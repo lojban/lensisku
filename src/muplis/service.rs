@@ -1,8 +1,13 @@
+use crate::utils::remove_html_tags;
 use deadpool_postgres::Pool;
 use log::{info, warn};
 use std::time::SystemTime;
 
 use super::dto::{MuplisEntry, MuplisSearchQuery, MuplisSearchResponse};
+
+pub fn sanitize_html(html: &str) -> String {
+    remove_html_tags(html)
+}
 
 pub async fn search_muplis(
     pool: &Pool,
@@ -92,10 +97,12 @@ pub async fn update_data(pool: &Pool, url: &str) -> Result<(), Box<dyn std::erro
     for (line_num, line) in content.lines().enumerate() {
         let parts: Vec<&str> = line.split('\t').collect();
         if let (Some(lojban), Some(english)) = (parts.get(0), parts.get(1)) {
+            let sanitized_lojban = sanitize_html(lojban);
+            let sanitized_english = sanitize_html(english);
             transaction
                 .execute(
                     "INSERT INTO muplis (lojban, english) VALUES ($1, $2)",
-                    &[lojban, english],
+                    &[&sanitized_lojban, &sanitized_english],
                 )
                 .await?;
         } else {

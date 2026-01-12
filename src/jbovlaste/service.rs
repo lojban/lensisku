@@ -1,3 +1,4 @@
+use crate::utils::remove_html_tags;
 use camxes_rs::peg::grammar::Peg;
 use chrono::TimeZone;
 use serde_json::json;
@@ -30,6 +31,10 @@ use base64::engine::general_purpose::STANDARD as BASE64;
 use base64::Engine;
 
 use chrono::{DateTime, Duration, Utc};
+
+pub fn sanitize_html(html: &str) -> String {
+    remove_html_tags(html)
+}
 
 pub async fn semantic_search(
     pool: &Pool,
@@ -872,11 +877,17 @@ async fn add_definition_in_transaction(
     redis_cache: &RedisCache,
     send_notifications: bool,
 ) -> Result<(String, i32), Box<dyn std::error::Error>> {
+    let sanitized_definition = sanitize_html(&request.definition);
+    let sanitized_notes = request.notes.as_ref().map(|n| sanitize_html(n));
+    let sanitized_etymology = request.etymology.as_ref().map(|e| sanitize_html(e));
+    let sanitized_selmaho = request.selmaho.as_ref().map(|s| sanitize_html(s));
+    let sanitized_jargon = request.jargon.as_ref().map(|j| sanitize_html(j));
+
     let combined_text = format!(
         "{} {} {}",
-        request.definition,
-        request.notes.as_deref().unwrap_or(""),
-        request.etymology.as_deref().unwrap_or("")
+        sanitized_definition,
+        sanitized_notes.as_deref().unwrap_or(""),
+        sanitized_etymology.as_deref().unwrap_or("")
     );
 
     let options = MathJaxValidationOptions { use_tectonic: true };
@@ -893,7 +904,7 @@ async fn add_definition_in_transaction(
             let res = analyze_word(&parsers, &request.word, source_langid, transaction).await?;
             (res.text, res.word_type)
         }
-        _ => (request.word.clone(), "phrase".to_string()),
+        _ => (sanitize_html(&request.word), "phrase".to_string()),
     };
 
     let type_id = match word_type.as_str() {
@@ -966,11 +977,11 @@ async fn add_definition_in_transaction(
                 &request.lang_id,
                 &valsi_id,
                 &definitionnum,
-                &request.definition,
-                &request.notes,
-                &request.etymology,
-                &request.selmaho,
-                &request.jargon,
+                &sanitized_definition,
+                &sanitized_notes,
+                &sanitized_etymology,
+                &sanitized_selmaho,
+                &sanitized_jargon,
                 &claims.sub,
                 &(Utc::now().timestamp() as i32),
                 &request.owner_only.unwrap_or(false),
@@ -1001,6 +1012,8 @@ async fn add_definition_in_transaction(
     // Add gloss keywords
     if let Some(gloss_keywords) = &request.gloss_keywords {
         for keyword in gloss_keywords {
+            let sanitized_word = sanitize_html(&keyword.word);
+            let sanitized_meaning = keyword.meaning.as_ref().map(|m| sanitize_html(m));
             // Add natlangword if it doesn't exist
             transaction
                 .execute(
@@ -1020,8 +1033,8 @@ async fn add_definition_in_transaction(
                  )",
                     &[
                         &request.lang_id,
-                        &keyword.word,
-                        &keyword.meaning,
+                        &sanitized_word,
+                        &sanitized_meaning,
                         &claims.sub,
                         &(Utc::now().timestamp() as i32),
                     ],
@@ -1040,8 +1053,8 @@ async fn add_definition_in_transaction(
                     &[
                         &definition_id,
                         &request.lang_id,
-                        &keyword.word,
-                        &keyword.meaning,
+                        &sanitized_word,
+                        &sanitized_meaning,
                     ],
                 )
                 .await?;
@@ -1051,6 +1064,8 @@ async fn add_definition_in_transaction(
     // Add place keywords
     if let Some(place_keywords) = &request.place_keywords {
         for (i, keyword) in place_keywords.iter().enumerate() {
+            let sanitized_word = sanitize_html(&keyword.word);
+            let sanitized_meaning = keyword.meaning.as_ref().map(|m| sanitize_html(m));
             // Add natlangword if it doesn't exist
             transaction
                 .execute(
@@ -1070,8 +1085,8 @@ async fn add_definition_in_transaction(
                  )",
                     &[
                         &request.lang_id,
-                        &keyword.word,
-                        &keyword.meaning,
+                        &sanitized_word,
+                        &sanitized_meaning,
                         &claims.sub,
                         &(Utc::now().timestamp() as i32),
                     ],
@@ -1091,8 +1106,8 @@ async fn add_definition_in_transaction(
                         &definition_id,
                         &((i + 1) as i32),
                         &request.lang_id,
-                        &keyword.word,
-                        &keyword.meaning,
+                        &sanitized_word,
+                        &sanitized_meaning,
                     ],
                 )
                 .await?;
@@ -1341,12 +1356,18 @@ pub async fn update_definition(
     request: &UpdateDefinitionRequest,
     redis_cache: &RedisCache,
 ) -> Result<(), Box<dyn std::error::Error>> {
+    let sanitized_definition = sanitize_html(&request.definition);
+    let sanitized_notes = request.notes.as_ref().map(|n| sanitize_html(n));
+    let sanitized_etymology = request.etymology.as_ref().map(|e| sanitize_html(e));
+    let sanitized_selmaho = request.selmaho.as_ref().map(|s| sanitize_html(s));
+    let sanitized_jargon = request.jargon.as_ref().map(|j| sanitize_html(j));
+
     // Combine all text fields for validation
     let combined_text = format!(
         "{} {} {}",
-        request.definition,
-        request.notes.as_deref().unwrap_or(""),
-        request.etymology.as_deref().unwrap_or("")
+        sanitized_definition,
+        sanitized_notes.as_deref().unwrap_or(""),
+        sanitized_etymology.as_deref().unwrap_or("")
     );
 
     let mut client = pool.get().await?;
@@ -1462,13 +1483,13 @@ pub async fn update_definition(
                  embedding = NULL
              WHERE definitionid = $8",
             &[
-                &request.definition,
-                &request.notes,
-                &request.jargon,
+                &sanitized_definition,
+                &sanitized_notes,
+                &sanitized_jargon,
                 &(Utc::now().timestamp() as i32),
-                &request.selmaho,
+                &sanitized_selmaho,
                 &owner_only,
-                &request.etymology,
+                &sanitized_etymology,
                 &definition_id,
             ],
         )
@@ -1513,6 +1534,8 @@ pub async fn update_definition(
     // Add gloss keywords
     if let Some(gloss_keywords) = &request.gloss_keywords {
         for keyword in gloss_keywords {
+            let sanitized_word = sanitize_html(&keyword.word);
+            let sanitized_meaning = keyword.meaning.as_ref().map(|m| sanitize_html(m));
             // First ensure the natlangword exists
             transaction
                 .execute(
@@ -1532,8 +1555,8 @@ pub async fn update_definition(
                  )",
                     &[
                         &request.lang_id,
-                        &keyword.word,
-                        &keyword.meaning,
+                        &sanitized_word,
+                        &sanitized_meaning,
                         &user_id,
                         &(Utc::now().timestamp() as i32),
                     ],
@@ -1552,8 +1575,8 @@ pub async fn update_definition(
                     &[
                         &definition_id,
                         &request.lang_id,
-                        &keyword.word,
-                        &keyword.meaning,
+                        &sanitized_word,
+                        &sanitized_meaning,
                     ],
                 )
                 .await?;
@@ -1563,6 +1586,8 @@ pub async fn update_definition(
     // Add place keywords
     if let Some(place_keywords) = &request.place_keywords {
         for (i, keyword) in place_keywords.iter().enumerate() {
+            let sanitized_word = sanitize_html(&keyword.word);
+            let sanitized_meaning = keyword.meaning.as_ref().map(|m| sanitize_html(m));
             // First ensure the natlangword exists
             transaction
                 .execute(
@@ -1582,8 +1607,8 @@ pub async fn update_definition(
                  )",
                     &[
                         &request.lang_id,
-                        &keyword.word,
-                        &keyword.meaning,
+                        &sanitized_word,
+                        &sanitized_meaning,
                         &user_id,
                         &(Utc::now().timestamp() as i32),
                     ],
@@ -1603,8 +1628,8 @@ pub async fn update_definition(
                         &definition_id,
                         &((i + 1) as i32),
                         &request.lang_id,
-                        &keyword.word,
-                        &keyword.meaning,
+                        &sanitized_word,
+                        &sanitized_meaning,
                     ],
                 )
                 .await?;

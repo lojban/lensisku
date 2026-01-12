@@ -1,3 +1,4 @@
+use crate::utils::remove_html_tags;
 use std::{
     collections::{HashMap, HashSet},
     env,
@@ -17,6 +18,10 @@ use super::{
     errors::ReactionError,
     models::{CommentOpinion, FreeThread, TrendingTimespan},
 };
+
+pub fn sanitize_html(html: &str) -> String {
+    remove_html_tags(html)
+}
 
 pub async fn get_thread_comments(
     pool: &Pool,
@@ -243,6 +248,13 @@ pub async fn add_comment(params: NewCommentParams) -> Result<Comment, Box<dyn st
     let mut content_parts: Vec<ContentPart> = serde_json::from_str(&params.content)
         .map_err(|e| format!("Failed to parse content: {}", e))?;
 
+    // Sanitize each part's content
+    for part in content_parts.iter_mut() {
+        if part.r#type == "text" || part.r#type == "header" {
+            part.data = sanitize_html(&part.data);
+        }
+    }
+
     // Remove empty text parts at the end
     while let Some(last) = content_parts.last() {
         if last.r#type == "text" && last.data.is_empty() {
@@ -263,13 +275,15 @@ pub async fn add_comment(params: NewCommentParams) -> Result<Comment, Box<dyn st
         .into());
     }
 
+    let sanitized_subject = sanitize_html(&params.subject);
+
     // Add subject as header if present
-    if !params.subject.is_empty() {
+    if !sanitized_subject.is_empty() {
         content_parts.insert(
             0,
             ContentPart {
                 r#type: "header".to_string(),
-                data: params.subject.clone(),
+                data: sanitized_subject.clone(),
             },
         );
     }
@@ -298,7 +312,7 @@ pub async fn add_comment(params: NewCommentParams) -> Result<Comment, Box<dyn st
                 &params.user_id,
                 &comment_num,
                 &(Utc::now().timestamp() as i32),
-                &params.subject,
+                &sanitized_subject,
                 &content_json,
             ],
         )

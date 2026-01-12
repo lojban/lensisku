@@ -1,3 +1,4 @@
+use crate::utils::remove_html_tags;
 use super::dto::SkippedItemInfo;
 use super::dto::*;
 use crate::{
@@ -13,6 +14,9 @@ pub async fn create_collection(
     user_id: i32,
     req: &CreateCollectionRequest,
 ) -> AppResult<CollectionResponse> {
+    let sanitized_name = sanitize_html(&req.name);
+    let sanitized_description = req.description.as_ref().map(|d| sanitize_html(d));
+
     let mut client = pool
         .get()
         .await
@@ -29,8 +33,8 @@ pub async fn create_collection(
              RETURNING collection_id, created_at, updated_at",
             &[
                 &user_id,
-                &req.name,
-                &req.description,
+                &sanitized_name,
+                &sanitized_description,
                 &req.is_public.unwrap_or(true),
             ],
         )
@@ -46,8 +50,8 @@ pub async fn create_collection(
 
     let response = CollectionResponse {
         collection_id: row.get("collection_id"),
-        name: req.name.clone(),
-        description: req.description.clone(),
+        name: sanitized_name,
+        description: sanitized_description,
         is_public: req.is_public.unwrap_or(true),
         created_at: row.get("created_at"),
         updated_at: row.get("updated_at"),
@@ -60,6 +64,10 @@ pub async fn create_collection(
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
     Ok(response)
+}
+
+pub fn sanitize_html(html: &str) -> String {
+    remove_html_tags(html)
 }
 
 pub async fn list_collections(pool: &Pool, user_id: i32) -> AppResult<CollectionListResponse> {
@@ -225,6 +233,9 @@ pub async fn update_collection(
         return Err(AppError::Unauthorized("Access denied".to_string()));
     }
 
+    let sanitized_name = req.name.as_ref().map(|n| sanitize_html(n));
+    let sanitized_description = req.description.as_ref().map(|d| sanitize_html(d));
+
     // Update collection
     let row = transaction
         .query_one(
@@ -236,8 +247,8 @@ pub async fn update_collection(
              WHERE collection_id = $5
              RETURNING *",
             &[
-                &req.name,
-                &req.description,
+                &sanitized_name,
+                &sanitized_description,
                 &req.is_public,
                 &Utc::now(),
                 &collection_id,
@@ -578,6 +589,10 @@ pub async fn import_collection_from_json(
 
         // Insert the item
         current_max_position += 1;
+        let sanitized_front = item.free_content_front.as_ref().map(|f| sanitize_html(f));
+        let sanitized_back = item.free_content_back.as_ref().map(|b| sanitize_html(b));
+        let sanitized_note = item.collection_note.as_ref().map(|n| sanitize_html(n));
+
         let new_item_id: i32 = transaction
             .query_one(
                 "INSERT INTO collection_items (collection_id, definition_id, free_content_front, free_content_back, notes, position)
@@ -585,9 +600,9 @@ pub async fn import_collection_from_json(
                 &[
                     &target_collection_id,
                     &item.definition_id,
-                    &item.free_content_front,
-                    &item.free_content_back,
-                    &item.collection_note,
+                    &sanitized_front,
+                    &sanitized_back,
+                    &sanitized_note,
                     &current_max_position,
                 ],
             )
@@ -690,6 +705,10 @@ pub async fn upsert_item(
     // Calculate new position
     let position = req.position.unwrap_or(max_position + 1);
 
+    let sanitized_notes = req.notes.as_ref().map(|n| sanitize_html(n));
+    let sanitized_front = req.free_content_front.as_ref().map(|f| sanitize_html(f));
+    let sanitized_back = req.free_content_back.as_ref().map(|b| sanitize_html(b));
+
     // Check if item exists either by specified ID or definition ID
     let existing_item = if let Some(item_id) = req.item_id {
         transaction
@@ -721,7 +740,7 @@ pub async fn upsert_item(
     }
 
     // Create or update item
-    let (item_id, notes, added_at) = if let Some(row) = existing_item {
+    let (item_id, notes, added_at): (i32, Option<String>, DateTime<Utc>) = if let Some(row) = existing_item {
         // Update existing item
         let old_position: i32 = row.get("position");
 
@@ -757,14 +776,14 @@ pub async fn upsert_item(
                 "UPDATE collection_items 
                  SET notes = $1, position = $2 
                  WHERE item_id = $3",
-                &[&req.notes, &position, &row.get::<_, i32>("item_id")],
+                &[&sanitized_notes, &position, &row.get::<_, i32>("item_id")],
             )
             .await
             .map_err(|e| AppError::Database(e.to_string()))?;
 
         (
-            row.get("item_id"),
-            req.notes.clone(),
+            row.get::<_, i32>("item_id"),
+            sanitized_notes,
             row.get::<_, DateTime<Utc>>("added_at"),
         )
     } else {
@@ -782,14 +801,14 @@ pub async fn upsert_item(
                 &[
                     &collection_id,
                     &req.definition_id,
-                    &req.free_content_front,
-                    &req.free_content_back,
+                    &sanitized_front,
+                    &sanitized_back,
                     &req.language_id,
                     &req.owner_user_id,
                     &req.license,
                     &req.script,
                     &req.is_original.unwrap_or(true),
-                    &req.notes,
+                    &sanitized_notes,
                     &position,
                     &req.auto_progress,
                 ],
@@ -798,8 +817,8 @@ pub async fn upsert_item(
             .map_err(|e| AppError::Database(e.to_string()))?;
 
         (
-            row.get("item_id"),
-            req.notes.clone(),
+            row.get::<_, i32>("item_id"),
+            sanitized_notes,
             row.get::<_, DateTime<Utc>>("added_at"),
         )
     };
@@ -1120,8 +1139,8 @@ pub async fn upsert_item(
             username: None,
             valsi_id: None,
             lang_id: None,
-            free_content_front: req.free_content_front.clone(),
-            free_content_back: req.free_content_back.clone(),
+            free_content_front: sanitized_front,
+            free_content_back: sanitized_back,
             notes: None,
             language_id: req.language_id,
             owner_user_id: req.owner_user_id,

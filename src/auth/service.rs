@@ -1,4 +1,5 @@
 //TODO: refactor
+use crate::utils::remove_html_tags;
 use bcrypt::{hash, verify, DEFAULT_COST};
 use chrono::{Duration, Utc};
 use jsonwebtoken::{encode, EncodingKey, Header};
@@ -40,6 +41,10 @@ use super::{
 pub fn hash_password(password: &str) -> Result<String, PasswordHashError> {
     // Always use bcrypt for new passwords
     Ok(hash(password, DEFAULT_COST)?)
+}
+
+pub fn sanitize_html(html: &str) -> String {
+    remove_html_tags(html)
 }
 
 fn rot13(input: &str) -> String {
@@ -536,10 +541,11 @@ pub async fn signup(pool: &Pool, user_data: &SignupRequest) -> AppResult<AuthRes
         .map_err(|e| AppError::Database(e.to_string()))?;
 
     // Check if user exists
+    let sanitized_username = sanitize_html(&user_data.username);
     let existing_check = transaction
         .query(
             "SELECT userid FROM users WHERE username = $1 OR email = $2",
-            &[&user_data.username, &user_data.email],
+            &[&sanitized_username, &user_data.email],
         )
         .await?;
 
@@ -563,7 +569,7 @@ pub async fn signup(pool: &Pool, user_data: &SignupRequest) -> AppResult<AuthRes
             ) VALUES ($1, $2, $3, $4, $5, false, $6) 
             RETURNING userid",
             &[
-                &user_data.username,
+                &sanitized_username,
                 &user_data.email,
                 &password_hash,
                 &created_at,
@@ -575,7 +581,7 @@ pub async fn signup(pool: &Pool, user_data: &SignupRequest) -> AppResult<AuthRes
 
     let user = User {
         userid: row.get("userid"),
-        username: user_data.username.clone(),
+        username: sanitized_username,
         email: user_data.email.clone(),
         password: password_hash,
         created_at,
@@ -840,6 +846,10 @@ pub async fn update_profile(
     let mut param_count = 1;
     let mut username_changed = false;
 
+    let mut sanitized_realname = None;
+    let mut sanitized_url = None;
+    let mut sanitized_personal = None;
+
     // Handle username update separately due to uniqueness check
     if let Some(new_username) = &profile.username {
         // Check if the new username is different from the current one
@@ -866,18 +876,21 @@ pub async fn update_profile(
     }
 
     if let Some(realname) = &profile.realname {
+        sanitized_realname = Some(sanitize_html(realname));
         updates.push(format!("realname = ${}", param_count));
-        params.push(realname);
+        params.push(sanitized_realname.as_ref().unwrap());
         param_count += 1;
     }
     if let Some(url) = &profile.url {
+        sanitized_url = Some(sanitize_html(url));
         updates.push(format!("url = ${}", param_count));
-        params.push(url);
+        params.push(sanitized_url.as_ref().unwrap());
         param_count += 1;
     }
     if let Some(personal) = &profile.personal {
+        sanitized_personal = Some(sanitize_html(personal));
         updates.push(format!("personal = ${}", param_count));
-        params.push(personal);
+        params.push(sanitized_personal.as_ref().unwrap());
         param_count += 1;
     }
 

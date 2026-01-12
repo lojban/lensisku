@@ -145,6 +145,11 @@ mod tests {
     }
 }
 
+pub fn remove_html_tags(html: &str) -> String {
+    static TAG_RE: Lazy<Regex> = Lazy::new(|| Regex::new(r#"(?i)<[/?[a-z][^>]*>"#).unwrap());
+    TAG_RE.replace_all(html, "").into_owned()
+}
+
 pub fn validate_item_image(image: &ImageData) -> Result<(), String> {
     if !["image/jpeg", "image/png", "image/gif", "image/webp"].contains(&image.mime_type.as_str()) {
         return Err("Invalid image type. Supported types: JPEG, PNG, GIF, WebP".to_string());
