@@ -182,7 +182,7 @@
 
   <!-- Main content -->
   <main class="main-content">
-    <div class="p-3 pb-12 max-w-4xl mx-auto min-h-[calc(100vh-12rem)] relative flex flex-col" id="main-child">
+    <div class="p-3 max-w-4xl mx-auto min-h-[calc(100vh-12rem)] relative flex flex-col" id="main-child">
       <div class="flex-1">
         <router-view v-slot="{ Component, route }">
           <component :is="Component" v-bind="route.meta.props" v-on="route.name === 'home'
