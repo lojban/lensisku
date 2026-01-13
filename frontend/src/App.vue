@@ -182,19 +182,21 @@
 
   <!-- Main content -->
   <main class="main-content">
-    <div class="p-3 pb-12 max-w-4xl mx-auto min-h-[calc(100vh-12rem)] relative" id="main-child">
-      <router-view v-slot="{ Component, route }">
-        <component :is="Component" v-bind="route.meta.props" v-on="route.name === 'home'
-          ? {
-            search: performSearch,
-            'view-message': viewMessage,
-            'view-thread': viewThread,
-          }
-          : {}
-          " />
-      </router-view>
+    <div class="p-3 pb-12 max-w-4xl mx-auto min-h-[calc(100vh-12rem)] relative flex flex-col" id="main-child">
+      <div class="flex-1">
+        <router-view v-slot="{ Component, route }">
+          <component :is="Component" v-bind="route.meta.props" v-on="route.name === 'home'
+            ? {
+              search: performSearch,
+              'view-message': viewMessage,
+              'view-thread': viewThread,
+            }
+            : {}
+            " />
+        </router-view>
+      </div>
 
-      <footer class="mt-10 text-center text-xs text-gray-500 leading-relaxed">
+      <footer class="mt-auto text-center text-xs text-gray-500 leading-relaxed">
         {{ $t('footer.publicDomainNotice') }}
       </footer>
     </div>
