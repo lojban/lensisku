@@ -193,6 +193,10 @@
           : {}
           " />
       </router-view>
+
+      <footer class="mt-10 text-center text-xs text-gray-500 leading-relaxed">
+        {{ $t('footer.publicDomainNotice') }}
+      </footer>
     </div>
   </main>
 

@@ -118,7 +118,8 @@
     "chatSettings": "Chat Settings",
     "marqueeToggle": "Running line in the footer",
     "recentMessages": "Recent Messages",
-    "noRecentMessages": "No recent messages"
+    "noRecentMessages": "No recent messages",
+    "publicDomainNotice": "All content is public domain. By submitting content, you agree to place it in the public domain to the fullest extent allowed by local law."
   },
   "testDataWarning": "For tests only (data are regularly flushed). Report issues on",
   "discord": "Discord",
