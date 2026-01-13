@@ -35,7 +35,7 @@
                   {{ t(`wordTypes.${definition.type_name.replace(/'/g,'h')}`) }}
                 </span>
                 <RouterLink v-if="definition.selmaho"
-                  :to="{ path: '/', query: { mode: 'dictionary', selmaho: definition.selmaho } }"
+                  :to="{ path: '/', query: selmahoLinkQuery }"
                   class="inline-flex items-center px-2 py-1 text-xs font-medium bg-purple-100 text-purple-700 rounded-md justify-center sm:justify-start hover:bg-purple-200 hover:text-purple-800 transition-colors"
                   @click.stop 
                 >
@@ -423,6 +423,14 @@ const hasNotes = computed(() =>
 
 const hasAdditionalInfo = computed(() => {
   return props.definition.notes || props.definition.selmaho
+})
+
+const selmahoLinkQuery = computed(() => {
+  return {
+    mode: 'dictionary',
+    selmaho: props.definition.selmaho,
+    q: '',
+  }
 })
 
 // Remove the local getTypeClass implementation
