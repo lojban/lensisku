@@ -226,11 +226,15 @@ pub async fn search_definitions(
     pool: web::Data<Pool>,
     redis_cache: web::Data<RedisCache>,
     query: web::Query<SearchDefinitionsQuery>,
+    claims: Option<Claims>,
 ) -> impl Responder {
     let page = query.page.unwrap_or(1);
     let per_page = query.per_page.unwrap_or(20);
     let search_term = query.search.as_deref().unwrap_or("").trim();
     let include_comments = query.include_comments.unwrap_or(false);
+
+    // Use fast search if explicitly requested via 'fast' parameter, or for non-logged-in users
+    let use_fast_search = query.fast.unwrap_or(false) || claims.is_none();
 
     let cache_key = generate_search_cache_key(&query);
 
@@ -268,7 +272,11 @@ pub async fn search_definitions(
                     source_langid: query.source_langid,
                 };
 
-                service::search_definitions(&pool, params, &redis_cache).await
+                if use_fast_search {
+                    service::fast_search_definitions(&pool, params, &redis_cache).await
+                } else {
+                    service::search_definitions(&pool, params, &redis_cache).await
+                }
             },
             None,
         )

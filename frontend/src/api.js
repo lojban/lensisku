@@ -172,6 +172,17 @@ export const searchDefinitions = (params, signal) => {
   }
   return api.get(endpoint, { params: finalParams, signal })
 }
+
+// Fast search - forces use of fast_search_definitions endpoint regardless of login status
+export const fastSearchDefinitions = (params, signal) => {
+  // Ensure source_langid is included if provided
+  const finalParams = { ...params, fast: true };
+  if (finalParams.source_langid === 1) { // Don't send default
+    delete finalParams.source_langid;
+  }
+  // Force fast search by including 'fast=true' parameter
+  return api.get('/jbovlaste/definitions', { params: finalParams, signal })
+}
 export const getValsiDetails = (id) => api.get(`/jbovlaste/valsi/${id}`)
 export const getValsiDefinitions = (id) => api.get(`/jbovlaste/valsi/${id}/definitions`)
 export const validateMathJax = (text) => api.post('/language/validate_mathjax', { text })

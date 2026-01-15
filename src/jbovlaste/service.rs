@@ -671,6 +671,303 @@ pub async fn search_definitions(
     })
 }
 
+/// Fast search for non-logged-in users - avoids expensive JOINs (votes, comments, user-specific data)
+/// Searches in words, definitions, notes, selmaho, and glosswords
+pub async fn fast_search_definitions(
+    pool: &Pool,
+    params: SearchDefinitionsParams,
+    redis_cache: &RedisCache,
+) -> Result<DefinitionResponse, Box<dyn std::error::Error>> {
+    let mut client = pool.get().await?;
+    let transaction = client.transaction().await?;
+
+    let offset = (params.page - 1) * params.per_page;
+    let like_pattern = format!("%{}%", params.search_term);
+
+    // Convert Option<Vec<i32>> to Option<&[i32]> for Postgres
+    let languages_slice: Option<&[i32]> = params.languages.as_deref();
+
+    // Add table alias to sort_by
+    let sort_column = match params.sort_by.as_str() {
+        "word" => "r.valsiword",
+        "type" => "r.type_name",
+        "date" => "r.time",
+        "score" => "r.score",
+        _ => "r.valsiword",
+    };
+    let sort_order = match params.sort_order.as_str() {
+        s if s.eq_ignore_ascii_case("desc") => "DESC",
+        _ => "ASC",
+    };
+
+    // Start with base parameters (will be $1-$2)
+    let mut query_params: Vec<&(dyn tokio_postgres::types::ToSql + Sync)> = vec![
+        &params.search_term,
+        &like_pattern,
+    ];
+
+    // Build dynamic conditions
+    let mut conditions = vec![];
+
+    // Add selmaho condition if present
+    if let Some(selmaho) = &params.selmaho {
+        conditions.push(format!("AND d.selmaho = ${}", query_params.len() + 1));
+        query_params.push(selmaho);
+    }
+
+    // Add username condition if present
+    if let Some(username) = &params.username {
+        conditions.push(format!("AND u.username = ${}", query_params.len() + 1));
+        query_params.push(username);
+    }
+
+    let word_type_value;
+    if let Some(word_type) = params.word_type {
+        word_type_value = word_type;
+        conditions.push(format!("AND v.typeid = ${}", query_params.len() + 1));
+        query_params.push(&word_type_value);
+    }
+
+    // Add source_langid condition if present, otherwise default to 1 (Lojban)
+    let source_langid_value = params.source_langid.unwrap_or(1);
+    conditions.push(format!("AND v.source_langid = ${}", query_params.len() + 1));
+    query_params.push(&source_langid_value);
+
+    // Add languages_slice parameter ($3)
+    query_params.push(&languages_slice);
+
+    let additional_conditions = conditions.join(" ");
+
+    // Now add LIMIT and OFFSET parameters at the end
+    let limit_param_index = query_params.len() + 1;
+    query_params.push(&params.per_page);
+    let offset_param_index = query_params.len() + 1;
+    query_params.push(&offset);
+
+    // Fast query without expensive JOINs (votes, comments, images, etc.)
+    // Includes search in glosswords via keywordmapping/natlangwords
+    let query_string = format!(
+        r#"
+        WITH glosswords_search AS (
+            SELECT DISTINCT k.definitionid
+            FROM keywordmapping k
+            JOIN natlangwords n ON k.natlangwordid = n.wordid
+            WHERE k.place = 0
+            AND (n.word ILIKE $2 OR COALESCE(n.meaning, '') ILIKE $2)
+        ),
+        base_data AS (
+            SELECT 
+                d.definitionid, d.valsiid, d.langid, d.definition, d.notes, d.etymology, d.created_at,
+                d.selmaho, d.jargon, d.definitionnum, d.time, d.owner_only,
+                v.word as valsiword,
+                u.username,
+                l.realname as langrealname,
+                vt.descriptor as type_name,
+                0 as score,
+                CASE
+                    WHEN v.word = $1 THEN 10
+                    WHEN v.word ILIKE $1 THEN 9
+                    WHEN v.rafsi IS NOT NULL AND $1 = ANY(string_to_array(v.rafsi, ' ')) THEN 8
+                    WHEN v.word ILIKE $2 THEN 7
+                    WHEN gs.definitionid IS NOT NULL THEN 6
+                    WHEN d.definition ILIKE $2 OR
+                         d.notes ILIKE $2 OR
+                         d.selmaho ILIKE $2 THEN 1
+                    ELSE 0
+                END as rank
+            FROM definitions d
+            JOIN valsi v ON d.valsiid = v.valsiid
+            JOIN valsitypes vt ON v.typeid = vt.typeid
+            JOIN users u ON d.userid = u.userid
+            JOIN languages l ON d.langid = l.langid
+            LEFT JOIN glosswords_search gs ON gs.definitionid = d.definitionid
+            WHERE ($1 = '' OR
+                  v.word ILIKE $2 OR
+                  v.source_langid = 1 AND
+                  d.definition ILIKE $2 OR
+                  d.notes ILIKE $2 OR
+                  d.selmaho ILIKE $2 OR
+                  $1 = ANY(string_to_array(v.rafsi, ' ')) OR
+                  gs.definitionid IS NOT NULL
+                  )
+                  AND (d.langid = ANY($3) OR $3 IS NULL)
+                  {additional_conditions}
+        ),
+        ranked_results AS (
+            SELECT DISTINCT ON (definitionid) *
+            FROM base_data
+            WHERE rank > 0
+        )
+        SELECT r.*
+        FROM ranked_results r
+        ORDER BY r.rank DESC, r.score DESC, {} {}
+        LIMIT {} OFFSET {}"#,
+        sort_column, sort_order, 
+        format!("${}", limit_param_index),
+        format!("${}", offset_param_index)
+    );
+
+    let mut definitions: Vec<DefinitionDetail> = Vec::new();
+    let rows = transaction.query(&query_string, &query_params).await?;
+
+    // Get all definition IDs for keyword fetching
+    let def_ids: Vec<i32> = rows.iter().map(|row| row.get("definitionid")).collect();
+
+    // Use the helper function to fetch keywords
+    let (gloss_keywords_map, place_keywords_map) = fetch_keywords(&transaction, &def_ids).await?;
+
+    let words: Vec<String> = rows
+        .iter()
+        .map(|row| row.get::<_, String>("valsiword"))
+        .collect();
+
+    let sound_urls = check_sound_urls(&words, redis_cache).await;
+
+    // Process each definition
+    for row in rows {
+        let def_id: i32 = row.get("definitionid");
+
+        let word: String = row.get("valsiword");
+        definitions.push(DefinitionDetail {
+            similarity: None,
+            definitionid: def_id,
+            valsiword: word.clone(),
+            valsiid: row.get("valsiid"),
+            langid: row.get("langid"),
+            definition: row.get("definition"),
+            notes: row.get("notes"),
+            etymology: row.get("etymology"),
+            selmaho: row.get("selmaho"),
+            jargon: row.get("jargon"),
+            definitionnum: row.get("definitionnum"),
+            langrealname: row.get("langrealname"),
+            username: row.get("username"),
+            time: row.get("time"),
+            type_name: row.get("type_name"),
+            score: row.get("score"),
+            comment_count: None, // Not included in fast search
+            gloss_keywords: gloss_keywords_map.get(&def_id).cloned(),
+            place_keywords: place_keywords_map.get(&def_id).cloned(),
+            user_vote: None, // Not included in fast search
+            owner_only: row.get("owner_only"),
+            can_edit: false, // Not included in fast search
+            created_at: row.get("created_at"),
+            has_image: false, // Not checked in fast search for performance
+            sound_url: sound_urls.get(&word).cloned().flatten(),
+            embedding: None,
+            metadata: None,
+        });
+    }
+
+    // Count query - simplified without expensive JOINs or regex
+    let base_conditions = r#"($1 = '' OR
+                  v.word ILIKE $2 OR
+                  d.definition ILIKE $2 OR
+                  d.notes ILIKE $2 OR
+                  d.selmaho ILIKE $2 OR
+                  $1 = ANY(string_to_array(v.rafsi, ' ')) OR
+                  EXISTS (
+                      SELECT 1 FROM keywordmapping k
+                      JOIN natlangwords n ON k.natlangwordid = n.wordid
+                      WHERE k.definitionid = d.definitionid
+                      AND k.place = 0
+                      AND (n.word ILIKE $2 OR COALESCE(n.meaning, '') ILIKE $2)
+                  ))
+                  AND (d.langid = ANY($3) OR $3 IS NULL)
+                  AND v.source_langid = $4"#;
+
+    // Build dynamic conditions with correct parameter numbering
+    let mut conditions = vec![];
+    let mut current_param_num = 5; // Start from 5 since we now use 1-4 in base
+
+    if params.selmaho.is_some() {
+        conditions.push(format!("AND d.selmaho = ${}", current_param_num));
+        current_param_num += 1;
+    }
+
+    // Add username condition if present
+    if params.username.is_some() {
+        conditions.push(format!("AND u.username = ${}", current_param_num));
+        current_param_num += 1;
+    }
+
+    // word_type condition needs to increment param_num too
+    if params.word_type.is_some() {
+        conditions.push(format!("AND v.typeid = ${}", current_param_num));
+    }
+
+    let additional_conditions = conditions.join(" ");
+
+    let count_query = format!(
+        r#"
+    WITH ranked_results AS (
+        SELECT d.definitionid,
+            CASE
+                WHEN v.word = $1 THEN 10
+                WHEN v.word ILIKE $1 THEN 9
+                WHEN v.rafsi IS NOT NULL AND $1 = ANY(string_to_array(v.rafsi, ' ')) THEN 8
+                WHEN v.word ILIKE $2 THEN 7
+                WHEN EXISTS (
+                    SELECT 1 FROM keywordmapping k
+                    JOIN natlangwords n ON k.natlangwordid = n.wordid
+                    WHERE k.definitionid = d.definitionid
+                    AND k.place = 0
+                    AND (n.word ILIKE $2 OR COALESCE(n.meaning, '') ILIKE $2)
+                ) THEN 6
+                WHEN d.definition ILIKE $2 OR
+                     d.notes ILIKE $2 OR
+                     d.selmaho ILIKE $2 THEN 1
+                ELSE 0
+            END as rank
+        FROM definitions d
+        JOIN valsi v ON d.valsiid = v.valsiid
+        JOIN valsitypes vt ON v.typeid = vt.typeid
+        JOIN users u ON d.userid = u.userid
+        JOIN languages l ON d.langid = l.langid
+        WHERE {base_conditions} {additional_conditions}
+    )
+    SELECT COUNT(DISTINCT definitionid)
+    FROM ranked_results
+    WHERE rank > 0"#
+    );
+
+    // Create params for count query
+    let mut count_params: Vec<&(dyn tokio_postgres::types::ToSql + Sync)> = vec![
+        &params.search_term,    // $1
+        &like_pattern,          // $2
+        &languages_slice,       // $3
+        &source_langid_value,   // $4 (Now part of base_conditions)
+    ];
+
+    // Add conditional parameters in the correct order, matching additional_conditions logic
+    if let Some(selmaho) = &params.selmaho {
+        count_params.push(selmaho); // $6 if present
+    }
+    if let Some(username) = &params.username {
+        count_params.push(username); // $7 if selmaho present, else $6
+    }
+    let word_type_value; // Temporary storage needed outside the if block
+    if let Some(word_type) = params.word_type {
+        word_type_value = word_type;
+        count_params.push(&word_type_value); // $8/$7/$6 depending on others
+    }
+
+    let total: i64 = transaction
+        .query_one(&count_query, &count_params)
+        .await?
+        .get(0);
+
+    let decomposition = get_source_words(&params.search_term, &transaction).await?;
+
+    transaction.commit().await?;
+
+    Ok(DefinitionResponse {
+        definitions,
+        decomposition,
+        total,
+    })
+}
+
 async fn get_source_words(
     word: &str,
     transaction: &tokio_postgres::Transaction<'_>,

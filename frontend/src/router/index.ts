@@ -22,6 +22,11 @@ const baseRoutes: Array<RouteRecordRaw> = [
     }),
   },
   {
+    path: "/fast-search",
+    name: "FastSearch",
+    component: () => import("../pages/FastSearchPage.vue"),
+  },
+  {
     path: "/message/:id",
     name: "MessageDetail",
     component: () => import("../pages/MessageDetail.vue"),

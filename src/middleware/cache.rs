@@ -58,8 +58,14 @@ impl RedisCache {
 }
 
 pub fn generate_search_cache_key(query: &SearchDefinitionsQuery) -> String {
+    let prefix = if query.fast.unwrap_or(false) {
+        "fast_search"
+    } else {
+        "search"
+    };
     format!(
-        "search:{}:{}:{}:{}:{}:{}:{}:{}:{}:{}:{}",
+        "{}:{}:{}:{}:{}:{}:{}:{}:{}:{}:{}:{}",
+        prefix,
         query.page.unwrap_or(1),
         query.per_page.unwrap_or(20),
         query.search.as_deref().unwrap_or(""),
