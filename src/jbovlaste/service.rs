@@ -687,13 +687,13 @@ pub async fn fast_search_definitions(
     // Convert Option<Vec<i32>> to Option<&[i32]> for Postgres
     let languages_slice: Option<&[i32]> = params.languages.as_deref();
 
-    // Add table alias to sort_by
+    // Add table alias to sort_by (no CTE, so use direct column names)
     let sort_column = match params.sort_by.as_str() {
-        "word" => "r.valsiword",
-        "type" => "r.type_name",
-        "date" => "r.time",
-        "score" => "r.score",
-        _ => "r.valsiword",
+        "word" => "valsiword",
+        "type" => "type_name",
+        "date" => "created_at",
+        "score" => "score",
+        _ => "valsiword",
     };
     let sort_order = match params.sort_order.as_str() {
         s if s.eq_ignore_ascii_case("desc") => "DESC",
@@ -744,63 +744,32 @@ pub async fn fast_search_definitions(
     let offset_param_index = query_params.len() + 1;
     query_params.push(&offset);
 
-    // Fast query without expensive JOINs (votes, comments, images, etc.)
-    // Includes search in glosswords via keywordmapping/natlangwords
+    // Fast query using cached_search_text - no JOINs except valsi for ranking
+    // Single indexed text search replaces all keywordmapping/natlangwords JOINs
     let query_string = format!(
         r#"
-        WITH glosswords_search AS (
-            SELECT DISTINCT k.definitionid
-            FROM keywordmapping k
-            JOIN natlangwords n ON k.natlangwordid = n.wordid
-            WHERE k.place = 0
-            AND (n.word ILIKE $2 OR COALESCE(n.meaning, '') ILIKE $2)
-        ),
-        base_data AS (
-            SELECT 
-                d.definitionid, d.valsiid, d.langid, d.definition, d.notes, d.etymology, d.created_at,
-                d.selmaho, d.jargon, d.definitionnum, d.time, d.owner_only,
-                v.word as valsiword,
-                u.username,
-                l.realname as langrealname,
-                vt.descriptor as type_name,
-                0 as score,
-                CASE
-                    WHEN v.word = $1 THEN 10
-                    WHEN v.word ILIKE $1 THEN 9
-                    WHEN v.rafsi IS NOT NULL AND $1 = ANY(string_to_array(v.rafsi, ' ')) THEN 8
-                    WHEN v.word ILIKE $2 THEN 7
-                    WHEN gs.definitionid IS NOT NULL THEN 6
-                    WHEN d.definition ILIKE $2 OR
-                         d.notes ILIKE $2 OR
-                         d.selmaho ILIKE $2 THEN 1
-                    ELSE 0
-                END as rank
-            FROM definitions d
-            JOIN valsi v ON d.valsiid = v.valsiid
-            JOIN valsitypes vt ON v.typeid = vt.typeid
-            JOIN users u ON d.userid = u.userid
-            JOIN languages l ON d.langid = l.langid
-            LEFT JOIN glosswords_search gs ON gs.definitionid = d.definitionid
-            WHERE ($1 = '' OR
-                  v.word ILIKE $2 OR
-                  v.source_langid = 1 AND
-                  d.definition ILIKE $2 OR
-                  d.notes ILIKE $2 OR
-                  d.selmaho ILIKE $2 OR
-                  $1 = ANY(string_to_array(v.rafsi, ' ')) OR
-                  gs.definitionid IS NOT NULL
-                  )
-                  AND (d.langid = ANY($3) OR $3 IS NULL)
-                  {additional_conditions}
-        ),
-        ranked_results AS (
-            SELECT DISTINCT ON (definitionid) *
-            FROM base_data
-            WHERE rank > 0
-        )
-        SELECT r.*
-        FROM ranked_results r
-        ORDER BY r.rank DESC, r.score DESC, {} {}
+        SELECT 
+            d.definitionid, d.valsiid, d.langid, d.definition, d.notes, d.selmaho, d.created_at,
+            v.word as valsiword,
+            d.cached_username as username,
+            d.cached_langrealname as langrealname,
+            d.cached_type_name as type_name,
+            0 as score,
+            CASE
+                WHEN v.word = $1 THEN 10
+                WHEN v.word ILIKE $1 THEN 9
+                WHEN v.rafsi IS NOT NULL AND $1 = ANY(string_to_array(v.rafsi, ' ')) THEN 8
+                WHEN v.word ILIKE $2 THEN 7
+                WHEN d.cached_search_text ILIKE $2 THEN 6
+                ELSE 0
+            END as rank
+        FROM definitions d
+        JOIN valsi v ON d.valsiid = v.valsiid
+        WHERE d.cached_search_text ILIKE $2
+        AND (d.langid = ANY($3) OR $3 IS NULL)
+        AND v.source_langid = $4
+        {additional_conditions}
+        ORDER BY rank DESC, {} {}
         LIMIT {} OFFSET {}"#,
         sort_column, sort_order, 
         format!("${}", limit_param_index),
@@ -810,18 +779,15 @@ pub async fn fast_search_definitions(
     let mut definitions: Vec<DefinitionDetail> = Vec::new();
     let rows = transaction.query(&query_string, &query_params).await?;
 
-    // Get all definition IDs for keyword fetching
+    // Get all definition IDs for keyword fetching (keywords are displayed, so fetch them)
     let def_ids: Vec<i32> = rows.iter().map(|row| row.get("definitionid")).collect();
 
     // Use the helper function to fetch keywords
     let (gloss_keywords_map, place_keywords_map) = fetch_keywords(&transaction, &def_ids).await?;
 
-    let words: Vec<String> = rows
-        .iter()
-        .map(|row| row.get::<_, String>("valsiword"))
-        .collect();
-
-    let sound_urls = check_sound_urls(&words, redis_cache).await;
+    // Skip sound_urls for maximum speed (external API call is slow)
+    // Skip decomposition unless search term looks like a lujvo (contains multiple consonants)
+    let sound_urls: HashMap<String, Option<String>> = HashMap::new(); // Skip for performance
 
     // Process each definition
     for row in rows {
@@ -836,43 +802,31 @@ pub async fn fast_search_definitions(
             langid: row.get("langid"),
             definition: row.get("definition"),
             notes: row.get("notes"),
-            etymology: row.get("etymology"),
+            etymology: None, // Not fetched in fast search
             selmaho: row.get("selmaho"),
-            jargon: row.get("jargon"),
-            definitionnum: row.get("definitionnum"),
+            jargon: None, // Not fetched in fast search
+            definitionnum: 0, // Not fetched in fast search
             langrealname: row.get("langrealname"),
             username: row.get("username"),
-            time: row.get("time"),
+            time: 0, // Not fetched in fast search (using created_at instead)
             type_name: row.get("type_name"),
             score: row.get("score"),
             comment_count: None, // Not included in fast search
             gloss_keywords: gloss_keywords_map.get(&def_id).cloned(),
             place_keywords: place_keywords_map.get(&def_id).cloned(),
             user_vote: None, // Not included in fast search
-            owner_only: row.get("owner_only"),
+            owner_only: false, // Not fetched in fast search
             can_edit: false, // Not included in fast search
             created_at: row.get("created_at"),
             has_image: false, // Not checked in fast search for performance
-            sound_url: sound_urls.get(&word).cloned().flatten(),
+            sound_url: None, // Skipped for performance in fast search
             embedding: None,
             metadata: None,
         });
     }
 
-    // Count query - simplified without expensive JOINs or regex
-    let base_conditions = r#"($1 = '' OR
-                  v.word ILIKE $2 OR
-                  d.definition ILIKE $2 OR
-                  d.notes ILIKE $2 OR
-                  d.selmaho ILIKE $2 OR
-                  $1 = ANY(string_to_array(v.rafsi, ' ')) OR
-                  EXISTS (
-                      SELECT 1 FROM keywordmapping k
-                      JOIN natlangwords n ON k.natlangwordid = n.wordid
-                      WHERE k.definitionid = d.definitionid
-                      AND k.place = 0
-                      AND (n.word ILIKE $2 OR COALESCE(n.meaning, '') ILIKE $2)
-                  ))
+    // Count query - simplified using cached_search_text
+    let base_conditions = r#"d.cached_search_text ILIKE $2
                   AND (d.langid = ANY($3) OR $3 IS NULL)
                   AND v.source_langid = $4"#;
 
@@ -885,9 +839,9 @@ pub async fn fast_search_definitions(
         current_param_num += 1;
     }
 
-    // Add username condition if present
+    // Add username condition if present (using cached field)
     if params.username.is_some() {
-        conditions.push(format!("AND u.username = ${}", current_param_num));
+        conditions.push(format!("AND d.cached_username = ${}", current_param_num));
         current_param_num += 1;
     }
 
@@ -900,35 +854,10 @@ pub async fn fast_search_definitions(
 
     let count_query = format!(
         r#"
-    WITH ranked_results AS (
-        SELECT d.definitionid,
-            CASE
-                WHEN v.word = $1 THEN 10
-                WHEN v.word ILIKE $1 THEN 9
-                WHEN v.rafsi IS NOT NULL AND $1 = ANY(string_to_array(v.rafsi, ' ')) THEN 8
-                WHEN v.word ILIKE $2 THEN 7
-                WHEN EXISTS (
-                    SELECT 1 FROM keywordmapping k
-                    JOIN natlangwords n ON k.natlangwordid = n.wordid
-                    WHERE k.definitionid = d.definitionid
-                    AND k.place = 0
-                    AND (n.word ILIKE $2 OR COALESCE(n.meaning, '') ILIKE $2)
-                ) THEN 6
-                WHEN d.definition ILIKE $2 OR
-                     d.notes ILIKE $2 OR
-                     d.selmaho ILIKE $2 THEN 1
-                ELSE 0
-            END as rank
-        FROM definitions d
-        JOIN valsi v ON d.valsiid = v.valsiid
-        JOIN valsitypes vt ON v.typeid = vt.typeid
-        JOIN users u ON d.userid = u.userid
-        JOIN languages l ON d.langid = l.langid
-        WHERE {base_conditions} {additional_conditions}
-    )
-    SELECT COUNT(DISTINCT definitionid)
-    FROM ranked_results
-    WHERE rank > 0"#
+    SELECT COUNT(DISTINCT d.definitionid)
+    FROM definitions d
+    JOIN valsi v ON d.valsiid = v.valsiid
+    WHERE {base_conditions} {additional_conditions}"#
     );
 
     // Create params for count query
@@ -957,7 +886,14 @@ pub async fn fast_search_definitions(
         .await?
         .get(0);
 
-    let decomposition = get_source_words(&params.search_term, &transaction).await?;
+    // Skip decomposition for maximum speed (only compute if search term looks like lujvo)
+    // A simple heuristic: if it's longer than 5 chars and contains consonants, might be lujvo
+    let decomposition = if params.search_term.len() > 5 
+        && params.search_term.chars().any(|c| c.is_alphabetic() && !matches!(c, 'a' | 'e' | 'i' | 'o' | 'u' | 'A' | 'E' | 'I' | 'O' | 'U')) {
+        get_source_words(&params.search_term, &transaction).await.unwrap_or_default()
+    } else {
+        Vec::new()
+    };
 
     transaction.commit().await?;
 

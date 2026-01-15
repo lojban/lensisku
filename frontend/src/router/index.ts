@@ -22,7 +22,7 @@ const baseRoutes: Array<RouteRecordRaw> = [
     }),
   },
   {
-    path: "/fast-search",
+    path: "/sutra_sisku",
     name: "FastSearch",
     component: () => import("../pages/FastSearchPage.vue"),
   },
