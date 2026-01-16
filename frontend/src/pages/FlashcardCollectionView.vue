@@ -332,6 +332,10 @@ const loadFlashcards = async () => {
 // Search debouncing
 let searchTimeout = null
 
+// Debounce delay: 450ms is optimal for search inputs (400-500ms range)
+// This balances responsiveness with reducing unnecessary API calls
+const DEBOUNCE_DELAY = 450
+
 function clearSearchTimeout() {
   if (searchTimeout) {
     clearTimeout(searchTimeout)
@@ -343,11 +347,14 @@ function clearSearchTimeout() {
 const definitionsSearchQueue = new SearchQueue()
 
 const debouncedSearch = () => {
+  // Clear any pending timeouts to prevent stale searches
   clearSearchTimeout()
   
   // Capture current query value to check in timeout
   const currentQuery = searchQuery.value
   
+  // Debounce the search - only trigger after user stops typing
+  // This prevents excessive API calls while user is actively typing
   searchTimeout = setTimeout(() => {
     // Only perform search if query hasn't changed (to prevent race conditions)
     if (searchQuery.value === currentQuery) {
@@ -355,7 +362,7 @@ const debouncedSearch = () => {
       loadDefinitions()
     }
     searchTimeout = null
-  }, 300)
+  }, DEBOUNCE_DELAY)
 }
 
 const modalCurrentPage = ref(1)

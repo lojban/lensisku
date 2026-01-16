@@ -166,6 +166,10 @@ const getDefaultLanguages = () => {
   return props.languages.filter((lang) => defaultFilterLanguageTags.includes(lang.tag))
 }
 
+// Debounce delay: 450ms is optimal for search inputs (400-500ms range)
+// This balances responsiveness with reducing unnecessary API calls
+const DEBOUNCE_DELAY = 450
+
 // Debounce timer
 let debounceTimer = null
 
@@ -188,6 +192,7 @@ const hasAnyActiveFilters = computed(() => {
 })
 
 const debouncedFilterChange = () => {
+  // Clear any pending timeouts to prevent stale filter updates
   clearDebounceTimer()
   
   // Capture current filter values to check in timeout
@@ -196,6 +201,8 @@ const debouncedFilterChange = () => {
     username: filters.value.username,
   }
   
+  // Debounce the filter change - only trigger after user stops typing
+  // This prevents excessive API calls while user is actively typing
   debounceTimer = setTimeout(() => {
     // Only emit if filters haven't changed (to prevent race conditions)
     if (filters.value.selmaho === currentFilters.selmaho && 
@@ -203,7 +210,7 @@ const debouncedFilterChange = () => {
       emitUpdate()
     }
     debounceTimer = null
-  }, 300)
+  }, DEBOUNCE_DELAY)
 }
 
 const handleWordTypeChange = (event) => {
@@ -230,7 +237,7 @@ const emitUpdate = () => {
 }
 
 const clearFilter = (filterName) => {
-  // Clear any pending timeout first to prevent it from firing after clearing
+  // Clear any pending timeouts first to prevent them from firing after clearing
   clearDebounceTimer()
   filters.value[filterName] = ''
   emitUpdate()

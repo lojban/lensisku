@@ -1377,6 +1377,10 @@ const addItemResults = ref([])
 const isSearching = ref(false)
 let searchTimeoutFilter = null
 
+// Debounce delay: 450ms is optimal for search inputs (400-500ms range)
+// This balances responsiveness with reducing unnecessary API calls
+const DEBOUNCE_DELAY = 450
+
 // Search queues to prevent race conditions
 const itemsSearchQueue = new SearchQueue()
 const definitionsSearchQueue = new SearchQueue()
@@ -1386,22 +1390,29 @@ function clearSearchTimeoutFilter() {
     clearTimeout(searchTimeoutFilter)
     searchTimeoutFilter = null
   }
+  isSearching.value = false
 }
 
 const handleSearch = () => {
+  // Clear any pending timeouts to prevent stale searches
   clearSearchTimeoutFilter()
   
   // Capture current query value to check in timeout
   const currentQuery = itemSearchQuery.value
   
-  isSearching.value = true
+  // Debounce the search - only trigger after user stops typing
+  // This prevents excessive API calls while user is actively typing
   searchTimeoutFilter = setTimeout(() => {
     // Only perform search if query hasn't changed (to prevent race conditions)
     if (itemSearchQuery.value === currentQuery) {
+      // Show loading spinner when search actually starts
+      if (itemSearchQuery.value.trim()) {
+        isSearching.value = true
+      }
       performSearch()
     }
     searchTimeoutFilter = null
-  }, 300)
+  }, DEBOUNCE_DELAY)
 }
 
 const performSearch = async () => {
@@ -1685,22 +1696,29 @@ function clearSearchTimeout() {
     clearTimeout(searchTimeout)
     searchTimeout = null
   }
+  isSearching.value = false
 }
 
 const debouncedSearch = () => {
+  // Clear any pending timeouts to prevent stale searches
   clearSearchTimeout()
   
   // Capture current query value to check in timeout
   const currentQuery = searchQuery.value
   
-  isSearching.value = true
+  // Debounce the search - only trigger after user stops typing
+  // This prevents excessive API calls while user is actively typing
   searchTimeout = setTimeout(() => {
     // Only perform search if query hasn't changed (to prevent race conditions)
     if (searchQuery.value === currentQuery) {
+      // Show loading spinner when search actually starts
+      if (searchQuery.value.trim()) {
+        isSearching.value = true
+      }
       performSearchDefinitions()
     }
     searchTimeout = null
-  }, 300)
+  }, DEBOUNCE_DELAY)
 }
 
 // Search definitions for adding
@@ -1746,20 +1764,18 @@ const performSearchDefinitions = async () => {
 }
 
 const clearItemSearch = () => {
-  // Clear any pending timeout first to prevent it from firing after clearing
+  // Clear any pending timeouts first to prevent them from firing after clearing
   clearSearchTimeoutFilter()
   itemSearchQuery.value = ''
-  isSearching.value = false
   fetchItems()
 }
 
 const clearDefinitionSearch = () => {
-  // Clear any pending timeout first to prevent it from firing after clearing
+  // Clear any pending timeouts first to prevent them from firing after clearing
   clearSearchTimeout()
   selectedDefinition.value = ''
   searchQuery.value = ''
   addItemResults.value = []
-  isSearching.value = false
 }
 
 // Add definition to collection

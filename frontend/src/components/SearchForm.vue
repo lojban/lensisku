@@ -75,6 +75,10 @@ const mode = ref(modes.value.find(m => m.value === props.initialMode) || modes.v
 const isSearching = ref(false)
 let searchTimeout = null
 
+// Debounce delay: 450ms is optimal for search inputs (400-500ms range)
+// This balances responsiveness with reducing unnecessary API calls
+const DEBOUNCE_DELAY = 450
+
 const getPlaceholder = computed(() => {
   switch (mode.value?.value) {
     case 'messages':
@@ -97,25 +101,31 @@ function clearSearchTimeout() {
     window.clearTimeout(searchTimeout)
     searchTimeout = null
   }
+  isSearching.value = false
 }
 
 function handleInput() {
-  // Clear any pending timeout to prevent stale searches
+  // Clear any pending timeouts to prevent stale searches
   clearSearchTimeout()
   
   // Capture current query value to check in timeout
   const currentQuery = query.value
   
-  isSearching.value = true
+  // Debounce the search - only trigger after user stops typing
+  // This prevents excessive API calls while user is actively typing
   searchTimeout = window.setTimeout(() => {
     // Only emit if query hasn't changed (to prevent race conditions)
-    // and if it's not empty (unless it was explicitly cleared)
     if (query.value === currentQuery) {
+      // Show loading spinner when search actually starts
+      if (query.value.trim()) {
+        isSearching.value = true
+      }
       emitSearch()
+      // Note: isSearching will be cleared by parent component when search completes
+      // or by next input/clear action
     }
-    isSearching.value = false
     searchTimeout = null
-  }, 300)
+  }, DEBOUNCE_DELAY)
 }
 
 function emitSearch() {
@@ -123,27 +133,24 @@ function emitSearch() {
 }
 
 function clearInput() {
-  // Clear any pending timeout first to prevent it from firing after clearing
+  // Clear any pending timeouts first to prevent them from firing after clearing
   clearSearchTimeout()
   query.value = ''
-  isSearching.value = false
   emit('search', { query: '', mode: mode.value.value })
   focusInput()
 }
 
 function onModeChange() {
-  // Clear any pending timeout when mode changes to prevent stale searches
+  // Clear any pending timeouts when mode changes to prevent stale searches
   clearSearchTimeout()
-  isSearching.value = false
   emit('search', { query: query.value, mode: mode.value.value})
 }
 
 watch(
   () => props.initialQuery,
   (newValue) => {
-    // Clear any pending timeout when query changes externally
+    // Clear any pending timeouts when query changes externally
     clearSearchTimeout()
-    isSearching.value = false
     query.value = newValue
   }
 )
@@ -153,9 +160,8 @@ watch(
   (newValue) => {
     const newMode = modes.value.find(m => m.value === newValue)
     if (newMode) {
-      // Clear any pending timeout when mode changes externally
+      // Clear any pending timeouts when mode changes externally
       clearSearchTimeout()
-      isSearching.value = false
       mode.value = newMode
     }
   }
