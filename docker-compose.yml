@@ -25,6 +25,7 @@ services:
       - ./data/infinity:/app/.cache
     ports:
       - 3002:3000
+    command: >
       v2
       --engine optimum
       --model-id sentence-transformers/all-MiniLM-L6-v2
@@ -40,7 +41,7 @@ services:
       - POSTGRES_PASSWORD=${DB_PASSWORD}
       - POSTGRES_DB=${DB_NAME}
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql
     ports:
       - "${DB_PORT:-5432}:5432"
     networks:

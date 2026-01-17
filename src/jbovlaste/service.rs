@@ -581,10 +581,6 @@ pub async fn search_definitions(
     // We should copy the RANK logic to count query OR simplify it.
     // The previous count query duplicated the RANK logic.
 
-    let base_conditions = r#"(d.cached_search_text ILIKE $2)
-                  AND (d.langid = ANY($4) OR $4 IS NULL)
-                  {additional_conditions}"#;
-
     // We need to re-construct params for the count query because the main query params included per_page/offset which we don't want constraints on?
     // Actually simpler: reuse the same params vector structure but just select count.
     // But `count_query` logic in original code rebuilt params.
@@ -680,7 +676,6 @@ pub async fn search_definitions(
 pub async fn fast_search_definitions(
     pool: &Pool,
     params: SearchDefinitionsParams,
-    redis_cache: &RedisCache,
 ) -> Result<DefinitionResponse, Box<dyn std::error::Error>> {
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
@@ -790,7 +785,7 @@ pub async fn fast_search_definitions(
 
     // Skip sound_urls for maximum speed (external API call is slow)
     // Skip decomposition unless search term looks like a lujvo (contains multiple consonants)
-    let sound_urls: HashMap<String, Option<String>> = HashMap::new(); // Skip for performance
+    let _sound_urls: HashMap<String, Option<String>> = HashMap::new(); // Skip for performance
 
     // Process each definition
     for row in rows {

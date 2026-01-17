@@ -123,9 +123,12 @@ $$ LANGUAGE plpgsql;
 
 -- Composite index optimized for the WHERE clause pattern
 -- This index supports: cached_search_text search + langid filter + source_langid filter
+-- Note: Excluding large TEXT columns (cached_search_text, definition, notes) from INCLUDE
+-- to avoid exceeding btree index row size limits. These are already indexed separately or
+-- can be fetched from the table when needed.
 CREATE INDEX IF NOT EXISTS idx_definitions_fast_search_where 
 ON definitions(cached_source_langid, langid)
-INCLUDE (definitionid, cached_search_text, cached_valsiword, cached_rafsi, cached_username, cached_langrealname, cached_type_name, definition, notes, selmaho, created_at)
+INCLUDE (definitionid, cached_valsiword, cached_rafsi, cached_username, cached_langrealname, cached_type_name, selmaho, created_at)
 WHERE definition != '' AND cached_search_text IS NOT NULL;
 
 -- Index for word_type filtering (cached_typeid)

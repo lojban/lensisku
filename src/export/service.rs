@@ -1184,11 +1184,7 @@ async fn generate_lojban_entries(
         .map(|id| format!("AND ci.collection_id = {}", id))
         .unwrap_or_default();
 
-    let where_clause = if collection_id.is_none() {
-        format!("WHERE vbg.langid = $1{}", collection_condition)
-    } else {
-        collection_condition
-    };
+    let where_clause = format!("WHERE vbg.langid = $1{}", collection_condition);
 
     let query = format!(
         "SELECT v.word, c.rafsi, c.selmaho, c.definition,
@@ -1204,11 +1200,7 @@ async fn generate_lojban_entries(
         collection_note_select, collection_join, where_clause
     );
 
-    let params: Vec<&(dyn postgres_types::ToSql + Sync)> = if collection_id.is_none() {
-        vec![&lang_id]
-    } else {
-        vec![]
-    };
+    let params: Vec<&(dyn postgres_types::ToSql + Sync)> = vec![&lang_id];
 
     let rows = transaction.query(&query, &params[..]).await?;
 

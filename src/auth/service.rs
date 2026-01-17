@@ -846,10 +846,6 @@ pub async fn update_profile(
     let mut param_count = 1;
     let mut username_changed = false;
 
-    let mut sanitized_realname = None;
-    let mut sanitized_url = None;
-    let mut sanitized_personal = None;
-
     // Handle username update separately due to uniqueness check
     if let Some(new_username) = &profile.username {
         // Check if the new username is different from the current one
@@ -875,22 +871,23 @@ pub async fn update_profile(
         }
     }
 
-    if let Some(realname) = &profile.realname {
-        sanitized_realname = Some(sanitize_html(realname));
+    // Store sanitized values in outer scope so references live long enough
+    let sanitized_realname = profile.realname.as_ref().map(|r| sanitize_html(r));
+    if let Some(ref realname) = sanitized_realname {
         updates.push(format!("realname = ${}", param_count));
-        params.push(sanitized_realname.as_ref().unwrap());
+        params.push(realname);
         param_count += 1;
     }
-    if let Some(url) = &profile.url {
-        sanitized_url = Some(sanitize_html(url));
+    let sanitized_url = profile.url.as_ref().map(|u| sanitize_html(u));
+    if let Some(ref url) = sanitized_url {
         updates.push(format!("url = ${}", param_count));
-        params.push(sanitized_url.as_ref().unwrap());
+        params.push(url);
         param_count += 1;
     }
-    if let Some(personal) = &profile.personal {
-        sanitized_personal = Some(sanitize_html(personal));
+    let sanitized_personal = profile.personal.as_ref().map(|p| sanitize_html(p));
+    if let Some(ref personal) = sanitized_personal {
         updates.push(format!("personal = ${}", param_count));
-        params.push(sanitized_personal.as_ref().unwrap());
+        params.push(personal);
         param_count += 1;
     }
 

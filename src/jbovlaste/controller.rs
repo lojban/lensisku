@@ -273,7 +273,7 @@ pub async fn search_definitions(
                 };
 
                 if use_fast_search {
-                    service::fast_search_definitions(&pool, params, &redis_cache).await
+                    service::fast_search_definitions(&pool, params).await
                 } else {
                     service::search_definitions(&pool, params, &redis_cache).await
                 }

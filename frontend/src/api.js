@@ -298,6 +298,7 @@ export const mergeCollection = (data) => api.post(`/collections/merge`, data)
 export const exportDictionary = (language, params) =>
   api.get(`/export/dictionary/${language}?${params}`, {
     responseType: 'blob',
+    timeout: 300000, // 5 minutes for large exports
   })
 
 export const listCachedExports = () => api.get('/export/cached')
