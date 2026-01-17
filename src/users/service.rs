@@ -41,6 +41,7 @@ pub async fn list_users(
     // Build sort clause
     let sort_by = match query.sort_by.as_deref().unwrap_or("username") {
         "realname" => "realname",
+        "created_at" => "created_at",
         _ => "username",
     };
 

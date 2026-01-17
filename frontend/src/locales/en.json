@@ -232,6 +232,14 @@
     "roleAssignedSuccess": "Role assigned successfully!",
     "usernameTakenError": "Username already taken. Please choose another."
   },
+  "roles": {
+    "admin": "Admin",
+    "moderator": "Moderator",
+    "editor": "Editor",
+    "user": "User",
+    "unconfirmed": "Unconfirmed",
+    "blocked": "Blocked"
+  },
   "userList": {
     "users": "Users",
     "roleManagement": "Role Management",
@@ -974,6 +982,7 @@
       "allRoles": "All Roles",
       "usernameSort": "Username",
       "realNameSort": "Real Name",
+      "createdAtSort": "Creation Date",
       "ascSort": "A to Z",
       "descSort": "Z to A"
     },

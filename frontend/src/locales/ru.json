@@ -231,6 +231,14 @@
     "roleAssignedSuccess": "Роль успешно назначена!",
     "usernameTakenError": "Имя пользователя уже занято. Пожалуйста, выберите другое."
   },
+  "roles": {
+    "admin": "Администратор",
+    "moderator": "Модератор",
+    "editor": "Редактор",
+    "user": "Пользователь",
+    "unconfirmed": "Неподтверждённый",
+    "blocked": "Заблокирован"
+  },
   "userList": {
     "users": "Пользователи",
     "roleManagement": "Управление ролями",
@@ -977,6 +985,7 @@
       "allRoles": "Все роли",
       "usernameSort": "Имя пользователя",
       "realNameSort": "Настоящее имя",
+      "createdAtSort": "Дата создания",
       "ascSort": "А до Я",
       "descSort": "Я до А"
     },

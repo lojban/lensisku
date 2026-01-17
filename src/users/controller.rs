@@ -19,7 +19,7 @@ use super::{dto::*, service};
         ("page" = Option<i64>, Query, description = "Page number"),
         ("per_page" = Option<i64>, Query, description = "Items per page"),
         ("search" = Option<String>, Query, description = "Search by username or realname"),
-        ("sort_by" = Option<String>, Query, description = "Sort field (username, realname)"),
+        ("sort_by" = Option<String>, Query, description = "Sort field (username, realname, created_at)"),
         ("sort_order" = Option<String>, Query, description = "Sort order (asc/desc)"),
         ("role" = Option<String>, Query, description = "Filter by user role (admin, moderator, editor, user, unconfirmed)")
     ),

@@ -30,7 +30,7 @@
                 :key="role.name"
                 :value="role.name"
               >
-                {{ role.name }}
+                {{ translateRole(role.name) }}
               </option>
             </select>
           </div>
@@ -50,6 +50,9 @@
               </option>
               <option value="realname">
                 {{ t('components.userListTab.realNameSort') }}
+              </option>
+              <option value="created_at">
+                {{ t('components.userListTab.createdAtSort') }}
               </option>
             </select>
             <label class="text-sm text-gray-600 whitespace-nowrap">{{ t('components.userListTab.sortOrderLabel') }}</label>
@@ -98,7 +101,7 @@
               class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
               :class="getRoleClass(user.role)"
             >
-              {{ user.role }}
+              {{ translateRole(user.role) }}
             </span>
           </div>
         </div>
@@ -151,6 +154,17 @@ defineEmits([
   'nextPage',
   'viewUser',
 ])
+
+const translateRole = (role) => {
+  if (!role || typeof role !== 'string') {
+    return role || ''
+  }
+  const lowerRole = role.toLowerCase()
+  const translationKey = `roles.${lowerRole}`
+  const translated = t(translationKey)
+  // If translation doesn't exist, return original role name
+  return translated !== translationKey ? translated : role
+}
 
 const getRoleClass = (role) => {
   // Handle cases where role might be undefined or null

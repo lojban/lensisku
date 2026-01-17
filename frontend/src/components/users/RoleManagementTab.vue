@@ -68,7 +68,7 @@
       >
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-4 mb-3 sm:mb-4">
           <h3 class="text-base sm:text-lg font-medium">
-            {{ role.name }}
+            {{ translateRole(role.name) }}
           </h3>
           <button
             v-if="!['admin', 'user', 'editor'].includes(role.name.toLowerCase())"
@@ -166,4 +166,15 @@ defineEmits([
   'deletePermission',
   'togglePermission',
 ])
+
+const translateRole = (role) => {
+  if (!role || typeof role !== 'string') {
+    return role || ''
+  }
+  const lowerRole = role.toLowerCase()
+  const translationKey = `roles.${lowerRole}`
+  const translated = t(translationKey)
+  // If translation doesn't exist, return original role name
+  return translated !== translationKey ? translated : role
+}
 </script>

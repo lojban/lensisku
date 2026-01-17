@@ -94,8 +94,6 @@
     "createdBy": "se finti la",
     "quizTab": "sidju",
     "quizDirectionLabel": "sidju tadji",
-    "quizTab": "sidju",
-    "quizDirectionLabel": "sidju tadji",
     "items": "da",
     "actions": "nu gasnu",
     "editCollectionInfo": "galfi lo liste",
@@ -110,7 +108,6 @@
     "importJsonError": "fliba lo ka jmina lo JSON datnyvei",
     "skippedItemsHeader": "lo se cliva",
     "andMoreSkipped": ".e so'o {count} drata",
-    "addItem": "jmina lo se liste",
     "viewAsFlashcards": "viska fi'o karda",
     "levels": "karda klesi",
     "onlyItemsWithoutFlashcards": "lo se liste poi na karda",
@@ -120,5 +117,26 @@
     "descriptionLabel": "skicu",
     "makePublicLabel": "javni lo liste",
     "saveChanges": "vreji lo nu galfi"
+  },
+  "roles": {
+    "admin": "admine",
+    "moderator": "jitro",
+    "editor": "cnegau",
+    "user": "pilno",
+    "unconfirmed": "na'e jdice",
+    "blocked": "ca na kakne"
+  },
+  "components": {
+    "userListTab": {
+      "roleLabel": "pikta",
+      "sortByLabel": "jmina fi",
+      "sortOrderLabel": "tadji",
+      "allRoles": "ro pikta",
+      "usernameSort": "cmene",
+      "realNameSort": "zunle cmene",
+      "createdAtSort": "finti ca",
+      "ascSort": "A to Z",
+      "descSort": "Z to A"
+    }
   }
 }

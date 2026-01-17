@@ -76,7 +76,7 @@
               :key="role.name"
               :value="role.name"
             >
-              {{ role.name }}
+              {{ translateRole(role.name) }}
             </option>
           </select>
           <button
@@ -131,7 +131,7 @@
             <div>
               <span class="text-sm font-medium text-gray-500">{{ t('profile.role') }}</span>
               <p class="mt-1 text-gray-900">
-                {{ profileData.role }}
+                {{ translateRole(profileData.role) }}
               </p>
             </div>
             <div v-if="isOwnProfile || profileData.email">
@@ -627,6 +627,17 @@ const performAssignRole = async () => {
 }
 
 const capitalizeFirstLetter = (str) => str.charAt(0).toUpperCase() + str.substring(1)
+
+const translateRole = (role) => {
+  if (!role || typeof role !== 'string') {
+    return role || ''
+  }
+  const lowerRole = role.toLowerCase()
+  const translationKey = `roles.${lowerRole}`
+  const translated = t(translationKey)
+  // If translation doesn't exist, return original role name
+  return translated !== translationKey ? translated : role
+}
 
 const fetchProfileData = async () => {
   isLoading.value = true

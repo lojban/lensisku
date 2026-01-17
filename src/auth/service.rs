@@ -102,6 +102,27 @@ pub async fn get_roles_with_permissions(
         .get()
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
+    
+    // First, get all distinct roles from users table to ensure we include roles like "unconfirmed"
+    // that might not have any permissions assigned
+    let all_roles_rows = client
+        .query(
+            "SELECT DISTINCT role::text FROM users ORDER BY role",
+            &[],
+        )
+        .await?;
+
+    use std::collections::BTreeMap;
+    let mut roles: BTreeMap<String, Vec<String>> = BTreeMap::new();
+
+    // Initialize all roles with empty permissions
+    for row in all_roles_rows {
+        let role: String = row.get("role");
+        roles.insert(role, Vec::new());
+    }
+
+    // Then, get roles with permissions (filtered by actor's permissions)
+    // Use case-insensitive comparison for role names
     let rows = client
         .query(
             "SELECT r.role::text, p.name as permission 
@@ -110,11 +131,11 @@ pub async fn get_roles_with_permissions(
          WHERE NOT EXISTS (
              SELECT 1 
              FROM role_permissions rp 
-             WHERE rp.role = r.role 
+             WHERE LOWER(rp.role::text) = LOWER(r.role::text)
              AND NOT EXISTS (
                  SELECT 1 
                  FROM role_permissions actor_perms 
-                 WHERE actor_perms.role = $1 
+                 WHERE LOWER(actor_perms.role::text) = LOWER($1::text)
                  AND actor_perms.permission_id = rp.permission_id
              )
          )
@@ -123,9 +144,7 @@ pub async fn get_roles_with_permissions(
         )
         .await?;
 
-    use std::collections::BTreeMap;
-    let mut roles: BTreeMap<String, Vec<String>> = BTreeMap::new();
-
+    // Add permissions to roles
     for row in rows {
         let role: String = row.get("role");
         let permission: String = row.get("permission");
