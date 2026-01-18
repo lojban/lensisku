@@ -32,7 +32,7 @@
                 </h2>
                 <span v-if="definition.type_name && props.showWordType"
                   class="px-2 py-1 text-xs font-medium rounded-full" :class="getTypeClass(definition.type_name)">
-                  {{ t(`wordTypes.${definition.type_name.replace(/'/g,'h')}`) }}
+                  {{ t(`wordTypes.${definition.type_name.replace(/'/g,'h').replace(/ /g, '-')}`) }}
                 </span>
                 <RouterLink v-if="definition.selmaho"
                   :to="{ path: '/', query: selmahoLinkQuery }"

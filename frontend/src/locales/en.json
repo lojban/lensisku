@@ -1135,10 +1135,11 @@
     "cmavo": "cmavo",
     "lujvo": "lujvo",
     "fuhivla": "fu'ivla",
-    "experimental cmavo": "experimental cmavo",
-    "experimental gismu": "experimental gismu",
+    "experimental-cmavo": "experimental cmavo",
+    "experimental-gismu": "experimental gismu",
     "cmavo-compound": "cmavo compound",
     "bu-letteral": "bu-letteral",
-    "zei-lujvo": "zei-lujvo"
+    "zei-lujvo": "zei-lujvo",
+    "obsolete cmevla": "obsolete cmevla"
   }
 }

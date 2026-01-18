@@ -1138,10 +1138,11 @@
     "phrase": "фраза",
     "lujvo": "lujvo",
     "fuhivla": "fu'ivla",
-    "experimental cmavo": "экспериментальное cmavo",
-    "experimental gismu": "экспериментальное gismu",
+    "experimental-cmavo": "экспериментальное cmavo",
+    "experimental-gismu": "экспериментальное gismu",
     "cmavo-compound": "составное cmavo",
     "bu-letteral": "bu-символ",
-    "zei-lujvo": "zei-lujvo"
+    "zei-lujvo": "zei-lujvo",
+    "obsolete cmevla": "устаревшее cmevla"
   }
 }
