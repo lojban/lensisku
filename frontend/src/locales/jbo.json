@@ -40,6 +40,8 @@
       "comments": "nu tavla",
       "messages": "datnyve'u"
     },
+    "searchTitle": "sisku: {query}",
+    "defaultTitle": "jicmu",
     "addDefinition": "valsi",
     "newFreeThread": "cnino nu tavla"
   },

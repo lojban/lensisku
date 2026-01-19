@@ -69,6 +69,8 @@
       "comments": "Discussion Waves",
       "messages": "Mail Archive"
     },
+    "searchTitle": "Search: {query}",
+    "defaultTitle": "Home",
     "addDefinition": "Definition",
     "newFreeThread": "Start Free Wave",
     "noCommentsFound": "No comments found matching your search"

@@ -457,7 +457,24 @@ const error = ref(null);
 const searchFormRef = ref(null);
 
 const { t, locale } = useI18n();
-useSeoHead({ title: searchQuery.value || 'Home', locale: locale.value })
+
+// Truncate search query for page title (max 50 characters)
+const truncatedSearchQuery = computed(() => {
+  if (!searchQuery.value) return null
+  const maxLength = 50
+  if (searchQuery.value.length <= maxLength) return searchQuery.value
+  return searchQuery.value.substring(0, maxLength) + '...'
+})
+
+// Page title that reflects the search query
+const pageTitle = computed(() => {
+  if (truncatedSearchQuery.value) {
+    return t('home.searchTitle', { query: truncatedSearchQuery.value })
+  }
+  return t('home.defaultTitle')
+})
+
+useSeoHead({ title: pageTitle, locale: locale.value })
 
 // Filter state
 const languages = ref([])

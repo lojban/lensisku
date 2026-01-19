@@ -69,6 +69,8 @@
       "comments": "Обсуждения",
       "messages": "Архив почты"
     },
+    "searchTitle": "Поиск: {query}",
+    "defaultTitle": "Главная",
     "addDefinition": "Определение",
     "newFreeThread": "Начать новую волну",
     "noCommentsFound": "Комментарии, соответствующие вашему поиску, не найдены"
