@@ -3197,6 +3197,13 @@ pub async fn delete_definition(
 
     transaction
         .execute(
+            "DELETE FROM natlangwordvotes WHERE definitionid = $1",
+            &[&definition_id],
+        )
+        .await?;
+
+    transaction
+        .execute(
             "DELETE FROM definition_images WHERE definition_id = $1",
             &[&definition_id],
         )
@@ -3344,6 +3351,13 @@ pub async fn delete_bulk_definitions(
         transaction
             .execute(
                 "DELETE FROM definitionvotes WHERE definitionid = $1",
+                &[&def_id],
+            )
+            .await?;
+
+        transaction
+            .execute(
+                "DELETE FROM natlangwordvotes WHERE definitionid = $1",
                 &[&def_id],
             )
             .await?;

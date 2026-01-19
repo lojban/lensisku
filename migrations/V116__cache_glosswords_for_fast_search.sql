@@ -7,12 +7,11 @@ ALTER TABLE definitions ADD COLUMN IF NOT EXISTS cached_glosswords TEXT;
 -- Populate cached_glosswords with all glosswords (place=0) as space-separated lowercase words
 UPDATE definitions d
 SET cached_glosswords = COALESCE((
-    SELECT string_agg(LOWER(n.word), ' ')
+    SELECT string_agg(LOWER(n.word), ' ' ORDER BY n.word)
     FROM keywordmapping k
     JOIN natlangwords n ON k.natlangwordid = n.wordid
     WHERE k.definitionid = d.definitionid
     AND k.place = 0
-    ORDER BY n.word
 ), '');
 
 -- Create GIN index for fast full-word matching on cached_glosswords
@@ -35,12 +34,11 @@ BEGIN
             cached_source_langid = v.source_langid,
             cached_typeid = v.typeid,
             cached_glosswords = COALESCE((
-                SELECT string_agg(LOWER(n.word), ' ')
+                SELECT string_agg(LOWER(n.word), ' ' ORDER BY n.word)
                 FROM keywordmapping k
                 JOIN natlangwords n ON k.natlangwordid = n.wordid
                 WHERE k.definitionid = d.definitionid
                 AND k.place = 0
-                ORDER BY n.word
             ), ''),
             cached_search_text = LOWER(
                 COALESCE(v.word, '') || ' ' ||
@@ -66,12 +64,11 @@ BEGIN
         UPDATE definitions d
         SET 
             cached_glosswords = COALESCE((
-                SELECT string_agg(LOWER(n.word), ' ')
+                SELECT string_agg(LOWER(n.word), ' ' ORDER BY n.word)
                 FROM keywordmapping k
                 JOIN natlangwords n ON k.natlangwordid = n.wordid
                 WHERE k.definitionid = d.definitionid
                 AND k.place = 0
-                ORDER BY n.word
             ), ''),
             cached_search_text = LOWER(
                 COALESCE(d.cached_valsiword, '') || ' ' ||
@@ -135,12 +132,11 @@ BEGIN
         UPDATE definitions d
         SET 
             cached_glosswords = COALESCE((
-                SELECT string_agg(LOWER(n.word), ' ')
+                SELECT string_agg(LOWER(n.word), ' ' ORDER BY n.word)
                 FROM keywordmapping k
                 JOIN natlangwords n ON k.natlangwordid = n.wordid
                 WHERE k.definitionid = d.definitionid
                 AND k.place = 0
-                ORDER BY n.word
             ), ''),
             cached_search_text = LOWER(
                 COALESCE(d.cached_valsiword, '') || ' ' ||
