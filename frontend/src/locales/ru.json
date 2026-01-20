@@ -1145,6 +1145,8 @@
     "cmavo-compound": "составное cmavo",
     "bu-letteral": "bu-символ",
     "zei-lujvo": "zei-lujvo",
-    "oobsolete-cmevla": "устаревшее cmevla"
+    "obsolete-cmevla": "устаревшее cmevla",
+    "obsolete-fuhivla": "устаревшее fuhivla",
+    "obsolete-cmavo": "устаревшее cmavo"
   }
 }
