@@ -262,10 +262,7 @@
     <!-- Messages -->
     <div v-if="success" class="text-green-600 text-xs sm:text-sm mt-2">
       {{ isEditMode 
-          ? t('upsertDefinition.updateSuccess') 
-          : isExistingWord 
-            ? t('upsertDefinition.addDefinitionSuccess')
-            : t('upsertDefinition.addSuccess') }}
+          && t('upsertDefinition.updateSuccess') }}
       <span v-if="isExistingWord && !isEditMode">{{ t('upsertDefinition.existingWordNote') }}</span>
     </div>
   </form>
