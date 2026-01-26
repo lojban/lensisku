@@ -521,6 +521,7 @@
     "adding": "Adding...",
     "updateSuccess": "Word updated successfully!",
     "addSuccess": "Word added successfully!",
+    "addDefinitionSuccess": "Definition added successfully!",
     "existingWordNote": "A new definition has been added to the existing word.",
     "loadDefinitionError": "Failed to load definition data",
     "loadLanguagesError": "Failed to load languages",

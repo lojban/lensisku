@@ -89,6 +89,9 @@
         <label for="language" class="block text-sm font-medium text-blue-700">{{ t('upsertDefinition.languageLabel') }}
           <span class="text-red-500">{{ t('upsertDefinition.required') }}</span></label>
         <select id="language" v-model="langId" required class="input-field w-full h-10"
+          :class="{
+            'border-red-500 focus:ring-red-500 focus:border-red-500': shouldHighlightMissing && missingFields.langId
+          }"
           :disabled="isLoading || isSubmitting">
           <option value="">
             {{ t('upsertDefinition.selectLanguagePlaceholder') }}
@@ -110,7 +113,8 @@
       <textarea id="definition" v-model="definition" :required="!imageData" rows="4" :class="{
         'textarea-field': true,
         'border-red-300 focus:ring-red-500 focus:border-red-500': definitionError,
-        'border-blue-300 focus:ring-blue-500 focus:border-blue-500': !definitionError,
+        'border-red-500 focus:ring-red-500 focus:border-red-500': shouldHighlightMissing && missingFields.definition && !definitionError,
+        'border-blue-300 focus:ring-blue-500 focus:border-blue-500': !definitionError && !(shouldHighlightMissing && missingFields.definition),
       }" :disabled="isSubmitting" />
       <p v-if="definitionError" class="mt-2 text-xs sm:text-sm text-red-600">
         {{ definitionError }}
@@ -257,8 +261,12 @@
 
     <!-- Messages -->
     <div v-if="success" class="text-green-600 text-xs sm:text-sm mt-2">
-      {{ isEditMode ? t('upsertDefinition.updateSuccess') : t('upsertDefinition.addSuccess') }}
-      <span v-if="isExistingWord">{{ t('upsertDefinition.existingWordNote') }}</span>
+      {{ isEditMode 
+          ? t('upsertDefinition.updateSuccess') 
+          : isExistingWord 
+            ? t('upsertDefinition.addDefinitionSuccess')
+            : t('upsertDefinition.addSuccess') }}
+      <span v-if="isExistingWord && !isEditMode">{{ t('upsertDefinition.existingWordNote') }}</span>
     </div>
   </form>
 </template>
@@ -388,6 +396,22 @@ const isValid = computed(
     wordType.value &&
     !definitionError.value
 )
+
+// Track missing required fields for highlighting
+const missingFields = computed(() => {
+  const missing = {}
+  // Only show missing fields if wordType is set (analysis was done)
+  if (wordType.value) {
+    if (!langId.value) missing.langId = true
+    if (!definition.value && !imageData.value) missing.definition = true
+  }
+  return missing
+})
+
+// Check if we should highlight fields (form invalid after analysis)
+const shouldHighlightMissing = computed(() => {
+  return wordType.value && !isValid.value
+})
 
 // Methods for keywords
 const addGlossKeyword = () => {
