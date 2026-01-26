@@ -47,7 +47,7 @@
             <button v-if="filters[field]"
               class="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors duration-200 [&>svg]:hover:text-current"
               @click="clearFilter(field)">
-              <X class="h-4 w-4" />
+              <X class="h-5 w-5" />
             </button>
           </div>
         </div>

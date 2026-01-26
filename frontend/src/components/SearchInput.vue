@@ -32,17 +32,17 @@ defineEmits(['update:modelValue', 'clear'])
       :class="{ 'pr-10': modelValue.length > 0 }"
       @input="$emit('update:modelValue', $event.target.value)"
     >
-    <div class="absolute right-3 top-1">
+    <div class="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center">
       <Loader2
         v-if="isLoading"
-        class="mt-1 h-4 w-4 text-gray-500 animate-spin"
+        class="h-4 w-4 text-gray-500 animate-spin"
       />
       <button
         v-else-if="modelValue"
         class="text-gray-400 hover:text-gray-600"
         @click="$emit('clear')"
       >
-        <X class="mt-1 h-4 w-4" />
+        <X class="h-5 w-5" />
       </button>
     </div>
   </div>

@@ -32,7 +32,7 @@
           <button v-else-if="query"
             class="text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors duration-200 p-1 rounded-full"
             @click="clearInput">
-            <X class="h-4 w-4" />
+            <X class="h-5 w-5" />
           </button>
         </div>
       </div>
