@@ -29,7 +29,7 @@
 
 
     <!-- PaginationComponent -->
-    <div v-if="total > perPage">
+    <div v-if="totalPages > 1">
       <PaginationComponent
         :current-page="currentPage"
         :total-pages="totalPages"
@@ -81,6 +81,9 @@ const totalPages = computed(() => Math.ceil(total.value / perPage.value))
 const comments = ref([])
 const definitions = ref([])
 const votes = ref([])
+
+// Flag to prevent double fetches when updating route programmatically
+const isUpdatingRoute = ref(false)
 
 // Methods
 const fetchComments = async () => {
@@ -153,8 +156,14 @@ const fetchData = (tabKey) => {
 
 const changePage = (newPage) => {
   if (newPage >= 1 && newPage <= totalPages.value) {
+    isUpdatingRoute.value = true
     currentPage.value = newPage
-    fetchData()
+    fetchData(activeTab.value)
+    router.replace({
+      query: { ...route.query, tab: activeTab.value, page: newPage },
+    }).finally(() => {
+      isUpdatingRoute.value = false
+    })
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 }
@@ -173,18 +182,20 @@ const formatDate = (timestamp) => {
 const handleTabClick = async (tabKey) => {
   isLoading.value = true
   clearError()
+  isUpdatingRoute.value = true
   currentPage.value = 1 // Reset to first page on tab change
 
   try {
     await fetchData(tabKey)
     activeTab.value = tabKey
-    router.replace({
-      query: { ...route.query, tab: tabKey },
+    await router.replace({
+      query: { ...route.query, tab: tabKey, page: 1 },
     })
   } catch (e) {
     showError(t('userContributions.loadDataError')) // Use t()
   } finally {
     isLoading.value = false
+    isUpdatingRoute.value = false
   }
 }
 
@@ -221,6 +232,46 @@ onMounted(() => {
     ? route.query.tab
     : 'comments'
   activeTab.value = initialTab
+  
+  // Read page from URL query parameter
+  const pageFromQuery = parseInt(route.query.page, 10)
+  if (pageFromQuery && pageFromQuery >= 1) {
+    currentPage.value = pageFromQuery
+  }
+  
   fetchData(initialTab)
 })
+
+// Watch for route query changes (e.g., browser back/forward)
+watch(
+  () => route.query,
+  (newQuery, oldQuery) => {
+    // Skip if this is the initial mount (oldQuery will be undefined)
+    if (!oldQuery) return
+    
+    // Skip if we're programmatically updating the route (to prevent double fetches)
+    if (isUpdatingRoute.value) return
+    
+    const newTab = newQuery.tab && ['comments', 'definitions'].includes(newQuery.tab)
+      ? newQuery.tab
+      : 'comments'
+    
+    const pageFromQuery = parseInt(newQuery.page, 10)
+    const newPage = pageFromQuery && pageFromQuery >= 1 ? pageFromQuery : 1
+    
+    // Only update if something actually changed
+    const tabChanged = newTab !== activeTab.value
+    const pageChanged = newPage !== currentPage.value
+    
+    if (tabChanged || pageChanged) {
+      if (tabChanged) {
+        activeTab.value = newTab
+        currentPage.value = 1
+      } else if (pageChanged) {
+        currentPage.value = newPage
+      }
+      fetchData(activeTab.value)
+    }
+  }
+)
 </script>
