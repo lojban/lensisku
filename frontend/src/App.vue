@@ -306,7 +306,7 @@ const resendConfirmationSuccess = ref(false)
 const showUnconfirmedWarning = computed(() => {
   return auth.state.isLoggedIn && 
          !auth.state.isLoading && 
-         (auth.state.role === 'Unconfirmed' || !auth.state.email_confirmed)
+         (auth.state.role.toLowerCase() === 'unconfirmed' || !auth.state.email_confirmed)
 })
 
 const rnd = (max, min = 1) => ((Math.random() * max) / min).toFixed(2)
