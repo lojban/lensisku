@@ -9,7 +9,7 @@ RUN apt-get update && apt-get install -y \
     texlive-latex-extra \
     texlive-lang-chinese \
     texlive-lang-japanese \
-    texlive-lang-indic \
+    texlive-lang-other \
     fonts-noto-cjk fonts-noto-cjk-extra \
     fonts-noto-core fonts-noto-extra \
     fonts-linuxlibertine \
@@ -54,7 +54,7 @@ RUN apt-get update && apt-get install -y \
     texlive-latex-extra \
     texlive-lang-chinese \
     texlive-lang-japanese \
-    texlive-lang-indic \
+    texlive-lang-other \
     fonts-noto-cjk fonts-noto-cjk-extra \
     fonts-noto-core fonts-noto-extra \
     fonts-linuxlibertine \
