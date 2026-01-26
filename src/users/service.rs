@@ -284,6 +284,7 @@ pub async fn get_user_definitions(
             JOIN definitions d ON v.definition_id = d.definitionid
             JOIN valsi val ON d.valsiid = val.valsiid
             WHERE v.user_id = $1
+            ORDER BY v.definition_id, v.version_id, v.created_at DESC
 
             UNION ALL
 
@@ -308,24 +309,6 @@ pub async fn get_user_definitions(
         .query(query, &[&user_id, &per_page, &offset])
         .await?;
 
-    let count_query = r#"
-        WITH all_definitions AS (
-            -- Count versioned definitions
-            SELECT DISTINCT definition_id
-            FROM definition_versions
-            WHERE user_id = $1
-
-            UNION
-
-            -- Count non-versioned definitions
-            SELECT d.definitionid
-            FROM definitions d
-            LEFT JOIN definition_versions dv ON d.definitionid = dv.definition_id
-            WHERE d.userid = $1 AND dv.definition_id IS NULL
-        )
-        SELECT COUNT(*) FROM all_definitions
-    "#;
-
     let items = rows
         .iter()
         .map(|row| Definition {
@@ -336,6 +319,20 @@ pub async fn get_user_definitions(
             content: row.get("content"),
         })
         .collect();
+
+    // Count total definitions using the same logic as the main query
+    let count_query = r#"
+        SELECT COUNT(*) FROM (
+            SELECT DISTINCT definition_id
+            FROM definition_versions
+            WHERE user_id = $1
+            UNION
+            SELECT d.definitionid
+            FROM definitions d
+            LEFT JOIN definition_versions dv ON d.definitionid = dv.definition_id
+            WHERE d.userid = $1 AND dv.definition_id IS NULL
+        ) AS all_definitions
+    "#;
 
     let total: i64 = transaction
         .query_one(count_query, &[&user_id])
