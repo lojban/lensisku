@@ -91,6 +91,9 @@ const auth = useAuth()
 const { showError, clearError } = useError()
 const { t, locale } = useI18n()
 
+// LocalStorage keys
+const STORAGE_KEY_PREFIX = 'userList_'
+
 // State for UserListTab
 const userList = ref([])
 const total = ref(0)
@@ -103,6 +106,37 @@ const sortBy = ref('username')
 const sortOrder = ref('asc')
 const roleFilter = ref('')
 const availableRoles = ref([])
+
+// Load from localStorage
+const loadFromLocalStorage = () => {
+  if (typeof window === 'undefined') return
+  try {
+    const savedSortBy = localStorage.getItem(STORAGE_KEY_PREFIX + 'sortBy')
+    const savedSortOrder = localStorage.getItem(STORAGE_KEY_PREFIX + 'sortOrder')
+    const savedRoleFilter = localStorage.getItem(STORAGE_KEY_PREFIX + 'roleFilter')
+    const savedSearchQuery = localStorage.getItem(STORAGE_KEY_PREFIX + 'searchQuery')
+    
+    if (savedSortBy) sortBy.value = savedSortBy
+    if (savedSortOrder) sortOrder.value = savedSortOrder
+    if (savedRoleFilter !== null) roleFilter.value = savedRoleFilter
+    if (savedSearchQuery !== null) searchQuery.value = savedSearchQuery
+  } catch (e) {
+    console.error('Error loading from localStorage:', e)
+  }
+}
+
+// Save to localStorage
+const saveToLocalStorage = () => {
+  if (typeof window === 'undefined') return
+  try {
+    localStorage.setItem(STORAGE_KEY_PREFIX + 'sortBy', sortBy.value)
+    localStorage.setItem(STORAGE_KEY_PREFIX + 'sortOrder', sortOrder.value)
+    localStorage.setItem(STORAGE_KEY_PREFIX + 'roleFilter', roleFilter.value)
+    localStorage.setItem(STORAGE_KEY_PREFIX + 'searchQuery', searchQuery.value)
+  } catch (e) {
+    console.error('Error saving to localStorage:', e)
+  }
+}
 
 // State for RoleManagementTab
 const roles = ref([])
@@ -182,6 +216,7 @@ const fetchUsers = async () => {
 const updateSearch = () => {
   isSearching.value = true
   offset.value = 0 // Reset offset when searching
+  saveToLocalStorage() // Save to localStorage when filters change
   updateUrlParams()
 }
 
@@ -335,11 +370,20 @@ const handleTabClick = (tabKey) => {
 
 // Sync URL parameters with state
 const syncFromRoute = () => {
-  searchQuery.value = route.query.q || ''
+  // URL params take precedence over localStorage
+  if (route.query.q !== undefined) {
+    searchQuery.value = route.query.q || ''
+  }
   offset.value = parseInt(route.query.offset) || 0
-  sortBy.value = route.query.sort_by || 'username'
-  sortOrder.value = route.query.sort_order || 'asc'
-  roleFilter.value = route.query.role || ''
+  if (route.query.sort_by !== undefined) {
+    sortBy.value = route.query.sort_by || 'username'
+  }
+  if (route.query.sort_order !== undefined) {
+    sortOrder.value = route.query.sort_order || 'asc'
+  }
+  if (route.query.role !== undefined) {
+    roleFilter.value = route.query.role || ''
+  }
 }
 
 // Watch for route changes
@@ -385,7 +429,12 @@ watch(
 )
 
 onMounted(async () => {
+  // Load from localStorage first (will be overridden by URL params if they exist)
+  loadFromLocalStorage()
+  // Then sync from route (URL params take precedence)
   syncFromRoute()
+  // Save back to localStorage after syncing (to persist URL params if they exist)
+  saveToLocalStorage()
   try {
     const rolesResponse = await getRoles()
     availableRoles.value = rolesResponse.data.roles

@@ -45,14 +45,14 @@
               class="input-field flex-1"
               @change="$emit('update:sortBy', $event.target.value)"
             >
+              <option value="created_at">
+                {{ t('components.userListTab.createdAtSort') }}
+              </option>
               <option value="username">
                 {{ t('components.userListTab.usernameSort') }}
               </option>
               <option value="realname">
                 {{ t('components.userListTab.realNameSort') }}
-              </option>
-              <option value="created_at">
-                {{ t('components.userListTab.createdAtSort') }}
               </option>
             </select>
             <label class="text-sm text-gray-600 whitespace-nowrap">{{ t('components.userListTab.sortOrderLabel') }}</label>
