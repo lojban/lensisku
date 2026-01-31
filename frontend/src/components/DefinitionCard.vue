@@ -32,20 +32,19 @@
                 </h2>
                 <span v-if="definition.type_name && props.showWordType"
                   class="px-2 py-1 text-xs font-medium rounded-full" :class="getTypeClass(definition.type_name)">
-                  {{ t(`wordTypes.${definition.type_name.replace(/'/g,'h').replace(/ /g, '-')}`) }}
+                  {{ t(`wordTypes.${definition.type_name.replace(/'/g, 'h').replace(/ /g, '-')}`) }}
                 </span>
-                <RouterLink v-if="definition.selmaho"
-                  :to="{ path: '/', query: selmahoLinkQuery }"
+                <RouterLink v-if="definition.selmaho" :to="{ path: '/', query: selmahoLinkQuery }"
                   class="inline-flex items-center px-2 py-1 text-xs font-medium bg-purple-100 text-purple-700 rounded-md justify-center sm:justify-start hover:bg-purple-200 hover:text-purple-800 transition-colors"
-                  @click.stop 
-                >
+                  @click.stop>
                   {{ t('components.definitionCard.selmaoLabel') }} {{ definition.selmaho }}
                 </RouterLink>
                 <span v-if="definition.rafsi"
                   class="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-700 rounded-full">
                   {{ definition.rafsi }}
                 </span>
-                <span :title="t('components.definitionCard.flashcardIndicatorTitle')" class="cursor-pointer" @click.stop="$emit('edit-item')">
+                <span :title="t('components.definitionCard.flashcardIndicatorTitle')" class="cursor-pointer"
+                  @click.stop="$emit('edit-item')">
                   <GalleryHorizontalIcon v-if="showEditButton && flashcard"
                     class="h-4 w-4 text-purple-600 hover:text-purple-800" />
                 </span>
@@ -70,7 +69,8 @@
               </div>
 
               <div class="flex items-center gap-2 flex-wrap">
-                <button v-if="showEditButton" class="btn-empty" @click.stop="$emit('edit-item')" :title="t('components.definitionCard.editItemTitle')">
+                <button v-if="showEditButton" class="btn-empty" @click.stop="$emit('edit-item')"
+                  :title="t('components.definitionCard.editItemTitle')">
                   <Pencil class="h-4 w-4" />
                   <span class="sr-only">{{ t('components.definitionCard.editButton') }}</span>
                 </button>
@@ -86,38 +86,33 @@
               <div v-if="showReorderControls"
                 class="flex flex-wrap gap-2 md:gap-0 justify-end sm:justify-end w-full sm:w-auto flex-none"
                 role="group">
-                <button :disabled="isFirstItem || isReordering" class="btn-group-item btn-empty" :title="t('components.definitionCard.moveUpTitle')"
-                  @click.stop="$emit('move-up')">
+                <button :disabled="isFirstItem || isReordering" class="btn-group-item btn-empty"
+                  :title="t('components.definitionCard.moveUpTitle')" @click.stop="$emit('move-up')">
                   <ArrowUp class="h-4 w-4" />
                   <span class="sr-only">{{ t('components.definitionCard.moveUpTitle') }}</span>
                 </button>
 
-                <button :disabled="isLastItem || isReordering" class="btn-group-item btn-empty" :title="t('components.definitionCard.moveDownTitle')"
-                  @click.stop="$emit('move-down')">
+                <button :disabled="isLastItem || isReordering" class="btn-group-item btn-empty"
+                  :title="t('components.definitionCard.moveDownTitle')" @click.stop="$emit('move-down')">
                   <ArrowDown class="h-4 w-4" />
                   <span class="sr-only">{{ t('components.definitionCard.moveDownTitle') }}</span>
                 </button>
 
-                <button class="btn-group-item btn-empty hover:text-red-600" :title="t('components.definitionCard.removeItemTitle')"
-                  @click.stop="$emit('remove')">
+                <button class="btn-group-item btn-empty hover:text-red-600"
+                  :title="t('components.definitionCard.removeItemTitle')" @click.stop="$emit('remove')">
                   <Trash2 class="h-4 w-4" />
                   <span class="sr-only">{{ t('components.definitionCard.removeItemTitle') }}</span>
                 </button>
               </div>
-              <div v-if="showExternalDeleteButton && isOwner"
-                class="flex flex-wrap justify-end ml-auto" role="group">
-                <button class="btn-empty hover:text-red-600 flex items-center gap-1" :title="t('components.definitionCard.removeFromLevelTitle')" @click.stop="$emit('delete-item')">
+              <div v-if="showExternalDeleteButton && isOwner" class="flex flex-wrap justify-end ml-auto" role="group">
+                <button class="btn-empty hover:text-red-600 flex items-center gap-1"
+                  :title="t('components.definitionCard.removeFromLevelTitle')" @click.stop="$emit('delete-item')">
                   <MinusCircle class="h-4 w-4" />
                   <span>{{ t('components.definitionCard.removeFromLevelButton') }}</span>
                 </button>
               </div>
             </div>
 
-            <!-- Canonical Form -->
-            <div v-if="(flashcard && flashcard.canonical_form) || (definition && definition.canonical_form)"
-                 class="mt-1 text-sm text-gray-500 font-mono">
-              {{ (flashcard && flashcard.canonical_form) || definition.canonical_form }}
-            </div>
 
             <!-- Metadata Row -->
             <div class="flex flex-wrap items-center gap-2 mt-1 text-sm text-gray-500">
@@ -200,6 +195,19 @@
         </div>
       </div>
 
+      <!-- Canonical Form -->
+      <div v-if="(flashcard && flashcard.canonical_form) || (definition && definition.canonical_form)"
+        class="mt-3 pt-3 border-t flex flex-col gap-1.5">
+        <div class="flex items-center gap-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+          <SquareEqual class="h-3.5 w-3.5 text-blue-400" />
+          <span>{{ t('components.definitionCard.canonicalLabel') }}</span>
+        </div>
+        <div
+          class="text-sm text-gray-700 font-mono bg-blue-50/30 p-2 rounded border border-blue-100/30 whitespace-pre-wrap leading-relaxed overflow-x-auto">
+          {{ flashcard?.canonical_form || definition.canonical_form }}
+        </div>
+      </div>
+
       <!-- Control Section -->
       <div v-if="!disableToolbar" class="mt-3">
         <div class="flex flex-wrap gap-2 sm:gap-0 sm:space-x-2 md:space-x-0 space-x-0" role="group">
@@ -249,14 +257,9 @@
       </div>
     </div>
   </div>
-  <DeleteConfirmation
-    :show="showDeleteConfirm"
-    :title="t('components.definitionCard.deleteConfirmTitle')"
+  <DeleteConfirmation :show="showDeleteConfirm" :title="t('components.definitionCard.deleteConfirmTitle')"
     :message="t('components.definitionCard.deleteConfirmMessage', { word: definition.valsiword ?? definition.word })"
-    :is-deleting="isDeleting"
-    @confirm="confirmDelete"
-    @cancel="cancelDelete"
-  />
+    :is-deleting="isDeleting" @confirm="confirmDelete" @cancel="cancelDelete" />
 </template>
 
 <script setup>
@@ -273,6 +276,7 @@ import {
   MessageSquareMore,
   MinusCircle,
   GalleryHorizontalIcon,
+  SquareEqual,
 } from 'lucide-vue-next'
 import { computed, ref, watch } from 'vue';
 import { RouterLink, useRouter } from 'vue-router';
@@ -466,7 +470,7 @@ const confirmDelete = async () => {
     const response = await deleteDefinition(props.definition.definitionid)
     emit('refresh-definitions') // Notify parent to refresh the list
     showDeleteConfirm.value = false
-    
+
     // Check if valsi was deleted or if there are no remaining definitions
     const responseData = response.data
     if (responseData.valsi_deleted || !responseData.has_remaining_definitions) {

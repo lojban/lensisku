@@ -143,6 +143,9 @@
       "createdAtSort": "finti ca",
       "ascSort": "A to Z",
       "descSort": "Z to A"
+    },
+    "definitionCard": {
+      "canonicalLabel": "tersmujbo"
     }
   }
 }
