@@ -432,6 +432,17 @@
           <p v-if="enableFlashcard" class="text-xs text-gray-500">
             {{ t('collectionDetail.autoProgressDescription') }}
           </p>
+
+          <!-- Canonical Comparison for Definition Fill-in -->
+          <div v-if="enableFlashcard && addItemDirection.toLowerCase().includes('fillin')" class="flex items-center space-x-2 mt-3">
+            <input id="definition_canonical_comparison" v-model="useCanonicalComparison" type="checkbox" class="checkbox-toggle">
+            <label for="definition_canonical_comparison" class="text-sm text-gray-700">
+              {{ t('collectionDetail.useCanonicalComparisonLabel', 'Use canonical Lojban comparison') }}
+            </label>
+          </div>
+          <p v-if="enableFlashcard && addItemDirection.toLowerCase().includes('fillin')" class="text-xs text-gray-500">
+            {{ t('collectionDetail.useCanonicalComparisonDescription', 'When enabled, answers will be compared using their canonical Lojban form, allowing for equivalent but differently written answers.') }}
+          </p>
         </div>
       </div>
 
@@ -616,6 +627,17 @@
             </label>
           </div>
           <p class="text-xs text-gray-500">{{ t('collectionDetail.autoProgressDescription') }}</p>
+
+          <!-- Canonical Comparison for New Definition Fill-in -->
+          <div v-if="addItemDirection.toLowerCase().includes('fillin')" class="flex items-center space-x-2 mt-3">
+            <input id="new_def_canonical_comparison" v-model="useCanonicalComparison" type="checkbox" class="checkbox-toggle">
+            <label for="new_def_canonical_comparison" class="text-sm text-gray-700">
+              {{ t('collectionDetail.useCanonicalComparisonLabel', 'Use canonical Lojban comparison') }}
+            </label>
+          </div>
+          <p v-if="addItemDirection.toLowerCase().includes('fillin')" class="text-xs text-gray-500">
+            {{ t('collectionDetail.useCanonicalComparisonDescription', 'When enabled, answers will be compared using their canonical Lojban form, allowing for equivalent but differently written answers.') }}
+          </p>
         </div>
       </div>
 

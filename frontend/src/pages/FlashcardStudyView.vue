@@ -84,9 +84,6 @@
             <AudioPlayer v-if="currentCard.flashcard.sound_url" :url="currentCard.flashcard.sound_url"
               class="h-6 w-6" />
           </div>
-          <div v-if="currentCard.flashcard.canonical_form" class="text-lg text-gray-600 mt-2 text-center font-mono">
-            {{ currentCard.flashcard.canonical_form }}
-          </div>
           <div v-if="currentCard.flashcard.has_front_image" class="mt-4 flex justify-center">
             <img
               :src="`/api/collections/${currentCard.flashcard.collection_id}/items/${currentCard.flashcard.item_id}/image/front`"
