@@ -608,7 +608,7 @@ async fn generate_xml(
                 ci.item_id, ci.definition_id, ci.notes as collection_note, ci.position,
                 ci.free_content_front, ci.free_content_back, 
                 ci.langid as language_id, ci.owner_user_id, ci.license,
-                v.word, d.definition, d.notes as definition_notes, t.descriptor as word_type,
+                v.word, d.definition, d.notes as definition_notes, d.jargon, t.descriptor as word_type,
                 c.rafsi, c.selmaho,
                 (SELECT image_data FROM collection_item_images WHERE item_id = ci.item_id AND side = 'front') as front_image_data,
                 (SELECT mime_type FROM collection_item_images WHERE item_id = ci.item_id AND side = 'front') as front_image_mime,
@@ -652,7 +652,7 @@ async fn generate_xml(
                 ci.item_id, ci.definition_id, ci.notes as collection_note, ci.position,
                 ci.free_content_front, ci.free_content_back, 
                 ci.langid as language_id, ci.owner_user_id, ci.license,
-                v.word, d.definition, d.notes as definition_notes, t.descriptor as word_type,
+                v.word, d.definition, d.notes as definition_notes, d.jargon, t.descriptor as word_type,
                 c.rafsi, c.selmaho,
                 (SELECT image_data FROM collection_item_images WHERE item_id = ci.item_id AND side = 'front') as front_image_data,
                 (SELECT mime_type FROM collection_item_images WHERE item_id = ci.item_id AND side = 'front') as front_image_mime,
@@ -730,11 +730,12 @@ async fn generate_xml(
 
     let query = format!(
         "SELECT v.word, vbg.definitionid, c.rafsi, c.selmaho, c.definition,
-                c.notes, t.descriptor,
+                c.notes, d.jargon, t.descriptor,
                 (SELECT COALESCE(SUM(value), 0) FROM definitionvotes WHERE definitionid = vbg.definitionid) as score
          FROM valsibestguesses vbg
          JOIN valsi v ON v.valsiid = vbg.valsiid
          JOIN convenientdefinitions c ON c.definitionid = vbg.definitionid
+         JOIN definitions d ON d.definitionid = vbg.definitionid
          JOIN valsitypes t ON t.typeid = v.typeid
          {}
          WHERE vbg.langid = $1 {} {}
@@ -791,6 +792,14 @@ async fn generate_xml(
             writer.write(XmlEvent::start_element("notes"))?;
             writer.write(XmlEvent::Characters(&notes))?;
             writer.write(XmlEvent::end_element())?;
+        }
+
+        if let Some(jargon) = row.get::<_, Option<String>>("jargon") {
+            if !jargon.is_empty() {
+                writer.write(XmlEvent::start_element("jargon"))?;
+                writer.write(XmlEvent::Characters(&jargon))?;
+                writer.write(XmlEvent::end_element())?;
+            }
         }
 
         writer.write(XmlEvent::start_element("score"))?;
@@ -869,6 +878,7 @@ impl CollectionExportItem {
             license: row.get("license"),
             definition: row.get("definition"),
             definition_notes: row.get("definition_notes"),
+            jargon: row.get("jargon"),
             free_content_front: row.get("free_content_front"),
             free_content_back: row.get("free_content_back"),
             front_image_url,
@@ -1300,7 +1310,7 @@ async fn generate_tsv(
                 ci.item_id, ci.definition_id, ci.notes as collection_note, ci.position,
                 ci.free_content_front, ci.free_content_back, 
                 ci.langid as language_id, ci.owner_user_id, ci.license,
-                v.word, d.definition, d.notes as definition_notes, t.descriptor as word_type,
+                v.word, d.definition, d.notes as definition_notes, d.jargon, t.descriptor as word_type,
                 c.rafsi, c.selmaho,
                 (SELECT image_data FROM collection_item_images WHERE item_id = ci.item_id AND side = 'front') as front_image_data,
                 (SELECT mime_type FROM collection_item_images WHERE item_id = ci.item_id AND side = 'front') as front_image_mime,
@@ -1344,7 +1354,7 @@ async fn generate_tsv(
                 ci.item_id, ci.definition_id, ci.notes as collection_note, ci.position,
                 ci.free_content_front, ci.free_content_back,
                 ci.langid as language_id, ci.owner_user_id, ci.license,
-                v.word, d.definition, d.notes as definition_notes, t.descriptor as word_type,
+                v.word, d.definition, d.notes as definition_notes, d.jargon, t.descriptor as word_type,
                 c.rafsi, c.selmaho
             FROM collection_items ci
             LEFT JOIN definitions d ON ci.definition_id = d.definitionid
@@ -1377,11 +1387,12 @@ async fn generate_tsv(
 
     let query = format!(
         "SELECT v.word, vbg.definitionid, c.rafsi, c.selmaho, c.definition,
-                c.notes, t.descriptor{},
+                c.notes, d.jargon, t.descriptor{},
                 (SELECT COALESCE(SUM(value), 0) FROM definitionvotes WHERE definitionid = vbg.definitionid) as score
          FROM valsibestguesses vbg
          JOIN valsi v ON v.valsiid = vbg.valsiid
          JOIN convenientdefinitions c ON c.definitionid = vbg.definitionid
+         JOIN definitions d ON d.definitionid = vbg.definitionid
          JOIN valsitypes t ON t.typeid = v.typeid
          {}
          WHERE vbg.langid = $1 {} {}
@@ -1412,7 +1423,7 @@ async fn generate_tsv(
 
     let mut tsv = String::new();
     // Write header
-    tsv.push_str("word\ttype\trafsi\tselmaho\tdefinition\tnotes\tcollection_note\tscore");
+    tsv.push_str("word\ttype\trafsi\tselmaho\tdefinition\tnotes\tjargon\tcollection_note\tscore");
 
     // Add gloss word columns
     for i in 1..=max_gloss_count {
@@ -1434,6 +1445,7 @@ async fn generate_tsv(
         let selmaho: Option<String> = row.get("selmaho");
         let definition: String = row.get("definition");
         let notes: Option<String> = row.get("notes");
+        let jargon: Option<String> = row.get("jargon");
         let collection_note: Option<String> = row.get("collection_note");
         let score: f32 = row.get("score");
 
@@ -1442,13 +1454,14 @@ async fn generate_tsv(
 
         // Start row with basic fields
         tsv.push_str(&format!(
-            "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+            "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
             replace_newlines(&word),
             replace_newlines(&descriptor),
             replace_newlines(&rafsi.unwrap_or_default()),
             replace_newlines(&selmaho.unwrap_or_default()),
             replace_newlines(&definition),
             replace_newlines(&notes.unwrap_or_default()),
+            replace_newlines(&jargon.unwrap_or_default()),
             replace_newlines(&collection_note.unwrap_or_default()),
             score
         ));
@@ -1500,7 +1513,7 @@ fn generate_collection_tsv(
 ) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
     let mut tsv = String::new();
     // Write header for collection items
-    tsv.push_str("item_id\tposition\tdefinition_id\tword\tword_type\trafsi\tselmaho\tdefinition\tdefinition_notes\tfree_content_front\tfree_content_back\tcollection_note\n");
+    tsv.push_str("item_id\tposition\tdefinition_id\tword\tword_type\trafsi\tselmaho\tdefinition\tdefinition_notes\tjargon\tfree_content_front\tfree_content_back\tcollection_note\n");
 
     for row in rows {
         let item_id: i32 = row.get("item_id");
@@ -1512,12 +1525,13 @@ fn generate_collection_tsv(
         let selmaho: Option<String> = row.get("selmaho");
         let definition: Option<String> = row.get("definition");
         let definition_notes: Option<String> = row.get("definition_notes");
+        let jargon: Option<String> = row.get("jargon");
         let free_content_front: Option<String> = row.get("free_content_front");
         let free_content_back: Option<String> = row.get("free_content_back");
         let collection_note: Option<String> = row.get("collection_note");
 
         tsv.push_str(&format!(
-            "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n",
+            "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n",
             item_id,
             position,
             definition_id.map(|id| id.to_string()).unwrap_or_default(),
@@ -1527,6 +1541,7 @@ fn generate_collection_tsv(
             replace_newlines(&selmaho.unwrap_or_default()),
             replace_newlines(&definition.unwrap_or_default()),
             replace_newlines(&definition_notes.unwrap_or_default()),
+            replace_newlines(&jargon.unwrap_or_default()),
             replace_newlines(&free_content_front.unwrap_or_default()),
             replace_newlines(&free_content_back.unwrap_or_default()),
             replace_newlines(&collection_note.unwrap_or_default())
@@ -1548,7 +1563,7 @@ async fn generate_json(
                 ci.item_id, ci.definition_id, ci.notes as collection_note, ci.position,
                 ci.free_content_front, ci.free_content_back, 
                 ci.langid as language_id, ci.owner_user_id, ci.license,
-                v.word, d.definition, d.notes as definition_notes, t.descriptor as word_type,
+                v.word, d.definition, d.notes as definition_notes, d.jargon, t.descriptor as word_type,
                 c.rafsi, c.selmaho,
                 (SELECT image_data FROM collection_item_images WHERE item_id = ci.item_id AND side = 'front') as front_image_data,
                 (SELECT mime_type FROM collection_item_images WHERE item_id = ci.item_id AND side = 'front') as front_image_mime,
@@ -1603,11 +1618,12 @@ async fn generate_json(
 
     let query = format!(
         "SELECT v.word, vbg.definitionid, c.rafsi, c.selmaho, c.definition,
-                c.notes, t.descriptor{},
+                c.notes, d.jargon, t.descriptor{},
                 (SELECT COALESCE(SUM(value), 0) FROM definitionvotes WHERE definitionid = vbg.definitionid) as score
          FROM valsibestguesses vbg
          JOIN valsi v ON v.valsiid = vbg.valsiid
          JOIN convenientdefinitions c ON c.definitionid = vbg.definitionid
+         JOIN definitions d ON d.definitionid = vbg.definitionid
          JOIN valsitypes t ON t.typeid = v.typeid
          {}
          WHERE vbg.langid = $1 {} {}
@@ -1644,6 +1660,7 @@ async fn generate_json(
                 selmaho: row.get("selmaho"),
                 definition: row.get("definition"),
                 notes: row.get("notes"),
+                jargon: row.get("jargon"),
                 collection_note: row.get("collection_note"),
                 score: row.get("score"),
                 gloss_keywords: gloss_map.get(&definition_id).cloned(),

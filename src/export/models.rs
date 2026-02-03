@@ -68,6 +68,8 @@ pub struct DictionaryEntry {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub notes: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub jargon: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub collection_note: Option<String>,
     pub score: f32,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -103,6 +105,8 @@ pub struct CollectionExportItem {
     pub definition: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub definition_notes: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub jargon: Option<String>,
     // Fields for free-content items
     #[serde(skip_serializing_if = "Option::is_none")]
     pub free_content_front: Option<String>,
