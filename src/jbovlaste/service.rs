@@ -1654,19 +1654,24 @@ pub async fn update_definition(
             SELECT
                 COALESCE(to_timestamp(d.time) AT TIME ZONE 'UTC', d.created_at), d.definitionid, d.langid, d.valsiid, d.definition, d.notes, d.etymology, d.selmaho, d.jargon,
                 COALESCE(
-                    (SELECT jsonb_agg(jsonb_build_object('word', n.word, 'meaning', n.meaning))
-                     FROM keywordmapping k
-                     JOIN natlangwords n ON k.natlangwordid = n.wordid
-                     WHERE k.definitionid = d.definitionid AND k.place = 0),
-                    '[]'::jsonb
+                    (SELECT jsonb_agg(to_jsonb(kw))
+                     FROM (
+                         SELECT n.word, n.meaning
+                         FROM keywordmapping k
+                         JOIN natlangwords n ON k.natlangwordid = n.wordid
+                         WHERE k.definitionid = d.definitionid AND k.place = 0
+                     ) kw
+                    ), '[]'::jsonb
                 ),
                 COALESCE(
-                    (SELECT jsonb_agg(jsonb_build_object('word', n.word, 'meaning', n.meaning, 'place', k.place))
-                     FROM keywordmapping k
-                     JOIN natlangwords n ON k.natlangwordid = n.wordid
-                     WHERE k.definitionid = d.definitionid AND k.place > 0
-                     ORDER BY k.place),
-                    '[]'::jsonb
+                    (SELECT jsonb_agg(to_jsonb(kw) ORDER BY kw.place)
+                     FROM (
+                         SELECT n.word, n.meaning, k.place
+                         FROM keywordmapping k
+                         JOIN natlangwords n ON k.natlangwordid = n.wordid
+                         WHERE k.definitionid = d.definitionid AND k.place > 0
+                     ) kw
+                    ), '[]'::jsonb
                 ),
                 d.userid, 'Initial version'
             FROM definitions d
