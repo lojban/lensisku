@@ -1652,7 +1652,7 @@ pub async fn update_definition(
                 gloss_keywords, place_keywords, user_id, message
             )
             SELECT
-                COALESCE(d.time, d.created_at), d.definitionid, d.langid, d.valsiid, d.definition, d.notes, d.etymology, d.selmaho, d.jargon,
+                COALESCE(to_timestamp(d.time) AT TIME ZONE 'UTC', d.created_at), d.definitionid, d.langid, d.valsiid, d.definition, d.notes, d.etymology, d.selmaho, d.jargon,
                 COALESCE(
                     (SELECT jsonb_agg(jsonb_build_object('word', n.word, 'meaning', n.meaning))
                      FROM keywordmapping k

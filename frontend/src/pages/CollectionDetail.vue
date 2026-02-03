@@ -787,6 +787,7 @@ import { useError } from '@/composables/useError'
 import { useSeoHead } from '@/composables/useSeoHead'
 import { useI18n } from 'vue-i18n'
 import { SearchQueue } from '@/utils/searchQueue'
+import { normalizeSearchQuery } from '@/utils/searchQueryUtils'
 
 const { t, locale } = useI18n();
 
@@ -1243,7 +1244,7 @@ const openEditItemModal = async (item) => {
           has_back_image: item.has_back_image
         }
 
-        searchQuery.value = def.valsiword // Keep setting search query for context
+        searchQuery.value = normalizeSearchQuery(def.valsiword) // Keep setting search query for context
 
         addItemResults.value = [def] // Keep setting results for consistency, though only one is selected
 
@@ -1465,7 +1466,7 @@ const performSearch = async () => {
     const { signal } = request
 
     const response = await searchItems({
-      q: itemSearchQuery.value,
+      q: normalizeSearchQuery(itemSearchQuery.value),
       user_id: collection.value?.owner?.user_id,
     }, signal)
 
@@ -1583,7 +1584,7 @@ const fetchItems = async () => {
     const response = await listCollectionItems(props.collectionId, {
       page: currentPage.value,
       per_page: itemsPerPage,
-      search: itemSearchQuery.value.trim() || undefined,
+      search: normalizeSearchQuery(itemSearchQuery.value).trim() || undefined,
       item_id: editItemId.value,
       exclude_with_flashcards: isAddFlashcardMode.value || undefined,
     })

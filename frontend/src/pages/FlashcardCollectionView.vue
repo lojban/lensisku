@@ -219,6 +219,7 @@ import { useError } from '@/composables/useError'
 import { useSeoHead } from '@/composables/useSeoHead'
 import { useI18n } from 'vue-i18n'
 import { SearchQueue } from '@/utils/searchQueue'
+import { normalizeSearchQuery } from '@/utils/searchQueryUtils'
 
 const props = defineProps({
   collectionId: {
@@ -383,7 +384,7 @@ const loadDefinitions = async (page = modalCurrentPage.value) => {
     const response = await listCollectionItems(props.collectionId, {
       page,
       per_page: modalItemsPerPage.value,
-      search: searchQuery.value || undefined,
+      search: normalizeSearchQuery(searchQuery.value) || undefined,
     }, signal)
 
     // Only process if this is still the latest request

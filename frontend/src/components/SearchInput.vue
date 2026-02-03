@@ -1,6 +1,7 @@
 <script setup>
 import { Loader2, X } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
+import { normalizeSearchQuery } from '@/utils/searchQueryUtils'
 
 const { t } = useI18n()
 
@@ -30,7 +31,7 @@ defineEmits(['update:modelValue', 'clear'])
       :placeholder="placeholder"
       class="input-field w-full min-w-[200px]"
       :class="{ 'pr-10': modelValue.length > 0 }"
-      @input="$emit('update:modelValue', $event.target.value)"
+      @input="$emit('update:modelValue', normalizeSearchQuery($event.target.value))"
     >
     <div class="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center">
       <Loader2

@@ -356,6 +356,7 @@ import { useLanguageSelection } from '@/composables/useLanguageSelection';
 import { useSeoHead } from '@/composables/useSeoHead'
 import { useI18n } from 'vue-i18n';
 import { SearchQueue } from '@/utils/searchQueue';
+import { normalizeSearchQuery } from '@/utils/searchQueryUtils';
 
 import MessageList from './MessageList.vue'
 
@@ -426,7 +427,7 @@ const initialized = ref(false)
 const getInitialSearchQuery = () => {
   if (typeof window === 'undefined') return;
   const storedQuery = localStorage.getItem('searchQuery')
-  return storedQuery || props.urlSearchQuery
+  return normalizeSearchQuery(storedQuery || props.urlSearchQuery || '')
 }
 
 const getInitialGroupByThread = () => {
@@ -926,13 +927,14 @@ const performSearch = ({ query, mode }) => {
   }
 
   // Update state before pushing to router to avoid duplicate fetches
-  searchQuery.value = query
+  const normalizedQuery = normalizeSearchQuery(query)
+  searchQuery.value = normalizedQuery
   searchMode.value = mode
   // groupByThread is handled by its own watcher now
   // Store mode and query in localStorage
   if (typeof window !== 'undefined') {
   localStorage.setItem('searchMode', mode)
-  localStorage.setItem('searchQuery', query)
+  localStorage.setItem('searchQuery', normalizedQuery)
   }
 
   // Push to router but don't fetch data here - the route watcher will handle it
@@ -997,8 +999,9 @@ const syncFromRoute = () => {
 
   // Only update values if they exist in URL
   if (query.q !== undefined) {
-    searchQuery.value = query.q
-    if (typeof window !== 'undefined') localStorage.setItem('searchQuery', query.q)
+    const normalized = normalizeSearchQuery(query.q)
+    searchQuery.value = normalized
+    if (typeof window !== 'undefined') localStorage.setItem('searchQuery', normalized)
   }
 
   if (query.mode !== undefined) {

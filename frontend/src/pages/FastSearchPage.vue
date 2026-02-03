@@ -138,6 +138,7 @@ import SearchFormSkeleton from '@/components/skeletons/SearchFormSkeleton.vue';
 import { useLanguageSelection } from '@/composables/useLanguageSelection';
 import { useSeoHead } from '@/composables/useSeoHead';
 import { SearchQueue } from '@/utils/searchQueue';
+import { normalizeSearchQuery } from '@/utils/searchQueryUtils';
 
 const router = useRouter();
 const route = useRoute();
@@ -154,7 +155,7 @@ const initialized = ref(false);
 // Get search query from localStorage or use default
 const getInitialSearchQuery = () => {
   if (typeof window === 'undefined') return '';
-  return route.query.q || '';
+  return normalizeSearchQuery(route.query.q || '');
 };
 
 const searchQuery = ref(getInitialSearchQuery());
@@ -307,9 +308,10 @@ const performSearch = ({ query }) => {
     word_type: filters.value.word_type || undefined,
   };
 
-  searchQuery.value = query;
+  const normalizedQuery = normalizeSearchQuery(query);
+  searchQuery.value = normalizedQuery;
   if (typeof window !== 'undefined') {
-    localStorage.setItem('searchQuery', query);
+    localStorage.setItem('searchQuery', normalizedQuery);
   }
 
   router.push({ query: updateParams });
@@ -342,8 +344,9 @@ const syncFromRoute = () => {
   const query = route.query;
 
   if (query.q !== undefined) {
-    searchQuery.value = query.q;
-    if (typeof window !== 'undefined') localStorage.setItem('searchQuery', query.q);
+    const normalized = normalizeSearchQuery(query.q);
+    searchQuery.value = normalized;
+    if (typeof window !== 'undefined') localStorage.setItem('searchQuery', normalized);
   }
 
   if (query.page !== undefined) {

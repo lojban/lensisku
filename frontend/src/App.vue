@@ -280,6 +280,7 @@ import BackgroundComponent from './components/BackgroundComponent.vue'
 import FooterComponent from './components/FooterComponent.vue'
 import NavLink from './components/NavLink.vue'
 import ModalComponent from '@/components/ModalComponent.vue'
+import { normalizeSearchQuery } from '@/utils/searchQueryUtils'
 import { provideAuth } from './composables/useAuth'
 import { provideError } from './composables/useError'
 import { localeCaptureGroupRegex, supportedLocales } from './config/locales';
@@ -348,7 +349,7 @@ const triggerPyro = () => {
 }
 
 const performSearch = ({ query, mode }) => {
-  searchQuery.value = query
+  searchQuery.value = normalizeSearchQuery(query)
   searchMode.value = mode
   updateRouteParams()
 }
@@ -363,7 +364,7 @@ const updateRouteParams = () => {
 }
 
 const syncFromRoute = () => {
-  searchQuery.value = route.query.q || ''
+  searchQuery.value = normalizeSearchQuery(route.query.q || '')
   searchMode.value = route.query.mode || 'messages'
 }
 

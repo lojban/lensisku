@@ -21,7 +21,7 @@
     :role-filter="roleFilter"
     :sort-by="sortBy"
     :sort-order="sortOrder"
-    @update:search-query="searchQuery = $event; updateSearch()"
+    @update:search-query="searchQuery = normalizeSearchQuery($event); updateSearch()"
     @update:role-filter="roleFilter = $event; updateSearch()"
     @update:sort-by="sortBy = $event; updateSearch()"
     @update:sort-order="sortOrder = $event; updateSearch()"
@@ -84,6 +84,7 @@ import UserListTab from '@/components/users/UserListTab.vue'
 import { useAuth } from '@/composables/useAuth.js'
 import { useError } from '@/composables/useError.js'
 import { useSeoHead } from '@/composables/useSeoHead'
+import { normalizeSearchQuery } from '@/utils/searchQueryUtils'
 
 const router = useRouter()
 const route = useRoute()
@@ -174,7 +175,7 @@ const tabs = computed(() => {
 const updateUrlParams = () => {
   router.push({
     query: {
-      q: searchQuery.value || undefined,
+      q: normalizeSearchQuery(searchQuery.value) || undefined,
       offset: offset.value || undefined,
       sort_by: sortBy.value !== 'username' ? sortBy.value : undefined,
       sort_order: sortOrder.value !== 'asc' ? sortOrder.value : undefined,
@@ -372,7 +373,7 @@ const handleTabClick = (tabKey) => {
 const syncFromRoute = () => {
   // URL params take precedence over localStorage
   if (route.query.q !== undefined) {
-    searchQuery.value = route.query.q || ''
+    searchQuery.value = normalizeSearchQuery(route.query.q || '')
   }
   offset.value = parseInt(route.query.offset) || 0
   if (route.query.sort_by !== undefined) {

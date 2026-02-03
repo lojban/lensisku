@@ -45,6 +45,7 @@ import { Book, Search, Mail, List, ChevronDown, Waves, X } from 'lucide-vue-next
 import Select from 'primevue/select'
 import { ref, computed, watch, onBeforeUnmount } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { normalizeSearchQuery } from '@/utils/searchQueryUtils'
 
 const { t } = useI18n()
 
@@ -70,7 +71,7 @@ const props = defineProps({
 const emit = defineEmits(['search'])
 
 const searchInput = ref(null)
-const query = ref(props.initialQuery)
+const query = ref(normalizeSearchQuery(props.initialQuery))
 const mode = ref(modes.value.find(m => m.value === props.initialMode) || modes.value[0])
 const isSearching = ref(false)
 let searchTimeout = null
@@ -105,6 +106,7 @@ function clearSearchTimeout() {
 }
 
 function handleInput() {
+  query.value = normalizeSearchQuery(query.value)
   // Clear any pending timeouts to prevent stale searches
   clearSearchTimeout()
   
@@ -129,7 +131,7 @@ function handleInput() {
 }
 
 function emitSearch() {
-  emit('search', { query: query.value, mode: mode.value.value })
+  emit('search', { query: normalizeSearchQuery(query.value), mode: mode.value.value })
 }
 
 function clearInput() {
@@ -143,7 +145,7 @@ function clearInput() {
 function onModeChange() {
   // Clear any pending timeouts when mode changes to prevent stale searches
   clearSearchTimeout()
-  emit('search', { query: query.value, mode: mode.value.value})
+  emit('search', { query: normalizeSearchQuery(query.value), mode: mode.value.value})
 }
 
 watch(
@@ -151,7 +153,7 @@ watch(
   (newValue) => {
     // Clear any pending timeouts when query changes externally
     clearSearchTimeout()
-    query.value = newValue
+    query.value = normalizeSearchQuery(newValue)
   }
 )
 
