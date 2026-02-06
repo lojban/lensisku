@@ -1,7 +1,7 @@
 <template>
   <div
     ref="scrollContainer"
-    class="-m-4 h-screen bg-black text-white overflow-y-scroll snap-y snap-mandatory"
+    class="reel-container -m-4 h-screen bg-black text-white overflow-y-scroll snap-y snap-mandatory touch-pan-y"
   >
     <!-- Header -->
     <div class="z-30">
@@ -126,6 +126,13 @@
   // Initial load
   onMounted(fetchArticles)
 </script>
+
+<style scoped>
+  .reel-container {
+    overscroll-behavior-y: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+</style>
 
 <style>
   html,

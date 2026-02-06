@@ -1,5 +1,5 @@
 <template>
-  <div class="wiki-card h-screen w-full flex items-center justify-center snap-start relative">
+  <div class="wiki-card h-screen w-full flex items-center justify-center snap-start snap-always relative">
     <div class="h-full w-full relative">
       <div v-if="article.thumbnail" class="absolute inset-0">
         <img loading="lazy" :src="article.thumbnail.source" :alt="article.title" :class="[
