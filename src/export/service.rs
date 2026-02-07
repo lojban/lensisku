@@ -17,6 +17,7 @@ use super::models::CachedExport;
 use super::models::CollectionExportItem;
 use super::models::DictionaryEntry;
 use super::models::NaturalEntry;
+use super::models::User;
 use super::models::ValsiRow;
 use super::models::{ExportFormat, ExportOptions};
 use crate::jbovlaste::KeywordMapping;
