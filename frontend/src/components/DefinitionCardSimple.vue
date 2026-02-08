@@ -11,16 +11,16 @@
                 <h2
                   v-if="definition.definitionid"
                   :title="valsiDisplayText"
-                  class="text-base font-semibold min-w-0 max-w-full line-clamp-2 break-all text-blue-700 hover:text-blue-800 hover:underline"
+                  class="text-base font-semibold truncate min-w-0 text-blue-700 hover:text-blue-800 hover:underline"
                 >
-                  <RouterLink :to="`/valsi/${definition.valsiword ?? definition.word}?highlight_definition_id=${definition.definitionid}`" class="break-all">
+                  <RouterLink :to="`/valsi/${definition.valsiword ?? definition.word}?highlight_definition_id=${definition.definitionid}`">
                     {{ definition.valsiword ?? definition.word }}
                   </RouterLink>
                 </h2>
                 <h2
                   v-else
                   :title="valsiDisplayText"
-                  class="text-base font-semibold min-w-0 max-w-full line-clamp-2 break-all text-gray-800"
+                  class="text-base font-semibold truncate min-w-0 text-gray-800"
                 >
                   {{ definition.free_content_front || definition.word }}
                 </h2>

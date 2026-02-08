@@ -18,13 +18,12 @@
                 <div class="min-w-0 max-w-full flex items-baseline gap-1">
                   <h2
                     :title="valsiDisplayText"
-                    class="text-base font-semibold min-w-0 max-w-full line-clamp-2 break-all"
+                    class="text-base font-semibold truncate min-w-0"
                     :class="definition.definitionid ? 'text-blue-700 hover:text-blue-800 hover:underline' : 'text-gray-800'"
                   >
                     <template v-if="definition.definitionid">
                       <RouterLink
                         :to="`/valsi/${definition.valsiword ?? definition.word}?highlight_definition_id=${definition.definitionid}`"
-                        class="break-all"
                       >
                         {{ definition.valsiword ?? definition.word }}
                         <sup v-if="showDefinitionNumber" class="italic font-medium text-gray-600">
