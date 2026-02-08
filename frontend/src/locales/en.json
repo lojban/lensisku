@@ -1,6 +1,7 @@
 {
   "seo": {
-    "baseTitle": "Lojban Dictionary"
+    "baseTitle": "Lojban Dictionary",
+    "defaultDescription": "Search the Lojban dictionary and corpus. Find word definitions, usage examples, and community discussions in Lojban (la .lojban.)."
   },
   "filters": {
     "changePhoto": "Change photo",
@@ -71,6 +72,8 @@
     },
     "searchTitle": "Search: {query}",
     "defaultTitle": "Home",
+    "metaDescription": "Search the Lojban dictionary and corpus. Find definitions, examples, and discussions.",
+    "searchMetaDescription": "Search results for \"{query}\" in the Lojban dictionary."
     "addDefinition": "Definition",
     "newFreeThread": "Start Free Wave",
     "noCommentsFound": "No comments found matching your search"
@@ -766,7 +769,8 @@
     "loadError": "Failed to load valsi details",
     "rafsiLabel": "Rafsi:",
     "decompositionLabel": "Decomposition:",
-    "entry": "Entry"
+    "entry": "Entry",
+    "metaDescription": "{word} — Lojban word ({type}). Definitions and usage in the Lojban dictionary."
   },
   "cachedExports": {
     "title": "Cached Dictionary Exports",

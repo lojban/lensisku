@@ -269,6 +269,7 @@ import { ref, onMounted, onBeforeUnmount, watch, computed, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 
 import { useI18n } from 'vue-i18n'
+import { useHead } from '@vueuse/head'
 import { jwtDecode } from 'jwt-decode'
 
 import Error from '@/components/Error.vue'
@@ -290,6 +291,18 @@ import logoSvgRaw from '@/assets/icons/favicon.svg?raw';
 const i18n = useI18n() // Use i18n composable
 const $t = i18n.t
 const $locale = i18n.locale
+
+// Default SEO: meta description so Google shows a proper snippet instead of footer text.
+// Pages can override by setting description in useSeoHead (same key 'description').
+useHead({
+  meta: [
+    {
+      name: 'description',
+      content: i18n.t('seo.defaultDescription'),
+      key: 'description',
+    },
+  ],
+})
 const router = useRouter()
 const route = useRoute()
 const searchQuery = ref('')

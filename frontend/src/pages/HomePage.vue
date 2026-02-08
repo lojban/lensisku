@@ -475,7 +475,15 @@ const pageTitle = computed(() => {
   return t('home.defaultTitle')
 })
 
-useSeoHead({ title: pageTitle, locale: locale.value })
+// Meta description for search snippets (avoids footer text being used)
+const pageDescription = computed(() => {
+  if (searchQuery.value?.trim()) {
+    return t('home.searchMetaDescription', { query: truncatedSearchQuery.value || searchQuery.value })
+  }
+  return t('home.metaDescription')
+})
+
+useSeoHead({ title: pageTitle, description: pageDescription })
 
 // Filter state
 const languages = ref([])

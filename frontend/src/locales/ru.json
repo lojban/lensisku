@@ -1,6 +1,7 @@
 {
   "seo": {
-    "baseTitle": "Словарь Ложбана"
+    "baseTitle": "Словарь Ложбана",
+    "defaultDescription": "Поиск по словарю и корпусу ложбана. Определения слов, примеры и обсуждения на языке ложбан (la .lojban.)."
   },
   "filters": {
     "changePhoto": "Изменить фото",
@@ -71,6 +72,8 @@
     },
     "searchTitle": "Поиск: {query}",
     "defaultTitle": "Главная",
+    "metaDescription": "Поиск по словарю и корпусу ложбана. Определения, примеры и обсуждения.",
+    "searchMetaDescription": "Результаты поиска «{query}» в словаре ложбана.",
     "addDefinition": "Определение",
     "newFreeThread": "Начать новую волну",
     "noCommentsFound": "Комментарии, соответствующие вашему поиску, не найдены"
@@ -760,7 +763,8 @@
     "loadError": "Не удалось загрузить детали valsi",
     "rafsiLabel": "Rafsi:",
     "decompositionLabel": "Разложение:",
-    "entry": "Запись"
+    "entry": "Запись",
+    "metaDescription": "{word} — слово ложбана ({type}). Определения и примеры в словаре ложбана."
   },
   "cachedExports": {
     "title": "Кэшированные экспорты словаря",

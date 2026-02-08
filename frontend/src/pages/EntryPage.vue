@@ -7,16 +7,18 @@
     <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
   </div>
 
-  <!-- Content -->
-  <div
+  <!-- Content: semantic article for SEO and accessibility -->
+  <article
     v-else-if="valsi"
     class="space-y-3"
+    itemscope
+    itemtype="https://schema.org/DefinedTerm"
   >
     <!-- Header Section -->
-    <div class="border-b pb-2 min-w-0">
+    <header class="border-b pb-2 min-w-0">
       <div class="flex flex-wrap gap-2 w-full lg:w-auto justify-between min-w-0">
         <div class="flex items-center gap-3 min-w-0 max-w-full">
-          <h2 class="text-3xl font-bold text-gray-800 min-w-0 max-w-full break-all">
+          <h1 class="text-3xl font-bold text-gray-800 min-w-0 max-w-full break-all" itemprop="name">
             {{ valsi.word }}
             <AudioPlayer
               v-if="definitions.length > 0 && definitions[0].sound_url"
@@ -58,7 +60,7 @@
           </div>
         </div>
       </div>
-    </div>
+    </header>
 
     <!-- Discussion Section -->
     <div class="flex flex-wrap gap-2 w-full lg:w-auto justify-center">
@@ -131,7 +133,7 @@
         @click="router.push(`/valsi/add?word=${encodeURIComponent(valsi.word)}`)"
       />
     </div>
-  </div>
+  </article>
 </template>
 
 <script setup>
@@ -184,7 +186,20 @@ const definitions = ref([])
 const isLoading = ref(true)
 const { showError, clearError } = useError()
 
-useSeoHead({ title: computed(() => valsi.value?.word || t('entryPage.entry')), locale: locale.value })
+const entryTitle = computed(() => valsi.value?.word || t('entryPage.entry'))
+const entryDescription = computed(() => {
+  const v = valsi.value
+  if (!v) return ''
+  const typeLabel = getWordTypeLabel(v.type_name)
+  return t('entryPage.metaDescription', { word: v.word, type: typeLabel })
+})
+const entryCanonical = computed(() => route.fullPath)
+
+useSeoHead({
+  title: entryTitle,
+  description: entryDescription,
+  canonical: entryCanonical,
+})
 
 // Remove the local getTypeClass implementation
 
