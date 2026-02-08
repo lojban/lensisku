@@ -5,6 +5,7 @@ use crate::{
     mailarchive::{check_for_new_emails, import_maildir},
     muplis,
     notifications::run_email_notifications,
+    utils::preprocess_definition_for_vectors,
 };
 use chrono::Local;
 use deadpool_postgres::Pool;
