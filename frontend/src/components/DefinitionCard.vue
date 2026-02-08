@@ -13,18 +13,28 @@
           <!-- Compact Header Layout -->
           <div class="w-full">
             <!-- Main Content -->
-            <div class="flex flex-wrap items-center justify-between gap-2">
-              <div class="w-auto flex items-center gap-2 flex-wrap">
-                <h2 class="text-base font-semibold truncate flex-shrink-0"
+            <div class="flex flex-wrap items-center justify-between gap-2 min-w-0">
+              <div class="min-w-0 flex-1 flex items-center gap-2 flex-wrap">
+                <h2 class="text-base font-semibold min-w-0 max-w-full truncate flex-shrink-0"
                   :class="definition.definitionid ? 'text-blue-700 hover:text-blue-800 hover:underline' : 'text-gray-800'">
                   <template v-if="definition.definitionid">
-                    <RouterLink
-                      :to="`/valsi/${definition.valsiword ?? definition.word}?highlight_definition_id=${definition.definitionid}`">
-                      {{ definition.valsiword ?? definition.word }}
-                      <sup v-if="showDefinitionNumber" class="italic font-medium text-gray-600">
-                        #
-                      </sup>
-                    </RouterLink>
+                    <template v-if="isLongValsi">
+                      <button type="button" class="text-left align-baseline cursor-pointer bg-transparent border-none p-0 underline-offset-2 hover:underline"
+                        :title="t('components.definitionCard.clickToGoToDefinition')"
+                        @click.prevent="showValsiPopup = true">
+                        {{ valsiWord }}
+                        <sup v-if="showDefinitionNumber" class="italic font-medium text-gray-600">#</sup>
+                      </button>
+                    </template>
+                    <template v-else>
+                      <RouterLink
+                        :to="valsiHref">
+                        {{ valsiWord }}
+                        <sup v-if="showDefinitionNumber" class="italic font-medium text-gray-600">
+                          #
+                        </sup>
+                      </RouterLink>
+                    </template>
                   </template>
                   <template v-else>
                     {{ definition.free_content_front || definition.word }}
@@ -260,6 +270,22 @@
   <DeleteConfirmation :show="showDeleteConfirm" :title="t('components.definitionCard.deleteConfirmTitle')"
     :message="t('components.definitionCard.deleteConfirmMessage', { word: definition.valsiword ?? definition.word })"
     :is-deleting="isDeleting" @confirm="confirmDelete" @cancel="cancelDelete" />
+  <!-- Long valsi popup: full word + click to go to definition -->
+  <Teleport to="body">
+    <div v-if="showValsiPopup" class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50"
+      @click.self="showValsiPopup = false">
+      <div class="bg-white rounded-lg shadow-xl max-w-[90vw] max-h-[80vh] overflow-auto p-6 cursor-pointer border-2 border-blue-200 hover:border-blue-400 transition-colors"
+        role="button"
+        tabindex="0"
+        :title="t('components.definitionCard.clickToGoToDefinition')"
+        @click="goToValsiPage"
+        @keydown.enter="goToValsiPage"
+        @keydown.space.prevent="goToValsiPage">
+        <p class="text-base font-semibold text-blue-700 break-all">{{ valsiWord }}</p>
+        <p class="mt-2 text-sm text-gray-500">{{ t('components.definitionCard.clickToGoToDefinition') }}</p>
+      </div>
+    </div>
+  </Teleport>
 </template>
 
 <script setup>
@@ -405,6 +431,23 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['move-up', 'move-down', 'remove', 'collection-updated', 'delete', 'refresh-definitions', 'edit-item', 'delete-item'])
+
+const LONG_VALSI_THRESHOLD = 50
+const valsiWord = computed(() => props.definition.valsiword ?? props.definition.word ?? '')
+const valsiHref = computed(() =>
+  props.definition.definitionid
+    ? `/valsi/${encodeURIComponent(valsiWord.value)}?highlight_definition_id=${props.definition.definitionid}`
+    : ''
+)
+const isLongValsi = computed(() => (valsiWord.value || '').length > LONG_VALSI_THRESHOLD)
+const showValsiPopup = ref(false)
+
+function goToValsiPage() {
+  if (valsiHref.value) {
+    router.push(valsiHref.value)
+    showValsiPopup.value = false
+  }
+}
 
 const collections = ref(props.collections)
 const showDeleteConfirm = ref(false)

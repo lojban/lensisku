@@ -5,19 +5,29 @@
       <!-- Word and Type Info -->
       <div class="flex-1 w-full space-y-3">
         <div class="w-full">
-          <div class="flex flex-wrap items-center justify-between gap-2">
-            <div class="w-auto flex items-center gap-2 flex-wrap">
+          <div class="flex flex-wrap items-center justify-between gap-2 min-w-0">
+            <div class="min-w-0 flex-1 flex items-center gap-2 flex-wrap">
               <h2
                 v-if="definition.definitionid"
-                class="text-base font-semibold truncate flex-shrink-0 text-blue-700 hover:text-blue-800 hover:underline"
+                class="text-base font-semibold min-w-0 max-w-full truncate flex-shrink-0 text-blue-700 hover:text-blue-800 hover:underline"
               >
-                <RouterLink :to="`/valsi/${definition.valsiword ?? definition.word}?highlight_definition_id=${definition.definitionid}`">
-                  {{ definition.valsiword ?? definition.word }}
+                <template v-if="isLongValsi">
+                  <button
+                    type="button"
+                    class="text-left align-baseline cursor-pointer bg-transparent border-none p-0 underline-offset-2 hover:underline"
+                    :title="t('components.definitionCard.clickToGoToDefinition')"
+                    @click.prevent="showValsiPopup = true"
+                  >
+                    {{ valsiWord }}
+                  </button>
+                </template>
+                <RouterLink v-else :to="valsiHref">
+                  {{ valsiWord }}
                 </RouterLink>
               </h2>
               <h2
                 v-else
-                class="text-base font-semibold truncate flex-shrink-0 text-gray-800"
+                class="text-base font-semibold min-w-0 max-w-full truncate flex-shrink-0 text-gray-800"
               >
                 {{ definition.free_content_front || definition.word }}
               </h2>
@@ -87,16 +97,55 @@
       </div>
     </div>
   </div>
+  <Teleport to="body">
+    <div
+      v-if="showValsiPopup"
+      class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50"
+      @click.self="showValsiPopup = false"
+    >
+      <div
+        class="bg-white rounded-lg shadow-xl max-w-[90vw] max-h-[80vh] overflow-auto p-6 cursor-pointer border-2 border-blue-200 hover:border-blue-400 transition-colors"
+        role="button"
+        tabindex="0"
+        :title="t('components.definitionCard.clickToGoToDefinition')"
+        @click="goToValsiPage"
+        @keydown.enter="goToValsiPage"
+        @keydown.space.prevent="goToValsiPage"
+      >
+        <p class="text-base font-semibold text-blue-700 break-all">{{ valsiWord }}</p>
+        <p class="mt-2 text-sm text-gray-500">{{ t('components.definitionCard.clickToGoToDefinition') }}</p>
+      </div>
+    </div>
+  </Teleport>
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
+import { useRouter } from 'vue-router';
 import { RouterLink } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { getTypeClass } from '@/utils/wordTypeUtils';
 import LazyMathJax from './LazyMathJax.vue';
 
 const { t } = useI18n();
+const router = useRouter();
+
+const LONG_VALSI_THRESHOLD = 50;
+const valsiWord = computed(() => props.definition.valsiword ?? props.definition.word ?? '');
+const valsiHref = computed(() =>
+  props.definition.definitionid
+    ? `/valsi/${encodeURIComponent(valsiWord.value)}?highlight_definition_id=${props.definition.definitionid}`
+    : ''
+);
+const isLongValsi = computed(() => (valsiWord.value || '').length > LONG_VALSI_THRESHOLD);
+const showValsiPopup = ref(false);
+
+function goToValsiPage() {
+  if (valsiHref.value) {
+    router.push(valsiHref.value);
+    showValsiPopup.value = false;
+  }
+}
 
 const props = defineProps({
   definition: {

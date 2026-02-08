@@ -67,7 +67,7 @@
 <script setup lang="ts">
   import { useIntersectionObserver } from '@vueuse/core'
   import { Loader2 } from 'lucide-vue-next'
-  import { ref, onMounted, computed } from 'vue'
+  import { ref, onMounted, computed, onUnmounted } from 'vue'
   import { useI18n } from 'vue-i18n';
   
   import LanguageSelector from '../components/LanguageSelector.vue'
@@ -78,6 +78,7 @@
   import { useLocalization } from '../composables/tiktoknu/useLocalization'
   import { useWikiArticles } from '../composables/tiktoknu/useWikiArticles'
 
+  const REEL_DEBOUNCE_MS = 2000
 
   const { t } = useI18n()
   const { currentLanguage } = useLocalization()
@@ -91,9 +92,48 @@
     )
   )
   const observerTarget = ref<HTMLElement | null>(null)
-  const scrollContainer = ref(null)
+  const scrollContainer = ref<HTMLElement | null>(null)
   const showLikes = ref(false)
   const searchQuery = ref('')
+
+  let lockedReelIndex = 0
+  let lastReelChangeTime = 0
+
+  function getReelIndexFromScrollTop(scrollTop: number, viewportHeight: number): number {
+    return Math.round(scrollTop / viewportHeight)
+  }
+
+  function scrollToReel(index: number) {
+    const el = scrollContainer.value
+    if (!el) return
+    const vh = el.clientHeight
+    const top = Math.max(0, index * vh)
+    el.scrollTo({ top, behavior: 'smooth' })
+  }
+
+  function handleReelScrollEnd() {
+    const el = scrollContainer.value
+    if (!el) return
+    const vh = el.clientHeight
+    const currentReel = getReelIndexFromScrollTop(el.scrollTop, vh)
+    const now = Date.now()
+    const withinCooldown = now - lastReelChangeTime < REEL_DEBOUNCE_MS
+
+    if (currentReel !== lockedReelIndex) {
+      if (withinCooldown) {
+        scrollToReel(lockedReelIndex)
+      } else {
+        const maxReel = Math.max(0, Math.floor((el.scrollHeight - vh) / vh))
+        const oneStep = lockedReelIndex + Math.sign(currentReel - lockedReelIndex)
+        const allowedReel = Math.max(0, Math.min(oneStep, maxReel))
+        if (allowedReel !== currentReel) {
+          scrollToReel(allowedReel)
+        }
+        lockedReelIndex = allowedReel
+        lastReelChangeTime = now
+      }
+    }
+  }
 
   const resetPage = () => window.location.reload()
 
@@ -123,8 +163,31 @@
     }
   )
 
-  // Initial load
-  onMounted(fetchArticles)
+  let scrollEndTimeout: ReturnType<typeof setTimeout> | null = null
+
+  function onScroll() {
+    if (scrollEndTimeout) clearTimeout(scrollEndTimeout)
+    scrollEndTimeout = setTimeout(() => {
+      scrollEndTimeout = null
+      handleReelScrollEnd()
+    }, 150)
+  }
+
+  onMounted(() => {
+    fetchArticles()
+    const el = scrollContainer.value
+    if (el) {
+      el.addEventListener('scroll', onScroll, { passive: true })
+    }
+  })
+
+  onUnmounted(() => {
+    const el = scrollContainer.value
+    if (el) {
+      el.removeEventListener('scroll', onScroll)
+    }
+    if (scrollEndTimeout) clearTimeout(scrollEndTimeout)
+  })
 </script>
 
 <style scoped>
