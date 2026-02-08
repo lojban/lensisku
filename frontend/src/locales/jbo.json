@@ -145,7 +145,10 @@
       "descSort": "Z to A"
     },
     "definitionCard": {
-      "canonicalLabel": "tersmujbo"
+      "canonicalLabel": "tersmujbo",
+      "fullWordModalTitle": "mulno valsi",
+      "fullWordModalHint": "cuxna ja'e lo nu tcidu lu'e le ve skicu",
+      "clickToSeeFullWord": "cuxna ja'e lo nu zgana le mulno valsi"
     }
   }
 }

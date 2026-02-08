@@ -104,6 +104,7 @@
   </div>
   <div
     v-else
+    ref="searchResultsRef"
     class="min-h-[400px] mt-4 sm:mt-6"
   >
     <div class="space-y-4">
@@ -456,6 +457,7 @@ const isInitialLoading = ref(true); // Loading state for initial component setup
 const isLoadingTrending = ref(false);
 const error = ref(null);
 const searchFormRef = ref(null);
+const searchResultsRef = ref(null);
 
 const { t, locale } = useI18n();
 
@@ -1177,6 +1179,12 @@ watch(
     if (relevantParamsChanged || groupByThreadChanged) {
       syncFromRoute() // Sync other state variables
       await fetchData() // Fetch data using the potentially updated currentPage
+
+      // When page changed, scroll search results to top
+      if (newQuery.page !== oldQuery?.page && searchResultsRef.value) {
+        await nextTick();
+        searchResultsRef.value.scrollIntoView({ block: 'start', behavior: 'instant' });
+      }
 
       // Attempt to focus after data fetch if it's the home route and not initial load
       if ((route.name === 'Home' || route.name === 'Home-lang') && searchFormRef.value && !isInitialLoading.value) {

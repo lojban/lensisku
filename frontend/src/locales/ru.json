@@ -928,7 +928,10 @@
       "selmaoLabel": "selma'o",
       "flashcardIndicatorTitle": "Элемент коллекции имеет карточку",
       "similarity": "схожести",
-      "canonicalLabel": "Каноническая форма:"
+      "canonicalLabel": "Каноническая форма:",
+      "fullWordModalTitle": "Полное слово",
+      "fullWordModalHint": "Нажмите на слово ниже, чтобы перейти на страницу определения.",
+      "clickToSeeFullWord": "Нажмите, чтобы увидеть полное слово"
     },
     "imageUploadButton": {
       "invalidType": "Пожалуйста, выберите файл изображения",

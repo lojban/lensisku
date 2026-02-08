@@ -73,8 +73,8 @@
     "searchTitle": "Search: {query}",
     "defaultTitle": "Home",
     "metaDescription": "Search the Lojban dictionary and corpus. Find definitions, examples, and discussions.",
-    "searchMetaDescription": "Search results for \"{query}\" in the Lojban dictionary."
-    "addDefinition": "Definition",
+"searchMetaDescription": "Search results for \"{query}\" in the Lojban dictionary.",
+      "addDefinition": "Definition",
     "newFreeThread": "Start Free Wave",
     "noCommentsFound": "No comments found matching your search"
   },
@@ -934,7 +934,10 @@
       "selmaoLabel": "selma'o",
       "flashcardIndicatorTitle": "Collection item has a flashcard",
       "similarity": "similarity",
-      "canonicalLabel": "Canonical Form:"
+      "canonicalLabel": "Canonical Form:",
+      "fullWordModalTitle": "Full word",
+      "fullWordModalHint": "Click the word below to go to the definition page.",
+      "clickToSeeFullWord": "Click to see full word"
     },
     "imageUploadButton": {
       "invalidType": "Please select an image file",

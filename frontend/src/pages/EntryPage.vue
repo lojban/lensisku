@@ -25,7 +25,7 @@
               :url="definitions[0].sound_url"
               class="flex-shrink-0"
             />
-          </h2>
+          </h1>
         </div>
         <div class="flex flex-wrap items-center gap-2">
           <span

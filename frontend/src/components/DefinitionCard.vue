@@ -14,12 +14,22 @@
           <div class="w-full">
             <!-- Main Content -->
             <div class="flex flex-wrap items-center justify-between gap-2">
-              <div class="w-auto flex items-center gap-2 flex-wrap">
-                <h2 class="text-base font-semibold truncate flex-shrink-0"
+              <div class="w-auto flex items-center gap-2 flex-wrap min-w-0">
+                <h2 class="text-base font-semibold truncate flex-shrink-0 min-w-0 max-w-full"
                   :class="definition.definitionid ? 'text-blue-700 hover:text-blue-800 hover:underline' : 'text-gray-800'">
                   <template v-if="definition.definitionid">
+                    <template v-if="isValsiTruncated">
+                      <span
+                        class="cursor-pointer"
+                        :title="t('components.definitionCard.clickToSeeFullWord')"
+                        @click="showValsiModal = true">
+                        {{ displayedValsi }}
+                        <sup v-if="showDefinitionNumber" class="italic font-medium text-gray-600">#</sup>
+                      </span>
+                    </template>
                     <RouterLink
-                      :to="`/valsi/${definition.valsiword ?? definition.word}?highlight_definition_id=${definition.definitionid}`">
+                      v-else
+                      :to="valsiDefinitionLink">
                       {{ definition.valsiword ?? definition.word }}
                       <sup v-if="showDefinitionNumber" class="italic font-medium text-gray-600">
                         #
@@ -27,7 +37,7 @@
                     </RouterLink>
                   </template>
                   <template v-else>
-                    {{ definition.free_content_front || definition.word }}
+                    <span class="truncate block">{{ displayedFreeContent }}</span>
                   </template>
                 </h2>
                 <span v-if="definition.type_name && props.showWordType"
@@ -35,9 +45,10 @@
                   {{ t(`wordTypes.${definition.type_name.replace(/'/g, 'h').replace(/ /g, '-')}`) }}
                 </span>
                 <RouterLink v-if="definition.selmaho" :to="{ path: '/', query: selmahoLinkQuery }"
-                  class="inline-flex items-center px-2 py-1 text-xs font-medium bg-purple-100 text-purple-700 rounded-md justify-center sm:justify-start hover:bg-purple-200 hover:text-purple-800 transition-colors"
+                  class="inline-flex items-center px-2 py-1 text-xs font-medium bg-purple-100 text-purple-700 rounded-md justify-center sm:justify-start hover:bg-purple-200 hover:text-purple-800 transition-colors min-w-0 max-w-full truncate"
+                  :title="definition.selmaho.length > MAX_VALSI_DISPLAY_LENGTH ? definition.selmaho : undefined"
                   @click.stop>
-                  {{ t('components.definitionCard.selmaoLabel') }} {{ definition.selmaho }}
+                  {{ t('components.definitionCard.selmaoLabel') }} {{ displayedSelmaho }}
                 </RouterLink>
                 <span v-if="definition.rafsi"
                   class="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-700 rounded-full">
@@ -257,6 +268,18 @@
       </div>
     </div>
   </div>
+  <ModalComponent
+    :show="showValsiModal"
+    :title="t('components.definitionCard.fullWordModalTitle')"
+    @close="showValsiModal = false">
+    <p class="text-sm text-gray-600 mb-3">{{ t('components.definitionCard.fullWordModalHint') }}</p>
+    <RouterLink
+      :to="valsiDefinitionLink"
+      class="text-blue-700 hover:text-blue-800 hover:underline break-all font-medium"
+      @click="showValsiModal = false">
+      {{ definition.valsiword ?? definition.word }}
+    </RouterLink>
+  </ModalComponent>
   <DeleteConfirmation :show="showDeleteConfirm" :title="t('components.definitionCard.deleteConfirmTitle')"
     :message="t('components.definitionCard.deleteConfirmMessage', { word: definition.valsiword ?? definition.word })"
     :is-deleting="isDeleting" @confirm="confirmDelete" @cancel="cancelDelete" />
@@ -287,6 +310,7 @@ import { deleteDefinition } from '@/api';
 import ClipboardButton from '@/components/ClipboardButton.vue';
 import CollectionWidget from '@/components/CollectionWidget.vue';
 import DeleteConfirmation from '@/components/DeleteConfirmation.vue';
+import ModalComponent from '@/components/ModalComponent.vue';
 import VoteButtons from '@/components/VoteButtons.vue';
 import { useAuth } from '@/composables/useAuth';
 import AudioPlayer from './AudioPlayer.vue';
@@ -406,9 +430,33 @@ const props = defineProps({
 
 const emit = defineEmits(['move-up', 'move-down', 'remove', 'collection-updated', 'delete', 'refresh-definitions', 'edit-item', 'delete-item'])
 
+const MAX_VALSI_DISPLAY_LENGTH = 30
+
 const collections = ref(props.collections)
 const showDeleteConfirm = ref(false)
+const showValsiModal = ref(false)
 const isDeleting = ref(false)
+
+const valsiWord = computed(() => props.definition.valsiword ?? props.definition.word)
+const displayedValsi = computed(() =>
+  valsiWord.value.length > MAX_VALSI_DISPLAY_LENGTH
+    ? valsiWord.value.slice(0, MAX_VALSI_DISPLAY_LENGTH) + '…'
+    : valsiWord.value
+)
+const isValsiTruncated = computed(() => valsiWord.value.length > MAX_VALSI_DISPLAY_LENGTH)
+const valsiDefinitionLink = computed(() =>
+  props.definition.definitionid
+    ? `/valsi/${encodeURIComponent(valsiWord.value)}?highlight_definition_id=${props.definition.definitionid}`
+    : '#'
+)
+const displayedFreeContent = computed(() => {
+  const raw = props.definition.free_content_front || props.definition.word || ''
+  return raw.length > MAX_VALSI_DISPLAY_LENGTH ? raw.slice(0, MAX_VALSI_DISPLAY_LENGTH) + '…' : raw
+})
+const displayedSelmaho = computed(() => {
+  const s = props.definition.selmaho || ''
+  return s.length > MAX_VALSI_DISPLAY_LENGTH ? s.slice(0, MAX_VALSI_DISPLAY_LENGTH) + '…' : s
+})
 
 watch(
   () => props.collections,

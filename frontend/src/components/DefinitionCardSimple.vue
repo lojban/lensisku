@@ -6,20 +6,31 @@
       <div class="flex-1 w-full space-y-3">
         <div class="w-full">
           <div class="flex flex-wrap items-center justify-between gap-2">
-            <div class="w-auto flex items-center gap-2 flex-wrap">
+            <div class="w-auto flex items-center gap-2 flex-wrap min-w-0">
               <h2
                 v-if="definition.definitionid"
-                class="text-base font-semibold truncate flex-shrink-0 text-blue-700 hover:text-blue-800 hover:underline"
+                class="text-base font-semibold truncate flex-shrink-0 min-w-0 max-w-full text-blue-700 hover:text-blue-800 hover:underline"
               >
-                <RouterLink :to="`/valsi/${definition.valsiword ?? definition.word}?highlight_definition_id=${definition.definitionid}`">
+                <span
+                  v-if="isValsiTruncated"
+                  class="cursor-pointer"
+                  :title="t('components.definitionCard.clickToSeeFullWord')"
+                  @click="showValsiModal = true"
+                >
+                  {{ displayedValsi }}
+                </span>
+                <RouterLink
+                  v-else
+                  :to="valsiDefinitionLink"
+                >
                   {{ definition.valsiword ?? definition.word }}
                 </RouterLink>
               </h2>
               <h2
                 v-else
-                class="text-base font-semibold truncate flex-shrink-0 text-gray-800"
+                class="text-base font-semibold truncate flex-shrink-0 min-w-0 max-w-full text-gray-800"
               >
-                {{ definition.free_content_front || definition.word }}
+                <span class="truncate block">{{ displayedFreeContent }}</span>
               </h2>
               <span
                 v-if="definition.type_name && showWordType"
@@ -31,9 +42,10 @@
               <RouterLink
                 v-if="definition.selmaho"
                 :to="{ path: '/', query: selmahoLinkQuery }"
-                class="px-2 py-1 text-xs font-medium rounded-full bg-purple-100 text-purple-700 hover:bg-purple-200"
+                class="px-2 py-1 text-xs font-medium rounded-full bg-purple-100 text-purple-700 hover:bg-purple-200 min-w-0 max-w-full truncate inline-block"
+                :title="definition.selmaho.length > MAX_VALSI_DISPLAY_LENGTH ? definition.selmaho : undefined"
               >
-                {{ definition.selmaho }}
+                {{ displayedSelmaho }}
               </RouterLink>
             </div>
           </div>
@@ -87,16 +99,34 @@
       </div>
     </div>
   </div>
+  <ModalComponent
+    :show="showValsiModal"
+    :title="t('components.definitionCard.fullWordModalTitle')"
+    @close="showValsiModal = false"
+  >
+    <p class="text-sm text-gray-600 mb-3">{{ t('components.definitionCard.fullWordModalHint') }}</p>
+    <RouterLink
+      :to="valsiDefinitionLink"
+      class="text-blue-700 hover:text-blue-800 hover:underline break-all font-medium"
+      @click="showValsiModal = false"
+    >
+      {{ definition.valsiword ?? definition.word }}
+    </RouterLink>
+  </ModalComponent>
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import { RouterLink } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { getTypeClass } from '@/utils/wordTypeUtils';
 import LazyMathJax from './LazyMathJax.vue';
+import ModalComponent from '@/components/ModalComponent.vue';
 
 const { t } = useI18n();
+
+const MAX_VALSI_DISPLAY_LENGTH = 30;
+const showValsiModal = ref(false);
 
 const props = defineProps({
   definition: {
@@ -111,6 +141,27 @@ const props = defineProps({
     type: Boolean,
     default: true,
   },
+});
+
+const valsiWord = computed(() => props.definition.valsiword ?? props.definition.word);
+const displayedValsi = computed(() =>
+  valsiWord.value.length > MAX_VALSI_DISPLAY_LENGTH
+    ? valsiWord.value.slice(0, MAX_VALSI_DISPLAY_LENGTH) + '…'
+    : valsiWord.value
+);
+const isValsiTruncated = computed(() => valsiWord.value.length > MAX_VALSI_DISPLAY_LENGTH);
+const valsiDefinitionLink = computed(() =>
+  props.definition.definitionid
+    ? `/valsi/${encodeURIComponent(valsiWord.value)}?highlight_definition_id=${props.definition.definitionid}`
+    : '#'
+);
+const displayedFreeContent = computed(() => {
+  const raw = props.definition.free_content_front || props.definition.word || '';
+  return raw.length > MAX_VALSI_DISPLAY_LENGTH ? raw.slice(0, MAX_VALSI_DISPLAY_LENGTH) + '…' : raw;
+});
+const displayedSelmaho = computed(() => {
+  const s = props.definition.selmaho || '';
+  return s.length > MAX_VALSI_DISPLAY_LENGTH ? s.slice(0, MAX_VALSI_DISPLAY_LENGTH) + '…' : s;
 });
 
 const selmahoLinkQuery = computed(() => ({

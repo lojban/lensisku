@@ -258,7 +258,7 @@ export default {
               {},
           },
           '.btn-empty': {
-            '@apply btn-base text-gray-600 bg-gray-50 enabled:hover:bg-gray-200 border-gray-300':
+            '@apply btn-base text-gray-600 bg-gray-50 enabled:hover:bg-gray-300 border-gray-300 enabled:hover:border-gray-400':
               {},
           },
           '.btn-error': {

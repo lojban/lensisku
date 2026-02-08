@@ -211,6 +211,8 @@ onBeforeUnmount(() => {
 <style scoped>
 .mathjax-content {
   min-height: 1em;
+  overflow-wrap: anywhere;
+  word-break: break-all;
 }
 
 :deep(.MathJax) {
@@ -221,8 +223,13 @@ onBeforeUnmount(() => {
   @apply inline;
 }
 
-:deep(a) {
-  @apply inline;
+/* Force long text (e.g. valsi) inside links to break by character.
+   inline-block + max-width so the link has a width; then word-break wraps the text. */
+:deep(.mathjax-content a) {
+  display: inline-block !important;
+  max-width: 100% !important;
+  overflow-wrap: anywhere !important;
+  word-break: break-all !important;
 }
 
 :deep(p) {
