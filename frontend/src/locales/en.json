@@ -908,6 +908,9 @@
       "unsubscribeError": "Failed to unsubscribe from events"
     },
     "definitionCard": {
+      "showFullWord": "Show full word",
+      "closeFullWord": "Close",
+      "goToValsiPage": "Go to valsi page",
       "editItemTitle": "Edit item",
       "copyTitle": "Copy word and definition to clipboard",
       "moveUpTitle": "Move up",
