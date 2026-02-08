@@ -934,8 +934,7 @@
       "selmaoLabel": "selma'o",
       "flashcardIndicatorTitle": "Collection item has a flashcard",
       "similarity": "similarity",
-      "canonicalLabel": "Canonical Form:",
-      "clickToGoToDefinition": "Click to go to definition"
+      "canonicalLabel": "Canonical Form:"
     },
     "imageUploadButton": {
       "invalidType": "Please select an image file",

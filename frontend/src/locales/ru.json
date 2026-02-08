@@ -928,8 +928,7 @@
       "selmaoLabel": "selma'o",
       "flashcardIndicatorTitle": "Элемент коллекции имеет карточку",
       "similarity": "схожести",
-      "canonicalLabel": "Каноническая форма:",
-      "clickToGoToDefinition": "Нажмите, чтобы перейти к определению"
+      "canonicalLabel": "Каноническая форма:"
     },
     "imageUploadButton": {
       "invalidType": "Пожалуйста, выберите файл изображения",
