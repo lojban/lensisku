@@ -124,21 +124,26 @@ async fn calculate_missing_embeddings(
             combined_text.push_str(" (name)");
         }
 
-        let processed_text = match preprocess_definition_for_vectors(&combined_text) {
-            Ok(t) if !t.is_empty() => t,
-            Ok(_) => {
-                continue;
-            }
-            Err(e) => {
-                log::warn!(
-                    "Skipping definition {} (type: {}) due to preprocessing error: {}",
-                    definition_id,
-                    type_name,
-                    e
-                );
-                continue;
-            }
-        };
+        // Preprocessing commented out per user request - using raw combined text
+        // let processed_text = match preprocess_definition_for_vectors(&combined_text) {
+        //     Ok(t) if !t.is_empty() => t,
+        //     Ok(_) => {
+        //         continue;
+        //     }
+        //     Err(e) => {
+        //         log::warn!(
+        //             "Skipping definition {} (type: {}) due to preprocessing error: {}",
+        //             definition_id,
+        //             type_name,
+        //             e
+        //         );
+        //         continue;
+        //     }
+        // };
+        let processed_text = combined_text.trim().to_string();
+        if processed_text.is_empty() {
+            continue;
+        }
         all_texts.push(processed_text);
         all_definition_ids.push(definition_id);
     }

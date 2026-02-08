@@ -66,16 +66,18 @@ pub async fn semantic_search(
     let infinity_url =
         std::env::var("INFINITY_URL").unwrap_or_else(|_| "http://infinity:3000".to_string());
     let client = reqwest::Client::new();
-    let processed_text = match crate::utils::preprocess_definition_for_vectors(
-        query.search.as_deref().unwrap_or("").trim(),
-    ) {
-        Ok(text) => text,
-        Err(e) => {
-            return HttpResponse::InternalServerError().json(json!({
-                "error": format!("Failed to preprocess text: {}", e)
-            }));
-        }
-    };
+    // Preprocessing commented out per user request - using raw query text
+    // let processed_text = match crate::utils::preprocess_definition_for_vectors(
+    //     query.search.as_deref().unwrap_or("").trim(),
+    // ) {
+    //     Ok(text) => text,
+    //     Err(e) => {
+    //         return HttpResponse::InternalServerError().json(json!({
+    //             "error": format!("Failed to preprocess text: {}", e)
+    //         }));
+    //     }
+    // };
+    let processed_text = query.search.as_deref().unwrap_or("").trim().to_string();
 
     let response = client
         .post(format!("{}/embeddings", infinity_url))

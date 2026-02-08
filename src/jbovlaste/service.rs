@@ -127,8 +127,7 @@ pub async fn semantic_search(
         )
         SELECT COUNT(*)
         FROM vector_search
-        WHERE score > 0 AND similarity < {}"#,
-        similarity_threshold
+        WHERE score > 0 -- AND similarity < SIMILARITY_THRESHOLD"#,
     );
 
     // Execute count query with all necessary parameters accumulated so far
@@ -193,7 +192,7 @@ pub async fn semantic_search(
         ranked_results AS (
             SELECT DISTINCT ON (definitionid) *
             FROM vector_search
-            WHERE score > 0 AND similarity < {similarity_threshold}
+            WHERE score > 0 -- AND similarity < {similarity_threshold}
         )
         SELECT r.*
         FROM ranked_results r

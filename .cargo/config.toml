@@ -1,6 +1,8 @@
 # Cargo configuration
-# Note: CXXFLAGS must be set as an environment variable
-# This file documents the requirement but doesn't set it directly
-# The C++ standard is set to C++17 via CXXFLAGS environment variable
-# in watch.sh and other build scripts
+# CXXFLAGS is set here to ensure it's picked up by all cargo commands,
+# including 'cargo check'. This is required for dependencies like
+# tectonic_xetex_layout which uses ICU headers requiring C++17 features.
+
+[env]
+CXXFLAGS = "-std=c++17"
 
