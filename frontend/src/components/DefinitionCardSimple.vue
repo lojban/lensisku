@@ -5,11 +5,11 @@
       <!-- Word and Type Info -->
       <div class="flex-1 w-full space-y-3">
         <div class="w-full">
-          <div class="flex flex-wrap items-center justify-between gap-2">
-            <div class="w-auto flex items-center gap-2 flex-wrap">
+          <div class="flex flex-wrap items-center justify-between gap-2 min-w-0">
+            <div class="min-w-0 flex-1 flex items-center gap-2 flex-wrap">
               <h2
                 v-if="definition.definitionid"
-                class="text-base font-semibold truncate flex-shrink-0 text-blue-700 hover:text-blue-800 hover:underline"
+                class="text-base font-semibold break-words min-w-0 text-blue-700 hover:text-blue-800 hover:underline"
               >
                 <RouterLink :to="`/valsi/${definition.valsiword ?? definition.word}?highlight_definition_id=${definition.definitionid}`">
                   {{ definition.valsiword ?? definition.word }}
@@ -17,7 +17,7 @@
               </h2>
               <h2
                 v-else
-                class="text-base font-semibold truncate flex-shrink-0 text-gray-800"
+                class="text-base font-semibold break-words min-w-0 text-gray-800"
               >
                 {{ definition.free_content_front || definition.word }}
               </h2>

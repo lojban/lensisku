@@ -13,9 +13,9 @@
           <!-- Compact Header Layout -->
           <div class="w-full">
             <!-- Main Content -->
-            <div class="flex flex-wrap items-center justify-between gap-2">
-              <div class="w-auto flex items-center gap-2 flex-wrap">
-                <h2 class="text-base font-semibold truncate flex-shrink-0"
+            <div class="flex flex-wrap items-center justify-between gap-2 min-w-0">
+              <div class="min-w-0 flex-1 flex items-center gap-2 flex-wrap">
+                <h2 class="text-base font-semibold break-words min-w-0"
                   :class="definition.definitionid ? 'text-blue-700 hover:text-blue-800 hover:underline' : 'text-gray-800'">
                   <template v-if="definition.definitionid">
                     <RouterLink
