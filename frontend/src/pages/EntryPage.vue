@@ -13,10 +13,10 @@
     class="space-y-3"
   >
     <!-- Header Section -->
-    <div class="border-b pb-2">
-      <div class="flex flex-wrap gap-2 w-full lg:w-auto justify-between">
-        <div class="flex items-center gap-3">
-          <h2 class="text-3xl font-bold text-gray-800">
+    <div class="border-b pb-2 min-w-0">
+      <div class="flex flex-wrap gap-2 w-full lg:w-auto justify-between min-w-0">
+        <div class="flex items-center gap-3 min-w-0 max-w-full">
+          <h2 class="text-3xl font-bold text-gray-800 min-w-0 max-w-full break-all">
             {{ valsi.word }}
             <AudioPlayer
               v-if="definitions.length > 0 && definitions[0].sound_url"
