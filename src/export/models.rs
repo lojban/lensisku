@@ -55,6 +55,13 @@ pub struct ExportOptions {
 }
 
 #[derive(Serialize)]
+pub struct User {
+    pub username: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub realname: Option<String>,
+}
+
+#[derive(Serialize)]
 pub struct DictionaryEntry {
     pub word: String,
     pub word_type: String,
@@ -68,6 +75,8 @@ pub struct DictionaryEntry {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub notes: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub etymology: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub jargon: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub collection_note: Option<String>,
@@ -76,6 +85,8 @@ pub struct DictionaryEntry {
     pub gloss_keywords: Option<Vec<KeywordMapping>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub place_keywords: Option<Vec<KeywordMapping>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub user: Option<User>,
 }
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]

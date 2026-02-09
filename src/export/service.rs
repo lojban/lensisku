@@ -17,6 +17,7 @@ use super::models::CachedExport;
 use super::models::CollectionExportItem;
 use super::models::DictionaryEntry;
 use super::models::NaturalEntry;
+use super::models::User;
 use super::models::ValsiRow;
 use super::models::{ExportFormat, ExportOptions};
 use crate::jbovlaste::KeywordMapping;
@@ -1619,13 +1620,14 @@ async fn generate_json(
 
     let query = format!(
         "SELECT v.word, vbg.definitionid, c.rafsi, c.selmaho, c.definition,
-                c.notes, d.jargon, t.descriptor{},
+                c.notes, d.etymology, d.jargon, t.descriptor{}, u.username, u.realname,
                 (SELECT COALESCE(SUM(value), 0) FROM definitionvotes WHERE definitionid = vbg.definitionid) as score
          FROM valsibestguesses vbg
          JOIN valsi v ON v.valsiid = vbg.valsiid
          JOIN convenientdefinitions c ON c.definitionid = vbg.definitionid
          JOIN definitions d ON d.definitionid = vbg.definitionid
          JOIN valsitypes t ON t.typeid = v.typeid
+         LEFT JOIN users u ON u.userid = d.userid
          {}
          WHERE vbg.langid = $1 {} {}
          AND v.source_langid = 1
@@ -1661,11 +1663,16 @@ async fn generate_json(
                 selmaho: row.get("selmaho"),
                 definition: row.get("definition"),
                 notes: row.get("notes"),
+                etymology: row.get("etymology"),
                 jargon: row.get("jargon"),
                 collection_note: row.get("collection_note"),
                 score: row.get("score"),
                 gloss_keywords: gloss_map.get(&definition_id).cloned(),
                 place_keywords: place_map.get(&definition_id).cloned(),
+                user: row.get("username").map(|user| User {
+                    username: user,
+                    realname: row.get("realname"),
+                }),
             }
         })
         .collect();
