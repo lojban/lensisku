@@ -276,7 +276,7 @@ const scrollToDefinition = () => {
 
 const getWordTypeLabel = (typeName) => {
   if (!typeName) return ''
-  const key = `wordTypes.${typeName.replace(/'/g,'h')}`
+  const key = `wordTypes.${typeName.replace(/'/g,'h').replace(/ /g, '-')}`
   const translated = t(key)
   // If translation returns the key itself, it means the translation doesn't exist
   // In that case, return the type name as fallback (except for experimental cmavo which is ok)
