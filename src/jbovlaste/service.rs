@@ -1150,7 +1150,7 @@ async fn add_definition_in_transaction(
     let (word, word_type) = match source_langid {
         1 | 58 => {
             // Lojban or Loglan
-            validate_mathjax(&combined_text, options)
+            validate_mathjax(&combined_text, &options)
                 .await
                 .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)?;
             let res = analyze_word(&parsers, &request.word, source_langid, transaction).await?;
@@ -1706,7 +1706,7 @@ pub async fn update_definition(
 
     // Only validate MathJax if source lang is Lojban (1) or not set
     if source_langid.is_none() || source_langid == Some(1) {
-        validate_mathjax(&combined_text, options)
+        validate_mathjax(&combined_text, &options)
             .await
             .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)?;
     }

@@ -313,13 +313,30 @@ const auth = useAuth()
 const { showError, clearError } = useError()
 const { t, locale } = useI18n()
 
-/** Format API error for display; e.g. RAFSI_CONFLICT|word|type -> translated message */
+/** Format API error for display; e.g. RAFSI_CONFLICT|word|type -> translated message; LaTeX field errors -> localized */
 function formatDefinitionError(apiError) {
-  if (typeof apiError === 'string' && apiError.startsWith('RAFSI_CONFLICT|')) {
+  if (typeof apiError !== 'string') return apiError
+  if (apiError.startsWith('RAFSI_CONFLICT|')) {
     const parts = apiError.split('|')
     const word = parts[1] ?? ''
     const type = parts[2] ?? ''
     return t('upsertDefinition.rafsiConflict', { word, type })
+  }
+  const latexPrefix = 'Invalid LaTeX/MathJax in '
+  if (apiError.startsWith(latexPrefix)) {
+    const after = apiError.slice(latexPrefix.length)
+    const colon = after.indexOf(': ')
+    const fieldKey = colon >= 0 ? after.slice(0, colon).trim() : after
+    const details = colon >= 0 ? after.slice(colon + 2).trim() : ''
+    const fieldLabel =
+      fieldKey === 'definition'
+        ? t('upsertDefinition.definitionLabel')
+        : fieldKey === 'notes'
+          ? t('upsertDefinition.notesLabel')
+          : fieldKey === 'etymology'
+            ? t('upsertDefinition.etymologyLabel')
+            : fieldKey
+    return t('upsertDefinition.validateErrorInField', { field: fieldLabel, details })
   }
   return apiError
 }

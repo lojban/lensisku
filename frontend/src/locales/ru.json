@@ -536,6 +536,7 @@
     "analyzeError": "Не удалось проанализировать текст",
     "analyzeErrorGeneric": "Ошибка анализа текста",
     "validateError": "Неверный синтаксис LaTeX/MathJax",
+    "validateErrorInField": "Неверный LaTeX/MathJax в поле «{field}»: {details}",
     "saveError": "Не удалось сохранить определение",
     "saveErrorGeneric": "Ошибка сохранения определения",
     "sourceLanguageLabel": "Язык статьи корпуса",

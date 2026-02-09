@@ -7,7 +7,7 @@ use actix_web::web;
 use actix_web_httpauth::middleware::HttpAuthentication;
 
 pub use models::MathJaxValidationOptions;
-pub use service::{analyze_word, validate_mathjax};
+pub use service::{analyze_word, validate_mathjax, validate_mathjax_fields};
 
 pub fn configure(cfg: &mut web::ServiceConfig) {
     cfg.service(
