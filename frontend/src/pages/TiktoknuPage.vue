@@ -1,18 +1,8 @@
 <template>
   <div
     ref="scrollContainer"
-    class="reel-container -m-4 h-screen bg-black text-white overflow-y-scroll snap-y snap-mandatory touch-pan-y"
+    class="reel-container -m-4 h-full bg-black text-white overflow-y-scroll snap-y snap-mandatory touch-pan-y"
   >
-    <!-- Header -->
-    <div class="z-30">
-      <button
-        class="text-2xl font-bold text-white drop-shadow-lg hover:opacity-80 transition-opacity"
-        @click="resetPage"
-      >
-        tiktoknu
-      </button>
-    </div>
-
     <!-- Controls -->
     <div class="absolute top-4 right-4 z-30 flex flex-col items-end gap-2">
       <button

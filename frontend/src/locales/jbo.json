@@ -149,6 +149,26 @@
       "fullWordModalTitle": "mulno valsi",
       "fullWordModalHint": "cuxna ja'e lo nu tcidu lu'e le ve skicu",
       "clickToSeeFullWord": "cuxna ja'e lo nu zgana le mulno valsi"
+    },
+    "tiktoknu": {
+      "loading": "ca'o jgari",
+      "likesCount": "lo se nelci cu {count}",
+      "likesPanel": {
+        "title": "lo liste be lo se nelci",
+        "exportButtonTitle": "cupra lo liste be lo se nelci",
+        "exportButton": "cupra",
+        "searchPlaceholder": "sisku lo se nelci...",
+        "noMatches": "no da se facki",
+        "noLikes": "no da se nelci ca'e",
+        "removeFromLikes": "jai gau co'u cmima fi le'i se nelci"
+      },
+      "wikiCard": {
+        "likeArticle": "nelci",
+        "shareArticle": "gubysku",
+        "readMore": "tcidu le mulno",
+        "shareError": "fliba lo ka gubysku",
+        "copySuccess": "snada lo ka zbasu le zasni fukpi"
+      }
     }
   }
 }
