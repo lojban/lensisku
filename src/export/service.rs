@@ -1669,9 +1669,9 @@ async fn generate_json(
                 score: row.get("score"),
                 gloss_keywords: gloss_map.get(&definition_id).cloned(),
                 place_keywords: place_map.get(&definition_id).cloned(),
-                user: row.get("username").map(|user| User {
+                user: row.get::<_, Option<String>>("username").map(|user| User {
                     username: user,
-                    realname: row.get("realname"),
+                    realname: row.get::<_, Option<String>>("realname"),
                 }),
             }
         })
