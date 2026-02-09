@@ -1990,12 +1990,13 @@ pub async fn update_definition(
 
     transaction
         .execute(
-            "SELECT notify_valsi_subscribers($1, 'edit', $2, $3, $4)",
+            "SELECT notify_valsi_subscribers($1, 'edit', $2, $3, $4, $5)",
             &[
                 &valsi_id,
                 &format!("Definition updated for {}", valsi_word),
                 &url,
                 &user_id,
+                &definition_id,
             ],
         )
         .await?;
