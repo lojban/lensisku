@@ -516,23 +516,34 @@ watch(flatStyle, () => {
   processedComments.value = processComments(comments.value, flatStyle.value)
 })
 
-// Reactive page title
-const pageTitle = ref('Wave')
-
-// Update title based on discussion context
-watchEffect(() => {
+// SEO: title and description at least as informative as the page content
+const pageTitle = computed(() => {
   if (valsiDetails.value?.word) {
     if (definitionDetails.value) {
-      pageTitle.value = `${valsiDetails.value.word} - Discussing Definition`
-    } else {
-      pageTitle.value = `${valsiDetails.value.word} - Waves`
+      return t('commentList.titleDefinition', { word: valsiDetails.value.word })
     }
-  } else {
-    pageTitle.value = 'Wave'
+    return t('commentList.titleEntry', { word: valsiDetails.value.word })
   }
+  return t('commentList.titleDefault')
 })
 
-useSeoHead({ title: pageTitle }, locale.value)
+const metaDescription = computed(() => {
+  if (valsiDetails.value?.word) {
+    if (definitionDetails.value) {
+      return t('commentList.metaDescriptionDefinition', { word: valsiDetails.value.word })
+    }
+    return t('commentList.metaDescriptionEntry', { word: valsiDetails.value.word })
+  }
+  return t('commentList.metaDescriptionDefault')
+})
+
+const canonicalPath = computed(() => route.fullPath)
+
+useSeoHead({
+  title: pageTitle,
+  description: metaDescription,
+  canonical: canonicalPath,
+}, locale.value)
 
 const fetchDefinitionsAndDetails = async () => {
   if (props.valsiId) {
