@@ -180,7 +180,13 @@
     "waveRoot": "Wave Root",
     "noComments": "No comments yet. Be the first to start the discussion wave!",
     "newDiscussionWave": "New Discussion Wave",
-    "quoteSelectedText": "Quote Selected Text"
+    "quoteSelectedText": "Quote Selected Text",
+    "titleDefault": "Discussion Waves",
+    "titleEntry": "{word} — Discussion Waves",
+    "titleDefinition": "{word} — Discussing Definition",
+    "metaDescriptionDefault": "Community discussion waves and comments for the Lojban dictionary.",
+    "metaDescriptionEntry": "Discussion and comments for the Lojban word {word}. Community waves and threads in the Lojban dictionary.",
+    "metaDescriptionDefinition": "Discussion and comments for a definition of the Lojban word {word}. Community waves in the Lojban dictionary."
   },
   "threadView": {
     "newestFirst": "Newest first",
