@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use actix_web::{get, post, web, HttpResponse, Responder};
 // use actix_web_grants::protect;
 use deadpool_postgres::Pool;
@@ -112,17 +110,14 @@ pub async fn revert_to_version(
     pool: web::Data<Pool>,
     version_id: web::Path<i32>,
     user: crate::auth::Claims,
-    // ELI5: We're accepting a shared permission checker (Arc) that helps us determine if users
-    // are allowed to make changes. It's like a security badge reader that multiple doors
-    // can use at the same time to check if someone is allowed to enter.
-    perm_cache: web::Data<Arc<PermissionCache>>,
+    perm_cache: web::Data<PermissionCache>,
 ) -> impl Responder {
     match service::revert_to_version(
         &pool,
         version_id.into_inner(),
         user.sub,
         &user.role.to_string(),
-        &perm_cache,
+        perm_cache.get_ref(),
     )
     .await
     {
