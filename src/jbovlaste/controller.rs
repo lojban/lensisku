@@ -19,7 +19,7 @@ use crate::jbovlaste::{
     UpdateDefinitionRequest, UpdateDefinitionResponse, ValsiDefinitionsQuery, ValsiDetail,
     ValsiTypeListResponse, VoteRequest, VoteResponse,
 };
-use crate::language::{validate_mathjax, MathJaxValidationOptions};
+use crate::language::{validate_mathjax_fields, MathJaxValidationOptions};
 use crate::middleware::cache::{generate_search_cache_key, RedisCache};
 use camxes_rs::peg::grammar::Peg;
 use std::collections::HashMap;
@@ -415,6 +415,32 @@ pub async fn add_definition(
     redis_cache: web::Data<RedisCache>,
     request: web::Json<AddDefinitionRequest>,
 ) -> impl Responder {
+    let options = MathJaxValidationOptions { use_tectonic: true };
+    let definition = crate::utils::remove_html_tags(&request.definition);
+    let notes = request
+        .notes
+        .as_ref()
+        .map(|n| crate::utils::remove_html_tags(n));
+    let etymology = request
+        .etymology
+        .as_ref()
+        .map(|e| crate::utils::remove_html_tags(e));
+    let fields: Vec<(&str, &str)> = vec![
+        ("definition", definition.as_str()),
+        ("notes", notes.as_deref().unwrap_or("")),
+        ("etymology", etymology.as_deref().unwrap_or("")),
+    ]
+    .into_iter()
+    .filter(|(_, t)| !t.trim().is_empty())
+    .collect::<Vec<_>>();
+    if let Err((field_name, e)) = validate_mathjax_fields(&fields, &options).await {
+        return HttpResponse::BadRequest().json(AddValsiResponse {
+            success: false,
+            word_type: String::new(),
+            definition_id: 0,
+            error: Some(format!("Invalid LaTeX/MathJax in {}: {}", field_name, e)),
+        });
+    }
     if let Some(image) = &request.image {
         if let Err(e) = validate_image(image) {
             return HttpResponse::BadRequest().json(AddValsiResponse {
@@ -558,10 +584,29 @@ pub async fn update_definition(
 
     let options = MathJaxValidationOptions { use_tectonic: true };
 
-    if let Err(e) = validate_mathjax(&req.definition, options).await {
+    let definition = crate::utils::remove_html_tags(&req.definition);
+    let notes = req
+        .notes
+        .as_ref()
+        .map(|n| crate::utils::remove_html_tags(n));
+    let etymology = req
+        .etymology
+        .as_ref()
+        .map(|e| crate::utils::remove_html_tags(e));
+
+    let fields: Vec<(&str, &str)> = vec![
+        ("definition", definition.as_str()),
+        ("notes", notes.as_deref().unwrap_or("")),
+        ("etymology", etymology.as_deref().unwrap_or("")),
+    ]
+    .into_iter()
+    .filter(|(_, t)| !t.trim().is_empty())
+    .collect::<Vec<_>>();
+
+    if let Err((field_name, e)) = validate_mathjax_fields(&fields, &options).await {
         return HttpResponse::BadRequest().json(UpdateDefinitionResponse {
             success: false,
-            error: Some(format!("Invalid LaTeX/MathJax: {}", e)),
+            error: Some(format!("Invalid LaTeX/MathJax in {}: {}", field_name, e)),
         });
     }
 

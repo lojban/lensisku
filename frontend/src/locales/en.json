@@ -542,6 +542,7 @@
     "analyzeError": "Failed to analyze text",
     "analyzeErrorGeneric": "Error analyzing text",
     "validateError": "Invalid LaTeX/MathJax syntax",
+    "validateErrorInField": "Invalid LaTeX/MathJax in {field}: {details}",
     "saveError": "Failed to save definition",
     "saveErrorGeneric": "Error saving definition",
     "rafsiLabel": "Rafsi",

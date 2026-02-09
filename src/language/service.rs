@@ -221,7 +221,7 @@ pub async fn validate_mathjax_handler(text: &str) -> MathJaxValidationResponse {
     let options = MathJaxValidationOptions {
         use_tectonic: false, // Simple validation for language service
     };
-    match validate_mathjax(text, options).await {
+    match validate_mathjax(text, &options).await {
         Ok(_) => MathJaxValidationResponse {
             valid: true,
             error: None,
@@ -326,7 +326,7 @@ pub fn analyze_word_type(tokens: &[LojbanToken]) -> String {
 
 pub async fn validate_mathjax(
     text: &str,
-    options: MathJaxValidationOptions,
+    options: &MathJaxValidationOptions,
 ) -> Result<(), MathJaxValidationError> {
     if text.trim().is_empty() {
         return Ok(());
@@ -342,6 +342,20 @@ pub async fn validate_mathjax(
         validate_with_tectonic(text).await?;
     }
 
+    Ok(())
+}
+
+/// Validate LaTeX/MathJax in multiple named fields. Returns `Ok(())` if all are valid,
+/// or `Err((field_name, error))` for the first field that fails.
+pub async fn validate_mathjax_fields(
+    fields: &[(&str, &str)],
+    options: &MathJaxValidationOptions,
+) -> Result<(), (String, MathJaxValidationError)> {
+    for (name, text) in fields {
+        if let Err(e) = validate_mathjax(text, options).await {
+            return Err(((*name).to_string(), e));
+        }
+    }
     Ok(())
 }
 
@@ -547,6 +561,21 @@ async fn fetch_experimental_gismu_rafsi(
     fetch_rafsi_data(transaction, 7).await // 7 = experimental gismu type ID
 }
 
+/// Format a tectonic error including its full cause chain for clearer user feedback.
+fn format_tectonic_error(e: &tectonic::errors::Error) -> String {
+    use std::error::Error;
+    let mut parts = vec![e.to_string()];
+    let mut current: &(dyn Error + 'static) = e;
+    while let Some(source) = current.source() {
+        let msg = source.to_string();
+        if !msg.is_empty() && !parts.contains(&msg) {
+            parts.push(msg);
+        }
+        current = source;
+    }
+    parts.join(". ")
+}
+
 async fn validate_with_tectonic(expr: &str) -> Result<(), MathJaxValidationError> {
     let latex_content = mathjax_to_latex(expr)?;
 
@@ -568,7 +597,7 @@ async fn validate_with_tectonic(expr: &str) -> Result<(), MathJaxValidationError
         Ok(_) => Ok(()),
         Err(e) => Err(MathJaxValidationError::Tectonic(format!(
             "LaTeX compilation failed: {}",
-            e
+            format_tectonic_error(&e)
         ))),
     }
 }
