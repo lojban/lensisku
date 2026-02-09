@@ -561,19 +561,88 @@ async fn fetch_experimental_gismu_rafsi(
     fetch_rafsi_data(transaction, 7).await // 7 = experimental gismu type ID
 }
 
-/// Format a tectonic error including its full cause chain for clearer user feedback.
-fn format_tectonic_error(e: &tectonic::errors::Error) -> String {
-    use std::error::Error;
-    let mut parts = vec![e.to_string()];
-    let mut current: &(dyn Error + 'static) = e;
-    while let Some(source) = current.source() {
-        let msg = source.to_string();
-        if !msg.is_empty() && !parts.contains(&msg) {
-            parts.push(msg);
+/// Extract the last TeX error from a .log file for a user-friendly message.
+/// Looks for "! <message>" and optional "l.<num> <context>" lines.
+fn extract_latex_error_from_log(log: &str) -> Option<String> {
+    let mut last_error = None;
+    let mut last_line_ref = None;
+    for line in log.lines() {
+        let trimmed = line.trim();
+        if trimmed.starts_with("! ") {
+            last_error = Some(trimmed[2..].trim().to_string());
+            last_line_ref = None;
+        } else if let Some(rest) = trimmed.strip_prefix("l.") {
+            let (num, ctx) = if let Some(num_end) = rest.find(' ') {
+                (rest[..num_end].trim(), rest[num_end..].trim())
+            } else {
+                (rest.trim(), "")
+            };
+            let ctx_short = if ctx.len() > 60 {
+                format!("{}...", &ctx[..57])
+            } else {
+                ctx.to_string()
+            };
+            last_line_ref = Some((num.to_string(), ctx_short));
         }
-        current = source;
     }
-    parts.join(". ")
+    match (last_error, last_line_ref) {
+        (Some(msg), Some((num, ctx))) if !ctx.is_empty() => {
+            Some(format!("{} (line {}: …{}…)", msg, num, ctx))
+        }
+        (Some(msg), Some((num, _))) => Some(format!("{} (line {})", msg, num)),
+        (Some(msg), None) => Some(msg),
+        (None, _) => None,
+    }
+}
+
+/// Run LaTeX via the tectonic driver with keep_logs(true) so we can read the
+/// .log on failure and surface the actual TeX error (e.g. "Misplaced alignment tab character &").
+fn compile_latex_and_capture_log(latex_document: String) -> Result<(), MathJaxValidationError> {
+    use tectonic::driver::{ProcessingSessionBuilder, OutputFormat};
+    use tectonic::status::NoopStatusBackend;
+
+    let mut status = NoopStatusBackend::default();
+    let config = tectonic::config::PersistentConfig::open(false).map_err(|e| {
+        MathJaxValidationError::Tectonic(format!("Failed to open config: {}", e))
+    })?;
+    let bundle = config
+        .default_bundle(false, &mut status)
+        .map_err(|e| {
+            MathJaxValidationError::Tectonic(format!("Failed to load bundle: {}", e))
+        })?;
+    let format_cache_path = config.format_cache_path().map_err(|e| {
+        MathJaxValidationError::Tectonic(format!("Failed to get format cache path: {}", e))
+    })?;
+
+    let mut sb = ProcessingSessionBuilder::default();
+    sb.bundle(bundle)
+        .primary_input_buffer(latex_document.as_bytes())
+        .tex_input_name("texput.tex")
+        .format_name("latex")
+        .format_cache_path(format_cache_path)
+        .keep_logs(true)
+        .keep_intermediates(false)
+        .print_stdout(false)
+        .output_format(OutputFormat::Pdf)
+        .do_not_write_output_files();
+
+    let mut sess = sb.create(&mut status).map_err(|e| {
+        MathJaxValidationError::Tectonic(format!("Failed to create session: {}", e))
+    })?;
+
+    if let Err(_e) = sess.run(&mut status) {
+        let files = sess.into_file_data();
+        let log_content = files
+            .get("texput.log")
+            .map(|f| String::from_utf8_lossy(&f.data).into_owned())
+            .unwrap_or_default();
+        let specific = extract_latex_error_from_log(&log_content).unwrap_or_else(|| {
+            "see LaTeX log for details".to_string()
+        });
+        return Err(MathJaxValidationError::Tectonic(specific));
+    }
+
+    Ok(())
 }
 
 async fn validate_with_tectonic(expr: &str) -> Result<(), MathJaxValidationError> {
@@ -589,17 +658,11 @@ async fn validate_with_tectonic(expr: &str) -> Result<(), MathJaxValidationError
         latex_content
     );
 
-    let result = tokio::task::spawn_blocking(move || tectonic::latex_to_pdf(latex_document))
+    let result = tokio::task::spawn_blocking(move || compile_latex_and_capture_log(latex_document))
         .await
         .map_err(|e| MathJaxValidationError::Tectonic(format!("Thread join error: {}", e)))?;
 
-    match result {
-        Ok(_) => Ok(()),
-        Err(e) => Err(MathJaxValidationError::Tectonic(format!(
-            "LaTeX compilation failed: {}",
-            format_tectonic_error(&e)
-        ))),
-    }
+    result
 }
 
 pub async fn analyze_word_in_pool(
