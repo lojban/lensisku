@@ -83,7 +83,7 @@ pub async fn semantic_search(
     let response = client
         .post(format!("{}/embeddings", infinity_url))
         .json(&serde_json::json!({
-            "model": "sentence-transformers/all-MiniLM-L6-v2",
+            "model": "Xenova/all-MiniLM-L6-v2",
             "input": processed_text,
             "encoding_format": "float"
         }))

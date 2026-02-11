@@ -35,7 +35,7 @@ services:
     command: >
       v2
       --engine optimum
-      --model-id sentence-transformers/all-MiniLM-L6-v2
+      --model-id Xenova/all-MiniLM-L6-v2
       --port 3000
     networks:
       - lojban-network

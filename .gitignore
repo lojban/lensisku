@@ -27,3 +27,4 @@ data
 /*.js
 /package.json
 /pnpm-lock.yaml
+/test
