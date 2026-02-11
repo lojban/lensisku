@@ -161,11 +161,11 @@ async fn calculate_missing_embeddings(
             texts.len()
         );
 
-        // Get embeddings from infinity service
+        // Get embeddings from infinity service (Xenova/all-MiniLM-L6-v2 matches semantic-search MCP)
         let response = client
             .post(format!("{}/embeddings", infinity_url))
             .json(&serde_json::json!({
-                "model": "sentence-transformers/all-MiniLM-L6-v2",
+                "model": "Xenova/all-MiniLM-L6-v2",
                 "input": texts,
                 "encoding_format": "float"
             }))
