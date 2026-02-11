@@ -55,3 +55,15 @@ pub fn handle_error(e: Box<dyn std::error::Error>, context: &str) -> HttpRespons
 pub fn handle_import_error(e: Box<dyn std::error::Error>) -> HttpResponse {
     handle_error(e, "Import failed")
 }
+
+/// L2-normalize an embedding so cosine distance (e.g. pgvector <=>) matches
+/// semantic-search MCP (Xenova/all-MiniLM-L6-v2 with normalize: true).
+/// In-place; returns the same slice for convenience.
+pub fn l2_normalize_embedding(embedding: &mut [f32]) {
+    let norm: f32 = embedding.iter().map(|x| x * x).sum::<f32>().sqrt();
+    if norm > 0.0 {
+        for x in embedding.iter_mut() {
+            *x /= norm;
+        }
+    }
+}
