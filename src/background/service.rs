@@ -5,6 +5,7 @@ use crate::{
     mailarchive::{check_for_new_emails, import_maildir},
     muplis,
     notifications::run_email_notifications,
+    utils,
 };
 use chrono::Local;
 use deadpool_postgres::Pool;
@@ -177,17 +178,24 @@ async fn calculate_missing_embeddings(
                 AppError::ExternalService(format!("Failed to parse response: {}", e))
             })?;
 
-            // Process all embeddings in the response
+            // Process all embeddings in the response. Use each item's "index" field when
+            // present (OpenAI-compatible API) so we match by input order even if the
+            // server returns results in a different order.
             let data_array = body["data"].as_array().ok_or_else(|| {
                 AppError::ExternalService("Expected 'data' array in response".into())
             })?;
 
-            for (i, embedding_data) in data_array.iter().enumerate() {
+            for (fallback_i, embedding_data) in data_array.iter().enumerate() {
+                let i = embedding_data["index"]
+                    .as_u64()
+                    .and_then(|u| u.try_into().ok())
+                    .unwrap_or(fallback_i);
+
                 let embedding_values = embedding_data["embedding"].as_array().ok_or_else(|| {
                     AppError::ExternalService("Embedding data missing array".into())
                 })?;
 
-                let embedding: Vec<f32> = embedding_values
+                let mut embedding: Vec<f32> = embedding_values
                     .iter()
                     .map(|v| {
                         v.as_f64().map(|f| f as f32).ok_or_else(|| {
@@ -196,6 +204,8 @@ async fn calculate_missing_embeddings(
                     })
                     .collect::<Result<Vec<_>, _>>()?;
 
+                // Match MCP (normalize: true) so cosine-distance ranking is consistent
+                utils::l2_normalize_embedding(&mut embedding);
                 let pg_vector = Vector::from(embedding);
 
                 if let (Some(definition_id), Some(processed_text)) =

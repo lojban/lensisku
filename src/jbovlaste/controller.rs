@@ -21,6 +21,7 @@ use crate::jbovlaste::{
 };
 use crate::language::{validate_mathjax_fields, MathJaxValidationOptions};
 use crate::middleware::cache::{generate_search_cache_key, RedisCache};
+use crate::utils;
 use camxes_rs::peg::grammar::Peg;
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -89,12 +90,12 @@ pub async fn semantic_search(
         .send()
         .await;
 
-    let embedding = match response {
+    let mut embedding: Option<Vec<f32>> = match response {
         Ok(resp) if resp.status().is_success() => {
             let body: serde_json::Value = resp.json().await.unwrap_or_default();
             body["data"][0]["embedding"]
                 .as_array()
-                .and_then(|vec| vec.iter().map(|v| v.as_f64().map(|f| f as f32)).collect())
+                .and_then(|vec| vec.iter().map(|v| v.as_f64().map(|f| f as f32)).collect::<Option<Vec<_>>>())
         }
         _ => {
             return HttpResponse::InternalServerError().json(json!({
@@ -102,6 +103,10 @@ pub async fn semantic_search(
             }));
         }
     };
+    // L2-normalize so ranking matches semantic-search MCP (normalize: true)
+    if let Some(ref mut emb) = embedding {
+        utils::l2_normalize_embedding(emb);
+    }
 
     match redis_cache
         .get_or_set(
