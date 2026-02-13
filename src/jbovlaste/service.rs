@@ -966,6 +966,46 @@ async fn get_source_words(
         }
     }
 
+    // Fallback: long rafsi like "blan" may not be in valsi.rafsi; treat as rafsi + one vowel (gismu form)
+    let unresolved: Vec<&str> = parts
+        .iter()
+        .filter(|rafsi| {
+            rafsi.len() >= 2
+                && rafsi_map.get(*rafsi).is_none()
+                && exact_word_map.get(*rafsi).is_none()
+        })
+        .map(|s| s.as_str())
+        .collect();
+    let mut long_rafsi_to_word: HashMap<String, String> = HashMap::new();
+    if !unresolved.is_empty() {
+        let candidates: Vec<String> = unresolved
+            .iter()
+            .flat_map(|rafsi| {
+                ['a', 'e', 'i', 'o', 'u'].map(|v| format!("{}{}", rafsi, v))
+            })
+            .collect();
+        if let Ok(long_rows) = transaction
+            .query(
+                "SELECT word FROM valsi WHERE word = ANY($1::text[])",
+                &[&candidates],
+            )
+            .await
+        {
+            for row in long_rows {
+                let word: String = row.get("word");
+                if let Some(rafsi) = word.chars().next_back().and_then(|c| {
+                    if ['a', 'e', 'i', 'o', 'u'].contains(&c) {
+                        Some(word[..word.len() - c.len_utf8()].to_string())
+                    } else {
+                        None
+                    }
+                }) {
+                    long_rafsi_to_word.entry(rafsi).or_insert_with(|| word.clone());
+                }
+            }
+        }
+    }
+
     let source_words: Vec<String> = parts
         .iter()
         .filter_map(|rafsi| {
@@ -975,6 +1015,8 @@ async fn get_source_words(
                 .and_then(|words| words.first().cloned())
                 // If no rafsi match found, try exact word match
                 .or_else(|| exact_word_map.get(rafsi).cloned())
+                // Fallback: long rafsi (e.g. "blan") -> gismu that is rafsi + vowel (e.g. "blanu")
+                .or_else(|| long_rafsi_to_word.get(rafsi).cloned())
         })
         .collect();
     debug!("{:#?}", source_words);
