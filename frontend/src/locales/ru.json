@@ -544,6 +544,9 @@
     "rafsiLabel": "Рафси",
     "rafsiPlaceholder": "Рафси через пробел",
     "rafsiNote": "Список рафси, разделённых пробелом.",
+    "selmahoLabel": "Селмахо",
+    "selmahoPlaceholder": "напр. CAI, ZAhO",
+    "selmahoNote": "Грамматическая классификация cmavo (необязательно).",
     "rafsiConflict": "Рафси уже используется неэкспериментальным словом '{word}' ({type})"
   },
   "flashcardStudy": {

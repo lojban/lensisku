@@ -548,6 +548,9 @@
     "rafsiLabel": "Rafsi",
     "rafsiPlaceholder": "Space separated rafsi",
     "rafsiNote": "Space separated list of rafsi.",
+    "selmahoLabel": "Selmaho",
+    "selmahoPlaceholder": "e.g. CAI, ZAhO",
+    "selmahoNote": "Grammatical classification of the cmavo (optional).",
     "sourceLanguageLabel": "Entry Language",
     "sourceLanguageNote": "The language the word itself belongs to. Cannot be changed after creation.",
     "rafsiConflict": "Rafsi already used by non-experimental word '{word}' ({type})"
