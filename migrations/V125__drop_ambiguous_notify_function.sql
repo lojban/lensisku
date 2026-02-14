@@ -1,0 +1,1 @@
+DROP FUNCTION IF EXISTS notify_valsi_subscribers(INTEGER, TEXT, TEXT, TEXT, INTEGER);
