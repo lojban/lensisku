@@ -114,6 +114,20 @@
       </p>
     </div>
 
+    <!-- Selmaho Input (cmavo / experimental cmavo only) -->
+    <div v-if="showSelmahoField">
+      <label for="selmaho" class="block text-sm font-medium text-blue-700">
+        {{ t('upsertDefinition.selmahoLabel', 'Selmaho') }} <span class="text-gray-500 font-normal">{{
+          t('upsertDefinition.optional') }}</span>
+      </label>
+      <input id="selmaho" v-model="selmaho" type="text"
+        :placeholder="t('upsertDefinition.selmahoPlaceholder', 'e.g. CAI, ZAhO')" class="input-field w-full"
+        :disabled="isSubmitting" />
+      <p class="mt-1 text-xs text-gray-500">
+        {{ t('upsertDefinition.selmahoNote', 'Grammatical classification of the cmavo (optional).') }}
+      </p>
+    </div>
+
     <!-- Definition Input -->
     <div>
       <div class="flex items-center justify-between">
@@ -350,6 +364,7 @@ const langId = ref('')
 const sourceLangId = ref(1)
 const definition = ref('')
 const rafsi = ref('')
+const selmaho = ref('')
 const notes = ref('')
 const etymology = ref('')
 const jargon = ref('')
@@ -397,6 +412,7 @@ const loadDefinitionData = async (definitionId) => {
       langId.value = def.langid
       definition.value = def.definition
       rafsi.value = def.rafsi || ''
+      selmaho.value = def.selmaho || ''
       notes.value = def.notes || ''
       etymology.value = def.etymology || ''
       jargon.value = def.jargon || ''
@@ -448,6 +464,12 @@ const missingFields = computed(() => {
 // Check if we should highlight fields (form invalid after analysis)
 const shouldHighlightMissing = computed(() => {
   return wordType.value && !isValid.value
+})
+
+// Show selmaho field for cmavo and experimental cmavo
+const showSelmahoField = computed(() => {
+  const t = wordType.value || ''
+  return t === 'cmavo' || t === 'experimental cmavo'
 })
 
 // Methods for keywords
@@ -612,6 +634,7 @@ const submitValsi = async () => {
       word: word.value,
       definition: definition.value,
       rafsi: rafsi.value || null,
+      ...(showSelmahoField.value && { selmaho: selmaho.value?.trim() || null }),
       notes: notes.value || null,
       etymology: etymology.value || null,
       jargon: jargon.value || null,
