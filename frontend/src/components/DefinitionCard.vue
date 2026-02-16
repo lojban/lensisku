@@ -499,10 +499,12 @@ const getLanguageName = (langId) => {
 }
 
 const formatDate = (timestamp) => {
-  return new Date(timestamp).toLocaleDateString(undefined, {
+  return new Date(timestamp).toLocaleString(undefined, {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
+    hour: 'numeric',
+    minute: 'numeric',
   })
 }
 

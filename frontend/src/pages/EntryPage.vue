@@ -15,7 +15,7 @@
     itemtype="https://schema.org/DefinedTerm"
   >
     <!-- Header Section -->
-    <header class="border-b pb-2 min-w-0">
+    <h1 class="border-b p-2 min-w-0 rounded-md">
       <div class="flex flex-wrap gap-2 w-full lg:w-auto justify-between min-w-0">
         <div class="flex items-center gap-3 min-w-0 max-w-full">
           <h1 class="text-3xl font-bold text-gray-800 min-w-0 max-w-full break-all" itemprop="name">
@@ -60,7 +60,7 @@
           </div>
         </div>
       </div>
-    </header>
+    </h1>
 
     <!-- Discussion Section -->
     <div class="flex flex-wrap gap-2 w-full lg:w-auto justify-center">
