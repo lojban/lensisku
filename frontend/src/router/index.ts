@@ -165,6 +165,11 @@ const baseRoutes: Array<RouteRecordRaw> = [
     meta: { requiresAuth: true },
   },
   {
+    path: "/definitions/export-pairs",
+    name: "ExportPairs",
+    component: () => import("../pages/ExportPairs.vue"),
+  },
+  {
     path: "/export/cached",
     name: "CachedExports",
     component: () => import("../pages/CachedExports.vue"),

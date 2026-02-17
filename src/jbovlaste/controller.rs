@@ -14,10 +14,11 @@ use crate::jbovlaste::dto::{ListDefinitionsQuery, NonLojbanDefinitionsQuery};
 use crate::jbovlaste::service::validate_image;
 use crate::jbovlaste::{
     service, AddDefinitionRequest, AddValsiResponse, BulkImportParams, BulkVoteRequest,
-    BulkVoteResponse, DefinitionDetail, DefinitionListResponse, GetImageDefinitionQuery,
-    ImageUploadRequest, RecentChangesQuery, RecentChangesResponse, SearchDefinitionsParams,
-    UpdateDefinitionRequest, UpdateDefinitionResponse, ValsiDefinitionsQuery, ValsiDetail,
-    ValsiTypeListResponse, VoteRequest, VoteResponse,
+    BulkVoteResponse, DefinitionDetail, DefinitionListResponse, DefinitionTranslation, ExportPairsQuery,
+    GetImageDefinitionQuery, ImageUploadRequest, LinkDefinitionsRequest, RecentChangesQuery,
+    RecentChangesResponse, SearchDefinitionsParams, UpdateDefinitionRequest,
+    UpdateDefinitionResponse, ValsiDefinitionsQuery, ValsiDetail, ValsiTypeListResponse,
+    VoteRequest, VoteResponse,
 };
 use crate::language::{validate_mathjax_fields, MathJaxValidationOptions};
 use crate::middleware::cache::{generate_search_cache_key, RedisCache};
@@ -1288,5 +1289,143 @@ pub async fn list_client_definitions_handler(
             HttpResponse::InternalServerError()
                 .json(json!({"error": "Failed to retrieve definitions"}))
         }
+    }
+}
+
+#[utoipa::path(
+    post,
+    path = "/jbovlaste/definitions/link",
+    tag = "jbovlaste",
+    request_body = LinkDefinitionsRequest,
+    responses(
+        (status = 200, description = "Definitions linked successfully"),
+        (status = 400, description = "Invalid request"),
+        (status = 500, description = "Internal server error")
+    ),
+    security(
+        ("bearer_auth" = [])
+    ),
+    summary = "Link two definitions",
+    description = "Creates a bidirectional link between two definitions, indicating they are translations of each other."
+)]
+#[post("/definitions/link")]
+#[protect("edit_definition")]
+pub async fn link_definitions_handler(
+    pool: web::Data<Pool>,
+    claims: Claims,
+    req: web::Json<LinkDefinitionsRequest>,
+) -> impl Responder {
+    match service::link_definitions(
+        &pool,
+        req.definition_id,
+        req.translation_id,
+        claims.sub,
+    )
+    .await
+    {
+        Ok(_) => HttpResponse::Ok().json(json!({ "success": true })),
+        Err(e) => HttpResponse::InternalServerError().json(json!({
+            "success": false,
+            "error": e.to_string()
+        })),
+    }
+}
+
+#[utoipa::path(
+    delete,
+    path = "/jbovlaste/definitions/link/{definition_id}/{translation_id}",
+    tag = "jbovlaste",
+    params(
+        ("definition_id" = i32, Path, description = "Definition ID"),
+        ("translation_id" = i32, Path, description = "Translation ID")
+    ),
+    responses(
+        (status = 200, description = "Link removed successfully"),
+        (status = 500, description = "Internal server error")
+    ),
+    security(
+        ("bearer_auth" = [])
+    ),
+    summary = "Unlink definitions",
+    description = "Removes the bidirectional link between two definitions."
+)]
+#[delete("/definitions/link/{definition_id}/{translation_id}")]
+#[protect("edit_definition")]
+pub async fn unlink_definitions_handler(
+    pool: web::Data<Pool>,
+    path: web::Path<(i32, i32)>,
+) -> impl Responder {
+    let (definition_id, translation_id) = path.into_inner();
+    match service::unlink_definitions(&pool, definition_id, translation_id).await {
+        Ok(_) => HttpResponse::Ok().json(json!({ "success": true })),
+        Err(e) => HttpResponse::InternalServerError().json(json!({
+            "success": false,
+            "error": e.to_string()
+        })),
+    }
+}
+
+#[utoipa::path(
+    get,
+    path = "/jbovlaste/definitions/{id}/translations",
+    tag = "jbovlaste",
+    params(
+        ("id" = i32, Path, description = "Definition ID")
+    ),
+    responses(
+        (status = 200, description = "List of translations", body = Vec<DefinitionTranslation>),
+        (status = 500, description = "Internal server error")
+    ),
+    summary = "Get definition translations",
+    description = "Retrieves all definitions linked as translations to the specified definition."
+)]
+#[get("/definitions/{id}/translations")]
+pub async fn get_translations_handler(
+    pool: web::Data<Pool>,
+    id: web::Path<i32>,
+) -> impl Responder {
+    match service::get_definition_translations(&pool, id.into_inner()).await {
+        Ok(translations) => HttpResponse::Ok().json(translations),
+        Err(e) => HttpResponse::InternalServerError().body(format!("Error: {}", e)),
+    }
+}
+
+#[utoipa::path(
+    get,
+    path = "/jbovlaste/definitions/export-pairs",
+    tag = "jbovlaste",
+    params(
+        ("from_lang" = i32, Query, description = "Source language ID"),
+        ("to_lang" = i32, Query, description = "Target language ID")
+    ),
+    responses(
+        (status = 200, description = "TSV export", content_type = "text/tab-separated-values"),
+        (status = 500, description = "Internal server error")
+    ),
+    summary = "Export linked pairs",
+    description = "Exports all linked definition pairs between two languages as a TSV file."
+)]
+#[get("/definitions/export-pairs")]
+pub async fn export_pairs_handler(
+    pool: web::Data<Pool>,
+    query: web::Query<ExportPairsQuery>,
+) -> impl Responder {
+    match service::export_linked_pairs(&pool, query.from_lang, query.to_lang).await {
+        Ok(tsv_content) => {
+            let cd = ContentDisposition {
+                disposition: DispositionType::Attachment,
+                parameters: vec![
+                    actix_web::http::header::DispositionParam::Filename(
+                        format!("pairs_{}_{}.tsv", query.from_lang, query.to_lang)
+                    )
+                ],
+            };
+
+            HttpResponse::Ok()
+                .content_type("text/tab-separated-values")
+                .insert_header(cd)
+                .body(tsv_content)
+        }
+        Err(e) => HttpResponse::InternalServerError().body(format!("Error: {}", e)),
     }
 }

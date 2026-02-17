@@ -547,7 +547,9 @@
     "selmahoLabel": "Селмахо",
     "selmahoPlaceholder": "напр. CAI, ZAhO",
     "selmahoNote": "Грамматическая классификация cmavo (необязательно).",
-    "rafsiConflict": "Рафси уже используется неэкспериментальным словом '{word}' ({type})"
+    "rafsiConflict": "Рафси уже используется неэкспериментальным словом '{word}' ({type})",
+    "addTranslationTitle": "Добавить перевод",
+    "linkError": "Не удалось связать определение"
   },
   "flashcardStudy": {
     "title": "Учебная сессия",
@@ -774,7 +776,11 @@
     "rafsiLabel": "Rafsi:",
     "decompositionLabel": "Разложение:",
     "entry": "Запись",
-    "metaDescription": "{word} — слово ложбана ({type}). Определения и примеры в словаре ложбана."
+    "metaDescription": "{word} — слово ложбана ({type}). Определения и примеры в словаре ложбана.",
+    "translationsLabel": "Переводы",
+    "unlinkTranslation": "Отвязать перевод",
+    "confirmUnlink": "Вы уверены, что хотите отвязать этот перевод?",
+    "unlinkError": "Не удалось отвязать перевод"
   },
   "cachedExports": {
     "title": "Кэшированные экспорты словаря",
@@ -941,7 +947,10 @@
       "canonicalLabel": "Каноническая форма:",
       "fullWordModalTitle": "Полное слово",
       "fullWordModalHint": "Нажмите на слово ниже, чтобы перейти на страницу определения.",
-      "clickToSeeFullWord": "Нажмите, чтобы увидеть полное слово"
+      "clickToSeeFullWord": "Нажмите, чтобы увидеть полное слово",
+      "examplesLabel": "Примеры:",
+      "translateButton": "Перевести",
+      "translateButtonTitle": "Перевести это определение"
     },
     "imageUploadButton": {
       "invalidType": "Пожалуйста, выберите файл изображения",
@@ -1171,5 +1180,18 @@
     "obsolete-cmevla": "устаревшее cmevla",
     "obsolete-fuhivla": "устаревшее fuhivla",
     "obsolete-cmavo": "устаревшее cmavo"
+  },
+  "exportPairs": {
+    "title": "Экспорт пар переводов",
+    "description": "Экспорт связанных пар определений между двумя языками в формате TSV. Это полезно для импорта в Anki или другие инструменты для карточек.",
+    "fromLanguage": "Исходный язык",
+    "toLanguage": "Целевой язык",
+    "selectLanguage": "Выберите язык",
+    "exporting": "Экспорт...",
+    "exportButton": "Экспорт пар",
+    "pageTitle": "Экспорт пар переводов",
+    "pageDescription": "Экспорт связанных пар определений ложбана.",
+    "loadError": "Не удалось загрузить языки",
+    "exportError": "Не удалось экспортировать пары"
   }
 }

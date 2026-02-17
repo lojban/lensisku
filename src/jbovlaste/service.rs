@@ -3875,3 +3875,150 @@ async fn validate_and_update_rafsi(
     }
     Ok(())
 }
+
+pub async fn link_definitions(
+    pool: &Pool,
+    definition_id: i32,
+    translation_id: i32,
+    user_id: i32,
+) -> Result<(), Box<dyn std::error::Error>> {
+    if definition_id == translation_id {
+        return Err("Cannot link a definition to itself".into());
+    }
+
+    let mut client = pool.get().await?;
+    let transaction = client.transaction().await?;
+
+    // Check if both definitions exist
+    let count = transaction
+        .query_one(
+            "SELECT COUNT(*) FROM definitions WHERE definitionid IN ($1, $2)",
+            &[&definition_id, &translation_id],
+        )
+        .await?
+        .get::<_, i64>(0);
+
+    if count != 2 {
+        return Err("One or both definitions do not exist".into());
+    }
+
+    // Insert bidirectional links
+    // We use ON CONFLICT DO NOTHING to handle cases where the link already exists
+    transaction
+        .execute(
+            "INSERT INTO definition_links (definition_id, translation_id, created_by)
+             VALUES ($1, $2, $3), ($2, $1, $3)
+             ON CONFLICT (definition_id, translation_id) DO NOTHING",
+            &[&definition_id, &translation_id, &user_id],
+        )
+        .await?;
+
+    transaction.commit().await?;
+    Ok(())
+}
+
+pub async fn unlink_definitions(
+    pool: &Pool,
+    definition_id: i32,
+    translation_id: i32,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let mut client = pool.get().await?;
+    let transaction = client.transaction().await?;
+
+    transaction
+        .execute(
+            "DELETE FROM definition_links
+             WHERE (definition_id = $1 AND translation_id = $2)
+                OR (definition_id = $2 AND translation_id = $1)",
+            &[&definition_id, &translation_id],
+        )
+        .await?;
+
+    transaction.commit().await?;
+    Ok(())
+}
+
+use super::dto::DefinitionTranslation;
+
+pub async fn get_definition_translations(
+    pool: &Pool,
+    definition_id: i32,
+) -> Result<Vec<DefinitionTranslation>, Box<dyn std::error::Error>> {
+    let client = pool.get().await?;
+
+    let rows = client
+        .query(
+            "SELECT d.definitionid, v.word as valsiword, d.definition, l.langid, l.realname as lang_name
+             FROM definition_links dl
+             JOIN definitions d ON dl.translation_id = d.definitionid
+             JOIN valsi v ON d.valsiid = v.valsiid
+             JOIN languages l ON d.langid = l.langid
+             WHERE dl.definition_id = $1
+             ORDER BY l.realname, v.word",
+            &[&definition_id],
+        )
+        .await?;
+
+    let translations = rows
+        .iter()
+        .map(|row| DefinitionTranslation {
+            definitionid: row.get("definitionid"),
+            valsiword: row.get("valsiword"),
+            definition: row.get("definition"),
+            langid: row.get("langid"),
+            lang_name: row.get("lang_name"),
+        })
+        .collect();
+
+    Ok(translations)
+}
+
+pub async fn export_linked_pairs(
+    pool: &Pool,
+    from_lang: i32,
+    to_lang: i32,
+) -> Result<String, Box<dyn std::error::Error>> {
+    let client = pool.get().await?;
+
+    // Streaming fetching might be better for large exports, but for now we'll fetch all.
+    // If memory becomes an issue, we can switch to using a cursor or pagination.
+    let rows = client
+        .query(
+            "SELECT
+                d1.definitionid as def_id_1, v1.word as word_1, d1.definition as text_1,
+                d2.definitionid as def_id_2, v2.word as word_2, d2.definition as text_2
+             FROM definition_links dl
+             JOIN definitions d1 ON dl.definition_id = d1.definitionid
+             JOIN valsi v1 ON d1.valsiid = v1.valsiid
+             JOIN definitions d2 ON dl.translation_id = d2.definitionid
+             JOIN valsi v2 ON d2.valsiid = v2.valsiid
+             WHERE d1.langid = $1 AND d2.langid = $2",
+            &[&from_lang, &to_lang],
+        )
+        .await?;
+
+    let mut tsv_output = String::new();
+    // Header
+    tsv_output.push_str("id\tword\tdefinition\ttranslation_id\ttranslation_word\ttranslation_definition\n");
+
+    for row in rows {
+        let id1: i32 = row.get("def_id_1");
+        let word1: String = row.get("word_1");
+        let text1: String = row.get("text_1");
+        let id2: i32 = row.get("def_id_2");
+        let word2: String = row.get("word_2");
+        let text2: String = row.get("text_2");
+
+        tsv_output.push_str(&format!(
+            "{}\t{}\t{}\t{}\t{}\t{}\n",
+            id1,
+            word1.replace('\t', " "), // Basic sanitization for TSV
+            text1.replace('\t', " ").replace('\n', " "), 
+            id2,
+            word2.replace('\t', " "),
+            text2.replace('\t', " ").replace('\n', " ")
+        ));
+    }
+
+    Ok(tsv_output)
+}

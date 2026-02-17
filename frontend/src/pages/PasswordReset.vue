@@ -124,7 +124,7 @@ import { ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 
-import { requestPasswordReset as apiRequestPasswordReset, api } from '@/api'
+import { requestPasswordReset as apiRequestPasswordReset, restorePassword as apiRestorePassword, api } from '@/api'
 import AlertComponent from '@/components/AlertComponent.vue'
 import { useSeoHead } from '@/composables/useSeoHead'
 
@@ -212,7 +212,7 @@ const resetPassword = async () => {
     isLoading.value = true
     error.value = null;
 
-    const response = await api.post('/auth/restore_password', { // Keep using 'api' for this one or move it too? For now, assuming only request_password_reset was requested to be moved.
+    const response = await apiRestorePassword({
       token: token.value,
       session_id: sessionId.value,
       new_password: newPassword.value,

@@ -44,7 +44,11 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
                     .service(controller::list_bulk_import_clients_handler)
                     .service(controller::upload_definition_image)
                     .service(controller::list_client_definitions_handler)
-                    .service(controller::get_bulk_votes),
-            ),
+                    .service(controller::get_bulk_votes)
+                    .service(controller::link_definitions_handler)
+                    .service(controller::unlink_definitions_handler),
+            )
+            .service(controller::get_translations_handler)
+            .service(controller::export_pairs_handler),
     );
 }

@@ -346,6 +346,9 @@ export const getUserVotes = (params) => api.get(`/users/votes`, { params })
 export const resendConfirmation = (email) => api.post('/auth/resend-confirmation', { email })
 export const confirmEmail = (token) => api.post('/auth/confirm-email', { token })
 
+export const requestPasswordReset = (email) => api.post('/auth/request_password_reset', { email })
+export const restorePassword = (data) => api.post('/auth/restore_password', data)
+
 export const createFlashcard = async (collectionId, data) => {
   return api.post(`/flashcards/${collectionId}`, data)
 }
@@ -483,4 +486,21 @@ export const assignRole = (user_id, role) => api.post('/auth/assign-role', { use
 
 export const deleteDefinition = (id) => api.delete(`/jbovlaste/definition/${id}`)
 
-export const requestPasswordReset = (email) => api.post('/auth/request_password_reset', { email })
+// Definition Linking
+export const linkDefinitions = (definitionId, translationId) =>
+  api.post('/jbovlaste/definitions/link', {
+    definition_id: parseInt(definitionId),
+    translation_id: parseInt(translationId),
+  })
+
+export const unlinkDefinitions = (definitionId, translationId) =>
+  api.delete(`/jbovlaste/definitions/link/${definitionId}/${translationId}`)
+
+export const getDefinitionTranslations = (definitionId) =>
+  api.get(`/jbovlaste/definitions/${definitionId}/translations`)
+
+export const exportLinkedPairs = (fromLang, toLang) =>
+  api.get('/jbovlaste/definitions/export-pairs', {
+    params: { from_lang: fromLang, to_lang: toLang },
+    responseType: 'blob',
+  })

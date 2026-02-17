@@ -305,6 +305,7 @@ import {
   getLanguages,
   validateMathJax,
   getDefinition,
+  linkDefinitions,
 } from '@/api'
 import AlertComponent from '@/components/AlertComponent.vue'
 import DynamicInput from '@/components/DynamicInput.vue'
@@ -551,6 +552,26 @@ onMounted(async () => {
     isAuthor.value = true;
   }
   await loadLanguages(); // Load languages after potentially setting sourceLangId
+
+  // Handle translation pre-filling
+  const translateFromId = route.query.translate_from_def
+  if (translateFromId && !isEditMode.value) {
+    try {
+      const res = await getDefinition(translateFromId)
+      const sourceDef = res.data
+      // Pre-fill fields that might be useful
+      // For now, we mainly want to ensure we don't copy the definition/language blindly
+      // But maybe copying notes/keywords is helpful?
+      // Let's just set the word if not already set (though it should be set by word query param)
+      if (!word.value && sourceDef.valsiword) {
+        word.value = sourceDef.valsiword
+        prefilledWord.value = true
+      }
+      useSeoHead({ title: t('upsertDefinition.addTranslationTitle') }, locale.value)
+    } catch (e) {
+      console.error('Error loading source definition for translation:', e)
+    }
+  }
 })
 
 const clearAnalysis = () => {
@@ -665,10 +686,22 @@ const submitValsi = async () => {
       success.value = true
       isExistingWord.value = response.data.existing_word || false
 
+      const newDefinitionId = response.data.definition_id || editDefinitionId.value
+      
+      // Auto-link if translation source is present
+      const sourceDefId = route.query.translate_from_def
+      if (sourceDefId && !isEditMode.value) {
+        try {
+          await linkDefinitions(sourceDefId, newDefinitionId)
+        } catch (linkError) {
+          console.error("Failed to auto-link definitions:", linkError)
+          showError(t('upsertDefinition.linkError'))
+        }
+      }
+
       // Wait a moment to show success message
       setTimeout(() => {
-        const definitionId = response.data.definition_id || editDefinitionId.value
-        router.push(`/valsi/${word.value.replace(/ /g, '_')}?highlight_definition_id=${definitionId}`)
+        router.push(`/valsi/${word.value.replace(/ /g, '_')}?highlight_definition_id=${newDefinitionId}`)
       }, 1500)
     } else {
       showError(formatDefinitionError(response.data.error) || t('upsertDefinition.saveError'))
@@ -676,7 +709,6 @@ const submitValsi = async () => {
     }
   } catch (e) {
     showError(formatDefinitionError(e.response?.data?.error) || t('upsertDefinition.saveErrorGeneric'))
-  } finally {
     isSubmitting.value = false
   }
 }
