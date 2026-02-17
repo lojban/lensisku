@@ -223,3 +223,24 @@ pub struct ImageData {
     pub data: String, // Base64 encoded image data
     pub mime_type: String,
 }
+
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct LinkDefinitionsRequest {
+    pub definition_id: i32,
+    pub translation_id: i32,
+}
+
+#[derive(Debug, Serialize, ToSchema)]
+pub struct DefinitionTranslation {
+    pub definitionid: i32,
+    pub valsiword: String,
+    pub definition: String,
+    pub langid: i32,
+    pub lang_name: String,
+}
+
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct ExportPairsQuery {
+    pub from_lang: i32,
+    pub to_lang: i32,
+}

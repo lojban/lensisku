@@ -116,6 +116,40 @@
       </div>
     </div>
 
+
+    <!-- Translations Section -->
+    <div v-if="translations.length > 0" class="space-y-4 pt-4 border-t">
+      <h3 class="text-xl font-semibold text-gray-700 flex items-center gap-2">
+        <span>{{ t('entryPage.translationsLabel') }}</span>
+        <span class="text-sm font-normal text-gray-500">({{ translations.length }})</span>
+      </h3>
+
+      <div class="space-y-4">
+        <div v-for="trans in translations" :key="trans.definitionid" class="p-3 bg-gray-50 rounded-lg border">
+          <div class="flex justify-between items-start">
+            <div>
+              <RouterLink 
+                :to="`/valsi/${trans.valsiword}?highlight_definition_id=${trans.definitionid}`"
+                class="font-bold text-blue-600 hover:underline"
+              >
+                {{ trans.valsiword }}
+              </RouterLink>
+              <span class="text-gray-500 text-sm ml-2">({{ trans.lang_name }})</span>
+              <div class="mt-1 text-gray-800">{{ trans.definition }}</div>
+            </div>
+            <button 
+              v-if="auth.state.isLoggedIn"
+              @click="unlinkTranslation(trans)"
+              class="text-red-500 hover:text-red-700 p-1"
+              :title="t('entryPage.unlinkTranslation')"
+            >
+              <Trash2 class="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Action Buttons -->
     <div class="flex flex-wrap gap-3 pt-4 border-t">
       <button
@@ -137,13 +171,13 @@
 </template>
 
 <script setup>
-import { ArrowLeft, AudioWaveform } from 'lucide-vue-next'
+import { ArrowLeft, AudioWaveform, Trash2 } from 'lucide-vue-next'
 import { ref, onMounted, watch, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import { getTypeClass } from '@/utils/wordTypeUtils'; // Import shared utility
 
-import { getValsiDefinitions, getValsiDetails, getCollections, getLanguages } from '@/api'
+import { getValsiDefinitions, getValsiDetails, getCollections, getLanguages, getDefinitionTranslations, unlinkDefinitions } from '@/api'
 import AudioPlayer from '@/components/AudioPlayer.vue'
 import DefinitionCard from '@/components/DefinitionCard.vue'
 import IconButton from '@/components/icons/IconButton.vue'
@@ -293,6 +327,49 @@ onMounted(async () => {
   }
   const langsResponse = await getLanguages()
   languages.value = langsResponse.data
+})
+
+const translations = ref([])
+
+const fetchTranslations = async () => {
+  // Only fetch translations if we have a definition ID to link from
+  // For now, we'll fetch translations for all definitions of this word
+  // This is a simplification; ideally we'd show translations per definition
+  if (definitions.value.length > 0) {
+    const allTranslations = []
+    for (const def of definitions.value) {
+      try {
+        const res = await getDefinitionTranslations(def.definitionid)
+        if (res.data && res.data.length > 0) {
+          allTranslations.push(...res.data.map(t => ({ ...t, source_def_id: def.definitionid })))
+        }
+      } catch (e) {
+        console.error('Error fetching translations for def', def.definitionid, e)
+      }
+    }
+    // Deduplicate by definitionid
+    translations.value = Array.from(new Map(allTranslations.map(item => [item.definitionid, item])).values())
+  }
+}
+
+const unlinkTranslation = async (translation) => {
+  if (!confirm(t('entryPage.confirmUnlink'))) return
+  
+  try {
+    await unlinkDefinitions(translation.source_def_id, translation.definitionid)
+    await fetchTranslations()
+  } catch (e) {
+    console.error('Error unlinking definition:', e)
+    showError(t('entryPage.unlinkError'))
+  }
+}
+
+watch(definitions, async (newDefs) => {
+  if (newDefs.length > 0) {
+    await fetchTranslations()
+  } else {
+    translations.value = []
+  }
 })
 </script>
 

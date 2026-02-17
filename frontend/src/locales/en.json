@@ -553,7 +553,9 @@
     "selmahoNote": "Grammatical classification of the cmavo (optional).",
     "sourceLanguageLabel": "Entry Language",
     "sourceLanguageNote": "The language the word itself belongs to. Cannot be changed after creation.",
-    "rafsiConflict": "Rafsi already used by non-experimental word '{word}' ({type})"
+    "rafsiConflict": "Rafsi already used by non-experimental word '{word}' ({type})",
+    "addTranslationTitle": "Add Translation",
+    "linkError": "Failed to link definition"
   },
   "flashcardStudy": {
     "title": "Study Session",
@@ -780,7 +782,11 @@
     "rafsiLabel": "Rafsi:",
     "decompositionLabel": "Decomposition:",
     "entry": "Entry",
-    "metaDescription": "{word} — Lojban word ({type}). Definitions and usage in the Lojban dictionary."
+    "metaDescription": "{word} — Lojban word ({type}). Definitions and usage in the Lojban dictionary.",
+    "translationsLabel": "Translations",
+    "unlinkTranslation": "Unlink translation",
+    "confirmUnlink": "Are you sure you want to unlink this translation?",
+    "unlinkError": "Failed to unlink translation"
   },
   "cachedExports": {
     "title": "Cached Dictionary Exports",
@@ -948,7 +954,9 @@
       "fullWordModalTitle": "Full word",
       "fullWordModalHint": "Click the word below to go to the definition page.",
       "clickToSeeFullWord": "Click to see full word",
-      "examplesLabel": "Examples:"
+      "examplesLabel": "Examples:",
+      "translateButton": "Translate",
+      "translateButtonTitle": "Translate this definition"
     },
     "imageUploadButton": {
       "invalidType": "Please select an image file",
@@ -1181,5 +1189,18 @@
     "obsolete-cmevla": "obsolete cmevla",
     "obsolete-fuhivla": "obsolete fu'ivla",
     "obsolete-cmavo": "obsolete cmavo"
+  },
+  "exportPairs": {
+    "title": "Export Translation Pairs",
+    "description": "Export linked definition pairs between two languages in TSV format. This is useful for importing into Anki or other flashcard tools.",
+    "fromLanguage": "From Language",
+    "toLanguage": "To Language",
+    "selectLanguage": "Select a language",
+    "exporting": "Exporting...",
+    "exportButton": "Export Pairs",
+    "pageTitle": "Export Translation Pairs",
+    "pageDescription": "Export linked Lojban definition pairs.",
+    "loadError": "Failed to load languages",
+    "exportError": "Failed to export pairs"
   }
 }

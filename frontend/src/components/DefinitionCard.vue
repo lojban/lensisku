@@ -283,6 +283,15 @@
             {{ t('components.definitionCard.commentButton') }}
           </RouterLink>
 
+          <!-- Translate -->
+          <button v-if="auth.state.isLoggedIn"
+            class="btn-create btn-group-item w-full sm:w-auto text-center"
+            @click="router.push(`/valsi/add?word=${encodeURIComponent(definition.valsiword ?? definition.word)}&translate_from_def=${definition.definitionid}`)"
+            :title="t('components.definitionCard.translateButtonTitle')">
+            <Languages class="h-4 w-4" />
+            {{ t('components.definitionCard.translateButton') }}
+          </button>
+
           <!-- Discussions -->
           <RouterLink v-if="disableDiscussionButton && !disableDiscussionToolbarButton"
             :to="`/comments?valsi_id=${definition.valsiid}&definition_id=${definition.definitionid}`"
@@ -330,6 +339,7 @@ import {
   MinusCircle,
   GalleryHorizontalIcon,
   EqualApproximately,
+  Languages,
 } from 'lucide-vue-next'
 import { computed, ref, watch } from 'vue';
 import { RouterLink, useRouter } from 'vue-router';

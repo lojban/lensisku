@@ -148,7 +148,10 @@
       "canonicalLabel": "tersmujbo",
       "fullWordModalTitle": "mulno valsi",
       "fullWordModalHint": "cuxna ja'e lo nu tcidu lu'e le ve skicu",
-      "clickToSeeFullWord": "cuxna ja'e lo nu zgana le mulno valsi"
+      "clickToSeeFullWord": "cuxna ja'e lo nu zgana le mulno valsi",
+      "examplesLabel": "mupli:",
+      "translateButton": "fanva",
+      "translateButtonTitle": "fanva ti"
     },
     "tiktoknu": {
       "loading": "ca'o jgari",
@@ -170,5 +173,28 @@
         "copySuccess": "snada lo ka zbasu le zasni fukpi"
       }
     }
+  },
+  "exportPairs": {
+    "title": "cupra lo porsi be lo xe fanva",
+    "description": "cupra lo porsi be lo xe fanva fi'o selcmi lo remna bangu .i ti sidju lo nu jmina lo karda",
+    "fromLanguage": "se fanva bangu",
+    "toLanguage": "te fanva bangu",
+    "selectLanguage": "cuxna lo bangu",
+    "exporting": "ca'a ca'o cupra",
+    "exportButton": "cupra",
+    "pageTitle": "cupra lo porsi be lo xe fanva",
+    "pageDescription": "cupra lo porsi be lo xe fanva be fi la lojban.",
+    "loadError": "fliba lo ka jgari lo bangu",
+    "exportError": "fliba lo ka cupra"
+  },
+  "entryPage": {
+    "translationsLabel": "xe fanva",
+    "unlinkTranslation": "vimcu lo xe fanva",
+    "confirmUnlink": "xu do djica lo nu vimcu ti?",
+    "unlinkError": "fliba lo ka vimcu lo xe fanva"
+  },
+  "upsertDefinition": {
+    "addTranslationTitle": "jmina lo xe fanva",
+    "linkError": "fliba lo ka jmina lo xe fanva"
   }
 }
