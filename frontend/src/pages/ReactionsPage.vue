@@ -67,7 +67,7 @@ const auth = useAuth()
 const totalPages = computed(() => Math.ceil(total.value / perPage.value))
 
 const formatDate = (timestamp) => {
-  return new Date(timestamp).toLocaleString(undefined, {
+  return new Date(timestamp).toLocaleString(locale.value, {
     year: 'numeric',
     month: 'long',
     day: 'numeric',

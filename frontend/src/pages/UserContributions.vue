@@ -169,7 +169,7 @@ const changePage = (newPage) => {
 }
 
 const formatDate = (timestamp) => {
-  return new Date(timestamp).toLocaleString(undefined, {
+  return new Date(timestamp).toLocaleString(locale.value, {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
