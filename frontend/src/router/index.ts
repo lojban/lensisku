@@ -95,6 +95,12 @@ const baseRoutes: Array<RouteRecordRaw> = [
     props: (route) => ({ id: route.params.id }),
   },
   {
+    path: "/definition_link/:id/discussion",
+    name: "DefinitionLinkDiscussion",
+    component: () => import("../pages/DefinitionLinkDiscussion.vue"),
+    props: (route) => ({ id: parseInt(route.params.id as string) }),
+  },
+  {
     path: "/reset-password",
     name: "ResetPassword",
     component: () => import("../pages/PasswordReset.vue"),

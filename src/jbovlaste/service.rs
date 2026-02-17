@@ -3881,7 +3881,7 @@ pub async fn link_definitions(
     definition_id: i32,
     translation_id: i32,
     user_id: i32,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<i32, Box<dyn std::error::Error>> {
     if definition_id == translation_id {
         return Err("Cannot link a definition to itself".into());
     }
@@ -3913,8 +3913,23 @@ pub async fn link_definitions(
         )
         .await?;
 
+    // Return the ID of the link where definition_id < translation_id as the "canonical" link ID
+    let (d1, d2) = if definition_id < translation_id {
+        (definition_id, translation_id)
+    } else {
+        (translation_id, definition_id)
+    };
+
+    let link_id: i32 = transaction
+        .query_one(
+            "SELECT id FROM definition_links WHERE definition_id = $1 AND translation_id = $2",
+            &[&d1, &d2],
+        )
+        .await?
+        .get(0);
+
     transaction.commit().await?;
-    Ok(())
+    Ok(link_id)
 }
 
 pub async fn unlink_definitions(
@@ -3948,7 +3963,7 @@ pub async fn get_definition_translations(
 
     let rows = client
         .query(
-            "SELECT d.definitionid, v.word as valsiword, d.definition, l.langid, l.realname as lang_name
+            "SELECT d.definitionid, v.word as valsiword, d.definition, l.langid, l.realname as lang_name, dl.id as link_id
              FROM definition_links dl
              JOIN definitions d ON dl.translation_id = d.definitionid
              JOIN valsi v ON d.valsiid = v.valsiid
@@ -3967,6 +3982,7 @@ pub async fn get_definition_translations(
             definition: row.get("definition"),
             langid: row.get("langid"),
             lang_name: row.get("lang_name"),
+            link_id: row.get("link_id"),
         })
         .collect();
 
@@ -4021,4 +4037,45 @@ pub async fn export_linked_pairs(
     }
 
     Ok(tsv_output)
+}
+
+pub async fn get_definition_link(
+    pool: &Pool,
+    id: i32,
+) -> Result<Option<serde_json::Value>, Box<dyn std::error::Error>> {
+    let client = pool.get().await?;
+    let row = client
+        .query_opt(
+            "SELECT 
+                l.id,
+                l.definition_id,
+                l.translation_id,
+                l.created_at,
+                d1.definition as def1_content,
+                v1.word as def1_word,
+                d2.definition as def2_content,
+                v2.word as def2_word
+             FROM definition_links l
+             JOIN definitions d1 ON l.definition_id = d1.definitionid
+             JOIN valsi v1 ON d1.valsiid = v1.valsiid
+             JOIN definitions d2 ON l.translation_id = d2.definitionid
+             JOIN valsi v2 ON d2.valsiid = v2.valsiid
+             WHERE l.id = ",
+            &[&id],
+        )
+        .await?;
+
+    match row {
+        Some(row) => Ok(Some(serde_json::json!({
+            "id": row.get::<_, i32>("id"),
+            "definition_id": row.get::<_, i32>("definition_id"),
+            "translation_id": row.get::<_, i32>("translation_id"),
+            "created_at": row.get::<_, chrono::DateTime<chrono::Utc>>("created_at"),
+            "def1_content": row.get::<_, String>("def1_content"),
+            "def1_word": row.get::<_, String>("def1_word"),
+            "def2_content": row.get::<_, String>("def2_content"),
+            "def2_word": row.get::<_, String>("def2_word"),
+        }))),
+        None => Ok(None),
+    }
 }

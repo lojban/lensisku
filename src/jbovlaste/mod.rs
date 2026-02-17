@@ -49,6 +49,7 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
                     .service(controller::unlink_definitions_handler),
             )
             .service(controller::get_translations_handler)
+            .service(controller::get_definition_link_handler)
             .service(controller::export_pairs_handler),
     );
 }

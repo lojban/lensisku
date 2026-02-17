@@ -499,6 +499,9 @@ export const unlinkDefinitions = (definitionId, translationId) =>
 export const getDefinitionTranslations = (definitionId) =>
   api.get(`/jbovlaste/definitions/${definitionId}/translations`)
 
+export const getDefinitionLink = (id) =>
+  api.get(`/jbovlaste/definition-links/${id}`)
+
 export const exportLinkedPairs = (fromLang, toLang) =>
   api.get('/jbovlaste/definitions/export-pairs', {
     params: { from_lang: fromLang, to_lang: toLang },

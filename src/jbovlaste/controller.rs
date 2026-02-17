@@ -1323,7 +1323,7 @@ pub async fn link_definitions_handler(
     )
     .await
     {
-        Ok(_) => HttpResponse::Ok().json(json!({ "success": true })),
+        Ok(link_id) => HttpResponse::Ok().json(json!({ "success": true, "link_id": link_id })),
         Err(e) => HttpResponse::InternalServerError().json(json!({
             "success": false,
             "error": e.to_string()
@@ -1426,6 +1426,33 @@ pub async fn export_pairs_handler(
                 .insert_header(cd)
                 .body(tsv_content)
         }
+        Err(e) => HttpResponse::InternalServerError().body(format!("Error: {}", e)),
+    }
+}
+
+#[utoipa::path(
+    get,
+    path = "/jbovlaste/definition-links/{id}",
+    tag = "jbovlaste",
+    params(
+        ("id" = i32, Path, description = "Link ID")
+    ),
+    responses(
+        (status = 200, description = "Definition link details"),
+        (status = 404, description = "Link not found"),
+        (status = 500, description = "Internal server error")
+    ),
+    summary = "Get definition link details",
+    description = "Retrieves details about a specific definition link, including its definitions and valsi words."
+)]
+#[get("/definition-links/{id}")]
+pub async fn get_definition_link_handler(
+    pool: web::Data<Pool>,
+    id: web::Path<i32>,
+) -> impl Responder {
+    match service::get_definition_link(&pool, id.into_inner()).await {
+        Ok(Some(link)) => HttpResponse::Ok().json(link),
+        Ok(None) => HttpResponse::NotFound().finish(),
         Err(e) => HttpResponse::InternalServerError().body(format!("Error: {}", e)),
     }
 }

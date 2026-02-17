@@ -188,6 +188,15 @@
     "metaDescriptionEntry": "Discussion and comments for the Lojban word {word}. Community waves and threads in the Lojban dictionary.",
     "metaDescriptionDefinition": "Discussion and comments for a definition of the Lojban word {word}. Community waves in the Lojban dictionary."
   },
+  "definitionLinkDiscussion": {
+    "title": "Discussion Wave: Definition Link",
+    "discussion": "Wave Discussion",
+    "viewEntry": "View Entry",
+    "noCommentsHint": "Join the conversation! This is a dedicated space to discuss how these two definitions are linked together.",
+    "seoTitle": "Discussing link between {w1} and {w2}",
+    "seoDesc": "Join the community discussion about the connection between two Lojban definitions.",
+    "errorLoadLink": "Failed to load link details. The link might have been removed."
+  },
   "threadView": {
     "newestFirst": "Newest first",
     "oldestFirst": "Oldest first",

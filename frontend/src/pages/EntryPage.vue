@@ -136,6 +136,15 @@
               </RouterLink>
               <span class="text-gray-500 text-sm ml-2">({{ trans.lang_name }})</span>
               <div class="mt-1 text-gray-800">{{ trans.definition }}</div>
+              <div class="mt-2 flex items-center space-x-3">
+                <RouterLink 
+                  :to="`/definition_link/${trans.link_id}/discussion`"
+                  class="text-xs font-bold text-blue-500 hover:text-blue-700 flex items-center bg-blue-50 px-2 py-1 rounded transition-colors"
+                >
+                  <MessageCircle class="h-3 w-3 mr-1" />
+                  {{ t('definitionLinkDiscussion.discussion') }}
+                </RouterLink>
+              </div>
             </div>
             <button 
               v-if="auth.state.isLoggedIn"
@@ -171,7 +180,7 @@
 </template>
 
 <script setup>
-import { ArrowLeft, AudioWaveform, Trash2 } from 'lucide-vue-next'
+import { ArrowLeft, AudioWaveform, Trash2, MessageCircle } from 'lucide-vue-next'
 import { ref, onMounted, watch, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'

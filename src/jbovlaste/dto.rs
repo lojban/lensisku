@@ -237,6 +237,7 @@ pub struct DefinitionTranslation {
     pub definition: String,
     pub langid: i32,
     pub lang_name: String,
+    pub link_id: i32,
 }
 
 #[derive(Debug, Deserialize, ToSchema)]
