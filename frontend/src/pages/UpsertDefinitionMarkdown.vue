@@ -254,7 +254,7 @@ async function submitValsi() {
     if (response.data.success || response.status === 200) { // Check for 200 status as well
       const definitionId = response.data.definition_id || editDefinitionId.value
       // Redirect to the entry page after successful save
-      router.push(`/valsi/${word.value}?highlight_definition_id=${definitionId}`)
+      router.push(`/valsi/${word.value.replace(/ /g, '_')}?highlight_definition_id=${definitionId}`)
     } else {
        console.error('Error saving definition:', response.data.error)
        // Potentially show error to user using useError composable if needed

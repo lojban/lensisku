@@ -152,7 +152,7 @@ const displayedValsi = computed(() =>
 const isValsiTruncated = computed(() => valsiWord.value.length > MAX_VALSI_DISPLAY_LENGTH);
 const valsiDefinitionLink = computed(() =>
   props.definition.definitionid
-    ? `/valsi/${encodeURIComponent(valsiWord.value)}?highlight_definition_id=${props.definition.definitionid}`
+    ? `/valsi/${encodeURIComponent(valsiWord.value.replace(/ /g, '_'))}?highlight_definition_id=${props.definition.definitionid}`
     : '#'
 );
 const displayedFreeContent = computed(() => {

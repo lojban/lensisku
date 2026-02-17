@@ -1094,6 +1094,8 @@ pub async fn get_entry_details(
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
 
+    let id_or_word = id_or_word.replace('_', " ");
+
     let result = transaction
         .query_opt(
             "SELECT v.valsiid, v.word, vt.descriptor as type_name, v.rafsi, v.source_langid,
@@ -2599,6 +2601,8 @@ pub async fn get_definitions_by_entry(
         SELECT r.*
         FROM definition_ranks r
         ORDER BY r.sort_rank, r.langid, r.time DESC".to_string();
+
+    let id_or_word = id_or_word.replace('_', " ");
 
     let mut definitions: Vec<DefinitionDetail> = transaction
         .query(

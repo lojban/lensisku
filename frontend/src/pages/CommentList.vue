@@ -4,7 +4,7 @@
     <div v-if="valsiDetails" class="mb-4">
       <h2 v-if="!definitionId" class="text-2xl font-bold space-x-2 select-none">
         <span class="text-gray-500 italic">{{ t('commentList.discussingEntry') }}</span>
-        <RouterLink v-if="valsiDetails.valsiid" :to="`/valsi/${valsiDetails.word}`"
+        <RouterLink v-if="valsiDetails.valsiid" :to="`/valsi/${valsiDetails.word.replace(/ /g, '_')}`"
           class="text-blue-700 hover:text-blue-800 hover:underline">
           {{ valsiDetails.word }}
         </RouterLink>

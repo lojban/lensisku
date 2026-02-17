@@ -50,7 +50,7 @@
               :key="word"
             >
               <RouterLink 
-                :to="{ path: `/valsi/${word}`, query: { langid: valsi.source_langid } }"
+                :to="{ path: `/valsi/${word.replace(/ /g, '_')}`, query: { langid: valsi.source_langid } }"
                 class="text-blue-600 hover:text-blue-800 hover:underline"
               >
                 {{ word }}

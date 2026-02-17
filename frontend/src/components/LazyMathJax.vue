@@ -110,7 +110,7 @@ const renderContent = async () => {
               }
             },
             renderer(token) {
-              const url = new URL(`/valsi/${token.href}`, window.location.origin)
+              const url = new URL(`/valsi/${token.href.replace(/ /g, '_')}`, window.location.origin)
               if (props.langId) url.searchParams.set('langid', props.langId)
               if (props.username) url.searchParams.set('username', props.username)
               return `<a
@@ -120,11 +120,11 @@ const renderContent = async () => {
         ]
 
         const renderer = {
-          link(href, title, text) {
-            // Check if this is a valsi link
-            if (href?.href?.startsWith('/valsi/')) {
-              const word = href.href.split('/valsi/')[1]
-              const url = new URL(`/valsi/${word}`, window.location.origin)
+            link(href, title, text) {
+              // Check if this is a valsi link
+              if (href?.href?.startsWith('/valsi/')) {
+                const word = href.href.split('/valsi/')[1]
+                const url = new URL(`/valsi/${word.replace(/ /g, '_')}`, window.location.origin)
               if (props.langId) url.searchParams.set('langid', props.langId)
               if (props.username) url.searchParams.set('username', props.username)
               return `<a
