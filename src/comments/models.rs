@@ -44,6 +44,7 @@ impl postgres_types::FromSql<'_> for CommentContent {
 pub struct Comment {
     pub valsi_id: Option<i32>,
     pub definition_id: Option<i32>,
+    pub definition_link_id: Option<i32>,
     pub comment_id: i32,
     pub thread_id: i32,
     pub parent_id: Option<i32>,
@@ -89,6 +90,7 @@ pub struct Thread {
     pub natlang_word_id: Option<i32>,
     pub definition_id: Option<i32>,
     pub target_user_id: Option<i32>,
+    pub definition_link_id: Option<i32>,
     pub valsi: Option<String>,
     pub natlang_word: Option<String>,
     pub tag: Option<String>,
@@ -161,6 +163,7 @@ pub struct FreeThread {
     pub valsiid: Option<i32>,
     pub definitionid: Option<i32>,
     pub target_user_id: Option<i32>,
+    pub definition_link_id: Option<i32>,
     pub valsi_word: Option<String>,
     pub definition: Option<String>,
     pub last_comment_id: i32,

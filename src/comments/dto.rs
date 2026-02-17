@@ -12,6 +12,7 @@ pub struct NewCommentParams {
     pub valsi_id: Option<i32>,
     pub natlang_word_id: Option<i32>,
     pub definition_id: Option<i32>,
+    pub definition_link_id: Option<i32>,
     pub target_user_id: Option<i32>,
     pub parent_id: Option<i32>,
     pub subject: String,
@@ -81,6 +82,8 @@ pub struct NewCommentRequest {
     pub target_user_id: Option<i32>,
     #[serde(default)]
     pub definition_id: Option<i32>,
+    #[serde(default)]
+    pub definition_link_id: Option<i32>,
     #[serde(default)]
     pub parent_id: Option<i32>, // None or 0 for top-level comments
     pub subject: String,
@@ -174,6 +177,7 @@ pub struct ThreadQuery {
     pub valsi_id: Option<i32>,
     pub natlang_word_id: Option<i32>,
     pub definition_id: Option<i32>,
+    pub definition_link_id: Option<i32>,
     pub target_user_id: Option<i32>,
     pub comment_id: Option<i32>,
     pub scroll_to: Option<i32>,
@@ -214,6 +218,7 @@ pub struct SearchCommentsQuery {
     pub username: Option<String>,
     pub valsi_id: Option<i32>,
     pub definition_id: Option<i32>,
+    pub definition_link_id: Option<i32>,
     pub target_user_id: Option<i32>,
 }
 
@@ -227,6 +232,7 @@ pub struct SearchCommentsParams {
     pub username: Option<String>,
     pub valsi_id: Option<i32>,
     pub definition_id: Option<i32>,
+    pub definition_link_id: Option<i32>,
     pub target_user_id: Option<i32>,
 }
 
@@ -246,6 +252,7 @@ pub struct ThreadParams {
     pub valsi_id: Option<i32>,
     pub natlang_word_id: Option<i32>,
     pub definition_id: Option<i32>,
+    pub definition_link_id: Option<i32>,
     pub target_user_id: Option<i32>,
     pub comment_id: Option<i32>,
     pub scroll_to: Option<i32>,

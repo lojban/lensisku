@@ -71,6 +71,7 @@ pub async fn get_thread(
         valsi_id: query.valsi_id,
         natlang_word_id: query.natlang_word_id,
         definition_id: query.definition_id,
+        definition_link_id: query.definition_link_id,
         target_user_id: query.target_user_id,
         comment_id: query.comment_id,
         scroll_to: query.scroll_to,
@@ -128,6 +129,7 @@ pub async fn search_comments(
         username: query.username.clone(),
         valsi_id: query.valsi_id,
         definition_id: query.definition_id,
+        definition_link_id: query.definition_link_id,
         target_user_id: query.target_user_id,
     };
 
@@ -220,6 +222,7 @@ pub async fn add_comment(
         valsi_id: request.valsi_id,
         natlang_word_id: request.natlang_word_id,
         definition_id: request.definition_id,
+        definition_link_id: request.definition_link_id,
         target_user_id: request.target_user_id,
         parent_id: request.parent_id,
         subject: request.subject.clone(),

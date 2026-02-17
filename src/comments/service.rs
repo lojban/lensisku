@@ -53,6 +53,7 @@ pub async fn get_thread_comments(
             params.valsi_id,
             params.natlang_word_id,
             params.definition_id,
+            params.definition_link_id,
             params.target_user_id,
         )
         .await?
@@ -81,6 +82,7 @@ pub async fn get_thread_comments(
                         c.total_replies,
                         c.valsiid,
                         c.definitionid,
+                        c.definition_link_id,
                         c.content::text as content,
                         cc.total_reactions as counter_reactions,
                         cc.total_replies as counter_replies,
@@ -112,6 +114,7 @@ pub async fn get_thread_comments(
                         c.total_replies,
                         c.valsiid,
                         c.definitionid,
+                        c.definition_link_id,
                         c.content::text as content,
                         cc.total_reactions as counter_reactions,
                         cc.total_replies as counter_replies,
@@ -184,8 +187,9 @@ pub async fn get_thread_comments(
                 total_replies: row.get::<_, Option<i64>>("total_replies").unwrap_or(0),
                 is_liked: row.get("is_liked"),
                 is_bookmarked: row.get("is_bookmarked"),
-                valsi_id: None,
-                definition_id: None,
+                valsi_id: row.get("valsiid"),
+                definition_id: row.get("definitionid"),
+                definition_link_id: row.get("definition_link_id"),
                 reactions: reactions_map.get(&comment_id).cloned().unwrap_or_default(),
                 parent_content: row
                     .get::<_, Option<String>>("parent_content")
@@ -228,6 +232,7 @@ pub async fn add_comment(params: NewCommentParams) -> Result<Comment, Box<dyn st
             params.valsi_id,
             params.natlang_word_id,
             params.definition_id,
+            params.definition_link_id,
             params.target_user_id,
         )
         .await?
@@ -457,11 +462,12 @@ async fn get_thread_id_by_context(
     valsi_id: Option<i32>,
     natlang_word_id: Option<i32>,
     definition_id: Option<i32>,
+    definition_link_id: Option<i32>,
     target_user_id: Option<i32>,
 ) -> Result<Option<i32>, Box<dyn std::error::Error>> {
     // Ensure only one context type is primarily active or it's a free-standing thread context
     let mut active_contexts = 0;
-    if valsi_id.is_some() || natlang_word_id.is_some() || definition_id.is_some() {
+    if valsi_id.is_some() || natlang_word_id.is_some() || definition_id.is_some() || definition_link_id.is_some() {
         active_contexts += 1;
     }
     if target_user_id.is_some() {
@@ -481,12 +487,14 @@ async fn get_thread_id_by_context(
             WHERE (t.valsiid = $1 OR ($1 IS NULL AND (t.valsiid IS NULL OR t.valsiid = 0)))
               AND (t.natlangwordid = $2 OR ($2 IS NULL AND (t.natlangwordid IS NULL OR t.natlangwordid = 0)))
               AND (t.definitionid = $3 OR ($3 IS NULL AND (t.definitionid IS NULL OR t.definitionid = 0)))
-              AND (t.target_user_id = $4 OR ($4 IS NULL AND t.target_user_id IS NULL))
+              AND (t.definition_link_id = $4 OR ($4 IS NULL AND (t.definition_link_id IS NULL OR t.definition_link_id = 0)))
+              AND (t.target_user_id = $5 OR ($5 IS NULL AND t.target_user_id IS NULL))
             LIMIT 1",
             &[
                 &valsi_id,
                 &natlang_word_id,
                 &definition_id,
+                &definition_link_id,
                 &target_user_id,
             ],
         )
@@ -506,7 +514,7 @@ pub async fn toggle_like(
     // First, ensure comment_counters record exists
     transaction
         .execute(
-            "INSERT INTO comment_counters (comment_id, total_likes, total_replies)
+            "INSERT INTO comment_counters (comment_id, total_reactions, total_replies)
              VALUES ($1, 0, 0)
              ON CONFLICT (comment_id) DO NOTHING",
             &[&comment_id],
@@ -535,7 +543,7 @@ pub async fn toggle_like(
             transaction
                 .execute(
                     "UPDATE comment_counters
-                     SET total_likes = total_likes + 1
+                     SET total_reactions = total_reactions + 1
                      WHERE comment_id = $1",
                     &[&comment_id],
                 )
@@ -558,7 +566,7 @@ pub async fn toggle_like(
             transaction
                 .execute(
                     "UPDATE comment_counters
-                     SET total_likes = total_likes - 1
+                     SET total_reactions = total_reactions - 1
                      WHERE comment_id = $1",
                     &[&comment_id],
                 )
@@ -597,6 +605,7 @@ async fn get_comment_by_id(
                     c.total_replies,
                     c.valsiid,
                     c.definitionid,
+                    c.definition_link_id,
                     c.content::text as content,
                     cc.total_reactions,
                     cc.total_replies,
@@ -631,8 +640,9 @@ async fn get_comment_by_id(
         total_replies: row.get::<_, Option<i64>>("total_replies").unwrap_or(0),
         is_liked: row.get("is_liked"),
         is_bookmarked: row.get("is_bookmarked"),
-        valsi_id: None,
-        definition_id: None,
+        valsi_id: row.get("valsiid"),
+        definition_id: row.get("definitionid"),
+        definition_link_id: row.get("definition_link_id"),
         reactions,
         valsi_word: None,
         definition: None,
@@ -725,6 +735,7 @@ pub async fn get_bookmarked_comments(
                 is_bookmarked: row.get("is_bookmarked"),
                 valsi_id: row.get("valsiid"),
                 definition_id: row.get("definitionid"),
+                definition_link_id: row.get("definition_link_id"),
                 reactions: reactions_map.get(&comment_id).cloned().unwrap_or_default(),
                 valsi_word: None,
                 definition: None,
@@ -824,6 +835,7 @@ pub async fn get_liked_comments(
                 is_bookmarked: row.get("is_bookmarked"),
                 valsi_id: row.get("valsiid"),
                 definition_id: row.get("definitionid"),
+                definition_link_id: row.get("definition_link_id"),
                 reactions: reactions_map.get(&comment_id).cloned().unwrap_or_default(),
                 valsi_word: None,
                 definition: None,
@@ -978,8 +990,9 @@ pub async fn get_user_comments(
                 total_replies: row.get::<_, Option<i64>>("total_replies").unwrap_or(0),
                 is_liked: row.get("is_liked"),
                 is_bookmarked: row.get("is_bookmarked"),
-                valsi_id: None,
-                definition_id: None,
+                valsi_id: row.get("valsiid"),
+                definition_id: row.get("definitionid"),
+                definition_link_id: row.get("definition_link_id"),
                 reactions: reactions_map.get(&comment_id).cloned().unwrap_or_default(),
                 valsi_word: None,
                 definition: None,
@@ -1240,6 +1253,7 @@ pub async fn get_trending_comments(
                 is_bookmarked: row.get("is_bookmarked"),
                 valsi_id: row.get("valsiid"),
                 definition_id: row.get("definitionid"),
+                definition_link_id: row.get("definition_link_id"),
                 reactions: reactions_map.get(&comment_id).cloned().unwrap_or_default(),
                 valsi_word: None,
                 definition: None,
@@ -1351,8 +1365,9 @@ pub async fn get_most_bookmarked_comments(
                 total_replies: row.get::<_, Option<i64>>("total_replies").unwrap_or(0),
                 is_liked: row.get("is_liked"),
                 is_bookmarked: row.get("is_bookmarked"),
-                valsi_id: None,
-                definition_id: None,
+                valsi_id: row.get("valsiid"),
+                definition_id: row.get("definitionid"),
+                definition_link_id: row.get("definition_link_id"),
                 reactions: reactions_map.get(&comment_id).cloned().unwrap_or_default(),
                 valsi_word: None,
                 definition: None,
@@ -1489,8 +1504,9 @@ pub async fn get_comments_by_hashtag(
                 total_replies: row.get::<_, Option<i64>>("total_replies").unwrap_or(0),
                 is_liked: row.get("is_liked"),
                 is_bookmarked: row.get("is_bookmarked"),
-                valsi_id: None,
-                definition_id: None,
+                valsi_id: row.get("valsiid"),
+                definition_id: row.get("definitionid"),
+                definition_link_id: row.get("definition_link_id"),
                 reactions: reactions_map.get(&comment_id).cloned().unwrap_or_default(),
                 valsi_word: None,
                 definition: None,
@@ -1721,6 +1737,7 @@ pub async fn search_comments(
             CASE WHEN cb.user_id IS NOT NULL THEN true ELSE false END as is_bookmarked,
             t.valsiid,
             t.definitionid,
+            t.definition_link_id,
             u.username,
             t.target_user_id,
             v.word as valsi_word,
@@ -1769,7 +1786,15 @@ pub async fn search_comments(
         target_user_id_value = target_user_id;
         conditions.push(format!("t.target_user_id = ${}", param_count));
         query_params.push(&target_user_id_value);
-        // param_count += 1; // Not needed if it's the last one before pagination params
+        param_count += 1;
+    }
+
+    let definition_link_id_value: i32;
+    if let Some(definition_link_id) = search_params.definition_link_id {
+        definition_link_id_value = definition_link_id;
+        conditions.push(format!("t.definition_link_id = ${}", param_count));
+        query_params.push(&definition_link_id_value);
+        param_count += 1;
     }
 
     // Construct the WHERE clause
@@ -1842,6 +1867,7 @@ pub async fn search_comments(
                 is_bookmarked: row.get("is_bookmarked"),
                 valsi_id: row.get("valsiid"),
                 definition_id: row.get("definitionid"),
+                definition_link_id: row.get("definition_link_id"),
                 reactions: reactions_map.get(&comment_id).cloned().unwrap_or_default(),
                 valsi_word: row.get("valsi_word"),
                 definition: row.get("definition"),
@@ -1946,6 +1972,7 @@ pub async fn get_my_reactions(
                 is_bookmarked: row.get("is_bookmarked"),
                 valsi_id: row.get("valsiid"),
                 definition_id: row.get("definitionid"),
+                definition_link_id: row.get("definition_link_id"),
                 reactions: reactions_map.get(&comment_id).cloned().unwrap_or_default(),
                 valsi_word: None,
                 definition: None,
@@ -2088,11 +2115,12 @@ async fn get_or_create_thread_id(
     valsi_id: Option<i32>,
     natlang_word_id: Option<i32>,
     definition_id: Option<i32>,
+    definition_link_id: Option<i32>,
     target_user_id: Option<i32>,
 ) -> Result<i32, Box<dyn std::error::Error>> {
     // Validate that only one context type is primarily active or it's a free-standing thread
     let mut active_contexts = 0;
-    if valsi_id.is_some() || natlang_word_id.is_some() || definition_id.is_some() {
+    if valsi_id.is_some() || natlang_word_id.is_some() || definition_id.is_some() || definition_link_id.is_some() {
         active_contexts += 1;
     }
     if target_user_id.is_some() {
@@ -2108,26 +2136,27 @@ async fn get_or_create_thread_id(
         WHERE (valsiid = $1 OR ($1 IS NULL AND valsiid IS NULL))
           AND (natlangwordid = $2 OR ($2 IS NULL AND natlangwordid IS NULL))
           AND (definitionid = $3 OR ($3 IS NULL AND definitionid IS NULL))
-          AND (target_user_id = $4 OR ($4 IS NULL AND target_user_id IS NULL))
+          AND (definition_link_id = $4 OR ($4 IS NULL AND definition_link_id IS NULL))
+          AND (target_user_id = $5 OR ($5 IS NULL AND target_user_id IS NULL))
         LIMIT 1";
 
     if let Some(row) = transaction
         .query_opt(
             query_select,
-            &[&valsi_id, &natlang_word_id, &definition_id, &target_user_id],
+            &[&valsi_id, &natlang_word_id, &definition_id, &definition_link_id, &target_user_id],
         )
         .await?
     {
         Ok(row.get("threadid"))
     } else {
         let query_insert = "
-            INSERT INTO threads (valsiid, natlangwordid, definitionid, target_user_id)
-            VALUES ($1, $2, $3, $4)
+            INSERT INTO threads (valsiid, natlangwordid, definitionid, definition_link_id, target_user_id)
+            VALUES ($1, $2, $3, $4, $5)
             RETURNING threadid";
         Ok(transaction
             .query_one(
                 query_insert,
-                &[&valsi_id, &natlang_word_id, &definition_id, &target_user_id],
+                &[&valsi_id, &natlang_word_id, &definition_id, &definition_link_id, &target_user_id],
             )
             .await?
             .get("threadid"))
@@ -2177,6 +2206,7 @@ pub async fn list_threads(
                     t.threadid,
                     t.valsiid,
                     t.definitionid,
+                    t.definition_link_id,
                     t.target_user_id,
                     v.word as valsi_word,
                     d.definition,
@@ -2213,6 +2243,7 @@ pub async fn list_threads(
             valsiid: row.get("valsiid"),
             definitionid: row.get("definitionid"),
             target_user_id: row.get("target_user_id"),
+            definition_link_id: row.get("definition_link_id"),
             valsi_word: row.get("valsi_word"),
             definition: row.get("definition"),
             last_comment_id: row.get("last_comment_id"),
@@ -2264,7 +2295,7 @@ pub async fn list_threads(
                 is_bookmarked: ft.is_bookmarked,
                 valsi_id: ft.valsiid,
                 definition_id: ft.definitionid,
-                // target_user_id: ft.target_user_id, // Add if Comment struct is updated
+                definition_link_id: ft.definition_link_id,
                 reactions: vec![],
                 parent_content: None,
                 valsi_word: ft.valsi_word,
@@ -2286,11 +2317,11 @@ pub async fn get_like_count(
     let client = pool.get().await?;
     let row = client
         .query_one(
-            "SELECT total_likes FROM comment_counters WHERE comment_id = $1",
+            "SELECT total_reactions FROM comment_counters WHERE comment_id = $1",
             &[&comment_id],
         )
         .await?;
-    Ok(row.get("total_likes"))
+    Ok(row.get("total_reactions"))
 }
 
 pub async fn list_comments(
@@ -2380,6 +2411,7 @@ pub async fn list_comments(
                 is_bookmarked: row.get("is_bookmarked"),
                 valsi_id: row.get("valsiid"),
                 definition_id: row.get("definitionid"),
+                definition_link_id: row.get("definition_link_id"),
                 reactions: reactions_map.get(&comment_id).cloned().unwrap_or_default(),
                 valsi_word: row.get("valsi_word"),
                 definition: row.get("definition"),
