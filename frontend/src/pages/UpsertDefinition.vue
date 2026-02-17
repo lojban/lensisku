@@ -668,7 +668,7 @@ const submitValsi = async () => {
       // Wait a moment to show success message
       setTimeout(() => {
         const definitionId = response.data.definition_id || editDefinitionId.value
-        router.push(`/valsi/${word.value}?highlight_definition_id=${definitionId}`)
+        router.push(`/valsi/${word.value.replace(/ /g, '_')}?highlight_definition_id=${definitionId}`)
       }, 1500)
     } else {
       showError(formatDefinitionError(response.data.error) || t('upsertDefinition.saveError'))

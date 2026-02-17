@@ -96,7 +96,7 @@ const getChangeLink = (change) => {
   } else if (change.change_type === 'message') {
     return `/message/${change.comment_id}`
   }
-  return `/valsi/${change.word}?highlight_definition_id=${change.definition_id}`
+  return `/valsi/${change.word.replace(/ /g, '_')}?highlight_definition_id=${change.definition_id}`
 }
 
 const formatTime = (timestamp) =>

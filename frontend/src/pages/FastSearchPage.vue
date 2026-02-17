@@ -62,7 +62,7 @@
                 <h2
                   class="text-base font-semibold text-blue-700 hover:text-blue-800 hover:underline truncate flex-shrink-0"
                 >
-                  <RouterLink :to="{ path: `/valsi/${word}`, query: { langid: definitions[0]?.langid } }">
+                  <RouterLink :to="{ path: `/valsi/${word.replace(/ /g, '_')}`, query: { langid: definitions[0]?.langid } }">
                     {{ word }}
                   </RouterLink>
                 </h2>
