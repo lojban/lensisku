@@ -947,7 +947,8 @@
       "canonicalLabel": "Canonical Form:",
       "fullWordModalTitle": "Full word",
       "fullWordModalHint": "Click the word below to go to the definition page.",
-      "clickToSeeFullWord": "Click to see full word"
+      "clickToSeeFullWord": "Click to see full word",
+      "examplesLabel": "Examples:"
     },
     "imageUploadButton": {
       "invalidType": "Please select an image file",
