@@ -41,9 +41,10 @@ struct ApiDoc;
 
 pub fn configure(cfg: &mut web::ServiceConfig) {
     let openapi = ApiDoc::openapi();
-    let config = Config::new(["/api-docs/openapi.json"]).persist_authorization(true);
+    let config = Config::new(["openapi.json"]).persist_authorization(true);
     cfg.service(
         SwaggerUi::new("/swagger-ui/{_:.*}")
+            .url("/swagger-ui/openapi.json", openapi.clone())
             .url("/api-docs/openapi.json", openapi)
             .config(config),
     );
