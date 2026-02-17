@@ -16,7 +16,7 @@ use super::{
     AddDefinitionRequest, BulkImportParams, DefinitionListResponse, DefinitionResponse,
     GetImageDefinitionQuery, ImageData, KeywordMapping, ListDefinitionsQuery,
     NonLojbanDefinitionsQuery, RecentChange, RecentChangesResponse, SearchDefinitionsParams,
-    UpdateDefinitionRequest, ValsiDetail, ValsiType,
+    UpdateDefinitionRequest, ValsiDetail, ValsiType, Example,
 };
 use crate::jbovlaste::models::DefinitionDetail;
 use vlazba::jvokaha::jvokaha;
@@ -242,6 +242,7 @@ pub async fn semantic_search(
             sound_url: None,
             metadata: None,
             rafsi: None,
+            examples: None,
         });
     }
 
@@ -574,6 +575,7 @@ pub async fn search_definitions(
             embedding: None,
             metadata: None,
             rafsi: None,
+            examples: None,
         });
     }
 
@@ -842,6 +844,7 @@ pub async fn fast_search_definitions(
             embedding: None,
             metadata: None,
             rafsi: None,
+            examples: None,
         });
     }
 
@@ -1615,6 +1618,30 @@ pub async fn get_definition(
 
     transaction.commit().await?;
 
+    // Fetch examples
+    let client = pool.get().await?;
+    let example_rows = client
+        .query(
+            "SELECT e.exampleid, e.content, e.examplenum, e.time, u.username
+             FROM example e
+             JOIN users u ON e.userid = u.userid
+             WHERE e.definitionid = $1
+             ORDER BY e.examplenum",
+            &[&definition_id],
+        )
+        .await?;
+
+    let examples: Vec<Example> = example_rows
+        .into_iter()
+        .map(|row| Example {
+            exampleid: row.get("exampleid"),
+            content: row.get("content"),
+            examplenum: row.get("examplenum"),
+            username: row.get("username"),
+            time: row.get("time"),
+        })
+        .collect();
+
     let word: String = row.get("valsiword");
     let sound_urls = check_sound_urls(&[word.clone()], redis_cache).await;
 
@@ -1647,6 +1674,7 @@ pub async fn get_definition(
         created_at: row.get("created_at"),
         has_image: row.get("has_image"),
         metadata: None,
+        examples: Some(examples),
     };
 
     Ok(Some(definition))
@@ -2214,6 +2242,7 @@ pub async fn list_definitions(
             has_image: row.get("has_image"),
             metadata: None,
             rafsi: None,
+            examples: None,
         })
         .collect();
 
@@ -2380,6 +2409,7 @@ pub async fn list_non_lojban_definitions(
             has_image: row.get("has_image"),
             metadata: None,
             rafsi: None,
+            examples: None,
         })
         .collect();
 
@@ -2612,6 +2642,7 @@ pub async fn get_definitions_by_entry(
             sound_url: None,
             metadata: None,
             rafsi: None,
+            examples: None,
         })
         .collect();
 
@@ -2662,6 +2693,18 @@ pub async fn get_definitions_by_entry(
         Vec::new()
     };
 
+    // Get examples in bulk
+    let examples_rows = transaction
+        .query(
+            "SELECT e.exampleid, e.content, e.examplenum, e.time, e.definitionid, u.username
+             FROM example e
+             JOIN users u ON e.userid = u.userid
+             WHERE e.definitionid = ANY($1)
+             ORDER BY e.definitionid, e.examplenum",
+            &[&def_ids],
+        )
+        .await?;
+
     let words: Vec<String> = definitions.iter().map(|d| d.valsiword.clone()).collect();
     let sound_urls = check_sound_urls(&words, redis_cache).await;
 
@@ -2690,6 +2733,23 @@ pub async fn get_definitions_by_entry(
             .find(|r| r.get::<_, i32>("definitionid") == def.definitionid)
         {
             def.user_vote = Some(row.get("vote"));
+        }
+
+        // Update examples
+        let def_examples: Vec<Example> = examples_rows
+            .iter()
+            .filter(|r| r.get::<_, i32>("definitionid") == def.definitionid)
+            .map(|row| Example {
+                exampleid: row.get("exampleid"),
+                content: row.get("content"),
+                examplenum: row.get("examplenum"),
+                username: row.get("username"),
+                time: row.get("time"),
+            })
+            .collect();
+
+        if !def_examples.is_empty() {
+            def.examples = Some(def_examples);
         }
     }
 
@@ -3721,6 +3781,7 @@ pub async fn list_definitions_by_client_id(
             similarity: None,
             metadata: row.get("metadata"),
             rafsi: None,
+            examples: None,
         });
     }
 

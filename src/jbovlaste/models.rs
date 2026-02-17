@@ -77,6 +77,17 @@ pub struct DefinitionDetail {
     pub similarity: Option<f64>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub metadata: Option<serde_json::Value>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub examples: Option<Vec<Example>>,
+}
+
+#[derive(Debug, Serialize, Deserialize, ToSchema, Clone)]
+pub struct Example {
+    pub exampleid: i32,
+    pub content: String,
+    pub examplenum: i32,
+    pub username: String,
+    pub time: i32,
 }
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
@@ -117,6 +128,7 @@ impl From<tokio_postgres::Row> for DefinitionDetail {
             sound_url: row.get("sound_url"),
             embedding: None,
             metadata: row.get("metadata"),
+            examples: None,
         }
     }
 }

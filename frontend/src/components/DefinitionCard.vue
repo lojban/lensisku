@@ -200,6 +200,36 @@
           <LazyMathJax :content="definition.etymology" :enable-markdown="true" />
         </div>
 
+        <div v-if="definition.examples && definition.examples.length > 0" class="w-full mt-2">
+          <h4 class="italic text-gray-600 mb-2">
+            {{ t('components.definitionCard.examplesLabel') }}
+          </h4>
+          <div class="overflow-x-auto border rounded-md">
+            <table class="min-w-full divide-y divide-gray-200 text-sm">
+              <thead class="bg-gray-50 uppercase tracking-wider text-[10px] font-semibold text-gray-500">
+                <tr>
+                  <th scope="col" class="px-3 py-2 text-left">#</th>
+                  <th scope="col" class="px-3 py-2 text-left">Content</th>
+                  <th scope="col" class="px-3 py-2 text-left">By</th>
+                </tr>
+              </thead>
+              <tbody class="bg-white divide-y divide-gray-100">
+                <tr v-for="ex in definition.examples" :key="ex.exampleid" class="hover:bg-gray-50/50">
+                  <td class="px-3 py-2 whitespace-nowrap text-gray-400 font-mono text-xs">
+                    {{ ex.examplenum }}
+                  </td>
+                  <td class="px-3 py-2 text-gray-700">
+                    <LazyMathJax :content="ex.content" :enable-markdown="true" />
+                  </td>
+                  <td class="px-3 py-2 whitespace-nowrap text-gray-500 text-xs">
+                    {{ ex.username }}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
         <div v-if="definition.owner_only && !props.disableOwnerOnlyLock" class="flex items-center text-amber-600">
           <Lock class="h-5 w-5 mr-1" />
           <span class="text-sm">{{ t('components.definitionCard.ownerOnlyNote') }}</span>
