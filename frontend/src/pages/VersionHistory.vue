@@ -303,7 +303,7 @@ const performRevertToVersion = async (versionId) => {
 
 // Helper functions
 const formatDate = (date) => {
-  return new Date(date).toLocaleString(undefined, {
+  return new Date(date).toLocaleString(locale.value, {
     year: 'numeric',
     month: 'short',
     day: 'numeric',

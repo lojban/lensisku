@@ -346,7 +346,7 @@ import { useAuth } from '@/composables/useAuth';
 import AudioPlayer from './AudioPlayer.vue';
 import LazyMathJax from './LazyMathJax.vue';
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const auth = useAuth();
 const router = useRouter();
 
@@ -529,7 +529,7 @@ const getLanguageName = (langId) => {
 }
 
 const formatDate = (timestamp) => {
-  return new Date(timestamp).toLocaleString(undefined, {
+  return new Date(timestamp).toLocaleString(locale.value, {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
