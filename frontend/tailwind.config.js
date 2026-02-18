@@ -280,6 +280,9 @@ export default {
             '@apply btn-base text-purple-700 bg-purple-50 enabled:hover:bg-purple-200 border-purple-600':
               {},
           },
+          '.btn-link': {
+            '@apply btn-base text-blue-700 bg-blue-50 enabled:hover:bg-blue-200 border-blue-600': {},
+          },
           '.btn-previous, .btn-next': {
             '@apply btn-base text-gray-700 bg-gray-50 enabled:hover:bg-gray-200 border-gray-500':
               {},
