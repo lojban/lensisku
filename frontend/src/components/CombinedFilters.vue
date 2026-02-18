@@ -1,12 +1,24 @@
 <template>
   <div class="filters space-y-4">
     <!-- Language Filter Section -->
-    <div class="flex flex-col sm:flex-row items-center sm:justify-between gap-4 p-4 bg-white rounded-lg shadow-sm">
+    <div class="flex flex-col sm:flex-row items-center sm:justify-between gap-4 md:p-4 md:bg-white md:rounded-lg md:shadow-sm">
       <MultiSelect v-model="selectedLangs" :options="languages" :max-selected-labels="3" name="id"
         :option-label="(lang) => `${lang.real_name} (${lang.english_name})`" filter
         :placeholder="t('filters.selectLanguages')" class="w-full sm:w-80 !rounded-full" />
 
-      <div class="flex items-center gap-2 self-end md:self-center">
+        
+        <div class="flex items-center gap-2 self-end md:self-center">
+        <div class="flex items-center gap-2">
+          <input
+            id="semantic-search-filter"
+            v-model="filters.isSemantic"
+            type="checkbox"
+            class="checkbox-toggle"
+            @change="FemitUpdate">
+          <label for="semantic-search-filter" class="text-sm text-gray-700 select-none cursor-pointer whitespace-nowrap">
+            {{ t('searchForm.modes.semantic') }}
+          </label>
+        </div>
         <button v-if="hasAnyActiveFilters" class="btn-empty h-8" @click="resetAllFilters">
           {{ t('filters.resetAllFilters') }}
         </button>
@@ -95,6 +107,7 @@ const props = defineProps({
       selectedLanguages: [],
       word_type: null,
       source_langid: 1, // Default to Lojban
+      isSemantic: true,
     }),
   },
   languages: {
@@ -113,6 +126,7 @@ const filters = ref({
   username: props.modelValue.username,
   word_type: null,
   source_langid: props.modelValue.source_langid || 1, // Initialize from prop or default
+  isSemantic: props.modelValue.isSemantic !== false, // Default to true
 })
 
 const showWordType = computed(() => !filters.value.selmaho)
@@ -130,6 +144,7 @@ watch(
       username: newVal.username,
       word_type: null,
       source_langid: newVal.source_langid || 1, // Sync source_langid
+      isSemantic: newVal.isSemantic !== false,
     }
 
     if (newVal.word_type && wordTypes.value.length > 0) {
@@ -187,6 +202,7 @@ const hasAnyActiveFilters = computed(() => {
     filters.value.username ||
     filters.value.word_type ||
     filters.value.source_langid !== 1 || // Check if source_langid is not default
+    !filters.value.isSemantic || // isSemantic is true by default, so if it's false, it's modified
     expanded.value
   )
 })
@@ -231,6 +247,7 @@ const emitUpdate = () => {
     selectedLanguages: selectedLangs.value.map((lang) => lang.id),
     word_type: filters.value.word_type?.type_id || null,
     source_langid: filters.value.source_langid || 1, // Include source_langid
+    isSemantic: filters.value.isSemantic,
   }
   emit('update:modelValue', updatedValue)
   emit('change', updatedValue)
@@ -254,6 +271,7 @@ const resetAllFilters = () => {
     selectedLanguages: defaultLangs.map((lang) => lang.id),
     word_type: null,
     source_langid: 1, // Reset source_langid to default
+    isSemantic: true, // Reset to default
   }
 
   // Single emit for both reset and update

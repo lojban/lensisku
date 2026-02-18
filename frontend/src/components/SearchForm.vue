@@ -41,7 +41,7 @@
 </template>
 
 <script setup>
-import { Book, Search, Mail, List, ChevronDown, Waves, X } from 'lucide-vue-next'
+import { Book, Mail, List, ChevronDown, Waves, X } from 'lucide-vue-next'
 import Select from 'primevue/select'
 import { ref, computed, watch, onBeforeUnmount } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -51,7 +51,6 @@ const { t } = useI18n()
 
 const modes = ref([
   { name: t('searchForm.modes.dictionary'), value: 'dictionary', icon: Book, color: 'text-blue-500' },
-  { name: t('searchForm.modes.semantic'), value: 'semantic', icon: Search, color: 'text-green-500' },
   { name: t('searchForm.modes.comments'), value: 'comments', icon: Waves, color: 'text-purple-500' },
   { name: t('searchForm.modes.messages'), value: 'messages', icon: Mail, color: 'text-orange-500' },
   { name: t('searchForm.modes.muplis'), value: 'muplis', icon: List, color: 'text-teal-500' }
@@ -64,7 +63,7 @@ const props = defineProps({
   },
   initialMode: {
     type: String,
-    default: 'dictionary',
+    default: 'semantic',
   }
 })
 
@@ -72,7 +71,7 @@ const emit = defineEmits(['search'])
 
 const searchInput = ref(null)
 const query = ref(normalizeSearchQuery(props.initialQuery))
-const mode = ref(modes.value.find(m => m.value === props.initialMode) || modes.value[0])
+const mode = ref(modes.value.find(m => m.value === (props.initialMode === 'semantic' ? 'dictionary' : props.initialMode)) || modes.value[0])
 const isSearching = ref(false)
 let searchTimeout = null
 
@@ -88,8 +87,6 @@ const getPlaceholder = computed(() => {
       return t('searchForm.placeholder.muplis')
     case 'dictionary':
       return t('searchForm.placeholder.dictionary')
-    case 'semantic':
-      return t('searchForm.placeholder.semantic')
     case 'comments':
       return t('searchForm.placeholder.comments')
     default:
@@ -131,21 +128,22 @@ function handleInput() {
 }
 
 function emitSearch() {
-  emit('search', { query: normalizeSearchQuery(query.value), mode: mode.value.value })
+  let effectiveMode = mode.value.value
+  emit('search', { query: normalizeSearchQuery(query.value), mode: effectiveMode })
 }
 
 function clearInput() {
   // Clear any pending timeouts first to prevent them from firing after clearing
   clearSearchTimeout()
   query.value = ''
-  emit('search', { query: '', mode: mode.value.value })
+  emitSearch()
   focusInput()
 }
 
 function onModeChange() {
   // Clear any pending timeouts when mode changes to prevent stale searches
   clearSearchTimeout()
-  emit('search', { query: normalizeSearchQuery(query.value), mode: mode.value.value})
+  emitSearch()
 }
 
 watch(
@@ -160,7 +158,8 @@ watch(
 watch(
   () => props.initialMode,
   (newValue) => {
-    const newMode = modes.value.find(m => m.value === newValue)
+    const targetModeValue = newValue === 'semantic' ? 'dictionary' : newValue
+    const newMode = modes.value.find(m => m.value === targetModeValue)
     if (newMode) {
       // Clear any pending timeouts when mode changes externally
       clearSearchTimeout()
@@ -182,3 +181,4 @@ defineExpose({
   focusInput
 })
 </script>
+

@@ -65,8 +65,9 @@ pub async fn semantic_search(
     // Convert Vec<f32> to pgvector::Vector
     let vector = pgvector::Vector::from(query_embedding);
     // Start with parameters needed for both queries (main and count)
+    // $1 = vector, $2 = languages_slice, $3 = search_term
     let mut query_params: Vec<&(dyn tokio_postgres::types::ToSql + Sync)> =
-        vec![&vector, &languages_slice];
+        vec![&vector, &languages_slice, &params.search_term];
 
     // Build dynamic conditions and add parameters
     let mut conditions = vec![];
@@ -110,7 +111,12 @@ pub async fn semantic_search(
             SELECT 
                 d.definitionid,
                 d.embedding <=> $1::vector as similarity,
-                COALESCE(dv.score, 0) as score
+                COALESCE(dv.score, 0) as score,
+                CASE 
+                    WHEN v.word = $3 THEN 0 
+                    WHEN v.word ILIKE $3 THEN 1
+                    ELSE 2 
+                END as exact_match_rank
             FROM definitions d
             JOIN valsi v ON d.valsiid = v.valsiid
             JOIN valsitypes vt ON v.typeid = vt.typeid
@@ -122,7 +128,7 @@ pub async fn semantic_search(
               AND d.definition != ''
               AND d.embedding IS NOT NULL
             {additional_conditions}
-            ORDER BY d.embedding <=> $1::vector
+            ORDER BY exact_match_rank ASC, d.embedding <=> $1::vector ASC
             LIMIT 1000
         )
         SELECT COUNT(*)
@@ -167,7 +173,12 @@ pub async fn semantic_search(
                 COALESCE(dv.score, 0) as score,
                 COALESCE(cc.comment_count, 0) as comment_count,
                 (di.definition_id IS NOT NULL) as has_image,
-                d.embedding <=> $1::vector as similarity
+                d.embedding <=> $1::vector as similarity,
+                CASE 
+                    WHEN v.word = $3 THEN 0 
+                    WHEN v.word ILIKE $3 THEN 1
+                    ELSE 2 
+                END as exact_match_rank
             FROM definitions d
             JOIN valsi v ON d.valsiid = v.valsiid
             JOIN valsitypes vt ON v.typeid = vt.typeid
@@ -186,7 +197,7 @@ pub async fn semantic_search(
               AND d.definition != ''
               AND d.embedding IS NOT NULL
             {additional_conditions}
-            ORDER BY d.embedding <=> $1::vector
+            ORDER BY exact_match_rank ASC, d.embedding <=> $1::vector ASC
             LIMIT 1000
         ),
         ranked_results AS (
@@ -196,7 +207,7 @@ pub async fn semantic_search(
         )
         SELECT r.*
         FROM ranked_results r
-        ORDER BY r.similarity ASC
+        ORDER BY r.exact_match_rank ASC, r.similarity ASC
         {limit_offset_sql}"#
     );
 

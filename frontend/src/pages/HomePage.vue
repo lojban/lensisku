@@ -407,7 +407,7 @@ const props = defineProps({
   },
   urlSearchMode: {
     type: String,
-    default: 'dictionary',
+    default: 'semantic',
   },
 })
 
@@ -492,10 +492,11 @@ const languages = ref([])
 const filters = ref({
   selmaho: '',
   username: '',
-  word_type: null,
-  isExpanded: false,
-  selectedLanguages: [],
-  source_langid: 1,
+  word_type: route.query.word_type ? Number(route.query.word_type) : null,
+  isExpanded: route.query.isExpanded === 'true',
+  selectedLanguages: route.query.langs ? route.query.langs.split(',').map(Number) : [],
+  source_langid: route.query.source_langid ? Number(route.query.source_langid) : 1,
+  isSemantic: searchMode.value === 'semantic' || searchMode.value === 'dictionary' ? searchMode.value !== 'dictionary' : true,
 })
 
 // Search queues to prevent race conditions
@@ -537,14 +538,15 @@ const fetchDefinitions = async (page, search = '') => {
     }
 
     let response
-    if (auth.state.isLoggedIn) {
+    const isSemantic = searchMode.value === 'semantic'
+    
+    if (auth.state.isLoggedIn || isSemantic) {
       response = await searchDefinitions({
         ...params,
-        semantic: searchMode.value === 'semantic',
+        semantic: isSemantic,
       }, signal)
     } else {
-      // Use fast search for non-logged in users (similar to FastSearchPage)
-      // We remove include_comments to match FastSearchPage behavior/performance
+      // Use fast search for non-logged in users (regular dictionary)
       const fastParams = { ...params }
       delete fastParams.include_comments
       
@@ -918,11 +920,14 @@ const updateUrlWithFilters = () => {
 // Search handling
 
 const performSearch = ({ query, mode }) => {
+  // Use semantic mode if we're in dictionary mode and semantic search is enabled
+  const effectiveMode = (mode === 'dictionary' && filters.value.isSemantic) ? 'semantic' : mode;
+
   // Reset to first page whenever search query or mode changes
   const updateParams = {
     ...route.query,
     q: query || undefined, // Use undefined if query is empty
-    mode,
+    mode: effectiveMode,
     group_by_thread: groupByThread.value ? 'true' : undefined,
     page: undefined, // Always reset to page 1 for a new search
     langs: (filters.value.selectedLanguages && filters.value.selectedLanguages.length > 0) ? filters.value.selectedLanguages.join(',') : undefined,
@@ -931,20 +936,30 @@ const performSearch = ({ query, mode }) => {
     word_type: filters.value.word_type || undefined,
   }
 
-  if (searchMode.value !== mode) {
+  // Handle case where we might be on a localized Home-lang route
+  const isHomeRoute = route.name === 'Home' || route.name?.startsWith('Home-');
+  
+  if (!isHomeRoute) {
+    // If we're not on the home page, redirect to home with the search params
+    const currentLocale = route.path.split('/')[1] || 'en';
+    router.push({ path: `/${currentLocale}`, query: updateParams });
+    return;
+  }
+
+  if (searchMode.value !== effectiveMode) {
     // Reset sortBy to default for the new mode
-    sortBy.value = mode === 'messages' ? 'rank' : 'time'
+    sortBy.value = effectiveMode === 'messages' ? 'rank' : 'time'
   }
 
   // Update state before pushing to router to avoid duplicate fetches
   const normalizedQuery = normalizeSearchQuery(query)
   searchQuery.value = normalizedQuery
-  searchMode.value = mode
+  searchMode.value = effectiveMode
   // groupByThread is handled by its own watcher now
   // Store mode and query in localStorage
   if (typeof window !== 'undefined') {
-  localStorage.setItem('searchMode', mode)
-  localStorage.setItem('searchQuery', normalizedQuery)
+    localStorage.setItem('searchMode', effectiveMode)
+    localStorage.setItem('searchQuery', normalizedQuery)
   }
 
   // Push to router but don't fetch data here - the route watcher will handle it
@@ -1050,6 +1065,11 @@ const syncFromRoute = () => {
   } else {
     filters.value.source_langid = 1 // Default if not present
   }
+
+  // Sync isSemantic from searchMode which was synced from route mode above
+  if (searchMode.value === 'semantic' || searchMode.value === 'dictionary') {
+    filters.value.isSemantic = searchMode.value === 'semantic'
+  }
 }
 
 
@@ -1144,6 +1164,19 @@ watch(
     }
   },
   { deep: true }
+)
+
+watch(
+  () => filters.value.isSemantic,
+  (newVal) => {
+    if (searchMode.value === 'semantic' || searchMode.value === 'dictionary') {
+      const newMode = newVal ? 'semantic' : 'dictionary'
+      if (searchMode.value !== newMode) {
+        searchMode.value = newMode
+        updateUrlWithFilters()
+      }
+    }
+  }
 )
 
 watch(groupByThread, (newVal, oldVal) => {
