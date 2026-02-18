@@ -146,6 +146,11 @@
       "ascSort": "A to Z",
       "descSort": "Z to A"
     },
+    "commentItem": {
+      "reactions": {
+        "facepalm": "fliba"
+      }
+    },
     "definitionCard": {
       "canonicalLabel": "tersmujbo",
       "fullWordModalTitle": "mulno valsi",
