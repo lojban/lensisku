@@ -118,7 +118,9 @@
     "nameLabel": "cmene",
     "descriptionLabel": "skicu",
     "makePublicLabel": "javni lo liste",
-    "saveChanges": "vreji lo nu galfi"
+    "saveChanges": "vreji lo nu galfi",
+    "confirmDeleteTitle": "xu do djica lo nu vimcu",
+    "confirmDeleteMessage": "xu do djica lo nu vimcu ti i ganai nubu mo'u fasnu gi na cumki fa lo nu jai gau di'a zasti"
   },
   "collectionWidget": {
     "select": "cuxna",
