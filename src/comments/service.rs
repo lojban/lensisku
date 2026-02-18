@@ -947,6 +947,7 @@ pub async fn get_user_comments(
                     c.total_replies,
                     c.valsiid,
                     c.definitionid,
+                    c.definition_link_id,
                     c.content::text as content,
                     COALESCE(cc.total_reactions, 0) as total_reactions,
                     COALESCE(cc.total_replies, 0) as total_replies,
@@ -1326,13 +1327,12 @@ pub async fn get_most_bookmarked_comments(
                 c.total_replies,
                 c.valsiid,
                 c.definitionid,
+                c.definition_link_id,
                 c.content::text as content,
-                u.username, u.realname,
                 ac.total_reactions, ac.total_replies,
                 CASE WHEN cl.user_id IS NOT NULL THEN true ELSE false END as is_liked,
                 CASE WHEN cb.user_id IS NOT NULL THEN true ELSE false END as is_bookmarked
-             FROM comments c
-             JOIN users u ON c.userid = u.userid
+             FROM convenientcomments c
              JOIN comment_activity_counters ac ON c.commentid = ac.comment_id
              LEFT JOIN comment_likes cl ON c.commentid = cl.comment_id AND cl.user_id = $1
              LEFT JOIN comment_bookmarks cb ON c.commentid = cb.comment_id AND cb.user_id = $1
@@ -1462,12 +1462,12 @@ pub async fn get_comments_by_hashtag(
             r#"
             SELECT c.commentid, c.threadid, c.parentid, c.userid,
                    c.commentnum, c.time, c.subject, c.content::text as content,
-                   u.username, u.realname,
+                   c.username, c.realname,
+                   c.valsiid, c.definitionid, c.definition_link_id,
                    cc.total_reactions, cc.total_replies,
                    CASE WHEN cl.user_id IS NOT NULL THEN true ELSE false END as is_liked,
                    CASE WHEN cb.user_id IS NOT NULL THEN true ELSE false END as is_bookmarked
-            FROM comments c
-            JOIN users u ON c.userid = u.userid
+            FROM convenientcomments c
             JOIN comment_counters cc ON c.commentid = cc.comment_id
             JOIN post_hashtags ph ON c.commentid = ph.post_id
             JOIN hashtags h ON ph.hashtag_id = h.id
@@ -2364,6 +2364,7 @@ pub async fn list_comments(
             CASE WHEN cb.user_id IS NOT NULL THEN true ELSE false END as is_bookmarked,
             t.valsiid,
             t.definitionid,
+            t.definition_link_id,
             u.username,
             u.realname,
             v.word as valsi_word,
