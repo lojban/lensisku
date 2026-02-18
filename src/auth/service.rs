@@ -105,9 +105,10 @@ pub async fn get_roles_with_permissions(
     
     // First, get all distinct roles from users table to ensure we include roles like "unconfirmed"
     // that might not have any permissions assigned
+    // Use LOWER() to avoid duplicates with different casing
     let all_roles_rows = client
         .query(
-            "SELECT DISTINCT role::text FROM users ORDER BY role",
+            "SELECT DISTINCT LOWER(role::text) as role FROM users ORDER BY role",
             &[],
         )
         .await?;
@@ -125,7 +126,7 @@ pub async fn get_roles_with_permissions(
     // Use case-insensitive comparison for role names
     let rows = client
         .query(
-            "SELECT r.role::text, p.name as permission 
+            "SELECT LOWER(r.role::text) as role, p.name as permission 
          FROM role_permissions r
          JOIN permissions p ON r.permission_id = p.id
          WHERE NOT EXISTS (
@@ -139,7 +140,7 @@ pub async fn get_roles_with_permissions(
                  AND actor_perms.permission_id = rp.permission_id
              )
          )
-         ORDER BY r.role, p.name",
+         ORDER BY role, p.name",
             &[&actor_role],
         )
         .await?;
@@ -481,9 +482,9 @@ pub async fn assign_role(
         .execute(
             "UPDATE users 
              SET role = $1,
-                 disabled = CASE WHEN $1 = 'Blocked' THEN true ELSE false END,
-                 disabled_at = CASE WHEN $1 = 'Blocked' THEN NOW() ELSE NULL END,
-                 disabled_by = CASE WHEN $1 = 'Blocked' THEN $3 ELSE NULL::integer END
+                 disabled = CASE WHEN LOWER($1::text) = 'blocked' THEN true ELSE false END,
+                 disabled_at = CASE WHEN LOWER($1::text) = 'blocked' THEN NOW() ELSE NULL END,
+                 disabled_by = CASE WHEN LOWER($1::text) = 'blocked' THEN $3 ELSE NULL::integer END
              WHERE userid = $2",
             &[&new_role, &target_user_id, &assigner_id],
         )
@@ -776,7 +777,7 @@ pub async fn login(
             // Then create the User struct. If User::from doesn't use 'user_uuid', it's fine.
             let user = User::from(row);
 
-            if user.role == UserRole::Blocked.to_string() {
+            if user.role.to_lowercase() == UserRole::Blocked.to_string() {
                 Err(AppError::Auth("Account is blocked".to_string()))
             } else if verify_password(&user_data.password, &user.password).unwrap_or(false) {
                 let mut user_for_token = user.clone();

@@ -25,12 +25,12 @@ pub enum UserRole {
 impl std::fmt::Display for UserRole {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            UserRole::Admin => write!(f, "Admin"),
-            UserRole::Moderator => write!(f, "Moderator"),
-            UserRole::Editor => write!(f, "Editor"),
-            UserRole::User => write!(f, "User"),
-            UserRole::Unconfirmed => write!(f, "Unconfirmed"),
-            UserRole::Blocked => write!(f, "Blocked"),
+            UserRole::Admin => write!(f, "admin"),
+            UserRole::Moderator => write!(f, "moderator"),
+            UserRole::Editor => write!(f, "editor"),
+            UserRole::User => write!(f, "user"),
+            UserRole::Unconfirmed => write!(f, "unconfirmed"),
+            UserRole::Blocked => write!(f, "blocked"),
         }
     }
 }
