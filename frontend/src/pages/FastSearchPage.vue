@@ -9,7 +9,7 @@
     <SearchForm
       ref="searchFormRef"
       :initial-query="searchQuery"
-      :initial-mode="'dictionary'"
+      :initial-mode="'semantic'"
       class="w-full transition-opacity duration-300"
       :class="{ 'opacity-0 pointer-events-none h-0 overflow-hidden': isInitialLoading }"
       @search="performSearch"
@@ -294,10 +294,11 @@ const updateUrlWithFilters = () => {
 };
 
 // Search handling
-const performSearch = ({ query }) => {
+const performSearch = ({ query, mode }) => {
   const updateParams = {
     ...route.query,
     q: query || undefined,
+    mode: mode !== 'dictionary' ? mode : undefined, // Keep mode if it's not dictionary
     page: undefined, // Always reset to page 1 for a new search
     langs:
       filters.value.selectedLanguages && filters.value.selectedLanguages.length > 0
@@ -307,6 +308,13 @@ const performSearch = ({ query }) => {
     username: filters.value.username || undefined,
     word_type: filters.value.word_type || undefined,
   };
+
+  if (mode !== 'dictionary') {
+    // If we're on FastSearch and mode is semantic, waves, mail, etc., redirect to Home
+    const currentLocale = route.path.split('/')[1] || 'en';
+    router.push({ path: `/${currentLocale}`, query: updateParams });
+    return;
+  }
 
   const normalizedQuery = normalizeSearchQuery(query);
   searchQuery.value = normalizedQuery;

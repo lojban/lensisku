@@ -45,7 +45,7 @@
     "selectSearchMode": "Select Search Mode",
     "modes": {
       "dictionary": "Dictionary&Corpus",
-      "semantic": "Semantic Search",
+      "semantic": "by meaning",
       "comments": "Discussion Waves",
       "messages": "Mail Archive",
       "muplis": "Muplis Phrases",
