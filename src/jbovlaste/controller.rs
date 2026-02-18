@@ -1324,10 +1324,24 @@ pub async fn link_definitions_handler(
     .await
     {
         Ok(link_id) => HttpResponse::Ok().json(json!({ "success": true, "link_id": link_id })),
-        Err(e) => HttpResponse::InternalServerError().json(json!({
-            "success": false,
-            "error": e.to_string()
-        })),
+        Err(e) => {
+            let msg = e.to_string();
+            // Return 400 for known validation errors
+            if msg.contains("Linking is only allowed for phrases")
+                || msg.contains("Cannot link a definition to itself")
+                || msg.contains("One or both definitions do not exist")
+            {
+                HttpResponse::BadRequest().json(json!({
+                    "success": false,
+                    "error": msg
+                }))
+            } else {
+                HttpResponse::InternalServerError().json(json!({
+                    "success": false,
+                    "error": msg
+                }))
+            }
+        }
     }
 }
 

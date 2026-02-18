@@ -3889,17 +3889,26 @@ pub async fn link_definitions(
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
 
-    // Check if both definitions exist
-    let count = transaction
-        .query_one(
-            "SELECT COUNT(*) FROM definitions WHERE definitionid IN ($1, $2)",
+    // Check if both definitions exist AND are of type 'phrase' (typeid 15)
+    let rows = transaction
+        .query(
+            "SELECT d.definitionid, v.typeid 
+             FROM definitions d 
+             JOIN valsi v ON d.valsiid = v.valsiid 
+             WHERE d.definitionid IN ($1, $2)",
             &[&definition_id, &translation_id],
         )
-        .await?
-        .get::<_, i64>(0);
+        .await?;
 
-    if count != 2 {
+    if rows.len() != 2 {
         return Err("One or both definitions do not exist".into());
+    }
+
+    for row in rows {
+        let typeid: i16 = row.get("typeid");
+        if typeid != 15 {
+            return Err("Linking is only allowed for phrases".into());
+        }
     }
 
     // Insert bidirectional links
@@ -4060,7 +4069,7 @@ pub async fn get_definition_link(
              JOIN valsi v1 ON d1.valsiid = v1.valsiid
              JOIN definitions d2 ON l.translation_id = d2.definitionid
              JOIN valsi v2 ON d2.valsiid = v2.valsiid
-             WHERE l.id = ",
+             WHERE l.id = $1",
             &[&id],
         )
         .await?;
@@ -4079,3 +4088,4 @@ pub async fn get_definition_link(
         None => Ok(None),
     }
 }
+

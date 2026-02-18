@@ -965,7 +965,21 @@
       "clickToSeeFullWord": "Click to see full word",
       "examplesLabel": "Examples:",
       "translateButton": "Translate",
-      "translateButtonTitle": "Translate this definition"
+      "translateButtonTitle": "Add a translation for this word / definition",
+      "translateButtonTitlePhrase": "Create a linked translation for this phrase",
+      "linkTranslation": "Link Translation",
+      "linkExisting": "Link Existing",
+      "linkExistingTitle": "Link this definition to an existing one",
+      "modalTitle": "Link to Existing Definition",
+      "searchPlaceholder": "Search for a phrase or translation...",
+      "noResults": "No phrases found matching your search",
+      "linkConfirm": "Link to this definition?",
+      "linkSuccess": "Definitions linked successfully!",
+      "linkError": "Failed to link definitions",
+      "searching": "Searching...",
+      "wordType": "Word Type:",
+      "language": "Language:",
+      "link": "Link"
     },
     "imageUploadButton": {
       "invalidType": "Please select an image file",
