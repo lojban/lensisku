@@ -294,7 +294,7 @@
 
           <!-- Link existing -->
           <button v-if="auth.state.isLoggedIn && canLink"
-            class="btn-aqua-blue btn-group-item w-full sm:w-auto text-center"
+            class="btn-link btn-group-item w-full sm:w-auto text-center"
             @click="showLinkModal = true"
             :title="t('components.definitionCard.linkExistingTitle')">
             <LinkIcon class="h-4 w-4" />
@@ -371,7 +371,7 @@
                 <span>{{ t('components.definitionCard.wordType') }} {{ res.type_name }}</span>
               </div>
             </div>
-            <button class="ml-2 btn-aqua-emerald py-1 px-3 text-sm">
+            <button class="ml-2 btn-success py-1 px-3 text-sm">
               {{ t('components.definitionCard.link') }}
             </button>
           </div>
