@@ -385,6 +385,8 @@
     "deleteItemConfirmTitle": "Remove Item",
     "deleteItemConfirmMessage": "Are you sure you want to remove '{item}' from the collection?",
     "deleteCollectionConfirmMessage": "Are you sure you want to delete this collection? This action cannot be undone.",
+    "confirmDeleteTitle": "Confirm Delete",
+    "confirmDeleteMessage": "Are you sure you want to delete this collection? This action cannot be undone.",
     "adding": "Adding",
     "addNewDefinitionButton": "Create definition",
     "semicolonHint": "Use a semicolon (;) to separate multiple correct answers.",
