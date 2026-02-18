@@ -22,7 +22,6 @@ use crate::jbovlaste::{
 };
 use crate::language::{validate_mathjax_fields, MathJaxValidationOptions};
 use crate::middleware::cache::{generate_search_cache_key, RedisCache};
-use crate::utils;
 use camxes_rs::peg::grammar::Peg;
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -65,49 +64,17 @@ pub async fn semantic_search(
 
     let cache_key = crate::middleware::cache::generate_semantic_search_cache_key(&query);
 
-    let infinity_url =
-        std::env::var("INFINITY_URL").unwrap_or_else(|_| "http://infinity:3000".to_string());
-    let client = reqwest::Client::new();
-    // Preprocessing commented out per user request - using raw query text
-    // let processed_text = match crate::utils::preprocess_definition_for_vectors(
-    //     query.search.as_deref().unwrap_or("").trim(),
-    // ) {
-    //     Ok(text) => text,
-    //     Err(e) => {
-    //         return HttpResponse::InternalServerError().json(json!({
-    //             "error": format!("Failed to preprocess text: {}", e)
-    //         }));
-    //     }
-    // };
     let processed_text = query.search.as_deref().unwrap_or("").trim().to_string();
 
-    let response = client
-        .post(format!("{}/embeddings", infinity_url))
-        .json(&serde_json::json!({
-            "model": "Xenova/all-MiniLM-L6-v2",
-            "input": processed_text,
-            "encoding_format": "float"
-        }))
-        .send()
-        .await;
-
-    let mut embedding: Option<Vec<f32>> = match response {
-        Ok(resp) if resp.status().is_success() => {
-            let body: serde_json::Value = resp.json().await.unwrap_or_default();
-            body["data"][0]["embedding"]
-                .as_array()
-                .and_then(|vec| vec.iter().map(|v| v.as_f64().map(|f| f as f32)).collect::<Option<Vec<_>>>())
-        }
-        _ => {
+    // Generate embedding in-process via fastembed (AllMiniLML6V2, mean pooling, L2-normalised)
+    let embedding = match crate::embeddings::get_embedding(&processed_text).await {
+        Ok(emb) => emb,
+        Err(e) => {
             return HttpResponse::InternalServerError().json(json!({
-                "error": "Failed to get embedding from semantic search service"
+                "error": format!("Failed to generate embedding: {}", e)
             }));
         }
     };
-    // L2-normalize so ranking matches semantic-search MCP (normalize: true)
-    if let Some(ref mut emb) = embedding {
-        utils::l2_normalize_embedding(emb);
-    }
 
     match redis_cache
         .get_or_set(
@@ -116,7 +83,7 @@ pub async fn semantic_search(
                 let params = SearchDefinitionsParams {
                     page,
                     per_page,
-                    search_term: query.search.as_deref().unwrap_or("").trim().to_string(),
+                    search_term: processed_text.clone(),
                     include_comments: false,
                     sort_by: "similarity".to_string(),
                     sort_order: "asc".to_string(),
@@ -127,13 +94,7 @@ pub async fn semantic_search(
                     source_langid: query.source_langid,
                 };
 
-                if let Some(embedding) = embedding {
-                    service::semantic_search(&pool, params, embedding).await
-                } else {
-                    // Fallback to regular search if embedding fails? Or return error?
-                    // For now, let's assume embedding is required for semantic search.
-                    Err("Failed to generate embedding for semantic search".into())
-                }
+                service::semantic_search(&pool, params, embedding).await
             },
             None, // Use default TTL
         )

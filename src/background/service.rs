@@ -5,13 +5,11 @@ use crate::{
     mailarchive::{check_for_new_emails, import_maildir},
     muplis,
     notifications::run_email_notifications,
-    utils,
 };
 use chrono::Local;
 use deadpool_postgres::Pool;
 use log::{error, info};
 use pgvector::Vector;
-use reqwest::Client;
 use std::{sync::Arc, time::Duration};
 use tokio::{
     sync::Mutex,
@@ -31,27 +29,7 @@ fn skip_notes_for_embedding_type(type_name: &str) -> bool {
     )
 }
 
-async fn calculate_missing_embeddings(
-    pool: &Pool,
-    client: &Client,
-    infinity_url: &str,
-) -> AppResult<()> {
-    // First check if infinity service is healthy
-    let health_response = client
-        .get(format!("{}/health", infinity_url))
-        .send()
-        .await
-        .map_err(|e| {
-            AppError::ExternalService(format!("Failed to contact infinity service: {}", e))
-        })?;
-
-    if !health_response.status().is_success() {
-        return Err(AppError::ExternalService(format!(
-            "Infinity service health check failed with status: {}",
-            health_response.status()
-        )));
-    }
-
+async fn calculate_missing_embeddings(pool: &Pool) -> AppResult<()> {
     let mut conn = pool
         .get()
         .await
@@ -79,8 +57,8 @@ async fn calculate_missing_embeddings(
         .map_err(|e| AppError::Database(format!("Failed to query definitions: {}", e)))?;
 
     // Prepare all texts for embedding
-    let mut all_texts = Vec::new();
-    let mut all_definition_ids = Vec::new();
+    let mut all_texts: Vec<String> = Vec::new();
+    let mut all_definition_ids: Vec<i32> = Vec::new();
 
     for row in &rows {
         let definition_id: i32 = row.get("definitionid");
@@ -124,22 +102,6 @@ async fn calculate_missing_embeddings(
             combined_text.push_str(" (name)");
         }
 
-        // Preprocessing commented out per user request - using raw combined text
-        // let processed_text = match preprocess_definition_for_vectors(&combined_text) {
-        //     Ok(t) if !t.is_empty() => t,
-        //     Ok(_) => {
-        //         continue;
-        //     }
-        //     Err(e) => {
-        //         log::warn!(
-        //             "Skipping definition {} (type: {}) due to preprocessing error: {}",
-        //             definition_id,
-        //             type_name,
-        //             e
-        //         );
-        //         continue;
-        //     }
-        // };
         let processed_text = combined_text.trim().to_string();
         if processed_text.is_empty() {
             continue;
@@ -149,83 +111,48 @@ async fn calculate_missing_embeddings(
     }
 
     // Process in chunks of 100
-    for chunk in all_texts.chunks(100).zip(all_definition_ids.chunks(100)) {
-        let (texts, definition_ids) = chunk;
+    for (texts_chunk, ids_chunk) in all_texts
+        .chunks(100)
+        .zip(all_definition_ids.chunks(100))
+    {
         let transaction = conn
             .transaction()
             .await
             .map_err(|e| AppError::Database(format!("Failed to start transaction: {}", e)))?;
 
         info!(
-            "Requesting embeddings for batch of {} definitions",
-            texts.len()
+            "Calculating embeddings for batch of {} definitions",
+            texts_chunk.len()
         );
 
-        // Get embeddings from infinity service (Xenova/all-MiniLM-L6-v2 matches semantic-search MCP)
-        let response = client
-            .post(format!("{}/embeddings", infinity_url))
-            .json(&serde_json::json!({
-                "model": "Xenova/all-MiniLM-L6-v2",
-                "input": texts,
-                "encoding_format": "float"
-            }))
-            .send()
-            .await
-            .map_err(|e| AppError::ExternalService(format!("Failed to get embeddings: {}", e)))?;
+        // Generate embeddings in-process via fastembed (AllMiniLML6V2, mean pooling, L2-normalised)
+        let embeddings =
+            crate::embeddings::get_batch_embeddings(texts_chunk.to_vec()).await?;
 
-        if response.status().is_success() {
-            let body: serde_json::Value = response.json().await.map_err(|e| {
-                AppError::ExternalService(format!("Failed to parse response: {}", e))
-            })?;
-
-            // Process all embeddings in the response. Use each item's "index" field when
-            // present (OpenAI-compatible API) so we match by input order even if the
-            // server returns results in a different order.
-            let data_array = body["data"].as_array().ok_or_else(|| {
-                AppError::ExternalService("Expected 'data' array in response".into())
-            })?;
-
-            for (fallback_i, embedding_data) in data_array.iter().enumerate() {
-                let i = embedding_data["index"]
-                    .as_u64()
-                    .and_then(|u| u.try_into().ok())
-                    .unwrap_or(fallback_i);
-
-                let embedding_values = embedding_data["embedding"].as_array().ok_or_else(|| {
-                    AppError::ExternalService("Embedding data missing array".into())
-                })?;
-
-                let mut embedding: Vec<f32> = embedding_values
-                    .iter()
-                    .map(|v| {
-                        v.as_f64().map(|f| f as f32).ok_or_else(|| {
-                            AppError::ExternalService("Invalid f64 value in embedding".into())
-                        })
-                    })
-                    .collect::<Result<Vec<_>, _>>()?;
-
-                // Match MCP (normalize: true) so cosine-distance ranking is consistent
-                utils::l2_normalize_embedding(&mut embedding);
-                let pg_vector = Vector::from(embedding);
-
-                if let (Some(definition_id), Some(processed_text)) =
-                    (definition_ids.get(i), texts.get(i))
-                {
-                    transaction
-                        .execute(
-                            "UPDATE definitions
-                             SET embedding = $1,
-                                 metadata = COALESCE(metadata, '{}'::jsonb) || jsonb_build_object('processed_text', $3::text)
-                             WHERE definitionid = $2",
-                            &[&pg_vector, definition_id, processed_text],
-                        )
-                        .await
-                        .map_err(|e| AppError::Database(format!("Failed to update definition: {}", e)))?;
-                } else {
-                    log::warn!("Index out of bounds for definition_ids or texts: {}", i);
+        for (i, (embedding, processed_text)) in
+            embeddings.into_iter().zip(texts_chunk.iter()).enumerate()
+        {
+            let definition_id = match ids_chunk.get(i) {
+                Some(id) => id,
+                None => {
+                    log::warn!("Index out of bounds for definition_ids: {}", i);
                     continue;
                 }
-            }
+            };
+
+            // fastembed already L2-normalises — no manual normalisation needed
+            let pg_vector = Vector::from(embedding);
+
+            transaction
+                .execute(
+                    "UPDATE definitions
+                     SET embedding = $1,
+                         metadata = COALESCE(metadata, '{}'::jsonb) || jsonb_build_object('processed_text', $3::text)
+                     WHERE definitionid = $2",
+                    &[&pg_vector, definition_id, processed_text],
+                )
+                .await
+                .map_err(|e| AppError::Database(format!("Failed to update definition: {}", e)))?;
         }
 
         transaction
@@ -261,22 +188,14 @@ pub async fn spawn_background_tasks(pool: Pool, maildir_path: String) {
         }
     });
 
-    // Embedding calculation task
+    // Embedding calculation task (in-process via fastembed — no external service needed)
     let embedding_pool = pool.clone();
     tokio::spawn(async move {
-        let client = Client::new();
-        let infinity_url =
-            std::env::var("INFINITY_URL").unwrap_or_else(|_| "http://infinity:3000".to_string());
-
         let mut interval = time::interval(Duration::from_secs(60 * 60)); // Run hourly
         loop {
             interval.tick().await;
 
-            let pool = embedding_pool.clone();
-            let client = client.clone();
-            let infinity_url = infinity_url.clone();
-
-            if let Err(e) = calculate_missing_embeddings(&pool, &client, &infinity_url).await {
+            if let Err(e) = calculate_missing_embeddings(&embedding_pool).await {
                 error!("Failed to calculate embeddings: {}", e);
             }
         }

@@ -125,6 +125,7 @@ wasmtime = "17.0.0"
 wasi-common = "17.0.0"
 wasmtime-wasi = "17.0.0"
 anyhow = "1.0"
+fastembed = { version = "4", default-features = false, features = ["hf-hub", "ort-download-binaries"] }
 
 [dev-dependencies]
 criterion = "0.5.1"
