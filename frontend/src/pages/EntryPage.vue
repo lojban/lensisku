@@ -341,9 +341,12 @@ onMounted(async () => {
 const translations = ref([])
 
 const fetchTranslations = async () => {
-  // Only fetch translations if we have a definition ID to link from
-  // For now, we'll fetch translations for all definitions of this word
-  // This is a simplification; ideally we'd show translations per definition
+  // Only fetch translations for phrases
+  if (valsi.value?.type_name !== 'phrase') {
+    translations.value = []
+    return
+  }
+
   if (definitions.value.length > 0) {
     const allTranslations = []
     for (const def of definitions.value) {

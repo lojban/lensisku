@@ -959,7 +959,21 @@
       "clickToSeeFullWord": "Нажмите, чтобы увидеть полное слово",
       "examplesLabel": "Примеры:",
       "translateButton": "Перевести",
-      "translateButtonTitle": "Перевести это определение"
+      "translateButtonTitle": "Добавить перевод для этого слова / определения",
+      "translateButtonTitlePhrase": "Создать связанный перевод для этой фразы",
+      "linkTranslation": "Связать перевод",
+      "linkExisting": "Связать с существующим",
+      "linkExistingTitle": "Связать это определение с уже существующим",
+      "modalTitle": "Связать с существующим определением",
+      "searchPlaceholder": "Поиск фразы или перевода...",
+      "noResults": "Фразы не найдены",
+      "linkConfirm": "Связать с этим определением?",
+      "linkSuccess": "Определения успешно связаны!",
+      "linkError": "Не удалось связать определения",
+      "searching": "Поиск...",
+      "wordType": "Тип слова:",
+      "language": "Язык:",
+      "link": "Связать"
     },
     "imageUploadButton": {
       "invalidType": "Пожалуйста, выберите файл изображения",

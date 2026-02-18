@@ -286,10 +286,19 @@
           <!-- Translate -->
           <button v-if="auth.state.isLoggedIn"
             class="btn-create btn-group-item w-full sm:w-auto text-center"
-            @click="router.push(`/valsi/add?word=${encodeURIComponent(definition.valsiword ?? definition.word)}&translate_from_def=${definition.definitionid}`)"
-            :title="t('components.definitionCard.translateButtonTitle')">
+            @click="router.push(`/valsi/add?word=${encodeURIComponent(definition.valsiword ?? definition.word)}${canLink ? '&translate_from_def=' + definition.definitionid : ''}`)"
+            :title="canLink ? t('components.definitionCard.translateButtonTitlePhrase') : t('components.definitionCard.translateButtonTitle')">
             <Languages class="h-4 w-4" />
             {{ t('components.definitionCard.translateButton') }}
+          </button>
+
+          <!-- Link existing -->
+          <button v-if="auth.state.isLoggedIn && canLink"
+            class="btn-aqua-blue btn-group-item w-full sm:w-auto text-center"
+            @click="showLinkModal = true"
+            :title="t('components.definitionCard.linkExistingTitle')">
+            <LinkIcon class="h-4 w-4" />
+            {{ t('components.definitionCard.linkExisting') }}
           </button>
 
           <!-- Discussions -->
@@ -319,6 +328,57 @@
       {{ definition.valsiword ?? definition.word }}
     </RouterLink>
   </ModalComponent>
+
+  <!-- Link Existing Definition Modal -->
+  <ModalComponent
+    :show="showLinkModal"
+    :title="t('components.definitionCard.modalTitle')"
+    @close="showLinkModal = false">
+    <div class="space-y-4">
+      <div class="relative">
+        <input
+          v-model="linkSearchQuery"
+          type="text"
+          :placeholder="t('components.definitionCard.searchPlaceholder')"
+          class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 pr-10"
+          @input="handleLinkSearch"
+        >
+        <div class="absolute right-3 top-2.5">
+          <Loader2 v-if="isSearching" class="h-5 w-5 animate-spin text-blue-500" />
+          <Search v-else class="h-5 w-5 text-gray-400" />
+        </div>
+      </div>
+
+      <div class="max-h-96 overflow-y-auto space-y-2">
+        <div v-if="linkSearchResults.length === 0 && !isSearching" class="text-center py-4 text-gray-500">
+          {{ t('components.definitionCard.noResults') }}
+        </div>
+        
+        <div v-for="res in linkSearchResults" :key="res.definitionid" 
+          class="p-3 border rounded-lg hover:border-blue-300 hover:bg-blue-50 cursor-pointer transition-colors group"
+          @click="handleLinkTo(res)">
+          <div class="flex justify-between items-start">
+            <div class="min-w-0 flex-1">
+              <div class="font-bold text-blue-700 truncate group-hover:underline">
+                {{ res.valsiword }}
+              </div>
+              <div class="text-sm text-gray-600 line-clamp-2">
+                {{ res.definition }}
+              </div>
+              <div class="mt-1 flex items-center gap-2 text-xs text-gray-400">
+                <span>{{ t('components.definitionCard.language') }} {{ getLanguageName(res.langid) }}</span>
+                <span>·</span>
+                <span>{{ t('components.definitionCard.wordType') }} {{ res.type_name }}</span>
+              </div>
+            </div>
+            <button class="ml-2 btn-aqua-emerald py-1 px-3 text-sm">
+              {{ t('components.definitionCard.link') }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </ModalComponent>
   <DeleteConfirmation :show="showDeleteConfirm" :title="t('components.definitionCard.deleteConfirmTitle')"
     :message="t('components.definitionCard.deleteConfirmMessage', { word: definition.valsiword ?? definition.word })"
     :is-deleting="isDeleting" @confirm="confirmDelete" @cancel="cancelDelete" />
@@ -340,25 +400,30 @@ import {
   GalleryHorizontalIcon,
   EqualApproximately,
   Languages,
+  Link as LinkIcon,
+  Search,
+  Loader2,
 } from 'lucide-vue-next'
 import { computed, ref, watch } from 'vue';
 import { RouterLink, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { getTypeClass } from '@/utils/wordTypeUtils'; // Import shared utility
 
-import { deleteDefinition } from '@/api';
+import { deleteDefinition, searchDefinitions, linkDefinitions } from '@/api';
 import ClipboardButton from '@/components/ClipboardButton.vue';
 import CollectionWidget from '@/components/CollectionWidget.vue';
 import DeleteConfirmation from '@/components/DeleteConfirmation.vue';
 import ModalComponent from '@/components/ModalComponent.vue';
 import VoteButtons from '@/components/VoteButtons.vue';
 import { useAuth } from '@/composables/useAuth';
+import { useError } from '@/composables/useError';
 import AudioPlayer from './AudioPlayer.vue';
 import LazyMathJax from './LazyMathJax.vue';
 
 const { t, locale } = useI18n();
 const auth = useAuth();
 const router = useRouter();
+const { showError } = useError();
 
 const props = defineProps({
   collections: {
@@ -497,6 +562,53 @@ const displayedSelmaho = computed(() => {
   const s = props.definition.selmaho || ''
   return s.length > MAX_VALSI_DISPLAY_LENGTH ? s.slice(0, MAX_VALSI_DISPLAY_LENGTH) + '…' : s
 })
+
+const canLink = computed(() => props.definition.type_name === 'phrase')
+
+// Linking Modal State
+const showLinkModal = ref(false)
+const linkSearchQuery = ref('')
+const linkSearchResults = ref([])
+const isSearching = ref(false)
+let searchTimeout = null
+
+const handleLinkSearch = () => {
+  if (searchTimeout) clearTimeout(searchTimeout)
+  if (!linkSearchQuery.value.trim()) {
+    linkSearchResults.value = []
+    return
+  }
+  
+  searchTimeout = setTimeout(async () => {
+    isSearching.value = true
+    try {
+      const res = await searchDefinitions({
+        query: linkSearchQuery.value,
+        word_type: 'phrase',
+        per_page: 20
+      })
+      // Filter out current definition
+      linkSearchResults.value = res.data.definitions.filter(d => d.definitionid !== props.definition.definitionid)
+    } catch (e) {
+      console.error('Search error', e)
+    } finally {
+      isSearching.value = false
+    }
+  }, 400)
+}
+
+const handleLinkTo = async (target) => {
+  if (!confirm(t('components.definitionCard.linkConfirm'))) return
+  
+  try {
+    await linkDefinitions(props.definition.definitionid, target.definitionid)
+    showLinkModal.value = false
+    emit('refresh-definitions')
+  } catch (e) {
+    console.error('Linking error', e)
+    showError(e.response?.data?.error || t('components.definitionCard.linkError'))
+  }
+}
 
 watch(
   () => props.collections,
