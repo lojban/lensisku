@@ -888,6 +888,7 @@
       "deleteFailed": "Failed to delete comment",
       "customEmojiPlaceholder": "Type custom emoji...",
       "reactions": {
+        "facepalm": "Facepalm",
         "approve": "Approve",
         "disapprove": "Disapprove",
         "lovethis": "Love this",

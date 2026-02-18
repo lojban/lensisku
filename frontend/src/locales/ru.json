@@ -881,6 +881,7 @@
       "deleteFailed": "Не удалось удалить комментарий",
       "customEmojiPlaceholder": "Введите свой эмодзи...",
       "reactions": {
+        "facepalm": "Рука-лицо",
         "approve": "Одобряю",
         "disapprove": "Не одобряю",
         "lovethis": "Нравится",
