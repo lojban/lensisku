@@ -16,23 +16,6 @@ services:
     networks:
       - lojban-network
 
-  infinity:
-    image: michaelf34/infinity:0.0.75-cpu
-    container_name: infinity
-    stdin_open: true
-    tty: true
-    volumes:
-      - ./data/infinity:/app/.cache
-    ports:
-      - 3002:3000
-    command: >
-      v2
-      --engine optimum
-      --model-id Xenova/all-MiniLM-L6-v2
-      --port 3000
-    networks:
-      - lojban-network
-
   db:
     image: pgvector/pgvector:pg18-trixie
     command: postgres -c shared_preload_libraries=vector
