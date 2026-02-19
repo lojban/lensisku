@@ -2010,7 +2010,7 @@ const handleJsonFileSelect = async (event) => {
     const response = await importCollectionFull(payload)
     const { collection: newCollection, imported_count, skipped_count, levels_created, warnings } = response.data
 
-    const message = t('collectionDetail.importFullSuccess', {
+    let message = t('collectionDetail.importFullSuccess', {
       name: newCollection.name,
       imported: imported_count,
       skipped: skipped_count,
