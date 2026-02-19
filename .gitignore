@@ -28,3 +28,4 @@ data
 /package.json
 /pnpm-lock.yaml
 /test
+.fastembed_cache
