@@ -14,7 +14,7 @@
             v-model="filters.isSemantic"
             type="checkbox"
             class="checkbox-toggle"
-            @change="FemitUpdate">
+            @change="emitUpdate">
           <label for="semantic-search-filter" class="text-sm text-gray-700 select-none cursor-pointer whitespace-nowrap">
             {{ t('searchForm.modes.semantic') }}
           </label>
