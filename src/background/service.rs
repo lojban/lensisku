@@ -16,19 +16,6 @@ use tokio::{
     time::{self, sleep},
 };
 
-/// Types where definition notes are known to skew embeddings (e.g. boilerplate "experimental" text).
-/// When we have no glosswords, we use only definition and exclude notes for these types.
-fn skip_notes_for_embedding_type(type_name: &str) -> bool {
-    matches!(
-        type_name.to_lowercase().as_str(),
-        "experimental cmavo"
-            | "experimental gismu"
-            | "obsolete cmavo"
-            | "obsolete gismu"
-            | "obsolete zei-lujvo"
-    )
-}
-
 async fn calculate_missing_embeddings(pool: &Pool) -> AppResult<()> {
     let mut conn = pool
         .get()
@@ -78,18 +65,11 @@ async fn calculate_missing_embeddings(pool: &Pool) -> AppResult<()> {
         // If glosswords exist, use them as the primary source to avoid noise from lengthy definitions/notes.
         if !glosswords.trim().is_empty() {
             text_parts.push(glosswords);
-        } else {
-            // Fallback to definition (+ notes only when notes are not known to skew embeddings)
-            let def_len = definition.len().max(1);
-            text_parts.push(definition);
-            let add_notes = !skip_notes_for_embedding_type(&type_name)
-                && !notes.trim().is_empty()
-                && !(type_name.eq_ignore_ascii_case("fu'ivla") && notes.len() > 2 * def_len);
-            if add_notes {
-                text_parts.push(notes);
-            }
         }
-
+        // Use definition + notes
+        text_parts.push(definition);
+        text_parts.push(notes);
+        
         // Always include placewords as they capture key semantic roles
         if !placewords.trim().is_empty() {
             text_parts.push(placewords);
@@ -125,7 +105,7 @@ async fn calculate_missing_embeddings(pool: &Pool) -> AppResult<()> {
             texts_chunk.len()
         );
 
-        // Generate embeddings in-process via fastembed (AllMiniLML6V2, mean pooling, L2-normalised)
+        // Generate embeddings in-process via ONNX Runtime (EmbeddingGemma, mean pooling, L2-normalised)
         let embeddings =
             crate::embeddings::get_batch_embeddings(texts_chunk.to_vec()).await?;
 
