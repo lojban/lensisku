@@ -126,13 +126,13 @@ wasi-common = "17.0.0"
 wasmtime-wasi = "17.0.0"
 anyhow = "1.0"
 fastembed = { version = "4", default-features = false, features = ["hf-hub", "ort-download-binaries"] }
-hf-hub = { version = "0.4", default-features = false, features = ["ureq"] }
-dirs = "5"
-ort = { version = "=2.0.0-rc.9", features = ["ndarray"], default-features = false }
-tokenizers = { version = "0.21", features = ["onig"], default-features = false }
 
 [dev-dependencies]
 criterion = "0.5.1"
+
+
+
+
 
 [lints.clippy]
 panic = "warn"
