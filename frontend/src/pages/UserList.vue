@@ -103,8 +103,8 @@ const isSearching = ref(false)
 const searchQuery = ref('')
 const offset = ref(parseInt(route.query.offset) || 0)
 const perPage = ref(20)
-const sortBy = ref('username')
-const sortOrder = ref('asc')
+const sortBy = ref('created_at')
+const sortOrder = ref('desc')
 const roleFilter = ref('')
 const availableRoles = ref([])
 
@@ -177,8 +177,8 @@ const updateUrlParams = () => {
     query: {
       q: normalizeSearchQuery(searchQuery.value) || undefined,
       offset: offset.value || undefined,
-      sort_by: sortBy.value !== 'username' ? sortBy.value : undefined,
-      sort_order: sortOrder.value !== 'asc' ? sortOrder.value : undefined,
+      sort_by: sortBy.value !== 'created_at' ? sortBy.value : undefined,
+      sort_order: sortOrder.value !== 'desc' ? sortOrder.value : undefined,
       role: roleFilter.value || undefined,
     },
   })
@@ -377,10 +377,10 @@ const syncFromRoute = () => {
   }
   offset.value = parseInt(route.query.offset) || 0
   if (route.query.sort_by !== undefined) {
-    sortBy.value = route.query.sort_by || 'username'
+    sortBy.value = route.query.sort_by || 'created_at'
   }
   if (route.query.sort_order !== undefined) {
-    sortOrder.value = route.query.sort_order || 'asc'
+    sortOrder.value = route.query.sort_order || 'desc'
   }
   if (route.query.role !== undefined) {
     roleFilter.value = route.query.role || ''
@@ -420,7 +420,7 @@ watch(
       if (roleFilter.value) {
         titleParts.push(`${t('profile.role')}: ${roleFilter.value}`)
       }
-      if (sortBy.value !== 'username' || sortOrder.value !== 'asc') {
+      if (sortBy.value !== 'created_at' || sortOrder.value !== 'desc') {
         titleParts.push(`${t('userList.sortByLabel')} ${t(`userList.sortBy.${sortBy.value}`)} ${sortOrder.value === 'asc' ? t('userList.sortOrder.asc') : t('userList.sortOrder.desc')}`)
       }
       pageTitle.value = titleParts.length ? `${t('userList.users')} - ${titleParts.join(' | ')}` : t('userList.users')

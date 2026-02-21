@@ -39,21 +39,21 @@ pub async fn list_users(
     }
 
     // Build sort clause
-    let sort_by = match query.sort_by.as_deref().unwrap_or("username") {
+    let sort_by = match query.sort_by.as_deref().unwrap_or("created_at") {
         "realname" => "realname",
-        "created_at" => "created_at",
-        _ => "username",
+        "username" => "username",
+        _ => "created_at",
     };
 
     let sort_order = match query
         .sort_order
         .as_deref()
-        .unwrap_or("asc")
+        .unwrap_or("desc")
         .to_uppercase()
         .as_str()
     {
-        "DESC" => "DESC",
-        _ => "ASC",
+        "ASC" => "ASC",
+        _ => "DESC",
     };
 
     // Add limit and offset to params
