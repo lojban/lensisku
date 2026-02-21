@@ -1331,7 +1331,11 @@ async fn add_definition_in_transaction(
     if let Some(gloss_keywords) = &request.gloss_keywords {
         for keyword in gloss_keywords {
             let sanitized_word = sanitize_html(&keyword.word);
-            let sanitized_meaning = keyword.meaning.as_ref().map(|m| sanitize_html(m));
+            let sanitized_meaning = keyword
+                .meaning
+                .as_ref()
+                .map(|m| sanitize_html(m))
+                .filter(|s| !s.trim().is_empty());
             // Add natlangword if it doesn't exist
             transaction
                 .execute(
@@ -1383,7 +1387,11 @@ async fn add_definition_in_transaction(
     if let Some(place_keywords) = &request.place_keywords {
         for (i, keyword) in place_keywords.iter().enumerate() {
             let sanitized_word = sanitize_html(&keyword.word);
-            let sanitized_meaning = keyword.meaning.as_ref().map(|m| sanitize_html(m));
+            let sanitized_meaning = keyword
+                .meaning
+                .as_ref()
+                .map(|m| sanitize_html(m))
+                .filter(|s| !s.trim().is_empty());
             // Add natlangword if it doesn't exist
             transaction
                 .execute(
@@ -1893,7 +1901,11 @@ pub async fn update_definition(
     if let Some(gloss_keywords) = &request.gloss_keywords {
         for keyword in gloss_keywords {
             let sanitized_word = sanitize_html(&keyword.word);
-            let sanitized_meaning = keyword.meaning.as_ref().map(|m| sanitize_html(m));
+            let sanitized_meaning = keyword
+                .meaning
+                .as_ref()
+                .map(|m| sanitize_html(m))
+                .filter(|s| !s.trim().is_empty());
             // First ensure the natlangword exists
             transaction
                 .execute(
@@ -1945,7 +1957,11 @@ pub async fn update_definition(
     if let Some(place_keywords) = &request.place_keywords {
         for (i, keyword) in place_keywords.iter().enumerate() {
             let sanitized_word = sanitize_html(&keyword.word);
-            let sanitized_meaning = keyword.meaning.as_ref().map(|m| sanitize_html(m));
+            let sanitized_meaning = keyword
+                .meaning
+                .as_ref()
+                .map(|m| sanitize_html(m))
+                .filter(|s| !s.trim().is_empty());
             // First ensure the natlangword exists
             transaction
                 .execute(
