@@ -123,7 +123,7 @@ impl EmailService {
                         <td style="padding: 40px 48px;">
                             <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
                                 <tr>
-                                    <td style="font-size: 16px; line-height: 1.6; color: #334155; padding-bottom: 32px; text-align: left;">
+                                    <td style="font-size: 16px; line-height: 1.6; color: #334155; padding-bottom: 32px; text-align: center;">
                                         {}"#,
             self.frontend_url,
             content.join("<br><br>")
@@ -245,7 +245,7 @@ impl EmailService {
         // HTML: same shell as build_email_content, with structured content
         let valsi_esc = escape(valsi_word);
         let actor_line = actor_username
-            .map(|u| format!(r#"<div style="display: inline-block; background-color: #f1f5f9; color: #475569; padding: 4px 12px; border-radius: 9999px; font-size: 13px; font-weight: 500; margin-bottom: 24px;">Updated by <strong>{}</strong></div>"#, escape(u)))
+            .map(|u| format!(r#"<div style="display: inline-block; background-color: #f1f5f9; color: #475569; padding: 4px 12px; border-radius: 9999px; font-size: 13px; font-weight: 500; margin-bottom: 24px;">By <strong>{}</strong></div>"#, escape(u)))
             .unwrap_or_else(String::new);
 
         let def_block = new_definition.map(|def| {
@@ -256,7 +256,7 @@ impl EmailService {
                 esc.clone()
             };
             format!(
-                r#"<tr><td style="padding-bottom: 24px;"><div style="font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b; margin-bottom: 8px;">New definition</div><div style="font-size: 15px; line-height: 1.6; color: #1e293b; background: #f8fafc; border-left: 4px solid #3b82f6; padding: 16px; border-radius: 0 12px 12px 0;">{}</div></td></tr>"#,
+                r#"<tr><td style="padding-bottom: 24px;"><div style="font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b; margin-bottom: 8px;">Definition</div><div style="font-size: 15px; line-height: 1.6; color: #1e293b; background: #f8fafc; border-left: 4px solid #3b82f6; padding: 16px; border-radius: 0 12px 12px 0; text-align: left;">{}</div></td></tr>"#,
                 trunc.replace('\n', "<br>")
             )
         }).unwrap_or_else(String::new);
@@ -277,22 +277,23 @@ impl EmailService {
                     })
                     .unwrap_or_else(|| "(empty)".to_string());
                 format!(
-                    r#"<tr><td style="padding: 12px 16px; border-bottom: 1px solid #f1f5f9;"><div style="margin-bottom: 4px;"><span style="font-size: 13px; font-weight: 600; color: #334155;">{}</span> <span style="display: inline-block; background-color: {}; color: {}; padding: 2px 8px; border-radius: 9999px; font-size: 11px; font-weight: 600; margin-left: 8px; vertical-align: middle;">{}</span></div><div style="font-size: 14px; color: #64748b; line-height: 1.5;">{}</div></td></tr>"#,
+                    r#"<tr><td style="padding: 12px 16px; border-bottom: 1px solid #f1f5f9; text-align: left;"><div style="margin-bottom: 4px;"><span style="font-size: 13px; font-weight: 600; color: #334155;">{}</span> <span style="display: inline-block; background-color: {}; color: {}; padding: 2px 8px; border-radius: 9999px; font-size: 11px; font-weight: 600; margin-left: 8px; vertical-align: middle;">{}</span></div><div style="font-size: 14px; color: #64748b; line-height: 1.5;">{}</div></td></tr>"#,
                     field_esc, bg, color, label, content.replace('\n', " ")
                 )
             }).collect();
             format!(
-                r#"<tr><td style="padding-bottom: 32px;"><div style="font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b; margin-bottom: 8px;">What changed</div><table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background: #ffffff; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden;">{}</table></td></tr>"#,
+                r#"<tr><td style="padding-bottom: 32px;"><div style="font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b; margin-bottom: 8px;">Changes</div><table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background: #ffffff; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden;">{}</table></td></tr>"#,
                 rows
             )
         }).unwrap_or_else(String::new);
 
         let content_inner = format!(
-            r#"<tr><td style="text-align: left; padding-bottom: 8px;">{}</td></tr>
-               <tr><td style="font-size: 24px; font-weight: 700; color: #0f172a; padding-bottom: 24px; letter-spacing: -0.02em; text-align: left;">Definition updated for <span style="color: #3b82f6;">{}</span></td></tr>
+            r#"<tr><td style="text-align: center; padding-bottom: 8px;">{}</td></tr>
+               <tr><td style="font-size: 24px; font-weight: 700; color: #0f172a; padding-bottom: 24px; letter-spacing: -0.02em; text-align: center;">{} <span style="color: #3b82f6;">{}</span></td></tr>
                {}
                {}"#,
             if actor_line.is_empty() { String::new() } else { format!("{}", actor_line) },
+            if changes.as_ref().map(|c| c.is_empty()).unwrap_or(true) { "New valsi added:" } else { "Definition updated for" },
             valsi_esc,
             def_block,
             changes_block
@@ -327,15 +328,15 @@ impl EmailService {
                     </tr>
                     <!-- Content -->
                     <tr>
-                        <td style="padding: 40px 48px;">
+                        <td style="padding: 40px 48px; text-align: center;">
                             <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
                                 {}
                                 <tr>
-                                    <td align="left" style="padding-top: 16px;">
+                                    <td align="center" style="padding-top: 16px;">
                                         <table role="presentation" cellspacing="0" cellpadding="0" border="0">
                                             <tr>
                                                 <td align="center" style="border-radius: 9999px; background: linear-gradient(180deg, #60a5fa 0%, #3b82f6 100%); box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
-                                                    <a href="{}" style="display: inline-block; padding: 14px 36px; font-size: 15px; font-weight: 600; color: #ffffff; text-decoration: none; border-radius: 9999px; border: 1px solid #3b82f6;">View Update</a>
+                                                    <a href="{}" style="display: inline-block; padding: 14px 36px; font-size: 15px; font-weight: 600; color: #ffffff; text-decoration: none; border-radius: 99999px; border: 1px solid #3b82f6;">View on Dictionary</a>
                                                 </td>
                                             </tr>
                                         </table>
@@ -436,7 +437,7 @@ pub async fn send_notification_emails(pool: &deadpool_postgres::Pool) -> Result<
             }
         };
 
-        let (text_body, html_body) = if notification_type == "edit" {
+        let (text_body, html_body) = if notification_type == "edit" || notification_type == "add" {
             let word = valsi_word.as_deref().unwrap_or("a valsi");
             let url = link.as_deref().unwrap_or("");
             let (new_definition, changes) = if let Some(def_id) = definition_id {
@@ -475,7 +476,7 @@ pub async fn send_notification_emails(pool: &deadpool_postgres::Pool) -> Result<
             let message_lines: Vec<&str> = message.split('\n').collect();
             email_service.build_email_content(
                 &message_lines,
-                link.as_ref().map(|url| ("View Update", url.as_str())),
+                link.as_ref().map(|url| ("View Link", url.as_str())),
             )
         };
 
