@@ -93,10 +93,12 @@ impl EmailService {
         // Common HTML template - using table layout for email client compatibility
         html_body.push_str(&format!(
             r#"<!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="light">
+    <meta name="supported-color-schemes" content="light">
     <!--[if mso]>
     <style type="text/css">
         table {{border-collapse:collapse;border-spacing:0;margin:0;}}
@@ -105,39 +107,39 @@ impl EmailService {
     </style>
     <![endif]-->
 </head>
-<body style="margin: 0; padding: 0; background-color: #f3f4f6; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;">
-    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f3f4f6;">
+<body style="margin: 0; padding: 0; background-color: #f8fafc; font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; -webkit-font-smoothing: antialiased;">
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f8fafc; padding: 40px 20px;">
         <tr>
-            <td align="center" style="padding: 40px 20px;">
-                <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="600" style="max-width: 600px; background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <td align="center">
+                <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="max-width: 600px; background-color: #ffffff; border-radius: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -2px rgba(0,0,0,0.05); overflow: hidden;">
                     <!-- Header -->
                     <tr>
-                        <td align="center" style="padding: 32px 24px 24px 24px;">
-                            <img src="{}/assets/icons/favicon.png" alt="Lojban Dictionary Logo" style="height: 64px; width: 128px; display: block;">
+                        <td align="center" style="padding: 32px 32px 24px; border-bottom: 1px solid #f1f5f9;">
+                            <img src="{}/assets/icons/favicon.png" alt="Lojban Dictionary Logo" style="height: 56px; width: auto; display: block; margin: 0 auto;">
                         </td>
                     </tr>
                     <!-- Content -->
                     <tr>
-                        <td style="padding: 0 48px 32px 48px;">
+                        <td style="padding: 40px 48px;">
                             <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
                                 <tr>
-                                    <td align="center" style="font-size: 16px; line-height: 1.6; color: #333333; padding-bottom: 24px;">
+                                    <td style="font-size: 16px; line-height: 1.6; color: #334155; padding-bottom: 32px; text-align: left;">
                                         {}"#,
             self.frontend_url,
-            content.join("<br>")
+            content.join("<br><br>")
         ));
 
         // Add action button if provided
         if let Some((action_text, action_url)) = action_link {
             html_body.push_str(&format!(
-                r#"</td>
+                r#"                                    </td>
                                 </tr>
                                 <tr>
-                                    <td align="center" style="padding-top: 24px; padding-bottom: 8px;">
+                                    <td align="center" style="padding-top: 8px;">
                                         <table role="presentation" cellspacing="0" cellpadding="0" border="0">
                                             <tr>
-                                                <td align="center" style="background-color: #3b82f6; border-radius: 1000px;">
-                                                    <a href="{}" style="display: inline-block; padding: 12px 32px; font-size: 16px; font-weight: 500; color: #ffffff; text-decoration: none; border-radius: 1000px;">{}</a>
+                                                <td align="center" style="border-radius: 9999px; background: linear-gradient(180deg, #60a5fa 0%, #3b82f6 100%); box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+                                                    <a href="{}" style="display: inline-block; padding: 14px 36px; font-size: 15px; font-weight: 600; color: #ffffff; text-decoration: none; border-radius: 9999px; border: 1px solid #3b82f6;">{}</a>
                                                 </td>
                                             </tr>
                                         </table>
@@ -147,7 +149,7 @@ impl EmailService {
             ));
         } else {
             html_body.push_str(
-                r#"</td>
+                r#"                                    </td>
                                 </tr>"#,
             );
         }
@@ -159,10 +161,10 @@ impl EmailService {
                     </tr>
                     <!-- Footer -->
                     <tr>
-                        <td align="center" style="padding: 32px 48px; border-top: 1px solid #e5e7eb;">
+                        <td align="center" style="padding: 32px 48px; background-color: #f8fafc; border-top: 1px solid #f1f5f9;">
                             <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
                                 <tr>
-                                    <td align="center" style="font-size: 14px; line-height: 1.5; color: #6b7280;">
+                                    <td align="center" style="font-size: 13px; line-height: 1.5; color: #64748b;">
                                         <p style="margin: 0 0 8px 0;">This message was sent by the Lojban Dictionary service.</p>
                                         <p style="margin: 0;">© {} Lojban Dictionary</p>
                                     </td>
@@ -243,7 +245,7 @@ impl EmailService {
         // HTML: same shell as build_email_content, with structured content
         let valsi_esc = escape(valsi_word);
         let actor_line = actor_username
-            .map(|u| format!("Updated by: <strong>{}</strong>", escape(u)))
+            .map(|u| format!(r#"<div style="display: inline-block; background-color: #f1f5f9; color: #475569; padding: 4px 12px; border-radius: 9999px; font-size: 13px; font-weight: 500; margin-bottom: 24px;">Updated by <strong>{}</strong></div>"#, escape(u)))
             .unwrap_or_else(String::new);
 
         let def_block = new_definition.map(|def| {
@@ -254,17 +256,17 @@ impl EmailService {
                 esc.clone()
             };
             format!(
-                r#"<tr><td style="padding-bottom: 12px;"><div style="font-size: 14px; color: #4b5563; margin-bottom: 4px;">New definition</div><div style="font-size: 15px; line-height: 1.5; color: #111827; background: #f9fafb; border-left: 4px solid #3b82f6; padding: 12px 16px; border-radius: 0 4px 4px 0;">{}</div></td></tr>"#,
+                r#"<tr><td style="padding-bottom: 24px;"><div style="font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b; margin-bottom: 8px;">New definition</div><div style="font-size: 15px; line-height: 1.6; color: #1e293b; background: #f8fafc; border-left: 4px solid #3b82f6; padding: 16px; border-radius: 0 12px 12px 0;">{}</div></td></tr>"#,
                 trunc.replace('\n', "<br>")
             )
         }).unwrap_or_else(String::new);
 
         let changes_block = changes.filter(|chgs| !chgs.is_empty()).map(|chgs| {
             let rows: String = chgs.iter().map(|c| {
-                let (label, style) = match c.change_type {
-                    ChangeType::Added => ("Added", "color: #059669;"),
-                    ChangeType::Removed => ("Removed", "color: #dc2626;"),
-                    ChangeType::Modified => ("Modified", "color: #d97706;"),
+                let (label, bg, color) = match c.change_type {
+                    ChangeType::Added => ("Added", "#d1fae5", "#059669"),
+                    ChangeType::Removed => ("Removed", "#fee2e2", "#dc2626"),
+                    ChangeType::Modified => ("Modified", "#fef3c7", "#d97706"),
                 };
                 let field_esc = escape(&c.field);
                 let content = c.new_value.as_ref()
@@ -275,34 +277,35 @@ impl EmailService {
                     })
                     .unwrap_or_else(|| "(empty)".to_string());
                 format!(
-                    r#"<tr><td style="padding: 6px 0; border-bottom: 1px solid #e5e7eb;"><span style="font-size: 13px; font-weight: 600;">{}:</span> <span style="{}">{}</span><br><span style="font-size: 13px; color: #6b7280;">{}</span></td></tr>"#,
-                    field_esc, style, label, content.replace('\n', " ")
+                    r#"<tr><td style="padding: 12px 16px; border-bottom: 1px solid #f1f5f9;"><div style="margin-bottom: 4px;"><span style="font-size: 13px; font-weight: 600; color: #334155;">{}</span> <span style="display: inline-block; background-color: {}; color: {}; padding: 2px 8px; border-radius: 9999px; font-size: 11px; font-weight: 600; margin-left: 8px; vertical-align: middle;">{}</span></div><div style="font-size: 14px; color: #64748b; line-height: 1.5;">{}</div></td></tr>"#,
+                    field_esc, bg, color, label, content.replace('\n', " ")
                 )
             }).collect();
             format!(
-                r#"<tr><td style="padding-bottom: 12px;"><div style="font-size: 14px; color: #4b5563; margin-bottom: 8px;">What changed</div><table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="font-size: 14px; background: #f9fafb; border-radius: 6px; border: 1px solid #e5e7eb;">{}</table></td></tr>"#,
+                r#"<tr><td style="padding-bottom: 32px;"><div style="font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b; margin-bottom: 8px;">What changed</div><table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background: #ffffff; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden;">{}</table></td></tr>"#,
                 rows
             )
         }).unwrap_or_else(String::new);
 
         let content_inner = format!(
-            r#"<tr><td align="center" style="font-size: 18px; font-weight: 600; color: #111827; padding-bottom: 16px;">Definition updated</td></tr>
-                                <tr><td align="center" style="font-size: 16px; color: #333333; padding-bottom: 8px;">Valsi: <strong>{}</strong></td></tr>
-                                {}
-                                <tr><td style="padding: 8px 0 16px 0;">{}</td></tr>
-                                {}"#,
+            r#"<tr><td style="text-align: left; padding-bottom: 8px;">{}</td></tr>
+               <tr><td style="font-size: 24px; font-weight: 700; color: #0f172a; padding-bottom: 24px; letter-spacing: -0.02em; text-align: left;">Definition updated for <span style="color: #3b82f6;">{}</span></td></tr>
+               {}
+               {}"#,
+            if actor_line.is_empty() { String::new() } else { format!("{}", actor_line) },
             valsi_esc,
-            if actor_line.is_empty() { String::new() } else { format!(r#"<tr><td align="center" style="font-size: 14px; color: #6b7280; padding-bottom: 16px;">{}</td></tr>"#, actor_line) },
             def_block,
             changes_block
         );
 
         let html_body = format!(
             r#"<!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="light">
+    <meta name="supported-color-schemes" content="light">
     <!--[if mso]>
     <style type="text/css">
         table {{border-collapse:collapse;border-spacing:0;margin:0;}}
@@ -311,26 +314,28 @@ impl EmailService {
     </style>
     <![endif]-->
 </head>
-<body style="margin: 0; padding: 0; background-color: #f3f4f6; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;">
-    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f3f4f6;">
+<body style="margin: 0; padding: 0; background-color: #f8fafc; font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; -webkit-font-smoothing: antialiased;">
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f8fafc; padding: 40px 20px;">
         <tr>
-            <td align="center" style="padding: 40px 20px;">
-                <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="600" style="max-width: 600px; background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <td align="center">
+                <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="max-width: 600px; background-color: #ffffff; border-radius: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -2px rgba(0,0,0,0.05); overflow: hidden;">
+                    <!-- Header -->
                     <tr>
-                        <td align="center" style="padding: 32px 24px 24px 24px;">
-                            <img src="{}/assets/icons/favicon.png" alt="Lojban Dictionary Logo" style="height: 64px; width: 128px; display: block;">
+                        <td align="center" style="padding: 32px 32px 24px; border-bottom: 1px solid #f1f5f9;">
+                            <img src="{}/assets/icons/favicon.png" alt="Lojban Dictionary Logo" style="height: 56px; width: auto; display: block; margin: 0 auto;">
                         </td>
                     </tr>
+                    <!-- Content -->
                     <tr>
-                        <td style="padding: 0 48px 32px 48px;">
+                        <td style="padding: 40px 48px;">
                             <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
                                 {}
                                 <tr>
-                                    <td align="center" style="padding-top: 24px; padding-bottom: 8px;">
+                                    <td align="left" style="padding-top: 16px;">
                                         <table role="presentation" cellspacing="0" cellpadding="0" border="0">
                                             <tr>
-                                                <td align="center" style="background-color: #3b82f6; border-radius: 1000px;">
-                                                    <a href="{}" style="display: inline-block; padding: 12px 32px; font-size: 16px; font-weight: 500; color: #ffffff; text-decoration: none; border-radius: 1000px;">View update</a>
+                                                <td align="center" style="border-radius: 9999px; background: linear-gradient(180deg, #60a5fa 0%, #3b82f6 100%); box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+                                                    <a href="{}" style="display: inline-block; padding: 14px 36px; font-size: 15px; font-weight: 600; color: #ffffff; text-decoration: none; border-radius: 9999px; border: 1px solid #3b82f6;">View Update</a>
                                                 </td>
                                             </tr>
                                         </table>
@@ -339,11 +344,12 @@ impl EmailService {
                             </table>
                         </td>
                     </tr>
+                    <!-- Footer -->
                     <tr>
-                        <td align="center" style="padding: 32px 48px; border-top: 1px solid #e5e7eb;">
+                        <td align="center" style="padding: 32px 48px; background-color: #f8fafc; border-top: 1px solid #f1f5f9;">
                             <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
                                 <tr>
-                                    <td align="center" style="font-size: 14px; line-height: 1.5; color: #6b7280;">
+                                    <td align="center" style="font-size: 13px; line-height: 1.5; color: #64748b;">
                                         <p style="margin: 0 0 8px 0;">This message was sent by the Lojban Dictionary service.</p>
                                         <p style="margin: 0;">© {} Lojban Dictionary</p>
                                     </td>
