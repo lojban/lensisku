@@ -1,85 +1,94 @@
 <template>
-  <div>
-    <!-- Search and Filter Controls -->
-    <div class="bg-white p-4 rounded-lg shadow-sm mb-6">
-      <div class="flex flex-wrap gap-4">
-        <!-- Search Input -->
-        <SearchInput
-          :model-value="searchQuery"
-          :is-loading="isSearching"
-          :placeholder="t('userList.searchPlaceholder')"
-          @update:model-value="$emit('update:searchQuery', $event)"
-          @keyup.enter="$emit('updateSearch')"
-          @clear="$emit('clearSearch')"
-        />
-
-        <!-- Role Filter -->
-        <div>
-          <div class="flex items-center gap-2">
-            <label class="text-sm text-gray-600 whitespace-nowrap">{{ t('components.userListTab.roleLabel') }}</label>
-            <select
-              :value="roleFilter"
-              class="input-field flex-1"
-              @change="$emit('update:roleFilter', $event.target.value)"
-            >
-              <option value="">
-                {{ t('components.userListTab.allRoles') }}
-              </option>
-              <option
-                v-for="role in availableRoles"
-                :key="role.name"
-                :value="role.name"
-              >
-                {{ translateRole(role.name) }}
-              </option>
-            </select>
-          </div>
+  <div class="space-y-6">
+    <!-- Search and Filter Controls (compact single row) -->
+    <div class="bg-white border border-gray-200 rounded-xl shadow-sm p-3 sm:p-4">
+      <div class="flex flex-wrap items-center gap-3 sm:gap-4">
+        <!-- Search: compact width -->
+        <div class="w-full sm:w-auto sm:min-w-[220px] sm:max-w-[280px] flex-1 sm:flex-initial">
+          <SearchInput
+            :model-value="searchQuery"
+            :is-loading="isSearching"
+            :placeholder="t('userList.searchPlaceholder')"
+            :show-search-icon="true"
+            @update:model-value="$emit('update:searchQuery', $event)"
+            @keyup.enter="$emit('updateSearch')"
+            @clear="$emit('clearSearch')"
+          />
         </div>
 
-        <!-- Sort Controls -->
-        <div>
-          <div class="flex items-center gap-2">
-            <label class="text-sm text-gray-600 whitespace-nowrap">{{ t('components.userListTab.sortByLabel') }}</label>
-            <select
-              :value="sortBy"
-              class="input-field flex-1"
-              @change="$emit('update:sortBy', $event.target.value)"
+        <!-- Role Filter -->
+        <div class="flex items-center gap-2 shrink-0">
+          <label class="text-sm font-medium text-gray-700 whitespace-nowrap">{{ t('components.userListTab.roleLabel') }}</label>
+          <select
+            :value="roleFilter"
+            class="input-field"
+            @change="$emit('update:roleFilter', $event.target.value)"
+          >
+            <option value="">
+              {{ t('components.userListTab.allRoles') }}
+            </option>
+            <option
+              v-for="role in availableRoles"
+              :key="role.name"
+              :value="role.name"
             >
-              <option value="created_at">
-                {{ t('components.userListTab.createdAtSort') }}
-              </option>
-              <option value="username">
-                {{ t('components.userListTab.usernameSort') }}
-              </option>
-              <option value="realname">
-                {{ t('components.userListTab.realNameSort') }}
-              </option>
-            </select>
-            <label class="text-sm text-gray-600 whitespace-nowrap">{{ t('components.userListTab.sortOrderLabel') }}</label>
-            <select
-              :value="sortOrder"
-              class="input-field flex-1"
-              @change="$emit('update:sortOrder', $event.target.value)"
-            >
-              <option value="asc">
-                {{ t('components.userListTab.ascSort') }}
-              </option>
-              <option value="desc">
-                {{ t('components.userListTab.descSort') }}
-              </option>
-            </select>
-          </div>
+              {{ translateRole(role.name) }}
+            </option>
+          </select>
+        </div>
+
+        <!-- Sort By -->
+        <div class="flex items-center gap-2 shrink-0">
+          <label class="text-sm font-medium text-gray-700 whitespace-nowrap">{{ t('components.userListTab.sortByLabel') }}</label>
+          <select
+            :value="sortBy"
+            class="input-field"
+            @change="$emit('update:sortBy', $event.target.value)"
+          >
+            <option value="created_at">
+              {{ t('components.userListTab.createdAtSort') }}
+            </option>
+            <option value="username">
+              {{ t('components.userListTab.usernameSort') }}
+            </option>
+            <option value="realname">
+              {{ t('components.userListTab.realNameSort') }}
+            </option>
+          </select>
+        </div>
+
+        <!-- Sort Order -->
+        <div class="flex items-center gap-2 shrink-0">
+          <label class="text-sm font-medium text-gray-700 whitespace-nowrap">{{ t('components.userListTab.sortOrderLabel') }}</label>
+          <select
+            :value="sortOrder"
+            class="input-field"
+            @change="$emit('update:sortOrder', $event.target.value)"
+          >
+            <option value="asc">
+              {{ t('components.userListTab.ascSort') }}
+            </option>
+            <option value="desc">
+              {{ t('components.userListTab.descSort') }}
+            </option>
+          </select>
         </div>
       </div>
     </div>
 
-    <div class="space-y-4 min-h-[400px]">
-      <!-- User Cards with hover effects -->
-      <div class="grid gap-4">
+    <!-- User list -->
+    <div class="min-h-[400px]">
+      <!-- Loading state -->
+      <div v-if="isLoading && userList.length === 0" class="flex flex-col items-center justify-center py-16">
+        <div class="animate-spin rounded-full h-10 w-10 border-2 border-blue-500 border-t-transparent" aria-hidden="true" />
+        <p class="mt-3 text-sm text-gray-600">{{ t('userList.loadingUsers') }}</p>
+      </div>
+
+      <div v-else class="grid gap-3 sm:gap-4">
         <div
           v-for="user in userList"
           :key="user.user_id"
-          class="bg-white p-4 rounded-lg border hover:border-blue-300 hover:shadow-sm transition-all duration-200 cursor-pointer"
+          class="bg-white p-4 sm:p-5 rounded-xl border border-gray-200 hover:border-blue-400/60 hover:shadow-md transition-all duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
           role="button"
           tabindex="0"
           @click="$emit('viewUser', user.username)"
@@ -87,7 +96,7 @@
         >
           <div class="flex justify-between items-start gap-4">
             <div class="min-w-0 flex-1">
-              <h3 class="text-lg font-medium text-blue-600 truncate">
+              <h3 class="text-lg font-medium text-blue-600 truncate hover:text-blue-700">
                 {{ user.username }}
               </h3>
               <p
@@ -98,7 +107,7 @@
               </p>
             </div>
             <span
-              class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+              class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium shrink-0"
               :class="getRoleClass(user.role)"
             >
               {{ translateRole(user.role) }}
