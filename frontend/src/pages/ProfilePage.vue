@@ -63,6 +63,14 @@
           <Pencil class="h-4 w-4" />
           {{ t('profile.editProfile') }}
         </button>
+        <button
+          v-if="auth.state.isLoggedIn"
+          class="btn-cancel"
+          @click="auth.logout()"
+        >
+          <LogOut class="h-4 w-4" />
+          {{ t('nav.logout') }}
+        </button>
 
         <!-- Role Assignment Section -->
         <div
@@ -338,7 +346,7 @@
 
 <script setup>
 import { jwtDecode } from 'jwt-decode'
-import { Wallet, KeyRound, Activity, Pencil, User, ChevronDown, Camera, Trash2 } from 'lucide-vue-next'
+import { Wallet, KeyRound, Activity, Pencil, User, ChevronDown, Camera, Trash2, LogOut } from 'lucide-vue-next'
 import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter , RouterLink, useRoute } from 'vue-router'

@@ -262,7 +262,8 @@
   "userList": {
     "users": "Пользователи",
     "roleManagement": "Управление ролями",
-    "searchPlaceholder": "Поиск по имени пользователя или настоящему имени",
+    "searchPlaceholder": "Поиск по имени пользователя или настоящему имени...",
+    "loadingUsers": "Загрузка пользователей...",
     "roleFilterLabel": "Роль:",
     "allRoles": "Все роли",
     "sortByLabel": "Сортировать по:",
@@ -601,6 +602,10 @@
     "title": "Поддерживаемые языки",
     "description": "Языки, доступные для записей корпуса и переводов",
     "totalLabel": "Всего: {count} языков",
+    "showingCount": "Показано {count} из {total} языков",
+    "searchPlaceholder": "Поиск по названию или коду...",
+    "noMatchingLanguages": "Нет языков по вашему запросу",
+    "clearSearch": "Сбросить поиск",
     "loading": "Загрузка языков...",
     "tableHeader": {
       "tag": "Тег",
@@ -857,6 +862,9 @@
   },
   "loading": "Загрузка...",
   "components": {
+    "searchInput": {
+      "clearAria": "Очистить поиск"
+    },
     "loadingSpinner": {
       "loadingDefault": "Загрузка..."
     },

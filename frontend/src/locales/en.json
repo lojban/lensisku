@@ -266,7 +266,8 @@
   "userList": {
     "users": "Users",
     "roleManagement": "Role Management",
-    "searchPlaceholder": "Search by username, or real name",
+    "searchPlaceholder": "Search by username or real name...",
+    "loadingUsers": "Loading users...",
     "roleFilterLabel": "Role:",
     "allRoles": "All Roles",
     "sortByLabel": "Sort by:",
@@ -608,6 +609,10 @@
     "title": "Supported Languages",
     "description": "Languages available for corpus entries and translations",
     "totalLabel": "Total: {count} languages",
+    "showingCount": "Showing {count} of {total} languages",
+    "searchPlaceholder": "Search by name or code...",
+    "noMatchingLanguages": "No languages match your search",
+    "clearSearch": "Clear search",
     "loading": "Loading languages...",
     "tableHeader": {
       "tag": "Tag",
@@ -864,6 +869,9 @@
   },
   "loading": "Loading...",
   "components": {
+    "searchInput": {
+      "clearAria": "Clear search"
+    },
     "loadingSpinner": {
       "loadingDefault": "Loading..."
     },
