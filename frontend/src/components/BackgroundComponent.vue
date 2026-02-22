@@ -42,16 +42,17 @@ onMounted(() => {
   const setBackground = async () => {
     const index = Math.floor(Math.random() * backgroundUrls.length)
     const url = backgroundUrls[index]
-    
-    // Preload the chosen image
-    await new Promise(resolve => {
+
+    const loaded = await new Promise((resolve) => {
       const img = new Image()
+      img.onload = () => resolve(true)
+      img.onerror = () => resolve(false)
       img.src = url
-      img.onload = resolve
-      img.onerror = resolve
     })
 
-    bgDiv.style.backgroundImage = `url(${url})`
+    if (loaded) {
+      bgDiv.style.backgroundImage = `url(${url})`
+    }
 
     // Schedule next background change after 30 seconds
     timeoutId = setTimeout(setBackground, 30000)
