@@ -1217,7 +1217,26 @@ async fn add_definition_in_transaction(
         _ => (sanitize_html(&request.word), "phrase".to_string()),
     };
 
-    let type_id = match word_type.as_str() {
+    // Only treat as official gismu/cmavo if there is at least one dictionary entry from officialdata for this word
+    let has_officialdata_entry = transaction
+        .query_opt(
+            "SELECT 1 FROM valsi v
+             JOIN definitions d ON d.valsiid = v.valsiid
+             JOIN users u ON d.userid = u.userid
+             WHERE v.word = $1 AND v.source_langid = $2 AND u.username = 'officialdata'
+             LIMIT 1",
+            &[&word, &source_langid],
+        )
+        .await?
+        .is_some();
+
+    let resolved_word_type: &str = match (word_type.as_str(), has_officialdata_entry) {
+        ("gismu", false) => "experimental gismu",
+        ("cmavo", false) => "experimental cmavo",
+        _ => word_type.as_str(),
+    };
+
+    let type_id = match resolved_word_type {
         "gismu" => 1,
         "cmavo" => 2,
         "cmevla" => 3,
