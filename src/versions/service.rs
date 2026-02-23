@@ -435,6 +435,21 @@ fn compare_option_field(
     }
 }
 
+/// Format keyword/gloss list for display in diffs, emails, and UI (e.g. "word1 (meaning1), word2 (meaning2)").
+fn format_keywords_display(keywords: &[KeywordMapping]) -> String {
+    keywords
+        .iter()
+        .map(|k| {
+            k.meaning
+                .as_deref()
+                .filter(|m| !m.is_empty())
+                .map(|m| format!("{} ({})", k.word, m))
+                .unwrap_or_else(|| k.word.clone())
+        })
+        .collect::<Vec<_>>()
+        .join(", ")
+}
+
 fn compare_keywords(
     field: &str,
     old_keywords: &Option<Vec<crate::jbovlaste::KeywordMapping>>,
@@ -445,19 +460,19 @@ fn compare_keywords(
         (None, Some(new)) => changes.push(Change {
             field: field.to_string(),
             old_value: None,
-            new_value: Some(format!("{:?}", new)),
+            new_value: Some(format_keywords_display(new)),
             change_type: ChangeType::Added,
         }),
         (Some(old), None) => changes.push(Change {
             field: field.to_string(),
-            old_value: Some(format!("{:?}", old)),
+            old_value: Some(format_keywords_display(old)),
             new_value: None,
             change_type: ChangeType::Removed,
         }),
         (Some(old), Some(new)) if old != new => changes.push(Change {
             field: field.to_string(),
-            old_value: Some(format!("{:?}", old)),
-            new_value: Some(format!("{:?}", new)),
+            old_value: Some(format_keywords_display(old)),
+            new_value: Some(format_keywords_display(new)),
             change_type: ChangeType::Modified,
         }),
         _ => {}
