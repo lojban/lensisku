@@ -37,21 +37,35 @@
               <div class="text-xs font-medium text-gray-500">
                 {{ formatFieldName(diffChange.field) }}:
               </div>
-              <template v-if="diffChange.change_type === 'modified'">
-                <div class="bg-red-50 p-2 rounded text-sm mb-1">
-                  <LazyMathJax :content="diffChange.old_value" :enable-markdown="true" />
-                </div>
-                <div class="bg-green-50 p-2 rounded text-sm">
-                  <LazyMathJax :content="diffChange.new_value" :enable-markdown="true" />
-                </div>
+              <template v-if="isPlainTextField(diffChange.field)">
+                <template v-if="diffChange.change_type === 'modified'">
+                  <div class="bg-red-50 p-2 rounded text-sm mb-1 whitespace-pre-wrap">{{ diffChange.old_value || '' }}</div>
+                  <div class="bg-green-50 p-2 rounded text-sm whitespace-pre-wrap">{{ diffChange.new_value || '' }}</div>
+                </template>
+                <template v-else>
+                  <div :class="{
+                    'bg-green-50 text-green-800': diffChange.change_type === 'added',
+                    'bg-red-50 text-red-800': diffChange.change_type === 'removed',
+                  }" class="p-2 rounded text-sm whitespace-pre-wrap">{{ diffChange.new_value || diffChange.old_value || '' }}</div>
+                </template>
               </template>
               <template v-else>
-                <div :class="{
-                  'bg-green-50 text-green-800': diffChange.change_type === 'added',
-                  'bg-red-50 text-red-800': diffChange.change_type === 'removed',
-                }" class="p-2 rounded text-sm">
-                  <LazyMathJax :content="diffChange.new_value || diffChange.old_value" :enable-markdown="true" />
-                </div>
+                <template v-if="diffChange.change_type === 'modified'">
+                  <div class="bg-red-50 p-2 rounded text-sm mb-1">
+                    <LazyMathJax :content="diffChange.old_value" :enable-markdown="true" />
+                  </div>
+                  <div class="bg-green-50 p-2 rounded text-sm">
+                    <LazyMathJax :content="diffChange.new_value" :enable-markdown="true" />
+                  </div>
+                </template>
+                <template v-else>
+                  <div :class="{
+                    'bg-green-50 text-green-800': diffChange.change_type === 'added',
+                    'bg-red-50 text-red-800': diffChange.change_type === 'removed',
+                  }" class="p-2 rounded text-sm">
+                    <LazyMathJax :content="diffChange.new_value || diffChange.old_value" :enable-markdown="true" />
+                  </div>
+                </template>
               </template>
             </div>
           </div>
@@ -114,6 +128,10 @@ const formatFieldName = (field) => {
     .map(word => t(`components.recentChangeItem.fields.${word}`, word.charAt(0).toUpperCase() + word.slice(1))) // Use t() with fallback
     .join(' ');
 }
+
+// Fields whose values are plain keyword/gloss lists — render as text only (no markdown/linkification)
+const isPlainTextField = (field) =>
+  field === 'gloss_keywords' || field === 'place_keywords'
 </script>
 
 <style scoped>
