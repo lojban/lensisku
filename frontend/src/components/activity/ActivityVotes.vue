@@ -9,48 +9,29 @@
         {{ t('components.activityVotes.noVotes') }}
       </p>
     </div>
-    <div
+    <DefinitionCard
       v-for="vote in votes"
       v-else
       :key="`${vote.definition_id}-${vote.voted_at}`"
-      class="bg-white p-4 rounded-lg border hover:border-blue-300 transition-colors break-words"
-    >
-      <RouterLink
-        :to="`/valsi/${vote.valsi_word}?highlight_definition_id=${vote.definition_id}`"
-        class="block"
-      >
-        <div class="flex items-center gap-2 mb-2">
-          <h3 class="text-lg font-semibold text-blue-700 break-words overflow-hidden">
-            {{ vote.valsi_word }}
-          </h3>
-          <span
-            class="text-sm px-2 py-0.5 rounded-full shrink-0"
-            :class="vote.vote_value > 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'"
-          >
-            {{ vote.vote_value > 0 ? '+1' : '-1' }}
-          </span>
-        </div>
-        <div class="text-sm text-gray-600 mb-2 break-words overflow-hidden">
-          {{ t('components.activityVotes.inLanguage', { language: vote.language }) }}
-        </div>
-        <div class="prose max-w-none mb-4 break-words overflow-hidden">
-          <LazyMathJax :content="vote.definition" />
-        </div>
-        <div class="text-sm text-gray-500">
-          {{ formatDate(vote.voted_at) }}
-        </div>
-      </RouterLink>
-    </div>
+      :definition="voteToDefinition(vote)"
+      :languages="languages"
+      :disable-toolbar="true"
+      :disable-discussion-button="false"
+      :show-word-type="true"
+      :show-audio="true"
+    />
   </div>
 </template>
 
 <script setup>
-import { Vote } from 'lucide-vue-next';
-import { useI18n } from 'vue-i18n';
+import { Vote } from 'lucide-vue-next'
+import { ref, onMounted } from 'vue'
 
-import LazyMathJax from '@/components/LazyMathJax.vue';
+import { getLanguages } from '@/api'
+import DefinitionCard from '@/components/DefinitionCard.vue'
+import { useI18n } from 'vue-i18n'
 
-const { t } = useI18n();
+const { t } = useI18n()
 
 defineProps({
   votes: {
@@ -60,6 +41,30 @@ defineProps({
   formatDate: {
     type: Function,
     required: true
+  }
+})
+
+const languages = ref([])
+
+function voteToDefinition(vote) {
+  return {
+    definitionid: vote.definition_id,
+    valsiword: vote.valsi_word,
+    word: vote.valsi_word,
+    definition: vote.definition,
+    langid: vote.langid,
+    score: vote.score ?? 0,
+    user_vote: vote.vote_value,
+    created_at: vote.voted_at
+  }
+}
+
+onMounted(async () => {
+  try {
+    const response = await getLanguages()
+    languages.value = response.data
+  } catch (error) {
+    console.error('Error fetching languages:', error)
   }
 })
 </script>

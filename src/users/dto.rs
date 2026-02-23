@@ -79,7 +79,9 @@ pub struct Vote {
     pub valsi_word: String,
     pub definition: String,
     pub language: String,
+    pub langid: i32,
     pub vote_value: i32,
+    pub score: i32,
     #[schema(value_type = String, format = DateTime)]
     pub voted_at: DateTime<Utc>,
 }
