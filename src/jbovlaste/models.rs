@@ -100,7 +100,7 @@ pub struct DefinitionResponse {
 impl From<tokio_postgres::Row> for DefinitionDetail {
     fn from(row: tokio_postgres::Row) -> Self {
         Self {
-            similarity: row.get("similarity"),
+            similarity: row.get::<_, Option<f64>>("similarity").map(|d| (1.0 - d).max(0.0)),
             definitionid: row.get("definitionid"),
             valsiword: row.get("valsiword"),
             valsiid: row.get("valsiid"),

@@ -222,7 +222,7 @@ pub async fn semantic_search(
         let word: String = row.get("valsiword");
         definitions.push(DefinitionDetail {
             embedding: None,
-            similarity: row.get::<_, Option<f64>>("similarity"),
+            similarity: row.get::<_, Option<f64>>("similarity").map(|d| (1.0 - d).max(0.0)),
             definitionid: def_id,
             valsiword: word.clone(),
             valsiid: row.get("valsiid"),
