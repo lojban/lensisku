@@ -212,8 +212,9 @@ pub async fn get_user_votes(
         .query(
             "SELECT 
                 dv.definitionid, dv.value::integer as vote_value,
-                v.word as valsi_word, d.definition,
+                v.word as valsi_word, d.definition, d.langid,
                 l.realname as language,
+                (SELECT COALESCE(SUM(value), 0)::integer FROM definitionvotes WHERE definitionid = dv.definitionid) as score,
                 to_timestamp(dv.time) as voted_at
              FROM definitionvotes dv
              JOIN definitions d ON dv.definitionid = d.definitionid
@@ -241,7 +242,9 @@ pub async fn get_user_votes(
             valsi_word: row.get("valsi_word"),
             definition: row.get("definition"),
             language: row.get("language"),
+            langid: row.get("langid"),
             vote_value: row.get("vote_value"),
+            score: row.get("score"),
             voted_at: row.get("voted_at"),
         })
         .collect();
