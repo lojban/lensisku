@@ -721,10 +721,12 @@ pub async fn get_recent_changes(
     pool: web::Data<Pool>,
     redis_cache: web::Data<RedisCache>,
     query: web::Query<RecentChangesQuery>,
+    claims: Option<Claims>,
 ) -> impl Responder {
     let days = query.days.unwrap_or(7);
+    let user_id = claims.map(|c| c.sub);
 
-    match service::get_recent_changes(&pool, days, &redis_cache).await {
+    match service::get_recent_changes(&pool, days, &redis_cache, user_id).await {
         Ok(response) => HttpResponse::Ok().json(response),
         Err(e) => {
             HttpResponse::InternalServerError().body(format!("Error retrieving changes: {}", e))

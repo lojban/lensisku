@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 use serde_json;
 use utoipa::ToSchema;
 
+use crate::comments::dto::ReactionResponse;
 use crate::versions::VersionDiff;
 
 #[derive(Debug)]
@@ -154,6 +155,14 @@ pub struct RecentChange {
     pub time: i32,
     pub language_name: Option<String>,
     pub diff: Option<VersionDiff>,
+    // Comment-type only (optional so non-comment changes stay small)
+    pub comment_num: Option<i32>,
+    pub valsi_word: Option<String>,
+    pub parent_id: Option<i32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub reactions: Option<Vec<ReactionResponse>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub is_bookmarked: Option<bool>,
 }
 
 #[derive(Debug, Serialize, ToSchema)]
