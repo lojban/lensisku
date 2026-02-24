@@ -885,6 +885,8 @@ impl CollectionExportItem {
             front_image_url,
             back_image_url,
             direction: None, // only set in full collection export
+            level_index: None,
+            position_in_level: None,
         }
     }
 }

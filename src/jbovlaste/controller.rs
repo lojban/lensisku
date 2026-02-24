@@ -14,9 +14,9 @@ use crate::jbovlaste::dto::{ListDefinitionsQuery, NonLojbanDefinitionsQuery};
 use crate::jbovlaste::service::validate_image;
 use crate::jbovlaste::{
     service, AddDefinitionRequest, AddValsiResponse, BulkImportParams, BulkVoteRequest,
-    BulkVoteResponse, DefinitionDetail, DefinitionListResponse, DefinitionTranslation, ExportPairsQuery,
-    GetImageDefinitionQuery, ImageUploadRequest, LinkDefinitionsRequest, RecentChangesQuery,
-    RecentChangesResponse, SearchDefinitionsParams, UpdateDefinitionRequest,
+    BulkVoteResponse, DefinitionDetail, DefinitionListResponse, DefinitionTranslation,
+    ExportPairsQuery, GetImageDefinitionQuery, ImageUploadRequest, LinkDefinitionsRequest,
+    RecentChangesQuery, RecentChangesResponse, SearchDefinitionsParams, UpdateDefinitionRequest,
     UpdateDefinitionResponse, ValsiDefinitionsQuery, ValsiDetail, ValsiTypeListResponse,
     VoteRequest, VoteResponse,
 };
@@ -61,6 +61,12 @@ pub async fn semantic_search(
             .collect();
         parsed.ok()
     });
+
+    if crate::embeddings::embeddings_disabled() {
+        return HttpResponse::ServiceUnavailable().json(json!({
+            "error": "Semantic search is disabled (DISABLE_EMBEDDINGS is set). Use text search instead."
+        }));
+    }
 
     let cache_key = crate::middleware::cache::generate_semantic_search_cache_key(&query);
 
@@ -1278,13 +1284,7 @@ pub async fn link_definitions_handler(
     claims: Claims,
     req: web::Json<LinkDefinitionsRequest>,
 ) -> impl Responder {
-    match service::link_definitions(
-        &pool,
-        req.definition_id,
-        req.translation_id,
-        claims.sub,
-    )
-    .await
+    match service::link_definitions(&pool, req.definition_id, req.translation_id, claims.sub).await
     {
         Ok(link_id) => HttpResponse::Ok().json(json!({ "success": true, "link_id": link_id })),
         Err(e) => {
@@ -1357,10 +1357,7 @@ pub async fn unlink_definitions_handler(
     description = "Retrieves all definitions linked as translations to the specified definition."
 )]
 #[get("/definitions/{id}/translations")]
-pub async fn get_translations_handler(
-    pool: web::Data<Pool>,
-    id: web::Path<i32>,
-) -> impl Responder {
+pub async fn get_translations_handler(pool: web::Data<Pool>, id: web::Path<i32>) -> impl Responder {
     match service::get_definition_translations(&pool, id.into_inner()).await {
         Ok(translations) => HttpResponse::Ok().json(translations),
         Err(e) => HttpResponse::InternalServerError().body(format!("Error: {}", e)),
@@ -1391,11 +1388,9 @@ pub async fn export_pairs_handler(
         Ok(tsv_content) => {
             let cd = ContentDisposition {
                 disposition: DispositionType::Attachment,
-                parameters: vec![
-                    actix_web::http::header::DispositionParam::Filename(
-                        format!("pairs_{}_{}.tsv", query.from_lang, query.to_lang)
-                    )
-                ],
+                parameters: vec![actix_web::http::header::DispositionParam::Filename(
+                    format!("pairs_{}_{}.tsv", query.from_lang, query.to_lang),
+                )],
             };
 
             HttpResponse::Ok()

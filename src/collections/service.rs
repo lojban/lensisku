@@ -1,6 +1,6 @@
-use crate::utils::remove_html_tags;
 use super::dto::SkippedItemInfo;
 use super::dto::*;
+use crate::utils::remove_html_tags;
 use crate::{
     auth_utils::verify_collection_ownership, export::models::CollectionExportItem,
     flashcards::models::FlashcardDirection, utils::validate_item_image, AppError, AppResult,
@@ -316,7 +316,38 @@ pub async fn delete_collection(pool: &Pool, collection_id: i32, user_id: i32) ->
         return Err(AppError::Unauthorized("Access denied".to_string()));
     }
 
-    // Delete collection items first
+    // Delete in dependency order: flashcards reference collection_items, so delete flashcard
+    // data first, then levels, then items, then the collection.
+
+    // 1. Review history references flashcards without CASCADE
+    transaction
+        .execute(
+            "DELETE FROM flashcard_review_history
+             WHERE flashcard_id IN (SELECT id FROM flashcards WHERE collection_id = $1)",
+            &[&collection_id],
+        )
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+    // 2. Flashcards (CASCADEs: user_flashcard_progress, flashcard_level_items)
+    transaction
+        .execute(
+            "DELETE FROM flashcards WHERE collection_id = $1",
+            &[&collection_id],
+        )
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+    // 3. Levels (CASCADEs: level_prerequisites, flashcard_level_items, user_level_progress)
+    transaction
+        .execute(
+            "DELETE FROM flashcard_levels WHERE collection_id = $1",
+            &[&collection_id],
+        )
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+    // 4. Collection items (CASCADEs: collection_item_images, etc.)
     transaction
         .execute(
             "DELETE FROM collection_items WHERE collection_id = $1",
@@ -325,7 +356,7 @@ pub async fn delete_collection(pool: &Pool, collection_id: i32, user_id: i32) ->
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
 
-    // Delete collection
+    // 5. Collection
     transaction
         .execute(
             "DELETE FROM collections WHERE collection_id = $1",
@@ -596,9 +627,14 @@ pub async fn import_collection_from_json(
         let sanitized_back = item.free_content_back.as_ref().map(|b| sanitize_html(b));
         let sanitized_note = item.collection_note.as_ref().map(|n| sanitize_html(n));
 
-        let canonical_form = sanitized_front.as_ref()
+        let canonical_form = sanitized_front
+            .as_ref()
             .and_then(|front| crate::tersmu::get_canonical_form(front))
-            .or_else(|| item.word.as_ref().and_then(|w| crate::tersmu::get_canonical_form(w)));
+            .or_else(|| {
+                item.word
+                    .as_ref()
+                    .and_then(|w| crate::tersmu::get_canonical_form(w))
+            });
 
         let new_item_id: i32 = transaction
             .query_one(
@@ -690,7 +726,11 @@ pub async fn import_full(
         .map_err(|e| AppError::Database(e.to_string()))?;
 
     let sanitized_name = sanitize_html(&req.collection.name);
-    let sanitized_description = req.collection.description.as_ref().map(|d| sanitize_html(d));
+    let sanitized_description = req
+        .collection
+        .description
+        .as_ref()
+        .map(|d| sanitize_html(d));
     let is_public = req.collection.is_public.unwrap_or(true);
 
     let row = transaction
@@ -698,7 +738,12 @@ pub async fn import_full(
             "INSERT INTO collections (user_id, name, description, is_public)
              VALUES ($1, $2, $3, $4)
              RETURNING collection_id, created_at, updated_at",
-            &[&user_id, &sanitized_name, &sanitized_description, &is_public],
+            &[
+                &user_id,
+                &sanitized_name,
+                &sanitized_description,
+                &is_public,
+            ],
         )
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
@@ -708,7 +753,8 @@ pub async fn import_full(
     let mut skipped_count = 0i32;
     let mut warnings: Vec<String> = Vec::new();
     // For each export index, Some(item_id) if we inserted that item, None if skipped
-    let mut inserted_item_ids_by_export_index: Vec<Option<i32>> = Vec::with_capacity(req.items.len());
+    let mut inserted_item_ids_by_export_index: Vec<Option<i32>> =
+        Vec::with_capacity(req.items.len());
 
     for (pos, item) in req.items.iter().enumerate() {
         let has_definition = item.definition_id.is_some();
@@ -753,7 +799,11 @@ pub async fn import_full(
         let canonical_form = sanitized_front
             .as_ref()
             .and_then(|f| crate::tersmu::get_canonical_form(f))
-            .or_else(|| item.word.as_ref().and_then(|w| crate::tersmu::get_canonical_form(w)));
+            .or_else(|| {
+                item.word
+                    .as_ref()
+                    .and_then(|w| crate::tersmu::get_canonical_form(w))
+            });
 
         let new_item_id: i32 = transaction
             .query_one(
@@ -796,33 +846,68 @@ pub async fn import_full(
         imported_count += 1;
     }
 
+    // When no explicit levels array is provided, infer levels from per-item level_index/position_in_level
+    let levels_to_use: Vec<LevelExport> = if !req.levels.is_empty() {
+        req.levels.clone()
+    } else {
+        let mut level_to_items: std::collections::BTreeMap<u32, Vec<(usize, i32)>> =
+            std::collections::BTreeMap::new();
+        for (item_idx, item) in req.items.iter().enumerate() {
+            if let Some(li) = item.level_index {
+                let pos = item.position_in_level.unwrap_or(i32::MAX);
+                level_to_items.entry(li).or_default().push((item_idx, pos));
+            }
+        }
+        level_to_items
+            .into_iter()
+            .enumerate()
+            .map(|(pos_index, (level_index, mut items))| {
+                items.sort_by_key(|&(idx, pos)| (pos, idx));
+                // Chain prerequisites: level 0 has none, level 1 requires 0, level 2 requires 1, etc.
+                let prerequisite_positions: Vec<usize> = if pos_index == 0 {
+                    vec![]
+                } else {
+                    vec![pos_index - 1]
+                };
+                LevelExport {
+                    name: format!("Level {}", level_index + 1),
+                    description: None,
+                    min_cards: 5,
+                    min_success_rate: 0.8,
+                    position: level_index as i32,
+                    prerequisite_positions,
+                    item_positions: items.into_iter().map(|(idx, _)| idx).collect(),
+                }
+            })
+            .collect()
+    };
+
     let mut levels_created = 0i32;
-    if !req.levels.is_empty() {
+    if !levels_to_use.is_empty() {
         // For each export index, Some(flashcard_id) if we have a flashcard for that item, None if skipped
         let mut flashcard_id_by_export_index: Vec<Option<i32>> =
             Vec::with_capacity(inserted_item_ids_by_export_index.len());
         for (idx, item_id_opt) in inserted_item_ids_by_export_index.iter().enumerate() {
             let flashcard_id_opt = match *item_id_opt {
                 Some(item_id) => {
-                    let direction = parse_export_direction(req.items.get(idx).and_then(|i| i.direction.as_ref()));
+                    let direction = parse_export_direction(
+                        req.items.get(idx).and_then(|i| i.direction.as_ref()),
+                    );
                     let flashcard_id: i32 = transaction
-                .query_one(
-                    "INSERT INTO flashcards (collection_id, position, item_id, direction)
+                        .query_one(
+                            "INSERT INTO flashcards (collection_id, position, item_id, direction)
                      VALUES ($1, $2, $3, $4)
                      RETURNING id",
-                    &[
-                        &collection_id,
-                        &(idx as i32),
-                        &item_id,
-                        &direction,
-                    ],
-                )
-                .await
-                .map_err(|e| AppError::Database(e.to_string()))?
-                .try_get(0)
-                .map_err(|e| AppError::Database(e.to_string()))?;
-                    initialize_flashcard_progress(&transaction, user_id, flashcard_id, "direct").await?;
-                    initialize_flashcard_progress(&transaction, user_id, flashcard_id, "reverse").await?;
+                            &[&collection_id, &(idx as i32), &item_id, &direction],
+                        )
+                        .await
+                        .map_err(|e| AppError::Database(e.to_string()))?
+                        .try_get(0)
+                        .map_err(|e| AppError::Database(e.to_string()))?;
+                    initialize_flashcard_progress(&transaction, user_id, flashcard_id, "direct")
+                        .await?;
+                    initialize_flashcard_progress(&transaction, user_id, flashcard_id, "reverse")
+                        .await?;
                     Some(flashcard_id)
                 }
                 None => None,
@@ -830,8 +915,8 @@ pub async fn import_full(
             flashcard_id_by_export_index.push(flashcard_id_opt);
         }
 
-        let mut new_level_ids: Vec<i32> = Vec::with_capacity(req.levels.len());
-        for level in &req.levels {
+        let mut new_level_ids: Vec<i32> = Vec::with_capacity(levels_to_use.len());
+        for level in &levels_to_use {
             let level_id: i32 = transaction
                 .query_one(
                     "INSERT INTO flashcard_levels (collection_id, name, description, min_cards, min_success_rate, position)
@@ -854,7 +939,7 @@ pub async fn import_full(
             levels_created += 1;
         }
 
-        for (level_idx, level) in req.levels.iter().enumerate() {
+        for (level_idx, level) in levels_to_use.iter().enumerate() {
             let level_id = new_level_ids[level_idx];
             for &prereq_idx in &level.prerequisite_positions {
                 if prereq_idx < new_level_ids.len() {
@@ -900,10 +985,7 @@ pub async fn import_full(
         created_at: row.get("created_at"),
         updated_at: row.get("updated_at"),
         item_count: imported_count as i64,
-        owner: CollectionOwner {
-            user_id,
-            username,
-        },
+        owner: CollectionOwner { user_id, username },
     };
 
     transaction
@@ -964,25 +1046,26 @@ pub async fn export_collection_full(
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
 
-    let mut item_id_to_index: std::collections::HashMap<i32, usize> = std::collections::HashMap::new();
+    let mut item_id_to_index: std::collections::HashMap<i32, usize> =
+        std::collections::HashMap::new();
     let items: Vec<CollectionExportItem> = item_rows
         .iter()
         .enumerate()
         .map(|(idx, row)| {
             let item_id: i32 = row.get("item_id");
             item_id_to_index.insert(item_id, idx);
-            let front_image_url = row
-                .get::<_, Option<Vec<u8>>>("front_image_data")
-                .and_then(|data| {
-                    row.get::<_, Option<String>>("front_image_mime")
-                        .map(|mime| format!("data:{};base64,{}", mime, BASE64.encode(&data)))
-                });
-            let back_image_url = row
-                .get::<_, Option<Vec<u8>>>("back_image_data")
-                .and_then(|data| {
-                    row.get::<_, Option<String>>("back_image_mime")
-                        .map(|mime| format!("data:{};base64,{}", mime, BASE64.encode(&data)))
-                });
+            let front_image_url =
+                row.get::<_, Option<Vec<u8>>>("front_image_data")
+                    .and_then(|data| {
+                        row.get::<_, Option<String>>("front_image_mime")
+                            .map(|mime| format!("data:{};base64,{}", mime, BASE64.encode(&data)))
+                    });
+            let back_image_url =
+                row.get::<_, Option<Vec<u8>>>("back_image_data")
+                    .and_then(|data| {
+                        row.get::<_, Option<String>>("back_image_mime")
+                            .map(|mime| format!("data:{};base64,{}", mime, BASE64.encode(&data)))
+                    });
             let direction: Option<String> = row.get("flashcard_direction");
             CollectionExportItem {
                 item_id: row.get("item_id"),
@@ -1004,6 +1087,8 @@ pub async fn export_collection_full(
                 front_image_url,
                 back_image_url,
                 direction,
+                level_index: None,
+                position_in_level: None,
             }
         })
         .collect();
@@ -1184,7 +1269,8 @@ pub async fn upsert_item(
     }
 
     // Create or update item
-    let mut canonical_form = sanitized_front.as_ref()
+    let mut canonical_form = sanitized_front
+        .as_ref()
         .and_then(|front| crate::tersmu::get_canonical_form(front));
 
     // For dictionary items without free content, try to use the word from the definition
@@ -1200,59 +1286,67 @@ pub async fn upsert_item(
         }
     }
 
-    let (item_id, notes, added_at): (i32, Option<String>, DateTime<Utc>) = if let Some(row) = existing_item {
-        let item_id: i32 = row.get("item_id");
-        // Update existing item
-        let old_position: i32 = row.get("position");
+    let (item_id, notes, added_at): (i32, Option<String>, DateTime<Utc>) =
+        if let Some(row) = existing_item {
+            let item_id: i32 = row.get("item_id");
+            // Update existing item
+            let old_position: i32 = row.get("position");
 
-        if position != old_position {
-            // Shift items if position changed
-            let (start, end, shift) = if position > old_position {
-                (old_position + 1, position + 1, -1)
-            } else {
-                (position, old_position, 1)
-            };
+            if position != old_position {
+                // Shift items if position changed
+                let (start, end, shift) = if position > old_position {
+                    (old_position + 1, position + 1, -1)
+                } else {
+                    (position, old_position, 1)
+                };
 
-            transaction
-                .execute(
-                    "UPDATE collection_items 
+                transaction
+                    .execute(
+                        "UPDATE collection_items 
                      SET position = position + $1
                      WHERE collection_id = $2 
                      AND position >= $3 AND position < $4
                      AND item_id != $5",
+                        &[
+                            &shift as &(dyn tokio_postgres::types::ToSql + Sync),
+                            &collection_id,
+                            &start,
+                            &end,
+                            &item_id,
+                        ],
+                    )
+                    .await
+                    .map_err(|e| AppError::Database(e.to_string()))?;
+            }
+
+            transaction
+                .execute(
+                    "UPDATE collection_items 
+                 SET notes = $1, position = $2, canonical_form = $3,
+                     free_content_front = $4, free_content_back = $5
+                 WHERE item_id = $6",
                     &[
-                        &shift as &(dyn tokio_postgres::types::ToSql + Sync),
-                        &collection_id,
-                        &start,
-                        &end,
+                        &sanitized_notes,
+                        &position,
+                        &canonical_form,
+                        &sanitized_front,
+                        &sanitized_back,
                         &item_id,
                     ],
                 )
                 .await
                 .map_err(|e| AppError::Database(e.to_string()))?;
-        }
 
-        transaction
-            .execute(
-                "UPDATE collection_items 
-                 SET notes = $1, position = $2, canonical_form = $3,
-                     free_content_front = $4, free_content_back = $5
-                 WHERE item_id = $6",
-                &[&sanitized_notes, &position, &canonical_form, &sanitized_front, &sanitized_back, &item_id],
+            (
+                item_id,
+                sanitized_notes,
+                row.get::<_, DateTime<Utc>>("added_at"),
             )
-            .await
-            .map_err(|e| AppError::Database(e.to_string()))?;
-
-        (
-            item_id,
-            sanitized_notes,
-            row.get::<_, DateTime<Utc>>("added_at"),
-        )
-    } else {
-        // Add new item
-        let row = transaction
-            .query_one(
-                "INSERT INTO collection_items (
+        } else {
+            // Add new item
+            let row = transaction
+                .query_one(
+                    "INSERT INTO collection_items (
                     collection_id, definition_id, 
                     free_content_front, free_content_back, 
                     langid, owner_user_id, license, script, is_original,
@@ -1260,31 +1354,31 @@ pub async fn upsert_item(
                 )
                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
                 RETURNING item_id, added_at",
-                &[
-                    &collection_id,
-                    &req.definition_id,
-                    &sanitized_front,
-                    &sanitized_back,
-                    &req.language_id,
-                    &req.owner_user_id,
-                    &req.license,
-                    &req.script,
-                    &req.is_original.unwrap_or(true),
-                    &sanitized_notes,
-                    &position,
-                    &req.auto_progress.unwrap_or(true),
-                    &canonical_form,
-                ],
-            )
-            .await
-            .map_err(|e| AppError::Database(e.to_string()))?;
+                    &[
+                        &collection_id,
+                        &req.definition_id,
+                        &sanitized_front,
+                        &sanitized_back,
+                        &req.language_id,
+                        &req.owner_user_id,
+                        &req.license,
+                        &req.script,
+                        &req.is_original.unwrap_or(true),
+                        &sanitized_notes,
+                        &position,
+                        &req.auto_progress.unwrap_or(true),
+                        &canonical_form,
+                    ],
+                )
+                .await
+                .map_err(|e| AppError::Database(e.to_string()))?;
 
-        (
-            row.get::<_, i32>("item_id"),
-            sanitized_notes,
-            row.get::<_, DateTime<Utc>>("added_at"),
-        )
-    };
+            (
+                row.get::<_, i32>("item_id"),
+                sanitized_notes,
+                row.get::<_, DateTime<Utc>>("added_at"),
+            )
+        };
 
     // Handle front image
     if let Some(image) = &req.front_image {

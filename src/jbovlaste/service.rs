@@ -13,19 +13,19 @@ use log::debug;
 use super::broadcast::Broadcaster;
 use super::dto::ClientIdGroup;
 use super::{
-    AddDefinitionRequest, BulkImportParams, DefinitionListResponse, DefinitionResponse,
+    AddDefinitionRequest, BulkImportParams, DefinitionListResponse, DefinitionResponse, Example,
     GetImageDefinitionQuery, ImageData, KeywordMapping, ListDefinitionsQuery,
     NonLojbanDefinitionsQuery, RecentChange, RecentChangesResponse, SearchDefinitionsParams,
-    UpdateDefinitionRequest, ValsiDetail, ValsiType, Example,
+    UpdateDefinitionRequest, ValsiDetail, ValsiType,
 };
 use crate::jbovlaste::models::DefinitionDetail;
 use vlazba::jvokaha::jvokaha;
 
 use crate::auth::Claims;
+use crate::comments::dto::ReactionResponse;
 use crate::language::{analyze_word, validate_mathjax, MathJaxValidationOptions};
 use crate::middleware::cache::RedisCache;
 use crate::subscriptions::models::SubscriptionTrigger;
-use crate::comments::dto::ReactionResponse;
 use crate::versions::service::{get_diff, get_version_with_transaction};
 use crate::versions::{Change, ChangeType, VersionContent, VersionDiff};
 use base64::engine::general_purpose::STANDARD as BASE64;
@@ -150,7 +150,10 @@ pub async fn semantic_search(
     let offset_param_index = query_params.len() + 1;
     query_params.push(&offset);
 
-    let limit_offset_sql = format!("LIMIT ${} OFFSET ${}", limit_param_index, offset_param_index);
+    let limit_offset_sql = format!(
+        "LIMIT ${} OFFSET ${}",
+        limit_param_index, offset_param_index
+    );
 
     let query_string = format!(
         r#"
@@ -223,7 +226,9 @@ pub async fn semantic_search(
         let word: String = row.get("valsiword");
         definitions.push(DefinitionDetail {
             embedding: None,
-            similarity: row.get::<_, Option<f64>>("similarity").map(|d| (1.0 - d).max(0.0)),
+            similarity: row
+                .get::<_, Option<f64>>("similarity")
+                .map(|d| (1.0 - d).max(0.0)),
             definitionid: def_id,
             valsiword: word.clone(),
             valsiid: row.get("valsiid"),
@@ -392,10 +397,7 @@ pub async fn search_definitions(
     if let Some(word_type) = params.word_type {
         word_type_value = word_type;
         // Use cached_typeid to avoid joining valsi/valsitypes tables
-        conditions.push(format!(
-            "AND d.cached_typeid = ${}",
-            query_params.len() + 1
-        ));
+        conditions.push(format!("AND d.cached_typeid = ${}", query_params.len() + 1));
         query_params.push(&word_type_value);
     }
 
@@ -755,7 +757,10 @@ pub async fn fast_search_definitions(
 
     // Add username condition if present (using cached field)
     if let Some(username) = &params.username {
-        conditions.push(format!("AND d.cached_username = ${}", query_params.len() + 1));
+        conditions.push(format!(
+            "AND d.cached_username = ${}",
+            query_params.len() + 1
+        ));
         query_params.push(username);
     }
 
@@ -804,7 +809,8 @@ pub async fn fast_search_definitions(
         {additional_conditions}
         ORDER BY rank DESC, {} {}
         LIMIT {} OFFSET {}"#,
-        sort_column, sort_order, 
+        sort_column,
+        sort_order,
         format!("${}", limit_param_index),
         format!("${}", offset_param_index)
     );
@@ -837,7 +843,7 @@ pub async fn fast_search_definitions(
             notes: row.get("notes"),
             etymology: None, // Not fetched in fast search
             selmaho: row.get("selmaho"),
-            jargon: None, // Not fetched in fast search
+            jargon: None,     // Not fetched in fast search
             definitionnum: 0, // Not fetched in fast search
             langrealname: row.get("langrealname"),
             username: row.get("username"),
@@ -847,12 +853,12 @@ pub async fn fast_search_definitions(
             comment_count: None, // Not included in fast search
             gloss_keywords: gloss_keywords_map.get(&def_id).cloned(),
             place_keywords: place_keywords_map.get(&def_id).cloned(),
-            user_vote: None, // Not included in fast search
+            user_vote: None,   // Not included in fast search
             owner_only: false, // Not fetched in fast search
-            can_edit: false, // Not included in fast search
+            can_edit: false,   // Not included in fast search
             created_at: row.get("created_at"),
             has_image: false, // Not checked in fast search for performance
-            sound_url: None, // Skipped for performance in fast search
+            sound_url: None,  // Skipped for performance in fast search
             embedding: None,
             metadata: None,
             rafsi: None,
@@ -897,9 +903,9 @@ pub async fn fast_search_definitions(
 
     // Create params for count query - no search_term needed, only like_pattern
     let mut count_params: Vec<&(dyn tokio_postgres::types::ToSql + Sync)> = vec![
-        &like_pattern,          // $1
-        &languages_slice,       // $2
-        &source_langid_value,   // $3
+        &like_pattern,        // $1
+        &languages_slice,     // $2
+        &source_langid_value, // $3
     ];
 
     // Add conditional parameters in the correct order, matching additional_conditions logic
@@ -922,9 +928,14 @@ pub async fn fast_search_definitions(
 
     // Skip decomposition for maximum speed (only compute if search term looks like lujvo)
     // A simple heuristic: if it's longer than 5 chars and contains consonants, might be lujvo
-    let decomposition = if params.search_term.len() > 5 
-        && params.search_term.chars().any(|c| c.is_alphabetic() && !matches!(c, 'a' | 'e' | 'i' | 'o' | 'u' | 'A' | 'E' | 'I' | 'O' | 'U')) {
-        get_source_words(&params.search_term, &transaction).await.unwrap_or_default()
+    let decomposition = if params.search_term.len() > 5
+        && params.search_term.chars().any(|c| {
+            c.is_alphabetic()
+                && !matches!(c, 'a' | 'e' | 'i' | 'o' | 'u' | 'A' | 'E' | 'I' | 'O' | 'U')
+        }) {
+        get_source_words(&params.search_term, &transaction)
+            .await
+            .unwrap_or_default()
     } else {
         Vec::new()
     };
@@ -995,9 +1006,7 @@ async fn get_source_words(
     if !unresolved.is_empty() {
         let candidates: Vec<String> = unresolved
             .iter()
-            .flat_map(|rafsi| {
-                ['a', 'e', 'i', 'o', 'u'].map(|v| format!("{}{}", rafsi, v))
-            })
+            .flat_map(|rafsi| ['a', 'e', 'i', 'o', 'u'].map(|v| format!("{}{}", rafsi, v)))
             .collect();
         if let Ok(long_rows) = transaction
             .query(
@@ -1015,7 +1024,9 @@ async fn get_source_words(
                         None
                     }
                 }) {
-                    long_rafsi_to_word.entry(rafsi).or_insert_with(|| word.clone());
+                    long_rafsi_to_word
+                        .entry(rafsi)
+                        .or_insert_with(|| word.clone());
                 }
             }
         }
@@ -1278,13 +1289,7 @@ async fn add_definition_in_transaction(
             .get::<_, i32>("valsiid"),
     };
 
-    validate_and_update_rafsi(
-        transaction,
-        valsi_id,
-        request.rafsi.clone(),
-        source_langid,
-    )
-    .await?;
+    validate_and_update_rafsi(transaction, valsi_id, request.rafsi.clone(), source_langid).await?;
 
     // Get next definition number
     let definitionnum = transaction
@@ -1560,7 +1565,10 @@ async fn add_definition_in_transaction(
     }
 
     if let Err(e) = redis_cache.invalidate_definition_search_caches().await {
-        log::error!("Failed to invalidate definition search caches after add: {}", e);
+        log::error!(
+            "Failed to invalidate definition search caches after add: {}",
+            e
+        );
     }
 
     Ok((word_type, definition_id))
@@ -2121,7 +2129,10 @@ pub async fn update_definition(
         .await?;
 
     if let Err(e) = redis_cache.invalidate_definition_search_caches().await {
-        log::error!("Failed to invalidate definition search caches after update: {}", e);
+        log::error!(
+            "Failed to invalidate definition search caches after update: {}",
+            e
+        );
     }
     transaction.commit().await?;
 
@@ -2589,7 +2600,10 @@ pub async fn update_vote(
         .get::<_, i32>("total_vote");
 
     if let Err(e) = redis_cache.invalidate_definition_search_caches().await {
-        log::error!("Failed to invalidate definition search caches after vote: {}", e);
+        log::error!(
+            "Failed to invalidate definition search caches after vote: {}",
+            e
+        );
     }
 
     // Commit transaction
@@ -2831,11 +2845,14 @@ async fn fetch_reactions_for_changes(
     let mut reactions_map: HashMap<i32, Vec<ReactionResponse>> = HashMap::new();
     for row in rows.iter() {
         let comment_id: i32 = row.get("comment_id");
-        reactions_map.entry(comment_id).or_default().push(ReactionResponse {
-            reaction: row.get("reaction"),
-            count: row.get("count"),
-            reacted: row.get("reacted"),
-        });
+        reactions_map
+            .entry(comment_id)
+            .or_default()
+            .push(ReactionResponse {
+                reaction: row.get("reaction"),
+                count: row.get("count"),
+                reacted: row.get("reacted"),
+            });
     }
     for &comment_id in comment_ids {
         reactions_map.entry(comment_id).or_default();
@@ -3621,10 +3638,7 @@ pub async fn delete_definition(
 
         // Delete the valsi itself
         let valsi_deleted_count = transaction
-            .execute(
-                "DELETE FROM valsi WHERE valsiid = $1",
-                &[&valsi_id],
-            )
+            .execute("DELETE FROM valsi WHERE valsiid = $1", &[&valsi_id])
             .await?;
 
         valsi_deleted = valsi_deleted_count > 0;
@@ -3992,11 +4006,11 @@ async fn validate_and_update_rafsi(
                     .await?;
             } else {
                 let rafsi_list: Vec<&str> = rafsi_str.split_whitespace().collect();
-                
+
                 // Check conflicts
                 // Types: 1=gismu, 2=cmavo, 4=lujvo, 5=fu'ivla
                 let protected_types: Vec<i16> = vec![1, 2, 4, 5];
-                
+
                 let conflict_query = "
                     SELECT v.word, vt.descriptor
                     FROM valsi v
@@ -4011,19 +4025,15 @@ async fn validate_and_update_rafsi(
                     )
                     LIMIT 1
                 ";
-                
+
                 let rows = transaction
                     .query(conflict_query, &[&valsi_id, &protected_types, &rafsi_list])
                     .await?;
-                
+
                 if let Some(row) = rows.first() {
                     let word: String = row.get("word");
                     let type_name: String = row.get("descriptor");
-                    return Err(format!(
-                        "RAFSI_CONFLICT|{}|{}",
-                        word, type_name
-                    )
-                    .into());
+                    return Err(format!("RAFSI_CONFLICT|{}|{}", word, type_name).into());
                 }
 
                 // Update valsi
@@ -4187,7 +4197,9 @@ pub async fn export_linked_pairs(
 
     let mut tsv_output = String::new();
     // Header
-    tsv_output.push_str("id\tword\tdefinition\ttranslation_id\ttranslation_word\ttranslation_definition\n");
+    tsv_output.push_str(
+        "id\tword\tdefinition\ttranslation_id\ttranslation_word\ttranslation_definition\n",
+    );
 
     for row in rows {
         let id1: i32 = row.get("def_id_1");
@@ -4201,7 +4213,7 @@ pub async fn export_linked_pairs(
             "{}\t{}\t{}\t{}\t{}\t{}\n",
             id1,
             word1.replace('\t', " "), // Basic sanitization for TSV
-            text1.replace('\t', " ").replace('\n', " "), 
+            text1.replace('\t', " ").replace('\n', " "),
             id2,
             word2.replace('\t', " "),
             text2.replace('\t', " ").replace('\n', " ")
@@ -4251,4 +4263,3 @@ pub async fn get_definition_link(
         None => Ok(None),
     }
 }
-

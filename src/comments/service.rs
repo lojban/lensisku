@@ -462,7 +462,11 @@ async fn get_thread_id_by_context(
 ) -> Result<Option<i32>, Box<dyn std::error::Error>> {
     // Ensure only one context type is primarily active or it's a free-standing thread context
     let mut active_contexts = 0;
-    if valsi_id.is_some() || natlang_word_id.is_some() || definition_id.is_some() || definition_link_id.is_some() {
+    if valsi_id.is_some()
+        || natlang_word_id.is_some()
+        || definition_id.is_some()
+        || definition_link_id.is_some()
+    {
         active_contexts += 1;
     }
     if target_user_id.is_some() {
@@ -1902,7 +1906,11 @@ async fn get_or_create_thread_id(
 ) -> Result<i32, Box<dyn std::error::Error>> {
     // Validate that only one context type is primarily active or it's a free-standing thread
     let mut active_contexts = 0;
-    if valsi_id.is_some() || natlang_word_id.is_some() || definition_id.is_some() || definition_link_id.is_some() {
+    if valsi_id.is_some()
+        || natlang_word_id.is_some()
+        || definition_id.is_some()
+        || definition_link_id.is_some()
+    {
         active_contexts += 1;
     }
     if target_user_id.is_some() {
@@ -1925,7 +1933,13 @@ async fn get_or_create_thread_id(
     if let Some(row) = transaction
         .query_opt(
             query_select,
-            &[&valsi_id, &natlang_word_id, &definition_id, &definition_link_id, &target_user_id],
+            &[
+                &valsi_id,
+                &natlang_word_id,
+                &definition_id,
+                &definition_link_id,
+                &target_user_id,
+            ],
         )
         .await?
     {
@@ -1938,7 +1952,13 @@ async fn get_or_create_thread_id(
         Ok(transaction
             .query_one(
                 query_insert,
-                &[&valsi_id, &natlang_word_id, &definition_id, &definition_link_id, &target_user_id],
+                &[
+                    &valsi_id,
+                    &natlang_word_id,
+                    &definition_id,
+                    &definition_link_id,
+                    &target_user_id,
+                ],
             )
             .await?
             .get("threadid"))

@@ -228,11 +228,19 @@ impl EmailService {
                     };
                     text_body.push_str(&format!("  - {} ({}): ", c.field, label));
                     if let Some(v) = &c.new_value {
-                        let t = if v.len() > 80 { format!("{}...", &v[..80]) } else { v.clone() };
+                        let t = if v.len() > 80 {
+                            format!("{}...", &v[..80])
+                        } else {
+                            v.clone()
+                        };
                         text_body.push_str(&t);
                     } else if let Some(v) = &c.old_value {
                         text_body.push_str("(removed)");
-                        let t = if v.len() > 60 { format!("{}...", &v[..60]) } else { v.clone() };
+                        let t = if v.len() > 60 {
+                            format!("{}...", &v[..60])
+                        } else {
+                            v.clone()
+                        };
                         text_body.push_str(&t);
                     }
                     text_body.push('\n');
@@ -292,8 +300,16 @@ impl EmailService {
                <tr><td style="font-size: 24px; font-weight: 700; color: #0f172a; padding-bottom: 24px; letter-spacing: -0.02em; text-align: center;">{} <span style="color: #3b82f6;">{}</span></td></tr>
                {}
                {}"#,
-            if actor_line.is_empty() { String::new() } else { format!("{}", actor_line) },
-            if changes.as_ref().map(|c| c.is_empty()).unwrap_or(true) { "New valsi added:" } else { "Definition updated for" },
+            if actor_line.is_empty() {
+                String::new()
+            } else {
+                format!("{}", actor_line)
+            },
+            if changes.as_ref().map(|c| c.is_empty()).unwrap_or(true) {
+                "New valsi added:"
+            } else {
+                "Definition updated for"
+            },
             valsi_esc,
             def_block,
             changes_block
@@ -441,21 +457,27 @@ pub async fn send_notification_emails(pool: &deadpool_postgres::Pool) -> Result<
             let word = valsi_word.as_deref().unwrap_or("a valsi");
             let url = link.as_deref().unwrap_or("");
             let (new_definition, changes) = if let Some(def_id) = definition_id {
-                let (version_pair, single_def) = match crate::versions::service::get_definition_history(pool, def_id, 1, 2).await {
-                    Ok(history) if history.versions.len() >= 2 => (
-                        Some((history.versions[1].version_id, history.versions[0].version_id)),
-                        None,
-                    ),
-                    Ok(history) if history.versions.len() == 1 => (
-                        None,
-                        Some(history.versions[0].content.definition.clone()),
-                    ),
-                    _ => (None, None),
-                };
+                let (version_pair, single_def) =
+                    match crate::versions::service::get_definition_history(pool, def_id, 1, 2).await
+                    {
+                        Ok(history) if history.versions.len() >= 2 => (
+                            Some((
+                                history.versions[1].version_id,
+                                history.versions[0].version_id,
+                            )),
+                            None,
+                        ),
+                        Ok(history) if history.versions.len() == 1 => {
+                            (None, Some(history.versions[0].content.definition.clone()))
+                        }
+                        _ => (None, None),
+                    };
                 if let Some(single) = single_def {
                     (Some(single), None)
                 } else if let Some((from_id, to_id)) = version_pair {
-                    match crate::versions::service::get_diff_with_transaction(pool, from_id, to_id).await {
+                    match crate::versions::service::get_diff_with_transaction(pool, from_id, to_id)
+                        .await
+                    {
                         Ok(diff) => (Some(diff.new_content.definition), Some(diff.changes)),
                         Err(_) => (None, None),
                     }

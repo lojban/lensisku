@@ -47,6 +47,9 @@ This will start the application along with all required services (database, infi
 - `DB_PORT` - PostgreSQL port (defaults to 5432)
 - `MAILDIR_PATH` - Path to maildir directory
 
+**Optional (local development):**
+- `DISABLE_EMBEDDINGS=1` (or `true`/`yes`) - Skip loading the embedding model and all embedding computation; semantic search returns 503 with a message, and the background embedding job no-ops
+
 #### Option 2: Using Makefile
 
 The Makefile provides convenient commands for managing the Docker environment:

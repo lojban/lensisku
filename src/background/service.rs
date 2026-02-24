@@ -30,6 +30,10 @@ fn skip_notes_for_embedding_type(type_name: &str) -> bool {
 }
 
 async fn calculate_missing_embeddings(pool: &Pool) -> AppResult<()> {
+    if crate::embeddings::embeddings_disabled() {
+        info!("Embeddings disabled (DISABLE_EMBEDDINGS); skipping calculation.");
+        return Ok(());
+    }
     let mut conn = pool
         .get()
         .await
@@ -64,8 +68,12 @@ async fn calculate_missing_embeddings(pool: &Pool) -> AppResult<()> {
         let definition_id: i32 = row.get("definitionid");
         let definition: String = row.get("definition");
         let notes: String = row.get("notes");
-        let glosswords: String = row.get::<_, Option<String>>("glosswords").unwrap_or_default();
-        let placewords: String = row.get::<_, Option<String>>("placewords").unwrap_or_default();
+        let glosswords: String = row
+            .get::<_, Option<String>>("glosswords")
+            .unwrap_or_default();
+        let placewords: String = row
+            .get::<_, Option<String>>("placewords")
+            .unwrap_or_default();
 
         if row.get::<_, i32>("langid") == 1 {
             continue;
@@ -111,10 +119,7 @@ async fn calculate_missing_embeddings(pool: &Pool) -> AppResult<()> {
     }
 
     // Process in chunks of 100
-    for (texts_chunk, ids_chunk) in all_texts
-        .chunks(100)
-        .zip(all_definition_ids.chunks(100))
-    {
+    for (texts_chunk, ids_chunk) in all_texts.chunks(100).zip(all_definition_ids.chunks(100)) {
         let transaction = conn
             .transaction()
             .await
@@ -126,8 +131,7 @@ async fn calculate_missing_embeddings(pool: &Pool) -> AppResult<()> {
         );
 
         // Generate embeddings in-process via fastembed (AllMiniLML6V2, mean pooling, L2-normalised)
-        let embeddings =
-            crate::embeddings::get_batch_embeddings(texts_chunk.to_vec()).await?;
+        let embeddings = crate::embeddings::get_batch_embeddings(texts_chunk.to_vec()).await?;
 
         for (i, (embedding, processed_text)) in
             embeddings.into_iter().zip(texts_chunk.iter()).enumerate()

@@ -31,11 +31,10 @@ mod payments;
 mod server;
 pub mod sessions;
 mod subscriptions;
+mod tersmu;
 mod users;
 mod utils;
-mod tersmu;
 mod versions;
-
 
 #[actix_web::main]
 async fn main() -> AppResult<()> {

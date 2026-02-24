@@ -41,7 +41,10 @@ impl PermissionCache {
                 name: row.get("name"),
                 description: row.get("description"),
             };
-            cache.entry(role_lower).or_insert_with(Vec::new).push(permission);
+            cache
+                .entry(role_lower)
+                .or_insert_with(Vec::new)
+                .push(permission);
         }
 
         let mut write_cache = self.cache.write().await;
@@ -64,6 +67,9 @@ impl PermissionCache {
         let cache = self.cache.read().await;
         // Normalize role to lowercase for case-insensitive lookup
         let role_lower = role.to_lowercase();
-        cache.get(&role_lower).map(|v| v.to_vec()).unwrap_or_default()
+        cache
+            .get(&role_lower)
+            .map(|v| v.to_vec())
+            .unwrap_or_default()
     }
 }
