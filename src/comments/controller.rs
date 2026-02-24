@@ -97,7 +97,7 @@ pub async fn get_thread(
         ("search" = Option<String>, Query, description = "Search term"),
         ("page" = Option<i64>, Query, description = "Page number starting from 1"),
         ("per_page" = Option<i64>, Query, description = "Items per page"),
-        ("sort_by" = Option<String>, Query, description = "Sort field: time, likes, replies"),
+        ("sort_by" = Option<String>, Query, description = "Sort field: time, reactions, replies"),
         ("sort_order" = Option<String>, Query, description = "Sort order: asc, desc"),
         ("username" = Option<String>, Query, description = "Filter by username"),
         ("valsi_id" = Option<i32>, Query, description = "Filter by valsi ID"),
@@ -249,69 +249,6 @@ pub async fn add_comment(
 }
 
 #[utoipa::path(
-    post,
-    path = "/comments/like",
-    tag = "comments",
-    request_body = CommentActionRequest,
-    responses(
-        (status = 200, description = "Like action completed successfully"),
-        (status = 400, description = "Invalid request"),
-        (status = 500, description = "Internal server error")
-    ),
-    security(
-        ("bearer_auth" = [])
-    ),
-    summary = "Like or unlike a comment",
-    description = "Toggles the like status of a comment for the current user"
-)]
-#[post("/like")]
-pub async fn toggle_like(
-    pool: web::Data<Pool>,
-    claims: Claims,
-    request: web::Json<CommentActionRequest>,
-) -> impl Responder {
-    match service::toggle_like(&pool, request.comment_id, claims.sub, request.action).await {
-        Ok(_) => HttpResponse::Ok().json(json!({
-            "success": true,
-            "message": if request.action { "Comment liked" } else { "Comment unliked" }
-        })),
-        Err(e) => HttpResponse::InternalServerError().json(json!({
-            "error": "Failed to toggle like",
-            "details": format!("{:#?}", e)
-        })),
-    }
-}
-
-#[utoipa::path(
-    get,
-    path = "/comments/likes/{comment_id}",
-    tag = "comments",
-    params(
-        ("comment_id" = i32, Path, description = "Comment ID")
-    ),
-    responses(
-        (status = 200, description = "Like count retrieved successfully", body = i64),
-        (status = 404, description = "Comment not found"),
-        (status = 500, description = "Internal server error")
-    ),
-    security(
-        ("bearer_auth" = [])
-    ),
-    summary = "Get comment like count",
-    description = "Retrieves the total number of likes for a comment"
-)]
-#[get("/likes/{comment_id}")]
-pub async fn get_like_count(pool: web::Data<Pool>, comment_id: web::Path<i32>) -> impl Responder {
-    match service::get_like_count(&pool, comment_id.into_inner()).await {
-        Ok(count) => HttpResponse::Ok().json(json!({ "likes": count })),
-        Err(e) => HttpResponse::InternalServerError().json(json!({
-            "error": "Failed to get like count",
-            "details": e.to_string()
-        })),
-    }
-}
-
-#[utoipa::path(
     get,
     path = "/comments/bookmarks",
     tag = "comments",
@@ -342,42 +279,6 @@ pub async fn get_bookmarks(
         Ok(response) => HttpResponse::Ok().json(response),
         Err(e) => HttpResponse::InternalServerError().json(json!({
             "error": "Failed to get bookmarked comments",
-            "details": format!("{:#?}", e)
-        })),
-    }
-}
-
-#[utoipa::path(
-    get,
-    path = "/comments/likes",
-    tag = "comments",
-    params(
-        ("page" = Option<i64>, Query, description = "Page number starting from 1"),
-        ("per_page" = Option<i64>, Query, description = "Items per page")
-    ),
-    responses(
-        (status = 200, description = "Liked comments retrieved successfully", body = Vec<Comment>),
-        (status = 500, description = "Internal server error")
-    ),
-    security(
-        ("bearer_auth" = [])
-    ),
-    summary = "Get liked comments",
-    description = "Retrieves paginated comments liked by the current user"
-)]
-#[get("/likes")]
-pub async fn get_likes(
-    pool: web::Data<Pool>,
-    claims: Claims,
-    query: web::Query<PaginationQuery>,
-) -> impl Responder {
-    let page = query.page.unwrap_or(1);
-    let per_page = query.per_page.unwrap_or(20);
-
-    match service::get_liked_comments(&pool, claims.sub, page, per_page).await {
-        Ok(response) => HttpResponse::Ok().json(response),
-        Err(e) => HttpResponse::InternalServerError().json(json!({
-            "error": "Failed to get liked comments",
             "details": format!("{:#?}", e)
         })),
     }
@@ -659,7 +560,7 @@ pub async fn get_trending(
         (status = 500, description = "Internal server error")
     ),
     summary = "Get comment statistics",
-    description = "Retrieves detailed statistics for a comment including likes, bookmarks, replies, and opinions"
+    description = "Retrieves detailed statistics for a comment including bookmarks, replies, reactions, and opinions"
 )]
 #[get("/stats/{comment_id}")]
 pub async fn get_comment_stats(

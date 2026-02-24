@@ -313,12 +313,6 @@ export const deleteComment = async (commentId) => {
   return await api.delete(`/comments/${commentId}`)
 }
 
-export const toggleLike = (commentId, like) =>
-  api.post('/comments/like', {
-    comment_id: commentId,
-    action: like,
-  })
-
 export const toggleBookmark = (commentId, bookmark) =>
   api.post('/comments/bookmark', {
     comment_id: commentId,
@@ -332,7 +326,6 @@ export const toggleReaction = async (commentId, reaction) =>
   })
 
 export const getBookmarks = (params) => api.get('/comments/bookmarks', { params })
-export const getLikes = (params) => api.get('/comments/likes', { params })
 export const getMyReactions = (params) => api.get('/comments/reactions/my', { params })
 
 export const getUserComments = (username, params) =>

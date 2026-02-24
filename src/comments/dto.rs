@@ -28,9 +28,7 @@ pub struct CommentActionRequest {
 #[derive(Debug, Serialize, ToSchema)]
 pub struct CommentResponse {
     pub comment: super::models::Comment,
-    pub likes: i64,
     pub replies: i64,
-    pub is_liked: bool,
     pub is_bookmarked: bool,
 }
 
@@ -55,7 +53,6 @@ pub struct OpinionVoteRequest {
 
 #[derive(Debug, Serialize, ToSchema)]
 pub struct CommentStats {
-    pub total_likes: i64,
     pub total_bookmarks: i64,
     pub total_replies: i64,
     pub total_opinions: i64,
