@@ -1558,8 +1558,8 @@ async fn add_definition_in_transaction(
             .await?;
     }
 
-    if let Err(e) = redis_cache.invalidate("search:*").await {
-        log::error!("Failed to invalidate search cache: {}", e);
+    if let Err(e) = redis_cache.invalidate_definition_search_caches().await {
+        log::error!("Failed to invalidate definition search caches after add: {}", e);
     }
 
     Ok((word_type, definition_id))
@@ -2119,8 +2119,8 @@ pub async fn update_definition(
         )
         .await?;
 
-    if let Err(e) = redis_cache.invalidate("search:*").await {
-        log::error!("Failed to invalidate search cache: {}", e);
+    if let Err(e) = redis_cache.invalidate_definition_search_caches().await {
+        log::error!("Failed to invalidate definition search caches after update: {}", e);
     }
     transaction.commit().await?;
 
@@ -2587,8 +2587,8 @@ pub async fn update_vote(
         .await?
         .get::<_, i32>("total_vote");
 
-    if let Err(e) = redis_cache.invalidate("search:*").await {
-        log::error!("Failed to invalidate search cache: {}", e);
+    if let Err(e) = redis_cache.invalidate_definition_search_caches().await {
+        log::error!("Failed to invalidate definition search caches after vote: {}", e);
     }
 
     // Commit transaction

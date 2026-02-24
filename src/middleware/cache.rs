@@ -55,6 +55,16 @@ impl RedisCache {
 
         Ok(())
     }
+
+    /// Invalidates all caches that may contain definition list/search results
+    /// (keyword search, fast search, semantic search). Call when definitions
+    /// or votes change so cached results stay correct.
+    pub async fn invalidate_definition_search_caches(&self) -> Result<(), RedisError> {
+        for pattern in &["search:*", "fast_search:*", "semantic_search:*"] {
+            self.invalidate(pattern).await?;
+        }
+        Ok(())
+    }
 }
 
 pub fn generate_search_cache_key(query: &SearchDefinitionsQuery) -> String {
