@@ -25,6 +25,7 @@ use crate::auth::Claims;
 use crate::language::{analyze_word, validate_mathjax, MathJaxValidationOptions};
 use crate::middleware::cache::RedisCache;
 use crate::subscriptions::models::SubscriptionTrigger;
+use crate::comments::dto::ReactionResponse;
 use crate::versions::service::{get_diff, get_version_with_transaction};
 use crate::versions::{Change, ChangeType, VersionContent, VersionDiff};
 use base64::engine::general_purpose::STANDARD as BASE64;
@@ -2807,24 +2808,84 @@ pub async fn get_definitions_by_entry(
     Ok(definitions)
 }
 
+/// Fetches reactions for the given comment IDs (for recent-changes enrichment).
+async fn fetch_reactions_for_changes(
+    transaction: &Transaction<'_>,
+    comment_ids: &[i32],
+    current_user_id: Option<i32>,
+) -> Result<HashMap<i32, Vec<ReactionResponse>>, Box<dyn std::error::Error>> {
+    let rows = transaction
+        .query(
+            "SELECT
+                cr.comment_id,
+                cr.reaction,
+                COUNT(*) as count,
+                COALESCE(BOOL_OR(cr.user_id = $2), false) as reacted
+             FROM comment_reactions cr
+             WHERE cr.comment_id = ANY($1)
+             GROUP BY cr.comment_id, cr.reaction
+             ORDER BY cr.comment_id, count DESC, cr.reaction",
+            &[&comment_ids, &current_user_id],
+        )
+        .await?;
+    let mut reactions_map: HashMap<i32, Vec<ReactionResponse>> = HashMap::new();
+    for row in rows.iter() {
+        let comment_id: i32 = row.get("comment_id");
+        reactions_map.entry(comment_id).or_default().push(ReactionResponse {
+            reaction: row.get("reaction"),
+            count: row.get("count"),
+            reacted: row.get("reacted"),
+        });
+    }
+    for &comment_id in comment_ids {
+        reactions_map.entry(comment_id).or_default();
+    }
+    Ok(reactions_map)
+}
+
+/// Fetches the set of comment IDs bookmarked by the given user (for recent-changes enrichment).
+async fn fetch_comment_bookmarks_for_changes(
+    transaction: &Transaction<'_>,
+    comment_ids: &[i32],
+    user_id: i32,
+) -> Result<HashSet<i32>, Box<dyn std::error::Error>> {
+    if comment_ids.is_empty() {
+        return Ok(HashSet::new());
+    }
+    let rows = transaction
+        .query(
+            "SELECT comment_id FROM comment_bookmarks
+             WHERE comment_id = ANY($1) AND user_id = $2",
+            &[&comment_ids, &user_id],
+        )
+        .await?;
+    Ok(rows.iter().map(|r| r.get::<_, i32>("comment_id")).collect())
+}
+
 pub async fn get_recent_changes(
     pool: &Pool,
     days: i32,
     redis_cache: &RedisCache,
+    user_id: Option<i32>,
 ) -> Result<RecentChangesResponse, Box<dyn std::error::Error>> {
     use std::time::Duration as StdDuration;
 
-    // Generate cache key based on days parameter
-    let cache_key = format!("recent_changes:{}", days);
+    // Cache key includes user_id when authenticated so per-user reactions/bookmarks are cached
+    let cache_key = match user_id {
+        None => format!("recent_changes:{}", days),
+        Some(uid) => format!("recent_changes:{}:user:{}", days, uid),
+    };
 
     // Cache for 5 minutes (300 seconds) - recent changes should be relatively fresh
     let cache_ttl = StdDuration::from_secs(300);
+
+    let user_id = user_id;
 
     // Use Redis cache with get_or_set pattern
     let response = redis_cache
         .get_or_set(
             &cache_key,
-            || async {
+            || async move {
                 let mut client = pool.get().await?;
                 let transaction = client.transaction().await?;
 
@@ -2853,9 +2914,13 @@ pub async fn get_recent_changes(
                 c.time,
                 l.realname AS language_name,
                 NULL::integer as version_id,
-                NULL::integer as prev_version_id
+                NULL::integer as prev_version_id,
+                v.word AS valsi_word,
+                c.commentnum,
+                c.parentid
             FROM comments c
             JOIN threads t ON c.threadid = t.threadid
+            JOIN valsi v ON t.valsiid = v.valsiid
             JOIN users u ON c.userid = u.userid
             JOIN definitions d ON d.definitionid = t.definitionid
             LEFT JOIN languages l ON d.langid = l.langid
@@ -2881,7 +2946,10 @@ pub async fn get_recent_changes(
                 LAG(dv.version_id) OVER (
                     PARTITION BY d.definitionid
                     ORDER BY dv.created_at
-                ) as prev_version_id
+                ) as prev_version_id,
+                NULL::text AS valsi_word,
+                NULL::integer AS commentnum,
+                NULL::integer AS parentid
             FROM definition_versions dv
             JOIN definitions d ON dv.definition_id = d.definitionid
             JOIN valsi v ON d.valsiid = v.valsiid
@@ -2906,7 +2974,10 @@ pub async fn get_recent_changes(
                 v.time,
                 NULL AS language_name,
                 NULL::integer as version_id,
-                NULL::integer as prev_version_id
+                NULL::integer as prev_version_id,
+                NULL::text AS valsi_word,
+                NULL::integer AS commentnum,
+                NULL::integer AS parentid
             FROM valsi v
             JOIN users u ON v.userid = u.userid
             WHERE v.time > $1 AND u.username != 'officialdata' AND v.source_langid = 1
@@ -2928,7 +2999,10 @@ pub async fn get_recent_changes(
                 EXTRACT(EPOCH FROM m.sent_at)::integer AS time,
                 NULL AS language_name,
                 NULL::integer as version_id,
-                NULL::integer as prev_version_id
+                NULL::integer as prev_version_id,
+                NULL::text AS valsi_word,
+                NULL::integer AS commentnum,
+                NULL::integer AS parentid
             FROM messages m
             WHERE m.sent_at > to_timestamp($1)
             AND NOT EXISTS (
@@ -2972,6 +3046,13 @@ pub async fn get_recent_changes(
                         time: row.get("time"),
                         language_name: row.get("language_name"),
                         diff: None,
+                        comment_num: row.get::<_, Option<i32>>("commentnum"),
+                        valsi_word: row.get("valsi_word"),
+                        parent_id: row
+                            .get::<_, Option<i32>>("parentid")
+                            .filter(|&id| id != 0),
+                        reactions: None,
+                        is_bookmarked: None,
                     };
 
                     // Add diff for definition changes
@@ -3015,6 +3096,42 @@ pub async fn get_recent_changes(
                     }
 
                     changes.push(change);
+                }
+
+                // Always attach reactions for comment-type changes (so non-logged-in users see reaction counts).
+                // Only attach is_bookmarked when user is authenticated.
+                let comment_ids: Vec<i32> = changes
+                    .iter()
+                    .filter_map(|c| {
+                        if c.change_type == "comment" {
+                            c.comment_id
+                        } else {
+                            None
+                        }
+                    })
+                    .collect();
+                if !comment_ids.is_empty() {
+                    let reactions_map =
+                        fetch_reactions_for_changes(&transaction, &comment_ids, user_id).await?;
+                    let bookmarks = if let Some(uid) = user_id {
+                        Some(
+                            fetch_comment_bookmarks_for_changes(&transaction, &comment_ids, uid)
+                                .await?,
+                        )
+                    } else {
+                        None
+                    };
+                    for change in &mut changes {
+                        if change.change_type == "comment" {
+                            if let Some(cid) = change.comment_id {
+                                change.reactions = Some(
+                                    reactions_map.get(&cid).cloned().unwrap_or_default(),
+                                );
+                                change.is_bookmarked =
+                                    bookmarks.as_ref().map(|b| b.contains(&cid));
+                            }
+                        }
+                    }
                 }
 
                 let total = changes.len() as i64;

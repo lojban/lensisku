@@ -1,5 +1,18 @@
 <template>
-  <div class="comment-item bg-white border rounded-lg p-3 my-2 hover:border-blue-300 transition-colors min-w-48">
+  <!-- Comment-type: reuse CommentItem so reactions and save button are shown -->
+  <CommentItem
+    v-if="change.change_type === 'comment'"
+    :comment="mappedComment"
+    :reply-enabled="false"
+    :show-context="true"
+    :valsi-id="change.valsi_id || 0"
+    :definition-id="change.definition_id || 0"
+  />
+  <!-- Other change types: existing layout -->
+  <div
+    v-else
+    class="comment-item bg-white border rounded-lg p-3 my-2 hover:border-blue-300 transition-colors min-w-48"
+  >
     <div class="flex flex-col md:flex-row justify-between gap-2">
       <div class="space-x-2">
         <span :class="getTypeClass(change.change_type)"
@@ -73,14 +86,6 @@
             class="prose prose-sm max-w-none text-gray-700 mb-3">
             <LazyMathJax :content="change.content" :enable-markdown="true" />
           </div>
-          <div v-else-if="change.change_type === 'comment' && change.content"
-            class="prose prose-sm max-w-none text-gray-700 [&_img]:max-h-48 [&_img]:object-contain mb-3">
-            <template v-for="(part, index) in change.content" :key="index">
-              <div v-if="part.type === 'text'">
-                <LazyMathJax :content="part.data" :enable-markdown="true" />
-              </div>
-            </template>
-          </div>
         </div>
       </div>
     </div>
@@ -88,21 +93,56 @@
 </template>
 
 <script setup>
+import { computed } from 'vue';
 import { MessageCircle } from 'lucide-vue-next';
 import { RouterLink } from 'vue-router';
 import { useI18n } from 'vue-i18n';
-import { getTypeClass } from '@/utils/wordTypeUtils'; // Import shared utility
+import { getTypeClass } from '@/utils/wordTypeUtils';
 
+import CommentItem from '@/components/CommentItem.vue';
 import LazyMathJax from '@/components/LazyMathJax.vue';
 
 const { t, locale } = useI18n();
 
-defineProps({
+const props = defineProps({
   change: {
     type: Object,
     required: true
   }
-})
+});
+
+// Map recent-change (comment type) to the shape CommentItem expects (reactions, save, etc.)
+const mappedComment = computed(() => {
+  const c = props.change;
+  if (c.change_type !== 'comment') return null;
+  const rawContent = Array.isArray(c.content)
+    ? c.content
+    : [{ type: 'text', data: typeof c.content === 'string' ? c.content : '' }];
+  // CommentItem derives subject from content parts with type 'header'; inject one if we have change.word
+  const content =
+    c.word && !rawContent.some((p) => p.type === 'header')
+      ? [{ type: 'header', data: c.word }, ...rawContent]
+      : rawContent;
+  return {
+    comment_id: c.comment_id,
+    thread_id: c.thread_id,
+    definition_id: c.definition_id ?? null,
+    valsi_id: c.valsi_id ?? null,
+    username: c.username ?? null,
+    time: c.time,
+    content,
+    subject: c.word ?? '', // also reflected in header part in content when injected
+    reactions: c.reactions ?? [],
+    is_bookmarked: c.is_bookmarked ?? false,
+    comment_num: c.comment_num ?? 0,
+    parent_id: c.parent_id ?? null,
+    valsi_word: c.valsi_word ?? null,
+    total_replies: 0,
+    total_reactions: (c.reactions ?? []).reduce((sum, r) => sum + (r.count ?? 0), 0),
+    definition: null,
+    parent_content: null
+  };
+});
 
 const getChangeLink = (change) => {
   if (change.change_type === 'comment') {
