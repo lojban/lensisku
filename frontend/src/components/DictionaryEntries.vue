@@ -45,6 +45,7 @@
             :definition="def"
             :languages="languages"
             :show-score="props.showScores"
+            :show-vote-buttons="props.showVoteButtons"
             :disable-toolbar="true"
             :disable-owner-only-lock="true"
             :collections="collections"
@@ -94,6 +95,10 @@ const props = defineProps({
   showScores: {
     type: Boolean,
     default: false,
+  },
+  showVoteButtons: {
+    type: Boolean,
+    default: true,
   },
   collections: {
     type: Array,
