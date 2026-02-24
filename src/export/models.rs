@@ -131,6 +131,12 @@ pub struct CollectionExportItem {
     // Flashcard direction when item has an associated flashcard (full export only)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub direction: Option<String>,
+    /// 0-based level index this item belongs to (for import when levels array is omitted)
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub level_index: Option<u32>,
+    /// Order of this item within its level (for import when levels array is omitted)
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub position_in_level: Option<i32>,
 }
 
 #[derive(Debug)]

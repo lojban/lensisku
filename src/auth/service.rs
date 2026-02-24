@@ -102,7 +102,7 @@ pub async fn get_roles_with_permissions(
         .get()
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
-    
+
     // First, get all distinct roles from users table to ensure we include roles like "unconfirmed"
     // that might not have any permissions assigned
     // Use LOWER() to avoid duplicates with different casing

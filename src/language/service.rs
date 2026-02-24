@@ -598,18 +598,15 @@ fn extract_latex_error_from_log(log: &str) -> Option<String> {
 /// Run LaTeX via the tectonic driver with keep_logs(true) so we can read the
 /// .log on failure and surface the actual TeX error (e.g. "Misplaced alignment tab character &").
 fn compile_latex_and_capture_log(latex_document: String) -> Result<(), MathJaxValidationError> {
-    use tectonic::driver::{ProcessingSessionBuilder, OutputFormat};
+    use tectonic::driver::{OutputFormat, ProcessingSessionBuilder};
     use tectonic::status::NoopStatusBackend;
 
     let mut status = NoopStatusBackend::default();
-    let config = tectonic::config::PersistentConfig::open(false).map_err(|e| {
-        MathJaxValidationError::Tectonic(format!("Failed to open config: {}", e))
-    })?;
+    let config = tectonic::config::PersistentConfig::open(false)
+        .map_err(|e| MathJaxValidationError::Tectonic(format!("Failed to open config: {}", e)))?;
     let bundle = config
         .default_bundle(false, &mut status)
-        .map_err(|e| {
-            MathJaxValidationError::Tectonic(format!("Failed to load bundle: {}", e))
-        })?;
+        .map_err(|e| MathJaxValidationError::Tectonic(format!("Failed to load bundle: {}", e)))?;
     let format_cache_path = config.format_cache_path().map_err(|e| {
         MathJaxValidationError::Tectonic(format!("Failed to get format cache path: {}", e))
     })?;
@@ -636,9 +633,8 @@ fn compile_latex_and_capture_log(latex_document: String) -> Result<(), MathJaxVa
             .get("texput.log")
             .map(|f| String::from_utf8_lossy(&f.data).into_owned())
             .unwrap_or_default();
-        let specific = extract_latex_error_from_log(&log_content).unwrap_or_else(|| {
-            "see LaTeX log for details".to_string()
-        });
+        let specific = extract_latex_error_from_log(&log_content)
+            .unwrap_or_else(|| "see LaTeX log for details".to_string());
         return Err(MathJaxValidationError::Tectonic(specific));
     }
 

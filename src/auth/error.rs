@@ -42,4 +42,3 @@ impl From<bcrypt::BcryptError> for PasswordHashError {
         PasswordHashError::BcryptError(error)
     }
 }
-

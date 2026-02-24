@@ -8,6 +8,11 @@
 //! The model is initialised lazily on first use and cached for the lifetime of
 //! the process.  The first call downloads ~80 MB from Hugging Face (or reads
 //! from the local cache at `~/.cache/huggingface/hub` / `FASTEMBED_CACHE_PATH`).
+//!
+//! Set `DISABLE_EMBEDDINGS=1` (or `true`/`yes`) to skip loading the model and
+//! all embedding computation (e.g. for local development).
+
+use std::env;
 
 use fastembed::{EmbeddingModel, InitOptions, TextEmbedding};
 use once_cell::sync::OnceCell;
@@ -17,7 +22,20 @@ use crate::error::{AppError, AppResult};
 
 static MODEL: OnceCell<Mutex<TextEmbedding>> = OnceCell::new();
 
+/// Returns true when embedding model loading and inference are disabled via env.
+pub fn embeddings_disabled() -> bool {
+    env::var("DISABLE_EMBEDDINGS")
+        .ok()
+        .map(|v| matches!(v.to_lowercase().as_str(), "1" | "true" | "yes"))
+        .unwrap_or(false)
+}
+
 fn get_model() -> AppResult<&'static Mutex<TextEmbedding>> {
+    if embeddings_disabled() {
+        return Err(AppError::Internal(
+            "Embeddings are disabled (DISABLE_EMBEDDINGS is set)".into(),
+        ));
+    }
     MODEL.get_or_try_init(|| {
         log::info!("Initialising embedding model (AllMiniLML6V2) — first run may download ~80 MB…");
         let model = TextEmbedding::try_new(InitOptions::new(EmbeddingModel::AllMiniLML6V2))

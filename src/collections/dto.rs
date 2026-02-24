@@ -221,7 +221,7 @@ pub struct CollectionFullExport {
     pub levels: Vec<LevelExport>,
 }
 
-#[derive(Debug, Serialize, Deserialize, ToSchema)]
+#[derive(Clone, Debug, Serialize, Deserialize, ToSchema)]
 pub struct LevelExport {
     pub name: String,
     pub description: Option<String>,

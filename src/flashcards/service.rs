@@ -103,7 +103,10 @@ pub async fn create_flashcard(
             let item_id: i32 = row.get(0);
             // Ensure canonical_form is updated if missing (backfill)
             let existing_canon: Option<String> = transaction
-                .query_one("SELECT canonical_form FROM collection_items WHERE item_id = $1", &[&item_id])
+                .query_one(
+                    "SELECT canonical_form FROM collection_items WHERE item_id = $1",
+                    &[&item_id],
+                )
                 .await?
                 .get(0);
 
@@ -125,14 +128,16 @@ pub async fn create_flashcard(
                 };
 
                 if let Some(canon_val) = canon {
-                    transaction.execute(
-                        "UPDATE collection_items SET canonical_form = $1 WHERE item_id = $2",
-                        &[&canon_val, &item_id]
-                    ).await?;
+                    transaction
+                        .execute(
+                            "UPDATE collection_items SET canonical_form = $1 WHERE item_id = $2",
+                            &[&canon_val, &item_id],
+                        )
+                        .await?;
                 }
             }
             item_id
-        },
+        }
         None => {
             let max_position: i32 = transaction
                 .query_one(
@@ -142,7 +147,9 @@ pub async fn create_flashcard(
                 .await?
                 .get(0);
 
-            let canonical_form = req.free_content_front.as_ref()
+            let canonical_form = req
+                .free_content_front
+                .as_ref()
                 .and_then(|front| crate::tersmu::get_canonical_form(front));
 
             transaction

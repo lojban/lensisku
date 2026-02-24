@@ -42,66 +42,147 @@
         <VueFlow v-model="elements" :default-viewport="{ zoom: 1 }" :min-zoom="0.2" :max-zoom="4"
           class="vue-flow-wrapper" fit-view-on-init>
           <template #node-custom="nodeProps">
-            <div class="node-content bg-white p-4 rounded-lg border relative" :class="[
-              nodeProps.data.progress?.is_completed
-                ? 'border-green-500'
-                : nodeProps.data.progress?.is_unlocked
-                  ? 'border-blue-500'
-                  : 'border-gray-300',
-            ]">
-              <h3 class="text-lg font-semibold">
-                {{ nodeProps.data.name }}
-              </h3>
-              <p v-if="nodeProps.data.description" class="text-gray-600 mt-1">
-                {{ nodeProps.data.description }}
-              </p>
+            <div
+              class="level-card node-content relative overflow-hidden rounded-2xl border-2 transition-all duration-300"
+              :class="getLevelCardClass(nodeProps.data)"
+            >
+              <!-- Top accent bar -->
+              <div class="level-card-accent absolute inset-x-0 top-0 h-1" :class="getLevelAccentClass(nodeProps.data)" />
 
-              <!-- Progress -->
-              <div class="space-y-2 mt-2">
-                <div class="flex justify-between text-sm">
-                  <span class="text-gray-600">{{ t('flashcardLevels.progress') }}</span>
-                  <span class="font-medium">
-                    {{ nodeProps.data.progress?.cards_completed || 0 }}/{{ nodeProps.data.card_count
-                    }}
-                  </span>
-                </div>
-                <div class="w-full bg-gray-200 rounded-full h-2">
-                  <div class="h-2 rounded-full transition-all duration-300" :class="getProgressBarClass(nodeProps.data)"
-                    :style="{ width: getProgressWidth(nodeProps.data) }" />
-                </div>
-                <div class="flex justify-between text-sm">
-                  <span class="text-gray-600">{{ t('flashcardLevels.successRate') }}</span>
-                  <span class="font-medium">
-                    {{ formatSuccessRate(nodeProps.data.progress?.success_rate) }}
-                  </span>
+              <!-- Status icon badge (top-right) -->
+              <div
+                class="absolute top-3 right-3 flex h-10 w-10 items-center justify-center rounded-xl shadow-md"
+                :class="getLevelBadgeClass(nodeProps.data)"
+              >
+                <Lock v-if="!isLevelUnlocked(nodeProps.data) && !nodeProps.data.progress?.is_completed"
+                  class="h-5 w-5 text-white" />
+                <Unlock v-else-if="isLevelUnlocked(nodeProps.data) && !nodeProps.data.progress?.is_completed"
+                  class="h-5 w-5 text-white" />
+                <CheckCircle2 v-else class="h-5 w-5 text-white" />
+              </div>
+
+              <!-- Level number / label (optional: position in list could be passed via data if needed) -->
+              <div class="pt-4 pr-14 pl-4">
+                <h3
+                  class="text-lg font-bold tracking-tight"
+                  :class="nodeProps.data.progress?.is_completed ? 'text-emerald-800' : isLevelUnlocked(nodeProps.data) ? 'text-slate-800' : 'text-slate-500'"
+                >
+                  {{ nodeProps.data.name }}
+                </h3>
+                <p
+                  v-if="nodeProps.data.description"
+                  class="mt-1 text-sm line-clamp-2"
+                  :class="isLevelUnlocked(nodeProps.data) || nodeProps.data.progress?.is_completed ? 'text-slate-600' : 'text-slate-400'"
+                >
+                  {{ nodeProps.data.description }}
+                </p>
+              </div>
+
+              <!-- Locked state: hint only when level has prerequisites -->
+              <div
+                v-if="!isLevelUnlocked(nodeProps.data) && !nodeProps.data.progress?.is_completed"
+                class="px-4 pb-4 pt-2"
+              >
+                <p v-if="nodeProps.data.prerequisites?.length" class="flex items-center gap-2 text-sm text-slate-400">
+                  <Lock class="h-4 w-4 shrink-0" />
+                  {{ t('flashcardLevels.unlockHint', 'Complete previous levels to unlock') }}
+                </p>
+                <div v-if="isOwner" class="mt-3 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    class="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-slate-50 px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-100"
+                    @click="editLevel(nodeProps.data)"
+                  >
+                    <Settings class="h-4 w-4" />
+                    {{ t('flashcardLevels.actions.edit') }}
+                  </button>
+                  <button
+                    type="button"
+                    class="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-slate-50 px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-100"
+                    @click="showAddCardsModal(nodeProps.data)"
+                  >
+                    <PlusCircle class="h-4 w-4" />
+                    {{ t('flashcardLevels.actions.addCards') }}
+                  </button>
                 </div>
               </div>
 
-              <!-- Actions -->
-              <div class="mt-2 flex gap-2">
-                <button class="btn-empty" @click="showLevelCards(nodeProps.data)">
-                  {{ t('flashcardLevels.actions.viewCards') }}
-                </button>
-                <button v-if="isOwner" class="btn-empty" @click="editLevel(nodeProps.data)">
-                  {{ t('flashcardLevels.actions.edit') }}
-                </button>
-                <IconButton v-if="isOwner" :label="t('flashcardLevels.actions.addCards')" button-classes="btn-create"
-                  @click="showAddCardsModal(nodeProps.data)" />
-              </div>
+              <!-- Unlocked / Completed: progress + actions -->
+              <div v-else class="px-4 pb-4 pt-2">
+                <!-- Progress bar -->
+                <div class="space-y-1.5">
+                  <div class="flex justify-between text-xs font-medium">
+                    <span :class="nodeProps.data.progress?.is_completed ? 'text-emerald-600' : 'text-slate-500'">
+                      {{ t('flashcardLevels.progress') }}
+                    </span>
+                    <span :class="nodeProps.data.progress?.is_completed ? 'text-emerald-700' : 'text-slate-700'">
+                      {{ nodeProps.data.progress?.cards_completed || 0 }}/{{ nodeProps.data.card_count }}
+                    </span>
+                  </div>
+                  <div class="h-2 w-full overflow-hidden rounded-full bg-slate-200">
+                    <div
+                      class="h-full rounded-full transition-all duration-300"
+                      :class="getProgressBarClass(nodeProps.data)"
+                      :style="{ width: getProgressWidth(nodeProps.data) }"
+                    />
+                  </div>
+                  <div class="flex justify-between text-xs">
+                    <span class="text-slate-500">{{ t('flashcardLevels.successRate') }}</span>
+                    <span class="font-medium text-slate-700">
+                      {{ formatSuccessRate(nodeProps.data.progress?.success_rate) }}
+                    </span>
+                  </div>
+                </div>
 
-              <!-- Status Indicator -->
-              <div class="absolute top-2 right-2">
-                <span v-if="nodeProps.data.progress?.is_completed"
-                  class="px-2 py-1 text-sm bg-green-100 text-green-700 rounded-full">
+                <!-- Primary action: View cards / Practice -->
+                <div class="mt-3 flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    class="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold shadow-sm transition focus:outline-none focus:ring-2 focus:ring-offset-2"
+                    :class="nodeProps.data.progress?.is_completed
+                      ? 'bg-emerald-500 text-white hover:bg-emerald-600 focus:ring-emerald-500'
+                      : 'bg-blue-500 text-white hover:bg-blue-600 focus:ring-blue-500'"
+                    @click="showLevelCards(nodeProps.data)"
+                  >
+                    <BookOpen class="h-4 w-4" />
+                    {{ t('flashcardLevels.actions.viewCards') }}
+                  </button>
+                  <RouterLink
+                    v-if="nodeProps.data.card_count > 0"
+                    :to="`/collections/${props.collectionId}/flashcards`"
+                    class="inline-flex items-center gap-2 rounded-xl border-2 border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-blue-400 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                  >
+                    <Play class="h-4 w-4" />
+                    {{ t('flashcardLevels.actions.practice', 'Practice') }}
+                  </RouterLink>
+                  <template v-if="isOwner">
+                    <button
+                      type="button"
+                      class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-100 hover:text-slate-800"
+                      @click="editLevel(nodeProps.data)"
+                    >
+                      <Settings class="h-4 w-4" />
+                      {{ t('flashcardLevels.actions.edit') }}
+                    </button>
+                    <button
+                      type="button"
+                      class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-100 hover:text-slate-800"
+                      @click="showAddCardsModal(nodeProps.data)"
+                    >
+                      <PlusCircle class="h-4 w-4" />
+                      {{ t('flashcardLevels.actions.addCards') }}
+                    </button>
+                  </template>
+                </div>
+
+                <!-- Completed ribbon hint -->
+                <p
+                  v-if="nodeProps.data.progress?.is_completed"
+                  class="mt-2 flex items-center gap-1.5 text-xs font-medium text-emerald-600"
+                >
+                  <Sparkles class="h-3.5 w-3.5" />
                   {{ t('flashcardLevels.status.completed') }}
-                </span>
-                <span v-else-if="nodeProps.data.progress?.is_unlocked"
-                  class="px-2 py-1 text-sm bg-blue-100 text-blue-700 rounded-full">
-                  {{ t('flashcardLevels.status.unlocked') }}
-                </span>
-                <span v-else class="px-2 py-1 text-sm bg-gray-100 text-gray-700 rounded-full">
-                  {{ t('flashcardLevels.status.locked') }}
-                </span>
+                </p>
               </div>
             </div>
           </template>
@@ -333,7 +414,17 @@
 import { Background } from '@vue-flow/background';
 import { Controls } from '@vue-flow/controls';
 import { VueFlow, useVueFlow } from '@vue-flow/core';
-import { ArrowLeft } from 'lucide-vue-next';
+import {
+  ArrowLeft,
+  Lock,
+  Unlock,
+  CheckCircle2,
+  Play,
+  BookOpen,
+  Settings,
+  PlusCircle,
+  Sparkles,
+} from 'lucide-vue-next';
 import { ref, computed, onMounted, watch } from 'vue';
 import { RouterLink } from 'vue-router';
 import { useI18n } from 'vue-i18n';
@@ -607,10 +698,35 @@ const addSelectedCards = async () => {
   }
 }
 
+// Level is playable when backend says not locked (e.g. no prerequisites) or user progress has unlocked_at set
+const isLevelUnlocked = (level) => level && (!level.is_locked || !!level.progress?.is_unlocked)
+
+const getLevelCardClass = (level) => {
+  if (level.progress?.is_completed) {
+    return 'level-card--completed border-emerald-400 bg-gradient-to-b from-emerald-50 to-white shadow-lg shadow-emerald-100/50'
+  }
+  if (isLevelUnlocked(level)) {
+    return 'level-card--unlocked border-blue-400 bg-gradient-to-b from-blue-50/80 to-white shadow-md hover:shadow-lg hover:border-blue-500'
+  }
+  return 'level-card--locked border-slate-300 bg-gradient-to-b from-slate-50 to-white opacity-90'
+}
+
+const getLevelAccentClass = (level) => {
+  if (level.progress?.is_completed) return 'bg-gradient-to-r from-emerald-400 to-emerald-500'
+  if (isLevelUnlocked(level)) return 'bg-gradient-to-r from-blue-400 to-blue-500'
+  return 'bg-slate-300'
+}
+
+const getLevelBadgeClass = (level) => {
+  if (level.progress?.is_completed) return 'bg-emerald-500'
+  if (isLevelUnlocked(level)) return 'bg-blue-500'
+  return 'bg-slate-400'
+}
+
 const getProgressBarClass = (level) => {
-  if (level.progress?.is_completed) return 'bg-green-500'
-  if (level.progress?.is_unlocked) return 'bg-blue-500'
-  return 'bg-gray-400'
+  if (level.progress?.is_completed) return 'bg-emerald-500'
+  if (isLevelUnlocked(level)) return 'bg-blue-500'
+  return 'bg-slate-400'
 }
 
 const getProgressWidth = (level) => {
@@ -631,12 +747,13 @@ const getTreeLevel = (level) => {
 
 const { elements, setElements } = useVueFlow()
 
-// Convert levels to Vue Flow elements
+// Convert levels to Vue Flow elements (vertical layout: levels stacked top-to-bottom, depth as horizontal offset)
 const convertLevelsToElements = (levelsData) => {
-  const nodes = levelsData.map((level, index) => ({
+  const sorted = [...levelsData].sort((a, b) => a.position - b.position)
+  const nodes = sorted.map((level, index) => ({
     id: level.level_id.toString(),
     type: 'custom',
-    position: { x: index * 250, y: getTreeLevel(level) * 200 },
+    position: { x: getTreeLevel(level) * 220, y: index * 220 },
     data: level,
   }))
 
@@ -697,5 +814,22 @@ onMounted(async () => {
 .vue-flow-wrapper {
   width: 100%;
   height: 100%;
+}
+
+.level-card {
+  min-width: 280px;
+  max-width: 320px;
+}
+
+.level-card--locked {
+  filter: saturate(0.7);
+}
+
+.level-card--unlocked:hover {
+  transform: translateY(-1px);
+}
+
+.level-card--completed .level-card-accent {
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.4);
 }
 </style>
