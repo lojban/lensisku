@@ -86,14 +86,12 @@ pub async fn get_thread_comments(
                         c.content::text as content,
                         cc.total_reactions as counter_reactions,
                         cc.total_replies as counter_replies,
-                        CASE WHEN cl.user_id IS NOT NULL THEN true ELSE false END as is_liked,
                         CASE WHEN cb.user_id IS NOT NULL THEN true ELSE false END as is_bookmarked,
                         ARRAY[c.commentnum] as path,
                         0 as depth,
                         pc.content::text as parent_content
                     FROM convenientcomments c
                     LEFT JOIN comment_counters cc ON c.commentid = cc.comment_id
-                    LEFT JOIN comment_likes cl ON c.commentid = cl.comment_id AND cl.user_id = $1
                     LEFT JOIN comment_bookmarks cb ON c.commentid = cb.comment_id AND cb.user_id = $1
                     LEFT JOIN convenientcomments pc ON c.parentid = pc.commentid
                     WHERE c.threadid = $2 AND c.parentid is null
@@ -118,14 +116,12 @@ pub async fn get_thread_comments(
                         c.content::text as content,
                         cc.total_reactions as counter_reactions,
                         cc.total_replies as counter_replies,
-                        CASE WHEN cl.user_id IS NOT NULL THEN true ELSE false END as is_liked,
                         CASE WHEN cb.user_id IS NOT NULL THEN true ELSE false END as is_bookmarked,
                         ct.path || c.commentnum as path,
                         ct.depth + 1 as depth,
                         ct.content as parent_content
                     FROM convenientcomments c
                     LEFT JOIN comment_counters cc ON c.commentid = cc.comment_id
-                    LEFT JOIN comment_likes cl ON c.commentid = cl.comment_id AND cl.user_id = $1
                     LEFT JOIN comment_bookmarks cb ON c.commentid = cb.comment_id AND cb.user_id = $1
                     JOIN comment_tree ct ON c.parentid = ct.commentid
                 )
@@ -185,7 +181,6 @@ pub async fn get_thread_comments(
                 realname: row.get("realname"),
                 total_reactions: row.get::<_, Option<i64>>("total_reactions").unwrap_or(0),
                 total_replies: row.get::<_, Option<i64>>("total_replies").unwrap_or(0),
-                is_liked: row.get("is_liked"),
                 is_bookmarked: row.get("is_bookmarked"),
                 valsi_id: row.get("valsiid"),
                 definition_id: row.get("definitionid"),
@@ -502,88 +497,6 @@ async fn get_thread_id_by_context(
         .map(|row| row.get("threadid")))
 }
 
-pub async fn toggle_like(
-    pool: &Pool,
-    comment_id: i32,
-    user_id: i32,
-    like: bool,
-) -> Result<(), Box<dyn std::error::Error>> {
-    let mut client = pool.get().await?;
-    let transaction = client.transaction().await?;
-
-    // First, ensure comment_counters record exists
-    transaction
-        .execute(
-            "INSERT INTO comment_counters (comment_id, total_reactions, total_replies)
-             VALUES ($1, 0, 0)
-             ON CONFLICT (comment_id) DO NOTHING",
-            &[&comment_id],
-        )
-        .await?;
-
-    let is_liked = transaction
-        .query_opt(
-            "SELECT 1 FROM comment_likes
-             WHERE comment_id = $1 AND user_id = $2",
-            &[&comment_id, &user_id],
-        )
-        .await?
-        .is_some();
-
-    if like != is_liked {
-        if like {
-            transaction
-                .execute(
-                    "INSERT INTO comment_likes (comment_id, user_id, created_at)
-                     VALUES ($1, $2, $3)",
-                    &[&comment_id, &user_id, &Utc::now()],
-                )
-                .await?;
-
-            transaction
-                .execute(
-                    "UPDATE comment_counters
-                     SET total_reactions = total_reactions + 1
-                     WHERE comment_id = $1",
-                    &[&comment_id],
-                )
-                .await?;
-            transaction
-                .execute(
-                    "SELECT update_comment_counter($1, 'likes', true)",
-                    &[&comment_id],
-                )
-                .await?;
-        } else {
-            transaction
-                .execute(
-                    "DELETE FROM comment_likes
-                     WHERE comment_id = $1 AND user_id = $2",
-                    &[&comment_id, &user_id],
-                )
-                .await?;
-
-            transaction
-                .execute(
-                    "UPDATE comment_counters
-                     SET total_reactions = total_reactions - 1
-                     WHERE comment_id = $1",
-                    &[&comment_id],
-                )
-                .await?;
-            transaction
-                .execute(
-                    "SELECT update_comment_counter($1, 'likes', false)",
-                    &[&comment_id],
-                )
-                .await?;
-        }
-    }
-
-    transaction.commit().await?;
-    Ok(())
-}
-
 async fn get_comment_by_id(
     transaction: &tokio_postgres::Transaction<'_>,
     comment_id: i32,
@@ -609,11 +522,9 @@ async fn get_comment_by_id(
                     c.content::text as content,
                     cc.total_reactions,
                     cc.total_replies,
-                    CASE WHEN cl.user_id IS NOT NULL THEN true ELSE false END as is_liked,
                     CASE WHEN cb.user_id IS NOT NULL THEN true ELSE false END as is_bookmarked
              FROM convenientcomments c
              LEFT JOIN comment_counters cc ON c.commentid = cc.comment_id
-             LEFT JOIN comment_likes cl ON c.commentid = cl.comment_id AND cl.user_id = $2
              LEFT JOIN comment_bookmarks cb ON c.commentid = cb.comment_id AND cb.user_id = $2
              WHERE c.commentid = $1",
             &[&comment_id, &user_id],
@@ -638,7 +549,6 @@ async fn get_comment_by_id(
         realname: row.get("realname"),
         total_reactions: row.get::<_, Option<i64>>("total_reactions").unwrap_or(0),
         total_replies: row.get::<_, Option<i64>>("total_replies").unwrap_or(0),
-        is_liked: row.get("is_liked"),
         is_bookmarked: row.get("is_bookmarked"),
         valsi_id: row.get("valsiid"),
         definition_id: row.get("definitionid"),
@@ -692,12 +602,10 @@ pub async fn get_bookmarked_comments(
                     t.*,
                     COALESCE(cc.total_reactions, 0) as total_reactions,
                     COALESCE(cc.total_replies, 0) as total_replies,
-                    CASE WHEN cl.user_id IS NOT NULL THEN true ELSE false END as is_liked,
                     CASE WHEN cb.user_id IS NOT NULL THEN true ELSE false END as is_bookmarked,
                     pc.content::text as parent_content
              FROM convenientcomments c
              LEFT JOIN comment_counters cc ON c.commentid = cc.comment_id
-             LEFT JOIN comment_likes cl ON c.commentid = cl.comment_id AND cl.user_id = $1::int4
              JOIN comment_bookmarks cb ON c.commentid = cb.comment_id
              JOIN threads t ON t.threadid = c.threadid
              LEFT JOIN convenientcomments pc ON c.parentid = pc.commentid
@@ -731,107 +639,6 @@ pub async fn get_bookmarked_comments(
                 realname: row.get("realname"),
                 total_reactions: row.get::<_, Option<i64>>("total_reactions").unwrap_or(0),
                 total_replies: row.get::<_, Option<i64>>("total_replies").unwrap_or(0),
-                is_liked: row.get("is_liked"),
-                is_bookmarked: row.get("is_bookmarked"),
-                valsi_id: row.get("valsiid"),
-                definition_id: row.get("definitionid"),
-                definition_link_id: row.get("definition_link_id"),
-                reactions: reactions_map.get(&comment_id).cloned().unwrap_or_default(),
-                valsi_word: None,
-                definition: None,
-                first_comment_subject: None,
-                first_comment_content: None,
-                last_comment_username: None,
-            })
-        })
-        .collect::<Result<Vec<_>, Box<dyn std::error::Error>>>()?;
-
-    transaction.commit().await?;
-
-    Ok(PaginatedCommentsResponse {
-        comments: mapped_comments,
-        total,
-        page,
-        per_page,
-    })
-}
-
-pub async fn get_liked_comments(
-    pool: &Pool,
-    user_id: i32,
-    page: i64,
-    per_page: i64,
-) -> Result<PaginatedCommentsResponse, Box<dyn std::error::Error>> {
-    let mut client = pool.get().await?;
-    let transaction = client.transaction().await?;
-
-    let offset = (page - 1) * per_page;
-
-    // Get total count
-    let total: i64 = transaction
-        .query_one(
-            "SELECT COUNT(*) FROM comment_likes WHERE user_id = $1",
-            &[&user_id],
-        )
-        .await?
-        .get(0);
-
-    let comments = transaction
-        .query(
-            "SELECT
-                        c.commentid,
-                        c.threadid,
-                        c.parentid,
-                        c.userid,
-                        c.commentnum,
-                        c.time,
-                        c.subject,
-                        c.username,
-                        c.realname,
-                        c.total_reactions,
-                        c.total_replies,
-                        c.valsiid,
-                        c.definitionid,
-                        c.content::text as content,
-                        t.*,
-                    COALESCE(cc.total_reactions, 0) as total_reactions,
-                    COALESCE(cc.total_replies, 0) as total_replies,
-                    CASE WHEN cl.user_id IS NOT NULL THEN true ELSE false END as is_liked,
-                    CASE WHEN cb.user_id IS NOT NULL THEN true ELSE false END as is_bookmarked
-             FROM convenientcomments c
-             LEFT JOIN comment_counters cc ON c.commentid = cc.comment_id
-             LEFT JOIN comment_bookmarks cb ON c.commentid = cb.comment_id AND cb.user_id = $1
-             JOIN comment_likes cl ON c.commentid = cl.comment_id
-             JOIN threads t ON t.threadid = c.threadid
-             WHERE cl.user_id = $1
-             ORDER BY cl.created_at DESC
-             LIMIT $2 OFFSET $3",
-            &[&user_id, &per_page, &offset],
-        )
-        .await?;
-
-    let comment_ids: Vec<i32> = comments.iter().map(|row| row.get("commentid")).collect();
-    let reactions_map = fetch_reactions(&transaction, &comment_ids, Some(user_id)).await?;
-
-    let mapped_comments = comments
-        .iter()
-        .map(|row| {
-            let comment_id = row.get::<_, i32>("commentid");
-            Ok(Comment {
-                parent_content: None,
-                comment_id,
-                thread_id: row.get("threadid"),
-                parent_id: row.get("parentid"),
-                user_id: row.get("userid"),
-                comment_num: row.get("commentnum"),
-                time: row.get("time"),
-                subject: row.get("subject"),
-                content: serde_json::from_str(&row.get::<_, String>("content")).unwrap_or_default(),
-                username: row.get("username"),
-                realname: row.get("realname"),
-                total_reactions: row.get::<_, Option<i64>>("total_reactions").unwrap_or(0),
-                total_replies: row.get::<_, Option<i64>>("total_replies").unwrap_or(0),
-                is_liked: row.get("is_liked"),
                 is_bookmarked: row.get("is_bookmarked"),
                 valsi_id: row.get("valsiid"),
                 definition_id: row.get("definitionid"),
@@ -951,11 +758,9 @@ pub async fn get_user_comments(
                     c.content::text as content,
                     COALESCE(cc.total_reactions, 0) as total_reactions,
                     COALESCE(cc.total_replies, 0) as total_replies,
-                    CASE WHEN cl.user_id IS NOT NULL THEN true ELSE false END as is_liked,
                     CASE WHEN cb.user_id IS NOT NULL THEN true ELSE false END as is_bookmarked
              FROM convenientcomments c
              LEFT JOIN comment_counters cc ON c.commentid = cc.comment_id
-             LEFT JOIN comment_likes cl ON c.commentid = cl.comment_id AND cl.user_id = $2
              LEFT JOIN comment_bookmarks cb ON c.commentid = cb.comment_id AND cb.user_id = $2
              WHERE c.userid = $1
              ORDER BY c.time DESC
@@ -989,7 +794,6 @@ pub async fn get_user_comments(
                 realname: row.get("realname"),
                 total_reactions: row.get::<_, Option<i64>>("total_reactions").unwrap_or(0),
                 total_replies: row.get::<_, Option<i64>>("total_replies").unwrap_or(0),
-                is_liked: row.get("is_liked"),
                 is_bookmarked: row.get("is_bookmarked"),
                 valsi_id: row.get("valsiid"),
                 definition_id: row.get("definitionid"),
@@ -1213,7 +1017,6 @@ pub async fn get_trending_comments(
                 LEFT JOIN threads t ON c.threadid = t.threadid
                 LEFT JOIN comments pc ON c.parentid = pc.commentid
                 LEFT JOIN comment_activity_counters cc ON c.commentid = cc.comment_id
-                LEFT JOIN comment_likes cl ON c.commentid = cl.comment_id AND cl.user_id = $1
                 LEFT JOIN comment_bookmarks cb ON c.commentid = cb.comment_id AND cb.user_id = $1
                 WHERE c.time > extract(epoch from (now() - make_interval(hours => $2)))::int
                 AND (cc.total_reactions > 0 OR cc.total_replies > 0 OR cc.total_bookmarks > 0)
@@ -1250,7 +1053,6 @@ pub async fn get_trending_comments(
                 realname: row.get("realname"),
                 total_reactions: row.get::<_, Option<i64>>("total_reactions").unwrap_or(0),
                 total_replies: row.get::<_, Option<i64>>("total_replies").unwrap_or(0),
-                is_liked: None,
                 is_bookmarked: row.get("is_bookmarked"),
                 valsi_id: row.get("valsiid"),
                 definition_id: row.get("definitionid"),
@@ -1277,7 +1079,7 @@ pub async fn get_comment_stats(
 
     let row = client
         .query_one(
-            "SELECT total_likes, total_bookmarks, total_replies,
+            "SELECT total_bookmarks, total_replies,
                     total_opinions, total_reactions, last_activity_at
              FROM comment_activity_counters
              WHERE comment_id = $1",
@@ -1286,7 +1088,6 @@ pub async fn get_comment_stats(
         .await?;
 
     Ok(CommentStats {
-        total_likes: row.get("total_likes"),
         total_replies: row.get("total_replies"),
         total_bookmarks: row.get("total_bookmarks"),
         total_opinions: row.get("total_opinions"),
@@ -1330,11 +1131,9 @@ pub async fn get_most_bookmarked_comments(
                 c.definition_link_id,
                 c.content::text as content,
                 ac.total_reactions, ac.total_replies,
-                CASE WHEN cl.user_id IS NOT NULL THEN true ELSE false END as is_liked,
                 CASE WHEN cb.user_id IS NOT NULL THEN true ELSE false END as is_bookmarked
              FROM convenientcomments c
              JOIN comment_activity_counters ac ON c.commentid = ac.comment_id
-             LEFT JOIN comment_likes cl ON c.commentid = cl.comment_id AND cl.user_id = $1
              LEFT JOIN comment_bookmarks cb ON c.commentid = cb.comment_id AND cb.user_id = $1
              ORDER BY ac.total_bookmarks DESC
              LIMIT $2 OFFSET $3",
@@ -1363,7 +1162,6 @@ pub async fn get_most_bookmarked_comments(
                 realname: row.get("realname"),
                 total_reactions: row.get::<_, Option<i64>>("total_reactions").unwrap_or(0),
                 total_replies: row.get::<_, Option<i64>>("total_replies").unwrap_or(0),
-                is_liked: row.get("is_liked"),
                 is_bookmarked: row.get("is_bookmarked"),
                 valsi_id: row.get("valsiid"),
                 definition_id: row.get("definitionid"),
@@ -1465,13 +1263,11 @@ pub async fn get_comments_by_hashtag(
                    c.username, c.realname,
                    c.valsiid, c.definitionid, c.definition_link_id,
                    cc.total_reactions, cc.total_replies,
-                   CASE WHEN cl.user_id IS NOT NULL THEN true ELSE false END as is_liked,
                    CASE WHEN cb.user_id IS NOT NULL THEN true ELSE false END as is_bookmarked
             FROM convenientcomments c
             JOIN comment_counters cc ON c.commentid = cc.comment_id
             JOIN post_hashtags ph ON c.commentid = ph.post_id
             JOIN hashtags h ON ph.hashtag_id = h.id
-            LEFT JOIN comment_likes cl ON c.commentid = cl.comment_id AND cl.user_id = $2
             LEFT JOIN comment_bookmarks cb ON c.commentid = cb.comment_id AND cb.user_id = $2
             WHERE h.tag = $1
             ORDER BY c.time DESC
@@ -1502,7 +1298,6 @@ pub async fn get_comments_by_hashtag(
                 realname: row.get("realname"),
                 total_reactions: row.get::<_, Option<i64>>("total_reactions").unwrap_or(0),
                 total_replies: row.get::<_, Option<i64>>("total_replies").unwrap_or(0),
-                is_liked: row.get("is_liked"),
                 is_bookmarked: row.get("is_bookmarked"),
                 valsi_id: row.get("valsiid"),
                 definition_id: row.get("definitionid"),
@@ -1581,13 +1376,6 @@ pub async fn delete_comment(
     transaction
         .execute(
             "DELETE FROM valsi_subscriptions WHERE source_comment_id = $1",
-            &[&comment_id],
-        )
-        .await?;
-
-    transaction
-        .execute(
-            "DELETE FROM comment_likes WHERE comment_id = $1",
             &[&comment_id],
         )
         .await?;
@@ -1733,7 +1521,6 @@ pub async fn search_comments(
             c.content::text as content,
             cc.total_reactions,
             cc.total_replies,
-            CASE WHEN cl.user_id IS NOT NULL THEN true ELSE false END as is_liked,
             CASE WHEN cb.user_id IS NOT NULL THEN true ELSE false END as is_bookmarked,
             t.valsiid,
             t.definitionid,
@@ -1748,7 +1535,6 @@ pub async fn search_comments(
         LEFT JOIN valsi v ON t.valsiid = v.valsiid
         LEFT JOIN definitions d ON t.definitionid = d.definitionid
         LEFT JOIN comment_activity_counters cc ON c.commentid = cc.comment_id
-        LEFT JOIN comment_likes cl ON c.commentid = cl.comment_id AND cl.user_id = $1
         LEFT JOIN comment_bookmarks cb ON c.commentid = cb.comment_id AND cb.user_id = $1
         WHERE (c.subject ILIKE $2 OR c.plain_content ILIKE $2 OR u.username ILIKE $2)";
 
@@ -1863,7 +1649,6 @@ pub async fn search_comments(
                 realname: None,
                 total_reactions: row.get::<_, Option<i64>>("total_reactions").unwrap_or(0),
                 total_replies: row.get::<_, Option<i64>>("total_replies").unwrap_or(0),
-                is_liked: row.get("is_liked"),
                 is_bookmarked: row.get("is_bookmarked"),
                 valsi_id: row.get("valsiid"),
                 definition_id: row.get("definitionid"),
@@ -1929,11 +1714,9 @@ pub async fn get_my_reactions(
             t.*,
             COALESCE(cc.total_reactions, 0) as total_reactions,
             COALESCE(cc.total_replies, 0) as total_replies,
-            CASE WHEN cl.user_id IS NOT NULL THEN true ELSE false END as is_liked,
             CASE WHEN cb.user_id IS NOT NULL THEN true ELSE false END as is_bookmarked
              FROM convenientcomments c
              LEFT JOIN comment_counters cc ON c.commentid = cc.comment_id
-             LEFT JOIN comment_likes cl ON c.commentid = cl.comment_id AND cl.user_id = $1
              LEFT JOIN comment_bookmarks cb ON c.commentid = cb.comment_id AND cb.user_id = $1
              JOIN threads t ON t.threadid = c.threadid
              WHERE c.commentid IN (
@@ -1968,7 +1751,6 @@ pub async fn get_my_reactions(
                 realname: row.get("realname"),
                 total_reactions: row.get::<_, Option<i64>>("total_reactions").unwrap_or(0),
                 total_replies: row.get::<_, Option<i64>>("total_replies").unwrap_or(0),
-                is_liked: row.get("is_liked"),
                 is_bookmarked: row.get("is_bookmarked"),
                 valsi_id: row.get("valsiid"),
                 definition_id: row.get("definitionid"),
@@ -2262,7 +2044,6 @@ pub async fn list_threads(
             total_comments: row.get::<_, i32>("total_comments") as i64,
             username: row.get("username"),
             realname: row.get("realname"),
-            is_liked: None,
             is_bookmarked: None,
             total_reactions: 0,
             reactions: Vec::new(),
@@ -2291,7 +2072,6 @@ pub async fn list_threads(
                 realname: ft.realname,
                 total_reactions: 0, // Will get from joined data
                 total_replies: ft.total_comments,
-                is_liked: ft.is_liked,
                 is_bookmarked: ft.is_bookmarked,
                 valsi_id: ft.valsiid,
                 definition_id: ft.definitionid,
@@ -2308,20 +2088,6 @@ pub async fn list_threads(
         page,
         per_page,
     })
-}
-
-pub async fn get_like_count(
-    pool: &Pool,
-    comment_id: i32,
-) -> Result<i64, Box<dyn std::error::Error>> {
-    let client = pool.get().await?;
-    let row = client
-        .query_one(
-            "SELECT total_reactions FROM comment_counters WHERE comment_id = $1",
-            &[&comment_id],
-        )
-        .await?;
-    Ok(row.get("total_reactions"))
 }
 
 pub async fn list_comments(
@@ -2360,7 +2126,6 @@ pub async fn list_comments(
             c.content::text as content,
             cc.total_reactions,
             cc.total_replies,
-            CASE WHEN cl.user_id IS NOT NULL THEN true ELSE false END as is_liked,
             CASE WHEN cb.user_id IS NOT NULL THEN true ELSE false END as is_bookmarked,
             t.valsiid,
             t.definitionid,
@@ -2375,7 +2140,6 @@ pub async fn list_comments(
         LEFT JOIN valsi v ON t.valsiid = v.valsiid
         LEFT JOIN definitions d ON t.definitionid = d.definitionid
         LEFT JOIN comment_activity_counters cc ON c.commentid = cc.comment_id
-        LEFT JOIN comment_likes cl ON c.commentid = cl.comment_id AND cl.user_id = $1
         LEFT JOIN comment_bookmarks cb ON c.commentid = cb.comment_id AND cb.user_id = $1
         ORDER BY c.time {}
         LIMIT $2 OFFSET $3",
@@ -2408,7 +2172,6 @@ pub async fn list_comments(
                 realname: row.get("realname"),
                 total_reactions: row.get::<_, Option<i64>>("total_reactions").unwrap_or(0),
                 total_replies: row.get::<_, Option<i64>>("total_replies").unwrap_or(0),
-                is_liked: row.get("is_liked"),
                 is_bookmarked: row.get("is_bookmarked"),
                 valsi_id: row.get("valsiid"),
                 definition_id: row.get("definitionid"),

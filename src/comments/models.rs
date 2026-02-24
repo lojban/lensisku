@@ -59,7 +59,6 @@ pub struct Comment {
     pub realname: Option<String>,
     pub total_reactions: i64,
     pub total_replies: i64,
-    pub is_liked: Option<bool>,
     pub is_bookmarked: Option<bool>,
     #[schema(value_type = Vec<ReactionResponse>)]
     pub reactions: Vec<ReactionResponse>,
@@ -94,14 +93,6 @@ pub struct Thread {
     pub valsi: Option<String>,
     pub natlang_word: Option<String>,
     pub tag: Option<String>,
-}
-
-#[derive(Debug, Serialize, ToSchema)]
-pub struct CommentLike {
-    pub user_id: i32,
-    pub comment_id: i32,
-    #[schema(value_type = String, format = DateTime)]
-    pub created_at: DateTime<Utc>,
 }
 
 #[derive(Debug, Serialize, ToSchema)]
@@ -178,7 +169,6 @@ pub struct FreeThread {
     pub last_comment_username: Option<String>,
     pub username: String,
     pub realname: Option<String>,
-    pub is_liked: Option<bool>,
     pub is_bookmarked: Option<bool>,
     pub user_id: i32,
     pub comment_num: i32,

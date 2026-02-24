@@ -132,20 +132,6 @@
 
     <!-- Actions -->
     <div class="flex flex-wrap gap-2 justify-end">
-      <!-- <button v-if="auth.state.isLoggedIn" @click.stop="handleLikeClick" :disabled="isProcessing"
-        class="gap-1.5 btn-empty" :class="[
-          comment.is_liked
-            ? 'bg-red-100 text-red-600 border border-red-200'
-            : ''
-        ]">
-        <div class="flex items-center gap-1">
-          <span class="icon" :class="{ 'animate-bounce-once': isLikeAnimating }">
-            {{ comment.is_liked ? '❤️' : '🤍' }}
-          </span>
-          <span v-if="comment.total_likes > 0">{{ comment.total_likes }}</span>
-        </div>
-      </button> -->
-
       <div class="flex gap-2 items-center">
         <div v-if="reactions.length" class="flex flex-wrap gap-1">
           <button v-for="reaction in reactions" :key="reaction.reaction"
@@ -583,27 +569,6 @@ const handleImageError = (event) => {
     sibling.style.display = 'flex'
   }
 }
-
-// const handleLikeClick = async (e) => {
-//   e.stopPropagation();
-//   if (isProcessing.value) return;
-
-//   isProcessing.value = true;
-//   try {
-//     await toggleLike(comment.comment_id, !comment.is_liked);
-//     comment.is_liked = !comment.is_liked;
-//     comment.total_likes += comment.is_liked ? 1 : -1;
-
-//     isLikeAnimating.value = true;
-//     setTimeout(() => {
-//       isLikeAnimating.value = false;
-//     }, 1000);
-//   } catch (error) {
-//     console.error("Error toggling like:", error);
-//   } finally {
-//     isProcessing.value = false;
-//   }
-// };
 
 const handleBookmarkClick = async (e) => {
   e.stopPropagation()

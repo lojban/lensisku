@@ -390,7 +390,6 @@ pub async fn get_user_comments(
                 u.realname,
                 cc.total_reactions,
                 cc.total_replies,
-                CASE WHEN cl.user_id IS NOT NULL THEN true ELSE false END as is_liked,
                 CASE WHEN cb.user_id IS NOT NULL THEN true ELSE false END as is_bookmarked,
                 (SELECT json_agg(json_build_object(
                     'reaction', r.reaction,
@@ -412,7 +411,6 @@ pub async fn get_user_comments(
              LEFT JOIN definitions d ON t.definitionid = d.definitionid
              JOIN users u ON c.userid = u.userid
              LEFT JOIN comment_counters cc ON c.commentid = cc.comment_id
-             LEFT JOIN comment_likes cl ON c.commentid = cl.comment_id AND cl.user_id = $1
              LEFT JOIN comment_bookmarks cb ON c.commentid = cb.comment_id AND cb.user_id = $1
              WHERE c.userid = $1
              ORDER BY c.time DESC
@@ -453,7 +451,6 @@ pub async fn get_user_comments(
                 realname: row.get("realname"),
                 total_reactions: row.get::<_, Option<i64>>("total_reactions").unwrap_or(0),
                 total_replies: row.get::<_, Option<i64>>("total_replies").unwrap_or(0),
-                is_liked: row.get("is_liked"),
                 is_bookmarked: row.get("is_bookmarked"),
                 reactions: reactions.unwrap_or_default(),
                 parent_content: None,
