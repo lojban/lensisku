@@ -32,3 +32,10 @@ pub struct ImageData {
     pub data: String, // Base64 encoded image data
     pub mime_type: String,
 }
+
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
+pub struct SoundData {
+    #[schema(format = "byte")]
+    pub data: String, // Base64 encoded audio data
+    pub mime_type: String,
+}

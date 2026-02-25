@@ -1,4 +1,4 @@
-use super::models::ImageData;
+use super::models::{ImageData, SoundData};
 use crate::export::models::CollectionExportItem;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
@@ -108,6 +108,10 @@ pub struct AddItemRequest {
     pub front_image: Option<ImageData>,
     #[schema(format = "binary")]
     pub back_image: Option<ImageData>,
+    #[schema(format = "binary")]
+    pub sound: Option<SoundData>,
+    /// When updating an item, set to true to remove existing custom sound
+    pub remove_sound: Option<bool>,
 }
 
 #[derive(Debug, Serialize, ToSchema)]
@@ -141,6 +145,9 @@ pub struct CollectionItemResponse {
     pub auto_progress: bool,
     pub has_front_image: bool,
     pub has_back_image: bool,
+    pub has_sound: bool,
+    /// Custom sound: /api/collections/{id}/items/{item_id}/sound; or fallback OGG URL from check_sound_urls.
+    pub sound_url: Option<String>,
     #[schema(value_type = String, format = DateTime)]
     pub added_at: DateTime<Utc>,
     pub canonical_form: Option<String>,
@@ -156,6 +163,9 @@ pub struct UpdateItemRequest {
     pub back_image: Option<ImageData>,
     pub remove_front_image: Option<bool>,
     pub remove_back_image: Option<bool>,
+    #[schema(format = "binary")]
+    pub sound: Option<SoundData>,
+    pub remove_sound: Option<bool>,
 }
 
 #[derive(Debug, Deserialize, ToSchema)]

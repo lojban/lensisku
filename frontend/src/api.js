@@ -269,8 +269,6 @@ export const removeCollectionItem = (collectionId, itemId) =>
 export const updateItemNotes = (collectionId, itemId, data) =>
   api.put(`/collections/${collectionId}/items/${itemId}/notes`, data)
 
-export const updateItemImages = (collectionId, itemId, data) =>
-  api.put(`/collections/${collectionId}/items/${itemId}/images`, data)
 
 export const listCollectionItems = (collectionId, params, signal) =>
   api.get(`/collections/${collectionId}/items`, { params, signal })
@@ -460,12 +458,23 @@ export const initiatePasswordChange = (data) => api.post('/auth/change-password/
 
 export const completePasswordChange = (data) => api.post('/auth/change-password/complete', data)
 
-export const updateItemNotesImages = async (collectionId, itemId, data) => {
-  return await api.put(`/collections/${collectionId}/items/${itemId}/images`, data)
+export const updateItemNotesMedia = async (collectionId, itemId, data) => {
+  return await api.put(`/collections/${collectionId}/items/${itemId}/media`, data)
 }
 
 export const getItemImage = async (collectionId, itemId, side) => {
   return await api.get(`/collections/${collectionId}/items/${itemId}/image/${side}`, {
+    responseType: 'blob',
+  })
+}
+
+export const getItemSound = (collectionId, itemId) => {
+  return `${apiBaseUrl}/collections/${collectionId}/items/${itemId}/sound`
+}
+
+/** Fetch collection item sound as blob (uses api so Bearer is sent automatically). */
+export const getItemSoundBlob = (collectionId, itemId) => {
+  return api.get(`/collections/${collectionId}/items/${itemId}/sound`, {
     responseType: 'blob',
   })
 }

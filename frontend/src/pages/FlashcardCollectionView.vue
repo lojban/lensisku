@@ -116,11 +116,25 @@
       <!-- Card Content -->
       <div class="flex justify-between items-start gap-4">
         <div class="min-w-0 flex-1">
-          <h3 class="text-lg font-medium text-gray-800">
-            {{ card.flashcard.word ?? card.flashcard.free_content_front }}
-          </h3>
-          <div v-if="card.flashcard.canonical_form" class="text-sm text-gray-500 font-mono mt-1">
-             {{ card.flashcard.canonical_form }}
+          <div class="flex flex-wrap items-center gap-2 min-w-0">
+            <h3 class="text-lg font-medium text-gray-800">
+              {{ card.flashcard.word ?? card.flashcard.free_content_front }}
+            </h3>
+            <span v-if="card.flashcard.has_custom_sound && card.flashcard.sound_url" class="shrink-0" @click.stop>
+              <AudioPlayer :url="card.flashcard.sound_url"
+                :collection-id="card.flashcard.sound_url?.startsWith?.('/api/') ? card.flashcard.collection_id : undefined"
+                :item-id="card.flashcard.sound_url?.startsWith?.('/api/') ? card.flashcard.item_id : undefined"
+                class="shrink-0" />
+            </span>
+          </div>
+          <div v-if="showCanonicalForCard(card)" class="mt-2 flex flex-col gap-1">
+            <div class="flex items-center gap-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+              <EqualApproximately class="h-3.5 w-3.5 text-blue-400 shrink-0" />
+              <span>{{ t('components.definitionCard.canonicalLabel') }}</span>
+            </div>
+            <div class="text-sm text-gray-700 font-mono bg-blue-50/30 p-2 rounded border border-blue-100/30">
+              {{ card.flashcard.canonical_form }}
+            </div>
           </div>
           <div class="text-sm text-gray-600 mt-1">
             <LazyMathJax :content="card.flashcard.definition ?? card.flashcard.free_content_back" />
@@ -199,7 +213,7 @@
 </template>
 
 <script setup>
-import { ArrowUp, ArrowDown, ArrowLeft, Repeat1 } from 'lucide-vue-next'
+import { ArrowUp, ArrowDown, ArrowLeft, Repeat1, EqualApproximately } from 'lucide-vue-next'
 import { ref, computed, onMounted, watch, onBeforeUnmount } from 'vue'
 import { useRouter, RouterLink, useRoute } from 'vue-router'
 
@@ -211,6 +225,7 @@ import {
   importFromCollection,
   getCollection,
 } from '@/api'
+import AudioPlayer from '@/components/AudioPlayer.vue'
 import LazyMathJax from '@/components/LazyMathJax.vue'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import PaginationComponent from '@/components/PaginationComponent.vue'
@@ -431,6 +446,14 @@ const updateStats = () => {
   flashcards.value.forEach((card) => {
     stats.value[card.progress[0].status.toLowerCase()]++
   })
+}
+
+const showCanonicalForCard = (card) => {
+  const fc = card?.flashcard
+  if (!fc?.canonical_form) return false
+  const main = (fc.word ?? fc.free_content_front ?? '').trim().toLowerCase()
+  const canonical = fc.canonical_form.trim().toLowerCase()
+  return main !== canonical
 }
 
 const openFlashcard = (card) => {

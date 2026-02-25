@@ -326,12 +326,66 @@ export default {
           },
           '.btn-group-item': {
             '@apply border rounded-full': {},
+            '&:not(:disabled):active': {
+              '@apply scale-[1.02]': {},
+            },
             '@screen md': {
               '@apply rounded-none first:rounded-l-full last:rounded-r-full first:border-l last:border-r':
                 {},
               '&:not(:last-child)': {
                 '@apply border-r-0': {},
               },
+            },
+          },
+          '.btn-aqua-group-item': {
+            borderRadius: 0,
+            '&:first-child:not(:last-child)': {
+              borderTopLeftRadius: '1000px',
+              borderBottomLeftRadius: '1000px',
+              borderTopRightRadius: 0,
+              borderBottomRightRadius: 0,
+              '&::before': {
+                borderRadius: '2em 0 0 0.5em',
+                left: '0.4375em',
+                width: 'calc(100% - 0.4375em)',
+                transform: 'none',
+              },
+              '&::after': {
+                borderRadius: '0.75em 0 0 0.75em',
+              },
+            },
+            '&:last-child:not(:first-child)': {
+              borderTopLeftRadius: 0,
+              borderBottomLeftRadius: 0,
+              borderTopRightRadius: '1000px',
+              borderBottomRightRadius: '1000px',
+              '&::before': {
+                borderRadius: '0 2em 0.5em 0',
+                left: 'auto',
+                right: '0.4375em',
+                width: 'calc(100% - 0.4375em)',
+                transform: 'none',
+              },
+              '&::after': {
+                borderRadius: '0 0.75em 0.75em 0',
+              },
+            },
+            '&:not(:first-child):not(:last-child)': {
+              '&::before': {
+                borderRadius: 0,
+                left: 0,
+                width: '100%',
+                transform: 'none',
+              },
+              '&::after': {
+                borderRadius: 0,
+              },
+            },
+            '&:only-child': {
+              borderRadius: '1000px',
+            },
+            '&:not(:disabled):active': {
+              '@apply scale-[1.02]': {},
             },
           },
           '.btn-aqua-toggle': {

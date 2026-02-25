@@ -27,6 +27,7 @@
   import { useI18n } from 'vue-i18n';
 
   import { useError } from '@/composables/useError';
+  import { getItemSoundBlob } from '@/api';
 
   const { showError, clearError } = useError();
   const { t } = useI18n();
@@ -35,6 +36,9 @@
       type: String,
       required: true,
     },
+    /** When set with itemId, load sound via api (Bearer sent). Omit for external URLs. */
+    collectionId: { type: Number, default: null },
+    itemId: { type: Number, default: null },
   })
 
   const isPlaying = ref(false)
@@ -100,14 +104,22 @@
     }
   }
 
+  const getCacheKey = () => {
+    if (props.collectionId != null && props.itemId != null) {
+      return `collection:${props.collectionId}:${props.itemId}`
+    }
+    return props.url
+  }
+
   const loadAudio = async () => {
+    const cacheKey = getCacheKey()
     const cache = await loadCacheFromStorage()
-    const cacheEntry = cache.get(props.url)
+    const cacheEntry = cache.get(cacheKey)
 
     if (cacheEntry && (await validateBlobUrl(cacheEntry.blob))) {
       const blob = await fetch(cacheEntry.blob).then((r) => r.blob())
       audio.value = new Audio(URL.createObjectURL(blob))
-      cache.set(props.url, {
+      cache.set(cacheKey, {
         blob: cacheEntry.blob,
         lastAccessed: Date.now(),
       })
@@ -119,24 +131,29 @@
     clearError()
 
     try {
-      const response = await fetch(props.url)
-      if (!response.ok) throw new Error('Failed to load audio')
+      let blob
+      if (props.collectionId != null && props.itemId != null) {
+        const response = await getItemSoundBlob(props.collectionId, props.itemId)
+        blob = response.data
+      } else {
+        const response = await fetch(props.url)
+        if (!response.ok) throw new Error('Failed to load audio')
+        blob = await response.blob()
+      }
 
-      const blob = await response.blob()
       const blobUrl = URL.createObjectURL(blob)
-
       audio.value = new Audio(blobUrl)
       audio.value.addEventListener('ended', handleEnded)
 
       cleanCache(cache)
-      cache.set(props.url, {
+      cache.set(cacheKey, {
         blob: blobUrl,
         lastAccessed: Date.now(),
       })
       saveCacheToStorage(cache)
     } catch (e) {
       console.error('Error loading audio:', e)
-      showError(t('audioPlayer.loadError'))
+      showError(t('audioPlayer.playError'))
     } finally {
       isLoading.value = false
     }

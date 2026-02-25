@@ -117,7 +117,7 @@
           class="relative w-full max-w-full overflow-visible">
           <DefinitionCard :show-edit-button="isOwner" :show-reorder-controls="isOwner" :is-owner="isOwner"
             :flashcard="item.flashcard" :is-reordering="isReordering" :show-vote-buttons="false"
-            :is-first-item="index === 0" :is-last-item="index === paginatedItems.items.length - 1" :definition="{
+            :is-first-item="index === 0" :is-last-item="index === paginatedItems.items.length - 1"             :definition="{
               definitionid: item.definition_id || 0,
               item_id: item.item_id,
               valsiid: item.valsi_id,
@@ -129,6 +129,8 @@
               free_content_back: item.free_content_back,
               has_front_image: item.has_front_image,
               has_back_image: item.has_back_image,
+              has_sound: item.has_sound,
+              sound_url: item.sound_url,
             }" :collection-id="collection.collection_id" :item-id="item.item_id" :languages="languages"
             :collections="userCollections" @collection-updated="userCollections = $event"
             :disable-discussion-button="true" :disable-toolbar="true" :notes="item.ci_notes" :show-notes-edit="isOwner"
@@ -248,6 +250,10 @@
 
         <ImageUpload v-model="customContent.backImage" :collection-id="numericCollectionId" :item-id="null" side="back"
           :label="t('collectionDetail.backImageLabel')" @image-loaded="handleBackImageLoaded" />
+
+        <SoundUpload v-model="customContent.sound" :collection-id="numericCollectionId" :item-id="currentItem?.item_id"
+          :has-existing-sound="currentItem?.has_sound" :label="t('collectionDetail.soundLabel', 'Custom Sound')"
+          @remove-sound="customContent.removeSound = true" />
         <!-- Notes Field -->
         <div class="mt-4">
           <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('collectionDetail.notesLabel') }}</label>
@@ -383,6 +389,10 @@
           <ImageUpload v-model="definitionBackImage" :collection-id="numericCollectionId" :item-id="null" side="back"
             :label="t('collectionDetail.backImageLabel')" class="mb-4"
             @image-loaded="handleDefinitionBackImageLoaded" />
+
+          <SoundUpload v-model="definitionSound" :collection-id="numericCollectionId" :item-id="currentItem?.item_id"
+            :has-existing-sound="currentItem?.has_sound" :label="t('collectionDetail.soundLabel', 'Custom Sound')"
+            @remove-sound="definitionRemoveSound = true" />
           <div class="flex items-center space-x-2 mb-2">
             <button type="button" class="btn-action" @click="toggleFlashcard">
               <template v-if="enableFlashcard">
@@ -548,6 +558,8 @@
         <!-- Image Upload -->
         <ImageUpload v-model="newDefinitionImage" :label="t('collectionDetail.imageLabel')"
           @image-loaded="handleNewDefinitionImageLoaded" @remove-image="handleNewDefinitionRemoveImage" />
+
+        <SoundUpload v-model="newDefinitionSound" :label="t('collectionDetail.soundLabel', 'Custom Sound')" />
 
         <!-- Notes Input -->
         <div>
@@ -760,6 +772,7 @@ import DefinitionCard from '@/components/DefinitionCard.vue'
 import DeleteConfirmationModal from '@/components/DeleteConfirmation.vue'
 import DynamicInput from '@/components/DynamicInput.vue'
 import ImageUpload from '@/components/ImageUpload.vue'
+import SoundUpload from '@/components/SoundUpload.vue'
 import ToastFloat from '@/components/ToastFloat.vue'
 import LazyMathJax from '@/components/LazyMathJax.vue'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
@@ -866,10 +879,14 @@ const customContent = ref({
   back: '',
   frontImage: null,
   backImage: null,
+  sound: null,
+  removeSound: false,
   auto_progress: true,
 })
 
 const definitionBackImage = ref(null)
+const definitionSound = ref(null)
+const definitionRemoveSound = ref(false)
 const addItemDirection = ref('direct')
 const useCanonicalComparison = ref(true)
 const enableFlashcard = ref(false)
@@ -887,6 +904,7 @@ const newDefinitionData = ref({
   ownerOnly: false,
 })
 const newDefinitionImage = ref(null)
+const newDefinitionSound = ref(null)
 const newDefinitionWordType = ref('')
 const newDefinitionRecommended = ref('')
 const newDefinitionProblems = ref({})
@@ -1022,6 +1040,7 @@ const addNewDefinitionAndItem = async () => {
       notes: addItemNotes.value, // Use the general notes field for the collection item
       auto_progress: customContent.value.auto_progress, // Use the general auto_progress
       direction: enableFlashcard.value ? addItemDirection.value : null, // Use general flashcard settings
+      sound: newDefinitionSound.value,
       // Images are handled by the definition itself, not duplicated here
     }
     await addCollectionItem(props.collectionId, addItemPayload)
@@ -1049,6 +1068,7 @@ const resetNewDefinitionForm = () => {
     ownerOnly: false,
   }
   newDefinitionImage.value = null
+  newDefinitionSound.value = null
   newDefinitionWordType.value = ''
   newDefinitionRecommended.value = ''
   newDefinitionProblems.value = {}
@@ -1111,18 +1131,28 @@ const addCustomContent = async () => {
       notes: addItemNotes.value,
       front_image: customContent.value.frontImage,
       back_image: customContent.value.backImage,
+      sound: customContent.value.sound,
+      remove_sound: customContent.value.removeSound,
       auto_progress: itemType.value === 'quiz' ? true : customContent.value.auto_progress, // Quizzes are always auto-progress for now
       direction: direction,
       use_canonical_comparison: useCanonicalComparison.value,
     })
 
     showAddModal.value = false
+    const hadSoundChange = !!customContent.value.sound || !!customContent.value.removeSound
+    if (hadSoundChange) {
+      successMessage.value = t('collectionDetail.itemUpdatedSoundSaved', 'Item updated. Sound saved.')
+      showSuccessToast.value = true
+      setTimeout(() => { showSuccessToast.value = false }, 3000)
+    }
 
     customContent.value = {
       front: '',
       back: '',
       frontImage: null,
       backImage: null,
+      sound: null,
+      removeSound: false,
     }
 
     addItemNotes.value = ''
@@ -1192,6 +1222,8 @@ const openEditItemModal = async (item) => {
   addItemDirection.value = item.flashcard?.direction || 'direct'
   customContent.value.auto_progress = item.auto_progress
   currentItem.value = item
+  definitionSound.value = null
+  definitionRemoveSound.value = false
 
   // Load existing content based on item type
   if (item.definition_id) {
@@ -1262,6 +1294,8 @@ const openEditItemModal = async (item) => {
       back: item.free_content_back || '',
       frontImage: null,
       backImage: null,
+      sound: null,
+      removeSound: false,
       auto_progress: itemType.value === 'quiz' ? true : item.auto_progress,
     }
 
@@ -1805,18 +1839,21 @@ const resetForm = () => {
   searchQuery.value = ''
   addItemResults.value = []
   definitionBackImage.value = null
+  definitionSound.value = null
+  definitionRemoveSound.value = false
   selectedDefinition.value = null
   enableFlashcard.value = false
   addItemDirection.value = 'direct'
   isEditingItem.value = false
-  definitionBackImage.value = null
   currentItem.value = null
   customContent.value = {
     front: '',
     back: '',
     frontImage: null,
     backImage: null,
-    auto_progress: true
+    sound: null,
+    removeSound: false,
+    auto_progress: true,
   }
 }
 
@@ -1830,6 +1867,8 @@ const addNewItem = async (definition) => {
       notes: addItemNotes.value,
       front_image: itemType.value === 'definition' ? null : customContent.value.frontImage, // Only for custom/quiz
       back_image: definitionBackImage.value,
+      sound: definitionSound.value,
+      remove_sound: definitionRemoveSound.value,
       auto_progress: customContent.value.auto_progress,
       direction: enableFlashcard.value ? addItemDirection.value : null
     }
