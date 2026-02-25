@@ -67,8 +67,10 @@ impl RedisCache {
     }
 }
 
-pub fn generate_search_cache_key(query: &SearchDefinitionsQuery) -> String {
-    let prefix = if query.fast.unwrap_or(false) {
+/// Cache key for definition search. `use_fast_search` must match the actual path
+/// (fast vs full) so logged-in users don't get cached fast-search results with score 0.
+pub fn generate_search_cache_key(query: &SearchDefinitionsQuery, use_fast_search: bool) -> String {
+    let prefix = if use_fast_search {
         "fast_search"
     } else {
         "search"
