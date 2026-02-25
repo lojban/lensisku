@@ -211,7 +211,7 @@ pub async fn search_definitions(
     // Use fast search if explicitly requested via 'fast' parameter, or for non-logged-in users
     let use_fast_search = query.fast.unwrap_or(false) || claims.is_none();
 
-    let cache_key = generate_search_cache_key(&query);
+    let cache_key = generate_search_cache_key(&query, use_fast_search);
 
     match redis_cache
         .get_or_set(
