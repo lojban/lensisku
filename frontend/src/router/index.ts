@@ -220,13 +220,11 @@ const baseRoutes: Array<RouteRecordRaw> = [
     props: (route) => ({
       collectionId: route.params.collectionId,
     }),
-    meta: { requiresAuth: true },
   },
   {
     path: "/collections/:collectionId/flashcards/study",
     name: "FlashcardStudy",
     component: () => import("../pages/FlashcardStudyView.vue"),
-    meta: { requiresAuth: true },
   },
   {
     path: "/collections/:collectionId/levels",

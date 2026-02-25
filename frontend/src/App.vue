@@ -217,6 +217,8 @@
     </div>
   </main>
 
+  <AnonymousProgressBanner />
+
   <!-- Floating Action Button -->
   <div class="max-w-4xl mx-auto relative" v-if="auth.state.isLoggedIn && route.name !== 'flashcard-study'">
     <div
@@ -280,6 +282,7 @@ import IconButton from '@/components/icons/IconButton.vue'
 import BackgroundComponent from './components/BackgroundComponent.vue'
 import FooterComponent from './components/FooterComponent.vue'
 import NavLink from './components/NavLink.vue'
+import AnonymousProgressBanner from '@/components/AnonymousProgressBanner.vue'
 import ModalComponent from '@/components/ModalComponent.vue'
 import { normalizeSearchQuery } from '@/utils/searchQueryUtils'
 import { provideAuth } from './composables/useAuth'

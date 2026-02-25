@@ -39,8 +39,8 @@
     </p>
     <div class="flex justify-center">
       <button ref="returnToDeckButtonRef" class="btn-get w-auto h-10 text-base shadow-sm"
-        @click="router.push(`/collections/${route.params.collectionId}/flashcards`)">
-        {{ t('flashcardStudy.returnToDeck') }}
+        @click="router.push(returnToUrl)">
+        {{ isAnonLevelMode ? t('flashcardStudy.returnToLevels', 'Back to levels') : t('flashcardStudy.returnToDeck') }}
       </button>
     </div>
   </div>
@@ -242,15 +242,29 @@ import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import AlertComponent from '@/components/AlertComponent.vue'
 
-import { getDueCards, reviewFlashcard, getLanguages, submitFillinAnswer, getFlashcards, snoozeFlashcard } from '@/api'
+import { getDueCards, reviewFlashcard, getLanguages, submitFillinAnswer, getFlashcards, snoozeFlashcard, getLevelCards, getLevels } from '@/api'
 import LazyMathJax from '@/components/LazyMathJax.vue'
 import AudioPlayer from '@/components/AudioPlayer.vue'
 import { useSeoHead } from '@/composables/useSeoHead'
+import { useAuth } from '@/composables/useAuth'
+import { useAnonymousProgress } from '@/composables/useAnonymousProgress'
 
 const { t, locale } = useI18n()
 
 const route = useRoute()
 const router = useRouter()
+const auth = useAuth()
+const { getProgress, saveLevelProgress } = useAnonymousProgress()
+
+const levelIdParam = computed(() => route.query.levelId ? parseInt(route.query.levelId, 10) : null)
+const isAnonLevelMode = computed(() => !auth.state.isLoggedIn && levelIdParam.value != null)
+const anonLevelMeta = ref(null) // { min_cards, min_success_rate } when in anon level mode
+
+const returnToUrl = computed(() =>
+  isAnonLevelMode.value
+    ? `/collections/${route.params.collectionId}/levels`
+    : `/collections/${route.params.collectionId}/flashcards`
+)
 
 const isLoading = ref(true)
 const remainingCards = ref([])
@@ -318,6 +332,75 @@ const loadDueCards = async (singleCardId = null) => {
   }
 }
 
+/** Anonymous level mode: load all cards for the level (no auth), shape as study cards. */
+const loadLevelCardsForAnon = async () => {
+  const lid = levelIdParam.value
+  const cid = route.params.collectionId
+  if (!lid || !cid) return
+  isLoading.value = true
+  try {
+    const levelsRes = await getLevels(cid)
+    const level = (levelsRes.data.levels || []).find((l) => l.level_id === lid)
+    if (level) {
+      anonLevelMeta.value = { min_cards: level.min_cards, min_success_rate: level.min_success_rate }
+    }
+    const all = []
+    let page = 1
+    const perPage = 100
+    let total = 0
+    do {
+      const res = await getLevelCards(lid, page, perPage)
+      const list = res.data.cards || []
+      total = res.data.total || 0
+      for (const c of list) {
+        all.push({
+          flashcard: {
+            id: c.flashcard_id,
+            word: c.word,
+            definition: c.definition,
+            free_content_front: c.free_content_front,
+            free_content_back: c.free_content_back,
+            has_front_image: c.has_front_image,
+            has_back_image: c.has_back_image,
+            sound_url: c.sound_url,
+            collection_id: c.collection_id,
+            item_id: c.item_id,
+            direction: 'direct'
+          },
+          progress: [{ card_side: 'direct', status: 'new' }]
+        })
+      }
+      page++
+    } while (all.length < total)
+    remainingCards.value = all
+    totalCards.value = all.length
+    loadNextCard()
+  } catch (error) {
+    console.error(t('flashcardStudy.loadError'), error)
+  } finally {
+    isLoading.value = false
+  }
+}
+
+const applyAnonLevelProgress = (correct) => {
+  const cid = route.params.collectionId
+  const lid = levelIdParam.value
+  if (!cid || !lid) return
+  const cur = getProgress(cid, lid) || { cards_completed: 0, correct_answers: 0, total_answers: 0 }
+  const total_answers = (cur.total_answers || 0) + 1
+  const correct_answers = (cur.correct_answers || 0) + (correct ? 1 : 0)
+  const cards_completed = correct_answers
+  let completed_at = cur.completed_at ?? null
+  const meta = anonLevelMeta.value
+  if (meta && total_answers > 0) {
+    const rate = correct_answers / total_answers
+    if (cards_completed >= meta.min_cards && rate >= meta.min_success_rate) {
+      completed_at = new Date().toISOString()
+    }
+  }
+  saveLevelProgress(cid, lid, { cards_completed, correct_answers, total_answers, completed_at })
+}
+
 const loadNextCard = () => {
   if (remainingCards.value.length > 0) {
     currentCard.value = remainingCards.value.shift()
@@ -338,29 +421,37 @@ const submitAnswer = async (rating) => {
   isSubmitting.value = true
 
   try {
+    if (isAnonLevelMode.value) {
+      const correct = typeof rating === 'number' ? rating >= 3 : true
+      applyAnonLevelProgress(correct)
+      if (isFillInMode.value) {
+        fillinResult.value = { correct, message: correct ? t('flashcardStudy.correctAnswer') : '' }
+        await nextTick()
+        if (!isJustInformationMode.value) answerAudioPlayerRef.value?.play()
+      } else {
+        loadNextCard()
+      }
+      isSubmitting.value = false
+      return
+    }
     if (isFillInMode.value) {
-      // Call fill-in endpoint
       const response = await submitFillinAnswer({
         flashcard_id: currentCard.value.flashcard.id,
         card_side: currentCard.value.progress[0].card_side,
-        answer: userAnswer.value.trim() // Trim the answer
+        answer: userAnswer.value.trim()
       })
-      fillinResult.value = response.data // Store the result to show feedback
-      console.log('checking');
-      // Check for newly due cards after submitting fill-in answer
-      await checkForDueChanges();
-      await nextTick() // Wait for DOM update after fillinResult changes
-      if (!isJustInformationMode.value) answerAudioPlayerRef.value?.play() // Play audio after revealing answer, if not just info
+      fillinResult.value = response.data
+      await checkForDueChanges()
+      await nextTick()
+      if (!isJustInformationMode.value) answerAudioPlayerRef.value?.play()
     } else {
-      // Call regular review endpoint
       await reviewFlashcard({
         flashcard_id: currentCard.value.flashcard.id,
         rating,
         card_side: currentCard.value.progress[0].card_side,
       })
-      loadNextCard() // Move to next card immediately for non-fill-in
-      // Check for newly due cards after submitting regular answer
-      await checkForDueChanges();
+      loadNextCard()
+      await checkForDueChanges()
     }
   } catch (error) {
     console.error(t('flashcardStudy.submitError'), error)
@@ -373,13 +464,15 @@ const snoozeCard = async () => {
   if (!currentCard.value || isSubmitting.value) return
   isSubmitting.value = true
   try {
+    if (isAnonLevelMode.value) {
+      loadNextCard()
+      return
+    }
     await snoozeFlashcard(currentCard.value.flashcard.id)
-    // Card snoozed successfully, load the next one
     loadNextCard()
     await checkForDueChanges()
   } catch (error) {
     console.error(t('flashcardStudy.snoozeError'), error)
-    // Optionally show an error message to the user
   } finally {
     isSubmitting.value = false
   }
@@ -398,8 +491,7 @@ const handleNextCard = async () => {
   fillinResult.value = null
   userAnswer.value = ''
   loadNextCard()
-  // Check for newly due cards after moving to the next card
-  await checkForDueChanges();
+  if (!isAnonLevelMode.value) await checkForDueChanges()
 }
 
 const newCardsMessage = ref('')
@@ -529,11 +621,17 @@ useSeoHead({ title: t('flashcardStudy.title') }, locale.value)
 
 onMounted(async () => {
   try {
-    // Fetch languages first
     const langsResponse = await getLanguages()
     languages.value = langsResponse.data
 
-    // Then load cards, potentially a single one
+    if (isAnonLevelMode.value) {
+      await loadLevelCardsForAnon()
+      return
+    }
+    if (!auth.state.isLoggedIn) {
+      router.replace(`/collections/${route.params.collectionId}/levels`)
+      return
+    }
     const cardIdToLoad = route.query.card_id ? parseInt(route.query.card_id) : null
     await loadDueCards(cardIdToLoad)
   } catch (error) {

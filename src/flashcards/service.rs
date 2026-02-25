@@ -9,7 +9,9 @@ use fsrs::{
 use log::{debug, error, info};
 use std::collections::HashMap;
 
-use crate::auth_utils::{verify_collection_ownership, verify_flashcard_ownership};
+use crate::auth_utils::{
+    verify_collection_ownership, verify_collection_read_access, verify_flashcard_ownership,
+};
 
 use super::{
     dto::{
@@ -17,8 +19,8 @@ use super::{
         DailyProgress, DirectAnswerRequest, DirectAnswerResponse, FillInAnswerRequest, Flashcard,
         FlashcardListQuery, FlashcardListResponse, FlashcardResponse, ImportFromCollectionResponse,
         LevelCardListResponse, LevelCardProgress, LevelCardResponse, LevelListResponse,
-        LevelProgress, LevelResponse, PrerequisiteLevel, ReviewRequest, ReviewResponse,
-        StreakResponse, UpdateLevelRequest,
+        LevelProgress, LevelResponse, MergeProgressRequest, MergeProgressResponse,
+        PrerequisiteLevel, ReviewRequest, ReviewResponse, StreakResponse, UpdateLevelRequest,
     },
     models::*,
 };
@@ -2822,6 +2824,10 @@ pub async fn get_collection_levels(
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
 
+    verify_collection_read_access(&transaction, collection_id, user_id)
+        .await
+        .map_err(|e| Box::new(std::io::Error::new(std::io::ErrorKind::PermissionDenied, e.to_string())) as Box<dyn std::error::Error>)?;
+
     let rows = transaction
         .query(
             "SELECT l.*, COUNT(fli.flashcard_id) as card_count
@@ -3120,6 +3126,24 @@ pub async fn get_level_cards_paginated(
     let client = pool.get().await?;
     let offset = (page - 1) * per_page;
 
+    // Enforce collection read access: anonymous only public, logged-in: public or owner
+    let collection_row = client
+        .query_one(
+            "SELECT c.collection_id, c.user_id as owner_id, c.is_public
+             FROM flashcard_levels l
+             JOIN collections c ON c.collection_id = l.collection_id
+             WHERE l.level_id = $1",
+            &[&level_id],
+        )
+        .await?;
+    let owner_id: i32 = collection_row.get("owner_id");
+    let is_public: bool = collection_row.get("is_public");
+    match user_id {
+        None if !is_public => return Err("Access denied".into()),
+        Some(uid) if !is_public && owner_id != uid => return Err("Access denied".into()),
+        _ => {}
+    }
+
     // Check if level is unlocked for authenticated users
     if let Some(uid) = user_id {
         let is_unlocked = client
@@ -3232,6 +3256,71 @@ pub async fn get_level_cards_paginated(
         page,
         per_page,
     })
+}
+
+pub async fn merge_anonymous_progress(
+    pool: &Pool,
+    user_id: i32,
+    req: &MergeProgressRequest,
+) -> Result<MergeProgressResponse, Box<dyn std::error::Error>> {
+    let mut client = pool.get().await?;
+    let transaction = client.transaction().await?;
+
+    verify_collection_read_access(&transaction, req.collection_id, Some(user_id))
+        .await
+        .map_err(|e| Box::new(std::io::Error::new(std::io::ErrorKind::PermissionDenied, e.to_string())) as Box<dyn std::error::Error>)?;
+
+    let mut merged = 0_i64;
+    for item in &req.level_progress {
+        let level_collection_id: i32 = transaction
+            .query_one(
+                "SELECT collection_id FROM flashcard_levels WHERE level_id = $1",
+                &[&item.level_id],
+            )
+            .await?
+            .get("collection_id");
+        if level_collection_id != req.collection_id {
+            continue; // skip levels that don't belong to this collection
+        }
+
+        transaction
+            .execute(
+                r#"
+                INSERT INTO user_level_progress
+                  (user_id, level_id, cards_completed, correct_answers, total_answers, last_activity_at, completed_at)
+                VALUES ($1, $2, $3, $4, $5, CURRENT_TIMESTAMP,
+                  CASE WHEN (SELECT min_cards FROM flashcard_levels WHERE level_id = $2) <= $3
+                    AND (SELECT min_success_rate FROM flashcard_levels WHERE level_id = $2) <= (CASE WHEN $5 > 0 THEN $4::float / $5 ELSE 0 END)
+                  THEN CURRENT_TIMESTAMP ELSE NULL END)
+                ON CONFLICT (user_id, level_id) DO UPDATE SET
+                  cards_completed = GREATEST(user_level_progress.cards_completed, EXCLUDED.cards_completed),
+                  correct_answers = GREATEST(user_level_progress.correct_answers, EXCLUDED.correct_answers),
+                  total_answers = GREATEST(user_level_progress.total_answers, EXCLUDED.total_answers),
+                  last_activity_at = CURRENT_TIMESTAMP,
+                  completed_at = CASE WHEN check_level_completion(EXCLUDED.user_id, EXCLUDED.level_id) AND user_level_progress.completed_at IS NULL THEN CURRENT_TIMESTAMP ELSE user_level_progress.completed_at END
+                "#,
+                &[&user_id, &item.level_id, &item.cards_completed, &item.correct_answers, &item.total_answers],
+            )
+            .await?;
+        merged += 1;
+    }
+
+    // Set unlocked_at for levels where prerequisites are now met
+    transaction
+        .execute(
+            r#"
+            UPDATE user_level_progress ulp
+            SET unlocked_at = CASE
+              WHEN check_level_prerequisites(ulp.user_id, ulp.level_id) AND ulp.unlocked_at IS NULL
+              THEN CURRENT_TIMESTAMP ELSE ulp.unlocked_at END
+            WHERE ulp.user_id = $1
+            "#,
+            &[&user_id],
+        )
+        .await?;
+
+    transaction.commit().await?;
+    Ok(MergeProgressResponse { merged_levels: merged })
 }
 
 pub async fn remove_card_from_level(

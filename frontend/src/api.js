@@ -384,6 +384,10 @@ export const getStreak = async (days = 7) => {
   return api.get('/flashcards/streak', { params: { days } })
 }
 
+export const mergeProgress = async (data) => {
+  return api.post('/flashcards/progress/merge', data)
+}
+
 export const list_threads = (params) => api.get('/comments/threads', { params })
 
 export const list_comments = (params) => api.get('/comments/list', { params })

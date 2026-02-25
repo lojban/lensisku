@@ -1,7 +1,8 @@
 import { jwtDecode } from "jwt-decode";
 import { reactive, provide, inject } from "vue";
 import { useRouter } from "vue-router";
-import { setAuthInstance, api, performBackendLogout } from "@/api";
+import { setAuthInstance, api, performBackendLogout, mergeProgress } from "@/api";
+import { getAllProgressForMerge, clearAfterMerge } from "@/composables/useAnonymousProgress";
 
 const authKey = Symbol();
 
@@ -256,6 +257,19 @@ export function provideAuth() {
     }
 
     startTokenVerification();
+    void mergeAnonymousProgressThenClear();
+  }
+
+  async function mergeAnonymousProgressThenClear() {
+    try {
+      const payloads = getAllProgressForMerge();
+      for (const p of payloads) {
+        await mergeProgress({ collection_id: p.collection_id, level_progress: p.level_progress });
+      }
+      if (payloads.length) clearAfterMerge();
+    } catch (err) {
+      console.warn("Merge anonymous progress failed:", err);
+    }
   }
 
   function parseToken(token) {

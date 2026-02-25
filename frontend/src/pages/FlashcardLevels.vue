@@ -416,6 +416,7 @@ import {
 import DefinitionCard from '@/components/DefinitionCard.vue'
 import IconButton from '@/components/icons/IconButton.vue'
 import { useAuth } from '@/composables/useAuth';
+import { useAnonymousProgress } from '@/composables/useAnonymousProgress';
 import { useSeoHead } from '@/composables/useSeoHead';
 import '@vue-flow/core/dist/style.css';
 import '@vue-flow/core/dist/theme-default.css';
@@ -431,9 +432,21 @@ const props = defineProps({
 const auth = useAuth();
 const router = useRouter();
 const { t, locale } = useI18n();
+const { getProgress } = useAnonymousProgress();
 
 const startStudy = () => {
-  router.push(`/collections/${props.collectionId}/flashcards/study`);
+  if (auth.state.isLoggedIn) {
+    router.push(`/collections/${props.collectionId}/flashcards/study`);
+    return;
+  }
+  const sorted = [...levels.value].sort((a, b) => a.position - b.position);
+  const firstUnlocked = sorted.find((l) => isLevelUnlockedForAnon(l));
+  const levelId = firstUnlocked?.level_id ?? sorted[0]?.level_id;
+  if (levelId) {
+    router.push(`/collections/${props.collectionId}/flashcards/study?levelId=${levelId}`);
+  } else {
+    router.push(`/collections/${props.collectionId}/flashcards/study`);
+  }
 };
 
 // State
@@ -477,6 +490,38 @@ const isOwner = computed(() => {
 
 const sortedLevels = computed(() => {
   return [...levels.value].sort((a, b) => a.position - b.position)
+})
+
+// When anonymous, a level is unlocked if it has no prerequisites or all prerequisites are completed in localStorage
+function isLevelUnlockedForAnon (level) {
+  if (!level?.prerequisites?.length) return true
+  const cid = props.collectionId
+  return level.prerequisites.every((p) => {
+    const local = getProgress(cid, p.level_id)
+    return local?.completed_at != null
+  })
+}
+
+// Levels with anonymous progress merged in (is_locked, progress) when not logged in
+const effectiveLevels = computed(() => {
+  const raw = levels.value
+  if (auth.state.isLoggedIn || !raw.length) return raw
+  const cid = props.collectionId
+  return raw.map((level) => {
+    const local = getProgress(cid, level.level_id)
+    const hasLocal = local && (local.cards_completed > 0 || local.total_answers > 0)
+    const isLocked = hasLocal ? !isLevelUnlockedForAnon(level) : level.is_locked
+    const progress = hasLocal
+      ? {
+          cards_completed: local.cards_completed ?? 0,
+          correct_answers: local.correct_answers ?? 0,
+          total_answers: local.total_answers ?? 0,
+          is_unlocked: !isLocked,
+          is_completed: !!local.completed_at
+        }
+      : level.progress
+    return { ...level, is_locked: isLocked, progress }
+  })
 })
 
 const availablePrerequisites = computed(() => {
@@ -789,9 +834,9 @@ const scrollToFirstUnlocked = (levelsData) => {
   })
 }
 
-// Watch for changes in levels and update Vue Flow elements (no deep: avoid double run and second fitView)
+// Watch for changes in levels (and effectiveLevels for anon) and update Vue Flow elements
 watch(
-  () => levels.value,
+  () => effectiveLevels.value,
   (newLevels) => {
     if (newLevels?.length) {
       setElements(convertLevelsToElements(newLevels))

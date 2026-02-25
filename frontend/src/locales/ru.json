@@ -571,6 +571,7 @@
     "allCaughtUp": "Все выучено!",
     "allReviewed": "Вы повторили все карточки, требующие повторения.",
     "returnToDeck": "Вернуться к колоде",
+    "returnToLevels": "Назад к уровням",
     "cardOfTotal": "Карточка {current} из {total}",
     "definitionLanguage": "Язык определения: {language}",
     "typeAnswer": "Введите ваш ответ здесь",
@@ -1173,6 +1174,18 @@
     "deleteButton": "Удалить",
     "deleteLevelConfirmTitle": "Удалить уровень",
     "deleteLevelConfirmMessage": "Вы уверены, что хотите удалить уровень '{levelName}'? Это действие необратимо."
+  },
+  "anonymousProgress": {
+    "bannerMessage": "Зарегистрируйтесь, чтобы сохранять прогресс на всех устройствах",
+    "signUp": "Регистрация",
+    "logIn": "Вход",
+    "dismiss": "Закрыть",
+    "viewLevels": "Уровни",
+    "studyLevels": "Учить (по уровням)",
+    "signInToSaveProgress": "Войдите, чтобы сохранять прогресс и учить по расписанию.",
+    "studyByLevelHint": "Вы можете учить по уровням выше; прогресс сохраняется на этом устройстве до входа.",
+    "useLevelsToStudy": "Используйте ссылки выше, чтобы открыть уровни и начать учить.",
+    "mergeSuccess": "Ваш прогресс сохранён в аккаунте."
   },
   "audioPlayer": {
     "loadError": "Не удалось загрузить аудио",

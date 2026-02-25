@@ -601,6 +601,7 @@
     "allCaughtUp": "All caught up!",
     "allReviewed": "You've reviewed all due cards.",
     "returnToDeck": "Return to Deck",
+    "returnToLevels": "Back to levels",
     "cardOfTotal": "Card {current} of {total}",
     "definitionLanguage": "Definition Language: {language}",
     "typeAnswer": "Type your answer here",
@@ -1206,6 +1207,18 @@
     "deleteButton": "Delete",
     "deleteLevelConfirmTitle": "Delete Level",
     "deleteLevelConfirmMessage": "Are you sure you want to delete the level '{levelName}'? This action cannot be undone."
+  },
+  "anonymousProgress": {
+    "bannerMessage": "Sign up to save your progress across devices",
+    "signUp": "Sign up",
+    "logIn": "Log in",
+    "dismiss": "Dismiss",
+    "viewLevels": "View levels",
+    "studyLevels": "Study (by level)",
+    "signInToSaveProgress": "Sign in to save your progress and study by due date.",
+    "studyByLevelHint": "You can study by level above; progress is saved on this device until you sign in.",
+    "useLevelsToStudy": "Use the links above to view levels and start studying.",
+    "mergeSuccess": "Your progress has been saved to your account."
   },
   "audioPlayer": {
     "loadError": "Failed to load audio",
