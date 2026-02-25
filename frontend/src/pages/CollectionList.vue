@@ -90,6 +90,16 @@
       </div>
       <div class="flex flex-wrap items-center gap-4 text-sm justify-end">
         <!-- Action Buttons -->
+          <button
+            type="button"
+            class="btn-aqua-sky"
+            :disabled="studyLoadingId === collection.collection_id"
+            @click="startStudy(collection)"
+          >
+            <GraduationCap v-if="studyLoadingId !== collection.collection_id" class="w-4 h-4" />
+            <span v-else class="animate-spin inline-block w-4 h-4 border-2 border-current border-t-transparent rounded-full" />
+            {{ studyLoadingId === collection.collection_id ? t('collectionList.studying') : t('collectionList.studyButton') }}
+          </button>
           <RouterLink :to="`/collections/${collection.collection_id}/flashcards`" class="btn-aqua-orange">
             <GalleryHorizontalIcon class="w-4 h-4" />
             {{ t('collectionList.flashcardsButton') }}
@@ -172,7 +182,7 @@
 </template>
 
 <script setup>
-import { GalleryHorizontalIcon, List, CirclePlus } from 'lucide-vue-next';
+import { GalleryHorizontalIcon, List, CirclePlus, GraduationCap } from 'lucide-vue-next';
 import { ref, onMounted, watch } from 'vue';
 import { RouterLink, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
@@ -183,6 +193,7 @@ import {
   createCollection,
   importCollectionFull,
   getStreak,
+  getLevels,
 } from '@/api'
 import IconButton from '@/components/icons/IconButton.vue'
 import { useAuth } from '@/composables/useAuth'
@@ -203,6 +214,7 @@ const importFileInput = ref(null)
 const isImporting = ref(false)
 const streakData = ref(null)
 const isLoadingStreak = ref(false)
+const studyLoadingId = ref(null)
 
 const newCollection = ref({
   name: '',
@@ -270,6 +282,25 @@ const formatDate = (date) => {
     month: 'short',
     day: 'numeric',
   })
+}
+
+const startStudy = async (collection) => {
+  if (studyLoadingId.value) return
+  studyLoadingId.value = collection.collection_id
+  try {
+    const response = await getLevels(collection.collection_id)
+    const hasLevels = response.data?.levels?.length > 0
+    if (hasLevels) {
+      router.push(`/collections/${collection.collection_id}/levels`)
+    } else {
+      router.push(`/collections/${collection.collection_id}/flashcards/study`)
+    }
+  } catch (err) {
+    console.error('Error loading levels:', err)
+    router.push(`/collections/${collection.collection_id}/flashcards/study`)
+  } finally {
+    studyLoadingId.value = null
+  }
 }
 
 const triggerImport = () => {
