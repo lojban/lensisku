@@ -3,6 +3,9 @@
 Download OGG sounds from La-Lojban/sutysisku-lojban-corpus-downloader (data/sance and
 default-data/sance recursively) and import into valsi_sounds. Run from inside Docker with
 DATABASE_URL set. Idempotent: re-run overwrites existing sounds (ON CONFLICT DO UPDATE).
+
+Uses the Git Trees API (recursive) to list all files without the Contents API's 1,000-item-
+per-directory limit. Tree API supports up to 100,000 entries per request.
 """
 from __future__ import annotations
 
@@ -18,39 +21,46 @@ except ImportError:
     print("psycopg2 required. Install with: apt-get install python3-psycopg2", file=sys.stderr)
     sys.exit(1)
 
-GITHUB_API = "https://api.github.com/repos/La-Lojban/sutysisku-lojban-corpus-downloader/contents"
+GITHUB_API = "https://api.github.com/repos/La-Lojban/sutysisku-lojban-corpus-downloader"
 RAW_BASE = "https://raw.githubusercontent.com/La-Lojban/sutysisku-lojban-corpus-downloader/main"
 
+SANCE_PREFIXES = ("data/sance/", "default-data/sance/")
 
-def list_files_recursive(prefix: str) -> list[tuple[str, str]]:
-    """List (path, download_url) for every file under prefix. prefix is e.g. 'data/sance'."""
+
+def list_ogg_files_via_trees_api() -> list[tuple[str, str]]:
+    """List (path, download_url) for every .ogg file under data/sance and default-data/sance
+    using the Git Trees API (recursive). Avoids the Contents API 1,000-item-per-dir limit."""
+    url = f"{GITHUB_API}/git/trees/main?recursive=1"
+    req = urllib.request.Request(url, headers={"Accept": "application/vnd.github.v3+json"})
+    try:
+        with urllib.request.urlopen(req, timeout=60) as resp:
+            data = resp.read().decode()
+    except Exception as e:
+        print(f"Error: failed to fetch tree {url}: {e}", file=sys.stderr)
+        return []
+    try:
+        payload = json.loads(data)
+    except Exception as e:
+        print(f"Error: invalid JSON from tree API: {e}", file=sys.stderr)
+        return []
+    tree = payload.get("tree")
+    if not isinstance(tree, list):
+        print("Error: tree API response missing 'tree' array", file=sys.stderr)
+        return []
+    if payload.get("truncated"):
+        print("Warning: Git tree was truncated (repo has >100k entries). Some OGG files may be missing.", file=sys.stderr)
     out: list[tuple[str, str]] = []
-    to_visit = [prefix]
-    while to_visit:
-        path = to_visit.pop()
-        url = f"{GITHUB_API}/{path}"
-        req = urllib.request.Request(url, headers={"Accept": "application/vnd.github.v3+json"})
-        try:
-            with urllib.request.urlopen(req, timeout=30) as resp:
-                data = resp.read().decode()
-        except Exception as e:
-            print(f"Warning: failed to list {url}: {e}", file=sys.stderr)
+    for item in tree:
+        if item.get("type") != "blob":
             continue
-        try:
-            items = json.loads(data)
-        except Exception as e:
-            print(f"Warning: invalid JSON from {url}: {e}", file=sys.stderr)
+        path = item.get("path") or ""
+        if not path.lower().endswith(".ogg"):
             continue
-        if not isinstance(items, list):
-            items = [items]
-        for item in items:
-            name = item.get("name") or ""
-            if item.get("type") == "dir":
-                to_visit.append(f"{path}/{name}".rstrip("/"))
-            elif item.get("type") == "file" and name.lower().endswith(".ogg"):
-                dl = item.get("download_url")
-                if dl:
-                    out.append((f"{path}/{name}", dl))
+        if not any(path.startswith(prefix) for prefix in SANCE_PREFIXES):
+            continue
+        # Prefer raw URL to avoid per-file API calls; same as previous behavior
+        download_url = f"{RAW_BASE}/{path}"
+        out.append((path, download_url))
     return out
 
 
@@ -69,10 +79,7 @@ def main() -> int:
         print("Set DATABASE_URL (e.g. postgres://user:pass@host/db)", file=sys.stderr)
         return 1
 
-    paths_to_fetch = []
-    for prefix in ("data/sance", "default-data/sance"):
-        paths_to_fetch.extend(list_files_recursive(prefix))
-
+    paths_to_fetch = list_ogg_files_via_trees_api()
     print(f"Found {len(paths_to_fetch)} OGG file(s). Downloading and importing...")
 
     conn = psycopg2.connect(database_url)
