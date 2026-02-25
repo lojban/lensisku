@@ -340,7 +340,6 @@ async fn fetch_keywords(
 pub async fn search_definitions(
     pool: &Pool,
     params: SearchDefinitionsParams,
-    redis_cache: &RedisCache,
 ) -> Result<DefinitionResponse, Box<dyn std::error::Error>> {
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
@@ -549,7 +548,7 @@ pub async fn search_definitions(
         .map(|row| row.get::<_, String>("valsiword"))
         .collect();
 
-    let sound_urls = check_sound_urls(&words, redis_cache).await;
+    let sound_urls = get_valsi_sound_urls_from_db(pool, &words).await?;
 
     // Process each definition
     for row in rows {
@@ -824,9 +823,8 @@ pub async fn fast_search_definitions(
     // Use the helper function to fetch keywords
     let (gloss_keywords_map, place_keywords_map) = fetch_keywords(&transaction, &def_ids).await?;
 
-    // Skip sound_urls for maximum speed (external API call is slow)
-    // Skip decomposition unless search term looks like a lujvo (contains multiple consonants)
-    let _sound_urls: HashMap<String, Option<String>> = HashMap::new(); // Skip for performance
+    let words: Vec<String> = rows.iter().map(|row| row.get::<_, String>("valsiword")).collect();
+    let sound_urls = get_valsi_sound_urls_from_db(pool, &words).await?;
 
     // Process each definition
     for row in rows {
@@ -858,7 +856,7 @@ pub async fn fast_search_definitions(
             can_edit: false,   // Not included in fast search
             created_at: row.get("created_at"),
             has_image: false, // Not checked in fast search for performance
-            sound_url: None,  // Skipped for performance in fast search
+            sound_url: sound_urls.get(&word).cloned().flatten(),
             embedding: None,
             metadata: None,
             rafsi: None,
@@ -1050,64 +1048,57 @@ async fn get_source_words(
     Ok(source_words)
 }
 
-pub async fn check_sound_urls(
+/// Returns sound (bytes, mime_type) for a valsi if stored in valsi_sounds. Public read, no auth.
+pub async fn get_valsi_sound(
+    pool: &Pool,
+    valsi_id: i32,
+) -> Result<Option<(Vec<u8>, String)>, Box<dyn std::error::Error>> {
+    let client = pool.get().await?;
+    let row = client
+        .query_opt(
+            "SELECT sound_data, mime_type FROM valsi_sounds WHERE valsi_id = $1",
+            &[&valsi_id],
+        )
+        .await?;
+    Ok(row.map(|r| (r.get("sound_data"), r.get("mime_type"))))
+}
+
+/// DB-only: returns map word -> Some("/api/jbovlaste/valsi/{word}/sound") for words that have a row in valsi_sounds. No external fetches.
+pub async fn get_valsi_sound_urls_from_db(
+    pool: &Pool,
     words: &[String],
-    redis_cache: &RedisCache,
-) -> HashMap<String, Option<String>> {
-    let unique_words: Vec<String> = words
+) -> Result<HashMap<String, Option<String>>, Box<dyn std::error::Error>> {
+    if words.is_empty() {
+        return Ok(HashMap::new());
+    }
+    let unique_lower: Vec<String> = words
         .iter()
+        .map(|w| w.to_lowercase())
         .collect::<HashSet<_>>()
         .into_iter()
-        .cloned()
         .collect();
-
-    let client = reqwest::Client::new();
-    let base_url = "https://raw.githubusercontent.com/La-Lojban/sutysisku-lojban-corpus-downloader/gh-pages/data/sance";
-    let semaphore = Arc::new(tokio::sync::Semaphore::new(10));
-    let mut results = HashMap::new();
-
-    let futures: Vec<_> = unique_words
-        .iter()
-        .map(|word| {
-            let url = format!("{}/{}.ogg", base_url, word);
-            let client = client.clone();
-            let semaphore = semaphore.clone();
-            let word = word.clone();
-            let cache_key = format!("sound_url:{}", word);
-
-            async move {
-                let exists = (redis_cache
-                    .get_or_set(
-                        &cache_key,
-                        || async {
-                            let _permit = semaphore.acquire().await.map_err(|e| {
-                                format!("Semaphore acquire failed for sound URL check: {}", e)
-                            })?;
-                            let resp = client.head(&url).send().await;
-                            Ok(resp.map(|r| r.status().is_success()).unwrap_or(false))
-                        },
-                        Some(std::time::Duration::from_secs(100 * 24 * 60 * 60)),
-                    )
-                    .await)
-                    .unwrap_or(false);
-
-                (
-                    word.clone(),
-                    if exists {
-                        Some(format!("{}/{}.ogg", base_url, word))
-                    } else {
-                        None
-                    },
-                )
-            }
-        })
-        .collect();
-
-    for result in futures::future::join_all(futures).await {
-        results.insert(result.0, result.1);
+    let client = pool.get().await?;
+    let rows = client
+        .query(
+            "SELECT DISTINCT v.word FROM valsi v
+             JOIN valsi_sounds vs ON vs.valsi_id = v.valsiid
+             WHERE LOWER(v.word) = ANY($1)",
+            &[&unique_lower],
+        )
+        .await?;
+    let has_sound: HashSet<String> = rows.iter().map(|r| r.get::<_, String>("word").to_lowercase()).collect();
+    let mut result = HashMap::new();
+    for word in words {
+        result.insert(
+            word.clone(),
+            if has_sound.contains(&word.to_lowercase()) {
+                Some(format!("/api/jbovlaste/valsi/{}/sound", word))
+            } else {
+                None
+            },
+        );
     }
-
-    results
+    Ok(result)
 }
 
 pub async fn get_entry_details(
@@ -1578,7 +1569,6 @@ pub async fn get_definition(
     pool: &Pool,
     definition_id: i32,
     user_id: Option<i32>,
-    redis_cache: &RedisCache,
 ) -> Result<Option<DefinitionDetail>, Box<dyn std::error::Error>> {
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
@@ -1692,12 +1682,12 @@ pub async fn get_definition(
         .collect();
 
     let word: String = row.get("valsiword");
-    let sound_urls = check_sound_urls(&[word.clone()], redis_cache).await;
+    let sound_urls = get_valsi_sound_urls_from_db(pool, &[word.clone()]).await?;
 
     let definition = DefinitionDetail {
         similarity: None,
         embedding: None,
-        sound_url: sound_urls.get(&word).and_then(|url| url.clone()),
+        sound_url: sound_urls.get(&word).cloned().flatten(),
         definitionid: row.get("definitionid"),
         valsiword: row.get("valsiword"),
         valsiid: row.get("valsiid"),
@@ -2624,7 +2614,6 @@ pub async fn get_definitions_by_entry(
     user_id: Option<i32>,
     preferred_langid: Option<i32>,
     preferred_username: Option<String>,
-    redis_cache: &RedisCache,
 ) -> Result<Vec<DefinitionDetail>, Box<dyn std::error::Error>> {
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
@@ -2771,11 +2760,11 @@ pub async fn get_definitions_by_entry(
         .await?;
 
     let words: Vec<String> = definitions.iter().map(|d| d.valsiword.clone()).collect();
-    let sound_urls = check_sound_urls(&words, redis_cache).await;
+    let sound_urls = get_valsi_sound_urls_from_db(pool, &words).await?;
 
     // Update definitions with the collected data
     for def in &mut definitions {
-        def.sound_url = sound_urls.get(&def.valsiword).cloned().flatten(); // Use flatten to fix type mismatch
+        def.sound_url = sound_urls.get(&def.valsiword).cloned().flatten();
                                                                            // Update comment count
         if let Some(row) = comment_counts
             .iter()

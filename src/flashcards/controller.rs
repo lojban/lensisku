@@ -1,7 +1,6 @@
 use crate::flashcards::dto::{QuizAnswerResultDto, QuizFlashcardQuestionDto, SubmitQuizAnswerDto};
 use std::collections::HashMap;
 
-use crate::middleware::cache::RedisCache;
 use actix_web::{delete, get, patch, post, put, web, HttpResponse, Responder};
 use deadpool_postgres::Pool;
 use serde_json::json;
@@ -177,9 +176,8 @@ pub async fn list_flashcards(
     pool: web::Data<Pool>,
     claims: Claims,
     query: web::Query<FlashcardListQuery>,
-    redis_cache: web::Data<RedisCache>, // Add redis_cache parameter
 ) -> impl Responder {
-    match service::list_flashcards(&pool, claims.sub, query.into_inner(), &redis_cache).await {
+    match service::list_flashcards(&pool, claims.sub, query.into_inner()).await {
         Ok(response) => HttpResponse::Ok().json(response),
         Err(e) => {
             HttpResponse::InternalServerError().body(format!("Failed to list flashcards: {}", e))
@@ -250,7 +248,6 @@ pub async fn get_due_cards(
     pool: web::Data<Pool>,
     claims: Claims,
     query: web::Query<FlashcardListQuery>,
-    redis_cache: web::Data<RedisCache>,
 ) -> impl Responder {
     let mut query_params = query.into_inner();
 
@@ -263,7 +260,7 @@ pub async fn get_due_cards(
         query_params.due = Some(true);
     }
 
-    match service::list_flashcards(&pool, claims.sub, query_params, &redis_cache).await {
+    match service::list_flashcards(&pool, claims.sub, query_params).await {
         Ok(response) => HttpResponse::Ok().json(response),
         Err(e) => HttpResponse::InternalServerError().body(format!("Failed to get cards: {}", e)),
     }

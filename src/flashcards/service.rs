@@ -1,5 +1,4 @@
-use crate::jbovlaste::service::check_sound_urls;
-use crate::middleware::cache::RedisCache;
+use crate::jbovlaste::service::get_valsi_sound_urls_from_db;
 use chrono::{DateTime, Duration, Utc};
 use deadpool_postgres::Pool;
 use deadpool_postgres::Transaction;
@@ -609,7 +608,6 @@ pub async fn list_flashcards(
     pool: &Pool,
     user_id: i32,
     query: FlashcardListQuery,
-    redis_cache: &RedisCache,
 ) -> Result<FlashcardListResponse, Box<dyn std::error::Error>> {
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
@@ -678,9 +676,11 @@ pub async fn list_flashcards(
         .into_iter()
         .collect();
 
-    // Fetch sound URLs in bulk for all items (valsi-backed and free-content via canonical_form)
+    // Fetch sound URLs from DB (valsi_sounds) for valsi-backed and free-content items
     let sound_urls_map = if !words_to_check.is_empty() {
-        check_sound_urls(&words_to_check, redis_cache).await
+        get_valsi_sound_urls_from_db(pool, &words_to_check)
+            .await
+            .unwrap_or_else(|_| HashMap::new())
     } else {
         HashMap::new()
     };
