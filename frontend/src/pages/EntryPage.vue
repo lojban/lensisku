@@ -23,6 +23,7 @@
             <AudioPlayer
               v-if="definitions.length > 0 && definitions[0].sound_url"
               :url="definitions[0].sound_url"
+              :valsi-id-or-word="route.params.id"
               class="flex-shrink-0"
             />
           </h1>

@@ -27,7 +27,7 @@
   import { useI18n } from 'vue-i18n';
 
   import { useError } from '@/composables/useError';
-  import { getItemSoundBlob } from '@/api';
+  import { getItemSoundBlob, getValsiSoundBlob } from '@/api';
 
   const { showError, clearError } = useError();
   const { t } = useI18n();
@@ -39,6 +39,8 @@
     /** When set with itemId, load sound via api (Bearer sent). Omit for external URLs. */
     collectionId: { type: Number, default: null },
     itemId: { type: Number, default: null },
+    /** When set, load valsi sound via api (Bearer sent). Use when url is /api/jbovlaste/valsi/{id}/sound. */
+    valsiIdOrWord: { type: String, default: null },
   })
 
   const isPlaying = ref(false)
@@ -104,8 +106,19 @@
     }
   }
 
+  /** True when url is our jbovlaste valsi sound endpoint (use getValsiSoundBlob). */
+  const isValsiSoundUrl = () =>
+    props.url.includes('/jbovlaste/valsi/') && props.url.endsWith('/sound')
+
+  /** True when url is our collection item sound endpoint (use getItemSoundBlob). */
+  const isCollectionItemSoundUrl = () =>
+    props.url.includes('/collections/') && props.url.includes('/items/') && props.url.endsWith('/sound')
+
   const getCacheKey = () => {
-    if (props.collectionId != null && props.itemId != null) {
+    // Prefer URL-based keys so valsi fallback and collection custom sound don't share cache
+    const valsiKey = props.valsiIdOrWord ?? (props.url.match(/\/jbovlaste\/valsi\/([^/]+)\/sound/)?.[1])
+    if (valsiKey) return `valsi:${valsiKey}`
+    if (props.collectionId != null && props.itemId != null && isCollectionItemSoundUrl()) {
       return `collection:${props.collectionId}:${props.itemId}`
     }
     return props.url
@@ -132,7 +145,21 @@
 
     try {
       let blob
-      if (props.collectionId != null && props.itemId != null) {
+      // Prefer URL type: valsi fallback vs collection item custom sound (both can have collectionId/itemId set)
+      if (props.valsiIdOrWord != null || isValsiSoundUrl()) {
+        const idOrWord = props.valsiIdOrWord ?? (() => {
+          const m = props.url.match(/\/jbovlaste\/valsi\/([^/]+)\/sound/)
+          return m ? decodeURIComponent(m[1]) : null
+        })()
+        if (idOrWord) {
+          const response = await getValsiSoundBlob(idOrWord)
+          blob = response.data
+        } else {
+          const response = await fetch(props.url)
+          if (!response.ok) throw new Error('Failed to load audio')
+          blob = await response.blob()
+        }
+      } else if (props.collectionId != null && props.itemId != null && isCollectionItemSoundUrl()) {
         const response = await getItemSoundBlob(props.collectionId, props.itemId)
         blob = response.data
       } else {

@@ -19,15 +19,15 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
     cfg.app_data(web::Data::from(broadcaster)).service(
         web::scope("jbovlaste")
             .service(controller::get_sitemap)
+            .service(controller::get_valsi_sound)
+            .service(controller::get_definitions_by_entry)
+            .service(controller::get_entry_details)
             .service(controller::search_definitions)
             .service(controller::semantic_search)
             .service(controller::get_definition)
             .service(controller::list_definitions)
             .service(controller::list_non_lojban_definitions)
             .service(controller::get_definition_image)
-            .service(controller::get_entry_details)
-            .service(controller::get_valsi_sound)
-            .service(controller::get_definitions_by_entry)
             .service(controller::get_recent_changes)
             .service(controller::list_valsi_types)
             .service(

@@ -177,6 +177,10 @@ export const fastSearchDefinitions = (params, signal) => {
 }
 export const getValsiDetails = (id) => api.get(`/jbovlaste/valsi/${id}`)
 export const getValsiDefinitions = (id) => api.get(`/jbovlaste/valsi/${id}/definitions`)
+
+/** Fetch valsi sound as blob (uses api so Bearer is sent if needed). */
+export const getValsiSoundBlob = (idOrWord) =>
+  api.get(`/jbovlaste/valsi/${encodeURIComponent(idOrWord)}/sound`, { responseType: 'blob' })
 export const validateMathJax = (text) => api.post('/language/validate_mathjax', { text })
 export const updateValsi = (id, valsiData) => api.put(`/jbovlaste/valsi/${id}`, valsiData)
 export const getDefinition = (id) => api.get(`/jbovlaste/definition/${id}`)

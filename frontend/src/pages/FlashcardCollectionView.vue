@@ -142,7 +142,7 @@
             <h3 class="text-lg font-medium text-gray-800">
               {{ card.flashcard.word ?? card.flashcard.free_content_front }}
             </h3>
-            <span v-if="card.flashcard.has_custom_sound && card.flashcard.sound_url" class="shrink-0" @click.stop>
+            <span v-if="card.flashcard.sound_url" class="shrink-0" @click.stop>
               <AudioPlayer :url="card.flashcard.sound_url"
                 :collection-id="card.flashcard.sound_url?.startsWith?.('/api/') ? card.flashcard.collection_id : undefined"
                 :item-id="card.flashcard.sound_url?.startsWith?.('/api/') ? card.flashcard.item_id : undefined"
