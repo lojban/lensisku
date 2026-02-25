@@ -1540,17 +1540,94 @@ async fn add_definition_in_transaction(
             .await?
             .get("word");
 
+        let lang_realname: Option<String> = transaction
+            .query_opt(
+                "SELECT realname FROM languages WHERE langid = $1",
+                &[&request.lang_id],
+            )
+            .await?
+            .map(|row| row.get("realname"));
+
         let url = format!("{}/valsi/{}", env::var("FRONTEND_URL")?, valsi_word,);
+
+        const TRUNCATE_DEFINITION: usize = 800;
+        const TRUNCATE_NOTES: usize = 400;
+        let def_display = if sanitized_definition.len() > TRUNCATE_DEFINITION {
+            format!("{}...", &sanitized_definition[..TRUNCATE_DEFINITION])
+        } else {
+            sanitized_definition.clone()
+        };
+        let notes_display = sanitized_notes.as_ref().map(|n| {
+            if n.len() > TRUNCATE_NOTES {
+                format!("{}...", &n[..TRUNCATE_NOTES])
+            } else {
+                n.clone()
+            }
+        });
+
+        let mut message_lines = vec![format!("New definition added for {}", valsi_word), String::new()];
+        message_lines.push(format!("Definition: {}", def_display));
+        if let Some(ref n) = notes_display {
+            message_lines.push(format!("Notes: {}", n));
+        }
+        if let Some(ref e) = sanitized_etymology {
+            if !e.is_empty() {
+                message_lines.push(format!("Etymology: {}", e));
+            }
+        }
+        if let Some(ref s) = sanitized_selmaho {
+            if !s.is_empty() {
+                message_lines.push(format!("Selmaho: {}", s));
+            }
+        }
+        if let Some(ref j) = sanitized_jargon {
+            if !j.is_empty() {
+                message_lines.push(format!("Jargon: {}", j));
+            }
+        }
+        if let Some(ref name) = lang_realname {
+            message_lines.push(format!("Language: {}", name));
+        }
+        if request.owner_only == Some(true) {
+            message_lines.push("Owner only: yes".to_string());
+        }
+        if let Some(ref gloss) = request.gloss_keywords {
+            if !gloss.is_empty() {
+                let gloss_str = gloss
+                    .iter()
+                    .map(|k| {
+                        k.meaning
+                            .as_ref()
+                            .map(|m| format!("{} ({})", k.word, m))
+                            .unwrap_or_else(|| k.word.clone())
+                    })
+                    .collect::<Vec<_>>()
+                    .join(", ");
+                message_lines.push(format!("Gloss keywords: {}", gloss_str));
+            }
+        }
+        if let Some(ref place) = request.place_keywords {
+            if !place.is_empty() {
+                let place_str = place
+                    .iter()
+                    .map(|k| {
+                        k.meaning
+                            .as_ref()
+                            .map(|m| format!("{} ({})", k.word, m))
+                            .unwrap_or_else(|| k.word.clone())
+                    })
+                    .collect::<Vec<_>>()
+                    .join(", ");
+                message_lines.push(format!("Place keywords: {}", place_str));
+            }
+        }
+
+        let message = message_lines.join("\n");
 
         transaction
             .execute(
                 "SELECT notify_valsi_subscribers($1, 'definition', $2, $3, $4)",
-                &[
-                    &valsi_id,
-                    &format!("New definition added for {}", valsi_word),
-                    &url,
-                    &claims.sub,
-                ],
+                &[&valsi_id, &message, &url, &claims.sub],
             )
             .await?;
     }
