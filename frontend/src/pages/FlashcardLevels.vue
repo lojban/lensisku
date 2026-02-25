@@ -1,7 +1,7 @@
 <template>
-  <div>
+  <div class="flex flex-col min-h-[calc(100vh-6rem)]">
     <!-- Header -->
-    <div class="mb-6">
+    <div class="mb-4 flex-shrink-0">
       <div class="flex items-center justify-between mb-4">
         <div class="flex items-center space-x-3">
           <RouterLink :to="`/collections/${props.collectionId}/flashcards`" class="btn-history">
@@ -13,7 +13,10 @@
         </div>
       </div>
 
-      <div class="flex flex-col sm:flex-row gap-2">
+      <div class="flex flex-col sm:flex-row gap-2 items-center sm:items-start">
+        <button type="button" class="btn-aqua-orange h-10 text-base" @click="startStudy">
+          {{ t('flashcardLevels.studyButton', 'Study') }}
+        </button>
         <IconButton v-if="isOwner" :label="t('flashcardLevels.createLevel')" button-classes="btn-aqua-emerald"
           @click="showCreateModal = true" />
       </div>
@@ -25,9 +28,9 @@
     </div>
 
     <!-- Levels Display -->
-    <div v-else class="grid gap-6">
+    <div v-else class="flex flex-col flex-1 min-h-0 gap-6">
       <!-- Empty State -->
-      <div v-if="levels.length === 0" class="text-center py-12 bg-gray-50 rounded-lg border">
+      <div v-if="levels.length === 0" class="text-center py-12 bg-gray-50 rounded-lg border flex-shrink-0">
         <p class="text-gray-600 mb-4">
           {{ t('flashcardLevels.noLevels') }}
         </p>
@@ -38,9 +41,9 @@
       </div>
 
       <!-- Flow Container -->
-      <div v-else class="h-[600px]">
+      <div v-else class="flex-1 min-h-0 flex flex-col">
         <VueFlow v-model="elements" :default-viewport="{ zoom: 1 }" :min-zoom="0.2" :max-zoom="4"
-          class="vue-flow-wrapper">
+          class="vue-flow-wrapper flex-1 min-h-0">
           <template #node-custom="nodeProps">
             <div
               class="level-card node-content"
@@ -394,7 +397,7 @@ import {
   Target,
 } from 'lucide-vue-next';
 import { ref, computed, onMounted, watch, nextTick } from 'vue';
-import { RouterLink } from 'vue-router';
+import { RouterLink, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import DeleteConfirmationModal from '@/components/DeleteConfirmation.vue';
 import ModalComponent from '@/components/ModalComponent.vue';
@@ -426,7 +429,12 @@ const props = defineProps({
 });
 
 const auth = useAuth();
+const router = useRouter();
 const { t, locale } = useI18n();
+
+const startStudy = () => {
+  router.push(`/collections/${props.collectionId}/flashcards/study`);
+};
 
 // State
 const collection = ref(null)
