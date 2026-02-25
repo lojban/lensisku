@@ -9,13 +9,16 @@ import {
 } from "../config/locales";
 export type { SupportedLocale } from "../config/locales";
 
+// Eager load HomePage so "/" and locale roots are always preloaded (no lazy chunk).
+import HomePage from "../pages/HomePage.vue";
+
 // Create base routes without locale prefix
 // The NotFound route MUST be the last one in this array.
 const baseRoutes: Array<RouteRecordRaw> = [
   {
     path: "",
     name: "Home",
-    component: () => import("../pages/HomePage.vue"),
+    component: HomePage,
     props: (route) => ({
       urlSearchQuery: route.query.q,
       urlSearchMode: route.query.mode || "dictionary",
