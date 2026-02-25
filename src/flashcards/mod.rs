@@ -25,6 +25,7 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
             .service(controller::add_cards)
             .service(controller::create_level)
             .service(controller::list_levels)
+            .service(controller::merge_progress)
             .service(controller::list_level_cards)
             .service(controller::remove_card_from_level)
             .service(controller::delete_level)

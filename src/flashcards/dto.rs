@@ -314,3 +314,25 @@ pub struct QuizFlashcardQuestionDto {
     pub question_text: String,
     pub answer_options: Vec<String>,
 }
+
+/// Single level progress item for merging anonymous progress into user account.
+#[derive(Debug, Deserialize, Serialize, ToSchema)]
+pub struct MergeProgressLevelItem {
+    pub level_id: i32,
+    pub cards_completed: i32,
+    pub correct_answers: i32,
+    pub total_answers: i32,
+}
+
+/// Request body for merging anonymous (localStorage) progress into the authenticated user.
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct MergeProgressRequest {
+    pub collection_id: i32,
+    pub level_progress: Vec<MergeProgressLevelItem>,
+}
+
+/// Response after merging progress.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct MergeProgressResponse {
+    pub merged_levels: i64,
+}

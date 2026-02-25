@@ -10,7 +10,8 @@ use super::{
         self, AddCardsRequest, CreateFlashcardRequest, CreateLevelRequest, DirectAnswerResponse,
         FillInAnswerRequest, FlashcardListResponse, FlashcardResponse, ImportFromCollectionRequest,
         ImportFromCollectionResponse, LevelCardListResponse, LevelCardResponse, LevelListResponse,
-        LevelResponse, ReviewRequest, ReviewResponse, StreakResponse, UpdateLevelRequest,
+        LevelResponse, MergeProgressRequest, MergeProgressResponse, ReviewRequest, ReviewResponse,
+        StreakResponse, UpdateLevelRequest,
     },
     models::*,
     service,
@@ -653,7 +654,45 @@ pub async fn list_levels(
         .await
     {
         Ok(levels) => HttpResponse::Ok().json(levels),
-        Err(e) => HttpResponse::InternalServerError().json(json!({ "error": e.to_string() })),
+        Err(e) => {
+            let msg = e.to_string();
+            if msg.to_lowercase().contains("access denied") {
+                HttpResponse::Forbidden().json(json!({ "error": msg }))
+            } else {
+                HttpResponse::InternalServerError().json(json!({ "error": msg }))
+            }
+        }
+    }
+}
+
+#[utoipa::path(
+    post,
+    path = "/flashcards/progress/merge",
+    tag = "flashcards",
+    request_body = MergeProgressRequest,
+    responses(
+        (status = 200, description = "Progress merged", body = MergeProgressResponse),
+        (status = 403, description = "Access denied to collection"),
+        (status = 500, description = "Internal server error")
+    ),
+    security(("bearer_auth" = []))
+)]
+#[post("/progress/merge")]
+pub async fn merge_progress(
+    pool: web::Data<Pool>,
+    claims: Claims,
+    req: web::Json<MergeProgressRequest>,
+) -> impl Responder {
+    match service::merge_anonymous_progress(&pool, claims.sub, &req).await {
+        Ok(response) => HttpResponse::Ok().json(response),
+        Err(e) => {
+            let msg = e.to_string();
+            if msg.to_lowercase().contains("access denied") {
+                HttpResponse::Forbidden().json(json!({ "error": msg }))
+            } else {
+                HttpResponse::InternalServerError().json(json!({ "error": msg }))
+            }
+        }
     }
 }
 
@@ -726,10 +765,16 @@ pub async fn list_level_cards(
     .await
     {
         Ok(response) => HttpResponse::Ok().json(response),
-        Err(e) => match e.to_string().as_str() {
-            "Level not found" => HttpResponse::NotFound().finish(),
-            _ => HttpResponse::InternalServerError().json(json!({ "error": e.to_string() })),
-        },
+        Err(e) => {
+            let msg = e.to_string();
+            if msg.to_lowercase().contains("access denied") {
+                HttpResponse::Forbidden().json(json!({ "error": msg }))
+            } else if msg == "Level not found" {
+                HttpResponse::NotFound().finish()
+            } else {
+                HttpResponse::InternalServerError().json(json!({ "error": msg }))
+            }
+        }
     }
 }
 
