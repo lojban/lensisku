@@ -286,7 +286,7 @@
   "userList": {
     "users": "Users",
     "roleManagement": "Role Management",
-    "searchPlaceholder": "Search by username or real name...",
+    "searchPlaceholder": "Search by name...",
     "loadingUsers": "Loading users...",
     "roleFilterLabel": "Role:",
     "allRoles": "All Roles",

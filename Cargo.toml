@@ -36,6 +36,13 @@ inherits = "release"
 lto = true
 codegen-units = 1
 
+# Faster release build for Docker/CI (less LTO and more codegen units)
+[profile.release-fast]
+inherits = "release"
+lto = false
+codegen-units = 16
+incremental = true
+
 [[bin]]
 name = "lensisku"
 path = "src/main.rs"

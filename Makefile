@@ -13,7 +13,7 @@ include .env
 export
 
 # Targets
-.PHONY: up down logs ps clean build help psql
+.PHONY: up down logs ps clean build build-prod help psql
 
 # Default target
 help:
@@ -24,7 +24,8 @@ help:
 	@echo "  make logs    - View logs from all containers"
 	@echo "  make ps      - List running containers"
 	@echo "  make clean   - Remove all containers and volumes"
-	@echo "  make build   - Rebuild the Docker images"
+	@echo "  make build       - Rebuild dev Docker images (db, redis)"
+	@echo "  make build-prod  - Build production app image (faster Rust: uses BuildKit cache)"
 	@echo "  make psql    - Enter PostgreSQL container and connect to the database"
 	@echo "  make redis   - Enter Redis container and connect to the storage"
 
@@ -54,7 +55,12 @@ clean:
 
 build:
 	@echo "$(CYAN)Rebuilding Docker images...$(NC)"
-	$(DC) -f $(DC_FILE) build --no-cache
+	DOCKER_BUILDKIT=1 $(DC) -f $(DC_FILE) build --no-cache
+
+# Production image (use BuildKit for faster Rust compile via cache mounts)
+build-prod:
+	@echo "$(CYAN)Building production Docker image...$(NC)"
+	DOCKER_BUILDKIT=1 docker build -t lenisku:latest .
 
 # Check for errors in the code
 check:
