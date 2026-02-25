@@ -11,10 +11,11 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
         web::scope("collections")
             .service(controller::list_public_collections)
             .service(controller::export_collection_full)
-            .service(controller::get_collection)
-            .service(controller::list_collection_items)
+            // More specific item routes first so they are not shadowed by /{id} or /{id}/items
             .service(controller::get_item_image)
             .service(controller::get_item_sound)
+            .service(controller::get_collection)
+            .service(controller::list_collection_items)
             .service(controller::search_collection_items)
             .service(
                 web::scope("")
