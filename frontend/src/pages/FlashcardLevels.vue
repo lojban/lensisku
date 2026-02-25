@@ -721,18 +721,26 @@ const getTreeLevel = (level) => {
 
 const { elements, setElements, fitView } = useVueFlow()
 
-// First unlocked level (by position) for scroll-into-view
-const getFirstUnlockedLevelId = (levelsData) => {
-  if (!levelsData?.length) return null
+// First unlocked level and next level (by position) for scroll-into-view — fit both into view
+const getFirstUnlockedAndNextLevelIds = (levelsData) => {
+  if (!levelsData?.length) return []
   const sorted = [...levelsData].sort((a, b) => a.position - b.position)
-  const first = sorted.find(
+  const firstIndex = sorted.findIndex(
     (l) => l.progress?.is_unlocked || l.progress?.is_completed
   )
-  return first ? first.level_id.toString() : null
+  if (firstIndex === -1) return []
+  const ids = [sorted[firstIndex].level_id.toString()]
+  if (firstIndex + 1 < sorted.length) {
+    ids.push(sorted[firstIndex + 1].level_id.toString())
+  }
+  return ids
 }
 
 // Inset so level cards never touch the flow area borders (hover scale/shadow have room)
 const FLOW_PADDING = 12
+
+// Vertical spacing between level cards (enough to avoid overlap with variable card height and hover lift)
+const CARD_VERTICAL_GAP = 380
 
 // Convert levels to Vue Flow elements (vertical layout: levels stacked top-to-bottom, depth as horizontal offset)
 const convertLevelsToElements = (levelsData) => {
@@ -740,7 +748,7 @@ const convertLevelsToElements = (levelsData) => {
   const nodes = sorted.map((level, index) => ({
     id: level.level_id.toString(),
     type: 'custom',
-    position: { x: getTreeLevel(level) * 220 + FLOW_PADDING, y: index * 220 + FLOW_PADDING },
+    position: { x: getTreeLevel(level) * 220 + FLOW_PADDING, y: index * CARD_VERTICAL_GAP + FLOW_PADDING },
     data: { ...level, levelIndex: index + 1 },
   }))
 
@@ -760,15 +768,15 @@ const convertLevelsToElements = (levelsData) => {
 // Only run initial scroll once so we never get a second fitView that zooms out to fit all
 let initialScrollScheduled = false
 
-// Scroll viewport to first unlocked level and zoom it into view (runs once after first load)
+// Scroll viewport to first unlocked level and next level, zoom both into view (runs once after first load)
 const scrollToFirstUnlocked = (levelsData) => {
-  const nodeId = getFirstUnlockedLevelId(levelsData)
-  if (!nodeId) return // never call fitView() for "all" — that would zoom out and override our zoom-to-node
+  const nodeIds = getFirstUnlockedAndNextLevelIds(levelsData)
+  if (!nodeIds.length) return // never call fitView() for "all" — that would zoom out and override our zoom-to-node
   if (initialScrollScheduled) return
   initialScrollScheduled = true
   nextTick(() => {
     setTimeout(() => {
-      fitView({ nodes: [nodeId], padding: 0.4, duration: 400 })
+      fitView({ nodes: nodeIds, padding: 0.1, duration: 400 })
     }, 150)
   })
 }

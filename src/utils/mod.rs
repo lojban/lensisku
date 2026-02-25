@@ -4,7 +4,7 @@ use base64::{engine::general_purpose::STANDARD as BASE64, Engine};
 use once_cell::sync::Lazy;
 use std::collections::HashSet;
 
-use crate::collections::models::ImageData;
+use crate::collections::models::{ImageData, SoundData};
 
 pub fn remove_html_tags(html: &str) -> String {
     static AMMONIA: Lazy<AmmoniaBuilder<'static>> = Lazy::new(|| {
@@ -30,6 +30,23 @@ pub fn validate_item_image(image: &ImageData) -> Result<(), String> {
 
     if decoded_size > 5 * 1024 * 1024 {
         return Err("Image size exceeds 5MB limit".to_string());
+    }
+
+    Ok(())
+}
+
+pub fn validate_item_audio(sound: &SoundData) -> Result<(), String> {
+    if !["audio/mpeg", "audio/ogg", "audio/webm", "audio/mp3"].contains(&sound.mime_type.as_str()) {
+        return Err("Invalid audio type. Supported types: MP3, OGG, WEBM (WAV is not supported).".to_string());
+    }
+
+    let decoded_size = BASE64
+        .decode(&sound.data)
+        .map_err(|_| "Invalid base64 data".to_string())?
+        .len();
+
+    if decoded_size > 5 * 1024 * 1024 {
+        return Err("Audio size exceeds 5MB limit".to_string());
     }
 
     Ok(())

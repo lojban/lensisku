@@ -432,6 +432,7 @@ pub async fn merge_collections(
 #[get("/{id}/items")]
 pub async fn list_collection_items(
     pool: web::Data<Pool>,
+    redis_cache: web::Data<crate::middleware::cache::RedisCache>,
     claims: Option<Claims>,
     id: web::Path<i32>,
     query: web::Query<ListCollectionItemsQuery>,
@@ -448,6 +449,7 @@ pub async fn list_collection_items(
         query.search.clone(),
         query.item_id.clone(),
         query.exclude_with_flashcards,
+        redis_cache.as_ref(),
     )
     .await
     {
@@ -555,8 +557,57 @@ pub async fn get_item_image(
 }
 
 #[utoipa::path(
+    get,
+    path = "/collections/{collection_id}/items/{item_id}/sound",
+    tag = "collections",
+    params(
+        ("collection_id" = i32, Path, description = "Collection ID"),
+        ("item_id" = i32, Path, description = "Item ID")
+    ),
+    responses(
+        (status = 200, description = "Sound data", content_type = "audio/*"),
+        (status = 404, description = "Sound not found"),
+        (status = 403, description = "Access denied"),
+        (status = 500, description = "Internal server error")
+    ),
+    security(
+        ("bearer_auth" = [])
+    )
+)]
+#[get("/{collection_id}/items/{item_id}/sound")]
+pub async fn get_item_sound(
+    pool: web::Data<Pool>,
+    path: web::Path<(i32, i32)>,
+    claims: Option<Claims>,
+) -> impl Responder {
+    let (_collection_id, item_id) = path.into_inner();
+
+    match service::get_item_sound(&pool, item_id, claims.map(|c| c.sub)).await {
+        Ok(Some((sound_data, mime_type))) => {
+            let cd = ContentDisposition {
+                disposition: DispositionType::Inline,
+                parameters: vec![],
+            };
+            HttpResponse::Ok()
+                .content_type(mime_type)
+                .insert_header(cd)
+                .body(sound_data)
+        }
+        Ok(None) => HttpResponse::NotFound().finish(),
+        Err(e) => {
+            let msg = e.to_string();
+            if msg.contains("Access denied") {
+                HttpResponse::Forbidden().finish()
+            } else {
+                HttpResponse::InternalServerError().body(format!("Error: {}", e))
+            }
+        }
+    }
+}
+
+#[utoipa::path(
     put,
-    path = "/collections/{collection_id}/items/{item_id}/images",
+    path = "/collections/{collection_id}/items/{item_id}/media",
     tag = "collections",
     params(
         ("collection_id" = i32, Path, description = "Collection ID"),
@@ -564,8 +615,8 @@ pub async fn get_item_image(
     ),
     request_body = UpdateItemRequest,
     responses(
-        (status = 200, description = "Images updated successfully"),
-        (status = 400, description = "Invalid request - image validation failed"),
+        (status = 200, description = "Media updated successfully"),
+        (status = 400, description = "Invalid request - validation failed"),
         (status = 401, description = "Unauthorized"),
         (status = 403, description = "Forbidden - User doesn't have access to collection"),
         (status = 404, description = "Collection or item not found"),
@@ -574,13 +625,13 @@ pub async fn get_item_image(
     security(
         ("bearer_auth" = [])
     ),
-    summary = "Update item images",
-    description = "Updates the front and/or back images for a collection item. Can add new images, \
-                  update existing ones, or remove them. Supports JPEG, PNG, GIF, and WebP formats \
-                  with a 5MB size limit per image."
+    summary = "Update item media",
+    description = "Updates the front/back images and/or custom sound for a collection item. \
+                  Supports image (JPEG, PNG, GIF, WebP) and audio (MP3, OGG, WEBM; WAV not supported) formats \
+                  with a 5MB size limit."
 )]
-#[put("/{collection_id}/items/{item_id}/images")]
-pub async fn update_item_images(
+#[put("/{collection_id}/items/{item_id}/media")]
+pub async fn update_item_media(
     pool: web::Data<Pool>,
     claims: Claims,
     path: web::Path<(i32, i32)>,
@@ -595,10 +646,10 @@ pub async fn update_item_images(
                 HttpResponse::NotFound().finish()
             } else if msg.contains("Access denied") {
                 HttpResponse::Forbidden().finish()
-            } else if msg.contains("Invalid image") {
+            } else if msg.contains("Invalid image") || msg.contains("Invalid audio") || msg.contains("exceeds 5MB") {
                 HttpResponse::BadRequest().body(msg)
             } else {
-                HttpResponse::InternalServerError().body(format!("Failed to update images: {}", e))
+                HttpResponse::InternalServerError().body(format!("Failed to update media: {}", e))
             }
         }
     }

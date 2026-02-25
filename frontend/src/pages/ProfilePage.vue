@@ -40,37 +40,42 @@
           {{ t('profile.balance') }}
         </RouterLink>
         -->
-        <RouterLink
-          v-if="isOwnProfile"
-          to="/change-password"
-          class="btn-aqua-orange"
-        >
-          <KeyRound class="h-4 w-4" />
-          {{ t('profile.changePassword') }}
-        </RouterLink>
-        <RouterLink
-          :to="`/user/${profileData.username}/activity?tab=definitions`"
-          class="btn-aqua-purple"
-        >
-          <Activity class="h-4 w-4" />
-          {{ t('profile.viewActivity') }}
-        </RouterLink>
-        <button
-          v-if="isOwnProfile && !isEditing"
-          class="btn-aqua-yellow"
-          @click="toggleEdit"
-        >
-          <Pencil class="h-4 w-4" />
-          {{ t('profile.editProfile') }}
-        </button>
-        <button
-          v-if="auth.state.isLoggedIn"
-          class="btn-cancel"
-          @click="auth.logout()"
-        >
-          <LogOut class="h-4 w-4" />
-          {{ t('nav.logout') }}
-        </button>
+        <!-- Aqua button group -->
+        <div class="flex">
+          <RouterLink
+            v-if="isOwnProfile"
+            to="/change-password"
+            class="btn-aqua-orange btn-aqua-group-item"
+          >
+            <KeyRound class="h-4 w-4" />
+            {{ t('profile.changePassword') }}
+          </RouterLink>
+          <button
+            v-if="isOwnProfile && !isEditing"
+            class="btn-aqua-yellow btn-aqua-group-item"
+            @click="toggleEdit"
+          >
+            <Pencil class="h-4 w-4" />
+            {{ t('profile.editProfile') }}
+          </button>
+          </div>
+          <div class="flex">
+          <RouterLink
+            :to="`/user/${profileData.username}/activity?tab=definitions`"
+            class="btn-aqua-purple btn-aqua-group-item"
+          >
+            <Activity class="h-4 w-4" />
+            {{ t('profile.viewActivity') }}
+          </RouterLink>
+          <button
+            v-if="auth.state.isLoggedIn"
+            class="btn-aqua btn-aqua-group-item"
+            @click="auth.logout()"
+          >
+            <LogOut class="h-4 w-4" />
+            {{ t('nav.logout') }}
+          </button>
+        </div>
 
         <!-- Role Assignment Section -->
         <div

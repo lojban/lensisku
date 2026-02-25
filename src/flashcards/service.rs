@@ -35,7 +35,8 @@ async fn get_flashcard(
                     d.definition, d.langid as definition_language_id,
                     v.word,
                     EXISTS(SELECT 1 FROM collection_item_images WHERE item_id = ci.item_id AND side = 'front') as has_front_image,
-                    EXISTS(SELECT 1 FROM collection_item_images WHERE item_id = ci.item_id AND side = 'back') as has_back_image
+                    EXISTS(SELECT 1 FROM collection_item_images WHERE item_id = ci.item_id AND side = 'back') as has_back_image,
+                    EXISTS(SELECT 1 FROM collection_item_sounds WHERE item_id = ci.item_id) as has_custom_sound
              FROM flashcards f
              JOIN collection_items ci ON f.item_id = ci.item_id
              LEFT JOIN definitions d ON ci.definition_id = d.definitionid
@@ -61,7 +62,16 @@ async fn get_flashcard(
         direction: row.get("direction"),
         position: row.get("position"),
         definition_language_id: row.get("definition_language_id"),
-        sound_url: None,
+        sound_url: if row.get::<_, bool>("has_custom_sound") {
+            Some(format!(
+                "/api/collections/{}/items/{}/sound",
+                row.get::<_, i32>("collection_id"),
+                row.get::<_, i32>("item_id")
+            ))
+        } else {
+            None
+        },
+        has_custom_sound: row.get("has_custom_sound"),
         canonical_form: row.get("canonical_form"),
         use_canonical_comparison: row.get("use_canonical_comparison"),
         created_at: row.get("created_at"),
@@ -180,9 +190,12 @@ pub async fn create_flashcard(
     let existing = transaction
         .query_opt(
             "SELECT f.id, f.created_at, ci.notes, f.direction,
-                    f.position, ci.definition_id,
+                    f.position, ci.definition_id, ci.item_id,
                     ci.free_content_front, ci.free_content_back, ci.canonical_form,
-                    v.word, d.definition
+                    v.word, d.definition,
+                    EXISTS(SELECT 1 FROM collection_item_images WHERE item_id = ci.item_id AND side = 'front') as has_front_image,
+                    EXISTS(SELECT 1 FROM collection_item_images WHERE item_id = ci.item_id AND side = 'back') as has_back_image,
+                    EXISTS(SELECT 1 FROM collection_item_sounds WHERE item_id = ci.item_id) as has_custom_sound
              FROM flashcards f
              JOIN collection_items ci ON f.item_id = ci.item_id
              LEFT JOIN definitions d ON ci.definition_id = d.definitionid
@@ -211,7 +224,16 @@ pub async fn create_flashcard(
             item_id,
             question_text: None,
             quiz_options: None,
-            sound_url: None,
+            sound_url: if row.get::<_, bool>("has_custom_sound") {
+                Some(format!(
+                    "/api/collections/{}/items/{}/sound",
+                    collection_id,
+                    item_id
+                ))
+            } else {
+                None
+            },
+            has_custom_sound: row.get("has_custom_sound"),
             canonical_form: row.get("canonical_form"),
             use_canonical_comparison: row.get("use_canonical_comparison"),
         };
@@ -614,6 +636,7 @@ pub async fn list_flashcards(
                v.word, d.definition,
                EXISTS(SELECT 1 FROM collection_item_images WHERE item_id = ci.item_id AND side = 'front') as has_front_image,
                EXISTS(SELECT 1 FROM collection_item_images WHERE item_id = ci.item_id AND side = 'back') as has_back_image,
+               EXISTS(SELECT 1 FROM collection_item_sounds WHERE item_id = ci.item_id) as has_custom_sound,
                rh.reviews,
                EXTRACT(EPOCH FROM (CURRENT_TIMESTAMP - p.last_reviewed_at))/86400 as days_since_review
         FROM flashcards f
@@ -642,19 +665,24 @@ pub async fn list_flashcards(
     )
     .await?;
 
-    // Collect unique words to fetch sound URLs
+    // Collect unique strings for sound URL lookup: valsi word when linked, otherwise free_content_front.
     let words_to_check: Vec<String> = rows
         .iter()
-        .filter_map(|row| row.get::<_, Option<String>>("word"))
-        .collect::<std::collections::HashSet<_>>() // Collect into HashSet to get unique words
+        .filter_map(|row| {
+            let word: Option<String> = row.get("word");
+            let free_content_front: Option<String> = row.get("free_content_front");
+            word.or(free_content_front)
+        })
+        .filter(|w| !w.trim().is_empty())
+        .collect::<std::collections::HashSet<_>>()
         .into_iter()
-        .collect(); // Convert back to Vec
+        .collect();
 
-    // Fetch sound URLs in bulk
+    // Fetch sound URLs in bulk for all items (valsi-backed and free-content via canonical_form)
     let sound_urls_map = if !words_to_check.is_empty() {
         check_sound_urls(&words_to_check, redis_cache).await
     } else {
-        HashMap::new() // Handle case with no words
+        HashMap::new()
     };
 
     let mut all_flashcards_with_retrievability = Vec::new();
@@ -797,9 +825,9 @@ pub async fn list_flashcards(
             // For non-due listing, combine progresses into single card
             if !processed_ids.contains(&flashcard_id) {
                 let word: Option<String> = row.get("word");
-                let sound_url = word
-                    .as_ref()
-                    .and_then(|w| sound_urls_map.get(w).cloned().flatten());
+                let free_content_front: Option<String> = row.get("free_content_front");
+                let sound_key = word.as_ref().or(free_content_front.as_ref());
+                let sound_url = sound_key.and_then(|k| sound_urls_map.get(k).cloned().flatten());
 
                 let mut card_response = FlashcardResponse {
                     flashcard: Flashcard {
@@ -818,7 +846,16 @@ pub async fn list_flashcards(
                         has_front_image: row.get("has_front_image"),
                         has_back_image: row.get("has_back_image"),
                         item_id: row.get("item_id"),
-                        sound_url: sound_url.clone(),
+                        sound_url: if row.get::<_, bool>("has_custom_sound") {
+                            Some(format!(
+                                "/api/collections/{}/items/{}/sound",
+                                query.collection_id,
+                                row.get::<_, i32>("item_id")
+                            ))
+                        } else {
+                            sound_url
+                        },
+                        has_custom_sound: row.get("has_custom_sound"),
                         canonical_form: row.get("canonical_form"),
                         use_canonical_comparison: row.get("use_canonical_comparison"),
                         question_text: question_text.clone(), // Use cloned quiz data
@@ -857,9 +894,9 @@ pub async fn list_flashcards(
         } else {
             // For due cards or non-both direction, create separate response
             let word: Option<String> = row.get("word");
-            let sound_url = word
-                .as_ref()
-                .and_then(|w| sound_urls_map.get(w).cloned().flatten());
+            let free_content_front: Option<String> = row.get("free_content_front");
+            let sound_key = word.as_ref().or(free_content_front.as_ref());
+            let sound_url = sound_key.and_then(|k| sound_urls_map.get(k).cloned().flatten());
 
             let card_response = FlashcardResponse {
                 flashcard: Flashcard {
@@ -878,9 +915,18 @@ pub async fn list_flashcards(
                     created_at: row.get("created_at"),
                     definition_language_id: row.get("definition_language_id"),
                     item_id: row.get("item_id"),
-                    sound_url, // Add sound_url
-                    question_text,
-                    quiz_options,
+                    sound_url: if row.get::<_, bool>("has_custom_sound") {
+                        Some(format!(
+                            "/api/collections/{}/items/{}/sound",
+                            query.collection_id,
+                            row.get::<_, i32>("item_id")
+                        ))
+                    } else {
+                        sound_url
+                    },
+                    has_custom_sound: row.get("has_custom_sound"),
+                    question_text: question_text.clone(),
+                    quiz_options: quiz_options.clone(),
                     canonical_form: row.get("canonical_form"),
                     use_canonical_comparison: row.get("use_canonical_comparison"),
                 },
@@ -2916,11 +2962,12 @@ async fn get_level_cards(
 
     let rows = transaction
         .query(
-            "SELECT f.id, ci.item_id, ci.definition_id, fli.position,
+            "SELECT f.id, f.collection_id, ci.item_id, ci.definition_id, fli.position,
                 v.word, v.valsiid, d.definition, d.definitionid, ci.notes as ci_notes,
                 ci.free_content_front, ci.free_content_back, ci.canonical_form,
                 EXISTS(SELECT 1 FROM collection_item_images cii WHERE cii.item_id = ci.item_id AND cii.side = 'front') as has_front_image,
                 EXISTS(SELECT 1 FROM collection_item_images cii WHERE cii.item_id = ci.item_id AND cii.side = 'back') as has_back_image,
+                EXISTS(SELECT 1 FROM collection_item_sounds WHERE item_id = ci.item_id) as has_sound,
                 COUNT(CASE WHEN frh.rating >= 3 THEN 1 END) as correct_answers,
                 COUNT(frh.rating) as total_attempts,
                 MAX(frh.review_time) as last_reviewed_at
@@ -2933,7 +2980,7 @@ async fn get_level_cards(
              ON frh.flashcard_id = f.id
              AND frh.user_id = $2
          WHERE fli.level_id = $1
-         GROUP BY f.id, ci.item_id, fli.position, v.word, d.definition, v.valsiid, d.definitionid,
+         GROUP BY f.id, f.collection_id, ci.item_id, fli.position, v.word, d.definition, v.valsiid, d.definitionid,
                   ci.free_content_front, ci.free_content_back, ci.canonical_form
          ORDER BY fli.position",
             &[&level_id, &user_id],
@@ -2958,6 +3005,18 @@ async fn get_level_cards(
             None
         };
 
+        let has_sound: bool = row.get("has_sound");
+        let collection_id: i32 = row.get("collection_id");
+        let item_id: i32 = row.get("item_id");
+        let sound_url = if has_sound {
+            Some(format!(
+                "/api/collections/{}/items/{}/sound",
+                collection_id, item_id
+            ))
+        } else {
+            None
+        };
+
         cards.push(LevelCardResponse {
             flashcard_id: row.get("id"),
             position: row.get("position"),
@@ -2967,7 +3026,10 @@ async fn get_level_cards(
             free_content_back: row.get("free_content_back"),
             has_front_image: row.get("has_front_image"),
             has_back_image: row.get("has_back_image"),
-            item_id: row.get("item_id"),
+            has_sound,
+            sound_url,
+            collection_id: row.get("collection_id"),
+            item_id,
             definition_id: row.get("definitionid"),
             valsi_id: row.get("valsiid"),
             ci_notes: row.get("ci_notes"),
@@ -3083,11 +3145,12 @@ pub async fn get_level_cards_paginated(
 
     let rows = client
         .query(
-            "SELECT f.id, ci.item_id, ci.definition_id, fli.position,
+            "SELECT f.id, f.collection_id, ci.item_id, ci.definition_id, fli.position,
                 v.word, v.valsiid, d.definition, d.definitionid, ci.notes as ci_notes,
                 ci.free_content_front, ci.free_content_back, ci.canonical_form,
                 EXISTS(SELECT 1 FROM collection_item_images cii WHERE cii.item_id = ci.item_id AND cii.side = 'front') as has_front_image,
                 EXISTS(SELECT 1 FROM collection_item_images cii WHERE cii.item_id = ci.item_id AND cii.side = 'back') as has_back_image,
+                EXISTS(SELECT 1 FROM collection_item_sounds WHERE item_id = ci.item_id) as has_sound,
                 COUNT(CASE WHEN frh.rating >= 3 THEN 1 END) as correct_answers,
                 COUNT(frh.rating) as total_attempts,
                 MAX(frh.review_time) as last_reviewed_at
@@ -3100,7 +3163,7 @@ pub async fn get_level_cards_paginated(
                 ON frh.flashcard_id = f.id
                 AND frh.user_id = $1
             WHERE fli.level_id = $2
-            GROUP BY f.id, ci.item_id, fli.position, v.word, d.definition, v.valsiid, d.definitionid,
+            GROUP BY f.id, f.collection_id, ci.item_id, fli.position, v.word, d.definition, v.valsiid, d.definitionid,
                     ci.free_content_front, ci.free_content_back, ci.canonical_form
             ORDER BY fli.position
             LIMIT $3 OFFSET $4",
@@ -3129,6 +3192,18 @@ pub async fn get_level_cards_paginated(
                 None
             };
 
+            let has_sound: bool = row.get("has_sound");
+            let collection_id: i32 = row.get("collection_id");
+            let item_id: i32 = row.get("item_id");
+            let sound_url = if has_sound {
+                Some(format!(
+                    "/api/collections/{}/items/{}/sound",
+                    collection_id, item_id
+                ))
+            } else {
+                None
+            };
+
             LevelCardResponse {
                 flashcard_id: row.get("id"),
                 position: row.get("position"),
@@ -3140,7 +3215,10 @@ pub async fn get_level_cards_paginated(
                 free_content_back: row.get("free_content_back"),
                 has_front_image: row.get("has_front_image"),
                 has_back_image: row.get("has_back_image"),
-                item_id: row.get("item_id"),
+                has_sound,
+                sound_url,
+                collection_id: row.get("collection_id"),
+                item_id,
                 ci_notes: row.get("ci_notes"),
                 canonical_form: row.get("canonical_form"),
                 progress,

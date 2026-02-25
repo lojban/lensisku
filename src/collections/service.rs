@@ -1,13 +1,16 @@
 use super::dto::SkippedItemInfo;
 use super::dto::*;
+use crate::jbovlaste::service::check_sound_urls;
+use crate::middleware::cache::RedisCache;
 use crate::utils::remove_html_tags;
 use crate::{
     auth_utils::verify_collection_ownership, export::models::CollectionExportItem,
-    flashcards::models::FlashcardDirection, utils::validate_item_image, AppError, AppResult,
+    flashcards::models::FlashcardDirection, utils::validate_item_audio, utils::validate_item_image, AppError, AppResult,
 };
 use base64::{engine::general_purpose::STANDARD as BASE64, Engine};
 use chrono::{DateTime, Utc};
 use deadpool_postgres::{Pool, Transaction};
+use std::collections::HashSet;
 
 pub async fn create_collection(
     pool: &Pool,
@@ -1231,9 +1234,6 @@ pub async fn upsert_item(
         .try_get(0)
         .map_err(|e| AppError::Database(e.to_string()))?;
 
-    // Calculate new position
-    let position = req.position.unwrap_or(max_position + 1);
-
     let sanitized_notes = req.notes.as_ref().map(|n| sanitize_html(n));
     let sanitized_front = req.free_content_front.as_ref().map(|f| sanitize_html(f));
     let sanitized_back = req.free_content_back.as_ref().map(|b| sanitize_html(b));
@@ -1262,6 +1262,11 @@ pub async fn upsert_item(
     } else {
         None
     };
+
+    // Use explicit position, or when updating existing item keep its current position; otherwise append
+    let position = req.position.or_else(|| {
+        existing_item.as_ref().map(|row| row.get::<_, i32>("position"))
+    }).unwrap_or(max_position + 1);
 
     // Validate item_id exists if provided
     if req.item_id.is_some() && existing_item.is_none() {
@@ -1411,6 +1416,31 @@ pub async fn upsert_item(
                    image_data = EXCLUDED.image_data,
                    mime_type = EXCLUDED.mime_type",
                 &[&item_id, &image_data, &image.mime_type],
+            )
+            .await
+            .map_err(|e| AppError::Database(e.to_string()))?;
+    }
+
+    // Handle sound: overwrite (delete then insert) or remove
+    if req.remove_sound.unwrap_or(false) || req.sound.is_some() {
+        transaction
+            .execute(
+                "DELETE FROM collection_item_sounds WHERE item_id = $1",
+                &[&item_id],
+            )
+            .await
+            .map_err(|e| AppError::Database(e.to_string()))?;
+    }
+    if let Some(sound) = &req.sound {
+        validate_item_audio(sound).map_err(|e| AppError::BadRequest(e.to_string()))?;
+        let sound_data = BASE64
+            .decode(&sound.data)
+            .map_err(|e| AppError::BadRequest(format!("Invalid sound base64: {}", e)))?;
+        transaction
+            .execute(
+                "INSERT INTO collection_item_sounds (item_id, sound_data, mime_type)
+                 VALUES ($1, $2, $3)",
+                &[&item_id, &sound_data, &sound.mime_type],
             )
             .await
             .map_err(|e| AppError::Database(e.to_string()))?;
@@ -1647,6 +1677,16 @@ pub async fn upsert_item(
         };
     }
 
+    // Resolve has_sound from DB after any sound updates
+    let has_sound: bool = transaction
+        .query_one(
+            "SELECT EXISTS(SELECT 1 FROM collection_item_sounds WHERE item_id = $1)",
+            &[&item_id],
+        )
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?
+        .get(0);
+
     // Get item details
     let response = if let Some(def_id) = req.definition_id {
         // Get definition details
@@ -1684,6 +1724,15 @@ pub async fn upsert_item(
             added_at,
             has_front_image: req.front_image.is_some(),
             has_back_image: req.back_image.is_some(),
+            has_sound,
+            sound_url: if has_sound {
+                Some(format!(
+                    "/api/collections/{}/items/{}/sound",
+                    collection_id, item_id
+                ))
+            } else {
+                None
+            },
             canonical_form: canonical_form,
             flashcard: None,
         }
@@ -1711,6 +1760,15 @@ pub async fn upsert_item(
             added_at,
             has_front_image: req.front_image.is_some(),
             has_back_image: req.back_image.is_some(),
+            has_sound,
+            sound_url: if has_sound {
+                Some(format!(
+                    "/api/collections/{}/items/{}/sound",
+                    collection_id, item_id
+                ))
+            } else {
+                None
+            },
             canonical_form: canonical_form,
             flashcard: None,
         }
@@ -2156,6 +2214,7 @@ pub async fn list_collection_items(
     search: Option<String>,
     item_id: Option<i32>,
     exclude_with_flashcards: Option<bool>,
+    redis_cache: &RedisCache,
 ) -> AppResult<CollectionItemListResponse> {
     let mut client = pool
         .get()
@@ -2197,6 +2256,8 @@ pub async fn list_collection_items(
                        WHERE cii.item_id = ci.item_id AND cii.side = 'front') as has_front_image,
                 EXISTS(SELECT 1 FROM collection_item_images cii 
                        WHERE cii.item_id = ci.item_id AND cii.side = 'back') as has_back_image,
+                EXISTS(SELECT 1 FROM collection_item_sounds cis 
+                       WHERE cis.item_id = ci.item_id) as has_sound,
                 f.id as flashcard_id, f.direction::text as flashcard_direction, f.created_at as flashcard_created_at
          FROM collection_items ci
          LEFT JOIN definitions d ON ci.definition_id = d.definitionid
@@ -2253,44 +2314,84 @@ pub async fn list_collection_items(
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
 
-    // Map results
-    let items = rows
+    // Map results: set sound_url to custom when has_sound, else None (fallback filled below)
+    let mut items: Vec<CollectionItemResponse> = rows
         .iter()
-        .map(|row| CollectionItemResponse {
-            lang_id: row.get("lang_id"),
-            item_id: row.get("item_id"),
-            definition_id: row.get("definition_id"),
-            valsi_id: row.get("valsiid"),
-            word: row.get("word"),
-            username: row.get("username"),
-            definition: row.get("definition"),
-            notes: row.get("notes"),
-            ci_notes: row.get("ci_notes"),
-            position: row.get("position"),
-            auto_progress: row.get("auto_progress"),
-            added_at: row.get("added_at"),
-            free_content_front: row.get("free_content_front"),
-            free_content_back: row.get("free_content_back"),
-            has_front_image: exists_front_image(row),
-            language_id: row.get("langid"),
-            owner_user_id: row.get("owner_user_id"),
-            license: row.get("license"),
-            script: row.get("script"),
-            is_original: row.get("is_original"),
-            has_back_image: exists_back_image(row),
-            canonical_form: row.get("canonical_form"),
-            flashcard: if let Some(flashcard_id) = row.get::<_, Option<i32>>("flashcard_id") {
-                Some(FlashcardResponse {
-                    id: flashcard_id,
-                    direction: row.get("flashcard_direction"),
-                    created_at: row.get("flashcard_created_at"),
-                    canonical_form: row.get("canonical_form"),
-                })
+        .map(|row| {
+            let has_sound: bool = row.get("has_sound");
+            let item_id: i32 = row.get("item_id");
+            let sound_url = if has_sound {
+                Some(format!(
+                    "/api/collections/{}/items/{}/sound",
+                    collection_id, item_id
+                ))
             } else {
                 None
-            },
+            };
+            CollectionItemResponse {
+                lang_id: row.get("lang_id"),
+                item_id,
+                definition_id: row.get("definition_id"),
+                valsi_id: row.get("valsiid"),
+                word: row.get("word"),
+                username: row.get("username"),
+                definition: row.get("definition"),
+                notes: row.get("notes"),
+                ci_notes: row.get("ci_notes"),
+                position: row.get("position"),
+                auto_progress: row.get("auto_progress"),
+                added_at: row.get("added_at"),
+                free_content_front: row.get("free_content_front"),
+                free_content_back: row.get("free_content_back"),
+                has_front_image: exists_front_image(row),
+                language_id: row.get("langid"),
+                owner_user_id: row.get("owner_user_id"),
+                license: row.get("license"),
+                script: row.get("script"),
+                is_original: row.get("is_original"),
+                has_back_image: exists_back_image(row),
+                has_sound,
+                sound_url,
+                canonical_form: row.get("canonical_form"),
+                flashcard: if let Some(flashcard_id) = row.get::<_, Option<i32>>("flashcard_id") {
+                    Some(FlashcardResponse {
+                        id: flashcard_id,
+                        direction: row.get("flashcard_direction"),
+                        created_at: row.get("flashcard_created_at"),
+                        canonical_form: row.get("canonical_form"),
+                    })
+                } else {
+                    None
+                },
+            }
         })
         .collect();
+
+    // Fallback sound_url from check_sound_urls for items without custom sound
+    let words_to_check: Vec<String> = rows
+        .iter()
+        .filter(|r| !r.get::<_, bool>("has_sound"))
+        .filter_map(|r| {
+            let w: Option<String> = r.get("word");
+            let f: Option<String> = r.get("free_content_front");
+            w.or(f).filter(|s| !s.trim().is_empty())
+        })
+        .collect::<HashSet<_>>()
+        .into_iter()
+        .collect();
+    let sound_urls_map = if words_to_check.is_empty() {
+        std::collections::HashMap::new()
+    } else {
+        check_sound_urls(&words_to_check, redis_cache).await
+    };
+    for (item, row) in items.iter_mut().zip(rows.iter()) {
+        if !item.has_sound {
+            let key: Option<String> = row
+                .get::<_, Option<String>>("word")
+                .or(row.get("free_content_front"));
+            item.sound_url = key.and_then(|k| sound_urls_map.get(&k).cloned().flatten());
+        }
+    }
 
     // Build and execute count query
     let mut count_query = String::from(
@@ -2420,6 +2521,15 @@ pub async fn update_item_notes(
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
 
+    let has_sound: bool = transaction
+        .query_one(
+            "SELECT EXISTS(SELECT 1 FROM collection_item_sounds WHERE item_id = $1)",
+            &[&item_id],
+        )
+        .await
+        .map(|r| r.get(0))
+        .unwrap_or(false);
+
     transaction
         .commit()
         .await
@@ -2447,6 +2557,15 @@ pub async fn update_item_notes(
         script: item.get("script"),
         is_original: item.get("is_original"),
         has_back_image: item.get("has_back_image"),
+        has_sound,
+        sound_url: if has_sound {
+            Some(format!(
+                "/api/collections/{}/items/{}/sound",
+                collection_id, item_id
+            ))
+        } else {
+            None
+        },
         canonical_form: item.get("canonical_form"),
         flashcard: None,
     })
@@ -2493,6 +2612,48 @@ pub async fn get_item_image(
         .map_err(|e| AppError::Database(e.to_string()))?;
 
     Ok(result.map(|row| (row.get("image_data"), row.get("mime_type"))))
+}
+
+pub async fn get_item_sound(
+    pool: &Pool,
+    item_id: i32,
+    user_id: Option<i32>,
+) -> AppResult<Option<(Vec<u8>, String)>> {
+    let client = pool
+        .get()
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+    // Check access rights
+    if let Some(uid) = user_id {
+        let owner_id: i32 = client
+            .query_one(
+                "SELECT c.user_id FROM collections c 
+                 JOIN collection_items ci ON c.collection_id = ci.collection_id 
+                 WHERE ci.item_id = $1",
+                &[&item_id],
+            )
+            .await
+            .map_err(|e| AppError::Database(e.to_string()))?
+            .try_get(0)
+            .map_err(|e| AppError::Database(e.to_string()))?;
+
+        if owner_id != uid {
+            return Err(AppError::Unauthorized("Access denied".to_string()));
+        }
+    }
+
+    let result = client
+        .query_opt(
+            "SELECT sound_data, mime_type 
+             FROM collection_item_sounds 
+             WHERE item_id = $1",
+            &[&item_id],
+        )
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+    Ok(result.map(|row| (row.get("sound_data"), row.get("mime_type"))))
 }
 
 pub async fn update_item_images(
@@ -2576,6 +2737,32 @@ pub async fn update_item_images(
             .map_err(|e| AppError::Database(e.to_string()))?;
     }
 
+    // Handle sound
+    if req.remove_sound.unwrap_or(false) || req.sound.is_some() {
+        transaction
+            .execute(
+                "DELETE FROM collection_item_sounds WHERE item_id = $1",
+                &[&item_id],
+            )
+            .await
+            .map_err(|e| AppError::Database(e.to_string()))?;
+    }
+
+    if let Some(sound) = &req.sound {
+        validate_item_audio(sound).map_err(|e| AppError::BadRequest(e.to_string()))?;
+        let sound_data = BASE64
+            .decode(&sound.data)
+            .map_err(|e| AppError::BadRequest(format!("Invalid sound base64: {}", e)))?;
+        transaction
+            .execute(
+                "INSERT INTO collection_item_sounds (item_id, sound_data, mime_type)
+             VALUES ($1, $2, $3)",
+                &[&item_id, &sound_data, &sound.mime_type],
+            )
+            .await
+            .map_err(|e| AppError::Database(e.to_string()))?;
+    }
+
     transaction
         .commit()
         .await
@@ -2636,7 +2823,9 @@ pub async fn search_items(
                EXISTS(SELECT 1 FROM collection_item_images cii 
                       WHERE cii.item_id = ci.item_id AND cii.side = 'front') as has_front_image,
                EXISTS(SELECT 1 FROM collection_item_images cii 
-                      WHERE cii.item_id = ci.item_id AND cii.side = 'back') as has_back_image
+                      WHERE cii.item_id = ci.item_id AND cii.side = 'back') as has_back_image,
+               EXISTS(SELECT 1 FROM collection_item_sounds cis 
+                      WHERE cis.item_id = ci.item_id) as has_sound
         FROM collection_items ci
         JOIN accessible_collections ac ON ci.collection_id = ac.collection_id
         JOIN collections c ON ci.collection_id = c.collection_id
@@ -2659,30 +2848,45 @@ pub async fn search_items(
 
     let items = rows
         .iter()
-        .map(|row| CollectionItemResponse {
-            item_id: row.get("item_id"),
-            definition_id: row.get("definition_id"),
-            word: row.get("word"),
-            username: row.get("username"),
-            valsi_id: row.get("valsiid"),
-            definition: row.get("definition"),
-            notes: row.get("notes"),
-            ci_notes: row.get("ci_notes"),
-            position: row.get("position"),
-            auto_progress: row.get("auto_progress"),
-            added_at: row.get("added_at"),
-            lang_id: row.get("lang_id"),
-            free_content_front: row.get("free_content_front"),
-            free_content_back: row.get("free_content_back"),
-            has_front_image: row.get("has_front_image"),
-            language_id: row.get("langid"),
-            owner_user_id: row.get("owner_user_id"),
-            license: row.get("license"),
-            script: row.get("script"),
-            is_original: row.get("is_original"),
-            has_back_image: row.get("has_back_image"),
-            canonical_form: row.get("canonical_form"),
-            flashcard: None,
+        .map(|row| {
+            let has_sound: bool = row.get("has_sound");
+            let item_id: i32 = row.get("item_id");
+            let cid: i32 = row.get("collection_id");
+            let sound_url = if has_sound {
+                Some(format!(
+                    "/api/collections/{}/items/{}/sound",
+                    cid, item_id
+                ))
+            } else {
+                None
+            };
+            CollectionItemResponse {
+                item_id,
+                definition_id: row.get("definition_id"),
+                word: row.get("word"),
+                username: row.get("username"),
+                valsi_id: row.get("valsiid"),
+                definition: row.get("definition"),
+                notes: row.get("notes"),
+                ci_notes: row.get("ci_notes"),
+                position: row.get("position"),
+                auto_progress: row.get("auto_progress"),
+                added_at: row.get("added_at"),
+                lang_id: row.get("lang_id"),
+                free_content_front: row.get("free_content_front"),
+                free_content_back: row.get("free_content_back"),
+                has_front_image: row.get("has_front_image"),
+                language_id: row.get("langid"),
+                owner_user_id: row.get("owner_user_id"),
+                license: row.get("license"),
+                script: row.get("script"),
+                is_original: row.get("is_original"),
+                has_back_image: row.get("has_back_image"),
+                has_sound,
+                sound_url,
+                canonical_form: row.get("canonical_form"),
+                flashcard: None,
+            }
         })
         .collect();
 

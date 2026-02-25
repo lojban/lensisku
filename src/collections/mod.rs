@@ -14,6 +14,7 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
             .service(controller::get_collection)
             .service(controller::list_collection_items)
             .service(controller::get_item_image)
+            .service(controller::get_item_sound)
             .service(controller::search_collection_items)
             .service(
                 web::scope("")
@@ -28,7 +29,7 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
                     .service(controller::remove_item)
                     .service(controller::clone_collection)
                     .service(controller::merge_collections)
-                    .service(controller::update_item_images)
+                    .service(controller::update_item_media)
                     .service(controller::import_json)
                     .service(controller::import_collection_from_json)
                     .service(controller::import_full),

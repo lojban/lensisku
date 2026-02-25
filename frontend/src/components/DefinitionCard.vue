@@ -59,7 +59,10 @@
                   <GalleryHorizontalIcon v-if="showEditButton && flashcard"
                     class="h-4 w-4 text-purple-600 hover:text-purple-800" />
                 </span>
-                <AudioPlayer v-if="definition.sound_url && props.showAudio" :url="definition.sound_url"
+                <AudioPlayer v-if="(definition.sound_url || itemSoundUrl) && props.showAudio"
+                  :url="definition.sound_url || itemSoundUrl"
+                  :collection-id="useApiForSound ? (props.collectionId ?? undefined) : undefined"
+                  :item-id="useApiForSound ? (props.itemId ?? undefined) : undefined"
                   class="shrink-0" />
               </div>
               <div class="flex items-center gap-2 flex-wrap">
@@ -236,8 +239,8 @@
         </div>
       </div>
 
-      <!-- Canonical Form -->
-      <div v-if="(flashcard && flashcard.canonical_form) || (definition && definition.canonical_form)"
+      <!-- Canonical Form (only when different from main form) -->
+      <div v-if="showCanonicalForm"
         class="mt-3 pt-3 border-t flex flex-col gap-1.5">
         <div class="flex items-center gap-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
           <EqualApproximately class="h-3.5 w-3.5 text-blue-400" />
@@ -245,7 +248,7 @@
         </div>
         <div
           class="text-sm text-gray-700 font-mono bg-blue-50/30 p-2 rounded border border-blue-100/30 whitespace-pre-wrap leading-relaxed overflow-x-auto">
-          {{ flashcard?.canonical_form || definition.canonical_form }}
+          {{ flashcard?.canonical_form ?? definition.canonical_form }}
         </div>
       </div>
 
@@ -564,6 +567,24 @@ const displayedSelmaho = computed(() => {
 })
 
 const canLink = computed(() => props.definition.type_name === 'phrase')
+
+const showCanonicalForm = computed(() => {
+  const canonical = props.flashcard?.canonical_form || props.definition?.canonical_form
+  if (!canonical) return false
+  const main = (props.definition.valsiword ?? props.definition.word ?? props.definition.free_content_front ?? '').trim().toLowerCase()
+  return main !== canonical.trim().toLowerCase()
+})
+
+const itemSoundUrl = computed(() => {
+  if (!props.showAudio || !props.definition?.has_sound || !props.collectionId || !props.itemId) return null
+  return `/api/collections/${props.collectionId}/items/${props.itemId}/sound`
+})
+
+/** True when sound should be loaded via api (getItemSoundBlob) so Bearer is sent; false for external URLs. */
+const useApiForSound = computed(() => {
+  const url = props.definition?.sound_url || itemSoundUrl.value
+  return Boolean(url && !String(url).startsWith('http') && props.collectionId != null && props.itemId != null)
+})
 
 // Linking Modal State
 const showLinkModal = ref(false)

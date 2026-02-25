@@ -131,6 +131,7 @@ pub struct Flashcard {
     pub definition_language_id: Option<i32>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub sound_url: Option<String>,
+    pub has_custom_sound: bool,
     pub canonical_form: Option<String>,
     #[serde(default = "default_use_canonical_comparison")]
     pub use_canonical_comparison: bool,
@@ -273,6 +274,10 @@ pub struct LevelCardResponse {
     pub free_content_back: Option<String>,
     pub has_front_image: bool,
     pub has_back_image: bool,
+    pub has_sound: bool,
+    /// Custom: /api/collections/{id}/items/{item_id}/sound; fallback not populated for level cards yet.
+    pub sound_url: Option<String>,
+    pub collection_id: i32,
     pub item_id: i32,
     pub definition_id: Option<i32>,
     pub valsi_id: Option<i32>,

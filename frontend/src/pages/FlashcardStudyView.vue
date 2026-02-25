@@ -82,6 +82,8 @@
               {{ currentCard.flashcard.word ?? currentCard.flashcard.free_content_front }}
             </h3>
             <AudioPlayer v-if="currentCard.flashcard.sound_url" :url="currentCard.flashcard.sound_url"
+              :collection-id="currentCard.flashcard.sound_url?.startsWith?.('/api/') ? currentCard.flashcard.collection_id : undefined"
+              :item-id="currentCard.flashcard.sound_url?.startsWith?.('/api/') ? currentCard.flashcard.item_id : undefined"
               class="h-6 w-6" />
           </div>
           <div v-if="currentCard.flashcard.has_front_image" class="mt-4 flex justify-center">
@@ -130,10 +132,19 @@
               <div class="flex items-center justify-center gap-2">
                 <span>{{ currentCard.flashcard.word ?? currentCard.flashcard.free_content_front }}</span>
                 <AudioPlayer ref="answerAudioPlayerRef" v-if="currentCard.flashcard.sound_url"
-                  :url="currentCard.flashcard.sound_url" class="h-6 w-6 inline-block" />
+                  :url="currentCard.flashcard.sound_url"
+                  :collection-id="currentCard.flashcard.sound_url?.startsWith?.('/api/') ? currentCard.flashcard.collection_id : undefined"
+                  :item-id="currentCard.flashcard.sound_url?.startsWith?.('/api/') ? currentCard.flashcard.item_id : undefined"
+                  class="h-6 w-6 inline-block" />
               </div>
-              <div v-if="currentCard.flashcard.canonical_form" class="text-lg text-gray-600 mt-2 text-center font-mono">
-                {{ currentCard.flashcard.canonical_form }}
+              <div v-if="showCanonicalForm" class="mt-3 pt-3 border-t flex flex-col gap-1.5 text-center">
+                <div class="flex items-center justify-center gap-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                  <EqualApproximately class="h-3.5 w-3.5 text-blue-400" />
+                  <span>{{ t('components.definitionCard.canonicalLabel') }}</span>
+                </div>
+                <div class="text-sm text-gray-700 font-mono bg-blue-50/30 p-2 rounded border border-blue-100/30 inline-block mx-auto">
+                  {{ currentCard.flashcard.canonical_form }}
+                </div>
               </div>
               <div v-if="currentCard.flashcard.has_front_image" class="mt-4 flex justify-center">
                 <img
@@ -225,7 +236,7 @@
 </template>
 
 <script setup>
-import { XCircle, Check, Smile, CheckCircle2 } from 'lucide-vue-next'
+import { XCircle, Check, Smile, CheckCircle2, EqualApproximately } from 'lucide-vue-next'
 import { ref, onMounted, computed, watch, nextTick, onBeforeUnmount } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
@@ -262,6 +273,14 @@ const isFillInMode = computed(() => {
 const isJustInformationMode = computed(() => {
   const dir = currentCard.value?.flashcard?.direction
   return dir && dir.toLowerCase() === 'justinformation'
+})
+
+const showCanonicalForm = computed(() => {
+  const fc = currentCard.value?.flashcard
+  if (!fc?.canonical_form) return false
+  const main = (fc.word ?? fc.free_content_front ?? '').trim().toLowerCase()
+  const canonical = fc.canonical_form.trim().toLowerCase()
+  return main !== canonical
 })
 
 const getLanguageName = (langId) => {
