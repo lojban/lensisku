@@ -262,7 +262,7 @@
   "userList": {
     "users": "Пользователи",
     "roleManagement": "Управление ролями",
-    "searchPlaceholder": "Поиск по имени пользователя или настоящему имени...",
+    "searchPlaceholder": "Поиск по имени пользователя ...",
     "loadingUsers": "Загрузка пользователей...",
     "roleFilterLabel": "Роль:",
     "allRoles": "Все роли",

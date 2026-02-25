@@ -16,12 +16,36 @@ RUN apt-get update && apt-get install -y \
     libgraphite2-dev \
     libharfbuzz-dev \
     && rm -rf /var/lib/apt/lists/*
-COPY . .
 # Set C++ standard to C++17 for dependencies that compile C++ code
-# This is required for tectonic_xetex_layout which uses ICU headers
-# that require C++17 features (auto template parameters)
 ENV CXXFLAGS="-std=c++17"
-RUN cargo build --release
+# Optional: set to release-fast for faster Docker builds (less optimized binary)
+ARG CARGO_BUILD_PROFILE=release
+
+# Copy only manifest and lockfile, then build with stub sources so this layer
+# caches compiled dependencies. When only app code changes, only the final
+# cargo build re-runs and recompiles the app (deps come from cache).
+COPY Cargo.toml Cargo.lock ./
+RUN mkdir -p src test && \
+    echo 'fn main() {}' > src/main.rs && \
+    echo 'fn main() {}' > test/test.rs
+
+# Build dependencies (and stub binaries). Use BuildKit cache mounts so
+# registry, git, and target are reused across builds (much faster rebuilds).
+RUN --mount=type=cache,target=/usr/local/cargo/registry \
+    --mount=type=cache,target=/usr/local/cargo/git \
+    --mount=type=cache,target=/usr/src/app/target \
+    cargo build --release --profile ${CARGO_BUILD_PROFILE}
+
+# Overwrite stubs with real source (only dirs needed for cargo build; excludes frontend, docs, scripts, etc.).
+COPY src ./src
+COPY test ./test
+COPY migrations ./migrations
+COPY .cargo ./.cargo
+RUN --mount=type=cache,target=/usr/local/cargo/registry \
+    --mount=type=cache,target=/usr/local/cargo/git \
+    --mount=type=cache,target=/usr/src/app/target \
+    cargo build --release --profile ${CARGO_BUILD_PROFILE} && \
+    cp /usr/src/app/target/${CARGO_BUILD_PROFILE}/lensisku /usr/src/app/lensisku-out
 
 # Build stage for Vue.js frontend
 FROM node:24-alpine as frontend-builder
@@ -64,7 +88,7 @@ RUN apt-get update && apt-get install -y \
 
 
 # Copy the built artifacts from the previous stages
-COPY --from=backend-builder /usr/src/app/target/release/lensisku .
+COPY --from=backend-builder /usr/src/app/lensisku-out .
 COPY --from=frontend-builder /usr/src/app/dist /var/www/html
 
 # Copy Nginx configuration
