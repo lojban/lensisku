@@ -9,6 +9,7 @@ per-directory limit. Tree API supports up to 100,000 entries per request.
 """
 from __future__ import annotations
 
+import argparse
 import json
 import os
 import sys
@@ -74,6 +75,16 @@ def download(url: str) -> bytes | None:
 
 
 def main() -> int:
+    parser = argparse.ArgumentParser(description="Import OGG valsi sounds from sutysisku-lojban-corpus-downloader into valsi_sounds.")
+    parser.add_argument(
+        "--limit",
+        type=int,
+        default=None,
+        metavar="N",
+        help="Stop after inserting/updating N sounds (default: no limit)",
+    )
+    args = parser.parse_args()
+
     database_url = os.environ.get("DATABASE_URL")
     if not database_url:
         print("Set DATABASE_URL (e.g. postgres://user:pass@host/db)", file=sys.stderr)
@@ -81,6 +92,8 @@ def main() -> int:
 
     paths_to_fetch = list_ogg_files_via_trees_api()
     print(f"Found {len(paths_to_fetch)} OGG file(s). Downloading and importing...")
+    if args.limit is not None:
+        print(f"Limit: stop after {args.limit} insert(s)/update(s).")
 
     conn = psycopg2.connect(database_url)
     cur = conn.cursor()
@@ -90,8 +103,14 @@ def main() -> int:
     total = len(paths_to_fetch)
 
     for i, (rel_path, download_url) in enumerate(paths_to_fetch):
+        if args.limit is not None and inserted >= args.limit:
+            print(f"Reached limit {args.limit}, stopping.")
+            break
         stem = Path(rel_path).stem
         if not stem:
+            continue
+        if any(c.isupper() for c in stem):
+            skipped += 1
             continue
         data = download(download_url)
         if not data:
