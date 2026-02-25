@@ -1,7 +1,6 @@
 use super::dto::SkippedItemInfo;
 use super::dto::*;
-use crate::jbovlaste::service::check_sound_urls;
-use crate::middleware::cache::RedisCache;
+use crate::jbovlaste::service::get_valsi_sound_urls_from_db;
 use crate::utils::remove_html_tags;
 use crate::{
     auth_utils::verify_collection_ownership, export::models::CollectionExportItem,
@@ -2214,7 +2213,6 @@ pub async fn list_collection_items(
     search: Option<String>,
     item_id: Option<i32>,
     exclude_with_flashcards: Option<bool>,
-    redis_cache: &RedisCache,
 ) -> AppResult<CollectionItemListResponse> {
     let mut client = pool
         .get()
@@ -2367,7 +2365,7 @@ pub async fn list_collection_items(
         })
         .collect();
 
-    // Fallback sound_url from check_sound_urls for items without custom sound
+    // Fallback sound_url from DB (valsi_sounds) for items without custom sound
     let words_to_check: Vec<String> = rows
         .iter()
         .filter(|r| !r.get::<_, bool>("has_sound"))
@@ -2382,7 +2380,9 @@ pub async fn list_collection_items(
     let sound_urls_map = if words_to_check.is_empty() {
         std::collections::HashMap::new()
     } else {
-        check_sound_urls(&words_to_check, redis_cache).await
+        get_valsi_sound_urls_from_db(pool, &words_to_check)
+            .await
+            .map_err(|e| AppError::Database(e.to_string()))?
     };
     for (item, row) in items.iter_mut().zip(rows.iter()) {
         if !item.has_sound {

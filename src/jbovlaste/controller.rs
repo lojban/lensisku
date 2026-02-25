@@ -250,7 +250,7 @@ pub async fn search_definitions(
                 if use_fast_search {
                     service::fast_search_definitions(&pool, params).await
                 } else {
-                    service::search_definitions(&pool, params, &redis_cache).await
+                    service::search_definitions(&pool, params).await
                 }
             },
             None,
@@ -313,6 +313,47 @@ pub async fn get_entry_details(
 #[utoipa::path(
     get,
     tag = "jbovlaste",
+    path = "/jbovlaste/valsi/{id_or_word}/sound",
+    params(
+        ("id_or_word" = String, Path, description = "Valsi ID or word"),
+    ),
+    responses(
+        (status = 200, description = "Sound data", content_type = "audio/*"),
+        (status = 404, description = "Valsi or sound not found"),
+        (status = 500, description = "Internal server error")
+    ),
+    summary = "Get valsi sound",
+    description = "Returns the audio for a valsi if stored in the database. No auth required."
+)]
+#[get("/valsi/{id_or_word}/sound")]
+pub async fn get_valsi_sound(
+    pool: web::Data<Pool>,
+    id_or_word: web::Path<String>,
+) -> impl Responder {
+    let id_or_word = id_or_word.into_inner();
+    let valsi_detail = match service::get_entry_details(&pool, &id_or_word).await {
+        Ok(d) => d,
+        Err(_) => return HttpResponse::NotFound().finish(),
+    };
+    match service::get_valsi_sound(&pool, valsi_detail.valsiid).await {
+        Ok(Some((sound_data, mime_type))) => {
+            let cd = ContentDisposition {
+                disposition: DispositionType::Inline,
+                parameters: vec![],
+            };
+            HttpResponse::Ok()
+                .content_type(mime_type)
+                .insert_header(cd)
+                .body(sound_data)
+        }
+        Ok(None) => HttpResponse::NotFound().finish(),
+        Err(e) => HttpResponse::InternalServerError().body(format!("Error: {}", e)),
+    }
+}
+
+#[utoipa::path(
+    get,
+    tag = "jbovlaste",
     path = "/jbovlaste/valsi/{id_or_word}/definitions",
     params(
         ("id_or_word" = String, Path, description = "Valsi ID or word"),
@@ -335,7 +376,6 @@ pub async fn get_entry_details(
 #[get("/valsi/{id_or_word}/definitions")]
 pub async fn get_definitions_by_entry(
     pool: web::Data<Pool>,
-    redis_cache: web::Data<RedisCache>,
     id_or_word: web::Path<String>,
     query: web::Query<ValsiDefinitionsQuery>,
     claims: Option<Claims>,
@@ -346,7 +386,6 @@ pub async fn get_definitions_by_entry(
         claims.map(|c| c.sub),
         query.langid,
         query.username.clone(),
-        &redis_cache,
     )
     .await
     {
@@ -470,13 +509,12 @@ pub async fn add_definition(
 #[get("/definition/{id}")]
 pub async fn get_definition(
     pool: web::Data<Pool>,
-    redis_cache: web::Data<RedisCache>,
     id: web::Path<i32>,
     claims: Option<Claims>,
 ) -> impl Responder {
     let definition_id = id.into_inner();
 
-    match service::get_definition(&pool, definition_id, claims.map(|c| c.sub), &redis_cache).await {
+    match service::get_definition(&pool, definition_id, claims.map(|c| c.sub)).await {
         Ok(Some(definition)) => HttpResponse::Ok().json(definition),
         Ok(None) => HttpResponse::NotFound().finish(),
         Err(e) => HttpResponse::InternalServerError().body(format!("Database error: {}", e)),

@@ -146,7 +146,7 @@ pub struct CollectionItemResponse {
     pub has_front_image: bool,
     pub has_back_image: bool,
     pub has_sound: bool,
-    /// Custom sound: /api/collections/{id}/items/{item_id}/sound; or fallback OGG URL from check_sound_urls.
+    /// Custom sound or DB valsi sound URL only (no external URLs): /api/collections/{id}/items/{item_id}/sound or /api/jbovlaste/valsi/{word}/sound.
     pub sound_url: Option<String>,
     #[schema(value_type = String, format = DateTime)]
     pub added_at: DateTime<Utc>,

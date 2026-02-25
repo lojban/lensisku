@@ -432,7 +432,6 @@ pub async fn merge_collections(
 #[get("/{id}/items")]
 pub async fn list_collection_items(
     pool: web::Data<Pool>,
-    redis_cache: web::Data<crate::middleware::cache::RedisCache>,
     claims: Option<Claims>,
     id: web::Path<i32>,
     query: web::Query<ListCollectionItemsQuery>,
@@ -449,7 +448,6 @@ pub async fn list_collection_items(
         query.search.clone(),
         query.item_id.clone(),
         query.exclude_with_flashcards,
-        redis_cache.as_ref(),
     )
     .await
     {

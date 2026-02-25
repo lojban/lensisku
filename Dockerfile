@@ -91,6 +91,13 @@ RUN apt-get update && apt-get install -y \
 COPY --from=backend-builder /usr/src/app/lensisku-out .
 COPY --from=frontend-builder /usr/src/app/dist /var/www/html
 
+# Scripts (e.g. import_valsi_sounds) and tools to run them
+COPY scripts ./scripts
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3 \
+    python3-psycopg2 \
+    && rm -rf /var/lib/apt/lists/*
+
 # Copy Nginx configuration
 COPY nginx.conf /etc/nginx/nginx.conf
 
