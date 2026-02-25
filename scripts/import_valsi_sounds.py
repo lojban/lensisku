@@ -87,8 +87,9 @@ def main() -> int:
     inserted = 0
     skipped = 0
     errors = 0
+    total = len(paths_to_fetch)
 
-    for rel_path, download_url in paths_to_fetch:
+    for i, (rel_path, download_url) in enumerate(paths_to_fetch):
         stem = Path(rel_path).stem
         if not stem:
             continue
@@ -111,6 +112,9 @@ def main() -> int:
         )
         if cur.rowcount:
             inserted += 1
+            if inserted % 100 == 0:
+                left = total - (i + 1)
+                print(f"Progress: {inserted} words imported, {left} files left to process.")
         else:
             skipped += 1
 

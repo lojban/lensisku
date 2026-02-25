@@ -200,7 +200,7 @@
     <div class="pt-3 max-w-4xl mx-auto min-h-[calc(100vh-12rem)] relative flex flex-col" id="main-child">
       <div class="flex-1 px-3">
         <router-view v-slot="{ Component, route }">
-          <component :is="Component" v-bind="route.meta.props" v-on="route.name === 'home'
+          <component :is="Component" v-bind="route.meta.props" v-on="(route.name === 'Home' || route.name?.startsWith('Home-'))
             ? {
               search: performSearch,
               'view-message': viewMessage,
