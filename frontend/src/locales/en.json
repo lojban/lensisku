@@ -78,6 +78,18 @@
     "newFreeThread": "Start Free Wave",
     "noCommentsFound": "No comments found matching your search"
   },
+  "assistantChat": {
+    "title": "Lojban Assistant",
+    "subtitle": "Describe a concept in English; the assistant uses jbovlaste to suggest Lojban words and combinations.",
+    "emptyState": "Send a message to get started.",
+    "assistantLabel": "Assistant",
+    "userLabel": "You",
+    "placeholder": "Describe a concept or ask for a Lojban translation...",
+    "hint": "The assistant can search the dictionary by meaning.",
+    "sending": "Sending...",
+    "send": "Send",
+    "error": "Something went wrong. Please try again."
+  },
   "deleteConfirmation": {
     "title": "Confirm Delete",
     "message": "Are you sure you want to delete this? This action cannot be undone.",

@@ -4,7 +4,6 @@ use deadpool_postgres::Pool;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 
-use crate::config::AppConfig;
 use crate::embeddings::get_embedding;
 use crate::error::AppError;
 use crate::jbovlaste::models::{DefinitionDetail, DefinitionResponse, SearchDefinitionsParams};
@@ -12,20 +11,20 @@ use crate::jbovlaste::service::semantic_search;
 
 use super::dto::{ChatMessage, ChatRequest};
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 struct ToolFunction {
     name: String,
     description: String,
     parameters: serde_json::Value,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 struct Tool {
     r#type: String,
     function: ToolFunction,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 struct ChatCompletionMessageRequest {
     role: String,
     content: String,
@@ -212,11 +211,7 @@ fn summarise_definition(def: &DefinitionDetail) -> serde_json::Value {
     })
 }
 
-pub async fn handle_chat(
-    _config: &AppConfig,
-    pool: &Pool,
-    request: ChatRequest,
-) -> Result<String, AppError> {
+pub async fn handle_chat(pool: &Pool, request: ChatRequest) -> Result<String, AppError> {
     let api_key = env::var("OPENROUTER_API_KEY").map_err(|_| {
         AppError::ExternalService("OPENROUTER_API_KEY is not set in the environment".into())
     })?;
@@ -257,7 +252,7 @@ pub async fn handle_chat(
         .json()
         .await?;
 
-    let mut choice = first_response
+    let choice = first_response
         .choices
         .into_iter()
         .next()

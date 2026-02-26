@@ -45,6 +45,18 @@
     "addDefinition": "valsi",
     "newFreeThread": "cnino nu tavla"
   },
+  "assistantChat": {
+    "title": "lojbo sidju",
+    "subtitle": "cusku lo smuni be lo glico .i lo sidju cu pilno la .jbovlaste. .e lo smuni sisku .e lo nu ciksi lo valsi .e lo jufra",
+    "emptyState": "cusku lo ni'o .e lo nu cfari",
+    "assistantLabel": "sidju",
+    "userLabel": "do",
+    "placeholder": "cusku lo smuni .a cpedu lo lojbo jufra...",
+    "hint": "lo sidju ka'e sisku fi lo valste fi'o smuni",
+    "sending": "ca'o mrilu...",
+    "send": "mrilu",
+    "error": "lo nu fliba cu fasnu .i ko troci ranji"
+  },
   "sort": {
     "time": "Sort by Time",
     "reactions": "Sort by Reactions",
