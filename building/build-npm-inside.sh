@@ -16,10 +16,9 @@ scriptdir="$(readlink -f "$(dirname "$0")")"
 
 cd "$scriptdir/../frontend"
 
-# Set CLEAN=1 for a full clean rebuild; otherwise keep node_modules for faster installs
-if [[ "${CLEAN:-0}" == "1" ]]; then
-  rm -rf node_modules dist
-fi
+# Clean out old dependency packages and the previous build
+rm -rf node_modules dist
 
 pnpm install --frozen-lockfile
+
 pnpm run build

@@ -16,13 +16,12 @@ scriptdir="$(readlink -f "$(dirname "$0")")"
 
 cd "$scriptdir/.."
 
+# Clean out the old build
+rm -rf target
+
 # Set C++ standard to C++17 for dependencies that compile C++ code
-export CXXFLAGS="${CXXFLAGS:--std=c++17}"
+# This is required for tectonic_xetex_layout which uses ICU headers
+# that require C++17 features (auto template parameters)
+export CXXFLAGS="-std=c++17"
 
-# Skip wiping target for much faster incremental rebuilds; set CLEAN=1 for a clean build
-if [[ "${CLEAN:-0}" == "1" ]]; then
-  rm -rf target
-fi
-
-# Default: release (binary at target/release/lensisku for run_program). Set CARGO_PROFILE=release-fast for faster builds (binary at target/release-fast/lensisku).
-cargo build --release --profile "${CARGO_PROFILE:-release}"
+cargo build --release
