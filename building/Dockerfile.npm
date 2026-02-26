@@ -5,9 +5,6 @@ ARG USERNAME
 ARG UID
 ARG GID
 
-# Prevent Corepack from prompting to download pnpm (e.g. in CI/deploy)
-ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
-
 RUN apk add --no-cache bash && corepack enable && corepack prepare pnpm@9 --activate
 
 RUN mkdir -p /home/$USERNAME/.local/share/pnpm /home/$USERNAME/.npm \

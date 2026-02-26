@@ -33,7 +33,6 @@ mkdir -p "$PNPM_STORE"
 chcon -R -t container_file_t "$PNPM_STORE" 2>/dev/null || true
 
 podman run --userns=keep-id --rm \
-  -e COREPACK_ENABLE_DOWNLOAD_PROMPT=0 \
   -v "$SRC_DIR:/src" \
   -v "$LOCAL_DIR:/home/$(id -un)/.npm" \
   -v "$PNPM_STORE:/home/$(id -un)/.local/share/pnpm/store" \
