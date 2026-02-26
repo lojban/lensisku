@@ -1,8 +1,11 @@
 use std::env;
+use std::time::Duration;
 
 use deadpool_postgres::Pool;
+use regex::Regex;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
+use tokio::time::sleep;
 
 use crate::embeddings::get_embedding;
 use crate::error::AppError;
@@ -36,7 +39,7 @@ struct ChatCompletionMessageRequest {
     tool_calls: Option<Vec<ToolCall>>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 struct ChatCompletionRequest {
     model: String,
     messages: Vec<ChatCompletionMessageRequest>,
@@ -56,7 +59,54 @@ struct ChatCompletionChoice {
     message: ChatCompletionMessageResponse,
 }
 
-/// Deserialize OpenRouter response from response body; on error log body for debugging.
+/// OpenRouter/OpenAI-style error payload (e.g. 200 OK with {"error":{"message":"...","code":500}}).
+#[derive(Debug, Deserialize)]
+struct OpenRouterErrorPayload {
+    #[serde(default)]
+    error: OpenRouterErrorDetail,
+}
+
+#[derive(Debug, Deserialize, Default)]
+struct OpenRouterErrorDetail {
+    #[serde(default)]
+    message: String,
+    #[serde(default)]
+    code: Option<u16>,
+}
+
+/// Ensure OpenRouter response is success; on HTTP error return body for debugging.
+/// 5xx are returned as ExternalServiceRetryable so callers can retry.
+async fn ensure_openrouter_status(
+    res: reqwest::Response,
+    label: &str,
+) -> Result<reqwest::Response, AppError> {
+    let status = res.status();
+    if status.is_success() {
+        return Ok(res);
+    }
+    let body = res.text().await.unwrap_or_else(|_| String::from("(failed to read body)"));
+    let message = format!(
+        "{} returned {} {}",
+        label,
+        status,
+        status.canonical_reason().unwrap_or("")
+    );
+    if status.is_server_error() {
+        Err(AppError::ExternalServiceRetryable {
+            message,
+            raw_response: body,
+        })
+    } else {
+        Err(AppError::ExternalServiceWithRaw {
+            message,
+            raw_response: body,
+        })
+    }
+}
+
+/// Deserialize OpenRouter response from response body; on error include raw body for debugging.
+/// When the body is an error payload (e.g. 200 OK with {"error":{"message":"Internal Server Error","code":500}}),
+/// returns ExternalServiceRetryable so callers can retry.
 async fn parse_chat_response(
     res: reqwest::Response,
     label: &str,
@@ -65,26 +115,83 @@ async fn parse_chat_response(
     let body = res.text().await.map_err(|e| {
         AppError::ExternalService(format!("Failed to read {} response body: {}", label, e))
     })?;
-    match serde_json::from_str::<ChatCompletionResponse>(&body) {
+    let body_trimmed = body.trim();
+    match serde_json::from_str::<ChatCompletionResponse>(body_trimmed) {
         Ok(parsed) => Ok(parsed),
         Err(e) => {
-            log::debug!(
-                "OpenRouter {} response (status {}): {}",
-                label,
-                status,
-                body
-            );
-            log::warn!(
-                "OpenRouter {} parse error: {} (see debug log for raw body)",
-                label,
-                e
-            );
-            Err(AppError::ExternalService(format!(
-                "Invalid {} response: {}",
-                label, e
-            )))
+            // Check if body is an OpenRouter/OpenAI-style error (e.g. 200 with {"error":{...}}).
+            let retryable = if let Ok(err_payload) = serde_json::from_str::<OpenRouterErrorPayload>(body_trimmed) {
+                let code = err_payload.error.code;
+                let msg = if err_payload.error.message.is_empty() {
+                    format!("Invalid {} response: {}", label, e)
+                } else {
+                    format!("{}: {}", label, err_payload.error.message)
+                };
+                let is_server_error = code.map(|c| c >= 500).unwrap_or(true);
+                if is_server_error {
+                    log::warn!("OpenRouter {} returned error body (code {:?}), will retry: {}", label, code, msg);
+                    Some((msg, body.clone()))
+                } else {
+                    None
+                }
+            } else {
+                // Unrecognized shape; treat parse failure as retryable (transient malformed response).
+                Some((
+                    format!("Invalid {} response: {}", label, e),
+                    body.clone(),
+                ))
+            };
+            if let Some((message, raw_response)) = retryable {
+                log::debug!("OpenRouter {} response (status {}): {}", label, status, raw_response);
+                return Err(AppError::ExternalServiceRetryable {
+                    message,
+                    raw_response,
+                });
+            }
+            log::debug!("OpenRouter {} response (status {}): {}", label, status, body);
+            log::warn!("OpenRouter {} parse error: {} (see debug log for raw body)", label, e);
+            Err(AppError::ExternalServiceWithRaw {
+                message: format!("Invalid {} response: {}", label, e),
+                raw_response: body,
+            })
         }
     }
+}
+
+const OPENROUTER_MAX_ATTEMPTS: u32 = 3;
+const OPENROUTER_INITIAL_BACKOFF_MS: u64 = 500;
+
+/// Runs an OpenRouter chat/completions request with retries on transient errors (5xx or error body).
+async fn openrouter_chat_with_retry<F, Fut>(label: &str, mut run: F) -> Result<ChatCompletionResponse, AppError>
+where
+    F: FnMut() -> Fut,
+    Fut: std::future::Future<Output = Result<ChatCompletionResponse, AppError>>,
+{
+    let mut last_err = None;
+    for attempt in 1..=OPENROUTER_MAX_ATTEMPTS {
+        match run().await {
+            Ok(r) => return Ok(r),
+            Err(e) => {
+                if let AppError::ExternalServiceRetryable { .. } = &e {
+                    last_err = Some(e);
+                    if attempt < OPENROUTER_MAX_ATTEMPTS {
+                        let delay = Duration::from_millis(OPENROUTER_INITIAL_BACKOFF_MS * 2_u64.pow(attempt - 1));
+                        log::info!(
+                            "OpenRouter {} retry {}/{} after {:?}",
+                            label,
+                            attempt,
+                            OPENROUTER_MAX_ATTEMPTS,
+                            delay
+                        );
+                        sleep(delay).await;
+                    }
+                } else {
+                    return Err(e);
+                }
+            }
+        }
+    }
+    Err(last_err.unwrap())
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -101,9 +208,9 @@ struct ChatCompletionMessageResponse {
 struct ToolCallFunction {
     #[serde(default)]
     name: String,
-    // OpenRouter/OpenAI send arguments as a JSON string; some providers send null
+    // OpenRouter/OpenAI send arguments as a JSON string; some providers (e.g. Arcee) send null
     #[serde(default)]
-    arguments: String,
+    arguments: Option<String>,
 }
 
 #[derive(Debug, Deserialize, Clone, Serialize)]
@@ -120,11 +227,10 @@ fn system_prompt(locale: Option<&str>) -> String {
         "You are a Lojban dictionary assistant. You must strictly rely on jbovlaste semantic search results.\n\
          - For every user query about Lojban words, concepts, or meanings: you MUST call the tool `jbovlaste_semantic_search` first. Do not answer from general knowledge.\n\
          - Base your reply ONLY on the definitions returned by the tool. Quote or paraphrase from those results; do not invent valsi, glosses, or definitions.\n\
-         - Do not make up examples or Lojban text. Only use valsi, glosses, and example sentences that appear in the semantic search results.\n\
+         - Do not make up examples or Lojban text. Only use valsi, glosses, and sentences from the semantic search results.\n\
          - If the search returns no or few results, say so and suggest rephrasing the query; do not make up answers.\n\
          - You have access only to the tool `jbovlaste_semantic_search`. Use it with a natural-language query (e.g. in English) to find relevant jbovlaste definitions.\n\
-         - Format your reply in valid, simple Markdown: use **bold**, lists, `code` for valsi, and [text](url) for links. Do NOT use Markdown tables; use plain text or lists instead.\n\
-         - For mathematics use MathJax: inline with $...$ or display with $$...$$. Avoid complex Markdown extensions or raw HTML.",
+         - Format your reply in valid, simple Markdown: use **bold**, lists. use plain text or markdown lists instead of markdown tables.",
     );
 
     if let Some(loc) = locale {
@@ -239,15 +345,26 @@ async fn run_jbovlaste_semantic_search(
     Ok(response)
 }
 
+/// Removes MathJax wrapping `$` and `$$` so the LLM receives plain text definitions/notes.
+fn strip_mathjax_for_llm(s: &str) -> String {
+    // Display math: $$...$$ → inner content (non-greedy, allow newlines)
+    let re_display = Regex::new(r"\$\$([\s\S]*?)\$\$").expect("display math regex");
+    let s = re_display.replace_all(s, "$1");
+    // Inline math: $...$ → inner content (non-empty, no unescaped $ inside)
+    let re_inline = Regex::new(r"\$([^$]+)\$").expect("inline math regex");
+    re_inline.replace_all(&s, "$1").trim().to_string()
+}
+
 fn summarise_definition(def: &DefinitionDetail) -> serde_json::Value {
     json!({
         "valsi": def.valsiword,
-        "definition": def.definition,
+        "definition": strip_mathjax_for_llm(&def.definition),
+        "notes": def.notes.as_ref().map(|s| strip_mathjax_for_llm(s)),
         "lang": def.langrealname,
         "score": def.score,
         "similarity": def.similarity,
-        "selmaho": def.selmaho,
-        "jargon": def.jargon,
+        "selmaho": def.selmaho.as_ref().map(|s| strip_mathjax_for_llm(s)),
+        "jargon": def.jargon.as_ref().map(|s| strip_mathjax_for_llm(s)),
     })
 }
 
@@ -281,15 +398,24 @@ pub async fn handle_chat(pool: &Pool, request: ChatRequest) -> Result<String, Ap
         tool_choice: Some(json!("auto")),
     };
 
-    let first_res = client
-        .post(format!("{}/chat/completions", base_url))
-        .header("Authorization", format!("Bearer {}", api_key))
-        .header("Content-Type", "application/json")
-        .json(&first_request)
-        .send()
-        .await?;
-    let first_response: ChatCompletionResponse =
-        parse_chat_response(first_res.error_for_status()?, "first chat/completions").await?;
+    let first_response = openrouter_chat_with_retry("first chat/completions", || {
+        let client = client.clone();
+        let base_url = base_url.clone();
+        let api_key = api_key.clone();
+        let first_request = first_request.clone();
+        async move {
+            let res = client
+                .post(format!("{}/chat/completions", base_url))
+                .header("Authorization", format!("Bearer {}", api_key))
+                .header("Content-Type", "application/json")
+                .json(&first_request)
+                .send()
+                .await?;
+            let ok = ensure_openrouter_status(res, "first chat/completions").await?;
+            parse_chat_response(ok, "first chat/completions").await
+        }
+    })
+    .await?;
 
     let choice = first_response
         .choices
@@ -301,9 +427,9 @@ pub async fn handle_chat(pool: &Pool, request: ChatRequest) -> Result<String, Ap
         // Handle only the first semantic search tool call for now
         if let Some(first_call) = tool_calls.first() {
             if first_call.function.name == "jbovlaste_semantic_search" {
-                let args_json: &str = match first_call.function.arguments.as_str() {
-                    "" => "{}",
-                    s => s,
+                let args_json: &str = match first_call.function.arguments.as_deref() {
+                    None | Some("") => "{}",
+                    Some(s) => s,
                 };
                 let args: ToolArgs = serde_json::from_str(args_json).map_err(|e| {
                     log::warn!(
@@ -311,7 +437,10 @@ pub async fn handle_chat(pool: &Pool, request: ChatRequest) -> Result<String, Ap
                         e,
                         first_call.function.arguments
                     );
-                    e
+                    AppError::ExternalServiceWithRaw {
+                        message: "Assistant produced invalid tool arguments; please try again.".into(),
+                        raw_response: args_json.to_string(),
+                    }
                 })?;
 
                 let results = run_jbovlaste_semantic_search(pool, args).await?;
@@ -338,27 +467,36 @@ pub async fn handle_chat(pool: &Pool, request: ChatRequest) -> Result<String, Ap
                     content: choice.message.content.clone(),
                     tool_call_id: None,
                     name: None,
-                    tool_calls: Some(tool_calls),
+                    tool_calls: Some(tool_calls.clone()),
                 });
                 second_messages.push(tool_message);
 
                 let second_request = ChatCompletionRequest {
                     model: "openrouter/free".to_string(),
-                    messages: second_messages,
-                    tools: Some(tools),
+                    messages: second_messages.clone(),
+                    tools: Some(tools.clone()),
                     tool_choice: Some(json!("none")),
                 };
 
-                let second_res = client
-                    .post(format!("{}/chat/completions", base_url))
-                    .header("Authorization", format!("Bearer {}", api_key))
-                    .header("Content-Type", "application/json")
-                    .json(&second_request)
-                    .send()
-                    .await?;
-                let second_response: ChatCompletionResponse =
-                    parse_chat_response(second_res.error_for_status()?, "second chat/completions")
-                        .await?;
+                let second_response = openrouter_chat_with_retry("second chat/completions", || {
+                    let client = client.clone();
+                    let base_url = base_url.clone();
+                    let api_key = api_key.clone();
+                    let second_request = second_request.clone();
+                    async move {
+                        let res = client
+                            .post(format!("{}/chat/completions", base_url))
+                            .header("Authorization", format!("Bearer {}", api_key))
+                            .header("Content-Type", "application/json")
+                            .json(&second_request)
+                            .send()
+                            .await?;
+                        let ok =
+                            ensure_openrouter_status(res, "second chat/completions").await?;
+                        parse_chat_response(ok, "second chat/completions").await
+                    }
+                })
+                .await?;
 
                 let final_choice = second_response
                     .choices
