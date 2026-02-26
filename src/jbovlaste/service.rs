@@ -1638,6 +1638,9 @@ async fn add_definition_in_transaction(
             e
         );
     }
+    if let Err(e) = redis_cache.invalidate_recent_changes().await {
+        log::error!("Failed to invalidate recent changes cache after add: {}", e);
+    }
 
     Ok((word_type, definition_id))
 }
@@ -2201,6 +2204,9 @@ pub async fn update_definition(
             e
         );
     }
+    if let Err(e) = redis_cache.invalidate_recent_changes().await {
+        log::error!("Failed to invalidate recent changes cache after update: {}", e);
+    }
     transaction.commit().await?;
 
     Ok(())
@@ -2671,6 +2677,9 @@ pub async fn update_vote(
             "Failed to invalidate definition search caches after vote: {}",
             e
         );
+    }
+    if let Err(e) = redis_cache.invalidate_recent_changes().await {
+        log::error!("Failed to invalidate recent changes cache after vote: {}", e);
     }
 
     // Commit transaction
