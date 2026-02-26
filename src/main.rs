@@ -10,6 +10,7 @@ use std::sync::Arc;
 pub mod error;
 pub use error::{AppError, AppResult};
 pub mod api_docs;
+mod assistant;
 mod auth;
 pub mod auth_utils;
 mod background;
