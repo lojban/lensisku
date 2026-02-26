@@ -639,27 +639,35 @@
       </div>
 
       <!-- Action Buttons -->
-      <div class="mt-4 flex justify-end gap-2">
-        <button v-if="isEditingItem" class="btn-error mr-auto"
-          @click="itemToDelete = currentItem; showDeleteItemConfirm = true">
-          {{ t('collectionDetail.deleteItemButton') }}
-        </button>
-        <button class="btn-cancel" @click.stop="cancelEditItemModal()">
-          {{ t('collectionDetail.cancel') }}
-        </button>
-        <button v-if="itemType === 'custom' || itemType === 'quiz'" :disabled="!customContent.front.trim() || !customContent.back.trim()"
-          class="btn-insert" @click="addCustomContent">
-          {{ isEditingItem ? t('collectionDetail.updateItem') : t('collectionDetail.addItemButton') }}
-        </button>
-        <button v-else-if="itemType === 'definition' && selectedDefinition" class="btn-insert"
-          @click="addNewItem(selectedDefinition)">
-          {{ isEditingItem ? t('collectionDetail.updateItem') : t('collectionDetail.addSelectedDefinition') }}
-        </button>
+      <div class="mt-4 flex flex-col gap-2">
+        <!-- Progress bar when updating item -->
+        <div v-if="isEditingItem && isUpdatingItem" class="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden">
+          <div class="h-full w-1/3 bg-indigo-500 rounded-full progress-indeterminate" />
+        </div>
+        <div class="flex justify-end gap-2">
+          <button v-if="isEditingItem" class="btn-error mr-auto"
+            :disabled="isUpdatingItem"
+            @click="itemToDelete = currentItem; showDeleteItemConfirm = true">
+            {{ t('collectionDetail.deleteItemButton') }}
+          </button>
+          <button class="btn-cancel" :disabled="isUpdatingItem" @click.stop="cancelEditItemModal()">
+            {{ t('collectionDetail.cancel') }}
+          </button>
+          <button v-if="itemType === 'custom' || itemType === 'quiz'" :disabled="!customContent.front.trim() || !customContent.back.trim() || isUpdatingItem"
+            class="btn-insert" @click="addCustomContent">
+            {{ isEditingItem ? t('collectionDetail.updateItem') : t('collectionDetail.addItemButton') }}
+          </button>
+          <button v-else-if="itemType === 'definition' && selectedDefinition" class="btn-insert"
+            :disabled="isUpdatingItem"
+            @click="addNewItem(selectedDefinition)">
+            {{ isEditingItem ? t('collectionDetail.updateItem') : t('collectionDetail.addSelectedDefinition') }}
+          </button>
         <button v-else-if="itemType === 'newDefinition'" class="btn-insert"
           :disabled="isSubmittingNewDefinition || !newDefinitionData.word || !newDefinitionData.langId || (!newDefinitionData.definition && !newDefinitionImage) || !newDefinitionWordType"
           @click="addNewDefinitionAndItem">
           {{ isSubmittingNewDefinition ? t('collectionDetail.adding') : t('collectionDetail.addNewDefinitionButton') }}
         </button>
+        </div>
       </div>
     </ModalComponent>
 
@@ -1119,7 +1127,11 @@ const addCustomContent = async () => {
   showValidation.value = true
   if (!customContent.value.front.trim() || !customContent.value.back.trim()) {
     return
-  }  
+  }
+
+  if (isEditingItem.value) {
+    isUpdatingItem.value = true
+  }
 
   try {
     const direction = itemType.value === 'quiz' ? addItemDirection.value : (enableFlashcard.value ? addItemDirection.value : null);
@@ -1165,6 +1177,8 @@ const addCustomContent = async () => {
     }
   } catch (error) {
     console.error('Error adding custom content:', error)
+  } finally {
+    isUpdatingItem.value = false
   }
 }
 
@@ -1400,6 +1414,7 @@ function cancelEditItemModal() {
 const showDeleteItemConfirm = ref(false)
 const itemToDelete = ref(null)
 const isDeletingItem = ref(false)
+const isUpdatingItem = ref(false)
 const showDeleteCollectionConfirm = ref(false) // New state for collection deletion confirmation
 const isDeletingCollection = ref(false) // New state for collection deletion loading
 const showSuccessToast = ref(false)
@@ -1858,6 +1873,9 @@ const resetForm = () => {
 }
 
 const addNewItem = async (definition) => {
+  if (isEditingItem.value) {
+    isUpdatingItem.value = true
+  }
   try {
     const payload = {
       collection_id: numericCollectionId.value,
@@ -1880,6 +1898,8 @@ const addNewItem = async (definition) => {
     await Promise.all([fetchItems(), fetchCollection()])
   } catch (error) {
     console.error('Error adding definition:', error)
+  } finally {
+    isUpdatingItem.value = false
   }
 }
 
@@ -2110,5 +2130,18 @@ watch(
 <style scoped>
 .prose :deep(p) {
   margin: 0;
+}
+
+@keyframes indeterminate {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(400%);
+  }
+}
+
+.progress-indeterminate {
+  animation: indeterminate 1.2s ease-in-out infinite;
 }
 </style>
