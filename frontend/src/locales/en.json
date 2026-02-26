@@ -88,6 +88,7 @@
     "hint": "The assistant can search the dictionary by meaning.",
     "sending": "Sending...",
     "send": "Send",
+    "thinking": "Assistant is thinking",
     "error": "Something went wrong. Please try again."
   },
   "deleteConfirmation": {

@@ -277,6 +277,7 @@ const baseRoutes: Array<RouteRecordRaw> = [
     path: "/assistant",
     name: "AssistantChat",
     component: () => import("../pages/AssistantChat.vue"),
+    meta: { hideFooter: true },
   },
   // NotFound route must be last among base routes to catch all unmatched paths within a locale
   {

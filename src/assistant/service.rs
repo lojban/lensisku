@@ -56,8 +56,40 @@ struct ChatCompletionChoice {
     message: ChatCompletionMessageResponse,
 }
 
+/// Deserialize OpenRouter response from response body; on error log body for debugging.
+async fn parse_chat_response(
+    res: reqwest::Response,
+    label: &str,
+) -> Result<ChatCompletionResponse, AppError> {
+    let status = res.status();
+    let body = res.text().await.map_err(|e| {
+        AppError::ExternalService(format!("Failed to read {} response body: {}", label, e))
+    })?;
+    match serde_json::from_str::<ChatCompletionResponse>(&body) {
+        Ok(parsed) => Ok(parsed),
+        Err(e) => {
+            log::debug!(
+                "OpenRouter {} response (status {}): {}",
+                label,
+                status,
+                body
+            );
+            log::warn!(
+                "OpenRouter {} parse error: {} (see debug log for raw body)",
+                label,
+                e
+            );
+            Err(AppError::ExternalService(format!(
+                "Invalid {} response: {}",
+                label, e
+            )))
+        }
+    }
+}
+
 #[derive(Debug, Deserialize, Clone)]
 struct ChatCompletionMessageResponse {
+    #[serde(default)]
     role: String,
     #[serde(default)]
     content: String,
@@ -67,24 +99,30 @@ struct ChatCompletionMessageResponse {
 
 #[derive(Debug, Deserialize, Clone, Serialize)]
 struct ToolCallFunction {
+    #[serde(default)]
     name: String,
-    // OpenRouter/OpenAI send arguments as a JSON string
+    // OpenRouter/OpenAI send arguments as a JSON string; some providers send null
+    #[serde(default)]
     arguments: String,
 }
 
 #[derive(Debug, Deserialize, Clone, Serialize)]
 struct ToolCall {
+    #[serde(default)]
     id: String,
+    #[serde(default)]
     r#type: String,
     function: ToolCallFunction,
 }
 
 fn system_prompt(locale: Option<&str>) -> String {
     let mut base = String::from(
-        "You are a Lojban dictionary assistant.\n\
-         The user describes concepts (often in English), and you help find or compose good Lojban expressions.\n\
-         You have access to a tool named `jbovlaste_semantic_search` that searches jbovlaste definitions semantically.\n\
-         Use that tool whenever it would help to find relevant existing valsi or glosses, then explain suggestions clearly.",
+        "You are a Lojban dictionary assistant. You must strictly rely on jbovlaste semantic search results.\n\
+         - For every user query about Lojban words, concepts, or meanings: you MUST call the tool `jbovlaste_semantic_search` first. Do not answer from general knowledge.\n\
+         - Base your reply ONLY on the definitions returned by the tool. Quote or paraphrase from those results; do not invent valsi, glosses, or definitions.\n\
+         - If the search returns no or few results, say so and suggest rephrasing the query; do not make up answers.\n\
+         - You have access only to the tool `jbovlaste_semantic_search`. Use it with a natural-language query (e.g. in English) to find relevant jbovlaste definitions.\n\
+         - Format your reply in valid, simple Markdown: use **bold**, lists, `code` for valsi, and [text](url) for links. Avoid complex extensions or raw HTML.",
     );
 
     if let Some(loc) = locale {
@@ -127,7 +165,7 @@ fn jbovlaste_tool_schema() -> Tool {
         r#type: "function".to_string(),
         function: ToolFunction {
             name: "jbovlaste_semantic_search".to_string(),
-            description: "Semantic search over jbovlaste definitions stored in the database. Use this to find Lojban words or combinations related to a concept."
+            description: "Semantic search over jbovlaste definitions. Call this for every user question about Lojban words or concepts; results are the only source you may use for valsi and definitions."
                 .to_string(),
             parameters: json!({
                 "type": "object",
@@ -241,16 +279,15 @@ pub async fn handle_chat(pool: &Pool, request: ChatRequest) -> Result<String, Ap
         tool_choice: Some(json!("auto")),
     };
 
-    let first_response: ChatCompletionResponse = client
+    let first_res = client
         .post(format!("{}/chat/completions", base_url))
         .header("Authorization", format!("Bearer {}", api_key))
         .header("Content-Type", "application/json")
         .json(&first_request)
         .send()
-        .await?
-        .error_for_status()?
-        .json()
         .await?;
+    let first_response: ChatCompletionResponse =
+        parse_chat_response(first_res.error_for_status()?, "first chat/completions").await?;
 
     let choice = first_response
         .choices
@@ -262,7 +299,18 @@ pub async fn handle_chat(pool: &Pool, request: ChatRequest) -> Result<String, Ap
         // Handle only the first semantic search tool call for now
         if let Some(first_call) = tool_calls.first() {
             if first_call.function.name == "jbovlaste_semantic_search" {
-                let args: ToolArgs = serde_json::from_str(&first_call.function.arguments)?;
+                let args_json: &str = match first_call.function.arguments.as_str() {
+                    "" => "{}",
+                    s => s,
+                };
+                let args: ToolArgs = serde_json::from_str(args_json).map_err(|e| {
+                    log::warn!(
+                        "Tool call arguments JSON parse error: {}; raw arguments: {:?}",
+                        e,
+                        first_call.function.arguments
+                    );
+                    e
+                })?;
 
                 let results = run_jbovlaste_semantic_search(pool, args).await?;
 
@@ -299,16 +347,16 @@ pub async fn handle_chat(pool: &Pool, request: ChatRequest) -> Result<String, Ap
                     tool_choice: Some(json!("none")),
                 };
 
-                let second_response: ChatCompletionResponse = client
+                let second_res = client
                     .post(format!("{}/chat/completions", base_url))
                     .header("Authorization", format!("Bearer {}", api_key))
                     .header("Content-Type", "application/json")
                     .json(&second_request)
                     .send()
-                    .await?
-                    .error_for_status()?
-                    .json()
                     .await?;
+                let second_response: ChatCompletionResponse =
+                    parse_chat_response(second_res.error_for_status()?, "second chat/completions")
+                        .await?;
 
                 let final_choice = second_response
                     .choices

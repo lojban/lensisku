@@ -27,10 +27,10 @@
         :class="msg.role === 'user' ? 'justify-end' : 'justify-start'"
       >
         <div
-          class="max-w-[80%] rounded-lg px-3 py-2 text-sm whitespace-pre-wrap break-words"
+          class="max-w-[80%] rounded-lg px-3 py-2 text-sm break-words"
           :class="msg.role === 'user'
-            ? 'bg-blue-600 text-white'
-            : 'bg-gray-100 text-gray-900'"
+            ? 'bg-blue-600 text-white whitespace-pre-wrap'
+            : 'bg-gray-100 text-gray-900 assistant-markdown'"
         >
           <span v-if="msg.role === 'assistant'" class="block text-[11px] font-semibold text-gray-500 mb-1">
             {{ $t('assistantChat.assistantLabel') }}
@@ -38,7 +38,32 @@
           <span v-else-if="msg.role === 'user'" class="block text-[11px] font-semibold text-blue-100 mb-1">
             {{ $t('assistantChat.userLabel') }}
           </span>
-          <span>{{ msg.content }}</span>
+          <LazyMathJax
+            v-if="msg.role === 'assistant'"
+            :content="msg.content"
+            :enable-markdown="true"
+            :lang-id="locale"
+          />
+          <span v-else>{{ msg.content }}</span>
+        </div>
+      </div>
+
+      <!-- Thinking indicator while waiting for assistant reply -->
+      <div
+        v-if="isLoading"
+        class="flex justify-start"
+        role="status"
+        :aria-label="$t('assistantChat.thinking')"
+      >
+        <div class="max-w-[80%] rounded-lg px-3 py-2.5 bg-gray-100 text-gray-600 text-sm">
+          <span class="block text-[11px] font-semibold text-gray-500 mb-1.5">
+            {{ $t('assistantChat.assistantLabel') }}
+          </span>
+          <div class="thinking-dots flex items-center gap-1 min-h-[1.25rem]">
+            <span class="thinking-dot" />
+            <span class="thinking-dot" />
+            <span class="thinking-dot" />
+          </div>
         </div>
       </div>
     </div>
@@ -49,7 +74,7 @@
     >
       <textarea
         v-model="input"
-        class="input-field min-h-[80px] max-h-40 resize-y"
+        class="textarea-field min-h-[80px] max-h-40 resize-y"
         :placeholder="$t('assistantChat.placeholder')"
         :disabled="isLoading"
       />
@@ -87,6 +112,7 @@ import { ref, watch, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
 
+import LazyMathJax from '@/components/LazyMathJax.vue'
 import { assistantChat } from '../api'
 
 const { locale, t } = useI18n()
@@ -107,10 +133,8 @@ const scrollToBottom = () => {
 }
 
 watch(
-  () => messages.value.length,
-  () => {
-    scrollToBottom()
-  }
+  () => [messages.value.length, isLoading.value],
+  () => scrollToBottom()
 )
 
 const handleSend = async () => {
@@ -150,3 +174,53 @@ const handleSend = async () => {
   }
 }
 </script>
+
+<style scoped>
+.assistant-markdown :deep(.mathjax-content) {
+  display: block;
+}
+.assistant-markdown :deep(a) {
+  @apply text-blue-600 hover:text-blue-800 hover:underline;
+}
+.assistant-markdown :deep(ul),
+.assistant-markdown :deep(ol) {
+  @apply my-1 pl-4;
+}
+.assistant-markdown :deep(p + p) {
+  @apply mt-2;
+}
+
+/* Thinking indicator: subtle bouncing dots */
+.thinking-dots {
+  --dot-size: 6px;
+}
+.thinking-dot {
+  width: var(--dot-size);
+  height: var(--dot-size);
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.4;
+  animation: thinking-bounce 1.4s ease-in-out infinite both;
+}
+.thinking-dot:nth-child(1) {
+  animation-delay: 0s;
+}
+.thinking-dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+.thinking-dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+@keyframes thinking-bounce {
+  0%,
+  60%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.4;
+  }
+  30% {
+    transform: translateY(-4px);
+    opacity: 1;
+  }
+}
+</style>
