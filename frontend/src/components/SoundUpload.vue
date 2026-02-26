@@ -371,8 +371,10 @@ const loadExistingSound = async () => {
   }
 }
 
+const ALLOWED_AUDIO_TYPES = ['audio/mpeg', 'audio/mp3', 'audio/ogg', 'audio/webm']
 const validateFile = (file) => {
-  if (!['audio/mpeg', 'audio/ogg', 'audio/webm', 'audio/mp3'].includes(file.type)) {
+  const ok = ALLOWED_AUDIO_TYPES.some((t) => file.type === t || file.type.startsWith(t + ';'))
+  if (!ok) {
     throw new Error(t('soundUpload.invalidFileType'))
   }
 
