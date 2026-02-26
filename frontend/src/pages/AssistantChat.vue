@@ -1,12 +1,24 @@
 <template>
   <div class="flex flex-col h-full max-h-[calc(100vh-3rem)]">
-    <div class="mb-4">
-      <h1 class="text-2xl font-bold text-gray-800">
-        {{ $t('assistantChat.title') }}
-      </h1>
-      <p class="mt-1 text-sm text-gray-600">
-        {{ $t('assistantChat.subtitle') }}
-      </p>
+    <div class="mb-4 flex items-start justify-between gap-3">
+      <div>
+        <h1 class="text-2xl font-bold text-gray-800">
+          {{ $t('assistantChat.title') }}
+        </h1>
+        <p class="mt-1 text-sm text-gray-600">
+          {{ $t('assistantChat.subtitle') }}
+        </p>
+      </div>
+      <button
+        v-if="messages.length > 0"
+        type="button"
+        class="btn-aqua-zinc flex items-center gap-1.5 px-2.5 py-1.5 text-sm shrink-0"
+        :aria-label="$t('assistantChat.clearHistory')"
+        @click="clearHistory"
+      >
+        <Trash2 class="w-4 h-4" />
+        {{ $t('assistantChat.clearHistory') }}
+      </button>
     </div>
 
     <div
@@ -80,12 +92,20 @@
       />
 
       <div class="flex items-center justify-between gap-3">
-        <p
-          v-if="error"
-          class="text-xs text-red-600"
-        >
-          {{ error }}
-        </p>
+        <div v-if="error" class="flex items-center gap-2 min-w-0">
+          <p class="text-xs text-red-600 truncate">
+            {{ error }}
+          </p>
+          <button
+            type="button"
+            class="shrink-0 p-1 rounded text-red-600 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-300"
+            :aria-label="$t('assistantChat.retry')"
+            :title="$t('assistantChat.retry')"
+            @click="retryLast"
+          >
+            <RotateCw class="w-4 h-4" />
+          </button>
+        </div>
         <span v-else class="text-xs text-gray-500">
           {{ $t('assistantChat.hint') }}
         </span>
@@ -110,14 +130,12 @@
 <script setup>
 import { ref, watch, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRoute } from 'vue-router'
+import { RotateCw, Trash2 } from 'lucide-vue-next'
 
 import LazyMathJax from '@/components/LazyMathJax.vue'
 import { assistantChat } from '../api'
 
 const { locale, t } = useI18n()
-const route = useRoute()
-
 const messages = ref([])
 const input = ref('')
 const isLoading = ref(false)
@@ -137,41 +155,60 @@ watch(
   () => scrollToBottom()
 )
 
+async function performRequest(msgList) {
+  const payload = {
+    messages: msgList.map((m) => ({
+      role: m.role,
+      content: m.content,
+    })),
+    locale: locale.value,
+  }
+  const { data } = await assistantChat(payload)
+  messages.value.push({
+    role: 'assistant',
+    content: data.reply,
+  })
+}
+
 const handleSend = async () => {
   const content = input.value.trim()
   if (!content || isLoading.value) return
 
   error.value = ''
-
   messages.value.push({
     role: 'user',
     content,
   })
-
   input.value = ''
   isLoading.value = true
 
   try {
-    const payload = {
-      messages: messages.value.map((m) => ({
-        role: m.role,
-        content: m.content,
-      })),
-      locale: locale.value,
-    }
-
-    const { data } = await assistantChat(payload)
-
-    messages.value.push({
-      role: 'assistant',
-      content: data.reply,
-    })
+    await performRequest(messages.value)
   } catch (e) {
     console.error(e)
     error.value = t('assistantChat.error')
   } finally {
     isLoading.value = false
   }
+}
+
+const retryLast = async () => {
+  if (isLoading.value || !error.value) return
+  error.value = ''
+  isLoading.value = true
+  try {
+    await performRequest(messages.value)
+  } catch (e) {
+    console.error(e)
+    error.value = t('assistantChat.error')
+  } finally {
+    isLoading.value = false
+  }
+}
+
+const clearHistory = () => {
+  messages.value = []
+  error.value = ''
 }
 </script>
 
