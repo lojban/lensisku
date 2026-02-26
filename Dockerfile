@@ -1,8 +1,8 @@
-# Build stage for Rust backend
-FROM rust:latest as backend-builder
+# Build stage for Rust backend (pin version for reproducible, faster layer cache)
+FROM rust:1-bookworm as backend-builder
 WORKDIR /usr/src/app
-# Install XeLaTeX and required fonts
-RUN apt-get update && apt-get install -y \
+# Install XeLaTeX and required fonts (single layer, no-recommends where safe)
+RUN apt-get update && apt-get install -y --no-install-recommends \
     texlive-xetex \
     texlive-fonts-recommended \
     texlive-fonts-extra \
@@ -16,10 +16,9 @@ RUN apt-get update && apt-get install -y \
     libgraphite2-dev \
     libharfbuzz-dev \
     && rm -rf /var/lib/apt/lists/*
-# Set C++ standard to C++17 for dependencies that compile C++ code
 ENV CXXFLAGS="-std=c++17"
-# Optional: set to release-fast for faster Docker builds (less optimized binary)
-ARG CARGO_BUILD_PROFILE=release
+# Use release-fast by default for faster image builds; override with build-arg for production.
+ARG CARGO_BUILD_PROFILE=release-fast
 
 # Copy only manifest and lockfile, then build with stub sources so this layer
 # caches compiled dependencies. When only app code changes, only the final
@@ -47,31 +46,25 @@ RUN --mount=type=cache,target=/usr/local/cargo/registry \
     cargo build --release --profile ${CARGO_BUILD_PROFILE} && \
     cp /usr/src/app/target/${CARGO_BUILD_PROFILE}/lensisku /usr/src/app/lensisku-out
 
-# Build stage for Vue.js frontend
-FROM node:24-alpine as frontend-builder
+# Build stage for Vue.js frontend (pin version for reproducible builds)
+FROM node:24-alpine AS frontend-builder
 WORKDIR /usr/src/app
-# Copy package.json and pnpm-lock.yaml
-COPY frontend/package.json ./
-COPY frontend/pnpm-lock.yaml ./
-# Install pnpm using standalone installer (avoids npm registry network issues)
-# Try corepack first, fallback to standalone installer if needed
-RUN apk add curl && \
-    (corepack enable && corepack prepare pnpm@latest --activate || \
-     curl -fsSL https://get.pnpm.io/install.sh | sh -)
-ENV PATH="/root/.local/share/pnpm:$PATH"
-# Install dependencies
-RUN pnpm install --frozen-lockfile
-# Copy the rest of the frontend code
+RUN apk add --no-cache curl && \
+    corepack enable && corepack prepare pnpm@9 --activate
+ENV PNPM_HOME="/root/.local/share/pnpm" PATH="/root/.local/share/pnpm:$PATH"
+COPY frontend/package.json frontend/pnpm-lock.yaml ./
+# Cache pnpm store across builds for much faster dependency installs
+RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
+    pnpm install --frozen-lockfile
 COPY frontend .
-# Build the frontend
 RUN pnpm run build
 
-# Final stage
+# Final stage (slim base, single apt layer for smaller image and cache)
 FROM debian:bookworm-slim
 WORKDIR /usr/src/app
 
-# Install necessary dependencies
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    nginx-light \
     texlive-xetex \
     texlive-fonts-recommended \
     texlive-fonts-extra \
@@ -84,19 +77,13 @@ RUN apt-get update && apt-get install -y \
     fonts-linuxlibertine \
     libgraphite2-dev \
     libharfbuzz-dev \
-    && rm -rf /var/lib/apt/lists/*
-
-
-# Copy the built artifacts from the previous stages
-COPY --from=backend-builder /usr/src/app/lensisku-out .
-COPY --from=frontend-builder /usr/src/app/dist /var/www/html
-
-# Scripts (e.g. import_valsi_sounds) and tools to run them
-COPY scripts ./scripts
-RUN apt-get update && apt-get install -y --no-install-recommends \
     python3 \
     python3-psycopg2 \
     && rm -rf /var/lib/apt/lists/*
+
+COPY --from=backend-builder /usr/src/app/lensisku-out .
+COPY --from=frontend-builder /usr/src/app/dist /var/www/html
+COPY scripts ./scripts
 
 # Copy Nginx configuration
 COPY nginx.conf /etc/nginx/nginx.conf

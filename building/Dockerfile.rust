@@ -1,14 +1,17 @@
-FROM rust:latest
+# Pin version for reproducible, cache-friendly builds
+FROM rust:1-bookworm
 
 ARG USERNAME
 ARG UID
 ARG GID
 
-RUN mkdir -p /home/$USERNAME/.cargo
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libgraphite2-dev libharfbuzz-dev \
+    && rm -rf /var/lib/apt/lists/*
 
-RUN chown -R $UID:$GID /home/$USERNAME
+RUN mkdir -p /home/$USERNAME/.cargo && chown -R $UID:$GID /home/$USERNAME
 
-RUN apt-get update && apt-get install -y libgraphite2-dev libharfbuzz-dev
-    
 ENV HOME=/home/$USERNAME
 ENV CARGO_HOME=/home/$USERNAME/.cargo
+# Required for tectonic_xetex_layout (ICU C++17)
+ENV CXXFLAGS="-std=c++17"
