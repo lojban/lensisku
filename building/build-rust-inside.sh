@@ -25,4 +25,9 @@ if [[ "${CLEAN:-0}" == "1" ]]; then
 fi
 
 # Default: release (binary at target/release/lensisku for run_program). Set CARGO_PROFILE=release-fast for faster builds (binary at target/release-fast/lensisku).
-cargo build --release --profile "${CARGO_PROFILE:-release}"
+profile="${CARGO_PROFILE:-release}"
+if [[ "$profile" == "release" ]]; then
+  cargo build --release
+else
+  cargo build --profile "$profile"
+fi
