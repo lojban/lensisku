@@ -56,7 +56,9 @@
     "sending": "ca'o mrilu...",
     "send": "mrilu",
     "thinking": "lo sidju ca'o pensi",
-    "error": "lo nu fliba cu fasnu .i ko troci ranji"
+    "error": "lo nu fliba cu fasnu .i ko troci ranji",
+    "retry": "troci ranji",
+    "clearHistory": "vimcu lo nu tavla cfari"
   },
   "sort": {
     "time": "Sort by Time",

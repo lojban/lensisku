@@ -89,7 +89,9 @@
     "sending": "Sending...",
     "send": "Send",
     "thinking": "Assistant is thinking",
-    "error": "Something went wrong. Please try again."
+    "error": "Something went wrong. Please try again.",
+    "retry": "Retry",
+    "clearHistory": "Clear chat history"
   },
   "deleteConfirmation": {
     "title": "Confirm Delete",
