@@ -27,6 +27,20 @@ pub enum AppError {
     #[error("External service error: {0}")]
     ExternalService(String),
 
+    /// External service error with raw response body (e.g. OpenRouter) for debugging.
+    #[error("External service error: {message}")]
+    ExternalServiceWithRaw {
+        message: String,
+        raw_response: String,
+    },
+
+    /// Transient external service error (e.g. 500, error body); safe to retry.
+    #[error("External service error (retryable): {message}")]
+    ExternalServiceRetryable {
+        message: String,
+        raw_response: String,
+    },
+
     #[error("Validation error: {0}")]
     Validation(String),
 
@@ -62,6 +76,12 @@ impl actix_web::ResponseError for AppError {
             AppError::Auth(_) => actix_web::http::StatusCode::FORBIDDEN, // Or FORBIDDEN
             AppError::NotFound(_) => actix_web::http::StatusCode::NOT_FOUND,
             AppError::ExternalService(_) => actix_web::http::StatusCode::INTERNAL_SERVER_ERROR,
+            AppError::ExternalServiceWithRaw { .. } => {
+                actix_web::http::StatusCode::INTERNAL_SERVER_ERROR
+            }
+            AppError::ExternalServiceRetryable { .. } => {
+                actix_web::http::StatusCode::INTERNAL_SERVER_ERROR
+            }
             AppError::Validation(_) => actix_web::http::StatusCode::BAD_REQUEST,
             AppError::BadRequest(_) => actix_web::http::StatusCode::BAD_REQUEST,
             AppError::Unauthorized(_) => actix_web::http::StatusCode::UNAUTHORIZED,
@@ -74,9 +94,17 @@ impl actix_web::ResponseError for AppError {
     }
 
     fn error_response(&self) -> actix_web::HttpResponse {
-        actix_web::HttpResponse::build(self.status_code()).json(serde_json::json!({
-            "error": self.to_string(),
-        }))
+        let err_str = self.to_string();
+        let mut body = serde_json::json!({
+            "error": err_str,
+            "message": err_str,
+        });
+        if let AppError::ExternalServiceWithRaw { raw_response, .. }
+        | AppError::ExternalServiceRetryable { raw_response, .. } = self
+        {
+            body["raw_response"] = serde_json::Value::String(raw_response.clone());
+        }
+        actix_web::HttpResponse::build(self.status_code()).json(body)
     }
 }
 
