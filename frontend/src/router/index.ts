@@ -273,6 +273,11 @@ const baseRoutes: Array<RouteRecordRaw> = [
     name: "AprilFools",
     component: () => import("../pages/AprilFools.vue"),
   },
+  {
+    path: "/assistant",
+    name: "AssistantChat",
+    component: () => import("../pages/AssistantChat.vue"),
+  },
   // NotFound route must be last among base routes to catch all unmatched paths within a locale
   {
     path: "/:pathMatch(.*)*",

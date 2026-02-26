@@ -11,6 +11,7 @@ use crate::{
     muplis::{self},
     sessions, subscriptions, users,
     versions::{self},
+    assistant,
 };
 use actix_cors::Cors;
 use actix_web::{http::header, middleware::Logger, web, App, HttpServer};
@@ -126,6 +127,7 @@ pub async fn start_server(
             .configure(crate::openapi::configure)
             .configure(crate::payments::configure)
             .configure(sessions::controller::init_routes)
+            .configure(assistant::configure)
     })
     .workers(num_workers)
     .bind("0.0.0.0:8080")
