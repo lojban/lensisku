@@ -12,9 +12,6 @@ trap '__error_trapper "${LINENO}/${BASH_LINENO}" "$?" "$BASH_COMMAND"' ERR
 set -euE -o pipefail
 shopt -s failglob
 
-# Auto-accept Corepack package manager downloads (no "Do you want to continue? [Y/n]")
-export COREPACK_ENABLE_DOWNLOAD_PROMPT=0
-
 scriptdir="$(readlink -f "$(dirname "$0")")"
 
 cd "$scriptdir/../frontend"
