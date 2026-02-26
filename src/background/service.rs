@@ -118,8 +118,8 @@ async fn calculate_missing_embeddings(pool: &Pool) -> AppResult<()> {
         all_definition_ids.push(definition_id);
     }
 
-    // Process in chunks of 100
-    for (texts_chunk, ids_chunk) in all_texts.chunks(100).zip(all_definition_ids.chunks(100)) {
+    // Process in chunks of 20
+    for (texts_chunk, ids_chunk) in all_texts.chunks(20).zip(all_definition_ids.chunks(20)) {
         let transaction = conn
             .transaction()
             .await

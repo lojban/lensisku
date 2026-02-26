@@ -211,7 +211,7 @@
         </router-view>
       </div>
 
-      <footer class="mt-6 p-3 text-center text-xs text-gray-500 leading-relaxed">
+      <footer v-if="!route.meta.hideFooter" class="mt-6 p-3 text-center text-xs text-gray-500 leading-relaxed">
         {{ $t('footer.publicDomainNotice') }}
       </footer>
     </div>
