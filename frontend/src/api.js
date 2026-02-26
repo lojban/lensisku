@@ -517,3 +517,5 @@ export const exportLinkedPairs = (fromLang, toLang) =>
     params: { from_lang: fromLang, to_lang: toLang },
     responseType: 'blob',
   })
+
+export const assistantChat = (payload) => api.post('/assistant/chat', payload)
