@@ -3,6 +3,8 @@ use actix_web_grants::protect;
 use deadpool_postgres::Pool;
 use serde_json::json;
 
+use crate::middleware::cache::RedisCache;
+
 use super::{
     dto::{
         CommentStats, CreateOpinionRequest, NewCommentRequest, OpinionVoteRequest,
@@ -203,6 +205,7 @@ pub async fn list_comments(
 #[protect(any("create_comment"))]
 pub async fn add_comment(
     pool: web::Data<Pool>,
+    redis_cache: web::Data<RedisCache>,
     claims: Claims,
     request: web::Json<NewCommentRequest>,
 ) -> impl Responder {
@@ -230,7 +233,12 @@ pub async fn add_comment(
     };
 
     match service::add_comment(params).await {
-        Ok(comment) => HttpResponse::Ok().json(comment),
+        Ok(comment) => {
+            if let Err(e) = redis_cache.invalidate_recent_changes().await {
+                log::error!("Failed to invalidate recent changes cache after add comment: {}", e);
+            }
+            HttpResponse::Ok().json(comment)
+        },
         Err(e) => {
             let error_message = e.to_string();
             if error_message.contains("exceeds the maximum size") {

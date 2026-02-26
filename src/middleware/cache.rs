@@ -65,6 +65,12 @@ impl RedisCache {
         }
         Ok(())
     }
+
+    /// Invalidates the recent changes page cache. Call when definitions,
+    /// comments, threads, or votes change so the Recent Changes page is fresh.
+    pub async fn invalidate_recent_changes(&self) -> Result<(), RedisError> {
+        self.invalidate("recent_changes:*").await
+    }
 }
 
 /// Cache key for definition search. `use_fast_search` must match the actual path
