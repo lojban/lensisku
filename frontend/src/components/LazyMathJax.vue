@@ -236,6 +236,12 @@ onBeforeUnmount(() => {
   @apply inline;
 }
 
+/* Two consecutive <p> blocks: force block display so they stack vertically */
+:deep(p + p),
+:deep(p:has(+ p)) {
+  display: block !important;
+}
+
 :deep(.mathjax-content > *) {
   @apply inline;
 }
