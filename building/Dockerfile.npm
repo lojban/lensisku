@@ -1,15 +1,15 @@
+# Pin version for reproducible, cache-friendly builds
 FROM node:24-alpine
 
 ARG USERNAME
 ARG UID
 ARG GID
 
-RUN apk update && apk add bash
+RUN apk add --no-cache bash && corepack enable && corepack prepare pnpm@9 --activate
 
-RUN npm install -g pnpm
-
-RUN mkdir -p /home/$USERNAME/.npm
-
-RUN chown -R $UID:$GID /home/$USERNAME
+RUN mkdir -p /home/$USERNAME/.local/share/pnpm /home/$USERNAME/.npm \
+    && chown -R $UID:$GID /home/$USERNAME
 
 ENV HOME=/home/$USERNAME
+ENV PNPM_HOME=/home/$USERNAME/.local/share/pnpm
+ENV PATH="$PNPM_HOME:$PATH"

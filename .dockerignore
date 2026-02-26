@@ -1,10 +1,26 @@
+# Dependencies and build outputs (rebuilt in container)
 node_modules
-*.log
+frontend/node_modules
+frontend/dist
+target
+.vite
+
+# Git and env
 .git
+.env
+.env.example
+.env.*
+
+# Misc
+*.log
 .cache
 *.zip
 *.db
 *.txt
-target
-.vite
-.env.example
+docs
+archive
+building
+test-maildir
+.fastembed_cache
+.specstory
+*.code-workspace
