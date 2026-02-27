@@ -274,6 +274,25 @@ To develop the application locally:
 
    ```
    docker compose -f ./docker-compose.dev.yml up -d
+   ```
+
+   Before running database migrations (which `make back` will do for you), you need to import the base `lojban_lens` database dump so that migrations can run on top of it.
+
+   From the project root, with the Postgres container (usually named `lenpostgres`) running, and using the default database name `lojban_lens` from `.env.example`:
+
+   ```bash
+   # Copy the dump into the Postgres container
+   docker cp dump/jbocma.sql lenpostgres:/tmp/jbocma.sql
+
+   # Import it into the target database (uses lojban_lens by default)
+   docker exec -it lenpostgres \
+     psql -U "$DB_USER" -d "$DB_NAME" \
+     -f /tmp/jbocma.sql
+   ```
+
+   Once the dump has been imported, you can run:
+
+   ```bash
    make back
    ```
 
