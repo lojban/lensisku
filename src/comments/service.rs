@@ -1008,6 +1008,7 @@ pub async fn get_trending_comments(
                     c.total_replies,
                     c.valsiid,
                     c.definitionid,
+                    c.definition_link_id,
                     c.content::text as content,
                     pc.content::text as parent_content,
                     t.valsiid,
