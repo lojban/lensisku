@@ -74,12 +74,21 @@ const queueForRendering = (element) => {
   }
 }
 
+/** Normalize link anchor text: fix "https\_\_" or "https__" in markdown (serializer escape bug) */
+function normalizeLinkAnchors(text) {
+  if (!text || typeof text !== 'string') return text
+  return text
+    .replace(/(https?:)(\\_){2}/g, '$1//')
+    .replace(/(https?)__(?=[^\s\]])/g, '$1://')
+}
+
 const renderContent = async () => {
   if (!contentRef.value || !props.content) return
 
   let finalContent = props.content
 
   if (props.enableMarkdown) {
+    finalContent = normalizeLinkAnchors(finalContent)
     // First split content into LaTeX and non-LaTeX parts
     const parts = props.content.split(/(\$[^$]+\$)/)
     finalContent = parts
