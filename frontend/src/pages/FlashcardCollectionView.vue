@@ -3,9 +3,6 @@
   <div class="bg-white border rounded-lg p-4 sm:p-6 mb-6">
     <div class="flex items-center justify-between mb-4">
       <div class="flex items-center space-x-3">
-        <RouterLink :to="`/collections/${props.collectionId}`" class="btn-history">
-          <ArrowLeft class="h-5 w-5" />
-        </RouterLink>
         <h2 class="text-2xl font-bold">
           <span class="ml-1">{{ t('components.flashcardCollectionView.title', { collectionName: collection?.name }) }}</span>
         </h2>
@@ -14,6 +11,9 @@
 
     <template v-if="isOwner && !isLoading && collection?.item_count > existingFlashcardIds.size">
       <div class="flex flex-wrap justify-center md:justify-start gap-2 mb-4">
+        <RouterLink :to="`/collections/${props.collectionId}`" class="btn-aqua-zinc">
+          <ArrowLeft class="h-5 w-5" />
+        </RouterLink>
         <RouterLink
           :to="`/collections/${collection.collection_id}?mode=add_flashcard`"
           class="btn-aqua-emerald"

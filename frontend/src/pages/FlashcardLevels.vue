@@ -4,17 +4,17 @@
     <div class="mb-4 flex-shrink-0">
       <div class="flex items-center justify-between mb-4">
         <div class="flex items-center space-x-3">
-          <RouterLink :to="`/collections/${props.collectionId}/flashcards`" class="btn-history">
-            <ArrowLeft class="h-5 w-5" />
-          </RouterLink>
-          <h2 class="text-2xl font-bold inline-flex items-center">
-            <span class="ml-1">{{ collection?.name }} - Levels</span>
+          <h2 class="text-2xl font-bold inline-flex items-center gap-2">
+            {{ collection?.name }}
           </h2>
         </div>
       </div>
 
-      <div class="flex flex-col sm:flex-row gap-2 items-center sm:items-start">
-        <button type="button" class="btn-aqua-orange h-10 text-base" @click="startStudy">
+      <div class="flex flex-row gap-2 justify-between items-center w-full">
+        <RouterLink :to="`/collections/${props.collectionId}/flashcards`" class="btn-aqua-zinc">
+          <ArrowLeft class="h-5 w-5" />
+        </RouterLink>
+        <button type="button" class="btn-aqua-orange" @click="startStudy">
           {{ t('flashcardLevels.studyButton', 'Study') }}
         </button>
         <IconButton v-if="isOwner" :label="t('flashcardLevels.createLevel')" button-classes="btn-aqua-emerald"
@@ -45,11 +45,8 @@
         <VueFlow v-model="elements" :default-viewport="{ zoom: 1 }" :min-zoom="0.2" :max-zoom="4"
           class="vue-flow-wrapper flex-1 min-h-0">
           <template #node-custom="nodeProps">
-            <div
-              class="level-card node-content"
-              :class="getLevelCardClass(nodeProps.data)"
-              :style="getLevelCardStyle(nodeProps.data)"
-            >
+            <div class="level-card node-content" :class="getLevelCardClass(nodeProps.data)"
+              :style="getLevelCardStyle(nodeProps.data)">
               <!-- Top accent + glow -->
               <div class="level-card-glow" />
 
@@ -78,10 +75,8 @@
               </div>
 
               <!-- Locked: hint + owner actions -->
-              <div
-                v-if="!isLevelUnlocked(nodeProps.data) && !nodeProps.data.progress?.is_completed"
-                class="level-card-body"
-              >
+              <div v-if="!isLevelUnlocked(nodeProps.data) && !nodeProps.data.progress?.is_completed"
+                class="level-card-body">
                 <p v-if="nodeProps.data.prerequisites?.length" class="level-card-hint">
                   <Lock class="h-4 w-4 shrink-0 opacity-80" />
                   {{ t('flashcardLevels.unlockHint', 'Complete previous levels to unlock') }}
@@ -91,7 +86,8 @@
                     <Settings class="h-4 w-4" />
                     {{ t('flashcardLevels.actions.edit') }}
                   </button>
-                  <button type="button" class="level-card-btn level-card-btn-ghost" @click="showAddCardsModal(nodeProps.data)">
+                  <button type="button" class="level-card-btn level-card-btn-ghost"
+                    @click="showAddCardsModal(nodeProps.data)">
                     <PlusCircle class="h-4 w-4" />
                     {{ t('flashcardLevels.actions.addCards') }}
                   </button>
@@ -109,10 +105,7 @@
                     </span>
                   </div>
                   <div class="level-card-progress-track">
-                    <div
-                      class="level-card-progress-fill"
-                      :style="{ width: getProgressWidth(nodeProps.data) }"
-                    />
+                    <div class="level-card-progress-fill" :style="{ width: getProgressWidth(nodeProps.data) }" />
                   </div>
                   <div class="level-card-stats">
                     <span>{{ t('flashcardLevels.successRate') }}</span>
@@ -121,28 +114,24 @@
                 </div>
 
                 <div class="level-card-actions level-card-actions-main">
-                  <button
-                    type="button"
-                    class="level-card-btn level-card-btn-primary"
-                    @click="showLevelCards(nodeProps.data)"
-                  >
+                  <button type="button" class="level-card-btn level-card-btn-primary"
+                    @click="showLevelCards(nodeProps.data)">
                     <BookOpen class="h-4 w-4" />
                     {{ t('flashcardLevels.actions.viewCards') }}
                   </button>
-                  <RouterLink
-                    v-if="nodeProps.data.card_count > 0"
-                    :to="`/collections/${props.collectionId}/flashcards`"
-                    class="level-card-btn level-card-btn-secondary"
-                  >
+                  <RouterLink v-if="nodeProps.data.card_count > 0" :to="`/collections/${props.collectionId}/flashcards`"
+                    class="level-card-btn level-card-btn-secondary">
                     <Play class="h-4 w-4" />
                     {{ t('flashcardLevels.actions.practice', 'Practice') }}
                   </RouterLink>
                   <template v-if="isOwner">
-                    <button type="button" class="level-card-btn level-card-btn-ghost" @click="editLevel(nodeProps.data)">
+                    <button type="button" class="level-card-btn level-card-btn-ghost"
+                      @click="editLevel(nodeProps.data)">
                       <Settings class="h-4 w-4" />
                       {{ t('flashcardLevels.actions.edit') }}
                     </button>
-                    <button type="button" class="level-card-btn level-card-btn-ghost" @click="showAddCardsModal(nodeProps.data)">
+                    <button type="button" class="level-card-btn level-card-btn-ghost"
+                      @click="showAddCardsModal(nodeProps.data)">
                       <PlusCircle class="h-4 w-4" />
                       {{ t('flashcardLevels.actions.addCards') }}
                     </button>
@@ -178,13 +167,13 @@
 
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('flashcardLevels.descriptionLabel')
-            }}</label>
+              }}</label>
             <textarea v-model="levelForm.description" rows="3" class="textarea-field" />
           </div>
 
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('flashcardLevels.prerequisitesLabel')
-            }}</label>
+              }}</label>
             <select v-model="levelForm.prerequisite_ids" multiple
               class="w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500">
               <option v-for="level in availablePrerequisites" :key="level.level_id" :value="level.level_id">
@@ -196,13 +185,13 @@
           <div class="grid grid-cols-2 gap-4">
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('flashcardLevels.minCardsLabel')
-              }}</label>
+                }}</label>
               <input v-model.number="levelForm.min_cards" type="number" min="1"
                 class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500">
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('flashcardLevels.minSuccessRateLabel')
-              }}</label>
+                }}</label>
               <input v-model.number="levelForm.min_success_rate" type="number" min="0" max="100"
                 class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500">
             </div>
@@ -240,7 +229,7 @@
                 <div v-if="card.progress" class="flex flex-row w-full justify-between gap-2 mb-4 text-sm text-gray-500">
                   <div class="flex flex-row text-sm text-gray-500">
                     <span>{{ t('flashcardLevels.mySuccessRate') }} {{ formatSuccessRate(card.progress.success_rate)
-                    }}</span>
+                      }}</span>
                     <span class="mx-2">|</span>
                     <span>{{ t('flashcardLevels.myAttempts') }} {{ card.progress.total_attempts }}</span>
                   </div>
@@ -493,7 +482,7 @@ const sortedLevels = computed(() => {
 })
 
 // When anonymous, a level is unlocked if it has no prerequisites or all prerequisites are completed in localStorage
-function isLevelUnlockedForAnon (level) {
+function isLevelUnlockedForAnon(level) {
   if (!level?.prerequisites?.length) return true
   const cid = props.collectionId
   return level.prerequisites.every((p) => {
@@ -513,12 +502,12 @@ const effectiveLevels = computed(() => {
     const isLocked = hasLocal ? !isLevelUnlockedForAnon(level) : level.is_locked
     const progress = hasLocal
       ? {
-          cards_completed: local.cards_completed ?? 0,
-          correct_answers: local.correct_answers ?? 0,
-          total_answers: local.total_answers ?? 0,
-          is_unlocked: !isLocked,
-          is_completed: !!local.completed_at
-        }
+        cards_completed: local.cards_completed ?? 0,
+        correct_answers: local.correct_answers ?? 0,
+        total_answers: local.total_answers ?? 0,
+        is_unlocked: !isLocked,
+        is_completed: !!local.completed_at
+      }
       : level.progress
     return { ...level, is_locked: isLocked, progress }
   })
@@ -882,7 +871,8 @@ onMounted(async () => {
 
 /* Internal padding so cards don't touch Vue Flow area borders */
 .vue-flow-wrapper :deep(.vue-flow__viewport) {
-  padding: 0.5rem; /* p-2 equivalent */
+  padding: 0.5rem;
+  /* p-2 equivalent */
   box-sizing: border-box;
 }
 
