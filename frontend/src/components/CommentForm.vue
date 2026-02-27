@@ -91,7 +91,11 @@ onMounted(async () => {
   // Update content ref on change
   crepe.on((listener) => {
     listener.markdownUpdated(() => {
-      const markdown = crepe.getMarkdown()
+      let markdown = crepe.getMarkdown()
+      // Fix link anchor text: markdown serializer escapes _ in link labels, so URL-like
+      // text stored as "https__..." becomes "https\_\_..." — normalize back to "https://"
+      markdown = markdown.replace(/(https?:)(\\_){2}/g, '$1//')
+      markdown = markdown.replace(/(https?)__(?=[^\s\]])/g, '$1://')
       // Parse markdown into content parts array
       // Split markdown into blocks and preserve quote formatting
       const contentParts = markdown.split(/(^>.*$)/gm).filter(line => line.trim()).map(line => {
