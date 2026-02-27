@@ -2,6 +2,7 @@ use std::{collections::HashMap, sync::Arc};
 
 use crate::language::dto::*;
 use crate::language::models::{Language, LojbanToken};
+use camxes_rs::peg::parsing::ParseNode;
 use camxes_rs::peg::{grammar::Peg, parsing::ParseResult};
 use deadpool_postgres::{Pool, Transaction};
 use log::warn;
@@ -49,10 +50,10 @@ pub fn parse_lojban(parsers: &Arc<HashMap<i32, Peg>>, input: &str) -> LojbanPars
 
     let ParseResult(_, _, result) = parser.parse(input);
 
-    match result {
+    match result.as_ref() {
         Ok(tokens) => {
             let mut lojban_tokens: Vec<LojbanToken> =
-                tokens.into_iter().map(LojbanToken::from).collect();
+                tokens.iter().cloned().map(LojbanToken::from).collect();
 
             fn fill_text(token: &mut LojbanToken, input: &str) {
                 token.text = input[token.start..token.end].to_string();
@@ -86,6 +87,97 @@ fn fill_text(token: &mut LojbanToken, input: &str) {
     }
 }
 
+/// Collects lujvo rafsi segment strings from the camxes parse tree.
+/// Expands stressed_*_rafsi into
+/// "rafsi + 'y" / "rafsi + y" for readable decomposition.
+fn lujvo_segments_from_nodes(input: &str, nodes: &[ParseNode]) -> Option<Vec<String>> {
+    fn find_lujvo_core(nodes: &[ParseNode]) -> Option<&ParseNode> {
+        for node in nodes {
+            if let ParseNode::NonTerminal { name, children, .. } = node {
+                if name == "lujvo_core" {
+                    return Some(node);
+                }
+                if let Some(found) = find_lujvo_core(children) {
+                    return Some(found);
+                }
+            }
+        }
+        None
+    }
+
+    let lujvo_core = find_lujvo_core(nodes)?;
+    let ParseNode::NonTerminal { children, .. } = lujvo_core else {
+        return None;
+    };
+
+    let mut parts: Vec<(usize, String)> = Vec::new();
+
+    for node in children {
+        if let ParseNode::NonTerminal { name, span, children: sub } = node {
+            let (s, e) = (span.0, span.1);
+            if s >= e || e > input.len() {
+                continue;
+            }
+            let text = input[s..e].to_string();
+            if name == "stressed_fuhivla_rafsi" {
+                let mut rafsi_end = s;
+                let mut hy_start = e;
+                for n in sub {
+                    if let ParseNode::NonTerminal { name: nname, span: nspan, .. } = n {
+                        let (ns, ne) = (nspan.0, nspan.1);
+                        if nname == "fuhivla_trim" {
+                            rafsi_end = ne;
+                        }
+                        if nname == "onset" && ne <= e {
+                            rafsi_end = rafsi_end.max(ne);
+                        }
+                        if nname == "h" || nname == "y" {
+                            if ns < hy_start {
+                                hy_start = ns;
+                            }
+                        }
+                    }
+                }
+                if rafsi_end > s {
+                    parts.push((s, input[s..rafsi_end].to_string()));
+                }
+                if hy_start < e {
+                    parts.push((hy_start, input[hy_start..e].to_string()));
+                }
+            } else if name == "stressed_hy_rafsi" || name == "stressed_y_rafsi" {
+                let mut rafsi_end = s;
+                let mut hy_start = e;
+                for n in sub {
+                    if let ParseNode::NonTerminal { name: nname, span: nspan, .. } = n {
+                        let (ns, ne) = (nspan.0, nspan.1);
+                        if nname != "h" && nname != "y" {
+                            if ne > rafsi_end {
+                                rafsi_end = ne;
+                            }
+                        }
+                        if nname == "h" || nname == "y" {
+                            if ns < hy_start {
+                                hy_start = ns;
+                            }
+                        }
+                    }
+                }
+                if rafsi_end > s {
+                    parts.push((s, input[s..rafsi_end].to_string()));
+                }
+                if hy_start < e {
+                    parts.push((hy_start, input[hy_start..e].to_string()));
+                }
+            } else {
+                parts.push((s, text));
+            }
+        }
+    }
+
+    parts.sort_by_key(|(start, _)| *start);
+    Some(parts.into_iter().map(|(_, s)| s).collect())
+}
+
 pub async fn analyze_word(
     parsers: &Arc<HashMap<i32, Peg>>,
     word: &str,
@@ -112,10 +204,13 @@ pub async fn analyze_word(
 
     let ParseResult(_, _, result) = parser.parse(word);
 
-    match result {
+    match result.as_ref() {
         Ok(tokens) => {
+            let lujvo_decomposition_camxes =
+                lujvo_segments_from_nodes(word, tokens).map(|s| s.join(" + "));
+
             let mut parsed_tokens: Vec<LojbanToken> =
-                tokens.into_iter().map(LojbanToken::from).collect();
+                tokens.iter().cloned().map(LojbanToken::from).collect();
 
             for token in &mut parsed_tokens {
                 fill_text(token, word);
@@ -143,14 +238,13 @@ pub async fn analyze_word(
             };
 
             let (recommended, problems) = if word_type.as_str() == "lujvo" {
-                match jvokaha(word) {
+                let recommended = match jvokaha(word) {
                     Ok(_) => {
                         let cmavo = fetch_cmavo_rafsi(&transaction).await.ok();
                         let cmavo_exp = fetch_experimental_cmavo_rafsi(&transaction).await.ok();
                         let gismu = fetch_gismu_rafsi(&transaction).await.ok();
                         let gismu_exp = fetch_experimental_gismu_rafsi(&transaction).await.ok();
-
-                        let reconstructed = reconstruct_lujvo(
+                        reconstruct_lujvo(
                             word,
                             true,
                             &RafsiOptions {
@@ -160,15 +254,12 @@ pub async fn analyze_word(
                                 custom_gismu: gismu.as_ref(),
                                 custom_gismu_exp: gismu_exp.as_ref(),
                             },
-                        );
-
-                        match reconstructed {
-                            Ok(options) => (Some(options), None),
-                            Err(_) => (None, None),
-                        }
+                        )
+                        .ok()
                     }
-                    Err(_) => (None, None),
-                }
+                    Err(_) => None,
+                };
+                (recommended.or(lujvo_decomposition_camxes), None)
             } else if ["gismu", "experimental gismu"].contains(&word_type.as_str()) {
                 // 1 = gismu type ID
                 let gismu_regular = fetch_gismu_data(&transaction, 1)
@@ -521,22 +612,6 @@ async fn fetch_rafsi_data(
     Ok(result)
 }
 
-async fn fetch_gismu_data(
-    transaction: &Transaction<'_>,
-    type_id: i16,
-) -> Result<Vec<String>, Box<dyn std::error::Error>> {
-    let rows = transaction
-        .query("SELECT word FROM valsi WHERE typeid = $1", &[&type_id])
-        .await?;
-
-    let mut result: Vec<String> = Vec::new();
-    for row in rows {
-        let word: String = row.get("word");
-        result.push(word);
-    }
-    Ok(result)
-}
-
 async fn fetch_cmavo_rafsi(
     transaction: &Transaction<'_>,
 ) -> Result<HashMap<String, Vec<String>>, Box<dyn std::error::Error>> {
@@ -559,6 +634,22 @@ async fn fetch_experimental_gismu_rafsi(
     transaction: &Transaction<'_>,
 ) -> Result<HashMap<String, Vec<String>>, Box<dyn std::error::Error>> {
     fetch_rafsi_data(transaction, 7).await // 7 = experimental gismu type ID
+}
+
+async fn fetch_gismu_data(
+    transaction: &Transaction<'_>,
+    type_id: i16,
+) -> Result<Vec<String>, Box<dyn std::error::Error>> {
+    let rows = transaction
+        .query("SELECT word FROM valsi WHERE typeid = $1", &[&type_id])
+        .await?;
+
+    let mut result: Vec<String> = Vec::new();
+    for row in rows {
+        let word: String = row.get("word");
+        result.push(word);
+    }
+    Ok(result)
 }
 
 /// Extract the last TeX error from a .log file for a user-friendly message.
