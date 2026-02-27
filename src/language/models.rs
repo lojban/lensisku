@@ -1,4 +1,4 @@
-use camxes_rs::peg::parsing::{ParseNode, Span};
+use camxes_rs::peg::parsing::ParseNode;
 use serde::{Deserialize, Serialize};
 use std::error::Error as StdError;
 use tokio_postgres::Row;
@@ -65,18 +65,22 @@ pub struct LojbanToken {
 impl From<ParseNode> for LojbanToken {
     fn from(node: ParseNode) -> Self {
         match node {
-            ParseNode::Terminal(Span(start, end)) => LojbanToken {
+            ParseNode::Terminal { span } => LojbanToken {
                 kind: "terminal".to_string(),
                 text: String::new(),
-                start,
-                end,
+                start: span.0,
+                end: span.1,
                 children: vec![],
             },
-            ParseNode::NonTerminal(name, Span(start, end), children) => LojbanToken {
+            ParseNode::NonTerminal {
+                name,
+                span,
+                children,
+            } => LojbanToken {
                 kind: format!("non_terminal_{}", name),
                 text: String::new(),
-                start,
-                end,
+                start: span.0,
+                end: span.1,
                 children: children.into_iter().map(LojbanToken::from).collect(),
             },
         }
