@@ -132,6 +132,7 @@ def main() -> int:
         if cur.rowcount:
             inserted += 1
             if inserted % 100 == 0:
+                conn.commit()
                 left = total - (i + 1)
                 print(f"Progress: {inserted} words imported, {left} files left to process.")
         else:
