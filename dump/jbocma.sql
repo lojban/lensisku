@@ -1,0 +1,1944 @@
+--
+-- PostgreSQL database dump
+--
+
+\restrict HXaQTVBQs9bdfXKRuOOcvCK4ogS1Fy89x45AwkQgON7xQIhfkDHdl15q1nvlThc
+
+-- Dumped from database version 18.1 (Debian 18.1-1.pgdg13+2)
+-- Dumped by pg_dump version 18.1 (Debian 18.1-1.pgdg13+2)
+
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET idle_in_transaction_session_timeout = 0;
+SET transaction_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SELECT pg_catalog.set_config('search_path', '', false);
+SET check_function_bodies = false;
+SET xmloption = content;
+SET client_min_messages = warning;
+SET row_security = off;
+
+--
+-- Name: refresh_natlangwordbestplaces_for_delete(); Type: FUNCTION; Schema: public; Owner: lojban
+--
+
+CREATE FUNCTION public.refresh_natlangwordbestplaces_for_delete() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+  BEGIN
+    PERFORM reset_natlangwordbestplace(OLD.natlangwordid);
+    RETURN NULL;
+  END;
+$$;
+
+
+ALTER FUNCTION public.refresh_natlangwordbestplaces_for_delete() OWNER TO lojban;
+
+--
+-- Name: refresh_natlangwordbestplaces_for_upsert(); Type: FUNCTION; Schema: public; Owner: lojban
+--
+
+CREATE FUNCTION public.refresh_natlangwordbestplaces_for_upsert() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+  BEGIN
+    PERFORM reset_natlangwordbestplace(NEW.natlangwordid);
+    RETURN NULL;
+  END;
+$$;
+
+
+ALTER FUNCTION public.refresh_natlangwordbestplaces_for_upsert() OWNER TO lojban;
+
+--
+-- Name: refresh_valsibestdefinitions_for_delete(); Type: FUNCTION; Schema: public; Owner: lojban
+--
+
+CREATE FUNCTION public.refresh_valsibestdefinitions_for_delete() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+  BEGIN
+    PERFORM reset_valsibestdefinition(OLD.valsiid, OLD.langid);
+    RETURN NULL;
+  END;
+$$;
+
+
+ALTER FUNCTION public.refresh_valsibestdefinitions_for_delete() OWNER TO lojban;
+
+--
+-- Name: refresh_valsibestdefinitions_for_upsert(); Type: FUNCTION; Schema: public; Owner: lojban
+--
+
+CREATE FUNCTION public.refresh_valsibestdefinitions_for_upsert() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+  BEGIN
+    PERFORM reset_valsibestdefinition(NEW.valsiid, NEW.langid);
+    RETURN NULL;
+  END;
+$$;
+
+
+ALTER FUNCTION public.refresh_valsibestdefinitions_for_upsert() OWNER TO lojban;
+
+--
+-- Name: reload_natlangwordbestplaces(); Type: FUNCTION; Schema: public; Owner: lojban
+--
+
+CREATE FUNCTION public.reload_natlangwordbestplaces() RETURNS void
+    LANGUAGE plpgsql
+    AS $$
+  DECLARE
+    _wordid integer;
+  BEGIN
+
+    TRUNCATE natlangwordbestplaces;
+
+    FOR _wordid IN
+      SELECT DISTINCT natlangwordid AS wordid
+        FROM natlangwordvotes
+    LOOP
+      PERFORM reset_natlangwordbestplace(_wordid);
+    END LOOP;
+
+  END;
+$$;
+
+
+ALTER FUNCTION public.reload_natlangwordbestplaces() OWNER TO lojban;
+
+--
+-- Name: reload_valsibestdefinitions(); Type: FUNCTION; Schema: public; Owner: lojban
+--
+
+CREATE FUNCTION public.reload_valsibestdefinitions() RETURNS void
+    LANGUAGE plpgsql
+    AS $$
+  DECLARE
+    _row RECORD;
+  BEGIN
+
+    TRUNCATE valsibestdefinitions;
+
+    FOR _row IN
+      SELECT DISTINCT valsiid, langid
+        FROM definitionvotes
+    LOOP
+      PERFORM reset_valsibestdefinition(_row.valsiid, _row.langid);
+    END LOOP;
+
+  END;
+$$;
+
+
+ALTER FUNCTION public.reload_valsibestdefinitions() OWNER TO lojban;
+
+--
+-- Name: reset_natlangwordbestplace(integer); Type: FUNCTION; Schema: public; Owner: lojban
+--
+
+CREATE FUNCTION public.reset_natlangwordbestplace(_wordid integer) RETURNS void
+    LANGUAGE plpgsql
+    AS $$
+  DECLARE
+    _new RECORD;
+  BEGIN
+
+    SELECT natlangwordid AS wordid, definitionid, place, min(time) AS time, sum(value) AS score
+      INTO _new
+      FROM natlangwordvotes
+      WHERE natlangwordid = _wordid
+      GROUP BY wordid, definitionid, place
+      ORDER BY score DESC, time
+      LIMIT 1;
+
+    DELETE
+      FROM natlangwordbestplaces
+      WHERE wordid = _wordid;
+
+    IF _new IS NOT NULL THEN
+      INSERT
+        INTO natlangwordbestplaces (wordid, definitionid, place, score)
+        VALUES (_new.wordid, _new.definitionid, _new.place, _new.score);
+    END IF;
+
+  END;
+$$;
+
+
+ALTER FUNCTION public.reset_natlangwordbestplace(_wordid integer) OWNER TO lojban;
+
+--
+-- Name: reset_valsibestdefinition(integer, integer); Type: FUNCTION; Schema: public; Owner: lojban
+--
+
+CREATE FUNCTION public.reset_valsibestdefinition(_valsiid integer, _langid integer) RETURNS void
+    LANGUAGE plpgsql
+    AS $$
+  DECLARE
+    _new RECORD;
+  BEGIN
+
+    SELECT valsiid, langid, definitionid, min(time) as time, sum(value) AS score
+      INTO _new
+      FROM definitionvotes
+      WHERE valsiid = _valsiid AND langid = _langid
+      GROUP BY valsiid, langid, definitionid
+      ORDER BY score DESC, time
+      LIMIT 1;
+
+    DELETE
+      FROM valsibestdefinitions
+      WHERE valsiid = _valsiid AND langid = _langid;
+
+    IF _new IS NOT NULL THEN
+      INSERT
+        INTO valsibestdefinitions (valsiid, langid, definitionid, score)
+        VALUES (_new.valsiid, _new.langid, _new.definitionid, _new.score);
+    END IF;
+
+  END;
+$$;
+
+
+ALTER FUNCTION public.reset_valsibestdefinition(_valsiid integer, _langid integer) OWNER TO lojban;
+
+SET default_tablespace = '';
+
+SET default_table_access_method = heap;
+
+--
+-- Name: comments; Type: TABLE; Schema: public; Owner: lojban
+--
+
+CREATE TABLE public.comments (
+    commentid integer NOT NULL,
+    threadid integer NOT NULL,
+    parentid integer NOT NULL,
+    userid integer NOT NULL,
+    commentnum integer NOT NULL,
+    "time" integer NOT NULL,
+    subject text,
+    content text
+);
+
+
+ALTER TABLE public.comments OWNER TO lojban;
+
+--
+-- Name: comments_commentid_seq; Type: SEQUENCE; Schema: public; Owner: lojban
+--
+
+CREATE SEQUENCE public.comments_commentid_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.comments_commentid_seq OWNER TO lojban;
+
+--
+-- Name: comments_commentid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: lojban
+--
+
+ALTER SEQUENCE public.comments_commentid_seq OWNED BY public.comments.commentid;
+
+
+--
+-- Name: users; Type: TABLE; Schema: public; Owner: lojban
+--
+
+CREATE TABLE public.users (
+    userid integer NOT NULL,
+    username character varying(64) NOT NULL,
+    password character(32) NOT NULL,
+    email text NOT NULL,
+    realname text,
+    url text,
+    personal text,
+    votesize real DEFAULT 0.0
+);
+
+
+ALTER TABLE public.users OWNER TO lojban;
+
+--
+-- Name: convenientcomments; Type: VIEW; Schema: public; Owner: lojban
+--
+
+CREATE VIEW public.convenientcomments AS
+ SELECT c.commentid,
+    c.threadid,
+    c.parentid,
+    c.userid,
+    u.username,
+    u.realname,
+    c."time",
+    c.subject,
+    c.content,
+    c.commentnum
+   FROM public.comments c,
+    public.users u
+  WHERE (u.userid = c.userid);
+
+
+ALTER VIEW public.convenientcomments OWNER TO lojban;
+
+--
+-- Name: definitions; Type: TABLE; Schema: public; Owner: lojban
+--
+
+CREATE TABLE public.definitions (
+    langid integer NOT NULL,
+    valsiid integer NOT NULL,
+    definitionnum integer NOT NULL,
+    definitionid integer NOT NULL,
+    definition text NOT NULL,
+    notes text,
+    userid integer NOT NULL,
+    "time" integer NOT NULL,
+    selmaho text,
+    jargon text
+);
+
+
+ALTER TABLE public.definitions OWNER TO lojban;
+
+--
+-- Name: languages; Type: TABLE; Schema: public; Owner: lojban
+--
+
+CREATE TABLE public.languages (
+    langid integer NOT NULL,
+    tag character varying(128) NOT NULL,
+    englishname text NOT NULL,
+    lojbanname text NOT NULL,
+    realname text NOT NULL,
+    forlojban text,
+    url text
+);
+
+
+ALTER TABLE public.languages OWNER TO lojban;
+
+--
+-- Name: valsi; Type: TABLE; Schema: public; Owner: lojban
+--
+
+CREATE TABLE public.valsi (
+    valsiid integer NOT NULL,
+    word text NOT NULL,
+    typeid smallint NOT NULL,
+    userid integer NOT NULL,
+    "time" integer NOT NULL,
+    rafsi text
+);
+
+
+ALTER TABLE public.valsi OWNER TO lojban;
+
+--
+-- Name: convenientdefinitions; Type: VIEW; Schema: public; Owner: lojban
+--
+
+CREATE VIEW public.convenientdefinitions AS
+ SELECT nd.definitionid,
+    l.realname AS langrealname,
+    l.tag,
+    l.langid,
+    v.valsiid,
+    v.word,
+    nd.definition,
+    nd.notes,
+    u.username,
+    u.userid,
+    nd."time",
+    nd.definitionnum,
+    v.rafsi,
+    nd.selmaho,
+    nd.jargon
+   FROM public.definitions nd,
+    public.languages l,
+    public.valsi v,
+    public.users u
+  WHERE ((nd.langid = l.langid) AND (nd.valsiid = v.valsiid) AND (nd.userid = u.userid));
+
+
+ALTER VIEW public.convenientdefinitions OWNER TO lojban;
+
+--
+-- Name: etymology; Type: TABLE; Schema: public; Owner: lojban
+--
+
+CREATE TABLE public.etymology (
+    etymologyid integer NOT NULL,
+    valsiid integer NOT NULL,
+    langid integer NOT NULL,
+    content text,
+    "time" integer NOT NULL,
+    userid integer NOT NULL
+);
+
+
+ALTER TABLE public.etymology OWNER TO lojban;
+
+--
+-- Name: convenientetymology; Type: VIEW; Schema: public; Owner: lojban
+--
+
+CREATE VIEW public.convenientetymology AS
+ SELECT e.etymologyid,
+    v.word,
+    e.valsiid,
+    l.tag,
+    l.realname,
+    l.langid,
+    e.content,
+    e."time",
+    u.username,
+    u.userid
+   FROM public.etymology e,
+    public.valsi v,
+    public.languages l,
+    public.users u
+  WHERE ((e.userid = u.userid) AND (e.langid = l.langid) AND (e.valsiid = v.valsiid));
+
+
+ALTER VIEW public.convenientetymology OWNER TO lojban;
+
+--
+-- Name: example; Type: TABLE; Schema: public; Owner: lojban
+--
+
+CREATE TABLE public.example (
+    exampleid integer NOT NULL,
+    valsiid integer NOT NULL,
+    definitionid integer NOT NULL,
+    examplenum integer NOT NULL,
+    content text,
+    "time" integer NOT NULL,
+    userid integer NOT NULL
+);
+
+
+ALTER TABLE public.example OWNER TO lojban;
+
+--
+-- Name: convenientexamples; Type: VIEW; Schema: public; Owner: lojban
+--
+
+CREATE VIEW public.convenientexamples AS
+ SELECT e.exampleid,
+    v.word,
+    e.valsiid,
+    e.content,
+    e."time",
+    u.username,
+    u.userid,
+    e.examplenum,
+    e.definitionid
+   FROM public.valsi v,
+    public.example e,
+    public.users u
+  WHERE ((v.valsiid = e.valsiid) AND (u.userid = e.userid));
+
+
+ALTER VIEW public.convenientexamples OWNER TO lojban;
+
+--
+-- Name: natlangwords; Type: TABLE; Schema: public; Owner: lojban
+--
+
+CREATE TABLE public.natlangwords (
+    wordid integer NOT NULL,
+    langid integer NOT NULL,
+    word text NOT NULL,
+    meaning text,
+    meaningnum integer NOT NULL,
+    userid integer NOT NULL,
+    "time" integer NOT NULL,
+    notes text,
+    CONSTRAINT natlangwords_meaning_nonempty CHECK ((length(meaning) > 0))
+);
+
+
+ALTER TABLE public.natlangwords OWNER TO lojban;
+
+--
+-- Name: threads; Type: TABLE; Schema: public; Owner: lojban
+--
+
+CREATE TABLE public.threads (
+    threadid integer NOT NULL,
+    valsiid integer NOT NULL,
+    natlangwordid integer NOT NULL,
+    definitionid integer NOT NULL
+);
+
+
+ALTER TABLE public.threads OWNER TO lojban;
+
+--
+-- Name: convenientthreads; Type: VIEW; Schema: public; Owner: lojban
+--
+
+CREATE VIEW public.convenientthreads AS
+ SELECT t.threadid,
+    t.valsiid,
+    v.word AS valsi,
+    t.natlangwordid,
+    nlw.word AS natlangword,
+    l.tag,
+    t.definitionid
+   FROM public.threads t,
+    public.valsi v,
+    public.natlangwords nlw,
+    public.languages l
+  WHERE ((t.valsiid = v.valsiid) AND (t.natlangwordid = nlw.wordid) AND (nlw.langid = l.langid));
+
+
+ALTER VIEW public.convenientthreads OWNER TO lojban;
+
+--
+-- Name: valsitypes; Type: TABLE; Schema: public; Owner: lojban
+--
+
+CREATE TABLE public.valsitypes (
+    typeid smallint NOT NULL,
+    descriptor character varying(128)
+);
+
+
+ALTER TABLE public.valsitypes OWNER TO lojban;
+
+--
+-- Name: convenientvalsi; Type: VIEW; Schema: public; Owner: lojban
+--
+
+CREATE VIEW public.convenientvalsi AS
+ SELECT v.valsiid,
+    v.word,
+    t.descriptor AS type,
+    v.typeid,
+    u.username,
+    v.userid,
+    v."time",
+    v.rafsi
+   FROM public.valsi v,
+    public.valsitypes t,
+    public.users u
+  WHERE ((v.typeid = t.typeid) AND (v.userid = u.userid));
+
+
+ALTER VIEW public.convenientvalsi OWNER TO lojban;
+
+--
+-- Name: definitions_definitionid_seq; Type: SEQUENCE; Schema: public; Owner: lojban
+--
+
+CREATE SEQUENCE public.definitions_definitionid_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.definitions_definitionid_seq OWNER TO lojban;
+
+--
+-- Name: definitions_definitionid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: lojban
+--
+
+ALTER SEQUENCE public.definitions_definitionid_seq OWNED BY public.definitions.definitionid;
+
+
+--
+-- Name: definitionvotes; Type: TABLE; Schema: public; Owner: lojban
+--
+
+CREATE TABLE public.definitionvotes (
+    valsiid integer NOT NULL,
+    langid integer NOT NULL,
+    definitionid integer NOT NULL,
+    value real NOT NULL,
+    userid integer NOT NULL,
+    "time" integer NOT NULL
+);
+
+
+ALTER TABLE public.definitionvotes OWNER TO lojban;
+
+--
+-- Name: etymology_etymologyid_seq; Type: SEQUENCE; Schema: public; Owner: lojban
+--
+
+CREATE SEQUENCE public.etymology_etymologyid_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.etymology_etymologyid_seq OWNER TO lojban;
+
+--
+-- Name: etymology_etymologyid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: lojban
+--
+
+ALTER SEQUENCE public.etymology_etymologyid_seq OWNED BY public.etymology.etymologyid;
+
+
+--
+-- Name: example_exampleid_seq; Type: SEQUENCE; Schema: public; Owner: lojban
+--
+
+CREATE SEQUENCE public.example_exampleid_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.example_exampleid_seq OWNER TO lojban;
+
+--
+-- Name: example_exampleid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: lojban
+--
+
+ALTER SEQUENCE public.example_exampleid_seq OWNED BY public.example.exampleid;
+
+
+--
+-- Name: keywordmapping; Type: TABLE; Schema: public; Owner: lojban
+--
+
+CREATE TABLE public.keywordmapping (
+    natlangwordid integer NOT NULL,
+    definitionid integer NOT NULL,
+    place smallint NOT NULL
+);
+
+
+ALTER TABLE public.keywordmapping OWNER TO lojban;
+
+--
+-- Name: languages_langid_seq; Type: SEQUENCE; Schema: public; Owner: lojban
+--
+
+CREATE SEQUENCE public.languages_langid_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.languages_langid_seq OWNER TO lojban;
+
+--
+-- Name: languages_langid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: lojban
+--
+
+ALTER SEQUENCE public.languages_langid_seq OWNED BY public.languages.langid;
+
+
+--
+-- Name: natlangword_corrections; Type: TABLE; Schema: public; Owner: lojban
+--
+
+CREATE TABLE public.natlangword_corrections (
+    wordid integer,
+    newword text NOT NULL,
+    newmeaning text NOT NULL,
+    notes text,
+    userid integer,
+    "time" integer NOT NULL
+);
+
+
+ALTER TABLE public.natlangword_corrections OWNER TO lojban;
+
+--
+-- Name: natlangwordbestplaces; Type: TABLE; Schema: public; Owner: lojban
+--
+
+CREATE TABLE public.natlangwordbestplaces (
+    wordid integer NOT NULL,
+    definitionid integer NOT NULL,
+    place integer NOT NULL,
+    score integer NOT NULL
+);
+
+
+ALTER TABLE public.natlangwordbestplaces OWNER TO lojban;
+
+--
+-- Name: natlangwordbestguesses; Type: VIEW; Schema: public; Owner: lojban
+--
+
+CREATE VIEW public.natlangwordbestguesses AS
+ SELECT wordid AS natlangwordid,
+    definitionid,
+    place
+   FROM public.natlangwordbestplaces
+  WHERE (score > 0);
+
+
+ALTER VIEW public.natlangwordbestguesses OWNER TO lojban;
+
+--
+-- Name: natlangwords_wordid_seq; Type: SEQUENCE; Schema: public; Owner: lojban
+--
+
+CREATE SEQUENCE public.natlangwords_wordid_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.natlangwords_wordid_seq OWNER TO lojban;
+
+--
+-- Name: natlangwords_wordid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: lojban
+--
+
+ALTER SEQUENCE public.natlangwords_wordid_seq OWNED BY public.natlangwords.wordid;
+
+
+--
+-- Name: natlangwordvotes; Type: TABLE; Schema: public; Owner: lojban
+--
+
+CREATE TABLE public.natlangwordvotes (
+    natlangwordid integer NOT NULL,
+    definitionid integer,
+    place integer NOT NULL,
+    userid integer NOT NULL,
+    value integer NOT NULL,
+    "time" integer NOT NULL
+);
+
+
+ALTER TABLE public.natlangwordvotes OWNER TO lojban;
+
+--
+-- Name: pages; Type: TABLE; Schema: public; Owner: lojban
+--
+
+CREATE TABLE public.pages (
+    pagename text NOT NULL,
+    version integer NOT NULL,
+    "time" integer NOT NULL,
+    userid integer NOT NULL,
+    langid integer NOT NULL,
+    content text,
+    compressed boolean DEFAULT false,
+    latest boolean DEFAULT true
+);
+
+
+ALTER TABLE public.pages OWNER TO lojban;
+
+--
+-- Name: threads_threadid_seq; Type: SEQUENCE; Schema: public; Owner: lojban
+--
+
+CREATE SEQUENCE public.threads_threadid_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.threads_threadid_seq OWNER TO lojban;
+
+--
+-- Name: threads_threadid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: lojban
+--
+
+ALTER SEQUENCE public.threads_threadid_seq OWNED BY public.threads.threadid;
+
+
+--
+-- Name: users_userid_seq; Type: SEQUENCE; Schema: public; Owner: lojban
+--
+
+CREATE SEQUENCE public.users_userid_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.users_userid_seq OWNER TO lojban;
+
+--
+-- Name: users_userid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: lojban
+--
+
+ALTER SEQUENCE public.users_userid_seq OWNED BY public.users.userid;
+
+
+--
+-- Name: users_view; Type: TABLE; Schema: public; Owner: lojban
+--
+
+CREATE TABLE public.users_view (
+    userid integer,
+    username character varying(64),
+    votesize real
+);
+
+
+ALTER TABLE public.users_view OWNER TO lojban;
+
+--
+-- Name: valsi_valsiid_seq; Type: SEQUENCE; Schema: public; Owner: lojban
+--
+
+CREATE SEQUENCE public.valsi_valsiid_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.valsi_valsiid_seq OWNER TO lojban;
+
+--
+-- Name: valsi_valsiid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: lojban
+--
+
+ALTER SEQUENCE public.valsi_valsiid_seq OWNED BY public.valsi.valsiid;
+
+
+--
+-- Name: valsibestdefinitions; Type: TABLE; Schema: public; Owner: lojban
+--
+
+CREATE TABLE public.valsibestdefinitions (
+    valsiid integer NOT NULL,
+    langid integer NOT NULL,
+    definitionid integer NOT NULL,
+    score integer NOT NULL
+);
+
+
+ALTER TABLE public.valsibestdefinitions OWNER TO lojban;
+
+--
+-- Name: valsibestguesses; Type: VIEW; Schema: public; Owner: lojban
+--
+
+CREATE VIEW public.valsibestguesses AS
+ SELECT valsiid,
+    langid,
+    definitionid
+   FROM public.valsibestdefinitions
+  WHERE (score > 0);
+
+
+ALTER VIEW public.valsibestguesses OWNER TO lojban;
+
+--
+-- Name: xrefs; Type: TABLE; Schema: public; Owner: lojban
+--
+
+CREATE TABLE public.xrefs (
+    srctype smallint NOT NULL,
+    srcid integer NOT NULL,
+    desttype smallint NOT NULL,
+    destid integer NOT NULL
+);
+
+
+ALTER TABLE public.xrefs OWNER TO lojban;
+
+--
+-- Name: comments commentid; Type: DEFAULT; Schema: public; Owner: lojban
+--
+
+ALTER TABLE ONLY public.comments ALTER COLUMN commentid SET DEFAULT nextval('public.comments_commentid_seq'::regclass);
+
+
+--
+-- Name: definitions definitionid; Type: DEFAULT; Schema: public; Owner: lojban
+--
+
+ALTER TABLE ONLY public.definitions ALTER COLUMN definitionid SET DEFAULT nextval('public.definitions_definitionid_seq'::regclass);
+
+
+--
+-- Name: etymology etymologyid; Type: DEFAULT; Schema: public; Owner: lojban
+--
+
+ALTER TABLE ONLY public.etymology ALTER COLUMN etymologyid SET DEFAULT nextval('public.etymology_etymologyid_seq'::regclass);
+
+
+--
+-- Name: example exampleid; Type: DEFAULT; Schema: public; Owner: lojban
+--
+
+ALTER TABLE ONLY public.example ALTER COLUMN exampleid SET DEFAULT nextval('public.example_exampleid_seq'::regclass);
+
+
+--
+-- Name: languages langid; Type: DEFAULT; Schema: public; Owner: lojban
+--
+
+ALTER TABLE ONLY public.languages ALTER COLUMN langid SET DEFAULT nextval('public.languages_langid_seq'::regclass);
+
+
+--
+-- Name: natlangwords wordid; Type: DEFAULT; Schema: public; Owner: lojban
+--
+
+ALTER TABLE ONLY public.natlangwords ALTER COLUMN wordid SET DEFAULT nextval('public.natlangwords_wordid_seq'::regclass);
+
+
+--
+-- Name: threads threadid; Type: DEFAULT; Schema: public; Owner: lojban
+--
+
+ALTER TABLE ONLY public.threads ALTER COLUMN threadid SET DEFAULT nextval('public.threads_threadid_seq'::regclass);
+
+
+--
+-- Name: users userid; Type: DEFAULT; Schema: public; Owner: lojban
+--
+
+ALTER TABLE ONLY public.users ALTER COLUMN userid SET DEFAULT nextval('public.users_userid_seq'::regclass);
+
+
+--
+-- Name: valsi valsiid; Type: DEFAULT; Schema: public; Owner: lojban
+--
+
+ALTER TABLE ONLY public.valsi ALTER COLUMN valsiid SET DEFAULT nextval('public.valsi_valsiid_seq'::regclass);
+
+
+--
+-- Data for Name: comments; Type: TABLE DATA; Schema: public; Owner: lojban
+--
+
+COPY public.comments (commentid, threadid, parentid, userid, commentnum, "time", subject, content) FROM stdin;
+\.
+
+
+--
+-- Data for Name: definitions; Type: TABLE DATA; Schema: public; Owner: lojban
+--
+
+COPY public.definitions (langid, valsiid, definitionnum, definitionid, definition, notes, userid, "time", selmaho, jargon) FROM stdin;
+\.
+
+
+--
+-- Data for Name: definitionvotes; Type: TABLE DATA; Schema: public; Owner: lojban
+--
+
+COPY public.definitionvotes (valsiid, langid, definitionid, value, userid, "time") FROM stdin;
+\.
+
+
+--
+-- Data for Name: etymology; Type: TABLE DATA; Schema: public; Owner: lojban
+--
+
+COPY public.etymology (etymologyid, valsiid, langid, content, "time", userid) FROM stdin;
+\.
+
+
+--
+-- Data for Name: example; Type: TABLE DATA; Schema: public; Owner: lojban
+--
+
+COPY public.example (exampleid, valsiid, definitionid, examplenum, content, "time", userid) FROM stdin;
+\.
+
+
+--
+-- Data for Name: keywordmapping; Type: TABLE DATA; Schema: public; Owner: lojban
+--
+
+COPY public.keywordmapping (natlangwordid, definitionid, place) FROM stdin;
+\.
+
+
+--
+-- Data for Name: languages; Type: TABLE DATA; Schema: public; Owner: lojban
+--
+
+COPY public.languages (langid, tag, englishname, lojbanname, realname, forlojban, url) FROM stdin;
+0	xx	nolanguage	nolanguage	nolanguage	noforlojban	http://nowhere/
+19	no	Norwegian		norsk	lojban	http://www.sprakrad.no/
+2	en	English	gli'icybau	English	Lojban	\N
+3	hi	Hindi	xinbau	हिन्दी	\N	\N
+4	es	Spanish	spa'anybau	Español	\N	\N
+6	zh	Chinese	jugbau	中文	\N	\N
+7	ar	Arabic	rabybau	‮العربية‬	\N	\N
+10	ja	Japanese	ponbau	日本語	ロジバン	\N
+11	pl	Polish		Polski	\N	\N
+13	it	Italian		Italiano	\N	\N
+14	ko	Korean		한국어	\N	\N
+16	el	Greek	xesybau	Ελληνικά	Λόζμπαν	\N
+15	ro	Romanian		Română	\N	\N
+21	pt	Portuguese	potybau	Português	\N	\N
+22	sv	Swedish		Svenska	\N	\N
+23	sr	Serbian		Srpski	\N	\N
+24	tr	Turkish	bangrtirki	Türkçe	\N	\N
+26	ka	Georgian	kartuli	ქართველი	\N	\N
+27	gu	Gujarati	gudjrati	ગુજરાતી	\N	\N
+28	sq	Albanian	ckiptare	shqiptare	\N	\N
+29	eu	Basque	skalduna	Euskara	\N	\N
+31	id	Indonesian	bidbau	Bahasa Indonesia	\N	\N
+32	mg	Malagasy	malgaci	Malagasy	\N	\N
+33	ne	Nepali	bangrnepali	नेपाली	\N	\N
+34	sa	Sanskrit	srito	संस्कृत	\N	\N
+35	so	Somali	bangrsomali	Soomaali	\N	\N
+36	br	Breton	bre'one	brezhoneg	\N	\N
+37	ch	Chamorro	tcamoru	Chamoru	\N	\N
+38	kw	Cornish	kernauke	Kernewek	\N	\N
+39	ca	Catalan	katlana	català	\N	\N
+40	la	Latin	latmo	Latina	\N	\N
+41	hr	Croatian	bangrxrvatski	hrvatski	\N	\N
+42	nl	Dutch	bangrnedrlanda	Nederlands	\N	\N
+43	hu	Hungarian	banrmadiaru	Magyarul	\N	\N
+44	lt	Lithuanian	bangrlietuva	Lietuvių	\N	\N
+45	bg	Bulgarian	bolgaro	Български	\N	\N
+46	sk	Slovak	slovako	Slovenský	\N	\N
+47	sl	Slovenian	slovino	Slovenski	\N	\N
+48	vi	Vietnamese	vietnama	Tiếng Việt	\N	\N
+49	et	Estonian	bangrxesti	Eesti	\N	\N
+50	gl	Galician	bangrgalego	Galego	\N	\N
+51	uk	Ukrainian	vukro	Українська	\N	\N
+52	am	Amharic	amxari	አማርኛ	\N	\N
+53	cy	Welsh	kamro	Cymraeg	\N	\N
+54	ga	Irish	gailge	Gaeilge	\N	\N
+55	ia	Interlingua	binbau	Interlingua	\N	\N
+56	wa	Walloon	frasrvalona	Walon	\N	\N
+58	art-loglan	Loglan	loglan	loglan	\N	http://www.loglan.net/
+59	eo	Esperanto	spe'atybau	Esperanto	Loĵbano	http://www.esperanto.net/
+57	tlh	Klingon	bangrtlingana	 	\N	http://www.kli.org/
+9	de	German	dotybau	Deutsch	Lojban	\N
+5	ru	Russian	rukybau	Русский	Ложбан	\N
+60	tpi	Tok Pisin	bangrtokpisina	tok Pisin	tok Losban	\N
+1	jbo	Lojban	jbobau	lojban	\N	http://www.lojban.org/
+315	test	Test Language	cipybau	Test Language	Lojban	
+314	ta	Tamil	bangrtamiji	தமிழ்	யாழ்வாண்	\N
+8	fr	French	fasybau	Français	\N	\N
+316	art-guaspi	Gua\\spi	gaspo	gua\\spi	 	http://www.math.ucla.edu/~jimc/guaspi
+18	cs	Czech	tce'exo	Česká	\N	\N
+12	da	Danish	danseke	Dansk	\N	\N
+317	en-simple	Simple English	sampu glibau	Simple English	\N	\N
+20	fi	Finnish	suomne	Suomi	\N	\N
+25	fa	Farsi	bangrfarsi	‮فرسى‬	\N	\N
+17	he	Hebrew	xebybau	עברית	לוז'בן	\N
+30	be	Belarusian	labru'obau	Беларуская	\N	\N
+318	fr-facile	Easy French	frili fasybau	Français facile	\N	\N
+319	lv	Latvian	bangrlatfiacu	Latviešu	\N	\N
+320	pt-br	Portuguese (Brazil)	razypotybau	Português do Brasil	\N	\N
+321	en-bpfk	BPFK English	glico bangu be bypyfyky.	BPFK English	\N	https://groups.google.com/forum/#!forum/bpfk-list
+322	tok	Toki Pona	tokpona	toki pona	toki losupan	https://en.wikipedia.org/wiki/Toki_Pona
+\.
+
+
+--
+-- Data for Name: natlangword_corrections; Type: TABLE DATA; Schema: public; Owner: lojban
+--
+
+COPY public.natlangword_corrections (wordid, newword, newmeaning, notes, userid, "time") FROM stdin;
+\.
+
+
+--
+-- Data for Name: natlangwordbestplaces; Type: TABLE DATA; Schema: public; Owner: lojban
+--
+
+COPY public.natlangwordbestplaces (wordid, definitionid, place, score) FROM stdin;
+\.
+
+
+--
+-- Data for Name: natlangwords; Type: TABLE DATA; Schema: public; Owner: lojban
+--
+
+COPY public.natlangwords (wordid, langid, word, meaning, meaningnum, userid, "time", notes) FROM stdin;
+\.
+
+
+--
+-- Data for Name: natlangwordvotes; Type: TABLE DATA; Schema: public; Owner: lojban
+--
+
+COPY public.natlangwordvotes (natlangwordid, definitionid, place, userid, value, "time") FROM stdin;
+\.
+
+
+--
+-- Data for Name: pages; Type: TABLE DATA; Schema: public; Owner: lojban
+--
+
+COPY public.pages (pagename, version, "time", userid, langid, content, compressed, latest) FROM stdin;
+\.
+
+
+--
+-- Data for Name: threads; Type: TABLE DATA; Schema: public; Owner: lojban
+--
+
+COPY public.threads (threadid, valsiid, natlangwordid, definitionid) FROM stdin;
+\.
+
+
+--
+-- Data for Name: users; Type: TABLE DATA; Schema: public; Owner: lojban
+--
+
+COPY public.users (userid, username, password, email, realname, url, personal, votesize) FROM stdin;
+2	jkominek	                                	jkominek-jbovlaste@miranda.org				1
+4	guest	                                	webmaster@lojban.org				1
+1	officialdata	                                	jbovlaste-admin@lojban.org				10000
+3	rlpowell	                                	rlpowell@digitalkingdom.org				1
+0	nobody	                                	nobody@localhost				0
+\.
+
+
+--
+-- Data for Name: users_view; Type: TABLE DATA; Schema: public; Owner: lojban
+--
+
+COPY public.users_view (userid, username, votesize) FROM stdin;
+2	jkominek	1
+4	guest	1
+1	officialdata	10000
+3	rlpowell	1
+0	nobody	0
+\.
+
+
+--
+-- Data for Name: valsi; Type: TABLE DATA; Schema: public; Owner: lojban
+--
+
+COPY public.valsi (valsiid, word, typeid, userid, "time", rafsi) FROM stdin;
+\.
+
+
+--
+-- Data for Name: valsibestdefinitions; Type: TABLE DATA; Schema: public; Owner: lojban
+--
+
+COPY public.valsibestdefinitions (valsiid, langid, definitionid, score) FROM stdin;
+\.
+
+
+--
+-- Data for Name: valsitypes; Type: TABLE DATA; Schema: public; Owner: lojban
+--
+
+COPY public.valsitypes (typeid, descriptor) FROM stdin;
+0	nalvla
+1	gismu
+2	cmavo
+4	lujvo
+5	fu'ivla
+7	experimental gismu
+8	experimental cmavo
+6	cmavo-compound
+9	bu-letteral
+10	zei-lujvo
+12	obsolete fu'ivla
+13	obsolete zei-lujvo
+3	cmevla
+11	obsolete cmevla
+14	obsolete cmavo
+15	phrase
+\.
+
+
+--
+-- Data for Name: xrefs; Type: TABLE DATA; Schema: public; Owner: lojban
+--
+
+COPY public.xrefs (srctype, srcid, desttype, destid) FROM stdin;
+\.
+
+
+--
+-- Name: comments_commentid_seq; Type: SEQUENCE SET; Schema: public; Owner: lojban
+--
+
+SELECT pg_catalog.setval('public.comments_commentid_seq', 3887, true);
+
+
+--
+-- Name: definitions_definitionid_seq; Type: SEQUENCE SET; Schema: public; Owner: lojban
+--
+
+SELECT pg_catalog.setval('public.definitions_definitionid_seq', 73685, true);
+
+
+--
+-- Name: etymology_etymologyid_seq; Type: SEQUENCE SET; Schema: public; Owner: lojban
+--
+
+SELECT pg_catalog.setval('public.etymology_etymologyid_seq', 1780, true);
+
+
+--
+-- Name: example_exampleid_seq; Type: SEQUENCE SET; Schema: public; Owner: lojban
+--
+
+SELECT pg_catalog.setval('public.example_exampleid_seq', 1026, true);
+
+
+--
+-- Name: languages_langid_seq; Type: SEQUENCE SET; Schema: public; Owner: lojban
+--
+
+SELECT pg_catalog.setval('public.languages_langid_seq', 322, true);
+
+
+--
+-- Name: natlangwords_wordid_seq; Type: SEQUENCE SET; Schema: public; Owner: lojban
+--
+
+SELECT pg_catalog.setval('public.natlangwords_wordid_seq', 74603, true);
+
+
+--
+-- Name: threads_threadid_seq; Type: SEQUENCE SET; Schema: public; Owner: lojban
+--
+
+SELECT pg_catalog.setval('public.threads_threadid_seq', 1740, true);
+
+
+--
+-- Name: users_userid_seq; Type: SEQUENCE SET; Schema: public; Owner: lojban
+--
+
+SELECT pg_catalog.setval('public.users_userid_seq', 1493, true);
+
+
+--
+-- Name: valsi_valsiid_seq; Type: SEQUENCE SET; Schema: public; Owner: lojban
+--
+
+SELECT pg_catalog.setval('public.valsi_valsiid_seq', 34819, true);
+
+
+--
+-- Name: comments comments_pkey; Type: CONSTRAINT; Schema: public; Owner: lojban
+--
+
+ALTER TABLE ONLY public.comments
+    ADD CONSTRAINT comments_pkey PRIMARY KEY (commentid);
+
+
+--
+-- Name: definitions definitions_langid_key; Type: CONSTRAINT; Schema: public; Owner: lojban
+--
+
+ALTER TABLE ONLY public.definitions
+    ADD CONSTRAINT definitions_langid_key UNIQUE (langid, valsiid, definitionnum);
+
+
+--
+-- Name: definitions definitions_pkey; Type: CONSTRAINT; Schema: public; Owner: lojban
+--
+
+ALTER TABLE ONLY public.definitions
+    ADD CONSTRAINT definitions_pkey PRIMARY KEY (definitionid);
+
+
+--
+-- Name: definitionvotes definitionvotes_pkey; Type: CONSTRAINT; Schema: public; Owner: lojban
+--
+
+ALTER TABLE ONLY public.definitionvotes
+    ADD CONSTRAINT definitionvotes_pkey PRIMARY KEY (valsiid, langid, userid);
+
+
+--
+-- Name: etymology etymology_etymologyid_key; Type: CONSTRAINT; Schema: public; Owner: lojban
+--
+
+ALTER TABLE ONLY public.etymology
+    ADD CONSTRAINT etymology_etymologyid_key UNIQUE (etymologyid);
+
+
+--
+-- Name: example example_exampleid_key; Type: CONSTRAINT; Schema: public; Owner: lojban
+--
+
+ALTER TABLE ONLY public.example
+    ADD CONSTRAINT example_exampleid_key UNIQUE (exampleid);
+
+
+--
+-- Name: keywordmapping keywordmapping_pkey; Type: CONSTRAINT; Schema: public; Owner: lojban
+--
+
+ALTER TABLE ONLY public.keywordmapping
+    ADD CONSTRAINT keywordmapping_pkey PRIMARY KEY (natlangwordid, definitionid, place);
+
+
+--
+-- Name: languages languages_pkey; Type: CONSTRAINT; Schema: public; Owner: lojban
+--
+
+ALTER TABLE ONLY public.languages
+    ADD CONSTRAINT languages_pkey PRIMARY KEY (langid);
+
+
+--
+-- Name: natlangwordbestplaces natlangwordbestplaces_pkey; Type: CONSTRAINT; Schema: public; Owner: lojban
+--
+
+ALTER TABLE ONLY public.natlangwordbestplaces
+    ADD CONSTRAINT natlangwordbestplaces_pkey PRIMARY KEY (wordid);
+
+
+--
+-- Name: natlangwords natlangwords_pkey; Type: CONSTRAINT; Schema: public; Owner: lojban
+--
+
+ALTER TABLE ONLY public.natlangwords
+    ADD CONSTRAINT natlangwords_pkey PRIMARY KEY (wordid);
+
+
+--
+-- Name: natlangwords natlangwords_unique_langid_word_meaning; Type: CONSTRAINT; Schema: public; Owner: lojban
+--
+
+ALTER TABLE ONLY public.natlangwords
+    ADD CONSTRAINT natlangwords_unique_langid_word_meaning UNIQUE (langid, word, meaning);
+
+
+--
+-- Name: natlangwordvotes natlangwordvotes_pkey; Type: CONSTRAINT; Schema: public; Owner: lojban
+--
+
+ALTER TABLE ONLY public.natlangwordvotes
+    ADD CONSTRAINT natlangwordvotes_pkey PRIMARY KEY (natlangwordid, userid);
+
+
+--
+-- Name: pages pages_pkey; Type: CONSTRAINT; Schema: public; Owner: lojban
+--
+
+ALTER TABLE ONLY public.pages
+    ADD CONSTRAINT pages_pkey PRIMARY KEY (pagename, version, langid);
+
+
+--
+-- Name: threads threads_pkey; Type: CONSTRAINT; Schema: public; Owner: lojban
+--
+
+ALTER TABLE ONLY public.threads
+    ADD CONSTRAINT threads_pkey PRIMARY KEY (threadid);
+
+
+--
+-- Name: users users_pkey; Type: CONSTRAINT; Schema: public; Owner: lojban
+--
+
+ALTER TABLE ONLY public.users
+    ADD CONSTRAINT users_pkey PRIMARY KEY (userid);
+
+
+--
+-- Name: users users_username_key; Type: CONSTRAINT; Schema: public; Owner: lojban
+--
+
+ALTER TABLE ONLY public.users
+    ADD CONSTRAINT users_username_key UNIQUE (username);
+
+
+--
+-- Name: valsi valsi_pkey; Type: CONSTRAINT; Schema: public; Owner: lojban
+--
+
+ALTER TABLE ONLY public.valsi
+    ADD CONSTRAINT valsi_pkey PRIMARY KEY (valsiid);
+
+
+--
+-- Name: valsi valsi_word_key; Type: CONSTRAINT; Schema: public; Owner: lojban
+--
+
+ALTER TABLE ONLY public.valsi
+    ADD CONSTRAINT valsi_word_key UNIQUE (word);
+
+
+--
+-- Name: valsibestdefinitions valsibestdefinitions_pkey; Type: CONSTRAINT; Schema: public; Owner: lojban
+--
+
+ALTER TABLE ONLY public.valsibestdefinitions
+    ADD CONSTRAINT valsibestdefinitions_pkey PRIMARY KEY (valsiid, langid);
+
+
+--
+-- Name: valsitypes valsitypes_descriptor_key; Type: CONSTRAINT; Schema: public; Owner: lojban
+--
+
+ALTER TABLE ONLY public.valsitypes
+    ADD CONSTRAINT valsitypes_descriptor_key UNIQUE (descriptor);
+
+
+--
+-- Name: valsitypes valsitypes_pkey; Type: CONSTRAINT; Schema: public; Owner: lojban
+--
+
+ALTER TABLE ONLY public.valsitypes
+    ADD CONSTRAINT valsitypes_pkey PRIMARY KEY (typeid);
+
+
+--
+-- Name: natlangwordbestplaces_definitionid_key; Type: INDEX; Schema: public; Owner: lojban
+--
+
+CREATE INDEX natlangwordbestplaces_definitionid_key ON public.natlangwordbestplaces USING btree (definitionid);
+
+
+--
+-- Name: natlangwords_lower_word; Type: INDEX; Schema: public; Owner: lojban
+--
+
+CREATE INDEX natlangwords_lower_word ON public.natlangwords USING btree (lower(word));
+
+
+--
+-- Name: natlangwords_unique_langid_word_null; Type: INDEX; Schema: public; Owner: lojban
+--
+
+CREATE UNIQUE INDEX natlangwords_unique_langid_word_null ON public.natlangwords USING btree (langid, word) WHERE (meaning IS NULL);
+
+
+--
+-- Name: valsi_lower_word; Type: INDEX; Schema: public; Owner: lojban
+--
+
+CREATE INDEX valsi_lower_word ON public.valsi USING btree (lower(word));
+
+
+--
+-- Name: valsi_unique_word_nospaces; Type: INDEX; Schema: public; Owner: lojban
+--
+
+CREATE UNIQUE INDEX valsi_unique_word_nospaces ON public.valsi USING btree (replace(word, ' '::text, ''::text));
+
+
+--
+-- Name: valsibestdefinitions_definitionid_key; Type: INDEX; Schema: public; Owner: lojban
+--
+
+CREATE INDEX valsibestdefinitions_definitionid_key ON public.valsibestdefinitions USING btree (definitionid);
+
+
+--
+-- Name: definitionvotes on_definitionvotes_delete; Type: TRIGGER; Schema: public; Owner: lojban
+--
+
+CREATE TRIGGER on_definitionvotes_delete AFTER DELETE ON public.definitionvotes FOR EACH ROW EXECUTE FUNCTION public.refresh_valsibestdefinitions_for_delete();
+
+
+--
+-- Name: definitionvotes on_definitionvotes_insert; Type: TRIGGER; Schema: public; Owner: lojban
+--
+
+CREATE TRIGGER on_definitionvotes_insert AFTER INSERT ON public.definitionvotes FOR EACH ROW EXECUTE FUNCTION public.refresh_valsibestdefinitions_for_upsert();
+
+
+--
+-- Name: definitionvotes on_definitionvotes_update; Type: TRIGGER; Schema: public; Owner: lojban
+--
+
+CREATE TRIGGER on_definitionvotes_update AFTER UPDATE ON public.definitionvotes FOR EACH ROW EXECUTE FUNCTION public.refresh_valsibestdefinitions_for_upsert();
+
+
+--
+-- Name: natlangwordvotes on_natlangwordvotes_delete; Type: TRIGGER; Schema: public; Owner: lojban
+--
+
+CREATE TRIGGER on_natlangwordvotes_delete AFTER DELETE ON public.natlangwordvotes FOR EACH ROW EXECUTE FUNCTION public.refresh_natlangwordbestplaces_for_delete();
+
+
+--
+-- Name: natlangwordvotes on_natlangwordvotes_insert; Type: TRIGGER; Schema: public; Owner: lojban
+--
+
+CREATE TRIGGER on_natlangwordvotes_insert AFTER INSERT ON public.natlangwordvotes FOR EACH ROW EXECUTE FUNCTION public.refresh_natlangwordbestplaces_for_upsert();
+
+
+--
+-- Name: natlangwordvotes on_natlangwordvotes_update; Type: TRIGGER; Schema: public; Owner: lojban
+--
+
+CREATE TRIGGER on_natlangwordvotes_update AFTER UPDATE ON public.natlangwordvotes FOR EACH ROW EXECUTE FUNCTION public.refresh_natlangwordbestplaces_for_upsert();
+
+
+--
+-- Name: keywordmapping $1; Type: FK CONSTRAINT; Schema: public; Owner: lojban
+--
+
+ALTER TABLE ONLY public.keywordmapping
+    ADD CONSTRAINT "$1" FOREIGN KEY (natlangwordid) REFERENCES public.natlangwords(wordid);
+
+
+--
+-- Name: natlangword_corrections $1; Type: FK CONSTRAINT; Schema: public; Owner: lojban
+--
+
+ALTER TABLE ONLY public.natlangword_corrections
+    ADD CONSTRAINT "$1" FOREIGN KEY (wordid) REFERENCES public.natlangwords(wordid);
+
+
+--
+-- Name: natlangwordvotes $1; Type: FK CONSTRAINT; Schema: public; Owner: lojban
+--
+
+ALTER TABLE ONLY public.natlangwordvotes
+    ADD CONSTRAINT "$1" FOREIGN KEY (natlangwordid) REFERENCES public.natlangwords(wordid);
+
+
+--
+-- Name: valsi $1; Type: FK CONSTRAINT; Schema: public; Owner: lojban
+--
+
+ALTER TABLE ONLY public.valsi
+    ADD CONSTRAINT "$1" FOREIGN KEY (typeid) REFERENCES public.valsitypes(typeid);
+
+
+--
+-- Name: keywordmapping $2; Type: FK CONSTRAINT; Schema: public; Owner: lojban
+--
+
+ALTER TABLE ONLY public.keywordmapping
+    ADD CONSTRAINT "$2" FOREIGN KEY (definitionid) REFERENCES public.definitions(definitionid);
+
+
+--
+-- Name: natlangword_corrections $2; Type: FK CONSTRAINT; Schema: public; Owner: lojban
+--
+
+ALTER TABLE ONLY public.natlangword_corrections
+    ADD CONSTRAINT "$2" FOREIGN KEY (userid) REFERENCES public.users(userid);
+
+
+--
+-- Name: natlangwordvotes $2; Type: FK CONSTRAINT; Schema: public; Owner: lojban
+--
+
+ALTER TABLE ONLY public.natlangwordvotes
+    ADD CONSTRAINT "$2" FOREIGN KEY (definitionid) REFERENCES public.definitions(definitionid);
+
+
+--
+-- Name: natlangwordvotes $3; Type: FK CONSTRAINT; Schema: public; Owner: lojban
+--
+
+ALTER TABLE ONLY public.natlangwordvotes
+    ADD CONSTRAINT "$3" FOREIGN KEY (userid) REFERENCES public.users(userid);
+
+
+--
+-- Name: comments comments_parentid; Type: FK CONSTRAINT; Schema: public; Owner: lojban
+--
+
+ALTER TABLE ONLY public.comments
+    ADD CONSTRAINT comments_parentid FOREIGN KEY (parentid) REFERENCES public.comments(commentid) MATCH FULL;
+
+
+--
+-- Name: comments comments_threadid; Type: FK CONSTRAINT; Schema: public; Owner: lojban
+--
+
+ALTER TABLE ONLY public.comments
+    ADD CONSTRAINT comments_threadid FOREIGN KEY (threadid) REFERENCES public.threads(threadid) MATCH FULL;
+
+
+--
+-- Name: comments comments_userid; Type: FK CONSTRAINT; Schema: public; Owner: lojban
+--
+
+ALTER TABLE ONLY public.comments
+    ADD CONSTRAINT comments_userid FOREIGN KEY (userid) REFERENCES public.users(userid) MATCH FULL;
+
+
+--
+-- Name: definitions definitions_langid; Type: FK CONSTRAINT; Schema: public; Owner: lojban
+--
+
+ALTER TABLE ONLY public.definitions
+    ADD CONSTRAINT definitions_langid FOREIGN KEY (langid) REFERENCES public.languages(langid) MATCH FULL;
+
+
+--
+-- Name: definitions definitions_userid; Type: FK CONSTRAINT; Schema: public; Owner: lojban
+--
+
+ALTER TABLE ONLY public.definitions
+    ADD CONSTRAINT definitions_userid FOREIGN KEY (userid) REFERENCES public.users(userid) MATCH FULL;
+
+
+--
+-- Name: definitions definitions_valsiid; Type: FK CONSTRAINT; Schema: public; Owner: lojban
+--
+
+ALTER TABLE ONLY public.definitions
+    ADD CONSTRAINT definitions_valsiid FOREIGN KEY (valsiid) REFERENCES public.valsi(valsiid) MATCH FULL;
+
+
+--
+-- Name: definitionvotes definitionvotes_definitionid; Type: FK CONSTRAINT; Schema: public; Owner: lojban
+--
+
+ALTER TABLE ONLY public.definitionvotes
+    ADD CONSTRAINT definitionvotes_definitionid FOREIGN KEY (definitionid) REFERENCES public.definitions(definitionid) MATCH FULL;
+
+
+--
+-- Name: definitionvotes definitionvotes_langid; Type: FK CONSTRAINT; Schema: public; Owner: lojban
+--
+
+ALTER TABLE ONLY public.definitionvotes
+    ADD CONSTRAINT definitionvotes_langid FOREIGN KEY (langid) REFERENCES public.languages(langid) MATCH FULL;
+
+
+--
+-- Name: definitionvotes definitionvotes_userid; Type: FK CONSTRAINT; Schema: public; Owner: lojban
+--
+
+ALTER TABLE ONLY public.definitionvotes
+    ADD CONSTRAINT definitionvotes_userid FOREIGN KEY (userid) REFERENCES public.users(userid) MATCH FULL;
+
+
+--
+-- Name: definitionvotes definitionvotes_valsiid; Type: FK CONSTRAINT; Schema: public; Owner: lojban
+--
+
+ALTER TABLE ONLY public.definitionvotes
+    ADD CONSTRAINT definitionvotes_valsiid FOREIGN KEY (valsiid) REFERENCES public.valsi(valsiid) MATCH FULL;
+
+
+--
+-- Name: etymology etymology_langid; Type: FK CONSTRAINT; Schema: public; Owner: lojban
+--
+
+ALTER TABLE ONLY public.etymology
+    ADD CONSTRAINT etymology_langid FOREIGN KEY (langid) REFERENCES public.languages(langid) MATCH FULL;
+
+
+--
+-- Name: etymology etymology_userid; Type: FK CONSTRAINT; Schema: public; Owner: lojban
+--
+
+ALTER TABLE ONLY public.etymology
+    ADD CONSTRAINT etymology_userid FOREIGN KEY (userid) REFERENCES public.users(userid) MATCH FULL;
+
+
+--
+-- Name: etymology etymology_valsiid; Type: FK CONSTRAINT; Schema: public; Owner: lojban
+--
+
+ALTER TABLE ONLY public.etymology
+    ADD CONSTRAINT etymology_valsiid FOREIGN KEY (valsiid) REFERENCES public.valsi(valsiid) MATCH FULL;
+
+
+--
+-- Name: example example_userid; Type: FK CONSTRAINT; Schema: public; Owner: lojban
+--
+
+ALTER TABLE ONLY public.example
+    ADD CONSTRAINT example_userid FOREIGN KEY (userid) REFERENCES public.users(userid) MATCH FULL;
+
+
+--
+-- Name: example example_valsiid; Type: FK CONSTRAINT; Schema: public; Owner: lojban
+--
+
+ALTER TABLE ONLY public.example
+    ADD CONSTRAINT example_valsiid FOREIGN KEY (valsiid) REFERENCES public.valsi(valsiid) MATCH FULL;
+
+
+--
+-- Name: keywordmapping keywordmapping_defbestguessid; Type: FK CONSTRAINT; Schema: public; Owner: lojban
+--
+
+ALTER TABLE ONLY public.keywordmapping
+    ADD CONSTRAINT keywordmapping_defbestguessid FOREIGN KEY (definitionid) REFERENCES public.definitions(definitionid) MATCH FULL;
+
+
+--
+-- Name: keywordmapping keywordmapping_natlangwordid; Type: FK CONSTRAINT; Schema: public; Owner: lojban
+--
+
+ALTER TABLE ONLY public.keywordmapping
+    ADD CONSTRAINT keywordmapping_natlangwordid FOREIGN KEY (natlangwordid) REFERENCES public.natlangwords(wordid) MATCH FULL;
+
+
+--
+-- Name: natlangwordbestplaces natlangwordbestplaces_definitionid; Type: FK CONSTRAINT; Schema: public; Owner: lojban
+--
+
+ALTER TABLE ONLY public.natlangwordbestplaces
+    ADD CONSTRAINT natlangwordbestplaces_definitionid FOREIGN KEY (definitionid) REFERENCES public.definitions(definitionid);
+
+
+--
+-- Name: natlangwordbestplaces natlangwordbestplaces_wordid; Type: FK CONSTRAINT; Schema: public; Owner: lojban
+--
+
+ALTER TABLE ONLY public.natlangwordbestplaces
+    ADD CONSTRAINT natlangwordbestplaces_wordid FOREIGN KEY (wordid) REFERENCES public.natlangwords(wordid);
+
+
+--
+-- Name: threads natlangwordid_natlangwordid; Type: FK CONSTRAINT; Schema: public; Owner: lojban
+--
+
+ALTER TABLE ONLY public.threads
+    ADD CONSTRAINT natlangwordid_natlangwordid FOREIGN KEY (natlangwordid) REFERENCES public.natlangwords(wordid) MATCH FULL;
+
+
+--
+-- Name: natlangwords natlangwords_langid; Type: FK CONSTRAINT; Schema: public; Owner: lojban
+--
+
+ALTER TABLE ONLY public.natlangwords
+    ADD CONSTRAINT natlangwords_langid FOREIGN KEY (langid) REFERENCES public.languages(langid) MATCH FULL;
+
+
+--
+-- Name: natlangwordvotes natlangwordvotes_natlangwordid; Type: FK CONSTRAINT; Schema: public; Owner: lojban
+--
+
+ALTER TABLE ONLY public.natlangwordvotes
+    ADD CONSTRAINT natlangwordvotes_natlangwordid FOREIGN KEY (natlangwordid) REFERENCES public.natlangwords(wordid) MATCH FULL;
+
+
+--
+-- Name: natlangwordvotes natlangwordvotes_voter; Type: FK CONSTRAINT; Schema: public; Owner: lojban
+--
+
+ALTER TABLE ONLY public.natlangwordvotes
+    ADD CONSTRAINT natlangwordvotes_voter FOREIGN KEY (userid) REFERENCES public.users(userid) MATCH FULL;
+
+
+--
+-- Name: pages pages_langid; Type: FK CONSTRAINT; Schema: public; Owner: lojban
+--
+
+ALTER TABLE ONLY public.pages
+    ADD CONSTRAINT pages_langid FOREIGN KEY (langid) REFERENCES public.languages(langid) MATCH FULL;
+
+
+--
+-- Name: pages pages_userid; Type: FK CONSTRAINT; Schema: public; Owner: lojban
+--
+
+ALTER TABLE ONLY public.pages
+    ADD CONSTRAINT pages_userid FOREIGN KEY (userid) REFERENCES public.users(userid) MATCH FULL;
+
+
+--
+-- Name: threads threads_valsiid; Type: FK CONSTRAINT; Schema: public; Owner: lojban
+--
+
+ALTER TABLE ONLY public.threads
+    ADD CONSTRAINT threads_valsiid FOREIGN KEY (valsiid) REFERENCES public.valsi(valsiid) MATCH FULL;
+
+
+--
+-- Name: valsi valsi_userid; Type: FK CONSTRAINT; Schema: public; Owner: lojban
+--
+
+ALTER TABLE ONLY public.valsi
+    ADD CONSTRAINT valsi_userid FOREIGN KEY (userid) REFERENCES public.users(userid) MATCH FULL;
+
+
+--
+-- Name: valsibestdefinitions valsibestdefinitions_definitionid; Type: FK CONSTRAINT; Schema: public; Owner: lojban
+--
+
+ALTER TABLE ONLY public.valsibestdefinitions
+    ADD CONSTRAINT valsibestdefinitions_definitionid FOREIGN KEY (definitionid) REFERENCES public.definitions(definitionid);
+
+
+--
+-- Name: valsibestdefinitions valsibestdefinitions_langid; Type: FK CONSTRAINT; Schema: public; Owner: lojban
+--
+
+ALTER TABLE ONLY public.valsibestdefinitions
+    ADD CONSTRAINT valsibestdefinitions_langid FOREIGN KEY (langid) REFERENCES public.languages(langid);
+
+
+--
+-- Name: valsibestdefinitions valsibestdefinitions_valsiid; Type: FK CONSTRAINT; Schema: public; Owner: lojban
+--
+
+ALTER TABLE ONLY public.valsibestdefinitions
+    ADD CONSTRAINT valsibestdefinitions_valsiid FOREIGN KEY (valsiid) REFERENCES public.valsi(valsiid);
+
+
+--
+-- Name: TABLE comments; Type: ACL; Schema: public; Owner: lojban
+--
+
+GRANT SELECT ON TABLE public.comments TO PUBLIC;
+
+
+--
+-- Name: TABLE users; Type: ACL; Schema: public; Owner: lojban
+--
+
+GRANT SELECT ON TABLE public.users TO PUBLIC;
+
+
+--
+-- Name: TABLE convenientcomments; Type: ACL; Schema: public; Owner: lojban
+--
+
+GRANT SELECT ON TABLE public.convenientcomments TO PUBLIC;
+
+
+--
+-- Name: TABLE definitions; Type: ACL; Schema: public; Owner: lojban
+--
+
+GRANT SELECT ON TABLE public.definitions TO PUBLIC;
+
+
+--
+-- Name: TABLE languages; Type: ACL; Schema: public; Owner: lojban
+--
+
+GRANT SELECT ON TABLE public.languages TO PUBLIC;
+
+
+--
+-- Name: TABLE valsi; Type: ACL; Schema: public; Owner: lojban
+--
+
+GRANT SELECT ON TABLE public.valsi TO PUBLIC;
+
+
+--
+-- Name: TABLE etymology; Type: ACL; Schema: public; Owner: lojban
+--
+
+GRANT SELECT ON TABLE public.etymology TO PUBLIC;
+
+
+--
+-- Name: TABLE convenientetymology; Type: ACL; Schema: public; Owner: lojban
+--
+
+GRANT SELECT ON TABLE public.convenientetymology TO PUBLIC;
+
+
+--
+-- Name: TABLE example; Type: ACL; Schema: public; Owner: lojban
+--
+
+GRANT SELECT ON TABLE public.example TO PUBLIC;
+
+
+--
+-- Name: TABLE convenientexamples; Type: ACL; Schema: public; Owner: lojban
+--
+
+GRANT SELECT ON TABLE public.convenientexamples TO PUBLIC;
+
+
+--
+-- Name: TABLE natlangwords; Type: ACL; Schema: public; Owner: lojban
+--
+
+GRANT SELECT ON TABLE public.natlangwords TO PUBLIC;
+
+
+--
+-- Name: TABLE threads; Type: ACL; Schema: public; Owner: lojban
+--
+
+GRANT SELECT ON TABLE public.threads TO PUBLIC;
+
+
+--
+-- Name: TABLE convenientthreads; Type: ACL; Schema: public; Owner: lojban
+--
+
+GRANT SELECT ON TABLE public.convenientthreads TO PUBLIC;
+
+
+--
+-- Name: TABLE valsitypes; Type: ACL; Schema: public; Owner: lojban
+--
+
+GRANT SELECT ON TABLE public.valsitypes TO PUBLIC;
+
+
+--
+-- Name: TABLE convenientvalsi; Type: ACL; Schema: public; Owner: lojban
+--
+
+GRANT SELECT ON TABLE public.convenientvalsi TO PUBLIC;
+
+
+--
+-- Name: TABLE definitionvotes; Type: ACL; Schema: public; Owner: lojban
+--
+
+GRANT SELECT ON TABLE public.definitionvotes TO PUBLIC;
+
+
+--
+-- Name: TABLE keywordmapping; Type: ACL; Schema: public; Owner: lojban
+--
+
+GRANT SELECT ON TABLE public.keywordmapping TO PUBLIC;
+
+
+--
+-- Name: TABLE natlangwordvotes; Type: ACL; Schema: public; Owner: lojban
+--
+
+GRANT SELECT ON TABLE public.natlangwordvotes TO PUBLIC;
+
+
+--
+-- Name: TABLE pages; Type: ACL; Schema: public; Owner: lojban
+--
+
+GRANT SELECT ON TABLE public.pages TO PUBLIC;
+
+
+--
+-- Name: TABLE xrefs; Type: ACL; Schema: public; Owner: lojban
+--
+
+GRANT SELECT ON TABLE public.xrefs TO PUBLIC;
+
+
+--
+-- PostgreSQL database dump complete
+--
+
+\unrestrict HXaQTVBQs9bdfXKRuOOcvCK4ogS1Fy89x45AwkQgON7xQIhfkDHdl15q1nvlThc
+
