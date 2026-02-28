@@ -23,7 +23,8 @@ use vlazba::jvokaha::jvokaha;
 
 use crate::auth::Claims;
 use crate::comments::dto::ReactionResponse;
-use crate::language::{analyze_word, validate_mathjax, MathJaxValidationOptions};
+use crate::language::{analyze_word, lujvo_segments_from_nodes, validate_mathjax, MathJaxValidationOptions};
+use camxes_rs::peg::parsing::ParseResult;
 use crate::middleware::cache::RedisCache;
 use crate::subscriptions::models::SubscriptionTrigger;
 use crate::versions::service::{get_diff, get_version_with_transaction};
@@ -50,6 +51,7 @@ pub async fn semantic_search(
     pool: &Pool,
     params: SearchDefinitionsParams,
     query_embedding: Vec<f32>,
+    parsers: Option<&Arc<HashMap<i32, Peg>>>,
 ) -> Result<DefinitionResponse, Box<dyn std::error::Error>> {
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
@@ -264,7 +266,7 @@ pub async fn semantic_search(
     }
 
     // Decomposition is fetched after the main query results
-    let decomposition = get_source_words(&params.search_term, &transaction).await?;
+    let decomposition = get_source_words(&params.search_term, &transaction, parsers).await?;
 
     transaction.commit().await?;
 
@@ -340,6 +342,7 @@ async fn fetch_keywords(
 pub async fn search_definitions(
     pool: &Pool,
     params: SearchDefinitionsParams,
+    parsers: Option<&Arc<HashMap<i32, Peg>>>,
 ) -> Result<DefinitionResponse, Box<dyn std::error::Error>> {
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
@@ -693,7 +696,7 @@ pub async fn search_definitions(
         .await?
         .get(0);
 
-    let decomposition = get_source_words(&params.search_term, &transaction).await?;
+    let decomposition = get_source_words(&params.search_term, &transaction, parsers).await?;
 
     transaction.commit().await?;
 
@@ -710,6 +713,7 @@ pub async fn search_definitions(
 pub async fn fast_search_definitions(
     pool: &Pool,
     params: SearchDefinitionsParams,
+    parsers: Option<&Arc<HashMap<i32, Peg>>>,
 ) -> Result<DefinitionResponse, Box<dyn std::error::Error>> {
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
@@ -931,7 +935,7 @@ pub async fn fast_search_definitions(
             c.is_alphabetic()
                 && !matches!(c, 'a' | 'e' | 'i' | 'o' | 'u' | 'A' | 'E' | 'I' | 'O' | 'U')
         }) {
-        get_source_words(&params.search_term, &transaction)
+        get_source_words(&params.search_term, &transaction, parsers)
             .await
             .unwrap_or_default()
     } else {
@@ -950,11 +954,28 @@ pub async fn fast_search_definitions(
 async fn get_source_words(
     word: &str,
     transaction: &tokio_postgres::Transaction<'_>,
+    parsers: Option<&Arc<HashMap<i32, Peg>>>,
 ) -> Result<Vec<String>, Box<dyn std::error::Error>> {
-    let parts = jvokaha(word).unwrap_or_else(|_| {
-        debug!("Failed to decompose word '{}'", word);
-        Vec::new()
-    });
+    let mut parts = Vec::new();
+
+    // Try camxes if we have the parsers and this is a Lojban word (langid 1)
+    if let Some(parsers) = parsers {
+        if let Some(parser) = parsers.get(&1) {
+            let ParseResult(_, _, result) = parser.parse(word);
+            if let Ok(tokens) = result.as_ref() {
+                if let Some(segments) = lujvo_segments_from_nodes(word, tokens) {
+                    parts = segments;
+                }
+            }
+        }
+    }
+
+    if parts.is_empty() {
+        parts = jvokaha(word).unwrap_or_else(|_| {
+            debug!("Failed to decompose word '{}'", word);
+            Vec::new()
+        });
+    }
     let rafsi_parts: Vec<&str> = parts.iter().map(|s| s.as_str()).collect();
 
     // First try to find exact word matches
@@ -1104,6 +1125,7 @@ pub async fn get_valsi_sound_urls_from_db(
 pub async fn get_entry_details(
     pool: &Pool,
     id_or_word: &str,
+    parsers: Option<&Arc<HashMap<i32, Peg>>>,
 ) -> Result<ValsiDetail, Box<dyn std::error::Error>> {
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
@@ -1140,7 +1162,7 @@ pub async fn get_entry_details(
             };
 
             if detail.type_name.to_lowercase() == "lujvo" {
-                match get_source_words(&detail.word, &transaction).await {
+                match get_source_words(&detail.word, &transaction, parsers).await {
                     Ok(words) => detail.decomposition = Some(words),
                     Err(e) => log::error!("Failed to decompose lujvo {}: {}", detail.word, e),
                 }

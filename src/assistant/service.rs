@@ -338,7 +338,7 @@ async fn run_jbovlaste_semantic_search(
         source_langid: args.source_langid,
     };
 
-    let response = semantic_search(pool, params, embedding)
+    let response = semantic_search(pool, params, embedding, None)
         .await
         .map_err(|e| AppError::ExternalService(format!("Semantic search failed: {}", e)))?;
 
