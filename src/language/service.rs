@@ -90,7 +90,7 @@ fn fill_text(token: &mut LojbanToken, input: &str) {
 /// Collects lujvo rafsi segment strings from the camxes parse tree.
 /// Expands stressed_*_rafsi into
 /// "rafsi + 'y" / "rafsi + y" for readable decomposition.
-fn lujvo_segments_from_nodes(input: &str, nodes: &[ParseNode]) -> Option<Vec<String>> {
+pub fn lujvo_segments_from_nodes(input: &str, nodes: &[ParseNode]) -> Option<Vec<String>> {
     fn find_lujvo_core(nodes: &[ParseNode]) -> Option<&ParseNode> {
         for node in nodes {
             if let ParseNode::NonTerminal { name, children, .. } = node {

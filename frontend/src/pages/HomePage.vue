@@ -512,6 +512,7 @@ const fetchDefinitions = async (page, search = '') => {
   error.value = null
 
   const { requestId, signal } = definitionsSearchQueue.createRequest()
+  decomposition.value = []
 
   try {
     const params = {
@@ -563,7 +564,7 @@ const fetchDefinitions = async (page, search = '') => {
     total.value = response.data.total
     currentPage.value = page
     totalPages.value = Math.ceil(response.data.total / 10)
-    decomposition.value = response.data.decomposition
+    decomposition.value = response.data.decomposition || []
 
     // Get bulk votes for current user only if we have definitions
     if (auth.state.isLoggedIn && definitions.value.length > 0) {
@@ -784,6 +785,7 @@ const fetchData = async () => {
     // Fetch trending/changes but ensure main loading is false
     await fetchTrendingAndChanges()
     isLoading.value = false // Ensure main loading is stopped
+    decomposition.value = []
     return
   }
 

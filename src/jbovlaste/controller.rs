@@ -48,6 +48,7 @@ pub async fn semantic_search(
     pool: web::Data<Pool>,
     redis_cache: web::Data<RedisCache>,
     query: web::Query<SearchDefinitionsQuery>,
+    parsers: web::Data<Arc<HashMap<i32, Peg>>>,
 ) -> impl Responder {
     let page = query.page.unwrap_or(1);
     let per_page = query.per_page.unwrap_or(20);
@@ -100,7 +101,7 @@ pub async fn semantic_search(
                     source_langid: query.source_langid,
                 };
 
-                service::semantic_search(&pool, params, embedding).await
+                service::semantic_search(&pool, params, embedding, Some(&parsers)).await
             },
             None, // Use default TTL
         )
@@ -111,7 +112,7 @@ pub async fn semantic_search(
             total: response.total,
             page,
             per_page,
-            decomposition: vec![],
+            decomposition: response.decomposition,
         }),
         Err(e) => HttpResponse::InternalServerError().body(format!("Error: {}", e)),
     }
@@ -202,6 +203,7 @@ pub async fn search_definitions(
     redis_cache: web::Data<RedisCache>,
     query: web::Query<SearchDefinitionsQuery>,
     claims: Option<Claims>,
+    parsers: web::Data<Arc<HashMap<i32, Peg>>>,
 ) -> impl Responder {
     let page = query.page.unwrap_or(1);
     let per_page = query.per_page.unwrap_or(20);
@@ -248,9 +250,9 @@ pub async fn search_definitions(
                 };
 
                 if use_fast_search {
-                    service::fast_search_definitions(&pool, params).await
+                    service::fast_search_definitions(&pool, params, Some(&parsers)).await
                 } else {
-                    service::search_definitions(&pool, params).await
+                    service::search_definitions(&pool, params, Some(&parsers)).await
                 }
             },
             None,
@@ -291,8 +293,9 @@ pub async fn search_definitions(
 pub async fn get_entry_details(
     pool: web::Data<Pool>,
     id_or_word: web::Path<String>,
+    parsers: web::Data<Arc<HashMap<i32, Peg>>>,
 ) -> impl Responder {
-    match service::get_entry_details(&pool, &id_or_word.into_inner()).await {
+    match service::get_entry_details(&pool, &id_or_word.into_inner(), Some(&parsers)).await {
         Ok(valsi_detail) => HttpResponse::Ok().json(json!({
             "valsi": valsi_detail
         })),
@@ -329,9 +332,10 @@ pub async fn get_entry_details(
 pub async fn get_valsi_sound(
     pool: web::Data<Pool>,
     id_or_word: web::Path<String>,
+    parsers: web::Data<Arc<HashMap<i32, Peg>>>,
 ) -> impl Responder {
     let id_or_word = id_or_word.into_inner();
-    let valsi_detail = match service::get_entry_details(&pool, &id_or_word).await {
+    let valsi_detail = match service::get_entry_details(&pool, &id_or_word, Some(&parsers)).await {
         Ok(d) => d,
         Err(_) => return HttpResponse::NotFound().finish(),
     };
