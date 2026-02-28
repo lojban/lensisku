@@ -104,6 +104,7 @@
           :show-audio="false"
           :definition-id="def.definitionid"
           :show-definition-number="true" 
+          :collections="collections"
           @refresh-definitions="fetchDefinitionsDetails"
         />
       </div>
