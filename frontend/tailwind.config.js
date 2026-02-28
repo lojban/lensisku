@@ -352,6 +352,9 @@ export default {
               },
               '&::after': {
                 borderRadius: '0.75em 0 0 0.75em',
+                left: '0.4375em',
+                width: 'calc(100% - 0.4375em)',
+                transform: 'none',
               },
             },
             '&:last-child:not(:first-child)': {
@@ -368,6 +371,10 @@ export default {
               },
               '&::after': {
                 borderRadius: '0 0.75em 0.75em 0',
+                left: 'auto',
+                right: '0.4375em',
+                width: 'calc(100% - 0.4375em)',
+                transform: 'none',
               },
             },
             '&:not(:first-child):not(:last-child)': {
