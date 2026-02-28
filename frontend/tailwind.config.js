@@ -344,6 +344,11 @@ export default {
               borderBottomLeftRadius: '1000px',
               borderTopRightRadius: 0,
               borderBottomRightRadius: 0,
+              boxShadow:
+              '0 0.375em 0.5em rgba(0, 0, 0, 0.3),' +
+              '0 0.125em 0.125em hsla(var(--aqua-hue, 215), 100%, 36.7%, 0.5),' +
+              'inset 0 0.25em 0.5em hsla(calc(var(--aqua-hue, 215) + 4), 100%, 9.6%, 0.8),' +
+              'inset 0 -0.25em 0.5em 0.25em hsla(var(--aqua-hue, 215), 100%, 36.7%, 0.75)',
               '&::before': {
                 borderRadius: '2em 0 0 0.5em',
                 left: '0.4375em',
@@ -362,6 +367,11 @@ export default {
               borderBottomLeftRadius: 0,
               borderTopRightRadius: '1000px',
               borderBottomRightRadius: '1000px',
+              boxShadow:
+              '0 0.375em 0.5em rgba(0, 0, 0, 0.3),' +
+              '0 0.125em 0.125em hsla(var(--aqua-hue, 215), 100%, 36.7%, 0.5),' +
+              'inset 0 0.25em 0.5em hsla(calc(var(--aqua-hue, 215) + 4), 100%, 9.6%, 0.8),' +
+              'inset 0 0.375em 0.5em -0.25em hsla(var(--aqua-hue, 215), 100%, 36.7%, 0.75)',
               '&::before': {
                 borderRadius: '0 2em 0.5em 0',
                 left: 'auto',
@@ -378,6 +388,11 @@ export default {
               },
             },
             '&:not(:first-child):not(:last-child)': {
+              boxShadow:
+              '0 0.375em 0.5em rgba(0, 0, 0, 0.3),' +
+              '0 0.125em 0.125em hsla(var(--aqua-hue, 215), 100%, 36.7%, 0.5),' +
+              'inset 0 0.25em 0.5em hsla(calc(var(--aqua-hue, 215) + 4), 100%, 9.6%, 0.8),' +
+              'inset 0 -0.25em 0.5em -0.25em hsla(var(--aqua-hue, 215), 100%, 36.7%, 0.75)',
               '&::before': {
                 borderRadius: 0,
                 left: 0,
@@ -392,7 +407,7 @@ export default {
               borderRadius: '1000px',
             },
             '&:not(:disabled):active': {
-              '@apply scale-[1.02]': {},
+              '@apply z-10 scale-[1.02]': {},
             },
           },
           '.btn-aqua-toggle': {
