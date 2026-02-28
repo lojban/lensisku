@@ -1,7 +1,7 @@
 <template>
   <div class="collection-widget">
     <!-- Add to Collection Button -->
-    <button class="btn-empty flex items-center gap-2 hover:text-yellow-600" @click="showModal = true"
+    <button class="btn-empty flex items-center gap-2 hover:text-yellow-600" @click="openModal"
       :title="t('collectionWidget.addToCollection')">
       <CopyPlus class="w-4 h-4" />
     </button>
@@ -160,6 +160,15 @@ const fetchCollections = async () => {
   } catch (error) {
     console.error('Error fetching collections:', error)
   }
+}
+
+const openModal = async () => {
+  showModal.value = true
+  if (collections.value.length === 0) {
+    isLoading.value = true
+  }
+  await fetchCollections()
+  isLoading.value = false
 }
 
 const closeModal = () => {
