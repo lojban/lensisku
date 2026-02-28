@@ -45,6 +45,7 @@ import { Crepe } from '@milkdown/crepe';
 import { Loader } from 'lucide-vue-next';
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue';
 import { insert } from '@milkdown/utils';
+import TurndownService from 'turndown';
 import ToastFloat from './ToastFloat.vue'; // Import ToastFloat
 import '@milkdown/crepe/theme/common/style.css';
 import '@milkdown/crepe/theme/frame.css';
@@ -62,6 +63,8 @@ const toastType = ref('info');
 
 const editor = ref(null);
 let crepe = null;
+const turndownService = new TurndownService()
+let handlePaste = null
 
 onMounted(async () => {
   crepe = new Crepe({
@@ -88,28 +91,28 @@ onMounted(async () => {
 
   await crepe.create()
 
+  const updateFormContent = () => {
+    if (!crepe) return;
+    let markdown = crepe.getMarkdown()
+    
+    // Convert problematic autolinks <https://...> to [https://...](https://...) 
+    // to prevent backend from stripping them as HTML tags.
+    markdown = markdown.replace(/<(https?:\/\/[^\s>]+)>/g, '[$1]($1)')
+    
+    // Parse markdown into content parts array
+    const contentParts = markdown.split(/(^>.*$)/gm).filter(line => line.trim()).map(line => {
+      line = line.trim();
+      if (line.startsWith('# ')) {
+        return { type: 'header', data: line.substring(2).trim() }
+      }
+      return { type: 'text', data: line }
+    })
+    form.value.content = contentParts
+  }
+
   // Update content ref on change
   crepe.on((listener) => {
-    listener.markdownUpdated(() => {
-      let markdown = crepe.getMarkdown()
-      // Fix link anchor text: markdown serializer escapes _ in link labels, so URL-like
-      // text stored as "https__..." becomes "https\_\_..." — normalize back to "https://"
-      markdown = markdown.replace(/(https?:)(\\_){2}/g, '$1//')
-      markdown = markdown.replace(/(https?)__(?=[^\s\]])/g, '$1://')
-      // Parse markdown into content parts array
-      // Split markdown into blocks and preserve quote formatting
-      const contentParts = markdown.split(/(^>.*$)/gm).filter(line => line.trim()).map(line => {
-        line = line.trim();
-        //if (line.startsWith('> ')) {
-        //  return { type: 'blockquote', data: line.substring(2).trim() }
-        //}
-        if (line.startsWith('# ')) {
-          return { type: 'header', data: line.substring(2).trim() }
-        }
-        return { type: 'text', data: line }
-      })
-      form.value.content = contentParts
-    })
+    listener.markdownUpdated(updateFormContent)
   })
 })
 
@@ -183,6 +186,24 @@ watch(
 watch(() => form.value.content, autoResize)
 
 const handleSubmit = () => {
+  // Final sync to ensure content is captured even if debounced update hasn't fired
+  if (crepe) {
+    let markdown = crepe.getMarkdown()
+    // Fix link anchor text
+    markdown = markdown.replace(/(https?:)(\\_){2}/g, '$1//')
+    markdown = markdown.replace(/(https?)__(?=[^\s\]])/g, '$1://')
+    
+    // Convert problematic autolinks <https://...> to [https://...](https://...)
+    // to prevent backend from stripping them as HTML tags.
+    markdown = markdown.replace(/<(https?:\/\/[^\s>]+)>/g, '[$1]($1)')
+    
+    form.value.content = markdown.split(/(^>.*$)/gm).filter(line => line.trim()).map(line => {
+      line = line.trim();
+      if (line.startsWith('# ')) return { type: 'header', data: line.substring(2).trim() }
+      return { type: 'text', data: line }
+    })
+  }
+
   if (form.value.content.length > 0 || form.value.subject.length > 0) {
     // Estimate payload size
     const encoder = new TextEncoder();
