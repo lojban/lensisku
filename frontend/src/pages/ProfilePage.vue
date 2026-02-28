@@ -68,7 +68,7 @@
             {{ t('profile.viewActivity') }}
           </RouterLink>
           <button
-            v-if="auth.state.isLoggedIn"
+            v-if="isOwnProfile && auth.state.isLoggedIn"
             class="btn-aqua btn-aqua-group-item"
             @click="auth.logout()"
           >
