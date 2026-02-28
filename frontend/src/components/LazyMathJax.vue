@@ -221,24 +221,23 @@ onBeforeUnmount(() => {
 .mathjax-content {
   min-height: 1em;
   overflow-wrap: anywhere;
-  word-break: break-all;
 }
 
 :deep(.MathJax) {
   margin: 0.25em 0;
 }
 
-:deep(.mathjax-content) {
+.mathjax-content {
   @apply inline;
 }
 
 /* Force long text (e.g. valsi) inside links to break by character.
    inline-block + max-width so the link has a width; then word-break wraps the text. */
-:deep(.mathjax-content a) {
+.mathjax-content :deep(a) {
   display: inline-block !important;
   max-width: 100% !important;
   overflow-wrap: anywhere !important;
-  word-break: break-all !important;
+  word-break: break-word !important;
 }
 
 :deep(p) {
@@ -251,7 +250,7 @@ onBeforeUnmount(() => {
   display: block !important;
 }
 
-:deep(.mathjax-content > *) {
+.mathjax-content :deep(> *) {
   @apply inline;
 }
 
@@ -279,11 +278,11 @@ onBeforeUnmount(() => {
 }
 
 /* Ensure blockquote overrides inline styles */
-:deep(.mathjax-content > blockquote) {
+.mathjax-content :deep(> blockquote) {
   display: block !important;
 }
 
-:deep(.mathjax-content > blockquote > *) {
+.mathjax-content :deep(> blockquote > *) {
   display: block !important;
 }
 

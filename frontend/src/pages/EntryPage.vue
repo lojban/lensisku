@@ -18,7 +18,7 @@
     <h1 class="border-b p-2 min-w-0 rounded-md">
       <div class="flex flex-wrap gap-2 w-full lg:w-auto justify-between min-w-0">
         <div class="flex items-center gap-3 min-w-0 max-w-full">
-          <h1 class="text-3xl font-bold text-gray-800 min-w-0 max-w-full break-all" itemprop="name">
+          <h1 class="text-3xl font-bold text-gray-800 min-w-0 max-w-full break-words" itemprop="name">
             {{ valsi.word }}
             <AudioPlayer
               v-if="definitions.length > 0 && definitions[0].sound_url"

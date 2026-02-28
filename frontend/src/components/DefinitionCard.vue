@@ -9,7 +9,7 @@
     <div :class="[disableBorder ? '' : 'p-4']">
       <div class="flex flex-col sm:flex-row justify-between items-start gap-4">
         <!-- Word and Type Info -->
-        <div class="flex-1 w-full space-y-3">
+        <div class="flex-1 w-full min-w-0 space-y-3">
           <!-- Compact Header Layout -->
           <div class="w-full">
             <!-- Main Content -->
@@ -326,7 +326,7 @@
     <p class="text-sm text-gray-600 mb-3">{{ t('components.definitionCard.fullWordModalHint') }}</p>
     <RouterLink
       :to="valsiDefinitionLink"
-      class="text-blue-700 hover:text-blue-800 hover:underline break-all font-medium"
+      class="text-blue-700 hover:text-blue-800 hover:underline break-words font-medium"
       @click="showValsiModal = false">
       {{ definition.valsiword ?? definition.word }}
     </RouterLink>
