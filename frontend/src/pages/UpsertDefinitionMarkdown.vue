@@ -90,6 +90,8 @@
 
 <script setup>
 import { Crepe } from '@milkdown/crepe';
+import { insert } from '@milkdown/utils';
+import TurndownService from 'turndown';
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
@@ -111,6 +113,8 @@ const definition = ref('')
 const sourceLangId = ref(1)
 const editor = ref(null)
 let crepe = null
+const turndownService = new TurndownService()
+let handlePaste = null
 
 onMounted(async () => {
   await loadLanguages()
@@ -171,13 +175,18 @@ onMounted(async () => {
     },
   })
 
-  await crepe.create()
+  const updateDefinition = () => {
+    if (crepe) {
+      let markdown = crepe.getMarkdown()
+      // Convert autolinks <https://...> to [https://...](https://...)
+      markdown = markdown.replace(/<(https?:\/\/[^\s>]+)>/g, '[$1]($1)')
+      definition.value = markdown
+    }
+  }
 
   // Update definition ref on change
   crepe.on((listener) => {
-    listener.markdownUpdated(() => {
-      definition.value = crepe.getMarkdown()
-    })
+    listener.markdownUpdated(updateDefinition)
   })
 })
 
@@ -223,6 +232,12 @@ async function loadDefinitionData(definitionId) {
 }
 
 async function submitValsi() {
+  if (crepe) {
+    let markdown = crepe.getMarkdown()
+    // Convert autolinks <https://...> to [https://...](https://...)
+    markdown = markdown.replace(/<(https?:\/\/[^\s>]+)>/g, '[$1]($1)')
+    definition.value = markdown
+  }
   if (!isValid.value) return
 
   isSubmitting.value = true
