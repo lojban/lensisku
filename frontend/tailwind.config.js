@@ -370,6 +370,14 @@ export default {
               },
             },
           },
+          '.btn-group-forced': {
+            '& .btn-group-item': {
+              '@apply rounded-none first:rounded-l-full last:rounded-r-full': {},
+              '&:not(:last-child)': {
+                '@apply border-r-0': {},
+              },
+            },
+          },
           '.btn-aqua-group-item': {
             borderRadius: 0,
             '&:first-child:not(:last-child)': {
