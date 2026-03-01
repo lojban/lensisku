@@ -9,7 +9,7 @@
         
         <div class="flex items-center gap-2 self-end md:self-center">
         <div class="flex items-center gap-4">
-          <div class="flex items-center gap-1.5 cursor-pointer" @click="toggleSearchInPhrases" title="Search in phrases">
+          <div class="flex items-center gap-1 cursor-pointer" @click="toggleSearchInPhrases" title="Search in phrases">
             <button
               type="button"
               class="flex items-center justify-center focus:outline-none bg-transparent border-0 p-0"
@@ -18,12 +18,12 @@
               <MinusSquare v-else-if="filters.word_type" class="w-5 h-5 text-gray-400" />
               <Square v-else class="w-5 h-5 text-gray-400" />
             </button>
-            <span class="text-sm text-gray-700 select-none whitespace-nowrap">
+            <span class="text-xs text-gray-700 select-none whitespace-nowrap">
               {{ t('searchForm.modes.searchInPhrases') }}
             </span>
           </div>
 
-          <div class="flex items-center gap-1.5 cursor-pointer" @click="toggleSemanticSearch" :title="t('searchForm.modes.semantic')">
+          <div class="flex items-center gap-1 cursor-pointer" @click="toggleSemanticSearch" :title="t('searchForm.modes.semantic')">
             <button
               type="button"
               class="flex items-center justify-center focus:outline-none bg-transparent border-0 p-0"
@@ -31,7 +31,7 @@
               <CheckSquare v-if="filters.isSemantic" class="w-5 h-5 text-blue-500" />
               <Square v-else class="w-5 h-5 text-gray-400" />
             </button>
-            <span class="text-sm text-gray-700 select-none cursor-pointer whitespace-nowrap">
+            <span class="text-xs text-gray-700 select-none cursor-pointer whitespace-nowrap">
               {{ t('searchForm.modes.semantic') }}
             </span>
           </div>
