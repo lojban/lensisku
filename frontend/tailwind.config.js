@@ -210,12 +210,45 @@ export default {
             '@apply aqua-base bg-zinc-300': {},
             '--aqua-hue': '212',
           },
+          '.btn-aqua-gray': {
+            '@apply aqua-base bg-gray-800 !text-white': {},
+            boxShadow:
+              '0 0.375em 0.5em rgba(0, 0, 0, 0.4),' +
+              '0 0.125em 0.125em rgba(0, 0, 0, 0.3),' +
+              'inset 0 0.25em 0.5em rgba(0, 0, 0, 0.8),' +
+              'inset 0 0.375em 0.5em 0.25em rgba(255, 255, 255, 0.1)',
+            '&:focus, &:active': {
+              boxShadow:
+                '0 0.375em 0.5em rgba(0, 0, 0, 0.4),' +
+                '0 0.125em 0.125em rgba(0, 0, 0, 0.3),' +
+                'inset 0 0.25em 0.5em rgba(0, 0, 0, 0.8),' +
+                'inset 0 0.375em 0.5em 0.25em rgba(255, 255, 255, 0.15),' +
+                '0 0 0.5em rgba(255, 255, 255, 0.2)',
+            },
+          },
           '.btn-aqua-white': {
             '@apply aqua-base bg-white': {},
-            '--aqua-hue': '45',
             background: 'linear-gradient(rgba(160, 160, 160, 1), rgba(255, 255, 255, 0.625))',
             boxShadow:
-              '0 0.375em 0.5em rgba(0, 0, 0, 0.2), 0 0.125em 0.125em rgba(0, 0, 0, 0.3), inset 0 0.25em 0.25em rgba(0, 0, 0, 0.4), inset 0 0.375em 0.5em 0.25em #BBBBBB',
+              '0 0.375em 0.5em rgba(0, 0, 0, 0.3),' +
+              '0 0.125em 0.125em hsla(0, 0%, 36.7%, 0.5),' +
+              'inset 0 0.25em 0.5em hsla(0, 0%, 9.6%, 0.8),' +
+              'inset 0 0.375em 0.5em 0.25em hsla(0, 0%, 36.7%, 0.75)',
+            '&:not(:disabled)': {
+              '@apply hover:brightness-110 active:scale-[0.98]': {},
+            },
+            '&:focus, &:active': {
+              boxShadow:
+                '0 0.375em 0.5em rgba(0, 0, 0, 0.3),' +
+                '0 0.125em 0.125em hsla(0, 0%, 36.7%, 0.5),' +
+                'inset 0 0.25em 0.5em hsla(0, 0%, 9.6%, 0.8),' +
+                'inset 0 0.375em 0.5em 0.25em hsla(0, 0%, 36.7%, 0.75),' +
+                '0 0 0.5em hsla(0, 0%, 54.7%, 0.5)',
+              '&:disabled': {
+                boxShadow:
+                  '0 0.375em 0.5em rgba(0, 0, 0, 0.2), 0 0.125em 0.125em rgba(0, 0, 0, 0.3), inset 0 0.25em 0.25em rgba(0, 0, 0, 0.4), inset 0 0.375em 0.5em 0.25em #BBBBBB',
+              },
+            }
           },
           '.btn-insert': {
             '@apply btn-base text-white bg-gradient-to-b from-blue-400 to-blue-500 border-blue-500 text-white enabled:hover:text-blue-500 enabled:hover:bg-gradient-to-b enabled:hover:from-white enabled:hover:to-white':
@@ -345,10 +378,10 @@ export default {
               borderTopRightRadius: 0,
               borderBottomRightRadius: 0,
               boxShadow:
-              '0 0.375em 0.5em rgba(0, 0, 0, 0.3),' +
-              '0 0.125em 0.125em hsla(var(--aqua-hue, 215), 100%, 36.7%, 0.5),' +
-              'inset 0 0.25em 0.5em hsla(calc(var(--aqua-hue, 215) + 4), 100%, 9.6%, 0.8),' +
-              'inset 0 -0.25em 0.5em 0.25em hsla(var(--aqua-hue, 215), 100%, 36.7%, 0.75)',
+                '0 0.375em 0.5em rgba(0, 0, 0, 0.3),' +
+                '0 0.125em 0.125em hsla(var(--aqua-hue, 215), 100%, 36.7%, 0.5),' +
+                'inset 0 0.25em 0.5em hsla(calc(var(--aqua-hue, 215) + 4), 100%, 9.6%, 0.8),' +
+                'inset 0 -0.25em 0.5em 0.25em hsla(var(--aqua-hue, 215), 100%, 36.7%, 0.75)',
               '&::before': {
                 borderRadius: '2em 0 0 0.5em',
                 left: '0.4375em',
@@ -368,10 +401,10 @@ export default {
               borderTopRightRadius: '1000px',
               borderBottomRightRadius: '1000px',
               boxShadow:
-              '0 0.375em 0.5em rgba(0, 0, 0, 0.3),' +
-              '0 0.125em 0.125em hsla(var(--aqua-hue, 215), 100%, 36.7%, 0.5),' +
-              'inset 0 0.25em 0.5em hsla(calc(var(--aqua-hue, 215) + 4), 100%, 9.6%, 0.8),' +
-              'inset 0 0.375em 0.5em -0.25em hsla(var(--aqua-hue, 215), 100%, 36.7%, 0.75)',
+                '0 0.375em 0.5em rgba(0, 0, 0, 0.3),' +
+                '0 0.125em 0.125em hsla(var(--aqua-hue, 215), 100%, 36.7%, 0.5),' +
+                'inset 0 0.25em 0.5em hsla(calc(var(--aqua-hue, 215) + 4), 100%, 9.6%, 0.8),' +
+                'inset 0 0.375em 0.5em -0.25em hsla(var(--aqua-hue, 215), 100%, 36.7%, 0.75)',
               '&::before': {
                 borderRadius: '0 2em 0.5em 0',
                 left: 'auto',
@@ -389,10 +422,10 @@ export default {
             },
             '&:not(:first-child):not(:last-child)': {
               boxShadow:
-              '0 0.375em 0.5em rgba(0, 0, 0, 0.3),' +
-              '0 0.125em 0.125em hsla(var(--aqua-hue, 215), 100%, 36.7%, 0.5),' +
-              'inset 0 0.25em 0.5em hsla(calc(var(--aqua-hue, 215) + 4), 100%, 9.6%, 0.8),' +
-              'inset 0 -0.25em 0.5em -0.25em hsla(var(--aqua-hue, 215), 100%, 36.7%, 0.75)',
+                '0 0.375em 0.5em rgba(0, 0, 0, 0.3),' +
+                '0 0.125em 0.125em hsla(var(--aqua-hue, 215), 100%, 36.7%, 0.5),' +
+                'inset 0 0.25em 0.5em hsla(calc(var(--aqua-hue, 215) + 4), 100%, 9.6%, 0.8),' +
+                'inset 0 -0.25em 0.5em -0.25em hsla(var(--aqua-hue, 215), 100%, 36.7%, 0.75)',
               '&::before': {
                 borderRadius: 0,
                 left: 0,

@@ -238,19 +238,19 @@
       >
         <div v-show="showActionModal" class="flex flex-col gap-3 mb-1 items-end pointer-events-auto pr-1">
           <IconButton v-if="auth.state.isLoggedIn" :label="$t('fab.newDiscussion')"
-            button-classes="btn-aqua-white h-12 text-base !px-5 !rounded-full" @click="handleNewFreeThread">
+            button-classes="btn-aqua-white h-12 text-base !px-5" @click="handleNewFreeThread">
             <template #icon>
-              <AudioWaveform class="h-5 w-5" />
+              <AudioWaveform class="h-6 w-6 text-purple-600" />
             </template>
           </IconButton>
           <IconButton v-if="auth.state.isLoggedIn" :label="$t('fab.addDefinition')" icon-classes="h-5 w-5"
-            button-classes="btn-aqua-green h-12 text-base !px-5 !rounded-full" @click="handleNewDefinition" />
+            button-classes="btn-aqua-emerald h-12 text-base !px-5" @click="handleNewDefinition" />
         </div>
       </transition>
 
-      <button class="p-2 flex items-center justify-center w-[52px] h-[52px] btn-aqua-emerald rounded-corner"
+      <button class="p-2 flex items-center justify-center w-[52px] h-[52px] btn-aqua-rose"
         @click="showActionModal = !showActionModal">
-        <Plus class="h-6 w-6 transition-all duration-200" :class="{ 'rotate-45': showActionModal }" />
+        <Plus class="h-7 w-7 transition-all duration-200" :class="{ 'rotate-45': showActionModal }" />
       </button>
     </div>
   </div>
