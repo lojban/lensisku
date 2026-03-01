@@ -49,17 +49,28 @@
     <h2 class="text-xl sm:text-2xl font-bold text-gray-800">
       {{ viewMode !== 'my' ? t('collectionList.publicCollections') : t('collectionList.myCollections') }}
     </h2>
-    <div class="flex flex-row gap-2 justify-end flex-grow flex-wrap">
-      <label v-if="auth.state.isLoggedIn" :class="[viewMode === 'my' ? ' btn-aqua-slate' : 'btn-aqua-white']">
-        <input type="checkbox" class="checkmark-aqua" :checked="viewMode === 'my'"
-          @click="viewMode = viewMode === 'my' ? 'public' : 'my'">
-        <span> {{ t('collectionList.myCollectionsLabel') }} </span>
-      </label>
+    <div class="flex flex-col sm:flex-row justify-end flex-grow gap-2 sm:gap-0 mt-2 sm:mt-0">
       <input ref="importFileInput" type="file" accept=".json" class="hidden" @change="handleImportFile">
-      <IconButton v-if="auth.state.isLoggedIn" :label="t('collectionList.importCollection')"
-        button-classes="btn-aqua-sky flex-grow" :disabled="isImporting" @click="triggerImport" />
-      <IconButton v-if="auth.state.isLoggedIn" :label="t('collectionList.createCollection')"
-        button-classes="btn-aqua-emerald flex-grow" @click="showCreateModal = true" />
+      <div v-if="auth.state.isLoggedIn" class="flex flex-col sm:flex-row flex-grow sm:flex-none" role="group">
+        <label :class="[viewMode === 'my' ? ' btn-aqua-slate' : 'btn-aqua-white', 'sm:btn-aqua-group-item']" class="btn-aqua flex-grow sm:flex-initial cursor-pointer items-center justify-center flex mb-2 sm:mb-0">
+          <input type="checkbox" class="checkmark-aqua" :checked="viewMode === 'my'"
+            @click="viewMode = viewMode === 'my' ? 'public' : 'my'">
+          <span> {{ t('collectionList.myCollectionsLabel') }} </span>
+        </label>
+        <IconButton
+          v-if="auth.state.isLoggedIn"
+          :label="t('collectionList.importCollection')"
+          button-classes="btn-aqua-sky sm:btn-aqua-group-item flex-grow sm:flex-initial mb-2 sm:mb-0"
+          :disabled="isImporting"
+          @click="triggerImport"
+        />
+        <IconButton
+          v-if="auth.state.isLoggedIn"
+          :label="t('collectionList.createCollection')"
+          button-classes="btn-aqua-emerald sm:btn-aqua-group-item flex-grow sm:flex-initial"
+          @click="showCreateModal = true"
+        />
+      </div>
     </div>
   </div>
   <!-- Loading State -->
@@ -88,26 +99,28 @@
           </p>
         </div>
       </div>
-      <div class="flex flex-wrap items-center gap-4 text-sm justify-end">
+      <div class="flex items-center text-xs sm:text-sm mt-2" role="group">
         <!-- Action Buttons -->
+        <div class="flex flex-nowrap shrink-0">
           <button
             type="button"
-            class="btn-aqua-sky"
+            class="btn-aqua-orange btn-aqua-group-item"
             :disabled="studyLoadingId === collection.collection_id"
             @click="startStudy(collection)"
           >
-            <GraduationCap v-if="studyLoadingId !== collection.collection_id" class="w-4 h-4" />
-            <span v-else class="animate-spin inline-block w-4 h-4 border-2 border-current border-t-transparent rounded-full" />
-            {{ studyLoadingId === collection.collection_id ? t('collectionList.studying') : t('collectionList.studyButton') }}
+            <GraduationCap v-if="studyLoadingId !== collection.collection_id" class="w-4 h-4 shrink-0" />
+            <span v-else class="animate-spin inline-block w-4 h-4 border-2 border-current border-t-transparent rounded-full shrink-0" />
+            <span>{{ studyLoadingId === collection.collection_id ? t('collectionList.studying') : t('collectionList.studyButton') }}</span>
           </button>
-          <RouterLink :to="`/collections/${collection.collection_id}/flashcards`" class="btn-aqua-orange">
-            <GalleryHorizontalIcon class="w-4 h-4" />
-            {{ t('collectionList.flashcardsButton') }}
+          <RouterLink :to="`/collections/${collection.collection_id}/flashcards`" class="btn-aqua-rose btn-aqua-group-item">
+            <GalleryHorizontalIcon class="w-4 h-4 shrink-0" />
+            <span>{{ t('collectionList.flashcardsButton') }}</span>
           </RouterLink>
-          <RouterLink :to="`/collections/${collection.collection_id}`" class="btn-aqua-purple">
-            <List class="w-4 h-4" />
-            {{ t('collectionList.collectionButton') }}
+          <RouterLink :to="`/collections/${collection.collection_id}`" class="btn-aqua-white btn-aqua-group-item">
+            <List class="w-4 h-4 shrink-0" />
+            <span>{{ t('collectionList.collectionButton') }}</span>
           </RouterLink>
+        </div>
       </div>
 
       <!-- Footer -->
@@ -135,10 +148,10 @@
   <!-- Empty State -->
   <div v-if="!isLoading && collections.length === 0"
     class="text-center py-12 bg-gray-50 rounded-lg border border-blue-100">
-    <button v-if="viewMode === 'my' && auth.state.isLoggedIn" class="mt-4 inline-flex items-center btn-aqua-emerald"
+    <button v-if="viewMode === 'my' && auth.state.isLoggedIn" class="mt-4 btn-aqua-emerald"
       @click="showCreateModal = true">
       <CirclePlus class="h-4 w-4" />
-      {{ t('collectionList.createFirstCollection') }}
+      <span>{{ t('collectionList.createFirstCollection') }}</span>
     </button>
   </div>
 
