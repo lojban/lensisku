@@ -228,8 +228,7 @@ pub async fn create_flashcard(
             sound_url: if row.get::<_, bool>("has_custom_sound") {
                 Some(format!(
                     "/api/collections/{}/items/{}/sound",
-                    collection_id,
-                    item_id
+                    collection_id, item_id
                 ))
             } else {
                 None
@@ -2826,7 +2825,12 @@ pub async fn get_collection_levels(
 
     verify_collection_read_access(&transaction, collection_id, user_id)
         .await
-        .map_err(|e| Box::new(std::io::Error::new(std::io::ErrorKind::PermissionDenied, e.to_string())) as Box<dyn std::error::Error>)?;
+        .map_err(|e| {
+            Box::new(std::io::Error::new(
+                std::io::ErrorKind::PermissionDenied,
+                e.to_string(),
+            )) as Box<dyn std::error::Error>
+        })?;
 
     let rows = transaction
         .query(
@@ -3268,7 +3272,12 @@ pub async fn merge_anonymous_progress(
 
     verify_collection_read_access(&transaction, req.collection_id, Some(user_id))
         .await
-        .map_err(|e| Box::new(std::io::Error::new(std::io::ErrorKind::PermissionDenied, e.to_string())) as Box<dyn std::error::Error>)?;
+        .map_err(|e| {
+            Box::new(std::io::Error::new(
+                std::io::ErrorKind::PermissionDenied,
+                e.to_string(),
+            )) as Box<dyn std::error::Error>
+        })?;
 
     let mut merged = 0_i64;
     for item in &req.level_progress {
@@ -3320,7 +3329,9 @@ pub async fn merge_anonymous_progress(
         .await?;
 
     transaction.commit().await?;
-    Ok(MergeProgressResponse { merged_levels: merged })
+    Ok(MergeProgressResponse {
+        merged_levels: merged,
+    })
 }
 
 pub async fn remove_card_from_level(

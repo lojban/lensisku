@@ -35,14 +35,18 @@ pub fn validate_item_image(image: &ImageData) -> Result<(), String> {
     Ok(())
 }
 
-const ALLOWED_AUDIO_MIME_PREFIXES: &[&str] = &["audio/mpeg", "audio/mp3", "audio/ogg", "audio/webm"];
+const ALLOWED_AUDIO_MIME_PREFIXES: &[&str] =
+    &["audio/mpeg", "audio/mp3", "audio/ogg", "audio/webm"];
 
 pub fn validate_item_audio(sound: &SoundData) -> Result<(), String> {
     let ok = ALLOWED_AUDIO_MIME_PREFIXES
         .iter()
         .any(|prefix| sound.mime_type.as_str().starts_with(prefix));
     if !ok {
-        return Err("Invalid audio type. Supported types: MP3, OGG, WEBM (WAV is not supported).".to_string());
+        return Err(
+            "Invalid audio type. Supported types: MP3, OGG, WEBM (WAV is not supported)."
+                .to_string(),
+        );
     }
 
     let decoded_size = BASE64

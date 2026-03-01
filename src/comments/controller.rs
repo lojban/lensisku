@@ -235,10 +235,13 @@ pub async fn add_comment(
     match service::add_comment(params).await {
         Ok(comment) => {
             if let Err(e) = redis_cache.invalidate_recent_changes().await {
-                log::error!("Failed to invalidate recent changes cache after add comment: {}", e);
+                log::error!(
+                    "Failed to invalidate recent changes cache after add comment: {}",
+                    e
+                );
             }
             HttpResponse::Ok().json(comment)
-        },
+        }
         Err(e) => {
             let error_message = e.to_string();
             if error_message.contains("exceeds the maximum size") {
