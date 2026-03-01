@@ -16,7 +16,7 @@
       "sourceLanguage": "Исходный язык"
     },
     "defaultSourceLanguage": "По умолчанию (Ложбан)",
-    "resetAllFilters": "Сбросить все фильтры",
+    "resetAllFilters": "Сбросить фильтры",
     "selectWordType": "Выберите тип слова"
   },
   "login": {
@@ -49,7 +49,8 @@
       "comments": "Обсуждения",
       "messages": "Архив почты",
       "muplis": "Фразы Muplis",
-      "groupByThread": "Группировать по теме"
+      "groupByThread": "Группировать по теме",
+      "searchInPhrases": "Включая фразы"
     },
     "placeholder": {
       "dictionary": "Искать слова, определения, заметки, рассказы...",

@@ -23,16 +23,17 @@
             </span>
           </div>
 
-          <div class="flex items-center gap-1.5">
-            <input
-            id="semantic-search-filter"
-            v-model="filters.isSemantic"
-            type="checkbox"
-            class="checkbox-toggle"
-            @change="emitUpdate">
-            <label for="semantic-search-filter" class="text-sm text-gray-700 select-none cursor-pointer whitespace-nowrap">
+          <div class="flex items-center gap-1.5 cursor-pointer" @click="toggleSemanticSearch" :title="t('searchForm.modes.semantic')">
+            <button
+              type="button"
+              class="flex items-center justify-center focus:outline-none bg-transparent border-0 p-0"
+            >
+              <CheckSquare v-if="filters.isSemantic" class="w-5 h-5 text-blue-500" />
+              <Square v-else class="w-5 h-5 text-gray-400" />
+            </button>
+            <span class="text-sm text-gray-700 select-none cursor-pointer whitespace-nowrap">
               {{ t('searchForm.modes.semantic') }}
-            </label>
+            </span>
           </div>
         </div>
         <button v-if="hasAnyActiveFilters" class="btn-empty h-8" @click="resetAllFilters">
@@ -312,6 +313,11 @@ const toggleExpanded = () => {
 const toggleSearchInPhrases = () => {
   if (filters.value.word_type) return
   filters.value.searchInPhrases = !filters.value.searchInPhrases
+  emitUpdate()
+}
+
+const toggleSemanticSearch = () => {
+  filters.value.isSemantic = !filters.value.isSemantic
   emitUpdate()
 }
 
