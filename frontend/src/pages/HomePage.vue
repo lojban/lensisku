@@ -498,6 +498,7 @@ const filters = ref({
   selectedLanguages: route.query.langs ? route.query.langs.split(',').map(Number) : [],
   source_langid: route.query.source_langid ? Number(route.query.source_langid) : 1,
   isSemantic: searchMode.value === 'semantic' || searchMode.value === 'dictionary' ? searchMode.value !== 'dictionary' : true,
+  searchInPhrases: route.query.searchInPhrases ? route.query.searchInPhrases === 'true' : true,
 })
 
 // Search queues to prevent race conditions
@@ -537,6 +538,10 @@ const fetchDefinitions = async (page, search = '') => {
 
     if (filters.value.selmaho) {
       params.selmaho = filters.value.selmaho
+    }
+
+    if (filters.value.searchInPhrases !== undefined && filters.value.searchInPhrases !== null) {
+      params.search_in_phrases = filters.value.searchInPhrases
     }
 
     let response
@@ -916,6 +921,7 @@ const updateUrlWithFilters = () => {
       word_type: filters.value.word_type || undefined,
       source_langid: filters.value.source_langid !== 1 ? filters.value.source_langid : undefined,
       group_by_thread: groupByThread.value ? 'true' : undefined,
+      searchInPhrases: filters.value.searchInPhrases === false ? 'false' : undefined,
     },
   })
 }
@@ -937,6 +943,7 @@ const performSearch = ({ query, mode }) => {
     selmaho: filters.value.selmaho || undefined,
     username: filters.value.username || undefined,
     word_type: filters.value.word_type || undefined,
+    searchInPhrases: filters.value.searchInPhrases === false ? 'false' : undefined,
   }
 
   // Handle case where we might be on a localized Home-lang route

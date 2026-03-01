@@ -362,6 +362,7 @@ async fn run_jbovlaste_semantic_search(
         username: None,
         word_type: None,
         source_langid: args.source_langid,
+        search_in_phrases: None,
     };
 
     let response = semantic_search(pool, params, embedding, None)

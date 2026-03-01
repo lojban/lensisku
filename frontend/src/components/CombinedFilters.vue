@@ -8,16 +8,32 @@
 
         
         <div class="flex items-center gap-2 self-end md:self-center">
-        <div class="flex items-center gap-2">
-          <input
+        <div class="flex items-center gap-4">
+          <div class="flex items-center gap-1.5 cursor-pointer" @click="toggleSearchInPhrases" title="Search in phrases">
+            <button
+              type="button"
+              class="flex items-center justify-center focus:outline-none bg-transparent border-0 p-0"
+            >
+              <CheckSquare v-if="filters.searchInPhrases && !filters.word_type" class="w-5 h-5 text-blue-500" />
+              <MinusSquare v-else-if="filters.word_type" class="w-5 h-5 text-gray-400" />
+              <Square v-else class="w-5 h-5 text-gray-400" />
+            </button>
+            <span class="text-sm text-gray-700 select-none whitespace-nowrap">
+              {{ t('searchForm.modes.searchInPhrases') }}
+            </span>
+          </div>
+
+          <div class="flex items-center gap-1.5">
+            <input
             id="semantic-search-filter"
             v-model="filters.isSemantic"
             type="checkbox"
             class="checkbox-toggle"
             @change="emitUpdate">
-          <label for="semantic-search-filter" class="text-sm text-gray-700 select-none cursor-pointer whitespace-nowrap">
-            {{ t('searchForm.modes.semantic') }}
-          </label>
+            <label for="semantic-search-filter" class="text-sm text-gray-700 select-none cursor-pointer whitespace-nowrap">
+              {{ t('searchForm.modes.semantic') }}
+            </label>
+          </div>
         </div>
         <button v-if="hasAnyActiveFilters" class="btn-empty h-8" @click="resetAllFilters">
           {{ t('filters.resetAllFilters') }}
@@ -82,7 +98,7 @@
 </template>
 
 <script setup>
-import { ChevronDown, X } from 'lucide-vue-next'
+import { ChevronDown, X, CheckSquare, Square, MinusSquare } from 'lucide-vue-next'
 import MultiSelect from 'primevue/multiselect'
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 
@@ -96,6 +112,9 @@ const props = defineProps({
   components: {
     MultiSelect,
     ChevronDown,
+    CheckSquare,
+    Square,
+    MinusSquare,
   },
   modelValue: {
     type: Object,
@@ -108,6 +127,7 @@ const props = defineProps({
       word_type: null,
       source_langid: 1, // Default to Lojban
       isSemantic: true,
+      searchInPhrases: true,
     }),
   },
   languages: {
@@ -127,6 +147,7 @@ const filters = ref({
   word_type: null,
   source_langid: props.modelValue.source_langid || 1, // Initialize from prop or default
   isSemantic: props.modelValue.isSemantic !== false, // Default to true
+  searchInPhrases: props.modelValue.searchInPhrases !== false,
 })
 
 const showWordType = computed(() => !filters.value.selmaho)
@@ -145,6 +166,7 @@ watch(
       word_type: null,
       source_langid: newVal.source_langid || 1, // Sync source_langid
       isSemantic: newVal.isSemantic !== false,
+      searchInPhrases: newVal.searchInPhrases !== false,
     }
 
     if (newVal.word_type && wordTypes.value.length > 0) {
@@ -203,6 +225,7 @@ const hasAnyActiveFilters = computed(() => {
     filters.value.word_type ||
     filters.value.source_langid !== 1 || // Check if source_langid is not default
     !filters.value.isSemantic || // isSemantic is true by default, so if it's false, it's modified
+    !filters.value.searchInPhrases || // modified if false
     expanded.value
   )
 })
@@ -248,6 +271,7 @@ const emitUpdate = () => {
     word_type: filters.value.word_type?.type_id || null,
     source_langid: filters.value.source_langid || 1, // Include source_langid
     isSemantic: filters.value.isSemantic,
+    searchInPhrases: filters.value.word_type ? null : filters.value.searchInPhrases,
   }
   emit('update:modelValue', updatedValue)
   emit('change', updatedValue)
@@ -272,6 +296,7 @@ const resetAllFilters = () => {
     word_type: null,
     source_langid: 1, // Reset source_langid to default
     isSemantic: true, // Reset to default
+    searchInPhrases: true,
   }
 
   // Single emit for both reset and update
@@ -281,6 +306,12 @@ const resetAllFilters = () => {
 
 const toggleExpanded = () => {
   expanded.value = !expanded.value
+  emitUpdate()
+}
+
+const toggleSearchInPhrases = () => {
+  if (filters.value.word_type) return
+  filters.value.searchInPhrases = !filters.value.searchInPhrases
   emitUpdate()
 }
 

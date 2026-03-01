@@ -18,6 +18,7 @@ pub struct SearchDefinitionsQuery {
     pub username: Option<String>,
     pub source_langid: Option<i32>,
     pub fast: Option<bool>,
+    pub search_in_phrases: Option<bool>,
 }
 
 #[derive(Debug, Deserialize, ToSchema)]
