@@ -5,45 +5,47 @@
       <MultiSelect v-model="selectedLangs" :options="languages" :max-selected-labels="3" name="id"
         :option-label="(lang) => `${lang.real_name} (${lang.english_name})`" filter
         :placeholder="t('filters.selectLanguages')" class="w-full sm:w-80 !rounded-full" />
-
-        
         <div class="flex items-center gap-2 self-end md:self-center">
-        <div class="flex items-center gap-4">
-          <div class="flex items-center gap-1 cursor-pointer" @click="toggleSearchInPhrases" title="Search in phrases">
-            <button
-              type="button"
-              class="flex items-center justify-center focus:outline-none bg-transparent border-0 p-0"
-            >
-              <CheckSquare v-if="filters.searchInPhrases && !filters.word_type" class="w-5 h-5 text-blue-500" />
-              <MinusSquare v-else-if="filters.word_type" class="w-5 h-5 text-gray-400" />
-              <Square v-else class="w-5 h-5 text-gray-400" />
-            </button>
-            <span class="text-xs text-gray-700 select-none whitespace-nowrap">
+        <div class="flex items-center btn-group-forced" role="group">
+          <button
+            type="button"
+            class="btn-empty btn-group-item px-2"
+            :class="{ '!text-gray-400': filters.word_type }"
+            @click="toggleSearchInPhrases"
+            :title="t('searchForm.modes.searchInPhrases')"
+          >
+            <CheckSquare v-if="filters.searchInPhrases && !filters.word_type" class="w-4 h-4" />
+            <MinusSquare v-else-if="filters.word_type" class="w-4 h-4" />
+            <Square v-else class="w-4 h-4" />
+            <span class="text-xs select-none whitespace-nowrap">
               {{ t('searchForm.modes.searchInPhrases') }}
             </span>
-          </div>
+          </button>
 
-          <div class="flex items-center gap-1 cursor-pointer" @click="toggleSemanticSearch" :title="t('searchForm.modes.semantic')">
-            <button
-              type="button"
-              class="flex items-center justify-center focus:outline-none bg-transparent border-0 p-0"
-            >
-              <CheckSquare v-if="filters.isSemantic" class="w-5 h-5 text-blue-500" />
-              <Square v-else class="w-5 h-5 text-gray-400" />
-            </button>
-            <span class="text-xs text-gray-700 select-none cursor-pointer whitespace-nowrap">
+          <button
+            type="button"
+            class="btn-empty btn-group-item px-2"
+            @click="toggleSemanticSearch"
+            :title="t('searchForm.modes.semantic')"
+          >
+            <CheckSquare v-if="filters.isSemantic" class="w-4 h-4" />
+            <Square v-else class="w-4 h-4" />
+            <span class="text-xs select-none whitespace-nowrap">
               {{ t('searchForm.modes.semantic') }}
             </span>
-          </div>
+          </button>
         </div>
-        <button v-if="hasAnyActiveFilters" class="btn-empty h-8" @click="resetAllFilters">
-          {{ t('filters.resetAllFilters') }}
-        </button>
 
-        <button class="btn-empty h-8" @click="toggleExpanded">
-          <ChevronDown class="h-5 w-5 transition-transform duration-200" :class="{ 'rotate-180': expanded }"
-            :stroke-width="2" />
-        </button>
+        <div class="flex items-center btn-group-forced" role="group">
+          <button v-if="hasAnyActiveFilters" class="btn-empty btn-group-item h-6 px-2" @click="resetAllFilters" :title="t('filters.resetAllFilters')">
+            {{ t('filters.resetAllFilters') }}
+          </button>
+
+          <button class="btn-empty btn-group-item h-6 px-2" @click="toggleExpanded" :title="expanded ? t('filters.collapse') : t('filters.expand')">
+            <ChevronDown class="h-5 w-5 transition-transform duration-200" :class="{ 'rotate-180': expanded }"
+              :stroke-width="2" />
+          </button>
+        </div>
       </div>
     </div>
 
