@@ -219,30 +219,41 @@
 
   <AnonymousProgressBanner />
 
+  <!-- Action Overlay -->
+  <div v-if="showActionModal" class="fixed inset-0 z-40" @click="showActionModal = false"></div>
+
   <!-- Floating Action Button -->
   <div class="max-w-4xl mx-auto relative" v-if="auth.state.isLoggedIn && route.name !== 'flashcard-study'">
     <div
       class="fixed md:absolute bottom-6 right-4 md:bottom-8 md:right-8 lg:-right-4 lg:-mr-4 z-50 flex flex-col items-end gap-3">
+      
+      <!-- Action Buttons -->
+      <transition
+        enter-active-class="transition ease-out duration-200"
+        enter-from-class="opacity-0 translate-y-2 pointer-events-none"
+        enter-to-class="opacity-100 translate-y-0 pointer-events-auto"
+        leave-active-class="transition ease-in duration-150"
+        leave-from-class="opacity-100 translate-y-0 pointer-events-auto"
+        leave-to-class="opacity-0 translate-y-2 pointer-events-none"
+      >
+        <div v-show="showActionModal" class="flex flex-col gap-3 mb-1 items-end pointer-events-auto pr-1">
+          <IconButton v-if="auth.state.isLoggedIn" :label="$t('fab.newDiscussion')"
+            button-classes="btn-aqua-white h-12 text-base !px-5 !rounded-full" @click="handleNewFreeThread">
+            <template #icon>
+              <AudioWaveform class="h-5 w-5" />
+            </template>
+          </IconButton>
+          <IconButton v-if="auth.state.isLoggedIn" :label="$t('fab.addDefinition')" icon-classes="h-5 w-5"
+            button-classes="btn-aqua-green h-12 text-base !px-5 !rounded-full" @click="handleNewDefinition" />
+        </div>
+      </transition>
+
       <button class="p-2 flex items-center justify-center w-[52px] h-[52px] btn-aqua-emerald rounded-corner"
-        @click="showActionModal = true">
+        @click="showActionModal = !showActionModal">
         <Plus class="h-6 w-6 transition-all duration-200" :class="{ 'rotate-45': showActionModal }" />
       </button>
     </div>
   </div>
-
-  <!-- Action Modal -->
-  <ModalComponent :show="showActionModal" @close="showActionModal = false" :title="$t('fab.actionsTitle', 'Actions')">
-    <div class="flex flex-wrap gap-5 p-4 justify-center">
-      <IconButton v-if="auth.state.isLoggedIn" :label="$t('fab.addDefinition')" icon-classes="h-5 w-5"
-        button-classes="btn-aqua-green h-12 text-base !w-64 !rounded-full" @click="handleNewDefinition" />
-      <IconButton v-if="auth.state.isLoggedIn" :label="$t('fab.newDiscussion')"
-        button-classes="btn-aqua-purple h-12 text-base !w-64 !rounded-full" @click="handleNewFreeThread">
-        <template #icon>
-          <AudioWaveform class="h-5 w-5" />
-        </template>
-      </IconButton>
-    </div>
-  </ModalComponent>
 
   <FooterComponent />
 </template>

@@ -213,7 +213,7 @@ export default {
           '.btn-aqua-white': {
             '@apply aqua-base bg-white': {},
             '--aqua-hue': '45',
-            background: 'linear-gradient(rgba(160, 160, 160, 0.625), rgba(255, 255, 255, 0.625))',
+            background: 'linear-gradient(rgba(160, 160, 160, 1), rgba(255, 255, 255, 0.625))',
             boxShadow:
               '0 0.375em 0.5em rgba(0, 0, 0, 0.2), 0 0.125em 0.125em rgba(0, 0, 0, 0.3), inset 0 0.25em 0.25em rgba(0, 0, 0, 0.4), inset 0 0.375em 0.5em 0.25em #BBBBBB',
           },
