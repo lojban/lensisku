@@ -99,6 +99,7 @@ pub async fn semantic_search(
                     username: query.username.clone(),
                     word_type: query.word_type,
                     source_langid: query.source_langid,
+                    search_in_phrases: query.search_in_phrases,
                 };
 
                 service::semantic_search(&pool, params, embedding, Some(&parsers)).await
@@ -247,6 +248,7 @@ pub async fn search_definitions(
                     username: query.username.clone(),
                     word_type: query.word_type,
                     source_langid: query.source_langid,
+                    search_in_phrases: query.search_in_phrases,
                 };
 
                 if use_fast_search {

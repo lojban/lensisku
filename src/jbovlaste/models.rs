@@ -19,6 +19,7 @@ pub struct SearchDefinitionsParams {
     pub username: Option<String>,
     pub word_type: Option<i16>,
     pub source_langid: Option<i32>,
+    pub search_in_phrases: Option<bool>,
 }
 
 #[derive(Debug, Serialize, ToSchema)]

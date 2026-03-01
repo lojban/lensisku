@@ -101,6 +101,12 @@ pub async fn semantic_search(
     conditions.push(format!("AND v.source_langid = ${}", query_params.len() + 1));
     query_params.push(&source_langid_value);
 
+    if params.word_type.is_none() {
+        if let Some(false) = params.search_in_phrases {
+            conditions.push("AND v.typeid != 15".to_string());
+        }
+    }
+
     let additional_conditions = conditions.join(" ");
 
     // --- Execute Count Query ---
@@ -414,6 +420,12 @@ pub async fn search_definitions(
     ));
     query_params.push(&source_langid_value);
 
+    if params.word_type.is_none() {
+        if let Some(false) = params.search_in_phrases {
+            conditions.push("AND d.cached_typeid != 15".to_string());
+        }
+    }
+
     let additional_conditions = conditions.join(" ");
 
     // Build query with language filter and selmaho
@@ -660,6 +672,12 @@ pub async fn search_definitions(
     ));
     count_params.push(&source_langid_value);
 
+    if params.word_type.is_none() {
+        if let Some(false) = params.search_in_phrases {
+            count_conditions.push("AND d.cached_typeid != 15".to_string());
+        }
+    }
+
     let count_additional = count_conditions.join(" ");
 
     let count_query = format!(
@@ -775,6 +793,12 @@ pub async fn fast_search_definitions(
         word_type_value = word_type;
         conditions.push(format!("AND d.cached_typeid = ${}", query_params.len() + 1));
         query_params.push(&word_type_value);
+    }
+
+    if params.word_type.is_none() {
+        if let Some(false) = params.search_in_phrases {
+            conditions.push("AND d.cached_typeid != 15".to_string());
+        }
     }
 
     let additional_conditions = conditions.join(" ");
