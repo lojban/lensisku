@@ -89,8 +89,15 @@ const renderContent = async () => {
 
   if (props.enableMarkdown) {
     finalContent = normalizeLinkAnchors(finalContent)
+    
+    // Preserve multiple empty lines by converting them to <br> tags.
+    // marked will collapse \n\n into paragraph separations and ignore extra \n's.
+    finalContent = finalContent.replace(/\n{3,}/g, (match) => {
+      return '\n\n' + '<br>'.repeat(match.length - 2) + '\n\n';
+    });
+    
     // First split content into LaTeX and non-LaTeX parts
-    const parts = props.content.split(/(\$[^$]+\$)/)
+    const parts = finalContent.split(/(\$[^$]+\$)/)
     finalContent = parts
       .map((part) => {
         // Skip markdown processing for LaTeX parts
