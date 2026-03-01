@@ -16,7 +16,7 @@
       "sourceLanguage": "Source Language"
     },
     "defaultSourceLanguage": "Default (Lojban)",
-    "resetAllFilters": "Reset All Filters",
+    "resetAllFilters": "Reset Filters",
     "selectWordType": "Select Word Type"
   },
   "login": {
@@ -50,7 +50,7 @@
       "messages": "Mail Archive",
       "muplis": "Muplis Phrases",
       "groupByThread": "Group by Thread",
-      "searchInPhrases": "Search in phrases"
+      "searchInPhrases": "Include phrases"
     },
     "placeholder": {
       "dictionary": "Search words, definitions, notes, short stories...",
