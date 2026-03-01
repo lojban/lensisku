@@ -176,6 +176,7 @@ const filters = ref({
   isExpanded: false,
   selectedLanguages: [],
   source_langid: 1,
+  searchInPhrases: route.query.searchInPhrases !== 'false',
 });
 
 // Search queue to prevent race conditions
@@ -209,6 +210,10 @@ const fetchDefinitions = async (page, search = '') => {
 
     if (filters.value.selmaho) {
       params.selmaho = filters.value.selmaho;
+    }
+
+    if (filters.value.searchInPhrases !== undefined && filters.value.searchInPhrases !== null) {
+      params.search_in_phrases = filters.value.searchInPhrases;
     }
 
     const response = await fastSearchDefinitions(params, signal);
@@ -270,6 +275,7 @@ const handleFiltersReset = async () => {
     selectedLanguages: [],
     word_type: '',
     source_langid: 1,
+    searchInPhrases: true,
   };
   currentPage.value = 1;
   searchQuery.value = '';
@@ -289,6 +295,7 @@ const updateUrlWithFilters = () => {
       username: filters.value.username || undefined,
       word_type: filters.value.word_type || undefined,
       source_langid: filters.value.source_langid !== 1 ? filters.value.source_langid : undefined,
+      searchInPhrases: filters.value.searchInPhrases === false ? 'false' : undefined,
     },
   });
 };
@@ -307,6 +314,7 @@ const performSearch = ({ query, mode }) => {
     selmaho: filters.value.selmaho || undefined,
     username: filters.value.username || undefined,
     word_type: filters.value.word_type || undefined,
+    searchInPhrases: filters.value.searchInPhrases === false ? 'false' : undefined,
   };
 
   if (mode !== 'dictionary') {
@@ -382,6 +390,12 @@ const syncFromRoute = () => {
     filters.value.source_langid = parseInt(query.source_langid) || 1;
   } else {
     filters.value.source_langid = 1;
+  }
+
+  if (query.searchInPhrases !== undefined) {
+    filters.value.searchInPhrases = query.searchInPhrases !== 'false';
+  } else {
+    filters.value.searchInPhrases = true;
   }
 };
 
@@ -464,7 +478,8 @@ watch(
       newQuery.selmaho !== oldQuery?.selmaho ||
       newQuery.username !== oldQuery?.username ||
       newQuery.word_type !== oldQuery?.word_type ||
-      newQuery.source_langid !== oldQuery?.source_langid;
+      newQuery.source_langid !== oldQuery?.source_langid ||
+      newQuery.searchInPhrases !== oldQuery?.searchInPhrases;
 
     currentPage.value = parseInt(newQuery.page) || 1;
 

@@ -19,6 +19,7 @@ const baseRoutes: Array<RouteRecordRaw> = [
     path: "",
     name: "Home",
     component: HomePage,
+    meta: { alwaysShowScrollbar: true },
     props: (route) => ({
       urlSearchQuery: route.query.q,
       urlSearchMode: route.query.mode || "dictionary",
@@ -28,6 +29,7 @@ const baseRoutes: Array<RouteRecordRaw> = [
     path: "/sutra_sisku",
     name: "FastSearch",
     component: () => import("../pages/FastSearchPage.vue"),
+    meta: { alwaysShowScrollbar: true },
   },
   {
     path: "/message/:id",
@@ -187,6 +189,7 @@ const baseRoutes: Array<RouteRecordRaw> = [
     path: "/collections",
     name: "CollectionList",
     component: () => import("../pages/CollectionList.vue"),
+    meta: { alwaysShowScrollbar: true },
   },
   {
     path: "/collections/:id",

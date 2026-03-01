@@ -196,7 +196,7 @@
   </div>
 
   <!-- Main content -->
-  <main class="main-content">
+  <main class="main-content" :class="{ 'scrollbar-always': route.meta.alwaysShowScrollbar }">
     <div class="pt-3 max-w-4xl mx-auto min-h-[calc(100vh-12rem)] relative flex flex-col" id="main-child">
       <div class="flex-1 px-3">
         <router-view v-slot="{ Component, route }">
@@ -746,6 +746,10 @@ footer {
 
 .main-content {
   overflow-y: auto;
+}
+
+.main-content.scrollbar-always {
+  overflow-y: scroll;
 }
 
 .sihesle {

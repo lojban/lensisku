@@ -87,7 +87,7 @@
             <PlusCircle class="w-4 h-4" />
             {{ t('collectionDetail.addItem') }}
           </button>
-          <RouterLink :to="`/collections/${props.collectionId}/flashcards`" class="btn-aqua-orange md:flex-none">
+          <RouterLink :to="`/collections/${props.collectionId}/flashcards`" class="btn-aqua-rose md:flex-none">
             <GalleryHorizontalIcon class="w-4 h-4" />
             {{ t('collectionDetail.viewAsFlashcards') }}
           </RouterLink>

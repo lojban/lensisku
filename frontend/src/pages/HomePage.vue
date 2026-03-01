@@ -498,8 +498,8 @@ const filters = ref({
   selectedLanguages: route.query.langs ? route.query.langs.split(',').map(Number) : [],
   source_langid: route.query.source_langid ? Number(route.query.source_langid) : 1,
   isSemantic: searchMode.value === 'semantic' || searchMode.value === 'dictionary' ? searchMode.value !== 'dictionary' : true,
-  searchInPhrases: route.query.searchInPhrases ? route.query.searchInPhrases === 'true' : true,
-})
+    searchInPhrases: route.query.searchInPhrases !== 'false',
+  })
 
 // Search queues to prevent race conditions
 const definitionsSearchQueue = new SearchQueue()
@@ -897,6 +897,8 @@ const handleFiltersReset = async () => {
     selectedLanguages: [],
     word_type: '',
     source_langid: 1,
+    searchInPhrases: true,
+    isSemantic: true,
   }
   currentPage.value = 1
   searchQuery.value = ''
@@ -1080,6 +1082,12 @@ const syncFromRoute = () => {
   if (searchMode.value === 'semantic' || searchMode.value === 'dictionary') {
     filters.value.isSemantic = searchMode.value === 'semantic'
   }
+
+  if (query.searchInPhrases !== undefined) {
+    filters.value.searchInPhrases = query.searchInPhrases !== 'false'
+  } else {
+    filters.value.searchInPhrases = true
+  }
 }
 
 
@@ -1208,7 +1216,8 @@ watch(
       newQuery.selmaho !== oldQuery?.selmaho ||
       newQuery.username !== oldQuery?.username ||
       newQuery.word_type !== oldQuery?.word_type ||
-      newQuery.source_langid !== oldQuery?.source_langid
+      newQuery.source_langid !== oldQuery?.source_langid ||
+      newQuery.searchInPhrases !== oldQuery?.searchInPhrases
 
     const groupByThreadChanged = newQuery.group_by_thread !== oldQuery?.group_by_thread;
     if (groupByThreadChanged) {
