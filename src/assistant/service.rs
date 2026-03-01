@@ -84,7 +84,10 @@ async fn ensure_openrouter_status(
     if status.is_success() {
         return Ok(res);
     }
-    let body = res.text().await.unwrap_or_else(|_| String::from("(failed to read body)"));
+    let body = res
+        .text()
+        .await
+        .unwrap_or_else(|_| String::from("(failed to read body)"));
     let message = format!(
         "{} returned {} {}",
         label,
@@ -120,7 +123,9 @@ async fn parse_chat_response(
         Ok(parsed) => Ok(parsed),
         Err(e) => {
             // Check if body is an OpenRouter/OpenAI-style error (e.g. 200 with {"error":{...}}).
-            let retryable = if let Ok(err_payload) = serde_json::from_str::<OpenRouterErrorPayload>(body_trimmed) {
+            let retryable = if let Ok(err_payload) =
+                serde_json::from_str::<OpenRouterErrorPayload>(body_trimmed)
+            {
                 let code = err_payload.error.code;
                 let msg = if err_payload.error.message.is_empty() {
                     format!("Invalid {} response: {}", label, e)
@@ -129,27 +134,43 @@ async fn parse_chat_response(
                 };
                 let is_server_error = code.map(|c| c >= 500).unwrap_or(true);
                 if is_server_error {
-                    log::warn!("OpenRouter {} returned error body (code {:?}), will retry: {}", label, code, msg);
+                    log::warn!(
+                        "OpenRouter {} returned error body (code {:?}), will retry: {}",
+                        label,
+                        code,
+                        msg
+                    );
                     Some((msg, body.clone()))
                 } else {
                     None
                 }
             } else {
                 // Unrecognized shape; treat parse failure as retryable (transient malformed response).
-                Some((
-                    format!("Invalid {} response: {}", label, e),
-                    body.clone(),
-                ))
+                Some((format!("Invalid {} response: {}", label, e), body.clone()))
             };
             if let Some((message, raw_response)) = retryable {
-                log::debug!("OpenRouter {} response (status {}): {}", label, status, raw_response);
+                log::debug!(
+                    "OpenRouter {} response (status {}): {}",
+                    label,
+                    status,
+                    raw_response
+                );
                 return Err(AppError::ExternalServiceRetryable {
                     message,
                     raw_response,
                 });
             }
-            log::debug!("OpenRouter {} response (status {}): {}", label, status, body);
-            log::warn!("OpenRouter {} parse error: {} (see debug log for raw body)", label, e);
+            log::debug!(
+                "OpenRouter {} response (status {}): {}",
+                label,
+                status,
+                body
+            );
+            log::warn!(
+                "OpenRouter {} parse error: {} (see debug log for raw body)",
+                label,
+                e
+            );
             Err(AppError::ExternalServiceWithRaw {
                 message: format!("Invalid {} response: {}", label, e),
                 raw_response: body,
@@ -162,7 +183,10 @@ const OPENROUTER_MAX_ATTEMPTS: u32 = 3;
 const OPENROUTER_INITIAL_BACKOFF_MS: u64 = 500;
 
 /// Runs an OpenRouter chat/completions request with retries on transient errors (5xx or error body).
-async fn openrouter_chat_with_retry<F, Fut>(label: &str, mut run: F) -> Result<ChatCompletionResponse, AppError>
+async fn openrouter_chat_with_retry<F, Fut>(
+    label: &str,
+    mut run: F,
+) -> Result<ChatCompletionResponse, AppError>
 where
     F: FnMut() -> Fut,
     Fut: std::future::Future<Output = Result<ChatCompletionResponse, AppError>>,
@@ -175,7 +199,9 @@ where
                 if let AppError::ExternalServiceRetryable { .. } = &e {
                     last_err = Some(e);
                     if attempt < OPENROUTER_MAX_ATTEMPTS {
-                        let delay = Duration::from_millis(OPENROUTER_INITIAL_BACKOFF_MS * 2_u64.pow(attempt - 1));
+                        let delay = Duration::from_millis(
+                            OPENROUTER_INITIAL_BACKOFF_MS * 2_u64.pow(attempt - 1),
+                        );
                         log::info!(
                             "OpenRouter {} retry {}/{} after {:?}",
                             label,
@@ -417,11 +443,10 @@ pub async fn handle_chat(pool: &Pool, request: ChatRequest) -> Result<String, Ap
     })
     .await?;
 
-    let choice = first_response
-        .choices
-        .into_iter()
-        .next()
-        .ok_or_else(|| AppError::ExternalService("No choices returned from OpenRouter".into()))?;
+    let choice =
+        first_response.choices.into_iter().next().ok_or_else(|| {
+            AppError::ExternalService("No choices returned from OpenRouter".into())
+        })?;
 
     if let Some(tool_calls) = choice.message.tool_calls.clone() {
         // Handle only the first semantic search tool call for now
@@ -438,15 +463,19 @@ pub async fn handle_chat(pool: &Pool, request: ChatRequest) -> Result<String, Ap
                         first_call.function.arguments
                     );
                     AppError::ExternalServiceWithRaw {
-                        message: "Assistant produced invalid tool arguments; please try again.".into(),
+                        message: "Assistant produced invalid tool arguments; please try again."
+                            .into(),
                         raw_response: args_json.to_string(),
                     }
                 })?;
 
                 let results = run_jbovlaste_semantic_search(pool, args).await?;
 
-                let compact_results: Vec<serde_json::Value> =
-                    results.definitions.iter().map(summarise_definition).collect();
+                let compact_results: Vec<serde_json::Value> = results
+                    .definitions
+                    .iter()
+                    .map(summarise_definition)
+                    .collect();
 
                 let tool_payload = json!({
                     "results": compact_results,
@@ -491,20 +520,15 @@ pub async fn handle_chat(pool: &Pool, request: ChatRequest) -> Result<String, Ap
                             .json(&second_request)
                             .send()
                             .await?;
-                        let ok =
-                            ensure_openrouter_status(res, "second chat/completions").await?;
+                        let ok = ensure_openrouter_status(res, "second chat/completions").await?;
                         parse_chat_response(ok, "second chat/completions").await
                     }
                 })
                 .await?;
 
-                let final_choice = second_response
-                    .choices
-                    .into_iter()
-                    .next()
-                    .ok_or_else(|| {
-                        AppError::ExternalService("No choices in second OpenRouter response".into())
-                    })?;
+                let final_choice = second_response.choices.into_iter().next().ok_or_else(|| {
+                    AppError::ExternalService("No choices in second OpenRouter response".into())
+                })?;
 
                 return Ok(final_choice.message.content);
             }

@@ -4,7 +4,8 @@ use crate::jbovlaste::service::get_valsi_sound_urls_from_db;
 use crate::utils::remove_html_tags;
 use crate::{
     auth_utils::verify_collection_ownership, export::models::CollectionExportItem,
-    flashcards::models::FlashcardDirection, utils::validate_item_audio, utils::validate_item_image, AppError, AppResult,
+    flashcards::models::FlashcardDirection, utils::validate_item_audio, utils::validate_item_image,
+    AppError, AppResult,
 };
 use base64::{engine::general_purpose::STANDARD as BASE64, Engine};
 use chrono::{DateTime, Utc};
@@ -1263,9 +1264,14 @@ pub async fn upsert_item(
     };
 
     // Use explicit position, or when updating existing item keep its current position; otherwise append
-    let position = req.position.or_else(|| {
-        existing_item.as_ref().map(|row| row.get::<_, i32>("position"))
-    }).unwrap_or(max_position + 1);
+    let position = req
+        .position
+        .or_else(|| {
+            existing_item
+                .as_ref()
+                .map(|row| row.get::<_, i32>("position"))
+        })
+        .unwrap_or(max_position + 1);
 
     // Validate item_id exists if provided
     if req.item_id.is_some() && existing_item.is_none() {
@@ -2853,10 +2859,7 @@ pub async fn search_items(
             let item_id: i32 = row.get("item_id");
             let cid: i32 = row.get("collection_id");
             let sound_url = if has_sound {
-                Some(format!(
-                    "/api/collections/{}/items/{}/sound",
-                    cid, item_id
-                ))
+                Some(format!("/api/collections/{}/items/{}/sound", cid, item_id))
             } else {
                 None
             };

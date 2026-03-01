@@ -73,13 +73,19 @@
               {{ t('collectionWidget.makePublic') }}
             </label>
           </div>
-          <div class="flex justify-end gap-2">
-            <button type="button" class="btn-cancel" @click="showCreateForm = false">
-              {{ t('collectionWidget.cancel') }}
-            </button>
-            <button type="submit" :disabled="isCreating" class="btn-create">
-              {{ isCreating ? t('collectionDetail.saving') : t('collectionWidget.createAndAdd') }}
-            </button>
+          <div class="mt-2 flex flex-col gap-2">
+            <!-- Progress bar when creating collection -->
+            <div v-if="isCreating" class="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden">
+              <div class="h-full w-1/3 bg-indigo-500 rounded-full progress-indeterminate" />
+            </div>
+            <div class="flex justify-end gap-2">
+              <button type="button" class="btn-cancel" :disabled="isCreating" @click="showCreateForm = false">
+                {{ t('collectionWidget.cancel') }}
+              </button>
+              <button type="submit" :disabled="isCreating" class="btn-create">
+                {{ isCreating ? t('collectionDetail.saving') : t('collectionWidget.createAndAdd') }}
+              </button>
+            </div>
           </div>
         </form>
       </div>
@@ -89,13 +95,19 @@
         <label class="block text-xs font-medium text-gray-700 mb-1">{{ t('collectionWidget.notesLabel') }}</label>
         <textarea v-model="notes" rows="2" :placeholder="t('collectionWidget.notesPlaceholder')"
           class="textarea-field" />
-        <div class="flex justify-end gap-2 mt-2">
-          <button class="btn-cancel" @click="cancelAddWithNotes">
-            {{ t('collectionWidget.cancel') }}
-          </button>
-          <button class="btn-insert" @click="confirmAddWithNotes">
-            {{ t('collectionWidget.addToCollectionButton') }}
-          </button>
+        <div class="mt-2 flex flex-col gap-2">
+          <!-- Progress bar when saving -->
+          <div v-if="isAddingTo === selectedCollectionId" class="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden">
+            <div class="h-full w-1/3 bg-indigo-500 rounded-full progress-indeterminate" />
+          </div>
+          <div class="flex justify-end gap-2">
+            <button class="btn-cancel" :disabled="isAddingTo === selectedCollectionId" @click="cancelAddWithNotes">
+              {{ t('collectionWidget.cancel') }}
+            </button>
+            <button class="btn-insert" :disabled="isAddingTo === selectedCollectionId" @click="confirmAddWithNotes">
+              {{ t('collectionWidget.addToCollectionButton') }}
+            </button>
+          </div>
         </div>
       </div>
     </ModalComponent>

@@ -656,8 +656,11 @@ async fn send_confirmation_email(to_email: &str, confirmation_url: &str) -> Resu
         "If you didn't create this account, please ignore this email.",
     ];
 
-    let (text_body, html_body) = email_service
-        .build_email_content(message_content, Some(("Confirm Email", confirmation_url)));
+    let (text_body, html_body) = email_service.build_email_content(
+        message_content,
+        Some(("Confirm Email", confirmation_url)),
+        "en",
+    );
 
     email_service
         .send_notification(EmailNotification {
@@ -1057,6 +1060,7 @@ pub async fn request_password_reset(
     let (text_body, html_body) = email_service.build_email_content(
         message_content,
         Some(("Reset Password", reset_url.as_str())),
+        "en",
     );
 
     if let Err(e) = email_service.send_notification(EmailNotification {
@@ -1449,7 +1453,7 @@ pub async fn initiate_password_change(
         "If you didn't request this change, please contact us immediately.",
     ];
 
-    let (text_body, html_body) = email_service.build_email_content(message_content, None);
+    let (text_body, html_body) = email_service.build_email_content(message_content, None, "en");
 
     email_service
         .send_notification(EmailNotification {

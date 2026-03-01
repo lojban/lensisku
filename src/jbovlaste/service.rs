@@ -23,14 +23,16 @@ use vlazba::jvokaha::jvokaha;
 
 use crate::auth::Claims;
 use crate::comments::dto::ReactionResponse;
-use crate::language::{analyze_word, lujvo_segments_from_nodes, validate_mathjax, MathJaxValidationOptions};
-use camxes_rs::peg::parsing::ParseResult;
+use crate::language::{
+    analyze_word, lujvo_segments_from_nodes, validate_mathjax, MathJaxValidationOptions,
+};
 use crate::middleware::cache::RedisCache;
 use crate::subscriptions::models::SubscriptionTrigger;
 use crate::versions::service::{get_diff, get_version_with_transaction};
 use crate::versions::{Change, ChangeType, VersionContent, VersionDiff};
 use base64::engine::general_purpose::STANDARD as BASE64;
 use base64::Engine;
+use camxes_rs::peg::parsing::ParseResult;
 
 use chrono::{DateTime, Duration, Utc};
 
@@ -827,7 +829,10 @@ pub async fn fast_search_definitions(
     // Use the helper function to fetch keywords
     let (gloss_keywords_map, place_keywords_map) = fetch_keywords(&transaction, &def_ids).await?;
 
-    let words: Vec<String> = rows.iter().map(|row| row.get::<_, String>("valsiword")).collect();
+    let words: Vec<String> = rows
+        .iter()
+        .map(|row| row.get::<_, String>("valsiword"))
+        .collect();
     let sound_urls = get_valsi_sound_urls_from_db(pool, &words).await?;
 
     // Process each definition
@@ -1107,7 +1112,10 @@ pub async fn get_valsi_sound_urls_from_db(
             &[&unique_lower],
         )
         .await?;
-    let has_sound: HashSet<String> = rows.iter().map(|r| r.get::<_, String>("word").to_lowercase()).collect();
+    let has_sound: HashSet<String> = rows
+        .iter()
+        .map(|r| r.get::<_, String>("word").to_lowercase())
+        .collect();
     let mut result = HashMap::new();
     for word in words {
         result.insert(
@@ -1587,7 +1595,10 @@ async fn add_definition_in_transaction(
             }
         });
 
-        let mut message_lines = vec![format!("New definition added for {}", valsi_word), String::new()];
+        let mut message_lines = vec![
+            format!("New definition added for {}", valsi_word),
+            String::new(),
+        ];
         message_lines.push(format!("Definition: {}", def_display));
         if let Some(ref n) = notes_display {
             message_lines.push(format!("Notes: {}", n));
@@ -2227,7 +2238,10 @@ pub async fn update_definition(
         );
     }
     if let Err(e) = redis_cache.invalidate_recent_changes().await {
-        log::error!("Failed to invalidate recent changes cache after update: {}", e);
+        log::error!(
+            "Failed to invalidate recent changes cache after update: {}",
+            e
+        );
     }
     transaction.commit().await?;
 
@@ -2701,7 +2715,10 @@ pub async fn update_vote(
         );
     }
     if let Err(e) = redis_cache.invalidate_recent_changes().await {
-        log::error!("Failed to invalidate recent changes cache after vote: {}", e);
+        log::error!(
+            "Failed to invalidate recent changes cache after vote: {}",
+            e
+        );
     }
 
     // Commit transaction
@@ -2873,7 +2890,7 @@ pub async fn get_definitions_by_entry(
     // Update definitions with the collected data
     for def in &mut definitions {
         def.sound_url = sound_urls.get(&def.valsiword).cloned().flatten();
-                                                                           // Update comment count
+        // Update comment count
         if let Some(row) = comment_counts
             .iter()
             .find(|r| r.get::<_, i32>("definitionid") == def.definitionid)

@@ -2,7 +2,7 @@ use crate::auth::permissions::PermissionCache;
 use crate::flashcards;
 use crate::middleware::limiter::EmailConfirmationLimiter;
 use crate::{
-    auth, collections, comments,
+    assistant, auth, collections, comments,
     config::AppConfig,
     error::{AppError, AppResult},
     export, jbovlaste, language,
@@ -11,7 +11,6 @@ use crate::{
     muplis::{self},
     sessions, subscriptions, users,
     versions::{self},
-    assistant,
 };
 use actix_cors::Cors;
 use actix_web::{http::header, middleware::Logger, web, App, HttpServer};

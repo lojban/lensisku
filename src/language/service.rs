@@ -113,7 +113,12 @@ pub fn lujvo_segments_from_nodes(input: &str, nodes: &[ParseNode]) -> Option<Vec
     let mut parts: Vec<(usize, String)> = Vec::new();
 
     for node in children {
-        if let ParseNode::NonTerminal { name, span, children: sub } = node {
+        if let ParseNode::NonTerminal {
+            name,
+            span,
+            children: sub,
+        } = node
+        {
             let (s, e) = (span.0, span.1);
             if s >= e || e > input.len() {
                 continue;
@@ -123,7 +128,12 @@ pub fn lujvo_segments_from_nodes(input: &str, nodes: &[ParseNode]) -> Option<Vec
                 let mut rafsi_end = s;
                 let mut hy_start = e;
                 for n in sub {
-                    if let ParseNode::NonTerminal { name: nname, span: nspan, .. } = n {
+                    if let ParseNode::NonTerminal {
+                        name: nname,
+                        span: nspan,
+                        ..
+                    } = n
+                    {
                         let (ns, ne) = (nspan.0, nspan.1);
                         if nname == "fuhivla_trim" {
                             rafsi_end = ne;
@@ -148,7 +158,12 @@ pub fn lujvo_segments_from_nodes(input: &str, nodes: &[ParseNode]) -> Option<Vec
                 let mut rafsi_end = s;
                 let mut hy_start = e;
                 for n in sub {
-                    if let ParseNode::NonTerminal { name: nname, span: nspan, .. } = n {
+                    if let ParseNode::NonTerminal {
+                        name: nname,
+                        span: nspan,
+                        ..
+                    } = n
+                    {
                         let (ns, ne) = (nspan.0, nspan.1);
                         if nname != "h" && nname != "y" {
                             if ne > rafsi_end {

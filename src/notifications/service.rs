@@ -11,6 +11,39 @@ use serde::{Deserialize, Serialize};
 use std::{env, num::ParseIntError};
 use thiserror::Error;
 
+use once_cell::sync::Lazy;
+use std::collections::HashMap;
+
+static LOCALES: Lazy<HashMap<&'static str, serde_json::Value>> = Lazy::new(|| {
+    let mut m = HashMap::new();
+    m.insert(
+        "en",
+        serde_json::from_str(include_str!("../../locales/en.json")).unwrap(),
+    );
+    m.insert(
+        "jbo",
+        serde_json::from_str(include_str!("../../locales/jbo.json")).unwrap(),
+    );
+    m
+});
+
+fn t(lang: &str, key: &str) -> String {
+    let locale = LOCALES
+        .get(lang)
+        .unwrap_or_else(|| LOCALES.get("en").unwrap());
+    if let Some(val) = locale.get(key) {
+        if let Some(s) = val.as_str() {
+            return s.to_string();
+        }
+    }
+    if let Some(val) = LOCALES.get("en").unwrap().get(key) {
+        if let Some(s) = val.as_str() {
+            return s.to_string();
+        }
+    }
+    key.to_string()
+}
+
 use crate::versions::models::{Change, ChangeType};
 
 #[derive(Debug, Error)]
@@ -83,6 +116,7 @@ impl EmailService {
         &self,
         content: &[&str],
         action_link: Option<(&str, &str)>,
+        lang: &str,
     ) -> (String, String) {
         let mut text_body = String::new();
         let mut html_body = String::new();
@@ -154,7 +188,6 @@ impl EmailService {
             );
         }
 
-        // Common footer
         html_body.push_str(&format!(
             r#"                            </table>
                         </td>
@@ -165,8 +198,8 @@ impl EmailService {
                             <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
                                 <tr>
                                     <td align="center" style="font-size: 13px; line-height: 1.5; color: #64748b;">
-                                        <p style="margin: 0 0 8px 0;">This message was sent by the Lojban Dictionary service.</p>
-                                        <p style="margin: 0;">© {} Lojban Dictionary</p>
+                                        <p style="margin: 0 0 8px 0;">{}</p>
+                                        <p style="margin: 0;">{}</p>
                                     </td>
                                 </tr>
                             </table>
@@ -178,7 +211,8 @@ impl EmailService {
     </table>
 </body>
 </html>"#,
-            chrono::Local::now().year()
+            t(lang, "footer_sent_by"),
+            t(lang, "footer_copyright").replace("{}", &chrono::Local::now().year().to_string())
         ));
 
         (text_body, html_body)
@@ -194,6 +228,7 @@ impl EmailService {
         new_definition: Option<&str>,
         changes: Option<&[Change]>,
         action_url: &str,
+        lang: &str,
     ) -> (String, String) {
         let escape = |s: &str| {
             s.replace('&', "&amp;")
@@ -204,13 +239,19 @@ impl EmailService {
 
         // Plain text
         let mut text_body = String::new();
-        text_body.push_str(&format!("Definition updated for {}\n\n", valsi_word));
+        text_body.push_str(&format!(
+            "{}\n\n",
+            t(lang, "text_def_updated_for").replace("{}", valsi_word)
+        ));
         if let Some(u) = actor_username {
-            text_body.push_str(&format!("Updated by: {}\n\n", u));
+            text_body.push_str(&format!(
+                "{}\n\n",
+                t(lang, "text_updated_by").replace("{}", u)
+            ));
         }
         if let Some(def) = new_definition {
             let trunc = if def.len() > 400 { &def[..400] } else { def };
-            text_body.push_str("New definition:\n");
+            text_body.push_str(&format!("{}\n", t(lang, "text_new_def")));
             text_body.push_str(trunc);
             if def.len() > 400 {
                 text_body.push_str("...");
@@ -219,12 +260,12 @@ impl EmailService {
         }
         if let Some(chgs) = changes {
             if !chgs.is_empty() {
-                text_body.push_str("Changes:\n");
+                text_body.push_str(&format!("{}\n", t(lang, "text_changes")));
                 for c in chgs {
                     let label = match c.change_type {
-                        ChangeType::Added => "Added",
-                        ChangeType::Removed => "Removed",
-                        ChangeType::Modified => "Modified",
+                        ChangeType::Added => t(lang, "label_added"),
+                        ChangeType::Removed => t(lang, "label_removed"),
+                        ChangeType::Modified => t(lang, "label_modified"),
                     };
                     text_body.push_str(&format!("  - {} ({}): ", c.field, label));
                     if let Some(v) = &c.new_value {
@@ -235,7 +276,7 @@ impl EmailService {
                         };
                         text_body.push_str(&t);
                     } else if let Some(v) = &c.old_value {
-                        text_body.push_str("(removed)");
+                        text_body.push_str(&t(lang, "text_removed_val"));
                         let t = if v.len() > 60 {
                             format!("{}...", &v[..60])
                         } else {
@@ -248,12 +289,12 @@ impl EmailService {
                 text_body.push('\n');
             }
         }
-        text_body.push_str(&format!("View update: {}", action_url));
+        text_body.push_str(&t(lang, "text_view_update").replace("{}", action_url));
 
         // HTML: same shell as build_email_content, with structured content
         let valsi_esc = escape(valsi_word);
         let actor_line = actor_username
-            .map(|u| format!(r#"<div style="display: inline-block; background-color: #f1f5f9; color: #475569; padding: 4px 12px; border-radius: 9999px; font-size: 13px; font-weight: 500; margin-bottom: 24px;">By <strong>{}</strong></div>"#, escape(u)))
+            .map(|u| format!(r#"<div style="display: inline-block; background-color: #f1f5f9; color: #475569; padding: 4px 12px; border-radius: 9999px; font-size: 13px; font-weight: 500; margin-bottom: 24px;">{}</div>"#, t(lang, "html_by_user").replace("{}", &escape(u))))
             .unwrap_or_else(String::new);
 
         let def_block = new_definition.map(|def| {
@@ -264,7 +305,8 @@ impl EmailService {
                 esc.clone()
             };
             format!(
-                r#"<tr><td style="padding-bottom: 24px;"><div style="font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b; margin-bottom: 8px;">Definition</div><div style="font-size: 15px; line-height: 1.6; color: #1e293b; background: #f8fafc; border-left: 4px solid #3b82f6; padding: 16px; border-radius: 0 12px 12px 0; text-align: left;">{}</div></td></tr>"#,
+                r#"<tr><td style="padding-bottom: 24px;"><div style="font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b; margin-bottom: 8px;">{}</div><div style="font-size: 15px; line-height: 1.6; color: #1e293b; background: #f8fafc; border-left: 4px solid #3b82f6; padding: 16px; border-radius: 0 12px 12px 0; text-align: left;">{}</div></td></tr>"#,
+                t(lang, "html_definition_label"),
                 trunc.replace('\n', "<br>")
             )
         }).unwrap_or_else(String::new);
@@ -272,9 +314,9 @@ impl EmailService {
         let changes_block = changes.filter(|chgs| !chgs.is_empty()).map(|chgs| {
             let rows: String = chgs.iter().map(|c| {
                 let (label, bg, color) = match c.change_type {
-                    ChangeType::Added => ("Added", "#d1fae5", "#059669"),
-                    ChangeType::Removed => ("Removed", "#fee2e2", "#dc2626"),
-                    ChangeType::Modified => ("Modified", "#fef3c7", "#d97706"),
+                    ChangeType::Added => (t(lang, "label_added"), "#d1fae5", "#059669"),
+                    ChangeType::Removed => (t(lang, "label_removed"), "#fee2e2", "#dc2626"),
+                    ChangeType::Modified => (t(lang, "label_modified"), "#fef3c7", "#d97706"),
                 };
                 let field_esc = escape(&c.field);
                 let content = c.new_value.as_ref()
@@ -283,14 +325,15 @@ impl EmailService {
                         let esc = escape(v);
                         if esc.len() > 120 { format!("{}...", esc.chars().take(120).collect::<String>()) } else { esc }
                     })
-                    .unwrap_or_else(|| "(empty)".to_string());
+                    .unwrap_or_else(|| t(lang, "text_empty").to_string());
                 format!(
                     r#"<tr><td style="padding: 12px 16px; border-bottom: 1px solid #f1f5f9; text-align: left;"><div style="margin-bottom: 4px;"><span style="font-size: 13px; font-weight: 600; color: #334155;">{}</span> <span style="display: inline-block; background-color: {}; color: {}; padding: 2px 8px; border-radius: 9999px; font-size: 11px; font-weight: 600; margin-left: 8px; vertical-align: middle;">{}</span></div><div style="font-size: 14px; color: #64748b; line-height: 1.5;">{}</div></td></tr>"#,
                     field_esc, bg, color, label, content.replace('\n', " ")
                 )
             }).collect();
             format!(
-                r#"<tr><td style="padding-bottom: 32px;"><div style="font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b; margin-bottom: 8px;">Changes</div><table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background: #ffffff; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden;">{}</table></td></tr>"#,
+                r#"<tr><td style="padding-bottom: 32px;"><div style="font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b; margin-bottom: 8px;">{}</div><table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background: #ffffff; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden;">{}</table></td></tr>"#,
+                t(lang, "html_changes_label"),
                 rows
             )
         }).unwrap_or_else(String::new);
@@ -306,9 +349,9 @@ impl EmailService {
                 format!("{}", actor_line)
             },
             if changes.as_ref().map(|c| c.is_empty()).unwrap_or(true) {
-                "New valsi added:"
+                t(lang, "html_new_valsi_added")
             } else {
-                "Definition updated for"
+                t(lang, "html_def_updated_for")
             },
             valsi_esc,
             def_block,
@@ -352,7 +395,7 @@ impl EmailService {
                                         <table role="presentation" cellspacing="0" cellpadding="0" border="0">
                                             <tr>
                                                 <td align="center" style="border-radius: 9999px; background: linear-gradient(180deg, #60a5fa 0%, #3b82f6 100%); box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
-                                                    <a href="{}" style="display: inline-block; padding: 14px 36px; font-size: 15px; font-weight: 600; color: #ffffff; text-decoration: none; border-radius: 99999px; border: 1px solid #3b82f6;">View on Dictionary</a>
+                                                    <a href="{}" style="display: inline-block; padding: 14px 36px; font-size: 15px; font-weight: 600; color: #ffffff; text-decoration: none; border-radius: 99999px; border: 1px solid #3b82f6;">{}</a>
                                                 </td>
                                             </tr>
                                         </table>
@@ -367,8 +410,8 @@ impl EmailService {
                             <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
                                 <tr>
                                     <td align="center" style="font-size: 13px; line-height: 1.5; color: #64748b;">
-                                        <p style="margin: 0 0 8px 0;">This message was sent by the Lojban Dictionary service.</p>
-                                        <p style="margin: 0;">© {} Lojban Dictionary</p>
+                                        <p style="margin: 0 0 8px 0;">{}</p>
+                                        <p style="margin: 0;">{}</p>
                                     </td>
                                 </tr>
                             </table>
@@ -383,15 +426,22 @@ impl EmailService {
             self.frontend_url,
             content_inner,
             action_url,
-            chrono::Local::now().year()
+            t(lang, "html_view_dictionary"),
+            t(lang, "footer_sent_by"),
+            t(lang, "footer_copyright").replace("{}", &chrono::Local::now().year().to_string())
         );
 
         (text_body, html_body)
     }
 
     pub fn send_notification(&self, notification: EmailNotification) -> Result<(), EmailError> {
+        let mailbox = lettre::message::Mailbox::new(
+            Some("la lensisku".to_string()),
+            self.from_address.parse::<lettre::address::Address>()?,
+        );
+
         let email = Message::builder()
-            .from(self.from_address.parse()?)
+            .from(mailbox)
             .to(notification.to_email.parse()?)
             .subject(notification.subject)
             .multipart(MultiPart::alternative_plain_html(
@@ -412,11 +462,14 @@ pub async fn send_notification_emails(pool: &deadpool_postgres::Pool) -> Result<
         .query(
             "SELECT n.*, u.email, v.word as valsi_word,
                     actor.username as actor_username,
-                    n.definition_id
+                    n.definition_id,
+                    l.tag as language_tag
              FROM user_notifications n
              JOIN users u ON n.user_id = u.userid
              LEFT JOIN valsi v ON n.valsi_id = v.valsiid
              LEFT JOIN users actor ON n.actor_id = actor.userid
+             LEFT JOIN definitions d ON n.definition_id = d.definitionid
+             LEFT JOIN languages l ON d.langid = l.langid
              WHERE n.email_sent IS NULL
              AND u.email IS NOT NULL
              AND u.email <> ''
@@ -440,16 +493,20 @@ pub async fn send_notification_emails(pool: &deadpool_postgres::Pool) -> Result<
         let link: Option<String> = row.get("link");
         let actor_username: Option<String> = row.get("actor_username");
         let definition_id: Option<i32> = row.get("definition_id");
+        let language_tag: Option<String> = row.get("language_tag");
+        let lang = language_tag.as_deref().unwrap_or("en");
 
         let subject = if notification_type == "edit" {
             match &valsi_word {
-                Some(word) => format!("Lojban Dictionary: Definition updated - {}", word),
-                None => "Lojban Dictionary: Definition updated".to_string(),
+                Some(word) => t(lang, "subject_definition_updated_word").replace("{}", word),
+                None => t(lang, "subject_definition_updated"),
             }
         } else {
             match &valsi_word {
-                Some(word) => format!("Lojban Dictionary: {} - {}", notification_type, word),
-                None => format!("Lojban Dictionary: {}", notification_type),
+                Some(word) => t(lang, "subject_other_word")
+                    .replacen("{}", notification_type.as_str(), 1)
+                    .replacen("{}", word.as_str(), 1),
+                None => t(lang, "subject_other").replace("{}", notification_type.as_str()),
             }
         };
 
@@ -493,12 +550,16 @@ pub async fn send_notification_emails(pool: &deadpool_postgres::Pool) -> Result<
                 new_definition.as_deref(),
                 changes.as_deref().filter(|c| !c.is_empty()),
                 url,
+                lang,
             )
         } else {
             let message_lines: Vec<&str> = message.split('\n').collect();
+            let view_lang_text = t(lang, "html_view_dictionary");
             email_service.build_email_content(
                 &message_lines,
-                link.as_ref().map(|url| ("View Link", url.as_str())),
+                link.as_ref()
+                    .map(|url| (view_lang_text.as_str(), url.as_str())),
+                lang,
             )
         };
 

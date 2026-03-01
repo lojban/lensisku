@@ -20,7 +20,9 @@ pub async fn verify_collection_read_access(
     let is_public: bool = row.get("is_public");
     match user_id {
         None if !is_public => Err(AppError::Auth("Access denied".to_string())),
-        Some(uid) if !is_public && owner_id != uid => Err(AppError::Auth("Access denied".to_string())),
+        Some(uid) if !is_public && owner_id != uid => {
+            Err(AppError::Auth("Access denied".to_string()))
+        }
         _ => Ok(()),
     }
 }

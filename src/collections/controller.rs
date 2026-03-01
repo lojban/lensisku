@@ -644,7 +644,10 @@ pub async fn update_item_media(
                 HttpResponse::NotFound().finish()
             } else if msg.contains("Access denied") {
                 HttpResponse::Forbidden().finish()
-            } else if msg.contains("Invalid image") || msg.contains("Invalid audio") || msg.contains("exceeds 5MB") {
+            } else if msg.contains("Invalid image")
+                || msg.contains("Invalid audio")
+                || msg.contains("exceeds 5MB")
+            {
                 HttpResponse::BadRequest().body(msg)
             } else {
                 HttpResponse::InternalServerError().body(format!("Failed to update media: {}", e))
