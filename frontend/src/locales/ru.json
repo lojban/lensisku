@@ -1071,7 +1071,8 @@
       "realNameSort": "Настоящее имя",
       "createdAtSort": "Дата создания",
       "ascSort": "А до Я",
-      "descSort": "Я до А"
+      "descSort": "Я до А",
+      "joinedAt": "Присоединился {date}"
     },
     "activityReactions": {
       "noReactedComments": "Комментариев с реакциями не найдено."

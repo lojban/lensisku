@@ -32,6 +32,9 @@ pub struct UserInfo {
     pub url: Option<String>,
     pub is_enabled: bool,
     pub role: String,
+    #[schema(value_type = String, format = DateTime)]
+    pub created_at: DateTime<Utc>,
+    pub has_profile_image: bool,
 }
 
 #[derive(Debug, Serialize, ToSchema)]

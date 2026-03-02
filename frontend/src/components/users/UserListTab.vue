@@ -94,24 +94,57 @@
           @click="$emit('viewUser', user.username)"
           @keyup.enter="$emit('viewUser', user.username)"
         >
-          <div class="flex justify-between items-start gap-4">
-            <div class="min-w-0 flex-1">
-              <h3 class="text-lg font-medium text-blue-600 truncate hover:text-blue-700">
-                {{ user.username }}
-              </h3>
-              <p
-                v-if="user.realname"
-                class="text-gray-600 text-sm mt-1 truncate"
-              >
-                {{ user.realname }}
-              </p>
+          <div class="flex items-start gap-4">
+            <!-- Avatar -->
+            <div class="shrink-0 mt-1">
+              <div v-if="user.has_profile_image" class="w-12 h-12 rounded-full overflow-hidden border border-gray-100 shadow-sm">
+                <img
+                  :src="getProfileImage(user.username, { cached: true })"
+                  :alt="user.username"
+                  class="w-full h-full object-cover"
+                >
+              </div>
+              <div v-else class="w-12 h-12 rounded-full bg-gray-50 flex items-center justify-center text-gray-400 border border-gray-100 shadow-sm">
+                <User class="h-6 w-6" />
+              </div>
             </div>
-            <span
-              class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium shrink-0"
-              :class="getRoleClass(user.role)"
-            >
-              {{ translateRole(user.role) }}
-            </span>
+
+            <!-- User Info -->
+            <div class="min-w-0 flex-1">
+              <div class="flex justify-between items-start gap-2">
+                <div class="min-w-0">
+                  <h3 class="text-lg font-medium text-blue-600 truncate hover:text-blue-700">
+                    {{ user.username }}
+                  </h3>
+                  <p
+                    v-if="user.realname"
+                    class="text-gray-600 text-sm mt-0.5 truncate"
+                  >
+                    {{ user.realname }}
+                  </p>
+                </div>
+                <span
+                  class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium shrink-0"
+                  :class="getRoleClass(user.role)"
+                >
+                  {{ translateRole(user.role) }}
+                </span>
+              </div>
+
+              <!-- Personal description -->
+              <p
+                v-if="user.personal"
+                class="text-gray-500 text-sm mt-2 line-clamp-2"
+              >
+                {{ user.personal }}
+              </p>
+
+              <!-- Join Date -->
+              <div class="flex items-center gap-1.5 mt-3 text-xs text-gray-400">
+                <Calendar class="h-3.5 w-3.5" />
+                <span>{{ t('components.userListTab.joinedAt', { date: formatDate(user.created_at) }) }}</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -131,11 +164,13 @@
 </template>
 
 <script setup>
+import { Calendar, User } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
+import { getProfileImage } from '@/api.js'
 import PaginationComponent from '@/components/PaginationComponent.vue'
 import SearchInput from '@/components/SearchInput.vue'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 
 defineProps({
   userList: { type: Array, required: true },
@@ -163,6 +198,11 @@ defineEmits([
   'nextPage',
   'viewUser',
 ])
+
+const formatDate = (dateString) => {
+  if (!dateString) return ''
+  return new Date(dateString).toLocaleDateString(locale.value)
+}
 
 const translateRole = (role) => {
   if (!role || typeof role !== 'string') {
