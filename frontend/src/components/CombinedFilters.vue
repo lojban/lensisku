@@ -6,42 +6,46 @@
         :option-label="(lang) => `${lang.real_name} (${lang.english_name})`" filter
         :placeholder="t('filters.selectLanguages')" class="w-full sm:w-80 !rounded-full" />
         <div class="flex items-center gap-2 self-end md:self-center">
-        <div class="flex items-center btn-group-forced" role="group">
+        <div class="flex items-center" role="group">
           <button
-            type="button"
-            class="btn-empty btn-group-item px-2"
-            :class="{ '!text-gray-400': filters.word_type }"
-            @click="toggleSearchInPhrases"
+            class="btn-aqua btn-aqua-group-item px-3"
+            :class="[{ 'opacity-50 !cursor-not-allowed': filters.word_type }]"
             :title="t('searchForm.modes.searchInPhrases')"
+            @click="toggleSearchInPhrases"
           >
-            <CheckSquare v-if="filters.searchInPhrases && !filters.word_type" class="w-4 h-4" />
-            <MinusSquare v-else-if="filters.word_type" class="w-4 h-4" />
-            <Square v-else class="w-4 h-4" />
+            <input
+              type="checkbox"
+              class="checkmark-aqua"
+              :checked="filters.searchInPhrases && !filters.word_type"
+              :disabled="!!filters.word_type"
+            >
             <span class="text-xs select-none whitespace-nowrap">
               {{ t('searchForm.modes.searchInPhrases') }}
             </span>
           </button>
 
           <button
-            type="button"
-            class="btn-empty btn-group-item px-2"
-            @click="toggleSemanticSearch"
+            class="btn-aqua btn-aqua-group-item px-3"
             :title="t('searchForm.modes.semantic')"
+            @click="toggleSemanticSearch"
           >
-            <CheckSquare v-if="filters.isSemantic" class="w-4 h-4" />
-            <Square v-else class="w-4 h-4" />
+            <input
+              type="checkbox"
+              class="checkmark-aqua"
+              :checked="filters.isSemantic"
+            >
             <span class="text-xs select-none whitespace-nowrap">
               {{ t('searchForm.modes.semantic') }}
             </span>
           </button>
         </div>
 
-        <div class="flex items-center btn-group-forced" role="group">
-          <button v-if="hasAnyActiveFilters" class="btn-empty btn-group-item h-6 px-2" @click="resetAllFilters" :title="t('filters.resetAllFilters')">
-            {{ t('filters.resetAllFilters') }}
+        <div class="flex items-center" role="group">
+          <button v-if="hasAnyActiveFilters" type="button" class="btn-aqua btn-aqua-group-item px-3" @click="resetAllFilters" :title="t('filters.resetAllFilters')">
+            <span class="text-xs">{{ t('filters.resetAllFilters') }}</span>
           </button>
 
-          <button class="btn-empty btn-group-item h-6 px-2" @click="toggleExpanded" :title="expanded ? t('filters.collapse') : t('filters.expand')">
+          <button type="button" class="btn-aqua btn-aqua-group-item px-3" @click="toggleExpanded" :title="expanded ? t('filters.collapse') : t('filters.expand')">
             <ChevronDown class="h-5 w-5 transition-transform duration-200" :class="{ 'rotate-180': expanded }"
               :stroke-width="2" />
           </button>
@@ -101,7 +105,7 @@
 </template>
 
 <script setup>
-import { ChevronDown, X, CheckSquare, Square, MinusSquare } from 'lucide-vue-next'
+import { ChevronDown, X } from 'lucide-vue-next'
 import MultiSelect from 'primevue/multiselect'
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 
@@ -115,9 +119,6 @@ const props = defineProps({
   components: {
     MultiSelect,
     ChevronDown,
-    CheckSquare,
-    Square,
-    MinusSquare,
   },
   modelValue: {
     type: Object,
