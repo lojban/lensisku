@@ -1101,7 +1101,8 @@
       "realNameSort": "Real Name",
       "createdAtSort": "Creation Date",
       "ascSort": "A to Z",
-      "descSort": "Z to A"
+      "descSort": "Z to A",
+      "joinedAt": "Joined at {date}"
     },
     "activityReactions": {
       "noReactedComments": "No reacted comments found."

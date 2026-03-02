@@ -67,7 +67,7 @@ pub async fn list_users(
         (_, true) => 2,
     };
     let query_string = format!(
-        "SELECT userid, username, realname, email, personal, url, role, password != 'DISABLED' as is_enabled
+        "SELECT userid, username, realname, email, personal, url, role, password != 'DISABLED' as is_enabled, created_at, has_profile_image(userid) as has_profile_image
          FROM users
          WHERE {}
          ORDER BY {} {}
@@ -102,6 +102,8 @@ pub async fn list_users(
                 personal: row.get("personal"),
                 url: row.get("url"),
                 role: row.get("role"),
+                created_at: row.get("created_at"),
+                has_profile_image: row.get("has_profile_image"),
             }
         })
         .collect();

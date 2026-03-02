@@ -159,7 +159,8 @@
       "realNameSort": "zunle cmene",
       "createdAtSort": "finti ca",
       "ascSort": "A to Z",
-      "descSort": "Z to A"
+      "descSort": "Z to A",
+      "joinedAt": "co'a pilno ca {date}"
     },
     "commentItem": {
       "reactions": {
