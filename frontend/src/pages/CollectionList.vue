@@ -51,12 +51,13 @@
     </h2>
     <div class="flex flex-col sm:flex-row justify-end flex-grow gap-2 sm:gap-0 mt-2 sm:mt-0">
       <input ref="importFileInput" type="file" accept=".json" class="hidden" @change="handleImportFile">
-      <div v-if="auth.state.isLoggedIn" class="flex flex-col sm:flex-row flex-grow sm:flex-none" role="group">
-        <label :class="[viewMode === 'my' ? ' btn-aqua-slate' : 'btn-aqua-white', 'sm:btn-aqua-group-item']" class="btn-aqua flex-grow sm:flex-initial cursor-pointer items-center justify-center flex mb-2 sm:mb-0">
+      <div v-if="auth.state.isLoggedIn" class="flex flex-col sm:flex-row flex-grow sm:flex-none gap-2 sm:gap-3 sm:items-stretch">
+        <label :class="[viewMode === 'my' ? 'btn-aqua-slate' : 'btn-aqua-white']" class="btn-aqua flex-grow sm:flex-initial cursor-pointer items-center justify-center flex mb-2 sm:mb-0 rounded-full">
           <input type="checkbox" class="checkmark-aqua" :checked="viewMode === 'my'"
             @click="viewMode = viewMode === 'my' ? 'public' : 'my'">
           <span> {{ t('collectionList.myCollectionsLabel') }} </span>
         </label>
+        <div class="flex flex-col sm:flex-row flex-grow sm:flex-none gap-2 sm:gap-0" role="group">
         <IconButton
           v-if="auth.state.isLoggedIn"
           :label="t('collectionList.importCollection')"
@@ -70,6 +71,7 @@
           button-classes="btn-aqua-emerald sm:btn-aqua-group-item flex-grow sm:flex-initial"
           @click="showCreateModal = true"
         />
+        </div>
       </div>
     </div>
   </div>
@@ -88,38 +90,58 @@
       class="bg-white p-3 sm:p-4 border rounded-lg hover:border-blue-300 transition-colors">
       <!-- Main Content -->
       <div class="flex flex-col gap-3">
-        <!-- Title and Description -->
-        <div class="min-w-0">
-          <RouterLink :to="`/collections/${collection.collection_id}`"
-            class="block text-base font-semibold text-blue-600 hover:text-blue-800 hover:underline line-clamp-2 mb-1">
-            {{ collection.name }}
-          </RouterLink>
+        <!-- Title, Description and Actions -->
+        <div class="flex flex-col gap-1">
+          <div class="flex items-center justify-between gap-2">
+            <RouterLink
+              :to="`/collections/${collection.collection_id}`"
+              class="text-base font-semibold text-blue-600 hover:text-blue-800 hover:underline flex-1 min-w-0"
+            >
+              <span class="block truncate">
+                {{ collection.name }}
+              </span>
+            </RouterLink>
+            <button
+              type="button"
+              class="btn-aqua-orange h-8"
+              :disabled="studyLoadingId === collection.collection_id"
+              @click="startStudy(collection)"
+            >
+              <GraduationCap v-if="studyLoadingId !== collection.collection_id" class="w-4 h-4 shrink-0" />
+              <span
+                v-else
+                class="animate-spin inline-block w-4 h-4 border-2 border-current border-t-transparent rounded-full shrink-0"
+              />
+              <span>
+                {{
+                  studyLoadingId === collection.collection_id
+                    ? t('collectionList.studying')
+                    : t('collectionList.studyButton')
+                }}
+              </span>
+            </button>
+          </div>
           <p v-if="collection.description" class="text-gray-600 text-sm line-clamp-2">
             {{ collection.description }}
           </p>
         </div>
-      </div>
-      <div class="flex items-center text-xs sm:text-sm mt-2" role="group">
-        <!-- Action Buttons -->
-        <div class="flex flex-nowrap shrink-0">
-          <button
-            type="button"
-            class="btn-aqua-orange btn-aqua-group-item"
-            :disabled="studyLoadingId === collection.collection_id"
-            @click="startStudy(collection)"
-          >
-            <GraduationCap v-if="studyLoadingId !== collection.collection_id" class="w-4 h-4 shrink-0" />
-            <span v-else class="animate-spin inline-block w-4 h-4 border-2 border-current border-t-transparent rounded-full shrink-0" />
-            <span>{{ studyLoadingId === collection.collection_id ? t('collectionList.studying') : t('collectionList.studyButton') }}</span>
-          </button>
-          <RouterLink :to="`/collections/${collection.collection_id}/flashcards`" class="btn-aqua-rose btn-aqua-group-item">
-            <GalleryHorizontalIcon class="w-4 h-4 shrink-0" />
-            <span>{{ t('collectionList.flashcardsButton') }}</span>
-          </RouterLink>
-          <RouterLink :to="`/collections/${collection.collection_id}`" class="btn-aqua-white btn-aqua-group-item">
-            <List class="w-4 h-4 shrink-0" />
-            <span>{{ t('collectionList.collectionButton') }}</span>
-          </RouterLink>
+        <div class="mt-3 flex justify-center">
+          <div class="flex flex-nowrap items-center btn-group-forced" role="group">
+            <RouterLink
+              :to="`/collections/${collection.collection_id}`"
+              class="btn-empty btn-group-item"
+            >
+              <List class="w-4 h-4 shrink-0" />
+              <span>{{ t('collectionList.collectionButton') }}</span>
+            </RouterLink>
+            <RouterLink
+              :to="`/collections/${collection.collection_id}/flashcards`"
+              class="btn-empty btn-group-item"
+            >
+              <GalleryHorizontalIcon class="w-4 h-4 shrink-0" />
+              <span>{{ t('collectionList.flashcardsButton') }}</span>
+            </RouterLink>
+          </div>
         </div>
       </div>
 
