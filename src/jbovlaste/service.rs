@@ -3713,6 +3713,14 @@ pub async fn delete_definition(
         )
         .await?;
 
+    // Delete user notifications referencing this definition
+    transaction
+        .execute(
+            "DELETE FROM user_notifications WHERE definition_id = $1",
+            &[&definition_id],
+        )
+        .await?;
+
     // Delete related subscriptions
     transaction
         .execute(
@@ -3926,6 +3934,14 @@ pub async fn delete_bulk_definitions(
         transaction
             .execute(
                 "DELETE FROM definition_versions WHERE definition_id = $1",
+                &[&def_id],
+            )
+            .await?;
+
+        // Delete user notifications referencing this definition
+        transaction
+            .execute(
+                "DELETE FROM user_notifications WHERE definition_id = $1",
                 &[&def_id],
             )
             .await?;
