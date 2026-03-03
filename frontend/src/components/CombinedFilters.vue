@@ -1,51 +1,39 @@
 <template>
   <div class="filters space-y-4">
     <!-- Language Filter Section -->
-    <div class="flex flex-col sm:flex-row items-center sm:justify-between gap-4 md:p-4 md:bg-white md:rounded-lg md:shadow-sm">
+    <div
+      class="flex flex-col sm:flex-row items-center sm:justify-between gap-4 md:p-4 md:bg-white md:rounded-lg md:shadow-sm">
       <MultiSelect v-model="selectedLangs" :options="languages" :max-selected-labels="3" name="id"
         :option-label="(lang) => `${lang.real_name} (${lang.english_name})`" filter
         :placeholder="t('filters.selectLanguages')" class="w-full sm:w-80 !rounded-full" />
-        <div class="flex items-center gap-2 self-end md:self-center">
+      <div class="flex items-center gap-2 self-end md:self-center">
         <div class="flex items-center" role="group">
-          <button
-            class="btn-aqua btn-aqua-group-item px-3"
-            :class="[{ 'opacity-50 !cursor-not-allowed': filters.word_type }]"
-            :title="t('searchForm.modes.searchInPhrases')"
-            @click="toggleSearchInPhrases"
-          >
-            <input
-              type="checkbox"
-              class="checkmark-aqua"
-              :checked="filters.searchInPhrases && !filters.word_type"
-              :disabled="!!filters.word_type"
-            >
-            <span class="text-xs select-none whitespace-nowrap">
-              {{ t('searchForm.modes.searchInPhrases') }}
-            </span>
-          </button>
-
-          <button
-            class="btn-aqua btn-aqua-group-item px-3"
-            :title="t('searchForm.modes.semantic')"
-            @click="toggleSemanticSearch"
-          >
-            <input
-              type="checkbox"
-              class="checkmark-aqua"
-              :checked="filters.isSemantic"
-            >
+          <button class="btn-aqua btn-aqua-group-item px-3" :title="t('searchForm.modes.semantic')"
+            @click="toggleSemanticSearch">
+            <input type="checkbox" class="checkmark-aqua" :checked="filters.isSemantic">
             <span class="text-xs select-none whitespace-nowrap">
               {{ t('searchForm.modes.semantic') }}
+            </span>
+          </button>
+          <button class="btn-aqua btn-aqua-group-item px-3"
+            :class="[{ 'opacity-50 !cursor-not-allowed': filters.word_type }]"
+            :title="t('searchForm.modes.searchInPhrases')" @click="toggleSearchInPhrases">
+            <input type="checkbox" class="checkmark-aqua" :checked="filters.searchInPhrases && !filters.word_type"
+              :disabled="!!filters.word_type">
+            <span class="text-xs select-none whitespace-nowrap">
+              {{ t('searchForm.modes.searchInPhrases') }}
             </span>
           </button>
         </div>
 
         <div class="flex items-center" role="group">
-          <button v-if="hasAnyActiveFilters" type="button" class="btn-aqua btn-aqua-group-item px-3" @click="resetAllFilters" :title="t('filters.resetAllFilters')">
+          <button v-if="hasAnyActiveFilters" type="button" class="btn-aqua btn-aqua-group-item px-3"
+            @click="resetAllFilters" :title="t('filters.resetAllFilters')">
             <span class="text-xs">{{ t('filters.resetAllFilters') }}</span>
           </button>
 
-          <button type="button" class="btn-aqua btn-aqua-group-item px-3" @click="toggleExpanded" :title="expanded ? t('filters.collapse') : t('filters.expand')">
+          <button type="button" class="btn-aqua btn-aqua-group-item px-3" @click="toggleExpanded"
+            :title="expanded ? t('filters.collapse') : t('filters.expand')">
             <ChevronDown class="h-5 w-5 transition-transform duration-200" :class="{ 'rotate-180': expanded }"
               :stroke-width="2" />
           </button>
@@ -74,11 +62,13 @@
         <!-- Unified input fields with clear buttons -->
         <div v-for="field in ['selmaho', 'username']" :key="field" class="relative">
           <label class="block text-sm font-medium text-gray-700 mb-1">
-            {{ field === 'selmaho' ? t('components.combinedFilters.filterBySelmao') : t('components.combinedFilters.filterByAuthor') }}
+            {{ field === 'selmaho' ? t('components.combinedFilters.filterBySelmao') :
+              t('components.combinedFilters.filterByAuthor') }}
           </label>
           <div class="relative">
-            <input v-model="filters[field]" type="text" :placeholder="t(`components.combinedFilters.placeholder${field.charAt(0).toUpperCase() + field.slice(1)}`)" class="input-field w-full"
-              @input="debouncedFilterChange">
+            <input v-model="filters[field]" type="text"
+              :placeholder="t(`components.combinedFilters.placeholder${field.charAt(0).toUpperCase() + field.slice(1)}`)"
+              class="input-field w-full" @input="debouncedFilterChange">
             <button v-if="filters[field]"
               class="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors duration-200 [&>svg]:hover:text-current"
               @click="clearFilter(field)">
@@ -237,19 +227,19 @@ const hasAnyActiveFilters = computed(() => {
 const debouncedFilterChange = () => {
   // Clear any pending timeouts to prevent stale filter updates
   clearDebounceTimer()
-  
+
   // Capture current filter values to check in timeout
   const currentFilters = {
     selmaho: filters.value.selmaho,
     username: filters.value.username,
   }
-  
+
   // Debounce the filter change - only trigger after user stops typing
   // This prevents excessive API calls while user is actively typing
   debounceTimer = setTimeout(() => {
     // Only emit if filters haven't changed (to prevent race conditions)
-    if (filters.value.selmaho === currentFilters.selmaho && 
-        filters.value.username === currentFilters.username) {
+    if (filters.value.selmaho === currentFilters.selmaho &&
+      filters.value.username === currentFilters.username) {
       emitUpdate()
     }
     debounceTimer = null
