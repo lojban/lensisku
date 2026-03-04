@@ -73,22 +73,20 @@ pub fn sanitize_html(html: &str) -> String {
     remove_html_tags(html)
 }
 
-pub async fn list_collections(pool: &Pool, user_id: i32) -> AppResult<CollectionListResponse> {
+pub async fn list_collections(pool: &Pool, user_id: i32, sort: Option<&str>) -> AppResult<CollectionListResponse> {
     let client = pool
         .get()
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
 
+    let sql = build_collections_query(
+        "WHERE c.user_id = $1",
+        sort,
+        true, // user-owned listing; filter by user_id
+    );
+
     let rows = client
-        .query(
-            "SELECT c.*, u.username, 
-                    (SELECT COUNT(*) FROM collection_items ci WHERE ci.collection_id = c.collection_id) as item_count
-             FROM collections c
-             JOIN users u ON c.user_id = u.userid
-             WHERE c.user_id = $1
-             ORDER BY c.updated_at DESC",
-            &[&user_id],
-        )
+        .query(&sql, &[&user_id])
         .await.map_err(|e| AppError::Database(e.to_string()))?;
 
     let collections = rows
@@ -116,25 +114,33 @@ pub async fn list_collections(pool: &Pool, user_id: i32) -> AppResult<Collection
     })
 }
 
-pub async fn list_public_collections(pool: &Pool) -> AppResult<CollectionListResponse> {
+pub async fn list_public_collections(
+    pool: &Pool,
+    redis: &crate::middleware::cache::RedisCache,
+    sort: Option<&str>
+) -> AppResult<CollectionListResponse> {
+    let sort_key = sort.unwrap_or("active_week");
+    let cache_key = format!("collections_public:{}", sort_key);
+
+    // Try to serve from the precomputed cache first.
+    if let Ok(Some(response)) = redis.get::<CollectionListResponse>(&cache_key).await {
+        return Ok(response);
+    }
+
+    // Cache miss – compute live
     let client = pool
         .get()
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
 
+    log::info!("collection cache miss for sort_key={sort_key}; computing live");
+    let sql = build_collections_query("WHERE c.is_public = true", Some(sort_key), false);
+
     let rows = client
-        .query(
-            "SELECT c.*, u.userid, u.username, 
-                    (SELECT COUNT(*) FROM collection_items ci WHERE ci.collection_id = c.collection_id) as item_count
-             FROM collections c
-             JOIN users u ON c.user_id = u.userid
-             WHERE c.is_public = true
-             ORDER BY c.updated_at DESC",
-            &[],
-        )
+        .query(&sql, &[])
         .await.map_err(|e| AppError::Database(e.to_string()))?;
 
-    let collections = rows
+    let collections: Vec<CollectionResponse> = rows
         .iter()
         .map(|row| CollectionResponse {
             collection_id: row.get("collection_id"),
@@ -153,10 +159,128 @@ pub async fn list_public_collections(pool: &Pool) -> AppResult<CollectionListRes
         })
         .collect();
 
-    Ok(CollectionListResponse {
+    let response = CollectionListResponse {
         collections,
         total: rows.len() as i64,
-    })
+    };
+
+    // Store in Redis (6 hour TTL if background job fails, though it should be refreshed)
+    let _ = redis.set(&cache_key, &response, Some(std::time::Duration::from_secs(6 * 3600))).await;
+
+    Ok(response)
+}
+
+/// Recompute all four sort-order snapshots for the public collections list and
+/// store them in Redis. Called by the background job every few hours.
+pub async fn refresh_collection_sort_cache(
+    pool: &Pool,
+    redis: &crate::middleware::cache::RedisCache,
+) -> AppResult<()> {
+    let client = pool
+        .get()
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+    for sort_key in &["active_week", "active_month", "active_all", "newest"] {
+        let sql = build_collections_query("WHERE c.is_public = true", Some(sort_key), false);
+        let rows = client
+            .query(&sql, &[])
+            .await
+            .map_err(|e| AppError::Database(format!("Cache refresh query failed for {sort_key}: {e}")))?;
+
+        let collections: Vec<CollectionResponse> = rows
+            .iter()
+            .map(|row| CollectionResponse {
+                collection_id: row.get("collection_id"),
+                name: row.get("name"),
+                description: row.get("description"),
+                is_public: row.get("is_public"),
+                created_at: row.get("created_at"),
+                updated_at: row.get("updated_at"),
+                item_count: row.get("item_count"),
+                owner: CollectionOwner {
+                    user_id: row.get("userid"),
+                    username: row
+                        .try_get("username")
+                        .unwrap_or_else(|_| "unknown".to_string()),
+                },
+            })
+            .collect();
+
+        let response = CollectionListResponse {
+            total: collections.len() as i64,
+            collections,
+        };
+
+        let cache_key = format!("collections_public:{}", sort_key);
+        redis.set(&cache_key, &response, Some(std::time::Duration::from_secs(6 * 3600)))
+            .await
+            .map_err(|e| AppError::ExternalService(format!("Cache refresh Redis set failed for {sort_key}: {e}")))?;
+
+        log::info!("collection cache refreshed in Redis for sort_key={sort_key}");
+    }
+
+    Ok(())
+}
+
+
+/// Build the SQL query for listing collections with a configurable ORDER BY.
+///
+/// `where_clause` – a WHERE clause already containing any necessary conditions
+///    (but **no** $N placeholders for user_id – the parameter index is handled
+///    by the caller).
+/// `sort`         – sort key: "active_week" | "active_month" | "active_all" | "newest".
+/// `user_owned`   – if true the query selects `u.username` only (no `u.userid`),
+///    matching the shape used by `list_collections`.
+fn build_collections_query(where_clause: &str, sort: Option<&str>, user_owned: bool) -> String {
+    let extra_select = if user_owned { "" } else { "u.userid, " };
+
+    let (active_join, order_by) = match sort.unwrap_or("active_week") {
+        "active_month" => (
+            "LEFT JOIN flashcards f ON f.collection_id = c.collection_id
+             LEFT JOIN user_flashcard_progress ufp ON ufp.flashcard_id = f.id
+                 AND ufp.last_reviewed_at >= NOW() - INTERVAL '30 days'",
+            "ORDER BY COUNT(DISTINCT ufp.user_id) DESC, c.updated_at DESC",
+        ),
+        "active_all" => (
+            "LEFT JOIN flashcards f ON f.collection_id = c.collection_id
+             LEFT JOIN user_flashcard_progress ufp ON ufp.flashcard_id = f.id",
+            "ORDER BY COUNT(DISTINCT ufp.user_id) DESC, c.updated_at DESC",
+        ),
+        "newest" => (
+            "",
+            "ORDER BY c.created_at DESC",
+        ),
+        // default: active_week
+        _ => (
+            "LEFT JOIN flashcards f ON f.collection_id = c.collection_id
+             LEFT JOIN user_flashcard_progress ufp ON ufp.flashcard_id = f.id
+                 AND ufp.last_reviewed_at >= NOW() - INTERVAL '7 days'",
+            "ORDER BY COUNT(DISTINCT ufp.user_id) DESC, c.updated_at DESC",
+        ),
+    };
+
+    let group_by = if active_join.is_empty() {
+        String::new()
+    } else {
+        "GROUP BY c.collection_id, u.userid".to_string()
+    };
+
+    format!(
+        "SELECT c.*, {extra_select}u.username,
+                (SELECT COUNT(*) FROM collection_items ci WHERE ci.collection_id = c.collection_id) AS item_count
+         FROM collections c
+         JOIN users u ON c.user_id = u.userid
+         {active_join}
+         {where_clause}
+         {group_by}
+         {order_by}",
+        extra_select = extra_select,
+        active_join = active_join,
+        where_clause = where_clause,
+        group_by = group_by,
+        order_by = order_by,
+    )
 }
 
 pub async fn get_collection(

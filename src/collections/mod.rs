@@ -1,7 +1,7 @@
 pub mod controller;
 pub mod dto;
 pub mod models;
-mod service;
+pub mod service;
 
 use actix_web::web;
 use actix_web_httpauth::middleware::HttpAuthentication;

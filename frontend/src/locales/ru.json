@@ -1142,7 +1142,15 @@
     "studyStreak": "Прогресс обучения",
     "studyButton": "Учить",
     "studying": "…",
-    "updated": "Обновлено"
+    "updated": "Обновлено",
+    "sortLabel": "Сортировать по",
+    "sortActiveWeek": "Активные за неделю",
+    "sortActiveMonth": "Активные за месяц",
+    "sortActiveAll": "Активные за всё время",
+    "sortNewest": "Сначала новые",
+    "importCollection": "Импортировать коллекцию",
+    "importError": "Ошибка импорта",
+    "importFullFormatError": "Используйте файл полного экспорта коллекции (JSON с полями collection, items и опционально levels)."
   },
   "flashcardLevels": {
     "title": "{collectionName} - Уровни",
