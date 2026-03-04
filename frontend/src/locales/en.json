@@ -1175,7 +1175,12 @@
     "studyStreak": "Study Streak",
     "studyButton": "Study",
     "studying": "…",
-    "updated": "Updated"
+    "updated": "Updated",
+    "sortLabel": "Sort by",
+    "sortActiveWeek": "Active this week",
+    "sortActiveMonth": "Active this month",
+    "sortActiveAll": "All-time active",
+    "sortNewest": "Newest first"
   },
   "flashcardLevels": {
     "title": "{collectionName} - Levels",

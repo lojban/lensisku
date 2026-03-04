@@ -16,10 +16,11 @@ use actix_cors::Cors;
 use actix_web::{http::header, middleware::Logger, web, App, HttpServer};
 use camxes_rs::peg::grammar::Peg;
 use log::{error, info};
-use std::{collections::HashMap, env, sync::Arc, time::Duration};
+use std::{collections::HashMap, env, sync::Arc};
 
 pub async fn start_server(
     config: AppConfig,
+    redis_cache: Arc<RedisCache>,
     grammar_texts: Arc<HashMap<i32, String>>,
 ) -> AppResult<()> {
     let num_workers = num_cpus::get();
@@ -27,16 +28,7 @@ pub async fn start_server(
 
     let pool = config.db_pools.app_pool;
     let redis_url = env::var("REDIS_URL").unwrap_or_else(|_| "redis://127.0.0.1:6379".to_string());
-    let redis_cache = web::Data::new(
-        RedisCache::new(
-            &redis_url,
-            Duration::from_secs(36000), // 10 hour TTL
-        )
-        .map_err(|e| {
-            AppError::ExternalService(format!("Failed to initialize Redis cache: {}", e))
-        })?,
-    );
-
+    
     // Configure rate limiters
     let general_limiter =
         web::Data::new(middleware::configure_rate_limiter(&redis_url).map_err(|e| {
@@ -58,6 +50,8 @@ pub async fn start_server(
                 e
             ))
         })?);
+
+    let redis_cache_data = web::Data::from(redis_cache);
 
     let perm_cache = web::Data::from(PermissionCache::new(pool.clone()));
     perm_cache
@@ -110,7 +104,7 @@ pub async fn start_server(
             .app_data(general_limiter.clone())
             .app_data(password_reset_limiter.clone())
             .app_data(email_confirmation_limiter.clone())
-            .app_data(redis_cache.clone())
+            .app_data(redis_cache_data.clone())
             .configure(auth::configure)
             .configure(users::configure)
             .configure(muplis::configure)

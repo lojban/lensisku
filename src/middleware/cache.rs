@@ -17,6 +17,35 @@ impl RedisCache {
         })
     }
 
+    pub async fn set<T>(
+        &self,
+        key: &str,
+        data: &T,
+        ttl: Option<Duration>,
+    ) -> Result<(), Box<dyn std::error::Error>>
+    where
+        T: Serialize,
+    {
+        let mut conn = self.client.get_multiplexed_async_connection().await?;
+        let serialized = serde_json::to_string(data)?;
+        let ttl = ttl.unwrap_or(self.default_ttl);
+        let _: () = conn.set_ex(key, serialized, ttl.as_secs()).await?;
+        Ok(())
+    }
+
+    pub async fn get<T>(&self, key: &str) -> Result<Option<T>, Box<dyn std::error::Error>>
+    where
+        T: DeserializeOwned,
+    {
+        let mut conn = self.client.get_multiplexed_async_connection().await?;
+        if let Ok(data) = conn.get::<_, String>(key).await {
+            if let Ok(parsed) = serde_json::from_str::<T>(&data) {
+                return Ok(Some(parsed));
+            }
+        }
+        Ok(None)
+    }
+
     pub async fn get_or_set<T, F, Fut>(
         &self,
         key: &str,
@@ -28,19 +57,12 @@ impl RedisCache {
         F: FnOnce() -> Fut,
         Fut: std::future::Future<Output = Result<T, Box<dyn std::error::Error>>>,
     {
-        let mut conn = self.client.get_multiplexed_async_connection().await?;
-
-        if let Ok(data) = conn.get::<_, String>(key).await {
-            if let Ok(parsed) = serde_json::from_str::<T>(&data) {
-                return Ok(parsed);
-            }
+        if let Ok(Some(cached)) = self.get::<T>(key).await {
+            return Ok(cached);
         }
 
         let data = fetch_data().await?;
-        let serialized = serde_json::to_string(&data)?;
-
-        let ttl = ttl.unwrap_or(self.default_ttl);
-        let _: () = conn.set_ex(key, serialized, ttl.as_secs()).await?;
+        self.set(key, &data, ttl).await?;
 
         Ok(data)
     }

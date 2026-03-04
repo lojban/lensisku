@@ -56,8 +56,12 @@ pub async fn create_collection(
                   update timestamps."
 )]
 #[get("")]
-pub async fn list_collections(pool: web::Data<Pool>, claims: Claims) -> impl Responder {
-    match service::list_collections(&pool, claims.sub).await {
+pub async fn list_collections(
+    pool: web::Data<Pool>,
+    claims: Claims,
+    query: web::Query<ListCollectionsQuery>,
+) -> impl Responder {
+    match service::list_collections(&pool, claims.sub, query.sort.as_deref()).await {
         Ok(response) => HttpResponse::Ok().json(response),
         Err(e) => HttpResponse::InternalServerError().json(json!({
             "error": format!("Failed to list collections: {}", e)
@@ -79,8 +83,12 @@ pub async fn list_collections(pool: web::Data<Pool>, claims: Claims) -> impl Res
                   ordered by last update time."
 )]
 #[get("/public")]
-pub async fn list_public_collections(pool: web::Data<Pool>) -> impl Responder {
-    match service::list_public_collections(&pool).await {
+pub async fn list_public_collections(
+    pool: web::Data<Pool>,
+    redis_cache: web::Data<crate::middleware::cache::RedisCache>,
+    query: web::Query<ListCollectionsQuery>,
+) -> impl Responder {
+    match service::list_public_collections(&pool, &redis_cache, query.sort.as_deref()).await {
         Ok(response) => HttpResponse::Ok().json(response),
         Err(e) => HttpResponse::InternalServerError().json(json!({
             "error": format!("Failed to list public collections: {}", e)

@@ -168,7 +168,11 @@ async fn calculate_missing_embeddings(pool: &Pool) -> AppResult<()> {
     Ok(())
 }
 
-pub async fn spawn_background_tasks(pool: Pool, maildir_path: String) {
+pub async fn spawn_background_tasks(
+    pool: Pool,
+    redis: Arc<crate::middleware::cache::RedisCache>,
+    maildir_path: String,
+) {
     let pool_clone = pool.clone();
     let maildir_path_clone = maildir_path.clone();
     tokio::spawn(async move {
@@ -226,6 +230,30 @@ pub async fn spawn_background_tasks(pool: Pool, maildir_path: String) {
             interval.tick().await;
             if let Err(e) = check_for_new_emails(&pool_clone, &maildir_path_clone).await {
                 error!("Failed to check for new emails: {}", e);
+            }
+        }
+    });
+
+    // Refresh collection sort cache periodically
+    let pool_clone = pool.clone();
+    let redis_clone = redis.clone();
+    tokio::spawn(async move {
+        // Run immediately on startup, then every 6 hours
+        if let Err(e) =
+            crate::collections::service::refresh_collection_sort_cache(&pool_clone, &redis_clone)
+                .await
+        {
+            error!("Failed initial collection sort cache refresh: {}", e);
+        }
+
+        let mut interval = time::interval(Duration::from_secs(6 * 60 * 60)); // 6 hours
+        loop {
+            interval.tick().await; // The first tick completes immediately
+            if let Err(e) =
+                crate::collections::service::refresh_collection_sort_cache(&pool_clone, &redis_clone)
+                    .await
+            {
+                error!("Failed to refresh collection sort cache: {}", e);
             }
         }
     });

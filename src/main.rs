@@ -65,8 +65,22 @@ async fn main() -> AppResult<()> {
     // Import initial maildir data using import pool
     let maildir_path = env::var("MAILDIR_PATH").unwrap_or("test-maildir".to_string());
 
+    // Initialize Redis cache
+    let redis_url = env::var("REDIS_URL").unwrap_or_else(|_| "redis://127.0.0.1:6379".to_string());
+    let redis_cache = Arc::new(
+        crate::middleware::cache::RedisCache::new(&redis_url, std::time::Duration::from_secs(36000))
+            .map_err(|e| {
+                AppError::ExternalService(format!("Failed to initialize Redis cache: {}", e))
+            })?,
+    );
+
     // Spawn background tasks with import pool
-    background::spawn_background_tasks(config.db_pools.import_pool.clone(), maildir_path).await;
+    background::spawn_background_tasks(
+        config.db_pools.import_pool.clone(),
+        redis_cache.clone(),
+        maildir_path,
+    )
+    .await;
 
     // Initialize email service to verify configuration
     if let Err(e) = notifications::EmailService::new() {
@@ -79,7 +93,7 @@ async fn main() -> AppResult<()> {
     }
 
     info!("Starting HTTP server on 0.0.0.0:8080");
-    server::start_server(config, grammar_texts).await
+    server::start_server(config, redis_cache, grammar_texts).await
 }
 
 fn initialize_grammar_texts() -> AppResult<HashMap<i32, String>> {

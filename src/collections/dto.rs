@@ -5,6 +5,16 @@ use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
 #[derive(Debug, Deserialize, ToSchema)]
+pub struct ListCollectionsQuery {
+    /// Sort order for collections.
+    /// - `active_week`  – most active flashcard users in the last 7 days (default)
+    /// - `active_month` – most active flashcard users in the last 30 days
+    /// - `active_all`   – most active flashcard users of all time
+    /// - `newest`       – most recently created first
+    pub sort: Option<String>,
+}
+
+#[derive(Debug, Deserialize, ToSchema)]
 pub struct CreateCollectionRequest {
     pub name: String,
     pub description: Option<String>,
@@ -25,7 +35,7 @@ pub struct MergeCollectionsRequest {
     pub new_collection_name: Option<String>,
 }
 
-#[derive(Debug, Serialize, ToSchema)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct CollectionResponse {
     pub collection_id: i32,
     pub name: String,
@@ -39,13 +49,13 @@ pub struct CollectionResponse {
     pub owner: CollectionOwner,
 }
 
-#[derive(Debug, Serialize, ToSchema)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct CollectionOwner {
     pub user_id: i32,
     pub username: String,
 }
 
-#[derive(Debug, Serialize, ToSchema)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct CollectionListResponse {
     pub collections: Vec<CollectionResponse>,
     pub total: i64,

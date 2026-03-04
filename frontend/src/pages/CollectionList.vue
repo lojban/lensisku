@@ -45,7 +45,7 @@
   </div>
 
   <!-- Header -->
-  <div class="flex flex-col sm:flex-row justify-between items-center gap-2 space-x-2 mb-6">
+  <div class="flex flex-col sm:flex-row justify-between items-center gap-2 space-x-2 mb-4">
     <h2 class="text-xl sm:text-2xl font-bold text-gray-800">
       {{ viewMode !== 'my' ? t('collectionList.publicCollections') : t('collectionList.myCollections') }}
     </h2>
@@ -75,6 +75,28 @@
       </div>
     </div>
   </div>
+
+  <!-- Sort Controls -->
+  <div class="flex flex-wrap items-center gap-2 mb-4">
+    <span class="text-sm text-gray-500 font-medium shrink-0">{{ t('collectionList.sortLabel') }}:</span>
+    <div class="flex flex-wrap gap-1" role="group">
+      <button
+        v-for="opt in sortOptions"
+        :key="opt.value"
+        type="button"
+        :class="[
+          'px-3 py-1 rounded-full text-xs font-medium border transition-colors',
+          sortBy === opt.value
+            ? 'bg-blue-600 text-white border-blue-600'
+            : 'bg-white text-gray-600 border-gray-300 hover:border-blue-400 hover:text-blue-600',
+        ]"
+        @click="sortBy = opt.value"
+      >
+        {{ opt.label }}
+      </button>
+    </div>
+  </div>
+
   <!-- Loading State -->
   <div v-if="isLoading" class="flex justify-center py-8">
     <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
@@ -218,7 +240,7 @@
 
 <script setup>
 import { GalleryHorizontalIcon, List, CirclePlus, GraduationCap } from 'lucide-vue-next';
-import { ref, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { RouterLink, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 
@@ -243,6 +265,7 @@ const { t, locale } = useI18n()
 const collections = ref([])
 const isLoading = ref(true)
 const viewMode = ref(auth.state.isLoggedIn ? 'my' : 'public')
+const sortBy = ref('active_week')
 const showCreateModal = ref(false)
 const isSubmitting = ref(false)
 const importFileInput = ref(null)
@@ -250,6 +273,13 @@ const isImporting = ref(false)
 const streakData = ref(null)
 const isLoadingStreak = ref(false)
 const studyLoadingId = ref(null)
+
+const sortOptions = computed(() => [
+  { value: 'active_week',  label: t('collectionList.sortActiveWeek') },
+  { value: 'active_month', label: t('collectionList.sortActiveMonth') },
+  { value: 'active_all',   label: t('collectionList.sortActiveAll') },
+  { value: 'newest',       label: t('collectionList.sortNewest') },
+])
 
 const newCollection = ref({
   name: '',
@@ -282,9 +312,11 @@ const fetchCollections = async () => {
       viewMode.value = 'public'
     }
 
+    const params = { sort: sortBy.value }
+
     const response = await (viewMode.value === 'my' && auth.state.isLoggedIn
-      ? getCollections()
-      : getPublicCollections())
+      ? getCollections(params)
+      : getPublicCollections(params))
     collections.value = response.data.collections
   } catch (error) {
     console.error('Error fetching collections:', error)
@@ -379,8 +411,8 @@ const handleImportFile = async (event) => {
   }
 }
 
-// Watch for view mode changes
-watch([viewMode, () => auth.state.isLoggedIn], () => {
+// Watch for view mode or sort changes
+watch([viewMode, sortBy, () => auth.state.isLoggedIn], () => {
   // Force public view when logged out
   if (!auth.state.isLoggedIn) {
     viewMode.value = 'public'
