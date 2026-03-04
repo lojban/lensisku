@@ -1,4 +1,10 @@
 <template>
+  <div class="flashcard-study-root" :class="{ 'pt-for-anon-banner': anonBannerVisible }">
+  <AnonymousProgressBanner
+    v-if="cardsAnsweredInSession >= 4"
+    position="top"
+    @visible="anonBannerVisible = $event"
+  />
   <!-- Session Header -->
   <div class="bg-white border rounded-lg p-4 mb-6">
     <div class="flex flex-wrap justify-between items-center gap-4">
@@ -81,10 +87,16 @@
             <h3 class="text-2xl font-bold text-gray-800">
               {{ currentCard.flashcard.word ?? currentCard.flashcard.free_content_front }}
             </h3>
-            <AudioPlayer v-if="currentCard.flashcard.sound_url" :url="currentCard.flashcard.sound_url"
+            <AudioPlayer
+              v-if="currentCard.flashcard.sound_url"
+              :key="'q-' + currentCard.flashcard.id"
+              ref="questionAudioPlayerRef"
+              :url="currentCard.flashcard.sound_url"
               :collection-id="currentCard.flashcard.sound_url?.startsWith?.('/api/') ? currentCard.flashcard.collection_id : undefined"
               :item-id="currentCard.flashcard.sound_url?.startsWith?.('/api/') ? currentCard.flashcard.item_id : undefined"
-              class="h-6 w-6" />
+              :suppress-play-errors="true"
+              class="h-6 w-6"
+            />
           </div>
           <div v-if="currentCard.flashcard.has_front_image" class="mt-4 flex justify-center">
             <img
@@ -111,8 +123,8 @@
             @keydown.enter.prevent="submitAnswer" :disabled="!!fillinResult" />
         </div>
 
-        <!-- Answer Display (shown after revealing or submitting fill-in) -->
-        <div v-if="showAnswer || fillinResult" class="flex flex-col gap-4 pt-4 border-t">
+        <!-- Answer Display (shown after revealing, or after fill-in when incorrect) -->
+        <div v-if="showAnswer || (fillinResult && !isFillinCorrect)" class="flex flex-col gap-4 pt-4 border-t">
           <div class="prose max-w-none text-center text-lg">
             <h4 class="text-sm text-center text-gray-700 mb-2">
               {{ t('flashcardStudy.correctAnswer') }}
@@ -135,6 +147,7 @@
                   :url="currentCard.flashcard.sound_url"
                   :collection-id="currentCard.flashcard.sound_url?.startsWith?.('/api/') ? currentCard.flashcard.collection_id : undefined"
                   :item-id="currentCard.flashcard.sound_url?.startsWith?.('/api/') ? currentCard.flashcard.item_id : undefined"
+                  :suppress-play-errors="true"
                   class="h-6 w-6 inline-block" />
               </div>
               <div v-if="showCanonicalForm" class="mt-3 pt-3 border-t flex flex-col gap-1.5 text-center">
@@ -216,10 +229,13 @@
 
     <!-- Next Card button (for fill-in modes after submitting) -->
     <div v-else-if="fillinResult" class="flex justify-center px-4">
-      <div class="flex flex-col gap-2 mt-4">
-        <AlertComponent :type="fillinResult.correct ? 'success' : 'error'">
-          {{ fillinResult.message }}
-        </AlertComponent>
+      <div class="flex flex-col gap-2 mt-4 items-center">
+        <!-- When correct: show a clear success message only -->
+        <div v-if="isFillinCorrect" class="flex items-center gap-2 text-green-600 font-medium text-lg">
+          <Check class="h-6 w-6 shrink-0" />
+          <span>{{ t('flashcardStudy.answerCorrect') }}</span>
+        </div>
+        <!-- When incorrect: correct answer is shown above; no error alert -->
         <button v-if="remainingCards.length <= 0" class="btn-get w-auto h-10 text-base shadow-sm"
           @click="router.back()">
           {{ t('flashcardStudy.endSession') }}
@@ -233,6 +249,7 @@
       </div>
     </div>
   </div>
+  </div>
 </template>
 
 <script setup>
@@ -240,14 +257,19 @@ import { XCircle, Check, Smile, CheckCircle2, EqualApproximately } from 'lucide-
 import { ref, onMounted, computed, watch, nextTick, onBeforeUnmount } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
-import AlertComponent from '@/components/AlertComponent.vue'
+import AnonymousProgressBanner from '@/components/AnonymousProgressBanner.vue'
 
-import { getDueCards, reviewFlashcard, getLanguages, submitFillinAnswer, getFlashcards, snoozeFlashcard, getLevelCards, getLevels } from '@/api'
+import { getDueCards, reviewFlashcard, getLanguages, submitFillinAnswer, getFlashcards, snoozeFlashcard, getLevelCards, getLevels, getCollectionFlashcardsPublic } from '@/api'
 import LazyMathJax from '@/components/LazyMathJax.vue'
 import AudioPlayer from '@/components/AudioPlayer.vue'
 import { useSeoHead } from '@/composables/useSeoHead'
 import { useAuth } from '@/composables/useAuth'
 import { useAnonymousProgress } from '@/composables/useAnonymousProgress'
+
+const ANON_BANNER_ANSWERED_KEY = 'lensisku_study_cards_answered'
+
+const anonBannerVisible = ref(false)
+const cardsAnsweredInSession = ref(0)
 
 const { t, locale } = useI18n()
 
@@ -258,13 +280,14 @@ const { getProgress, saveLevelProgress } = useAnonymousProgress()
 
 const levelIdParam = computed(() => route.query.levelId ? parseInt(route.query.levelId, 10) : null)
 const isAnonLevelMode = computed(() => !auth.state.isLoggedIn && levelIdParam.value != null)
+const isAnonNoLevelsMode = ref(false) // anon studying collection with no levels (uses public flashcards)
 const anonLevelMeta = ref(null) // { min_cards, min_success_rate } when in anon level mode
 
-const returnToUrl = computed(() =>
-  isAnonLevelMode.value
-    ? `/collections/${route.params.collectionId}/levels`
-    : `/collections/${route.params.collectionId}/flashcards`
-)
+const returnToUrl = computed(() => {
+  if (isAnonNoLevelsMode.value) return `/collections/${route.params.collectionId}/flashcards`
+  if (isAnonLevelMode.value) return `/collections/${route.params.collectionId}/levels`
+  return `/collections/${route.params.collectionId}/flashcards`
+})
 
 const isLoading = ref(true)
 const remainingCards = ref([])
@@ -276,6 +299,7 @@ const nextCardButtonRef = ref(null)
 const fillInTextareaRef = ref(null)
 const returnToDeckButtonRef = ref(null)
 const answerAudioPlayerRef = ref(null)
+const questionAudioPlayerRef = ref(null)
 
 const languages = ref([])
 
@@ -297,9 +321,42 @@ const showCanonicalForm = computed(() => {
   return main !== canonical
 })
 
+/** True when fill-in answer was correct (API `answer_correct`, or anon/legacy `correct`/`success`). */
+const isFillinCorrect = computed(() => {
+  const r = fillinResult.value
+  if (!r) return false
+  if (r.answer_correct !== undefined && r.answer_correct !== null) return r.answer_correct === true
+  return r.correct === true || r.success === true
+})
+
 const getLanguageName = (langId) => {
   const lang = languages.value.find((l) => l.id === langId)
   return lang?.real_name || 'Unknown'
+}
+
+/** Anonymous fill-in: check if user answer matches expected (direct → definition/back, reverse → word/front). */
+function isAnonFillinAnswerCorrect() {
+  const card = currentCard.value
+  const side = card?.progress?.[0]?.card_side
+  const dir = (card?.flashcard?.direction ?? '').toLowerCase()
+  const fc = card?.flashcard
+  if (!fc || !side) return false
+  let expectedRaw
+  if (side === 'direct' && (dir === 'fillin' || dir === 'fillin_both')) {
+    expectedRaw = (fc.definition ?? fc.free_content_back ?? '').trim()
+  } else if (side === 'reverse' && (dir === 'fillin_reverse' || dir === 'fillin_both')) {
+    expectedRaw = (fc.word ?? fc.free_content_front ?? '').trim()
+  } else {
+    return false
+  }
+  const user = userAnswer.value.trim().toLowerCase()
+  if (!user) return false
+  const expectedLower = expectedRaw.toLowerCase()
+  if (expectedLower.includes(';')) {
+    const options = expectedLower.split(';').map((s) => s.trim()).filter(Boolean)
+    return options.some((opt) => opt === user)
+  }
+  return expectedLower === user
 }
 
 const loadDueCards = async (singleCardId = null) => {
@@ -382,10 +439,43 @@ const loadLevelCardsForAnon = async () => {
   }
 }
 
+/** Anonymous no-levels mode: load all flashcards for the collection (public API), one study card per side. Returns true if cards were loaded. */
+const loadCollectionCardsForAnon = async () => {
+  const cid = route.params.collectionId
+  if (!cid) return false
+  isLoading.value = true
+  try {
+    const res = await getCollectionFlashcardsPublic(cid)
+    const list = res.data.flashcards || []
+    const all = []
+    for (const item of list) {
+      const progressList = item.progress || []
+      for (const p of progressList) {
+        all.push({
+          flashcard: item.flashcard,
+          progress: [{ ...p, status: p.status || 'new' }]
+        })
+      }
+    }
+    if (all.length === 0) return false
+    remainingCards.value = all
+    totalCards.value = all.length
+    isAnonNoLevelsMode.value = true
+    anonLevelMeta.value = null
+    loadNextCard()
+    return true
+  } catch (error) {
+    console.error(t('flashcardStudy.loadError'), error)
+    return false
+  } finally {
+    isLoading.value = false
+  }
+}
+
 const applyAnonLevelProgress = (correct) => {
   const cid = route.params.collectionId
-  const lid = levelIdParam.value
-  if (!cid || !lid) return
+  const lid = isAnonNoLevelsMode.value ? 0 : levelIdParam.value
+  if (!cid || lid == null) return
   const cur = getProgress(cid, lid) || { cards_completed: 0, correct_answers: 0, total_answers: 0 }
   const total_answers = (cur.total_answers || 0) + 1
   const correct_answers = (cur.correct_answers || 0) + (correct ? 1 : 0)
@@ -421,14 +511,22 @@ const submitAnswer = async (rating) => {
   isSubmitting.value = true
 
   try {
-    if (isAnonLevelMode.value) {
-      const correct = typeof rating === 'number' ? rating >= 3 : true
-      applyAnonLevelProgress(correct)
+    const next = cardsAnsweredInSession.value + 1
+    cardsAnsweredInSession.value = next
+    try {
+      sessionStorage.setItem(ANON_BANNER_ANSWERED_KEY, String(next))
+    } catch (_) {}
+    if (isAnonLevelMode.value || isAnonNoLevelsMode.value) {
+      let correct
       if (isFillInMode.value) {
+        correct = isAnonFillinAnswerCorrect()
         fillinResult.value = { correct, message: correct ? t('flashcardStudy.correctAnswer') : '' }
+        applyAnonLevelProgress(correct)
         await nextTick()
         if (!isJustInformationMode.value) answerAudioPlayerRef.value?.play()
       } else {
+        correct = typeof rating === 'number' ? rating >= 3 : true
+        applyAnonLevelProgress(correct)
         loadNextCard()
       }
       isSubmitting.value = false
@@ -464,7 +562,7 @@ const snoozeCard = async () => {
   if (!currentCard.value || isSubmitting.value) return
   isSubmitting.value = true
   try {
-    if (isAnonLevelMode.value) {
+    if (isAnonLevelMode.value || isAnonNoLevelsMode.value) {
       loadNextCard()
       return
     }
@@ -491,7 +589,7 @@ const handleNextCard = async () => {
   fillinResult.value = null
   userAnswer.value = ''
   loadNextCard()
-  if (!isAnonLevelMode.value) await checkForDueChanges()
+  if (!isAnonLevelMode.value && !isAnonNoLevelsMode.value) await checkForDueChanges()
 }
 
 const newCardsMessage = ref('')
@@ -514,18 +612,17 @@ async function checkForDueChanges() {
 
 // --- Focus and Keyboard Handling ---
 
-// Watch for changes in the current card to focus the textarea if it's a fill-in type
+// Watch for changes in the current card: focus textarea for fill-in, auto-play question audio for direct
 watch(currentCard, (newCard) => {
   if (newCard && isFillInMode.value && !fillinResult.value) {
     nextTick(() => {
       fillInTextareaRef.value?.focus()
     })
   }
-}, { immediate: true }) // immediate: true to run on initial load if applicable
-watch(currentCard, (newCard) => {
-  if (newCard && isFillInMode.value && !fillinResult.value) {
+  // Auto-play question audio when showing a direct card with sound (play runs after nextTick; AudioPlayer loads then plays)
+  if (newCard?.progress?.[0]?.card_side === 'direct' && newCard?.flashcard?.sound_url) {
     nextTick(() => {
-      fillInTextareaRef.value?.focus()
+      questionAudioPlayerRef.value?.play()
     })
   }
 }, { immediate: true })
@@ -621,6 +718,10 @@ useSeoHead({ title: t('flashcardStudy.title') }, locale.value)
 
 onMounted(async () => {
   try {
+    const stored = sessionStorage.getItem(ANON_BANNER_ANSWERED_KEY)
+    cardsAnsweredInSession.value = parseInt(stored || '0', 10)
+  } catch (_) {}
+  try {
     const langsResponse = await getLanguages()
     languages.value = langsResponse.data
 
@@ -629,7 +730,11 @@ onMounted(async () => {
       return
     }
     if (!auth.state.isLoggedIn) {
-      router.replace(`/collections/${route.params.collectionId}/levels`)
+      const cid = route.params.collectionId
+      const loaded = await loadCollectionCardsForAnon()
+      if (!loaded) {
+        router.replace(`/collections/${cid}/levels`)
+      }
       return
     }
     const cardIdToLoad = route.query.card_id ? parseInt(route.query.card_id) : null
@@ -639,3 +744,9 @@ onMounted(async () => {
   }
 })
 </script>
+
+<style scoped>
+.flashcard-study-root.pt-for-anon-banner {
+  padding-top: 5.5rem;
+}
+</style>

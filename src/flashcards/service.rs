@@ -605,6 +605,162 @@ fn get_review_time(datetime: Option<DateTime<Utc>>) -> Option<DateTime<Utc>> {
     }
 }
 
+/// Build a Flashcard from a row that has the standard flashcard + collection_items + definition columns.
+/// Used by both list_flashcards_public and list_flashcards.
+fn build_flashcard_from_row(
+    row: &tokio_postgres::Row,
+    collection_id: i32,
+    sound_url_from_valsi: Option<String>,
+    question_text: Option<String>,
+    quiz_options: Option<Vec<String>>,
+) -> Flashcard {
+    let item_id: i32 = row.get("item_id");
+    let has_custom_sound: bool = row.get("has_custom_sound");
+    let sound_url = if has_custom_sound {
+        Some(format!(
+            "/api/collections/{}/items/{}/sound",
+            collection_id, item_id
+        ))
+    } else {
+        sound_url_from_valsi
+    };
+    Flashcard {
+        id: row.get("id"),
+        collection_id,
+        item_id,
+        definition_id: row.get("definition_id"),
+        word: row.get("word"),
+        definition: row.get("definition"),
+        free_content_front: row.get("free_content_front"),
+        free_content_back: row.get("free_content_back"),
+        has_front_image: row.get("has_front_image"),
+        has_back_image: row.get("has_back_image"),
+        notes: row.get("notes"),
+        position: row.get("position"),
+        direction: row.get("direction"),
+        definition_language_id: row.get("definition_language_id"),
+        sound_url,
+        has_custom_sound,
+        canonical_form: row.get("canonical_form"),
+        use_canonical_comparison: row.get("use_canonical_comparison"),
+        created_at: row.get("created_at"),
+        question_text,
+        quiz_options,
+    }
+}
+
+/// List flashcards for a public collection (no auth). Used by anonymous users when the collection has no levels.
+pub async fn list_flashcards_public(
+    pool: &Pool,
+    collection_id: i32,
+) -> Result<FlashcardListResponse, Box<dyn std::error::Error>> {
+    let mut client = pool.get().await?;
+    let transaction = client.transaction().await?;
+
+    verify_collection_read_access(&transaction, collection_id, None)
+        .await
+        .map_err(|e| Box::new(std::io::Error::new(std::io::ErrorKind::PermissionDenied, e.to_string())) as Box<dyn std::error::Error>)?;
+
+    let rows = transaction
+        .query(
+            "SELECT f.id, f.collection_id, f.item_id, f.position, f.direction, f.created_at,
+                    ci.definition_id, ci.free_content_front, ci.free_content_back, ci.notes,
+                    ci.canonical_form, f.use_canonical_comparison,
+                    d.langid as definition_language_id, v.word, d.definition,
+                    EXISTS(SELECT 1 FROM collection_item_images WHERE item_id = ci.item_id AND side = 'front') as has_front_image,
+                    EXISTS(SELECT 1 FROM collection_item_images WHERE item_id = ci.item_id AND side = 'back') as has_back_image,
+                    EXISTS(SELECT 1 FROM collection_item_sounds WHERE item_id = ci.item_id) as has_custom_sound
+             FROM flashcards f
+             JOIN collection_items ci ON f.item_id = ci.item_id AND ci.collection_id = f.collection_id
+             LEFT JOIN definitions d ON ci.definition_id = d.definitionid
+             LEFT JOIN valsi v ON d.valsiid = v.valsiid
+             WHERE f.collection_id = $1
+             ORDER BY f.position",
+            &[&collection_id],
+        )
+        .await?;
+
+    let words_to_check: Vec<String> = rows
+        .iter()
+        .filter_map(|row| {
+            let word: Option<String> = row.get("word");
+            let free: Option<String> = row.get("free_content_front");
+            word.or(free).filter(|w| !w.trim().is_empty())
+        })
+        .collect::<std::collections::HashSet<_>>()
+        .into_iter()
+        .collect();
+    let sound_urls_map = if !words_to_check.is_empty() {
+        get_valsi_sound_urls_from_db(pool, &words_to_check)
+            .await
+            .unwrap_or_else(|_| HashMap::new())
+    } else {
+        HashMap::new()
+    };
+
+    let mut flashcards = Vec::new();
+    for row in &rows {
+        let flashcard_id: i32 = row.get("id");
+        let direction: FlashcardDirection = row.get("direction");
+        let word: Option<String> = row.get("word");
+        let free_content_front: Option<String> = row.get("free_content_front");
+        let sound_key = word.as_ref().or(free_content_front.as_ref());
+        let sound_url = sound_key.and_then(|k| sound_urls_map.get(k).cloned().flatten());
+
+        let flashcard = build_flashcard_from_row(row, collection_id, sound_url, None, None);
+
+        let synthetic_progress = |card_side: &str| UserFlashcardProgress {
+            id: 0,
+            user_id: 0,
+            flashcard_id,
+            card_side: card_side.to_string(),
+            ease_factor: 0.0,
+            stability: 0,
+            difficulty: 0,
+            interval: 0,
+            review_count: 0,
+            last_reviewed_at: None,
+            next_review_at: None,
+            status: FlashcardStatus::New,
+        };
+
+        match direction {
+            FlashcardDirection::Both | FlashcardDirection::FillInBoth => {
+                flashcards.push(FlashcardResponse {
+                    flashcard: flashcard.clone(),
+                    progress: vec![
+                        synthetic_progress("direct"),
+                        synthetic_progress("reverse"),
+                    ],
+                });
+            }
+            FlashcardDirection::Reverse
+            | FlashcardDirection::FillInReverse => {
+                flashcards.push(FlashcardResponse {
+                    flashcard: flashcard.clone(),
+                    progress: vec![synthetic_progress("reverse")],
+                });
+            }
+            _ => {
+                flashcards.push(FlashcardResponse {
+                    flashcard: flashcard.clone(),
+                    progress: vec![synthetic_progress("direct")],
+                });
+            }
+        }
+    }
+
+    let total = flashcards.len() as i64;
+    transaction.commit().await?;
+    Ok(FlashcardListResponse {
+        flashcards,
+        total,
+        page: 1,
+        per_page: total.max(1),
+        due_count: 0,
+    })
+}
+
 pub async fn list_flashcards(
     pool: &Pool,
     user_id: i32,
@@ -831,37 +987,13 @@ pub async fn list_flashcards(
                 let sound_url = sound_key.and_then(|k| sound_urls_map.get(k).cloned().flatten());
 
                 let mut card_response = FlashcardResponse {
-                    flashcard: Flashcard {
-                        id: flashcard_id,
-                        collection_id: query.collection_id,
-                        definition_id: row.get("definition_id"),
-                        word: word.clone(),
-                        definition: row.get("definition"),
-                        direction,
-                        notes: row.get("notes"),
-                        position: row.get("position"),
-                        created_at: row.get("created_at"),
-                        definition_language_id: row.get("definition_language_id"),
-                        free_content_front: row.get("free_content_front"),
-                        free_content_back: row.get("free_content_back"),
-                        has_front_image: row.get("has_front_image"),
-                        has_back_image: row.get("has_back_image"),
-                        item_id: row.get("item_id"),
-                        sound_url: if row.get::<_, bool>("has_custom_sound") {
-                            Some(format!(
-                                "/api/collections/{}/items/{}/sound",
-                                query.collection_id,
-                                row.get::<_, i32>("item_id")
-                            ))
-                        } else {
-                            sound_url
-                        },
-                        has_custom_sound: row.get("has_custom_sound"),
-                        canonical_form: row.get("canonical_form"),
-                        use_canonical_comparison: row.get("use_canonical_comparison"),
-                        question_text: question_text.clone(), // Use cloned quiz data
-                        quiz_options: quiz_options.clone(),
-                    },
+                    flashcard: build_flashcard_from_row(
+                        row,
+                        query.collection_id,
+                        sound_url,
+                        question_text.clone(),
+                        quiz_options.clone(),
+                    ),
                     progress: vec![progress],
                 };
 
@@ -900,37 +1032,13 @@ pub async fn list_flashcards(
             let sound_url = sound_key.and_then(|k| sound_urls_map.get(k).cloned().flatten());
 
             let card_response = FlashcardResponse {
-                flashcard: Flashcard {
-                    id: flashcard_id,
-                    collection_id: query.collection_id,
-                    definition_id: row.get("definition_id"),
-                    word: word.clone(), // Use the cloned word
-                    definition: row.get("definition"),
-                    free_content_front: row.get("free_content_front"),
-                    free_content_back: row.get("free_content_back"),
-                    has_front_image: row.get("has_front_image"),
-                    has_back_image: row.get("has_back_image"),
-                    notes: row.get("notes"),
-                    direction, // Use direction directly
-                    position: row.get("position"),
-                    created_at: row.get("created_at"),
-                    definition_language_id: row.get("definition_language_id"),
-                    item_id: row.get("item_id"),
-                    sound_url: if row.get::<_, bool>("has_custom_sound") {
-                        Some(format!(
-                            "/api/collections/{}/items/{}/sound",
-                            query.collection_id,
-                            row.get::<_, i32>("item_id")
-                        ))
-                    } else {
-                        sound_url
-                    },
-                    has_custom_sound: row.get("has_custom_sound"),
-                    question_text: question_text.clone(),
-                    quiz_options: quiz_options.clone(),
-                    canonical_form: row.get("canonical_form"),
-                    use_canonical_comparison: row.get("use_canonical_comparison"),
-                },
+                flashcard: build_flashcard_from_row(
+                    row,
+                    query.collection_id,
+                    sound_url,
+                    question_text.clone(),
+                    quiz_options.clone(),
+                ),
                 progress: vec![progress],
             };
             all_flashcards_with_retrievability.push((card_response, retrievability));
@@ -1517,6 +1625,7 @@ pub async fn review_flashcard(
             req.card_side, interval
         ),
         next_review: Some(next_review),
+        answer_correct: None,
     })
 }
 
@@ -2171,6 +2280,7 @@ pub async fn review_flashcard_serverside(
         card_side: req.card_side.clone(),
         message,
         next_review: review_result.next_review,
+        answer_correct: Some(rating >= 3),
     })
 }
 

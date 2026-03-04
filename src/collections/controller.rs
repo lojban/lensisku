@@ -98,6 +98,40 @@ pub async fn list_public_collections(
 
 #[utoipa::path(
     get,
+    path = "/collections/{id}/flashcards",
+    tag = "collections",
+    params(
+        ("id" = i32, Path, description = "Collection ID")
+    ),
+    responses(
+        (status = 200, description = "List of flashcards (public, no auth). For collections with no levels."),
+        (status = 403, description = "Access denied (private collection)"),
+        (status = 500, description = "Internal server error")
+    ),
+    summary = "List collection flashcards (public)",
+    description = "Returns all flashcards in a public collection. Used by anonymous users when the collection has no levels. No authentication required."
+)]
+#[get("/{id}/flashcards")]
+pub async fn get_collection_flashcards(
+    pool: web::Data<Pool>,
+    id: web::Path<i32>,
+) -> impl Responder {
+    match crate::flashcards::list_flashcards_public(&pool, id.into_inner()).await {
+        Ok(response) => HttpResponse::Ok().json(response),
+        Err(e) => {
+            let msg = e.to_string();
+            if msg.contains("Access denied") || msg.contains("PermissionDenied") {
+                return HttpResponse::Forbidden().finish();
+            }
+            HttpResponse::InternalServerError().json(json!({
+                "error": format!("Failed to list flashcards: {}", msg)
+            }))
+        }
+    }
+}
+
+#[utoipa::path(
+    get,
     path = "/collections/{id}",
     tag = "collections",
     params(

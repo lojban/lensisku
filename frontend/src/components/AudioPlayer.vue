@@ -41,6 +41,8 @@
     itemId: { type: Number, default: null },
     /** When set, load valsi sound via api (Bearer sent). Use when url is /api/jbovlaste/valsi/{id}/sound. */
     valsiIdOrWord: { type: String, default: null },
+    /** When true, log load/play errors to console only (no user-facing showError). Use for auto-play contexts. */
+    suppressPlayErrors: { type: Boolean, default: false },
   })
 
   const isPlaying = ref(false)
@@ -180,7 +182,7 @@
       saveCacheToStorage(cache)
     } catch (e) {
       console.error('Error loading audio:', e)
-      showError(t('audioPlayer.playError'))
+      if (!props.suppressPlayErrors) showError(t('audioPlayer.playError'))
     } finally {
       isLoading.value = false
     }
@@ -202,7 +204,7 @@
         isPlaying.value = true
       } catch (e) {
         console.error('Error playing audio:', e)
-        showError(t('audioPlayer.playError'))
+        if (!props.suppressPlayErrors) showError(t('audioPlayer.playError'))
       }
     }
   }

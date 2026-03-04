@@ -622,6 +622,7 @@
     "definitionLanguage": "Definition Language: {language}",
     "typeAnswer": "Type your answer here",
     "correctAnswer": "Correct Answer:",
+    "answerCorrect": "Correct!",
     "notes": "Notes:",
     "submitAnswer": "Submit Answer",
     "showAnswer": "Show Answer",
@@ -1176,11 +1177,10 @@
     "studyButton": "Study",
     "studying": "…",
     "updated": "Updated",
-    "sortLabel": "Sort by",
-    "sortActiveWeek": "Active this week",
-    "sortActiveMonth": "Active this month",
-    "sortActiveAll": "All-time active",
-    "sortNewest": "Newest first"
+    "sortActiveWeek": "Popular this week",
+    "sortActiveMonth": "Popular this month",
+    "sortActiveAll": "All-time popular",
+    "sortNewest": "Newest collections first"
   },
   "flashcardLevels": {
     "title": "{collectionName} - Levels",
