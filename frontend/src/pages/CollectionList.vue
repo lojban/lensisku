@@ -78,7 +78,6 @@
 
   <!-- Sort Controls -->
   <div class="flex flex-wrap items-center gap-2 mb-4">
-    <span class="text-sm text-gray-500 font-medium shrink-0">{{ t('collectionList.sortLabel') }}:</span>
     <div class="flex flex-wrap gap-1" role="group">
       <button
         v-for="opt in sortOptions"

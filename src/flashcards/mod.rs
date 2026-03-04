@@ -3,6 +3,8 @@ pub mod dto;
 pub mod models;
 mod service;
 
+pub use service::list_flashcards_public;
+
 use actix_web::web;
 
 pub fn configure(cfg: &mut web::ServiceConfig) {

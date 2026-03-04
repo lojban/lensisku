@@ -421,6 +421,11 @@ export const getLevels = async (collectionId) => {
   return api.get(`/flashcards/levels/${collectionId}`)
 }
 
+/** List flashcards for a public collection (no auth). Used when collection has no levels. */
+export const getCollectionFlashcardsPublic = async (collectionId) => {
+  return api.get(`/collections/${collectionId}/flashcards`)
+}
+
 export const getLevelCards = async (levelId, page = 1, perPage = 10) => {
   return api.get(`/flashcards/levels/${levelId}/cards`, {
     params: {

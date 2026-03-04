@@ -217,8 +217,6 @@
     </div>
   </main>
 
-  <AnonymousProgressBanner />
-
   <!-- Action Overlay -->
   <div v-if="showActionModal" class="fixed inset-0 z-40" @click="showActionModal = false"></div>
 
@@ -293,7 +291,6 @@ import IconButton from '@/components/icons/IconButton.vue'
 import BackgroundComponent from './components/BackgroundComponent.vue'
 import FooterComponent from './components/FooterComponent.vue'
 import NavLink from './components/NavLink.vue'
-import AnonymousProgressBanner from '@/components/AnonymousProgressBanner.vue'
 import ModalComponent from '@/components/ModalComponent.vue'
 import { normalizeSearchQuery } from '@/utils/searchQueryUtils'
 import { provideAuth } from './composables/useAuth'

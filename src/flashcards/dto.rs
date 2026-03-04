@@ -54,6 +54,9 @@ pub struct ReviewResponse {
     pub card_side: String,
     #[schema(value_type = String, format = DateTime)]
     pub next_review: Option<DateTime<Utc>>,
+    /// When set (fill-in endpoint), true if the answer was correct (rating >= 3).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub answer_correct: Option<bool>,
 }
 
 #[derive(Debug, Deserialize, ToSchema)]
