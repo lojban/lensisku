@@ -101,90 +101,30 @@
     <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
   </div>
 
-  <!-- Collections Grid -->
-  <div v-else class="grid gap-4">
-    <p class="text-gray-600 text-sm mb-2">
+  <!-- Collections Card Grid -->
+  <div v-else class="collections-section">
+    <p class="text-slate-600 text-sm mb-6 max-w-2xl">
       {{ auth.state.isLoggedIn ? t('collectionList.collectionDescription') :
         t('collectionList.collectionDescriptionLoggedOut') }}
     </p>
-    <div v-for="collection in collections" :key="collection.collection_id"
-      class="bg-white p-3 sm:p-4 border rounded-lg hover:border-blue-300 transition-colors">
-      <!-- Main Content -->
-      <div class="flex flex-col gap-3">
-        <!-- Title, Description and Actions -->
-        <div class="flex flex-col gap-1">
-          <div class="flex items-center justify-between gap-2">
-            <RouterLink
-              :to="`/collections/${collection.collection_id}`"
-              class="text-base font-semibold text-blue-600 hover:text-blue-800 hover:underline flex-1 min-w-0"
-            >
-              <span class="block truncate">
-                {{ collection.name }}
-              </span>
-            </RouterLink>
-            <button
-              type="button"
-              class="btn-aqua-orange h-8"
-              :disabled="studyLoadingId === collection.collection_id"
-              @click="startStudy(collection)"
-            >
-              <GraduationCap v-if="studyLoadingId !== collection.collection_id" class="w-4 h-4 shrink-0" />
-              <span
-                v-else
-                class="animate-spin inline-block w-4 h-4 border-2 border-current border-t-transparent rounded-full shrink-0"
-              />
-              <span>
-                {{
-                  studyLoadingId === collection.collection_id
-                    ? t('collectionList.studying')
-                    : t('collectionList.studyButton')
-                }}
-              </span>
-            </button>
-          </div>
-          <p v-if="collection.description" class="text-gray-600 text-sm line-clamp-2">
-            {{ collection.description }}
-          </p>
-        </div>
-        <div class="mt-3 flex justify-center">
-          <div class="flex flex-nowrap items-center btn-group-forced" role="group">
-            <RouterLink
-              :to="`/collections/${collection.collection_id}`"
-              class="btn-empty btn-group-item"
-            >
-              <List class="w-4 h-4 shrink-0" />
-              <span>{{ t('collectionList.collectionButton') }}</span>
-            </RouterLink>
-            <RouterLink
-              :to="`/collections/${collection.collection_id}/flashcards`"
-              class="btn-empty btn-group-item"
-            >
-              <GalleryHorizontalIcon class="w-4 h-4 shrink-0" />
-              <span>{{ t('collectionList.flashcardsButton') }}</span>
-            </RouterLink>
-          </div>
-        </div>
-      </div>
-
-      <!-- Footer -->
-      <div class="flex flex-wrap items-center justify-between text-xs sm:text-sm text-gray-500 mt-3 gap-2">
-        <div class="flex items-center gap-2">
-          <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs"
-            :class="collection.is_public ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'">
-            {{ collection.is_public ? t('collectionList.publicStatus') : t('collectionList.privateStatus') }}
-          </span>
-          <span class="text-xs text-gray-500"> {{ t('collectionList.itemsCount', { count: collection.item_count }) }}
-          </span>
-        </div>
-        <div class="italic">
-          {{ t('collectionList.createdBy') }}
-          <RouterLink :to="`/user/${collection.owner.user_id}`"
-            class="text-blue-600 hover:text-blue-800 hover:underline">
-            {{ collection.owner.username }}
-          </RouterLink>
-        </div>
-        <div>{{ t('collectionList.updated') }} {{ formatDate(collection.updated_at) }}</div>
-      </div>
+    <div class="collections-grid">
+      <CollectionCard
+        v-for="collection in collections"
+        :key="collection.collection_id"
+        :collection="collection"
+        :study-loading="studyLoadingId === collection.collection_id"
+        :format-date="formatDate"
+        :study-button-label="t('collectionList.studyButton')"
+        :studying-label="t('collectionList.studying')"
+        :collection-button-label="t('collectionList.collectionButton')"
+        :flashcards-button-label="t('collectionList.flashcardsButton')"
+        :created-by-label="t('collectionList.createdBy')"
+        :updated-label="t('collectionList.updated')"
+        :public-label="t('collectionList.publicStatus')"
+        :private-label="t('collectionList.privateStatus')"
+        :items-count-label="t('collectionList.itemsCount', { count: collection.item_count })"
+        @study="startStudy(collection)"
+      />
     </div>
   </div>
 
@@ -238,9 +178,9 @@
 </template>
 
 <script setup>
-import { GalleryHorizontalIcon, List, CirclePlus, GraduationCap } from 'lucide-vue-next';
+import { CirclePlus } from 'lucide-vue-next';
 import { ref, computed, onMounted, watch } from 'vue';
-import { RouterLink, useRouter } from 'vue-router';
+import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 
 import {
@@ -252,6 +192,7 @@ import {
   getLevels,
 } from '@/api'
 import IconButton from '@/components/icons/IconButton.vue'
+import { CollectionCard } from '@packages/ui'
 import { useAuth } from '@/composables/useAuth'
 import { useSeoHead } from '@/composables/useSeoHead'
 
@@ -431,6 +372,14 @@ onMounted(() => {
 </script>
 
 <style scoped>
+.collections-section {
+  @apply w-full;
+}
+.collections-grid {
+  @apply grid gap-5 sm:gap-6 items-stretch;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
+}
+
 .animate-fade-in-up {
   animation: fadeInUp 0.3s ease-out;
 }
