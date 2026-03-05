@@ -1,6 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 export default {
-  content: ['./index.html', './src/**/*.{vue,js,ts,jsx,tsx}'],
+  content: ['./index.html', './src/**/*.{vue,js,ts,jsx,tsx}', './packages/**/*.{vue,js,ts,jsx,tsx}'],
   theme: {
     extend: {},
   },
@@ -473,6 +473,89 @@ export default {
                 'inset 0 0.25em 0.5em hsla(0, 0%, 9.6%, 0.8),' +
                 'inset 0 0.375em 0.5em 0.25em hsla(0, 0%, 36.7%, 0.75)',
             },
+          },
+          '.card-base': {
+            '@apply bg-white rounded-2xl border border-gray-200 overflow-hidden transition-all duration-200 h-full flex flex-col min-h-0':
+              {},
+          },
+          '.card-elevated': {
+            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04), 0 6px 16px rgba(0, 0, 0, 0.06)',
+            '&:hover': {
+              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.06), 0 12px 28px rgba(0, 0, 0, 0.08)',
+              '@apply border-gray-300': {},
+            },
+          },
+          '.card-body': {
+            '@apply flex-1 min-h-0 grid p-5 sm:p-6': {},
+            gridTemplateRows: 'auto 1fr auto',
+          },
+          '.card-header-wrap': {
+            '@apply min-h-0 overflow-auto': {},
+          },
+          '.card-footer-spacer': {
+            '@apply min-h-0': {},
+          },
+          '.card-footer': {
+            '@apply flex flex-col min-h-0 flex-shrink-0': {},
+          },
+          '.card-footer-block': {
+            '@apply flex flex-col flex-shrink-0': {},
+          },
+          '.card-actions': {
+            '@apply flex flex-wrap items-center justify-center gap-2 pt-4 flex-shrink-0': {},
+          },
+          '.card-compact .card-actions': {
+            '@apply pt-3': {},
+          },
+          '.card-title': {
+            '@apply text-lg font-semibold text-gray-800 block truncate transition-colors': {},
+            '&:hover': { '@apply text-blue-600': {} },
+            '&:focus': { '@apply text-blue-600 outline-none': {} },
+          },
+          '.card-description': {
+            '@apply text-gray-600 text-sm line-clamp-2 leading-snug': {},
+          },
+          '.card-footer-inner': {
+            '@apply flex flex-wrap items-center justify-between gap-2': {},
+          },
+          '.card-badges': {
+            '@apply flex flex-wrap gap-2': {},
+          },
+          '.badge': {
+            '@apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium': {},
+          },
+          '.badge-public': {
+            '@apply bg-green-100 text-green-700': {},
+          },
+          '.badge-private': {
+            '@apply bg-gray-100 text-gray-600': {},
+          },
+          '.badge-muted': {
+            '@apply bg-gray-50 text-gray-500': {},
+          },
+          '.card-meta': {
+            '@apply flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500 shrink-0': {},
+          },
+          '.card-meta-by': {
+            '@apply flex items-center gap-1': {},
+          },
+          '.card-meta-link': {
+            '@apply font-medium text-blue-600 hover:text-blue-800 hover:underline': {},
+          },
+          '.card-meta-date': {
+            '@apply text-gray-400': {},
+          },
+          '.card-nav-buttons': {
+            '@apply flex flex-nowrap items-center justify-center gap-0 rounded-xl overflow-hidden border border-gray-200 bg-gray-50/50':
+              {},
+          },
+          '.card-nav-btn': {
+            '@apply flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-gray-600 flex-1 justify-center border-r border-gray-200 last:border-r-0 transition-colors':
+              {},
+            '&:hover': { '@apply bg-gray-100 text-gray-800': {} },
+          },
+          '.card-study-area': {
+            '@apply flex items-center justify-center min-h-[5.5rem] py-6 sm:py-8 flex-shrink-0': {},
           },
         })
     },
