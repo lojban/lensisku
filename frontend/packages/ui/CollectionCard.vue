@@ -2,12 +2,20 @@
   <Card elevated class="collection-card">
     <template #header>
       <div class="space-y-2">
-        <RouterLink
-          :to="`/collections/${collection.collection_id}`"
-          class="card-title"
-        >
-          {{ collection.name }}
-        </RouterLink>
+        <div class="flex items-center justify-between gap-2 min-w-0">
+          <RouterLink
+            :to="`/collections/${collection.collection_id}`"
+            class="card-title min-w-0 flex-1 truncate"
+          >
+            {{ collection.name }}
+          </RouterLink>
+          <span
+            class="badge shrink-0"
+            :class="collection.is_public ? 'badge-public' : 'badge-private'"
+          >
+            {{ collection.is_public ? publicLabel : privateLabel }}
+          </span>
+        </div>
         <p v-if="collection.description" class="card-description">
           {{ collection.description }}
         </p>
@@ -16,15 +24,15 @@
 
     <template #footer>
       <div class="card-footer-block">
-        <div class="card-study-area">
+        <div class="card-study-area card-study-area-compact">
           <Button
             :variant="studyButtonVariant"
             :loading="studyLoading"
-            class="!h-auto px-8 py-4 rounded-2xl text-base"
+            class="!h-auto px-5 py-2.5 rounded-xl text-sm"
             @click="$emit('study', collection)"
           >
             <template #icon>
-              <GraduationCap v-if="!studyLoading" class="w-5 h-5 shrink-0" />
+              <GraduationCap v-if="!studyLoading" class="w-4 h-4 shrink-0" />
             </template>
             {{ studyLoading ? studyingLabel : studyButtonLabel }}
           </Button>
@@ -47,19 +55,8 @@
             </RouterLink>
           </div>
         </div>
-        <div class="card-footer-inner border-t border-gray-100 pt-4 mt-4">
-          <div class="card-badges">
-            <span
-              class="badge"
-              :class="collection.is_public ? 'badge-public' : 'badge-private'"
-            >
-              {{ collection.is_public ? publicLabel : privateLabel }}
-            </span>
-            <span class="badge badge-muted">
-              {{ itemsCountLabel }}
-            </span>
-          </div>
-          <div class="card-meta">
+        <div class="card-footer-inner border-t border-gray-100 pt-3 mt-3 w-full">
+          <div class="card-meta card-meta-row">
             <span class="card-meta-by">
               {{ createdByLabel }}
               <RouterLink
@@ -69,8 +66,16 @@
                 {{ collection.owner.username }}
               </RouterLink>
             </span>
-            <span class="card-meta-date">
-              {{ updatedLabel }} {{ formatDate(collection.updated_at) }}
+            <span
+              class="card-meta-date"
+              :aria-label="updatedLabel + ' ' + formatDate(collection.updated_at)"
+              :title="updatedLabel + ' ' + formatDate(collection.updated_at)"
+            >
+              <CalendarClock class="card-meta-icon" aria-hidden="true" />
+              {{ formatDate(collection.updated_at) }}
+            </span>
+            <span class="badge badge-muted">
+              {{ itemsCountLabel }}
             </span>
           </div>
         </div>
@@ -81,7 +86,7 @@
 
 <script setup>
 import { computed } from 'vue'
-import { GraduationCap, List, LayoutGrid } from 'lucide-vue-next'
+import { GraduationCap, List, LayoutGrid, CalendarClock } from 'lucide-vue-next'
 import Card from './Card.vue'
 import Button from './Button.vue'
 
@@ -141,5 +146,19 @@ defineEmits(['study'])
 <style scoped>
 .collection-card {
   @apply flex flex-col h-full;
+}
+
+:deep(.card-study-area-compact) {
+  min-height: 0;
+  padding-top: 0.75rem;
+  padding-bottom: 0.75rem;
+}
+
+.card-meta-row {
+  @apply flex flex-wrap items-center gap-x-3 gap-y-1 w-full justify-between;
+}
+
+.card-meta-icon {
+  @apply w-3.5 h-3.5 inline-block align-middle mr-0.5 text-gray-400;
 }
 </style>

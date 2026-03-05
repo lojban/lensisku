@@ -1,44 +1,44 @@
 <template>
   <!-- Streak Stats -->
-  <div v-if="auth.state.isLoggedIn" class="mb-6 h-36 bg-white p-4 rounded-lg border">
+  <div v-if="auth.state.isLoggedIn" class="mb-4 h-24 bg-white px-3 py-2.5 rounded-lg border">
     <template v-if="!isLoadingStreak && streakData">
-      <div class="flex items-center justify-between mb-3">
-        <h3 class="text-lg font-semibold text-gray-800">
+      <div class="flex items-center justify-between mb-1.5">
+        <h3 class="text-sm font-semibold text-gray-800">
           {{ t('collectionList.studyStreak') }}
         </h3>
-        <div class="text-sm text-gray-600">
+        <div class="text-xs text-gray-600">
           {{ t('collectionList.currentStreak') }}: <span class="font-semibold">{{ t('collectionList.days', {
             count:
               streakData.current_streak
           }) }}</span>
         </div>
       </div>
-      <div class="grid grid-cols-7 gap-2">
+      <div class="grid grid-cols-7 gap-1">
         <div v-for="day in streakData.daily_progress.slice(0, 7).reverse()" :key="day.date"
           class="flex flex-col items-center">
-          <div class="text-xs text-gray-500 mb-1">
+          <div class="text-[10px] text-gray-500 leading-tight">
             {{ new Date(day.date).toLocaleDateString(locale, { weekday: 'short' }) }}
           </div>
-          <div class="w-8 h-8 rounded-full flex items-center justify-center"
+          <div class="w-6 h-6 rounded-full flex items-center justify-center text-xs"
             :class="day.reviews_count > 0 ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-400'">
             {{ day.reviews_count }}
           </div>
-          <div class="text-xs text-gray-500 mt-1">
+          <div class="text-[10px] text-gray-500 leading-tight">
             {{ t('collectionList.points', { count: day.points }) }}
           </div>
         </div>
       </div>
     </template>
-    <div v-else class="animate-pulse h-36">
-      <div class="flex items-center justify-between mb-4">
-        <div class="h-6 bg-gray-200 rounded w-1/3" />
-        <div class="h-4 bg-gray-100 rounded w-1/4" />
+    <div v-else class="animate-pulse h-24">
+      <div class="flex items-center justify-between mb-2">
+        <div class="h-4 bg-gray-200 rounded w-1/3" />
+        <div class="h-3 bg-gray-100 rounded w-1/4" />
       </div>
-      <div class="grid grid-cols-7 gap-2">
-        <div v-for="i in 7" :key="i" class="flex flex-col items-center space-y-2">
-          <div class="h-4 bg-gray-100 rounded w-full max-w-[40px]" />
-          <div class="w-8 h-8 rounded-full bg-gray-100" />
-          <div class="h-3 bg-gray-100 rounded w-full max-w-[30px]" />
+      <div class="grid grid-cols-7 gap-1">
+        <div v-for="i in 7" :key="i" class="flex flex-col items-center">
+          <div class="h-3 bg-gray-100 rounded w-full max-w-[32px] mb-0.5" />
+          <div class="w-6 h-6 rounded-full bg-gray-100" />
+          <div class="h-2.5 bg-gray-100 rounded w-full max-w-[24px] mt-0.5" />
         </div>
       </div>
     </div>
@@ -104,8 +104,10 @@
   <!-- Collections Card Grid -->
   <div v-else class="collections-section">
     <p class="text-slate-600 text-sm mb-6 max-w-2xl">
-      {{ auth.state.isLoggedIn ? t('collectionList.collectionDescription') :
-        t('collectionList.collectionDescriptionLoggedOut') }}
+      <template v-if="auth.state.isLoggedIn">{{ t('collectionList.collectionDescription') }}</template>
+      <i18n-t v-else keypath="collectionList.collectionDescriptionLoggedOut" tag="span">
+        <RouterLink to="/login" class="text-blue-600 hover:text-blue-800 underline font-medium">{{ t('collectionList.loginTo') }}</RouterLink>
+      </i18n-t>
     </p>
     <div class="collections-grid">
       <CollectionCard
@@ -119,7 +121,7 @@
         :collection-button-label="t('collectionList.collectionButton')"
         :flashcards-button-label="t('collectionList.flashcardsButton')"
         :created-by-label="t('collectionList.createdBy')"
-        :updated-label="t('collectionList.updated')"
+        :updated-label="t('collectionList.updatedAt')"
         :public-label="t('collectionList.publicStatus')"
         :private-label="t('collectionList.privateStatus')"
         :items-count-label="t('collectionList.itemsCount', { count: collection.item_count })"
@@ -376,8 +378,7 @@ onMounted(() => {
   @apply w-full;
 }
 .collections-grid {
-  @apply grid gap-5 sm:gap-6 items-stretch;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
+  @apply grid gap-4 sm:gap-5 items-stretch grid-cols-1 sm:grid-cols-2 lg:grid-cols-3;
 }
 
 .animate-fade-in-up {

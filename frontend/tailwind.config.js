@@ -228,12 +228,12 @@ export default {
           },
           '.btn-aqua-white': {
             '@apply aqua-base bg-white': {},
-            background: 'linear-gradient(rgba(160, 160, 160, 1), rgba(255, 255, 255, 0.625))',
+            background: 'linear-gradient(rgba(180, 180, 180, 1), rgba(255, 255, 255, 0.625))',
             boxShadow:
               '0 0.375em 0.5em rgba(0, 0, 0, 0.3),' +
               '0 0.125em 0.125em hsla(0, 0%, 36.7%, 0.5),' +
-              'inset 0 0.25em 0.5em hsla(0, 0%, 9.6%, 0.8),' +
-              'inset 0 0.375em 0.5em 0.25em hsla(0, 0%, 36.7%, 0.75)',
+              'inset 0 0.15em 0.35em rgba(255, 255, 255, 0.7),' +
+              'inset 0 -0.05em 0.2em rgba(0, 0, 0, 0.06)',
             '&:not(:disabled)': {
               '@apply hover:brightness-110 active:scale-[0.98]': {},
             },
@@ -241,8 +241,8 @@ export default {
               boxShadow:
                 '0 0.375em 0.5em rgba(0, 0, 0, 0.3),' +
                 '0 0.125em 0.125em hsla(0, 0%, 36.7%, 0.5),' +
-                'inset 0 0.25em 0.5em hsla(0, 0%, 9.6%, 0.8),' +
-                'inset 0 0.375em 0.5em 0.25em hsla(0, 0%, 36.7%, 0.75),' +
+                'inset 0 0.15em 0.35em rgba(255, 255, 255, 0.7),' +
+                'inset 0 -0.05em 0.2em rgba(0, 0, 0, 0.06),' +
                 '0 0 0.5em hsla(0, 0%, 54.7%, 0.5)',
               '&:disabled': {
                 boxShadow:
@@ -470,8 +470,8 @@ export default {
               boxShadow:
                 '0 0.375em 0.5em rgba(0, 0, 0, 0.3),' +
                 '0 0.125em 0.125em hsla(0, 0%, 36.7%, 0.5),' +
-                'inset 0 0.25em 0.5em hsla(0, 0%, 9.6%, 0.8),' +
-                'inset 0 0.375em 0.5em 0.25em hsla(0, 0%, 36.7%, 0.75)',
+                'inset 0 0.15em 0.35em rgba(255, 255, 255, 0.7),' +
+                'inset 0 -0.05em 0.2em rgba(0, 0, 0, 0.06)',
             },
           },
           '.card-base': {
