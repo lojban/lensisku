@@ -3,65 +3,55 @@
     <ToastFloat :show="showSuccessToast" :message="successMessage" type="success" @close="showSuccessToast = false" />
     <!-- Header -->
     <div class="bg-white border rounded-lg p-4 sm:p-6 mb-6">
-      <div class="flex flex-col sm:flex-row justify-between items-start gap-2 sm:gap-0">
-        <div class="w-full sm:w-auto">
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <div class="flex flex-wrap items-center gap-2 min-w-0">
           <h2 class="text-xl sm:text-2xl font-bold text-gray-800 flex items-center gap-2">
             {{ collection.name }}
-            <span class="text-sm px-2 py-1 rounded-full select-none" :class="collection.is_public ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
+            <span class="text-sm px-2 py-1 rounded-full select-none shrink-0" :class="collection.is_public ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
               ">{{ collection.is_public ? t('collectionDetail.public') : t('collectionDetail.private') }}</span>
           </h2>
-
           <!-- Meta information -->
-          <div class="flex flex-wrap gap-2 mt-4">
-            <div class="text-sm text-gray-500">
+          <div class="flex flex-wrap items-center gap-2 text-sm text-gray-500">
+            <span>
               {{ t('collectionDetail.createdBy') }}
               <RouterLink :to="`/user/${collection.owner.username}`"
                 class="text-blue-600 hover:text-blue-800 hover:underline">
                 {{ collection.owner.username }}
               </RouterLink>
-            </div>
-            <div class="text-sm text-gray-500">
-              {{ t('collectionDetail.itemsCount', { count: collection.item_count }) }}
-            </div>
+            </span>
+            <span>{{ t('collectionDetail.itemsCount', { count: collection.item_count }) }}</span>
           </div>
         </div>
 
         <!-- Actions Dropdown -->
-        <div v-if="auth.state.isLoggedIn" class="relative actions-dropdown w-full sm:w-auto">
-          <button
-            class="w-full sm:w-auto p-2 hover:bg-gray-100 rounded-full inline-flex items-center justify-between sm:justify-start gap-2"
-            @click="showActions = !showActions">
-            <span class="text-sm text-gray-600">{{ t('collectionDetail.actions') }}</span>
-            <EllipsisVertical class="w-4 h-4" />
+        <div class="shrink-0">
+        <Dropdown v-if="auth.state.isLoggedIn":trigger-label="t('collectionDetail.actions')">
+          <button v-if="isOwner" type="button" class="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
+            @click="showEditModal = true">
+            {{ t('collectionDetail.editCollectionInfo') }}
           </button>
-          <div v-if="showActions"
-            class="absolute right-0 mt-2 w-full sm:w-48 bg-white border rounded-lg shadow-lg py-1 z-30">
-            <button v-if="isOwner" class="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
-              @click="showEditModal = true">
-              {{ t('collectionDetail.editCollectionInfo') }}
-            </button>
-            <button class="w-full px-4 py-2 text-left text-sm text-indigo-600 hover:bg-indigo-50"
-              @click="handleCloneCollection">
-              {{ t('collectionDetail.cloneCollection') }}
-            </button>
-            <button v-if="collection.is_public || isOwner"
-              class="w-full px-4 py-2 text-left text-sm text-purple-600 hover:bg-purple-50"
-              @click="showExportModal = true">
-              {{ t('collectionDetail.exportCollection') }}
-            </button>
-            <button v-if="isOwner" class="w-full px-4 py-2 text-left text-sm text-green-600 hover:bg-green-50"
-              @click="showMergeModal = true, loadAvailableCollections()">
-              {{ t('collectionDetail.mergeCollections') }}
-            </button>
-            <button v-if="isOwner" class="w-full px-4 py-2 text-left text-sm text-cyan-600 hover:bg-cyan-50"
-              @click="triggerJsonImport">
-              {{ t('collectionDetail.importFullButton', 'Import from file') }}
-            </button>
-            <button v-if="isOwner" class="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50"
-              @click="handleDelete">
-              {{ t('collectionDetail.deleteCollection') }}
-            </button>
-          </div>
+          <button type="button" class="w-full px-4 py-2 text-left text-sm text-indigo-600 hover:bg-indigo-50"
+            @click="handleCloneCollection">
+            {{ t('collectionDetail.cloneCollection') }}
+          </button>
+          <button v-if="collection.is_public || isOwner" type="button"
+            class="w-full px-4 py-2 text-left text-sm text-purple-600 hover:bg-purple-50"
+            @click="showExportModal = true">
+            {{ t('collectionDetail.exportCollection') }}
+          </button>
+          <button v-if="isOwner" type="button" class="w-full px-4 py-2 text-left text-sm text-green-600 hover:bg-green-50"
+            @click="showMergeModal = true; loadAvailableCollections()">
+            {{ t('collectionDetail.mergeCollections') }}
+          </button>
+          <button v-if="isOwner" type="button" class="w-full px-4 py-2 text-left text-sm text-cyan-600 hover:bg-cyan-50"
+            @click="triggerJsonImport">
+            {{ t('collectionDetail.importFullButton', 'Import from file') }}
+          </button>
+          <button v-if="isOwner" type="button" class="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50"
+            @click="handleDelete">
+            {{ t('collectionDetail.deleteCollection') }}
+          </button>
+        </Dropdown>
         </div>
       </div>
 
@@ -192,7 +182,7 @@
 
     <!-- Export Collection Modal (full: items + levels + flashcard directions) -->
     <ModalComponent :show="showExportModal" :title="t('collectionDetail.exportCollectionTitle')"
-      @close="showExportModal = false; showActions = !showActions">
+      @close="showExportModal = false">
       <div class="space-y-4">
         <p class="text-sm text-gray-600">
           {{ t('collectionDetail.exportFullDescription', 'Exports this collection as JSON including all items, flashcard levels, and flashcard settings. You can re-import the file later to create a new collection with the same structure.') }}
@@ -206,7 +196,7 @@
       </div>
 
       <div class="mt-6 flex justify-end space-x-3">
-        <button type="button" class="btn-cancel" @click="showExportModal = false; showActions = !showActions">
+        <button type="button" class="btn-cancel" @click="showExportModal = false">
           {{ t('collectionDetail.cancel') }}
         </button>
         <button :disabled="isExporting" class="btn-get" @click="handleExport">
@@ -673,7 +663,7 @@
 
     <!-- Merge Collection Modal -->
     <ModalComponent :show="showMergeModal" :title="t('collectionDetail.mergeCollectionTitle')"
-      @close="showMergeModal = false; showActions = !showActions">
+      @close="showMergeModal = false">
       <div v-if="isLoadingCollections" class="flex justify-center py-4">
         <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-500" />
       </div>
@@ -712,7 +702,7 @@
 
         <!-- Action Buttons -->
         <div class="flex justify-end space-x-3 pt-4">
-          <button type="button" class="btn-cancel" @click="showMergeModal = false; showActions = !showActions">
+          <button type="button" class="btn-cancel" @click="showMergeModal = false">
             {{ t('collectionDetail.cancel') }}
           </button>
           <button type="submit" :disabled="!isValidMerge || isMerging" class="btn-update">
@@ -738,7 +728,6 @@
 import {
   GalleryHorizontalIcon,
   LayoutPanelTop,
-  EllipsisVertical,
   BookOpen,
   Edit3,
   HelpCircle,
@@ -788,6 +777,7 @@ import ModalComponent from '@/components/ModalComponent.vue'
 import PaginationComponent from '@/components/PaginationComponent.vue'
 import SearchInput from '@/components/SearchInput.vue'
 import TabbedPageHeader from '@/components/TabbedPageHeader.vue'
+import { Dropdown } from '@packages/ui'
 import { useAuth } from '@/composables/useAuth'
 import { useError } from '@/composables/useError'
 import { useSeoHead } from '@/composables/useSeoHead'
@@ -829,7 +819,6 @@ const collection = ref(null)
 const { showError, clearError } = useError()
 const isLoading = ref(true)
 const isLoadingItems = ref(false)
-const showActions = ref(false)
 const showEditModal = ref(false)
 const showAddModal = ref(false)
 const isEditingItem = ref(false)
@@ -1546,7 +1535,6 @@ const handleCloneCollection = async () => {
     console.error('Error cloning collection:', error)
   } finally {
     isCloning.value = false
-    showActions.value = false
   }
 }
 
@@ -1951,12 +1939,6 @@ const toggleAddFlashcardMode = () => {
   })
 }
 
-const handleDocumentClick = (event) => {
-  if (showActions.value && !event.target.closest('.actions-dropdown')) {
-    showActions.value = false
-  }
-}
-
 const successMessage = ref('')
 const showMergeModal = ref(false)
 const selectedCollectionToMerge = ref('')
@@ -2035,7 +2017,6 @@ const jsonImportInput = ref(null)
 
 const triggerJsonImport = () => {
   jsonImportInput.value?.click()
-  showActions.value = false // Close actions dropdown
 }
 
 const handleJsonFileSelect = async (event) => {
@@ -2099,7 +2080,6 @@ onMounted(() => {
   if (auth.state.isLoggedIn) {
     fetchUserCollections();
   }
-  document.addEventListener('click', handleDocumentClick)
 })
 
 watch(() => auth.state.isLoggedIn, (loggedIn) => {
@@ -2113,7 +2093,6 @@ watch(() => auth.state.isLoggedIn, (loggedIn) => {
 useSeoHead({ title: computed(() => collection.value?.name || 'Collection') }, locale.value)
 
 onUnmounted(() => {
-  document.removeEventListener('click', handleDocumentClick)
   // Clean up any pending search timeouts
   clearSearchTimeoutFilter()
   clearSearchTimeout()

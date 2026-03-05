@@ -346,7 +346,7 @@ import {
 import CombinedFilters from '@/components/CombinedFilters.vue'
 import CommentItem from '@/components/CommentItem.vue'
 import DictionaryEntries from '@/components/DictionaryEntries.vue'
-import IconButton from '@/components/icons/IconButton.vue'
+import { IconButton } from '@packages/ui'
 import MuplisList from '@/components/MuplisList.vue'
 import PaginationComponent from '@/components/PaginationComponent.vue'
 import RecentChangeItem from '@/components/RecentChangeItem.vue';

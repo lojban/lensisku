@@ -286,7 +286,7 @@ import { jwtDecode } from 'jwt-decode'
 import Error from '@/components/Error.vue'
 import { resendConfirmation } from '@/api'
 import CoursesIcon from '@/components/icons/CoursesIcon.vue'
-import IconButton from '@/components/icons/IconButton.vue'
+import { IconButton } from '@packages/ui'
 
 import BackgroundComponent from './components/BackgroundComponent.vue'
 import FooterComponent from './components/FooterComponent.vue'

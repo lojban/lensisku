@@ -403,7 +403,7 @@ import {
   deleteLevel, // Import the new function
 } from '@/api'
 import DefinitionCard from '@/components/DefinitionCard.vue'
-import IconButton from '@/components/icons/IconButton.vue'
+import { IconButton } from '@packages/ui'
 import { useAuth } from '@/composables/useAuth';
 import { useAnonymousProgress } from '@/composables/useAnonymousProgress';
 import { useSeoHead } from '@/composables/useSeoHead';
