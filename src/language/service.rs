@@ -437,15 +437,17 @@ pub async fn validate_mathjax(
     if text.trim().is_empty() {
         return Ok(());
     }
+    // Decode HTML entities so that e.g. &lt; becomes < for LaTeX (avoids "Misplaced alignment tab character &")
+    let decoded = crate::utils::decode_html_entities(text);
     // Check for balanced delimiters
-    check_balanced_delimiters(text)?;
+    check_balanced_delimiters(&decoded)?;
 
     // Check common syntax patterns
-    check_syntax_patterns(text)?;
+    check_syntax_patterns(&decoded)?;
 
     // validate with Tectonic
     if options.use_tectonic {
-        validate_with_tectonic(text).await?;
+        validate_with_tectonic(&decoded).await?;
     }
 
     Ok(())
