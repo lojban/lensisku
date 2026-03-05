@@ -191,7 +191,7 @@ import { getTypeClass } from '@/utils/wordTypeUtils'; // Import shared utility
 import { getValsiDefinitions, getValsiDetails, getCollections, getLanguages, getDefinitionTranslations, unlinkDefinitions } from '@/api'
 import AudioPlayer from '@/components/AudioPlayer.vue'
 import DefinitionCard from '@/components/DefinitionCard.vue'
-import IconButton from '@/components/icons/IconButton.vue'
+import { IconButton } from '@packages/ui'
 import SubscriptionControls from '@/components/SubscriptionControls.vue'
 import { useAuth } from '@/composables/useAuth'
 import { useError } from '@/composables/useError'

@@ -335,7 +335,7 @@
   "collectionDetail": {
     "public": "Public",
     "private": "Private",
-    "createdBy": "Created by",
+    "createdBy": "by",
     "items": "items",
     "actions": "Actions",
     "editCollectionInfo": "Edit Collection Info",
@@ -1147,6 +1147,7 @@
     }
   },
   "collectionList": {
+    "addActions": "Add",
     "cancelButton": "Cancel",
     "collectionButton": "Collection",
     "importCollection": "Import collection",

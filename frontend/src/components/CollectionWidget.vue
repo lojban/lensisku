@@ -122,7 +122,7 @@ import { ref, watch, onMounted, onUnmounted, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 import { getCollections, addCollectionItem, api } from '@/api';
-import IconButton from '@/components/icons/IconButton.vue';
+import { IconButton } from '@packages/ui';
 import LoadingSpinner from '@/components/LoadingSpinner.vue';
 import ModalComponent from '@/components/ModalComponent.vue';
 import ToastFloat from '@/components/ToastFloat.vue';

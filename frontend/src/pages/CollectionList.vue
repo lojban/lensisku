@@ -51,27 +51,31 @@
     </h2>
     <div class="flex flex-col sm:flex-row justify-end flex-grow gap-2 sm:gap-0 mt-2 sm:mt-0">
       <input ref="importFileInput" type="file" accept=".json" class="hidden" @change="handleImportFile">
-      <div v-if="auth.state.isLoggedIn" class="flex flex-col sm:flex-row flex-grow sm:flex-none gap-2 sm:gap-3 sm:items-stretch">
-        <label :class="[viewMode === 'my' ? 'btn-aqua-slate' : 'btn-aqua-white']" class="btn-aqua flex-grow sm:flex-initial cursor-pointer items-center justify-center flex mb-2 sm:mb-0 rounded-full">
+      <div v-if="auth.state.isLoggedIn" class="flex flex-row gap-2 items-center">
+        <button class="btn-aqua-white">
           <input type="checkbox" class="checkmark-aqua" :checked="viewMode === 'my'"
             @click="viewMode = viewMode === 'my' ? 'public' : 'my'">
           <span> {{ t('collectionList.myCollectionsLabel') }} </span>
-        </label>
-        <div class="flex flex-col sm:flex-row flex-grow sm:flex-none gap-2 sm:gap-0" role="group">
-        <IconButton
-          v-if="auth.state.isLoggedIn"
-          :label="t('collectionList.importCollection')"
-          button-classes="btn-aqua-sky sm:btn-aqua-group-item flex-grow sm:flex-initial mb-2 sm:mb-0"
-          :disabled="isImporting"
-          @click="triggerImport"
-        />
-        <IconButton
-          v-if="auth.state.isLoggedIn"
-          :label="t('collectionList.createCollection')"
-          button-classes="btn-aqua-emerald sm:btn-aqua-group-item flex-grow sm:flex-initial"
-          @click="showCreateModal = true"
-        />
-        </div>
+        </button>
+        <Dropdown :trigger-label="t('collectionList.addActions')">
+          <button
+            type="button"
+            class="w-full px-4 py-2 text-left text-sm text-cyan-600 hover:bg-cyan-50 flex items-center gap-2"
+            :disabled="isImporting"
+            @click="triggerImport"
+          >
+            <Upload class="h-4 w-4 shrink-0" />
+            {{ t('collectionList.importCollection') }}
+          </button>
+          <button
+            type="button"
+            class="w-full px-4 py-2 text-left text-sm text-emerald-600 hover:bg-emerald-50 flex items-center gap-2"
+            @click="showCreateModal = true"
+          >
+            <CirclePlus class="h-4 w-4 shrink-0" />
+            {{ t('collectionList.createCollection') }}
+          </button>
+        </Dropdown>
       </div>
     </div>
   </div>
@@ -180,7 +184,7 @@
 </template>
 
 <script setup>
-import { CirclePlus } from 'lucide-vue-next';
+import { CirclePlus, Upload } from 'lucide-vue-next';
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
@@ -193,8 +197,7 @@ import {
   getStreak,
   getLevels,
 } from '@/api'
-import IconButton from '@/components/icons/IconButton.vue'
-import { CollectionCard } from '@packages/ui'
+import { CollectionCard, Dropdown } from '@packages/ui'
 import { useAuth } from '@/composables/useAuth'
 import { useSeoHead } from '@/composables/useSeoHead'
 
