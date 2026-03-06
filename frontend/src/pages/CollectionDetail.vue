@@ -3,62 +3,61 @@
     <ToastFloat :show="showSuccessToast" :message="successMessage" type="success" @close="showSuccessToast = false" />
     <!-- Header -->
     <div class="bg-white border rounded-lg p-4 sm:p-6 mb-6">
-      <div class="flex flex-wrap items-center justify-between gap-2">
-        <div class="flex flex-wrap items-center gap-2 min-w-0">
-          <h2 class="text-xl sm:text-2xl font-bold text-gray-800 flex items-center gap-2">
-            {{ collection.name }}
-            <span class="text-sm px-2 py-1 rounded-full select-none shrink-0" :class="collection.is_public ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
-              ">{{ collection.is_public ? t('collectionDetail.public') : t('collectionDetail.private') }}</span>
-          </h2>
-          <!-- Meta information -->
-          <div class="flex flex-wrap items-center gap-2 text-sm text-gray-500">
-            <span>
-              {{ t('collectionDetail.createdBy') }}
-              <RouterLink :to="`/user/${collection.owner.username}`"
-                class="text-blue-600 hover:text-blue-800 hover:underline">
-                {{ collection.owner.username }}
-              </RouterLink>
-            </span>
-            <span>{{ t('collectionDetail.itemsCount', { count: collection.item_count }) }}</span>
-          </div>
-        </div>
+      <!-- Row 1: Title full row -->
+      <h2 class="text-xl sm:text-2xl font-bold text-gray-800 mb-2">
+        {{ collection.name }}
+      </h2>
 
-        <!-- Actions Dropdown -->
-        <div class="shrink-0">
-        <Dropdown v-if="auth.state.isLoggedIn":trigger-label="t('collectionDetail.actions')">
-          <button v-if="isOwner" type="button" class="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
-            @click="showEditModal = true">
-            {{ t('collectionDetail.editCollectionInfo') }}
-          </button>
-          <button type="button" class="w-full px-4 py-2 text-left text-sm text-indigo-600 hover:bg-indigo-50"
-            @click="handleCloneCollection">
-            {{ t('collectionDetail.cloneCollection') }}
-          </button>
-          <button v-if="collection.is_public || isOwner" type="button"
-            class="w-full px-4 py-2 text-left text-sm text-purple-600 hover:bg-purple-50"
-            @click="showExportModal = true">
-            {{ t('collectionDetail.exportCollection') }}
-          </button>
-          <button v-if="isOwner" type="button" class="w-full px-4 py-2 text-left text-sm text-green-600 hover:bg-green-50"
-            @click="showMergeModal = true; loadAvailableCollections()">
-            {{ t('collectionDetail.mergeCollections') }}
-          </button>
-          <button v-if="isOwner" type="button" class="w-full px-4 py-2 text-left text-sm text-cyan-600 hover:bg-cyan-50"
-            @click="triggerJsonImport">
-            {{ t('collectionDetail.importFullButton', 'Import from file') }}
-          </button>
-          <button v-if="isOwner" type="button" class="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50"
-            @click="handleDelete">
-            {{ t('collectionDetail.deleteCollection') }}
-          </button>
-        </Dropdown>
+      <!-- Row 2: Description -->
+      <div v-if="collection.description" class="w-full">
+        <div class="max-h-32 text-sm overflow-y-auto border rounded p-2 w-full read-box">
+          <LazyMathJax :content="collection.description" />
         </div>
       </div>
 
-
-      <div v-if="collection.description">
-        <div class="max-h-32 text-sm overflow-y-auto border rounded p-2 bg-gray-50 my-2 w-full read-box">
-          <LazyMathJax :content="collection.description" />
+      <!-- Row 3: public + owner + count + actions -->
+      <div class="flex flex-wrap items-center justify-between gap-2 text-sm text-gray-500 mt-1">
+        <div class="flex flex-wrap items-center gap-2">
+          <span class="text-sm px-2 py-1 rounded-full select-none shrink-0" :class="collection.is_public ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'">
+            {{ collection.is_public ? t('collectionDetail.public') : t('collectionDetail.private') }}
+          </span>
+          <span>
+            {{ t('collectionDetail.createdBy') }}
+            <RouterLink :to="`/user/${collection.owner.username}`"
+              class="text-blue-600 hover:text-blue-800 hover:underline">
+              {{ collection.owner.username }}
+            </RouterLink>
+          </span>
+          <span>{{ t('collectionDetail.itemsCount', { count: collection.item_count }) }}</span>
+        </div>
+        <div class="shrink-0">
+          <Dropdown v-if="auth.state.isLoggedIn" :trigger-label="t('collectionDetail.actions')">
+            <button v-if="isOwner" type="button" class="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
+              @click="showEditModal = true">
+              {{ t('collectionDetail.editCollectionInfo') }}
+            </button>
+            <button type="button" class="w-full px-4 py-2 text-left text-sm text-indigo-600 hover:bg-indigo-50"
+              @click="handleCloneCollection">
+              {{ t('collectionDetail.cloneCollection') }}
+            </button>
+            <button v-if="collection.is_public || isOwner" type="button"
+              class="w-full px-4 py-2 text-left text-sm text-purple-600 hover:bg-purple-50"
+              @click="showExportModal = true">
+              {{ t('collectionDetail.exportCollection') }}
+            </button>
+            <button v-if="isOwner" type="button" class="w-full px-4 py-2 text-left text-sm text-green-600 hover:bg-green-50"
+              @click="showMergeModal = true; loadAvailableCollections()">
+              {{ t('collectionDetail.mergeCollections') }}
+            </button>
+            <button v-if="isOwner" type="button" class="w-full px-4 py-2 text-left text-sm text-cyan-600 hover:bg-cyan-50"
+              @click="triggerJsonImport">
+              {{ t('collectionDetail.importFullButton', 'Import from file') }}
+            </button>
+            <button v-if="isOwner" type="button" class="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50"
+              @click="handleDelete">
+              {{ t('collectionDetail.deleteCollection') }}
+            </button>
+          </Dropdown>
         </div>
       </div>
 
@@ -67,7 +66,7 @@
 
 
       <!-- Search and Actions -->
-      <div class="space-y-4 md:space-y-0">
+      <div class="space-y-4 md:space-y-0 mt-4">
         <div class="flex flex-wrap items-center gap-2 w-auto">
           <div class="relative w-full md:w-auto mb-2 md:mb-0">
             <SearchInput v-model="itemSearchQuery" :placeholder="t('collectionDetail.searchItemsPlaceholder')"
@@ -81,7 +80,7 @@
             <GalleryHorizontalIcon class="w-4 h-4" />
             {{ t('collectionDetail.viewAsFlashcards') }}
           </RouterLink>
-          <RouterLink :to="`/collections/${props.collectionId}/levels`" class="btn-aqua-sky ymd:flex-none">
+          <RouterLink :to="`/collections/${props.collectionId}/levels`" class="btn-aqua-sky md:flex-none">
             <LayoutPanelTop class="w-4 h-4" />
             {{ t('collectionDetail.levels') }}
           </RouterLink>

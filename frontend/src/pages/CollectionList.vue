@@ -52,9 +52,10 @@
     <div class="flex flex-col sm:flex-row justify-end flex-grow gap-2 sm:gap-0 mt-2 sm:mt-0">
       <input ref="importFileInput" type="file" accept=".json" class="hidden" @change="handleImportFile">
       <div v-if="auth.state.isLoggedIn" class="flex flex-row gap-2 items-center">
-        <button class="btn-aqua-white">
+        <button class="btn-aqua-white"
+            @click="setViewMode(viewMode === 'my' ? 'public' : 'my')">
           <input type="checkbox" class="checkmark-aqua" :checked="viewMode === 'my'"
-            @click="viewMode = viewMode === 'my' ? 'public' : 'my'">
+            readonly tabindex="-1" @click.prevent>
           <span> {{ t('collectionList.myCollectionsLabel') }} </span>
         </button>
         <Dropdown :trigger-label="t('collectionList.addActions')">
@@ -82,7 +83,7 @@
 
   <!-- Sort Controls -->
   <div class="flex flex-wrap items-center gap-2 mb-4">
-    <div class="flex flex-wrap gap-1" role="group">
+    <div class="flex flex-wrap justify-center gap-1 sm:justify-start" role="group">
       <button
         v-for="opt in sortOptions"
         :key="opt.value"
@@ -136,7 +137,7 @@
 
   <!-- Empty State -->
   <div v-if="!isLoading && collections.length === 0"
-    class="text-center py-12 bg-gray-50 rounded-lg border border-blue-100">
+    class="flex flex-col items-center justify-center text-center py-12 bg-gray-50 rounded-lg border border-blue-100">
     <button v-if="viewMode === 'my' && auth.state.isLoggedIn" class="mt-4 btn-aqua-emerald"
       @click="showCreateModal = true">
       <CirclePlus class="h-4 w-4" />
@@ -186,7 +187,7 @@
 <script setup>
 import { CirclePlus, Upload } from 'lucide-vue-next';
 import { ref, computed, onMounted, watch } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 
 import {
@@ -203,13 +204,25 @@ import { useSeoHead } from '@/composables/useSeoHead'
 
 const auth = useAuth()
 const router = useRouter()
+const route = useRoute()
+
+const VIEW_PARAM = 'view'
+const VIEW_STORAGE_KEY = 'collections-view'
+const validView = (v) => (v === 'my' || v === 'public' ? v : null)
 
 const { t, locale } = useI18n()
 
-// State
+// State: viewMode from URL param; when no param, from localStorage if set; else default by login
+const initialView = () => {
+  const fromUrl = validView(route.query[VIEW_PARAM])
+  if (fromUrl && (fromUrl === 'public' || auth.state.isLoggedIn)) return fromUrl
+  const fromStorage = validView(typeof localStorage !== 'undefined' ? localStorage.getItem(VIEW_STORAGE_KEY) : null)
+  if (fromStorage != null && (fromStorage === 'public' || auth.state.isLoggedIn)) return fromStorage
+  return auth.state.isLoggedIn ? 'my' : 'public'
+}
+const viewMode = ref(initialView())
 const collections = ref([])
 const isLoading = ref(true)
-const viewMode = ref(auth.state.isLoggedIn ? 'my' : 'public')
 const sortBy = ref('active_week')
 const showCreateModal = ref(false)
 const isSubmitting = ref(false)
@@ -356,6 +369,24 @@ const handleImportFile = async (event) => {
   }
 }
 
+function setViewMode(mode) {
+  const next = mode === 'my' || mode === 'public' ? mode : viewMode.value
+  if (!auth.state.isLoggedIn && next === 'my') return
+  viewMode.value = next
+  router.replace({ path: route.path, query: { ...route.query, [VIEW_PARAM]: next } })
+}
+
+// Persist viewMode to localStorage whenever it changes
+watch(viewMode, (val) => {
+  if (typeof localStorage !== 'undefined') localStorage.setItem(VIEW_STORAGE_KEY, val)
+}, { immediate: true })
+
+// Sync viewMode from URL when route query changes (e.g. back/forward)
+watch(() => route.query[VIEW_PARAM], (qView) => {
+  const next = validView(qView) && (qView === 'public' || auth.state.isLoggedIn) ? qView : (auth.state.isLoggedIn ? 'my' : 'public')
+  if (viewMode.value !== next) viewMode.value = next
+})
+
 // Watch for view mode or sort changes
 watch([viewMode, sortBy, () => auth.state.isLoggedIn], () => {
   // Force public view when logged out
@@ -371,6 +402,10 @@ watch(viewMode, (newMode) => {
 })
 
 onMounted(() => {
+  // Persist initial view to URL so refresh and back/forward stay in sync
+  if (route.query[VIEW_PARAM] !== viewMode.value) {
+    router.replace({ path: route.path, query: { ...route.query, [VIEW_PARAM]: viewMode.value } })
+  }
   fetchCollections()
   fetchStreakData()
 })
