@@ -1174,6 +1174,7 @@
     "points": "{count} pt | {count} pts",
     "privateStatus": "Private",
     "publicCollections": "Public collections",
+    "publicCollectionsLabel": "Public courses",
     "publicStatus": "Public",
     "studyStreak": "Study streak",
     "studyButton": "Study",
@@ -1182,7 +1183,7 @@
     "sortActiveWeek": "Popular this week",
     "sortActiveMonth": "Popular this month",
     "sortActiveAll": "All-time popular",
-    "sortNewest": "Newest collections first"
+    "sortNewest": "Newest first"
   },
   "flashcardLevels": {
     "title": "{collectionName} - Levels",

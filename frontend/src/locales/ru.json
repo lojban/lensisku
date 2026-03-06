@@ -1141,6 +1141,7 @@
     "points": "{count} очк.",
     "privateStatus": "Частная",
     "publicCollections": "Публичные коллекции",
+    "publicCollectionsLabel": "Публичные курсы",
     "publicStatus": "Публичная",
     "studyStreak": "Прогресс обучения",
     "studyButton": "Учить",
@@ -1149,7 +1150,7 @@
     "sortActiveWeek": "Популярные за неделю",
     "sortActiveMonth": "Популярные за месяц",
     "sortActiveAll": "Популярные за всё время",
-    "sortNewest": "Сначала новые коллекции",
+    "sortNewest": "Сначала новые",
     "importCollection": "Импортировать коллекцию",
     "importError": "Ошибка импорта",
     "importFullFormatError": "Используйте файл полного экспорта коллекции (JSON с полями collection, items и опционально levels)."
