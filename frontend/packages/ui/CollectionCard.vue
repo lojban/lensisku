@@ -98,6 +98,12 @@ const AQUA_VARIANT_WHEEL = [
   'aqua-purple',
   'aqua-rose',
   'aqua-blue',
+  'aqua-gray',
+  'aqua-slate',
+  'aqua-red',
+  'aqua-yellow',
+  'aqua-green',
+  'aqua-zinc',
 ]
 
 function hashString(str) {

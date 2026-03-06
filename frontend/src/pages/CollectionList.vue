@@ -52,13 +52,26 @@
     <div class="flex flex-col sm:flex-row justify-end flex-grow gap-2 sm:gap-0 mt-2 sm:mt-0">
       <input ref="importFileInput" type="file" accept=".json" class="hidden" @change="handleImportFile">
       <div v-if="auth.state.isLoggedIn" class="flex flex-row gap-2 items-center">
-        <button class="btn-aqua-white"
-            @click="setViewMode(viewMode === 'my' ? 'public' : 'my')">
-          <input type="checkbox" class="checkmark-aqua" :checked="viewMode === 'my'"
-            readonly tabindex="-1" @click.prevent>
-          <span> {{ t('collectionList.myCollectionsLabel') }} </span>
-        </button>
+        <!-- When in 'my' mode: show an IconButton to switch back to public view -->
+        <IconButton
+          v-if="viewMode === 'my'"
+          :label="t('collectionList.publicCollectionsLabel')"
+          button-classes="btn-aqua-white"
+          @click="setViewMode('public')"
+        >
+          <template #icon>
+            <ArrowBigRight class="h-4 w-4" />
+          </template>
+        </IconButton>
         <Dropdown :trigger-label="t('collectionList.addActions')">
+          <button
+            type="button"
+            class="w-full px-4 py-2 text-left text-sm text-orange-600 hover:bg-orange-50 flex items-center gap-2"
+            @click="setViewMode('my')"
+          >
+            <BookOpen class="h-4 w-4 shrink-0" />
+            {{ t('collectionList.myCollectionsLabel') }}
+          </button>
           <button
             type="button"
             class="w-full px-4 py-2 text-left text-sm text-cyan-600 hover:bg-cyan-50 flex items-center gap-2"
@@ -185,7 +198,7 @@
 </template>
 
 <script setup>
-import { CirclePlus, Upload } from 'lucide-vue-next';
+import { CirclePlus, Upload, BookOpen, ArrowBigRight } from 'lucide-vue-next';
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
@@ -198,7 +211,7 @@ import {
   getStreak,
   getLevels,
 } from '@/api'
-import { CollectionCard, Dropdown } from '@packages/ui'
+import { CollectionCard, Dropdown, IconButton } from '@packages/ui'
 import { useAuth } from '@/composables/useAuth'
 import { useSeoHead } from '@/composables/useSeoHead'
 
