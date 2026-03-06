@@ -6,7 +6,11 @@
     "scripts": {
         "dev": "vite",
         "build": "npx vue-tsc --noEmit && npx vite-ssg build",
-        "start": "npx vue-tsc --noEmit && npx vite-ssg build && pnpm preview"
+        "start": "npx vue-tsc --noEmit && npx vite-ssg build && pnpm preview",
+        "lint": "eslint .",
+        "lint:fix": "eslint . --fix",
+        "format": "prettier --write .",
+        "format:check": "prettier --check ."
     },
     "dependencies": {
         "@milkdown/crepe": "^7.6.4",

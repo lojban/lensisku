@@ -5,16 +5,16 @@
         <div class="flex items-center justify-between gap-2 min-w-0">
           <RouterLink
             :to="`/collections/${collection.collection_id}`"
-            class="card-title min-w-0 flex-1 truncate"
+            class="card-title min-w-0 flex-1 line-clamp-2 whitespace-normal"
           >
             {{ collection.name }}
           </RouterLink>
-          <span
+          <!-- <span
             class="badge shrink-0"
             :class="collection.is_public ? 'badge-public' : 'badge-private'"
           >
             {{ collection.is_public ? publicLabel : privateLabel }}
-          </span>
+          </span> -->
         </div>
         <p v-if="collection.description" class="card-description">
           {{ collection.description }}
@@ -74,9 +74,9 @@
               <CalendarClock class="card-meta-icon" aria-hidden="true" />
               {{ formatDate(collection.updated_at) }}
             </span>
-            <span class="badge badge-muted">
+            <!-- <span class="badge badge-muted">
               {{ itemsCountLabel }}
-            </span>
+            </span> -->
           </div>
         </div>
       </div>

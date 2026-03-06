@@ -59,9 +59,9 @@
               <div class="level-card-badge">
                 <Lock v-if="!isLevelUnlocked(nodeProps.data) && !nodeProps.data.progress?.is_completed"
                   class="level-card-badge-icon" />
-                <Flame v-else-if="isLevelUnlocked(nodeProps.data) && !nodeProps.data.progress?.is_completed"
+                <Dumbbell v-else-if="isLevelUnlocked(nodeProps.data) && isLevelFinished90(nodeProps.data)"
                   class="level-card-badge-icon" />
-                <Trophy v-else class="level-card-badge-icon" />
+                <Sprout v-else class="level-card-badge-icon" />
               </div>
 
               <!-- Title & description -->
@@ -381,8 +381,8 @@ import {
   Settings,
   PlusCircle,
   Sparkles,
-  Trophy,
-  Flame,
+  Dumbbell,
+  Sprout,
   Target,
 } from 'lucide-vue-next';
 import { ref, computed, onMounted, watch, nextTick } from 'vue';
@@ -721,6 +721,14 @@ const getProgressWidth = (level) => {
   if (!level.card_count) return '0%'
   const progress = (level.progress?.cards_completed || 0) / level.card_count
   return `${Math.round(progress * 100)}%`
+}
+
+/** Level is “finished” at least 90% (for strength badge). */
+const isLevelFinished90 = (level) => {
+  if (level?.progress?.is_completed) return true
+  if (!level?.card_count) return false
+  const p = (level.progress?.cards_completed || 0) / level.card_count
+  return p >= 0.9
 }
 
 const formatSuccessRate = (rate) => {
