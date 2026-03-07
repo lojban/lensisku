@@ -983,7 +983,7 @@
       "by": "от",
       "selmaoLabel": "selma'o",
       "flashcardIndicatorTitle": "Элемент коллекции имеет карточку",
-      "similarity": "схожести",
+      "similarity": "{percent}% схожести",
       "canonicalLabel": "Каноническая форма:",
       "fullWordModalTitle": "Полное слово",
       "fullWordModalHint": "Нажмите на слово ниже, чтобы перейти на страницу определения.",

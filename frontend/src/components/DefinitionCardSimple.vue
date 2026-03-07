@@ -94,6 +94,9 @@
             <span v-if="definition.created_at">
               {{ formatDate(definition.created_at) }}
             </span>
+            <span v-if="props.showScore && definition.similarity" class="italic">
+              · {{ t('components.definitionCard.similarity', { percent: Math.round(definition.similarity * 100) }) }}
+            </span>
           </div>
         </div>
       </div>
@@ -140,6 +143,10 @@ const props = defineProps({
   showWordType: {
     type: Boolean,
     default: true,
+  },
+  showScore: {
+    type: Boolean,
+    default: false,
   },
 });
 

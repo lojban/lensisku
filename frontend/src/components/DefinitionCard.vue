@@ -146,7 +146,7 @@
                 {{ formatDate(definition.created_at) }}
               </span>
               <span v-if="props.showScore && definition.similarity" class="italic">
-                · {{ definition.similarity.toFixed(2) }} {{ t('components.definitionCard.similarity') }}
+                · {{ t('components.definitionCard.similarity', { percent: Math.round(definition.similarity * 100) }) }}
               </span>
             </div>
           </div>

@@ -1013,7 +1013,7 @@
       "by": "by",
       "selmaoLabel": "selma'o",
       "flashcardIndicatorTitle": "Collection item has a flashcard",
-      "similarity": "similarity",
+      "similarity": "{percent}% similarity",
       "canonicalLabel": "Canonical form:",
       "fullWordModalTitle": "Full word",
       "fullWordModalHint": "Click the word below to go to the definition page.",
