@@ -202,6 +202,38 @@ export default {
             '@apply aqua-base bg-red-400': {},
             '--aqua-hue': '0',
           },
+          '.btn-aqua-amber': {
+            '@apply aqua-base bg-amber-400': {},
+            '--aqua-hue': '38',
+          },
+          '.btn-aqua-lime': {
+            '@apply aqua-base bg-lime-400': {},
+            '--aqua-hue': '84',
+          },
+          '.btn-aqua-teal': {
+            '@apply aqua-base bg-teal-400': {},
+            '--aqua-hue': '173',
+          },
+          '.btn-aqua-cyan': {
+            '@apply aqua-base bg-cyan-400': {},
+            '--aqua-hue': '188',
+          },
+          '.btn-aqua-indigo': {
+            '@apply aqua-base bg-indigo-400': {},
+            '--aqua-hue': '243',
+          },
+          '.btn-aqua-violet': {
+            '@apply aqua-base bg-violet-400': {},
+            '--aqua-hue': '260',
+          },
+          '.btn-aqua-fuchsia': {
+            '@apply aqua-base bg-fuchsia-400': {},
+            '--aqua-hue': '292',
+          },
+          '.btn-aqua-pink': {
+            '@apply aqua-base bg-pink-400': {},
+            '--aqua-hue': '330',
+          },
           '.btn-aqua-zinc': {
             '@apply aqua-base bg-zinc-300': {},
             '--aqua-hue': '240',
