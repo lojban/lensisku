@@ -1014,7 +1014,7 @@
       "by": "fa la",
       "selmaoLabel": "selma'o",
       "flashcardIndicatorTitle": "lo se liste cu karda",
-      "similarity": "ka simsa",
+      "similarity": "{percent} ce'i si'e lo ka simsa",
       "canonicalLabel": "ralju valsi:",
       "fullWordModalTitle": "mulno valsi",
       "fullWordModalHint": "ko cuxna lo valsi mu'i lo nu klama lo ciksi papri.",
