@@ -67,6 +67,7 @@ pub struct FlashcardListQuery {
     pub status: Option<FlashcardStatus>,
     pub due: Option<bool>, // if true, only return cards due for review
     pub flashcard_id: Option<i32>,
+    pub level_id: Option<i32>,
 }
 
 #[derive(Debug, Serialize, ToSchema)]

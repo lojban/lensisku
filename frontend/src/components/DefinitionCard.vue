@@ -578,11 +578,20 @@ const displayedValsi = computed(() =>
     : valsiWord.value
 )
 const isValsiTruncated = computed(() => valsiWord.value.length > MAX_VALSI_DISPLAY_LENGTH)
-const valsiDefinitionLink = computed(() =>
-  props.definition.definitionid
-    ? `/valsi/${encodeURIComponent(valsiWord.value.replace(/ /g, '_'))}?highlight_definition_id=${props.definition.definitionid}`
-    : '#'
-)
+const valsiDefinitionLink = computed(() => {
+  if (!props.definition.definitionid) return '#'
+  
+  const query = { highlight_definition_id: props.definition.definitionid }
+  const langId = props.definition.langid ?? props.definition.lang_id
+  if (langId) {
+    query.langid = langId
+  }
+  
+  return {
+    path: `/valsi/${encodeURIComponent(valsiWord.value.replace(/ /g, '_'))}`,
+    query
+  }
+})
 const displayedFreeContent = computed(() => {
   const raw = props.definition.free_content_front || props.definition.word || ''
   return raw.length > MAX_VALSI_DISPLAY_LENGTH ? raw.slice(0, MAX_VALSI_DISPLAY_LENGTH) + '…' : raw

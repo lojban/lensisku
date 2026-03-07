@@ -811,12 +811,13 @@ pub async fn list_flashcards(
              OR ($4::boolean = true AND
                  (p.next_review_at IS NULL OR p.next_review_at <= CURRENT_TIMESTAMP)))
         AND ($5::int IS NULL OR f.id = $5)
+        AND ($6::int IS NULL OR f.id IN (SELECT flashcard_id FROM flashcard_level_items WHERE level_id = $6))
         ORDER BY
         CASE
             WHEN $4::boolean = true THEN EXTRACT(EPOCH FROM p.next_review_at)
             ELSE f.position::bigint
         END",
-        &[&user_id, &query.collection_id, &query.status, &query.due, &query.flashcard_id],
+        &[&user_id, &query.collection_id, &query.status, &query.due, &query.flashcard_id, &query.level_id],
     )
     .await?;
 
