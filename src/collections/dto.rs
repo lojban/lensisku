@@ -46,6 +46,7 @@ pub struct CollectionResponse {
     #[schema(value_type = String, format = DateTime)]
     pub updated_at: DateTime<Utc>,
     pub item_count: i64,
+    pub has_flashcards: bool,
     pub owner: CollectionOwner,
 }
 
