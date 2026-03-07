@@ -52,6 +52,8 @@ pub struct ExportOptions {
     pub format: Option<String>,
     pub positive_scores_only: Option<bool>,
     pub collection_id: Option<i32>,
+    /// Language tag for the source/word language (defaults to Lojban if omitted)
+    pub source_lang: Option<String>,
 }
 
 #[derive(Serialize)]

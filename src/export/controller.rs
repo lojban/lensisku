@@ -75,7 +75,8 @@ pub async fn download_cached_export(
         ("lang" = String, Path, description = "Language tag"),
         ("format" = Option<String>, Query, description = "Export format (pdf, latex, xml, json)"),
         ("positive_scores_only" = Option<bool>, Query, description = "Include only entries with positive scores"),
-        ("collection_id" = Option<i32>, Query, description = "Export only definitions from specific collection")
+        ("collection_id" = Option<i32>, Query, description = "Export only definitions from specific collection"),
+        ("source_lang" = Option<String>, Query, description = "Language tag of the source/word language (defaults to Lojban)")
     ),
     responses(
         (status = 200, description = "Dictionary exported successfully"),

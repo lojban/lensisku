@@ -434,7 +434,10 @@
     "optionsLabel": "Параметры экспорта",
     "positiveScoresOnly": "Включать только записи с положительной оценкой",
     "generating": "Генерация экспорта...",
-    "exportButton": "Экспортировать словарь"
+    "exportButton": "Экспортировать словарь",
+    "sourceLangLabel": "Источник слов (язык)",
+    "selectSourceLanguage": "Выберите язык-источник",
+    "sourceLangDefault": "Ложбан (по умолчанию)"
   },
   "collectionWidget": {
     "itemsCount": "{count} элементов",

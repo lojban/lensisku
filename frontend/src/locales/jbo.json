@@ -464,7 +464,10 @@
     "optionsLabel": "cupra te tcila",
     "positiveScoresOnly": "kansa lo valsi poi se zanru po'o",
     "generating": "ca'o cupra...",
-    "exportButton": "cupra lo vlaste"
+    "exportButton": "cupra lo vlaste",
+    "sourceLangLabel": "ckaji lo ka fanva fo ce'u",
+    "selectSourceLanguage": "cuxna tu'a le ckaji be lo ka fanva fo ce'u",
+    "sourceLangDefault": "jai se cuxna gi'o nai lojbo"
   },
   "collectionWidget": {
     "itemsCount": "{count} lo se liste",

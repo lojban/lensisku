@@ -464,7 +464,10 @@
     "optionsLabel": "Export options",
     "positiveScoresOnly": "Include only entries with positive scores",
     "generating": "Generating export...",
-    "exportButton": "Export dictionary"
+    "exportButton": "Export dictionary",
+    "sourceLangLabel": "Source language (words)",
+    "selectSourceLanguage": "Select source language",
+    "sourceLangDefault": "Lojban (default)"
   },
   "collectionWidget": {
     "itemsCount": "{count} items",
