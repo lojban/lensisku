@@ -59,6 +59,7 @@ pub async fn create_collection(
         created_at: row.get("created_at"),
         updated_at: row.get("updated_at"),
         item_count: 0,
+        has_flashcards: false,
         owner: CollectionOwner { user_id, username },
     };
 
@@ -99,6 +100,7 @@ pub async fn list_collections(pool: &Pool, user_id: i32, sort: Option<&str>) -> 
             created_at: row.get("created_at"),
             updated_at: row.get("updated_at"),
             item_count: row.get("item_count"),
+            has_flashcards: row.get("has_flashcards"),
             owner: CollectionOwner {
                 user_id,
                 username: row
@@ -150,6 +152,7 @@ pub async fn list_public_collections(
             created_at: row.get("created_at"),
             updated_at: row.get("updated_at"),
             item_count: row.get("item_count"),
+            has_flashcards: row.get("has_flashcards"),
             owner: CollectionOwner {
                 user_id: row.get("userid"),
                 username: row
@@ -198,6 +201,7 @@ pub async fn refresh_collection_sort_cache(
                 created_at: row.get("created_at"),
                 updated_at: row.get("updated_at"),
                 item_count: row.get("item_count"),
+                has_flashcards: row.get("has_flashcards"),
                 owner: CollectionOwner {
                     user_id: row.get("userid"),
                     username: row
@@ -268,7 +272,8 @@ fn build_collections_query(where_clause: &str, sort: Option<&str>, user_owned: b
 
     format!(
         "SELECT c.*, {extra_select}u.username,
-                (SELECT COUNT(*) FROM collection_items ci WHERE ci.collection_id = c.collection_id) AS item_count
+                (SELECT COUNT(*) FROM collection_items ci WHERE ci.collection_id = c.collection_id) AS item_count,
+                EXISTS(SELECT 1 FROM flashcards f WHERE f.collection_id = c.collection_id) AS has_flashcards
          FROM collections c
          JOIN users u ON c.user_id = u.userid
          {active_join}
@@ -297,7 +302,8 @@ pub async fn get_collection(
     let collection_row = client
     .query_one(
         "SELECT c.*, u.userid, u.username, 
-        (SELECT COUNT(*) FROM collection_items ci WHERE ci.collection_id = c.collection_id) as item_count
+        (SELECT COUNT(*) FROM collection_items ci WHERE ci.collection_id = c.collection_id) as item_count,
+        EXISTS(SELECT 1 FROM flashcards f WHERE f.collection_id = c.collection_id) as has_flashcards
         FROM collections c
         JOIN users u ON c.user_id = u.userid
              WHERE c.collection_id = $1",
@@ -321,6 +327,7 @@ pub async fn get_collection(
         created_at: collection_row.get("created_at"),
         updated_at: collection_row.get("updated_at"),
         item_count: collection_row.get("item_count"),
+        has_flashcards: collection_row.get("has_flashcards"),
         owner: CollectionOwner {
             user_id: owner_id,
             username: collection_row
@@ -401,6 +408,16 @@ pub async fn update_collection(
         .try_get::<_, i64>(0)
         .map_err(|e| AppError::Database(e.to_string()))?;
 
+    let has_flashcards = transaction
+        .query_one(
+            "SELECT EXISTS(SELECT 1 FROM flashcards WHERE collection_id = $1)",
+            &[&collection_id],
+        )
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?
+        .try_get::<_, bool>(0)
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
     transaction
         .commit()
         .await
@@ -414,6 +431,7 @@ pub async fn update_collection(
         created_at: row.get("created_at"),
         updated_at: row.get("updated_at"),
         item_count,
+        has_flashcards,
         owner: CollectionOwner { user_id, username },
     })
 }
@@ -626,6 +644,7 @@ pub async fn import_json(
         created_at: row.get("created_at"),
         updated_at: row.get("updated_at"),
         item_count: imported_count as i64,
+        has_flashcards: false,
         owner: CollectionOwner { user_id, username },
     };
 
@@ -1112,6 +1131,7 @@ pub async fn import_full(
         created_at: row.get("created_at"),
         updated_at: row.get("updated_at"),
         item_count: imported_count as i64,
+        has_flashcards: false,
         owner: CollectionOwner { user_id, username },
     };
 
@@ -2227,6 +2247,7 @@ pub async fn clone_collection(
         created_at: new_collection.get("created_at"),
         updated_at: new_collection.get("updated_at"),
         item_count,
+        has_flashcards: false,
         owner: CollectionOwner { user_id, username },
     })
 }
@@ -2304,7 +2325,8 @@ pub async fn merge_collections(
     let collection_row = transaction
         .query_one(
             "SELECT c.*, u.userid, u.username,
-            (SELECT COUNT(*) FROM collection_items ci WHERE ci.collection_id = c.collection_id) as item_count
+            (SELECT COUNT(*) FROM collection_items ci WHERE ci.collection_id = c.collection_id) as item_count,
+            EXISTS(SELECT 1 FROM flashcards f WHERE f.collection_id = c.collection_id) as has_flashcards
             FROM collections c
             JOIN users u ON c.user_id = u.userid
             WHERE c.collection_id = $1",
@@ -2320,6 +2342,7 @@ pub async fn merge_collections(
         created_at: collection_row.get("created_at"),
         updated_at: collection_row.get("updated_at"),
         item_count: collection_row.get("item_count"),
+        has_flashcards: collection_row.get("has_flashcards"),
         owner: CollectionOwner {
             user_id: collection_row.get("userid"),
             username: collection_row.get("username"),

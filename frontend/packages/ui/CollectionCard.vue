@@ -4,7 +4,9 @@
       <div class="space-y-2 flex flex-col items-center">
         <div class="flex items-center justify-center gap-2 w-full min-w-0">
           <RouterLink
-            :to="`/collections/${collection.collection_id}`"
+            :to="collection.has_flashcards
+              ? `/collections/${collection.collection_id}/flashcards`
+              : `/collections/${collection.collection_id}`"
             class="card-title min-w-0 flex-1 line-clamp-2 whitespace-normal text-center"
           >
             {{ collection.name }}
@@ -18,7 +20,7 @@
 
     <template #footer>
       <div class="card-footer-block">
-        <div class="card-study-area card-study-area-compact">
+        <div v-if="collection.has_flashcards" class="card-study-area card-study-area-compact">
           <Button
             :variant="studyButtonVariant"
             :loading="studyLoading"
