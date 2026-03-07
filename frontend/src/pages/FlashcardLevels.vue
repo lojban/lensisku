@@ -119,7 +119,7 @@
                     <BookOpen class="h-4 w-4" />
                     {{ t('flashcardLevels.actions.viewCards') }}
                   </button>
-                  <RouterLink v-if="nodeProps.data.card_count > 0" :to="`/collections/${props.collectionId}/flashcards`"
+                  <RouterLink v-if="nodeProps.data.card_count > 0" :to="`/collections/${props.collectionId}/flashcards/study?levelId=${nodeProps.data.level_id}`"
                     class="level-card-btn level-card-btn-secondary">
                     <Play class="h-4 w-4" />
                     {{ t('flashcardLevels.actions.practice', 'Practice') }}

@@ -377,6 +377,7 @@ const loadDueCards = async (singleCardId = null) => {
       // Fetch all due cards
       response = await getDueCards({
         collection_id: route.params.collectionId,
+        level_id: levelIdParam.value || undefined,
       })
       remainingCards.value = response.data.flashcards
       totalCards.value = response.data.total
