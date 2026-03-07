@@ -36,6 +36,26 @@
       </select>
     </div>
 
+    <!-- Source Language Selection -->
+    <div class="space-y-2">
+      <label class="block text-sm font-medium text-gray-700">{{ t('dictionaryExport.sourceLangLabel') }}</label>
+      <select
+        v-model="selectedSourceLanguage"
+        class="input-field w-full"
+      >
+        <option value="">
+          {{ t('dictionaryExport.sourceLangDefault') }}
+        </option>
+        <option
+          v-for="lang in languages"
+          :key="lang.id"
+          :value="lang.tag"
+        >
+          {{ lang.real_name }} ({{ lang.english_name }})
+        </option>
+      </select>
+    </div>
+
     <!-- Format Selection -->
     <div class="space-y-2">
       <label class="block text-sm font-medium text-gray-700">{{ t('dictionaryExport.formatLabel') }}</label>
@@ -140,6 +160,7 @@
   const { showError, clearError } = useError()
   const languages = ref([])
   const STORAGE_KEY = 'dictionaryExport_selectedLanguage'
+  const SOURCE_LANG_STORAGE_KEY = 'dictionaryExport_selectedSourceLanguage'
 
   const getInitialLanguage = (languages) => {
     if (typeof window === 'undefined') return;
@@ -151,7 +172,19 @@
     }
   }
 
+  const getInitialSourceLanguage = (languages) => {
+    if (typeof window === 'undefined') return '';
+
+    const stored = localStorage.getItem(SOURCE_LANG_STORAGE_KEY)
+    // Allow empty string (= Lojban default)
+    if (stored !== null && (stored === '' || languages.some((lang) => lang.tag === stored))) {
+      return stored
+    }
+    return ''
+  }
+
   const selectedLanguage = ref('')
+  const selectedSourceLanguage = ref('')
   const selectedFormat = ref('pdf')
   const positiveScoresOnly = ref(true)
   const isLoading = ref(false)
@@ -209,6 +242,7 @@
       languages.value = response.data
       const candidateLanguage = getInitialLanguage(languages.value)
       if (candidateLanguage) selectedLanguage.value = candidateLanguage
+      selectedSourceLanguage.value = getInitialSourceLanguage(languages.value)
     } catch (err) {
       showError('Failed to load languages')
     }
@@ -223,6 +257,12 @@
     }
   })
 
+  // Watch selectedSourceLanguage and save to localStorage
+  watch(selectedSourceLanguage, (newLang) => {
+    if (typeof window === 'undefined') return;
+    localStorage.setItem(SOURCE_LANG_STORAGE_KEY, newLang)
+  })
+
   const handleExport = async () => {
     if (!canExport.value) return
 
@@ -231,10 +271,14 @@
 
     try {
       // Prepare params
-      const params = new URLSearchParams({
+      const paramsObj = {
         format: selectedFormat.value,
         positive_scores_only: positiveScoresOnly.value ? 'true' : 'false',
-      }).toString()
+      }
+      if (selectedSourceLanguage.value) {
+        paramsObj.source_lang = selectedSourceLanguage.value
+      }
+      const params = new URLSearchParams(paramsObj).toString()
 
       const response = await exportDictionary(selectedLanguage.value, params)
 

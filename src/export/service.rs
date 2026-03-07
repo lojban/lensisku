@@ -402,6 +402,25 @@ pub async fn verify_collection_access(
     Ok(is_public || user_id == Some(owner_id))
 }
 
+/// Resolve a language tag to its langid. Defaults to Lojban (langid = 1) when tag is None or blank.
+pub async fn resolve_source_langid(
+    transaction: &mut Transaction<'_>,
+    source_lang: Option<&str>,
+) -> Result<i32, Box<dyn std::error::Error + Send + Sync>> {
+    match source_lang {
+        Some(tag) if !tag.is_empty() => {
+            let row = transaction
+                .query_opt("SELECT langid FROM languages WHERE tag = $1", &[&tag])
+                .await?;
+            match row {
+                Some(r) => Ok(r.get(0)),
+                None => Err(format!("Unknown source language tag: {}", tag).into()),
+            }
+        }
+        _ => Ok(1), // Default: Lojban
+    }
+}
+
 pub async fn export_with_access_check(
     pool: &Pool,
     lang: &str,
@@ -420,9 +439,11 @@ pub async fn export_with_access_check(
             return Err("Access denied".into());
         }
     }
+    let source_langid =
+        resolve_source_langid(&mut transaction, options.source_lang.as_deref()).await?;
 
     transaction.commit().await?;
-    export_dictionary(pool, lang, format, options, options.collection_id).await
+    export_dictionary(pool, lang, format, options, options.collection_id, source_langid).await
 }
 
 pub async fn export_dictionary(
@@ -431,10 +452,11 @@ pub async fn export_dictionary(
     format: ExportFormat,
     options: &ExportOptions,
     collection_id: Option<i32>,
+    source_langid: i32,
 ) -> Result<(Vec<u8>, String, String), Box<dyn std::error::Error + Send + Sync>> {
     // For collection exports, bypass cache
     if collection_id.is_some() {
-        return generate_export(pool, lang, format, options, collection_id).await;
+        return generate_export(pool, lang, format, options, collection_id, source_langid).await;
     }
 
     let mut client = pool.get().await?;
@@ -464,7 +486,7 @@ pub async fn export_dictionary(
     transaction.commit().await?;
 
     // If not in cache, generate new export
-    generate_export(pool, lang, format, options, collection_id).await
+    generate_export(pool, lang, format, options, collection_id, source_langid).await
 }
 
 fn zip_tsv_content(
@@ -489,6 +511,7 @@ async fn generate_export(
     format: ExportFormat,
     options: &ExportOptions,
     collection_id: Option<i32>,
+    source_langid: i32,
 ) -> Result<(Vec<u8>, String, String), Box<dyn std::error::Error + Send + Sync>> {
     let filename = match collection_id {
         Some(id) => format!("collection-{}-{}.{}", id, lang, format.file_extension()),
@@ -501,27 +524,33 @@ async fn generate_export(
 
     let content = match format {
         ExportFormat::Pdf => {
-            let latex = generate_latex(&mut transaction, lang, collection_id).await?;
+            let latex =
+                generate_latex(&mut transaction, lang, collection_id, source_langid).await?;
             transaction.commit().await?;
             generate_pdf(&latex).await?
         }
         ExportFormat::LaTeX => {
-            let latex = generate_latex(&mut transaction, lang, collection_id).await?;
+            let latex =
+                generate_latex(&mut transaction, lang, collection_id, source_langid).await?;
             transaction.commit().await?;
             latex.into_bytes()
         }
         ExportFormat::Xml => {
-            let xml = generate_xml(&mut transaction, lang, options, collection_id).await?;
+            let xml =
+                generate_xml(&mut transaction, lang, options, collection_id, source_langid).await?;
             transaction.commit().await?;
             xml.into_bytes()
         }
         ExportFormat::Json => {
-            let json = generate_json(&mut transaction, lang, options, collection_id).await?;
+            let json =
+                generate_json(&mut transaction, lang, options, collection_id, source_langid)
+                    .await?;
             transaction.commit().await?;
             json.into_bytes()
         }
         ExportFormat::Tsv => {
-            let tsv = generate_tsv(&mut transaction, lang, options, collection_id).await?;
+            let tsv =
+                generate_tsv(&mut transaction, lang, options, collection_id, source_langid).await?;
             transaction.commit().await?;
             // Determine the TSV filename (without .zip extension)
             let tsv_filename = match collection_id {
@@ -601,6 +630,7 @@ async fn generate_xml(
     lang: &str,
     options: &ExportOptions,
     collection_id: Option<i32>,
+    source_langid: i32,
 ) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
     if let Some(id) = collection_id {
         // Handle collection export
@@ -740,13 +770,13 @@ async fn generate_xml(
          JOIN valsitypes t ON t.typeid = v.typeid
          {}
          WHERE vbg.langid = $1 {} {}
-         AND v.source_langid = 1
+         AND v.source_langid = $2
          ORDER BY lower(v.word)",
         collection_join, score_condition, collection_condition
     );
 
     let langid = lang_info.get::<_, i32>("langid");
-    let rows = transaction.query(&query, &[&langid]).await?;
+    let rows = transaction.query(&query, &[&langid, &source_langid]).await?;
 
     // Collect all definition IDs
     let def_ids: Vec<i32> = rows
@@ -895,6 +925,7 @@ async fn generate_latex(
     transaction: &mut Transaction<'_>,
     lang: &str,
     collection_id: Option<i32>,
+    source_langid: i32,
 ) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
     if let Some(id) = collection_id {
         // Handle collection export
@@ -964,10 +995,10 @@ async fn generate_latex(
 
     let content = if collection_id.is_some() {
         // Generate LaTeX specifically for a collection
-        generate_collection_latex(transaction, lang, collection_id.unwrap()).await?
+        generate_collection_latex(transaction, lang, collection_id.unwrap(), source_langid).await?
     } else {
         // Generate standard dictionary chapters
-        generate_chapters(transaction, lang, &escaped_lang, None).await?
+        generate_chapters(transaction, lang, &escaped_lang, None, source_langid).await?
     };
 
     Ok(format!(
@@ -983,6 +1014,7 @@ async fn generate_chapters(
     lang: &str,
     escaped_lang: &str,
     collection_id: Option<i32>,
+    source_langid: i32,
 ) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
     let lang_id: i32 = transaction
         .query_one("SELECT langid FROM languages WHERE tag = $1", &[&lang])
@@ -996,6 +1028,7 @@ async fn generate_chapters(
             lang,
             "lo smuni be bau la .lojban.",
             collection_id,
+            source_langid,
         )
         .await
     } else {
@@ -1005,6 +1038,7 @@ async fn generate_chapters(
             lang,
             escaped_lang,
             collection_id,
+            source_langid,
         )
         .await
     }
@@ -1016,8 +1050,10 @@ async fn generate_lojban_chapter(
     lang: &str,
     title: &str,
     collection_id: Option<i32>,
+    source_langid: i32,
 ) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
-    let entries = generate_lojban_entries(transaction, lang_id, lang, collection_id).await?;
+    let entries =
+        generate_lojban_entries(transaction, lang_id, lang, collection_id, source_langid).await?;
     Ok(format!("\\chapter{{{}}}{}", title, entries))
 }
 
@@ -1025,6 +1061,7 @@ async fn generate_collection_latex(
     transaction: &mut Transaction<'_>,
     lang: &str, // lang tag needed for escape_tex logic
     collection_id: i32,
+    _source_langid: i32,
 ) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
     let mut entries = String::new();
 
@@ -1124,6 +1161,7 @@ async fn generate_lojban_and_natural_chapters(
     lang: &str,
     escaped_lang: &str,
     collection_id: Option<i32>,
+    source_langid: i32,
 ) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
     let (vlaste_from_jbo, vlaste_to_jbo) = if collection_id.is_some() {
         (
@@ -1137,15 +1175,23 @@ async fn generate_lojban_and_natural_chapters(
         )
     };
 
-    let lojban_chapter =
-        generate_lojban_chapter(transaction, lang_id, lang, &vlaste_from_jbo, collection_id)
-            .await?;
+    let lojban_chapter = generate_lojban_chapter(
+        transaction,
+        lang_id,
+        lang,
+        &vlaste_from_jbo,
+        collection_id,
+        source_langid,
+    )
+    .await?;
 
     // Check if there are any natural language entries before generating that chapter
-    let has_natural_entries = check_natural_entries(transaction, lang_id, collection_id).await?;
+    let has_natural_entries =
+        check_natural_entries(transaction, lang_id, collection_id, source_langid).await?;
 
     if has_natural_entries {
-        let natural_chapter = generate_natural_chapter(transaction, lang_id, collection_id).await?;
+        let natural_chapter =
+            generate_natural_chapter(transaction, lang_id, collection_id, source_langid).await?;
         Ok(format!(
             "{}\n\\chapter{{{}}}{}",
             lojban_chapter, vlaste_to_jbo, natural_chapter
@@ -1159,6 +1205,7 @@ async fn check_natural_entries(
     transaction: &mut Transaction<'_>,
     lang_id: i32,
     collection_id: Option<i32>,
+    source_langid: i32,
 ) -> Result<bool, Box<dyn std::error::Error + Send + Sync>> {
     let collection_join = collection_id
         .map(|_| "JOIN collection_items ci ON ci.definition_id = vbg.definitionid")
@@ -1176,12 +1223,12 @@ async fn check_natural_entries(
             JOIN natlangwords nlw ON nlw.wordid = nlwbg.natlangwordid
             {}
             WHERE vbg.langid = $1 {}
-            AND v.source_langid = 1
+            AND v.source_langid = $2
         )",
         collection_join, collection_condition
     );
 
-    let row = transaction.query_one(&query, &[&lang_id]).await?;
+    let row = transaction.query_one(&query, &[&lang_id, &source_langid]).await?;
     Ok(row.get(0))
 }
 
@@ -1190,6 +1237,7 @@ async fn generate_lojban_entries(
     lang_id: i32,
     lang: &str,
     collection_id: Option<i32>,
+    source_langid: i32,
 ) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
     let mut entries = String::new();
     let collection_join = collection_id
@@ -1213,12 +1261,12 @@ async fn generate_lojban_entries(
          JOIN valsitypes t ON t.typeid = v.typeid
          {}
          {}
-         AND v.source_langid = 1
+         AND v.source_langid = $2
          ORDER BY lower(v.word)",
         collection_note_select, collection_join, where_clause
     );
 
-    let params: Vec<&(dyn postgres_types::ToSql + Sync)> = vec![&lang_id];
+    let params: Vec<&(dyn postgres_types::ToSql + Sync)> = vec![&lang_id, &source_langid];
 
     let rows = transaction.query(&query, &params[..]).await?;
 
@@ -1242,6 +1290,7 @@ async fn generate_natural_chapter(
     transaction: &mut Transaction<'_>,
     lang_id: i32,
     collection_id: Option<i32>,
+    source_langid: i32,
 ) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
     let collection_join = collection_id
         .map(|_| "JOIN collection_items ci ON ci.definition_id = vbg.definitionid")
@@ -1261,7 +1310,7 @@ async fn generate_natural_chapter(
          JOIN natlangwords nlw ON nlw.wordid = nlwbg.natlangwordid
          {}
          WHERE vbg.langid = $1 {}
-         AND v.source_langid = 1
+         AND v.source_langid = $2
          AND EXISTS (
           SELECT 1
           FROM keywordmapping km
@@ -1271,7 +1320,7 @@ async fn generate_natural_chapter(
         collection_note_select, collection_join, collection_condition
     );
 
-    let rows = transaction.query(&query, &[&lang_id]).await?;
+    let rows = transaction.query(&query, &[&lang_id, &source_langid]).await?;
     let mut entries = String::new();
 
     for row in rows {
@@ -1306,6 +1355,7 @@ async fn generate_tsv(
     lang: &str,
     options: &ExportOptions,
     collection_id: Option<i32>,
+    source_langid: i32,
 ) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
     if let Some(id) = collection_id {
         // Handle collection export
@@ -1400,7 +1450,7 @@ async fn generate_tsv(
          JOIN valsitypes t ON t.typeid = v.typeid
          {}
          WHERE vbg.langid = $1 {} {}
-         AND v.source_langid = 1
+         AND v.source_langid = $2
          ORDER BY lower(v.word)",
         collection_note_select, collection_join, score_condition, collection_condition
     );
@@ -1410,7 +1460,7 @@ async fn generate_tsv(
         .await?
         .get::<_, i32>("langid");
 
-    let rows = transaction.query(&query, &[&langid]).await?;
+    let rows = transaction.query(&query, &[&langid, &source_langid]).await?;
 
     // Collect all definition IDs
     let def_ids: Vec<i32> = rows
@@ -1559,6 +1609,7 @@ async fn generate_json(
     lang: &str,
     options: &ExportOptions,
     collection_id: Option<i32>,
+    source_langid: i32,
 ) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
     if let Some(id) = collection_id {
         // Handle collection export
@@ -1632,7 +1683,7 @@ async fn generate_json(
          LEFT JOIN users u ON u.userid = d.userid
          {}
          WHERE vbg.langid = $1 {} {}
-         AND v.source_langid = 1
+         AND v.source_langid = $2
          ORDER BY lower(v.word)",
         collection_note_select, collection_join, score_condition, collection_condition
     );
@@ -1642,7 +1693,7 @@ async fn generate_json(
         .await?
         .get::<_, i32>("langid");
 
-    let rows = transaction.query(&query, &[&langid]).await?;
+    let rows = transaction.query(&query, &[&langid, &source_langid]).await?;
 
     // Collect all definition IDs
     let def_ids: Vec<i32> = rows
@@ -1797,7 +1848,7 @@ pub async fn export_all_dictionaries(pool: &Pool) -> Result<(), Box<dyn Error + 
                 lang, format
             );
 
-            match export_dictionary(pool, &lang, *format, &Default::default(), None).await {
+            match export_dictionary(pool, &lang, *format, &Default::default(), None, 1).await {
                 Ok((content, content_type, filename)) => {
                     if let Err(e) = transaction
                         .execute(
