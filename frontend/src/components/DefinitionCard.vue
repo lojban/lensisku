@@ -203,6 +203,32 @@
           <LazyMathJax :content="definition.etymology" :enable-markdown="true" />
         </div>
 
+        <div v-if="hasMetadata" class="w-full mt-2">
+          <h4 class="italic text-gray-600 mb-2">
+            {{ t('components.definitionCard.metadataLabel') }}
+          </h4>
+          <div class="overflow-x-auto border rounded-md">
+            <table class="min-w-full divide-y divide-gray-200 text-sm">
+              <thead class="bg-gray-50 uppercase tracking-wider text-[10px] font-semibold text-gray-500">
+                <tr>
+                  <th scope="col" class="px-3 py-2 text-left">{{ t('components.definitionCard.metadataKey') }}</th>
+                  <th scope="col" class="px-3 py-2 text-left">{{ t('components.definitionCard.metadataValue') }}</th>
+                </tr>
+              </thead>
+              <tbody class="bg-white divide-y divide-gray-100">
+                <tr v-for="(value, key) in definition.metadata" :key="key" class="hover:bg-gray-50/50">
+                  <td class="px-3 py-2 whitespace-nowrap text-gray-500 font-mono text-xs font-semibold">
+                    {{ key }}
+                  </td>
+                  <td class="px-3 py-2 text-gray-700">
+                    {{ value }}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
         <div v-if="definition.examples && definition.examples.length > 0" class="w-full mt-2">
           <h4 class="italic text-gray-600 mb-2">
             {{ t('components.definitionCard.examplesLabel') }}
@@ -652,8 +678,12 @@ const hasNotes = computed(() =>
   )
 )
 
+const hasMetadata = computed(() => {
+  return props.definition.metadata && Object.keys(props.definition.metadata).length > 0;
+})
+
 const hasAdditionalInfo = computed(() => {
-  return props.definition.notes || props.definition.selmaho
+  return props.definition.notes || props.definition.selmaho || props.definition.etymology || (props.definition.examples && props.definition.examples.length > 0) || props.definition.has_image || props.definition.owner_only || hasMetadata.value
 })
 
 const selmahoLinkQuery = computed(() => {

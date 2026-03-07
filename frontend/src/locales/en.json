@@ -1034,7 +1034,10 @@
       "searching": "Searching...",
       "wordType": "Word type:",
       "language": "Language:",
-      "link": "Link"
+      "link": "Link",
+      "metadataLabel": "Metadata:",
+      "metadataKey": "Key",
+      "metadataValue": "Value"
     },
     "imageUploadButton": {
       "invalidType": "Please select an image file",
