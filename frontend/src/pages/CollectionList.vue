@@ -95,8 +95,8 @@
   </div>
 
   <!-- Sort Controls -->
-  <div class="flex flex-wrap items-center gap-2 mb-4">
-    <div class="flex flex-wrap justify-center gap-1 sm:justify-start" role="group">
+  <div class="flex flex-wrap items-center justify-center gap-2 mb-4">
+    <div class="flex flex-wrap justify-center gap-1" role="group">
       <button
         v-for="opt in sortOptions"
         :key="opt.value"
