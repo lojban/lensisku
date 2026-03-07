@@ -1,22 +1,16 @@
 <template>
   <Card elevated class="collection-card">
     <template #header>
-      <div class="space-y-2">
-        <div class="flex items-center justify-between gap-2 min-w-0">
+      <div class="space-y-2 flex flex-col items-center">
+        <div class="flex items-center justify-center gap-2 w-full min-w-0">
           <RouterLink
             :to="`/collections/${collection.collection_id}`"
-            class="card-title min-w-0 flex-1 line-clamp-2 whitespace-normal"
+            class="card-title min-w-0 flex-1 line-clamp-2 whitespace-normal text-center"
           >
             {{ collection.name }}
           </RouterLink>
-          <!-- <span
-            class="badge shrink-0"
-            :class="collection.is_public ? 'badge-public' : 'badge-private'"
-          >
-            {{ collection.is_public ? publicLabel : privateLabel }}
-          </span> -->
         </div>
-        <p v-if="collection.description" class="card-description">
+        <p v-if="collection.description" class="card-description text-center">
           {{ collection.description }}
         </p>
       </div>
