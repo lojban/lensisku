@@ -135,7 +135,6 @@
         :study-loading="studyLoadingId === collection.collection_id"
         :format-date="formatDate"
         :study-button-label="t('collectionList.studyButton')"
-        :studying-label="t('collectionList.studying')"
         :collection-button-label="t('collectionList.collectionButton')"
         :flashcards-button-label="t('collectionList.flashcardsButton')"
         :created-by-label="t('collectionList.createdBy')"

@@ -423,20 +423,26 @@ const router = useRouter();
 const { t, locale } = useI18n();
 const { getProgress } = useAnonymousProgress();
 
-const startStudy = () => {
-  if (auth.state.isLoggedIn) {
-    router.push(`/collections/${props.collectionId}/flashcards/study`);
-    return;
-  }
+function startStudy() {
   const sorted = [...levels.value].sort((a, b) => a.position - b.position);
-  const firstUnlocked = sorted.find((l) => isLevelUnlockedForAnon(l));
-  const levelId = firstUnlocked?.level_id ?? sorted[0]?.level_id;
-  if (levelId) {
-    router.push(`/collections/${props.collectionId}/flashcards/study?levelId=${levelId}`);
+  let targetLevelId = null;
+
+  if (auth.state.isLoggedIn) {
+    const firstUnlockedIncomplete = sorted.find((level) => 
+      (!level.is_locked || !!level.progress?.is_unlocked) && !level.progress?.is_completed
+    );
+    targetLevelId = firstUnlockedIncomplete?.level_id ?? sorted[0]?.level_id;
+  } else {
+    const firstUnlocked = sorted.find((l) => isLevelUnlockedForAnon(l));
+    targetLevelId = firstUnlocked?.level_id ?? sorted[0]?.level_id;
+  }
+
+  if (targetLevelId) {
+    router.push(`/collections/${props.collectionId}/flashcards/study?levelId=${targetLevelId}`);
   } else {
     router.push(`/collections/${props.collectionId}/flashcards/study`);
   }
-};
+}
 
 // State
 const collection = ref(null)

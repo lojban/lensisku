@@ -30,7 +30,7 @@
             <template #icon>
               <GraduationCap v-if="!studyLoading" class="w-4 h-4 shrink-0" />
             </template>
-            {{ studyLoading ? studyingLabel : studyButtonLabel }}
+            {{ studyButtonLabel }}
           </Button>
         </div>
         <div class="card-actions">
@@ -133,7 +133,6 @@ const props = defineProps({
     required: true,
   },
   studyButtonLabel: { type: String, default: 'Study' },
-  studyingLabel: { type: String, default: '…' },
   collectionButtonLabel: { type: String, default: 'Collection' },
   flashcardsButtonLabel: { type: String, default: 'Flashcards' },
   createdByLabel: { type: String, default: 'by' },

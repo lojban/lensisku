@@ -46,7 +46,7 @@
     <div class="flex justify-center">
       <button ref="returnToDeckButtonRef" class="btn-get w-auto h-10 text-base shadow-sm"
         @click="router.push(returnToUrl)">
-        {{ isAnonLevelMode ? t('flashcardStudy.returnToLevels', 'Back to levels') : t('flashcardStudy.returnToDeck') }}
+        {{ levelIdParam != null ? t('flashcardStudy.returnToLevels', 'Back to levels') : t('flashcardStudy.returnToDeck') }}
       </button>
     </div>
   </div>
@@ -284,8 +284,8 @@ const isAnonNoLevelsMode = ref(false) // anon studying collection with no levels
 const anonLevelMeta = ref(null) // { min_cards, min_success_rate } when in anon level mode
 
 const returnToUrl = computed(() => {
+  if (levelIdParam.value != null) return `/collections/${route.params.collectionId}/levels`
   if (isAnonNoLevelsMode.value) return `/collections/${route.params.collectionId}/flashcards`
-  if (isAnonLevelMode.value) return `/collections/${route.params.collectionId}/levels`
   return `/collections/${route.params.collectionId}/flashcards`
 })
 
