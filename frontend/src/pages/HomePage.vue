@@ -39,7 +39,7 @@
     </div>
     <!-- Trending Comments -->
     <div
-      v-else-if="trendingComments.length > 0"
+      v-if="trendingComments.length > 0"
       class="space-y-4"
     >
       <h2 class="text-xl sm:text-2xl font-bold text-gray-800 select-none">
@@ -65,8 +65,8 @@
 
     <!-- Recent Changes -->
     <div
-      v-else-if="recentChanges.length > 0"
-      class="space-y-4"
+      v-if="recentChanges.length > 0"
+      class="space-y-4 mt-8"
     >
       <div
         class="flex flex-col md:flex-row justify-between items-start sm:items-center gap-3 sm:space-x-2 w-full sm:w-auto ml-auto"
@@ -74,15 +74,6 @@
         <h2 class="text-xl sm:text-2xl font-bold text-gray-800 select-none">
           {{ $t('home.recentChanges') }}
         </h2>
-        <!-- <div class="flex flex-wrap items-start sm:items-center gap-3 sm:space-x-4 ml-auto">
-          <div v-if="auth.isLoading" class="w-[120px] h-6 bg-gray-100 animate-pulse rounded-full"></div>
-          <div v-else class="flex flex-wrap items-start sm:items-center gap-3 sm:space-x-4 ml-auto">
-            <IconButton v-if="auth.state.isLoggedIn && decodedRole !== 'Unconfirmed'" label="Definition"
-              buttonClasses="btn-aqua-emerald" @click="router.push('/valsi/add')" />
-            <IconButton v-if="auth.state.isLoggedIn" label="New Free Thread" buttonClasses="btn-aqua-rose"
-              @click="handleNewFreeComment" />
-          </div>
-        </div> -->
       </div>
       <div
         v-for="(group, index) in groupedChanges"
@@ -661,30 +652,24 @@ const fetchTrendingAndChanges = async () => {
   // Try to load cached recent changes immediately for instant display
   const cachedChanges = getCachedRecentChanges()
   if (cachedChanges) {
-    recentChanges.value = cachedChanges.slice(0, 20)
+    recentChanges.value = cachedChanges.slice(0, 10)
     isLoadingChanges.value = false
   }
   
   try {
-    const response = await getTrendingComments({
-      limit: 20,
+    const trendingResponse = await getTrendingComments({
+      limit: 10,
       timespan: 'month',
     })
-    trendingComments.value = response.data
+    trendingComments.value = trendingResponse.data
 
-    if (trendingComments.value.length === 0) {
-      // Only show loading if we don't have cached data
-      if (!cachedChanges) {
-        isLoadingChanges.value = true
-      }
-      
-      const response = await getRecentChanges({ days: 70 })
-      const changes = response.data.changes.slice(0, 20)
-      recentChanges.value = changes
-      
-      // Cache the fresh data
-      setCachedRecentChanges(response.data.changes)
-    }
+    // Always fetch recent changes to keep them fresh
+    const recentResponse = await getRecentChanges({ days: 70, limit: 10, types: 'comment,definition' })
+    const changes = recentResponse.data.changes
+    recentChanges.value = changes
+    
+    // Cache the fresh data
+    setCachedRecentChanges(changes)
   } catch (e) {
     console.error('Error fetching data:', e)
     // If we have cached data and fetch fails, keep using cached data

@@ -192,6 +192,8 @@ pub struct RecentChangesResponse {
 #[derive(Debug, Deserialize, ToSchema)]
 pub struct RecentChangesQuery {
     pub days: Option<i32>,
+    pub limit: Option<i64>,
+    pub types: Option<String>,
 }
 
 #[derive(Debug, Deserialize, ToSchema)]

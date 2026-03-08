@@ -3020,21 +3020,29 @@ async fn fetch_comment_bookmarks_for_changes(
 pub async fn get_recent_changes(
     pool: &Pool,
     days: i32,
+    limit: Option<i64>,
+    types: Option<String>,
     redis_cache: &RedisCache,
     user_id: Option<i32>,
 ) -> Result<RecentChangesResponse, Box<dyn std::error::Error>> {
     use std::time::Duration as StdDuration;
 
-    // Cache key includes user_id when authenticated so per-user reactions/bookmarks are cached
+    // Cache key includes limit and types
     let cache_key = match user_id {
-        None => format!("recent_changes:{}", days),
-        Some(uid) => format!("recent_changes:{}:user:{}", days, uid),
+        None => format!(
+            "recent_changes:{}:limit:{:?}:types:{:?}",
+            days, limit, types
+        ),
+        Some(uid) => format!(
+            "recent_changes:{}:limit:{:?}:types:{:?}:user:{}",
+            days, limit, types, uid
+        ),
     };
 
     // Cache for 5 minutes (300 seconds) - recent changes should be relatively fresh
     let cache_ttl = StdDuration::from_secs(300);
 
-    let user_id = user_id;
+    let types_cloned = types.clone();
 
     // Use Redis cache with get_or_set pattern
     let response = redis_cache
@@ -3049,13 +3057,20 @@ pub async fn get_recent_changes(
 
                 let mut changes = Vec::new();
 
-                // Get base changes first
-                let base_changes = transaction
-        .query(
-            "
-        WITH all_changes AS (
-            -- Comments
-            SELECT
+                // Determine which branches of UNION to include based on 'types' query param
+                let requested_types: Vec<&str> = if let Some(t) = &types_cloned {
+                    t.split(',').collect()
+                } else {
+                    vec!["comment", "definition", "valsi", "message"]
+                };
+
+                let limit_val = limit.unwrap_or(100);
+
+                let mut queries = Vec::new();
+
+                if requested_types.contains(&"comment") {
+                    queries.push(format!(
+                        "(SELECT
                 'comment' AS change_type,
                 c.subject AS word,
                 c.content AS content,
@@ -3079,12 +3094,15 @@ pub async fn get_recent_changes(
             JOIN users u ON c.userid = u.userid
             JOIN definitions d ON d.definitionid = t.definitionid
             LEFT JOIN languages l ON d.langid = l.langid
-            WHERE c.time > $1 AND u.username != 'officialdata'
+            WHERE c.time > {} AND u.username != 'officialdata'
+            ORDER BY c.time DESC LIMIT {})",
+                        back_timestamp, limit_val
+                    ));
+                }
 
-            UNION ALL
-
-            -- Definitions
-            SELECT
+                if requested_types.contains(&"definition") {
+                    queries.push(format!(
+                        "(SELECT
                 'definition' AS change_type,
                 v.word,
                 to_jsonb(dv.message) as content,
@@ -3098,10 +3116,11 @@ pub async fn get_recent_changes(
                 EXTRACT(EPOCH FROM dv.created_at)::integer as time,
                 l.realname AS language_name,
                 dv.version_id,
-                LAG(dv.version_id) OVER (
-                    PARTITION BY d.definitionid
-                    ORDER BY dv.created_at
-                ) as prev_version_id,
+                (SELECT prev_dv.version_id 
+                 FROM definition_versions prev_dv 
+                 WHERE prev_dv.definition_id = dv.definition_id 
+                   AND prev_dv.created_at < dv.created_at 
+                 ORDER BY prev_dv.created_at DESC LIMIT 1) as prev_version_id,
                 NULL::text AS valsi_word,
                 NULL::integer AS commentnum,
                 NULL::integer AS parentid
@@ -3110,15 +3129,18 @@ pub async fn get_recent_changes(
             JOIN valsi v ON d.valsiid = v.valsiid
             JOIN users u ON dv.user_id = u.userid
             LEFT JOIN languages l ON d.langid = l.langid
-            WHERE dv.created_at > to_timestamp($1) AND u.username != 'officialdata' AND v.source_langid = 1
+            WHERE dv.created_at > to_timestamp({}) AND u.username != 'officialdata' AND v.source_langid = 1
+            ORDER BY dv.created_at DESC LIMIT {})",
+                        back_timestamp, limit_val
+                    ));
+                }
 
-            UNION ALL
-
-            -- Valsi
-            SELECT
+                if requested_types.contains(&"valsi") {
+                    queries.push(format!(
+                        "(SELECT
                 'valsi' AS change_type,
                 v.word,
-                '{}'::jsonb as content,
+                '{{}}'::jsonb as content,
                 v.valsiid,
                 0 AS langid,
                 0 AS natlangwordid,
@@ -3135,12 +3157,15 @@ pub async fn get_recent_changes(
                 NULL::integer AS parentid
             FROM valsi v
             JOIN users u ON v.userid = u.userid
-            WHERE v.time > $1 AND u.username != 'officialdata' AND v.source_langid = 1
+            WHERE v.time > {} AND u.username != 'officialdata' AND v.source_langid = 1
+            ORDER BY v.time DESC LIMIT {})",
+                        back_timestamp, limit_val
+                    ));
+                }
 
-            UNION ALL
-
-            -- Messages
-            SELECT
+                if requested_types.contains(&"message") {
+                    queries.push(format!(
+                        "(SELECT
                 'message' AS change_type,
                 COALESCE(m.subject, '') AS word,
                 to_jsonb(COALESCE(m.content, '')) as content,
@@ -3159,18 +3184,30 @@ pub async fn get_recent_changes(
                 NULL::integer AS commentnum,
                 NULL::integer AS parentid
             FROM messages m
-            WHERE m.sent_at > to_timestamp($1)
+            WHERE m.sent_at > to_timestamp({})
             AND NOT EXISTS (
                 SELECT 1
                 FROM message_spam_votes msv
                 WHERE msv.message_id = m.id
             )
-        )
-        SELECT * FROM all_changes
-        ORDER BY time DESC",
-            &[&back_timestamp],
-        )
-        .await?;
+            ORDER BY m.sent_at DESC LIMIT {})",
+                        back_timestamp, limit_val
+                    ));
+                }
+
+                if queries.is_empty() {
+                    return Ok(RecentChangesResponse { changes: vec![], total: 0 });
+                }
+
+                let final_query = format!(
+                    "WITH all_changes AS ({})
+                     SELECT * FROM all_changes
+                     ORDER BY time DESC LIMIT {}",
+                    queries.join(" UNION ALL "),
+                    limit_val
+                );
+
+                let base_changes = transaction.query(&final_query, &[]).await?;
 
                 // Process each change and add diffs for definitions
                 for row in base_changes {
