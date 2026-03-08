@@ -1303,5 +1303,8 @@
     "pageDescription": "cupra lo lojbo ciksi selyli'e.",
     "loadError": "fliba lo nu jgari lo bangu",
     "exportError": "fliba lo nu cupra lo selyli'e"
+  },
+  "lingo": {
+    "appName": "lentadni"
   }
 }

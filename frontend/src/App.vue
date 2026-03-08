@@ -196,9 +196,19 @@
   </div>
 
   <!-- Main content -->
-  <main class="main-content" :class="{ 'scrollbar-always': route.meta.alwaysShowScrollbar }">
-    <div class="pt-3 max-w-4xl mx-auto min-h-[calc(100vh-12rem)] relative flex flex-col" id="main-child">
-      <div class="flex-1 px-3">
+  <main class="main-content" :class="[
+    { 'scrollbar-always': route.meta.alwaysShowScrollbar },
+    route.meta.fullHeight ? 'main-content--no-scroll' : ''
+  ]">
+    <div
+      class="max-w-4xl mx-auto relative flex flex-col"
+      :class="[
+        route.meta.fullHeight ? 'main-child-full-height w-full sm:w-[380px] sm:min-w-[380px] sm:max-w-[380px]' : 'min-h-[calc(100vh-12rem)]',
+        route.path.startsWith('/lingo') ? 'lg:pl-64' : ''
+      ]"
+      id="main-child"
+    >
+      <div class="flex-1" :class="{ 'main-child-inner-full-height': route.meta.fullHeight }">
         <router-view v-slot="{ Component, route }">
           <component :is="Component" v-bind="route.meta.props" v-on="(route.name === 'Home' || route.name?.startsWith('Home-'))
             ? {
@@ -211,7 +221,7 @@
         </router-view>
       </div>
 
-      <footer v-if="!route.meta.hideFooter" class="mt-6 p-3 text-center text-xs text-gray-500 leading-relaxed">
+      <footer v-if="!route.meta.hideFooter" class="mt-6 max-w-full break-words px-3 py-3 text-center text-xs text-gray-500 leading-relaxed">
         {{ $t('footer.publicDomainNotice') }}
       </footer>
     </div>
@@ -221,7 +231,7 @@
   <div v-if="showActionModal" class="fixed inset-0 z-40" @click="showActionModal = false"></div>
 
   <!-- Floating Action Button -->
-  <div class="max-w-4xl mx-auto relative" v-if="auth.state.isLoggedIn && route.name !== 'flashcard-study'">
+  <div class="max-w-4xl mx-auto relative" v-if="auth.state.isLoggedIn && route.name !== 'flashcard-study' && !route.meta.fullHeight">
     <div
       class="fixed md:absolute bottom-6 right-4 md:bottom-8 md:right-8 lg:-right-4 lg:-mr-4 z-50 flex flex-col items-end gap-3">
       
@@ -253,7 +263,7 @@
     </div>
   </div>
 
-  <FooterComponent />
+  <FooterComponent v-if="!route.meta.fullHeight" />
 </template>
 
 <script setup>
@@ -747,6 +757,47 @@ footer {
 
 .main-content.scrollbar-always {
   overflow-y: scroll;
+}
+
+/* Full-height pages (e.g. Lingo study): no scrollbar, child fills main */
+.main-content.main-content--no-scroll {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 57px);
+  padding-bottom: 0;
+}
+@media (min-width: 640px) {
+  .main-content.main-content--no-scroll {
+    height: calc(100vh - 49px);
+  }
+}
+
+.main-content.main-content--no-scroll > #main-child {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* Prevent page scroll when full-height study is active */
+html:has(.main-content.main-content--no-scroll),
+body:has(.main-content.main-content--no-scroll) {
+  overflow: hidden;
+  height: 100%;
+}
+
+.main-child-full-height {
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.main-child-inner-full-height {
+  flex: 1 1 0;
+  min-height: 0;
+  padding-left: 0;
+  padding-right: 0;
+  overflow: hidden;
 }
 
 .sihesle {

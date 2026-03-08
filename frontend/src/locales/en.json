@@ -1305,5 +1305,8 @@
     "pageDescription": "Export linked Lojban definition pairs.",
     "loadError": "Failed to load languages",
     "exportError": "Failed to export pairs"
+  },
+  "lingo": {
+    "appName": "lentadni"
   }
 }
