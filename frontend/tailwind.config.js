@@ -186,10 +186,6 @@ export default {
             '@apply aqua-base bg-emerald-400': {},
             '--aqua-hue': '160',
           },
-          '.btn-aqua-green': {
-            '@apply aqua-base bg-green-300': {},
-            '--aqua-hue': '142',
-          },
           '.btn-aqua-rose': {
             '@apply aqua-base bg-rose-400': {},
             '--aqua-hue': '350',
@@ -210,7 +206,7 @@ export default {
             '@apply aqua-base bg-lime-400': {},
             '--aqua-hue': '84',
           },
-          '.btn-aqua-teal': {
+          '.btn-aqua-green': {
             '@apply aqua-base bg-teal-400': {},
             '--aqua-hue': '173',
           },

@@ -230,10 +230,62 @@ const baseRoutes: Array<RouteRecordRaw> = [
     component: () => import("../pages/FlashcardStudyView.vue"),
   },
   {
+    path: "/collections/:collectionId/lingo/study",
+    name: "LingoStudy",
+    component: () => import("../pages/LingoStudyView.vue"),
+    meta: { hideFooter: true, fullHeight: true },
+  },
+  {
     path: "/collections/:collectionId/levels",
     name: "FlashcardLevels",
     component: () => import("../pages/FlashcardLevels.vue"),
     props: true,
+  },
+  {
+    path: "/collections/:collectionId/lingo/levels",
+    name: "LingoLevels",
+    component: () => import("../pages/LingoLevels.vue"),
+    props: true,
+  },
+  {
+    path: "/lingo",
+    name: "LingoHome",
+    component: () => import("../pages/LingoHome.vue"),
+  },
+  {
+    path: "/lingo/courses",
+    name: "LingoCourses",
+    component: () => import("../pages/LingoCourses.vue"),
+  },
+  {
+    path: "/lingo/learn",
+    name: "LingoLearn",
+    component: () => import("../pages/LingoLearn.vue"),
+  },
+  {
+    path: "/lingo/leaderboard",
+    name: "LingoLeaderboard",
+    component: () => import("../pages/LingoLeaderboard.vue"),
+  },
+  {
+    path: "/lingo/quests",
+    name: "LingoQuests",
+    component: () => import("../pages/LingoQuests.vue"),
+  },
+  {
+    path: "/lingo/shop",
+    name: "LingoShop",
+    component: () => import("../pages/LingoShop.vue"),
+  },
+  {
+    path: "/lingo/login",
+    name: "LingoLogin",
+    component: () => import("../pages/LingoLogin.vue"),
+  },
+  {
+    path: "/lingo/signup",
+    name: "LingoSignup",
+    component: () => import("../pages/LingoSignup.vue"),
   },
   {
     path: "/change-password",

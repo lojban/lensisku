@@ -27,7 +27,6 @@ const VARIANT_CLASSES = {
   'aqua-lime': 'btn-aqua-lime',
   'aqua-green': 'btn-aqua-green',
   'aqua-emerald': 'btn-aqua-emerald',
-  'aqua-teal': 'btn-aqua-teal',
   'aqua-cyan': 'btn-aqua-cyan',
   'aqua-sky': 'btn-aqua-sky',
   'aqua-blue': 'btn-aqua-blue',
