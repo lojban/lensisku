@@ -370,6 +370,11 @@ export const submitFillinAnswer = async (data) => {
   return api.post(`/flashcards/${data.flashcard_id}/fillin`, data)
 }
 
+/** Submit selected option for a quiz (multiple-choice) flashcard. */
+export const submitQuizAnswer = async (data) => {
+  return api.post('/flashcards/quiz/submit', data)
+}
+
 export const deleteFlashcard = async (flashcardId) => {
   return api.delete(`/flashcards/${flashcardId}`)
 }

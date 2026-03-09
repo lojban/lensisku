@@ -274,9 +274,12 @@
           </select>
           <label v-if="itemType === 'quiz'" class="block text-sm font-medium text-gray-700 mb-2">{{ t('collectionDetail.quizDirectionLabel') }}</label>
           <select v-if="itemType === 'quiz'" v-model="addItemDirection" class="w-full input-field text-sm">
-            <option value="QuizDirect">{{ t('collectionDetail.direction.direct') }}</option>
-            <option value="QuizReverse">{{ t('collectionDetail.direction.reverse') }}</option>
-            <option value="QuizBoth">{{ t('collectionDetail.direction.both') }}</option>
+            <option value="quiz_direct">{{ t('collectionDetail.direction.direct') }}</option>
+            <option value="quiz_reverse">{{ t('collectionDetail.direction.reverse') }}</option>
+            <option value="quiz_both">{{ t('collectionDetail.direction.both') }}</option>
+            <option value="quiz_image_direct">{{ t('collectionDetail.direction.quizImageDirect') }}</option>
+            <option value="quiz_image_reverse">{{ t('collectionDetail.direction.quizImageReverse') }}</option>
+            <option value="quiz_image_both">{{ t('collectionDetail.direction.quizImageBoth') }}</option>
           </select>
 
           <div class="flex items-center space-x-2">
@@ -457,9 +460,12 @@
 
         <label class="block text-sm font-medium text-gray-700 mb-2">{{ t('collectionDetail.quizDirectionLabel') }}</label>
         <select v-model="addItemDirection" class="w-full input-field text-sm">
-            <option value="QuizDirect">{{ t('collectionDetail.direction.direct') }}</option>
-            <option value="QuizReverse">{{ t('collectionDetail.direction.reverse') }}</option>
-            <option value="QuizBoth">{{ t('collectionDetail.direction.both') }}</option>
+            <option value="quiz_direct">{{ t('collectionDetail.direction.direct') }}</option>
+            <option value="quiz_reverse">{{ t('collectionDetail.direction.reverse') }}</option>
+            <option value="quiz_both">{{ t('collectionDetail.direction.both') }}</option>
+            <option value="quiz_image_direct">{{ t('collectionDetail.direction.quizImageDirect') }}</option>
+            <option value="quiz_image_reverse">{{ t('collectionDetail.direction.quizImageReverse') }}</option>
+            <option value="quiz_image_both">{{ t('collectionDetail.direction.quizImageBoth') }}</option>
         </select>
       </div>
 

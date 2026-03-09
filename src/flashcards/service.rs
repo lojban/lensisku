@@ -324,7 +324,21 @@ pub async fn create_flashcard(
                 &[&flashcard_id, &correct_answer_text]
             ).await?;
             initialize_progress(&transaction, user_id, flashcard_id, "direct").await?;
-            // Quiz progress tracked on "direct" side for FSRS
+        }
+        FlashcardDirection::QuizImageDirect
+        | FlashcardDirection::QuizImageReverse
+        | FlashcardDirection::QuizImageBoth => {
+            let correct_answer_text = match req.direction {
+                FlashcardDirection::QuizImageDirect => format!("{}:front", item_id),
+                FlashcardDirection::QuizImageReverse => format!("{}:back", item_id),
+                FlashcardDirection::QuizImageBoth => item_id.to_string(),
+                _ => unreachable!(),
+            };
+            transaction.execute(
+                "INSERT INTO flashcard_quiz_options (flashcard_id, correct_answer_text) VALUES ($1, $2)",
+                &[&flashcard_id, &correct_answer_text]
+            ).await?;
+            initialize_progress(&transaction, user_id, flashcard_id, "direct").await?;
         }
     }
 
@@ -544,7 +558,7 @@ pub async fn generate_and_set_quiz_options(
     // Fetch flashcard and related item details
     let flashcard_details_row = transaction
         .query_one(
-            "SELECT f.direction, ci.definition_id, ci.free_content_front, ci.free_content_back
+            "SELECT f.direction, f.item_id, ci.definition_id, ci.free_content_front, ci.free_content_back
          FROM flashcards f
          JOIN collection_items ci ON f.item_id = ci.item_id
          WHERE f.id = $1",
@@ -553,28 +567,46 @@ pub async fn generate_and_set_quiz_options(
         .await?;
 
     let direction: FlashcardDirection = flashcard_details_row.get("direction");
+    let item_id: i32 = flashcard_details_row.get("item_id");
     let definition_id: Option<i32> = flashcard_details_row.get("definition_id");
     let free_content_front: Option<String> = flashcard_details_row.get("free_content_front");
     let free_content_back: Option<String> = flashcard_details_row.get("free_content_back");
 
-    // Ensure the flashcard is a quiz type
+    // Ensure the flashcard is a quiz type (text or image options)
     if !matches!(
         direction,
         FlashcardDirection::QuizDirect
             | FlashcardDirection::QuizReverse
             | FlashcardDirection::QuizBoth
+            | FlashcardDirection::QuizImageDirect
+            | FlashcardDirection::QuizImageReverse
+            | FlashcardDirection::QuizImageBoth
     ) {
         return Err("Flashcard is not a quiz type.".into());
     }
 
-    let correct_answer_text = determine_correct_answer_for_quiz(
-        &transaction,
-        &direction,
-        definition_id,
-        free_content_front.as_deref(),
-        free_content_back.as_deref(),
-    )
-    .await?;
+    let correct_answer_text = if matches!(
+        direction,
+        FlashcardDirection::QuizImageDirect
+            | FlashcardDirection::QuizImageReverse
+            | FlashcardDirection::QuizImageBoth
+    ) {
+        match direction {
+            FlashcardDirection::QuizImageDirect => format!("{}:front", item_id),
+            FlashcardDirection::QuizImageReverse => format!("{}:back", item_id),
+            FlashcardDirection::QuizImageBoth => item_id.to_string(),
+            _ => unreachable!(),
+        }
+    } else {
+        determine_correct_answer_for_quiz(
+            &transaction,
+            &direction,
+            definition_id,
+            free_content_front.as_deref(),
+            free_content_back.as_deref(),
+        )
+        .await?
+    };
 
     // Insert or update the quiz option
     let quiz_option_row = transaction
@@ -880,11 +912,11 @@ pub async fn list_flashcards(
                 }
                 FlashcardDirection::QuizDirect
                 | FlashcardDirection::QuizReverse
-                | FlashcardDirection::QuizBoth => {
-                    // This case should ideally be handled by prior logic ensuring quiz_options exist.
-                    // If progress is missing for a quiz, initialize it.
+                | FlashcardDirection::QuizBoth
+                | FlashcardDirection::QuizImageDirect
+                | FlashcardDirection::QuizImageReverse
+                | FlashcardDirection::QuizImageBoth => {
                     initialize_progress(&transaction, user_id, flashcard_id, "direct").await?;
-                    // Quiz progress tracked on "direct" side for FSRS
                 }
             }
             continue;
@@ -942,18 +974,21 @@ pub async fn list_flashcards(
             FlashcardDirection::QuizDirect
                 | FlashcardDirection::QuizReverse
                 | FlashcardDirection::QuizBoth
+                | FlashcardDirection::QuizImageDirect
+                | FlashcardDirection::QuizImageReverse
+                | FlashcardDirection::QuizImageBoth
         ) {
             let effective_quiz_direction = match direction {
-                FlashcardDirection::QuizDirect => "direct",
-                FlashcardDirection::QuizReverse => "reverse",
-                FlashcardDirection::QuizBoth => {
+                FlashcardDirection::QuizDirect | FlashcardDirection::QuizImageDirect => "direct",
+                FlashcardDirection::QuizReverse | FlashcardDirection::QuizImageReverse => "reverse",
+                FlashcardDirection::QuizBoth | FlashcardDirection::QuizImageBoth => {
                     if rand::random() {
                         "direct"
                     } else {
                         "reverse"
                     }
-                } // Randomly pick for QuizBoth
-                _ => "direct", // Default, should not happen for quiz types
+                }
+                _ => "direct",
             };
             match get_quiz_options_for_listing(
                 &transaction,
@@ -1104,7 +1139,7 @@ async fn get_quiz_options_for_listing(
 ) -> Result<(String, Vec<String>), Box<dyn std::error::Error>> {
     // 1. Fetch the flashcard details to determine question and correct answer source
     let card_details_row = transaction.query_one(
-        "SELECT f.direction as actual_direction, ci.definition_id, ci.free_content_front, ci.free_content_back,
+        "SELECT f.direction as actual_direction, f.collection_id, f.item_id, ci.definition_id, ci.free_content_front, ci.free_content_back,
                 v.word, d.definition, fqo.correct_answer_text
          FROM flashcards f
          JOIN collection_items ci ON f.item_id = ci.item_id
@@ -1115,6 +1150,7 @@ async fn get_quiz_options_for_listing(
         &[&flashcard_id]
     ).await?;
 
+    let actual_direction: FlashcardDirection = card_details_row.get("actual_direction");
     let definition_id: Option<i32> = card_details_row.get("definition_id");
     let free_content_front: Option<String> = card_details_row.get("free_content_front");
     let free_content_back: Option<String> = card_details_row.get("free_content_back");
@@ -1152,6 +1188,60 @@ async fn get_quiz_options_for_listing(
         }
         _ => return Err("Invalid effective_direction for quiz".into()),
     };
+
+    // Image quiz: options are "item_id:side"; correct is stored as "item_id:side" or "item_id" (for Both)
+    if matches!(
+        actual_direction,
+        FlashcardDirection::QuizImageDirect
+            | FlashcardDirection::QuizImageReverse
+            | FlashcardDirection::QuizImageBoth
+    ) {
+        let collection_id: i32 = card_details_row.get("collection_id");
+        let current_item_id: i32 = card_details_row.get("item_id");
+        let side = if correct_answer_text.contains(':') {
+            correct_answer_text.split(':').nth(1).unwrap_or("front").to_string()
+        } else if actual_direction == FlashcardDirection::QuizImageBoth {
+            if effective_direction_str == "direct" {
+                "front".to_string()
+            } else {
+                "back".to_string()
+            }
+        } else if actual_direction == FlashcardDirection::QuizImageDirect {
+            "front".to_string()
+        } else {
+            "back".to_string()
+        };
+        let correct_option = if correct_answer_text.contains(':') {
+            correct_answer_text.clone()
+        } else {
+            format!("{}:{}", correct_answer_text.trim(), side)
+        };
+
+        let distractor_rows = transaction
+            .query(
+                "SELECT f.item_id
+                 FROM flashcards f
+                 JOIN collection_item_images cii ON cii.item_id = f.item_id AND cii.side = $2
+                 WHERE f.collection_id = $1 AND f.item_id != $3
+                 ORDER BY RANDOM()
+                 LIMIT 3",
+                &[&collection_id, &side, &current_item_id],
+            )
+            .await?;
+        let mut distractors: Vec<String> = distractor_rows
+            .iter()
+            .map(|r| format!("{}:{}", r.get::<_, i32>("item_id"), side))
+            .collect();
+        while distractors.len() < 3 {
+            distractors.push(distractors.get(distractors.len().wrapping_sub(1)).cloned().unwrap_or_else(|| correct_option.clone()));
+        }
+        distractors.truncate(3);
+        let mut options = vec![correct_option.clone()];
+        options.extend(distractors);
+        use rand::seq::SliceRandom;
+        options.shuffle(&mut rand::rng());
+        return Ok((question_text, options));
+    }
 
     // 3. Fetch distractors - Exploitation (user's past incorrect answers)
     let mut distractors: Vec<String> = transaction.query(
@@ -2484,7 +2574,7 @@ pub async fn get_next_quiz_for_user(
         WHERE p.user_id = $1
         AND p.next_review_at <= CURRENT_TIMESTAMP
         AND p.card_side = 'direct'  -- Quiz progress tracked on direct side
-        AND f.direction IN ('QuizDirect', 'QuizReverse', 'QuizBoth')
+        AND f.direction IN ('quiz_direct', 'quiz_reverse', 'quiz_both', 'quiz_image_direct', 'quiz_image_reverse', 'quiz_image_both')
         AND NOT p.archived
         ORDER BY p.next_review_at
         LIMIT 1
@@ -2500,18 +2590,18 @@ pub async fn get_next_quiz_for_user(
     let flashcard_id: i32 = flashcard_row.get("id");
     let direction: FlashcardDirection = flashcard_row.get("direction");
 
-    // Determine effective direction (direct/reverse) for QuizBoth
+    // Determine effective direction (direct/reverse) for QuizBoth / QuizImageBoth
     let effective_direction = match direction {
-        FlashcardDirection::QuizDirect => "direct",
-        FlashcardDirection::QuizReverse => "reverse",
-        FlashcardDirection::QuizBoth => {
+        FlashcardDirection::QuizDirect | FlashcardDirection::QuizImageDirect => "direct",
+        FlashcardDirection::QuizReverse | FlashcardDirection::QuizImageReverse => "reverse",
+        FlashcardDirection::QuizBoth | FlashcardDirection::QuizImageBoth => {
             if rand::random() {
                 "direct"
             } else {
                 "reverse"
             }
         }
-        _ => "direct", // Shouldn't happen since we filtered above
+        _ => "direct",
     };
 
     // Get question and options
@@ -2549,8 +2639,15 @@ pub async fn submit_quiz_answer(
         .await?;
     let correct_answer_text: String = correct_answer_row.get("correct_answer_text");
 
-    let is_correct = answer_data.selected_answer_text.trim().to_lowercase()
-        == correct_answer_text.trim().to_lowercase();
+    // For image quiz (QuizImageBoth) we store "item_id" only; user submits "item_id:front" or "item_id:back"
+    let is_correct = if correct_answer_text.contains(':') {
+        answer_data.selected_answer_text.trim().to_lowercase()
+            == correct_answer_text.trim().to_lowercase()
+    } else {
+        let ct = correct_answer_text.trim();
+        let st = answer_data.selected_answer_text.trim();
+        st == format!("{}:front", ct) || st == format!("{}:back", ct)
+    };
 
     // Log the attempt with all presented options
     transaction.execute(

@@ -397,7 +397,10 @@
       "fillin": "ciska (valsi —> ciksi)",
       "fillin_reverse": "ciska (ciksi —> valsi)",
       "fillin_both": "ciska (ro re farna)",
-      "justinformation": "nuzba po'o"
+      "justinformation": "nuzba po'o",
+      "quizImageDirect": "cipra: valsi → cuxna lo pixra",
+      "quizImageReverse": "cipra: ciksi → cuxna lo pixra",
+      "quizImageBoth": "cipra: pixra (ro re farna)"
     },
     "quizDirectionLabel": "cipra farna",
     "autoProgressLabel": "curmi lo nu drani nu zenba",
@@ -626,6 +629,8 @@
     "typeAnswer": "ciska lo spuda ti",
     "correctAnswer": "drani spuda:",
     "answerCorrect": "drani!",
+    "answerIncorrect": "drani na",
+    "selectOption": "cuxna lo drani spuda",
     "notes": "notci:",
     "submitAnswer": "benji lo spuda",
     "showAnswer": "viska lo spuda",
@@ -897,7 +902,13 @@
       "fillin": "ciska (valsi —> ciksi)",
       "fillinreverse": "ciska (ciksi —> valsi)",
       "fillinboth": "ciska (ro re farna)",
-      "justinformation": "nuzba po'o"
+      "justinformation": "nuzba po'o",
+      "quiz_direct": "cipra (valsi → cuxna)",
+      "quiz_reverse": "cipra (ciksi → cuxna)",
+      "quiz_both": "cipra (ro re)",
+      "quiz_image_direct": "cipra: valsi → pixra",
+      "quiz_image_reverse": "cipra: ciksi → pixra",
+      "quiz_image_both": "cipra: pixra (ro re)"
     },
     "quizDirectionLabel": "cipra farna",
     "actions": {

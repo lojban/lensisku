@@ -65,11 +65,11 @@
                   <span>{{ t('flashcardStudy.canonicalComparisonEnabled', 'Canonical comparison enabled') }}</span>
                 </div>
 
-                <!-- Question -->
+                <!-- Question (quiz uses question_text when present) -->
                 <div v-if="currentCard.progress[0].card_side === 'direct'">
                   <div class="flex items-center justify-center gap-1.5">
                     <h3 class="text-base font-bold text-gray-800 sm:text-lg">
-                      {{ currentCard.flashcard.word ?? currentCard.flashcard.free_content_front }}
+                      {{ currentCard.flashcard.question_text ?? currentCard.flashcard.word ?? currentCard.flashcard.free_content_front }}
                     </h3>
                     <AudioPlayer
                       v-if="currentCard.flashcard.sound_url"
@@ -92,7 +92,7 @@
                 </div>
                 <div v-else>
                   <div class="text-center text-gray-800 text-base sm:text-lg">
-                    <LazyMathJax :content="currentCard.flashcard.definition ?? currentCard.flashcard.free_content_back" />
+                    <LazyMathJax :content="currentCard.flashcard.question_text ?? currentCard.flashcard.definition ?? currentCard.flashcard.free_content_back" />
                     <div v-if="currentCard.flashcard.has_back_image" class="mt-1 flex justify-center">
                       <img
                         :src="`/api/collections/${currentCard.flashcard.collection_id}/items/${currentCard.flashcard.item_id}/image/back`"
@@ -100,6 +100,40 @@
                         alt="Back image"
                       >
                     </div>
+                  </div>
+                </div>
+
+                <!-- Quiz: multiple-choice options (text or image) -->
+                <div v-if="isQuizMode && !quizResult && (currentCard.flashcard.quiz_options?.length || quizImageOptions?.length)" class="mt-1.5">
+                  <p class="text-[10px] text-slate-500 text-center mb-1.5 sm:text-xs">{{ t('flashcardStudy.selectOption') }}</p>
+                  <div class="grid grid-cols-2 gap-1.5 sm:gap-2">
+                    <template v-if="quizImageOptions?.length">
+                      <button
+                        v-for="opt in quizImageOptions"
+                        :key="opt.id"
+                        type="button"
+                        class="flex flex-col items-center justify-center p-2 rounded-xl border-2 border-slate-200 bg-white hover:border-green-400 hover:bg-green-50/50 transition-colors disabled:opacity-60 disabled:pointer-events-none min-h-[80px]"
+                        :disabled="isSubmitting"
+                        @click="submitQuizOption(opt.id)"
+                      >
+                        <img
+                          :src="opt.imageUrl"
+                          class="w-full h-16 sm:h-20 object-contain rounded-lg"
+                          :alt="opt.id"
+                        >
+                      </button>
+                    </template>
+                    <button
+                      v-else
+                      v-for="(opt, idx) in currentCard.flashcard.quiz_options"
+                      :key="idx"
+                      type="button"
+                      class="p-2.5 rounded-xl border-2 border-slate-200 bg-white hover:border-green-400 hover:bg-green-50/50 transition-colors text-left text-xs sm:text-sm font-medium text-gray-800 disabled:opacity-60 disabled:pointer-events-none"
+                      :disabled="isSubmitting"
+                      @click="submitQuizOption(opt)"
+                    >
+                      <LazyMathJax :content="opt" />
+                    </button>
                   </div>
                 </div>
 
@@ -117,8 +151,18 @@
                   />
                 </div>
 
+                <!-- Quiz result -->
+                <div v-if="quizResult" class="flex flex-col gap-1 pt-1.5 border-t border-slate-200">
+                  <div :class="quizResult.correct ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'" class="text-center text-sm">
+                    {{ quizResult.correct ? t('flashcardStudy.answerCorrect') : t('flashcardStudy.answerIncorrect') }}
+                  </div>
+                  <p v-if="!quizResult.correct && quizResult.message" class="text-center text-gray-600 text-xs">
+                    {{ quizResult.message }}
+                  </p>
+                </div>
+
                 <!-- Answer Display (after reveal or wrong fill-in) -->
-                <div v-if="showAnswer || (fillinResult && !isFillinCorrect)" class="flex flex-col gap-1 pt-1.5 border-t border-slate-200">
+                <div v-if="(showAnswer || (fillinResult && !isFillinCorrect)) && !quizResult" class="flex flex-col gap-1 pt-1.5 border-t border-slate-200">
                   <div class="prose prose-sm max-w-none text-center text-sm sm:text-base">
                     <h4 class="text-[10px] text-center text-gray-700 mb-0.5 sm:text-xs">
                       {{ t('flashcardStudy.correctAnswer') }}
@@ -243,7 +287,7 @@ import LingoStudyHeader from '@/components/LingoStudyHeader.vue'
 import LingoStudyFooter from '@/components/LingoStudyFooter.vue'
 import LingoResultCard from '@/components/LingoResultCard.vue'
 
-import { getDueCards, reviewFlashcard, getLanguages, submitFillinAnswer, getFlashcards, snoozeFlashcard, getLevelCards, getLevels, getCollectionFlashcardsPublic } from '@/api'
+import { getDueCards, reviewFlashcard, getLanguages, submitFillinAnswer, submitQuizAnswer, getFlashcards, snoozeFlashcard, getLevelCards, getLevels, getCollectionFlashcardsPublic } from '@/api'
 import LazyMathJax from '@/components/LazyMathJax.vue'
 import AudioPlayer from '@/components/AudioPlayer.vue'
 import { useSeoHead } from '@/composables/useSeoHead'
@@ -298,6 +342,12 @@ const isJustInformationMode = computed(() => {
   return dir && dir.toLowerCase() === 'justinformation'
 })
 
+/** Multiple-choice quiz: select one of the options (text or image). */
+const isQuizMode = computed(() => {
+  const dir = currentCard.value?.flashcard?.direction
+  return dir && (dir.toLowerCase().startsWith('quiz'))
+})
+
 const showCanonicalForm = computed(() => {
   const fc = currentCard.value?.flashcard
   if (!fc?.canonical_form) return false
@@ -329,6 +379,7 @@ const progressPercentage = computed(() => {
 
 /** Footer status for Duolingo-style footer */
 const footerStatus = computed(() => {
+  if (quizResult.value) return quizResult.value.correct ? 'correct' : 'wrong'
   if (fillinResult.value) return isFillinCorrect.value ? 'correct' : 'wrong'
   if (showAnswer.value && isFillInMode.value) return 'correct'
   return 'none'
@@ -336,6 +387,7 @@ const footerStatus = computed(() => {
 
 const footerDisabled = computed(() => {
   if (footerStatus.value !== 'none') return false
+  if (isQuizMode.value) return true // User must tap an option
   if (isFillInMode.value) return !userAnswer.value.trim() || isSubmitting.value
   return isSubmitting.value
 })
@@ -346,7 +398,8 @@ function handleExit() {
 
 function onFooterCheck() {
   if (footerStatus.value === 'correct' || footerStatus.value === 'wrong') {
-    handleNextCard()
+    if (quizResult.value) handleQuizNextCard()
+    else handleNextCard()
     return
   }
   if (isFillInMode.value) submitAnswer()
@@ -516,7 +569,8 @@ const loadNextCard = () => {
     currentCard.value = remainingCards.value.shift()
     showAnswer.value = false
     userAnswer.value = ''
-    fillinResult.value = null // Reset fill-in result
+    fillinResult.value = null
+    quizResult.value = null
   } else {
     currentCard.value = null
   }
@@ -525,6 +579,20 @@ const loadNextCard = () => {
 const userAnswer = ref('')
 const isSubmitting = ref(false)
 const fillinResult = ref(null)
+const quizResult = ref(null)
+
+/** Image quiz: options are "item_id:side"; build list with image URLs for current collection. */
+const quizImageOptions = computed(() => {
+  const fc = currentCard.value?.flashcard
+  const opts = fc?.quiz_options
+  if (!opts?.length || !fc?.collection_id) return null
+  const first = opts[0]
+  if (typeof first !== 'string' || !first.includes(':')) return null
+  return opts.map((id) => ({
+    id,
+    imageUrl: `/api/collections/${fc.collection_id}/items/${id.split(':')[0]}/image/${id.split(':')[1] || 'front'}`,
+  }))
+})
 
 const submitAnswer = async (rating) => {
   if (!currentCard.value || isSubmitting.value) return
@@ -562,7 +630,7 @@ const submitAnswer = async (rating) => {
       await checkForDueChanges()
       await nextTick()
       if (!isJustInformationMode.value) answerAudioPlayerRef.value?.play()
-    } else {
+    } else if (!isQuizMode.value) {
       await reviewFlashcard({
         flashcard_id: currentCard.value.flashcard.id,
         rating,
@@ -576,6 +644,49 @@ const submitAnswer = async (rating) => {
   } finally {
     isSubmitting.value = false
   }
+}
+
+const submitQuizOption = async (selectedOption) => {
+  if (!currentCard.value || isSubmitting.value) return
+  const fc = currentCard.value.flashcard
+  const options = quizImageOptions.value?.length
+    ? quizImageOptions.value.map((o) => o.id)
+    : (fc.quiz_options || [])
+  isSubmitting.value = true
+  try {
+    const next = cardsAnsweredInSession.value + 1
+    cardsAnsweredInSession.value = next
+    try {
+      sessionStorage.setItem(ANON_BANNER_ANSWERED_KEY, String(next))
+    } catch (_) {}
+    if (isAnonLevelMode.value || isAnonNoLevelsMode.value) {
+      const correct = String(selectedOption).trim().toLowerCase() ===
+        String((fc.quiz_options || [])[0] || '').trim().toLowerCase()
+      quizResult.value = { correct, message: correct ? '' : t('flashcardStudy.correctAnswer') }
+      applyAnonLevelProgress(correct)
+    } else {
+      const response = await submitQuizAnswer({
+        flashcard_id: fc.id,
+        card_side: currentCard.value.progress[0].card_side,
+        selected_answer_text: selectedOption,
+        presented_options: options,
+      })
+      quizResult.value = response.data
+      await checkForDueChanges()
+    }
+    await nextTick()
+    if (quizResult.value?.correct && fc.sound_url) answerAudioPlayerRef.value?.play()
+  } catch (error) {
+    console.error(t('flashcardStudy.submitError'), error)
+  } finally {
+    isSubmitting.value = false
+  }
+}
+
+const handleQuizNextCard = async () => {
+  quizResult.value = null
+  loadNextCard()
+  if (!isAnonLevelMode.value && !isAnonNoLevelsMode.value) await checkForDueChanges()
 }
 
 const snoozeCard = async () => {

@@ -397,7 +397,10 @@
       "fillin": "Fill in (word → definition)",
       "fillin_reverse": "Fill in (definition → word)",
       "fillin_both": "Fill in (both directions)",
-      "justinformation": "Just information"
+      "justinformation": "Just information",
+      "quizImageDirect": "Quiz: word → choose image",
+      "quizImageReverse": "Quiz: definition → choose image",
+      "quizImageBoth": "Quiz: image options (both sides)"
     },
     "quizDirectionLabel": "Quiz direction",
     "autoProgressLabel": "Enable auto-progression",
@@ -626,6 +629,8 @@
     "typeAnswer": "Type your answer here",
     "correctAnswer": "Correct answer:",
     "answerCorrect": "Correct!",
+    "answerIncorrect": "Incorrect",
+    "selectOption": "Select the correct answer",
     "notes": "Notes:",
     "submitAnswer": "Submit answer",
     "showAnswer": "Show answer",
@@ -896,7 +901,13 @@
       "fillin": "Fill in (word → definition)",
       "fillinreverse": "Fill in (definition → word)",
       "fillinboth": "Fill in (both directions)",
-      "justinformation": "Just information"
+      "justinformation": "Just information",
+      "quiz_direct": "Quiz (word → choose answer)",
+      "quiz_reverse": "Quiz (definition → choose answer)",
+      "quiz_both": "Quiz (both sides)",
+      "quiz_image_direct": "Quiz: word → choose image",
+      "quiz_image_reverse": "Quiz: definition → choose image",
+      "quiz_image_both": "Quiz: image options (both)"
     },
     "quizDirectionLabel": "Quiz direction",
     "actions": {
