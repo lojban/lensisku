@@ -1650,6 +1650,34 @@ pub async fn upsert_item(
                         .await
                         .map_err(|e| AppError::Database(e.to_string()))?;
 
+                    // Store correct answer for quiz-image when switching to image-quiz
+                    if matches!(
+                        direction,
+                        FlashcardDirection::QuizImageDirect
+                            | FlashcardDirection::QuizImageReverse
+                            | FlashcardDirection::QuizImageBoth
+                    ) {
+                        let item_row = transaction
+                            .query_one("SELECT item_id FROM flashcards WHERE id = $1", &[&existing_id])
+                            .await
+                            .map_err(|e| AppError::Database(e.to_string()))?;
+                        let flashcard_item_id: i32 = item_row.get("item_id");
+                        let correct = match direction {
+                            FlashcardDirection::QuizImageDirect => format!("{}:front", flashcard_item_id),
+                            FlashcardDirection::QuizImageReverse => format!("{}:back", flashcard_item_id),
+                            FlashcardDirection::QuizImageBoth => flashcard_item_id.to_string(),
+                            _ => unreachable!(),
+                        };
+                        let _ = transaction
+                            .execute(
+                                "INSERT INTO flashcard_quiz_options (flashcard_id, correct_answer_text)
+                                 VALUES ($1, $2)
+                                 ON CONFLICT (flashcard_id) DO UPDATE SET correct_answer_text = EXCLUDED.correct_answer_text",
+                                &[&existing_id, &correct],
+                            )
+                            .await;
+                    }
+
                     // Initialize new progress based on new direction
                     match direction {
                         FlashcardDirection::Direct => {
@@ -1733,7 +1761,10 @@ pub async fn upsert_item(
                         }
                         FlashcardDirection::QuizDirect
                         | FlashcardDirection::QuizReverse
-                        | FlashcardDirection::QuizBoth => {
+                        | FlashcardDirection::QuizBoth
+                        | FlashcardDirection::QuizImageDirect
+                        | FlashcardDirection::QuizImageReverse
+                        | FlashcardDirection::QuizImageBoth => {
                             restore_or_initialize_progress(
                                 &transaction,
                                 user_id,
@@ -1777,6 +1808,29 @@ pub async fn upsert_item(
 
                 let new_id: i32 = row.get("id");
 
+                // Store correct answer for quiz-image types so study can show image options
+                if matches!(
+                    direction,
+                    FlashcardDirection::QuizImageDirect
+                        | FlashcardDirection::QuizImageReverse
+                        | FlashcardDirection::QuizImageBoth
+                ) {
+                    let correct = match direction {
+                        FlashcardDirection::QuizImageDirect => format!("{}:front", item_id),
+                        FlashcardDirection::QuizImageReverse => format!("{}:back", item_id),
+                        FlashcardDirection::QuizImageBoth => item_id.to_string(),
+                        _ => unreachable!(),
+                    };
+                    let _ = transaction
+                        .execute(
+                            "INSERT INTO flashcard_quiz_options (flashcard_id, correct_answer_text)
+                             VALUES ($1, $2)
+                             ON CONFLICT (flashcard_id) DO UPDATE SET correct_answer_text = EXCLUDED.correct_answer_text",
+                            &[&new_id, &correct],
+                        )
+                        .await;
+                }
+
                 // Initialize progress based on direction
                 match direction {
                     FlashcardDirection::Direct => {
@@ -1814,7 +1868,10 @@ pub async fn upsert_item(
                     }
                     FlashcardDirection::QuizDirect
                     | FlashcardDirection::QuizReverse
-                    | FlashcardDirection::QuizBoth => {
+                    | FlashcardDirection::QuizBoth
+                    | FlashcardDirection::QuizImageDirect
+                    | FlashcardDirection::QuizImageReverse
+                    | FlashcardDirection::QuizImageBoth => {
                         initialize_flashcard_progress(&transaction, user_id, new_id, "direct")
                             .await?;
                         initialize_flashcard_progress(&transaction, user_id, new_id, "reverse")

@@ -121,6 +121,9 @@ pub enum FlashcardDirection {
     QuizDirect,
     QuizReverse,
     QuizBoth,
+    QuizImageDirect,
+    QuizImageReverse,
+    QuizImageBoth,
 }
 
 impl<'a> FromSql<'a> for FlashcardDirection {
@@ -137,6 +140,9 @@ impl<'a> FromSql<'a> for FlashcardDirection {
             "quiz_direct" => Ok(FlashcardDirection::QuizDirect),
             "quiz_reverse" => Ok(FlashcardDirection::QuizReverse),
             "quiz_both" => Ok(FlashcardDirection::QuizBoth),
+            "quiz_image_direct" => Ok(FlashcardDirection::QuizImageDirect),
+            "quiz_image_reverse" => Ok(FlashcardDirection::QuizImageReverse),
+            "quiz_image_both" => Ok(FlashcardDirection::QuizImageBoth),
             _ => Err("Invalid flashcard direction".into()),
         }
     }
@@ -163,6 +169,9 @@ impl ToSql for FlashcardDirection {
             FlashcardDirection::QuizDirect => "quiz_direct",
             FlashcardDirection::QuizReverse => "quiz_reverse",
             FlashcardDirection::QuizBoth => "quiz_both",
+            FlashcardDirection::QuizImageDirect => "quiz_image_direct",
+            FlashcardDirection::QuizImageReverse => "quiz_image_reverse",
+            FlashcardDirection::QuizImageBoth => "quiz_image_both",
         };
         out.extend_from_slice(s.as_bytes());
         Ok(IsNull::No)

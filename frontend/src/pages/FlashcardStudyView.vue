@@ -81,11 +81,12 @@
         </div>
 
         <!-- Question -->
+        <!-- For quiz mode prefer question_text when present -->
         <!-- Display Word/Front for 'direct' side -->
         <div v-if="currentCard.progress[0].card_side === 'direct'">
           <div class="flex items-center justify-center gap-2">
             <h3 class="text-2xl font-bold text-gray-800">
-              {{ currentCard.flashcard.word ?? currentCard.flashcard.free_content_front }}
+              {{ currentCard.flashcard.question_text ?? currentCard.flashcard.word ?? currentCard.flashcard.free_content_front }}
             </h3>
             <AudioPlayer
               v-if="currentCard.flashcard.sound_url"
@@ -107,12 +108,46 @@
         <!-- Display Definition/Back for 'reverse' side -->
         <div v-else>
           <div class="text-center text-gray-800 text-2xl">
-            <LazyMathJax :content="currentCard.flashcard.definition ?? currentCard.flashcard.free_content_back" />
+            <LazyMathJax :content="currentCard.flashcard.question_text ?? currentCard.flashcard.definition ?? currentCard.flashcard.free_content_back" />
             <div v-if="currentCard.flashcard.has_back_image" class="mt-4 flex justify-center">
               <img
                 :src="`/api/collections/${currentCard.flashcard.collection_id}/items/${currentCard.flashcard.item_id}/image/back`"
                 class="max-h-48 rounded-lg object-contain bg-gray-100" alt="Back image">
             </div>
+          </div>
+        </div>
+
+        <!-- Quiz: multiple-choice options (text or image) -->
+        <div v-if="isQuizMode && !quizResult && (currentCard.flashcard.quiz_options?.length || quizImageOptions?.length)" class="mt-4">
+          <p class="text-sm text-gray-600 text-center mb-3">{{ t('flashcardStudy.selectOption') }}</p>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
+            <template v-if="quizImageOptions?.length">
+              <button
+                v-for="opt in quizImageOptions"
+                :key="opt.id"
+                type="button"
+                class="flex flex-col items-center justify-center p-3 rounded-xl border-2 border-gray-200 bg-white hover:border-blue-400 hover:bg-blue-50/50 transition-colors disabled:opacity-60 disabled:pointer-events-none min-h-[100px]"
+                :disabled="isSubmitting"
+                @click="submitQuizOption(opt.id)"
+              >
+                <img
+                  :src="opt.imageUrl"
+                  class="w-full h-24 sm:h-28 object-contain rounded-lg"
+                  :alt="opt.id"
+                >
+              </button>
+            </template>
+            <button
+              v-else
+              v-for="(opt, idx) in currentCard.flashcard.quiz_options"
+              :key="idx"
+              type="button"
+              class="p-4 rounded-xl border-2 border-gray-200 bg-white hover:border-blue-400 hover:bg-blue-50/50 transition-colors text-left text-base font-medium text-gray-800 disabled:opacity-60 disabled:pointer-events-none"
+              :disabled="isSubmitting"
+              @click="submitQuizOption(opt)"
+            >
+              <LazyMathJax :content="opt" />
+            </button>
           </div>
         </div>
 
@@ -123,8 +158,18 @@
             @keydown.enter.prevent="submitAnswer" :disabled="!!fillinResult" />
         </div>
 
+        <!-- Quiz result (correct/incorrect + correct answer) -->
+        <div v-if="quizResult" class="flex flex-col gap-4 pt-4 border-t">
+          <div :class="quizResult.correct ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'" class="text-center text-lg">
+            {{ quizResult.correct ? t('flashcardStudy.answerCorrect') : t('flashcardStudy.answerIncorrect') }}
+          </div>
+          <p v-if="!quizResult.correct && quizResult.message" class="text-center text-gray-700">
+            {{ quizResult.message }}
+          </p>
+        </div>
+
         <!-- Answer Display (shown after revealing, or after fill-in when incorrect) -->
-        <div v-if="showAnswer || (fillinResult && !isFillinCorrect)" class="flex flex-col gap-4 pt-4 border-t">
+        <div v-if="(showAnswer || (fillinResult && !isFillinCorrect)) && !quizResult" class="flex flex-col gap-4 pt-4 border-t">
           <div class="prose max-w-none text-center text-lg">
             <h4 class="text-sm text-center text-gray-700 mb-2">
               {{ t('flashcardStudy.correctAnswer') }}
@@ -178,13 +223,11 @@
       </div>
     </div>
 
-    <!-- Review Controls -->
-    <div v-if="!showAnswer && !fillinResult && !isJustInformationMode" class="flex justify-center px-4">
-      <!-- Show Submit button for fill-in modes -->
+    <!-- Review Controls (quiz mode uses option buttons in card, no extra button) -->
+    <div v-if="!showAnswer && !fillinResult && !quizResult && !isJustInformationMode && !isQuizMode" class="flex justify-center px-4">
       <button v-if="isFillInMode" class="btn-get w-auto h-10 text-base shadow-sm" @click="submitAnswer()">
         {{ t('flashcardStudy.submitAnswer') }}
       </button>
-      <!-- Show "Show Answer" button for non-fill-in modes -->
       <button v-else ref="showAnswerButtonRef" class="btn-get w-auto h-10 text-base shadow-sm"
         @click="revealAnswerAndPlayAudio">
         {{ t('flashcardStudy.showAnswer') }}
@@ -194,6 +237,16 @@
     <div v-else-if="isJustInformationMode && !showAnswer" class="flex justify-center px-4">
       <button class="btn-get w-auto h-10 text-base shadow-sm" @click="submitAnswer(4)">
         <Check class="h-4 w-4" />
+      </button>
+    </div>
+
+    <!-- Quiz: Next card after answering -->
+    <div v-else-if="quizResult" class="flex justify-center px-4 mt-4">
+      <button v-if="remainingCards.length <= 0" class="btn-get w-auto h-10 text-base shadow-sm" @click="router.back()">
+        {{ t('flashcardStudy.endSession') }}
+      </button>
+      <button v-else ref="nextCardButtonRef" class="btn-get w-auto h-10 text-base shadow-sm" @click="handleQuizNextCard">
+        {{ t('flashcardStudy.nextCard') }}
       </button>
     </div>
 
@@ -259,7 +312,7 @@ import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import AnonymousProgressBanner from '@/components/AnonymousProgressBanner.vue'
 
-import { getDueCards, reviewFlashcard, getLanguages, submitFillinAnswer, getFlashcards, snoozeFlashcard, getLevelCards, getLevels, getCollectionFlashcardsPublic } from '@/api'
+import { getDueCards, reviewFlashcard, getLanguages, submitFillinAnswer, submitQuizAnswer, getFlashcards, snoozeFlashcard, getLevelCards, getLevels, getCollectionFlashcardsPublic } from '@/api'
 import LazyMathJax from '@/components/LazyMathJax.vue'
 import AudioPlayer from '@/components/AudioPlayer.vue'
 import { useSeoHead } from '@/composables/useSeoHead'
@@ -311,6 +364,12 @@ const isFillInMode = computed(() => {
 const isJustInformationMode = computed(() => {
   const dir = currentCard.value?.flashcard?.direction
   return dir && dir.toLowerCase() === 'justinformation'
+})
+
+/** Multiple-choice quiz: select one of the options (text or image). */
+const isQuizMode = computed(() => {
+  const dir = currentCard.value?.flashcard?.direction
+  return dir && (dir.toLowerCase().startsWith('quiz'))
 })
 
 const showCanonicalForm = computed(() => {
@@ -497,7 +556,8 @@ const loadNextCard = () => {
     currentCard.value = remainingCards.value.shift()
     showAnswer.value = false
     userAnswer.value = ''
-    fillinResult.value = null // Reset fill-in result
+    fillinResult.value = null
+    quizResult.value = null
   } else {
     currentCard.value = null
   }
@@ -506,6 +566,20 @@ const loadNextCard = () => {
 const userAnswer = ref('')
 const isSubmitting = ref(false)
 const fillinResult = ref(null)
+const quizResult = ref(null)
+
+/** Image quiz: options are "item_id:side"; build list with image URLs for current collection. */
+const quizImageOptions = computed(() => {
+  const fc = currentCard.value?.flashcard
+  const opts = fc?.quiz_options
+  if (!opts?.length || !fc?.collection_id) return null
+  const first = opts[0]
+  if (typeof first !== 'string' || !first.includes(':')) return null
+  return opts.map((id) => ({
+    id,
+    imageUrl: `/api/collections/${fc.collection_id}/items/${id.split(':')[0]}/image/${id.split(':')[1] || 'front'}`,
+  }))
+})
 
 const submitAnswer = async (rating) => {
   if (!currentCard.value || isSubmitting.value) return
@@ -543,7 +617,7 @@ const submitAnswer = async (rating) => {
       await checkForDueChanges()
       await nextTick()
       if (!isJustInformationMode.value) answerAudioPlayerRef.value?.play()
-    } else {
+    } else if (!isQuizMode.value) {
       await reviewFlashcard({
         flashcard_id: currentCard.value.flashcard.id,
         rating,
@@ -552,11 +626,55 @@ const submitAnswer = async (rating) => {
       loadNextCard()
       await checkForDueChanges()
     }
+    // Quiz mode is handled by submitQuizOption
   } catch (error) {
     console.error(t('flashcardStudy.submitError'), error)
   } finally {
     isSubmitting.value = false
   }
+}
+
+const submitQuizOption = async (selectedOption) => {
+  if (!currentCard.value || isSubmitting.value) return
+  const fc = currentCard.value.flashcard
+  const options = quizImageOptions.value?.length
+    ? quizImageOptions.value.map((o) => o.id)
+    : (fc.quiz_options || [])
+  isSubmitting.value = true
+  try {
+    const next = cardsAnsweredInSession.value + 1
+    cardsAnsweredInSession.value = next
+    try {
+      sessionStorage.setItem(ANON_BANNER_ANSWERED_KEY, String(next))
+    } catch (_) {}
+    if (isAnonLevelMode.value || isAnonNoLevelsMode.value) {
+      const correct = String(selectedOption).trim().toLowerCase() ===
+        String((fc.quiz_options || [])[0] || '').trim().toLowerCase()
+      quizResult.value = { correct, message: correct ? '' : t('flashcardStudy.correctAnswer') }
+      applyAnonLevelProgress(correct)
+    } else {
+      const response = await submitQuizAnswer({
+        flashcard_id: fc.id,
+        card_side: currentCard.value.progress[0].card_side,
+        selected_answer_text: selectedOption,
+        presented_options: options,
+      })
+      quizResult.value = response.data
+      await checkForDueChanges()
+    }
+    await nextTick()
+    if (quizResult.value?.correct && fc.sound_url) answerAudioPlayerRef.value?.play()
+  } catch (error) {
+    console.error(t('flashcardStudy.submitError'), error)
+  } finally {
+    isSubmitting.value = false
+  }
+}
+
+const handleQuizNextCard = async () => {
+  quizResult.value = null
+  loadNextCard()
+  if (!isAnonLevelMode.value && !isAnonNoLevelsMode.value) await checkForDueChanges()
 }
 
 const snoozeCard = async () => {
