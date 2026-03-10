@@ -3087,7 +3087,8 @@ pub async fn get_recent_changes(
                 NULL::integer as prev_version_id,
                 v.word AS valsi_word,
                 c.commentnum,
-                c.parentid
+                c.parentid,
+                2 AS type_sort_order
             FROM comments c
             JOIN threads t ON c.threadid = t.threadid
             JOIN valsi v ON t.valsiid = v.valsiid
@@ -3123,7 +3124,8 @@ pub async fn get_recent_changes(
                  ORDER BY prev_dv.created_at DESC LIMIT 1) as prev_version_id,
                 NULL::text AS valsi_word,
                 NULL::integer AS commentnum,
-                NULL::integer AS parentid
+                NULL::integer AS parentid,
+                0 AS type_sort_order
             FROM definition_versions dv
             JOIN definitions d ON dv.definition_id = d.definitionid
             JOIN valsi v ON d.valsiid = v.valsiid
@@ -3154,7 +3156,8 @@ pub async fn get_recent_changes(
                 NULL::integer as prev_version_id,
                 NULL::text AS valsi_word,
                 NULL::integer AS commentnum,
-                NULL::integer AS parentid
+                NULL::integer AS parentid,
+                1 AS type_sort_order
             FROM valsi v
             JOIN users u ON v.userid = u.userid
             WHERE v.time > {} AND u.username != 'officialdata' AND v.source_langid = 1
@@ -3182,7 +3185,8 @@ pub async fn get_recent_changes(
                 NULL::integer as prev_version_id,
                 NULL::text AS valsi_word,
                 NULL::integer AS commentnum,
-                NULL::integer AS parentid
+                NULL::integer AS parentid,
+                3 AS type_sort_order
             FROM messages m
             WHERE m.sent_at > to_timestamp({})
             AND NOT EXISTS (
@@ -3202,7 +3206,7 @@ pub async fn get_recent_changes(
                 let final_query = format!(
                     "WITH all_changes AS ({})
                      SELECT * FROM all_changes
-                     ORDER BY time DESC LIMIT {}",
+                     ORDER BY time DESC, type_sort_order ASC LIMIT {}",
                     queries.join(" UNION ALL "),
                     limit_val
                 );
