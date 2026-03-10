@@ -37,13 +37,11 @@ import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import LingoLayout from '@/components/LingoLayout.vue'
 import LingoCourseCard from '@/components/LingoCourseCard.vue'
-import { getCollections, getPublicCollections } from '@/api'
-import { useAuth } from '@/composables/useAuth'
+import { getPublicCollections } from '@/api'
 import { useSeoHead } from '@/composables/useSeoHead'
 
 const LINGO_ACTIVE_COURSE_KEY = 'lingo_active_collection_id'
 
-const auth = useAuth()
 const router = useRouter()
 const { t, locale } = useI18n()
 
@@ -71,9 +69,10 @@ function setStoredActiveId(id) {
 async function loadCollections() {
   isLoading.value = true
   try {
-    const api = auth.state.isLoggedIn ? getCollections : getPublicCollections
-    const response = await api({})
-    collections.value = response.data.collections || []
+    const response = await getPublicCollections({})
+    const raw = response.data.collections || []
+    // Prefer backend-computed has_flashcards, fallback to item_count for compatibility.
+    collections.value = raw.filter((c) => c.has_flashcards || (c.item_count ?? 0) > 0)
     activeCollectionId.value = getStoredActiveId()
   } catch (e) {
     console.error(e)
