@@ -101,6 +101,7 @@ async function loadCollections() {
       per_page: perPage.value,
       search: searchQuery.value.trim() || undefined,
       has_flashcards_only: true,
+      has_levels_only: true,
     })
     collections.value = response.data.collections || []
     totalCollections.value = Number(response.data.total || 0)

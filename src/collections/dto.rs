@@ -20,6 +20,8 @@ pub struct ListCollectionsQuery {
     pub search: Option<String>,
     /// When true, only return collections that already have at least one flashcard.
     pub has_flashcards_only: Option<bool>,
+    /// When true, only return collections that have at least one flashcard level.
+    pub has_levels_only: Option<bool>,
 }
 
 #[derive(Debug, Deserialize, ToSchema)]

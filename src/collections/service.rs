@@ -91,6 +91,7 @@ pub async fn list_collections(
         &mut params,
         query.search.as_deref(),
         query.has_flashcards_only.unwrap_or(false),
+        query.has_levels_only.unwrap_or(false),
     );
 
     query_collections(
@@ -117,11 +118,12 @@ pub async fn list_public_collections(
         .map(|s| !s.trim().is_empty())
         .unwrap_or(false);
     let has_flashcards_only = query.has_flashcards_only.unwrap_or(false);
+    let has_levels_only = query.has_levels_only.unwrap_or(false);
     let pagination = pagination_bounds(query.page, query.per_page);
     let has_pagination = pagination.is_some();
 
     // For plain listing requests (sort-only), serve from cache and paginate in memory if requested.
-    if !has_search && !has_flashcards_only {
+    if !has_search && !has_flashcards_only && !has_levels_only {
         if let Ok(Some(response)) = redis.get::<CollectionListResponse>(&cache_key).await {
             if let Some((_, per_page, offset)) = pagination {
                 let start = offset as usize;
@@ -153,6 +155,7 @@ pub async fn list_public_collections(
         &mut params,
         query.search.as_deref(),
         has_flashcards_only,
+        has_levels_only,
     );
 
     let response = query_collections(
@@ -166,7 +169,7 @@ pub async fn list_public_collections(
     .await?;
 
     // Keep existing sort-cache behavior only for plain (non-filtered, unpaginated) requests.
-    if !has_search && !has_flashcards_only && !has_pagination {
+    if !has_search && !has_flashcards_only && !has_levels_only && !has_pagination {
         let _ = redis
             .set(
                 &cache_key,
@@ -194,11 +197,18 @@ fn build_collection_where_clause(
     params: &mut Vec<Box<dyn ToSql + Sync>>,
     search: Option<&str>,
     has_flashcards_only: bool,
+    has_levels_only: bool,
 ) -> String {
     let mut conditions = vec![base_condition.to_string()];
     if has_flashcards_only {
         conditions.push(
             "EXISTS(SELECT 1 FROM flashcards f WHERE f.collection_id = c.collection_id)"
+                .to_string(),
+        );
+    }
+    if has_levels_only {
+        conditions.push(
+            "EXISTS(SELECT 1 FROM flashcard_levels fl WHERE fl.collection_id = c.collection_id)"
                 .to_string(),
         );
     }
