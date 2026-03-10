@@ -71,7 +71,7 @@
         <div>
           <button
             type="submit" 
-            class="w-full flex justify-center items-center btn-aqua-green h-8 gap-2 py-3 rounded-full text-lg font-semibold transition-all"
+            class="w-full flex justify-center items-center btn-aqua-teal h-8 gap-2 py-3 rounded-full text-lg font-semibold transition-all"
             :disabled="isLoading"
             :class="{'opacity-75 cursor-not-allowed': isLoading}"
           >

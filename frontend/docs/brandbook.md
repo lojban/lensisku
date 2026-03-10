@@ -20,7 +20,7 @@ By having two forms, the design system creates a visual hierarchy.
 
 | Class | Appearance / Color | Target Function & User Expectation |
 | :--- | :--- | :--- |
-| **`btn-aqua-green`** / **`btn-aqua-emerald`** | 🟩 Green / Emerald | **Create / Save (Primary)**: The user expects to successfully complete a major flow (e.g., Save User Profile, Create Database Entry). |
+| **`btn-aqua-teal`** / **`btn-aqua-emerald`** | 🟩 Green / Emerald | **Create / Save (Primary)**: The user expects to successfully complete a major flow (e.g., Save User Profile, Create Database Entry). |
 | **`btn-aqua-blue`** / **`btn-aqua-sky`** | 🟦 Blue / Sky | **Navigate / Core Action**: The user expects to move forward, submit a search, or trigger the primary neutral action of the view. |
 | **`btn-aqua-red`** / **`btn-aqua-rose`** | 🟥 Red / Rose | **Destructive (Major)**: The user expects an irreversible action that affects the global state (e.g., Delete Account). |
 | **`btn-aqua-orange`** / **`btn-aqua-yellow`**| 🟧 Orange / Yellow | **Warning / Attention**: The user expects to perform an action that requires caution but isn't strictly destructive (e.g., Suspend Resource, Change Permissions). |
@@ -58,7 +58,7 @@ By having two forms, the design system creates a visual hierarchy.
 
 To prevent cognitive overhead for developers and unify the UI, the current class ecosystem should be refactored:
 
-1.  **Semantic Over Color (Aqua)**: Instead of `btn-aqua-green`, define `btn-aqua-success`. Have a fixed palette:
+1.  **Semantic Over Color (Aqua)**: Instead of `btn-aqua-teal`, define `btn-aqua-success`. Have a fixed palette:
     *   `Primary` (Blue/Sky)
     *   `Success` (Emerald/Green)
     *   `Danger` (Red/Rose)
@@ -80,7 +80,7 @@ The `ui` package contains base functional wrappers (`Button.vue`, `IconButton.vu
 1.  **`Button.vue` Hardcoded Variants:**
     The `Button.vue` component contains a `VARIANT_CLASSES` dictionary mapping strings like `aqua-white` to `btn-aqua-white`. However, it misses many classes defined in `tailwind.config.js` and behaves as a leaky abstraction.
 2.  **`IconButton.vue` default classes:**
-    Currently hardcodes `btn-aqua-green` as the default button class, enforcing a glossy-success look on every basic icon button unless manually overridden.
+    Currently hardcodes `btn-aqua-teal` as the default button class, enforcing a glossy-success look on every basic icon button unless manually overridden.
 3.  **Ambiguous Component Splitting:**
     The separation between `packages/ui` and `packages/components` (and `src/components`) is ill-defined. Wait, `packages/components` doesn't even exist (or is virtually empty/untracked).
 
@@ -93,10 +93,10 @@ Remove the hardcoded variant map. Instead, rely on a prop `theme` ("aqua" | "fla
 <Button theme="aqua" color="success">Submit</Button>
 <Button theme="flat" color="danger" variant="outline">Delete</Button>
 ```
-*Implementation internally computes the classes `btn-aqua-green` dynamically rather than hardcoding a list.*
+*Implementation internally computes the classes `btn-aqua-teal` dynamically rather than hardcoding a list.*
 
 #### 2. Refactor `IconButton.vue`
-Make `IconButton.vue` a simple wrapper around the refactored `Button.vue`, passing down properties and rendering slots. Do not hardcode `btn-aqua-green`.
+Make `IconButton.vue` a simple wrapper around the refactored `Button.vue`, passing down properties and rendering slots. Do not hardcode `btn-aqua-teal`.
 ```vue
 <template>
   <Button :theme="theme" :color="color" :icon-only="!label" v-bind="$attrs">

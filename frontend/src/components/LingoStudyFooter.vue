@@ -83,7 +83,7 @@ const footerClass = computed(() => {
 
 const buttonClass = computed(() => {
   if (props.status === 'wrong') return 'btn-aqua-rose'
-  return 'btn-aqua-green'
+  return 'btn-aqua-teal'
 })
 
 const buttonLabel = computed(() => {

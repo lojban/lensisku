@@ -12,12 +12,12 @@
 
         <div class="flex w-full max-w-[330px] flex-col items-center gap-3">
           <template v-if="auth.state.isLoggedIn">
-            <RouterLink to="/lingo/courses" class="btn-aqua-green w-full justify-center text-base">
+            <RouterLink to="/lingo/courses" class="btn-aqua-teal w-full justify-center text-base">
               {{ t('lingo.continueLearning', 'Continue Learning') }}
             </RouterLink>
           </template>
           <template v-else>
-            <RouterLink to="/lingo/signup" class="btn-aqua-green w-full justify-center text-base">
+            <RouterLink to="/lingo/signup" class="btn-aqua-teal w-full justify-center text-base">
               {{ t('lingo.getStarted', 'Get Started') }}
             </RouterLink>
             <RouterLink to="/lingo/login" class="btn-aqua-white w-full justify-center text-base">

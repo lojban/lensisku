@@ -82,7 +82,7 @@
             {{ t('changePassword.startOverButton') }}
           </button>
 
-          <button type="submit" class="btn-aqua-green flex-1 h-8" :disabled="isLoading || !isValidPasswordChange">
+          <button type="submit" class="btn-aqua-teal flex-1 h-8" :disabled="isLoading || !isValidPasswordChange">
             <template v-if="isLoading">
               <Loader2 class="animate-spin -ml-1 mr-3 h-5 w-5 text-current" />
               {{ t('changePassword.changingPassword') }}

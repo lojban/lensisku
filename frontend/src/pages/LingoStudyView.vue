@@ -38,7 +38,7 @@
         </div>
         <button
           ref="returnToDeckButtonRef"
-          class="btn-aqua-green h-9 min-w-[140px] text-sm"
+          class="btn-aqua-teal h-9 min-w-[140px] text-sm"
           @click="router.push(returnToUrl)"
         >
           {{ levelIdParam != null ? t('flashcardStudy.returnToLevels', 'Back to levels') : t('flashcardStudy.returnToDeck') }}
