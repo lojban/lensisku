@@ -72,7 +72,7 @@
             <SearchInput v-model="itemSearchQuery" :placeholder="t('collectionDetail.searchItemsPlaceholder')"
               :is-loading="isSearching" @update:model-value="handleSearch" @clear="clearItemSearch" />
           </div>
-          <button v-if="isOwner" class="btn-aqua-green md:flex-none" @click="resetForm(); showAddModal = true">
+          <button v-if="isOwner" class="btn-aqua-teal md:flex-none" @click="resetForm(); showAddModal = true">
             <PlusCircle class="w-4 h-4" />
             {{ t('collectionDetail.addItem') }}
           </button>

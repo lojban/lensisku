@@ -22,7 +22,7 @@ const props = defineProps({
   label: { type: String, default: '' },
   /** Aria-label for icon-only buttons; falls back to label when present */
   ariaLabel: { type: String, default: '' },
-  buttonClasses: { type: String, default: 'btn-aqua-green' },
+  buttonClasses: { type: String, default: 'btn-aqua-teal' },
   iconClasses: { type: String, default: 'h-4 w-4' },
   disabled: { type: Boolean, default: false },
 })

@@ -206,7 +206,7 @@ export default {
             '@apply aqua-base bg-lime-400': {},
             '--aqua-hue': '84',
           },
-          '.btn-aqua-green': {
+          '.btn-aqua-teal': {
             '@apply aqua-base bg-teal-400': {},
             '--aqua-hue': '173',
           },
