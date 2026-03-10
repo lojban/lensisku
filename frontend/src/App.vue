@@ -201,14 +201,14 @@
     route.meta.fullHeight ? 'main-content--no-scroll' : ''
   ]">
     <div
-      class="max-w-4xl mx-auto relative flex flex-col"
+      class="max-w-4xl mx-auto relative flex flex-col pt-3"
       :class="[
         route.meta.fullHeight ? 'main-child-full-height w-full sm:w-[380px] sm:min-w-[380px] sm:max-w-[380px]' : 'min-h-[calc(100vh-12rem)]',
         route.path.startsWith('/lingo') ? 'lg:pl-64' : ''
       ]"
       id="main-child"
     >
-      <div class="flex-1" :class="{ 'main-child-inner-full-height': route.meta.fullHeight }">
+      <div class="flex-1 px-3" :class="{ 'main-child-inner-full-height': route.meta.fullHeight }">
         <router-view v-slot="{ Component, route }">
           <component :is="Component" v-bind="route.meta.props" v-on="(route.name === 'Home' || route.name?.startsWith('Home-'))
             ? {
