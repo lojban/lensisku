@@ -28,7 +28,7 @@ pub async fn start_server(
 
     let pool = config.db_pools.app_pool;
     let redis_url = env::var("REDIS_URL").unwrap_or_else(|_| "redis://127.0.0.1:6379".to_string());
-    
+
     // Configure rate limiters
     let general_limiter =
         web::Data::new(middleware::configure_rate_limiter(&redis_url).map_err(|e| {
@@ -83,6 +83,7 @@ pub async fn start_server(
                 }
             }
         }
+        #[allow(clippy::arc_with_non_send_sync)]
         let worker_parsers_data = web::Data::new(Arc::new(worker_parsers)); // Wrap in Arc for sharing
 
         let cors = Cors::default()
@@ -124,8 +125,8 @@ pub async fn start_server(
     })
     .workers(num_workers)
     .bind("0.0.0.0:8080")
-    .map_err(|e| AppError::Io(e))?
+    .map_err(AppError::Io)?
     .run()
     .await
-    .map_err(|e| AppError::Io(e))
+    .map_err(AppError::Io)
 }

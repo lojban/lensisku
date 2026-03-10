@@ -141,11 +141,10 @@ pub fn lujvo_segments_from_nodes(input: &str, nodes: &[ParseNode]) -> Option<Vec
                         if nname == "onset" && ne <= e {
                             rafsi_end = rafsi_end.max(ne);
                         }
-                        if nname == "h" || nname == "y" {
-                            if ns < hy_start {
+                        if (nname == "h" || nname == "y")
+                            && ns < hy_start {
                                 hy_start = ns;
                             }
-                        }
                     }
                 }
                 if rafsi_end > s {
@@ -165,16 +164,14 @@ pub fn lujvo_segments_from_nodes(input: &str, nodes: &[ParseNode]) -> Option<Vec
                     } = n
                     {
                         let (ns, ne) = (nspan.0, nspan.1);
-                        if nname != "h" && nname != "y" {
-                            if ne > rafsi_end {
+                        if nname != "h" && nname != "y"
+                            && ne > rafsi_end {
                                 rafsi_end = ne;
                             }
-                        }
-                        if nname == "h" || nname == "y" {
-                            if ns < hy_start {
+                        if (nname == "h" || nname == "y")
+                            && ns < hy_start {
                                 hy_start = ns;
                             }
-                        }
                     }
                 }
                 if rafsi_end > s {
@@ -255,10 +252,10 @@ pub async fn analyze_word(
             let (recommended, problems) = if word_type.as_str() == "lujvo" {
                 let recommended = match jvokaha(word) {
                     Ok(_) => {
-                        let cmavo = fetch_cmavo_rafsi(&transaction).await.ok();
-                        let cmavo_exp = fetch_experimental_cmavo_rafsi(&transaction).await.ok();
-                        let gismu = fetch_gismu_rafsi(&transaction).await.ok();
-                        let gismu_exp = fetch_experimental_gismu_rafsi(&transaction).await.ok();
+                        let cmavo = fetch_cmavo_rafsi(transaction).await.ok();
+                        let cmavo_exp = fetch_experimental_cmavo_rafsi(transaction).await.ok();
+                        let gismu = fetch_gismu_rafsi(transaction).await.ok();
+                        let gismu_exp = fetch_experimental_gismu_rafsi(transaction).await.ok();
                         reconstruct_lujvo(
                             word,
                             true,
@@ -277,12 +274,12 @@ pub async fn analyze_word(
                 (recommended.or(lujvo_decomposition_camxes), None)
             } else if ["gismu", "experimental gismu"].contains(&word_type.as_str()) {
                 // 1 = gismu type ID
-                let gismu_regular = fetch_gismu_data(&transaction, 1)
+                let gismu_regular = fetch_gismu_data(transaction, 1)
                     .await
                     .ok()
                     .unwrap_or_default();
                 // 7 = experimental gismu type ID
-                let gismu_exp = fetch_gismu_data(&transaction, 7)
+                let gismu_exp = fetch_gismu_data(transaction, 7)
                     .await
                     .ok()
                     .unwrap_or_default();
@@ -676,8 +673,8 @@ fn extract_latex_error_from_log(log: &str) -> Option<String> {
     let mut last_line_ref = None;
     for line in log.lines() {
         let trimmed = line.trim();
-        if trimmed.starts_with("! ") {
-            last_error = Some(trimmed[2..].trim().to_string());
+        if let Some(stripped) = trimmed.strip_prefix("! ") {
+            last_error = Some(stripped.trim().to_string());
             last_line_ref = None;
         } else if let Some(rest) = trimmed.strip_prefix("l.") {
             let (num, ctx) = if let Some(num_end) = rest.find(' ') {

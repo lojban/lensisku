@@ -6,6 +6,15 @@
         {{ t('lingo.languageCourses', 'Language Courses') }}
       </h1>
 
+      <div class="mt-4">
+        <input
+          v-model="searchQuery"
+          type="text"
+          class="input-field w-full sm:max-w-md"
+          :placeholder="t('lingo.searchCourses', 'Search courses by name or description')"
+        >
+      </div>
+
       <div v-if="isLoading" class="flex h-full w-full items-center justify-center py-12">
         <div class="h-10 w-10 animate-spin rounded-full border-2 border-green-500 border-t-transparent" />
       </div>
@@ -24,6 +33,17 @@
         />
       </div>
 
+      <PaginationComponent
+        v-if="!isLoading && totalPages > 1"
+        :current-page="currentPage"
+        :total-pages="totalPages"
+        :total="totalCollections"
+        :per-page="perPage"
+        class="w-full mt-6"
+        @prev="prevPage"
+        @next="nextPage"
+      />
+
       <p v-if="!isLoading && collections.length === 0" class="py-8 text-center text-neutral-600">
         {{ t('lingo.noCourses', 'No courses yet. Create a collection from the main app.') }}
       </p>
@@ -32,11 +52,12 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import LingoLayout from '@/components/LingoLayout.vue'
 import LingoCourseCard from '@/components/LingoCourseCard.vue'
+import PaginationComponent from '@/components/PaginationComponent.vue'
 import { getPublicCollections } from '@/api'
 import { useSeoHead } from '@/composables/useSeoHead'
 
@@ -49,6 +70,12 @@ const collections = ref([])
 const isLoading = ref(true)
 const isSelecting = ref(false)
 const activeCollectionId = ref(null)
+const searchQuery = ref('')
+const currentPage = ref(1)
+const perPage = ref(12)
+const totalCollections = ref(0)
+const totalPages = computed(() => Math.max(1, Math.ceil(totalCollections.value / perPage.value)))
+let searchDebounceTimer = null
 
 function getStoredActiveId() {
   try {
@@ -69,17 +96,40 @@ function setStoredActiveId(id) {
 async function loadCollections() {
   isLoading.value = true
   try {
-    const response = await getPublicCollections({})
-    const raw = response.data.collections || []
-    // Prefer backend-computed has_flashcards, fallback to item_count for compatibility.
-    collections.value = raw.filter((c) => c.has_flashcards || (c.item_count ?? 0) > 0)
+    const response = await getPublicCollections({
+      page: currentPage.value,
+      per_page: perPage.value,
+      search: searchQuery.value.trim() || undefined,
+      has_flashcards_only: true,
+    })
+    collections.value = response.data.collections || []
+    totalCollections.value = Number(response.data.total || 0)
+
+    if (collections.value.length === 0 && totalCollections.value > 0 && currentPage.value > 1) {
+      currentPage.value = Math.max(1, totalPages.value)
+      await loadCollections()
+      return
+    }
     activeCollectionId.value = getStoredActiveId()
   } catch (e) {
     console.error(e)
     collections.value = []
+    totalCollections.value = 0
   } finally {
     isLoading.value = false
   }
+}
+
+function prevPage() {
+  if (currentPage.value <= 1) return
+  currentPage.value -= 1
+  loadCollections()
+}
+
+function nextPage() {
+  if (currentPage.value >= totalPages.value) return
+  currentPage.value += 1
+  loadCollections()
 }
 
 function onSelectCourse(id) {
@@ -97,5 +147,17 @@ function onSelectCourse(id) {
 
 useSeoHead({ title: t('lingo.courses', 'Courses') }, locale.value)
 
+watch(searchQuery, () => {
+  if (searchDebounceTimer) clearTimeout(searchDebounceTimer)
+  searchDebounceTimer = setTimeout(() => {
+    currentPage.value = 1
+    loadCollections()
+  }, 300)
+})
+
 onMounted(loadCollections)
+
+onBeforeUnmount(() => {
+  if (searchDebounceTimer) clearTimeout(searchDebounceTimer)
+})
 </script>

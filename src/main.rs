@@ -68,10 +68,13 @@ async fn main() -> AppResult<()> {
     // Initialize Redis cache
     let redis_url = env::var("REDIS_URL").unwrap_or_else(|_| "redis://127.0.0.1:6379".to_string());
     let redis_cache = Arc::new(
-        crate::middleware::cache::RedisCache::new(&redis_url, std::time::Duration::from_secs(36000))
-            .map_err(|e| {
-                AppError::ExternalService(format!("Failed to initialize Redis cache: {}", e))
-            })?,
+        crate::middleware::cache::RedisCache::new(
+            &redis_url,
+            std::time::Duration::from_secs(36000),
+        )
+        .map_err(|e| {
+            AppError::ExternalService(format!("Failed to initialize Redis cache: {}", e))
+        })?,
     );
 
     // Spawn background tasks with import pool

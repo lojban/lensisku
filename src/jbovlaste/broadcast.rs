@@ -38,8 +38,7 @@ impl Broadcaster {
         })
     }
 
-    // Removed new_import_job as cancellation is now tied to client_id
-
+    #[allow(clippy::await_holding_lock)]
     pub async fn cancel_import(&self, client_id: &str) -> Result<(), String> {
         let mut inner = self.inner.lock();
         if let Some(client_info) = inner.clients.get_mut(client_id) {
@@ -100,6 +99,7 @@ impl Broadcaster {
         )
     }
 
+    #[allow(clippy::await_holding_lock)]
     pub async fn broadcast(&self, client_id: &str, msg: &str) -> Result<(), String> {
         let inner = self.inner.lock();
 

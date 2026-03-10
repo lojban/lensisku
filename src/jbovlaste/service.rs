@@ -811,6 +811,7 @@ pub async fn fast_search_definitions(
 
     // Fast query using cached_search_text - NO JOINs at all!
     // All data is cached in definitions table for maximum speed
+    #[allow(clippy::format_in_format_args)]
     let query_string = format!(
         r#"
         SELECT 
@@ -1045,8 +1046,8 @@ async fn get_source_words(
         .iter()
         .filter(|rafsi| {
             rafsi.len() >= 2
-                && rafsi_map.get(*rafsi).is_none()
-                && exact_word_map.get(*rafsi).is_none()
+                && !rafsi_map.contains_key(*rafsi)
+                && !exact_word_map.contains_key(*rafsi)
         })
         .map(|s| s.as_str())
         .collect();
@@ -1819,6 +1820,7 @@ pub async fn get_definition(
         .collect();
 
     let word: String = row.get("valsiword");
+    #[allow(clippy::cloned_ref_to_slice_refs)]
     let sound_urls = get_valsi_sound_urls_from_db(pool, &[word.clone()]).await?;
 
     let definition = DefinitionDetail {
@@ -3422,7 +3424,6 @@ pub async fn get_sitemap(
             Some(std::time::Duration::from_secs(3600 * 24)), // Cache for 24 hours
         )
         .await
-        .map_err(|e| e.into())
 }
 
 pub async fn get_all_valsi_words(
@@ -4408,10 +4409,10 @@ pub async fn export_linked_pairs(
             "{}\t{}\t{}\t{}\t{}\t{}\n",
             id1,
             word1.replace('\t', " "), // Basic sanitization for TSV
-            text1.replace('\t', " ").replace('\n', " "),
+            text1.replace(['\t', '\n'], " "),
             id2,
             word2.replace('\t', " "),
-            text2.replace('\t', " ").replace('\n', " ")
+            text2.replace(['\t', '\n'], " ")
         ));
     }
 

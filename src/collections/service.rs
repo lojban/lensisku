@@ -11,6 +11,7 @@ use base64::{engine::general_purpose::STANDARD as BASE64, Engine};
 use chrono::{DateTime, Utc};
 use deadpool_postgres::{Pool, Transaction};
 use std::collections::HashSet;
+use tokio_postgres::types::ToSql;
 
 pub async fn create_collection(
     pool: &Pool,
@@ -74,75 +75,244 @@ pub fn sanitize_html(html: &str) -> String {
     remove_html_tags(html)
 }
 
-pub async fn list_collections(pool: &Pool, user_id: i32, sort: Option<&str>) -> AppResult<CollectionListResponse> {
+pub async fn list_collections(
+    pool: &Pool,
+    user_id: i32,
+    query: &ListCollectionsQuery,
+) -> AppResult<CollectionListResponse> {
     let client = pool
         .get()
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
 
-    let sql = build_collections_query(
-        "WHERE c.user_id = $1",
-        sort,
-        true, // user-owned listing; filter by user_id
+    let mut params: Vec<Box<dyn ToSql + Sync>> = vec![Box::new(user_id)];
+    let where_clause = build_collection_where_clause(
+        "c.user_id = $1",
+        &mut params,
+        query.search.as_deref(),
+        query.has_flashcards_only.unwrap_or(false),
     );
 
-    let rows = client
-        .query(&sql, &[&user_id])
-        .await.map_err(|e| AppError::Database(e.to_string()))?;
-
-    let collections = rows
-        .iter()
-        .map(|row| CollectionResponse {
-            collection_id: row.get("collection_id"),
-            name: row.get("name"),
-            description: row.get("description"),
-            is_public: row.get("is_public"),
-            created_at: row.get("created_at"),
-            updated_at: row.get("updated_at"),
-            item_count: row.get("item_count"),
-            has_flashcards: row.get("has_flashcards"),
-            owner: CollectionOwner {
-                user_id,
-                username: row
-                    .try_get("username")
-                    .unwrap_or_else(|_| "unknown".to_string()),
-            },
-        })
-        .collect();
-
-    Ok(CollectionListResponse {
-        collections,
-        total: rows.len() as i64,
-    })
+    query_collections(
+        &client,
+        &where_clause,
+        &mut params,
+        query.sort.as_deref(),
+        query.search.as_deref(),
+        pagination_bounds(query.page, query.per_page),
+    )
+    .await
 }
 
 pub async fn list_public_collections(
     pool: &Pool,
     redis: &crate::middleware::cache::RedisCache,
-    sort: Option<&str>
+    query: &ListCollectionsQuery,
 ) -> AppResult<CollectionListResponse> {
-    let sort_key = sort.unwrap_or("active_week");
+    let sort_key = query.sort.as_deref().unwrap_or("active_week");
     let cache_key = format!("collections_public:{}", sort_key);
+    let has_search = query
+        .search
+        .as_deref()
+        .map(|s| !s.trim().is_empty())
+        .unwrap_or(false);
+    let has_flashcards_only = query.has_flashcards_only.unwrap_or(false);
+    let pagination = pagination_bounds(query.page, query.per_page);
+    let has_pagination = pagination.is_some();
 
-    // Try to serve from the precomputed cache first.
-    if let Ok(Some(response)) = redis.get::<CollectionListResponse>(&cache_key).await {
-        return Ok(response);
+    // For plain listing requests (sort-only), serve from cache and paginate in memory if requested.
+    if !has_search && !has_flashcards_only {
+        if let Ok(Some(response)) = redis.get::<CollectionListResponse>(&cache_key).await {
+            if let Some((_, per_page, offset)) = pagination {
+                let start = offset as usize;
+                let page_items = response
+                    .collections
+                    .into_iter()
+                    .skip(start)
+                    .take(per_page as usize)
+                    .collect::<Vec<_>>();
+                return Ok(CollectionListResponse {
+                    collections: page_items,
+                    total: response.total,
+                });
+            }
+            return Ok(response);
+        }
     }
 
-    // Cache miss – compute live
+    // Cache miss or filtered query – compute live
     let client = pool
         .get()
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
 
-    log::info!("collection cache miss for sort_key={sort_key}; computing live");
-    let sql = build_collections_query("WHERE c.is_public = true", Some(sort_key), false);
+    log::info!("collection cache miss/filtered query for sort_key={sort_key}; computing live");
+    let mut params: Vec<Box<dyn ToSql + Sync>> = vec![];
+    let where_clause = build_collection_where_clause(
+        "c.is_public = true",
+        &mut params,
+        query.search.as_deref(),
+        has_flashcards_only,
+    );
 
+    let response = query_collections(
+        &client,
+        &where_clause,
+        &mut params,
+        query.sort.as_deref(),
+        query.search.as_deref(),
+        pagination,
+    )
+    .await?;
+
+    // Keep existing sort-cache behavior only for plain (non-filtered, unpaginated) requests.
+    if !has_search && !has_flashcards_only && !has_pagination {
+        let _ = redis
+            .set(
+                &cache_key,
+                &response,
+                Some(std::time::Duration::from_secs(6 * 3600)),
+            )
+            .await;
+    }
+
+    Ok(response)
+}
+
+fn pagination_bounds(page: Option<i64>, per_page: Option<i64>) -> Option<(i64, i64, i64)> {
+    if page.is_none() && per_page.is_none() {
+        return None;
+    }
+    let normalized_page = page.unwrap_or(1).max(1);
+    let normalized_per_page = per_page.unwrap_or(24).clamp(1, 100);
+    let offset = (normalized_page - 1) * normalized_per_page;
+    Some((normalized_page, normalized_per_page, offset))
+}
+
+fn build_collection_where_clause(
+    base_condition: &str,
+    params: &mut Vec<Box<dyn ToSql + Sync>>,
+    search: Option<&str>,
+    has_flashcards_only: bool,
+) -> String {
+    let mut conditions = vec![base_condition.to_string()];
+    if has_flashcards_only {
+        conditions.push(
+            "EXISTS(SELECT 1 FROM flashcards f WHERE f.collection_id = c.collection_id)"
+                .to_string(),
+        );
+    }
+
+    if let Some(raw_search) = search {
+        let trimmed = raw_search.trim();
+        if !trimmed.is_empty() {
+            let like = format!("%{}%", trimmed);
+            params.push(Box::new(like));
+            let like_idx = params.len();
+            conditions.push(format!(
+                "(c.name ILIKE ${idx} OR COALESCE(c.description, '') ILIKE ${idx})",
+                idx = like_idx
+            ));
+        }
+    }
+
+    format!("WHERE {}", conditions.join(" AND "))
+}
+
+async fn query_collections(
+    client: &tokio_postgres::Client,
+    where_clause: &str,
+    params: &mut Vec<Box<dyn ToSql + Sync>>,
+    sort: Option<&str>,
+    search: Option<&str>,
+    pagination: Option<(i64, i64, i64)>,
+) -> AppResult<CollectionListResponse> {
+    let (active_join, sort_order) = match sort.unwrap_or("active_week") {
+        "active_month" => (
+            "LEFT JOIN flashcards f ON f.collection_id = c.collection_id
+             LEFT JOIN user_flashcard_progress ufp ON ufp.flashcard_id = f.id
+                 AND ufp.last_reviewed_at >= NOW() - INTERVAL '30 days'",
+            "COUNT(DISTINCT ufp.user_id) DESC, c.updated_at DESC",
+        ),
+        "active_all" => (
+            "LEFT JOIN flashcards f ON f.collection_id = c.collection_id
+             LEFT JOIN user_flashcard_progress ufp ON ufp.flashcard_id = f.id",
+            "COUNT(DISTINCT ufp.user_id) DESC, c.updated_at DESC",
+        ),
+        "newest" => ("", "c.created_at DESC"),
+        _ => (
+            "LEFT JOIN flashcards f ON f.collection_id = c.collection_id
+             LEFT JOIN user_flashcard_progress ufp ON ufp.flashcard_id = f.id
+                 AND ufp.last_reviewed_at >= NOW() - INTERVAL '7 days'",
+            "COUNT(DISTINCT ufp.user_id) DESC, c.updated_at DESC",
+        ),
+    };
+
+    let group_by = if active_join.is_empty() {
+        String::new()
+    } else {
+        "GROUP BY c.collection_id, u.userid".to_string()
+    };
+
+    let mut search_rank_select = "0 AS search_rank,".to_string();
+    let mut search_rank_order = String::new();
+    if let Some(raw_search) = search {
+        let trimmed = raw_search.trim();
+        if !trimmed.is_empty() {
+            params.push(Box::new(trimmed.to_string()));
+            let term_idx = params.len();
+            // Prefer title full-word matches, then title substring, then description matches.
+            search_rank_select = format!(
+                "(CASE WHEN to_tsvector('simple', COALESCE(c.name, '')) @@ plainto_tsquery('simple', ${term}) THEN 100 ELSE 0 END
+                  + CASE WHEN c.name ILIKE ${like} THEN 20 ELSE 0 END
+                  + CASE WHEN to_tsvector('simple', COALESCE(c.description, '')) @@ plainto_tsquery('simple', ${term}) THEN 10 ELSE 0 END
+                  + CASE WHEN COALESCE(c.description, '') ILIKE ${like} THEN 1 ELSE 0 END) AS search_rank,",
+                term = term_idx,
+                like = term_idx - 1,
+            );
+            search_rank_order = "search_rank DESC, ".to_string();
+        }
+    }
+
+    let count_param_refs: Vec<&(dyn ToSql + Sync)> =
+        params.iter().map(|p| &**p as &(dyn ToSql + Sync)).collect();
+    let count_sql = format!("SELECT COUNT(*) AS total FROM collections c {where_clause}",);
+    let total: i64 = client
+        .query_one(&count_sql, &count_param_refs)
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?
+        .get("total");
+
+    let mut sql = format!(
+        "SELECT c.*, u.userid, u.username,
+                (SELECT COUNT(*) FROM collection_items ci WHERE ci.collection_id = c.collection_id) AS item_count,
+                EXISTS(SELECT 1 FROM flashcards f2 WHERE f2.collection_id = c.collection_id) AS has_flashcards,
+                {search_rank_select}
+                c.updated_at AS _rank_tiebreak
+         FROM collections c
+         JOIN users u ON c.user_id = u.userid
+         {active_join}
+         {where_clause}
+         {group_by}
+         ORDER BY {search_rank_order}{sort_order}, _rank_tiebreak DESC"
+    );
+
+    if let Some((_, per_page, offset)) = pagination {
+        params.push(Box::new(per_page));
+        let per_page_idx = params.len();
+        params.push(Box::new(offset));
+        let offset_idx = params.len();
+        sql.push_str(&format!(" LIMIT ${per_page_idx} OFFSET ${offset_idx}"));
+    }
+
+    let param_refs: Vec<&(dyn ToSql + Sync)> =
+        params.iter().map(|p| &**p as &(dyn ToSql + Sync)).collect();
     let rows = client
-        .query(&sql, &[])
-        .await.map_err(|e| AppError::Database(e.to_string()))?;
+        .query(&sql, &param_refs)
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
 
-    let collections: Vec<CollectionResponse> = rows
+    let collections = rows
         .iter()
         .map(|row| CollectionResponse {
             collection_id: row.get("collection_id"),
@@ -162,15 +332,7 @@ pub async fn list_public_collections(
         })
         .collect();
 
-    let response = CollectionListResponse {
-        collections,
-        total: rows.len() as i64,
-    };
-
-    // Store in Redis (6 hour TTL if background job fails, though it should be refreshed)
-    let _ = redis.set(&cache_key, &response, Some(std::time::Duration::from_secs(6 * 3600))).await;
-
-    Ok(response)
+    Ok(CollectionListResponse { collections, total })
 }
 
 /// Recompute all four sort-order snapshots for the public collections list and
@@ -186,10 +348,9 @@ pub async fn refresh_collection_sort_cache(
 
     for sort_key in &["active_week", "active_month", "active_all", "newest"] {
         let sql = build_collections_query("WHERE c.is_public = true", Some(sort_key), false);
-        let rows = client
-            .query(&sql, &[])
-            .await
-            .map_err(|e| AppError::Database(format!("Cache refresh query failed for {sort_key}: {e}")))?;
+        let rows = client.query(&sql, &[]).await.map_err(|e| {
+            AppError::Database(format!("Cache refresh query failed for {sort_key}: {e}"))
+        })?;
 
         let collections: Vec<CollectionResponse> = rows
             .iter()
@@ -217,16 +378,24 @@ pub async fn refresh_collection_sort_cache(
         };
 
         let cache_key = format!("collections_public:{}", sort_key);
-        redis.set(&cache_key, &response, Some(std::time::Duration::from_secs(6 * 3600)))
+        redis
+            .set(
+                &cache_key,
+                &response,
+                Some(std::time::Duration::from_secs(6 * 3600)),
+            )
             .await
-            .map_err(|e| AppError::ExternalService(format!("Cache refresh Redis set failed for {sort_key}: {e}")))?;
+            .map_err(|e| {
+                AppError::ExternalService(format!(
+                    "Cache refresh Redis set failed for {sort_key}: {e}"
+                ))
+            })?;
 
         log::info!("collection cache refreshed in Redis for sort_key={sort_key}");
     }
 
     Ok(())
 }
-
 
 /// Build the SQL query for listing collections with a configurable ORDER BY.
 ///
@@ -251,10 +420,7 @@ fn build_collections_query(where_clause: &str, sort: Option<&str>, user_owned: b
              LEFT JOIN user_flashcard_progress ufp ON ufp.flashcard_id = f.id",
             "ORDER BY COUNT(DISTINCT ufp.user_id) DESC, c.updated_at DESC",
         ),
-        "newest" => (
-            "",
-            "ORDER BY c.created_at DESC",
-        ),
+        "newest" => ("", "ORDER BY c.created_at DESC"),
         // default: active_week
         _ => (
             "LEFT JOIN flashcards f ON f.collection_id = c.collection_id
@@ -671,7 +837,7 @@ fn decode_data_url(url: &str) -> AppResult<(String, Vec<u8>)> {
         return Err(AppError::BadRequest("Invalid data URL format".to_string()));
     }
     let mime_type = parts[0].to_string();
-    let data_part = parts[1].splitn(2, ',').nth(1).unwrap_or("");
+    let data_part = parts[1].split_once(',').map(|x| x.1).unwrap_or("");
 
     if !parts[1].starts_with("base64,") {
         return Err(AppError::BadRequest(
@@ -917,8 +1083,7 @@ pub async fn import_full(
             continue;
         }
 
-        if has_definition {
-            let def_id = item.definition_id.unwrap();
+        if let Some(def_id) = item.definition_id {
             let exists = transaction
                 .query_one(
                     "SELECT EXISTS(SELECT 1 FROM definitions WHERE definitionid = $1)",
@@ -1658,13 +1823,20 @@ pub async fn upsert_item(
                             | FlashcardDirection::QuizImageBoth
                     ) {
                         let item_row = transaction
-                            .query_one("SELECT item_id FROM flashcards WHERE id = $1", &[&existing_id])
+                            .query_one(
+                                "SELECT item_id FROM flashcards WHERE id = $1",
+                                &[&existing_id],
+                            )
                             .await
                             .map_err(|e| AppError::Database(e.to_string()))?;
                         let flashcard_item_id: i32 = item_row.get("item_id");
                         let correct = match direction {
-                            FlashcardDirection::QuizImageDirect => format!("{}:front", flashcard_item_id),
-                            FlashcardDirection::QuizImageReverse => format!("{}:back", flashcard_item_id),
+                            FlashcardDirection::QuizImageDirect => {
+                                format!("{}:front", flashcard_item_id)
+                            }
+                            FlashcardDirection::QuizImageReverse => {
+                                format!("{}:back", flashcard_item_id)
+                            }
                             FlashcardDirection::QuizImageBoth => flashcard_item_id.to_string(),
                             _ => unreachable!(),
                         };
@@ -1939,7 +2111,7 @@ pub async fn upsert_item(
             } else {
                 None
             },
-            canonical_form: canonical_form,
+            canonical_form,
             flashcard: None,
         }
     } else {
@@ -1975,7 +2147,7 @@ pub async fn upsert_item(
             } else {
                 None
             },
-            canonical_form: canonical_form,
+            canonical_form,
             flashcard: None,
         }
     };
@@ -2414,6 +2586,7 @@ pub async fn merge_collections(
     Ok(result)
 }
 
+#[allow(clippy::too_many_arguments)]
 pub async fn list_collection_items(
     pool: &Pool,
     collection_id: i32,
@@ -2561,16 +2734,12 @@ pub async fn list_collection_items(
                 has_sound,
                 sound_url,
                 canonical_form: row.get("canonical_form"),
-                flashcard: if let Some(flashcard_id) = row.get::<_, Option<i32>>("flashcard_id") {
-                    Some(FlashcardResponse {
+                flashcard: row.get::<_, Option<i32>>("flashcard_id").map(|flashcard_id| FlashcardResponse {
                         id: flashcard_id,
                         direction: row.get("flashcard_direction"),
                         created_at: row.get("flashcard_created_at"),
                         canonical_form: row.get("canonical_form"),
-                    })
-                } else {
-                    None
-                },
+                    }),
             }
         })
         .collect();

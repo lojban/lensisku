@@ -90,9 +90,9 @@ async fn calculate_missing_embeddings(pool: &Pool) -> AppResult<()> {
             // Fallback to definition (+ notes only when notes are not known to skew embeddings)
             let def_len = definition.len().max(1);
             text_parts.push(definition);
-            let add_notes = !skip_notes_for_embedding_type(&type_name)
-                && !notes.trim().is_empty()
-                && !(type_name.eq_ignore_ascii_case("fu'ivla") && notes.len() > 2 * def_len);
+            let add_notes = !(skip_notes_for_embedding_type(&type_name)
+                || notes.trim().is_empty()
+                || (type_name.eq_ignore_ascii_case("fu'ivla") && notes.len() > 2 * def_len));
             if add_notes {
                 text_parts.push(notes);
             }
@@ -225,7 +225,7 @@ pub async fn spawn_background_tasks(
     let pool_clone = pool.clone();
     let maildir_path_clone = maildir_path.clone();
     tokio::spawn(async move {
-        let mut interval = time::interval(Duration::from_secs(1 * 24 * 60 * 60)); // 1 day
+        let mut interval = time::interval(Duration::from_secs(24 * 60 * 60)); // 1 day
         loop {
             interval.tick().await;
             if let Err(e) = check_for_new_emails(&pool_clone, &maildir_path_clone).await {
@@ -249,9 +249,11 @@ pub async fn spawn_background_tasks(
         let mut interval = time::interval(Duration::from_secs(6 * 60 * 60)); // 6 hours
         loop {
             interval.tick().await; // The first tick completes immediately
-            if let Err(e) =
-                crate::collections::service::refresh_collection_sort_cache(&pool_clone, &redis_clone)
-                    .await
+            if let Err(e) = crate::collections::service::refresh_collection_sort_cache(
+                &pool_clone,
+                &redis_clone,
+            )
+            .await
             {
                 error!("Failed to refresh collection sort cache: {}", e);
             }

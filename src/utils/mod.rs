@@ -47,8 +47,7 @@ pub fn decode_html_entities(text: &str) -> String {
                 if is_numeric {
                     if numeric_hex {
                         if b.is_ascii_hexdigit() {
-                            numeric_val = numeric_val * 16
-                                + (b as char).to_digit(16).unwrap_or(0);
+                            numeric_val = numeric_val * 16 + (b as char).to_digit(16).unwrap_or(0);
                         }
                     } else if b.is_ascii_digit() {
                         numeric_val = numeric_val * 10 + (b - b'0') as u32;
