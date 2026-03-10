@@ -1,3 +1,5 @@
+#![allow(clippy::expect_used)]
+
 use crate::mailarchive::{Message, SearchQuery, SearchResponse, ThreadQuery, ThreadResponse};
 use base64::engine::general_purpose::STANDARD;
 use base64::Engine as _;
@@ -834,7 +836,6 @@ fn parse_email_date(date_str: &str) -> Result<DateTime<FixedOffset>, Box<dyn std
                     }
                 })
         })
-        .map_err(|e| e.into())
 }
 
 fn parse_header_date(header_value: &str) -> Option<DateTime<FixedOffset>> {

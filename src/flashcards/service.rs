@@ -691,7 +691,12 @@ pub async fn list_flashcards_public(
 
     verify_collection_read_access(&transaction, collection_id, None)
         .await
-        .map_err(|e| Box::new(std::io::Error::new(std::io::ErrorKind::PermissionDenied, e.to_string())) as Box<dyn std::error::Error>)?;
+        .map_err(|e| {
+            Box::new(std::io::Error::new(
+                std::io::ErrorKind::PermissionDenied,
+                e.to_string(),
+            )) as Box<dyn std::error::Error>
+        })?;
 
     let rows = transaction
         .query(
@@ -760,14 +765,10 @@ pub async fn list_flashcards_public(
             FlashcardDirection::Both | FlashcardDirection::FillInBoth => {
                 flashcards.push(FlashcardResponse {
                     flashcard: flashcard.clone(),
-                    progress: vec![
-                        synthetic_progress("direct"),
-                        synthetic_progress("reverse"),
-                    ],
+                    progress: vec![synthetic_progress("direct"), synthetic_progress("reverse")],
                 });
             }
-            FlashcardDirection::Reverse
-            | FlashcardDirection::FillInReverse => {
+            FlashcardDirection::Reverse | FlashcardDirection::FillInReverse => {
                 flashcards.push(FlashcardResponse {
                     flashcard: flashcard.clone(),
                     progress: vec![synthetic_progress("reverse")],
@@ -1038,7 +1039,7 @@ pub async fn list_flashcards(
                     let other_id: i32 = r.get("id");
                     let other_side: String = r.get("card_side");
                     other_id == flashcard_id
-                        && card_side.as_deref().map_or(false, |cs| other_side != cs)
+                        && card_side.as_deref().is_some_and(|cs| other_side != cs)
                 }) {
                     let other_progress = UserFlashcardProgress {
                         id: other_row.get("id"),
@@ -1103,8 +1104,9 @@ pub async fn list_flashcards(
             })
             .filter(|row| {
                 // Only count if the card ID matches the query ID, if provided
-                query.flashcard_id.is_none()
-                    || row.get::<_, i32>("id") == query.flashcard_id.unwrap()
+                query
+                    .flashcard_id
+                    .is_none_or(|fid| row.get::<_, i32>("id") == fid)
             })
             .count() as i64
     };
@@ -1199,7 +1201,11 @@ async fn get_quiz_options_for_listing(
         let collection_id: i32 = card_details_row.get("collection_id");
         let current_item_id: i32 = card_details_row.get("item_id");
         let side = if correct_answer_text.contains(':') {
-            correct_answer_text.split(':').nth(1).unwrap_or("front").to_string()
+            correct_answer_text
+                .split(':')
+                .nth(1)
+                .unwrap_or("front")
+                .to_string()
         } else if actual_direction == FlashcardDirection::QuizImageBoth {
             if effective_direction_str == "direct" {
                 "front".to_string()
@@ -1233,7 +1239,12 @@ async fn get_quiz_options_for_listing(
             .map(|r| format!("{}:{}", r.get::<_, i32>("item_id"), side))
             .collect();
         while distractors.len() < 3 {
-            distractors.push(distractors.get(distractors.len().wrapping_sub(1)).cloned().unwrap_or_else(|| correct_option.clone()));
+            distractors.push(
+                distractors
+                    .get(distractors.len().wrapping_sub(1))
+                    .cloned()
+                    .unwrap_or_else(|| correct_option.clone()),
+            );
         }
         distractors.truncate(3);
         let mut options = vec![correct_option.clone()];
@@ -2197,12 +2208,12 @@ fn calculate_similarity(s1: &str, s2: &str) -> f32 {
 
     let mut matrix = vec![vec![0; len2 + 1]; len1 + 1];
 
-    for i in 0..=len1 {
-        matrix[i][0] = i;
+    for (i, row) in matrix.iter_mut().enumerate() {
+        row[0] = i;
     }
 
-    for j in 0..=len2 {
-        matrix[0][j] = j;
+    for (j, cell) in matrix[0].iter_mut().enumerate() {
+        *cell = j;
     }
 
     for i in 1..=len1 {

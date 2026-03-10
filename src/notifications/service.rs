@@ -1,3 +1,5 @@
+#![allow(clippy::expect_used, clippy::unwrap_used)]
+
 use chrono::Datelike;
 use lettre::{
     message::MultiPart,
@@ -295,7 +297,7 @@ impl EmailService {
         let valsi_esc = escape(valsi_word);
         let actor_line = actor_username
             .map(|u| format!(r#"<div style="display: inline-block; background-color: #f1f5f9; color: #475569; padding: 4px 12px; border-radius: 9999px; font-size: 13px; font-weight: 500; margin-bottom: 24px;">{}</div>"#, t(lang, "html_by_user").replace("{}", &escape(u))))
-            .unwrap_or_else(String::new);
+            .unwrap_or_default();
 
         let def_block = new_definition.map(|def| {
             let esc = escape(def);
@@ -309,7 +311,7 @@ impl EmailService {
                 t(lang, "html_definition_label"),
                 trunc.replace('\n', "<br>")
             )
-        }).unwrap_or_else(String::new);
+        }).unwrap_or_default();
 
         let changes_block = changes.filter(|chgs| !chgs.is_empty()).map(|chgs| {
             let rows: String = chgs.iter().map(|c| {
@@ -336,7 +338,7 @@ impl EmailService {
                 t(lang, "html_changes_label"),
                 rows
             )
-        }).unwrap_or_else(String::new);
+        }).unwrap_or_default();
 
         let content_inner = format!(
             r#"<tr><td style="text-align: center; padding-bottom: 8px;">{}</td></tr>
@@ -346,7 +348,7 @@ impl EmailService {
             if actor_line.is_empty() {
                 String::new()
             } else {
-                format!("{}", actor_line)
+                actor_line.to_string()
             },
             if changes.as_ref().map(|c| c.is_empty()).unwrap_or(true) {
                 t(lang, "html_new_valsi_added")

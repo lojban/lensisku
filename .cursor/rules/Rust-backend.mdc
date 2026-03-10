@@ -1,0 +1,5 @@
+---
+alwaysApply: true
+---
+
+use `cargo clippy --fix --allow-dirty --allow-staged 2>&1` to fix all warnings. use clippy to find problems.

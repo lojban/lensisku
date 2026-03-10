@@ -95,7 +95,20 @@
   </div>
 
   <!-- Sort Controls -->
-  <div class="flex flex-wrap items-center justify-center gap-2 mb-4">
+  <div class="mb-4 flex flex-col gap-3">
+    <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+      <input
+        v-model="searchQuery"
+        type="text"
+        class="input-field w-full sm:max-w-md"
+        :placeholder="t('collectionList.searchPlaceholder', 'Search courses by name or description')"
+      >
+      <label class="inline-flex items-center gap-2 text-sm text-gray-700">
+        <input v-model="hasFlashcardsOnly" type="checkbox" class="checkbox-toggle">
+        <span>{{ t('collectionList.onlyWithFlashcards', 'Only with flashcards') }}</span>
+      </label>
+    </div>
+    <div class="flex flex-wrap items-center justify-center gap-2">
     <div class="flex flex-wrap justify-center gap-1" role="group">
       <button
         v-for="opt in sortOptions"
@@ -111,6 +124,7 @@
       >
         {{ opt.label }}
       </button>
+    </div>
     </div>
   </div>
 
@@ -145,6 +159,16 @@
         @study="startStudy(collection)"
       />
     </div>
+    <PaginationComponent
+      v-if="totalPages > 1"
+      :current-page="currentPage"
+      :total-pages="totalPages"
+      :total="totalCollections"
+      :per-page="perPage"
+      class="w-full"
+      @prev="prevPage"
+      @next="nextPage"
+    />
   </div>
 
   <!-- Empty State -->
@@ -198,7 +222,7 @@
 
 <script setup>
 import { CirclePlus, Upload, BookOpen, ArrowBigRight } from 'lucide-vue-next';
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onBeforeUnmount, onMounted, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 
@@ -211,6 +235,7 @@ import {
   getLevels,
 } from '@/api'
 import { CollectionCard, Dropdown, IconButton } from '@packages/ui'
+import PaginationComponent from '@/components/PaginationComponent.vue'
 import { useAuth } from '@/composables/useAuth'
 import { useSeoHead } from '@/composables/useSeoHead'
 
@@ -236,6 +261,11 @@ const viewMode = ref(initialView())
 const collections = ref([])
 const isLoading = ref(true)
 const sortBy = ref('active_week')
+const searchQuery = ref('')
+const hasFlashcardsOnly = ref(false)
+const currentPage = ref(1)
+const perPage = ref(12)
+const totalCollections = ref(0)
 const showCreateModal = ref(false)
 const isSubmitting = ref(false)
 const importFileInput = ref(null)
@@ -243,6 +273,9 @@ const isImporting = ref(false)
 const streakData = ref(null)
 const isLoadingStreak = ref(false)
 const studyLoadingId = ref(null)
+let searchDebounceTimer = null
+
+const totalPages = computed(() => Math.max(1, Math.ceil(totalCollections.value / perPage.value)))
 
 const sortOptions = computed(() => [
   { value: 'active_week',  label: t('collectionList.sortActiveWeek') },
@@ -282,17 +315,43 @@ const fetchCollections = async () => {
       viewMode.value = 'public'
     }
 
-    const params = { sort: sortBy.value }
+    const params = {
+      sort: sortBy.value,
+      page: currentPage.value,
+      per_page: perPage.value,
+      has_flashcards_only: hasFlashcardsOnly.value ? true : undefined,
+      search: searchQuery.value.trim() || undefined,
+    }
 
     const response = await (viewMode.value === 'my' && auth.state.isLoggedIn
       ? getCollections(params)
       : getPublicCollections(params))
-    collections.value = response.data.collections
+    collections.value = response.data.collections || []
+    totalCollections.value = Number(response.data.total || 0)
+
+    if (collections.value.length === 0 && totalCollections.value > 0 && currentPage.value > 1) {
+      currentPage.value = Math.max(1, totalPages.value)
+      await fetchCollections()
+      return
+    }
   } catch (error) {
     console.error('Error fetching collections:', error)
+    totalCollections.value = 0
   } finally {
     isLoading.value = false
   }
+}
+
+const prevPage = () => {
+  if (currentPage.value <= 1) return
+  currentPage.value -= 1
+  fetchCollections()
+}
+
+const nextPage = () => {
+  if (currentPage.value >= totalPages.value) return
+  currentPage.value += 1
+  fetchCollections()
 }
 
 // Create new collection
@@ -400,12 +459,21 @@ watch(() => route.query[VIEW_PARAM], (qView) => {
 })
 
 // Watch for view mode or sort changes
-watch([viewMode, sortBy, () => auth.state.isLoggedIn], () => {
+watch([viewMode, sortBy, hasFlashcardsOnly, () => auth.state.isLoggedIn], () => {
   // Force public view when logged out
   if (!auth.state.isLoggedIn) {
     viewMode.value = 'public'
   }
+  currentPage.value = 1
   fetchCollections()
+})
+
+watch(searchQuery, () => {
+  if (searchDebounceTimer) clearTimeout(searchDebounceTimer)
+  searchDebounceTimer = setTimeout(() => {
+    currentPage.value = 1
+    fetchCollections()
+  }, 300)
 })
 
 // Update title when view mode changes
@@ -420,6 +488,10 @@ onMounted(() => {
   }
   fetchCollections()
   fetchStreakData()
+})
+
+onBeforeUnmount(() => {
+  if (searchDebounceTimer) clearTimeout(searchDebounceTimer)
 })
 </script>
 

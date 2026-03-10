@@ -1,3 +1,5 @@
+#![allow(clippy::expect_used)]
+
 use std::sync::OnceLock;
 use wasmtime::*;
 use wasmtime_wasi::sync::WasiCtxBuilder;

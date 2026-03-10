@@ -1,4 +1,6 @@
 //TODO: refactor
+#![allow(clippy::expect_used, clippy::unwrap_used)]
+
 use crate::utils::remove_html_tags;
 use bcrypt::{hash, verify, DEFAULT_COST};
 use chrono::{Duration, Utc};

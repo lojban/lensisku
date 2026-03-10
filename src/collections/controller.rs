@@ -61,7 +61,7 @@ pub async fn list_collections(
     claims: Claims,
     query: web::Query<ListCollectionsQuery>,
 ) -> impl Responder {
-    match service::list_collections(&pool, claims.sub, query.sort.as_deref()).await {
+    match service::list_collections(&pool, claims.sub, &query).await {
         Ok(response) => HttpResponse::Ok().json(response),
         Err(e) => HttpResponse::InternalServerError().json(json!({
             "error": format!("Failed to list collections: {}", e)
@@ -88,7 +88,7 @@ pub async fn list_public_collections(
     redis_cache: web::Data<crate::middleware::cache::RedisCache>,
     query: web::Query<ListCollectionsQuery>,
 ) -> impl Responder {
-    match service::list_public_collections(&pool, &redis_cache, query.sort.as_deref()).await {
+    match service::list_public_collections(&pool, &redis_cache, &query).await {
         Ok(response) => HttpResponse::Ok().json(response),
         Err(e) => HttpResponse::InternalServerError().json(json!({
             "error": format!("Failed to list public collections: {}", e)
@@ -488,7 +488,7 @@ pub async fn list_collection_items(
         page,
         per_page,
         query.search.clone(),
-        query.item_id.clone(),
+        query.item_id,
         query.exclude_with_flashcards,
     )
     .await

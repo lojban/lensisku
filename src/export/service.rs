@@ -443,7 +443,15 @@ pub async fn export_with_access_check(
         resolve_source_langid(&mut transaction, options.source_lang.as_deref()).await?;
 
     transaction.commit().await?;
-    export_dictionary(pool, lang, format, options, options.collection_id, source_langid).await
+    export_dictionary(
+        pool,
+        lang,
+        format,
+        options,
+        options.collection_id,
+        source_langid,
+    )
+    .await
 }
 
 pub async fn export_dictionary(
@@ -536,21 +544,38 @@ async fn generate_export(
             latex.into_bytes()
         }
         ExportFormat::Xml => {
-            let xml =
-                generate_xml(&mut transaction, lang, options, collection_id, source_langid).await?;
+            let xml = generate_xml(
+                &mut transaction,
+                lang,
+                options,
+                collection_id,
+                source_langid,
+            )
+            .await?;
             transaction.commit().await?;
             xml.into_bytes()
         }
         ExportFormat::Json => {
-            let json =
-                generate_json(&mut transaction, lang, options, collection_id, source_langid)
-                    .await?;
+            let json = generate_json(
+                &mut transaction,
+                lang,
+                options,
+                collection_id,
+                source_langid,
+            )
+            .await?;
             transaction.commit().await?;
             json.into_bytes()
         }
         ExportFormat::Tsv => {
-            let tsv =
-                generate_tsv(&mut transaction, lang, options, collection_id, source_langid).await?;
+            let tsv = generate_tsv(
+                &mut transaction,
+                lang,
+                options,
+                collection_id,
+                source_langid,
+            )
+            .await?;
             transaction.commit().await?;
             // Determine the TSV filename (without .zip extension)
             let tsv_filename = match collection_id {
@@ -776,7 +801,9 @@ async fn generate_xml(
     );
 
     let langid = lang_info.get::<_, i32>("langid");
-    let rows = transaction.query(&query, &[&langid, &source_langid]).await?;
+    let rows = transaction
+        .query(&query, &[&langid, &source_langid])
+        .await?;
 
     // Collect all definition IDs
     let def_ids: Vec<i32> = rows
@@ -993,9 +1020,9 @@ async fn generate_latex(
         title = format!("{} - {}", title, escape_all(&collection_name));
     }
 
-    let content = if collection_id.is_some() {
+    let content = if let Some(cid) = collection_id {
         // Generate LaTeX specifically for a collection
-        generate_collection_latex(transaction, lang, collection_id.unwrap(), source_langid).await?
+        generate_collection_latex(transaction, lang, cid, source_langid).await?
     } else {
         // Generate standard dictionary chapters
         generate_chapters(transaction, lang, &escaped_lang, None, source_langid).await?
@@ -1228,7 +1255,9 @@ async fn check_natural_entries(
         collection_join, collection_condition
     );
 
-    let row = transaction.query_one(&query, &[&lang_id, &source_langid]).await?;
+    let row = transaction
+        .query_one(&query, &[&lang_id, &source_langid])
+        .await?;
     Ok(row.get(0))
 }
 
@@ -1320,7 +1349,9 @@ async fn generate_natural_chapter(
         collection_note_select, collection_join, collection_condition
     );
 
-    let rows = transaction.query(&query, &[&lang_id, &source_langid]).await?;
+    let rows = transaction
+        .query(&query, &[&lang_id, &source_langid])
+        .await?;
     let mut entries = String::new();
 
     for row in rows {
@@ -1460,7 +1491,9 @@ async fn generate_tsv(
         .await?
         .get::<_, i32>("langid");
 
-    let rows = transaction.query(&query, &[&langid, &source_langid]).await?;
+    let rows = transaction
+        .query(&query, &[&langid, &source_langid])
+        .await?;
 
     // Collect all definition IDs
     let def_ids: Vec<i32> = rows
@@ -1489,7 +1522,7 @@ async fn generate_tsv(
         tsv.push_str(&format!("\tplacekeyword_{}\tplacekeyword_{}_meaning", i, i));
     }
 
-    tsv.push_str("\n");
+    tsv.push('\n');
 
     for row in rows.iter() {
         let definition_id: i32 = row.get("definitionid");
@@ -1556,7 +1589,7 @@ async fn generate_tsv(
             }
         }
 
-        tsv.push_str("\n");
+        tsv.push('\n');
     }
 
     Ok(tsv)
@@ -1693,7 +1726,9 @@ async fn generate_json(
         .await?
         .get::<_, i32>("langid");
 
-    let rows = transaction.query(&query, &[&langid, &source_langid]).await?;
+    let rows = transaction
+        .query(&query, &[&langid, &source_langid])
+        .await?;
 
     // Collect all definition IDs
     let def_ids: Vec<i32> = rows

@@ -12,6 +12,14 @@ pub struct ListCollectionsQuery {
     /// - `active_all`   – most active flashcard users of all time
     /// - `newest`       – most recently created first
     pub sort: Option<String>,
+    /// 1-based page index. If omitted with `per_page`, defaults to page 1.
+    pub page: Option<i64>,
+    /// Number of items per page (clamped server-side).
+    pub per_page: Option<i64>,
+    /// Case-insensitive substring search over collection name/description.
+    pub search: Option<String>,
+    /// When true, only return collections that already have at least one flashcard.
+    pub has_flashcards_only: Option<bool>,
 }
 
 #[derive(Debug, Deserialize, ToSchema)]
