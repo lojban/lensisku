@@ -11,6 +11,7 @@ use crate::{
     muplis::{self},
     sessions, subscriptions, users,
     versions::{self},
+    waves,
 };
 use actix_cors::Cors;
 use actix_web::{http::header, middleware::Logger, web, App, HttpServer};
@@ -113,6 +114,7 @@ pub async fn start_server(
             .configure(mailarchive::configure)
             .configure(jbovlaste::configure)
             .configure(comments::configure)
+            .configure(waves::configure)
             .configure(versions::configure)
             .configure(export::configure)
             .configure(subscriptions::configure)

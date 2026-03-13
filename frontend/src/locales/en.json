@@ -77,7 +77,8 @@
 "searchMetaDescription": "Search results for \"{query}\" in the Lojban dictionary.",
       "addDefinition": "Definition",
     "newFreeThread": "Start free wave",
-    "noCommentsFound": "No comments found matching your search"
+    "noCommentsFound": "No comments found matching your search",
+    "waveSourceMail": "Mail"
   },
   "assistantChat": {
     "title": "Lojban Assistant",
@@ -173,6 +174,7 @@
     "imageComment": "Image comment",
     "by": "By",
     "comments": "comments",
+    "messages": "messages",
     "noContent": "No content",
     "noWavesFound": "No waves found"
   },

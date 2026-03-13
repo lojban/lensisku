@@ -36,6 +36,7 @@ mod tersmu;
 mod users;
 mod utils;
 mod versions;
+mod waves;
 
 #[actix_web::main]
 async fn main() -> AppResult<()> {
