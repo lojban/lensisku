@@ -440,6 +440,8 @@
     "description": "Export corpus entries in various formats",
     "viewCached": "View cached exports",
     "languageLabel": "Language",
+    "languageFrom": "Entries' language",
+    "languageTo": "Definitions' language",
     "selectLanguage": "Select a language",
     "formatLabel": "Export format",
     "formats": {

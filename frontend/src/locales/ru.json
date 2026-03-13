@@ -410,6 +410,8 @@
     "description": "Экспорт записей корпуса в различных форматах",
     "viewCached": "Просмотр кэшированных экспортов",
     "languageLabel": "Язык",
+    "languageFrom": "Язык словарных гнёзд",
+    "languageTo": "Язык определений",
     "selectLanguage": "Выберите язык",
     "formatLabel": "Формат экспорта",
     "formats": {

@@ -440,6 +440,8 @@
     "description": "cupra lo sarsku valsi fi lo drata tadji",
     "viewCached": "viska lo ba'o se cupra",
     "languageLabel": "bangu",
+    "languageFrom": "te fanva",
+    "languageTo": "ve fanva",
     "selectLanguage": "ko cuxna pa bangu",
     "formatLabel": "cupra te tcila",
     "formats": {
