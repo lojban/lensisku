@@ -16,44 +16,44 @@
 
   <!-- Export Form -->
   <div class="p-6 bg-white rounded-lg shadow-sm space-y-6">
-    <!-- Language Selection -->
-    <div class="space-y-2">
-      <label class="block text-sm font-medium text-gray-700">{{ t('dictionaryExport.languageLabel') }}</label>
-      <select
-        v-model="selectedLanguage"
-        class="input-field w-full"
-      >
-        <option value="">
-          {{ t('dictionaryExport.selectLanguage') }}
-        </option>
-        <option
-          v-for="lang in languages"
-          :key="lang.id"
-          :value="lang.tag"
+    <!-- Language selection (one row, input group) -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2">
+      <label class="block text-sm font-medium text-gray-700 sm:block">{{ t('dictionaryExport.languageFrom') }}</label>
+      <label class="block text-sm font-medium text-gray-700 sm:block">{{ t('dictionaryExport.languageTo') }}</label>
+      <div class="input-group sm:col-span-2">
+        <select
+          v-model="selectedSourceLanguage"
+          class="input-field w-full"
+          :aria-label="t('dictionaryExport.languageFrom')"
         >
-          {{ lang.real_name }} ({{ lang.english_name }})
-        </option>
-      </select>
-    </div>
-
-    <!-- Source Language Selection -->
-    <div class="space-y-2">
-      <label class="block text-sm font-medium text-gray-700">{{ t('dictionaryExport.sourceLangLabel') }}</label>
-      <select
-        v-model="selectedSourceLanguage"
-        class="input-field w-full"
-      >
-        <option value="">
-          {{ t('dictionaryExport.sourceLangDefault') }}
-        </option>
-        <option
-          v-for="lang in languages"
-          :key="lang.id"
-          :value="lang.tag"
+          <option value="">
+            {{ t('dictionaryExport.sourceLangDefault') }}
+          </option>
+          <option
+            v-for="lang in languages"
+            :key="lang.id"
+            :value="lang.tag"
+          >
+            {{ lang.real_name }} ({{ lang.english_name }})
+          </option>
+        </select>
+        <select
+          v-model="selectedLanguage"
+          class="input-field w-full"
+          :aria-label="t('dictionaryExport.languageTo')"
         >
-          {{ lang.real_name }} ({{ lang.english_name }})
-        </option>
-      </select>
+          <option value="">
+            {{ t('dictionaryExport.selectLanguage') }}
+          </option>
+          <option
+            v-for="lang in languages"
+            :key="lang.id"
+            :value="lang.tag"
+          >
+            {{ lang.real_name }} ({{ lang.english_name }})
+          </option>
+        </select>
+      </div>
     </div>
 
     <!-- Format Selection -->
