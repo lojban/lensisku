@@ -458,7 +458,7 @@ watch(() => route.query[VIEW_PARAM], (qView) => {
   if (viewMode.value !== next) viewMode.value = next
 })
 
-// Watch for view mode or sort changes
+// Watch for view mode or sort changes (and auth so streak loads when auth resolves after mount)
 watch([viewMode, sortBy, hasFlashcardsOnly, () => auth.state.isLoggedIn], () => {
   // Force public view when logged out
   if (!auth.state.isLoggedIn) {
@@ -466,6 +466,7 @@ watch([viewMode, sortBy, hasFlashcardsOnly, () => auth.state.isLoggedIn], () => 
   }
   currentPage.value = 1
   fetchCollections()
+  if (auth.state.isLoggedIn) fetchStreakData()
 })
 
 watch(searchQuery, () => {
