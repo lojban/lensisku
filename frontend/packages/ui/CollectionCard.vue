@@ -43,6 +43,7 @@
               <span>{{ collectionButtonLabel }}</span>
             </RouterLink>
             <RouterLink
+              v-if="collection.has_flashcards"
               :to="`/collections/${collection.collection_id}/flashcards`"
               class="btn-empty btn-group-item"
             >
