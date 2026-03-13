@@ -31,7 +31,7 @@ import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 
-import { getRecentChanges, list_threads, list_comments, list_definitions } from '@/api'
+import { getRecentChanges, list_wave_threads, list_comments, list_definitions } from '@/api'
 import ActivityChanges from '@/components/activity/ActivityChanges.vue'
 import ActivityComments from '@/components/activity/ActivityComments.vue'
 import ActivityDefinitions from '@/components/activity/ActivityDefinitions.vue'
@@ -128,40 +128,36 @@ const fetchData = async (tabKey) => {
         break
       case 'threads':
         threads.value = []
-        response = await list_threads({
+        response = await list_wave_threads({
           page: currentPage.value,
           per_page: perPage.value,
           sort_by: 'time',
           sort_order: 'desc',
           signal: abortController.signal
         })
-        threads.value = response.data.comments
+        threads.value = response.data.items
         totalItems.value = response.data.total
 
-        // Transform content for display
-        threads.value.forEach(thread => {
-          // Parse content for both first and last comments
-          const parseContent = (content) => {
-            if (content && typeof content === 'string') {
-              try {
-                return JSON.parse(content);
-              } catch (e) {
-                return [{ type: 'text', data: content }];
+        // Normalize comment threads for display (same shape as before for comment type)
+        threads.value.forEach((item) => {
+          if (item.source === 'comment') {
+            const parseContent = (content) => {
+              if (content && typeof content === 'string') {
+                try {
+                  return JSON.parse(content)
+                } catch (e) {
+                  return [{ type: 'text', data: content }]
+                }
               }
+              return Array.isArray(content) ? content : []
             }
-            return content;
-          };
-
-          // Last comment content (displayed preview)
-          thread.content = parseContent(thread.content);
-          thread.simple_content = thread.content?.filter(p => p.type === 'text').map(p => p.data).join(' ') || ''
-          // First comment content (used for subject fallback)
-          thread.first_comment_content = parseContent(thread.first_comment_content);
-
-          // Ensure we have at least an empty array for content
-          thread.content = thread.content || [];
-          thread.first_comment_content = thread.first_comment_content || [];
-        });
+            item.time = item.last_activity_time
+            item.content = parseContent(item.first_comment_content)
+            item.simple_content = item.simple_content ?? (item.content?.filter(p => p.type === 'text').map(p => p.data).join(' ') || '')
+            item.first_comment_content = Array.isArray(item.first_comment_content) ? item.first_comment_content : parseContent(item.first_comment_content)
+            item.total_replies = item.total_replies ?? 0
+          }
+        })
         break
       case 'all_comments':
         allComments.value = []

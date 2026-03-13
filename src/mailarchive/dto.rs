@@ -48,3 +48,14 @@ pub struct SpamVoteResponse {
     pub success: bool,
     pub user_voted: bool,
 }
+
+/// Summary of a mail thread (all messages with same cleaned_subject) for listing.
+#[derive(Debug)]
+pub struct MailThreadSummary {
+    pub cleaned_subject: String,
+    pub subject: Option<String>,
+    pub from_address: Option<String>,
+    pub last_sent_at: Option<chrono::DateTime<chrono::Utc>>,
+    pub message_count: i64,
+    pub content_preview: Option<String>,
+}

@@ -7,7 +7,7 @@ pub mod controller;
 pub mod dto;
 mod errors;
 pub mod models;
-mod service;
+pub mod service;
 
 pub fn configure(cfg: &mut web::ServiceConfig) {
     cfg.service(
@@ -19,7 +19,6 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
             .service(controller::get_trending)
             .service(controller::get_comment_stats)
             .service(controller::get_most_bookmarked)
-            .service(controller::search_comments)
             .service(controller::list_comments)
             .service(
                 web::scope("/hashtags")

@@ -108,9 +108,7 @@
                 ? $t('home.searchResultsTitle.semantic')
                 : searchMode === 'muplis'
                   ? $t('home.searchResultsTitle.muplis')
-                  : searchMode === 'comments'
-                    ? $t('home.searchResultsTitle.comments')
-                    : $t('home.searchResultsTitle.messages')
+                  : $t('home.searchResultsTitle.comments')
           }}
         </h2>
 
@@ -151,7 +149,7 @@
         </div>
 
         <div
-          v-if="searchMode === 'comments' || searchMode === 'messages'"
+          v-if="searchMode === 'comments'"
           class="flex items-center gap-2"
         >
           <div class="relative">
@@ -160,47 +158,14 @@
               class="input-field"
               @change="handleSortChange"
             >
-              <option
-                v-if="searchMode === 'comments'"
-                value="time"
-              >
+              <option value="time">
                 {{ $t('sort.time') }}
               </option>
-              <option
-                v-if="searchMode === 'comments'"
-                value="reactions"
-              >
+              <option value="reactions">
                 {{ $t('sort.reactions') }}
               </option>
-              <option
-                v-if="searchMode === 'comments'"
-                value="replies"
-              >
+              <option value="replies">
                 {{ $t('sort.replies') }}
-              </option>
-              <option
-                v-if="searchMode === 'messages'"
-                value="rank"
-              >
-                {{ $t('sort.relevance') }}
-              </option>
-              <option
-                v-if="searchMode === 'messages'"
-                value="date"
-              >
-                {{ $t('sort.date') }}
-              </option>
-              <option
-                v-if="searchMode === 'messages'"
-                value="subject"
-              >
-                {{ $t('sort.subject') }}
-              </option>
-              <option
-                v-if="searchMode === 'messages'"
-                value="from"
-              >
-                {{ $t('sort.sender') }}
               </option>
             </select>
           </div>
@@ -219,15 +184,6 @@
             />
             <span>{{ sortOrder === 'asc' ? $t('sort.asc') : $t('sort.desc') }}</span>
           </button>
-          <!-- Group by Thread Toggle -->
-          <div v-if="searchMode === 'messages'" class="flex items-center space-x-2">
-            <input
-              id="groupByThread"
-              type="checkbox"
-              v-model="groupByThread"
-              class="checkbox-toggle">
-            <label for="groupByThread" class="text-sm text-gray-700 whitespace-nowrap">{{ $t('searchForm.modes.groupByThread') }}</label>
-          </div>
         </div>
       </div>
       <div
@@ -249,15 +205,6 @@
           :decomposition="decomposition || []"
           @collection-updated="collections = $event"
         />
-        <MessageList
-          v-else-if="searchMode === 'messages'"
-          :messages="messages"
-          :show-content="includeContent"
-          :search-term="searchQuery"
-          :is-grouped-by-thread="groupByThread"
-          @view-message="viewMessage"
-          @view-thread-summary="handleViewThreadSummary"
-        />
         <MuplisList
           v-else-if="searchMode === 'muplis'"
           :entries="muplisEntries"
@@ -267,23 +214,36 @@
           v-else-if="searchMode === 'comments'"
           class="space-y-4"
         >
-          <div v-if="comments.length > 0">
+          <div v-if="waveItems.length > 0">
             <div
-              v-for="comment in comments"
-              :key="comment.comment_id"
+              v-for="(item, idx) in waveItems"
+              :key="item.source === 'comment' ? item.comment.comment_id : 'mail-' + item.message.id"
               class="cursor-pointer"
               @click="
-                router.push(
-                  `/comments?thread_id=${comment.thread_id}&comment_id=${comment.parent_id}&scroll_to=${comment.comment_id}&valsi_id=${comment.valsi_id}&definition_id=${comment.definition_id || 0}`
-                )
+                item.source === 'comment'
+                  ? router.push(`/comments?thread_id=${item.comment.thread_id}&comment_id=${item.comment.parent_id}&scroll_to=${item.comment.comment_id}&valsi_id=${item.comment.valsi_id}&definition_id=${item.comment.definition_id || 0}`)
+                  : router.push(`/mail/thread?subject=${encodeURIComponent(item.message.cleaned_subject || item.message.subject || '')}`)
               "
             >
               <CommentItem
-                :comment="comment"
+                v-if="item.source === 'comment'"
+                :comment="item.comment"
                 :reply-enabled="true"
                 :show-context="true"
                 @reply="handleReply"
               />
+              <div
+                v-else
+                class="rounded-lg border border-gray-200 bg-white p-4 hover:border-blue-200"
+              >
+                <div class="flex items-center gap-2 text-sm text-gray-500 mb-1">
+                  <span class="font-medium text-gray-800">{{ item.message.subject || item.message.cleaned_subject || '-' }}</span>
+                  <span class="text-xs px-2 py-0.5 rounded bg-gray-100">{{ $t('home.waveSourceMail') }}</span>
+                </div>
+                <div class="text-sm text-gray-600">
+                  {{ item.message.from_address }} · {{ item.message.date || '' }}
+                </div>
+              </div>
             </div>
           </div>
           <div
@@ -330,7 +290,7 @@ import {
   getLanguages,
   getTrendingComments,
   getRecentChanges,
-  searchComments,
+  searchWaves,
   getCollections,
   getBulkVotes
 } from '@/api'
@@ -351,7 +311,6 @@ import { useI18n } from 'vue-i18n';
 import { SearchQueue } from '@/utils/searchQueue';
 import { normalizeSearchQuery } from '@/utils/searchQueryUtils';
 
-import MessageList from './MessageList.vue'
 
 
 
@@ -404,11 +363,10 @@ const props = defineProps({
 })
 
 // State
-const messages = ref([])
+const waveItems = ref([])
 const muplisEntries = ref([])
 const definitions = ref([])
 const decomposition = ref([])
-const comments = ref([])
 const total = ref(0)
 const currentPage = ref(parseInt(route.query.page) || 1)
 const totalPages = ref(1)
@@ -439,7 +397,8 @@ const searchQuery = ref(getInitialSearchQuery())
 const getInitialSearchMode = () => {
   if (typeof window === 'undefined') return;
   const storedMode = localStorage.getItem('searchMode')
-  return storedMode || props.urlSearchMode
+  const mode = storedMode || props.urlSearchMode
+  return mode === 'messages' ? 'comments' : mode
 }
 
 const searchMode = ref(getInitialSearchMode())
@@ -494,8 +453,7 @@ const filters = ref({
 
 // Search queues to prevent race conditions
 const definitionsSearchQueue = new SearchQueue()
-const commentsSearchQueue = new SearchQueue()
-const messagesSearchQueue = new SearchQueue()
+const wavesSearchQueue = new SearchQueue()
 const muplisSearchQueue = new SearchQueue()
 
 // Fetch corpus entries
@@ -717,50 +675,45 @@ const toggleSortOrder = () => {
 const handleSortChange = () => {
   currentPage.value = 1
   if (searchMode.value === 'comments') {
-    fetchComments(1, searchQuery.value)
-  } else if (searchMode.value === 'messages') {
+    fetchWaves(1, searchQuery.value)
+  } else {
     fetchData()
   }
 }
 
-const fetchComments = async (page, search = '') => {
+const fetchWaves = async (page, search = '') => {
   isLoading.value = true
   error.value = null
 
-  const { requestId, signal } = commentsSearchQueue.createRequest()
+  const { requestId, signal } = wavesSearchQueue.createRequest()
 
   try {
-    const response = await searchComments({
+    const response = await searchWaves({
       page,
       per_page: 10,
-      search,
+      search: search || undefined,
       sort_by: sortBy.value,
       sort_order: sortOrder.value,
     }, signal)
 
-    // Only process if this is still the latest request
-    if (!commentsSearchQueue.shouldProcess(requestId)) {
+    if (!wavesSearchQueue.shouldProcess(requestId)) {
       return
     }
 
-    comments.value = response.data.comments
+    waveItems.value = response.data.items
     total.value = response.data.total
     currentPage.value = page
     totalPages.value = Math.ceil(response.data.total / 10)
   } catch (e) {
-    // Ignore abort errors
     if (e.name === 'AbortError' || e.code === 'ERR_CANCELED' || e.message?.includes('canceled')) {
       return
     }
-    
-    // Only show errors for the latest request
-    if (commentsSearchQueue.shouldProcess(requestId)) {
-      error.value = e.response?.data?.error || 'Failed to load comments'
-      console.error('Error fetching comments:', e)
+    if (wavesSearchQueue.shouldProcess(requestId)) {
+      error.value = e.response?.data?.error || 'Failed to load waves'
+      console.error('Error fetching waves:', e)
     }
   } finally {
-    // Only update loading state if this is still the latest request
-    if (commentsSearchQueue.shouldProcess(requestId)) {
+    if (wavesSearchQueue.shouldProcess(requestId)) {
       isLoading.value = false
     }
   }
@@ -796,33 +749,7 @@ const fetchData = async () => {
     if (searchMode.value === 'dictionary' || searchMode.value === 'semantic') {
       await fetchDefinitions(currentPage.value, searchQuery.value)
     } else if (searchMode.value === 'comments') {
-      await fetchComments(currentPage.value, searchQuery.value)
-    } else if (searchMode.value === 'messages') {
-      const { requestId, signal } = messagesSearchQueue.createRequest()
-      
-      try {
-        const response = await api.get('/mail/search', { params, signal })
-        
-        // Only process if this is still the latest request
-        if (!messagesSearchQueue.shouldProcess(requestId)) {
-          return
-        }
-        
-        messages.value = response.data.messages
-        totalPages.value = Math.ceil(response.data.total / response.data.per_page)
-        isLoading.value = false
-      } catch (error) {
-        // Ignore abort errors
-        if (error.name === 'AbortError' || error.code === 'ERR_CANCELED' || error.message?.includes('canceled')) {
-          return
-        }
-        
-        // Only show errors for the latest request
-        if (messagesSearchQueue.shouldProcess(requestId)) {
-          console.error('Error fetching data:', error)
-          isLoading.value = false
-        }
-      }
+      await fetchWaves(currentPage.value, searchQuery.value)
     } else if (searchMode.value === 'muplis') {
       const { requestId, signal } = muplisSearchQueue.createRequest()
       
@@ -945,7 +872,7 @@ const performSearch = ({ query, mode }) => {
 
   if (searchMode.value !== effectiveMode) {
     // Reset sortBy to default for the new mode
-    sortBy.value = effectiveMode === 'messages' ? 'rank' : 'time'
+    sortBy.value = 'time'
   }
 
   // Update state before pushing to router to avoid duplicate fetches
@@ -1027,8 +954,9 @@ const syncFromRoute = () => {
   }
 
   if (query.mode !== undefined) {
-    searchMode.value = query.mode
-    if (typeof window !== 'undefined') localStorage.setItem('searchMode', query.mode)
+    const mode = query.mode === 'messages' ? 'comments' : query.mode
+    searchMode.value = mode
+    if (typeof window !== 'undefined') localStorage.setItem('searchMode', mode)
   }
   // groupByThread is now handled by its watcher and getInitialGroupByThread
   // if (query.group_by_thread !== undefined) {

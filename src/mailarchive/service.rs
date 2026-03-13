@@ -1,6 +1,8 @@
 #![allow(clippy::expect_used)]
 
-use crate::mailarchive::{Message, SearchQuery, SearchResponse, ThreadQuery, ThreadResponse};
+use crate::mailarchive::{
+    dto::MailThreadSummary, Message, SearchQuery, SearchResponse, ThreadQuery, ThreadResponse,
+};
 use base64::engine::general_purpose::STANDARD;
 use base64::Engine as _;
 use chrono::{DateTime, FixedOffset, NaiveDateTime, Utc};
@@ -286,6 +288,76 @@ pub async fn show_thread(
         per_page,
         clean_subject,
     })
+}
+
+/// List mail threads (grouped by cleaned_subject) for the waves unified list.
+pub async fn list_mail_threads(
+    pool: &Pool,
+    page: i64,
+    per_page: i64,
+    sort_order: &str,
+) -> Result<(Vec<MailThreadSummary>, i64), Box<dyn std::error::Error>> {
+    let mut client = pool.get().await?;
+    let transaction = client.transaction().await?;
+    let offset = (page - 1) * per_page;
+    let order_dir = if sort_order.eq_ignore_ascii_case("asc") {
+        "ASC"
+    } else {
+        "DESC"
+    };
+
+    let total: i64 = transaction
+        .query_one(
+            "SELECT COUNT(DISTINCT cleaned_subject) FROM messages WHERE cleaned_subject IS NOT NULL AND cleaned_subject != ''",
+            &[],
+        )
+        .await?
+        .get(0);
+
+    let rows = transaction
+        .query(
+            &format!(
+                r#"
+                WITH latest AS (
+                    SELECT DISTINCT ON (cleaned_subject)
+                        id, cleaned_subject, subject, from_address, sent_at,
+                        LEFT(content, 300) as content_preview
+                    FROM messages
+                    WHERE cleaned_subject IS NOT NULL AND cleaned_subject != ''
+                    ORDER BY cleaned_subject, sent_at DESC NULLS LAST
+                ),
+                counts AS (
+                    SELECT cleaned_subject, COUNT(*) as cnt
+                    FROM messages
+                    WHERE cleaned_subject IS NOT NULL AND cleaned_subject != ''
+                    GROUP BY cleaned_subject
+                )
+                SELECT l.cleaned_subject, l.subject, l.from_address, l.sent_at, c.cnt as message_count, l.content_preview
+                FROM latest l
+                JOIN counts c ON c.cleaned_subject = l.cleaned_subject
+                ORDER BY l.sent_at DESC NULLS LAST {}
+                LIMIT $1 OFFSET $2
+                "#,
+                order_dir
+            ),
+            &[&per_page, &offset],
+        )
+        .await?;
+
+    let items: Vec<MailThreadSummary> = rows
+        .iter()
+        .map(|row| MailThreadSummary {
+            cleaned_subject: row.get("cleaned_subject"),
+            subject: row.get("subject"),
+            from_address: row.get("from_address"),
+            last_sent_at: row.get("sent_at"),
+            message_count: row.get::<_, i64>("message_count"),
+            content_preview: row.get("content_preview"),
+        })
+        .collect();
+
+    transaction.commit().await?;
+    Ok((items, total))
 }
 
 fn remove_prefixes(subject: &str) -> String {

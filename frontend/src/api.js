@@ -462,7 +462,8 @@ export const removeProfileImage = () => {
 
 export const getTrendingComments = (params) => api.get('/comments/trending', { params })
 
-export const searchComments = (params, signal) => api.get('/comments/search', { params, signal })
+export const searchWaves = (params, signal) => api.get('/waves/search', { params, signal })
+export const list_wave_threads = (params, signal) => api.get('/waves/threads', { params, signal })
 
 // Get available user roles
 export const getRoles = () => api.get('/auth/roles')

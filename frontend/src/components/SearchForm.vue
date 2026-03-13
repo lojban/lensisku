@@ -41,7 +41,7 @@
 </template>
 
 <script setup>
-import { Book, Mail, List, ChevronDown, Waves, X } from 'lucide-vue-next'
+import { Book, List, ChevronDown, Waves, X } from 'lucide-vue-next'
 import Select from 'primevue/select'
 import { ref, computed, watch, onBeforeUnmount } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -52,7 +52,6 @@ const { t } = useI18n()
 const modes = ref([
   { name: t('searchForm.modes.dictionary'), value: 'dictionary', icon: Book, color: 'text-blue-500' },
   { name: t('searchForm.modes.comments'), value: 'comments', icon: Waves, color: 'text-purple-500' },
-  { name: t('searchForm.modes.messages'), value: 'messages', icon: Mail, color: 'text-orange-500' },
   { name: t('searchForm.modes.muplis'), value: 'muplis', icon: List, color: 'text-teal-500' }
 ]);
 
@@ -81,8 +80,6 @@ const DEBOUNCE_DELAY = 450
 
 const getPlaceholder = computed(() => {
   switch (mode.value?.value) {
-    case 'messages':
-      return t('searchForm.placeholder.messages')
     case 'muplis':
       return t('searchForm.placeholder.muplis')
     case 'dictionary':

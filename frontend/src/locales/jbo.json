@@ -77,7 +77,8 @@
     "searchMetaDescription": "ko viska lo se facki be la'ei \"{query}\" ne'i lo lojbo vlaste.",
     "addDefinition": "valsi ciksi",
     "newFreeThread": "cfari lo karni",
-    "noCommentsFound": "no casnu karni cu se facki"
+    "noCommentsFound": "no mapti pinka cu se penmi",
+    "waveSourceMail": "mu'e mrilu"
   },
   "assistantChat": {
     "title": "lojbo sidju",
@@ -173,6 +174,7 @@
     "imageComment": "pixra casnu",
     "by": "finti fa la",
     "comments": "casnu karni",
+    "messages": "mrilu",
     "noContent": "no da kansa",
     "noWavesFound": "no karni cu se facki"
   },
