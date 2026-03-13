@@ -78,7 +78,7 @@
             :disabled="isImporting"
             @click="triggerImport"
           >
-            <Upload class="h-4 w-4 shrink-0" />
+            <Import class="h-4 w-4 shrink-0" />
             {{ t('collectionList.importCollection') }}
           </button>
           <button
@@ -221,7 +221,7 @@
 </template>
 
 <script setup>
-import { CirclePlus, Upload, BookOpen, ArrowBigRight } from 'lucide-vue-next';
+import { CirclePlus, Import, BookOpen, ArrowBigRight } from 'lucide-vue-next';
 import { ref, computed, onBeforeUnmount, onMounted, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
