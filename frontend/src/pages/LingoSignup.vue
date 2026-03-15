@@ -95,10 +95,14 @@ async function performSignup() {
       router.push(returnTo.value)
     }
   } catch (err) {
-    error.value =
-      err.response?.data?.error_description ||
-      err.response?.data?.message ||
-      t('signupPage.signupError', 'Sign up failed.')
+    if (err.response?.status === 409 || err.response?.data?.error === 'user_exists') {
+      error.value = t('signupPage.userExists', 'Username or email already exists.')
+    } else {
+      error.value =
+        err.response?.data?.error_description ||
+        err.response?.data?.message ||
+        t('signupPage.signupError', 'Sign up failed.')
+    }
   } finally {
     isLoading.value = false
   }

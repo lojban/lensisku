@@ -228,7 +228,12 @@ const resetPassword = async () => {
       error.value = { message: response.data.message }
     }
   } catch (err) {
-    error.value = { message: err.response?.data?.error || t('passwordReset.resetFailedError') }
+    if (err.response?.status === 400) {
+      error.value = { message: t('passwordReset.invalidTokenError') }
+    } else {
+      const msg = err.response?.data?.error_description ?? err.response?.data?.error
+      error.value = { message: msg || t('passwordReset.resetFailedError') }
+    }
   } finally {
     isLoading.value = false
   }

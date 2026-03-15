@@ -113,14 +113,25 @@ const confirmEmailToken = async (token) => {
         }
       }
     } else {
-      error.value = response.data.error || 'Failed to confirm email'
-      isExpired.value = response.data.error?.includes('expired')
+      const errMsg = response.data.error || ''
+      if (errMsg.toLowerCase().includes('expired')) {
+        error.value = t('emailConfirmation.errorExpired')
+        isExpired.value = true
+      } else if (errMsg.toLowerCase().includes('invalid')) {
+        error.value = t('emailConfirmation.errorInvalidToken')
+      } else {
+        error.value = errMsg || t('emailConfirmation.errorConfirming')
+      }
     }
   } catch (err) {
-    // Handle HTTP error responses (4xx, 5xx)
-    if (err.response?.data?.error) {
-      error.value = err.response.data.error
-      isExpired.value = err.response.data.error.includes('expired')
+    const errMsg = err.response?.data?.error
+    if (errMsg?.toLowerCase().includes('expired')) {
+      error.value = t('emailConfirmation.errorExpired')
+      isExpired.value = true
+    } else if (errMsg?.toLowerCase().includes('invalid')) {
+      error.value = t('emailConfirmation.errorInvalidToken')
+    } else if (errMsg) {
+      error.value = errMsg
     } else {
       error.value = t('emailConfirmation.errorConfirming')
     }

@@ -13,7 +13,7 @@ use tokio::task;
 use actix_web::{dev::ServiceRequest, error::ErrorUnauthorized, HttpMessage};
 use actix_web::{web, Error};
 use actix_web_httpauth::extractors::bearer::BearerAuth;
-use jsonwebtoken::{decode, DecodingKey, Validation};
+use jsonwebtoken::{decode, DecodingKey, Algorithm, Validation};
 
 use deadpool_postgres::Pool;
 use rand::{rng, Rng};
@@ -300,7 +300,10 @@ pub async fn update_role(
 
 pub async fn delete_role(pool: &Pool, role_name: &str) -> AppResult<()> {
     let protected_roles = ["admin", "editor", "unconfirmed", "blocked"];
-    if protected_roles.contains(&role_name) {
+    if protected_roles
+        .iter()
+        .any(|r| role_name.eq_ignore_ascii_case(r))
+    {
         return Err(AppError::BadRequest(format!(
             "Cannot delete protected role: {}",
             role_name
@@ -539,10 +542,11 @@ pub async fn validator(
     let token = credentials.token();
     let secret = env::var("JWT_SECRET").expect("JWT_SECRET must be set");
 
+    let validation = Validation::new(Algorithm::HS256);
     match decode::<Claims>(
         token,
         &DecodingKey::from_secret(secret.as_bytes()),
-        &Validation::default(),
+        &validation,
     ) {
         Ok(token_data) => {
             req.extensions_mut().insert(token_data.claims);
@@ -1258,11 +1262,12 @@ pub async fn refresh_tokens(
     let secret =
         env::var("REFRESH_TOKEN_SECRET").map_err(|e| AppError::Config(vec![e.to_string()]))?;
 
-    // Validate refresh token
+    // Validate refresh token (explicit HS256 to prevent algorithm confusion)
+    let validation = Validation::new(Algorithm::HS256);
     let token_data = decode::<Claims>(
         refresh_token,
         &DecodingKey::from_secret(secret.as_bytes()),
-        &Validation::default(),
+        &validation,
     )?;
 
     let claims = token_data.claims;
