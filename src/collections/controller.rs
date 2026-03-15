@@ -350,7 +350,8 @@ pub async fn update_item_position(
         (status = 500, description = "Internal server error")
     ),
     security(("bearer_auth" = [])),
-    summary = "Remove item from collection"
+    summary = "Remove item from collection",
+    description = "Removes a dictionary item and associated flashcards from a collection."
 )]
 #[delete("/{id}/items/{item_id}")]
 pub async fn remove_item(
@@ -560,7 +561,9 @@ pub async fn update_item_notes(
     ),
     security(
         ("bearer_auth" = [])
-    )
+    ),
+    summary = "Get item image",
+    description = "Retrieves the image associated with the front or back side of an item."
 )]
 #[get("/{collection_id}/items/{item_id}/image/{side}")]
 pub async fn get_item_image(
@@ -612,7 +615,9 @@ pub async fn get_item_image(
     ),
     security(
         ("bearer_auth" = [])
-    )
+    ),
+    summary = "Get item sound",
+    description = "Retrieves the sound file associated with a collection item."
 )]
 #[get("/{collection_id}/items/{item_id}/sound")]
 pub async fn get_item_sound(
