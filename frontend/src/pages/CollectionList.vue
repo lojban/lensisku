@@ -1,6 +1,6 @@
 <template>
-  <!-- Streak Stats (card-base per brandbook) -->
-  <div v-if="auth.state.isLoggedIn" class="card-base card-compact mb-4 p-4 sm:p-5">
+  <!-- Streak Stats (card-base per brandbook). Min-height reserves space so skeleton and content have equal bounding rect (no CLS). -->
+  <div v-if="auth.state.isLoggedIn" class="card-base card-compact mb-4 p-4 sm:p-5 min-h-[7.6875rem]">
     <template v-if="!isLoadingStreak && streakData">
       <div class="flex items-center justify-between mb-2">
         <h3 class="text-base font-semibold text-gray-800">
@@ -29,16 +29,20 @@
         </div>
       </div>
     </template>
-    <div v-else class="animate-pulse min-h-[6rem]">
+    <!-- Skeleton: same structure and sizes as real content to avoid CLS (equal bounding rect) -->
+    <div v-else class="animate-pulse streak-skeleton" aria-hidden="true">
       <div class="flex items-center justify-between mb-2">
-        <div class="h-4 bg-gray-200 rounded w-1/3" />
-        <div class="h-3 bg-gray-100 rounded w-1/4" />
+        <!-- Match h3.text-base font-semibold line-height (1.5rem = 24px) -->
+        <div class="h-6 bg-gray-200 rounded w-1/3 shrink-0" />
+        <!-- Match .card-meta text-xs height -->
+        <div class="h-4 bg-gray-100 rounded w-1/4 shrink-0" />
       </div>
       <div class="grid grid-cols-7 gap-1.5">
         <div v-for="i in 7" :key="i" class="flex flex-col items-center">
-          <div class="h-3 bg-gray-100 rounded w-full max-w-[32px] mb-0.5" />
-          <div class="w-6 h-6 rounded-full bg-gray-100" />
-          <div class="h-2.5 bg-gray-100 rounded w-full max-w-[24px] mt-0.5" />
+          <!-- Match .card-meta-date.text-[10px].leading-tight (~12.5px) -->
+          <div class="h-[13px] bg-gray-100 rounded w-full max-w-[32px] shrink-0" />
+          <div class="w-6 h-6 rounded-full bg-gray-100 shrink-0" />
+          <div class="h-[13px] bg-gray-100 rounded w-full max-w-[24px] shrink-0" />
         </div>
       </div>
     </div>
@@ -108,21 +112,21 @@
         <span>{{ t('collectionList.onlyWithFlashcards', 'Only with flashcards') }}</span>
       </label>
     </div>
-    <div class="btn-group-forced flex flex-nowrap justify-center min-w-0 overflow-x-auto" role="group" aria-label="Sort order">
-      <button
-        v-for="opt in sortOptions"
-        :key="opt.value"
-        type="button"
-        :class="[
-          'btn-reaction btn-group-item px-2 py-1 sm:px-4 sm:py-1.5 shrink-0 flex items-center justify-center gap-1.5',
-          { enabled: sortBy === opt.value },
-        ]"
-        :title="opt.label"
-        @click="sortBy = opt.value"
-      >
-        <component :is="opt.icon" class="h-4 w-4 shrink-0" aria-hidden="true" />
-        <span class="hidden sm:inline">{{ opt.label }}</span>
-      </button>
+    <div class="flex flex-row items-center gap-2 sm:block">
+      <div class="btn-group-forced flex flex-nowrap justify-center min-w-0 overflow-x-auto sm:overflow-visible" role="group" aria-label="Sort order">
+        <button
+          v-for="opt in sortOptions"
+          :key="opt.value"
+          type="button"
+          class="btn-group-item btn-get px-2 py-1 sm:px-4 sm:py-1.5 shrink-0 flex items-center justify-center gap-1.5"
+          :title="opt.label"
+          @click="sortBy = opt.value"
+        >
+          <component :is="opt.icon" class="h-4 w-4 shrink-0" aria-hidden="true" />
+          <span class="hidden sm:inline">{{ opt.label }}</span>
+        </button>
+      </div>
+      <span class="sm:hidden text-sm font-medium text-gray-700 shrink-0" aria-live="polite">{{ selectedSortLabel }}</span>
     </div>
   </div>
 
@@ -281,6 +285,8 @@ const sortOptions = computed(() => [
   { value: 'active_all',   label: t('collectionList.sortActiveAll'), icon: Trophy },
   { value: 'newest',       label: t('collectionList.sortNewest'), icon: ArrowDown },
 ])
+
+const selectedSortLabel = computed(() => sortOptions.value.find(o => o.value === sortBy.value)?.label ?? '')
 
 const newCollection = ref({
   name: '',
