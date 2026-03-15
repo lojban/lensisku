@@ -13,8 +13,9 @@
         "format:check": "prettier --check ."
     },
     "dependencies": {
-        "@milkdown/crepe": "^7.6.4",
-        "@milkdown/utils": "^7.6.4",
+        "@milkdown/core": "^7.19.0",
+        "@milkdown/crepe": "^7.19.0",
+        "@milkdown/utils": "^7.19.0",
         "@paypal/paypal-js": "^8.2.0",
         "@primeuix/themes": "^1.0.0",
         "@tailwindcss/typography": "^0.5.16",
@@ -23,7 +24,7 @@
         "@vue-flow/core": "^1.42.3",
         "@vueuse/core": "^13.0.0",
         "@vueuse/head": "^2.0.0",
-        "axios": "^1.8.4",
+        "axios": "^1.13.6",
         "jwt-decode": "4.0.0",
         "lucide-vue-next": "^0.482.0",
         "marked": "^15.0.7",
