@@ -94,10 +94,9 @@ const getInitialTab = () => {
 }
 const activeTab = ref(getInitialTab())
 
-// Threads pagination
+// Threads pagination: only update URL; route watcher will sync currentPage and fetch
 const changePage = (newPage) => {
   if (newPage >= 1 && newPage <= totalPages.value) {
-    currentPage.value = newPage
     router.replace({
       query: { ...route.query, page: newPage },
     })
@@ -119,22 +118,24 @@ const fetchData = async (tabKey) => {
     switch (tabKey) {
       case 'changes':
         changes.value = []
-        response = await getRecentChanges({
-          days: days.value,
-          signal: abortController.signal
-        })
+        response = await getRecentChanges(
+          { days: days.value },
+          abortController.signal
+        )
         changes.value = response.data.changes
         totalItems.value = response.data.total // Assuming API returns total
         break
       case 'threads':
         threads.value = []
-        response = await list_wave_threads({
-          page: currentPage.value,
-          per_page: perPage.value,
-          sort_by: 'time',
-          sort_order: 'desc',
-          signal: abortController.signal
-        })
+        response = await list_wave_threads(
+          {
+            page: currentPage.value,
+            per_page: perPage.value,
+            sort_by: 'time',
+            sort_order: 'desc',
+          },
+          abortController.signal
+        )
         threads.value = response.data.items
         totalItems.value = response.data.total
 
@@ -161,24 +162,28 @@ const fetchData = async (tabKey) => {
         break
       case 'all_comments':
         allComments.value = []
-        response = await list_comments({
-          page: currentPage.value,
-          per_page: perPage.value,
-          sort_order: 'desc',
-          signal: abortController.signal
-        })
+        response = await list_comments(
+          {
+            page: currentPage.value,
+            per_page: perPage.value,
+            sort_order: 'desc',
+          },
+          abortController.signal
+        )
         allComments.value = response.data.comments
         totalItems.value = response.data.total
         break
       case 'all_definitions':
         allDefinitions.value = []
-        response = await list_definitions({
-          page: currentPage.value,
-          per_page: perPage.value,
-          sort_by: 'created_at',
-          sort_order: 'desc',
-          signal: abortController.signal
-        })
+        response = await list_definitions(
+          {
+            page: currentPage.value,
+            per_page: perPage.value,
+            sort_by: 'created_at',
+            sort_order: 'desc',
+          },
+          abortController.signal
+        )
         allDefinitions.value = response.data.definitions
         totalItems.value = response.data.total
         break
