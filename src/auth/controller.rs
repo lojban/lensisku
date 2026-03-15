@@ -12,7 +12,7 @@ use crate::{
         email_confirmation, service, Claims, CompletePasswordChangeRequest,
         EmailConfirmationRequest, FollowRequest, RefreshTokenRequest, ResendConfirmationRequest,
     },
-    middleware::limiter::{EmailConfirmationLimiter, PasswordResetLimiter},
+    middleware::limiter::{EmailConfirmationLimiter, LoginLimiter, PasswordResetLimiter},
 };
 
 use super::dto::*;
@@ -360,14 +360,16 @@ pub async fn confirm_email(
     responses(
         (status = 200, description = "Login successful", body = AuthResponse),
         (status = 401, description = "Invalid credentials", body = String),
+        (status = 429, description = "Too many login attempts", body = String),
         (status = 500, description = "Internal server error")
     ),
     summary = "Authenticate user",
-    description = "Authenticate a user with their credentials and receive access and refresh tokens. The access token should be included in the Authorization header for subsequent requests to protected endpoints. The refresh token can be used to obtain new tokens when the access token expires."
+    description = "Authenticate a user with their credentials and receive access and refresh tokens. Rate limited by IP and by failed attempts per identifier."
 )]
 #[post("/login")]
 pub async fn login(
     pool: web::Data<Pool>,
+    login_limiter: web::Data<LoginLimiter>,
     user_data: web::Json<LoginRequest>,
     req: actix_web::HttpRequest,
 ) -> Result<HttpResponse, Error> {
@@ -383,12 +385,41 @@ pub async fn login(
             h.to_str().unwrap_or("unknown").to_string()
         });
 
+    if !login_limiter
+        .check_and_record_attempt(&ip_address)
+        .await
+        .unwrap_or(false)
+    {
+        return Ok(HttpResponse::TooManyRequests().json(
+            "Too many login attempts from this IP. Please try again later.",
+        ));
+    }
+
+    if login_limiter
+        .is_identifier_over_failure_limit(&user_data.username_or_email)
+        .await
+        .unwrap_or(false)
+    {
+        return Ok(HttpResponse::TooManyRequests().json(
+            "Too many failed attempts for this account. Please try again later.",
+        ));
+    }
+
     match service::login(&pool, &user_data, ip_address, user_agent).await {
         Ok(token_pair) => Ok(HttpResponse::Ok().json(json!({
             "access_token": token_pair.access_token,
             "refresh_token": token_pair.refresh_token
         }))),
-        Err(_) => Ok(HttpResponse::Unauthorized().json("Invalid credentials")),
+        Err(_) => {
+            if login_limiter
+                .record_failed_login(&user_data.username_or_email)
+                .await
+                .is_err()
+            {
+                log::warn!("Failed to record login failure for rate limiting");
+            }
+            Ok(HttpResponse::Unauthorized().json("Invalid credentials"))
+        }
     }
 }
 

@@ -11,7 +11,7 @@
           v-model="searchQuery"
           type="text"
           class="input-field w-full sm:max-w-md"
-          :placeholder="t('lingo.searchCourses', 'Search courses by name or description')"
+          :placeholder="t('lingo.searchCourses')"
         >
       </div>
 

@@ -5,12 +5,12 @@
       classes="fixed inset-0 w-screen h-screen bg-cover bg-center bg-no-repeat"
     />
     <div
-      class="w-full max-w-md p-8 mx-4 rounded-2xl border border-white/50 flex-shrink-0
-             backdrop-blur-xl bg-white/10 shadow-lg 
+      class="w-full max-w-md p-8 mx-4 rounded-2xl border border-white/40 flex-shrink-0
+             backdrop-blur-xl bg-black/25 shadow-lg 
              transition-all duration-300 hover:shadow-xl
              flex flex-col items-center"
     >
-      <h2 class="text-2xl sm:text-3xl font-bold mb-6 text-white text-center">
+      <h2 class="text-2xl sm:text-3xl font-bold mb-6 text-white text-center [text-shadow:0_1px_3px_rgba(0,0,0,0.9),0_0_12px_rgba(0,0,0,0.6)]">
         {{ t('signupPage.title') }}
       </h2>
       <form
@@ -20,7 +20,7 @@
         <div>
           <label
             for="username"
-            class="block text-sm font-medium text-white"
+            class="block text-sm font-medium text-white [text-shadow:0_1px_2px_rgba(0,0,0,0.9)]"
           >{{ t('signupPage.usernameLabel') }}</label>
           <div class="relative">
             <input
@@ -37,7 +37,7 @@
         <div>
           <label
             for="email"
-            class="block text-sm font-medium text-white"
+            class="block text-sm font-medium text-white [text-shadow:0_1px_2px_rgba(0,0,0,0.9)]"
           >{{ t('signupPage.emailLabel') }}</label>
           <div class="relative">
             <input
@@ -54,7 +54,7 @@
         <div>
           <label
             for="password"
-            class="block text-sm font-medium text-white"
+            class="block text-sm font-medium text-white [text-shadow:0_1px_2px_rgba(0,0,0,0.9)]"
           >{{ t('signupPage.passwordLabel') }}</label>
           <div class="relative">
             <input
@@ -86,7 +86,7 @@
           </button>
         </div>
       </form>
-      <p class="mt-4 text-sm text-white text-center w-full">
+      <p class="mt-4 text-sm text-white text-center w-full [text-shadow:0_1px_2px_rgba(0,0,0,0.9)]">
         {{ t('signupPage.haveAccountPrompt') }}
         <RouterLink
           to="/login"
@@ -140,11 +140,12 @@ const performSignup = async () => {
       router.push(redirectPath || '/'); // Redirect to stored path or home
     }
   } catch (err) {
-    // Handle structured error responses from the backend
-    if (err.response?.data?.error_description) {
+    if (err.response?.status === 409 || err.response?.data?.error === 'user_exists') {
+      showError(t('signupPage.userExists'))
+    } else if (err.response?.data?.error_description) {
       showError(err.response.data.error_description)
-    } else if (err.response?.data) {
-      showError(err.response.data)
+    } else if (err.response?.data?.error) {
+      showError(err.response.data.error)
     } else {
       showError(t('signupPage.signupError'))
     }

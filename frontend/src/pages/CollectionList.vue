@@ -1,40 +1,40 @@
 <template>
-  <!-- Streak Stats -->
-  <div v-if="auth.state.isLoggedIn" class="mb-4 h-24 bg-white px-3 py-2.5 rounded-lg border">
+  <!-- Streak Stats (card-base per brandbook) -->
+  <div v-if="auth.state.isLoggedIn" class="card-base card-compact mb-4 p-4 sm:p-5">
     <template v-if="!isLoadingStreak && streakData">
-      <div class="flex items-center justify-between mb-1.5">
-        <h3 class="text-sm font-semibold text-gray-800">
+      <div class="flex items-center justify-between mb-2">
+        <h3 class="text-base font-semibold text-gray-800">
           {{ t('collectionList.studyStreak') }}
         </h3>
-        <div class="text-xs text-gray-600">
-          {{ t('collectionList.currentStreak') }}: <span class="font-semibold">{{ t('collectionList.days', {
+        <div class="card-meta">
+          {{ t('collectionList.currentStreak') }}: <span class="font-semibold text-gray-700">{{ t('collectionList.days', {
             count:
               streakData.current_streak
           }) }}</span>
         </div>
       </div>
-      <div class="grid grid-cols-7 gap-1">
+      <div class="grid grid-cols-7 gap-1.5">
         <div v-for="day in streakData.daily_progress.slice(0, 7).reverse()" :key="day.date"
           class="flex flex-col items-center">
-          <div class="text-[10px] text-gray-500 leading-tight">
+          <div class="card-meta-date text-[10px] leading-tight">
             {{ new Date(day.date).toLocaleDateString(locale, { weekday: 'short' }) }}
           </div>
-          <div class="w-6 h-6 rounded-full flex items-center justify-center text-xs"
+          <div class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium"
             :class="day.reviews_count > 0 ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-400'">
             {{ day.reviews_count }}
           </div>
-          <div class="text-[10px] text-gray-500 leading-tight">
+          <div class="card-meta-date text-[10px] leading-tight">
             {{ t('collectionList.points', { count: day.points }) }}
           </div>
         </div>
       </div>
     </template>
-    <div v-else class="animate-pulse h-24">
+    <div v-else class="animate-pulse min-h-[6rem]">
       <div class="flex items-center justify-between mb-2">
         <div class="h-4 bg-gray-200 rounded w-1/3" />
         <div class="h-3 bg-gray-100 rounded w-1/4" />
       </div>
-      <div class="grid grid-cols-7 gap-1">
+      <div class="grid grid-cols-7 gap-1.5">
         <div v-for="i in 7" :key="i" class="flex flex-col items-center">
           <div class="h-3 bg-gray-100 rounded w-full max-w-[32px] mb-0.5" />
           <div class="w-6 h-6 rounded-full bg-gray-100" />
@@ -45,11 +45,11 @@
   </div>
 
   <!-- Header -->
-  <div class="flex flex-col sm:flex-row justify-between items-center gap-2 space-x-2 mb-4">
+  <div class="flex flex-row flex-wrap justify-between items-center gap-2 mb-4">
     <h2 class="text-xl sm:text-2xl font-bold text-gray-800">
       {{ viewMode !== 'my' ? t('collectionList.publicCollections') : t('collectionList.myCollections') }}
     </h2>
-    <div class="flex flex-col sm:flex-row justify-end flex-grow gap-2 sm:gap-0 mt-2 sm:mt-0">
+    <div class="flex flex-row justify-end flex-grow gap-2">
       <input ref="importFileInput" type="file" accept=".json" class="hidden" @change="handleImportFile">
       <div v-if="auth.state.isLoggedIn" class="flex flex-row gap-2 items-center">
         <!-- When in 'my' mode: show an IconButton to switch back to public view -->
@@ -94,37 +94,35 @@
     </div>
   </div>
 
-  <!-- Sort Controls -->
-  <div class="mb-4 flex flex-col gap-3">
-    <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+  <!-- Sort & filter controls (card-base, input-field, checkbox-toggle per brandbook) -->
+  <div class="card-base card-compact mb-4 p-4 sm:p-5 flex flex-col gap-4">
+    <div class="flex flex-row flex-wrap items-center gap-3">
       <input
         v-model="searchQuery"
         type="text"
-        class="input-field w-full sm:max-w-md"
-        :placeholder="t('collectionList.searchPlaceholder', 'Search courses by name or description')"
+        class="input-field flex-1 min-w-0 max-w-md"
+        :placeholder="t('collectionList.searchPlaceholder')"
       >
-      <label class="inline-flex items-center gap-2 text-sm text-gray-700">
+      <label class="inline-flex items-center gap-2 text-sm font-medium text-gray-700 select-none cursor-pointer">
         <input v-model="hasFlashcardsOnly" type="checkbox" class="checkbox-toggle">
         <span>{{ t('collectionList.onlyWithFlashcards', 'Only with flashcards') }}</span>
       </label>
     </div>
-    <div class="flex flex-wrap items-center justify-center gap-2">
-    <div class="flex flex-wrap justify-center gap-1" role="group">
+    <div class="btn-group-forced flex flex-nowrap justify-center min-w-0 overflow-x-auto" role="group" aria-label="Sort order">
       <button
         v-for="opt in sortOptions"
         :key="opt.value"
         type="button"
         :class="[
-          'px-3 py-1 rounded-full text-xs font-medium border transition-colors',
-          sortBy === opt.value
-            ? 'bg-blue-600 text-white border-blue-600'
-            : 'bg-white text-gray-600 border-gray-300 hover:border-blue-400 hover:text-blue-600',
+          'btn-reaction btn-group-item px-2 py-1 sm:px-4 sm:py-1.5 shrink-0 flex items-center justify-center gap-1.5',
+          { enabled: sortBy === opt.value },
         ]"
+        :title="opt.label"
         @click="sortBy = opt.value"
       >
-        {{ opt.label }}
+        <component :is="opt.icon" class="h-4 w-4 shrink-0" aria-hidden="true" />
+        <span class="hidden sm:inline">{{ opt.label }}</span>
       </button>
-    </div>
     </div>
   </div>
 
@@ -221,7 +219,7 @@
 </template>
 
 <script setup>
-import { CirclePlus, Import, BookOpen, ArrowBigRight } from 'lucide-vue-next';
+import { CirclePlus, Import, BookOpen, ArrowBigRight, CalendarDays, Calendar, Trophy, ArrowDown } from 'lucide-vue-next';
 import { ref, computed, onBeforeUnmount, onMounted, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
@@ -278,10 +276,10 @@ let searchDebounceTimer = null
 const totalPages = computed(() => Math.max(1, Math.ceil(totalCollections.value / perPage.value)))
 
 const sortOptions = computed(() => [
-  { value: 'active_week',  label: t('collectionList.sortActiveWeek') },
-  { value: 'active_month', label: t('collectionList.sortActiveMonth') },
-  { value: 'active_all',   label: t('collectionList.sortActiveAll') },
-  { value: 'newest',       label: t('collectionList.sortNewest') },
+  { value: 'active_week',  label: t('collectionList.sortActiveWeek'), icon: CalendarDays },
+  { value: 'active_month', label: t('collectionList.sortActiveMonth'), icon: Calendar },
+  { value: 'active_all',   label: t('collectionList.sortActiveAll'), icon: Trophy },
+  { value: 'newest',       label: t('collectionList.sortNewest'), icon: ArrowDown },
 ])
 
 const newCollection = ref({

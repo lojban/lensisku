@@ -531,7 +531,9 @@
     "errorRequestingToken": "fliba lo nu cpedu lo cnino birti nuzba",
     "errorEmailRequired": "lo mrilu judri cu sarcu",
     "errorRateLimit": "ko denpa ze'i lo nu za'u re'u cpedu",
-    "errorNoToken": "no birti nuzba cu zvati"
+    "errorNoToken": "no birti nuzba cu zvati",
+    "errorExpired": "lo birti nuzba ca'o mudyfau .i ko cpedu lo cnino birti nuzba vi",
+    "errorInvalidToken": "lo birti nuzba na birti"
   },
   "versionHistory": {
     "title": "galfi porsi",
@@ -750,7 +752,8 @@
     "forgotPasswordLink": "xu do tolmo'i lo do japyvla?",
     "noAccountPrompt": "xu do na jasypu'ense?",
     "signUpLink": "terbejbi'o",
-    "loginError": "fliba lo nu co'a jaspu"
+    "loginError": "fliba lo nu co'a jaspu",
+    "rateLimitError": "za'u re'u ce'u ce'u cpedu lo nu co'a jaspu .i ko denpa ze'i"
   },
   "passwordReset": {
     "resetTitle": "galfi lo japyvla",
@@ -779,7 +782,8 @@
     "rateLimitError": "do kakne lo nu cpedu lo nu galfi lo japyvla pa roi pe lo vo cacra .i ko denpa ze'i",
     "requestFailedError": "fliba lo nu cpedu lo nu galfi lo japyvla",
     "invalidResetDataError": "ko birti lo nu lo japyvla cu dunli gi'e se lerfu li bi'umau li bi.",
-    "resetFailedError": "fliba lo nu galfi lo japyvla"
+    "resetFailedError": "fliba lo nu galfi lo japyvla",
+    "invalidTokenError": "lo galfi nuzba na birti ji'a mudyfau .i ko cpedu lo cnino galfi nuzba"
   },
   "changePassword": {
     "title": "galfi lo japyvla",
@@ -803,8 +807,11 @@
     "changePasswordButton": "galfi lo japyvla",
     "successMessage": "snada lo nu galfi lo japyvla! .i ca'o klama lo nu co'a jaspu...",
     "backToProfile": "klama lo jasypu'ense papri",
+    "verificationCodeSent": "benji lo birti nuzba lo do samymri",
     "initiateFailedError": "fliba lo nu cfari lo nu galfi lo japyvla",
-    "completeFailedError": "fliba lo nu galfi lo japyvla"
+    "completeFailedError": "fliba lo nu galfi lo japyvla",
+    "wrongPassword": "lo ca japyvla na birti",
+    "invalidCode": "lo birti nuzba na birti ji'a mudyfau"
   },
   "signupPage": {
     "title": "co'a se jasypu'ense",
@@ -815,7 +822,8 @@
     "creatingAccount": "ca'o finti...",
     "haveAccountPrompt": "xu do jasypu'ense?",
     "loginLink": "co'a jaspu",
-    "signupError": "fliba lo nu co'a se jasypu'ense"
+    "signupError": "fliba lo nu co'a se jasypu'ense",
+    "userExists": "lo pilno cmene ja lo samymri judri ba'o se pilno"
   },
   "bulkImport": {
     "title": "so'i valsi nu jmina",
@@ -1195,6 +1203,7 @@
     "publicCollections": "gubni liste",
     "publicCollectionsLabel": "gubni karda cu'u",
     "publicStatus": "gubni",
+    "searchPlaceholder": "ko sisku lo cmene .a lo skicu be lo karda cu'u",
     "studyStreak": "tadni porsi",
     "studyButton": "tadni",
     "updated": "ba'o se galfi",
@@ -1320,6 +1329,7 @@
     "exportError": "fliba lo nu cupra lo selyli'e"
   },
   "lingo": {
-    "appName": "lentadni"
+    "appName": "lentadni",
+    "searchCourses": "ko sisku lo cmene .a lo skicu be lo karda cu'u"
   }
 }

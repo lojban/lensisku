@@ -1,7 +1,7 @@
 use actix_web::{dev::Payload, Error as ActixError, FromRequest, HttpRequest};
 use chrono::{DateTime, Utc};
 use futures::future::{ready, Ready};
-use jsonwebtoken::{decode, DecodingKey, Validation};
+use jsonwebtoken::{decode, DecodingKey, Algorithm, Validation};
 use serde::{Deserialize, Serialize};
 use std::{env, error::Error, str::FromStr};
 use utoipa::ToSchema;
@@ -110,7 +110,8 @@ impl FromRequest for Claims {
             };
             let key = DecodingKey::from_secret(secret.as_bytes());
 
-            match decode::<Claims>(token, &key, &Validation::default()) {
+            let validation = Validation::new(Algorithm::HS256);
+            match decode::<Claims>(token, &key, &validation) {
                 Ok(token_data) => ready(Ok(token_data.claims)),
                 Err(_) => ready(Err(actix_web::error::ErrorUnauthorized("Invalid token"))),
             }

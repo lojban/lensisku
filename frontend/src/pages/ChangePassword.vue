@@ -176,9 +176,13 @@ const initiatePasswordChange = async () => {
     })
 
     verificationId.value = response.data.verification_id
-    success.value = t('changePassword.verificationCodeSent') // Assuming you add this key
+    success.value = t('changePassword.verificationCodeSent')
   } catch (err) {
-    showError(err.response?.data?.error || t('changePassword.initiateFailedError'))
+    if (err.response?.status === 401) {
+      showError(t('changePassword.wrongPassword'))
+    } else {
+      showError(err.response?.data?.error || t('changePassword.initiateFailedError'))
+    }
     verificationId.value = ''
   } finally {
     isLoading.value = false
@@ -207,7 +211,11 @@ const completePasswordChange = async () => {
       router.push('/login')
     }, 2000)
   } catch (err) {
-    showError(err.response?.data?.error || t('changePassword.completeFailedError'))
+    if (err.response?.status === 400) {
+      showError(t('changePassword.invalidCode'))
+    } else {
+      showError(err.response?.data?.error || t('changePassword.completeFailedError'))
+    }
   } finally {
     isLoading.value = false
   }

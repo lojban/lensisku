@@ -7,13 +7,14 @@ use crate::{
     error::{AppError, AppResult},
     export, jbovlaste, language,
     mailarchive::{self},
-    middleware::{self, cache::RedisCache, limiter::PasswordResetLimiter},
+    middleware::{self, cache::RedisCache, limiter::{LoginLimiter, PasswordResetLimiter}},
     muplis::{self},
     sessions, subscriptions, users,
     versions::{self},
     waves,
 };
 use actix_cors::Cors;
+use actix_limitation::RateLimiter;
 use actix_web::{http::header, middleware::Logger, web, App, HttpServer};
 use camxes_rs::peg::grammar::Peg;
 use log::{error, info};
@@ -51,6 +52,10 @@ pub async fn start_server(
                 e
             ))
         })?);
+
+    let login_limiter = web::Data::new(LoginLimiter::new(&redis_url).map_err(|e| {
+        AppError::ExternalService(format!("Failed to initialize login rate limiter: {}", e))
+    })?);
 
     let redis_cache_data = web::Data::from(redis_cache);
 
@@ -100,12 +105,14 @@ pub async fn start_server(
         App::new()
             .wrap(Logger::default())
             .wrap(cors)
+            .wrap(RateLimiter::default())
             .app_data(web::Data::new(pool.clone()))
             .app_data(worker_parsers_data.clone()) // Pass the worker-specific parser map
             .app_data(perm_cache.clone())
             .app_data(general_limiter.clone())
             .app_data(password_reset_limiter.clone())
             .app_data(email_confirmation_limiter.clone())
+            .app_data(login_limiter.clone())
             .app_data(redis_cache_data.clone())
             .configure(auth::configure)
             .configure(users::configure)

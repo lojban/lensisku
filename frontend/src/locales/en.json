@@ -531,7 +531,9 @@
     "errorRequestingToken": "An error occurred while requesting a new token",
     "errorEmailRequired": "Email address is required",
     "errorRateLimit": "Please wait before requesting another confirmation email",
-    "errorNoToken": "No confirmation token provided"
+    "errorNoToken": "No confirmation token provided",
+    "errorExpired": "Confirmation link has expired. You can request a new one below.",
+    "errorInvalidToken": "Invalid confirmation link."
   },
   "versionHistory": {
     "title": "Version history",
@@ -696,7 +698,8 @@
     "forgotPasswordLink": "Forgot your password?",
     "noAccountPrompt": "Don't have an account?",
     "signUpLink": "Sign up",
-    "loginError": "An error occurred during login"
+    "loginError": "An error occurred during login",
+    "rateLimitError": "Too many login attempts. Please try again later."
   },
   "passwordReset": {
     "resetTitle": "Reset password",
@@ -725,7 +728,8 @@
     "rateLimitError": "You can only request one password reset every 4 hours. Please try again later.",
     "requestFailedError": "Failed to process password reset request",
     "invalidResetDataError": "Please ensure passwords match and are at least 8 characters long.",
-    "resetFailedError": "Failed to reset password"
+    "resetFailedError": "Failed to reset password",
+    "invalidTokenError": "Reset link is invalid or has expired. Please request a new password reset."
   },
   "changePassword": {
     "title": "Change password",
@@ -749,8 +753,11 @@
     "changePasswordButton": "Change password",
     "successMessage": "Password changed successfully! Redirecting to login...",
     "backToProfile": "Back to profile",
+    "verificationCodeSent": "Verification code sent to your email.",
     "initiateFailedError": "Failed to initiate password change",
-    "completeFailedError": "Failed to change password"
+    "completeFailedError": "Failed to change password",
+    "wrongPassword": "Current password is incorrect.",
+    "invalidCode": "Invalid or expired verification code."
   },
   "signupPage": {
     "title": "Sign up",
@@ -761,7 +768,8 @@
     "creatingAccount": "Creating account...",
     "haveAccountPrompt": "Already have an account?",
     "loginLink": "Log in",
-    "signupError": "An error occurred during signup"
+    "signupError": "An error occurred during signup",
+    "userExists": "Username or email already exists."
   },
   "bulkImport": {
     "title": "Bulk import definitions",
@@ -1197,6 +1205,7 @@
     "publicCollections": "Public collections",
     "publicCollectionsLabel": "Public courses",
     "publicStatus": "Public",
+    "searchPlaceholder": "Search courses by name or description",
     "studyStreak": "Study streak",
     "studyButton": "Study",
     "updated": "Updated",
@@ -1322,6 +1331,7 @@
     "exportError": "Failed to export pairs"
   },
   "lingo": {
-    "appName": "lentadni"
+    "appName": "lentadni",
+    "searchCourses": "Search courses by name or description"
   }
 }

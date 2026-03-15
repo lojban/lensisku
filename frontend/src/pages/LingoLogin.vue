@@ -86,10 +86,14 @@ async function performLogin() {
       router.push(returnTo.value)
     }
   } catch (err) {
-    error.value =
-      err.response?.data?.error_description ||
-      err.response?.data?.message ||
-      t('loginPage.loginError', 'Invalid credentials.')
+    if (err.response?.status === 429) {
+      error.value = t('loginPage.rateLimitError', 'Too many login attempts. Please try again later.')
+    } else {
+      error.value =
+        err.response?.data?.error_description ||
+        err.response?.data?.message ||
+        t('loginPage.loginError', 'Invalid credentials.')
+    }
   } finally {
     isLoading.value = false
   }
