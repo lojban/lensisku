@@ -30,7 +30,7 @@
           </span>
           <span>{{ t('collectionDetail.itemsCount', { count: collection.item_count }) }}</span>
         </div>
-        <div class="shrink-0">
+        <div class="shrink-0 w-fit">
           <Dropdown v-if="auth.state.isLoggedIn" :trigger-label="t('collectionDetail.actions')">
             <button v-if="isOwner" type="button" class="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
               @click="showEditModal = true">
