@@ -42,6 +42,7 @@
 
 <script setup>
 import { Crepe } from '@milkdown/crepe';
+import { editorViewCtx } from '@milkdown/core';
 import { Loader } from 'lucide-vue-next';
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue';
 import { insert } from '@milkdown/utils';
@@ -65,6 +66,8 @@ const editor = ref(null);
 let crepe = null;
 const turndownService = new TurndownService()
 let handlePaste = null
+/** Cleanup for Space-exits-link keydown listener (remove on unmount). */
+let spaceExitLinkCleanup = null
 
 onMounted(async () => {
   crepe = new Crepe({
@@ -90,6 +93,31 @@ onMounted(async () => {
   })
 
   await crepe.create()
+
+  // When cursor is inside a link, Space or Tab should end the link and insert the character (not extend the anchor).
+  crepe.editor.action((ctx) => {
+    const view = ctx.get(editorViewCtx);
+    if (!view?.dom) return;
+    const linkMarkType = view.state.schema.marks.link;
+    if (!linkMarkType) return;
+    const handler = (e) => {
+      const key = e.key === ' ' ? ' ' : e.key === 'Tab' ? '\t' : null;
+      if (key === null) return;
+      const { state } = view;
+      const { $from, empty } = state.selection;
+      const inLink = empty && $from.marks().some((m) => m.type === linkMarkType);
+      if (!inLink) return;
+      e.preventDefault();
+      e.stopPropagation();
+      const tr = state.tr.removeStoredMark(linkMarkType).insertText(key, state.selection.from);
+      view.dispatch(tr);
+    };
+    view.dom.addEventListener('keydown', handler, true);
+    spaceExitLinkCleanup = () => {
+      view.dom.removeEventListener('keydown', handler, true);
+      spaceExitLinkCleanup = null;
+    };
+  });
 
   const updateFormContent = () => {
     if (!crepe) return;
@@ -117,6 +145,9 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
+  if (typeof spaceExitLinkCleanup === 'function') {
+    spaceExitLinkCleanup();
+  }
   if (crepe) {
     crepe.destroy()
   }
