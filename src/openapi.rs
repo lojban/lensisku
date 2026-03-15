@@ -15,12 +15,10 @@ use utoipauto::utoipauto;
         (name = "language", description = "Linguistics-related endpoints"), 
         (name = "muplis", description = "Muplis search endpoints"), 
         (name = "versions", description = "Definition versioning endpoints"), 
-        (name = "dictionary", description = "Dictionary search and management"),
         (name = "export", description = "Dictionary exports endpoints"),
         (name = "mail", description = "Mail archive thread and message view"),
         (name = "waves", description = "Unified discussion waves and mail search"),
         (name = "jbovlaste", description = "Lojban dictionary management endpoints"),
-        (name = "sitemap", description = "Sitemap endpoints"),
         (name = "collections", description = "Organized bookmarks endpoints"),
         (name = "flashcards", description = "Flashcard learning system endpoints"),
         (name = "payments", description = "Payments and balance handling endpoints"),
@@ -36,6 +34,10 @@ use utoipauto::utoipauto;
         crate::flashcards::dto::QuizAnswerResultDto,
         crate::mailarchive::dto::SpamVoteResponse,
         crate::sessions::dto::PaginatedUserSessionsResponse,
+        crate::waves::dto::WavesSearchResponse,
+        crate::waves::dto::WavesThreadsResponse,
+        crate::waves::dto::WaveSearchHit,
+        crate::waves::dto::WaveThreadSummary,
     ))
 )]
 struct ApiDoc;

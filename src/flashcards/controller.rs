@@ -170,7 +170,9 @@ pub async fn delete_flashcard(
     ),
     security(
         ("bearer_auth" = [])
-    )
+    ),
+    summary = "List flashcards in collection",
+    description = "Retrieves a paginated list of flashcards from a specific collection, optionally filtered by status and due state"
 )]
 #[get("")]
 pub async fn list_flashcards(
@@ -203,7 +205,9 @@ pub async fn list_flashcards(
     ),
     security(
         ("bearer_auth" = [])
-    )
+    ),
+    summary = "Review a flashcard",
+    description = "Saves the user's review of a flashcard, updating its spaced repetition state"
 )]
 #[post("/{flashcard_id}/review")]
 pub async fn review_flashcard(
@@ -283,7 +287,9 @@ pub async fn get_due_cards(
     ),
     security(
         ("bearer_auth" = [])
-    )
+    ),
+    summary = "Reset flashcard progress",
+    description = "Resets the spaced repetition progress for a specific flashcard for the authenticated user"
 )]
 #[post("/{flashcard_id}/reset")]
 pub async fn reset_progress(
@@ -369,7 +375,9 @@ pub async fn update_flashcard_position(
     ),
     security(
         ("bearer_auth" = [])
-    )
+    ),
+    summary = "Import collection",
+    description = "Imports an existing collection into the user's flashcards"
 )]
 #[post("/collection/import")]
 pub async fn import_from_collection(
@@ -514,7 +522,9 @@ pub async fn submit_quiz_answer(
     ),
     security(
         ("bearer_auth" = [])
-    )
+    ),
+    summary = "Get user streak",
+    description = "Retrieves the learning streak information for the authenticated user over the specified number of days"
 )]
 #[get("/streak")]
 pub async fn get_streak(
@@ -546,7 +556,9 @@ pub async fn get_streak(
         (status = 403, description = "Forbidden - User doesn't have access"),
         (status = 500, description = "Internal server error")
     ),
-    security(("bearer_auth" = []))
+    security(("bearer_auth" = [])),
+    summary = "Create a new level",
+    description = "Creates a new level in the specified collection"
 )]
 #[post("/levels/{collection_id}")]
 pub async fn create_level(
@@ -578,7 +590,9 @@ pub async fn create_level(
         (status = 404, description = "Level not found"),
         (status = 500, description = "Internal server error")
     ),
-    security(("bearer_auth" = []))
+    security(("bearer_auth" = [])),
+    summary = "Delete level",
+    description = "Deletes a level from a collection if it is not a prerequisite for other levels"
 )]
 #[delete("/levels/{level_id}")]
 pub async fn delete_level(
@@ -615,7 +629,9 @@ pub async fn delete_level(
         (status = 403, description = "Forbidden - User doesn't have access"),
         (status = 500, description = "Internal server error")
     ),
-    security(("bearer_auth" = []))
+    security(("bearer_auth" = [])),
+    summary = "Update level",
+    description = "Updates an existing level's details"
 )]
 #[put("/levels/{level_id}")]
 pub async fn update_level(
@@ -642,7 +658,9 @@ pub async fn update_level(
         (status = 200, description = "List of levels", body = LevelListResponse),
         (status = 500, description = "Internal server error")
     ),
-    security(("bearer_auth" = []))
+    security(("bearer_auth" = [])),
+    summary = "List levels",
+    description = "Retrieves all levels for a specific collection"
 )]
 #[get("/levels/{collection_id}")]
 pub async fn list_levels(
@@ -675,7 +693,9 @@ pub async fn list_levels(
         (status = 403, description = "Access denied to collection"),
         (status = 500, description = "Internal server error")
     ),
-    security(("bearer_auth" = []))
+    security(("bearer_auth" = [])),
+    summary = "Merge progress",
+    description = "Merges anonymous flashcard progress into the authenticated user's account"
 )]
 #[post("/progress/merge")]
 pub async fn merge_progress(
@@ -707,7 +727,9 @@ pub async fn merge_progress(
         (status = 403, description = "Forbidden - User doesn't have access"),
         (status = 500, description = "Internal server error")
     ),
-    security(("bearer_auth" = []))
+    security(("bearer_auth" = [])),
+    summary = "Add cards to level",
+    description = "Adds existing flashcards or creates new ones inside a specific level"
 )]
 #[post("/cards/{level_id}")]
 pub async fn add_cards(
@@ -740,7 +762,9 @@ pub async fn add_cards(
         (status = 404, description = "Level not found"),
         (status = 500, description = "Internal server error")
     ),
-    security(("bearer_auth" = []))
+    security(("bearer_auth" = [])),
+    summary = "List level cards",
+    description = "Retrieves a paginated list of flashcards associated with a specific level"
 )]
 #[get("/levels/{level_id}/cards")]
 pub async fn list_level_cards(
@@ -792,7 +816,9 @@ pub async fn list_level_cards(
         (status = 404, description = "Level or card not found"),
         (status = 500, description = "Internal server error")
     ),
-    security(("bearer_auth" = []))
+    security(("bearer_auth" = [])),
+    summary = "Remove card from level",
+    description = "Removes a flashcard from its associated level"
 )]
 #[delete("/levels/{level_id}/cards/{flashcard_id}")]
 pub async fn remove_card_from_level(

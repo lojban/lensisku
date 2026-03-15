@@ -85,7 +85,9 @@ pub async fn get_public_profile(
         (status = 200, description = "List of user's definitions", body = ContributionsResponse<Definition>),
         (status = 404, description = "User not found"),
         (status = 500, description = "Internal server error")
-    )
+    ),
+    summary = "Get user definitions",
+    description = "Retrieves a paginated list of definitions created or modified by the user"
 )]
 #[get("/{username}/definitions")]
 pub async fn get_user_definitions(
@@ -118,7 +120,9 @@ pub async fn get_user_definitions(
         (status = 200, description = "List of user's comments", body = ContributionsResponse<Comment>),
         (status = 404, description = "User not found"),
         (status = 500, description = "Internal server error")
-    )
+    ),
+    summary = "Get user comments",
+    description = "Retrieves a paginated list of comments authored by the user"
 )]
 #[get("/{username}/comments")]
 pub async fn get_user_comments(
@@ -184,6 +188,8 @@ pub async fn get_user_votes(
         (status = 500, description = "Internal server error")
     ),
     security(("bearer_auth" = [])),
+    summary = "Update profile image",
+    description = "Uploads and updates the authenticated user's profile image"
 )]
 #[post("/profile-image")]
 pub async fn update_profile_image(
@@ -214,7 +220,9 @@ pub async fn update_profile_image(
         (status = 200, description = "Profile image", content_type = "image/*"),
         (status = 404, description = "Image not found"),
         (status = 500, description = "Internal server error")
-    )
+    ),
+    summary = "Get profile image",
+    description = "Retrieves the profile image for the specified user"
 )]
 #[get("/{username}/profile-image")]
 pub async fn get_profile_image(
@@ -247,7 +255,9 @@ pub async fn get_profile_image(
         (status = 401, description = "Unauthorized"),
         (status = 500, description = "Internal server error")
     ),
-    security(("bearer_auth" = []))
+    security(("bearer_auth" = [])),
+    summary = "Remove profile image",
+    description = "Removes the authenticated user's profile image"
 )]
 #[delete("/profile-image")]
 pub async fn remove_profile_image(pool: web::Data<Pool>, claims: Claims) -> impl Responder {
