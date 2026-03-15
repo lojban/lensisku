@@ -775,10 +775,11 @@ pub async fn get_recent_changes(
 ) -> impl Responder {
     let days = query.days.unwrap_or(7);
     let limit = query.limit;
+    let page = query.page.unwrap_or(1);
     let types = query.types.clone();
     let user_id = claims.map(|c| c.sub);
 
-    match service::get_recent_changes(&pool, days, limit, types, &redis_cache, user_id).await {
+    match service::get_recent_changes(&pool, days, limit, page, types, &redis_cache, user_id).await {
         Ok(response) => HttpResponse::Ok().json(response),
         Err(e) => {
             HttpResponse::InternalServerError().body(format!("Error retrieving changes: {}", e))

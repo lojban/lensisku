@@ -3023,21 +3023,22 @@ pub async fn get_recent_changes(
     pool: &Pool,
     days: i32,
     limit: Option<i64>,
+    page: i64,
     types: Option<String>,
     redis_cache: &RedisCache,
     user_id: Option<i32>,
 ) -> Result<RecentChangesResponse, Box<dyn std::error::Error>> {
     use std::time::Duration as StdDuration;
 
-    // Cache key includes limit and types
+    // Cache key includes limit, page, and types
     let cache_key = match user_id {
         None => format!(
-            "recent_changes:{}:limit:{:?}:types:{:?}",
-            days, limit, types
+            "recent_changes:{}:limit:{:?}:page:{}:types:{:?}",
+            days, limit, page, types
         ),
         Some(uid) => format!(
-            "recent_changes:{}:limit:{:?}:types:{:?}:user:{}",
-            days, limit, types, uid
+            "recent_changes:{}:limit:{:?}:page:{}:types:{:?}:user:{}",
+            days, limit, page, types, uid
         ),
     };
 
@@ -3067,6 +3068,8 @@ pub async fn get_recent_changes(
                 };
 
                 let limit_val = limit.unwrap_or(100);
+                let offset_val = (page.max(1) - 1) * limit_val;
+                let fetch_limit = limit_val + offset_val;
 
                 let mut queries = Vec::new();
 
@@ -3099,7 +3102,7 @@ pub async fn get_recent_changes(
             LEFT JOIN languages l ON d.langid = l.langid
             WHERE c.time > {} AND u.username != 'officialdata'
             ORDER BY c.time DESC LIMIT {})",
-                        back_timestamp, limit_val
+                        back_timestamp, fetch_limit
                     ));
                 }
 
@@ -3135,7 +3138,7 @@ pub async fn get_recent_changes(
             LEFT JOIN languages l ON d.langid = l.langid
             WHERE dv.created_at > to_timestamp({}) AND u.username != 'officialdata' AND v.source_langid = 1
             ORDER BY dv.created_at DESC LIMIT {})",
-                        back_timestamp, limit_val
+                        back_timestamp, fetch_limit
                     ));
                 }
 
@@ -3164,7 +3167,7 @@ pub async fn get_recent_changes(
             JOIN users u ON v.userid = u.userid
             WHERE v.time > {} AND u.username != 'officialdata' AND v.source_langid = 1
             ORDER BY v.time DESC LIMIT {})",
-                        back_timestamp, limit_val
+                        back_timestamp, fetch_limit
                     ));
                 }
 
@@ -3197,7 +3200,7 @@ pub async fn get_recent_changes(
                 WHERE msv.message_id = m.id
             )
             ORDER BY m.sent_at DESC LIMIT {})",
-                        back_timestamp, limit_val
+                        back_timestamp, fetch_limit
                     ));
                 }
 
@@ -3205,12 +3208,25 @@ pub async fn get_recent_changes(
                     return Ok(RecentChangesResponse { changes: vec![], total: 0 });
                 }
 
+                let count_query = format!(
+                    "WITH all_changes AS ({})
+                     SELECT count(*)::bigint as total FROM all_changes",
+                    queries.join(" UNION ALL ")
+                );
+
+                let total: i64 = transaction
+                    .query_one(&count_query, &[])
+                    .await?
+                    .get("total");
+
                 let final_query = format!(
                     "WITH all_changes AS ({})
                      SELECT * FROM all_changes
-                     ORDER BY time DESC, type_sort_order ASC LIMIT {}",
+                     ORDER BY time DESC, type_sort_order ASC 
+                     LIMIT {} OFFSET {}",
                     queries.join(" UNION ALL "),
-                    limit_val
+                    limit_val,
+                    offset_val
                 );
 
                 let base_changes = transaction.query(&final_query, &[]).await?;
@@ -3332,7 +3348,7 @@ pub async fn get_recent_changes(
                     }
                 }
 
-                let total = changes.len() as i64;
+
 
                 transaction.commit().await?;
 

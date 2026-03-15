@@ -194,6 +194,7 @@ pub struct RecentChangesQuery {
     pub days: Option<i32>,
     pub limit: Option<i64>,
     pub types: Option<String>,
+    pub page: Option<i64>,
 }
 
 #[derive(Debug, Deserialize, ToSchema)]
