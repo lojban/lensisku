@@ -209,7 +209,7 @@ export const getValsiAndDefinitionDetails = async (valsiId, definitionId) => {
 }
 
 // Recent changes
-export const getRecentChanges = (params) => api.get('/jbovlaste/changes', { params })
+export const getRecentChanges = (params, signal) => api.get('/jbovlaste/changes', { params, signal })
 
 // Voting endpoints
 export const voteDefinition = (definitionId, downvote = false) =>
@@ -399,15 +399,15 @@ export const mergeProgress = async (data) => {
 
 export const list_threads = (params) => api.get('/comments/threads', { params })
 
-export const list_comments = (params) => api.get('/comments/list', { params })
+export const list_comments = (params, signal) => api.get('/comments/list', { params, signal })
 
-export const list_definitions = (params) => {
+export const list_definitions = (params, signal) => {
   // Ensure source_langid is included if provided
   const finalParams = { ...params };
   if (finalParams.source_langid === 1) { // Don't send default
     delete finalParams.source_langid;
   }
-  return api.get('/jbovlaste/definitions/list', { params: finalParams })
+  return api.get('/jbovlaste/definitions/list', { params: finalParams, signal })
 }
 
 export const addCardsToLevel = async (levelId, data) => {
