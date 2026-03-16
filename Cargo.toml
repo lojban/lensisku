@@ -18,7 +18,8 @@ rpath = false
 opt-level = 3           # Maximum optimizations
 lto = "fat"            # Enable link-time optimization across all crates
 codegen-units = 1      # Further optimize at the cost of compile time
-panic = "abort"        # Remove panic unwinding code
+# Unwind required for CatchPanicWithMessage middleware to return panic message in HTTP 500
+panic = "unwind"
 strip = true          # Strip symbols from binary
 overflow-checks = false # Disable integer overflow checks
 debug = false         # No debug symbols

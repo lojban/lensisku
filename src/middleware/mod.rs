@@ -5,6 +5,7 @@ use std::time::Duration;
 pub mod cache;
 pub mod image;
 pub mod limiter;
+pub mod panic_handler;
 
 pub fn configure_rate_limiter(redis_url: &str) -> Result<Limiter, String> {
     let limiter = Limiter::builder(redis_url)
