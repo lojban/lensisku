@@ -7,7 +7,7 @@ use crate::{
     error::{AppError, AppResult},
     export, jbovlaste, language,
     mailarchive::{self},
-    middleware::{self, cache::RedisCache, limiter::{LoginLimiter, PasswordResetLimiter}},
+    middleware::{self, cache::RedisCache, limiter::{LoginLimiter, PasswordResetLimiter}, panic_handler::CatchPanicWithMessage},
     muplis::{self},
     sessions, subscriptions, users,
     versions::{self},
@@ -103,6 +103,7 @@ pub async fn start_server(
             .max_age(3600);
 
         App::new()
+            .wrap(CatchPanicWithMessage)
             .wrap(Logger::default())
             .wrap(cors)
             .wrap(RateLimiter::default())
