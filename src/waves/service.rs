@@ -68,7 +68,7 @@ pub async fn search_waves(
         per_page: Some(fetch_per_source),
         sort_by: Some("date".to_string()),
         sort_order: Some(sort_order.to_string()),
-        include_content: Some(false),
+        include_content: Some(true),
         group_by_thread: Some(false),
     };
 

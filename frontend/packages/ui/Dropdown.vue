@@ -13,10 +13,12 @@
     </div>
     <div
       v-if="open"
-      class="absolute right-0 mt-2 m-2 w-max min-w-0 max-w-[calc(100vw-1rem)] bg-white border rounded-lg shadow-lg py-1 z-30"
+      class="absolute right-0 mt-2 m-2 w-fit min-w-0 max-w-[calc(100vw-1rem)] bg-white border rounded-lg shadow-lg py-1 z-30"
       @click="open = false"
     >
-      <slot />
+      <div class="w-fit whitespace-nowrap">
+        <slot />
+      </div>
     </div>
   </div>
 </template>

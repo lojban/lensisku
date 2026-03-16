@@ -119,7 +119,9 @@
           :key="opt.value"
           type="button"
           class="btn-group-item btn-get px-2 py-1 sm:px-4 sm:py-1.5 shrink-0 flex items-center justify-center gap-1.5"
+          :class="{ 'btn-group-item-selected': sortBy === opt.value }"
           :title="opt.label"
+          :aria-pressed="sortBy === opt.value"
           @click="sortBy = opt.value"
         >
           <component :is="opt.icon" class="h-4 w-4 shrink-0" aria-hidden="true" />
