@@ -27,12 +27,12 @@
         </div>
 
         <div class="flex items-center" role="group">
-          <button v-if="hasAnyActiveFilters" type="button" class="btn-aqua btn-aqua-group-item px-3"
+          <button v-if="hasAnyActiveFilters" type="button" class="btn-aqua-white btn-aqua-group-item px-3"
             @click="resetAllFilters" :title="t('filters.resetAllFilters')">
             <span class="text-xs">{{ t('filters.resetAllFilters') }}</span>
           </button>
 
-          <button type="button" class="btn-aqua btn-aqua-group-item px-3" @click="toggleExpanded"
+          <button type="button" class="btn-aqua-white btn-aqua-group-item px-3" @click="toggleExpanded"
             :title="expanded ? t('filters.collapse') : t('filters.expand')">
             <ChevronDown class="h-5 w-5 transition-transform duration-200" :class="{ 'rotate-180': expanded }"
               :stroke-width="2" />

@@ -1099,6 +1099,7 @@
     },
     "flashcardCollectionView": {
       "title": "{collectionName} - karda",
+      "collectionButton": "lo klesi",
       "addFlashcardButton": "jmina lo karda",
       "importAllButton": "jmina ro da",
       "importing": "ca'o jmina...",
@@ -1198,6 +1199,7 @@
     "myCollections": "mi liste .e lo karda cu'u",
     "myCollectionsLabel": "mi liste .e lo karda cu'u",
     "nameLabel": "cmene",
+    "onlyWithFlashcards": "karda ku po'o",
     "points": "{count} pt",
     "privateStatus": "sivni",
     "publicCollections": "gubni liste",
@@ -1207,6 +1209,7 @@
     "studyStreak": "tadni porsi",
     "studyButton": "tadni",
     "updated": "ba'o se galfi",
+    "updatedAt": "ba'o se galfi",
     "sortActiveWeek": "misno pe lo jeftu",
     "sortActiveMonth": "misno pe lo masti",
     "sortActiveAll": "misno pe ro temci",

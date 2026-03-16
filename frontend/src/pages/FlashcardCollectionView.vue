@@ -11,18 +11,20 @@
 
     <template v-if="isOwner && !isLoading && collection?.item_count > existingFlashcardIds.size">
       <div class="flex flex-wrap justify-center md:justify-start gap-2 mb-4">
-        <RouterLink :to="`/collections/${props.collectionId}`" class="btn-aqua-zinc">
-          <ArrowLeft class="h-5 w-5" />
-        </RouterLink>
-        <RouterLink
-          :to="`/collections/${collection.collection_id}?mode=add_flashcard`"
-          class="btn-aqua-emerald"
-        >
-          {{ t('components.flashcardCollectionView.addFlashcardButton') }}
-        </RouterLink>
-        <button class="btn-aqua-red w-auto" :disabled="isImporting" @click="handleImport">
-          {{ isImporting ? t('components.flashcardCollectionView.importing') : t('components.flashcardCollectionView.importAllButton') }}
-        </button>
+        <div class="flex items-center" role="group">
+          <RouterLink :to="`/collections/${props.collectionId}`" class="btn-aqua-zinc btn-aqua-group-item">
+            {{ t('components.flashcardCollectionView.collectionButton') }}
+          </RouterLink>
+          <RouterLink
+            :to="`/collections/${collection.collection_id}?mode=add_flashcard`"
+            class="btn-aqua-emerald btn-aqua-group-item"
+          >
+            {{ t('components.flashcardCollectionView.addFlashcardButton') }}
+          </RouterLink>
+          <button class="btn-aqua-red btn-aqua-group-item w-auto" :disabled="isImporting" @click="handleImport">
+            {{ isImporting ? t('components.flashcardCollectionView.importing') : t('components.flashcardCollectionView.importAllButton') }}
+          </button>
+        </div>
       </div>
     </template>
     <div v-if="auth.state.isLoggedIn" class="flex flex-row justify-center mb-2 gap-2">
@@ -235,7 +237,7 @@
 </template>
 
 <script setup>
-import { ArrowUp, ArrowDown, ArrowLeft, Repeat1, EqualApproximately } from 'lucide-vue-next'
+import { ArrowUp, ArrowDown, Repeat1, EqualApproximately } from 'lucide-vue-next'
 import { ref, computed, onMounted, watch, onBeforeUnmount } from 'vue'
 import { useRouter, RouterLink, useRoute } from 'vue-router'
 
