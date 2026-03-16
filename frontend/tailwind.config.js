@@ -427,8 +427,7 @@ export default {
               background: 'none'
             },
             '&:first-child:not(:last-child)': {
-              '@apply z-10 scale-x-[0.9]': {},
-              transformOrigin: 'top right',
+              '@apply z-10': {},
               borderTopLeftRadius: '1000px',
               borderBottomLeftRadius: '1000px',
               borderTopRightRadius: 0,
@@ -452,8 +451,7 @@ export default {
               },
             },
             '&:last-child:not(:first-child)': {
-              '@apply z-10 scale-x-[0.9]': {},
-              transformOrigin: 'top left',
+              '@apply z-10': {},
               borderTopLeftRadius: 0,
               borderBottomLeftRadius: 0,
               borderTopRightRadius: '1000px',
@@ -479,8 +477,7 @@ export default {
               },
             },
             '&:not(:first-child):not(:last-child)': {
-              '@apply z-10 scale-x-[0.9]': {},
-              transformOrigin: 'top',
+              '@apply z-10': {},
               boxShadow:
                 '0 0.375em 0.5em rgba(0, 0, 0, 0.3),' +
                 '0 0.125em 0.125em hsla(var(--aqua-hue, 215), 100%, 36.7%, 0.5),' +

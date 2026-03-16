@@ -1101,6 +1101,7 @@
     },
     "flashcardCollectionView": {
       "title": "{collectionName} - Flashcards",
+      "collectionButton": "Collection",
       "addFlashcardButton": "Add flashcard",
       "importAllButton": "Import all",
       "importing": "Importing...",
@@ -1200,6 +1201,7 @@
     "myCollections": "My courses & collections",
     "myCollectionsLabel": "My courses & collections",
     "nameLabel": "Name",
+    "onlyWithFlashcards": "Only with flashcards",
     "points": "{count} pt | {count} pts",
     "privateStatus": "Private",
     "publicCollections": "Public collections",
@@ -1209,6 +1211,7 @@
     "studyStreak": "Study streak",
     "studyButton": "Study",
     "updated": "Updated",
+    "updatedAt": "Updated at",
     "sortActiveWeek": "Popular this week",
     "sortActiveMonth": "Popular this month",
     "sortActiveAll": "All-time popular",

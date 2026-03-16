@@ -72,18 +72,20 @@
             <SearchInput v-model="itemSearchQuery" :placeholder="t('collectionDetail.searchItemsPlaceholder')"
               :is-loading="isSearching" @update:model-value="handleSearch" @clear="clearItemSearch" />
           </div>
-          <button v-if="isOwner" class="btn-aqua-teal md:flex-none" @click="resetForm(); showAddModal = true">
-            <PlusCircle class="w-4 h-4" />
-            {{ t('collectionDetail.addItem') }}
-          </button>
-          <RouterLink :to="`/collections/${props.collectionId}/flashcards`" class="btn-aqua-rose md:flex-none">
-            <GalleryHorizontalIcon class="w-4 h-4" />
-            {{ t('collectionDetail.viewAsFlashcards') }}
-          </RouterLink>
-          <RouterLink :to="`/collections/${props.collectionId}/levels`" class="btn-aqua-sky md:flex-none">
-            <LayoutPanelTop class="w-4 h-4" />
-            {{ t('collectionDetail.levels') }}
-          </RouterLink>
+          <div class="flex items-center gap-0" role="group">
+            <button v-if="isOwner" class="btn-aqua-emerald btn-aqua-group-item md:flex-none" @click="resetForm(); showAddModal = true">
+              <PlusCircle class="w-4 h-4" />
+              {{ t('collectionDetail.addItem') }}
+            </button>
+            <RouterLink :to="`/collections/${props.collectionId}/flashcards`" class="btn-aqua-rose btn-aqua-group-item md:flex-none">
+              <GalleryHorizontalIcon class="w-4 h-4" />
+              {{ t('collectionDetail.viewAsFlashcards') }}
+            </RouterLink>
+            <RouterLink :to="`/collections/${props.collectionId}/levels`" class="btn-aqua-sky btn-aqua-group-item md:flex-none">
+              <LayoutPanelTop class="w-4 h-4" />
+              {{ t('collectionDetail.levels') }}
+            </RouterLink>
+          </div>
         </div>
       </div>
     </div>
@@ -860,6 +862,7 @@ const addItemTabs = computed(() => [
 
 // Computed properties
 const isOwner = computed(() => {
+console.log(collection.value?.owner?.username, auth.state.username)
   return collection.value?.owner?.username === auth.state.username
 })
 
