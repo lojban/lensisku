@@ -2,7 +2,7 @@
   <div v-if="collection">
     <ToastFloat :show="showSuccessToast" :message="successMessage" type="success" @close="showSuccessToast = false" />
     <!-- Header -->
-    <div class="bg-white border rounded-lg p-4 sm:p-6 mb-6">
+    <div class="bg-white border rounded-lg p-4 sm:p-6 mb-6 gap-1">
       <!-- Row 1: Title full row -->
       <h2 class="text-xl sm:text-2xl font-bold text-gray-800 mb-2">
         {{ collection.name }}
@@ -16,7 +16,7 @@
       </div>
 
       <!-- Row 3: public + owner + count + actions -->
-      <div class="flex flex-wrap items-center justify-between gap-2 text-sm text-gray-500 mt-1">
+      <div class="flex flex-row gap-2 items-center justify-between text-sm text-gray-500">
         <div class="flex flex-wrap items-center gap-2">
           <span class="text-sm px-2 py-1 rounded-full select-none shrink-0" :class="collection.is_public ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'">
             {{ collection.is_public ? t('collectionDetail.public') : t('collectionDetail.private') }}
@@ -30,35 +30,33 @@
           </span>
           <span>{{ t('collectionDetail.itemsCount', { count: collection.item_count }) }}</span>
         </div>
-        <div class="shrink-0 w-fit">
           <Dropdown v-if="auth.state.isLoggedIn" :trigger-label="t('collectionDetail.actions')">
-            <button v-if="isOwner" type="button" class="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
+            <button v-if="isOwner" type="button" class="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
               @click="showEditModal = true">
               {{ t('collectionDetail.editCollectionInfo') }}
             </button>
-            <button type="button" class="w-full px-4 py-2 text-left text-sm text-indigo-600 hover:bg-indigo-50"
+            <button type="button" class="w-full px-4 py-2 text-left text-sm text-indigo-600 hover:bg-indigo-50 flex items-center gap-2"
               @click="handleCloneCollection">
               {{ t('collectionDetail.cloneCollection') }}
             </button>
             <button v-if="collection.is_public || isOwner" type="button"
-              class="w-full px-4 py-2 text-left text-sm text-purple-600 hover:bg-purple-50"
+              class="w-full px-4 py-2 text-left text-sm text-purple-600 hover:bg-purple-50 flex items-center gap-2"
               @click="showExportModal = true">
               {{ t('collectionDetail.exportCollection') }}
             </button>
-            <button v-if="isOwner" type="button" class="w-full px-4 py-2 text-left text-sm text-green-600 hover:bg-green-50"
+            <button v-if="isOwner" type="button" class="w-full px-4 py-2 text-left text-sm text-green-600 hover:bg-green-50 flex items-center gap-2"
               @click="showMergeModal = true; loadAvailableCollections()">
               {{ t('collectionDetail.mergeCollections') }}
             </button>
-            <button v-if="isOwner" type="button" class="w-full px-4 py-2 text-left text-sm text-cyan-600 hover:bg-cyan-50"
+            <button v-if="isOwner" type="button" class="w-full px-4 py-2 text-left text-sm text-cyan-600 hover:bg-cyan-50 flex items-center gap-2"
               @click="triggerJsonImport">
               {{ t('collectionDetail.importFullButton', 'Import from file') }}
             </button>
-            <button v-if="isOwner" type="button" class="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50"
+            <button v-if="isOwner" type="button" class="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
               @click="handleDelete">
               {{ t('collectionDetail.deleteCollection') }}
             </button>
           </Dropdown>
-        </div>
       </div>
 
       <!-- Hidden file input for JSON import -->

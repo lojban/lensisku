@@ -4,7 +4,8 @@
     <div class="flex items-center justify-between mb-4">
       <div class="flex items-center space-x-3">
         <h2 class="text-2xl font-bold">
-          <span class="ml-1">{{ t('components.flashcardCollectionView.title', { collectionName: collection?.name }) }}</span>
+          <span v-if="isLoading" class="ml-1 inline-block h-[29px] w-72 max-w-full bg-gray-200 animate-pulse rounded" aria-hidden="true" />
+          <span v-else class="ml-1">{{ t('components.flashcardCollectionView.title', { collectionName: collection?.name }) }}</span>
         </h2>
       </div>
     </div>

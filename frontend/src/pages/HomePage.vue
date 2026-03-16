@@ -240,8 +240,19 @@
                   <span class="font-medium text-gray-800">{{ item.message.subject || item.message.cleaned_subject || '-' }}</span>
                   <span class="text-xs px-2 py-0.5 rounded bg-gray-100">{{ $t('home.waveSourceMail') }}</span>
                 </div>
-                <div class="text-sm text-gray-600">
+                <div class="text-sm text-gray-600 mb-2">
                   {{ item.message.from_address }} · {{ item.message.date || '' }}
+                </div>
+                <div
+                  v-if="item.message.parts_json && textParts(item.message.parts_json).length"
+                  class="text-sm text-gray-700 border-t border-gray-100 pt-2 mt-2 prose prose-sm max-w-none [&_img]:max-h-48 [&_img]:object-contain"
+                >
+                  <LazyMathJax
+                    v-for="(part, pidx) in textParts(item.message.parts_json)"
+                    :key="pidx"
+                    :content="part.content || ''"
+                    :enable-markdown="part.mime_type === 'text/plain'"
+                  />
                 </div>
               </div>
             </div>
@@ -297,6 +308,7 @@ import {
 import CombinedFilters from '@/components/CombinedFilters.vue'
 import CommentItem from '@/components/CommentItem.vue'
 import DictionaryEntries from '@/components/DictionaryEntries.vue'
+import LazyMathJax from '@/components/LazyMathJax.vue'
 import { IconButton } from '@packages/ui'
 import MuplisList from '@/components/MuplisList.vue'
 import PaginationComponent from '@/components/PaginationComponent.vue'
@@ -311,8 +323,15 @@ import { useI18n } from 'vue-i18n';
 import { SearchQueue } from '@/utils/searchQueue';
 import { normalizeSearchQuery } from '@/utils/searchQueryUtils';
 
-
-
+/** Return text parts from mail message parts_json for display. */
+function textParts(partsJson) {
+  if (!partsJson) return []
+  const parts = Array.isArray(partsJson) ? partsJson : []
+  return parts.filter(p => p && (p.mime_type || p.mimeType || '').startsWith('text/')).map(p => ({
+    mime_type: p.mime_type || p.mimeType || 'text/plain',
+    content: typeof p.content === 'string' ? p.content : (p.content || '')
+  }))
+}
 
 defineEmits(['search', 'view-message', 'view-thread'])
 
