@@ -31,7 +31,7 @@ impl From<Row> for Message {
             cleaned_subject: row.try_get("cleaned_subject").unwrap_or_default(),
             from_address: row.get("from_address"),
             to_address: row.get("to_address"),
-            parts_json: row.get("parts_json"),
+            parts_json: row.try_get::<_, Option<serde_json::Value>>("parts_json").ok().flatten(),
             file_path,
             spam_vote_count: row.try_get("spam_vote_count").unwrap_or(0),
             current_user_voted_spam: row.try_get("current_user_voted_spam").ok(),

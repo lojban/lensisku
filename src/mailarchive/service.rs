@@ -98,7 +98,7 @@ pub async fn search_messages(
     let content_select = if include_content {
         "parts_json"
     } else {
-        "NULL as parts_json"
+        "NULL::jsonb as parts_json"
     };
 
     let query_string;
@@ -123,7 +123,7 @@ pub async fn search_messages(
                          m.sent_at DESC NULLS LAST, m.date DESC NULLS LAST
             )
             SELECT id, message_id, date, cleaned_subject as subject, from_address, to_address, 
-                   CASE WHEN {} THEN parts_json ELSE NULL END as parts_json,
+                   CASE WHEN {} THEN parts_json ELSE NULL::jsonb END as parts_json,
                    spam_vote_count, rank, sent_at
             FROM thread_representatives
             ORDER BY {} {}, date {}
@@ -254,7 +254,7 @@ pub async fn show_thread(
         )
     } else {
         format!(
-            "SELECT m.id, m.message_id, m.date, m.subject, m.from_address, m.to_address, NULL as parts_json,
+            "SELECT m.id, m.message_id, m.date, m.subject, m.from_address, m.to_address, NULL::jsonb as parts_json,
              (SELECT COUNT(*) FROM message_spam_votes msv WHERE msv.message_id = m.id) as spam_vote_count
              FROM messages m
              WHERE m.cleaned_subject = $1
@@ -335,7 +335,7 @@ pub async fn list_mail_threads(
                 SELECT l.cleaned_subject, l.subject, l.from_address, l.sent_at, c.cnt as message_count, l.content_preview
                 FROM latest l
                 JOIN counts c ON c.cleaned_subject = l.cleaned_subject
-                ORDER BY l.sent_at DESC NULLS LAST {}
+                ORDER BY l.sent_at {} NULLS LAST
                 LIMIT $1 OFFSET $2
                 "#,
                 order_dir
