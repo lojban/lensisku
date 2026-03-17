@@ -17,7 +17,11 @@
     <!-- Header Section -->
     <h1 class="border-b p-2 min-w-0 rounded-md">
       <div class="flex flex-wrap gap-2 w-full lg:w-auto justify-between min-w-0">
-        <div class="flex items-center gap-3 min-w-0 max-w-full">
+        <div class="flex flex-wrap items-center gap-2 min-w-0 max-w-full">
+          <BookOpen
+            class="flex-shrink-0 w-8 h-8 text-gray-500"
+            aria-hidden="true"
+          />
           <h1 class="text-3xl font-bold text-gray-800 min-w-0 max-w-full break-words" itemprop="name">
             {{ valsi.word }}
             <AudioPlayer
@@ -27,14 +31,6 @@
               class="flex-shrink-0"
             />
           </h1>
-        </div>
-        <div class="flex flex-wrap items-center gap-2">
-          <span
-            class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium"
-            :class="getTypeClass(valsi.type_name)"
-          >
-            {{ getWordTypeLabel(valsi.type_name) }}
-          </span>
           <span
             v-if="valsi.rafsi"
             class="inline-flex items-center px-3 py-1 bg-gray-100 rounded-full text-sm font-medium text-gray-700"
@@ -59,6 +55,14 @@
               <span v-if="index < valsi.decomposition.length - 1">+</span>
             </template>
           </div>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+          <span
+            class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium"
+            :class="getTypeClass(valsi.type_name)"
+          >
+            {{ getWordTypeLabel(valsi.type_name) }}
+          </span>
         </div>
       </div>
     </h1>
@@ -182,7 +186,7 @@
 </template>
 
 <script setup>
-import { ArrowLeft, AudioWaveform, Trash2, MessageCircle } from 'lucide-vue-next'
+import { ArrowLeft, AudioWaveform, BookOpen, Trash2, MessageCircle } from 'lucide-vue-next'
 import { ref, onMounted, watch, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
