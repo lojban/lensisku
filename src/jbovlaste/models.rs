@@ -81,6 +81,9 @@ pub struct DefinitionDetail {
     pub metadata: Option<serde_json::Value>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub examples: Option<Vec<Example>>,
+    /// Cached lujvo decomposition (source words). Only set for type "lujvo".
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub decomposition: Option<Vec<String>>,
 }
 
 #[derive(Debug, Serialize, Deserialize, ToSchema, Clone)]
@@ -133,6 +136,7 @@ impl From<tokio_postgres::Row> for DefinitionDetail {
             embedding: None,
             metadata: row.get("metadata"),
             examples: None,
+            decomposition: None,
         }
     }
 }

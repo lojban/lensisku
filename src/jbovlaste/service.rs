@@ -181,6 +181,8 @@ pub async fn semantic_search(
                 d.definitionid, d.valsiid, d.langid, d.definition, d.notes, d.etymology, d.created_at,
                 d.selmaho, d.jargon, d.definitionnum, d.time, d.owner_only,
                 v.word as valsiword,
+                d.cached_rafsi as rafsi,
+                d.cached_decomposition as cached_decomposition,
                 u.username,
                 l.realname as langrealname,
                 vt.descriptor as type_name,
@@ -229,6 +231,15 @@ pub async fn semantic_search(
     // Execute main query with the final parameter list (including limit/offset)
     let rows = transaction.query(&query_string, &query_params).await?;
 
+    let def_ids: Vec<i32> = rows.iter().map(|row| row.get("definitionid")).collect();
+    let (gloss_keywords_map, place_keywords_map) = fetch_keywords(&transaction, &def_ids).await?;
+
+    let words: Vec<String> = rows
+        .iter()
+        .map(|row| row.get::<_, String>("valsiword"))
+        .collect();
+    let sound_urls = get_valsi_sound_urls_from_db(pool, &words).await?;
+
     // Process each definition
     for row in rows {
         let def_id: i32 = row.get("definitionid");
@@ -259,17 +270,22 @@ pub async fn semantic_search(
             } else {
                 None
             },
-            gloss_keywords: None,
-            place_keywords: None,
+            gloss_keywords: gloss_keywords_map.get(&def_id).cloned(),
+            place_keywords: place_keywords_map.get(&def_id).cloned(),
             user_vote: None,
             owner_only: row.get("owner_only"),
             can_edit: false,
             created_at: row.get("created_at"),
             has_image: row.get("has_image"),
-            sound_url: None,
+            sound_url: sound_urls.get(&word).cloned().flatten(),
             metadata: None,
-            rafsi: None,
+            rafsi: row.try_get::<_, Option<String>>("rafsi").ok().flatten(),
             examples: None,
+            decomposition: parse_cached_decomposition(
+                row.try_get::<_, Option<String>>("cached_decomposition")
+                    .ok()
+                    .flatten(),
+            ),
         });
     }
 
@@ -283,6 +299,15 @@ pub async fn semantic_search(
         decomposition,
         total,
     })
+}
+
+/// Parse cached_decomposition from DB (JSON array string) into Option<Vec<String>>.
+fn parse_cached_decomposition(s: Option<String>) -> Option<Vec<String>> {
+    let s = s?;
+    if s.trim().is_empty() {
+        return None;
+    }
+    serde_json::from_str::<Vec<String>>(&s).ok()
 }
 
 // Helper function to fetch keywords (extracted and adapted from search_definitions)
@@ -450,6 +475,8 @@ pub async fn search_definitions(
                 d.cached_username as username,
                 d.cached_langrealname as langrealname,
                 d.cached_type_name as type_name,
+                d.cached_rafsi as rafsi,
+                d.cached_decomposition as cached_decomposition,
                 COALESCE(dv.score, 0) as score,
                 COALESCE(cc.comment_count, 0) as comment_count,
                 (di.definition_id IS NOT NULL) as has_image,
@@ -513,11 +540,13 @@ pub async fn search_definitions(
                 d.cached_username as username,
                 d.cached_langrealname as langrealname,
                 d.cached_type_name as type_name,
+                d.cached_rafsi as rafsi,
+                d.cached_decomposition as cached_decomposition,
                 COALESCE(dv.score, 0) as score,
                 (di.definition_id IS NOT NULL) as has_image,
                 CASE
                     WHEN d.cached_valsiword = $1 THEN 13
-                    WHEN d.cached_glosswords IS NOT NULL AND d.cached_glosswords != '' 
+                    WHEN d.cached_glosswords IS NOT NULL AND d.cached_glosswords != ''
                          AND LOWER($1) = ANY(string_to_array(d.cached_glosswords, ' ')) THEN 12
                     WHEN d.cached_valsiword ILIKE $1 THEN 11
                     WHEN d.cached_valsiword ~* $3 THEN 10
@@ -604,7 +633,12 @@ pub async fn search_definitions(
             sound_url: sound_urls.get(&word).cloned().flatten(), // Fixed type mismatch
             embedding: None,
             metadata: None,
-            rafsi: None,
+            rafsi: row.try_get::<_, Option<String>>("rafsi").ok().flatten(),
+            decomposition: parse_cached_decomposition(
+                row.try_get::<_, Option<String>>("cached_decomposition")
+                    .ok()
+                    .flatten(),
+            ),
             examples: None,
         });
     }
@@ -893,7 +927,8 @@ pub async fn fast_search_definitions(
             sound_url: sound_urls.get(&word).cloned().flatten(),
             embedding: None,
             metadata: None,
-            rafsi: None,
+            rafsi: None,           // Not returned in fast search for performance
+            decomposition: None,  // Not returned in fast search for performance
             examples: None,
         });
     }
@@ -1168,6 +1203,7 @@ pub async fn get_entry_details(
     let result = transaction
         .query_opt(
             "SELECT v.valsiid, v.word, vt.descriptor as type_name, v.rafsi, v.source_langid,
+             v.cached_decomposition,
              (SELECT COUNT(c.commentid)
               FROM threads t
               LEFT JOIN comments c ON t.threadid = c.threadid
@@ -1184,19 +1220,37 @@ pub async fn get_entry_details(
 
     match result {
         Some(row) => {
+            let valsiid: i32 = row.get("valsiid");
             let mut detail = ValsiDetail {
                 source_langid: row.get("source_langid"),
-                valsiid: row.get("valsiid"),
+                valsiid,
                 word: row.get("word"),
                 type_name: row.get("type_name"),
                 rafsi: row.get("rafsi"),
                 comment_count: row.get("comment_count"),
-                decomposition: None,
+                decomposition: row
+                    .try_get::<_, Option<String>>("cached_decomposition")
+                    .ok()
+                    .flatten()
+                    .and_then(|s| parse_cached_decomposition(Some(s))),
             };
 
-            if detail.type_name.to_lowercase() == "lujvo" {
+            if detail.type_name.to_lowercase() == "lujvo" && detail.decomposition.is_none() {
                 match get_source_words(&detail.word, &transaction, parsers).await {
-                    Ok(words) => detail.decomposition = Some(words),
+                    Ok(words) => {
+                        detail.decomposition = Some(words.clone());
+                        // Persist to valsi so list search and future requests use cache
+                        if !words.is_empty() {
+                            if let Ok(json_str) = serde_json::to_string(&words) {
+                                let _ = transaction
+                                    .execute(
+                                        "UPDATE valsi SET cached_decomposition = $1 WHERE valsiid = $2",
+                                        &[&json_str, &valsiid],
+                                    )
+                                    .await;
+                            }
+                        }
+                    }
                     Err(e) => log::error!("Failed to decompose lujvo {}: {}", detail.word, e),
                 }
             }
@@ -1853,6 +1907,11 @@ pub async fn get_definition(
         has_image: row.get("has_image"),
         metadata: None,
         examples: Some(examples),
+        decomposition: row
+            .try_get::<_, Option<String>>("cached_decomposition")
+            .ok()
+            .flatten()
+            .and_then(parse_cached_decomposition),
     };
 
     Ok(Some(definition))
@@ -2438,6 +2497,7 @@ pub async fn list_definitions(
             metadata: None,
             rafsi: None,
             examples: None,
+            decomposition: None,
         })
         .collect();
 
@@ -2605,6 +2665,7 @@ pub async fn list_non_lojban_definitions(
             metadata: None,
             rafsi: None,
             examples: None,
+            decomposition: None,
         })
         .collect();
 
@@ -2848,6 +2909,7 @@ pub async fn get_definitions_by_entry(
             metadata: None,
             rafsi: None,
             examples: None,
+            decomposition: None,
         })
         .collect();
 
@@ -4175,6 +4237,7 @@ pub async fn list_definitions_by_client_id(
             metadata: row.get("metadata"),
             rafsi: None,
             examples: None,
+            decomposition: None,
         });
     }
 

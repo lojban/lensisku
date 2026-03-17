@@ -54,6 +54,16 @@
                   class="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-700 rounded-full">
                   {{ definition.rafsi }}
                 </span>
+                <span v-if="definition.decomposition?.length"
+                  class="px-2 py-1 text-xs font-medium bg-amber-50 text-amber-800 rounded-full inline-flex items-center gap-0.5 flex-wrap">
+                  <template v-for="(word, index) in definition.decomposition" :key="word">
+                    <RouterLink :to="{ path: `/valsi/${word.replace(/ /g, '_')}` }"
+                      class="text-amber-800 hover:text-amber-900 hover:underline">
+                      {{ word }}
+                    </RouterLink>
+                    <span v-if="index < definition.decomposition.length - 1" class="text-amber-600">+</span>
+                  </template>
+                </span>
                 <span :title="t('components.definitionCard.flashcardIndicatorTitle')" class="cursor-pointer"
                   @click.stop="$emit('edit-item')">
                   <GalleryHorizontalIcon v-if="showEditButton && flashcard"
@@ -189,6 +199,19 @@
             {{ t('components.definitionCard.notesLabel') }}
           </h4>
           <LazyMathJax :content="definition.notes" :enable-markdown="true" />
+        </div>
+
+        <!-- Gloss Keywords (glosswords) -->
+        <div v-if="definition.gloss_keywords && definition.gloss_keywords.length > 0" class="mt-3 pt-2 border-t">
+          <div class="flex flex-wrap gap-1">
+            <span
+              v-for="keyword in definition.gloss_keywords"
+              :key="keyword.word"
+              class="px-2 py-1 text-xs bg-blue-50 text-blue-700 rounded"
+            >
+              {{ keyword.word }}
+            </span>
+          </div>
         </div>
 
         <div v-if="definition.has_image" class="mt-4 flex justify-center">
