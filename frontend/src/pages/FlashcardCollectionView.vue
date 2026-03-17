@@ -1,66 +1,93 @@
 <template>
-  <!-- Header -->
-  <div class="bg-white border rounded-lg p-4 sm:p-6 mb-6">
+  <!-- Header: row order matches CollectionDetail.vue (Title → Description → meta → actions) -->
+  <div class="bg-white border rounded-lg p-4 sm:p-6 mb-6 flex flex-col gap-2">
     <!-- Skeleton: same layout shape to avoid CLS while loading -->
     <template v-if="isHeaderLoading">
-      <div class="flex items-center justify-between mb-4">
-        <div class="h-8 w-72 max-w-full bg-gray-200 animate-pulse rounded" aria-hidden="true" />
+      <div class="h-8 w-72 max-w-full bg-gray-200 animate-pulse rounded" aria-hidden="true" />
+      <div class="flex flex-wrap gap-2">
+        <div class="h-6 w-16 bg-gray-200 animate-pulse rounded" />
+        <div class="h-6 w-24 bg-gray-200 animate-pulse rounded" />
       </div>
-      <div class="flex flex-wrap justify-center md:justify-start gap-2 mb-4">
+      <div class="flex flex-wrap justify-center md:justify-start gap-2">
         <div class="h-10 w-24 bg-gray-200 animate-pulse rounded" />
         <div class="h-10 w-28 bg-gray-200 animate-pulse rounded" />
         <div class="h-10 w-20 bg-gray-200 animate-pulse rounded" />
       </div>
-      <div class="flex flex-row justify-center mb-2 gap-2">
-        <div class="h-10 w-32 bg-gray-200 animate-pulse rounded" />
-      </div>
-      <div class="mt-4 h-20 max-w-full bg-gray-200 animate-pulse rounded" />
+      <div class="h-10 w-32 bg-gray-200 animate-pulse rounded" />
     </template>
 
     <template v-else>
-      <div class="flex items-center justify-between mb-4">
-        <div class="flex items-center space-x-3">
-          <h2 class="text-2xl font-bold">
-            <span class="ml-1">{{ t('components.flashcardCollectionView.title', { collectionName: collection?.name }) }}</span>
-          </h2>
+      <!-- Row 1: Title -->
+      <h2 class="flex items-center gap-2 text-xl sm:text-2xl font-bold text-gray-800">
+        <GalleryHorizontalIcon class="w-6 h-6 shrink-0 text-gray-600" aria-hidden="true" />
+        {{ t('components.flashcardCollectionView.title', { collectionName: collection?.name }) }}
+      </h2>
+
+      <!-- Row 2: Description -->
+      <div v-if="collection?.description" class="w-full">
+        <div class="max-h-32 text-sm overflow-y-auto border rounded p-2 w-full read-box">
+          <LazyMathJax :content="collection.description" />
         </div>
       </div>
 
-      <template v-if="isOwner && collection?.item_count > existingFlashcardIds.size">
-        <div class="flex flex-wrap justify-center md:justify-start gap-2 mb-4">
-          <div class="flex items-center" role="group">
-            <RouterLink :to="`/collections/${props.collectionId}`" class="btn-aqua-zinc btn-aqua-group-item">
+      <!-- Row 3: public + owner + count + actions -->
+      <div class="flex flex-row gap-2 items-center justify-between text-sm text-gray-500">
+        <div class="flex flex-wrap items-center gap-2">
+          <span class="text-sm px-2 py-1 rounded-full select-none shrink-0" :class="collection?.is_public ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'">
+            {{ collection?.is_public ? t('collectionDetail.public') : t('collectionDetail.private') }}
+          </span>
+          <span v-if="collection?.owner">
+            {{ t('collectionDetail.createdBy') }}
+            <RouterLink :to="`/user/${collection.owner.username}`"
+              class="text-blue-600 hover:text-blue-800 hover:underline">
+              {{ collection.owner.username }}
+            </RouterLink>
+          </span>
+          <span>{{ t('collectionDetail.itemsCount', { count: collection?.item_count ?? 0 }) }}</span>
+        </div>
+        <RouterLink :to="`/collections/${props.collectionId}`" class="text-sm text-gray-600 hover:text-gray-800 shrink-0">
+          {{ t('collectionDetail.actions') }}
+        </RouterLink>
+      </div>
+
+      <!-- Row 4: Action buttons -->
+      <div class="space-y-4 md:space-y-0">
+        <div class="flex flex-wrap items-center gap-2 w-auto">
+          <div class="flex items-center gap-0" role="group">
+            <RouterLink :to="`/collections/${props.collectionId}`" class="btn-aqua-zinc btn-aqua-group-item md:flex-none">
+              <List class="w-4 h-4 shrink-0" aria-hidden="true" />
               {{ t('components.flashcardCollectionView.collectionButton') }}
             </RouterLink>
-            <RouterLink
-              :to="`/collections/${collection.collection_id}?mode=add_flashcard`"
-              class="btn-aqua-emerald btn-aqua-group-item"
-            >
-              {{ t('components.flashcardCollectionView.addFlashcardButton') }}
-            </RouterLink>
-            <button class="btn-aqua-red btn-aqua-group-item w-auto" :disabled="isImporting" @click="handleImport">
-              {{ isImporting ? t('components.flashcardCollectionView.importing') : t('components.flashcardCollectionView.importAllButton') }}
-            </button>
+            <template v-if="isOwner && collection?.item_count > existingFlashcardIds.size">
+              <RouterLink
+                :to="`/collections/${collection.collection_id}?mode=add_flashcard`"
+                class="btn-aqua-emerald btn-aqua-group-item md:flex-none"
+              >
+                <PlusCircle class="w-4 h-4 shrink-0" aria-hidden="true" />
+                {{ t('components.flashcardCollectionView.addFlashcardButton') }}
+              </RouterLink>
+              <button class="btn-aqua-red btn-aqua-group-item md:flex-none" :disabled="isImporting" @click="handleImport">
+                <Import class="w-4 h-4 shrink-0" aria-hidden="true" />
+                {{ isImporting ? t('components.flashcardCollectionView.importing') : t('components.flashcardCollectionView.importAllButton') }}
+              </button>
+            </template>
+            <template v-if="!auth.state.isLoggedIn">
+              <RouterLink :to="`/collections/${props.collectionId}/levels`" class="btn-aqua-orange btn-aqua-group-item md:flex-none">
+                {{ t('anonymousProgress.viewLevels', 'View levels') }}
+              </RouterLink>
+              <RouterLink :to="`/collections/${props.collectionId}/levels`" class="btn-aqua-emerald btn-aqua-group-item md:flex-none">
+                {{ t('anonymousProgress.studyLevels', 'Study (by level)') }}
+              </RouterLink>
+            </template>
           </div>
         </div>
-      </template>
-      <div v-if="auth.state.isLoggedIn" class="flex flex-row justify-center mb-2 gap-2">
+      </div>
+
+      <!-- Row 5: Study now (large, centered on its own row when logged in) -->
+      <div v-if="auth.state.isLoggedIn" class="flex flex-row justify-center gap-2">
         <button class="btn-aqua-orange h-10 text-base" :disabled="!dueCount" @click="startLearningSession">
           {{ t('flashcardCollection.studyNow', { count: dueCount }) }}
         </button>
-      </div>
-      <div v-else class="flex flex-row justify-center mb-2 gap-2 flex-wrap">
-        <RouterLink :to="`/collections/${props.collectionId}/levels`" class="btn-aqua-orange h-10 text-base inline-flex items-center">
-          {{ t('anonymousProgress.viewLevels', 'View levels') }}
-        </RouterLink>
-        <RouterLink :to="`/collections/${props.collectionId}/levels`" class="btn-aqua-emerald h-10 text-base inline-flex items-center">
-          {{ t('anonymousProgress.studyLevels', 'Study (by level)') }}
-        </RouterLink>
-      </div>
-      <div v-if="collection?.description">
-        <div class="max-h-32 text-sm overflow-y-auto border rounded mt-4 p-2 bg-gray-50 read-box">
-          <LazyMathJax :content="collection.description" />
-        </div>
       </div>
     </template>
   </div>
@@ -255,7 +282,7 @@
 </template>
 
 <script setup>
-import { ArrowUp, ArrowDown, Repeat1, EqualApproximately } from 'lucide-vue-next'
+import { ArrowUp, ArrowDown, Repeat1, EqualApproximately, GalleryHorizontalIcon, List, PlusCircle, Import } from 'lucide-vue-next'
 import { ref, computed, onMounted, watch, onBeforeUnmount } from 'vue'
 import { useRouter, RouterLink, useRoute } from 'vue-router'
 
