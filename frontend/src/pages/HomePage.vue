@@ -139,11 +139,11 @@
           <IconButton
             v-if="auth.state.isLoggedIn"
             :label="$t('home.newFreeThread')"
-            button-classes="btn-aqua-emerald"
+            button-classes="btn-aqua-white"
             @click="handleNewFreeComment"
           >
             <template #icon>
-              <AudioWaveform class="h-4 w-4" />
+              <AudioWaveform class="h-4 w-4 text-purple-600" />
             </template>
           </IconButton>
         </div>
