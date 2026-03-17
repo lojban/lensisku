@@ -237,9 +237,7 @@
                 class="comment-item bg-white border rounded-lg p-3 my-2 hover:border-blue-300 transition-colors min-w-48"
               >
                 <div class="mb-2 text-sm text-gray-600 whitespace-nowrap overflow-hidden flex items-center">
-                  <span class="bg-blue-50 text-blue-700 px-2.5 py-0.5 rounded-full">
-                    {{ $t('home.waveSourceMail') }}
-                  </span>
+                  <SourceTypeBadge type="mail" />
                   <span class="text-blue-700 font-medium ml-1.5 truncate inline-block max-w-[calc(100%-120px)]">
                     {{ item.message.subject || item.message.cleaned_subject || '-' }}
                   </span>
@@ -311,6 +309,7 @@ import {
 } from '@/api'
 import CombinedFilters from '@/components/CombinedFilters.vue'
 import CommentItem from '@/components/CommentItem.vue'
+import SourceTypeBadge from '@/components/SourceTypeBadge.vue'
 import DictionaryEntries from '@/components/DictionaryEntries.vue'
 import LazyMathJax from '@/components/LazyMathJax.vue'
 import { IconButton } from '@packages/ui'

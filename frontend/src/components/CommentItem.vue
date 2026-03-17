@@ -3,9 +3,7 @@
     :data-comment-id="processedComment.comment_id">
     <div v-if="showContext && (processedComment.definition || processedComment.valsi_id)"
       class="mb-2 text-sm text-gray-600 whitespace-nowrap overflow-hidden flex items-center">
-      <span class="bg-blue-50 text-blue-700 px-2.5 py-0.5 rounded-full">
-        {{ processedComment.definition_id ? t('components.commentItem.inDefinition') : t('components.commentItem.inValsi') }}
-      </span>
+      <SourceTypeBadge :type="processedComment.definition_id ? 'definition' : 'valsi'" />
       <RouterLink v-if="processedComment.definition"
         :to="`/valsi/${processedComment.valsi_word}?highlight_definition_id=${processedComment.definition_id}`"
         class="hover:underline text-blue-700 font-medium ml-1.5 truncate inline-block max-w-[calc(100%-120px)]">
@@ -229,6 +227,7 @@ import { useI18n } from 'vue-i18n';
 import { toggleBookmark, toggleReaction, deleteComment } from '@/api';
 import DeleteConfirmationModal from '@/components/DeleteConfirmation.vue';
 import ReactionPlusIcon from '@/components/icons/ReactionPlusIcon.vue';
+import SourceTypeBadge from '@/components/SourceTypeBadge.vue';
 import LazyMathJax from '@/components/LazyMathJax.vue';
 import ToastFloat from '@/components/ToastFloat.vue';
 import { useAvatarStore } from '@/composables/avatarStore';
