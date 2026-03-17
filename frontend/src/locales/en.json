@@ -1219,6 +1219,7 @@
   },
   "flashcardLevels": {
     "title": "{collectionName} - Levels",
+    "viewFlashcards": "View flashcards",
     "studyButton": "Study",
     "createLevel": "Create level",
     "noLevels": "No levels created yet.",

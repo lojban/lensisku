@@ -1,51 +1,68 @@
 <template>
   <!-- Header -->
   <div class="bg-white border rounded-lg p-4 sm:p-6 mb-6">
-    <div class="flex items-center justify-between mb-4">
-      <div class="flex items-center space-x-3">
-        <h2 class="text-2xl font-bold">
-          <span v-if="isLoading" class="ml-1 inline-block h-[29px] w-72 max-w-full bg-gray-200 animate-pulse rounded" aria-hidden="true" />
-          <span v-else class="ml-1">{{ t('components.flashcardCollectionView.title', { collectionName: collection?.name }) }}</span>
-        </h2>
+    <!-- Skeleton: same layout shape to avoid CLS while loading -->
+    <template v-if="isHeaderLoading">
+      <div class="flex items-center justify-between mb-4">
+        <div class="h-8 w-72 max-w-full bg-gray-200 animate-pulse rounded" aria-hidden="true" />
       </div>
-    </div>
-
-    <template v-if="isOwner && !isLoading && collection?.item_count > existingFlashcardIds.size">
       <div class="flex flex-wrap justify-center md:justify-start gap-2 mb-4">
-        <div class="flex items-center" role="group">
-          <RouterLink :to="`/collections/${props.collectionId}`" class="btn-aqua-zinc btn-aqua-group-item">
-            {{ t('components.flashcardCollectionView.collectionButton') }}
-          </RouterLink>
-          <RouterLink
-            :to="`/collections/${collection.collection_id}?mode=add_flashcard`"
-            class="btn-aqua-emerald btn-aqua-group-item"
-          >
-            {{ t('components.flashcardCollectionView.addFlashcardButton') }}
-          </RouterLink>
-          <button class="btn-aqua-red btn-aqua-group-item w-auto" :disabled="isImporting" @click="handleImport">
-            {{ isImporting ? t('components.flashcardCollectionView.importing') : t('components.flashcardCollectionView.importAllButton') }}
-          </button>
+        <div class="h-10 w-24 bg-gray-200 animate-pulse rounded" />
+        <div class="h-10 w-28 bg-gray-200 animate-pulse rounded" />
+        <div class="h-10 w-20 bg-gray-200 animate-pulse rounded" />
+      </div>
+      <div class="flex flex-row justify-center mb-2 gap-2">
+        <div class="h-10 w-32 bg-gray-200 animate-pulse rounded" />
+      </div>
+      <div class="mt-4 h-20 max-w-full bg-gray-200 animate-pulse rounded" />
+    </template>
+
+    <template v-else>
+      <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center space-x-3">
+          <h2 class="text-2xl font-bold">
+            <span class="ml-1">{{ t('components.flashcardCollectionView.title', { collectionName: collection?.name }) }}</span>
+          </h2>
+        </div>
+      </div>
+
+      <template v-if="isOwner && collection?.item_count > existingFlashcardIds.size">
+        <div class="flex flex-wrap justify-center md:justify-start gap-2 mb-4">
+          <div class="flex items-center" role="group">
+            <RouterLink :to="`/collections/${props.collectionId}`" class="btn-aqua-zinc btn-aqua-group-item">
+              {{ t('components.flashcardCollectionView.collectionButton') }}
+            </RouterLink>
+            <RouterLink
+              :to="`/collections/${collection.collection_id}?mode=add_flashcard`"
+              class="btn-aqua-emerald btn-aqua-group-item"
+            >
+              {{ t('components.flashcardCollectionView.addFlashcardButton') }}
+            </RouterLink>
+            <button class="btn-aqua-red btn-aqua-group-item w-auto" :disabled="isImporting" @click="handleImport">
+              {{ isImporting ? t('components.flashcardCollectionView.importing') : t('components.flashcardCollectionView.importAllButton') }}
+            </button>
+          </div>
+        </div>
+      </template>
+      <div v-if="auth.state.isLoggedIn" class="flex flex-row justify-center mb-2 gap-2">
+        <button class="btn-aqua-orange h-10 text-base" :disabled="!dueCount" @click="startLearningSession">
+          {{ t('flashcardCollection.studyNow', { count: dueCount }) }}
+        </button>
+      </div>
+      <div v-else class="flex flex-row justify-center mb-2 gap-2 flex-wrap">
+        <RouterLink :to="`/collections/${props.collectionId}/levels`" class="btn-aqua-orange h-10 text-base inline-flex items-center">
+          {{ t('anonymousProgress.viewLevels', 'View levels') }}
+        </RouterLink>
+        <RouterLink :to="`/collections/${props.collectionId}/levels`" class="btn-aqua-emerald h-10 text-base inline-flex items-center">
+          {{ t('anonymousProgress.studyLevels', 'Study (by level)') }}
+        </RouterLink>
+      </div>
+      <div v-if="collection?.description">
+        <div class="max-h-32 text-sm overflow-y-auto border rounded mt-4 p-2 bg-gray-50 read-box">
+          <LazyMathJax :content="collection.description" />
         </div>
       </div>
     </template>
-    <div v-if="auth.state.isLoggedIn" class="flex flex-row justify-center mb-2 gap-2">
-      <button class="btn-aqua-orange h-10 text-base" :disabled="!dueCount" @click="startLearningSession">
-        {{ t('flashcardCollection.studyNow', { count: dueCount }) }}
-      </button>
-    </div>
-    <div v-else class="flex flex-row justify-center mb-2 gap-2 flex-wrap">
-      <RouterLink :to="`/collections/${props.collectionId}/levels`" class="btn-aqua-orange h-10 text-base inline-flex items-center">
-        {{ t('anonymousProgress.viewLevels', 'View levels') }}
-      </RouterLink>
-      <RouterLink :to="`/collections/${props.collectionId}/levels`" class="btn-aqua-emerald h-10 text-base inline-flex items-center">
-        {{ t('anonymousProgress.studyLevels', 'Study (by level)') }}
-      </RouterLink>
-    </div>
-    <div v-if="collection?.description">
-      <div class="max-h-32 text-sm overflow-y-auto border rounded mt-4 p-2 bg-gray-50 read-box">
-        <LazyMathJax :content="collection.description" />
-      </div>
-    </div>
   </div>
 
   <!-- Anonymous: sign-in prompt -->
@@ -578,6 +595,9 @@ const pageTitle = ref('Flashcards')
 useSeoHead({ title: pageTitle }, locale.value)
 
 const isAnonView = computed(() => !auth.state.isLoggedIn)
+
+/** True while collection or flashcards are loading; used to show header skeleton and avoid CLS */
+const isHeaderLoading = computed(() => !collection.value || isLoading.value)
 
 onMounted(async () => {
   syncFromRoute()

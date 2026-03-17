@@ -356,7 +356,7 @@
     "exportFullDescription": "cupra lo liste fi lo JSON kansa ro da .e lo karda klesi .e lo karda te tcila .i ko kakne lo nu za'u re'u jmina lo datnyvei mu'i lo nu finti lo cnino liste poi dunli.",
     "skippedItemsHeader": "cliva da",
     "andMoreSkipped": ".e so'o {count} drata...",
-    "viewAsFlashcards": "viska fi'o karda",
+    "viewAsFlashcards": "zgana le ckini karda",
     "levels": "klesi",
     "onlyItemsWithoutFlashcards": "da poi na se karda po'o",
     "noItems": "no da su'o liste cu zvati.",
@@ -1217,6 +1217,7 @@
   },
   "flashcardLevels": {
     "title": "{collectionName} - klesi",
+    "viewFlashcards": "zgana le karda",
     "studyButton": "tadni",
     "createLevel": "finti lo klesi",
     "noLevels": "no klesi cu ba'o se finti.",
