@@ -2,9 +2,10 @@
   <div v-if="collection">
     <ToastFloat :show="showSuccessToast" :message="successMessage" type="success" @close="showSuccessToast = false" />
     <!-- Header -->
-    <div class="bg-white border rounded-lg p-4 sm:p-6 mb-6 gap-1">
-      <!-- Row 1: Title full row -->
-      <h2 class="text-xl sm:text-2xl font-bold text-gray-800 mb-2">
+    <div class="bg-white border rounded-lg p-4 sm:p-6 mb-6 flex flex-col gap-2">
+      <!-- Row 1: Title -->
+      <h2 class="flex items-center gap-2 text-xl sm:text-2xl font-bold text-gray-800">
+        <List class="w-6 h-6 shrink-0 text-gray-600" aria-hidden="true" />
         {{ collection.name }}
       </h2>
 
@@ -63,10 +64,10 @@
       <input ref="jsonImportInput" type="file" accept=".json" class="hidden" @change="handleJsonFileSelect">
 
 
-      <!-- Search and Actions -->
-      <div class="space-y-4 md:space-y-0 mt-4">
+      <!-- Row 4: Search and Actions -->
+      <div class="space-y-4 md:space-y-0">
         <div class="flex flex-wrap items-center gap-2 w-auto">
-          <div class="relative w-full md:w-auto mb-2 md:mb-0">
+          <div class="relative w-full md:w-auto">
             <SearchInput v-model="itemSearchQuery" :placeholder="t('collectionDetail.searchItemsPlaceholder')"
               :is-loading="isSearching" @update:model-value="handleSearch" @clear="clearItemSearch" />
           </div>
@@ -79,7 +80,7 @@
               <GalleryHorizontalIcon class="w-4 h-4" />
               {{ t('collectionDetail.viewAsFlashcards') }}
             </RouterLink>
-            <RouterLink :to="`/collections/${props.collectionId}/levels`" class="btn-aqua-sky btn-aqua-group-item md:flex-none">
+            <RouterLink :to="`/collections/${props.collectionId}/levels`" class="btn-aqua-white btn-aqua-group-item md:flex-none">
               <LayoutPanelTop class="w-4 h-4" />
               {{ t('collectionDetail.levels') }}
             </RouterLink>
@@ -733,6 +734,7 @@
 import {
   GalleryHorizontalIcon,
   LayoutPanelTop,
+  List,
   BookOpen,
   Edit3,
   HelpCircle,

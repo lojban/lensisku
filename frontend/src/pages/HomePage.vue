@@ -234,13 +234,17 @@
               />
               <div
                 v-else
-                class="rounded-lg border border-gray-200 bg-white p-4 hover:border-blue-200"
+                class="comment-item bg-white border rounded-lg p-3 my-2 hover:border-blue-300 transition-colors min-w-48"
               >
-                <div class="flex items-center gap-2 text-sm text-gray-500 mb-1">
-                  <span class="font-medium text-gray-800">{{ item.message.subject || item.message.cleaned_subject || '-' }}</span>
-                  <span class="text-xs px-2 py-0.5 rounded bg-gray-100">{{ $t('home.waveSourceMail') }}</span>
+                <div class="mb-2 text-sm text-gray-600 whitespace-nowrap overflow-hidden flex items-center">
+                  <span class="bg-blue-50 text-blue-700 px-2.5 py-0.5 rounded-full">
+                    {{ $t('home.waveSourceMail') }}
+                  </span>
+                  <span class="text-blue-700 font-medium ml-1.5 truncate inline-block max-w-[calc(100%-120px)]">
+                    {{ item.message.subject || item.message.cleaned_subject || '-' }}
+                  </span>
                 </div>
-                <div class="text-sm text-gray-600 mb-2">
+                <div class="text-xs text-gray-500 mb-2">
                   {{ item.message.from_address }} · {{ item.message.date || '' }}
                 </div>
                 <div
