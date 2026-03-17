@@ -11,10 +11,10 @@
       </div>
 
       <div class="flex flex-row gap-2 justify-between items-center w-full">
-        <RouterLink :to="`/collections/${props.collectionId}/flashcards`" class="btn-aqua-zinc">
-          <ArrowLeft class="h-5 w-5" />
+        <RouterLink :to="`/collections/${props.collectionId}/flashcards`" class="btn-aqua-rose">
+          {{ t('flashcardLevels.viewFlashcards', 'View flashcards') }}
         </RouterLink>
-        <button type="button" class="btn-aqua-orange" @click="startStudy">
+        <button type="button" class="btn-aqua-orange h-10 text-base" @click="startStudy">
           {{ t('flashcardLevels.studyButton', 'Study') }}
         </button>
         <IconButton v-if="isOwner" :label="t('flashcardLevels.createLevel')" button-classes="btn-aqua-emerald"
@@ -374,7 +374,6 @@ import { Background } from '@vue-flow/background';
 import { Controls } from '@vue-flow/controls';
 import { VueFlow, useVueFlow } from '@vue-flow/core';
 import {
-  ArrowLeft,
   Lock,
   Play,
   BookOpen,
@@ -777,17 +776,17 @@ const getTreeLevel = (level) => {
 
 const { elements, setElements, fitView } = useVueFlow()
 
-// First unlocked level and next level (by position) for scroll-into-view — fit both into view
-const getFirstUnlockedAndNextLevelIds = (levelsData) => {
+// Last unlocked level and previous level (by position) for scroll-into-view — fit both into view
+const getLastUnlockedAndPrevLevelIds = (levelsData) => {
   if (!levelsData?.length) return []
   const sorted = [...levelsData].sort((a, b) => a.position - b.position)
-  const firstIndex = sorted.findIndex(
+  const lastIndex = sorted.findLastIndex(
     (l) => l.progress?.is_unlocked || l.progress?.is_completed
   )
-  if (firstIndex === -1) return []
-  const ids = [sorted[firstIndex].level_id.toString()]
-  if (firstIndex + 1 < sorted.length) {
-    ids.push(sorted[firstIndex + 1].level_id.toString())
+  if (lastIndex === -1) return []
+  const ids = [sorted[lastIndex].level_id.toString()]
+  if (lastIndex > 0) {
+    ids.unshift(sorted[lastIndex - 1].level_id.toString())
   }
   return ids
 }
@@ -824,9 +823,9 @@ const convertLevelsToElements = (levelsData) => {
 // Only run initial scroll once so we never get a second fitView that zooms out to fit all
 let initialScrollScheduled = false
 
-// Scroll viewport to first unlocked level and next level, zoom both into view (runs once after first load)
-const scrollToFirstUnlocked = (levelsData) => {
-  const nodeIds = getFirstUnlockedAndNextLevelIds(levelsData)
+// Scroll viewport to last unlocked level and previous level, zoom both into view (runs once after first load)
+const scrollToLastUnlocked = (levelsData) => {
+  const nodeIds = getLastUnlockedAndPrevLevelIds(levelsData)
   if (!nodeIds.length) return // never call fitView() for "all" — that would zoom out and override our zoom-to-node
   if (initialScrollScheduled) return
   initialScrollScheduled = true
@@ -843,7 +842,7 @@ watch(
   (newLevels) => {
     if (newLevels?.length) {
       setElements(convertLevelsToElements(newLevels))
-      scrollToFirstUnlocked(newLevels)
+      scrollToLastUnlocked(newLevels)
     }
   }
 )

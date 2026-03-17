@@ -90,10 +90,10 @@
     <!-- Loading State -->
     <LoadingSpinner v-if="isLoading" class="py-12" />
     <!-- Items List -->
-    <div v-if="isOwner && isAddFlashcardMode" class="flex items-center gap-2 px-3 py-2 my-2">
-      <label class="btn-aqua-slate">
-        <input type="checkbox" class="checkmark-aqua" :checked="isAddFlashcardMode" @change="toggleAddFlashcardMode">
-        <span> {{ t('collectionDetail.onlyItemsWithoutFlashcards') }} </span>
+    <div v-if="isOwner && isAddFlashcardMode" class="flex flex-row flex-wrap items-center gap-3 px-3 py-2 my-2">
+      <label class="inline-flex items-center gap-2 text-sm font-medium text-gray-700 select-none cursor-pointer">
+        <input type="checkbox" class="checkbox-toggle" :checked="isAddFlashcardMode" @change="toggleAddFlashcardMode">
+        <span>{{ t('collectionDetail.onlyItemsWithoutFlashcards') }}</span>
       </label>
     </div>
     <div class="space-y-4">
