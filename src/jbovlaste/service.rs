@@ -1911,7 +1911,7 @@ pub async fn get_definition(
             .try_get::<_, Option<String>>("cached_decomposition")
             .ok()
             .flatten()
-            .and_then(parse_cached_decomposition),
+            .and_then(|s| parse_cached_decomposition(Some(s))),
     };
 
     Ok(Some(definition))

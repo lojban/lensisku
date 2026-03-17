@@ -144,7 +144,7 @@ export default {
             '@apply shadow-inner shadow-slate-200': {},
           },
           '.input-field': {
-            '@apply px-4 py-1.5 text-sm h-8 text-gray-700 bg-white border border-gray-300 placeholder-blue-400 rounded-full transition-all focus:ring-1 focus:ring-blue-500 focus:border-blue-500 focus:outline-none focus:z-50 hover:z-50 whitespace-nowrap shadow-inner shadow-slate-200':
+            '@apply px-4 py-1.5 text-sm h-8 text-gray-700 bg-white border border-gray-300 placeholder-blue-400 rounded-full transition-all focus:ring-1 focus:ring-blue-500 focus:border-blue-500 focus:outline-none focus:z-50 whitespace-nowrap shadow-inner shadow-slate-200':
               {},
             '&:hover:not(:disabled)': {
               '@apply border-blue-400': {},
