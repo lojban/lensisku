@@ -712,7 +712,12 @@
     "noExports": "no ba'o se cupra cu se facki",
     "download": "jdicpa",
     "loadError": "fliba lo nu jgari lo ba'o se cupra",
-    "downloadError": "fliba lo nu jdicpa"
+    "downloadError": "fliba lo nu jdicpa",
+    "searchPlaceholder": "ko sisku lo bangu .a lo te tcila...",
+    "noMatchingExports": "no se cupra cu se facki",
+    "clearSearch": "vimcu lo sisku",
+    "showingCount": "viska li {count} pe li {total} se cupra",
+    "totalLabel": "ro se cupra li {count}"
   },
   "languageList": {
     "title": "se bangu liste",

@@ -870,7 +870,12 @@
     "noExports": "No cached exports found",
     "download": "Download",
     "loadError": "Failed to load cached exports",
-    "downloadError": "Failed to download export"
+    "downloadError": "Failed to download export",
+    "searchPlaceholder": "Search by language or format...",
+    "noMatchingExports": "No exports match your search",
+    "clearSearch": "Clear search",
+    "showingCount": "{count} of {total} exports",
+    "totalLabel": "{count} exports"
   },
   "bulkImportClients": {
     "title": "Bulk import definitions by client",
