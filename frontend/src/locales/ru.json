@@ -840,7 +840,12 @@
     "noExports": "Кэшированные экспорты не найдены",
     "download": "Скачать",
     "loadError": "Не удалось загрузить кэшированные экспорты",
-    "downloadError": "Не удалось скачать экспорт"
+    "downloadError": "Не удалось скачать экспорт",
+    "searchPlaceholder": "Поиск по языку или формату...",
+    "noMatchingExports": "Нет экспортов по вашему запросу",
+    "clearSearch": "Очистить поиск",
+    "showingCount": "{count} из {total} экспортов",
+    "totalLabel": "{count} экспортов"
   },
   "bulkImportClients": {
     "title": "Массовый импорт определений по клиенту",

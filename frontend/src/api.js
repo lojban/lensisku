@@ -304,6 +304,9 @@ export const importCollectionFull = (data) => api.post('/collections/import/full
 
 export const listCachedExports = () => api.get('/export/cached')
 
+/** Base URL for API (e.g. for direct download links). */
+export const getApiBaseUrl = () => import.meta.env.VITE_BASE_URL ?? '/api'
+
 export const downloadCachedExport = (languageTag, format) =>
   api.get(`/export/cached/${languageTag}/${format}`, {
     responseType: 'blob',
