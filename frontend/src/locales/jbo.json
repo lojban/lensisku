@@ -335,6 +335,7 @@
     "systemRoleDeleteError": "na ku ka'e vimcu lo kibyflalu pikta"
   },
   "collectionDetail": {
+    "pageHint": "lo liste",
     "public": "gubni",
     "private": "sivni",
     "createdBy": "fa la",
@@ -1113,7 +1114,8 @@
       "unlabelAsSpam": "kraga'igau lo spam votu ({count})"
     },
     "flashcardCollectionView": {
-      "title": "{collectionName} - karda",
+      "pageHint": "karda",
+      "title": "{collectionName}",
       "collectionButton": "lo klesi",
       "addFlashcardButton": "jmina lo karda",
       "importAllButton": "jmina ro da",

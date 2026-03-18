@@ -335,6 +335,7 @@
     "systemRoleDeleteError": "System roles cannot be deleted"
   },
   "collectionDetail": {
+    "pageHint": "Collection",
     "public": "Public",
     "private": "Private",
     "createdBy": "by",
@@ -1115,7 +1116,8 @@
       "unlabelAsSpam": "Undo spam report ({count})"
     },
     "flashcardCollectionView": {
-      "title": "{collectionName} - Flashcards",
+      "pageHint": "Flashcards",
+      "title": "{collectionName}",
       "collectionButton": "Collection",
       "addFlashcardButton": "Add flashcard",
       "importAllButton": "Import all",
