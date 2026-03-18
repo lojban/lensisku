@@ -813,7 +813,7 @@ const performUpdateProfile = async () => {
     showError(err.response?.data?.error || 'Error updating profile')
     // If the error is specifically about the username being taken
     if (err.response?.data?.error === 'Username already taken') {
-      showError(t('profile.usernameTakenError', 'Username already taken. Please choose another.'));
+      showError(t('profile.usernameTakenError'));
     }
   } finally {
     isUpdating.value = false

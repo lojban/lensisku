@@ -11,7 +11,7 @@
       </RouterLink>
       <div class="flex shrink-0 items-center gap-2">
         <IconButton
-          :label="t('flashcardLevels.studyButton', 'Study')"
+          :label="t('flashcardLevels.studyButton')"
           button-classes="btn-aqua-orange h-10 px-4 text-sm font-semibold"
           icon-classes="h-4 w-4"
           @click="startStudy"
@@ -56,7 +56,7 @@
           <LingoUnitBanner
             :title="collection?.name || ''"
             :description="collection?.description || ''"
-            :continue-label="t('flashcardLevels.studyButton', 'Continue')"
+            :continue-label="t('flashcardLevels.continueLabel')"
             @continue="startStudy"
           />
 
@@ -71,7 +71,7 @@
               :completed="!!level.progress?.is_completed"
               :percentage="activeLevel && level.level_id === activeLevel.level_id ? activeLevelPercentage : 0"
               :study-url="`/collections/${props.collectionId}/lingo/study?levelId=${level.level_id}`"
-              :start-label="t('flashcardLevels.start', 'Start')"
+              :start-label="t('flashcardLevels.start')"
               :show-owner-menu="isOwner"
             >
               <template #menu>

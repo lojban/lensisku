@@ -51,7 +51,7 @@
             </button>
             <button v-if="isOwner" type="button" class="w-full px-4 py-2 text-left text-sm text-cyan-600 hover:bg-cyan-50 flex items-center gap-2"
               @click="triggerJsonImport">
-              {{ t('collectionDetail.importFullButton', 'Import from file') }}
+              {{ t('collectionDetail.importFullButton') }}
             </button>
             <button v-if="isOwner" type="button" class="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
               @click="handleDelete">
@@ -185,7 +185,7 @@
       @close="showExportModal = false">
       <div class="space-y-4">
         <p class="text-sm text-gray-600">
-          {{ t('collectionDetail.exportFullDescription', 'Exports this collection as JSON including all items, flashcard levels, and flashcard settings. You can re-import the file later to create a new collection with the same structure.') }}
+          {{ t('collectionDetail.exportFullDescription') }}
         </p>
         <div v-if="exportProgress" class="text-sm text-blue-600 mt-2">
           {{ exportProgress }}
@@ -242,7 +242,7 @@
           :label="t('collectionDetail.backImageLabel')" @image-loaded="handleBackImageLoaded" />
 
         <SoundUpload v-model="customContent.sound" :collection-id="numericCollectionId" :item-id="currentItem?.item_id"
-          :has-existing-sound="currentItem?.has_sound" :label="t('collectionDetail.soundLabel', 'Custom Sound')"
+          :has-existing-sound="currentItem?.has_sound" :label="t('collectionDetail.soundLabel')"
           @remove-sound="customContent.removeSound = true" />
         <!-- Notes Field -->
         <div class="mt-4">
@@ -297,11 +297,11 @@
           <div v-if="addItemDirection.toLowerCase().includes('fillin')" class="flex items-center space-x-2 mt-3">
             <input id="use_canonical_comparison" v-model="useCanonicalComparison" type="checkbox" class="checkbox-toggle">
             <label for="use_canonical_comparison" class="text-sm text-gray-700">
-              {{ t('collectionDetail.useCanonicalComparisonLabel', 'Use canonical Lojban comparison') }}
+              {{ t('collectionDetail.useCanonicalComparisonLabel') }}
             </label>
           </div>
           <p v-if="addItemDirection.toLowerCase().includes('fillin')" class="text-xs text-gray-500">
-            {{ t('collectionDetail.useCanonicalComparisonDescription', 'When enabled, answers will be compared using their canonical Lojban form, allowing for equivalent but differently written answers.') }}
+            {{ t('collectionDetail.useCanonicalComparisonDescription') }}
           </p>
         </div>
 
@@ -384,7 +384,7 @@
             @image-loaded="handleDefinitionBackImageLoaded" />
 
           <SoundUpload v-model="definitionSound" :collection-id="numericCollectionId" :item-id="currentItem?.item_id"
-            :has-existing-sound="currentItem?.has_sound" :label="t('collectionDetail.soundLabel', 'Custom Sound')"
+            :has-existing-sound="currentItem?.has_sound" :label="t('collectionDetail.soundLabel')"
             @remove-sound="definitionRemoveSound = true" />
           <div class="flex items-center space-x-2 mb-2">
             <button type="button" class="btn-action" @click="toggleFlashcard">
@@ -425,11 +425,11 @@
           <div v-if="enableFlashcard && addItemDirection.toLowerCase().includes('fillin')" class="flex items-center space-x-2 mt-3">
             <input id="definition_canonical_comparison" v-model="useCanonicalComparison" type="checkbox" class="checkbox-toggle">
             <label for="definition_canonical_comparison" class="text-sm text-gray-700">
-              {{ t('collectionDetail.useCanonicalComparisonLabel', 'Use canonical Lojban comparison') }}
+              {{ t('collectionDetail.useCanonicalComparisonLabel') }}
             </label>
           </div>
           <p v-if="enableFlashcard && addItemDirection.toLowerCase().includes('fillin')" class="text-xs text-gray-500">
-            {{ t('collectionDetail.useCanonicalComparisonDescription', 'When enabled, answers will be compared using their canonical Lojban form, allowing for equivalent but differently written answers.') }}
+            {{ t('collectionDetail.useCanonicalComparisonDescription') }}
           </p>
         </div>
       </div>
@@ -437,22 +437,22 @@
       <!-- Quiz Content Form -->
       <div v-else-if="itemType === 'quiz'" class="flex-1 overflow-y-auto space-y-2 p-2" ref="quizContentContainer">
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('collectionDetail.frontContentLabel', 'Question') }}</label>
-          <textarea v-model="customContent.front" rows="3" :placeholder="t('collectionDetail.frontContentPlaceholder', 'Enter question...')"
+          <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('collectionDetail.frontContentLabel') }}</label>
+          <textarea v-model="customContent.front" rows="3" :placeholder="t('collectionDetail.frontContentPlaceholder')"
             class="textarea-field" :class="{ 'border-red-300': showValidation && !customContent.front.trim() }" />
-          <span v-if="showValidation && !customContent.front.trim()" class="text-sm text-red-600">{{ t('collectionDetail.frontContentRequired', 'Question is required') }}</span>
+          <span v-if="showValidation && !customContent.front.trim()" class="text-sm text-red-600">{{ t('collectionDetail.frontContentRequired') }}</span>
         </div>
         <ImageUpload v-model="customContent.frontImage" :collection-id="numericCollectionId" :item-id="null"
-          side="front" :label="t('collectionDetail.frontImageLabel', 'Question Image (Optional)')" @image-loaded="handleFrontImageLoaded" />
+          side="front" :label="t('collectionDetail.frontImageLabel')" @image-loaded="handleFrontImageLoaded" />
 
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('collectionDetail.backContentLabel', 'Correct Answer') }}</label>
-          <textarea v-model="customContent.back" rows="3" :placeholder="t('collectionDetail.backContentPlaceholder', 'Enter correct answer...')"
+          <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('collectionDetail.backContentLabel') }}</label>
+          <textarea v-model="customContent.back" rows="3" :placeholder="t('collectionDetail.backContentPlaceholder')"
             class="textarea-field" :class="{ 'border-red-300': showValidation && !customContent.back.trim() }" />
-          <span v-if="showValidation && !customContent.back.trim()" class="text-sm text-red-600">{{ t('collectionDetail.backContentRequired', 'Correct answer is required') }}</span>
+          <span v-if="showValidation && !customContent.back.trim()" class="text-sm text-red-600">{{ t('collectionDetail.backContentRequired') }}</span>
         </div>
         <ImageUpload v-model="customContent.backImage" :collection-id="numericCollectionId" :item-id="null" side="back"
-          :label="t('collectionDetail.backImageLabel', 'Answer Image (Optional)')" @image-loaded="handleBackImageLoaded" />
+          :label="t('collectionDetail.backImageLabel')" @image-loaded="handleBackImageLoaded" />
 
         <div class="mt-4">
           <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('collectionDetail.notesLabel') }}</label>
@@ -555,7 +555,7 @@
         <ImageUpload v-model="newDefinitionImage" :label="t('collectionDetail.imageLabel')"
           @image-loaded="handleNewDefinitionImageLoaded" @remove-image="handleNewDefinitionRemoveImage" />
 
-        <SoundUpload v-model="newDefinitionSound" :label="t('collectionDetail.soundLabel', 'Custom Sound')" />
+        <SoundUpload v-model="newDefinitionSound" :label="t('collectionDetail.soundLabel')" />
 
         <!-- Notes Input -->
         <div>
@@ -625,11 +625,11 @@
           <div v-if="addItemDirection.toLowerCase().includes('fillin')" class="flex items-center space-x-2 mt-3">
             <input id="new_def_canonical_comparison" v-model="useCanonicalComparison" type="checkbox" class="checkbox-toggle">
             <label for="new_def_canonical_comparison" class="text-sm text-gray-700">
-              {{ t('collectionDetail.useCanonicalComparisonLabel', 'Use canonical Lojban comparison') }}
+              {{ t('collectionDetail.useCanonicalComparisonLabel') }}
             </label>
           </div>
           <p v-if="addItemDirection.toLowerCase().includes('fillin')" class="text-xs text-gray-500">
-            {{ t('collectionDetail.useCanonicalComparisonDescription', 'When enabled, answers will be compared using their canonical Lojban form, allowing for equivalent but differently written answers.') }}
+            {{ t('collectionDetail.useCanonicalComparisonDescription') }}
           </p>
         </div>
       </div>
@@ -1150,7 +1150,7 @@ const addCustomContent = async () => {
     showAddModal.value = false
     const hadSoundChange = !!customContent.value.sound || !!customContent.value.removeSound
     if (hadSoundChange) {
-      successMessage.value = t('collectionDetail.itemUpdatedSoundSaved', 'Item updated. Sound saved.')
+      successMessage.value = t('collectionDetail.itemUpdatedSoundSaved')
       showSuccessToast.value = true
       setTimeout(() => { showSuccessToast.value = false }, 3000)
     }
@@ -2041,7 +2041,7 @@ const handleJsonFileSelect = async (event) => {
 
     // Full format: { collection, items, levels? }
     if (!jsonData.collection || !Array.isArray(jsonData.items)) {
-      showError(t('collectionDetail.importFullFormatError', 'Use a full collection export file (JSON with collection, items, and optionally levels).'))
+      showError(t('collectionDetail.importFullFormatError'))
       return
     }
 
@@ -2075,7 +2075,7 @@ const handleJsonFileSelect = async (event) => {
     }, 4000)
     router.push(`/collections/${newCollection.collection_id}`)
   } catch (error) {
-    showError(error.response?.data?.error || t('collectionDetail.importJsonError', 'Import failed'))
+    showError(error.response?.data?.error || t('collectionDetail.importJsonError'))
   } finally {
     isImportingJson.value = false
     jsonImportInput.value.value = ''

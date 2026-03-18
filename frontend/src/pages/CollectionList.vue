@@ -109,7 +109,7 @@
       >
       <label class="inline-flex items-center gap-2 text-sm font-medium text-gray-700 select-none cursor-pointer">
         <input v-model="hasFlashcardsOnly" type="checkbox" class="checkbox-toggle">
-        <span>{{ t('collectionList.onlyWithFlashcards', 'Only with flashcards') }}</span>
+        <span>{{ t('collectionList.onlyWithFlashcards') }}</span>
       </label>
     </div>
     <div class="flex flex-row items-center gap-2 sm:block">
@@ -419,7 +419,7 @@ const handleImportFile = async (event) => {
     const jsonData = JSON.parse(fileContent)
 
     if (!jsonData.collection || !Array.isArray(jsonData.items)) {
-      alert(t('collectionList.importFullFormatError', 'Use a full collection export file (JSON with collection, items, and optionally levels).'))
+      alert(t('collectionList.importFullFormatError'))
       return
     }
 
@@ -439,7 +439,7 @@ const handleImportFile = async (event) => {
     router.push(`/collections/${newCollection.collection_id}`)
   } catch (error) {
     console.error('Import failed:', error)
-    alert(error.response?.data?.error || t('collectionList.importError', 'Import failed'))
+    alert(error.response?.data?.error || t('collectionList.importError'))
   } finally {
     isImporting.value = false
     event.target.value = ''

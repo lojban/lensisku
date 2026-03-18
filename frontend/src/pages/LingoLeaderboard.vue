@@ -6,14 +6,14 @@
       </div>
 
       <h1 class="my-6 text-center text-2xl font-bold text-slate-800">
-        {{ t('lingo.leaderboard', 'Leaderboard') }}
+        {{ t('lingo.leaderboard') }}
       </h1>
       <p class="mb-6 text-center text-slate-600">
-        {{ t('lingo.leaderboardDescription', 'See where you stand among other learners.') }}
+        {{ t('lingo.leaderboardDescription') }}
       </p>
 
       <div class="w-full max-w-md rounded-xl border-2 border-slate-200 bg-white p-4 text-center text-slate-500">
-        {{ t('lingo.comingSoon', 'Coming soon.') }}
+        {{ t('lingo.comingSoon') }}
       </div>
     </div>
   </LingoLayout>
@@ -26,5 +26,5 @@ import LingoLayout from '@/components/LingoLayout.vue'
 import { useSeoHead } from '@/composables/useSeoHead'
 
 const { t, locale } = useI18n()
-useSeoHead({ title: t('lingo.leaderboard', 'Leaderboard') }, locale.value)
+useSeoHead({ title: t('lingo.leaderboard') }, locale.value)
 </script>

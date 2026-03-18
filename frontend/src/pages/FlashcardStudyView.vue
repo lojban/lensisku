@@ -46,7 +46,7 @@
     <div class="flex justify-center">
       <button ref="returnToDeckButtonRef" class="btn-get w-auto h-10 text-base shadow-sm"
         @click="router.push(returnToUrl)">
-        {{ levelIdParam != null ? t('flashcardStudy.returnToLevels', 'Back to levels') : t('flashcardStudy.returnToDeck') }}
+        {{ levelIdParam != null ? t('flashcardStudy.returnToLevels') : t('flashcardStudy.returnToDeck') }}
       </button>
     </div>
   </div>
@@ -77,7 +77,7 @@
         <div v-if="isFillInMode && currentCard.flashcard.use_canonical_comparison" 
           class="flex items-center justify-center gap-2 text-xs text-green-600 bg-green-50 border border-green-200 rounded px-3 py-1.5">
           <CheckCircle2 class="h-3.5 w-3.5" />
-          <span>{{ t('flashcardStudy.canonicalComparisonEnabled', 'Canonical comparison enabled') }}</span>
+          <span>{{ t('flashcardStudy.canonicalComparisonEnabled') }}</span>
         </div>
 
         <!-- Question -->

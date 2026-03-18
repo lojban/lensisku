@@ -87,10 +87,10 @@ const buttonClass = computed(() => {
 })
 
 const buttonLabel = computed(() => {
-  if (props.status === 'none') return props.labelCheck || t('flashcardStudy.check', 'Check')
-  if (props.status === 'correct') return props.labelNext || t('flashcardStudy.next', 'Next')
-  if (props.status === 'wrong') return props.labelRetry || t('flashcardStudy.retry', 'Try again')
-  return props.labelContinue || t('flashcardStudy.continue', 'Continue')
+  if (props.status === 'none') return props.labelCheck || t('flashcardStudy.check')
+  if (props.status === 'correct') return props.labelNext || t('flashcardStudy.next')
+  if (props.status === 'wrong') return props.labelRetry || t('flashcardStudy.retry')
+  return props.labelContinue || t('flashcardStudy.continue')
 })
 </script>
 

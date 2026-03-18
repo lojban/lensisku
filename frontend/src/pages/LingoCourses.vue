@@ -3,7 +3,7 @@
     <!-- Match archive: full-height container, 12px horizontal on mobile (-mx-4 cancels layout px-4, then px-3) -->
     <div class="mx-auto h-full max-w-[912px] -mx-4 px-3 lg:mx-auto lg:px-0">
       <h1 class="text-2xl font-bold text-neutral-700">
-        {{ t('lingo.languageCourses', 'Language Courses') }}
+        {{ t('lingo.languageCourses') }}
       </h1>
 
       <div class="mt-4">
@@ -45,7 +45,7 @@
       />
 
       <p v-if="!isLoading && collections.length === 0" class="py-8 text-center text-neutral-600">
-        {{ t('lingo.noCourses', 'No courses yet. Create a collection from the main app.') }}
+        {{ t('lingo.noCourses') }}
       </p>
     </div>
   </LingoLayout>
@@ -146,7 +146,7 @@ function onSelectCourse(id) {
   isSelecting.value = false
 }
 
-useSeoHead({ title: t('lingo.courses', 'Courses') }, locale.value)
+useSeoHead({ title: t('lingo.courses') }, locale.value)
 
 watch(searchQuery, () => {
   if (searchDebounceTimer) clearTimeout(searchDebounceTimer)

@@ -79,10 +79,10 @@
       </div>
 
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-2">{{ t('filters.filterBy.sourceLanguage', 'Entry Language') }}</label>
+        <label class="block text-sm font-medium text-gray-700 mb-2">{{ t('filters.filterBy.sourceLanguage') }}</label>
         <div class="relative">
           <select v-model="filters.source_langid" class="input-field w-full" @change="emitUpdate">
-            <option :value="1">{{ t('filters.defaultSourceLanguage', 'Default (Lojban)') }}</option>
+            <option :value="1">{{ t('filters.defaultSourceLanguage') }}</option>
             <option v-for="lang in languages.filter(l => l.id !== 1)" :key="lang.id" :value="lang.id">
               {{ lang.real_name }} ({{ lang.english_name }})
             </option>

@@ -2,18 +2,18 @@
   <div class="lingo-auth flex min-h-screen flex-col items-center justify-center bg-slate-100 px-4 py-8">
     <RouterLink to="/lingo" class="mb-6 flex items-center gap-x-3">
       <GraduationCap class="h-12 w-12 text-green-600" />
-      <h1 class="text-2xl font-extrabold tracking-wide text-green-600">{{ t('lingo.appName', 'lentadni') }}</h1>
+      <h1 class="text-2xl font-extrabold tracking-wide text-green-600">{{ t('lingo.appName') }}</h1>
     </RouterLink>
 
     <h2 class="mb-6 text-xl font-semibold text-slate-800">
-      {{ t('loginPage.title', 'Log in') }}
+      {{ t('loginPage.title') }}
     </h2>
 
     <form class="flex w-full max-w-[400px] flex-col gap-4" @submit.prevent="performLogin">
       <input
         v-model="username"
         type="text"
-        :placeholder="t('loginPage.usernamePlaceholder', 'Username or email')"
+        :placeholder="t('loginPage.usernamePlaceholder')"
         required
         class="input-field w-full rounded-lg px-4 py-2.5"
         :disabled="isLoading"
@@ -21,7 +21,7 @@
       <input
         v-model="password"
         type="password"
-        :placeholder="t('loginPage.passwordLabel', 'Password')"
+        :placeholder="t('loginPage.passwordLabel')"
         required
         class="input-field w-full rounded-lg px-4 py-2.5"
         :disabled="isLoading"
@@ -33,14 +33,14 @@
         :disabled="isLoading"
       >
         <Loader2 v-if="isLoading" class="mx-auto h-5 w-5 animate-spin" />
-        <span v-else>{{ t('loginPage.loginButton', 'Log in') }}</span>
+        <span v-else>{{ t('loginPage.loginButton') }}</span>
       </button>
     </form>
 
     <p class="mt-6 text-center text-sm text-slate-500">
-      {{ t('loginPage.noAccountPrompt', "Don't have an account?") }}
+      {{ t('loginPage.noAccountPrompt') }}
       <RouterLink to="/lingo/signup" class="font-medium text-green-600 hover:underline">
-        {{ t('loginPage.signUpLink', 'Sign up') }}
+        {{ t('loginPage.signUpLink') }}
       </RouterLink>
     </p>
   </div>
@@ -67,7 +67,7 @@ const { t, locale } = useI18n()
 
 const returnTo = computed(() => route.query.returnTo || '/lingo/courses')
 
-useSeoHead({ title: t('loginPage.title', 'Log in') }, locale.value)
+useSeoHead({ title: t('loginPage.title') }, locale.value)
 
 async function performLogin() {
   error.value = ''
@@ -87,12 +87,12 @@ async function performLogin() {
     }
   } catch (err) {
     if (err.response?.status === 429) {
-      error.value = t('loginPage.rateLimitError', 'Too many login attempts. Please try again later.')
+      error.value = t('loginPage.rateLimitError')
     } else {
       error.value =
         err.response?.data?.error_description ||
         err.response?.data?.message ||
-        t('loginPage.loginError', 'Invalid credentials.')
+        t('loginPage.loginError')
     }
   } finally {
     isLoading.value = false

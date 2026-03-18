@@ -12,10 +12,10 @@
 
       <div class="flex flex-row gap-2 justify-between items-center w-full">
         <RouterLink :to="`/collections/${props.collectionId}/flashcards`" class="btn-aqua-rose">
-          {{ t('flashcardLevels.viewFlashcards', 'View flashcards') }}
+          {{ t('flashcardLevels.viewFlashcards') }}
         </RouterLink>
         <button type="button" class="btn-aqua-orange h-10 text-base" @click="startStudy">
-          {{ t('flashcardLevels.studyButton', 'Study') }}
+          {{ t('flashcardLevels.studyButton') }}
         </button>
         <IconButton v-if="isOwner" :label="t('flashcardLevels.createLevel')" button-classes="btn-aqua-emerald"
           @click="showCreateModal = true" />
@@ -79,7 +79,7 @@
                 class="level-card-body">
                 <p v-if="nodeProps.data.prerequisites?.length" class="level-card-hint">
                   <Lock class="h-4 w-4 shrink-0 opacity-80" />
-                  {{ t('flashcardLevels.unlockHint', 'Complete previous levels to unlock') }}
+                  {{ t('flashcardLevels.unlockHint') }}
                 </p>
                 <div v-if="isOwner" class="level-card-actions">
                   <button type="button" class="level-card-btn level-card-btn-ghost" @click="editLevel(nodeProps.data)">
@@ -122,7 +122,7 @@
                   <RouterLink v-if="nodeProps.data.card_count > 0" :to="`/collections/${props.collectionId}/flashcards/study?levelId=${nodeProps.data.level_id}`"
                     class="level-card-btn level-card-btn-secondary">
                     <Play class="h-4 w-4" />
-                    {{ t('flashcardLevels.actions.practice', 'Practice') }}
+                    {{ t('flashcardLevels.actions.practice') }}
                   </RouterLink>
                   <template v-if="isOwner">
                     <button type="button" class="level-card-btn level-card-btn-ghost"

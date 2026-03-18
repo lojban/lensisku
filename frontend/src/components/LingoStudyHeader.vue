@@ -5,7 +5,7 @@
     <button
       type="button"
       class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:opacity-80 focus:outline-none focus:ring-2 focus:ring-green-500 sm:h-9 sm:w-9"
-      :aria-label="t('flashcardStudy.endSession', 'End session')"
+      :aria-label="t('flashcardStudy.endSession')"
       @click="$emit('exit')"
     >
       <X class="h-5 w-5 sm:h-5 sm:w-5" />

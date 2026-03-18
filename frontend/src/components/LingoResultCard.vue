@@ -65,8 +65,8 @@ const valueClass = computed(() =>
 const headerText = computed(() => {
   if (props.headerText) return props.headerText
   return props.variant === 'hearts'
-    ? t('lingo.heartsLeft', 'Hearts left')
-    : t('lingo.totalXP', 'Total XP')
+    ? t('lingo.heartsLeft')
+    : t('lingo.totalXP')
 })
 </script>
 

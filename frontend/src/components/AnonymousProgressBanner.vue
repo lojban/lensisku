@@ -6,25 +6,25 @@
       :class="bannerClasses"
     >
       <p class="text-sm text-gray-700 flex-1 min-w-0 text-center sm:text-left order-1 sm:order-none">
-        {{ t('anonymousProgress.bannerMessage', 'Sign up to save your progress across devices') }}
+        {{ t('anonymousProgress.bannerMessage') }}
       </p>
       <div class="flex items-center justify-center gap-2 shrink-0 order-2 sm:order-none">
         <RouterLink
           to="/signup"
           class="btn-aqua-orange text-sm px-3 py-2 min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-md"
         >
-          {{ t('anonymousProgress.signUp', 'Sign up') }}
+          {{ t('anonymousProgress.signUp') }}
         </RouterLink>
         <RouterLink
           to="/login"
           class="btn-empty text-sm px-3 py-2 min-h-[44px] min-w-[44px] inline-flex items-center justify-center border border-gray-300 rounded-md hover:bg-gray-50"
         >
-          {{ t('anonymousProgress.logIn', 'Log in') }}
+          {{ t('anonymousProgress.logIn') }}
         </RouterLink>
         <button
           type="button"
           class="p-2.5 min-h-[44px] min-w-[44px] flex items-center justify-center text-gray-400 hover:text-gray-600 rounded-md hover:bg-gray-100"
-          :aria-label="t('anonymousProgress.dismiss', 'Dismiss')"
+          :aria-label="t('anonymousProgress.dismiss')"
           @click="dismiss"
         >
           <X class="h-5 w-5" />
