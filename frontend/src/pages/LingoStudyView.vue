@@ -41,7 +41,7 @@
           class="btn-aqua-teal h-9 min-w-[140px] text-sm"
           @click="router.push(returnToUrl)"
         >
-          {{ levelIdParam != null ? t('flashcardStudy.returnToLevels', 'Back to levels') : t('flashcardStudy.returnToDeck') }}
+          {{ levelIdParam != null ? t('flashcardStudy.returnToLevels') : t('flashcardStudy.returnToDeck') }}
         </button>
       </div>
 
@@ -62,7 +62,7 @@
                 <div v-if="isFillInMode && currentCard.flashcard.use_canonical_comparison"
                   class="flex items-center justify-center gap-1 text-[10px] text-green-600 bg-green-50 border border-green-200 rounded px-1.5 py-0.5">
                   <CheckCircle2 class="h-3 w-3" />
-                  <span>{{ t('flashcardStudy.canonicalComparisonEnabled', 'Canonical comparison enabled') }}</span>
+                  <span>{{ t('flashcardStudy.canonicalComparisonEnabled') }}</span>
                 </div>
 
                 <!-- Question (quiz uses question_text when present) -->
@@ -260,8 +260,8 @@
           :status="footerStatus"
           :disabled="footerDisabled"
           :compact="true"
-          :correct-label="t('flashcardStudy.nicelyDone', 'Nicely done!')"
-          :wrong-label="t('flashcardStudy.tryAgain', 'Try again.')"
+          :correct-label="t('flashcardStudy.nicelyDone')"
+          :wrong-label="t('flashcardStudy.tryAgain')"
           @check="onFooterCheck"
         />
         <LingoStudyFooter
@@ -269,7 +269,7 @@
           status="none"
           :disabled="false"
           :compact="true"
-          :label-check="t('flashcardStudy.continue', 'Continue')"
+          :label-check="t('flashcardStudy.continue')"
           @check="submitAnswer(4)"
         />
       </div>

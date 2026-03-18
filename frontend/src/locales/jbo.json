@@ -435,7 +435,9 @@
     "adding": "ca'o jmina",
     "addNewDefinitionButton": "finti lo ciksi",
     "semicolonHint": "ko pilno lo me'o \";\" mu'i lo nu sepli lo drani spuda.",
-    "quizTab": "cipra"
+    "quizTab": "cipra",
+    "useCanonicalComparisonLabel": "pilno lo ralju lojbo mintu",
+    "useCanonicalComparisonDescription": "va'o lo nu curmi kei lo spuda cu mintu fi lo ralju lojbo .i ko kakne lo nu ciska lo drata gi'e drani"
   },
   "dictionaryExport": {
     "title": "vlaste cupra",
@@ -658,7 +660,14 @@
       "forgot": "tolmo'i",
       "good": "zabna",
       "easy": "frili"
-    }
+    },
+    "canonicalComparisonEnabled": "curmi lo ralju lojbo mintu",
+    "nicelyDone": "zabna!",
+    "tryAgain": "za'u re'u troci",
+    "continue": "di'a",
+    "check": "birti",
+    "next": "bavla'i",
+    "retry": "za'u re'u troci"
   },
   "newThreadPage": {
     "title": "cfari lo cnino casnu",
@@ -709,6 +718,7 @@
   },
   "cachedExports": {
     "title": "ba'o se cupra vlaste",
+    "description": "vlaste se cupra poi ba'o se zbasu fi lo bangu .e lo te tcila .i ko jdicpa",
     "noExports": "no ba'o se cupra cu se facki",
     "download": "jdicpa",
     "loadError": "fliba lo nu jgari lo ba'o se cupra",
@@ -1232,13 +1242,17 @@
     "actions": {
       "viewCards": "viska lo karda",
       "edit": "galfi",
-      "addCards": "jmina lo karda"
+      "addCards": "jmina lo karda",
+      "practice": "tadni"
     },
     "status": {
       "completed": "ba'o mulno",
       "unlocked": "ba'o se kargau",
       "locked": "se kalju"
     },
+    "unlockHint": "mulno lo prula'i klesi mu'i lo nu kargau",
+    "start": "cfari",
+    "continueLabel": "di'a",
     "editLevelTitle": "galfi lo klesi",
     "createLevelTitle": "finti lo klesi",
     "nameLabel": "cmene",
@@ -1339,6 +1353,27 @@
   },
   "lingo": {
     "appName": "lentadni",
-    "searchCourses": "ko sisku lo cmene .a lo skicu be lo karda cu'u"
+    "searchCourses": "ko sisku lo cmene .a lo skicu be lo karda cu'u",
+    "languageCourses": "bangu cu'u",
+    "noCourses": "no cu'u cu zasti .i ko finti lo liste fi lo jicmu kibygau",
+    "courses": "cu'u",
+    "heroTitle": "ko cilre .e ko tadni .e ko master sepi'o Lingo",
+    "continueLearning": "di'a tadni",
+    "getStarted": "cfari",
+    "haveAccount": "mi ba'o jasypu'ense",
+    "signOut": "co'u jaspu",
+    "login": "co'a jaspu",
+    "shop": "vecnu",
+    "shopDescription": "ko pilno lo do points mu'i lo nu terpa'e",
+    "refillHearts": "zenba lo nelci",
+    "comingSoon": "ba'o se finti",
+    "unlimitedHearts": "nolraitru lo nelci",
+    "learnLanguages": "ko cilre lo bangu sepi'o Lingo",
+    "leaderboard": "porsi",
+    "leaderboardDescription": "ko viska lo do porsi fi lo drata tadni",
+    "quests": "nu troci",
+    "questsDescription": "ko mulno lo nu troci sepi'o lo nu jbera points",
+    "heartsLeft": "nelci to mulno",
+    "totalXP": "ro XP"
   }
 }

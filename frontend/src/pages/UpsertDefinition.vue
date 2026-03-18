@@ -68,7 +68,7 @@
       <!-- Optional Entry Language Selection (Only for new entries) -->
       <div class="flex-1">
         <label for="source-language" class="block text-sm font-medium text-blue-700">{{
-          t('upsertDefinition.sourceLanguageLabel', 'Entry Language') }} <span class="text-red-500">{{
+          t('upsertDefinition.sourceLanguageLabel') }} <span class="text-red-500">{{
             t('upsertDefinition.required') }}</span></label>
         <select id="source-language" v-model="sourceLangId" required class="input-field w-full h-10"
           :disabled="isLoading || isSubmitting || isEditMode || prefilledWord" :readonly="prefilledWord || isEditMode">
@@ -103,28 +103,28 @@
     <!-- Rafsi Input (Lojban only) -->
     <div v-if="parseInt(sourceLangId) === 1">
       <label for="rafsi" class="block text-sm font-medium text-blue-700">
-        {{ t('upsertDefinition.rafsiLabel', 'Rafsi') }} <span class="text-gray-500 font-normal">{{
+        {{ t('upsertDefinition.rafsiLabel') }} <span class="text-gray-500 font-normal">{{
           t('upsertDefinition.optional') }}</span>
       </label>
       <input id="rafsi" v-model="rafsi" type="text"
-        :placeholder="t('upsertDefinition.rafsiPlaceholder', 'Space separated rafsi')" class="input-field w-full"
+        :placeholder="t('upsertDefinition.rafsiPlaceholder')" class="input-field w-full"
         :disabled="isSubmitting" />
       <p class="mt-1 text-xs text-gray-500">
-        {{ t('upsertDefinition.rafsiNote', 'Space separated list of rafsi.') }}
+        {{ t('upsertDefinition.rafsiNote') }}
       </p>
     </div>
 
     <!-- Selmaho Input (cmavo / experimental cmavo only) -->
     <div v-if="showSelmahoField">
       <label for="selmaho" class="block text-sm font-medium text-blue-700">
-        {{ t('upsertDefinition.selmahoLabel', 'Selmaho') }} <span class="text-gray-500 font-normal">{{
+        {{ t('upsertDefinition.selmahoLabel') }} <span class="text-gray-500 font-normal">{{
           t('upsertDefinition.optional') }}</span>
       </label>
       <input id="selmaho" v-model="selmaho" type="text"
-        :placeholder="t('upsertDefinition.selmahoPlaceholder', 'e.g. CAI, ZAhO')" class="input-field w-full"
+        :placeholder="t('upsertDefinition.selmahoPlaceholder')" class="input-field w-full"
         :disabled="isSubmitting" />
       <p class="mt-1 text-xs text-gray-500">
-        {{ t('upsertDefinition.selmahoNote', 'Grammatical classification of the cmavo (optional).') }}
+        {{ t('upsertDefinition.selmahoNote') }}
       </p>
     </div>
 
@@ -176,7 +176,7 @@
     <!-- Jargon Input -->
     <div>
       <label for="jargon" class="block text-sm font-medium text-blue-700">
-        {{ t('upsertDefinition.jargonLabel', 'Jargon') }} <span class="text-gray-500 font-normal">{{
+        {{ t('upsertDefinition.jargonLabel') }} <span class="text-gray-500 font-normal">{{
           t('upsertDefinition.optional') }}</span>
       </label>
       <textarea id="jargon" v-model="jargon" rows="2" class="textarea-field" :disabled="isSubmitting" />

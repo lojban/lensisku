@@ -435,7 +435,9 @@
     "adding": "Adding",
     "addNewDefinitionButton": "Create definition",
     "semicolonHint": "Use a semicolon (;) to separate multiple correct answers.",
-    "quizTab": "Quiz"
+    "quizTab": "Quiz",
+    "useCanonicalComparisonLabel": "Use canonical Lojban comparison",
+    "useCanonicalComparisonDescription": "When enabled, answers will be compared using their canonical Lojban form, allowing for equivalent but differently written answers."
   },
   "dictionaryExport": {
     "title": "Dictionary export",
@@ -658,7 +660,14 @@
       "forgot": "Forgot",
       "good": "Good",
       "easy": "Easy"
-    }
+    },
+    "canonicalComparisonEnabled": "Canonical comparison enabled",
+    "nicelyDone": "Nicely done!",
+    "tryAgain": "Try again.",
+    "continue": "Continue",
+    "check": "Check",
+    "next": "Next",
+    "retry": "Try again"
   },
   "languageList": {
     "title": "Supported languages",
@@ -867,6 +876,7 @@
   },
   "cachedExports": {
     "title": "Cached dictionary exports",
+    "description": "Pre-built dictionary exports by language and format, ready to download.",
     "noExports": "No cached exports found",
     "download": "Download",
     "loadError": "Failed to load cached exports",
@@ -1234,13 +1244,17 @@
     "actions": {
       "viewCards": "View cards",
       "edit": "Edit",
-      "addCards": "Add Cards"
+      "addCards": "Add Cards",
+      "practice": "Practice"
     },
     "status": {
       "completed": "Completed",
       "unlocked": "Unlocked",
       "locked": "Locked"
     },
+    "unlockHint": "Complete previous levels to unlock",
+    "start": "Start",
+    "continueLabel": "Continue",
     "editLevelTitle": "Edit level",
     "createLevelTitle": "Create level",
     "nameLabel": "Name",
@@ -1341,6 +1355,27 @@
   },
   "lingo": {
     "appName": "lentadni",
-    "searchCourses": "Search courses by name or description"
+    "searchCourses": "Search courses by name or description",
+    "languageCourses": "Language Courses",
+    "noCourses": "No courses yet. Create a collection from the main app.",
+    "courses": "Courses",
+    "heroTitle": "Learn, practice and master with Lingo.",
+    "continueLearning": "Continue Learning",
+    "getStarted": "Get Started",
+    "haveAccount": "I already have an account",
+    "signOut": "Sign out",
+    "login": "Log in",
+    "shop": "Shop",
+    "shopDescription": "Spend your points on cool stuff.",
+    "refillHearts": "Refill hearts",
+    "comingSoon": "Coming soon",
+    "unlimitedHearts": "Unlimited hearts",
+    "learnLanguages": "Learn languages with Lingo",
+    "leaderboard": "Leaderboard",
+    "leaderboardDescription": "See where you stand among other learners.",
+    "quests": "Quests",
+    "questsDescription": "Complete quests by earning points.",
+    "heartsLeft": "Hearts left",
+    "totalXP": "Total XP"
   }
 }

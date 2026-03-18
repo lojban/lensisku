@@ -8,7 +8,7 @@
         class="lingo-sidebar-item flex h-9 shrink-0 items-center gap-2 px-3 font-medium italic text-slate-400"
       >
         <GraduationCap class="h-5 w-5 shrink-0 text-slate-400" />
-        <span>{{ t('lingo.appName', 'lentadni') }}</span>
+        <span>{{ t('lingo.appName') }}</span>
       </span>
       <LingoSidebarItem
         label="Learn"

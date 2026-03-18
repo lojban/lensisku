@@ -2,18 +2,18 @@
   <div class="lingo-auth flex min-h-screen flex-col items-center justify-center bg-slate-100 px-4 py-8">
     <RouterLink to="/lingo" class="mb-6 flex items-center gap-x-3">
       <GraduationCap class="h-12 w-12 text-green-600" />
-      <h1 class="text-2xl font-extrabold tracking-wide text-green-600">{{ t('lingo.appName', 'lentadni') }}</h1>
+      <h1 class="text-2xl font-extrabold tracking-wide text-green-600">{{ t('lingo.appName') }}</h1>
     </RouterLink>
 
     <h2 class="mb-6 text-xl font-semibold text-slate-800">
-      {{ t('signupPage.title', 'Create account') }}
+      {{ t('signupPage.title') }}
     </h2>
 
     <form class="flex w-full max-w-[400px] flex-col gap-4" @submit.prevent="performSignup">
       <input
         v-model="username"
         type="text"
-        :placeholder="t('signupPage.usernameLabel', 'Username')"
+        :placeholder="t('signupPage.usernameLabel')"
         required
         class="input-field w-full rounded-lg px-4 py-2.5"
         :disabled="isLoading"
@@ -21,7 +21,7 @@
       <input
         v-model="email"
         type="email"
-        :placeholder="t('signupPage.emailLabel', 'Email')"
+        :placeholder="t('signupPage.emailLabel')"
         required
         class="input-field w-full rounded-lg px-4 py-2.5"
         :disabled="isLoading"
@@ -29,7 +29,7 @@
       <input
         v-model="password"
         type="password"
-        :placeholder="t('signupPage.passwordLabel', 'Password')"
+        :placeholder="t('signupPage.passwordLabel')"
         required
         minlength="6"
         class="input-field w-full rounded-lg px-4 py-2.5"
@@ -42,14 +42,14 @@
         :disabled="isLoading"
       >
         <Loader2 v-if="isLoading" class="mx-auto h-5 w-5 animate-spin" />
-        <span v-else>{{ t('signupPage.createAccountButton', 'Sign up') }}</span>
+        <span v-else>{{ t('signupPage.createAccountButton') }}</span>
       </button>
     </form>
 
     <p class="mt-6 text-center text-sm text-slate-500">
-      {{ t('signupPage.haveAccountPrompt', 'Already have an account?') }}
+      {{ t('signupPage.haveAccountPrompt') }}
       <RouterLink to="/lingo/login" class="font-medium text-green-600 hover:underline">
-        {{ t('signupPage.loginLink', 'Log in') }}
+        {{ t('signupPage.loginLink') }}
       </RouterLink>
     </p>
   </div>
@@ -77,7 +77,7 @@ const { t, locale } = useI18n()
 
 const returnTo = computed(() => route.query.returnTo || '/lingo/courses')
 
-useSeoHead({ title: t('signupPage.title', 'Create account') }, locale.value)
+useSeoHead({ title: t('signupPage.title') }, locale.value)
 
 async function performSignup() {
   error.value = ''
@@ -96,12 +96,12 @@ async function performSignup() {
     }
   } catch (err) {
     if (err.response?.status === 409 || err.response?.data?.error === 'user_exists') {
-      error.value = t('signupPage.userExists', 'Username or email already exists.')
+      error.value = t('signupPage.userExists')
     } else {
       error.value =
         err.response?.data?.error_description ||
         err.response?.data?.message ||
-        t('signupPage.signupError', 'Sign up failed.')
+        t('signupPage.signupError')
     }
   } finally {
     isLoading.value = false

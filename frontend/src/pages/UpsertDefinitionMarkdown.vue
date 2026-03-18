@@ -53,7 +53,7 @@
 
       <!-- Entry Language Selection (Only for new entries) -->
       <div v-if="!isEditMode">
-        <label for="source-language" class="block text-sm font-medium text-blue-700">{{ t('upsertDefinition.sourceLanguageLabel', 'Entry Language') }} <span class="text-red-500">{{ t('upsertDefinition.required') }}</span></label>
+        <label for="source-language" class="block text-sm font-medium text-blue-700">{{ t('upsertDefinition.sourceLanguageLabel') }} <span class="text-red-500">{{ t('upsertDefinition.required') }}</span></label>
         <select id="source-language" v-model="sourceLangId" required class="input-field w-full h-10" :disabled="isLoading || isSubmitting || isEditMode">
           <option value="">{{ t('upsertDefinition.selectLanguagePlaceholder') }}</option>
           <option v-for="lang in languages" :key="lang.id" :value="lang.id">
@@ -61,7 +61,7 @@
           </option>
         </select>
          <p class="mt-1 text-xs text-gray-500">
-          {{ t('upsertDefinition.sourceLanguageNote', 'The language the word itself belongs to. Cannot be changed after creation.') }}
+          {{ t('upsertDefinition.sourceLanguageNote') }}
         </p>
       </div>
 

@@ -6,10 +6,10 @@
       </div>
 
       <h1 class="my-6 text-center text-2xl font-bold text-slate-800">
-        {{ t('lingo.quests', 'Quests') }}
+        {{ t('lingo.quests') }}
       </h1>
       <p class="mb-6 text-center text-slate-600">
-        {{ t('lingo.questsDescription', 'Complete quests by earning points.') }}
+        {{ t('lingo.questsDescription') }}
       </p>
 
       <ul class="w-full max-w-lg space-y-0 border-t-2 border-slate-200">
@@ -55,5 +55,5 @@ onMounted(() => {
   } catch {}
 })
 
-useSeoHead({ title: t('lingo.quests', 'Quests') }, locale.value)
+useSeoHead({ title: t('lingo.quests') }, locale.value)
 </script>

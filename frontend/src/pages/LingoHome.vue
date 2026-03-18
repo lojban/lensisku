@@ -7,21 +7,21 @@
 
       <div class="flex flex-col items-center gap-8">
         <h1 class="max-w-[480px] text-center text-xl font-bold text-slate-700 lg:text-3xl">
-          {{ t('lingo.heroTitle', 'Learn, practice and master with Lingo.') }}
+          {{ t('lingo.heroTitle') }}
         </h1>
 
         <div class="flex w-full max-w-[330px] flex-col items-center gap-3">
           <template v-if="auth.state.isLoggedIn">
             <RouterLink to="/lingo/courses" class="btn-aqua-teal w-full justify-center text-base">
-              {{ t('lingo.continueLearning', 'Continue Learning') }}
+              {{ t('lingo.continueLearning') }}
             </RouterLink>
           </template>
           <template v-else>
             <RouterLink to="/lingo/signup" class="btn-aqua-teal w-full justify-center text-base">
-              {{ t('lingo.getStarted', 'Get Started') }}
+              {{ t('lingo.getStarted') }}
             </RouterLink>
             <RouterLink to="/lingo/login" class="btn-aqua-white w-full justify-center text-base">
-              {{ t('lingo.haveAccount', 'I already have an account') }}
+              {{ t('lingo.haveAccount') }}
             </RouterLink>
           </template>
         </div>
@@ -39,5 +39,5 @@ import { useSeoHead } from '@/composables/useSeoHead'
 const auth = useAuth()
 const { t, locale } = useI18n()
 
-useSeoHead({ title: t('lingo.appName', 'Lingo') }, locale.value)
+useSeoHead({ title: t('lingo.appName') }, locale.value)
 </script>

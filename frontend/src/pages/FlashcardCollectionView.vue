@@ -68,12 +68,14 @@
               </button>
             </template>
             <template v-if="!auth.state.isLoggedIn">
-              <RouterLink :to="`/collections/${props.collectionId}/levels`" class="btn-aqua-orange btn-aqua-group-item md:flex-none">
-                {{ t('anonymousProgress.viewLevels', 'View levels') }}
-              </RouterLink>
-              <RouterLink :to="`/collections/${props.collectionId}/levels`" class="btn-aqua-emerald btn-aqua-group-item md:flex-none">
-                {{ t('anonymousProgress.studyLevels', 'Study (by level)') }}
-              </RouterLink>
+              <div class="mt-2 gap-4">
+                <RouterLink :to="`/collections/${props.collectionId}/levels`" class="btn-aqua-orange btn-aqua-group-item md:flex-none">
+                  {{ t('anonymousProgress.viewLevels') }}
+                </RouterLink>
+                <RouterLink :to="`/collections/${props.collectionId}/levels`" class="btn-aqua-emerald btn-aqua-group-item md:flex-none">
+                  {{ t('anonymousProgress.studyLevels') }}
+                </RouterLink>
+              </div>
             </template>
           </div>
         </div>
@@ -95,10 +97,10 @@
   <!-- Anonymous: sign-in prompt -->
   <div v-if="isAnonView" class="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6 text-center">
     <p class="text-gray-700 mb-3">
-      {{ t('anonymousProgress.signInToSaveProgress', 'Sign in to save your progress and study by due date.') }}
+      {{ t('anonymousProgress.signInToSaveProgress') }}
     </p>
     <p class="text-sm text-gray-600">
-      {{ t('anonymousProgress.studyByLevelHint', 'You can study by level above; progress is saved on this device until you sign in.') }}
+      {{ t('anonymousProgress.studyByLevelHint') }}
     </p>
   </div>
 
@@ -169,7 +171,7 @@
   <LoadingSpinner v-if="!isAnonView && isLoading" class="py-12" />
 
   <div v-else-if="isAnonView" class="text-center py-8 bg-gray-50 rounded-lg border border-blue-100">
-    <p class="text-gray-600 mb-4">{{ t('anonymousProgress.useLevelsToStudy', 'Use the links above to view levels and start studying.') }}</p>
+    <p class="text-gray-600 mb-4">{{ t('anonymousProgress.useLevelsToStudy') }}</p>
   </div>
 
   <div v-else-if="flashcards.length === 0" class="text-center py-12 bg-gray-50 rounded-lg border border-blue-100">

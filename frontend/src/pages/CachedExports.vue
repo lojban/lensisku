@@ -63,9 +63,14 @@ onMounted(async () => {
 
 <template>
   <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-    <h1 class="text-2xl font-bold text-gray-800">
-      {{ t('cachedExports.title') }}
-    </h1>
+    <div>
+      <h2 class="text-2xl font-bold text-gray-800">
+        {{ t('cachedExports.title') }}
+      </h2>
+      <p class="text-gray-600 mt-2">
+        {{ t('cachedExports.description') }}
+      </p>
+    </div>
     <div v-if="exports.length > 0" class="text-sm text-gray-600 bg-gray-100 px-3 py-1.5 rounded-full font-medium shrink-0">
       {{ hasActiveSearch ? t('cachedExports.showingCount', { count: filteredExports.length, total: exports.length }) : t('cachedExports.totalLabel', { count: exports.length }) }}
     </div>
