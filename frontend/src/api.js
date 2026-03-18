@@ -304,8 +304,14 @@ export const importCollectionFull = (data) => api.post('/collections/import/full
 
 export const listCachedExports = () => api.get('/export/cached')
 
-/** Base URL for API (e.g. for direct download links). */
-export const getApiBaseUrl = () => import.meta.env.VITE_BASE_URL ?? '/api'
+/** Base URL for API (e.g. for direct download links or fetch streaming). No trailing slash. */
+export const getApiBaseUrl = () => (import.meta.env.VITE_BASE_URL ?? '/api').replace(/\/$/, '')
+
+/** Headers for authenticated fetch requests (e.g. SSE streams). Same auth as axios interceptor. */
+export const getAuthHeaders = () => {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null
+  return token ? { Authorization: `Bearer ${token}` } : {}
+}
 
 export const downloadCachedExport = (languageTag, format) =>
   api.get(`/export/cached/${languageTag}/${format}`, {

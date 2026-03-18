@@ -12,7 +12,19 @@ pub struct ChatRequest {
     pub locale: Option<String>,
 }
 
+/// One step of the assistant's thought process (e.g. a tool call and its result).
+#[derive(Debug, Clone, Serialize)]
+pub struct AssistantStep {
+    /// Human-readable description of the action (e.g. "Semantic search: \"word combinations\"").
+    pub action: String,
+    /// Short summary of the result for display in the chat.
+    pub result: String,
+}
+
 #[derive(Debug, Serialize)]
 pub struct ChatResponse {
     pub reply: String,
+    /// Optional list of steps (tool calls + results) to show as thought process in the UI.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub steps: Option<Vec<AssistantStep>>,
 }
