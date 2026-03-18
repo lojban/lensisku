@@ -315,6 +315,7 @@
     "systemRoleDeleteError": "Системные роли не могут быть удалены"
   },
   "collectionDetail": {
+    "pageHint": "Коллекция",
     "public": "Публичная",
     "private": "Частная",
     "createdBy": "Создана",
@@ -1086,7 +1087,8 @@
       "unlabelAsSpam": "Отменить жалобу на спам ({count})"
     },
     "flashcardCollectionView": {
-      "title": "{collectionName} - Карточки",
+      "pageHint": "Карточки",
+      "title": "{collectionName}",
       "collectionButton": "Коллекция",
       "addFlashcardButton": "Добавить карточку",
       "importAllButton": "Импортировать все",

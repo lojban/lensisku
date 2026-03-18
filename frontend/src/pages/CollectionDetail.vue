@@ -3,9 +3,12 @@
     <ToastFloat :show="showSuccessToast" :message="successMessage" type="success" @close="showSuccessToast = false" />
     <!-- Header -->
     <div class="bg-white border rounded-lg p-4 sm:p-6 mb-6 flex flex-col gap-2">
-      <!-- Row 1: Title -->
-      <h2 class="flex items-center gap-2 text-xl sm:text-2xl font-bold text-gray-800">
-        <List class="w-6 h-6 shrink-0 text-gray-600" aria-hidden="true" />
+      <!-- Row 1: Hint (collection) + Title -->
+      <div class="flex items-center gap-2 text-gray-500 italic text-sm mb-1">
+        <List class="w-5 h-5 shrink-0" aria-hidden="true" />
+        <span>{{ t('collectionDetail.pageHint') }}</span>
+      </div>
+      <h2 class="text-xl sm:text-2xl font-bold text-gray-800">
         {{ collection.name }}
       </h2>
 
@@ -80,8 +83,8 @@
               <GalleryHorizontalIcon class="w-4 h-4" />
               {{ t('collectionDetail.viewAsFlashcards') }}
             </RouterLink>
-            <RouterLink :to="`/collections/${props.collectionId}/levels`" class="btn-aqua-white btn-aqua-group-item md:flex-none">
-              <LayoutPanelTop class="w-4 h-4" />
+            <RouterLink :to="`/collections/${props.collectionId}/levels`" class="btn-aqua-white btn-aqua-group-item inline-flex items-center gap-2">
+              <LayoutPanelTop class="w-4 h-4 shrink-0" aria-hidden="true" />
               {{ t('collectionDetail.levels') }}
             </RouterLink>
           </div>

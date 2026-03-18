@@ -3,6 +3,7 @@
   <div class="bg-white border rounded-lg p-4 sm:p-6 mb-6 flex flex-col gap-2">
     <!-- Skeleton: same layout shape to avoid CLS while loading -->
     <template v-if="isHeaderLoading">
+      <div class="h-4 w-20 bg-gray-200 animate-pulse rounded" aria-hidden="true" />
       <div class="h-8 w-72 max-w-full bg-gray-200 animate-pulse rounded" aria-hidden="true" />
       <div class="flex flex-wrap gap-2">
         <div class="h-6 w-16 bg-gray-200 animate-pulse rounded" />
@@ -16,9 +17,12 @@
     </template>
 
     <template v-else>
-      <!-- Row 1: Title -->
-      <h2 class="flex items-center gap-2 text-xl sm:text-2xl font-bold text-gray-800">
-        <GalleryHorizontalIcon class="w-6 h-6 shrink-0 text-gray-600" aria-hidden="true" />
+      <!-- Row 1: Hint (flashcards) + Title -->
+      <div class="flex items-center gap-2 text-gray-500 italic text-sm mb-1">
+        <GalleryHorizontalIcon class="w-5 h-5 shrink-0" aria-hidden="true" />
+        <span>{{ t('components.flashcardCollectionView.pageHint') }}</span>
+      </div>
+      <h2 class="text-xl sm:text-2xl font-bold text-gray-800">
         {{ t('components.flashcardCollectionView.title', { collectionName: collection?.name }) }}
       </h2>
 
@@ -82,7 +86,7 @@
       </div>
 
       <!-- Row 5: Study (full session) + Levels, centered, not grouped -->
-      <div v-if="auth.state.isLoggedIn" class="flex flex-row justify-center items-center gap-2">
+      <div v-if="auth.state.isLoggedIn" class="flex flex-row justify-center items-center gap-2 mt-4">
         <RouterLink :to="`/collections/${props.collectionId}/flashcards/study`" class="btn-aqua-orange h-10 text-base inline-flex items-center justify-center gap-2">
           {{ t('flashcardCollection.studyNow', { count: dueCount }) }}
         </RouterLink>
@@ -633,7 +637,7 @@ onMounted(async () => {
   try {
     const response = await getCollection(props.collectionId)
     collection.value = response.data
-    pageTitle.value = collection.value.name + ' - flashcards'
+    pageTitle.value = collection.value.name
   } catch (error) {
     console.error('Error fetching collection:', error)
   }
