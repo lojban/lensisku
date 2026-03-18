@@ -776,19 +776,12 @@ const getTreeLevel = (level) => {
 
 const { elements, setElements, fitView } = useVueFlow()
 
-// Last unlocked level and previous level (by position) for scroll-into-view — fit both into view
-const getLastUnlockedAndPrevLevelIds = (levelsData) => {
-  if (!levelsData?.length) return []
+// Next available unlocked level (first unlocked and not completed) — center and zoom into it on open
+const getNextUnlockedLevelId = (levelsData) => {
+  if (!levelsData?.length) return null
   const sorted = [...levelsData].sort((a, b) => a.position - b.position)
-  const lastIndex = sorted.findLastIndex(
-    (l) => l.progress?.is_unlocked || l.progress?.is_completed
-  )
-  if (lastIndex === -1) return []
-  const ids = [sorted[lastIndex].level_id.toString()]
-  if (lastIndex > 0) {
-    ids.unshift(sorted[lastIndex - 1].level_id.toString())
-  }
-  return ids
+  const next = sorted.find((l) => isLevelUnlocked(l) && !l.progress?.is_completed)
+  return next ? next.level_id.toString() : null
 }
 
 // Inset so level cards never touch the flow area borders (hover scale/shadow have room)
@@ -823,15 +816,15 @@ const convertLevelsToElements = (levelsData) => {
 // Only run initial scroll once so we never get a second fitView that zooms out to fit all
 let initialScrollScheduled = false
 
-// Scroll viewport to last unlocked level and previous level, zoom both into view (runs once after first load)
-const scrollToLastUnlocked = (levelsData) => {
-  const nodeIds = getLastUnlockedAndPrevLevelIds(levelsData)
-  if (!nodeIds.length) return // never call fitView() for "all" — that would zoom out and override our zoom-to-node
+// Center viewport on next available unlocked level and zoom into it (runs once after first load)
+const scrollToNextUnlocked = (levelsData) => {
+  const nodeId = getNextUnlockedLevelId(levelsData)
+  if (!nodeId) return // never call fitView() for "all" — that would zoom out and override our zoom-to-node
   if (initialScrollScheduled) return
   initialScrollScheduled = true
   nextTick(() => {
     setTimeout(() => {
-      fitView({ nodes: nodeIds, padding: 0.1, duration: 400 })
+      fitView({ nodes: [nodeId], padding: 0.25, duration: 400 })
     }, 150)
   })
 }
@@ -842,7 +835,7 @@ watch(
   (newLevels) => {
     if (newLevels?.length) {
       setElements(convertLevelsToElements(newLevels))
-      scrollToLastUnlocked(newLevels)
+      scrollToNextUnlocked(newLevels)
     }
   }
 )

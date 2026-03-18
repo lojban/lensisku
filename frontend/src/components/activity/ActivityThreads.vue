@@ -8,7 +8,7 @@
         v-for="thread in threads"
         :key="thread.source === 'comment' ? thread.thread_id : 'mail-' + (thread.cleaned_subject || '')"
         class="space-y-2 bg-white p-4 rounded-lg border border-gray-200 hover:border-blue-200 transition-colors cursor-pointer"
-        @click="thread.source === 'comment' ? router.push(`/comments?thread_id=${thread.thread_id}&scroll_to=${thread.comment_id}&valsi_id=${thread.valsi_id || ''}&definition_id=${thread.definition_id || ''}`) : router.push(`/mail/thread?subject=${encodeURIComponent(thread.cleaned_subject || thread.subject || '')}`)"
+        @click="thread.source === 'comment' ? router.push(`/comments?thread_id=${thread.thread_id}&scroll_to=${thread.comment_id}&valsi_id=${thread.valsi_id || ''}&definition_id=${thread.definition_id || ''}`) : goToMailThread(thread.cleaned_subject || thread.subject)"
       >
         <!-- Comment thread -->
         <template v-if="thread.source === 'comment'">
@@ -96,13 +96,19 @@
 
 <script setup>
 import { MessageSquareMore, Image } from 'lucide-vue-next'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 
 import LazyMathJax from '@/components/LazyMathJax.vue'
 
 const router = useRouter()
+const route = useRoute()
 const { t } = useI18n()
+
+function goToMailThread(subject) {
+  const locale = route.path.split('/')[1] || 'en'
+  router.push({ name: `ThreadView-${locale}`, params: { subject: subject || '' } })
+}
 
 defineProps({
   threads: {
