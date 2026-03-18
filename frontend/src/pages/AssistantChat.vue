@@ -50,19 +50,44 @@
           <span v-else-if="msg.role === 'user'" class="block text-[11px] font-semibold text-blue-100 mb-1">
             {{ $t('assistantChat.userLabel') }}
           </span>
+          <!-- Thought process: tool calls and results in italic gray (updates in real time over SSE) -->
+          <div
+            v-if="msg.role === 'assistant' && msg.steps && msg.steps.length > 0"
+            class="thought-process mb-2 space-y-1"
+          >
+            <div
+              v-for="(step, stepIdx) in msg.steps"
+              :key="stepIdx"
+              class="text-gray-500 text-xs italic"
+            >
+              <span>{{ step.action }}</span>
+              <span class="block mt-0.5">{{ step.result }}</span>
+            </div>
+          </div>
+          <!-- Thinking dots inside assistant bubble while streaming and no reply yet -->
+          <div
+            v-if="msg.role === 'assistant' && isLoading && index === messages.length - 1 && !msg.content"
+            class="thinking-dots flex items-center gap-1 min-h-[1.25rem] mb-1"
+            role="status"
+            :aria-label="$t('assistantChat.thinking')"
+          >
+            <span class="thinking-dot" />
+            <span class="thinking-dot" />
+            <span class="thinking-dot" />
+          </div>
           <LazyMathJax
-            v-if="msg.role === 'assistant'"
+            v-if="msg.role === 'assistant' && msg.content"
             :content="msg.content"
             :enable-markdown="true"
             :lang-id="locale"
           />
-          <span v-else>{{ msg.content }}</span>
+          <span v-else-if="msg.role === 'user'">{{ msg.content }}</span>
         </div>
       </div>
 
-      <!-- Thinking indicator while waiting for assistant reply -->
+      <!-- Thinking indicator when no assistant message yet (e.g. before stream starts) -->
       <div
-        v-if="isLoading"
+        v-if="isLoading && (messages.length === 0 || messages[messages.length - 1]?.role !== 'assistant')"
         class="flex justify-start"
         role="status"
         :aria-label="$t('assistantChat.thinking')"
@@ -133,7 +158,7 @@ import { useI18n } from 'vue-i18n'
 import { RotateCw, Trash2 } from 'lucide-vue-next'
 
 import LazyMathJax from '@/components/LazyMathJax.vue'
-import { assistantChat } from '../api'
+import { getApiBaseUrl, getAuthHeaders } from '../api'
 
 const { locale, t } = useI18n()
 const messages = ref([])
@@ -163,11 +188,66 @@ async function performRequest(msgList) {
     })),
     locale: locale.value,
   }
-  const { data } = await assistantChat(payload)
+
+  // Placeholder assistant message; steps and content will be updated from the stream
   messages.value.push({
     role: 'assistant',
-    content: data.reply,
+    content: '',
+    steps: [],
   })
+  const assistantIndex = messages.value.length - 1
+
+  const headers = {
+    'Content-Type': 'application/json',
+    ...getAuthHeaders(),
+  }
+
+  const response = await fetch(`${getApiBaseUrl()}/assistant/chat/stream`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(payload),
+  })
+
+  if (!response.ok) {
+    const errText = await response.text()
+    throw new Error(errText || `HTTP ${response.status}`)
+  }
+
+  if (!response.body) {
+    throw new Error('Response body is null')
+  }
+
+  const reader = response.body.pipeThrough(new TextDecoderStream()).getReader()
+  let buffer = ''
+
+  while (true) {
+    const { value, done } = await reader.read()
+    if (value) buffer += value
+    const lines = buffer.split(/\n/)
+    buffer = lines.pop() ?? '' // keep incomplete line in buffer
+    for (const line of lines) {
+      const data = line.replace(/^data:\s*/, '').trim()
+      if (!data || !data.startsWith('{')) continue
+      try {
+        const event = JSON.parse(data)
+        if (event.type === 'step') {
+          messages.value[assistantIndex].steps.push({
+            action: event.action ?? '',
+            result: event.result ?? '',
+          })
+        } else if (event.type === 'done') {
+          messages.value[assistantIndex].content = event.reply ?? ''
+        } else if (event.type === 'error') {
+          messages.value[assistantIndex].content = event.error
+            ? `_${t('assistantChat.error')}: ${event.error}_`
+            : t('assistantChat.error')
+        }
+      } catch (_) {
+        // ignore non-JSON or malformed lines
+      }
+    }
+    if (done) break
+  }
 }
 
 const handleSend = async () => {

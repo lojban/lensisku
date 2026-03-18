@@ -174,7 +174,7 @@ import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ImagePlus } from 'lucide-vue-next'
 
-import { cancelBulkImport, deleteBulkDefinitions, getLanguages } from '../api.js'
+import { cancelBulkImport, deleteBulkDefinitions, getApiBaseUrl, getAuthHeaders, getLanguages } from '../api.js'
 import ClipboardButton from '@/components/ClipboardButton.vue'
 import { useSeoHead } from '@/composables/useSeoHead'
 import { useError } from '@/composables/useError'
@@ -292,14 +292,10 @@ const submitImport = async () => {
       if (csvFile.value !== null) reader.readAsText(csvFile.value)
     })
 
-    const apiBaseUrl = (import.meta.env.VITE_BASE_URL ?? '/api')
-    const url = `${apiBaseUrl}/jbovlaste/bulk-import`
-    const accessToken = localStorage.getItem('accessToken')
+    const url = `${getApiBaseUrl()}/jbovlaste/bulk-import`
     const headers = {
       'Content-Type': 'application/json',
-    }
-    if (accessToken) {
-      headers['Authorization'] = `Bearer ${accessToken}`
+      ...getAuthHeaders(),
     }
 
     const response = await fetch(url, {

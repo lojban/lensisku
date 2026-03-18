@@ -3,10 +3,12 @@
 use std::env;
 use std::time::Duration;
 
+use actix_web_lab::sse;
 use deadpool_postgres::Pool;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
+use tokio::sync::mpsc;
 use tokio::time::sleep;
 
 use crate::embeddings::get_embedding;
@@ -14,7 +16,7 @@ use crate::error::AppError;
 use crate::jbovlaste::models::{DefinitionDetail, DefinitionResponse, SearchDefinitionsParams};
 use crate::jbovlaste::service::semantic_search;
 
-use super::dto::{ChatMessage, ChatRequest};
+use super::dto::{AssistantStep, ChatMessage, ChatRequest};
 
 #[derive(Debug, Clone, Serialize)]
 struct ToolFunction {
@@ -253,12 +255,13 @@ struct ToolCall {
 fn system_prompt(locale: Option<&str>) -> String {
     let mut base = String::from(
         "You are a Lojban dictionary assistant. You must strictly rely on jbovlaste semantic search results.\n\
-         - For every user query about Lojban words, concepts, or meanings: you MUST call the tool `jbovlaste_semantic_search` first. Do not answer from general knowledge.\n\
-         - Base your reply ONLY on the definitions returned by the tool. Quote or paraphrase from those results; do not invent valsi, glosses, or definitions.\n\
+         - For every user query about Lojban words, concepts, or meanings: you MUST call the tool `jbovlaste_semantic_search` at least once. Do not answer from general knowledge.\n\
+         - You MAY call `jbovlaste_semantic_search` multiple times in one turn when needed: e.g. for word combinations, different phrasings, or separate concepts. Each call can use a different query.\n\
+         - Base your reply ONLY on the definitions returned by the tool(s). Quote or paraphrase from those results; do not invent valsi, glosses, or definitions.\n\
          - Do not make up examples or Lojban text. Only use valsi, glosses, and sentences from the semantic search results.\n\
-         - If the search returns no or few results, say so and suggest rephrasing the query; do not make up answers.\n\
+         - If the search returns no or few results, you may try another query or say so and suggest rephrasing; do not make up answers.\n\
          - You have access only to the tool `jbovlaste_semantic_search`. Use it with a natural-language query (e.g. in English) to find relevant jbovlaste definitions.\n\
-         - Format your reply in valid, simple Markdown: use **bold**, lists. use plain text or markdown lists instead of markdown tables.",
+         - Format your reply in valid, simple Markdown: use **bold**, lists. Use plain text or markdown lists instead of markdown tables.",
     );
 
     if let Some(loc) = locale {
@@ -344,9 +347,9 @@ struct ToolArgs {
     source_langid: Option<i32>,
 }
 
-async fn run_jbovlaste_semantic_search(
+async fn run_jbovlaste_semantic_search_once(
     pool: &Pool,
-    args: ToolArgs,
+    args: &ToolArgs,
 ) -> Result<DefinitionResponse, AppError> {
     let limit = args.limit.unwrap_or(10).clamp(1, 50) as i64;
 
@@ -359,7 +362,7 @@ async fn run_jbovlaste_semantic_search(
         include_comments: false,
         sort_by: "score".to_string(),
         sort_order: "desc".to_string(),
-        languages: args.languages,
+        languages: args.languages.clone(),
         selmaho: None,
         username: None,
         word_type: None,
@@ -372,6 +375,36 @@ async fn run_jbovlaste_semantic_search(
         .map_err(|e| AppError::ExternalService(format!("Semantic search failed: {}", e)))?;
 
     Ok(response)
+}
+
+/// Runs semantic search with retries on transient failure (embedding or DB/network).
+async fn run_jbovlaste_semantic_search_with_retry(
+    pool: &Pool,
+    args: ToolArgs,
+) -> Result<DefinitionResponse, AppError> {
+    for attempt in 1..=TOOL_MAX_ATTEMPTS {
+        match run_jbovlaste_semantic_search_once(pool, &args).await {
+            Ok(r) => return Ok(r),
+            Err(e) => {
+                if attempt < TOOL_MAX_ATTEMPTS {
+                    let delay = Duration::from_millis(
+                        TOOL_INITIAL_BACKOFF_MS * 2_u64.pow(attempt - 1),
+                    );
+                    log::info!(
+                        "Assistant semantic search retry {}/{} for query \"{}\" after {:?}",
+                        attempt,
+                        TOOL_MAX_ATTEMPTS,
+                        args.query,
+                        delay
+                    );
+                    sleep(delay).await;
+                } else {
+                    return Err(e);
+                }
+            }
+        }
+    }
+    unreachable!()
 }
 
 /// Removes MathJax wrapping `$` and `$$` so the LLM receives plain text definitions/notes.
@@ -397,7 +430,38 @@ fn summarise_definition(def: &DefinitionDetail) -> serde_json::Value {
     })
 }
 
-pub async fn handle_chat(pool: &Pool, request: ChatRequest) -> Result<String, AppError> {
+/// Maximum number of agent turns (LLM call + tool executions) per user message.
+const AGENT_MAX_ITERATIONS: u32 = 15;
+
+/// Max retries for a single tool call (e.g. semantic search) on transient failure.
+const TOOL_MAX_ATTEMPTS: u32 = 3;
+const TOOL_INITIAL_BACKOFF_MS: u64 = 400;
+
+/// Runs the agent loop. If event_tx is Some, streams step/done/error events and then drops the sender.
+pub async fn run_agent_loop(
+    pool: &Pool,
+    request: &ChatRequest,
+    event_tx: Option<mpsc::Sender<sse::Event>>,
+) -> Result<(String, Vec<AssistantStep>), AppError> {
+    let mut event_tx = event_tx;
+    let result = run_agent_loop_inner(pool, request, &mut event_tx).await;
+    if let Err(ref e) = result {
+        if let Some(tx) = event_tx.take() {
+            let payload = json!({ "type": "error", "error": format!("{}", e) });
+            if let Ok(data) = serde_json::to_string(&payload) {
+                let _ = tx.send(sse::Data::new(data).into()).await;
+            }
+            drop(tx);
+        }
+    }
+    result
+}
+
+async fn run_agent_loop_inner(
+    pool: &Pool,
+    request: &ChatRequest,
+    event_tx: &mut Option<mpsc::Sender<sse::Event>>,
+) -> Result<(String, Vec<AssistantStep>), AppError> {
     let api_key = env::var("OPENROUTER_API_KEY").map_err(|_| {
         AppError::ExternalService("OPENROUTER_API_KEY is not set in the environment".into())
     })?;
@@ -407,7 +471,7 @@ pub async fn handle_chat(pool: &Pool, request: ChatRequest) -> Result<String, Ap
 
     let client = reqwest::Client::new();
 
-    let mut messages = Vec::new();
+    let mut messages: Vec<ChatCompletionMessageRequest> = Vec::new();
     messages.push(ChatCompletionMessageRequest {
         role: "system".to_string(),
         content: system_prompt(request.locale.as_deref()),
@@ -419,125 +483,187 @@ pub async fn handle_chat(pool: &Pool, request: ChatRequest) -> Result<String, Ap
     messages.extend(map_chat_messages(&request.messages));
 
     let tools = vec![jbovlaste_tool_schema()];
+    let mut steps = Vec::new();
 
-    let first_request = ChatCompletionRequest {
-        model: "openrouter/free".to_string(),
-        messages: messages.clone(),
-        tools: Some(tools.clone()),
-        tool_choice: Some(json!("auto")),
-    };
+    // Agent loop: call LLM until it returns a final reply (no tool_calls).
+    for iteration in 1..=AGENT_MAX_ITERATIONS {
+        let request_body = ChatCompletionRequest {
+            model: "openrouter/free".to_string(),
+            messages: messages.clone(),
+            tools: Some(tools.clone()),
+            tool_choice: Some(json!("auto")),
+        };
 
-    let first_response = openrouter_chat_with_retry("first chat/completions", || {
-        let client = client.clone();
-        let base_url = base_url.clone();
-        let api_key = api_key.clone();
-        let first_request = first_request.clone();
-        async move {
-            let res = client
-                .post(format!("{}/chat/completions", base_url))
-                .header("Authorization", format!("Bearer {}", api_key))
-                .header("Content-Type", "application/json")
-                .json(&first_request)
-                .send()
-                .await?;
-            let ok = ensure_openrouter_status(res, "first chat/completions").await?;
-            parse_chat_response(ok, "first chat/completions").await
-        }
-    })
-    .await?;
+        let label = format!("chat/completions iteration {}", iteration);
+        let response = openrouter_chat_with_retry(&label, || {
+            let client = client.clone();
+            let base_url = base_url.clone();
+            let api_key = api_key.clone();
+            let request_body = request_body.clone();
+            let label = label.clone();
+            async move {
+                let res = client
+                    .post(format!("{}/chat/completions", base_url))
+                    .header("Authorization", format!("Bearer {}", api_key))
+                    .header("Content-Type", "application/json")
+                    .json(&request_body)
+                    .send()
+                    .await?;
+                let ok = ensure_openrouter_status(res, &label).await?;
+                parse_chat_response(ok, &label).await
+            }
+        })
+        .await?;
 
-    let choice =
-        first_response.choices.into_iter().next().ok_or_else(|| {
+        let choice = response.choices.into_iter().next().ok_or_else(|| {
             AppError::ExternalService("No choices returned from OpenRouter".into())
         })?;
 
-    if let Some(tool_calls) = choice.message.tool_calls.clone() {
-        // Handle only the first semantic search tool call for now
-        if let Some(first_call) = tool_calls.first() {
-            if first_call.function.name == "jbovlaste_semantic_search" {
-                let args_json: &str = match first_call.function.arguments.as_deref() {
+        let tool_calls = choice.message.tool_calls.clone();
+
+        // Append assistant message (with optional tool_calls) to history.
+        messages.push(ChatCompletionMessageRequest {
+            role: choice.message.role.clone(),
+            content: choice.message.content.clone(),
+            tool_call_id: None,
+            name: None,
+            tool_calls: tool_calls.clone(),
+        });
+
+        if let Some(calls) = tool_calls {
+            // Execute each tool call and append tool results. Recover from parse/tool errors by
+            // feeding an error message back to the LLM so it can try again.
+            for call in &calls {
+                if call.function.name != "jbovlaste_semantic_search" {
+                    continue;
+                }
+
+                let args_json: &str = match call.function.arguments.as_deref() {
                     None | Some("") => "{}",
                     Some(s) => s,
                 };
-                let args: ToolArgs = serde_json::from_str(args_json).map_err(|e| {
-                    log::warn!(
-                        "Tool call arguments JSON parse error: {}; raw arguments: {:?}",
-                        e,
-                        first_call.function.arguments
-                    );
-                    AppError::ExternalServiceWithRaw {
-                        message: "Assistant produced invalid tool arguments; please try again."
-                            .into(),
-                        raw_response: args_json.to_string(),
+
+                let args: ToolArgs = match serde_json::from_str(args_json) {
+                    Ok(a) => a,
+                    Err(e) => {
+                        log::warn!(
+                            "Tool call arguments JSON parse error: {}; raw arguments: {:?}",
+                            e,
+                            call.function.arguments
+                        );
+                        let err_msg = format!(
+                            "Invalid tool arguments (invalid JSON). Please call jbovlaste_semantic_search again with valid JSON. Error: {}",
+                            e
+                        );
+                        messages.push(ChatCompletionMessageRequest {
+                            role: "tool".to_string(),
+                            content: serde_json::to_string(&json!({ "error": err_msg }))
+                                .unwrap_or_else(|_| err_msg.clone()),
+                            tool_call_id: Some(call.id.clone()),
+                            name: Some(call.function.name.clone()),
+                            tool_calls: None,
+                        });
+                        continue;
                     }
-                })?;
+                };
 
-                let results = run_jbovlaste_semantic_search(pool, args).await?;
+                let action_desc = format!("Semantic search: \"{}\"", args.query);
 
-                let compact_results: Vec<serde_json::Value> = results
-                    .definitions
-                    .iter()
-                    .map(summarise_definition)
-                    .collect();
+                let tool_result = run_jbovlaste_semantic_search_with_retry(pool, args).await;
 
-                let tool_payload = json!({
-                    "results": compact_results,
-                    "total": results.total,
-                });
+                let (result_summary, tool_payload_value) = match &tool_result {
+                    Ok(results) => {
+                        let summary = format!("Found {} definition(s).", results.total);
+                        let compact_results: Vec<serde_json::Value> = results
+                            .definitions
+                            .iter()
+                            .map(summarise_definition)
+                            .collect();
+                        let payload = json!({
+                            "results": compact_results,
+                            "total": results.total,
+                        });
+                        (summary, payload)
+                    }
+                    Err(e) => {
+                        let err_str = format!("{}", e);
+                        log::warn!("Assistant semantic search failed after retries: {}", err_str);
+                        let summary = format!("Error after retries: {}", err_str);
+                        let payload = json!({
+                            "error": err_str,
+                            "results": [],
+                            "total": 0,
+                        });
+                        (summary, payload)
+                    }
+                };
 
-                let tool_message = ChatCompletionMessageRequest {
+                let step = AssistantStep {
+                    action: action_desc.clone(),
+                    result: result_summary.clone(),
+                };
+                steps.push(step.clone());
+
+                // Stream step event in real time
+                if let Some(ref tx) = event_tx {
+                    let payload = json!({
+                        "type": "step",
+                        "action": step.action,
+                        "result": step.result,
+                    });
+                    if let Ok(data) = serde_json::to_string(&payload) {
+                        let _ = tx.send(sse::Data::new(data).into()).await;
+                    }
+                }
+
+                let tool_content = serde_json::to_string(&tool_payload_value)
+                    .unwrap_or_else(|_| tool_payload_value["error"].as_str().unwrap_or("").to_string());
+
+                messages.push(ChatCompletionMessageRequest {
                     role: "tool".to_string(),
-                    content: serde_json::to_string(&tool_payload)?,
-                    tool_call_id: Some(first_call.id.clone()),
-                    name: Some(first_call.function.name.clone()),
+                    content: tool_content,
+                    tool_call_id: Some(call.id.clone()),
+                    name: Some(call.function.name.clone()),
                     tool_calls: None,
-                };
-
-                let mut second_messages = messages;
-                second_messages.push(ChatCompletionMessageRequest {
-                    role: choice.message.role.clone(),
-                    content: choice.message.content.clone(),
-                    tool_call_id: None,
-                    name: None,
-                    tool_calls: Some(tool_calls.clone()),
                 });
-                second_messages.push(tool_message);
-
-                let second_request = ChatCompletionRequest {
-                    model: "openrouter/free".to_string(),
-                    messages: second_messages.clone(),
-                    tools: Some(tools.clone()),
-                    tool_choice: Some(json!("none")),
-                };
-
-                let second_response = openrouter_chat_with_retry("second chat/completions", || {
-                    let client = client.clone();
-                    let base_url = base_url.clone();
-                    let api_key = api_key.clone();
-                    let second_request = second_request.clone();
-                    async move {
-                        let res = client
-                            .post(format!("{}/chat/completions", base_url))
-                            .header("Authorization", format!("Bearer {}", api_key))
-                            .header("Content-Type", "application/json")
-                            .json(&second_request)
-                            .send()
-                            .await?;
-                        let ok = ensure_openrouter_status(res, "second chat/completions").await?;
-                        parse_chat_response(ok, "second chat/completions").await
-                    }
-                })
-                .await?;
-
-                let final_choice = second_response.choices.into_iter().next().ok_or_else(|| {
-                    AppError::ExternalService("No choices in second OpenRouter response".into())
-                })?;
-
-                return Ok(final_choice.message.content);
             }
+            // Loop again so the model can see tool results and either call more tools or reply.
+        } else {
+            // No tool calls: this is the final assistant reply.
+            let reply = choice.message.content;
+            if let Some(tx) = event_tx.take() {
+                let payload = json!({ "type": "done", "reply": reply });
+                if let Ok(data) = serde_json::to_string(&payload) {
+                    let _ = tx.send(sse::Data::new(data).into()).await;
+                }
+                drop(tx);
+            }
+            return Ok((reply, steps));
         }
     }
 
-    // No tool calls – just return the first message content
-    Ok(choice.message.content)
+    // Max iterations reached without a final reply; return last assistant content if any.
+    let last_content = messages
+        .iter()
+        .rev()
+        .find(|m| m.role == "assistant")
+        .map(|m| m.content.clone())
+        .unwrap_or_else(|| "I need more time to look that up. Please try again.".to_string());
+
+    if let Some(tx) = event_tx.take() {
+        let payload = json!({ "type": "done", "reply": &last_content });
+        if let Ok(data) = serde_json::to_string(&payload) {
+            let _ = tx.send(sse::Data::new(data).into()).await;
+        }
+        drop(tx);
+    }
+    Ok((last_content, steps))
+}
+
+/// Non-streaming entry point: runs the agent and returns reply + steps.
+pub async fn handle_chat(
+    pool: &Pool,
+    request: ChatRequest,
+) -> Result<(String, Vec<AssistantStep>), AppError> {
+    run_agent_loop(pool, &request, None).await
 }
