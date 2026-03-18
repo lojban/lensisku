@@ -222,7 +222,7 @@
               @click="
                 item.source === 'comment'
                   ? router.push(`/comments?thread_id=${item.comment.thread_id}&comment_id=${item.comment.parent_id}&scroll_to=${item.comment.comment_id}&valsi_id=${item.comment.valsi_id}&definition_id=${item.comment.definition_id || 0}`)
-                  : router.push(`/mail/thread?subject=${encodeURIComponent(item.message.cleaned_subject || item.message.subject || '')}`)
+                  : handleViewThreadSummary(item.message.cleaned_subject || item.message.subject || '')
               "
             >
               <CommentItem
