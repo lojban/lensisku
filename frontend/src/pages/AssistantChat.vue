@@ -35,54 +35,136 @@
       <div
         v-for="(msg, index) in messages"
         :key="index"
-        class="flex"
-        :class="msg.role === 'user' ? 'justify-end' : 'justify-start'"
+        class="flex flex-col gap-3"
+        :class="msg.role === 'user' ? 'items-end' : 'items-start'"
       >
+        <!-- User message: single bubble -->
         <div
-          class="max-w-[80%] rounded-lg px-3 py-2 text-sm break-words"
-          :class="msg.role === 'user'
-            ? 'bg-blue-600 text-white whitespace-pre-wrap'
-            : 'bg-gray-100 text-gray-900 assistant-markdown'"
+          v-if="msg.role === 'user'"
+          class="max-w-[80%] rounded-lg px-3 py-2 text-sm break-words bg-blue-600 text-white whitespace-pre-wrap"
         >
-          <span v-if="msg.role === 'assistant'" class="block text-[11px] font-semibold text-gray-500 mb-1">
-            {{ $t('assistantChat.assistantLabel') }}
-          </span>
-          <span v-else-if="msg.role === 'user'" class="block text-[11px] font-semibold text-blue-100 mb-1">
+          <span class="block text-[11px] font-semibold text-blue-100 mb-1">
             {{ $t('assistantChat.userLabel') }}
           </span>
-          <!-- Thought process: tool calls and results in italic gray (updates in real time over SSE) -->
-          <div
-            v-if="msg.role === 'assistant' && msg.steps && msg.steps.length > 0"
-            class="thought-process mb-2 space-y-1"
-          >
-            <div
-              v-for="(step, stepIdx) in msg.steps"
-              :key="stepIdx"
-              class="text-gray-500 text-xs italic"
-            >
-              <span>{{ step.action }}</span>
-              <span class="block mt-0.5">{{ step.result }}</span>
-            </div>
-          </div>
-          <!-- Thinking dots inside assistant bubble while streaming and no reply yet -->
-          <div
-            v-if="msg.role === 'assistant' && isLoading && index === messages.length - 1 && !msg.content"
-            class="thinking-dots flex items-center gap-1 min-h-[1.25rem] mb-1"
-            role="status"
-            :aria-label="$t('assistantChat.thinking')"
-          >
-            <span class="thinking-dot" />
-            <span class="thinking-dot" />
-            <span class="thinking-dot" />
-          </div>
-          <LazyMathJax
-            v-if="msg.role === 'assistant' && msg.content"
-            :content="msg.content"
-            :enable-markdown="true"
-            :lang-id="locale"
-          />
-          <span v-else-if="msg.role === 'user'">{{ msg.content }}</span>
+          <span>{{ msg.content }}</span>
         </div>
+
+        <!-- Assistant: one bubble per reply (multi-model) or single bubble (legacy) -->
+        <template v-if="msg.role === 'assistant'">
+          <div
+            v-for="(reply, replyIdx) in assistantReplies(msg)"
+            :key="replyIdx"
+            class="max-w-[80%] rounded-lg px-3 py-2 text-sm break-words bg-gray-100 text-gray-900 assistant-markdown"
+          >
+            <span class="block text-[11px] font-semibold text-gray-500 mb-1">
+              {{ reply.modelName || (reply.model ? formatModelLabel(reply.model) : '') || $t('assistantChat.assistantLabel') }}
+            </span>
+            <!-- Thought process: steps with optional folded tool output -->
+            <div
+              v-if="reply.steps && reply.steps.length > 0"
+              class="thought-process mb-2 space-y-1"
+            >
+              <div
+                v-for="(step, stepIdx) in reply.steps"
+                :key="stepIdx"
+                class="text-gray-500 text-xs italic"
+              >
+                <span>{{ step.action }}</span>
+                <span class="block mt-0.5">{{ step.result }}</span>
+                <!-- Collapsible tool output -->
+                <div
+                  v-if="step.tool_output"
+                  class="mt-1 text-gray-400"
+                >
+                  <button
+                    type="button"
+                    class="text-left underline hover:no-underline focus:outline-none"
+                    :aria-expanded="isStepOutputVisible(stepKey(index, replyIdx, stepIdx))"
+                    @click="toggleStepOutput(stepKey(index, replyIdx, stepIdx))"
+                  >
+                    {{ isStepOutputVisible(stepKey(index, replyIdx, stepIdx)) ? 'Hide' : 'Show' }} output
+                  </button>
+                  <pre
+                    v-show="isStepOutputVisible(stepKey(index, replyIdx, stepIdx))"
+                    class="mt-1 p-1.5 rounded bg-gray-200 text-[10px] overflow-x-auto max-h-48 overflow-y-auto whitespace-pre-wrap break-all"
+                  >{{ step.tool_output }}</pre>
+                </div>
+              </div>
+            </div>
+            <!-- Thinking dots while streaming and no reply yet for this model -->
+            <div
+              v-if="isLoading && index === messages.length - 1 && !reply.content"
+              class="thinking-dots flex items-center gap-1 min-h-[1.25rem] mb-1"
+              role="status"
+              :aria-label="$t('assistantChat.thinking')"
+            >
+              <span class="thinking-dot" />
+              <span class="thinking-dot" />
+              <span class="thinking-dot" />
+            </div>
+            <LazyMathJax
+              v-if="reply.content"
+              :content="reply.content"
+              :enable-markdown="true"
+              :lang-id="locale"
+            />
+          </div>
+          <!-- Legacy single bubble when no replies array yet -->
+          <div
+            v-if="assistantReplies(msg).length === 0"
+            class="max-w-[80%] rounded-lg px-3 py-2 text-sm break-words bg-gray-100 text-gray-900 assistant-markdown"
+          >
+            <span class="block text-[11px] font-semibold text-gray-500 mb-1">
+              {{ $t('assistantChat.assistantLabel') }}
+            </span>
+            <div
+              v-if="msg.steps && msg.steps.length > 0"
+              class="thought-process mb-2 space-y-1"
+            >
+              <div
+                v-for="(step, stepIdx) in msg.steps"
+                :key="stepIdx"
+                class="text-gray-500 text-xs italic"
+              >
+                <span>{{ step.action }}</span>
+                <span class="block mt-0.5">{{ step.result }}</span>
+                <div
+                  v-if="step.tool_output"
+                  class="mt-1 text-gray-400"
+                >
+                  <button
+                    type="button"
+                    class="text-left underline hover:no-underline focus:outline-none"
+                    :aria-expanded="isStepOutputVisible(stepKey('legacy', index, stepIdx))"
+                    @click="toggleStepOutput(stepKey('legacy', index, stepIdx))"
+                  >
+                    {{ isStepOutputVisible(stepKey('legacy', index, stepIdx)) ? 'Hide' : 'Show' }} output
+                  </button>
+                  <pre
+                    v-show="isStepOutputVisible(stepKey('legacy', index, stepIdx))"
+                    class="mt-1 p-1.5 rounded bg-gray-200 text-[10px] overflow-x-auto max-h-48 overflow-y-auto whitespace-pre-wrap break-all"
+                  >{{ step.tool_output }}</pre>
+                </div>
+              </div>
+            </div>
+            <div
+              v-if="isLoading && index === messages.length - 1 && !msg.content"
+              class="thinking-dots flex items-center gap-1 min-h-[1.25rem] mb-1"
+              role="status"
+              :aria-label="$t('assistantChat.thinking')"
+            >
+              <span class="thinking-dot" />
+              <span class="thinking-dot" />
+              <span class="thinking-dot" />
+            </div>
+            <LazyMathJax
+              v-if="msg.content"
+              :content="msg.content"
+              :enable-markdown="true"
+              :lang-id="locale"
+            />
+          </div>
+        </template>
       </div>
 
       <!-- Thinking indicator when no assistant message yet (e.g. before stream starts) -->
@@ -167,6 +249,37 @@ const input = ref('')
 const isLoading = ref(false)
 const error = ref('')
 const scrollContainer = ref(null)
+/** Keys: step id string (e.g. "0-0-0"); value: true if output is expanded */
+const stepShowOutput = ref({})
+
+/** Returns array of reply objects for an assistant message (multi-model or legacy single). */
+function assistantReplies(msg) {
+  if (!msg || msg.role !== 'assistant') return []
+  if (msg.replies && msg.replies.length > 0) return msg.replies
+  if (msg.content || (msg.steps && msg.steps.length > 0)) {
+    return [{ model: null, modelName: null, steps: msg.steps || [], content: msg.content || '' }]
+  }
+  return []
+}
+
+function toggleStepOutput(key) {
+  stepShowOutput.value[key] = !stepShowOutput.value[key]
+}
+
+function isStepOutputVisible(key) {
+  return !!stepShowOutput.value[key]
+}
+
+function stepKey(...parts) {
+  return parts.join('-')
+}
+
+/** Short display name for OpenRouter model id (e.g. "provider/model-name" → "model-name"). */
+function formatModelLabel(modelId) {
+  if (!modelId) return ''
+  const last = modelId.split('/').pop()
+  return last || modelId
+}
 
 const scrollToBottom = () => {
   nextTick(() => {
@@ -190,13 +303,27 @@ async function performRequest(msgList) {
     locale: locale.value,
   }
 
-  // Placeholder assistant message; steps and content will be updated from the stream
+  // Placeholder assistant message; steps and content (or per-model replies) updated from the stream
   messages.value.push({
     role: 'assistant',
     content: '',
     steps: [],
+    replies: [], // [{ model, steps, content }] when backend sends model in events
   })
   const assistantIndex = messages.value.length - 1
+
+  function getOrCreateReply(modelId, modelName = null) {
+    const msg = messages.value[assistantIndex]
+    if (!msg.replies) msg.replies = []
+    let r = msg.replies.find((x) => x.model === modelId)
+    if (!r) {
+      r = { model: modelId, modelName: modelName || null, steps: [], content: '' }
+      msg.replies.push(r)
+    } else if (modelName != null && modelName !== r.modelName) {
+      r.modelName = modelName
+    }
+    return r
+  }
 
   const headers = {
     'Content-Type': 'application/json',
@@ -231,36 +358,46 @@ async function performRequest(msgList) {
       if (!data || !data.startsWith('{')) continue
       try {
         const event = JSON.parse(data)
-        const steps = messages.value[assistantIndex].steps
+        const modelId = event.model ?? null
+        const modelName = event.model_name ?? null
+        const msg = messages.value[assistantIndex]
+        const steps = modelId ? getOrCreateReply(modelId, modelName).steps : msg.steps
         if (event.type === 'step_start') {
-          // Show this step immediately (result updates when "step" arrives).
+          if (modelId) getOrCreateReply(modelId, modelName)
           steps.push({
             action: event.action ?? '',
             result: '…',
+            tool_output: undefined,
           })
         } else if (event.type === 'step') {
+          if (modelId) getOrCreateReply(modelId, modelName)
           const idx = typeof event.index === 'number' ? event.index : steps.length
+          const stepPayload = {
+            action: event.action ?? (steps[idx]?.action ?? ''),
+            result: event.result ?? '',
+            tool_output: event.tool_output ?? steps[idx]?.tool_output,
+          }
           if (idx >= 0 && idx < steps.length) {
-            steps[idx] = {
-              action: event.action ?? steps[idx].action,
-              result: event.result ?? '',
-            }
+            steps[idx] = stepPayload
           } else {
-            steps.push({
-              action: event.action ?? '',
-              result: event.result ?? '',
-            })
+            steps.push(stepPayload)
           }
         } else if (event.type === 'done') {
-          messages.value[assistantIndex].content = event.reply ?? ''
-        } else if (event.type === 'error') {
-          let errContent = event.error
-            ? `_${t('assistantChat.error')}: ${event.error}_`
-            : t('assistantChat.error')
-          if (event.raw_response) {
-            errContent += `\n\n**Debug (raw response):**\n\`\`\`\n${event.raw_response}\n\`\`\``
+          if (modelId) {
+            const reply = getOrCreateReply(modelId, modelName)
+            reply.content = event.reply ?? ''
+          } else {
+            msg.content = event.reply ?? ''
           }
-          messages.value[assistantIndex].content = errContent
+        } else if (event.type === 'error') {
+          const errContent = event.error
+            ? `_${t('assistantChat.error')}: ${event.error}_`
+            : t('assistantChat.error') + (event.raw_response ? `\n\n**Debug:**\n\`\`\`\n${event.raw_response}\n\`\`\`` : '')
+          if (modelId) {
+            getOrCreateReply(modelId).content = errContent
+          } else {
+            msg.content = errContent
+          }
         }
       } catch (_) {
         // ignore non-JSON or malformed lines

@@ -1,12 +1,12 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct ChatMessage {
     pub role: String,
     pub content: String,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct ChatRequest {
     pub messages: Vec<ChatMessage>,
     pub locale: Option<String>,
@@ -19,6 +19,9 @@ pub struct AssistantStep {
     pub action: String,
     /// Short summary of the result for display in the chat.
     pub result: String,
+    /// Raw tool output (e.g. JSON) for display in folded/collapsible UI.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tool_output: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
