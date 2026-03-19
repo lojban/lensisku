@@ -261,6 +261,7 @@ fn system_prompt(locale: Option<&str>) -> String {
          - Do not make up examples or Lojban text. Only use valsi, glosses, and sentences from the semantic search results.\n\
          - If the search returns no or few results, you may try another query or say so and suggest rephrasing; do not make up answers.\n\
          - You have access only to the tool `jbovlaste_semantic_search`. Use it with a natural-language query (e.g. in English) to find relevant jbovlaste definitions.\n\
+         - Prefer using your platform's native tool-calling. If you cannot and must output a tool call as text, use exactly this format once per call: CALL>[{\"name\":\"jbovlaste_semantic_search\",\"arguments\":{\"query\":\"your search query\"}}]</TOOLCALL>\n\
          - Format your reply in valid, simple Markdown: use **bold**, lists. Use plain text or markdown lists instead of markdown tables.",
     );
 
@@ -345,6 +346,47 @@ struct ToolArgs {
     languages: Option<Vec<i32>>,
     #[serde(default)]
     source_langid: Option<i32>,
+}
+
+/// Some models (e.g. openrouter/free) emit tool calls as text instead of tool_calls.
+/// Parse content for CALL>[...]</TOOLCALL> and return equivalent ToolCalls.
+fn parse_tool_calls_from_content(content: &str) -> Option<Vec<ToolCall>> {
+    const PREFIX: &str = "CALL>";
+    const SUFFIX: &str = "</TOOLCALL>";
+    let start = content.find(PREFIX)?;
+    let rest = &content[start + PREFIX.len()..];
+    let end = rest.find(SUFFIX)?;
+    let json_str = rest[..end].trim();
+    #[derive(Deserialize)]
+    struct FallbackCall {
+        name: String,
+        #[serde(default)]
+        arguments: Option<serde_json::Value>,
+    }
+    let arr: Vec<FallbackCall> = serde_json::from_str(json_str).ok()?;
+    if arr.is_empty() {
+        return None;
+    }
+    Some(
+        arr.into_iter()
+            .enumerate()
+            .map(|(i, c)| {
+                let args_string = c
+                    .arguments
+                    .as_ref()
+                    .and_then(|v| serde_json::to_string(v).ok())
+                    .unwrap_or_else(|| "{}".to_string());
+                ToolCall {
+                    id: format!("fallback-{}", i),
+                    r#type: "function".to_string(),
+                    function: ToolCallFunction {
+                        name: c.name,
+                        arguments: Some(args_string),
+                    },
+                }
+            })
+            .collect(),
+    )
 }
 
 async fn run_jbovlaste_semantic_search_once(
@@ -519,7 +561,13 @@ async fn run_agent_loop_inner(
             AppError::ExternalService("No choices returned from OpenRouter".into())
         })?;
 
-        let tool_calls = choice.message.tool_calls.clone();
+        // Some models emit tool calls in content as CALL>[...]</TOOLCALL> instead of tool_calls.
+        let tool_calls = choice
+            .message
+            .tool_calls
+            .clone()
+            .filter(|c| !c.is_empty())
+            .or_else(|| parse_tool_calls_from_content(&choice.message.content));
 
         // Append assistant message (with optional tool_calls) to history.
         messages.push(ChatCompletionMessageRequest {
