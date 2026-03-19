@@ -644,7 +644,7 @@ const fetchTrendingAndChanges = async () => {
     trendingComments.value = trendingResponse.data
 
     // Always fetch recent changes to keep them fresh
-    const recentResponse = await getRecentChanges({ days: 70, limit: 10, types: 'comment,definition' })
+    const recentResponse = await getRecentChanges({ limit: 10, types: 'comment,definition' })
     const changes = recentResponse.data.changes
     recentChanges.value = changes
     

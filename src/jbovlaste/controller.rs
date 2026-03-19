@@ -753,10 +753,12 @@ pub async fn update_vote(
     tag = "jbovlaste",
     summary = "Get recent changes to the dictionary",
     description = "Retrieves a list of recent changes to the dictionary, including modifications to definitions, \
-                  comments, and valsi entries. Changes are ordered by time descending. \
+                  comments, and valsi entries. Uses cursor-based pagination (no time window). \
                   Excludes automated changes made by the system account.",
     params(
-        ("days" = Option<i32>, Query, description = "Number of days to look back")
+        ("limit" = Option<i64>, Query, description = "Page size (default 20)"),
+        ("types" = Option<String>, Query, description = "Comma-separated types: comment,definition,valsi,message"),
+        ("after" = Option<String>, Query, description = "Opaque cursor for next page")
     ),
     responses(
         (status = 200, description = "Recent changes retrieved successfully", body = RecentChangesResponse),
@@ -773,13 +775,12 @@ pub async fn get_recent_changes(
     query: web::Query<RecentChangesQuery>,
     claims: Option<Claims>,
 ) -> impl Responder {
-    let days = query.days.unwrap_or(7);
     let limit = query.limit;
-    let page = query.page.unwrap_or(1);
     let types = query.types.clone();
+    let after = query.after.clone();
     let user_id = claims.map(|c| c.sub);
 
-    match service::get_recent_changes(&pool, days, limit, page, types, &redis_cache, user_id).await {
+    match service::get_recent_changes(&pool, limit, types, after, &redis_cache, user_id).await {
         Ok(response) => HttpResponse::Ok().json(response),
         Err(e) => {
             HttpResponse::InternalServerError().body(format!("Error retrieving changes: {}", e))

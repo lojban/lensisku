@@ -8,7 +8,7 @@
 
   <!-- Content -->
   <div v-if="!error" class="space-y-4">
-    <ActivityChanges v-if="activeTab === 'changes'" v-model:days="days" :grouped-changes="groupedChanges"
+    <ActivityChanges v-if="activeTab === 'changes'" :grouped-changes="groupedChanges"
       :format-date="formatDate" />
 
     <ActivityThreads v-if="activeTab === 'threads'" :threads="threads" :format-date-for-thread="formatDateForThread"
@@ -19,9 +19,14 @@
     <ActivityDefinitions v-if="activeTab === 'all_definitions'" :definitions="allDefinitions"
       :format-date="formatDateForThread" />
 
-    <PaginationComponent v-if="['threads', 'all_comments', 'all_definitions'].includes(activeTab) && totalPages > 1"
-      :current-page="currentPage" :total-pages="totalPages" :total="totalItems" :per-page="perPage"
-      @prev="changePage(currentPage - 1)" @next="changePage(currentPage + 1)" />
+    <PaginationComponent
+      v-if="(activeTab === 'changes' && (currentPage > 1 || nextCursor)) || (['threads', 'all_comments', 'all_definitions'].includes(activeTab) && totalPages > 1)"
+      :current-page="currentPage"
+      :total-pages="activeTab === 'changes' ? (nextCursor ? currentPage + 1 : currentPage) : totalPages"
+      :total="activeTab === 'changes' ? 0 : totalItems"
+      :per-page="perPage"
+      @prev="changePage(currentPage - 1)"
+      @next="changePage(currentPage + 1)" />
   </div>
 </template>
 
@@ -51,9 +56,7 @@ const tabs = computed(() => [
   { key: 'all_definitions', label: t('recentChanges.allDefinitions'), icon: Book },
 ])
 
-const STORAGE_KEY_DAYS = 'recentChanges_daysSelection'
 const STORAGE_KEY_TAB = 'recentChanges_activeTab'
-const DEFAULT_DAYS = 7
 
 const route = useRoute()
 const router = useRouter()
@@ -70,13 +73,9 @@ const perPage = ref(20)
 const totalItems = ref(0) // Generic total for the active tab
 const totalPages = ref(1)
 
-// Specific state for 'changes' tab
-const getInitialDays = () => {
-  if (typeof window === 'undefined') return DEFAULT_DAYS;
-  const storedDays = localStorage.getItem(STORAGE_KEY_DAYS)
-  return parseInt(route.query.days || storedDays || DEFAULT_DAYS)
-}
-const days = ref(getInitialDays())
+// Cursor-based pagination for 'changes' tab: cursors[i] = cursor to request page i+1 (cursors[0] = undefined for page 1)
+const cursors = ref([])
+const nextCursor = ref(null) // next_cursor from last response (for changes tab)
 
 // Loading and error state
 const isLoading = ref(true)
@@ -94,12 +93,13 @@ const getInitialTab = () => {
 }
 const activeTab = ref(getInitialTab())
 
-// Threads pagination: only update URL; route watcher will sync currentPage and fetch
+// Pagination: update URL; route watcher will sync currentPage and fetch
 const changePage = (newPage) => {
-  if (newPage >= 1 && newPage <= totalPages.value) {
-    router.replace({
-      query: { ...route.query, page: newPage },
-    })
+  if (activeTab.value === 'changes') {
+    const canGo = newPage >= 1 && (newPage <= currentPage.value || nextCursor.value || cursors.value[newPage - 1])
+    if (canGo) router.replace({ query: { ...route.query, page: newPage } })
+  } else if (newPage >= 1 && newPage <= totalPages.value) {
+    router.replace({ query: { ...route.query, page: newPage } })
   }
 }
 
@@ -116,15 +116,29 @@ const fetchData = async (tabKey) => {
   try {
     let response
     switch (tabKey) {
-      case 'changes':
+      case 'changes': {
         changes.value = []
+        let pageToFetch = currentPage.value
+        if (currentPage.value > 1 && !cursors.value[currentPage.value - 1]) {
+          currentPage.value = 1
+          pageToFetch = 1
+          router.replace({ query: { ...route.query, page: 1 } })
+        }
+        const after = pageToFetch > 1 ? cursors.value[pageToFetch - 1] : undefined
         response = await getRecentChanges(
-          { days: days.value },
+          { limit: perPage.value, ...(after && { after }) },
           abortController.signal
         )
         changes.value = response.data.changes
-        totalItems.value = response.data.total // Assuming API returns total
+        nextCursor.value = response.data.next_cursor ?? null
+        if (response.data.next_cursor) {
+          const c = [...cursors.value]
+          c[pageToFetch] = response.data.next_cursor
+          cursors.value = c
+        }
+        totalItems.value = 0
         break
+      }
       case 'threads':
         threads.value = []
         response = await list_wave_threads(
@@ -208,19 +222,6 @@ const fetchData = async (tabKey) => {
 
 const isInitializing = ref(true)
 
-// Watch for changes in the 'days' ref
-watch(days, (newDays, oldDays) => {
-  if (typeof window === 'undefined') return;
-
-  if (!isInitializing.value && newDays !== oldDays) {
-    localStorage.setItem(STORAGE_KEY_DAYS, newDays.toString())
-    router.replace({ query: { ...route.query, days: newDays, page: 1 } }) // Reset page on days change
-    if (activeTab.value === 'changes') {
-      fetchData('changes') // Refetch changes
-    }
-  }
-})
-
 // Watch activeTab and save to localStorage
 watch(activeTab, (newTab) => {
   if (typeof window !== 'undefined') {
@@ -230,18 +231,19 @@ watch(activeTab, (newTab) => {
 
 const handleTabClick = async (tabKey) => {
   if (tabKey === activeTab.value || isLoading.value) return
-  
+
   isLoading.value = true
   clearError()
-  currentPage.value = 1 // Reset page on tab change
+  currentPage.value = 1
+  if (tabKey === 'changes') {
+    cursors.value = []
+    nextCursor.value = null
+  }
   try {
     await fetchData(tabKey)
-    await fetchData(tabKey)
-    // Only update active tab if fetch was successful
     activeTab.value = tabKey
-    // Update URL query params for tab and reset page
     router.replace({
-      query: { ...route.query, tab: tabKey, page: undefined }, // Remove page param if it's 1
+      query: { ...route.query, tab: tabKey, page: undefined },
     })
   } catch (e) {
     showError(e.response?.data?.error || 'Failed to load data')
@@ -302,13 +304,8 @@ const formatDateForThread = (timestamp) =>
 
 // Reactive page title
 const pageTitle = computed(() => {
-  const currentTab = tabs.value.find(t => t.key === activeTab.value) // Use tabs.value
-  const baseTitle = currentTab ? currentTab.label : t('recentChanges.activityTitle') // Default title if tab not found
-
-  if (activeTab.value === 'changes') {
-    return `${t('recentChanges.lastDays', { days: days.value })}`
-  }
-  return baseTitle
+  const currentTab = tabs.value.find(t => t.key === activeTab.value)
+  return currentTab ? currentTab.label : t('recentChanges.activityTitle')
 })
 useSeoHead({ title: pageTitle }, locale.value)
 
@@ -318,32 +315,26 @@ const isHandlingRouteChange = ref(false)
 
 watch(
   () => route.query,
-  async (newQuery, oldQuery) => {
-    if (typeof window === 'undefined' || isHandlingRouteChange.value) return;
+  async (newQuery) => {
+    if (typeof window === 'undefined' || isHandlingRouteChange.value) return
 
-    const newTab = newQuery.tab && tabs.value.map(t => t.key).includes(newQuery.tab) ? newQuery.tab : getInitialTab() // Use tabs.value
+    const newTab = newQuery.tab && tabs.value.map(t => t.key).includes(newQuery.tab) ? newQuery.tab : getInitialTab()
     const newPage = parseInt(newQuery.page) || 1
-    const newDaysQuery = parseInt(newQuery.days) || getInitialDays()
 
     let needsFetch = false
-
     if (newTab !== activeTab.value) {
       activeTab.value = newTab
       needsFetch = true
+      if (newTab === 'changes') {
+        cursors.value = []
+        nextCursor.value = null
+      }
     }
     if (newPage !== currentPage.value) {
       currentPage.value = newPage
       needsFetch = true
     }
-    if (newDaysQuery !== days.value) {
-      days.value = newDaysQuery
-      localStorage.setItem(STORAGE_KEY_DAYS, newDaysQuery.toString())
-      if (activeTab.value === 'changes') { // Only refetch if days changed and on changes tab
-        needsFetch = true
-      }
-    }
 
-    // Only fetch if not initializing and relevant params changed
     if (!isInitializing.value && needsFetch) {
       isHandlingRouteChange.value = true
       try {

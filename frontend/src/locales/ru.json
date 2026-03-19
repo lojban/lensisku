@@ -233,7 +233,7 @@
     "allDefinitions": "Все определения",
     "showChangesForLast": "Показать изменения за последние",
     "days": "дней",
-    "noChangesFound": "Изменений за последние {days} дней не найдено",
+    "noChangesFound": "Изменений не найдено",
     "activityTitle": "Активность",
     "lastDays": "Последние {days} дней",
     "by": "от",

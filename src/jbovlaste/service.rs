@@ -34,7 +34,7 @@ use base64::engine::general_purpose::STANDARD as BASE64;
 use base64::Engine;
 use camxes_rs::peg::parsing::ParseResult;
 
-use chrono::{DateTime, Duration, Utc};
+use chrono::{DateTime, Utc};
 
 pub fn sanitize_html(html: &str) -> String {
     remove_html_tags(html)
@@ -3081,35 +3081,55 @@ async fn fetch_comment_bookmarks_for_changes(
     Ok(rows.iter().map(|r| r.get::<_, i32>("comment_id")).collect())
 }
 
+/// Cursor for keyset pagination of recent changes: (time, type_sort_order, cursor_id).
+#[derive(serde::Serialize, serde::Deserialize)]
+struct RecentChangesCursor {
+    t: i32,
+    s: i32,
+    i: i64,
+}
+
+fn encode_recent_changes_cursor(time: i32, type_sort_order: i32, cursor_id: i64) -> String {
+    let c = RecentChangesCursor {
+        t: time,
+        s: type_sort_order,
+        i: cursor_id,
+    };
+    let json = serde_json::to_string(&c).unwrap_or_default();
+    BASE64.encode(json.as_bytes())
+}
+
+fn decode_recent_changes_cursor(after: &str) -> Option<(i32, i32, i64)> {
+    let bytes = BASE64.decode(after.as_bytes()).ok()?;
+    let c: RecentChangesCursor = serde_json::from_slice(&bytes).ok()?;
+    Some((c.t, c.s, c.i))
+}
+
 pub async fn get_recent_changes(
     pool: &Pool,
-    days: i32,
     limit: Option<i64>,
-    page: i64,
     types: Option<String>,
+    after: Option<String>,
     redis_cache: &RedisCache,
     user_id: Option<i32>,
 ) -> Result<RecentChangesResponse, Box<dyn std::error::Error>> {
     use std::time::Duration as StdDuration;
 
-    // Cache key includes limit, page, and types
     let cache_key = match user_id {
         None => format!(
-            "recent_changes:{}:limit:{:?}:page:{}:types:{:?}",
-            days, limit, page, types
+            "recent_changes:limit:{:?}:after:{:?}:types:{:?}",
+            limit, after, types
         ),
         Some(uid) => format!(
-            "recent_changes:{}:limit:{:?}:page:{}:types:{:?}:user:{}",
-            days, limit, page, types, uid
+            "recent_changes:limit:{:?}:after:{:?}:types:{:?}:user:{}",
+            limit, after, types, uid
         ),
     };
 
-    // Cache for 5 minutes (300 seconds) - recent changes should be relatively fresh
     let cache_ttl = StdDuration::from_secs(300);
-
     let types_cloned = types.clone();
+    let after_cloned = after.clone();
 
-    // Use Redis cache with get_or_set pattern
     let response = redis_cache
         .get_or_set(
             &cache_key,
@@ -3117,25 +3137,31 @@ pub async fn get_recent_changes(
                 let mut client = pool.get().await?;
                 let transaction = client.transaction().await?;
 
-                let back_time = Utc::now() - Duration::days(days as i64);
-                let back_timestamp = back_time.timestamp() as i32;
-
-                let mut changes = Vec::new();
-
-                // Determine which branches of UNION to include based on 'types' query param
                 let requested_types: Vec<&str> = if let Some(t) = &types_cloned {
                     t.split(',').collect()
                 } else {
                     vec!["comment", "definition", "valsi", "message"]
                 };
 
-                let limit_val = limit.unwrap_or(100);
-                let offset_val = (page.max(1) - 1) * limit_val;
-                let fetch_limit = limit_val + offset_val;
+                let limit_val = limit.unwrap_or(20).clamp(1, 100);
+                let cursor_condition = after_cloned.as_ref().and_then(|a| {
+                    decode_recent_changes_cursor(a)
+                });
 
                 let mut queries = Vec::new();
 
+                // Comment branch: cursor_id = c.commentid. Compare (time, -type_sort_order, cursor_id) for ORDER BY time DESC, type_sort ASC, cursor_id DESC.
                 if requested_types.contains(&"comment") {
+                    let (where_extra, order_limit) = match cursor_condition {
+                        Some((ct, cs, ci)) => (
+                            format!(" AND (c.time, -2, c.commentid) < ({}, {}, {})", ct, -cs, ci),
+                            format!("ORDER BY c.time DESC, 2, c.commentid DESC LIMIT {}", limit_val),
+                        ),
+                        None => (
+                            String::new(),
+                            format!("ORDER BY c.time DESC, 2, c.commentid DESC LIMIT {}", limit_val),
+                        ),
+                    };
                     queries.push(format!(
                         "(SELECT
                 'comment' AS change_type,
@@ -3155,20 +3181,35 @@ pub async fn get_recent_changes(
                 v.word AS valsi_word,
                 c.commentnum,
                 c.parentid,
-                2 AS type_sort_order
+                2 AS type_sort_order,
+                c.commentid::bigint AS cursor_id
             FROM comments c
             JOIN threads t ON c.threadid = t.threadid
             JOIN valsi v ON t.valsiid = v.valsiid
             JOIN users u ON c.userid = u.userid
             JOIN definitions d ON d.definitionid = t.definitionid
             LEFT JOIN languages l ON d.langid = l.langid
-            WHERE c.time > {} AND u.username != 'officialdata'
-            ORDER BY c.time DESC LIMIT {})",
-                        back_timestamp, fetch_limit
+            WHERE u.username != 'officialdata' {}
+            {})",
+                        where_extra, order_limit
                     ));
                 }
 
+                // Definition branch: cursor_id = dv.version_id
                 if requested_types.contains(&"definition") {
+                    let (where_extra, order_limit) = match cursor_condition {
+                        Some((ct, cs, ci)) => (
+                            format!(
+                                " AND (EXTRACT(EPOCH FROM dv.created_at)::integer, -0, dv.version_id) < ({}, {}, {})",
+                                ct, -cs, ci
+                            ),
+                            format!("ORDER BY dv.created_at DESC, 0, dv.version_id DESC LIMIT {}", limit_val),
+                        ),
+                        None => (
+                            String::new(),
+                            format!("ORDER BY dv.created_at DESC, 0, dv.version_id DESC LIMIT {}", limit_val),
+                        ),
+                    };
                     queries.push(format!(
                         "(SELECT
                 'definition' AS change_type,
@@ -3192,19 +3233,31 @@ pub async fn get_recent_changes(
                 NULL::text AS valsi_word,
                 NULL::integer AS commentnum,
                 NULL::integer AS parentid,
-                0 AS type_sort_order
+                0 AS type_sort_order,
+                dv.version_id::bigint AS cursor_id
             FROM definition_versions dv
             JOIN definitions d ON dv.definition_id = d.definitionid
             JOIN valsi v ON d.valsiid = v.valsiid
             JOIN users u ON dv.user_id = u.userid
             LEFT JOIN languages l ON d.langid = l.langid
-            WHERE dv.created_at > to_timestamp({}) AND u.username != 'officialdata' AND v.source_langid = 1
-            ORDER BY dv.created_at DESC LIMIT {})",
-                        back_timestamp, fetch_limit
+            WHERE u.username != 'officialdata' AND v.source_langid = 1 {}
+            {})",
+                        where_extra, order_limit
                     ));
                 }
 
+                // Valsi branch: cursor_id = v.valsiid
                 if requested_types.contains(&"valsi") {
+                    let (where_extra, order_limit) = match cursor_condition {
+                        Some((ct, cs, ci)) => (
+                            format!(" AND (v.time, -1, v.valsiid) < ({}, {}, {})", ct, -cs, ci),
+                            format!("ORDER BY v.time DESC, 1, v.valsiid DESC LIMIT {}", limit_val),
+                        ),
+                        None => (
+                            String::new(),
+                            format!("ORDER BY v.time DESC, 1, v.valsiid DESC LIMIT {}", limit_val),
+                        ),
+                    };
                     queries.push(format!(
                         "(SELECT
                 'valsi' AS change_type,
@@ -3224,16 +3277,31 @@ pub async fn get_recent_changes(
                 NULL::text AS valsi_word,
                 NULL::integer AS commentnum,
                 NULL::integer AS parentid,
-                1 AS type_sort_order
+                1 AS type_sort_order,
+                v.valsiid::bigint AS cursor_id
             FROM valsi v
             JOIN users u ON v.userid = u.userid
-            WHERE v.time > {} AND u.username != 'officialdata' AND v.source_langid = 1
-            ORDER BY v.time DESC LIMIT {})",
-                        back_timestamp, fetch_limit
+            WHERE u.username != 'officialdata' AND v.source_langid = 1 {}
+            {})",
+                        where_extra, order_limit
                     ));
                 }
 
+                // Message branch: cursor_id = m.id
                 if requested_types.contains(&"message") {
+                    let (where_extra, order_limit) = match cursor_condition {
+                        Some((ct, cs, ci)) => (
+                            format!(
+                                " AND (EXTRACT(EPOCH FROM m.sent_at)::integer, -3, m.id) < ({}, {}, {})",
+                                ct, -cs, ci
+                            ),
+                            format!("ORDER BY m.sent_at DESC, 3, m.id DESC LIMIT {}", limit_val),
+                        ),
+                        None => (
+                            String::new(),
+                            format!("ORDER BY m.sent_at DESC, 3, m.id DESC LIMIT {}", limit_val),
+                        ),
+                    };
                     queries.push(format!(
                         "(SELECT
                 'message' AS change_type,
@@ -3253,49 +3321,48 @@ pub async fn get_recent_changes(
                 NULL::text AS valsi_word,
                 NULL::integer AS commentnum,
                 NULL::integer AS parentid,
-                3 AS type_sort_order
+                3 AS type_sort_order,
+                m.id::bigint AS cursor_id
             FROM messages m
-            WHERE m.sent_at > to_timestamp({})
-            AND NOT EXISTS (
+            WHERE NOT EXISTS (
                 SELECT 1
                 FROM message_spam_votes msv
                 WHERE msv.message_id = m.id
-            )
-            ORDER BY m.sent_at DESC LIMIT {})",
-                        back_timestamp, fetch_limit
+            ) {}
+            {})",
+                        where_extra, order_limit
                     ));
                 }
 
                 if queries.is_empty() {
-                    return Ok(RecentChangesResponse { changes: vec![], total: 0 });
+                    return Ok(RecentChangesResponse {
+                        changes: vec![],
+                        total: 0,
+                        next_cursor: None,
+                    });
                 }
-
-                let count_query = format!(
-                    "WITH all_changes AS ({})
-                     SELECT count(*)::bigint as total FROM all_changes",
-                    queries.join(" UNION ALL ")
-                );
-
-                let total: i64 = transaction
-                    .query_one(&count_query, &[])
-                    .await?
-                    .get("total");
 
                 let final_query = format!(
                     "WITH all_changes AS ({})
                      SELECT * FROM all_changes
-                     ORDER BY time DESC, type_sort_order ASC 
-                     LIMIT {} OFFSET {}",
+                     ORDER BY time DESC, type_sort_order ASC, cursor_id DESC
+                     LIMIT {}",
                     queries.join(" UNION ALL "),
-                    limit_val,
-                    offset_val
+                    limit_val
                 );
 
                 let base_changes = transaction.query(&final_query, &[]).await?;
+                let mut changes = Vec::new();
+                let mut last_cursor: Option<(i32, i32, i64)> = None;
 
                 // Process each change and add diffs for definitions
                 for row in base_changes {
                     let change_type: String = row.get("change_type");
+                    let time: i32 = row.get("time");
+                    let type_sort_order: i32 = row.get("type_sort_order");
+                    let cursor_id: i64 = row.get::<_, i64>("cursor_id");
+                    last_cursor = Some((time, type_sort_order, cursor_id));
+
                     let mut change = RecentChange {
                         change_type: change_type.clone(),
                         word: row.get("word"),
@@ -3414,7 +3481,15 @@ pub async fn get_recent_changes(
 
                 transaction.commit().await?;
 
-                Ok(RecentChangesResponse { changes, total })
+                let next_cursor = last_cursor
+                    .filter(|_| changes.len() >= limit_val as usize)
+                    .map(|(t, s, i)| encode_recent_changes_cursor(t, s, i));
+
+                Ok(RecentChangesResponse {
+                    changes,
+                    total: 0,
+                    next_cursor,
+                })
             },
             Some(cache_ttl),
         )
