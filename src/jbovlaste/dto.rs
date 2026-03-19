@@ -186,15 +186,19 @@ pub struct VoteError {
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct RecentChangesResponse {
     pub changes: Vec<RecentChange>,
+    /// Total count (0 when using cursor-based pagination).
     pub total: i64,
+    /// Opaque cursor for the next page when using cursor-based pagination.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub next_cursor: Option<String>,
 }
 
 #[derive(Debug, Deserialize, ToSchema)]
 pub struct RecentChangesQuery {
-    pub days: Option<i32>,
     pub limit: Option<i64>,
     pub types: Option<String>,
-    pub page: Option<i64>,
+    /// Cursor for keyset pagination (when present, overrides page and no time window is used).
+    pub after: Option<String>,
 }
 
 #[derive(Debug, Deserialize, ToSchema)]

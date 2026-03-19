@@ -253,7 +253,7 @@
     "allDefinitions": "ro valsi ciksi",
     "showChangesForLast": "viska lo nu galfi pe lo prula'i",
     "days": "djedi",
-    "noChangesFound": "no nu galfi cu fasnu pe lo prula'i li {days} djedi",
+    "noChangesFound": "no nu galfi cu fasnu",
     "activityTitle": "gasnu",
     "lastDays": "prula'i li {days} djedi",
     "by": "fa la",

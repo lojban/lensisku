@@ -253,7 +253,7 @@
     "allDefinitions": "All definitions",
     "showChangesForLast": "Show changes for last",
     "days": "days",
-    "noChangesFound": "No changes found in the last {days} days",
+    "noChangesFound": "No changes found",
     "activityTitle": "Activity",
     "lastDays": "Last {days} days",
     "by": "by",
