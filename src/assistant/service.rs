@@ -226,19 +226,20 @@ where
 
 #[derive(Debug, Deserialize, Clone)]
 struct ChatCompletionMessageResponse {
+    /// OpenRouter/OpenAI may send null for role or content (e.g. when message has tool_calls).
     #[serde(default)]
-    role: String,
+    role: Option<String>,
     #[serde(default)]
-    content: String,
+    content: Option<String>,
     #[serde(default)]
     tool_calls: Option<Vec<ToolCall>>,
 }
 
 #[derive(Debug, Deserialize, Clone, Serialize)]
 struct ToolCallFunction {
+    /// Some providers send null for name or arguments.
     #[serde(default)]
-    name: String,
-    // OpenRouter/OpenAI send arguments as a JSON string; some providers (e.g. Arcee) send null
+    name: Option<String>,
     #[serde(default)]
     arguments: Option<String>,
 }
@@ -246,9 +247,9 @@ struct ToolCallFunction {
 #[derive(Debug, Deserialize, Clone, Serialize)]
 struct ToolCall {
     #[serde(default)]
-    id: String,
+    id: Option<String>,
     #[serde(default)]
-    r#type: String,
+    r#type: Option<String>,
     function: ToolCallFunction,
 }
 
@@ -261,6 +262,7 @@ fn system_prompt(locale: Option<&str>) -> String {
          - Do not make up examples or Lojban text. Only use valsi, glosses, and sentences from the semantic search results.\n\
          - If the search returns no or few results, you may try another query or say so and suggest rephrasing; do not make up answers.\n\
          - You have access only to the tool `jbovlaste_semantic_search`. Use it with a natural-language query (e.g. in English) to find relevant jbovlaste definitions.\n\
+         - Request only a small number of results per search (limit 5–10); the top results are usually enough and faster. Do not use a high limit.\n\
          - Prefer using your platform's native tool-calling. If you cannot and must output a tool call as text, use exactly this format once per call: CALL>[{\"name\":\"jbovlaste_semantic_search\",\"arguments\":{\"query\":\"your search query\"}}]</TOOLCALL>\n\
          - Format your reply in valid, simple Markdown: use **bold**, lists. Use plain text or markdown lists instead of markdown tables.",
     );
@@ -317,9 +319,9 @@ fn jbovlaste_tool_schema() -> Tool {
                     "limit": {
                         "type": "integer",
                         "minimum": 1,
-                        "maximum": 50,
-                        "default": 10,
-                        "description": "Maximum number of results to return."
+                        "maximum": 15,
+                        "default": 8,
+                        "description": "Number of top results to return (5–10 is usually enough; keep low)."
                     },
                     "languages": {
                         "type": "array",
@@ -377,10 +379,10 @@ fn parse_tool_calls_from_content(content: &str) -> Option<Vec<ToolCall>> {
                     .and_then(|v| serde_json::to_string(v).ok())
                     .unwrap_or_else(|| "{}".to_string());
                 ToolCall {
-                    id: format!("fallback-{}", i),
-                    r#type: "function".to_string(),
+                    id: Some(format!("fallback-{}", i)),
+                    r#type: Some("function".to_string()),
                     function: ToolCallFunction {
-                        name: c.name,
+                        name: Some(c.name),
                         arguments: Some(args_string),
                     },
                 }
@@ -389,11 +391,14 @@ fn parse_tool_calls_from_content(content: &str) -> Option<Vec<ToolCall>> {
     )
 }
 
+/// Maximum results per semantic search (top results are enough; keeps responses fast).
+const SEMANTIC_SEARCH_MAX_LIMIT: u32 = 15;
+
 async fn run_jbovlaste_semantic_search_once(
     pool: &Pool,
     args: &ToolArgs,
 ) -> Result<DefinitionResponse, AppError> {
-    let limit = args.limit.unwrap_or(10).clamp(1, 50) as i64;
+    let limit = args.limit.unwrap_or(8).clamp(1, SEMANTIC_SEARCH_MAX_LIMIT) as i64;
 
     let embedding = get_embedding(&args.query).await?;
 
@@ -414,7 +419,12 @@ async fn run_jbovlaste_semantic_search_once(
 
     let response = semantic_search(pool, params, embedding, None)
         .await
-        .map_err(|e| AppError::ExternalService(format!("Semantic search failed: {}", e)))?;
+        .map_err(|e| {
+            AppError::ExternalService(format!(
+                "Semantic search failed for query \"{}\": {}",
+                args.query, e
+            ))
+        })?;
 
     Ok(response)
 }
@@ -479,6 +489,32 @@ const AGENT_MAX_ITERATIONS: u32 = 15;
 const TOOL_MAX_ATTEMPTS: u32 = 3;
 const TOOL_INITIAL_BACKOFF_MS: u64 = 400;
 
+/// Max length of raw_response included in SSE error events (to avoid huge payloads).
+const ERROR_RAW_RESPONSE_MAX_LEN: usize = 8000;
+
+/// Builds the JSON payload for an SSE error event, including debugging info (e.g. raw_response when present).
+fn sse_error_payload(e: &AppError) -> serde_json::Value {
+    let mut obj = json!({
+        "type": "error",
+        "error": format!("{}", e),
+    });
+    if let AppError::ExternalServiceWithRaw { raw_response, .. }
+    | AppError::ExternalServiceRetryable { raw_response, .. } = e
+    {
+        let truncated = if raw_response.len() > ERROR_RAW_RESPONSE_MAX_LEN {
+            format!(
+                "{}... [truncated, total {} bytes]",
+                &raw_response[..ERROR_RAW_RESPONSE_MAX_LEN],
+                raw_response.len()
+            )
+        } else {
+            raw_response.clone()
+        };
+        obj["raw_response"] = serde_json::Value::String(truncated);
+    }
+    obj
+}
+
 /// Runs the agent loop. If event_tx is Some, streams step/done/error events and then drops the sender.
 pub async fn run_agent_loop(
     pool: &Pool,
@@ -489,7 +525,7 @@ pub async fn run_agent_loop(
     let result = run_agent_loop_inner(pool, request, &mut event_tx).await;
     if let Err(ref e) = result {
         if let Some(tx) = event_tx.take() {
-            let payload = json!({ "type": "error", "error": format!("{}", e) });
+            let payload = sse_error_payload(e);
             if let Ok(data) = serde_json::to_string(&payload) {
                 let _ = tx.send(sse::Data::new(data).into()).await;
             }
@@ -558,21 +594,25 @@ async fn run_agent_loop_inner(
         .await?;
 
         let choice = response.choices.into_iter().next().ok_or_else(|| {
-            AppError::ExternalService("No choices returned from OpenRouter".into())
+            AppError::ExternalService(format!(
+                "No choices returned from OpenRouter (iteration {})",
+                iteration
+            ))
         })?;
 
+        let msg = &choice.message;
+        let content_str = msg.content.as_deref().unwrap_or("");
         // Some models emit tool calls in content as CALL>[...]</TOOLCALL> instead of tool_calls.
-        let tool_calls = choice
-            .message
+        let tool_calls = msg
             .tool_calls
             .clone()
             .filter(|c| !c.is_empty())
-            .or_else(|| parse_tool_calls_from_content(&choice.message.content));
+            .or_else(|| parse_tool_calls_from_content(content_str));
 
         // Append assistant message (with optional tool_calls) to history.
         messages.push(ChatCompletionMessageRequest {
-            role: choice.message.role.clone(),
-            content: choice.message.content.clone(),
+            role: msg.role.clone().unwrap_or_else(|| "assistant".to_string()),
+            content: content_str.to_string(),
             tool_call_id: None,
             name: None,
             tool_calls: tool_calls.clone(),
@@ -581,8 +621,8 @@ async fn run_agent_loop_inner(
         if let Some(calls) = tool_calls {
             // Execute each tool call and append tool results. Recover from parse/tool errors by
             // feeding an error message back to the LLM so it can try again.
-            for call in &calls {
-                if call.function.name != "jbovlaste_semantic_search" {
+            for (step_index, call) in calls.iter().enumerate() {
+                if call.function.name.as_deref() != Some("jbovlaste_semantic_search") {
                     continue;
                 }
 
@@ -607,8 +647,8 @@ async fn run_agent_loop_inner(
                             role: "tool".to_string(),
                             content: serde_json::to_string(&json!({ "error": err_msg }))
                                 .unwrap_or_else(|_| err_msg.clone()),
-                            tool_call_id: Some(call.id.clone()),
-                            name: Some(call.function.name.clone()),
+                            tool_call_id: call.id.clone(),
+                            name: call.function.name.clone(),
                             tool_calls: None,
                         });
                         continue;
@@ -617,11 +657,29 @@ async fn run_agent_loop_inner(
 
                 let action_desc = format!("Semantic search: \"{}\"", args.query);
 
+                // Emit step_start immediately so the UI shows this step before the tool runs.
+                if let Some(ref tx) = event_tx {
+                    let start_payload = json!({
+                        "type": "step_start",
+                        "index": step_index,
+                        "action": action_desc,
+                    });
+                    if let Ok(data) = serde_json::to_string(&start_payload) {
+                        let _ = tx.send(sse::Data::new(data).into()).await;
+                    }
+                }
+
                 let tool_result = run_jbovlaste_semantic_search_with_retry(pool, args).await;
 
                 let (result_summary, tool_payload_value) = match &tool_result {
                     Ok(results) => {
-                        let summary = format!("Found {} definition(s).", results.total);
+                        let n = results.definitions.len();
+                        let total = results.total;
+                        let summary = if total > n as i64 {
+                            format!("Returned top {} definition(s) ({} matching total).", n, total)
+                        } else {
+                            format!("Returned {} definition(s).", n)
+                        };
                         let compact_results: Vec<serde_json::Value> = results
                             .definitions
                             .iter()
@@ -652,10 +710,11 @@ async fn run_agent_loop_inner(
                 };
                 steps.push(step.clone());
 
-                // Stream step event in real time
+                // Stream step event with result so the UI can update the step at this index.
                 if let Some(ref tx) = event_tx {
                     let payload = json!({
                         "type": "step",
+                        "index": step_index,
                         "action": step.action,
                         "result": step.result,
                     });
@@ -670,15 +729,19 @@ async fn run_agent_loop_inner(
                 messages.push(ChatCompletionMessageRequest {
                     role: "tool".to_string(),
                     content: tool_content,
-                    tool_call_id: Some(call.id.clone()),
-                    name: Some(call.function.name.clone()),
+                    tool_call_id: call.id.clone(),
+                    name: call.function.name.clone(),
                     tool_calls: None,
                 });
             }
             // Loop again so the model can see tool results and either call more tools or reply.
         } else {
             // No tool calls: this is the final assistant reply.
-            let reply = choice.message.content;
+            let reply = choice
+                .message
+                .content
+                .clone()
+                .unwrap_or_else(String::new);
             if let Some(tx) = event_tx.take() {
                 let payload = json!({ "type": "done", "reply": reply });
                 if let Ok(data) = serde_json::to_string(&payload) {
@@ -696,6 +759,7 @@ async fn run_agent_loop_inner(
         .rev()
         .find(|m| m.role == "assistant")
         .map(|m| m.content.clone())
+        .filter(|c| !c.is_empty())
         .unwrap_or_else(|| "I need more time to look that up. Please try again.".to_string());
 
     if let Some(tx) = event_tx.take() {

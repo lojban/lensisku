@@ -258,7 +258,14 @@
     "lastDays": "prula'i li {days} djedi",
     "by": "fa la",
     "in": "bu'u",
-    "commentFallback": "casnu"
+    "commentFallback": "casnu",
+    "changeTypes": {
+      "valsi": "valsi",
+      "definition": "ciksi",
+      "comment": "casnu",
+      "message": "mikce",
+      "etymology": "krasi"
+    }
   },
   "profile": {
     "removeConfirm": "xu do birti lo nu vimcu lo do pixra?",

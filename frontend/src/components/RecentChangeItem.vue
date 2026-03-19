@@ -17,7 +17,7 @@
       <div class="space-x-2">
         <span :class="getTypeClass(change.change_type)"
           class="inline-block px-2 py-1 text-xs font-medium rounded-full mb-2">
-          {{ change.change_type }}
+          {{ getChangeTypeLabel(change.change_type) }}
         </span>
         <span class="text-xs text-gray-500">
           {{ formatTime(change.time) }}
@@ -159,7 +159,8 @@ const formatTime = (timestamp) =>
     minute: '2-digit',
   })
 
-// Remove the local getTypeClass implementation
+const getChangeTypeLabel = (changeType) =>
+  t(`recentChanges.changeTypes.${changeType}`)
 
 const formatFieldName = (field) => {
   return field

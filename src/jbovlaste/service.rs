@@ -3155,11 +3155,11 @@ pub async fn get_recent_changes(
                     let (where_extra, order_limit) = match cursor_condition {
                         Some((ct, cs, ci)) => (
                             format!(" AND (c.time, -2, c.commentid) < ({}, {}, {})", ct, -cs, ci),
-                            format!("ORDER BY c.time DESC, 2, c.commentid DESC LIMIT {}", limit_val),
+                            format!("ORDER BY c.time DESC, type_sort_order ASC, c.commentid DESC LIMIT {}", limit_val),
                         ),
                         None => (
                             String::new(),
-                            format!("ORDER BY c.time DESC, 2, c.commentid DESC LIMIT {}", limit_val),
+                            format!("ORDER BY c.time DESC, type_sort_order ASC, c.commentid DESC LIMIT {}", limit_val),
                         ),
                     };
                     queries.push(format!(
@@ -3203,11 +3203,11 @@ pub async fn get_recent_changes(
                                 " AND (EXTRACT(EPOCH FROM dv.created_at)::integer, -0, dv.version_id) < ({}, {}, {})",
                                 ct, -cs, ci
                             ),
-                            format!("ORDER BY dv.created_at DESC, 0, dv.version_id DESC LIMIT {}", limit_val),
+                            format!("ORDER BY dv.created_at DESC, type_sort_order ASC, dv.version_id DESC LIMIT {}", limit_val),
                         ),
                         None => (
                             String::new(),
-                            format!("ORDER BY dv.created_at DESC, 0, dv.version_id DESC LIMIT {}", limit_val),
+                            format!("ORDER BY dv.created_at DESC, type_sort_order ASC, dv.version_id DESC LIMIT {}", limit_val),
                         ),
                     };
                     queries.push(format!(
@@ -3251,11 +3251,11 @@ pub async fn get_recent_changes(
                     let (where_extra, order_limit) = match cursor_condition {
                         Some((ct, cs, ci)) => (
                             format!(" AND (v.time, -1, v.valsiid) < ({}, {}, {})", ct, -cs, ci),
-                            format!("ORDER BY v.time DESC, 1, v.valsiid DESC LIMIT {}", limit_val),
+                            format!("ORDER BY v.time DESC, type_sort_order ASC, v.valsiid DESC LIMIT {}", limit_val),
                         ),
                         None => (
                             String::new(),
-                            format!("ORDER BY v.time DESC, 1, v.valsiid DESC LIMIT {}", limit_val),
+                            format!("ORDER BY v.time DESC, type_sort_order ASC, v.valsiid DESC LIMIT {}", limit_val),
                         ),
                     };
                     queries.push(format!(
@@ -3295,11 +3295,11 @@ pub async fn get_recent_changes(
                                 " AND (EXTRACT(EPOCH FROM m.sent_at)::integer, -3, m.id) < ({}, {}, {})",
                                 ct, -cs, ci
                             ),
-                            format!("ORDER BY m.sent_at DESC, 3, m.id DESC LIMIT {}", limit_val),
+                            format!("ORDER BY m.sent_at DESC, type_sort_order ASC, m.id DESC LIMIT {}", limit_val),
                         ),
                         None => (
                             String::new(),
-                            format!("ORDER BY m.sent_at DESC, 3, m.id DESC LIMIT {}", limit_val),
+                            format!("ORDER BY m.sent_at DESC, type_sort_order ASC, m.id DESC LIMIT {}", limit_val),
                         ),
                     };
                     queries.push(format!(

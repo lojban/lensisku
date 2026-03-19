@@ -114,6 +114,7 @@
         class="textarea-field min-h-[80px] max-h-40 resize-y"
         :placeholder="$t('assistantChat.placeholder')"
         :disabled="isLoading"
+        @keydown.enter.exact.prevent="handleSend"
       />
 
       <div class="flex items-center justify-between gap-3">
@@ -230,17 +231,36 @@ async function performRequest(msgList) {
       if (!data || !data.startsWith('{')) continue
       try {
         const event = JSON.parse(data)
-        if (event.type === 'step') {
-          messages.value[assistantIndex].steps.push({
+        const steps = messages.value[assistantIndex].steps
+        if (event.type === 'step_start') {
+          // Show this step immediately (result updates when "step" arrives).
+          steps.push({
             action: event.action ?? '',
-            result: event.result ?? '',
+            result: '…',
           })
+        } else if (event.type === 'step') {
+          const idx = typeof event.index === 'number' ? event.index : steps.length
+          if (idx >= 0 && idx < steps.length) {
+            steps[idx] = {
+              action: event.action ?? steps[idx].action,
+              result: event.result ?? '',
+            }
+          } else {
+            steps.push({
+              action: event.action ?? '',
+              result: event.result ?? '',
+            })
+          }
         } else if (event.type === 'done') {
           messages.value[assistantIndex].content = event.reply ?? ''
         } else if (event.type === 'error') {
-          messages.value[assistantIndex].content = event.error
+          let errContent = event.error
             ? `_${t('assistantChat.error')}: ${event.error}_`
             : t('assistantChat.error')
+          if (event.raw_response) {
+            errContent += `\n\n**Debug (raw response):**\n\`\`\`\n${event.raw_response}\n\`\`\``
+          }
+          messages.value[assistantIndex].content = errContent
         }
       } catch (_) {
         // ignore non-JSON or malformed lines
