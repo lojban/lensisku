@@ -62,6 +62,11 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { Play, Pause } from 'lucide-vue-next';
+import { useI18n } from 'vue-i18n';
+import { useSeoHead } from '@/composables/useSeoHead';
+
+const { t } = useI18n();
+useSeoHead({ title: t('aprilFools.pageTitle') });
 
 const audioPlayer = ref(null);
 const isPlaying = ref(false);

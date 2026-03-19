@@ -1,7 +1,9 @@
 <script setup>
-import { useI18n } from 'vue-i18n';
+import { useI18n } from 'vue-i18n'
+import { useSeoHead } from '@/composables/useSeoHead'
 
-const { t } = useI18n();
+const { t } = useI18n()
+useSeoHead({ title: t('paypalReturn.title') })
 </script>
 
 <template>

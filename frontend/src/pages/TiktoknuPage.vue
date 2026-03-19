@@ -58,8 +58,9 @@
   import { useIntersectionObserver } from '@vueuse/core'
   import { Loader2 } from 'lucide-vue-next'
   import { ref, onMounted, computed } from 'vue'
-  import { useI18n } from 'vue-i18n';
-  
+  import { useI18n } from 'vue-i18n'
+  import { useSeoHead } from '@/composables/useSeoHead'
+
   import LanguageSelector from '../components/LanguageSelector.vue'
   import ModalComponent from '../components/ModalComponent.vue'
   import LikesPanel from '../components/tiktoknu/LikesPanel.vue'
@@ -70,6 +71,7 @@
 
 
   const { t } = useI18n()
+  useSeoHead({ title: t('components.tiktoknu.pageTitle') })
   const { currentLanguage } = useLocalization()
   const { articles, loading, fetchArticles } = useWikiArticles(currentLanguage)
   const { likedArticles, toggleLike, isLiked, likedArticlesCount } = useLikedArticles()
