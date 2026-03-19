@@ -204,10 +204,11 @@
     "bulkImport": "jmina so'i valsi",
     "manageRoles": "jitro lo pikta",
     "myActivity": "mi gasnu",
-    "logout": "co'u jaspu",
-    "iamUsers": "IAM / pilno",
-    "signUp": "terbejbi'o",
-    "logIn": "co'a jaspu"
+    "logout": "de'a se jaspu",
+    "iamUsers": "IAM / le'i pilno",
+    "signUp": "co'a se jaspu",
+    "logIn": "di'a se jaspu",
+    "assistant": "rutni se menli gi'e sidju"
   },
   "mobileNav": {
     "recentChanges": "cnino nu galfi"

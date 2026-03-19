@@ -76,6 +76,10 @@
                 <Globe class="h-4 w-4" />
                 {{ $t('nav.languages') }}
               </NavLink>
+              <NavLink to="/assistant" class="navbar-item justify-start py-2">
+                <Bot class="h-4 w-4" />
+                {{ $t('nav.assistant') }}
+              </NavLink>
               <NavLink v-if="!auth.state.isLoggedIn" to="/export/cached" class="navbar-item justify-start py-2">
                 <Download class="h-4 w-4" />
                 {{ $t('nav.cachedExports') }}
@@ -153,6 +157,13 @@
           @click="isMenuOpen = false">
           <Globe class="h-5 w-5" />
           {{ $t('nav.languages') }}
+        </NavLink>
+
+        <NavLink to="/assistant"
+          class="flex items-center px-4 py-2 text-base text-gray-600 hover:bg-gray-100 rounded-md transition-colors gap-2"
+          @click="isMenuOpen = false">
+          <Bot class="h-5 w-5" />
+          {{ $t('nav.assistant') }}
         </NavLink>
 
         <NavLink v-if="!auth.state.isLoggedIn" to="/export/cached"
@@ -245,6 +256,12 @@
         leave-to-class="opacity-0 translate-y-2 pointer-events-none"
       >
         <div v-show="showActionModal" class="flex flex-col gap-3 mb-1 items-end pointer-events-auto pr-1">
+          <IconButton :label="$t('nav.assistant')"
+            button-classes="btn-aqua-white h-12 text-base !px-5" @click="handleAssistantChat">
+            <template #icon>
+              <Bot class="h-6 w-6 text-indigo-600" />
+            </template>
+          </IconButton>
           <IconButton v-if="auth.state.isLoggedIn" :label="$t('fab.newDiscussion')"
             button-classes="btn-aqua-white h-12 text-base !px-5" @click="handleNewFreeThread">
             <template #icon>
@@ -283,7 +300,8 @@ import {
   AudioWaveform,
   BookmarkCheck,
   Clock4,
-  GalleryVerticalEnd
+  GalleryVerticalEnd,
+  Bot
 } from 'lucide-vue-next'
 import { Menu } from 'lucide-vue-next' // Explicitly import Menu if it was missed by auto-sort
 import { ref, onMounted, onBeforeUnmount, watch, computed, nextTick } from 'vue'
@@ -368,6 +386,11 @@ const snowflakes = ref(generateSnowflakes())
 const handleNewDefinition = () => {
   router.push('/valsi/add')
   showActionModal.value = false // Close modal
+}
+
+const handleAssistantChat = () => {
+  router.push('/assistant')
+  showActionModal.value = false
 }
 
 const handleNewFreeThread = () => {

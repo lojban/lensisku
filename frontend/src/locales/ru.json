@@ -187,7 +187,8 @@
     "logout": "Выйти",
     "iamUsers": "IAM/пользователи",
     "signUp": "Регистрация",
-    "logIn": "Войти"
+    "logIn": "Войти",
+    "assistant": "ИИ-помощник"
   },
   "mobileNav": {
     "recentChanges": "Последнее"
