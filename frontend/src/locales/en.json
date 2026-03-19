@@ -865,7 +865,7 @@
     "dictionary": "Dictionary",
     "addDefinition": "Add definition",
     "discussEntry": "Discuss entry",
-    "loadError": "Failed to load valsi details",
+    "loadError": "Failed to load entry details",
     "rafsiLabel": "Rafsi:",
     "decompositionLabel": "Decomposition:",
     "entry": "Entry",
@@ -1012,7 +1012,7 @@
       "saved": "Saved",
       "delete": "Delete",
       "inDefinition": "In definition",
-      "inValsi": "In valsi",
+      "inValsi": "In entry",
       "untitledEntry": "Untitled entry"
     },
     "activityVotes": {
