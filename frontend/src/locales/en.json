@@ -207,7 +207,8 @@
     "logout": "Logout",
     "iamUsers": "IAM / users",
     "signUp": "Sign up",
-    "logIn": "Log in"
+    "logIn": "Log in",
+    "assistant": "AI Assistant"
   },
   "mobileNav": {
     "recentChanges": "Recent changes"
