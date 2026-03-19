@@ -20,9 +20,9 @@ pub struct NewCommentParams {
 }
 
 #[derive(Debug, Deserialize, ToSchema)]
-pub struct CommentActionRequest {
+pub struct BookmarkActionRequest {
     pub comment_id: i32,
-    pub action: bool, // true to like/bookmark, false to unlike/unbookmark
+    pub action: bool, // true to bookmark, false to unbookmark
 }
 
 #[derive(Debug, Serialize, ToSchema)]
