@@ -3,6 +3,14 @@
     "baseTitle": "Портал Ложбана",
     "defaultDescription": "Поиск по словарю и корпусу ложбана. Определения слов, примеры и обсуждения на языке ложбан (la .lojban.)."
   },
+  "notFoundPage": {
+    "pageTitle": "404 — Страница не найдена",
+    "description": "Запрашиваемая страница не существует.",
+    "returnHome": "На главную"
+  },
+  "aprilFools": {
+    "pageTitle": "Lojban 2025"
+  },
   "filters": {
     "changePhoto": "Изменить фото",
     "uploadPhoto": "Загрузить фото",
@@ -1151,6 +1159,7 @@
       "noComments": "Комментариев пока нет"
     },
     "tiktoknu": {
+      "pageTitle": "Tiktoknu",
       "loading": "Загрузка...",
       "likesCount": "Лайки ({count})",
       "likesPanel": {
@@ -1335,6 +1344,7 @@
   },
   "lingo": {
     "appName": "lentadni",
+    "learn": "Обучение",
     "searchCourses": "Поиск по названию или описанию курса",
     "languageCourses": "Языковые курсы",
     "noCourses": "Курсов пока нет. Создайте коллекцию в основном приложении.",

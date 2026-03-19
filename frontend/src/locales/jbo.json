@@ -3,6 +3,14 @@
     "baseTitle": "lojbo kibykarni",
     "defaultDescription": "ko sisku lo lojbo vlaste .e lo lojbo sarsku .i ko facki lo valsi se ciksi .e lo mupli jufra .e lo casnu karni pe la .lojban."
   },
+  "notFoundPage": {
+    "pageTitle": "404 - no karni",
+    "description": "lo karni poi do sisku cu na zasti.",
+    "returnHome": "ko cliva lo jicmu karni"
+  },
+  "aprilFools": {
+    "pageTitle": "la .lojban. 2025"
+  },
   "filters": {
     "changePhoto": "galfi lo pixra",
     "uploadPhoto": "punji lo pixra",
@@ -1166,6 +1174,7 @@
       "noComments": "no casnu karni cu zasti"
     },
     "tiktoknu": {
+      "pageTitle": "tiktoknu",
       "loading": "ca'o jgari...",
       "likesCount": "nelci ({count})",
       "likesPanel": {
@@ -1362,6 +1371,7 @@
   },
   "lingo": {
     "appName": "lentadni",
+    "learn": "tadni",
     "searchCourses": "ko sisku lo cmene .a lo skicu be lo karda cu'u",
     "languageCourses": "bangu cu'u",
     "noCourses": "no cu'u cu zasti .i ko finti lo liste fi lo jicmu kibygau",

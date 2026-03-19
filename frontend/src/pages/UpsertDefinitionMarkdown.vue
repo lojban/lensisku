@@ -100,6 +100,7 @@ import { getLanguages, addValsi, updateValsi, getDefinition } from '@/api';
 import '@milkdown/crepe/theme/common/style.css';
 import '@milkdown/crepe/theme/frame.css';
 import { useAuth } from '@/composables/useAuth';
+import { useSeoHead } from '@/composables/useSeoHead';
 
 const route = useRoute();
 const router = useRouter();
@@ -200,6 +201,11 @@ const isEditMode = ref(false)
 const isSubmitting = ref(false)
 const isLoading = ref(true)
 const editDefinitionId = ref(null)
+
+const pageTitle = computed(() =>
+  isEditMode.value ? t('upsertDefinitionMarkdown.editTitle') : t('upsertDefinitionMarkdown.addTitle')
+)
+useSeoHead({ title: pageTitle })
 
 const isValid = computed(() => {
   return langId.value && definition.value.trim()

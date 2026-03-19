@@ -241,9 +241,11 @@ import { useI18n } from 'vue-i18n'
 import { RotateCw, Trash2 } from 'lucide-vue-next'
 
 import LazyMathJax from '@/components/LazyMathJax.vue'
+import { useSeoHead } from '@/composables/useSeoHead'
 import { getApiBaseUrl, getAuthHeaders } from '../api'
 
 const { locale, t } = useI18n()
+useSeoHead({ title: t('assistantChat.title') })
 const messages = ref([])
 const input = ref('')
 const isLoading = ref(false)

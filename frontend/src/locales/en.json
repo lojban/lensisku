@@ -3,6 +3,14 @@
     "baseTitle": "Lojban Portal",
     "defaultDescription": "Search the Lojban dictionary and corpus. Find word definitions, usage examples, and community discussions in Lojban (la .lojban.)."
   },
+  "notFoundPage": {
+    "pageTitle": "404 - Page Not Found",
+    "description": "The page you're looking for doesn't exist.",
+    "returnHome": "Return Home"
+  },
+  "aprilFools": {
+    "pageTitle": "Lojban 2025"
+  },
   "filters": {
     "changePhoto": "Change photo",
     "uploadPhoto": "Upload photo",
@@ -1180,6 +1188,7 @@
       "noComments": "No comments yet"
     },
     "tiktoknu": {
+      "pageTitle": "Tiktoknu",
       "loading": "Loading...",
       "likesCount": "Likes ({count})",
       "likesPanel": {
@@ -1364,6 +1373,7 @@
   },
   "lingo": {
     "appName": "lentadni",
+    "learn": "Learn",
     "searchCourses": "Search courses by name or description",
     "languageCourses": "Language Courses",
     "noCourses": "No courses yet. Create a collection from the main app.",

@@ -74,9 +74,11 @@
 <script setup>
 import { ref, onMounted, reactive } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useSeoHead } from '@/composables/useSeoHead'
 import { getBulkImportClients, getBulkImportClientDefinitions } from '@/api'
 
 const { t } = useI18n()
+useSeoHead({ title: t('bulkImportClients.title') })
 
 const clients = ref([])
 const loadingClients = ref(true)
