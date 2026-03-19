@@ -238,7 +238,14 @@
     "lastDays": "Последние {days} дней",
     "by": "от",
     "in": "на языке",
-    "commentFallback": "Комментарий"
+    "commentFallback": "Комментарий",
+    "changeTypes": {
+      "valsi": "Запись",
+      "definition": "Определение",
+      "comment": "Комментарий",
+      "message": "Сообщение",
+      "etymology": "Этимология"
+    }
   },
   "profile": {
     "removeConfirm": "Вы уверены, что хотите удалить изображение профиля?",

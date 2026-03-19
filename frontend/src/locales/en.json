@@ -258,7 +258,14 @@
     "lastDays": "Last {days} days",
     "by": "by",
     "in": "in",
-    "commentFallback": "Comment"
+    "commentFallback": "Comment",
+    "changeTypes": {
+      "valsi": "Entry",
+      "definition": "Definition",
+      "comment": "Comment",
+      "message": "Message",
+      "etymology": "Etymology"
+    }
   },
   "profile": {
     "removeConfirm": "Are you sure you want to remove your profile picture?",

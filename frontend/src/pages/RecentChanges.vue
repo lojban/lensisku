@@ -205,7 +205,9 @@ const fetchData = async (tabKey) => {
     totalPages.value = Math.ceil(totalItems.value / perPage.value)
   } catch (e) {
     if (e.name !== 'AbortError') { // Ignore aborted requests
-      showError(e.response?.data?.error || `Failed to load ${tabKey}`)
+      const data = e.response?.data
+      const msg = data?.detail ?? data?.error ?? `Failed to load ${tabKey}`
+      showError(msg)
       // Reset relevant data on error
       switch(tabKey) {
         case 'changes': changes.value = []; break
@@ -246,7 +248,8 @@ const handleTabClick = async (tabKey) => {
       query: { ...route.query, tab: tabKey, page: undefined },
     })
   } catch (e) {
-    showError(e.response?.data?.error || 'Failed to load data')
+    const data = e.response?.data
+    showError(data?.detail ?? data?.error ?? 'Failed to load data')
   } finally {
     isLoading.value = false
   }

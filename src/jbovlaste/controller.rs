@@ -783,9 +783,26 @@ pub async fn get_recent_changes(
     match service::get_recent_changes(&pool, limit, types, after, &redis_cache, user_id).await {
         Ok(response) => HttpResponse::Ok().json(response),
         Err(e) => {
-            HttpResponse::InternalServerError().body(format!("Error retrieving changes: {}", e))
+            let detail = error_chain(&*e);
+            log::error!("Error retrieving recent changes: {}", detail);
+            HttpResponse::InternalServerError().json(json!({
+                "error": "Error retrieving changes",
+                "detail": detail
+            }))
         }
     }
+}
+
+/// Build a full error description from an error and its source chain (for debugging).
+fn error_chain(e: &(dyn std::error::Error + 'static)) -> String {
+    let mut s = e.to_string();
+    let mut source = e.source();
+    while let Some(err) = source {
+        s.push_str(" | ");
+        s.push_str(&err.to_string());
+        source = err.source();
+    }
+    s
 }
 
 #[utoipa::path(
