@@ -101,7 +101,13 @@
     "thinking": "ca'o pensi",
     "error": "fasnu lo nu fliba .i ko troci ranji",
     "retry": "za'u re'u troci",
-    "clearHistory": "vimcu lo citri be lo nu casnu"
+    "clearHistory": "vimcu lo citri be lo nu casnu",
+    "returnedDefinitions": "ciksi {n} cu se xruti",
+    "totalMatchingHint": "lo ciksi {total} cu se penmi lo datni (lo zmadu cu na se liste)",
+    "notesLabel": "pinka:",
+    "toolErrorSummary": "fliba lo ka penmi",
+    "showRawOutput": "co'a zgana le se penmi be fi le sorcu",
+    "hideRawOutput": "co'u zgana le se penmi be fi le sorcu"
   },
   "deleteConfirmation": {
     "title": "birti lo nu vimcu",

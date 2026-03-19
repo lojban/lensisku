@@ -62,34 +62,15 @@
             <!-- Thought process: steps with optional folded tool output -->
             <div
               v-if="reply.steps && reply.steps.length > 0"
-              class="thought-process mb-2 space-y-1"
+              class="thought-process mb-2 space-y-2"
             >
-              <div
+              <AssistantThoughtStep
                 v-for="(step, stepIdx) in reply.steps"
                 :key="stepIdx"
-                class="text-gray-500 text-xs italic"
-              >
-                <span>{{ step.action }}</span>
-                <span class="block mt-0.5">{{ step.result }}</span>
-                <!-- Collapsible tool output -->
-                <div
-                  v-if="step.tool_output"
-                  class="mt-1 text-gray-400"
-                >
-                  <button
-                    type="button"
-                    class="text-left underline hover:no-underline focus:outline-none"
-                    :aria-expanded="isStepOutputVisible(stepKey(index, replyIdx, stepIdx))"
-                    @click="toggleStepOutput(stepKey(index, replyIdx, stepIdx))"
-                  >
-                    {{ isStepOutputVisible(stepKey(index, replyIdx, stepIdx)) ? 'Hide' : 'Show' }} output
-                  </button>
-                  <pre
-                    v-show="isStepOutputVisible(stepKey(index, replyIdx, stepIdx))"
-                    class="mt-1 p-1.5 rounded bg-gray-200 text-[10px] overflow-x-auto max-h-48 overflow-y-auto whitespace-pre-wrap break-all"
-                  >{{ step.tool_output }}</pre>
-                </div>
-              </div>
+                :step="step"
+                :show-raw-output="isStepOutputVisible(stepKey(index, replyIdx, stepIdx))"
+                @toggle-raw="toggleStepOutput(stepKey(index, replyIdx, stepIdx))"
+              />
             </div>
             <!-- Thinking dots while streaming and no reply yet for this model -->
             <div
@@ -119,33 +100,15 @@
             </span>
             <div
               v-if="msg.steps && msg.steps.length > 0"
-              class="thought-process mb-2 space-y-1"
+              class="thought-process mb-2 space-y-2"
             >
-              <div
+              <AssistantThoughtStep
                 v-for="(step, stepIdx) in msg.steps"
                 :key="stepIdx"
-                class="text-gray-500 text-xs italic"
-              >
-                <span>{{ step.action }}</span>
-                <span class="block mt-0.5">{{ step.result }}</span>
-                <div
-                  v-if="step.tool_output"
-                  class="mt-1 text-gray-400"
-                >
-                  <button
-                    type="button"
-                    class="text-left underline hover:no-underline focus:outline-none"
-                    :aria-expanded="isStepOutputVisible(stepKey('legacy', index, stepIdx))"
-                    @click="toggleStepOutput(stepKey('legacy', index, stepIdx))"
-                  >
-                    {{ isStepOutputVisible(stepKey('legacy', index, stepIdx)) ? 'Hide' : 'Show' }} output
-                  </button>
-                  <pre
-                    v-show="isStepOutputVisible(stepKey('legacy', index, stepIdx))"
-                    class="mt-1 p-1.5 rounded bg-gray-200 text-[10px] overflow-x-auto max-h-48 overflow-y-auto whitespace-pre-wrap break-all"
-                  >{{ step.tool_output }}</pre>
-                </div>
-              </div>
+                :step="step"
+                :show-raw-output="isStepOutputVisible(stepKey('legacy', index, stepIdx))"
+                @toggle-raw="toggleStepOutput(stepKey('legacy', index, stepIdx))"
+              />
             </div>
             <div
               v-if="isLoading && index === messages.length - 1 && !msg.content"
@@ -240,6 +203,7 @@ import { ref, watch, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RotateCw, Trash2 } from 'lucide-vue-next'
 
+import AssistantThoughtStep from '@/components/AssistantThoughtStep.vue'
 import LazyMathJax from '@/components/LazyMathJax.vue'
 import { useSeoHead } from '@/composables/useSeoHead'
 import { getApiBaseUrl, getAuthHeaders } from '../api'
@@ -366,23 +330,51 @@ async function performRequest(msgList) {
         const steps = modelId ? getOrCreateReply(modelId, modelName).steps : msg.steps
         if (event.type === 'step_start') {
           if (modelId) getOrCreateReply(modelId, modelName)
-          steps.push({
-            action: event.action ?? '',
-            result: '…',
-            tool_output: undefined,
-          })
+          const idx =
+            typeof event.index === 'number' ? event.index : steps.length
+          while (steps.length < idx) {
+            steps.push({
+              action: '',
+              result: '…',
+              tool_output: undefined,
+            })
+          }
+          if (steps.length === idx) {
+            steps.push({
+              action: event.action ?? '',
+              result: '…',
+              tool_output: undefined,
+            })
+          } else {
+            const existing = steps[idx]
+            steps[idx] = {
+              action: event.action ?? existing?.action ?? '',
+              result: '…',
+              tool_output: existing?.tool_output,
+            }
+          }
         } else if (event.type === 'step') {
           if (modelId) getOrCreateReply(modelId, modelName)
-          const idx = typeof event.index === 'number' ? event.index : steps.length
+          const idx =
+            typeof event.index === 'number'
+              ? event.index
+              : Math.max(0, steps.length - 1)
           const stepPayload = {
             action: event.action ?? (steps[idx]?.action ?? ''),
             result: event.result ?? '',
             tool_output: event.tool_output ?? steps[idx]?.tool_output,
           }
-          if (idx >= 0 && idx < steps.length) {
-            steps[idx] = stepPayload
-          } else {
+          while (steps.length < idx) {
+            steps.push({
+              action: stepPayload.action,
+              result: '…',
+              tool_output: undefined,
+            })
+          }
+          if (steps.length === idx) {
             steps.push(stepPayload)
+          } else {
+            steps[idx] = stepPayload
           }
         } else if (event.type === 'done') {
           if (modelId) {

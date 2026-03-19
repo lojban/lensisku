@@ -109,10 +109,10 @@ pub async fn semantic_search(
 
     let additional_conditions = conditions.join(" ");
 
-    // --- Execute Count Query ---
-    // Optimized to use JOINs instead of subqueries
-    let count_query = format!(
-        r#"
+    let total: i64 = if params.include_total_count {
+        // Full match count for HTTP pagination (extra query).
+        let count_query = format!(
+            r#"
         WITH vote_scores AS (
             SELECT definitionid, COALESCE(SUM(value), 0) as score
             FROM definitionvotes
@@ -145,13 +145,14 @@ pub async fn semantic_search(
         SELECT COUNT(*)
         FROM vector_search
         WHERE score > 0 -- AND similarity < SIMILARITY_THRESHOLD"#,
-    );
-
-    // Execute count query with all necessary parameters accumulated so far
-    let total: i64 = transaction
-        .query_one(&count_query, &query_params)
-        .await?
-        .get(0);
+        );
+        transaction
+            .query_one(&count_query, &query_params)
+            .await?
+            .get(0)
+    } else {
+        0
+    };
 
     // --- Prepare and Execute Main Query ---
     // Add limit and offset parameters ONLY for the main query
@@ -293,6 +294,12 @@ pub async fn semantic_search(
     let decomposition = get_source_words(&params.search_term, &transaction, parsers).await?;
 
     transaction.commit().await?;
+
+    let total = if params.include_total_count {
+        total
+    } else {
+        definitions.len() as i64
+    };
 
     Ok(DefinitionResponse {
         definitions,

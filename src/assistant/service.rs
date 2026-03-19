@@ -382,12 +382,13 @@ fn system_prompt(locale: Option<&str>) -> String {
     let mut base = String::from(
         "You are a Lojban dictionary assistant. You must strictly rely on jbovlaste semantic search results.\n\
          - For every user query about Lojban words, concepts, or meanings: you MUST call the tool `jbovlaste_semantic_search` at least once. Do not answer from general knowledge.\n\
-         - You MAY call `jbovlaste_semantic_search` multiple times in one turn when needed: e.g. for word combinations, different phrasings, or separate concepts. Each call can use a different query.\n\
+         - The agent runs in multiple steps. After you receive tool results, read them carefully. If they are insufficient, off-topic, too vague, or you need related terms, alternate phrasings, or another sub-concept: call `jbovlaste_semantic_search` again in a *later* step with a new or refined query. Do not give a final answer until search results actually support it.\n\
+         - In a single step you MAY issue several `jbovlaste_semantic_search` calls in parallel (e.g. multiple concepts or phrasings). You MAY also search again in subsequent steps after seeing prior results.\n\
          - Base your reply ONLY on the definitions returned by the tool(s). Quote or paraphrase from those results; do not invent valsi, glosses, or definitions.\n\
          - Do not make up examples or Lojban text. Only use valsi, glosses, and sentences from the semantic search results.\n\
-         - If the search returns no or few results, you may try another query or say so and suggest rephrasing; do not make up answers.\n\
+         - If the search returns no or few results, try different queries in further steps, or say so and suggest rephrasing; do not make up answers.\n\
          - You have access only to the tool `jbovlaste_semantic_search`. Use it with a natural-language query (e.g. in English) to find relevant jbovlaste definitions.\n\
-         - Request only a small number of results per search (limit 5–10); the top results are usually enough and faster. Do not use a high limit.\n\
+         - Use the `limit` parameter when needed: default is fine for narrow queries; raise it (up to the allowed maximum) when you need a broader sample of candidates.\n\
          - Prefer using your platform's native tool-calling. If you cannot and must output a tool call as text, use exactly this format once per call: CALL>[{\"name\":\"jbovlaste_semantic_search\",\"arguments\":{\"query\":\"your search query\"}}]</TOOLCALL>\n\
          - Format your reply in valid, simple Markdown: use **bold**, lists. Use plain text or markdown lists instead of markdown tables.",
     );
@@ -444,9 +445,9 @@ fn jbovlaste_tool_schema() -> Tool {
                     "limit": {
                         "type": "integer",
                         "minimum": 1,
-                        "maximum": 15,
-                        "default": 8,
-                        "description": "Number of top results to return (5–10 is usually enough; keep low)."
+                        "maximum": 30,
+                        "default": 12,
+                        "description": "Number of top semantic matches to return (use more when you need a wider set of candidates)."
                     },
                     "languages": {
                         "type": "array",
@@ -516,14 +517,17 @@ fn parse_tool_calls_from_content(content: &str) -> Option<Vec<ToolCall>> {
     )
 }
 
-/// Maximum results per semantic search (top results are enough; keeps responses fast).
-const SEMANTIC_SEARCH_MAX_LIMIT: u32 = 15;
+/// Maximum results per semantic search for the assistant tool.
+const SEMANTIC_SEARCH_MAX_LIMIT: u32 = 30;
 
 async fn run_jbovlaste_semantic_search_once(
     pool: &Pool,
     args: &ToolArgs,
 ) -> Result<DefinitionResponse, AppError> {
-    let limit = args.limit.unwrap_or(8).clamp(1, SEMANTIC_SEARCH_MAX_LIMIT) as i64;
+    let limit = args
+        .limit
+        .unwrap_or(12)
+        .clamp(1, SEMANTIC_SEARCH_MAX_LIMIT) as i64;
 
     let embedding = get_embedding(&args.query).await?;
 
@@ -540,6 +544,7 @@ async fn run_jbovlaste_semantic_search_once(
         word_type: None,
         source_langid: args.source_langid,
         search_in_phrases: None,
+        include_total_count: false,
     };
 
     let response = semantic_search(pool, params, embedding, None)
@@ -788,10 +793,13 @@ async fn run_agent_loop_inner(
         if let Some(calls) = tool_calls {
             // Execute each tool call and append tool results. Recover from parse/tool errors by
             // feeding an error message back to the LLM so it can try again.
-            for (step_index, call) in calls.iter().enumerate() {
+            for call in calls.iter() {
                 if call.function.name.as_deref() != Some("jbovlaste_semantic_search") {
                     continue;
                 }
+
+                // Global index across all agent iterations so SSE clients never overwrite earlier steps.
+                let global_step_index = steps.len();
 
                 let args_json: &str = match call.function.arguments.as_deref() {
                     None | Some("") => "{}",
@@ -830,7 +838,7 @@ async fn run_agent_loop_inner(
                         "type": "step_start",
                         "model": model,
                         "model_name": model_name,
-                        "index": step_index,
+                        "index": global_step_index,
                         "action": action_desc,
                     });
                     if let Ok(data) = serde_json::to_string(&start_payload) {
@@ -843,12 +851,7 @@ async fn run_agent_loop_inner(
                 let (result_summary, tool_payload_value) = match &tool_result {
                     Ok(results) => {
                         let n = results.definitions.len();
-                        let total = results.total;
-                        let summary = if total > n as i64 {
-                            format!("Returned top {} definition(s) ({} matching total).", n, total)
-                        } else {
-                            format!("Returned {} definition(s).", n)
-                        };
+                        let summary = format!("Returned {} definition(s).", n);
                         let compact_results: Vec<serde_json::Value> = results
                             .definitions
                             .iter()
@@ -856,7 +859,6 @@ async fn run_agent_loop_inner(
                             .collect();
                         let payload = json!({
                             "results": compact_results,
-                            "total": results.total,
                         });
                         (summary, payload)
                     }
@@ -867,7 +869,6 @@ async fn run_agent_loop_inner(
                         let payload = json!({
                             "error": err_str,
                             "results": [],
-                            "total": 0,
                         });
                         (summary, payload)
                     }
@@ -889,7 +890,7 @@ async fn run_agent_loop_inner(
                         "type": "step",
                         "model": model,
                         "model_name": model_name,
-                        "index": step_index,
+                        "index": global_step_index,
                         "action": step.action,
                         "result": step.result,
                     });

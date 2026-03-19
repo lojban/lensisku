@@ -101,7 +101,13 @@
     "thinking": "Помощник думает",
     "error": "Что-то пошло не так. Попробуйте ещё раз.",
     "retry": "Повторить",
-    "clearHistory": "Очистить историю чата"
+    "clearHistory": "Очистить историю чата",
+    "returnedDefinitions": "Возвращённые определения ({n})",
+    "totalMatchingHint": "Всего совпадений в базе: {total} (выше показаны только лучшие).",
+    "notesLabel": "Примечания:",
+    "toolErrorSummary": "Ошибка поиска",
+    "showRawOutput": "Показать сырой JSON",
+    "hideRawOutput": "Скрыть сырой JSON"
   },
   "deleteConfirmation": {
     "title": "Подтвердите удаление",
