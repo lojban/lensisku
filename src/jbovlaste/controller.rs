@@ -100,6 +100,7 @@ pub async fn semantic_search(
                     word_type: query.word_type,
                     source_langid: query.source_langid,
                     search_in_phrases: query.search_in_phrases,
+                    include_total_count: true,
                 };
 
                 service::semantic_search(&pool, params, embedding, Some(&parsers)).await
@@ -249,6 +250,7 @@ pub async fn search_definitions(
                     word_type: query.word_type,
                     source_langid: query.source_langid,
                     search_in_phrases: query.search_in_phrases,
+                    include_total_count: true,
                 };
 
                 if use_fast_search {

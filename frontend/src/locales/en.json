@@ -101,7 +101,13 @@
     "thinking": "Assistant is thinking",
     "error": "Something went wrong. Please try again.",
     "retry": "Retry",
-    "clearHistory": "Clear chat history"
+    "clearHistory": "Clear chat history",
+    "returnedDefinitions": "Definitions returned ({n})",
+    "totalMatchingHint": "{total} definitions matched in total (only the top results are listed above).",
+    "notesLabel": "Notes:",
+    "toolErrorSummary": "Search error",
+    "showRawOutput": "Show raw search result",
+    "hideRawOutput": "Hide raw search result"
   },
   "deleteConfirmation": {
     "title": "Confirm delete",

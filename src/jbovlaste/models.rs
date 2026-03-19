@@ -20,6 +20,8 @@ pub struct SearchDefinitionsParams {
     pub word_type: Option<i16>,
     pub source_langid: Option<i32>,
     pub search_in_phrases: Option<bool>,
+    /// When false, semantic search skips the extra COUNT query and sets `total` to the number of rows returned.
+    pub include_total_count: bool,
 }
 
 #[derive(Debug, Serialize, ToSchema)]
