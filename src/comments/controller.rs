@@ -18,7 +18,7 @@ use crate::{
     auth::Claims,
     comments::{
         dto::{
-            CommentActionRequest, FreeThreadQuery, NewCommentParams, PaginationQuery,
+            BookmarkActionRequest, FreeThreadQuery, NewCommentParams, PaginationQuery,
             ReactionPaginationQuery, ReactionRequest, SearchCommentsParams, ThreadParams,
             TrendingQuery,
         },
@@ -382,7 +382,7 @@ pub async fn get_user_comments(
     post,
     path = "/comments/bookmark",
     tag = "comments",
-    request_body = CommentActionRequest,
+    request_body = BookmarkActionRequest,
     responses(
         (status = 200, description = "Bookmark action completed successfully"),
         (status = 400, description = "Invalid request"),
@@ -398,7 +398,7 @@ pub async fn get_user_comments(
 pub async fn toggle_bookmark(
     pool: web::Data<Pool>,
     claims: Claims,
-    request: web::Json<CommentActionRequest>,
+    request: web::Json<BookmarkActionRequest>,
 ) -> impl Responder {
     match service::toggle_bookmark(&pool, request.comment_id, claims.sub, request.action).await {
         Ok(_) => HttpResponse::Ok().json(json!({
