@@ -839,7 +839,7 @@
     "dictionary": "Словарь",
     "addDefinition": "Добавить определение",
     "discussEntry": "Обсудить запись",
-    "loadError": "Не удалось загрузить детали valsi",
+    "loadError": "Не удалось загрузить детали записи",
     "rafsiLabel": "Rafsi:",
     "decompositionLabel": "Разложение:",
     "entry": "Запись",
@@ -986,7 +986,7 @@
       "saved": "Сохранено",
       "delete": "Удалить",
       "inDefinition": "В определении",
-      "inValsi": "В valsi",
+      "inValsi": "В записи",
       "untitledEntry": "Запись без названия"
     },
     "activityVotes": {
