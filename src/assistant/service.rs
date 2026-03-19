@@ -186,6 +186,131 @@ async fn parse_chat_response(
 const OPENROUTER_MAX_ATTEMPTS: u32 = 3;
 const OPENROUTER_INITIAL_BACKOFF_MS: u64 = 500;
 
+/// OpenRouter /api/v1/models/user response: list of models (we use flexible parsing for pricing).
+#[derive(Debug, Deserialize)]
+struct OpenRouterModelsResponse {
+    data: Vec<OpenRouterModel>,
+}
+
+#[derive(Debug, Deserialize)]
+struct OpenRouterModel {
+    id: String,
+    #[serde(default)]
+    name: Option<String>,
+    #[serde(default)]
+    created: Option<f64>,
+    #[serde(default)]
+    context_length: Option<f64>,
+    #[serde(default)]
+    architecture: Option<OpenRouterArchitecture>,
+    /// Pricing: often { "prompt": "0", "completion": "0" } or numeric; we accept any and check in code.
+    #[serde(default)]
+    pricing: Option<serde_json::Value>,
+}
+
+#[derive(Debug, Deserialize)]
+struct OpenRouterArchitecture {
+    #[serde(default)]
+    modality: Option<String>,
+    #[serde(default)]
+    input_modalities: Option<Vec<String>>,
+    #[serde(default)]
+    output_modalities: Option<Vec<String>>,
+}
+
+fn price_is_zero(v: &serde_json::Value) -> bool {
+    match v {
+        serde_json::Value::Number(n) => n.as_f64() == Some(0.0),
+        serde_json::Value::String(s) => s == "0" || s == "0.0",
+        serde_json::Value::Null => true,
+        _ => false,
+    }
+}
+
+fn is_text_to_text(arch: &OpenRouterArchitecture) -> bool {
+    let modality = arch.modality.as_deref().unwrap_or("");
+    if modality == "text" {
+        return true;
+    }
+    let inp = arch.input_modalities.as_deref().unwrap_or(&[]);
+    let out = arch.output_modalities.as_deref().unwrap_or(&[]);
+    inp.contains(&"text".to_string()) && out.contains(&"text".to_string())
+}
+
+/// (model_id, display_name) for use in UI. Display name is OpenRouter "name" or id as fallback.
+pub type ModelIdName = (String, String);
+
+/// Fetch top 2 free, text-to-text, long-context models from OpenRouter (user-filtered list).
+/// Criteria: pricing.prompt and pricing.completion = 0, modality text->text, context_length > 100_000.
+/// Sorted by created desc (newest first). OpenRouter does not expose "top 4 this week" in the API.
+pub async fn fetch_top_free_models(
+    base_url: &str,
+    api_key: &str,
+) -> Result<Vec<ModelIdName>, AppError> {
+    let url = format!("{}/models/user", base_url.trim_end_matches('/'));
+    let client = reqwest::Client::new();
+    let res = client
+        .get(&url)
+        .header("Authorization", format!("Bearer {}", api_key))
+        .send()
+        .await
+        .map_err(|e| AppError::ExternalService(format!("OpenRouter models/user request failed: {}", e)))?;
+
+    let status = res.status();
+    if !status.is_success() {
+        let body = res.text().await.unwrap_or_else(|_| String::from("(no body)"));
+        return Err(AppError::ExternalServiceWithRaw {
+            message: format!("OpenRouter models/user returned {}", status),
+            raw_response: body,
+        });
+    }
+
+    let body: OpenRouterModelsResponse = res.json().await.map_err(|e| {
+        AppError::ExternalService(format!("OpenRouter models/user JSON parse error: {}", e))
+    })?;
+
+    const MIN_CONTEXT: f64 = 100_000.0;
+    let mut eligible: Vec<(f64, String, String)> = body
+        .data
+        .into_iter()
+        .filter_map(|m| {
+            let ctx = m.context_length.unwrap_or(0.0);
+            if ctx <= MIN_CONTEXT {
+                return None;
+            }
+            let arch = m.architecture.as_ref()?;
+            if !is_text_to_text(arch) {
+                return None;
+            }
+            let pricing = m.pricing.as_ref()?;
+            let prompt_zero = pricing.get("prompt").is_some_and(price_is_zero);
+            let completion_zero = pricing.get("completion").is_some_and(price_is_zero);
+            if !prompt_zero || !completion_zero {
+                return None;
+            }
+            let created = m.created.unwrap_or(0.0);
+            let name = m
+                .name
+                .filter(|s| !s.is_empty())
+                .unwrap_or_else(|| m.id.clone());
+            Some((created, m.id, name))
+        })
+        .collect();
+
+    eligible.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap_or(std::cmp::Ordering::Equal));
+    let top: Vec<ModelIdName> = eligible
+        .into_iter()
+        .map(|(_, id, name)| (id, name))
+        .take(2)
+        .collect();
+
+    if top.is_empty() {
+        log::warn!("OpenRouter: no free text-to-text models with context > 100k found; falling back to openrouter/free");
+        return Ok(vec![("openrouter/free".to_string(), "OpenRouter Free".to_string())]);
+    }
+    Ok(top)
+}
+
 /// Runs an OpenRouter chat/completions request with retries on transient errors (5xx or error body).
 async fn openrouter_chat_with_retry<F, Fut>(
     label: &str,
@@ -515,30 +640,72 @@ fn sse_error_payload(e: &AppError) -> serde_json::Value {
     obj
 }
 
-/// Runs the agent loop. If event_tx is Some, streams step/done/error events and then drops the sender.
+/// Runs the agent loop. If event_tx is Some, streams step/done/error events (with optional "model" key for parallel runs).
+/// When event_tx is Some and we have 2 models, runs both in parallel and streams both; otherwise runs a single model.
 pub async fn run_agent_loop(
     pool: &Pool,
     request: &ChatRequest,
     event_tx: Option<mpsc::Sender<sse::Event>>,
 ) -> Result<(String, Vec<AssistantStep>), AppError> {
-    let mut event_tx = event_tx;
-    let result = run_agent_loop_inner(pool, request, &mut event_tx).await;
-    if let Err(ref e) = result {
-        if let Some(tx) = event_tx.take() {
-            let payload = sse_error_payload(e);
-            if let Ok(data) = serde_json::to_string(&payload) {
-                let _ = tx.send(sse::Data::new(data).into()).await;
-            }
-            drop(tx);
+    let api_key = env::var("OPENROUTER_API_KEY").map_err(|_| {
+        AppError::ExternalService("OPENROUTER_API_KEY is not set in the environment".into())
+    })?;
+    let base_url = env::var("OPENROUTER_API_BASE")
+        .unwrap_or_else(|_| "https://openrouter.ai/api/v1".to_string());
+
+    let models = fetch_top_free_models(&base_url, &api_key).await?;
+    let models: Vec<ModelIdName> = models.into_iter().take(2).collect();
+    let is_streaming = event_tx.is_some();
+    let run_parallel = is_streaming && models.len() == 2;
+
+    if run_parallel {
+        let tx1 = event_tx.clone().expect("run_parallel implies Some");
+        let tx2 = event_tx.expect("run_parallel implies Some");
+        let pool1 = pool.clone();
+        let pool2 = pool.clone();
+        let req1 = request.clone();
+        let req2 = request.clone();
+        let (m1_id, m1_name) = models[0].clone();
+        let (m2_id, m2_name) = models[1].clone();
+        let (r1, r2) = tokio::join!(
+            run_agent_loop_inner(&pool1, &req1, &m1_id, &m1_name, Some(tx1)),
+            run_agent_loop_inner(&pool2, &req2, &m2_id, &m2_name, Some(tx2)),
+        );
+        // Drop senders so the SSE stream ends. Return first successful reply for API compatibility.
+        if let Ok((reply, _)) = r1 {
+            Ok((reply, vec![]))
+        } else if let Ok((reply, _)) = r2 {
+            Ok((reply, vec![]))
+        } else {
+            Err(r1.unwrap_err())
         }
+    } else {
+        let (model_id, model_name) = models
+            .first()
+            .cloned()
+            .unwrap_or_else(|| ("openrouter/free".to_string(), "OpenRouter Free".to_string()));
+        let mut event_tx = event_tx;
+        let result =
+            run_agent_loop_inner(pool, request, &model_id, &model_name, event_tx.take()).await;
+        if let Err(ref e) = result {
+            if let Some(tx) = event_tx.take() {
+                let payload = sse_error_payload(e);
+                if let Ok(data) = serde_json::to_string(&payload) {
+                    let _ = tx.send(sse::Data::new(data).into()).await;
+                }
+                drop(tx);
+            }
+        }
+        result
     }
-    result
 }
 
 async fn run_agent_loop_inner(
     pool: &Pool,
     request: &ChatRequest,
-    event_tx: &mut Option<mpsc::Sender<sse::Event>>,
+    model: &str,
+    model_name: &str,
+    event_tx: Option<mpsc::Sender<sse::Event>>,
 ) -> Result<(String, Vec<AssistantStep>), AppError> {
     let api_key = env::var("OPENROUTER_API_KEY").map_err(|_| {
         AppError::ExternalService("OPENROUTER_API_KEY is not set in the environment".into())
@@ -566,7 +733,7 @@ async fn run_agent_loop_inner(
     // Agent loop: call LLM until it returns a final reply (no tool_calls).
     for iteration in 1..=AGENT_MAX_ITERATIONS {
         let request_body = ChatCompletionRequest {
-            model: "openrouter/free".to_string(),
+            model: model.to_string(),
             messages: messages.clone(),
             tools: Some(tools.clone()),
             tool_choice: Some(json!("auto")),
@@ -661,6 +828,8 @@ async fn run_agent_loop_inner(
                 if let Some(ref tx) = event_tx {
                     let start_payload = json!({
                         "type": "step_start",
+                        "model": model,
+                        "model_name": model_name,
                         "index": step_index,
                         "action": action_desc,
                     });
@@ -704,27 +873,33 @@ async fn run_agent_loop_inner(
                     }
                 };
 
+                let tool_content = serde_json::to_string(&tool_payload_value)
+                    .unwrap_or_else(|_| tool_payload_value["error"].as_str().unwrap_or("").to_string());
+
                 let step = AssistantStep {
                     action: action_desc.clone(),
                     result: result_summary.clone(),
+                    tool_output: Some(tool_content.clone()),
                 };
                 steps.push(step.clone());
 
-                // Stream step event with result so the UI can update the step at this index.
+                // Stream step event with result and optional tool_output so the UI can show it folded.
                 if let Some(ref tx) = event_tx {
-                    let payload = json!({
+                    let mut payload = json!({
                         "type": "step",
+                        "model": model,
+                        "model_name": model_name,
                         "index": step_index,
                         "action": step.action,
                         "result": step.result,
                     });
+                    if let Some(ref out) = step.tool_output {
+                        payload["tool_output"] = serde_json::Value::String(out.clone());
+                    }
                     if let Ok(data) = serde_json::to_string(&payload) {
                         let _ = tx.send(sse::Data::new(data).into()).await;
                     }
                 }
-
-                let tool_content = serde_json::to_string(&tool_payload_value)
-                    .unwrap_or_else(|_| tool_payload_value["error"].as_str().unwrap_or("").to_string());
 
                 messages.push(ChatCompletionMessageRequest {
                     role: "tool".to_string(),
@@ -742,8 +917,13 @@ async fn run_agent_loop_inner(
                 .content
                 .clone()
                 .unwrap_or_else(String::new);
-            if let Some(tx) = event_tx.take() {
-                let payload = json!({ "type": "done", "reply": reply });
+            if let Some(tx) = event_tx {
+                let payload = json!({
+                    "type": "done",
+                    "model": model,
+                    "model_name": model_name,
+                    "reply": reply
+                });
                 if let Ok(data) = serde_json::to_string(&payload) {
                     let _ = tx.send(sse::Data::new(data).into()).await;
                 }
@@ -762,8 +942,13 @@ async fn run_agent_loop_inner(
         .filter(|c| !c.is_empty())
         .unwrap_or_else(|| "I need more time to look that up. Please try again.".to_string());
 
-    if let Some(tx) = event_tx.take() {
-        let payload = json!({ "type": "done", "reply": &last_content });
+    if let Some(tx) = event_tx {
+        let payload = json!({
+            "type": "done",
+            "model": model,
+            "model_name": model_name,
+            "reply": &last_content
+        });
         if let Ok(data) = serde_json::to_string(&payload) {
             let _ = tx.send(sse::Data::new(data).into()).await;
         }
