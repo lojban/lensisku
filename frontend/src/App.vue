@@ -212,14 +212,25 @@
     route.meta.fullHeight ? 'main-content--no-scroll' : ''
   ]">
     <div
-      class="max-w-4xl mx-auto relative flex flex-col pt-3"
+      class="max-w-4xl mx-auto relative flex flex-col"
       :class="[
-        route.meta.fullHeight ? 'main-child-full-height w-full sm:w-[380px] sm:min-w-[380px] sm:max-w-[380px]' : 'min-h-[calc(100vh-12rem)]',
+        route.meta.contentTopPaddingMainOnly ? 'pt-0' : 'pt-3',
+        route.meta.fullHeight
+          ? route.meta.fullHeightNarrow
+            ? 'main-child-full-height w-full sm:w-[380px] sm:min-w-[380px] sm:max-w-[380px]'
+            : 'main-child-full-height w-full'
+          : 'min-h-[calc(100vh-12rem)]',
         route.path.startsWith('/lingo') ? 'lg:pl-64' : ''
       ]"
       id="main-child"
     >
-      <div class="flex-1 px-3" :class="{ 'main-child-inner-full-height': route.meta.fullHeight }">
+      <div
+        class="flex-1"
+        :class="[
+          route.meta.contentTopPaddingMainOnly ? 'px-0' : 'px-3',
+          { 'main-child-inner-full-height': route.meta.fullHeight },
+        ]"
+      >
         <router-view v-slot="{ Component, route }">
           <component :is="Component" v-bind="route.meta.props" v-on="(route.name === 'Home' || route.name?.startsWith('Home-'))
             ? {
@@ -821,6 +832,8 @@ body:has(.main-content.main-content--no-scroll) {
   padding-left: 0;
   padding-right: 0;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .sihesle {

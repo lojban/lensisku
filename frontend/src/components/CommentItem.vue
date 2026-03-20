@@ -63,7 +63,7 @@
       <div class="mt-2">
         <template v-if="processedComment.subject">
           <h4 class="font-medium text-blue-700 text-sm sm:text-base">
-            {{ processedComment.subject }}
+            <LazyMathJax :content="processedComment.subject" :enable-markdown="true" class="inline" />
           </h4>
         </template>
       </div>

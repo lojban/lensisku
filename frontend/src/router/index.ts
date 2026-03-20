@@ -53,6 +53,11 @@ const baseRoutes: Array<RouteRecordRaw> = [
     path: "/tiktoknu",
     name: "Tiktoknu",
     component: () => import("../pages/TiktoknuPage.vue"),
+    meta: {
+      hideFooter: true,
+      fullHeight: true,
+      contentTopPaddingMainOnly: true,
+    },
   },
   {
     path: "/signup",
@@ -233,7 +238,7 @@ const baseRoutes: Array<RouteRecordRaw> = [
     path: "/collections/:collectionId/lingo/study",
     name: "LingoStudy",
     component: () => import("../pages/LingoStudyView.vue"),
-    meta: { hideFooter: true, fullHeight: true },
+    meta: { hideFooter: true, fullHeight: true, fullHeightNarrow: true },
   },
   {
     path: "/collections/:collectionId/levels",
@@ -332,7 +337,11 @@ const baseRoutes: Array<RouteRecordRaw> = [
     path: "/assistant",
     name: "AssistantChat",
     component: () => import("../pages/AssistantChat.vue"),
-    meta: { hideFooter: true },
+    meta: {
+      hideFooter: true,
+      fullHeight: true,
+      contentTopPaddingMainOnly: true,
+    },
   },
   // NotFound route must be last among base routes to catch all unmatched paths within a locale
   {

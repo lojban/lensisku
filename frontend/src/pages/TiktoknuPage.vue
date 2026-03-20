@@ -1,7 +1,7 @@
 <template>
   <div
     ref="scrollContainer"
-    class="reel-container -m-4 h-full bg-black text-white overflow-y-scroll snap-y snap-mandatory touch-pan-y"
+    class="reel-container h-full bg-black text-white overflow-y-scroll snap-y snap-mandatory touch-pan-y"
   >
     <!-- Controls -->
     <div class="absolute top-4 right-4 z-30 flex flex-col items-end gap-2">
@@ -124,16 +124,8 @@
     overscroll-behavior-y: contain;
     -webkit-overflow-scrolling: touch;
   }
-</style>
 
-<style>
-  html,
-  body {
-    overscroll-behavior-y: contain;
-    overflow: hidden;
-  }
-
-  ::-webkit-scrollbar {
+  .reel-container::-webkit-scrollbar {
     display: none;
   }
 </style>
