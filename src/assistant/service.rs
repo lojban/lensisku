@@ -380,12 +380,13 @@ struct ToolCall {
 
 fn system_prompt(locale: Option<&str>) -> String {
     let mut base = String::from(
-        "You are a Lojban dictionary assistant. You must strictly rely on jbovlaste semantic search results.\n\
-         - For every user query about Lojban words, concepts, or meanings: you MUST call the tool `jbovlaste_semantic_search` at least once. Do not answer from general knowledge.\n\
-         - The agent runs in multiple steps. After you receive tool results, read them carefully. If they are insufficient, off-topic, too vague, or you need related terms, alternate phrasings, or another sub-concept: call `jbovlaste_semantic_search` again in a *later* step with a new or refined query. Do not give a final answer until search results actually support it.\n\
-         - In a single step you MAY issue several `jbovlaste_semantic_search` calls in parallel (e.g. multiple concepts or phrasings). You MAY also search again in subsequent steps after seeing prior results.\n\
-         - Base your reply ONLY on the definitions returned by the tool(s). Quote or paraphrase from those results; do not invent valsi, glosses, or definitions.\n\
-         - Do not make up examples or Lojban text. Only use valsi, glosses, and sentences from the semantic search results.\n\
+        "You are a Lojban dictionary assistant. You must strictly rely on jbovlaste semantic search results whenever you need dictionary evidence.\n\
+         - **When to call `jbovlaste_semantic_search`:** Call it when the user asks about Lojban words, concepts, or meanings that require **new** jbovlaste evidence: e.g. the first question in a thread, a **different** valsi or topic than already covered, or when nothing in the prior conversation gives you grounded definitions for what they asked.\n\
+         - **When NOT to call (no tool):** If the user’s message is a **clarification, follow-up, or rephrase** about the **same** word or concept you already answered using prior search-backed content in this conversation, answer from that conversation only—**do not** run semantic search again. Same for “explain simpler”, “give an example from what you already quoted”, or short confirmations—reuse prior assistant turns.\n\
+         - **Multi-step search within one answer:** After you receive tool results, read them carefully. If they are insufficient, off-topic, too vague, or you need related terms, alternate phrasings, or another sub-concept **for that same reply**, call `jbovlaste_semantic_search` again in a *later* step with a new or refined query. Do not give a final answer until search results actually support it.\n\
+         - In a single step you MAY issue several `jbovlaste_semantic_search` calls in parallel (e.g. multiple concepts or phrasings). You MAY search again in later **steps of the same turn** when refining.\n\
+         - Base any statement about valsi, glosses, or definitions on the definitions returned by the tool(s) in this thread **or** on prior assistant messages that were already grounded in those tools. Quote or paraphrase from those results; do not invent valsi, glosses, or definitions.\n\
+         - Do not make up examples or Lojban text. Only use valsi, glosses, and sentences from semantic search results (or from your earlier replies that cited them).\n\
          - If the search returns no or few results, try different queries in further steps, or say so and suggest rephrasing; do not make up answers.\n\
          - You have access only to the tool `jbovlaste_semantic_search`. Use it with a natural-language query (e.g. in English) to find relevant jbovlaste definitions.\n\
          - Use the `limit` parameter when needed: default is fine for narrow queries; raise it (up to the allowed maximum) when you need a broader sample of candidates.\n\
@@ -433,7 +434,7 @@ fn jbovlaste_tool_schema() -> Tool {
         r#type: "function".to_string(),
         function: ToolFunction {
             name: "jbovlaste_semantic_search".to_string(),
-            description: "Semantic search over jbovlaste definitions. Call this for every user question about Lojban words or concepts; results are the only source you may use for valsi and definitions."
+            description: "Semantic search over jbovlaste definitions. Call when you need jbovlaste evidence (new topic, new valsi, or no prior grounded answer in the conversation). Do not call for clarifying follow-ups about material already answered from search in this thread."
                 .to_string(),
             parameters: json!({
                 "type": "object",
@@ -610,6 +611,43 @@ fn summarise_definition(def: &DefinitionDetail) -> serde_json::Value {
         "selmaho": def.selmaho.as_ref().map(|s| strip_mathjax_for_llm(s)),
         "jargon": def.jargon.as_ref().map(|s| strip_mathjax_for_llm(s)),
     })
+}
+
+/// Plain-text tool results for the LLM (avoids echoing JSON fragments in the final reply).
+fn semantic_tool_results_plain_text_for_llm(query: &str, definitions: &[DefinitionDetail]) -> String {
+    let mut out = String::new();
+    out.push_str(&format!("Semantic search for: \"{}\"\n\n", query));
+    if definitions.is_empty() {
+        out.push_str("(No definitions returned.)");
+        return out;
+    }
+    for (i, def) in definitions.iter().enumerate() {
+        out.push_str(&format!("--- {} ---\n", i + 1));
+        out.push_str(&format!("valsi: {}\n", def.valsiword));
+        out.push_str(&format!("language: {}\n", def.langrealname));
+        if let Some(sim) = def.similarity {
+            out.push_str(&format!("relevance: {:.4}\n", sim));
+        }
+        out.push_str("definition:\n");
+        out.push_str(&strip_mathjax_for_llm(&def.definition));
+        out.push('\n');
+        if let Some(notes) = def.notes.as_ref() {
+            let n = strip_mathjax_for_llm(notes);
+            if !n.trim().is_empty() {
+                out.push_str("notes:\n");
+                out.push_str(&n);
+                out.push('\n');
+            }
+        }
+        if let Some(s) = def.selmaho.as_ref() {
+            let s = strip_mathjax_for_llm(s);
+            if !s.trim().is_empty() {
+                out.push_str(&format!("selmaho: {}\n", s));
+            }
+        }
+        out.push('\n');
+    }
+    out
 }
 
 /// Maximum number of agent turns (LLM call + tool executions) per user message.
@@ -820,8 +858,7 @@ async fn run_agent_loop_inner(
                         );
                         messages.push(ChatCompletionMessageRequest {
                             role: "tool".to_string(),
-                            content: serde_json::to_string(&json!({ "error": err_msg }))
-                                .unwrap_or_else(|_| err_msg.clone()),
+                            content: format!("Tool error: {}", err_msg),
                             tool_call_id: call.id.clone(),
                             name: call.function.name.clone(),
                             tool_calls: None,
@@ -830,7 +867,8 @@ async fn run_agent_loop_inner(
                     }
                 };
 
-                let action_desc = format!("Semantic search: \"{}\"", args.query);
+                let search_query_for_llm = args.query.clone();
+                let action_desc = format!("Semantic search: \"{}\"", search_query_for_llm);
 
                 // Emit step_start immediately so the UI shows this step before the tool runs.
                 if let Some(ref tx) = event_tx {
@@ -874,13 +912,25 @@ async fn run_agent_loop_inner(
                     }
                 };
 
-                let tool_content = serde_json::to_string(&tool_payload_value)
-                    .unwrap_or_else(|_| tool_payload_value["error"].as_str().unwrap_or("").to_string());
+                let tool_content_json = serde_json::to_string(&tool_payload_value).unwrap_or_else(|_| {
+                    tool_payload_value["error"]
+                        .as_str()
+                        .unwrap_or("")
+                        .to_string()
+                });
+
+                let tool_content_for_llm = match &tool_result {
+                    Ok(results) => semantic_tool_results_plain_text_for_llm(
+                        &search_query_for_llm,
+                        &results.definitions,
+                    ),
+                    Err(e) => format!("Semantic search error: {}", e),
+                };
 
                 let step = AssistantStep {
                     action: action_desc.clone(),
                     result: result_summary.clone(),
-                    tool_output: Some(tool_content.clone()),
+                    tool_output: Some(tool_content_json.clone()),
                 };
                 steps.push(step.clone());
 
@@ -904,7 +954,7 @@ async fn run_agent_loop_inner(
 
                 messages.push(ChatCompletionMessageRequest {
                     role: "tool".to_string(),
-                    content: tool_content,
+                    content: tool_content_for_llm,
                     tool_call_id: call.id.clone(),
                     name: call.function.name.clone(),
                     tool_calls: None,
