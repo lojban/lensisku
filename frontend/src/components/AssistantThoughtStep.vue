@@ -1,7 +1,7 @@
 <template>
   <div class="text-gray-500 text-xs italic">
     <span>{{ step.action }}</span>
-    <span class="block mt-0.5">— {{ step.result }}</span>
+    <span v-if="!semanticPayload?.results?.length" class="block mt-0.5">— {{ step.result }}</span>
 
     <!-- Structured semantic search results: nested foldables -->
     <div
