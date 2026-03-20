@@ -1,7 +1,7 @@
 <template>
   <header class="lingo-marketing-header border-b-2 border-slate-200 bg-white px-4">
     <div class="mx-auto flex h-20 max-w-screen-lg items-center justify-between">
-      <RouterLink to="/lingo" class="flex items-center gap-x-3 py-4">
+      <RouterLink to="/lingo/courses" class="flex items-center gap-x-3 py-4">
         <GraduationCap class="h-10 w-10 text-green-600" />
         <h1 class="text-2xl font-extrabold tracking-wide text-green-600">{{ t('lingo.appName') }}</h1>
       </RouterLink>
@@ -41,6 +41,6 @@ const { t } = useI18n()
 
 function handleSignOut() {
   auth.logout()
-  router.push('/lingo')
+  router.push('/lingo/courses')
 }
 </script>

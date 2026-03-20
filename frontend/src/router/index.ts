@@ -253,11 +253,6 @@ const baseRoutes: Array<RouteRecordRaw> = [
     props: true,
   },
   {
-    path: "/lingo",
-    name: "LingoHome",
-    component: () => import("../pages/LingoHome.vue"),
-  },
-  {
     path: "/lingo/courses",
     name: "LingoCourses",
     component: () => import("../pages/LingoCourses.vue"),

@@ -8,7 +8,7 @@
     >
       <Menu class="h-6 w-6" />
     </button>
-    <RouterLink to="/lingo" class="ml-3 flex items-center gap-2">
+    <RouterLink to="/lingo/courses" class="ml-3 flex items-center gap-2">
       <GraduationCap class="h-8 w-8 text-white" />
       <span class="text-xl font-bold text-white">{{ t('lingo.appName') }}</span>
     </RouterLink>
