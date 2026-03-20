@@ -19,7 +19,11 @@
                 {{ t('activityThreads.imageComment') }}
               </template>
               <template v-else>
-                {{ thread.first_comment_subject || thread.first_comment_content?.find(p => p.type === 'text')?.data || '-' }}
+                <LazyMathJax
+                  :content="thread.first_comment_subject || thread.first_comment_content?.find(p => p.type === 'text')?.data || '-'"
+                  :enable-markdown="true"
+                  class="inline"
+                />
               </template>
               <span class="text-sm font-normal text-gray-400 italic"> · {{ t('activityThreads.by') }} {{ thread.username }}</span>
             </h3>
@@ -57,7 +61,11 @@
         <template v-else>
           <div class="flex flex-wrap gap-2 items-center mb-2">
             <h3 class="font-medium text-gray-800">
-              {{ thread.subject || thread.cleaned_subject || '-' }}
+              <LazyMathJax
+                :content="thread.subject || thread.cleaned_subject || '-'"
+                :enable-markdown="true"
+                class="inline"
+              />
             </h3>
             <span class="text-sm font-normal text-gray-400 italic"> · {{ t('activityThreads.by') }} {{ thread.from_address }}</span>
           </div>
