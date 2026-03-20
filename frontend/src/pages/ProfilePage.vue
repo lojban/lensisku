@@ -61,7 +61,7 @@
           </div>
           <div class="flex">
           <RouterLink
-            :to="`/user/${profileData.username}/activity?tab=definitions`"
+            :to="isOwnProfile ? '/reactions?tab=definitions' : `/user/${profileData.username}/activity?tab=definitions`"
             class="btn-aqua-purple btn-aqua-group-item"
           >
             <Activity class="h-4 w-4" />
