@@ -1,6 +1,6 @@
 <template>
   <div class="lingo-auth flex min-h-screen flex-col items-center justify-center bg-slate-100 px-4 py-8">
-    <RouterLink to="/lingo" class="mb-6 flex items-center gap-x-3">
+    <RouterLink to="/lingo/courses" class="mb-6 flex items-center gap-x-3">
       <GraduationCap class="h-12 w-12 text-green-600" />
       <h1 class="text-2xl font-extrabold tracking-wide text-green-600">{{ t('lingo.appName') }}</h1>
     </RouterLink>
