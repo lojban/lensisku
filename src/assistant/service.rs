@@ -10,6 +10,9 @@ use serde_json::json;
 use tokio::sync::mpsc;
 use tokio::time::sleep;
 
+use once_cell::sync::Lazy;
+use regex::Regex;
+
 use crate::embeddings::get_embedding;
 use crate::error::AppError;
 use crate::jbovlaste::models::{DefinitionDetail, DefinitionResponse, SearchDefinitionsParams};
@@ -391,8 +394,7 @@ fn system_prompt(locale: Option<&str>) -> String {
          - Use the `limit` parameter when needed: default is fine for narrow queries; raise it (up to the allowed maximum) when you need a broader sample of candidates.\n\
          - Prefer using your platform's native tool-calling. If you cannot and must output a tool call as text, use exactly this format once per call: CALL>[{\"name\":\"jbovlaste_semantic_search\",\"arguments\":{\"query\":\"your search query\"}}]</TOOLCALL>\n\
          - Format your reply in valid, simple Markdown: use **bold**, lists. Use plain text or markdown lists instead of markdown tables.\n\
-         - When quoting definitions from jbovlaste, preserve inline `$...$` math delimiters exactly as in the tool output (they are part of the definition text).\n\
-         - Do **not** append citation markers, source indices, or JSON metadata to your answer: never use fullwidth brackets `【` `】` around JSON, and never output fields like `id`, `cursor`, or `loc` meant for UI grounding. The user only needs readable prose and optional valsi/definition quotes.",
+         - When quoting definitions from jbovlaste, preserve inline `$...$` math delimiters exactly as in the tool output (they are part of the definition text).",
     );
 
     if let Some(loc) = locale {
@@ -476,6 +478,13 @@ struct ToolArgs {
     languages: Option<Vec<i32>>,
     #[serde(default)]
     source_langid: Option<i32>,
+}
+
+static LLM_CORNER_BRACKET_SEGMENTS: Lazy<Regex> =
+    Lazy::new(|| Regex::new(r"【.*?】").expect("valid regex"));
+
+fn strip_llm_corner_bracket_segments(s: &str) -> String {
+    LLM_CORNER_BRACKET_SEGMENTS.replace_all(s, "").into_owned()
 }
 
 /// Some models (e.g. openrouter/free) emit tool calls as text instead of tool_calls.
@@ -952,11 +961,13 @@ async fn run_agent_loop_inner(
             // Loop again so the model can see tool results and either call more tools or reply.
         } else {
             // No tool calls: this is the final assistant reply.
-            let reply = choice
-                .message
-                .content
-                .clone()
-                .unwrap_or_else(String::new);
+            let reply = strip_llm_corner_bracket_segments(
+                &choice
+                    .message
+                    .content
+                    .clone()
+                    .unwrap_or_else(String::new),
+            );
             if let Some(tx) = event_tx {
                 let payload = json!({
                     "type": "done",
@@ -981,6 +992,7 @@ async fn run_agent_loop_inner(
         .map(|m| m.content.clone())
         .filter(|c| !c.is_empty())
         .unwrap_or_else(|| "I need more time to look that up. Please try again.".to_string());
+    let last_content = strip_llm_corner_bracket_segments(&last_content);
 
     if let Some(tx) = event_tx {
         let payload = json!({
