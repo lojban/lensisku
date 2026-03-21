@@ -90,7 +90,6 @@
   },
   "assistantChat": {
     "title": "Lojban Assistant",
-    "subtitle": "Describe a concept in English; the assistant uses jbovlaste to suggest Lojban words and combinations.",
     "emptyState": "Send a message to get started.",
     "assistantLabel": "Assistant",
     "userLabel": "You",
