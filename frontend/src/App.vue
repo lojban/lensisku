@@ -61,35 +61,41 @@
             <Clock4 class="h-5 w-5" />
             {{ $t('nav.recent') }}
           </NavLink>
-          <div class="relative group">
-            <button class="navbar-item">
+          <div ref="moreNavRef" class="relative group">
+            <button
+              type="button"
+              class="navbar-item"
+              :aria-expanded="isMoreNavOpen"
+              aria-haspopup="true"
+              @click.stop="isMoreNavOpen = !isMoreNavOpen">
               <span class="hidden lg:inline"> {{ $t('nav.more') }} </span>
               <ChevronDown class="h-5 w-5" :stroke-width="2.5" :absolute-stroke-width="true" />
             </button>
             <div
-              class="absolute hidden group-hover:flex flex-col mt-0 bg-white border border-gray-200 rounded-md shadow-lg z-50 p-1 w-auto max-w-96">
-              <NavLink v-if="auth.state.isLoggedIn" to="/users" class="navbar-item justify-start py-2" @click="isMenuOpen = false">
+              class="absolute flex-col mt-0 bg-white border border-gray-200 rounded-md shadow-lg z-50 p-1 w-auto max-w-96"
+              :class="isMoreNavOpen ? 'flex' : 'hidden group-hover:flex'">
+              <NavLink v-if="auth.state.isLoggedIn" to="/users" class="navbar-item justify-start py-2" @click="closeNavMenus">
                 <Users class="h-4 w-4" />
                 {{ auth.state.authorities?.includes('manage_roles') ? $t('nav.iamUsers') : $t('nav.users') }}
               </NavLink>
-              <NavLink to="/languages" class="navbar-item justify-start py-2">
+              <NavLink to="/languages" class="navbar-item justify-start py-2" @click="closeNavMenus">
                 <Globe class="h-4 w-4" />
                 {{ $t('nav.languages') }}
               </NavLink>
-              <NavLink to="/assistant" class="navbar-item justify-start py-2">
+              <NavLink to="/assistant" class="navbar-item justify-start py-2" @click="closeNavMenus">
                 <Bot class="h-4 w-4" />
                 {{ $t('nav.assistant') }}
               </NavLink>
-              <NavLink v-if="!auth.state.isLoggedIn" to="/export/cached" class="navbar-item justify-start py-2">
+              <NavLink v-if="!auth.state.isLoggedIn" to="/export/cached" class="navbar-item justify-start py-2" @click="closeNavMenus">
                 <Download class="h-4 w-4" />
                 {{ $t('nav.cachedExports') }}
               </NavLink>
-              <NavLink v-if="auth.state.isLoggedIn" to="/export" class="navbar-item justify-start py-2">
+              <NavLink v-if="auth.state.isLoggedIn" to="/export" class="navbar-item justify-start py-2" @click="closeNavMenus">
                 <Upload class="h-4 w-4" />
                 {{ $t('nav.export') }}
               </NavLink>
               <NavLink v-if="auth.state.isLoggedIn && auth.state.authorities?.includes('bulk_import')" to="/bulk-import"
-                class="navbar-item justify-start py-2">
+                class="navbar-item justify-start py-2" @click="closeNavMenus">
                 <Download class="h-4 w-4" />
                 {{ $t('nav.bulkImport') }}
               </NavLink>
@@ -360,6 +366,8 @@ const searchMode = ref('messages')
 const auth = provideAuth()
 const { error, clearError } = provideError()
 const isMenuOpen = ref(false)
+const isMoreNavOpen = ref(false)
+const moreNavRef = ref(null)
 const showActionModal = ref(false)
 const showPyro = ref(false)
 const discordChatUrl = 'https://discord.gg/4KhzRzpmVr'
@@ -436,10 +444,15 @@ const syncFromRoute = () => {
   searchMode.value = route.query.mode || 'messages'
 }
 
+const closeNavMenus = () => {
+  isMenuOpen.value = false
+  isMoreNavOpen.value = false
+}
+
 const handleLogout = () => {
   auth.logout()
   router.push('/login')
-  isMenuOpen.value = false
+  closeNavMenus()
 }
 
 const handleResendConfirmation = async () => {
@@ -496,7 +509,7 @@ const viewThread = (subject) => {
 watch(
   () => route.fullPath,
   () => {
-    isMenuOpen.value = false
+    closeNavMenus()
     clearError()
   }
 )
@@ -506,6 +519,13 @@ const handleClickOutside = (event) => {
   const header = document.querySelector('header')
   if (isMenuOpen.value && header && !header.contains(event.target)) {
     isMenuOpen.value = false
+  }
+  if (
+    isMoreNavOpen.value &&
+    moreNavRef.value &&
+    !moreNavRef.value.contains(event.target)
+  ) {
+    isMoreNavOpen.value = false
   }
 }
 
@@ -619,6 +639,7 @@ onMounted(() => {
     if (window.innerWidth >= 640) {
       // sm breakpoint
       isMenuOpen.value = false
+      isMoreNavOpen.value = false
     }
   }
 
