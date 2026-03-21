@@ -145,9 +145,6 @@
               {{ $t('assistantChat.newChat') }}
             </button>
           </div>
-          <p class="mt-1 text-sm text-gray-600">
-            {{ $t('assistantChat.subtitle') }}
-          </p>
         </div>
       </div>
 
@@ -987,17 +984,16 @@ const retryLast = async () => {
 
 /*
  * LazyMathJax forces direct children to `inline`, which breaks <pre> and lets long code
- * widen past the bubble. Keep scroll inside the code block only (not the chat pane).
+ * widen past the bubble. Scroll horizontally inside <pre>; height grows with content (no inner vertical scrollbar).
  */
 .assistant-markdown :deep(.mathjax-content > pre) {
   display: block !important;
   max-width: 100%;
   margin: 0.5rem 0;
   overflow-x: auto;
-  overflow-y: auto;
-  max-height: min(70vh, 28rem);
   -webkit-overflow-scrolling: touch;
   box-sizing: border-box;
+  @apply rounded-md border border-gray-200 bg-gray-50/80 px-3 py-2 shadow-inner;
 }
 
 .assistant-markdown :deep(.mathjax-content pre code) {
