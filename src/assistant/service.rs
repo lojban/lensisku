@@ -7,7 +7,7 @@ use actix_web_lab::sse;
 use deadpool_postgres::Pool;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use tokio::sync::mpsc;
+use tokio::sync::{mpsc, RwLock};
 use tokio::time::sleep;
 
 use once_cell::sync::Lazy;
@@ -16,7 +16,7 @@ use regex::Regex;
 use crate::embeddings::get_embedding;
 use crate::error::AppError;
 use crate::jbovlaste::models::{DefinitionDetail, DefinitionResponse, SearchDefinitionsParams};
-use crate::jbovlaste::service::semantic_search;
+use crate::jbovlaste::service::{cmavo_gismu_english_dictionary_text, semantic_search};
 
 use super::dto::{AssistantStep, ChatMessage, ChatRequest};
 
@@ -380,9 +380,10 @@ struct ToolCall {
     function: ToolCallFunction,
 }
 
-fn system_prompt(locale: Option<&str>) -> String {
+fn system_prompt_base(locale: Option<&str>) -> String {
     let mut base = String::from(
         "You are a Lojban dictionary assistant. You must strictly rely on jbovlaste semantic search results whenever you need dictionary evidence.\n\
+         - **Canonical cmavo/gismu list:** The message may include a block titled \"Official cmavo and gismu (English, jbovlaste)\". That list is the ground truth for whether a Lojban **cmavo** or **gismu** exists and for its English gloss in this database. Do **not** invent cmavo or gismu that are not in that list. For **lujvo**, **fu'ivla**, **cmavo compounds**, or anything not in that list, use `jbovlaste_semantic_search`.\n\
          - **When to call `jbovlaste_semantic_search`:** Call it when the user asks about Lojban words, concepts, or meanings that require **new** jbovlaste evidence: e.g. the first question in a thread, a **different** valsi or topic than already covered, or when nothing in the prior conversation gives you grounded definitions for what they asked.\n\
          - **When NOT to call (no tool):** If the user’s message is a **clarification, follow-up, or rephrase** about the **same** word or concept you already answered using prior search-backed content in this conversation, answer from that conversation only—**do not** run semantic search again. Same for “explain simpler”, “give an example from what you already quoted”, or short confirmations—reuse prior assistant turns.\n\
          - **Multi-step search within one answer:** After you receive tool results, read them carefully. If they are insufficient, off-topic, too vague, or you need related terms, alternate phrasings, or another sub-concept **for that same reply**, call `jbovlaste_semantic_search` again in a *later* step with a new or refined query. Do not give a final answer until search results actually support it.\n\
@@ -407,6 +408,79 @@ fn system_prompt(locale: Option<&str>) -> String {
     }
 
     base
+}
+
+static ASSISTANT_CMAVO_GISMU_DICT_CACHE: Lazy<RwLock<Option<String>>> =
+    Lazy::new(|| RwLock::new(None));
+
+fn truncate_utf8_prefix(s: &str, max_bytes: usize) -> &str {
+    if s.len() <= max_bytes {
+        return s;
+    }
+    let mut end = max_bytes;
+    while end > 0 && !s.is_char_boundary(end) {
+        end -= 1;
+    }
+    &s[..end]
+}
+
+/// Loads English cmavo+gismu lines from the DB (jbovlaste), cached for the process lifetime (official list is stable) with optional size cap.
+async fn assistant_cmavo_gismu_dictionary_cached(pool: &Pool) -> String {
+    let max_chars: usize = env::var("ASSISTANT_GISMU_CMAVO_DICT_MAX_CHARS")
+        .ok()
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(120_000);
+
+    {
+        let guard = ASSISTANT_CMAVO_GISMU_DICT_CACHE.read().await;
+        if let Some(ref s) = *guard {
+            return s.clone();
+        }
+    }
+
+    let fetched = match cmavo_gismu_english_dictionary_text(pool).await {
+        Ok(s) => s,
+        Err(e) => {
+            log::warn!("Failed to load cmavo/gismu dictionary for assistant: {}", e);
+            return String::new();
+        }
+    };
+
+    let text = if fetched.len() > max_chars {
+        let prefix = truncate_utf8_prefix(&fetched, max_chars);
+        let cut = prefix.rfind('\n').unwrap_or(prefix.len());
+        let mut t = prefix[..cut].to_string();
+        t.push_str("\n\n[Dictionary truncated for context size; remaining entries omitted.]");
+        t
+    } else {
+        fetched
+    };
+
+    if text.is_empty() {
+        return text;
+    }
+
+    {
+        let mut guard = ASSISTANT_CMAVO_GISMU_DICT_CACHE.write().await;
+        if let Some(ref s) = *guard {
+            return s.clone();
+        }
+        *guard = Some(text.clone());
+    }
+    text
+}
+
+async fn system_prompt_with_dictionary(pool: &Pool, locale: Option<&str>) -> String {
+    let base = system_prompt_base(locale);
+    let dict = assistant_cmavo_gismu_dictionary_cached(pool).await;
+    if dict.is_empty() {
+        return base;
+    }
+    format!(
+        "{}\n\n## Official cmavo and gismu (English, jbovlaste)\n\
+Each line is `word - definition` (best English definition per word). Use this as the authoritative list of **cmavo** and **gismu** in this database.\n\n{}",
+        base, dict
+    )
 }
 
 fn to_openrouter_role(role: &str) -> String {
@@ -760,7 +834,7 @@ async fn run_agent_loop_inner(
     let mut messages: Vec<ChatCompletionMessageRequest> = Vec::new();
     messages.push(ChatCompletionMessageRequest {
         role: "system".to_string(),
-        content: system_prompt(request.locale.as_deref()),
+        content: system_prompt_with_dictionary(pool, request.locale.as_deref()).await,
         tool_call_id: None,
         name: None,
         tool_calls: None,
