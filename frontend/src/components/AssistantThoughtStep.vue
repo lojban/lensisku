@@ -35,16 +35,24 @@
               </summary>
               <div
                 v-if="row.definition"
-                class="mt-1.5 pl-1 border-l-2 border-gray-200 text-gray-700 whitespace-pre-wrap break-words"
+                class="mt-1.5 pl-1 border-l-2 border-gray-200 text-gray-700 break-words"
               >
-                {{ row.definition }}
+                <LazyMathJax
+                  :content="row.definition"
+                  :lang-id="langId"
+                  class="block text-xs text-gray-700"
+                />
               </div>
               <div
                 v-if="row.notes"
-                class="mt-1 text-[11px] text-gray-500 whitespace-pre-wrap break-words"
+                class="mt-1 text-[11px] text-gray-500 break-words"
               >
                 <span class="font-medium text-gray-600">{{ $t('assistantChat.notesLabel') }}</span>
-                {{ row.notes }}
+                <LazyMathJax
+                  :content="row.notes"
+                  :lang-id="langId"
+                  class="inline text-[11px] text-gray-500"
+                />
               </div>
             </details>
           </li>
@@ -97,6 +105,8 @@
 <script setup>
 import { computed } from 'vue'
 
+import LazyMathJax from '@/components/LazyMathJax.vue'
+
 const props = defineProps({
   step: {
     type: Object,
@@ -105,6 +115,10 @@ const props = defineProps({
   showRawOutput: {
     type: Boolean,
     default: false,
+  },
+  langId: {
+    type: String,
+    default: '',
   },
 })
 

@@ -120,18 +120,18 @@
     </aside>
 
     <!-- Main column -->
-    <div class="flex flex-col flex-1 min-w-0 min-h-0 pt-3">
+    <div class="flex flex-col flex-1 min-w-0 min-h-0 pt-3 px-3">
       <div class="mb-3 flex items-start gap-3">
         <button
           type="button"
-          class="md:hidden shrink-0 m-1 p-2 rounded-lg border border-gray-200 bg-white text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-400/50"
+          class="md:hidden shrink-0 p-2 rounded-lg border border-gray-200 bg-white text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-400/50"
           :aria-label="$t('assistantChat.openChatHistory')"
           :aria-expanded="sidebarOpen"
           @click="sidebarOpen = !sidebarOpen"
         >
           <PanelLeft class="w-5 h-5" />
         </button>
-        <div class="flex-1 min-w-0 pr-3">
+        <div class="flex-1 min-w-0">
           <div class="flex items-start justify-between gap-3 min-w-0">
             <h1 class="text-2xl font-bold text-gray-800 min-w-0">
               {{ $t('assistantChat.title') }}
@@ -230,6 +230,7 @@
                   v-for="(step, stepIdx) in reply.steps"
                   :key="stepIdx"
                   :step="step"
+                  :lang-id="locale"
                   :show-raw-output="isStepOutputVisible(stepKey(index, replyIdx, stepIdx))"
                   @toggle-raw="toggleStepOutput(stepKey(index, replyIdx, stepIdx))"
                 />
@@ -268,6 +269,7 @@
                   v-for="(step, stepIdx) in msg.steps"
                   :key="stepIdx"
                   :step="step"
+                  :lang-id="locale"
                   :show-raw-output="isStepOutputVisible(stepKey('legacy', index, stepIdx))"
                   @toggle-raw="toggleStepOutput(stepKey('legacy', index, stepIdx))"
                 />
@@ -315,7 +317,7 @@
       </div>
 
       <form
-        class="mt-4 mb-8 flex flex-col gap-2 shrink-0 pr-3"
+        class="mt-4 flex flex-col gap-2 shrink-0 sticky bottom-0 z-10 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]"
         @submit.prevent="handleSend"
       >
         <textarea
