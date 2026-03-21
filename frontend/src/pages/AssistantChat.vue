@@ -216,7 +216,7 @@
             <div
               v-for="(reply, replyIdx) in assistantReplies(msg)"
               :key="replyIdx"
-              class="max-w-[80%] rounded-lg px-3 py-2 text-sm break-words bg-gray-100 text-gray-900 assistant-markdown"
+              class="max-w-[80%] min-w-0 rounded-lg px-3 py-2 text-sm break-words bg-gray-100 text-gray-900 assistant-markdown"
             >
               <span class="block text-[11px] font-semibold text-gray-500 mb-1">
                 {{ reply.modelName || (reply.model ? formatModelLabel(reply.model) : '') || $t('assistantChat.assistantLabel') }}
@@ -256,7 +256,7 @@
             <!-- Legacy single bubble when no replies array yet -->
             <div
               v-if="assistantReplies(msg).length === 0"
-              class="max-w-[80%] rounded-lg px-3 py-2 text-sm break-words bg-gray-100 text-gray-900 assistant-markdown"
+              class="max-w-[80%] min-w-0 rounded-lg px-3 py-2 text-sm break-words bg-gray-100 text-gray-900 assistant-markdown"
             >
               <span class="block text-[11px] font-semibold text-gray-500 mb-1">
                 {{ $t('assistantChat.assistantLabel') }}
@@ -981,7 +981,32 @@ const retryLast = async () => {
 <style scoped>
 .assistant-markdown :deep(.mathjax-content) {
   display: block;
+  min-width: 0;
+  max-width: 100%;
 }
+
+/*
+ * LazyMathJax forces direct children to `inline`, which breaks <pre> and lets long code
+ * widen past the bubble. Keep scroll inside the code block only (not the chat pane).
+ */
+.assistant-markdown :deep(.mathjax-content > pre) {
+  display: block !important;
+  max-width: 100%;
+  margin: 0.5rem 0;
+  overflow-x: auto;
+  overflow-y: auto;
+  max-height: min(70vh, 28rem);
+  -webkit-overflow-scrolling: touch;
+  box-sizing: border-box;
+}
+
+.assistant-markdown :deep(.mathjax-content pre code) {
+  display: block;
+  white-space: pre;
+  word-break: normal;
+  overflow-wrap: normal;
+}
+
 .assistant-markdown :deep(a) {
   @apply text-blue-600 hover:text-blue-800 hover:underline;
 }

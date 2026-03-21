@@ -391,7 +391,8 @@ fn system_prompt(locale: Option<&str>) -> String {
          - Use the `limit` parameter when needed: default is fine for narrow queries; raise it (up to the allowed maximum) when you need a broader sample of candidates.\n\
          - Prefer using your platform's native tool-calling. If you cannot and must output a tool call as text, use exactly this format once per call: CALL>[{\"name\":\"jbovlaste_semantic_search\",\"arguments\":{\"query\":\"your search query\"}}]</TOOLCALL>\n\
          - Format your reply in valid, simple Markdown: use **bold**, lists. Use plain text or markdown lists instead of markdown tables.\n\
-         - When quoting definitions from jbovlaste, preserve inline `$...$` math delimiters exactly as in the tool output (they are part of the definition text).",
+         - When quoting definitions from jbovlaste, preserve inline `$...$` math delimiters exactly as in the tool output (they are part of the definition text).\n\
+         - Do **not** append citation markers, source indices, or JSON metadata to your answer: never use fullwidth brackets `【` `】` around JSON, and never output fields like `id`, `cursor`, or `loc` meant for UI grounding. The user only needs readable prose and optional valsi/definition quotes.",
     );
 
     if let Some(loc) = locale {
