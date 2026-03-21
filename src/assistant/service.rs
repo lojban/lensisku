@@ -5,7 +5,6 @@ use std::time::Duration;
 
 use actix_web_lab::sse;
 use deadpool_postgres::Pool;
-use regex::Regex;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use tokio::sync::mpsc;
@@ -391,7 +390,8 @@ fn system_prompt(locale: Option<&str>) -> String {
          - You have access only to the tool `jbovlaste_semantic_search`. Use it with a natural-language query (e.g. in English) to find relevant jbovlaste definitions.\n\
          - Use the `limit` parameter when needed: default is fine for narrow queries; raise it (up to the allowed maximum) when you need a broader sample of candidates.\n\
          - Prefer using your platform's native tool-calling. If you cannot and must output a tool call as text, use exactly this format once per call: CALL>[{\"name\":\"jbovlaste_semantic_search\",\"arguments\":{\"query\":\"your search query\"}}]</TOOLCALL>\n\
-         - Format your reply in valid, simple Markdown: use **bold**, lists. Use plain text or markdown lists instead of markdown tables.",
+         - Format your reply in valid, simple Markdown: use **bold**, lists. Use plain text or markdown lists instead of markdown tables.\n\
+         - When quoting definitions from jbovlaste, preserve inline `$...$` math delimiters exactly as in the tool output (they are part of the definition text).",
     );
 
     if let Some(loc) = locale {
@@ -590,26 +590,16 @@ async fn run_jbovlaste_semantic_search_with_retry(
     unreachable!()
 }
 
-/// Removes MathJax wrapping `$` and `$$` so the LLM receives plain text definitions/notes.
-fn strip_mathjax_for_llm(s: &str) -> String {
-    // Display math: $$...$$ → inner content (non-greedy, allow newlines)
-    let re_display = Regex::new(r"\$\$([\s\S]*?)\$\$").expect("display math regex");
-    let s = re_display.replace_all(s, "$1");
-    // Inline math: $...$ → inner content (non-empty, no unescaped $ inside)
-    let re_inline = Regex::new(r"\$([^$]+)\$").expect("inline math regex");
-    re_inline.replace_all(&s, "$1").trim().to_string()
-}
-
 fn summarise_definition(def: &DefinitionDetail) -> serde_json::Value {
     json!({
         "valsi": def.valsiword,
-        "definition": strip_mathjax_for_llm(&def.definition),
-        "notes": def.notes.as_ref().map(|s| strip_mathjax_for_llm(s)),
+        "definition": &def.definition,
+        "notes": def.notes.as_deref(),
         "lang": def.langrealname,
         "score": def.score,
         "similarity": def.similarity,
-        "selmaho": def.selmaho.as_ref().map(|s| strip_mathjax_for_llm(s)),
-        "jargon": def.jargon.as_ref().map(|s| strip_mathjax_for_llm(s)),
+        "selmaho": def.selmaho.as_deref(),
+        "jargon": def.jargon.as_deref(),
     })
 }
 
@@ -629,18 +619,16 @@ fn semantic_tool_results_plain_text_for_llm(query: &str, definitions: &[Definiti
             out.push_str(&format!("relevance: {:.4}\n", sim));
         }
         out.push_str("definition:\n");
-        out.push_str(&strip_mathjax_for_llm(&def.definition));
+        out.push_str(&def.definition);
         out.push('\n');
         if let Some(notes) = def.notes.as_ref() {
-            let n = strip_mathjax_for_llm(notes);
-            if !n.trim().is_empty() {
+            if !notes.trim().is_empty() {
                 out.push_str("notes:\n");
-                out.push_str(&n);
+                out.push_str(notes);
                 out.push('\n');
             }
         }
         if let Some(s) = def.selmaho.as_ref() {
-            let s = strip_mathjax_for_llm(s);
             if !s.trim().is_empty() {
                 out.push_str(&format!("selmaho: {}\n", s));
             }
