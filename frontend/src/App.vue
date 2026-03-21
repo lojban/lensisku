@@ -814,17 +814,24 @@ footer {
   overflow-y: scroll;
 }
 
-/* Full-height pages (e.g. Lingo study): no scrollbar, child fills main */
+/* Full-height pages (e.g. Lingo study): no scrollbar, child fills main.
+   Use small viewport height so layout fits when mobile browser chrome is visible;
+   100vh alone is often taller than the visible area and pushes content below the fold. */
 .main-content.main-content--no-scroll {
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  box-sizing: border-box;
+  /* legacy */
   height: calc(100vh - 57px);
-  padding-bottom: 0;
+  /* prefer svh when supported (mobile toolbars / dynamic UI) */
+  height: calc(100svh - 57px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 @media (min-width: 640px) {
   .main-content.main-content--no-scroll {
     height: calc(100vh - 49px);
+    height: calc(100svh - 49px);
   }
 }
 
