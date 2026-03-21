@@ -119,9 +119,9 @@
       </div>
     </aside>
 
-    <!-- Main column -->
-    <div class="flex flex-col flex-1 min-w-0 min-h-0 pt-3 px-3">
-      <div class="mb-3 flex items-start gap-3">
+    <!-- Main column: flex-1 + min-h-0 + overflow-hidden so messages scroll and form stays in view -->
+    <div class="flex flex-col flex-1 min-w-0 min-h-0 overflow-hidden pt-3 px-3 gap-3">
+      <div class="shrink-0 flex items-start gap-3">
         <button
           type="button"
           class="md:hidden shrink-0 p-2 rounded-lg border border-gray-200 bg-white text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-400/50"
@@ -317,7 +317,7 @@
       </div>
 
       <form
-        class="mt-4 flex flex-col gap-2 shrink-0 sticky bottom-0 z-10 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]"
+        class="shrink-0 flex flex-col gap-2 border-t border-gray-100 bg-white pt-3 pb-2 -mx-3 px-3"
         @submit.prevent="handleSend"
       >
         <textarea
