@@ -1,7 +1,11 @@
 <template>
-  <div
-    class="flex min-h-0 flex-1 h-full w-full overflow-hidden gap-0 md:gap-4"
-  >
+  <!--
+    Layout is isolated from App.vue flex/100svh quirks on small screens:
+    - Mobile: shell height = 100dvh − header (matches sticky header h-14 / sm:h-12)
+    - Desktop: fill parent (fullHeight route) as before
+    - One scroll region (messages); composer is a normal flex footer
+  -->
+  <div class="assistant-root flex min-h-0 w-full min-w-0 flex-1 gap-0 overflow-hidden md:h-full md:gap-4">
     <!-- Mobile drawer backdrop -->
     <div
       v-if="!isDesktop && sidebarOpen"
@@ -13,54 +17,50 @@
     <!-- Chat history sidebar -->
     <aside
       :class="[
-        'flex flex-col flex-shrink-0 border-r border-gray-200 bg-gradient-to-b from-slate-50 to-gray-50/90 z-50 h-full min-h-0',
+        'assistant-sidebar flex min-h-0 flex-shrink-0 flex-col border-r border-gray-200 bg-gradient-to-b from-slate-50 to-gray-50/90 z-50',
         isDesktop
-          ? 'relative w-[min(100%,18rem)] md:w-72'
-          : 'fixed left-0 top-0 bottom-0 w-[min(18rem,88vw)] shadow-2xl transition-transform duration-200 ease-out md:relative md:translate-x-0 md:shadow-none',
+          ? 'relative h-full w-[min(100%,18rem)] md:w-72'
+          : 'fixed bottom-0 left-0 top-14 w-[min(18rem,88vw)] shadow-2xl transition-transform duration-200 ease-out sm:top-12 md:relative md:h-full md:translate-x-0 md:shadow-none',
         !isDesktop && !sidebarOpen ? '-translate-x-full pointer-events-none' : 'translate-x-0',
       ]"
       :aria-label="$t('assistantChat.searchChats')"
     >
-      <div class="flex items-center justify-between gap-2 px-3 py-3 border-b border-gray-200/80 bg-white/60">
-        <h2 class="text-sm font-semibold text-gray-800 truncate">
-          {{ $t('assistantChat.searchChats') }}
-        </h2>
+      <!-- Row 1: close (mobile) + new chat -->
+      <div class="flex items-center gap-2 border-b border-gray-200/60 bg-white/40 px-2 py-2">
         <button
           v-if="!isDesktop"
           type="button"
-          class="p-1.5 rounded-lg text-gray-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-400/50"
+          class="shrink-0 rounded-lg p-1.5 text-gray-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-400/50"
           :aria-label="$t('assistantChat.closeChatHistory')"
           @click="sidebarOpen = false"
         >
-          <X class="w-5 h-5" />
+          <X class="h-5 w-5" />
+        </button>
+        <button
+          type="button"
+          class="flex min-w-0 flex-1 items-center justify-center gap-2 rounded-lg border border-dashed border-gray-300 bg-white/80 py-2.5 text-sm font-medium text-gray-700 hover:border-blue-400 hover:bg-blue-50/60 hover:text-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-400/40 transition-colors"
+          @click="startNewChat"
+        >
+          <Plus class="h-4 w-4 shrink-0" />
+          {{ $t('assistantChat.newChat') }}
         </button>
       </div>
 
-      <div class="px-2 py-2 border-b border-gray-200/60 bg-white/40">
+      <!-- Row 2: search -->
+      <div class="border-b border-gray-200/60 bg-white/40 px-2 py-2">
         <div class="relative">
           <Search
-            class="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"
+            class="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400"
             aria-hidden="true"
           />
           <input
             v-model="chatSearchQuery"
             type="search"
             autocomplete="off"
-            class="w-full rounded-lg border border-gray-200 bg-white pl-9 pr-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400/30"
+            class="w-full rounded-lg border border-gray-200 bg-white py-2 pl-9 pr-3 text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400/30"
             :placeholder="$t('assistantChat.searchChatsPlaceholder')"
           >
         </div>
-      </div>
-
-      <div class="p-2 border-b border-gray-200/60">
-        <button
-          type="button"
-          class="w-full flex items-center justify-center gap-2 rounded-lg border border-dashed border-gray-300 bg-white/80 py-2.5 text-sm font-medium text-gray-700 hover:border-blue-400 hover:bg-blue-50/60 hover:text-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-400/40 transition-colors"
-          @click="startNewChat"
-        >
-          <Plus class="w-4 h-4 shrink-0" />
-          {{ $t('assistantChat.newChat') }}
-        </button>
       </div>
 
       <div
@@ -119,9 +119,9 @@
       </div>
     </aside>
 
-    <!-- Main column: flex-1 + min-h-0 + overflow-hidden so messages scroll and form stays in view -->
-    <div class="flex flex-col flex-1 min-w-0 min-h-0 overflow-hidden pt-3 px-3 gap-3">
-      <div class="shrink-0 flex items-start gap-3">
+    <!-- Main column -->
+    <div class="assistant-main flex min-h-0 min-w-0 flex-1 flex-col gap-3 overflow-hidden px-3 pt-3">
+      <div class="flex shrink-0 items-start gap-3">
         <button
           type="button"
           class="md:hidden shrink-0 p-2 rounded-lg border border-gray-200 bg-white text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-400/50"
@@ -150,7 +150,7 @@
 
       <div
         ref="scrollContainer"
-        class="relative flex-1 rounded-lg border border-gray-200 bg-white min-h-0"
+        class="assistant-messages relative min-h-0 flex-1 overflow-x-hidden rounded-lg border border-gray-200 bg-white [overscroll-behavior-y:contain]"
         :class="isRestoringScroll ? 'overflow-hidden' : 'overflow-y-auto'"
         @scroll.passive="onScrollAreaScroll"
       >
@@ -314,7 +314,7 @@
       </div>
 
       <form
-        class="shrink-0 flex flex-col gap-2 border-t border-gray-100 bg-white pt-3 pb-2 -mx-3 px-3"
+        class="assistant-composer -mx-3 flex shrink-0 flex-col gap-2 border-t border-gray-100 bg-white px-3 pb-2 pt-3"
         @submit.prevent="handleSend"
       >
         <textarea
@@ -586,6 +586,14 @@ function onScrollAreaScroll() {
   debouncedScrollPersist()
 }
 
+/** When mobile browser chrome or visual viewport changes, max scroll range changes — reclamp so top of thread stays reachable. */
+function clampMessageScroll() {
+  const el = scrollContainer.value
+  if (!el) return
+  const max = Math.max(0, el.scrollHeight - el.clientHeight)
+  if (el.scrollTop > max) el.scrollTop = max
+}
+
 function applyStoredScrollForActiveSession() {
   if (messages.value.length === 0) {
     chatMessagesReady.value = true
@@ -623,6 +631,14 @@ watch(
 onMounted(() => {
   suppressAutoScroll.value = true
   loadFromStorage()
+
+  window.addEventListener('resize', clampMessageScroll)
+  const vv = typeof window !== 'undefined' ? window.visualViewport : null
+  if (vv) {
+    vv.addEventListener('resize', clampMessageScroll)
+    vv.addEventListener('scroll', clampMessageScroll)
+  }
+
   if (messages.value.length === 0) {
     loaded.value = true
     chatMessagesReady.value = true
@@ -644,6 +660,12 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   if (loaded.value) persistToStorage()
+  window.removeEventListener('resize', clampMessageScroll)
+  const vv = typeof window !== 'undefined' ? window.visualViewport : null
+  if (vv) {
+    vv.removeEventListener('resize', clampMessageScroll)
+    vv.removeEventListener('scroll', clampMessageScroll)
+  }
 })
 
 onKeyStroke('Escape', () => {
@@ -976,6 +998,25 @@ const retryLast = async () => {
 </script>
 
 <style scoped>
+/* Mobile: explicit 100dvh − header so layout does not depend on App.vue main height math */
+.assistant-root {
+  --assistant-header: 3.5rem;
+}
+@media (min-width: 640px) {
+  .assistant-root {
+    --assistant-header: 3rem;
+  }
+}
+@media (max-width: 767px) {
+  .assistant-root {
+    box-sizing: border-box;
+    height: calc(100vh - var(--assistant-header) - env(safe-area-inset-bottom, 0px));
+    max-height: calc(100vh - var(--assistant-header) - env(safe-area-inset-bottom, 0px));
+    height: calc(100dvh - var(--assistant-header) - env(safe-area-inset-bottom, 0px));
+    max-height: calc(100dvh - var(--assistant-header) - env(safe-area-inset-bottom, 0px));
+  }
+}
+
 .assistant-markdown :deep(.mathjax-content) {
   display: block;
   min-width: 0;
