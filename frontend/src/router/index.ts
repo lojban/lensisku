@@ -238,7 +238,7 @@ const baseRoutes: Array<RouteRecordRaw> = [
     path: "/collections/:collectionId/lingo/study",
     name: "LingoStudy",
     component: () => import("../pages/LingoStudyView.vue"),
-    meta: { hideFooter: true, fullHeight: true, fullHeightNarrow: true },
+    meta: { hideFooter: true, fullHeight: true },
   },
   {
     path: "/collections/:collectionId/levels",
@@ -362,7 +362,7 @@ const localeRoutes = supportedLocales.flatMap((locale) =>
 ) as Array<RouteRecordRaw>;
 
 export const setupRouterGuards = (router: any, isClient: boolean) => {
-  router.beforeEach(async (to: any, from: any, next: any) => {
+  router.beforeEach(async (to: any, from: any) => {
     const baseToName = to.name?.split("-")[0];
 
     if (to.query.redirect_loop) {
@@ -371,10 +371,10 @@ export const setupRouterGuards = (router: any, isClient: boolean) => {
         // Navigate to Login but clear the flag to break the loop.
         const newQuery = { ...to.query };
         delete newQuery.redirect_loop;
-        return next({ name: to.name, params: to.params, query: newQuery, replace: true });
+        return { name: to.name, params: to.params, query: newQuery, replace: true };
       }
       // For other routes with redirect_loop, go to root.
-      return next('/');
+      return '/';
     }
     
     if (isClient) {
@@ -401,13 +401,12 @@ export const setupRouterGuards = (router: any, isClient: boolean) => {
           targetLocale = pathSegments[1] as SupportedLocale;
         }
         
-        return next({
+        return {
           name: `Login-${targetLocale}`, // Use the extracted locale for the Login route name
           query: { redirect_loop: from.name ? '1' : undefined }
-        });
+        };
       }
     }
-    next();
   });
 };
 

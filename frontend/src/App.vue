@@ -222,9 +222,7 @@
       :class="[
         route.meta.contentTopPaddingMainOnly ? 'pt-0' : 'pt-3',
         route.meta.fullHeight
-          ? route.meta.fullHeightNarrow
-            ? 'main-child-full-height w-full sm:w-[380px] sm:min-w-[380px] sm:max-w-[380px]'
-            : 'main-child-full-height w-full'
+          ? 'main-child-full-height w-full'
           : 'min-h-[calc(100vh-12rem)]',
         route.path.startsWith('/lingo') ? 'lg:pl-64' : ''
       ]"
@@ -684,12 +682,11 @@ footer {
 
 .main-content {
   height: calc(100vh - 57px - 24px);
-  padding-bottom: 24px;
 }
 
 .main-content>* {
   @apply bg-transparent md:bg-zinc-50/75 md:border-x;
-  min-height: calc(100% - 24px);
+  min-height: 100%;
 }
 
 @media (min-width: 640px) {
