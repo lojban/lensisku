@@ -522,6 +522,7 @@ function createInitialSession() {
       updatedAt: Date.now(),
       messages: [],
       scrollTop: 0,
+      primaryModelId: null,
     },
   ]
   activeSessionId.value = id
@@ -759,6 +760,7 @@ function startNewChat() {
     updatedAt: Date.now(),
     messages: [],
     scrollTop: 0,
+    primaryModelId: null,
   }
   sessions.value = [newSession, ...sessions.value.filter((s) => s.id !== id)].slice(0, MAX_SESSIONS)
   activeSessionId.value = id
@@ -770,6 +772,65 @@ function startNewChat() {
     suppressAutoScroll.value = false
     persistToStorage()
   })
+}
+
+/** OpenAI-shaped segments replayed to the backend (assistant + tool + assistant …). */
+function pruneApiSegment(seg) {
+  const o = { role: seg.role, content: seg.content ?? '' }
+  if (seg.tool_calls != null) o.tool_calls = seg.tool_calls
+  if (seg.tool_call_id != null) o.tool_call_id = seg.tool_call_id
+  if (seg.name != null) o.name = seg.name
+  return o
+}
+
+function pickPrimaryReply(msg, primaryModelId) {
+  if (!msg || msg.role !== 'assistant') return null
+  if (msg.replies?.length) {
+    if (primaryModelId) {
+      const hit = msg.replies.find((r) => r.model === primaryModelId)
+      if (hit) return hit
+    }
+    return msg.replies[0]
+  }
+  return {
+    model: null,
+    modelName: null,
+    steps: msg.steps || [],
+    content: msg.content || '',
+    apiTrace: msg.apiTrace,
+  }
+}
+
+function buildPayloadMessages(msgList, session) {
+  const primary = session?.primaryModelId ?? null
+  const out = []
+  for (const m of msgList) {
+    if (m.role === 'user') {
+      out.push({ role: 'user', content: m.content ?? '' })
+      continue
+    }
+    if (m.role === 'assistant') {
+      const reply = pickPrimaryReply(m, primary)
+      if (reply?.apiTrace?.length) {
+        for (const seg of reply.apiTrace) {
+          out.push(pruneApiSegment(seg))
+        }
+      } else {
+        const text = reply?.content ?? m.content ?? ''
+        out.push({ role: 'assistant', content: text })
+      }
+    }
+  }
+  return out
+}
+
+function ensureSessionPrimaryModel(sessionId, modelId) {
+  if (!modelId) return
+  const idx = sessions.value.findIndex((s) => s.id === sessionId)
+  if (idx < 0) return
+  const s = sessions.value[idx]
+  if (s.primaryModelId) return
+  sessions.value.splice(idx, 1, { ...s, primaryModelId: modelId })
 }
 
 function deleteSession(id, e) {
@@ -806,10 +867,8 @@ async function performRequest(sessionId, options = {}) {
   const msgList = getSessionMessagesForMutation(sessionId)
   if (!msgList || msgList.length === 0) return
 
-  const payloadMessages = msgList.map((m) => ({
-    role: m.role,
-    content: m.content,
-  }))
+  const session = sessions.value.find((s) => s.id === sessionId)
+  const payloadMessages = buildPayloadMessages(msgList, session)
 
   if (appendAssistant) {
     msgList.push({
@@ -884,7 +943,26 @@ async function performRequest(sessionId, options = {}) {
         if (modelId && !reply) continue
         if (!modelId && !msg.steps) msg.steps = []
         const steps = modelId ? reply.steps : msg.steps
-        if (event.type === 'step_start') {
+        if (event.type === 'assistant_tool_calls') {
+          if (modelId) {
+            const r = getOrCreateReply(modelId, modelName)
+            if (r) {
+              if (!r.apiTrace) r.apiTrace = []
+              r.apiTrace.push({
+                role: 'assistant',
+                content: event.content ?? '',
+                tool_calls: event.tool_calls ?? null,
+              })
+            }
+          } else {
+            if (!msg.apiTrace) msg.apiTrace = []
+            msg.apiTrace.push({
+              role: 'assistant',
+              content: event.content ?? '',
+              tool_calls: event.tool_calls ?? null,
+            })
+          }
+        } else if (event.type === 'step_start') {
           if (modelId) getOrCreateReply(modelId, modelName)
           const idx =
             typeof event.index === 'number' ? event.index : steps.length
@@ -919,6 +997,8 @@ async function performRequest(sessionId, options = {}) {
             action: event.action ?? (steps[idx]?.action ?? ''),
             result: event.result ?? '',
             tool_output: event.tool_output ?? steps[idx]?.tool_output,
+            tool_call_id: event.tool_call_id ?? steps[idx]?.tool_call_id,
+            tool_content_plain: event.tool_content_plain ?? steps[idx]?.tool_content_plain,
           }
           while (steps.length < idx) {
             steps.push({
@@ -932,12 +1012,44 @@ async function performRequest(sessionId, options = {}) {
           } else {
             steps[idx] = stepPayload
           }
+          const plain = event.tool_content_plain
+          const tcId = event.tool_call_id
+          if (plain != null && plain !== '') {
+            const toolSeg = {
+              role: 'tool',
+              content: plain,
+              tool_call_id: tcId ?? null,
+              name: 'jbovlaste_semantic_search',
+            }
+            const dupCheck = (trace) =>
+              trace?.some(
+                (s) =>
+                  s.role === 'tool' && tcId != null && s.tool_call_id === tcId
+              )
+            if (modelId) {
+              const r = getOrCreateReply(modelId, modelName)
+              if (r) {
+                if (!r.apiTrace) r.apiTrace = []
+                if (!dupCheck(r.apiTrace)) r.apiTrace.push(toolSeg)
+              }
+            } else {
+              if (!msg.apiTrace) msg.apiTrace = []
+              if (!dupCheck(msg.apiTrace)) msg.apiTrace.push(toolSeg)
+            }
+          }
         } else if (event.type === 'done') {
+          ensureSessionPrimaryModel(sessionId, event.model)
           if (modelId) {
             const r = getOrCreateReply(modelId, modelName)
-            if (r) r.content = event.reply ?? ''
+            if (r) {
+              r.content = event.reply ?? ''
+              if (!r.apiTrace) r.apiTrace = []
+              r.apiTrace.push({ role: 'assistant', content: event.reply ?? '' })
+            }
           } else {
             msg.content = event.reply ?? ''
+            if (!msg.apiTrace) msg.apiTrace = []
+            msg.apiTrace.push({ role: 'assistant', content: event.reply ?? '' })
           }
         } else if (event.type === 'error') {
           const errContent = event.error
@@ -945,9 +1057,13 @@ async function performRequest(sessionId, options = {}) {
             : t('assistantChat.error') + (event.raw_response ? `\n\n**Debug:**\n\`\`\`\n${event.raw_response}\n\`\`\`` : '')
           if (modelId) {
             const r = getOrCreateReply(modelId)
-            if (r) r.content = errContent
+            if (r) {
+              r.content = errContent
+              r.apiTrace = undefined
+            }
           } else {
             msg.content = errContent
+            msg.apiTrace = undefined
           }
         }
         if (event.type === 'done' || event.type === 'error') {
