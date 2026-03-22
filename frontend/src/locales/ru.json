@@ -97,6 +97,9 @@
     "hint": "Помощник может искать в словаре по смыслу.",
     "sending": "Отправка...",
     "send": "Отправить",
+    "sendMessage": "Отправить сообщение",
+    "stopRecording": "Остановить запись",
+    "stopped": "Генерация остановлена.",
     "thinking": "Помощник думает",
     "error": "Что-то пошло не так. Попробуйте ещё раз.",
     "retry": "Повторить",
@@ -113,7 +116,10 @@
     "notesLabel": "Примечания:",
     "toolErrorSummary": "Ошибка поиска",
     "showRawOutput": "Показать сырой JSON",
-    "hideRawOutput": "Скрыть сырой JSON"
+    "hideRawOutput": "Скрыть сырой JSON",
+    "editMessage": "Изменить",
+    "saveEdit": "Сохранить",
+    "cancelEdit": "Отмена"
   },
   "deleteConfirmation": {
     "title": "Подтвердите удаление",
