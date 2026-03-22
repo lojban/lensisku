@@ -1,9 +1,9 @@
 <template>
   <!--
-    Layout is isolated from App.vue flex/100svh quirks on small screens:
-    - Mobile: shell height = 100dvh − header (matches sticky header h-14 / sm:h-12)
-    - Desktop: fill parent (fullHeight route) as before
-    - One scroll region (messages); composer is a normal flex footer
+    Full-height route: shell fills App.vue main (already viewport − header).
+    Mobile uses height:100% of that slot — not 100dvh−header again — so dvh/svh
+    mismatch cannot overflow and confuse mobile Firefox scroll position.
+    One scroll region (messages); composer is a normal flex footer.
   -->
   <div class="assistant-root flex min-h-0 w-full min-w-0 flex-1 gap-0 overflow-hidden md:h-full md:gap-4">
     <!-- Mobile drawer backdrop -->
@@ -325,7 +325,7 @@
           @keydown.enter.exact.prevent="handleSend"
         />
 
-        <div class="flex items-center justify-between gap-3">
+        <div class="flex items-center justify-between gap-3 min-w-0">
           <div v-if="error" class="flex items-center gap-2 min-w-0">
             <p class="text-xs text-red-600 truncate">
               {{ error }}
@@ -340,13 +340,13 @@
               <RotateCw class="w-4 h-4" />
             </button>
           </div>
-          <span v-else class="text-xs text-gray-500">
+          <span v-else class="min-w-0 flex-1 text-xs text-gray-500 truncate pr-2">
             {{ $t('assistantChat.hint') }}
           </span>
 
           <button
             type="submit"
-            class="btn-aqua-cyan px-4 py-1.5 text-sm disabled:opacity-60 disabled:cursor-not-allowed"
+            class="assistant-send-btn btn-aqua-cyan shrink-0 min-w-max px-4 py-1.5 text-sm disabled:opacity-60 disabled:cursor-not-allowed"
             :disabled="isStreamingThisSession || !input.trim()"
           >
             <span v-if="isStreamingThisSession">
@@ -631,6 +631,11 @@ watch(
 onMounted(() => {
   suppressAutoScroll.value = true
   loadFromStorage()
+
+  // Full-height route: keep layout viewport at top (Firefox mobile can offset when inner height mismatches dvh/svh).
+  if (typeof window !== 'undefined') {
+    window.scrollTo(0, 0)
+  }
 
   window.addEventListener('resize', clampMessageScroll)
   const vv = typeof window !== 'undefined' ? window.visualViewport : null
@@ -998,23 +1003,29 @@ const retryLast = async () => {
 </script>
 
 <style scoped>
-/* Mobile: explicit 100dvh − header so layout does not depend on App.vue main height math */
-.assistant-root {
-  --assistant-header: 3.5rem;
-}
-@media (min-width: 640px) {
-  .assistant-root {
-    --assistant-header: 3rem;
-  }
-}
+/*
+ * Fill App.vue's full-height main only — do not use 100dvh−header here.
+ * Main is already (100svh − app header); an extra viewport-based height can be
+ * taller than that slot when 100dvh > 100svh (mobile toolbar), which can make
+ * Firefox/Android shift the document scroll and hide the sticky header.
+ */
 @media (max-width: 767px) {
   .assistant-root {
     box-sizing: border-box;
-    height: calc(100vh - var(--assistant-header) - env(safe-area-inset-bottom, 0px));
-    max-height: calc(100vh - var(--assistant-header) - env(safe-area-inset-bottom, 0px));
-    height: calc(100dvh - var(--assistant-header) - env(safe-area-inset-bottom, 0px));
-    max-height: calc(100dvh - var(--assistant-header) - env(safe-area-inset-bottom, 0px));
+    height: 100%;
+    max-height: 100%;
+    min-height: 0;
   }
+}
+
+/* aqua-base ellipsizes label spans; keep Send / Sending fully visible on narrow screens */
+.assistant-send-btn {
+  text-overflow: clip;
+}
+.assistant-send-btn :deep(span) {
+  max-width: none;
+  overflow: visible;
+  text-overflow: clip;
 }
 
 .assistant-markdown :deep(.mathjax-content) {
