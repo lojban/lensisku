@@ -955,8 +955,9 @@ async fn sse_stream_debug_parallel_branch_finished(
 }
 
 /// Runs the agent loop. If event_tx is Some, streams step/done/error events (with optional "model" key for parallel runs).
-/// When event_tx is Some and we have 2 models, runs both in parallel and streams both; otherwise runs a single model
-/// at a time and **tries the next catalog candidate** on failure (see [`OPENROUTER_MODEL_CANDIDATES_MAX`]).
+/// When event_tx is Some and we have 2 models, runs both in parallel and streams both; **if either branch fails**,
+/// retries that slot with the next unused candidates from the same list (see [`OPENROUTER_MODEL_CANDIDATES_MAX`]).
+/// Otherwise runs a single model at a time and tries the next catalog candidate on failure.
 pub async fn run_agent_loop(
     pool: &Pool,
     request: &ChatRequest,
@@ -988,20 +989,74 @@ pub async fn run_agent_loop(
         let req2 = request.clone();
         let (m1_id, m1_name) = parallel_models[0].clone();
         let (m2_id, m2_name) = parallel_models[1].clone();
-        let (r1, r2) = tokio::join!(
+        let (mut r1, mut r2) = tokio::join!(
             run_agent_loop_inner(&pool1, &req1, &m1_id, &m1_name, Some(tx1)),
             run_agent_loop_inner(&pool2, &req2, &m2_id, &m2_name, Some(tx2)),
         );
         sse_stream_debug_parallel_branch_finished(&post_debug_tx, &m1_id, &m1_name, &r1).await;
         sse_stream_debug_parallel_branch_finished(&post_debug_tx, &m2_id, &m2_name, &r2).await;
+
+        // Spare candidates (index 2..) are shared between both branches: each round tries one retry for
+        // branch 1 if still failing, then one for branch 2, so one branch cannot exhaust the list alone
+        // while the other never gets a try (unless only one branch still fails).
+        let mut next_idx = 2;
+        while next_idx < candidates.len() && (r1.is_err() || r2.is_err()) {
+            if r1.is_err() {
+                let (nid, nname) = candidates[next_idx].clone();
+                next_idx += 1;
+                let res = run_agent_loop_inner(
+                    &pool1,
+                    &req1,
+                    &nid,
+                    &nname,
+                    Some(post_debug_tx.clone()),
+                )
+                .await;
+                if let Err(ref e) = res {
+                    sse_stream_debug_model_attempt_failed(&post_debug_tx, &nid, &nname, e).await;
+                    log::warn!(
+                        "Assistant: parallel branch 1 model {} failed; trying next candidate if any: {}",
+                        nid,
+                        e
+                    );
+                }
+                sse_stream_debug_parallel_branch_finished(&post_debug_tx, &nid, &nname, &res).await;
+                r1 = res;
+            }
+            if r2.is_err() && next_idx < candidates.len() {
+                let (nid, nname) = candidates[next_idx].clone();
+                next_idx += 1;
+                let res = run_agent_loop_inner(
+                    &pool2,
+                    &req2,
+                    &nid,
+                    &nname,
+                    Some(post_debug_tx.clone()),
+                )
+                .await;
+                if let Err(ref e) = res {
+                    sse_stream_debug_model_attempt_failed(&post_debug_tx, &nid, &nname, e).await;
+                    log::warn!(
+                        "Assistant: parallel branch 2 model {} failed; trying next candidate if any: {}",
+                        nid,
+                        e
+                    );
+                }
+                sse_stream_debug_parallel_branch_finished(&post_debug_tx, &nid, &nname, &res).await;
+                r2 = res;
+            }
+        }
+
         drop(post_debug_tx);
-        // Drop senders so the SSE stream ends. Return first successful reply for API compatibility.
+        // Return first successful reply for API compatibility.
         if let Ok((reply, _)) = r1 {
             Ok((reply, vec![]))
         } else if let Ok((reply, _)) = r2 {
             Ok((reply, vec![]))
         } else {
-            Err(r1.unwrap_err())
+            Err(r2
+                .err()
+                .unwrap_or_else(|| r1.expect_err("both parallel branches failed")))
         }
     } else {
         let mut event_tx = event_tx;
