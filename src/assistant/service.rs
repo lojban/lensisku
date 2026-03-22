@@ -188,6 +188,9 @@ async fn parse_chat_response(
 
 const OPENROUTER_MAX_ATTEMPTS: u32 = 3;
 const OPENROUTER_INITIAL_BACKOFF_MS: u64 = 500;
+/// Max free models to pull from the catalog (newest first). First two may run in parallel when
+/// streaming; the rest are used only as sequential fallbacks if earlier choices fail.
+const OPENROUTER_MODEL_CANDIDATES_MAX: usize = 8;
 
 /// OpenRouter /api/v1/models/user response: list of models (we use flexible parsing for pricing).
 #[derive(Debug, Deserialize)]
@@ -281,8 +284,11 @@ async fn fetch_openrouter_models_list(
     Ok(body.data)
 }
 
-/// Fetch the two **newest free** (`pricing.prompt` and `pricing.completion` both zero) text models from
+/// Fetch the **newest free** (`pricing.prompt` and `pricing.completion` both zero) text models from
 /// OpenRouter's public [`GET /models`](https://openrouter.ai/docs/api/api-reference/models/get-models) catalog.
+///
+/// Returns up to [`OPENROUTER_MODEL_CANDIDATES_MAX`] entries (newest first). The caller uses the first
+/// two for optional parallel streaming; remaining entries are sequential fallbacks.
 ///
 /// Uses the full model list (not `/models/user`). Excludes router placeholders (`openrouter/free`,
 /// `openrouter/auto`) so parallel runs use real provider slugs when any exist. Prefers long context
@@ -351,7 +357,7 @@ pub async fn fetch_latest_openrouter_models(
         eligible
             .into_iter()
             .map(|(_, id, name)| (id, name))
-            .take(2)
+            .take(OPENROUTER_MODEL_CANDIDATES_MAX)
             .collect()
     };
 
@@ -859,7 +865,8 @@ fn sse_error_payload(e: &AppError) -> serde_json::Value {
 }
 
 /// Runs the agent loop. If event_tx is Some, streams step/done/error events (with optional "model" key for parallel runs).
-/// When event_tx is Some and we have 2 models, runs both in parallel and streams both; otherwise runs a single model.
+/// When event_tx is Some and we have 2 models, runs both in parallel and streams both; otherwise runs a single model
+/// at a time and **tries the next catalog candidate** on failure (see [`OPENROUTER_MODEL_CANDIDATES_MAX`]).
 pub async fn run_agent_loop(
     pool: &Pool,
     request: &ChatRequest,
@@ -871,10 +878,10 @@ pub async fn run_agent_loop(
     let base_url = env::var("OPENROUTER_API_BASE")
         .unwrap_or_else(|_| "https://openrouter.ai/api/v1".to_string());
 
-    let models = fetch_latest_openrouter_models(&base_url, &api_key).await?;
-    let models: Vec<ModelIdName> = models.into_iter().take(2).collect();
+    let candidates = fetch_latest_openrouter_models(&base_url, &api_key).await?;
+    let parallel_models: Vec<ModelIdName> = candidates.iter().take(2).cloned().collect();
     let is_streaming = event_tx.is_some();
-    let run_parallel = is_streaming && models.len() == 2;
+    let run_parallel = is_streaming && parallel_models.len() == 2;
 
     if run_parallel {
         let tx1 = event_tx.clone().expect("run_parallel implies Some");
@@ -883,8 +890,8 @@ pub async fn run_agent_loop(
         let pool2 = pool.clone();
         let req1 = request.clone();
         let req2 = request.clone();
-        let (m1_id, m1_name) = models[0].clone();
-        let (m2_id, m2_name) = models[1].clone();
+        let (m1_id, m1_name) = parallel_models[0].clone();
+        let (m2_id, m2_name) = parallel_models[1].clone();
         let (r1, r2) = tokio::join!(
             run_agent_loop_inner(&pool1, &req1, &m1_id, &m1_name, Some(tx1)),
             run_agent_loop_inner(&pool2, &req2, &m2_id, &m2_name, Some(tx2)),
@@ -898,23 +905,42 @@ pub async fn run_agent_loop(
             Err(r1.unwrap_err())
         }
     } else {
-        let (model_id, model_name) = models
-            .first()
-            .cloned()
-            .unwrap_or_else(|| ("openrouter/free".to_string(), "OpenRouter Free".to_string()));
         let mut event_tx = event_tx;
-        let result =
-            run_agent_loop_inner(pool, request, &model_id, &model_name, event_tx.take()).await;
-        if let Err(ref e) = result {
+        let mut last_err: Option<AppError> = None;
+
+        for (model_id, model_name) in &candidates {
+            let tx = event_tx.clone();
+            match run_agent_loop_inner(pool, request, model_id, model_name, tx).await {
+                Ok(result) => {
+                    // Inner consumed a clone of the sender; drop any remaining handle so the SSE stream ends.
+                    drop(event_tx.take());
+                    return Ok(result);
+                }
+                Err(e) => {
+                    log::warn!(
+                        "Assistant: model {} failed; trying next candidate if any: {}",
+                        model_id,
+                        e
+                    );
+                    last_err = Some(e);
+                }
+            }
+        }
+
+        if let Some(e) = last_err.take() {
             if let Some(tx) = event_tx.take() {
-                let payload = sse_error_payload(e);
+                let payload = sse_error_payload(&e);
                 if let Ok(data) = serde_json::to_string(&payload) {
                     let _ = tx.send(sse::Data::new(data).into()).await;
                 }
                 drop(tx);
             }
+            return Err(e);
         }
-        result
+
+        Err(AppError::ExternalService(
+            "Assistant: no OpenRouter model candidates".into(),
+        ))
     }
 }
 
