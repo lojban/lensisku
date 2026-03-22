@@ -18,7 +18,8 @@ use crate::error::AppError;
 use crate::jbovlaste::models::{DefinitionDetail, DefinitionResponse, SearchDefinitionsParams};
 use crate::jbovlaste::service::{cmavo_gismu_english_dictionary_text, semantic_search};
 
-use super::dto::{AssistantStep, ChatMessage, ChatRequest};
+use super::context_compress;
+use super::dto::{AssistantStep, ChatMessage, ChatRequest, ToolCallDto};
 
 #[derive(Debug, Clone, Serialize)]
 struct ToolFunction {
@@ -205,9 +206,18 @@ struct OpenRouterModel {
     context_length: Option<f64>,
     #[serde(default)]
     architecture: Option<OpenRouterArchitecture>,
-    /// Pricing: often { "prompt": "0", "completion": "0" } or numeric; we accept any and check in code.
+    /// e.g. `{ "prompt": "0", "completion": "0" }` — we require both to be zero for “free” models.
     #[serde(default)]
     pricing: Option<serde_json::Value>,
+}
+
+fn price_is_zero(v: &serde_json::Value) -> bool {
+    match v {
+        serde_json::Value::Number(n) => n.as_f64() == Some(0.0),
+        serde_json::Value::String(s) => s == "0" || s == "0.0",
+        serde_json::Value::Null => true,
+        _ => false,
+    }
 }
 
 #[derive(Debug, Deserialize)]
@@ -218,15 +228,6 @@ struct OpenRouterArchitecture {
     input_modalities: Option<Vec<String>>,
     #[serde(default)]
     output_modalities: Option<Vec<String>>,
-}
-
-fn price_is_zero(v: &serde_json::Value) -> bool {
-    match v {
-        serde_json::Value::Number(n) => n.as_f64() == Some(0.0),
-        serde_json::Value::String(s) => s == "0" || s == "0.0",
-        serde_json::Value::Null => true,
-        _ => false,
-    }
 }
 
 fn is_text_to_text(arch: &OpenRouterArchitecture) -> bool {
@@ -242,72 +243,127 @@ fn is_text_to_text(arch: &OpenRouterArchitecture) -> bool {
 /// (model_id, display_name) for use in UI. Display name is OpenRouter "name" or id as fallback.
 pub type ModelIdName = (String, String);
 
-/// Fetch top 2 free, text-to-text, long-context models from OpenRouter (user-filtered list).
-/// Criteria: pricing.prompt and pricing.completion = 0, modality text->text, context_length > 100_000.
-/// Sorted by created desc (newest first). OpenRouter does not expose "top 4 this week" in the API.
-pub async fn fetch_top_free_models(
+/// OpenRouter aggregate / router endpoints — not concrete provider models (avoid for parallel runs).
+fn is_placeholder_or_router_only_model(id: &str) -> bool {
+    matches!(id, "openrouter/free" | "openrouter/auto")
+}
+
+async fn fetch_openrouter_models_list(
     base_url: &str,
     api_key: &str,
-) -> Result<Vec<ModelIdName>, AppError> {
-    let url = format!("{}/models/user", base_url.trim_end_matches('/'));
+    query: &str,
+) -> Result<Vec<OpenRouterModel>, AppError> {
+    let url = format!(
+        "{}/models{}",
+        base_url.trim_end_matches('/'),
+        query
+    );
     let client = reqwest::Client::new();
     let res = client
         .get(&url)
         .header("Authorization", format!("Bearer {}", api_key))
         .send()
         .await
-        .map_err(|e| AppError::ExternalService(format!("OpenRouter models/user request failed: {}", e)))?;
+        .map_err(|e| AppError::ExternalService(format!("OpenRouter models request failed: {}", e)))?;
 
     let status = res.status();
     if !status.is_success() {
         let body = res.text().await.unwrap_or_else(|_| String::from("(no body)"));
         return Err(AppError::ExternalServiceWithRaw {
-            message: format!("OpenRouter models/user returned {}", status),
+            message: format!("OpenRouter models returned {}", status),
             raw_response: body,
         });
     }
 
     let body: OpenRouterModelsResponse = res.json().await.map_err(|e| {
-        AppError::ExternalService(format!("OpenRouter models/user JSON parse error: {}", e))
+        AppError::ExternalService(format!("OpenRouter models JSON parse error: {}", e))
     })?;
+    Ok(body.data)
+}
 
-    const MIN_CONTEXT: f64 = 100_000.0;
-    let mut eligible: Vec<(f64, String, String)> = body
-        .data
-        .into_iter()
-        .filter_map(|m| {
-            let ctx = m.context_length.unwrap_or(0.0);
-            if ctx <= MIN_CONTEXT {
-                return None;
-            }
-            let arch = m.architecture.as_ref()?;
-            if !is_text_to_text(arch) {
-                return None;
-            }
-            let pricing = m.pricing.as_ref()?;
-            let prompt_zero = pricing.get("prompt").is_some_and(price_is_zero);
-            let completion_zero = pricing.get("completion").is_some_and(price_is_zero);
-            if !prompt_zero || !completion_zero {
-                return None;
-            }
-            let created = m.created.unwrap_or(0.0);
-            let name = m
-                .name
-                .filter(|s| !s.is_empty())
-                .unwrap_or_else(|| m.id.clone());
-            Some((created, m.id, name))
-        })
-        .collect();
+/// Fetch the two **newest free** (`pricing.prompt` and `pricing.completion` both zero) text models from
+/// OpenRouter's public [`GET /models`](https://openrouter.ai/docs/api/api-reference/models/get-models) catalog.
+///
+/// Uses the full model list (not `/models/user`). Excludes router placeholders (`openrouter/free`,
+/// `openrouter/auto`) so parallel runs use real provider slugs when any exist. Prefers long context
+/// (100k+), then falls back to 32k+. Sorted by `created` descending.
+pub async fn fetch_latest_openrouter_models(
+    base_url: &str,
+    api_key: &str,
+) -> Result<Vec<ModelIdName>, AppError> {
+    const MIN_CONTEXT_PREFERRED: f64 = 100_000.0;
+    const MIN_CONTEXT_FALLBACK: f64 = 32_000.0;
 
-    eligible.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap_or(std::cmp::Ordering::Equal));
-    let top: Vec<ModelIdName> = eligible
-        .into_iter()
-        .map(|(_, id, name)| (id, name))
-        .take(2)
-        .collect();
+    let mut data = match fetch_openrouter_models_list(
+        base_url,
+        api_key,
+        "?output_modalities=text&supported_parameters=tools",
+    )
+    .await
+    {
+        Ok(d) => d,
+        Err(e) => {
+            log::debug!(
+                "OpenRouter models (tools filter) failed or unavailable: {}; retrying without tools filter",
+                e
+            );
+            fetch_openrouter_models_list(base_url, api_key, "?output_modalities=text").await?
+        }
+    };
+
+    if data.is_empty() {
+        data = fetch_openrouter_models_list(base_url, api_key, "?output_modalities=text").await?;
+    }
+
+    let pick = |min_ctx: f64| -> Vec<ModelIdName> {
+        let mut eligible: Vec<(f64, String, String)> = data
+            .iter()
+            .filter_map(|m| {
+                if is_placeholder_or_router_only_model(&m.id) {
+                    return None;
+                }
+                let ctx = m.context_length.unwrap_or(0.0);
+                if ctx <= min_ctx {
+                    return None;
+                }
+                let arch = m.architecture.as_ref()?;
+                if !is_text_to_text(arch) {
+                    return None;
+                }
+                let pricing = m.pricing.as_ref()?;
+                let prompt_zero = pricing.get("prompt").is_some_and(price_is_zero);
+                let completion_zero = pricing.get("completion").is_some_and(price_is_zero);
+                if !prompt_zero || !completion_zero {
+                    return None;
+                }
+                let created = m.created.unwrap_or(0.0);
+                let name = m
+                    .name
+                    .as_ref()
+                    .filter(|s| !s.is_empty())
+                    .map(String::to_owned)
+                    .unwrap_or_else(|| m.id.clone());
+                Some((created, m.id.clone(), name))
+            })
+            .collect();
+
+        eligible.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap_or(std::cmp::Ordering::Equal));
+        eligible
+            .into_iter()
+            .map(|(_, id, name)| (id, name))
+            .take(2)
+            .collect()
+    };
+
+    let mut top = pick(MIN_CONTEXT_PREFERRED);
+    if top.is_empty() {
+        top = pick(MIN_CONTEXT_FALLBACK);
+    }
 
     if top.is_empty() {
-        log::warn!("OpenRouter: no free text-to-text models with context > 100k found; falling back to openrouter/free");
+        log::warn!(
+            "OpenRouter: no free (zero-priced) text models matched filters; falling back to openrouter/free"
+        );
         return Ok(vec![("openrouter/free".to_string(), "OpenRouter Free".to_string())]);
     }
     Ok(top)
@@ -378,6 +434,49 @@ struct ToolCall {
     #[serde(default)]
     r#type: Option<String>,
     function: ToolCallFunction,
+}
+
+fn tool_call_dto_to_internal(c: &ToolCallDto) -> ToolCall {
+    ToolCall {
+        id: c.id.clone(),
+        r#type: c.r#type.clone(),
+        function: ToolCallFunction {
+            name: c.function.name.clone(),
+            arguments: c.function.arguments.clone(),
+        },
+    }
+}
+
+fn error_indicates_context_limit(e: &AppError) -> bool {
+    let mut text = String::new();
+    match e {
+        AppError::ExternalServiceWithRaw {
+            message,
+            raw_response,
+        } => {
+            text.push_str(message);
+            text.push_str(raw_response);
+        }
+        AppError::ExternalServiceRetryable {
+            message,
+            raw_response,
+        } => {
+            text.push_str(message);
+            text.push_str(raw_response);
+        }
+        AppError::ExternalService(m) => {
+            text.push_str(m);
+        }
+        _ => return false,
+    }
+    let lower = text.to_lowercase();
+    lower.contains("context length")
+        || lower.contains("maximum context")
+        || lower.contains("token limit")
+        || lower.contains("too many tokens")
+        || lower.contains("exceeds the context")
+        || lower.contains("prompt is too long")
+        || lower.contains("requested token")
 }
 
 fn system_prompt_base(locale: Option<&str>) -> String {
@@ -483,25 +582,29 @@ Each line is `word - definition` (best English definition per word). Use this as
     )
 }
 
-fn to_openrouter_role(role: &str) -> String {
-    match role {
-        "user" | "assistant" | "system" => role.to_string(),
-        other => {
-            log::warn!("Unknown chat role `{}`, mapping to `user`", other);
-            "user".to_string()
-        }
-    }
-}
-
 fn map_chat_messages(messages: &[ChatMessage]) -> Vec<ChatCompletionMessageRequest> {
     messages
         .iter()
-        .map(|m| ChatCompletionMessageRequest {
-            role: to_openrouter_role(&m.role),
-            content: m.content.clone(),
-            tool_call_id: None,
-            name: None,
-            tool_calls: None,
+        .map(|m| {
+            let role = match m.role.as_str() {
+                "user" | "assistant" | "system" | "tool" => m.role.clone(),
+                other => {
+                    log::warn!("Unknown chat role `{}`, mapping to `user`", other);
+                    "user".to_string()
+                }
+            };
+            let tool_calls = m.tool_calls.as_ref().map(|tc| {
+                tc.iter()
+                    .map(tool_call_dto_to_internal)
+                    .collect::<Vec<ToolCall>>()
+            });
+            ChatCompletionMessageRequest {
+                role,
+                content: m.content.clone(),
+                tool_call_id: m.tool_call_id.clone(),
+                name: m.name.clone(),
+                tool_calls,
+            }
         })
         .collect()
 }
@@ -768,7 +871,7 @@ pub async fn run_agent_loop(
     let base_url = env::var("OPENROUTER_API_BASE")
         .unwrap_or_else(|_| "https://openrouter.ai/api/v1".to_string());
 
-    let models = fetch_top_free_models(&base_url, &api_key).await?;
+    let models = fetch_latest_openrouter_models(&base_url, &api_key).await?;
     let models: Vec<ModelIdName> = models.into_iter().take(2).collect();
     let is_streaming = event_tx.is_some();
     let run_parallel = is_streaming && models.len() == 2;
@@ -831,49 +934,85 @@ async fn run_agent_loop_inner(
 
     let client = reqwest::Client::new();
 
+    let system_content = system_prompt_with_dictionary(pool, request.locale.as_deref()).await;
+    let mut client_round = context_compress::compress_chat_history_for_request(&request.messages);
     let mut messages: Vec<ChatCompletionMessageRequest> = Vec::new();
     messages.push(ChatCompletionMessageRequest {
         role: "system".to_string(),
-        content: system_prompt_with_dictionary(pool, request.locale.as_deref()).await,
+        content: system_content.clone(),
         tool_call_id: None,
         name: None,
         tool_calls: None,
     });
-
-    messages.extend(map_chat_messages(&request.messages));
+    messages.extend(map_chat_messages(&client_round));
 
     let tools = vec![jbovlaste_tool_schema()];
     let mut steps = Vec::new();
+    let mut aggressive_context_retry = false;
 
     // Agent loop: call LLM until it returns a final reply (no tool_calls).
     for iteration in 1..=AGENT_MAX_ITERATIONS {
-        let request_body = ChatCompletionRequest {
-            model: model.to_string(),
-            messages: messages.clone(),
-            tools: Some(tools.clone()),
-            tool_choice: Some(json!("auto")),
-        };
-
         let label = format!("chat/completions iteration {}", iteration);
-        let response = openrouter_chat_with_retry(&label, || {
-            let client = client.clone();
-            let base_url = base_url.clone();
-            let api_key = api_key.clone();
-            let request_body = request_body.clone();
-            let label = label.clone();
-            async move {
-                let res = client
-                    .post(format!("{}/chat/completions", base_url))
-                    .header("Authorization", format!("Bearer {}", api_key))
-                    .header("Content-Type", "application/json")
-                    .json(&request_body)
-                    .send()
-                    .await?;
-                let ok = ensure_openrouter_status(res, &label).await?;
-                parse_chat_response(ok, &label).await
+        let response = loop {
+            let request_body = ChatCompletionRequest {
+                model: model.to_string(),
+                messages: messages.clone(),
+                tools: Some(tools.clone()),
+                tool_choice: Some(json!("auto")),
+            };
+            match openrouter_chat_with_retry(&label, {
+                let client = client.clone();
+                let base_url = base_url.clone();
+                let api_key = api_key.clone();
+                let request_body = request_body.clone();
+                let label = label.clone();
+                move || {
+                    let client = client.clone();
+                    let base_url = base_url.clone();
+                    let api_key = api_key.clone();
+                    let request_body = request_body.clone();
+                    let label = label.clone();
+                    async move {
+                        let res = client
+                            .post(format!("{}/chat/completions", base_url))
+                            .header("Authorization", format!("Bearer {}", api_key))
+                            .header("Content-Type", "application/json")
+                            .json(&request_body)
+                            .send()
+                            .await?;
+                        let ok = ensure_openrouter_status(res, &label).await?;
+                        parse_chat_response(ok, &label).await
+                    }
+                }
+            })
+            .await
+            {
+                Ok(r) => break r,
+                Err(e) => {
+                    if iteration == 1
+                        && !aggressive_context_retry
+                        && error_indicates_context_limit(&e)
+                    {
+                        aggressive_context_retry = true;
+                        log::warn!(
+                            "Assistant: context limit error on first iteration; retrying with aggressive history compression"
+                        );
+                        client_round =
+                            context_compress::compress_chat_history_aggressive(&request.messages);
+                        messages = vec![ChatCompletionMessageRequest {
+                            role: "system".to_string(),
+                            content: system_content.clone(),
+                            tool_call_id: None,
+                            name: None,
+                            tool_calls: None,
+                        }];
+                        messages.extend(map_chat_messages(&client_round));
+                        continue;
+                    }
+                    return Err(e);
+                }
             }
-        })
-        .await?;
+        };
 
         let choice = response.choices.into_iter().next().ok_or_else(|| {
             AppError::ExternalService(format!(
@@ -901,6 +1040,18 @@ async fn run_agent_loop_inner(
         });
 
         if let Some(calls) = tool_calls {
+            if let Some(ref tx) = event_tx {
+                let payload = json!({
+                    "type": "assistant_tool_calls",
+                    "model": model,
+                    "model_name": model_name,
+                    "content": content_str,
+                    "tool_calls": calls,
+                });
+                if let Ok(data) = serde_json::to_string(&payload) {
+                    let _ = tx.send(sse::Data::new(data).into()).await;
+                }
+            }
             // Execute each tool call and append tool results. Recover from parse/tool errors by
             // feeding an error message back to the LLM so it can try again.
             for call in calls.iter() {
@@ -950,6 +1101,7 @@ async fn run_agent_loop_inner(
                         "model_name": model_name,
                         "index": global_step_index,
                         "action": action_desc,
+                        "tool_call_id": call.id,
                     });
                     if let Ok(data) = serde_json::to_string(&start_payload) {
                         let _ = tx.send(sse::Data::new(data).into()).await;
@@ -1015,6 +1167,8 @@ async fn run_agent_loop_inner(
                         "index": global_step_index,
                         "action": step.action,
                         "result": step.result,
+                        "tool_call_id": call.id,
+                        "tool_content_plain": tool_content_for_llm,
                     });
                     if let Some(ref out) = step.tool_output {
                         payload["tool_output"] = serde_json::Value::String(out.clone());
@@ -1089,4 +1243,54 @@ pub async fn handle_chat(
     request: ChatRequest,
 ) -> Result<(String, Vec<AssistantStep>), AppError> {
     run_agent_loop(pool, &request, None).await
+}
+
+#[cfg(test)]
+mod chat_message_map_tests {
+    use super::map_chat_messages;
+    use crate::assistant::dto::{ChatMessage, ToolCallDto, ToolCallFunctionDto};
+
+    #[test]
+    fn map_passes_tool_role_and_ids() {
+        let messages = vec![
+            ChatMessage {
+                role: "assistant".into(),
+                content: "".into(),
+                tool_calls: Some(vec![ToolCallDto {
+                    id: Some("c1".into()),
+                    r#type: Some("function".into()),
+                    function: ToolCallFunctionDto {
+                        name: Some("jbovlaste_semantic_search".into()),
+                        arguments: Some(r#"{"query":"test"}"#.into()),
+                    },
+                }]),
+                tool_call_id: None,
+                name: None,
+            },
+            ChatMessage {
+                role: "tool".into(),
+                content: "tool body".into(),
+                tool_calls: None,
+                tool_call_id: Some("c1".into()),
+                name: Some("jbovlaste_semantic_search".into()),
+            },
+        ];
+        let out = map_chat_messages(&messages);
+        assert_eq!(out.len(), 2);
+        assert_eq!(out[0].role, "assistant");
+        assert!(out[0].tool_calls.is_some());
+        assert_eq!(out[1].role, "tool");
+        assert_eq!(out[1].tool_call_id.as_deref(), Some("c1"));
+        assert_eq!(out[1].content, "tool body");
+    }
+
+    #[test]
+    fn error_indicates_context_detects_keywords() {
+        use crate::error::AppError;
+        assert!(super::error_indicates_context_limit(&AppError::ExternalServiceWithRaw {
+            message: "x".into(),
+            raw_response: "prompt is too long".into(),
+        }));
+        assert!(!super::error_indicates_context_limit(&AppError::BadRequest("nope".into())));
+    }
 }
