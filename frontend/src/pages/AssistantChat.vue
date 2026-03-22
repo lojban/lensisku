@@ -3,7 +3,10 @@
     Full-height route: shell fills App.vue main (already viewport − header).
     Mobile uses height:100% of that slot — not 100dvh−header again — so dvh/svh
     mismatch cannot overflow and confuse mobile Firefox scroll position.
-    One scroll region (messages); composer is a normal flex footer.
+
+    Main column (assistant-main): column flex — shrink-0 header, flex-1 scroll
+    region (assistant-main-stage → assistant-messages), shrink-0 footer (composer).
+    One scroll region (messages); composer stays at the bottom of the main column.
   -->
   <div class="assistant-root flex min-h-0 w-full min-w-0 flex-1 gap-0 overflow-hidden md:h-full md:gap-4">
     <!-- Mobile drawer backdrop -->
@@ -119,9 +122,11 @@
       </div>
     </aside>
 
-    <!-- Main column -->
-    <div class="assistant-main flex min-h-0 min-w-0 flex-1 flex-col gap-3 overflow-hidden px-3 pt-3">
-      <div class="flex shrink-0 items-start gap-3">
+    <!-- Main column: flex column — header | flex-1 messages | footer composer -->
+    <div
+      class="assistant-main flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
+    >
+      <header class="assistant-main-header flex shrink-0 items-start gap-3 px-3 pt-3">
         <button
           type="button"
           class="md:hidden shrink-0 p-2 rounded-lg border border-gray-200 bg-white text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-400/50"
@@ -131,14 +136,14 @@
         >
           <PanelLeft class="w-5 h-5" />
         </button>
-        <div class="flex-1 min-w-0">
-          <div class="flex items-start justify-between gap-3 min-w-0">
-            <h1 class="text-2xl font-bold text-gray-800 min-w-0">
+        <div class="min-w-0 flex-1">
+          <div class="flex min-w-0 items-start justify-between gap-3">
+            <h1 class="min-w-0 text-2xl font-bold text-gray-800">
               {{ $t('assistantChat.title') }}
             </h1>
             <button
               type="button"
-              class="hidden sm:inline-flex shrink-0 btn-aqua-emerald items-center gap-1.5 px-2.5 py-1.5 text-sm"
+              class="hidden shrink-0 sm:inline-flex btn-aqua-emerald items-center gap-1.5 px-2.5 py-1.5 text-sm"
               @click="startNewChat"
             >
               <Plus class="w-4 h-4" />
@@ -146,14 +151,17 @@
             </button>
           </div>
         </div>
-      </div>
+      </header>
 
       <div
-        ref="scrollContainer"
-        class="assistant-messages relative min-h-0 flex-1 overflow-x-hidden rounded-lg border border-gray-200 bg-white [overscroll-behavior-y:contain]"
-        :class="isRestoringScroll ? 'overflow-hidden' : 'overflow-y-auto'"
-        @scroll.passive="onScrollAreaScroll"
+        class="assistant-main-stage assistant-main-stage-bg flex min-h-0 flex-1 flex-col px-3 pt-3"
       >
+        <div
+          ref="scrollContainer"
+          class="assistant-messages relative min-h-0 flex-1 overflow-x-hidden rounded-lg border border-gray-200 bg-white [overscroll-behavior-y:contain]"
+          :class="isRestoringScroll ? 'overflow-hidden' : 'overflow-y-auto'"
+          @scroll.passive="onScrollAreaScroll"
+        >
         <!-- Until localStorage is read, avoid wrong empty state / CLS -->
         <div
           v-if="!loaded"
@@ -362,67 +370,72 @@
             </div>
           </div>
         </template>
+        </div>
       </div>
 
-      <form
-        class="assistant-composer -mx-3 flex shrink-0 flex-col gap-2 border-t border-gray-100 bg-white px-3 pb-3 pt-3"
-        @submit.prevent="handleSend"
+      <footer
+        class="assistant-main-footer shrink-0 w-full border-t border-gray-100 bg-white px-3 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom,0px))]"
       >
-        <div class="relative min-w-0">
-          <textarea
-            v-model="input"
-            class="textarea-field min-h-[88px] max-h-40 w-full resize-y pl-3 pr-12 pb-11 pt-2.5"
-            :placeholder="$t('assistantChat.placeholder')"
-            :disabled="isStreamingThisSession"
-            @keydown.enter.exact.prevent="handleSend"
-          />
-          <button
-            :type="isStreamingThisSession ? 'button' : 'submit'"
-            class="assistant-composer-action !rounded-md absolute bottom-3 right-1 z-10 flex h-9 w-9 shrink-0 items-center justify-center !p-0 shadow-md shadow-black/15 transition-[colors,box-shadow] hover:shadow-lg hover:shadow-black/20 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white disabled:cursor-not-allowed disabled:opacity-50"
-            :class="isStreamingThisSession ? 'btn-aqua-red' : 'btn-aqua-blue'"
-            :disabled="!isStreamingThisSession && !input.trim()"
-            :aria-label="
-              isStreamingThisSession
-                ? $t('assistantChat.stopRecording')
-                : $t('assistantChat.sendMessage')
-            "
-            @click="isStreamingThisSession ? stopStreaming() : undefined"
-          >
-            <Square
-              v-if="isStreamingThisSession"
-              class="h-6 w-6"
-              stroke-width="2.5"
-              aria-hidden="true"
+        <form
+          class="assistant-composer flex flex-col gap-2"
+          @submit.prevent="handleSend"
+        >
+          <div class="relative min-w-0">
+            <textarea
+              v-model="input"
+              class="textarea-field min-h-[88px] max-h-40 w-full resize-y pl-3 pr-12 pb-11 pt-2.5"
+              :placeholder="$t('assistantChat.placeholder')"
+              :disabled="isStreamingThisSession"
+              @keydown.enter.exact.prevent="handleSend"
             />
-            <Play
-              v-else
-              class="h-6 w-6 translate-x-px"
-              stroke-width="2.25"
-              aria-hidden="true"
-            />
-          </button>
-        </div>
-
-        <div class="flex min-w-0 items-center gap-2 px-0.5 pt-0.5">
-          <div v-if="error" class="flex min-w-0 flex-1 items-center gap-2">
-            <p class="min-w-0 flex-1 truncate text-xs text-red-600">
-              {{ error }}
-            </p>
             <button
-              type="button"
-              class="shrink-0 rounded p-1 text-red-600 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-300"
-              :aria-label="$t('assistantChat.retry')"
-              :title="$t('assistantChat.retry')"
-              @click="retryLast"
+              :type="isStreamingThisSession ? 'button' : 'submit'"
+              class="assistant-composer-action !rounded-md absolute bottom-3 right-1 z-10 flex h-9 w-9 shrink-0 items-center justify-center !p-0 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white disabled:cursor-not-allowed disabled:opacity-50"
+              :class="isStreamingThisSession ? 'btn-cancel focus:ring-gray-500' : 'btn-get focus:ring-blue-400/60'"
+              :disabled="!isStreamingThisSession && !input.trim()"
+              :aria-label="
+                isStreamingThisSession
+                  ? $t('assistantChat.stopRecording')
+                  : $t('assistantChat.sendMessage')
+              "
+              @click="isStreamingThisSession ? stopStreaming() : undefined"
             >
-              <RotateCw class="h-4 w-4" />
+              <Square
+                v-if="isStreamingThisSession"
+                class="h-6 w-6"
+                stroke-width="2.5"
+                aria-hidden="true"
+              />
+              <Play
+                v-else
+                class="h-6 w-6 translate-x-px"
+                stroke-width="2.25"
+                aria-hidden="true"
+              />
             </button>
           </div>
-          <span v-else class="min-w-0 flex-1 text-xs leading-snug text-gray-500">
-            {{ $t('assistantChat.hint') }}
-          </span>
-        </div>
-      </form>
+
+          <div class="flex min-w-0 items-center gap-2 px-0.5 pt-0.5">
+            <div v-if="error" class="flex min-w-0 flex-1 items-center gap-2">
+              <p class="min-w-0 flex-1 truncate text-xs text-red-600">
+                {{ error }}
+              </p>
+              <button
+                type="button"
+                class="shrink-0 rounded p-1 text-red-600 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-300"
+                :aria-label="$t('assistantChat.retry')"
+                :title="$t('assistantChat.retry')"
+                @click="retryLast"
+              >
+                <RotateCw class="h-4 w-4" />
+              </button>
+            </div>
+            <span v-else class="min-w-0 flex-1 text-xs leading-snug text-gray-500">
+              {{ $t('assistantChat.hint') }}
+            </span>
+          </div>
+        </form>
+      </footer>
     </div>
   </div>
 </template>
@@ -866,6 +879,7 @@ const scrollToBottom = () => {
 function commitEditMessage() {
   const index = editingMessageIndex.value
   if (index == null || index < 0) return
+  if (streamingSessionId.value !== null) return
   const text = editingMessageDraft.value.trim()
   if (!text) return
   const original = messages.value[index]
@@ -880,7 +894,12 @@ function commitEditMessage() {
   messages.value = [...prefix, newMsg]
   pendingBumpUpdatedAt.value = true
   cancelEditMessage()
-  nextTick(() => scrollToBottom())
+  const sessionId = activeSessionId.value
+  const appendAssistant = newMsg.role === 'user'
+  nextTick(() => {
+    scrollToBottom()
+    void runAssistantStream(sessionId, appendAssistant)
+  })
 }
 
 watch(activeSessionId, () => {
@@ -1298,36 +1317,24 @@ const handleSend = async () => {
   })
   input.value = ''
   const sessionId = activeSessionId.value
-  const ac = new AbortController()
-  streamAbortController.value = ac
-  streamingSessionId.value = sessionId
-  try {
-    await performRequest(sessionId, { appendAssistant: true, signal: ac.signal })
-  } catch (e) {
-    if (e?.name === 'AbortError' || e?.cause?.name === 'AbortError') {
-      abortAssistantMessage(sessionId)
-      error.value = ''
-      pendingBumpUpdatedAt.value = true
-      if (loaded.value) debouncedPersist()
-      return
-    }
-    console.error(e)
-    error.value = t('assistantChat.error')
-  } finally {
-    streamingSessionId.value = null
-    streamAbortController.value = null
-  }
+  await runAssistantStream(sessionId, true)
 }
 
 const retryLast = async () => {
   if (streamingSessionId.value !== null || !error.value) return
   error.value = ''
   const sessionId = activeSessionId.value
+  await runAssistantStream(sessionId, false)
+}
+
+/** Stream assistant reply; `appendAssistant` true when the last message is user (append empty assistant first). */
+async function runAssistantStream(sessionId, appendAssistant) {
+  error.value = ''
   const ac = new AbortController()
   streamAbortController.value = ac
   streamingSessionId.value = sessionId
   try {
-    await performRequest(sessionId, { appendAssistant: false, signal: ac.signal })
+    await performRequest(sessionId, { appendAssistant, signal: ac.signal })
   } catch (e) {
     if (e?.name === 'AbortError' || e?.cause?.name === 'AbortError') {
       abortAssistantMessage(sessionId)
@@ -1360,6 +1367,11 @@ const retryLast = async () => {
     max-height: 100%;
     min-height: 0;
   }
+}
+
+/* Same horizontal stripes as global `header, footer` in App.vue */
+.assistant-main-stage-bg {
+  background: repeating-linear-gradient(#f8f8f8, #f8f8f8 4px, #ffffff 4px, #ffffff 8px);
 }
 
 .assistant-markdown :deep(.mathjax-content) {
