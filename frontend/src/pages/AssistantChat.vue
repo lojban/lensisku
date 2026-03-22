@@ -197,98 +197,149 @@
               class="flex flex-col gap-3"
               :class="msg.role === 'user' ? 'items-end' : 'items-start'"
             >
-          <!-- User message: single bubble -->
+          <!-- User message: bubble + edit (row, pencil to the right of the bubble) -->
           <div
             v-if="msg.role === 'user'"
-            class="max-w-[80%] rounded-lg px-3 py-2 text-sm break-words bg-blue-600 text-white whitespace-pre-wrap"
+            class="flex w-full justify-end"
           >
-            <span class="block text-[11px] font-semibold text-blue-100 mb-1">
-              {{ $t('assistantChat.userLabel') }}
-            </span>
-            <span>{{ msg.content }}</span>
+            <div
+              v-if="editingMessageIndex === index"
+              id="assistant-inline-edit-panel"
+              ref="inlineEditPanelRef"
+              class="flex w-full max-w-[80%] flex-col gap-0 rounded-lg border border-blue-300 bg-white py-0 shadow-sm"
+            >
+              <label class="sr-only" :for="'assistant-edit-' + index">{{ $t('assistantChat.editMessage') }}</label>
+              <textarea
+                :id="'assistant-edit-' + index"
+                v-model="editingMessageDraft"
+                class="textarea-field min-h-[4.5rem] w-full resize-y text-sm text-gray-900"
+                rows="4"
+                @keydown.escape.prevent="cancelEditMessage"
+              />
+              <div class="mx-2 my-2 flex justify-end gap-2">
+                <button
+                  type="button"
+                  class="btn-cancel"
+                  @click="cancelEditMessage"
+                >
+                  {{ $t('assistantChat.cancelEdit') }}
+                </button>
+                <button
+                  type="button"
+                  class="btn-insert"
+                  @click="commitEditMessage"
+                >
+                  {{ $t('assistantChat.saveEdit') }}
+                </button>
+              </div>
+            </div>
+            <div
+              v-else
+              class="flex w-full max-w-[80%] flex-row items-end justify-end gap-1.5"
+            >
+              <div class="min-w-0 max-w-[calc(100%-2.5rem)] rounded-lg px-3 py-2 text-sm break-words bg-blue-600 text-white whitespace-pre-wrap">
+                <span class="mb-1 block text-[11px] font-semibold text-blue-100">
+                  {{ $t('assistantChat.userLabel') }}
+                </span>
+                <span>{{ msg.content }}</span>
+              </div>
+              <button
+                v-if="canEditMessages"
+                type="button"
+                class="shrink-0 rounded-md p-1.5 text-gray-500 hover:bg-gray-100 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/40"
+                :aria-label="$t('assistantChat.editMessage')"
+                :title="$t('assistantChat.editMessage')"
+                @click="startEditMessage(index)"
+              >
+                <Pencil class="h-4 w-4" aria-hidden="true" />
+              </button>
+            </div>
           </div>
 
           <!-- Assistant: one bubble per reply (multi-model) or single bubble (legacy) -->
-          <template v-if="msg.role === 'assistant'">
+          <div
+            v-else-if="msg.role === 'assistant'"
+            class="flex w-full flex-col items-start gap-1"
+          >
             <div
               v-for="(reply, replyIdx) in assistantReplies(msg)"
               :key="replyIdx"
               class="max-w-[80%] min-w-0 rounded-lg px-3 py-2 text-sm break-words bg-gray-100 text-gray-900 assistant-markdown"
             >
-              <span class="block text-[11px] font-semibold text-gray-500 mb-1">
-                {{ reply.modelName || (reply.model ? formatModelLabel(reply.model) : '') || $t('assistantChat.assistantLabel') }}
-              </span>
-              <!-- Thought process: steps with optional folded tool output -->
-              <div
-                v-if="reply.steps && reply.steps.length > 0"
-                class="thought-process mb-2 space-y-2"
-              >
-                <AssistantThoughtStep
-                  v-for="(step, stepIdx) in reply.steps"
-                  :key="stepIdx"
-                  :step="step"
+                <span class="mb-1 block text-[11px] font-semibold text-gray-500">
+                  {{ reply.modelName || (reply.model ? formatModelLabel(reply.model) : '') || $t('assistantChat.assistantLabel') }}
+                </span>
+                <!-- Thought process: steps with optional folded tool output -->
+                <div
+                  v-if="reply.steps && reply.steps.length > 0"
+                  class="thought-process mb-2 space-y-2"
+                >
+                  <AssistantThoughtStep
+                    v-for="(step, stepIdx) in reply.steps"
+                    :key="stepIdx"
+                    :step="step"
+                    :lang-id="locale"
+                    :show-raw-output="isStepOutputVisible(stepKey(index, replyIdx, stepIdx))"
+                    @toggle-raw="toggleStepOutput(stepKey(index, replyIdx, stepIdx))"
+                  />
+                </div>
+                <!-- Thinking dots while streaming and no reply yet for this model -->
+                <div
+                  v-if="isStreamingThisSession && index === messages.length - 1 && !reply.content"
+                  class="thinking-dots mb-1 flex min-h-[1.25rem] items-center gap-1"
+                  role="status"
+                  :aria-label="$t('assistantChat.thinking')"
+                >
+                  <span class="thinking-dot" />
+                  <span class="thinking-dot" />
+                  <span class="thinking-dot" />
+                </div>
+                <LazyMathJax
+                  v-if="reply.content"
+                  :content="reply.content"
+                  :enable-markdown="true"
                   :lang-id="locale"
-                  :show-raw-output="isStepOutputVisible(stepKey(index, replyIdx, stepIdx))"
-                  @toggle-raw="toggleStepOutput(stepKey(index, replyIdx, stepIdx))"
                 />
-              </div>
-              <!-- Thinking dots while streaming and no reply yet for this model -->
-              <div
-                v-if="isStreamingThisSession && index === messages.length - 1 && !reply.content"
-                class="thinking-dots flex items-center gap-1 min-h-[1.25rem] mb-1"
-                role="status"
-                :aria-label="$t('assistantChat.thinking')"
-              >
-                <span class="thinking-dot" />
-                <span class="thinking-dot" />
-                <span class="thinking-dot" />
-              </div>
-              <LazyMathJax
-                v-if="reply.content"
-                :content="reply.content"
-                :enable-markdown="true"
-                :lang-id="locale"
-              />
             </div>
             <!-- Legacy single bubble when no replies array yet -->
             <div
               v-if="assistantReplies(msg).length === 0"
               class="max-w-[80%] min-w-0 rounded-lg px-3 py-2 text-sm break-words bg-gray-100 text-gray-900 assistant-markdown"
             >
-              <span class="block text-[11px] font-semibold text-gray-500 mb-1">
-                {{ $t('assistantChat.assistantLabel') }}
-              </span>
-              <div
-                v-if="msg.steps && msg.steps.length > 0"
-                class="thought-process mb-2 space-y-2"
-              >
-                <AssistantThoughtStep
-                  v-for="(step, stepIdx) in msg.steps"
-                  :key="stepIdx"
-                  :step="step"
+                <span class="mb-1 block text-[11px] font-semibold text-gray-500">
+                  {{ $t('assistantChat.assistantLabel') }}
+                </span>
+                <div
+                  v-if="msg.steps && msg.steps.length > 0"
+                  class="thought-process mb-2 space-y-2"
+                >
+                  <AssistantThoughtStep
+                    v-for="(step, stepIdx) in msg.steps"
+                    :key="stepIdx"
+                    :step="step"
+                    :lang-id="locale"
+                    :show-raw-output="isStepOutputVisible(stepKey('legacy', index, stepIdx))"
+                    @toggle-raw="toggleStepOutput(stepKey('legacy', index, stepIdx))"
+                  />
+                </div>
+                <div
+                  v-if="isStreamingThisSession && index === messages.length - 1 && !msg.content"
+                  class="thinking-dots mb-1 flex min-h-[1.25rem] items-center gap-1"
+                  role="status"
+                  :aria-label="$t('assistantChat.thinking')"
+                >
+                  <span class="thinking-dot" />
+                  <span class="thinking-dot" />
+                  <span class="thinking-dot" />
+                </div>
+                <LazyMathJax
+                  v-if="msg.content"
+                  :content="msg.content"
+                  :enable-markdown="true"
                   :lang-id="locale"
-                  :show-raw-output="isStepOutputVisible(stepKey('legacy', index, stepIdx))"
-                  @toggle-raw="toggleStepOutput(stepKey('legacy', index, stepIdx))"
                 />
-              </div>
-              <div
-                v-if="isStreamingThisSession && index === messages.length - 1 && !msg.content"
-                class="thinking-dots flex items-center gap-1 min-h-[1.25rem] mb-1"
-                role="status"
-                :aria-label="$t('assistantChat.thinking')"
-              >
-                <span class="thinking-dot" />
-                <span class="thinking-dot" />
-                <span class="thinking-dot" />
-              </div>
-              <LazyMathJax
-                v-if="msg.content"
-                :content="msg.content"
-                :enable-markdown="true"
-                :lang-id="locale"
-              />
             </div>
-          </template>
+          </div>
         </div>
 
         <!-- Thinking indicator when no assistant message yet (e.g. before stream starts) -->
@@ -314,48 +365,62 @@
       </div>
 
       <form
-        class="assistant-composer -mx-3 flex shrink-0 flex-col gap-2 border-t border-gray-100 bg-white px-3 pb-2 pt-3"
+        class="assistant-composer -mx-3 flex shrink-0 flex-col gap-2 border-t border-gray-100 bg-white px-3 pb-3 pt-3"
         @submit.prevent="handleSend"
       >
-        <textarea
-          v-model="input"
-          class="textarea-field min-h-[80px] max-h-40 resize-y"
-          :placeholder="$t('assistantChat.placeholder')"
-          :disabled="isStreamingThisSession"
-          @keydown.enter.exact.prevent="handleSend"
-        />
+        <div class="relative min-w-0">
+          <textarea
+            v-model="input"
+            class="textarea-field min-h-[88px] max-h-40 w-full resize-y pl-3 pr-12 pb-11 pt-2.5"
+            :placeholder="$t('assistantChat.placeholder')"
+            :disabled="isStreamingThisSession"
+            @keydown.enter.exact.prevent="handleSend"
+          />
+          <button
+            :type="isStreamingThisSession ? 'button' : 'submit'"
+            class="assistant-composer-action !rounded-md absolute bottom-3 right-1 z-10 flex h-9 w-9 shrink-0 items-center justify-center !p-0 shadow-md shadow-black/15 transition-[colors,box-shadow] hover:shadow-lg hover:shadow-black/20 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white disabled:cursor-not-allowed disabled:opacity-50"
+            :class="isStreamingThisSession ? 'btn-aqua-red' : 'btn-aqua-blue'"
+            :disabled="!isStreamingThisSession && !input.trim()"
+            :aria-label="
+              isStreamingThisSession
+                ? $t('assistantChat.stopRecording')
+                : $t('assistantChat.sendMessage')
+            "
+            @click="isStreamingThisSession ? stopStreaming() : undefined"
+          >
+            <Square
+              v-if="isStreamingThisSession"
+              class="h-6 w-6"
+              stroke-width="2.5"
+              aria-hidden="true"
+            />
+            <Play
+              v-else
+              class="h-6 w-6 translate-x-px"
+              stroke-width="2.25"
+              aria-hidden="true"
+            />
+          </button>
+        </div>
 
-        <div class="flex items-center justify-between gap-3 min-w-0">
-          <div v-if="error" class="flex items-center gap-2 min-w-0">
-            <p class="text-xs text-red-600 truncate">
+        <div class="flex min-w-0 items-center gap-2 px-0.5 pt-0.5">
+          <div v-if="error" class="flex min-w-0 flex-1 items-center gap-2">
+            <p class="min-w-0 flex-1 truncate text-xs text-red-600">
               {{ error }}
             </p>
             <button
               type="button"
-              class="shrink-0 p-1 rounded text-red-600 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-300"
+              class="shrink-0 rounded p-1 text-red-600 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-300"
               :aria-label="$t('assistantChat.retry')"
               :title="$t('assistantChat.retry')"
               @click="retryLast"
             >
-              <RotateCw class="w-4 h-4" />
+              <RotateCw class="h-4 w-4" />
             </button>
           </div>
-          <span v-else class="min-w-0 flex-1 text-xs text-gray-500 truncate pr-2">
+          <span v-else class="min-w-0 flex-1 text-xs leading-snug text-gray-500">
             {{ $t('assistantChat.hint') }}
           </span>
-
-          <button
-            type="submit"
-            class="assistant-send-btn btn-aqua-cyan shrink-0 min-w-max px-4 py-1.5 text-sm disabled:opacity-60 disabled:cursor-not-allowed"
-            :disabled="isStreamingThisSession || !input.trim()"
-          >
-            <span v-if="isStreamingThisSession">
-              {{ $t('assistantChat.sending') }}
-            </span>
-            <span v-else>
-              {{ $t('assistantChat.send') }}
-            </span>
-          </button>
         </div>
       </form>
     </div>
@@ -366,7 +431,18 @@
 import { ref, watch, nextTick, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useDebounceFn, useMediaQuery, onKeyStroke } from '@vueuse/core'
-import { RotateCw, Trash2, Plus, PanelLeft, X, Search, MessageSquare } from 'lucide-vue-next'
+import {
+  RotateCw,
+  Trash2,
+  Plus,
+  PanelLeft,
+  X,
+  Search,
+  MessageSquare,
+  Play,
+  Square,
+  Pencil,
+} from 'lucide-vue-next'
 
 import AssistantThoughtStep from '@/components/AssistantThoughtStep.vue'
 import LazyMathJax from '@/components/LazyMathJax.vue'
@@ -389,6 +465,8 @@ const loaded = ref(false)
 const input = ref('')
 /** Session id currently receiving a stream (only one in-flight request). */
 const streamingSessionId = ref(null)
+/** AbortController for the active stream fetch (stop button). */
+const streamAbortController = ref(null)
 const isStreamingThisSession = computed(
   () =>
     streamingSessionId.value !== null && streamingSessionId.value === activeSessionId.value
@@ -403,6 +481,11 @@ const chatMessagesReady = ref(true)
 const stepShowOutput = ref({})
 /** Set before debounced persist so `updatedAt` bumps only on user send or assistant done/error. */
 const pendingBumpUpdatedAt = ref(false)
+/** Inline edit: index in `messages` being edited (`null` = none). */
+const editingMessageIndex = ref(null)
+const editingMessageDraft = ref('')
+/** Set when inline edit panel is mounted (one at a time). */
+const inlineEditPanelRef = ref(null)
 
 /** True while localStorage is applied but scroll not yet restored for a non-empty thread. */
 const isRestoringScroll = computed(
@@ -421,6 +504,8 @@ const messagePaneVisibleClass = computed(() => {
     ? 'transition-opacity duration-200 ease-out opacity-100'
     : 'invisible pointer-events-none'
 })
+
+const canEditMessages = computed(() => loaded.value && !isStreamingThisSession.value)
 
 const filteredSessions = computed(() => {
   const q = chatSearchQuery.value.trim().toLowerCase()
@@ -466,6 +551,62 @@ function assistantPlainText(msg) {
     legacy.push(...msg.steps.map((s) => `${s.action || ''} ${s.result || ''} ${s.tool_output || ''}`))
   }
   return legacy.join(' ')
+}
+
+function plainTextForEdit(msg) {
+  if (!msg) return ''
+  if (msg.role === 'user') return msg.content ?? ''
+  return assistantPlainText(msg)
+}
+
+/** `ref` on a node inside `v-for` may be an array — unwrap to a single `HTMLElement`. */
+function resolveInlineEditPanelEl() {
+  const r = inlineEditPanelRef.value
+  const v = Array.isArray(r) ? r[0] : r
+  if (v instanceof HTMLElement) return v
+  if (typeof document !== 'undefined') {
+    const byId = document.getElementById('assistant-inline-edit-panel')
+    if (byId instanceof HTMLElement) return byId
+  }
+  return null
+}
+
+function scrollInlineEditPanelIntoView() {
+  nextTick(() => {
+    nextTick(() => {
+      requestAnimationFrame(() => {
+        const panel = resolveInlineEditPanelEl()
+        const sc = scrollContainer.value
+        if (!panel || !sc) return
+        panel.scrollIntoView({ block: 'end', behavior: 'auto' })
+        requestAnimationFrame(() => {
+          const pr = panel.getBoundingClientRect()
+          const sr = sc.getBoundingClientRect()
+          const pad = 8
+          if (pr.bottom > sr.bottom - pad) {
+            sc.scrollTop += pr.bottom - sr.bottom + pad
+          }
+          if (pr.top < sr.top + pad) {
+            sc.scrollTop += pr.top - sr.top - pad
+          }
+        })
+      })
+    })
+  })
+}
+
+function startEditMessage(index) {
+  if (!canEditMessages.value) return
+  const msg = messages.value[index]
+  if (!msg) return
+  editingMessageIndex.value = index
+  editingMessageDraft.value = plainTextForEdit(msg)
+  scrollInlineEditPanelIntoView()
+}
+
+function cancelEditMessage() {
+  editingMessageIndex.value = null
+  editingMessageDraft.value = ''
 }
 
 function deriveTitle(msgs) {
@@ -674,7 +815,12 @@ onBeforeUnmount(() => {
   }
 })
 
-onKeyStroke('Escape', () => {
+onKeyStroke('Escape', (e) => {
+  if (editingMessageIndex.value !== null) {
+    cancelEditMessage()
+    e.preventDefault?.()
+    return
+  }
   if (!isDesktop.value) sidebarOpen.value = false
 })
 
@@ -715,6 +861,31 @@ const scrollToBottom = () => {
     }
   })
 }
+
+/** Replace message at `index` with edited text; drop all messages after it (local + RAM). */
+function commitEditMessage() {
+  const index = editingMessageIndex.value
+  if (index == null || index < 0) return
+  const text = editingMessageDraft.value.trim()
+  if (!text) return
+  const original = messages.value[index]
+  if (!original) return
+  const prefix = messages.value.slice(0, index)
+  let newMsg
+  if (original.role === 'user') {
+    newMsg = { role: 'user', content: text }
+  } else {
+    newMsg = { role: 'assistant', content: text, steps: [], replies: [] }
+  }
+  messages.value = [...prefix, newMsg]
+  pendingBumpUpdatedAt.value = true
+  cancelEditMessage()
+  nextTick(() => scrollToBottom())
+}
+
+watch(activeSessionId, () => {
+  cancelEditMessage()
+})
 
 watch(
   () => [messages.value.length, isStreamingThisSession.value],
@@ -861,6 +1032,42 @@ function deleteSession(id, e) {
   persistToStorage()
 }
 
+function stopStreaming() {
+  streamAbortController.value?.abort()
+}
+
+/** After user aborts a stream: drop empty assistant stub or append a short stopped note. */
+function abortAssistantMessage(sessionId) {
+  const list = getSessionMessagesForMutation(sessionId)
+  if (!list?.length) return
+  const last = list[list.length - 1]
+  if (last.role !== 'assistant') return
+
+  const hasVisible =
+    (last.content && last.content.trim()) ||
+    (last.replies &&
+      last.replies.some(
+        (r) =>
+          (r.content && r.content.trim()) ||
+          (r.steps && r.steps.some((s) => s.result && s.result !== '…'))
+      )) ||
+    (last.steps && last.steps.some((s) => s.result && s.result !== '…'))
+
+  const note = `_${t('assistantChat.stopped')}_`
+  if (!hasVisible) {
+    list.pop()
+    return
+  }
+
+  if (last.replies?.length) {
+    const r =
+      last.replies.find((x) => x.content?.trim()) ?? last.replies[last.replies.length - 1]
+    r.content = (r.content || '') + (r.content?.trim() ? '\n\n' : '') + note
+  } else {
+    last.content = (last.content || '') + (last.content?.trim() ? '\n\n' : '') + note
+  }
+}
+
 async function performRequest(sessionId, options = {}) {
   const appendAssistant = options.appendAssistant !== false
 
@@ -910,6 +1117,7 @@ async function performRequest(sessionId, options = {}) {
     method: 'POST',
     headers,
     body: JSON.stringify(payload),
+    signal: options.signal,
   })
 
   if (!response.ok) {
@@ -1090,14 +1298,24 @@ const handleSend = async () => {
   })
   input.value = ''
   const sessionId = activeSessionId.value
+  const ac = new AbortController()
+  streamAbortController.value = ac
   streamingSessionId.value = sessionId
   try {
-    await performRequest(sessionId, { appendAssistant: true })
+    await performRequest(sessionId, { appendAssistant: true, signal: ac.signal })
   } catch (e) {
+    if (e?.name === 'AbortError' || e?.cause?.name === 'AbortError') {
+      abortAssistantMessage(sessionId)
+      error.value = ''
+      pendingBumpUpdatedAt.value = true
+      if (loaded.value) debouncedPersist()
+      return
+    }
     console.error(e)
     error.value = t('assistantChat.error')
   } finally {
     streamingSessionId.value = null
+    streamAbortController.value = null
   }
 }
 
@@ -1105,14 +1323,24 @@ const retryLast = async () => {
   if (streamingSessionId.value !== null || !error.value) return
   error.value = ''
   const sessionId = activeSessionId.value
+  const ac = new AbortController()
+  streamAbortController.value = ac
   streamingSessionId.value = sessionId
   try {
-    await performRequest(sessionId, { appendAssistant: false })
+    await performRequest(sessionId, { appendAssistant: false, signal: ac.signal })
   } catch (e) {
+    if (e?.name === 'AbortError' || e?.cause?.name === 'AbortError') {
+      abortAssistantMessage(sessionId)
+      error.value = ''
+      pendingBumpUpdatedAt.value = true
+      if (loaded.value) debouncedPersist()
+      return
+    }
     console.error(e)
     error.value = t('assistantChat.error')
   } finally {
     streamingSessionId.value = null
+    streamAbortController.value = null
   }
 }
 
@@ -1132,16 +1360,6 @@ const retryLast = async () => {
     max-height: 100%;
     min-height: 0;
   }
-}
-
-/* aqua-base ellipsizes label spans; keep Send / Sending fully visible on narrow screens */
-.assistant-send-btn {
-  text-overflow: clip;
-}
-.assistant-send-btn :deep(span) {
-  max-width: none;
-  overflow: visible;
-  text-overflow: clip;
 }
 
 .assistant-markdown :deep(.mathjax-content) {

@@ -97,6 +97,9 @@
     "hint": "lo sidju ka'e sisku fi lo valste fi'o smuni",
     "sending": "ca'o benji...",
     "send": "benji",
+    "sendMessage": "benji le nuzba",
+    "stopRecording": "tolcanci lo nu zbasu",
+    "stopped": "lo nu zbasu lo djedi cu topli",
     "thinking": "ca'o pensi",
     "error": "fasnu lo nu fliba .i ko troci ranji",
     "retry": "za'u re'u troci",
@@ -113,7 +116,10 @@
     "notesLabel": "pinka:",
     "toolErrorSummary": "fliba lo ka penmi",
     "showRawOutput": "co'a zgana le se penmi be fi le sorcu",
-    "hideRawOutput": "co'u zgana le se penmi be fi le sorcu"
+    "hideRawOutput": "co'u zgana le se penmi be fi le sorcu",
+    "editMessage": "cenba",
+    "saveEdit": "rejgau",
+    "cancelEdit": "canpa"
   },
   "deleteConfirmation": {
     "title": "birti lo nu vimcu",

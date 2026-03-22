@@ -50,9 +50,10 @@ RUN --mount=type=cache,target=/usr/local/cargo/registry \
 # Build stage for Vue.js frontend
 FROM node:24-alpine as frontend-builder
 WORKDIR /usr/src/app
-# Copy package.json and pnpm-lock.yaml
+# Copy package.json, lockfile, and pnpm 10 allowBuilds (esbuild, vue-demi postinstall)
 COPY frontend/package.json ./
 COPY frontend/pnpm-lock.yaml ./
+COPY frontend/pnpm-workspace.yaml ./
 # Install pnpm using standalone installer (avoids npm registry network issues)
 # Try corepack first, fallback to standalone installer if needed
 RUN apk add curl && \
