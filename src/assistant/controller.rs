@@ -54,6 +54,9 @@ pub async fn chat(
 /// (see jbovlaste/broadcast.rs): one channel, `sse::Data::new(json_str).into()` per event,
 /// response body = `Sse::from_infallible_receiver(rx)`. Sender is dropped when the agent loop
 /// finishes so the client sees the stream end.
+///
+/// Events with `"type":"stream_debug"` describe model selection and per-attempt failures for
+/// debugging (Network tab / custom clients); the web UI ignores them.
 #[post("/chat/stream")]
 pub async fn chat_stream(
     pool: web::Data<deadpool_postgres::Pool>,

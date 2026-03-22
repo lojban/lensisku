@@ -852,18 +852,106 @@ fn sse_error_payload(e: &AppError) -> serde_json::Value {
     if let AppError::ExternalServiceWithRaw { raw_response, .. }
     | AppError::ExternalServiceRetryable { raw_response, .. } = e
     {
-        let truncated = if raw_response.len() > ERROR_RAW_RESPONSE_MAX_LEN {
-            format!(
-                "{}... [truncated, total {} bytes]",
-                &raw_response[..ERROR_RAW_RESPONSE_MAX_LEN],
-                raw_response.len()
-            )
-        } else {
-            raw_response.clone()
-        };
-        obj["raw_response"] = serde_json::Value::String(truncated);
+        obj["raw_response"] = serde_json::Value::String(truncate_error_raw_response(raw_response));
     }
     obj
+}
+
+fn truncate_error_raw_response(raw_response: &str) -> String {
+    if raw_response.len() > ERROR_RAW_RESPONSE_MAX_LEN {
+        format!(
+            "{}... [truncated, total {} bytes]",
+            &raw_response[..ERROR_RAW_RESPONSE_MAX_LEN],
+            raw_response.len()
+        )
+    } else {
+        raw_response.to_string()
+    }
+}
+
+/// Debug-only SSE events (`type: "stream_debug"`). Clients should ignore these; useful for inspecting
+/// model selection and per-attempt failures in the Network tab or custom tooling.
+async fn sse_send_stream_debug(tx: &mpsc::Sender<sse::Event>, debug: serde_json::Value) {
+    let payload = json!({
+        "type": "stream_debug",
+        "debug": debug
+    });
+    if let Ok(data) = serde_json::to_string(&payload) {
+        let _ = tx.send(sse::Data::new(data).into()).await;
+    }
+}
+
+fn app_error_debug_object(e: &AppError) -> serde_json::Value {
+    let mut o = json!({
+        "message": format!("{}", e),
+    });
+    if let AppError::ExternalServiceWithRaw { raw_response, .. }
+    | AppError::ExternalServiceRetryable { raw_response, .. } = e
+    {
+        o["raw_response"] = serde_json::Value::String(truncate_error_raw_response(raw_response));
+    }
+    o
+}
+
+async fn sse_stream_debug_models_plan(
+    tx: &mpsc::Sender<sse::Event>,
+    candidates: &[ModelIdName],
+    run_parallel: bool,
+    parallel_pair: &[ModelIdName],
+) {
+    let list: Vec<serde_json::Value> = candidates
+        .iter()
+        .map(|(id, name)| json!({ "id": id, "name": name }))
+        .collect();
+    let mut debug = json!({
+        "kind": "models_plan",
+        "mode": if run_parallel { "parallel" } else { "sequential" },
+        "candidates": list,
+    });
+    if run_parallel && parallel_pair.len() == 2 {
+        debug["parallel_pair"] = json!([
+            { "id": parallel_pair[0].0, "name": parallel_pair[0].1 },
+            { "id": parallel_pair[1].0, "name": parallel_pair[1].1 },
+        ]);
+    } else {
+        debug["note"] = serde_json::Value::String(
+            "Sequential: try each candidate in order until one succeeds.".into(),
+        );
+    }
+    sse_send_stream_debug(tx, debug).await;
+}
+
+async fn sse_stream_debug_model_attempt_failed(
+    tx: &mpsc::Sender<sse::Event>,
+    model_id: &str,
+    model_name: &str,
+    e: &AppError,
+) {
+    let debug = json!({
+        "kind": "model_attempt_failed",
+        "model": model_id,
+        "model_name": model_name,
+        "error": app_error_debug_object(e),
+    });
+    sse_send_stream_debug(tx, debug).await;
+}
+
+async fn sse_stream_debug_parallel_branch_finished(
+    tx: &mpsc::Sender<sse::Event>,
+    model_id: &str,
+    model_name: &str,
+    result: &Result<(String, Vec<AssistantStep>), AppError>,
+) {
+    let mut debug = json!({
+        "kind": "parallel_branch_finished",
+        "model": model_id,
+        "model_name": model_name,
+        "ok": result.is_ok(),
+    });
+    if let Err(e) = result {
+        debug["error"] = app_error_debug_object(e);
+    }
+    sse_send_stream_debug(tx, debug).await;
 }
 
 /// Runs the agent loop. If event_tx is Some, streams step/done/error events (with optional "model" key for parallel runs).
@@ -885,9 +973,15 @@ pub async fn run_agent_loop(
     let is_streaming = event_tx.is_some();
     let run_parallel = is_streaming && parallel_models.len() == 2;
 
+    if let Some(ref tx) = event_tx {
+        sse_stream_debug_models_plan(tx, &candidates, run_parallel, &parallel_models).await;
+    }
+
     if run_parallel {
-        let tx1 = event_tx.clone().expect("run_parallel implies Some");
-        let tx2 = event_tx.expect("run_parallel implies Some");
+        let et = event_tx.expect("run_parallel implies streaming sender");
+        let post_debug_tx = et.clone();
+        let tx1 = et.clone();
+        let tx2 = et;
         let pool1 = pool.clone();
         let pool2 = pool.clone();
         let req1 = request.clone();
@@ -898,6 +992,9 @@ pub async fn run_agent_loop(
             run_agent_loop_inner(&pool1, &req1, &m1_id, &m1_name, Some(tx1)),
             run_agent_loop_inner(&pool2, &req2, &m2_id, &m2_name, Some(tx2)),
         );
+        sse_stream_debug_parallel_branch_finished(&post_debug_tx, &m1_id, &m1_name, &r1).await;
+        sse_stream_debug_parallel_branch_finished(&post_debug_tx, &m2_id, &m2_name, &r2).await;
+        drop(post_debug_tx);
         // Drop senders so the SSE stream ends. Return first successful reply for API compatibility.
         if let Ok((reply, _)) = r1 {
             Ok((reply, vec![]))
@@ -919,6 +1016,9 @@ pub async fn run_agent_loop(
                     return Ok(result);
                 }
                 Err(e) => {
+                    if let Some(ref tx) = event_tx {
+                        sse_stream_debug_model_attempt_failed(tx, model_id, model_name, &e).await;
+                    }
                     log::warn!(
                         "Assistant: model {} failed; trying next candidate if any: {}",
                         model_id,
