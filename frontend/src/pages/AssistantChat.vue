@@ -300,6 +300,7 @@ import {
 import AssistantThoughtStep from '@/components/AssistantThoughtStep.vue'
 import LazyMathJax from '@/components/LazyMathJax.vue'
 import { useSeoHead } from '@/composables/useSeoHead'
+import { useAuth } from '@/composables/useAuth'
 import { getApiBaseUrl, getAuthHeaders } from '../api'
 
 const STORAGE_KEY = 'lensisku-assistant-chats-v1'
@@ -307,6 +308,10 @@ const MAX_SESSIONS = 100
 
 const { locale, t } = useI18n()
 useSeoHead({ title: t('assistantChat.title') })
+
+const auth = useAuth()
+/** Logged-in users persist chats to PostgreSQL; anonymous users use localStorage. */
+const isRemoteMode = computed(() => auth.state.isLoggedIn === true)
 
 const isDesktop = useMediaQuery('(min-width: 768px)')
 const sidebarOpen = ref(false)
@@ -482,6 +487,78 @@ function formatSessionTime(ts) {
   }
 }
 
+async function waitAuthReady() {
+  for (let i = 0; i < 200; i++) {
+    if (!auth.state.isLoading) return
+    await new Promise((r) => setTimeout(r, 50))
+  }
+}
+
+function mapServerChat(row) {
+  const msgs = Array.isArray(row.messages) ? row.messages : []
+  return {
+    id: row.id,
+    title: row.title?.trim() ? row.title : t('assistantChat.newChat'),
+    updatedAt: new Date(row.updatedAt).getTime(),
+    messages: msgs,
+    scrollTop: typeof row.scrollTop === 'number' ? row.scrollTop : 0,
+    primaryModelId: row.primaryModelId ?? null,
+    _stub: false,
+  }
+}
+
+async function fetchSessionIfNeeded(id) {
+  const s = sessions.value.find((x) => x.id === id)
+  if (!s?._stub) return
+  const base = getApiBaseUrl()
+  const r = await fetch(`${base}/assistant/chats/${id}`, { headers: getAuthHeaders() })
+  if (!r.ok) return
+  const row = await r.json()
+  const mapped = mapServerChat(row)
+  const idx = sessions.value.findIndex((x) => x.id === id)
+  if (idx >= 0) sessions.value.splice(idx, 1, mapped)
+}
+
+async function loadFromServer() {
+  const base = getApiBaseUrl()
+  const headers = getAuthHeaders()
+  let listRes = await fetch(`${base}/assistant/chats`, { headers })
+  if (!listRes.ok) {
+    throw new Error(await listRes.text())
+  }
+  let list = await listRes.json()
+  if (!Array.isArray(list)) list = []
+  if (list.length === 0) {
+    const cr = await fetch(`${base}/assistant/chats`, { method: 'POST', headers })
+    if (!cr.ok) throw new Error(await cr.text())
+    const created = await cr.json()
+    list = [
+      {
+        id: created.id,
+        title: created.title,
+        updatedAt: created.updatedAt,
+      },
+    ]
+  }
+  const sessionsPartial = list.map((item) => ({
+    id: item.id,
+    title: item.title?.trim() ? item.title : t('assistantChat.newChat'),
+    updatedAt: new Date(item.updatedAt).getTime(),
+    messages: [],
+    scrollTop: 0,
+    primaryModelId: null,
+    _stub: true,
+  }))
+  const firstId = sessionsPartial[0].id
+  const fullRes = await fetch(`${base}/assistant/chats/${firstId}`, { headers })
+  if (!fullRes.ok) throw new Error(await fullRes.text())
+  const full = await fullRes.json()
+  const firstSession = mapServerChat(full)
+  sessions.value = sessionsPartial.map((s) => (s.id === firstId ? firstSession : s))
+  activeSessionId.value = firstId
+  messages.value = JSON.parse(JSON.stringify(firstSession.messages))
+}
+
 function loadFromStorage() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
@@ -529,10 +606,11 @@ function readScrollTopForPersist() {
   return typeof s?.scrollTop === 'number' ? s.scrollTop : 0
 }
 
-function persistToStorage(options = {}) {
-  if (!loaded.value || !activeSessionId.value) return
+/** Merges live `messages` into the active session row and sidebar order. */
+function mergeActiveSessionIntoState(options = {}) {
+  if (!loaded.value || !activeSessionId.value) return null
   const idx = sessions.value.findIndex((s) => s.id === activeSessionId.value)
-  if (idx < 0) return
+  if (idx < 0) return null
   const preserveUpdatedAt = options.preserveUpdatedAt === true
   const prevUpdatedAt = sessions.value[idx].updatedAt
   let updatedAt = prevUpdatedAt
@@ -551,6 +629,34 @@ function persistToStorage(options = {}) {
   const merged = [session, ...others]
   merged.sort((a, b) => b.updatedAt - a.updatedAt)
   sessions.value = merged.slice(0, MAX_SESSIONS)
+  return session
+}
+
+async function persistToServerImmediate(options = {}) {
+  const session = mergeActiveSessionIntoState(options)
+  if (!session || session._stub) return
+  const base = getApiBaseUrl()
+  const body = {
+    title: session.title,
+    messages: session.messages,
+    primaryModelId: session.primaryModelId ?? null,
+    scrollTop: session.scrollTop,
+  }
+  const r = await fetch(`${base}/assistant/chats/${session.id}`, {
+    method: 'PUT',
+    headers: {
+      ...getAuthHeaders(),
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(body),
+  })
+  if (!r.ok) {
+    console.warn('assistant chat PUT failed', await r.text())
+  }
+}
+
+function persistToStorageLocal(options = {}) {
+  mergeActiveSessionIntoState(options)
   try {
     localStorage.setItem(
       STORAGE_KEY,
@@ -565,7 +671,22 @@ function persistToStorage(options = {}) {
   }
 }
 
-const debouncedPersist = useDebounceFn(persistToStorage, 400)
+function persistToStorage(options = {}) {
+  if (!loaded.value || !activeSessionId.value) return
+  if (isRemoteMode.value) {
+    void persistToServerImmediate(options)
+  } else {
+    persistToStorageLocal(options)
+  }
+}
+
+const debouncedPersist = useDebounceFn(() => {
+  if (isRemoteMode.value) {
+    void persistToServerImmediate({})
+  } else {
+    persistToStorageLocal({})
+  }
+}, 400)
 const debouncedScrollPersist = useDebounceFn(() => {
   if (!loaded.value || !activeSessionId.value || !scrollContainer.value) return
   const idx = sessions.value.findIndex((s) => s.id === activeSessionId.value)
@@ -647,9 +768,23 @@ watch(
   { deep: true }
 )
 
-onMounted(() => {
+onMounted(async () => {
   suppressAutoScroll.value = true
-  loadFromStorage()
+  await waitAuthReady()
+  try {
+    if (isRemoteMode.value) {
+      await loadFromServer()
+    } else {
+      loadFromStorage()
+    }
+  } catch (e) {
+    console.error(e)
+    if (!isRemoteMode.value) loadFromStorage()
+    else {
+      error.value = t('assistantChat.error')
+      loadFromStorage()
+    }
+  }
 
   // Full-height route: keep layout viewport at top (Firefox mobile can offset when inner height mismatches dvh/svh).
   if (typeof window !== 'undefined') {
@@ -784,13 +919,20 @@ function getSessionMessagesForMutation(sessionId) {
   return s?.messages ?? null
 }
 
-function selectSession(id) {
+async function selectSession(id) {
   if (id === activeSessionId.value) return
   persistToStorage({ preserveUpdatedAt: true })
   suppressAutoScroll.value = true
   activeSessionId.value = id
+  if (isRemoteMode.value) {
+    try {
+      await fetchSessionIfNeeded(id)
+    } catch (e) {
+      console.error(e)
+    }
+  }
   const s = sessions.value.find((x) => x.id === id)
-  const nextMsgs = s ? JSON.parse(JSON.stringify(s.messages)) : []
+  const nextMsgs = s ? JSON.parse(JSON.stringify(s.messages || [])) : []
   chatMessagesReady.value = nextMsgs.length === 0
   messages.value = nextMsgs
   error.value = ''
@@ -803,23 +945,53 @@ function selectSession(id) {
   })
 }
 
-function startNewChat() {
+async function startNewChat() {
+  error.value = ''
   persistToStorage({ preserveUpdatedAt: true })
   suppressAutoScroll.value = true
   chatMessagesReady.value = true
-  const id = createId()
-  const newSession = {
-    id,
-    title: t('assistantChat.newChat'),
-    updatedAt: Date.now(),
-    messages: [],
-    scrollTop: 0,
-    primaryModelId: null,
+  if (isRemoteMode.value) {
+    try {
+      const base = getApiBaseUrl()
+      const r = await fetch(`${base}/assistant/chats`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+      })
+      if (!r.ok) throw new Error(await r.text())
+      const created = await r.json()
+      const newSession = {
+        id: created.id,
+        title: created.title?.trim() ? created.title : t('assistantChat.newChat'),
+        updatedAt: new Date(created.updatedAt).getTime(),
+        messages: [],
+        scrollTop: 0,
+        primaryModelId: null,
+        _stub: false,
+      }
+      sessions.value = [newSession, ...sessions.value.filter((s) => s.id !== newSession.id)].slice(
+        0,
+        MAX_SESSIONS
+      )
+      activeSessionId.value = newSession.id
+      messages.value = []
+    } catch (e) {
+      console.error(e)
+      error.value = t('assistantChat.error')
+    }
+  } else {
+    const id = createId()
+    const newSession = {
+      id,
+      title: t('assistantChat.newChat'),
+      updatedAt: Date.now(),
+      messages: [],
+      scrollTop: 0,
+      primaryModelId: null,
+    }
+    sessions.value = [newSession, ...sessions.value.filter((s) => s.id !== id)].slice(0, MAX_SESSIONS)
+    activeSessionId.value = id
+    messages.value = []
   }
-  sessions.value = [newSession, ...sessions.value.filter((s) => s.id !== id)].slice(0, MAX_SESSIONS)
-  activeSessionId.value = id
-  messages.value = []
-  error.value = ''
   sidebarOpen.value = false
   nextTick(() => {
     if (scrollContainer.value) scrollContainer.value.scrollTop = 0
@@ -887,9 +1059,49 @@ function ensureSessionPrimaryModel(sessionId, modelId) {
   sessions.value.splice(idx, 1, { ...s, primaryModelId: modelId })
 }
 
-function deleteSession(id, e) {
+async function deleteSession(id, e) {
   e?.stopPropagation?.()
+  if (isRemoteMode.value) {
+    try {
+      const base = getApiBaseUrl()
+      const r = await fetch(`${base}/assistant/chats/${id}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders(),
+      })
+      if (!r.ok && r.status !== 404) {
+        console.warn('delete chat failed', await r.text())
+      }
+    } catch (err) {
+      console.error(err)
+    }
+  }
   if (sessions.value.length <= 1) {
+    if (isRemoteMode.value) {
+      try {
+        const base = getApiBaseUrl()
+        const r = await fetch(`${base}/assistant/chats`, { method: 'POST', headers: getAuthHeaders() })
+        if (r.ok) {
+          const created = await r.json()
+          const empty = {
+            id: created.id,
+            title: t('assistantChat.newChat'),
+            updatedAt: new Date(created.updatedAt).getTime(),
+            messages: [],
+            scrollTop: 0,
+            primaryModelId: null,
+            _stub: false,
+          }
+          sessions.value = [empty]
+          activeSessionId.value = empty.id
+          messages.value = []
+          chatMessagesReady.value = true
+          error.value = ''
+          return
+        }
+      } catch (_) {
+        /* fall through */
+      }
+    }
     messages.value = []
     chatMessagesReady.value = true
     error.value = ''
@@ -901,7 +1113,14 @@ function deleteSession(id, e) {
   if (activeSessionId.value === id) {
     suppressAutoScroll.value = true
     activeSessionId.value = next[0].id
-    const switchedMsgs = JSON.parse(JSON.stringify(next[0].messages))
+    if (isRemoteMode.value) {
+      try {
+        await fetchSessionIfNeeded(next[0].id)
+      } catch (_) {
+        /* ignore */
+      }
+    }
+    const switchedMsgs = JSON.parse(JSON.stringify(next[0].messages || []))
     chatMessagesReady.value = switchedMsgs.length === 0
     messages.value = switchedMsgs
     nextTick(() => {
@@ -976,6 +1195,10 @@ async function performRequest(sessionId, options = {}) {
 
   const assistantIndex = msgList.length - 1
 
+  if (isRemoteMode.value) {
+    await persistToServerImmediate({})
+  }
+
   function getOrCreateReply(modelId, modelName = null) {
     const list = getSessionMessagesForMutation(sessionId)
     if (!list || list.length <= assistantIndex) return null
@@ -996,10 +1219,17 @@ async function performRequest(sessionId, options = {}) {
     ...getAuthHeaders(),
   }
 
-  const response = await fetch(`${getApiBaseUrl()}/assistant/chat/stream`, {
+  const streamUrl = isRemoteMode.value
+    ? `${getApiBaseUrl()}/assistant/chats/${encodeURIComponent(sessionId)}/stream`
+    : `${getApiBaseUrl()}/assistant/chat/stream`
+  const streamBody = isRemoteMode.value
+    ? JSON.stringify({ locale: locale.value })
+    : JSON.stringify(payload)
+
+  const response = await fetch(streamUrl, {
     method: 'POST',
     headers,
-    body: JSON.stringify(payload),
+    body: streamBody,
     signal: options.signal,
   })
 

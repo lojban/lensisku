@@ -1,6 +1,7 @@
 #![allow(clippy::expect_used, clippy::unwrap_used)]
 
 use std::env;
+use std::sync::Arc;
 use std::time::Duration;
 
 use actix_web_lab::sse;
@@ -24,6 +25,7 @@ use crate::jbovlaste::service::{cmavo_gismu_english_dictionary_text, semantic_se
 
 use super::context_compress;
 use super::dto::{AssistantStep, ChatMessage, ChatRequest, ToolCallDto};
+use super::persist::ChatPersistState;
 
 #[derive(Debug, Clone, Serialize)]
 struct ToolFunction {
@@ -687,6 +689,22 @@ fn truncate_error_raw_response(raw_response: &str) -> String {
     }
 }
 
+async fn emit_sse_user_visible(
+    persist: &Option<Arc<ChatPersistState>>,
+    tx: &mpsc::Sender<sse::Event>,
+    payload: serde_json::Value,
+) -> Result<(), AppError> {
+    if let Some(p) = persist {
+        if payload.get("type").and_then(|t| t.as_str()) != Some("stream_debug") {
+            p.apply_and_save(&payload).await?;
+        }
+    }
+    if let Ok(data) = serde_json::to_string(&payload) {
+        let _ = tx.send(sse::Data::new(data).into()).await;
+    }
+    Ok(())
+}
+
 /// Debug-only SSE events (`type: "stream_debug"`). Clients should ignore these; useful for inspecting
 /// model selection and per-attempt failures in the Network tab or custom tooling.
 async fn sse_send_stream_debug(tx: &mpsc::Sender<sse::Event>, debug: serde_json::Value) {
@@ -785,6 +803,7 @@ pub async fn run_agent_loop(
     request: &ChatRequest,
     event_tx: Option<mpsc::Sender<sse::Event>>,
     redis: Option<&RedisCache>,
+    persist: Option<Arc<ChatPersistState>>,
 ) -> Result<(String, Vec<AssistantStep>), AppError> {
     let api_key = env::var("OPENROUTER_API_KEY").map_err(|_| {
         AppError::ExternalService("OPENROUTER_API_KEY is not set in the environment".into())
@@ -796,7 +815,15 @@ pub async fn run_agent_loop(
         load_or_fetch_openrouter_candidates(redis, &base_url, &api_key).await?;
 
     loop {
-        match run_agent_loop_with_candidates(pool, request, event_tx.clone(), &candidates).await {
+        match run_agent_loop_with_candidates(
+            pool,
+            request,
+            event_tx.clone(),
+            &candidates,
+            persist.clone(),
+        )
+        .await
+        {
             Ok(ok) => return Ok(ok),
             Err(e) if from_redis_only => {
                 log::warn!(
@@ -816,6 +843,7 @@ async fn run_agent_loop_with_candidates(
     request: &ChatRequest,
     event_tx: Option<mpsc::Sender<sse::Event>>,
     candidates: &[ModelIdName],
+    persist: Option<Arc<ChatPersistState>>,
 ) -> Result<(String, Vec<AssistantStep>), AppError> {
     let parallel_models: Vec<ModelIdName> = candidates.iter().take(2).cloned().collect();
     let is_streaming = event_tx.is_some();
@@ -836,9 +864,11 @@ async fn run_agent_loop_with_candidates(
         let req2 = request.clone();
         let (m1_id, m1_name) = parallel_models[0].clone();
         let (m2_id, m2_name) = parallel_models[1].clone();
+        let p1 = persist.clone();
+        let p2 = persist.clone();
         let (mut r1, mut r2) = tokio::join!(
-            run_agent_loop_inner(&pool1, &req1, &m1_id, &m1_name, Some(tx1)),
-            run_agent_loop_inner(&pool2, &req2, &m2_id, &m2_name, Some(tx2)),
+            run_agent_loop_inner(&pool1, &req1, &m1_id, &m1_name, Some(tx1), p1),
+            run_agent_loop_inner(&pool2, &req2, &m2_id, &m2_name, Some(tx2), p2),
         );
         sse_stream_debug_parallel_branch_finished(&post_debug_tx, &m1_id, &m1_name, &r1).await;
         sse_stream_debug_parallel_branch_finished(&post_debug_tx, &m2_id, &m2_name, &r2).await;
@@ -857,6 +887,7 @@ async fn run_agent_loop_with_candidates(
                     &nid,
                     &nname,
                     Some(post_debug_tx.clone()),
+                    persist.clone(),
                 )
                 .await;
                 if let Err(ref e) = res {
@@ -879,6 +910,7 @@ async fn run_agent_loop_with_candidates(
                     &nid,
                     &nname,
                     Some(post_debug_tx.clone()),
+                    persist.clone(),
                 )
                 .await;
                 if let Err(ref e) = res {
@@ -911,7 +943,9 @@ async fn run_agent_loop_with_candidates(
 
         for (model_id, model_name) in candidates {
             let tx = event_tx.clone();
-            match run_agent_loop_inner(pool, request, model_id, model_name, tx).await {
+            match run_agent_loop_inner(pool, request, model_id, model_name, tx, persist.clone())
+                .await
+            {
                 Ok(result) => {
                     // Inner consumed a clone of the sender; drop any remaining handle so the SSE stream ends.
                     drop(event_tx.take());
@@ -934,8 +968,9 @@ async fn run_agent_loop_with_candidates(
         if let Some(e) = last_err.take() {
             if let Some(tx) = event_tx.take() {
                 let payload = sse_error_payload(&e);
-                if let Ok(data) = serde_json::to_string(&payload) {
-                    let _ = tx.send(sse::Data::new(data).into()).await;
+                if let Err(send_err) = emit_sse_user_visible(&persist, &tx, payload).await {
+                    drop(tx);
+                    return Err(send_err);
                 }
                 drop(tx);
             }
@@ -954,6 +989,7 @@ async fn run_agent_loop_inner(
     model: &str,
     model_name: &str,
     event_tx: Option<mpsc::Sender<sse::Event>>,
+    persist: Option<Arc<ChatPersistState>>,
 ) -> Result<(String, Vec<AssistantStep>), AppError> {
     let api_key = env::var("OPENROUTER_API_KEY").map_err(|_| {
         AppError::ExternalService("OPENROUTER_API_KEY is not set in the environment".into())
@@ -1078,9 +1114,7 @@ async fn run_agent_loop_inner(
                     "content": content_str,
                     "tool_calls": calls,
                 });
-                if let Ok(data) = serde_json::to_string(&payload) {
-                    let _ = tx.send(sse::Data::new(data).into()).await;
-                }
+                emit_sse_user_visible(&persist, tx, payload).await?;
             }
             // Execute each tool call and append tool results. Recover from parse/tool errors by
             // feeding an error message back to the LLM so it can try again.
@@ -1149,9 +1183,7 @@ async fn run_agent_loop_inner(
                     if let Some(ref ar) = assistant_reasoning {
                         start_payload["assistant_reasoning"] = serde_json::Value::String(ar.clone());
                     }
-                    if let Ok(data) = serde_json::to_string(&start_payload) {
-                        let _ = tx.send(sse::Data::new(data).into()).await;
-                    }
+                    emit_sse_user_visible(&persist, tx, start_payload).await?;
                 }
 
                 let tool_result = run_jbovlaste_semantic_search_with_retry(pool, args).await;
@@ -1223,9 +1255,7 @@ async fn run_agent_loop_inner(
                     if let Some(ref out) = step.tool_output {
                         payload["tool_output"] = serde_json::Value::String(out.clone());
                     }
-                    if let Ok(data) = serde_json::to_string(&payload) {
-                        let _ = tx.send(sse::Data::new(data).into()).await;
-                    }
+                    emit_sse_user_visible(&persist, tx, payload).await?;
                 }
 
                 messages.push(ChatCompletionMessageRequest {
@@ -1253,9 +1283,7 @@ async fn run_agent_loop_inner(
                     "model_name": model_name,
                     "reply": reply
                 });
-                if let Ok(data) = serde_json::to_string(&payload) {
-                    let _ = tx.send(sse::Data::new(data).into()).await;
-                }
+                emit_sse_user_visible(&persist, &tx, payload).await?;
                 drop(tx);
             }
             return Ok((reply, steps));
@@ -1279,21 +1307,10 @@ async fn run_agent_loop_inner(
             "model_name": model_name,
             "reply": &last_content
         });
-        if let Ok(data) = serde_json::to_string(&payload) {
-            let _ = tx.send(sse::Data::new(data).into()).await;
-        }
+        emit_sse_user_visible(&persist, &tx, payload).await?;
         drop(tx);
     }
     Ok((last_content, steps))
-}
-
-/// Non-streaming entry point: runs the agent and returns reply + steps.
-pub async fn handle_chat(
-    pool: &Pool,
-    request: ChatRequest,
-    redis: Option<&RedisCache>,
-) -> Result<(String, Vec<AssistantStep>), AppError> {
-    run_agent_loop(pool, &request, None, redis).await
 }
 
 #[cfg(test)]
