@@ -3,6 +3,7 @@ use actix_web_lab::sse;
 use tokio::sync::mpsc;
 
 use crate::error::AppError;
+use crate::middleware::cache::RedisCache;
 
 use super::dto::{ChatRequest, ChatResponse};
 
@@ -34,11 +35,12 @@ fn parse_chat_request(body: &web::Bytes) -> Result<ChatRequest, AppError> {
 #[post("/chat")]
 pub async fn chat(
     pool: web::Data<deadpool_postgres::Pool>,
+    redis_cache: web::Data<RedisCache>,
     body: web::Bytes,
 ) -> Result<HttpResponse, AppError> {
     let request = parse_chat_request(&body)?;
 
-    let (reply, steps) = super::handle_chat(pool.get_ref(), request).await?;
+    let (reply, steps) = super::handle_chat(pool.get_ref(), request, Some(redis_cache.get_ref())).await?;
 
     Ok(HttpResponse::Ok().json(ChatResponse {
         reply,
@@ -60,15 +62,23 @@ pub async fn chat(
 #[post("/chat/stream")]
 pub async fn chat_stream(
     pool: web::Data<deadpool_postgres::Pool>,
+    redis_cache: web::Data<RedisCache>,
     body: web::Bytes,
 ) -> Result<impl actix_web::Responder, AppError> {
     let request = parse_chat_request(&body)?;
 
     let (tx, rx) = mpsc::channel::<sse::Event>(32);
     let pool_clone = pool.get_ref().clone();
+    let redis_cache = redis_cache.clone();
 
     actix_web::rt::spawn(async move {
-        let result = super::run_agent_loop(&pool_clone, &request, Some(tx)).await;
+        let result = super::run_agent_loop(
+            &pool_clone,
+            &request,
+            Some(tx),
+            Some(redis_cache.get_ref()),
+        )
+        .await;
         if let Err(ref e) = result {
             log::error!("Assistant stream agent loop error: {}", e);
             if let crate::error::AppError::ExternalServiceWithRaw { raw_response, .. }

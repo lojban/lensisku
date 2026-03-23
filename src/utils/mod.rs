@@ -1,3 +1,7 @@
+pub mod embeddings;
+pub mod openrouter_models;
+pub mod tersmu;
+
 use actix_web::{HttpResponse, ResponseError};
 use ammonia::Builder as AmmoniaBuilder;
 use base64::{engine::general_purpose::STANDARD as BASE64, Engine};

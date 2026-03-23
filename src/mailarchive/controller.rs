@@ -3,44 +3,8 @@ use actix_web::{get, post, web, HttpResponse, Responder};
 use deadpool_postgres::Pool;
 use serde_json::json;
 
-use super::{
-    service, Message, SearchQuery, SearchResponse, SpamVoteResponse, ThreadQuery, ThreadResponse,
-};
+use super::{service, Message, SpamVoteResponse, ThreadQuery, ThreadResponse};
 use crate::auth::Claims;
-
-#[utoipa::path(
-    get,
-    tag = "mail",
-    path = "/mail/search",
-    params(
-        ("query" = String, Query, description = "Search query"),
-        ("page" = Option<i64>, Query, description = "Page number"), 
-        ("per_page" = Option<i64>, Query, description = "Items per page"),
-        ("sort_by" = Option<String>, Query, description = "Field to sort by (rank, date)"),
-        ("sort_order" = Option<String>, Query, description = "Sort order (asc or desc)"),
-        ("include_content" = Option<bool>, Query, description = "Include message content"),
-        ("group_by_thread" = Option<bool>, Query, description = "Group results by thread, showing one message per thread")
-    ),
-    responses(
-        (status = 200, description = "List of messages", body = SearchResponse),
-        (status = 500, description = "Internal server error")  
-    ),
-    summary = "Search mail archive",
-    description = "Search through the mail archive using keywords. Supports pagination and content filtering. \
-                  The search covers message subjects and content, with results ranked by relevance. Messages \
-                  can optionally include or exclude the full content in responses.",
-
-)]
-#[get("/search")]
-pub async fn search_messages(
-    pool: web::Data<Pool>,
-    query: web::Query<SearchQuery>,
-) -> impl Responder {
-    match service::search_messages(&pool, query.into_inner()).await {
-        Ok(response) => HttpResponse::Ok().json(response),
-        Err(e) => HttpResponse::InternalServerError().body(format!("Database error: {}", e)),
-    }
-}
 
 #[utoipa::path(
     post,

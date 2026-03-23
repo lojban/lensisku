@@ -12,8 +12,8 @@ use tokio_postgres::Row;
 use super::{
     dto::{
         CommentStats, ContentPart, CreateOpinionRequest, NewCommentParams, OpinionVoteRequest,
-        PaginatedCommentsResponse, PaginatedReactions, ReactionResponse, ReactionSummary,
-        SearchCommentsParams, ThreadParams, TrendingHashtag,
+        PaginatedCommentsResponse, ReactionResponse, SearchCommentsParams, ThreadParams,
+        TrendingHashtag,
     },
     errors::ReactionError,
     models::{CommentOpinion, FreeThread, TrendingTimespan},
@@ -1777,84 +1777,6 @@ pub async fn get_my_reactions(
         total,
         page,
         per_page,
-    })
-}
-
-pub async fn get_reactions(
-    pool: &Pool,
-    comment_id: i32,
-    current_user_id: Option<i32>,
-    page: Option<i64>,
-    page_size: Option<i32>,
-) -> Result<ReactionSummary, Box<dyn std::error::Error>> {
-    let mut client = pool.get().await?;
-    let transaction = client.transaction().await?;
-
-    let page = page.unwrap_or(1);
-    let page_size = page_size.unwrap_or(10);
-    let offset = (page - 1) * page_size as i64;
-
-    // Get total count first
-    let total_count: i64 = transaction
-        .query_one(
-            "SELECT COUNT(*) FROM (
-                SELECT DISTINCT reaction
-                FROM comment_reactions
-                WHERE comment_id = $1
-            ) as distinct_reactions",
-            &[&comment_id],
-        )
-        .await?
-        .get(0);
-
-    // Get paginated reactions
-    let reactions = transaction
-        .query(
-            "SELECT
-                cr.reaction,
-                COUNT(*) as count,
-                BOOL_OR(cr.user_id = $1) as reacted
-             FROM comment_reactions cr
-             WHERE cr.comment_id = $2
-             GROUP BY cr.reaction
-             ORDER BY count DESC, reaction
-             LIMIT $3 OFFSET $4",
-            &[&current_user_id, &comment_id, &page_size, &offset],
-        )
-        .await?;
-
-    let total_reactions: i64 = transaction
-        .query_one(
-            "SELECT COUNT(*) FROM comment_reactions WHERE comment_id = $1",
-            &[&comment_id],
-        )
-        .await?
-        .get(0);
-
-    let total_pages = (total_count as f64 / page_size as f64).ceil() as i64;
-
-    let reaction_list = reactions
-        .iter()
-        .map(|row| ReactionResponse {
-            reaction: row.get("reaction"),
-            count: row.get("count"),
-            reacted: row.get("reacted"),
-        })
-        .collect();
-
-    let paginated_reactions = PaginatedReactions {
-        reactions: reaction_list,
-        total_reactions,
-        total_pages,
-        current_page: page,
-        page_size,
-    };
-
-    transaction.commit().await?;
-
-    Ok(ReactionSummary {
-        reactions: paginated_reactions,
-        total_distinct_reactions: total_count,
     })
 }
 

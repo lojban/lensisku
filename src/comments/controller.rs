@@ -8,8 +8,7 @@ use crate::middleware::cache::RedisCache;
 use super::{
     dto::{
         CommentStats, CreateOpinionRequest, NewCommentRequest, OpinionVoteRequest,
-        PaginatedCommentsResponse, ReactionSummary, SearchCommentsQuery, ThreadQuery,
-        TrendingHashtag,
+        PaginatedCommentsResponse, ThreadQuery, TrendingHashtag,
     },
     models::{Comment, CommentOpinion},
     service,
@@ -19,8 +18,7 @@ use crate::{
     comments::{
         dto::{
             BookmarkActionRequest, FreeThreadQuery, NewCommentParams, PaginationQuery,
-            ReactionPaginationQuery, ReactionRequest, SearchCommentsParams, ThreadParams,
-            TrendingQuery,
+            ReactionRequest, ThreadParams, TrendingQuery,
         },
         models::TrendingTimespan,
     },
@@ -87,59 +85,6 @@ pub async fn get_thread(
         Err(e) => HttpResponse::InternalServerError().json(json!({
             "error": "Failed to get comments",
             "details": format!("{:#?}", e)
-        })),
-    }
-}
-
-#[utoipa::path(
-    get,
-    path = "/comments/search",
-    tag = "comments",
-    params(
-        ("search" = Option<String>, Query, description = "Search term"),
-        ("page" = Option<i64>, Query, description = "Page number starting from 1"),
-        ("per_page" = Option<i64>, Query, description = "Items per page"),
-        ("sort_by" = Option<String>, Query, description = "Sort field: time, reactions, replies"),
-        ("sort_order" = Option<String>, Query, description = "Sort order: asc, desc"),
-        ("username" = Option<String>, Query, description = "Filter by username"),
-        ("valsi_id" = Option<i32>, Query, description = "Filter by valsi ID"),
-        ("definition_id" = Option<i32>, Query, description = "Filter by definition ID"),
-        ("target_user_id" = Option<i32>, Query, description = "Filter by target user ID for profile comments")
-    ),
-    responses(
-        (status = 200, description = "Paginated comments matching search", body = PaginatedCommentsResponse),
-        (status = 500, description = "Internal server error")
-    ),
-    security(
-        ("bearer_auth" = [])
-    ),
-    summary = "Search comments",
-    description = "Search comments with filtering and sorting options"
-)]
-#[get("/search")]
-pub async fn search_comments(
-    pool: web::Data<Pool>,
-    query: web::Query<SearchCommentsQuery>,
-    claims: Option<Claims>,
-) -> impl Responder {
-    let params = SearchCommentsParams {
-        page: query.page.unwrap_or(1),
-        per_page: query.per_page.unwrap_or(20),
-        search_term: query.search.as_deref().unwrap_or("").to_string(),
-        sort_by: query.sort_by.as_deref().unwrap_or("time").to_string(),
-        sort_order: query.sort_order.as_deref().unwrap_or("desc").to_string(),
-        username: query.username.clone(),
-        valsi_id: query.valsi_id,
-        definition_id: query.definition_id,
-        definition_link_id: query.definition_link_id,
-        target_user_id: query.target_user_id,
-    };
-
-    match service::search_comments(&pool, params, claims.map(|c| c.sub)).await {
-        Ok(response) => HttpResponse::Ok().json(response),
-        Err(e) => HttpResponse::InternalServerError().json(json!({
-            "error": "Failed to search comments",
-            "details": e.to_string()
         })),
     }
 }
@@ -810,47 +755,6 @@ pub async fn toggle_reaction(
                 }))
             }
         }
-    }
-}
-
-#[utoipa::path(
-    get,
-    path = "/comments/{comment_id}/reactions",
-    tag = "comments",
-    params(
-        ("comment_id" = i32, Path, description = "Comment ID"),
-        ("page" = Option<i64>, Query, description = "Page number"),
-        ("page_size" = Option<i32>, Query, description = "Number of reactions per page")
-    ),
-    responses(
-        (status = 200, description = "Reactions retrieved successfully", body = ReactionSummary),
-        (status = 500, description = "Internal server error")
-    ),
-    security(
-        ("bearer_auth" = [])
-    )
-)]
-#[get("/{comment_id}/reactions")]
-pub async fn get_reactions(
-    pool: web::Data<Pool>,
-    comment_id: web::Path<i32>,
-    query: web::Query<ReactionPaginationQuery>,
-    claims: Option<Claims>,
-) -> impl Responder {
-    match service::get_reactions(
-        &pool,
-        comment_id.into_inner(),
-        claims.map(|c| c.sub),
-        query.page,
-        query.page_size,
-    )
-    .await
-    {
-        Ok(summary) => HttpResponse::Ok().json(summary),
-        Err(e) => HttpResponse::InternalServerError().json(json!({
-            "error": "Failed to get reactions",
-            "details": e.to_string()
-        })),
     }
 }
 
