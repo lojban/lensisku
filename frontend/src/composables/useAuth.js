@@ -3,6 +3,9 @@ import { reactive, provide, inject } from "vue";
 import { useRouter } from "vue-router";
 import { setAuthInstance, api, performBackendLogout, mergeProgress } from "@/api";
 import { getAllProgressForMerge, clearAfterMerge } from "@/composables/useAnonymousProgress";
+import { getApiBaseUrl, getAuthHeaders } from "@/api";
+
+const ASSISTANT_CHATS_STORAGE_KEY = "lensisku-assistant-chats-v1";
 
 const authKey = Symbol();
 
@@ -258,6 +261,45 @@ export function provideAuth() {
 
     startTokenVerification();
     void mergeAnonymousProgressThenClear();
+    void mergeAssistantChatsThenClear();
+  }
+
+  async function mergeAssistantChatsThenClear() {
+    try {
+      const raw = localStorage.getItem(ASSISTANT_CHATS_STORAGE_KEY);
+      if (!raw) return;
+      const data = JSON.parse(raw);
+      const sessions = Array.isArray(data.sessions) ? data.sessions : [];
+      if (!sessions.length) {
+        localStorage.removeItem(ASSISTANT_CHATS_STORAGE_KEY);
+        return;
+      }
+      const token = localStorage.getItem("accessToken");
+      if (!token) return;
+      const base = getApiBaseUrl();
+      const res = await fetch(`${base}/assistant/chats/import`, {
+        method: "POST",
+        headers: {
+          ...getAuthHeaders(),
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          sessions: sessions.map((s) => ({
+            title: s.title || "",
+            messages: s.messages ?? [],
+            primaryModelId: s.primaryModelId ?? null,
+            scrollTop: typeof s.scrollTop === "number" ? s.scrollTop : 0,
+          })),
+        }),
+      });
+      if (!res.ok) {
+        console.warn("Merge assistant chats failed:", await res.text());
+        return;
+      }
+      localStorage.removeItem(ASSISTANT_CHATS_STORAGE_KEY);
+    } catch (err) {
+      console.warn("Merge assistant chats failed:", err);
+    }
   }
 
   async function mergeAnonymousProgressThenClear() {

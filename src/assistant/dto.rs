@@ -30,7 +30,7 @@ pub struct ChatMessage {
     pub name: Option<String>,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct ChatRequest {
     pub messages: Vec<ChatMessage>,
     pub locale: Option<String>,
@@ -51,10 +51,3 @@ pub struct AssistantStep {
     pub assistant_reasoning: Option<String>,
 }
 
-#[derive(Debug, Serialize)]
-pub struct ChatResponse {
-    pub reply: String,
-    /// Optional list of steps (tool calls + results) to show as thought process in the UI.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub steps: Option<Vec<AssistantStep>>,
-}
