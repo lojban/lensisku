@@ -19,8 +19,11 @@ fn get_engine() -> &'static Engine {
 fn get_module() -> &'static Module {
     MODULE.get_or_init(|| {
         let engine = get_engine();
-        // assets/wasm/tersmu.wasm
-        let wasm_bytes = include_bytes!("./assets/wasm/tersmu.wasm");
+        // Resolved from crate root so this module can live under `src/utils/`.
+        let wasm_bytes = include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/assets/wasm/tersmu.wasm"
+        ));
         Module::from_binary(engine, wasm_bytes).expect("Failed to load tersmu.wasm")
     })
 }

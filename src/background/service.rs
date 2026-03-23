@@ -30,7 +30,7 @@ fn skip_notes_for_embedding_type(type_name: &str) -> bool {
 }
 
 async fn calculate_missing_embeddings(pool: &Pool) -> AppResult<()> {
-    if crate::embeddings::embeddings_disabled() {
+    if crate::utils::embeddings::embeddings_disabled() {
         info!("Embeddings disabled (DISABLE_EMBEDDINGS); skipping calculation.");
         return Ok(());
     }
@@ -131,7 +131,7 @@ async fn calculate_missing_embeddings(pool: &Pool) -> AppResult<()> {
         );
 
         // Generate embeddings in-process via fastembed (AllMiniLML6V2, mean pooling, L2-normalised)
-        let embeddings = crate::embeddings::get_batch_embeddings(texts_chunk.to_vec()).await?;
+        let embeddings = crate::utils::embeddings::get_batch_embeddings(texts_chunk.to_vec()).await?;
 
         for (i, (embedding, processed_text)) in
             embeddings.into_iter().zip(texts_chunk.iter()).enumerate()
@@ -230,6 +230,38 @@ pub async fn spawn_background_tasks(
             interval.tick().await;
             if let Err(e) = check_for_new_emails(&pool_clone, &maildir_path_clone).await {
                 error!("Failed to check for new emails: {}", e);
+            }
+        }
+    });
+
+    // Probe OpenRouter models and cache two working ids in Redis for the assistant (fast path).
+    let redis_openrouter = redis.clone();
+    tokio::spawn(async move {
+        async fn try_refresh(
+            redis: &crate::middleware::cache::RedisCache,
+        ) -> Result<(), Box<dyn std::error::Error>> {
+            let api_key = match std::env::var("OPENROUTER_API_KEY") {
+                Ok(k) => k,
+                Err(_) => {
+                    log::debug!("OPENROUTER_API_KEY not set; skipping OpenRouter assistant model cache refresh");
+                    return Ok(());
+                }
+            };
+            let base_url = std::env::var("OPENROUTER_API_BASE")
+                .unwrap_or_else(|_| "https://openrouter.ai/api/v1".to_string());
+            crate::utils::openrouter_models::refresh_openrouter_assistant_models_cache(
+                redis,
+                &base_url,
+                &api_key,
+            )
+            .await
+        }
+
+        let mut interval = time::interval(Duration::from_secs(60 * 60)); // hourly; first tick fires immediately
+        loop {
+            interval.tick().await;
+            if let Err(e) = try_refresh(&redis_openrouter).await {
+                error!("Failed OpenRouter assistant model cache refresh: {}", e);
             }
         }
     });

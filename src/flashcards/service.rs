@@ -123,7 +123,7 @@ pub async fn create_flashcard(
 
             if existing_canon.is_none() {
                 let canon = if let Some(front) = &req.free_content_front {
-                    crate::tersmu::get_canonical_form(front)
+                    crate::utils::tersmu::get_canonical_form(front)
                 } else if let Some(def_id) = req.definition_id {
                     // Fetch word for dictionary items
                     let word_row = transaction.query_opt(
@@ -132,7 +132,7 @@ pub async fn create_flashcard(
                     ).await?;
                     word_row.and_then(|r| {
                         let word: String = r.get(0);
-                        crate::tersmu::get_canonical_form(&word)
+                        crate::utils::tersmu::get_canonical_form(&word)
                     })
                 } else {
                     None
@@ -161,7 +161,7 @@ pub async fn create_flashcard(
             let canonical_form = req
                 .free_content_front
                 .as_ref()
-                .and_then(|front| crate::tersmu::get_canonical_form(front));
+                .and_then(|front| crate::utils::tersmu::get_canonical_form(front));
 
             transaction
                 .query_one(
@@ -2142,8 +2142,8 @@ pub async fn check_answer(
     let is_correct = if use_canonical && is_free_content {
         // Try canonical comparison for free content (Lojban phrases)
         if let (Some(expected_canon), Some(provided_canon)) = (
-            crate::tersmu::get_canonical_form(&expected),
-            crate::tersmu::get_canonical_form(&provided),
+            crate::utils::tersmu::get_canonical_form(&expected),
+            crate::utils::tersmu::get_canonical_form(&provided),
         ) {
             expected_canon == provided_canon
         } else {

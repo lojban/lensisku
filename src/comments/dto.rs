@@ -119,29 +119,6 @@ pub struct ReactionResponse {
 }
 
 #[derive(Debug, Serialize, ToSchema)]
-pub struct PaginatedReactions {
-    pub reactions: Vec<ReactionResponse>,
-    pub total_reactions: i64,
-    pub total_pages: i64,
-    pub current_page: i64,
-    pub page_size: i32,
-}
-
-#[derive(Debug, Serialize, ToSchema)]
-pub struct ReactionSummary {
-    pub reactions: PaginatedReactions,
-    pub total_distinct_reactions: i64,
-}
-
-#[derive(Debug, Deserialize, ToSchema)]
-pub struct ReactionPaginationQuery {
-    #[schema(default = 1)]
-    pub page: Option<i64>,
-    #[schema(default = 10)]
-    pub page_size: Option<i32>,
-}
-
-#[derive(Debug, Serialize, ToSchema)]
 pub struct PaginatedCommentsResponse {
     pub comments: Vec<Comment>,
     pub total: i64,
@@ -199,24 +176,6 @@ pub struct PaginationQuery {
     pub page: Option<i64>,
     #[schema(default = 20)]
     pub per_page: Option<i64>,
-}
-
-#[derive(Debug, Deserialize, ToSchema)]
-pub struct SearchCommentsQuery {
-    #[schema(default = 1)]
-    pub page: Option<i64>,
-    #[schema(default = 20)]
-    pub per_page: Option<i64>,
-    pub search: Option<String>,
-    #[schema(default = "time")]
-    pub sort_by: Option<String>,
-    #[schema(default = "desc")]
-    pub sort_order: Option<String>,
-    pub username: Option<String>,
-    pub valsi_id: Option<i32>,
-    pub definition_id: Option<i32>,
-    pub definition_link_id: Option<i32>,
-    pub target_user_id: Option<i32>,
 }
 
 #[derive(Debug)]

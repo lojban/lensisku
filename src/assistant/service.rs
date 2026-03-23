@@ -13,9 +13,13 @@ use tokio::time::sleep;
 use once_cell::sync::Lazy;
 use regex::Regex;
 
-use crate::embeddings::get_embedding;
+use crate::utils::embeddings::get_embedding;
 use crate::error::AppError;
 use crate::jbovlaste::models::{DefinitionDetail, DefinitionResponse, SearchDefinitionsParams};
+use crate::middleware::cache::RedisCache;
+use crate::utils::openrouter_models::{
+    fetch_latest_openrouter_models, load_or_fetch_openrouter_candidates, ModelIdName,
+};
 use crate::jbovlaste::service::{cmavo_gismu_english_dictionary_text, semantic_search};
 
 use super::context_compress;
@@ -188,192 +192,6 @@ async fn parse_chat_response(
 
 const OPENROUTER_MAX_ATTEMPTS: u32 = 3;
 const OPENROUTER_INITIAL_BACKOFF_MS: u64 = 500;
-/// Max free models to pull from the catalog (newest first). First two may run in parallel when
-/// streaming; the rest are used only as sequential fallbacks if earlier choices fail.
-const OPENROUTER_MODEL_CANDIDATES_MAX: usize = 8;
-
-/// OpenRouter /api/v1/models/user response: list of models (we use flexible parsing for pricing).
-#[derive(Debug, Deserialize)]
-struct OpenRouterModelsResponse {
-    data: Vec<OpenRouterModel>,
-}
-
-#[derive(Debug, Deserialize)]
-struct OpenRouterModel {
-    id: String,
-    #[serde(default)]
-    name: Option<String>,
-    #[serde(default)]
-    created: Option<f64>,
-    #[serde(default)]
-    context_length: Option<f64>,
-    #[serde(default)]
-    architecture: Option<OpenRouterArchitecture>,
-    /// e.g. `{ "prompt": "0", "completion": "0" }` — we require both to be zero for “free” models.
-    #[serde(default)]
-    pricing: Option<serde_json::Value>,
-}
-
-fn price_is_zero(v: &serde_json::Value) -> bool {
-    match v {
-        serde_json::Value::Number(n) => n.as_f64() == Some(0.0),
-        serde_json::Value::String(s) => s == "0" || s == "0.0",
-        serde_json::Value::Null => true,
-        _ => false,
-    }
-}
-
-#[derive(Debug, Deserialize)]
-struct OpenRouterArchitecture {
-    #[serde(default)]
-    modality: Option<String>,
-    #[serde(default)]
-    input_modalities: Option<Vec<String>>,
-    #[serde(default)]
-    output_modalities: Option<Vec<String>>,
-}
-
-fn is_text_to_text(arch: &OpenRouterArchitecture) -> bool {
-    let modality = arch.modality.as_deref().unwrap_or("");
-    if modality == "text" {
-        return true;
-    }
-    let inp = arch.input_modalities.as_deref().unwrap_or(&[]);
-    let out = arch.output_modalities.as_deref().unwrap_or(&[]);
-    inp.contains(&"text".to_string()) && out.contains(&"text".to_string())
-}
-
-/// (model_id, display_name) for use in UI. Display name is OpenRouter "name" or id as fallback.
-pub type ModelIdName = (String, String);
-
-/// OpenRouter aggregate / router endpoints — not concrete provider models (avoid for parallel runs).
-fn is_placeholder_or_router_only_model(id: &str) -> bool {
-    matches!(id, "openrouter/free" | "openrouter/auto")
-}
-
-async fn fetch_openrouter_models_list(
-    base_url: &str,
-    api_key: &str,
-    query: &str,
-) -> Result<Vec<OpenRouterModel>, AppError> {
-    let url = format!(
-        "{}/models{}",
-        base_url.trim_end_matches('/'),
-        query
-    );
-    let client = reqwest::Client::new();
-    let res = client
-        .get(&url)
-        .header("Authorization", format!("Bearer {}", api_key))
-        .send()
-        .await
-        .map_err(|e| AppError::ExternalService(format!("OpenRouter models request failed: {}", e)))?;
-
-    let status = res.status();
-    if !status.is_success() {
-        let body = res.text().await.unwrap_or_else(|_| String::from("(no body)"));
-        return Err(AppError::ExternalServiceWithRaw {
-            message: format!("OpenRouter models returned {}", status),
-            raw_response: body,
-        });
-    }
-
-    let body: OpenRouterModelsResponse = res.json().await.map_err(|e| {
-        AppError::ExternalService(format!("OpenRouter models JSON parse error: {}", e))
-    })?;
-    Ok(body.data)
-}
-
-/// Fetch the **newest free** (`pricing.prompt` and `pricing.completion` both zero) text models from
-/// OpenRouter's public [`GET /models`](https://openrouter.ai/docs/api/api-reference/models/get-models) catalog.
-///
-/// Returns up to [`OPENROUTER_MODEL_CANDIDATES_MAX`] entries (newest first). The caller uses the first
-/// two for optional parallel streaming; remaining entries are sequential fallbacks.
-///
-/// Uses the full model list (not `/models/user`). Excludes router placeholders (`openrouter/free`,
-/// `openrouter/auto`) so parallel runs use real provider slugs when any exist. Prefers long context
-/// (100k+), then falls back to 32k+. Sorted by `created` descending.
-pub async fn fetch_latest_openrouter_models(
-    base_url: &str,
-    api_key: &str,
-) -> Result<Vec<ModelIdName>, AppError> {
-    const MIN_CONTEXT_PREFERRED: f64 = 100_000.0;
-    const MIN_CONTEXT_FALLBACK: f64 = 32_000.0;
-
-    let mut data = match fetch_openrouter_models_list(
-        base_url,
-        api_key,
-        "?output_modalities=text&supported_parameters=tools",
-    )
-    .await
-    {
-        Ok(d) => d,
-        Err(e) => {
-            log::debug!(
-                "OpenRouter models (tools filter) failed or unavailable: {}; retrying without tools filter",
-                e
-            );
-            fetch_openrouter_models_list(base_url, api_key, "?output_modalities=text").await?
-        }
-    };
-
-    if data.is_empty() {
-        data = fetch_openrouter_models_list(base_url, api_key, "?output_modalities=text").await?;
-    }
-
-    let pick = |min_ctx: f64| -> Vec<ModelIdName> {
-        let mut eligible: Vec<(f64, String, String)> = data
-            .iter()
-            .filter_map(|m| {
-                if is_placeholder_or_router_only_model(&m.id) {
-                    return None;
-                }
-                let ctx = m.context_length.unwrap_or(0.0);
-                if ctx <= min_ctx {
-                    return None;
-                }
-                let arch = m.architecture.as_ref()?;
-                if !is_text_to_text(arch) {
-                    return None;
-                }
-                let pricing = m.pricing.as_ref()?;
-                let prompt_zero = pricing.get("prompt").is_some_and(price_is_zero);
-                let completion_zero = pricing.get("completion").is_some_and(price_is_zero);
-                if !prompt_zero || !completion_zero {
-                    return None;
-                }
-                let created = m.created.unwrap_or(0.0);
-                let name = m
-                    .name
-                    .as_ref()
-                    .filter(|s| !s.is_empty())
-                    .map(String::to_owned)
-                    .unwrap_or_else(|| m.id.clone());
-                Some((created, m.id.clone(), name))
-            })
-            .collect();
-
-        eligible.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap_or(std::cmp::Ordering::Equal));
-        eligible
-            .into_iter()
-            .map(|(_, id, name)| (id, name))
-            .take(OPENROUTER_MODEL_CANDIDATES_MAX)
-            .collect()
-    };
-
-    let mut top = pick(MIN_CONTEXT_PREFERRED);
-    if top.is_empty() {
-        top = pick(MIN_CONTEXT_FALLBACK);
-    }
-
-    if top.is_empty() {
-        log::warn!(
-            "OpenRouter: no free (zero-priced) text models matched filters; falling back to openrouter/free"
-        );
-        return Ok(vec![("openrouter/free".to_string(), "OpenRouter Free".to_string())]);
-    }
-    Ok(top)
-}
 
 /// Runs an OpenRouter chat/completions request with retries on transient errors (5xx or error body).
 async fn openrouter_chat_with_retry<F, Fut>(
@@ -956,12 +774,17 @@ async fn sse_stream_debug_parallel_branch_finished(
 
 /// Runs the agent loop. If event_tx is Some, streams step/done/error events (with optional "model" key for parallel runs).
 /// When event_tx is Some and we have 2 models, runs both in parallel and streams both; **if either branch fails**,
-/// retries that slot with the next unused candidates from the same list (see [`OPENROUTER_MODEL_CANDIDATES_MAX`]).
+/// retries that slot with the next unused candidates from the same list (see
+/// [`crate::utils::openrouter_models::OPENROUTER_MODEL_CANDIDATES_MAX`]).
 /// Otherwise runs a single model at a time and tries the next catalog candidate on failure.
+///
+/// Uses two probed models from Redis when available ([`crate::utils::openrouter_models`]); on failure of that set,
+/// falls back to a live catalog fetch once (same mechanism as before).
 pub async fn run_agent_loop(
     pool: &Pool,
     request: &ChatRequest,
     event_tx: Option<mpsc::Sender<sse::Event>>,
+    redis: Option<&RedisCache>,
 ) -> Result<(String, Vec<AssistantStep>), AppError> {
     let api_key = env::var("OPENROUTER_API_KEY").map_err(|_| {
         AppError::ExternalService("OPENROUTER_API_KEY is not set in the environment".into())
@@ -969,13 +792,37 @@ pub async fn run_agent_loop(
     let base_url = env::var("OPENROUTER_API_BASE")
         .unwrap_or_else(|_| "https://openrouter.ai/api/v1".to_string());
 
-    let candidates = fetch_latest_openrouter_models(&base_url, &api_key).await?;
+    let (mut candidates, mut from_redis_only) =
+        load_or_fetch_openrouter_candidates(redis, &base_url, &api_key).await?;
+
+    loop {
+        match run_agent_loop_with_candidates(pool, request, event_tx.clone(), &candidates).await {
+            Ok(ok) => return Ok(ok),
+            Err(e) if from_redis_only => {
+                log::warn!(
+                    "OpenRouter: Redis-cached assistant models failed ({}); loading full catalog once",
+                    e
+                );
+                candidates = fetch_latest_openrouter_models(&base_url, &api_key).await?;
+                from_redis_only = false;
+            }
+            Err(e) => return Err(e),
+        }
+    }
+}
+
+async fn run_agent_loop_with_candidates(
+    pool: &Pool,
+    request: &ChatRequest,
+    event_tx: Option<mpsc::Sender<sse::Event>>,
+    candidates: &[ModelIdName],
+) -> Result<(String, Vec<AssistantStep>), AppError> {
     let parallel_models: Vec<ModelIdName> = candidates.iter().take(2).cloned().collect();
     let is_streaming = event_tx.is_some();
     let run_parallel = is_streaming && parallel_models.len() == 2;
 
     if let Some(ref tx) = event_tx {
-        sse_stream_debug_models_plan(tx, &candidates, run_parallel, &parallel_models).await;
+        sse_stream_debug_models_plan(tx, candidates, run_parallel, &parallel_models).await;
     }
 
     if run_parallel {
@@ -1062,7 +909,7 @@ pub async fn run_agent_loop(
         let mut event_tx = event_tx;
         let mut last_err: Option<AppError> = None;
 
-        for (model_id, model_name) in &candidates {
+        for (model_id, model_name) in candidates {
             let tx = event_tx.clone();
             match run_agent_loop_inner(pool, request, model_id, model_name, tx).await {
                 Ok(result) => {
@@ -1424,8 +1271,9 @@ async fn run_agent_loop_inner(
 pub async fn handle_chat(
     pool: &Pool,
     request: ChatRequest,
+    redis: Option<&RedisCache>,
 ) -> Result<(String, Vec<AssistantStep>), AppError> {
-    run_agent_loop(pool, &request, None).await
+    run_agent_loop(pool, &request, None, redis).await
 }
 
 #[cfg(test)]

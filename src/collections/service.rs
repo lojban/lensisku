@@ -777,7 +777,7 @@ pub async fn import_json(
                 .await.map_err(|e| AppError::Database(e.to_string()))?
                 .try_get(0).map_err(|e| AppError::Database(e.to_string()))?;
 
-            let canonical_form = crate::tersmu::get_canonical_form(&item.word);
+            let canonical_form = crate::utils::tersmu::get_canonical_form(&item.word);
 
             // Add item
             transaction
@@ -951,11 +951,11 @@ pub async fn import_collection_from_json(
 
         let canonical_form = sanitized_front
             .as_ref()
-            .and_then(|front| crate::tersmu::get_canonical_form(front))
+            .and_then(|front| crate::utils::tersmu::get_canonical_form(front))
             .or_else(|| {
                 item.word
                     .as_ref()
-                    .and_then(|w| crate::tersmu::get_canonical_form(w))
+                    .and_then(|w| crate::utils::tersmu::get_canonical_form(w))
             });
 
         let new_item_id: i32 = transaction
@@ -1119,11 +1119,11 @@ pub async fn import_full(
         let sanitized_note = item.collection_note.as_ref().map(|n| sanitize_html(n));
         let canonical_form = sanitized_front
             .as_ref()
-            .and_then(|f| crate::tersmu::get_canonical_form(f))
+            .and_then(|f| crate::utils::tersmu::get_canonical_form(f))
             .or_else(|| {
                 item.word
                     .as_ref()
-                    .and_then(|w| crate::tersmu::get_canonical_form(w))
+                    .and_then(|w| crate::utils::tersmu::get_canonical_form(w))
             });
 
         let new_item_id: i32 = transaction
@@ -1600,7 +1600,7 @@ pub async fn upsert_item(
     // Create or update item
     let mut canonical_form = sanitized_front
         .as_ref()
-        .and_then(|front| crate::tersmu::get_canonical_form(front));
+        .and_then(|front| crate::utils::tersmu::get_canonical_form(front));
 
     // For dictionary items without free content, try to use the word from the definition
     if canonical_form.is_none() {
@@ -1610,7 +1610,7 @@ pub async fn upsert_item(
                 &[&def_id]
             ).await {
                 let word: String = row.get(0);
-                canonical_form = crate::tersmu::get_canonical_form(&word);
+                canonical_form = crate::utils::tersmu::get_canonical_form(&word);
             }
         }
     }

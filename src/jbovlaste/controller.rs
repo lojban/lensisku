@@ -63,7 +63,7 @@ pub async fn semantic_search(
         parsed.ok()
     });
 
-    if crate::embeddings::embeddings_disabled() {
+    if crate::utils::embeddings::embeddings_disabled() {
         return HttpResponse::ServiceUnavailable().json(json!({
             "error": "Semantic search is disabled (DISABLE_EMBEDDINGS is set). Use text search instead."
         }));
@@ -74,7 +74,7 @@ pub async fn semantic_search(
     let processed_text = query.search.as_deref().unwrap_or("").trim().to_string();
 
     // Generate embedding in-process via fastembed (AllMiniLML6V2, mean pooling, L2-normalised)
-    let embedding = match crate::embeddings::get_embedding(&processed_text).await {
+    let embedding = match crate::utils::embeddings::get_embedding(&processed_text).await {
         Ok(emb) => emb,
         Err(e) => {
             return HttpResponse::InternalServerError().json(json!({
