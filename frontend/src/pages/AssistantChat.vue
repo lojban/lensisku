@@ -8,7 +8,7 @@
     region (assistant-main-stage → assistant-messages), shrink-0 footer (composer).
     One scroll region (messages); composer stays at the bottom of the main column.
   -->
-  <div class="assistant-root flex min-h-0 w-full min-w-0 flex-1 gap-0 overflow-hidden md:h-full md:gap-4">
+  <div class="assistant-root flex min-h-0 w-full min-w-0 flex-1 gap-0 overflow-hidden md:h-full">
     <!-- Mobile drawer backdrop -->
     <div v-if="!isDesktop && sidebarOpen"
       class="fixed inset-0 z-40 bg-black/40 backdrop-blur-[1px] md:hidden transition-opacity" aria-hidden="true"
@@ -325,9 +325,17 @@ const input = ref('')
 const streamingSessionId = ref(null)
 /** AbortController for the active stream fetch (stop button). */
 const streamAbortController = ref(null)
+/**
+ * After reload the browser drops the SSE connection; the server may still be writing to Postgres.
+ * We poll GET /assistant/chats/:id until the last assistant turn looks complete.
+ */
+const isRecoveringRemoteStream = ref(false)
+let remoteStreamPollTimer = null
+
 const isStreamingThisSession = computed(
   () =>
-    streamingSessionId.value !== null && streamingSessionId.value === activeSessionId.value
+    (streamingSessionId.value !== null && streamingSessionId.value === activeSessionId.value) ||
+    (isRecoveringRemoteStream.value === true && activeSessionId.value != null)
 )
 const error = ref('')
 const scrollContainer = ref(null)
@@ -387,6 +395,79 @@ function createId() {
     return crypto.randomUUID()
   }
   return `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`
+}
+
+/** True while the last assistant bubble has no final text yet or a tool step is still in progress (…). */
+function isAssistantReplyIncomplete(msg) {
+  if (!msg || msg.role !== 'assistant') return false
+  const stepPending = (steps) =>
+    steps?.some((s) => s.result === '…' || s.result === '\u2026')
+  if (msg.replies?.length) {
+    for (const r of msg.replies) {
+      if (stepPending(r.steps)) return true
+      if (!r.content?.trim()) return true
+    }
+    return false
+  }
+  if (stepPending(msg.steps)) return true
+  return !msg.content?.trim()
+}
+
+function stopRemoteStreamRecovery() {
+  if (remoteStreamPollTimer != null) {
+    clearInterval(remoteStreamPollTimer)
+    remoteStreamPollTimer = null
+  }
+  isRecoveringRemoteStream.value = false
+}
+
+function startRemoteStreamRecovery(chatId) {
+  if (!isRemoteMode.value || !chatId) return
+  stopRemoteStreamRecovery()
+  isRecoveringRemoteStream.value = true
+  const tick = async () => {
+    if (activeSessionId.value !== chatId || !isRecoveringRemoteStream.value) {
+      stopRemoteStreamRecovery()
+      return
+    }
+    try {
+      const r = await fetch(
+        `${getApiBaseUrl()}/assistant/chats/${encodeURIComponent(chatId)}`,
+        { headers: getAuthHeaders() }
+      )
+      if (!r.ok) return
+      const row = await r.json()
+      const msgs = Array.isArray(row.messages) ? row.messages : []
+      messages.value = msgs
+      const idx = sessions.value.findIndex((s) => s.id === chatId)
+      if (idx >= 0) {
+        const cur = sessions.value[idx]
+        sessions.value.splice(idx, 1, {
+          ...cur,
+          messages: JSON.parse(JSON.stringify(msgs)),
+          primaryModelId: row.primaryModelId ?? cur.primaryModelId ?? null,
+        })
+      }
+      const last = msgs[msgs.length - 1]
+      if (!last || !isAssistantReplyIncomplete(last)) {
+        stopRemoteStreamRecovery()
+        pendingBumpUpdatedAt.value = true
+        debouncedPersist()
+      }
+    } catch (e) {
+      console.warn('assistant stream recovery poll failed', e)
+    }
+  }
+  void tick()
+  remoteStreamPollTimer = setInterval(tick, 1200)
+}
+
+function maybeStartRemoteStreamRecovery() {
+  if (!isRemoteMode.value || !activeSessionId.value || !loaded.value) return
+  const last = messages.value[messages.value.length - 1]
+  if (last && isAssistantReplyIncomplete(last)) {
+    startRemoteStreamRecovery(activeSessionId.value)
+  }
 }
 
 function assistantPlainText(msg) {
@@ -812,12 +893,14 @@ onMounted(async () => {
       applyStoredScrollForActiveSession()
       nextTick(() => {
         suppressAutoScroll.value = false
+        maybeStartRemoteStreamRecovery()
       })
     })
   })
 })
 
 onBeforeUnmount(() => {
+  stopRemoteStreamRecovery()
   if (loaded.value) persistToStorage()
   window.removeEventListener('resize', clampMessageScroll)
   const vv = typeof window !== 'undefined' ? window.visualViewport : null
@@ -921,6 +1004,7 @@ function getSessionMessagesForMutation(sessionId) {
 
 async function selectSession(id) {
   if (id === activeSessionId.value) return
+  stopRemoteStreamRecovery()
   persistToStorage({ preserveUpdatedAt: true })
   suppressAutoScroll.value = true
   activeSessionId.value = id
@@ -941,12 +1025,14 @@ async function selectSession(id) {
     applyStoredScrollForActiveSession()
     nextTick(() => {
       suppressAutoScroll.value = false
+      maybeStartRemoteStreamRecovery()
     })
   })
 }
 
 async function startNewChat() {
   error.value = ''
+  stopRemoteStreamRecovery()
   persistToStorage({ preserveUpdatedAt: true })
   suppressAutoScroll.value = true
   chatMessagesReady.value = true
@@ -1136,6 +1222,15 @@ async function deleteSession(id, e) {
 
 function stopStreaming() {
   streamAbortController.value?.abort()
+  if (isRecoveringRemoteStream.value) {
+    const sid = activeSessionId.value
+    stopRemoteStreamRecovery()
+    if (sid) {
+      abortAssistantMessage(sid)
+      pendingBumpUpdatedAt.value = true
+      void persistToServerImmediate({})
+    }
+  }
 }
 
 /** After user aborts a stream: drop empty assistant stub or append a short stopped note. */
@@ -1415,7 +1510,7 @@ async function performRequest(sessionId, options = {}) {
 
 const handleSend = async () => {
   const content = input.value.trim()
-  if (!content || streamingSessionId.value !== null) return
+  if (!content || isStreamingThisSession.value) return
 
   error.value = ''
   pendingBumpUpdatedAt.value = true
@@ -1429,7 +1524,7 @@ const handleSend = async () => {
 }
 
 const retryLast = async () => {
-  if (streamingSessionId.value !== null || !error.value) return
+  if (isStreamingThisSession.value || !error.value) return
   error.value = ''
   const sessionId = activeSessionId.value
   await runAssistantStream(sessionId, false)
@@ -1437,6 +1532,7 @@ const retryLast = async () => {
 
 /** Stream assistant reply; `appendAssistant` true when the last message is user (append empty assistant first). */
 async function runAssistantStream(sessionId, appendAssistant) {
+  stopRemoteStreamRecovery()
   error.value = ''
   const ac = new AbortController()
   streamAbortController.value = ac

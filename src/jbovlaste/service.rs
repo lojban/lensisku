@@ -3642,6 +3642,10 @@ fn assistant_dictionary_one_line_definition(raw: &str) -> String {
 
 /// English best definitions for official **gismu** (typeid 1) and **cmavo** (typeid 2), one line each:
 /// `word - definition`. Used to ground the LLM assistant; sourced from jbovlaste (`valsibestdefinitions` for English).
+///
+/// **Gismu** that denote a particular natural language, country, nation, or named culture/religion are omitted
+/// (jbovlaste templates such as `$x_{1}$ reflects … culture/nationality/language`, `… pertains to … culture`,
+/// English/USA-specific wordings). **`lojbo`** is kept so the assistant still sees Lojban-as-language/community.
 pub async fn cmavo_gismu_english_dictionary_text(
     pool: &Pool,
 ) -> Result<String, Box<dyn std::error::Error>> {
@@ -3658,6 +3662,22 @@ pub async fn cmavo_gismu_english_dictionary_text(
             WHERE v.typeid IN (1, 2)
               AND d.definition IS NOT NULL
               AND TRIM(d.definition) <> ''
+              AND (
+                v.typeid <> 1
+                OR v.word = 'lojbo'
+                OR NOT (
+                  (
+                    d.definition LIKE '$x_{1}$ reflects %'
+                    AND d.definition NOT LIKE '$x_{1}$ reflects/mirrors%'
+                  )
+                  OR d.definition LIKE '$x_{1}$ is English/pertains to%'
+                  OR d.definition LIKE '$x_{1}$ pertains to USA/%'
+                  OR (
+                    d.definition LIKE '$x_{1}$ pertains to the %'
+                    AND d.definition LIKE '%culture%'
+                  )
+                )
+              )
             ORDER BY v.word
             "#,
             &[],
