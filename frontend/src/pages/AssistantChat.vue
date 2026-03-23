@@ -249,12 +249,16 @@
               @keydown.enter.exact.prevent="handleSend" @blur="onAssistantFormControlBlur" />
             <button :type="isStreamingThisSession ? 'button' : 'submit'"
               class="assistant-composer-action !rounded-md absolute bottom-3 right-1 z-10 flex h-9 w-9 shrink-0 items-center justify-center !p-0 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white disabled:cursor-not-allowed disabled:opacity-50"
-              :class="isStreamingThisSession ? 'btn-cancel focus:ring-gray-500' : 'btn-get focus:ring-blue-400/60'"
+              :class="isStreamingThisSession
+                ? 'border border-black bg-black shadow-sm transition-colors enabled:hover:bg-neutral-950 enabled:hover:border-black focus:ring-red-500/45'
+                : 'btn-get focus:ring-blue-400/60'"
               :disabled="!isStreamingThisSession && !input.trim()" :aria-label="isStreamingThisSession
                   ? (isRecoveringRemoteStream ? $t('assistantChat.recoveringStream') : $t('assistantChat.stopRecording'))
                   : $t('assistantChat.sendMessage')
                 " @click="isStreamingThisSession ? stopStreaming() : undefined">
-              <Square v-if="isStreamingThisSession" class="h-6 w-6" stroke-width="2.5" aria-hidden="true" />
+              <span v-if="isStreamingThisSession"
+                class="block h-[1.125rem] w-[1.125rem] shrink-0 rounded-[2px] bg-red-500"
+                aria-hidden="true" />
               <Play v-else class="h-6 w-6 translate-x-px" stroke-width="2.25" aria-hidden="true" />
             </button>
           </div>
@@ -297,7 +301,6 @@ import {
   Search,
   MessageSquare,
   Play,
-  Square,
   Pencil,
 } from 'lucide-vue-next'
 
@@ -945,8 +948,32 @@ function formatModelLabel(modelId) {
   return last || modelId
 }
 
-const scrollToBottom = () => {
+/** Pixels from the bottom of the messages pane to still count as “at bottom” (sticky follow). */
+const SCROLL_BOTTOM_THRESHOLD_PX = 48
+
+function isMessagePaneNearBottom() {
+  const el = scrollContainer.value
+  if (!el) return true
+  const { scrollTop, scrollHeight, clientHeight } = el
+  const maxScroll = scrollHeight - clientHeight
+  if (maxScroll <= 0) return true
+  return maxScroll - scrollTop <= SCROLL_BOTTOM_THRESHOLD_PX
+}
+
+/** User explicitly followed the thread (send, edit submit) — always jump to latest. */
+function scrollToBottomForce() {
   if (suppressAutoScroll.value) return
+  nextTick(() => {
+    if (scrollContainer.value) {
+      scrollContainer.value.scrollTop = scrollContainer.value.scrollHeight
+    }
+  })
+}
+
+/** Live updates (streaming): only scroll if the user was already pinned to the bottom. */
+function scrollToBottomIfPinned() {
+  if (suppressAutoScroll.value) return
+  if (!isMessagePaneNearBottom()) return
   nextTick(() => {
     if (scrollContainer.value) {
       scrollContainer.value.scrollTop = scrollContainer.value.scrollHeight
@@ -982,7 +1009,7 @@ function commitEditMessage() {
   const sessionId = activeSessionId.value
   const appendAssistant = newMsg.role === 'user'
   nextTick(() => {
-    scrollToBottom()
+    scrollToBottomForce()
     void runAssistantStream(sessionId, appendAssistant)
   })
 }
@@ -993,7 +1020,20 @@ watch(activeSessionId, () => {
 
 watch(
   () => [messages.value.length, isStreamingThisSession.value],
-  () => scrollToBottom()
+  () => {
+    if (!loaded.value) return
+    scrollToBottomIfPinned()
+  }
+)
+
+watch(
+  messages,
+  () => {
+    if (!loaded.value) return
+    if (!isStreamingThisSession.value) return
+    scrollToBottomIfPinned()
+  },
+  { deep: true }
 )
 
 /** Messages array to mutate for a session (live view when active, stored copy when not). */
@@ -1561,6 +1601,9 @@ const handleSend = async () => {
     content,
   })
   input.value = ''
+  nextTick(() => {
+    scrollToBottomForce()
+  })
   const sessionId = activeSessionId.value
   await runAssistantStream(sessionId, true)
 }
@@ -1568,6 +1611,9 @@ const handleSend = async () => {
 const retryLast = async () => {
   if (isStreamingThisSession.value || !error.value) return
   error.value = ''
+  nextTick(() => {
+    scrollToBottomForce()
+  })
   const sessionId = activeSessionId.value
   await runAssistantStream(sessionId, false)
 }
