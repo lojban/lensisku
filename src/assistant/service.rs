@@ -1,5 +1,6 @@
 #![allow(clippy::expect_used, clippy::unwrap_used)]
 
+use std::collections::HashSet;
 use std::env;
 use std::sync::Arc;
 use std::time::Duration;
@@ -309,6 +310,80 @@ fn error_indicates_context_limit(e: &AppError) -> bool {
         || lower.contains("requested token")
 }
 
+/// Resolves jbovlaste `languages.tag` values (e.g. `en`, `ru`, `jbo`) to `langid` for DB filters.
+async fn resolve_jbovlaste_language_tags_to_langids(
+    pool: &Pool,
+    tags: &[String],
+) -> Result<Option<Vec<i32>>, AppError> {
+    let mut norm: Vec<String> = Vec::new();
+    let mut seen = HashSet::new();
+    for t in tags {
+        let s = t.trim().to_lowercase();
+        if !s.is_empty() && seen.insert(s.clone()) {
+            norm.push(s);
+        }
+    }
+    if norm.is_empty() {
+        return Ok(None);
+    }
+    let client = pool
+        .get()
+        .await
+        .map_err(|e| AppError::ExternalService(format!("Database pool error: {}", e)))?;
+    let mut ids = Vec::with_capacity(norm.len());
+    for tag in &norm {
+        let row = client
+            .query_opt(
+                "SELECT langid FROM languages WHERE lower(tag) = lower($1)",
+                &[tag],
+            )
+            .await
+            .map_err(|e| AppError::ExternalService(format!("language tag lookup failed: {}", e)))?;
+        match row {
+            Some(r) => ids.push(r.get::<_, i32>(0)),
+            None => {
+                return Err(AppError::BadRequest(format!(
+                    "Unknown language tag `{}`. Use jbovlaste tags such as en, ru, es, jbo.",
+                    tag
+                )));
+            }
+        }
+    }
+    Ok(Some(ids))
+}
+
+/// Resolves optional `source_language` tag to `langid` (valsi source language). `None` = caller default.
+async fn resolve_optional_source_language_tag(
+    pool: &Pool,
+    tag: &Option<String>,
+) -> Result<Option<i32>, AppError> {
+    let Some(t) = tag else {
+        return Ok(None);
+    };
+    let s = t.trim();
+    if s.is_empty() {
+        return Ok(None);
+    }
+    let client = pool
+        .get()
+        .await
+        .map_err(|e| AppError::ExternalService(format!("Database pool error: {}", e)))?;
+    let row = client
+        .query_opt(
+            "SELECT langid FROM languages WHERE lower(tag) = lower($1)",
+            &[&s],
+        )
+        .await
+        .map_err(|e| AppError::ExternalService(format!("source_language lookup failed: {}", e)))?;
+    match row {
+        Some(r) => Ok(Some(r.get::<_, i32>(0))),
+        None => Err(AppError::BadRequest(format!(
+            "Unknown source_language tag `{}`. Example: jbo for Lojban head words.",
+            s
+        ))),
+    }
+}
+
 fn system_prompt_base(locale: Option<&str>) -> String {
     let mut base = String::with_capacity(4096);
 
@@ -318,6 +393,24 @@ fn system_prompt_base(locale: Option<&str>) -> String {
          (the community Lojban dictionary). You help users look up words, understand \
          definitions, explore morphology, and learn Lojban. Be welcoming to beginners \
          and precise for advanced learners. Encourage follow-up questions.\n\n",
+    );
+
+    // ── Objectives (multi-step reasoning model) ──────────────────────────
+    base.push_str(
+        "## Objectives\n\
+         For each user message, follow this decision process:\n\
+         1. **Decide & extract terms**: Does answering require new jbovlaste evidence \
+         (unknown valsi, new topic, or no prior search for this material)? If yes, \
+         **rewrite the user question into search terms** that match how dictionary \
+         glosses are written (short, concrete; see *Query relevance* below), then call \
+         `jbovlaste_semantic_search` with those terms—not with the user’s full sentence.\n\
+         2. **Refine**: After reviewing results, if similarity is low or hits are off-topic, \
+         call the tool again with a **different** query (synonym, shorter string, alternate \
+         valsi spelling, or split into two searches). Do not repeat the same query.\n\
+         3. **Answer**: Once you have enough grounded evidence, write your final response \
+         **without calling any tool**.\n\n\
+         If the user is asking a follow-up or clarification about a word you **already \
+         searched** in this conversation, skip straight to step 3—do not search again.\n\n",
     );
 
     // ── Trusted sources (hierarchy) ──────────────────────────────────────
@@ -392,24 +485,38 @@ fn system_prompt_base(locale: Option<&str>) -> String {
          actually support it. You MAY issue several parallel calls in a single step \
          (e.g. multiple concepts) and search again in later steps when refining.\n\n\
          If the search returns no or few results, try different queries in further \
-         steps, or say so and suggest rephrasing; do not make up answers.\n\n",
+         steps, or say so and suggest rephrasing; do not make up answers.\n\n\
+         **Finish rule:** Once the definitions you have retrieved are sufficient to \
+         answer the question, reply directly in your next turn **without calling any \
+         tool**. Calling the tool again after you already have the relevant results is \
+         wasteful and confusing for the user.\n\n",
     );
 
-    // ── Query formatting (critical) ──────────────────────────────────────
+    // ── Query relevance (critical) ───────────────────────────────────────
     base.push_str(
-        "## Query formatting (critical)\n\
-         The `query` argument searches **only** jbovlaste definitions via embedding \
-         similarity. It is **not** a web search string.\n\
-         - **Pass the valsi alone** when you know it: `lorxu`, `xamgu`.\n\
-         - Or pass **a few topical content words** in English or Lojban: `fox`, \
-         `logical connective`, `klama`.\n\
+        "## Query relevance (critical)\n\
+         The `query` is embedded and matched against **definition text** in jbovlaste. \
+         Phrasing that matches gloss style yields better hits than conversational English.\n\
+         - **Valsi-first:** If the user names or you can infer a Lojban word, search **only** \
+         that valsi (`lorxu`, `.u`, `klama`). Do not add English around it.\n\
+         - **Strip chat noise:** Remove question words (\"what\", \"how\", \"is there\"), \
+         politeness, and phrases like \"in Lojban\", \"the word for\", \"tell me\" before \
+         searching. Keep the **topic** (e.g. user asks \"what’s fox\" → query `fox`).\n\
+         - **Concept queries:** Use **2–6 content words** max—nouns, verbs, adjectives, \
+         standard grammar terms used in jbovlaste (`sumti`, `selbri`, `tanru`, \
+         `logical connective`, `attitudinal`). Avoid long clauses and lists of unrelated \
+         ideas; if the user asks two things, use **two** tool calls or two sequential steps.\n\
+         - **Weak results:** If top hits look irrelevant or `similarity` scores are poor, \
+         retry with: a shorter query; a synonym; the same concept in Lojban if you know a \
+         related valsi from results; or a different facet (e.g. `animal` vs `mammal`).\n\
          - **Never** add meta-words like \"Lojban\", \"definition\", \"dictionary\", \
-         \"jbovlaste\", \"meaning\", or \"word\"—they dilute embedding similarity and \
-         hurt results.\n\
-         - Use the `limit` parameter: default (12) is fine for narrow queries; raise \
-         it (up to 30) when you need a broader sample.\n\
-         - The optional `languages` parameter accepts language IDs to restrict \
-         definitions to specific natural languages (e.g. English, Spanish).\n\n",
+         \"jbovlaste\", \"meaning\", or \"word\"—they dilute embeddings.\n\
+         - **limit:** Use ~8–12 for a specific valsi or tight concept; raise toward **30** \
+         when exploring a broad English concept or when the first page lacks a good match.\n\
+         - **languages:** Optional list of **language tags** (not numeric IDs), e.g. `en` for \
+         English glosses, `ru` for Russian, `jbo` if you need definitions written in Lojban. \
+         Omit to search across all natural-language definition rows the backend indexes. \
+         Prefer `en` when the user reads English.\n\n",
     );
 
     // ── Response formatting ──────────────────────────────────────────────
@@ -432,8 +539,9 @@ fn system_prompt_base(locale: Option<&str>) -> String {
         "## Fallback tool-call format\n\
          Prefer your platform's native tool-calling. If you cannot use it, emit \
          exactly: CALL>[{\"name\":\"jbovlaste_semantic_search\",\"arguments\":\
-         {\"query\":\"lorxu\"}}]</TOOLCALL> — with only the valsi or keywords in the \
-         query, never a sentence explaining what jbovlaste is.",
+         {\"query\":\"lorxu\"}}]</TOOLCALL> or \
+         {\"query\":\"logical connective\",\"limit\":16,\"languages\":[\"en\"]} — short \
+         `query`; use `languages` tags like en, ru, jbo.",
     );
 
     // ── Locale preference ────────────────────────────────────────────────
@@ -554,30 +662,61 @@ fn jbovlaste_tool_schema() -> Tool {
         r#type: "function".to_string(),
         function: ToolFunction {
             name: "jbovlaste_semantic_search".to_string(),
-            description: "Searches jbovlaste by semantic similarity—only use when you need new evidence (new valsi/topic, or no grounded answer yet). Do not repeat search for the same material already in this thread. **`query` is never a web-style phrase:** do not add \"Lojban\", \"definition\", \"dictionary\", \"meaning\", \"jbovlaste\", or \"word\"—the index is already Lojban definitions; those words only dilute the embedding. Pass the valsi alone (e.g. `lorxu`) or a few content words (e.g. `fox`, `logical connective`)."
+            description: "Semantic search over jbovlaste definition text (embedding \
+                          similarity). Your ONLY tool—call before stating facts about \
+                          Lojban words or meanings, unless the official cmavo/gismu block \
+                          in the system message already answers. \
+                          Call when: new valsi/topic, or prior results were insufficient—\
+                          then use a **different** `query` (no duplicate searches). \
+                          Do NOT call when this thread already has search-backed \
+                          definitions for the same question—answer from those. \
+                          **`query`**: not a chat message. Prefer bare valsi (`lorxu`, \
+                          `i`, `klama`). Else 2–6 gloss-style keywords (English or Lojban): \
+                          e.g. `fox`, `logical connective`, `past tense`, `emotion`. \
+                          Bad: \"what is the Lojban word for fox\", \"definition of klama\", \
+                          \"jbovlaste search lorxu\". Strip questions and meta-words \
+                          (\"Lojban\", \"definition\", \"dictionary\", \"meaning\", \
+                          \"word\", \"jbovlaste\"). \
+                          **`languages`**: optional BCP-47-style tags from jbovlaste \
+                          (`languages.tag`), e.g. `en` (English glosses), `ru`, `es`, `jbo`. \
+                          Omit to search across indexed natural-language definitions; use \
+                          `[\"en\"]` when the user wants English glosses only."
                 .to_string(),
             parameters: json!({
                 "type": "object",
                 "properties": {
                     "query": {
                         "type": "string",
-                        "description": "Valsi only (`lorxu`) or a few English/Lojban content words. Do **not** append \"Lojban\", \"definition\", \"dictionary\", \"jbovlaste\", etc.—they are redundant and worsen matches."
+                        "description": "Embedding input: bare valsi OR short keyword list \
+                            matching dictionary gloss style. Strip question framing. \
+                            Examples: `klama`, `fox`, `sumti`, `logical connective`. \
+                            Avoid sentences and filler; synonyms are OK if first search \
+                            was weak."
                     },
                     "limit": {
                         "type": "integer",
                         "minimum": 1,
                         "maximum": 30,
                         "default": 12,
-                        "description": "Number of top semantic matches to return (use more when you need a wider set of candidates)."
+                        "description": "How many top matches to return. Use ~8–12 for a \
+                            known valsi or narrow term; increase toward 30 for broad \
+                            English concepts or when refining after weak results."
                     },
                     "languages": {
                         "type": "array",
-                        "items": { "type": "integer" },
-                        "description": "Optional list of non-Lojban language IDs to restrict definitions to."
+                        "items": { "type": "string" },
+                        "description": "Optional: restrict to definitions in these languages. \
+                            Use **tags** from jbovlaste, not numeric IDs. Examples: \
+                            `[\"en\"]` English glosses; `[\"ru\"]` Russian; `[\"es\"]` Spanish; \
+                            `[\"jbo\"]` definitions written in Lojban. Combine e.g. `[\"en\",\"ru\"]` \
+                            for bilingual glosses. Omit to include all indexed languages."
                     },
-                    "source_langid": {
-                        "type": "integer",
-                        "description": "Optional source language ID of the valsi (defaults to 1 = Lojban)."
+                    "source_language": {
+                        "type": "string",
+                        "description": "Optional: **language tag** of the head word (valsi) \
+                            source language—usually omit (defaults to Lojban `jbo`). \
+                            Set when filtering non-Lojban source languages (same `tag` as \
+                            in jbovlaste `languages`). Example: `jbo` for standard Lojban valsi."
                     }
                 },
                 "required": ["query"]
@@ -591,10 +730,11 @@ struct ToolArgs {
     query: String,
     #[serde(default)]
     limit: Option<u32>,
+    /// jbovlaste `languages.tag` values (e.g. en, ru, jbo), not numeric langids.
     #[serde(default)]
-    languages: Option<Vec<i32>>,
+    languages: Option<Vec<String>>,
     #[serde(default)]
-    source_langid: Option<i32>,
+    source_language: Option<String>,
 }
 
 static LLM_CORNER_BRACKET_SEGMENTS: Lazy<Regex> =
@@ -664,6 +804,13 @@ async fn run_jbovlaste_semantic_search_once(
         .unwrap_or(12)
         .clamp(1, SEMANTIC_SEARCH_MAX_LIMIT) as i64;
 
+    let languages_langids = match args.languages.as_deref() {
+        None | Some([]) => None,
+        Some(tags) => resolve_jbovlaste_language_tags_to_langids(pool, tags).await?,
+    };
+
+    let source_langid = resolve_optional_source_language_tag(pool, &args.source_language).await?;
+
     let embedding = get_embedding(&query).await?;
 
     let params = SearchDefinitionsParams {
@@ -673,11 +820,11 @@ async fn run_jbovlaste_semantic_search_once(
         include_comments: false,
         sort_by: "score".to_string(),
         sort_order: "desc".to_string(),
-        languages: args.languages.clone(),
+        languages: languages_langids,
         selmaho: None,
         username: None,
         word_type: None,
-        source_langid: args.source_langid,
+        source_langid,
         search_in_phrases: None,
         include_total_count: false,
     };
@@ -702,6 +849,7 @@ async fn run_jbovlaste_semantic_search_with_retry(
     for attempt in 1..=TOOL_MAX_ATTEMPTS {
         match run_jbovlaste_semantic_search_once(pool, &args).await {
             Ok(r) => return Ok(r),
+            Err(e @ AppError::BadRequest(_)) => return Err(e),
             Err(e) => {
                 if attempt < TOOL_MAX_ATTEMPTS {
                     let delay = Duration::from_millis(
@@ -1158,6 +1306,12 @@ async fn run_agent_loop_inner(
     let tools = vec![jbovlaste_tool_schema()];
     let mut steps = Vec::new();
     let mut aggressive_context_retry = false;
+    // Per-query repetition counter: if the model calls the same search query too many
+    // times in a row, inject a tool-level reminder instead of running it again.
+    // This mirrors Roo-Code's ToolRepetitionDetector pattern.
+    let mut query_seen_count: std::collections::HashMap<String, u32> =
+        std::collections::HashMap::new();
+    const MAX_QUERY_REPETITIONS: u32 = 2;
 
     // Agent loop: call LLM until it returns a final reply (no tool_calls).
     for iteration in 1..=AGENT_MAX_ITERATIONS {
@@ -1264,6 +1418,20 @@ async fn run_agent_loop_inner(
             let mut is_first_semantic_in_batch = true;
             for call in calls.iter() {
                 if call.function.name.as_deref() != Some("jbovlaste_semantic_search") {
+                    // Unexpected: only jbovlaste_semantic_search is in the tool schema.
+                    // Still complete the round so the assistant message's tool_call_id has a
+                    // matching tool result (required by the OpenAI message protocol).
+                    log::error!(
+                        "Assistant: unexpected tool call '{}' — not in schema",
+                        call.function.name.as_deref().unwrap_or("unknown")
+                    );
+                    messages.push(ChatCompletionMessageRequest {
+                        role: "tool".to_string(),
+                        content: "Unknown tool. Use jbovlaste_semantic_search.".to_string(),
+                        tool_call_id: call.id.clone(),
+                        name: call.function.name.clone(),
+                        tool_calls: None,
+                    });
                     continue;
                 }
 
@@ -1327,6 +1495,36 @@ async fn run_agent_loop_inner(
                 let mut args = args;
                 args.query = query_trimmed.clone();
                 let search_query_for_llm = query_trimmed;
+
+                // Repetition guard (Roo-inspired ToolRepetitionDetector): if the model calls
+                // the same query more than MAX_QUERY_REPETITIONS times, inject a tool-level
+                // reminder to use existing results instead of running the search again.
+                let seen = query_seen_count
+                    .entry(search_query_for_llm.clone())
+                    .or_insert(0);
+                *seen += 1;
+                if *seen > MAX_QUERY_REPETITIONS {
+                    log::warn!(
+                        "Assistant: query '{}' repeated {} times; injecting loop-break tool result",
+                        search_query_for_llm,
+                        seen
+                    );
+                    messages.push(ChatCompletionMessageRequest {
+                        role: "tool".to_string(),
+                        content: format!(
+                            "You have already searched for \"{}\" {} time(s). \
+                             The results are already in this conversation. \
+                             Stop searching and formulate your answer now.",
+                            search_query_for_llm,
+                            *seen - 1
+                        ),
+                        tool_call_id: call.id.clone(),
+                        name: call.function.name.clone(),
+                        tool_calls: None,
+                    });
+                    continue;
+                }
+
                 let action_desc = format!("Semantic search: \"{}\"", search_query_for_llm);
 
                 // Emit step_start immediately so the UI shows this step before the tool runs.
@@ -1435,6 +1633,25 @@ async fn run_agent_loop_inner(
                     .clone()
                     .unwrap_or_else(String::new),
             );
+
+            // Stuck-recovery: if the model returned empty content with no tools while search
+            // results exist in this conversation, inject a brief nudge message and continue the
+            // loop. This mirrors Roo's noToolsUsed / recovery pattern for stalled agents.
+            if reply.trim().is_empty() && iteration < AGENT_MAX_ITERATIONS && !steps.is_empty() {
+                log::warn!(
+                    "Assistant: empty reply with no tool calls at iteration {}; injecting recovery nudge",
+                    iteration
+                );
+                messages.push(ChatCompletionMessageRequest {
+                    role: "user".to_string(),
+                    content: "You have search results above. Please use them to answer my question now.".to_string(),
+                    tool_call_id: None,
+                    name: None,
+                    tool_calls: None,
+                });
+                continue;
+            }
+
             if let Some(tx) = event_tx {
                 let payload = json!({
                     "type": "done",
