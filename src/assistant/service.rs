@@ -318,9 +318,10 @@ fn system_prompt_base(locale: Option<&str>) -> String {
          - Base statements about valsi, glosses, or definitions on tool output in this thread **or** prior assistant messages that were grounded in those tools. Quote or tightly paraphrase; do not extend beyond the cited text.\n\
          - **Examples:** Only reproduce Lojban text that appears in (1) or (2). Do not author new Lojban examples except by rearranging words **already** shown in those sources (and say that is what you did).\n\
          - If the search returns no or few results, try different queries in further steps, or say so and suggest rephrasing; do not make up answers.\n\
-         - You have access only to the tool `jbovlaste_semantic_search`. Use it with a natural-language query (e.g. in English) to find relevant jbovlaste definitions.\n\
+         - **Semantic search `query` (critical):** This tool already searches **only** jbovlaste (Lojban dictionary) definitions. The `query` argument is **not** a web search string. **Wrong:** `\"lorxu Lojban definition\"`, `\"xamgu dictionary\"`, `\"means in Lojban\"`—extra words like \"Lojban\", \"definition\", \"dictionary\", \"jbovlaste\", \"meaning\", or \"word\" add noise and **hurt** embedding similarity. **Right:** the valsi alone (`lorxu`, `xamgu`) when you know it, or a **few** topical words in English or Lojban (`fox`, `logical connective`, `klama`) with **no** meta-labels.\n\
+         - You have access only to the tool `jbovlaste_semantic_search`. Use it with such a **minimal** `query` as above.\n\
          - Use the `limit` parameter when needed: default is fine for narrow queries; raise it (up to the allowed maximum) when you need a broader sample of candidates.\n\
-         - Prefer using your platform's native tool-calling. If you cannot and must output a tool call as text, use exactly this format once per call: CALL>[{\"name\":\"jbovlaste_semantic_search\",\"arguments\":{\"query\":\"your search query\"}}]</TOOLCALL>\n\
+         - Prefer using your platform's native tool-calling. If you cannot and must output a tool call as text, use exactly this format once per call: CALL>[{\"name\":\"jbovlaste_semantic_search\",\"arguments\":{\"query\":\"lorxu\"}}]</TOOLCALL> (only the valsi or keywords—never a sentence that explains what jbovlaste is).\n\
          - Format your reply in valid, simple Markdown: use **bold**, lists. Use plain text or markdown lists instead of markdown tables.\n\
          - When quoting definitions from jbovlaste, preserve inline `$...$` math delimiters exactly as in the tool output (they are part of the definition text).",
     );
@@ -442,14 +443,14 @@ fn jbovlaste_tool_schema() -> Tool {
         r#type: "function".to_string(),
         function: ToolFunction {
             name: "jbovlaste_semantic_search".to_string(),
-            description: "Semantic search over jbovlaste definitions—the only source of jbovlaste-backed facts besides the official cmavo/gismu block in the system prompt. Call when you need evidence (new topic, new valsi, grammar in definitions, or no prior grounded answer). Do not call for clarifying follow-ups about material already answered from search in this thread. Never invent Lojban: if results are empty, acknowledge uncertainty rather than guessing."
+            description: "Searches jbovlaste by semantic similarity—only use when you need new evidence (new valsi/topic, or no grounded answer yet). Do not repeat search for the same material already in this thread. **`query` is never a web-style phrase:** do not add \"Lojban\", \"definition\", \"dictionary\", \"meaning\", \"jbovlaste\", or \"word\"—the index is already Lojban definitions; those words only dilute the embedding. Pass the valsi alone (e.g. `lorxu`) or a few content words (e.g. `fox`, `logical connective`)."
                 .to_string(),
             parameters: json!({
                 "type": "object",
                 "properties": {
                     "query": {
                         "type": "string",
-                        "description": "Natural-language concept to search for (typically in English)."
+                        "description": "Valsi only (`lorxu`) or a few English/Lojban content words. Do **not** append \"Lojban\", \"definition\", \"dictionary\", \"jbovlaste\", etc.—they are redundant and worsen matches."
                     },
                     "limit": {
                         "type": "integer",
@@ -540,17 +541,24 @@ async fn run_jbovlaste_semantic_search_once(
     pool: &Pool,
     args: &ToolArgs,
 ) -> Result<DefinitionResponse, AppError> {
+    let query = args.query.trim().to_string();
+    if query.is_empty() {
+        return Err(AppError::BadRequest(
+            "jbovlaste_semantic_search: query is empty after trimming".into(),
+        ));
+    }
+
     let limit = args
         .limit
         .unwrap_or(12)
         .clamp(1, SEMANTIC_SEARCH_MAX_LIMIT) as i64;
 
-    let embedding = get_embedding(&args.query).await?;
+    let embedding = get_embedding(&query).await?;
 
     let params = SearchDefinitionsParams {
         page: 1,
         per_page: limit,
-        search_term: args.query.clone(),
+        search_term: query.clone(),
         include_comments: false,
         sort_by: "score".to_string(),
         sort_order: "desc".to_string(),
@@ -568,7 +576,7 @@ async fn run_jbovlaste_semantic_search_once(
         .map_err(|e| {
             AppError::ExternalService(format!(
                 "Semantic search failed for query \"{}\": {}",
-                args.query, e
+                query, e
             ))
         })?;
 
@@ -1167,7 +1175,23 @@ async fn run_agent_loop_inner(
                     }
                 };
 
-                let search_query_for_llm = args.query.clone();
+                let query_trimmed = args.query.trim().to_string();
+                if query_trimmed.is_empty() {
+                    let err_msg =
+                        "jbovlaste_semantic_search: query is empty after trimming".to_string();
+                    messages.push(ChatCompletionMessageRequest {
+                        role: "tool".to_string(),
+                        content: format!("Tool error: {}", err_msg),
+                        tool_call_id: call.id.clone(),
+                        name: call.function.name.clone(),
+                        tool_calls: None,
+                    });
+                    continue;
+                }
+
+                let mut args = args;
+                args.query = query_trimmed.clone();
+                let search_query_for_llm = query_trimmed;
                 let action_desc = format!("Semantic search: \"{}\"", search_query_for_llm);
 
                 // Emit step_start immediately so the UI shows this step before the tool runs.
