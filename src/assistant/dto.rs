@@ -46,6 +46,9 @@ pub struct AssistantStep {
     /// Raw tool output (e.g. JSON) for display in folded/collapsible UI.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tool_output: Option<String>,
+    /// Assistant message text from the same model turn **before** this tool call (first tool in a batch only).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub assistant_reasoning: Option<String>,
 }
 
 #[derive(Debug, Serialize)]

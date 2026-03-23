@@ -68,8 +68,16 @@ pub fn compress_chat_history(messages: &[ChatMessage], max_input_chars: usize) -
 }
 
 /// Public entry using `ASSISTANT_MAX_INPUT_CHARS` (or override).
+/// If the history is already under budget, returns a clone immediately—no truncation passes.
 pub fn compress_chat_history_for_request(messages: &[ChatMessage]) -> Vec<ChatMessage> {
-    compress_chat_history(messages, default_max_input_chars())
+    let max = default_max_input_chars();
+    if messages.is_empty() {
+        return vec![];
+    }
+    if estimate_messages_chars(messages) <= max {
+        return messages.to_vec();
+    }
+    compress_chat_history(messages, max)
 }
 
 /// More aggressive compression (e.g. retry after provider context error).
@@ -78,6 +86,9 @@ pub fn compress_chat_history_aggressive(messages: &[ChatMessage]) -> Vec<ChatMes
     let tool_cap = (default_tool_body_max_chars() / 2).max(2_000);
     if messages.is_empty() {
         return vec![];
+    }
+    if estimate_messages_chars(messages) <= budget {
+        return messages.to_vec();
     }
     let mut out: Vec<ChatMessage> = messages.to_vec();
     let mut guard = 0u32;
@@ -209,5 +220,22 @@ mod tests {
         let out = compress_chat_history(&v, 8);
         assert_eq!(out.len(), 1);
         assert_eq!(out[0].content, "new-turn-yyyy");
+    }
+
+    #[test]
+    fn for_request_returns_clone_when_already_under_budget() {
+        let v = vec![user("hello")];
+        let out = super::compress_chat_history_for_request(&v);
+        assert_eq!(out.len(), 1);
+        assert_eq!(out[0].content, "hello");
+    }
+
+    #[test]
+    fn aggressive_returns_clone_when_already_under_half_budget() {
+        let v = vec![user(&"x".repeat(1000))];
+        assert!(super::estimate_messages_chars(&v) < 20_000);
+        let out = super::compress_chat_history_aggressive(&v);
+        assert_eq!(out.len(), 1);
+        assert_eq!(out[0].content.len(), 1000);
     }
 }

@@ -1084,10 +1084,23 @@ async fn run_agent_loop_inner(
             }
             // Execute each tool call and append tool results. Recover from parse/tool errors by
             // feeding an error message back to the LLM so it can try again.
+            let mut is_first_semantic_in_batch = true;
             for call in calls.iter() {
                 if call.function.name.as_deref() != Some("jbovlaste_semantic_search") {
                     continue;
                 }
+
+                let assistant_reasoning = if is_first_semantic_in_batch {
+                    is_first_semantic_in_batch = false;
+                    let t = content_str.trim();
+                    if t.is_empty() {
+                        None
+                    } else {
+                        Some(t.to_string())
+                    }
+                } else {
+                    None
+                };
 
                 // Global index across all agent iterations so SSE clients never overwrite earlier steps.
                 let global_step_index = steps.len();
@@ -1125,7 +1138,7 @@ async fn run_agent_loop_inner(
 
                 // Emit step_start immediately so the UI shows this step before the tool runs.
                 if let Some(ref tx) = event_tx {
-                    let start_payload = json!({
+                    let mut start_payload = json!({
                         "type": "step_start",
                         "model": model,
                         "model_name": model_name,
@@ -1133,6 +1146,9 @@ async fn run_agent_loop_inner(
                         "action": action_desc,
                         "tool_call_id": call.id,
                     });
+                    if let Some(ref ar) = assistant_reasoning {
+                        start_payload["assistant_reasoning"] = serde_json::Value::String(ar.clone());
+                    }
                     if let Ok(data) = serde_json::to_string(&start_payload) {
                         let _ = tx.send(sse::Data::new(data).into()).await;
                     }
@@ -1185,6 +1201,7 @@ async fn run_agent_loop_inner(
                     action: action_desc.clone(),
                     result: result_summary.clone(),
                     tool_output: Some(tool_content_json.clone()),
+                    assistant_reasoning: assistant_reasoning.clone(),
                 };
                 steps.push(step.clone());
 
@@ -1200,6 +1217,9 @@ async fn run_agent_loop_inner(
                         "tool_call_id": call.id,
                         "tool_content_plain": tool_content_for_llm,
                     });
+                    if let Some(ref ar) = assistant_reasoning {
+                        payload["assistant_reasoning"] = serde_json::Value::String(ar.clone());
+                    }
                     if let Some(ref out) = step.tool_output {
                         payload["tool_output"] = serde_json::Value::String(out.clone());
                     }

@@ -1069,6 +1069,7 @@ async function performRequest(sessionId, options = {}) {
               action: '',
               result: '…',
               tool_output: undefined,
+              assistant_reasoning: undefined,
             })
           }
           if (steps.length === idx) {
@@ -1076,6 +1077,7 @@ async function performRequest(sessionId, options = {}) {
               action: event.action ?? '',
               result: '…',
               tool_output: undefined,
+              assistant_reasoning: event.assistant_reasoning,
             })
           } else {
             const existing = steps[idx]
@@ -1083,6 +1085,8 @@ async function performRequest(sessionId, options = {}) {
               action: event.action ?? existing?.action ?? '',
               result: '…',
               tool_output: existing?.tool_output,
+              assistant_reasoning:
+                event.assistant_reasoning ?? existing?.assistant_reasoning,
             }
           }
         } else if (event.type === 'step') {
@@ -1097,12 +1101,15 @@ async function performRequest(sessionId, options = {}) {
             tool_output: event.tool_output ?? steps[idx]?.tool_output,
             tool_call_id: event.tool_call_id ?? steps[idx]?.tool_call_id,
             tool_content_plain: event.tool_content_plain ?? steps[idx]?.tool_content_plain,
+            assistant_reasoning:
+              event.assistant_reasoning ?? steps[idx]?.assistant_reasoning,
           }
           while (steps.length < idx) {
             steps.push({
               action: stepPayload.action,
               result: '…',
               tool_output: undefined,
+              assistant_reasoning: undefined,
             })
           }
           if (steps.length === idx) {
