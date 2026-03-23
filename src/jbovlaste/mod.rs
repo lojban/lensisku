@@ -37,6 +37,7 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
                     .service(controller::add_definition)
                     .service(controller::bulk_import_definitions)
                     .service(controller::cancel_bulk_import)
+                    .service(controller::list_active_imports)
                     .service(controller::delete_bulk_definitions)
                     .service(controller::update_definition)
                     .service(controller::delete_definition)

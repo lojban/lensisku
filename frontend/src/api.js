@@ -109,7 +109,6 @@ api.interceptors.request.use(
 )
 
 // API endpoints
-export const getMessage = (id) => api.get(`/mail/message/${id}`)
 export const getMessageDetails = (id) => api.get(`/mail/message/${id}`)
 export const voteSpamMessage = (messageId) =>
   api.post(`/mail/messages/${messageId}/spam-vote`)
@@ -127,8 +126,6 @@ export const deleteBulkDefinitions = (clientId) =>
   api.post(`/jbovlaste/bulk-import/delete/${clientId}`)
 
 export const getThread = (params) => api.get('/mail/thread', { params })
-export const searchMuplis = (params) => api.get('/muplis/search', { params })
-export const searchDictionary = (params) => api.get('/dictionary/search', { params })
 
 // Auth endpoints
 export const login = (credentials) => api.post('/auth/login', credentials)
@@ -187,10 +184,6 @@ export const getDefinition = (id) => api.get(`/jbovlaste/definition/${id}`)
 export const addComment = (body) => api.post(`/comments`, body)
 export const fetchComments = (queryString) => api.get(`/comments/thread?${queryString}`)
 
-export const addEtymology = (data) => api.post('/jbovlaste/etymology', data)
-export const getEtymology = (id) => api.get(`/jbovlaste/etymology/${id}`)
-export const updateEtymology = (id, data) => api.put(`/jbovlaste/etymology/${id}`, data)
-
 export const getValsiAndDefinitionDetails = async (valsiId, definitionId) => {
   const valsiRes = await getValsiDetails(valsiId)
 
@@ -217,8 +210,6 @@ export const voteDefinition = (definitionId, downvote = false) =>
     definition_id: definitionId,
     downvote,
   })
-
-export const getCurrentUserVote = (definitionId) => api.get(`/jbovlaste/vote/${definitionId}`)
 
 export const getBulkVotes = (params) => api.post('/jbovlaste/votes', params)
 
@@ -270,10 +261,6 @@ export const updateItemPosition = (collectionId, itemId, position) =>
 export const removeCollectionItem = (collectionId, itemId) =>
   api.delete(`/collections/${collectionId}/items/${itemId}`)
 
-export const updateItemNotes = (collectionId, itemId, data) =>
-  api.put(`/collections/${collectionId}/items/${itemId}/notes`, data)
-
-
 export const listCollectionItems = (collectionId, params, signal) =>
   api.get(`/collections/${collectionId}/items`, { params, signal })
 
@@ -312,13 +299,6 @@ export const getAuthHeaders = () => {
   const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null
   return token ? { Authorization: `Bearer ${token}` } : {}
 }
-
-export const downloadCachedExport = (languageTag, format) =>
-  api.get(`/export/cached/${languageTag}/${format}`, {
-    responseType: 'blob',
-  })
-
-export const importCollectionFromJson = (collectionId, data) => api.post(`/collections/${collectionId}/import/json`, data)
 
 export const deleteComment = async (commentId) => {
   return await api.delete(`/comments/${commentId}`)
@@ -394,10 +374,6 @@ export const snoozeFlashcard = async (flashcardId) => {
 
 export const importFromCollection = (data) => api.post('/flashcards/collection/import', data)
 
-export const resetProgress = async (flashcardId) => {
-  return api.post(`/flashcards/${flashcardId}/reset`)
-}
-
 export const getStreak = async (days = 7) => {
   return api.get('/flashcards/streak', { params: { days } })
 }
@@ -405,8 +381,6 @@ export const getStreak = async (days = 7) => {
 export const mergeProgress = async (data) => {
   return api.post('/flashcards/progress/merge', data)
 }
-
-export const list_threads = (params) => api.get('/comments/threads', { params })
 
 export const list_comments = (params, signal) => api.get('/comments/list', { params, signal })
 
@@ -486,18 +460,10 @@ export const initiatePasswordChange = (data) => api.post('/auth/change-password/
 
 export const completePasswordChange = (data) => api.post('/auth/change-password/complete', data)
 
-export const updateItemNotesMedia = async (collectionId, itemId, data) => {
-  return await api.put(`/collections/${collectionId}/items/${itemId}/media`, data)
-}
-
 export const getItemImage = async (collectionId, itemId, side) => {
   return await api.get(`/collections/${collectionId}/items/${itemId}/image/${side}`, {
     responseType: 'blob',
   })
-}
-
-export const getItemSound = (collectionId, itemId) => {
-  return `${apiBaseUrl}/collections/${collectionId}/items/${itemId}/sound`
 }
 
 /** Fetch collection item sound as blob (uses api so Bearer is sent automatically). */
@@ -508,8 +474,6 @@ export const getItemSoundBlob = (collectionId, itemId) => {
 }
 
 // Payment endpoints
-export const createPayment = (paymentData) => api.post('/payments', paymentData)
-
 export const getBalance = () => api.get('/payments/balance')
 
 export const assignRole = (user_id, role) => api.post('/auth/assign-role', { user_id, role })
@@ -537,5 +501,3 @@ export const exportLinkedPairs = (fromLang, toLang) =>
     params: { from_lang: fromLang, to_lang: toLang },
     responseType: 'blob',
   })
-
-export const assistantChat = (payload) => api.post('/assistant/chat', payload)

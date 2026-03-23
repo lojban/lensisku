@@ -19,6 +19,7 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
             .service(controller::review_flashcard)
             .service(controller::submit_answer)
             .service(controller::get_due_cards)
+            .service(controller::get_next_quiz)
             .service(controller::reset_progress)
             .service(controller::update_flashcard_position)
             .service(controller::import_from_collection)
