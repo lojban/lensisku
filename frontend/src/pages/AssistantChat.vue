@@ -248,10 +248,10 @@
               :placeholder="$t('assistantChat.placeholder')" :disabled="isStreamingThisSession"
               @keydown.enter.exact.prevent="handleSend" @blur="onAssistantFormControlBlur" />
             <button :type="isStreamingThisSession ? 'button' : 'submit'"
-              class="assistant-composer-action !rounded-md absolute bottom-3 right-1 z-10 flex h-9 w-9 shrink-0 items-center justify-center !p-0 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white disabled:cursor-not-allowed disabled:opacity-50"
+              class="assistant-composer-action !rounded-md absolute bottom-2 right-2 z-10 flex h-9 w-9 shrink-0 items-center justify-center !p-0 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white disabled:cursor-not-allowed disabled:opacity-50"
               :class="isStreamingThisSession
                 ? 'border border-black bg-black shadow-sm transition-colors enabled:hover:bg-neutral-950 enabled:hover:border-black focus:ring-red-500/45'
-                : 'btn-get focus:ring-blue-400/60'"
+                : 'border border-gray-300 bg-white text-black shadow-sm transition-colors enabled:hover:bg-gray-50 enabled:hover:border-gray-400 focus:ring-gray-400/60'"
               :disabled="!isStreamingThisSession && !input.trim()" :aria-label="isStreamingThisSession
                   ? (isRecoveringRemoteStream ? $t('assistantChat.recoveringStream') : $t('assistantChat.stopRecording'))
                   : $t('assistantChat.sendMessage')
@@ -259,7 +259,7 @@
               <span v-if="isStreamingThisSession"
                 class="block h-[1.125rem] w-[1.125rem] shrink-0 rounded-[2px] bg-red-500"
                 aria-hidden="true" />
-              <Play v-else class="h-6 w-6 translate-x-px" stroke-width="2.25" aria-hidden="true" />
+              <ArrowUp v-else class="h-6 w-6" stroke-width="2.25" aria-hidden="true" />
             </button>
           </div>
 
@@ -300,7 +300,7 @@ import {
   X,
   Search,
   MessageSquare,
-  Play,
+  ArrowUp,
   Pencil,
 } from 'lucide-vue-next'
 
