@@ -737,6 +737,26 @@ fn app_error_debug_object(e: &AppError) -> serde_json::Value {
     o
 }
 
+/// Pre-creates reply stubs for parallel dual-model runs so `streamFinished` can be tracked per branch
+/// (and reload / recovery does not treat the turn as complete after only one model finishes).
+async fn emit_parallel_branches(
+    tx: &mpsc::Sender<sse::Event>,
+    persist: &Option<Arc<ChatPersistState>>,
+    pair: &[ModelIdName],
+) -> Result<(), AppError> {
+    if pair.len() != 2 {
+        return Ok(());
+    }
+    let payload = json!({
+        "type": "parallel_branches",
+        "models": [
+            { "id": pair[0].0, "name": pair[0].1 },
+            { "id": pair[1].0, "name": pair[1].1 },
+        ],
+    });
+    emit_sse_user_visible(persist, tx, payload).await
+}
+
 async fn sse_stream_debug_models_plan(
     tx: &mpsc::Sender<sse::Event>,
     candidates: &[ModelIdName],
@@ -859,6 +879,9 @@ async fn run_agent_loop_with_candidates(
 
     if let Some(ref tx) = event_tx {
         sse_stream_debug_models_plan(tx, candidates, run_parallel, &parallel_models).await;
+        if run_parallel {
+            emit_parallel_branches(tx, &persist, &parallel_models).await?;
+        }
     }
 
     if run_parallel {
