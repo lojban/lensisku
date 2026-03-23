@@ -27,6 +27,10 @@ use super::context_compress;
 use super::dto::{AssistantStep, ChatMessage, ChatRequest, ToolCallDto};
 use super::persist::ChatPersistState;
 
+/// When `true`, streaming runs two OpenRouter models in parallel when two candidates exist.
+/// Temporarily set to `false` to use only one model per turn (sequential candidate fallback).
+const ASSISTANT_PARALLEL_DUAL_MODEL: bool = false;
+
 #[derive(Debug, Clone, Serialize)]
 struct ToolFunction {
     name: String,
@@ -982,7 +986,8 @@ async fn run_agent_loop_with_candidates(
 ) -> Result<(String, Vec<AssistantStep>), AppError> {
     let parallel_models: Vec<ModelIdName> = candidates.iter().take(2).cloned().collect();
     let is_streaming = event_tx.is_some();
-    let run_parallel = is_streaming && parallel_models.len() == 2;
+    let run_parallel =
+        ASSISTANT_PARALLEL_DUAL_MODEL && is_streaming && parallel_models.len() == 2;
 
     if let Some(ref tx) = event_tx {
         sse_stream_debug_models_plan(tx, candidates, run_parallel, &parallel_models).await;
