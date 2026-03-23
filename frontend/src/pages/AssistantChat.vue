@@ -171,7 +171,7 @@
                   </div>
                 </div>
 
-                <!-- Assistant: one bubble per reply (multi-model) or single bubble (legacy) -->
+                <!-- Assistant: one bubble per reply (multi-model) or single top-level bubble -->
                 <div v-else-if="msg.role === 'assistant'" class="flex w-full flex-col items-start gap-1">
                   <div v-for="(reply, replyIdx) in assistantReplies(msg)" :key="replyIdx"
                     class="max-w-[80%] min-w-0 rounded-lg px-3 py-2 text-sm break-words bg-gray-100 text-gray-900 assistant-markdown">
@@ -196,7 +196,7 @@
                     <LazyMathJax v-if="reply.content" :content="reply.content" :enable-markdown="true"
                       :lang-id="locale" />
                   </div>
-                  <!-- Legacy single bubble when no replies array yet -->
+                  <!-- Single top-level bubble when `replies` is empty -->
                   <div v-if="assistantReplies(msg).length === 0"
                     class="max-w-[80%] min-w-0 rounded-lg px-3 py-2 text-sm break-words bg-gray-100 text-gray-900 assistant-markdown">
                     <span class="mb-1 block text-[11px] font-semibold text-gray-500">
@@ -204,8 +204,8 @@
                     </span>
                     <div v-if="msg.steps && msg.steps.length > 0" class="thought-process mb-2 space-y-2">
                       <AssistantThoughtStep v-for="(step, stepIdx) in msg.steps" :key="stepIdx" :step="step"
-                        :lang-id="locale" :show-raw-output="isStepOutputVisible(stepKey('legacy', index, stepIdx))"
-                        @toggle-raw="toggleStepOutput(stepKey('legacy', index, stepIdx))" />
+                        :lang-id="locale" :show-raw-output="isStepOutputVisible(stepKey('single', index, stepIdx))"
+                        @toggle-raw="toggleStepOutput(stepKey('single', index, stepIdx))" />
                     </div>
                     <div v-if="isStreamingThisSession && index === messages.length - 1 && !msg.content"
                       class="thinking-dots mb-1 flex min-h-[1.25rem] items-center gap-1" role="status"
@@ -251,7 +251,7 @@
               class="assistant-composer-action !rounded-md absolute bottom-3 right-1 z-10 flex h-9 w-9 shrink-0 items-center justify-center !p-0 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white disabled:cursor-not-allowed disabled:opacity-50"
               :class="isStreamingThisSession ? 'btn-cancel focus:ring-gray-500' : 'btn-get focus:ring-blue-400/60'"
               :disabled="!isStreamingThisSession && !input.trim()" :aria-label="isStreamingThisSession
-                  ? $t('assistantChat.stopRecording')
+                  ? (isRecoveringRemoteStream ? $t('assistantChat.recoveringStream') : $t('assistantChat.stopRecording'))
                   : $t('assistantChat.sendMessage')
                 " @click="isStreamingThisSession ? stopStreaming() : undefined">
               <Square v-if="isStreamingThisSession" class="h-6 w-6" stroke-width="2.5" aria-hidden="true" />
@@ -270,6 +270,10 @@
                 <RotateCw class="h-4 w-4" />
               </button>
             </div>
+            <p v-else-if="isRecoveringRemoteStream"
+              class="min-w-0 flex-1 text-xs leading-snug text-amber-800/90">
+              {{ $t('assistantChat.recoveringStream') }}
+            </p>
             <span v-else class="min-w-0 flex-1 text-xs leading-snug text-gray-500">
               {{ $t('assistantChat.hint') }}
             </span>
@@ -397,20 +401,13 @@ function createId() {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`
 }
 
-/** True while the last assistant bubble has no final text yet or a tool step is still in progress (…). */
-function isAssistantReplyIncomplete(msg) {
-  if (!msg || msg.role !== 'assistant') return false
-  const stepPending = (steps) =>
-    steps?.some((s) => s.result === '…' || s.result === '\u2026')
+/** Whether the assistant turn ended (`streamFinished` from SSE / persisted state). */
+function isAssistantStreamComplete(msg) {
+  if (!msg || msg.role !== 'assistant') return true
   if (msg.replies?.length) {
-    for (const r of msg.replies) {
-      if (stepPending(r.steps)) return true
-      if (!r.content?.trim()) return true
-    }
-    return false
+    return msg.replies.every((r) => r.streamFinished === true)
   }
-  if (stepPending(msg.steps)) return true
-  return !msg.content?.trim()
+  return msg.streamFinished === true
 }
 
 function stopRemoteStreamRecovery() {
@@ -449,7 +446,7 @@ function startRemoteStreamRecovery(chatId) {
         })
       }
       const last = msgs[msgs.length - 1]
-      if (!last || !isAssistantReplyIncomplete(last)) {
+      if (!last || isAssistantStreamComplete(last)) {
         stopRemoteStreamRecovery()
         pendingBumpUpdatedAt.value = true
         debouncedPersist()
@@ -465,7 +462,7 @@ function startRemoteStreamRecovery(chatId) {
 function maybeStartRemoteStreamRecovery() {
   if (!isRemoteMode.value || !activeSessionId.value || !loaded.value) return
   const last = messages.value[messages.value.length - 1]
-  if (last && isAssistantReplyIncomplete(last)) {
+  if (last && !isAssistantStreamComplete(last)) {
     startRemoteStreamRecovery(activeSessionId.value)
   }
 }
@@ -485,11 +482,11 @@ function assistantPlainText(msg) {
       })
       .join(' ')
   }
-  const legacy = [msg.content || '']
+  const parts = [msg.content || '']
   if (msg.steps && msg.steps.length > 0) {
-    legacy.push(...msg.steps.map((s) => `${s.action || ''} ${s.result || ''} ${s.tool_output || ''}`))
+    parts.push(...msg.steps.map((s) => `${s.action || ''} ${s.result || ''} ${s.tool_output || ''}`))
   }
-  return legacy.join(' ')
+  return parts.join(' ')
 }
 
 function plainTextForEdit(msg) {
@@ -919,7 +916,7 @@ onKeyStroke('Escape', (e) => {
   if (!isDesktop.value) sidebarOpen.value = false
 })
 
-/** Returns array of reply objects for an assistant message (multi-model or legacy single). */
+/** Returns array of reply objects for an assistant message (multi-model or single top-level bubble). */
 function assistantReplies(msg) {
   if (!msg || msg.role !== 'assistant') return []
   if (msg.replies && msg.replies.length > 0) return msg.replies
@@ -971,7 +968,13 @@ function commitEditMessage() {
   if (original.role === 'user') {
     newMsg = { role: 'user', content: text }
   } else {
-    newMsg = { role: 'assistant', content: text, steps: [], replies: [] }
+    newMsg = {
+      role: 'assistant',
+      content: text,
+      steps: [],
+      replies: [],
+      streamFinished: true,
+    }
   }
   messages.value = [...prefix, newMsg]
   pendingBumpUpdatedAt.value = true
@@ -1256,7 +1259,11 @@ function abortAssistantMessage(sessionId) {
     return
   }
 
+  last.streamFinished = true
   if (last.replies?.length) {
+    for (const r of last.replies) {
+      r.streamFinished = true
+    }
     const r =
       last.replies.find((x) => x.content?.trim()) ?? last.replies[last.replies.length - 1]
     r.content = (r.content || '') + (r.content?.trim() ? '\n\n' : '') + note
@@ -1280,7 +1287,18 @@ async function performRequest(sessionId, options = {}) {
       content: '',
       steps: [],
       replies: [],
+      streamFinished: false,
     })
+  } else {
+    const last = msgList[msgList.length - 1]
+    if (last?.role === 'assistant') {
+      last.streamFinished = false
+      if (last.replies?.length) {
+        for (const r of last.replies) {
+          r.streamFinished = false
+        }
+      }
+    }
   }
 
   const payload = {
@@ -1301,7 +1319,13 @@ async function performRequest(sessionId, options = {}) {
     if (!msg.replies) msg.replies = []
     let r = msg.replies.find((x) => x.model === modelId)
     if (!r) {
-      r = { model: modelId, modelName: modelName || null, steps: [], content: '' }
+      r = {
+        model: modelId,
+        modelName: modelName || null,
+        steps: [],
+        content: '',
+        streamFinished: false,
+      }
       msg.replies.push(r)
     } else if (modelName != null && modelName !== r.modelName) {
       r.modelName = modelName
@@ -1354,6 +1378,20 @@ async function performRequest(sessionId, options = {}) {
         if (event.type === 'stream_debug') {
           if (import.meta.env.DEV) {
             console.debug('[assistant stream_debug]', event.debug)
+          }
+          continue
+        }
+        if (event.type === 'parallel_branches') {
+          const listPb = getSessionMessagesForMutation(sessionId)
+          const msgPb = listPb?.[assistantIndex]
+          if (msgPb) {
+            const models = event.models
+            if (Array.isArray(models)) {
+              for (const p of models) {
+                if (p?.id) getOrCreateReply(p.id, p.name ?? null)
+              }
+            }
+            if (loaded.value) debouncedPersist()
           }
           continue
         }
@@ -1473,11 +1511,13 @@ async function performRequest(sessionId, options = {}) {
             const r = getOrCreateReply(modelId, modelName)
             if (r) {
               r.content = event.reply ?? ''
+              r.streamFinished = true
               if (!r.apiTrace) r.apiTrace = []
               r.apiTrace.push({ role: 'assistant', content: event.reply ?? '' })
             }
           } else {
             msg.content = event.reply ?? ''
+            msg.streamFinished = true
             if (!msg.apiTrace) msg.apiTrace = []
             msg.apiTrace.push({ role: 'assistant', content: event.reply ?? '' })
           }
@@ -1489,10 +1529,12 @@ async function performRequest(sessionId, options = {}) {
             const r = getOrCreateReply(modelId)
             if (r) {
               r.content = errContent
+              r.streamFinished = true
               r.apiTrace = undefined
             }
           } else {
             msg.content = errContent
+            msg.streamFinished = true
             msg.apiTrace = undefined
           }
         }

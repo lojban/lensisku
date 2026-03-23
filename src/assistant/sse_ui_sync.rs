@@ -36,13 +36,15 @@ fn get_or_create_reply<'a>(
             "model": model_id,
             "modelName": name,
             "steps": [],
-            "content": ""
+            "content": "",
+            "streamFinished": false
         })
     } else {
         json!({
             "model": model_id,
             "steps": [],
-            "content": ""
+            "content": "",
+            "streamFinished": false
         })
     };
     let new_len = arr.len() + 1;
@@ -83,6 +85,19 @@ fn steps_mut<'a>(
         .ok_or_else(|| AppError::BadRequest("steps not array".into()))
 }
 
+fn set_reply_stream_finished(msg: &mut Value, model_id: &str, finished: bool) {
+    if let Some(arr) = msg.get_mut("replies").and_then(|v| v.as_array_mut()) {
+        for r in arr.iter_mut() {
+            if r.get("model").and_then(|m| m.as_str()) == Some(model_id) {
+                if let Some(o) = r.as_object_mut() {
+                    o.insert("streamFinished".into(), json!(finished));
+                }
+                break;
+            }
+        }
+    }
+}
+
 /// Applies one SSE event to `messages` (array). `assistant_index` is the last assistant bubble index.
 pub fn apply_sse_event_to_messages(
     messages: &mut Value,
@@ -116,6 +131,49 @@ pub fn apply_sse_event_to_messages(
     }
 
     match ty {
+        "parallel_branches" => {
+            let models = event
+                .get("models")
+                .and_then(|m| m.as_array())
+                .cloned()
+                .unwrap_or_default();
+            let o = msg
+                .as_object_mut()
+                .ok_or_else(|| AppError::BadRequest("assistant not object".into()))?;
+            let replies = o.entry("replies".to_string()).or_insert_with(|| json!([]));
+            let arr = replies
+                .as_array_mut()
+                .ok_or_else(|| AppError::BadRequest("replies not array".into()))?;
+            for m in models {
+                let Some(id) = m.get("id").and_then(|x| x.as_str()) else {
+                    continue;
+                };
+                if arr
+                    .iter()
+                    .any(|r| r.get("model").and_then(|x| x.as_str()) == Some(id))
+                {
+                    continue;
+                }
+                let name = m.get("name").and_then(|x| x.as_str());
+                let r = if let Some(name) = name {
+                    json!({
+                        "model": id,
+                        "modelName": name,
+                        "steps": [],
+                        "content": "",
+                        "streamFinished": false
+                    })
+                } else {
+                    json!({
+                        "model": id,
+                        "steps": [],
+                        "content": "",
+                        "streamFinished": false
+                    })
+                };
+                arr.push(r);
+            }
+        }
         "assistant_tool_calls" => {
             let entry = json!({
                 "role": "assistant",
@@ -277,13 +335,12 @@ pub fn apply_sse_event_to_messages(
                 if let Some(a) = trace.as_array_mut() {
                     a.push(done_seg);
                 }
+                set_reply_stream_finished(msg, mid, true);
             } else {
-                msg.as_object_mut()
-                    .unwrap()
-                    .insert("content".into(), json!(reply_text));
-                let trace = msg
-                    .as_object_mut()
-                    .unwrap()
+                let o = msg.as_object_mut().unwrap();
+                o.insert("content".into(), json!(reply_text));
+                o.insert("streamFinished".into(), json!(true));
+                let trace = o
                     .entry("apiTrace".to_string())
                     .or_insert_with(|| json!([]));
                 if let Some(a) = trace.as_array_mut() {
@@ -303,14 +360,64 @@ pub fn apply_sse_event_to_messages(
                 let o = r.as_object_mut().unwrap();
                 o.insert("content".into(), json!(formatted));
                 o.remove("apiTrace");
+                set_reply_stream_finished(msg, mid, true);
             } else {
                 let o = msg.as_object_mut().unwrap();
                 o.insert("content".into(), json!(formatted));
                 o.remove("apiTrace");
+                o.insert("streamFinished".into(), json!(true));
             }
         }
         _ => {}
     }
 
     Ok(())
+}
+
+#[cfg(test)]
+mod stream_finished_tests {
+    use super::apply_sse_event_to_messages;
+    use serde_json::json;
+
+    #[test]
+    fn done_without_model_sets_stream_finished() {
+        let mut messages = json!([
+            {"role": "user", "content": "hi"},
+            {
+                "role": "assistant",
+                "content": "",
+                "steps": [],
+                "streamFinished": false
+            }
+        ]);
+        let ev = json!({"type": "done", "reply": "hello"});
+        apply_sse_event_to_messages(&mut messages, 1, &ev).unwrap();
+        let m = &messages[1];
+        assert_eq!(m["streamFinished"], true);
+        assert_eq!(m["content"], "hello");
+    }
+
+    #[test]
+    fn done_with_model_sets_reply_stream_finished() {
+        let mut messages = json!([
+            {"role": "user", "content": "hi"},
+            {
+                "role": "assistant",
+                "content": "",
+                "steps": [],
+                "streamFinished": false,
+                "replies": []
+            }
+        ]);
+        let ev = json!({
+            "type": "done",
+            "reply": "a",
+            "model": "openrouter/x",
+            "model_name": "X"
+        });
+        apply_sse_event_to_messages(&mut messages, 1, &ev).unwrap();
+        let replies = messages[1]["replies"].as_array().unwrap();
+        assert_eq!(replies.len(), 1);
+        assert_eq!(replies[0]["streamFinished"], true);
+    }
 }

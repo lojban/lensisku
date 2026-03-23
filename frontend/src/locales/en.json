@@ -95,6 +95,7 @@
     "userLabel": "You",
     "placeholder": "Describe a concept or ask for a Lojban translation...",
     "hint": "The assistant can search the dictionary by meaning.",
+    "recoveringStream": "Finishing the previous reply on the server…",
     "sending": "Sending...",
     "send": "Send",
     "sendMessage": "Send message",
