@@ -1,3 +1,9 @@
+//! OpenAPI spec and Swagger UI for HTTP routes under the Rust server.
+//!
+//! **SPA coverage:** The Vue app calls a subset of these endpoints via `frontend/src/api.js` (axios base URL `/api`).
+//! Many routes exist for other consumers (email/background jobs, admin, future UI, or non-browser clients).
+//! Absence from `api.js` does not mean a route is unused server-side.
+
 use actix_web::web;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::{Config, SwaggerUi};

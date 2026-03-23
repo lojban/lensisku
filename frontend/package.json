@@ -10,7 +10,8 @@
         "lint": "eslint .",
         "lint:fix": "eslint . --fix",
         "format": "prettier --write .",
-        "format:check": "prettier --check ."
+        "format:check": "prettier --check .",
+        "knip": "knip --no-config-hints"
     },
     "dependencies": {
         "@milkdown/core": "^7.19.1",
@@ -49,6 +50,7 @@
         "eslint-plugin-import": "^2.31.0",
         "eslint-plugin-vue": "^9.33.0",
         "husky": "^9.1.7",
+        "knip": "^6.0.2",
         "lint-staged": "^15.5.0",
         "postcss": "^8.5.8",
         "prettier": "^3.5.3",
