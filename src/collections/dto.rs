@@ -290,3 +290,34 @@ pub struct ImportFullResponse {
     pub levels_created: i32,
     pub warnings: Vec<String>,
 }
+
+/// One row for bulk edit: items with no dictionary definition and non-empty custom front and back text.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct CustomTextBulkItemRow {
+    pub item_id: i32,
+    pub position: i32,
+    pub free_content_front: String,
+    pub free_content_back: String,
+}
+
+#[derive(Debug, Serialize, ToSchema)]
+pub struct CustomTextBulkListResponse {
+    pub items: Vec<CustomTextBulkItemRow>,
+}
+
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct CustomTextBulkUpdateItem {
+    pub item_id: i32,
+    pub free_content_front: String,
+    pub free_content_back: String,
+}
+
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct CustomTextBulkUpdateRequest {
+    pub items: Vec<CustomTextBulkUpdateItem>,
+}
+
+#[derive(Debug, Serialize, ToSchema)]
+pub struct CustomTextBulkUpdateResponse {
+    pub updated: i32,
+}

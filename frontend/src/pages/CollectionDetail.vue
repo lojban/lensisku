@@ -74,11 +74,20 @@
             <SearchInput v-model="itemSearchQuery" :placeholder="t('collectionDetail.searchItemsPlaceholder')"
               :is-loading="isSearching" @update:model-value="handleSearch" @clear="clearItemSearch" />
           </div>
-          <div class="flex items-center gap-0" role="group">
-            <button v-if="isOwner" class="btn-aqua-emerald btn-aqua-group-item md:flex-none" @click="resetForm(); showAddModal = true">
+          <div v-if="isOwner" class="flex items-center gap-0" role="group" aria-label="Collection editing">
+            <button class="btn-aqua-emerald btn-aqua-group-item md:flex-none" @click="resetForm(); showAddModal = true">
               <PlusCircle class="w-4 h-4" />
               {{ t('collectionDetail.addItem') }}
             </button>
+            <RouterLink
+              :to="`/collections/${props.collectionId}/custom-text-bulk`"
+              class="btn-aqua-amber btn-aqua-group-item inline-flex items-center gap-2"
+            >
+              <Table2 class="w-4 h-4 shrink-0" aria-hidden="true" />
+              {{ t('collectionDetail.bulkEditCustomText') }}
+            </RouterLink>
+          </div>
+          <div class="flex items-center gap-0" role="group" aria-label="Study">
             <RouterLink :to="`/collections/${props.collectionId}/flashcards`" class="btn-aqua-rose btn-aqua-group-item md:flex-none">
               <GalleryHorizontalIcon class="w-4 h-4" />
               {{ t('collectionDetail.viewAsFlashcards') }}
@@ -738,6 +747,7 @@ import {
   GalleryHorizontalIcon,
   LayoutPanelTop,
   List,
+  Table2,
   BookOpen,
   Edit3,
   HelpCircle,

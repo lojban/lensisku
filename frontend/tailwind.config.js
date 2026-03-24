@@ -42,7 +42,7 @@ export default {
           },
           '& span': {
             position: 'relative',
-            top: '1px',
+            top: '0.75px',
             zIndex: 1,
             whiteSpace: 'nowrap',
             overflow: 'hidden',
@@ -74,7 +74,7 @@ export default {
             width: 'calc(100% - 1.25em)',
             borderRadius: '0.75em',
             bottom: '10%',
-            filter: 'blur(1px)',
+            filter: 'blur(0.75px)',
           },
           '&:focus, &:active': {
             boxShadow:
@@ -375,7 +375,7 @@ export default {
             // appearance: 'none',
             background: "url('/assets/icons/check.svg') no-repeat center",
             backgroundSize: '0%',
-            border: '1px solid #333',
+            border: '0.75px solid #333',
             borderRadius: '0.25rem',
             width: '16px',
             height: '16px',
@@ -522,7 +522,7 @@ export default {
               {},
           },
           '.card-elevated': {
-            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04), 0 6px 16px rgba(0, 0, 0, 0.06)',
+            boxShadow: '0 0.75px 3px rgba(0, 0, 0, 0.04), 0 6px 16px rgba(0, 0, 0, 0.06)',
             '&:hover': {
               boxShadow: '0 4px 12px rgba(0, 0, 0, 0.06), 0 12px 28px rgba(0, 0, 0, 0.08)',
               '@apply border-gray-300': {},

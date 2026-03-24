@@ -264,6 +264,14 @@ export const removeCollectionItem = (collectionId, itemId) =>
 export const listCollectionItems = (collectionId, params, signal) =>
   api.get(`/collections/${collectionId}/items`, { params, signal })
 
+/** Owner only: items with no dictionary definition_id (custom free content; either side may be empty). */
+export const listCustomTextBulkItems = (collectionId) =>
+  api.get(`/collections/${collectionId}/items/custom-text-bulk`)
+
+/** Owner only: bulk update custom front/back for those items (max 500 per request). */
+export const bulkUpdateCustomTextItems = (collectionId, data) =>
+  api.put(`/collections/${collectionId}/items/custom-text-bulk`, data)
+
 export const searchItems = (params, signal) =>
   api.get(`/collections/${params.user_id}/search`, {
     params: {

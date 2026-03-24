@@ -3281,3 +3281,137 @@ pub async fn search_items(
         total: rows.len() as i64,
     })
 }
+
+const MAX_CUSTOM_TEXT_BULK_ITEMS: usize = 500;
+
+pub async fn list_custom_text_bulk_items(
+    pool: &Pool,
+    collection_id: i32,
+    user_id: i32,
+) -> AppResult<CustomTextBulkListResponse> {
+    let mut client = pool
+        .get()
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+    let transaction = client
+        .transaction()
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+    verify_collection_ownership(&transaction, collection_id, user_id).await?;
+
+    let rows = transaction
+        .query(
+            "SELECT ci.item_id, ci.position, ci.free_content_front, ci.free_content_back
+             FROM collection_items ci
+             WHERE ci.collection_id = $1
+               AND ci.definition_id IS NULL
+             ORDER BY ci.position ASC, ci.added_at DESC",
+            &[&collection_id],
+        )
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+    let items = rows
+        .iter()
+        .map(|row| CustomTextBulkItemRow {
+            item_id: row.get("item_id"),
+            position: row.get("position"),
+            free_content_front: row
+                .get::<_, Option<String>>("free_content_front")
+                .unwrap_or_default(),
+            free_content_back: row
+                .get::<_, Option<String>>("free_content_back")
+                .unwrap_or_default(),
+        })
+        .collect();
+
+    transaction
+        .commit()
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+    Ok(CustomTextBulkListResponse { items })
+}
+
+pub async fn bulk_update_custom_text_items(
+    pool: &Pool,
+    collection_id: i32,
+    user_id: i32,
+    req: &CustomTextBulkUpdateRequest,
+) -> AppResult<CustomTextBulkUpdateResponse> {
+    if req.items.len() > MAX_CUSTOM_TEXT_BULK_ITEMS {
+        return Err(AppError::BadRequest(format!(
+            "At most {} items per request",
+            MAX_CUSTOM_TEXT_BULK_ITEMS
+        )));
+    }
+
+    let mut seen = HashSet::new();
+    for item in &req.items {
+        if !seen.insert(item.item_id) {
+            return Err(AppError::BadRequest(
+                "Duplicate item_id in request".to_string(),
+            ));
+        }
+    }
+
+    let mut client = pool
+        .get()
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+    let transaction = client
+        .transaction()
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+    verify_collection_ownership(&transaction, collection_id, user_id).await?;
+
+    let mut updated: i32 = 0;
+
+    for item in &req.items {
+        let sanitized_front = sanitize_html(&item.free_content_front);
+        let sanitized_back = sanitize_html(&item.free_content_back);
+
+        let canonical_form = if sanitized_front.trim().is_empty() {
+            None
+        } else {
+            crate::utils::tersmu::get_canonical_form(sanitized_front.as_str())
+        };
+
+        let n = transaction
+            .execute(
+                "UPDATE collection_items
+                 SET free_content_front = $1,
+                     free_content_back = $2,
+                     canonical_form = $3
+                 WHERE collection_id = $4
+                   AND item_id = $5
+                   AND definition_id IS NULL",
+                &[
+                    &sanitized_front,
+                    &sanitized_back,
+                    &canonical_form,
+                    &collection_id,
+                    &item.item_id,
+                ],
+            )
+            .await
+            .map_err(|e| AppError::Database(e.to_string()))?;
+
+        if n == 0 {
+            return Err(AppError::BadRequest(format!(
+                "Item {} not found or is not a custom-text-only item in this collection",
+                item.item_id
+            )));
+        }
+        updated += 1;
+    }
+
+    transaction
+        .commit()
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+    Ok(CustomTextBulkUpdateResponse { updated })
+}
