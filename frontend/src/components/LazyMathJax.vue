@@ -3,7 +3,7 @@
 </template>
 
 <script setup>
-import { marked } from 'marked'
+import { Marked } from 'marked'
 import { ref, onMounted, watch, nextTick, onBeforeUnmount } from 'vue'
 
 const props = defineProps({
@@ -30,6 +30,11 @@ const props = defineProps({
   curlyLinkClass: {
     type: String,
     default: 'text-blue-600 hover:text-blue-800', // Default link styling
+  },
+  /** `{valsi}` → /valsi/ links. Disable in assistant chat so `$x_{1}$` is not parsed as `{1}`. */
+  enableCurlyLinks: {
+    type: Boolean,
+    default: true,
   },
 })
 
@@ -232,15 +237,8 @@ const renderContent = async () => {
     });
     
     const segments = splitMarkdownAndInlineMath(finalContent)
-    finalContent = segments
-      .map((seg) => {
-        if (seg.type === 'math') {
-          return seg.content
-        }
-        const part = seg.content
-
-        // Process non-LaTeX parts with markdown
-        const extensions = [
+    const extensions = props.enableCurlyLinks
+      ? [
           {
             name: 'curlyLink',
             level: 'inline',
@@ -250,13 +248,15 @@ const renderContent = async () => {
             tokenizer(src) {
               const rule = /^{([^}]+)}/
               const match = rule.exec(src)
-              if (match) {
-                return {
-                  type: 'curlyLink',
-                  raw: match[0],
-                  text: match[1].trim(),
-                  href: match[1].trim(),
-                }
+              if (!match) return
+              const inner = match[1].trim()
+              // LaTeX subscripts like $x_{1}$ — do not treat as /valsi/ link
+              if (/^\d+$/.test(inner)) return
+              return {
+                type: 'curlyLink',
+                raw: match[0],
+                text: inner,
+                href: inner,
               }
             },
             renderer(token) {
@@ -268,28 +268,34 @@ const renderContent = async () => {
             },
           },
         ]
+      : []
 
-        const renderer = {
-            link(href, title, text) {
-              // Check if this is a valsi link
-              if (href?.href?.startsWith('/valsi/')) {
-                const word = href.href.split('/valsi/')[1]
-                const url = new URL(`/valsi/${word.replace(/ /g, '_')}`, window.location.origin)
-              if (props.langId) url.searchParams.set('langid', props.langId)
-              if (props.username) url.searchParams.set('username', props.username)
-              return `<a
+    const renderer = {
+      link(href, title, text) {
+        if (href?.href?.startsWith('/valsi/')) {
+          const word = href.href.split('/valsi/')[1]
+          const url = new URL(`/valsi/${word.replace(/ /g, '_')}`, window.location.origin)
+          if (props.langId) url.searchParams.set('langid', props.langId)
+          if (props.username) url.searchParams.set('username', props.username)
+          return `<a
                         href="${url.toString()}"
                         class="text-blue-600 hover:text-blue-800 hover:underline inline">
                         ${text ?? href.text}
                     </a>`
-            }
-            // Default link handling
-            return `<a href="${href.href}" title="${href.title || ''}" class="text-blue-600 hover:text-blue-800 hover:underline">${href.text}</a>`
-          },
         }
+        return `<a href="${href.href}" title="${href.title || ''}" class="text-blue-600 hover:text-blue-800 hover:underline">${href.text}</a>`
+      },
+    }
 
-        marked.use({ extensions, renderer })
-        return marked(part)
+    const mdParser = new Marked()
+    mdParser.use({ extensions, renderer })
+
+    finalContent = segments
+      .map((seg) => {
+        if (seg.type === 'math') {
+          return seg.content
+        }
+        return mdParser.parse(seg.content)
       })
       .join('')
   }
@@ -307,6 +313,17 @@ const renderContent = async () => {
   }
 
   contentRef.value.innerHTML = finalContent
+
+  if (props.enableMarkdown) {
+    contentRef.value.querySelectorAll('table').forEach((table) => {
+      if (table.parentElement?.classList?.contains('mathjax-table-wrap')) return
+      const wrap = document.createElement('div')
+      wrap.className = 'mathjax-table-wrap'
+      table.parentNode.insertBefore(wrap, table)
+      wrap.appendChild(table)
+    })
+  }
+
   if (
     finalContent.includes('$') ||
     finalContent.includes('\\[') ||
@@ -427,7 +444,24 @@ onBeforeUnmount(() => {
   display: block !important;
 }
 
-/* Pipe tables from markdown: root `inline` rule would break layout */
+/* Pipe tables: scroll wide content; root `inline` rule would break layout without wrapper */
+.mathjax-content :deep(.mathjax-table-wrap) {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin: 0.5rem 0;
+}
+
+.mathjax-content :deep(.mathjax-table-wrap table) {
+  display: table !important;
+  width: max-content;
+  min-width: min(100%, 28rem);
+  max-width: none;
+  border-collapse: collapse;
+  font-size: 0.95em;
+}
+
 .mathjax-content :deep(> table) {
   display: table !important;
   width: 100%;
@@ -443,6 +477,7 @@ onBeforeUnmount(() => {
   padding: 0.25rem 0.5rem;
   vertical-align: top;
   text-align: left;
+  min-width: 7.5rem;
 }
 
 :deep(.curly-quotes::before) {

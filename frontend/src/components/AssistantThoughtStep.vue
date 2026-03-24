@@ -10,6 +10,7 @@
       <LazyMathJax
         :content="String(step.assistant_reasoning)"
         :enable-markdown="true"
+        :enable-curly-links="false"
         :lang-id="langId"
         class="block text-xs text-gray-800 leading-snug"
       />
