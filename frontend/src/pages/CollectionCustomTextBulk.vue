@@ -1,7 +1,5 @@
 <template>
   <div class="flex flex-col min-h-[calc(100vh-6rem)] pb-24 md:pb-8">
-    <ToastFloat :show="showSuccessToast" :message="successMessage" type="success" @close="showSuccessToast = false" />
-
     <div class="mb-4 flex w-full flex-col gap-3">
       <div class="flex w-full flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div class="min-w-0 flex-1">
@@ -193,10 +191,15 @@
       </button>
       <button
         type="button"
-        class="btn-update min-w-[8rem]"
+        class="btn-update min-w-[10rem]"
         :disabled="isSaving || !isDirty"
+        :aria-busy="isSaving"
         @click="saveAll"
       >
+        <span class="inline-flex h-5 w-5 shrink-0 items-center justify-center" aria-hidden="true">
+          <Loader2 v-if="isSaving" class="h-5 w-5 animate-spin" />
+          <Save v-else class="h-5 w-5" />
+        </span>
         {{ isSaving ? t('collectionCustomTextBulk.saving') : t('collectionCustomTextBulk.saveAll') }}
       </button>
     </div>
@@ -204,7 +207,7 @@
 </template>
 
 <script setup>
-import { ArrowLeft, List } from 'lucide-vue-next'
+import { ArrowLeft, List, Loader2, Save } from 'lucide-vue-next'
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
@@ -215,15 +218,16 @@ import {
   listCustomTextBulkItems,
 } from '@/api'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
-import ToastFloat from '@/components/ToastFloat.vue'
 import { useAuth } from '@/composables/useAuth'
 import { useError } from '@/composables/useError'
+import { useSuccessToast } from '@/composables/useSuccessToast'
 import { useSeoHead } from '@/composables/useSeoHead'
 
 const { t, locale } = useI18n()
 const router = useRouter()
 const auth = useAuth()
 const { showError, clearError } = useError()
+const { showSuccess } = useSuccessToast()
 
 const props = defineProps({
   collectionId: {
@@ -252,8 +256,6 @@ const rows = ref([])
 const newRows = ref([createEmptyDraft()])
 const snapshotJson = ref('')
 const isSaving = ref(false)
-const showSuccessToast = ref(false)
-const successMessage = ref('')
 
 const isOwner = computed(
   () => collection.value?.owner?.username === auth.state.username,
@@ -420,13 +422,11 @@ async function saveAll() {
     }
 
     const updatedCount = rows.value.length + draftsToAdd.length
-    successMessage.value = t('collectionCustomTextBulk.saveSuccess', {
-      count: updatedCount,
-    })
-    showSuccessToast.value = true
-    setTimeout(() => {
-      showSuccessToast.value = false
-    }, 3000)
+    showSuccess(
+      t('collectionCustomTextBulk.saveSuccess', {
+        count: updatedCount,
+      }),
+    )
 
     await load(true)
   } catch (e) {
