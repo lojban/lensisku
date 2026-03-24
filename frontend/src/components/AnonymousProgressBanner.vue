@@ -1,11 +1,9 @@
 <template>
   <Transition :name="transitionName">
-    <div
-      v-if="show"
-      ref="bannerRef"
-      :class="bannerClasses"
-    >
-      <p class="text-sm text-gray-700 flex-1 min-w-0 text-center sm:text-left order-1 sm:order-none">
+    <div v-if="show" ref="bannerRef" :class="bannerClasses">
+      <p
+        class="text-sm text-gray-700 flex-1 min-w-0 text-center sm:text-left order-1 sm:order-none"
+      >
         {{ t('anonymousProgress.bannerMessage') }}
       </p>
       <div class="flex items-center justify-center gap-2 shrink-0 order-2 sm:order-none">
@@ -44,7 +42,7 @@ import { getAllProgressForMerge } from '@/composables/useAnonymousProgress'
 
 const props = defineProps({
   /** 'top' for flashcard study (fixed at top); 'bottom' default */
-  position: { type: String, default: 'bottom' }
+  position: { type: String, default: 'bottom' },
 })
 
 const emit = defineEmits(['visible'])
@@ -54,12 +52,12 @@ const DISMISS_KEY = 'lensisku_anon_banner_dismissed'
 const { t } = useI18n()
 
 const isTop = computed(() => props.position === 'top')
-const transitionName = computed(() => isTop.value ? 'slide-down' : 'slide-up')
+const transitionName = computed(() => (isTop.value ? 'slide-down' : 'slide-up'))
 const bannerClasses = computed(() => [
   'anon-progress-banner fixed left-0 right-0 z-30 flex flex-col sm:flex-row sm:items-center sm:justify-center gap-3 sm:gap-4 px-4 py-3 bg-white border-gray-200',
   isTop.value
     ? 'top-14 sm:top-12 border-b shadow-[0_4px_6px_-1px_rgba(0,0,0,0.1)] safe-area-pt'
-    : 'bottom-0 border-t shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] safe-area-pb'
+    : 'bottom-0 border-t shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] safe-area-pb',
 ])
 const route = useRoute()
 const auth = useAuth()
@@ -95,7 +93,7 @@ const show = computed(() => {
   return isRelevantCollectionPath.value
 })
 
-function dismiss () {
+function dismiss() {
   dismissed.value = true
   try {
     sessionStorage.setItem(DISMISS_KEY, '1')

@@ -1,5 +1,7 @@
 <template>
-  <div class="lingo-unit-banner flex w-full items-center justify-between rounded-xl bg-green-500 p-5 text-white">
+  <div
+    class="lingo-unit-banner flex w-full items-center justify-between rounded-xl bg-green-500 p-5 text-white"
+  >
     <div class="space-y-2.5">
       <h3 class="text-2xl font-bold">{{ title }}</h3>
       <p v-if="description" class="text-lg opacity-95">{{ description }}</p>

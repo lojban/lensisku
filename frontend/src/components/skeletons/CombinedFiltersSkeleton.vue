@@ -1,7 +1,9 @@
 <template>
   <div class="filters space-y-4 animate-pulse">
     <!-- Language Filter Section Skeleton -->
-    <div class="flex flex-col sm:flex-row items-center sm:justify-between gap-4 p-4 bg-gray-100 rounded-lg shadow-sm">
+    <div
+      class="flex flex-col sm:flex-row items-center sm:justify-between gap-4 p-4 bg-gray-100 rounded-lg shadow-sm"
+    >
       <!-- MultiSelect Skeleton -->
       <div class="h-10 w-full sm:w-80 bg-gray-200 rounded-full" />
       <!-- Buttons Skeleton -->

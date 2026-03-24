@@ -1,10 +1,10 @@
-import { ViteSSG } from "vite-ssg";
-import Applic from "./App.vue";
-import { routes, setupRouterGuards } from "./router"; // Import routes and guard setup
-import i18n from "./i18n"; // Import the i18n instance
-import "./style.css"; // Keep global styles if any
-import Aura from "@primeuix/themes/aura";
-import PrimeVue from "primevue/config";
+import { ViteSSG } from 'vite-ssg'
+import Applic from './App.vue'
+import { routes, setupRouterGuards } from './router' // Import routes and guard setup
+import i18n from './i18n' // Import the i18n instance
+import './style.css' // Keep global styles if any
+import Aura from '@primeuix/themes/aura'
+import PrimeVue from 'primevue/config'
 import { Crepe } from '@milkdown/crepe' // Eagerly import Crepe
 import '@milkdown/crepe/theme/common/style.css'
 import '@milkdown/crepe/theme/frame.css'
@@ -17,10 +17,7 @@ export const createApp = ViteSSG(
   // vue-router options with routes array
   { routes }, // Pass routes in the RouterOptions structure
   // function to configure the app instance
-  ({
-    app, router,
-    isClient,
-  }) => {
+  ({ app, router, isClient }) => {
     // Setup navigation guards
     setupRouterGuards(router, isClient)
 
@@ -28,41 +25,42 @@ export const createApp = ViteSSG(
       theme: {
         preset: Aura,
         options: {
-          darkModeSelector: ".dark-mode",
+          darkModeSelector: '.dark-mode',
         },
       },
-    });
+    })
 
     // Install i18n instance
-    app.use(i18n);
+    app.use(i18n)
 
     if (isClient) {
-      (window as any).MathJax = {
+      const w = window as any
+      w.MathJax = {
         tex: {
           inlineMath: [
-            ["$", "$"],
-            ["\\(", "\\)"],
+            ['$', '$'],
+            ['\\(', '\\)'],
           ],
           displayMath: [
-            ["$$", "$$"],
-            ["\\[", "\\]"],
+            ['$$', '$$'],
+            ['\\[', '\\]'],
           ],
           processEscapes: true,
         },
         options: {
           // Include `code` so inline markdown `<code>$x_1$</code>` stays literal (matches jbovlaste).
-          skipHtmlTags: ["script", "noscript", "style", "textarea", "pre", "code"],
+          skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
         },
-      };
+      }
 
       // Load MathJax
-      (function () {
-        var script = document.createElement("script");
-        script.src =
-          "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js";
-        script.async = true;
-        document.head.appendChild(script);
-      })();
+      const loadMathJax = () => {
+        const script = document.createElement('script')
+        script.src = 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js'
+        script.async = true
+        document.head.appendChild(script)
+      }
+      loadMathJax()
     }
 
     // Potentially handle initial state hydration here if needed
@@ -77,4 +75,4 @@ export const createApp = ViteSSG(
     // Add base path if deploying to a subdirectory
     // base: '/my-app/',
   }
-);
+)

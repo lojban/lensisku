@@ -1,9 +1,6 @@
 <template>
   <div class="space-y-4">
-    <div
-      v-if="comments.length === 0"
-      class="text-center py-8 bg-gray-50 rounded-lg"
-    >
+    <div v-if="comments.length === 0" class="text-center py-8 bg-gray-50 rounded-lg">
       <MessageSquare class="mx-auto h-12 w-12 text-blue-400" />
       <p class="text-gray-600">
         {{ t('components.activityComments.noComments') }}
@@ -40,15 +37,15 @@ import { useI18n } from 'vue-i18n'
 import CommentItem from '@/components/CommentItem.vue'
 
 const router = useRouter()
-const { t } = useI18n();
+const { t } = useI18n()
 defineProps({
   comments: {
     type: Array,
-    required: true
+    required: true,
   },
   formatDate: {
     type: Function,
-    required: true
-  }
+    required: true,
+  },
 })
 </script>

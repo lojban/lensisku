@@ -30,24 +30,20 @@
     class="min-h-[400px] mt-4 sm:mt-6"
   >
     <div class="space-y-4">
-      <div class="flex flex-wrap justify-between items-center gap-3 sm:space-x-4 w-full sm:w-auto ml-auto">
+      <div
+        class="flex flex-wrap justify-between items-center gap-3 sm:space-x-4 w-full sm:w-auto ml-auto"
+      >
         <h2 class="text-xl sm:text-2xl font-bold text-gray-800 select-none">
           {{ $t('home.searchResultsTitle.dictionary') }}
         </h2>
       </div>
 
-      <div
-        v-if="isLoading"
-        class="flex justify-center py-8"
-      >
+      <div v-if="isLoading" class="flex justify-center py-8">
         <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
       </div>
 
       <template v-else>
-        <div
-          v-if="!isLoading && !error"
-          class="grid gap-4 mb-6"
-        >
+        <div v-if="!isLoading && !error" class="grid gap-4 mb-6">
           <!-- Decomposition display -->
           <AlertComponent
             v-if="decomposition?.length"
@@ -55,21 +51,20 @@
             :label="$t('components.dictionaryEntries.decomposition')"
           >
             <div class="inline-flex items-center gap-1">
-              <template
-                v-for="(word, index) in decomposition"
-                :key="word"
-              >
+              <template v-for="(word, index) in decomposition" :key="word">
                 <h2
                   class="text-base font-semibold text-blue-700 hover:text-blue-800 hover:underline truncate flex-shrink-0"
                 >
-                  <RouterLink :to="{ path: `/valsi/${word.replace(/ /g, '_')}`, query: { langid: definitions[0]?.langid } }">
+                  <RouterLink
+                    :to="{
+                      path: `/valsi/${word.replace(/ /g, '_')}`,
+                      query: { langid: definitions[0]?.langid },
+                    }"
+                  >
                     {{ word }}
                   </RouterLink>
                 </h2>
-                <span
-                  v-if="index < decomposition.length - 1"
-                  class="text-aqua-500"
-                >+</span>
+                <span v-if="index < decomposition.length - 1" class="text-aqua-500">+</span>
               </template>
             </div>
           </AlertComponent>
@@ -84,17 +79,11 @@
           />
         </div>
 
-        <div
-          v-if="!isLoading && definitions.length === 0"
-          class="text-center py-8 text-gray-600"
-        >
+        <div v-if="!isLoading && definitions.length === 0" class="text-center py-8 text-gray-600">
           {{ $t('components.dictionaryEntries.noEntries') }}
         </div>
 
-        <div
-          v-if="error"
-          class="text-center py-8 text-red-600"
-        >
+        <div v-if="error" class="text-center py-8 text-red-600">
           {{ error }}
         </div>
       </template>
@@ -102,10 +91,7 @@
   </div>
 
   <!-- PaginationComponent -->
-  <div
-    v-if="searchQuery || filters.selmaho || filters.username || filters.word_type"
-    class="mt-6"
-  >
+  <div v-if="searchQuery || filters.selmaho || filters.username || filters.word_type" class="mt-6">
     <PaginationComponent
       :current-page="currentPage"
       :total-pages="totalPages"
@@ -119,56 +105,53 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
-import { useI18n } from 'vue-i18n';
-import { nextTick } from 'vue';
+import { ref, onMounted, watch } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
+import { useI18n } from 'vue-i18n'
+import { nextTick } from 'vue'
 
-import {
-  fastSearchDefinitions,
-  getLanguages,
-} from '@/api';
-import CombinedFilters from '@/components/CombinedFilters.vue';
-import DefinitionCardSimple from '@/components/DefinitionCardSimple.vue';
-import AlertComponent from '@/components/AlertComponent.vue';
-import PaginationComponent from '@/components/PaginationComponent.vue';
-import SearchForm from '@/components/SearchForm.vue';
-import CombinedFiltersSkeleton from '@/components/skeletons/CombinedFiltersSkeleton.vue';
-import SearchFormSkeleton from '@/components/skeletons/SearchFormSkeleton.vue';
-import { useLanguageSelection } from '@/composables/useLanguageSelection';
-import { useSeoHead } from '@/composables/useSeoHead';
-import { SearchQueue } from '@/utils/searchQueue';
-import { normalizeSearchQuery } from '@/utils/searchQueryUtils';
+import { fastSearchDefinitions, getLanguages } from '@/api'
+import CombinedFilters from '@/components/CombinedFilters.vue'
+import DefinitionCardSimple from '@/components/DefinitionCardSimple.vue'
+import AlertComponent from '@/components/AlertComponent.vue'
+import PaginationComponent from '@/components/PaginationComponent.vue'
+import SearchForm from '@/components/SearchForm.vue'
+import CombinedFiltersSkeleton from '@/components/skeletons/CombinedFiltersSkeleton.vue'
+import SearchFormSkeleton from '@/components/skeletons/SearchFormSkeleton.vue'
+import { useLanguageSelection } from '@/composables/useLanguageSelection'
+import { useSeoHead } from '@/composables/useSeoHead'
+import { SearchQueue } from '@/utils/searchQueue'
+import { normalizeSearchQuery } from '@/utils/searchQueryUtils'
 
-const router = useRouter();
-const route = useRoute();
-const { getInitialLanguages, saveLanguages } = useLanguageSelection();
+const router = useRouter()
+const route = useRoute()
+const { getInitialLanguages, saveLanguages } = useLanguageSelection()
 
 // State
-const definitions = ref([]);
-const decomposition = ref([]);
-const total = ref(0);
-const currentPage = ref(parseInt(route.query.page) || 1);
-const totalPages = ref(1);
-const initialized = ref(false);
+const definitions = ref([])
+const decomposition = ref([])
+const total = ref(0)
+const currentPage = ref(parseInt(route.query.page) || 1)
+const totalPages = ref(1)
+const initialized = ref(false)
 
 // Get search query from localStorage or use default
 const getInitialSearchQuery = () => {
-  if (typeof window === 'undefined') return '';
-  return normalizeSearchQuery(route.query.q || '');
-};
+  if (typeof window === 'undefined') return ''
+  return normalizeSearchQuery(route.query.q || '')
+}
 
-const searchQuery = ref(getInitialSearchQuery());
-const isLoading = ref(true);
-const isInitialLoading = ref(true);
-const error = ref(null);
-const searchFormRef = ref(null);
+const searchQuery = ref(getInitialSearchQuery())
+const isLoading = ref(true)
+const isInitialLoading = ref(true)
+const error = ref(null)
+const searchFormRef = ref(null)
 
-const { t, locale } = useI18n();
-useSeoHead({ title: searchQuery.value || 'Fast Search', locale: locale.value });
+const { t, locale } = useI18n()
+useSeoHead({ title: searchQuery.value || 'Fast Search', locale: locale.value })
 
 // Filter state
-const languages = ref([]);
+const languages = ref([])
 const filters = ref({
   selmaho: '',
   username: '',
@@ -177,17 +160,17 @@ const filters = ref({
   selectedLanguages: [],
   source_langid: 1,
   searchInPhrases: route.query.searchInPhrases !== 'false',
-});
+})
 
 // Search queue to prevent race conditions
-const definitionsSearchQueue = new SearchQueue();
+const definitionsSearchQueue = new SearchQueue()
 
 // Fetch definitions using fast search
 const fetchDefinitions = async (page, search = '') => {
-  isLoading.value = true;
-  error.value = null;
+  isLoading.value = true
+  error.value = null
 
-  const { requestId, signal } = definitionsSearchQueue.createRequest();
+  const { requestId, signal } = definitionsSearchQueue.createRequest()
 
   try {
     const params = {
@@ -198,54 +181,54 @@ const fetchDefinitions = async (page, search = '') => {
       ...(filters.value.selectedLanguages.length > 0 && {
         languages: filters.value.selectedLanguages.join(','),
       }),
-    };
+    }
 
     if (!filters.value.selmaho) {
-      params.word_type = filters.value.word_type || undefined;
+      params.word_type = filters.value.word_type || undefined
     }
 
     if (filters.value.source_langid && filters.value.source_langid !== 1) {
-      params.source_langid = filters.value.source_langid;
+      params.source_langid = filters.value.source_langid
     }
 
     if (filters.value.selmaho) {
-      params.selmaho = filters.value.selmaho;
+      params.selmaho = filters.value.selmaho
     }
 
     if (filters.value.searchInPhrases !== undefined && filters.value.searchInPhrases !== null) {
-      params.search_in_phrases = filters.value.searchInPhrases;
+      params.search_in_phrases = filters.value.searchInPhrases
     }
 
-    const response = await fastSearchDefinitions(params, signal);
+    const response = await fastSearchDefinitions(params, signal)
 
     // Only process if this is still the latest request
     if (!definitionsSearchQueue.shouldProcess(requestId)) {
-      return;
+      return
     }
 
-    definitions.value = response.data.definitions;
-    total.value = response.data.total;
-    currentPage.value = page;
-    totalPages.value = Math.ceil(response.data.total / 10);
-    decomposition.value = response.data.decomposition || [];
+    definitions.value = response.data.definitions
+    total.value = response.data.total
+    currentPage.value = page
+    totalPages.value = Math.ceil(response.data.total / 10)
+    decomposition.value = response.data.decomposition || []
   } catch (e) {
     // Ignore abort errors
     if (e.name === 'AbortError' || e.code === 'ERR_CANCELED' || e.message?.includes('canceled')) {
-      return;
+      return
     }
 
     // Only show errors for the latest request
     if (definitionsSearchQueue.shouldProcess(requestId)) {
-      error.value = e.response?.data?.error || 'Failed to load definitions';
-      console.error('Error fetching definitions:', e);
+      error.value = e.response?.data?.error || 'Failed to load definitions'
+      console.error('Error fetching definitions:', e)
     }
   } finally {
     // Only update loading state if this is still the latest request
     if (definitionsSearchQueue.shouldProcess(requestId)) {
-      isLoading.value = false;
+      isLoading.value = false
     }
   }
-};
+}
 
 const fetchData = async () => {
   if (
@@ -254,18 +237,18 @@ const fetchData = async () => {
     !filters.value.username &&
     !filters.value.word_type
   ) {
-    isLoading.value = false;
-    return;
+    isLoading.value = false
+    return
   }
 
-  isLoading.value = true;
-  await fetchDefinitions(currentPage.value, searchQuery.value);
-};
+  isLoading.value = true
+  await fetchDefinitions(currentPage.value, searchQuery.value)
+}
 
 // Filter handling
 const handleFilterChange = () => {
-  updateUrlWithFilters();
-};
+  updateUrlWithFilters()
+}
 
 const handleFiltersReset = async () => {
   filters.value = {
@@ -276,11 +259,11 @@ const handleFiltersReset = async () => {
     word_type: '',
     source_langid: 1,
     searchInPhrases: true,
-  };
-  currentPage.value = 1;
-  searchQuery.value = '';
-  updateUrlWithFilters();
-};
+  }
+  currentPage.value = 1
+  searchQuery.value = ''
+  updateUrlWithFilters()
+}
 
 const updateUrlWithFilters = () => {
   router.push({
@@ -297,8 +280,8 @@ const updateUrlWithFilters = () => {
       source_langid: filters.value.source_langid !== 1 ? filters.value.source_langid : undefined,
       searchInPhrases: filters.value.searchInPhrases === false ? 'false' : undefined,
     },
-  });
-};
+  })
+}
 
 // Search handling
 const performSearch = ({ query, mode }) => {
@@ -315,23 +298,23 @@ const performSearch = ({ query, mode }) => {
     username: filters.value.username || undefined,
     word_type: filters.value.word_type || undefined,
     searchInPhrases: filters.value.searchInPhrases === false ? 'false' : undefined,
-  };
+  }
 
   if (mode !== 'dictionary') {
     // If we're on FastSearch and mode is semantic, waves, mail, etc., redirect to Home
-    const currentLocale = route.path.split('/')[1] || 'en';
-    router.push({ path: `/${currentLocale}`, query: updateParams });
-    return;
+    const currentLocale = route.path.split('/')[1] || 'en'
+    router.push({ path: `/${currentLocale}`, query: updateParams })
+    return
   }
 
-  const normalizedQuery = normalizeSearchQuery(query);
-  searchQuery.value = normalizedQuery;
+  const normalizedQuery = normalizeSearchQuery(query)
+  searchQuery.value = normalizedQuery
   if (typeof window !== 'undefined') {
-    localStorage.setItem('searchQuery', normalizedQuery);
+    localStorage.setItem('searchQuery', normalizedQuery)
   }
 
-  router.push({ query: updateParams });
-};
+  router.push({ query: updateParams })
+}
 
 const prevPage = () => {
   if (currentPage.value > 1) {
@@ -340,9 +323,9 @@ const prevPage = () => {
         ...route.query,
         page: currentPage.value - 1,
       },
-    });
+    })
   }
-};
+}
 
 const nextPage = () => {
   if (currentPage.value < totalPages.value) {
@@ -351,122 +334,122 @@ const nextPage = () => {
         ...route.query,
         page: currentPage.value + 1,
       },
-    });
+    })
   }
-};
+}
 
 // URL sync
 const syncFromRoute = () => {
-  const query = route.query;
+  const query = route.query
 
   if (query.q !== undefined) {
-    const normalized = normalizeSearchQuery(query.q);
-    searchQuery.value = normalized;
-    if (typeof window !== 'undefined') localStorage.setItem('searchQuery', normalized);
+    const normalized = normalizeSearchQuery(query.q)
+    searchQuery.value = normalized
+    if (typeof window !== 'undefined') localStorage.setItem('searchQuery', normalized)
   }
 
   if (query.page !== undefined) {
-    currentPage.value = parseInt(query.page) || 1;
+    currentPage.value = parseInt(query.page) || 1
   }
 
   // Sync filters from URL
   if (query.langs !== undefined) {
-    filters.value.selectedLanguages = query.langs.split(',').map(Number);
+    filters.value.selectedLanguages = query.langs.split(',').map(Number)
   }
 
   if (query.selmaho !== undefined) {
-    filters.value.selmaho = query.selmaho;
+    filters.value.selmaho = query.selmaho
   }
 
   if (query.username !== undefined) {
-    filters.value.username = query.username;
+    filters.value.username = query.username
   }
 
   if (query.word_type !== undefined) {
-    filters.value.word_type = query.word_type ? Number(query.word_type) : null;
+    filters.value.word_type = query.word_type ? Number(query.word_type) : null
   }
 
   if (query.source_langid !== undefined) {
-    filters.value.source_langid = parseInt(query.source_langid) || 1;
+    filters.value.source_langid = parseInt(query.source_langid) || 1
   } else {
-    filters.value.source_langid = 1;
+    filters.value.source_langid = 1
   }
 
   if (query.searchInPhrases !== undefined) {
-    filters.value.searchInPhrases = query.searchInPhrases !== 'false';
+    filters.value.searchInPhrases = query.searchInPhrases !== 'false'
   } else {
-    filters.value.searchInPhrases = true;
+    filters.value.searchInPhrases = true
   }
-};
+}
 
 const handleKeyDown = (event) => {
   if (event.key === '/' && !['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) {
-    event.preventDefault();
-    searchFormRef.value?.$refs.searchInput?.focus();
+    event.preventDefault()
+    searchFormRef.value?.$refs.searchInput?.focus()
   }
-};
+}
 
 onMounted(async () => {
-  window.addEventListener('keydown', handleKeyDown);
+  window.addEventListener('keydown', handleKeyDown)
   try {
-    const languagesResponse = await getLanguages();
-    languages.value = languagesResponse.data;
+    const languagesResponse = await getLanguages()
+    languages.value = languagesResponse.data
 
-    const initialLangs = getInitialLanguages(route, languages.value);
-    filters.value.selectedLanguages = initialLangs;
+    const initialLangs = getInitialLanguages(route, languages.value)
+    filters.value.selectedLanguages = initialLangs
 
-    const queryToPush = { ...route.query };
-    let pushNeeded = false;
+    const queryToPush = { ...route.query }
+    let pushNeeded = false
 
     if (searchQuery.value && route.query.q !== searchQuery.value) {
-      queryToPush.q = searchQuery.value;
-      pushNeeded = true;
+      queryToPush.q = searchQuery.value
+      pushNeeded = true
     } else if (!searchQuery.value && route.query.q === undefined) {
-      queryToPush.q = undefined;
+      queryToPush.q = undefined
     }
 
     const targetLangs =
       filters.value.selectedLanguages.length > 0
         ? filters.value.selectedLanguages.join(',')
-        : undefined;
+        : undefined
     if (route.query.langs !== targetLangs) {
-      queryToPush.langs = targetLangs;
-      pushNeeded = true;
+      queryToPush.langs = targetLangs
+      pushNeeded = true
     }
 
     Object.keys(queryToPush).forEach(
-      (key) => queryToPush[key] === undefined && delete queryToPush[key],
-    );
+      (key) => queryToPush[key] === undefined && delete queryToPush[key]
+    )
 
     if (pushNeeded) {
-      router.push({ query: queryToPush });
+      router.push({ query: queryToPush })
     }
-    isInitialLoading.value = false;
-    initialized.value = true;
+    isInitialLoading.value = false
+    initialized.value = true
   } catch (e) {
-    console.error('Error loading initial data:', e);
-    isInitialLoading.value = false;
+    console.error('Error loading initial data:', e)
+    isInitialLoading.value = false
   } finally {
-    isInitialLoading.value = false;
+    isInitialLoading.value = false
 
     if (route.name === 'FastSearch' || route.name?.startsWith('FastSearch-')) {
-      await nextTick();
+      await nextTick()
       if (searchFormRef.value && !isInitialLoading.value) {
-        searchFormRef.value.focusInput();
+        searchFormRef.value.focusInput()
       }
     }
   }
-});
+})
 
 watch(
   () => filters.value.selectedLanguages,
   (newLanguages) => {
     if (newLanguages.length > 0) {
-      saveLanguages(newLanguages);
+      saveLanguages(newLanguages)
     }
   },
-  { deep: true },
-);
+  { deep: true }
+)
 
 watch(
   () => route.query,
@@ -479,24 +462,24 @@ watch(
       newQuery.username !== oldQuery?.username ||
       newQuery.word_type !== oldQuery?.word_type ||
       newQuery.source_langid !== oldQuery?.source_langid ||
-      newQuery.searchInPhrases !== oldQuery?.searchInPhrases;
+      newQuery.searchInPhrases !== oldQuery?.searchInPhrases
 
-    currentPage.value = parseInt(newQuery.page) || 1;
+    currentPage.value = parseInt(newQuery.page) || 1
 
     if (relevantParamsChanged) {
-      syncFromRoute();
-      await fetchData();
+      syncFromRoute()
+      await fetchData()
 
       if (
         (route.name === 'FastSearch' || route.name?.startsWith('FastSearch-')) &&
         searchFormRef.value &&
         !isInitialLoading.value
       ) {
-        await nextTick();
-        searchFormRef.value.focusInput();
+        await nextTick()
+        searchFormRef.value.focusInput()
       }
     }
   },
-  { deep: true, immediate: true },
-);
+  { deep: true, immediate: true }
+)
 </script>

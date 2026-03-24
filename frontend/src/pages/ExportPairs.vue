@@ -1,7 +1,7 @@
 <template>
   <div class="max-w-4xl mx-auto p-4 sm:p-6 lg:p-8">
     <h1 class="text-3xl font-bold text-gray-800 mb-6">{{ t('exportPairs.title') }}</h1>
-    
+
     <div class="bg-white rounded-lg shadow p-6">
       <p class="text-gray-600 mb-6">{{ t('exportPairs.description') }}</p>
 
@@ -12,12 +12,7 @@
             <label for="fromLang" class="block text-sm font-medium text-gray-700 mb-2">
               {{ t('exportPairs.fromLanguage') }}
             </label>
-            <select
-              id="fromLang"
-              v-model="fromLang"
-              class="input-field w-full"
-              required
-            >
+            <select id="fromLang" v-model="fromLang" class="input-field w-full" required>
               <option value="" disabled>{{ t('exportPairs.selectLanguage') }}</option>
               <option v-for="lang in languages" :key="lang.id" :value="lang.id">
                 {{ lang.real_name }} ({{ lang.english_name }})
@@ -30,12 +25,7 @@
             <label for="toLang" class="block text-sm font-medium text-gray-700 mb-2">
               {{ t('exportPairs.toLanguage') }}
             </label>
-            <select
-              id="toLang"
-              v-model="toLang"
-              class="input-field w-full"
-              required
-            >
+            <select id="toLang" v-model="toLang" class="input-field w-full" required>
               <option value="" disabled>{{ t('exportPairs.selectLanguage') }}</option>
               <option v-for="lang in languages" :key="lang.id" :value="lang.id">
                 {{ lang.real_name }} ({{ lang.english_name }})
@@ -52,7 +42,9 @@
           >
             <Download v-if="!isExporting" class="h-5 w-5" />
             <Loader2 v-else class="h-5 w-5 animate-spin" />
-            <span>{{ isExporting ? t('exportPairs.exporting') : t('exportPairs.exportButton') }}</span>
+            <span>{{
+              isExporting ? t('exportPairs.exporting') : t('exportPairs.exportButton')
+            }}</span>
           </button>
         </div>
       </form>
@@ -73,12 +65,12 @@ const { showError } = useError()
 
 useSeoHead({
   title: t('exportPairs.pageTitle'),
-  description: t('exportPairs.pageDescription')
+  description: t('exportPairs.pageDescription'),
 })
 
 const languages = ref([])
 const fromLang = ref(1) // Default Lojban
-const toLang = ref(2)   // Default English
+const toLang = ref(2) // Default English
 const isExporting = ref(false)
 
 const isValid = computed(() => fromLang.value && toLang.value && fromLang.value !== toLang.value)
@@ -99,12 +91,12 @@ const handleExport = async () => {
   isExporting.value = true
   try {
     const response = await exportLinkedPairs(fromLang.value, toLang.value)
-    
+
     // Create blob link to download
     const url = window.URL.createObjectURL(new Blob([response.data]))
     const link = document.createElement('a')
     link.href = url
-    
+
     // Extract filename from header or generate default
     const contentDisposition = response.headers['content-disposition']
     let fileName = `pairs_${fromLang.value}_${toLang.value}.tsv`
@@ -112,7 +104,7 @@ const handleExport = async () => {
       const fileNameMatch = contentDisposition.match(/filename="?(.+)"?/)
       if (fileNameMatch && fileNameMatch.length === 2) fileName = fileNameMatch[1]
     }
-    
+
     link.setAttribute('download', fileName)
     document.body.appendChild(link)
     link.click()

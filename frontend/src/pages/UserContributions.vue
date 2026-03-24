@@ -27,7 +27,6 @@
       :format-date="formatDate"
     />
 
-
     <!-- PaginationComponent -->
     <div v-if="totalPages > 1">
       <PaginationComponent
@@ -159,11 +158,13 @@ const changePage = (newPage) => {
     isUpdatingRoute.value = true
     currentPage.value = newPage
     fetchData(activeTab.value)
-    router.replace({
-      query: { ...route.query, tab: activeTab.value, page: newPage },
-    }).finally(() => {
-      isUpdatingRoute.value = false
-    })
+    router
+      .replace({
+        query: { ...route.query, tab: activeTab.value, page: newPage },
+      })
+      .finally(() => {
+        isUpdatingRoute.value = false
+      })
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 }
@@ -204,41 +205,46 @@ const pageTitle = ref(t('userContributions.activityTitle', { username: props.use
 useSeoHead({ title: pageTitle, locale: locale.value })
 
 // Configure tabs
-const tabs = computed(() => [ // Make tabs computed
+const tabs = computed(() => [
+  // Make tabs computed
   {
     key: 'comments',
     label: t('userContributions.comments'), // Use t()
-    icon: MessageSquare
+    icon: MessageSquare,
   },
   {
     key: 'definitions',
     label: t('userContributions.definitions'), // Use t()
-    icon: Book
-  }
+    icon: Book,
+  },
 ])
 
 // Update title when tab changes or username changes
 watch(
   [activeTab, () => props.username],
   ([newTab, newUsername]) => {
-    const tabTitle = tabs.value.find(t => t.key === newTab)?.label || t('userContributions.activityTitle', { username: '' }) // Use tabs.value and t()
-    pageTitle.value = t('userContributions.activityTitle', { username: newUsername }) + ` - ${tabTitle}` // Use t()
+    const tabTitle =
+      tabs.value.find((t) => t.key === newTab)?.label ||
+      t('userContributions.activityTitle', { username: '' }) // Use tabs.value and t()
+    pageTitle.value =
+      t('userContributions.activityTitle', { username: newUsername }) + ` - ${tabTitle}` // Use t()
   },
   { immediate: true }
 )
 
 onMounted(() => {
-  const initialTab = route.query.tab && ['comments', 'definitions'].includes(route.query.tab)
-    ? route.query.tab
-    : 'comments'
+  const initialTab =
+    route.query.tab && ['comments', 'definitions'].includes(route.query.tab)
+      ? route.query.tab
+      : 'comments'
   activeTab.value = initialTab
-  
+
   // Read page from URL query parameter
   const pageFromQuery = parseInt(route.query.page, 10)
   if (pageFromQuery && pageFromQuery >= 1) {
     currentPage.value = pageFromQuery
   }
-  
+
   fetchData(initialTab)
 })
 
@@ -248,21 +254,20 @@ watch(
   (newQuery, oldQuery) => {
     // Skip if this is the initial mount (oldQuery will be undefined)
     if (!oldQuery) return
-    
+
     // Skip if we're programmatically updating the route (to prevent double fetches)
     if (isUpdatingRoute.value) return
-    
-    const newTab = newQuery.tab && ['comments', 'definitions'].includes(newQuery.tab)
-      ? newQuery.tab
-      : 'comments'
-    
+
+    const newTab =
+      newQuery.tab && ['comments', 'definitions'].includes(newQuery.tab) ? newQuery.tab : 'comments'
+
     const pageFromQuery = parseInt(newQuery.page, 10)
     const newPage = pageFromQuery && pageFromQuery >= 1 ? pageFromQuery : 1
-    
+
     // Only update if something actually changed
     const tabChanged = newTab !== activeTab.value
     const pageChanged = newPage !== currentPage.value
-    
+
     if (tabChanged || pageChanged) {
       if (tabChanged) {
         activeTab.value = newTab

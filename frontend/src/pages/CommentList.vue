@@ -4,8 +4,11 @@
     <div v-if="valsiDetails" class="mb-4">
       <h2 v-if="!definitionId" class="text-2xl font-bold space-x-2 select-none">
         <span class="text-gray-500 italic">{{ t('commentList.discussingEntry') }}</span>
-        <RouterLink v-if="valsiDetails.valsiid" :to="`/valsi/${valsiDetails.word.replace(/ /g, '_')}`"
-          class="text-blue-700 hover:text-blue-800 hover:underline">
+        <RouterLink
+          v-if="valsiDetails.valsiid"
+          :to="`/valsi/${valsiDetails.word.replace(/ /g, '_')}`"
+          class="text-blue-700 hover:text-blue-800 hover:underline"
+        >
           {{ valsiDetails.word }}
         </RouterLink>
         <span v-else class="text-blue-700">
@@ -17,27 +20,48 @@
       </h2>
     </div>
     <div v-if="valsiDetails && definitionDetails" class="mb-4">
-      <DefinitionCard :definition="definitionDetails" :languages="languages" :disable-discussion-button="true"
-        :disable-discussion-toolbar-button="true" :show-definition-number="true" />
+      <DefinitionCard
+        :definition="definitionDetails"
+        :languages="languages"
+        :disable-discussion-button="true"
+        :disable-discussion-toolbar-button="true"
+        :show-definition-number="true"
+      />
     </div>
 
     <!-- Action buttons -->
     <div class="flex flex-wrap gap-2 w-full lg:w-auto justify-center">
-      <label class="inline-flex items-center" :disabled="flatStyleEnforced"
-        :class="[!flatStyle && !flatStyleEnforced ? ' btn-aqua-slate' : 'btn-aqua-white']">
-        <input type="checkbox" class="checkmark-aqua" :checked="!flatStyle && !flatStyleEnforced"
-          :disabled="flatStyleEnforced" @change="toggleFlatStyle">
-        <span class="text-sm select-none" :class="{ 'text-gray-400': flatStyleEnforced }">{{ t('commentList.threaded') }}</span>
+      <label
+        class="inline-flex items-center"
+        :disabled="flatStyleEnforced"
+        :class="[!flatStyle && !flatStyleEnforced ? ' btn-aqua-slate' : 'btn-aqua-white']"
+      >
+        <input
+          type="checkbox"
+          class="checkmark-aqua"
+          :checked="!flatStyle && !flatStyleEnforced"
+          :disabled="flatStyleEnforced"
+          @change="toggleFlatStyle"
+        />
+        <span class="text-sm select-none" :class="{ 'text-gray-400': flatStyleEnforced }">{{
+          t('commentList.threaded')
+        }}</span>
       </label>
-      <button v-if="auth.state.isLoggedIn && comments.length > 0" class="btn-aqua-emerald"
-        @click="handleNewTopLevelComment">
+      <button
+        v-if="auth.state.isLoggedIn && comments.length > 0"
+        class="btn-aqua-emerald"
+        @click="handleNewTopLevelComment"
+      >
         <AudioWaveform class="h-4 w-4" />
         <span>
           {{ t('commentList.newWave') }}
         </span>
       </button>
-      <button v-if="commentId > 0 && !!currentComment?.parent_id" class="inline-flex items-center btn-aqua-purple"
-        @click="goToParent">
+      <button
+        v-if="commentId > 0 && !!currentComment?.parent_id"
+        class="inline-flex items-center btn-aqua-purple"
+        @click="goToParent"
+      >
         <ArrowLeft class="h-5 w-5" />
         {{ t('commentList.parent') }}
       </button>
@@ -50,8 +74,13 @@
 
   <!-- New top-level comment form -->
   <div v-if="showTopLevelForm" class="mb-6">
-    <CommentForm :is-submitting="isSubmitting" :initial-values="newComment"
-      class="border border-blue-200 rounded-lg shadow-sm" @submit="submitComment" @cancel="cancelComment" />
+    <CommentForm
+      :is-submitting="isSubmitting"
+      :initial-values="newComment"
+      class="border border-blue-200 rounded-lg shadow-sm"
+      @submit="submitComment"
+      @cancel="cancelComment"
+    />
   </div>
 
   <!-- Comments list -->
@@ -61,15 +90,29 @@
       <template v-if="commentId > 0">
         <!-- Single comment thread view -->
         <div v-for="comment in targetCommentThread" :key="comment.comment_id" class="relative">
-          <div :style="{ marginLeft: `${flatStyle ? 0 : getReplyMargin(comment.level)}rem` }"
-            @mouseup="handleTextSelection(comment.comment_id, $event)">
-            <CommentItem :comment="comment" :valsi-id="valsiId" :natlang-word-id="natlangWordId"
-              :definition-id="definitionId" :reply-enabled="true" :flat-style="flatStyle" @reply="handleReply" />
+          <div
+            :style="{ marginLeft: `${flatStyle ? 0 : getReplyMargin(comment.level)}rem` }"
+            @mouseup="handleTextSelection(comment.comment_id, $event)"
+          >
+            <CommentItem
+              :comment="comment"
+              :valsi-id="valsiId"
+              :natlang-word-id="natlangWordId"
+              :definition-id="definitionId"
+              :reply-enabled="true"
+              :flat-style="flatStyle"
+              @reply="handleReply"
+            />
 
             <!-- Inline reply form -->
             <div v-if="replyToId === comment.comment_id" class="ml-4">
-              <CommentForm :is-submitting="isSubmitting" :initial-values="newComment" is-reply @submit="submitComment"
-                @cancel="cancelComment" />
+              <CommentForm
+                :is-submitting="isSubmitting"
+                :initial-values="newComment"
+                is-reply
+                @submit="submitComment"
+                @cancel="cancelComment"
+              />
             </div>
           </div>
         </div>
@@ -77,15 +120,30 @@
       <template v-else>
         <!-- All comments in order -->
         <div v-for="comment in processedComments" :key="comment.comment_id" class="relative">
-          <div :style="{ marginLeft: `${getReplyMargin(comment.level)}rem` }"
-            @mouseup="handleTextSelection(comment.comment_id, $event)">
-            <CommentItem :comment="comment" :level="comment.level" :valsi-id="valsiId" :natlang-word-id="natlangWordId"
-              :definition-id="definitionId" :reply-enabled="true" :flat-style="flatStyle" @reply="handleReply" />
+          <div
+            :style="{ marginLeft: `${getReplyMargin(comment.level)}rem` }"
+            @mouseup="handleTextSelection(comment.comment_id, $event)"
+          >
+            <CommentItem
+              :comment="comment"
+              :level="comment.level"
+              :valsi-id="valsiId"
+              :natlang-word-id="natlangWordId"
+              :definition-id="definitionId"
+              :reply-enabled="true"
+              :flat-style="flatStyle"
+              @reply="handleReply"
+            />
 
             <!-- Inline reply form -->
             <div v-if="replyToId === comment.comment_id" class="ml-4">
-              <CommentForm :is-submitting="isSubmitting" :initial-values="newComment" is-reply @submit="submitComment"
-                @cancel="cancelComment" />
+              <CommentForm
+                :is-submitting="isSubmitting"
+                :initial-values="newComment"
+                is-reply
+                @submit="submitComment"
+                @cancel="cancelComment"
+              />
             </div>
           </div>
         </div>
@@ -93,8 +151,14 @@
     </template>
 
     <div v-if="!isLoading && totalPages > 1" class="mt-6">
-      <PaginationComponent :current-page="currentPage" :total-pages="totalPages" :total="total" :per-page="perPage"
-        @prev="changePage(currentPage - 1)" @next="changePage(currentPage + 1)" />
+      <PaginationComponent
+        :current-page="currentPage"
+        :total-pages="totalPages"
+        :total="total"
+        :per-page="perPage"
+        @prev="changePage(currentPage - 1)"
+        @next="changePage(currentPage + 1)"
+      />
     </div>
 
     <!-- Loading state -->
@@ -103,14 +167,19 @@
     </div>
 
     <!-- Empty state -->
-    <div v-if="!isLoading && comments.length === 0"
-      class="flex flex-col justify-center text-center py-12 bg-blue-50 rounded-lg border border-blue-100 p-4">
+    <div
+      v-if="!isLoading && comments.length === 0"
+      class="flex flex-col justify-center text-center py-12 bg-blue-50 rounded-lg border border-blue-100 p-4"
+    >
       <MessageSquare class="mx-auto h-12 w-12 text-blue-400" />
       <p class="my-4 text-gray-600">
         {{ t('commentList.noComments') }}
       </p>
-      <button v-if="auth.state.isLoggedIn" class="btn-aqua-emerald h-8 text-base mx-auto"
-        @click="handleNewTopLevelComment">
+      <button
+        v-if="auth.state.isLoggedIn"
+        class="btn-aqua-emerald h-8 text-base mx-auto"
+        @click="handleNewTopLevelComment"
+      >
         <AudioWaveform class="h-4 w-4" />
         <span>
           {{ t('commentList.newDiscussionWave') }}
@@ -118,12 +187,18 @@
       </button>
     </div>
     <!-- Floating quote button -->
-    <div v-if="quotePosition.visible" class="fixed z-50 bg-white border border-gray-300 rounded-md shadow-sm p-1"
+    <div
+      v-if="quotePosition.visible"
+      class="fixed z-50 bg-white border border-gray-300 rounded-md shadow-sm p-1"
       :style="{
         left: `${quotePosition.x}px`,
-        top: `${quotePosition.y}px`
-      }">
-      <button @click="handleQuote" class="text-sm px-2 py-1 hover:bg-gray-100 rounded-md flex items-center">
+        top: `${quotePosition.y}px`,
+      }"
+    >
+      <button
+        @click="handleQuote"
+        class="text-sm px-2 py-1 hover:bg-gray-100 rounded-md flex items-center"
+      >
         <Quote class="w-4 h-4 mr-1" />
         {{ t('commentList.quoteSelectedText') }}
       </button>
@@ -199,14 +274,16 @@ const newComment = ref({
   subject: '',
   content: '',
 })
-const flatStyle = ref((typeof window === 'undefined') ? '' : localStorage.getItem('commentFlatStyle') === 'true')
+const flatStyle = ref(
+  typeof window === 'undefined' ? '' : localStorage.getItem('commentFlatStyle') === 'true'
+)
 const flatStyleEnforced = ref(false)
 const selectedCommentId = ref(null)
 const selectedText = ref('')
 const quotePosition = ref({ x: 0, y: 0, visible: false })
 
 const toggleFlatStyle = () => {
-  if (typeof window === 'undefined') return;
+  if (typeof window === 'undefined') return
 
   flatStyle.value = !flatStyle.value
   localStorage.setItem('commentFlatStyle', flatStyle.value)
@@ -216,7 +293,7 @@ const processedComments = ref([])
 
 const processComments = (comments, isFlat) => {
   levelMap.clear()
-  return comments.map(comment => {
+  return comments.map((comment) => {
     let level = 0
     if (!isFlat && comment.parent_id !== 0) {
       level = (levelMap.get(comment.parent_id) || 0) + 1
@@ -224,7 +301,7 @@ const processComments = (comments, isFlat) => {
     levelMap.set(comment.comment_id, level)
     return {
       ...comment,
-      level: isFlat ? 0 : level
+      level: isFlat ? 0 : level,
     }
   })
 }
@@ -284,18 +361,17 @@ const scrollToComment = async (commentId) => {
 }
 
 const getReplyMargin = (level) => {
-  return Math.min(Math.max(level - 1, 0) * 2, 8);
+  return Math.min(Math.max(level - 1, 0) * 2, 8)
 }
 
 const handleNewTopLevelComment = () => {
   if (props.valsiId === 0 && props.definitionId === 0) {
-    router.push('/comments/new-thread');
+    router.push('/comments/new-thread')
   } else {
-    showTopLevelForm.value = true;
-    replyToId.value = null;
+    showTopLevelForm.value = true
+    replyToId.value = null
   }
 }
-
 
 const handleTextSelection = (commentId, event) => {
   const selection = window.getSelection()
@@ -308,7 +384,7 @@ const handleTextSelection = (commentId, event) => {
       quotePosition.value = {
         x: rect.left + window.pageXOffset,
         y: rect.top + window.pageYOffset - 60,
-        visible: true
+        visible: true,
       }
     } else {
       quotePosition.value.visible = false
@@ -337,7 +413,7 @@ const handleQuote = () => {
 
       observer.observe(formComponent, {
         childList: true,
-        subtree: true
+        subtree: true,
       })
     }
   })
@@ -360,14 +436,14 @@ const handleReply = (commentId) => {
 
       observer.observe(formComponent, {
         childList: true,
-        subtree: true
+        subtree: true,
       })
     }
   })
 }
 
 const performFetchComments = async (isInitialLoad = false, scrollTo) => {
-  if (typeof window === 'undefined') return;
+  if (typeof window === 'undefined') return
 
   scrollTo = scrollTo || props.scrollTo
   try {
@@ -383,7 +459,7 @@ const performFetchComments = async (isInitialLoad = false, scrollTo) => {
 
       // Automatically enable flat style if any comment level >4
       const unflattenedComments = processComments(response.data.comments, false)
-      const maxLevel = Math.max(...unflattenedComments.map(c => c.level))
+      const maxLevel = Math.max(...unflattenedComments.map((c) => c.level))
       if (maxLevel > 4) {
         flatStyle.value = true
         processedComments.value = processComments(response.data.comments, true)
@@ -418,7 +494,7 @@ const currentPage = ref(1)
 const perPage = ref(10)
 const total = ref(0)
 
-const currentComment = computed(() => comments.value.find(c => c.comment_id === props.commentId))
+const currentComment = computed(() => comments.value.find((c) => c.comment_id === props.commentId))
 
 const totalPages = computed(() => Math.ceil(total.value / perPage.value))
 
@@ -465,18 +541,21 @@ const submitComment = async (formData) => {
           ...route.query,
           thread_id: response.data.thread_id,
           comment_id: response.data.comment_id,
-          scroll_to: newCommentId
-        }
+          scroll_to: newCommentId,
+        },
       })
       await nextTick()
       scrollToComment(newCommentId)
     }
   } catch (error) {
-    console.error('Error submitting comment:', error);
+    console.error('Error submitting comment:', error)
     // Use the useError composable to show the error
-    showError(error.response?.data?.error || 'Failed to submit comment', error.response?.data?.details);
+    showError(
+      error.response?.data?.error || 'Failed to submit comment',
+      error.response?.data?.details
+    )
   } finally {
-    isSubmitting.value = false;
+    isSubmitting.value = false
   }
 }
 
@@ -539,11 +618,14 @@ const metaDescription = computed(() => {
 
 const canonicalPath = computed(() => route.fullPath)
 
-useSeoHead({
-  title: pageTitle,
-  description: metaDescription,
-  canonical: canonicalPath,
-}, locale.value)
+useSeoHead(
+  {
+    title: pageTitle,
+    description: metaDescription,
+    canonical: canonicalPath,
+  },
+  locale.value
+)
 
 const fetchDefinitionsAndDetails = async () => {
   if (props.valsiId) {

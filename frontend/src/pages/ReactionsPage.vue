@@ -1,5 +1,10 @@
 <template>
-  <TabbedPageHeader :tabs="tabs" :active-tab="activeTab" :page-title="pageTitle" @tab-click="handleTabClick" />
+  <TabbedPageHeader
+    :tabs="tabs"
+    :active-tab="activeTab"
+    :page-title="pageTitle"
+    @tab-click="handleTabClick"
+  />
 
   <!-- Loading State with Skeleton -->
   <div v-if="isLoading" class="space-y-4">
@@ -8,16 +13,47 @@
 
   <!-- Content -->
   <div v-else class="space-y-4">
-    <ActivityBookmarks v-if="activeTab === 'bookmarked'" :comments="bookmarks" :format-date="formatDate" :no-items-message="t('reactionsPage.noBookmarks')" />
-    <ActivityReactions v-else-if="activeTab === 'reactions'" :comments="reactions" :format-date="formatDate" :no-items-message="t('reactionsPage.noReactions')" />
-    <ActivityComments v-else-if="activeTab === 'comments'" :comments="comments" :format-date="formatDate" :no-items-message="t('reactionsPage.noComments')" />
-    <ActivityDefinitions v-else-if="activeTab === 'definitions'" :definitions="definitions" :format-date="formatDate" :no-items-message="t('reactionsPage.noDefinitions')" />
-    <ActivityVotes v-else-if="activeTab === 'votes'" :votes="votes" :format-date="formatDate" :no-items-message="t('reactionsPage.noVotes')" />
+    <ActivityBookmarks
+      v-if="activeTab === 'bookmarked'"
+      :comments="bookmarks"
+      :format-date="formatDate"
+      :no-items-message="t('reactionsPage.noBookmarks')"
+    />
+    <ActivityReactions
+      v-else-if="activeTab === 'reactions'"
+      :comments="reactions"
+      :format-date="formatDate"
+      :no-items-message="t('reactionsPage.noReactions')"
+    />
+    <ActivityComments
+      v-else-if="activeTab === 'comments'"
+      :comments="comments"
+      :format-date="formatDate"
+      :no-items-message="t('reactionsPage.noComments')"
+    />
+    <ActivityDefinitions
+      v-else-if="activeTab === 'definitions'"
+      :definitions="definitions"
+      :format-date="formatDate"
+      :no-items-message="t('reactionsPage.noDefinitions')"
+    />
+    <ActivityVotes
+      v-else-if="activeTab === 'votes'"
+      :votes="votes"
+      :format-date="formatDate"
+      :no-items-message="t('reactionsPage.noVotes')"
+    />
 
     <!-- PaginationComponent -->
     <div v-if="total > perPage">
-      <PaginationComponent :current-page="currentPage" :total-pages="totalPages" :total="total" :per-page="perPage"
-        @prev="() => changePage(currentPage - 1)" @next="() => changePage(currentPage + 1)" />
+      <PaginationComponent
+        :current-page="currentPage"
+        :total-pages="totalPages"
+        :total="total"
+        :per-page="perPage"
+        @prev="() => changePage(currentPage - 1)"
+        @next="() => changePage(currentPage + 1)"
+      />
     </div>
   </div>
 </template>
@@ -28,7 +64,13 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter, useRoute } from 'vue-router'
 
-import { getBookmarks, getMyReactions, getUserComments, getUserDefinitions, getUserVotes } from '@/api'
+import {
+  getBookmarks,
+  getMyReactions,
+  getUserComments,
+  getUserDefinitions,
+  getUserVotes,
+} from '@/api'
 import ActivityBookmarks from '@/components/activity/ActivityBookmarks.vue'
 import ActivityComments from '@/components/activity/ActivityComments.vue'
 import ActivityDefinitions from '@/components/activity/ActivityDefinitions.vue'
@@ -99,7 +141,7 @@ const fetchData = async (tabKey) => {
         }
         response = await getUserComments(auth.state.username, {
           page: currentPage.value,
-          per_page: perPage.value
+          per_page: perPage.value,
         })
         comments.value = response.data.items
         break
@@ -112,14 +154,14 @@ const fetchData = async (tabKey) => {
         }
         response = await getUserDefinitions(auth.state.username, {
           page: currentPage.value,
-          per_page: perPage.value
+          per_page: perPage.value,
         })
         definitions.value = response.data.items
         break
       case 'votes':
         response = await getUserVotes({
           page: currentPage.value,
-          per_page: perPage.value
+          per_page: perPage.value,
         })
         votes.value = response.data.items
         break
@@ -163,7 +205,8 @@ const handleTabClick = async (tabKey) => {
 }
 
 // Reactive page title
-const tabs = computed(() => [ // Make tabs computed for reactivity with t()
+const tabs = computed(() => [
+  // Make tabs computed for reactivity with t()
   { key: 'bookmarked', label: t('reactionsPage.bookmarks'), icon: BookmarkCheck },
   { key: 'reactions', label: t('reactionsPage.reactions'), icon: ReactionIcon },
   { key: 'comments', label: t('reactionsPage.comments'), icon: MessageSquare },
@@ -178,22 +221,28 @@ useSeoHead({ title: pageTitle }, locale.value)
 watch(
   activeTab,
   (newTab) => {
-    pageTitle.value = `${tabs.value.find(t => t.key === newTab)?.label || t('reactionsPage.activity')}` // Use tabs.value and t()
+    pageTitle.value = `${tabs.value.find((t) => t.key === newTab)?.label || t('reactionsPage.activity')}` // Use tabs.value and t()
   },
   { immediate: true }
 )
 
 onMounted(() => {
   // Wait for auth state to settle before fetching initial data
-  watch(() => auth.state.isLoading, (loading) => {
-    if (!loading) {
-      // Determine initial tab *after* auth is loaded
-      const initialTab = route.query.tab && ['bookmarked', 'reactions', 'comments', 'definitions', 'votes'].includes(route.query.tab)
-        ? route.query.tab
-        : 'bookmarked'
-      activeTab.value = initialTab
-      fetchData(initialTab)
-    }
-  }, { immediate: true })
+  watch(
+    () => auth.state.isLoading,
+    (loading) => {
+      if (!loading) {
+        // Determine initial tab *after* auth is loaded
+        const initialTab =
+          route.query.tab &&
+          ['bookmarked', 'reactions', 'comments', 'definitions', 'votes'].includes(route.query.tab)
+            ? route.query.tab
+            : 'bookmarked'
+        activeTab.value = initialTab
+        fetchData(initialTab)
+      }
+    },
+    { immediate: true }
+  )
 })
 </script>

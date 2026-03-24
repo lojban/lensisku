@@ -11,12 +11,17 @@
             {{ collection?.name || '…' }}
           </h1>
         </div>
-        <RouterLink :to="`/collections/${numericCollectionId}`" class="btn-aqua-white shrink-0 self-start">
+        <RouterLink
+          :to="`/collections/${numericCollectionId}`"
+          class="btn-aqua-white shrink-0 self-start"
+        >
           <ArrowLeft class="w-4 h-4" />
           {{ t('collectionCustomTextBulk.backToCollection') }}
         </RouterLink>
       </div>
-      <p class="w-full text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-md px-3 py-2">
+      <p
+        class="w-full text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-md px-3 py-2"
+      >
         {{ t('collectionCustomTextBulk.disclaimer') }}
       </p>
     </div>
@@ -37,13 +42,13 @@
         </p>
 
         <!-- Desktop: table -->
-        <div class="hidden md:block overflow-x-auto border border-gray-200 rounded-lg bg-white shadow-sm">
+        <div
+          class="hidden md:block overflow-x-auto border border-gray-200 rounded-lg bg-white shadow-sm"
+        >
           <table class="min-w-full text-sm border-collapse">
             <thead>
               <tr class="bg-gray-100 border-b border-gray-200 text-left">
-                <th class="px-2 py-2 font-semibold text-gray-700 w-12 whitespace-nowrap">
-                  #
-                </th>
+                <th class="px-2 py-2 font-semibold text-gray-700 w-12 whitespace-nowrap">#</th>
                 <th class="px-2 py-2 font-semibold text-gray-700 min-w-[12rem]">
                   {{ t('collectionCustomTextBulk.colFront') }}
                 </th>
@@ -86,7 +91,8 @@
                 class="border-t-2 border-dashed border-gray-200 bg-emerald-50/40"
               >
                 <td class="px-2 py-2 align-top text-emerald-700 font-medium whitespace-nowrap">
-                  {{ t('collectionCustomTextBulk.newRowMarker') }}{{ newRows.length > 1 ? ` ${dIdx + 1}` : '' }}
+                  {{ t('collectionCustomTextBulk.newRowMarker')
+                  }}{{ newRows.length > 1 ? ` ${dIdx + 1}` : '' }}
                 </td>
                 <td class="px-2 py-2 align-top">
                   <textarea
@@ -124,7 +130,9 @@
               {{ t('collectionCustomTextBulk.cardLabel', { n: idx + 1 }) }}
             </div>
             <div>
-              <label class="block text-xs font-medium text-gray-600 mb-1">{{ t('collectionCustomTextBulk.colFront') }}</label>
+              <label class="block text-xs font-medium text-gray-600 mb-1">{{
+                t('collectionCustomTextBulk.colFront')
+              }}</label>
               <textarea
                 v-model="row.free_content_front"
                 rows="1"
@@ -133,7 +141,9 @@
               />
             </div>
             <div>
-              <label class="block text-xs font-medium text-gray-600 mb-1">{{ t('collectionCustomTextBulk.colBack') }}</label>
+              <label class="block text-xs font-medium text-gray-600 mb-1">{{
+                t('collectionCustomTextBulk.colBack')
+              }}</label>
               <textarea
                 v-model="row.free_content_back"
                 rows="1"
@@ -149,10 +159,13 @@
             class="border-2 border-dashed border-emerald-200 rounded-lg p-3 bg-emerald-50/50 space-y-2"
           >
             <div class="text-xs font-medium text-emerald-800">
-              {{ t('collectionCustomTextBulk.newRowSectionTitle') }}{{ newRows.length > 1 ? ` (${dIdx + 1})` : '' }}
+              {{ t('collectionCustomTextBulk.newRowSectionTitle')
+              }}{{ newRows.length > 1 ? ` (${dIdx + 1})` : '' }}
             </div>
             <div>
-              <label class="block text-xs font-medium text-gray-600 mb-1">{{ t('collectionCustomTextBulk.colFront') }}</label>
+              <label class="block text-xs font-medium text-gray-600 mb-1">{{
+                t('collectionCustomTextBulk.colFront')
+              }}</label>
               <textarea
                 v-model="draft.free_content_front"
                 rows="1"
@@ -162,7 +175,9 @@
               />
             </div>
             <div>
-              <label class="block text-xs font-medium text-gray-600 mb-1">{{ t('collectionCustomTextBulk.colBack') }}</label>
+              <label class="block text-xs font-medium text-gray-600 mb-1">{{
+                t('collectionCustomTextBulk.colBack')
+              }}</label>
               <textarea
                 v-model="draft.free_content_back"
                 rows="1"
@@ -181,12 +196,7 @@
       v-if="isOwner && !isLoading"
       class="fixed bottom-0 left-0 right-0 md:static md:mt-6 p-4 bg-white/95 md:bg-transparent border-t md:border-t-0 border-gray-200 backdrop-blur-sm z-20 flex justify-end gap-3 safe-area-pb"
     >
-      <button
-        type="button"
-        class="btn-cancel"
-        :disabled="isSaving || !isDirty"
-        @click="resetRows"
-      >
+      <button type="button" class="btn-cancel" :disabled="isSaving || !isDirty" @click="resetRows">
         {{ t('collectionCustomTextBulk.revert') }}
       </button>
       <button
@@ -200,7 +210,9 @@
           <Loader2 v-if="isSaving" class="h-5 w-5 animate-spin" />
           <Save v-else class="h-5 w-5" />
         </span>
-        {{ isSaving ? t('collectionCustomTextBulk.saving') : t('collectionCustomTextBulk.saveAll') }}
+        {{
+          isSaving ? t('collectionCustomTextBulk.saving') : t('collectionCustomTextBulk.saveAll')
+        }}
       </button>
     </div>
   </div>
@@ -257,15 +269,10 @@ const newRows = ref([createEmptyDraft()])
 const snapshotJson = ref('')
 const isSaving = ref(false)
 
-const isOwner = computed(
-  () => collection.value?.owner?.username === auth.state.username,
-)
+const isOwner = computed(() => collection.value?.owner?.username === auth.state.username)
 
 const hasNewRowContent = computed(() =>
-  newRows.value.some(
-    (r) =>
-      r.free_content_front.trim() !== '' || r.free_content_back.trim() !== '',
-  ),
+  newRows.value.some((r) => r.free_content_front.trim() !== '' || r.free_content_back.trim() !== '')
 )
 
 /** When the last draft row gets any text, append another empty draft so the user can keep adding. */
@@ -276,8 +283,7 @@ function ensureTrailingEmptyDraft() {
     return
   }
   const last = list[list.length - 1]
-  const lastIsEmpty
-    = !last.free_content_front.trim() && !last.free_content_back.trim()
+  const lastIsEmpty = !last.free_content_front.trim() && !last.free_content_back.trim()
   if (!lastIsEmpty) {
     newRows.value = [...list, createEmptyDraft()]
   }
@@ -290,12 +296,12 @@ function fitTextareaHeight(el) {
   if (!(el instanceof HTMLTextAreaElement)) return
   el.style.height = 'auto'
   const cs = getComputedStyle(el)
-  const maxPx
-    = cs.maxHeight && cs.maxHeight !== 'none' && !Number.isNaN(parseFloat(cs.maxHeight))
+  const maxPx =
+    cs.maxHeight && cs.maxHeight !== 'none' && !Number.isNaN(parseFloat(cs.maxHeight))
       ? parseFloat(cs.maxHeight)
       : 160
-  const minPx
-    = cs.minHeight && cs.minHeight !== '0px' && !Number.isNaN(parseFloat(cs.minHeight))
+  const minPx =
+    cs.minHeight && cs.minHeight !== '0px' && !Number.isNaN(parseFloat(cs.minHeight))
       ? parseFloat(cs.minHeight)
       : 44
   // scrollHeight can be too small before layout; never below one comfortable line + padding
@@ -324,13 +330,11 @@ watch(
     await nextTick()
     refitAllBulkTextareas()
   },
-  { deep: true },
+  { deep: true }
 )
 
 const isDirty = computed(() => {
-  const rowsChanged
-    = snapshotJson.value !== ''
-      && JSON.stringify(rows.value) !== snapshotJson.value
+  const rowsChanged = snapshotJson.value !== '' && JSON.stringify(rows.value) !== snapshotJson.value
   return rowsChanged || hasNewRowContent.value
 })
 
@@ -359,10 +363,7 @@ async function load(silent = false) {
 
     const isPublic = collection.value?.is_public
     const ownerName = collection.value?.owner?.username
-    if (
-      !isPublic
-      && (!auth.state.isLoggedIn || ownerName !== auth.state.username)
-    ) {
+    if (!isPublic && (!auth.state.isLoggedIn || ownerName !== auth.state.username)) {
       router.push('/collections')
       return
     }
@@ -396,8 +397,7 @@ async function saveAll() {
   if (!isDirty.value || isSaving.value) return
 
   const draftsToAdd = newRows.value.filter(
-    (r) =>
-      r.free_content_front.trim() !== '' || r.free_content_back.trim() !== '',
+    (r) => r.free_content_front.trim() !== '' || r.free_content_back.trim() !== ''
   )
 
   isSaving.value = true
@@ -425,7 +425,7 @@ async function saveAll() {
     showSuccess(
       t('collectionCustomTextBulk.saveSuccess', {
         count: updatedCount,
-      }),
+      })
     )
 
     await load(true)
@@ -440,13 +440,10 @@ onMounted(load)
 
 watch(
   () => props.collectionId,
-  () => load(),
+  () => load()
 )
 
-useSeoHead(
-  { title: computed(() => t('collectionCustomTextBulk.documentTitle')) },
-  locale.value,
-)
+useSeoHead({ title: computed(() => t('collectionCustomTextBulk.documentTitle')) }, locale.value)
 </script>
 
 <style scoped>

@@ -8,11 +8,11 @@ const { t } = useI18n()
 defineProps({
   modelValue: {
     type: String,
-    default: ''
+    default: '',
   },
   isLoading: {
     type: Boolean,
-    default: false
+    default: false,
   },
   placeholder: {
     type: String,
@@ -20,8 +20,8 @@ defineProps({
   },
   showSearchIcon: {
     type: Boolean,
-    default: false
-  }
+    default: false,
+  },
 })
 
 defineEmits(['update:modelValue', 'clear'])
@@ -41,10 +41,10 @@ defineEmits(['update:modelValue', 'clear'])
       class="input-field w-full min-w-[200px] transition-colors"
       :class="{
         'pl-10': showSearchIcon,
-        'pr-10': modelValue.length > 0
+        'pr-10': modelValue.length > 0,
       }"
       @input="$emit('update:modelValue', normalizeSearchQuery($event.target.value))"
-    >
+    />
     <div class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
       <Loader2
         v-if="isLoading"

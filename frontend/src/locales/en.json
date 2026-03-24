@@ -82,8 +82,8 @@
     "searchTitle": "Search: {query}",
     "defaultTitle": "Home",
     "metaDescription": "Search the Lojban dictionary and corpus. Find definitions, examples, and discussions.",
-"searchMetaDescription": "Search results for \"{query}\" in the Lojban dictionary.",
-      "addDefinition": "Definition",
+    "searchMetaDescription": "Search results for \"{query}\" in the Lojban dictionary.",
+    "addDefinition": "Definition",
     "newFreeThread": "Start free wave",
     "noCommentsFound": "No comments found matching your search",
     "waveSourceMail": "Mail"
@@ -1028,7 +1028,8 @@
       "errorTooLarge": "Comment is too large (max 5MB)."
     },
     "error": {
-      "failedToCopy": "Failed to copy to clipboard"
+      "failedToCopy": "Failed to copy to clipboard",
+      "copiedToClipboard": "Copied to clipboard!"
     },
     "commentItem": {
       "showParent": "Show parent",
@@ -1038,6 +1039,7 @@
       "deleteConfirmMessage": "Are you sure you want to delete this comment? This action cannot be undone.",
       "deleteSuccess": "Comment deleted successfully",
       "deleteFailed": "Failed to delete comment",
+      "reactionLimitError": "Could not add reaction (limit reached).",
       "customEmojiPlaceholder": "Type custom emoji...",
       "reactions": {
         "facepalm": "Facepalm",

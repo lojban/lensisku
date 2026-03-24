@@ -1029,7 +1029,8 @@
       "errorTooLarge": "lo nuzba cu mutce lo ka barda (memmau li 5 megbaitni)."
     },
     "error": {
-      "failedToCopy": "fliba lo nu fukpi"
+      "failedToCopy": "fliba lo nu fukpi",
+      "copiedToClipboard": "fukpi fi lo fukpyter"
     },
     "commentItem": {
       "showParent": "viska lo rirni",
@@ -1039,6 +1040,7 @@
       "deleteConfirmMessage": "xu do birti lo nu vimcu lo nuzba be ti? .i lo nu zukte ti na ku ka'e di'a zasti.",
       "deleteSuccess": "snada lo nu vimcu lo nuzba",
       "deleteFailed": "fliba lo nu vimcu lo nuzba",
+      "reactionLimitError": "fliba lo nu jmina lo cinmo (mutce lo kamnil)",
       "customEmojiPlaceholder": "ko ciska lo cinmo...",
       "reactions": {
         "facepalm": "fliba",

@@ -1,5 +1,10 @@
 <template>
-  <TabbedPageHeader :tabs="tabs" :active-tab="activeTab" :page-title="pageTitle" @tab-click="handleTabClick" />
+  <TabbedPageHeader
+    :tabs="tabs"
+    :active-tab="activeTab"
+    :page-title="pageTitle"
+    @tab-click="handleTabClick"
+  />
 
   <!-- Loading State with Skeleton -->
   <div v-if="isLoading" class="space-y-4">
@@ -8,25 +13,45 @@
 
   <!-- Content -->
   <div v-if="!error" class="space-y-4">
-    <ActivityChanges v-if="activeTab === 'changes'" :grouped-changes="groupedChanges"
-      :format-date="formatDate" />
+    <ActivityChanges
+      v-if="activeTab === 'changes'"
+      :grouped-changes="groupedChanges"
+      :format-date="formatDate"
+    />
 
-    <ActivityThreads v-if="activeTab === 'threads'" :threads="threads" :format-date-for-thread="formatDateForThread"
-      :format-time="formatTime" />
+    <ActivityThreads
+      v-if="activeTab === 'threads'"
+      :threads="threads"
+      :format-date-for-thread="formatDateForThread"
+      :format-time="formatTime"
+    />
 
-    <ActivityComments v-if="activeTab === 'all_comments'" :comments="allComments" :format-date="formatDateForThread" />
+    <ActivityComments
+      v-if="activeTab === 'all_comments'"
+      :comments="allComments"
+      :format-date="formatDateForThread"
+    />
 
-    <ActivityDefinitions v-if="activeTab === 'all_definitions'" :definitions="allDefinitions"
-      :format-date="formatDateForThread" />
+    <ActivityDefinitions
+      v-if="activeTab === 'all_definitions'"
+      :definitions="allDefinitions"
+      :format-date="formatDateForThread"
+    />
 
     <PaginationComponent
-      v-if="(activeTab === 'changes' && (currentPage > 1 || nextCursor)) || (['threads', 'all_comments', 'all_definitions'].includes(activeTab) && totalPages > 1)"
+      v-if="
+        (activeTab === 'changes' && (currentPage > 1 || nextCursor)) ||
+        (['threads', 'all_comments', 'all_definitions'].includes(activeTab) && totalPages > 1)
+      "
       :current-page="currentPage"
-      :total-pages="activeTab === 'changes' ? (nextCursor ? currentPage + 1 : currentPage) : totalPages"
+      :total-pages="
+        activeTab === 'changes' ? (nextCursor ? currentPage + 1 : currentPage) : totalPages
+      "
       :total="activeTab === 'changes' ? 0 : totalItems"
       :per-page="perPage"
       @prev="changePage(currentPage - 1)"
-      @next="changePage(currentPage + 1)" />
+      @next="changePage(currentPage + 1)"
+    />
   </div>
 </template>
 
@@ -83,10 +108,10 @@ const { error, showError, clearError } = useError()
 
 // Active tab state
 const getInitialTab = () => {
-  if (typeof window === 'undefined') return 'changes';
+  if (typeof window === 'undefined') return 'changes'
   const storedTab = localStorage.getItem(STORAGE_KEY_TAB)
   const queryTab = route.query.tab
-  const validTabs = tabs.value.map(t => t.key) // Use tabs.value here
+  const validTabs = tabs.value.map((t) => t.key) // Use tabs.value here
   if (queryTab && validTabs.includes(queryTab)) return queryTab
   if (storedTab && validTabs.includes(storedTab)) return storedTab
   return 'changes'
@@ -96,7 +121,9 @@ const activeTab = ref(getInitialTab())
 // Pagination: update URL; route watcher will sync currentPage and fetch
 const changePage = (newPage) => {
   if (activeTab.value === 'changes') {
-    const canGo = newPage >= 1 && (newPage <= currentPage.value || nextCursor.value || cursors.value[newPage - 1])
+    const canGo =
+      newPage >= 1 &&
+      (newPage <= currentPage.value || nextCursor.value || cursors.value[newPage - 1])
     if (canGo) router.replace({ query: { ...route.query, page: newPage } })
   } else if (newPage >= 1 && newPage <= totalPages.value) {
     router.replace({ query: { ...route.query, page: newPage } })
@@ -107,7 +134,7 @@ const changePage = (newPage) => {
 const fetchData = async (tabKey) => {
   isLoading.value = true
   clearError()
-  
+
   // Abort any previous request
   if (abortController) {
     abortController.abort()
@@ -168,8 +195,16 @@ const fetchData = async (tabKey) => {
             }
             item.time = item.last_activity_time
             item.content = parseContent(item.first_comment_content)
-            item.simple_content = item.simple_content ?? (item.content?.filter(p => p.type === 'text').map(p => p.data).join(' ') || '')
-            item.first_comment_content = Array.isArray(item.first_comment_content) ? item.first_comment_content : parseContent(item.first_comment_content)
+            item.simple_content =
+              item.simple_content ??
+              (item.content
+                ?.filter((p) => p.type === 'text')
+                .map((p) => p.data)
+                .join(' ') ||
+                '')
+            item.first_comment_content = Array.isArray(item.first_comment_content)
+              ? item.first_comment_content
+              : parseContent(item.first_comment_content)
             item.total_replies = item.total_replies ?? 0
           }
         })
@@ -204,23 +239,31 @@ const fetchData = async (tabKey) => {
     }
     totalPages.value = Math.ceil(totalItems.value / perPage.value)
   } catch (e) {
-    if (e.name !== 'AbortError') { // Ignore aborted requests
+    if (e.name !== 'AbortError') {
+      // Ignore aborted requests
       const data = e.response?.data
       const msg = data?.detail ?? data?.error ?? `Failed to load ${tabKey}`
       showError(msg)
       // Reset relevant data on error
-      switch(tabKey) {
-        case 'changes': changes.value = []; break
-        case 'threads': threads.value = []; break
-        case 'all_comments': allComments.value = []; break
-        case 'all_definitions': allDefinitions.value = []; break
+      switch (tabKey) {
+        case 'changes':
+          changes.value = []
+          break
+        case 'threads':
+          threads.value = []
+          break
+        case 'all_comments':
+          allComments.value = []
+          break
+        case 'all_definitions':
+          allDefinitions.value = []
+          break
       }
     }
   } finally {
     isLoading.value = false
   }
 }
-
 
 const isInitializing = ref(true)
 
@@ -307,7 +350,7 @@ const formatDateForThread = (timestamp) =>
 
 // Reactive page title
 const pageTitle = computed(() => {
-  const currentTab = tabs.value.find(t => t.key === activeTab.value)
+  const currentTab = tabs.value.find((t) => t.key === activeTab.value)
   return currentTab ? currentTab.label : t('recentChanges.activityTitle')
 })
 useSeoHead({ title: pageTitle }, locale.value)
@@ -321,7 +364,10 @@ watch(
   async (newQuery) => {
     if (typeof window === 'undefined' || isHandlingRouteChange.value) return
 
-    const newTab = newQuery.tab && tabs.value.map(t => t.key).includes(newQuery.tab) ? newQuery.tab : getInitialTab()
+    const newTab =
+      newQuery.tab && tabs.value.map((t) => t.key).includes(newQuery.tab)
+        ? newQuery.tab
+        : getInitialTab()
     const newPage = parseInt(newQuery.page) || 1
 
     let needsFetch = false
@@ -349,6 +395,4 @@ watch(
   },
   { deep: true, immediate: true }
 )
-
-
 </script>

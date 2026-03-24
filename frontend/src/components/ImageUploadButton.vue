@@ -2,25 +2,40 @@
   <div class="image-upload flex flex-col items-center gap-4">
     <!-- Current Image Preview -->
     <div class="relative w-32 h-32">
-      <img v-if="displayImage" :src="displayImage" :alt="`${username}'s profile picture`"
-        class="w-32 h-32 rounded-full object-cover border-4 border-white shadow-lg">
-      <div v-else
-        class="w-32 h-32 rounded-full bg-gray-200 flex items-center justify-center text-gray-400 border-4 border-white shadow-lg">
+      <img
+        v-if="displayImage"
+        :src="displayImage"
+        :alt="`${username}'s profile picture`"
+        class="w-32 h-32 rounded-full object-cover border-4 border-white shadow-lg"
+      />
+      <div
+        v-else
+        class="w-32 h-32 rounded-full bg-gray-200 flex items-center justify-center text-gray-400 border-4 border-white shadow-lg"
+      >
         <User class="h-16 w-16" />
       </div>
 
       <!-- Upload Progress Overlay -->
-      <div v-if="isUploading"
-        class="absolute inset-0 rounded-full bg-black bg-opacity-50 flex items-center justify-center">
+      <div
+        v-if="isUploading"
+        class="absolute inset-0 rounded-full bg-black bg-opacity-50 flex items-center justify-center"
+      >
         <div class="text-center">
           <div class="relative w-16 h-16 mx-auto">
             <!-- Circular Progress -->
             <svg class="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
               <circle cx="50" cy="50" r="45" fill="none" stroke="#4B5563" stroke-width="8" />
-              <circle cx="50" cy="50" r="45" fill="none" stroke="#3B82F6" stroke-width="8"
+              <circle
+                cx="50"
+                cy="50"
+                r="45"
+                fill="none"
+                stroke="#3B82F6"
+                stroke-width="8"
                 :stroke-dasharray="circumference"
                 :stroke-dashoffset="circumference - (uploadProgress / 100) * circumference"
-                class="transition-all duration-300" />
+                class="transition-all duration-300"
+              />
             </svg>
             <!-- Percentage Text -->
             <div class="absolute inset-0 flex items-center justify-center">
@@ -34,7 +49,7 @@
     <!-- Upload/Remove Controls -->
     <div class="flex gap-2">
       <label v-if="!isUploading" class="btn-update cursor-pointer">
-        <input type="file" class="hidden" accept="image/*" @change="handleFileChange">
+        <input type="file" class="hidden" accept="image/*" @change="handleFileChange" />
         <Upload class="h-4 w-4 mr-1.5" />
         {{ hasImage ? t('filters.changePhoto') : t('filters.uploadPhoto') }}
       </label>
@@ -48,13 +63,13 @@
 </template>
 
 <script setup>
-import { User, Upload, Trash2 } from 'lucide-vue-next';
-import { ref, computed, watch } from 'vue';
-import { useI18n } from 'vue-i18n';
+import { User, Upload, Trash2 } from 'lucide-vue-next'
+import { ref, computed, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 
-import { useError } from '@/composables/useError';
+import { useError } from '@/composables/useError'
 
-const { t } = useI18n();
+const { t } = useI18n()
 
 const { showError, clearError } = useError()
 const props = defineProps({
@@ -96,14 +111,14 @@ const handleFileChange = async (event) => {
 
   // Validate file
   if (!file.type.startsWith('image/')) {
-    showError(t('components.imageUploadButton.invalidType'));
-    return;
+    showError(t('components.imageUploadButton.invalidType'))
+    return
   }
 
   if (file.size > 5 * 1024 * 1024) {
     // 5MB limit
-    showError(t('components.imageUploadButton.tooLarge'));
-    return;
+    showError(t('components.imageUploadButton.tooLarge'))
+    return
   }
 
   try {
@@ -138,27 +153,27 @@ const handleFileChange = async (event) => {
         // Complete the progress bar
         uploadProgress.value = 100
         setTimeout(() => {
-          isUploading.value = false;
-          uploadProgress.value = 0;
-        }, 500);
+          isUploading.value = false
+          uploadProgress.value = 0
+        }, 500)
       } catch (err) {
-        showError(t('components.imageUploadButton.processError'));
-        isUploading.value = false;
-        uploadProgress.value = 0;
+        showError(t('components.imageUploadButton.processError'))
+        isUploading.value = false
+        uploadProgress.value = 0
       }
-    };
+    }
 
     reader.onerror = () => {
-      showError(t('components.imageUploadButton.readError'));
-      isUploading.value = false;
-      uploadProgress.value = 0;
-    };
+      showError(t('components.imageUploadButton.readError'))
+      isUploading.value = false
+      uploadProgress.value = 0
+    }
 
-    reader.readAsDataURL(file);
+    reader.readAsDataURL(file)
   } catch (err) {
-    showError(t('components.imageUploadButton.uploadError'));
-    isUploading.value = false;
-    uploadProgress.value = 0;
+    showError(t('components.imageUploadButton.uploadError'))
+    isUploading.value = false
+    uploadProgress.value = 0
   }
 }
 

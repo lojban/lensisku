@@ -4,8 +4,12 @@
       <label for="definition" class="block text-sm font-medium text-blue-700">
         {{ label || t('imageUpload.image') }}
       </label>
-      <button v-if="modelValue || loadedImage" type="button" class="text-sm text-red-600 hover:text-red-700"
-        @click="handleRemove">
+      <button
+        v-if="modelValue || loadedImage"
+        type="button"
+        class="text-sm text-red-600 hover:text-red-700"
+        @click="handleRemove"
+      >
         {{ t('imageUpload.removeImage') }}
       </button>
       <span v-else-if="note" class="text-xs text-gray-500">
@@ -16,23 +20,36 @@
     <!-- Image Preview -->
     <div v-if="modelValue || loadedImage" class="relative flex justify-center">
       <img
-        :src="modelValue?.dataUri || (modelValue ? `data:${modelValue.mime_type};base64,${modelValue.data}` : previewUrl)"
-        alt="Preview" class="max-h-64 rounded-lg object-contain bg-gray-100">
-      <div class="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-10 transition-opacity rounded-lg" />
+        :src="
+          modelValue?.dataUri ||
+          (modelValue ? `data:${modelValue.mime_type};base64,${modelValue.data}` : previewUrl)
+        "
+        alt="Preview"
+        class="max-h-64 rounded-lg object-contain bg-gray-100"
+      />
+      <div
+        class="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-10 transition-opacity rounded-lg"
+      />
     </div>
 
     <!-- Upload Button -->
-    <div v-if="!modelValue && !loadedImage" ref="dropZoneRef"
-      class="flex justify-center px-6 pt-5 pb-6 border-2 border-dashed rounded-lg transition-colors" :class="{
+    <div
+      v-if="!modelValue && !loadedImage"
+      ref="dropZoneRef"
+      class="flex justify-center px-6 pt-5 pb-6 border-2 border-dashed rounded-lg transition-colors"
+      :class="{
         'border-blue-400 bg-blue-50': isOverDropZone,
         'border-gray-300': !isOverDropZone,
-      }">
+      }"
+    >
       <div class="space-y-1 text-center">
         <ImagePlus class="mx-auto h-12 w-12 text-gray-300" :stroke-width="1" />
         <div class="flex text-sm text-gray-600">
-          <label class="relative cursor-pointer rounded-md font-medium text-blue-600 hover:text-blue-500">
+          <label
+            class="relative cursor-pointer rounded-md font-medium text-blue-600 hover:text-blue-500"
+          >
             <span>{{ t('imageUpload.uploadPrompt') }}</span>
-            <input type="file" class="sr-only" accept="image/*" @change="handleFileSelect">
+            <input type="file" class="sr-only" accept="image/*" @change="handleFileSelect" />
           </label>
           <p class="pl-1">
             {{ t('imageUpload.dragDrop') }}

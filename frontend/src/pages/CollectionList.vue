@@ -1,26 +1,38 @@
 <template>
   <!-- Streak Stats (card-base per brandbook). Min-height reserves space so skeleton and content have equal bounding rect (no CLS). -->
-  <div v-if="auth.state.isLoggedIn" class="card-base card-compact mb-4 p-4 sm:p-5 min-h-[7.6875rem]">
+  <div
+    v-if="auth.state.isLoggedIn"
+    class="card-base card-compact mb-4 p-4 sm:p-5 min-h-[7.6875rem]"
+  >
     <template v-if="!isLoadingStreak && streakData">
       <div class="flex items-center justify-between mb-2">
         <h3 class="text-base font-semibold text-gray-800">
           {{ t('collectionList.studyStreak') }}
         </h3>
         <div class="card-meta">
-          {{ t('collectionList.currentStreak') }}: <span class="font-semibold text-gray-700">{{ t('collectionList.days', {
-            count:
-              streakData.current_streak
-          }) }}</span>
+          {{ t('collectionList.currentStreak') }}:
+          <span class="font-semibold text-gray-700">{{
+            t('collectionList.days', {
+              count: streakData.current_streak,
+            })
+          }}</span>
         </div>
       </div>
       <div class="grid grid-cols-7 gap-1.5">
-        <div v-for="day in streakData.daily_progress.slice(0, 7).reverse()" :key="day.date"
-          class="flex flex-col items-center">
+        <div
+          v-for="day in streakData.daily_progress.slice(0, 7).reverse()"
+          :key="day.date"
+          class="flex flex-col items-center"
+        >
           <div class="card-meta-date text-[10px] leading-tight">
             {{ new Date(day.date).toLocaleDateString(locale, { weekday: 'short' }) }}
           </div>
-          <div class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium"
-            :class="day.reviews_count > 0 ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-400'">
+          <div
+            class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium"
+            :class="
+              day.reviews_count > 0 ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-400'
+            "
+          >
             {{ day.reviews_count }}
           </div>
           <div class="card-meta-date text-[10px] leading-tight">
@@ -51,10 +63,20 @@
   <!-- Header -->
   <div class="flex flex-row flex-wrap justify-between items-center gap-2 mb-4">
     <h2 class="text-xl sm:text-2xl font-bold text-gray-800">
-      {{ viewMode !== 'my' ? t('collectionList.publicCollections') : t('collectionList.myCollections') }}
+      {{
+        viewMode !== 'my'
+          ? t('collectionList.publicCollections')
+          : t('collectionList.myCollections')
+      }}
     </h2>
     <div class="flex flex-row justify-end flex-grow gap-2">
-      <input ref="importFileInput" type="file" accept=".json" class="hidden" @change="handleImportFile">
+      <input
+        ref="importFileInput"
+        type="file"
+        accept=".json"
+        class="hidden"
+        @change="handleImportFile"
+      />
       <div v-if="auth.state.isLoggedIn" class="flex flex-row gap-2 items-center">
         <!-- When in 'my' mode: show an IconButton to switch back to public view -->
         <IconButton
@@ -106,14 +128,20 @@
         type="text"
         class="input-field flex-1 min-w-0 max-w-md"
         :placeholder="t('collectionList.searchPlaceholder')"
+      />
+      <label
+        class="inline-flex items-center gap-2 text-sm font-medium text-gray-700 select-none cursor-pointer"
       >
-      <label class="inline-flex items-center gap-2 text-sm font-medium text-gray-700 select-none cursor-pointer">
-        <input v-model="hasFlashcardsOnly" type="checkbox" class="checkbox-toggle">
+        <input v-model="hasFlashcardsOnly" type="checkbox" class="checkbox-toggle" />
         <span>{{ t('collectionList.onlyWithFlashcards') }}</span>
       </label>
     </div>
     <div class="flex flex-row items-center gap-2 sm:block">
-      <div class="btn-group-forced flex flex-nowrap justify-center min-w-0 overflow-x-auto sm:overflow-visible" role="group" aria-label="Sort order">
+      <div
+        class="btn-group-forced flex flex-nowrap justify-center min-w-0 overflow-x-auto sm:overflow-visible"
+        role="group"
+        aria-label="Sort order"
+      >
         <button
           v-for="opt in sortOptions"
           :key="opt.value"
@@ -128,7 +156,9 @@
           <span class="hidden sm:inline">{{ opt.label }}</span>
         </button>
       </div>
-      <span class="sm:hidden text-sm font-medium text-gray-700 shrink-0" aria-live="polite">{{ selectedSortLabel }}</span>
+      <span class="sm:hidden text-sm font-medium text-gray-700 shrink-0" aria-live="polite">{{
+        selectedSortLabel
+      }}</span>
     </div>
   </div>
 
@@ -140,9 +170,13 @@
   <!-- Collections Card Grid -->
   <div v-else class="collections-section">
     <p class="text-slate-600 text-sm mb-6 max-w-2xl">
-      <template v-if="auth.state.isLoggedIn">{{ t('collectionList.collectionDescription') }}</template>
+      <template v-if="auth.state.isLoggedIn">{{
+        t('collectionList.collectionDescription')
+      }}</template>
       <i18n-t v-else keypath="collectionList.collectionDescriptionLoggedOut" tag="span">
-        <RouterLink to="/login" class="text-blue-600 hover:text-blue-800 underline font-medium">{{ t('collectionList.loginTo') }}</RouterLink>
+        <RouterLink to="/login" class="text-blue-600 hover:text-blue-800 underline font-medium">{{
+          t('collectionList.loginTo')
+        }}</RouterLink>
       </i18n-t>
     </p>
     <div class="collections-grid">
@@ -176,18 +210,25 @@
   </div>
 
   <!-- Empty State -->
-  <div v-if="!isLoading && collections.length === 0"
-    class="flex flex-col items-center justify-center text-center py-12 bg-gray-50 rounded-lg border border-blue-100">
-    <button v-if="viewMode === 'my' && auth.state.isLoggedIn" class="mt-4 btn-aqua-emerald"
-      @click="showCreateModal = true">
+  <div
+    v-if="!isLoading && collections.length === 0"
+    class="flex flex-col items-center justify-center text-center py-12 bg-gray-50 rounded-lg border border-blue-100"
+  >
+    <button
+      v-if="viewMode === 'my' && auth.state.isLoggedIn"
+      class="mt-4 btn-aqua-emerald"
+      @click="showCreateModal = true"
+    >
       <CirclePlus class="h-4 w-4" />
       <span>{{ t('collectionList.createFirstCollection') }}</span>
     </button>
   </div>
 
   <!-- Create Collection ModalComponent -->
-  <div v-if="showCreateModal"
-    class="z-[1000] fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
+  <div
+    v-if="showCreateModal"
+    class="z-[1000] fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4"
+  >
     <div class="bg-white rounded-lg max-w-md w-full p-6">
       <h3 class="text-lg font-semibold mb-4">
         {{ t('collectionList.createModalTitle') }}
@@ -195,16 +236,24 @@
       <form @submit.prevent="performCreateCollection">
         <div class="space-y-4">
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('collectionList.nameLabel') }}</label>
-            <input v-model="newCollection.name" type="text" required class="w-full input-field">
+            <label class="block text-sm font-medium text-gray-700 mb-1">{{
+              t('collectionList.nameLabel')
+            }}</label>
+            <input v-model="newCollection.name" type="text" required class="w-full input-field" />
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('collectionList.descriptionLabel')
+            <label class="block text-sm font-medium text-gray-700 mb-1">{{
+              t('collectionList.descriptionLabel')
             }}</label>
             <textarea v-model="newCollection.description" rows="3" class="textarea-field" />
           </div>
           <div class="flex items-center gap-2">
-            <input id="is_public" v-model="newCollection.is_public" type="checkbox" class="checkbox-toggle">
+            <input
+              id="is_public"
+              v-model="newCollection.is_public"
+              type="checkbox"
+              class="checkbox-toggle"
+            />
             <label for="is_public" class="text-sm text-gray-700">
               {{ t('collectionList.makePublicLabel') }}
             </label>
@@ -216,7 +265,9 @@
             {{ t('collectionList.cancelButton') }}
           </button>
           <button type="submit" :disabled="isSubmitting" class="btn-create">
-            {{ isSubmitting ? t('collectionList.creatingButton') : t('collectionList.createButton') }}
+            {{
+              isSubmitting ? t('collectionList.creatingButton') : t('collectionList.createButton')
+            }}
           </button>
         </div>
       </form>
@@ -225,10 +276,19 @@
 </template>
 
 <script setup>
-import { CirclePlus, Import, BookOpen, ArrowBigRight, CalendarDays, Calendar, Trophy, ArrowDown } from 'lucide-vue-next';
-import { ref, computed, onBeforeUnmount, onMounted, watch } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
-import { useI18n } from 'vue-i18n';
+import {
+  CirclePlus,
+  Import,
+  BookOpen,
+  ArrowBigRight,
+  CalendarDays,
+  Calendar,
+  Trophy,
+  ArrowDown,
+} from 'lucide-vue-next'
+import { ref, computed, onBeforeUnmount, onMounted, watch } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 
 import {
   getCollections,
@@ -257,7 +317,9 @@ const { t, locale } = useI18n()
 const initialView = () => {
   const fromUrl = validView(route.query[VIEW_PARAM])
   if (fromUrl && (fromUrl === 'public' || auth.state.isLoggedIn)) return fromUrl
-  const fromStorage = validView(typeof localStorage !== 'undefined' ? localStorage.getItem(VIEW_STORAGE_KEY) : null)
+  const fromStorage = validView(
+    typeof localStorage !== 'undefined' ? localStorage.getItem(VIEW_STORAGE_KEY) : null
+  )
   if (fromStorage != null && (fromStorage === 'public' || auth.state.isLoggedIn)) return fromStorage
   return auth.state.isLoggedIn ? 'my' : 'public'
 }
@@ -282,21 +344,28 @@ let searchDebounceTimer = null
 const totalPages = computed(() => Math.max(1, Math.ceil(totalCollections.value / perPage.value)))
 
 const sortOptions = computed(() => [
-  { value: 'active_week',  label: t('collectionList.sortActiveWeek'), icon: CalendarDays },
+  { value: 'active_week', label: t('collectionList.sortActiveWeek'), icon: CalendarDays },
   { value: 'active_month', label: t('collectionList.sortActiveMonth'), icon: Calendar },
-  { value: 'active_all',   label: t('collectionList.sortActiveAll'), icon: Trophy },
-  { value: 'newest',       label: t('collectionList.sortNewest'), icon: ArrowDown },
+  { value: 'active_all', label: t('collectionList.sortActiveAll'), icon: Trophy },
+  { value: 'newest', label: t('collectionList.sortNewest'), icon: ArrowDown },
 ])
 
-const selectedSortLabel = computed(() => sortOptions.value.find(o => o.value === sortBy.value)?.label ?? '')
+const selectedSortLabel = computed(
+  () => sortOptions.value.find((o) => o.value === sortBy.value)?.label ?? ''
+)
 
-const newCollection = ref({
-  name: '',
-  description: '',
-  is_public: true,
-}, locale.value)
+const newCollection = ref(
+  {
+    name: '',
+    description: '',
+    is_public: true,
+  },
+  locale.value
+)
 
-const pageTitle = ref(t(viewMode.value === 'my' ? "collectionList.myCollections": "collectionList.publicCollections"))
+const pageTitle = ref(
+  t(viewMode.value === 'my' ? 'collectionList.myCollections' : 'collectionList.publicCollections')
+)
 useSeoHead({ title: pageTitle, locale: locale.value })
 
 const fetchStreakData = async () => {
@@ -454,15 +523,27 @@ function setViewMode(mode) {
 }
 
 // Persist viewMode to localStorage whenever it changes
-watch(viewMode, (val) => {
-  if (typeof localStorage !== 'undefined') localStorage.setItem(VIEW_STORAGE_KEY, val)
-}, { immediate: true })
+watch(
+  viewMode,
+  (val) => {
+    if (typeof localStorage !== 'undefined') localStorage.setItem(VIEW_STORAGE_KEY, val)
+  },
+  { immediate: true }
+)
 
 // Sync viewMode from URL when route query changes (e.g. back/forward)
-watch(() => route.query[VIEW_PARAM], (qView) => {
-  const next = validView(qView) && (qView === 'public' || auth.state.isLoggedIn) ? qView : (auth.state.isLoggedIn ? 'my' : 'public')
-  if (viewMode.value !== next) viewMode.value = next
-})
+watch(
+  () => route.query[VIEW_PARAM],
+  (qView) => {
+    const next =
+      validView(qView) && (qView === 'public' || auth.state.isLoggedIn)
+        ? qView
+        : auth.state.isLoggedIn
+          ? 'my'
+          : 'public'
+    if (viewMode.value !== next) viewMode.value = next
+  }
+)
 
 // Watch for view mode or sort changes (and auth so streak loads when auth resolves after mount)
 watch([viewMode, sortBy, hasFlashcardsOnly, () => auth.state.isLoggedIn], () => {
@@ -485,7 +566,9 @@ watch(searchQuery, () => {
 
 // Update title when view mode changes
 watch(viewMode, (newMode) => {
-  pageTitle.value = t(newMode === 'my' ? "collectionList.myCollections": "collectionList.publicCollections")
+  pageTitle.value = t(
+    newMode === 'my' ? 'collectionList.myCollections' : 'collectionList.publicCollections'
+  )
 })
 
 onMounted(() => {

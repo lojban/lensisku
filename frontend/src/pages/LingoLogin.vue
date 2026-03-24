@@ -1,5 +1,7 @@
 <template>
-  <div class="lingo-auth flex min-h-screen flex-col items-center justify-center bg-slate-100 px-4 py-8">
+  <div
+    class="lingo-auth flex min-h-screen flex-col items-center justify-center bg-slate-100 px-4 py-8"
+  >
     <RouterLink to="/lingo/courses" class="mb-6 flex items-center gap-x-3">
       <GraduationCap class="h-12 w-12 text-green-600" />
       <h1 class="text-2xl font-extrabold tracking-wide text-green-600">{{ t('lingo.appName') }}</h1>
@@ -27,11 +29,7 @@
         :disabled="isLoading"
       />
       <p v-if="error" class="text-sm text-red-600" role="alert">{{ error }}</p>
-      <button
-        type="submit"
-        class="btn-aqua-teal h-12 w-full text-base"
-        :disabled="isLoading"
-      >
+      <button type="submit" class="btn-aqua-teal h-12 w-full text-base" :disabled="isLoading">
         <Loader2 v-if="isLoading" class="mx-auto h-5 w-5 animate-spin" />
         <span v-else>{{ t('loginPage.loginButton') }}</span>
       </button>
@@ -78,11 +76,7 @@ async function performLogin() {
       password: password.value,
     })
     if (response.data.access_token) {
-      auth.login(
-        response.data.access_token,
-        response.data.refresh_token,
-        username.value
-      )
+      auth.login(response.data.access_token, response.data.refresh_token, username.value)
       router.push(returnTo.value)
     }
   } catch (err) {

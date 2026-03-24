@@ -1,19 +1,19 @@
 <template>
-    <div class="bg-white rounded-lg shadow-md p-6">
-      <h2 class="text-2xl font-bold mb-6 text-gray-800">
-        {{ t('newThreadPage.title') }}
-      </h2>
-      <p class="text-gray-600 text-sm mb-2">
-        {{ t('newThreadPage.description') }}
-      </p>
-      <CommentForm
-        ref="commentFormRef"
-        :is-reply="false"
-        :is-submitting="isSubmitting"
-        @submit="createNewThread"
-        @cancel="cancelCreation"
-      />
-    </div>
+  <div class="bg-white rounded-lg shadow-md p-6">
+    <h2 class="text-2xl font-bold mb-6 text-gray-800">
+      {{ t('newThreadPage.title') }}
+    </h2>
+    <p class="text-gray-600 text-sm mb-2">
+      {{ t('newThreadPage.description') }}
+    </p>
+    <CommentForm
+      ref="commentFormRef"
+      :is-reply="false"
+      :is-submitting="isSubmitting"
+      @submit="createNewThread"
+      @cancel="cancelCreation"
+    />
+  </div>
 </template>
 
 <script setup>
@@ -42,7 +42,7 @@ const createNewThread = async (formData) => {
     isSubmitting.value = true
     const response = await addComment({
       subject: formData.subject,
-      content: formData.content
+      content: formData.content,
     })
 
     if (response.data?.thread_id) {
@@ -50,8 +50,8 @@ const createNewThread = async (formData) => {
         path: '/comments',
         query: {
           thread_id: response.data.thread_id,
-          scroll_to: response.data.comment_id
-        }
+          scroll_to: response.data.comment_id,
+        },
       })
     }
   } catch (error) {
@@ -68,6 +68,8 @@ const cancelCreation = () => {
 
 <style scoped>
 .shadow-md {
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 </style>

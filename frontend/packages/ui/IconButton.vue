@@ -29,9 +29,7 @@ const props = defineProps({
 
 defineEmits(['click'])
 
-const ariaLabelComputed = computed(() =>
-  props.ariaLabel || props.label || null
-)
+const ariaLabelComputed = computed(() => props.ariaLabel || props.label || null)
 </script>
 
 <style scoped>

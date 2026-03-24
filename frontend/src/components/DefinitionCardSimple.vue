@@ -1,5 +1,7 @@
 <template>
-  <div class="w-full bg-white border rounded-lg hover:border-blue-300 transition-colors shadow hover:shadow-none p-4">
+  <div
+    class="w-full bg-white border rounded-lg hover:border-blue-300 transition-colors shadow hover:shadow-none p-4"
+  >
     <!-- Header Section -->
     <div class="flex flex-col sm:flex-row justify-between items-start gap-4">
       <!-- Word and Type Info -->
@@ -19,10 +21,7 @@
                 >
                   {{ displayedValsi }}
                 </span>
-                <RouterLink
-                  v-else
-                  :to="valsiDefinitionLink"
-                >
+                <RouterLink v-else :to="valsiDefinitionLink">
                   {{ definition.valsiword ?? definition.word }}
                 </RouterLink>
               </h2>
@@ -43,7 +42,11 @@
                 v-if="definition.selmaho"
                 :to="{ path: '/', query: selmahoLinkQuery }"
                 class="px-2 py-1 text-xs font-medium rounded-full bg-purple-100 text-purple-700 hover:bg-purple-200 min-w-0 max-w-full truncate inline-block"
-                :title="definition.selmaho.length > MAX_VALSI_DISPLAY_LENGTH ? definition.selmaho : undefined"
+                :title="
+                  definition.selmaho.length > MAX_VALSI_DISPLAY_LENGTH
+                    ? definition.selmaho
+                    : undefined
+                "
               >
                 {{ displayedSelmaho }}
               </RouterLink>
@@ -63,7 +66,10 @@
           </div>
 
           <!-- Gloss Keywords -->
-          <div v-if="definition.gloss_keywords && definition.gloss_keywords.length > 0" class="mt-3 pt-2 border-t">
+          <div
+            v-if="definition.gloss_keywords && definition.gloss_keywords.length > 0"
+            class="mt-3 pt-2 border-t"
+          >
             <div class="flex flex-wrap gap-1">
               <span
                 v-for="keyword in definition.gloss_keywords"
@@ -95,7 +101,12 @@
               {{ formatDate(definition.created_at) }}
             </span>
             <span v-if="props.showScore && definition.similarity" class="italic">
-              · {{ t('components.definitionCard.similarity', { percent: Math.round(definition.similarity * 100) }) }}
+              ·
+              {{
+                t('components.definitionCard.similarity', {
+                  percent: Math.round(definition.similarity * 100),
+                })
+              }}
             </span>
           </div>
         </div>
@@ -119,17 +130,17 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue';
-import { RouterLink } from 'vue-router';
-import { useI18n } from 'vue-i18n';
-import { getTypeClass } from '@/utils/wordTypeUtils';
-import LazyMathJax from './LazyMathJax.vue';
-import ModalComponent from '@/components/ModalComponent.vue';
+import { computed, ref } from 'vue'
+import { RouterLink } from 'vue-router'
+import { useI18n } from 'vue-i18n'
+import { getTypeClass } from '@/utils/wordTypeUtils'
+import LazyMathJax from './LazyMathJax.vue'
+import ModalComponent from '@/components/ModalComponent.vue'
 
-const { t } = useI18n();
+const { t } = useI18n()
 
-const MAX_VALSI_DISPLAY_LENGTH = 30;
-const showValsiModal = ref(false);
+const MAX_VALSI_DISPLAY_LENGTH = 30
+const showValsiModal = ref(false)
 
 const props = defineProps({
   definition: {
@@ -148,44 +159,44 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
-});
+})
 
-const valsiWord = computed(() => props.definition.valsiword ?? props.definition.word);
+const valsiWord = computed(() => props.definition.valsiword ?? props.definition.word)
 const displayedValsi = computed(() =>
   valsiWord.value.length > MAX_VALSI_DISPLAY_LENGTH
     ? valsiWord.value.slice(0, MAX_VALSI_DISPLAY_LENGTH) + '…'
     : valsiWord.value
-);
-const isValsiTruncated = computed(() => valsiWord.value.length > MAX_VALSI_DISPLAY_LENGTH);
+)
+const isValsiTruncated = computed(() => valsiWord.value.length > MAX_VALSI_DISPLAY_LENGTH)
 const valsiDefinitionLink = computed(() =>
   props.definition.definitionid
     ? `/valsi/${encodeURIComponent(valsiWord.value.replace(/ /g, '_'))}?highlight_definition_id=${props.definition.definitionid}`
     : '#'
-);
+)
 const displayedFreeContent = computed(() => {
-  const raw = props.definition.free_content_front || props.definition.word || '';
-  return raw.length > MAX_VALSI_DISPLAY_LENGTH ? raw.slice(0, MAX_VALSI_DISPLAY_LENGTH) + '…' : raw;
-});
+  const raw = props.definition.free_content_front || props.definition.word || ''
+  return raw.length > MAX_VALSI_DISPLAY_LENGTH ? raw.slice(0, MAX_VALSI_DISPLAY_LENGTH) + '…' : raw
+})
 const displayedSelmaho = computed(() => {
-  const s = props.definition.selmaho || '';
-  return s.length > MAX_VALSI_DISPLAY_LENGTH ? s.slice(0, MAX_VALSI_DISPLAY_LENGTH) + '…' : s;
-});
+  const s = props.definition.selmaho || ''
+  return s.length > MAX_VALSI_DISPLAY_LENGTH ? s.slice(0, MAX_VALSI_DISPLAY_LENGTH) + '…' : s
+})
 
 const selmahoLinkQuery = computed(() => ({
   selmaho: props.definition.selmaho,
-}));
+}))
 
 const getLanguageName = (langId) => {
-  const lang = props.languages.find((l) => l.langid === langId);
-  return lang ? lang.realname : '';
-};
+  const lang = props.languages.find((l) => l.langid === langId)
+  return lang ? lang.realname : ''
+}
 
 const formatDate = (dateString) => {
-  const date = new Date(dateString);
+  const date = new Date(dateString)
   return new Intl.DateTimeFormat('en-US', {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
-  }).format(date);
-};
+  }).format(date)
+}
 </script>

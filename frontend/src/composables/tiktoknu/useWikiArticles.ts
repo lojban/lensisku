@@ -12,10 +12,10 @@ class PreloadQueue {
       this.isProcessing = false
       return
     }
-    
+
     this.isProcessing = true
     const src = this.queue.shift()!
-    
+
     try {
       const img = new Image()
       img.src = src
@@ -51,7 +51,7 @@ export function useWikiArticles(currentLanguage: Ref<{ api: string }>) {
   const fetchArticles = async (forBuffer = false) => {
     if (loading.value) return
     loading.value = true
-    
+
     try {
       const response = await fetch(
         currentLanguage.value.api +
@@ -82,8 +82,9 @@ export function useWikiArticles(currentLanguage: Ref<{ api: string }>) {
           thumbnail: page.thumbnail,
           canonicalurl: page.canonicalurl,
         }))
-        .filter((article: WikiArticle) => 
-          article.thumbnail?.source && article.canonicalurl && article.extract
+        .filter(
+          (article: WikiArticle) =>
+            article.thumbnail?.source && article.canonicalurl && article.extract
         )
 
       // Queue images for sequential preloading in background

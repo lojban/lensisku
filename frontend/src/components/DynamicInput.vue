@@ -10,7 +10,7 @@
       :readonly="prefilledWord || isEditMode"
       @input="handleInput"
       @paste="handlePaste"
-    >
+    />
 
     <textarea
       v-else
@@ -28,60 +28,60 @@
 </template>
 
 <script setup>
-  import { ref, watch } from 'vue'
+import { ref, watch } from 'vue'
 
-  const props = defineProps({
-    id: {
-      type: String,
-      default: '0',
-    },
-    modelValue: {
-      type: String,
-      default: '',
-    },
-    isAnalyzing: Boolean,
-    isSubmitting: Boolean,
-    prefilledWord: Boolean,
-    isEditMode: Boolean,
-  })
+const props = defineProps({
+  id: {
+    type: String,
+    default: '0',
+  },
+  modelValue: {
+    type: String,
+    default: '',
+  },
+  isAnalyzing: Boolean,
+  isSubmitting: Boolean,
+  prefilledWord: Boolean,
+  isEditMode: Boolean,
+})
 
-  const emit = defineEmits(['update:modelValue', 'input', 'clear-analysis'])
+const emit = defineEmits(['update:modelValue', 'input', 'clear-analysis'])
 
-  const inputValue = ref(props.modelValue)
-  const useTextarea = ref(false)
+const inputValue = ref(props.modelValue)
+const useTextarea = ref(false)
 
-  const checkLength = (text) => {
-    useTextarea.value = text.length > 200
-  }
+const checkLength = (text) => {
+  useTextarea.value = text.length > 200
+}
 
-  const handleInput = (event) => {
-    const value = event.target.value
-    checkLength(value)
-    emit('update:modelValue', value)
-    emit('input', event)
-    emit('clear-analysis')
-  }
+const handleInput = (event) => {
+  const value = event.target.value
+  checkLength(value)
+  emit('update:modelValue', value)
+  emit('input', event)
+  emit('clear-analysis')
+}
 
-  const handlePaste = async (event) => {
-    event.preventDefault()
-    const pastedText = event.clipboardData.getData('text')
-    const currentValue = inputValue.value || ''
-    const cursorPos = event.target.selectionStart
+const handlePaste = async (event) => {
+  event.preventDefault()
+  const pastedText = event.clipboardData.getData('text')
+  const currentValue = inputValue.value || ''
+  const cursorPos = event.target.selectionStart
 
-    const newValue =
-      currentValue.slice(0, cursorPos) + pastedText + currentValue.slice(event.target.selectionEnd)
+  const newValue =
+    currentValue.slice(0, cursorPos) + pastedText + currentValue.slice(event.target.selectionEnd)
 
+  inputValue.value = newValue
+  checkLength(newValue)
+  emit('update:modelValue', newValue)
+  emit('clear-analysis')
+}
+
+watch(
+  () => props.modelValue,
+  (newValue) => {
     inputValue.value = newValue
     checkLength(newValue)
-    emit('update:modelValue', newValue)
-    emit('clear-analysis')
   }
-
-  watch(
-    () => props.modelValue,
-    (newValue) => {
-      inputValue.value = newValue
-      checkLength(newValue)
-    }
-  )
+)
 </script>

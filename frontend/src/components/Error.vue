@@ -1,7 +1,7 @@
 <template>
   <ToastFloat
     :show="!!message"
-    :message="displayMessage" 
+    :message="displayMessage"
     type="error"
     :duration="0"
     @close="$emit('close')"
@@ -16,7 +16,7 @@ import ToastFloat from './ToastFloat.vue'
 
 const props = defineProps({
   message: String,
-  details: String
+  details: String,
 })
 
 const { t } = useI18n()

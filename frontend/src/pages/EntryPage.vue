@@ -1,28 +1,20 @@
 <template>
   <!-- Loading State -->
-  <div
-    v-if="isLoading"
-    class="flex justify-center py-8"
-  >
+  <div v-if="isLoading" class="flex justify-center py-8">
     <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
   </div>
 
   <!-- Content: semantic article for SEO and accessibility -->
-  <article
-    v-else-if="valsi"
-    class="space-y-3"
-    itemscope
-    itemtype="https://schema.org/DefinedTerm"
-  >
+  <article v-else-if="valsi" class="space-y-3" itemscope itemtype="https://schema.org/DefinedTerm">
     <!-- Header Section -->
     <h1 class="border-b p-2 min-w-0 rounded-md">
       <div class="flex flex-wrap gap-2 w-full lg:w-auto justify-between min-w-0">
         <div class="flex items-center gap-3 min-w-0 max-w-full">
-          <BookOpen
-            class="flex-shrink-0 w-8 h-8 text-gray-500"
-            aria-hidden="true"
-          />
-          <h1 class="text-3xl font-bold text-gray-800 min-w-0 max-w-full break-words" itemprop="name">
+          <BookOpen class="flex-shrink-0 w-8 h-8 text-gray-500" aria-hidden="true" />
+          <h1
+            class="text-3xl font-bold text-gray-800 min-w-0 max-w-full break-words"
+            itemprop="name"
+          >
             {{ valsi.word }}
             <AudioPlayer
               v-if="definitions.length > 0 && definitions[0].sound_url"
@@ -50,12 +42,12 @@
             class="inline-flex items-center gap-1 text-sm text-gray-700"
           >
             <span class="font-medium">{{ t('entryPage.decompositionLabel') }}</span>
-            <template
-              v-for="(word, index) in valsi.decomposition"
-              :key="word"
-            >
-              <RouterLink 
-                :to="{ path: `/valsi/${word.replace(/ /g, '_')}`, query: { langid: valsi.source_langid } }"
+            <template v-for="(word, index) in valsi.decomposition" :key="word">
+              <RouterLink
+                :to="{
+                  path: `/valsi/${word.replace(/ /g, '_')}`,
+                  query: { langid: valsi.source_langid },
+                }"
                 class="text-blue-600 hover:text-blue-800 hover:underline"
               >
                 {{ word }}
@@ -69,10 +61,7 @@
 
     <!-- Discussion Section -->
     <div class="flex flex-wrap gap-2 w-full lg:w-auto justify-center">
-      <RouterLink
-        :to="`/comments?valsi_id=${valsi.valsiid}`"
-        class="btn-aqua-slate"
-      >
+      <RouterLink :to="`/comments?valsi_id=${valsi.valsiid}`" class="btn-aqua-slate">
         <AudioWaveform class="w-4 h-4" />
         <span
           v-if="(valsi.comment_count ?? 0) > 0"
@@ -82,10 +71,7 @@
         </span>
         <span>{{ t('entryPage.discussEntry') }}</span>
       </RouterLink>
-      <SubscriptionControls
-        :valsi-id="valsi.valsiid"
-        :auth="auth"
-      />
+      <SubscriptionControls :valsi-id="valsi.valsiid" :auth="auth" />
     </div>
 
     <!-- Definitions Section -->
@@ -107,7 +93,7 @@
           :show-word-type="false"
           :show-audio="false"
           :definition-id="def.definitionid"
-          :show-definition-number="true" 
+          :show-definition-number="true"
           :collections="collections"
           @refresh-definitions="fetchDefinitionsDetails"
         />
@@ -122,7 +108,6 @@
       </div>
     </div>
 
-
     <!-- Translations Section -->
     <div v-if="translations.length > 0" class="space-y-4 pt-4 border-t">
       <h3 class="text-xl font-semibold text-gray-700 flex items-center gap-2">
@@ -131,10 +116,14 @@
       </h3>
 
       <div class="space-y-4">
-        <div v-for="trans in translations" :key="trans.definitionid" class="p-3 bg-gray-50 rounded-lg border">
+        <div
+          v-for="trans in translations"
+          :key="trans.definitionid"
+          class="p-3 bg-gray-50 rounded-lg border"
+        >
           <div class="flex justify-between items-start">
             <div>
-              <RouterLink 
+              <RouterLink
                 :to="`/valsi/${trans.valsiword}?highlight_definition_id=${trans.definitionid}`"
                 class="font-bold text-blue-600 hover:underline"
               >
@@ -143,7 +132,7 @@
               <span class="text-gray-500 text-sm ml-2">({{ trans.lang_name }})</span>
               <div class="mt-1 text-gray-800">{{ trans.definition }}</div>
               <div class="mt-2 flex items-center space-x-3">
-                <RouterLink 
+                <RouterLink
                   :to="`/definition_link/${trans.link_id}/discussion`"
                   class="text-xs font-bold text-blue-500 hover:text-blue-700 flex items-center bg-blue-50 px-2 py-1 rounded transition-colors"
                 >
@@ -152,7 +141,7 @@
                 </RouterLink>
               </div>
             </div>
-            <button 
+            <button
               v-if="auth.state.isLoggedIn"
               @click="unlinkTranslation(trans)"
               class="text-red-500 hover:text-red-700 p-1"
@@ -167,10 +156,7 @@
 
     <!-- Action Buttons -->
     <div class="flex flex-wrap gap-3 pt-4 border-t">
-      <button
-        class="btn-aqua-zinc"
-        @click="goBack"
-      >
+      <button class="btn-aqua-zinc" @click="goBack">
         <ArrowLeft class="h-5 w-5" />
         <span>{{ t('entryPage.dictionary') }}</span>
       </button>
@@ -190,9 +176,16 @@ import { ArrowLeft, AudioWaveform, BookOpen, Trash2, MessageCircle } from 'lucid
 import { ref, onMounted, watch, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
-import { getTypeClass } from '@/utils/wordTypeUtils'; // Import shared utility
+import { getTypeClass } from '@/utils/wordTypeUtils' // Import shared utility
 
-import { getValsiDefinitions, getValsiDetails, getCollections, getLanguages, getDefinitionTranslations, unlinkDefinitions } from '@/api'
+import {
+  getValsiDefinitions,
+  getValsiDetails,
+  getCollections,
+  getLanguages,
+  getDefinitionTranslations,
+  unlinkDefinitions,
+} from '@/api'
 import AudioPlayer from '@/components/AudioPlayer.vue'
 import DefinitionCard from '@/components/DefinitionCard.vue'
 import { IconButton } from '@packages/ui'
@@ -210,7 +203,7 @@ const props = defineProps({
   },
   onRefresh: {
     type: Function,
-    default: () => { },
+    default: () => {},
   },
 })
 
@@ -325,7 +318,7 @@ const scrollToDefinition = () => {
 
 const getWordTypeLabel = (typeName) => {
   if (!typeName) return ''
-  const key = `wordTypes.${typeName.replace(/'/g,'h').replace(/ /g, '-')}`
+  const key = `wordTypes.${typeName.replace(/'/g, 'h').replace(/ /g, '-')}`
   const translated = t(key)
   // If translation returns the key itself, it means the translation doesn't exist
   // In that case, return the type name as fallback (except for experimental cmavo which is ok)
@@ -359,20 +352,22 @@ const fetchTranslations = async () => {
       try {
         const res = await getDefinitionTranslations(def.definitionid)
         if (res.data && res.data.length > 0) {
-          allTranslations.push(...res.data.map(t => ({ ...t, source_def_id: def.definitionid })))
+          allTranslations.push(...res.data.map((t) => ({ ...t, source_def_id: def.definitionid })))
         }
       } catch (e) {
         console.error('Error fetching translations for def', def.definitionid, e)
       }
     }
     // Deduplicate by definitionid
-    translations.value = Array.from(new Map(allTranslations.map(item => [item.definitionid, item])).values())
+    translations.value = Array.from(
+      new Map(allTranslations.map((item) => [item.definitionid, item])).values()
+    )
   }
 }
 
 const unlinkTranslation = async (translation) => {
   if (!confirm(t('entryPage.confirmUnlink'))) return
-  
+
   try {
     await unlinkDefinitions(translation.source_def_id, translation.definitionid)
     await fetchTranslations()
@@ -408,7 +403,6 @@ watch(definitions, async (newDefs) => {
 }
 
 @keyframes highlight-definition {
-
   0%,
   95% {
     @apply outline outline-orange-600 outline-2 bg-orange-50 border-orange-600;

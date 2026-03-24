@@ -13,7 +13,9 @@
       </p>
 
       <div class="w-full max-w-md space-y-4 rounded-xl border-2 border-slate-200 bg-white p-4">
-        <div class="flex items-center gap-4 border-t-2 border-slate-100 pt-4 first:border-t-0 first:pt-0">
+        <div
+          class="flex items-center gap-4 border-t-2 border-slate-100 pt-4 first:border-t-0 first:pt-0"
+        >
           <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-rose-100">
             <Heart class="h-7 w-7 text-rose-500" />
           </div>

@@ -1,10 +1,10 @@
 <template>
-  <svg 
-    v-if="mimeType.startsWith('image')" 
-    xmlns="http://www.w3.org/2000/svg" 
-    fill="none" 
-    viewBox="0 0 24 24" 
-    stroke-width="1.5" 
+  <svg
+    v-if="mimeType.startsWith('image')"
+    xmlns="http://www.w3.org/2000/svg"
+    fill="none"
+    viewBox="0 0 24 24"
+    stroke-width="1.5"
     stroke="currentColor"
   >
     <path
@@ -14,12 +14,12 @@
     />
   </svg>
 
-  <svg 
-    v-else-if="mimeType === 'application/pdf'" 
-    xmlns="http://www.w3.org/2000/svg" 
-    fill="none" 
-    viewBox="0 0 24 24" 
-    stroke-width="1.5" 
+  <svg
+    v-else-if="mimeType === 'application/pdf'"
+    xmlns="http://www.w3.org/2000/svg"
+    fill="none"
+    viewBox="0 0 24 24"
+    stroke-width="1.5"
     stroke="currentColor"
   >
     <path
@@ -29,12 +29,12 @@
     />
   </svg>
 
-  <svg 
-    v-else-if="mimeType.startsWith('audio/') || mimeType === 'video/ogg'" 
-    xmlns="http://www.w3.org/2000/svg" 
-    fill="none" 
-    viewBox="0 0 24 24" 
-    stroke-width="1.5" 
+  <svg
+    v-else-if="mimeType.startsWith('audio/') || mimeType === 'video/ogg'"
+    xmlns="http://www.w3.org/2000/svg"
+    fill="none"
+    viewBox="0 0 24 24"
+    stroke-width="1.5"
     stroke="currentColor"
   >
     <path
@@ -44,12 +44,12 @@
     />
   </svg>
 
-  <svg 
-    v-else-if="mimeType === 'application/msword'" 
-    xmlns="http://www.w3.org/2000/svg" 
-    fill="none" 
-    viewBox="0 0 24 24" 
-    stroke-width="1.5" 
+  <svg
+    v-else-if="mimeType === 'application/msword'"
+    xmlns="http://www.w3.org/2000/svg"
+    fill="none"
+    viewBox="0 0 24 24"
+    stroke-width="1.5"
     stroke="currentColor"
   >
     <path
@@ -59,12 +59,14 @@
     />
   </svg>
 
-  <svg 
-    v-else-if="mimeType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'" 
-    xmlns="http://www.w3.org/2000/svg" 
-    fill="none" 
-    viewBox="0 0 24 24" 
-    stroke-width="1.5" 
+  <svg
+    v-else-if="
+      mimeType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    "
+    xmlns="http://www.w3.org/2000/svg"
+    fill="none"
+    viewBox="0 0 24 24"
+    stroke-width="1.5"
     stroke="currentColor"
   >
     <path
@@ -74,12 +76,12 @@
     />
   </svg>
 
-  <svg 
-    v-else 
-    xmlns="http://www.w3.org/2000/svg" 
-    fill="none" 
-    viewBox="0 0 24 24" 
-    stroke-width="1.5" 
+  <svg
+    v-else
+    xmlns="http://www.w3.org/2000/svg"
+    fill="none"
+    viewBox="0 0 24 24"
+    stroke-width="1.5"
     stroke="currentColor"
   >
     <path
@@ -94,7 +96,7 @@
 defineProps({
   mimeType: {
     type: String,
-    default: 'application/octet-stream'
-  }
+    default: 'application/octet-stream',
+  },
 })
 </script>

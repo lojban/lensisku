@@ -1,16 +1,17 @@
 <template>
   <!-- Loading State -->
-  <LoadingSpinner
-    v-if="isLoading"
-    class="py-8"
-  />
+  <LoadingSpinner v-if="isLoading" class="py-8" />
 
   <!-- Profile Content -->
   <div v-else>
     <!-- Header -->
     <div class="flex flex-col lg:flex-row justify-between items-center gap-4 mb-6">
       <h2 class="text-2xl font-bold text-gray-800 text-center sm:text-left flex-1 min-w-[200px]">
-        {{ isOwnProfile ? t('profile.yourProfile') : t('profile.userProfile', { username: profileData.username }) }}
+        {{
+          isOwnProfile
+            ? t('profile.yourProfile')
+            : t('profile.userProfile', { username: profileData.username })
+        }}
       </h2>
       <div class="flex flex-wrap gap-2 w-full lg:w-auto justify-center items-center">
         <!-- Language Selector -->
@@ -20,15 +21,13 @@
             class="input-field appearance-none !h-6 !py-0 !pr-8 !text-xs"
             @change="switchLanguage"
           >
-            <option
-              v-for="loc in availableLocales"
-              :key="`locale-${loc}`"
-              :value="loc"
-            >
+            <option v-for="loc in availableLocales" :key="`locale-${loc}`" :value="loc">
               {{ loc.toUpperCase() }}
             </option>
           </select>
-          <ChevronDown class="h-4 w-4 text-gray-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <ChevronDown
+            class="h-4 w-4 text-gray-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none"
+          />
         </div>
         <!--
         <RouterLink
@@ -58,10 +57,14 @@
             <Pencil class="h-4 w-4" />
             {{ t('profile.editProfile') }}
           </button>
-          </div>
-          <div class="flex">
+        </div>
+        <div class="flex">
           <RouterLink
-            :to="isOwnProfile ? '/reactions?tab=definitions' : `/user/${profileData.username}/activity?tab=definitions`"
+            :to="
+              isOwnProfile
+                ? '/reactions?tab=definitions'
+                : `/user/${profileData.username}/activity?tab=definitions`
+            "
             class="btn-aqua-purple btn-aqua-group-item"
           >
             <Activity class="h-4 w-4" />
@@ -78,27 +81,13 @@
         </div>
 
         <!-- Role Assignment Section -->
-        <div
-          v-if="canAssignRoles && !isOwnProfile"
-          class="flex gap-2 items-center form-group"
-        >
-          <select
-            v-model="selectedRole"
-            class="input-field h-6 py-0"
-          >
-            <option
-              v-for="role in assignableRoles"
-              :key="role.name"
-              :value="role.name"
-            >
+        <div v-if="canAssignRoles && !isOwnProfile" class="flex gap-2 items-center form-group">
+          <select v-model="selectedRole" class="input-field h-6 py-0">
+            <option v-for="role in assignableRoles" :key="role.name" :value="role.name">
               {{ translateRole(role.name) }}
             </option>
           </select>
-          <button
-            class="btn-aqua-emerald"
-            :disabled="isAssigningRole"
-            @click="performAssignRole"
-          >
+          <button class="btn-aqua-emerald" :disabled="isAssigningRole" @click="performAssignRole">
             {{ isAssigningRole ? t('profile.assigning') : t('profile.assignRole') }}
           </button>
         </div>
@@ -106,15 +95,15 @@
     </div>
 
     <!-- View Mode -->
-    <div
-      v-if="!isEditing"
-      class="bg-white p-4 rounded-lg border space-y-4"
-    >
+    <div v-if="!isEditing" class="bg-white p-4 rounded-lg border space-y-4">
       <div class="">
         <!-- Profile Image -->
         <div class="mb-6 flex flex-col items-center">
           <!-- Skeleton for View Mode -->
-          <div v-show="isViewProfileImageLoading" class="w-32 h-32 rounded-full bg-gray-200 animate-pulse border-4 border-white shadow-lg"></div>
+          <div
+            v-show="isViewProfileImageLoading"
+            class="w-32 h-32 rounded-full bg-gray-200 animate-pulse border-4 border-white shadow-lg"
+          ></div>
           <!-- Actual Image for View Mode -->
           <img
             v-show="!isViewProfileImageLoading && profileData.has_profile_image"
@@ -123,7 +112,7 @@
             class="w-32 h-32 rounded-full object-cover border-4 border-white shadow-lg"
             @load="handleViewProfileImageLoad"
             @error="handleViewProfileImageError"
-          >
+          />
           <!-- Placeholder for View Mode (No Image or Error) -->
           <div
             v-show="!isViewProfileImageLoading && !profileData.has_profile_image"
@@ -173,11 +162,9 @@
                   :href="profileData.url"
                   target="_blank"
                   class="text-blue-600 hover:underline"
-                >{{ profileData.url }}</a>
-                <span
-                  v-else
-                  class="text-gray-900"
-                >{{ t('profile.notSet') }}</span>
+                  >{{ profileData.url }}</a
+                >
+                <span v-else class="text-gray-900">{{ t('profile.notSet') }}</span>
               </p>
             </div>
             <div>
@@ -210,17 +197,20 @@
       <div class="flex flex-col items-center mb-6">
         <div class="relative group w-32 h-32">
           <!-- Skeleton for Edit Mode -->
-          <div v-show="isEditProfileImageLoading" class="w-32 h-32 rounded-full bg-gray-200 animate-pulse border-4 border-white shadow-lg"></div>
+          <div
+            v-show="isEditProfileImageLoading"
+            class="w-32 h-32 rounded-full bg-gray-200 animate-pulse border-4 border-white shadow-lg"
+          ></div>
           <!-- Avatar Image or Placeholder for Edit Mode -->
           <img
             v-show="!isEditProfileImageLoading && currentImageUrl"
-            :key="currentImageUrl" 
+            :key="currentImageUrl"
             :src="currentImageUrl"
             :alt="`${profileData.username}'s profile picture`"
             class="w-32 h-32 rounded-full object-cover border-4 border-white shadow-lg"
             @load="handleEditProfileImageLoad"
             @error="handleEditProfileImageError"
-          >
+          />
           <div
             v-show="!isEditProfileImageLoading && !currentImageUrl"
             class="w-32 h-32 rounded-full bg-gray-200 flex items-center justify-center text-gray-400 border-4 border-white shadow-lg"
@@ -236,15 +226,21 @@
             <svg class="w-16 h-16 transform -rotate-90" viewBox="0 0 100 100">
               <circle cx="50" cy="50" r="45" fill="none" stroke="#4B5563" stroke-width="8" />
               <circle
-                cx="50" cy="50" r="45" fill="none" stroke="#3B82F6" stroke-width="8"
+                cx="50"
+                cy="50"
+                r="45"
+                fill="none"
+                stroke="#3B82F6"
+                stroke-width="8"
                 :stroke-dasharray="circumference"
                 :stroke-dashoffset="circumference - (uploadProgress / 100) * circumference"
                 class="transition-all duration-300"
               />
             </svg>
-            <span class="absolute text-white text-sm font-medium">{{ Math.round(uploadProgress) }}%</span>
+            <span class="absolute text-white text-sm font-medium"
+              >{{ Math.round(uploadProgress) }}%</span
+            >
           </div>
-
 
           <!-- Action Buttons (Always visible below when not uploading) -->
           <div
@@ -255,7 +251,7 @@
               class="cursor-pointer p-2 bg-white border border-gray-300 rounded-full text-blue-600 hover:bg-blue-50 transition-all shadow-md"
               :title="t('profile.uploadNewPhoto')"
             >
-              <input type="file" class="hidden" accept="image/*" @change="handleFileChange">
+              <input type="file" class="hidden" accept="image/*" @change="handleFileChange" />
               <Camera class="h-5 w-5" />
             </label>
             <button
@@ -282,79 +278,61 @@
       <!-- Rest of the form fields -->
       <div>
         <label class="block text-sm font-medium text-gray-700">{{ t('profile.username') }}</label>
-        <input 
+        <input
           v-model="editForm.username"
           type="text"
           class="input-field w-full"
           :disabled="isUpdating"
-        >
+        />
       </div>
       <div>
         <label class="block text-sm font-medium text-gray-700">{{ t('profile.realName') }}</label>
-        <input
-          v-model="editForm.realname"
-          type="text"
-          class="input-field w-full"
-        >
+        <input v-model="editForm.realname" type="text" class="input-field w-full" />
       </div>
 
       <div>
         <label class="block text-sm font-medium text-gray-700">{{ t('profile.url') }}</label>
-        <input
-          v-model="editForm.url"
-          type="url"
-          class="input-field w-full"
-        >
+        <input v-model="editForm.url" type="url" class="input-field w-full" />
       </div>
 
       <div>
-        <label class="block text-sm font-medium text-gray-700">{{ t('profile.personalInfo') }}</label>
-        <textarea
-          v-model="editForm.personal"
-          rows="4"
-          class="textarea-field"
-        />
+        <label class="block text-sm font-medium text-gray-700">{{
+          t('profile.personalInfo')
+        }}</label>
+        <textarea v-model="editForm.personal" rows="4" class="textarea-field" />
       </div>
-      <div
-        v-if="updateSuccess"
-        class="text-green-600 text-sm"
-      >
+      <div v-if="updateSuccess" class="text-green-600 text-sm">
         {{ t('profile.updateSuccess') }}
       </div>
 
       <div class="mt-6 flex justify-end gap-3">
-        <button
-          type="button"
-          class="btn-cancel"
-          @click="toggleEdit"
-        >
+        <button type="button" class="btn-cancel" @click="toggleEdit">
           {{ t('profile.cancel') }}
         </button>
-        <button
-          type="submit"
-          :disabled="isUpdating || isImageUploading"
-          class="btn-update"
-        >
+        <button type="submit" :disabled="isUpdating || isImageUploading" class="btn-update">
           {{ isUpdating ? t('profile.saving') : t('profile.saveChanges') }}
         </button>
       </div>
     </form>
-
-    <!-- Role Assigned ToastFloat -->
-    <ToastFloat
-      :show="showToast"
-      :message="t('profile.roleAssignedSuccess')"
-      type="success"
-    />
   </div>
 </template>
 
 <script setup>
 import { jwtDecode } from 'jwt-decode'
-import { Wallet, KeyRound, Activity, Pencil, User, ChevronDown, Camera, Trash2, LogOut } from 'lucide-vue-next'
+import {
+  Wallet,
+  KeyRound,
+  Activity,
+  Pencil,
+  User,
+  ChevronDown,
+  Camera,
+  Trash2,
+  LogOut,
+} from 'lucide-vue-next'
 import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRouter , RouterLink, useRoute } from 'vue-router'
+import { useRouter, RouterLink, useRoute } from 'vue-router'
 
 import {
   updateProfile,
@@ -363,14 +341,14 @@ import {
   removeProfileImage,
   getProfileImage,
   assignRole,
-  getRoles
+  getRoles,
 } from '@/api'
 
 import LazyMathJax from '@/components/LazyMathJax.vue'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
-import ToastFloat from '@/components/ToastFloat.vue'
 import { useAuth } from '@/composables/useAuth'
 import { useError } from '@/composables/useError'
+import { useSuccessToast } from '@/composables/useSuccessToast'
 import { useSeoHead } from '@/composables/useSeoHead'
 
 const route = useRoute()
@@ -380,25 +358,30 @@ const { locale, availableLocales, t } = useI18n()
 
 // State
 const { showError, clearError } = useError()
+const { showSuccess } = useSuccessToast()
 const isLoading = ref(true)
 const isEditing = ref(false)
 const isUpdating = ref(false)
 
 // --- Profile Image Loading States & Handlers ---
-const isViewProfileImageLoading = ref(false);
-const handleViewProfileImageLoad = () => { isViewProfileImageLoading.value = false; };
+const isViewProfileImageLoading = ref(false)
+const handleViewProfileImageLoad = () => {
+  isViewProfileImageLoading.value = false
+}
 const handleViewProfileImageError = () => {
-  console.error('Profile image failed to load (view mode).');
-  isViewProfileImageLoading.value = false;
-};
+  console.error('Profile image failed to load (view mode).')
+  isViewProfileImageLoading.value = false
+}
 
-const isEditProfileImageLoading = ref(false);
-const handleEditProfileImageLoad = () => { isEditProfileImageLoading.value = false; };
+const isEditProfileImageLoading = ref(false)
+const handleEditProfileImageLoad = () => {
+  isEditProfileImageLoading.value = false
+}
 const handleEditProfileImageError = () => {
-  console.error('Profile image failed to load (edit mode).');
-  isEditProfileImageLoading.value = false;
-  currentImageUrl.value = null; // Keep original behavior for edit mode
-};
+  console.error('Profile image failed to load (edit mode).')
+  isEditProfileImageLoading.value = false
+  currentImageUrl.value = null // Keep original behavior for edit mode
+}
 // --- End Profile Image Loading States & Handlers ---
 
 const isImageUploading = ref(false) // Keep track of upload state
@@ -443,29 +426,29 @@ const profileImageUrl = computed(() => {
 
 // Methods
 const switchLanguage = (event) => {
-  if (typeof window === 'undefined') return;
+  if (typeof window === 'undefined') return
 
   const newLocale = event.target.value
   if (availableLocales.includes(newLocale)) {
     locale.value = newLocale
     localStorage.setItem('selectedLocale', newLocale) // Store preference
     // Construct the new path by replacing/adding the locale prefix
-    const currentPath = route.path;
-    const pathSegments = currentPath.split('/').filter(segment => segment !== ''); // Split and remove empty segments (e.g., leading '/')
+    const currentPath = route.path
+    const pathSegments = currentPath.split('/').filter((segment) => segment !== '') // Split and remove empty segments (e.g., leading '/')
 
     // Check if the first segment is a known locale (assuming availableLocales is accessible in this scope)
     if (pathSegments.length > 0 && availableLocales.includes(pathSegments[0])) {
       // Replace the existing locale prefix
-      pathSegments[0] = newLocale;
+      pathSegments[0] = newLocale
     } else {
-      pathSegments.unshift(newLocale);
+      pathSegments.unshift(newLocale)
     }
 
     // Reconstruct the path, ensuring it starts with a '/'
-    const newPath = '/' + pathSegments.join('/');
+    const newPath = '/' + pathSegments.join('/')
 
     // Update the URL using the new path and preserving query parameters
-    router.push({ path: newPath, query: route.query });
+    router.push({ path: newPath, query: route.query })
     // Optionally, you might want to reload the page or trigger a data refresh
     // window.location.reload(); // Uncomment if a full reload is desired
   }
@@ -475,19 +458,19 @@ const fetchProfileImageUrl = async () => {
   // Always try to fetch, rely on cache or get updated image
   if (profileData.value.username) {
     try {
-      isEditProfileImageLoading.value = true; // Set loading before changing src
+      isEditProfileImageLoading.value = true // Set loading before changing src
       // Append timestamp to bypass cache if needed, or rely on backend/browser caching
       currentImageUrl.value = getProfileImage(profileData.value.username) + `?t=${Date.now()}`
     } catch (err) {
       console.error('Error loading profile image for edit:', err)
-      currentImageUrl.value = null;
-      isEditProfileImageLoading.value = false; // Error setting it, so not loading
+      currentImageUrl.value = null
+      isEditProfileImageLoading.value = false // Error setting it, so not loading
       // Don't nullify if fetch fails, might still have old image
       // currentImageUrl.value = null;
     }
   } else {
-    currentImageUrl.value = null;
-    isEditProfileImageLoading.value = false;
+    currentImageUrl.value = null
+    isEditProfileImageLoading.value = false
   }
 }
 
@@ -504,7 +487,8 @@ const handleFileChange = async (event) => {
     imageUploadError.value = t('profile.uploadError.invalidType')
     return
   }
-  if (file.size > 5 * 1024 * 1024) { // 5MB limit
+  if (file.size > 5 * 1024 * 1024) {
+    // 5MB limit
     imageUploadError.value = t('profile.uploadError.tooLarge')
     return
   }
@@ -518,7 +502,7 @@ const handleFileChange = async (event) => {
         const base64Data = e.target.result.split(',')[1]
         const imageData = { data: base64Data, mime_type: file.type }
 
-        isEditProfileImageLoading.value = true; // Set loading for preview
+        isEditProfileImageLoading.value = true // Set loading for preview
         // Show preview immediately
         currentImageUrl.value = URL.createObjectURL(file) // Temporary preview
 
@@ -543,12 +527,12 @@ const handleFileChange = async (event) => {
           isImageUploading.value = false
           uploadProgress.value = 0
         }, 500)
-
       } catch (err) {
         console.error('Upload error:', err)
-        imageUploadError.value = err.response?.data?.message || t('profile.uploadError.uploadFailed')
+        imageUploadError.value =
+          err.response?.data?.message || t('profile.uploadError.uploadFailed')
         isImageUploading.value = false
-        isEditProfileImageLoading.value = false; // Error during preview setup or upload
+        isEditProfileImageLoading.value = false // Error during preview setup or upload
         uploadProgress.value = 0
         // Revert preview if upload failed? Or keep it? For now, keep preview.
         // await fetchProfileImageUrl(); // Re-fetch original if needed
@@ -557,11 +541,10 @@ const handleFileChange = async (event) => {
     reader.onerror = () => {
       imageUploadError.value = t('profile.uploadError.readError')
       isImageUploading.value = false
-      isEditProfileImageLoading.value = false; // Error reading file
+      isEditProfileImageLoading.value = false // Error reading file
       uploadProgress.value = 0
     }
     reader.readAsDataURL(file)
-
   } catch (err) {
     imageUploadError.value = t('profile.uploadError.uploadFailed')
     isImageUploading.value = false
@@ -578,7 +561,7 @@ const handleImageRemove = async () => {
     await removeProfileImage()
     profileData.value.has_profile_image = false
     currentImageUrl.value = null // Clear the image URL
-    isEditProfileImageLoading.value = false; // No image, so not loading
+    isEditProfileImageLoading.value = false // No image, so not loading
     updateSuccess.value = true
   } catch (err) {
     imageUploadError.value = err.response?.data?.message || 'Failed to remove image.'
@@ -589,7 +572,7 @@ const handleImageRemove = async () => {
 // --- End Integrated Image Upload Logic ---
 
 const decodedToken = computed(() => {
-  if (typeof window === 'undefined') return;
+  if (typeof window === 'undefined') return
 
   const token = localStorage.getItem('accessToken')
   if (token) {
@@ -613,13 +596,10 @@ const assignableRoles = ref([])
 
 // Check if current user can assign roles based on permissions
 const canAssignRoles = computed(() => {
-  return decodedAuthorities.value?.includes('manage_roles')
-    && !isOwnProfile.value
+  return decodedAuthorities.value?.includes('manage_roles') && !isOwnProfile.value
 })
 
 // Assign role method
-const showToast = ref(false)
-
 const performAssignRole = async () => {
   if (!selectedRole.value || !profileData.value || !currentUserId.value) return
 
@@ -630,10 +610,7 @@ const performAssignRole = async () => {
     // Update profile data
     profileData.value.role = selectedRole.value
     updateSuccess.value = true
-    showToast.value = true
-    setTimeout(() => {
-      showToast.value = false
-    }, 3000)
+    showSuccess(t('profile.roleAssignedSuccess'))
   } catch (err) {
     showError(err.response?.data?.message || 'Failed to assign role')
   } finally {
@@ -701,15 +678,7 @@ const fetchProfileData = async () => {
       }
     }
 
-    const {
-      realname,
-      url,
-      personal,
-      join_date,
-      has_profile_image,
-      user_id,
-      role,
-    } = response.data
+    const { realname, url, personal, join_date, has_profile_image, user_id, role } = response.data
 
     profileData.value = {
       ...profileData.value,
@@ -731,17 +700,18 @@ const fetchProfileData = async () => {
     memberSince.value = join_date ? new Date(join_date).toLocaleDateString(locale.value) : 'N/A'
     editForm.value = { realname, url, personal }
 
-
     // Load assignable roles if we have permission
     if (canAssignRoles.value) {
       try {
         const rolesRes = await getRoles()
-        assignableRoles.value = rolesRes.data.roles.map((role=>({...role, name: capitalizeFirstLetter(role.name)})))
+        assignableRoles.value = rolesRes.data.roles.map((role) => ({
+          ...role,
+          name: capitalizeFirstLetter(role.name),
+        }))
       } catch (err) {
         console.error('Failed to fetch assignable roles:', err)
       }
     }
-
   } catch (err) {
     showError('Error loading profile data')
     console.error('Error loading profile:', err)
@@ -782,7 +752,7 @@ const performUpdateProfile = async () => {
       // Update the authentication state with the new token
       const newToken = response.data.new_token
       localStorage.setItem('accessToken', newToken)
-      
+
       // Update the auth state
       if (auth && auth.state) {
         auth.state.accessToken = newToken
@@ -813,7 +783,7 @@ const performUpdateProfile = async () => {
     showError(err.response?.data?.error || 'Error updating profile')
     // If the error is specifically about the username being taken
     if (err.response?.data?.error === 'Username already taken') {
-      showError(t('profile.usernameTakenError'));
+      showError(t('profile.usernameTakenError'))
     }
   } finally {
     isUpdating.value = false
@@ -828,13 +798,17 @@ watch(
   }
 )
 
-watch(() => profileData.value.has_profile_image, (hasImage) => {
-  if (hasImage) {
-    isViewProfileImageLoading.value = true;
-  } else {
-    isViewProfileImageLoading.value = false;
-  }
-}, { immediate: true });
+watch(
+  () => profileData.value.has_profile_image,
+  (hasImage) => {
+    if (hasImage) {
+      isViewProfileImageLoading.value = true
+    } else {
+      isViewProfileImageLoading.value = false
+    }
+  },
+  { immediate: true }
+)
 
 // Initialize
 
@@ -843,6 +817,6 @@ onMounted(() => {
   // handles authentication checks. By the time onMounted is called,
   // auth.state.isLoggedIn (and other auth state like username) should be stable
   // if the navigation was allowed by the guard.
-  fetchProfileData();
+  fetchProfileData()
 })
 </script>

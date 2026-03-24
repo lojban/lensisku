@@ -1,34 +1,53 @@
 <template>
   <div class="space-y-4">
-    <div
-      v-if="threads.length"
-      class="space-y-4"
-    >
+    <div v-if="threads.length" class="space-y-4">
       <div
         v-for="thread in threads"
-        :key="thread.source === 'comment' ? thread.thread_id : 'mail-' + (thread.cleaned_subject || '')"
+        :key="
+          thread.source === 'comment' ? thread.thread_id : 'mail-' + (thread.cleaned_subject || '')
+        "
         class="space-y-2 bg-white p-4 rounded-lg border border-gray-200 hover:border-blue-200 transition-colors cursor-pointer"
-        @click="thread.source === 'comment' ? router.push(`/comments?thread_id=${thread.thread_id}&scroll_to=${thread.comment_id}&valsi_id=${thread.valsi_id || ''}&definition_id=${thread.definition_id || ''}`) : goToMailThread(thread.cleaned_subject || thread.subject)"
+        @click="
+          thread.source === 'comment'
+            ? router.push(
+                `/comments?thread_id=${thread.thread_id}&scroll_to=${thread.comment_id}&valsi_id=${thread.valsi_id || ''}&definition_id=${thread.definition_id || ''}`
+              )
+            : goToMailThread(thread.cleaned_subject || thread.subject)
+        "
       >
         <!-- Comment thread -->
         <template v-if="thread.source === 'comment'">
           <div class="flex flex-wrap gap-2 items-center mb-2">
             <h3 class="font-medium text-gray-800">
-              <template v-if="thread.first_comment_content?.some(p => p.type === 'text' && p.data?.startsWith('!['))">
+              <template
+                v-if="
+                  thread.first_comment_content?.some(
+                    (p) => p.type === 'text' && p.data?.startsWith('![')
+                  )
+                "
+              >
                 <Image class="w-4 h-4 inline-block mr-1" />
                 {{ t('activityThreads.imageComment') }}
               </template>
               <template v-else>
                 <LazyMathJax
-                  :content="thread.first_comment_subject || thread.first_comment_content?.find(p => p.type === 'text')?.data || '-'"
+                  :content="
+                    thread.first_comment_subject ||
+                    thread.first_comment_content?.find((p) => p.type === 'text')?.data ||
+                    '-'
+                  "
                   :enable-markdown="true"
                   class="inline"
                 />
               </template>
-              <span class="text-sm font-normal text-gray-400 italic"> · {{ t('activityThreads.by') }} {{ thread.username }}</span>
+              <span class="text-sm font-normal text-gray-400 italic">
+                · {{ t('activityThreads.by') }} {{ thread.username }}</span
+              >
             </h3>
           </div>
-          <div class="flex items-center text-sm text-blue-500 hover:text-blue-700 hover:underline pb-2 border-b">
+          <div
+            class="flex items-center text-sm text-blue-500 hover:text-blue-700 hover:underline pb-2 border-b"
+          >
             <span>{{ thread.total_replies }} {{ t('activityThreads.comments') }}</span>
           </div>
           <div class="text-sm text-gray-600 space-y-2">
@@ -43,15 +62,9 @@
               v-if="thread.simple_content"
               class="border-l-2 border-gray-300 pl-2 text-gray-500 [&_img]:max-h-48 [&_img]:object-contain"
             >
-              <LazyMathJax
-                :content="thread.simple_content"
-                :enable-markdown="true"
-              />
+              <LazyMathJax :content="thread.simple_content" :enable-markdown="true" />
             </div>
-            <div
-              v-else
-              class="flex items-center gap-2 text-gray-400 pt-1"
-            >
+            <div v-else class="flex items-center gap-2 text-gray-400 pt-1">
               <MessageSquareMore class="w-4 h-4" />
               <span class="text-sm">{{ t('activityThreads.noContent') }}</span>
             </div>
@@ -67,34 +80,29 @@
                 class="inline"
               />
             </h3>
-            <span class="text-sm font-normal text-gray-400 italic"> · {{ t('activityThreads.by') }} {{ thread.from_address }}</span>
+            <span class="text-sm font-normal text-gray-400 italic">
+              · {{ t('activityThreads.by') }} {{ thread.from_address }}</span
+            >
           </div>
-          <div class="flex items-center text-sm text-blue-500 hover:text-blue-700 hover:underline pb-2 border-b">
+          <div
+            class="flex items-center text-sm text-blue-500 hover:text-blue-700 hover:underline pb-2 border-b"
+          >
             <span>{{ thread.message_count }} {{ t('activityThreads.messages') }}</span>
           </div>
           <div
             v-if="thread.content_preview"
             class="text-sm text-gray-600 border-l-2 border-gray-300 pl-2 text-gray-500 [&_img]:max-h-48 [&_img]:object-contain"
           >
-            <LazyMathJax
-              :content="thread.content_preview"
-              :enable-markdown="true"
-            />
+            <LazyMathJax :content="thread.content_preview" :enable-markdown="true" />
           </div>
-          <div
-            v-else
-            class="flex items-center gap-2 text-gray-400 pt-1 text-sm"
-          >
+          <div v-else class="flex items-center gap-2 text-gray-400 pt-1 text-sm">
             <MessageSquareMore class="w-4 h-4" />
             <span>{{ t('activityThreads.noContent') }}</span>
           </div>
         </template>
       </div>
     </div>
-    <div
-      v-else
-      class="text-center py-8 bg-gray-50 rounded-lg border border-gray-200"
-    >
+    <div v-else class="text-center py-8 bg-gray-50 rounded-lg border border-gray-200">
       <p class="text-sm text-gray-600">
         {{ t('activityThreads.noWavesFound') }}
       </p>
@@ -121,15 +129,15 @@ function goToMailThread(subject) {
 defineProps({
   threads: {
     type: Array,
-    required: true
+    required: true,
   },
   formatDateForThread: {
     type: Function,
-    required: true
+    required: true,
   },
   formatTime: {
     type: Function,
-    required: true
-  }
+    required: true,
+  },
 })
 </script>

@@ -1,0 +1,10 @@
+dist
+node_modules
+pnpm-lock.yaml
+pnpm-workspace.yaml
+build.log
+build2.log
+build3.log
+coverage
+*.min.js
+*.min.css

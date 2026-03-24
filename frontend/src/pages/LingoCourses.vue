@@ -12,11 +12,13 @@
           type="text"
           class="input-field w-full sm:max-w-md"
           :placeholder="t('lingo.searchCourses')"
-        >
+        />
       </div>
 
       <div v-if="isLoading" class="flex h-full w-full items-center justify-center py-12">
-        <div class="h-10 w-10 animate-spin rounded-full border-2 border-green-500 border-t-transparent" />
+        <div
+          class="h-10 w-10 animate-spin rounded-full border-2 border-green-500 border-t-transparent"
+        />
       </div>
 
       <div

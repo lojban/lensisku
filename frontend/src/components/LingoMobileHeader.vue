@@ -1,5 +1,7 @@
 <template>
-  <header class="lingo-mobile-header fixed left-0 right-0 top-0 z-50 flex h-14 items-center border-b border-white/20 bg-green-500 px-4 lg:hidden">
+  <header
+    class="lingo-mobile-header fixed left-0 right-0 top-0 z-50 flex h-14 items-center border-b border-white/20 bg-green-500 px-4 lg:hidden"
+  >
     <button
       type="button"
       class="flex h-10 w-10 items-center justify-center rounded-lg text-white transition hover:bg-white/20"

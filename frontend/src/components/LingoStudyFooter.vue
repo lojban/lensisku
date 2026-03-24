@@ -13,7 +13,10 @@
         class="flex items-center text-xs font-bold text-green-600 sm:text-sm"
         :class="{ 'lg:text-base': !compact, 'lg:text-sm': compact }"
       >
-        <CheckCircle class="mr-1.5 h-4 w-4 shrink-0 sm:mr-2 sm:h-5 sm:w-5" :class="{ 'lg:h-6 lg:w-6': !compact }" />
+        <CheckCircle
+          class="mr-1.5 h-4 w-4 shrink-0 sm:mr-2 sm:h-5 sm:w-5"
+          :class="{ 'lg:h-6 lg:w-6': !compact }"
+        />
         <span>{{ correctLabel }}</span>
       </div>
       <div
@@ -21,7 +24,10 @@
         class="flex items-center text-xs font-bold text-rose-500 sm:text-sm"
         :class="{ 'lg:text-base': !compact, 'lg:text-sm': compact }"
       >
-        <XCircle class="mr-1.5 h-4 w-4 shrink-0 sm:mr-2 sm:h-5 sm:w-5" :class="{ 'lg:h-6 lg:w-6': !compact }" />
+        <XCircle
+          class="mr-1.5 h-4 w-4 shrink-0 sm:mr-2 sm:h-5 sm:w-5"
+          :class="{ 'lg:h-6 lg:w-6': !compact }"
+        />
         <span>{{ wrongLabel }}</span>
       </div>
       <div v-else class="flex-1" />
@@ -32,7 +38,12 @@
         :disabled="disabled"
         :aria-disabled="disabled"
         class="btn-aqua ml-auto text-sm"
-        :class="[buttonClass, compact ? 'min-w-[88px] py-2 sm:min-w-[96px] sm:py-2' : 'min-w-[100px] py-2.5 sm:min-w-[110px] sm:py-3 sm:text-base lg:min-w-[120px]']"
+        :class="[
+          buttonClass,
+          compact
+            ? 'min-w-[88px] py-2 sm:min-w-[96px] sm:py-2'
+            : 'min-w-[100px] py-2.5 sm:min-w-[110px] sm:py-3 sm:text-base lg:min-w-[120px]',
+        ]"
         @click="$emit('check')"
       >
         {{ buttonLabel }}

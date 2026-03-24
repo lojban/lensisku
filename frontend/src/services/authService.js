@@ -4,7 +4,7 @@ import { api } from '../api'
 
 class AuthService {
   async checkAuthStatus() {
-    if (typeof window === 'undefined') return;
+    if (typeof window === 'undefined') return
 
     const accessToken = localStorage.getItem('accessToken')
     if (!accessToken) return false
@@ -27,7 +27,7 @@ class AuthService {
   }
 
   async refreshAccessToken() {
-    if (typeof window === 'undefined') return;
+    if (typeof window === 'undefined') return
 
     try {
       const refreshToken = localStorage.getItem('refreshToken')

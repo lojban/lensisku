@@ -10,28 +10,40 @@
   -->
   <div class="assistant-root flex min-h-0 w-full min-w-0 flex-1 gap-0 overflow-hidden md:h-full">
     <!-- Mobile drawer backdrop -->
-    <div v-if="!isDesktop && sidebarOpen"
-      class="fixed inset-0 z-40 bg-black/40 backdrop-blur-[1px] md:hidden transition-opacity" aria-hidden="true"
-      @click="sidebarOpen = false" />
+    <div
+      v-if="!isDesktop && sidebarOpen"
+      class="fixed inset-0 z-40 bg-black/40 backdrop-blur-[1px] md:hidden transition-opacity"
+      aria-hidden="true"
+      @click="sidebarOpen = false"
+    />
 
     <!-- Chat history sidebar -->
-    <aside :class="[
-      'assistant-sidebar flex min-h-0 flex-shrink-0 flex-col border-r border-gray-200 bg-gradient-to-b from-slate-50 to-gray-50/90 z-50',
-      isDesktop
-        ? 'relative h-full w-[min(100%,18rem)] md:w-72'
-        : 'fixed bottom-0 left-0 top-14 w-[min(18rem,88vw)] shadow-2xl transition-transform duration-200 ease-out sm:top-12 md:relative md:h-full md:translate-x-0 md:shadow-none',
-      !isDesktop && !sidebarOpen ? '-translate-x-full pointer-events-none' : 'translate-x-0',
-    ]" :aria-label="$t('assistantChat.searchChats')">
+    <aside
+      :class="[
+        'assistant-sidebar flex min-h-0 flex-shrink-0 flex-col border-r border-gray-200 bg-gradient-to-b from-slate-50 to-gray-50/90 z-50',
+        isDesktop
+          ? 'relative h-full w-[min(100%,18rem)] md:w-72'
+          : 'fixed bottom-0 left-0 top-14 w-[min(18rem,88vw)] shadow-2xl transition-transform duration-200 ease-out sm:top-12 md:relative md:h-full md:translate-x-0 md:shadow-none',
+        !isDesktop && !sidebarOpen ? '-translate-x-full pointer-events-none' : 'translate-x-0',
+      ]"
+      :aria-label="$t('assistantChat.searchChats')"
+    >
       <!-- Row 1: close (mobile) + new chat -->
       <div class="flex items-center gap-2 border-b border-gray-200/60 bg-white/40 px-2 py-2">
-        <button v-if="!isDesktop" type="button"
+        <button
+          v-if="!isDesktop"
+          type="button"
           class="shrink-0 rounded-lg p-1.5 text-gray-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-400/50"
-          :aria-label="$t('assistantChat.closeChatHistory')" @click="sidebarOpen = false">
+          :aria-label="$t('assistantChat.closeChatHistory')"
+          @click="sidebarOpen = false"
+        >
           <X class="h-5 w-5" />
         </button>
-        <button type="button"
+        <button
+          type="button"
           class="flex min-w-0 flex-1 items-center justify-center gap-2 rounded-lg border border-dashed border-gray-300 bg-white/80 py-2.5 text-sm font-medium text-gray-700 hover:border-blue-400 hover:bg-blue-50/60 hover:text-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-400/40 transition-colors"
-          @click="startNewChat">
+          @click="startNewChat"
+        >
           <Plus class="h-4 w-4 shrink-0" />
           {{ $t('assistantChat.newChat') }}
         </button>
@@ -40,11 +52,18 @@
       <!-- Row 2: search -->
       <div class="border-b border-gray-200/60 bg-white/40 px-2 py-2">
         <div class="relative">
-          <Search class="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400"
-            aria-hidden="true" />
-          <input v-model="chatSearchQuery" type="search" autocomplete="off"
+          <Search
+            class="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400"
+            aria-hidden="true"
+          />
+          <input
+            v-model="chatSearchQuery"
+            type="search"
+            autocomplete="off"
             class="w-full rounded-lg border border-gray-200 bg-white py-2 pl-9 pr-3 text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400/30"
-            :placeholder="$t('assistantChat.searchChatsPlaceholder')" @blur="onAssistantFormControlBlur">
+            :placeholder="$t('assistantChat.searchChatsPlaceholder')"
+            @blur="onAssistantFormControlBlur"
+          />
         </div>
       </div>
 
@@ -52,18 +71,31 @@
         <p v-if="filteredSessions.length === 0" class="px-2 py-6 text-center text-sm text-gray-500">
           {{ $t('assistantChat.noChatsMatch') }}
         </p>
-        <button v-for="session in filteredSessions" :key="session.id" type="button" role="listitem"
+        <button
+          v-for="session in filteredSessions"
+          :key="session.id"
+          type="button"
+          role="listitem"
           class="group w-full text-left rounded-lg px-2.5 py-2.5 transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-400/50"
-          :class="session.id === activeSessionId
+          :class="
+            session.id === activeSessionId
               ? 'bg-blue-100/90 border border-blue-200/80 shadow-sm'
               : 'border border-transparent hover:bg-gray-100/90'
-            " :aria-current="session.id === activeSessionId ? 'true' : undefined" :aria-label="session.id === activeSessionId
+          "
+          :aria-current="session.id === activeSessionId ? 'true' : undefined"
+          :aria-label="
+            session.id === activeSessionId
               ? $t('assistantChat.activeChat') + ': ' + session.title
               : session.title
-            " @click="selectSession(session.id)">
+          "
+          @click="selectSession(session.id)"
+        >
           <div class="flex items-start gap-2">
-            <MessageSquare class="w-4 h-4 mt-0.5 shrink-0"
-              :class="session.id === activeSessionId ? 'text-blue-600' : 'text-gray-400'" aria-hidden="true" />
+            <MessageSquare
+              class="w-4 h-4 mt-0.5 shrink-0"
+              :class="session.id === activeSessionId ? 'text-blue-600' : 'text-gray-400'"
+              aria-hidden="true"
+            />
             <div class="min-w-0 flex-1">
               <p class="text-sm font-medium text-gray-900 line-clamp-2 leading-snug">
                 {{ session.title }}
@@ -72,9 +104,12 @@
                 {{ formatSessionTime(session.updatedAt) }}
               </p>
             </div>
-            <button type="button"
+            <button
+              type="button"
               class="shrink-0 p-1 rounded text-gray-400 hover:text-red-600 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-300 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100"
-              :aria-label="$t('assistantChat.deleteChat')" @click="deleteSession(session.id, $event)">
+              :aria-label="$t('assistantChat.deleteChat')"
+              @click="deleteSession(session.id, $event)"
+            >
               <Trash2 class="w-3.5 h-3.5" />
             </button>
           </div>
@@ -85,10 +120,13 @@
     <!-- Main column: flex column — header | flex-1 messages | footer composer -->
     <div class="assistant-main flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
       <header class="assistant-main-header flex shrink-0 items-start gap-3 px-3 pt-3">
-        <button type="button"
+        <button
+          type="button"
           class="md:hidden shrink-0 p-2 rounded-lg border border-gray-200 bg-white text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-400/50"
-          :aria-label="$t('assistantChat.openChatHistory')" :aria-expanded="sidebarOpen"
-          @click="sidebarOpen = !sidebarOpen">
+          :aria-label="$t('assistantChat.openChatHistory')"
+          :aria-expanded="sidebarOpen"
+          @click="sidebarOpen = !sidebarOpen"
+        >
           <PanelLeft class="w-5 h-5" />
         </button>
         <div class="min-w-0 flex-1">
@@ -96,9 +134,11 @@
             <h1 class="min-w-0 text-2xl font-bold text-gray-800">
               {{ $t('assistantChat.title') }}
             </h1>
-            <button type="button"
+            <button
+              type="button"
               class="hidden shrink-0 sm:inline-flex btn-aqua-emerald items-center gap-1.5 px-2.5 py-1.5 text-sm"
-              @click="startNewChat">
+              @click="startNewChat"
+            >
               <Plus class="w-4 h-4" />
               {{ $t('assistantChat.newChat') }}
             </button>
@@ -106,10 +146,15 @@
         </div>
       </header>
 
-      <div class="assistant-main-stage assistant-main-stage-bg flex min-h-0 flex-1 flex-col px-3 pt-3">
-        <div ref="scrollContainer"
+      <div
+        class="assistant-main-stage assistant-main-stage-bg flex min-h-0 flex-1 flex-col px-3 pt-3"
+      >
+        <div
+          ref="scrollContainer"
           class="assistant-messages relative min-h-0 flex-1 overflow-x-hidden rounded-lg border border-gray-200 bg-white [overscroll-behavior-y:contain]"
-          :class="isRestoringScroll ? 'overflow-hidden' : 'overflow-y-auto'" @scroll.passive="onScrollAreaScroll">
+          :class="isRestoringScroll ? 'overflow-hidden' : 'overflow-y-auto'"
+          @scroll.passive="onScrollAreaScroll"
+        >
           <!-- Until localStorage is read, avoid wrong empty state / CLS -->
           <div v-if="!loaded" class="p-4 space-y-3 animate-pulse" aria-hidden="true">
             <div class="h-7 w-48 rounded-md bg-gray-200" />
@@ -119,9 +164,11 @@
 
           <template v-else>
             <!-- Non-empty: solid cover + skeleton until scroll restored; real thread stays invisible (layout preserved) -->
-            <div v-if="isRestoringScroll"
+            <div
+              v-if="isRestoringScroll"
               class="pointer-events-none absolute inset-0 z-10 flex min-h-full flex-col gap-3 bg-white p-4"
-              aria-hidden="true">
+              aria-hidden="true"
+            >
               <div class="h-4 w-3/4 max-w-md animate-pulse rounded-md bg-gray-200" />
               <div class="h-20 w-full max-w-md animate-pulse rounded-md bg-gray-100" />
               <div class="h-4 w-2/3 animate-pulse rounded-md bg-gray-200" />
@@ -129,22 +176,40 @@
               <div class="h-4 w-1/2 animate-pulse rounded-md bg-gray-200" />
             </div>
 
-            <div class="p-4 space-y-4" :class="messagePaneVisibleClass" :aria-hidden="isRestoringScroll">
+            <div
+              class="p-4 space-y-4"
+              :class="messagePaneVisibleClass"
+              :aria-hidden="isRestoringScroll"
+            >
               <div v-if="showEmptyChatHint" class="text-gray-500 text-sm">
                 {{ $t('assistantChat.emptyState') }}
               </div>
 
-              <div v-for="(msg, index) in messages" :key="index" class="flex flex-col gap-3"
-                :class="msg.role === 'user' ? 'items-end' : 'items-start'">
+              <div
+                v-for="(msg, index) in messages"
+                :key="index"
+                class="flex flex-col gap-3"
+                :class="msg.role === 'user' ? 'items-end' : 'items-start'"
+              >
                 <!-- User message: bubble + edit (row, pencil to the right of the bubble) -->
                 <div v-if="msg.role === 'user'" class="flex w-full justify-end">
-                  <div v-if="editingMessageIndex === index" id="assistant-inline-edit-panel" ref="inlineEditPanelRef"
-                    class="flex w-full max-w-[80%] flex-col gap-0 rounded-lg border border-blue-300 bg-white py-0 shadow-sm">
-                    <label class="sr-only" :for="'assistant-edit-' + index">{{ $t('assistantChat.editMessage')
-                      }}</label>
-                    <textarea :id="'assistant-edit-' + index" v-model="editingMessageDraft"
-                      class="textarea-field min-h-[4.5rem] w-full resize-y text-sm text-gray-900" rows="4"
-                      @keydown.escape.prevent="cancelEditMessage" @blur="onAssistantFormControlBlur" />
+                  <div
+                    v-if="editingMessageIndex === index"
+                    id="assistant-inline-edit-panel"
+                    ref="inlineEditPanelRef"
+                    class="flex w-full max-w-[80%] flex-col gap-0 rounded-lg border border-blue-300 bg-white py-0 shadow-sm"
+                  >
+                    <label class="sr-only" :for="'assistant-edit-' + index">{{
+                      $t('assistantChat.editMessage')
+                    }}</label>
+                    <textarea
+                      :id="'assistant-edit-' + index"
+                      v-model="editingMessageDraft"
+                      class="textarea-field min-h-[4.5rem] w-full resize-y text-sm text-gray-900"
+                      rows="4"
+                      @keydown.escape.prevent="cancelEditMessage"
+                      @blur="onAssistantFormControlBlur"
+                    />
                     <div class="mx-2 my-2 flex justify-end gap-2">
                       <button type="button" class="btn-cancel" @click="cancelEditMessage">
                         {{ $t('assistantChat.cancelEdit') }}
@@ -154,77 +219,136 @@
                       </button>
                     </div>
                   </div>
-                  <div v-else class="flex w-full max-w-[80%] flex-row items-end justify-end gap-1.5">
+                  <div
+                    v-else
+                    class="flex w-full max-w-[80%] flex-row items-end justify-end gap-1.5"
+                  >
                     <div
-                      class="min-w-0 max-w-[calc(100%-2.5rem)] rounded-lg px-3 py-2 text-sm break-words bg-blue-600 text-white whitespace-pre-wrap">
+                      class="min-w-0 max-w-[calc(100%-2.5rem)] rounded-lg px-3 py-2 text-sm break-words bg-blue-600 text-white whitespace-pre-wrap"
+                    >
                       <span class="mb-1 block text-[11px] font-semibold text-blue-100">
                         {{ $t('assistantChat.userLabel') }}
                       </span>
                       <span>{{ msg.content }}</span>
                     </div>
-                    <button v-if="canEditMessages" type="button"
+                    <button
+                      v-if="canEditMessages"
+                      type="button"
                       class="shrink-0 rounded-md p-1.5 text-gray-500 hover:bg-gray-100 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/40"
-                      :aria-label="$t('assistantChat.editMessage')" :title="$t('assistantChat.editMessage')"
-                      @click="startEditMessage(index)">
+                      :aria-label="$t('assistantChat.editMessage')"
+                      :title="$t('assistantChat.editMessage')"
+                      @click="startEditMessage(index)"
+                    >
                       <Pencil class="h-4 w-4" aria-hidden="true" />
                     </button>
                   </div>
                 </div>
 
                 <!-- Assistant: one bubble per reply (multi-model) or single top-level bubble -->
-                <div v-else-if="msg.role === 'assistant'" class="flex w-full flex-col items-start gap-1">
-                  <div v-for="(reply, replyIdx) in assistantReplies(msg)" :key="replyIdx"
-                    class="max-w-[80%] min-w-0 rounded-lg px-3 py-2 text-sm break-words bg-gray-100 text-gray-900 assistant-markdown">
+                <div
+                  v-else-if="msg.role === 'assistant'"
+                  class="flex w-full flex-col items-start gap-1"
+                >
+                  <div
+                    v-for="(reply, replyIdx) in assistantReplies(msg)"
+                    :key="replyIdx"
+                    class="max-w-[80%] min-w-0 rounded-lg px-3 py-2 text-sm break-words bg-gray-100 text-gray-900 assistant-markdown"
+                  >
                     <span class="mb-1 block text-[11px] font-semibold text-gray-500">
-                      {{ reply.modelName || (reply.model ? formatModelLabel(reply.model) : '') ||
-                        $t('assistantChat.assistantLabel') }}
+                      {{
+                        reply.modelName ||
+                        (reply.model ? formatModelLabel(reply.model) : '') ||
+                        $t('assistantChat.assistantLabel')
+                      }}
                     </span>
                     <!-- Thought process: steps with optional folded tool output -->
-                    <div v-if="reply.steps && reply.steps.length > 0" class="thought-process mb-2 space-y-2">
-                      <AssistantThoughtStep v-for="(step, stepIdx) in reply.steps" :key="stepIdx" :step="step"
-                        :lang-id="locale" :show-raw-output="isStepOutputVisible(stepKey(index, replyIdx, stepIdx))"
-                        @toggle-raw="toggleStepOutput(stepKey(index, replyIdx, stepIdx))" />
+                    <div
+                      v-if="reply.steps && reply.steps.length > 0"
+                      class="thought-process mb-2 space-y-2"
+                    >
+                      <AssistantThoughtStep
+                        v-for="(step, stepIdx) in reply.steps"
+                        :key="stepIdx"
+                        :step="step"
+                        :lang-id="locale"
+                        :show-raw-output="isStepOutputVisible(stepKey(index, replyIdx, stepIdx))"
+                        @toggle-raw="toggleStepOutput(stepKey(index, replyIdx, stepIdx))"
+                      />
                     </div>
                     <!-- Thinking dots while streaming and no reply yet for this model -->
-                    <div v-if="isStreamingThisSession && index === messages.length - 1 && !reply.content"
-                      class="thinking-dots mb-1 flex min-h-[1.25rem] items-center gap-1" role="status"
-                      :aria-label="$t('assistantChat.thinking')">
+                    <div
+                      v-if="
+                        isStreamingThisSession && index === messages.length - 1 && !reply.content
+                      "
+                      class="thinking-dots mb-1 flex min-h-[1.25rem] items-center gap-1"
+                      role="status"
+                      :aria-label="$t('assistantChat.thinking')"
+                    >
                       <span class="thinking-dot" />
                       <span class="thinking-dot" />
                       <span class="thinking-dot" />
                     </div>
-                    <LazyMathJax v-if="reply.content" :content="reply.content" :enable-markdown="true"
+                    <LazyMathJax
+                      v-if="reply.content"
+                      :content="reply.content"
+                      :enable-markdown="true"
                       :enable-curly-links="false"
-                      :lang-id="locale" />
+                      :lang-id="locale"
+                    />
                   </div>
                   <!-- Single top-level bubble when `replies` is empty -->
-                  <div v-if="assistantReplies(msg).length === 0"
-                    class="max-w-[80%] min-w-0 rounded-lg px-3 py-2 text-sm break-words bg-gray-100 text-gray-900 assistant-markdown">
+                  <div
+                    v-if="assistantReplies(msg).length === 0"
+                    class="max-w-[80%] min-w-0 rounded-lg px-3 py-2 text-sm break-words bg-gray-100 text-gray-900 assistant-markdown"
+                  >
                     <span class="mb-1 block text-[11px] font-semibold text-gray-500">
                       {{ $t('assistantChat.assistantLabel') }}
                     </span>
-                    <div v-if="msg.steps && msg.steps.length > 0" class="thought-process mb-2 space-y-2">
-                      <AssistantThoughtStep v-for="(step, stepIdx) in msg.steps" :key="stepIdx" :step="step"
-                        :lang-id="locale" :show-raw-output="isStepOutputVisible(stepKey('single', index, stepIdx))"
-                        @toggle-raw="toggleStepOutput(stepKey('single', index, stepIdx))" />
+                    <div
+                      v-if="msg.steps && msg.steps.length > 0"
+                      class="thought-process mb-2 space-y-2"
+                    >
+                      <AssistantThoughtStep
+                        v-for="(step, stepIdx) in msg.steps"
+                        :key="stepIdx"
+                        :step="step"
+                        :lang-id="locale"
+                        :show-raw-output="isStepOutputVisible(stepKey('single', index, stepIdx))"
+                        @toggle-raw="toggleStepOutput(stepKey('single', index, stepIdx))"
+                      />
                     </div>
-                    <div v-if="isStreamingThisSession && index === messages.length - 1 && !msg.content"
-                      class="thinking-dots mb-1 flex min-h-[1.25rem] items-center gap-1" role="status"
-                      :aria-label="$t('assistantChat.thinking')">
+                    <div
+                      v-if="isStreamingThisSession && index === messages.length - 1 && !msg.content"
+                      class="thinking-dots mb-1 flex min-h-[1.25rem] items-center gap-1"
+                      role="status"
+                      :aria-label="$t('assistantChat.thinking')"
+                    >
                       <span class="thinking-dot" />
                       <span class="thinking-dot" />
                       <span class="thinking-dot" />
                     </div>
-                    <LazyMathJax v-if="msg.content" :content="msg.content" :enable-markdown="true"
-                      :enable-curly-links="false" :lang-id="locale" />
+                    <LazyMathJax
+                      v-if="msg.content"
+                      :content="msg.content"
+                      :enable-markdown="true"
+                      :enable-curly-links="false"
+                      :lang-id="locale"
+                    />
                   </div>
                 </div>
               </div>
 
               <!-- Thinking indicator when no assistant message yet (e.g. before stream starts) -->
               <div
-                v-if="!isRestoringScroll && isStreamingThisSession && (messages.length === 0 || messages[messages.length - 1]?.role !== 'assistant')"
-                class="flex justify-start" role="status" :aria-label="$t('assistantChat.thinking')">
+                v-if="
+                  !isRestoringScroll &&
+                  isStreamingThisSession &&
+                  (messages.length === 0 || messages[messages.length - 1]?.role !== 'assistant')
+                "
+                class="flex justify-start"
+                role="status"
+                :aria-label="$t('assistantChat.thinking')"
+              >
                 <div class="max-w-[80%] rounded-lg px-3 py-2.5 bg-gray-100 text-gray-600 text-sm">
                   <span class="block text-[11px] font-semibold text-gray-500 mb-1.5">
                     {{ $t('assistantChat.assistantLabel') }}
@@ -242,25 +366,41 @@
       </div>
 
       <footer
-        class="assistant-main-footer shrink-0 w-full border-t border-gray-100 bg-white px-3 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom,0px))]">
+        class="assistant-main-footer shrink-0 w-full border-t border-gray-100 bg-white px-3 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom,0px))]"
+      >
         <form class="assistant-composer flex flex-col gap-2" @submit.prevent="handleSend">
           <div class="relative min-w-0">
-            <textarea v-model="input"
+            <textarea
+              v-model="input"
               class="textarea-field min-h-[88px] max-h-40 w-full resize-y pl-3 pr-12 pb-11 pt-2.5"
-              :placeholder="$t('assistantChat.placeholder')" :disabled="isStreamingThisSession"
-              @keydown.enter.exact.prevent="handleSend" @blur="onAssistantFormControlBlur" />
-            <button :type="isStreamingThisSession ? 'button' : 'submit'"
+              :placeholder="$t('assistantChat.placeholder')"
+              :disabled="isStreamingThisSession"
+              @keydown.enter.exact.prevent="handleSend"
+              @blur="onAssistantFormControlBlur"
+            />
+            <button
+              :type="isStreamingThisSession ? 'button' : 'submit'"
               class="assistant-composer-action !rounded-full absolute bottom-3 right-3 z-10 flex h-8 w-8 shrink-0 items-center justify-center !p-0 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white disabled:cursor-not-allowed disabled:opacity-50"
-              :class="isStreamingThisSession
-                ? 'border border-black bg-black shadow-sm transition-colors enabled:hover:bg-neutral-950 enabled:hover:border-black focus:ring-red-500/45'
-                : 'border border-gray-300 bg-white text-black shadow-sm transition-colors enabled:hover:bg-gray-50 enabled:hover:border-gray-400 focus:ring-gray-400/60'"
-              :disabled="!isStreamingThisSession && !input.trim()" :aria-label="isStreamingThisSession
-                  ? (isRecoveringRemoteStream ? $t('assistantChat.recoveringStream') : $t('assistantChat.stopRecording'))
+              :class="
+                isStreamingThisSession
+                  ? 'border border-black bg-black shadow-sm transition-colors enabled:hover:bg-neutral-950 enabled:hover:border-black focus:ring-red-500/45'
+                  : 'border border-gray-300 bg-white text-black shadow-sm transition-colors enabled:hover:bg-gray-50 enabled:hover:border-gray-400 focus:ring-gray-400/60'
+              "
+              :disabled="!isStreamingThisSession && !input.trim()"
+              :aria-label="
+                isStreamingThisSession
+                  ? isRecoveringRemoteStream
+                    ? $t('assistantChat.recoveringStream')
+                    : $t('assistantChat.stopRecording')
                   : $t('assistantChat.sendMessage')
-                " @click="isStreamingThisSession ? stopStreaming() : undefined">
-              <span v-if="isStreamingThisSession"
+              "
+              @click="isStreamingThisSession ? stopStreaming() : undefined"
+            >
+              <span
+                v-if="isStreamingThisSession"
                 class="block h-[1rem] w-[1rem] shrink-0 rounded-[2px] bg-red-500"
-                aria-hidden="true" />
+                aria-hidden="true"
+              />
               <ArrowUp v-else class="h-6 w-6" stroke-width="2.25" aria-hidden="true" />
             </button>
           </div>
@@ -270,14 +410,20 @@
               <p class="min-w-0 flex-1 truncate text-xs text-red-600">
                 {{ error }}
               </p>
-              <button type="button"
+              <button
+                type="button"
                 class="shrink-0 rounded p-1 text-red-600 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-300"
-                :aria-label="$t('assistantChat.retry')" :title="$t('assistantChat.retry')" @click="retryLast">
+                :aria-label="$t('assistantChat.retry')"
+                :title="$t('assistantChat.retry')"
+                @click="retryLast"
+              >
                 <RotateCw class="h-4 w-4" />
               </button>
             </div>
-            <p v-else-if="isRecoveringRemoteStream"
-              class="min-w-0 flex-1 text-xs leading-snug text-amber-800/90">
+            <p
+              v-else-if="isRecoveringRemoteStream"
+              class="min-w-0 flex-1 text-xs leading-snug text-amber-800/90"
+            >
               {{ $t('assistantChat.recoveringStream') }}
             </p>
             <span v-else class="min-w-0 flex-1 text-xs leading-snug text-gray-500">
@@ -433,10 +579,9 @@ function startRemoteStreamRecovery(chatId) {
       return
     }
     try {
-      const r = await fetch(
-        `${getApiBaseUrl()}/assistant/chats/${encodeURIComponent(chatId)}`,
-        { headers: getAuthHeaders() }
-      )
+      const r = await fetch(`${getApiBaseUrl()}/assistant/chats/${encodeURIComponent(chatId)}`, {
+        headers: getAuthHeaders(),
+      })
       if (!r.ok) return
       const row = await r.json()
       const msgs = Array.isArray(row.messages) ? row.messages : []
@@ -489,7 +634,9 @@ function assistantPlainText(msg) {
   }
   const parts = [msg.content || '']
   if (msg.steps && msg.steps.length > 0) {
-    parts.push(...msg.steps.map((s) => `${s.action || ''} ${s.result || ''} ${s.tool_output || ''}`))
+    parts.push(
+      ...msg.steps.map((s) => `${s.action || ''} ${s.result || ''} ${s.tool_output || ''}`)
+    )
   }
   return parts.join(' ')
 }
@@ -1119,7 +1266,10 @@ async function startNewChat() {
       scrollTop: 0,
       primaryModelId: null,
     }
-    sessions.value = [newSession, ...sessions.value.filter((s) => s.id !== id)].slice(0, MAX_SESSIONS)
+    sessions.value = [newSession, ...sessions.value.filter((s) => s.id !== id)].slice(
+      0,
+      MAX_SESSIONS
+    )
     activeSessionId.value = id
     messages.value = []
   }
@@ -1210,7 +1360,10 @@ async function deleteSession(id, e) {
     if (isRemoteMode.value) {
       try {
         const base = getApiBaseUrl()
-        const r = await fetch(`${base}/assistant/chats`, { method: 'POST', headers: getAuthHeaders() })
+        const r = await fetch(`${base}/assistant/chats`, {
+          method: 'POST',
+          headers: getAuthHeaders(),
+        })
         if (r.ok) {
           const created = await r.json()
           const empty = {
@@ -1306,8 +1459,7 @@ function abortAssistantMessage(sessionId) {
     for (const r of last.replies) {
       r.streamFinished = true
     }
-    const r =
-      last.replies.find((x) => x.content?.trim()) ?? last.replies[last.replies.length - 1]
+    const r = last.replies.find((x) => x.content?.trim()) ?? last.replies[last.replies.length - 1]
     r.content = (r.content || '') + (r.content?.trim() ? '\n\n' : '') + note
   } else {
     last.content = (last.content || '') + (last.content?.trim() ? '\n\n' : '') + note
@@ -1467,8 +1619,7 @@ async function performRequest(sessionId, options = {}) {
           }
         } else if (event.type === 'step_start') {
           if (modelId) getOrCreateReply(modelId, modelName)
-          const idx =
-            typeof event.index === 'number' ? event.index : steps.length
+          const idx = typeof event.index === 'number' ? event.index : steps.length
           while (steps.length < idx) {
             steps.push({
               action: '',
@@ -1490,24 +1641,19 @@ async function performRequest(sessionId, options = {}) {
               action: event.action ?? existing?.action ?? '',
               result: '…',
               tool_output: existing?.tool_output,
-              assistant_reasoning:
-                event.assistant_reasoning ?? existing?.assistant_reasoning,
+              assistant_reasoning: event.assistant_reasoning ?? existing?.assistant_reasoning,
             }
           }
         } else if (event.type === 'step') {
           if (modelId) getOrCreateReply(modelId, modelName)
-          const idx =
-            typeof event.index === 'number'
-              ? event.index
-              : Math.max(0, steps.length - 1)
+          const idx = typeof event.index === 'number' ? event.index : Math.max(0, steps.length - 1)
           const stepPayload = {
-            action: event.action ?? (steps[idx]?.action ?? ''),
+            action: event.action ?? steps[idx]?.action ?? '',
             result: event.result ?? '',
             tool_output: event.tool_output ?? steps[idx]?.tool_output,
             tool_call_id: event.tool_call_id ?? steps[idx]?.tool_call_id,
             tool_content_plain: event.tool_content_plain ?? steps[idx]?.tool_content_plain,
-            assistant_reasoning:
-              event.assistant_reasoning ?? steps[idx]?.assistant_reasoning,
+            assistant_reasoning: event.assistant_reasoning ?? steps[idx]?.assistant_reasoning,
           }
           while (steps.length < idx) {
             steps.push({
@@ -1532,10 +1678,7 @@ async function performRequest(sessionId, options = {}) {
               name: 'jbovlaste_semantic_search',
             }
             const dupCheck = (trace) =>
-              trace?.some(
-                (s) =>
-                  s.role === 'tool' && tcId != null && s.tool_call_id === tcId
-              )
+              trace?.some((s) => s.role === 'tool' && tcId != null && s.tool_call_id === tcId)
             if (modelId) {
               const r = getOrCreateReply(modelId, modelName)
               if (r) {
@@ -1566,7 +1709,8 @@ async function performRequest(sessionId, options = {}) {
         } else if (event.type === 'error') {
           const errContent = event.error
             ? `_${t('assistantChat.error')}: ${event.error}_`
-            : t('assistantChat.error') + (event.raw_response ? `\n\n**Debug:**\n\`\`\`\n${event.raw_response}\n\`\`\`` : '')
+            : t('assistantChat.error') +
+              (event.raw_response ? `\n\n**Debug:**\n\`\`\`\n${event.raw_response}\n\`\`\`` : '')
           if (modelId) {
             const r = getOrCreateReply(modelId)
             if (r) {
@@ -1644,7 +1788,6 @@ async function runAssistantStream(sessionId, appendAssistant) {
     streamAbortController.value = null
   }
 }
-
 </script>
 
 <style scoped>
@@ -1743,7 +1886,6 @@ async function runAssistantStream(sessionId, appendAssistant) {
 }
 
 @keyframes thinking-bounce {
-
   0%,
   60%,
   100% {

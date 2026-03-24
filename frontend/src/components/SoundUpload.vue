@@ -4,8 +4,12 @@
       <label class="block text-sm font-medium text-blue-700">
         {{ label || t('soundUpload.sound') }}
       </label>
-      <button v-if="modelValue || loadedSound" type="button" class="text-sm text-red-600 hover:text-red-700"
-        @click="handleRemove">
+      <button
+        v-if="modelValue || loadedSound"
+        type="button"
+        class="text-sm text-red-600 hover:text-red-700"
+        @click="handleRemove"
+      >
         {{ t('soundUpload.removeSound') }}
       </button>
       <span v-else-if="note" class="text-xs text-gray-500">
@@ -14,7 +18,10 @@
     </div>
 
     <!-- Sound Preview -->
-    <div v-if="modelValue || loadedSound" class="relative flex flex-col items-center mt-2 p-4 border rounded-lg bg-gray-50">
+    <div
+      v-if="modelValue || loadedSound"
+      class="relative flex flex-col items-center mt-2 p-4 border rounded-lg bg-gray-50"
+    >
       <div class="flex items-center gap-4 mb-2">
         <Volume2 class="h-8 w-8 text-blue-500" />
         <span class="text-sm text-gray-600">{{ fileName || 'Custom Audio' }}</span>
@@ -25,7 +32,11 @@
     <!-- No sound: choose Upload or Record -->
     <div v-if="!modelValue && !loadedSound" class="mt-2 space-y-3">
       <!-- Tabs: Upload | Record -->
-      <div class="flex rounded-lg border border-gray-200 p-1 bg-gray-50" role="tablist" aria-label="Add sound by">
+      <div
+        class="flex rounded-lg border border-gray-200 p-1 bg-gray-50"
+        role="tablist"
+        aria-label="Add sound by"
+      >
         <button
           type="button"
           role="tab"
@@ -34,7 +45,7 @@
             'flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-md text-sm font-medium transition-colors',
             inputMode === 'upload'
               ? 'bg-white text-blue-600 shadow-sm'
-              : 'text-gray-600 hover:text-gray-900'
+              : 'text-gray-600 hover:text-gray-900',
           ]"
           @click="inputMode = 'upload'"
         >
@@ -49,9 +60,12 @@
             'flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-md text-sm font-medium transition-colors',
             inputMode === 'record'
               ? 'bg-white text-blue-600 shadow-sm'
-              : 'text-gray-600 hover:text-gray-900'
+              : 'text-gray-600 hover:text-gray-900',
           ]"
-          @click="inputMode = 'record'; recordingError = ''"
+          @click="
+            inputMode = 'record'
+            recordingError = ''
+          "
         >
           <Mic class="h-4 w-4" />
           {{ t('soundUpload.recordTab') }}
@@ -59,17 +73,28 @@
       </div>
 
       <!-- Upload panel -->
-      <div v-show="inputMode === 'upload'" ref="dropZoneRef"
-        class="flex justify-center px-6 pt-5 pb-6 border-2 border-dashed rounded-lg transition-colors" :class="{
+      <div
+        v-show="inputMode === 'upload'"
+        ref="dropZoneRef"
+        class="flex justify-center px-6 pt-5 pb-6 border-2 border-dashed rounded-lg transition-colors"
+        :class="{
           'border-blue-400 bg-blue-50': isOverDropZone,
           'border-gray-300': !isOverDropZone,
-        }">
+        }"
+      >
         <div class="space-y-1 text-center">
           <Upload class="mx-auto h-12 w-12 text-gray-300" :stroke-width="1" />
           <div class="flex flex-wrap justify-center gap-x-1 text-sm text-gray-600">
-            <label class="relative cursor-pointer rounded-md font-medium text-blue-600 hover:text-blue-500">
+            <label
+              class="relative cursor-pointer rounded-md font-medium text-blue-600 hover:text-blue-500"
+            >
               <span>{{ t('soundUpload.uploadPrompt') }}</span>
-              <input type="file" class="sr-only" accept="audio/mpeg,audio/mp3,audio/ogg,audio/webm" @change="handleFileSelect">
+              <input
+                type="file"
+                class="sr-only"
+                accept="audio/mpeg,audio/mp3,audio/ogg,audio/webm"
+                @change="handleFileSelect"
+              />
             </label>
             <p>{{ t('soundUpload.dragDrop') }}</p>
           </div>
@@ -80,7 +105,10 @@
       </div>
 
       <!-- Record panel -->
-      <div v-show="inputMode === 'record'" class="border border-gray-200 rounded-lg p-4 bg-gray-50/50">
+      <div
+        v-show="inputMode === 'record'"
+        class="border border-gray-200 rounded-lg p-4 bg-gray-50/50"
+      >
         <!-- Permission / not started -->
         <template v-if="!isRecording && !recordedBlob">
           <p class="text-sm text-gray-600 mb-3">
@@ -105,7 +133,9 @@
         <template v-else-if="isRecording">
           <div class="flex items-center justify-center gap-3 py-2">
             <span class="relative flex h-3 w-3" aria-hidden="true">
-              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
+              <span
+                class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"
+              />
               <span class="relative inline-flex rounded-full h-3 w-3 bg-red-500" />
             </span>
             <span class="text-sm font-medium text-gray-700 tabular-nums">
@@ -312,7 +342,8 @@ function discardRecording() {
 
 const audioUrl = computed(() => {
   if (props.modelValue?.dataUri) return props.modelValue.dataUri
-  if (props.modelValue?.data) return `data:${props.modelValue.mime_type};base64,${props.modelValue.data}`
+  if (props.modelValue?.data)
+    return `data:${props.modelValue.mime_type};base64,${props.modelValue.data}`
   return previewUrl.value
 })
 
@@ -339,8 +370,7 @@ const handleRemove = () => {
 }
 
 const loadExistingSound = async () => {
-  if (!props.hasExistingSound || !props.collectionId || !props.itemId || isLoading.value)
-    return
+  if (!props.hasExistingSound || !props.collectionId || !props.itemId || isLoading.value) return
 
   try {
     isLoading.value = true

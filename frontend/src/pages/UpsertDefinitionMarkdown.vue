@@ -1,19 +1,19 @@
 <template>
   <div class="container mx-auto p-4">
     <h2 class="text-xl sm:text-2xl font-bold text-gray-800 select-none mb-4">
-      {{ isEditMode ? t('upsertDefinitionMarkdown.editTitle') : t('upsertDefinitionMarkdown.addTitle') }}
+      {{
+        isEditMode
+          ? t('upsertDefinitionMarkdown.editTitle')
+          : t('upsertDefinitionMarkdown.addTitle')
+      }}
     </h2>
 
-    <form
-      class="space-y-4"
-      @submit.prevent="submitValsi"
-    >
+    <form class="space-y-4" @submit.prevent="submitValsi">
       <!-- Word Input -->
       <div>
-        <label
-          for="word"
-          class="block text-sm font-medium text-blue-700"
-        > {{ t('upsertDefinitionMarkdown.wordLabel') }} </label>
+        <label for="word" class="block text-sm font-medium text-blue-700">
+          {{ t('upsertDefinitionMarkdown.wordLabel') }}
+        </label>
         <input
           id="word"
           v-model="word"
@@ -22,15 +22,14 @@
           class="input-field w-full h-10 mb-4"
           :disabled="isSubmitting"
           :placeholder="t('upsertDefinitionMarkdown.wordPlaceholder')"
-        >
+        />
       </div>
 
       <!-- Language Selection -->
       <div>
-        <label
-          for="language"
-          class="block text-sm font-medium text-blue-700"
-        > {{ t('upsertDefinitionMarkdown.languageLabel') }} </label>
+        <label for="language" class="block text-sm font-medium text-blue-700">
+          {{ t('upsertDefinitionMarkdown.languageLabel') }}
+        </label>
         <select
           id="language"
           v-model="langId"
@@ -41,11 +40,7 @@
           <option value="">
             {{ t('upsertDefinitionMarkdown.languagePlaceholder') }}
           </option>
-          <option
-            v-for="lang in languages"
-            :key="lang.id"
-            :value="lang.id"
-          >
+          <option v-for="lang in languages" :key="lang.id" :value="lang.id">
             {{ lang.real_name }} ({{ lang.english_name }})
           </option>
         </select>
@@ -53,35 +48,43 @@
 
       <!-- Entry Language Selection (Only for new entries) -->
       <div v-if="!isEditMode">
-        <label for="source-language" class="block text-sm font-medium text-blue-700">{{ t('upsertDefinition.sourceLanguageLabel') }} <span class="text-red-500">{{ t('upsertDefinition.required') }}</span></label>
-        <select id="source-language" v-model="sourceLangId" required class="input-field w-full h-10" :disabled="isLoading || isSubmitting || isEditMode">
+        <label for="source-language" class="block text-sm font-medium text-blue-700"
+          >{{ t('upsertDefinition.sourceLanguageLabel') }}
+          <span class="text-red-500">{{ t('upsertDefinition.required') }}</span></label
+        >
+        <select
+          id="source-language"
+          v-model="sourceLangId"
+          required
+          class="input-field w-full h-10"
+          :disabled="isLoading || isSubmitting || isEditMode"
+        >
           <option value="">{{ t('upsertDefinition.selectLanguagePlaceholder') }}</option>
           <option v-for="lang in languages" :key="lang.id" :value="lang.id">
             {{ lang.real_name }} ({{ lang.english_name }})
           </option>
         </select>
-         <p class="mt-1 text-xs text-gray-500">
+        <p class="mt-1 text-xs text-gray-500">
           {{ t('upsertDefinition.sourceLanguageNote') }}
         </p>
       </div>
 
       <!-- Definition Editor -->
       <div>
-        <label class="block text-sm font-medium text-blue-700 mb-2"> {{ t('upsertDefinitionMarkdown.definitionLabel') }} </label>
-        <div
-          ref="editor"
-          class="milkdown-editor"
-        />
+        <label class="block text-sm font-medium text-blue-700 mb-2">
+          {{ t('upsertDefinitionMarkdown.definitionLabel') }}
+        </label>
+        <div ref="editor" class="milkdown-editor" />
       </div>
 
       <!-- Submit Button -->
       <div class="flex justify-end">
-        <button
-          type="submit"
-          class="btn-create"
-          :disabled="isSubmitting || !isValid"
-        >
-          {{ isSubmitting ? t('upsertDefinitionMarkdown.saving') : t('upsertDefinitionMarkdown.saveButton') }}
+        <button type="submit" class="btn-create" :disabled="isSubmitting || !isValid">
+          {{
+            isSubmitting
+              ? t('upsertDefinitionMarkdown.saving')
+              : t('upsertDefinitionMarkdown.saveButton')
+          }}
         </button>
       </div>
     </form>
@@ -89,23 +92,23 @@
 </template>
 
 <script setup>
-import { Crepe } from '@milkdown/crepe';
-import { insert } from '@milkdown/utils';
-import TurndownService from 'turndown';
-import { ref, computed, onMounted, onUnmounted } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
-import { useI18n } from 'vue-i18n';
+import { Crepe } from '@milkdown/crepe'
+import { insert } from '@milkdown/utils'
+import TurndownService from 'turndown'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 
-import { getLanguages, addValsi, updateValsi, getDefinition } from '@/api';
-import '@milkdown/crepe/theme/common/style.css';
-import '@milkdown/crepe/theme/frame.css';
-import { useAuth } from '@/composables/useAuth';
-import { useSeoHead } from '@/composables/useSeoHead';
+import { getLanguages, addValsi, updateValsi, getDefinition } from '@/api'
+import '@milkdown/crepe/theme/common/style.css'
+import '@milkdown/crepe/theme/frame.css'
+import { useAuth } from '@/composables/useAuth'
+import { useSeoHead } from '@/composables/useSeoHead'
 
-const route = useRoute();
-const router = useRouter();
-const auth = useAuth();
-const { t } = useI18n();
+const route = useRoute()
+const router = useRouter()
+const auth = useAuth()
+const { t } = useI18n()
 
 // Form state
 const langId = ref('')
@@ -137,7 +140,7 @@ onMounted(async () => {
       },
       [Crepe.Feature.ImageBlock]: {
         onUpload: async (file) => {
-          if (typeof window === 'undefined') return;
+          if (typeof window === 'undefined') return
           // Convert file to base64
           const reader = new FileReader()
           reader.readAsDataURL(file)
@@ -203,7 +206,9 @@ const isLoading = ref(true)
 const editDefinitionId = ref(null)
 
 const pageTitle = computed(() =>
-  isEditMode.value ? t('upsertDefinitionMarkdown.editTitle') : t('upsertDefinitionMarkdown.addTitle')
+  isEditMode.value
+    ? t('upsertDefinitionMarkdown.editTitle')
+    : t('upsertDefinitionMarkdown.addTitle')
 )
 useSeoHead({ title: pageTitle })
 
@@ -256,7 +261,7 @@ async function submitValsi() {
       etymology: null,
       lang_id: parseInt(langId.value),
       // Only include source_langid when adding a new definition
-      ...( !isEditMode.value && { source_langid: parseInt(sourceLangId.value) || 1 } ),
+      ...(!isEditMode.value && { source_langid: parseInt(sourceLangId.value) || 1 }),
       selmaho: null,
       jargon: null,
       gloss_keywords: null,
@@ -272,17 +277,18 @@ async function submitValsi() {
       response = await addValsi(requestData)
     }
 
-    if (response.data.success || response.status === 200) { // Check for 200 status as well
+    if (response.data.success || response.status === 200) {
+      // Check for 200 status as well
       const definitionId = response.data.definition_id || editDefinitionId.value
       // Redirect to the entry page after successful save
       router.push(`/valsi/${word.value.replace(/ /g, '_')}?highlight_definition_id=${definitionId}`)
     } else {
-       console.error('Error saving definition:', response.data.error)
-       // Potentially show error to user using useError composable if needed
+      console.error('Error saving definition:', response.data.error)
+      // Potentially show error to user using useError composable if needed
     }
   } catch (error) {
-     console.error('Error saving definition:', error)
-     // Potentially show error to user using useError composable if needed
+    console.error('Error saving definition:', error)
+    // Potentially show error to user using useError composable if needed
   } finally {
     isSubmitting.value = false
   }

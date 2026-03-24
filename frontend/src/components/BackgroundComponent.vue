@@ -1,8 +1,5 @@
 <template>
-  <div
-    :id="id"
-    :class="classes"
-  />
+  <div :id="id" :class="classes" />
 </template>
 
 <script setup>
@@ -11,12 +8,12 @@ import { onMounted } from 'vue'
 const props = defineProps({
   id: {
     type: String,
-    default: 'background-container'
+    default: 'background-container',
   },
   classes: {
     type: String,
-    default: ''
-  }
+    default: '',
+  },
 })
 
 const backgroundUrls = [
@@ -66,6 +63,4 @@ onMounted(() => {
 })
 </script>
 
-<style scoped>
-
-</style>
+<style scoped></style>

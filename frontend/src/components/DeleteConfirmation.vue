@@ -1,8 +1,8 @@
 <script setup>
-import { useI18n } from 'vue-i18n';
-import { computed } from 'vue';
+import { useI18n } from 'vue-i18n'
+import { computed } from 'vue'
 
-const { t } = useI18n();
+const { t } = useI18n()
 
 const props = defineProps({
   show: {
@@ -21,22 +21,20 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
-});
+})
 
-const emit = defineEmits(['confirm', 'cancel']);
+const emit = defineEmits(['confirm', 'cancel'])
 
-const translatedTitle = computed(() =>
-  props.title || t('deleteConfirmation.deleteDefinition')
-);
+const translatedTitle = computed(() => props.title || t('deleteConfirmation.deleteDefinition'))
 
-const translatedMessage = computed(() =>
-  props.message || t('deleteConfirmation.definitionWarning', { word: 'Untitled entry' })
-);
+const translatedMessage = computed(
+  () => props.message || t('deleteConfirmation.definitionWarning', { word: 'Untitled entry' })
+)
 
 // Keyboard navigation handler
 function handleKeydown(e) {
   if (e.key === 'Escape') {
-    emit('cancel');
+    emit('cancel')
   }
 }
 </script>
@@ -58,7 +56,11 @@ function handleKeydown(e) {
         {{ translatedMessage }}
       </p>
       <div class="sr-only" aria-live="polite">
-        {{ isDeleting ? t('deleteConfirmation.deletionInProgress') : t('deleteConfirmation.readyForDeletion') }}
+        {{
+          isDeleting
+            ? t('deleteConfirmation.deletionInProgress')
+            : t('deleteConfirmation.readyForDeletion')
+        }}
       </div>
       <div class="flex justify-end gap-3">
         <button class="btn-cancel" @click="$emit('cancel')">
