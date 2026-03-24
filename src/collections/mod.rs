@@ -26,6 +26,8 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
                     .service(controller::update_collection)
                     .service(controller::delete_collection)
                     .service(controller::upsert_item)
+                    .service(controller::list_custom_text_bulk_items)
+                    .service(controller::bulk_update_custom_text_items)
                     .service(controller::update_item_position)
                     .service(controller::update_item_notes)
                     .service(controller::remove_item)

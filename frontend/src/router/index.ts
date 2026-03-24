@@ -247,6 +247,14 @@ const baseRoutes: Array<RouteRecordRaw> = [
     props: true,
   },
   {
+    path: "/collections/:collectionId/custom-text-bulk",
+    name: "CollectionCustomTextBulk",
+    component: () => import("../pages/CollectionCustomTextBulk.vue"),
+    props: (route) => ({
+      collectionId: route.params.collectionId,
+    }),
+  },
+  {
     path: "/collections/:collectionId/lingo/levels",
     name: "LingoLevels",
     component: () => import("../pages/LingoLevels.vue"),

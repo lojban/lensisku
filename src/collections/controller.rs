@@ -454,6 +454,89 @@ pub async fn merge_collections(
 
 #[utoipa::path(
     get,
+    path = "/collections/{id}/items/custom-text-bulk",
+    tag = "collections",
+    params(
+        ("id" = i32, Path, description = "Collection ID")
+    ),
+    responses(
+        (status = 200, description = "Custom-text bulk rows", body = CustomTextBulkListResponse),
+        (status = 403, description = "Access denied"),
+        (status = 404, description = "Collection not found"),
+        (status = 500, description = "Internal server error")
+    ),
+    security(("bearer_auth" = [])),
+    summary = "List items for custom-text bulk edit",
+    description = "Owner only. Returns collection items not linked to a dictionary definition (definition_id IS NULL), including rows with text on only one side."
+)]
+#[get("/{id}/items/custom-text-bulk")]
+pub async fn list_custom_text_bulk_items(
+    pool: web::Data<Pool>,
+    claims: Claims,
+    id: web::Path<i32>,
+) -> impl Responder {
+    match service::list_custom_text_bulk_items(&pool, id.into_inner(), claims.sub).await {
+        Ok(response) => HttpResponse::Ok().json(response),
+        Err(e) => {
+            let msg = e.to_string();
+            if msg.contains("Access Denied") || msg.contains("does not belong") {
+                return HttpResponse::Forbidden().json(json!({ "error": msg }));
+            }
+            HttpResponse::InternalServerError().json(json!({
+                "error": format!("Failed to list custom-text bulk items: {}", e)
+            }))
+        }
+    }
+}
+
+#[utoipa::path(
+    put,
+    path = "/collections/{id}/items/custom-text-bulk",
+    tag = "collections",
+    params(
+        ("id" = i32, Path, description = "Collection ID")
+    ),
+    request_body = CustomTextBulkUpdateRequest,
+    responses(
+        (status = 200, description = "Updated count", body = CustomTextBulkUpdateResponse),
+        (status = 400, description = "Validation failed"),
+        (status = 403, description = "Access denied"),
+        (status = 500, description = "Internal server error")
+    ),
+    security(("bearer_auth" = [])),
+    summary = "Bulk update custom front/back text",
+    description = "Owner only. Updates free_content_front and free_content_back for items that are custom-text-only (no definition_id). At most 500 items per request."
+)]
+#[put("/{id}/items/custom-text-bulk")]
+pub async fn bulk_update_custom_text_items(
+    pool: web::Data<Pool>,
+    claims: Claims,
+    id: web::Path<i32>,
+    req: web::Json<CustomTextBulkUpdateRequest>,
+) -> impl Responder {
+    match service::bulk_update_custom_text_items(&pool, id.into_inner(), claims.sub, &req).await {
+        Ok(response) => HttpResponse::Ok().json(response),
+        Err(e) => {
+            let msg = e.to_string();
+            if msg.contains("Access Denied") || msg.contains("does not belong") {
+                return HttpResponse::Forbidden().json(json!({ "error": msg }));
+            }
+            if msg.contains("Bad request")
+                || msg.contains("Duplicate item_id")
+                || msg.contains("At most")
+                || msg.contains("not a custom-text-only")
+            {
+                return HttpResponse::BadRequest().json(json!({ "error": msg }));
+            }
+            HttpResponse::InternalServerError().json(json!({
+                "error": format!("Failed to bulk update: {}", e)
+            }))
+        }
+    }
+}
+
+#[utoipa::path(
+    get,
     path = "/collections/{id}/items",
     tag = "collections",
     params(

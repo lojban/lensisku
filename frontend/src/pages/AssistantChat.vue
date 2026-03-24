@@ -250,7 +250,7 @@
               :placeholder="$t('assistantChat.placeholder')" :disabled="isStreamingThisSession"
               @keydown.enter.exact.prevent="handleSend" @blur="onAssistantFormControlBlur" />
             <button :type="isStreamingThisSession ? 'button' : 'submit'"
-              class="assistant-composer-action !rounded-md absolute bottom-2 right-2 z-10 flex h-9 w-9 shrink-0 items-center justify-center !p-0 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white disabled:cursor-not-allowed disabled:opacity-50"
+              class="assistant-composer-action !rounded-full absolute bottom-3 right-3 z-10 flex h-8 w-8 shrink-0 items-center justify-center !p-0 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white disabled:cursor-not-allowed disabled:opacity-50"
               :class="isStreamingThisSession
                 ? 'border border-black bg-black shadow-sm transition-colors enabled:hover:bg-neutral-950 enabled:hover:border-black focus:ring-red-500/45'
                 : 'border border-gray-300 bg-white text-black shadow-sm transition-colors enabled:hover:bg-gray-50 enabled:hover:border-gray-400 focus:ring-gray-400/60'"
@@ -259,7 +259,7 @@
                   : $t('assistantChat.sendMessage')
                 " @click="isStreamingThisSession ? stopStreaming() : undefined">
               <span v-if="isStreamingThisSession"
-                class="block h-[1.125rem] w-[1.125rem] shrink-0 rounded-[2px] bg-red-500"
+                class="block h-[1rem] w-[1rem] shrink-0 rounded-[2px] bg-red-500"
                 aria-hidden="true" />
               <ArrowUp v-else class="h-6 w-6" stroke-width="2.25" aria-hidden="true" />
             </button>
