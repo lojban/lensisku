@@ -65,16 +65,18 @@
              <Menu v-if="!isMenuOpen" class="h-6 w-6" /> <X v-else class="h-6 w-6" /> </button
           > <!-- Logo - Always visible --> <NavLink
             to="/"
-            class="flex items-center space-x-2 px-2 sm:px-3 py-1.5"
+            class="navbar-item flex items-center"
             @click="triggerPyro"
             >
-            <div
-              v-html="logoSvgRaw"
-              role="img"
-              :aria-label="$t('logoText')"
-              class="w-7 h-7"
-              :class="{ 'animate-rotate-3d': showPyro }"
-            ></div>
+            <div class="w-9 h-9 shrink-0 -skew-x-12">
+              <div
+                v-html="logoSvgRaw"
+                role="img"
+                :aria-label="$t('logoText')"
+                class="h-full w-full"
+                :class="{ 'animate-rotate-3d': showPyro }"
+              ></div>
+            </div>
              <span class="select-none font-medium">{{ $t('logoText') }}</span
             > </NavLink
           >
@@ -349,7 +351,7 @@
         >
            <IconButton
             :label="$t('nav.assistant')"
-            button-classes="btn-aqua-white h-12 text-base !px-5"
+            button-classes="btn-aqua-slate h-12 text-base !px-5"
             @click="handleAssistantChat"
             > <template #icon> <Bot class="h-6 w-6 text-indigo-600" /> </template> </IconButton
           > <IconButton
