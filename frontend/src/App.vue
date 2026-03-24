@@ -340,7 +340,7 @@ import { provideAuth } from './composables/useAuth'
 import { provideError } from './composables/useError'
 import { localeCaptureGroupRegex, supportedLocales } from './config/locales';
 
-import logoSvgRaw from '@/assets/icons/favicon.svg?raw';
+import logoSvgRaw from '../public/assets/icons/favicon.svg?raw';
 
 const i18n = useI18n() // Use i18n composable
 const $t = i18n.t
