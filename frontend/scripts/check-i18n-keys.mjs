@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Finds vue-i18n keys referenced in source that are missing from locale JSON files.
- * Mirrors runtime warnings when a key is missing for the active locale (e.g. en, jbo, ru, ja).
+ * Mirrors runtime warnings when a key is missing for the active locale (e.g. en, jbo, ru, ja, zh).
  *
  * Usage: node scripts/check-i18n-keys.mjs
  *        pnpm run i18n:check
@@ -108,6 +108,7 @@ function main() {
     { code: 'jbo', file: 'jbo.json' },
     { code: 'ru', file: 'ru.json' },
     { code: 'ja', file: 'ja.json' },
+    { code: 'zh', file: 'zh.json' },
   ]
 
   /** @type {{ code: string, label: string, keys: Set<string> }[]} */
@@ -168,7 +169,7 @@ function main() {
       .map((m) => m.code)
       .join(', ')
     console.error(
-      `i18n check failed for: ${failed}. Add keys to src/locales/en.json and/or the overlay locale files (jbo.json, ru.json, ja.json) as in src/i18n.ts.`,
+      `i18n check failed for: ${failed}. Add keys to src/locales/en.json and/or the overlay locale files (jbo.json, ru.json, ja.json, zh.json) as in src/i18n.ts.`,
     )
   }
   process.exit(exitCode)
