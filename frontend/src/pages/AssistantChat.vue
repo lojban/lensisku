@@ -194,6 +194,7 @@
                       <span class="thinking-dot" />
                     </div>
                     <LazyMathJax v-if="reply.content" :content="reply.content" :enable-markdown="true"
+                      :enable-curly-links="false"
                       :lang-id="locale" />
                   </div>
                   <!-- Single top-level bubble when `replies` is empty -->
@@ -214,7 +215,8 @@
                       <span class="thinking-dot" />
                       <span class="thinking-dot" />
                     </div>
-                    <LazyMathJax v-if="msg.content" :content="msg.content" :enable-markdown="true" :lang-id="locale" />
+                    <LazyMathJax v-if="msg.content" :content="msg.content" :enable-markdown="true"
+                      :enable-curly-links="false" :lang-id="locale" />
                   </div>
                 </div>
               </div>
@@ -1700,6 +1702,10 @@ async function runAssistantStream(sessionId, appendAssistant) {
 .assistant-markdown :deep(ul),
 .assistant-markdown :deep(ol) {
   @apply my-1 pl-4;
+}
+
+.assistant-markdown :deep(.mathjax-content .mathjax-table-wrap) {
+  @apply max-w-full;
 }
 
 .assistant-markdown :deep(.mathjax-content table) {
