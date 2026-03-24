@@ -1,1 +1,21 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="29.999" height="29.999"><g stroke="#DC2626" style="stroke:#f41a1a;stroke-opacity:1"><g style="stroke-width:.860199"><path d="M16 1.256v6.265" style="stroke:#f41a1a;stroke-width:.906202;stroke-opacity:1" transform="matrix(1.16665 0 0 1.15841 -3.564 -.713)"/><path fill="none" d="m14 4 2-2 2 2" style="stroke:#f41a1a;stroke-width:.860199;stroke-opacity:1" transform="matrix(1.22953 0 0 1.21989 -4.57 -1.698)"/></g><g style="stroke-width:.860992"><path d="M24.485 16h6.27" style="stroke:#f41a1a;stroke-width:.907046;stroke-opacity:1" transform="matrix(1.15737 0 0 1.16555 -6.338 -3.548)"/><path fill="none" d="m28 14 2 2-2 2" style="stroke:#f41a1a;stroke-width:.860992;stroke-opacity:1" transform="matrix(1.21975 0 0 1.2274 -7.336 -4.538)"/></g><g style="stroke-width:.860233"><path d="M16 24.477v6.265" style="stroke:#f41a1a;stroke-width:.906238;stroke-opacity:1" transform="matrix(1.1666 0 0 1.15837 -3.563 -6.353)"/><path fill="none" d="m14 28 2 2 2-2" style="stroke:#f41a1a;stroke-width:.860233;stroke-opacity:1" transform="matrix(1.22948 0 0 1.21984 -4.569 -7.338)"/></g><g style="stroke-width:.86088"><path d="M1.246 16h6.269" style="stroke:#f41a1a;stroke-width:.906929;stroke-opacity:1" transform="matrix(1.15752 0 0 1.1657 -.7 -3.55)"/><path fill="none" d="m4 14-2 2 2 2" style="stroke:#f41a1a;stroke-width:.86088;stroke-opacity:1" transform="matrix(1.2199 0 0 1.22756 -1.697 -4.54)"/></g></g><g transform="matrix(1.0539 0 0 1.05307 -1.351 -.92)"><path fill="#3b82f6" stroke="#3b82f6" stroke-linecap="round" stroke-width="1.2" d="m18.551 17.467 6.152 6.152-1.025 1.025-6.152-6.152"/><circle cx="13.466" cy="13.124" r="5.81" fill="none" stroke="#3b82f6" stroke-width="2.051" style="stroke:#3b82f6;stroke-opacity:1"/><path fill="none" stroke="#93c5fd" stroke-linecap="round" stroke-width="1.025" d="M11.415 11.074q.684-.684 1.71-.342"/></g></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" fill="none">
+  <defs>
+    <linearGradient id="favicon-lens" x1="6" y1="6" x2="22" y2="22" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#3b82f6"/>
+      <stop offset="1" stop-color="#2563eb"/>
+    </linearGradient>
+  </defs>
+  <!-- Outward arrows: thicker strokes, round geometry -->
+  <g stroke="#ef4444" stroke-width="2.35" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M16 9.5V4M13 6.5l3-3 3 3"/>
+    <path d="M22.5 16H28M25 13l3 3-3 3"/>
+    <path d="M16 22.5V28M13 25.5l3 3 3-3"/>
+    <path d="M9.5 16H4M6.5 13l-3 3 3 3"/>
+  </g>
+  <!-- Magnifying glass -->
+  <g stroke="url(#favicon-lens)" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.05">
+    <circle cx="13.25" cy="13.25" r="5.65"/>
+    <path d="m17.85 17.85 6.9 6.9"/>
+  </g>
+  <path stroke="#93c5fd" stroke-width="1.15" stroke-linecap="round" d="M11.1 11.1q.75-.75 1.85-.4"/>
+</svg>

@@ -150,8 +150,8 @@ impl EmailService {
                 <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="max-width: 600px; background-color: #ffffff; border-radius: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -2px rgba(0,0,0,0.05); overflow: hidden;">
                     <!-- Header -->
                     <tr>
-                        <td align="center" style="padding: 32px 32px 24px; border-bottom: 1px solid #f1f5f9;">
-                            <img src="{}/assets/icons/favicon.png" alt="Lojban Dictionary Logo" style="height: 56px; width: auto; display: block; margin: 0 auto;">
+                        <td align="center" bgcolor="white" style="padding: 32px 32px 24px; background-color: #ffffff; border-bottom: 1px solid #f1f5f9;">
+                            <img src="{}/assets/icons/logo-email.png" alt="Lojban Dictionary Logo" width="56" height="56" style="height: 56px; width: 56px; max-width: 100%; display: block; margin: 0 auto;">
                         </td>
                     </tr>
                     <!-- Content -->
@@ -383,8 +383,8 @@ impl EmailService {
                 <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="max-width: 600px; background-color: #ffffff; border-radius: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -2px rgba(0,0,0,0.05); overflow: hidden;">
                     <!-- Header -->
                     <tr>
-                        <td align="center" style="padding: 32px 32px 24px; border-bottom: 1px solid #f1f5f9;">
-                            <img src="{}/assets/icons/favicon.png" alt="Lojban Dictionary Logo" style="height: 56px; width: auto; display: block; margin: 0 auto;">
+                        <td align="center" bgcolor="white" style="padding: 32px 32px 24px; background-color: #ffffff; border-bottom: 1px solid #f1f5f9;">
+                            <img src="{}/assets/icons/logo-email.png" alt="Lojban Dictionary Logo" width="56" height="56" style="height: 56px; width: 56px; max-width: 100%; display: block; margin: 0 auto;">
                         </td>
                     </tr>
                     <!-- Content -->
