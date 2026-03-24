@@ -68,16 +68,16 @@
             class="navbar-item flex items-center"
             @click="triggerPyro"
             >
-            <div class="w-9 h-9 shrink-0 -skew-x-12">
+            <div class="flex h-8 w-8 shrink-0 items-center justify-center -skew-x-12">
               <div
                 v-html="logoSvgRaw"
                 role="img"
                 :aria-label="$t('logoText')"
-                class="h-full w-full"
+                class="flex h-full w-full items-center justify-center [&>svg]:block [&>svg]:h-full [&>svg]:w-full [&>svg]:max-h-full [&>svg]:max-w-full"
                 :class="{ 'animate-rotate-3d': showPyro }"
               ></div>
             </div>
-             <span class="select-none font-medium">{{ $t('logoText') }}</span
+             <span class="select-none font-medium leading-none">{{ $t('logoText') }}</span
             > </NavLink
           >
         </div>
