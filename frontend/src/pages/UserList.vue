@@ -1,13 +1,10 @@
 <template>
-  <TabbedPageHeader
+   <TabbedPageHeader
     :tabs="tabs"
     :active-tab="activeTab"
     :page-title="activeTab === 'users' ? t('userList.users') : t('userList.roleManagement')"
     @tab-click="handleTabClick"
-  />
-
-  <!-- Users Tab Content -->
-  <UserListTab
+  /> <!-- Users Tab Content --> <UserListTab
     v-if="activeTab === 'users'"
     :user-list="userList"
     :total="total"
@@ -21,7 +18,7 @@
     :role-filter="roleFilter"
     :sort-by="sortBy"
     :sort-order="sortOrder"
-    @update:search-query="searchQuery = normalizeSearchQuery($event); updateSearch()"
+    @update:search-query="searchQuery = normalizeSearchQuery(String($event)) as string; updateSearch()"
     @update:role-filter="roleFilter = $event; updateSearch()"
     @update:sort-by="sortBy = $event; updateSearch()"
     @update:sort-order="sortOrder = $event; updateSearch()"
@@ -30,10 +27,7 @@
     @prevPage="prevPage"
     @nextPage="nextPage"
     @viewUser="viewUser"
-  />
-
-  <!-- Roles Tab Content -->
-  <RoleManagementTab
+  /> <!-- Roles Tab Content --> <RoleManagementTab
     v-if="activeTab === 'roles' && hasManageRolesPermission"
     :roles="roles"
     :available-permissions="permissions"
@@ -47,10 +41,7 @@
     @addPermission="handleAddPermission"
     @deletePermission="handleDeletePermission"
     @togglePermission="handleTogglePermission"
-  />
-
-  <!-- Confirmation Modals (remain in the parent) -->
-  <DeleteConfirmationModal
+  /> <!-- Confirmation Modals (remain in the parent) --> <DeleteConfirmationModal
     :show="showDeletePermissionConfirm"
     :title="t('roleManagement.deletePermissionConfirmTitle')"
     :message="
@@ -62,9 +53,7 @@
     :is-deleting="isDeletingPermission"
     @confirm="performDeletePermission(permissionToDelete.roleName, permissionToDelete.permission)"
     @cancel="showDeletePermissionConfirm = false"
-  />
-
-  <DeleteConfirmationModal
+  /> <DeleteConfirmationModal
     :show="showDeleteRoleConfirm"
     :title="t('roleManagement.deleteRoleConfirmTitle')"
     :message="t('roleManagement.deleteRoleConfirmMessage', { roleName: roleToDelete })"
@@ -74,22 +63,23 @@
   />
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { Shield, Users } from 'lucide-vue-next'
 import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter, useRoute } from 'vue-router'
 
-import { listUsers, getRoles, getPermissions, createRole, updateRole, deleteRole } from '@/api.js'
+import { listUsers, getRoles, getPermissions, createRole, updateRole, deleteRole } from '@/api'
 import DeleteConfirmationModal from '@/components/DeleteConfirmation.vue'
 import PaginationComponent from '@/components/PaginationComponent.vue'
 import TabbedPageHeader from '@/components/TabbedPageHeader.vue'
 import RoleManagementTab from '@/components/users/RoleManagementTab.vue'
 import UserListTab from '@/components/users/UserListTab.vue'
-import { useAuth } from '@/composables/useAuth.js'
-import { useError } from '@/composables/useError.js'
+import { useAuth } from '@/composables/useAuth'
+import { useError } from '@/composables/useError'
 import { useSeoHead } from '@/composables/useSeoHead'
 import { normalizeSearchQuery } from '@/utils/searchQueryUtils'
+import { queryStr } from '@/utils/routeQuery'
 
 const router = useRouter()
 const route = useRoute()
@@ -106,7 +96,7 @@ const total = ref(0)
 const isLoading = ref(true)
 const isSearching = ref(false)
 const searchQuery = ref('')
-const offset = ref(parseInt(route.query.offset) || 0)
+const offset = ref(parseInt(queryStr(route.query.offset), 10) || 0)
 const perPage = ref(20)
 const sortBy = ref('created_at')
 const sortOrder = ref('desc')
@@ -166,7 +156,7 @@ const currentPage = computed(() => Math.floor(offset.value / perPage.value) + 1)
 
 const hasManageRolesPermission = computed(() => {
   return auth.state.authorities?.includes('manage_roles') ?? false
-}, locale.value)
+})
 
 const tabs = computed(() => {
   const baseTabs = [{ key: 'users', label: t('userList.users'), icon: Users }]
@@ -378,17 +368,17 @@ const handleTabClick = (tabKey) => {
 const syncFromRoute = () => {
   // URL params take precedence over localStorage
   if (route.query.q !== undefined) {
-    searchQuery.value = normalizeSearchQuery(route.query.q || '')
+    searchQuery.value = normalizeSearchQuery(queryStr(route.query.q)) as string
   }
-  offset.value = parseInt(route.query.offset) || 0
+  offset.value = parseInt(queryStr(route.query.offset), 10) || 0
   if (route.query.sort_by !== undefined) {
-    sortBy.value = route.query.sort_by || 'created_at'
+    sortBy.value = queryStr(route.query.sort_by) || 'created_at'
   }
   if (route.query.sort_order !== undefined) {
-    sortOrder.value = route.query.sort_order || 'desc'
+    sortOrder.value = queryStr(route.query.sort_order) || 'desc'
   }
   if (route.query.role !== undefined) {
-    roleFilter.value = route.query.role || ''
+    roleFilter.value = queryStr(route.query.role) || ''
   }
 }
 
@@ -409,7 +399,7 @@ watch(
 
 // Reactive page title
 const pageTitle = ref('Users')
-useSeoHead({ title: pageTitle }, locale.value)
+useSeoHead({ title: pageTitle })
 
 // Update title when search parameters change or tab changes
 watch(
@@ -459,3 +449,4 @@ onMounted(async () => {
   }
 })
 </script>
+

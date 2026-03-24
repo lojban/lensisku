@@ -1,24 +1,28 @@
 <template>
+
   <div class="w-full min-h-[calc(100vh-12rem)] flex items-center justify-center relative">
+
     <div
       class="w-full max-w-md p-8 mx-auto rounded-2xl border border-blue-200 flex-shrink-0 backdrop-blur-xl bg-blue-50/90 shadow-lg transition-all duration-300 hover:shadow-xl flex flex-col items-center"
     >
-      <h2 class="text-2xl sm:text-3xl font-bold mb-6 text-blue-900 text-center">
-        {{ t('changePassword.title') }}
-      </h2>
 
-      <!-- Step 1: Current Password -->
+      <h2 class="text-2xl sm:text-3xl font-bold mb-6 text-blue-900 text-center">
+         {{ t('changePassword.title') }}
+      </h2>
+       <!-- Step 1: Current Password -->
       <form
         v-if="!verificationId"
         class="w-full space-y-6"
         @submit.prevent="initiatePasswordChange"
       >
+
         <div>
-          <label for="currentPassword" class="block text-sm font-medium text-blue-900 mb-2">{{
+           <label for="currentPassword" class="block text-sm font-medium text-blue-900 mb-2">{{
             t('changePassword.currentPasswordLabel')
-          }}</label>
+          }}</label
+          >
           <div class="relative">
-            <input
+             <input
               id="currentPassword"
               v-model="currentPassword"
               type="password"
@@ -26,35 +30,33 @@
               class="input-field w-full text-base h-10 pl-3 pr-10"
               :disabled="isLoading"
               :placeholder="t('changePassword.currentPasswordPlaceholder')"
-            />
-            <Key class="h-5 w-5 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2" />
+            /> <Key class="h-5 w-5 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2" />
           </div>
-        </div>
 
-        <button
+        </div>
+         <button
           type="submit"
           class="w-full flex justify-center items-center btn-aqua-slate h-8 gap-2 py-3 rounded-full text-lg font-semibold transition-all"
           :disabled="isLoading || !currentPassword"
           :class="{ 'opacity-75 cursor-not-allowed': isLoading }"
         >
-          <template v-if="isLoading">
-            <Loader2 class="animate-spin -ml-1 mr-3 h-5 w-5 text-current" />
-            {{ t('changePassword.verifying') }}
-          </template>
-          <template v-else>
-            {{ t('changePassword.continueButton') }}
-          </template>
-        </button>
+           <template v-if="isLoading"
+            > <Loader2 class="animate-spin -ml-1 mr-3 h-5 w-5 text-current" /> {{
+              t('changePassword.verifying')
+            }} </template
+          > <template v-else> {{ t('changePassword.continueButton') }} </template> </button
+        >
       </form>
-
-      <!-- Step 2: Verification Code and New Password -->
+       <!-- Step 2: Verification Code and New Password -->
       <form v-else class="w-full space-y-6" @submit.prevent="completePasswordChange">
+
         <div>
-          <label for="verificationCode" class="block text-sm font-medium text-blue-900 mb-2">{{
+           <label for="verificationCode" class="block text-sm font-medium text-blue-900 mb-2">{{
             t('changePassword.verificationCodeLabel')
-          }}</label>
+          }}</label
+          >
           <div class="relative">
-            <input
+             <input
               id="verificationCode"
               v-model="verificationCode"
               type="text"
@@ -62,17 +64,18 @@
               :placeholder="t('changePassword.verificationCodePlaceholder')"
               class="input-field w-full text-base h-10 pl-3 pr-10"
               :disabled="isLoading"
-            />
-            <Mail class="h-5 w-5 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2" />
+            /> <Mail class="h-5 w-5 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2" />
           </div>
+
         </div>
 
         <div>
-          <label for="newPassword" class="block text-sm font-medium text-blue-900 mb-2">{{
+           <label for="newPassword" class="block text-sm font-medium text-blue-900 mb-2">{{
             t('changePassword.newPasswordLabel')
-          }}</label>
+          }}</label
+          >
           <div class="relative">
-            <input
+             <input
               id="newPassword"
               v-model="newPassword"
               type="password"
@@ -80,17 +83,18 @@
               class="input-field w-full text-base h-10 pl-3 pr-10"
               :disabled="isLoading"
               :placeholder="t('changePassword.newPasswordPlaceholder')"
-            />
-            <Key class="h-5 w-5 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2" />
+            /> <Key class="h-5 w-5 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2" />
           </div>
+
         </div>
 
         <div>
-          <label for="confirmPassword" class="block text-sm font-medium text-blue-900 mb-2">{{
+           <label for="confirmPassword" class="block text-sm font-medium text-blue-900 mb-2">{{
             t('changePassword.confirmPasswordLabel')
-          }}</label>
+          }}</label
+          >
           <div class="relative">
-            <input
+             <input
               id="confirmPassword"
               v-model="confirmPassword"
               type="password"
@@ -98,68 +102,71 @@
               class="input-field w-full text-base h-10 pl-3 pr-10"
               :disabled="isLoading"
               :placeholder="t('changePassword.confirmPasswordPlaceholder')"
-            />
-            <Key class="h-5 w-5 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2" />
+            /> <Key class="h-5 w-5 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2" />
           </div>
+
         </div>
 
         <div
           v-if="showValidationErrors"
           class="mt-4 p-3 bg-yellow-50 border border-yellow-200 text-yellow-800 rounded-md"
         >
-          <p class="font-medium mb-1">
-            {{ t('changePassword.validationErrorTitle') }}
-          </p>
+
+          <p class="font-medium mb-1"> {{ t('changePassword.validationErrorTitle') }} </p>
+
           <ul class="list-disc list-inside">
+
             <li v-for="error in passwordValidationErrors" :key="error" class="text-sm">
-              {{ error }}
+               {{ error }}
             </li>
+
           </ul>
+
         </div>
 
         <div class="flex gap-3">
-          <button
+           <button
             type="button"
             class="btn-aqua-zinc flex-1 h-8"
             :disabled="isLoading"
             @click="resetForm"
           >
-            {{ t('changePassword.startOverButton') }}
-          </button>
-
-          <button
+             {{ t('changePassword.startOverButton') }} </button
+          > <button
             type="submit"
             class="btn-aqua-teal flex-1 h-8"
             :disabled="isLoading || !isValidPasswordChange"
           >
-            <template v-if="isLoading">
-              <Loader2 class="animate-spin -ml-1 mr-3 h-5 w-5 text-current" />
-              {{ t('changePassword.changingPassword') }}
-            </template>
-            <template v-else>
-              {{ t('changePassword.changePasswordButton') }}
-            </template>
-          </button>
+             <template v-if="isLoading"
+              > <Loader2 class="animate-spin -ml-1 mr-3 h-5 w-5 text-current" /> {{
+                t('changePassword.changingPassword')
+              }} </template
+            > <template v-else> {{ t('changePassword.changePasswordButton') }} </template> </button
+          >
         </div>
+
       </form>
 
       <div
         v-if="success"
         class="w-full mt-4 p-3 bg-emerald-100 border border-emerald-200 text-emerald-700 rounded-md text-center"
       >
-        {{ success }}
+         {{ success }}
       </div>
 
       <p class="mt-4 text-sm text-white text-center w-full">
-        <RouterLink to="/profile" class="font-medium text-blue-900 hover:text-blue-700">
-          {{ t('changePassword.backToProfile') }}
-        </RouterLink>
+         <RouterLink to="/profile" class="font-medium text-blue-900 hover:text-blue-700"
+          > {{ t('changePassword.backToProfile') }} </RouterLink
+        >
       </p>
+
     </div>
+
   </div>
+
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { Loader2, Key, Mail, KeyRound } from 'lucide-vue-next'
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
@@ -171,7 +178,7 @@ import { useError } from '@/composables/useError'
 import { useSeoHead } from '@/composables/useSeoHead'
 
 const { t, locale } = useI18n()
-useSeoHead({ title: t('changePassword.title'), locale: locale.value })
+useSeoHead({ title: t('changePassword.title') })
 
 const router = useRouter()
 const auth = useAuth()
@@ -283,3 +290,4 @@ const resetForm = () => {
   success.value = ''
 }
 </script>
+

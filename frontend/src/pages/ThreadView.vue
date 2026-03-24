@@ -1,124 +1,131 @@
 <template>
-  <!-- Thread Header -->
+   <!-- Thread Header -->
   <div class="bg-white border border-blue-200 rounded-lg p-4 mb-4 shadow-sm">
-    <h2 class="text-xl font-semibold text-gray-700 mb-4">
-      {{ cleanedSubject }}
-    </h2>
+
+    <h2 class="text-xl font-semibold text-gray-700 mb-4"> {{ cleanedSubject }} </h2>
 
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-      <!-- Sort Controls -->
+       <!-- Sort Controls -->
       <div class="flex items-center space-x-3">
-        <label class="text-sm text-gray-600 font-medium">{{ t('sort.sortByLabel') }}</label>
-        <select v-model="sortOrder" class="input-field" @change="fetchThread">
-          <option value="desc">
-            {{ t('threadView.newestFirst') }}
-          </option>
-          <option value="asc">
-            {{ t('threadView.oldestFirst') }}
-          </option>
-        </select>
-      </div>
+         <label class="text-sm text-gray-600 font-medium">{{ t('sort.sortByLabel') }}</label
+        > <select v-model="sortOrder" class="input-field" @change="fetchThread">
 
-      <!-- Content Toggle -->
+          <option value="desc"> {{ t('threadView.newestFirst') }} </option>
+
+          <option value="asc"> {{ t('threadView.oldestFirst') }} </option>
+           </select
+        >
+      </div>
+       <!-- Content Toggle -->
       <div class="flex items-center space-x-3">
-        <input
+         <input
           v-model="includeContent"
           type="checkbox"
           class="checkbox-toggle"
           @change="fetchThread"
-        />
-        <label class="text-sm text-gray-600 font-medium whitespace-nowrap cursor-pointer">{{
+        /> <label class="text-sm text-gray-600 font-medium whitespace-nowrap cursor-pointer">{{
           t('threadView.showContent')
-        }}</label>
+        }}</label
+        >
       </div>
+
     </div>
+
   </div>
-
-  <!-- Loading State -->
-  <LoadingSpinner v-if="isLoading" class="py-12" />
-
-  <!-- Messages List -->
+   <!-- Loading State --> <LoadingSpinner v-if="isLoading" class="py-12" /> <!-- Messages List -->
   <div v-else-if="!isLoading && messages.length > 0" class="space-y-4">
+
     <div
       v-for="message in messages"
       :key="message.id"
       class="message-item bg-white border border-blue-200 rounded-lg hover:border-blue-300 transition-colors shadow-sm"
     >
+
       <div class="p-4">
-        <!-- Message Header -->
+         <!-- Message Header -->
         <div class="flex justify-between items-start mb-3">
+
           <h3 class="text-lg font-semibold text-blue-700">
-            <LazyMathJax
+             <LazyMathJax
               :content="message.subject || ''"
               :enable-markdown="true"
               :search-term="props.searchTerm"
               curly-link-class="underline text-pink-600 hover:text-pink-800"
             />
           </h3>
-          <span class="text-sm text-gray-500 whitespace-nowrap ml-4">
-            {{ formatDate(message.date) }}
-          </span>
+           <span class="text-sm text-gray-500 whitespace-nowrap ml-4"
+            > {{ formatDate(message.date) }} </span
+          >
         </div>
-
-        <!-- Message Details -->
+         <!-- Message Details -->
         <div class="space-y-2">
+
           <div class="flex items-center space-x-2 text-sm text-gray-600">
-            <span class="font-medium text-gray-700">{{ t('threadView.from') }}</span>
-            <span>{{ formatEmailAddress(message.from_address) }}</span>
+             <span class="font-medium text-gray-700">{{ t('threadView.from') }}</span
+            > <span>{{ formatEmailAddress(message.from_address) }}</span
+            >
           </div>
 
           <div v-if="message.to_address" class="flex items-center space-x-2 text-sm text-gray-600">
-            <span class="font-medium text-gray-700">{{ t('threadView.to') }}</span>
-            <span>{{ formatEmailAddress(message.to_address) }}</span>
+             <span class="font-medium text-gray-700">{{ t('threadView.to') }}</span
+            > <span>{{ formatEmailAddress(message.to_address) }}</span
+            >
           </div>
-        </div>
 
-        <!-- Message Parts -->
+        </div>
+         <!-- Message Parts -->
         <div v-if="includeContent && message.parts_json" class="mt-4 pt-4 border-t border-gray-100">
-          <!-- Text parts -->
+           <!-- Text parts -->
           <div
             v-for="part in message.parts_json.filter((p) => p.mime_type.startsWith('text/'))"
             :key="part.id"
             class="text-gray-700 text-sm prose max-w-none"
             v-html="highlightText(part.content)"
           />
-
-          <!-- Attachments -->
+           <!-- Attachments -->
           <div
             v-if="message.parts_json.filter((p) => !p.mime_type.startsWith('text/')).length"
             class="mt-4"
           >
+
             <div class="text-sm font-medium text-gray-600 mb-2">
-              {{ t('threadView.attachments') }}
+               {{ t('threadView.attachments') }}
             </div>
+
             <div class="flex flex-wrap gap-2">
+
               <div
                 v-for="part in message.parts_json.filter((p) => !p.mime_type.startsWith('text/'))"
                 :key="part.id"
                 class="px-3 py-1.5 bg-gray-50 rounded-lg border border-gray-200 hover:border-blue-200 transition-colors flex items-center gap-2"
               >
-                <AttachmentIcon :mime-type="part.mime_type" class="w-4 h-4 flex-shrink-0" />
-                <span class="text-sm text-gray-700">{{ part.content_type }}</span>
+                 <AttachmentIcon :mime-type="part.mime_type" class="w-4 h-4 flex-shrink-0" /> <span
+                  class="text-sm text-gray-700"
+                  >{{ part.content_type }}</span
+                >
               </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
 
-  <!-- Empty State -->
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+   <!-- Empty State -->
   <div
     v-else-if="!isLoading && messages.length === 0"
     class="text-center p-8 bg-white border border-blue-200 rounded-lg"
   >
-    <p class="text-gray-600">
-      {{ t('threadView.noMessages') }}
-    </p>
-  </div>
 
-  <!-- PaginationComponent -->
-  <PaginationComponent
+    <p class="text-gray-600"> {{ t('threadView.noMessages') }} </p>
+
+  </div>
+   <!-- PaginationComponent --> <PaginationComponent
     v-if="!isLoading && messages.length > 0 && totalPages > 1"
     :current-page="currentPage"
     :total-pages="totalPages"
@@ -130,7 +137,7 @@
   />
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { marked } from 'marked'
 import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -142,6 +149,7 @@ import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import PaginationComponent from '@/components/PaginationComponent.vue'
 import LazyMathJax from '@/components/LazyMathJax.vue'
 import { useSeoHead } from '@/composables/useSeoHead'
+import { queryStr } from '@/utils/routeQuery'
 
 // Props
 const props = defineProps({
@@ -160,7 +168,7 @@ const route = useRoute()
 const { t, locale } = useI18n()
 const messages = ref([])
 const cleanedSubject = ref('')
-const currentPage = ref(parseInt(route.query.page) || 1)
+const currentPage = ref(parseInt(queryStr(route.query.page), 10) || 1)
 const totalPages = ref(1)
 const total = ref(0)
 const sortOrder = ref('desc')
@@ -174,7 +182,7 @@ const pageTitle = computed(() => {
   return t('threadView.threadTitle', { subject: cleanedSubject.value })
 })
 
-useSeoHead({ title: pageTitle }, locale.value)
+useSeoHead({ title: pageTitle })
 
 const fetchThread = async () => {
   isLoading.value = true
@@ -214,7 +222,7 @@ const changePage = async (page) => {
 watch(
   () => route.query.page,
   (newPage) => {
-    const page = parseInt(newPage) || 1
+    const page = parseInt(queryStr(newPage), 10) || 1
     if (page !== currentPage.value) {
       currentPage.value = page
       fetchThread()
@@ -236,11 +244,12 @@ const highlightText = (text) => {
   const trimmedText = text.replace(/[\n\r ]+$/, '')
 
   // First parse with marked
-  const parsedContent = marked(trimmedText, {
+  const parsedContent = marked.parse(trimmedText, {
     renderer: new marked.Renderer(),
     gfm: true,
     breaks: true,
-  })
+    async: false,
+  }) as string
 
   // Then apply search term highlighting if needed
   if (props.searchTerm) {
@@ -275,7 +284,7 @@ const formatEmailAddress = (email) => {
 
 onMounted(() => {
   // Set initial page from URL
-  currentPage.value = parseInt(route.query.page) || 1
+  currentPage.value = parseInt(queryStr(route.query.page), 10) || 1
   fetchThread()
 })
 </script>
@@ -372,3 +381,4 @@ select:focus {
   @apply text-xs;
 }
 </style>
+

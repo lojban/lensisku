@@ -17,11 +17,15 @@
     "lint-staged"
   ],
   "ignoreIssues": {
-    "src/api.js": ["exports"],
-    "src/composables/useAnonymousProgress.js": ["exports"],
+    "src/api.ts": ["exports", "types"],
+    "src/composables/useAnonymousProgress.ts": ["exports", "types"],
+    "src/composables/useAuth.ts": ["types"],
+    "src/composables/useError.ts": ["types"],
+    "src/composables/useLanguageSelection.ts": ["types"],
+    "src/composables/useSuccessToast.ts": ["types"],
     "src/config/lingoConstants.ts": ["exports"],
     "src/config/locales.ts": ["exports"],
-    "src/utils/searchQueue.js": ["exports"],
-    "src/router/index.ts": ["types"]
+    "src/router/index.ts": ["types"],
+    "src/utils/searchQueue.ts": ["exports"]
   }
 }

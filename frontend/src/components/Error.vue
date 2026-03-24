@@ -1,5 +1,5 @@
 <template>
-  <ToastFloat
+   <ToastFloat
     :show="!!message"
     :message="displayMessage"
     type="error"
@@ -8,7 +8,7 @@
   />
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 
@@ -27,3 +27,4 @@ const displayMessage = computed(() => {
 
 defineEmits(['close'])
 </script>
+

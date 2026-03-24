@@ -1,27 +1,28 @@
 <template>
+
   <div class="flex gap-3">
-    <button class="btn-history" @click="goBack">
-      <ArrowLeft class="h-5 w-5" />
-    </button>
-    <button class="btn-market" @click="viewThread">
-      {{ t('components.messageActions.viewThread') }}
-    </button>
-    <button
+     <button class="btn-history" @click="goBack"> <ArrowLeft class="h-5 w-5" /> </button> <button
+      class="btn-market"
+      @click="viewThread"
+    >
+       {{ t('components.messageActions.viewThread') }} </button
+    > <button
       v-if="showSpamButton"
       class="btn-warning"
       :class="currentUserVotedSpam ? 'btn-warning' : 'btn-empty'"
       @click="$emit('toggle-spam-vote')"
     >
-      {{
+       {{
         currentUserVotedSpam
           ? t('components.messageDetail.unlabelAsSpam', { count: spamVoteCount })
           : t('components.messageDetail.labelAsSpam', { count: spamVoteCount })
-      }}
-    </button>
+      }} </button
+    >
   </div>
+
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ArrowLeft } from 'lucide-vue-next'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
@@ -71,3 +72,4 @@ const viewThread = () => {
   }
 }
 </script>
+

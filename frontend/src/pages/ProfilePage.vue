@@ -1,35 +1,35 @@
 <template>
-  <!-- Loading State -->
-  <LoadingSpinner v-if="isLoading" class="py-8" />
-
-  <!-- Profile Content -->
+   <!-- Loading State --> <LoadingSpinner v-if="isLoading" class="py-8" /> <!-- Profile Content -->
   <div v-else>
-    <!-- Header -->
+     <!-- Header -->
     <div class="flex flex-col lg:flex-row justify-between items-center gap-4 mb-6">
+
       <h2 class="text-2xl font-bold text-gray-800 text-center sm:text-left flex-1 min-w-[200px]">
-        {{
+         {{
           isOwnProfile
             ? t('profile.yourProfile')
             : t('profile.userProfile', { username: profileData.username })
         }}
       </h2>
+
       <div class="flex flex-wrap gap-2 w-full lg:w-auto justify-center items-center">
-        <!-- Language Selector -->
+         <!-- Language Selector -->
         <div v-if="isOwnProfile" class="relative group">
-          <select
+           <select
             :value="locale"
             class="input-field appearance-none !h-6 !py-0 !pr-8 !text-xs"
             @change="switchLanguage"
           >
+
             <option v-for="loc in availableLocales" :key="`locale-${loc}`" :value="loc">
-              {{ loc.toUpperCase() }}
+               {{ loc.toUpperCase() }}
             </option>
-          </select>
-          <ChevronDown
+             </select
+          > <ChevronDown
             class="h-4 w-4 text-gray-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none"
           />
         </div>
-        <!--
+         <!--
         <RouterLink
           v-if="isOwnProfile"
           to="/balance"
@@ -38,171 +38,177 @@
           <Wallet class="h-4 w-4" />
           {{ t('profile.balance') }}
         </RouterLink>
-        -->
-        <!-- Aqua button group -->
+        --> <!-- Aqua button group -->
         <div class="flex">
-          <RouterLink
+           <RouterLink
             v-if="isOwnProfile"
             to="/change-password"
             class="btn-aqua-orange btn-aqua-group-item"
-          >
-            <KeyRound class="h-4 w-4" />
-            {{ t('profile.changePassword') }}
-          </RouterLink>
-          <button
+            > <KeyRound class="h-4 w-4" /> {{ t('profile.changePassword') }} </RouterLink
+          > <button
             v-if="isOwnProfile && !isEditing"
             class="btn-aqua-yellow btn-aqua-group-item"
             @click="toggleEdit"
           >
-            <Pencil class="h-4 w-4" />
-            {{ t('profile.editProfile') }}
-          </button>
+             <Pencil class="h-4 w-4" /> {{ t('profile.editProfile') }} </button
+          >
         </div>
+
         <div class="flex">
-          <RouterLink
+           <RouterLink
             :to="
               isOwnProfile
                 ? '/reactions?tab=definitions'
                 : `/user/${profileData.username}/activity?tab=definitions`
             "
             class="btn-aqua-purple btn-aqua-group-item"
-          >
-            <Activity class="h-4 w-4" />
-            {{ t('profile.viewActivity') }}
-          </RouterLink>
-          <button
+            > <Activity class="h-4 w-4" /> {{ t('profile.viewActivity') }} </RouterLink
+          > <button
             v-if="isOwnProfile && auth.state.isLoggedIn"
             class="btn-aqua btn-aqua-group-item"
             @click="auth.logout()"
           >
-            <LogOut class="h-4 w-4" />
-            {{ t('nav.logout') }}
-          </button>
+             <LogOut class="h-4 w-4" /> {{ t('nav.logout') }} </button
+          >
         </div>
-
-        <!-- Role Assignment Section -->
+         <!-- Role Assignment Section -->
         <div v-if="canAssignRoles && !isOwnProfile" class="flex gap-2 items-center form-group">
-          <select v-model="selectedRole" class="input-field h-6 py-0">
-            <option v-for="role in assignableRoles" :key="role.name" :value="role.name">
-              {{ translateRole(role.name) }}
-            </option>
-          </select>
-          <button class="btn-aqua-emerald" :disabled="isAssigningRole" @click="performAssignRole">
-            {{ isAssigningRole ? t('profile.assigning') : t('profile.assignRole') }}
-          </button>
-        </div>
-      </div>
-    </div>
+           <select v-model="selectedRole" class="input-field h-6 py-0">
 
-    <!-- View Mode -->
+            <option v-for="role in assignableRoles" :key="role.name" :value="role.name">
+               {{ translateRole(role.name) }}
+            </option>
+             </select
+          > <button class="btn-aqua-emerald" :disabled="isAssigningRole" @click="performAssignRole">
+             {{ isAssigningRole ? t('profile.assigning') : t('profile.assignRole') }} </button
+          >
+        </div>
+
+      </div>
+
+    </div>
+     <!-- View Mode -->
     <div v-if="!isEditing" class="bg-white p-4 rounded-lg border space-y-4">
+
       <div class="">
-        <!-- Profile Image -->
+         <!-- Profile Image -->
         <div class="mb-6 flex flex-col items-center">
-          <!-- Skeleton for View Mode -->
+           <!-- Skeleton for View Mode -->
           <div
             v-show="isViewProfileImageLoading"
             class="w-32 h-32 rounded-full bg-gray-200 animate-pulse border-4 border-white shadow-lg"
           ></div>
-          <!-- Actual Image for View Mode -->
-          <img
+           <!-- Actual Image for View Mode --> <img
             v-show="!isViewProfileImageLoading && profileData.has_profile_image"
             :src="profileImageUrl"
             :alt="`${profileData.username}'s profile picture`"
             class="w-32 h-32 rounded-full object-cover border-4 border-white shadow-lg"
             @load="handleViewProfileImageLoad"
             @error="handleViewProfileImageError"
-          />
-          <!-- Placeholder for View Mode (No Image or Error) -->
+          /> <!-- Placeholder for View Mode (No Image or Error) -->
           <div
             v-show="!isViewProfileImageLoading && !profileData.has_profile_image"
             class="w-32 h-32 rounded-full bg-gray-200 flex items-center justify-center text-gray-400 border-4 border-white shadow-lg"
           >
-            <User class="h-16 w-16" />
+             <User class="h-16 w-16" />
           </div>
+
         </div>
-
-        <!-- Profile Info -->
+         <!-- Profile Info -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
-          <!-- Left Column -->
+           <!-- Left Column -->
           <div class="space-y-4">
-            <div>
-              <span class="text-sm font-medium text-gray-500">{{ t('profile.username') }}</span>
-              <p class="mt-1 text-gray-900">
-                {{ profileData.username }}
-              </p>
-            </div>
-            <div>
-              <span class="text-sm font-medium text-gray-500">{{ t('profile.role') }}</span>
-              <p class="mt-1 text-gray-900">
-                {{ translateRole(profileData.role) }}
-              </p>
-            </div>
-            <div v-if="isOwnProfile || profileData.email">
-              <span class="text-sm font-medium text-gray-500">{{ t('profile.email') }}</span>
-              <p class="mt-1 text-gray-900">
-                {{ profileData.email }}
-              </p>
-            </div>
-            <div>
-              <span class="text-sm font-medium text-gray-500">{{ t('profile.realName') }}</span>
-              <p class="mt-1 text-gray-900">
-                {{ profileData.realname || t('profile.notSet') }}
-              </p>
-            </div>
-          </div>
 
-          <!-- Right Column -->
-          <div class="space-y-4">
             <div>
-              <span class="text-sm font-medium text-gray-500">{{ t('profile.url') }}</span>
+               <span class="text-sm font-medium text-gray-500">{{ t('profile.username') }}</span
+              >
+              <p class="mt-1 text-gray-900"> {{ profileData.username }} </p>
+
+            </div>
+
+            <div>
+               <span class="text-sm font-medium text-gray-500">{{ t('profile.role') }}</span
+              >
+              <p class="mt-1 text-gray-900"> {{ translateRole(profileData.role) }} </p>
+
+            </div>
+
+            <div v-if="isOwnProfile || profileData.email">
+               <span class="text-sm font-medium text-gray-500">{{ t('profile.email') }}</span
+              >
+              <p class="mt-1 text-gray-900"> {{ profileData.email }} </p>
+
+            </div>
+
+            <div>
+               <span class="text-sm font-medium text-gray-500">{{ t('profile.realName') }}</span
+              >
+              <p class="mt-1 text-gray-900"> {{ profileData.realname || t('profile.notSet') }} </p>
+
+            </div>
+
+          </div>
+           <!-- Right Column -->
+          <div class="space-y-4">
+
+            <div>
+               <span class="text-sm font-medium text-gray-500">{{ t('profile.url') }}</span
+              >
               <p class="mt-1">
-                <a
+                 <a
                   v-if="profileData.url"
                   :href="profileData.url"
                   target="_blank"
                   class="text-blue-600 hover:underline"
                   >{{ profileData.url }}</a
+                > <span v-else class="text-gray-900">{{ t('profile.notSet') }}</span
                 >
-                <span v-else class="text-gray-900">{{ t('profile.notSet') }}</span>
               </p>
+
             </div>
+
             <div>
-              <span class="text-sm font-medium text-gray-500">{{ t('profile.personalInfo') }}</span>
+               <span class="text-sm font-medium text-gray-500">{{ t('profile.personalInfo') }}</span
+              >
               <p class="mt-1 text-gray-900">
-                <LazyMathJax
+                 <LazyMathJax
                   :content="profileData.personal || t('profile.notSet')"
                   class="inline"
                 />
               </p>
-            </div>
-            <div>
-              <span class="text-sm font-medium text-gray-500">{{ t('profile.memberSince') }}</span>
-              <p class="mt-1 text-gray-900">
-                {{ memberSince }}
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
 
-    <!-- Edit Mode -->
+            </div>
+
+            <div>
+               <span class="text-sm font-medium text-gray-500">{{ t('profile.memberSince') }}</span
+              >
+              <p class="mt-1 text-gray-900"> {{ memberSince }} </p>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+     <!-- Edit Mode -->
     <form
       v-else
       class="bg-white p-4 rounded-lg border space-y-4"
       @submit.prevent="performUpdateProfile"
     >
-      <!-- Integrated Avatar Upload UI -->
+       <!-- Integrated Avatar Upload UI -->
       <div class="flex flex-col items-center mb-6">
+
         <div class="relative group w-32 h-32">
-          <!-- Skeleton for Edit Mode -->
+           <!-- Skeleton for Edit Mode -->
           <div
             v-show="isEditProfileImageLoading"
             class="w-32 h-32 rounded-full bg-gray-200 animate-pulse border-4 border-white shadow-lg"
           ></div>
-          <!-- Avatar Image or Placeholder for Edit Mode -->
-          <img
+           <!-- Avatar Image or Placeholder for Edit Mode --> <img
             v-show="!isEditProfileImageLoading && currentImageUrl"
             :key="currentImageUrl"
             :src="currentImageUrl"
@@ -215,16 +221,17 @@
             v-show="!isEditProfileImageLoading && !currentImageUrl"
             class="w-32 h-32 rounded-full bg-gray-200 flex items-center justify-center text-gray-400 border-4 border-white shadow-lg"
           >
-            <User class="h-16 w-16" />
+             <User class="h-16 w-16" />
           </div>
-
-          <!-- Loading/Progress Overlay -->
+           <!-- Loading/Progress Overlay -->
           <div
             v-if="isImageUploading"
             class="absolute inset-0 rounded-full bg-black bg-opacity-50 flex items-center justify-center"
           >
-            <svg class="w-16 h-16 transform -rotate-90" viewBox="0 0 100 100">
+             <svg class="w-16 h-16 transform -rotate-90" viewBox="0 0 100 100">
+
               <circle cx="50" cy="50" r="45" fill="none" stroke="#4B5563" stroke-width="8" />
+
               <circle
                 cx="50"
                 cy="50"
@@ -236,88 +243,85 @@
                 :stroke-dashoffset="circumference - (uploadProgress / 100) * circumference"
                 class="transition-all duration-300"
               />
-            </svg>
-            <span class="absolute text-white text-sm font-medium"
+               </svg
+            > <span class="absolute text-white text-sm font-medium"
               >{{ Math.round(uploadProgress) }}%</span
             >
           </div>
-
-          <!-- Action Buttons (Always visible below when not uploading) -->
+           <!-- Action Buttons (Always visible below when not uploading) -->
           <div
             v-if="!isImageUploading"
             class="absolute -bottom-4 left-1/2 transform -translate-x-1/2 flex gap-3"
           >
-            <label
+             <label
               class="cursor-pointer p-2 bg-white border border-gray-300 rounded-full text-blue-600 hover:bg-blue-50 transition-all shadow-md"
               :title="t('profile.uploadNewPhoto')"
-            >
-              <input type="file" class="hidden" accept="image/*" @change="handleFileChange" />
-              <Camera class="h-5 w-5" />
-            </label>
-            <button
+              > <input type="file" class="hidden" accept="image/*" @change="handleFileChange" />
+              <Camera class="h-5 w-5" /> </label
+            > <button
               v-if="hasImage"
               class="p-2 bg-white border border-gray-300 rounded-full text-red-600 hover:bg-red-50 transition-all shadow-md"
               :title="t('profile.removePhoto')"
               @click.stop="handleImageRemove"
             >
-              <Trash2 class="h-5 w-5" />
-            </button>
+               <Trash2 class="h-5 w-5" /> </button
+            >
           </div>
+
         </div>
-
-        <!-- Spacer to prevent overlap with buttons -->
+         <!-- Spacer to prevent overlap with buttons -->
         <div class="h-6" />
+         <!-- Upload Error Message -->
+        <p v-if="imageUploadError" class="mt-2 text-sm text-red-600"> {{ imageUploadError }} </p>
 
-        <!-- Upload Error Message -->
-        <p v-if="imageUploadError" class="mt-2 text-sm text-red-600">
-          {{ imageUploadError }}
-        </p>
       </div>
-      <!-- End Integrated Avatar Upload UI -->
-
-      <!-- Rest of the form fields -->
+       <!-- End Integrated Avatar Upload UI --> <!-- Rest of the form fields -->
       <div>
-        <label class="block text-sm font-medium text-gray-700">{{ t('profile.username') }}</label>
-        <input
+         <label class="block text-sm font-medium text-gray-700">{{ t('profile.username') }}</label
+        > <input
           v-model="editForm.username"
           type="text"
           class="input-field w-full"
           :disabled="isUpdating"
         />
       </div>
+
       <div>
-        <label class="block text-sm font-medium text-gray-700">{{ t('profile.realName') }}</label>
-        <input v-model="editForm.realname" type="text" class="input-field w-full" />
+         <label class="block text-sm font-medium text-gray-700">{{ t('profile.realName') }}</label
+        > <input v-model="editForm.realname" type="text" class="input-field w-full" />
       </div>
 
       <div>
-        <label class="block text-sm font-medium text-gray-700">{{ t('profile.url') }}</label>
-        <input v-model="editForm.url" type="url" class="input-field w-full" />
+         <label class="block text-sm font-medium text-gray-700">{{ t('profile.url') }}</label
+        > <input v-model="editForm.url" type="url" class="input-field w-full" />
       </div>
 
       <div>
-        <label class="block text-sm font-medium text-gray-700">{{
+         <label class="block text-sm font-medium text-gray-700">{{
           t('profile.personalInfo')
-        }}</label>
-        <textarea v-model="editForm.personal" rows="4" class="textarea-field" />
+        }}</label
+        > <textarea v-model="editForm.personal" rows="4" class="textarea-field" />
       </div>
+
       <div v-if="updateSuccess" class="text-green-600 text-sm">
-        {{ t('profile.updateSuccess') }}
+         {{ t('profile.updateSuccess') }}
       </div>
 
       <div class="mt-6 flex justify-end gap-3">
-        <button type="button" class="btn-cancel" @click="toggleEdit">
-          {{ t('profile.cancel') }}
-        </button>
-        <button type="submit" :disabled="isUpdating || isImageUploading" class="btn-update">
-          {{ isUpdating ? t('profile.saving') : t('profile.saveChanges') }}
-        </button>
+         <button type="button" class="btn-cancel" @click="toggleEdit">
+           {{ t('profile.cancel') }} </button
+        > <button type="submit" :disabled="isUpdating || isImageUploading" class="btn-update">
+           {{ isUpdating ? t('profile.saving') : t('profile.saveChanges') }} </button
+        >
       </div>
+
     </form>
+
   </div>
+
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { jwtDecode } from 'jwt-decode'
 import {
   Wallet,
@@ -350,6 +354,21 @@ import { useAuth } from '@/composables/useAuth'
 import { useError } from '@/composables/useError'
 import { useSuccessToast } from '@/composables/useSuccessToast'
 import { useSeoHead } from '@/composables/useSeoHead'
+
+/** JWT fields used on the profile page (decode + display). */
+interface ProfileJwtPayload {
+  sub?: string
+  username?: string
+  email?: string
+  authorities?: string[]
+  role?: string
+  exp?: number
+}
+
+function routeParamString(v: string | string[] | undefined): string | undefined {
+  if (v == null) return undefined
+  return Array.isArray(v) ? v[0] : v
+}
 
 const route = useRoute()
 const router = useRouter()
@@ -399,6 +418,8 @@ const profileData = ref({
   url: '',
   personal: '',
   user_id: '',
+  has_profile_image: false,
+  role: '' as string | undefined,
 })
 
 const editForm = ref({
@@ -409,12 +430,13 @@ const editForm = ref({
 })
 
 // Computed
-useSeoHead({ title: computed(() => profileData.value?.username) }, locale.value)
+useSeoHead({ title: computed(() => profileData.value?.username || '') })
 
 const hasImage = computed(() => profileData.value.has_profile_image)
 
 const isOwnProfile = computed(() => {
-  return !route.params.username || route.params.username === auth.state.username
+  const p = routeParamString(route.params.username)
+  return !p || p === auth.state.username
 })
 
 const profileImageUrl = computed(() => {
@@ -425,10 +447,10 @@ const profileImageUrl = computed(() => {
 })
 
 // Methods
-const switchLanguage = (event) => {
+const switchLanguage = (event: Event) => {
   if (typeof window === 'undefined') return
 
-  const newLocale = event.target.value
+  const newLocale = (event.target as HTMLSelectElement).value
   if (availableLocales.includes(newLocale)) {
     locale.value = newLocale
     localStorage.setItem('selectedLocale', newLocale) // Store preference
@@ -475,8 +497,8 @@ const fetchProfileImageUrl = async () => {
 }
 
 // --- Integrated Image Upload Logic ---
-const handleFileChange = async (event) => {
-  const file = event.target.files[0]
+const handleFileChange = async (event: Event) => {
+  const file = (event.target as HTMLInputElement).files?.[0]
   if (!file) return
 
   clearError()
@@ -499,7 +521,8 @@ const handleFileChange = async (event) => {
     const reader = new FileReader()
     reader.onload = async (e) => {
       try {
-        const base64Data = e.target.result.split(',')[1]
+        const raw = e.target?.result
+        const base64Data = typeof raw === 'string' ? raw.split(',')[1] ?? '' : ''
         const imageData = { data: base64Data, mime_type: file.type }
 
         isEditProfileImageLoading.value = true // Set loading for preview
@@ -571,13 +594,13 @@ const handleImageRemove = async () => {
 }
 // --- End Integrated Image Upload Logic ---
 
-const decodedToken = computed(() => {
-  if (typeof window === 'undefined') return
+const decodedToken = computed((): ProfileJwtPayload | null => {
+  if (typeof window === 'undefined') return null
 
   const token = localStorage.getItem('accessToken')
   if (token) {
     try {
-      return jwtDecode(token)
+      return jwtDecode<ProfileJwtPayload>(token)
     } catch (e) {
       console.error('Error decoding token:', e)
       return null
@@ -618,9 +641,9 @@ const performAssignRole = async () => {
   }
 }
 
-const capitalizeFirstLetter = (str) => str.charAt(0).toUpperCase() + str.substring(1)
+const capitalizeFirstLetter = (str: string) => str.charAt(0).toUpperCase() + str.substring(1)
 
-const translateRole = (role) => {
+const translateRole = (role: string | undefined) => {
   if (!role || typeof role !== 'string') {
     return role || ''
   }
@@ -639,15 +662,15 @@ const fetchProfileData = async () => {
 
   try {
     let response,
-      username = route.params.username,
-      email
+      username: string | undefined = routeParamString(route.params.username),
+      email: string | undefined
 
     if (isOwnProfile.value) {
       if (token) {
         // For own profile, prefer route parameter username (which might be updated)
         // over token username (which might be stale)
-        if (route.params.username) {
-          username = route.params.username
+        if (routeParamString(route.params.username)) {
+          username = routeParamString(route.params.username)
         } else {
           username = token.username || 'N/A'
         }
@@ -656,7 +679,7 @@ const fetchProfileData = async () => {
     }
 
     try {
-      response = await getUserProfile(username)
+      response = await getUserProfile(username ?? '')
     } catch (profileErr) {
       // If profile lookup fails and this is own profile, try refreshing token
       if (isOwnProfile.value && auth && auth.refreshAccessToken) {
@@ -678,7 +701,30 @@ const fetchProfileData = async () => {
       }
     }
 
-    const { realname, url, personal, join_date, has_profile_image, user_id, role } = response.data
+    const {
+      realname,
+      url,
+      personal,
+      join_date,
+      has_profile_image,
+      user_id,
+      role,
+      username: usernameFromApi,
+      email: emailFromApi,
+    } = response.data as {
+      realname: string
+      url: string
+      personal: string
+      join_date?: string
+      has_profile_image: boolean
+      user_id: string
+      role: string
+      username?: string
+      email?: string
+    }
+
+    const resolvedUsername = usernameFromApi ?? username ?? ''
+    const resolvedEmail = emailFromApi ?? email ?? ''
 
     profileData.value = {
       ...profileData.value,
@@ -686,8 +732,8 @@ const fetchProfileData = async () => {
       realname,
       url,
       personal,
-      username,
-      email,
+      username: resolvedUsername,
+      email: resolvedEmail,
       has_profile_image,
       role,
     }
@@ -698,7 +744,12 @@ const fetchProfileData = async () => {
     await fetchProfileImageUrl()
 
     memberSince.value = join_date ? new Date(join_date).toLocaleDateString(locale.value) : 'N/A'
-    editForm.value = { realname, url, personal }
+    editForm.value = {
+      username: resolvedUsername,
+      realname,
+      url,
+      personal,
+    }
 
     // Load assignable roles if we have permission
     if (canAssignRoles.value) {
@@ -758,9 +809,11 @@ const performUpdateProfile = async () => {
         auth.state.accessToken = newToken
         // Decode the new token to get updated username
         try {
-          const decoded = jwtDecode(newToken)
-          auth.state.username = decoded.username
-          localStorage.setItem('username', decoded.username)
+          const decoded = jwtDecode<ProfileJwtPayload>(newToken)
+          if (decoded.username) {
+            auth.state.username = decoded.username
+            localStorage.setItem('username', decoded.username)
+          }
         } catch (e) {
           console.error('Error decoding new token:', e)
         }
@@ -820,3 +873,4 @@ onMounted(() => {
   fetchProfileData()
 })
 </script>
+

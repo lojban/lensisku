@@ -1,5 +1,5 @@
 <template>
-  <button
+   <button
     v-if="auth.state.isLoggedIn"
     :class="[
       isSubscribed ? 'btn-aqua-toggle active' : 'btn-aqua-toggle inactive',
@@ -8,19 +8,17 @@
     :disabled="isLoading"
     @click="toggleSubscription"
   >
-    <span class="inline-block align-middle">
-      <BellRing v-if="isSubscribed" class="h-4 w-4" />
-      <BellOff v-else class="h-4 w-4" />
-    </span>
-    {{
+     <span class="inline-block align-middle"
+      > <BellRing v-if="isSubscribed" class="h-4 w-4" /> <BellOff v-else class="h-4 w-4" /> </span
+    > {{
       isSubscribed
         ? t('components.subscriptionControls.gettingAlerts')
         : t('components.subscriptionControls.notGettingAlerts')
-    }}
-  </button>
+    }} </button
+  >
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { BellOff, BellRing } from 'lucide-vue-next'
 import { ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -80,3 +78,4 @@ const toggleSubscription = async () => {
 
 onMounted(fetchState)
 </script>
+

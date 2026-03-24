@@ -1,44 +1,31 @@
 <template>
-  <TabbedPageHeader
+   <TabbedPageHeader
     :tabs="tabs"
     :active-tab="activeTab"
     :page-title="pageTitle"
     @tab-click="handleTabClick"
-  />
-
-  <!-- Loading State with Skeleton -->
-  <div v-if="isLoading" class="space-y-4">
-    <SkeletonActivityItem v-for="n in 5" :key="n" />
-  </div>
-
-  <!-- Content -->
+  /> <!-- Loading State with Skeleton -->
+  <div v-if="isLoading" class="space-y-4"> <SkeletonActivityItem v-for="n in 5" :key="n" /> </div>
+   <!-- Content -->
   <div v-if="!error" class="space-y-4">
-    <ActivityChanges
+     <ActivityChanges
       v-if="activeTab === 'changes'"
       :grouped-changes="groupedChanges"
       :format-date="formatDate"
-    />
-
-    <ActivityThreads
+    /> <ActivityThreads
       v-if="activeTab === 'threads'"
       :threads="threads"
       :format-date-for-thread="formatDateForThread"
       :format-time="formatTime"
-    />
-
-    <ActivityComments
+    /> <ActivityComments
       v-if="activeTab === 'all_comments'"
       :comments="allComments"
       :format-date="formatDateForThread"
-    />
-
-    <ActivityDefinitions
+    /> <ActivityDefinitions
       v-if="activeTab === 'all_definitions'"
       :definitions="allDefinitions"
       :format-date="formatDateForThread"
-    />
-
-    <PaginationComponent
+    /> <PaginationComponent
       v-if="
         (activeTab === 'changes' && (currentPage > 1 || nextCursor)) ||
         (['threads', 'all_comments', 'all_definitions'].includes(activeTab) && totalPages > 1)
@@ -53,9 +40,10 @@
       @next="changePage(currentPage + 1)"
     />
   </div>
+
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { History, Waves, MessageSquare, Book } from 'lucide-vue-next'
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -71,6 +59,7 @@ import SkeletonActivityItem from '@/components/activity/SkeletonActivityItem.vue
 import TabbedPageHeader from '@/components/TabbedPageHeader.vue'
 import { useError } from '@/composables/useError'
 import { useSeoHead } from '@/composables/useSeoHead'
+import { queryStr } from '@/utils/routeQuery'
 
 const { t, locale } = useI18n()
 
@@ -90,7 +79,8 @@ const router = useRouter()
 const threads = ref([])
 const allComments = ref([])
 const allDefinitions = ref([])
-const changes = ref([])
+type ChangeRow = { time: number; [key: string]: unknown }
+const changes = ref<ChangeRow[]>([])
 
 // Pagination state (shared for simplicity, adjust if needed per tab)
 const currentPage = ref(1)
@@ -110,7 +100,7 @@ const { error, showError, clearError } = useError()
 const getInitialTab = () => {
   if (typeof window === 'undefined') return 'changes'
   const storedTab = localStorage.getItem(STORAGE_KEY_TAB)
-  const queryTab = route.query.tab
+  const queryTab = queryStr(route.query.tab)
   const validTabs = tabs.value.map((t) => t.key) // Use tabs.value here
   if (queryTab && validTabs.includes(queryTab)) return queryTab
   if (storedTab && validTabs.includes(storedTab)) return storedTab
@@ -119,7 +109,7 @@ const getInitialTab = () => {
 const activeTab = ref(getInitialTab())
 
 // Pagination: update URL; route watcher will sync currentPage and fetch
-const changePage = (newPage) => {
+const changePage = (newPage: number) => {
   if (activeTab.value === 'changes') {
     const canGo =
       newPage >= 1 &&
@@ -131,7 +121,7 @@ const changePage = (newPage) => {
 }
 
 // Unified fetch method with request deduplication and abort control
-const fetchData = async (tabKey) => {
+const fetchData = async (tabKey: string) => {
   isLoading.value = true
   clearError()
 
@@ -268,13 +258,13 @@ const fetchData = async (tabKey) => {
 const isInitializing = ref(true)
 
 // Watch activeTab and save to localStorage
-watch(activeTab, (newTab) => {
+watch(activeTab, (newTab: string) => {
   if (typeof window !== 'undefined') {
     localStorage.setItem(STORAGE_KEY_TAB, newTab)
   }
 })
 
-const handleTabClick = async (tabKey) => {
+const handleTabClick = async (tabKey: string) => {
   if (tabKey === activeTab.value || isLoading.value) return
 
   isLoading.value = true
@@ -303,7 +293,7 @@ let abortController = null
 
 onMounted(async () => {
   const initialTab = getInitialTab()
-  currentPage.value = parseInt(route.query.page) || 1
+  currentPage.value = parseInt(queryStr(route.query.page), 10) || 1
   await fetchData(initialTab)
   activeTab.value = initialTab // Set activeTab after initial fetch
   isInitializing.value = false
@@ -316,18 +306,21 @@ onUnmounted(() => {
 })
 
 const groupedChanges = computed(() => {
-  const groups = changes.value.reduce((acc, change) => {
-    const date = new Date(change.time * 1000).toLocaleDateString(locale.value)
-    if (!acc[date]) {
-      acc[date] = { date: new Date(change.time * 1000), changes: [] }
-    }
-    acc[date].changes.push(change)
-    return acc
-  }, {})
-  return Object.values(groups).sort((a, b) => b.date - a.date)
+  const groups = changes.value.reduce<Record<string, { date: Date; changes: ChangeRow[] }>>(
+    (acc, change) => {
+      const date = new Date(change.time * 1000).toLocaleDateString(locale.value)
+      if (!acc[date]) {
+        acc[date] = { date: new Date(change.time * 1000), changes: [] }
+      }
+      acc[date].changes.push(change)
+      return acc
+    },
+    {}
+  )
+  return Object.values(groups).sort((a, b) => b.date.getTime() - a.date.getTime())
 })
 
-const formatDate = (date) =>
+const formatDate = (date: Date) =>
   new Intl.DateTimeFormat(locale.value, {
     weekday: 'long',
     year: 'numeric',
@@ -335,13 +328,13 @@ const formatDate = (date) =>
     day: 'numeric',
   }).format(date)
 
-const formatTime = (timestamp) =>
+const formatTime = (timestamp: number) =>
   new Date(timestamp * 1000).toLocaleTimeString(locale.value, {
     hour: '2-digit',
     minute: '2-digit',
   })
 
-const formatDateForThread = (timestamp) =>
+const formatDateForThread = (timestamp: number) =>
   new Date(timestamp * 1000).toLocaleDateString(locale.value, {
     year: 'numeric',
     month: 'short',
@@ -353,7 +346,7 @@ const pageTitle = computed(() => {
   const currentTab = tabs.value.find((t) => t.key === activeTab.value)
   return currentTab ? currentTab.label : t('recentChanges.activityTitle')
 })
-useSeoHead({ title: pageTitle }, locale.value)
+useSeoHead({ title: pageTitle })
 
 // Unified route watcher
 // Additional flag to prevent race conditions with route changes
@@ -364,11 +357,10 @@ watch(
   async (newQuery) => {
     if (typeof window === 'undefined' || isHandlingRouteChange.value) return
 
+    const tabStr = queryStr(newQuery.tab)
     const newTab =
-      newQuery.tab && tabs.value.map((t) => t.key).includes(newQuery.tab)
-        ? newQuery.tab
-        : getInitialTab()
-    const newPage = parseInt(newQuery.page) || 1
+      tabStr && tabs.value.map((t) => t.key).includes(tabStr) ? tabStr : getInitialTab()
+    const newPage = parseInt(queryStr(newQuery.page), 10) || 1
 
     let needsFetch = false
     if (newTab !== activeTab.value) {
@@ -396,3 +388,4 @@ watch(
   { deep: true, immediate: true }
 )
 </script>
+

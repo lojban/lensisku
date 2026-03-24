@@ -1,24 +1,26 @@
 <template>
+
   <div :class="alertClasses" class="p-3 rounded-lg space-y-2">
+
     <div v-if="label || $slots.label" class="flex items-center gap-2 text-xs">
-      <slot name="label">
-        {{ label }}
-      </slot>
+       <slot name="label"> {{ label }} </slot>
     </div>
-    <div class="text-sm">
-      <slot />
-    </div>
+
+    <div class="text-sm"> <slot /> </div>
+
   </div>
+
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed } from 'vue'
 
 const props = defineProps({
   type: {
     type: String,
     default: 'info',
-    validator: (value) => ['info', 'success', 'warning', 'error', 'tip'].includes(value),
+    validator: (value: unknown) =>
+      typeof value === 'string' && ['info', 'success', 'warning', 'error', 'tip'].includes(value),
   },
   label: {
     type: String,
@@ -39,3 +41,4 @@ const alertClasses = computed(() => {
   return `${currentType.bg} ${currentType.border} ${currentType.text}`
 })
 </script>
+

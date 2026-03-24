@@ -1,9 +1,12 @@
 <template>
+
   <div ref="contentRef" :key="contentKey" class="mathjax-content break-words" />
+
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { Marked } from 'marked'
+import type { RendererObject } from 'marked'
 import { ref, onMounted, watch, nextTick, onBeforeUnmount } from 'vue'
 
 const props = defineProps({
@@ -286,7 +289,7 @@ const renderContent = async () => {
     }
 
     const mdParser = new Marked()
-    mdParser.use({ extensions, renderer })
+    mdParser.use({ extensions, renderer: renderer as RendererObject })
 
     finalContent = segments
       .map((seg) => {
@@ -486,3 +489,4 @@ onBeforeUnmount(() => {
   margin-left: 0.2em;
 }
 </style>
+

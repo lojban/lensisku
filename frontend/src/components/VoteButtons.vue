@@ -1,7 +1,7 @@
 <template>
+
   <div class="flex items-center space-x-1">
-    <!-- Upvote button -->
-    <button
+     <!-- Upvote button --> <button
       :disabled="!hasVotePermission || isLoading || userVote === 1"
       :class="[
         'p-0 rounded-md transition-colors text-gray-600',
@@ -17,15 +17,8 @@
       :title="t('components.voteButtons.upvoteTitle')"
       @click="handleVote(false)"
     >
-      <ThumbsUp class="w-5 h-5 m-1" :stroke-width="1.3" />
-    </button>
-
-    <!-- Score display -->
-    <span class="text-sm">
-      {{ score }}
-    </span>
-
-    <!-- Downvote button -->
+       <ThumbsUp class="w-5 h-5 m-1" :stroke-width="1.3" /> </button
+    > <!-- Score display --> <span class="text-sm"> {{ score }} </span> <!-- Downvote button -->
     <button
       :disabled="!hasVotePermission || isLoading || userVote === -1"
       :class="[
@@ -42,12 +35,13 @@
       :title="t('components.voteButtons.downvoteTitle')"
       @click="handleVote(true)"
     >
-      <ThumbsDown class="w-5 h-5 m-1" :stroke-width="1.3" />
-    </button>
+       <ThumbsDown class="w-5 h-5 m-1" :stroke-width="1.3" /> </button
+    >
   </div>
+
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ThumbsUp, ThumbsDown } from 'lucide-vue-next'
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
@@ -120,3 +114,4 @@ const handleVote = async (downvote = false) => {
   }
 }
 </script>
+

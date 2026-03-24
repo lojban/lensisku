@@ -1,10 +1,13 @@
 <template>
+
   <div class="container mx-auto p-4">
+
     <h1 class="text-2xl font-bold mb-4">{{ t('bulkImportClients.title') }}</h1>
 
     <div v-if="loadingClients" class="text-center">
+
       <p>{{ t('bulkImportClients.loadingGroups') }}</p>
-      <!-- Add a spinner or loading animation if available -->
+       <!-- Add a spinner or loading animation if available -->
     </div>
 
     <div
@@ -12,98 +15,120 @@
       class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4"
       role="alert"
     >
-      <strong class="font-bold">{{ t('bulkImportClients.errorTitle') }}</strong>
-      <span class="block sm:inline"> {{ clientsError }}</span>
+       <strong class="font-bold">{{ t('bulkImportClients.errorTitle') }}</strong
+      > <span class="block sm:inline"> {{ clientsError }}</span
+      >
     </div>
 
     <div v-else-if="clients.length === 0" class="text-center text-gray-500">
-      {{ t('bulkImportClients.noGroups') }}
+       {{ t('bulkImportClients.noGroups') }}
     </div>
 
     <div v-else>
+
       <ul class="space-y-4">
+
         <li v-for="client in clients" :key="client.client_id" class="border rounded p-4 shadow">
+
           <div
             class="flex justify-between items-center cursor-pointer"
             @click="toggleClient(client.client_id)"
           >
+
             <div class="space-x-1">
-              <span class="italic">{{ t('bulkImportClients.clientIdLabel') }}</span>
-              <span class="font-semibold">{{ client.client_id }}</span>
+               <span class="italic">{{ t('bulkImportClients.clientIdLabel') }}</span
+              > <span class="font-semibold">{{ client.client_id }}</span
+              >
             </div>
-            <span class="text-sm text-gray-600">{{
+             <span class="text-sm text-gray-600">{{
               t('bulkImportClients.definitionsCount', { count: client.count })
-            }}</span>
-            <button class="text-blue-500 hover:text-blue-700 text-sm">
-              {{
+            }}</span
+            > <button class="text-blue-500 hover:text-blue-700 text-sm">
+               {{
                 isExpanded(client.client_id)
                   ? t('bulkImportClients.collapse')
                   : t('bulkImportClients.expand')
-              }}
-            </button>
+              }} </button
+            >
           </div>
 
           <div v-if="isExpanded(client.client_id)" class="mt-4 pt-4 border-t">
+
             <div v-if="expandedClients[client.client_id]?.loading" class="text-center text-sm">
-              {{ t('bulkImportClients.loadingDefinitions') }}
+               {{ t('bulkImportClients.loadingDefinitions') }}
             </div>
+
             <div
               v-else-if="expandedClients[client.client_id]?.error"
               class="bg-red-100 border border-red-400 text-red-700 px-3 py-2 rounded text-sm"
               role="alert"
             >
-              {{ t('bulkImportClients.loadDefinitionsError') }}
-              {{ expandedClients[client.client_id].error }}
+               {{ t('bulkImportClients.loadDefinitionsError') }} {{
+                expandedClients[client.client_id].error
+              }}
             </div>
+
             <div
               v-else-if="expandedClients[client.client_id]?.definitions.length === 0"
               class="text-sm text-gray-500"
             >
-              {{ t('bulkImportClients.noDefinitions') }}
+               {{ t('bulkImportClients.noDefinitions') }}
             </div>
+
             <div v-else>
+
               <ul class="space-y-2">
+
                 <li
                   v-for="def in expandedClients[client.client_id].definitions"
                   :key="def.id"
                   class="text-sm border-b pb-1"
                 >
-                  <span class="italic mr-2">{{ def.langrealname }}</span>
-                  <span class="font-medium">{{ def.valsiword }}</span
-                  >: {{ truncateDefinition(def.definition) }}
-                  <!-- Add link to full definition page if needed -->
+                   <span class="italic mr-2">{{ def.langrealname }}</span
+                  > <span class="font-medium">{{ def.valsiword }}</span
+                  >: {{ truncateDefinition(def.definition) }} <!-- Add link to full definition page if needed -->
                   <!-- <router-link :to="{ name: 'valsi-detail', params: { id: def.valsi_id } }" class="text-blue-500 hover:underline ml-2">View</router-link> -->
+
                 </li>
+
               </ul>
-              <button
+               <button
                 v-if="expandedClients[client.client_id]?.hasMore"
                 @click="loadMoreDefinitions(client.client_id)"
                 :disabled="expandedClients[client.client_id]?.loadingMore"
                 class="mt-3 px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50 text-sm"
               >
-                {{
+                 {{
                   expandedClients[client.client_id]?.loadingMore
                     ? t('bulkImportClients.loadingMore')
                     : t('bulkImportClients.loadMore')
-                }}
-              </button>
+                }} </button
+              >
               <div
                 v-if="expandedClients[client.client_id]?.loadMoreError"
                 class="mt-2 bg-red-100 border border-red-400 text-red-700 px-3 py-2 rounded text-sm"
                 role="alert"
               >
-                {{ t('bulkImportClients.loadMoreError') }}
-                {{ expandedClients[client.client_id].loadMoreError }}
+                 {{ t('bulkImportClients.loadMoreError') }} {{
+                  expandedClients[client.client_id].loadMoreError
+                }}
               </div>
+
             </div>
+
           </div>
+
         </li>
+
       </ul>
+
     </div>
+
   </div>
+
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, onMounted, reactive } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useSeoHead } from '@/composables/useSeoHead'
@@ -220,3 +245,4 @@ onMounted(() => {
   fetchClients()
 })
 </script>
+

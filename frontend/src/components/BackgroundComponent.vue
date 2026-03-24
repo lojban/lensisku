@@ -1,8 +1,10 @@
 <template>
+
   <div :id="id" :class="classes" />
+
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { onMounted } from 'vue'
 
 const props = defineProps({
@@ -64,3 +66,4 @@ onMounted(() => {
 </script>
 
 <style scoped></style>
+

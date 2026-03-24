@@ -1,19 +1,20 @@
 <template>
-  <button
+   <button
     type="button"
     :class="buttonClasses"
     :aria-label="ariaLabelComputed"
     :disabled="disabled"
     @click="$emit('click', $event)"
   >
-    <slot name="icon">
-      <CirclePlus :class="iconClasses" />
-    </slot>
-    <span v-if="label" class="inline-flex items-center gap-2">{{ label }}</span>
-  </button>
+     <slot name="icon"> <CirclePlus :class="iconClasses" /> </slot> <span
+      v-if="label"
+      class="inline-flex items-center gap-2"
+      >{{ label }}</span
+    > </button
+  >
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed } from 'vue'
 import { CirclePlus } from 'lucide-vue-next'
 
@@ -27,9 +28,9 @@ const props = defineProps({
   disabled: { type: Boolean, default: false },
 })
 
-defineEmits(['click'])
+defineEmits<{ click: [e: MouseEvent] }>()
 
-const ariaLabelComputed = computed(() => props.ariaLabel || props.label || null)
+const ariaLabelComputed = computed(() => props.ariaLabel || props.label || undefined)
 </script>
 
 <style scoped>
@@ -37,3 +38,4 @@ button {
   @apply inline-flex items-center gap-2 w-auto md:flex-none;
 }
 </style>
+

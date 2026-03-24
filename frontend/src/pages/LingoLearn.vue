@@ -1,14 +1,18 @@
 <template>
-  <LingoLayout>
+   <LingoLayout
+    >
     <div class="flex justify-center py-12">
+
       <div
         class="h-10 w-10 animate-spin rounded-full border-2 border-green-500 border-t-transparent"
       />
+
     </div>
-  </LingoLayout>
+     </LingoLayout
+  >
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
@@ -33,3 +37,4 @@ onMounted(() => {
   router.replace('/lingo/courses')
 })
 </script>
+

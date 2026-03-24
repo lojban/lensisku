@@ -1,12 +1,13 @@
 <template>
+
   <div class="space-y-4">
+
     <div v-if="definitions.length === 0" class="text-center py-8 bg-gray-50 rounded-lg">
-      <Book class="mx-auto h-12 w-12 text-blue-400" />
-      <p class="text-gray-600">
-        {{ t('activity.noDefinitions') }}
-      </p>
+       <Book class="mx-auto h-12 w-12 text-blue-400" />
+      <p class="text-gray-600"> {{ t('activity.noDefinitions') }} </p>
+
     </div>
-    <DefinitionCard
+     <DefinitionCard
       v-for="def in definitions"
       v-else
       :key="def.definitionid"
@@ -18,9 +19,10 @@
       :show-audio="true"
     />
   </div>
+
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { Book } from 'lucide-vue-next'
 import { ref, onMounted } from 'vue'
 
@@ -28,16 +30,13 @@ import { getLanguages } from '@/api' // Import getLanguages
 import DefinitionCard from '@/components/DefinitionCard.vue' // Import DefinitionCard
 
 import { useI18n } from 'vue-i18n'
+import type { PropType } from 'vue'
 
 const { t } = useI18n()
 
 const props = defineProps({
   definitions: {
-    type: Array,
-    required: true,
-  },
-  formatDate: {
-    type: Function,
+    type: Array as PropType<Array<{ definitionid: number } & Record<string, unknown>>>,
     required: true,
   },
   formatDate: {
@@ -58,3 +57,4 @@ onMounted(async () => {
   }
 })
 </script>
+

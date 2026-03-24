@@ -1,46 +1,43 @@
 <template>
+
   <div
     ref="scrollContainer"
     class="reel-container h-full bg-black text-white overflow-y-scroll snap-y snap-mandatory touch-pan-y"
   >
-    <!-- Controls -->
+     <!-- Controls -->
     <div class="absolute top-4 right-4 z-30 flex flex-col items-end gap-2">
-      <button
+       <button
         class="text-sm text-white/70 hover:text-white transition-colors"
         @click="showLikes = true"
       >
-        {{ t('components.tiktoknu.likesCount', { count: likedArticlesCount }) }}
-      </button>
-      <LanguageSelector />
+         {{ t('components.tiktoknu.likesCount', { count: likedArticlesCount }) }} </button
+      > <LanguageSelector />
     </div>
-
-    <!-- Articles -->
-    <WikiCard
+     <!-- Articles --> <WikiCard
       v-for="article in articles"
       :key="article.pageid"
       :article="article"
       :is-liked="isLiked(article.pageid)"
       @like="toggleLike(article)"
     />
-
     <div v-if="loading" class="h-screen w-full flex items-center justify-center gap-2">
-      <Loader2 class="h-6 w-6 animate-spin" />
-      <span>{{ t('components.tiktoknu.loading') }}</span>
+       <Loader2 class="h-6 w-6 animate-spin" /> <span>{{ t('components.tiktoknu.loading') }}</span
+      >
     </div>
-
-    <ModalComponent :show="showLikes" class="mt-16" @close="showLikes = false">
-      <LikesPanel
+     <ModalComponent :show="showLikes" class="mt-16" @close="showLikes = false"
+      > <LikesPanel
         :liked-articles="likedArticles"
         :filtered-liked-articles="filteredLikedArticles"
         :search-query="searchQuery"
         @update:search-query="(val) => (searchQuery = val)"
         @export="handleExport"
         @remove="toggleLike"
-      />
-    </ModalComponent>
-    <!-- Observer target at very bottom -->
+      /> </ModalComponent
+    > <!-- Observer target at very bottom -->
     <div ref="observerTarget" class="h-1 w-full mb-[10rem]" aria-hidden="true" />
+
   </div>
+
 </template>
 
 <script setup lang="ts">
@@ -117,3 +114,4 @@ onMounted(fetchArticles)
   display: none;
 }
 </style>
+

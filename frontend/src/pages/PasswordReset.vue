@@ -1,19 +1,26 @@
 <template>
+
   <div class="w-full min-h-[calc(100vh-12rem)] flex items-center justify-center relative">
+
     <div
       class="w-full max-w-md p-8 mx-auto rounded-2xl border border-blue-200 flex-shrink-0 backdrop-blur-xl bg-blue-50/90 shadow-lg transition-all duration-300 hover:shadow-xl flex flex-col items-center space-y-6"
     >
+
       <div v-if="!sessionId" class="w-full space-y-6">
+
         <h2 class="text-2xl sm:text-3xl font-bold text-blue-900 text-center">
-          {{ t('passwordReset.resetTitle') }}
+           {{ t('passwordReset.resetTitle') }}
         </h2>
+
         <form class="space-y-6 w-full" @submit.prevent="requestPasswordReset">
+
           <div>
-            <label for="email" class="block text-sm font-medium text-blue-700">{{
+             <label for="email" class="block text-sm font-medium text-blue-700">{{
               t('passwordReset.emailLabel')
-            }}</label>
+            }}</label
+            >
             <div class="relative">
-              <input
+               <input
                 id="email"
                 v-model="email"
                 type="email"
@@ -21,49 +28,44 @@
                 class="input-field w-full h-10 pl-3 pr-10"
                 :disabled="isLoading"
                 :placeholder="t('passwordReset.emailPlaceholder')"
-              />
-              <Mail class="h-5 w-5 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2" />
+              /> <Mail class="h-5 w-5 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2" />
             </div>
-          </div>
 
-          <button
+          </div>
+           <button
             type="submit"
             class="w-full flex justify-center items-center btn-aqua-slate h-8 gap-2 py-3 rounded-full text-lg font-semibold transition-all"
             :disabled="isLoading || !email"
           >
-            <template v-if="isLoading">
-              <Loader2 class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" />
-              {{ t('passwordReset.sendingRequest') }}
-            </template>
-            <template v-else>
-              {{ t('passwordReset.requestButton') }}
-            </template>
-          </button>
+             <template v-if="isLoading"
+              > <Loader2 class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" /> {{
+                t('passwordReset.sendingRequest')
+              }} </template
+            > <template v-else> {{ t('passwordReset.requestButton') }} </template> </button
+          >
         </form>
-
-        <!-- Error Display -->
-        <AlertComponent v-if="error" type="error" class="mx-auto">
-          {{ error.message }}
-        </AlertComponent>
-
-        <!-- Success Message -->
-        <AlertComponent v-if="requestSent" type="success" class="mx-auto">
-          {{ t('passwordReset.requestSentSuccess') }}
-        </AlertComponent>
+         <!-- Error Display --> <AlertComponent v-if="error" type="error" class="mx-auto"
+          > {{ error.message }} </AlertComponent
+        > <!-- Success Message --> <AlertComponent v-if="requestSent" type="success" class="mx-auto"
+          > {{ t('passwordReset.requestSentSuccess') }} </AlertComponent
+        >
       </div>
-
-      <!-- Reset Password Form -->
+       <!-- Reset Password Form -->
       <div v-else class="w-full">
+
         <h2 class="text-2xl sm:text-3xl font-bold text-blue-900 text-center">
-          {{ t('passwordReset.setNewPasswordTitle') }}
+           {{ t('passwordReset.setNewPasswordTitle') }}
         </h2>
+
         <form class="space-y-6 w-full" @submit.prevent="resetPassword">
+
           <div>
-            <label for="newPassword" class="block text-sm font-medium text-blue-700">{{
+             <label for="newPassword" class="block text-sm font-medium text-blue-700">{{
               t('passwordReset.newPasswordLabel')
-            }}</label>
+            }}</label
+            >
             <div class="relative">
-              <input
+               <input
                 id="newPassword"
                 v-model="newPassword"
                 type="password"
@@ -71,17 +73,18 @@
                 class="input-field w-full h-10 pl-3 pr-10"
                 :disabled="isLoading"
                 :placeholder="t('passwordReset.newPasswordPlaceholder')"
-              />
-              <Key class="h-5 w-5 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2" />
+              /> <Key class="h-5 w-5 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2" />
             </div>
+
           </div>
 
           <div>
-            <label for="confirmPassword" class="block text-sm font-medium text-blue-700">{{
+             <label for="confirmPassword" class="block text-sm font-medium text-blue-700">{{
               t('passwordReset.confirmPasswordLabel')
-            }}</label>
+            }}</label
+            >
             <div class="relative">
-              <input
+               <input
                 id="confirmPassword"
                 v-model="confirmPassword"
                 type="password"
@@ -89,72 +92,72 @@
                 class="input-field w-full h-10 pl-3 pr-10"
                 :disabled="isLoading"
                 :placeholder="t('passwordReset.confirmPasswordPlaceholder')"
-              />
-              <Key class="h-5 w-5 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2" />
+              /> <Key class="h-5 w-5 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2" />
             </div>
+
           </div>
 
           <div
             v-if="showValidationErrors"
             class="mt-4 p-3 bg-yellow-50 border border-yellow-200 text-yellow-800 rounded-md"
           >
-            <p class="font-medium mb-1">
-              {{ t('passwordReset.validationErrorTitle') }}
-            </p>
+
+            <p class="font-medium mb-1"> {{ t('passwordReset.validationErrorTitle') }} </p>
+
             <ul class="list-disc list-inside">
+
               <li
                 v-for="validationError in passwordValidationErrors"
                 :key="validationError"
                 class="text-sm"
               >
-                {{ validationError }}
+                 {{ validationError }}
               </li>
-            </ul>
-          </div>
 
-          <button
+            </ul>
+
+          </div>
+           <button
             type="submit"
             class="w-full flex justify-center items-center btn-aqua-slate h-8 gap-2 py-3 rounded-full text-lg font-semibold transition-all"
             :disabled="isLoading || !isValidPasswordReset"
           >
-            <template v-if="isLoading">
-              <Loader2 class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" />
-              {{ t('passwordReset.resettingPassword') }}
-            </template>
-            <template v-else>
-              {{ t('passwordReset.resetPasswordButton') }}
-            </template>
-          </button>
+             <template v-if="isLoading"
+              > <Loader2 class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" /> {{
+                t('passwordReset.resettingPassword')
+              }} </template
+            > <template v-else> {{ t('passwordReset.resetPasswordButton') }} </template> </button
+          >
         </form>
-
-        <!-- Error Display -->
-        <div v-if="error" class="mb-4 text-center text-red-600">
-          {{ error.message }}
-        </div>
-
-        <!-- Success Message -->
+         <!-- Error Display -->
+        <div v-if="error" class="mb-4 text-center text-red-600"> {{ error.message }} </div>
+         <!-- Success Message -->
         <div
           v-if="resetSuccess"
           class="w-full mt-4 p-3 bg-emerald-100 border border-emerald-200 text-emerald-700 rounded-md text-center"
         >
-          {{ t('passwordReset.resetSuccess') }}
-          <RouterLink to="/login" class="text-green-700 hover:text-green-800 font-medium">
-            {{ t('passwordReset.loginLink') }}
-          </RouterLink>
-          .
+           {{ t('passwordReset.resetSuccess') }} <RouterLink
+            to="/login"
+            class="text-green-700 hover:text-green-800 font-medium"
+            > {{ t('passwordReset.loginLink') }} </RouterLink
+          > .
         </div>
+
       </div>
-      <!-- Back to Login Link -->
+       <!-- Back to Login Link -->
       <p class="text-sm text-white text-center w-full">
-        <RouterLink to="/login" class="font-medium text-blue-900 hover:text-blue-700">
-          {{ t('passwordReset.backToLogin') }}
-        </RouterLink>
+         <RouterLink to="/login" class="font-medium text-blue-900 hover:text-blue-700"
+          > {{ t('passwordReset.backToLogin') }} </RouterLink
+        >
       </p>
+
     </div>
+
   </div>
+
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { Loader2, Key, Mail } from 'lucide-vue-next'
 import { ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -281,10 +284,8 @@ const resetPassword = async () => {
   }
 }
 
-useSeoHead(
-  {
-    title: sessionId.value ? t('passwordReset.setNewPasswordTitle') : t('passwordReset.resetTitle'),
-  },
-  locale.value
-)
+useSeoHead({
+  title: sessionId.value ? t('passwordReset.setNewPasswordTitle') : t('passwordReset.resetTitle'),
+})
 </script>
+

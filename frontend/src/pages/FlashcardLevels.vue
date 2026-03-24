@@ -1,215 +1,220 @@
 <template>
+
   <div class="flex flex-col min-h-[calc(100vh-6rem)]">
-    <!-- Header -->
+     <!-- Header -->
     <div class="mb-4 flex-shrink-0">
+
       <div class="flex items-center justify-between mb-4">
+
         <div class="flex items-center space-x-3">
+
           <h2 class="text-2xl font-bold inline-flex items-center gap-2">
-            {{ collection?.name }}
+             {{ collection?.name }}
           </h2>
+
         </div>
+
       </div>
 
       <div class="flex flex-row gap-2 justify-between items-center w-full">
-        <RouterLink :to="`/collections/${props.collectionId}/flashcards`" class="btn-aqua-rose">
-          {{ t('flashcardLevels.viewFlashcards') }}
-        </RouterLink>
-        <button type="button" class="btn-aqua-orange h-10 text-base" @click="startStudy">
-          {{ t('flashcardLevels.studyButton') }}
-        </button>
-        <IconButton
+         <RouterLink :to="`/collections/${props.collectionId}/flashcards`" class="btn-aqua-rose"
+          > {{ t('flashcardLevels.viewFlashcards') }} </RouterLink
+        > <button type="button" class="btn-aqua-orange h-10 text-base" @click="startStudy">
+           {{ t('flashcardLevels.studyButton') }} </button
+        > <IconButton
           v-if="isOwner"
           :label="t('flashcardLevels.createLevel')"
           button-classes="btn-aqua-emerald"
           @click="showCreateModal = true"
         />
       </div>
-    </div>
 
-    <!-- Loading State -->
+    </div>
+     <!-- Loading State -->
     <div v-if="isLoading" class="flex justify-center py-8">
-      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
-    </div>
 
-    <!-- Levels Display -->
+      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+
+    </div>
+     <!-- Levels Display -->
     <div v-else class="flex flex-col flex-1 min-h-0 gap-6">
-      <!-- Empty State -->
+       <!-- Empty State -->
       <div
         v-if="levels.length === 0"
         class="text-center py-12 bg-gray-50 rounded-lg border flex-shrink-0"
       >
-        <p class="text-gray-600 mb-4">
-          {{ t('flashcardLevels.noLevels') }}
-        </p>
+
+        <p class="text-gray-600 mb-4"> {{ t('flashcardLevels.noLevels') }} </p>
+
         <div class="flex justify-center">
-          <IconButton
+           <IconButton
             v-if="isOwner"
             :label="t('flashcardLevels.createFirst')"
             button-classes="btn-aqua-emerald"
             @click="showCreateModal = true"
           />
         </div>
-      </div>
 
-      <!-- Flow Container -->
+      </div>
+       <!-- Flow Container -->
       <div v-else class="flex-1 min-h-0 flex flex-col">
-        <VueFlow
+         <VueFlow
           v-model="elements"
           :default-viewport="{ zoom: 1 }"
           :min-zoom="0.2"
           :max-zoom="4"
           class="vue-flow-wrapper flex-1 min-h-0"
-        >
-          <template #node-custom="nodeProps">
+          > <template #node-custom="nodeProps"
+            >
             <div
               class="level-card node-content"
               :class="getLevelCardClass(nodeProps.data)"
               :style="getLevelCardStyle(nodeProps.data)"
             >
-              <!-- Top accent + glow -->
+               <!-- Top accent + glow -->
               <div class="level-card-glow" />
-
-              <!-- Level number pill (game-style) -->
+               <!-- Level number pill (game-style) -->
               <div class="level-card-number">
-                <span>{{ nodeProps.data.levelIndex ?? '?' }}</span>
+                 <span>{{ nodeProps.data.levelIndex ?? '?' }}</span
+                >
               </div>
-
-              <!-- Status badge (top-right) -->
+               <!-- Status badge (top-right) -->
               <div class="level-card-badge">
-                <Lock
+                 <Lock
                   v-if="!isLevelUnlocked(nodeProps.data) && !nodeProps.data.progress?.is_completed"
                   class="level-card-badge-icon"
-                />
-                <Dumbbell
+                /> <Dumbbell
                   v-else-if="isLevelUnlocked(nodeProps.data) && isLevelFinished90(nodeProps.data)"
                   class="level-card-badge-icon"
-                />
-                <Sprout v-else class="level-card-badge-icon" />
+                /> <Sprout v-else class="level-card-badge-icon" />
               </div>
-
-              <!-- Title & description -->
+               <!-- Title & description -->
               <div class="level-card-header">
-                <h3 class="level-card-title">
-                  {{ nodeProps.data.name }}
-                </h3>
-                <p v-if="nodeProps.data.description" class="level-card-desc">
-                  {{ nodeProps.data.description }}
-                </p>
-              </div>
 
-              <!-- Locked: hint + owner actions -->
+                <h3 class="level-card-title"> {{ nodeProps.data.name }} </h3>
+
+                <p v-if="nodeProps.data.description" class="level-card-desc">
+                   {{ nodeProps.data.description }}
+                </p>
+
+              </div>
+               <!-- Locked: hint + owner actions -->
               <div
                 v-if="!isLevelUnlocked(nodeProps.data) && !nodeProps.data.progress?.is_completed"
                 class="level-card-body"
               >
+
                 <p v-if="nodeProps.data.prerequisites?.length" class="level-card-hint">
-                  <Lock class="h-4 w-4 shrink-0 opacity-80" />
-                  {{ t('flashcardLevels.unlockHint') }}
+                   <Lock class="h-4 w-4 shrink-0 opacity-80" /> {{
+                    t('flashcardLevels.unlockHint')
+                  }}
                 </p>
+
                 <div v-if="isOwner" class="level-card-actions">
-                  <button
+                   <button
                     type="button"
                     class="level-card-btn level-card-btn-ghost"
                     @click="editLevel(nodeProps.data)"
                   >
-                    <Settings class="h-4 w-4" />
-                    {{ t('flashcardLevels.actions.edit') }}
-                  </button>
-                  <button
+                     <Settings class="h-4 w-4" /> {{ t('flashcardLevels.actions.edit') }} </button
+                  > <button
                     type="button"
                     class="level-card-btn level-card-btn-ghost"
                     @click="showAddCardsModal(nodeProps.data)"
                   >
-                    <PlusCircle class="h-4 w-4" />
-                    {{ t('flashcardLevels.actions.addCards') }}
-                  </button>
+                     <PlusCircle class="h-4 w-4" /> {{ t('flashcardLevels.actions.addCards') }} </button
+                  >
                 </div>
-              </div>
 
-              <!-- Unlocked / Completed: progress + actions -->
+              </div>
+               <!-- Unlocked / Completed: progress + actions -->
               <div v-else class="level-card-body">
+
                 <div class="level-card-progress">
+
                   <div class="level-card-progress-head">
-                    <Target class="h-3.5 w-3.5 opacity-80" />
-                    <span>{{ t('flashcardLevels.progress') }}</span>
-                    <span class="level-card-progress-count">
-                      {{ nodeProps.data.progress?.cards_completed || 0 }}/{{
+                     <Target class="h-3.5 w-3.5 opacity-80" /> <span>{{
+                      t('flashcardLevels.progress')
+                    }}</span
+                    > <span class="level-card-progress-count"
+                      > {{ nodeProps.data.progress?.cards_completed || 0 }}/{{
                         nodeProps.data.card_count
-                      }}
-                    </span>
+                      }} </span
+                    >
                   </div>
+
                   <div class="level-card-progress-track">
+
                     <div
                       class="level-card-progress-fill"
                       :style="{ width: getProgressWidth(nodeProps.data) }"
                     />
+
                   </div>
+
                   <div class="level-card-stats">
-                    <span>{{ t('flashcardLevels.successRate') }}</span>
-                    <span class="font-semibold">{{
+                     <span>{{ t('flashcardLevels.successRate') }}</span
+                    > <span class="font-semibold">{{
                       formatSuccessRate(nodeProps.data.progress?.success_rate)
-                    }}</span>
+                    }}</span
+                    >
                   </div>
+
                 </div>
 
                 <div class="level-card-actions level-card-actions-main">
-                  <button
+                   <button
                     type="button"
                     class="level-card-btn level-card-btn-primary"
                     @click="showLevelCards(nodeProps.data)"
                   >
-                    <BookOpen class="h-4 w-4" />
-                    {{ t('flashcardLevels.actions.viewCards') }}
-                  </button>
-                  <RouterLink
+                     <BookOpen class="h-4 w-4" /> {{ t('flashcardLevels.actions.viewCards') }} </button
+                  > <RouterLink
                     v-if="nodeProps.data.card_count > 0"
                     :to="`/collections/${props.collectionId}/flashcards/study?levelId=${nodeProps.data.level_id}`"
                     class="level-card-btn level-card-btn-secondary"
-                  >
-                    <Play class="h-4 w-4" />
-                    {{ t('flashcardLevels.actions.practice') }}
-                  </RouterLink>
-                  <template v-if="isOwner">
-                    <button
+                    > <Play class="h-4 w-4" /> {{ t('flashcardLevels.actions.practice') }}
+                    </RouterLink
+                  > <template v-if="isOwner"
+                    > <button
                       type="button"
                       class="level-card-btn level-card-btn-ghost"
                       @click="editLevel(nodeProps.data)"
                     >
-                      <Settings class="h-4 w-4" />
-                      {{ t('flashcardLevels.actions.edit') }}
-                    </button>
-                    <button
+                       <Settings class="h-4 w-4" /> {{ t('flashcardLevels.actions.edit') }} </button
+                    > <button
                       type="button"
                       class="level-card-btn level-card-btn-ghost"
                       @click="showAddCardsModal(nodeProps.data)"
                     >
-                      <PlusCircle class="h-4 w-4" />
-                      {{ t('flashcardLevels.actions.addCards') }}
-                    </button>
-                  </template>
+                       <PlusCircle class="h-4 w-4" /> {{ t('flashcardLevels.actions.addCards') }} </button
+                    > </template
+                  >
                 </div>
 
                 <p v-if="nodeProps.data.progress?.is_completed" class="level-card-completed">
-                  <Sparkles class="h-3.5 w-3.5" />
-                  {{ t('flashcardLevels.status.completed') }}
+                   <Sparkles class="h-3.5 w-3.5" /> {{ t('flashcardLevels.status.completed') }}
                 </p>
-              </div>
-            </div>
-          </template>
-          <Background :pattern-color="'#aaa'" :gap="8" />
-          <Controls />
-        </VueFlow>
-      </div>
-    </div>
 
-    <!-- Create/Edit Level ModalComponent -->
+              </div>
+
+            </div>
+             </template
+          > <Background :pattern-color="'#aaa'" :gap="8" /> <Controls /> </VueFlow
+        >
+      </div>
+
+    </div>
+     <!-- Create/Edit Level ModalComponent -->
     <div
       v-if="showCreateModal || showEditModal"
       class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
     >
+
       <div class="bg-white rounded-lg max-w-md w-full p-6">
+
         <h3 class="text-lg font-semibold mb-4">
-          {{
+           {{
             showEditModal
               ? t('flashcardLevels.editLevelTitle')
               : t('flashcardLevels.createLevelTitle')
@@ -217,56 +222,61 @@
         </h3>
 
         <form class="space-y-4" @submit.prevent="handleSubmit">
+
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">{{
+             <label class="block text-sm font-medium text-gray-700 mb-1">{{
               t('flashcardLevels.nameLabel')
-            }}</label>
-            <input v-model="levelForm.name" type="text" required class="w-full input-field" />
+            }}</label
+            > <input v-model="levelForm.name" type="text" required class="w-full input-field" />
           </div>
 
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">{{
+             <label class="block text-sm font-medium text-gray-700 mb-1">{{
               t('flashcardLevels.descriptionLabel')
-            }}</label>
-            <textarea v-model="levelForm.description" rows="3" class="textarea-field" />
+            }}</label
+            > <textarea v-model="levelForm.description" rows="3" class="textarea-field" />
           </div>
 
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">{{
+             <label class="block text-sm font-medium text-gray-700 mb-1">{{
               t('flashcardLevels.prerequisitesLabel')
-            }}</label>
-            <select
+            }}</label
+            > <select
               v-model="levelForm.prerequisite_ids"
               multiple
               class="w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500"
             >
+
               <option
                 v-for="level in availablePrerequisites"
                 :key="level.level_id"
                 :value="level.level_id"
               >
-                {{ level.name }}
+                 {{ level.name }}
               </option>
-            </select>
+               </select
+            >
           </div>
 
           <div class="grid grid-cols-2 gap-4">
+
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">{{
+               <label class="block text-sm font-medium text-gray-700 mb-1">{{
                 t('flashcardLevels.minCardsLabel')
-              }}</label>
-              <input
+              }}</label
+              > <input
                 v-model.number="levelForm.min_cards"
                 type="number"
                 min="1"
                 class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
+
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">{{
+               <label class="block text-sm font-medium text-gray-700 mb-1">{{
                 t('flashcardLevels.minSuccessRateLabel')
-              }}</label>
-              <input
+              }}</label
+              > <input
                 v-model.number="levelForm.min_success_rate"
                 type="number"
                 min="0"
@@ -274,81 +284,90 @@
                 class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
+
           </div>
 
           <div class="flex justify-end gap-3 pt-4">
-            <button
+             <button
               v-if="showEditModal"
               type="button"
               class="btn-delete mr-auto"
               @click="showDeleteLevelConfirmDialog(currentLevel)"
             >
-              {{ t('flashcardLevels.deleteLevelButton') }}
-            </button>
-            <button type="button" class="btn-cancel" @click="closeModal">
-              {{ t('flashcardLevels.cancelButton') }}
-            </button>
-            <button type="submit" :disabled="isSubmitting" class="btn-create">
-              {{
+               {{ t('flashcardLevels.deleteLevelButton') }} </button
+            > <button type="button" class="btn-cancel" @click="closeModal">
+               {{ t('flashcardLevels.cancelButton') }} </button
+            > <button type="submit" :disabled="isSubmitting" class="btn-create">
+               {{
                 isSubmitting
                   ? t('flashcardLevels.savingButton')
                   : showEditModal
                     ? t('flashcardLevels.saveChangesButton')
                     : t('flashcardLevels.createLevelButton')
-              }}
-            </button>
+              }} </button
+            >
           </div>
-        </form>
-      </div>
-    </div>
 
-    <!-- Add Cards ModalComponent -->
-    <ModalComponent
+        </form>
+
+      </div>
+
+    </div>
+     <!-- Add Cards ModalComponent --> <ModalComponent
       :show="showCardsModal"
       :title="t('flashcardLevels.addCardsTitle')"
       @close="closeCardsModal"
-    >
+      >
       <div class="flex-1 overflow-y-auto">
+
         <div v-if="isLoadingCards" class="flex justify-center py-8">
+
           <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+
         </div>
+
         <div v-else>
+
           <div class="space-y-4">
+
             <div
               v-for="card in availableCards"
               :key="card.flashcard_id"
               class="border rounded-lg p-4 hover:border-blue-300"
             >
+
               <div class="flex flex-col justify-between items-start w-full">
+
                 <div
                   v-if="card.progress"
                   class="flex flex-row w-full justify-between gap-2 mb-4 text-sm text-gray-500"
                 >
+
                   <div class="flex flex-row text-sm text-gray-500">
-                    <span
-                      >{{ t('flashcardLevels.mySuccessRate') }}
-                      {{ formatSuccessRate(card.progress.success_rate) }}</span
-                    >
-                    <span class="mx-2">|</span>
-                    <span
-                      >{{ t('flashcardLevels.myAttempts') }}
-                      {{ card.progress.total_attempts }}</span
+                     <span
+                      >{{ t('flashcardLevels.mySuccessRate') }} {{
+                        formatSuccessRate(card.progress.success_rate)
+                      }}</span
+                    > <span class="mx-2">|</span> <span
+                      >{{ t('flashcardLevels.myAttempts') }} {{
+                        card.progress.total_attempts
+                      }}</span
                     >
                   </div>
-                  <button
+                   <button
                     :class="[
                       selectedCards.includes(card.flashcard_id) ? 'btn-cancel' : 'btn-insert',
                     ]"
                     @click="toggleCardSelection(card)"
                   >
-                    {{
+                     {{
                       selectedCards.includes(card.flashcard_id)
                         ? t('flashcardLevels.selected')
                         : t('flashcardLevels.select')
-                    }}
-                  </button>
+                    }} </button
+                  >
                 </div>
-                <DefinitionCard
+                 <DefinitionCard
                   :definition="{
                     definitionid: card.definition_id,
                     item_id: card.item_id, // Still missing, omit or handle in DefinitionCard
@@ -372,63 +391,75 @@
                   :item-id="card.item_id"
                 />
               </div>
+
             </div>
+
           </div>
+
         </div>
+
       </div>
-      <template #footer>
+       <template #footer
+        >
         <div class="flex justify-end gap-3">
-          <button class="btn-cancel" @click="closeCardsModal">
-            {{ t('flashcardLevels.cancelButton') }}
-          </button>
-          <button
+           <button class="btn-cancel" @click="closeCardsModal">
+             {{ t('flashcardLevels.cancelButton') }} </button
+          > <button
             :disabled="selectedCards.length === 0 || isAddingCards"
             class="btn-create"
             @click="addSelectedCards"
           >
-            {{
+             {{
               isAddingCards
                 ? t('flashcardLevels.addingCards')
                 : t('flashcardLevels.addNCards', {
                     count: selectedCards.length,
                   })
-            }}
-          </button>
+            }} </button
+          >
         </div>
-      </template>
-    </ModalComponent>
-
-    <!-- Level Cards ModalComponent -->
-    <ModalComponent
+         </template
+      > </ModalComponent
+    > <!-- Level Cards ModalComponent --> <ModalComponent
       :show="showLevelCardsModal"
       :title="t('flashcardLevels.levelCardsTitle', { levelName: currentLevel?.name || '' })"
       @close="closeLevelCardsModal"
-    >
+      >
       <div class="flex-1 overflow-y-auto">
+
         <div v-if="isLoadingLevelCards" class="flex justify-center py-8">
+
           <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+
         </div>
+
         <div v-else>
+
           <div class="space-y-4">
+
             <div
               v-for="card in levelCards"
               :key="card.flashcard_id"
               class="border rounded-lg p-4 hover:border-blue-300"
             >
+
               <div class="flex flex-col justify-between items-start w-full">
+
                 <div
                   v-if="card.progress"
                   class="flex flex-row w-full justify-between gap-2 mb-4 text-sm text-gray-500"
                 >
+
                   <div class="flex flex-row text-sm text-gray-500">
-                    <span
+                     <span
                       >My Success Rate: {{ formatSuccessRate(card.progress.success_rate) }}</span
+                    > <span class="mx-2">|</span> <span
+                      >My Attempts: {{ card.progress.total_attempts }}</span
                     >
-                    <span class="mx-2">|</span>
-                    <span>My Attempts: {{ card.progress.total_attempts }}</span>
                   </div>
+
                 </div>
-                <DefinitionCard
+                 <DefinitionCard
                   :definition="{
                     definitionid: card.definition_id,
                     valsiid: card.valsi_id,
@@ -448,80 +479,79 @@
                   :disable-border="true"
                   :hide-history="true"
                   :languages="languages"
-                  :collection-id="parseInt(props.collectionId)"
+                  :collection-id="parseInt(String(props.collectionId), 10)"
                   :item-id="card.item_id"
                   :show-external-delete-button="true"
                   :is-owner="isOwner"
                   @delete-item="confirmDeleteCard(card)"
                 />
               </div>
-            </div>
-          </div>
 
-          <!-- PaginationComponent -->
+            </div>
+
+          </div>
+           <!-- PaginationComponent -->
           <div v-if="levelCardsTotal > 0" class="mt-6 flex justify-between items-center">
-            <button
+             <button
               :disabled="currentLevelCardsPage === 1"
               class="btn-empty"
               @click="loadLevelCards(currentLevelCardsPage - 1)"
             >
-              {{ t('flashcardLevels.previousPage') }}
-            </button>
-            <span class="text-sm text-gray-600">
-              {{
+               {{ t('flashcardLevels.previousPage') }} </button
+            > <span class="text-sm text-gray-600"
+              > {{
                 t('flashcardLevels.pageInfo', {
                   currentPage: currentLevelCardsPage,
                   totalPages: totalLevelCardsPages,
                 })
-              }}
-            </span>
-            <button
+              }} </span
+            > <button
               :disabled="currentLevelCardsPage === totalLevelCardsPages"
               class="btn-empty"
               @click="loadLevelCards(currentLevelCardsPage + 1)"
             >
-              {{ t('flashcardLevels.nextPage') }}
-            </button>
+               {{ t('flashcardLevels.nextPage') }} </button
+            >
           </div>
-        </div>
-        <!-- This closes the v-else -->
-      </div>
-      <!-- This closes the flex-1 overflow-y-auto -->
-      <template #footer>
-        <div class="flex justify-end">
-          <button class="btn-cancel" @click="closeLevelCardsModal">
-            {{ t('flashcardLevels.closeButton') }}
-          </button>
-        </div>
-      </template>
-    </ModalComponent>
 
-    <!-- Delete Confirmation ModalComponent -->
+        </div>
+         <!-- This closes the v-else -->
+      </div>
+       <!-- This closes the flex-1 overflow-y-auto --> <template #footer
+        >
+        <div class="flex justify-end">
+           <button class="btn-cancel" @click="closeLevelCardsModal">
+             {{ t('flashcardLevels.closeButton') }} </button
+          >
+        </div>
+         </template
+      > </ModalComponent
+    > <!-- Delete Confirmation ModalComponent -->
     <div
       v-if="showDeleteConfirmation"
       class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-[60]"
     >
-      <div class="bg-white rounded-lg max-w-md w-full p-6">
-        <h3 class="text-lg font-semibold mb-4">
-          {{ t('flashcardLevels.deleteCardTitle') }}
-        </h3>
-        <p class="text-gray-600 mb-6">
-          {{ t('flashcardLevels.deleteCardMessage') }}
-        </p>
-        <div class="flex justify-end gap-3">
-          <button class="btn-cancel" @click="showDeleteConfirmation = false">
-            {{ t('flashcardLevels.cancelButton') }}
-          </button>
-          <button class="btn-delete" @click="deleteCard">
-            {{ t('flashcardLevels.deleteButton') }}
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
 
-  <!-- Delete Level Confirmation Modal -->
-  <DeleteConfirmationModal
+      <div class="bg-white rounded-lg max-w-md w-full p-6">
+
+        <h3 class="text-lg font-semibold mb-4"> {{ t('flashcardLevels.deleteCardTitle') }} </h3>
+
+        <p class="text-gray-600 mb-6"> {{ t('flashcardLevels.deleteCardMessage') }} </p>
+
+        <div class="flex justify-end gap-3">
+           <button class="btn-cancel" @click="showDeleteConfirmation = false">
+             {{ t('flashcardLevels.cancelButton') }} </button
+          > <button class="btn-delete" @click="deleteCard">
+             {{ t('flashcardLevels.deleteButton') }} </button
+          >
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+   <!-- Delete Level Confirmation Modal --> <DeleteConfirmationModal
     :show="showDeleteLevelConfirm"
     :title="t('flashcardLevels.deleteLevelConfirmTitle')"
     :message="t('flashcardLevels.deleteLevelConfirmMessage', { levelName: levelToDelete?.name })"
@@ -531,10 +561,11 @@
   />
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { Background } from '@vue-flow/background'
 import { Controls } from '@vue-flow/controls'
 import { VueFlow, useVueFlow } from '@vue-flow/core'
+import type { Elements } from '@vue-flow/core'
 import {
   Lock,
   Play,
@@ -566,7 +597,7 @@ import {
 import DefinitionCard from '@/components/DefinitionCard.vue'
 import { IconButton } from '@packages/ui'
 import { useAuth } from '@/composables/useAuth'
-import { useAnonymousProgress } from '@/composables/useAnonymousProgress'
+import { useAnonymousProgress, type LevelProgressData } from '@/composables/useAnonymousProgress'
 import { useSeoHead } from '@/composables/useSeoHead'
 import '@vue-flow/core/dist/style.css'
 import '@vue-flow/core/dist/theme-default.css'
@@ -654,7 +685,7 @@ function isLevelUnlockedForAnon(level) {
   if (!level?.prerequisites?.length) return true
   const cid = props.collectionId
   return level.prerequisites.every((p) => {
-    const local = getProgress(cid, p.level_id)
+    const local = getProgress(cid, p.level_id) as LevelProgressData | null
     return local?.completed_at != null
   })
 }
@@ -665,7 +696,7 @@ const effectiveLevels = computed(() => {
   if (auth.state.isLoggedIn || !raw.length) return raw
   const cid = props.collectionId
   return raw.map((level) => {
-    const local = getProgress(cid, level.level_id)
+    const local = getProgress(cid, level.level_id) as LevelProgressData | null
     const hasLocal = local && (local.cards_completed > 0 || local.total_answers > 0)
     const isLocked = hasLocal ? !isLevelUnlockedForAnon(level) : level.is_locked
     const progress = hasLocal
@@ -937,7 +968,8 @@ const getTreeLevel = (level) => {
   return Math.max(...level.prerequisites.map((p) => getTreeLevel(p))) + 1
 }
 
-const { elements, setElements, fitView } = useVueFlow()
+const elements = ref<Elements>([])
+const { setElements, fitView } = useVueFlow()
 
 // Next available unlocked level (first unlocked and not completed) — center and zoom into it on open
 const getNextUnlockedLevelId = (levelsData) => {
@@ -1028,10 +1060,9 @@ const performDeleteLevel = async () => {
   }
 }
 
-useSeoHead(
-  { title: t('flashcardLevels.title', { collectionName: collection.value?.name || '' }) },
-  locale.value
-)
+useSeoHead({
+  title: t('flashcardLevels.title', { collectionName: collection.value?.name || '' }),
+})
 
 onMounted(async () => {
   await Promise.all([fetchCollection(), fetchLevels()])
@@ -1300,3 +1331,4 @@ onMounted(async () => {
   color: var(--level-accent);
 }
 </style>
+

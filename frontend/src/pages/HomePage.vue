@@ -1,14 +1,9 @@
 <template>
-  <!-- Search and Filter Section -->
+   <!-- Search and Filter Section -->
   <div class="space-y-4 mt-4 sm:mt-6">
-    <!-- Skeletons -->
-    <SearchFormSkeleton v-if="isInitialLoading" />
-    <CombinedFiltersSkeleton
+     <!-- Skeletons --> <SearchFormSkeleton v-if="isInitialLoading" /> <CombinedFiltersSkeleton
       v-if="isInitialLoading && (searchMode === 'dictionary' || searchMode === 'semantic')"
-    />
-
-    <!-- Actual Components (hidden while loading) -->
-    <SearchForm
+    /> <!-- Actual Components (hidden while loading) --> <SearchForm
       ref="searchFormRef"
       :initial-query="searchQuery"
       :initial-mode="searchMode"
@@ -16,9 +11,7 @@
       class="w-full transition-opacity duration-300"
       :class="{ 'opacity-0 pointer-events-none h-0 overflow-hidden': isInitialLoading }"
       @search="performSearch"
-    />
-
-    <CombinedFilters
+    /> <CombinedFilters
       v-if="searchMode === 'dictionary' || searchMode === 'semantic'"
       v-model="filters"
       :languages="languages"
@@ -33,14 +26,19 @@
     v-if="!searchQuery && !filters.selmaho && !filters.username && !filters.word_type"
     class="min-h-[400px] mt-4 sm:mt-6"
   >
+
     <div v-if="isLoadingTrending" class="flex justify-center py-8">
+
       <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+
     </div>
-    <!-- Trending Comments -->
+     <!-- Trending Comments -->
     <div v-if="trendingComments.length > 0" class="space-y-4">
+
       <h2 class="text-xl sm:text-2xl font-bold text-gray-800 select-none">
-        {{ $t('home.trendingComments') }}
+         {{ $t('home.trendingComments') }}
       </h2>
+
       <div
         v-for="comment in trendingComments"
         :key="comment.comment_id"
@@ -51,36 +49,49 @@
           )
         "
       >
-        <CommentItem :comment="comment" :reply-enabled="true" @reply="handleReply" />
+         <CommentItem :comment="comment" :reply-enabled="true" @reply="handleReply" />
       </div>
-    </div>
 
-    <!-- Recent Changes -->
+    </div>
+     <!-- Recent Changes -->
     <div v-if="recentChanges.length > 0" class="space-y-4 mt-8">
+
       <div
         class="flex flex-col md:flex-row justify-between items-start sm:items-center gap-3 sm:space-x-2 w-full sm:w-auto ml-auto"
       >
+
         <h2 class="text-xl sm:text-2xl font-bold text-gray-800 select-none">
-          {{ $t('home.recentChanges') }}
+           {{ $t('home.recentChanges') }}
         </h2>
+
       </div>
+
       <div v-for="(group, index) in groupedChanges" :key="index" class="mb-8">
+
         <h3 class="text-base font-semibold text-gray-700 mb-4 pt-4 border-t">
-          {{ formatDate(group.date) }}
+           {{ formatDate(group.date) }}
         </h3>
+
         <div class="space-y-3">
-          <RecentChangeItem v-for="change in group.changes" :key="change.time" :change="change" />
+           <RecentChangeItem v-for="change in group.changes" :key="change.time" :change="change" />
         </div>
+
       </div>
+
     </div>
+
   </div>
+
   <div v-else ref="searchResultsRef" class="min-h-[400px] mt-4 sm:mt-6">
+
     <div class="space-y-4">
+
       <div
         class="flex flex-wrap justify-between items-center gap-3 sm:space-x-4 w-full sm:w-auto ml-auto"
       >
+
         <h2 class="text-xl sm:text-2xl font-bold text-gray-800 select-none">
-          {{
+           {{
             searchMode === 'dictionary'
               ? $t('home.searchResultsTitle.dictionary')
               : searchMode === 'semantic'
@@ -92,18 +103,19 @@
         </h2>
 
         <div
-          v-if="auth.isLoading"
+          v-if="auth.state.isLoading"
           class="flex flex-col sm:flex-row items-end sm:items-center gap-3 sm:space-x-4 ml-auto"
         >
-          <!-- Skeleton loader shown while auth state loads -->
+           <!-- Skeleton loader shown while auth state loads -->
           <div class="w-[120px] h-6 bg-gray-100 animate-pulse rounded-full" />
+
         </div>
 
         <div
           v-else-if="searchMode === 'dictionary' || searchMode === 'semantic'"
           class="flex flex-col sm:flex-row items-end sm:items-center gap-3 sm:space-x-4 ml-auto"
         >
-          <IconButton
+           <IconButton
             v-if="auth.state.isLoggedIn && decodedRole !== 'Unconfirmed'"
             :label="$t('home.addDefinition')"
             button-classes="btn-aqua-emerald"
@@ -115,48 +127,51 @@
           v-else-if="searchMode === 'comments'"
           class="flex flex-col sm:flex-row items-end sm:items-center gap-3 sm:space-x-4 ml-auto"
         >
-          <IconButton
+           <IconButton
             v-if="auth.state.isLoggedIn"
             :label="$t('home.newFreeThread')"
             button-classes="btn-aqua-white"
             @click="handleNewFreeComment"
+            > <template #icon> <AudioWaveform class="h-4 w-4 text-purple-600" /> </template>
+            </IconButton
           >
-            <template #icon>
-              <AudioWaveform class="h-4 w-4 text-purple-600" />
-            </template>
-          </IconButton>
         </div>
 
         <div v-if="searchMode === 'comments'" class="flex items-center gap-2">
+
           <div class="relative">
-            <select v-model="sortBy" class="input-field" @change="handleSortChange">
-              <option value="time">
-                {{ $t('sort.time') }}
-              </option>
-              <option value="reactions">
-                {{ $t('sort.reactions') }}
-              </option>
-              <option value="replies">
-                {{ $t('sort.replies') }}
-              </option>
-            </select>
+             <select v-model="sortBy" class="input-field" @change="handleSortChange">
+
+              <option value="time"> {{ $t('sort.time') }} </option>
+
+              <option value="reactions"> {{ $t('sort.reactions') }} </option>
+
+              <option value="replies"> {{ $t('sort.replies') }} </option>
+               </select
+            >
           </div>
-          <button
+           <button
             class="btn-empty h-8"
             :title="sortOrder === 'asc' ? $t('sort.ascending') : $t('sort.descending')"
             @click="toggleSortOrder"
           >
-            <ChevronUp v-if="sortOrder === 'asc'" class="h-5 w-5" />
-            <ChevronDown v-else class="h-5 w-5" />
-            <span>{{ sortOrder === 'asc' ? $t('sort.asc') : $t('sort.desc') }}</span>
-          </button>
+             <ChevronUp v-if="sortOrder === 'asc'" class="h-5 w-5" /> <ChevronDown
+              v-else
+              class="h-5 w-5"
+            /> <span>{{ sortOrder === 'asc' ? $t('sort.asc') : $t('sort.desc') }}</span
+            > </button
+          >
         </div>
+
       </div>
+
       <div v-if="isLoading" class="flex justify-center py-8">
+
         <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+
       </div>
-      <template v-else>
-        <DictionaryEntries
+       <template v-else
+        > <DictionaryEntries
           v-if="searchMode === 'dictionary' || searchMode === 'semantic'"
           :definitions="definitions"
           :is-loading="isLoading"
@@ -167,14 +182,15 @@
           :collections="collections"
           :decomposition="decomposition || []"
           @collection-updated="collections = $event"
-        />
-        <MuplisList
+        /> <MuplisList
           v-else-if="searchMode === 'muplis'"
           :entries="muplisEntries"
           :search-term="searchQuery"
         />
         <div v-else-if="searchMode === 'comments'" class="space-y-4">
+
           <div v-if="waveItems.length > 0">
+
             <div
               v-for="(item, idx) in waveItems"
               :key="item.source === 'comment' ? item.comment.comment_id : 'mail-' + item.message.id"
@@ -189,7 +205,7 @@
                     )
               "
             >
-              <CommentItem
+               <CommentItem
                 v-if="item.source === 'comment'"
                 :comment="item.comment"
                 :reply-enabled="true"
@@ -200,50 +216,56 @@
                 v-else
                 class="comment-item bg-white border rounded-lg p-3 my-2 hover:border-blue-300 transition-colors min-w-48"
               >
+
                 <div
                   class="mb-2 text-sm text-gray-600 whitespace-nowrap overflow-hidden flex items-center"
                 >
-                  <SourceTypeBadge type="mail" />
-                  <span
+                   <SourceTypeBadge type="mail" /> <span
                     class="text-blue-700 font-medium ml-1.5 truncate inline-block max-w-[calc(100%-120px)]"
+                    > {{ item.message.subject || item.message.cleaned_subject || '-' }} </span
                   >
-                    {{ item.message.subject || item.message.cleaned_subject || '-' }}
-                  </span>
                 </div>
+
                 <div class="text-xs text-gray-500 mb-2">
-                  {{ item.message.from_address }} · {{ item.message.date || '' }}
+                   {{ item.message.from_address }} · {{ item.message.date || '' }}
                 </div>
+
                 <div
                   v-if="item.message.parts_json && textParts(item.message.parts_json).length"
                   class="text-sm text-gray-700 border-t border-gray-100 pt-2 mt-2 prose prose-sm max-w-none [&_img]:max-h-48 [&_img]:object-contain"
                 >
-                  <LazyMathJax
+                   <LazyMathJax
                     v-for="(part, pidx) in textParts(item.message.parts_json)"
                     :key="pidx"
                     :content="part.content || ''"
                     :enable-markdown="part.mime_type === 'text/plain'"
                   />
                 </div>
-              </div>
-            </div>
-          </div>
-          <div v-else class="text-center py-12 bg-blue-50 rounded-lg border border-blue-100">
-            <MessageSquare class="mx-auto h-12 w-12 text-blue-400" />
-            <p class="mt-4 text-gray-600">
-              {{ $t('home.noCommentsFound') }}
-            </p>
-          </div>
-        </div>
-      </template>
-    </div>
-  </div>
 
-  <!-- PaginationComponent -->
+              </div>
+
+            </div>
+
+          </div>
+
+          <div v-else class="text-center py-12 bg-blue-50 rounded-lg border border-blue-100">
+             <MessageSquare class="mx-auto h-12 w-12 text-blue-400" />
+            <p class="mt-4 text-gray-600"> {{ $t('home.noCommentsFound') }} </p>
+
+          </div>
+
+        </div>
+         </template
+      >
+    </div>
+
+  </div>
+   <!-- PaginationComponent -->
   <div
     v-if="!(!searchQuery && !filters.selmaho && !filters.username && !filters.word_type)"
     class="mt-6"
   >
-    <PaginationComponent
+     <PaginationComponent
       :current-page="currentPage"
       :total-pages="totalPages"
       :total="total"
@@ -253,9 +275,10 @@
       @next="nextPage"
     />
   </div>
+
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { jwtDecode } from 'jwt-decode'
 import { MessageSquare, ChevronDown, ChevronUp, AudioWaveform } from 'lucide-vue-next'
 import { ref, onMounted, watch, computed, onBeforeUnmount, nextTick } from 'vue'
@@ -289,10 +312,18 @@ import { useLanguageSelection } from '@/composables/useLanguageSelection'
 import { useSeoHead } from '@/composables/useSeoHead'
 import { useI18n } from 'vue-i18n'
 import { SearchQueue } from '@/utils/searchQueue'
+import { queryStr } from '@/utils/routeQuery'
 import { normalizeSearchQuery } from '@/utils/searchQueryUtils'
 
+interface JwtUserPayload {
+  exp?: number
+  username?: string
+  role?: string
+  authorities?: string[]
+}
+
 /** Return text parts from mail message parts_json for display. */
-function textParts(partsJson) {
+function textParts(partsJson: unknown) {
   if (!partsJson) return []
   const parts = Array.isArray(partsJson) ? partsJson : []
   return parts
@@ -320,12 +351,12 @@ const fetchCollections = async () => {
 const router = useRouter()
 const route = useRoute()
 const auth = useAuth()
-const decodedToken = computed(() => {
-  if (typeof window === 'undefined') return
+const decodedToken = computed((): JwtUserPayload | null => {
+  if (typeof window === 'undefined') return null
   const token = localStorage.getItem('accessToken')
   if (token) {
     try {
-      return jwtDecode(token)
+      return jwtDecode<JwtUserPayload>(token)
     } catch (e) {
       console.error('Error decoding token:', e)
       return null
@@ -349,6 +380,14 @@ const props = defineProps({
     type: String,
     default: 'semantic',
   },
+  valsiId: {
+    type: Number,
+    default: 0,
+  },
+  definitionId: {
+    type: Number,
+    default: 0,
+  },
 })
 
 // State
@@ -357,7 +396,7 @@ const muplisEntries = ref([])
 const definitions = ref([])
 const decomposition = ref([])
 const total = ref(0)
-const currentPage = ref(parseInt(route.query.page) || 1)
+const currentPage = ref(parseInt(queryStr(route.query.page), 10) || 1)
 const totalPages = ref(1)
 const sortOrder = ref('desc')
 const includeContent = ref(true)
@@ -434,10 +473,10 @@ const languages = ref([])
 const filters = ref({
   selmaho: '',
   username: '',
-  word_type: route.query.word_type ? Number(route.query.word_type) : null,
+  word_type: route.query.word_type ? Number(queryStr(route.query.word_type)) : null,
   isExpanded: route.query.isExpanded === 'true',
-  selectedLanguages: route.query.langs ? route.query.langs.split(',').map(Number) : [],
-  source_langid: route.query.source_langid ? Number(route.query.source_langid) : 1,
+  selectedLanguages: route.query.langs ? queryStr(route.query.langs).split(',').map(Number) : [],
+  source_langid: route.query.source_langid ? Number(queryStr(route.query.source_langid)) : 1,
   isSemantic:
     searchMode.value === 'semantic' || searchMode.value === 'dictionary'
       ? searchMode.value !== 'dictionary'
@@ -459,7 +498,19 @@ const fetchDefinitions = async (page, search = '') => {
   decomposition.value = []
 
   try {
-    const params = {
+    const params: {
+      page: number
+      per_page: number
+      search: string
+      include_comments: boolean
+      username: string | undefined
+      group_by_thread: boolean
+      languages?: string
+      word_type?: number
+      source_langid?: number
+      selmaho?: string
+      search_in_phrases?: boolean
+    } = {
       page,
       per_page: 10,
       search: search,
@@ -557,7 +608,8 @@ const fetchDefinitions = async (page, search = '') => {
   }
 }
 
-const recentChanges = ref([])
+type RecentChangeRow = { time: number; [key: string]: unknown }
+const recentChanges = ref<RecentChangeRow[]>([])
 const isLoadingChanges = ref(false)
 
 // Cache key for recent changes
@@ -588,7 +640,7 @@ const getCachedRecentChanges = () => {
   }
 }
 
-const setCachedRecentChanges = (data) => {
+const setCachedRecentChanges = (data: RecentChangeRow[]) => {
   if (typeof window === 'undefined') return
   try {
     const cacheData = {
@@ -638,7 +690,9 @@ const fetchTrendingAndChanges = async () => {
 }
 
 const groupedChanges = computed(() => {
-  const groups = recentChanges.value.reduce((acc, change) => {
+  const groups = recentChanges.value.reduce<
+    Record<string, { date: Date; changes: RecentChangeRow[] }>
+  >((acc, change) => {
     const date = new Date(change.time * 1000).toLocaleDateString(locale.value)
     if (!acc[date]) {
       acc[date] = { date: new Date(change.time * 1000), changes: [] }
@@ -646,10 +700,10 @@ const groupedChanges = computed(() => {
     acc[date].changes.push(change)
     return acc
   }, {})
-  return Object.values(groups).sort((a, b) => b.date - a.date)
+  return Object.values(groups).sort((a, b) => b.date.getTime() - a.date.getTime())
 })
 
-const formatDate = (date) =>
+const formatDate = (date: Date) =>
   new Intl.DateTimeFormat(locale.value, {
     weekday: 'long',
     year: 'numeric',
@@ -663,7 +717,7 @@ const sortBy = ref(searchMode.value === 'messages' ? 'rank' : 'time')
 const toggleSortOrder = () => {
   sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc'
   if (searchMode.value === 'comments') {
-    fetchComments(currentPage.value, searchQuery.value)
+    fetchWaves(currentPage.value, searchQuery.value)
   } else if (searchMode.value === 'messages') {
     fetchData()
   }
@@ -811,7 +865,7 @@ const handleFiltersReset = async () => {
     username: '',
     isExpanded: false,
     selectedLanguages: [],
-    word_type: '',
+    word_type: null,
     source_langid: 1,
     searchInPhrases: true,
     isSemantic: true,
@@ -846,7 +900,7 @@ const updateUrlWithFilters = () => {
 
 // Search handling
 
-const performSearch = ({ query, mode }) => {
+const performSearch = ({ query, mode }: { query: string; mode: string }) => {
   // Use semantic mode if we're in dictionary mode and semantic search is enabled
   const effectiveMode = mode === 'dictionary' && filters.value.isSemantic ? 'semantic' : mode
 
@@ -868,7 +922,8 @@ const performSearch = ({ query, mode }) => {
   }
 
   // Handle case where we might be on a localized Home-lang route
-  const isHomeRoute = route.name === 'Home' || route.name?.startsWith('Home-')
+  const isHomeRoute =
+    route.name === 'Home' || (typeof route.name === 'string' && route.name.startsWith('Home-'))
 
   if (!isHomeRoute) {
     // If we're not on the home page, redirect to home with the search params
@@ -883,7 +938,7 @@ const performSearch = ({ query, mode }) => {
   }
 
   // Update state before pushing to router to avoid duplicate fetches
-  const normalizedQuery = normalizeSearchQuery(query)
+  const normalizedQuery = normalizeSearchQuery(query) as string
   searchQuery.value = normalizedQuery
   searchMode.value = effectiveMode
   // groupByThread is handled by its own watcher now
@@ -902,7 +957,7 @@ const handleNewFreeComment = () => {
   router.push('/comments/new-thread')
 }
 
-const handleReply = (commentId) => {
+const handleReply = (commentId: number) => {
   router.push({
     path: '/comments',
     query: {
@@ -935,14 +990,14 @@ const nextPage = () => {
   }
 }
 
-const viewMessage = (messageId) => {
+const viewMessage = (messageId: string | number) => {
   // Extract locale from the current route path
   const currentLocale = route.path.split('/')[1] || 'en' // Default to 'en' if locale is missing
   const routeName = `MessageDetail-${currentLocale}`
   router.push({ name: routeName, params: { id: messageId } })
 }
 
-const handleViewThreadSummary = (subject) => {
+const handleViewThreadSummary = (subject: string) => {
   const currentLocale = route.path.split('/')[1] || 'en'
   const routeName = `ThreadView-${currentLocale}`
   router.push({ name: routeName, params: { subject } })
@@ -955,13 +1010,13 @@ const syncFromRoute = () => {
 
   // Only update values if they exist in URL
   if (query.q !== undefined) {
-    const normalized = normalizeSearchQuery(query.q)
+    const normalized = normalizeSearchQuery(queryStr(query.q)) as string
     searchQuery.value = normalized
     if (typeof window !== 'undefined') localStorage.setItem('searchQuery', normalized)
   }
 
   if (query.mode !== undefined) {
-    const mode = query.mode === 'messages' ? 'comments' : query.mode
+    const mode = queryStr(query.mode) === 'messages' ? 'comments' : queryStr(query.mode)
     searchMode.value = mode
     if (typeof window !== 'undefined') localStorage.setItem('searchMode', mode)
   }
@@ -972,28 +1027,29 @@ const syncFromRoute = () => {
   // }
 
   if (query.page !== undefined) {
-    currentPage.value = parseInt(query.page) || 1
+    currentPage.value = parseInt(queryStr(query.page), 10) || 1
   }
 
   // Sync filters from URL
   if (query.langs !== undefined) {
-    filters.value.selectedLanguages = query.langs.split(',').map(Number)
+    filters.value.selectedLanguages = queryStr(query.langs).split(',').map(Number)
   }
 
   if (query.selmaho !== undefined) {
-    filters.value.selmaho = query.selmaho
+    filters.value.selmaho = queryStr(query.selmaho)
   }
 
   if (query.username !== undefined) {
-    filters.value.username = query.username
+    filters.value.username = queryStr(query.username)
   }
 
   if (query.word_type !== undefined) {
-    filters.value.word_type = query.word_type ? Number(query.word_type) : null
+    const wt = queryStr(query.word_type)
+    filters.value.word_type = wt ? Number(wt) : null
   }
 
   if (query.source_langid !== undefined) {
-    filters.value.source_langid = parseInt(query.source_langid) || 1 // Default to 1 if invalid
+    filters.value.source_langid = parseInt(queryStr(query.source_langid), 10) || 1 // Default to 1 if invalid
   } else {
     filters.value.source_langid = 1 // Default if not present
   }
@@ -1010,7 +1066,7 @@ const syncFromRoute = () => {
   }
 }
 
-const handleKeyDown = (event) => {
+const handleKeyDown = (event: KeyboardEvent) => {
   // Check if / was pressed and no input/textarea is focused
   if (event.key === '/' && !['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) {
     event.preventDefault()
@@ -1090,7 +1146,7 @@ onMounted(async () => {
     isInitialLoading.value = false
 
     // Focus search input if on home page
-    if (route.name === 'Home' || route.name.startsWith('Home-')) {
+    if (route.name === 'Home' || (typeof route.name === 'string' && route.name.startsWith('Home-'))) {
       await nextTick()
       if (searchFormRef.value && !isInitialLoading.value) {
         searchFormRef.value.focusInput()
@@ -1150,7 +1206,7 @@ watch(
     }
 
     // Update currentPage based on the new query *before* fetching
-    currentPage.value = parseInt(newQuery.page) || 1
+    currentPage.value = parseInt(queryStr(newQuery.page), 10) || 1
 
     // Only fetch data if relevant query params changed
     if (relevantParamsChanged || groupByThreadChanged) {
@@ -1196,3 +1252,4 @@ watch(
   }
 )
 </script>
+

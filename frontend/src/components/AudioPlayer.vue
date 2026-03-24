@@ -1,14 +1,17 @@
 <template>
+
   <div class="inline-flex items-center gap-2">
-    <button class="btn-get" :disabled="isLoading" @click="togglePlay">
-      <PauseCircle v-if="isPlaying" class="w-4 h-4" />
-      <Loader v-else-if="isLoading" class="w-4 h-4 animate-spin" />
-      <PlayCircle v-else class="w-4 h-4" />
-    </button>
+     <button class="btn-get" :disabled="isLoading" @click="togglePlay">
+       <PauseCircle v-if="isPlaying" class="w-4 h-4" /> <Loader
+        v-else-if="isLoading"
+        class="w-4 h-4 animate-spin"
+      /> <PlayCircle v-else class="w-4 h-4" /> </button
+    >
   </div>
+
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { PlayCircle, PauseCircle, Loader } from 'lucide-vue-next'
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -39,7 +42,10 @@ const audio = ref(null)
 const CACHE_SIZE = 20
 const CACHE_KEY = 'audioCache'
 
-const validateBlobUrl = async (url) => {
+type AudioCacheEntry = { blob: string; lastAccessed: number }
+type AudioCache = Map<string, AudioCacheEntry>
+
+const validateBlobUrl = async (url: string) => {
   try {
     const response = await fetch(url)
     return response.ok
@@ -48,12 +54,12 @@ const validateBlobUrl = async (url) => {
   }
 }
 
-const loadCacheFromStorage = async () => {
-  if (typeof window === 'undefined') return
+const loadCacheFromStorage = async (): Promise<AudioCache> => {
+  if (typeof window === 'undefined') return new Map()
 
   try {
     const cached = localStorage.getItem(CACHE_KEY)
-    const cache = cached ? new Map(JSON.parse(cached)) : new Map()
+    const cache: AudioCache = cached ? new Map(JSON.parse(cached) as [string, AudioCacheEntry][]) : new Map()
 
     // Validate all blob URLs in cache
     for (const [key, value] of cache.entries()) {
@@ -68,7 +74,7 @@ const loadCacheFromStorage = async () => {
   }
 }
 
-const saveCacheToStorage = (cache) => {
+const saveCacheToStorage = (cache: AudioCache) => {
   if (typeof window === 'undefined') return
 
   try {
@@ -79,7 +85,7 @@ const saveCacheToStorage = (cache) => {
   }
 }
 
-const cleanCache = (cache) => {
+const cleanCache = (cache: AudioCache) => {
   if (cache.size > CACHE_SIZE) {
     const entries = Array.from(cache.entries())
     const sortedEntries = entries.sort((a, b) => a[1].lastAccessed - b[1].lastAccessed)
@@ -221,3 +227,4 @@ defineExpose({
   play: togglePlay,
 })
 </script>
+

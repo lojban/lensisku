@@ -2,20 +2,22 @@ import { jwtDecode } from 'jwt-decode'
 
 import { api } from '../api'
 
+interface AccessTokenPayload {
+  exp: number
+}
+
 class AuthService {
-  async checkAuthStatus() {
+  async checkAuthStatus(): Promise<boolean | undefined> {
     if (typeof window === 'undefined') return
 
     const accessToken = localStorage.getItem('accessToken')
     if (!accessToken) return false
 
     try {
-      const decoded = jwtDecode(accessToken)
+      const decoded = jwtDecode<AccessTokenPayload>(accessToken)
       const now = Math.floor(Date.now() / 1000)
 
-      // Check if token is expired
       if (decoded.exp <= now) {
-        // Try to refresh
         return await this.refreshAccessToken()
       }
 
@@ -26,14 +28,17 @@ class AuthService {
     }
   }
 
-  async refreshAccessToken() {
+  async refreshAccessToken(): Promise<boolean | undefined> {
     if (typeof window === 'undefined') return
 
     try {
       const refreshToken = localStorage.getItem('refreshToken')
       if (!refreshToken) return false
 
-      const response = await api.post('/auth/refresh', {
+      const response = await api.post<{
+        access_token?: string
+        refresh_token?: string
+      }>('/auth/refresh', {
         refresh_token: refreshToken,
       })
 
@@ -53,7 +58,7 @@ class AuthService {
     return false
   }
 
-  isLoggedIn() {
+  isLoggedIn(): boolean {
     return !!localStorage.getItem('accessToken')
   }
 }

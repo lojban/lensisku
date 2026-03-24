@@ -1,73 +1,73 @@
 <template>
-  <BackgroundComponent />
+   <BackgroundComponent />
   <div v-if="isWinterSeason" class="snowflakes" aria-hidden="true">
+
     <div
       v-for="(flake, index) in snowflakes"
       :key="index"
       class="sihesle"
       :style="{ left: `${flake.left}%`, 'animation-delay': `${flake.delay1}s, ${flake.delay2}s` }"
     >
-      {{ index % 2 === 0 ? '❅' : '❆' }}
+       {{ index % 2 === 0 ? '❅' : '❆' }}
     </div>
+
   </div>
+
   <div v-if="isWinterSeason && showPyro" class="pyro" />
 
   <div
     v-if="showTestDataWarning"
     class="select-none top-14 md:top-12 opacity-80 fixed w-fit mx-auto left-0 right-0 z-10 text-xs py-0 px-2 text-center border bg-red-100 border-red-200"
   >
-    {{ $t('testDataWarning') }}
-    <a
+     {{ $t('testDataWarning') }} <a
       :href="discordChatUrl"
       target="_blank"
       rel="noopener noreferrer"
       class="text-blue-500 hover:text-red-800 underline"
+      > {{ $t('discord') }} </a
     >
-      {{ $t('discord') }}
-    </a>
   </div>
+
   <div
     v-if="showUnconfirmedWarning"
     class="select-none top-14 md:top-12 opacity-90 fixed w-full mx-auto left-0 right-0 z-10 text-sm py-2 px-4 text-center border bg-yellow-100 border-yellow-300"
   >
+
     <div class="max-w-4xl mx-auto flex items-center justify-center gap-2 flex-wrap">
-      <span>{{ $t('unconfirmedWarning') }}</span>
-      <button
+       <span>{{ $t('unconfirmedWarning') }}</span
+      > <button
         @click="handleResendConfirmation"
         :disabled="isResendingConfirmation"
         class="text-blue-600 hover:text-blue-800 underline font-medium disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        {{
+         {{
           isResendingConfirmation ? $t('emailConfirmation.sending') : $t('unconfirmedWarningLink')
-        }}
-      </button>
-      <span v-if="resendConfirmationSuccess" class="text-green-600 text-xs ml-2">
-        {{ $t('unconfirmedWarningMessageSent') }}
-      </span>
+        }} </button
+      > <span v-if="resendConfirmationSuccess" class="text-green-600 text-xs ml-2"
+        > {{ $t('unconfirmedWarningMessageSent') }} </span
+      >
     </div>
+
   </div>
-  <!-- Mobile-optimized header -->
+   <!-- Mobile-optimized header -->
   <header class="bg-white border-b border-gray-200 sticky top-0 z-40">
+
     <div class="px-1 sm:px-2 max-w-4xl mx-auto">
-      <!-- Main header content -->
+       <!-- Main header content -->
       <div class="flex items-center justify-between h-14 sm:h-12">
-        <!-- Logo + Toggle Menu Button -->
+         <!-- Logo + Toggle Menu Button -->
         <div class="flex items-center">
-          <button
+           <button
             class="sm:hidden p-3 text-gray-600 hover:bg-gray-100 rounded-md z-15"
             :aria-label="$t('toggleMenu')"
             @click.stop="isMenuOpen = !isMenuOpen"
           >
-            <Menu v-if="!isMenuOpen" class="h-6 w-6" />
-            <X v-else class="h-6 w-6" />
-          </button>
-
-          <!-- Logo - Always visible -->
-          <NavLink
+             <Menu v-if="!isMenuOpen" class="h-6 w-6" /> <X v-else class="h-6 w-6" /> </button
+          > <!-- Logo - Always visible --> <NavLink
             to="/"
             class="flex items-center space-x-2 px-2 sm:px-3 py-1.5"
             @click="triggerPyro"
-          >
+            >
             <div
               v-html="logoSvgRaw"
               role="img"
@@ -75,244 +75,202 @@
               class="w-7 h-7"
               :class="{ 'animate-rotate-3d': showPyro }"
             ></div>
-            <span class="select-none font-medium">{{ $t('logoText') }}</span>
-          </NavLink>
+             <span class="select-none font-medium">{{ $t('logoText') }}</span
+            > </NavLink
+          >
         </div>
-
-        <!-- Desktop Navigation - Hidden on mobile -->
+         <!-- Desktop Navigation - Hidden on mobile -->
         <nav class="hidden sm:ml-4 sm:flex items-center space-x-0 md:space-x-1 lg:space-x-2">
-          <NavLink to="/collections" class="navbar-item">
-            <GalleryVerticalEnd class="h-5 w-5" />
-            {{ $t('nav.courses') }}
-          </NavLink>
-          <NavLink to="/recent" class="navbar-item">
-            <Clock4 class="h-5 w-5" />
-            {{ $t('nav.recent') }}
-          </NavLink>
+           <NavLink to="/collections" class="navbar-item"
+            > <GalleryVerticalEnd class="h-5 w-5" /> {{ $t('nav.courses') }} </NavLink
+          > <NavLink to="/recent" class="navbar-item"
+            > <Clock4 class="h-5 w-5" /> {{ $t('nav.recent') }} </NavLink
+          >
           <div ref="moreNavRef" class="relative group">
-            <button
+             <button
               type="button"
               class="navbar-item"
               :aria-expanded="isMoreNavOpen"
               aria-haspopup="true"
               @click.stop="isMoreNavOpen = !isMoreNavOpen"
             >
-              <span class="hidden lg:inline"> {{ $t('nav.more') }} </span>
-              <ChevronDown class="h-5 w-5" :stroke-width="2.5" :absolute-stroke-width="true" />
-            </button>
+               <span class="hidden lg:inline"> {{ $t('nav.more') }} </span> <ChevronDown
+                class="h-5 w-5"
+                :stroke-width="2.5"
+                :absolute-stroke-width="true"
+              /> </button
+            >
             <div
               class="absolute flex-col mt-0 bg-white border border-gray-200 rounded-md shadow-lg z-50 p-1 w-auto max-w-96"
               :class="isMoreNavOpen ? 'flex' : 'hidden group-hover:flex'"
             >
-              <NavLink
+               <NavLink
                 v-if="auth.state.isLoggedIn"
                 to="/users"
                 class="navbar-item justify-start py-2"
                 @click="closeNavMenus"
-              >
-                <Users class="h-4 w-4" />
-                {{
+                > <Users class="h-4 w-4" /> {{
                   auth.state.authorities?.includes('manage_roles')
                     ? $t('nav.iamUsers')
                     : $t('nav.users')
-                }}
-              </NavLink>
-              <NavLink
+                }} </NavLink
+              > <NavLink
                 to="/languages"
                 class="navbar-item justify-start py-2"
                 @click="closeNavMenus"
-              >
-                <Globe class="h-4 w-4" />
-                {{ $t('nav.languages') }}
-              </NavLink>
-              <NavLink
+                > <Globe class="h-4 w-4" /> {{ $t('nav.languages') }} </NavLink
+              > <NavLink
                 to="/assistant"
                 class="navbar-item justify-start py-2"
                 @click="closeNavMenus"
-              >
-                <Bot class="h-4 w-4" />
-                {{ $t('nav.assistant') }}
-              </NavLink>
-              <NavLink
+                > <Bot class="h-4 w-4" /> {{ $t('nav.assistant') }} </NavLink
+              > <NavLink
                 v-if="!auth.state.isLoggedIn"
                 to="/export/cached"
                 class="navbar-item justify-start py-2"
                 @click="closeNavMenus"
-              >
-                <Download class="h-4 w-4" />
-                {{ $t('nav.cachedExports') }}
-              </NavLink>
-              <NavLink
+                > <Download class="h-4 w-4" /> {{ $t('nav.cachedExports') }} </NavLink
+              > <NavLink
                 v-if="auth.state.isLoggedIn"
                 to="/export"
                 class="navbar-item justify-start py-2"
                 @click="closeNavMenus"
-              >
-                <Upload class="h-4 w-4" />
-                {{ $t('nav.export') }}
-              </NavLink>
-              <NavLink
+                > <Upload class="h-4 w-4" /> {{ $t('nav.export') }} </NavLink
+              > <NavLink
                 v-if="auth.state.isLoggedIn && auth.state.authorities?.includes('bulk_import')"
                 to="/bulk-import"
                 class="navbar-item justify-start py-2"
                 @click="closeNavMenus"
+                > <Download class="h-4 w-4" /> {{ $t('nav.bulkImport') }} </NavLink
               >
-                <Download class="h-4 w-4" />
-                {{ $t('nav.bulkImport') }}
-              </NavLink>
             </div>
+
           </div>
+
         </nav>
-
-        <!-- Auth Buttons - Optimized for mobile -->
+         <!-- Auth Buttons - Optimized for mobile -->
         <div class="flex items-center space-x-2">
-          <!-- Only show auth buttons when loading is complete -->
-          <template v-if="!auth.state.isLoading">
-            <template v-if="auth.state.isLoggedIn">
-              <NavLink v-if="auth.state.isLoggedIn" to="/reactions" class="navbar-item">
-                <BookmarkCheck class="h-5 w-5" />
-                <span class="hidden sm:inline">{{ $t('nav.myActivity') }}</span>
-              </NavLink>
-              <NavLink to="/profile" class="navbar-item">
-                <User class="h-5 w-5" />
-                <span class="hidden sm:inline">{{ auth.state.username }}</span>
-              </NavLink>
-              <button class="navbar-item hidden sm:flex" @click="handleLogout">
-                <LogOut class="h-5 w-5" />
-                <span class="hidden md:inline">{{ $t('nav.logout') }}</span>
-              </button>
-            </template>
-            <template v-else>
-              <NavLink to="/signup" class="btn-signup">
-                <UserPlus class="h-5 w-5" />
-                <span class="hidden sm:inline">{{ $t('nav.signUp') }}</span>
-              </NavLink>
-              <NavLink to="/login" class="btn-login">
-                <LogIn class="h-5 w-5" />
-                <span class="hidden sm:inline">{{ $t('nav.logIn') }}</span>
-              </NavLink>
-            </template>
-          </template>
+           <!-- Only show auth buttons when loading is complete --> <template
+            v-if="!auth.state.isLoading"
+            > <template v-if="auth.state.isLoggedIn"
+              > <NavLink v-if="auth.state.isLoggedIn" to="/reactions" class="navbar-item"
+                > <BookmarkCheck class="h-5 w-5" /> <span class="hidden sm:inline">{{
+                  $t('nav.myActivity')
+                }}</span
+                > </NavLink
+              > <NavLink to="/profile" class="navbar-item"
+                > <User class="h-5 w-5" /> <span class="hidden sm:inline">{{
+                  auth.state.username
+                }}</span
+                > </NavLink
+              > <button class="navbar-item hidden sm:flex" @click="handleLogout">
+                 <LogOut class="h-5 w-5" /> <span class="hidden md:inline">{{
+                  $t('nav.logout')
+                }}</span
+                > </button
+              > </template
+            > <template v-else
+              > <NavLink to="/signup" class="btn-signup"
+                > <UserPlus class="h-5 w-5" /> <span class="hidden sm:inline">{{
+                  $t('nav.signUp')
+                }}</span
+                > </NavLink
+              > <NavLink to="/login" class="btn-login"
+                > <LogIn class="h-5 w-5" /> <span class="hidden sm:inline">{{
+                  $t('nav.logIn')
+                }}</span
+                > </NavLink
+              > </template
+            > </template
+          >
         </div>
-      </div>
 
-      <!-- Mobile Navigation Menu -->
+      </div>
+       <!-- Mobile Navigation Menu -->
       <div
         v-show="isMenuOpen"
         class="fixed sm:hidden top-14 left-0 right-0 bg-white shadow-md py-2 space-y-1 z-50"
       >
-        <NavLink
+         <NavLink
           to="/collections"
           class="flex items-center px-4 py-2 text-base text-gray-600 hover:bg-gray-100 rounded-md transition-colors gap-2"
           @click="isMenuOpen = false"
-        >
-          <GalleryVerticalEnd class="h-5 w-5" />
-          {{ $t('nav.courses') }}
-        </NavLink>
-
-        <NavLink
+          > <GalleryVerticalEnd class="h-5 w-5" /> {{ $t('nav.courses') }} </NavLink
+        > <NavLink
           to="/recent"
           class="flex items-center px-4 py-2 text-base text-gray-600 hover:bg-gray-100 rounded-md transition-colors gap-2"
           @click="isMenuOpen = false"
-        >
-          <Clock4 class="h-5 w-5" />
-          {{ $t('mobileNav.recentChanges') }}
-        </NavLink>
-
-        <NavLink
+          > <Clock4 class="h-5 w-5" /> {{ $t('mobileNav.recentChanges') }} </NavLink
+        > <NavLink
           v-if="auth.state.isLoggedIn"
           to="/users"
           class="flex items-center px-4 py-2 text-base text-gray-600 hover:bg-gray-100 rounded-md transition-colors gap-2"
           @click="isMenuOpen = false"
-        >
-          <Users class="h-5 w-5" />
-          {{
+          > <Users class="h-5 w-5" /> {{
             auth.state.authorities?.includes('manage_roles') ? $t('nav.iamUsers') : $t('nav.users')
-          }}
-        </NavLink>
-
-        <NavLink
+          }} </NavLink
+        > <NavLink
           to="/languages"
           class="flex items-center px-4 py-2 text-base text-gray-600 hover:bg-gray-100 rounded-md transition-colors gap-2"
           @click="isMenuOpen = false"
-        >
-          <Globe class="h-5 w-5" />
-          {{ $t('nav.languages') }}
-        </NavLink>
-
-        <NavLink
+          > <Globe class="h-5 w-5" /> {{ $t('nav.languages') }} </NavLink
+        > <NavLink
           to="/assistant"
           class="flex items-center px-4 py-2 text-base text-gray-600 hover:bg-gray-100 rounded-md transition-colors gap-2"
           @click="isMenuOpen = false"
-        >
-          <Bot class="h-5 w-5" />
-          {{ $t('nav.assistant') }}
-        </NavLink>
-
-        <NavLink
+          > <Bot class="h-5 w-5" /> {{ $t('nav.assistant') }} </NavLink
+        > <NavLink
           v-if="!auth.state.isLoggedIn"
           to="/export/cached"
           class="flex items-center px-4 py-2 text-base text-gray-600 hover:bg-gray-100 rounded-md transition-colors gap-2"
           @click="isMenuOpen = false"
-        >
-          <Download class="h-5 w-5" />
-          {{ $t('nav.cachedExports') }}
-        </NavLink>
-
-        <NavLink
+          > <Download class="h-5 w-5" /> {{ $t('nav.cachedExports') }} </NavLink
+        > <NavLink
           v-if="auth.state.isLoggedIn"
           to="/export"
           class="flex items-center px-4 py-2 text-base text-gray-600 hover:bg-gray-100 rounded-md transition-colors gap-2"
           @click="isMenuOpen = false"
-        >
-          <Upload class="h-5 w-5" />
-          {{ $t('nav.export') }}
-        </NavLink>
-
-        <NavLink
+          > <Upload class="h-5 w-5" /> {{ $t('nav.export') }} </NavLink
+        > <NavLink
           v-if="auth.state.isLoggedIn && auth.state.authorities?.includes('bulk_import')"
           to="/bulk-import"
           class="flex items-center px-4 py-2 text-base text-gray-600 hover:bg-gray-100 rounded-md transition-colors gap-2"
           @click="isMenuOpen = false"
+          > <Download class="h-5 w-5" /> {{ $t('nav.bulkImport') }} </NavLink
         >
-          <Download class="h-5 w-5" />
-          {{ $t('nav.bulkImport') }}
-        </NavLink>
-
         <div v-if="auth.state.isLoggedIn" class="my-1 border-t border-gray-200"></div>
-
-        <button
+         <button
           v-if="auth.state.isLoggedIn"
           class="flex items-center px-4 py-2 text-base text-[#007bff] hover:bg-gray-100 rounded-md transition-colors gap-2 w-full text-left"
           @click="handleLogout"
         >
-          <LogOut class="h-5 w-5" />
-          {{ $t('nav.logout') }}
-        </button>
+           <LogOut class="h-5 w-5" /> {{ $t('nav.logout') }} </button
+        >
       </div>
+
     </div>
+
   </header>
-  <!-- Global Error Display -->
+   <!-- Global Error Display -->
   <div class="flex justify-center">
+
     <div v-if="error?.message" class="w-full max-w-lg px-4">
-      <Error
+       <Error
         v-if="error?.message"
         :message="error.message"
-        :details="error.details"
+        :details="error.details != null ? String(error.details) : ''"
         @close="clearError"
       />
     </div>
-  </div>
 
-  <ToastFloat
+  </div>
+   <ToastFloat
     :show="!!successToast"
     :message="successToast?.message ?? ''"
     :duration="successToast?.duration ?? DEFAULT_SUCCESS_TOAST_DURATION_MS"
     type="success"
     @close="clearSuccess"
-  />
-
-  <!-- Main content -->
+  /> <!-- Main content -->
   <main
     class="main-content"
     :class="[
@@ -320,6 +278,7 @@
       route.meta.fullHeight ? 'main-content--no-scroll' : '',
     ]"
   >
+
     <div
       class="max-w-4xl mx-auto relative flex flex-col"
       :class="[
@@ -329,6 +288,7 @@
       ]"
       id="main-child"
     >
+
       <div
         class="flex-1"
         :class="[
@@ -336,12 +296,13 @@
           { 'main-child-inner-full-height': route.meta.fullHeight },
         ]"
       >
-        <router-view v-slot="{ Component, route }">
-          <component
+         <router-view v-slot="{ Component, route }"
+          > <component
             :is="Component"
-            v-bind="route.meta.props"
+            v-bind="metaProps(route.meta.props)"
             v-on="
-              route.name === 'Home' || route.name?.startsWith('Home-')
+              route.name === 'Home' ||
+              (typeof route.name === 'string' && route.name.startsWith('Home-'))
                 ? {
                     search: performSearch,
                     'view-message': viewMessage,
@@ -349,63 +310,56 @@
                   }
                 : {}
             "
-          />
-        </router-view>
+          /> </router-view
+        >
       </div>
 
       <footer
         v-if="!route.meta.hideFooter"
         class="mt-6 max-w-full break-words px-3 py-3 text-center text-xs text-gray-500 leading-relaxed"
       >
-        {{ $t('footer.publicDomainNotice') }}
+         {{ $t('footer.publicDomainNotice') }}
       </footer>
+
     </div>
+
   </main>
-
-  <!-- Action Overlay -->
+   <!-- Action Overlay -->
   <div v-if="showActionModal" class="fixed inset-0 z-40" @click="showActionModal = false"></div>
-
-  <!-- Floating Action Button -->
+   <!-- Floating Action Button -->
   <div
     class="max-w-4xl mx-auto relative"
     v-if="auth.state.isLoggedIn && route.name !== 'flashcard-study' && !route.meta.fullHeight"
   >
+
     <div
       class="fixed md:absolute bottom-6 right-4 md:bottom-8 md:right-8 lg:-right-4 lg:-mr-4 z-50 flex flex-col items-end gap-3"
     >
-      <!-- Action Buttons -->
-      <transition
+       <!-- Action Buttons --> <transition
         enter-active-class="transition ease-out duration-200"
         enter-from-class="opacity-0 translate-y-2 pointer-events-none"
         enter-to-class="opacity-100 translate-y-0 pointer-events-auto"
         leave-active-class="transition ease-in duration-150"
         leave-from-class="opacity-100 translate-y-0 pointer-events-auto"
         leave-to-class="opacity-0 translate-y-2 pointer-events-none"
-      >
+        >
         <div
           v-show="showActionModal"
           class="flex flex-col gap-3 mb-1 items-end pointer-events-auto pr-1"
         >
-          <IconButton
+           <IconButton
             :label="$t('nav.assistant')"
             button-classes="btn-aqua-white h-12 text-base !px-5"
             @click="handleAssistantChat"
-          >
-            <template #icon>
-              <Bot class="h-6 w-6 text-indigo-600" />
-            </template>
-          </IconButton>
-          <IconButton
+            > <template #icon> <Bot class="h-6 w-6 text-indigo-600" /> </template> </IconButton
+          > <IconButton
             v-if="auth.state.isLoggedIn"
             :label="$t('fab.newDiscussion')"
             button-classes="btn-aqua-white h-12 text-base !px-5"
             @click="handleNewFreeThread"
-          >
-            <template #icon>
-              <AudioWaveform class="h-6 w-6 text-purple-600" />
-            </template>
-          </IconButton>
-          <IconButton
+            > <template #icon> <AudioWaveform class="h-6 w-6 text-purple-600" /> </template>
+            </IconButton
+          > <IconButton
             v-if="auth.state.isLoggedIn"
             :label="$t('fab.addDefinition')"
             icon-classes="h-5 w-5"
@@ -413,24 +367,23 @@
             @click="handleNewDefinition"
           />
         </div>
-      </transition>
-
-      <button
+         </transition
+      > <button
         class="p-2 flex items-center justify-center w-[52px] h-[52px] btn-aqua-rose"
         @click="showActionModal = !showActionModal"
       >
-        <Plus
+         <Plus
           class="h-7 w-7 transition-all duration-200"
           :class="{ 'rotate-45': showActionModal }"
-        />
-      </button>
+        /> </button
+      >
     </div>
-  </div>
 
-  <FooterComponent v-if="!route.meta.fullHeight" />
+  </div>
+   <FooterComponent v-if="!route.meta.fullHeight" />
 </template>
 
-<script setup>
+<script setup lang="ts">
 import {
   Users,
   Globe,
@@ -469,6 +422,7 @@ import FooterComponent from './components/FooterComponent.vue'
 import NavLink from './components/NavLink.vue'
 import ModalComponent from '@/components/ModalComponent.vue'
 import { normalizeSearchQuery } from '@/utils/searchQueryUtils'
+import { queryStr } from '@/utils/routeQuery'
 import { provideAuth } from './composables/useAuth'
 import { provideError } from './composables/useError'
 import {
@@ -496,6 +450,12 @@ useHead({
 })
 const router = useRouter()
 const route = useRoute()
+
+function metaProps(p: unknown): Record<string, unknown> {
+  return p !== null && typeof p === 'object' && !Array.isArray(p)
+    ? (p as Record<string, unknown>)
+    : {}
+}
 const searchQuery = ref('')
 const searchMode = ref('messages')
 const auth = provideAuth()
@@ -562,8 +522,8 @@ const triggerPyro = () => {
   }, 3000)
 }
 
-const performSearch = ({ query, mode }) => {
-  searchQuery.value = normalizeSearchQuery(query)
+const performSearch = ({ query, mode }: { query: string; mode: string }) => {
+  searchQuery.value = normalizeSearchQuery(query) as string
   searchMode.value = mode
   updateRouteParams()
 }
@@ -578,8 +538,8 @@ const updateRouteParams = () => {
 }
 
 const syncFromRoute = () => {
-  searchQuery.value = normalizeSearchQuery(route.query.q || '')
-  searchMode.value = route.query.mode || 'messages'
+  searchQuery.value = normalizeSearchQuery(queryStr(route.query.q)) as string
+  searchMode.value = queryStr(route.query.mode) || 'messages'
 }
 
 const closeNavMenus = () => {
@@ -604,7 +564,7 @@ const handleResendConfirmation = async () => {
       return
     }
 
-    const decoded = jwtDecode(accessToken)
+    const decoded = jwtDecode<{ email?: string }>(accessToken)
     const email = decoded.email
 
     if (!email) {
@@ -632,11 +592,11 @@ const handleResendConfirmation = async () => {
   }
 }
 
-const viewMessage = (messageId) => {
-  router.push({ name: 'message', params: { id: messageId } })
+const viewMessage = (messageId: string | number) => {
+  router.push({ name: 'message', params: { id: String(messageId) } })
 }
 
-const viewThread = (subject) => {
+const viewThread = (subject: string) => {
   router.push({
     name: 'thread',
     params: { subject: encodeURIComponent(subject) },
@@ -711,9 +671,9 @@ const handleGlobalKeyDown = async (event) => {
   }
 
   // Don't trigger if user is typing in an input, textarea, or select
-  const activeElement = document.activeElement
-  const tagName = activeElement?.tagName
-  const isContentEditable = activeElement?.isContentEditable
+  const activeElement = document.activeElement as HTMLElement | null
+  const tagName = activeElement?.tagName ?? ''
+  const isContentEditable = activeElement?.isContentEditable === true
 
   if (['INPUT', 'TEXTAREA', 'SELECT'].includes(tagName) || isContentEditable) {
     return
@@ -728,7 +688,7 @@ const handleGlobalKeyDown = async (event) => {
   const currentLocale = localeMatch ? localeMatch[1] : $locale.value || 'en'
 
   // Check if we're already on the homepage
-  const isHomePage = route.name === 'Home' || route.name?.startsWith('Home-')
+  const isHomePage = route.name === 'Home' || (typeof route.name === 'string' && route.name.startsWith('Home-'))
 
   // Navigate to homepage if not already there
   if (!isHomePage) {
@@ -745,7 +705,7 @@ const handleGlobalKeyDown = async (event) => {
     // The search form has class "search-form" and contains an input
     const searchInput = document.querySelector(
       '.search-form input[type="text"], .search-form input:not([type="hidden"])'
-    )
+    ) as HTMLElement | null
     if (searchInput) {
       searchInput.focus()
       return true
@@ -761,7 +721,7 @@ const handleGlobalKeyDown = async (event) => {
         // Final fallback: try to find any input with input-field class in the main content area
         const fallbackInput = document.querySelector(
           'main .input-field[type="text"], main input.input-field:not([type="hidden"])'
-        )
+        ) as HTMLElement | null
         if (fallbackInput) {
           fallbackInput.focus()
         }
@@ -1258,3 +1218,4 @@ body:has(.main-content.main-content--no-scroll) {
   transition: background-image 1s ease-in-out;
 }
 </style>
+

@@ -1,21 +1,26 @@
+import type { RouteLocationNormalizedLoaded } from 'vue-router'
+
 import { defaultFilterLanguageTags } from '../config/locales'
 
+export interface LanguageOption {
+  id: number
+  tag: string
+}
+
 export const useLanguageSelection = () => {
-  // Get languages from localStorage or use defaults
-  const getStoredLanguages = () => {
+  const getStoredLanguages = (): number[] | null | undefined => {
     if (typeof window === 'undefined') return
 
     try {
       const stored = localStorage.getItem('selectedLanguages')
-      return stored ? JSON.parse(stored) : null
+      return stored ? (JSON.parse(stored) as number[]) : null
     } catch (e) {
       console.error('Error reading from localStorage:', e)
       return null
     }
   }
 
-  // Save languages to localStorage
-  const saveLanguages = (languageIds) => {
+  const saveLanguages = (languageIds: number[]): void => {
     if (typeof window === 'undefined') return
 
     try {
@@ -25,28 +30,26 @@ export const useLanguageSelection = () => {
     }
   }
 
-  // Get initial languages based on priority:
-  // 1. Router query params
-  // 2. localStorage
-  // 3. Default languages (en, jbo)
-  const getInitialLanguages = (route, availableLanguages) => {
-    // Check router query params first
-    if (route.query.langs) {
-      const routeLanguages = route.query.langs.split(',').map(Number)
+  const getInitialLanguages = (
+    route: RouteLocationNormalizedLoaded,
+    availableLanguages: LanguageOption[]
+  ): number[] => {
+    const langsQuery = route.query.langs
+    if (typeof langsQuery === 'string' && langsQuery) {
+      const routeLanguages = langsQuery.split(',').map(Number)
       saveLanguages(routeLanguages)
       return routeLanguages
     }
 
-    // Check localStorage next
     const storedLanguages = getStoredLanguages()
     if (storedLanguages) {
       return storedLanguages
     }
 
-    // Fall back to default languages
-    // Use defaultFilterLanguageTags from the centralized config
     const defaultLanguages = availableLanguages
-      .filter((lang) => defaultFilterLanguageTags.includes(lang.tag))
+      .filter((lang) =>
+        (defaultFilterLanguageTags as readonly string[]).includes(lang.tag)
+      )
       .map((lang) => lang.id)
     saveLanguages(defaultLanguages)
     return defaultLanguages

@@ -1,25 +1,26 @@
 <template>
-  <component
+   <component
     :is="tagComputed"
-    :type="tagComputed === 'button' ? type || 'button' : undefined"
-    :to="tagComputed === 'router-link' ? to : undefined"
-    :href="tagComputed === 'a' ? href : undefined"
+    :type="isNativeButton ? type || 'button' : undefined"
+    :to="isRouterLink ? to : undefined"
+    :href="isAnchor ? href : undefined"
     :disabled="disabled || loading"
     :class="buttonClasses"
     v-bind="$attrs"
     @click="handleClick"
+    > <slot v-if="!loading" name="icon" /> <component
+      v-else
+      :is="Spinner"
+      class="w-4 h-4 shrink-0"
+    /> <span v-if="$slots.default" class="relative top-px"><slot /></span> </component
   >
-    <slot v-if="!loading" name="icon" />
-    <component v-else :is="Spinner" class="w-4 h-4 shrink-0" />
-    <span v-if="$slots.default" class="relative top-px"><slot /></span>
-  </component>
 </template>
 
-<script setup>
-import { computed } from 'vue'
+<script setup lang="ts">
+import { computed, type Component } from 'vue'
 import { RouterLink } from 'vue-router'
 
-const VARIANT_CLASSES = {
+const VARIANT_CLASSES: Record<string, string> = {
   'aqua-white': 'btn-aqua-white',
   'aqua-orange': 'btn-aqua-orange',
   'aqua-amber': 'btn-aqua-amber',
@@ -62,13 +63,17 @@ const props = defineProps({
   class: { type: [String, Array, Object], default: '' },
 })
 
-const emit = defineEmits(['click'])
+const emit = defineEmits<{ click: [e: MouseEvent] }>()
 
-const tagComputed = computed(() => {
+const tagComputed = computed<Component | 'a' | 'button'>(() => {
   if (props.tag === 'router-link' || props.to) return RouterLink
   if (props.tag === 'a' || props.href) return 'a'
   return 'button'
 })
+
+const isRouterLink = computed(() => props.tag === 'router-link' || props.to != null)
+const isAnchor = computed(() => props.tag === 'a' || props.href != null)
+const isNativeButton = computed(() => tagComputed.value === 'button')
 
 const buttonClasses = computed(() => {
   const base = VARIANT_CLASSES[props.variant] || props.variant || 'btn-aqua-white'
@@ -76,13 +81,14 @@ const buttonClasses = computed(() => {
   return extra ? [base, extra].filter(Boolean).join(' ') : base
 })
 
-function handleClick(e) {
+function handleClick(e: MouseEvent) {
   if (props.loading || props.disabled) return
   emit('click', e)
 }
 
-const Spinner = {
+const Spinner: { template: string } = {
   template:
     '<span class="inline-block w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" aria-hidden="true" />',
 }
 </script>
+

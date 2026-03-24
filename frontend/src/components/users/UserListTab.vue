@@ -1,11 +1,13 @@
 <template>
+
   <div class="space-y-6">
-    <!-- Search and Filter Controls (compact single row) -->
+     <!-- Search and Filter Controls (compact single row) -->
     <div class="bg-white border border-gray-200 rounded-xl shadow-sm p-3 sm:p-4">
+
       <div class="flex flex-wrap items-center gap-3 sm:gap-4">
-        <!-- Search: compact width -->
+         <!-- Search: compact width -->
         <div class="w-full sm:w-auto sm:min-w-[220px] sm:max-w-[280px] flex-1 sm:flex-initial">
-          <SearchInput
+           <SearchInput
             :model-value="searchQuery"
             :is-loading="isSearching"
             :placeholder="t('userList.searchPlaceholder')"
@@ -15,84 +17,84 @@
             @clear="$emit('clearSearch')"
           />
         </div>
-
-        <!-- Role Filter -->
+         <!-- Role Filter -->
         <div class="flex items-center gap-2 shrink-0">
-          <label class="text-sm font-medium text-gray-700 whitespace-nowrap">{{
+           <label class="text-sm font-medium text-gray-700 whitespace-nowrap">{{
             t('components.userListTab.roleLabel')
-          }}</label>
-          <select
+          }}</label
+          > <select
             :value="roleFilter"
             class="input-field"
-            @change="$emit('update:roleFilter', $event.target.value)"
+            @change="$emit('update:roleFilter', selectValue($event))"
           >
-            <option value="">
-              {{ t('components.userListTab.allRoles') }}
-            </option>
-            <option v-for="role in availableRoles" :key="role.name" :value="role.name">
-              {{ translateRole(role.name) }}
-            </option>
-          </select>
-        </div>
 
-        <!-- Sort By -->
+            <option value=""> {{ t('components.userListTab.allRoles') }} </option>
+
+            <option v-for="role in availableRoles" :key="role.name" :value="role.name">
+               {{ translateRole(role.name) }}
+            </option>
+             </select
+          >
+        </div>
+         <!-- Sort By -->
         <div class="flex items-center gap-2 shrink-0">
-          <label class="text-sm font-medium text-gray-700 whitespace-nowrap">{{
+           <label class="text-sm font-medium text-gray-700 whitespace-nowrap">{{
             t('components.userListTab.sortByLabel')
-          }}</label>
-          <select
+          }}</label
+          > <select
             :value="sortBy"
             class="input-field"
-            @change="$emit('update:sortBy', $event.target.value)"
+            @change="$emit('update:sortBy', selectValue($event))"
           >
-            <option value="created_at">
-              {{ t('components.userListTab.createdAtSort') }}
-            </option>
-            <option value="username">
-              {{ t('components.userListTab.usernameSort') }}
-            </option>
-            <option value="realname">
-              {{ t('components.userListTab.realNameSort') }}
-            </option>
-          </select>
-        </div>
 
-        <!-- Sort Order -->
+            <option value="created_at"> {{ t('components.userListTab.createdAtSort') }} </option>
+
+            <option value="username"> {{ t('components.userListTab.usernameSort') }} </option>
+
+            <option value="realname"> {{ t('components.userListTab.realNameSort') }} </option>
+             </select
+          >
+        </div>
+         <!-- Sort Order -->
         <div class="flex items-center gap-2 shrink-0">
-          <label class="text-sm font-medium text-gray-700 whitespace-nowrap">{{
+           <label class="text-sm font-medium text-gray-700 whitespace-nowrap">{{
             t('components.userListTab.sortOrderLabel')
-          }}</label>
-          <select
+          }}</label
+          > <select
             :value="sortOrder"
             class="input-field"
-            @change="$emit('update:sortOrder', $event.target.value)"
+            @change="$emit('update:sortOrder', selectValue($event))"
           >
-            <option value="asc">
-              {{ t('components.userListTab.ascSort') }}
-            </option>
-            <option value="desc">
-              {{ t('components.userListTab.descSort') }}
-            </option>
-          </select>
-        </div>
-      </div>
-    </div>
 
-    <!-- User list -->
+            <option value="asc"> {{ t('components.userListTab.ascSort') }} </option>
+
+            <option value="desc"> {{ t('components.userListTab.descSort') }} </option>
+             </select
+          >
+        </div>
+
+      </div>
+
+    </div>
+     <!-- User list -->
     <div class="min-h-[400px]">
-      <!-- Loading state -->
+       <!-- Loading state -->
       <div
         v-if="isLoading && userList.length === 0"
         class="flex flex-col items-center justify-center py-16"
       >
+
         <div
           class="animate-spin rounded-full h-10 w-10 border-2 border-blue-500 border-t-transparent"
           aria-hidden="true"
         />
+
         <p class="mt-3 text-sm text-gray-600">{{ t('userList.loadingUsers') }}</p>
+
       </div>
 
       <div v-else class="grid gap-3 sm:gap-4">
+
         <div
           v-for="user in userList"
           :key="user.user_id"
@@ -102,65 +104,74 @@
           @click="$emit('viewUser', user.username)"
           @keyup.enter="$emit('viewUser', user.username)"
         >
+
           <div class="flex items-start gap-4">
-            <!-- Avatar -->
+             <!-- Avatar -->
             <div class="shrink-0 mt-1">
+
               <div
                 v-if="user.has_profile_image"
                 class="w-12 h-12 rounded-full overflow-hidden border border-gray-100 shadow-sm"
               >
-                <img
+                 <img
                   :src="getProfileImage(user.username, { cached: true })"
                   :alt="user.username"
                   class="w-full h-full object-cover"
                 />
               </div>
+
               <div
                 v-else
                 class="w-12 h-12 rounded-full bg-gray-50 flex items-center justify-center text-gray-400 border border-gray-100 shadow-sm"
               >
-                <User class="h-6 w-6" />
+                 <User class="h-6 w-6" />
               </div>
-            </div>
 
-            <!-- User Info -->
+            </div>
+             <!-- User Info -->
             <div class="min-w-0 flex-1">
+
               <div class="flex justify-between items-start gap-2">
+
                 <div class="min-w-0">
+
                   <h3 class="text-lg font-medium text-blue-600 truncate hover:text-blue-700">
-                    {{ user.username }}
+                     {{ user.username }}
                   </h3>
+
                   <p v-if="user.realname" class="text-gray-600 text-sm mt-0.5 truncate">
-                    {{ user.realname }}
+                     {{ user.realname }}
                   </p>
+
                 </div>
-                <span
+                 <span
                   class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium shrink-0"
                   :class="getRoleClass(user.role)"
+                  > {{ translateRole(user.role) }} </span
                 >
-                  {{ translateRole(user.role) }}
-                </span>
               </div>
-
-              <!-- Personal description -->
+               <!-- Personal description -->
               <p v-if="user.personal" class="text-gray-500 text-sm mt-2 line-clamp-2">
-                {{ user.personal }}
+                 {{ user.personal }}
               </p>
-
-              <!-- Join Date -->
+               <!-- Join Date -->
               <div class="flex items-center gap-1.5 mt-3 text-xs text-gray-400">
-                <Calendar class="h-3.5 w-3.5" />
-                <span>{{
+                 <Calendar class="h-3.5 w-3.5" /> <span>{{
                   t('components.userListTab.joinedAt', { date: formatDate(user.created_at) })
-                }}</span>
+                }}</span
+                >
               </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
 
-    <PaginationComponent
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+     <PaginationComponent
       v-if="total > perPage"
       :current-page="currentPage"
       :total-pages="totalPages"
@@ -171,24 +182,40 @@
       @next="$emit('nextPage')"
     />
   </div>
+
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { Calendar, User } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
-import { getProfileImage } from '@/api.js'
+import type { PropType } from 'vue'
+import { getProfileImage } from '@/api'
 import PaginationComponent from '@/components/PaginationComponent.vue'
 import SearchInput from '@/components/SearchInput.vue'
 
 const { t, locale } = useI18n()
 
+type UserRow = {
+  user_id: string | number
+  username: string
+  realname?: string | null
+  role?: string
+  personal?: string | null
+  has_profile_image?: boolean
+  created_at?: string
+}
+
+function selectValue(e: Event): string {
+  return (e.target as HTMLSelectElement).value
+}
+
 defineProps({
-  userList: { type: Array, required: true },
+  userList: { type: Array as PropType<UserRow[]>, required: true },
   total: { type: Number, required: true },
   perPage: { type: Number, required: true },
   currentPage: { type: Number, required: true },
   totalPages: { type: Number, required: true },
-  availableRoles: { type: Array, required: true },
+  availableRoles: { type: Array as PropType<Array<{ name: string }>>, required: true },
   isLoading: { type: Boolean, required: true },
   isSearching: { type: Boolean, required: true },
   searchQuery: { type: String, required: true },
@@ -209,12 +236,12 @@ defineEmits([
   'viewUser',
 ])
 
-const formatDate = (dateString) => {
+const formatDate = (dateString: string | undefined) => {
   if (!dateString) return ''
   return new Date(dateString).toLocaleDateString(locale.value)
 }
 
-const translateRole = (role) => {
+const translateRole = (role: string | undefined) => {
   if (!role || typeof role !== 'string') {
     return role || ''
   }
@@ -225,7 +252,7 @@ const translateRole = (role) => {
   return translated !== translationKey ? translated : role
 }
 
-const getRoleClass = (role) => {
+const getRoleClass = (role: string | undefined) => {
   // Handle cases where role might be undefined or null
   if (typeof role !== 'string' || !role) {
     return 'bg-gray-100 text-gray-600'
@@ -238,3 +265,4 @@ const getRoleClass = (role) => {
   return 'bg-green-100 text-green-800' // Default for 'user'
 }
 </script>
+

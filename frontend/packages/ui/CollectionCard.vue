@@ -1,90 +1,105 @@
 <template>
-  <Card elevated class="collection-card">
-    <template #header>
+   <Card elevated class="collection-card"
+    > <template #header
+      >
       <div class="space-y-2 flex flex-col items-center">
+
         <div class="flex items-center justify-center gap-2 w-full min-w-0">
-          <RouterLink
+           <RouterLink
             :to="
               collection.has_flashcards
                 ? `/collections/${collection.collection_id}/flashcards`
                 : `/collections/${collection.collection_id}`
             "
             class="card-title min-w-0 flex-1 line-clamp-2 whitespace-normal text-center"
+            > {{ collection.name }} </RouterLink
           >
-            {{ collection.name }}
-          </RouterLink>
         </div>
-        <p v-if="collection.description" class="card-description text-center">
-          {{ collection.description }}
-        </p>
-      </div>
-    </template>
 
-    <template #footer>
+        <p v-if="collection.description" class="card-description text-center">
+           {{ collection.description }}
+        </p>
+
+      </div>
+       </template
+    > <template #footer
+      >
       <div class="card-footer-block">
+
         <div v-if="collection.has_flashcards" class="card-study-area card-study-area-compact">
-          <Button
+           <Button
             :variant="studyButtonVariant"
             :loading="studyLoading"
             class="!h-auto px-5 py-2.5 rounded-xl text-sm"
             @click="$emit('study', collection)"
+            > <template #icon
+              > <GraduationCap v-if="!studyLoading" class="w-4 h-4 shrink-0" /> </template
+            > {{ studyButtonLabel }} </Button
           >
-            <template #icon>
-              <GraduationCap v-if="!studyLoading" class="w-4 h-4 shrink-0" />
-            </template>
-            {{ studyButtonLabel }}
-          </Button>
         </div>
+
         <div class="card-actions">
+
           <div class="btn-group-forced flex flex-nowrap justify-center" role="group">
-            <RouterLink
+             <RouterLink
               :to="`/collections/${collection.collection_id}`"
               class="btn-empty btn-group-item"
-            >
-              <List class="w-4 h-4 shrink-0" />
-              <span>{{ collectionButtonLabel }}</span>
-            </RouterLink>
-            <RouterLink
+              > <List class="w-4 h-4 shrink-0" /> <span>{{ collectionButtonLabel }}</span
+              > </RouterLink
+            > <RouterLink
               v-if="collection.has_flashcards"
               :to="`/collections/${collection.collection_id}/flashcards`"
               class="btn-empty btn-group-item"
+              > <LayoutGrid class="w-4 h-4 shrink-0" /> <span>{{ flashcardsButtonLabel }}</span
+              > </RouterLink
             >
-              <LayoutGrid class="w-4 h-4 shrink-0" />
-              <span>{{ flashcardsButtonLabel }}</span>
-            </RouterLink>
           </div>
+
         </div>
+
         <div class="card-footer-inner border-t border-gray-100 pt-3 mt-3 w-full">
+
           <div class="card-meta card-meta-row">
-            <span class="card-meta-by">
-              {{ createdByLabel }}
-              <RouterLink :to="`/user/${collection.owner.user_id}`" class="card-meta-link">
-                {{ collection.owner.username }}
-              </RouterLink>
-            </span>
-            <span
+             <span class="card-meta-by"
+              > {{ createdByLabel }} <RouterLink
+                :to="`/user/${collection.owner.user_id}`"
+                class="card-meta-link"
+                > {{ collection.owner.username }} </RouterLink
+              > </span
+            > <span
               class="card-meta-date"
               :aria-label="updatedLabel + ' ' + formatDate(collection.updated_at)"
               :title="updatedLabel + ' ' + formatDate(collection.updated_at)"
-            >
-              <CalendarClock class="card-meta-icon" aria-hidden="true" />
-              {{ formatDate(collection.updated_at) }}
-            </span>
-            <!-- <span class="badge badge-muted">
+              > <CalendarClock class="card-meta-icon" aria-hidden="true" /> {{
+                formatDate(collection.updated_at)
+              }} </span
+            > <!-- <span class="badge badge-muted">
               {{ itemsCountLabel }}
             </span> -->
           </div>
+
         </div>
+
       </div>
-    </template>
-  </Card>
+       </template
+    > </Card
+  >
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed } from 'vue'
 import { GraduationCap, List, LayoutGrid, CalendarClock } from 'lucide-vue-next'
 import Card from './Card.vue'
 import Button from './Button.vue'
+
+export interface CollectionCardCollection {
+  collection_id: number
+  name: string
+  description?: string | null
+  has_flashcards: boolean
+  updated_at: string
+  owner: { user_id: number; username: string }
+}
 
 const AQUA_VARIANT_WHEEL = [
   'aqua-white',
@@ -108,7 +123,7 @@ const AQUA_VARIANT_WHEEL = [
   'aqua-zinc',
 ]
 
-function hashString(str) {
+function hashString(str: string | undefined | null): number {
   if (!str || typeof str !== 'string') return 0
   let h = 0
   for (let i = 0; i < str.length; i++) {
@@ -120,7 +135,7 @@ function hashString(str) {
 
 const props = defineProps({
   collection: {
-    type: Object,
+    type: Object as () => CollectionCardCollection,
     required: true,
   },
   studyLoading: {
@@ -128,7 +143,7 @@ const props = defineProps({
     default: false,
   },
   formatDate: {
-    type: Function,
+    type: Function as unknown as () => (d: string) => string,
     required: true,
   },
   studyButtonLabel: { type: String, default: 'Study' },
@@ -149,7 +164,7 @@ const studyButtonVariant = computed(() => {
   return AQUA_VARIANT_WHEEL[index]
 })
 
-defineEmits(['study'])
+defineEmits<{ study: [collection: CollectionCardCollection] }>()
 </script>
 
 <style scoped>
@@ -171,3 +186,4 @@ defineEmits(['study'])
   @apply w-3.5 h-3.5 inline-block align-middle mr-0.5 text-gray-400;
 }
 </style>
+

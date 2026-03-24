@@ -5,13 +5,17 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "npx vue-tsc --noEmit && npx vite-ssg build",
-    "start": "npx vue-tsc --noEmit && npx vite-ssg build && pnpm preview",
+    "typecheck": "vue-tsc --noEmit -p tsconfig.app.json",
+    "typecheck:watch": "vue-tsc --noEmit -p tsconfig.app.json --watch",
+    "typecheck:pretty": "vue-tsc --noEmit -p tsconfig.app.json --pretty",
+    "build": "vue-tsc --noEmit -p tsconfig.app.json && vite-ssg build",
+    "start": "vue-tsc --noEmit -p tsconfig.app.json && vite-ssg build && pnpm preview",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "knip": "knip --no-config-hints"
+    "knip": "knip --no-config-hints",
+    "check": "pnpm run typecheck && pnpm run lint && pnpm knip"
   },
   "dependencies": {
     "@milkdown/core": "^7.19.1",

@@ -1,21 +1,16 @@
 <template>
-  <!-- Search and Filter Section -->
+   <!-- Search and Filter Section -->
   <div class="space-y-4 mt-4 sm:mt-6">
-    <!-- Skeletons -->
-    <SearchFormSkeleton v-if="isInitialLoading" />
-    <CombinedFiltersSkeleton v-if="isInitialLoading" />
-
-    <!-- Actual Components (hidden while loading) -->
-    <SearchForm
+     <!-- Skeletons --> <SearchFormSkeleton v-if="isInitialLoading" /> <CombinedFiltersSkeleton
+      v-if="isInitialLoading"
+    /> <!-- Actual Components (hidden while loading) --> <SearchForm
       ref="searchFormRef"
       :initial-query="searchQuery"
       :initial-mode="'semantic'"
       class="w-full transition-opacity duration-300"
       :class="{ 'opacity-0 pointer-events-none h-0 overflow-hidden': isInitialLoading }"
       @search="performSearch"
-    />
-
-    <CombinedFilters
+    /> <CombinedFilters
       v-model="filters"
       :languages="languages"
       class="w-full transition-opacity duration-300"
@@ -29,48 +24,52 @@
     v-if="searchQuery || filters.selmaho || filters.username || filters.word_type"
     class="min-h-[400px] mt-4 sm:mt-6"
   >
+
     <div class="space-y-4">
+
       <div
         class="flex flex-wrap justify-between items-center gap-3 sm:space-x-4 w-full sm:w-auto ml-auto"
       >
+
         <h2 class="text-xl sm:text-2xl font-bold text-gray-800 select-none">
-          {{ $t('home.searchResultsTitle.dictionary') }}
+           {{ $t('home.searchResultsTitle.dictionary') }}
         </h2>
+
       </div>
 
       <div v-if="isLoading" class="flex justify-center py-8">
-        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
-      </div>
 
-      <template v-else>
+        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+
+      </div>
+       <template v-else
+        >
         <div v-if="!isLoading && !error" class="grid gap-4 mb-6">
-          <!-- Decomposition display -->
-          <AlertComponent
+           <!-- Decomposition display --> <AlertComponent
             v-if="decomposition?.length"
             type="tip"
             :label="$t('components.dictionaryEntries.decomposition')"
-          >
+            >
             <div class="inline-flex items-center gap-1">
-              <template v-for="(word, index) in decomposition" :key="word">
+               <template v-for="(word, index) in decomposition" :key="word"
+                >
                 <h2
                   class="text-base font-semibold text-blue-700 hover:text-blue-800 hover:underline truncate flex-shrink-0"
                 >
-                  <RouterLink
+                   <RouterLink
                     :to="{
                       path: `/valsi/${word.replace(/ /g, '_')}`,
                       query: { langid: definitions[0]?.langid },
                     }"
+                    > {{ word }} </RouterLink
                   >
-                    {{ word }}
-                  </RouterLink>
                 </h2>
-                <span v-if="index < decomposition.length - 1" class="text-aqua-500">+</span>
-              </template>
+                 <span v-if="index < decomposition.length - 1" class="text-aqua-500">+</span>
+                </template
+              >
             </div>
-          </AlertComponent>
-
-          <!-- Definition Cards -->
-          <DefinitionCardSimple
+             </AlertComponent
+          > <!-- Definition Cards --> <DefinitionCardSimple
             v-for="def in definitions"
             :key="def.definitionid"
             :definition="def"
@@ -80,19 +79,18 @@
         </div>
 
         <div v-if="!isLoading && definitions.length === 0" class="text-center py-8 text-gray-600">
-          {{ $t('components.dictionaryEntries.noEntries') }}
+           {{ $t('components.dictionaryEntries.noEntries') }}
         </div>
 
-        <div v-if="error" class="text-center py-8 text-red-600">
-          {{ error }}
-        </div>
-      </template>
+        <div v-if="error" class="text-center py-8 text-red-600"> {{ error }} </div>
+         </template
+      >
     </div>
-  </div>
 
-  <!-- PaginationComponent -->
+  </div>
+   <!-- PaginationComponent -->
   <div v-if="searchQuery || filters.selmaho || filters.username || filters.word_type" class="mt-6">
-    <PaginationComponent
+     <PaginationComponent
       :current-page="currentPage"
       :total-pages="totalPages"
       :total="total"
@@ -102,10 +100,11 @@
       @next="nextPage"
     />
   </div>
+
 </template>
 
-<script setup>
-import { ref, onMounted, watch } from 'vue'
+<script setup lang="ts">
+import { ref, onMounted, watch, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { nextTick } from 'vue'
@@ -121,24 +120,30 @@ import SearchFormSkeleton from '@/components/skeletons/SearchFormSkeleton.vue'
 import { useLanguageSelection } from '@/composables/useLanguageSelection'
 import { useSeoHead } from '@/composables/useSeoHead'
 import { SearchQueue } from '@/utils/searchQueue'
+import { queryStr } from '@/utils/routeQuery'
 import { normalizeSearchQuery } from '@/utils/searchQueryUtils'
 
 const router = useRouter()
 const route = useRoute()
 const { getInitialLanguages, saveLanguages } = useLanguageSelection()
 
+type FastSearchDefinitionRow = {
+  definitionid: number
+  langid?: number
+}
+
 // State
-const definitions = ref([])
-const decomposition = ref([])
+const definitions = ref<FastSearchDefinitionRow[]>([])
+const decomposition = ref<string[]>([])
 const total = ref(0)
-const currentPage = ref(parseInt(route.query.page) || 1)
+const currentPage = ref(parseInt(queryStr(route.query.page), 10) || 1)
 const totalPages = ref(1)
 const initialized = ref(false)
 
 // Get search query from localStorage or use default
-const getInitialSearchQuery = () => {
+const getInitialSearchQuery = (): string => {
   if (typeof window === 'undefined') return ''
-  return normalizeSearchQuery(route.query.q || '')
+  return normalizeSearchQuery(queryStr(route.query.q)) as string
 }
 
 const searchQuery = ref(getInitialSearchQuery())
@@ -148,16 +153,17 @@ const error = ref(null)
 const searchFormRef = ref(null)
 
 const { t, locale } = useI18n()
-useSeoHead({ title: searchQuery.value || 'Fast Search', locale: locale.value })
+const pageTitle = computed(() => searchQuery.value?.trim() || 'Fast Search')
+useSeoHead({ title: pageTitle })
 
 // Filter state
 const languages = ref([])
 const filters = ref({
   selmaho: '',
   username: '',
-  word_type: null,
+  word_type: null as number | null,
   isExpanded: false,
-  selectedLanguages: [],
+  selectedLanguages: [] as number[],
   source_langid: 1,
   searchInPhrases: route.query.searchInPhrases !== 'false',
 })
@@ -166,14 +172,24 @@ const filters = ref({
 const definitionsSearchQueue = new SearchQueue()
 
 // Fetch definitions using fast search
-const fetchDefinitions = async (page, search = '') => {
+const fetchDefinitions = async (page: number, search = '') => {
   isLoading.value = true
   error.value = null
 
   const { requestId, signal } = definitionsSearchQueue.createRequest()
 
   try {
-    const params = {
+    const params: {
+      page: number
+      per_page: number
+      search: string
+      username: string | undefined
+      languages?: string
+      word_type?: number
+      source_langid?: number
+      selmaho?: string
+      search_in_phrases?: boolean
+    } = {
       page,
       per_page: 10,
       search: search,
@@ -256,7 +272,7 @@ const handleFiltersReset = async () => {
     username: '',
     isExpanded: false,
     selectedLanguages: [],
-    word_type: '',
+    word_type: null,
     source_langid: 1,
     searchInPhrases: true,
   }
@@ -284,7 +300,7 @@ const updateUrlWithFilters = () => {
 }
 
 // Search handling
-const performSearch = ({ query, mode }) => {
+const performSearch = ({ query, mode }: { query: string; mode: string }) => {
   const updateParams = {
     ...route.query,
     q: query || undefined,
@@ -307,7 +323,7 @@ const performSearch = ({ query, mode }) => {
     return
   }
 
-  const normalizedQuery = normalizeSearchQuery(query)
+  const normalizedQuery = normalizeSearchQuery(query) as string
   searchQuery.value = normalizedQuery
   if (typeof window !== 'undefined') {
     localStorage.setItem('searchQuery', normalizedQuery)
@@ -343,34 +359,35 @@ const syncFromRoute = () => {
   const query = route.query
 
   if (query.q !== undefined) {
-    const normalized = normalizeSearchQuery(query.q)
+    const normalized = normalizeSearchQuery(queryStr(query.q)) as string
     searchQuery.value = normalized
     if (typeof window !== 'undefined') localStorage.setItem('searchQuery', normalized)
   }
 
   if (query.page !== undefined) {
-    currentPage.value = parseInt(query.page) || 1
+    currentPage.value = parseInt(queryStr(query.page), 10) || 1
   }
 
   // Sync filters from URL
   if (query.langs !== undefined) {
-    filters.value.selectedLanguages = query.langs.split(',').map(Number)
+    filters.value.selectedLanguages = queryStr(query.langs).split(',').map(Number)
   }
 
   if (query.selmaho !== undefined) {
-    filters.value.selmaho = query.selmaho
+    filters.value.selmaho = queryStr(query.selmaho)
   }
 
   if (query.username !== undefined) {
-    filters.value.username = query.username
+    filters.value.username = queryStr(query.username)
   }
 
   if (query.word_type !== undefined) {
-    filters.value.word_type = query.word_type ? Number(query.word_type) : null
+    const wt = queryStr(query.word_type)
+    filters.value.word_type = wt ? Number(wt) : null
   }
 
   if (query.source_langid !== undefined) {
-    filters.value.source_langid = parseInt(query.source_langid) || 1
+    filters.value.source_langid = parseInt(queryStr(query.source_langid), 10) || 1
   } else {
     filters.value.source_langid = 1
   }
@@ -382,8 +399,12 @@ const syncFromRoute = () => {
   }
 }
 
-const handleKeyDown = (event) => {
-  if (event.key === '/' && !['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) {
+const handleKeyDown = (event: KeyboardEvent) => {
+  if (
+    event.key === '/' &&
+    document.activeElement &&
+    !['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)
+  ) {
     event.preventDefault()
     searchFormRef.value?.$refs.searchInput?.focus()
   }
@@ -401,7 +422,7 @@ onMounted(async () => {
     const queryToPush = { ...route.query }
     let pushNeeded = false
 
-    if (searchQuery.value && route.query.q !== searchQuery.value) {
+    if (searchQuery.value && queryStr(route.query.q) !== searchQuery.value) {
       queryToPush.q = searchQuery.value
       pushNeeded = true
     } else if (!searchQuery.value && route.query.q === undefined) {
@@ -432,7 +453,7 @@ onMounted(async () => {
   } finally {
     isInitialLoading.value = false
 
-    if (route.name === 'FastSearch' || route.name?.startsWith('FastSearch-')) {
+    if (route.name === 'FastSearch' || (typeof route.name === 'string' && route.name.startsWith('FastSearch-'))) {
       await nextTick()
       if (searchFormRef.value && !isInitialLoading.value) {
         searchFormRef.value.focusInput()
@@ -464,14 +485,14 @@ watch(
       newQuery.source_langid !== oldQuery?.source_langid ||
       newQuery.searchInPhrases !== oldQuery?.searchInPhrases
 
-    currentPage.value = parseInt(newQuery.page) || 1
+    currentPage.value = parseInt(queryStr(newQuery.page), 10) || 1
 
     if (relevantParamsChanged) {
       syncFromRoute()
       await fetchData()
 
       if (
-        (route.name === 'FastSearch' || route.name?.startsWith('FastSearch-')) &&
+        (route.name === 'FastSearch' || (typeof route.name === 'string' && route.name.startsWith('FastSearch-'))) &&
         searchFormRef.value &&
         !isInitialLoading.value
       ) {
@@ -483,3 +504,4 @@ watch(
   { deep: true, immediate: true }
 )
 </script>
+

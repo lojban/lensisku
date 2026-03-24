@@ -1,52 +1,41 @@
 <template>
-  <TabbedPageHeader
+   <TabbedPageHeader
     :tabs="tabs"
     :active-tab="activeTab"
     :page-title="pageTitle"
     @tab-click="handleTabClick"
-  />
-
-  <!-- Loading State with Skeleton -->
-  <div v-if="isLoading" class="space-y-4">
-    <SkeletonActivityItem v-for="n in 5" :key="n" />
-  </div>
-
-  <!-- Content -->
+  /> <!-- Loading State with Skeleton -->
+  <div v-if="isLoading" class="space-y-4"> <SkeletonActivityItem v-for="n in 5" :key="n" /> </div>
+   <!-- Content -->
   <div v-else class="space-y-4">
-    <ActivityBookmarks
+     <ActivityBookmarks
       v-if="activeTab === 'bookmarked'"
       :comments="bookmarks"
       :format-date="formatDate"
       :no-items-message="t('reactionsPage.noBookmarks')"
-    />
-    <ActivityReactions
+    /> <ActivityReactions
       v-else-if="activeTab === 'reactions'"
       :comments="reactions"
       :format-date="formatDate"
       :no-items-message="t('reactionsPage.noReactions')"
-    />
-    <ActivityComments
+    /> <ActivityComments
       v-else-if="activeTab === 'comments'"
       :comments="comments"
       :format-date="formatDate"
       :no-items-message="t('reactionsPage.noComments')"
-    />
-    <ActivityDefinitions
+    /> <ActivityDefinitions
       v-else-if="activeTab === 'definitions'"
       :definitions="definitions"
       :format-date="formatDate"
       :no-items-message="t('reactionsPage.noDefinitions')"
-    />
-    <ActivityVotes
+    /> <ActivityVotes
       v-else-if="activeTab === 'votes'"
       :votes="votes"
       :format-date="formatDate"
       :no-items-message="t('reactionsPage.noVotes')"
-    />
-
-    <!-- PaginationComponent -->
+    /> <!-- PaginationComponent -->
     <div v-if="total > perPage">
-      <PaginationComponent
+       <PaginationComponent
         :current-page="currentPage"
         :total-pages="totalPages"
         :total="total"
@@ -55,10 +44,12 @@
         @next="() => changePage(currentPage + 1)"
       />
     </div>
+
   </div>
+
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { MessageSquare, Book, Vote, BookmarkCheck } from 'lucide-vue-next'
 import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -83,6 +74,7 @@ import TabbedPageHeader from '@/components/TabbedPageHeader.vue'
 import { useAuth } from '@/composables/useAuth'
 import { useError } from '@/composables/useError'
 import { useSeoHead } from '@/composables/useSeoHead'
+import { queryStr } from '@/utils/routeQuery'
 
 const router = useRouter()
 const route = useRoute()
@@ -215,7 +207,7 @@ const tabs = computed(() => [
 ])
 
 const pageTitle = ref(tabs.value[0].label)
-useSeoHead({ title: pageTitle }, locale.value)
+useSeoHead({ title: pageTitle })
 
 // Update title when tab changes
 watch(
@@ -233,10 +225,10 @@ onMounted(() => {
     (loading) => {
       if (!loading) {
         // Determine initial tab *after* auth is loaded
+        const tabQ = queryStr(route.query.tab)
         const initialTab =
-          route.query.tab &&
-          ['bookmarked', 'reactions', 'comments', 'definitions', 'votes'].includes(route.query.tab)
-            ? route.query.tab
+          tabQ && ['bookmarked', 'reactions', 'comments', 'definitions', 'votes'].includes(tabQ)
+            ? tabQ
             : 'bookmarked'
         activeTab.value = initialTab
         fetchData(initialTab)
@@ -246,3 +238,4 @@ onMounted(() => {
   )
 })
 </script>
+

@@ -1,26 +1,28 @@
 <template>
-  <!-- Header with word being discussed -->
+   <!-- Header with word being discussed -->
   <div class="mb-6">
+
     <div v-if="valsiDetails" class="mb-4">
+
       <h2 v-if="!definitionId" class="text-2xl font-bold space-x-2 select-none">
-        <span class="text-gray-500 italic">{{ t('commentList.discussingEntry') }}</span>
-        <RouterLink
+         <span class="text-gray-500 italic">{{ t('commentList.discussingEntry') }}</span
+        > <RouterLink
           v-if="valsiDetails.valsiid"
           :to="`/valsi/${valsiDetails.word.replace(/ /g, '_')}`"
           class="text-blue-700 hover:text-blue-800 hover:underline"
-        >
-          {{ valsiDetails.word }}
-        </RouterLink>
-        <span v-else class="text-blue-700">
-          {{ valsiDetails.word }}
-        </span>
+          > {{ valsiDetails.word }} </RouterLink
+        > <span v-else class="text-blue-700"> {{ valsiDetails.word }} </span>
       </h2>
+
       <h2 v-else class="text-2xl font-bold space-x-2 select-none">
-        <span class="text-gray-500 italic">{{ t('commentList.discussingDefinition') }}</span>
+         <span class="text-gray-500 italic">{{ t('commentList.discussingDefinition') }}</span
+        >
       </h2>
+
     </div>
+
     <div v-if="valsiDetails && definitionDetails" class="mb-4">
-      <DefinitionCard
+       <DefinitionCard
         :definition="definitionDetails"
         :languages="languages"
         :disable-discussion-button="true"
@@ -28,53 +30,47 @@
         :show-definition-number="true"
       />
     </div>
-
-    <!-- Action buttons -->
+     <!-- Action buttons -->
     <div class="flex flex-wrap gap-2 w-full lg:w-auto justify-center">
-      <label
+       <label
         class="inline-flex items-center"
         :disabled="flatStyleEnforced"
         :class="[!flatStyle && !flatStyleEnforced ? ' btn-aqua-slate' : 'btn-aqua-white']"
-      >
-        <input
+        > <input
           type="checkbox"
           class="checkmark-aqua"
           :checked="!flatStyle && !flatStyleEnforced"
           :disabled="flatStyleEnforced"
           @change="toggleFlatStyle"
-        />
-        <span class="text-sm select-none" :class="{ 'text-gray-400': flatStyleEnforced }">{{
+        /> <span class="text-sm select-none" :class="{ 'text-gray-400': flatStyleEnforced }">{{
           t('commentList.threaded')
-        }}</span>
-      </label>
-      <button
+        }}</span
+        > </label
+      > <button
         v-if="auth.state.isLoggedIn && comments.length > 0"
         class="btn-aqua-emerald"
         @click="handleNewTopLevelComment"
       >
-        <AudioWaveform class="h-4 w-4" />
-        <span>
-          {{ t('commentList.newWave') }}
-        </span>
-      </button>
-      <button
+         <AudioWaveform class="h-4 w-4" /> <span> {{ t('commentList.newWave') }} </span> </button
+      > <button
         v-if="commentId > 0 && !!currentComment?.parent_id"
         class="inline-flex items-center btn-aqua-purple"
         @click="goToParent"
       >
-        <ArrowLeft class="h-5 w-5" />
-        {{ t('commentList.parent') }}
-      </button>
-      <button v-if="commentId > 0" class="inline-flex items-center btn-aqua-rose" @click="goToRoot">
-        <Home class="h-5 w-5" />
-        {{ t('commentList.waveRoot') }}
-      </button>
+         <ArrowLeft class="h-5 w-5" /> {{ t('commentList.parent') }} </button
+      > <button
+        v-if="commentId > 0"
+        class="inline-flex items-center btn-aqua-rose"
+        @click="goToRoot"
+      >
+         <Home class="h-5 w-5" /> {{ t('commentList.waveRoot') }} </button
+      >
     </div>
-  </div>
 
-  <!-- New top-level comment form -->
+  </div>
+   <!-- New top-level comment form -->
   <div v-if="showTopLevelForm" class="mb-6">
-    <CommentForm
+     <CommentForm
       :is-submitting="isSubmitting"
       :initial-values="newComment"
       class="border border-blue-200 rounded-lg shadow-sm"
@@ -82,19 +78,18 @@
       @cancel="cancelComment"
     />
   </div>
-
-  <!-- Comments list -->
+   <!-- Comments list -->
   <div class="space-y-4">
-    <template v-if="!isLoading">
-      <!-- Process all comments -->
-      <template v-if="commentId > 0">
-        <!-- Single comment thread view -->
+     <template v-if="!isLoading"
+      > <!-- Process all comments --> <template v-if="commentId > 0"
+        > <!-- Single comment thread view -->
         <div v-for="comment in targetCommentThread" :key="comment.comment_id" class="relative">
+
           <div
             :style="{ marginLeft: `${flatStyle ? 0 : getReplyMargin(comment.level)}rem` }"
             @mouseup="handleTextSelection(comment.comment_id, $event)"
           >
-            <CommentItem
+             <CommentItem
               :comment="comment"
               :valsi-id="valsiId"
               :natlang-word-id="natlangWordId"
@@ -102,29 +97,30 @@
               :reply-enabled="true"
               :flat-style="flatStyle"
               @reply="handleReply"
-            />
-
-            <!-- Inline reply form -->
+            /> <!-- Inline reply form -->
             <div v-if="replyToId === comment.comment_id" class="ml-4">
-              <CommentForm
+               <CommentForm
                 :is-submitting="isSubmitting"
                 :initial-values="newComment"
-                is-reply
+                :is-reply="true"
                 @submit="submitComment"
                 @cancel="cancelComment"
               />
             </div>
+
           </div>
+
         </div>
-      </template>
-      <template v-else>
-        <!-- All comments in order -->
+         </template
+      > <template v-else
+        > <!-- All comments in order -->
         <div v-for="comment in processedComments" :key="comment.comment_id" class="relative">
+
           <div
             :style="{ marginLeft: `${getReplyMargin(comment.level)}rem` }"
             @mouseup="handleTextSelection(comment.comment_id, $event)"
           >
-            <CommentItem
+             <CommentItem
               :comment="comment"
               :level="comment.level"
               :valsi-id="valsiId"
@@ -133,25 +129,25 @@
               :reply-enabled="true"
               :flat-style="flatStyle"
               @reply="handleReply"
-            />
-
-            <!-- Inline reply form -->
+            /> <!-- Inline reply form -->
             <div v-if="replyToId === comment.comment_id" class="ml-4">
-              <CommentForm
+               <CommentForm
                 :is-submitting="isSubmitting"
                 :initial-values="newComment"
-                is-reply
+                :is-reply="true"
                 @submit="submitComment"
                 @cancel="cancelComment"
               />
             </div>
-          </div>
-        </div>
-      </template>
-    </template>
 
+          </div>
+
+        </div>
+         </template
+      > </template
+    >
     <div v-if="!isLoading && totalPages > 1" class="mt-6">
-      <PaginationComponent
+       <PaginationComponent
         :current-page="currentPage"
         :total-pages="totalPages"
         :total="total"
@@ -160,33 +156,26 @@
         @next="changePage(currentPage + 1)"
       />
     </div>
-
-    <!-- Loading state -->
+     <!-- Loading state -->
     <div v-if="isLoading" class="flex justify-center py-8">
-      <Loader2 class="animate-spin h-8 w-8 text-blue-600" />
+       <Loader2 class="animate-spin h-8 w-8 text-blue-600" />
     </div>
-
-    <!-- Empty state -->
+     <!-- Empty state -->
     <div
       v-if="!isLoading && comments.length === 0"
       class="flex flex-col justify-center text-center py-12 bg-blue-50 rounded-lg border border-blue-100 p-4"
     >
-      <MessageSquare class="mx-auto h-12 w-12 text-blue-400" />
-      <p class="my-4 text-gray-600">
-        {{ t('commentList.noComments') }}
-      </p>
-      <button
+       <MessageSquare class="mx-auto h-12 w-12 text-blue-400" />
+      <p class="my-4 text-gray-600"> {{ t('commentList.noComments') }} </p>
+       <button
         v-if="auth.state.isLoggedIn"
         class="btn-aqua-emerald h-8 text-base mx-auto"
         @click="handleNewTopLevelComment"
       >
-        <AudioWaveform class="h-4 w-4" />
-        <span>
-          {{ t('commentList.newDiscussionWave') }}
-        </span>
-      </button>
+         <AudioWaveform class="h-4 w-4" /> <span> {{ t('commentList.newDiscussionWave') }} </span> </button
+      >
     </div>
-    <!-- Floating quote button -->
+     <!-- Floating quote button -->
     <div
       v-if="quotePosition.visible"
       class="fixed z-50 bg-white border border-gray-300 rounded-md shadow-sm p-1"
@@ -195,18 +184,19 @@
         top: `${quotePosition.y}px`,
       }"
     >
-      <button
+       <button
         @click="handleQuote"
         class="text-sm px-2 py-1 hover:bg-gray-100 rounded-md flex items-center"
       >
-        <Quote class="w-4 h-4 mr-1" />
-        {{ t('commentList.quoteSelectedText') }}
-      </button>
+         <Quote class="w-4 h-4 mr-1" /> {{ t('commentList.quoteSelectedText') }} </button
+      >
     </div>
+
   </div>
+
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ArrowLeft, Home, MessageSquare, AudioWaveform, Loader2, Quote } from 'lucide-vue-next'
 import { ref, computed, onMounted, watchEffect, nextTick, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -225,6 +215,7 @@ import PaginationComponent from '@/components/PaginationComponent.vue'
 import { useAuth } from '@/composables/useAuth'
 import { useError } from '@/composables/useError'
 import { useSeoHead } from '@/composables/useSeoHead'
+import { queryStr } from '@/utils/routeQuery'
 
 // Props
 const props = defineProps({
@@ -275,7 +266,7 @@ const newComment = ref({
   content: '',
 })
 const flatStyle = ref(
-  typeof window === 'undefined' ? '' : localStorage.getItem('commentFlatStyle') === 'true'
+  typeof window === 'undefined' ? false : localStorage.getItem('commentFlatStyle') === 'true'
 )
 const flatStyleEnforced = ref(false)
 const selectedCommentId = ref(null)
@@ -286,12 +277,12 @@ const toggleFlatStyle = () => {
   if (typeof window === 'undefined') return
 
   flatStyle.value = !flatStyle.value
-  localStorage.setItem('commentFlatStyle', flatStyle.value)
+  localStorage.setItem('commentFlatStyle', String(flatStyle.value))
 }
 
 const processedComments = ref([])
 
-const processComments = (comments, isFlat) => {
+const processComments = (comments: Array<Record<string, unknown> & { comment_id: number; parent_id: number }>, isFlat: boolean) => {
   levelMap.clear()
   return comments.map((comment) => {
     let level = 0
@@ -338,13 +329,13 @@ const targetCommentThread = computed(() => {
   return thread
 })
 
-const scrollToComment = async (commentId) => {
+const scrollToComment = async (commentId: number | string) => {
   // Wait for Vue to update the DOM
   await nextTick()
   // Wait an additional tick to ensure comments are rendered
   await nextTick()
 
-  const commentElement = document.querySelector(`[data-comment-id="${commentId}"]`)
+  const commentElement = document.querySelector(`[data-comment-id="${String(commentId)}"]`)
 
   if (commentElement) {
     // Add a small delay to ensure smooth scrolling
@@ -360,7 +351,7 @@ const scrollToComment = async (commentId) => {
   }
 }
 
-const getReplyMargin = (level) => {
+const getReplyMargin = (level: number) => {
   return Math.min(Math.max(level - 1, 0) * 2, 8)
 }
 
@@ -373,11 +364,11 @@ const handleNewTopLevelComment = () => {
   }
 }
 
-const handleTextSelection = (commentId, event) => {
+const handleTextSelection = (commentId: number, event: MouseEvent) => {
   const selection = window.getSelection()
   if (selection.toString().trim() && selection.rangeCount > 0) {
     const range = selection.getRangeAt(0)
-    if (event.currentTarget.contains(range.commonAncestorContainer)) {
+    if ((event.currentTarget as Node).contains(range.commonAncestorContainer)) {
       selectedText.value = selection.toString().trim()
       selectedCommentId.value = commentId
       const rect = range.getBoundingClientRect()
@@ -406,7 +397,7 @@ const handleQuote = () => {
       const observer = new MutationObserver(() => {
         const editorElement = formComponent.querySelector('.ProseMirror')
         if (editorElement) {
-          editorElement.focus()
+          ;(editorElement as HTMLElement).focus()
           observer.disconnect()
         }
       })
@@ -419,7 +410,7 @@ const handleQuote = () => {
   })
 }
 
-const handleReply = (commentId) => {
+const handleReply = (commentId: number) => {
   replyToId.value = commentId
   newComment.value = { subject: '', content: '' }
   showTopLevelForm.value = false
@@ -429,7 +420,7 @@ const handleReply = (commentId) => {
       const observer = new MutationObserver(() => {
         const editorElement = formComponent.querySelector('.ProseMirror')
         if (editorElement) {
-          editorElement.focus()
+          ;(editorElement as HTMLElement).focus()
           observer.disconnect()
         }
       })
@@ -442,10 +433,10 @@ const handleReply = (commentId) => {
   })
 }
 
-const performFetchComments = async (isInitialLoad = false, scrollTo) => {
+const performFetchComments = async (isInitialLoad = false, scrollTo?: number) => {
   if (typeof window === 'undefined') return
 
-  scrollTo = scrollTo || props.scrollTo
+  const effectiveScroll = scrollTo ?? props.scrollTo
   try {
     const buildQuery = buildQueryString(!isInitialLoad)
 
@@ -477,10 +468,10 @@ const performFetchComments = async (isInitialLoad = false, scrollTo) => {
 
     await nextTick()
 
-    if (scrollTo > 0) {
+    if (effectiveScroll > 0) {
       // Add a small delay to ensure smooth scrolling
       setTimeout(() => {
-        scrollToComment(scrollTo)
+        scrollToComment(effectiveScroll)
       }, 50)
     }
   } catch (error) {
@@ -500,28 +491,28 @@ const totalPages = computed(() => Math.ceil(total.value / perPage.value))
 
 const buildQueryString = (includePage = true) => {
   const params = new URLSearchParams()
-  if (props.valsiId) params.append('valsi_id', props.valsiId)
-  if (props.natlangWordId) params.append('natlang_word_id', props.natlangWordId)
-  if (props.definitionId) params.append('definition_id', props.definitionId)
-  if (props.commentId) params.append('comment_id', props.commentId)
-  if (props.scrollTo) params.append('scroll_to', props.scrollTo)
-  if (props.threadId) params.append('thread_id', props.threadId)
+  if (props.valsiId) params.append('valsi_id', String(props.valsiId))
+  if (props.natlangWordId) params.append('natlang_word_id', String(props.natlangWordId))
+  if (props.definitionId) params.append('definition_id', String(props.definitionId))
+  if (props.commentId) params.append('comment_id', String(props.commentId))
+  if (props.scrollTo) params.append('scroll_to', String(props.scrollTo))
+  if (props.threadId) params.append('thread_id', String(props.threadId))
   if (includePage) {
-    params.append('page', currentPage.value)
+    params.append('page', String(currentPage.value))
   }
-  params.append('per_page', perPage.value)
+  params.append('per_page', String(perPage.value))
 
   return params.toString()
 }
 
-const changePage = (page) => {
+const changePage = (page: number) => {
   currentPage.value = page
   // Subsequent page changes should include page parameter
   performFetchComments(false)
   // window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-const submitComment = async (formData) => {
+const submitComment = async (formData: { subject: string; content: string }) => {
   try {
     isSubmitting.value = true
     const response = await addComment({
@@ -534,7 +525,7 @@ const submitComment = async (formData) => {
     })
     if (response.status === 200) {
       const newCommentId = response.data.comment_id
-      await performFetchComments()
+      await performFetchComments(false)
       cancelComment()
       router.replace({
         query: {
@@ -618,14 +609,11 @@ const metaDescription = computed(() => {
 
 const canonicalPath = computed(() => route.fullPath)
 
-useSeoHead(
-  {
-    title: pageTitle,
-    description: metaDescription,
-    canonical: canonicalPath,
-  },
-  locale.value
-)
+useSeoHead({
+  title: pageTitle,
+  description: metaDescription,
+  canonical: canonicalPath,
+})
 
 const fetchDefinitionsAndDetails = async () => {
   if (props.valsiId) {
@@ -659,11 +647,13 @@ watchEffect(async () => {
     route.query.thread_id
 
   if (needsRefresh) {
-    await performFetchComments(true, route.query.scroll_to)
+    const st = route.query.scroll_to
+    const scrollNum = st !== undefined ? Number(queryStr(st)) || 0 : undefined
+    await performFetchComments(true, scrollNum)
   } else if (route.query.scroll_to) {
     // Only scroll if the data hasn't changed
     setTimeout(() => {
-      scrollToComment(route.query.scroll_to)
+      scrollToComment(queryStr(route.query.scroll_to))
     }, 50)
   }
 })
@@ -680,3 +670,4 @@ watchEffect(async () => {
   }
 }
 </style>
+

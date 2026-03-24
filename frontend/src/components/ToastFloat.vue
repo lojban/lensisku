@@ -1,6 +1,7 @@
 <template>
-  <Teleport to="body">
-    <Transition name="fade">
+   <Teleport to="body"
+    > <Transition name="fade"
+      >
       <div
         v-if="show"
         class="fixed left-1/2 top-1/2 -translate-y-1/2 -translate-x-1/2 w-fit max-w-[90vw] mx-auto px-4 py-2 rounded-lg shadow-lg z-[65]"
@@ -9,16 +10,18 @@
           'border-red-400 bg-red-100 text-red-800': type === 'error',
         }"
       >
+
         <div class="flex items-center align-center gap-2 text-lg">
-          {{ message }}
-          <button @click="closeToast">&times;</button>
+           {{ message }} <button @click="closeToast">&times;</button>
         </div>
+
       </div>
-    </Transition>
-  </Teleport>
+       </Transition
+    > </Teleport
+  >
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, watch } from 'vue'
 
 const props = defineProps({
@@ -33,7 +36,8 @@ const props = defineProps({
   type: {
     type: String,
     default: 'success',
-    validator: (value) => ['success', 'error'].includes(value),
+    validator: (value: unknown) =>
+      typeof value === 'string' && ['success', 'error'].includes(value),
   },
   duration: {
     type: Number,
@@ -79,3 +83,4 @@ watch(
   animation: fade-in-up 0.3s ease-out;
 }
 </style>
+
