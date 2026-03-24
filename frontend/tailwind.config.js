@@ -430,6 +430,19 @@ export default {
               },
             },
           },
+          // Collection list sort: selected = option color + glow; others = btn-aqua-white
+          '.btn-aqua-sort-idle': {
+            '@apply z-10 transition-[filter] duration-200 ease-out': {},
+          },
+          '.btn-aqua-sort-active': {
+            '@apply z-20 relative transition-[filter] duration-200 ease-out': {},
+            filter:
+              'drop-shadow(0 0 0.3rem hsla(var(--aqua-hue, 215), 82%, 58%, 0.75)) drop-shadow(0 0 0.9rem hsla(var(--aqua-hue, 215), 78%, 55%, 0.5))',
+            '&:hover:not(:disabled)': {
+              filter:
+                'brightness(1.1) drop-shadow(0 0 0.3rem hsla(var(--aqua-hue, 215), 82%, 58%, 0.8)) drop-shadow(0 0 0.9rem hsla(var(--aqua-hue, 215), 78%, 55%, 0.55))',
+            },
+          },
           '.btn-aqua-group-item': {
             borderRadius: 0,
             '&::after': {

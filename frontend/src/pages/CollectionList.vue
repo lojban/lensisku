@@ -156,7 +156,7 @@
     <div class="flex flex-row items-center gap-2 sm:block">
 
       <div
-        class="btn-group-forced flex flex-nowrap justify-center min-w-0 overflow-x-auto sm:overflow-visible"
+        class="flex flex-nowrap justify-center min-w-0 overflow-x-auto sm:overflow-visible gap-0 py-2"
         role="group"
         aria-label="Sort order"
       >
@@ -164,8 +164,11 @@
           v-for="opt in sortOptions"
           :key="opt.value"
           type="button"
-          class="btn-group-item btn-get px-2 py-1 sm:px-4 sm:py-1.5 shrink-0 flex items-center justify-center gap-1.5"
-          :class="{ 'btn-group-item-selected': sortBy === opt.value }"
+          class="btn-aqua-group-item relative shrink-0 flex h-6 items-center justify-center gap-1.5 px-2 sm:px-4 !cursor-pointer"
+          :class="[
+            sortBy === opt.value ? opt.aquaClass : 'btn-aqua-white',
+            sortBy === opt.value ? 'btn-aqua-sort-active' : 'btn-aqua-sort-idle',
+          ]"
           :title="opt.label"
           :aria-pressed="sortBy === opt.value"
           @click="sortBy = opt.value"
@@ -357,7 +360,10 @@ const initialView = () => {
 }
 const viewMode = ref(initialView())
 const collections = ref([])
+/** Full-page spinner only before the first completed list fetch; refetches keep prior rows visible. */
 const isLoading = ref(true)
+const hasLoadedOnce = ref(false)
+let loadRequestId = 0
 const sortBy = ref('active_week')
 const searchQuery = ref('')
 const hasFlashcardsOnly = ref(false)
@@ -376,10 +382,30 @@ let searchDebounceTimer = null
 const totalPages = computed(() => Math.max(1, Math.ceil(totalCollections.value / perPage.value)))
 
 const sortOptions = computed(() => [
-  { value: 'active_week', label: t('collectionList.sortActiveWeek'), icon: CalendarDays },
-  { value: 'active_month', label: t('collectionList.sortActiveMonth'), icon: Calendar },
-  { value: 'active_all', label: t('collectionList.sortActiveAll'), icon: Trophy },
-  { value: 'newest', label: t('collectionList.sortNewest'), icon: ArrowDown },
+  {
+    value: 'active_week',
+    label: t('collectionList.sortActiveWeek'),
+    icon: CalendarDays,
+    aquaClass: 'btn-aqua-sky',
+  },
+  {
+    value: 'active_month',
+    label: t('collectionList.sortActiveMonth'),
+    icon: Calendar,
+    aquaClass: 'btn-aqua-blue',
+  },
+  {
+    value: 'active_all',
+    label: t('collectionList.sortActiveAll'),
+    icon: Trophy,
+    aquaClass: 'btn-aqua-amber',
+  },
+  {
+    value: 'newest',
+    label: t('collectionList.sortNewest'),
+    icon: ArrowDown,
+    aquaClass: 'btn-aqua-emerald',
+  },
 ])
 
 const selectedSortLabel = computed(
@@ -412,7 +438,12 @@ const fetchStreakData = async () => {
 }
 
 const fetchCollections = async () => {
-  isLoading.value = true
+  const requestId = ++loadRequestId
+  const isInitialLoad = !hasLoadedOnce.value
+  if (isInitialLoad) {
+    isLoading.value = true
+  }
+
   try {
     // Only allow 'my' view mode when logged in
     if (!auth.state.isLoggedIn) {
@@ -430,6 +461,9 @@ const fetchCollections = async () => {
     const response = await (viewMode.value === 'my' && auth.state.isLoggedIn
       ? getCollections(params)
       : getPublicCollections(params))
+
+    if (requestId !== loadRequestId) return
+
     collections.value = response.data.collections || []
     totalCollections.value = Number(response.data.total || 0)
 
@@ -439,10 +473,14 @@ const fetchCollections = async () => {
       return
     }
   } catch (error) {
+    if (requestId !== loadRequestId) return
     console.error('Error fetching collections:', error)
     totalCollections.value = 0
   } finally {
-    isLoading.value = false
+    if (requestId === loadRequestId) {
+      isLoading.value = false
+      hasLoadedOnce.value = true
+    }
   }
 }
 
@@ -571,6 +609,16 @@ watch(
           ? 'my'
           : 'public'
     if (viewMode.value !== next) viewMode.value = next
+  }
+)
+
+watch(
+  () => auth.state.isLoggedIn,
+  (loggedIn, wasLoggedIn) => {
+    if (!loggedIn && wasLoggedIn) {
+      collections.value = []
+      hasLoadedOnce.value = false
+    }
   }
 )
 

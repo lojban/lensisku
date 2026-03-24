@@ -1,11 +1,12 @@
 #![allow(clippy::expect_used, clippy::unwrap_used)]
 
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::env;
 use std::sync::Arc;
 use std::time::Duration;
 
 use actix_web_lab::sse;
+use futures::future::join_all;
 use deadpool_postgres::Pool;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -65,6 +66,9 @@ struct ChatCompletionRequest {
     tools: Option<Vec<Tool>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     tool_choice: Option<serde_json::Value>,
+    /// OpenAI-compatible: when true, the model may return several tool calls in one turn.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    parallel_tool_calls: Option<bool>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -413,6 +417,21 @@ fn system_prompt_base(locale: Option<&str>) -> String {
          searched** in this conversation, skip straight to step 3—do not search again.\n\n",
     );
 
+    // ── Tool use (parallel calls) — adapted from Roo-Code tool-use guidelines ──
+    base.push_str(
+        "## Tool use\n\
+         The chat API allows **multiple tool calls in a single assistant message** when \
+         that saves turns (e.g. several independent lookups). Prefer native tool-calling; \
+         the host runs those calls **in parallel** when they do not depend on each other.\n\
+         - Decide what evidence you still need vs. what is already in this thread or the \
+         official cmavo/gismu list.\n\
+         - If several **independent** searches would help (different valsi or unrelated \
+         concepts), issue them together in one step instead of one-by-one.\n\
+         - If a later search should use wording informed by an earlier hit, run searches \
+         **across separate turns** so each step is grounded in prior tool results. Do not \
+         assume a search outcome before you have seen it.\n\n",
+    );
+
     // ── Trusted sources (hierarchy) ──────────────────────────────────────
     base.push_str(
         "## Trusted sources\n\
@@ -668,6 +687,8 @@ fn jbovlaste_tool_schema() -> Tool {
                           similarity). Your ONLY tool—call before stating facts about \
                           Lojban words or meanings, unless the official cmavo/gismu block \
                           in the system message already answers. \
+                          You may emit **several** jbovlaste_semantic_search calls in one \
+                          message when lookups are independent (different words or topics). \
                           Call when: new valsi/topic, or prior results were insufficient—\
                           then use a **different** `query` (no duplicate searches). \
                           Do NOT call when this thread already has search-backed \
@@ -727,7 +748,7 @@ fn jbovlaste_tool_schema() -> Tool {
     }
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 struct ToolArgs {
     query: String,
     #[serde(default)]
@@ -737,6 +758,25 @@ struct ToolArgs {
     languages: Option<Vec<String>>,
     #[serde(default)]
     source_language: Option<String>,
+}
+
+/// One assistant turn may include several tool calls; we prepare slots then run searches concurrently.
+#[derive(Debug)]
+enum PreparedToolSlot {
+    Immediate {
+        tool_call_id: Option<String>,
+        name: Option<String>,
+        content: String,
+    },
+    Search {
+        tool_call_id: Option<String>,
+        name: Option<String>,
+        args: ToolArgs,
+        search_query: String,
+        assistant_reasoning: Option<String>,
+        global_step_index: usize,
+        action_desc: String,
+    },
 }
 
 static LLM_CORNER_BRACKET_SEGMENTS: Lazy<Regex> =
@@ -1324,6 +1364,7 @@ async fn run_agent_loop_inner(
                 messages: messages.clone(),
                 tools: Some(tools.clone()),
                 tool_choice: Some(json!("auto")),
+                parallel_tool_calls: Some(true),
             };
             match openrouter_chat_with_retry(&label, {
                 let client = client.clone();
@@ -1415,24 +1456,23 @@ async fn run_agent_loop_inner(
                 });
                 emit_sse_user_visible(&persist, tx, payload).await?;
             }
-            // Execute each tool call and append tool results. Recover from parse/tool errors by
-            // feeding an error message back to the LLM so it can try again.
+            // Prepare tool slots (validation, repetition guard), then run semantic searches in
+            // parallel while preserving tool_result order to match assistant tool_calls (OpenAI protocol).
+            let base_step_index = steps.len();
+            let mut prepared: Vec<PreparedToolSlot> = Vec::with_capacity(calls.len());
+            let mut pending_search_ordinal = 0usize;
             let mut is_first_semantic_in_batch = true;
+
             for call in calls.iter() {
                 if call.function.name.as_deref() != Some("jbovlaste_semantic_search") {
-                    // Unexpected: only jbovlaste_semantic_search is in the tool schema.
-                    // Still complete the round so the assistant message's tool_call_id has a
-                    // matching tool result (required by the OpenAI message protocol).
                     log::error!(
                         "Assistant: unexpected tool call '{}' — not in schema",
                         call.function.name.as_deref().unwrap_or("unknown")
                     );
-                    messages.push(ChatCompletionMessageRequest {
-                        role: "tool".to_string(),
-                        content: "Unknown tool. Use jbovlaste_semantic_search.".to_string(),
+                    prepared.push(PreparedToolSlot::Immediate {
                         tool_call_id: call.id.clone(),
                         name: call.function.name.clone(),
-                        tool_calls: None,
+                        content: "Unknown tool. Use jbovlaste_semantic_search.".to_string(),
                     });
                     continue;
                 }
@@ -1449,8 +1489,7 @@ async fn run_agent_loop_inner(
                     None
                 };
 
-                // Global index across all agent iterations so SSE clients never overwrite earlier steps.
-                let global_step_index = steps.len();
+                let global_step_index = base_step_index + pending_search_ordinal;
 
                 let args_json: &str = match call.function.arguments.as_deref() {
                     None | Some("") => "{}",
@@ -1469,12 +1508,10 @@ async fn run_agent_loop_inner(
                             "Invalid tool arguments (invalid JSON). Please call jbovlaste_semantic_search again with valid JSON. Error: {}",
                             e
                         );
-                        messages.push(ChatCompletionMessageRequest {
-                            role: "tool".to_string(),
-                            content: format!("Tool error: {}", err_msg),
+                        prepared.push(PreparedToolSlot::Immediate {
                             tool_call_id: call.id.clone(),
                             name: call.function.name.clone(),
-                            tool_calls: None,
+                            content: format!("Tool error: {}", err_msg),
                         });
                         continue;
                     }
@@ -1484,12 +1521,10 @@ async fn run_agent_loop_inner(
                 if query_trimmed.is_empty() {
                     let err_msg =
                         "jbovlaste_semantic_search: query is empty after trimming".to_string();
-                    messages.push(ChatCompletionMessageRequest {
-                        role: "tool".to_string(),
-                        content: format!("Tool error: {}", err_msg),
+                    prepared.push(PreparedToolSlot::Immediate {
                         tool_call_id: call.id.clone(),
                         name: call.function.name.clone(),
-                        tool_calls: None,
+                        content: format!("Tool error: {}", err_msg),
                     });
                     continue;
                 }
@@ -1498,9 +1533,6 @@ async fn run_agent_loop_inner(
                 args.query = query_trimmed.clone();
                 let search_query_for_llm = query_trimmed;
 
-                // Repetition guard (Roo-inspired ToolRepetitionDetector): if the model calls
-                // the same query more than MAX_QUERY_REPETITIONS times, inject a tool-level
-                // reminder to use existing results instead of running the search again.
                 let seen = query_seen_count
                     .entry(search_query_for_llm.clone())
                     .or_insert(0);
@@ -1511,8 +1543,9 @@ async fn run_agent_loop_inner(
                         search_query_for_llm,
                         seen
                     );
-                    messages.push(ChatCompletionMessageRequest {
-                        role: "tool".to_string(),
+                    prepared.push(PreparedToolSlot::Immediate {
+                        tool_call_id: call.id.clone(),
+                        name: call.function.name.clone(),
                         content: format!(
                             "You have already searched for \"{}\" {} time(s). \
                              The results are already in this conversation. \
@@ -1520,110 +1553,185 @@ async fn run_agent_loop_inner(
                             search_query_for_llm,
                             *seen - 1
                         ),
-                        tool_call_id: call.id.clone(),
-                        name: call.function.name.clone(),
-                        tool_calls: None,
                     });
                     continue;
                 }
 
+                pending_search_ordinal += 1;
                 let action_desc = format!("Semantic search: \"{}\"", search_query_for_llm);
-
-                // Emit step_start immediately so the UI shows this step before the tool runs.
-                if let Some(ref tx) = event_tx {
-                    let mut start_payload = json!({
-                        "type": "step_start",
-                        "model": model,
-                        "model_name": model_name,
-                        "index": global_step_index,
-                        "action": action_desc,
-                        "tool_call_id": call.id,
-                    });
-                    if let Some(ref ar) = assistant_reasoning {
-                        start_payload["assistant_reasoning"] = serde_json::Value::String(ar.clone());
-                    }
-                    emit_sse_user_visible(&persist, tx, start_payload).await?;
-                }
-
-                let tool_result = run_jbovlaste_semantic_search_with_retry(pool, args).await;
-
-                let (result_summary, tool_payload_value) = match &tool_result {
-                    Ok(results) => {
-                        let n = results.definitions.len();
-                        let summary = format!("Returned {} definition(s).", n);
-                        let compact_results: Vec<serde_json::Value> = results
-                            .definitions
-                            .iter()
-                            .map(summarise_definition)
-                            .collect();
-                        let payload = json!({
-                            "results": compact_results,
-                        });
-                        (summary, payload)
-                    }
-                    Err(e) => {
-                        let err_str = format!("{}", e);
-                        log::warn!("Assistant semantic search failed after retries: {}", err_str);
-                        let summary = format!("Error after retries: {}", err_str);
-                        let payload = json!({
-                            "error": err_str,
-                            "results": [],
-                        });
-                        (summary, payload)
-                    }
-                };
-
-                let tool_content_json = serde_json::to_string(&tool_payload_value).unwrap_or_else(|_| {
-                    tool_payload_value["error"]
-                        .as_str()
-                        .unwrap_or("")
-                        .to_string()
-                });
-
-                let tool_content_for_llm = match &tool_result {
-                    Ok(results) => semantic_tool_results_plain_text_for_llm(
-                        &search_query_for_llm,
-                        &results.definitions,
-                    ),
-                    Err(e) => format!("Semantic search error: {}", e),
-                };
-
-                let step = AssistantStep {
-                    action: action_desc.clone(),
-                    result: result_summary.clone(),
-                    tool_output: Some(tool_content_json.clone()),
-                    assistant_reasoning: assistant_reasoning.clone(),
-                };
-                steps.push(step.clone());
-
-                // Stream step event with result and optional tool_output so the UI can show it folded.
-                if let Some(ref tx) = event_tx {
-                    let mut payload = json!({
-                        "type": "step",
-                        "model": model,
-                        "model_name": model_name,
-                        "index": global_step_index,
-                        "action": step.action,
-                        "result": step.result,
-                        "tool_call_id": call.id,
-                        "tool_content_plain": tool_content_for_llm,
-                    });
-                    if let Some(ref ar) = assistant_reasoning {
-                        payload["assistant_reasoning"] = serde_json::Value::String(ar.clone());
-                    }
-                    if let Some(ref out) = step.tool_output {
-                        payload["tool_output"] = serde_json::Value::String(out.clone());
-                    }
-                    emit_sse_user_visible(&persist, tx, payload).await?;
-                }
-
-                messages.push(ChatCompletionMessageRequest {
-                    role: "tool".to_string(),
-                    content: tool_content_for_llm,
+                prepared.push(PreparedToolSlot::Search {
                     tool_call_id: call.id.clone(),
                     name: call.function.name.clone(),
-                    tool_calls: None,
+                    args,
+                    search_query: search_query_for_llm,
+                    assistant_reasoning,
+                    global_step_index,
+                    action_desc,
                 });
+            }
+
+            let mut search_jobs: Vec<(usize, ToolArgs)> = Vec::new();
+            for (slot_i, slot) in prepared.iter().enumerate() {
+                if let PreparedToolSlot::Search { args, .. } = slot {
+                    search_jobs.push((slot_i, args.clone()));
+                }
+            }
+
+            let mut results_by_slot: HashMap<usize, Result<DefinitionResponse, AppError>> =
+                HashMap::new();
+
+            if !search_jobs.is_empty() {
+                if let Some(ref tx) = event_tx {
+                    for slot in &prepared {
+                        if let PreparedToolSlot::Search {
+                            global_step_index,
+                            action_desc,
+                            tool_call_id,
+                            assistant_reasoning,
+                            ..
+                        } = slot
+                        {
+                            let mut start_payload = json!({
+                                "type": "step_start",
+                                "model": model,
+                                "model_name": model_name,
+                                "index": global_step_index,
+                                "action": action_desc,
+                                "tool_call_id": tool_call_id,
+                            });
+                            if let Some(ref ar) = assistant_reasoning {
+                                start_payload["assistant_reasoning"] =
+                                    serde_json::Value::String(ar.clone());
+                            }
+                            emit_sse_user_visible(&persist, tx, start_payload).await?;
+                        }
+                    }
+                }
+
+                let pool_clone = pool.clone();
+                let outcomes = join_all(search_jobs.iter().map(|(_, args)| {
+                    let pool = pool_clone.clone();
+                    let args = args.clone();
+                    async move { run_jbovlaste_semantic_search_with_retry(&pool, args).await }
+                }))
+                .await;
+
+                for ((slot_i, _), outcome) in search_jobs.iter().zip(outcomes) {
+                    results_by_slot.insert(*slot_i, outcome);
+                }
+            }
+
+            for (slot_i, slot) in prepared.into_iter().enumerate() {
+                match slot {
+                    PreparedToolSlot::Immediate {
+                        tool_call_id,
+                        name,
+                        content,
+                    } => {
+                        messages.push(ChatCompletionMessageRequest {
+                            role: "tool".to_string(),
+                            content,
+                            tool_call_id,
+                            name,
+                            tool_calls: None,
+                        });
+                    }
+                    PreparedToolSlot::Search {
+                        tool_call_id,
+                        name,
+                        search_query,
+                        assistant_reasoning,
+                        global_step_index,
+                        action_desc,
+                        ..
+                    } => {
+                        let tool_result = results_by_slot
+                            .remove(&slot_i)
+                            .expect("search slot must have a result");
+
+                        let (result_summary, tool_payload_value) = match &tool_result {
+                            Ok(results) => {
+                                let n = results.definitions.len();
+                                let summary = format!("Returned {} definition(s).", n);
+                                let compact_results: Vec<serde_json::Value> = results
+                                    .definitions
+                                    .iter()
+                                    .map(summarise_definition)
+                                    .collect();
+                                let payload = json!({
+                                    "results": compact_results,
+                                });
+                                (summary, payload)
+                            }
+                            Err(e) => {
+                                let err_str = format!("{}", e);
+                                log::warn!(
+                                    "Assistant semantic search failed after retries: {}",
+                                    err_str
+                                );
+                                let summary = format!("Error after retries: {}", err_str);
+                                let payload = json!({
+                                    "error": err_str,
+                                    "results": [],
+                                });
+                                (summary, payload)
+                            }
+                        };
+
+                        let tool_content_json =
+                            serde_json::to_string(&tool_payload_value).unwrap_or_else(|_| {
+                                tool_payload_value["error"]
+                                    .as_str()
+                                    .unwrap_or("")
+                                    .to_string()
+                            });
+
+                        let tool_content_for_llm = match &tool_result {
+                            Ok(results) => semantic_tool_results_plain_text_for_llm(
+                                &search_query,
+                                &results.definitions,
+                            ),
+                            Err(e) => format!("Semantic search error: {}", e),
+                        };
+
+                        let step = AssistantStep {
+                            action: action_desc.clone(),
+                            result: result_summary.clone(),
+                            tool_output: Some(tool_content_json.clone()),
+                            assistant_reasoning: assistant_reasoning.clone(),
+                        };
+                        steps.push(step.clone());
+
+                        if let Some(ref tx) = event_tx {
+                            let mut payload = json!({
+                                "type": "step",
+                                "model": model,
+                                "model_name": model_name,
+                                "index": global_step_index,
+                                "action": step.action,
+                                "result": step.result,
+                                "tool_call_id": tool_call_id,
+                                "tool_content_plain": tool_content_for_llm,
+                            });
+                            if let Some(ref ar) = assistant_reasoning {
+                                payload["assistant_reasoning"] =
+                                    serde_json::Value::String(ar.clone());
+                            }
+                            if let Some(ref out) = step.tool_output {
+                                payload["tool_output"] = serde_json::Value::String(out.clone());
+                            }
+                            emit_sse_user_visible(&persist, tx, payload).await?;
+                        }
+
+                        messages.push(ChatCompletionMessageRequest {
+                            role: "tool".to_string(),
+                            content: tool_content_for_llm,
+                            tool_call_id,
+                            name,
+                            tool_calls: None,
+                        });
+                    }
+                }
             }
             // Loop again so the model can see tool results and either call more tools or reply.
         } else {

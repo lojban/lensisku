@@ -29,6 +29,12 @@
     "expand": "展开筛选",
     "collapse": "收起筛选"
   },
+  "fileDropzone": {
+    "chooseFile": "选择文件",
+    "orDragDrop": "或拖放到此处",
+    "ariaLabel": "文件拖放区域",
+    "acceptsCsvTsv": "CSV 或 TSV"
+  },
   "login": {
     "title": "登录",
     "usernameLabel": "用户名",
@@ -397,7 +403,6 @@
     "saveSuccess": "已保存 {count} 条。",
     "saveError": "无法保存更改。",
     "validationBothSides": "每一行正反面文字均不能为空。",
-    "newRowMarker": "新",
     "newRowSectionTitle": "新条目",
     "newRowFrontAria": "新条目正面内容",
     "newRowBackAria": "新条目背面内容",
@@ -406,6 +411,7 @@
     "importButton": "导入 CSV/TSV",
     "importing": "导入中…",
     "importAria": "导入 CSV 或 TSV 文件",
+    "importWrongFileType": "请选择 .csv 或 .tsv 文件。",
     "importHint": "导入在浏览器中合并行（先按正面、再按背面、再匹配未保存行）。点击「全部保存」以写入。",
     "importEmpty": "文件中没有数据行。",
     "importTooMany": "每次导入最多 {max} 行。",

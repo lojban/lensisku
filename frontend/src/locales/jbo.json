@@ -27,6 +27,12 @@
     "resetAllFilters": "kraga'igau",
     "selectWordType": "cuxna lo valsi klesi"
   },
+  "fileDropzone": {
+    "chooseFile": "cu'a lo datnyvei",
+    "orDragDrop": ".a bevri fi ti",
+    "ariaLabel": "lo datnyvei bevri stuzi",
+    "acceptsCsvTsv": "CSV .a TSV"
+  },
   "login": {
     "title": "co'a jaspu",
     "usernameLabel": "pilno cmene",
@@ -387,7 +393,6 @@
     "saveSuccess": "rejgasnu {count} da",
     "saveError": "fliba lo nu rejgasnu",
     "validationBothSides": "ro papri cu nitcu lo stedu .e lo trixe",
-    "newRowMarker": "cnino",
     "newRowSectionTitle": "cnino da",
     "newRowFrontAria": "stedu be lo cnino da",
     "newRowBackAria": "trixe be lo cnino da",
@@ -396,6 +401,7 @@
     "importButton": "jmina lo CSV/TSV",
     "importing": "ca'o jmina...",
     "importAria": "jmina lo CSV .a lo TSV datnyvei",
+    "importWrongFileType": ".e'u ko cu'a lo datnyvei poi du'u lo te cmene cu fanmo fi lo'u .csv .a .tsv",
     "importHint": "lo nu jmina cu zukte fi lo samselpla .i ko jmina fi lo stedu .e lo trixe .e lo na rejgasnu papri .i ko rejgau ro da mu'i lo nu stika lo datni",
     "importEmpty": "no papri cu zvati le datnyvei",
     "importTooMany": "so'i papri cu zmadu {max} lo'i papri",
