@@ -30,6 +30,10 @@ static LOCALES: Lazy<HashMap<&'static str, serde_json::Value>> = Lazy::new(|| {
         "ja",
         serde_json::from_str(include_str!("../../locales/ja.json")).unwrap(),
     );
+    m.insert(
+        "zh",
+        serde_json::from_str(include_str!("../../locales/zh.json")).unwrap(),
+    );
     m
 });
 
