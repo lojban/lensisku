@@ -27,6 +27,12 @@
     "resetAllFilters": "Сбросить",
     "selectWordType": "Выберите тип слова"
   },
+  "fileDropzone": {
+    "chooseFile": "Выбрать файл",
+    "orDragDrop": "или перетащите сюда",
+    "ariaLabel": "Область для файла",
+    "acceptsCsvTsv": "CSV или TSV"
+  },
   "login": {
     "title": "Войти",
     "usernameLabel": "Имя пользователя",
@@ -367,7 +373,6 @@
     "saveSuccess": "Сохранено элементов: {count}.",
     "saveError": "Не удалось сохранить.",
     "validationBothSides": "У каждой строки должны быть непустые лицо и оборот.",
-    "newRowMarker": "Новая",
     "newRowSectionTitle": "Новый элемент",
     "newRowFrontAria": "Лицо нового элемента",
     "newRowBackAria": "Оборот нового элемента",
@@ -376,6 +381,7 @@
     "importButton": "Импорт CSV/TSV",
     "importing": "Импорт…",
     "importAria": "Импорт файла CSV или TSV",
+    "importWrongFileType": "Выберите файл .csv или .tsv.",
     "importHint": "Слияние выполняется в браузере (сначала по лицу, затем по обороту, затем по несохранённым строкам). Нажмите «Сохранить всё», чтобы записать изменения на сервер.",
     "importEmpty": "В файле нет строк с данными.",
     "importTooMany": "Не больше {max} строк за один импорт.",

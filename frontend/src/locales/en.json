@@ -29,6 +29,12 @@
     "expand": "Expand filters",
     "collapse": "Collapse filters"
   },
+  "fileDropzone": {
+    "chooseFile": "Choose file",
+    "orDragDrop": "or drag and drop",
+    "ariaLabel": "File drop zone",
+    "acceptsCsvTsv": "CSV or TSV"
+  },
   "login": {
     "title": "Log in",
     "usernameLabel": "Username",
@@ -397,7 +403,6 @@
     "saveSuccess": "Saved {count} items.",
     "saveError": "Could not save changes.",
     "validationBothSides": "Each row must have non-empty front and back text.",
-    "newRowMarker": "New",
     "newRowSectionTitle": "New item",
     "newRowFrontAria": "New item front content",
     "newRowBackAria": "New item back content",
@@ -406,7 +411,8 @@
     "importButton": "Import CSV/TSV",
     "importing": "Importing…",
     "importAria": "Import CSV or TSV file",
-    "importHint": "Import merges rows in your browser (match by front text, then back, then unsaved rows). Click Save all to persist changes.",
+    "importWrongFileType": "Please choose a .csv or .tsv file.",
+    "importHint": "Import merges rows in your browser (match by front text, then back, then unsaved rows). Click 'Save all' on the page to persist changes.",
     "importEmpty": "The file has no data rows.",
     "importTooMany": "At most {max} rows per import.",
     "importSuccess": "Merged: {front} updated by front, {back} by back, {inserted} new rows, {skipped} empty rows skipped.",

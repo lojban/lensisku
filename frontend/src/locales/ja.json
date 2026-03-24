@@ -29,6 +29,12 @@
     "expand": "フィルターを展開",
     "collapse": "フィルターを折りたたむ"
   },
+  "fileDropzone": {
+    "chooseFile": "ファイルを選ぶ",
+    "orDragDrop": "またはここにドラッグ＆ドロップ",
+    "ariaLabel": "ファイルのドロップ領域",
+    "acceptsCsvTsv": "CSV または TSV"
+  },
   "login": {
     "title": "ログイン",
     "usernameLabel": "ユーザー名",
@@ -392,7 +398,6 @@
     "saveSuccess": "{count} 件を保存しました。",
     "saveError": "保存できませんでした。",
     "validationBothSides": "各行の表面・裏面のいずれも空にできません。",
-    "newRowMarker": "新規",
     "newRowSectionTitle": "新しい項目",
     "newRowFrontAria": "新規項目の表面",
     "newRowBackAria": "新規項目の裏面",
@@ -401,6 +406,7 @@
     "importButton": "CSV / TSV をインポート",
     "importing": "インポート中…",
     "importAria": "CSV または TSV ファイルをインポート",
+    "importWrongFileType": ".csv または .tsv ファイルを選んでください。",
     "importHint": "ブラウザ上で行をマージします（表面・裏面の一致、未保存行の順）。「すべて保存」で確定します。",
     "importEmpty": "データ行がありません。",
     "importTooMany": "1回のインポートは最大 {max} 行までです。",
