@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Email header asset: transparent bg, stroke-first, white halo for dark Gmail. Regenerate PNG via scripts/email-logo-export. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" fill="none">
+  <!-- Wide white under-stroke so colored lines stay visible on dark backgrounds (Gmail dark theme). -->
+  <g fill="none" stroke="#ffffff" stroke-linecap="round" stroke-linejoin="round" opacity="0.98">
+    <g stroke-width="3.4">
+      <!-- Cardinal ticks + chevrons (same geometry as color layer) -->
+      <path d="M16 2.2v6.2M13.1 5.3L16 2.4l2.9 2.9"/>
+      <path d="M29.8 16h-6.2M26.7 13.1l2.9 2.9-2.9 2.9"/>
+      <path d="M16 29.8v-6.2M13.1 26.7L16 29.6l2.9-2.9"/>
+      <path d="M2.2 16h6.2M5.3 13.1L2.4 16l2.9 2.9"/>
+      <!-- Magnifying glass -->
+      <circle cx="13.55" cy="13.35" r="6.05"/>
+      <path d="M18.65 18.45l6.35 6.35"/>
+      <path d="M10.4 10.2q1.35-1.35 3.35-.95"/>
+    </g>
+  </g>
+  <!-- Red compass -->
+  <g fill="none" stroke="#e11d48" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M16 2.2v6.2M13.1 5.3L16 2.4l2.9 2.9"/>
+    <path d="M29.8 16h-6.2M26.7 13.1l2.9 2.9-2.9 2.9"/>
+    <path d="M16 29.8v-6.2M13.1 26.7L16 29.6l2.9-2.9"/>
+    <path d="M2.2 16h6.2M5.3 13.1L2.4 16l2.9 2.9"/>
+  </g>
+  <!-- Blue lens (stroke-only; no solid fill) -->
+  <g fill="none" stroke="#2563eb" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="13.55" cy="13.35" r="6.05"/>
+    <path d="M18.65 18.45l6.35 6.35"/>
+  </g>
+  <path
+    fill="none"
+    stroke="#93c5fd"
+    stroke-width="1.05"
+    stroke-linecap="round"
+    d="M10.4 10.2q1.35-1.35 3.35-.95"
+  />
+</svg>
