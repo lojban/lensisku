@@ -212,6 +212,13 @@
     </div>
   </div>
 
+  <ToastFloat
+    :show="!!successToast"
+    :message="successToast?.message ?? ''"
+    type="success"
+    @close="clearSuccess"
+  />
+
   <!-- Main content -->
   <main class="main-content" :class="[
     { 'scrollbar-always': route.meta.alwaysShowScrollbar },
@@ -327,6 +334,7 @@ import { useHead } from '@vueuse/head'
 import { jwtDecode } from 'jwt-decode'
 
 import Error from '@/components/Error.vue'
+import ToastFloat from '@/components/ToastFloat.vue'
 import { resendConfirmation } from '@/api'
 import CoursesIcon from '@/components/icons/CoursesIcon.vue'
 import { IconButton } from '@packages/ui'
@@ -338,6 +346,7 @@ import ModalComponent from '@/components/ModalComponent.vue'
 import { normalizeSearchQuery } from '@/utils/searchQueryUtils'
 import { provideAuth } from './composables/useAuth'
 import { provideError } from './composables/useError'
+import { provideSuccessToast } from './composables/useSuccessToast'
 import { localeCaptureGroupRegex, supportedLocales } from './config/locales';
 
 import logoSvgRaw from '../public/assets/icons/favicon.svg?raw';
@@ -363,6 +372,7 @@ const searchQuery = ref('')
 const searchMode = ref('messages')
 const auth = provideAuth()
 const { error, clearError } = provideError()
+const { successToast, clearSuccess } = provideSuccessToast()
 const isMenuOpen = ref(false)
 const isMoreNavOpen = ref(false)
 const moreNavRef = ref(null)
