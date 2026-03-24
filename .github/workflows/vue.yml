@@ -33,6 +33,10 @@ jobs:
       working-directory: frontend
       run: pnpm install
 
+    - name: Check i18n keys (all locales)
+      working-directory: frontend
+      run: pnpm run i18n:check
+
     - name: Build project
       working-directory: frontend
       run: pnpm run build

@@ -15,7 +15,8 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "knip": "knip --no-config-hints",
-    "check": "pnpm run typecheck && pnpm run lint && pnpm knip"
+    "i18n:check": "node scripts/check-i18n-keys.mjs",
+    "check": "pnpm run typecheck && pnpm run lint && pnpm knip && pnpm run i18n:check"
   },
   "dependencies": {
     "@milkdown/core": "^7.19.1",
