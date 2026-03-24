@@ -62,10 +62,7 @@
               ? 'bg-white text-blue-600 shadow-sm'
               : 'text-gray-600 hover:text-gray-900',
           ]"
-          @click="
-            inputMode = 'record'
-            recordingError = ''
-          "
+          @click="inputMode = 'record'; recordingError = ''"
         >
           <Mic class="h-4 w-4" />
           {{ t('soundUpload.recordTab') }}

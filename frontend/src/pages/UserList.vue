@@ -21,22 +21,10 @@
     :role-filter="roleFilter"
     :sort-by="sortBy"
     :sort-order="sortOrder"
-    @update:search-query="
-      searchQuery = normalizeSearchQuery($event)
-      updateSearch()
-    "
-    @update:role-filter="
-      roleFilter = $event
-      updateSearch()
-    "
-    @update:sort-by="
-      sortBy = $event
-      updateSearch()
-    "
-    @update:sort-order="
-      sortOrder = $event
-      updateSearch()
-    "
+    @update:search-query="searchQuery = normalizeSearchQuery($event); updateSearch()"
+    @update:role-filter="roleFilter = $event; updateSearch()"
+    @update:sort-by="sortBy = $event; updateSearch()"
+    @update:sort-order="sortOrder = $event; updateSearch()"
     @updateSearch="updateSearch"
     @clearSearch="clearSearch"
     @prevPage="prevPage"
