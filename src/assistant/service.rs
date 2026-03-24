@@ -523,7 +523,9 @@ fn system_prompt_base(locale: Option<&str>) -> String {
     base.push_str(
         "## Response formatting\n\
          - Use valid, simple Markdown: **bold** for valsi and key terms, bullet lists \
-         for definitions. **Never use markdown tables** — use bullet lists or plain text instead.\n\
+         for definitions. **Never use markdown pipe tables** (lines starting with `|` and \
+         `|---|` separators) or ASCII grid tables — they render poorly in chat; use bullet \
+         lists, numbered lines, or plain paragraphs instead.\n\
          - When quoting definitions from jbovlaste, preserve inline `$...$` math \
          delimiters exactly as they appear in the tool output.\n\
          - When a definition has place structure (`$x_1$`, `$x_2$`, ...), present it \

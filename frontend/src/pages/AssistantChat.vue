@@ -1702,6 +1702,10 @@ async function runAssistantStream(sessionId, appendAssistant) {
   @apply my-1 pl-4;
 }
 
+.assistant-markdown :deep(.mathjax-content table) {
+  @apply my-2 text-sm;
+}
+
 .assistant-markdown :deep(p + p) {
   @apply mt-2;
 }
