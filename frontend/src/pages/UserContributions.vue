@@ -1,35 +1,24 @@
 <template>
-  <TabbedPageHeader
+   <TabbedPageHeader
     :tabs="tabs"
     :active-tab="activeTab"
     :page-title="pageTitle"
     @tab-click="handleTabClick"
-  />
-
-  <!-- Loading State with Skeleton -->
-  <div v-if="isLoading" class="space-y-4">
-    <SkeletonActivityItem v-for="n in 5" :key="n" />
-  </div>
-
-  <!-- Content -->
+  /> <!-- Loading State with Skeleton -->
+  <div v-if="isLoading" class="space-y-4"> <SkeletonActivityItem v-for="n in 5" :key="n" /> </div>
+   <!-- Content -->
   <div v-else class="space-y-4">
-    <!-- Comments Tab -->
-    <ActivityComments
+     <!-- Comments Tab --> <ActivityComments
       v-if="activeTab === 'comments'"
       :comments="comments"
       :format-date="formatDate"
-    />
-
-    <!-- Definitions Tab -->
-    <ActivityDefinitions
+    /> <!-- Definitions Tab --> <ActivityDefinitions
       v-if="activeTab === 'definitions'"
       :definitions="definitions"
       :format-date="formatDate"
-    />
-
-    <!-- PaginationComponent -->
+    /> <!-- PaginationComponent -->
     <div v-if="totalPages > 1">
-      <PaginationComponent
+       <PaginationComponent
         :current-page="currentPage"
         :total-pages="totalPages"
         :total="total"
@@ -38,10 +27,12 @@
         @next="() => changePage(currentPage + 1)"
       />
     </div>
+
   </div>
+
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { MessageSquare, Book } from 'lucide-vue-next'
 import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -56,6 +47,7 @@ import SkeletonActivityItem from '@/components/activity/SkeletonActivityItem.vue
 import TabbedPageHeader from '@/components/TabbedPageHeader.vue'
 import { useError } from '@/composables/useError'
 import { useSeoHead } from '@/composables/useSeoHead'
+import { queryStr } from '@/utils/routeQuery'
 
 const props = defineProps({
   username: {
@@ -202,7 +194,7 @@ const handleTabClick = async (tabKey) => {
 
 // Reactive page title
 const pageTitle = ref(t('userContributions.activityTitle', { username: props.username })) // Use t()
-useSeoHead({ title: pageTitle, locale: locale.value })
+useSeoHead({ title: pageTitle })
 
 // Configure tabs
 const tabs = computed(() => [
@@ -233,14 +225,13 @@ watch(
 )
 
 onMounted(() => {
+  const tabQ = queryStr(route.query.tab)
   const initialTab =
-    route.query.tab && ['comments', 'definitions'].includes(route.query.tab)
-      ? route.query.tab
-      : 'comments'
+    tabQ && ['comments', 'definitions'].includes(tabQ) ? tabQ : 'comments'
   activeTab.value = initialTab
 
   // Read page from URL query parameter
-  const pageFromQuery = parseInt(route.query.page, 10)
+  const pageFromQuery = parseInt(queryStr(route.query.page), 10)
   if (pageFromQuery && pageFromQuery >= 1) {
     currentPage.value = pageFromQuery
   }
@@ -258,10 +249,11 @@ watch(
     // Skip if we're programmatically updating the route (to prevent double fetches)
     if (isUpdatingRoute.value) return
 
+    const tabQ = queryStr(newQuery.tab)
     const newTab =
-      newQuery.tab && ['comments', 'definitions'].includes(newQuery.tab) ? newQuery.tab : 'comments'
+      tabQ && ['comments', 'definitions'].includes(tabQ) ? tabQ : 'comments'
 
-    const pageFromQuery = parseInt(newQuery.page, 10)
+    const pageFromQuery = parseInt(queryStr(newQuery.page), 10)
     const newPage = pageFromQuery && pageFromQuery >= 1 ? pageFromQuery : 1
 
     // Only update if something actually changed
@@ -280,3 +272,4 @@ watch(
   }
 )
 </script>
+

@@ -1,43 +1,42 @@
 <template>
+
   <div>
+
     <div class="flex items-center justify-between">
-      <label class="block text-sm font-medium text-blue-700">
-        {{ label || t('soundUpload.sound') }}
-      </label>
-      <button
+       <label class="block text-sm font-medium text-blue-700"
+        > {{ label || t('soundUpload.sound') }} </label
+      > <button
         v-if="modelValue || loadedSound"
         type="button"
         class="text-sm text-red-600 hover:text-red-700"
         @click="handleRemove"
       >
-        {{ t('soundUpload.removeSound') }}
-      </button>
-      <span v-else-if="note" class="text-xs text-gray-500">
-        {{ note }}
-      </span>
+         {{ t('soundUpload.removeSound') }} </button
+      > <span v-else-if="note" class="text-xs text-gray-500"> {{ note }} </span>
     </div>
-
-    <!-- Sound Preview -->
+     <!-- Sound Preview -->
     <div
       v-if="modelValue || loadedSound"
       class="relative flex flex-col items-center mt-2 p-4 border rounded-lg bg-gray-50"
     >
-      <div class="flex items-center gap-4 mb-2">
-        <Volume2 class="h-8 w-8 text-blue-500" />
-        <span class="text-sm text-gray-600">{{ fileName || 'Custom Audio' }}</span>
-      </div>
-      <audio controls :src="audioUrl" class="w-full h-10" />
-    </div>
 
-    <!-- No sound: choose Upload or Record -->
+      <div class="flex items-center gap-4 mb-2">
+         <Volume2 class="h-8 w-8 text-blue-500" /> <span class="text-sm text-gray-600">{{
+          fileName || 'Custom Audio'
+        }}</span
+        >
+      </div>
+       <audio controls :src="audioUrl" class="w-full h-10" />
+    </div>
+     <!-- No sound: choose Upload or Record -->
     <div v-if="!modelValue && !loadedSound" class="mt-2 space-y-3">
-      <!-- Tabs: Upload | Record -->
+       <!-- Tabs: Upload | Record -->
       <div
         class="flex rounded-lg border border-gray-200 p-1 bg-gray-50"
         role="tablist"
         aria-label="Add sound by"
       >
-        <button
+         <button
           type="button"
           role="tab"
           :aria-selected="inputMode === 'upload'"
@@ -49,10 +48,8 @@
           ]"
           @click="inputMode = 'upload'"
         >
-          <Upload class="h-4 w-4" />
-          {{ t('soundUpload.uploadTab') }}
-        </button>
-        <button
+           <Upload class="h-4 w-4" /> {{ t('soundUpload.uploadTab') }} </button
+        > <button
           type="button"
           role="tab"
           :aria-selected="inputMode === 'record'"
@@ -64,12 +61,10 @@
           ]"
           @click="inputMode = 'record'; recordingError = ''"
         >
-          <Mic class="h-4 w-4" />
-          {{ t('soundUpload.recordTab') }}
-        </button>
+           <Mic class="h-4 w-4" /> {{ t('soundUpload.recordTab') }} </button
+        >
       </div>
-
-      <!-- Upload panel -->
+       <!-- Upload panel -->
       <div
         v-show="inputMode === 'upload'"
         ref="dropZoneRef"
@@ -79,104 +74,104 @@
           'border-gray-300': !isOverDropZone,
         }"
       >
+
         <div class="space-y-1 text-center">
-          <Upload class="mx-auto h-12 w-12 text-gray-300" :stroke-width="1" />
+           <Upload class="mx-auto h-12 w-12 text-gray-300" :stroke-width="1" />
           <div class="flex flex-wrap justify-center gap-x-1 text-sm text-gray-600">
-            <label
+             <label
               class="relative cursor-pointer rounded-md font-medium text-blue-600 hover:text-blue-500"
-            >
-              <span>{{ t('soundUpload.uploadPrompt') }}</span>
-              <input
+              > <span>{{ t('soundUpload.uploadPrompt') }}</span
+              > <input
                 type="file"
                 class="sr-only"
                 accept="audio/mpeg,audio/mp3,audio/ogg,audio/webm"
                 @change="handleFileSelect"
-              />
-            </label>
+              /> </label
+            >
             <p>{{ t('soundUpload.dragDrop') }}</p>
-          </div>
-          <p class="text-xs text-gray-500">
-            {{ t('soundUpload.fileTypes') }}
-          </p>
-        </div>
-      </div>
 
-      <!-- Record panel -->
+          </div>
+
+          <p class="text-xs text-gray-500"> {{ t('soundUpload.fileTypes') }} </p>
+
+        </div>
+
+      </div>
+       <!-- Record panel -->
       <div
         v-show="inputMode === 'record'"
         class="border border-gray-200 rounded-lg p-4 bg-gray-50/50"
       >
-        <!-- Permission / not started -->
-        <template v-if="!isRecording && !recordedBlob">
-          <p class="text-sm text-gray-600 mb-3">
-            {{ t('soundUpload.recordHint') }}
-          </p>
-          <button
+         <!-- Permission / not started --> <template v-if="!isRecording && !recordedBlob"
+          >
+          <p class="text-sm text-gray-600 mb-3"> {{ t('soundUpload.recordHint') }} </p>
+           <button
             type="button"
             class="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-medium text-white bg-red-500 hover:bg-red-600 focus:ring-2 focus:ring-red-400 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             :disabled="isRequestingMic"
             @click="startRecording"
           >
-            <Mic v-if="!isRequestingMic" class="h-5 w-5" />
-            <Loader v-else class="h-5 w-5 animate-spin" />
-            {{ isRequestingMic ? t('soundUpload.requestingMic') : t('soundUpload.startRecording') }}
-          </button>
+             <Mic v-if="!isRequestingMic" class="h-5 w-5" /> <Loader
+              v-else
+              class="h-5 w-5 animate-spin"
+            /> {{
+              isRequestingMic ? t('soundUpload.requestingMic') : t('soundUpload.startRecording')
+            }} </button
+          >
           <p v-if="recordingError" class="mt-2 text-sm text-red-600" role="alert">
-            {{ recordingError }}
+             {{ recordingError }}
           </p>
-        </template>
-
-        <!-- Recording in progress -->
-        <template v-else-if="isRecording">
+           </template
+        > <!-- Recording in progress --> <template v-else-if="isRecording"
+          >
           <div class="flex items-center justify-center gap-3 py-2">
-            <span class="relative flex h-3 w-3" aria-hidden="true">
-              <span
+             <span class="relative flex h-3 w-3" aria-hidden="true"
+              > <span
                 class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"
-              />
-              <span class="relative inline-flex rounded-full h-3 w-3 bg-red-500" />
-            </span>
-            <span class="text-sm font-medium text-gray-700 tabular-nums">
-              {{ t('soundUpload.recordingTime', { seconds: recordingSeconds }) }}
-            </span>
+              /> <span class="relative inline-flex rounded-full h-3 w-3 bg-red-500" /> </span
+            > <span class="text-sm font-medium text-gray-700 tabular-nums"
+              > {{ t('soundUpload.recordingTime', { seconds: recordingSeconds }) }} </span
+            >
           </div>
-          <button
+           <button
             type="button"
             class="w-full mt-3 flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-medium text-white bg-gray-700 hover:bg-gray-800 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
             @click="stopRecording"
           >
-            <Square class="h-5 w-5" />
-            {{ t('soundUpload.stopRecording') }}
-          </button>
-        </template>
-
-        <!-- Recorded preview: use or re-record -->
-        <template v-else-if="recordedBlob">
+             <Square class="h-5 w-5" /> {{ t('soundUpload.stopRecording') }} </button
+          > </template
+        > <!-- Recorded preview: use or re-record --> <template v-else-if="recordedBlob"
+          >
           <div class="space-y-3">
-            <audio :src="recordedPreviewUrl" controls class="w-full h-10" />
+             <audio :src="recordedPreviewUrl" controls class="w-full h-10" />
             <div class="flex gap-2">
-              <button
+               <button
                 type="button"
                 class="flex-1 py-2.5 px-3 rounded-lg font-medium text-white bg-blue-600 hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                 @click="useRecording"
               >
-                {{ t('soundUpload.useRecording') }}
-              </button>
-              <button
+                 {{ t('soundUpload.useRecording') }} </button
+              > <button
                 type="button"
                 class="flex-1 py-2.5 px-3 rounded-lg font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
                 @click="discardRecording"
               >
-                {{ t('soundUpload.reRecord') }}
-              </button>
+                 {{ t('soundUpload.reRecord') }} </button
+              >
             </div>
+
           </div>
-        </template>
+           </template
+        >
       </div>
+
     </div>
+
   </div>
+
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { Mic, Volume2, Upload, Loader, Square } from 'lucide-vue-next'
 import { useDropZone } from '@vueuse/core'
 import { ref, watch, onMounted, onUnmounted, computed } from 'vue'
@@ -304,7 +299,9 @@ function blobToBase64(blob) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
     reader.onload = () => {
-      const base64 = (reader.result ?? '').split(',')[1]
+      const raw = reader.result
+      const dataUrl = typeof raw === 'string' ? raw : ''
+      const base64 = dataUrl.split(',')[1]
       resolve(base64)
     }
     reader.onerror = reject
@@ -381,7 +378,9 @@ const loadExistingSound = async () => {
 
     const reader = new FileReader()
     reader.onload = (e) => {
-      const base64String = (e.target?.result ?? '').split(',')?.[1]
+      const raw = e.target?.result
+      const dataUrl = typeof raw === 'string' ? raw : ''
+      const base64String = dataUrl.split(',')[1]
       loadedSound.value = {
         data: base64String,
         mime_type: blob.type,
@@ -421,7 +420,9 @@ const processFile = async (file) => {
 
     const reader = new FileReader()
     reader.onload = (e) => {
-      const base64String = (e.target?.result).split(',')[1]
+      const raw = e.target?.result
+      const dataUrl = typeof raw === 'string' ? raw : ''
+      const base64String = dataUrl.split(',')[1]
       const soundObj = {
         data: base64String,
         mime_type: file.type,
@@ -486,3 +487,4 @@ onUnmounted(() => {
   }
 })
 </script>
+

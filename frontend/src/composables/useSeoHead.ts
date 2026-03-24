@@ -1,4 +1,5 @@
-import { unref, computed } from 'vue'
+import { computed, toValue } from 'vue'
+import type { MaybeRefOrGetter } from 'vue'
 import { useHead } from '@vueuse/head'
 import { useI18n } from 'vue-i18n'
 
@@ -10,11 +11,11 @@ type MetaTag = {
 }
 
 type SeoConfig = {
-  title: string | ReturnType<typeof computed<string>>
+  title: MaybeRefOrGetter<string | null | undefined>
   /** Meta description for search snippets and og:description. Keep under ~155 chars. */
-  description?: string | ReturnType<typeof computed<string>>
+  description?: MaybeRefOrGetter<string | null | undefined>
   /** Canonical URL for the page (absolute or path). */
-  canonical?: string | ReturnType<typeof computed<string>>
+  canonical?: MaybeRefOrGetter<string | null | undefined>
   meta?: MetaTag[]
 }
 
@@ -23,12 +24,12 @@ export function useSeoHead(config: SeoConfig) {
   const baseTitle = computed(() => i18n.t('seo.baseTitle'))
 
   const resolvedTitle = computed(() => {
-    const title = unref(config.title)
+    const title = toValue(config.title)
     return title ? `${title} | ${baseTitle.value}` : baseTitle.value
   })
 
   const resolvedDescription = config.description
-    ? computed(() => String(unref(config.description) ?? '').slice(0, 160))
+    ? computed(() => String(toValue(config.description) ?? '').slice(0, 160))
     : null
 
   const ogTags = computed<MetaTag[]>(() => {
@@ -57,7 +58,7 @@ export function useSeoHead(config: SeoConfig) {
   ])
 
   const linkTags = computed(() => {
-    const canonical = config.canonical ? unref(config.canonical) : null
+    const canonical = config.canonical ? toValue(config.canonical) : null
     if (!canonical) return []
     const href = canonical.startsWith('http')
       ? canonical

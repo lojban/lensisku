@@ -392,7 +392,22 @@
     "newRowFrontAria": "New item front content",
     "newRowBackAria": "New item back content",
     "newRowFrontPlaceholder": "Front…",
-    "newRowBackPlaceholder": "Back…"
+    "newRowBackPlaceholder": "Back…",
+    "importButton": "Import CSV/TSV",
+    "importing": "Importing…",
+    "importAria": "Import CSV or TSV file",
+    "importHint": "Import merges rows in your browser (match by front text, then back, then unsaved rows). Click Save all to persist changes.",
+    "importEmpty": "The file has no data rows.",
+    "importTooMany": "At most {max} rows per import.",
+    "importSuccess": "Merged: {front} updated by front, {back} by back, {inserted} new rows, {skipped} empty rows skipped.",
+    "importError": "Could not read or parse the file.",
+    "colActions": "Actions",
+    "deleteRow": "Delete",
+    "deleteRowAria": "Delete saved item from collection",
+    "deleteDraftAria": "Remove unsaved row",
+    "deleteSavedConfirm": "Remove this item from the collection? This cannot be undone.",
+    "deleteDraftConfirm": "Discard this unsaved row?",
+    "deleteError": "Could not delete the item."
   },
   "collectionDetail": {
     "pageHint": "Collection",

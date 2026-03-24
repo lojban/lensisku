@@ -1,38 +1,39 @@
 <template>
-  <Transition :name="transitionName">
+   <Transition :name="transitionName"
+    >
     <div v-if="show" ref="bannerRef" :class="bannerClasses">
+
       <p
         class="text-sm text-gray-700 flex-1 min-w-0 text-center sm:text-left order-1 sm:order-none"
       >
-        {{ t('anonymousProgress.bannerMessage') }}
+         {{ t('anonymousProgress.bannerMessage') }}
       </p>
+
       <div class="flex items-center justify-center gap-2 shrink-0 order-2 sm:order-none">
-        <RouterLink
+         <RouterLink
           to="/signup"
           class="btn-aqua-orange text-sm px-3 py-2 min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-md"
-        >
-          {{ t('anonymousProgress.signUp') }}
-        </RouterLink>
-        <RouterLink
+          > {{ t('anonymousProgress.signUp') }} </RouterLink
+        > <RouterLink
           to="/login"
           class="btn-empty text-sm px-3 py-2 min-h-[44px] min-w-[44px] inline-flex items-center justify-center border border-gray-300 rounded-md hover:bg-gray-50"
-        >
-          {{ t('anonymousProgress.logIn') }}
-        </RouterLink>
-        <button
+          > {{ t('anonymousProgress.logIn') }} </RouterLink
+        > <button
           type="button"
           class="p-2.5 min-h-[44px] min-w-[44px] flex items-center justify-center text-gray-400 hover:text-gray-600 rounded-md hover:bg-gray-100"
           :aria-label="t('anonymousProgress.dismiss')"
           @click="dismiss"
         >
-          <X class="h-5 w-5" />
-        </button>
+           <X class="h-5 w-5" /> </button
+        >
       </div>
+
     </div>
-  </Transition>
+     </Transition
+  >
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
@@ -137,3 +138,4 @@ watch(show, (v) => emit('visible', v), { immediate: true })
   transform: translateY(-100%);
 }
 </style>
+

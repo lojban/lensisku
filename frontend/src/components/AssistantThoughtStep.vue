@@ -1,13 +1,14 @@
 <template>
+
   <div class="text-gray-500 text-xs italic">
+
     <div
       v-if="step.assistant_reasoning && String(step.assistant_reasoning).trim()"
       class="mb-2 not-italic rounded border border-indigo-100 bg-indigo-50/70 px-2 py-1.5 text-gray-800"
     >
-      <span class="mb-1 block text-[10px] font-semibold uppercase tracking-wide text-indigo-700/90">
-        {{ $t('assistantChat.reasoningLabel') }}
-      </span>
-      <LazyMathJax
+       <span class="mb-1 block text-[10px] font-semibold uppercase tracking-wide text-indigo-700/90"
+        > {{ $t('assistantChat.reasoningLabel') }} </span
+      > <LazyMathJax
         :content="String(step.assistant_reasoning)"
         :enable-markdown="true"
         :enable-curly-links="false"
@@ -15,95 +16,115 @@
         class="block text-xs text-gray-800 leading-snug"
       />
     </div>
-    <span>{{ step.action }}</span>
-    <span v-if="!semanticPayload?.results?.length" class="block mt-0.5">— {{ step.result }}</span>
-
-    <!-- Structured semantic search results: nested foldables -->
+     <span>{{ step.action }}</span
+    > <span v-if="!semanticPayload?.results?.length" class="block mt-0.5">— {{ step.result }}</span
+    > <!-- Structured semantic search results: nested foldables -->
     <div v-if="semanticPayload?.results?.length" class="mt-1.5 not-italic space-y-1">
+
       <details class="rounded border border-gray-200 bg-gray-50/80 px-2 py-1">
+
         <summary
           class="cursor-pointer text-gray-700 text-xs font-medium hover:underline select-none list-none [&::-webkit-details-marker]:hidden"
         >
-          {{ $t('assistantChat.returnedDefinitions', { n: semanticPayload.results.length }) }}
+           {{ $t('assistantChat.returnedDefinitions', { n: semanticPayload.results.length }) }}
         </summary>
+
         <ul class="mt-2 space-y-1 pl-0 list-none">
+
           <li v-for="(row, i) in semanticPayload.results" :key="i">
+
             <details class="rounded border border-gray-100 bg-white px-2 py-1 text-xs">
+
               <summary
                 class="cursor-pointer text-gray-800 hover:underline select-none list-none flex flex-wrap items-baseline gap-x-1 gap-y-0 [&::-webkit-details-marker]:hidden"
               >
-                <span class="font-mono font-semibold">{{ row.valsi }}</span>
-                <span v-if="row.lang" class="text-gray-500 font-normal">· {{ row.lang }}</span>
-                <span v-if="row.similarity != null" class="text-gray-400 font-normal text-[10px]"
+                 <span class="font-mono font-semibold">{{ row.valsi }}</span
+                > <span v-if="row.lang" class="text-gray-500 font-normal">· {{ row.lang }}</span
+                > <span v-if="row.similarity != null" class="text-gray-400 font-normal text-[10px]"
                   >sim {{ formatSimilarity(row.similarity) }}</span
                 >
               </summary>
+
               <div
                 v-if="row.definition"
                 class="mt-1.5 pl-1 border-l-2 border-gray-200 text-gray-700 break-words"
               >
-                <LazyMathJax
+                 <LazyMathJax
                   :content="row.definition"
                   :lang-id="langId"
                   class="block text-xs text-gray-700"
                 />
               </div>
+
               <div v-if="row.notes" class="mt-1 text-[11px] text-gray-500 break-words">
-                <span class="font-medium text-gray-600">{{ $t('assistantChat.notesLabel') }}</span>
-                <LazyMathJax
+                 <span class="font-medium text-gray-600">{{ $t('assistantChat.notesLabel') }}</span
+                > <LazyMathJax
                   :content="row.notes"
                   :lang-id="langId"
                   class="inline text-[11px] text-gray-500"
                 />
               </div>
+
             </details>
+
           </li>
+
         </ul>
+
         <p
           v-if="
             semanticPayload.total != null && semanticPayload.total > semanticPayload.results.length
           "
           class="text-[11px] text-gray-500 mt-2 mb-0"
         >
-          {{ $t('assistantChat.totalMatchingHint', { total: semanticPayload.total }) }}
+           {{ $t('assistantChat.totalMatchingHint', { total: semanticPayload.total }) }}
         </p>
-      </details>
-    </div>
 
-    <!-- Tool returned an error object -->
+      </details>
+
+    </div>
+     <!-- Tool returned an error object -->
     <div v-else-if="semanticPayload?.error" class="mt-1.5 not-italic">
+
       <details class="rounded border border-amber-100 bg-amber-50/60 px-2 py-1 text-xs">
+
         <summary
           class="cursor-pointer text-amber-900 font-medium hover:underline select-none list-none [&::-webkit-details-marker]:hidden"
         >
-          {{ $t('assistantChat.toolErrorSummary') }}
+           {{ $t('assistantChat.toolErrorSummary') }}
         </summary>
-        <p class="mt-1.5 text-amber-900 whitespace-pre-wrap break-words">
-          {{ semanticPayload.error }}
-        </p>
-      </details>
-    </div>
 
-    <!-- Unparseable or non-semantic payload: raw fold -->
+        <p class="mt-1.5 text-amber-900 whitespace-pre-wrap break-words">
+           {{ semanticPayload.error }}
+        </p>
+
+      </details>
+
+    </div>
+     <!-- Unparseable or non-semantic payload: raw fold -->
     <div v-else-if="step.tool_output" class="mt-1 text-gray-400 not-italic">
-      <button
+       <button
         type="button"
         class="text-left underline hover:no-underline focus:outline-none text-xs"
         :aria-expanded="showRawOutput"
         @click="$emit('toggleRaw')"
       >
-        {{ showRawOutput ? $t('assistantChat.hideRawOutput') : $t('assistantChat.showRawOutput') }}
-      </button>
+         {{ showRawOutput ? $t('assistantChat.hideRawOutput') : $t('assistantChat.showRawOutput') }}
+        </button
+      >
       <pre
         v-show="showRawOutput"
         class="mt-1 p-1.5 rounded bg-gray-200 text-[10px] overflow-x-auto max-h-48 overflow-y-auto whitespace-pre-wrap break-all"
         >{{ step.tool_output }}</pre
       >
+
     </div>
+
   </div>
+
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed } from 'vue'
 
 import LazyMathJax from '@/components/LazyMathJax.vue'
@@ -142,3 +163,4 @@ function formatSimilarity(s) {
   return s.toFixed(3)
 }
 </script>
+

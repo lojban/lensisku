@@ -1,50 +1,41 @@
 <template>
+
   <div class="collection-widget">
-    <!-- Add to Collection Button -->
-    <button
+     <!-- Add to Collection Button --> <button
       class="btn-empty flex items-center gap-2 hover:text-yellow-600"
       @click="openModal"
       :title="t('collectionWidget.addToCollection')"
     >
-      <CopyPlus class="w-4 h-4" />
-    </button>
+       <CopyPlus class="w-4 h-4" /> </button
+    > <ModalComponent
+      :show="showModal"
+      :title="t('collectionWidget.modalTitle')"
+      @close="closeModal"
+      > <!-- Header --> <template #header
+        >
+        <h3 class="text-xl font-bold"> {{ t('collectionWidget.modalTitle') }} </h3>
+         </template
+      > <!-- Loading State --> <LoadingSpinner v-if="isLoading" class="py-4" /> <!-- Collections List -->
 
-    <ModalComponent :show="showModal" :title="t('collectionWidget.modalTitle')" @close="closeModal">
-      <!-- Header -->
-      <template #header>
-        <h3 class="text-xl font-bold">
-          {{ t('collectionWidget.modalTitle') }}
-        </h3>
-      </template>
-
-      <!-- Loading State -->
-      <LoadingSpinner v-if="isLoading" class="py-4" />
-
-      <!-- Collections List -->
       <div v-else>
-        <!-- Create New Collection -->
-        <IconButton
+         <!-- Create New Collection --> <IconButton
           v-if="collections.length > 0"
           button-classes="w-full btn-aqua-emerald mb-4"
           :label="t('collectionWidget.createNew')"
           @click="showCreateForm = true"
-        />
-
-        <!-- Empty State -->
+        /> <!-- Empty State -->
         <div v-if="collections.length === 0" class="px-3 py-4 text-center">
-          <p class="text-sm text-gray-500 mb-2">
-            {{ t('collectionWidget.noCollections') }}
-          </p>
-          <IconButton
+
+          <p class="text-sm text-gray-500 mb-2"> {{ t('collectionWidget.noCollections') }} </p>
+           <IconButton
             button-classes="btn-aqua-emerald mt-4 mx-auto"
             :label="t('collectionWidget.createFirst')"
             @click="showCreateForm = true"
           />
         </div>
-
-        <!-- Collections -->
+         <!-- Collections -->
         <div v-else class="max-h-64 overflow-y-auto space-y-1">
-          <button
+           <button
             v-for="collection in collections"
             :key="collection.collection_id"
             :disabled="isAddingTo === collection.collection_id"
@@ -56,116 +47,135 @@
             }"
             @click="addToCollection(collection.collection_id)"
           >
+
             <div class="flex items-center gap-2">
-              <span class="text-gray-700">{{ collection.name }}</span>
-              <span class="text-xs text-gray-500">{{
+               <span class="text-gray-700">{{ collection.name }}</span
+              > <span class="text-xs text-gray-500">{{
                 t('collectionWidget.itemsCount', { count: collection.item_count })
-              }}</span>
+              }}</span
+              >
             </div>
-            <span
+             <span
               v-if="isAddingTo === collection.collection_id"
               class="text-indigo-600 animate-spin text-sm"
               >↻</span
-            >
-            <span v-else class="text-gray-400 invisible group-hover:visible">{{
+            > <span v-else class="text-gray-400 invisible group-hover:visible">{{
               selectedCollectionId === collection.collection_id
                 ? t('collectionWidget.selected')
                 : t('collectionWidget.select')
-            }}</span>
-          </button>
+            }}</span
+            > </button
+          >
         </div>
-      </div>
 
-      <!-- Create Collection Form -->
+      </div>
+       <!-- Create Collection Form -->
       <div v-if="showCreateForm" class="border-t mt-2 pt-2">
+
         <form class="space-y-3" @submit.prevent="createAndAddToCollection">
+
           <div>
-            <label class="block text-xs font-medium text-gray-700 mb-1">{{
+             <label class="block text-xs font-medium text-gray-700 mb-1">{{
               t('collectionWidget.collectionNameLabel')
-            }}</label>
-            <input v-model="newCollection.name" type="text" required class="w-full input-field" />
+            }}</label
+            > <input v-model="newCollection.name" type="text" required class="w-full input-field" />
+
           </div>
+
           <div>
-            <label class="block text-xs font-medium text-gray-700 mb-1">{{
+             <label class="block text-xs font-medium text-gray-700 mb-1">{{
               t('collectionWidget.descriptionLabel')
-            }}</label>
-            <textarea v-model="newCollection.description" rows="2" class="textarea-field" />
+            }}</label
+            > <textarea v-model="newCollection.description" rows="2" class="textarea-field" />
           </div>
+
           <div class="flex items-center space-x-2">
-            <input
+             <input
               id="is_public"
               v-model="newCollection.is_public"
               type="checkbox"
               class="checkbox-toggle"
-            />
-            <label for="is_public" class="text-xs text-gray-700">
-              {{ t('collectionWidget.makePublic') }}
-            </label>
+            /> <label for="is_public" class="text-xs text-gray-700"
+              > {{ t('collectionWidget.makePublic') }} </label
+            >
           </div>
+
           <div class="mt-2 flex flex-col gap-2">
-            <!-- Progress bar when creating collection -->
+             <!-- Progress bar when creating collection -->
             <div v-if="isCreating" class="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden">
+
               <div class="h-full w-1/3 bg-indigo-500 rounded-full progress-indeterminate" />
+
             </div>
+
             <div class="flex justify-end gap-2">
-              <button
+               <button
                 type="button"
                 class="btn-cancel"
                 :disabled="isCreating"
                 @click="showCreateForm = false"
               >
-                {{ t('collectionWidget.cancel') }}
-              </button>
-              <button type="submit" :disabled="isCreating" class="btn-create">
-                {{ isCreating ? t('collectionDetail.saving') : t('collectionWidget.createAndAdd') }}
-              </button>
+                 {{ t('collectionWidget.cancel') }} </button
+              > <button type="submit" :disabled="isCreating" class="btn-create">
+                 {{
+                  isCreating ? t('collectionDetail.saving') : t('collectionWidget.createAndAdd')
+                }} </button
+              >
             </div>
-          </div>
-        </form>
-      </div>
 
-      <!-- Notes Input -->
+          </div>
+
+        </form>
+
+      </div>
+       <!-- Notes Input -->
       <div v-if="showNotesInput" class="border-t mt-2 pt-2">
-        <label class="block text-xs font-medium text-gray-700 mb-1">{{
+         <label class="block text-xs font-medium text-gray-700 mb-1">{{
           t('collectionWidget.notesLabel')
-        }}</label>
-        <textarea
+        }}</label
+        > <textarea
           v-model="notes"
           rows="2"
           :placeholder="t('collectionWidget.notesPlaceholder')"
           class="textarea-field"
         />
         <div class="mt-2 flex flex-col gap-2">
-          <!-- Progress bar when saving -->
+           <!-- Progress bar when saving -->
           <div
             v-if="isAddingTo === selectedCollectionId"
             class="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden"
           >
+
             <div class="h-full w-1/3 bg-indigo-500 rounded-full progress-indeterminate" />
+
           </div>
+
           <div class="flex justify-end gap-2">
-            <button
+             <button
               class="btn-cancel"
               :disabled="isAddingTo === selectedCollectionId"
               @click="cancelAddWithNotes"
             >
-              {{ t('collectionWidget.cancel') }}
-            </button>
-            <button
+               {{ t('collectionWidget.cancel') }} </button
+            > <button
               class="btn-insert"
               :disabled="isAddingTo === selectedCollectionId"
               @click="confirmAddWithNotes"
             >
-              {{ t('collectionWidget.addToCollectionButton') }}
-            </button>
+               {{ t('collectionWidget.addToCollectionButton') }} </button
+            >
           </div>
+
         </div>
+
       </div>
-    </ModalComponent>
+       </ModalComponent
+    >
   </div>
+
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, watch, onMounted, onUnmounted, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 
@@ -363,3 +373,4 @@ onUnmounted(() => {
 <style scoped>
 /* Styles remain exactly the same */
 </style>
+

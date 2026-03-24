@@ -1,14 +1,14 @@
 <template>
-  <button
+   <button
     class="inline-flex items-center justify-center btn-empty"
     :title="title"
     @click.stop="copyToClipboard"
   >
-    <ClipboardCopy class="w-4 h-4" />
-  </button>
+     <ClipboardCopy class="w-4 h-4" /> </button
+  >
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ClipboardCopy } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 
@@ -44,3 +44,4 @@ const copyToClipboard = async () => {
   }
 }
 </script>
+

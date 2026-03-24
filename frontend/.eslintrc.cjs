@@ -42,7 +42,7 @@ module.exports = {
         '*.cjs',
         '*.config.js',
         '*.config.cjs',
-        'vite.config.js',
+        'vite.config.ts',
         'tailwind.config.js',
         'postcss.config.cjs',
       ],

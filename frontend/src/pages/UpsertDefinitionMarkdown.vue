@@ -1,7 +1,9 @@
 <template>
+
   <div class="container mx-auto p-4">
+
     <h2 class="text-xl sm:text-2xl font-bold text-gray-800 select-none mb-4">
-      {{
+       {{
         isEditMode
           ? t('upsertDefinitionMarkdown.editTitle')
           : t('upsertDefinitionMarkdown.addTitle')
@@ -9,12 +11,11 @@
     </h2>
 
     <form class="space-y-4" @submit.prevent="submitValsi">
-      <!-- Word Input -->
+       <!-- Word Input -->
       <div>
-        <label for="word" class="block text-sm font-medium text-blue-700">
-          {{ t('upsertDefinitionMarkdown.wordLabel') }}
-        </label>
-        <input
+         <label for="word" class="block text-sm font-medium text-blue-700"
+          > {{ t('upsertDefinitionMarkdown.wordLabel') }} </label
+        > <input
           id="word"
           v-model="word"
           type="text"
@@ -24,74 +25,76 @@
           :placeholder="t('upsertDefinitionMarkdown.wordPlaceholder')"
         />
       </div>
-
-      <!-- Language Selection -->
+       <!-- Language Selection -->
       <div>
-        <label for="language" class="block text-sm font-medium text-blue-700">
-          {{ t('upsertDefinitionMarkdown.languageLabel') }}
-        </label>
-        <select
+         <label for="language" class="block text-sm font-medium text-blue-700"
+          > {{ t('upsertDefinitionMarkdown.languageLabel') }} </label
+        > <select
           id="language"
           v-model="langId"
           required
           class="input-field w-full h-10"
           :disabled="isLoading || isSubmitting"
         >
-          <option value="">
-            {{ t('upsertDefinitionMarkdown.languagePlaceholder') }}
-          </option>
-          <option v-for="lang in languages" :key="lang.id" :value="lang.id">
-            {{ lang.real_name }} ({{ lang.english_name }})
-          </option>
-        </select>
-      </div>
 
-      <!-- Entry Language Selection (Only for new entries) -->
-      <div v-if="!isEditMode">
-        <label for="source-language" class="block text-sm font-medium text-blue-700"
-          >{{ t('upsertDefinition.sourceLanguageLabel') }}
-          <span class="text-red-500">{{ t('upsertDefinition.required') }}</span></label
+          <option value=""> {{ t('upsertDefinitionMarkdown.languagePlaceholder') }} </option>
+
+          <option v-for="lang in languages" :key="lang.id" :value="lang.id">
+             {{ lang.real_name }} ({{ lang.english_name }})
+          </option>
+           </select
         >
-        <select
+      </div>
+       <!-- Entry Language Selection (Only for new entries) -->
+      <div v-if="!isEditMode">
+         <label for="source-language" class="block text-sm font-medium text-blue-700"
+          >{{ t('upsertDefinition.sourceLanguageLabel') }} <span class="text-red-500">{{
+            t('upsertDefinition.required')
+          }}</span></label
+        > <select
           id="source-language"
           v-model="sourceLangId"
           required
           class="input-field w-full h-10"
           :disabled="isLoading || isSubmitting || isEditMode"
         >
+
           <option value="">{{ t('upsertDefinition.selectLanguagePlaceholder') }}</option>
+
           <option v-for="lang in languages" :key="lang.id" :value="lang.id">
-            {{ lang.real_name }} ({{ lang.english_name }})
+             {{ lang.real_name }} ({{ lang.english_name }})
           </option>
-        </select>
-        <p class="mt-1 text-xs text-gray-500">
-          {{ t('upsertDefinition.sourceLanguageNote') }}
-        </p>
-      </div>
+           </select
+        >
+        <p class="mt-1 text-xs text-gray-500"> {{ t('upsertDefinition.sourceLanguageNote') }} </p>
 
-      <!-- Definition Editor -->
+      </div>
+       <!-- Definition Editor -->
       <div>
-        <label class="block text-sm font-medium text-blue-700 mb-2">
-          {{ t('upsertDefinitionMarkdown.definitionLabel') }}
-        </label>
+         <label class="block text-sm font-medium text-blue-700 mb-2"
+          > {{ t('upsertDefinitionMarkdown.definitionLabel') }} </label
+        >
         <div ref="editor" class="milkdown-editor" />
-      </div>
 
-      <!-- Submit Button -->
+      </div>
+       <!-- Submit Button -->
       <div class="flex justify-end">
-        <button type="submit" class="btn-create" :disabled="isSubmitting || !isValid">
-          {{
+         <button type="submit" class="btn-create" :disabled="isSubmitting || !isValid">
+           {{
             isSubmitting
               ? t('upsertDefinitionMarkdown.saving')
               : t('upsertDefinitionMarkdown.saveButton')
-          }}
-        </button>
+          }} </button
+        >
       </div>
+
     </form>
+
   </div>
+
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { Crepe } from '@milkdown/crepe'
 import { insert } from '@milkdown/utils'
 import TurndownService from 'turndown'
@@ -144,9 +147,9 @@ onMounted(async () => {
           // Convert file to base64
           const reader = new FileReader()
           reader.readAsDataURL(file)
-          const dataUrl = await new Promise(
-            (resolve) => (reader.onload = () => resolve(reader.result))
-          )
+          const dataUrl = await new Promise<string>((resolve) => {
+            reader.onload = () => resolve(typeof reader.result === 'string' ? reader.result : '')
+          })
 
           // Extract mime type and data
           const [mimeType, data] = dataUrl.split(',', 2)
@@ -259,9 +262,9 @@ async function submitValsi() {
       definition: definition.value, // This already sends the markdown content
       notes: null,
       etymology: null,
-      lang_id: parseInt(langId.value),
+      lang_id: parseInt(String(langId.value), 10),
       // Only include source_langid when adding a new definition
-      ...(!isEditMode.value && { source_langid: parseInt(sourceLangId.value) || 1 }),
+      ...(!isEditMode.value && { source_langid: parseInt(String(sourceLangId.value), 10) || 1 }),
       selmaho: null,
       jargon: null,
       gloss_keywords: null,
@@ -316,3 +319,4 @@ onMounted(async () => {
   /* min-height: 300px; */
 }
 </style>
+

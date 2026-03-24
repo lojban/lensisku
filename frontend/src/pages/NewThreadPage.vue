@@ -1,12 +1,11 @@
 <template>
+
   <div class="bg-white rounded-lg shadow-md p-6">
-    <h2 class="text-2xl font-bold mb-6 text-gray-800">
-      {{ t('newThreadPage.title') }}
-    </h2>
-    <p class="text-gray-600 text-sm mb-2">
-      {{ t('newThreadPage.description') }}
-    </p>
-    <CommentForm
+
+    <h2 class="text-2xl font-bold mb-6 text-gray-800"> {{ t('newThreadPage.title') }} </h2>
+
+    <p class="text-gray-600 text-sm mb-2"> {{ t('newThreadPage.description') }} </p>
+     <CommentForm
       ref="commentFormRef"
       :is-reply="false"
       :is-submitting="isSubmitting"
@@ -14,9 +13,10 @@
       @cancel="cancelCreation"
     />
   </div>
+
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
@@ -27,7 +27,7 @@ import { useSeoHead } from '@/composables/useSeoHead'
 
 const { t, locale } = useI18n()
 
-useSeoHead({ title: computed(() => t('newThreadPage.pageTitle')) }, locale.value)
+useSeoHead({ title: computed(() => t('newThreadPage.pageTitle')) })
 
 const router = useRouter()
 const isSubmitting = ref(false)
@@ -73,3 +73,4 @@ const cancelCreation = () => {
     0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 </style>
+

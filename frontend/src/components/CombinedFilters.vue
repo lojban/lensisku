@@ -1,10 +1,11 @@
 <template>
+
   <div class="filters space-y-4">
-    <!-- Language Filter Section -->
+     <!-- Language Filter Section -->
     <div
       class="flex flex-col sm:flex-row items-center sm:justify-between gap-4 md:p-4 md:bg-white md:rounded-lg md:shadow-sm"
     >
-      <MultiSelect
+       <MultiSelect
         v-model="selectedLangs"
         :options="languages"
         :max-selected-labels="3"
@@ -15,60 +16,60 @@
         class="w-full sm:w-80 !rounded-full"
       />
       <div class="flex items-center gap-2 self-end md:self-center">
+
         <div class="flex items-center" role="group">
-          <button
+           <button
             class="btn-aqua btn-aqua-group-item px-3"
             :title="t('searchForm.modes.semantic')"
             @click="toggleSemanticSearch"
           >
-            <input type="checkbox" class="checkmark-aqua" :checked="filters.isSemantic" />
-            <span class="text-xs select-none whitespace-nowrap">
-              {{ t('searchForm.modes.semantic') }}
-            </span>
-          </button>
-          <button
+             <input type="checkbox" class="checkmark-aqua" :checked="filters.isSemantic" /> <span
+              class="text-xs select-none whitespace-nowrap"
+              > {{ t('searchForm.modes.semantic') }} </span
+            > </button
+          > <button
             class="btn-aqua btn-aqua-group-item px-3"
             :class="[{ 'opacity-50 !cursor-not-allowed': filters.word_type }]"
             :title="t('searchForm.modes.searchInPhrases')"
             @click="toggleSearchInPhrases"
           >
-            <input
+             <input
               type="checkbox"
               class="checkmark-aqua"
               :checked="filters.searchInPhrases && !filters.word_type"
               :disabled="!!filters.word_type"
-            />
-            <span class="text-xs select-none whitespace-nowrap">
-              {{ t('searchForm.modes.searchInPhrases') }}
-            </span>
-          </button>
+            /> <span class="text-xs select-none whitespace-nowrap"
+              > {{ t('searchForm.modes.searchInPhrases') }} </span
+            > </button
+          >
         </div>
 
         <div class="flex items-center" role="group">
-          <button
+           <button
             v-if="hasAnyActiveFilters"
             type="button"
             class="btn-aqua-white btn-aqua-group-item px-3"
             @click="resetAllFilters"
             :title="t('filters.resetAllFilters')"
           >
-            <span class="text-xs">{{ t('filters.resetAllFilters') }}</span>
-          </button>
-
-          <button
+             <span class="text-xs">{{ t('filters.resetAllFilters') }}</span
+            > </button
+          > <button
             type="button"
             class="btn-aqua-white btn-aqua-group-item px-3"
             @click="toggleExpanded"
             :title="expanded ? t('filters.collapse') : t('filters.expand')"
           >
-            <ChevronDown
+             <ChevronDown
               class="h-5 w-5 transition-transform duration-200"
               :class="{ 'rotate-180': expanded }"
               :stroke-width="2"
-            />
-          </button>
+            /> </button
+          >
         </div>
+
       </div>
+
     </div>
 
     <div
@@ -76,39 +77,42 @@
       class="mt-3 space-y-6 bg-white rounded-lg shadow-sm p-4"
       :class="{ 'animate-expandSection': expanded }"
     >
-      <!-- Advanced Filters -->
+       <!-- Advanced Filters -->
       <div class="space-y-4">
+
         <div v-if="showWordType">
-          <label class="block text-sm font-medium text-gray-700 mb-2">{{
+           <label class="block text-sm font-medium text-gray-700 mb-2">{{
             t('filters.filterBy.wordType')
-          }}</label>
+          }}</label
+          >
           <div class="relative">
-            <select
+             <select
               v-model="filters.word_type"
               class="input-field w-full"
               @change="handleWordTypeChange"
             >
-              <option value="" disabled selected>
-                {{ t('filters.selectWordType') }}
-              </option>
-              <option v-for="type in wordTypes" :key="type.type_id" :value="type">
-                {{ type.descriptor }}
-              </option>
-            </select>
-          </div>
-        </div>
 
-        <!-- Unified input fields with clear buttons -->
+              <option value="" disabled selected> {{ t('filters.selectWordType') }} </option>
+
+              <option v-for="type in wordTypes" :key="type.type_id" :value="type">
+                 {{ type.descriptor }}
+              </option>
+               </select
+            >
+          </div>
+
+        </div>
+         <!-- Unified input fields with clear buttons -->
         <div v-for="field in ['selmaho', 'username']" :key="field" class="relative">
-          <label class="block text-sm font-medium text-gray-700 mb-1">
-            {{
+           <label class="block text-sm font-medium text-gray-700 mb-1"
+            > {{
               field === 'selmaho'
                 ? t('components.combinedFilters.filterBySelmao')
                 : t('components.combinedFilters.filterByAuthor')
-            }}
-          </label>
+            }} </label
+          >
           <div class="relative">
-            <input
+             <input
               v-model="filters[field]"
               type="text"
               :placeholder="
@@ -118,40 +122,49 @@
               "
               class="input-field w-full"
               @input="debouncedFilterChange"
-            />
-            <button
+            /> <button
               v-if="filters[field]"
               class="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors duration-200 [&>svg]:hover:text-current"
               @click="clearFilter(field)"
             >
-              <X class="h-5 w-5" />
-            </button>
+               <X class="h-5 w-5" /> </button
+            >
           </div>
+
         </div>
+
       </div>
 
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-2">{{
+         <label class="block text-sm font-medium text-gray-700 mb-2">{{
           t('filters.filterBy.sourceLanguage')
-        }}</label>
+        }}</label
+        >
         <div class="relative">
-          <select v-model="filters.source_langid" class="input-field w-full" @change="emitUpdate">
+           <select v-model="filters.source_langid" class="input-field w-full" @change="emitUpdate">
+
             <option :value="1">{{ t('filters.defaultSourceLanguage') }}</option>
+
             <option
               v-for="lang in languages.filter((l) => l.id !== 1)"
               :key="lang.id"
               :value="lang.id"
             >
-              {{ lang.real_name }} ({{ lang.english_name }})
+               {{ lang.real_name }} ({{ lang.english_name }})
             </option>
-          </select>
+             </select
+          >
         </div>
+
       </div>
+
     </div>
+
   </div>
+
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ChevronDown, X } from 'lucide-vue-next'
 import MultiSelect from 'primevue/multiselect'
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
@@ -160,13 +173,17 @@ import { fetchDefinitionsTypes } from '@/api'
 
 import { defaultFilterLanguageTags } from '@/config/locales'
 import { useI18n } from 'vue-i18n'
+import type { PropType } from 'vue'
 const { t } = useI18n()
 
+type LanguageOption = {
+  id: number
+  real_name: string
+  english_name: string
+  tag: string
+}
+
 const props = defineProps({
-  components: {
-    MultiSelect,
-    ChevronDown,
-  },
   modelValue: {
     type: Object,
     required: true,
@@ -182,7 +199,7 @@ const props = defineProps({
     }),
   },
   languages: {
-    type: Array,
+    type: Array as PropType<LanguageOption[]>,
     required: true,
   },
 })
@@ -251,7 +268,9 @@ onBeforeUnmount(() => {
 })
 
 const getDefaultLanguages = () => {
-  return props.languages.filter((lang) => defaultFilterLanguageTags.includes(lang.tag))
+  return props.languages.filter((lang) =>
+    (defaultFilterLanguageTags as readonly string[]).includes(lang.tag)
+  )
 }
 
 // Debounce delay: 450ms is optimal for search inputs (400-500ms range)
@@ -444,3 +463,4 @@ watch(
   }
 }
 </style>
+

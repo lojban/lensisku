@@ -372,7 +372,22 @@
     "newRowFrontAria": "Лицо нового элемента",
     "newRowBackAria": "Оборот нового элемента",
     "newRowFrontPlaceholder": "Лицо…",
-    "newRowBackPlaceholder": "Оборот…"
+    "newRowBackPlaceholder": "Оборот…",
+    "importButton": "Импорт CSV/TSV",
+    "importing": "Импорт…",
+    "importAria": "Импорт файла CSV или TSV",
+    "importHint": "Слияние выполняется в браузере (сначала по лицу, затем по обороту, затем по несохранённым строкам). Нажмите «Сохранить всё», чтобы записать изменения на сервер.",
+    "importEmpty": "В файле нет строк с данными.",
+    "importTooMany": "Не больше {max} строк за один импорт.",
+    "importSuccess": "Слияние: {front} по лицу, {back} по обороту, {inserted} новых строк, {skipped} пустых пропущено.",
+    "importError": "Не удалось прочитать или разобрать файл.",
+    "colActions": "Действия",
+    "deleteRow": "Удалить",
+    "deleteRowAria": "Удалить сохранённый элемент из коллекции",
+    "deleteDraftAria": "Убрать несохранённую строку",
+    "deleteSavedConfirm": "Удалить этот элемент из коллекции? Это действие необратимо.",
+    "deleteDraftConfirm": "Отменить эту несохранённую строку?",
+    "deleteError": "Не удалось удалить элемент."
   },
   "collectionDetail": {
     "pageHint": "Коллекция",

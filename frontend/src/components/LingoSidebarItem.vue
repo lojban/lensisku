@@ -1,5 +1,5 @@
 <template>
-  <RouterLink
+   <RouterLink
     :to="href"
     class="lingo-sidebar-item flex items-center font-medium transition-colors"
     :class="[
@@ -12,13 +12,15 @@
           ? ''
           : 'text-slate-600 hover:bg-slate-100',
     ]"
+    > <component
+      :is="iconComponent"
+      :class="horizontal ? 'h-5 w-5 shrink-0' : 'h-8 w-8 shrink-0'"
+    /> <span>{{ label }}</span
+    > </RouterLink
   >
-    <component :is="iconComponent" :class="horizontal ? 'h-5 w-5 shrink-0' : 'h-8 w-8 shrink-0'" />
-    <span>{{ label }}</span>
-  </RouterLink>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { BookOpen, Trophy, Target, ShoppingBag, Dumbbell } from 'lucide-vue-next'
@@ -29,7 +31,8 @@ const props = defineProps({
   icon: {
     type: String,
     default: 'learn',
-    validator: (v) => ['learn', 'courses', 'leaderboard', 'quests', 'shop'].includes(v),
+    validator: (v: unknown) =>
+      typeof v === 'string' && ['learn', 'courses', 'leaderboard', 'quests', 'shop'].includes(v),
   },
   horizontal: { type: Boolean, default: false },
 })
@@ -50,3 +53,4 @@ const iconComponent = computed(() => {
   return map[props.icon] || BookOpen
 })
 </script>
+

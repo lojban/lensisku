@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { useI18n } from 'vue-i18n'
 import { computed } from 'vue'
 
@@ -40,6 +40,7 @@ function handleKeydown(e) {
 </script>
 
 <template>
+
   <div
     v-if="show"
     class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
@@ -48,28 +49,32 @@ function handleKeydown(e) {
     role="dialog"
     aria-modal="true"
   >
+
     <div class="bg-white rounded-lg p-6 max-w-md w-full">
-      <h3 class="text-lg font-medium mb-4">
-        {{ translatedTitle }}
-      </h3>
-      <p class="text-gray-600 mb-6">
-        {{ translatedMessage }}
-      </p>
+
+      <h3 class="text-lg font-medium mb-4"> {{ translatedTitle }} </h3>
+
+      <p class="text-gray-600 mb-6"> {{ translatedMessage }} </p>
+
       <div class="sr-only" aria-live="polite">
-        {{
+         {{
           isDeleting
             ? t('deleteConfirmation.deletionInProgress')
             : t('deleteConfirmation.readyForDeletion')
         }}
       </div>
+
       <div class="flex justify-end gap-3">
-        <button class="btn-cancel" @click="$emit('cancel')">
-          {{ t('deleteConfirmation.cancel') }}
-        </button>
-        <button :disabled="isDeleting" class="btn-delete" @click="$emit('confirm')">
-          {{ isDeleting ? t('deleteConfirmation.deleting') : t('deleteConfirmation.delete') }}
-        </button>
+         <button class="btn-cancel" @click="$emit('cancel')">
+           {{ t('deleteConfirmation.cancel') }} </button
+        > <button :disabled="isDeleting" class="btn-delete" @click="$emit('confirm')">
+           {{ isDeleting ? t('deleteConfirmation.deleting') : t('deleteConfirmation.delete') }} </button
+        >
       </div>
+
     </div>
+
   </div>
+
 </template>
+

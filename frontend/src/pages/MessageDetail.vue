@@ -1,13 +1,13 @@
 <template>
-  <!-- Loading State -->
+   <!-- Loading State -->
   <div v-if="!message" class="bg-white border border-blue-200 rounded-lg p-6 flex justify-center">
-    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
-  </div>
 
-  <!-- Message Content -->
+    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+
+  </div>
+   <!-- Message Content -->
   <div v-else>
-    <!-- Action Buttons -->
-    <MessageActions
+     <!-- Action Buttons --> <MessageActions
       ref="messageActions"
       class="mb-6"
       :message-id="message?.id"
@@ -16,130 +16,147 @@
       :show-spam-button="true"
       :current-user-voted-spam="currentUserVotedSpam"
       @toggle-spam-vote="toggleSpamVote"
-    />
-
-    <!-- Message Header -->
+    /> <!-- Message Header -->
     <div class="p-4 bg-white rounded-lg shadow-sm border border-gray-100">
+
       <div class="space-y-6">
-        <!-- Subject -->
+         <!-- Subject -->
         <h2 class="text-2xl font-bold text-gray-800 mb-4 pb-4 border-b border-gray-100">
-          <LazyMathJax
+           <LazyMathJax
             :content="message.subject || ''"
             :enable-markdown="true"
             :search-term="props.searchTerm"
             curly-link-class="underline text-pink-600 hover:text-pink-800"
           />
         </h2>
-        <!-- Message Meta -->
+         <!-- Message Meta -->
         <div class="flex flex-col md:flex-row gap-4 md:gap-6">
-          <!-- Left Column -->
+           <!-- Left Column -->
           <div class="space-y-4 md:space-y-6 md:flex-1 min-w-[280px]">
-            <!-- From -->
+             <!-- From -->
             <div class="space-y-1">
+
               <div class="text-xs font-medium text-gray-500 uppercase tracking-wider">
-                {{ t('components.messageDetail.fromLabel') }}
+                 {{ t('components.messageDetail.fromLabel') }}
               </div>
+
               <div class="text-gray-700 break-words">
-                {{ formatEmailAddress(message.from_address) }}
+                 {{ formatEmailAddress(message.from_address) }}
               </div>
+
+            </div>
+             <!-- To -->
+            <div class="space-y-1">
+
+              <div class="text-xs font-medium text-gray-500 uppercase tracking-wider">
+                 {{ t('components.messageDetail.toLabel') }}
+              </div>
+
+              <div class="text-gray-700 break-words">
+                 {{ formatEmailAddress(message.to_address) }}
+              </div>
+
             </div>
 
-            <!-- To -->
+          </div>
+           <!-- Right Column -->
+          <div class="space-y-4 md:space-y-6 md:flex-1 min-w-[280px]">
+             <!-- Date -->
             <div class="space-y-1">
+
               <div class="text-xs font-medium text-gray-500 uppercase tracking-wider">
-                {{ t('components.messageDetail.toLabel') }}
+                 {{ t('components.messageDetail.dateLabel') }}
               </div>
-              <div class="text-gray-700 break-words">
-                {{ formatEmailAddress(message.to_address) }}
-              </div>
+
+              <div class="text-gray-700"> {{ formatDate(message.date) }} </div>
+
             </div>
+             <!-- Message ID -->
+            <div v-if="message.message_id" class="space-y-1">
+
+              <div class="text-xs font-medium text-gray-500 uppercase tracking-wider">
+                 {{ t('components.messageDetail.messageIdLabel') }}
+              </div>
+
+              <div class="text-gray-700 text-sm break-words"> {{ message.message_id }} </div>
+
+            </div>
+
+            <div v-if="message.message_id" class="space-y-1">
+
+              <div class="text-xs font-medium text-gray-500 uppercase tracking-wider">
+                 {{ t('components.messageDetail.filenameLabel') }}
+              </div>
+
+              <div class="text-gray-700 text-sm break-words"> {{ message.file_path }} </div>
+
+            </div>
+
           </div>
 
-          <!-- Right Column -->
-          <div class="space-y-4 md:space-y-6 md:flex-1 min-w-[280px]">
-            <!-- Date -->
-            <div class="space-y-1">
-              <div class="text-xs font-medium text-gray-500 uppercase tracking-wider">
-                {{ t('components.messageDetail.dateLabel') }}
-              </div>
-              <div class="text-gray-700">
-                {{ formatDate(message.date) }}
-              </div>
-            </div>
-
-            <!-- Message ID -->
-            <div v-if="message.message_id" class="space-y-1">
-              <div class="text-xs font-medium text-gray-500 uppercase tracking-wider">
-                {{ t('components.messageDetail.messageIdLabel') }}
-              </div>
-              <div class="text-gray-700 text-sm break-words">
-                {{ message.message_id }}
-              </div>
-            </div>
-            <div v-if="message.message_id" class="space-y-1">
-              <div class="text-xs font-medium text-gray-500 uppercase tracking-wider">
-                {{ t('components.messageDetail.filenameLabel') }}
-              </div>
-              <div class="text-gray-700 text-sm break-words">
-                {{ message.file_path }}
-              </div>
-            </div>
-          </div>
         </div>
-      </div>
-    </div>
 
-    <!-- Message Parts -->
+      </div>
+
+    </div>
+     <!-- Message Parts -->
     <div class="mt-6 p-4 bg-white rounded-lg shadow-sm border border-gray-100 space-y-6">
-      <!-- Text Parts -->
-      <template v-for="part in message.parts_json.filter((p) => p.mime_type.startsWith('text/'))">
+       <!-- Text Parts --> <template
+        v-for="part in message.parts_json.filter((p) => p.mime_type.startsWith('text/'))"
+        >
         <div
           v-if="part.mime_type === 'text/plain' || part.mime_type === 'text/html'"
           :key="part.id"
           class="prose max-w-none text-gray-700 message-content"
           v-html="highlightText(replaceCidReferences(part.content, part.mime_type))"
         />
-      </template>
-
-      <!-- Attachments -->
+         </template
+      > <!-- Attachments -->
       <div
         v-if="message.parts_json.filter((p) => !p.mime_type.startsWith('text/')).length"
         class="pt-4 border-t border-gray-100"
       >
+
         <h3 class="text-lg font-semibold text-gray-800 mb-4">
-          {{ t('components.messageDetail.attachmentsTitle') }}
+           {{ t('components.messageDetail.attachmentsTitle') }}
         </h3>
+
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+
           <div
             v-for="part in message.parts_json.filter((p) => !p.mime_type.startsWith('text/'))"
             :key="part.id"
             class="p-3 bg-gray-50 rounded-lg border border-gray-200 hover:border-blue-200 transition-colors flex items-start gap-3"
           >
+
             <div class="flex-shrink-0">
-              <AttachmentIcon :mime-type="part.mime_type" class="w-6 h-6 text-gray-500" />
+               <AttachmentIcon :mime-type="part.mime_type" class="w-6 h-6 text-gray-500" />
             </div>
+
             <div class="flex-1 min-w-0">
+
               <div class="text-sm font-medium text-gray-700 truncate">
-                {{ part.filename || part.content_type }}
+                 {{ part.filename || part.content_type }}
               </div>
-              <div class="text-xs text-gray-500 mt-1">
-                {{ part.mime_type }}
-              </div>
+
+              <div class="text-xs text-gray-500 mt-1"> {{ part.mime_type }} </div>
+
             </div>
-            <button
+             <button
               class="btn-get"
               :title="t('components.messageDetail.downloadAttachmentTitle')"
               @click="downloadAttachment(part)"
             >
-              <Download class="h-5 w-5" />
-            </button>
+               <Download class="h-5 w-5" /> </button
+            >
           </div>
-        </div>
-      </div>
-    </div>
 
-    <!-- Action Buttons -->
-    <MessageActions
+        </div>
+
+      </div>
+
+    </div>
+     <!-- Action Buttons --> <MessageActions
       ref="messageActions"
       class="mt-6 pb-6"
       :message-id="message?.id"
@@ -150,9 +167,10 @@
       @toggle-spam-vote="toggleSpamVote"
     />
   </div>
+
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { Download } from 'lucide-vue-next'
 import { marked } from 'marked'
 import { ref, watch, computed } from 'vue'
@@ -208,11 +226,12 @@ const highlightText = (text) => {
   const trimmedText = text.replace(/[\n\r ]+$/, '')
 
   // First parse with marked
-  const parsedContent = marked(trimmedText, {
+  const parsedContent = marked.parse(trimmedText, {
     renderer: new marked.Renderer(),
     gfm: true,
     breaks: true,
-  })
+    async: false,
+  }) as string
 
   // Then apply search term highlighting if needed
   if (props.searchTerm) {
@@ -288,7 +307,7 @@ const pageTitle = computed(() => {
   return t('components.messageDetail.title', { subject: message.value.subject })
 })
 
-useSeoHead({ title: pageTitle }, locale.value)
+useSeoHead({ title: pageTitle })
 </script>
 
 <style scoped>
@@ -388,3 +407,4 @@ mark {
   background: #a1a1a1;
 }
 </style>
+

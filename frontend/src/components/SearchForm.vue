@@ -1,35 +1,40 @@
 <template>
+
   <div class="search-form max-w-3xl mx-auto">
+
     <div class="flex flex-col sm:flex-row gap-2 sm:gap-0">
+
       <div class="w-full sm:w-56 shrink-0 [&>div]:block [&>div]:w-full">
-        <Dropdown>
-          <template #trigger>
-            <button
+         <Dropdown
+          > <template #trigger
+            > <button
               type="button"
               class="w-full h-10 px-3 flex items-center justify-between gap-2 rounded-full sm:rounded-l-full sm:rounded-r-none border border-slate-300 bg-white shadow-none text-left"
             >
+
               <div v-if="mode" class="flex items-center gap-2 min-w-0">
-                <component :is="mode.icon" class="h-4 w-4 shrink-0" :class="mode.color" />
-                <span class="truncate">{{ mode.name }}</span>
+                 <component :is="mode.icon" class="h-4 w-4 shrink-0" :class="mode.color" /> <span
+                  class="truncate"
+                  >{{ mode.name }}</span
+                >
               </div>
-              <span v-else class="text-gray-500">{{ $t('searchForm.selectSearchMode') }}</span>
-              <ChevronDown class="h-4 w-4 shrink-0 text-gray-500" />
-            </button>
-          </template>
-          <button
+               <span v-else class="text-gray-500">{{ $t('searchForm.selectSearchMode') }}</span
+              > <ChevronDown class="h-4 w-4 shrink-0 text-gray-500" /> </button
+            > </template
+          > <button
             v-for="m in modes"
             :key="m.value"
             type="button"
             class="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
             @click="selectMode(m)"
           >
-            <component :is="m.icon" class="h-4 w-4 shrink-0" :class="m.color" />
-            {{ m.name }}
-          </button>
-        </Dropdown>
+             <component :is="m.icon" class="h-4 w-4 shrink-0" :class="m.color" /> {{ m.name }} </button
+          > </Dropdown
+        >
       </div>
+
       <div class="relative flex-1 sm:-ml-px">
-        <input
+         <input
           ref="searchInput"
           v-model="query"
           :placeholder="getPlaceholder"
@@ -37,24 +42,29 @@
           @input="handleInput"
         />
         <div class="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center">
+
           <div
             v-if="isSearching"
             class="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-500"
           />
-          <button
+           <button
             v-else-if="query"
             class="text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors duration-200 p-1 rounded-full"
             @click="clearInput"
           >
-            <X class="h-5 w-5" />
-          </button>
+             <X class="h-5 w-5" /> </button
+          >
         </div>
+
       </div>
+
     </div>
+
   </div>
+
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { Book, List, ChevronDown, Waves, X } from 'lucide-vue-next'
 import { Dropdown } from '@packages/ui'
 import { ref, computed, watch, onBeforeUnmount } from 'vue'
@@ -211,3 +221,4 @@ defineExpose({
   focusInput,
 })
 </script>
+

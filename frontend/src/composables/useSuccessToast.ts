@@ -1,18 +1,23 @@
-import { ref, provide, inject } from 'vue'
+import { ref, provide, inject, type Ref, type InjectionKey } from 'vue'
 
 /** Default global success toast visibility: 2.9 × 2 seconds (milliseconds). */
 export const DEFAULT_SUCCESS_TOAST_DURATION_MS = 2.9 * 2 * 1000
 
-const SUCCESS_TOAST_KEY = Symbol('successToast')
+export interface SuccessToastPayload {
+  message: string
+  duration?: number
+}
+
+const SUCCESS_TOAST_KEY = Symbol('successToast') as InjectionKey<{
+  successToast: Ref<SuccessToastPayload | null>
+  showSuccess: (message: string, durationMs?: number) => void
+  clearSuccess: () => void
+}>
 
 export function provideSuccessToast() {
-  const successToast = ref(null)
+  const successToast = ref<SuccessToastPayload | null>(null)
 
-  /**
-   * @param {string} message
-   * @param {number} [durationMs] ToastFloat duration (ms); defaults to 2.9×2s via DEFAULT_SUCCESS_TOAST_DURATION_MS in App when omitted
-   */
-  const showSuccess = (message, durationMs) => {
+  const showSuccess = (message: string, durationMs?: number) => {
     successToast.value = durationMs != null ? { message, duration: durationMs } : { message }
   }
 
@@ -20,17 +25,15 @@ export function provideSuccessToast() {
     successToast.value = null
   }
 
-  provide(SUCCESS_TOAST_KEY, {
-    successToast,
-    showSuccess,
-    clearSuccess,
-  })
-
-  return {
+  const ctx = {
     successToast,
     showSuccess,
     clearSuccess,
   }
+
+  provide(SUCCESS_TOAST_KEY, ctx)
+
+  return ctx
 }
 
 export function useSuccessToast() {

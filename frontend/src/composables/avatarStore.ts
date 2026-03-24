@@ -1,23 +1,18 @@
 import { getProfileImage } from '@/api'
 
-// Use regular Map instead of ref
-const avatarCache = new Map()
-// Track in-flight requests
-const pendingRequests = new Map()
+const avatarCache = new Map<string, boolean>()
+const pendingRequests = new Map<string, Promise<boolean>>()
 
 export const useAvatarStore = () => {
-  const checkProfileImage = async (username) => {
-    // Return cached result if available
+  const checkProfileImage = async (username: string): Promise<boolean> => {
     if (avatarCache.has(username)) {
-      return avatarCache.get(username)
+      return avatarCache.get(username) as boolean
     }
 
-    // Return existing promise if request is pending
     if (pendingRequests.has(username)) {
-      return pendingRequests.get(username)
+      return pendingRequests.get(username) as Promise<boolean>
     }
 
-    // Create new request promise
     const requestPromise = (async () => {
       try {
         const response = await fetch(getProfileImage(username, { cached: true }))
@@ -25,7 +20,6 @@ export const useAvatarStore = () => {
         avatarCache.set(username, hasAvatar)
         return hasAvatar
       } catch (error) {
-        // Don't cache failed requests
         console.error(`Failed to fetch avatar for ${username}:`, error)
         return false
       } finally {
@@ -33,19 +27,17 @@ export const useAvatarStore = () => {
       }
     })()
 
-    // Store the pending request
     pendingRequests.set(username, requestPromise)
     return requestPromise
   }
 
-  const getProfileImageUrl = (username) => {
+  const getProfileImageUrl = (username: string): string => {
     return getProfileImage(username, { cached: true })
   }
 
   return {
     checkProfileImage,
     getProfileImageUrl,
-    // Only expose cache for testing/debugging
     _avatarCache: avatarCache,
   }
 }

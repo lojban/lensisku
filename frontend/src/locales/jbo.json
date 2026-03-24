@@ -392,7 +392,22 @@
     "newRowFrontAria": "stedu be lo cnino da",
     "newRowBackAria": "trixe be lo cnino da",
     "newRowFrontPlaceholder": "stedu…",
-    "newRowBackPlaceholder": "trixe…"
+    "newRowBackPlaceholder": "trixe…",
+    "importButton": "jmina lo CSV/TSV",
+    "importing": "ca'o jmina...",
+    "importAria": "jmina lo CSV .a lo TSV datnyvei",
+    "importHint": "lo nu jmina cu zukte fi lo samselpla .i ko jmina fi lo stedu .e lo trixe .e lo na rejgasnu papri .i ko rejgau ro da mu'i lo nu stika lo datni",
+    "importEmpty": "no papri cu zvati le datnyvei",
+    "importTooMany": "so'i papri cu zmadu {max} lo'i papri",
+    "importSuccess": "jmina: {front} fi lo stedu .i {back} fi lo trixe .i {inserted} cnino papri .i {skipped} kunti cu cliva",
+    "importError": "fliba lo nu tcidu .a lo nu jimpe le datnyvei",
+    "colActions": "nu gasnu",
+    "deleteRow": "vimcu",
+    "deleteRowAria": "vimcu lo rejgasnu da fi lo liste",
+    "deleteDraftAria": "vimcu lo na rejgasnu papri",
+    "deleteSavedConfirm": "xu do birti lo nu vimcu lo da fi lo liste? .i lo nu zukte ti na ku ka'e di'a zasti",
+    "deleteDraftConfirm": "xu do birti lo nu cliva lo na rejgasnu papri?",
+    "deleteError": "fliba lo nu vimcu lo da"
   },
   "collectionDetail": {
     "pageHint": "lo liste",

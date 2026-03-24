@@ -1,13 +1,12 @@
 <template>
-  <span
+   <span
     :class="[config.bg, config.text, 'px-2.5 py-0.5 rounded-full inline-flex items-center gap-1.5']"
+    > <component :is="config.icon" class="size-3.5 shrink-0" /> <span>{{ label }}</span
+    > </span
   >
-    <component :is="config.icon" class="size-3.5 shrink-0" />
-    <span>{{ label }}</span>
-  </span>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { BookOpen, BookMarked, Mail } from 'lucide-vue-next'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -17,7 +16,8 @@ const props = defineProps({
   type: {
     type: String,
     required: true,
-    validator: (v) => ['definition', 'valsi', 'mail'].includes(v),
+    validator: (v: unknown) =>
+      typeof v === 'string' && ['definition', 'valsi', 'mail'].includes(v),
   },
   /** Override translated label; if not set, uses default for type */
   label: {
@@ -55,3 +55,4 @@ const defaultLabels = {
 const config = computed(() => typeConfig[props.type])
 const label = computed(() => (props.label ? props.label : defaultLabels[props.type]()))
 </script>
+

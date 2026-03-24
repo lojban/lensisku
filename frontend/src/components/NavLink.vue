@@ -1,14 +1,13 @@
 <template>
-  <component
+   <component
     :is="isActive ? 'span' : 'RouterLink'"
     :to="to"
     :class="{ 'nav-link': true, 'nav-link-active': isActive }"
+    > <slot /> </component
   >
-    <slot />
-  </component>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { localeCaptureGroupRegex } from '../config/locales'
@@ -64,3 +63,4 @@ const isActive = computed(() => {
   cursor: default;
 }
 </style>
+

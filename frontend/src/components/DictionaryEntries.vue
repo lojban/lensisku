@@ -1,36 +1,35 @@
 <template>
-  <div class="dictionary-entries space-y-4">
-    <LoadingSpinner v-if="isLoading" />
 
-    <!-- Corpus entries with batched rendering -->
+  <div class="dictionary-entries space-y-4">
+     <LoadingSpinner v-if="isLoading" /> <!-- Corpus entries with batched rendering -->
     <div v-else-if="!isLoading && !error" class="grid gap-4 mb-6">
-      <!-- Decomposition display -->
-      <AlertComponent
+       <!-- Decomposition display --> <AlertComponent
         v-if="decomposition?.length"
         type="tip"
         :label="t('components.dictionaryEntries.decomposition')"
-      >
+        >
         <div class="inline-flex items-center gap-1">
-          <template v-for="(word, index) in decomposition" :key="word">
+           <template v-for="(word, index) in decomposition" :key="word"
+            >
             <h2
               class="text-base font-semibold text-blue-700 hover:text-blue-800 hover:underline truncate flex-shrink-0"
             >
-              <RouterLink
+               <RouterLink
                 :to="{
                   path: `/valsi/${word.replace(/ /g, '_')}`,
                   query: { langid: definitions[0]?.langid },
                 }"
+                > {{ word }} </RouterLink
               >
-                {{ word }}
-              </RouterLink>
             </h2>
-            <span v-if="index < decomposition.length - 1" class="text-aqua-500">+</span>
-          </template>
+             <span v-if="index < decomposition.length - 1" class="text-aqua-500">+</span> </template
+          >
         </div>
-      </AlertComponent>
-      <template v-for="(batch, batchIndex) in definitionBatches" :key="batchIndex">
+         </AlertComponent
+      > <template v-for="(batch, batchIndex) in definitionBatches" :key="batchIndex"
+        >
         <div v-for="def in batch" v-show="isVisible(batchIndex)" :key="def.definitionid">
-          <DefinitionCard
+           <DefinitionCard
             :definition="def"
             :languages="languages"
             :show-score="props.showScores"
@@ -41,29 +40,41 @@
             @collection-updated="$emit('collection-updated', $event)"
           />
         </div>
-      </template>
+         </template
+      >
     </div>
 
     <div v-if="!isLoading && definitions.length === 0" class="text-center py-8 text-gray-600">
-      {{ t('components.dictionaryEntries.noEntries') }}
+       {{ t('components.dictionaryEntries.noEntries') }}
     </div>
+
   </div>
+
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import AlertComponent from '@/components/AlertComponent.vue'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import DefinitionCard from './DefinitionCard.vue'
+import type { PropType } from 'vue'
 
 const { t } = useI18n()
 defineEmits(['collection-updated'])
 
+/** Matches `DefinitionCard` / API language rows for filters. */
+type DictionaryLanguageOption = {
+  id: number
+  real_name: string
+  english_name?: string
+}
+type DefinitionEntry = Record<string, unknown> & { definitionid?: number; langid?: number }
+
 const props = defineProps({
   definitions: {
-    type: Array,
+    type: Array as PropType<DefinitionEntry[]>,
     required: true,
   },
   isLoading: {
@@ -75,7 +86,7 @@ const props = defineProps({
     default: '',
   },
   languages: {
-    type: Array,
+    type: Array as PropType<DictionaryLanguageOption[]>,
     required: true,
   },
   showScores: {
@@ -87,11 +98,11 @@ const props = defineProps({
     default: true,
   },
   collections: {
-    type: Array,
+    type: Array as PropType<unknown[]>,
     default: () => [],
   },
   decomposition: {
-    type: Array,
+    type: Array as PropType<string[]>,
     default: () => [],
   },
 })
@@ -119,7 +130,7 @@ onMounted(() => {
     (entries) => {
       entries.forEach((entry) => {
         if (entry.isIntersecting) {
-          const batchIndex = parseInt(entry.target.dataset.batchIndex)
+          const batchIndex = parseInt((entry.target as HTMLElement).dataset.batchIndex ?? '', 10)
           if (!visibleBatches.value.has(batchIndex)) {
             visibleBatches.value.add(batchIndex)
             // Load next batch preemptively
@@ -148,3 +159,4 @@ watch(
   { deep: true }
 )
 </script>
+

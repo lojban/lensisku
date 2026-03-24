@@ -1,81 +1,78 @@
 <template>
-  <!-- Comment-type: reuse CommentItem so reactions and save button are shown -->
-  <CommentItem
+   <!-- Comment-type: reuse CommentItem so reactions and save button are shown --> <CommentItem
     v-if="change.change_type === 'comment'"
     :comment="mappedComment"
     :reply-enabled="false"
     :show-context="true"
     :valsi-id="change.valsi_id || 0"
     :definition-id="change.definition_id || 0"
-  />
-  <!-- Other change types: existing layout -->
+  /> <!-- Other change types: existing layout -->
   <div
     v-else
     class="comment-item bg-white border rounded-lg p-3 my-2 hover:border-blue-300 transition-colors min-w-48"
   >
+
     <div class="flex flex-col md:flex-row justify-between gap-2">
+
       <div class="space-x-2">
-        <span
+         <span
           :class="getTypeClass(change.change_type)"
           class="inline-block px-2 py-1 text-xs font-medium rounded-full mb-2"
-        >
-          {{ getChangeTypeLabel(change.change_type) }}
-        </span>
-        <span class="text-xs text-gray-500">
-          {{ formatTime(change.time) }}
-        </span>
-        <span class="text-xs text-gray-600 italic">
-          {{ t('recentChanges.by') }}
-          <RouterLink
+          > {{ getChangeTypeLabel(change.change_type) }} </span
+        > <span class="text-xs text-gray-500"> {{ formatTime(change.time) }} </span> <span
+          class="text-xs text-gray-600 italic"
+          > {{ t('recentChanges.by') }} <RouterLink
             v-if="change.change_type !== 'message'"
             :to="`/user/${change.username}`"
             class="text-blue-600 hover:underline"
+            > {{ change.username }} </RouterLink
           >
-            {{ change.username }}
-          </RouterLink>
-          <div v-else class="inline">
-            {{ change.username }}
-          </div>
-        </span>
+          <div v-else class="inline"> {{ change.username }} </div>
+           </span
+        >
         <div class="text-sm">
-          <RouterLink
+           <RouterLink
             :to="getChangeLink(change)"
             class="font-medium text-blue-600 hover:text-blue-800 hover:underline flex items-center"
-          >
-            <template v-if="change.change_type === 'comment' && !change.word">
-              <MessageCircle class="h-4 w-4 mr-1" />
-              <span>{{ t('recentChanges.commentFallback') }}</span>
-            </template>
-            <span v-else>{{ change.word }}</span>
-          </RouterLink>
-          <span
+            > <template v-if="change.change_type === 'comment' && !change.word"
+              > <MessageCircle class="h-4 w-4 mr-1" /> <span>{{
+                t('recentChanges.commentFallback')
+              }}</span
+              > </template
+            > <span v-else>{{ change.word }}</span
+            > </RouterLink
+          > <span
             v-if="change.language_name && change.change_type === 'definition'"
             class="italic text-gray-600"
+            > {{ t('recentChanges.in') }} {{ change.language_name }} </span
           >
-            {{ t('recentChanges.in') }} {{ change.language_name }}
-          </span>
           <div
             v-if="change.change_type === 'definition' && change.diff"
             class="mt-3 space-y-3 border-l-4 border-blue-200 pl-4"
           >
+
             <div
               v-for="diffChange in change.diff.changes"
               :key="diffChange.field"
               class="space-y-1"
             >
+
               <div class="text-xs font-medium text-gray-500">
-                {{ formatFieldName(diffChange.field) }}:
+                 {{ formatFieldName(diffChange.field) }}:
               </div>
-              <template v-if="isPlainTextField(diffChange.field)">
-                <template v-if="diffChange.change_type === 'modified'">
+               <template v-if="isPlainTextField(diffChange.field)"
+                > <template v-if="diffChange.change_type === 'modified'"
+                  >
                   <div class="bg-red-50 p-2 rounded text-sm mb-1 whitespace-pre-wrap">
-                    {{ diffChange.old_value || '' }}
+                     {{ diffChange.old_value || '' }}
                   </div>
+
                   <div class="bg-green-50 p-2 rounded text-sm whitespace-pre-wrap">
-                    {{ diffChange.new_value || '' }}
+                     {{ diffChange.new_value || '' }}
                   </div>
-                </template>
-                <template v-else>
+                   </template
+                > <template v-else
+                  >
                   <div
                     :class="{
                       'bg-green-50 text-green-800': diffChange.change_type === 'added',
@@ -83,20 +80,23 @@
                     }"
                     class="p-2 rounded text-sm whitespace-pre-wrap"
                   >
-                    {{ diffChange.new_value || diffChange.old_value || '' }}
+                     {{ diffChange.new_value || diffChange.old_value || '' }}
                   </div>
-                </template>
-              </template>
-              <template v-else>
-                <template v-if="diffChange.change_type === 'modified'">
+                   </template
+                > </template
+              > <template v-else
+                > <template v-if="diffChange.change_type === 'modified'"
+                  >
                   <div class="bg-red-50 p-2 rounded text-sm mb-1">
-                    <LazyMathJax :content="diffChange.old_value" :enable-markdown="true" />
+                     <LazyMathJax :content="diffChange.old_value" :enable-markdown="true" />
                   </div>
+
                   <div class="bg-green-50 p-2 rounded text-sm">
-                    <LazyMathJax :content="diffChange.new_value" :enable-markdown="true" />
+                     <LazyMathJax :content="diffChange.new_value" :enable-markdown="true" />
                   </div>
-                </template>
-                <template v-else>
+                   </template
+                > <template v-else
+                  >
                   <div
                     :class="{
                       'bg-green-50 text-green-800': diffChange.change_type === 'added',
@@ -104,28 +104,36 @@
                     }"
                     class="p-2 rounded text-sm"
                   >
-                    <LazyMathJax
+                     <LazyMathJax
                       :content="diffChange.new_value || diffChange.old_value"
                       :enable-markdown="true"
                     />
                   </div>
-                </template>
-              </template>
+                   </template
+                > </template
+              >
             </div>
+
           </div>
+
           <div
             v-else-if="change.change_type === 'message' && change.content"
             class="prose prose-sm max-w-none text-gray-700 mb-3"
           >
-            <LazyMathJax :content="change.content" :enable-markdown="true" />
+             <LazyMathJax :content="change.content" :enable-markdown="true" />
           </div>
+
         </div>
+
       </div>
+
     </div>
+
   </div>
+
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed } from 'vue'
 import { MessageCircle } from 'lucide-vue-next'
 import { RouterLink } from 'vue-router'
@@ -222,3 +230,4 @@ const isPlainTextField = (field) => field === 'gloss_keywords' || field === 'pla
   border-color: rgb(147, 197, 253);
 }
 </style>
+

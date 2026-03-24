@@ -1,8 +1,9 @@
 <template>
+
   <div class="image-upload flex flex-col items-center gap-4">
-    <!-- Current Image Preview -->
+     <!-- Current Image Preview -->
     <div class="relative w-32 h-32">
-      <img
+       <img
         v-if="displayImage"
         :src="displayImage"
         :alt="`${username}'s profile picture`"
@@ -12,19 +13,24 @@
         v-else
         class="w-32 h-32 rounded-full bg-gray-200 flex items-center justify-center text-gray-400 border-4 border-white shadow-lg"
       >
-        <User class="h-16 w-16" />
+         <User class="h-16 w-16" />
       </div>
-
-      <!-- Upload Progress Overlay -->
+       <!-- Upload Progress Overlay -->
       <div
         v-if="isUploading"
         class="absolute inset-0 rounded-full bg-black bg-opacity-50 flex items-center justify-center"
       >
+
         <div class="text-center">
+
           <div class="relative w-16 h-16 mx-auto">
-            <!-- Circular Progress -->
-            <svg class="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+             <!-- Circular Progress --> <svg
+              class="w-full h-full transform -rotate-90"
+              viewBox="0 0 100 100"
+            >
+
               <circle cx="50" cy="50" r="45" fill="none" stroke="#4B5563" stroke-width="8" />
+
               <circle
                 cx="50"
                 cy="50"
@@ -36,33 +42,36 @@
                 :stroke-dashoffset="circumference - (uploadProgress / 100) * circumference"
                 class="transition-all duration-300"
               />
-            </svg>
-            <!-- Percentage Text -->
+               </svg
+            > <!-- Percentage Text -->
             <div class="absolute inset-0 flex items-center justify-center">
-              <span class="text-white text-sm font-medium">{{ Math.round(uploadProgress) }}%</span>
+               <span class="text-white text-sm font-medium">{{ Math.round(uploadProgress) }}%</span>
+
             </div>
+
           </div>
+
         </div>
+
       </div>
-    </div>
 
-    <!-- Upload/Remove Controls -->
+    </div>
+     <!-- Upload/Remove Controls -->
     <div class="flex gap-2">
-      <label v-if="!isUploading" class="btn-update cursor-pointer">
-        <input type="file" class="hidden" accept="image/*" @change="handleFileChange" />
-        <Upload class="h-4 w-4 mr-1.5" />
-        {{ hasImage ? t('filters.changePhoto') : t('filters.uploadPhoto') }}
-      </label>
-
-      <button v-if="hasImage && !isUploading" class="btn-delete" @click="handleRemove">
-        <Trash2 class="h-4 w-4 mr-1.5" />
-        {{ t('filters.removePhoto') }}
-      </button>
+       <label v-if="!isUploading" class="btn-update cursor-pointer"
+        > <input type="file" class="hidden" accept="image/*" @change="handleFileChange" /> <Upload
+          class="h-4 w-4 mr-1.5"
+        /> {{ hasImage ? t('filters.changePhoto') : t('filters.uploadPhoto') }} </label
+      > <button v-if="hasImage && !isUploading" class="btn-delete" @click="handleRemove">
+         <Trash2 class="h-4 w-4 mr-1.5" /> {{ t('filters.removePhoto') }} </button
+      >
     </div>
+
   </div>
+
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { User, Upload, Trash2 } from 'lucide-vue-next'
 import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -129,7 +138,9 @@ const handleFileChange = async (event) => {
     reader.onload = async (e) => {
       try {
         // Get base64 data without the data URL prefix
-        const base64Data = e.target.result.split(',')[1]
+        const raw = e.target?.result
+        const dataUrl = typeof raw === 'string' ? raw : ''
+        const base64Data = dataUrl.split(',')[1]
 
         const imageData = {
           data: base64Data,
@@ -197,3 +208,4 @@ const handleRemove = () => {
   border: 0;
 }
 </style>
+

@@ -1,27 +1,32 @@
 <template>
+
   <div
     v-if="!locked"
     class="lingo-lesson-button group flex flex-row items-center justify-start gap-2"
     :style="nodeStyle"
   >
-    <!-- Level button (clickable link) - no menu inside so it never blocks the click -->
-    <RouterLink :to="studyUrl" class="flex shrink-0 flex-col items-center">
-      <!-- Current: "Start" badge + circular progress + button (clone: lesson-button.tsx + button secondary/rounded border-b-8) -->
+     <!-- Level button (clickable link) - no menu inside so it never blocks the click -->
+    <RouterLink :to="studyUrl" class="flex shrink-0 flex-col items-center"
+      > <!-- Current: "Start" badge + circular progress + button (clone: lesson-button.tsx + button secondary/rounded border-b-8) -->
+
       <div v-if="current" class="relative h-[102px] w-[102px]">
-        <!-- Start label: exact clone - no shadow, border-2, animate-bounce, triangle pointer -->
+         <!-- Start label: exact clone - no shadow, border-2, animate-bounce, triangle pointer -->
         <div
           class="absolute -top-6 left-2.5 z-10 animate-bounce rounded-xl border-2 border-slate-200 bg-white px-3 py-2.5 font-bold uppercase tracking-wide text-green-500"
         >
-          {{ startLabel }}
+           {{ startLabel }}
           <div
             class="absolute -bottom-2 left-1/2 h-0 w-0 -translate-x-1/2 border-x-8 border-t-8 border-x-transparent border-t-white"
             aria-hidden
           />
+
         </div>
-        <!-- Progress ring (clone: path #4ade80, trail #e5e7eb) + button centered inside -->
+         <!-- Progress ring (clone: path #4ade80, trail #e5e7eb) + button centered inside -->
         <div class="relative h-[102px] w-[102px]">
-          <svg class="absolute inset-0 h-[102px] w-[102px] -rotate-90" viewBox="0 0 102 102">
+           <svg class="absolute inset-0 h-[102px] w-[102px] -rotate-90" viewBox="0 0 102 102">
+
             <circle cx="51" cy="51" r="43" fill="none" stroke="#e5e7eb" stroke-width="8" />
+
             <circle
               cx="51"
               cy="51"
@@ -34,31 +39,34 @@
               :stroke-dashoffset="270.2 - (270.2 * Math.min(100, percentage)) / 100"
               class="transition-all duration-300"
             />
-          </svg>
+             </svg
+          >
           <div class="absolute inset-0 flex items-center justify-center">
+
             <div
               class="lingo-lesson-button-circle flex h-[70px] w-[70px] flex-shrink-0 items-center justify-center rounded-full border-2 border-b-8 active:border-b-0"
               :class="circleClass"
             >
-              <component :is="iconComponent" class="h-10 w-10" :class="iconClass" />
+               <component :is="iconComponent" class="h-10 w-10" :class="iconClass" />
             </div>
-          </div>
-        </div>
-      </div>
 
-      <!-- Not current: just the circular button (clone: same secondary/locked, border-b-8) -->
+          </div>
+
+        </div>
+
+      </div>
+       <!-- Not current: just the circular button (clone: same secondary/locked, border-b-8) -->
       <div
         v-else
         class="lingo-lesson-button-circle flex h-[70px] w-[70px] flex-shrink-0 items-center justify-center rounded-full border-2 border-b-8 active:border-b-0"
         :class="circleClass"
       >
-        <component :is="iconComponent" class="h-10 w-10" :class="iconClass" />
+         <component :is="iconComponent" class="h-10 w-10" :class="iconClass" />
       </div>
-    </RouterLink>
-
-    <!-- Owner menu to the side: trigger + dropdown (does not overlap the level button) -->
+       </RouterLink
+    > <!-- Owner menu to the side: trigger + dropdown (does not overlap the level button) -->
     <div v-if="showOwnerMenu" class="relative z-20 flex shrink-0 items-center" @click.stop>
-      <button
+       <button
         type="button"
         class="flex h-8 w-8 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-200 hover:text-slate-700"
         :class="{ 'bg-slate-100 text-slate-700': menuOpen }"
@@ -67,36 +75,39 @@
         aria-label="Level options"
         @click.prevent="menuOpen = !menuOpen"
       >
-        <Settings class="h-4 w-4" />
-      </button>
-      <!-- Dropdown to the right of the gear so the level button stays clickable -->
+         <Settings class="h-4 w-4" /> </button
+      > <!-- Dropdown to the right of the gear so the level button stays clickable -->
       <div
         v-if="menuOpen"
         class="absolute left-full top-1/2 z-[50] ml-1 min-w-[180px] -translate-y-1/2 rounded-lg border border-slate-200 bg-white py-1 shadow-lg"
       >
-        <slot name="menu" />
+         <slot name="menu" />
       </div>
-      <!-- Click outside to close (above page, below dropdown) -->
+       <!-- Click outside to close (above page, below dropdown) -->
       <div v-if="menuOpen" class="fixed inset-0 z-[45]" aria-hidden @click="menuOpen = false" />
+
     </div>
+
   </div>
-  <!-- Locked with owner menu: show locked circle + settings to the right -->
+   <!-- Locked with owner menu: show locked circle + settings to the right -->
   <div
     v-else-if="locked && showOwnerMenu"
     class="lingo-lesson-button group flex flex-row items-center justify-start gap-2"
     :style="nodeStyle"
     aria-disabled="true"
   >
+
     <div
       class="lingo-lesson-button-circle flex h-[70px] w-[70px] flex-shrink-0 items-center justify-center rounded-full border-2 border-neutral-400 border-b-8 bg-neutral-200 pointer-events-none active:border-b-0"
     >
-      <component
+       <component
         :is="iconComponent"
         class="h-10 w-10 fill-neutral-400 stroke-neutral-400 text-neutral-400"
       />
     </div>
+
     <div class="relative z-20 flex shrink-0 items-center" @click.stop>
-      <button
+       <button
         type="button"
         class="flex h-8 w-8 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-200 hover:text-slate-700"
         :class="{ 'bg-slate-100 text-slate-700': menuOpen }"
@@ -105,36 +116,42 @@
         aria-label="Level options"
         @click.prevent="menuOpen = !menuOpen"
       >
-        <Settings class="h-4 w-4" />
-      </button>
+         <Settings class="h-4 w-4" /> </button
+      >
       <div
         v-if="menuOpen"
         class="absolute left-full top-1/2 z-[50] ml-1 min-w-[180px] -translate-y-1/2 rounded-lg border border-slate-200 bg-white py-1 shadow-lg"
       >
-        <slot name="menu" />
+         <slot name="menu" />
       </div>
+
       <div v-if="menuOpen" class="fixed inset-0 z-[45]" aria-hidden @click="menuOpen = false" />
+
     </div>
+
   </div>
-  <!-- Locked, no owner menu: circle only -->
+   <!-- Locked, no owner menu: circle only -->
   <div
     v-else
     class="lingo-lesson-button flex pointer-events-none"
     :style="nodeStyle"
     aria-disabled="true"
   >
+
     <div
       class="lingo-lesson-button-circle flex h-[70px] w-[70px] flex-shrink-0 items-center justify-center rounded-full border-2 border-neutral-400 border-b-8 bg-neutral-200 active:border-b-0"
     >
-      <component
+       <component
         :is="iconComponent"
         class="h-10 w-10 fill-neutral-400 stroke-neutral-400 text-neutral-400"
       />
     </div>
+
   </div>
+
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed } from 'vue'
 import { RouterLink } from 'vue-router'
 import { Check, Crown, Star, Settings } from 'lucide-vue-next'
@@ -208,3 +225,4 @@ const iconClass = computed(() => {
   transform: scale(1.05);
 }
 </style>
+

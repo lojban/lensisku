@@ -1,5 +1,5 @@
 <template>
-  <button
+   <button
     class="px-3 py-2 font-medium transition-colors flex items-center gap-2 border-b-2"
     :class="[
       active
@@ -8,14 +8,11 @@
     ]"
     @click="$emit('click')"
   >
-    <slot name="icon" />
-    <span class="hidden md:block">
-      {{ label }}
-    </span>
-  </button>
+     <slot name="icon" /> <span class="hidden md:block"> {{ label }} </span> </button
+  >
 </template>
 
-<script setup>
+<script setup lang="ts">
 defineProps({
   active: Boolean,
   label: {
@@ -26,3 +23,4 @@ defineProps({
 
 defineEmits(['click'])
 </script>
+
