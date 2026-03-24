@@ -70,10 +70,7 @@
             v-if="isOwner"
             type="button"
             class="w-full px-4 py-2 text-left text-sm text-green-600 hover:bg-green-50 flex items-center gap-2"
-            @click="
-              showMergeModal = true
-              loadAvailableCollections()
-            "
+            @click="showMergeModal = true; loadAvailableCollections()"
           >
             {{ t('collectionDetail.mergeCollections') }}
           </button>
@@ -125,10 +122,7 @@
           >
             <button
               class="btn-aqua-emerald btn-aqua-group-item md:flex-none"
-              @click="
-                resetForm()
-                showAddModal = true
-              "
+              @click="resetForm(); showAddModal = true"
             >
               <PlusCircle class="w-4 h-4" />
               {{ t('collectionDetail.addItem') }}
@@ -1069,10 +1063,7 @@
             v-if="isEditingItem"
             class="btn-error mr-auto"
             :disabled="isUpdatingItem"
-            @click="
-              itemToDelete = currentItem
-              showDeleteItemConfirm = true
-            "
+            @click="itemToDelete = currentItem; showDeleteItemConfirm = true"
           >
             {{ t('collectionDetail.deleteItemButton') }}
           </button>
