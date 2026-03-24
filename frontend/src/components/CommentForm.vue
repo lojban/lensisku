@@ -1,15 +1,24 @@
 <template>
-  <div class="mt-3 mb-6 comment-item bg-white border rounded-lg p-3 my-2 hover:border-blue-300 transition-colors relative">
-    <ToastFloat :show="showToast" :message="toastMessage" :type="toastType" @close="showToast = false" />
+  <div
+    class="mt-3 mb-6 comment-item bg-white border rounded-lg p-3 my-2 hover:border-blue-300 transition-colors relative"
+  >
     <div class="border-b border-gray-100 last:border-0">
       <form @submit.prevent="handleSubmit">
         <div v-if="showSubjectField || !isReply" class="mb-2">
           <div class="flex justify-between items-center">
-            <input ref="subjectInputRef" v-model="form.subject" type="text" :placeholder="t('components.commentForm.subjectPlaceholder')"
-              class="input-field w-full text-lg bg-transparent placeholder-gray-500 focus:outline-none">
-            <button v-if="isReply" type="button"
+            <input
+              ref="subjectInputRef"
+              v-model="form.subject"
+              type="text"
+              :placeholder="t('components.commentForm.subjectPlaceholder')"
+              class="input-field w-full text-lg bg-transparent placeholder-gray-500 focus:outline-none"
+            />
+            <button
+              v-if="isReply"
+              type="button"
               class="ml-2 text-sm text-gray-500 hover:text-gray-700 focus:outline-none"
-              @click="showSubjectField = false">
+              @click="showSubjectField = false"
+            >
               {{ t('components.commentForm.hideSubject') }}
             </button>
           </div>
@@ -26,8 +35,11 @@
               {{ t('components.commentForm.addSubject') }}
             </button> -->
 
-            <button type="submit" :disabled="isSubmitting || characterCount > 10280"
-              class="inline-flex items-center btn-insert text-sm">
+            <button
+              type="submit"
+              :disabled="isSubmitting || characterCount > 10280"
+              class="inline-flex items-center btn-insert text-sm"
+            >
               <div class="flex items-center">
                 <Loader v-if="isSubmitting" class="animate-spin -ml-1 mr-2 h-4 w-4" />
                 {{ submitButtonText }}
@@ -41,29 +53,26 @@
 </template>
 
 <script setup>
-import { Crepe } from '@milkdown/crepe';
-import { editorViewCtx } from '@milkdown/core';
-import { Loader } from 'lucide-vue-next';
-import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue';
-import { insert } from '@milkdown/utils';
-import TurndownService from 'turndown';
-import ToastFloat from './ToastFloat.vue'; // Import ToastFloat
-import '@milkdown/crepe/theme/common/style.css';
-import '@milkdown/crepe/theme/frame.css';
-import { useI18n } from 'vue-i18n';
+import { Crepe } from '@milkdown/crepe'
+import { editorViewCtx } from '@milkdown/core'
+import { Loader } from 'lucide-vue-next'
+import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
+import { insert } from '@milkdown/utils'
+import TurndownService from 'turndown'
+import '@milkdown/crepe/theme/common/style.css'
+import '@milkdown/crepe/theme/frame.css'
+import { useI18n } from 'vue-i18n'
 
-const { t } = useI18n();
+import { useError } from '@/composables/useError'
+
+const { t } = useI18n()
+const { showError } = useError()
 
 // Payload size limit (5MB)
-const MAX_PAYLOAD_SIZE = 5 * 1024 * 1024;
+const MAX_PAYLOAD_SIZE = 5 * 1024 * 1024
 
-// Toast notification state
-const showToast = ref(false);
-const toastMessage = ref('');
-const toastType = ref('info');
-
-const editor = ref(null);
-let crepe = null;
+const editor = ref(null)
+let crepe = null
 const turndownService = new TurndownService()
 let handlePaste = null
 /** Cleanup for Space-exits-link keydown listener (remove on unmount). */
@@ -71,7 +80,6 @@ let spaceExitLinkCleanup = null
 
 onMounted(async () => {
   crepe = new Crepe({
-
     root: editor.value,
     defaultValue: props.initialValues.content,
     featureConfigs: {
@@ -96,45 +104,48 @@ onMounted(async () => {
 
   // When cursor is inside a link, Space or Tab should end the link and insert the character (not extend the anchor).
   crepe.editor.action((ctx) => {
-    const view = ctx.get(editorViewCtx);
-    if (!view?.dom) return;
-    const linkMarkType = view.state.schema.marks.link;
-    if (!linkMarkType) return;
+    const view = ctx.get(editorViewCtx)
+    if (!view?.dom) return
+    const linkMarkType = view.state.schema.marks.link
+    if (!linkMarkType) return
     const handler = (e) => {
-      const key = e.key === ' ' ? ' ' : e.key === 'Tab' ? '\t' : null;
-      if (key === null) return;
-      const { state } = view;
-      const { $from, empty } = state.selection;
-      const inLink = empty && $from.marks().some((m) => m.type === linkMarkType);
-      if (!inLink) return;
-      e.preventDefault();
-      e.stopPropagation();
-      const tr = state.tr.removeStoredMark(linkMarkType).insertText(key, state.selection.from);
-      view.dispatch(tr);
-    };
-    view.dom.addEventListener('keydown', handler, true);
+      const key = e.key === ' ' ? ' ' : e.key === 'Tab' ? '\t' : null
+      if (key === null) return
+      const { state } = view
+      const { $from, empty } = state.selection
+      const inLink = empty && $from.marks().some((m) => m.type === linkMarkType)
+      if (!inLink) return
+      e.preventDefault()
+      e.stopPropagation()
+      const tr = state.tr.removeStoredMark(linkMarkType).insertText(key, state.selection.from)
+      view.dispatch(tr)
+    }
+    view.dom.addEventListener('keydown', handler, true)
     spaceExitLinkCleanup = () => {
-      view.dom.removeEventListener('keydown', handler, true);
-      spaceExitLinkCleanup = null;
-    };
-  });
+      view.dom.removeEventListener('keydown', handler, true)
+      spaceExitLinkCleanup = null
+    }
+  })
 
   const updateFormContent = () => {
-    if (!crepe) return;
+    if (!crepe) return
     let markdown = crepe.getMarkdown()
-    
-    // Convert problematic autolinks <https://...> to [https://...](https://...) 
+
+    // Convert problematic autolinks <https://...> to [https://...](https://...)
     // to prevent backend from stripping them as HTML tags.
     markdown = markdown.replace(/<(https?:\/\/[^\s>]+)>/g, '[$1]($1)')
-    
+
     // Parse markdown into content parts array
-    const contentParts = markdown.split(/(^>.*$)/gm).filter(line => line.trim()).map(line => {
-      line = line.trim();
-      if (line.startsWith('# ')) {
-        return { type: 'header', data: line.substring(2).trim() }
-      }
-      return { type: 'text', data: line }
-    })
+    const contentParts = markdown
+      .split(/(^>.*$)/gm)
+      .filter((line) => line.trim())
+      .map((line) => {
+        line = line.trim()
+        if (line.startsWith('# ')) {
+          return { type: 'header', data: line.substring(2).trim() }
+        }
+        return { type: 'text', data: line }
+      })
     form.value.content = contentParts
   }
 
@@ -146,7 +157,7 @@ onMounted(async () => {
 
 onUnmounted(() => {
   if (typeof spaceExitLinkCleanup === 'function') {
-    spaceExitLinkCleanup();
+    spaceExitLinkCleanup()
   }
   if (crepe) {
     crepe.destroy()
@@ -181,12 +192,14 @@ const form = ref({
   content: props.initialValues.content,
 })
 
-const characterCount = computed(() => form.value.content.length);
+const characterCount = computed(() => form.value.content.length)
 
-const submitButtonText = computed(() => (props.isSubmitting ? t('components.commentForm.posting') : t('components.commentForm.sendButton')));
+const submitButtonText = computed(() =>
+  props.isSubmitting ? t('components.commentForm.posting') : t('components.commentForm.sendButton')
+)
 
 const autoResize = async () => {
-  await nextTick();
+  await nextTick()
   const textarea = textareaRef.value
   if (textarea) {
     const lineHeight = parseInt(getComputedStyle(textarea).lineHeight)
@@ -223,39 +236,42 @@ const handleSubmit = () => {
     // Fix link anchor text
     markdown = markdown.replace(/(https?:)(\\_){2}/g, '$1//')
     markdown = markdown.replace(/(https?)__(?=[^\s\]])/g, '$1://')
-    
+
     // Convert problematic autolinks <https://...> to [https://...](https://...)
     // to prevent backend from stripping them as HTML tags.
     markdown = markdown.replace(/<(https?:\/\/[^\s>]+)>/g, '[$1]($1)')
-    
-    form.value.content = markdown.split(/(^>.*$)/gm).filter(line => line.trim()).map(line => {
-      line = line.trim();
-      if (line.startsWith('# ')) return { type: 'header', data: line.substring(2).trim() }
-      return { type: 'text', data: line }
-    })
+
+    form.value.content = markdown
+      .split(/(^>.*$)/gm)
+      .filter((line) => line.trim())
+      .map((line) => {
+        line = line.trim()
+        if (line.startsWith('# ')) return { type: 'header', data: line.substring(2).trim() }
+        return { type: 'text', data: line }
+      })
   }
 
   if (form.value.content.length > 0 || form.value.subject.length > 0) {
     // Estimate payload size
-    const encoder = new TextEncoder();
-    const subjectSize = encoder.encode(form.value.subject || '').length;
-    const contentString = JSON.stringify(form.value.content || []);
-    const contentSize = encoder.encode(contentString).length;
-    const totalSize = subjectSize + contentSize;
+    const encoder = new TextEncoder()
+    const subjectSize = encoder.encode(form.value.subject || '').length
+    const contentString = JSON.stringify(form.value.content || [])
+    const contentSize = encoder.encode(contentString).length
+    const totalSize = subjectSize + contentSize
 
     // Check against the limit
     if (totalSize > MAX_PAYLOAD_SIZE) {
-      toastMessage.value = t('components.commentForm.errorTooLarge');
-      toastType.value = 'error';
-      showToast.value = true;
-      console.error(`Comment payload size (${totalSize} bytes) exceeds limit (${MAX_PAYLOAD_SIZE} bytes).`);
-      return; // Prevent submission
+      showError('components.commentForm.errorTooLarge')
+      console.error(
+        `Comment payload size (${totalSize} bytes) exceeds limit (${MAX_PAYLOAD_SIZE} bytes).`
+      )
+      return // Prevent submission
     }
 
     // Proceed with submission if size is okay
     emit('submit', {
       subject: form.value.subject.trim(),
-      content: form.value.content == '' ? [] : form.value.content
+      content: form.value.content == '' ? [] : form.value.content,
     })
   }
 }
@@ -265,7 +281,7 @@ const focusSubject = () => {
 }
 
 defineExpose({
-  focusSubject
+  focusSubject,
 })
 </script>
 <style>

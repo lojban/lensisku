@@ -3,7 +3,9 @@
   <div class="space-y-4 mt-4 sm:mt-6">
     <!-- Skeletons -->
     <SearchFormSkeleton v-if="isInitialLoading" />
-    <CombinedFiltersSkeleton v-if="isInitialLoading && (searchMode === 'dictionary' || searchMode === 'semantic')" />
+    <CombinedFiltersSkeleton
+      v-if="isInitialLoading && (searchMode === 'dictionary' || searchMode === 'semantic')"
+    />
 
     <!-- Actual Components (hidden while loading) -->
     <SearchForm
@@ -31,17 +33,11 @@
     v-if="!searchQuery && !filters.selmaho && !filters.username && !filters.word_type"
     class="min-h-[400px] mt-4 sm:mt-6"
   >
-    <div
-      v-if="isLoadingTrending"
-      class="flex justify-center py-8"
-    >
+    <div v-if="isLoadingTrending" class="flex justify-center py-8">
       <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
     </div>
     <!-- Trending Comments -->
-    <div
-      v-if="trendingComments.length > 0"
-      class="space-y-4"
-    >
+    <div v-if="trendingComments.length > 0" class="space-y-4">
       <h2 class="text-xl sm:text-2xl font-bold text-gray-800 select-none">
         {{ $t('home.trendingComments') }}
       </h2>
@@ -55,19 +51,12 @@
           )
         "
       >
-        <CommentItem
-          :comment="comment"
-          :reply-enabled="true"
-          @reply="handleReply"
-        />
+        <CommentItem :comment="comment" :reply-enabled="true" @reply="handleReply" />
       </div>
     </div>
 
     <!-- Recent Changes -->
-    <div
-      v-if="recentChanges.length > 0"
-      class="space-y-4 mt-8"
-    >
+    <div v-if="recentChanges.length > 0" class="space-y-4 mt-8">
       <div
         class="flex flex-col md:flex-row justify-between items-start sm:items-center gap-3 sm:space-x-2 w-full sm:w-auto ml-auto"
       >
@@ -75,31 +64,21 @@
           {{ $t('home.recentChanges') }}
         </h2>
       </div>
-      <div
-        v-for="(group, index) in groupedChanges"
-        :key="index"
-        class="mb-8"
-      >
+      <div v-for="(group, index) in groupedChanges" :key="index" class="mb-8">
         <h3 class="text-base font-semibold text-gray-700 mb-4 pt-4 border-t">
           {{ formatDate(group.date) }}
         </h3>
         <div class="space-y-3">
-          <RecentChangeItem
-            v-for="change in group.changes"
-            :key="change.time"
-            :change="change"
-          />
+          <RecentChangeItem v-for="change in group.changes" :key="change.time" :change="change" />
         </div>
       </div>
     </div>
   </div>
-  <div
-    v-else
-    ref="searchResultsRef"
-    class="min-h-[400px] mt-4 sm:mt-6"
-  >
+  <div v-else ref="searchResultsRef" class="min-h-[400px] mt-4 sm:mt-6">
     <div class="space-y-4">
-      <div class="flex flex-wrap justify-between items-center gap-3 sm:space-x-4 w-full sm:w-auto ml-auto">
+      <div
+        class="flex flex-wrap justify-between items-center gap-3 sm:space-x-4 w-full sm:w-auto ml-auto"
+      >
         <h2 class="text-xl sm:text-2xl font-bold text-gray-800 select-none">
           {{
             searchMode === 'dictionary'
@@ -148,16 +127,9 @@
           </IconButton>
         </div>
 
-        <div
-          v-if="searchMode === 'comments'"
-          class="flex items-center gap-2"
-        >
+        <div v-if="searchMode === 'comments'" class="flex items-center gap-2">
           <div class="relative">
-            <select
-              v-model="sortBy"
-              class="input-field"
-              @change="handleSortChange"
-            >
+            <select v-model="sortBy" class="input-field" @change="handleSortChange">
               <option value="time">
                 {{ $t('sort.time') }}
               </option>
@@ -174,22 +146,13 @@
             :title="sortOrder === 'asc' ? $t('sort.ascending') : $t('sort.descending')"
             @click="toggleSortOrder"
           >
-            <ChevronUp
-              v-if="sortOrder === 'asc'"
-              class="h-5 w-5"
-            />
-            <ChevronDown
-              v-else
-              class="h-5 w-5"
-            />
+            <ChevronUp v-if="sortOrder === 'asc'" class="h-5 w-5" />
+            <ChevronDown v-else class="h-5 w-5" />
             <span>{{ sortOrder === 'asc' ? $t('sort.asc') : $t('sort.desc') }}</span>
           </button>
         </div>
       </div>
-      <div
-        v-if="isLoading"
-        class="flex justify-center py-8"
-      >
+      <div v-if="isLoading" class="flex justify-center py-8">
         <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
       </div>
       <template v-else>
@@ -210,10 +173,7 @@
           :entries="muplisEntries"
           :search-term="searchQuery"
         />
-        <div
-          v-else-if="searchMode === 'comments'"
-          class="space-y-4"
-        >
+        <div v-else-if="searchMode === 'comments'" class="space-y-4">
           <div v-if="waveItems.length > 0">
             <div
               v-for="(item, idx) in waveItems"
@@ -221,8 +181,12 @@
               class="cursor-pointer"
               @click="
                 item.source === 'comment'
-                  ? router.push(`/comments?thread_id=${item.comment.thread_id}&comment_id=${item.comment.parent_id}&scroll_to=${item.comment.comment_id}&valsi_id=${item.comment.valsi_id}&definition_id=${item.comment.definition_id || 0}`)
-                  : handleViewThreadSummary(item.message.cleaned_subject || item.message.subject || '')
+                  ? router.push(
+                      `/comments?thread_id=${item.comment.thread_id}&comment_id=${item.comment.parent_id}&scroll_to=${item.comment.comment_id}&valsi_id=${item.comment.valsi_id}&definition_id=${item.comment.definition_id || 0}`
+                    )
+                  : handleViewThreadSummary(
+                      item.message.cleaned_subject || item.message.subject || ''
+                    )
               "
             >
               <CommentItem
@@ -236,9 +200,13 @@
                 v-else
                 class="comment-item bg-white border rounded-lg p-3 my-2 hover:border-blue-300 transition-colors min-w-48"
               >
-                <div class="mb-2 text-sm text-gray-600 whitespace-nowrap overflow-hidden flex items-center">
+                <div
+                  class="mb-2 text-sm text-gray-600 whitespace-nowrap overflow-hidden flex items-center"
+                >
                   <SourceTypeBadge type="mail" />
-                  <span class="text-blue-700 font-medium ml-1.5 truncate inline-block max-w-[calc(100%-120px)]">
+                  <span
+                    class="text-blue-700 font-medium ml-1.5 truncate inline-block max-w-[calc(100%-120px)]"
+                  >
                     {{ item.message.subject || item.message.cleaned_subject || '-' }}
                   </span>
                 </div>
@@ -259,10 +227,7 @@
               </div>
             </div>
           </div>
-          <div
-            v-else
-            class="text-center py-12 bg-blue-50 rounded-lg border border-blue-100"
-          >
+          <div v-else class="text-center py-12 bg-blue-50 rounded-lg border border-blue-100">
             <MessageSquare class="mx-auto h-12 w-12 text-blue-400" />
             <p class="mt-4 text-gray-600">
               {{ $t('home.noCommentsFound') }}
@@ -291,10 +256,10 @@
 </template>
 
 <script setup>
-import { jwtDecode } from 'jwt-decode';
-import { MessageSquare, ChevronDown, ChevronUp, AudioWaveform } from 'lucide-vue-next';
-import { ref, onMounted, watch, computed, onBeforeUnmount, nextTick } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
+import { jwtDecode } from 'jwt-decode'
+import { MessageSquare, ChevronDown, ChevronUp, AudioWaveform } from 'lucide-vue-next'
+import { ref, onMounted, watch, computed, onBeforeUnmount, nextTick } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 
 import {
   api,
@@ -305,7 +270,7 @@ import {
   getRecentChanges,
   searchWaves,
   getCollections,
-  getBulkVotes
+  getBulkVotes,
 } from '@/api'
 import CombinedFilters from '@/components/CombinedFilters.vue'
 import CommentItem from '@/components/CommentItem.vue'
@@ -315,25 +280,27 @@ import LazyMathJax from '@/components/LazyMathJax.vue'
 import { IconButton } from '@packages/ui'
 import MuplisList from '@/components/MuplisList.vue'
 import PaginationComponent from '@/components/PaginationComponent.vue'
-import RecentChangeItem from '@/components/RecentChangeItem.vue';
-import SearchForm from '@/components/SearchForm.vue';
-import CombinedFiltersSkeleton from '@/components/skeletons/CombinedFiltersSkeleton.vue';
-import SearchFormSkeleton from '@/components/skeletons/SearchFormSkeleton.vue';
-import { useAuth } from '@/composables/useAuth';
-import { useLanguageSelection } from '@/composables/useLanguageSelection';
+import RecentChangeItem from '@/components/RecentChangeItem.vue'
+import SearchForm from '@/components/SearchForm.vue'
+import CombinedFiltersSkeleton from '@/components/skeletons/CombinedFiltersSkeleton.vue'
+import SearchFormSkeleton from '@/components/skeletons/SearchFormSkeleton.vue'
+import { useAuth } from '@/composables/useAuth'
+import { useLanguageSelection } from '@/composables/useLanguageSelection'
 import { useSeoHead } from '@/composables/useSeoHead'
-import { useI18n } from 'vue-i18n';
-import { SearchQueue } from '@/utils/searchQueue';
-import { normalizeSearchQuery } from '@/utils/searchQueryUtils';
+import { useI18n } from 'vue-i18n'
+import { SearchQueue } from '@/utils/searchQueue'
+import { normalizeSearchQuery } from '@/utils/searchQueryUtils'
 
 /** Return text parts from mail message parts_json for display. */
 function textParts(partsJson) {
   if (!partsJson) return []
   const parts = Array.isArray(partsJson) ? partsJson : []
-  return parts.filter(p => p && (p.mime_type || p.mimeType || '').startsWith('text/')).map(p => ({
-    mime_type: p.mime_type || p.mimeType || 'text/plain',
-    content: typeof p.content === 'string' ? p.content : (p.content || '')
-  }))
+  return parts
+    .filter((p) => p && (p.mime_type || p.mimeType || '').startsWith('text/'))
+    .map((p) => ({
+      mime_type: p.mime_type || p.mimeType || 'text/plain',
+      content: typeof p.content === 'string' ? p.content : p.content || '',
+    }))
 }
 
 defineEmits(['search', 'view-message', 'view-thread'])
@@ -354,7 +321,7 @@ const router = useRouter()
 const route = useRoute()
 const auth = useAuth()
 const decodedToken = computed(() => {
-  if (typeof window === 'undefined') return;
+  if (typeof window === 'undefined') return
   const token = localStorage.getItem('accessToken')
   if (token) {
     try {
@@ -398,13 +365,13 @@ const initialized = ref(false)
 
 // Get search query from localStorage or use default
 const getInitialSearchQuery = () => {
-  if (typeof window === 'undefined') return;
+  if (typeof window === 'undefined') return
   const storedQuery = localStorage.getItem('searchQuery')
   return normalizeSearchQuery(storedQuery || props.urlSearchQuery || '')
 }
 
 const getInitialGroupByThread = () => {
-  if (typeof window === 'undefined') return false;
+  if (typeof window === 'undefined') return false
   const urlParam = route.query.group_by_thread
   if (urlParam !== undefined) {
     return urlParam === 'true'
@@ -417,7 +384,7 @@ const groupByThread = ref(getInitialGroupByThread())
 const searchQuery = ref(getInitialSearchQuery())
 // Get search mode from localStorage or use default
 const getInitialSearchMode = () => {
-  if (typeof window === 'undefined') return;
+  if (typeof window === 'undefined') return
   const storedMode = localStorage.getItem('searchMode')
   const mode = storedMode || props.urlSearchMode
   return mode === 'messages' ? 'comments' : mode
@@ -425,14 +392,14 @@ const getInitialSearchMode = () => {
 
 const searchMode = ref(getInitialSearchMode())
 const trendingComments = ref([])
-const isLoading = ref(true); // Loading state for search results
-const isInitialLoading = ref(true); // Loading state for initial component setup (languages etc.)
-const isLoadingTrending = ref(false);
-const error = ref(null);
-const searchFormRef = ref(null);
-const searchResultsRef = ref(null);
+const isLoading = ref(true) // Loading state for search results
+const isInitialLoading = ref(true) // Loading state for initial component setup (languages etc.)
+const isLoadingTrending = ref(false)
+const error = ref(null)
+const searchFormRef = ref(null)
+const searchResultsRef = ref(null)
 
-const { t, locale } = useI18n();
+const { t, locale } = useI18n()
 
 // Truncate search query for page title (max 50 characters)
 const truncatedSearchQuery = computed(() => {
@@ -453,7 +420,9 @@ const pageTitle = computed(() => {
 // Meta description for search snippets (avoids footer text being used)
 const pageDescription = computed(() => {
   if (searchQuery.value?.trim()) {
-    return t('home.searchMetaDescription', { query: truncatedSearchQuery.value || searchQuery.value })
+    return t('home.searchMetaDescription', {
+      query: truncatedSearchQuery.value || searchQuery.value,
+    })
   }
   return t('home.metaDescription')
 })
@@ -469,9 +438,12 @@ const filters = ref({
   isExpanded: route.query.isExpanded === 'true',
   selectedLanguages: route.query.langs ? route.query.langs.split(',').map(Number) : [],
   source_langid: route.query.source_langid ? Number(route.query.source_langid) : 1,
-  isSemantic: searchMode.value === 'semantic' || searchMode.value === 'dictionary' ? searchMode.value !== 'dictionary' : true,
-    searchInPhrases: route.query.searchInPhrases !== 'false',
-  })
+  isSemantic:
+    searchMode.value === 'semantic' || searchMode.value === 'dictionary'
+      ? searchMode.value !== 'dictionary'
+      : true,
+  searchInPhrases: route.query.searchInPhrases !== 'false',
+})
 
 // Search queues to prevent race conditions
 const definitionsSearchQueue = new SearchQueue()
@@ -494,9 +466,9 @@ const fetchDefinitions = async (page, search = '') => {
       include_comments: true,
       username: filters.value.username || undefined,
       ...(filters.value.selectedLanguages.length > 0 && {
-        languages: filters.value.selectedLanguages.join(',')
+        languages: filters.value.selectedLanguages.join(','),
       }),
-    group_by_thread: groupByThread.value,
+      group_by_thread: groupByThread.value,
     }
 
     if (!filters.value.selmaho) {
@@ -517,17 +489,20 @@ const fetchDefinitions = async (page, search = '') => {
 
     let response
     const isSemantic = searchMode.value === 'semantic'
-    
+
     if (auth.state.isLoggedIn || isSemantic) {
-      response = await searchDefinitions({
-        ...params,
-        semantic: isSemantic,
-      }, signal)
+      response = await searchDefinitions(
+        {
+          ...params,
+          semantic: isSemantic,
+        },
+        signal
+      )
     } else {
       // Use fast search for non-logged in users (regular dictionary)
       const fastParams = { ...params }
       delete fastParams.include_comments
-      
+
       response = await fastSearchDefinitions(fastParams, signal)
     }
 
@@ -545,7 +520,7 @@ const fetchDefinitions = async (page, search = '') => {
     // Get bulk votes for current user only if we have definitions
     if (auth.state.isLoggedIn && definitions.value.length > 0) {
       try {
-        const definitionIds = definitions.value.map(d => d.definitionid)
+        const definitionIds = definitions.value.map((d) => d.definitionid)
         // Only fetch votes if we have IDs to check
         if (definitionIds.length > 0) {
           const votesResponse = await getBulkVotes({ definition_ids: definitionIds })
@@ -553,9 +528,9 @@ const fetchDefinitions = async (page, search = '') => {
 
           // Check again before updating votes (in case another request completed)
           if (definitionsSearchQueue.shouldProcess(requestId)) {
-            definitions.value = definitions.value.map(def => ({
+            definitions.value = definitions.value.map((def) => ({
               ...def,
-              user_vote: votesMap[def.definitionid] || null
+              user_vote: votesMap[def.definitionid] || null,
             }))
           }
         }
@@ -568,7 +543,7 @@ const fetchDefinitions = async (page, search = '') => {
     if (e.name === 'AbortError' || e.code === 'ERR_CANCELED' || e.message?.includes('canceled')) {
       return
     }
-    
+
     // Only show errors for the latest request
     if (definitionsSearchQueue.shouldProcess(requestId)) {
       error.value = e.response?.data?.error || 'Failed to load corpus entries'
@@ -595,15 +570,15 @@ const getCachedRecentChanges = () => {
   try {
     const cached = localStorage.getItem(RECENT_CHANGES_CACHE_KEY)
     if (!cached) return null
-    
+
     const { data, timestamp } = JSON.parse(cached)
     const now = Date.now()
-    
+
     // Check if cache is still valid (within TTL)
     if (now - timestamp < RECENT_CHANGES_CACHE_TTL) {
       return data
     }
-    
+
     // Cache expired, remove it
     localStorage.removeItem(RECENT_CHANGES_CACHE_KEY)
     return null
@@ -618,7 +593,7 @@ const setCachedRecentChanges = (data) => {
   try {
     const cacheData = {
       data,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     }
     localStorage.setItem(RECENT_CHANGES_CACHE_KEY, JSON.stringify(cacheData))
   } catch (e) {
@@ -628,14 +603,14 @@ const setCachedRecentChanges = (data) => {
 
 const fetchTrendingAndChanges = async () => {
   isLoadingTrending.value = true
-  
+
   // Try to load cached recent changes immediately for instant display
   const cachedChanges = getCachedRecentChanges()
   if (cachedChanges) {
     recentChanges.value = cachedChanges.slice(0, 10)
     isLoadingChanges.value = false
   }
-  
+
   try {
     const trendingResponse = await getTrendingComments({
       limit: 10,
@@ -647,7 +622,7 @@ const fetchTrendingAndChanges = async () => {
     const recentResponse = await getRecentChanges({ limit: 10, types: 'comment,definition' })
     const changes = recentResponse.data.changes
     recentChanges.value = changes
-    
+
     // Cache the fresh data
     setCachedRecentChanges(changes)
   } catch (e) {
@@ -710,13 +685,16 @@ const fetchWaves = async (page, search = '') => {
   const { requestId, signal } = wavesSearchQueue.createRequest()
 
   try {
-    const response = await searchWaves({
-      page,
-      per_page: 10,
-      search: search || undefined,
-      sort_by: sortBy.value,
-      sort_order: sortOrder.value,
-    }, signal)
+    const response = await searchWaves(
+      {
+        page,
+        per_page: 10,
+        search: search || undefined,
+        sort_by: sortBy.value,
+        sort_order: sortOrder.value,
+      },
+      signal
+    )
 
     if (!wavesSearchQueue.shouldProcess(requestId)) {
       return
@@ -762,7 +740,7 @@ const fetchData = async () => {
     per_page: 10,
     query: searchQuery.value.trim(),
     sort_by: sortBy.value,
-    sort_order: sortOrder.value,    
+    sort_order: sortOrder.value,
     include_content: includeContent.value,
     group_by_thread: groupByThread.value, // Pass groupByThread here
   }
@@ -774,7 +752,7 @@ const fetchData = async () => {
       await fetchWaves(currentPage.value, searchQuery.value)
     } else if (searchMode.value === 'muplis') {
       const { requestId, signal } = muplisSearchQueue.createRequest()
-      
+
       try {
         const response = await api.get('/muplis/search', {
           params: {
@@ -784,21 +762,25 @@ const fetchData = async () => {
           },
           signal,
         })
-        
+
         // Only process if this is still the latest request
         if (!muplisSearchQueue.shouldProcess(requestId)) {
           return
         }
-        
+
         muplisEntries.value = response.data.entries
         totalPages.value = Math.ceil(response.data.total / response.data.per_page)
         isLoading.value = false
       } catch (error) {
         // Ignore abort errors
-        if (error.name === 'AbortError' || error.code === 'ERR_CANCELED' || error.message?.includes('canceled')) {
+        if (
+          error.name === 'AbortError' ||
+          error.code === 'ERR_CANCELED' ||
+          error.message?.includes('canceled')
+        ) {
           return
         }
-        
+
         // Only show errors for the latest request
         if (muplisSearchQueue.shouldProcess(requestId)) {
           console.error('Error fetching data:', error)
@@ -807,15 +789,15 @@ const fetchData = async () => {
       }
     }
   } catch (error) {
-    console.error('Error fetching data:', error);
+    console.error('Error fetching data:', error)
     // Ensure loading states are reset on error
-    isLoading.value = false;
-    isLoadingTrending.value = false;
+    isLoading.value = false
+    isLoadingTrending.value = false
   } finally {
     // isLoading is handled within specific fetch functions (fetchDefinitions, fetchComments)
     // or set directly in the try block for other modes.
   }
-};
+}
 
 // Filter handling
 const handleFilterChange = () => {
@@ -866,7 +848,7 @@ const updateUrlWithFilters = () => {
 
 const performSearch = ({ query, mode }) => {
   // Use semantic mode if we're in dictionary mode and semantic search is enabled
-  const effectiveMode = (mode === 'dictionary' && filters.value.isSemantic) ? 'semantic' : mode;
+  const effectiveMode = mode === 'dictionary' && filters.value.isSemantic ? 'semantic' : mode
 
   // Reset to first page whenever search query or mode changes
   const updateParams = {
@@ -875,7 +857,10 @@ const performSearch = ({ query, mode }) => {
     mode: effectiveMode,
     group_by_thread: groupByThread.value ? 'true' : undefined,
     page: undefined, // Always reset to page 1 for a new search
-    langs: (filters.value.selectedLanguages && filters.value.selectedLanguages.length > 0) ? filters.value.selectedLanguages.join(',') : undefined,
+    langs:
+      filters.value.selectedLanguages && filters.value.selectedLanguages.length > 0
+        ? filters.value.selectedLanguages.join(',')
+        : undefined,
     selmaho: filters.value.selmaho || undefined,
     username: filters.value.username || undefined,
     word_type: filters.value.word_type || undefined,
@@ -883,13 +868,13 @@ const performSearch = ({ query, mode }) => {
   }
 
   // Handle case where we might be on a localized Home-lang route
-  const isHomeRoute = route.name === 'Home' || route.name?.startsWith('Home-');
-  
+  const isHomeRoute = route.name === 'Home' || route.name?.startsWith('Home-')
+
   if (!isHomeRoute) {
     // If we're not on the home page, redirect to home with the search params
-    const currentLocale = route.path.split('/')[1] || 'en';
-    router.push({ path: `/${currentLocale}`, query: updateParams });
-    return;
+    const currentLocale = route.path.split('/')[1] || 'en'
+    router.push({ path: `/${currentLocale}`, query: updateParams })
+    return
   }
 
   if (searchMode.value !== effectiveMode) {
@@ -952,16 +937,16 @@ const nextPage = () => {
 
 const viewMessage = (messageId) => {
   // Extract locale from the current route path
-  const currentLocale = route.path.split('/')[1] || 'en'; // Default to 'en' if locale is missing
-  const routeName = `MessageDetail-${currentLocale}`;
-  router.push({ name: routeName, params: { id: messageId } });
+  const currentLocale = route.path.split('/')[1] || 'en' // Default to 'en' if locale is missing
+  const routeName = `MessageDetail-${currentLocale}`
+  router.push({ name: routeName, params: { id: messageId } })
 }
 
 const handleViewThreadSummary = (subject) => {
-  const currentLocale = route.path.split('/')[1] || 'en';
-  const routeName = `ThreadView-${currentLocale}`;
-  router.push({ name: routeName, params: { subject } });
-};
+  const currentLocale = route.path.split('/')[1] || 'en'
+  const routeName = `ThreadView-${currentLocale}`
+  router.push({ name: routeName, params: { subject } })
+}
 
 // URL sync
 const syncFromRoute = () => {
@@ -1025,7 +1010,6 @@ const syncFromRoute = () => {
   }
 }
 
-
 const handleKeyDown = (event) => {
   // Check if / was pressed and no input/textarea is focused
   if (event.key === '/' && !['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) {
@@ -1035,79 +1019,85 @@ const handleKeyDown = (event) => {
 }
 
 onMounted(async () => {
-  window.addEventListener('keydown', handleKeyDown);
+  window.addEventListener('keydown', handleKeyDown)
   try {
-    const languagesResponse = await getLanguages();
-    languages.value = languagesResponse.data;
+    const languagesResponse = await getLanguages()
+    languages.value = languagesResponse.data
 
     // Set initial languages from route or defaults
-    const initialLangs = getInitialLanguages(route, languages.value);
-    filters.value.selectedLanguages = initialLangs;
+    const initialLangs = getInitialLanguages(route, languages.value)
+    filters.value.selectedLanguages = initialLangs
     // groupByThread is already initialized with getInitialGroupByThread
 
     // Initial data like languages is loaded, hide skeletons
     // isInitialLoading.value = false; // Moved down
 
     // Construct the target query parameters based on current state (from localStorage/defaults)
-    const queryToPush = { ...route.query }; // Start with current URL query
-    let pushNeeded = false;
+    const queryToPush = { ...route.query } // Start with current URL query
+    let pushNeeded = false
 
     // Sync 'q' from localStorage/default to URL if different
     if (searchQuery.value && route.query.q !== searchQuery.value) {
-      queryToPush.q = searchQuery.value;
-      pushNeeded = true;
-    } else if (!searchQuery.value && route.query.q === undefined) { // Only if URL.q is also undefined
-      queryToPush.q = undefined;
+      queryToPush.q = searchQuery.value
+      pushNeeded = true
+    } else if (!searchQuery.value && route.query.q === undefined) {
+      // Only if URL.q is also undefined
+      queryToPush.q = undefined
     }
 
     // Sync 'mode' from localStorage/default to URL if different
     if (searchMode.value && route.query.mode !== searchMode.value) {
-      queryToPush.mode = searchMode.value;
-      pushNeeded = true;
+      queryToPush.mode = searchMode.value
+      pushNeeded = true
     }
     // Sync 'group_by_thread' from localStorage/default to URL if different
-    const targetGroupByThread = groupByThread.value ? 'true' : undefined;
+    const targetGroupByThread = groupByThread.value ? 'true' : undefined
     if (route.query.group_by_thread !== targetGroupByThread) {
-      queryToPush.group_by_thread = targetGroupByThread;
-      pushNeeded = true;
+      queryToPush.group_by_thread = targetGroupByThread
+      pushNeeded = true
     }
 
     // Sync 'langs' from localStorage/default to URL if different
-    const targetLangs = filters.value.selectedLanguages.length > 0 ? filters.value.selectedLanguages.join(',') : undefined;
+    const targetLangs =
+      filters.value.selectedLanguages.length > 0
+        ? filters.value.selectedLanguages.join(',')
+        : undefined
     if (route.query.langs !== targetLangs) {
-      queryToPush.langs = targetLangs;
-      pushNeeded = true;
+      queryToPush.langs = targetLangs
+      pushNeeded = true
     }
 
     // Clean undefined values from queryToPush before pushing
-    Object.keys(queryToPush).forEach(key => queryToPush[key] === undefined && delete queryToPush[key]);
+    Object.keys(queryToPush).forEach(
+      (key) => queryToPush[key] === undefined && delete queryToPush[key]
+    )
 
     if (pushNeeded) {
-      router.push({ query: queryToPush });
+      router.push({ query: queryToPush })
       // The route watcher will handle fetching data with the new URL.
     }
-    isInitialLoading.value = false; // Skeletons can be hidden now.
+    isInitialLoading.value = false // Skeletons can be hidden now.
 
     // Auth-dependent fetches (like collections) are handled by the auth state watcher.
     // Initial data fetching (search or trending) is handled by the immediate route query watcher.
   } catch (e) {
-    console.error('Error loading initial data:', e);
+    console.error('Error loading initial data:', e)
     // Still hide skeletons even if there's an error loading languages,
     // as the components might still render partially or show an error state.
-    isInitialLoading.value = false;
+    isInitialLoading.value = false
   } finally {
-     // Ensure skeleton is hidden if try block finishes early or has issues not caught by catch
-    isInitialLoading.value = false;
+    // Ensure skeleton is hidden if try block finishes early or has issues not caught by catch
+    isInitialLoading.value = false
 
     // Focus search input if on home page
     if (route.name === 'Home' || route.name.startsWith('Home-')) {
-      await nextTick();
+      await nextTick()
       if (searchFormRef.value && !isInitialLoading.value) {
-        searchFormRef.value.focusInput();
+        searchFormRef.value.focusInput()
       }
     }
   }
-});
+})
 
 watch(
   () => filters.value.selectedLanguages,
@@ -1135,11 +1125,11 @@ watch(
 watch(groupByThread, (newVal, oldVal) => {
   if (newVal !== oldVal && searchMode.value === 'messages') {
     if (typeof window !== 'undefined') {
-      localStorage.setItem('mailSearch_groupByThread', newVal.toString());
+      localStorage.setItem('mailSearch_groupByThread', newVal.toString())
     }
-    updateUrlWithFilters(); // This will trigger the route watcher
+    updateUrlWithFilters() // This will trigger the route watcher
   }
-});
+})
 watch(
   () => route.query,
   async (newQuery, oldQuery) => {
@@ -1154,9 +1144,9 @@ watch(
       newQuery.source_langid !== oldQuery?.source_langid ||
       newQuery.searchInPhrases !== oldQuery?.searchInPhrases
 
-    const groupByThreadChanged = newQuery.group_by_thread !== oldQuery?.group_by_thread;
+    const groupByThreadChanged = newQuery.group_by_thread !== oldQuery?.group_by_thread
     if (groupByThreadChanged) {
-      groupByThread.value = newQuery.group_by_thread === 'true';
+      groupByThread.value = newQuery.group_by_thread === 'true'
     }
 
     // Update currentPage based on the new query *before* fetching
@@ -1169,19 +1159,23 @@ watch(
 
       // When page changed, scroll search results to top
       if (newQuery.page !== oldQuery?.page && searchResultsRef.value) {
-        await nextTick();
-        searchResultsRef.value.scrollIntoView({ block: 'start', behavior: 'instant' });
+        await nextTick()
+        searchResultsRef.value.scrollIntoView({ block: 'start', behavior: 'instant' })
       }
 
       // Attempt to focus after data fetch if it's the home route and not initial load
-      if ((route.name === 'Home' || route.name === 'Home-lang') && searchFormRef.value && !isInitialLoading.value) {
-        await nextTick();
-        searchFormRef.value.focusInput();
+      if (
+        (route.name === 'Home' || route.name === 'Home-lang') &&
+        searchFormRef.value &&
+        !isInitialLoading.value
+      ) {
+        await nextTick()
+        searchFormRef.value.focusInput()
       }
     }
   },
   { deep: true, immediate: true }
-);
+)
 
 watch(
   () => auth.state.isLoading,
@@ -1190,13 +1184,13 @@ watch(
     if (wasLoadingAuth && !isLoadingAuth) {
       // Auth state is now determined
       if (auth.state.isLoggedIn) {
-        await fetchCollections();
+        await fetchCollections()
       }
       // Always fetch data once auth is resolved and component is initialized
       // The route watcher's immediate run handles the very initial state sync.
       // This ensures data loads even if the route doesn't change after auth resolves.
       if (initialized.value) {
-         await fetchData();
+        await fetchData()
       }
     }
   }

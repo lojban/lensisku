@@ -1,9 +1,9 @@
-import { defaultFilterLanguageTags } from '../config/locales';
+import { defaultFilterLanguageTags } from '../config/locales'
 
 export const useLanguageSelection = () => {
   // Get languages from localStorage or use defaults
   const getStoredLanguages = () => {
-    if (typeof window === 'undefined') return;
+    if (typeof window === 'undefined') return
 
     try {
       const stored = localStorage.getItem('selectedLanguages')
@@ -16,7 +16,7 @@ export const useLanguageSelection = () => {
 
   // Save languages to localStorage
   const saveLanguages = (languageIds) => {
-    if (typeof window === 'undefined') return;
+    if (typeof window === 'undefined') return
 
     try {
       localStorage.setItem('selectedLanguages', JSON.stringify(languageIds))
@@ -45,7 +45,9 @@ export const useLanguageSelection = () => {
 
     // Fall back to default languages
     // Use defaultFilterLanguageTags from the centralized config
-    const defaultLanguages = availableLanguages.filter(lang => defaultFilterLanguageTags.includes(lang.tag)).map(lang => lang.id);
+    const defaultLanguages = availableLanguages
+      .filter((lang) => defaultFilterLanguageTags.includes(lang.tag))
+      .map((lang) => lang.id)
     saveLanguages(defaultLanguages)
     return defaultLanguages
   }

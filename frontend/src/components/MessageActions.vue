@@ -1,9 +1,6 @@
 <template>
   <div class="flex gap-3">
-    <button
-      class="btn-history"
-      @click="goBack"
-    >
+    <button class="btn-history" @click="goBack">
       <ArrowLeft class="h-5 w-5" />
     </button>
     <button class="btn-market" @click="viewThread">
@@ -15,19 +12,23 @@
       :class="currentUserVotedSpam ? 'btn-warning' : 'btn-empty'"
       @click="$emit('toggle-spam-vote')"
     >
-      {{ currentUserVotedSpam ? t('components.messageDetail.unlabelAsSpam', { count: spamVoteCount }) : t('components.messageDetail.labelAsSpam', { count: spamVoteCount }) }}
+      {{
+        currentUserVotedSpam
+          ? t('components.messageDetail.unlabelAsSpam', { count: spamVoteCount })
+          : t('components.messageDetail.labelAsSpam', { count: spamVoteCount })
+      }}
     </button>
   </div>
 </template>
 
 <script setup>
-import { ArrowLeft } from 'lucide-vue-next';
-import { useRoute, useRouter } from 'vue-router';
-import { useI18n } from 'vue-i18n';
+import { ArrowLeft } from 'lucide-vue-next'
+import { useRoute, useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 
-const { t } = useI18n();
-const route = useRoute();
-const router = useRouter();
+const { t } = useI18n()
+const route = useRoute()
+const router = useRouter()
 
 const goBack = () => {
   router.back()
@@ -59,13 +60,14 @@ defineEmits(['toggle-spam-vote'])
 
 const viewThread = () => {
   if (props.cleanedSubject) {
-    const currentLocale = route.path.split('/')[1] || 'en'; // Default to 'en' if locale is missing
-    const routeName = `ThreadView-${currentLocale}`;
+    const currentLocale = route.path.split('/')[1] || 'en' // Default to 'en' if locale is missing
+    const routeName = `ThreadView-${currentLocale}`
     router.push({
-      name: routeName, params: {
+      name: routeName,
+      params: {
         subject: props.cleanedSubject,
-      }
-    });
+      },
+    })
   }
 }
 </script>

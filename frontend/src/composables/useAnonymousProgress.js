@@ -6,7 +6,7 @@
 
 const STORAGE_KEY = 'lensisku_anon_progress'
 
-function readRaw () {
+function readRaw() {
   if (typeof window === 'undefined') return {}
   try {
     const s = localStorage.getItem(STORAGE_KEY)
@@ -16,7 +16,7 @@ function readRaw () {
   }
 }
 
-function writeRaw (data) {
+function writeRaw(data) {
   if (typeof window === 'undefined') return
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
@@ -30,7 +30,7 @@ function writeRaw (data) {
  * @param {string|number} [levelId] - if omitted, returns all levels for the collection
  * @returns {Object} progress for the collection, or for the level if levelId provided
  */
-export function getProgress (collectionId, levelId) {
+export function getProgress(collectionId, levelId) {
   const data = readRaw()
   const col = data[String(collectionId)]
   if (!col?.levels) return levelId == null ? {} : null
@@ -43,12 +43,13 @@ export function getProgress (collectionId, levelId) {
  * @param {string|number} levelId
  * @param {{ cards_completed: number, correct_answers: number, total_answers: number, completed_at?: string|null, card_attempts?: Array }} data
  */
-export function saveLevelProgress (collectionId, levelId, data) {
+export function saveLevelProgress(collectionId, levelId, data) {
   const all = readRaw()
   const cid = String(collectionId)
   const lid = String(levelId)
   if (!all[cid]) all[cid] = { levels: {} }
-  if (!all[cid].levels[lid]) all[cid].levels[lid] = { cards_completed: 0, correct_answers: 0, total_answers: 0 }
+  if (!all[cid].levels[lid])
+    all[cid].levels[lid] = { cards_completed: 0, correct_answers: 0, total_answers: 0 }
   const cur = all[cid].levels[lid]
   cur.cards_completed = data.cards_completed ?? cur.cards_completed
   cur.correct_answers = data.correct_answers ?? cur.correct_answers
@@ -62,7 +63,7 @@ export function saveLevelProgress (collectionId, levelId, data) {
  * Returns all progress in the shape expected by the merge API: { collection_id, level_progress: [ { level_id, cards_completed, correct_answers, total_answers } ] }[]
  * @returns {Array<{ collection_id: number, level_progress: Array<{ level_id: number, cards_completed: number, correct_answers: number, total_answers: number }> }>}
  */
-export function getAllProgressForMerge () {
+export function getAllProgressForMerge() {
   const data = readRaw()
   const out = []
   for (const [cid, col] of Object.entries(data)) {
@@ -74,11 +75,12 @@ export function getAllProgressForMerge () {
           level_id: parseInt(lid, 10),
           cards_completed: lev.cards_completed ?? 0,
           correct_answers: lev.correct_answers ?? 0,
-          total_answers: lev.total_answers ?? 0
+          total_answers: lev.total_answers ?? 0,
         })
       }
     }
-    if (levelProgress.length) out.push({ collection_id: parseInt(cid, 10), level_progress: levelProgress })
+    if (levelProgress.length)
+      out.push({ collection_id: parseInt(cid, 10), level_progress: levelProgress })
   }
   return out
 }
@@ -87,7 +89,7 @@ export function getAllProgressForMerge () {
  * Remove progress for one collection or all after successful merge.
  * @param {string|number|null} [collectionId] - if null/undefined, clear all
  */
-export function clearAfterMerge (collectionId) {
+export function clearAfterMerge(collectionId) {
   if (collectionId == null || collectionId === '') {
     if (typeof window !== 'undefined') localStorage.removeItem(STORAGE_KEY)
     return
@@ -97,11 +99,11 @@ export function clearAfterMerge (collectionId) {
   writeRaw(all)
 }
 
-export function useAnonymousProgress () {
+export function useAnonymousProgress() {
   return {
     getProgress,
     saveLevelProgress,
     getAllProgressForMerge,
-    clearAfterMerge
+    clearAfterMerge,
   }
 }

@@ -1,28 +1,42 @@
 <template>
   <div class="w-full min-h-[calc(100vh-12rem)] flex items-center justify-center relative">
-    <div class="w-full max-w-md p-8 mx-auto rounded-2xl border border-blue-200 flex-shrink-0
-             backdrop-blur-xl bg-blue-50/90 shadow-lg 
-             transition-all duration-300 hover:shadow-xl
-             flex flex-col items-center">
+    <div
+      class="w-full max-w-md p-8 mx-auto rounded-2xl border border-blue-200 flex-shrink-0 backdrop-blur-xl bg-blue-50/90 shadow-lg transition-all duration-300 hover:shadow-xl flex flex-col items-center"
+    >
       <h2 class="text-2xl sm:text-3xl font-bold mb-6 text-blue-900 text-center">
         {{ t('changePassword.title') }}
       </h2>
 
       <!-- Step 1: Current Password -->
-      <form v-if="!verificationId" class="w-full space-y-6" @submit.prevent="initiatePasswordChange">
+      <form
+        v-if="!verificationId"
+        class="w-full space-y-6"
+        @submit.prevent="initiatePasswordChange"
+      >
         <div>
-          <label for="currentPassword" class="block text-sm font-medium text-blue-900 mb-2">{{ t('changePassword.currentPasswordLabel') }}</label>
+          <label for="currentPassword" class="block text-sm font-medium text-blue-900 mb-2">{{
+            t('changePassword.currentPasswordLabel')
+          }}</label>
           <div class="relative">
-            <input id="currentPassword" v-model="currentPassword" type="password" required
-              class="input-field w-full text-base h-10 pl-3 pr-10" :disabled="isLoading"
-              :placeholder="t('changePassword.currentPasswordPlaceholder')">
+            <input
+              id="currentPassword"
+              v-model="currentPassword"
+              type="password"
+              required
+              class="input-field w-full text-base h-10 pl-3 pr-10"
+              :disabled="isLoading"
+              :placeholder="t('changePassword.currentPasswordPlaceholder')"
+            />
             <Key class="h-5 w-5 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2" />
           </div>
         </div>
 
-        <button type="submit"
+        <button
+          type="submit"
           class="w-full flex justify-center items-center btn-aqua-slate h-8 gap-2 py-3 rounded-full text-lg font-semibold transition-all"
-          :disabled="isLoading || !currentPassword" :class="{ 'opacity-75 cursor-not-allowed': isLoading }">
+          :disabled="isLoading || !currentPassword"
+          :class="{ 'opacity-75 cursor-not-allowed': isLoading }"
+        >
           <template v-if="isLoading">
             <Loader2 class="animate-spin -ml-1 mr-3 h-5 w-5 text-current" />
             {{ t('changePassword.verifying') }}
@@ -36,37 +50,63 @@
       <!-- Step 2: Verification Code and New Password -->
       <form v-else class="w-full space-y-6" @submit.prevent="completePasswordChange">
         <div>
-          <label for="verificationCode" class="block text-sm font-medium text-blue-900 mb-2">{{ t('changePassword.verificationCodeLabel') }}</label>
+          <label for="verificationCode" class="block text-sm font-medium text-blue-900 mb-2">{{
+            t('changePassword.verificationCodeLabel')
+          }}</label>
           <div class="relative">
-            <input id="verificationCode" v-model="verificationCode" type="text" required
-              :placeholder="t('changePassword.verificationCodePlaceholder')" class="input-field w-full text-base h-10 pl-3 pr-10"
-              :disabled="isLoading">
+            <input
+              id="verificationCode"
+              v-model="verificationCode"
+              type="text"
+              required
+              :placeholder="t('changePassword.verificationCodePlaceholder')"
+              class="input-field w-full text-base h-10 pl-3 pr-10"
+              :disabled="isLoading"
+            />
             <Mail class="h-5 w-5 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2" />
           </div>
         </div>
 
         <div>
-          <label for="newPassword" class="block text-sm font-medium text-blue-900 mb-2">{{ t('changePassword.newPasswordLabel') }}</label>
+          <label for="newPassword" class="block text-sm font-medium text-blue-900 mb-2">{{
+            t('changePassword.newPasswordLabel')
+          }}</label>
           <div class="relative">
-            <input id="newPassword" v-model="newPassword" type="password" required
-              class="input-field w-full text-base h-10 pl-3 pr-10" :disabled="isLoading"
-              :placeholder="t('changePassword.newPasswordPlaceholder')">
+            <input
+              id="newPassword"
+              v-model="newPassword"
+              type="password"
+              required
+              class="input-field w-full text-base h-10 pl-3 pr-10"
+              :disabled="isLoading"
+              :placeholder="t('changePassword.newPasswordPlaceholder')"
+            />
             <Key class="h-5 w-5 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2" />
           </div>
         </div>
 
         <div>
-          <label for="confirmPassword" class="block text-sm font-medium text-blue-900 mb-2">{{ t('changePassword.confirmPasswordLabel') }}</label>
+          <label for="confirmPassword" class="block text-sm font-medium text-blue-900 mb-2">{{
+            t('changePassword.confirmPasswordLabel')
+          }}</label>
           <div class="relative">
-            <input id="confirmPassword" v-model="confirmPassword" type="password" required
-              class="input-field w-full text-base h-10 pl-3 pr-10" :disabled="isLoading"
-              :placeholder="t('changePassword.confirmPasswordPlaceholder')">
+            <input
+              id="confirmPassword"
+              v-model="confirmPassword"
+              type="password"
+              required
+              class="input-field w-full text-base h-10 pl-3 pr-10"
+              :disabled="isLoading"
+              :placeholder="t('changePassword.confirmPasswordPlaceholder')"
+            />
             <Key class="h-5 w-5 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2" />
           </div>
         </div>
 
-        <div v-if="showValidationErrors"
-          class="mt-4 p-3 bg-yellow-50 border border-yellow-200 text-yellow-800 rounded-md">
+        <div
+          v-if="showValidationErrors"
+          class="mt-4 p-3 bg-yellow-50 border border-yellow-200 text-yellow-800 rounded-md"
+        >
           <p class="font-medium mb-1">
             {{ t('changePassword.validationErrorTitle') }}
           </p>
@@ -78,11 +118,20 @@
         </div>
 
         <div class="flex gap-3">
-          <button type="button" class="btn-aqua-zinc flex-1 h-8" :disabled="isLoading" @click="resetForm">
+          <button
+            type="button"
+            class="btn-aqua-zinc flex-1 h-8"
+            :disabled="isLoading"
+            @click="resetForm"
+          >
             {{ t('changePassword.startOverButton') }}
           </button>
 
-          <button type="submit" class="btn-aqua-teal flex-1 h-8" :disabled="isLoading || !isValidPasswordChange">
+          <button
+            type="submit"
+            class="btn-aqua-teal flex-1 h-8"
+            :disabled="isLoading || !isValidPasswordChange"
+          >
             <template v-if="isLoading">
               <Loader2 class="animate-spin -ml-1 mr-3 h-5 w-5 text-current" />
               {{ t('changePassword.changingPassword') }}
@@ -94,7 +143,10 @@
         </div>
       </form>
 
-      <div v-if="success" class="w-full mt-4 p-3 bg-emerald-100 border border-emerald-200 text-emerald-700 rounded-md text-center">
+      <div
+        v-if="success"
+        class="w-full mt-4 p-3 bg-emerald-100 border border-emerald-200 text-emerald-700 rounded-md text-center"
+      >
         {{ success }}
       </div>
 

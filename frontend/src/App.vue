@@ -1,30 +1,45 @@
 <template>
   <BackgroundComponent />
   <div v-if="isWinterSeason" class="snowflakes" aria-hidden="true">
-    <div v-for="(flake, index) in snowflakes" :key="index" class="sihesle"
-      :style="{ left: `${flake.left}%`, 'animation-delay': `${flake.delay1}s, ${flake.delay2}s` }">
+    <div
+      v-for="(flake, index) in snowflakes"
+      :key="index"
+      class="sihesle"
+      :style="{ left: `${flake.left}%`, 'animation-delay': `${flake.delay1}s, ${flake.delay2}s` }"
+    >
       {{ index % 2 === 0 ? '❅' : '❆' }}
     </div>
   </div>
   <div v-if="isWinterSeason && showPyro" class="pyro" />
 
-  <div v-if="showTestDataWarning"
-    class="select-none top-14 md:top-12 opacity-80 fixed w-fit mx-auto left-0 right-0 z-10 text-xs py-0 px-2 text-center border bg-red-100 border-red-200">
+  <div
+    v-if="showTestDataWarning"
+    class="select-none top-14 md:top-12 opacity-80 fixed w-fit mx-auto left-0 right-0 z-10 text-xs py-0 px-2 text-center border bg-red-100 border-red-200"
+  >
     {{ $t('testDataWarning') }}
-    <a :href="discordChatUrl" target="_blank" rel="noopener noreferrer"
-      class="text-blue-500 hover:text-red-800 underline">
+    <a
+      :href="discordChatUrl"
+      target="_blank"
+      rel="noopener noreferrer"
+      class="text-blue-500 hover:text-red-800 underline"
+    >
       {{ $t('discord') }}
     </a>
   </div>
-  <div v-if="showUnconfirmedWarning"
-    class="select-none top-14 md:top-12 opacity-90 fixed w-full mx-auto left-0 right-0 z-10 text-sm py-2 px-4 text-center border bg-yellow-100 border-yellow-300">
+  <div
+    v-if="showUnconfirmedWarning"
+    class="select-none top-14 md:top-12 opacity-90 fixed w-full mx-auto left-0 right-0 z-10 text-sm py-2 px-4 text-center border bg-yellow-100 border-yellow-300"
+  >
     <div class="max-w-4xl mx-auto flex items-center justify-center gap-2 flex-wrap">
       <span>{{ $t('unconfirmedWarning') }}</span>
       <button
         @click="handleResendConfirmation"
         :disabled="isResendingConfirmation"
-        class="text-blue-600 hover:text-blue-800 underline font-medium disabled:opacity-50 disabled:cursor-not-allowed">
-        {{ isResendingConfirmation ? $t('emailConfirmation.sending') : $t('unconfirmedWarningLink') }}
+        class="text-blue-600 hover:text-blue-800 underline font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        {{
+          isResendingConfirmation ? $t('emailConfirmation.sending') : $t('unconfirmedWarningLink')
+        }}
       </button>
       <span v-if="resendConfirmationSuccess" class="text-green-600 text-xs ml-2">
         {{ $t('unconfirmedWarningMessageSent') }}
@@ -38,15 +53,28 @@
       <div class="flex items-center justify-between h-14 sm:h-12">
         <!-- Logo + Toggle Menu Button -->
         <div class="flex items-center">
-          <button class="sm:hidden p-3 text-gray-600 hover:bg-gray-100 rounded-md z-15" :aria-label="$t('toggleMenu')"
-            @click.stop="isMenuOpen = !isMenuOpen">
+          <button
+            class="sm:hidden p-3 text-gray-600 hover:bg-gray-100 rounded-md z-15"
+            :aria-label="$t('toggleMenu')"
+            @click.stop="isMenuOpen = !isMenuOpen"
+          >
             <Menu v-if="!isMenuOpen" class="h-6 w-6" />
             <X v-else class="h-6 w-6" />
           </button>
 
           <!-- Logo - Always visible -->
-          <NavLink to="/" class="flex items-center space-x-2 px-2 sm:px-3 py-1.5" @click="triggerPyro">
-            <div v-html="logoSvgRaw" role="img" :aria-label="$t('logoText')" class="w-7 h-7" :class="{ 'animate-rotate-3d': showPyro }"></div>
+          <NavLink
+            to="/"
+            class="flex items-center space-x-2 px-2 sm:px-3 py-1.5"
+            @click="triggerPyro"
+          >
+            <div
+              v-html="logoSvgRaw"
+              role="img"
+              :aria-label="$t('logoText')"
+              class="w-7 h-7"
+              :class="{ 'animate-rotate-3d': showPyro }"
+            ></div>
             <span class="select-none font-medium">{{ $t('logoText') }}</span>
           </NavLink>
         </div>
@@ -67,35 +95,68 @@
               class="navbar-item"
               :aria-expanded="isMoreNavOpen"
               aria-haspopup="true"
-              @click.stop="isMoreNavOpen = !isMoreNavOpen">
+              @click.stop="isMoreNavOpen = !isMoreNavOpen"
+            >
               <span class="hidden lg:inline"> {{ $t('nav.more') }} </span>
               <ChevronDown class="h-5 w-5" :stroke-width="2.5" :absolute-stroke-width="true" />
             </button>
             <div
               class="absolute flex-col mt-0 bg-white border border-gray-200 rounded-md shadow-lg z-50 p-1 w-auto max-w-96"
-              :class="isMoreNavOpen ? 'flex' : 'hidden group-hover:flex'">
-              <NavLink v-if="auth.state.isLoggedIn" to="/users" class="navbar-item justify-start py-2" @click="closeNavMenus">
+              :class="isMoreNavOpen ? 'flex' : 'hidden group-hover:flex'"
+            >
+              <NavLink
+                v-if="auth.state.isLoggedIn"
+                to="/users"
+                class="navbar-item justify-start py-2"
+                @click="closeNavMenus"
+              >
                 <Users class="h-4 w-4" />
-                {{ auth.state.authorities?.includes('manage_roles') ? $t('nav.iamUsers') : $t('nav.users') }}
+                {{
+                  auth.state.authorities?.includes('manage_roles')
+                    ? $t('nav.iamUsers')
+                    : $t('nav.users')
+                }}
               </NavLink>
-              <NavLink to="/languages" class="navbar-item justify-start py-2" @click="closeNavMenus">
+              <NavLink
+                to="/languages"
+                class="navbar-item justify-start py-2"
+                @click="closeNavMenus"
+              >
                 <Globe class="h-4 w-4" />
                 {{ $t('nav.languages') }}
               </NavLink>
-              <NavLink to="/assistant" class="navbar-item justify-start py-2" @click="closeNavMenus">
+              <NavLink
+                to="/assistant"
+                class="navbar-item justify-start py-2"
+                @click="closeNavMenus"
+              >
                 <Bot class="h-4 w-4" />
                 {{ $t('nav.assistant') }}
               </NavLink>
-              <NavLink v-if="!auth.state.isLoggedIn" to="/export/cached" class="navbar-item justify-start py-2" @click="closeNavMenus">
+              <NavLink
+                v-if="!auth.state.isLoggedIn"
+                to="/export/cached"
+                class="navbar-item justify-start py-2"
+                @click="closeNavMenus"
+              >
                 <Download class="h-4 w-4" />
                 {{ $t('nav.cachedExports') }}
               </NavLink>
-              <NavLink v-if="auth.state.isLoggedIn" to="/export" class="navbar-item justify-start py-2" @click="closeNavMenus">
+              <NavLink
+                v-if="auth.state.isLoggedIn"
+                to="/export"
+                class="navbar-item justify-start py-2"
+                @click="closeNavMenus"
+              >
                 <Upload class="h-4 w-4" />
                 {{ $t('nav.export') }}
               </NavLink>
-              <NavLink v-if="auth.state.isLoggedIn && auth.state.authorities?.includes('bulk_import')" to="/bulk-import"
-                class="navbar-item justify-start py-2" @click="closeNavMenus">
+              <NavLink
+                v-if="auth.state.isLoggedIn && auth.state.authorities?.includes('bulk_import')"
+                to="/bulk-import"
+                class="navbar-item justify-start py-2"
+                @click="closeNavMenus"
+              >
                 <Download class="h-4 w-4" />
                 {{ $t('nav.bulkImport') }}
               </NavLink>
@@ -110,24 +171,24 @@
             <template v-if="auth.state.isLoggedIn">
               <NavLink v-if="auth.state.isLoggedIn" to="/reactions" class="navbar-item">
                 <BookmarkCheck class="h-5 w-5" />
-              <span class="hidden sm:inline">{{ $t('nav.myActivity') }}</span>
-            </NavLink>
-            <NavLink to="/profile" class="navbar-item">
-              <User class="h-5 w-5" />
-              <span class="hidden sm:inline">{{ auth.state.username }}</span>
-            </NavLink>
-            <button class="navbar-item hidden sm:flex" @click="handleLogout">
-              <LogOut class="h-5 w-5" />
-              <span class="hidden md:inline">{{ $t('nav.logout') }}</span>
-            </button>
-          </template>
-          <template v-else>
-            <NavLink to="/signup" class="btn-signup">
-              <UserPlus class="h-5 w-5" />
-              <span class="hidden sm:inline">{{ $t('nav.signUp') }}</span>
-            </NavLink>
-            <NavLink to="/login" class="btn-login">
-              <LogIn class="h-5 w-5" />
+                <span class="hidden sm:inline">{{ $t('nav.myActivity') }}</span>
+              </NavLink>
+              <NavLink to="/profile" class="navbar-item">
+                <User class="h-5 w-5" />
+                <span class="hidden sm:inline">{{ auth.state.username }}</span>
+              </NavLink>
+              <button class="navbar-item hidden sm:flex" @click="handleLogout">
+                <LogOut class="h-5 w-5" />
+                <span class="hidden md:inline">{{ $t('nav.logout') }}</span>
+              </button>
+            </template>
+            <template v-else>
+              <NavLink to="/signup" class="btn-signup">
+                <UserPlus class="h-5 w-5" />
+                <span class="hidden sm:inline">{{ $t('nav.signUp') }}</span>
+              </NavLink>
+              <NavLink to="/login" class="btn-login">
+                <LogIn class="h-5 w-5" />
                 <span class="hidden sm:inline">{{ $t('nav.logIn') }}</span>
               </NavLink>
             </template>
@@ -136,59 +197,84 @@
       </div>
 
       <!-- Mobile Navigation Menu -->
-      <div v-show="isMenuOpen" class="fixed sm:hidden top-14 left-0 right-0 bg-white shadow-md py-2 space-y-1 z-50">
-        <NavLink to="/collections"
+      <div
+        v-show="isMenuOpen"
+        class="fixed sm:hidden top-14 left-0 right-0 bg-white shadow-md py-2 space-y-1 z-50"
+      >
+        <NavLink
+          to="/collections"
           class="flex items-center px-4 py-2 text-base text-gray-600 hover:bg-gray-100 rounded-md transition-colors gap-2"
-          @click="isMenuOpen = false">
+          @click="isMenuOpen = false"
+        >
           <GalleryVerticalEnd class="h-5 w-5" />
           {{ $t('nav.courses') }}
         </NavLink>
 
-        <NavLink to="/recent"
+        <NavLink
+          to="/recent"
           class="flex items-center px-4 py-2 text-base text-gray-600 hover:bg-gray-100 rounded-md transition-colors gap-2"
-          @click="isMenuOpen = false">
+          @click="isMenuOpen = false"
+        >
           <Clock4 class="h-5 w-5" />
           {{ $t('mobileNav.recentChanges') }}
         </NavLink>
 
-        <NavLink v-if="auth.state.isLoggedIn" to="/users"
+        <NavLink
+          v-if="auth.state.isLoggedIn"
+          to="/users"
           class="flex items-center px-4 py-2 text-base text-gray-600 hover:bg-gray-100 rounded-md transition-colors gap-2"
-          @click="isMenuOpen = false">
+          @click="isMenuOpen = false"
+        >
           <Users class="h-5 w-5" />
-          {{ auth.state.authorities?.includes('manage_roles') ? $t('nav.iamUsers') : $t('nav.users') }}
+          {{
+            auth.state.authorities?.includes('manage_roles') ? $t('nav.iamUsers') : $t('nav.users')
+          }}
         </NavLink>
 
-        <NavLink to="/languages"
+        <NavLink
+          to="/languages"
           class="flex items-center px-4 py-2 text-base text-gray-600 hover:bg-gray-100 rounded-md transition-colors gap-2"
-          @click="isMenuOpen = false">
+          @click="isMenuOpen = false"
+        >
           <Globe class="h-5 w-5" />
           {{ $t('nav.languages') }}
         </NavLink>
 
-        <NavLink to="/assistant"
+        <NavLink
+          to="/assistant"
           class="flex items-center px-4 py-2 text-base text-gray-600 hover:bg-gray-100 rounded-md transition-colors gap-2"
-          @click="isMenuOpen = false">
+          @click="isMenuOpen = false"
+        >
           <Bot class="h-5 w-5" />
           {{ $t('nav.assistant') }}
         </NavLink>
 
-        <NavLink v-if="!auth.state.isLoggedIn" to="/export/cached"
+        <NavLink
+          v-if="!auth.state.isLoggedIn"
+          to="/export/cached"
           class="flex items-center px-4 py-2 text-base text-gray-600 hover:bg-gray-100 rounded-md transition-colors gap-2"
-          @click="isMenuOpen = false">
+          @click="isMenuOpen = false"
+        >
           <Download class="h-5 w-5" />
           {{ $t('nav.cachedExports') }}
         </NavLink>
 
-        <NavLink v-if="auth.state.isLoggedIn" to="/export"
+        <NavLink
+          v-if="auth.state.isLoggedIn"
+          to="/export"
           class="flex items-center px-4 py-2 text-base text-gray-600 hover:bg-gray-100 rounded-md transition-colors gap-2"
-          @click="isMenuOpen = false">
+          @click="isMenuOpen = false"
+        >
           <Upload class="h-5 w-5" />
           {{ $t('nav.export') }}
         </NavLink>
 
-        <NavLink v-if="auth.state.isLoggedIn && auth.state.authorities?.includes('bulk_import')" to="/bulk-import"
+        <NavLink
+          v-if="auth.state.isLoggedIn && auth.state.authorities?.includes('bulk_import')"
+          to="/bulk-import"
           class="flex items-center px-4 py-2 text-base text-gray-600 hover:bg-gray-100 rounded-md transition-colors gap-2"
-          @click="isMenuOpen = false">
+          @click="isMenuOpen = false"
+        >
           <Download class="h-5 w-5" />
           {{ $t('nav.bulkImport') }}
         </NavLink>
@@ -198,7 +284,8 @@
         <button
           v-if="auth.state.isLoggedIn"
           class="flex items-center px-4 py-2 text-base text-[#007bff] hover:bg-gray-100 rounded-md transition-colors gap-2 w-full text-left"
-          @click="handleLogout">
+          @click="handleLogout"
+        >
           <LogOut class="h-5 w-5" />
           {{ $t('nav.logout') }}
         </button>
@@ -208,30 +295,37 @@
   <!-- Global Error Display -->
   <div class="flex justify-center">
     <div v-if="error?.message" class="w-full max-w-lg px-4">
-      <Error v-if="error?.message" :message="error.message" :details="error.details" @close="clearError" />
+      <Error
+        v-if="error?.message"
+        :message="error.message"
+        :details="error.details"
+        @close="clearError"
+      />
     </div>
   </div>
 
   <ToastFloat
     :show="!!successToast"
     :message="successToast?.message ?? ''"
+    :duration="successToast?.duration ?? DEFAULT_SUCCESS_TOAST_DURATION_MS"
     type="success"
     @close="clearSuccess"
   />
 
   <!-- Main content -->
-  <main class="main-content" :class="[
-    { 'scrollbar-always': route.meta.alwaysShowScrollbar },
-    route.meta.fullHeight ? 'main-content--no-scroll' : ''
-  ]">
+  <main
+    class="main-content"
+    :class="[
+      { 'scrollbar-always': route.meta.alwaysShowScrollbar },
+      route.meta.fullHeight ? 'main-content--no-scroll' : '',
+    ]"
+  >
     <div
       class="max-w-4xl mx-auto relative flex flex-col"
       :class="[
         route.meta.contentTopPaddingMainOnly ? 'pt-0' : 'pt-3',
-        route.meta.fullHeight
-          ? 'main-child-full-height w-full'
-          : 'min-h-[calc(100vh-12rem)]',
-        route.path.startsWith('/lingo') ? 'lg:pl-64' : ''
+        route.meta.fullHeight ? 'main-child-full-height w-full' : 'min-h-[calc(100vh-12rem)]',
+        route.path.startsWith('/lingo') ? 'lg:pl-64' : '',
       ]"
       id="main-child"
     >
@@ -243,18 +337,26 @@
         ]"
       >
         <router-view v-slot="{ Component, route }">
-          <component :is="Component" v-bind="route.meta.props" v-on="(route.name === 'Home' || route.name?.startsWith('Home-'))
-            ? {
-              search: performSearch,
-              'view-message': viewMessage,
-              'view-thread': viewThread,
-            }
-            : {}
-            " />
+          <component
+            :is="Component"
+            v-bind="route.meta.props"
+            v-on="
+              route.name === 'Home' || route.name?.startsWith('Home-')
+                ? {
+                    search: performSearch,
+                    'view-message': viewMessage,
+                    'view-thread': viewThread,
+                  }
+                : {}
+            "
+          />
         </router-view>
       </div>
 
-      <footer v-if="!route.meta.hideFooter" class="mt-6 max-w-full break-words px-3 py-3 text-center text-xs text-gray-500 leading-relaxed">
+      <footer
+        v-if="!route.meta.hideFooter"
+        class="mt-6 max-w-full break-words px-3 py-3 text-center text-xs text-gray-500 leading-relaxed"
+      >
         {{ $t('footer.publicDomainNotice') }}
       </footer>
     </div>
@@ -264,10 +366,13 @@
   <div v-if="showActionModal" class="fixed inset-0 z-40" @click="showActionModal = false"></div>
 
   <!-- Floating Action Button -->
-  <div class="max-w-4xl mx-auto relative" v-if="auth.state.isLoggedIn && route.name !== 'flashcard-study' && !route.meta.fullHeight">
+  <div
+    class="max-w-4xl mx-auto relative"
+    v-if="auth.state.isLoggedIn && route.name !== 'flashcard-study' && !route.meta.fullHeight"
+  >
     <div
-      class="fixed md:absolute bottom-6 right-4 md:bottom-8 md:right-8 lg:-right-4 lg:-mr-4 z-50 flex flex-col items-end gap-3">
-      
+      class="fixed md:absolute bottom-6 right-4 md:bottom-8 md:right-8 lg:-right-4 lg:-mr-4 z-50 flex flex-col items-end gap-3"
+    >
       <!-- Action Buttons -->
       <transition
         enter-active-class="transition ease-out duration-200"
@@ -277,27 +382,47 @@
         leave-from-class="opacity-100 translate-y-0 pointer-events-auto"
         leave-to-class="opacity-0 translate-y-2 pointer-events-none"
       >
-        <div v-show="showActionModal" class="flex flex-col gap-3 mb-1 items-end pointer-events-auto pr-1">
-          <IconButton :label="$t('nav.assistant')"
-            button-classes="btn-aqua-white h-12 text-base !px-5" @click="handleAssistantChat">
+        <div
+          v-show="showActionModal"
+          class="flex flex-col gap-3 mb-1 items-end pointer-events-auto pr-1"
+        >
+          <IconButton
+            :label="$t('nav.assistant')"
+            button-classes="btn-aqua-white h-12 text-base !px-5"
+            @click="handleAssistantChat"
+          >
             <template #icon>
               <Bot class="h-6 w-6 text-indigo-600" />
             </template>
           </IconButton>
-          <IconButton v-if="auth.state.isLoggedIn" :label="$t('fab.newDiscussion')"
-            button-classes="btn-aqua-white h-12 text-base !px-5" @click="handleNewFreeThread">
+          <IconButton
+            v-if="auth.state.isLoggedIn"
+            :label="$t('fab.newDiscussion')"
+            button-classes="btn-aqua-white h-12 text-base !px-5"
+            @click="handleNewFreeThread"
+          >
             <template #icon>
               <AudioWaveform class="h-6 w-6 text-purple-600" />
             </template>
           </IconButton>
-          <IconButton v-if="auth.state.isLoggedIn" :label="$t('fab.addDefinition')" icon-classes="h-5 w-5"
-            button-classes="btn-aqua-emerald h-12 text-base !px-5" @click="handleNewDefinition" />
+          <IconButton
+            v-if="auth.state.isLoggedIn"
+            :label="$t('fab.addDefinition')"
+            icon-classes="h-5 w-5"
+            button-classes="btn-aqua-emerald h-12 text-base !px-5"
+            @click="handleNewDefinition"
+          />
         </div>
       </transition>
 
-      <button class="p-2 flex items-center justify-center w-[52px] h-[52px] btn-aqua-rose"
-        @click="showActionModal = !showActionModal">
-        <Plus class="h-7 w-7 transition-all duration-200" :class="{ 'rotate-45': showActionModal }" />
+      <button
+        class="p-2 flex items-center justify-center w-[52px] h-[52px] btn-aqua-rose"
+        @click="showActionModal = !showActionModal"
+      >
+        <Plus
+          class="h-7 w-7 transition-all duration-200"
+          :class="{ 'rotate-45': showActionModal }"
+        />
       </button>
     </div>
   </div>
@@ -323,7 +448,7 @@ import {
   BookmarkCheck,
   Clock4,
   GalleryVerticalEnd,
-  Bot
+  Bot,
 } from 'lucide-vue-next'
 import { Menu } from 'lucide-vue-next' // Explicitly import Menu if it was missed by auto-sort
 import { ref, onMounted, onBeforeUnmount, watch, computed, nextTick } from 'vue'
@@ -346,10 +471,13 @@ import ModalComponent from '@/components/ModalComponent.vue'
 import { normalizeSearchQuery } from '@/utils/searchQueryUtils'
 import { provideAuth } from './composables/useAuth'
 import { provideError } from './composables/useError'
-import { provideSuccessToast } from './composables/useSuccessToast'
-import { localeCaptureGroupRegex, supportedLocales } from './config/locales';
+import {
+  DEFAULT_SUCCESS_TOAST_DURATION_MS,
+  provideSuccessToast,
+} from './composables/useSuccessToast'
+import { localeCaptureGroupRegex, supportedLocales } from './config/locales'
 
-import logoSvgRaw from '../public/assets/icons/favicon.svg?raw';
+import logoSvgRaw from '../public/assets/icons/favicon.svg?raw'
 
 const i18n = useI18n() // Use i18n composable
 const $t = i18n.t
@@ -384,9 +512,11 @@ const isResendingConfirmation = ref(false)
 const resendConfirmationSuccess = ref(false)
 
 const showUnconfirmedWarning = computed(() => {
-  return auth.state.isLoggedIn && 
-         !auth.state.isLoading && 
-         (auth.state.role.toLowerCase() === 'unconfirmed' || !auth.state.email_confirmed)
+  return (
+    auth.state.isLoggedIn &&
+    !auth.state.isLoading &&
+    (auth.state.role.toLowerCase() === 'unconfirmed' || !auth.state.email_confirmed)
+  )
 })
 
 const rnd = (max, min = 1) => ((Math.random() * max) / min).toFixed(2)
@@ -465,7 +595,7 @@ const handleLogout = () => {
 
 const handleResendConfirmation = async () => {
   if (isResendingConfirmation.value) return
-  
+
   try {
     // Get email from JWT token
     const accessToken = auth.state.accessToken || localStorage.getItem('accessToken')
@@ -473,20 +603,20 @@ const handleResendConfirmation = async () => {
       console.error('No access token available')
       return
     }
-    
+
     const decoded = jwtDecode(accessToken)
     const email = decoded.email
-    
+
     if (!email) {
       console.error('No email found in token')
       return
     }
-    
+
     isResendingConfirmation.value = true
     resendConfirmationSuccess.value = false
-    
+
     const response = await resendConfirmation(email)
-    
+
     if (response.data.success) {
       resendConfirmationSuccess.value = true
       // Hide success message after 5 seconds
@@ -528,15 +658,10 @@ const handleClickOutside = (event) => {
   if (isMenuOpen.value && header && !header.contains(event.target)) {
     isMenuOpen.value = false
   }
-  if (
-    isMoreNavOpen.value &&
-    moreNavRef.value &&
-    !moreNavRef.value.contains(event.target)
-  ) {
+  if (isMoreNavOpen.value && moreNavRef.value && !moreNavRef.value.contains(event.target)) {
     isMoreNavOpen.value = false
   }
 }
-
 
 watch(() => route.query, syncFromRoute, { deep: true })
 
@@ -567,7 +692,7 @@ const setLocale = (newLocale) => {
   // Get the current $locale from the path
   const currentLocaleMatch = currentPath.match(localeCaptureGroupRegex)
   const currentLocale = currentLocaleMatch ? currentLocaleMatch[1] : ''
-  
+
   if (currentLocale && supportedLocales.includes(newLocale)) {
     // Replace the $locale prefix in the current path
     const newPath = currentPath.replace(`/${currentLocale}`, `/${newLocale}`)
@@ -589,7 +714,7 @@ const handleGlobalKeyDown = async (event) => {
   const activeElement = document.activeElement
   const tagName = activeElement?.tagName
   const isContentEditable = activeElement?.isContentEditable
-  
+
   if (['INPUT', 'TEXTAREA', 'SELECT'].includes(tagName) || isContentEditable) {
     return
   }
@@ -601,10 +726,10 @@ const handleGlobalKeyDown = async (event) => {
   const currentPath = route.path
   const localeMatch = currentPath.match(localeCaptureGroupRegex)
   const currentLocale = localeMatch ? localeMatch[1] : $locale.value || 'en'
-  
+
   // Check if we're already on the homepage
   const isHomePage = route.name === 'Home' || route.name?.startsWith('Home-')
-  
+
   // Navigate to homepage if not already there
   if (!isHomePage) {
     await router.push(`/${currentLocale}`)
@@ -613,26 +738,30 @@ const handleGlobalKeyDown = async (event) => {
   // Focus the search input after navigation
   // Wait for the route to update and component to mount
   await nextTick()
-  
+
   // Try multiple times to find the search input as the component might need time to mount
   const focusSearchInput = () => {
     // Try to find the search input in the SearchForm component
     // The search form has class "search-form" and contains an input
-    const searchInput = document.querySelector('.search-form input[type="text"], .search-form input:not([type="hidden"])')
+    const searchInput = document.querySelector(
+      '.search-form input[type="text"], .search-form input:not([type="hidden"])'
+    )
     if (searchInput) {
       searchInput.focus()
       return true
     }
     return false
   }
-  
+
   // Try immediately
   if (!focusSearchInput()) {
     // If not found, try again after a short delay to allow component to mount
     setTimeout(() => {
       if (!focusSearchInput()) {
         // Final fallback: try to find any input with input-field class in the main content area
-        const fallbackInput = document.querySelector('main .input-field[type="text"], main input.input-field:not([type="hidden"])')
+        const fallbackInput = document.querySelector(
+          'main .input-field[type="text"], main input.input-field:not([type="hidden"])'
+        )
         if (fallbackInput) {
           fallbackInput.focus()
         }
@@ -655,7 +784,7 @@ onMounted(() => {
   handleResize() // Check initial size
 
   document.addEventListener('click', handleClickOutside)
-  
+
   // Add global keyboard handler for "/" key
   window.addEventListener('keydown', handleGlobalKeyDown)
 
@@ -694,7 +823,7 @@ footer {
   height: calc(100vh - 57px - 24px);
 }
 
-.main-content>* {
+.main-content > * {
   @apply bg-transparent md:bg-zinc-50/75 md:border-x;
   min-height: 100%;
 }
@@ -717,13 +846,15 @@ footer {
 }
 
 ::-webkit-scrollbar-thumb {
-  background-image: linear-gradient(to right,
-      #375abb 0%,
-      #8bb4e3 21%,
-      #84b4e9 38%,
-      #3f8ae0 40%,
-      #95e0ff 86%,
-      #63abf2 100%);
+  background-image: linear-gradient(
+    to right,
+    #375abb 0%,
+    #8bb4e3 21%,
+    #84b4e9 38%,
+    #3f8ae0 40%,
+    #95e0ff 86%,
+    #63abf2 100%
+  );
   box-shadow:
     inset 0 1px #0028ab,
     inset 0 -1px #0028ab,
@@ -734,13 +865,15 @@ footer {
 }
 
 ::-webkit-scrollbar-thumb:horizontal {
-  background-image: linear-gradient(to bottom,
-      #375abb 0%,
-      #8bb4e3 21%,
-      #84b4e9 36%,
-      #3f8ae0 44%,
-      #95e0ff 86%,
-      #63abf2 100%);
+  background-image: linear-gradient(
+    to bottom,
+    #375abb 0%,
+    #8bb4e3 21%,
+    #84b4e9 36%,
+    #3f8ae0 44%,
+    #95e0ff 86%,
+    #63abf2 100%
+  );
   border-top-width: 0px;
   border-bottom-width: 0px;
   border-radius: 6px;
@@ -754,13 +887,15 @@ footer {
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background-image: linear-gradient(to left,
-      #375abb 0%,
-      #8bb4e3 21%,
-      #84b4e9 38%,
-      #3f8ae0 40%,
-      #95e0ff 86%,
-      #63abf2 100%);
+  background-image: linear-gradient(
+    to left,
+    #375abb 0%,
+    #8bb4e3 21%,
+    #84b4e9 38%,
+    #3f8ae0 40%,
+    #95e0ff 86%,
+    #63abf2 100%
+  );
   border-radius: 6px;
   box-shadow:
     inset 0 1px #0028ab,
@@ -772,13 +907,15 @@ footer {
 }
 
 ::-webkit-scrollbar-thumb:hover:horizontal {
-  background-image: linear-gradient(to top,
-      #375abb 0%,
-      #8bb4e3 21%,
-      #84b4e9 36%,
-      #3f8ae0 44%,
-      #95e0ff 86%,
-      #63abf2 100%);
+  background-image: linear-gradient(
+    to top,
+    #375abb 0%,
+    #8bb4e3 21%,
+    #84b4e9 36%,
+    #3f8ae0 44%,
+    #95e0ff 86%,
+    #63abf2 100%
+  );
   border-top-width: 0px;
   border-bottom-width: 0px;
   border-radius: 6px;
@@ -1050,7 +1187,6 @@ body:has(.main-content.main-content--no-scroll) {
 }
 
 @keyframes position {
-
   0%,
   19.9% {
     margin-top: 10%;

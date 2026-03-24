@@ -1,16 +1,25 @@
 <template>
-  <div class="comment-item bg-white border rounded-lg p-3 my-2 hover:border-blue-300 transition-colors min-w-48"
-    :data-comment-id="processedComment.comment_id">
-    <div v-if="showContext && (processedComment.definition || processedComment.valsi_id)"
-      class="mb-2 text-sm text-gray-600 whitespace-nowrap overflow-hidden flex items-center">
+  <div
+    class="comment-item bg-white border rounded-lg p-3 my-2 hover:border-blue-300 transition-colors min-w-48"
+    :data-comment-id="processedComment.comment_id"
+  >
+    <div
+      v-if="showContext && (processedComment.definition || processedComment.valsi_id)"
+      class="mb-2 text-sm text-gray-600 whitespace-nowrap overflow-hidden flex items-center"
+    >
       <SourceTypeBadge :type="processedComment.definition_id ? 'definition' : 'valsi'" />
-      <RouterLink v-if="processedComment.definition"
+      <RouterLink
+        v-if="processedComment.definition"
         :to="`/valsi/${processedComment.valsi_word}?highlight_definition_id=${processedComment.definition_id}`"
-        class="hover:underline text-blue-700 font-medium ml-1.5 truncate inline-block max-w-[calc(100%-120px)]">
+        class="hover:underline text-blue-700 font-medium ml-1.5 truncate inline-block max-w-[calc(100%-120px)]"
+      >
         <LazyMathJax :content="processedComment.definition" class="inline" />
       </RouterLink>
-      <RouterLink v-else-if="processedComment.valsi_id" :to="`/valsi/${processedComment.valsi_word}`"
-        class="hover:underline text-blue-700 font-medium ml-1.5 truncate inline-block max-w-[calc(100%-120px)]">
+      <RouterLink
+        v-else-if="processedComment.valsi_id"
+        :to="`/valsi/${processedComment.valsi_word}`"
+        class="hover:underline text-blue-700 font-medium ml-1.5 truncate inline-block max-w-[calc(100%-120px)]"
+      >
         {{ processedComment.valsi_word || t('components.commentItem.untitledEntry') }}
       </RouterLink>
     </div>
@@ -21,27 +30,38 @@
         <div class="flex items-start space-x-2">
           <RouterLink :to="`/user/${processedComment.username}`" class="flex-shrink-0">
             <!-- Skeleton while loading -->
-            <div v-show="isProfileImageLoading" class="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gray-200 animate-pulse border-2 border-white shadow-sm"></div>
-            
+            <div
+              v-show="isProfileImageLoading"
+              class="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gray-200 animate-pulse border-2 border-white shadow-sm"
+            ></div>
+
             <!-- Actual image when loaded -->
-            <img v-if="hasProfileImage" v-show="!isProfileImageLoading"
+            <img
+              v-if="hasProfileImage"
+              v-show="!isProfileImageLoading"
               :src="getProfileImageUrl(processedComment.username)"
               :alt="`${processedComment.username}'s profile picture`"
               class="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover border-2 border-white shadow-sm"
               @load="handleImageLoad"
-              @error="handleImageError">
-              
+              @error="handleImageError"
+            />
+
             <!-- Placeholder when no image -->
-            <div v-if="!hasProfileImage" v-show="!isProfileImageLoading"
-              class="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-400">
+            <div
+              v-if="!hasProfileImage"
+              v-show="!isProfileImageLoading"
+              class="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-400"
+            >
               <User class="h-4 w-4 sm:h-6 sm:w-6" />
             </div>
           </RouterLink>
 
           <div class="flex-1 min-w-0">
             <div class="flex flex-wrap items-baseline gap-1.5">
-              <RouterLink :to="`/user/${processedComment.username}`"
-                class="text-sm font-medium text-gray-700 hover:text-blue-600 hover:underline truncate">
+              <RouterLink
+                :to="`/user/${processedComment.username}`"
+                class="text-sm font-medium text-gray-700 hover:text-blue-600 hover:underline truncate"
+              >
                 {{ processedComment.username }}
               </RouterLink>
             </div>
@@ -54,7 +74,8 @@
         <div class="flex flex-row items-center gap-3">
           <RouterLink
             :to="`/comments/?comment_id=${processedComment.parent_id}&scroll_to=${processedComment.comment_id}&valsi_id=${props.valsiId || 0}&definition_id=${props.definitionId || 0}`"
-            class="text-sm text-gray-500 hover:text-blue-600 hover:underline break-all">
+            class="text-sm text-gray-500 hover:text-blue-600 hover:underline break-all"
+          >
             #{{ processedComment.comment_num }}
           </RouterLink>
         </div>
@@ -63,7 +84,11 @@
       <div class="mt-2">
         <template v-if="processedComment.subject">
           <h4 class="font-medium text-blue-700 text-sm sm:text-base">
-            <LazyMathJax :content="processedComment.subject" :enable-markdown="true" class="inline" />
+            <LazyMathJax
+              :content="processedComment.subject"
+              :enable-markdown="true"
+              class="inline"
+            />
           </h4>
         </template>
       </div>
@@ -73,7 +98,8 @@
       <div class="mb-2 ml-6 pl-2 border rounded-md border-l-2 border-gray-300">
         <RouterLink
           :to="`/comments/?thread_id=${processedComment.thread_id}&comment_id=${processedComment.parent_id}&scroll_to=${processedComment.parent_id}&valsi_id=${valsiId || 0}&definition_id=${definitionId || 0}`"
-          class="text-xs text-gray-600 hover:text-blue-500">
+          class="text-xs text-gray-600 hover:text-blue-500"
+        >
           <div class="text-sm">
             <div class="flex items-center gap-1 mb-1">
               <span class="text-xs">{{ t('components.commentItem.replyingTo') }}</span>
@@ -91,11 +117,15 @@
       </div>
     </div>
 
-    <div v-if="showParentInThread && processedComment.parent_content" class="min-w-48 overflow-x-auto">
+    <div
+      v-if="showParentInThread && processedComment.parent_content"
+      class="min-w-48 overflow-x-auto"
+    >
       <div class="pl-2 border rounded-md border-l-2 border-gray-300">
         <RouterLink
           :to="`/comments/?thread_id=${processedComment.thread_id}&comment_id=${processedComment.parent_id}&scroll_to=${processedComment.parent_id}&valsi_id=${valsiId || 0}&definition_id=${definitionId || 0}`"
-          class="text-xs text-gray-600 hover:text-blue-500">
+          class="text-xs text-gray-600 hover:text-blue-500"
+        >
           <div class="text-sm">
             <div class="flex items-center gap-1 mb-1">
               <span class="text-xs">{{ t('components.commentItem.parentComment') }}</span>
@@ -113,15 +143,19 @@
       </div>
     </div>
 
-    <button v-if="!flatStyle && processedComment.parent_id"
+    <button
+      v-if="!flatStyle && processedComment.parent_id"
       class="text-gray-500 italic hover:text-blue-600 flex items-center text-xs mb-2"
-      @click.stop="showParentInThread = !showParentInThread">
+      @click.stop="showParentInThread = !showParentInThread"
+    >
       <ArrowUp class="h-3 w-3" />
       <span>{{ t('components.commentItem.showParent') }}</span>
     </button>
 
     <div class="min-w-48 overflow-x-auto">
-      <div class="prose prose-sm max-w-none text-gray-700 mb-3 [&_img]:max-h-48 [&_img]:object-contain">
+      <div
+        class="prose prose-sm max-w-none text-gray-700 mb-3 [&_img]:max-h-48 [&_img]:object-contain"
+      >
         <template v-for="(part, index) in processedComment.plain_content" :key="index">
           <LazyMathJax :content="part.data" :enable-markdown="true" />
         </template>
@@ -132,13 +166,17 @@
     <div class="flex flex-wrap gap-2 justify-end">
       <div class="flex gap-2 items-center">
         <div v-if="reactions.length" class="flex flex-wrap gap-1">
-          <button v-for="reaction in reactions" :key="reaction.reaction"
-            class="gap-1.5 btn-reaction transition-all duration-300" :class="[
-              reaction.reacted &&
-              'enabled',
-            ]" @click.stop="handleReactionClick(reaction.reaction)">
-            <span class="inline-block text-base"
-              :class="{ 'animate-emoji-rotate': reaction.reacted && reaction.isNew }">
+          <button
+            v-for="reaction in reactions"
+            :key="reaction.reaction"
+            class="gap-1.5 btn-reaction transition-all duration-300"
+            :class="[reaction.reacted && 'enabled']"
+            @click.stop="handleReactionClick(reaction.reaction)"
+          >
+            <span
+              class="inline-block text-base"
+              :class="{ 'animate-emoji-rotate': reaction.reacted && reaction.isNew }"
+            >
               {{ reaction.reaction }}
             </span>
             <span v-if="reaction.count > 0" class="text-sm font-bold">
@@ -154,24 +192,45 @@
           </button>
 
           <Teleport to="body">
-            <div v-if="showReactionPicker"
+            <div
+              v-if="showReactionPicker"
               class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-              @click="showReactionPicker = false">
+              @click="showReactionPicker = false"
+            >
               <div class="bg-white rounded-lg shadow-lg max-w-sm w-full m-4 p-2" @click.stop>
                 <div class="mb-2 px-1">
-                  <input v-model="customEmoji" :placeholder="t('components.commentItem.customEmojiPlaceholder')"
+                  <input
+                    v-model="customEmoji"
+                    :placeholder="t('components.commentItem.customEmojiPlaceholder')"
                     class="w-full px-3 py-2 border rounded text-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none"
-                    maxlength="2" @keydown.enter="addCustomEmoji" @keydown.stop @click.stop>
+                    maxlength="2"
+                    @keydown.enter="addCustomEmoji"
+                    @keydown.stop
+                    @click.stop
+                  />
                 </div>
                 <div class="grid grid-cols-5 auto-rows-fr gap-0">
-                  <button v-for="emoji in emojiList" :key="emoji.symbol"
+                  <button
+                    v-for="emoji in emojiList"
+                    :key="emoji.symbol"
                     class="group p-1 hover:bg-gray-100 rounded transition-colors"
-                    :class="{ 'bg-blue-100': isReactionSelected(emoji.symbol) }" @click="addReaction(emoji.symbol)">
+                    :class="{ 'bg-blue-100': isReactionSelected(emoji.symbol) }"
+                    @click="addReaction(emoji.symbol)"
+                  >
                     <div class="flex flex-col items-center justify-between">
                       <span class="text-base group-hover:scale-110 transition-transform mb-1">{{
                         emoji.symbol
                       }}</span>
-                      <span class="text-xs text-gray-600 text-center break-words" :lang="locale" style="hyphens: auto;">{{ t(`components.commentItem.reactions.${emoji.meaning.toLowerCase().replace(/\s+/g, '')}`) }}</span>
+                      <span
+                        class="text-xs text-gray-600 text-center break-words"
+                        :lang="locale"
+                        style="hyphens: auto"
+                        >{{
+                          t(
+                            `components.commentItem.reactions.${emoji.meaning.toLowerCase().replace(/\s+/g, '')}`
+                          )
+                        }}</span
+                      >
                     </div>
                   </button>
                 </div>
@@ -181,29 +240,55 @@
         </div>
       </div>
 
-      <button v-if="auth.state.isLoggedIn" :disabled="isProcessing" class="gap-1.5 btn-empty" :class="[
-        processedComment.is_bookmarked
-          ? 'bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-200'
-          : '',
-      ]" @click.stop="handleBookmarkClick">
+      <button
+        v-if="auth.state.isLoggedIn"
+        :disabled="isProcessing"
+        class="gap-1.5 btn-empty"
+        :class="[
+          processedComment.is_bookmarked
+            ? 'bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-200'
+            : '',
+        ]"
+        @click.stop="handleBookmarkClick"
+      >
         <div class="flex items-center">
-          <BookmarkCheck v-if="processedComment.is_bookmarked" class="h-5 w-5"
-            :class="{ 'animate-bounce-once': isBookmarkAnimating }" />
-          <Bookmark v-else class="h-5 w-5" :class="{ 'animate-bounce-once': isBookmarkAnimating }" />
-          <span class="hidden sm:inline ml-1">{{ processedComment.is_bookmarked ? t('components.commentItem.saved') : t('components.commentItem.save') }}</span>
+          <BookmarkCheck
+            v-if="processedComment.is_bookmarked"
+            class="h-5 w-5"
+            :class="{ 'animate-bounce-once': isBookmarkAnimating }"
+          />
+          <Bookmark
+            v-else
+            class="h-5 w-5"
+            :class="{ 'animate-bounce-once': isBookmarkAnimating }"
+          />
+          <span class="hidden sm:inline ml-1">{{
+            processedComment.is_bookmarked
+              ? t('components.commentItem.saved')
+              : t('components.commentItem.save')
+          }}</span>
         </div>
       </button>
 
       <button
-        v-if="auth.state.isLoggedIn && auth.state.username === processedComment.username && (processedComment.total_replies ?? 0) === 0"
-        class="inline-flex items-center btn-empty text-red-600 hover:text-red-800" :disabled="isProcessing"
-        @click="handleDeleteClick">
+        v-if="
+          auth.state.isLoggedIn &&
+          auth.state.username === processedComment.username &&
+          (processedComment.total_replies ?? 0) === 0
+        "
+        class="inline-flex items-center btn-empty text-red-600 hover:text-red-800"
+        :disabled="isProcessing"
+        @click="handleDeleteClick"
+      >
         <Trash2 class="h-4 w-4" />
         <span class="sr-only">{{ t('components.commentItem.delete') }}</span>
       </button>
 
-      <button v-if="auth.state.isLoggedIn && replyEnabled" class="inline-flex items-center btn-reply"
-        @click="handleReplyClick">
+      <button
+        v-if="auth.state.isLoggedIn && replyEnabled"
+        class="inline-flex items-center btn-reply"
+        @click="handleReplyClick"
+      >
         <Reply class="w-5 h-5" />
         <span v-if="processedComment.total_replies > 0" class="text-xs font-bold">{{
           processedComment.total_replies
@@ -212,28 +297,35 @@
       </button>
     </div>
   </div>
-  <ToastFloat :show="showToast" :message="toastMessage" :type="toastType" />
-  <DeleteConfirmationModal :show="showDeleteConfirm" :title="t('components.commentItem.deleteConfirmTitle')"
-    :message="t('components.commentItem.deleteConfirmMessage')" :is-deleting="isDeleting"
-    @confirm="performDeleteComment" @cancel="showDeleteConfirm = false" />
+  <DeleteConfirmationModal
+    :show="showDeleteConfirm"
+    :title="t('components.commentItem.deleteConfirmTitle')"
+    :message="t('components.commentItem.deleteConfirmMessage')"
+    :is-deleting="isDeleting"
+    @confirm="performDeleteComment"
+    @cancel="showDeleteConfirm = false"
+  />
 </template>
 
 <script setup>
-import { Bookmark, BookmarkCheck, Reply, User, Trash2, ArrowUp } from 'lucide-vue-next';
-import { ref, onMounted, onUnmounted, computed } from 'vue';
-import { useRouter } from 'vue-router';
-import { useI18n } from 'vue-i18n';
+import { Bookmark, BookmarkCheck, Reply, User, Trash2, ArrowUp } from 'lucide-vue-next'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 
-import { toggleBookmark, toggleReaction, deleteComment } from '@/api';
-import DeleteConfirmationModal from '@/components/DeleteConfirmation.vue';
-import ReactionPlusIcon from '@/components/icons/ReactionPlusIcon.vue';
-import SourceTypeBadge from '@/components/SourceTypeBadge.vue';
-import LazyMathJax from '@/components/LazyMathJax.vue';
-import ToastFloat from '@/components/ToastFloat.vue';
-import { useAvatarStore } from '@/composables/avatarStore';
-import { useAuth } from '@/composables/useAuth';
+import { toggleBookmark, toggleReaction, deleteComment } from '@/api'
+import DeleteConfirmationModal from '@/components/DeleteConfirmation.vue'
+import ReactionPlusIcon from '@/components/icons/ReactionPlusIcon.vue'
+import SourceTypeBadge from '@/components/SourceTypeBadge.vue'
+import LazyMathJax from '@/components/LazyMathJax.vue'
+import { useAvatarStore } from '@/composables/avatarStore'
+import { useAuth } from '@/composables/useAuth'
+import { useError } from '@/composables/useError'
+import { useSuccessToast } from '@/composables/useSuccessToast'
 
-const { t, locale } = useI18n();
+const { t, locale } = useI18n()
+const { showSuccess } = useSuccessToast()
+const { showError } = useError()
 
 const props = defineProps({
   comment: {
@@ -275,14 +367,11 @@ const router = useRouter()
 const isProcessing = ref(false)
 const processedComment = computed(() => ({
   ...props.comment,
-  plain_content: props.comment.content.filter(part => part.type === 'text'),
-  subject: props.comment.content.find(part => part.type === 'header')?.data
+  plain_content: props.comment.content.filter((part) => part.type === 'text'),
+  subject: props.comment.content.find((part) => part.type === 'header')?.data,
 }))
 const isBookmarkAnimating = ref(false)
 const showReactionPicker = ref(false)
-const showToast = ref(false)
-const toastMessage = ref('')
-const toastType = ref('error')
 const showDeleteConfirm = ref(false)
 const isDeleting = ref(false)
 const showParentInThread = ref(false)
@@ -313,9 +402,9 @@ const emojiList = [
   { symbol: '≠', meaning: 'Not equal' },
   { symbol: '⟹', meaning: 'Implies' },
   { symbol: '⊢', meaning: 'Proves' },
-];
+]
 
-const customEmoji = ref('');
+const customEmoji = ref('')
 const addCustomEmoji = () => {
   if (customEmoji.value) {
     addReaction(customEmoji.value)
@@ -410,13 +499,9 @@ const handleReactionClick = async (reaction) => {
   } catch (error) {
     if (
       error.response?.status === 400 &&
-      error.response?.data?.details.includes('reactions per comment reached') >= 0
+      error.response?.data?.details?.includes('reactions per comment reached')
     ) {
-      toastMessage.value = error.response?.data?.details;
-      showToast.value = true
-      setTimeout(() => {
-        showToast.value = false
-      }, 5800)
+      showError(error.response?.data?.details || 'components.commentItem.reactionLimitError')
 
       // Revert optimistic update for maximum reactions case
       if (isExistingReaction) {
@@ -512,11 +597,8 @@ const performDeleteComment = async () => {
   try {
     const response = await deleteComment(processedComment.value.comment_id)
     if (response.status === 200) {
-      showToast.value = true;
-      toastMessage.value = t('components.commentItem.deleteSuccess');
-      toastType.value = 'success';
+      showSuccess(t('components.commentItem.deleteSuccess'))
       setTimeout(() => {
-        showToast.value = false;
         // Redirect to parent comment or thread
         if (processedComment.value.parent_id) {
           router.push({
@@ -537,24 +619,14 @@ const performDeleteComment = async () => {
             },
           })
         }
-      }, 1000);
+      }, 1000)
     } else {
-      showToast.value = true;
-      toastMessage.value = response.data?.error || t('components.commentItem.deleteFailed');
-      toastType.value = 'error';
-      setTimeout(() => {
-        showToast.value = false;
-      }, 3000);
+      showError('components.commentItem.deleteFailed')
     }
   } catch (error) {
-    showToast.value = true;
-    toastMessage.value = error.response?.data?.error || t('components.commentItem.deleteFailed');
-    toastType.value = 'error';
-    setTimeout(() => {
-      showToast.value = false;
-    }, 3000);
+    showError(error.response?.data?.error || 'components.commentItem.deleteFailed')
   } finally {
-    isDeleting.value = false;
+    isDeleting.value = false
     isProcessing.value = false
     showDeleteConfirm.value = false
   }
@@ -643,7 +715,6 @@ const formatDate = (timestamp) => {
 }
 
 @keyframes highlight {
-
   0%,
   95% {
     @apply outline outline-orange-600 outline-2 bg-orange-50 border-orange-600;

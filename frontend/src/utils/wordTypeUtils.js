@@ -16,8 +16,8 @@ export const getTypeClass = (type) => {
     etymology: 'bg-purple-100 text-purple-800',
     comment: 'bg-green-100 text-green-800',
     valsi: 'bg-yellow-100 text-yellow-800',
-    message: 'bg-indigo-100 text-indigo-800'
-  };
-  
-  return classMap[type] || 'bg-gray-100 text-gray-800';
-};
+    message: 'bg-indigo-100 text-indigo-800',
+  }
+
+  return classMap[type] || 'bg-gray-100 text-gray-800'
+}

@@ -30,19 +30,19 @@
 </template>
 
 <script setup>
-import CommentItem from '@/components/CommentItem.vue';
-import { useI18n } from 'vue-i18n';
+import CommentItem from '@/components/CommentItem.vue'
+import { useI18n } from 'vue-i18n'
 
-const { t } = useI18n();
+const { t } = useI18n()
 
 defineProps({
   comments: {
     type: Array,
-    required: true
+    required: true,
   },
   formatDate: {
     type: Function,
-    required: true
-  }
+    required: true,
+  },
 })
 </script>

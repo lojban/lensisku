@@ -18,7 +18,9 @@
 
         <!-- Role Filter -->
         <div class="flex items-center gap-2 shrink-0">
-          <label class="text-sm font-medium text-gray-700 whitespace-nowrap">{{ t('components.userListTab.roleLabel') }}</label>
+          <label class="text-sm font-medium text-gray-700 whitespace-nowrap">{{
+            t('components.userListTab.roleLabel')
+          }}</label>
           <select
             :value="roleFilter"
             class="input-field"
@@ -27,11 +29,7 @@
             <option value="">
               {{ t('components.userListTab.allRoles') }}
             </option>
-            <option
-              v-for="role in availableRoles"
-              :key="role.name"
-              :value="role.name"
-            >
+            <option v-for="role in availableRoles" :key="role.name" :value="role.name">
               {{ translateRole(role.name) }}
             </option>
           </select>
@@ -39,7 +37,9 @@
 
         <!-- Sort By -->
         <div class="flex items-center gap-2 shrink-0">
-          <label class="text-sm font-medium text-gray-700 whitespace-nowrap">{{ t('components.userListTab.sortByLabel') }}</label>
+          <label class="text-sm font-medium text-gray-700 whitespace-nowrap">{{
+            t('components.userListTab.sortByLabel')
+          }}</label>
           <select
             :value="sortBy"
             class="input-field"
@@ -59,7 +59,9 @@
 
         <!-- Sort Order -->
         <div class="flex items-center gap-2 shrink-0">
-          <label class="text-sm font-medium text-gray-700 whitespace-nowrap">{{ t('components.userListTab.sortOrderLabel') }}</label>
+          <label class="text-sm font-medium text-gray-700 whitespace-nowrap">{{
+            t('components.userListTab.sortOrderLabel')
+          }}</label>
           <select
             :value="sortOrder"
             class="input-field"
@@ -79,8 +81,14 @@
     <!-- User list -->
     <div class="min-h-[400px]">
       <!-- Loading state -->
-      <div v-if="isLoading && userList.length === 0" class="flex flex-col items-center justify-center py-16">
-        <div class="animate-spin rounded-full h-10 w-10 border-2 border-blue-500 border-t-transparent" aria-hidden="true" />
+      <div
+        v-if="isLoading && userList.length === 0"
+        class="flex flex-col items-center justify-center py-16"
+      >
+        <div
+          class="animate-spin rounded-full h-10 w-10 border-2 border-blue-500 border-t-transparent"
+          aria-hidden="true"
+        />
         <p class="mt-3 text-sm text-gray-600">{{ t('userList.loadingUsers') }}</p>
       </div>
 
@@ -97,14 +105,20 @@
           <div class="flex items-start gap-4">
             <!-- Avatar -->
             <div class="shrink-0 mt-1">
-              <div v-if="user.has_profile_image" class="w-12 h-12 rounded-full overflow-hidden border border-gray-100 shadow-sm">
+              <div
+                v-if="user.has_profile_image"
+                class="w-12 h-12 rounded-full overflow-hidden border border-gray-100 shadow-sm"
+              >
                 <img
                   :src="getProfileImage(user.username, { cached: true })"
                   :alt="user.username"
                   class="w-full h-full object-cover"
-                >
+                />
               </div>
-              <div v-else class="w-12 h-12 rounded-full bg-gray-50 flex items-center justify-center text-gray-400 border border-gray-100 shadow-sm">
+              <div
+                v-else
+                class="w-12 h-12 rounded-full bg-gray-50 flex items-center justify-center text-gray-400 border border-gray-100 shadow-sm"
+              >
                 <User class="h-6 w-6" />
               </div>
             </div>
@@ -116,10 +130,7 @@
                   <h3 class="text-lg font-medium text-blue-600 truncate hover:text-blue-700">
                     {{ user.username }}
                   </h3>
-                  <p
-                    v-if="user.realname"
-                    class="text-gray-600 text-sm mt-0.5 truncate"
-                  >
+                  <p v-if="user.realname" class="text-gray-600 text-sm mt-0.5 truncate">
                     {{ user.realname }}
                   </p>
                 </div>
@@ -132,17 +143,16 @@
               </div>
 
               <!-- Personal description -->
-              <p
-                v-if="user.personal"
-                class="text-gray-500 text-sm mt-2 line-clamp-2"
-              >
+              <p v-if="user.personal" class="text-gray-500 text-sm mt-2 line-clamp-2">
                 {{ user.personal }}
               </p>
 
               <!-- Join Date -->
               <div class="flex items-center gap-1.5 mt-3 text-xs text-gray-400">
                 <Calendar class="h-3.5 w-3.5" />
-                <span>{{ t('components.userListTab.joinedAt', { date: formatDate(user.created_at) }) }}</span>
+                <span>{{
+                  t('components.userListTab.joinedAt', { date: formatDate(user.created_at) })
+                }}</span>
               </div>
             </div>
           </div>

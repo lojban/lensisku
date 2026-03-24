@@ -1,13 +1,13 @@
-import { createI18n } from "vue-i18n";
-import { type SupportedLocale, defaultLocale } from "./config/locales";
+import { createI18n } from 'vue-i18n'
+import { type SupportedLocale, defaultLocale } from './config/locales'
 
 // Import locale messages
 // Using vite-plugin-vue-i18n or manual imports
 // For simplicity here, we'll manually import
-import enMessages from "./locales/en.json";
-import jboMessages from "./locales/jbo.json";
-import ruMessages from "./locales/ru.json";
-type MessageSchema = typeof enMessages;
+import enMessages from './locales/en.json'
+import jboMessages from './locales/jbo.json'
+import ruMessages from './locales/ru.json'
+type MessageSchema = typeof enMessages
 
 const i18n = createI18n<[MessageSchema], SupportedLocale>({
   legacy: false, // Use Composition API mode
@@ -21,6 +21,6 @@ const i18n = createI18n<[MessageSchema], SupportedLocale>({
   // Silent fallback warnings if needed
   // silentTranslationWarn: true,
   // silentFallbackWarn: true,
-});
+})
 
-export default i18n;
+export default i18n

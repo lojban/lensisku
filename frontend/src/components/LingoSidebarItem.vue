@@ -6,7 +6,11 @@
       horizontal
         ? 'h-9 shrink-0 gap-2 rounded-lg px-3 text-slate-600 hover:bg-slate-100'
         : 'h-[52px] w-full gap-5 rounded-xl px-4 text-left',
-      isActive ? 'bg-green-100 text-green-700' : horizontal ? '' : 'text-slate-600 hover:bg-slate-100',
+      isActive
+        ? 'bg-green-100 text-green-700'
+        : horizontal
+          ? ''
+          : 'text-slate-600 hover:bg-slate-100',
     ]"
   >
     <component :is="iconComponent" :class="horizontal ? 'h-5 w-5 shrink-0' : 'h-8 w-8 shrink-0'" />
@@ -17,13 +21,7 @@
 <script setup>
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
-import {
-  BookOpen,
-  Trophy,
-  Target,
-  ShoppingBag,
-  Dumbbell,
-} from 'lucide-vue-next'
+import { BookOpen, Trophy, Target, ShoppingBag, Dumbbell } from 'lucide-vue-next'
 
 const props = defineProps({
   label: { type: String, required: true },
@@ -37,7 +35,9 @@ const props = defineProps({
 })
 
 const route = useRoute()
-const isActive = computed(() => route.path === props.href || route.path.startsWith(props.href + '/'))
+const isActive = computed(
+  () => route.path === props.href || route.path.startsWith(props.href + '/')
+)
 
 const iconComponent = computed(() => {
   const map = {

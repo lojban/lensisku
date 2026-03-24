@@ -4,9 +4,11 @@
       <div class="space-y-2 flex flex-col items-center">
         <div class="flex items-center justify-center gap-2 w-full min-w-0">
           <RouterLink
-            :to="collection.has_flashcards
-              ? `/collections/${collection.collection_id}/flashcards`
-              : `/collections/${collection.collection_id}`"
+            :to="
+              collection.has_flashcards
+                ? `/collections/${collection.collection_id}/flashcards`
+                : `/collections/${collection.collection_id}`
+            "
             class="card-title min-w-0 flex-1 line-clamp-2 whitespace-normal text-center"
           >
             {{ collection.name }}
@@ -56,10 +58,7 @@
           <div class="card-meta card-meta-row">
             <span class="card-meta-by">
               {{ createdByLabel }}
-              <RouterLink
-                :to="`/user/${collection.owner.user_id}`"
-                class="card-meta-link"
-              >
+              <RouterLink :to="`/user/${collection.owner.user_id}`" class="card-meta-link">
                 {{ collection.owner.username }}
               </RouterLink>
             </span>
@@ -113,7 +112,7 @@ function hashString(str) {
   if (!str || typeof str !== 'string') return 0
   let h = 0
   for (let i = 0; i < str.length; i++) {
-    h = ((h << 5) - h) + str.charCodeAt(i)
+    h = (h << 5) - h + str.charCodeAt(i)
     h |= 0
   }
   return h
@@ -144,7 +143,9 @@ const props = defineProps({
 
 const studyButtonVariant = computed(() => {
   const name = props.collection?.name ?? ''
-  const index = ((hashString(name) % AQUA_VARIANT_WHEEL.length) + AQUA_VARIANT_WHEEL.length) % AQUA_VARIANT_WHEEL.length
+  const index =
+    ((hashString(name) % AQUA_VARIANT_WHEEL.length) + AQUA_VARIANT_WHEEL.length) %
+    AQUA_VARIANT_WHEEL.length
   return AQUA_VARIANT_WHEEL[index]
 })
 

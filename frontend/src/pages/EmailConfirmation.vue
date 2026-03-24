@@ -7,9 +7,16 @@
   <!-- Success State -->
   <div v-else-if="success" class="text-center">
     <div class="bg-white p-8 rounded-lg shadow-sm border border-green-200">
-      <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+      <div
+        class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4"
+      >
         <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M5 13l4 4L19 7"
+          />
         </svg>
       </div>
       <h2 class="text-2xl font-bold text-gray-800 mb-2">
@@ -34,22 +41,36 @@
     <div class="bg-white p-8 rounded-lg shadow-sm border border-red-200">
       <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
         <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+          />
         </svg>
       </div>
       <h2 class="text-2xl font-bold text-gray-800 mb-2">
         {{ t('emailConfirmation.failedTitle') }}
       </h2>
       <p class="text-red-600 mb-6">
-        {{ error }} <!-- Keep error message as is, it's dynamic -->
+        {{ error }}
+        <!-- Keep error message as is, it's dynamic -->
       </p>
       <div class="space-y-3">
         <RouterLink to="/" class="btn-get w-full block text-center">
           {{ t('emailConfirmation.returnHome') }}
         </RouterLink>
-        <button v-if="isExpired" class="btn-create w-full" :disabled="isRequestingToken" @click="requestNewToken">
-          {{ isRequestingToken ? t('emailConfirmation.sending') : t('emailConfirmation.requestNewToken') }}
+        <button
+          v-if="isExpired"
+          class="btn-create w-full"
+          :disabled="isRequestingToken"
+          @click="requestNewToken"
+        >
+          {{
+            isRequestingToken
+              ? t('emailConfirmation.sending')
+              : t('emailConfirmation.requestNewToken')
+          }}
         </button>
       </div>
     </div>
@@ -82,7 +103,6 @@ const isExpired = ref(false)
 const isRequestingToken = ref(false)
 const requestSuccess = ref(false)
 
-
 const route = useRoute()
 
 const pageTitle = computed(() => {
@@ -101,7 +121,7 @@ const confirmEmailToken = async (token) => {
     // Check for success field, or if response has message and no error, treat as success
     if (response.data.success === true || (response.data.message && !response.data.error)) {
       success.value = true
-      
+
       // If user is logged in, refresh their token to get updated email_confirmed status and role
       if (auth.state.isLoggedIn && auth.refreshAccessToken) {
         try {

@@ -1,7 +1,7 @@
 <template>
   <component
     :is="tagComputed"
-    :type="tagComputed === 'button' ? (type || 'button') : undefined"
+    :type="tagComputed === 'button' ? type || 'button' : undefined"
     :to="tagComputed === 'router-link' ? to : undefined"
     :href="tagComputed === 'a' ? href : undefined"
     :disabled="disabled || loading"
@@ -82,6 +82,7 @@ function handleClick(e) {
 }
 
 const Spinner = {
-  template: '<span class="inline-block w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" aria-hidden="true" />',
+  template:
+    '<span class="inline-block w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" aria-hidden="true" />',
 }
 </script>

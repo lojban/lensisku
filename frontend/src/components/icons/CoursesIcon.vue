@@ -16,7 +16,7 @@
 </template>
 
 <script>
-  export default {
-    name: 'CoursesIcon',
-  }
+export default {
+  name: 'CoursesIcon',
+}
 </script>

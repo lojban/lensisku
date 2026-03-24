@@ -1,10 +1,13 @@
 <template>
-  <div :class="[
-    'w-full overflow-visible relative',
-    !disableBorder
-      ? 'bg-white border rounded-lg hover:border-blue-300 transition-colors shadow hover:shadow-none'
-      : '',
-  ]" :data-definition-id="definitionId">
+  <div
+    :class="[
+      'w-full overflow-visible relative',
+      !disableBorder
+        ? 'bg-white border rounded-lg hover:border-blue-300 transition-colors shadow hover:shadow-none'
+        : '',
+    ]"
+    :data-definition-id="definitionId"
+  >
     <!-- Header Section -->
     <div :class="[disableBorder ? '' : 'p-4']">
       <div class="flex flex-col sm:flex-row justify-between items-start gap-4">
@@ -15,21 +18,28 @@
             <!-- Main Content -->
             <div class="flex flex-wrap items-center justify-between gap-2">
               <div class="w-auto flex items-center gap-2 flex-wrap min-w-0">
-                <h2 class="text-base font-semibold truncate flex-shrink-0 min-w-0 max-w-full"
-                  :class="definition.definitionid ? 'text-blue-700 hover:text-blue-800 hover:underline' : 'text-gray-800'">
+                <h2
+                  class="text-base font-semibold truncate flex-shrink-0 min-w-0 max-w-full"
+                  :class="
+                    definition.definitionid
+                      ? 'text-blue-700 hover:text-blue-800 hover:underline'
+                      : 'text-gray-800'
+                  "
+                >
                   <template v-if="definition.definitionid">
                     <template v-if="isValsiTruncated">
                       <span
                         class="cursor-pointer"
                         :title="t('components.definitionCard.clickToSeeFullWord')"
-                        @click="showValsiModal = true">
+                        @click="showValsiModal = true"
+                      >
                         {{ displayedValsi }}
-                        <sup v-if="showDefinitionNumber" class="italic font-medium text-gray-600">#</sup>
+                        <sup v-if="showDefinitionNumber" class="italic font-medium text-gray-600"
+                          >#</sup
+                        >
                       </span>
                     </template>
-                    <RouterLink
-                      v-else
-                      :to="valsiDefinitionLink">
+                    <RouterLink v-else :to="valsiDefinitionLink">
                       {{ definition.valsiword ?? definition.word }}
                       <sup v-if="showDefinitionNumber" class="italic font-medium text-gray-600">
                         #
@@ -40,114 +50,186 @@
                     <span class="truncate block">{{ displayedFreeContent }}</span>
                   </template>
                 </h2>
-                <span v-if="definition.type_name && props.showWordType"
-                  class="px-2 py-1 text-xs font-medium rounded-full" :class="getTypeClass(definition.type_name)">
+                <span
+                  v-if="definition.type_name && props.showWordType"
+                  class="px-2 py-1 text-xs font-medium rounded-full"
+                  :class="getTypeClass(definition.type_name)"
+                >
                   {{ t(`wordTypes.${definition.type_name.replace(/'/g, 'h').replace(/ /g, '-')}`) }}
                 </span>
-                <RouterLink v-if="definition.selmaho" :to="{ path: '/', query: selmahoLinkQuery }"
+                <RouterLink
+                  v-if="definition.selmaho"
+                  :to="{ path: '/', query: selmahoLinkQuery }"
                   class="inline-flex items-center px-2 py-1 text-xs font-medium bg-purple-100 text-purple-700 rounded-md justify-center sm:justify-start hover:bg-purple-200 hover:text-purple-800 transition-colors min-w-0 max-w-full truncate"
-                  :title="definition.selmaho.length > MAX_VALSI_DISPLAY_LENGTH ? definition.selmaho : undefined"
-                  @click.stop>
+                  :title="
+                    definition.selmaho.length > MAX_VALSI_DISPLAY_LENGTH
+                      ? definition.selmaho
+                      : undefined
+                  "
+                  @click.stop
+                >
                   {{ t('components.definitionCard.selmaoLabel') }} {{ displayedSelmaho }}
                 </RouterLink>
-                <span v-if="definition.rafsi"
-                  class="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-700 rounded-full">
+                <span
+                  v-if="definition.rafsi"
+                  class="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-700 rounded-full"
+                >
                   {{ definition.rafsi }}
                 </span>
-                <span v-if="definition.decomposition?.length"
-                  class="px-2 py-1 text-xs font-medium bg-amber-50 text-amber-800 rounded-full inline-flex items-center gap-0.5 flex-wrap">
+                <span
+                  v-if="definition.decomposition?.length"
+                  class="px-2 py-1 text-xs font-medium bg-amber-50 text-amber-800 rounded-full inline-flex items-center gap-0.5 flex-wrap"
+                >
                   <template v-for="(word, index) in definition.decomposition" :key="word">
-                    <RouterLink :to="{ path: `/valsi/${word.replace(/ /g, '_')}` }"
-                      class="text-amber-800 hover:text-amber-900 hover:underline">
+                    <RouterLink
+                      :to="{ path: `/valsi/${word.replace(/ /g, '_')}` }"
+                      class="text-amber-800 hover:text-amber-900 hover:underline"
+                    >
                       {{ word }}
                     </RouterLink>
-                    <span v-if="index < definition.decomposition.length - 1" class="text-amber-600">+</span>
+                    <span v-if="index < definition.decomposition.length - 1" class="text-amber-600"
+                      >+</span
+                    >
                   </template>
                 </span>
-                <span :title="t('components.definitionCard.flashcardIndicatorTitle')" class="cursor-pointer"
-                  @click.stop="$emit('edit-item')">
-                  <GalleryHorizontalIcon v-if="showEditButton && flashcard"
-                    class="h-4 w-4 text-purple-600 hover:text-purple-800" />
+                <span
+                  :title="t('components.definitionCard.flashcardIndicatorTitle')"
+                  class="cursor-pointer"
+                  @click.stop="$emit('edit-item')"
+                >
+                  <GalleryHorizontalIcon
+                    v-if="showEditButton && flashcard"
+                    class="h-4 w-4 text-purple-600 hover:text-purple-800"
+                  />
                 </span>
-                <AudioPlayer v-if="(definition.sound_url || itemSoundUrl) && props.showAudio"
+                <AudioPlayer
+                  v-if="(definition.sound_url || itemSoundUrl) && props.showAudio"
                   :url="definition.sound_url || itemSoundUrl"
                   :collection-id="useApiForSound ? (props.collectionId ?? undefined) : undefined"
                   :item-id="useApiForSound ? (props.itemId ?? undefined) : undefined"
-                  class="shrink-0" />
+                  class="shrink-0"
+                />
               </div>
               <div class="flex items-center gap-2 flex-wrap">
-                <RouterLink v-if="!disableDiscussionButton" :to="`/valsi/${definition.valsiword ?? definition.word}`"
-                  class="btn-empty">
+                <RouterLink
+                  v-if="!disableDiscussionButton"
+                  :to="`/valsi/${definition.valsiword ?? definition.word}`"
+                  class="btn-empty"
+                >
                   <MessageSquarePlus v-if="definition.comment_count === 0" class="h-4 w-4" />
                   <MessageSquareMore v-else class="h-4 w-4" />
-                  <span v-if="definition.comment_count"
-                    class="bg-gray-100 px-2 py-0.5 rounded-full text-xs font-medium">
+                  <span
+                    v-if="definition.comment_count"
+                    class="bg-gray-100 px-2 py-0.5 rounded-full text-xs font-medium"
+                  >
                     {{ definition.comment_count }}
                   </span>
-                  <span v-else class="hidden sm:inline">{{ t('components.definitionCard.discussButton') }}</span>
+                  <span v-else class="hidden sm:inline">{{
+                    t('components.definitionCard.discussButton')
+                  }}</span>
                 </RouterLink>
 
-                <VoteButtons v-if="props.showVoteButtons && definition.definitionid"
-                  :definition-id="definition.definitionid" :initial-score="definition.score"
-                  :initial-user-vote="definition.user_vote" @vote-change="() => { }" />
+                <VoteButtons
+                  v-if="props.showVoteButtons && definition.definitionid"
+                  :definition-id="definition.definitionid"
+                  :initial-score="definition.score"
+                  :initial-user-vote="definition.user_vote"
+                  @vote-change="() => {}"
+                />
               </div>
 
               <div class="flex items-center gap-2 flex-wrap">
-                <button v-if="showEditButton" class="btn-empty" @click.stop="$emit('edit-item')"
-                  :title="t('components.definitionCard.editItemTitle')">
+                <button
+                  v-if="showEditButton"
+                  class="btn-empty"
+                  @click.stop="$emit('edit-item')"
+                  :title="t('components.definitionCard.editItemTitle')"
+                >
                   <Pencil class="h-4 w-4" />
                   <span class="sr-only">{{ t('components.definitionCard.editButton') }}</span>
                 </button>
-                <ClipboardButton :content="(
-                  definition.definition +
-                  (definition.notes ? ' Notes: ' + definition.notes : '')
-                ).trim()
-                  " :title="t('components.definitionCard.copyTitle')" />
-                <CollectionWidget v-if="auth.state.isLoggedIn && definition.definitionid"
-                  :definition-id="definition.definitionid" :word="definition.valsiword ?? definition.word"
-                  :external-collections="collections" @collection-updated="updateCollections" />
+                <ClipboardButton
+                  :content="
+                    (
+                      definition.definition +
+                      (definition.notes ? ' Notes: ' + definition.notes : '')
+                    ).trim()
+                  "
+                  :title="t('components.definitionCard.copyTitle')"
+                />
+                <CollectionWidget
+                  v-if="auth.state.isLoggedIn && definition.definitionid"
+                  :definition-id="definition.definitionid"
+                  :word="definition.valsiword ?? definition.word"
+                  :external-collections="collections"
+                  @collection-updated="updateCollections"
+                />
               </div>
-              <div v-if="showReorderControls"
+              <div
+                v-if="showReorderControls"
                 class="flex flex-wrap gap-2 md:gap-0 justify-end sm:justify-end w-full sm:w-auto flex-none"
-                role="group">
-                <button :disabled="isFirstItem || isReordering" class="btn-group-item btn-empty"
-                  :title="t('components.definitionCard.moveUpTitle')" @click.stop="$emit('move-up')">
+                role="group"
+              >
+                <button
+                  :disabled="isFirstItem || isReordering"
+                  class="btn-group-item btn-empty"
+                  :title="t('components.definitionCard.moveUpTitle')"
+                  @click.stop="$emit('move-up')"
+                >
                   <ArrowUp class="h-4 w-4" />
                   <span class="sr-only">{{ t('components.definitionCard.moveUpTitle') }}</span>
                 </button>
 
-                <button :disabled="isLastItem || isReordering" class="btn-group-item btn-empty"
-                  :title="t('components.definitionCard.moveDownTitle')" @click.stop="$emit('move-down')">
+                <button
+                  :disabled="isLastItem || isReordering"
+                  class="btn-group-item btn-empty"
+                  :title="t('components.definitionCard.moveDownTitle')"
+                  @click.stop="$emit('move-down')"
+                >
                   <ArrowDown class="h-4 w-4" />
                   <span class="sr-only">{{ t('components.definitionCard.moveDownTitle') }}</span>
                 </button>
 
-                <button class="btn-group-item btn-empty hover:text-red-600"
-                  :title="t('components.definitionCard.removeItemTitle')" @click.stop="$emit('remove')">
+                <button
+                  class="btn-group-item btn-empty hover:text-red-600"
+                  :title="t('components.definitionCard.removeItemTitle')"
+                  @click.stop="$emit('remove')"
+                >
                   <Trash2 class="h-4 w-4" />
                   <span class="sr-only">{{ t('components.definitionCard.removeItemTitle') }}</span>
                 </button>
               </div>
-              <div v-if="showExternalDeleteButton && isOwner" class="flex flex-wrap justify-end ml-auto" role="group">
-                <button class="btn-empty hover:text-red-600 flex items-center gap-1"
-                  :title="t('components.definitionCard.removeFromLevelTitle')" @click.stop="$emit('delete-item')">
+              <div
+                v-if="showExternalDeleteButton && isOwner"
+                class="flex flex-wrap justify-end ml-auto"
+                role="group"
+              >
+                <button
+                  class="btn-empty hover:text-red-600 flex items-center gap-1"
+                  :title="t('components.definitionCard.removeFromLevelTitle')"
+                  @click.stop="$emit('delete-item')"
+                >
                   <MinusCircle class="h-4 w-4" />
                   <span>{{ t('components.definitionCard.removeFromLevelButton') }}</span>
                 </button>
               </div>
             </div>
 
-
             <!-- Metadata Row -->
             <div class="flex flex-wrap items-center gap-2 mt-1 text-sm text-gray-500">
-              <span v-if="definition.definitionid && definition.langid" class="italic text-gray-600">
+              <span
+                v-if="definition.definitionid && definition.langid"
+                class="italic text-gray-600"
+              >
                 {{ getLanguageName(definition.langid ?? definition.lang_id) }}
               </span>
               <span v-if="definition.definitionid && definition.username">·</span>
               <span v-if="definition.username">
                 {{ t('components.definitionCard.by') }}
-                <RouterLink :to="`/user/${definition.username}`"
-                  class="text-blue-600 hover:text-blue-800 hover:underline">
+                <RouterLink
+                  :to="`/user/${definition.username}`"
+                  class="text-blue-600 hover:text-blue-800 hover:underline"
+                >
                   {{ definition.username }}
                 </RouterLink>
               </span>
@@ -156,7 +238,12 @@
                 {{ formatDate(definition.created_at) }}
               </span>
               <span v-if="props.showScore && definition.similarity" class="italic">
-                · {{ t('components.definitionCard.similarity', { percent: Math.round(definition.similarity * 100) }) }}
+                ·
+                {{
+                  t('components.definitionCard.similarity', {
+                    percent: Math.round(definition.similarity * 100),
+                  })
+                }}
               </span>
             </div>
           </div>
@@ -167,8 +254,11 @@
       <div class="mt-4 space-y-4">
         <!-- Front Image -->
         <div v-if="definition.has_front_image" class="flex justify-center">
-          <img :src="`/api/collections/${collectionId}/items/${itemId}/image/front`" alt="Front side image"
-            class="max-h-48 w-full rounded-lg object-contain bg-gray-50 hover:bg-gray-100 transition-colors">
+          <img
+            :src="`/api/collections/${collectionId}/items/${itemId}/image/front`"
+            alt="Front side image"
+            class="max-h-48 w-full rounded-lg object-contain bg-gray-50 hover:bg-gray-100 transition-colors"
+          />
         </div>
       </div>
 
@@ -179,22 +269,29 @@
             <LazyMathJax v-if="notes" :content="notes" :enable-markdown="true" />
           </div>
         </div>
-
       </div>
 
       <!-- Back Image -->
       <div v-if="definition.has_back_image" class="flex justify-center">
-        <img :src="`/api/collections/${collectionId}/items/${definition.item_id}/image/back`" alt="Back side image"
-          class="max-h-48 w-full rounded-lg object-contain bg-gray-50 hover:bg-gray-100 transition-colors">
+        <img
+          :src="`/api/collections/${collectionId}/items/${definition.item_id}/image/back`"
+          alt="Back side image"
+          class="max-h-48 w-full rounded-lg object-contain bg-gray-50 hover:bg-gray-100 transition-colors"
+        />
       </div>
 
       <div class="text-sm prose prose-sm max-w-none text-gray-700 mt-2">
-        <LazyMathJax :content="definition.definition || definition.free_content_back || definition.content" />
+        <LazyMathJax
+          :content="definition.definition || definition.free_content_back || definition.content"
+        />
       </div>
 
       <!-- Additional Info -->
       <div v-if="hasAdditionalInfo" class="mt-2 flex flex-col gap-2">
-        <div v-if="definition.notes" class="w-full text-sm text-gray-600 bg-gray-100 p-2 rounded-md">
+        <div
+          v-if="definition.notes"
+          class="w-full text-sm text-gray-600 bg-gray-100 p-2 rounded-md"
+        >
           <h4 class="italic text-gray-600">
             {{ t('components.definitionCard.notesLabel') }}
           </h4>
@@ -202,7 +299,10 @@
         </div>
 
         <!-- Gloss Keywords (glosswords) -->
-        <div v-if="definition.gloss_keywords && definition.gloss_keywords.length > 0" class="mt-3 pt-2 border-t">
+        <div
+          v-if="definition.gloss_keywords && definition.gloss_keywords.length > 0"
+          class="mt-3 pt-2 border-t"
+        >
           <div class="flex flex-wrap gap-1">
             <span
               v-for="keyword in definition.gloss_keywords"
@@ -215,11 +315,17 @@
         </div>
 
         <div v-if="definition.has_image" class="mt-4 flex justify-center">
-          <img :src="`/api/jbovlaste/definition_image/${definition.definitionid}/image`" alt="Definition image"
-            class="max-h-64 rounded-lg object-contain bg-gray-100">
+          <img
+            :src="`/api/jbovlaste/definition_image/${definition.definitionid}/image`"
+            alt="Definition image"
+            class="max-h-64 rounded-lg object-contain bg-gray-100"
+          />
         </div>
 
-        <div v-if="definition.etymology" class="w-full text-sm text-gray-600 bg-gray-100 p-2 rounded-md">
+        <div
+          v-if="definition.etymology"
+          class="w-full text-sm text-gray-600 bg-gray-100 p-2 rounded-md"
+        >
           <h4 class="italic text-gray-600">
             {{ t('components.definitionCard.etymologyLabel') }}
           </h4>
@@ -232,15 +338,27 @@
           </h4>
           <div class="overflow-x-auto border rounded-md">
             <table class="min-w-full divide-y divide-gray-200 text-sm">
-              <thead class="bg-gray-50 uppercase tracking-wider text-[10px] font-semibold text-gray-500">
+              <thead
+                class="bg-gray-50 uppercase tracking-wider text-[10px] font-semibold text-gray-500"
+              >
                 <tr>
-                  <th scope="col" class="px-3 py-2 text-left">{{ t('components.definitionCard.metadataKey') }}</th>
-                  <th scope="col" class="px-3 py-2 text-left">{{ t('components.definitionCard.metadataValue') }}</th>
+                  <th scope="col" class="px-3 py-2 text-left">
+                    {{ t('components.definitionCard.metadataKey') }}
+                  </th>
+                  <th scope="col" class="px-3 py-2 text-left">
+                    {{ t('components.definitionCard.metadataValue') }}
+                  </th>
                 </tr>
               </thead>
               <tbody class="bg-white divide-y divide-gray-100">
-                <tr v-for="(value, key) in definition.metadata" :key="key" class="hover:bg-gray-50/50">
-                  <td class="px-3 py-2 whitespace-nowrap text-gray-500 font-mono text-xs font-semibold">
+                <tr
+                  v-for="(value, key) in definition.metadata"
+                  :key="key"
+                  class="hover:bg-gray-50/50"
+                >
+                  <td
+                    class="px-3 py-2 whitespace-nowrap text-gray-500 font-mono text-xs font-semibold"
+                  >
                     {{ key }}
                   </td>
                   <td class="px-3 py-2 text-gray-700">
@@ -258,7 +376,9 @@
           </h4>
           <div class="overflow-x-auto border rounded-md">
             <table class="min-w-full divide-y divide-gray-200 text-sm">
-              <thead class="bg-gray-50 uppercase tracking-wider text-[10px] font-semibold text-gray-500">
+              <thead
+                class="bg-gray-50 uppercase tracking-wider text-[10px] font-semibold text-gray-500"
+              >
                 <tr>
                   <th scope="col" class="px-3 py-2 text-left">#</th>
                   <th scope="col" class="px-3 py-2 text-left">Content</th>
@@ -266,7 +386,11 @@
                 </tr>
               </thead>
               <tbody class="bg-white divide-y divide-gray-100">
-                <tr v-for="ex in definition.examples" :key="ex.exampleid" class="hover:bg-gray-50/50">
+                <tr
+                  v-for="ex in definition.examples"
+                  :key="ex.exampleid"
+                  class="hover:bg-gray-50/50"
+                >
                   <td class="px-3 py-2 whitespace-nowrap text-gray-400 font-mono text-xs">
                     {{ ex.examplenum }}
                   </td>
@@ -282,21 +406,26 @@
           </div>
         </div>
 
-        <div v-if="definition.owner_only && !props.disableOwnerOnlyLock" class="flex items-center text-amber-600">
+        <div
+          v-if="definition.owner_only && !props.disableOwnerOnlyLock"
+          class="flex items-center text-amber-600"
+        >
           <Lock class="h-5 w-5 mr-1" />
           <span class="text-sm">{{ t('components.definitionCard.ownerOnlyNote') }}</span>
         </div>
       </div>
 
       <!-- Canonical Form (only when different from main form) -->
-      <div v-if="showCanonicalForm"
-        class="mt-3 pt-3 border-t flex flex-col gap-1.5">
-        <div class="flex items-center gap-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+      <div v-if="showCanonicalForm" class="mt-3 pt-3 border-t flex flex-col gap-1.5">
+        <div
+          class="flex items-center gap-2 text-xs font-semibold text-gray-400 uppercase tracking-wider"
+        >
           <EqualApproximately class="h-3.5 w-3.5 text-blue-400" />
           <span>{{ t('components.definitionCard.canonicalLabel') }}</span>
         </div>
         <div
-          class="text-sm text-gray-700 font-mono bg-blue-50/30 p-2 rounded border border-blue-100/30 whitespace-pre-wrap leading-relaxed overflow-x-auto">
+          class="text-sm text-gray-700 font-mono bg-blue-50/30 p-2 rounded border border-blue-100/30 whitespace-pre-wrap leading-relaxed overflow-x-auto"
+        >
           {{ flashcard?.canonical_form ?? definition.canonical_form }}
         </div>
       </div>
@@ -305,61 +434,86 @@
       <div v-if="!disableToolbar" class="mt-3">
         <div class="flex flex-wrap gap-2 sm:gap-0 sm:space-x-2 md:space-x-0 space-x-0" role="group">
           <!-- Edit button -->
-          <button v-if="auth.state.isLoggedIn && definition.can_edit"
+          <button
+            v-if="auth.state.isLoggedIn && definition.can_edit"
             class="btn-update btn-group-item w-full sm:w-auto text-center"
-            @click="router.push(`/definition/${definition.definitionid}/edit`)">
+            @click="router.push(`/definition/${definition.definitionid}/edit`)"
+          >
             <Pencil class="h-4 w-4" />
             {{ t('components.definitionCard.editButton') }}
           </button>
 
           <!-- Delete button -->
-          <button v-if="auth.state.isLoggedIn && auth.state.username === definition.username" @click="handleDeleteClick"
-            class="btn-delete btn-group-item w-full sm:w-auto text-center">
+          <button
+            v-if="auth.state.isLoggedIn && auth.state.username === definition.username"
+            @click="handleDeleteClick"
+            class="btn-delete btn-group-item w-full sm:w-auto text-center"
+          >
             <Trash2 class="h-4 w-4" />
             {{ t('components.definitionCard.deleteButton') }}
           </button>
 
           <!-- Version History -->
-          <RouterLink v-if="auth.state.isLoggedIn && !props.hideHistory"
+          <RouterLink
+            v-if="auth.state.isLoggedIn && !props.hideHistory"
             :to="`/definition/${definition.definitionid}/history?valsi_id=${definition.valsiid}`"
-            class="btn-history btn-group-item w-full sm:w-auto text-center">
+            class="btn-history btn-group-item w-full sm:w-auto text-center"
+          >
             <Clock class="h-4 w-4" />
             {{ t('components.definitionCard.historyButton') }}
           </RouterLink>
 
           <!-- Comment -->
-          <RouterLink v-if="auth.state.isLoggedIn && props.showCommentButton"
+          <RouterLink
+            v-if="auth.state.isLoggedIn && props.showCommentButton"
             :to="`/comments?valsi_id=${definition.valsiid}&definition_id=${definition.definitionid}`"
-            class="btn-create btn-group-item w-full sm:w-auto text-center">
+            class="btn-create btn-group-item w-full sm:w-auto text-center"
+          >
             <MessageSquare class="h-4 w-4" />
             {{ t('components.definitionCard.commentButton') }}
           </RouterLink>
 
           <!-- Translate -->
-          <button v-if="auth.state.isLoggedIn"
+          <button
+            v-if="auth.state.isLoggedIn"
             class="btn-create btn-group-item w-full sm:w-auto text-center"
-            @click="router.push(`/valsi/add?word=${encodeURIComponent(definition.valsiword ?? definition.word)}${canLink ? '&translate_from_def=' + definition.definitionid : ''}`)"
-            :title="canLink ? t('components.definitionCard.translateButtonTitlePhrase') : t('components.definitionCard.translateButtonTitle')">
+            @click="
+              router.push(
+                `/valsi/add?word=${encodeURIComponent(definition.valsiword ?? definition.word)}${canLink ? '&translate_from_def=' + definition.definitionid : ''}`
+              )
+            "
+            :title="
+              canLink
+                ? t('components.definitionCard.translateButtonTitlePhrase')
+                : t('components.definitionCard.translateButtonTitle')
+            "
+          >
             <Languages class="h-4 w-4" />
             {{ t('components.definitionCard.translateButton') }}
           </button>
 
           <!-- Link existing -->
-          <button v-if="auth.state.isLoggedIn && canLink"
+          <button
+            v-if="auth.state.isLoggedIn && canLink"
             class="btn-link btn-group-item w-full sm:w-auto text-center"
             @click="showLinkModal = true"
-            :title="t('components.definitionCard.linkExistingTitle')">
+            :title="t('components.definitionCard.linkExistingTitle')"
+          >
             <LinkIcon class="h-4 w-4" />
             {{ t('components.definitionCard.linkExisting') }}
           </button>
 
           <!-- Discussions -->
-          <RouterLink v-if="disableDiscussionButton && !disableDiscussionToolbarButton"
+          <RouterLink
+            v-if="disableDiscussionButton && !disableDiscussionToolbarButton"
             :to="`/comments?valsi_id=${definition.valsiid}&definition_id=${definition.definitionid}`"
-            class="btn-get btn-group-item w-full sm:w-auto text-center">
+            class="btn-get btn-group-item w-full sm:w-auto text-center"
+          >
             <AudioWaveform class="h-4 w-4" />
-            <span v-if="definition.comment_count && definition.comment_count > 0"
-              class="bg-gray-100 px-1.5 rounded-md border">
+            <span
+              v-if="definition.comment_count && definition.comment_count > 0"
+              class="bg-gray-100 px-1.5 rounded-md border"
+            >
               {{ definition.comment_count }}
             </span>
             {{ t('components.definitionCard.discussDefinitionButton') }}
@@ -371,12 +525,14 @@
   <ModalComponent
     :show="showValsiModal"
     :title="t('components.definitionCard.fullWordModalTitle')"
-    @close="showValsiModal = false">
+    @close="showValsiModal = false"
+  >
     <p class="text-sm text-gray-600 mb-3">{{ t('components.definitionCard.fullWordModalHint') }}</p>
     <RouterLink
       :to="valsiDefinitionLink"
       class="text-blue-700 hover:text-blue-800 hover:underline break-words font-medium"
-      @click="showValsiModal = false">
+      @click="showValsiModal = false"
+    >
       {{ definition.valsiword ?? definition.word }}
     </RouterLink>
   </ModalComponent>
@@ -385,7 +541,8 @@
   <ModalComponent
     :show="showLinkModal"
     :title="t('components.definitionCard.modalTitle')"
-    @close="showLinkModal = false">
+    @close="showLinkModal = false"
+  >
     <div class="space-y-4">
       <div class="relative">
         <input
@@ -394,7 +551,7 @@
           :placeholder="t('components.definitionCard.searchPlaceholder')"
           class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 pr-10"
           @input="handleLinkSearch"
-        >
+        />
         <div class="absolute right-3 top-2.5">
           <Loader2 v-if="isSearching" class="h-5 w-5 animate-spin text-blue-500" />
           <Search v-else class="h-5 w-5 text-gray-400" />
@@ -402,13 +559,19 @@
       </div>
 
       <div class="max-h-96 overflow-y-auto space-y-2">
-        <div v-if="linkSearchResults.length === 0 && !isSearching" class="text-center py-4 text-gray-500">
+        <div
+          v-if="linkSearchResults.length === 0 && !isSearching"
+          class="text-center py-4 text-gray-500"
+        >
           {{ t('components.definitionCard.noResults') }}
         </div>
-        
-        <div v-for="res in linkSearchResults" :key="res.definitionid" 
+
+        <div
+          v-for="res in linkSearchResults"
+          :key="res.definitionid"
           class="p-3 border rounded-lg hover:border-blue-300 hover:bg-blue-50 cursor-pointer transition-colors group"
-          @click="handleLinkTo(res)">
+          @click="handleLinkTo(res)"
+        >
           <div class="flex justify-between items-start">
             <div class="min-w-0 flex-1">
               <div class="font-bold text-blue-700 truncate group-hover:underline">
@@ -418,7 +581,10 @@
                 {{ res.definition }}
               </div>
               <div class="mt-1 flex items-center gap-2 text-xs text-gray-400">
-                <span>{{ t('components.definitionCard.language') }} {{ getLanguageName(res.langid) }}</span>
+                <span
+                  >{{ t('components.definitionCard.language') }}
+                  {{ getLanguageName(res.langid) }}</span
+                >
                 <span>·</span>
                 <span>{{ t('components.definitionCard.wordType') }} {{ res.type_name }}</span>
               </div>
@@ -431,9 +597,18 @@
       </div>
     </div>
   </ModalComponent>
-  <DeleteConfirmation :show="showDeleteConfirm" :title="t('components.definitionCard.deleteConfirmTitle')"
-    :message="t('components.definitionCard.deleteConfirmMessage', { word: definition.valsiword ?? definition.word })"
-    :is-deleting="isDeleting" @confirm="confirmDelete" @cancel="cancelDelete" />
+  <DeleteConfirmation
+    :show="showDeleteConfirm"
+    :title="t('components.definitionCard.deleteConfirmTitle')"
+    :message="
+      t('components.definitionCard.deleteConfirmMessage', {
+        word: definition.valsiword ?? definition.word,
+      })
+    "
+    :is-deleting="isDeleting"
+    @confirm="confirmDelete"
+    @cancel="cancelDelete"
+  />
 </template>
 
 <script setup>
@@ -456,26 +631,26 @@ import {
   Search,
   Loader2,
 } from 'lucide-vue-next'
-import { computed, ref, watch } from 'vue';
-import { RouterLink, useRouter } from 'vue-router';
-import { useI18n } from 'vue-i18n';
-import { getTypeClass } from '@/utils/wordTypeUtils'; // Import shared utility
+import { computed, ref, watch } from 'vue'
+import { RouterLink, useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
+import { getTypeClass } from '@/utils/wordTypeUtils' // Import shared utility
 
-import { deleteDefinition, searchDefinitions, linkDefinitions } from '@/api';
-import ClipboardButton from '@/components/ClipboardButton.vue';
-import CollectionWidget from '@/components/CollectionWidget.vue';
-import DeleteConfirmation from '@/components/DeleteConfirmation.vue';
-import ModalComponent from '@/components/ModalComponent.vue';
-import VoteButtons from '@/components/VoteButtons.vue';
-import { useAuth } from '@/composables/useAuth';
-import { useError } from '@/composables/useError';
-import AudioPlayer from './AudioPlayer.vue';
-import LazyMathJax from './LazyMathJax.vue';
+import { deleteDefinition, searchDefinitions, linkDefinitions } from '@/api'
+import ClipboardButton from '@/components/ClipboardButton.vue'
+import CollectionWidget from '@/components/CollectionWidget.vue'
+import DeleteConfirmation from '@/components/DeleteConfirmation.vue'
+import ModalComponent from '@/components/ModalComponent.vue'
+import VoteButtons from '@/components/VoteButtons.vue'
+import { useAuth } from '@/composables/useAuth'
+import { useError } from '@/composables/useError'
+import AudioPlayer from './AudioPlayer.vue'
+import LazyMathJax from './LazyMathJax.vue'
 
-const { t, locale } = useI18n();
-const auth = useAuth();
-const router = useRouter();
-const { showError } = useError();
+const { t, locale } = useI18n()
+const auth = useAuth()
+const router = useRouter()
+const { showError } = useError()
 
 const props = defineProps({
   collections: {
@@ -585,7 +760,16 @@ const props = defineProps({
   },
 })
 
-const emit = defineEmits(['move-up', 'move-down', 'remove', 'collection-updated', 'delete', 'refresh-definitions', 'edit-item', 'delete-item'])
+const emit = defineEmits([
+  'move-up',
+  'move-down',
+  'remove',
+  'collection-updated',
+  'delete',
+  'refresh-definitions',
+  'edit-item',
+  'delete-item',
+])
 
 const MAX_VALSI_DISPLAY_LENGTH = 30
 
@@ -603,16 +787,16 @@ const displayedValsi = computed(() =>
 const isValsiTruncated = computed(() => valsiWord.value.length > MAX_VALSI_DISPLAY_LENGTH)
 const valsiDefinitionLink = computed(() => {
   if (!props.definition.definitionid) return '#'
-  
+
   const query = { highlight_definition_id: props.definition.definitionid }
   const langId = props.definition.langid ?? props.definition.lang_id
   if (langId) {
     query.langid = langId
   }
-  
+
   return {
     path: `/valsi/${encodeURIComponent(valsiWord.value.replace(/ /g, '_'))}`,
-    query
+    query,
   }
 })
 const displayedFreeContent = computed(() => {
@@ -629,19 +813,29 @@ const canLink = computed(() => props.definition.type_name === 'phrase')
 const showCanonicalForm = computed(() => {
   const canonical = props.flashcard?.canonical_form || props.definition?.canonical_form
   if (!canonical) return false
-  const main = (props.definition.valsiword ?? props.definition.word ?? props.definition.free_content_front ?? '').trim().toLowerCase()
+  const main = (
+    props.definition.valsiword ??
+    props.definition.word ??
+    props.definition.free_content_front ??
+    ''
+  )
+    .trim()
+    .toLowerCase()
   return main !== canonical.trim().toLowerCase()
 })
 
 const itemSoundUrl = computed(() => {
-  if (!props.showAudio || !props.definition?.has_sound || !props.collectionId || !props.itemId) return null
+  if (!props.showAudio || !props.definition?.has_sound || !props.collectionId || !props.itemId)
+    return null
   return `/api/collections/${props.collectionId}/items/${props.itemId}/sound`
 })
 
 /** True when sound should be loaded via api (getItemSoundBlob) so Bearer is sent; false for external URLs. */
 const useApiForSound = computed(() => {
   const url = props.definition?.sound_url || itemSoundUrl.value
-  return Boolean(url && !String(url).startsWith('http') && props.collectionId != null && props.itemId != null)
+  return Boolean(
+    url && !String(url).startsWith('http') && props.collectionId != null && props.itemId != null
+  )
 })
 
 // Linking Modal State
@@ -657,17 +851,19 @@ const handleLinkSearch = () => {
     linkSearchResults.value = []
     return
   }
-  
+
   searchTimeout = setTimeout(async () => {
     isSearching.value = true
     try {
       const res = await searchDefinitions({
         query: linkSearchQuery.value,
         word_type: 'phrase',
-        per_page: 20
+        per_page: 20,
       })
       // Filter out current definition
-      linkSearchResults.value = res.data.definitions.filter(d => d.definitionid !== props.definition.definitionid)
+      linkSearchResults.value = res.data.definitions.filter(
+        (d) => d.definitionid !== props.definition.definitionid
+      )
     } catch (e) {
       console.error('Search error', e)
     } finally {
@@ -678,7 +874,7 @@ const handleLinkSearch = () => {
 
 const handleLinkTo = async (target) => {
   if (!confirm(t('components.definitionCard.linkConfirm'))) return
-  
+
   try {
     await linkDefinitions(props.definition.definitionid, target.definitionid)
     showLinkModal.value = false
@@ -705,17 +901,25 @@ const updateCollections = (updatedCollections) => {
 const hasNotes = computed(() =>
   Boolean(
     (props.notes || '').trim() !== '' ||
-    props.definition.has_front_image ||
-    props.definition.has_back_image
+      props.definition.has_front_image ||
+      props.definition.has_back_image
   )
 )
 
 const hasMetadata = computed(() => {
-  return props.definition.metadata && Object.keys(props.definition.metadata).length > 0;
+  return props.definition.metadata && Object.keys(props.definition.metadata).length > 0
 })
 
 const hasAdditionalInfo = computed(() => {
-  return props.definition.notes || props.definition.selmaho || props.definition.etymology || (props.definition.examples && props.definition.examples.length > 0) || props.definition.has_image || props.definition.owner_only || hasMetadata.value
+  return (
+    props.definition.notes ||
+    props.definition.selmaho ||
+    props.definition.etymology ||
+    (props.definition.examples && props.definition.examples.length > 0) ||
+    props.definition.has_image ||
+    props.definition.owner_only ||
+    hasMetadata.value
+  )
 })
 
 const selmahoLinkQuery = computed(() => {

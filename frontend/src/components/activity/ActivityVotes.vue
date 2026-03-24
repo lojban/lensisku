@@ -1,9 +1,6 @@
 <template>
   <div class="space-y-4">
-    <div
-      v-if="votes.length === 0"
-      class="text-center py-8 bg-gray-50 rounded-lg"
-    >
+    <div v-if="votes.length === 0" class="text-center py-8 bg-gray-50 rounded-lg">
       <Vote class="mx-auto h-12 w-12 text-blue-400" />
       <p class="text-gray-600">
         {{ t('components.activityVotes.noVotes') }}
@@ -36,12 +33,12 @@ const { t } = useI18n()
 defineProps({
   votes: {
     type: Array,
-    required: true
+    required: true,
   },
   formatDate: {
     type: Function,
-    required: true
-  }
+    required: true,
+  },
 })
 
 const languages = ref([])
@@ -55,7 +52,7 @@ function voteToDefinition(vote) {
     langid: vote.langid,
     score: vote.score ?? 0,
     user_vote: vote.vote_value,
-    created_at: vote.voted_at
+    created_at: vote.voted_at,
   }
 }
 

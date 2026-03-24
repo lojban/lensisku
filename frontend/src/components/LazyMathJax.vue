@@ -82,9 +82,7 @@ const queueForRendering = (element) => {
 /** Normalize link anchor text: fix "https\_\_" or "https__" in markdown (serializer escape bug) */
 function normalizeLinkAnchors(text) {
   if (!text || typeof text !== 'string') return text
-  return text
-    .replace(/(https?:)(\\_){2}/g, '$1//')
-    .replace(/(https?)__(?=[^\s\]])/g, '$1://')
+  return text.replace(/(https?:)(\\_){2}/g, '$1//').replace(/(https?)__(?=[^\s\]])/g, '$1://')
 }
 
 /** GFM-style pipe row or separator (do not split `$...$` math inside — breaks tables). */
@@ -229,13 +227,13 @@ const renderContent = async () => {
 
   if (props.enableMarkdown) {
     finalContent = normalizeLinkAnchors(finalContent)
-    
+
     // Preserve multiple empty lines by converting them to <br> tags.
     // marked will collapse \n\n into paragraph separations and ignore extra \n's.
     finalContent = finalContent.replace(/\n{3,}/g, (match) => {
-      return '\n\n' + '<br>'.repeat(match.length - 2) + '\n\n';
-    });
-    
+      return '\n\n' + '<br>'.repeat(match.length - 2) + '\n\n'
+    })
+
     const segments = splitMarkdownAndInlineMath(finalContent)
     const extensions = props.enableCurlyLinks
       ? [
@@ -302,14 +300,14 @@ const renderContent = async () => {
 
   // Apply highlighting if searchTerm is provided
   if (props.searchTerm && finalContent) {
-    const escapedSearchTerm = props.searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const regex = new RegExp(`(${escapedSearchTerm})`, 'gi');
-    finalContent = finalContent.replace(regex, '<mark>$1</mark>');
+    const escapedSearchTerm = props.searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    const regex = new RegExp(`(${escapedSearchTerm})`, 'gi')
+    finalContent = finalContent.replace(regex, '<mark>$1</mark>')
   }
 
   // Handle newlines if markdown is not enabled (AFTER highlighting)
   if (!props.enableMarkdown && finalContent) {
-    finalContent = finalContent.replace(/\n/g, '<br>');
+    finalContent = finalContent.replace(/\n/g, '<br>')
   }
 
   contentRef.value.innerHTML = finalContent
@@ -324,11 +322,7 @@ const renderContent = async () => {
     })
   }
 
-  if (
-    finalContent.includes('$') ||
-    finalContent.includes('\\[') ||
-    finalContent.includes('\\(')
-  ) {
+  if (finalContent.includes('$') || finalContent.includes('\\[') || finalContent.includes('\\(')) {
     queueForRendering(contentRef.value)
   }
 }
@@ -481,13 +475,13 @@ onBeforeUnmount(() => {
 }
 
 :deep(.curly-quotes::before) {
-  content: "«";
+  content: '«';
   display: inline-block;
   margin-right: 0.2em;
 }
 
 :deep(.curly-quotes::after) {
-  content: "»";
+  content: '»';
   display: inline-block;
   margin-left: 0.2em;
 }

@@ -6,51 +6,41 @@
   >
     <ClipboardCopy class="w-4 h-4" />
   </button>
-
-  <ToastFloat
-    :show="showToast"
-    :message="toastMessage"
-    :type="toastType"
-    @close="showToast = false"
-  />
 </template>
 
 <script setup>
-  import { ClipboardCopy } from 'lucide-vue-next'
-  import { ref } from 'vue'
+import { ClipboardCopy } from 'lucide-vue-next'
+import { useI18n } from 'vue-i18n'
 
-  import ToastFloat from './ToastFloat.vue'
+import { useError } from '@/composables/useError'
+import { useSuccessToast } from '@/composables/useSuccessToast'
 
-  const props = defineProps({
-    content: {
-      type: String,
-      required: true,
-    },
-    title: {
-      type: String,
-      default: 'Copy to clipboard',
-    },
-  })
+const props = defineProps({
+  content: {
+    type: String,
+    required: true,
+  },
+  title: {
+    type: String,
+    default: 'Copy to clipboard',
+  },
+})
 
-  const emit = defineEmits(['copied', 'error'])
+const emit = defineEmits(['copied', 'error'])
 
-  const showToast = ref(false)
-  const toastMessage = ref('')
-  const toastType = ref('success')
+const { t } = useI18n()
+const { showSuccess } = useSuccessToast()
+const { showError } = useError()
 
-  const copyToClipboard = async () => {
-    try {
-      await navigator.clipboard.writeText(props.content)
-      showToast.value = true
-      toastMessage.value = 'Copied to clipboard!'
-      toastType.value = 'success'
-      emit('copied')
-    } catch (err) {
-      console.error('Failed to copy:', err)
-      showToast.value = true
-      toastMessage.value = t('components.error.failedToCopy')
-      toastType.value = 'error'
-      emit('error', err)
-    }
+const copyToClipboard = async () => {
+  try {
+    await navigator.clipboard.writeText(props.content)
+    showSuccess(t('components.error.copiedToClipboard'))
+    emit('copied')
+  } catch (err) {
+    console.error('Failed to copy:', err)
+    showError('components.error.failedToCopy')
+    emit('error', err)
   }
+}
 </script>

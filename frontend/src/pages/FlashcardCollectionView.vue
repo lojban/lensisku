@@ -36,17 +36,28 @@
       <!-- Row 3: public + owner + count -->
       <div class="flex flex-row gap-2 items-center text-sm text-gray-500">
         <div class="flex flex-wrap items-center gap-2">
-          <span class="text-sm px-2 py-1 rounded-full select-none shrink-0" :class="collection?.is_public ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'">
-            {{ collection?.is_public ? t('collectionDetail.public') : t('collectionDetail.private') }}
+          <span
+            class="text-sm px-2 py-1 rounded-full select-none shrink-0"
+            :class="
+              collection?.is_public ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
+            "
+          >
+            {{
+              collection?.is_public ? t('collectionDetail.public') : t('collectionDetail.private')
+            }}
           </span>
           <span v-if="collection?.owner">
             {{ t('collectionDetail.createdBy') }}
-            <RouterLink :to="`/user/${collection.owner.username}`"
-              class="text-blue-600 hover:text-blue-800 hover:underline">
+            <RouterLink
+              :to="`/user/${collection.owner.username}`"
+              class="text-blue-600 hover:text-blue-800 hover:underline"
+            >
               {{ collection.owner.username }}
             </RouterLink>
           </span>
-          <span>{{ t('collectionDetail.itemsCount', { count: collection?.item_count ?? 0 }) }}</span>
+          <span>{{
+            t('collectionDetail.itemsCount', { count: collection?.item_count ?? 0 })
+          }}</span>
         </div>
       </div>
 
@@ -54,7 +65,10 @@
       <div class="space-y-4 md:space-y-0">
         <div class="flex flex-wrap items-center gap-2 w-auto">
           <div class="flex items-center gap-0" role="group">
-            <RouterLink :to="`/collections/${props.collectionId}`" class="btn-aqua-zinc btn-aqua-group-item md:flex-none">
+            <RouterLink
+              :to="`/collections/${props.collectionId}`"
+              class="btn-aqua-zinc btn-aqua-group-item md:flex-none"
+            >
               <List class="w-4 h-4 shrink-0" aria-hidden="true" />
               {{ t('components.flashcardCollectionView.collectionButton') }}
             </RouterLink>
@@ -66,17 +80,31 @@
                 <PlusCircle class="w-4 h-4 shrink-0" aria-hidden="true" />
                 {{ t('components.flashcardCollectionView.addFlashcardButton') }}
               </RouterLink>
-              <button class="btn-aqua-red btn-aqua-group-item md:flex-none" :disabled="isImporting" @click="handleImport">
+              <button
+                class="btn-aqua-red btn-aqua-group-item md:flex-none"
+                :disabled="isImporting"
+                @click="handleImport"
+              >
                 <Import class="w-4 h-4 shrink-0" aria-hidden="true" />
-                {{ isImporting ? t('components.flashcardCollectionView.importing') : t('components.flashcardCollectionView.importAllButton') }}
+                {{
+                  isImporting
+                    ? t('components.flashcardCollectionView.importing')
+                    : t('components.flashcardCollectionView.importAllButton')
+                }}
               </button>
             </template>
             <template v-if="!auth.state.isLoggedIn">
               <div class="mt-2 gap-4">
-                <RouterLink :to="`/collections/${props.collectionId}/levels`" class="btn-aqua-orange btn-aqua-group-item md:flex-none">
+                <RouterLink
+                  :to="`/collections/${props.collectionId}/levels`"
+                  class="btn-aqua-orange btn-aqua-group-item md:flex-none"
+                >
                   {{ t('anonymousProgress.viewLevels') }}
                 </RouterLink>
-                <RouterLink :to="`/collections/${props.collectionId}/levels`" class="btn-aqua-emerald btn-aqua-group-item md:flex-none">
+                <RouterLink
+                  :to="`/collections/${props.collectionId}/levels`"
+                  class="btn-aqua-emerald btn-aqua-group-item md:flex-none"
+                >
                   {{ t('anonymousProgress.studyLevels') }}
                 </RouterLink>
               </div>
@@ -86,11 +114,20 @@
       </div>
 
       <!-- Row 5: Study (full session) + Levels, centered, not grouped -->
-      <div v-if="auth.state.isLoggedIn" class="flex flex-row justify-center items-center gap-2 mt-4">
-        <RouterLink :to="`/collections/${props.collectionId}/flashcards/study`" class="btn-aqua-orange h-10 text-base inline-flex items-center justify-center gap-2">
+      <div
+        v-if="auth.state.isLoggedIn"
+        class="flex flex-row justify-center items-center gap-2 mt-4"
+      >
+        <RouterLink
+          :to="`/collections/${props.collectionId}/flashcards/study`"
+          class="btn-aqua-orange h-10 text-base inline-flex items-center justify-center gap-2"
+        >
           {{ t('flashcardCollection.studyNow', { count: dueCount }) }}
         </RouterLink>
-        <RouterLink :to="`/collections/${props.collectionId}/levels`" class="btn-aqua-white inline-flex items-center gap-2">
+        <RouterLink
+          :to="`/collections/${props.collectionId}/levels`"
+          class="btn-aqua-white inline-flex items-center gap-2"
+        >
           <LayoutPanelTop class="w-4 h-4 shrink-0" aria-hidden="true" />
           {{ t('collectionDetail.levels') }}
         </RouterLink>
@@ -99,7 +136,10 @@
   </div>
 
   <!-- Anonymous: sign-in prompt -->
-  <div v-if="isAnonView" class="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6 text-center">
+  <div
+    v-if="isAnonView"
+    class="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6 text-center"
+  >
     <p class="text-gray-700 mb-3">
       {{ t('anonymousProgress.signInToSaveProgress') }}
     </p>
@@ -165,8 +205,10 @@
         </option>
       </select>
       <label class="flex items-center gap-2">
-        <input v-model="filters.onlyDue" type="checkbox" class="checkbox-toggle">
-        <span class="text-sm text-gray-700">{{ t('components.flashcardCollectionView.filters.dueCardsOnly') }}</span>
+        <input v-model="filters.onlyDue" type="checkbox" class="checkbox-toggle" />
+        <span class="text-sm text-gray-700">{{
+          t('components.flashcardCollectionView.filters.dueCardsOnly')
+        }}</span>
       </label>
     </div>
   </div>
@@ -178,16 +220,23 @@
     <p class="text-gray-600 mb-4">{{ t('anonymousProgress.useLevelsToStudy') }}</p>
   </div>
 
-  <div v-else-if="flashcards.length === 0" class="text-center py-12 bg-gray-50 rounded-lg border border-blue-100">
+  <div
+    v-else-if="flashcards.length === 0"
+    class="text-center py-12 bg-gray-50 rounded-lg border border-blue-100"
+  >
     <p class="text-gray-600">
       {{ t('components.flashcardCollectionView.noFlashcards') }}
     </p>
   </div>
 
   <div v-else class="space-y-4">
-    <div v-for="(card, index) in flashcards" :key="card.flashcard.id" :class="{ 'cursor-pointer': isOwner }"
+    <div
+      v-for="(card, index) in flashcards"
+      :key="card.flashcard.id"
+      :class="{ 'cursor-pointer': isOwner }"
       @click="isOwner && openFlashcard(card)"
-      class="bg-white p-4 rounded-lg border hover:border-blue-300 shadow hover:shadow-none transition-all duration-200 max-w-full overflow-hidden">
+      class="bg-white p-4 rounded-lg border hover:border-blue-300 shadow hover:shadow-none transition-all duration-200 max-w-full overflow-hidden"
+    >
       <!-- Card Content -->
       <div class="flex justify-between items-start gap-4">
         <div class="min-w-0 flex-1">
@@ -196,18 +245,32 @@
               {{ card.flashcard.word ?? card.flashcard.free_content_front }}
             </h3>
             <span v-if="card.flashcard.sound_url" class="shrink-0" @click.stop>
-              <AudioPlayer :url="card.flashcard.sound_url"
-                :collection-id="card.flashcard.sound_url?.startsWith?.('/api/') ? card.flashcard.collection_id : undefined"
-                :item-id="card.flashcard.sound_url?.startsWith?.('/api/') ? card.flashcard.item_id : undefined"
-                class="shrink-0" />
+              <AudioPlayer
+                :url="card.flashcard.sound_url"
+                :collection-id="
+                  card.flashcard.sound_url?.startsWith?.('/api/')
+                    ? card.flashcard.collection_id
+                    : undefined
+                "
+                :item-id="
+                  card.flashcard.sound_url?.startsWith?.('/api/')
+                    ? card.flashcard.item_id
+                    : undefined
+                "
+                class="shrink-0"
+              />
             </span>
           </div>
           <div v-if="showCanonicalForCard(card)" class="mt-2 flex flex-col gap-1">
-            <div class="flex items-center gap-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+            <div
+              class="flex items-center gap-2 text-xs font-semibold text-gray-400 uppercase tracking-wider"
+            >
               <EqualApproximately class="h-3.5 w-3.5 text-blue-400 shrink-0" />
               <span>{{ t('components.definitionCard.canonicalLabel') }}</span>
             </div>
-            <div class="text-sm text-gray-700 font-mono bg-blue-50/30 p-2 rounded border border-blue-100/30">
+            <div
+              class="text-sm text-gray-700 font-mono bg-blue-50/30 p-2 rounded border border-blue-100/30"
+            >
               {{ card.flashcard.canonical_form }}
             </div>
           </div>
@@ -216,12 +279,18 @@
           </div>
           <div v-if="card.flashcard.has_front_image || card.flashcard.has_back_image" class="mt-2">
             <div v-if="card.flashcard.has_front_image" class="mb-2">
-              <img :src="`/api/collections/${card.flashcard.collection_id}/items/${card.flashcard.item_id}/image/front`"
-                class="max-h-40 rounded-lg object-contain bg-gray-100" alt="Front image">
+              <img
+                :src="`/api/collections/${card.flashcard.collection_id}/items/${card.flashcard.item_id}/image/front`"
+                class="max-h-40 rounded-lg object-contain bg-gray-100"
+                alt="Front image"
+              />
             </div>
             <div v-if="card.flashcard.has_back_image">
-              <img :src="`/api/collections/${card.flashcard.collection_id}/items/${card.flashcard.item_id}/image/back`"
-                class="max-h-40 rounded-lg object-contain bg-gray-100" alt="Back image">
+              <img
+                :src="`/api/collections/${card.flashcard.collection_id}/items/${card.flashcard.item_id}/image/back`"
+                class="max-h-40 rounded-lg object-contain bg-gray-100"
+                alt="Back image"
+              />
             </div>
           </div>
           <div v-if="card.flashcard.notes" class="text-sm text-gray-500 mt-1">
@@ -240,8 +309,11 @@
               </span>
             </div>
             <div class="w-full bg-gray-200 rounded-full h-2">
-              <div class="h-2 rounded-full transition-all duration-300" :class="getProgressBarClass(progress.status)"
-                :style="{ width: getProgressWidth(progress) }" />
+              <div
+                class="h-2 rounded-full transition-all duration-300"
+                :class="getProgressBarClass(progress.status)"
+                :style="{ width: getProgressWidth(progress) }"
+              />
             </div>
             <div v-if="progress.next_review_at" class="text-xs text-gray-500 mt-1 text-right">
               Next: {{ formatDate(progress.next_review_at) }}
@@ -249,25 +321,46 @@
           </div>
 
           <div class="flex items-center gap-2 flex-wrap">
-             <button class="btn-empty flex items-center gap-1.5 hover:bg-orange-50 text-orange-600" :title="t('components.flashcardCollectionView.reviewNowAction')" @click.stop="reviewSingleCard(card.flashcard.id)">
-               <Repeat1 class="h-4 w-4" />
-               <span class="sr-only">{{ t('components.flashcardCollectionView.reviewNowAction') }}</span>
-             </button>
-            <button :disabled="index === 0 || isReordering" class="btn-empty flex items-center gap-1.5" :class="[
-              index === 0 || isReordering ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100',
-            ]" :title="t('components.flashcardCollectionView.moveUpAction')" @click.stop="moveCard(card, 'up')">
+            <button
+              class="btn-empty flex items-center gap-1.5 hover:bg-orange-50 text-orange-600"
+              :title="t('components.flashcardCollectionView.reviewNowAction')"
+              @click.stop="reviewSingleCard(card.flashcard.id)"
+            >
+              <Repeat1 class="h-4 w-4" />
+              <span class="sr-only">{{
+                t('components.flashcardCollectionView.reviewNowAction')
+              }}</span>
+            </button>
+            <button
+              :disabled="index === 0 || isReordering"
+              class="btn-empty flex items-center gap-1.5"
+              :class="[
+                index === 0 || isReordering ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100',
+              ]"
+              :title="t('components.flashcardCollectionView.moveUpAction')"
+              @click.stop="moveCard(card, 'up')"
+            >
               <ArrowUp class="h-4 w-4" />
-              <span class="sr-only">{{ t('components.flashcardCollectionView.moveUpAction') }}</span>
+              <span class="sr-only">{{
+                t('components.flashcardCollectionView.moveUpAction')
+              }}</span>
             </button>
 
-            <button :disabled="index === flashcards.length - 1 || isReordering"
-              class="btn-empty flex items-center gap-1.5" :class="[
+            <button
+              :disabled="index === flashcards.length - 1 || isReordering"
+              class="btn-empty flex items-center gap-1.5"
+              :class="[
                 index === flashcards.length - 1 || isReordering
                   ? 'opacity-50 cursor-not-allowed'
                   : 'hover:bg-gray-100',
-              ]" :title="t('components.flashcardCollectionView.moveDownAction')" @click="moveCard(card, 'down')">
+              ]"
+              :title="t('components.flashcardCollectionView.moveDownAction')"
+              @click="moveCard(card, 'down')"
+            >
               <ArrowDown class="h-4 w-4" />
-              <span class="sr-only">{{ t('components.flashcardCollectionView.moveDownAction') }}</span>
+              <span class="sr-only">{{
+                t('components.flashcardCollectionView.moveDownAction')
+              }}</span>
             </button>
           </div>
         </div>
@@ -282,13 +375,29 @@
   </div>
 
   <div v-if="totalPages > 1">
-    <PaginationComponent :current-page="currentPage" :total-pages="totalPages" :total="flashcards.length"
-      :per-page="perPage" @prev="handlePageChange(currentPage - 1)" @next="handlePageChange(currentPage + 1)" />
+    <PaginationComponent
+      :current-page="currentPage"
+      :total-pages="totalPages"
+      :total="flashcards.length"
+      :per-page="perPage"
+      @prev="handlePageChange(currentPage - 1)"
+      @next="handlePageChange(currentPage + 1)"
+    />
   </div>
 </template>
 
 <script setup>
-import { ArrowUp, ArrowDown, Repeat1, EqualApproximately, GalleryHorizontalIcon, List, LayoutPanelTop, PlusCircle, Import } from 'lucide-vue-next'
+import {
+  ArrowUp,
+  ArrowDown,
+  Repeat1,
+  EqualApproximately,
+  GalleryHorizontalIcon,
+  List,
+  LayoutPanelTop,
+  PlusCircle,
+  Import,
+} from 'lucide-vue-next'
 import { ref, computed, onMounted, watch, onBeforeUnmount } from 'vue'
 import { useRouter, RouterLink, useRoute } from 'vue-router'
 
@@ -346,7 +455,10 @@ const handleImport = async () => {
       collection_id: parseInt(props.collectionId),
     })
 
-    successMessage.value = t('components.flashcardCollectionView.importSuccess', { importedCount: response.data.imported_count, skippedCount: response.data.skipped_count })
+    successMessage.value = t('components.flashcardCollectionView.importSuccess', {
+      importedCount: response.data.imported_count,
+      skippedCount: response.data.skipped_count,
+    })
 
     // Refresh flashcards list to show new cards
     await loadFlashcards()
@@ -380,7 +492,6 @@ const filters = ref({
   status: '',
   onlyDue: false,
 })
-
 
 const currentPage = ref(parseInt(route.query.page) || 1)
 const perPage = ref(10)
@@ -443,10 +554,10 @@ const definitionsSearchQueue = new SearchQueue()
 const debouncedSearch = () => {
   // Clear any pending timeouts to prevent stale searches
   clearSearchTimeout()
-  
+
   // Capture current query value to check in timeout
   const currentQuery = searchQuery.value
-  
+
   // Debounce the search - only trigger after user stops typing
   // This prevents excessive API calls while user is actively typing
   searchTimeout = setTimeout(() => {
@@ -464,18 +575,22 @@ const modalItemsPerPage = ref(10)
 
 const loadDefinitions = async (page = modalCurrentPage.value) => {
   isLoadingDefinitions.value = true
-  
+
   let requestId = null
   const request = definitionsSearchQueue.createRequest()
   requestId = request.requestId
   const { signal } = request
-  
+
   try {
-    const response = await listCollectionItems(props.collectionId, {
-      page,
-      per_page: modalItemsPerPage.value,
-      search: normalizeSearchQuery(searchQuery.value) || undefined,
-    }, signal)
+    const response = await listCollectionItems(
+      props.collectionId,
+      {
+        page,
+        per_page: modalItemsPerPage.value,
+        search: normalizeSearchQuery(searchQuery.value) || undefined,
+      },
+      signal
+    )
 
     // Only process if this is still the latest request
     if (!definitionsSearchQueue.shouldProcess(requestId)) {
@@ -490,10 +605,14 @@ const loadDefinitions = async (page = modalCurrentPage.value) => {
     }))
   } catch (err) {
     // Ignore abort errors
-    if (err.name === 'AbortError' || err.code === 'ERR_CANCELED' || err.message?.includes('canceled')) {
+    if (
+      err.name === 'AbortError' ||
+      err.code === 'ERR_CANCELED' ||
+      err.message?.includes('canceled')
+    ) {
       return
     }
-    
+
     // Only show errors for the latest request
     if (definitionsSearchQueue.shouldProcess(requestId)) {
       console.error('Error loading definitions:', err)
@@ -534,9 +653,9 @@ const showCanonicalForCard = (card) => {
 const openFlashcard = (card) => {
   router.push({
     path: `/collections/${props.collectionId}`,
-    query: { 
+    query: {
       editItem: card.flashcard.item_id,
-    }
+    },
   })
 }
 

@@ -1,8 +1,5 @@
 <template>
-  <article
-    class="card-base"
-    :class="[elevated && 'card-elevated', compact && 'card-compact']"
-  >
+  <article class="card-base" :class="[elevated && 'card-elevated', compact && 'card-compact']">
     <div v-if="$slots.media" class="overflow-hidden flex-shrink-0">
       <slot name="media" />
     </div>

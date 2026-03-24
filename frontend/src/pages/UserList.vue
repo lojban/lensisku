@@ -21,10 +21,22 @@
     :role-filter="roleFilter"
     :sort-by="sortBy"
     :sort-order="sortOrder"
-    @update:search-query="searchQuery = normalizeSearchQuery($event); updateSearch()"
-    @update:role-filter="roleFilter = $event; updateSearch()"
-    @update:sort-by="sortBy = $event; updateSearch()"
-    @update:sort-order="sortOrder = $event; updateSearch()"
+    @update:search-query="
+      searchQuery = normalizeSearchQuery($event)
+      updateSearch()
+    "
+    @update:role-filter="
+      roleFilter = $event
+      updateSearch()
+    "
+    @update:sort-by="
+      sortBy = $event
+      updateSearch()
+    "
+    @update:sort-order="
+      sortOrder = $event
+      updateSearch()
+    "
     @updateSearch="updateSearch"
     @clearSearch="clearSearch"
     @prevPage="prevPage"
@@ -53,7 +65,12 @@
   <DeleteConfirmationModal
     :show="showDeletePermissionConfirm"
     :title="t('roleManagement.deletePermissionConfirmTitle')"
-    :message="t('roleManagement.deletePermissionConfirmMessage', { permission: permissionToDelete.permission, roleName: permissionToDelete.roleName })"
+    :message="
+      t('roleManagement.deletePermissionConfirmMessage', {
+        permission: permissionToDelete.permission,
+        roleName: permissionToDelete.roleName,
+      })
+    "
     :is-deleting="isDeletingPermission"
     @confirm="performDeletePermission(permissionToDelete.roleName, permissionToDelete.permission)"
     @cancel="showDeletePermissionConfirm = false"
@@ -116,7 +133,7 @@ const loadFromLocalStorage = () => {
     const savedSortOrder = localStorage.getItem(STORAGE_KEY_PREFIX + 'sortOrder')
     const savedRoleFilter = localStorage.getItem(STORAGE_KEY_PREFIX + 'roleFilter')
     const savedSearchQuery = localStorage.getItem(STORAGE_KEY_PREFIX + 'searchQuery')
-    
+
     if (savedSortBy) sortBy.value = savedSortBy
     if (savedSortOrder) sortOrder.value = savedSortOrder
     if (savedRoleFilter !== null) roleFilter.value = savedRoleFilter
@@ -189,7 +206,7 @@ const viewUser = (username) => {
 }
 
 const fetchUsers = async () => {
-  if (typeof window === 'undefined') return;
+  if (typeof window === 'undefined') return
   isLoading.value = true
   clearError()
 
@@ -252,11 +269,11 @@ const fetchRolesAndPermissions = async () => {
     roles.value = rolesRes.data.roles
     permissions.value = permsRes.data.permissions
     // Initialize selectedPermissionMap
-    roles.value.forEach(role => {
+    roles.value.forEach((role) => {
       if (!selectedPermissionMap.value[role.name]) {
-        selectedPermissionMap.value[role.name] = null;
+        selectedPermissionMap.value[role.name] = null
       }
-    });
+    })
   } catch (error) {
     showError(t('userList.loadRolesError')) // Use translation key
     console.error('Error loading role data:', error)
@@ -266,8 +283,8 @@ const fetchRolesAndPermissions = async () => {
 }
 
 const handleUpdateSelectedPermission = ({ roleName, permission }) => {
-  selectedPermissionMap.value[roleName] = permission;
-};
+  selectedPermissionMap.value[roleName] = permission
+}
 
 const handleTogglePermission = (permission) => {
   const index = selectedPermissions.value.indexOf(permission)
@@ -293,16 +310,16 @@ const handleCreateRole = async () => {
 }
 
 const handleAddPermission = async (roleName) => {
-  const selectedPermission = selectedPermissionMap.value[roleName];
+  const selectedPermission = selectedPermissionMap.value[roleName]
   if (!selectedPermission) return
 
   try {
-    const role = roles.value.find(r => r.name === roleName)
+    const role = roles.value.find((r) => r.name === roleName)
     if (!role) return
     const newPermissions = [...role.permissions, selectedPermission.name]
     await updateRole(roleName, { permissions: newPermissions })
     await fetchRolesAndPermissions() // Refresh roles
-    selectedPermissionMap.value[roleName] = null; // Reset selection for this role
+    selectedPermissionMap.value[roleName] = null // Reset selection for this role
   } catch (error) {
     showError(t('userList.addPermissionError')) // Use translation key
     console.error('Error adding permission:', error)
@@ -317,9 +334,9 @@ const handleDeletePermission = ({ roleName, permission }) => {
 const performDeletePermission = async (roleName, permission) => {
   try {
     isDeletingPermission.value = true
-    const role = roles.value.find(r => r.name === roleName)
+    const role = roles.value.find((r) => r.name === roleName)
     if (!role) return
-    const newPermissions = role.permissions.filter(p => p !== permission)
+    const newPermissions = role.permissions.filter((p) => p !== permission)
     await updateRole(roleName, { permissions: newPermissions })
     await fetchRolesAndPermissions() // Refresh roles
   } catch (error) {
@@ -421,9 +438,13 @@ watch(
         titleParts.push(`${t('profile.role')}: ${roleFilter.value}`)
       }
       if (sortBy.value !== 'created_at' || sortOrder.value !== 'desc') {
-        titleParts.push(`${t('userList.sortByLabel')} ${t(`userList.sortBy.${sortBy.value}`)} ${sortOrder.value === 'asc' ? t('userList.sortOrder.asc') : t('userList.sortOrder.desc')}`)
+        titleParts.push(
+          `${t('userList.sortByLabel')} ${t(`userList.sortBy.${sortBy.value}`)} ${sortOrder.value === 'asc' ? t('userList.sortOrder.asc') : t('userList.sortOrder.desc')}`
+        )
       }
-      pageTitle.value = titleParts.length ? `${t('userList.users')} - ${titleParts.join(' | ')}` : t('userList.users')
+      pageTitle.value = titleParts.length
+        ? `${t('userList.users')} - ${titleParts.join(' | ')}`
+        : t('userList.users')
     }
   },
   { immediate: true }

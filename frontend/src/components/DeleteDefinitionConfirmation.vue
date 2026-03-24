@@ -11,18 +11,13 @@
         {{ t('deleteConfirmation.definitionWarning', { word: definitionWord }) }}
       </p>
       <div class="flex justify-end gap-3">
-        <button
-          class="btn-cancel"
-          @click="$emit('cancel')"
-        >
+        <button class="btn-cancel" @click="$emit('cancel')">
           {{ t('deleteConfirmation.cancel') }}
         </button>
-        <button
-          :disabled="isDeleting"
-          class="btn-delete"
-          @click="$emit('confirm')"
-        >
-          {{ isDeleting ? t('deleteConfirmation.deleting') : t('deleteConfirmation.deleteDefinition') }}
+        <button :disabled="isDeleting" class="btn-delete" @click="$emit('confirm')">
+          {{
+            isDeleting ? t('deleteConfirmation.deleting') : t('deleteConfirmation.deleteDefinition')
+          }}
         </button>
       </div>
     </div>

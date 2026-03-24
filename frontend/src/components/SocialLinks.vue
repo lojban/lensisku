@@ -12,37 +12,37 @@
         :src="`/assets/icons/${link.name}.svg`"
         :alt="link.name"
         class="icon p-1 h-6 w-6 hover:opacity-80"
-      >
+      />
     </a>
   </div>
 </template>
 
 <script>
-  export default {
-    name: 'SocialLinks',
-    props: {
-      buttons: {
-        type: Boolean,
-        default: false,
-      },
+export default {
+  name: 'SocialLinks',
+  props: {
+    buttons: {
+      type: Boolean,
+      default: false,
     },
-    data() {
-      return {
-        links: [
-          {
-            name: 'telegram',
-            link: 'https://t.me/lojban',
-          },
-          {
-            name: 'discord',
-            link: 'https://discord.gg/4KhzRzpmVr',
-          },
-          {
-            name: 'reddit',
-            link: 'https://reddit.com/r/lojban',
-          },
-        ],
-      }
-    },
-  }
+  },
+  data() {
+    return {
+      links: [
+        {
+          name: 'telegram',
+          link: 'https://t.me/lojban',
+        },
+        {
+          name: 'discord',
+          link: 'https://discord.gg/4KhzRzpmVr',
+        },
+        {
+          name: 'reddit',
+          link: 'https://reddit.com/r/lojban',
+        },
+      ],
+    }
+  },
+}
 </script>

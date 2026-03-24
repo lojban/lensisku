@@ -21,7 +21,7 @@ defineProps({
   label: {
     type: String,
     default: '',
-  }
+  },
 })
 
 defineEmits(['click'])

@@ -71,8 +71,18 @@ onMounted(async () => {
         {{ t('cachedExports.description') }}
       </p>
     </div>
-    <div v-if="exports.length > 0" class="text-sm text-gray-600 bg-gray-100 px-3 py-1.5 rounded-full font-medium shrink-0">
-      {{ hasActiveSearch ? t('cachedExports.showingCount', { count: filteredExports.length, total: exports.length }) : t('cachedExports.totalLabel', { count: exports.length }) }}
+    <div
+      v-if="exports.length > 0"
+      class="text-sm text-gray-600 bg-gray-100 px-3 py-1.5 rounded-full font-medium shrink-0"
+    >
+      {{
+        hasActiveSearch
+          ? t('cachedExports.showingCount', {
+              count: filteredExports.length,
+              total: exports.length,
+            })
+          : t('cachedExports.totalLabel', { count: exports.length })
+      }}
     </div>
   </div>
 
@@ -93,7 +103,10 @@ onMounted(async () => {
   </div>
 
   <div v-else>
-    <div v-if="exports.length === 0" class="text-center py-12 bg-blue-50 rounded-lg border border-blue-100">
+    <div
+      v-if="exports.length === 0"
+      class="text-center py-12 bg-blue-50 rounded-lg border border-blue-100"
+    >
       <File class="mx-auto h-12 w-12 text-blue-400" />
       <p class="mt-4 text-gray-600">
         {{ t('cachedExports.noExports') }}
@@ -102,8 +115,11 @@ onMounted(async () => {
 
     <div v-else class="bg-white shadow-sm rounded-lg overflow-hidden">
       <div class="divide-y divide-gray-200">
-        <div v-for="exportItem in filteredExports" :key="`${exportItem.language_tag}-${exportItem.format}`"
-          class="p-4 hover:bg-gray-50 flex items-center justify-between">
+        <div
+          v-for="exportItem in filteredExports"
+          :key="`${exportItem.language_tag}-${exportItem.format}`"
+          class="p-4 hover:bg-gray-50 flex items-center justify-between"
+        >
           <div>
             <div class="font-medium text-gray-900">
               {{ exportItem.language_realname }} - {{ exportItem.format.toUpperCase() }}
@@ -112,11 +128,7 @@ onMounted(async () => {
               {{ formatDate(exportItem.created_at) }}
             </div>
           </div>
-          <a
-            :href="downloadHref(exportItem)"
-            :download="exportItem.filename"
-            class="btn-get"
-          >
+          <a :href="downloadHref(exportItem)" :download="exportItem.filename" class="btn-get">
             {{ t('cachedExports.download') }}
           </a>
         </div>
@@ -124,8 +136,10 @@ onMounted(async () => {
     </div>
 
     <!-- Empty search state -->
-    <div v-if="!isLoading && exports.length > 0 && filteredExports.length === 0"
-      class="text-center py-12 bg-gray-50 rounded-xl border border-gray-200">
+    <div
+      v-if="!isLoading && exports.length > 0 && filteredExports.length === 0"
+      class="text-center py-12 bg-gray-50 rounded-xl border border-gray-200"
+    >
       <p class="text-gray-600">
         {{ t('cachedExports.noMatchingExports') }}
       </p>
@@ -135,4 +149,3 @@ onMounted(async () => {
     </div>
   </div>
 </template>
-

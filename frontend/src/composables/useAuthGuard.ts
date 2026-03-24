@@ -1,24 +1,24 @@
-import { jwtDecode } from 'jwt-decode';
+import { jwtDecode } from 'jwt-decode'
 
 // Define a basic type for the decoded JWT payload
 interface DecodedToken {
-  exp: number;
+  exp: number
   // Add other expected properties if known, e.g., username, authorities
-  [key: string]: any;
+  [key: string]: any
 }
 
 // Define a basic type for the auth instance structure based on usage
 interface AuthInstance {
   state: {
-    isLoggedIn: boolean;
-  };
-  checkAuthStatus: () => Promise<boolean>; // Assumes checkAuthStatus returns a promise resolving to boolean
+    isLoggedIn: boolean
+  }
+  checkAuthStatus: () => Promise<boolean> // Assumes checkAuthStatus returns a promise resolving to boolean
 }
 
 // Attempt to access globalAuth if it exists in the global scope or module context.
 // This reflects the dependency from the original file.
 // In a modular setup, this should ideally be passed as an argument or imported.
-declare const globalAuth: AuthInstance | null | undefined;
+declare const globalAuth: AuthInstance | null | undefined
 
 /**
  * Checks the authentication state, suitable for use in route guards.
@@ -29,54 +29,54 @@ declare const globalAuth: AuthInstance | null | undefined;
  */
 export async function checkAuthStateForGuard(): Promise<boolean | undefined> {
   if (typeof window === 'undefined') {
-    console.warn('checkAuthStateForGuard called in non-browser environment.');
-    return undefined;
+    console.warn('checkAuthStateForGuard called in non-browser environment.')
+    return undefined
   }
 
   // Check if globalAuth is defined and not null
-  const authInstance = typeof globalAuth !== 'undefined' ? globalAuth : null;
+  const authInstance = typeof globalAuth !== 'undefined' ? globalAuth : null
 
   if (!authInstance) {
     // Path 1: No globalAuth instance, check localStorage directly
-    console.log('checkAuthStateForGuard: No globalAuth instance. Checking localStorage.');
-    const accessToken = localStorage.getItem('accessToken');
+    console.log('checkAuthStateForGuard: No globalAuth instance. Checking localStorage.')
+    const accessToken = localStorage.getItem('accessToken')
     if (!accessToken) {
-      console.log('checkAuthStateForGuard: No access token in localStorage.');
-      return false; // Not logged in
+      console.log('checkAuthStateForGuard: No access token in localStorage.')
+      return false // Not logged in
     }
 
     try {
-      const decoded = jwtDecode<DecodedToken>(accessToken);
-      const now = Math.floor(Date.now() / 1000);
-      const isValid = now < decoded.exp;
-      console.log(`checkAuthStateForGuard: Token valid based on expiry? ${isValid}`);
+      const decoded = jwtDecode<DecodedToken>(accessToken)
+      const now = Math.floor(Date.now() / 1000)
+      const isValid = now < decoded.exp
+      console.log(`checkAuthStateForGuard: Token valid based on expiry? ${isValid}`)
       if (!isValid) {
-          // Optional: Clean up expired token? Original didn't explicitly do this here.
-          // localStorage.removeItem('accessToken');
-          // localStorage.removeItem('refreshToken');
+        // Optional: Clean up expired token? Original didn't explicitly do this here.
+        // localStorage.removeItem('accessToken');
+        // localStorage.removeItem('refreshToken');
       }
-      return isValid; // Return based on expiry check
+      return isValid // Return based on expiry check
     } catch (error) {
-      console.error('checkAuthStateForGuard: Error decoding token from localStorage.', error);
+      console.error('checkAuthStateForGuard: Error decoding token from localStorage.', error)
       // If token is invalid/corrupt, treat as not logged in
-      localStorage.removeItem('accessToken'); // Clean up invalid token
-      localStorage.removeItem('refreshToken');
-      return false;
+      localStorage.removeItem('accessToken') // Clean up invalid token
+      localStorage.removeItem('refreshToken')
+      return false
     }
   } else {
     // Path 2: globalAuth instance exists, use its checkAuthStatus method
-    console.log('checkAuthStateForGuard: Using globalAuth instance.');
+    console.log('checkAuthStateForGuard: Using globalAuth instance.')
     try {
       // The original called checkAuthStatus and then returned state.isLoggedIn.
       // Let's replicate that. checkAuthStatus might handle refresh internally.
-      await authInstance.checkAuthStatus(); // Ensure status is up-to-date
-      const isLoggedIn = authInstance.state.isLoggedIn;
-      console.log('checkAuthStateForGuard: globalAuth check complete. Logged in:', isLoggedIn);
-      return isLoggedIn; // Return the state after checking
+      await authInstance.checkAuthStatus() // Ensure status is up-to-date
+      const isLoggedIn = authInstance.state.isLoggedIn
+      console.log('checkAuthStateForGuard: globalAuth check complete. Logged in:', isLoggedIn)
+      return isLoggedIn // Return the state after checking
     } catch (error) {
-      console.error('checkAuthStateForGuard: Error during globalAuth.checkAuthStatus().', error);
+      console.error('checkAuthStateForGuard: Error during globalAuth.checkAuthStatus().', error)
       // If the check fails, assume not logged in for guard purposes
-      return false;
+      return false
     }
   }
 }

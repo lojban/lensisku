@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-const apiBaseUrl = (import.meta.env.VITE_BASE_URL ?? '/api')
+const apiBaseUrl = import.meta.env.VITE_BASE_URL ?? '/api'
 
 // Create axios instance with base URL
 export const api = axios.create({
@@ -33,15 +33,16 @@ api.interceptors.response.use(
 
     if (error.response?.status === 401 && !originalRequest._retry) {
       // Don't try to refresh for auth-related endpoints
-      const isAuthEndpoint = originalRequest.url === '/auth/login' || 
-                            originalRequest.url === '/auth/logout' || 
-                            originalRequest.url === '/auth/refresh';
-      
+      const isAuthEndpoint =
+        originalRequest.url === '/auth/login' ||
+        originalRequest.url === '/auth/logout' ||
+        originalRequest.url === '/auth/refresh'
+
       if (isAuthEndpoint) {
         if (originalRequest.url === '/auth/refresh' && authInstance) {
-          authInstance.logout();
+          authInstance.logout()
         }
-        return Promise.reject(error);
+        return Promise.reject(error)
       }
 
       if (isRefreshing) {
@@ -61,28 +62,28 @@ api.interceptors.response.use(
           throw new Error('Auth instance not initialized')
         }
 
-        const refreshed = await authInstance.refreshAccessToken();
-        isRefreshing = false; // Reset refreshing status
+        const refreshed = await authInstance.refreshAccessToken()
+        isRefreshing = false // Reset refreshing status
 
         if (refreshed) {
-          refreshSubscribers.forEach((callback) => callback(authInstance.state.accessToken));
-          refreshSubscribers = [];
-          originalRequest.headers['Authorization'] = `Bearer ${authInstance.state.accessToken}`; // Ensure header is set for retry
-          return api(originalRequest);
+          refreshSubscribers.forEach((callback) => callback(authInstance.state.accessToken))
+          refreshSubscribers = []
+          originalRequest.headers['Authorization'] = `Bearer ${authInstance.state.accessToken}` // Ensure header is set for retry
+          return api(originalRequest)
         } else {
           // If refresh failed, logout the user
           authInstance.logout()
           return Promise.reject(error)
         }
       } catch (err) {
-        isRefreshing = false; // Reset refreshing status
-        refreshSubscribers = [];
+        isRefreshing = false // Reset refreshing status
+        refreshSubscribers = []
 
         // On refresh error, logout and redirect
         if (authInstance) {
-          authInstance.logout();
+          authInstance.logout()
         }
-        return Promise.reject(err); // Propagate the error from the refresh attempt
+        return Promise.reject(err) // Propagate the error from the refresh attempt
       }
     }
     return Promise.reject(error)
@@ -110,9 +111,7 @@ api.interceptors.request.use(
 
 // API endpoints
 export const getMessageDetails = (id) => api.get(`/mail/message/${id}`)
-export const voteSpamMessage = (messageId) =>
-  api.post(`/mail/messages/${messageId}/spam-vote`)
-
+export const voteSpamMessage = (messageId) => api.post(`/mail/messages/${messageId}/spam-vote`)
 
 // Bulk Import endpoints
 export const getBulkImportClients = () => api.get('/jbovlaste/bulk-import/clients')
@@ -133,10 +132,10 @@ export const signup = (userData) => api.post('/auth/signup', userData)
 export const performBackendLogout = () => {
   // Create a new request config with Authorization header
   const config = {
-    headers: { Authorization: `Bearer ${localStorage.getItem('accessToken')}` }
-  };
+    headers: { Authorization: `Bearer ${localStorage.getItem('accessToken')}` },
+  }
   // Explicitly pass the empty body and config
-  return api.post('/auth/logout', {}, config);
+  return api.post('/auth/logout', {}, config)
 }
 
 // Profile endpoints
@@ -150,14 +149,16 @@ export const listUsers = (params) => api.get('/users', { params })
 // Valsi endpoints
 export const getLanguages = () => api.get('/language/languages')
 export const fetchDefinitionsTypes = () => api.get(`/jbovlaste/types`)
-export const analyzeWord = (word, sourceLangId = 1) => api.post('/language/analyze_word', { word, source_langid: sourceLangId })
+export const analyzeWord = (word, sourceLangId = 1) =>
+  api.post('/language/analyze_word', { word, source_langid: sourceLangId })
 export const addValsi = (valsiData) => api.post('/jbovlaste/valsi', valsiData)
 export const searchDefinitions = (params, signal) => {
   const endpoint = params.semantic ? '/jbovlaste/semantic-search' : '/jbovlaste/definitions'
   // Ensure source_langid is included if provided
-  const finalParams = { ...params };
-  if (finalParams.source_langid === 1) { // Don't send default
-    delete finalParams.source_langid;
+  const finalParams = { ...params }
+  if (finalParams.source_langid === 1) {
+    // Don't send default
+    delete finalParams.source_langid
   }
   return api.get(endpoint, { params: finalParams, signal })
 }
@@ -165,9 +166,10 @@ export const searchDefinitions = (params, signal) => {
 // Fast search - forces use of fast_search_definitions endpoint regardless of login status
 export const fastSearchDefinitions = (params, signal) => {
   // Ensure source_langid is included if provided
-  const finalParams = { ...params, fast: true };
-  if (finalParams.source_langid === 1) { // Don't send default
-    delete finalParams.source_langid;
+  const finalParams = { ...params, fast: true }
+  if (finalParams.source_langid === 1) {
+    // Don't send default
+    delete finalParams.source_langid
   }
   // Force fast search by including 'fast=true' parameter
   return api.get('/jbovlaste/definitions', { params: finalParams, signal })
@@ -202,7 +204,8 @@ export const getValsiAndDefinitionDetails = async (valsiId, definitionId) => {
 }
 
 // Recent changes
-export const getRecentChanges = (params, signal) => api.get('/jbovlaste/changes', { params, signal })
+export const getRecentChanges = (params, signal) =>
+  api.get('/jbovlaste/changes', { params, signal })
 
 // Voting endpoints
 export const voteDefinition = (definitionId, downvote = false) =>
@@ -394,9 +397,10 @@ export const list_comments = (params, signal) => api.get('/comments/list', { par
 
 export const list_definitions = (params, signal) => {
   // Ensure source_langid is included if provided
-  const finalParams = { ...params };
-  if (finalParams.source_langid === 1) { // Don't send default
-    delete finalParams.source_langid;
+  const finalParams = { ...params }
+  if (finalParams.source_langid === 1) {
+    // Don't send default
+    delete finalParams.source_langid
   }
   return api.get('/jbovlaste/definitions/list', { params: finalParams, signal })
 }
@@ -501,8 +505,7 @@ export const unlinkDefinitions = (definitionId, translationId) =>
 export const getDefinitionTranslations = (definitionId) =>
   api.get(`/jbovlaste/definitions/${definitionId}/translations`)
 
-export const getDefinitionLink = (id) =>
-  api.get(`/jbovlaste/definition-links/${id}`)
+export const getDefinitionLink = (id) => api.get(`/jbovlaste/definition-links/${id}`)
 
 export const exportLinkedPairs = (fromLang, toLang) =>
   api.get('/jbovlaste/definitions/export-pairs', {

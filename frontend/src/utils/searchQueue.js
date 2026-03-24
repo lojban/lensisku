@@ -1,9 +1,9 @@
 /**
  * Search Queue Utility
- * 
+ *
  * Manages search request queues to prevent race conditions where
  * older search results overwrite newer ones in the UI.
- * 
+ *
  * Features:
  * - Tracks request IDs to identify the latest request
  * - Cancels previous requests using AbortController
@@ -115,7 +115,7 @@ export async function executeSearch(queue, searchFn, onResult) {
 
   try {
     const result = await searchFn(signal)
-    
+
     // Check if this is still the latest request
     if (queue.shouldProcess(requestId)) {
       onResult(result)
@@ -132,11 +132,10 @@ export async function executeSearch(queue, searchFn, onResult) {
     if (error.name === 'AbortError' || error.code === 'ERR_CANCELED') {
       return
     }
-    
+
     // Only process errors for the latest request
     if (queue.shouldProcess(requestId)) {
       throw error
     }
   }
 }
-

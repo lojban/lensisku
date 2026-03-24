@@ -29,14 +29,23 @@
         </Dropdown>
       </div>
       <div class="relative flex-1 sm:-ml-px">
-        <input ref="searchInput" v-model="query" :placeholder="getPlaceholder"
+        <input
+          ref="searchInput"
+          v-model="query"
+          :placeholder="getPlaceholder"
           :class="`input-field w-full text-base h-10 border border-slate-300 sm:rounded-l-none ${query ? 'pr-10' : ''}`"
-          @input="handleInput">
+          @input="handleInput"
+        />
         <div class="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center">
-          <div v-if="isSearching" class="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-500" />
-          <button v-else-if="query"
+          <div
+            v-if="isSearching"
+            class="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-500"
+          />
+          <button
+            v-else-if="query"
             class="text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors duration-200 p-1 rounded-full"
-            @click="clearInput">
+            @click="clearInput"
+          >
             <X class="h-5 w-5" />
           </button>
         </div>
@@ -55,10 +64,20 @@ import { normalizeSearchQuery } from '@/utils/searchQueryUtils'
 const { t } = useI18n()
 
 const modes = ref([
-  { name: t('searchForm.modes.dictionary'), value: 'dictionary', icon: Book, color: 'text-blue-500' },
-  { name: t('searchForm.modes.comments'), value: 'comments', icon: Waves, color: 'text-purple-500' },
-  { name: t('searchForm.modes.muplis'), value: 'muplis', icon: List, color: 'text-teal-500' }
-]);
+  {
+    name: t('searchForm.modes.dictionary'),
+    value: 'dictionary',
+    icon: Book,
+    color: 'text-blue-500',
+  },
+  {
+    name: t('searchForm.modes.comments'),
+    value: 'comments',
+    icon: Waves,
+    color: 'text-purple-500',
+  },
+  { name: t('searchForm.modes.muplis'), value: 'muplis', icon: List, color: 'text-teal-500' },
+])
 
 const props = defineProps({
   initialQuery: {
@@ -68,14 +87,18 @@ const props = defineProps({
   initialMode: {
     type: String,
     default: 'semantic',
-  }
+  },
 })
 
 const emit = defineEmits(['search'])
 
 const searchInput = ref(null)
 const query = ref(normalizeSearchQuery(props.initialQuery))
-const mode = ref(modes.value.find(m => m.value === (props.initialMode === 'semantic' ? 'dictionary' : props.initialMode)) || modes.value[0])
+const mode = ref(
+  modes.value.find(
+    (m) => m.value === (props.initialMode === 'semantic' ? 'dictionary' : props.initialMode)
+  ) || modes.value[0]
+)
 const isSearching = ref(false)
 let searchTimeout = null
 
@@ -108,10 +131,10 @@ function handleInput() {
   query.value = normalizeSearchQuery(query.value)
   // Clear any pending timeouts to prevent stale searches
   clearSearchTimeout()
-  
+
   // Capture current query value to check in timeout
   const currentQuery = query.value
-  
+
   // Debounce the search - only trigger after user stops typing
   // This prevents excessive API calls while user is actively typing
   searchTimeout = window.setTimeout(() => {
@@ -166,7 +189,7 @@ watch(
   () => props.initialMode,
   (newValue) => {
     const targetModeValue = newValue === 'semantic' ? 'dictionary' : newValue
-    const newMode = modes.value.find(m => m.value === targetModeValue)
+    const newMode = modes.value.find((m) => m.value === targetModeValue)
     if (newMode) {
       // Clear any pending timeouts when mode changes externally
       clearSearchTimeout()
@@ -185,7 +208,6 @@ function focusInput() {
 }
 
 defineExpose({
-  focusInput
+  focusInput,
 })
 </script>
-

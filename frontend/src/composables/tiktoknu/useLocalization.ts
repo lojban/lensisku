@@ -3,7 +3,8 @@ import { ref, watch } from 'vue'
 import { LANGUAGES } from './languages'
 
 export function useLocalization() {
-  if (typeof window === 'undefined') return { currentLanguage: ref(LANGUAGES[0]), setLanguage: () => {} }
+  if (typeof window === 'undefined')
+    return { currentLanguage: ref(LANGUAGES[0]), setLanguage: () => {} }
   const getInitialLanguage = () => {
     const savedLanguageId = localStorage.getItem('lang')
     return LANGUAGES.find((lang) => lang.id === savedLanguageId) || LANGUAGES[0]

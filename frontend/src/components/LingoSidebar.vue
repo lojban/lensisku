@@ -10,36 +10,16 @@
         <GraduationCap class="h-5 w-5 shrink-0 text-slate-400" />
         <span>{{ t('lingo.appName') }}</span>
       </span>
-      <LingoSidebarItem
-        label="Learn"
-        href="/lingo/learn"
-        icon="learn"
-        :horizontal="true"
-      />
-      <LingoSidebarItem
-        label="Courses"
-        href="/lingo/courses"
-        icon="courses"
-        :horizontal="true"
-      />
+      <LingoSidebarItem label="Learn" href="/lingo/learn" icon="learn" :horizontal="true" />
+      <LingoSidebarItem label="Courses" href="/lingo/courses" icon="courses" :horizontal="true" />
       <LingoSidebarItem
         label="Leaderboard"
         href="/lingo/leaderboard"
         icon="leaderboard"
         :horizontal="true"
       />
-      <LingoSidebarItem
-        label="Quests"
-        href="/lingo/quests"
-        icon="quests"
-        :horizontal="true"
-      />
-      <LingoSidebarItem
-        label="Shop"
-        href="/lingo/shop"
-        icon="shop"
-        :horizontal="true"
-      />
+      <LingoSidebarItem label="Quests" href="/lingo/quests" icon="quests" :horizontal="true" />
+      <LingoSidebarItem label="Shop" href="/lingo/shop" icon="shop" :horizontal="true" />
     </nav>
   </aside>
 </template>

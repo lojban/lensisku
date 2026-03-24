@@ -1,24 +1,43 @@
 <template>
   <h2 class="text-xl sm:text-2xl font-bold text-gray-800 select-none">
-    {{ isEditMode ? t('upsertDefinition.editTitle') : prefilledWord ? t('upsertDefinition.addTitle') :
-      t('upsertDefinition.addEntryTitle') }}
+    {{
+      isEditMode
+        ? t('upsertDefinition.editTitle')
+        : prefilledWord
+          ? t('upsertDefinition.addTitle')
+          : t('upsertDefinition.addEntryTitle')
+    }}
   </h2>
 
   <form class="space-y-4 sm:space-y-6" @submit.prevent="submitValsi">
     <!-- Word Input and Analysis -->
     <div>
-      <label for="word" class="block text-sm font-medium text-blue-700">{{ t('upsertDefinition.wordLabel') }} <span
-          class="text-red-500">{{ t('upsertDefinition.required') }}</span></label>
+      <label for="word" class="block text-sm font-medium text-blue-700"
+        >{{ t('upsertDefinition.wordLabel') }}
+        <span class="text-red-500">{{ t('upsertDefinition.required') }}</span></label
+      >
       <div class="flex flex-col sm:flex-row gap-2 sm:space-x-2">
         <div class="flex-1 w-full">
           <!-- Added wrapper div with flex-1 -->
-          <DynamicInput id="word" v-model="word" :is-analyzing="isAnalyzing" :is-submitting="isSubmitting"
-            :prefilled-word="prefilledWord" :is-edit-mode="isEditMode" @clear-analysis="clearAnalysis" />
+          <DynamicInput
+            id="word"
+            v-model="word"
+            :is-analyzing="isAnalyzing"
+            :is-submitting="isSubmitting"
+            :prefilled-word="prefilledWord"
+            :is-edit-mode="isEditMode"
+            @clear-analysis="clearAnalysis"
+          />
         </div>
         <!-- Only show Analyze button when adding new word -->
         <div class="flex items-center justify-end">
-          <button v-if="!isEditMode" type="button" class="w-auto h-8 btn-aqua-orange text-base"
-            :disabled="isAnalyzing || isSubmitting || word === ''" @click="doAnalyzeWord">
+          <button
+            v-if="!isEditMode"
+            type="button"
+            class="w-auto h-8 btn-aqua-orange text-base"
+            :disabled="isAnalyzing || isSubmitting || word === ''"
+            @click="doAnalyzeWord"
+          >
             <div class="flex items-center gap-2">
               <Loader v-if="isAnalyzing" class="h-4 w-4 animate-spin" />
               <Search v-else class="h-4 w-4" />
@@ -37,7 +56,11 @@
         </p>
       </AlertComponent>
 
-      <AlertComponent v-if="recommended" type="tip" :label="t('upsertDefinition.recommendedWordLabel')">
+      <AlertComponent
+        v-if="recommended"
+        type="tip"
+        :label="t('upsertDefinition.recommendedWordLabel')"
+      >
         <div class="flex items-center gap-2 justify-start">
           <h2 class="font-semibold truncate">
             {{ recommended }}
@@ -51,8 +74,15 @@
 
       <div v-if="problems" class="space-y-4">
         <div v-for="(issues, category) in problems" :key="category">
-          <AlertComponent v-if="issues.length > 0" type="error"
-            :label="category === 'regular' ? t('upsertDefinition.similarRegularGismu') : t('upsertDefinition.similarExperimentalGismu')">
+          <AlertComponent
+            v-if="issues.length > 0"
+            type="error"
+            :label="
+              category === 'regular'
+                ? t('upsertDefinition.similarRegularGismu')
+                : t('upsertDefinition.similarExperimentalGismu')
+            "
+          >
             <ul class="list-disc list-inside space-y-1">
               <li v-for="(problem, index) in issues" :key="index" class="font-semibold truncate">
                 {{ problem }}
@@ -67,29 +97,51 @@
     <div class="flex flex-col sm:flex-row gap-4">
       <!-- Optional Entry Language Selection (Only for new entries) -->
       <div class="flex-1">
-        <label for="source-language" class="block text-sm font-medium text-blue-700">{{
-          t('upsertDefinition.sourceLanguageLabel') }} <span class="text-red-500">{{
-            t('upsertDefinition.required') }}</span></label>
-        <select id="source-language" v-model="sourceLangId" required class="input-field w-full h-10"
-          :disabled="isLoading || isSubmitting || isEditMode || prefilledWord" :readonly="prefilledWord || isEditMode">
+        <label for="source-language" class="block text-sm font-medium text-blue-700"
+          >{{ t('upsertDefinition.sourceLanguageLabel') }}
+          <span class="text-red-500">{{ t('upsertDefinition.required') }}</span></label
+        >
+        <select
+          id="source-language"
+          v-model="sourceLangId"
+          required
+          class="input-field w-full h-10"
+          :disabled="isLoading || isSubmitting || isEditMode || prefilledWord"
+          :readonly="prefilledWord || isEditMode"
+        >
           <!-- Default Lojban option -->
           <option v-for="lang in languages" :key="lang.id" :value="lang.id">
             {{ lang.real_name }} ({{ lang.english_name }})
           </option>
         </select>
         <p class="mt-1 text-xs text-gray-500">
-          {{ t('upsertDefinition.sourceLanguageNote', `The language the word itself belongs to. Cannot be changed after
-          creation.`) }}
+          {{
+            t(
+              'upsertDefinition.sourceLanguageNote',
+              `The language the word itself belongs to. Cannot be changed after
+          creation.`
+            )
+          }}
         </p>
       </div>
 
       <!-- Language Selection -->
       <div class="flex-1">
-        <label for="language" class="block text-sm font-medium text-blue-700">{{ t('upsertDefinition.languageLabel') }}
-          <span class="text-red-500">{{ t('upsertDefinition.required') }}</span></label>
-        <select id="language" v-model="langId" required class="input-field w-full h-10" :class="{
-          'border-red-500 focus:ring-red-500 focus:border-red-500': shouldHighlightMissing && missingFields.langId
-        }" :disabled="isLoading || isSubmitting">
+        <label for="language" class="block text-sm font-medium text-blue-700"
+          >{{ t('upsertDefinition.languageLabel') }}
+          <span class="text-red-500">{{ t('upsertDefinition.required') }}</span></label
+        >
+        <select
+          id="language"
+          v-model="langId"
+          required
+          class="input-field w-full h-10"
+          :class="{
+            'border-red-500 focus:ring-red-500 focus:border-red-500':
+              shouldHighlightMissing && missingFields.langId,
+          }"
+          :disabled="isLoading || isSubmitting"
+        >
           <option value="">
             {{ t('upsertDefinition.selectLanguagePlaceholder') }}
           </option>
@@ -103,12 +155,17 @@
     <!-- Rafsi Input (Lojban only) -->
     <div v-if="parseInt(sourceLangId) === 1">
       <label for="rafsi" class="block text-sm font-medium text-blue-700">
-        {{ t('upsertDefinition.rafsiLabel') }} <span class="text-gray-500 font-normal">{{
-          t('upsertDefinition.optional') }}</span>
+        {{ t('upsertDefinition.rafsiLabel') }}
+        <span class="text-gray-500 font-normal">{{ t('upsertDefinition.optional') }}</span>
       </label>
-      <input id="rafsi" v-model="rafsi" type="text"
-        :placeholder="t('upsertDefinition.rafsiPlaceholder')" class="input-field w-full"
-        :disabled="isSubmitting" />
+      <input
+        id="rafsi"
+        v-model="rafsi"
+        type="text"
+        :placeholder="t('upsertDefinition.rafsiPlaceholder')"
+        class="input-field w-full"
+        :disabled="isSubmitting"
+      />
       <p class="mt-1 text-xs text-gray-500">
         {{ t('upsertDefinition.rafsiNote') }}
       </p>
@@ -117,12 +174,17 @@
     <!-- Selmaho Input (cmavo / experimental cmavo only) -->
     <div v-if="showSelmahoField">
       <label for="selmaho" class="block text-sm font-medium text-blue-700">
-        {{ t('upsertDefinition.selmahoLabel') }} <span class="text-gray-500 font-normal">{{
-          t('upsertDefinition.optional') }}</span>
+        {{ t('upsertDefinition.selmahoLabel') }}
+        <span class="text-gray-500 font-normal">{{ t('upsertDefinition.optional') }}</span>
       </label>
-      <input id="selmaho" v-model="selmaho" type="text"
-        :placeholder="t('upsertDefinition.selmahoPlaceholder')" class="input-field w-full"
-        :disabled="isSubmitting" />
+      <input
+        id="selmaho"
+        v-model="selmaho"
+        type="text"
+        :placeholder="t('upsertDefinition.selmahoPlaceholder')"
+        class="input-field w-full"
+        :disabled="isSubmitting"
+      />
       <p class="mt-1 text-xs text-gray-500">
         {{ t('upsertDefinition.selmahoNote') }}
       </p>
@@ -131,16 +193,27 @@
     <!-- Definition Input -->
     <div>
       <div class="flex items-center justify-between">
-        <label for="definition" class="block text-sm font-medium text-blue-700">{{ t('upsertDefinition.definitionLabel')
-        }} <span class="text-red-500">{{ t('upsertDefinition.required') }}</span></label>
+        <label for="definition" class="block text-sm font-medium text-blue-700"
+          >{{ t('upsertDefinition.definitionLabel') }}
+          <span class="text-red-500">{{ t('upsertDefinition.required') }}</span></label
+        >
         <span class="text-xs text-gray-500">{{ t('upsertDefinition.requiredUnlessImage') }}</span>
       </div>
-      <textarea id="definition" v-model="definition" :required="!imageData" rows="4" :class="{
-        'textarea-field': true,
-        'border-red-300 focus:ring-red-500 focus:border-red-500': definitionError,
-        'border-red-500 focus:ring-red-500 focus:border-red-500': shouldHighlightMissing && missingFields.definition && !definitionError,
-        'border-blue-300 focus:ring-blue-500 focus:border-blue-500': !definitionError && !(shouldHighlightMissing && missingFields.definition),
-      }" :disabled="isSubmitting" />
+      <textarea
+        id="definition"
+        v-model="definition"
+        :required="!imageData"
+        rows="4"
+        :class="{
+          'textarea-field': true,
+          'border-red-300 focus:ring-red-500 focus:border-red-500': definitionError,
+          'border-red-500 focus:ring-red-500 focus:border-red-500':
+            shouldHighlightMissing && missingFields.definition && !definitionError,
+          'border-blue-300 focus:ring-blue-500 focus:border-blue-500':
+            !definitionError && !(shouldHighlightMissing && missingFields.definition),
+        }"
+        :disabled="isSubmitting"
+      />
       <p v-if="definitionError" class="mt-2 text-xs sm:text-sm text-red-600">
         {{ definitionError }}
       </p>
@@ -151,49 +224,83 @@
 
     <div>
       {{ imageData }}
-      <ImageUpload v-model="imageData" :definition-id="editDefinitionId" :has-existing-image="hasImage"
-        :note="t('upsertDefinition.requiredUnlessDefinitionProvided')" @image-loaded="handleImageLoaded"
-        @remove-image="handleRemoveImage" />
+      <ImageUpload
+        v-model="imageData"
+        :definition-id="editDefinitionId"
+        :has-existing-image="hasImage"
+        :note="t('upsertDefinition.requiredUnlessDefinitionProvided')"
+        @image-loaded="handleImageLoaded"
+        @remove-image="handleRemoveImage"
+      />
     </div>
     <!-- Notes Input -->
     <div>
       <label for="notes" class="block text-sm font-medium text-blue-700">
-        {{ t('upsertDefinition.notesLabel') }} <span class="text-gray-500 font-normal">{{ t('upsertDefinition.optional')
-        }}</span>
+        {{ t('upsertDefinition.notesLabel') }}
+        <span class="text-gray-500 font-normal">{{ t('upsertDefinition.optional') }}</span>
       </label>
-      <textarea id="notes" v-model="notes" rows="3" class="textarea-field" :disabled="isSubmitting" />
+      <textarea
+        id="notes"
+        v-model="notes"
+        rows="3"
+        class="textarea-field"
+        :disabled="isSubmitting"
+      />
     </div>
 
     <!-- Etymology Input -->
     <div>
       <label for="etymology" class="block text-sm font-medium text-blue-700">
-        {{ t('upsertDefinition.etymologyLabel') }} <span class="text-gray-500 font-normal">{{
-          t('upsertDefinition.optional') }}</span>
+        {{ t('upsertDefinition.etymologyLabel') }}
+        <span class="text-gray-500 font-normal">{{ t('upsertDefinition.optional') }}</span>
       </label>
-      <textarea id="etymology" v-model="etymology" rows="3" class="textarea-field" :disabled="isSubmitting" />
+      <textarea
+        id="etymology"
+        v-model="etymology"
+        rows="3"
+        class="textarea-field"
+        :disabled="isSubmitting"
+      />
     </div>
 
     <!-- Jargon Input -->
     <div>
       <label for="jargon" class="block text-sm font-medium text-blue-700">
-        {{ t('upsertDefinition.jargonLabel') }} <span class="text-gray-500 font-normal">{{
-          t('upsertDefinition.optional') }}</span>
+        {{ t('upsertDefinition.jargonLabel') }}
+        <span class="text-gray-500 font-normal">{{ t('upsertDefinition.optional') }}</span>
       </label>
-      <textarea id="jargon" v-model="jargon" rows="2" class="textarea-field" :disabled="isSubmitting" />
+      <textarea
+        id="jargon"
+        v-model="jargon"
+        rows="2"
+        class="textarea-field"
+        :disabled="isSubmitting"
+      />
     </div>
 
     <!-- Gloss Keywords -->
     <div>
       <label class="block text-sm font-medium text-blue-700 mb-2">
-        {{ t('upsertDefinition.glossKeywordsLabel') }} <span class="text-gray-500 font-normal">{{
-          t('upsertDefinition.optional') }}</span>
+        {{ t('upsertDefinition.glossKeywordsLabel') }}
+        <span class="text-gray-500 font-normal">{{ t('upsertDefinition.optional') }}</span>
       </label>
-      <div v-for="(keyword, index) in glossKeywords" :key="'gloss' + index"
-        class="flex flex-col sm:flex-row gap-2 sm:space-x-2 mb-2 items-center">
-        <input v-model="keyword.word" type="text" :placeholder="t('upsertDefinition.keywordPlaceholder')"
-          class="flex-1 input-field w-full">
-        <input v-model="keyword.meaning" type="text" :placeholder="t('upsertDefinition.meaningPlaceholder')"
-          class="flex-1 input-field w-full">
+      <div
+        v-for="(keyword, index) in glossKeywords"
+        :key="'gloss' + index"
+        class="flex flex-col sm:flex-row gap-2 sm:space-x-2 mb-2 items-center"
+      >
+        <input
+          v-model="keyword.word"
+          type="text"
+          :placeholder="t('upsertDefinition.keywordPlaceholder')"
+          class="flex-1 input-field w-full"
+        />
+        <input
+          v-model="keyword.meaning"
+          type="text"
+          :placeholder="t('upsertDefinition.meaningPlaceholder')"
+          class="flex-1 input-field w-full"
+        />
         <div class="flex flex-wrap space-x-2">
           <button type="button" class="sm:w-auto btn-aqua-red" @click="removeGlossKeyword(index)">
             <CircleMinus class="h-4 w-4" />
@@ -210,15 +317,26 @@
     <!-- Place Keywords -->
     <div>
       <label class="block text-sm font-medium text-blue-700 mb-2">
-        {{ t('upsertDefinition.placeKeywordsLabel') }} <span class="text-gray-500 font-normal">{{
-          t('upsertDefinition.optional') }}</span>
+        {{ t('upsertDefinition.placeKeywordsLabel') }}
+        <span class="text-gray-500 font-normal">{{ t('upsertDefinition.optional') }}</span>
       </label>
-      <div v-for="(keyword, index) in placeKeywords" :key="'place' + index"
-        class="flex flex-col sm:flex-row gap-2 sm:space-x-2 mb-2 items-center">
-        <input v-model="keyword.word" type="text" :placeholder="t('upsertDefinition.keywordPlaceholder')"
-          class="flex-1 input-field w-full">
-        <input v-model="keyword.meaning" type="text" :placeholder="t('upsertDefinition.meaningPlaceholder')"
-          class="flex-1 input-field w-full">
+      <div
+        v-for="(keyword, index) in placeKeywords"
+        :key="'place' + index"
+        class="flex flex-col sm:flex-row gap-2 sm:space-x-2 mb-2 items-center"
+      >
+        <input
+          v-model="keyword.word"
+          type="text"
+          :placeholder="t('upsertDefinition.keywordPlaceholder')"
+          class="flex-1 input-field w-full"
+        />
+        <input
+          v-model="keyword.meaning"
+          type="text"
+          :placeholder="t('upsertDefinition.meaningPlaceholder')"
+          class="flex-1 input-field w-full"
+        />
         <div class="flex flex-wrap space-x-2">
           <button type="button" class="sm:w-auto btn-aqua-red" @click="removePlaceKeyword(index)">
             <CircleMinus class="h-4 w-4" />
@@ -234,9 +352,11 @@
 
     <div v-if="!isEditMode || (isEditMode && isAuthor)" class="mb-4">
       <label class="flex items-center space-x-2">
-        <input v-model="ownerOnly" type="checkbox" class="checkbox-toggle">
-        <span class="text-xs sm:text-sm text-gray-700">{{ t('upsertDefinition.ownerOnlyLabel') }} <span
-            class="text-gray-500">{{ t('upsertDefinition.optional') }}</span></span>
+        <input v-model="ownerOnly" type="checkbox" class="checkbox-toggle" />
+        <span class="text-xs sm:text-sm text-gray-700"
+          >{{ t('upsertDefinition.ownerOnlyLabel') }}
+          <span class="text-gray-500">{{ t('upsertDefinition.optional') }}</span></span
+        >
       </label>
       <p class="mt-1 text-xs sm:text-sm text-gray-500">
         {{ t('upsertDefinition.ownerOnlyNote') }}
@@ -246,7 +366,11 @@
     <!-- Submit / Analyze Button -->
     <div class="flex justify-center w-full">
       <!-- Show Submit button if form is valid and not submitting -->
-      <button v-if="isValid && !isSubmitting" type="submit" class="max-w-fit btn-aqua-emerald h-10 text-base">
+      <button
+        v-if="isValid && !isSubmitting"
+        type="submit"
+        class="max-w-fit btn-aqua-emerald h-10 text-base"
+      >
         {{
           isEditMode
             ? t('upsertDefinition.updateButton')
@@ -257,8 +381,13 @@
       </button>
 
       <!-- Show Analyze button if form is invalid and not submitting -->
-      <button v-else-if="!isValid && !isSubmitting" type="button" class="max-w-fit btn-aqua-orange h-10 text-base"
-        :disabled="isAnalyzing || word === ''" @click="analyzeAndScroll">
+      <button
+        v-else-if="!isValid && !isSubmitting"
+        type="button"
+        class="max-w-fit btn-aqua-orange h-10 text-base"
+        :disabled="isAnalyzing || word === ''"
+        @click="analyzeAndScroll"
+      >
         <div class="flex items-center gap-2">
           <Loader v-if="isAnalyzing" class="h-4 w-4 animate-spin" />
           <Search v-else class="h-4 w-4" />
@@ -267,7 +396,12 @@
       </button>
 
       <!-- Show disabled state during submission -->
-      <button v-else-if="isSubmitting" type="button" class="max-w-fit btn-aqua-emerald h-10 text-base" disabled>
+      <button
+        v-else-if="isSubmitting"
+        type="button"
+        class="max-w-fit btn-aqua-emerald h-10 text-base"
+        disabled
+      >
         {{
           isEditMode
             ? isSubmitting
@@ -377,7 +511,7 @@ const hasImage = ref(false)
 const imageData = ref(null)
 const removeImage = ref(false)
 
-useSeoHead({ title: t("upsertDefinition.addEntryTitle") }, locale.value)
+useSeoHead({ title: t('upsertDefinition.addEntryTitle') }, locale.value)
 // UI state
 const definitionError = ref('')
 const success = ref(false)
@@ -499,13 +633,13 @@ const removePlaceKeyword = (index) => {
 const LAST_LANG_KEY = 'lastSelectedLanguage'
 
 const setLastLanguage = (langId) => {
-  if (typeof window === 'undefined') return;
+  if (typeof window === 'undefined') return
 
   localStorage.setItem(LAST_LANG_KEY, langId)
 }
 
 const getLastLanguage = () => {
-  if (typeof window === 'undefined') return;
+  if (typeof window === 'undefined') return
 
   return localStorage.getItem(LAST_LANG_KEY)
 }
@@ -534,24 +668,24 @@ watch(langId, (newValue) => {
 
 // Initialization
 onMounted(async () => {
-  const definitionId = props.id || route.params.id;
+  const definitionId = props.id || route.params.id
   if (definitionId) {
-    isEditMode.value = true;
-    useSeoHead({ title: 'Updating entry' }, locale.value);
-    editDefinitionId.value = definitionId;
-    await loadDefinitionData(definitionId); // This will set sourceLangId from loaded data
+    isEditMode.value = true
+    useSeoHead({ title: 'Updating entry' }, locale.value)
+    editDefinitionId.value = definitionId
+    await loadDefinitionData(definitionId) // This will set sourceLangId from loaded data
   } else {
-    const wordFromUrl = route.query.word;
+    const wordFromUrl = route.query.word
     if (wordFromUrl) {
-      word.value = decodeURIComponent(wordFromUrl);
-      prefilledWord.value = true;
-      await doAnalyzeWord(); // Analyze prefilled word
+      word.value = decodeURIComponent(wordFromUrl)
+      prefilledWord.value = true
+      await doAnalyzeWord() // Analyze prefilled word
     } else {
-      sourceLangId.value = 1; // Default for completely new entry
+      sourceLangId.value = 1 // Default for completely new entry
     }
-    isAuthor.value = true;
+    isAuthor.value = true
   }
-  await loadLanguages(); // Load languages after potentially setting sourceLangId
+  await loadLanguages() // Load languages after potentially setting sourceLangId
 
   // Handle translation pre-filling
   const translateFromId = route.query.translate_from_def
@@ -603,8 +737,11 @@ const doAnalyzeWord = async () => {
       clearError()
       wordType.value = response.data.word_type
       word.value = response.data.text
-      recommended.value = response.data.recommended && response.data.recommended !== word.value ? response.data.recommended : ''
-      problems.value = response.data.problems || {};
+      recommended.value =
+        response.data.recommended && response.data.recommended !== word.value
+          ? response.data.recommended
+          : ''
+      problems.value = response.data.problems || {}
     } else {
       success.value = false // Explicitly set success to false on API failure
       wordType.value = ''
@@ -664,7 +801,7 @@ const submitValsi = async () => {
       image: imageData.value,
       remove_image: removeImage.value,
       // Always include source_langid when adding a new definition (defaults to 1)
-      ...(!isEditMode.value && { source_langid: parseInt(sourceLangId.value) || 1 })
+      ...(!isEditMode.value && { source_langid: parseInt(sourceLangId.value) || 1 }),
     }
 
     // Include keywords if they're not empty
@@ -687,28 +824,32 @@ const submitValsi = async () => {
       isExistingWord.value = response.data.existing_word || false
 
       const newDefinitionId = response.data.definition_id || editDefinitionId.value
-      
+
       // Auto-link if translation source is present
       const sourceDefId = route.query.translate_from_def
       if (sourceDefId && !isEditMode.value) {
         try {
           await linkDefinitions(sourceDefId, newDefinitionId)
         } catch (linkError) {
-          console.error("Failed to auto-link definitions:", linkError)
+          console.error('Failed to auto-link definitions:', linkError)
           showError(t('upsertDefinition.linkError'))
         }
       }
 
       // Wait a moment to show success message
       setTimeout(() => {
-        router.push(`/valsi/${word.value.replace(/ /g, '_')}?highlight_definition_id=${newDefinitionId}`)
+        router.push(
+          `/valsi/${word.value.replace(/ /g, '_')}?highlight_definition_id=${newDefinitionId}`
+        )
       }, 1500)
     } else {
       showError(formatDefinitionError(response.data.error) || t('upsertDefinition.saveError'))
       definitionError.value = ''
     }
   } catch (e) {
-    showError(formatDefinitionError(e.response?.data?.error) || t('upsertDefinition.saveErrorGeneric'))
+    showError(
+      formatDefinitionError(e.response?.data?.error) || t('upsertDefinition.saveErrorGeneric')
+    )
     isSubmitting.value = false
   }
 }

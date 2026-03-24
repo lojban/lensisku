@@ -12,10 +12,7 @@
         <h3 class="text-lg font-medium select-none">
           {{ title }}
         </h3>
-        <button
-          class="text-gray-400 hover:text-gray-600"
-          @click="close"
-        >
+        <button class="text-gray-400 hover:text-gray-600" @click="close">
           <span class="text-xl font-medium">
             <X class="h-6 w-6" :title="t('modal.close')" />
           </span>
@@ -24,10 +21,7 @@
       <slot />
 
       <!-- Footer slot -->
-      <div
-        v-if="$slots.footer"
-        class="border-t pt-4 mt-4"
-      >
+      <div v-if="$slots.footer" class="border-t pt-4 mt-4">
         <slot name="footer" />
       </div>
     </div>

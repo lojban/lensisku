@@ -3,10 +3,7 @@
     <LoadingSpinner v-if="isLoading" />
 
     <!-- Corpus entries with batched rendering -->
-    <div
-      v-else-if="!isLoading && !error"
-      class="grid gap-4 mb-6"
-    >
+    <div v-else-if="!isLoading && !error" class="grid gap-4 mb-6">
       <!-- Decomposition display -->
       <AlertComponent
         v-if="decomposition?.length"
@@ -14,33 +11,25 @@
         :label="t('components.dictionaryEntries.decomposition')"
       >
         <div class="inline-flex items-center gap-1">
-          <template
-            v-for="(word, index) in decomposition"
-            :key="word"
-          >
+          <template v-for="(word, index) in decomposition" :key="word">
             <h2
               class="text-base font-semibold text-blue-700 hover:text-blue-800 hover:underline truncate flex-shrink-0"
             >
-              <RouterLink :to="{ path: `/valsi/${word.replace(/ /g, '_')}`, query: { langid: definitions[0]?.langid } }">
+              <RouterLink
+                :to="{
+                  path: `/valsi/${word.replace(/ /g, '_')}`,
+                  query: { langid: definitions[0]?.langid },
+                }"
+              >
                 {{ word }}
               </RouterLink>
             </h2>
-            <span
-              v-if="index < decomposition.length - 1"
-              class="text-aqua-500"
-            >+</span>
+            <span v-if="index < decomposition.length - 1" class="text-aqua-500">+</span>
           </template>
         </div>
       </AlertComponent>
-      <template
-        v-for="(batch, batchIndex) in definitionBatches"
-        :key="batchIndex"
-      >
-        <div
-          v-for="def in batch"
-          v-show="isVisible(batchIndex)"
-          :key="def.definitionid"
-        >
+      <template v-for="(batch, batchIndex) in definitionBatches" :key="batchIndex">
+        <div v-for="def in batch" v-show="isVisible(batchIndex)" :key="def.definitionid">
           <DefinitionCard
             :definition="def"
             :languages="languages"
@@ -55,25 +44,22 @@
       </template>
     </div>
 
-    <div
-      v-if="!isLoading && definitions.length === 0"
-      class="text-center py-8 text-gray-600"
-    >
+    <div v-if="!isLoading && definitions.length === 0" class="text-center py-8 text-gray-600">
       {{ t('components.dictionaryEntries.noEntries') }}
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue';
-import { useI18n } from 'vue-i18n';
+import { ref, computed, onMounted, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 
-import AlertComponent from '@/components/AlertComponent.vue';
-import LoadingSpinner from '@/components/LoadingSpinner.vue';
-import DefinitionCard from './DefinitionCard.vue';
+import AlertComponent from '@/components/AlertComponent.vue'
+import LoadingSpinner from '@/components/LoadingSpinner.vue'
+import DefinitionCard from './DefinitionCard.vue'
 
-const { t } = useI18n();
-defineEmits(['collection-updated']);
+const { t } = useI18n()
+defineEmits(['collection-updated'])
 
 const props = defineProps({
   definitions: {

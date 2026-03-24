@@ -1,6 +1,10 @@
 /** @type {import('tailwindcss').Config} */
 export default {
-  content: ['./index.html', './src/**/*.{vue,js,ts,jsx,tsx}', './packages/**/*.{vue,js,ts,jsx,tsx}'],
+  content: [
+    './index.html',
+    './src/**/*.{vue,js,ts,jsx,tsx}',
+    './packages/**/*.{vue,js,ts,jsx,tsx}',
+  ],
   theme: {
     extend: {},
   },
@@ -291,7 +295,7 @@ export default {
                 boxShadow:
                   '0 0.375em 0.5em rgba(0, 0, 0, 0.2), 0 0.125em 0.125em rgba(0, 0, 0, 0.3), inset 0 0.25em 0.25em rgba(0, 0, 0, 0.4), inset 0 0.375em 0.5em 0.25em #BBBBBB',
               },
-            }
+            },
           },
           '.btn-insert': {
             '@apply btn-base text-white bg-gradient-to-b from-blue-400 to-blue-500 border-blue-500 text-white enabled:hover:text-blue-500 enabled:hover:bg-gradient-to-b enabled:hover:from-white enabled:hover:to-white':
@@ -357,7 +361,8 @@ export default {
               {},
           },
           '.btn-link': {
-            '@apply btn-base text-blue-700 bg-blue-50 enabled:hover:bg-blue-200 border-blue-600': {},
+            '@apply btn-base text-blue-700 bg-blue-50 enabled:hover:bg-blue-200 border-blue-600':
+              {},
           },
           '.btn-previous, .btn-next': {
             '@apply btn-base text-gray-700 bg-gray-50 enabled:hover:bg-gray-200 border-gray-500':
@@ -420,14 +425,15 @@ export default {
                 '@apply border-r-0': {},
               },
               '&.btn-group-item-selected': {
-                '@apply bg-blue-100 border-blue-500 text-blue-700 ring-1 ring-blue-400 ring-inset': {},
+                '@apply bg-blue-100 border-blue-500 text-blue-700 ring-1 ring-blue-400 ring-inset':
+                  {},
               },
             },
           },
           '.btn-aqua-group-item': {
             borderRadius: 0,
             '&::after': {
-              background: 'none'
+              background: 'none',
             },
             '&:first-child:not(:last-child)': {
               '@apply z-10': {},

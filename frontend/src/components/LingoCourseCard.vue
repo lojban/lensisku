@@ -7,15 +7,14 @@
     @click="$emit('select', collection.collection_id)"
   >
     <div class="flex min-h-[24px] w-full items-center justify-end">
-      <div
-        v-if="isActive"
-        class="flex items-center justify-center rounded-md bg-green-600 p-1.5"
-      >
+      <div v-if="isActive" class="flex items-center justify-center rounded-md bg-green-600 p-1.5">
         <Check class="h-4 w-4 stroke-[3] text-white" />
       </div>
     </div>
 
-    <div class="flex h-[70px] w-[93px] shrink-0 items-center justify-center rounded-lg border border-neutral-200 bg-neutral-50 drop-shadow-md">
+    <div
+      class="flex h-[70px] w-[93px] shrink-0 items-center justify-center rounded-lg border border-neutral-200 bg-neutral-50 drop-shadow-md"
+    >
       <BookOpen class="h-9 w-9 text-green-600" />
     </div>
 

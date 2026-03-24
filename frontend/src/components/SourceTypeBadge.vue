@@ -8,9 +8,9 @@
 </template>
 
 <script setup>
-import { BookOpen, BookMarked, Mail } from 'lucide-vue-next';
-import { computed } from 'vue';
-import { useI18n } from 'vue-i18n';
+import { BookOpen, BookMarked, Mail } from 'lucide-vue-next'
+import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 const props = defineProps({
   /** One of: 'definition', 'valsi', 'mail' */
@@ -24,9 +24,9 @@ const props = defineProps({
     type: String,
     default: '',
   },
-});
+})
 
-const { t } = useI18n();
+const { t } = useI18n()
 
 const typeConfig = {
   definition: {
@@ -44,16 +44,14 @@ const typeConfig = {
     bg: 'bg-violet-50',
     text: 'text-violet-700',
   },
-};
+}
 
 const defaultLabels = {
   definition: () => t('components.commentItem.inDefinition'),
   valsi: () => t('components.commentItem.inValsi'),
   mail: () => t('home.waveSourceMail'),
-};
+}
 
-const config = computed(() => typeConfig[props.type]);
-const label = computed(() =>
-  props.label ? props.label : defaultLabels[props.type](),
-);
+const config = computed(() => typeConfig[props.type])
+const label = computed(() => (props.label ? props.label : defaultLabels[props.type]()))
 </script>

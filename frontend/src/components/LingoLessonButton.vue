@@ -5,10 +5,7 @@
     :style="nodeStyle"
   >
     <!-- Level button (clickable link) - no menu inside so it never blocks the click -->
-    <RouterLink
-      :to="studyUrl"
-      class="flex shrink-0 flex-col items-center"
-    >
+    <RouterLink :to="studyUrl" class="flex shrink-0 flex-col items-center">
       <!-- Current: "Start" badge + circular progress + button (clone: lesson-button.tsx + button secondary/rounded border-b-8) -->
       <div v-if="current" class="relative h-[102px] w-[102px]">
         <!-- Start label: exact clone - no shadow, border-2, animate-bounce, triangle pointer -->
@@ -24,14 +21,7 @@
         <!-- Progress ring (clone: path #4ade80, trail #e5e7eb) + button centered inside -->
         <div class="relative h-[102px] w-[102px]">
           <svg class="absolute inset-0 h-[102px] w-[102px] -rotate-90" viewBox="0 0 102 102">
-            <circle
-              cx="51"
-              cy="51"
-              r="43"
-              fill="none"
-              stroke="#e5e7eb"
-              stroke-width="8"
-            />
+            <circle cx="51" cy="51" r="43" fill="none" stroke="#e5e7eb" stroke-width="8" />
             <circle
               cx="51"
               cy="51"
@@ -67,11 +57,7 @@
     </RouterLink>
 
     <!-- Owner menu to the side: trigger + dropdown (does not overlap the level button) -->
-    <div
-      v-if="showOwnerMenu"
-      class="relative z-20 flex shrink-0 items-center"
-      @click.stop
-    >
+    <div v-if="showOwnerMenu" class="relative z-20 flex shrink-0 items-center" @click.stop>
       <button
         type="button"
         class="flex h-8 w-8 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-200 hover:text-slate-700"
@@ -91,12 +77,7 @@
         <slot name="menu" />
       </div>
       <!-- Click outside to close (above page, below dropdown) -->
-      <div
-        v-if="menuOpen"
-        class="fixed inset-0 z-[45]"
-        aria-hidden
-        @click="menuOpen = false"
-      />
+      <div v-if="menuOpen" class="fixed inset-0 z-[45]" aria-hidden @click="menuOpen = false" />
     </div>
   </div>
   <!-- Locked with owner menu: show locked circle + settings to the right -->
@@ -109,12 +90,12 @@
     <div
       class="lingo-lesson-button-circle flex h-[70px] w-[70px] flex-shrink-0 items-center justify-center rounded-full border-2 border-neutral-400 border-b-8 bg-neutral-200 pointer-events-none active:border-b-0"
     >
-      <component :is="iconComponent" class="h-10 w-10 fill-neutral-400 stroke-neutral-400 text-neutral-400" />
+      <component
+        :is="iconComponent"
+        class="h-10 w-10 fill-neutral-400 stroke-neutral-400 text-neutral-400"
+      />
     </div>
-    <div
-      class="relative z-20 flex shrink-0 items-center"
-      @click.stop
-    >
+    <div class="relative z-20 flex shrink-0 items-center" @click.stop>
       <button
         type="button"
         class="flex h-8 w-8 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-200 hover:text-slate-700"
@@ -132,12 +113,7 @@
       >
         <slot name="menu" />
       </div>
-      <div
-        v-if="menuOpen"
-        class="fixed inset-0 z-[45]"
-        aria-hidden
-        @click="menuOpen = false"
-      />
+      <div v-if="menuOpen" class="fixed inset-0 z-[45]" aria-hidden @click="menuOpen = false" />
     </div>
   </div>
   <!-- Locked, no owner menu: circle only -->
@@ -147,8 +123,13 @@
     :style="nodeStyle"
     aria-disabled="true"
   >
-    <div class="lingo-lesson-button-circle flex h-[70px] w-[70px] flex-shrink-0 items-center justify-center rounded-full border-2 border-neutral-400 border-b-8 bg-neutral-200 active:border-b-0">
-      <component :is="iconComponent" class="h-10 w-10 fill-neutral-400 stroke-neutral-400 text-neutral-400" />
+    <div
+      class="lingo-lesson-button-circle flex h-[70px] w-[70px] flex-shrink-0 items-center justify-center rounded-full border-2 border-neutral-400 border-b-8 bg-neutral-200 active:border-b-0"
+    >
+      <component
+        :is="iconComponent"
+        class="h-10 w-10 fill-neutral-400 stroke-neutral-400 text-neutral-400"
+      />
     </div>
   </div>
 </template>
@@ -211,7 +192,6 @@ const iconClass = computed(() => {
   if (props.completed) return 'fill-none stroke-[4] text-white'
   return 'fill-white stroke-white text-white'
 })
-
 </script>
 
 <style scoped>
@@ -220,7 +200,9 @@ const iconClass = computed(() => {
   display: flex;
 }
 .lingo-lesson-button-circle {
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
 }
 .lingo-lesson-button:not(.pointer-events-none):hover .lingo-lesson-button-circle {
   transform: scale(1.05);

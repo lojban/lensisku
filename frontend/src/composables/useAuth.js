@@ -1,143 +1,140 @@
-import { jwtDecode } from "jwt-decode";
-import { reactive, provide, inject } from "vue";
-import { useRouter } from "vue-router";
-import { setAuthInstance, api, performBackendLogout, mergeProgress } from "@/api";
-import { getAllProgressForMerge, clearAfterMerge } from "@/composables/useAnonymousProgress";
-import { getApiBaseUrl, getAuthHeaders } from "@/api";
+import { jwtDecode } from 'jwt-decode'
+import { reactive, provide, inject } from 'vue'
+import { useRouter } from 'vue-router'
+import { setAuthInstance, api, performBackendLogout, mergeProgress } from '@/api'
+import { getAllProgressForMerge, clearAfterMerge } from '@/composables/useAnonymousProgress'
+import { getApiBaseUrl, getAuthHeaders } from '@/api'
 
-const ASSISTANT_CHATS_STORAGE_KEY = "lensisku-assistant-chats-v1";
+const ASSISTANT_CHATS_STORAGE_KEY = 'lensisku-assistant-chats-v1'
 
-const authKey = Symbol();
+const authKey = Symbol()
 
-const REFRESH_MARGIN = 5 * 60; // 5 minutes before expiry
-const MAX_REFRESH_ATTEMPTS = 3;
-const TOKEN_VERIFY_INTERVAL = 30000; // 30 seconds
+const REFRESH_MARGIN = 5 * 60 // 5 minutes before expiry
+const MAX_REFRESH_ATTEMPTS = 3
+const TOKEN_VERIFY_INTERVAL = 30000 // 30 seconds
 
-let isRefreshing = false;
-let refreshSubscribers = [];
-let globalAuth = null; // Store auth instance
+let isRefreshing = false
+let refreshSubscribers = []
+let _globalAuth = null // Store auth instance (reserved for debugging / future use)
 
 export function provideAuth() {
-  const router = useRouter();
+  const router = useRouter()
 
   const state = reactive({
     isLoggedIn: false,
     isLoading: true, // Start with loading state
-    username: "",
-    accessToken: "",
-    refreshToken: "",
+    username: '',
+    accessToken: '',
+    refreshToken: '',
     refreshAttempts: 0,
     lastRefreshTime: null,
     authorities: [],
-    role: "",
+    role: '',
     email_confirmed: false,
-  });
+  })
 
   // Initialize auth state immediately
   setTimeout(() => {
-    checkAuthStatus();
-  }, 0);
+    checkAuthStatus()
+  }, 0)
 
-  let refreshTimer = null;
-  let verificationTimer = null;
-  let visibilityHandler = null;
+  let refreshTimer = null
+  let verificationTimer = null
+  let visibilityHandler = null
 
   // Enhanced token verification with retry logic
   const verifyAndRefreshToken = async () => {
-    if (typeof window === "undefined") return;
+    if (typeof window === 'undefined') return
 
-    const accessToken = localStorage.getItem("accessToken");
+    const accessToken = localStorage.getItem('accessToken')
 
     if (!accessToken) {
-      return false;
+      return false
     }
 
     try {
-      const decoded = jwtDecode(accessToken);
-      const now = Math.floor(Date.now() / 1000);
+      const decoded = jwtDecode(accessToken)
+      const now = Math.floor(Date.now() / 1000)
 
       // Check if token needs refresh (within margin)
       if (decoded.exp - now < REFRESH_MARGIN) {
-        return await refreshAccessToken();
+        return await refreshAccessToken()
       }
 
-      return true;
+      return true
     } catch (error) {
-      console.warn("Token validation failed:", error);
-      return await refreshAccessToken();
+      console.warn('Token validation failed:', error)
+      return await refreshAccessToken()
     }
-  };
+  }
 
   async function refreshAccessToken() {
     if (state.refreshAttempts >= MAX_REFRESH_ATTEMPTS) {
-      logout();
-      return false;
+      logout()
+      return false
     }
 
     if (isRefreshing) {
       return new Promise((resolve) => {
-        refreshSubscribers.push(resolve);
-      });
+        refreshSubscribers.push(resolve)
+      })
     }
 
-    isRefreshing = true;
+    isRefreshing = true
 
     try {
-      const refreshToken = localStorage.getItem("refreshToken");
+      const refreshToken = localStorage.getItem('refreshToken')
       if (!refreshToken) {
-        logout();
-        return false;
+        logout()
+        return false
       }
 
-      const response = await api.post("/auth/refresh", {
+      const response = await api.post('/auth/refresh', {
         refresh_token: refreshToken,
-      });
+      })
 
       if (response.data.access_token) {
-        state.accessToken = response.data.access_token;
-        localStorage.setItem("accessToken", response.data.access_token);
+        state.accessToken = response.data.access_token
+        localStorage.setItem('accessToken', response.data.access_token)
 
         if (response.data.refresh_token) {
-          state.refreshToken = response.data.refresh_token;
-          localStorage.setItem("refreshToken", response.data.refresh_token);
+          state.refreshToken = response.data.refresh_token
+          localStorage.setItem('refreshToken', response.data.refresh_token)
         }
 
-        state.refreshAttempts = 0;
-        state.lastRefreshTime = Date.now();
+        state.refreshAttempts = 0
+        state.lastRefreshTime = Date.now()
 
-        refreshSubscribers.forEach((callback) => callback(true));
-        refreshSubscribers = [];
+        refreshSubscribers.forEach((callback) => callback(true))
+        refreshSubscribers = []
 
-        const decoded = jwtDecode(response.data.access_token);
-        state.username = decoded.username; // Update reactive state
-        state.authorities = decoded.authorities || []; // Update reactive state
-        state.role = decoded.role || ""; // Update reactive state
-        state.email_confirmed = decoded.email_confirmed || false; // Update reactive state
-        localStorage.setItem("username", decoded.username); // Keep localStorage consistent
-        scheduleTokenRefresh(decoded.exp);
-        return true;
+        const decoded = jwtDecode(response.data.access_token)
+        state.username = decoded.username // Update reactive state
+        state.authorities = decoded.authorities || [] // Update reactive state
+        state.role = decoded.role || '' // Update reactive state
+        state.email_confirmed = decoded.email_confirmed || false // Update reactive state
+        localStorage.setItem('username', decoded.username) // Keep localStorage consistent
+        scheduleTokenRefresh(decoded.exp)
+        return true
       }
     } catch (error) {
-      state.refreshAttempts++;
-      console.error(
-        `Token refresh failed (attempt ${state.refreshAttempts}):`,
-        error
-      );
+      state.refreshAttempts++
+      console.error(`Token refresh failed (attempt ${state.refreshAttempts}):`, error)
 
-      refreshSubscribers.forEach((callback) => callback(false));
-      refreshSubscribers = [];
+      refreshSubscribers.forEach((callback) => callback(false))
+      refreshSubscribers = []
 
       if (state.refreshAttempts >= MAX_REFRESH_ATTEMPTS) {
-        logout();
-        return false;
+        logout()
+        return false
       }
 
-      return false;
+      return false
     } finally {
-      isRefreshing = false;
+      isRefreshing = false
     }
 
-    return false;
+    return false
   }
 
   async function logout() {
@@ -145,56 +142,53 @@ export function provideAuth() {
     // The Authorization header will be added by the request interceptor
     performBackendLogout()
       .then(() => {
-        console.log("Backend logout successful");
+        console.log('Backend logout successful')
       })
       .catch((error) => {
         // Error is expected if the token was already invalid or session expired.
         // Client-side cleanup should still occur.
-        console.error(
-          "Backend logout failed. Proceeding with client-side logout.",
-          error
-        );
-      });
+        console.error('Backend logout failed. Proceeding with client-side logout.', error)
+      })
 
     // Perform all client-side cleanup
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("refreshToken");
-    localStorage.removeItem("username");
+    localStorage.removeItem('accessToken')
+    localStorage.removeItem('refreshToken')
+    localStorage.removeItem('username')
 
-    state.isLoggedIn = false;
-    state.username = "";
-    state.accessToken = "";
-    state.refreshToken = "";
-    state.refreshAttempts = 0;
-    state.lastRefreshTime = null;
-    state.authorities = [];
-    state.role = "";
-    state.email_confirmed = false;
+    state.isLoggedIn = false
+    state.username = ''
+    state.accessToken = ''
+    state.refreshToken = ''
+    state.refreshAttempts = 0
+    state.lastRefreshTime = null
+    state.authorities = []
+    state.role = ''
+    state.email_confirmed = false
 
     if (refreshTimer) {
-      clearTimeout(refreshTimer);
-      refreshTimer = null;
+      clearTimeout(refreshTimer)
+      refreshTimer = null
     }
 
     if (verificationTimer) {
-      clearInterval(verificationTimer);
-      verificationTimer = null;
+      clearInterval(verificationTimer)
+      verificationTimer = null
     }
     if (visibilityHandler) {
-      document.removeEventListener("visibilitychange", visibilityHandler);
-      visibilityHandler = null;
+      document.removeEventListener('visibilitychange', visibilityHandler)
+      visibilityHandler = null
     }
 
-    isRefreshing = false;
-    refreshSubscribers = [];
+    isRefreshing = false
+    refreshSubscribers = []
 
-    console.log("Client-side logout completed.");
+    console.log('Client-side logout completed.')
 
     // Navigate to login page
     if (router) {
-      router.push("/login");
+      router.push('/login')
     } else {
-      console.warn("Router instance not available in logout function.");
+      console.warn('Router instance not available in logout function.')
       // Fallback if router is not available for some reason
       // window.location.pathname = '/login';
     }
@@ -202,172 +196,172 @@ export function provideAuth() {
 
   function scheduleTokenRefresh(expiryTime) {
     if (refreshTimer) {
-      clearTimeout(refreshTimer);
+      clearTimeout(refreshTimer)
     }
 
-    const now = Math.floor(Date.now() / 1000);
-    const timeUntilRefresh = Math.max(0, expiryTime - REFRESH_MARGIN - now);
-    console.log("Scheduling token refresh in", timeUntilRefresh, "seconds");
+    const now = Math.floor(Date.now() / 1000)
+    const timeUntilRefresh = Math.max(0, expiryTime - REFRESH_MARGIN - now)
+    console.log('Scheduling token refresh in', timeUntilRefresh, 'seconds')
 
-    refreshTimer = setTimeout(refreshAccessToken, timeUntilRefresh * 1000);
+    refreshTimer = setTimeout(refreshAccessToken, timeUntilRefresh * 1000)
   }
 
   // Setup continuous token verification
   const startTokenVerification = () => {
     if (verificationTimer) {
-      clearInterval(verificationTimer);
+      clearInterval(verificationTimer)
     }
 
     verificationTimer = setInterval(async () => {
-      console.log("Token verification check at", new Date().toISOString());
-      const isValid = await verifyAndRefreshToken();
+      console.log('Token verification check at', new Date().toISOString())
+      const isValid = await verifyAndRefreshToken()
       if (!isValid && state.isLoggedIn) {
-        console.warn("Token invalid during verification check, logging out");
-        logout();
+        console.warn('Token invalid during verification check, logging out')
+        logout()
       }
-    }, TOKEN_VERIFY_INTERVAL);
+    }, TOKEN_VERIFY_INTERVAL)
 
     visibilityHandler = () => {
-      if (document.visibilityState === "visible") {
-        console.log("Tab became visible, triggering immediate token check");
-        verifyAndRefreshToken();
+      if (document.visibilityState === 'visible') {
+        console.log('Tab became visible, triggering immediate token check')
+        verifyAndRefreshToken()
       }
-    };
-    document.addEventListener("visibilitychange", visibilityHandler);
-  };
+    }
+    document.addEventListener('visibilitychange', visibilityHandler)
+  }
 
   function login(accessToken, refreshToken, username) {
-    localStorage.setItem("accessToken", accessToken);
-    localStorage.setItem("refreshToken", refreshToken);
-    localStorage.setItem("username", username);
+    localStorage.setItem('accessToken', accessToken)
+    localStorage.setItem('refreshToken', refreshToken)
+    localStorage.setItem('username', username)
 
-    state.isLoggedIn = true;
-    state.username = username;
-    state.accessToken = accessToken;
-    state.refreshToken = refreshToken;
-    state.refreshAttempts = 0;
+    state.isLoggedIn = true
+    state.username = username
+    state.accessToken = accessToken
+    state.refreshToken = refreshToken
+    state.refreshAttempts = 0
 
-    const decoded = parseToken(accessToken);
+    const decoded = parseToken(accessToken)
     if (decoded) {
-      state.authorities = decoded.authorities || [];
-      state.role = decoded.role || "";
-      state.email_confirmed = decoded.email_confirmed || false;
-      scheduleTokenRefresh(decoded.exp);
+      state.authorities = decoded.authorities || []
+      state.role = decoded.role || ''
+      state.email_confirmed = decoded.email_confirmed || false
+      scheduleTokenRefresh(decoded.exp)
     } else {
-      state.authorities = [];
-      state.role = "";
-      state.email_confirmed = false;
+      state.authorities = []
+      state.role = ''
+      state.email_confirmed = false
     }
 
-    startTokenVerification();
-    void mergeAnonymousProgressThenClear();
-    void mergeAssistantChatsThenClear();
+    startTokenVerification()
+    void mergeAnonymousProgressThenClear()
+    void mergeAssistantChatsThenClear()
   }
 
   async function mergeAssistantChatsThenClear() {
     try {
-      const raw = localStorage.getItem(ASSISTANT_CHATS_STORAGE_KEY);
-      if (!raw) return;
-      const data = JSON.parse(raw);
-      const sessions = Array.isArray(data.sessions) ? data.sessions : [];
+      const raw = localStorage.getItem(ASSISTANT_CHATS_STORAGE_KEY)
+      if (!raw) return
+      const data = JSON.parse(raw)
+      const sessions = Array.isArray(data.sessions) ? data.sessions : []
       if (!sessions.length) {
-        localStorage.removeItem(ASSISTANT_CHATS_STORAGE_KEY);
-        return;
+        localStorage.removeItem(ASSISTANT_CHATS_STORAGE_KEY)
+        return
       }
-      const token = localStorage.getItem("accessToken");
-      if (!token) return;
-      const base = getApiBaseUrl();
+      const token = localStorage.getItem('accessToken')
+      if (!token) return
+      const base = getApiBaseUrl()
       const res = await fetch(`${base}/assistant/chats/import`, {
-        method: "POST",
+        method: 'POST',
         headers: {
           ...getAuthHeaders(),
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           sessions: sessions.map((s) => ({
-            title: s.title || "",
+            title: s.title || '',
             messages: s.messages ?? [],
             primaryModelId: s.primaryModelId ?? null,
-            scrollTop: typeof s.scrollTop === "number" ? s.scrollTop : 0,
+            scrollTop: typeof s.scrollTop === 'number' ? s.scrollTop : 0,
           })),
         }),
-      });
+      })
       if (!res.ok) {
-        console.warn("Merge assistant chats failed:", await res.text());
-        return;
+        console.warn('Merge assistant chats failed:', await res.text())
+        return
       }
-      localStorage.removeItem(ASSISTANT_CHATS_STORAGE_KEY);
+      localStorage.removeItem(ASSISTANT_CHATS_STORAGE_KEY)
     } catch (err) {
-      console.warn("Merge assistant chats failed:", err);
+      console.warn('Merge assistant chats failed:', err)
     }
   }
 
   async function mergeAnonymousProgressThenClear() {
     try {
-      const payloads = getAllProgressForMerge();
+      const payloads = getAllProgressForMerge()
       for (const p of payloads) {
-        await mergeProgress({ collection_id: p.collection_id, level_progress: p.level_progress });
+        await mergeProgress({ collection_id: p.collection_id, level_progress: p.level_progress })
       }
-      if (payloads.length) clearAfterMerge();
+      if (payloads.length) clearAfterMerge()
     } catch (err) {
-      console.warn("Merge anonymous progress failed:", err);
+      console.warn('Merge anonymous progress failed:', err)
     }
   }
 
   function parseToken(token) {
     try {
-      return jwtDecode(token);
+      return jwtDecode(token)
     } catch (error) {
-      console.error("Failed to decode token:", error);
-      return null;
+      console.error('Failed to decode token:', error)
+      return null
     }
   }
 
   async function checkAuthStatus() {
-    if (typeof window === "undefined") return;
+    if (typeof window === 'undefined') return
 
-    state.isLoading = true;
+    state.isLoading = true
     try {
-      const accessToken = localStorage.getItem("accessToken");
-      const refreshToken = localStorage.getItem("refreshToken");
+      const accessToken = localStorage.getItem('accessToken')
+      const refreshToken = localStorage.getItem('refreshToken')
 
       if (!accessToken || !refreshToken) {
-        state.isLoggedIn = false;
-        return false;
+        state.isLoggedIn = false
+        return false
       }
 
-      const decoded = parseToken(accessToken);
+      const decoded = parseToken(accessToken)
       if (!decoded) {
-        state.isLoggedIn = false;
-        return false;
+        state.isLoggedIn = false
+        return false
       }
 
-      const now = Math.floor(Date.now() / 1000);
+      const now = Math.floor(Date.now() / 1000)
       if (now >= decoded.exp) {
         if (refreshToken) {
-          state.refreshToken = refreshToken;
-          const refreshed = await refreshAccessToken();
-          state.isLoggedIn = refreshed;
-          return refreshed;
+          state.refreshToken = refreshToken
+          const refreshed = await refreshAccessToken()
+          state.isLoggedIn = refreshed
+          return refreshed
         } else {
-          logout();
-          return false;
+          logout()
+          return false
         }
       } else {
-        state.isLoggedIn = true;
-        state.username = decoded.username;
-        state.authorities = decoded.authorities || [];
-        state.role = decoded.role || "";
-        state.email_confirmed = decoded.email_confirmed || false;
-        state.accessToken = accessToken;
-        state.refreshToken = refreshToken;
+        state.isLoggedIn = true
+        state.username = decoded.username
+        state.authorities = decoded.authorities || []
+        state.role = decoded.role || ''
+        state.email_confirmed = decoded.email_confirmed || false
+        state.accessToken = accessToken
+        state.refreshToken = refreshToken
 
-        scheduleTokenRefresh(decoded.exp);
-        startTokenVerification();
-        return true;
+        scheduleTokenRefresh(decoded.exp)
+        startTokenVerification()
+        return true
       }
     } finally {
-      state.isLoading = false;
+      state.isLoading = false
     }
   }
 
@@ -377,19 +371,19 @@ export function provideAuth() {
     logout,
     checkAuthStatus,
     refreshAccessToken,
-  };
+  }
 
-  setAuthInstance(auth);
+  setAuthInstance(auth)
 
-  provide(authKey, auth);
-  globalAuth = auth; // Store the auth instance
-  return auth;
+  provide(authKey, auth)
+  _globalAuth = auth // Store the auth instance
+  return auth
 }
 
 export function useAuth() {
-  const auth = inject(authKey);
+  const auth = inject(authKey)
   if (!auth) {
-    throw new Error("useAuth() called without provider");
+    throw new Error('useAuth() called without provider')
   }
-  return auth;
+  return auth
 }

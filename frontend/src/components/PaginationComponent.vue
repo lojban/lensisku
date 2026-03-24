@@ -29,7 +29,9 @@
       >
         {{ t('pagination.previous') }}
       </button>
-      <span class="text-sm text-gray-600 whitespace-nowrap"> {{ t('pagination.page', { currentPage: currentPage, totalPages: totalPages || 1 }) }} </span>
+      <span class="text-sm text-gray-600 whitespace-nowrap">
+        {{ t('pagination.page', { currentPage: currentPage, totalPages: totalPages || 1 }) }}
+      </span>
       <button
         :disabled="currentPage >= totalPages"
         class="btn-next"
@@ -47,35 +49,35 @@
 </template>
 
 <script setup>
-  import { computed } from 'vue';
-  import { useI18n } from 'vue-i18n';
+import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 
-  const { t } = useI18n();
+const { t } = useI18n()
 
-  const props = defineProps({
-    currentPage: {
-      type: Number,
-      required: true,
-    },
-    totalPages: {
-      type: Number,
-      required: true,
-    },
-    total: {
-      type: Number,
-      required: true,
-    },
-    perPage: {
-      type: Number,
-      required: true,
-    },
-  })
+const props = defineProps({
+  currentPage: {
+    type: Number,
+    required: true,
+  },
+  totalPages: {
+    type: Number,
+    required: true,
+  },
+  total: {
+    type: Number,
+    required: true,
+  },
+  perPage: {
+    type: Number,
+    required: true,
+  },
+})
 
-  const paginationStart = computed(() => {
-    return (props.currentPage - 1) * props.perPage + 1
-  })
+const paginationStart = computed(() => {
+  return (props.currentPage - 1) * props.perPage + 1
+})
 
-  const paginationEnd = computed(() => {
-    return Math.min(props.currentPage * props.perPage, props.total)
-  })
+const paginationEnd = computed(() => {
+  return Math.min(props.currentPage * props.perPage, props.total)
+})
 </script>

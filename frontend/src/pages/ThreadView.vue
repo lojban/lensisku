@@ -9,11 +9,7 @@
       <!-- Sort Controls -->
       <div class="flex items-center space-x-3">
         <label class="text-sm text-gray-600 font-medium">{{ t('sort.sortByLabel') }}</label>
-        <select
-          v-model="sortOrder"
-          class="input-field"
-          @change="fetchThread"
-        >
+        <select v-model="sortOrder" class="input-field" @change="fetchThread">
           <option value="desc">
             {{ t('threadView.newestFirst') }}
           </option>
@@ -30,8 +26,10 @@
           type="checkbox"
           class="checkbox-toggle"
           @change="fetchThread"
-        >
-        <label class="text-sm text-gray-600 font-medium whitespace-nowrap cursor-pointer">{{ t('threadView.showContent') }}</label>
+        />
+        <label class="text-sm text-gray-600 font-medium whitespace-nowrap cursor-pointer">{{
+          t('threadView.showContent')
+        }}</label>
       </div>
     </div>
   </div>
@@ -40,10 +38,7 @@
   <LoadingSpinner v-if="isLoading" class="py-12" />
 
   <!-- Messages List -->
-  <div
-    v-else-if="!isLoading && messages.length > 0"
-    class="space-y-4"
-  >
+  <div v-else-if="!isLoading && messages.length > 0" class="space-y-4">
     <div
       v-for="message in messages"
       :key="message.id"
@@ -53,7 +48,12 @@
         <!-- Message Header -->
         <div class="flex justify-between items-start mb-3">
           <h3 class="text-lg font-semibold text-blue-700">
-            <LazyMathJax :content="message.subject || ''" :enable-markdown="true" :search-term="props.searchTerm" curly-link-class="underline text-pink-600 hover:text-pink-800" />
+            <LazyMathJax
+              :content="message.subject || ''"
+              :enable-markdown="true"
+              :search-term="props.searchTerm"
+              curly-link-class="underline text-pink-600 hover:text-pink-800"
+            />
           </h3>
           <span class="text-sm text-gray-500 whitespace-nowrap ml-4">
             {{ formatDate(message.date) }}
@@ -67,46 +67,37 @@
             <span>{{ formatEmailAddress(message.from_address) }}</span>
           </div>
 
-          <div
-            v-if="message.to_address"
-            class="flex items-center space-x-2 text-sm text-gray-600"
-          >
+          <div v-if="message.to_address" class="flex items-center space-x-2 text-sm text-gray-600">
             <span class="font-medium text-gray-700">{{ t('threadView.to') }}</span>
             <span>{{ formatEmailAddress(message.to_address) }}</span>
           </div>
         </div>
 
         <!-- Message Parts -->
-        <div
-          v-if="includeContent && message.parts_json"
-          class="mt-4 pt-4 border-t border-gray-100"
-        >
+        <div v-if="includeContent && message.parts_json" class="mt-4 pt-4 border-t border-gray-100">
           <!-- Text parts -->
-          <div 
-            v-for="part in message.parts_json.filter(p => p.mime_type.startsWith('text/'))"
+          <div
+            v-for="part in message.parts_json.filter((p) => p.mime_type.startsWith('text/'))"
             :key="part.id"
             class="text-gray-700 text-sm prose max-w-none"
             v-html="highlightText(part.content)"
           />
-          
+
           <!-- Attachments -->
           <div
-            v-if="message.parts_json.filter(p => !p.mime_type.startsWith('text/')).length"
+            v-if="message.parts_json.filter((p) => !p.mime_type.startsWith('text/')).length"
             class="mt-4"
           >
             <div class="text-sm font-medium text-gray-600 mb-2">
               {{ t('threadView.attachments') }}
             </div>
             <div class="flex flex-wrap gap-2">
-              <div 
-                v-for="part in message.parts_json.filter(p => !p.mime_type.startsWith('text/'))"
+              <div
+                v-for="part in message.parts_json.filter((p) => !p.mime_type.startsWith('text/'))"
                 :key="part.id"
                 class="px-3 py-1.5 bg-gray-50 rounded-lg border border-gray-200 hover:border-blue-200 transition-colors flex items-center gap-2"
               >
-                <AttachmentIcon
-                  :mime-type="part.mime_type"
-                  class="w-4 h-4 flex-shrink-0"
-                />
+                <AttachmentIcon :mime-type="part.mime_type" class="w-4 h-4 flex-shrink-0" />
                 <span class="text-sm text-gray-700">{{ part.content_type }}</span>
               </div>
             </div>
@@ -290,94 +281,94 @@ onMounted(() => {
 </script>
 
 <style scoped>
-  /* Hover effect */
-  .message-item {
-    word-break: break-word;
-  }
+/* Hover effect */
+.message-item {
+  word-break: break-word;
+}
 
-  .message-item:hover {
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-  }
+.message-item:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
 
-  /* Control panel styles */
-  select,
-  input[type='checkbox'] {
-    cursor: pointer;
-  }
+/* Control panel styles */
+select,
+input[type='checkbox'] {
+  cursor: pointer;
+}
 
-  select:focus {
-    outline: none;
-  }
+select:focus {
+  outline: none;
+}
 
-  /* Prose settings for message content */
-  .prose {
-    max-width: none;
-    color: inherit;
-  }
+/* Prose settings for message content */
+.prose {
+  max-width: none;
+  color: inherit;
+}
 
-  .prose {
-    @apply max-w-none;
-  }
+.prose {
+  @apply max-w-none;
+}
 
-  .prose :deep(p) {
-    @apply my-2;
-  }
+.prose :deep(p) {
+  @apply my-2;
+}
 
-  .prose :deep(a) {
-    @apply text-blue-600 hover:text-blue-800 hover:underline;
-  }
+.prose :deep(a) {
+  @apply text-blue-600 hover:text-blue-800 hover:underline;
+}
 
-  .prose :deep(code) {
-    @apply bg-gray-100 px-1 py-0.5 rounded text-sm font-mono;
-  }
+.prose :deep(code) {
+  @apply bg-gray-100 px-1 py-0.5 rounded text-sm font-mono;
+}
 
-  .prose :deep(ul),
-  .prose :deep(ol) {
-    @apply my-2 pl-6;
-  }
+.prose :deep(ul),
+.prose :deep(ol) {
+  @apply my-2 pl-6;
+}
 
-  .prose :deep(li) {
-    @apply my-1;
-  }
+.prose :deep(li) {
+  @apply my-1;
+}
 
-  .prose :deep(blockquote) {
-    @apply border-l-4 border-gray-300 pl-4 my-2 text-gray-600 italic;
-  }
+.prose :deep(blockquote) {
+  @apply border-l-4 border-gray-300 pl-4 my-2 text-gray-600 italic;
+}
 
-  .prose :deep(pre) {
-    @apply bg-gray-100 p-2 rounded my-2 overflow-x-auto;
-  }
+.prose :deep(pre) {
+  @apply bg-gray-100 p-2 rounded my-2 overflow-x-auto;
+}
 
-  .prose :deep(h1),
-  .prose :deep(h2),
-  .prose :deep(h3),
-  .prose :deep(h4),
-  .prose :deep(h5),
-  .prose :deep(h6) {
-    @apply font-bold mt-4 mb-2;
-  }
+.prose :deep(h1),
+.prose :deep(h2),
+.prose :deep(h3),
+.prose :deep(h4),
+.prose :deep(h5),
+.prose :deep(h6) {
+  @apply font-bold mt-4 mb-2;
+}
 
-  .prose :deep(h1) {
-    @apply text-2xl;
-  }
+.prose :deep(h1) {
+  @apply text-2xl;
+}
 
-  .prose :deep(h2) {
-    @apply text-xl;
-  }
+.prose :deep(h2) {
+  @apply text-xl;
+}
 
-  .prose :deep(h3) {
-    @apply text-lg;
-  }
+.prose :deep(h3) {
+  @apply text-lg;
+}
 
-  .prose :deep(h4) {
-    @apply text-base;
-  }
+.prose :deep(h4) {
+  @apply text-base;
+}
 
-  .prose :deep(h5) {
-    @apply text-sm;
-  }
+.prose :deep(h5) {
+  @apply text-sm;
+}
 
-  .prose :deep(h6) {
-    @apply text-xs;
-  }
+.prose :deep(h6) {
+  @apply text-xs;
+}
 </style>

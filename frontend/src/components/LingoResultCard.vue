@@ -1,8 +1,5 @@
 <template>
-  <div
-    class="lingo-result-card w-full rounded-2xl border-2 overflow-hidden"
-    :class="cardClass"
-  >
+  <div class="lingo-result-card w-full rounded-2xl border-2 overflow-hidden" :class="cardClass">
     <div
       class="rounded-t-xl px-3 py-1.5 text-center text-xs font-bold uppercase text-white"
       :class="headerClass"
@@ -45,28 +42,18 @@ const props = defineProps({
 const { t } = useI18n()
 
 const cardClass = computed(() =>
-  props.variant === 'points'
-    ? 'border-orange-400'
-    : 'border-rose-500'
+  props.variant === 'points' ? 'border-orange-400' : 'border-rose-500'
 )
 
-const headerClass = computed(() =>
-  props.variant === 'points'
-    ? 'bg-orange-400'
-    : 'bg-rose-500'
-)
+const headerClass = computed(() => (props.variant === 'points' ? 'bg-orange-400' : 'bg-rose-500'))
 
 const valueClass = computed(() =>
-  props.variant === 'points'
-    ? 'text-orange-500'
-    : 'text-rose-500'
+  props.variant === 'points' ? 'text-orange-500' : 'text-rose-500'
 )
 
 const headerText = computed(() => {
   if (props.headerText) return props.headerText
-  return props.variant === 'hearts'
-    ? t('lingo.heartsLeft')
-    : t('lingo.totalXP')
+  return props.variant === 'hearts' ? t('lingo.heartsLeft') : t('lingo.totalXP')
 })
 </script>
 

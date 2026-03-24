@@ -1,21 +1,15 @@
 <template>
   <div class="mb-2">
-    <nav
-      class="flex flex-wrap gap-x-2 gap-y-0"
-      aria-label="Tabs"
-    >
-      <NotebookTab 
-        v-for="tab in tabs" 
-        :key="tab.key" 
-        :active="activeTab === tab.key" 
-        :label="tab.label" 
+    <nav class="flex flex-wrap gap-x-2 gap-y-0" aria-label="Tabs">
+      <NotebookTab
+        v-for="tab in tabs"
+        :key="tab.key"
+        :active="activeTab === tab.key"
+        :label="tab.label"
         @click="$emit('tab-click', tab.key)"
       >
         <template #icon>
-          <component
-            :is="tab.icon"
-            v-if="tab.icon"
-          />
+          <component :is="tab.icon" v-if="tab.icon" />
         </template>
       </NotebookTab>
     </nav>
@@ -31,16 +25,16 @@ import NotebookTab from '@/components/NotebookTab.vue'
 defineProps({
   tabs: {
     type: Array,
-    required: true
+    required: true,
   },
   activeTab: {
     type: String,
-    required: true
+    required: true,
   },
   pageTitle: {
     type: String,
-    required: true
-  }
+    required: true,
+  },
 })
 
 defineEmits(['tab-click'])

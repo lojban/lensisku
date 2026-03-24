@@ -12,7 +12,7 @@
             :placeholder="t('roleManagement.roleNamePlaceholder')"
             class="input-field w-full sm:flex-1"
             @input="$emit('update:newRoleName', $event.target.value)"
-          >
+          />
           <button
             class="btn-aqua-emerald w-full sm:w-auto"
             :disabled="!newRoleName.trim() || selectedPermissions.length === 0"
@@ -22,17 +22,16 @@
           </button>
         </div>
 
-        <div
-          v-if="newRoleName.trim()"
-          class="flex flex-col gap-2"
-        >
-          <label class="font-medium text-sm sm:text-base">{{ t('roleManagement.selectPermissions') }}</label>
+        <div v-if="newRoleName.trim()" class="flex flex-col gap-2">
+          <label class="font-medium text-sm sm:text-base">{{
+            t('roleManagement.selectPermissions')
+          }}</label>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <div
               v-for="perm in availablePermissions"
               :key="perm.name"
               class="flex items-center p-2 rounded cursor-pointer hover:bg-gray-50"
-              :class="{'bg-gray-100': selectedPermissions.includes(perm.name)}"
+              :class="{ 'bg-gray-100': selectedPermissions.includes(perm.name) }"
               @click="$emit('togglePermission', perm.name)"
             >
               <input
@@ -40,7 +39,7 @@
                 :checked="selectedPermissions.includes(perm.name)"
                 class="mr-2"
                 @click.stop
-              >
+              />
               <div>
                 <div class="font-medium">
                   {{ perm.name }}
@@ -61,12 +60,10 @@
         {{ t('roleManagement.existingRoles') }}
       </h2>
 
-      <div
-        v-for="role in roles"
-        :key="role.name"
-        class="mb-4 sm:mb-6 border-b pb-3 sm:pb-4"
-      >
-        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-4 mb-3 sm:mb-4">
+      <div v-for="role in roles" :key="role.name" class="mb-4 sm:mb-6 border-b pb-3 sm:pb-4">
+        <div
+          class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-4 mb-3 sm:mb-4"
+        >
           <h3 class="text-base sm:text-lg font-medium">
             {{ translateRole(role.name) }}
           </h3>
@@ -82,22 +79,26 @@
         <!-- Permissions Section -->
         <div class="sm:pl-4">
           <div
-            v-if="availablePermissions.filter(p => !role.permissions.includes(p.name)).length > 0"
+            v-if="availablePermissions.filter((p) => !role.permissions.includes(p.name)).length > 0"
             class="flex flex-col sm:flex-row justify-center items-stretch sm:items-center gap-2 sm:gap-4 mb-3 sm:mb-4"
           >
             <select
               :value="selectedPermissionMap[role.name]"
               class="input-field w-full sm:flex-1 h-6 py-0"
-              @change="$emit('update:selectedPermission', { roleName: role.name, permission: JSON.parse($event.target.value) })"
+              @change="
+                $emit('update:selectedPermission', {
+                  roleName: role.name,
+                  permission: JSON.parse($event.target.value),
+                })
+              "
             >
-              <option
-                value=""
-                disabled
-              >
+              <option value="" disabled>
                 {{ t('roleManagement.selectPermission') }}
               </option>
               <option
-                v-for="perm in availablePermissions.filter(p => !role.permissions.includes(p.name))"
+                v-for="perm in availablePermissions.filter(
+                  (p) => !role.permissions.includes(p.name)
+                )"
                 :key="perm.name"
                 :value="JSON.stringify(perm)"
               >
@@ -115,7 +116,7 @@
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <div
-              v-for="perm in availablePermissions.filter(p => role.permissions.includes(p.name))"
+              v-for="perm in availablePermissions.filter((p) => role.permissions.includes(p.name))"
               :key="perm.name"
               class="bg-gray-50 p-2 rounded flex justify-between items-center hover:bg-gray-100"
             >
@@ -144,10 +145,10 @@
 </template>
 
 <script setup>
-import { Trash2 } from 'lucide-vue-next';
-import { useI18n } from 'vue-i18n';
+import { Trash2 } from 'lucide-vue-next'
+import { useI18n } from 'vue-i18n'
 
-const { t } = useI18n();
+const { t } = useI18n()
 
 defineProps({
   roles: { type: Array, required: true },

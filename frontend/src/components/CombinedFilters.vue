@@ -2,24 +2,42 @@
   <div class="filters space-y-4">
     <!-- Language Filter Section -->
     <div
-      class="flex flex-col sm:flex-row items-center sm:justify-between gap-4 md:p-4 md:bg-white md:rounded-lg md:shadow-sm">
-      <MultiSelect v-model="selectedLangs" :options="languages" :max-selected-labels="3" name="id"
-        :option-label="(lang) => `${lang.real_name} (${lang.english_name})`" filter
-        :placeholder="t('filters.selectLanguages')" class="w-full sm:w-80 !rounded-full" />
+      class="flex flex-col sm:flex-row items-center sm:justify-between gap-4 md:p-4 md:bg-white md:rounded-lg md:shadow-sm"
+    >
+      <MultiSelect
+        v-model="selectedLangs"
+        :options="languages"
+        :max-selected-labels="3"
+        name="id"
+        :option-label="(lang) => `${lang.real_name} (${lang.english_name})`"
+        filter
+        :placeholder="t('filters.selectLanguages')"
+        class="w-full sm:w-80 !rounded-full"
+      />
       <div class="flex items-center gap-2 self-end md:self-center">
         <div class="flex items-center" role="group">
-          <button class="btn-aqua btn-aqua-group-item px-3" :title="t('searchForm.modes.semantic')"
-            @click="toggleSemanticSearch">
-            <input type="checkbox" class="checkmark-aqua" :checked="filters.isSemantic">
+          <button
+            class="btn-aqua btn-aqua-group-item px-3"
+            :title="t('searchForm.modes.semantic')"
+            @click="toggleSemanticSearch"
+          >
+            <input type="checkbox" class="checkmark-aqua" :checked="filters.isSemantic" />
             <span class="text-xs select-none whitespace-nowrap">
               {{ t('searchForm.modes.semantic') }}
             </span>
           </button>
-          <button class="btn-aqua btn-aqua-group-item px-3"
+          <button
+            class="btn-aqua btn-aqua-group-item px-3"
             :class="[{ 'opacity-50 !cursor-not-allowed': filters.word_type }]"
-            :title="t('searchForm.modes.searchInPhrases')" @click="toggleSearchInPhrases">
-            <input type="checkbox" class="checkmark-aqua" :checked="filters.searchInPhrases && !filters.word_type"
-              :disabled="!!filters.word_type">
+            :title="t('searchForm.modes.searchInPhrases')"
+            @click="toggleSearchInPhrases"
+          >
+            <input
+              type="checkbox"
+              class="checkmark-aqua"
+              :checked="filters.searchInPhrases && !filters.word_type"
+              :disabled="!!filters.word_type"
+            />
             <span class="text-xs select-none whitespace-nowrap">
               {{ t('searchForm.modes.searchInPhrases') }}
             </span>
@@ -27,28 +45,49 @@
         </div>
 
         <div class="flex items-center" role="group">
-          <button v-if="hasAnyActiveFilters" type="button" class="btn-aqua-white btn-aqua-group-item px-3"
-            @click="resetAllFilters" :title="t('filters.resetAllFilters')">
+          <button
+            v-if="hasAnyActiveFilters"
+            type="button"
+            class="btn-aqua-white btn-aqua-group-item px-3"
+            @click="resetAllFilters"
+            :title="t('filters.resetAllFilters')"
+          >
             <span class="text-xs">{{ t('filters.resetAllFilters') }}</span>
           </button>
 
-          <button type="button" class="btn-aqua-white btn-aqua-group-item px-3" @click="toggleExpanded"
-            :title="expanded ? t('filters.collapse') : t('filters.expand')">
-            <ChevronDown class="h-5 w-5 transition-transform duration-200" :class="{ 'rotate-180': expanded }"
-              :stroke-width="2" />
+          <button
+            type="button"
+            class="btn-aqua-white btn-aqua-group-item px-3"
+            @click="toggleExpanded"
+            :title="expanded ? t('filters.collapse') : t('filters.expand')"
+          >
+            <ChevronDown
+              class="h-5 w-5 transition-transform duration-200"
+              :class="{ 'rotate-180': expanded }"
+              :stroke-width="2"
+            />
           </button>
         </div>
       </div>
     </div>
 
-    <div v-show="expanded" class="mt-3 space-y-6 bg-white rounded-lg shadow-sm p-4"
-      :class="{ 'animate-expandSection': expanded }">
+    <div
+      v-show="expanded"
+      class="mt-3 space-y-6 bg-white rounded-lg shadow-sm p-4"
+      :class="{ 'animate-expandSection': expanded }"
+    >
       <!-- Advanced Filters -->
       <div class="space-y-4">
         <div v-if="showWordType">
-          <label class="block text-sm font-medium text-gray-700 mb-2">{{ t('filters.filterBy.wordType') }}</label>
+          <label class="block text-sm font-medium text-gray-700 mb-2">{{
+            t('filters.filterBy.wordType')
+          }}</label>
           <div class="relative">
-            <select v-model="filters.word_type" class="input-field w-full" @change="handleWordTypeChange">
+            <select
+              v-model="filters.word_type"
+              class="input-field w-full"
+              @change="handleWordTypeChange"
+            >
               <option value="" disabled selected>
                 {{ t('filters.selectWordType') }}
               </option>
@@ -62,16 +101,29 @@
         <!-- Unified input fields with clear buttons -->
         <div v-for="field in ['selmaho', 'username']" :key="field" class="relative">
           <label class="block text-sm font-medium text-gray-700 mb-1">
-            {{ field === 'selmaho' ? t('components.combinedFilters.filterBySelmao') :
-              t('components.combinedFilters.filterByAuthor') }}
+            {{
+              field === 'selmaho'
+                ? t('components.combinedFilters.filterBySelmao')
+                : t('components.combinedFilters.filterByAuthor')
+            }}
           </label>
           <div class="relative">
-            <input v-model="filters[field]" type="text"
-              :placeholder="t(`components.combinedFilters.placeholder${field.charAt(0).toUpperCase() + field.slice(1)}`)"
-              class="input-field w-full" @input="debouncedFilterChange">
-            <button v-if="filters[field]"
+            <input
+              v-model="filters[field]"
+              type="text"
+              :placeholder="
+                t(
+                  `components.combinedFilters.placeholder${field.charAt(0).toUpperCase() + field.slice(1)}`
+                )
+              "
+              class="input-field w-full"
+              @input="debouncedFilterChange"
+            />
+            <button
+              v-if="filters[field]"
               class="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors duration-200 [&>svg]:hover:text-current"
-              @click="clearFilter(field)">
+              @click="clearFilter(field)"
+            >
               <X class="h-5 w-5" />
             </button>
           </div>
@@ -79,17 +131,22 @@
       </div>
 
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-2">{{ t('filters.filterBy.sourceLanguage') }}</label>
+        <label class="block text-sm font-medium text-gray-700 mb-2">{{
+          t('filters.filterBy.sourceLanguage')
+        }}</label>
         <div class="relative">
           <select v-model="filters.source_langid" class="input-field w-full" @change="emitUpdate">
             <option :value="1">{{ t('filters.defaultSourceLanguage') }}</option>
-            <option v-for="lang in languages.filter(l => l.id !== 1)" :key="lang.id" :value="lang.id">
+            <option
+              v-for="lang in languages.filter((l) => l.id !== 1)"
+              :key="lang.id"
+              :value="lang.id"
+            >
               {{ lang.real_name }} ({{ lang.english_name }})
             </option>
           </select>
         </div>
       </div>
-
     </div>
   </div>
 </template>
@@ -101,7 +158,7 @@ import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 
 import { fetchDefinitionsTypes } from '@/api'
 
-import { defaultFilterLanguageTags } from '@/config/locales';
+import { defaultFilterLanguageTags } from '@/config/locales'
 import { useI18n } from 'vue-i18n'
 const { t } = useI18n()
 
@@ -214,13 +271,13 @@ function clearDebounceTimer() {
 const hasAnyActiveFilters = computed(() => {
   return Boolean(
     selectedLangs.value.length > 0 ||
-    filters.value.selmaho ||
-    filters.value.username ||
-    filters.value.word_type ||
-    filters.value.source_langid !== 1 || // Check if source_langid is not default
-    !filters.value.isSemantic || // isSemantic is true by default, so if it's false, it's modified
-    !filters.value.searchInPhrases || // modified if false
-    expanded.value
+      filters.value.selmaho ||
+      filters.value.username ||
+      filters.value.word_type ||
+      filters.value.source_langid !== 1 || // Check if source_langid is not default
+      !filters.value.isSemantic || // isSemantic is true by default, so if it's false, it's modified
+      !filters.value.searchInPhrases || // modified if false
+      expanded.value
   )
 })
 
@@ -238,8 +295,10 @@ const debouncedFilterChange = () => {
   // This prevents excessive API calls while user is actively typing
   debounceTimer = setTimeout(() => {
     // Only emit if filters haven't changed (to prevent race conditions)
-    if (filters.value.selmaho === currentFilters.selmaho &&
-      filters.value.username === currentFilters.username) {
+    if (
+      filters.value.selmaho === currentFilters.selmaho &&
+      filters.value.username === currentFilters.username
+    ) {
       emitUpdate()
     }
     debounceTimer = null
@@ -247,9 +306,7 @@ const debouncedFilterChange = () => {
 }
 
 const handleWordTypeChange = (event) => {
-  const selectedType = wordTypes.value.find(
-    (type) => type.type_id === event.target.value?.type_id
-  )
+  const selectedType = wordTypes.value.find((type) => type.type_id === event.target.value?.type_id)
   if (selectedType) {
     filters.value.word_type = selectedType
   }
@@ -360,7 +417,7 @@ watch(
         // Update the modelValue without emitting change event
         const updatedValue = {
           ...props.modelValue,
-          selectedLanguages: selectedLangs.value.map(lang => lang.id)
+          selectedLanguages: selectedLangs.value.map((lang) => lang.id),
         }
         emit('update:modelValue', updatedValue)
       }
