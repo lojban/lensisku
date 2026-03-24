@@ -25,7 +25,9 @@
     },
     "defaultSourceLanguage": "Default (Lojban)",
     "resetAllFilters": "Reset",
-    "selectWordType": "Select word type"
+    "selectWordType": "Select word type",
+    "expand": "Expand filters",
+    "collapse": "Collapse filters"
   },
   "login": {
     "title": "Log in",
@@ -130,7 +132,9 @@
     "deleting": "Deleting...",
     "delete": "Delete",
     "deleteDefinition": "Delete definition",
-    "definitionWarning": "Are you sure you want to delete the definition for \"{word}\"? This action cannot be undone."
+    "definitionWarning": "Are you sure you want to delete the definition for \"{word}\"? This action cannot be undone.",
+    "deletionInProgress": "Deletion in progress…",
+    "readyForDeletion": "Ready to delete"
   },
   "imageUpload": {
     "image": "Image",
@@ -253,7 +257,8 @@
     "titleDefinition": "{word} — Discussing definition",
     "metaDescriptionDefault": "Community discussion waves and comments for the Lojban dictionary.",
     "metaDescriptionEntry": "Discussion and comments for the Lojban word {word}. Community waves and threads in the Lojban dictionary.",
-    "metaDescriptionDefinition": "Discussion and comments for a definition of the Lojban word {word}. Community waves in the Lojban dictionary."
+    "metaDescriptionDefinition": "Discussion and comments for a definition of the Lojban word {word}. Community waves in the Lojban dictionary.",
+    "errorSubmit": "Could not submit your comment. Please try again."
   },
   "definitionLinkDiscussion": {
     "title": "Discussion wave: definition link",
@@ -352,7 +357,12 @@
     "sortOrder": {
       "asc": "A to Z",
       "desc": "Z to A"
-    }
+    },
+    "loadRolesError": "Could not load roles.",
+    "createRoleError": "Could not create role.",
+    "addPermissionError": "Could not add permission.",
+    "removePermissionError": "Could not remove permission.",
+    "deleteRoleError": "Could not delete role."
   },
   "roleManagement": {
     "createNewRole": "Create new role",
@@ -514,7 +524,12 @@
     "semicolonHint": "Use a semicolon (;) to separate multiple correct answers.",
     "quizTab": "Quiz",
     "useCanonicalComparisonLabel": "Use canonical Lojban comparison",
-    "useCanonicalComparisonDescription": "When enabled, answers will be compared using their canonical Lojban form, allowing for equivalent but differently written answers."
+    "useCanonicalComparisonDescription": "When enabled, answers will be compared using their canonical Lojban form, allowing for equivalent but differently written answers.",
+    "newDefinitionValidationError": "Enter the word, language, and a definition or image before adding.",
+    "analyzeWordFirstError": "Analyze the word first to set its word type.",
+    "addDefinitionFailed": "Could not create the definition.",
+    "addDefinitionItemFailed": "The definition was created but could not be added to this collection.",
+    "mergeSuccess": "Collections merged successfully."
   },
   "dictionaryExport": {
     "title": "Dictionary export",
@@ -1040,6 +1055,7 @@
       "subjectPlaceholder": "Subject",
       "placeholder": "Type / to show menu",
       "addSubject": "Add subject",
+      "hideSubject": "Hide subject",
       "errorTooLarge": "Comment is too large (max 5MB)."
     },
     "error": {

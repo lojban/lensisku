@@ -1,6 +1,6 @@
-export const supportedLocales = ['en', 'jbo', 'ru'] as const
+export const supportedLocales = ['en', 'jbo', 'ru', 'ja'] as const
 
-export type SupportedLocale = (typeof supportedLocales)[number] // "en" | "jbo"
+export type SupportedLocale = (typeof supportedLocales)[number]
 
 export const defaultLocale: SupportedLocale = 'en'
 
