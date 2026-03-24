@@ -82,6 +82,141 @@ function normalizeLinkAnchors(text) {
     .replace(/(https?)__(?=[^\s\]])/g, '$1://')
 }
 
+/** GFM-style pipe row or separator (do not split `$...$` math inside — breaks tables). */
+function isLikelyMarkdownTableLine(line) {
+  const t = line.trimStart()
+  if (!t.startsWith('|')) return false
+  return (t.match(/\|/g) || []).length >= 2
+}
+
+function mergeAdjacentMdSegments(segments) {
+  const out = []
+  for (const seg of segments) {
+    if (seg.type === 'md' && out.length && out[out.length - 1].type === 'md') {
+      out[out.length - 1].content += seg.content
+    } else {
+      out.push(seg)
+    }
+  }
+  return out
+}
+
+/**
+ * Split non-table markdown from inline `$...$` math for marked(), without treating `$`
+ * inside fenced ``` or inline `code` as math.
+ */
+function splitNonTableChunkMath(text) {
+  const segments = []
+  let i = 0
+  let buf = ''
+
+  const flushMd = () => {
+    if (buf.length) {
+      segments.push({ type: 'md', content: buf })
+      buf = ''
+    }
+  }
+
+  while (i < text.length) {
+    // Fenced code block: ``` ... ```
+    if (text.startsWith('```', i)) {
+      const close = text.indexOf('\n```', i + 3)
+      if (close === -1) {
+        buf += text.slice(i)
+        i = text.length
+      } else {
+        const end = close + 4
+        buf += text.slice(i, end)
+        i = end
+      }
+      continue
+    }
+
+    // Inline code `...` (do not split on $ inside)
+    if (text[i] === '`') {
+      let j = i + 1
+      while (j < text.length && text[j] !== '`') {
+        j++
+      }
+      if (j < text.length) {
+        buf += text.slice(i, j + 1)
+        i = j + 1
+        continue
+      }
+      buf += text[i]
+      i++
+      continue
+    }
+
+    // Display math $$...$$
+    if (text[i] === '$' && text[i + 1] === '$') {
+      const end = text.indexOf('$$', i + 2)
+      if (end !== -1) {
+        flushMd()
+        segments.push({ type: 'math', content: text.slice(i, end + 2) })
+        i = end + 2
+        continue
+      }
+      buf += text[i]
+      i++
+      continue
+    }
+
+    // Inline math $...$ (single delimiters)
+    if (text[i] === '$') {
+      const end = text.indexOf('$', i + 1)
+      if (end !== -1) {
+        flushMd()
+        segments.push({ type: 'math', content: text.slice(i, end + 1) })
+        i = end + 1
+        continue
+      }
+    }
+
+    buf += text[i]
+    i++
+  }
+
+  flushMd()
+  return segments
+}
+
+/**
+ * Split markdown from inline math for marked(): table rows stay intact; `$` in
+ * backticks or fenced code does not start a math span.
+ */
+function splitMarkdownAndInlineMath(text) {
+  const lines = text.split('\n')
+  const pieces = []
+  let li = 0
+  while (li < lines.length) {
+    const line = lines[li]
+    if (isLikelyMarkdownTableLine(line)) {
+      let block = line
+      li++
+      while (li < lines.length && isLikelyMarkdownTableLine(lines[li])) {
+        block += '\n' + lines[li]
+        li++
+      }
+      pieces.push({ type: 'md', content: block + (li < lines.length ? '\n' : '') })
+      continue
+    }
+    const start = li
+    while (li < lines.length && !isLikelyMarkdownTableLine(lines[li])) {
+      li++
+    }
+    const chunk = lines.slice(start, li).join('\n')
+    if (start < li) {
+      if (chunk.length === 0) {
+        pieces.push({ type: 'md', content: '\n' })
+      } else {
+        pieces.push(...splitNonTableChunkMath(chunk))
+      }
+    }
+  }
+  return mergeAdjacentMdSegments(pieces)
+}
+
 const renderContent = async () => {
   if (!contentRef.value || !props.content) return
 
@@ -96,14 +231,13 @@ const renderContent = async () => {
       return '\n\n' + '<br>'.repeat(match.length - 2) + '\n\n';
     });
     
-    // First split content into LaTeX and non-LaTeX parts
-    const parts = finalContent.split(/(\$[^$]+\$)/)
-    finalContent = parts
-      .map((part) => {
-        // Skip markdown processing for LaTeX parts
-        if (part.startsWith('$') && part.endsWith('$')) {
-          return part
+    const segments = splitMarkdownAndInlineMath(finalContent)
+    finalContent = segments
+      .map((seg) => {
+        if (seg.type === 'math') {
+          return seg.content
         }
+        const part = seg.content
 
         // Process non-LaTeX parts with markdown
         const extensions = [
@@ -291,6 +425,24 @@ onBeforeUnmount(() => {
 
 .mathjax-content :deep(> blockquote > *) {
   display: block !important;
+}
+
+/* Pipe tables from markdown: root `inline` rule would break layout */
+.mathjax-content :deep(> table) {
+  display: table !important;
+  width: 100%;
+  max-width: 100%;
+  border-collapse: collapse;
+  margin: 0.5rem 0;
+  font-size: 0.95em;
+}
+
+.mathjax-content :deep(table th),
+.mathjax-content :deep(table td) {
+  border: 1px solid rgb(229 231 235);
+  padding: 0.25rem 0.5rem;
+  vertical-align: top;
+  text-align: left;
 }
 
 :deep(.curly-quotes::before) {

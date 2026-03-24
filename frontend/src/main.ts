@@ -50,7 +50,8 @@ export const createApp = ViteSSG(
           processEscapes: true,
         },
         options: {
-          skipHtmlTags: ["script", "noscript", "style", "textarea", "pre"],
+          // Include `code` so inline markdown `<code>$x_1$</code>` stays literal (matches jbovlaste).
+          skipHtmlTags: ["script", "noscript", "style", "textarea", "pre", "code"],
         },
       };
 
