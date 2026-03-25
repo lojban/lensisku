@@ -230,7 +230,17 @@ cmavo ↔ Particle: consonant + vowel (+ optional 'V sequences); may be run toge
 cmevla ↔ Name word: ends in a consonant; often written .name. with pauses matching dots.
 Bridi ↔ A clause: sumti fill numbered places x₁ x₂ … of one selbri (relation).
 cu ↔ Separates sumti cluster from selbri when needed; not used before nu/du'u/ka abstractions as selbri.
-fa fe fi fo fu ↔ Tag sumti to explicit places without using SE conversion.
+fa fe fi fo fu (place tags) ↔ Tag sumti to selbri places x₁–x₅; reorder sumti freely; unlike SE conversion they do not reshuffle the place structure; after be they mark places inside a tanru sumti (e.g. le klama be fi le tcadu).
+Modal terms (tense, location, cause, etc.) ↔ Apply to the whole bridi; they do not fill numbered selbri slots—omitted slots are still zo'e unless a place tag assigns them (learn-lojban: ca, fa'a, pu, bu'u, …).
+Modal term without a following sumti ↔ Locates the event relative to the speaker's here and now (e.g. ba alone = future from now; bu'u alone = at this place).
+Modal term with a following sumti ↔ Locates the event relative to the event or state in that argument (e.g. ba le nu mi cadzu = after I walk).
+Time and space (same principle) ↔ Temporal distance uses pu/ba with zi/za/zu; spatial distance uses vi/va/vu (short / medium / far); vowel order i–a–u repeats for subjective near/medium/long.
+la'u ↔ Modal with a sumti stating how far in time or space (e.g. in three days).
+fau, ca, bu'u ↔ fau: same time, place, or situation as…; ca: at the same time as… (present-like); bu'u: at a place (spatial analogue of ca).
+nau ↔ At the speaker's time or place—useful in nested bridi so an inner tense can be anchored to the utterance (English-style sequence of tenses).
+Modal terms and place tags together ↔ Modal terms do not remove fa–fu; both apply (e.g. mi klama se ka'a le rirxe le dinju still fills klama's places).
+Several modal particles (imaginary journey) ↔ Read left to right from implied now/here; order scopes modals (e.g. mo'u co'a vs co'a mo'u); pu ba vs ba pu differs.
+ce'e between modals ↔ Joins two modal particles at the same level so they are not nested, overriding the default left-to-right journey reading.
 nu / du'u / ka ↔ Abstractors: event, proposition, property (-ness); closed with kei where applicable.
 lu … li'u ↔ Quotation: Lojban text as a sumti; nestable.
 zo ↔ Quotes the single following Lojban word.

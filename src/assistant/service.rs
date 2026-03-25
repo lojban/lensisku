@@ -556,17 +556,14 @@ fn system_prompt_base(locale: Option<&str>) -> String {
     // ── Response formatting ──────────────────────────────────────────────
     base.push_str(
         "## Response formatting\n\
-         - Use valid, simple Markdown: **bold** for valsi and key terms, bullet lists \
-         for definitions. **Never use markdown pipe tables** (lines starting with `|` and \
-         `|---|` separators) or ASCII grid tables — they render poorly in chat; use bullet \
-         lists, numbered lines, or plain paragraphs instead.\n\
+         - Use valid, simple Markdown: **bold** for valsi and key terms.\n\
          - When quoting definitions from jbovlaste, preserve inline `$...$` math \
          delimiters exactly as they appear in the tool output.\n\
          - When a definition has place structure (`$x_1$`, `$x_2$`, ...), present it \
          clearly so the user understands each argument slot.\n\
          - Mention the selma'o for cmavo, and rafsi for gismu/cmavo when available, \
          as these are useful for learners.\n\
-         - If results include `notes`, `examples`, or `decomposition`, surface the \
+         - If results include `examples` surface the \
          relevant parts to give a complete answer.\n\n",
     );
 
@@ -714,11 +711,11 @@ fn jbovlaste_tool_schema() -> Tool {
                     "limit": {
                         "type": "integer",
                         "minimum": 1,
-                        "maximum": 30,
-                        "default": 12,
-                        "description": "How many top matches **per query**. Use ~8–12 for a \
-                            known valsi or narrow term; increase toward 30 for broad \
-                            English concepts or when refining after weak results."
+                        "maximum": 10,
+                        "default": 10,
+                        "description": "How many top matches **per query** (max 10). Use fewer \
+                            for a known valsi or narrow term; use 10 for broad English concepts \
+                            or when refining after weak results."
                     },
                     "languages": {
                         "type": "array",
@@ -792,7 +789,7 @@ fn parse_tool_calls_from_content(content: &str) -> Option<Vec<ToolCall>> {
 }
 
 /// Maximum results per semantic search for the assistant tool.
-const SEMANTIC_SEARCH_MAX_LIMIT: u32 = 30;
+const SEMANTIC_SEARCH_MAX_LIMIT: u32 = 10;
 
 /// Max parallel jbovlaste lookups bundled in **one** `jbovlaste_semantic_search` call (`queries` array).
 const SEMANTIC_SEARCH_MAX_QUERIES_PER_CALL: usize = 24;
@@ -915,7 +912,7 @@ async fn run_jbovlaste_semantic_search_once(
 
     let limit = params
         .limit
-        .unwrap_or(12)
+        .unwrap_or(SEMANTIC_SEARCH_MAX_LIMIT)
         .clamp(1, SEMANTIC_SEARCH_MAX_LIMIT) as i64;
 
     let languages_langids = match params.languages.as_deref() {
