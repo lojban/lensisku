@@ -6,7 +6,7 @@ use utoipa::ToSchema;
 use crate::comments::dto::ReactionResponse;
 use crate::versions::VersionDiff;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct SearchDefinitionsParams {
     pub page: i64,
     pub per_page: i64,

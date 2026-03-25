@@ -8,18 +8,19 @@ use std::time::Duration;
 use actix_web_lab::sse;
 use futures::future::join_all;
 use deadpool_postgres::Pool;
+use parking_lot::RwLock;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use tokio::sync::mpsc;
+use tokio::sync::{mpsc, Semaphore};
 use tokio::time::sleep;
 
 use once_cell::sync::Lazy;
 use regex::Regex;
 
-use crate::utils::embeddings::get_embedding;
+use crate::utils::embeddings::get_batch_embeddings;
 use crate::error::AppError;
 use crate::jbovlaste::models::{DefinitionDetail, DefinitionResponse, SearchDefinitionsParams};
-use crate::middleware::cache::RedisCache;
+use crate::middleware::cache::{generate_assistant_semantic_cache_key, RedisCache};
 use crate::utils::openrouter_models::{
     fetch_latest_openrouter_models, load_or_fetch_openrouter_candidates, ModelIdName,
 };
@@ -31,8 +32,54 @@ use super::dto::{AssistantStep, ChatMessage, ChatRequest, ToolCallDto};
 use super::persist::ChatPersistState;
 
 /// When `true`, streaming runs two OpenRouter models in parallel when two candidates exist.
-/// Temporarily set to `false` to use only one model per turn (sequential candidate fallback).
+/// **Off by default**: doubles provider cost/latency for marginal redundancy; enable only when needed.
 const ASSISTANT_PARALLEL_DUAL_MODEL: bool = false;
+
+/// In-process cache for `languages.tag` → `langid` (clears on process restart; disable via `ASSISTANT_LANG_TAG_CACHE_DISABLE`).
+static JBOVLASTE_LANG_TAG_CACHE: Lazy<RwLock<HashMap<String, i32>>> =
+    Lazy::new(|| RwLock::new(HashMap::new()));
+
+/// Limits concurrent DB+embedding work per batched tool call (embedding is batched; this caps parallel `semantic_search` calls).
+static ASSISTANT_SEMANTIC_SUBQUERY_SEMAPHORE: Lazy<Arc<Semaphore>> = Lazy::new(|| {
+    let n = env::var("ASSISTANT_SEMANTIC_SUBQUERY_CONCURRENCY")
+        .ok()
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(24)
+        .clamp(1, 64);
+    Arc::new(Semaphore::new(n))
+});
+
+fn assistant_lang_tag_cache_enabled() -> bool {
+    !env::var("ASSISTANT_LANG_TAG_CACHE_DISABLE")
+        .ok()
+        .map(|v| matches!(v.to_lowercase().as_str(), "1" | "true" | "yes"))
+        .unwrap_or(false)
+}
+
+fn assistant_semantic_cache_ttl() -> Duration {
+    Duration::from_secs(
+        env::var("ASSISTANT_SEMANTIC_CACHE_TTL_SECS")
+            .ok()
+            .and_then(|s| s.parse().ok())
+            .unwrap_or(600)
+            .clamp(60, 86_400),
+    )
+}
+
+fn assistant_semantic_cache_disabled() -> bool {
+    env::var("ASSISTANT_SEMANTIC_CACHE_DISABLE")
+        .ok()
+        .map(|v| matches!(v.to_lowercase().as_str(), "1" | "true" | "yes"))
+        .unwrap_or(false)
+}
+
+fn agent_max_iterations() -> u32 {
+    env::var("ASSISTANT_MAX_ITERATIONS")
+        .ok()
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(15)
+        .clamp(1, 30)
+}
 
 #[derive(Debug, Clone, Serialize)]
 struct ToolFunction {
@@ -316,6 +363,7 @@ fn error_indicates_context_limit(e: &AppError) -> bool {
 }
 
 /// Resolves jbovlaste `languages.tag` values (e.g. `en`, `ru`, `jbo`) to `langid` for DB filters.
+/// Uses an in-process tag cache and a single `ANY($1::text[])` query for cache misses.
 async fn resolve_jbovlaste_language_tags_to_langids(
     pool: &Pool,
     tags: &[String],
@@ -331,22 +379,49 @@ async fn resolve_jbovlaste_language_tags_to_langids(
     if norm.is_empty() {
         return Ok(None);
     }
-    let client = pool
-        .get()
-        .await
-        .map_err(|e| AppError::ExternalService(format!("Database pool error: {}", e)))?;
-    let mut ids = Vec::with_capacity(norm.len());
-    for tag in &norm {
-        let row = client
-            .query_opt(
-                "SELECT langid FROM languages WHERE lower(tag) = lower($1)",
-                &[tag],
+
+    let mut resolved_map: HashMap<String, i32> = HashMap::with_capacity(norm.len());
+
+    if assistant_lang_tag_cache_enabled() {
+        let cache = JBOVLASTE_LANG_TAG_CACHE.read();
+        for t in &norm {
+            if let Some(&id) = cache.get(t) {
+                resolved_map.insert(t.clone(), id);
+            }
+        }
+    }
+
+    let to_fetch: Vec<String> = norm
+        .iter()
+        .filter(|t| !resolved_map.contains_key(*t))
+        .cloned()
+        .collect();
+
+    if !to_fetch.is_empty() {
+        let client = pool
+            .get()
+            .await
+            .map_err(|e| AppError::ExternalService(format!("Database pool error: {}", e)))?;
+        let tag_refs: Vec<&str> = to_fetch.iter().map(|s| s.as_str()).collect();
+        let rows = client
+            .query(
+                "SELECT lower(tag) AS tag, langid FROM languages WHERE lower(tag) = ANY($1::text[])",
+                &[&tag_refs],
             )
             .await
             .map_err(|e| AppError::ExternalService(format!("language tag lookup failed: {}", e)))?;
-        match row {
-            Some(r) => ids.push(r.get::<_, i32>(0)),
-            None => {
+
+        for row in rows {
+            let tag: String = row.get("tag");
+            let langid: i32 = row.get("langid");
+            resolved_map.insert(tag.clone(), langid);
+            if assistant_lang_tag_cache_enabled() {
+                JBOVLASTE_LANG_TAG_CACHE.write().insert(tag, langid);
+            }
+        }
+
+        for tag in &to_fetch {
+            if !resolved_map.contains_key(tag) {
                 return Err(AppError::BadRequest(format!(
                     "Unknown language tag `{}`. Use jbovlaste tags such as en, ru, es, jbo.",
                     tag
@@ -354,39 +429,73 @@ async fn resolve_jbovlaste_language_tags_to_langids(
             }
         }
     }
+
+    let mut ids = Vec::with_capacity(norm.len());
+    for t in &norm {
+        ids.push(
+            *resolved_map
+                .get(t)
+                .expect("all norm tags resolved"),
+        );
+    }
     Ok(Some(ids))
 }
 
 /// Resolves optional `source_language` tag to `langid` (valsi source language). `None` = caller default.
 async fn resolve_optional_source_language_tag(
     pool: &Pool,
-    tag: &Option<String>,
+    tag: Option<&str>,
 ) -> Result<Option<i32>, AppError> {
-    let Some(t) = tag else {
+    let Some(s) = tag else {
         return Ok(None);
     };
-    let s = t.trim();
+    let s = s.trim();
     if s.is_empty() {
         return Ok(None);
     }
-    let client = pool
-        .get()
-        .await
-        .map_err(|e| AppError::ExternalService(format!("Database pool error: {}", e)))?;
-    let row = client
-        .query_opt(
-            "SELECT langid FROM languages WHERE lower(tag) = lower($1)",
-            &[&s],
-        )
-        .await
-        .map_err(|e| AppError::ExternalService(format!("source_language lookup failed: {}", e)))?;
-    match row {
-        Some(r) => Ok(Some(r.get::<_, i32>(0))),
-        None => Err(AppError::BadRequest(format!(
-            "Unknown source_language tag `{}`. Example: jbo for Lojban head words.",
-            s
-        ))),
+    let key = s.to_lowercase();
+    if assistant_lang_tag_cache_enabled() {
+        if let Some(&id) = JBOVLASTE_LANG_TAG_CACHE.read().get(&key) {
+            return Ok(Some(id));
+        }
     }
+    let resolved = resolve_jbovlaste_language_tags_to_langids(pool, std::slice::from_ref(&key)).await?;
+    let Some(v) = resolved else {
+        return Err(AppError::Internal(
+            "language tag resolution returned None unexpectedly".into(),
+        ));
+    };
+    let id = v
+        .first()
+        .copied()
+        .ok_or_else(|| AppError::Internal("empty language resolution".into()))?;
+    Ok(Some(id))
+}
+
+#[derive(Clone)]
+struct ResolvedSemanticFilters {
+    languages_langids: Option<Vec<i32>>,
+    source_langid: Option<i32>,
+}
+
+async fn resolve_semantic_search_language_filters(
+    pool: &Pool,
+    languages: Option<&[String]>,
+    source_language: Option<&String>,
+) -> Result<ResolvedSemanticFilters, AppError> {
+    let languages_langids = match languages {
+        None | Some([]) => None,
+        Some(tags) => resolve_jbovlaste_language_tags_to_langids(pool, tags).await?,
+    };
+    let source_langid = resolve_optional_source_language_tag(
+        pool,
+        source_language.map(|s| s.as_str()),
+    )
+    .await?;
+    Ok(ResolvedSemanticFilters {
+        languages_langids,
+        source_langid,
+    })
 }
 
 fn system_prompt_base(locale: Option<&str>) -> String {
@@ -795,11 +904,9 @@ const SEMANTIC_SEARCH_MAX_LIMIT: u32 = 10;
 const SEMANTIC_SEARCH_MAX_QUERIES_PER_CALL: usize = 24;
 
 #[derive(Debug, Clone)]
-struct SemanticSearchCallParams {
+struct SemanticSearchCore {
     query: String,
     limit: Option<u32>,
-    languages: Option<Vec<String>>,
-    source_language: Option<String>,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -871,12 +978,10 @@ impl SearchBatch {
         }
     }
 
-    fn call_params(&self, query: &str) -> SemanticSearchCallParams {
-        SemanticSearchCallParams {
+    fn call_core(&self, query: &str) -> SemanticSearchCore {
+        SemanticSearchCore {
             query: query.to_string(),
             limit: self.limit,
-            languages: self.languages.clone(),
-            source_language: self.source_language.clone(),
         }
     }
 }
@@ -899,31 +1004,24 @@ enum PreparedToolSlot {
     },
 }
 
-async fn run_jbovlaste_semantic_search_once(
+async fn run_jbovlaste_semantic_search_core(
     pool: &Pool,
-    params: &SemanticSearchCallParams,
+    core: &SemanticSearchCore,
+    filters: &ResolvedSemanticFilters,
+    embedding: &[f32],
+    redis: Option<&RedisCache>,
 ) -> Result<DefinitionResponse, AppError> {
-    let query = params.query.trim().to_string();
+    let query = core.query.trim().to_string();
     if query.is_empty() {
         return Err(AppError::BadRequest(
             "jbovlaste_semantic_search: query is empty after trimming".into(),
         ));
     }
 
-    let limit = params
+    let limit = core
         .limit
         .unwrap_or(SEMANTIC_SEARCH_MAX_LIMIT)
         .clamp(1, SEMANTIC_SEARCH_MAX_LIMIT) as i64;
-
-    let languages_langids = match params.languages.as_deref() {
-        None | Some([]) => None,
-        Some(tags) => resolve_jbovlaste_language_tags_to_langids(pool, tags).await?,
-    };
-
-    let source_langid =
-        resolve_optional_source_language_tag(pool, &params.source_language).await?;
-
-    let embedding = get_embedding(&query).await?;
 
     let params = SearchDefinitionsParams {
         page: 1,
@@ -932,23 +1030,58 @@ async fn run_jbovlaste_semantic_search_once(
         include_comments: false,
         sort_by: "score".to_string(),
         sort_order: "desc".to_string(),
-        languages: languages_langids,
+        languages: filters.languages_langids.clone(),
         selmaho: None,
         username: None,
         word_type: None,
-        source_langid,
+        source_langid: filters.source_langid,
         search_in_phrases: None,
         include_total_count: false,
     };
 
-    let response = semantic_search(pool, params, embedding, None)
+    let run_db = || async {
+        semantic_search(pool, params.clone(), embedding.to_vec(), None)
+            .await
+            .map_err(|e| {
+                AppError::ExternalService(format!(
+                    "Semantic search failed for query \"{}\": {}",
+                    query, e
+                ))
+            })
+    };
+
+    if assistant_semantic_cache_disabled() || redis.is_none() {
+        return run_db().await;
+    }
+
+    let redis = redis.expect("checked");
+    let cache_key = generate_assistant_semantic_cache_key(
+        &query,
+        limit,
+        filters.languages_langids.as_deref(),
+        filters.source_langid,
+    );
+
+    match redis.get::<DefinitionResponse>(&cache_key).await {
+        Ok(Some(cached)) => return Ok(cached),
+        Ok(None) => {}
+        Err(e) => {
+            log::warn!("Assistant semantic cache read failed ({}); running search", e);
+        }
+    }
+
+    let response = run_db().await?;
+
+    if let Err(e) = redis
+        .set(
+            &cache_key,
+            &response,
+            Some(assistant_semantic_cache_ttl()),
+        )
         .await
-        .map_err(|e| {
-            AppError::ExternalService(format!(
-                "Semantic search failed for query \"{}\": {}",
-                query, e
-            ))
-        })?;
+    {
+        log::warn!("Assistant semantic cache write failed: {}", e);
+    }
 
     Ok(response)
 }
@@ -956,10 +1089,13 @@ async fn run_jbovlaste_semantic_search_once(
 /// Runs semantic search with retries on transient failure (embedding or DB/network).
 async fn run_jbovlaste_semantic_search_with_retry(
     pool: &Pool,
-    params: SemanticSearchCallParams,
+    core: &SemanticSearchCore,
+    filters: &ResolvedSemanticFilters,
+    embedding: Vec<f32>,
+    redis: Option<&RedisCache>,
 ) -> Result<DefinitionResponse, AppError> {
     for attempt in 1..=TOOL_MAX_ATTEMPTS {
-        match run_jbovlaste_semantic_search_once(pool, &params).await {
+        match run_jbovlaste_semantic_search_core(pool, core, filters, &embedding, redis).await {
             Ok(r) => return Ok(r),
             Err(e @ AppError::BadRequest(_)) => return Err(e),
             Err(e) => {
@@ -971,7 +1107,7 @@ async fn run_jbovlaste_semantic_search_with_retry(
                         "Assistant semantic search retry {}/{} for query \"{}\" after {:?}",
                         attempt,
                         TOOL_MAX_ATTEMPTS,
-                        params.query,
+                        core.query,
                         delay
                     );
                     sleep(delay).await;
@@ -1096,9 +1232,6 @@ fn combine_batch_search_outcomes(
     let payload = json!({ "searches": searches });
     (summary, payload, plain.trim_end().to_string())
 }
-
-/// Maximum number of agent turns (LLM call + tool executions) per user message.
-const AGENT_MAX_ITERATIONS: u32 = 15;
 
 /// Max retries for a single tool call (e.g. semantic search) on transient failure.
 const TOOL_MAX_ATTEMPTS: u32 = 3;
@@ -1285,6 +1418,7 @@ pub async fn run_agent_loop(
             event_tx.clone(),
             &candidates,
             persist.clone(),
+            redis,
         )
         .await
         {
@@ -1308,6 +1442,7 @@ async fn run_agent_loop_with_candidates(
     event_tx: Option<mpsc::Sender<sse::Event>>,
     candidates: &[ModelIdName],
     persist: Option<Arc<ChatPersistState>>,
+    redis: Option<&RedisCache>,
 ) -> Result<(String, Vec<AssistantStep>), AppError> {
     let parallel_models: Vec<ModelIdName> = candidates.iter().take(2).cloned().collect();
     let is_streaming = event_tx.is_some();
@@ -1335,8 +1470,8 @@ async fn run_agent_loop_with_candidates(
         let p1 = persist.clone();
         let p2 = persist.clone();
         let (mut r1, mut r2) = tokio::join!(
-            run_agent_loop_inner(&pool1, &req1, &m1_id, &m1_name, Some(tx1), p1),
-            run_agent_loop_inner(&pool2, &req2, &m2_id, &m2_name, Some(tx2), p2),
+            run_agent_loop_inner(&pool1, &req1, &m1_id, &m1_name, Some(tx1), p1, redis),
+            run_agent_loop_inner(&pool2, &req2, &m2_id, &m2_name, Some(tx2), p2, redis),
         );
         sse_stream_debug_parallel_branch_finished(&post_debug_tx, &m1_id, &m1_name, &r1).await;
         sse_stream_debug_parallel_branch_finished(&post_debug_tx, &m2_id, &m2_name, &r2).await;
@@ -1356,6 +1491,7 @@ async fn run_agent_loop_with_candidates(
                     &nname,
                     Some(post_debug_tx.clone()),
                     persist.clone(),
+                    redis,
                 )
                 .await;
                 if let Err(ref e) = res {
@@ -1379,6 +1515,7 @@ async fn run_agent_loop_with_candidates(
                     &nname,
                     Some(post_debug_tx.clone()),
                     persist.clone(),
+                    redis,
                 )
                 .await;
                 if let Err(ref e) = res {
@@ -1411,8 +1548,16 @@ async fn run_agent_loop_with_candidates(
 
         for (model_id, model_name) in candidates {
             let tx = event_tx.clone();
-            match run_agent_loop_inner(pool, request, model_id, model_name, tx, persist.clone())
-                .await
+            match run_agent_loop_inner(
+                pool,
+                request,
+                model_id,
+                model_name,
+                tx,
+                persist.clone(),
+                redis,
+            )
+            .await
             {
                 Ok(result) => {
                     // Inner consumed a clone of the sender; drop any remaining handle so the SSE stream ends.
@@ -1458,6 +1603,7 @@ async fn run_agent_loop_inner(
     model_name: &str,
     event_tx: Option<mpsc::Sender<sse::Event>>,
     persist: Option<Arc<ChatPersistState>>,
+    redis: Option<&RedisCache>,
 ) -> Result<(String, Vec<AssistantStep>), AppError> {
     let api_key = env::var("OPENROUTER_API_KEY").map_err(|_| {
         AppError::ExternalService("OPENROUTER_API_KEY is not set in the environment".into())
@@ -1495,8 +1641,10 @@ async fn run_agent_loop_inner(
         std::collections::HashMap::new();
     const MAX_QUERY_REPETITIONS: u32 = 2;
 
+    let agent_max_iter = agent_max_iterations();
+
     // Agent loop: call LLM until it returns a final reply (no tool_calls).
-    for iteration in 1..=AGENT_MAX_ITERATIONS {
+    for iteration in 1..=agent_max_iter {
         let label = format!("chat/completions iteration {}", iteration);
         let response = loop {
             let request_body = ChatCompletionRequest {
@@ -1788,15 +1936,47 @@ async fn run_agent_loop_inner(
                 }
 
                 let pool_clone = pool.clone();
+                let sem = ASSISTANT_SEMANTIC_SUBQUERY_SEMAPHORE.clone();
                 for (slot_i, slot) in prepared.iter().enumerate() {
                     if let PreparedToolSlot::Search { batch, .. } = slot {
-                        let outcomes = join_all(batch.queries.iter().map(|q| {
-                            let pool = pool_clone.clone();
-                            let p = batch.call_params(q);
-                            async move {
-                                run_jbovlaste_semantic_search_with_retry(&pool, p).await
+                        let filters = resolve_semantic_search_language_filters(
+                            pool,
+                            batch.languages.as_deref(),
+                            batch.source_language.as_ref(),
+                        )
+                        .await?;
+
+                        let trimmed: Vec<String> =
+                            batch.queries.iter().map(|q| q.trim().to_string()).collect();
+                        for q in &trimmed {
+                            if q.is_empty() {
+                                return Err(AppError::BadRequest(
+                                    "jbovlaste_semantic_search: query is empty after trimming"
+                                        .into(),
+                                ));
                             }
-                        }))
+                        }
+
+                        let embeddings = get_batch_embeddings(trimmed.clone()).await?;
+
+                        let outcomes = join_all(
+                            trimmed.iter().zip(embeddings.into_iter()).map(|(q, emb)| {
+                                let pool = pool_clone.clone();
+                                let filters = filters.clone();
+                                let sem = sem.clone();
+                                let core = batch.call_core(q);
+                                async move {
+                                    let _permit = sem
+                                        .acquire()
+                                        .await
+                                        .expect("assistant semantic subquery semaphore");
+                                    run_jbovlaste_semantic_search_with_retry(
+                                        &pool, &core, &filters, emb, redis,
+                                    )
+                                    .await
+                                }
+                            }),
+                        )
                         .await;
                         batch_outcomes_by_slot.insert(slot_i, outcomes);
                     }
@@ -1901,7 +2081,7 @@ async fn run_agent_loop_inner(
             // Stuck-recovery: if the model returned empty content with no tools while search
             // results exist in this conversation, inject a brief nudge message and continue the
             // loop. This mirrors Roo's noToolsUsed / recovery pattern for stalled agents.
-            if reply.trim().is_empty() && iteration < AGENT_MAX_ITERATIONS && !steps.is_empty() {
+            if reply.trim().is_empty() && iteration < agent_max_iter && !steps.is_empty() {
                 log::warn!(
                     "Assistant: empty reply with no tool calls at iteration {}; injecting recovery nudge",
                     iteration

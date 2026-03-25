@@ -87,7 +87,10 @@ pub fn create_db_pools() -> AppResult<DatabasePools> {
         return Err(AppError::Config(errors));
     }
 
-    // Configure pools with validation and health checks
+    // Configure pools with validation and health checks.
+    // The app pool serves concurrent HTTP handlers; the assistant may run many parallel
+    // `semantic_search` transactions per batched tool call (`ASSISTANT_SEMANTIC_SUBQUERY_CONCURRENCY`).
+    // Size `DB_APP_POOL_SIZE` so peak concurrent DB work (assistant + other routes) stays below `max_size`.
     app_cfg.host = Some(host.clone());
     app_cfg.port = Some(port);
     app_cfg.user = Some(values[0].clone());

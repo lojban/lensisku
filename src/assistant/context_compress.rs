@@ -24,6 +24,8 @@ pub struct ContextBudget {
     pub system_prompt_byte_len: usize,
     /// Bytes per token heuristic for mapping token budgets ↔ `compress_chat_history` char budgets (default 4).
     pub bytes_per_token_estimate: u32,
+    /// Headroom before the hard context limit (`ASSISTANT_TOKEN_BUFFER_PERCENTAGE`, default [`TOKEN_BUFFER_PERCENTAGE`]).
+    pub token_buffer_percentage: f64,
 }
 
 impl ContextBudget {
@@ -45,11 +47,18 @@ impl ContextBudget {
             .unwrap_or(4_u32)
             .max(1);
 
+        let token_buffer_percentage = std::env::var("ASSISTANT_TOKEN_BUFFER_PERCENTAGE")
+            .ok()
+            .and_then(|s| s.parse().ok())
+            .unwrap_or(TOKEN_BUFFER_PERCENTAGE)
+            .clamp(0.01, 0.5);
+
         Self {
             context_window_tokens,
             max_output_tokens,
             system_prompt_byte_len,
             bytes_per_token_estimate,
+            token_buffer_percentage,
         }
     }
 
@@ -60,6 +69,7 @@ impl ContextBudget {
             max_output_tokens: 8192,
             system_prompt_byte_len,
             bytes_per_token_estimate: 4,
+            token_buffer_percentage: TOKEN_BUFFER_PERCENTAGE,
         }
     }
 }
@@ -99,7 +109,7 @@ fn estimate_tool_call_bytes(c: &super::dto::ToolCallDto) -> usize {
 /// Tokens available for **chat history** after buffer, completion reserve, and system prompt (Roo `manageContext` formula).
 pub fn allowed_history_tokens(budget: &ContextBudget) -> u32 {
     let cw = budget.context_window_tokens as f64;
-    let after_buffer = cw * (1.0 - TOKEN_BUFFER_PERCENTAGE);
+    let after_buffer = cw * (1.0 - budget.token_buffer_percentage);
     let reserved_out = budget.max_output_tokens as f64;
     let system_tok = estimate_tokens_from_byte_len(budget.system_prompt_byte_len) as f64;
     let raw = after_buffer - reserved_out - system_tok;

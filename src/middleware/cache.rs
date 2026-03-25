@@ -135,3 +135,29 @@ pub fn generate_semantic_search_cache_key(query: &SearchDefinitionsQuery) -> Str
                                          // Note: include_comments is fixed to false for semantic search
     )
 }
+
+/// Redis key for assistant tool semantic search (same `semantic_search:*` prefix as
+/// [`RedisCache::invalidate_definition_search_caches`]).
+pub fn generate_assistant_semantic_cache_key(
+    search_term: &str,
+    per_page: i64,
+    languages: Option<&[i32]>,
+    source_langid: Option<i32>,
+) -> String {
+    let mut lang_ids: Vec<i32> = languages.map(|s| s.to_vec()).unwrap_or_default();
+    lang_ids.sort_unstable();
+    let langs_str = lang_ids
+        .iter()
+        .map(|i| i.to_string())
+        .collect::<Vec<_>>()
+        .join(",");
+    let payload = format!(
+        "assistant_sem:v1|{}|{}|{}|{}",
+        search_term,
+        per_page,
+        langs_str,
+        source_langid.map(|i| i.to_string()).unwrap_or_else(|| "default".to_string())
+    );
+    let digest = format!("{:x}", md5::compute(payload.as_bytes()));
+    format!("semantic_search:assistant:{}", digest)
+}
