@@ -389,7 +389,7 @@
   "collectionCustomTextBulk": {
     "pageHint": "批量编辑自定义卡片文字",
     "documentTitle": "批量编辑自定义文字",
-    "disclaimer": "本页仅列出未关联词典释义的条目（自定义卡片内容）。已绑定词典词条的条目不在此列。",
+    "disclaimer": "本页仅列出未关联词典释义的合集项目：自定义内容卡片。",
     "backToCollection": "返回合集",
     "ownerOnly": "仅合集所有者可使用批量编辑。",
     "empty": "该合集中没有符合此类型的条目。",
@@ -409,6 +409,9 @@
     "newRowFrontPlaceholder": "正面…",
     "newRowBackPlaceholder": "背面…",
     "importButton": "导入 CSV/TSV",
+    "exportMenuLabel": "导出",
+    "exportCsv": "导出 CSV",
+    "exportTsv": "导出 TSV",
     "importing": "导入中…",
     "importAria": "导入 CSV 或 TSV 文件",
     "importWrongFileType": "请选择 .csv 或 .tsv 文件。",

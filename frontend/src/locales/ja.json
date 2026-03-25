@@ -384,7 +384,7 @@
   "collectionCustomTextBulk": {
     "pageHint": "カスタムカードの一括編集",
     "documentTitle": "カスタムテキストの一括編集",
-    "disclaimer": "このページでは辞書定義に紐づかない項目（カスタムカード）のみ表示します。辞書エントリに結びついた項目は含まれません。",
+    "disclaimer": "このページでは、辞書定義に紐づかないコレクション項目のみを一覧します：カスタム内容カード。",
     "backToCollection": "コレクションに戻る",
     "ownerOnly": "一括編集はコレクションの所有者のみ利用できます。",
     "empty": "この種類の項目はこのコレクションにありません。",
@@ -404,6 +404,9 @@
     "newRowFrontPlaceholder": "表面…",
     "newRowBackPlaceholder": "裏面…",
     "importButton": "CSV / TSV をインポート",
+    "exportMenuLabel": "エクスポート",
+    "exportCsv": "CSV をエクスポート",
+    "exportTsv": "TSV をエクスポート",
     "importing": "インポート中…",
     "importAria": "CSV または TSV ファイルをインポート",
     "importWrongFileType": ".csv または .tsv ファイルを選んでください。",
