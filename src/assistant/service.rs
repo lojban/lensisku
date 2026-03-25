@@ -519,10 +519,12 @@ fn system_prompt_base(locale: Option<&str>) -> String {
          For each user message, follow this decision process:\n\
          1. **Decide & extract terms**: Does answering require new jbovlaste evidence \
          (unknown valsi, new topic, or no prior search for this material)? If yes, \
-         **rewrite the user question into search terms** that match how dictionary \
-         glosses are written (short, concrete; see *Query relevance* below), then call \
-         `jbovlaste_semantic_search` **once** with a **`queries` array** listing every distinct \
-         term—not with the user’s full sentence, and not as several separate tool calls.\n\
+         **rewrite the user question into search terms in the user’s own language** \
+         that match how dictionary glosses are written (short, concrete; see *Query \
+         relevance* below), then call `jbovlaste_semantic_search` **once** with a \
+         **`queries` array** listing every distinct term—not with the user’s full \
+         sentence, not Lojban words guessed from memory, and not as several separate \
+         tool calls.\n\
          2. **Refine**: After reviewing results, if similarity is low or hits are off-topic, \
          call the tool again in a **later** turn with a **new** `queries` array (synonyms, \
          shorter strings, alternate valsi spellings). Do not repeat the same strings.\n\
@@ -638,28 +640,39 @@ fn system_prompt_base(locale: Option<&str>) -> String {
     // ── Query relevance (critical) ───────────────────────────────────────
     base.push_str(
         "## Query relevance (critical)\n\
-         Each string in **`queries`** is embedded and matched against **definition text** in jbovlaste. \
-         Phrasing that matches gloss style yields better hits than conversational English.\n\
-         - **Valsi-first:** If the user names or you can infer a Lojban word, include **only** \
-         that valsi as its own element (`lorxu`, `.u`, `klama`). Do not add English around it.\n\
+         Each string in **`queries`** is embedded and matched against **definition text** \
+         (glosses written in natural languages like English) in jbovlaste—**not** against \
+         Lojban valsi strings. Phrasing that matches gloss style yields good hits.\n\
+         - **User-language first:** Always search using keywords from the **user’s language** \
+         first. Rewrite the user’s question into short gloss-style terms in their \
+         language: user asks \"how to say big thanks\" → queries `[\"big thanks\", \"thanks\"]`. \
+         Do **NOT** guess or infer Lojban words from your pretrained knowledge—your Lojban \
+         memory is **untrusted** and guessing Lojban words produces irrelevant results.\n\
+         - **Explicit valsi only:** Include a bare Lojban valsi in `queries` **only** when \
+         the user **explicitly typed** it (e.g. user writes \"what is klama\" → include \
+         `\"klama\"`). Never fabricate or infer Lojban words to search for.\n\
+         - **No Lojban multi-word queries:** Never combine multiple Lojban words into one \
+         query string (e.g. `\"mutce ki’e\"` or `\"barda klama\"` are **useless**—the index \
+         contains single-word definitions, not Lojban phrases). Each user-typed valsi must \
+         be its own separate element.\n\
          - **Strip chat noise:** Remove question words (\"what\", \"how\", \"is there\"), \
          politeness, and phrases like \"in Lojban\", \"the word for\", \"tell me\" before \
          searching. Keep the **topic** (e.g. user asks \"what’s fox\" → `\"fox\"`).\n\
-         - **Concept queries:** Use **2–6 content words** max per string—nouns, verbs, adjectives, \
-         standard grammar terms used in jbovlaste (`sumti`, `selbri`, `tanru`, \
-         `logical connective`, `attitudinal`). Avoid long clauses; if the user needs two \
-         unrelated concepts, put **two strings** in the **same** `queries` array (one tool call).\n\
+         - **Concept queries:** Use **2–6 content words** max per string—nouns, verbs, \
+         adjectives, standard grammar terms used in jbovlaste (`sumti`, `selbri`, `tanru`, \
+         `logical connective`, `attitudinal`). If the user needs two unrelated concepts, \
+         put **two strings** in the **same** `queries` array (one tool call).\n\
          - **Weak results:** If top hits look irrelevant or `similarity` scores are poor, \
-         retry with: a shorter query; a synonym; the same concept in Lojban if you know a \
-         related valsi from results; or a different facet (e.g. `animal` vs `mammal`).\n\
+         retry with: a shorter query; a synonym; the same concept in Lojban **only if you \
+         found a related valsi in prior tool results** (not from memory); or a different \
+         facet (e.g. `animal` vs `mammal`).\n\
          - **Never** add meta-words like \"Lojban\", \"definition\", \"dictionary\", \
          \"jbovlaste\", \"meaning\", or \"word\"—they dilute embeddings.\n\
-         - **limit:** Use ~8–12 for a specific valsi or tight concept; raise toward **30** \
-         when exploring a broad English concept or when the first page lacks a good match.\n\
-         - **languages:** Optional list of **language tags** (not numeric IDs), e.g. `en` for \
-         English glosses, `ru` for Russian, `jbo` if you need definitions written in Lojban. \
-         Omit to search across all natural-language definition rows the backend indexes. \
-         Prefer `en` when the user reads English.\n\n",
+         - **limit:** Use 10 for a specific valsi or tight concept.\n\
+         - **languages (important):** Always pass `languages` matching the user’s language \
+         (e.g. `[\"en\"]` for English-speaking users, `[\"ru\"]` for Russian). Only omit \
+         `languages` when the user explicitly asks for multi-language results or you truly \
+         cannot determine their language.\n\n",
     );
 
     // ── Response formatting ──────────────────────────────────────────────
@@ -781,28 +794,30 @@ fn jbovlaste_tool_schema() -> Tool {
             name: "jbovlaste_semantic_search".to_string(),
             description: "Semantic search over jbovlaste definition text (embedding \
                           similarity). Your ONLY tool—call before stating facts about \
-                          Lojban words or meanings, unless the system message **core reference dictionary** \
-                          (bundled gismu, cmavo, learn-lojban, phrases) already answers. \
+                          Lojban words or meanings, unless the system message **core reference \
+                          dictionary** already answers. \
                           **Always pass every lookup in one call** via the **`queries` array** \
-                          (even a single word is `[\"lorxu\"]`). The server runs all queries in \
-                          parallel and returns every result set together—do **not** rely on \
-                          multiple separate tool calls in one turn. For translations, list all \
-                          valsi and gloss-style terms you need in `queries`. \
+                          (even a single word is `[\"lorxu\"]`). \
                           Call when: new valsi/topic, or prior results were insufficient—\
-                          then use **different** strings in `queries` (no duplicate searches). \
-                          Do NOT call when this thread already has search-backed \
-                          definitions for the same question—answer from those. \
-                          **Each query string**: not a chat message. Prefer bare valsi (`lorxu`, \
-                          `i`, `klama`). Else 2–6 gloss-style keywords (English or Lojban): \
-                          e.g. `fox`, `logical connective`, `past tense`, `emotion`. \
-                          Bad: \"what is the Lojban word for fox\", \"definition of klama\", \
-                          \"jbovlaste search lorxu\". Strip questions and meta-words \
-                          (\"Lojban\", \"definition\", \"dictionary\", \"meaning\", \
-                          \"word\", \"jbovlaste\"). \
-                          **`languages`**: optional BCP-47-style tags from jbovlaste \
-                          (`languages.tag`), e.g. `en` (English glosses), `ru`, `es`, `jbo`. \
-                          Omit to search across indexed natural-language definitions; use \
-                          `[\"en\"]` when the user wants English glosses only."
+                          then use **different** strings (no duplicate searches). \
+                          Do NOT call when this thread already has search-backed answers. \
+                          **Query language rules (critical):** \
+                          1) Search in the **user’s language** (e.g. English keywords like \
+                          `fox`, `big thanks`, `logical connective`, `past tense`). \
+                          2) Include a bare Lojban valsi ONLY if the user explicitly typed it. \
+                          3) NEVER guess Lojban words from memory—your pretrained Lojban is \
+                          untrusted and produces garbage results. \
+                          4) NEVER combine Lojban words in one query (e.g. `\"mutce ki’e\"` \
+                          is useless—each valsi must be a separate element). \
+                          Bad queries: \"what is the Lojban word for fox\", \
+                          \"definition of klama\", \"mutce ki’e\", \"barda klama\". \
+                          Good queries: `[\"fox\"]`, `[\"big thanks\", \"thanks\"]`, \
+                          `[\"klama\"]` (only if user typed klama). \
+                          Strip meta-words (\"Lojban\", \"definition\", \"dictionary\", \
+                          \"meaning\", \"word\", \"jbovlaste\"). \
+                          **`languages`**: Always pass the user’s language tag \
+                          (e.g. `[\"en\"]` for English, `[\"ru\"]` for Russian). \
+                          Omit only when language is unknown."
                 .to_string(),
             parameters: json!({
                 "type": "object",
@@ -968,12 +983,36 @@ struct SearchBatch {
     source_language: Option<String>,
 }
 
+/// Extract a jbovlaste language tag from a locale string (e.g. "en-US" → "en").
+fn language_tag_from_locale(locale: &str) -> Option<String> {
+    let tag = locale
+        .split(['-', '_'])
+        .next()?;
+    let tag = tag.trim().to_lowercase();
+    if tag.len() >= 2 {
+        Some(tag)
+    } else {
+        None
+    }
+}
+
 impl SearchBatch {
-    fn from_tool_args(args: &ToolArgs, queries: Vec<String>) -> Self {
+    fn from_tool_args(args: &ToolArgs, queries: Vec<String>, default_locale: Option<&str>) -> Self {
+        let languages = args.languages.clone().or_else(|| {
+            default_locale
+                .and_then(language_tag_from_locale)
+                .map(|tag| {
+                    log::info!(
+                        "Assistant: LLM omitted `languages`; defaulting to [\"{}\"] from locale",
+                        tag
+                    );
+                    vec![tag]
+                })
+        });
         Self {
             queries,
             limit: args.limit,
-            languages: args.languages.clone(),
+            languages,
             source_language: args.source_language.clone(),
         }
     }
@@ -1876,7 +1915,7 @@ async fn run_agent_loop_inner(
                 }
 
                 pending_search_ordinal += 1;
-                let batch = SearchBatch::from_tool_args(&args, queries);
+                let batch = SearchBatch::from_tool_args(&args, queries, request.locale.as_deref());
                 let action_desc = if batch.queries.len() == 1 {
                     format!("Semantic search: \"{}\"", batch.queries[0])
                 } else {
