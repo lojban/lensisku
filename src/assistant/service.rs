@@ -412,34 +412,31 @@ fn system_prompt_base(locale: Option<&str>) -> String {
          (unknown valsi, new topic, or no prior search for this material)? If yes, \
          **rewrite the user question into search terms** that match how dictionary \
          glosses are written (short, concrete; see *Query relevance* below), then call \
-         `jbovlaste_semantic_search` with those terms—not with the user’s full sentence.\n\
+         `jbovlaste_semantic_search` **once** with a **`queries` array** listing every distinct \
+         term—not with the user’s full sentence, and not as several separate tool calls.\n\
          2. **Refine**: After reviewing results, if similarity is low or hits are off-topic, \
-         call the tool again with a **different** query (synonym, shorter string, alternate \
-         valsi spelling, or split into two searches). Do not repeat the same query.\n\
+         call the tool again in a **later** turn with a **new** `queries` array (synonyms, \
+         shorter strings, alternate valsi spellings). Do not repeat the same strings.\n\
          3. **Answer**: Once you have enough grounded evidence, write your final response \
          **without calling any tool**.\n\n\
          If the user is asking a follow-up or clarification about a word you **already \
          searched** in this conversation, skip straight to step 3—do not search again.\n\n",
     );
 
-    // ── Tool use (parallel calls) — adapted from Roo-Code tool-use guidelines ──
+    // ── Tool use (batched jbovlaste_semantic_search) ───────────────────────
     base.push_str(&format!(
         "## Tool use\n\
-         The chat API allows **multiple tool calls in a single assistant message** when \
-         that saves turns (e.g. several independent lookups). Prefer native tool-calling; \
-         the host runs those calls **in parallel** when they do not depend on each other.\n\
+         `jbovlaste_semantic_search` **always** takes a **`queries` array** (even one lookup \
+         is `[\"lorxu\"]`). The server runs **every** query in parallel and returns all result \
+         blocks in **one** tool response—this is the **only** supported way to batch lookups; \
+         do **not** issue multiple separate `jbovlaste_semantic_search` calls in the same turn.\n\
          - Decide what evidence you still need vs. what is already in this thread or the \
          {}.\n\
-         - If several **independent** searches would help (different valsi or unrelated \
-         concepts), issue them together in one step instead of one-by-one.\n\
-         - **Translations and multi-word phrases:** First list every **valsi or gloss** you \
-         still need from jbovlaste (each distinct word or meaning). Then call \
-         `jbovlaste_semantic_search` **once per distinct lookup**, **all in the same assistant \
-         message** (parallel tool calls) so the host returns every result together—then you \
-         can build the full translation in the next turn without extra search round trips.\n\
-         - If a later search should use wording informed by an earlier hit, run searches \
-         **across separate turns** so each step is grounded in prior tool results. Do not \
-         assume a search outcome before you have seen it.\n\n",
+         - **Translations:** Put every distinct valsi or gloss-style string you need into \
+         **one** `queries` list in a **single** tool call.\n\
+         - If a later search should use wording informed by an earlier hit, call the tool \
+         again in a **later** turn after you have read the prior tool output. Do not assume \
+         a search outcome before you have seen it.\n\n",
         list_hint
     ));
 
@@ -518,12 +515,9 @@ fn system_prompt_base(locale: Option<&str>) -> String {
          \"give an example from what you already quoted\", or short confirmations.\n\n\
          **Multi-step search:** After receiving tool results, if they are insufficient, \
          off-topic, or you need related terms, call the tool again in a later step with \
-         a new or refined query. Do not give a final answer until search results \
-         actually support it. You MAY issue several parallel calls in a single step \
-         (e.g. multiple concepts) and search again in later steps when refining.\n\
-         For **translation** tasks especially: prepare **all** needed word/meaning queries up \
-         front and fire them **in parallel** in one step so you get the full evidence set \
-         at once.\n\n\
+         a **new** `queries` array. Do not give a final answer until search results \
+         actually support it. **Translation:** put **all** needed lookups in **one** `queries` \
+         array per tool call—never one tool call per word in the same turn.\n\n\
          If the search returns no or few results, try different queries in further \
          steps, or say so and suggest rephrasing; do not make up answers.\n\n\
          **Finish rule:** Once the definitions you have retrieved are sufficient to \
@@ -535,17 +529,17 @@ fn system_prompt_base(locale: Option<&str>) -> String {
     // ── Query relevance (critical) ───────────────────────────────────────
     base.push_str(
         "## Query relevance (critical)\n\
-         The `query` is embedded and matched against **definition text** in jbovlaste. \
+         Each string in **`queries`** is embedded and matched against **definition text** in jbovlaste. \
          Phrasing that matches gloss style yields better hits than conversational English.\n\
-         - **Valsi-first:** If the user names or you can infer a Lojban word, search **only** \
-         that valsi (`lorxu`, `.u`, `klama`). Do not add English around it.\n\
+         - **Valsi-first:** If the user names or you can infer a Lojban word, include **only** \
+         that valsi as its own element (`lorxu`, `.u`, `klama`). Do not add English around it.\n\
          - **Strip chat noise:** Remove question words (\"what\", \"how\", \"is there\"), \
          politeness, and phrases like \"in Lojban\", \"the word for\", \"tell me\" before \
-         searching. Keep the **topic** (e.g. user asks \"what’s fox\" → query `fox`).\n\
-         - **Concept queries:** Use **2–6 content words** max—nouns, verbs, adjectives, \
+         searching. Keep the **topic** (e.g. user asks \"what’s fox\" → `\"fox\"`).\n\
+         - **Concept queries:** Use **2–6 content words** max per string—nouns, verbs, adjectives, \
          standard grammar terms used in jbovlaste (`sumti`, `selbri`, `tanru`, \
-         `logical connective`, `attitudinal`). Avoid long clauses and lists of unrelated \
-         ideas; if the user asks two things, use **two** tool calls or two sequential steps.\n\
+         `logical connective`, `attitudinal`). Avoid long clauses; if the user needs two \
+         unrelated concepts, put **two strings** in the **same** `queries` array (one tool call).\n\
          - **Weak results:** If top hits look irrelevant or `similarity` scores are poor, \
          retry with: a shorter query; a synonym; the same concept in Lojban if you know a \
          related valsi from results; or a different facet (e.g. `animal` vs `mammal`).\n\
@@ -581,9 +575,9 @@ fn system_prompt_base(locale: Option<&str>) -> String {
         "## Fallback tool-call format\n\
          Prefer your platform's native tool-calling. If you cannot use it, emit \
          exactly: CALL>[{\"name\":\"jbovlaste_semantic_search\",\"arguments\":\
-         {\"query\":\"lorxu\"}}]</TOOLCALL> or \
-         {\"query\":\"logical connective\",\"limit\":16,\"languages\":[\"en\"]} — short \
-         `query`; use `languages` tags like en, ru, jbo.",
+         {\"queries\":[\"lorxu\"]}}]</TOOLCALL> or \
+         {\"queries\":[\"lorxu\",\"fox\",\"sumti\"],\"limit\":16,\"languages\":[\"en\"]} — \
+         short strings in `queries`; use `languages` tags like en, ru, jbo.",
     );
 
     // ── Locale preference ────────────────────────────────────────────────
@@ -639,7 +633,7 @@ async fn system_prompt_with_dictionary(_pool: &Pool, locale: Option<&str>) -> St
         "{}\n\n## Core reference dictionary\n\
 All data lines use the same column separator: spaced **↔** (U+2194): `left ↔ right`. \
 Sections **gismu** and **cmavo**: `valsi ↔ English definition`. **learn-lojban tutorial**: \
-English↔English notions and English↔Lojban examples from the lojban.pw course. **Phrases** (two \
+English↔English notions and English↔Lojban examples. **Phrases** (two \
 subsections): `English ↔ Lojban` — corpus samples (general, then math- / logic-leaning). \
 This bundled list is a **subset** of jbovlaste and full phrase corpora; \
 use `jbovlaste_semantic_search` for any valsi or nuance not present here.\n\n{}",
@@ -683,16 +677,16 @@ fn jbovlaste_tool_schema() -> Tool {
                           similarity). Your ONLY tool—call before stating facts about \
                           Lojban words or meanings, unless the system message **core reference dictionary** \
                           (bundled gismu, cmavo, learn-lojban, phrases) already answers. \
-                          Emit **several parallel** jbovlaste_semantic_search calls in **one** \
-                          message when lookups are independent (different valsi, glosses, or \
-                          topics). For **translations**, list every word or meaning you still need \
-                          first, then batch **all** those queries together so every result returns \
-                          at once before you compose the full Lojban. \
+                          **Always pass every lookup in one call** via the **`queries` array** \
+                          (even a single word is `[\"lorxu\"]`). The server runs all queries in \
+                          parallel and returns every result set together—do **not** rely on \
+                          multiple separate tool calls in one turn. For translations, list all \
+                          valsi and gloss-style terms you need in `queries`. \
                           Call when: new valsi/topic, or prior results were insufficient—\
-                          then use a **different** `query` (no duplicate searches). \
+                          then use **different** strings in `queries` (no duplicate searches). \
                           Do NOT call when this thread already has search-backed \
                           definitions for the same question—answer from those. \
-                          **`query`**: not a chat message. Prefer bare valsi (`lorxu`, \
+                          **Each query string**: not a chat message. Prefer bare valsi (`lorxu`, \
                           `i`, `klama`). Else 2–6 gloss-style keywords (English or Lojban): \
                           e.g. `fox`, `logical connective`, `past tense`, `emotion`. \
                           Bad: \"what is the Lojban word for fox\", \"definition of klama\", \
@@ -707,20 +701,22 @@ fn jbovlaste_tool_schema() -> Tool {
             parameters: json!({
                 "type": "object",
                 "properties": {
-                    "query": {
-                        "type": "string",
-                        "description": "Embedding input: bare valsi OR short keyword list \
-                            matching dictionary gloss style. Strip question framing. \
-                            Examples: `klama`, `fox`, `sumti`, `logical connective`. \
-                            Avoid sentences and filler; synonyms are OK if first search \
-                            was weak."
+                    "queries": {
+                        "type": "array",
+                        "items": { "type": "string", "minLength": 1 },
+                        "minItems": 1,
+                        "maxItems": 24,
+                        "description": "All jbovlaste lookups for this step. One string per \
+                            distinct valsi or gloss-style search (parallel on the server). \
+                            Single lookup: e.g. `[\"klama\"]`. Translation: e.g. \
+                            `[\"fox\", \"run\", \"because\", \"i\"]`. Max 24 strings."
                     },
                     "limit": {
                         "type": "integer",
                         "minimum": 1,
                         "maximum": 30,
                         "default": 12,
-                        "description": "How many top matches to return. Use ~8–12 for a \
+                        "description": "How many top matches **per query**. Use ~8–12 for a \
                             known valsi or narrow term; increase toward 30 for broad \
                             English concepts or when refining after weak results."
                     },
@@ -741,41 +737,10 @@ fn jbovlaste_tool_schema() -> Tool {
                             in jbovlaste `languages`). Example: `jbo` for standard Lojban valsi."
                     }
                 },
-                "required": ["query"]
+                "required": ["queries"]
             }),
         },
     }
-}
-
-#[derive(Debug, Deserialize, Clone)]
-struct ToolArgs {
-    query: String,
-    #[serde(default)]
-    limit: Option<u32>,
-    /// jbovlaste `languages.tag` values (e.g. en, ru, jbo), not numeric langids.
-    #[serde(default)]
-    languages: Option<Vec<String>>,
-    #[serde(default)]
-    source_language: Option<String>,
-}
-
-/// One assistant turn may include several tool calls; we prepare slots then run searches concurrently.
-#[derive(Debug)]
-enum PreparedToolSlot {
-    Immediate {
-        tool_call_id: Option<String>,
-        name: Option<String>,
-        content: String,
-    },
-    Search {
-        tool_call_id: Option<String>,
-        name: Option<String>,
-        args: ToolArgs,
-        search_query: String,
-        assistant_reasoning: Option<String>,
-        global_step_index: usize,
-        action_desc: String,
-    },
 }
 
 static LLM_CORNER_BRACKET_SEGMENTS: Lazy<Regex> =
@@ -829,28 +794,137 @@ fn parse_tool_calls_from_content(content: &str) -> Option<Vec<ToolCall>> {
 /// Maximum results per semantic search for the assistant tool.
 const SEMANTIC_SEARCH_MAX_LIMIT: u32 = 30;
 
+/// Max parallel jbovlaste lookups bundled in **one** `jbovlaste_semantic_search` call (`queries` array).
+const SEMANTIC_SEARCH_MAX_QUERIES_PER_CALL: usize = 24;
+
+#[derive(Debug, Clone)]
+struct SemanticSearchCallParams {
+    query: String,
+    limit: Option<u32>,
+    languages: Option<Vec<String>>,
+    source_language: Option<String>,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+struct ToolArgs {
+    /// Primary API: batch all lookups here (one tool round-trip).
+    #[serde(default)]
+    queries: Vec<String>,
+    /// Legacy single-query shape; accepted only if `queries` is empty (older clients / history).
+    #[serde(default)]
+    query: Option<String>,
+    #[serde(default)]
+    limit: Option<u32>,
+    /// jbovlaste `languages.tag` values (e.g. en, ru, jbo), not numeric langids.
+    #[serde(default)]
+    languages: Option<Vec<String>>,
+    #[serde(default)]
+    source_language: Option<String>,
+}
+
+impl ToolArgs {
+    fn normalized_queries(&self) -> Result<Vec<String>, String> {
+        let mut v: Vec<String> = self
+            .queries
+            .iter()
+            .map(|s| s.trim())
+            .filter(|s| !s.is_empty())
+            .map(String::from)
+            .collect();
+        if v.is_empty() {
+            if let Some(ref q) = self.query {
+                let t = q.trim();
+                if !t.is_empty() {
+                    v.push(t.to_string());
+                }
+            }
+        }
+        if v.is_empty() {
+            return Err(
+                "`queries` must be a non-empty array of search strings (non-empty after trimming)."
+                    .to_string(),
+            );
+        }
+        if v.len() > SEMANTIC_SEARCH_MAX_QUERIES_PER_CALL {
+            return Err(format!(
+                "At most {} queries per jbovlaste_semantic_search call.",
+                SEMANTIC_SEARCH_MAX_QUERIES_PER_CALL
+            ));
+        }
+        Ok(v)
+    }
+
+}
+
+#[derive(Debug, Clone)]
+struct SearchBatch {
+    queries: Vec<String>,
+    limit: Option<u32>,
+    languages: Option<Vec<String>>,
+    source_language: Option<String>,
+}
+
+impl SearchBatch {
+    fn from_tool_args(args: &ToolArgs, queries: Vec<String>) -> Self {
+        Self {
+            queries,
+            limit: args.limit,
+            languages: args.languages.clone(),
+            source_language: args.source_language.clone(),
+        }
+    }
+
+    fn call_params(&self, query: &str) -> SemanticSearchCallParams {
+        SemanticSearchCallParams {
+            query: query.to_string(),
+            limit: self.limit,
+            languages: self.languages.clone(),
+            source_language: self.source_language.clone(),
+        }
+    }
+}
+
+/// One assistant turn may include several tool calls; each jbovlaste search slot runs a **batch** of queries in parallel.
+#[derive(Debug)]
+enum PreparedToolSlot {
+    Immediate {
+        tool_call_id: Option<String>,
+        name: Option<String>,
+        content: String,
+    },
+    Search {
+        tool_call_id: Option<String>,
+        name: Option<String>,
+        batch: SearchBatch,
+        assistant_reasoning: Option<String>,
+        global_step_index: usize,
+        action_desc: String,
+    },
+}
+
 async fn run_jbovlaste_semantic_search_once(
     pool: &Pool,
-    args: &ToolArgs,
+    params: &SemanticSearchCallParams,
 ) -> Result<DefinitionResponse, AppError> {
-    let query = args.query.trim().to_string();
+    let query = params.query.trim().to_string();
     if query.is_empty() {
         return Err(AppError::BadRequest(
             "jbovlaste_semantic_search: query is empty after trimming".into(),
         ));
     }
 
-    let limit = args
+    let limit = params
         .limit
         .unwrap_or(12)
         .clamp(1, SEMANTIC_SEARCH_MAX_LIMIT) as i64;
 
-    let languages_langids = match args.languages.as_deref() {
+    let languages_langids = match params.languages.as_deref() {
         None | Some([]) => None,
         Some(tags) => resolve_jbovlaste_language_tags_to_langids(pool, tags).await?,
     };
 
-    let source_langid = resolve_optional_source_language_tag(pool, &args.source_language).await?;
+    let source_langid =
+        resolve_optional_source_language_tag(pool, &params.source_language).await?;
 
     let embedding = get_embedding(&query).await?;
 
@@ -885,10 +959,10 @@ async fn run_jbovlaste_semantic_search_once(
 /// Runs semantic search with retries on transient failure (embedding or DB/network).
 async fn run_jbovlaste_semantic_search_with_retry(
     pool: &Pool,
-    args: ToolArgs,
+    params: SemanticSearchCallParams,
 ) -> Result<DefinitionResponse, AppError> {
     for attempt in 1..=TOOL_MAX_ATTEMPTS {
-        match run_jbovlaste_semantic_search_once(pool, &args).await {
+        match run_jbovlaste_semantic_search_once(pool, &params).await {
             Ok(r) => return Ok(r),
             Err(e @ AppError::BadRequest(_)) => return Err(e),
             Err(e) => {
@@ -900,7 +974,7 @@ async fn run_jbovlaste_semantic_search_with_retry(
                         "Assistant semantic search retry {}/{} for query \"{}\" after {:?}",
                         attempt,
                         TOOL_MAX_ATTEMPTS,
-                        args.query,
+                        params.query,
                         delay
                     );
                     sleep(delay).await;
@@ -959,6 +1033,71 @@ fn semantic_tool_results_plain_text_for_llm(query: &str, definitions: &[Definiti
         out.push('\n');
     }
     out
+}
+
+fn combine_batch_search_outcomes(
+    queries: &[String],
+    outcomes: Vec<Result<DefinitionResponse, AppError>>,
+) -> (String, serde_json::Value, String) {
+    let mut searches = Vec::new();
+    let mut plain = String::new();
+    let mut total_defs = 0usize;
+    let mut err_count = 0usize;
+
+    for (q, res) in queries.iter().zip(outcomes) {
+        match res {
+            Ok(def_response) => {
+                total_defs += def_response.definitions.len();
+                let compact: Vec<serde_json::Value> = def_response
+                    .definitions
+                    .iter()
+                    .map(summarise_definition)
+                    .collect();
+                searches.push(json!({
+                    "query": q,
+                    "results": compact,
+                }));
+                plain.push_str(&semantic_tool_results_plain_text_for_llm(
+                    q,
+                    &def_response.definitions,
+                ));
+                plain.push('\n');
+            }
+            Err(e) => {
+                err_count += 1;
+                let err_str = format!("{}", e);
+                searches.push(json!({
+                    "query": q,
+                    "error": err_str.clone(),
+                    "results": [],
+                }));
+                plain.push_str(&format!(
+                    "Semantic search error for \"{}\": {}\n\n",
+                    q, err_str
+                ));
+            }
+        }
+    }
+
+    let summary = if err_count == 0 {
+        format!(
+            "{} quer{}; {} definition(s) total.",
+            queries.len(),
+            if queries.len() == 1 { "y" } else { "ies" },
+            total_defs
+        )
+    } else {
+        format!(
+            "{} quer{}; {} definition(s); {} sub-search error(s).",
+            queries.len(),
+            if queries.len() == 1 { "y" } else { "ies" },
+            total_defs,
+            err_count
+        )
+    };
+
+    let payload = json!({ "searches": searches });
+    (summary, payload, plain.trim_end().to_string())
 }
 
 /// Maximum number of agent turns (LLM call + tool executions) per user message.
@@ -1462,6 +1601,31 @@ async fn run_agent_loop_inner(
                 });
                 emit_sse_user_visible(&persist, tx, payload).await?;
             }
+
+            if calls.len() > 1 {
+                log::warn!(
+                    "Assistant: model emitted {} tool calls in one turn; expected one batched jbovlaste_semantic_search",
+                    calls.len()
+                );
+                let bail = "Use exactly one jbovlaste_semantic_search call per assistant turn. \
+                     Put every lookup in a single `queries` array (e.g. [\"klama\",\"fox\"]), \
+                     not multiple tool calls.";
+                for call in calls.iter() {
+                    messages.push(ChatCompletionMessageRequest {
+                        role: "tool".to_string(),
+                        content: bail.to_string(),
+                        tool_call_id: call.id.clone(),
+                        name: call
+                            .function
+                            .name
+                            .clone()
+                            .or_else(|| Some("jbovlaste_semantic_search".to_string())),
+                        tool_calls: None,
+                    });
+                }
+                continue;
+            }
+
             // Prepare tool slots (validation, repetition guard), then run semantic searches in
             // parallel while preserving tool_result order to match assistant tool_calls (OpenAI protocol).
             let base_step_index = steps.len();
@@ -1523,31 +1687,31 @@ async fn run_agent_loop_inner(
                     }
                 };
 
-                let query_trimmed = args.query.trim().to_string();
-                if query_trimmed.is_empty() {
-                    let err_msg =
-                        "jbovlaste_semantic_search: query is empty after trimming".to_string();
-                    prepared.push(PreparedToolSlot::Immediate {
-                        tool_call_id: call.id.clone(),
-                        name: call.function.name.clone(),
-                        content: format!("Tool error: {}", err_msg),
-                    });
-                    continue;
+                let queries = match args.normalized_queries() {
+                    Ok(q) => q,
+                    Err(msg) => {
+                        prepared.push(PreparedToolSlot::Immediate {
+                            tool_call_id: call.id.clone(),
+                            name: call.function.name.clone(),
+                            content: format!("Tool error: jbovlaste_semantic_search: {}", msg),
+                        });
+                        continue;
+                    }
+                };
+
+                let mut repetition_block: Option<(String, u32)> = None;
+                for q in &queries {
+                    let prior = query_seen_count.get(q).copied().unwrap_or(0);
+                    if prior >= MAX_QUERY_REPETITIONS {
+                        repetition_block = Some((q.clone(), prior));
+                        break;
+                    }
                 }
-
-                let mut args = args;
-                args.query = query_trimmed.clone();
-                let search_query_for_llm = query_trimmed;
-
-                let seen = query_seen_count
-                    .entry(search_query_for_llm.clone())
-                    .or_insert(0);
-                *seen += 1;
-                if *seen > MAX_QUERY_REPETITIONS {
+                if let Some((search_query_for_llm, prior)) = repetition_block {
                     log::warn!(
-                        "Assistant: query '{}' repeated {} times; injecting loop-break tool result",
+                        "Assistant: query '{}' already used {} time(s); injecting loop-break tool result",
                         search_query_for_llm,
-                        seen
+                        prior
                     );
                     prepared.push(PreparedToolSlot::Immediate {
                         tool_call_id: call.id.clone(),
@@ -1557,36 +1721,48 @@ async fn run_agent_loop_inner(
                              The results are already in this conversation. \
                              Stop searching and formulate your answer now.",
                             search_query_for_llm,
-                            *seen - 1
+                            prior
                         ),
                     });
                     continue;
                 }
+                for q in &queries {
+                    *query_seen_count.entry(q.clone()).or_insert(0) += 1;
+                }
 
                 pending_search_ordinal += 1;
-                let action_desc = format!("Semantic search: \"{}\"", search_query_for_llm);
+                let batch = SearchBatch::from_tool_args(&args, queries);
+                let action_desc = if batch.queries.len() == 1 {
+                    format!("Semantic search: \"{}\"", batch.queries[0])
+                } else {
+                    let preview = batch.queries[..batch.queries.len().min(4)].join(", ");
+                    let suffix = if batch.queries.len() > 4 { ", …" } else { "" };
+                    format!(
+                        "Semantic search ({} queries): {}{}",
+                        batch.queries.len(),
+                        preview,
+                        suffix
+                    )
+                };
                 prepared.push(PreparedToolSlot::Search {
                     tool_call_id: call.id.clone(),
                     name: call.function.name.clone(),
-                    args,
-                    search_query: search_query_for_llm,
+                    batch,
                     assistant_reasoning,
                     global_step_index,
                     action_desc,
                 });
             }
 
-            let mut search_jobs: Vec<(usize, ToolArgs)> = Vec::new();
-            for (slot_i, slot) in prepared.iter().enumerate() {
-                if let PreparedToolSlot::Search { args, .. } = slot {
-                    search_jobs.push((slot_i, args.clone()));
-                }
-            }
+            let mut batch_outcomes_by_slot: HashMap<
+                usize,
+                Vec<Result<DefinitionResponse, AppError>>,
+            > = HashMap::new();
 
-            let mut results_by_slot: HashMap<usize, Result<DefinitionResponse, AppError>> =
-                HashMap::new();
-
-            if !search_jobs.is_empty() {
+            if prepared
+                .iter()
+                .any(|s| matches!(s, PreparedToolSlot::Search { .. }))
+            {
                 if let Some(ref tx) = event_tx {
                     for slot in &prepared {
                         if let PreparedToolSlot::Search {
@@ -1615,15 +1791,18 @@ async fn run_agent_loop_inner(
                 }
 
                 let pool_clone = pool.clone();
-                let outcomes = join_all(search_jobs.iter().map(|(_, args)| {
-                    let pool = pool_clone.clone();
-                    let args = args.clone();
-                    async move { run_jbovlaste_semantic_search_with_retry(&pool, args).await }
-                }))
-                .await;
-
-                for ((slot_i, _), outcome) in search_jobs.iter().zip(outcomes) {
-                    results_by_slot.insert(*slot_i, outcome);
+                for (slot_i, slot) in prepared.iter().enumerate() {
+                    if let PreparedToolSlot::Search { batch, .. } = slot {
+                        let outcomes = join_all(batch.queries.iter().map(|q| {
+                            let pool = pool_clone.clone();
+                            let p = batch.call_params(q);
+                            async move {
+                                run_jbovlaste_semantic_search_with_retry(&pool, p).await
+                            }
+                        }))
+                        .await;
+                        batch_outcomes_by_slot.insert(slot_i, outcomes);
+                    }
                 }
             }
 
@@ -1645,60 +1824,32 @@ async fn run_agent_loop_inner(
                     PreparedToolSlot::Search {
                         tool_call_id,
                         name,
-                        search_query,
+                        batch,
                         assistant_reasoning,
                         global_step_index,
                         action_desc,
                         ..
                     } => {
-                        let tool_result = results_by_slot
+                        let outcomes = batch_outcomes_by_slot
                             .remove(&slot_i)
-                            .expect("search slot must have a result");
+                            .expect("search slot must have batch outcomes");
 
-                        let (result_summary, tool_payload_value) = match &tool_result {
-                            Ok(results) => {
-                                let n = results.definitions.len();
-                                let summary = format!("Returned {} definition(s).", n);
-                                let compact_results: Vec<serde_json::Value> = results
-                                    .definitions
-                                    .iter()
-                                    .map(summarise_definition)
-                                    .collect();
-                                let payload = json!({
-                                    "results": compact_results,
-                                });
-                                (summary, payload)
-                            }
-                            Err(e) => {
-                                let err_str = format!("{}", e);
+                        for res in &outcomes {
+                            if let Err(e) = res {
                                 log::warn!(
-                                    "Assistant semantic search failed after retries: {}",
-                                    err_str
+                                    "Assistant semantic search sub-query failed after retries: {}",
+                                    e
                                 );
-                                let summary = format!("Error after retries: {}", err_str);
-                                let payload = json!({
-                                    "error": err_str,
-                                    "results": [],
-                                });
-                                (summary, payload)
                             }
-                        };
+                        }
+
+                        let (result_summary, tool_payload_value, tool_content_for_llm) =
+                            combine_batch_search_outcomes(&batch.queries, outcomes);
 
                         let tool_content_json =
                             serde_json::to_string(&tool_payload_value).unwrap_or_else(|_| {
-                                tool_payload_value["error"]
-                                    .as_str()
-                                    .unwrap_or("")
-                                    .to_string()
+                                "{}".to_string()
                             });
-
-                        let tool_content_for_llm = match &tool_result {
-                            Ok(results) => semantic_tool_results_plain_text_for_llm(
-                                &search_query,
-                                &results.definitions,
-                            ),
-                            Err(e) => format!("Semantic search error: {}", e),
-                        };
 
                         let step = AssistantStep {
                             action: action_desc.clone(),
@@ -1821,7 +1972,7 @@ mod chat_message_map_tests {
                     r#type: Some("function".into()),
                     function: ToolCallFunctionDto {
                         name: Some("jbovlaste_semantic_search".into()),
-                        arguments: Some(r#"{"query":"test"}"#.into()),
+                        arguments: Some(r#"{"queries":["test"]}"#.into()),
                     },
                 }]),
                 tool_call_id: None,
