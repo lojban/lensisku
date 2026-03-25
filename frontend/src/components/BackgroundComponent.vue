@@ -1,11 +1,25 @@
 <template>
 
-  <div :id="id" :class="classes" />
+  <div :id="id" :class="['background-root', classes]">
+    <div
+      class="bg-layer"
+      :class="{ 'bg-layer--top': activeLayer === 0 }"
+      :style="layer0Style"
+    />
+    <div
+      class="bg-layer"
+      :class="{ 'bg-layer--top': activeLayer === 1 }"
+      :style="layer1Style"
+    />
+  </div>
 
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
+
+const TRANSITION_S = 2.9
+const transitionDurationCss = `${TRANSITION_S}s`
 
 const props = defineProps({
   id: {
@@ -34,36 +48,91 @@ const backgroundUrls = [
   '/assets/backgrounds/У_берегов_Финского_залива_(Шишкин).webp',
 ]
 
-onMounted(() => {
-  const bgDiv = document.getElementById(props.id)
-  let timeoutId
+const layer0Url = ref('')
+const layer1Url = ref('')
+const activeLayer = ref<0 | 1>(0)
+const isInitial = ref(true)
 
+const layer0Style = computed(() => ({
+  backgroundImage: layer0Url.value ? `url(${layer0Url.value})` : 'none',
+  opacity: activeLayer.value === 0 ? 1 : 0,
+}))
+
+const layer1Style = computed(() => ({
+  backgroundImage: layer1Url.value ? `url(${layer1Url.value})` : 'none',
+  opacity: activeLayer.value === 1 ? 1 : 0,
+}))
+
+let timeoutId: ReturnType<typeof setTimeout> | undefined
+
+function preload(url: string): Promise<boolean> {
+  return new Promise((resolve) => {
+    const img = new Image()
+    img.onload = () => resolve(true)
+    img.onerror = () => resolve(false)
+    img.src = url
+  })
+}
+
+onMounted(() => {
   const setBackground = async () => {
     const index = Math.floor(Math.random() * backgroundUrls.length)
     const url = backgroundUrls[index]
 
-    const loaded = await new Promise((resolve) => {
-      const img = new Image()
-      img.onload = () => resolve(true)
-      img.onerror = () => resolve(false)
-      img.src = url
-    })
-
-    if (loaded) {
-      bgDiv.style.backgroundImage = `url(${url})`
+    const loaded = await preload(url)
+    if (!loaded) {
+      timeoutId = setTimeout(setBackground, 30000)
+      return
     }
 
-    // Schedule next background change after 30 seconds
+    if (isInitial.value) {
+      layer0Url.value = url
+      activeLayer.value = 0
+      isInitial.value = false
+    } else {
+      const incoming: 0 | 1 = activeLayer.value === 0 ? 1 : 0
+      if (incoming === 0) {
+        layer0Url.value = url
+      } else {
+        layer1Url.value = url
+      }
+      await new Promise<void>((resolve) => {
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+      })
+      activeLayer.value = incoming
+    }
+
     timeoutId = setTimeout(setBackground, 30000)
   }
 
-  // Initial call
   setBackground()
+})
 
-  // Cleanup
-  return () => clearTimeout(timeoutId)
+onUnmounted(() => {
+  if (timeoutId !== undefined) {
+    clearTimeout(timeoutId)
+  }
 })
 </script>
 
-<style scoped></style>
+<style scoped>
+.background-root {
+  position: relative;
+  overflow: hidden;
+}
 
+.bg-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  pointer-events: none;
+  transition: opacity v-bind(transitionDurationCss) ease-in-out;
+}
+
+.bg-layer--top {
+  z-index: 2;
+}
+</style>

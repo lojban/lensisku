@@ -95,11 +95,12 @@ function isLikelyMarkdownTableLine(line) {
   return (t.match(/\|/g) || []).length >= 2
 }
 
+/** Join adjacent md pieces with a newline so block boundaries (e.g. heading + table) stay valid GFM. */
 function mergeAdjacentMdSegments(segments) {
   const out = []
   for (const seg of segments) {
     if (seg.type === 'md' && out.length && out[out.length - 1].type === 'md') {
-      out[out.length - 1].content += seg.content
+      out[out.length - 1].content += '\n' + seg.content
     } else {
       out.push(seg)
     }
