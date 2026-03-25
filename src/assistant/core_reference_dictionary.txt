@@ -246,6 +246,14 @@ lu … li'u ↔ Quotation: Lojban text as a sumti; nestable.
 zo ↔ Quotes the single following Lojban word.
 sei ↔ Incidental bridi commenting on the host sentence.
 ma / mo / xu ↔ Questions: sumti, selbri, yes/no respectively.
+Attitudinals (interjections), placement ↔ Modify the construct immediately before them; at the start of a bridi they scope the whole bridi; moving them changes which phrase is in scope (learn-lojban lesson 1).
+Attitudinal structure ↔ Root cmavo (e.g. ui, ie) plus optional scalar particles on the root; then optional suffixes pei, dai, zo'o; suffixes may take scalars too (e.g. ie zo'o nai = agree, not kidding).
+Attitudinal scalars: cu'i, nai, sai, cai, ru'e ↔ cu'i = middle/neutral on the scale; nai = opposite pole (ui happy vs ui nai alas); sai = strong intensity; cai = extreme intensity; ru'e = weak intensity (standard Lojban scale; learn-lojban stresses cu'i, nai, sai).
+pei (attitudinal suffix) ↔ Makes the attitudinal a question about the listener's feeling; pei alone asks for an appropriate attitudinal reply.
+dai (attitudinal suffix) ↔ Attributes the feeling to someone else (empathy, e.g. ui nai dai = you must be sad); without dai the speaker expresses their own attitude toward the bridi.
+zo'o / zo'o nai (attitudinal suffix) ↔ zo'o marks humor or non-serious tone; zo'o nai marks seriousness (I'm not joking).
+Vocatives and attitudinal scalars ↔ Vocatives use the same scalar modifiers as interjections (e.g. ki'e sai = thank you very much).
+Interjections before vocatives (sentence-wide scope) ↔ Put interjections before vocatives when both should modify the whole utterance; an interjection immediately after a vocative modifies that vocative or its argument (learn-lojban lesson 1).
 ku / kei / vau ↔ Terminators: end LE description, NU abstraction, bridi (when required).
 
 ## learn-lojban tutorial (examples; English ↔ Lojban; 40 lines, quota 40)

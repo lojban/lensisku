@@ -63,6 +63,14 @@ TUTORIAL_NOTION_LINES: list[str] = [
     f"zo{COL_SEP}Quotes the single following Lojban word.",
     f"sei{COL_SEP}Incidental bridi commenting on the host sentence.",
     f"ma / mo / xu{COL_SEP}Questions: sumti, selbri, yes/no respectively.",
+    f"Attitudinals (interjections), placement{COL_SEP}Modify the construct immediately before them; at the start of a bridi they scope the whole bridi; moving them changes which phrase is in scope (learn-lojban lesson 1).",
+    f"Attitudinal structure{COL_SEP}Root cmavo (e.g. ui, ie) plus optional scalar particles on the root; then optional suffixes pei, dai, zo'o; suffixes may take scalars too (e.g. ie zo'o nai = agree, not kidding).",
+    f"Attitudinal scalars: cu'i, nai, sai, cai, ru'e{COL_SEP}cu'i = middle/neutral on the scale; nai = opposite pole (ui happy vs ui nai alas); sai = strong intensity; cai = extreme intensity; ru'e = weak intensity (standard Lojban scale; learn-lojban stresses cu'i, nai, sai).",
+    f"pei (attitudinal suffix){COL_SEP}Makes the attitudinal a question about the listener's feeling; pei alone asks for an appropriate attitudinal reply.",
+    f"dai (attitudinal suffix){COL_SEP}Attributes the feeling to someone else (empathy, e.g. ui nai dai = you must be sad); without dai the speaker expresses their own attitude toward the bridi.",
+    f"zo'o / zo'o nai (attitudinal suffix){COL_SEP}zo'o marks humor or non-serious tone; zo'o nai marks seriousness (I'm not joking).",
+    f"Vocatives and attitudinal scalars{COL_SEP}Vocatives use the same scalar modifiers as interjections (e.g. ki'e sai = thank you very much).",
+    f"Interjections before vocatives (sentence-wide scope){COL_SEP}Put interjections before vocatives when both should modify the whole utterance; an interjection immediately after a vocative modifies that vocative or its argument (learn-lojban lesson 1).",
     f"ku / kei / vau{COL_SEP}Terminators: end LE description, NU abstraction, bridi (when required).",
 ]
 
