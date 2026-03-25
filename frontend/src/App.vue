@@ -290,8 +290,9 @@
     <div
       class="max-w-4xl mx-auto relative flex flex-col"
       :class="[
-        route.meta.contentTopPaddingMainOnly ? 'pt-0' : 'pt-3',
+        route.meta.contentTopPaddingMainOnly || route.meta.authFullBleed ? 'pt-0' : 'pt-3',
         route.meta.fullHeight ? 'main-child-full-height w-full' : 'min-h-[calc(100vh-12rem)]',
+        route.meta.authFullBleed ? 'main-child--auth-fullbleed' : '',
         route.path.startsWith('/lingo') ? 'lg:pl-64' : '',
       ]"
       id="main-child"
@@ -300,7 +301,7 @@
       <div
         class="flex-1"
         :class="[
-          route.meta.contentTopPaddingMainOnly ? 'px-0' : 'px-3',
+          route.meta.contentTopPaddingMainOnly || route.meta.authFullBleed ? 'px-0' : 'px-3',
           { 'main-child-inner-full-height': route.meta.fullHeight },
         ]"
       >
@@ -800,6 +801,11 @@ footer {
 .main-content > * {
   @apply bg-transparent md:bg-zinc-50/75 md:border-x;
   min-height: 100%;
+}
+
+/* Login / signup: global BackgroundComponent + body::before stay visible; no zinc column over the art */
+.main-content > #main-child.main-child--auth-fullbleed {
+  @apply bg-transparent md:bg-transparent md:border-0;
 }
 
 @media (min-width: 640px) {
