@@ -135,8 +135,8 @@
     </div>
 
   </div>
-   <!-- Sort & filter controls (card-base, input-field, checkbox-toggle per brandbook) -->
-  <div class="card-base card-compact mb-4 p-4 sm:p-5 flex flex-col gap-4">
+   <!-- Sort & filter controls (card-base, input-field, checkbox-toggle per brandbook). overflow-visible so sort glow/drop-shadow is not clipped by card-base overflow-hidden. -->
+  <div class="card-base card-compact mb-4 p-4 sm:p-5 flex flex-col gap-4 overflow-visible">
 
     <div class="flex flex-row flex-wrap items-center gap-3">
        <input
@@ -156,7 +156,7 @@
     <div class="flex flex-row items-center gap-2 sm:block">
 
       <div
-        class="flex flex-nowrap justify-center min-w-0 overflow-x-auto sm:overflow-visible gap-0 py-2"
+        class="flex flex-nowrap justify-center min-w-0 overflow-visible gap-0 py-2"
         role="group"
         aria-label="Sort order"
       >

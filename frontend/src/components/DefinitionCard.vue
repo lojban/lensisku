@@ -472,34 +472,37 @@
        <!-- Control Section -->
       <div v-if="!disableToolbar" class="mt-3">
 
-        <div class="flex flex-wrap gap-2 sm:gap-0 sm:space-x-2 md:space-x-0 space-x-0" role="group">
+        <div
+          class="flex flex-wrap gap-2 sm:gap-0 sm:space-x-2 md:space-x-0 space-x-0"
+          role="group"
+        >
            <!-- Edit button --> <button
             v-if="auth.state.isLoggedIn && definition.can_edit"
-            class="btn-update btn-group-item w-full sm:w-auto text-center"
+            class="btn-update btn-group-item text-center"
             @click="router.push(`/definition/${definition.definitionid}/edit`)"
           >
              <Pencil class="h-4 w-4" /> {{ t('components.definitionCard.editButton') }} </button
           > <!-- Delete button --> <button
             v-if="auth.state.isLoggedIn && auth.state.username === definition.username"
             @click="handleDeleteClick"
-            class="btn-delete btn-group-item w-full sm:w-auto text-center"
+            class="btn-delete btn-group-item text-center"
           >
              <Trash2 class="h-4 w-4" /> {{ t('components.definitionCard.deleteButton') }} </button
           > <!-- Version History --> <RouterLink
             v-if="auth.state.isLoggedIn && !props.hideHistory"
             :to="`/definition/${definition.definitionid}/history?valsi_id=${definition.valsiid}`"
-            class="btn-history btn-group-item w-full sm:w-auto text-center"
+            class="btn-history btn-group-item text-center"
             > <Clock class="h-4 w-4" /> {{ t('components.definitionCard.historyButton') }}
             </RouterLink
           > <!-- Comment --> <RouterLink
             v-if="auth.state.isLoggedIn && props.showCommentButton"
             :to="`/comments?valsi_id=${definition.valsiid}&definition_id=${definition.definitionid}`"
-            class="btn-create btn-group-item w-full sm:w-auto text-center"
+            class="btn-create btn-group-item text-center"
             > <MessageSquare class="h-4 w-4" /> {{ t('components.definitionCard.commentButton') }}
             </RouterLink
           > <!-- Translate --> <button
             v-if="auth.state.isLoggedIn"
-            class="btn-create btn-group-item w-full sm:w-auto text-center"
+            class="btn-create btn-group-item text-center"
             @click="router.push(`/valsi/add?word=${encodeURIComponent(definition.valsiword ?? definition.word ?? '')}${canLink ? '&translate_from_def=' + definition.definitionid : ''}`)"
             :title="
               canLink
@@ -510,7 +513,7 @@
              <Languages class="h-4 w-4" /> {{ t('components.definitionCard.translateButton') }} </button
           > <!-- Link existing --> <button
             v-if="auth.state.isLoggedIn && canLink"
-            class="btn-link btn-group-item w-full sm:w-auto text-center"
+            class="btn-link btn-group-item text-center"
             @click="showLinkModal = true"
             :title="t('components.definitionCard.linkExistingTitle')"
           >
@@ -518,7 +521,7 @@
           > <!-- Discussions --> <RouterLink
             v-if="disableDiscussionButton && !disableDiscussionToolbarButton"
             :to="`/comments?valsi_id=${definition.valsiid}&definition_id=${definition.definitionid}`"
-            class="btn-get btn-group-item w-full sm:w-auto text-center"
+            class="btn-get btn-group-item text-center"
             > <AudioWaveform class="h-4 w-4" /> <span
               v-if="definition.comment_count && definition.comment_count > 0"
               class="bg-gray-100 px-1.5 rounded-md border"

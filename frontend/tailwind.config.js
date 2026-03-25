@@ -407,6 +407,10 @@ export default {
           },
           '.btn-group-item': {
             '@apply border rounded-full': {},
+            // Tailwind's `max-sm` variant; `@screen` only accepts `theme.screens` keys (not max-*).
+            '@media (max-width: 639px)': {
+              '@apply w-auto': {},
+            },
             '&:not(:disabled):active': {
               '@apply scale-[1.02]': {},
             },

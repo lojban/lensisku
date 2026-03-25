@@ -66,9 +66,15 @@
           > <!-- Logo - Always visible --> <NavLink
             to="/"
             class="navbar-item flex items-center"
+            :class="{
+              '!text-gray-400 cursor-default pointer-events-none': isHomePage,
+            }"
             @click="triggerPyro"
             >
-            <div class="flex h-8 w-8 shrink-0 items-center justify-center -skew-x-12">
+            <div
+              class="flex h-8 w-8 shrink-0 items-center justify-center -skew-x-12"
+              :class="{ 'opacity-50': isHomePage }"
+            >
               <div
                 v-html="logoSvgRaw"
                 role="img"
@@ -452,6 +458,12 @@ useHead({
 })
 const router = useRouter()
 const route = useRoute()
+
+const isHomePage = computed(
+  () =>
+    route.name === 'Home' ||
+    (typeof route.name === 'string' && route.name.startsWith('Home-'))
+)
 
 function metaProps(p: unknown): Record<string, unknown> {
   return p !== null && typeof p === 'object' && !Array.isArray(p)
