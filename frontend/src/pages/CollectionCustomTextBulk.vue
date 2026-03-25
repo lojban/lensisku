@@ -4,9 +4,9 @@
 
     <div class="mb-4 flex w-full flex-col gap-3">
 
-      <div class="flex w-full flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+      <div class="flex w-full flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 
-        <div class="min-w-0 flex-1">
+        <div class="min-w-0 w-full flex-1">
 
           <div class="flex items-center gap-2 text-gray-500 italic text-sm mb-1">
              <List class="w-5 h-5 shrink-0" aria-hidden="true" /> <span>{{
@@ -20,23 +20,48 @@
           </h1>
 
         </div>
-        <div class="flex shrink-0 flex-wrap items-center gap-2 self-start">
-          <button
-            v-if="!isLoading && isOwner"
-            type="button"
-            class="btn-aqua-white inline-flex items-center gap-2 text-sm"
-            :disabled="isSaving || isImporting"
-            @click="showImportModal = true"
-          >
-            <Upload class="h-4 w-4 shrink-0" aria-hidden="true" />
-            {{ isImporting ? t('collectionCustomTextBulk.importing') : t('collectionCustomTextBulk.importButton') }}
-          </button>
-          <RouterLink
-            :to="`/collections/${numericCollectionId}`"
-            class="btn-aqua-white shrink-0 self-start"
-          >
-            <ArrowLeft class="w-4 h-4" /> {{ t('collectionCustomTextBulk.backToCollection') }}
-          </RouterLink>
+        <div
+          class="flex w-full min-w-0 shrink-0 flex-row flex-wrap items-center justify-between gap-3 sm:w-auto sm:justify-start"
+        >
+          <div class="flex flex-row items-center gap-0" role="group">
+            <RouterLink
+              :to="`/collections/${numericCollectionId}`"
+              class="btn-aqua-zinc btn-aqua-group-item inline-flex items-center gap-2 text-sm md:flex-none"
+            >
+              <ArrowLeft class="w-4 h-4 shrink-0" aria-hidden="true" />
+              {{ t('collectionCustomTextBulk.backToCollection') }}
+            </RouterLink>
+            <button
+              v-if="!isLoading && isOwner"
+              type="button"
+              class="btn-aqua-white btn-aqua-group-item inline-flex items-center gap-2 text-sm md:flex-none"
+              :disabled="isSaving || isImporting"
+              @click="showImportModal = true"
+            >
+              <FileDown class="h-4 w-4 shrink-0" aria-hidden="true" />
+              {{ isImporting ? t('collectionCustomTextBulk.importing') : t('collectionCustomTextBulk.importButton') }}
+            </button>
+          </div>
+          <Dropdown v-if="!isLoading && isOwner" :trigger-label="t('collectionCustomTextBulk.exportMenuLabel')">
+            <button
+              type="button"
+              class="w-full px-4 py-2 text-left text-sm text-cyan-600 hover:bg-cyan-50 flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
+              :disabled="isSaving || isImporting"
+              @click="exportListAsCsv"
+            >
+              <FileUp class="h-4 w-4 shrink-0" aria-hidden="true" />
+              {{ t('collectionCustomTextBulk.exportCsv') }}
+            </button>
+            <button
+              type="button"
+              class="w-full px-4 py-2 text-left text-sm text-emerald-600 hover:bg-emerald-50 flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
+              :disabled="isSaving || isImporting"
+              @click="exportListAsTsv"
+            >
+              <FileUp class="h-4 w-4 shrink-0" aria-hidden="true" />
+              {{ t('collectionCustomTextBulk.exportTsv') }}
+            </button>
+          </Dropdown>
         </div>
       </div>
 
@@ -338,7 +363,7 @@
 </template>
 
 <script setup lang="ts">
-import { ArrowLeft, List, Loader2, Save, Trash2, Upload } from 'lucide-vue-next'
+import { ArrowLeft, FileDown, FileUp, List, Loader2, Save, Trash2 } from 'lucide-vue-next'
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
@@ -352,14 +377,20 @@ import {
 import FileDropzone from '@/components/FileDropzone.vue'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import ModalComponent from '@/components/ModalComponent.vue'
+import { Dropdown } from '@packages/ui'
 import { useAuth } from '@/composables/useAuth'
 import { useError } from '@/composables/useError'
 import { useSuccessToast } from '@/composables/useSuccessToast'
 import { useSeoHead } from '@/composables/useSeoHead'
 import { isLikelyCsvOrTsvFile } from '@/utils/acceptCsvTsvFile'
+import {
+  buildBulkCustomTextCsv,
+  buildBulkCustomTextTsv,
+  downloadTextFile,
+} from '@/utils/exportBulkCustomText'
 import { mergeBulkImportRows, parseCsvOrTsvFile } from '@/utils/parseDelimitedImport'
 
-const { t, locale } = useI18n()
+const { t } = useI18n()
 const router = useRouter()
 const auth = useAuth()
 const { showError, clearError } = useError()
@@ -613,6 +644,37 @@ function onImportFileInvalid() {
 
 async function onImportFileSelected(file: File) {
   await processImportFile(file)
+}
+
+function getExportableRows(): { free_content_front: string; free_content_back: string }[] {
+  const drafts = newRows.value.filter(
+    (r) => r.free_content_front.trim() !== '' || r.free_content_back.trim() !== ''
+  )
+  const saved = rows.value.map((r) => ({
+    free_content_front: r.free_content_front,
+    free_content_back: r.free_content_back,
+  }))
+  return [...saved, ...drafts]
+}
+
+function exportListAsCsv() {
+  const data = getExportableRows()
+  const csv = buildBulkCustomTextCsv(data)
+  downloadTextFile(
+    `collection-${numericCollectionId.value}-custom-text.csv`,
+    csv,
+    'text/csv'
+  )
+}
+
+function exportListAsTsv() {
+  const data = getExportableRows()
+  const tsv = buildBulkCustomTextTsv(data)
+  downloadTextFile(
+    `collection-${numericCollectionId.value}-custom-text.tsv`,
+    tsv,
+    'text/tab-separated-values'
+  )
 }
 
 async function processImportFile(file: File) {
