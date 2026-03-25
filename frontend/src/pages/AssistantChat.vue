@@ -491,7 +491,13 @@ import AssistantThoughtStep from '@/components/AssistantThoughtStep.vue'
 import LazyMathJax from '@/components/LazyMathJax.vue'
 import { useSeoHead } from '@/composables/useSeoHead'
 import { useAuth } from '@/composables/useAuth'
-import { getApiBaseUrl, getAuthHeaders } from '../api'
+import {
+  getAssistantChatsCollectionUrl,
+  getAssistantChatStreamPostUrl,
+  getAssistantChatUrl,
+  getAssistantPublicStreamPostUrl,
+  getAuthHeaders,
+} from '../api'
 
 const STORAGE_KEY = 'lensisku-assistant-chats-v1'
 const MAX_SESSIONS = 100
@@ -587,13 +593,17 @@ function createId() {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`
 }
 
-/** Whether the assistant turn ended (`streamFinished` from SSE / persisted state). */
+/**
+ * Whether the assistant turn ended (`streamFinished` from SSE / persisted state).
+ * Only explicit `false` means still streaming; missing/`undefined` is treated as complete
+ * so legacy DB rows do not trigger endless GET recovery polling instead of normal POST SSE.
+ */
 function isAssistantStreamComplete(msg) {
   if (!msg || msg.role !== 'assistant') return true
   if (msg.replies?.length) {
-    return msg.replies.every((r) => r.streamFinished === true)
+    return msg.replies.every((r) => r.streamFinished !== false)
   }
-  return msg.streamFinished === true
+  return msg.streamFinished !== false
 }
 
 function stopRemoteStreamRecovery() {
@@ -614,7 +624,7 @@ function startRemoteStreamRecovery(chatId) {
       return
     }
     try {
-      const r = await fetch(`${getApiBaseUrl()}/assistant/chats/${encodeURIComponent(chatId)}`, {
+      const r = await fetch(getAssistantChatUrl(chatId), {
         headers: getAuthHeaders(),
       })
       if (!r.ok) return
@@ -775,8 +785,7 @@ function mapServerChat(row) {
 async function fetchSessionIfNeeded(id) {
   const s = sessions.value.find((x) => x.id === id)
   if (!s?._stub) return
-  const base = getApiBaseUrl()
-  const r = await fetch(`${base}/assistant/chats/${id}`, { headers: getAuthHeaders() })
+  const r = await fetch(getAssistantChatUrl(id), { headers: getAuthHeaders() })
   if (!r.ok) return
   const row = await r.json()
   const mapped = mapServerChat(row)
@@ -785,16 +794,15 @@ async function fetchSessionIfNeeded(id) {
 }
 
 async function loadFromServer() {
-  const base = getApiBaseUrl()
   const headers = getAuthHeaders()
-  let listRes = await fetch(`${base}/assistant/chats`, { headers })
+  let listRes = await fetch(getAssistantChatsCollectionUrl(), { headers })
   if (!listRes.ok) {
     throw new Error(await listRes.text())
   }
   let list = await listRes.json()
   if (!Array.isArray(list)) list = []
   if (list.length === 0) {
-    const cr = await fetch(`${base}/assistant/chats`, { method: 'POST', headers })
+    const cr = await fetch(getAssistantChatsCollectionUrl(), { method: 'POST', headers })
     if (!cr.ok) throw new Error(await cr.text())
     const created = await cr.json()
     list = [
@@ -815,7 +823,7 @@ async function loadFromServer() {
     _stub: true,
   }))
   const firstId = sessionsPartial[0].id
-  const fullRes = await fetch(`${base}/assistant/chats/${firstId}`, { headers })
+  const fullRes = await fetch(getAssistantChatUrl(firstId), { headers })
   if (!fullRes.ok) throw new Error(await fullRes.text())
   const full = await fullRes.json()
   const firstSession = mapServerChat(full)
@@ -900,14 +908,13 @@ function mergeActiveSessionIntoState(options: { preserveUpdatedAt?: boolean } = 
 async function persistToServerImmediate(options = {}) {
   const session = mergeActiveSessionIntoState(options)
   if (!session || session._stub) return
-  const base = getApiBaseUrl()
   const body = {
     title: session.title,
     messages: session.messages,
     primaryModelId: session.primaryModelId ?? null,
     scrollTop: session.scrollTop,
   }
-  const r = await fetch(`${base}/assistant/chats/${session.id}`, {
+  const r = await fetch(getAssistantChatUrl(session.id), {
     method: 'PUT',
     headers: {
       ...getAuthHeaders(),
@@ -1265,8 +1272,7 @@ async function startNewChat() {
   chatMessagesReady.value = true
   if (isRemoteMode.value) {
     try {
-      const base = getApiBaseUrl()
-      const r = await fetch(`${base}/assistant/chats`, {
+      const r = await fetch(getAssistantChatsCollectionUrl(), {
         method: 'POST',
         headers: getAuthHeaders(),
       })
@@ -1379,8 +1385,7 @@ async function deleteSession(id, e) {
   e?.stopPropagation?.()
   if (isRemoteMode.value) {
     try {
-      const base = getApiBaseUrl()
-      const r = await fetch(`${base}/assistant/chats/${id}`, {
+      const r = await fetch(getAssistantChatUrl(id), {
         method: 'DELETE',
         headers: getAuthHeaders(),
       })
@@ -1394,8 +1399,7 @@ async function deleteSession(id, e) {
   if (sessions.value.length <= 1) {
     if (isRemoteMode.value) {
       try {
-        const base = getApiBaseUrl()
-        const r = await fetch(`${base}/assistant/chats`, {
+        const r = await fetch(getAssistantChatsCollectionUrl(), {
           method: 'POST',
           headers: getAuthHeaders(),
         })
@@ -1571,8 +1575,8 @@ async function performRequest(
   }
 
   const streamUrl = isRemoteMode.value
-    ? `${getApiBaseUrl()}/assistant/chats/${encodeURIComponent(sessionId)}/stream`
-    : `${getApiBaseUrl()}/assistant/chat/stream`
+    ? getAssistantChatStreamPostUrl(sessionId)
+    : getAssistantPublicStreamPostUrl()
   const streamBody = isRemoteMode.value
     ? JSON.stringify({ locale: locale.value })
     : JSON.stringify(payload)

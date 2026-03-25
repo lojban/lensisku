@@ -1,26 +1,22 @@
 <template>
 
-  <div class="w-full min-h-[calc(100vh-12rem)] flex items-center justify-center relative">
-     <BackgroundComponent
-      id="login-background"
-      classes="fixed inset-0 w-screen h-screen bg-cover bg-center bg-no-repeat"
-    />
+  <div
+    class="flex min-h-full w-full flex-col items-center justify-center px-4 py-10 sm:px-6 sm:py-12"
+  >
     <div
-      class="w-full max-w-md p-8 mx-4 rounded-2xl border border-white/40 backdrop-blur-xl bg-black/25 shadow-lg transition-all duration-300 hover:shadow-xl flex flex-col items-center"
+      class="card-elevated flex w-full max-w-md flex-col items-center rounded-2xl border border-gray-200/90 bg-white/95 p-8 ring-1 ring-gray-900/5 backdrop-blur-sm"
     >
 
-      <h2
-        class="text-2xl sm:text-3xl font-bold mb-6 text-white text-center [text-shadow:0_1px_3px_rgba(0,0,0,0.9),0_0_12px_rgba(0,0,0,0.6)]"
-      >
+      <h2 class="mb-6 text-center text-2xl font-bold text-gray-900 sm:text-3xl">
          {{ t('loginPage.title') }}
       </h2>
 
-      <form class="space-y-6 w-full" @submit.prevent="performLogin">
+      <form class="w-full space-y-6" @submit.prevent="performLogin">
 
         <div>
            <label
             for="username"
-            class="block text-sm font-medium text-white [text-shadow:0_1px_2px_rgba(0,0,0,0.9)]"
+            class="mb-1 block text-sm font-medium text-gray-700"
             >{{ t('loginPage.usernameLabel') }}</label
           >
           <div class="relative">
@@ -29,7 +25,7 @@
               v-model="username"
               type="text"
               required
-              class="input-field w-full h-auto text-base pl-3 pr-10"
+              class="input-field h-10 w-full pl-3 pr-10 text-base"
               :disabled="isLoading"
               :placeholder="t('loginPage.usernamePlaceholder')"
             /> <User class="h-5 w-5 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2" />
@@ -40,7 +36,7 @@
         <div>
            <label
             for="password"
-            class="block text-sm font-medium text-white [text-shadow:0_1px_2px_rgba(0,0,0,0.9)]"
+            class="mb-1 block text-sm font-medium text-gray-700"
             >{{ t('loginPage.passwordLabel') }}</label
           >
           <div class="relative">
@@ -49,7 +45,7 @@
               v-model="password"
               type="password"
               required
-              class="input-field w-full h-auto text-base pl-3 pr-10"
+              class="input-field h-10 w-full pl-3 pr-10 text-base"
               :disabled="isLoading"
               :placeholder="t('loginPage.passwordPlaceholder')"
             /> <Key class="h-5 w-5 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2" />
@@ -78,16 +74,19 @@
 
       </form>
 
-      <p class="mt-4 text-sm text-white text-center w-full [text-shadow:0_1px_2px_rgba(0,0,0,0.9)]">
-         <RouterLink to="/reset-password" class="font-medium text-white hover:text-blue-200"
+      <p class="mt-4 w-full text-center text-sm text-gray-600">
+         <RouterLink
+          to="/reset-password"
+          class="font-medium text-blue-600 underline-offset-2 hover:text-blue-800 hover:underline"
           > {{ t('loginPage.forgotPasswordLink') }} </RouterLink
         >
       </p>
 
-      <p class="mt-4 text-sm text-white text-center w-full [text-shadow:0_1px_2px_rgba(0,0,0,0.9)]">
-         {{ t('loginPage.noAccountPrompt') }} <RouterLink
+      <p class="mt-4 w-full text-center text-sm text-gray-600">
+         {{ t('loginPage.noAccountPrompt') }}
+         <RouterLink
           to="/signup"
-          class="font-medium text-white hover:text-blue-200"
+          class="font-medium text-blue-600 underline-offset-2 hover:text-blue-800 hover:underline"
           > {{ t('loginPage.signUpLink') }} </RouterLink
         >
       </p>
@@ -108,8 +107,6 @@ import { login } from '@/api'
 import { useAuth } from '@/composables/useAuth'
 import { useError } from '@/composables/useError'
 import { useSeoHead } from '@/composables/useSeoHead'
-
-import BackgroundComponent from '../components/BackgroundComponent.vue'
 
 const username = ref('')
 const password = ref('')

@@ -59,11 +59,13 @@ const baseRoutes: Array<RouteRecordRaw> = [
     path: '/signup',
     name: 'Signup',
     component: () => import('../pages/SignupPage.vue'),
+    meta: { authFullBleed: true },
   },
   {
     path: '/login',
     name: 'Login',
     component: () => import('../pages/LoginPage.vue'),
+    meta: { authFullBleed: true },
   },
   {
     path: '/profile',

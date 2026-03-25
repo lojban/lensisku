@@ -1,26 +1,22 @@
 <template>
 
-  <div class="w-full min-h-[calc(100vh-12rem)] flex items-center justify-center relative">
-     <BackgroundComponent
-      id="login-background"
-      classes="fixed inset-0 w-screen h-screen bg-cover bg-center bg-no-repeat"
-    />
+  <div
+    class="flex min-h-full w-full flex-col items-center justify-center px-4 py-10 sm:px-6 sm:py-12"
+  >
     <div
-      class="w-full max-w-md p-8 mx-4 rounded-2xl border border-white/40 flex-shrink-0 backdrop-blur-xl bg-black/25 shadow-lg transition-all duration-300 hover:shadow-xl flex flex-col items-center"
+      class="card-elevated flex w-full max-w-md flex-shrink-0 flex-col items-center rounded-2xl border border-gray-200/90 bg-white/95 p-8 ring-1 ring-gray-900/5 backdrop-blur-sm"
     >
 
-      <h2
-        class="text-2xl sm:text-3xl font-bold mb-6 text-white text-center [text-shadow:0_1px_3px_rgba(0,0,0,0.9),0_0_12px_rgba(0,0,0,0.6)]"
-      >
+      <h2 class="mb-6 text-center text-2xl font-bold text-gray-900 sm:text-3xl">
          {{ t('signupPage.title') }}
       </h2>
 
-      <form class="space-y-6 w-full" @submit.prevent="performSignup">
+      <form class="w-full space-y-6" @submit.prevent="performSignup">
 
         <div>
            <label
             for="username"
-            class="block text-sm font-medium text-white [text-shadow:0_1px_2px_rgba(0,0,0,0.9)]"
+            class="mb-1 block text-sm font-medium text-gray-700"
             >{{ t('signupPage.usernameLabel') }}</label
           >
           <div class="relative">
@@ -39,7 +35,7 @@
         <div>
            <label
             for="email"
-            class="block text-sm font-medium text-white [text-shadow:0_1px_2px_rgba(0,0,0,0.9)]"
+            class="mb-1 block text-sm font-medium text-gray-700"
             >{{ t('signupPage.emailLabel') }}</label
           >
           <div class="relative">
@@ -58,7 +54,7 @@
         <div>
            <label
             for="password"
-            class="block text-sm font-medium text-white [text-shadow:0_1px_2px_rgba(0,0,0,0.9)]"
+            class="mb-1 block text-sm font-medium text-gray-700"
             >{{ t('signupPage.passwordLabel') }}</label
           >
           <div class="relative">
@@ -95,10 +91,11 @@
 
       </form>
 
-      <p class="mt-4 text-sm text-white text-center w-full [text-shadow:0_1px_2px_rgba(0,0,0,0.9)]">
-         {{ t('signupPage.haveAccountPrompt') }} <RouterLink
+      <p class="mt-4 w-full text-center text-sm text-gray-600">
+         {{ t('signupPage.haveAccountPrompt') }}
+         <RouterLink
           to="/login"
-          class="font-medium text-white hover:text-green-200"
+          class="font-medium text-blue-600 underline-offset-2 hover:text-blue-800 hover:underline"
           > {{ t('signupPage.loginLink') }} </RouterLink
         >
       </p>
@@ -119,8 +116,6 @@ import { signup } from '@/api'
 import { useAuth } from '@/composables/useAuth'
 import { useError } from '@/composables/useError'
 import { useSeoHead } from '@/composables/useSeoHead'
-
-import BackgroundComponent from '../components/BackgroundComponent.vue'
 
 const username = ref('')
 const email = ref('')

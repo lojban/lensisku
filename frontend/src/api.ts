@@ -333,6 +333,22 @@ export const listCachedExports = () => api.get('/export/cached')
 
 export const getApiBaseUrl = () => (import.meta.env.VITE_BASE_URL ?? '/api').replace(/\/$/, '')
 
+/** GET list / POST create `/assistant/chats`. */
+export const getAssistantChatsCollectionUrl = () => `${getApiBaseUrl()}/assistant/chats`
+
+/** GET/PUT/DELETE `/assistant/chats/:id` — not the SSE stream. */
+export const getAssistantChatUrl = (chatId: string) =>
+  `${getApiBaseUrl()}/assistant/chats/${encodeURIComponent(chatId)}`
+
+/**
+ * POST streams `text/event-stream` SSE; use `fetch()` + `response.body`, not axios (JSON-only).
+ */
+export const getAssistantChatStreamPostUrl = (chatId: string) =>
+  `${getAssistantChatUrl(chatId)}/stream`
+
+/** Anonymous stream: POST full `messages` JSON (no DB chat id). */
+export const getAssistantPublicStreamPostUrl = () => `${getApiBaseUrl()}/assistant/chat/stream`
+
 export const getAuthHeaders = (): Record<string, string> => {
   const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null
   return token ? { Authorization: `Bearer ${token}` } : {}
