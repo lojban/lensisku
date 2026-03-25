@@ -17,9 +17,81 @@
       />
     </div>
      <span>{{ step.action }}</span
-    > <span v-if="!semanticPayload?.results?.length" class="block mt-0.5">— {{ step.result }}</span
-    > <!-- Structured semantic search results: nested foldables -->
-    <div v-if="semanticPayload?.results?.length" class="mt-1.5 not-italic space-y-1">
+    > <span
+      v-if="!batchSearches.length && !semanticPayload?.results?.length"
+      class="block mt-0.5"
+      >— {{ step.result }}</span
+    > <!-- Batched semantic search: one block per query string -->
+    <div v-if="batchSearches.length" class="mt-1.5 not-italic space-y-2">
+
+      <details
+        v-for="(block, bi) in batchSearches"
+        :key="bi"
+        class="rounded border border-gray-200 bg-gray-50/80 px-2 py-1"
+      >
+
+        <summary
+          class="cursor-pointer text-gray-700 text-xs font-medium hover:underline select-none list-none [&::-webkit-details-marker]:hidden"
+        >
+           <span class="font-mono text-[11px]">{{ block.query }}</span>
+          —
+          <template v-if="block.error">{{ $t('assistantChat.toolErrorSummary') }}</template>
+          <template v-else>{{
+            $t('assistantChat.returnedDefinitions', { n: (block.results && block.results.length) || 0 })
+          }}</template>
+        </summary>
+
+        <ul v-if="block.results?.length" class="mt-2 space-y-1 pl-0 list-none">
+
+          <li v-for="(row, i) in block.results" :key="i">
+
+            <details class="rounded border border-gray-100 bg-white px-2 py-1 text-xs">
+
+              <summary
+                class="cursor-pointer text-gray-800 hover:underline select-none list-none flex flex-wrap items-baseline gap-x-1 gap-y-0 [&::-webkit-details-marker]:hidden"
+              >
+                 <span class="font-mono font-semibold">{{ row.valsi }}</span
+                > <span v-if="row.lang" class="text-gray-500 font-normal">· {{ row.lang }}</span
+                > <span v-if="row.similarity != null" class="text-gray-400 font-normal text-[10px]"
+                  >sim {{ formatSimilarity(row.similarity) }}</span
+                >
+              </summary>
+
+              <div
+                v-if="row.definition"
+                class="mt-1.5 pl-1 border-l-2 border-gray-200 text-gray-700 break-words"
+              >
+                 <LazyMathJax
+                  :content="row.definition"
+                  :lang-id="langId"
+                  class="block text-xs text-gray-700"
+                />
+              </div>
+
+              <div v-if="row.notes" class="mt-1 text-[11px] text-gray-500 break-words">
+                 <span class="font-medium text-gray-600">{{ $t('assistantChat.notesLabel') }}</span
+                > <LazyMathJax
+                  :content="row.notes"
+                  :lang-id="langId"
+                  class="inline text-[11px] text-gray-500"
+                />
+              </div>
+
+            </details>
+
+          </li>
+
+        </ul>
+
+        <p v-if="block.error" class="mt-2 text-[11px] text-amber-900 whitespace-pre-wrap break-words">
+           {{ block.error }}
+        </p>
+
+      </details>
+
+    </div>
+     <!-- Structured semantic search results (legacy single-query JSON): nested foldables -->
+    <div v-else-if="semanticPayload?.results?.length" class="mt-1.5 not-italic space-y-1">
 
       <details class="rounded border border-gray-200 bg-gray-50/80 px-2 py-1">
 
@@ -156,6 +228,13 @@ const semanticPayload = computed(() => {
     /* ignore */
   }
   return null
+})
+
+/** New batched tool shape: { searches: [{ query, results?, error? }] } */
+const batchSearches = computed(() => {
+  const p = semanticPayload.value
+  if (!p || !Array.isArray(p.searches)) return []
+  return p.searches.filter((s) => s && typeof s === 'object')
 })
 
 function formatSimilarity(s) {
