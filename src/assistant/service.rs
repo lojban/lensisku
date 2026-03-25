@@ -10,7 +10,7 @@ use futures::future::join_all;
 use deadpool_postgres::Pool;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use tokio::sync::{mpsc, RwLock};
+use tokio::sync::mpsc;
 use tokio::time::sleep;
 
 use once_cell::sync::Lazy;
@@ -23,8 +23,8 @@ use crate::middleware::cache::RedisCache;
 use crate::utils::openrouter_models::{
     fetch_latest_openrouter_models, load_or_fetch_openrouter_candidates, ModelIdName,
 };
-use crate::jbovlaste::service::{cmavo_gismu_english_dictionary_text, semantic_search};
-use crate::muplis::assistant_muplis_dictionary_text;
+use crate::jbovlaste::service::semantic_search;
+use std::borrow::Cow;
 
 use super::context_compress;
 use super::dto::{AssistantStep, ChatMessage, ChatRequest, ToolCallDto};
@@ -33,41 +33,6 @@ use super::persist::ChatPersistState;
 /// When `true`, streaming runs two OpenRouter models in parallel when two candidates exist.
 /// Temporarily set to `false` to use only one model per turn (sequential candidate fallback).
 const ASSISTANT_PARALLEL_DUAL_MODEL: bool = false;
-
-/// Which reference list is appended to the assistant system prompt (local DB).
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum AssistantSystemDictionary {
-    /// Muplis phrase pairs (`muplis` table).
-    Muplis,
-    /// Official cmavo + gismu English glosses from jbovlaste.
-    CmavoGismu,
-}
-
-fn assistant_system_dictionary_from_env() -> AssistantSystemDictionary {
-    match env::var("ASSISTANT_SYSTEM_DICTIONARY")
-        .ok()
-        .as_deref()
-        .map(str::trim)
-        .filter(|s| !s.is_empty())
-    {
-        Some(s)
-            if s.eq_ignore_ascii_case("cmavo_gismu")
-                || s.eq_ignore_ascii_case("gismu_cmavo")
-                || s.eq_ignore_ascii_case("jbovlaste") =>
-        {
-            AssistantSystemDictionary::CmavoGismu
-        }
-        Some(s) if s.eq_ignore_ascii_case("muplis") => AssistantSystemDictionary::Muplis,
-        Some(s) => {
-            log::warn!(
-                "Unknown ASSISTANT_SYSTEM_DICTIONARY={:?}, using muplis",
-                s
-            );
-            AssistantSystemDictionary::Muplis
-        }
-        None => AssistantSystemDictionary::Muplis,
-    }
-}
 
 #[derive(Debug, Clone, Serialize)]
 struct ToolFunction {
@@ -424,24 +389,12 @@ async fn resolve_optional_source_language_tag(
     }
 }
 
-fn system_prompt_base(locale: Option<&str>, dict: AssistantSystemDictionary) -> String {
+fn system_prompt_base(locale: Option<&str>) -> String {
     let mut base = String::with_capacity(4096);
-    let list_hint = match dict {
-        AssistantSystemDictionary::Muplis => {
-            "**Muplis** phrase pairs (Lojban ↔ English) injected below"
-        }
-        AssistantSystemDictionary::CmavoGismu => "**official cmavo/gismu** list",
-    };
-    let trusted_block_1 = match dict {
-        AssistantSystemDictionary::Muplis => {
-            "1. The **\"Muplis phrases (Lojban ↔ English)\"** block in this system message (if present).\n\
-         "
-        }
-        AssistantSystemDictionary::CmavoGismu => {
-            "1. The **\"Official cmavo and gismu\"** block in this system message (if present).\n\
-         "
-        }
-    };
+    let list_hint = "**core reference dictionary** (gismu, cmavo, learn-lojban, phrases) below";
+    let trusted_block_1 = "1. The **\"Core reference dictionary\"** block in this system message (if present): \
+         curated **gismu**, **cmavo**, **learn-lojban** notions/examples, and **English / Lojban phrase pairs**.\n\
+         ";
 
     // ── Role & personality ───────────────────────────────────────────────
     base.push_str(
@@ -479,6 +432,11 @@ fn system_prompt_base(locale: Option<&str>, dict: AssistantSystemDictionary) -> 
          {}.\n\
          - If several **independent** searches would help (different valsi or unrelated \
          concepts), issue them together in one step instead of one-by-one.\n\
+         - **Translations and multi-word phrases:** First list every **valsi or gloss** you \
+         still need from jbovlaste (each distinct word or meaning). Then call \
+         `jbovlaste_semantic_search` **once per distinct lookup**, **all in the same assistant \
+         message** (parallel tool calls) so the host returns every result together—then you \
+         can build the full translation in the next turn without extra search round trips.\n\
          - If a later search should use wording informed by an earlier hit, run searches \
          **across separate turns** so each step is grounded in prior tool results. Do not \
          assume a search outcome before you have seen it.\n\n",
@@ -506,12 +464,14 @@ fn system_prompt_base(locale: Option<&str>, dict: AssistantSystemDictionary) -> 
          by the sources above must be prefixed with an explicit disclaimer such as \
          \"**Uncertain (not verified from the database):**\" or omitted entirely. \
          Prefer saying you cannot answer from sources over filling gaps from memory.\n\
-         - **No hallucinated Lojban:** Never invent valsi, glosses, definitions, place \
-         structures, or Lojban sentences. If a search returns nothing useful, say so \
-         and suggest the user rephrase—do not improvise.\n\
-         - **Examples:** Only reproduce Lojban text that appears in sources (1) or (2). \
-         You may rearrange words already shown in those sources (and say that is what \
-         you did), but do not author new Lojban sentences from scratch.\n\n",
+         - **No hallucinated Lojban:** Never invent valsi, glosses, definitions, or place \
+         structures. If you need a word that is not in the injected reference lists and not \
+         in prior tool results, call `jbovlaste_semantic_search` before using it.\n\
+         - **Examples:** Prefer quoting or lightly adapting Lojban from the system message \
+         **reference block** (phrase pairs and/or bundled word lists) and from \
+         `jbovlaste_semantic_search` results in this thread. When composing short examples, \
+         use only **valsi** attested there; mirror common patterns (bridi structure, `.i`, \
+         sumti, abstractions, connectives). If you are unsure, search first or state uncertainty.\n\n",
     );
 
     // ── Lojban domain context ────────────────────────────────────────────
@@ -532,28 +492,18 @@ fn system_prompt_base(locale: Option<&str>, dict: AssistantSystemDictionary) -> 
          `relevance` (cosine similarity to your query).\n\n",
     );
 
-    // ── Injected reference list (cmavo/gismu vs Muplis phrases) ──────────
-    match dict {
-        AssistantSystemDictionary::Muplis => {
-            base.push_str(
-                "## Phrase reference (Muplis)\n\
-                 The block titled \"Muplis phrases (Lojban ↔ English)\" lists phrase pairs \
-                 from the local Muplis corpus (common Lojban fragments ↔ English). Use it \
-                 for natural multi-word glosses when present. For official **cmavo/gismu** \
-                 entries, place structure, selma'o, rafsi, lujvo decomposition, and anything \
-                 not covered there, use `jbovlaste_semantic_search`.\n\n",
-            );
-        }
-        AssistantSystemDictionary::CmavoGismu => {
-            base.push_str(
-                "## Canonical cmavo/gismu list\n\
-                 The block titled \"Official cmavo and gismu (English, jbovlaste)\" is the ground \
-                 truth for whether a cmavo or gismu exists and for its English gloss. For lujvo, \
-                 fu'ivla, compounds, or anything not in that list, use \
-                 `jbovlaste_semantic_search`.\n\n",
-            );
-        }
-    }
+    // ── Injected reference list (bundled `core_reference_dictionary.txt`) ─
+    base.push_str(
+        "## Core reference dictionary (single bundled source)\n\
+         One block titled \"Core reference dictionary\" ships with the server: \
+         **150 high-score gismu**, **60 cmavo** (PA1 digits 0–9 plus 50 more by score), \
+         **learn-lojban** notions plus **book examples** (when the Markdown source is available \
+         at build time), and **168** English/Lojban phrase lines: mostly grammar-diverse, plus a \
+         **math- / measure- / logic-leaning** batch; each line `left ↔ right` within its subsection. \
+         Treat it as your **primary** offline vocabulary and phrasing guide. For **any other valsi** \
+         (remaining gismu/cmavo, lujvo, fu'ivla, full definitions, examples, notes), call \
+         `jbovlaste_semantic_search`.\n\n",
+    );
 
     // ── When to call the tool ────────────────────────────────────────────
     base.push_str(
@@ -570,7 +520,10 @@ fn system_prompt_base(locale: Option<&str>, dict: AssistantSystemDictionary) -> 
          off-topic, or you need related terms, call the tool again in a later step with \
          a new or refined query. Do not give a final answer until search results \
          actually support it. You MAY issue several parallel calls in a single step \
-         (e.g. multiple concepts) and search again in later steps when refining.\n\n\
+         (e.g. multiple concepts) and search again in later steps when refining.\n\
+         For **translation** tasks especially: prepare **all** needed word/meaning queries up \
+         front and fire them **in parallel** in one step so you get the full evidence set \
+         at once.\n\n\
          If the search returns no or few results, try different queries in further \
          steps, or say so and suggest rephrasing; do not make up answers.\n\n\
          **Finish rule:** Once the definitions you have retrieved are sufficient to \
@@ -646,12 +599,6 @@ fn system_prompt_base(locale: Option<&str>, dict: AssistantSystemDictionary) -> 
     base
 }
 
-static ASSISTANT_CMAVO_GISMU_DICT_CACHE: Lazy<RwLock<Option<String>>> =
-    Lazy::new(|| RwLock::new(None));
-
-static ASSISTANT_MUPLIS_DICT_CACHE: Lazy<RwLock<Option<String>>> =
-    Lazy::new(|| RwLock::new(None));
-
 fn truncate_utf8_prefix(s: &str, max_bytes: usize) -> &str {
     if s.len() <= max_bytes {
         return s;
@@ -663,127 +610,41 @@ fn truncate_utf8_prefix(s: &str, max_bytes: usize) -> &str {
     &s[..end]
 }
 
-/// Loads English cmavo+gismu lines from the DB (jbovlaste), cached for the process lifetime (official list is stable) with optional size cap.
-async fn assistant_cmavo_gismu_dictionary_cached(pool: &Pool) -> String {
-    let max_chars: usize = env::var("ASSISTANT_GISMU_CMAVO_DICT_MAX_CHARS")
+/// Bundled assistant dictionary (`archive/dict` snapshot; rebuild with `scripts/build_assistant_core_dictionary.py`).
+fn assistant_bundled_core_dictionary_cow() -> Cow<'static, str> {
+    const EMBEDDED: &str = include_str!("core_reference_dictionary.txt");
+    let max_chars: usize = env::var("ASSISTANT_CORE_DICT_MAX_CHARS")
         .ok()
         .and_then(|s| s.parse().ok())
-        .unwrap_or(120_000);
-
-    {
-        let guard = ASSISTANT_CMAVO_GISMU_DICT_CACHE.read().await;
-        if let Some(ref s) = *guard {
-            return s.clone();
-        }
-    }
-
-    let fetched = match cmavo_gismu_english_dictionary_text(pool).await {
-        Ok(s) => s,
-        Err(e) => {
-            log::warn!("Failed to load cmavo/gismu dictionary for assistant: {}", e);
-            return String::new();
-        }
-    };
-
-    let text = if fetched.len() > max_chars {
-        let prefix = truncate_utf8_prefix(&fetched, max_chars);
+        .unwrap_or(500_000);
+    if EMBEDDED.len() <= max_chars {
+        Cow::Borrowed(EMBEDDED)
+    } else {
+        let prefix = truncate_utf8_prefix(EMBEDDED, max_chars);
         let cut = prefix.rfind('\n').unwrap_or(prefix.len());
         let mut t = prefix[..cut].to_string();
         t.push_str("\n\n[Dictionary truncated for context size; remaining entries omitted.]");
-        t
-    } else {
-        fetched
-    };
-
-    if text.is_empty() {
-        return text;
+        Cow::Owned(t)
     }
-
-    {
-        let mut guard = ASSISTANT_CMAVO_GISMU_DICT_CACHE.write().await;
-        if let Some(ref s) = *guard {
-            return s.clone();
-        }
-        *guard = Some(text.clone());
-    }
-    text
 }
 
-/// Loads Muplis phrase lines from the DB, cached for the process lifetime with optional size cap.
-async fn assistant_muplis_dictionary_cached(pool: &Pool) -> String {
-    let max_chars: usize = env::var("ASSISTANT_MUPLIS_DICT_MAX_CHARS")
-        .ok()
-        .and_then(|s| s.parse().ok())
-        .unwrap_or(120_000);
-
-    {
-        let guard = ASSISTANT_MUPLIS_DICT_CACHE.read().await;
-        if let Some(ref s) = *guard {
-            return s.clone();
-        }
+async fn system_prompt_with_dictionary(_pool: &Pool, locale: Option<&str>) -> String {
+    let base = system_prompt_base(locale);
+    let dict = assistant_bundled_core_dictionary_cow();
+    let dict_str = dict.as_ref();
+    if dict_str.trim().is_empty() {
+        return base;
     }
-
-    let fetched = match assistant_muplis_dictionary_text(pool).await {
-        Ok(s) => s,
-        Err(e) => {
-            log::warn!("Failed to load Muplis dictionary for assistant: {}", e);
-            return String::new();
-        }
-    };
-
-    let text = if fetched.len() > max_chars {
-        let prefix = truncate_utf8_prefix(&fetched, max_chars);
-        let cut = prefix.rfind('\n').unwrap_or(prefix.len());
-        let mut t = prefix[..cut].to_string();
-        t.push_str("\n\n[Dictionary truncated for context size; remaining entries omitted.]");
-        t
-    } else {
-        fetched
-    };
-
-    if text.is_empty() {
-        return text;
-    }
-
-    {
-        let mut guard = ASSISTANT_MUPLIS_DICT_CACHE.write().await;
-        if let Some(ref s) = *guard {
-            return s.clone();
-        }
-        *guard = Some(text.clone());
-    }
-    text
-}
-
-async fn system_prompt_with_dictionary(pool: &Pool, locale: Option<&str>) -> String {
-    let mode = assistant_system_dictionary_from_env();
-    let base = system_prompt_base(locale, mode);
-    match mode {
-        AssistantSystemDictionary::Muplis => {
-            let dict = assistant_muplis_dictionary_cached(pool).await;
-            if dict.is_empty() {
-                return base;
-            }
-            format!(
-                "{}\n\n## Muplis phrases (Lojban ↔ English)\n\
-Each line is `phrase - English gloss`. Phrase pairs from the local Muplis database (jb2en-style corpus). \
-This is **not** the full jbovlaste word list—use `jbovlaste_semantic_search` for valsi definitions, \
-grammar particles, and anything missing here.\n\n{}",
-                base, dict
-            )
-        }
-        AssistantSystemDictionary::CmavoGismu => {
-            let dict = assistant_cmavo_gismu_dictionary_cached(pool).await;
-            if dict.is_empty() {
-                return base;
-            }
-            format!(
-                "{}\n\n## Official cmavo and gismu (English, jbovlaste)\n\
-Each line is `word - definition` (best English definition per word). Use this as the authoritative list of **cmavo** and **gismu** in this database.\n\n{}",
-                base, dict
-            )
-        }
-    }
+    format!(
+        "{}\n\n## Core reference dictionary\n\
+All data lines use the same column separator: spaced **↔** (U+2194): `left ↔ right`. \
+Sections **gismu** and **cmavo**: `valsi ↔ English definition`. **learn-lojban tutorial**: \
+English↔English notions and English↔Lojban examples from the lojban.pw course. **Phrases** (two \
+subsections): `English ↔ Lojban` — corpus samples (general, then math- / logic-leaning). \
+This bundled list is a **subset** of jbovlaste and full phrase corpora; \
+use `jbovlaste_semantic_search` for any valsi or nuance not present here.\n\n{}",
+        base, dict_str
+    )
 }
 
 fn map_chat_messages(messages: &[ChatMessage]) -> Vec<ChatCompletionMessageRequest> {
@@ -820,11 +681,13 @@ fn jbovlaste_tool_schema() -> Tool {
             name: "jbovlaste_semantic_search".to_string(),
             description: "Semantic search over jbovlaste definition text (embedding \
                           similarity). Your ONLY tool—call before stating facts about \
-                          Lojban words or meanings, unless the system message **reference block** \
-                          (Muplis phrases or official cmavo/gismu list, depending on server config) \
-                          already answers. \
-                          You may emit **several** jbovlaste_semantic_search calls in one \
-                          message when lookups are independent (different words or topics). \
+                          Lojban words or meanings, unless the system message **core reference dictionary** \
+                          (bundled gismu, cmavo, learn-lojban, phrases) already answers. \
+                          Emit **several parallel** jbovlaste_semantic_search calls in **one** \
+                          message when lookups are independent (different valsi, glosses, or \
+                          topics). For **translations**, list every word or meaning you still need \
+                          first, then batch **all** those queries together so every result returns \
+                          at once before you compose the full Lojban. \
                           Call when: new valsi/topic, or prior results were insufficient—\
                           then use a **different** `query` (no duplicate searches). \
                           Do NOT call when this thread already has search-backed \
