@@ -1,0 +1,456 @@
+# Assistant core reference dictionary (generated)
+# Source: archive/dict/{gismu,cmavo,muplis-database}.tsv; optional learn-lojban book Markdown.
+#   python3 scripts/build_assistant_core_dictionary.py
+# Format: every non-comment data line is `left ↔ right` (Unicode U+2194, spaces).
+#   Gismu section: valsi ↔ English definition. Cmavo section: valsi ↔ English definition.
+#   learn-lojban: English↔English notions + English↔Lojban examples (lojban.pw course).
+#   Phrase sections: English ↔ Lojban (muplis; grammar-diverse + math-leaning subset).
+
+## gismu (150; by corpus score; metrology powers-of-ten entries filled only after others)
+
+gusni ↔ $x_1$ [energy] is light/illumination illuminating $x_2$ from light source $x_3$.
+pilno ↔ $x_1$ uses/employs $x_2$ [tool, apparatus, machine, agent, acting entity, material] for purpose $x_3$.
+sinma ↔ $x_{1}$ esteems/respects/venerates/highly regards $x_{2}$ [object of respect].
+bacru ↔ $x_{1}$ utters verbally/says/phonates/speaks [vocally makes sound] $x_{2}$.
+badna ↔ $x_{1}$ is a banana/plantain [fruit/plant] of species/breed $x_{2}$.
+cusku ↔ $x_{1}$ (agent) expresses/says $x_{2}$ (sedu'u/text/lu'e concept) for audience $x_{3}$ via expressive medium $x_{4}$.
+jarco ↔ $x_{1}$ (agent) shows/exhibits/displays/[reveals]/demonstrates $x_{2}$ (property) to audience $x_{3}$.
+lidne ↔ $x_{1}$ precedes/leads $x_{2}$ in sequence $x_{3}$; $x_{1}$ is former/preceding/previous; $x_{2}$ is latter/following.
+pluta ↔ $x_1$ is a route/path/way/course/track to $x_2$ from $x_3$ via/defined by points including $x_4$ (set).
+prami ↔ $x_{1}$ loves/feels strong affectionate devotion towards $x_{2}$ (object/state).
+barna ↔ $x_{1}$(s) is a/are mark(s)/spot(s) on $x_{2}$ of material $x_{3}$.
+canja ↔ $x_{1}$ exchanges/trades/barters commodity $x_{2}$ for $x_{3}$ with $x_{4}$; $x_{1}$, $x_{4}$ is a trader/merchant/businessman.
+catra ↔ $x_{1}$ (agent) kills/slaughters/murders $x_{2}$ by action/method $x_{3}$.
+ckaji ↔ $x_{1}$ has/is characterized by property/feature/trait/aspect/dimension $x_{2}$ (ka); $x_{2}$ is manifest in $x_{1}$.
+cmene ↔ $x_{1}$ (quoted word(s)) is a/the name/title/tag of $x_{2}$ to/used-by namer/name-user $x_{3}$ (person).
+fanmo ↔ $x_{1}$ is an end/finish/termination of thing/process $x_{2}$; [not necessarily implying completeness].
+farna ↔ $x_{1}$ is the direction of $x_{2}$ (object/event) from origin/in frame of reference $x_{3}$.
+ganse ↔ $x_{1}$ [observer] senses/detects/notices stimulus $x_{2}$ (object/nu) by means $x_{3}$ under conditions $x_{4}$.
+gasnu ↔ $x_{1}$ [person/agent] is an agentive cause of event $x_{2}$; $x_{1}$ does/brings about $x_{2}$.
+gletu ↔ $x_{1}$ copulates/mates/has coitus/sexual intercourse with $x_{2}$.
+jalra ↔ $x_{1}$ is a cockroach/orthopteran/termite of order/species/breed $x_{2}$.
+jdima ↔ $x_{1}$ [amount] is the price of $x_{2}$ to purchaser/consumer $x_{3}$ set by vendor $x_{4}$.
+jicmu ↔ $x_{1}$ is a basis/foundation/underlying or fundamental principle of $x_{2}$; $x_{1}$ is at the bottom of $x_{2}$.
+klesi ↔ $x_{1}$ (mass/si'o) is a class/category/subgroup/subset within $x_{2}$ with defining property $x_{3}$ (ka).
+mutce ↔ $x_{1}$ is much/extreme in property $x_{2}$ (ka), towards $x_{3}$ extreme/direction; $x_{1}$ is, in $x_{2}$, very $x_{3}$.
+pacna ↔ $x_{1}$ hopes/wishes for/desires $x_{2}$ (event), expected likelihood $x_{3}$ (0-1); $x_{1}$ hopes that $x_{2}$ happens.
+prali ↔ $x_{1}$ is a profit/gain/benefit/advantage to $x_{2}$ accruing/resulting from activity/process $x_{3}$.
+raktu ↔ $x_{1}$ (object/person/event/situation) troubles/disturbs $x_{2}$ (person) causing problem(s) $x_{3}$.
+rinju ↔ $x_{1}$ is restrained/held [back]/constrained/kept by restraint $x_{2}$ against $x_{3}$ (event).
+sovda ↔ $x_{1}$ is an egg/ovum/sperm/pollen/gamete of/from organism [mother/father] $x_{2}$.
+stika ↔ $x_{1}$ (event) adjusts/regulates/changes $x_{2}$ (ka/ni) in amount/degree $x_{3}$.
+terpa ↔ $x_{1}$ fears $x_{2}$; $x_{1}$ is afraid/scared/frightened by/fearful of $x_{2}$ (event/tu'a object).
+tirxu ↔ $x_{1}$ is a tiger/leopard/jaguar/[tigress] of species/breed $x_{2}$ with coat markings $x_{3}$.
+vamji ↔ $x_{1}$ (ni) is the equivalent value/worth of $x_{2}$ [item(s) of value] to $x_{3}$ for use/appreciation $x_{4}$.
+vasru ↔ $x_{1}$ contains/holds/encloses/includes contents $x_{2}$ within; $x_{1}$ is a vessel containing $x_{2}$.
+vecnu ↔ $x_{1}$ [seller] sells/vends $x_{2}$ [goods/service/commodity] to buyer $x_{3}$ for amount/cost/expense $x_{4}$.
+vrici ↔ $x_{1}$ (set/mass/ind.) is miscellaneous/various/assorted in property $x_{2}$ (ka).
+bakni ↔ $x_{1}$ is a cow/cattle/kine/ox/[bull/steer/calf] [beef-producer/bovine] of species/breed $x_{2}$.
+bapli ↔ $x_{1}$ [force] (ka) forces/compels event $x_{2}$ to occur; $x_{1}$ determines property $x_{2}$ to manifest.
+basti ↔ $x_{1}$ replaces/substitutes for/instead of $x_{2}$ in circumstance $x_{3}$; $x_{1}$ is a replacement/substitute.
+benji ↔ $x_{1}$ transfers/sends/transmits $x_{2}$ to receiver $x_{3}$ from transmitter/origin $x_{4}$ via means/medium $x_{5}$.
+bridi ↔ $x_{1}$ (du'u) is a predicate relationship with relation $x_{2}$ among arguments (sequence/set) $x_{3}$.
+cabra ↔ $x_{1}$ is apparatus/mechanism/device/equipment for function $x_{2}$ controlled/[triggered] by $x_{3}$ (agent).
+cafne ↔ $x_{1}$ (event) often/frequently/commonly/customarily occurs/recurs by standard $x_{2}$.
+carna ↔ $x_1$ turns about vector $x_2$ towards direction $x_3$, turning angular distance / to face point $x_4$
+catke ↔ $x_{1}$ [agent] shoves/pushes $x_{2}$ at locus $x_{3}$.
+cfari ↔ $x_{1}$ [state/event/process] commences/initiates/starts/begins to occur; (intransitive verb).
+cinmo ↔ $x_{1}$ feels emotion $x_{2}$ (ka) about $x_{3}$.
+cirko ↔ $x_{1}$ loses person/thing $x_{2}$ at/near $x_{3}$; $x_{1}$ loses property/feature $x_{2}$ in conditions/situation $x_{3}$.
+ckire ↔ $x_{1}$ is grateful/thankful to/appreciative of $x_{2}$ for $x_{3}$ (event/property).
+cpedu ↔ $x_{1}$ requests/asks/petitions/solicits for $x_{2}$ of/from $x_{3}$ in manner/form $x_{4}$.
+crida ↔ $x_{1}$ is a fairy/elf/gnome/brownie/pixie/goblin/kobold [mythical humanoid] of mythos/religion $x_{2}$.
+cukta ↔ $x_{1}$ is a book containing work $x_{2}$ by author $x_{3}$ for audience $x_{4}$ preserved in medium $x_{5}$.
+culno ↔ $x_{1}$ is full/completely filled with $x_{2}$.
+cuntu ↔ $x_{1}$ is an affair/organized activity involving person(s) $x_{2}$ (ind./mass); $x_{1}$ is $x_{2}$'s business.
+dakli ↔ $x_{1}$ is a sack/bag with contents $x_{2}$, and of material $x_{3}$.
+danfu ↔ $x_{1}$ is the answer/response/solution/[reply] to question/problem $x_{2}$.
+dapma ↔ $x_{1}$ curses/damns/condemns $x_{2}$ to fate (event) $x_{3}$.
+djica ↔ $x_{1}$ desires/wants/wishes $x_{2}$ (event/state) for purpose $x_{3}$.
+djuno ↔ $x_{1}$ knows fact(s) $x_{2}$ (du'u) about subject $x_{3}$ by epistemology $x_{4}$.
+dunda ↔ $x_{1}$ [donor] gives/donates gift/present $x_{2}$ to recipient/beneficiary $x_{3}$ [without payment/exchange].
+facki ↔ $x_{1}$ discovers/finds out $x_{2}$ (du'u) about subject/object $x_{3}$; $x_{1}$ finds (fi) $x_{3}$ (object).
+fange ↔ $x_{1}$ is foreign/alien/[exotic]/unfamiliar to $x_{2}$ in property $x_{3}$ (ka).
+fatci ↔ $x_{1}$ (du'u) is a fact/reality/truth/actuality, in the absolute.
+finti ↔ $x_{1}$ invents/creates/composes/authors $x_{2}$ for function/purpose $x_{3}$ from existing elements/ideas $x_{4}$.
+flalu ↔ $x_{1}$ is a law specifying $x_{2}$ (state/event) for community $x_{3}$ under conditions $x_{4}$ by lawgiver(s) $x_{5}$.
+frati ↔ $x_{1}$ reacts/responds/answers with action $x_{2}$ to stimulus $x_{3}$ under conditions $x_{4}$; $x_{1}$ is responsive.
+gerku ↔ $x_{1}$ is a dog/canine/[bitch] of species/breed $x_{2}$.
+gismu ↔ $x_{1}$ is a (Lojban) root word expressing relation $x_{2}$ among argument roles $x_{3}$, with affix(es) $x_{4}$.
+gleki ↔ $x_{1}$ is happy/merry/glad/gleeful about $x_{2}$ (event/state).
+gugde ↔ $x_{1}$ is the country of peoples $x_{2}$ with land/territory $x_{3}$; (people/territory relationship).
+jdice ↔ $x_{1}$ (person) decides/makes decision $x_{2}$ (du'u) about matter $x_{3}$ (event/state).
+jerna ↔ $x_{1}$ (agent/person) earns/[deserves/merits] wages/salary/pay $x_{2}$ for work/service $x_{3}$ (activity).
+jesni ↔ $x_{1}$ is a needle [pointed shape/form, not tool] of material $x_{2}$.
+jgari ↔ $x_{1}$ grasps/holds/clutches/seizes/grips/[hugs] $x_{2}$ with $x_{3}$ (part of $x_{1}$) at locus $x_{4}$ (part of $x_{2}$).
+jgina ↔ $x_{1}$ is a gene of creature [or locus on creature] $x_{2}$ determining trait/process $x_{3}$.
+jibri ↔ $x_{1}$ is a job/occupation/employment/vocation (a type of work regularly done for pay) of person $x_{2}$.
+jinvi ↔ $x_{1}$ thinks/opines $x_{2}$ [opinion] (du'u) is true about subject/issue $x_{3}$ on grounds $x_{4}$.
+jitro ↔ $x_{1}$ has control over/harnesses/manages/directs/conducts $x_{2}$ in $x_{3}$ (activity/event/performance).
+jukni ↔ $x_{1}$ is a spider/arachnid/crustacean/crab/lobster/non-insect arthropod of species/breed $x_{2}$.
+jurme ↔ $x_{1}$ is a bacterium/germ/microbe/protozoan/amoeba [1-celled life] of species/defining property $x_{2}$.
+kargu ↔ $x_{1}$ (object/commodity/property/event) is costly/expensive/dear to $x_{2}$ by standard $x_{3}$.
+karni ↔ $x_{1}$ is a journal/periodical/magazine/[newspaper] with content $x_{2}$ published by $x_{3}$ for audience $x_{4}$.
+kelci ↔ $x_{1}$ [agent] plays with plaything/toy $x_{2}$.
+kevna ↔ $x_{1}$ is a cavity/hole/hollow/cavern in $x_{2}$; $x_{1}$ is concave within $x_{2}$; $x_{2}$ is hollow at locus $x_{1}$.
+klama ↔ $x_{1}$ comes/goes to destination $x_{2}$ from origin $x_{3}$ via route $x_{4}$ using means/vehicle $x_{5}$.
+klani ↔ $x_1$ is measured by $x_2$ (number) on scale $x_3$ (si'o, property of $x_1$ with kau).
+klina ↔ $x_{1}$ (object/medium) is clear/transparent/without obstacle to in-the-clear $x_{2}$ [transmission].
+lamji ↔ $x_{1}$ is adjacent/beside/next to/in contact with $x_{2}$ in property/sequence $x_{3}$ in direction $x_{4}$.
+lanbi ↔ $x_{1}$ is a quantity of protein/albumin of type $x_{2}$ composed of amino acids (sequence/jo'u) $x_{3}$ .
+lebna ↔ $x_{1}$ takes/gets/gains/obtains/seizes/[removes] $x_{2}$ (object/property) from $x_{3}$ (possessor).
+lijda ↔ $x_{1}$ is a religion of believers including $x_{2}$ sharing common beliefs/practices/tenets including $x_{3}$.
+linto ↔ $x_{1}$ is light in mass/weight by standard $x_{2}$.
+lisri ↔ $x_1$ is a story/tale/yarn/narrative about plot/subject/moral $x_2$ by storyteller $x_3$ to audience $x_4$.
+lojbo ↔ $x_{1}$ reflects [Loglandic]/Lojbanic language/culture/nationality/community in aspect $x_{2}$.
+mabla ↔ $x_1$ is execrable/deplorable/wretched/shitty/awful/rotten/miserable/contemptible/crappy/inferior/low-quality in property $x_2$ by standard $x_3$; $x_1$ stinks/sucks in aspect $x_2$ according to $x_3$.
+melbi ↔ $x_{1}$ is beautiful/pleasant to $x_{2}$ in aspect $x_{3}$ (ka) by aesthetic standard $x_{4}$.
+mintu ↔ $x_{1}$ is the same/identical thing as $x_{2}$ by standard $x_{3}$; ($x_{1}$ and $x_{2}$ interchangeable).
+mixre ↔ $x_{1}$ (mass) is a mixture/blend/colloid/commingling with ingredients including $x_{2}$.
+mlatu ↔ $x_{1}$ is a cat/[puss/pussy/kitten] [feline animal] of species/breed $x_{2}$; (adjective:) $x_{1}$ is feline.
+mukti ↔ $x_{1}$ (action/event/state) motivates/is a motive/incentive for action/event $x_{2}$, per volition of $x_{3}$.
+mulno ↔ $x_{1}$ (event) is complete/done/finished; $x_{1}$ (object) has become whole in property $x_{2}$ by standard $x_{3}$.
+natfe ↔ $x_{1}$ (du'u) contradicts/denies/refutes/negates $x_{2}$ (du'u) under rules/logic $x_{3}$.
+navni ↔ $x_1$ is a quantity of/contains/is made of noble gas of type $x_2$ [helium/neon/argon/krypton/xenon/radon].
+nelci ↔ $x_{1}$ is fond of/likes/has a taste for $x_{2}$ (object/state).
+nenri ↔ $x_{1}$ is in/inside/within $x_{2}$; $x_{1}$ is on the inside/interior of $x_{2}$ [totally within the bounds of $x_{2}$].
+palku ↔ $x_{1}$ are pants/trousers/slacks/leggings [legged garment] of material $x_{2}$.
+pilji ↔ $x_{1}$ is the product/total/result of factors/multiplicands ($x_{2}$ and $x_{3}$) $x_{2}$ multiplied by $x_{3}$.
+pinka ↔ $x_{1}$ (text) is a comment/remark/observation about subject $x_{2}$ expressed by $x_{3}$ to audience $x_{4}$.
+plana ↔ $x_{1}$ is plump/fat/obese [excessively thick/bulbous/swollen] by standard $x_{2}$.
+pluka ↔ $x_{1}$ (event/state) seems pleasant to/pleases $x_{2}$ under conditions $x_{3}$.
+ponse ↔ $x_{1}$ possesses/owns/has $x_{2}$ under law/custom $x_{3}$; $x_{1}$ is owner/proprietor of $x_{2}$ under $x_{3}$.
+prenu ↔ $x_{1}$ is a person/people (noun) [not necessarily human]; $x_{1}$ displays personality/a persona.
+pruce ↔ $x_{1}$ is a process with inputs $x_{2}$, outputs/results $x_{3}$, passing through steps/stages $x_{4}$.
+rigni ↔ $x_{1}$ is repugnant to/causes disgust to $x_{2}$ under conditions $x_{3}$.
+rinsa ↔ $x_{1}$ (agent) greets/hails/[welcomes/says hello to]/responds to arrival of $x_{2}$ in manner $x_{3}$ (action).
+rirci ↔ $x_{1}$ [member] is rare/unusual/uncommon/atypical in property $x_{2}$ (ka) among members of $x_{3}$ (set).
+rivbi ↔ $x_{1}$ avoids/evades/shuns/escapes/skirts [fate] $x_{2}$ (event) through action/state $x_{3}$ (event).
+sakli ↔ $x_{1}$ slides/slips/glides on $x_{2}$.
+sakta ↔ $x_{1}$ is made of/contains/is a quantity of sugar [sweet edible] from source $x_{2}$ of composition $x_{3}$.
+sanmi ↔ $x_{1}$ (mass) is a meal composed of dishes including $x_{2}$.
+sarcu ↔ $x_{1}$ (abstract) is necessary/required for continuing state/process $x_{2}$ under conditions $x_{3}$.
+selci ↔ $x_{1}$ is a cell/atom/unit/molecule of $x_{2}$; $x_{1}$ is an indivisible, most basic subunit of $x_{2}$.
+senpi ↔ $x_{1}$ doubts/is dubious/doubtful/skeptical/questions that $x_{2}$ (du'u) is true.
+sepli ↔ $x_{1}$ is apart/separate from $x_{2}$, separated by partition/wall/gap/interval/separating medium $x_{3}$.
+sivni ↔ $x_{1}$ is private/personal/privy/[secret/confidential/confined] to $x_{2}$; $x_{1}$ is not-public/hidden.
+skina ↔ $x_{1}$ is a cinema/movie/film about $x_{2}$ [plot/theme/subject/activity], filmmaker $x_{3}$, for audience $x_{4}$.
+sorcu ↔ $x_{1}$ is a store/deposit/supply/reserve of materials/energy $x_{2}$ in containment $x_{3}$.
+spofu ↔ $x_{1}$ is broken/inoperable/broken down/non-utile/not usable for function $x_{2}$.
+srana ↔ $x_{1}$ pertains to/is germane/relevant to/concerns/is related/associated with/is about $x_{2}$.
+steci ↔ $x_{1}$ (ka) is specific/particular/specialized/[special]/a defining property of $x_{2}$ among $x_{3}$ (set).
+stuzi ↔ $x_{1}$ is an inherent/inalienable site/place/position/situation/spot/location of $x_{2}$ (object/event).
+sumji ↔ $x_{1}$ is a mathematical sum/result/total of $x_{2}$ plus/increased by $x_{3}$.
+surla ↔ $x_{1}$ relaxes/rests/is at ease in/by doing/being $x_{2}$ (activity).
+tadji ↔ $x_{1}$ [process] is a method/technique/approach/means for doing $x_{2}$ (event) under conditions $x_{3}$.
+tarti ↔ $x_{1}$ behaves/conducts oneself as/in-manner $x_{2}$ (event/property) under conditions $x_{3}$.
+tavla ↔ $x_{1}$ talks/speaks to $x_{2}$ about subject $x_{3}$ in language $x_{4}$.
+tcica ↔ $x_{1}$ (event/experience) misleads/deceives/dupes/fools/cheats/tricks $x_{2}$ into $x_{3}$ (event/state).
+terdi ↔ $x_{1}$ is the Earth/the home planet of race $x_{2}$; (adjective:) $x_{1}$ is terrestrial/earthbound.
+turni ↔ $x_{1}$ governs/rules/is ruler/governor/sovereign/reigns over people/territory/domain/subjects $x_{2}$.
+tutci ↔ $x_{1}$ is a tool/utensil/resource/instrument/implement used for doing $x_{2}$; [form determines function].
+xanka ↔ $x_{1}$ is nervous/anxious about $x_{2}$ (abstraction) under conditions $x_{3}$.
+xenru ↔ $x_{1}$ regrets/rues (abstraction) $x_{2}$; $x_{1}$ is regretful/rueful/sorry/[remorseful] about $x_{2}$.
+xlura ↔ $x_{1}$ (agent) influences/lures/tempts $x_{2}$ into action/state $x_{3}$ by influence/threat/lure $x_{4}$.
+xusra ↔ $x_{1}$ (agent) asserts/claims/declares $x_{2}$ (du'u) is true [can be used for epistemology of authority].
+zabna ↔ $x_1$ is favorable/great/superb/fabulous/dandy/outstanding/swell/admirable/nice/commendable/delightful/desirable/enjoyable/laudable/likable/lovable/wonderful/praiseworthy/high-quality/cool in property $x_2$ by standard $x_3$; $x_1$ rocks in aspect $x_2$ according to $x_3$
+zbasu ↔ $x_{1}$ makes/assembles/builds/manufactures/creates $x_{2}$ out of materials/parts/components $x_{3}$.
+zungi ↔ $x_{1}$ feels guilt/remorse about $x_{2}$ (abstraction).
+badri ↔ $x_{1}$ is sad/depressed/dejected/[unhappy/feels sorrow/grief] about $x_{2}$ (abstraction).
+bajra ↔ $x_{1}$ runs on surface $x_{2}$ using limbs $x_{3}$ with gait $x_{4}$.
+
+## cmavo (60; PA1 digits 0–9 then top 50 by corpus score)
+
+no ↔ digit/number: 0 (digit) [zero].
+pa ↔ digit/number: 1 (digit) [one].
+re ↔ digit/number: 2 (digit) [two].
+ci ↔ digit/number: 3 (digit) [three].
+vo ↔ digit/number: 4 (digit) [four].
+mu ↔ digit/number: 5 (digit) [five].
+xa ↔ digit/number: 6 (digit) [six].
+ze ↔ digit/number: 7 (digit) [seven].
+bi ↔ digit/number: 8 (digit) [eight].
+so ↔ digit/number: 9 (digit) [nine].
+a ↔ logical connective: sumti afterthought or.
+ba ↔ time tense relation/direction: will [selbri]; after [sumti]; default future tense.
+co'e ↔ elliptical/unspecified bridi relationship.
+da'a ↔ digit/number: all except n; all but n; default 1.
+jai ↔ convert tense/modal (tagged) place to 1st place; 1st place moves to extra FA place (fai).
+ka ↔ abstractor: property/quality abstractor (-ness); $x_{1}$ is quality/property exhibited by [bridi].
+lo ↔ descriptor: the one, which (is / does) ... / those, which (are / do) ...
+mei ↔ convert number to cardinality selbri; $x_{1}$ is a mass formed from a set $x_{2}$ of n members, one or more of which is/are $x_{3}$, measured relative to the set $x_{4}$.
+ne'i ↔ location tense relation/direction; within/inside of/into ...
+su'o ↔ digit/number: at least (some); no less than.
+a'a ↔ attitudinal: attentive - inattentive - avoiding.
+ba'a ↔ evidential: I expect - I experience - I remember.
+bo ↔ short scope joiner; joins various constructs with shortest scope and right grouping.
+bu'u ↔ location tense relation/direction; coincident with/at the same place as; space equivalent of ca.
+ca ↔ time tense relation/direction: is [selbri]; during/simultaneous with [sumti]; present tense.
+ca'e ↔ evidential: I define.
+ca'o ↔ interval event contour: during ...; continuative |-----|.
+ce'u ↔ pseudo-quantifier binding a variable within an abstraction that represents an open place.
+cei ↔ selbri variable assignment; assigns broda series pro-bridi to a selbri.
+da'i ↔ discursive: supposing - in fact.
+dau ↔ digit/number: hex digit A (decimal 10) [ten].
+ei ↔ attitudinal: obligation - freedom.
+fa'a ↔ location tense relation/direction; arriving at/directly towards ...
+fau ↔ fasnu modal, 1st place (non-causal) in the event of ...
+ga'u ↔ location tense relation/direction; upwards/up from ...
+gai ↔ digit/number: hex digit C (decimal 12) [twelve].
+ge'e ↔ attitudinal: elliptical/unspecified/non-specific emotion; no particular feeling.
+ji'a ↔ discursive: additionally.
+ka'e ↔ modal aspect: innate capability; possibly unrealized.
+ke ↔ start grouping of tanru, etc; ... type of ... ; overrides normal tanru left grouping.
+ki'u ↔ krinu modal, 1st place (justified by) justifiably; because of reason ...
+ku'i ↔ discursive: however/but/in contrast.
+lo'u ↔ start questionable/out-of-context quote; text should be Lojban words, but needn't be grammatical.
+mo'a ↔ digit/number: too few; subjective.
+pa'o ↔ location tense relation/direction; transfixing/passing through ...
+pai ↔ digit/number: pi (approximately 3.1416...); the constant defined by the ratio of the circumference to the diameter of all circles.
+pi'u ↔ non-logical connective: cross product; Cartesian product of sets.
+ra'i ↔ krasi modal, 1st place from source/origin/starting point ...
+re'a ↔ unary mathematical operator: matrix transpose/dual; $A^T$.
+sa'u ↔ discursive: simply - elaborating.
+so'i ↔ digit/number: many.
+ta'u ↔ discursive: expanding the tanru - making a tanru.
+tai ↔ tamsmi modal, 1st place (like)/(in manner 2) resembling ...; sharing ideal form ...
+ti'u ↔ tcika modal, 1st place (for letters) associated with time ... ; attach time stamp.
+to'o ↔ location tense relation/direction; departing from/directly away from ...
+ui ↔ attitudinal: happiness - unhappiness.
+vi ↔ location tense distance: here at ... ; at or a very short/tiny distance from ...
+y ↔ hesitation noise; maintains the floor while speaker decides what to say next.
+za'o ↔ interval event contour: continuing too long after natural end of ...; superfective | ---->.
+za'u ↔ digit/number: greater than.
+
+## learn-lojban tutorial (notions; English ↔ English, from lojban.pw course themes)
+
+Alphabet ↔ Latin letters; ' = /h/ between vowels; . = pause before vowel-initial words; stress on the second-to-last vowel.
+selbrivla (brivla) ↔ Relation/content word: consonant cluster within first five sounds, ends in a vowel (e.g. gleki, klama).
+cmavo ↔ Particle: consonant + vowel (+ optional 'V sequences); may be run together (e.g. lenu, naku).
+cmevla ↔ Name word: ends in a consonant; often written .name. with pauses matching dots.
+Bridi ↔ A clause: sumti fill numbered places x₁ x₂ … of one selbri (relation).
+cu ↔ Separates sumti cluster from selbri when needed; not used before nu/du'u/ka abstractions as selbri.
+fa fe fi fo fu ↔ Tag sumti to explicit places without using SE conversion.
+nu / du'u / ka ↔ Abstractors: event, proposition, property (-ness); closed with kei where applicable.
+lu … li'u ↔ Quotation: Lojban text as a sumti; nestable.
+zo ↔ Quotes the single following Lojban word.
+sei ↔ Incidental bridi commenting on the host sentence.
+ma / mo / xu ↔ Questions: sumti, selbri, yes/no respectively.
+ku / kei / vau ↔ Terminators: end LE description, NU abstraction, bridi (when required).
+
+## learn-lojban tutorial (examples; English ↔ Lojban; 40 lines, quota 40)
+
+Despite the mother singing beautifully, the child doesn't succeed in falling asleep. ↔ .i to'e ki'u nai le nu le mamta cu sanga su'o melbi kei le verba na snada lo ka sipna
+Alice said that she would meet Doris. ↔ la .alis. pu cusku le se du'u ri ba penmi la .doris.
+He is the first among my friends who keep silence together. ↔ le prenu cu pa moi le'i pendo be mi ku noi lu'o ke'a ca smaji
+I suggest that you eat something. ↔ mi stidi lo ka ce'u su'o da citka ce'e do
+Why do you say goodbye? ↔ ki'u ma do cusku zo co'o
+Move the car here! ↔ ko jai gau muvdu fai le karce fe ti
+This (no, I don't want another one!) apple is rotten. ↔ ti poi to vi'o nai do mi na ku djica tu'a su'o lo drata toi plise cu fusra
+Good. And then? ↔ ui .i je ba bo
+— Hello. How do you do? ↔ — coi .i xu do kanro
+I will meet you in three days. ↔ mi penmi do fi'o prulamdeidzo be fi li ci
+What is this? ↔ ti mo
+What? (about objects) ↔ ma dacti gi'e
+Oh-no. ↔ .i .oi
+How to translate "What's up?" to Lojban? ↔ ma xe fanva zoi gy.What's up?.gy. la .lojban.
+More than two people together are heavy. ↔ lei za'u re prenu cu tilju
+A dog bites itself. ↔ pa gerku cu batci lo nei
+Alice and Kevin kiss each other ↔ la .alis. jo'u la .kevin. cu cinba zu'ai
+You won! (And Yan is happy about that!) ↔ do jinga sei la .ian. cu gleki
+That is my last rat. ↔ tu ro moi le'i ratcu pe mi
+Listening. ↔ re'i
+That's interesting! ↔ .a'u
+su'o ↔ at least
+We are all human. ↔ ma'a remna
+x₁ (possible event) is imagined by x₂ ↔ xanri
+Ball! ↔ bolci
+prami ↔ x₁ loves x₂
+Thanks. ↔ ki'e
+It is raining. ↔ carvi
+This is a ball near you. ↔ ta bolci
+Goodbye. ↔ co'o
+Yeah. ↔ ie
+Five. ↔ mu
+- Will it rain? ↔ - lakne
+Ha-ha-ha! ↔ .u'i sai
+Nice. ↔ zabna
+Someone runs. ↔ bajra
+Yes. ↔ bilma
+- Will it rain? ↔ - cumki
+It's pleasant. ↔ pluka
+What about the smell? ↔ panci pei
+
+## phrases (135; grammar-diverse sample from muplis-database)
+
+Please don't forget to send out the letters. ↔ .i ko na co'u morji le du'u sarcu fa le nu do benji le za'u xatra vau goi ko'a .i je ko zukte ko'a
+Your mamma's so fat, she'd break London Bridge. ↔ i le mamta be do cu tai plana i da'i se ri'a bo ri jai gau spofau fai le cripu pe la .london.
+One day there will be something so that I will be both sad and happy about. ↔ i ba ku ca pa djedi su'o da mi ge se badri gi gleki
+I can't speak French at all. ↔ mi mulno lo ka ce'u na'e kakne lo ka tavla fo lo fraso
+Is this the book you spoke of the other day? ↔ xu ti du le cukta poi du pu zu skicu
+What do you believe of 'pelmeni'? "Nothing, I don't know such word." ↔ lu do jinvi ma zo pelmeni li'u lu na'i go'i .i mi na se slabu le valsi li'u
+How goes it, Jacques? ↔ coi djaks do mo
+Just a little bit. ↔ so'u va'e
+Steve is an American name. ↔ zoi gy.Steve.gy. merko glico cmene
+Aha, go on, what happened next? ↔ .a'a sei ko di'a co'e ma ba la'e do'i fasnu
+Don't say anything to anybody. ↔ ko na ku tavla su'o da ce'e su'o de
+I'm happy now that you've arrived. ↔ .ui bu'o do mo'u klama
+Are you the giver or the receiver of this rose? ↔ fi'a do dunda fe tu'a ti voi rozgu
+I told you, I disagree. ↔ .i ke'u mi na tugni
+He and I walked together. ↔ .i ra jo'u mi pu cadzu
+Oh no! ↔ .a'onai
+That hurts. ↔ cortu
+How fascinating! ↔ .a'ucai
+Do you understand? ↔ G
+Yes. ↔ je'u
+I will do it myself. ↔ e'ei se'a
+This is not enough. ↔ be'u
+Crazy! ↔ fenki
+That's true. ↔ jetnu
+I'm begging you. ↔ e'o cai
+How cold it is! ↔ u'e lenku
+Sam, no! ↔ doi sam. do'u .e'unai
+There's going to be a tsunami! ↔ .a'e pu'o tsunami
+Shutting down. ↔ pu'o sisti
+Ah, this is easy. ↔ a'i cu'i
+My name is Jack. ↔ mi'e .djak.
+I'm Susan Greene. ↔ mi'e .suzyn.grin.
+What is it? ↔ mo
+Such a wonderful music! ↔ u'e melbi zgike
+Help yourself. ↔ e'i cu'i dai
+Are you all right? ↔ uu oi pei
+This is highly irregular. ↔ mutce vitci
+It's unbelievably beautiful! ↔ ue sai tai ianai melbi
+Hello. ↔ coi
+How was your day today? ↔ cabdei pei
+Hello, Tom. ↔ coi tam
+Hello, old friend! ↔ coi .i'u
+Hi, Tom! ↔ coi .tam.
+It's dangerous here. ↔ bu'u ckape
+The rain stopped at last. ↔ co'u je za'o carvi
+It's done! ↔ mo'u fasnu
+Happy New Year! ↔ ui dai li'i cnino na'arcitsi
+This is Tom. ↔ mi'e .tom.
+I'm glad to hear that. ↔ ui zabna nuzba
+We are the Borg. ↔ mi'a du lai borg
+It's cold out there. ↔ lenku bu'u tu
+We try. ↔ mi'ai troci
+That's none of my business. ↔ la'e do'i a'u cu'i
+Carmen is a Spanish name. ↔ zo .karmen. spano cmene
+Steve is an American name. ↔ zo .stiv. merko cmene
+Fool! ↔ ge'e jai zu'e bebna
+There's going to be a tsunami! ↔ .a'e ba vilxasybo'a
+We need to chat soon. ↔ .ei mi'o bazi casnu
+Let's finish the job. ↔ ko'oi mi'ai mo'u gunka
+Happy New Year! ↔ ui dai li'i co'a na'arcitsi
+This'll be different. ↔ ba drata
+We'll wait. ↔ mi'a ba denpa
+I am not kidding. ↔ zo'o nai
+I can't. ↔ .e'e nai
+I'd like some plum jam. ↔ .au zirsmela pesxu
+We'll dance. ↔ mi'ai ba dansu
+I don't like chocolate. ↔ cakla .iu ru'e nai
+We'll win. ↔ mi'ai ba jinga
+I am fine, and you? ↔ be'u cu'i i pei
+Nah, why bother fixing it. ↔ .a'i nai cikre ta
+Dude, she's hot! ↔ u'e ra cinmle
+It's fall now. ↔ ca critu
+I'm not Tom. ↔ mi'e nai .tom.
+Hey, John. ↔ ju'i la djan.
+We live here. ↔ mi'ai xabju ti
+Kimi smiled — I can't believe it! ↔ ui ianairu'e la kimis cisma
+What's up? ↔ ma nuzba
+Heh, heh, he said 'arsehole'. ↔ .u'i ra cusku zo ganxo
+This is Tom calling. ↔ mi'e la .tom.
+We are here. ↔ mi'ai zvati ti
+Every hunter wants to know where the pheasant is. ↔ xo nobli prenu cu bredi io ze'e
+It's raining. ↔ ca ca'o carvi
+Hi, John. - I'm not John. ↔ lu coi djan li'u lu mi'e nai djan li'u
+Where is it? ↔ zvati ma
+Crows are black. ↔ lo'e korvo cu xekri
+We lack nothing. ↔ mi'a no da claxu
+Don't ask any questions. ↔ ko na retsku
+Don't be silly. ↔ ko na bebna
+Don't give up. ↔ ko na co'u troci
+Where are we? ↔ mi'ai zvati ma
+One way or round trip?' 'Um... let me think. Round trip.' ↔ lu klama fi vo'e je'i na'e bo vo'e li'u lu y vo'e li'u
+What species of elk is it? ↔ ti mirli ma
+I did it, through much hard work, though it took but little thought. ↔ uo ru'e a'i sai ro'o bu'o nai a'i ru'e sai ro'e bu'o nai
+She would not disclose the secret. ↔ ba'a ra ba ca'o mipri
+We'll survive. ↔ mi'o na ba co'u renvi
+Judy is kind to everyone. ↔ i la judis ta'e xendo ro prenu
+A is enough, but B is not enough. ↔ .abu raunzu. i je ku'i by. na go'i
+Her name is Lucifera. ↔ ra se cmene zoi gy.Lucifera.gy.
+There's nothing there. ↔ i no da zvati ta
+Don't look at this! ↔ ko na catlu ti
+This apple is sweet. ↔ ti voi plise cu kukte
+Wow, there are seven people here! ↔ .u'e ze prenu cu zvati ti
+Long time, no see. ↔ ze'u ku na ku penmi
+Where does it leave from? ↔ klama fi ma
+Where can I find him? ↔ ra zvati ma ba'a dai
+A crocodile has eaten Tom. ↔ pa krokodilo pu citka pa gerku
+He has small feet. ↔ ra se jamfu za'u cmalu
+Where are we now? ↔ mi'ai ca zvati ma
+The result won't really be good. ↔ lei jalge na ku ba ku zabna
+You speak. ↔ do bacru
+You are a panda. ↔ do latcribe
+You are foolish. ↔ do bebna
+You've already forgotten. ↔ do pujenai morji
+You're not a child anymore. ↔ do ba'o verba
+You may swim. ↔ .e'a do limna
+You may sit down. ↔ .e'a do zutse
+You CAN do it. ↔ do ba'e kakne
+You are a small person. ↔ do cmalu prenu
+Quit complaining. ↔ ko sisti lo ka pante
+You are a large person. ↔ do barda prenu
+It's the largest in the world. ↔ traji lo ka barda vau fo le'i munje
+Please sit down! ↔ .e'o do zutse
+Her legs are long. ↔ ra se tuple lo clani
+You're weird. ↔ do jai cizra
+Thank you very, very much! ↔ mutce mutce ckire do
+You will regret this. ↔ do ba xenru
+Please keep it a secret. ↔ gau do .e'o sivni
+Everything will be lost now. ↔ i ba zi ku no da ca'o zvati a'o nai
+Live and let live. ↔ ko jmive gi'e curmi lo nu jmive
+This is a good learning environment. ↔ vanbi co xamgu be lo ka cilre
+You'll get well soon. ↔ do ba zi di'a kanro
+It's me. ↔ mi'e mi
+I'm going to scream. ↔ .ai mi cmoni
+I'm going to bed. ↔ mi pu'o sipna
+I have to go to sleep. ↔ mi bai ei sipna
+
+## phrases (33; math-, measure-, and formal-logic leaning from muplis-database)
+
+There is no greatest positive integer. ↔ .i no da dubmau ro nonmau mulna'u
+If P, then Q' is logically equivalent to '(Not P) and/or Q'. ↔ ganai broda gi brode .ijo seni'i bo ga na broda gi brode
+If P, then Q' is logically equivalent to 'If not Q, then not P'. ↔ ganai broda gi brode .ijo seni'i bo ganai na brode gi na broda
+Two is the only prime whose successor is prime. ↔ li re se steci lo ka namcrprimu gi'e lamli'e su'o namcrprimu
+I heard that the distance between Tokyo and Osaka is about 10 km. ↔ .i ti'e sirji la .tokios. la .osakan. fa le mitre be li ji'i 10 ki'o
+This field is 100 square meters. ↔ i ti voi foldi cu mitre te'ai re li pa no no
+I like you more than you like me. ↔ .i le ni mi nelci do cu dubmau le ni do nelci mi
+The meeting began at nine o'clock sharp. ↔ .i pu simxu le ka penmi vau ti'u li cacra bu so mentu bu no
+This will cost €30. ↔ rupne'uru li pa ci
+How old are you?' 'I'm 16 years old.' ↔ lu .i do renvi fi ma li'u lu .i le nanca be li pa xa li'u
+She cried for hours without ceasing. ↔ .i le bi'u nai fetsi pu ze'a le cacra be li so'i ru'i klaku
+I'll finish the work five days from now. ↔ .ai mi ca le te temci be nau'u bei le djedi be li mu mo'u gunka
+It's more fun than drinking coffee. ↔ .i zmadu le'e nu pinxe lei ckafi vau le ka se la'u li xo kau zdile
+It's more fun than drinking tea. ↔ .i zmadu le'e nu pinxe lei tcati vau le ka se la'u li xo kau zdile
+It's more fun than studying. ↔ .i zmadu le'e nu tadni vau le ka se la'u li xo kau zdile
+I am going to stay here for three days. ↔ i .ai mi stali vi ku ze'a le djedi be li ci
+I will return in three days. ↔ mi ba di'a zvati la'u le djedi be li ci
+I make €100 a day. ↔ ro da poi djedi zo'u ca da mi jerna le ronru'u be li pa no no
+The old man has enough money. ↔ le laldo nanmu cu ponse le rupnu be li rau
+See you at five. ↔ .ai penmi do ti'u li cy mu
+I'm 17, too. ↔ .i mi ji'a renvi fi le nanca be li pa ze
+Can you come at ten on May second? ↔ xu do ka'e zvati ti'u li cacra bu pa no masti bu mu djedi bu re
+A week has seven days. ↔ .i lo'e jeftu cu djedi li ze
+He died a few days later. ↔ ra pu ba la'u le djedi be li so'u co'a morsi
+There are seven days in a week. ↔ lo ka jeftu cu ka djedi li ze
+I will return in 10 days. ↔ mi ba di'a zvati la'u le djedi be li dau
+Alice isn't present for more than two days. That is strange. ↔ i la alis ze'a lo djedi be li za'u re na ku zvati i la'e di'u cizra
+We should wait for 10 days. ↔ .ei mi'ai denpa ze'a le djedi be li dau
+The sky was so starry, so bright that, looking at it, one could not help asking oneself whether ill-humoured and capricious people could live under such a sky. ↔ i puki le tsani cu ckaji lo ka so'i da tarci bu'u ce'u noi carmi i tai bo lo'e prenu fau le nu ri catlu le tsani vau na ku ka'e ku na ku co'a retsku fi le nei fe le se du'u xu kau lo'e prenu poi gasnu lo fanza e lo se kanpe be fi li so'u cu ka'e xabju lo cnita be le tai tsani
+He's very strong. ↔ .i le bi'u nai nakni se la'u li so'i tsali
+I wasn't sold on their plan at first, but their conviction won me over. ↔ puku ca le pamoi mi na ku birti tu'a le se platu be le za'u mei i ku'i le ni ri krici cu jai rinka lo nu mi co'a birti
+I feed my dog twice a day. ↔ i mi jai gau citka fai le gerku pe mi re roi ro detydei
+Buy a liter of milk, and if there are eggs, buy a dozen eggs. ↔ ko erve tu'a pa litce poi ladru .ije ganai zvati fa su'o caksova gi ko erve tu'a pare ri
