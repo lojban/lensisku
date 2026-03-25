@@ -9,6 +9,35 @@ pub fn sanitize_html(html: &str) -> String {
     remove_html_tags(html)
 }
 
+/// All Muplis rows as `lojban - english` lines (whitespace-normalized), ordered for stable prompts.
+/// Used to ground the LLM assistant from the local `muplis` table (jb2en-style phrase pairs).
+pub async fn assistant_muplis_dictionary_text(
+    pool: &Pool,
+) -> Result<String, Box<dyn std::error::Error>> {
+    let client = pool.get().await?;
+    let rows = client
+        .query(
+            "SELECT lojban, english FROM muplis ORDER BY lojban, id",
+            &[],
+        )
+        .await?;
+
+    fn one_line(s: &str) -> String {
+        s.split_whitespace().collect::<Vec<_>>().join(" ")
+    }
+
+    let mut out = String::with_capacity(rows.len().saturating_mul(128));
+    for row in rows {
+        let lojban: String = row.get(0);
+        let english: String = row.get(1);
+        out.push_str(&lojban);
+        out.push_str(" - ");
+        out.push_str(&one_line(&english));
+        out.push('\n');
+    }
+    Ok(out)
+}
+
 pub async fn search_muplis(
     pool: &Pool,
     query: MuplisSearchQuery,
