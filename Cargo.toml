@@ -50,9 +50,6 @@ path = "src/main.rs"
 [[bin]]
 name = "test"
 path = "test/test.rs"
-[[bin]]
-name = "jbotcan-import"
-path = "scripts/jbotcan_import/main.rs"
 
 [dependencies]
 actix-web = { version = "4.10.2", features = ["rustls"] }
