@@ -15,6 +15,39 @@ use crate::waves::dto::{WaveSearchHit, WaveThreadSummary, WavesSearchQuery, Wave
 
 use super::dto::{WavesSearchResponse, WavesThreadsResponse};
 
+async fn fetch_comment_import_sources(
+    pool: &Pool,
+    comment_ids: &[i32],
+) -> Result<std::collections::HashMap<i32, Option<String>>, Box<dyn std::error::Error + Send + Sync>>
+{
+    use std::collections::HashMap;
+    if comment_ids.is_empty() {
+        return Ok(HashMap::new());
+    }
+    let client = pool
+        .get()
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error + Send + Sync> {
+            Box::new(io::Error::other(e.to_string()))
+        })?;
+    let rows = client
+        .query(
+            "SELECT commentid, import_source FROM comments WHERE commentid = ANY($1)",
+            &[&comment_ids],
+        )
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error + Send + Sync> {
+            Box::new(io::Error::other(e.to_string()))
+        })?;
+    let mut out = HashMap::new();
+    for row in rows {
+        let comment_id: i32 = row.get("commentid");
+        let import_source: Option<String> = row.get("import_source");
+        out.insert(comment_id, import_source);
+    }
+    Ok(out)
+}
+
 /// Parse message date string to unix timestamp for sorting. Returns 0 on parse failure.
 fn message_timestamp(date_str: Option<&String>) -> i64 {
     let s = match date_str {
@@ -79,10 +112,14 @@ pub async fn search_waves(
         Box::new(io::Error::other(e.to_string()))
     })?;
 
+    let comment_ids: Vec<i32> = comments_res.comments.iter().map(|c| c.comment_id).collect();
+    let import_sources = fetch_comment_import_sources(pool, &comment_ids).await?;
+
     let mut merged: Vec<(i64, WaveSearchHit)> = Vec::new();
     for c in comments_res.comments {
         let ts = c.time as i64;
-        merged.push((ts, WaveSearchHit::Comment { comment: c }));
+        let import_source = import_sources.get(&c.comment_id).cloned().flatten();
+        merged.push((ts, WaveSearchHit::Comment { comment: c, import_source }));
     }
     for m in mail_res.messages {
         let ts = message_timestamp(m.date.as_ref());
@@ -127,6 +164,8 @@ pub async fn list_wave_threads(
     })?;
 
     let mut items: Vec<WaveThreadSummary> = Vec::new();
+    let comment_ids: Vec<i32> = comment_res.comments.iter().map(|c| c.comment_id).collect();
+    let import_sources = fetch_comment_import_sources(pool, &comment_ids).await?;
 
     for c in comment_res.comments {
         let content = &c.content;
@@ -144,6 +183,7 @@ pub async fn list_wave_threads(
         items.push(WaveThreadSummary::Comment {
             thread_id: c.thread_id,
             comment_id: c.comment_id,
+            import_source: import_sources.get(&c.comment_id).cloned().flatten(),
             first_comment_subject: c.first_comment_subject.clone(),
             first_comment_content: c.first_comment_content.as_ref().map(|v| {
                 serde_json::to_value(v).unwrap_or(serde_json::Value::Null)

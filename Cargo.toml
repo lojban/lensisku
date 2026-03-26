@@ -50,6 +50,9 @@ path = "src/main.rs"
 [[bin]]
 name = "test"
 path = "test/test.rs"
+[[bin]]
+name = "jbotcan-import"
+path = "scripts/jbotcan_import/main.rs"
 
 [dependencies]
 actix-web = { version = "4.10.2", features = ["rustls"] }
@@ -119,7 +122,6 @@ wasmtime = "17.0.0"
 wasmtime-wasi = "17.0.0"
 anyhow = "1.0"
 fastembed = { version = "4", default-features = false, features = ["hf-hub", "ort-download-binaries"] }
-
 [dev-dependencies]
 criterion = "0.5.1"
 
