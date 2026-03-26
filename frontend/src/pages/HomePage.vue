@@ -205,6 +205,12 @@
                     )
               "
             >
+              <div
+                v-if="item.source === 'comment' && item.import_source === 'jbotcan'"
+                class="mb-1"
+              >
+                <SourceTypeBadge type="jbotcan" label="jbotcan" />
+              </div>
                <CommentItem
                 v-if="item.source === 'comment'"
                 :comment="item.comment"

@@ -21,6 +21,11 @@
          <!-- Comment thread --> <template v-if="thread.source === 'comment'"
           >
           <div class="flex flex-wrap gap-2 items-center mb-2">
+            <SourceTypeBadge
+              v-if="thread.import_source === 'jbotcan'"
+              type="jbotcan"
+              label="jbotcan"
+            />
 
             <h3 class="font-medium text-gray-800">
                <template
@@ -142,12 +147,14 @@ import { useI18n } from 'vue-i18n'
 import type { PropType } from 'vue'
 
 import LazyMathJax from '@/components/LazyMathJax.vue'
+import SourceTypeBadge from '@/components/SourceTypeBadge.vue'
 
 type ContentPart = { type: string; data?: string }
 
 /** Row from activity / waves API (comment thread vs mail thread). */
 type ActivityThreadRow = {
   source: 'comment' | 'mail' | string
+  import_source?: string | null
   thread_id?: number
   comment_id?: number
   valsi_id?: number | string

@@ -7,17 +7,17 @@
 </template>
 
 <script setup lang="ts">
-import { BookOpen, BookMarked, Mail } from 'lucide-vue-next'
+import { BookOpen, BookMarked, Mail, Image } from 'lucide-vue-next'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 const props = defineProps({
-  /** One of: 'definition', 'valsi', 'mail' */
+  /** One of: 'definition', 'valsi', 'mail', 'jbotcan' */
   type: {
     type: String,
     required: true,
     validator: (v: unknown) =>
-      typeof v === 'string' && ['definition', 'valsi', 'mail'].includes(v),
+      typeof v === 'string' && ['definition', 'valsi', 'mail', 'jbotcan'].includes(v),
   },
   /** Override translated label; if not set, uses default for type */
   label: {
@@ -44,12 +44,18 @@ const typeConfig = {
     bg: 'bg-violet-50',
     text: 'text-violet-700',
   },
+  jbotcan: {
+    icon: Image,
+    bg: 'bg-amber-50',
+    text: 'text-amber-700',
+  },
 }
 
 const defaultLabels = {
   definition: () => t('components.commentItem.inDefinition'),
   valsi: () => t('components.commentItem.inValsi'),
   mail: () => t('home.waveSourceMail'),
+  jbotcan: () => 'jbotcan',
 }
 
 const config = computed(() => typeConfig[props.type])

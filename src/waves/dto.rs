@@ -10,6 +10,8 @@ use crate::mailarchive::Message;
 pub enum WaveSearchHit {
     Comment {
         comment: Comment,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        import_source: Option<String>,
     },
     Mail {
         message: Message,
@@ -44,6 +46,8 @@ pub enum WaveThreadSummary {
     Comment {
         thread_id: i32,
         comment_id: i32,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        import_source: Option<String>,
         first_comment_subject: Option<String>,
         #[serde(skip_serializing_if = "Option::is_none")]
         first_comment_content: Option<serde_json::Value>,
