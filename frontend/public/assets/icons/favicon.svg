@@ -1,1 +1,51 @@
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="27" height="27" fill="none" viewBox="0 0 27 27"><defs><linearGradient id="a" x1="6" x2="22" y1="6" y2="22" gradientUnits="userSpaceOnUse"><stop stop-color="#3b82f6"/><stop offset="1" stop-color="#2563eb"/></linearGradient><linearGradient xlink:href="#a" id="c" x1="6" x2="22" y1="6" y2="22" gradientTransform="translate(2.25 2.5)" gradientUnits="userSpaceOnUse"/><linearGradient xlink:href="#a" id="d" x1="6" x2="22" y1="6" y2="22" gradientTransform="translate(2.25 2.5)" gradientUnits="userSpaceOnUse"/><linearGradient xlink:href="#a" id="b" x1="6" x2="22" y1="6" y2="22" gradientTransform="translate(2.25 2.5)" gradientUnits="userSpaceOnUse"/></defs><g stroke-linecap="round"><g stroke="#ef4444" stroke-linejoin="round" stroke-width="2"><path d="M13.75 7V1.5m-3 2.5 3-3 3 3M20.25 13.5h5.5m-3-3 3 3-3 3M13.75 20v5.5m-3-2.5 3 3 3-3M7.25 13.5h-5.5m2.5-3-3 3 3 3"/></g><g stroke="url(#a)" stroke-linejoin="round" stroke-width="2.05" style="stroke:url(#b)" transform="translate(-2.25 -2.5)"><circle cx="13.25" cy="13.25" r="5.65" fill="rgba(255,255,255,0.75)" style="stroke:url(#c);-webkit-backdrop-filter:blur(20px)"/><path d="m17.85 17.85 6.9 6.9" style="stroke:url(#d)"/></g><path stroke="#93c5fd" stroke-width="1.15" d="M8.85 8.6q.75-.75 1.85-.4"/></g></svg>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="27" height="27" fill="none" viewBox="0 0 27 27">
+  <defs>
+    <linearGradient id="a" x1="6" x2="22" y1="6" y2="22" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#3b82f6"/>
+      <stop offset="1" stop-color="#2563eb"/>
+    </linearGradient>
+    <linearGradient xlink:href="#a" id="c" x1="6" x2="22" y1="6" y2="22" gradientTransform="translate(2.25 2.5)" gradientUnits="userSpaceOnUse"/>
+    <linearGradient xlink:href="#a" id="d" x1="6" x2="22" y1="6" y2="22" gradientTransform="translate(2.25 2.5)" gradientUnits="userSpaceOnUse"/>
+    <linearGradient xlink:href="#a" id="b" x1="6" x2="22" y1="6" y2="22" gradientTransform="translate(2.25 2.5)" gradientUnits="userSpaceOnUse"/>
+    <radialGradient id="lensGloss" cx="32%" cy="28%" r="72%" gradientUnits="objectBoundingBox">
+      <stop offset="0%" stop-color="#fff" stop-opacity="0.72"/>
+      <stop offset="38%" stop-color="#fff" stop-opacity="0.22"/>
+      <stop offset="68%" stop-color="#fff" stop-opacity="0.06"/>
+      <stop offset="100%" stop-color="#fff" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="lensRim" x1="18%" y1="12%" x2="82%" y2="88%" gradientUnits="objectBoundingBox">
+      <stop offset="0%" stop-color="#fff" stop-opacity="0.5"/>
+      <stop offset="50%" stop-color="#fff" stop-opacity="0.08"/>
+      <stop offset="100%" stop-color="#fff" stop-opacity="0.28"/>
+    </linearGradient>
+  </defs>
+  <g stroke-linecap="round">
+    <g stroke="#ef4444" stroke-linejoin="round" stroke-width="2">
+      <path d="M13.75 7V1.5m-3 2.5 3-3 3 3M20.25 13.5h5.5m-3-3 3 3-3 3M13.75 20v5.5m-3-2.5 3 3 3-3M7.25 13.5h-5.5m2.5-3-3 3 3 3"/>
+    </g>
+    <g stroke="url(#a)" stroke-linejoin="round" stroke-width="2.05" style="stroke:url(#b)" transform="translate(-2.25 -2.5)">
+      <path d="m17.85 17.85 6.9 6.9" style="stroke:url(#d)"/>
+      <circle
+        cx="13.25"
+        cy="13.25"
+        r="5.65"
+        fill="rgba(255,255,255,0.42)"
+        stroke="url(#c)"
+        stroke-width="2.05"
+        style="backdrop-filter:blur(18px) saturate(185%);-webkit-backdrop-filter:blur(18px) saturate(185%)"
+      />
+      <circle cx="13.25" cy="13.25" r="5.65" fill="url(#lensGloss)" stroke="none" style="pointer-events:none"/>
+      <circle
+        cx="13.25"
+        cy="13.25"
+        r="5.5"
+        fill="none"
+        stroke="url(#lensRim)"
+        stroke-width="1.15"
+        opacity="0.85"
+        style="pointer-events:none"
+      />
+    </g>
+    <path stroke="#93c5fd" stroke-width="1.15" d="M8.85 8.6q.75-.75 1.85-.4"/>
+  </g>
+</svg>
