@@ -467,7 +467,7 @@ pub async fn merge_collections(
     ),
     security(("bearer_auth" = [])),
     summary = "List items for custom-text bulk edit",
-    description = "Owner only. Returns collection items not linked to a dictionary definition (definition_id IS NULL), including rows with text on only one side."
+    description = "Owner only. Returns collection items not linked to dictionary definition (definition_id IS NULL), including rows with text on only one side."
 )]
 #[get("/{id}/items/custom-text-bulk")]
 pub async fn list_custom_text_bulk_items(
