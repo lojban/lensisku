@@ -389,7 +389,7 @@
   "collectionCustomTextBulk": {
     "pageHint": "Bulk edit custom card text",
     "documentTitle": "Bulk edit custom text",
-    "disclaimer": "This page lists only collection items that are not linked to a dictionary definitions: custom content cards.",
+    "disclaimer": "This page lists only collection items with custom content (not linked to dictionary definitions).",
     "backToCollection": "Back to collection",
     "ownerOnly": "Only the collection owner can use bulk edit.",
     "empty": "No items match this type in this collection.",
