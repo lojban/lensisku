@@ -2655,7 +2655,14 @@ watch(
   }
 )
 
-useSeoHead({ title: computed(() => collection.value?.name || 'Collection') })
+useSeoHead({
+  title: computed(() => collection.value?.name || t('collectionDetail.pageHint')),
+  description: computed(() => {
+    const raw = collection.value?.description
+    if (!raw?.trim()) return undefined
+    return raw.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()
+  }),
+})
 
 onUnmounted(() => {
   // Clean up any pending search timeouts
