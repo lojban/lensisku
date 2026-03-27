@@ -20,40 +20,29 @@
              <!-- Main Content -->
             <div class="flex flex-wrap items-center justify-between gap-2">
 
-              <div class="w-auto flex items-center gap-2 flex-wrap min-w-0">
-
+              <div class="w-auto min-w-0 max-w-[14rem] sm:max-w-[18rem] md:max-w-[22rem]">
                 <h2
-                  class="text-base font-semibold truncate flex-shrink-0 min-w-0 max-w-full"
-                  :class="
-                    definition.definitionid
-                      ? 'text-blue-700 hover:text-blue-800 hover:underline'
-                      : 'text-gray-800'
-                  "
+                  v-if="definition.definitionid"
+                  class="text-base font-semibold flex-shrink-0 min-w-0 max-w-full truncate text-blue-700 hover:text-blue-800 hover:underline"
                 >
-                   <template v-if="definition.definitionid"
-                    > <template v-if="isValsiTruncated"
-                      > <span
+                  <template v-if="definition.definitionid">
+                    <template v-if="isValsiTruncated">
+                      <span
                         class="cursor-pointer"
                         :title="t('components.definitionCard.clickToSeeFullWord')"
                         @click="showValsiModal = true"
-                        > {{ displayedValsi }} <sup
-                          v-if="showDefinitionNumber"
-                          class="italic font-medium text-gray-600"
-                          >#</sup
-                        > </span
-                      > </template
-                    > <RouterLink v-else :to="valsiDefinitionLink"
-                      > {{ definition.valsiword ?? definition.word }} <sup
-                        v-if="showDefinitionNumber"
-                        class="italic font-medium text-gray-600"
-                        > # </sup
-                      > </RouterLink
-                    > </template
-                  > <template v-else
-                    > <span class="truncate block">{{ displayedFreeContent }}</span
-                    > </template
-                  >
+                      >
+                        {{ displayedValsi }}
+                        <sup v-if="showDefinitionNumber" class="italic font-medium text-gray-600">#</sup>
+                      </span>
+                    </template>
+                    <RouterLink v-else :to="valsiDefinitionLink">
+                      {{ definition.valsiword ?? definition.word }}
+                      <sup v-if="showDefinitionNumber" class="italic font-medium text-gray-600"> # </sup>
+                    </RouterLink>
+                  </template>
                 </h2>
+              </div>
                  <span
                   v-if="definition.type_name && props.showWordType"
                   class="px-2 py-1 text-xs font-medium rounded-full"
@@ -106,7 +95,6 @@
                   :item-id="useApiForSound ? (props.itemId ?? undefined) : undefined"
                   class="shrink-0"
                 />
-              </div>
 
               <div class="flex items-center gap-2 flex-wrap">
                  <RouterLink
@@ -161,7 +149,7 @@
 
               <div
                 v-if="showReorderControls"
-                class="flex flex-wrap gap-2 md:gap-0 justify-end sm:justify-end w-full sm:w-auto flex-none"
+                class="ml-auto flex flex-wrap gap-2 md:gap-0 justify-end sm:justify-end w-auto flex-none"
                 role="group"
               >
                  <button
@@ -275,6 +263,13 @@
           alt="Back side image"
           class="max-h-48 w-full rounded-lg object-contain bg-gray-50 hover:bg-gray-100 transition-colors"
         />
+      </div>
+
+      <div
+        v-if="showExpandedFrontContent"
+        class="mt-2 text-sm font-semibold text-gray-800 whitespace-pre-wrap break-words"
+      >
+        {{ displayedFreeContent }}
       </div>
 
       <div class="text-sm prose prose-sm max-w-none text-gray-700 mt-2">
@@ -881,8 +876,11 @@ const valsiDefinitionLink = computed(() => {
 })
 const displayedFreeContent = computed(() => {
   const raw = props.definition.free_content_front || props.definition.word || ''
-  return raw.length > MAX_VALSI_DISPLAY_LENGTH ? raw.slice(0, MAX_VALSI_DISPLAY_LENGTH) + '…' : raw
+  return raw
 })
+const showExpandedFrontContent = computed(
+  () => !props.definition.definitionid && displayedFreeContent.value.trim().length > 0
+)
 const displayedSelmaho = computed(() => {
   const s = props.definition.selmaho || ''
   return s.length > MAX_VALSI_DISPLAY_LENGTH ? s.slice(0, MAX_VALSI_DISPLAY_LENGTH) + '…' : s

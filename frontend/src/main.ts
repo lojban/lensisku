@@ -5,10 +5,9 @@ import i18n from './i18n' // Import the i18n instance
 import './style.css' // Keep global styles if any
 import Aura from '@primeuix/themes/aura'
 import PrimeVue from 'primevue/config'
-import { Crepe } from '@milkdown/crepe' // Eagerly import Crepe
+import '@milkdown/crepe' // Eagerly import Crepe
 import '@milkdown/crepe/theme/common/style.css'
 import '@milkdown/crepe/theme/frame.css'
-console.log('Crepe imported in main.js:', Crepe ? 'Yes' : 'No')
 
 // `export const createApp` is required for vite-ssg
 export const createApp = ViteSSG(

@@ -289,6 +289,11 @@ export const updateItemPosition = (
 export const removeCollectionItem = (collectionId: number | string, itemId: number | string) =>
   api.delete(`/collections/${collectionId}/items/${itemId}`)
 
+export const bulkRemoveCollectionItems = (
+  collectionId: number | string,
+  itemIds: number[]
+) => api.post(`/collections/${collectionId}/items/bulk-remove`, { item_ids: itemIds })
+
 export const listCollectionItems = (
   collectionId: number | string,
   params?: Record<string, unknown>,

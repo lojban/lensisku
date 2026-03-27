@@ -337,14 +337,20 @@ export default {
             '@apply btn-base text-gray-700 bg-gray-50 enabled:hover:bg-gray-200 border-gray-500':
               {},
           },
-          // Neutral “dismiss / clear” (brandbook §1.B): flat, subdued; inset surface like `input-field`.
+          // Neutral “dismiss / clear” (brandbook §1.B): subtle raised/embossed default with pressed active state.
           '.btn-empty': {
-            '@apply btn-base text-gray-600 bg-white border-gray-300 shadow-inner shadow-slate-200': {},
+            '@apply btn-base text-gray-700 bg-gradient-to-b from-white to-slate-50 border-gray-300': {},
+            boxShadow:
+              'inset 0 1px 0 rgba(255, 255, 255, 0.9), inset 0 -1px 0 rgba(148, 163, 184, 0.18), 0 1px 2px rgba(15, 23, 42, 0.08)',
             '&:not(:disabled):hover': {
-              '@apply bg-slate-50 border-gray-400 text-gray-700': {},
+              '@apply bg-gradient-to-b from-white to-slate-100 border-gray-400 text-gray-800': {},
+              boxShadow:
+                'inset 0 1px 0 rgba(255, 255, 255, 0.95), inset 0 -1px 0 rgba(148, 163, 184, 0.22), 0 2px 4px rgba(15, 23, 42, 0.1)',
             },
             '&:not(:disabled):active': {
-              '@apply bg-slate-100 border-gray-400': {},
+              '@apply bg-gradient-to-b from-slate-100 to-slate-200 border-gray-400 text-gray-800': {},
+              boxShadow:
+                'inset 0 1px 2px rgba(15, 23, 42, 0.16), inset 0 -1px 0 rgba(255, 255, 255, 0.45), 0 0 0 rgba(15, 23, 42, 0)',
             },
             '&:focus-visible:not(:disabled)': {
               '@apply ring-2 ring-blue-400/45 ring-offset-1 ring-offset-white': {},

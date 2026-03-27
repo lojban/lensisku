@@ -12,7 +12,7 @@
 
           <div class="flex flex-wrap items-center justify-between gap-2">
 
-            <div class="w-auto flex items-center gap-2 flex-wrap min-w-0">
+            <div class="w-auto min-w-0 max-w-[14rem] sm:max-w-[18rem] md:max-w-[22rem]">
 
               <h2
                 v-if="definition.definitionid"
@@ -29,13 +29,6 @@
                 >
               </h2>
 
-              <h2
-                v-else
-                class="text-base font-semibold truncate flex-shrink-0 min-w-0 max-w-full text-gray-800"
-              >
-                 <span class="truncate block">{{ displayedFreeContent }}</span
-                >
-              </h2>
                <span
                 v-if="definition.type_name && showWordType"
                 class="px-2 py-1 text-xs font-medium rounded-full"
@@ -57,6 +50,12 @@
 
           </div>
            <!-- Definition Content -->
+          <div
+            v-if="showExpandedFrontContent"
+            class="mt-2 text-sm font-semibold text-gray-800 whitespace-pre-wrap break-words"
+          >
+            {{ displayedFreeContent }}
+          </div>
           <div class="mt-3">
              <LazyMathJax :content="definition.definition" :enable-markdown="true" />
           </div>
@@ -178,8 +177,11 @@ const valsiDefinitionLink = computed(() =>
 )
 const displayedFreeContent = computed(() => {
   const raw = props.definition.free_content_front || props.definition.word || ''
-  return raw.length > MAX_VALSI_DISPLAY_LENGTH ? raw.slice(0, MAX_VALSI_DISPLAY_LENGTH) + '…' : raw
+  return raw
 })
+const showExpandedFrontContent = computed(
+  () => !props.definition.definitionid && displayedFreeContent.value.trim().length > 0
+)
 const displayedSelmaho = computed(() => {
   const s = props.definition.selmaho || ''
   return s.length > MAX_VALSI_DISPLAY_LENGTH ? s.slice(0, MAX_VALSI_DISPLAY_LENGTH) + '…' : s
