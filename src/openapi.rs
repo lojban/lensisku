@@ -19,7 +19,6 @@ use utoipauto::utoipauto;
         (name = "users", description = "Users endpoints"),
         (name = "comments", description = "Discussions endpoints"), 
         (name = "language", description = "Linguistics-related endpoints"), 
-        (name = "muplis", description = "Muplis search endpoints"), 
         (name = "versions", description = "Definition versioning endpoints"), 
         (name = "export", description = "Dictionary exports endpoints"),
         (name = "mail", description = "Mail archive thread and message view"),

@@ -64,7 +64,6 @@
       "semantic": "By meaning",
       "comments": "Discussion waves",
       "messages": "Mail archive",
-      "muplis": "Muplis phrases",
       "groupByThread": "Group by thread",
       "searchInPhrases": "Include phrases"
     },
@@ -73,7 +72,6 @@
       "semantic": "Search by meaning or concept...",
       "comments": "Search comments...",
       "messages": "Search messages...",
-      "muplis": "Search muplis...",
       "default": "Search..."
     }
   },
@@ -83,7 +81,6 @@
     "searchResultsTitle": {
       "dictionary": "Dictionary and corpus",
       "semantic": "Semantic search",
-      "muplis": "Muplis phrases",
       "comments": "Discussion waves",
       "messages": "Mail archive"
     },
@@ -397,7 +394,8 @@
     "backToCollection": "Back to collection",
     "ownerOnly": "Only the collection owner can use bulk edit.",
     "empty": "No items match this type in this collection.",
-    "rowCount": "{count} items",
+    "rowCountSavedOnly": "{saved} saved items",
+    "rowCountSavedAndScreen": "{saved} saved items ({screen} items on screen)",
     "colFront": "Front (prompt)",
     "colBack": "Back (answer)",
     "cardLabel": "Card {n}",
@@ -417,12 +415,16 @@
     "exportCsv": "Export CSV",
     "exportTsv": "Export TSV",
     "importing": "Importing…",
+    "importProgressLine": "{pct}% read · {rows} rows merged",
+    "importProgressAria": "Import progress",
     "importAria": "Import CSV or TSV file",
     "importWrongFileType": "Please choose a .csv or .tsv file.",
     "importHint": "Import merges rows in your browser (match by front text, then back, then unsaved rows). Click 'Save all' on the page to persist changes.",
     "importEmpty": "The file has no data rows.",
     "importTooMany": "At most {max} rows per import.",
     "importSuccess": "Merged: {front} updated by front, {back} by back, {inserted} new rows, {skipped} empty rows skipped.",
+    "importDiscardHint": "To discard this import and restore what was on the server before you opened this page, reload the page (unsaved changes will be lost).",
+    "importReloadPage": "Reload page",
     "importError": "Could not read or parse the file.",
     "colActions": "Actions",
     "deleteRow": "Delete",
@@ -430,7 +432,10 @@
     "deleteDraftAria": "Remove unsaved row",
     "deleteSavedConfirm": "Remove this item from the collection? This cannot be undone.",
     "deleteDraftConfirm": "Discard this unsaved row?",
-    "deleteError": "Could not delete the item."
+    "deleteError": "Could not delete the item.",
+    "filterPlaceholder": "Filter rows…",
+    "filterNoMatches": "No rows match your filter.",
+    "filterShowing": "Showing {visible} of {total} rows (filter)"
   },
   "collectionDetail": {
     "pageHint": "Collection",

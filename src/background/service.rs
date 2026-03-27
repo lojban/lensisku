@@ -3,7 +3,6 @@ use crate::{
     error::{AppError, AppResult},
     export::service::export_all_dictionaries,
     mailarchive::{check_for_new_emails, import_maildir},
-    muplis,
     notifications::run_email_notifications,
 };
 use chrono::Local;
@@ -205,18 +204,6 @@ pub async fn spawn_background_tasks(
 
             if let Err(e) = calculate_missing_embeddings(&embedding_pool).await {
                 error!("Failed to calculate embeddings: {}", e);
-            }
-        }
-    });
-
-    // Update muplis data periodically
-    let pool_clone = pool.clone();
-    tokio::spawn(async move {
-        let mut interval = time::interval(Duration::from_secs(24 * 60 * 60)); // Daily
-        loop {
-            interval.tick().await;
-            if let Err(e) = muplis::update_if_needed(&pool_clone).await {
-                error!("Failed to update muplis data: {}", e);
             }
         }
     });

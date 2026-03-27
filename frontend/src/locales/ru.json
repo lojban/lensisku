@@ -62,7 +62,6 @@
       "semantic": "Семантический поиск",
       "comments": "Обсуждения",
       "messages": "Архив почты",
-      "muplis": "Фразы Muplis",
       "groupByThread": "Группировать по теме",
       "searchInPhrases": "Включая фразы"
     },
@@ -71,7 +70,6 @@
       "semantic": "Искать по значению или концепту...",
       "comments": "Искать комментарии...",
       "messages": "Искать сообщения...",
-      "muplis": "Искать в Muplis...",
       "default": "Поиск..."
     }
   },
@@ -81,7 +79,6 @@
     "searchResultsTitle": {
       "dictionary": "Словарь и корпус",
       "semantic": "Семантический поиск",
-      "muplis": "Фразы Muplis",
       "comments": "Обсуждения",
       "messages": "Архив почты"
     },
@@ -367,7 +364,8 @@
     "backToCollection": "Назад к коллекции",
     "ownerOnly": "Массовое редактирование доступно только владельцу коллекции.",
     "empty": "В этой коллекции нет элементов этого типа.",
-    "rowCount": "Элементов: {count}",
+    "rowCountSavedOnly": "{saved} сохранённых",
+    "rowCountSavedAndScreen": "{saved} сохранённых ({screen} на экране)",
     "colFront": "Лицо (вопрос)",
     "colBack": "Оборот (ответ)",
     "cardLabel": "Карточка {n}",
@@ -387,12 +385,16 @@
     "exportCsv": "Экспорт CSV",
     "exportTsv": "Экспорт TSV",
     "importing": "Импорт…",
+    "importProgressLine": "Прочитано {pct}% · объединено строк: {rows}",
+    "importProgressAria": "Ход импорта",
     "importAria": "Импорт файла CSV или TSV",
     "importWrongFileType": "Выберите файл .csv или .tsv.",
     "importHint": "Слияние выполняется в браузере (сначала по лицу, затем по обороту, затем по несохранённым строкам). Нажмите «Сохранить всё», чтобы записать изменения на сервер.",
     "importEmpty": "В файле нет строк с данными.",
     "importTooMany": "Не больше {max} строк за один импорт.",
     "importSuccess": "Слияние: {front} по лицу, {back} по обороту, {inserted} новых строк, {skipped} пустых пропущено.",
+    "importDiscardHint": "Чтобы отменить импорт и вернуть данные с сервера как до открытия этой страницы, перезагрузите страницу (несохранённые изменения будут потеряны).",
+    "importReloadPage": "Перезагрузить страницу",
     "importError": "Не удалось прочитать или разобрать файл.",
     "colActions": "Действия",
     "deleteRow": "Удалить",
@@ -400,7 +402,10 @@
     "deleteDraftAria": "Убрать несохранённую строку",
     "deleteSavedConfirm": "Удалить этот элемент из коллекции? Это действие необратимо.",
     "deleteDraftConfirm": "Отменить эту несохранённую строку?",
-    "deleteError": "Не удалось удалить элемент."
+    "deleteError": "Не удалось удалить элемент.",
+    "filterPlaceholder": "Фильтр строк…",
+    "filterNoMatches": "Нет строк, подходящих под фильтр.",
+    "filterShowing": "Показано {visible} из {total} строк (фильтр)"
   },
   "collectionDetail": {
     "pageHint": "Коллекция",

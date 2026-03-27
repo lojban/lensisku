@@ -65,7 +65,7 @@
 </template>
 
 <script setup lang="ts">
-import { Book, List, ChevronDown, Waves, X } from 'lucide-vue-next'
+import { Book, ChevronDown, Waves, X } from 'lucide-vue-next'
 import { Dropdown } from '@packages/ui'
 import { ref, computed, watch, onBeforeUnmount } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -86,7 +86,6 @@ const modes = ref([
     icon: Waves,
     color: 'text-purple-500',
   },
-  { name: t('searchForm.modes.muplis'), value: 'muplis', icon: List, color: 'text-teal-500' },
 ])
 
 const props = defineProps({
@@ -118,8 +117,6 @@ const DEBOUNCE_DELAY = 450
 
 const getPlaceholder = computed(() => {
   switch (mode.value?.value) {
-    case 'muplis':
-      return t('searchForm.placeholder.muplis')
     case 'dictionary':
       return t('searchForm.placeholder.dictionary')
     case 'comments':

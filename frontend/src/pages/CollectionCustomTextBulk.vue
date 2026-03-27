@@ -1,63 +1,36 @@
 <template>
 
-  <div class="flex flex-col min-h-[calc(100vh-6rem)] pb-32 md:pb-8">
+  <div class="flex min-h-0 flex-1 flex-col pb-3">
 
     <div class="mb-4 flex w-full flex-col gap-3">
 
-      <div class="flex w-full flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <!-- Title row: collection name + export menu only -->
+      <div class="flex w-full flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
 
         <div class="min-w-0 w-full flex-1">
 
           <div class="flex items-center gap-2 text-gray-500 italic text-sm mb-1">
-             <List class="w-5 h-5 shrink-0" aria-hidden="true" /> <span>{{
+            <List class="w-5 h-5 shrink-0" aria-hidden="true" /> <span>{{
               t('collectionCustomTextBulk.pageHint')
-            }}</span
-            >
+              }}</span>
           </div>
 
           <h1 class="text-xl sm:text-2xl font-bold text-gray-800">
-             {{ collection?.name || '…' }}
+            {{ collection?.name || '…' }}
           </h1>
 
         </div>
-        <div
-          class="flex w-full min-w-0 shrink-0 flex-row flex-wrap items-center justify-between gap-3 sm:w-auto sm:justify-start"
-        >
-          <div class="flex flex-row items-center gap-0" role="group">
-            <RouterLink
-              :to="`/collections/${numericCollectionId}`"
-              class="btn-aqua-zinc btn-aqua-group-item inline-flex items-center gap-2 text-sm md:flex-none"
-            >
-              <ArrowLeft class="w-4 h-4 shrink-0" aria-hidden="true" />
-              {{ t('collectionCustomTextBulk.backToCollection') }}
-            </RouterLink>
-            <button
-              v-if="!isLoading && isOwner"
-              type="button"
-              class="btn-aqua-white btn-aqua-group-item inline-flex items-center gap-2 text-sm md:flex-none"
-              :disabled="isSaving || isImporting"
-              @click="showImportModal = true"
-            >
-              <FileDown class="h-4 w-4 shrink-0" aria-hidden="true" />
-              {{ isImporting ? t('collectionCustomTextBulk.importing') : t('collectionCustomTextBulk.importButton') }}
-            </button>
-          </div>
-          <Dropdown v-if="!isLoading && isOwner" :trigger-label="t('collectionCustomTextBulk.exportMenuLabel')">
-            <button
-              type="button"
+        <div v-if="!isLoading && isOwner" class="flex w-full shrink-0 justify-end sm:w-auto sm:justify-start">
+          <Dropdown :trigger-label="t('collectionCustomTextBulk.exportMenuLabel')">
+            <button type="button"
               class="w-full px-4 py-2 text-left text-sm text-cyan-600 hover:bg-cyan-50 flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
-              :disabled="isSaving || isImporting"
-              @click="exportListAsCsv"
-            >
+              :disabled="isSaving || isImporting" @click="exportListAsCsv">
               <FileUp class="h-4 w-4 shrink-0" aria-hidden="true" />
               {{ t('collectionCustomTextBulk.exportCsv') }}
             </button>
-            <button
-              type="button"
+            <button type="button"
               class="w-full px-4 py-2 text-left text-sm text-emerald-600 hover:bg-emerald-50 flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
-              :disabled="isSaving || isImporting"
-              @click="exportListAsTsv"
-            >
+              :disabled="isSaving || isImporting" @click="exportListAsTsv">
               <FileUp class="h-4 w-4 shrink-0" aria-hidden="true" />
               {{ t('collectionCustomTextBulk.exportTsv') }}
             </button>
@@ -65,180 +38,121 @@
         </div>
       </div>
 
-      <p
-        class="w-full text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-md px-3 py-2"
-      >
-         {{ t('collectionCustomTextBulk.disclaimer') }}
+      <!-- Actions: back, import, revert, save -->
+      <div class="flex w-full flex-row flex-wrap items-center gap-2 sm:gap-3">
+        <div class="flex flex-row items-center gap-0" role="group">
+          <RouterLink :to="`/collections/${numericCollectionId}`"
+            class="btn-aqua-zinc btn-aqua-group-item">
+            <ArrowLeft class="w-4 h-4 shrink-0" aria-hidden="true" />
+            {{ t('collectionCustomTextBulk.backToCollection') }}
+          </RouterLink>
+          <button v-if="!isLoading && isOwner" type="button"
+            class="btn-aqua-emerald btn-aqua-group-item"
+            :disabled="isSaving || isImporting" @click="showImportModal = true">
+            <FileDown class="h-4 w-4 shrink-0" aria-hidden="true" />
+            {{ isImporting ? t('collectionCustomTextBulk.importing') : t('collectionCustomTextBulk.importButton') }}
+          </button>
+        </div>
+        <div v-if="!isLoading && isOwner" class="flex flex-row flex-wrap items-center gap-0" role="group">
+          <button type="button"
+            class="btn-aqua-zinc btn-aqua-group-item inline-flex items-center gap-2"
+            :disabled="isSaving || !isDirty" @click="resetRows">
+            <Undo2 class="h-5 w-5 shrink-0" aria-hidden="true" />
+            {{ t('collectionCustomTextBulk.revert') }}
+          </button>
+          <button type="button"
+            class="btn-aqua-teal btn-aqua-group-item inline-flex items-center gap-2"
+            :disabled="isSaving || !isDirty" :aria-busy="isSaving" @click="saveAll">
+            <span class="inline-flex h-5 w-5 shrink-0 items-center justify-center" aria-hidden="true">
+              <Loader2 v-if="isSaving" class="h-5 w-5 animate-spin" />
+              <SaveChangesIcon v-else class="h-5 w-5" />
+            </span>
+            {{ isSaving ? t('collectionCustomTextBulk.saving') : t('collectionCustomTextBulk.saveAll') }}
+          </button>
+        </div>
+      </div>
+
+      <p class="w-full text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-md px-3 py-2">
+        {{ t('collectionCustomTextBulk.disclaimer') }}
       </p>
 
     </div>
-     <LoadingSpinner v-if="isLoading" class="py-12" />
+    <LoadingSpinner v-if="isLoading" class="py-12" />
     <div v-else-if="!isOwner" class="text-center py-12 text-gray-600">
-       {{ t('collectionCustomTextBulk.ownerOnly') }}
+      {{ t('collectionCustomTextBulk.ownerOnly') }}
     </div>
-     <template v-else
-      >
-      <ModalComponent
-        :show="showImportModal"
-        :title="t('collectionCustomTextBulk.importButton')"
-        @close="showImportModal = false"
-      >
+    <template v-else>
+      <ModalComponent :show="showImportModal" :title="t('collectionCustomTextBulk.importButton')"
+        @close="showImportModal = false">
         <p class="mb-4 text-sm text-gray-600">
           {{ t('collectionCustomTextBulk.importHint') }}
         </p>
-        <FileDropzone
-          accept=".csv,.tsv,text/csv,text/tab-separated-values"
-          :choose-file-text="t('fileDropzone.chooseFile')"
-          :or-drag-drop-text="t('fileDropzone.orDragDrop')"
-          :types-note-text="t('fileDropzone.acceptsCsvTsv')"
-          :dropzone-aria-label="t('fileDropzone.ariaLabel')"
-          :input-aria-label="t('collectionCustomTextBulk.importAria')"
-          :disabled="isSaving || isImporting"
-          :validate-file="isLikelyCsvOrTsvFile"
-          @select="onImportFileSelected"
-          @reject="onImportFileInvalid"
-        />
+        <FileDropzone accept=".csv,.tsv,text/csv,text/tab-separated-values"
+          :choose-file-text="t('fileDropzone.chooseFile')" :or-drag-drop-text="t('fileDropzone.orDragDrop')"
+          :types-note-text="t('fileDropzone.acceptsCsvTsv')" :dropzone-aria-label="t('fileDropzone.ariaLabel')"
+          :input-aria-label="t('collectionCustomTextBulk.importAria')" :disabled="isSaving || isImporting"
+          :validate-file="isLikelyCsvOrTsvFile" @select="onImportFileSelected" @reject="onImportFileInvalid" />
+        <div v-if="isImporting && importProgress" class="mt-4 space-y-2" role="status"
+          :aria-label="t('collectionCustomTextBulk.importProgressAria')">
+          <div class="h-2 rounded-full bg-gray-200 overflow-hidden">
+            <div class="h-full bg-cyan-600 transition-[width] duration-150 ease-out"
+              :style="{ width: `${importReadPct}%` }" />
+          </div>
+          <p class="text-xs text-gray-600">
+            {{ t('collectionCustomTextBulk.importProgressLine', importProgressParams) }}
+          </p>
+        </div>
       </ModalComponent>
 
       <div class="flex flex-col gap-4 flex-1 min-h-0">
 
         <div class="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
-          <p v-if="rows.length === 0" class="text-sm text-gray-600">
-            {{ t('collectionCustomTextBulk.empty') }}
-          </p>
-          <p v-else class="text-sm text-gray-600">
-            {{ t('collectionCustomTextBulk.rowCount', { count: rows.length }) }}
-          </p>
+          <div class="flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
+            <div class="relative w-full sm:w-auto sm:max-w-md">
+              <SearchInput
+                v-model="bulkFilterQuery"
+                :placeholder="t('collectionCustomTextBulk.filterPlaceholder')"
+                show-search-icon
+                @clear="bulkFilterQuery = ''"
+              />
+            </div>
+            <p v-if="rows.length === 0 && !hasNewRowContent" class="text-sm text-gray-600">
+              {{ t('collectionCustomTextBulk.empty') }}
+            </p>
+            <p
+              v-else-if="isBulkFilterActive && filteredScreenRowCount === 0"
+              class="text-sm text-gray-600"
+            >
+              {{ t('collectionCustomTextBulk.filterNoMatches') }}
+            </p>
+            <p v-else class="text-sm text-gray-600">
+              <template v-if="isBulkFilterActive">
+                {{
+                  t('collectionCustomTextBulk.filterShowing', {
+                    visible: filteredScreenRowCount,
+                    total: screenRowCount,
+                  })
+                }}
+              </template>
+              <template v-else>
+                {{
+                  rows.length === screenRowCount
+                    ? t('collectionCustomTextBulk.rowCountSavedOnly', { saved: rows.length })
+                    : t('collectionCustomTextBulk.rowCountSavedAndScreen', {
+                        saved: rows.length,
+                        screen: screenRowCount,
+                      })
+                }}
+              </template>
+            </p>
+          </div>
         </div>
-         <!-- Desktop: table -->
+        <!-- Virtualized sheet (desktop + mobile share one list; only visible rows mount). -->
         <div
-          class="hidden md:block overflow-x-auto border border-gray-200 rounded-lg bg-white shadow-sm"
-        >
-
-          <table class="min-w-full text-sm border-collapse">
-
-            <thead>
-
-              <tr class="bg-gray-100 border-b border-gray-200 text-left">
-
-                <th class="px-2 py-2 font-semibold text-gray-700 min-w-[12rem]">
-                   {{ t('collectionCustomTextBulk.colFront') }}
-                </th>
-
-                <th class="px-2 py-2 font-semibold text-gray-700 min-w-[12rem]">
-                   {{ t('collectionCustomTextBulk.colBack') }}
-                </th>
-
-                <th class="px-2 py-2 font-semibold text-gray-700 w-24 text-right whitespace-nowrap">
-                  {{ t('collectionCustomTextBulk.colActions') }}
-                </th>
-
-              </tr>
-
-            </thead>
-
-            <tbody>
-
-              <tr
-                v-for="(row, idx) in rows"
-                :key="row.item_id"
-                class="border-b border-gray-100 hover:bg-gray-50/80"
-              >
-
-                <td class="px-2 py-1 align-top">
-                   <textarea
-                    v-model="row.free_content_front"
-                    rows="1"
-                    class="bulk-sheet-input js-bulk-auto-text"
-                    :aria-label="t('collectionCustomTextBulk.colFront')"
-                    @input="onBulkTextInput"
-                  />
-                </td>
-
-                <td class="px-2 py-1 align-top">
-                   <textarea
-                    v-model="row.free_content_back"
-                    rows="1"
-                    class="bulk-sheet-input js-bulk-auto-text"
-                    :aria-label="t('collectionCustomTextBulk.colBack')"
-                    @input="onBulkTextInput"
-                  />
-                </td>
-
-                <td class="px-2 py-1 align-top text-right">
-                  <button
-                    type="button"
-                    class="inline-flex items-center justify-center rounded-md p-1.5 text-red-600 hover:bg-red-50 disabled:opacity-40"
-                    :disabled="isRowActionDisabled"
-                    :aria-label="t('collectionCustomTextBulk.deleteRowAria')"
-                    :title="t('collectionCustomTextBulk.deleteRow')"
-                    @click="deleteSavedRow(idx)"
-                  >
-                    <Loader2
-                      v-if="deletingItemId === row.item_id"
-                      class="h-4 w-4 animate-spin"
-                      aria-hidden="true"
-                    />
-                    <Trash2 v-else class="h-4 w-4" aria-hidden="true" />
-                  </button>
-                </td>
-
-              </tr>
-
-              <tr
-                v-for="(draft, dIdx) in newRows"
-                :key="draft.id"
-                class="border-t-2 border-dashed border-gray-200 bg-emerald-50/40"
-              >
-
-                <td class="px-2 py-2 align-top">
-                   <textarea
-                    v-model="draft.free_content_front"
-                    rows="1"
-                    class="bulk-sheet-input js-bulk-auto-text"
-                    :aria-label="t('collectionCustomTextBulk.newRowFrontAria')"
-                    :placeholder="t('collectionCustomTextBulk.newRowFrontPlaceholder')"
-                    @input="onBulkTextInput"
-                  />
-                </td>
-
-                <td class="px-2 py-2 align-top">
-                   <textarea
-                    v-model="draft.free_content_back"
-                    rows="1"
-                    class="bulk-sheet-input js-bulk-auto-text"
-                    :aria-label="t('collectionCustomTextBulk.newRowBackAria')"
-                    :placeholder="t('collectionCustomTextBulk.newRowBackPlaceholder')"
-                    @input="onBulkTextInput"
-                  />
-                </td>
-
-                <td class="px-2 py-2 align-top text-right">
-                  <button
-                    type="button"
-                    class="inline-flex items-center justify-center rounded-md p-1.5 text-red-600 hover:bg-red-50 disabled:opacity-40"
-                    :disabled="isRowActionDisabled || !canDeleteDraft(dIdx)"
-                    :aria-label="t('collectionCustomTextBulk.deleteDraftAria')"
-                    :title="t('collectionCustomTextBulk.deleteRow')"
-                    @click="deleteDraftRow(dIdx)"
-                  >
-                    <Trash2 class="h-4 w-4" aria-hidden="true" />
-                  </button>
-                </td>
-
-              </tr>
-
-            </tbody>
-
-          </table>
-
-        </div>
-         <!-- Mobile: single sheet (table-like, no gaps between rows) -->
-        <div
-          class="md:hidden rounded-lg border border-gray-200 bg-white shadow-sm [&>div:last-child]:border-b-0 [&>div:last-child]:rounded-b-lg"
+          class="flex min-h-0 flex-col overflow-hidden rounded-lg border border-gray-300 bg-white shadow-sm"
         >
           <div
-            class="sticky top-14 z-30 flex items-center rounded-t-lg border-b border-gray-200 bg-gray-100 px-2 py-2 text-left text-xs font-semibold text-gray-700 shadow-sm sm:top-12"
+            class="sticky top-14 z-30 flex items-center border-b border-gray-300 bg-gray-100 px-2 py-2 text-left text-xs font-semibold text-gray-700 shadow-sm sm:top-12 md:hidden"
           >
             <div class="flex min-w-0 flex-1 gap-2">
               <span class="min-w-0 flex-1 truncate">{{ t('collectionCustomTextBulk.colFront') }}</span>
@@ -248,122 +162,55 @@
           </div>
 
           <div
-            v-for="(row, idx) in rows"
-            :key="row.item_id"
-            class="flex items-start border-b border-gray-200 px-2 py-2"
+            ref="bulkScrollParentRef"
+            class="bulk-scroll-viewport min-h-0 max-h-[70vh] overflow-auto overflow-x-auto"
           >
-            <div class="flex min-w-0 flex-1 gap-2">
-              <textarea
-                v-model="row.free_content_front"
-                rows="1"
-                class="bulk-sheet-input js-bulk-auto-text min-w-0 flex-1"
-                :aria-label="t('collectionCustomTextBulk.colFront')"
-                @input="onBulkTextInput"
-              />
-              <textarea
-                v-model="row.free_content_back"
-                rows="1"
-                class="bulk-sheet-input js-bulk-auto-text min-w-0 flex-1"
-                :aria-label="t('collectionCustomTextBulk.colBack')"
-                @input="onBulkTextInput"
-              />
+            <div
+              class="sticky top-0 z-20 hidden min-w-full grid-cols-[minmax(12rem,1fr)_minmax(12rem,1fr)_6rem] border-b border-gray-300 bg-gray-100 px-2 py-2 text-left text-sm font-semibold text-gray-700 md:grid md:px-0"
+            >
+              <div class="min-w-[12rem] border-r border-gray-300 pl-2 pr-2">{{ t('collectionCustomTextBulk.colFront') }}</div>
+              <div class="min-w-[12rem] border-r border-gray-300 pl-2 pr-2">{{ t('collectionCustomTextBulk.colBack') }}</div>
+              <div class="w-24 whitespace-nowrap pl-2 pr-2 text-right">{{ t('collectionCustomTextBulk.colActions') }}</div>
             </div>
-            <div class="flex min-h-[2.75rem] shrink-0 items-start pl-1 pt-0.5">
-              <button
-                type="button"
-                class="inline-flex shrink-0 items-center justify-center rounded p-0.5 text-red-600 hover:bg-red-50 disabled:opacity-40"
-                :disabled="isRowActionDisabled"
-                :aria-label="t('collectionCustomTextBulk.deleteRowAria')"
-                :title="t('collectionCustomTextBulk.deleteRow')"
-                @click="deleteSavedRow(idx)"
+            <div
+              class="relative w-full"
+              :style="{ height: `${bulkTotalSize}px` }"
+            >
+              <div
+                v-for="virtualRow in bulkVirtualItems"
+                :key="String(virtualRow.key)"
+                :ref="bulkVirtualizer.measureElement"
+                :data-index="virtualRow.index"
+                class="absolute left-0 top-0 w-full"
+                :style="{ transform: `translateY(${virtualRow.start}px)` }"
               >
-                <Loader2
-                  v-if="deletingItemId === row.item_id"
-                  class="h-3.5 w-3.5 animate-spin"
-                  aria-hidden="true"
+                <CollectionCustomTextBulkRow
+                  v-if="bulkVirtualRows[virtualRow.index]"
+                  :entry="bulkVirtualRows[virtualRow.index]"
+                  :is-last="virtualRow.index === bulkVirtualRows.length - 1"
+                  :show-draft-section-top="isFirstDraftAfterSaved(virtualRow.index)"
+                  :new-row-count="newRows.length"
+                  :is-row-action-disabled="isRowActionDisabled"
+                  :deleting-item-id="deletingItemId"
+                  :can-delete-draft="canDeleteDraft"
+                  @input="onBulkTextInput"
+                  @delete-saved="deleteSavedRow"
+                  @delete-draft="deleteDraftRow"
                 />
-                <Trash2 v-else class="h-3.5 w-3.5" aria-hidden="true" />
-              </button>
-            </div>
-          </div>
-
-          <div
-            v-for="(draft, dIdx) in newRows"
-            :key="draft.id"
-            class="flex items-start border-b border-gray-200 bg-emerald-50/50 px-2 py-2"
-          >
-            <div class="flex min-w-0 flex-1 gap-2">
-              <textarea
-                v-model="draft.free_content_front"
-                rows="1"
-                class="bulk-sheet-input js-bulk-auto-text min-w-0 flex-1"
-                :aria-label="
-                  newRows.length > 1
-                    ? `${t('collectionCustomTextBulk.newRowSectionTitle')} (${dIdx + 1}) — ${t('collectionCustomTextBulk.colFront')}`
-                    : `${t('collectionCustomTextBulk.newRowSectionTitle')}: ${t('collectionCustomTextBulk.colFront')}`
-                "
-                :placeholder="t('collectionCustomTextBulk.newRowFrontPlaceholder')"
-                @input="onBulkTextInput"
-              />
-              <textarea
-                v-model="draft.free_content_back"
-                rows="1"
-                class="bulk-sheet-input js-bulk-auto-text min-w-0 flex-1"
-                :aria-label="
-                  newRows.length > 1
-                    ? `${t('collectionCustomTextBulk.newRowSectionTitle')} (${dIdx + 1}) — ${t('collectionCustomTextBulk.colBack')}`
-                    : `${t('collectionCustomTextBulk.newRowSectionTitle')}: ${t('collectionCustomTextBulk.colBack')}`
-                "
-                :placeholder="t('collectionCustomTextBulk.newRowBackPlaceholder')"
-                @input="onBulkTextInput"
-              />
-            </div>
-            <div class="flex min-h-[2.75rem] shrink-0 items-start pl-1 pt-0.5">
-              <button
-                type="button"
-                class="inline-flex shrink-0 items-center justify-center rounded p-0.5 text-red-600 hover:bg-red-50 disabled:opacity-40"
-                :disabled="isRowActionDisabled || !canDeleteDraft(dIdx)"
-                :aria-label="t('collectionCustomTextBulk.deleteDraftAria')"
-                :title="t('collectionCustomTextBulk.deleteRow')"
-                @click="deleteDraftRow(dIdx)"
-              >
-                <Trash2 class="h-3.5 w-3.5" aria-hidden="true" />
-              </button>
+              </div>
             </div>
           </div>
         </div>
 
       </div>
-       </template
-    > <!-- Save bar: sticky on mobile -->
-    <div
-      v-if="isOwner && !isLoading"
-      class="fixed bottom-6 left-0 right-0 z-20 max-md:pr-20 md:static md:mt-6 p-4 bg-white/95 md:bg-transparent border-t md:border-t-0 border-gray-200 backdrop-blur-sm flex justify-end gap-3 safe-area-pb"
-    >
-       <button type="button" class="btn-cancel" :disabled="isSaving || !isDirty" @click="resetRows">
-         {{ t('collectionCustomTextBulk.revert') }} </button
-      > <button
-        type="button"
-        class="btn-update min-w-[10rem]"
-        :disabled="isSaving || !isDirty"
-        :aria-busy="isSaving"
-        @click="saveAll"
-      >
-         <span class="inline-flex h-5 w-5 shrink-0 items-center justify-center" aria-hidden="true"
-          > <Loader2 v-if="isSaving" class="h-5 w-5 animate-spin" /> <Save v-else class="h-5 w-5" />
-          </span
-        > {{
-          isSaving ? t('collectionCustomTextBulk.saving') : t('collectionCustomTextBulk.saveAll')
-        }} </button
-      >
-    </div>
+    </template>
 
   </div>
 
 </template>
 
 <script setup lang="ts">
-import { ArrowLeft, FileDown, FileUp, List, Loader2, Save, Trash2 } from 'lucide-vue-next'
+import { ArrowLeft, FileDown, FileUp, List, Loader2, Undo2 } from 'lucide-vue-next'
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
@@ -374,9 +221,15 @@ import {
   listCustomTextBulkItems,
   removeCollectionItem,
 } from '@/api'
+import SaveChangesIcon from '@/components/icons/SaveChangesIcon.vue'
 import FileDropzone from '@/components/FileDropzone.vue'
+import CollectionCustomTextBulkRow, {
+  type BulkVirtualRow,
+} from '@/components/CollectionCustomTextBulkRow.vue'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import ModalComponent from '@/components/ModalComponent.vue'
+import SearchInput from '@/components/SearchInput.vue'
+import SuccessToastImportReloadHint from '@/components/SuccessToastImportReloadHint.vue'
 import { Dropdown } from '@packages/ui'
 import { useAuth } from '@/composables/useAuth'
 import { useError } from '@/composables/useError'
@@ -388,7 +241,14 @@ import {
   buildBulkCustomTextTsv,
   downloadTextFile,
 } from '@/utils/exportBulkCustomText'
-import { mergeBulkImportRows, parseCsvOrTsvFile } from '@/utils/parseDelimitedImport'
+import {
+  eachBulkImportRowFromFile,
+  finalizeBulkImportDraftRows,
+  mergeOneBulkImportRow,
+  stripTrailingEmptyDrafts,
+  type BulkMergeStats,
+} from '@/utils/parseDelimitedImport'
+import { measureElement, useVirtualizer } from '@tanstack/vue-virtual'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -426,6 +286,24 @@ const isSaving = ref(false)
 const isImporting = ref(false)
 const deletingItemId = ref<number | null>(null)
 const showImportModal = ref(false)
+/** Shown while streaming file read + row merge (avoids loading the whole file as one string). */
+const importProgress = ref<{
+  bytesRead: number
+  totalBytes: number
+  rowsMerged: number
+} | null>(null)
+
+const importReadPct = computed(() => {
+  const p = importProgress.value
+  if (!p || p.totalBytes <= 0) return 0
+  return Math.min(100, Math.round((p.bytesRead / p.totalBytes) * 100))
+})
+
+const importProgressParams = computed(() => {
+  const p = importProgress.value
+  if (!p) return { pct: 0, rows: 0 }
+  return { pct: importReadPct.value, rows: p.rowsMerged }
+})
 
 const MAX_IMPORT_ROWS = 2000
 
@@ -438,6 +316,79 @@ const isRowActionDisabled = computed(
 const hasNewRowContent = computed(() =>
   newRows.value.some((r) => r.free_content_front.trim() !== '' || r.free_content_back.trim() !== '')
 )
+
+/** Saved rows plus unsaved drafts that have content (empty placeholder row is not counted). */
+const screenRowCount = computed(() => {
+  const draftWithContent = newRows.value.filter(
+    (r) => r.free_content_front.trim() !== '' || r.free_content_back.trim() !== ''
+  ).length
+  return rows.value.length + draftWithContent
+})
+
+const bulkFilterQuery = ref('')
+
+function bulkRowMatchesFilter(front: string, back: string, q: string): boolean {
+  const needle = q.trim().toLowerCase()
+  if (!needle) return true
+  const hay = `${front ?? ''}\n${back ?? ''}`.toLowerCase()
+  return hay.includes(needle)
+}
+
+const isBulkFilterActive = computed(() => bulkFilterQuery.value.trim() !== '')
+
+/** Saved rows visible under the current filter (indices are positions in `rows`). */
+const filteredSavedRowsForDisplay = computed(() => {
+  const q = bulkFilterQuery.value
+  return rows.value
+    .map((row, idx) => ({ row, idx }))
+    .filter(({ row }) => bulkRowMatchesFilter(row.free_content_front, row.free_content_back, q))
+})
+
+/** Draft rows visible under the current filter (indices are positions in `newRows`). */
+const filteredDraftRowsForDisplay = computed(() => {
+  const q = bulkFilterQuery.value
+  return newRows.value
+    .map((draft, dIdx) => ({ draft, dIdx }))
+    .filter(({ draft }) => bulkRowMatchesFilter(draft.free_content_front, draft.free_content_back, q))
+})
+
+const filteredScreenRowCount = computed(
+  () => filteredSavedRowsForDisplay.value.length + filteredDraftRowsForDisplay.value.length
+)
+
+/** Single list for virtualization: saved rows then drafts (same order as before). */
+const bulkVirtualRows = computed((): BulkVirtualRow[] => [
+  ...filteredSavedRowsForDisplay.value.map((x) => ({ kind: 'saved' as const, row: x.row, idx: x.idx })),
+  ...filteredDraftRowsForDisplay.value.map((x) => ({ kind: 'draft' as const, draft: x.draft, dIdx: x.dIdx })),
+])
+
+const bulkScrollParentRef = ref<HTMLElement | null>(null)
+
+const bulkVirtualizer = useVirtualizer(
+  computed(() => ({
+    count: bulkVirtualRows.value.length,
+    getScrollElement: () => bulkScrollParentRef.value,
+    estimateSize: () => 88,
+    overscan: 12,
+    getItemKey: (index: number) => {
+      const item = bulkVirtualRows.value[index]
+      if (!item) return index
+      return item.kind === 'saved' ? `s-${item.row.item_id}` : `d-${item.draft.id}`
+    },
+    measureElement,
+  }))
+)
+
+const bulkVirtualItems = computed(() => bulkVirtualizer.value.getVirtualItems())
+const bulkTotalSize = computed(() => bulkVirtualizer.value.getTotalSize())
+
+function isFirstDraftAfterSaved(index: number) {
+  const list = bulkVirtualRows.value
+  const cur = list[index]
+  if (!cur || cur.kind !== 'draft') return false
+  const prev = list[index - 1]
+  return !prev || prev.kind === 'saved'
+}
 
 /** When the last draft row gets any text, append another empty draft so the user can keep adding. */
 function ensureTrailingEmptyDraft() {
@@ -458,6 +409,7 @@ watch(newRows, ensureTrailingEmptyDraft, { deep: true })
 /** Grow height with content; cap at max-height (10rem) then scroll inside. */
 function fitTextareaHeight(el) {
   if (!(el instanceof HTMLTextAreaElement)) return
+  el.style.minHeight = 'auto'
   el.style.height = 'auto'
   const cs = getComputedStyle(el)
   const maxPx =
@@ -470,7 +422,8 @@ function fitTextareaHeight(el) {
       : 44
   // scrollHeight can be too small before layout; never below one comfortable line + padding
   const target = Math.max(minPx, Math.min(el.scrollHeight, maxPx))
-  el.style.height = `${target}px`
+  el.style.minHeight = `${target}px`
+  el.style.height = 'auto'
 }
 
 function onBulkTextInput(e) {
@@ -516,17 +469,38 @@ function deleteDraftRow(dIdx: number) {
   newRows.value = newRows.value.filter((_, i) => i !== dIdx)
 }
 
+const BULK_REFIT_CHUNK = 72
+const BULK_REFIT_CHUNK_THRESHOLD = 96
+
+function refitBulkTextareasChunked(nodes: Iterable<HTMLTextAreaElement>) {
+  const arr = Array.from(nodes)
+  let i = 0
+  const step = () => {
+    const end = Math.min(i + BULK_REFIT_CHUNK, arr.length)
+    for (; i < end; i++) {
+      fitTextareaHeight(arr[i])
+    }
+    if (i < arr.length) {
+      requestAnimationFrame(step)
+    }
+  }
+  requestAnimationFrame(step)
+}
+
 function refitAllBulkTextareas() {
   if (typeof document === 'undefined') return
   requestAnimationFrame(() => {
-    document.querySelectorAll('textarea.js-bulk-auto-text').forEach((el) => {
-      fitTextareaHeight(el)
-    })
+    const nodes = document.querySelectorAll<HTMLTextAreaElement>('textarea.js-bulk-auto-text')
+    if (nodes.length >= BULK_REFIT_CHUNK_THRESHOLD) {
+      refitBulkTextareasChunked(nodes)
+    } else {
+      nodes.forEach((el) => fitTextareaHeight(el))
+    }
   })
 }
 
 watch(
-  [rows, newRows, isLoading],
+  [rows, newRows, isLoading, bulkFilterQuery],
   async () => {
     if (isLoading.value) return
     await nextTick()
@@ -677,45 +651,89 @@ function exportListAsTsv() {
   )
 }
 
+const MERGE_UI_YIELD_EVERY = 64
+
 async function processImportFile(file: File) {
   if (!file) return
   isImporting.value = true
+  importProgress.value = { bytesRead: 0, totalBytes: file.size, rowsMerged: 0 }
   clearError()
   try {
-    const text = await file.text()
-    const { rows: parsed } = parseCsvOrTsvFile(text, file.name)
-    if (parsed.length === 0) {
+    const mergedRows = rows.value.map((r) => ({ ...r }))
+    let mergedDrafts = stripTrailingEmptyDrafts(newRows.value.map((d) => ({ ...d })))
+    const stats: BulkMergeStats = {
+      replacedByFront: 0,
+      replacedByBack: 0,
+      inserted: 0,
+      skippedEmpty: 0,
+    }
+    let lineCount = 0
+    let mergeSteps = 0
+
+    for await (const row of eachBulkImportRowFromFile(file, (p) => {
+      importProgress.value = {
+        bytesRead: p.bytesRead,
+        totalBytes: p.totalBytes,
+        rowsMerged: lineCount,
+      }
+    })) {
+      lineCount++
+      if (lineCount > MAX_IMPORT_ROWS) {
+        showError(t('collectionCustomTextBulk.importTooMany', { max: MAX_IMPORT_ROWS }))
+        return
+      }
+      mergeOneBulkImportRow(row, mergedRows, mergedDrafts, createEmptyDraft, stats)
+      mergeSteps++
+      if (mergeSteps >= MERGE_UI_YIELD_EVERY) {
+        mergeSteps = 0
+        importProgress.value = {
+          bytesRead: importProgress.value!.bytesRead,
+          totalBytes: importProgress.value!.totalBytes,
+          rowsMerged: lineCount,
+        }
+        await new Promise<void>((resolve) => {
+          requestAnimationFrame(() => resolve())
+        })
+      }
+    }
+
+    if (lineCount === 0) {
       showError(t('collectionCustomTextBulk.importEmpty'))
       return
     }
-    if (parsed.length > MAX_IMPORT_ROWS) {
-      showError(t('collectionCustomTextBulk.importTooMany', { max: MAX_IMPORT_ROWS }))
-      return
-    }
-    const { rows: mergedRows, newRows: mergedDrafts, stats } = mergeBulkImportRows(
-      parsed,
-      rows.value,
-      newRows.value,
-      createEmptyDraft
-    )
-    rows.value = mergedRows
-    newRows.value = mergedDrafts
+
+    mergedDrafts = finalizeBulkImportDraftRows(mergedDrafts, createEmptyDraft)
+
+    isImporting.value = false
+    importProgress.value = null
+
     showSuccess(
       t('collectionCustomTextBulk.importSuccess', {
         front: stats.replacedByFront,
         back: stats.replacedByBack,
         inserted: stats.inserted,
         skipped: stats.skippedEmpty,
-      })
+      }),
+      {
+        duration: 0,
+        extraComponent: SuccessToastImportReloadHint,
+      }
     )
     showImportModal.value = false
+
     await nextTick()
-    refitAllBulkTextareas()
+    await new Promise<void>((resolve) => {
+      requestAnimationFrame(() => resolve())
+    })
+
+    rows.value = mergedRows
+    newRows.value = mergedDrafts
   } catch (err: unknown) {
     const ax = err as { message?: string }
     showError(ax.message || t('collectionCustomTextBulk.importError'))
   } finally {
     isImporting.value = false
+    importProgress.value = null
   }
 }
 
@@ -730,20 +748,24 @@ useSeoHead({ title: computed(() => t('collectionCustomTextBulk.documentTitle')) 
 </script>
 
 <style scoped>
-.safe-area-pb {
-  padding-bottom: max(1rem, env(safe-area-inset-bottom));
-}
-
-/* Input-like multiline fields: auto height via script, hard cap 10rem */
-.bulk-sheet-input {
-  @apply w-full px-3 py-1.5 text-sm text-gray-700 bg-white border border-gray-300 rounded-md;
-  @apply placeholder-gray-400 shadow-inner shadow-slate-200 resize-none overflow-y-auto;
-  @apply focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500;
+/* Multiline bulk sheet: `input-field` supplies brand chrome; this only fixes single-line assumptions + growth. */
+:deep(.bulk-sheet-input) {
+  @apply w-full resize-none overflow-y-auto;
   max-height: 10rem;
-  /* At least one line + vertical padding + border (scrollHeight alone can be ~20px otherwise) */
   min-height: 2.75rem;
   line-height: 1.375;
   box-sizing: border-box;
+  /* input-field: h-8, rounded-full, whitespace-nowrap — not valid for auto-growing textarea */
+  @apply h-auto whitespace-normal;
+  /* Neutralize input-field focus ring / blue border and hover border shift (sheet stays flat while editing). */
+  @apply transition-none focus:z-auto focus:ring-0 focus:border-gray-300 hover:border-gray-300;
 }
-</style>
 
+/* Desktop table: flush cell, borderless field, tighter block */
+:deep(.bulk-sheet-input.bulk-sheet-input--table) {
+  @apply rounded-none border-0;
+  min-height: 2rem;
+  @apply focus:border-0 hover:border-0;
+}
+
+</style>

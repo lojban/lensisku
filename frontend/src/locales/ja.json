@@ -64,7 +64,6 @@
       "semantic": "意味で検索",
       "comments": "議論ウェーブ",
       "messages": "メールアーカイブ",
-      "muplis": "Muplis のフレーズ",
       "groupByThread": "スレッドでまとめる",
       "searchInPhrases": "フレーズを含める"
     },
@@ -73,7 +72,6 @@
       "semantic": "意味や概念で検索…",
       "comments": "コメントを検索…",
       "messages": "メッセージを検索…",
-      "muplis": "Muplis を検索…",
       "default": "検索…"
     }
   },
@@ -83,7 +81,6 @@
     "searchResultsTitle": {
       "dictionary": "辞書・コーパス",
       "semantic": "意味検索",
-      "muplis": "Muplis のフレーズ",
       "comments": "議論ウェーブ",
       "messages": "メールアーカイブ"
     },
@@ -392,7 +389,8 @@
     "backToCollection": "コレクションに戻る",
     "ownerOnly": "一括編集はコレクションの所有者のみ利用できます。",
     "empty": "この種類の項目はこのコレクションにありません。",
-    "rowCount": "{count} 件",
+    "rowCountSavedOnly": "保存済み {saved} 件",
+    "rowCountSavedAndScreen": "保存済み {saved} 件（画面上 {screen} 行）",
     "colFront": "表面（問題）",
     "colBack": "裏面（答え）",
     "cardLabel": "カード {n}",
@@ -412,12 +410,16 @@
     "exportCsv": "CSV をエクスポート",
     "exportTsv": "TSV をエクスポート",
     "importing": "インポート中…",
+    "importProgressLine": "読み取り {pct}% · {rows} 行をマージ済み",
+    "importProgressAria": "インポートの進行状況",
     "importAria": "CSV または TSV ファイルをインポート",
     "importWrongFileType": ".csv または .tsv ファイルを選んでください。",
     "importHint": "ブラウザ上で行をマージします（表面・裏面の一致、未保存行の順）。「すべて保存」で確定します。",
     "importEmpty": "データ行がありません。",
     "importTooMany": "1回のインポートは最大 {max} 行までです。",
     "importSuccess": "マージ結果：表面一致 {front} 件、裏面一致 {back} 件、新規 {inserted} 行、空行スキップ {skipped} 行。",
+    "importDiscardHint": "このインポートを破棄し、このページを開く前にサーバーにあった内容に戻すには、ページを再読み込みしてください（未保存の変更は失われます）。",
+    "importReloadPage": "ページを再読み込み",
     "importError": "ファイルを読み込めませんでした。",
     "colActions": "操作",
     "deleteRow": "削除",
@@ -425,7 +427,10 @@
     "deleteDraftAria": "未保存の行を削除",
     "deleteSavedConfirm": "この項目をコレクションから削除しますか？取り消せません。",
     "deleteDraftConfirm": "この未保存の行を破棄しますか？",
-    "deleteError": "項目を削除できませんでした。"
+    "deleteError": "項目を削除できませんでした。",
+    "filterPlaceholder": "行を絞り込む…",
+    "filterNoMatches": "条件に一致する行がありません。",
+    "filterShowing": "{total} 行中 {visible} 行を表示（絞り込み）"
   },
   "collectionDetail": {
     "pageHint": "コレクション",

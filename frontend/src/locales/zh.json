@@ -64,7 +64,6 @@
       "semantic": "按含义",
       "comments": "讨论波",
       "messages": "邮件存档",
-      "muplis": "Muplis 短语",
       "groupByThread": "按主题串分组",
       "searchInPhrases": "包含短语"
     },
@@ -73,7 +72,6 @@
       "semantic": "按含义或概念搜索…",
       "comments": "搜索评论…",
       "messages": "搜索邮件…",
-      "muplis": "搜索 Muplis…",
       "default": "搜索…"
     }
   },
@@ -83,7 +81,6 @@
     "searchResultsTitle": {
       "dictionary": "词典与语料",
       "semantic": "语义搜索",
-      "muplis": "Muplis 短语",
       "comments": "讨论波",
       "messages": "邮件存档"
     },
@@ -397,7 +394,8 @@
     "backToCollection": "返回合集",
     "ownerOnly": "仅合集所有者可使用批量编辑。",
     "empty": "该合集中没有符合此类型的条目。",
-    "rowCount": "{count} 条",
+    "rowCountSavedOnly": "已保存 {saved} 条",
+    "rowCountSavedAndScreen": "已保存 {saved} 条（屏幕上 {screen} 条）",
     "colFront": "正面（问题）",
     "colBack": "背面（答案）",
     "cardLabel": "卡片 {n}",
@@ -417,12 +415,16 @@
     "exportCsv": "导出 CSV",
     "exportTsv": "导出 TSV",
     "importing": "导入中…",
+    "importProgressLine": "已读取 {pct}% · 已合并 {rows} 行",
+    "importProgressAria": "导入进度",
     "importAria": "导入 CSV 或 TSV 文件",
     "importWrongFileType": "请选择 .csv 或 .tsv 文件。",
     "importHint": "导入在浏览器中合并行（先按正面、再按背面、再匹配未保存行）。点击「全部保存」以写入。",
     "importEmpty": "文件中没有数据行。",
     "importTooMany": "每次导入最多 {max} 行。",
     "importSuccess": "已合并：按正面更新 {front} 条，按背面 {back} 条，新增 {inserted} 行，跳过空行 {skipped} 行。",
+    "importDiscardHint": "若要放弃此次导入并恢复打开本页前服务器上的内容，请重新加载页面（未保存的更改将丢失）。",
+    "importReloadPage": "重新加载页面",
     "importError": "无法读取或解析文件。",
     "colActions": "操作",
     "deleteRow": "删除",
@@ -430,7 +432,10 @@
     "deleteDraftAria": "移除未保存行",
     "deleteSavedConfirm": "从合集中移除此条目？此操作无法撤销。",
     "deleteDraftConfirm": "放弃此未保存行？",
-    "deleteError": "无法删除该条目。"
+    "deleteError": "无法删除该条目。",
+    "filterPlaceholder": "筛选行…",
+    "filterNoMatches": "没有与筛选条件匹配的行。",
+    "filterShowing": "显示 {visible} / {total} 行（筛选）"
   },
   "collectionDetail": {
     "pageHint": "合集",

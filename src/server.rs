@@ -8,7 +8,6 @@ use crate::{
     export, jbovlaste, language,
     mailarchive::{self},
     middleware::{self, cache::RedisCache, limiter::{LoginLimiter, PasswordResetLimiter}, panic_handler::CatchPanicWithMessage},
-    muplis::{self},
     sessions, subscriptions, users,
     versions::{self},
     waves,
@@ -117,7 +116,6 @@ pub async fn start_server(
             .app_data(redis_cache_data.clone())
             .configure(auth::configure)
             .configure(users::configure)
-            .configure(muplis::configure)
             .configure(language::configure)
             .configure(mailarchive::configure)
             .configure(jbovlaste::configure)
