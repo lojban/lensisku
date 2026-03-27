@@ -88,142 +88,6 @@ function normalizeLinkAnchors(text) {
   return text.replace(/(https?:)(\\_){2}/g, '$1//').replace(/(https?)__(?=[^\s\]])/g, '$1://')
 }
 
-/** GFM-style pipe row or separator (do not split `$...$` math inside — breaks tables). */
-function isLikelyMarkdownTableLine(line) {
-  const t = line.trimStart()
-  if (!t.startsWith('|')) return false
-  return (t.match(/\|/g) || []).length >= 2
-}
-
-/** Join adjacent md pieces with a newline so block boundaries (e.g. heading + table) stay valid GFM. */
-function mergeAdjacentMdSegments(segments) {
-  const out = []
-  for (const seg of segments) {
-    if (seg.type === 'md' && out.length && out[out.length - 1].type === 'md') {
-      out[out.length - 1].content += '\n' + seg.content
-    } else {
-      out.push(seg)
-    }
-  }
-  return out
-}
-
-/**
- * Split non-table markdown from inline `$...$` math for marked(), without treating `$`
- * inside fenced ``` or inline `code` as math.
- */
-function splitNonTableChunkMath(text) {
-  const segments = []
-  let i = 0
-  let buf = ''
-
-  const flushMd = () => {
-    if (buf.length) {
-      segments.push({ type: 'md', content: buf })
-      buf = ''
-    }
-  }
-
-  while (i < text.length) {
-    // Fenced code block: ``` ... ```
-    if (text.startsWith('```', i)) {
-      const close = text.indexOf('\n```', i + 3)
-      if (close === -1) {
-        buf += text.slice(i)
-        i = text.length
-      } else {
-        const end = close + 4
-        buf += text.slice(i, end)
-        i = end
-      }
-      continue
-    }
-
-    // Inline code `...` (do not split on $ inside)
-    if (text[i] === '`') {
-      let j = i + 1
-      while (j < text.length && text[j] !== '`') {
-        j++
-      }
-      if (j < text.length) {
-        buf += text.slice(i, j + 1)
-        i = j + 1
-        continue
-      }
-      buf += text[i]
-      i++
-      continue
-    }
-
-    // Display math $$...$$
-    if (text[i] === '$' && text[i + 1] === '$') {
-      const end = text.indexOf('$$', i + 2)
-      if (end !== -1) {
-        flushMd()
-        segments.push({ type: 'math', content: text.slice(i, end + 2) })
-        i = end + 2
-        continue
-      }
-      buf += text[i]
-      i++
-      continue
-    }
-
-    // Inline math $...$ (single delimiters)
-    if (text[i] === '$') {
-      const end = text.indexOf('$', i + 1)
-      if (end !== -1) {
-        flushMd()
-        segments.push({ type: 'math', content: text.slice(i, end + 1) })
-        i = end + 1
-        continue
-      }
-    }
-
-    buf += text[i]
-    i++
-  }
-
-  flushMd()
-  return segments
-}
-
-/**
- * Split markdown from inline math for marked(): table rows stay intact; `$` in
- * backticks or fenced code does not start a math span.
- */
-function splitMarkdownAndInlineMath(text) {
-  const lines = text.split('\n')
-  const pieces = []
-  let li = 0
-  while (li < lines.length) {
-    const line = lines[li]
-    if (isLikelyMarkdownTableLine(line)) {
-      let block = line
-      li++
-      while (li < lines.length && isLikelyMarkdownTableLine(lines[li])) {
-        block += '\n' + lines[li]
-        li++
-      }
-      pieces.push({ type: 'md', content: block + (li < lines.length ? '\n' : '') })
-      continue
-    }
-    const start = li
-    while (li < lines.length && !isLikelyMarkdownTableLine(lines[li])) {
-      li++
-    }
-    const chunk = lines.slice(start, li).join('\n')
-    if (start < li) {
-      if (chunk.length === 0) {
-        pieces.push({ type: 'md', content: '\n' })
-      } else {
-        pieces.push(...splitNonTableChunkMath(chunk))
-      }
-    }
-  }
-  return mergeAdjacentMdSegments(pieces)
-}
-
 const renderContent = async () => {
   if (!contentRef.value || !props.content) return
 
@@ -238,7 +102,6 @@ const renderContent = async () => {
       return '\n\n' + '<br>'.repeat(match.length - 2) + '\n\n'
     })
 
-    const segments = splitMarkdownAndInlineMath(finalContent)
     const extensions = props.enableCurlyLinks
       ? [
           {
@@ -291,15 +154,8 @@ const renderContent = async () => {
 
     const mdParser = new Marked()
     mdParser.use({ extensions, renderer: renderer as RendererObject })
-
-    finalContent = segments
-      .map((seg) => {
-        if (seg.type === 'math') {
-          return seg.content
-        }
-        return mdParser.parse(seg.content)
-      })
-      .join('')
+    const parsed = mdParser.parse(finalContent)
+    finalContent = typeof parsed === 'string' ? parsed : await parsed
   }
 
   // Apply highlighting if searchTerm is provided

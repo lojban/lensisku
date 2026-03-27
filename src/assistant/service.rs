@@ -519,17 +519,24 @@ fn system_prompt_base(locale: Option<&str>) -> String {
          For each user message, follow this decision process:\n\
          1. **Decide & extract terms**: Does answering require new jbovlaste evidence \
          (unknown valsi, new topic, or no prior search for this material)? If yes, \
-         **rewrite the user question into search terms in the user’s own language** \
+         **rewrite the user question into search terms in the user's own language** \
          that match how dictionary glosses are written (short, concrete; see *Query \
          relevance* below), then call `jbovlaste_semantic_search` **once** with a \
-         **`queries` array** listing every distinct term—not with the user’s full \
+         **`queries` array** listing every distinct term—not with the user's full \
          sentence, not Lojban words guessed from memory, and not as several separate \
          tool calls.\n\
-         2. **Refine**: After reviewing results, if similarity is low or hits are off-topic, \
-         call the tool again in a **later** turn with a **new** `queries` array (synonyms, \
-         shorter strings, alternate valsi spellings). Do not repeat the same strings.\n\
-         3. **Answer**: Once you have enough grounded evidence, write your final response \
-         **without calling any tool**.\n\n\
+         2. **Refine** (only when truly needed): After reviewing results, if similarity \
+         is low or the results do not cover the user's question, call the tool again in a \
+         **later** turn with a **new** `queries` array that explores a **different concept \
+         or angle**—synonyms, broader/narrower terms, or a different facet of the question. \
+         Do **not** repeat the same strings, and do **not** re-search for a valsi whose \
+         definition already appeared in prior results (you already have it). \
+         Refinement means \"try a different concept I still lack\", never \"search for the \
+         same word again in a different combination\".\n\
+         3. **Answer**: Once you have definitions that cover the key concepts in the user's \
+         question, reply directly **without calling any tool**. Two or three search results \
+         that map to the core concepts are usually enough—do not keep searching \
+         hoping for more detail; the tool returns definitions, not examples or usage guides.\n\n\
          If the user is asking a follow-up or clarification about a word you **already \
          searched** in this conversation, skip straight to step 3—do not search again.\n\n",
     );
@@ -631,10 +638,16 @@ fn system_prompt_base(locale: Option<&str>) -> String {
          array per tool call—never one tool call per word in the same turn.\n\n\
          If the search returns no or few results, try different queries in further \
          steps, or say so and suggest rephrasing; do not make up answers.\n\n\
-         **Finish rule:** Once the definitions you have retrieved are sufficient to \
-         answer the question, reply directly in your next turn **without calling any \
-         tool**. Calling the tool again after you already have the relevant results is \
-         wasteful and confusing for the user.\n\n",
+         **Finish rule:** Once the definitions you have retrieved cover the key \
+         concepts in the user's question, reply directly in your next turn **without \
+         calling any tool**. In particular: if you searched for [\"hate\", \"each other\"] \
+         and got definitions for \"xebni\" and \"zu'ai\", that is enough to compose an \
+         answer—do NOT then search for \"zu'ai\" or \"simxu\" separately, you already \
+         have what you need. Calling the tool again after you already have the relevant \
+         definitions is wasteful and confusing for the user. The tool is a dictionary: \
+         it returns definitions, not usage examples or grammar tutorials; repeatedly \
+         querying the same concept in different phrasings will not produce new \
+         information.\n\n",
     );
 
     // ── Query relevance (critical) ───────────────────────────────────────
@@ -643,21 +656,28 @@ fn system_prompt_base(locale: Option<&str>) -> String {
          Each string in **`queries`** is embedded and matched against **definition text** \
          (glosses written in natural languages like English) in jbovlaste—**not** against \
          Lojban valsi strings. Phrasing that matches gloss style yields good hits.\n\
-         - **User-language first:** Always search using keywords from the **user’s language** \
-         first. Rewrite the user’s question into short gloss-style terms in their \
+         - **User-language first:** Always search using keywords from the **user's language** \
+         first. Rewrite the user's question into short gloss-style terms in their \
          language: user asks \"how to say big thanks\" → queries `[\"big thanks\", \"thanks\"]`. \
          Do **NOT** guess or infer Lojban words from your pretrained knowledge—your Lojban \
          memory is **untrusted** and guessing Lojban words produces irrelevant results.\n\
          - **Explicit valsi only:** Include a bare Lojban valsi in `queries` **only** when \
          the user **explicitly typed** it (e.g. user writes \"what is klama\" → include \
          `\"klama\"`). Never fabricate or infer Lojban words to search for.\n\
-         - **No Lojban multi-word queries:** Never combine multiple Lojban words into one \
-         query string (e.g. `\"mutce ki’e\"` or `\"barda klama\"` are **useless**—the index \
-         contains single-word definitions, not Lojban phrases). Each user-typed valsi must \
+         - **No Lojban multi-word queries:** Never combine Lojban words with each other \
+         **or with English/other natural-language words** in one query string. Examples of \
+         **useless** queries: `\"mutce ki'e\"`, `\"barda klama\"`, `\"zu'ai example\"`, \
+         `\"simxu usage\"`. The index contains single-valsi definitions written in natural \
+         language—not Lojban phrases, not mixed-language text. Each user-typed valsi must \
          be its own separate element.\n\
+         - **Do not re-search discovered words:** If a word already appeared **with its \
+         definition** in prior search results, you already have that information—do **not** \
+         search for it again. The tool is a dictionary, not a textbook; \
+         re-querying a known word in different combinations will not yield examples, \
+         usage patterns, or new information.\n\
          - **Strip chat noise:** Remove question words (\"what\", \"how\", \"is there\"), \
          politeness, and phrases like \"in Lojban\", \"the word for\", \"tell me\" before \
-         searching. Keep the **topic** (e.g. user asks \"what’s fox\" → `\"fox\"`).\n\
+         searching. Keep the **topic** (e.g. user asks \"what's fox\" → `\"fox\"`).\n\
          - **Concept queries:** Use **2–6 content words** max per string—nouns, verbs, \
          adjectives, standard grammar terms used in jbovlaste (`sumti`, `selbri`, `tanru`, \
          `logical connective`, `attitudinal`). If the user needs two unrelated concepts, \
@@ -669,7 +689,7 @@ fn system_prompt_base(locale: Option<&str>) -> String {
          - **Never** add meta-words like \"Lojban\", \"definition\", \"dictionary\", \
          \"jbovlaste\", \"meaning\", or \"word\"—they dilute embeddings.\n\
          - **limit:** Use 10 for a specific valsi or tight concept.\n\
-         - **languages (important):** Always pass `languages` matching the user’s language \
+         - **languages (important):** Always pass `languages` matching the user's language \
          (e.g. `[\"en\"]` for English-speaking users, `[\"ru\"]` for Russian). Only omit \
          `languages` when the user explicitly asks for multi-language results or you truly \
          cannot determine their language.\n\n",
@@ -803,20 +823,25 @@ fn jbovlaste_tool_schema() -> Tool {
                           then use **different** strings (no duplicate searches). \
                           Do NOT call when this thread already has search-backed answers. \
                           **Query language rules (critical):** \
-                          1) Search in the **user’s language** (e.g. English keywords like \
+                          1) Search in the **user's language** (e.g. English keywords like \
                           `fox`, `big thanks`, `logical connective`, `past tense`). \
                           2) Include a bare Lojban valsi ONLY if the user explicitly typed it. \
                           3) NEVER guess Lojban words from memory—your pretrained Lojban is \
                           untrusted and produces garbage results. \
-                          4) NEVER combine Lojban words in one query (e.g. `\"mutce ki’e\"` \
-                          is useless—each valsi must be a separate element). \
+                          4) NEVER combine Lojban words in one query, and NEVER mix \
+                          Lojban words with English words (e.g. `\"mutce ki'e\"`, \
+                          `\"zu'ai example\"`, `\"simxu usage\"` are all useless—each \
+                          valsi must be a separate element). \
+                          5) NEVER re-search a valsi whose definition already appeared \
+                          in prior results—you already have it; the dictionary will \
+                          not give you examples or usage guides on repeated queries. \
                           Bad queries: \"what is the Lojban word for fox\", \
-                          \"definition of klama\", \"mutce ki’e\", \"barda klama\". \
+                          \"definition of klama\", \"mutce ki'e\", \"zu'ai example\". \
                           Good queries: `[\"fox\"]`, `[\"big thanks\", \"thanks\"]`, \
                           `[\"klama\"]` (only if user typed klama). \
                           Strip meta-words (\"Lojban\", \"definition\", \"dictionary\", \
                           \"meaning\", \"word\", \"jbovlaste\"). \
-                          **`languages`**: Always pass the user’s language tag \
+                          **`languages`**: Always pass the user's language tag \
                           (e.g. `[\"en\"]` for English, `[\"ru\"]` for Russian). \
                           Omit only when language is unknown."
                 .to_string(),
