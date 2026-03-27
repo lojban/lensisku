@@ -2,15 +2,19 @@
 """
 Build src/assistant/core_reference_dictionary.txt from archive/dict TSVs.
 
-- Top 150 gismu; cmavo = PA1 digits no…so (0–9) in order plus 50 more by `score`.
+- Full gismu.tsv and cmavo.tsv: all gismu (score order, metrology powers-of-ten after others);
+  all cmavo grouped by **selma'o** (`### SELMAHO`); PA1 digits no…so (0–9) in fixed order within PA1;
+  tutorial/teaching notes per selma'o as `# …` comment lines before that class's entries.
 - English ↔ Lojban pairs from muplis-database.tsv (same ` ↔ ` separator as word lines):
   grammar-diverse greedy cover with **per-family caps** (attitudinals, vocatives, structural openers),
   tie-breaking by **low sum of per-token corpus frequencies** in the pool (whole phrase, not just the start),
   and a reserved math- / logic-leaning batch.
-- Optional **learn-lojban** block (lojban.pw book): core notions + example pairs scraped from Markdown.
+- Optional **tutorial** block from Markdown lesson files: core notions + example pairs scraped from Markdown.
 
 Environment:
-  LEARN_LOJBAN_BOOK_DIR — directory with `1.md` … `13.md` (default: try sibling lojban.pw path).
+  ASSISTANT_TUTORIAL_BOOK_DIR — directory with numbered lesson `*.md` (e.g. `1.md` … `13.md`).
+  If unset, the build tries LEARN_LOJBAN_BOOK_DIR (legacy), then auto-detects `*/data/pages/en/books/*`
+  under sibling directories of this repo when `1.md` is present.
 
 Run from repo root:
   python3 scripts/build_assistant_core_dictionary.py
@@ -33,46 +37,151 @@ GISMU_PATH = ARCHIVE / "gismu.tsv"
 CMAVO_PATH = ARCHIVE / "cmavo.tsv"
 MUPLIS_PATH = ARCHIVE / "muplis-database.tsv"
 
-# learn-lojban (lojban.pw) — example pairs cap (diversity-selected).
+# Tutorial example pairs cap (diversity-selected) when Markdown lessons are available.
 TUTORIAL_EXAMPLE_QUOTA = 40
 
 # Single column separator for every data line (valsi↔gloss, English↔Lojban). U+2194, spaced.
 COL_SEP = " ↔ "
 
-# One-line notions aligned with the same course (English ↔ English); always included.
+# One-line notions: course-wide themes not tied to a single selma'o (particle detail lives under **## cmavo**).
 TUTORIAL_NOTION_LINES: list[str] = [
+    f"Using this dictionary{COL_SEP}Morphology (alphabet, brivla, cmavo, cmevla), bridi shape, and most particle usage are explained under **### selma'o** headings inside **## cmavo** (teaching notes as `#` lines before each class).",
     f"Alphabet{COL_SEP}Latin letters; ' = /h/ between vowels; . = pause before vowel-initial words; stress on the second-to-last vowel.",
     f"selbrivla (brivla){COL_SEP}Relation/content word: consonant cluster within first five sounds, ends in a vowel (e.g. gleki, klama).",
-    f"cmavo{COL_SEP}Particle: consonant + vowel (+ optional 'V sequences); may be run together (e.g. lenu, naku).",
+    f"cmavo{COL_SEP}Particle: consonant + vowel (+ optional 'V sequences); may be run together (e.g. lenu, naku); grammar class = **selma'o** (subsection titles in **## cmavo**).",
     f"cmevla{COL_SEP}Name word: ends in a consonant; often written .name. with pauses matching dots.",
     f"Bridi{COL_SEP}A clause: sumti fill numbered places x₁ x₂ … of one selbri (relation).",
-    f"cu{COL_SEP}Separates sumti cluster from selbri when needed; not used before nu/du'u/ka abstractions as selbri.",
-    f"fa fe fi fo fu (place tags){COL_SEP}Tag sumti to selbri places x₁–x₅; reorder sumti freely; unlike SE conversion they do not reshuffle the place structure; after be they mark places inside a tanru sumti (e.g. le klama be fi le tcadu).",
-    f"Modal terms (tense, location, cause, etc.){COL_SEP}Apply to the whole bridi; they do not fill numbered selbri slots—omitted slots are still zo'e unless a place tag assigns them (learn-lojban: ca, fa'a, pu, bu'u, …).",
-    f"Modal term without a following sumti{COL_SEP}Locates the event relative to the speaker's here and now (e.g. ba alone = future from now; bu'u alone = at this place).",
-    f"Modal term with a following sumti{COL_SEP}Locates the event relative to the event or state in that argument (e.g. ba le nu mi cadzu = after I walk).",
-    f"Time and space (same principle){COL_SEP}Temporal distance uses pu/ba with zi/za/zu; spatial distance uses vi/va/vu (short / medium / far); vowel order i–a–u repeats for subjective near/medium/long.",
-    f"la'u{COL_SEP}Modal with a sumti stating how far in time or space (e.g. in three days).",
-    f"fau, ca, bu'u{COL_SEP}fau: same time, place, or situation as…; ca: at the same time as… (present-like); bu'u: at a place (spatial analogue of ca).",
-    f"nau{COL_SEP}At the speaker's time or place—useful in nested bridi so an inner tense can be anchored to the utterance (English-style sequence of tenses).",
-    f"Modal terms and place tags together{COL_SEP}Modal terms do not remove fa–fu; both apply (e.g. mi klama se ka'a le rirxe le dinju still fills klama's places).",
-    f"Several modal particles (imaginary journey){COL_SEP}Read left to right from implied now/here; order scopes modals (e.g. mo'u co'a vs co'a mo'u); pu ba vs ba pu differs.",
-    f"ce'e between modals{COL_SEP}Joins two modal particles at the same level so they are not nested, overriding the default left-to-right journey reading.",
-    f"nu / du'u / ka{COL_SEP}Abstractors: event, proposition, property (-ness); closed with kei where applicable.",
-    f"lu … li'u{COL_SEP}Quotation: Lojban text as a sumti; nestable.",
-    f"zo{COL_SEP}Quotes the single following Lojban word.",
-    f"sei{COL_SEP}Incidental bridi commenting on the host sentence.",
-    f"ma / mo / xu{COL_SEP}Questions: sumti, selbri, yes/no respectively.",
-    f"Attitudinals (interjections), placement{COL_SEP}Modify the construct immediately before them; at the start of a bridi they scope the whole bridi; moving them changes which phrase is in scope (learn-lojban lesson 1).",
-    f"Attitudinal structure{COL_SEP}Root cmavo (e.g. ui, ie) plus optional scalar particles on the root; then optional suffixes pei, dai, zo'o; suffixes may take scalars too (e.g. ie zo'o nai = agree, not kidding).",
-    f"Attitudinal scalars: cu'i, nai, sai, cai, ru'e{COL_SEP}cu'i = middle/neutral on the scale; nai = opposite pole (ui happy vs ui nai alas); sai = strong intensity; cai = extreme intensity; ru'e = weak intensity (standard Lojban scale; learn-lojban stresses cu'i, nai, sai).",
-    f"pei (attitudinal suffix){COL_SEP}Makes the attitudinal a question about the listener's feeling; pei alone asks for an appropriate attitudinal reply.",
-    f"dai (attitudinal suffix){COL_SEP}Attributes the feeling to someone else (empathy, e.g. ui nai dai = you must be sad); without dai the speaker expresses their own attitude toward the bridi.",
-    f"zo'o / zo'o nai (attitudinal suffix){COL_SEP}zo'o marks humor or non-serious tone; zo'o nai marks seriousness (I'm not joking).",
-    f"Vocatives and attitudinal scalars{COL_SEP}Vocatives use the same scalar modifiers as interjections (e.g. ki'e sai = thank you very much).",
-    f"Interjections before vocatives (sentence-wide scope){COL_SEP}Put interjections before vocatives when both should modify the whole utterance; an interjection immediately after a vocative modifies that vocative or its argument (learn-lojban lesson 1).",
-    f"ku / kei / vau{COL_SEP}Terminators: end LE description, NU abstraction, bridi (when required).",
 ]
+
+# Per-selma'o teaching notes (`# …` lines) below each `### SELMAHO` heading before word rows.
+_SELMAHO_FAhA_LEARN: list[str] = [
+    "# Teaching note: spatial/directional modals (FAhA); combine with VA distance (vi/va/vu) the way PU time combines with ZI (zi/za/zu).",
+    "# With a following sumti, location/direction is relative to that argument; bare, relative to the speech situation.",
+]
+
+SELMAHO_NOTE_LINES: dict[str, list[str]] = {
+    "PA1": [
+        "# PA1: decimal digit cmavo (no=0 … so=9); combine with higher PA selma'o for larger numbers and grammar.",
+    ],
+    "BAI": [
+        "# Modal tags (BAI, …): attach circumstances like cause, amount, or situation to the bridi; they are not ordinary numbered sumti places unless linked with FA/fi'o.",
+        "# Without a following sumti, many modals anchor to the speaker's here/now; with a sumti, relative to that event or state (e.g. la'u for extent).",
+        "# Teaching note: read strings of tense/location modals left-to-right as an imaginary journey; order changes scope (e.g. mo'u co'a vs co'a mo'u; pu ba vs ba pu).",
+        "# Modal particles do not remove fa–fe–fi–fo–fu; place tags and modals apply together (e.g. mi klama se ka'a le rirxe le dinju still fills klama's places).",
+        "# fau: in the event of / in the same situation as… (non-causal modal nuance).",
+    ],
+    "BE": [
+        "# Links a sumti into a tanru or description (typically the x₂ of the head selbri); bei chains further linked sumti; be'o closes the substructure.",
+    ],
+    "CAI": [
+        "# Intensity scalars on attitudinal roots: cu'i neutral/middle; sai stronger; cai extreme; ru'e weak (many introductory courses stress cu'i, nai, sai).",
+        "# pei: turns the cluster into an attitudinal question (how do you feel?); bare pei invites an attitudinal reply.",
+    ],
+    "CEhE": [
+        "# ce'e: afterthought termset marker—joins terms (e.g. modals) at the same level so they are not nested under the default left-to-right journey reading.",
+    ],
+    "COI": [
+        "# Vocatives: greetings, thanks, hailing (coi, co'o, ki'e, …); take optional names or sumti after.",
+        "# Vocatives use the same CAI intensity scalars as interjections (e.g. ki'e sai = thank you very much).",
+        "# Put sentence-wide interjections before the vocative; an interjection right after the vocative scopes that vocative or its argument (typical introductory lesson 1 pattern).",
+    ],
+    "CU": [
+        "# Separates the sumti cluster from the selbri when needed; often dropped before nu/du'u/ka abstractions used as the selbri.",
+    ],
+    "CUhE": [
+        "# nau: resets tense/space to the speaker's here-and-now—useful inside nested bridi (English-style sequence of tenses).",
+    ],
+    "FA": [
+        "# fa fe fi fo fu: tag sumti to numbered places x₁–x₅; reorder freely without changing the underlying place structure (contrast SE conversion).",
+        "# After be/bei, FA tags mark places inside the linked sumti (e.g. le klama be fi le tcadu).",
+    ],
+    "GI": [
+        "# Forethought logical connectives: gi marks the branch between connected pieces (see also JA for tanru-internal afterthought connectives).",
+    ],
+    "GOI": [
+        "# goi, ne, no'u, …: assign or resume sumti (ko'a-series, Latin-style 'i.e.' bridges); ge'u may close the relative phrase.",
+    ],
+    "GOhA": [
+        "# mo: bridi/selbri question—asks what relationship holds (predicate question).",
+    ],
+    "I": [
+        "# .i (I): starts a new sentence in the same discourse; often elided when the speaker changes.",
+    ],
+    "JA": [
+        "# Tanru-internal afterthought connectives (je, ja, …): combine predicates inside a tanru before the outer bridi shape is closed.",
+    ],
+    "JOI": [
+        "# Non-logical connectives between sumti: mixture, sequence, union, etc. (joi, jo'u, ce'o, …).",
+    ],
+    "KEI": [
+        "# kei: closes nu/du'u/ka (etc.) abstractions; often elidable when grammar is clear.",
+    ],
+    "KOhA7": [
+        "# ma: sumti question—asks who/what fills a sumti place.",
+    ],
+    "KU": [
+        "# ku: closes LE/LO descriptions and similar sumti; elidable in many positions.",
+    ],
+    "LE": [
+        "# Non-veridical descriptors (le, le'i, …): 'the one(s) described as…'; close with ku.",
+    ],
+    "LIhU": [
+        "# li'u: closes lu … quotation; often elidable at end of text.",
+    ],
+    "LO": [
+        "# Veridical descriptors (lo, lo'i, …): 'some of those which really are…'.",
+    ],
+    "LU": [
+        "# lu … li'u: grammatical Lojban quotation as a sumti; nestable.",
+    ],
+    "NA": [
+        "# na: contradictory bridi negation (whole bridi in scope); distinct from naku and from na'e-style scalar negation.",
+    ],
+    "NAI": [
+        "# On attitudinal and many other cmavo: nai selects the opposite pole (e.g. ui vs ui nai).",
+        "# More broadly: negation-related flip attached to the preceding cmavo (see each word's definition).",
+    ],
+    "NU": [
+        "# nu: event abstraction; du'u: proposition/bridi abstract; ka: property abstract; close with kei where applicable.",
+    ],
+    "PU": [
+        "# pu ca ba: time direction—before / simultaneous with / after; default past / present / future when used alone.",
+        "# ca with a sumti: at the same time as that event (present-like relative to that bridi).",
+    ],
+    "SE": [
+        "# se te ve xe: conversion—swap x₁ with x₂…x₅ so another place is in the x₁ slot; **reshuffles** the place structure (unlike FA tags, which only reorder surface sumti).",
+        "# In tanru, conversion applies to the immediately following selbri (e.g. se klama emphasizes the goer).",
+    ],
+    "SEI": [
+        "# sei … se'u: incidental metalinguistic bridi commenting on the host utterance.",
+    ],
+    "UI1": [
+        "# Attitudinal interjections: modify the construct immediately before them; at the start of a bridi they scope the whole bridi (typical introductory lesson 1 pattern).",
+        "# Cluster shape: attitudinal root (UI1–UI7, etc.) plus optional CAI scalars on the root; optional UI5 suffixes (dai, zo'o, …); suffixes may take CAI/nai too (e.g. ie zo'o nai = agree, not kidding).",
+    ],
+    "UI5": [
+        "# dai: empathy—attribute the feeling to someone else (e.g. ui nai dai).",
+        "# zo'o / zo'o nai: humor vs serious tone (I'm joking / not joking).",
+    ],
+    "UI6": [
+        "# xu: yes/no truth-value question (discursive).",
+    ],
+    "VA": [
+        "# vi va vu: spatial distance from the reference—here / medium / far (subjective scale; vowel i–a–u = near/medium/long, like ZI for time).",
+    ],
+    "VAU": [
+        "# vau: closes the sumti of a simple bridi; in compound bridi separates trailing sumti shared across conjuncts.",
+    ],
+    "ZO": [
+        "# zo: quotes exactly one Lojban word immediately after it.",
+    ],
+    "ZI": [
+        "# zi za zu: subjective near/medium/long **time** distance; combine with pu/ba (and ca) for 'how far' in time.",
+    ],
+}
+
+for _sk in ("FAhA1", "FAhA2", "FAhA3", "FAhA4"):
+    SELMAHO_NOTE_LINES[_sk] = list(_SELMAHO_FAhA_LEARN)
 
 # Phrase selection: total lines from muplis, split between grammar diversity and math emphasis.
 MUPLIS_PHRASE_TOTAL = 168
@@ -221,24 +330,7 @@ CMOVO_DIGIT_ORDER: dict[str, int] = {
     "so": 9,
 }
 
-# After the PA1 block, how many additional cmavo to take by corpus score.
-CMAVO_TOP_AFTER_DIGITS = 50
-
-
-def read_cmavo_pa1_digits(path: Path) -> list[dict[str, str]]:
-    with path.open(newline="", encoding="utf-8") as f:
-        rows = list(csv.DictReader(f, delimiter="\t"))
-    digit_rows = [r for r in rows if (r.get("selmaho") or "").strip() == "PA1"]
-    digit_rows.sort(
-        key=lambda r: CMOVO_DIGIT_ORDER.get((r.get("word") or "").strip().lower(), 100),
-    )
-    return digit_rows
-
-
-def read_cmavo_core(path: Path) -> list[dict[str, str]]:
-    """PA1 digits 0–9 (archive order), then top `CMAVO_TOP_AFTER_DIGITS` other cmavo by score."""
-    digit_rows = read_cmavo_pa1_digits(path)
-    digit_words = {(r.get("word") or "").strip().lower() for r in digit_rows}
+def load_cmavo_rows(path: Path) -> list[dict[str, str]]:
     with path.open(newline="", encoding="utf-8") as f:
         rows = list(csv.DictReader(f, delimiter="\t"))
     for row in rows:
@@ -246,20 +338,44 @@ def read_cmavo_core(path: Path) -> list[dict[str, str]]:
             row["_score"] = int((row.get("score") or "0").strip() or "0")
         except ValueError:
             row["_score"] = 0
-    rows.sort(key=lambda x: (-x["_score"], x.get("word", "")))
-    more: list[dict[str, str]] = []
-    for r in rows:
-        w = (r.get("word") or "").strip().lower()
-        if w in digit_words:
-            continue
-        more.append(r)
-        if len(more) >= CMAVO_TOP_AFTER_DIGITS:
-            break
-    return digit_rows + more
+    return rows
 
 
-def read_gismu_rows_prefer_non_numeric(path: Path, want: int) -> list[dict[str, str]]:
-    """Same as score order, but fill with non-metrology gismu first (still all from same TSV)."""
+def _sort_cmavo_in_selmaho(sel: str, rows: list[dict[str, str]]) -> None:
+    if sel == "PA1":
+        rows.sort(
+            key=lambda r: CMOVO_DIGIT_ORDER.get((r.get("word") or "").strip().lower(), 1000),
+        )
+    else:
+        rows.sort(key=lambda r: (-r["_score"], (r.get("word") or "").strip()))
+
+
+def cmavo_grouped_by_selmaho(path: Path) -> tuple[list[tuple[str, list[dict[str, str]]]], int]:
+    """Return (ordered list of (selmaho, rows), total cmavo count). PA1 first; other selma'o A–Z."""
+    raw = load_cmavo_rows(path)
+    buckets: dict[str, list[dict[str, str]]] = {}
+    for row in raw:
+        sel = (row.get("selmaho") or "").strip() or "(missing)"
+        buckets.setdefault(sel, []).append(row)
+    keys = sorted(buckets.keys())
+    if "PA1" in keys:
+        keys.remove("PA1")
+        keys.insert(0, "PA1")
+    out: list[tuple[str, list[dict[str, str]]]] = []
+    n = 0
+    for sel in keys:
+        grp = buckets[sel]
+        _sort_cmavo_in_selmaho(sel, grp)
+        out.append((sel, grp))
+        n += len(grp)
+    return out, n
+
+
+def read_gismu_rows_prefer_non_numeric(
+    path: Path, want: int | None = None
+) -> list[dict[str, str]]:
+    """Score order with non-metrology gismu before metrology (powers-of-ten) at the tail.
+    If `want` is None, return the full TSV."""
     with path.open(newline="", encoding="utf-8") as f:
         r = csv.DictReader(f, delimiter="\t")
         rows = list(r)
@@ -271,6 +387,8 @@ def read_gismu_rows_prefer_non_numeric(path: Path, want: int) -> list[dict[str, 
     rows.sort(key=lambda x: (-x["_score"], x.get("word", "")))
     primary = [x for x in rows if not _is_numeric_scale_gismu(x.get("definition") or "")]
     secondary = [x for x in rows if _is_numeric_scale_gismu(x.get("definition") or "")]
+    if want is None:
+        return primary + secondary
     out = primary[:want]
     if len(out) < want:
         out.extend(secondary[: want - len(out)])
@@ -282,6 +400,22 @@ def format_word_definition_row(row: dict[str, str]) -> str:
     w = (row.get("word") or "").strip()
     d = one_line(row.get("definition") or "")
     return f"{w}{COL_SEP}{d}"
+
+
+def format_cmavo_selmaho_sections(
+    grouped: list[tuple[str, list[dict[str, str]]]],
+) -> list[str]:
+    lines: list[str] = []
+    for sel, rows in grouped:
+        lines.append(f"### {sel}")
+        lines.append("")
+        notes = SELMAHO_NOTE_LINES.get(sel)
+        if notes:
+            lines.extend(notes)
+            lines.append("")
+        lines.extend(format_word_definition_row(r) for r in rows)
+        lines.append("")
+    return lines
 
 
 def tags_for_lojban(lo: str) -> set[str]:
@@ -598,20 +732,29 @@ def select_muplis_diverse(
     return selected[:n]
 
 
-def resolve_learn_lojban_book_dir() -> Path | None:
-    env = os.environ.get("LEARN_LOJBAN_BOOK_DIR", "").strip()
+def resolve_tutorial_book_dir() -> Path | None:
+    """Markdown lesson directory (numbered `*.md`). Env first, then legacy env, then sibling auto-detect."""
     candidates: list[Path] = []
-    if env:
-        candidates.append(Path(env).expanduser())
-    candidates.append(
-        REPO.parent / "lojban.pw" / "data" / "pages" / "en" / "books" / "learn-lojban",
-    )
+    for key in ("ASSISTANT_TUTORIAL_BOOK_DIR", "LEARN_LOJBAN_BOOK_DIR"):
+        v = os.environ.get(key, "").strip()
+        if v:
+            candidates.append(Path(v).expanduser())
+    try:
+        for book_root in sorted(REPO.parent.glob("*/data/pages/en/books/*")):
+            if book_root.is_dir() and (book_root / "1.md").is_file():
+                candidates.append(book_root)
+    except OSError:
+        pass
+    seen: set[Path] = set()
     for p in candidates:
         try:
-            if p.is_dir():
-                return p.resolve()
+            r = p.resolve()
         except OSError:
             continue
+        if not r.is_dir() or r in seen:
+            continue
+        seen.add(r)
+        return r
     return None
 
 
@@ -697,7 +840,7 @@ def iter_tutorial_markdown_files(book_dir: Path) -> list[Path]:
     return sorted(paths, key=sort_key)
 
 
-def load_learn_lojban_example_pool(book_dir: Path) -> list[tuple[str, str]]:
+def load_tutorial_example_pool(book_dir: Path) -> list[tuple[str, str]]:
     seen: set[str] = set()
     out: list[tuple[str, str]] = []
     for path in iter_tutorial_markdown_files(book_dir):
@@ -720,8 +863,8 @@ def main() -> int:
             print(f"missing: {p}", file=sys.stderr)
             return 1
 
-    gismu = read_gismu_rows_prefer_non_numeric(GISMU_PATH, 150)
-    cmavo = read_cmavo_core(CMAVO_PATH)
+    gismu = read_gismu_rows_prefer_non_numeric(GISMU_PATH)
+    cmavo_grouped, cmavo_n = cmavo_grouped_by_selmaho(CMAVO_PATH)
 
     muplis_rows: list[tuple[str, str]] = []
     with MUPLIS_PATH.open(newline="", encoding="utf-8") as f:
@@ -732,14 +875,15 @@ def main() -> int:
             if en and lo:
                 muplis_rows.append((en, lo))
 
-    book_dir = resolve_learn_lojban_book_dir()
+    book_dir = resolve_tutorial_book_dir()
     tutorial_example_pool: list[tuple[str, str]] = []
     if book_dir is not None:
-        tutorial_example_pool = load_learn_lojban_example_pool(book_dir)
-        print(f"learn-lojban: {book_dir} — raw example pairs {len(tutorial_example_pool)}")
+        tutorial_example_pool = load_tutorial_example_pool(book_dir)
+        print(f"tutorial Markdown: {book_dir} — raw example pairs {len(tutorial_example_pool)}")
     else:
         print(
-            "learn-lojban: directory not found (set LEARN_LOJBAN_BOOK_DIR); "
+            "tutorial Markdown: directory not found (set ASSISTANT_TUTORIAL_BOOK_DIR "
+            "or LEARN_LOJBAN_BOOK_DIR, or place lessons under */data/pages/en/books/*/); "
             "notions only, no scraped examples",
             file=sys.stderr,
         )
@@ -769,32 +913,31 @@ def main() -> int:
 
     lines: list[str] = [
         "# Assistant core reference dictionary (generated)",
-        "# Source: archive/dict/{gismu,cmavo,muplis-database}.tsv; optional learn-lojban book Markdown.",
+        "# Source: archive/dict/{gismu,cmavo,muplis-database}.tsv; optional tutorial lesson Markdown.",
         "#   python3 scripts/build_assistant_core_dictionary.py",
         "# Format: every non-comment data line is `left ↔ right` (Unicode U+2194, spaces).",
-        "#   Gismu section: valsi ↔ English definition. Cmavo section: valsi ↔ English definition.",
-        "#   learn-lojban: English↔English notions + English↔Lojban examples (lojban.pw course).",
+        "#   Gismu: valsi ↔ English definition.",
+        "#   Cmavo: `### selma'o` subsections; optional `#` teaching note lines; then valsi ↔ English.",
+        "#   Tutorial: English↔English notions + English↔Lojban examples (from bundled Markdown when present).",
         "#   Phrase sections: English ↔ Lojban (muplis; grammar-diverse + math-leaning subset).",
         "",
-        "## gismu (150; by corpus score; metrology powers-of-ten entries filled only after others)",
+        f"## gismu ({len(gismu)}; full list; by corpus score; metrology powers-of-ten after others)",
         "",
     ]
     lines.extend(format_word_definition_row(row) for row in gismu)
     lines.append("")
     lines.append(
-        f"## cmavo ({len(cmavo)}; PA1 digits 0–9 then top {CMAVO_TOP_AFTER_DIGITS} by corpus score)"
+        f"## cmavo ({cmavo_n}; full list by selma'o; PA1 digits 0–9 in order within PA1; "
+        f"other classes sorted by corpus score then word)"
     )
     lines.append("")
-    lines.extend(format_word_definition_row(row) for row in cmavo)
-    lines.append("")
-    lines.append(
-        "## learn-lojban tutorial (notions; English ↔ English, from lojban.pw course themes)"
-    )
+    lines.extend(format_cmavo_selmaho_sections(cmavo_grouped))
+    lines.append("## tutorial (notions; English ↔ English)")
     lines.append("")
     lines.extend(TUTORIAL_NOTION_LINES)
     lines.append("")
     lines.append(
-        f"## learn-lojban tutorial (examples; English ↔ Lojban; {len(tutorial_examples)} lines, "
+        f"## tutorial (examples; English ↔ Lojban; {len(tutorial_examples)} lines, "
         f"quota {TUTORIAL_EXAMPLE_QUOTA})"
     )
     lines.append("")
@@ -803,7 +946,8 @@ def main() -> int:
             lines.append(f"{en}{COL_SEP}{lo}")
     else:
         lines.append(
-            f"(No examples bundled: clone lojban.pw pages or set LEARN_LOJBAN_BOOK_DIR.)"
+            "(No examples bundled: set ASSISTANT_TUTORIAL_BOOK_DIR or LEARN_LOJBAN_BOOK_DIR, "
+            "or add auto-discovered */data/pages/en/books/*/1.md.)"
         )
     lines.append("")
     lines.append(

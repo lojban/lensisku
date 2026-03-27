@@ -500,9 +500,9 @@ async fn resolve_semantic_search_language_filters(
 
 fn system_prompt_base(locale: Option<&str>) -> String {
     let mut base = String::with_capacity(4096);
-    let list_hint = "**core reference dictionary** (gismu, cmavo, learn-lojban, phrases) below";
+    let list_hint = "**core reference dictionary** (gismu, cmavo, tutorial, phrases) below";
     let trusted_block_1 = "1. The **\"Core reference dictionary\"** block in this system message (if present): \
-         curated **gismu**, **cmavo**, **learn-lojban** notions/examples, and **English / Lojban phrase pairs**.\n\
+         curated **gismu**, **cmavo**, **tutorial** notions/examples, and **English / Lojban phrase pairs**.\n\
          ";
 
     // ── Role & personality ───────────────────────────────────────────────
@@ -604,12 +604,12 @@ fn system_prompt_base(locale: Option<&str>) -> String {
     base.push_str(
         "## Core reference dictionary (single bundled source)\n\
          One block titled \"Core reference dictionary\" ships with the server: \
-         **150 high-score gismu**, **60 cmavo** (PA1 digits 0–9 plus 50 more by score), \
-         **learn-lojban** notions plus **book examples** (when the Markdown source is available \
+         the **full official gismu and cmavo lists** from the bundled TSV snapshot (gismu by score with metrology entries after others; **cmavo grouped by selma'o** with `###` headings, optional `#` teaching notes per class, PA1 digits 0–9 ordered within **PA1**, other classes by corpus score), \
+         **tutorial** notions plus **book examples** (when the Markdown source is available \
          at build time), and **168** English/Lojban phrase lines: mostly grammar-diverse, plus a \
          **math- / measure- / logic-leaning** batch; each line `left ↔ right` within its subsection. \
-         Treat it as your **primary** offline vocabulary and phrasing guide. For **any other valsi** \
-         (remaining gismu/cmavo, lujvo, fu'ivla, full definitions, examples, notes), call \
+         Treat it as your **primary** offline vocabulary and phrasing guide. For **lujvo**, **fu'ivla**, \
+         community-only entries, full **notes**/**examples**, or nuances not in this bundle, call \
          `jbovlaste_semantic_search`.\n\n",
     );
 
@@ -751,11 +751,12 @@ async fn system_prompt_with_dictionary(_pool: &Pool, locale: Option<&str>) -> St
     format!(
         "{}\n\n## Core reference dictionary\n\
 All data lines use the same column separator: spaced **↔** (U+2194): `left ↔ right`. \
-Sections **gismu** and **cmavo**: `valsi ↔ English definition`. **learn-lojban tutorial**: \
-English↔English notions and English↔Lojban examples. **Phrases** (two \
-subsections): `English ↔ Lojban` — corpus samples (general, then math- / logic-leaning). \
-This bundled list is a **subset** of jbovlaste and full phrase corpora; \
-use `jbovlaste_semantic_search` for any valsi or nuance not present here.\n\n{}",
+**Gismu**: `valsi ↔ English definition`. **Cmavo**: `### selma'o` subsections, optional `#` commentary lines, \
+then `valsi ↔ English definition`. **Tutorial** (notions + examples): English↔English notions and English↔Lojban examples. \
+**Phrases** (two subsections): `English ↔ Lojban` — corpus samples (general, then math- / logic-leaning). \
+**Gismu** and **cmavo** here are the full archive/dict TSV lists; phrase pairs and tutorial lines are still sampled. \
+For lujvo, fu'ivla, experimental entries, full notes/examples, or anything missing here, use \
+`jbovlaste_semantic_search`.\n\n{}",
         base, dict_str
     )
 }
