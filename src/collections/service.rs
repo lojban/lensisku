@@ -3340,7 +3340,8 @@ pub async fn bulk_update_custom_text_items(
     user_id: i32,
     req: &CustomTextBulkUpdateRequest,
 ) -> AppResult<CustomTextBulkUpdateResponse> {
-    if req.items.len() > MAX_CUSTOM_TEXT_BULK_ITEMS {
+    let total = req.items.len() + req.new_items.len();
+    if total > MAX_CUSTOM_TEXT_BULK_ITEMS {
         return Err(AppError::BadRequest(format!(
             "At most {} items per request",
             MAX_CUSTOM_TEXT_BULK_ITEMS
@@ -3408,10 +3409,87 @@ pub async fn bulk_update_custom_text_items(
         updated += 1;
     }
 
+    let mut inserted: i32 = 0;
+
+    if !req.new_items.is_empty() {
+        let max_position: i32 = transaction
+            .query_one(
+                "SELECT COALESCE(MAX(position), -1) FROM collection_items WHERE collection_id = $1",
+                &[&collection_id],
+            )
+            .await
+            .map_err(|e| AppError::Database(e.to_string()))?
+            .try_get(0)
+            .map_err(|e| AppError::Database(e.to_string()))?;
+
+        let mut next_position: i32 = max_position + 1;
+        let definition_id: Option<i32> = None;
+        let language_id: Option<i32> = None;
+        let owner_user_id: Option<i32> = None;
+        let license: Option<String> = None;
+        let script: Option<String> = None;
+        let notes: Option<String> = None;
+
+        for new_item in &req.new_items {
+            let sanitized_front = sanitize_html(&new_item.free_content_front);
+            let sanitized_back = sanitize_html(&new_item.free_content_back);
+
+            let free_front = if sanitized_front.trim().is_empty() {
+                None
+            } else {
+                Some(sanitized_front)
+            };
+            let free_back = if sanitized_back.trim().is_empty() {
+                None
+            } else {
+                Some(sanitized_back)
+            };
+
+            if free_front.is_none() && free_back.is_none() {
+                continue;
+            }
+
+            let canonical_form = free_front
+                .as_ref()
+                .and_then(|front| crate::utils::tersmu::get_canonical_form(front.as_str()));
+
+            transaction
+                .execute(
+                    "INSERT INTO collection_items (
+                    collection_id, definition_id,
+                    free_content_front, free_content_back,
+                    langid, owner_user_id, license, script, is_original,
+                    notes, position, auto_progress, canonical_form
+                )
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)",
+                    &[
+                        &collection_id,
+                        &definition_id,
+                        &free_front,
+                        &free_back,
+                        &language_id,
+                        &owner_user_id,
+                        &license,
+                        &script,
+                        &true,
+                        &notes,
+                        &next_position,
+                        &true,
+                        &canonical_form,
+                    ],
+                )
+                .await
+                .map_err(|e| AppError::Database(e.to_string()))?;
+
+            next_position += 1;
+            inserted += 1;
+        }
+    }
+
     transaction
         .commit()
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
 
-    Ok(CustomTextBulkUpdateResponse { updated })
+    Ok(CustomTextBulkUpdateResponse { updated, inserted })
 }
