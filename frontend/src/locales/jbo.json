@@ -92,6 +92,10 @@
     "addDefinition": "valsi ciksi",
     "newFreeThread": "cfari lo karni",
     "noCommentsFound": "no mapti pinka cu se penmi",
+    "waveSourceLabel": "boxna",
+    "waveSourceAll": "ro klesi",
+    "waveSourceJbotcan": "jbotcan",
+    "waveSourceComments": "lo pinka",
     "waveSourceMail": "mu'e mrilu"
   },
   "assistantChat": {
@@ -398,7 +402,7 @@
     "newRowBackAria": "trixe be lo cnino da",
     "newRowFrontPlaceholder": "stedu…",
     "newRowBackPlaceholder": "trixe…",
-    "importButton": "jmina lo CSV/TSV",
+    "importButton": "jmina lo pelji",
     "exportMenuLabel": "rejgau",
     "exportCsv": "rejgau lo CSV",
     "exportTsv": "rejgau lo TSV",

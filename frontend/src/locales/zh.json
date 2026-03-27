@@ -94,6 +94,10 @@
     "addDefinition": "释义",
     "newFreeThread": "发起自由波",
     "noCommentsFound": "没有符合搜索条件的评论",
+    "waveSourceLabel": "波浪",
+    "waveSourceAll": "全部类型",
+    "waveSourceJbotcan": "jbotcan",
+    "waveSourceComments": "评论",
     "waveSourceMail": "邮件"
   },
   "assistantChat": {
@@ -408,7 +412,7 @@
     "newRowBackAria": "新条目背面内容",
     "newRowFrontPlaceholder": "正面…",
     "newRowBackPlaceholder": "背面…",
-    "importButton": "导入 CSV/TSV",
+    "importButton": "导入工作表",
     "exportMenuLabel": "导出",
     "exportCsv": "导出 CSV",
     "exportTsv": "导出 TSV",

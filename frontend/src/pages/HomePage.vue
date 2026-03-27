@@ -23,7 +23,7 @@
   </div>
 
   <div
-    v-if="!searchQuery && !filters.selmaho && !filters.username && !filters.word_type"
+    v-if="showTrendingHome"
     class="min-h-[400px] mt-4 sm:mt-6"
   >
 
@@ -137,140 +137,232 @@
           >
         </div>
 
-        <div v-if="searchMode === 'comments'" class="flex items-center gap-2">
-
-          <div class="relative">
-             <select v-model="sortBy" class="input-field" @change="handleSortChange">
-
-              <option value="time"> {{ $t('sort.time') }} </option>
-
-              <option value="reactions"> {{ $t('sort.reactions') }} </option>
-
-              <option value="replies"> {{ $t('sort.replies') }} </option>
-               </select
+        <div
+          v-if="searchMode === 'comments'"
+          role="group"
+          :aria-label="$t('home.searchResultsTitle.comments')"
+          class="flex flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto ml-auto justify-end sm:justify-start"
+        >
+          <Dropdown class="relative block w-auto min-w-0 shrink">
+            <template #trigger="{ open: waveMenuOpen }">
+              <button
+                type="button"
+                class="btn-empty inline-flex h-8 min-w-0 w-auto max-w-[min(100vw-4rem,18rem)] items-center justify-between gap-1.5 px-3 text-sm"
+              >
+                <span class="truncate whitespace-nowrap">{{ waveSourceTriggerLabel }}</span>
+                <ChevronDown
+                  class="h-4 w-4 shrink-0 opacity-60 transition-transform duration-200"
+                  :class="{ 'rotate-180': waveMenuOpen }"
+                  :stroke-width="2"
+                />
+              </button>
+            </template>
+            <button
+              type="button"
+              class="block w-full whitespace-nowrap px-3 py-2 text-left text-sm hover:bg-gray-50"
+              @click="setWaveSource('all')"
             >
-          </div>
-           <button
-            class="btn-empty h-8"
+              {{ $t('home.waveSourceAll') }}
+            </button>
+            <button
+              type="button"
+              class="block w-full whitespace-nowrap px-3 py-2 text-left text-sm hover:bg-gray-50"
+              @click="setWaveSource('jbotcan')"
+            >
+              {{ $t('home.waveSourceJbotcan') }}
+            </button>
+            <button
+              type="button"
+              class="block w-full whitespace-nowrap px-3 py-2 text-left text-sm hover:bg-gray-50"
+              @click="setWaveSource('comments')"
+            >
+              {{ $t('home.waveSourceComments') }}
+            </button>
+            <button
+              type="button"
+              class="block w-full whitespace-nowrap px-3 py-2 text-left text-sm hover:bg-gray-50"
+              @click="setWaveSource('mail')"
+            >
+              {{ $t('home.waveSourceMail') }}
+            </button>
+          </Dropdown>
+
+          <Dropdown class="relative block w-auto min-w-0 shrink">
+            <template #trigger="{ open: sortMenuOpen }">
+              <button
+                type="button"
+                class="btn-empty inline-flex h-8 min-w-0 w-auto max-w-[min(100vw-4rem,18rem)] items-center justify-between gap-1.5 px-3 text-sm"
+              >
+                <span class="truncate whitespace-nowrap">{{ sortByTriggerLabel }}</span>
+                <ChevronDown
+                  class="h-4 w-4 shrink-0 opacity-60 transition-transform duration-200"
+                  :class="{ 'rotate-180': sortMenuOpen }"
+                  :stroke-width="2"
+                />
+              </button>
+            </template>
+            <button
+              type="button"
+              class="block w-full whitespace-nowrap px-3 py-2 text-left text-sm hover:bg-gray-50"
+              @click="setSortByField('time')"
+            >
+              {{ $t('sort.time') }}
+            </button>
+            <button
+              type="button"
+              class="block w-full whitespace-nowrap px-3 py-2 text-left text-sm hover:bg-gray-50"
+              @click="setSortByField('reactions')"
+            >
+              {{ $t('sort.reactions') }}
+            </button>
+            <button
+              type="button"
+              class="block w-full whitespace-nowrap px-3 py-2 text-left text-sm hover:bg-gray-50"
+              @click="setSortByField('replies')"
+            >
+              {{ $t('sort.replies') }}
+            </button>
+          </Dropdown>
+
+          <button
+            type="button"
+            class="btn-empty inline-flex h-8 min-w-0 w-auto items-center gap-1.5 whitespace-nowrap px-3 text-sm"
             :title="sortOrder === 'asc' ? $t('sort.ascending') : $t('sort.descending')"
             @click="toggleSortOrder"
           >
-             <ChevronUp v-if="sortOrder === 'asc'" class="h-5 w-5" /> <ChevronDown
+            <ChevronUp
+              v-if="sortOrder === 'asc'"
+              class="h-4 w-4 shrink-0 opacity-60"
+              :stroke-width="2"
+            />
+            <ChevronDown
               v-else
-              class="h-5 w-5"
-            /> <span>{{ sortOrder === 'asc' ? $t('sort.asc') : $t('sort.desc') }}</span
-            > </button
-          >
+              class="h-4 w-4 shrink-0 opacity-60"
+              :stroke-width="2"
+            />
+            <span class="whitespace-nowrap">{{
+              sortOrder === 'asc' ? $t('sort.asc') : $t('sort.desc')
+            }}</span>
+          </button>
         </div>
 
       </div>
 
-      <div v-if="isLoading" class="flex justify-center py-8">
+      <div class="relative" :class="{ 'min-h-[200px]': isLoading }">
+        <div
+          v-if="isLoading"
+          class="absolute inset-0 z-10 flex justify-center pt-8 sm:pt-12 bg-white/70 backdrop-blur-[1px]"
+          aria-busy="true"
+          aria-live="polite"
+        >
+          <div class="animate-spin rounded-full h-8 w-8 shrink-0 border-b-2 border-blue-600" />
+        </div>
 
-        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+        <div
+          class="relative z-0"
+          :class="{ 'pointer-events-none select-none': isLoading }"
+        >
+          <DictionaryEntries
+            v-if="searchMode === 'dictionary' || searchMode === 'semantic'"
+            :definitions="definitions"
+            :is-loading="isLoading"
+            :error="error"
+            :languages="languages"
+            :show-scores="auth.state.isLoggedIn"
+            :show-vote-buttons="auth.state.isLoggedIn"
+            :collections="collections"
+            :decomposition="decomposition || []"
+            @collection-updated="collections = $event"
+          />
+          <MuplisList
+            v-else-if="searchMode === 'muplis'"
+            :entries="muplisEntries"
+            :search-term="searchQuery"
+          />
+          <div v-else-if="searchMode === 'comments'" class="space-y-4">
 
-      </div>
-       <template v-else
-        > <DictionaryEntries
-          v-if="searchMode === 'dictionary' || searchMode === 'semantic'"
-          :definitions="definitions"
-          :is-loading="isLoading"
-          :error="error"
-          :languages="languages"
-          :show-scores="auth.state.isLoggedIn"
-          :show-vote-buttons="auth.state.isLoggedIn"
-          :collections="collections"
-          :decomposition="decomposition || []"
-          @collection-updated="collections = $event"
-        /> <MuplisList
-          v-else-if="searchMode === 'muplis'"
-          :entries="muplisEntries"
-          :search-term="searchQuery"
-        />
-        <div v-else-if="searchMode === 'comments'" class="space-y-4">
+            <div v-if="waveItems.length > 0">
 
-          <div v-if="waveItems.length > 0">
-
-            <div
-              v-for="(item, idx) in waveItems"
-              :key="item.source === 'comment' ? item.comment.comment_id : 'mail-' + item.message.id"
-              class="cursor-pointer"
-              @click="
-                item.source === 'comment'
-                  ? router.push(
-                      `/comments?thread_id=${item.comment.thread_id}&comment_id=${item.comment.parent_id}&scroll_to=${item.comment.comment_id}&valsi_id=${item.comment.valsi_id}&definition_id=${item.comment.definition_id || 0}`
-                    )
-                  : handleViewThreadSummary(
-                      item.message.cleaned_subject || item.message.subject || ''
-                    )
-              "
-            >
               <div
-                v-if="item.source === 'comment' && item.import_source === 'jbotcan'"
-                class="mb-1"
+                v-for="(item, idx) in waveItems"
+                :key="item.source === 'comment' ? item.comment.comment_id : 'mail-' + item.message.id"
+                class="cursor-pointer"
+                @click="
+                  item.source === 'comment'
+                    ? router.push(
+                        `/comments?thread_id=${item.comment.thread_id}&comment_id=${item.comment.parent_id}&scroll_to=${item.comment.comment_id}&valsi_id=${item.comment.valsi_id}&definition_id=${item.comment.definition_id || 0}`
+                      )
+                    : handleViewThreadSummary(
+                        item.message.cleaned_subject || item.message.subject || ''
+                      )
+                "
               >
-                <SourceTypeBadge type="jbotcan" label="jbotcan" />
-              </div>
-               <CommentItem
-                v-if="item.source === 'comment'"
-                :comment="item.comment"
-                :reply-enabled="true"
-                :show-context="true"
-                @reply="handleReply"
-              />
-              <div
-                v-else
-                class="comment-item bg-white border rounded-lg p-3 my-2 hover:border-blue-300 transition-colors min-w-48"
-              >
-
                 <div
-                  class="mb-2 text-sm text-gray-600 whitespace-nowrap overflow-hidden flex items-center"
+                  v-if="item.source === 'comment' && item.import_source === 'jbotcan'"
+                  class="mb-1"
                 >
-                   <SourceTypeBadge type="mail" /> <span
-                    class="text-blue-700 font-medium ml-1.5 truncate inline-block max-w-[calc(100%-120px)]"
-                    > {{ item.message.subject || item.message.cleaned_subject || '-' }} </span
+                  <SourceTypeBadge type="jbotcan" label="jbotcan" />
+                </div>
+                <CommentItem
+                  v-if="item.source === 'comment'"
+                  :comment="item.comment"
+                  :reply-enabled="true"
+                  :show-context="true"
+                  @reply="handleReply"
+                />
+                <div
+                  v-else
+                  class="comment-item bg-white border rounded-lg p-3 my-2 hover:border-blue-300 transition-colors min-w-48"
+                >
+
+                  <div
+                    class="mb-2 text-sm text-gray-600 whitespace-nowrap overflow-hidden flex items-center"
                   >
-                </div>
+                    <SourceTypeBadge type="mail" /> <span
+                      class="text-blue-700 font-medium ml-1.5 truncate inline-block max-w-[calc(100%-120px)]"
+                    > {{ item.message.subject || item.message.cleaned_subject || '-' }} </span
+                    >
+                  </div>
 
-                <div class="text-xs text-gray-500 mb-2">
-                   {{ item.message.from_address }} · {{ item.message.date || '' }}
-                </div>
+                  <div class="text-xs text-gray-500 mb-2">
+                    {{ item.message.from_address }} · {{ item.message.date || '' }}
+                  </div>
 
-                <div
-                  v-if="item.message.parts_json && textParts(item.message.parts_json).length"
-                  class="text-sm text-gray-700 border-t border-gray-100 pt-2 mt-2 prose prose-sm max-w-none [&_img]:max-h-48 [&_img]:object-contain"
-                >
-                   <LazyMathJax
-                    v-for="(part, pidx) in textParts(item.message.parts_json)"
-                    :key="pidx"
-                    :content="part.content || ''"
-                    :enable-markdown="part.mime_type === 'text/plain'"
-                  />
+                  <div
+                    v-if="item.message.parts_json && textParts(item.message.parts_json).length"
+                    class="text-sm text-gray-700 border-t border-gray-100 pt-2 mt-2 prose prose-sm max-w-none [&_img]:max-h-48 [&_img]:object-contain"
+                  >
+                    <LazyMathJax
+                      v-for="(part, pidx) in textParts(item.message.parts_json)"
+                      :key="pidx"
+                      :content="part.content || ''"
+                      :enable-markdown="part.mime_type === 'text/plain'"
+                    />
+                  </div>
+
                 </div>
 
               </div>
 
             </div>
 
+            <div
+              v-else-if="!isLoading"
+              class="text-center py-12 bg-blue-50 rounded-lg border border-blue-100"
+            >
+              <MessageSquare class="mx-auto h-12 w-12 text-blue-400" />
+              <p class="mt-4 text-gray-600"> {{ $t('home.noCommentsFound') }} </p>
+
+            </div>
+
           </div>
-
-          <div v-else class="text-center py-12 bg-blue-50 rounded-lg border border-blue-100">
-             <MessageSquare class="mx-auto h-12 w-12 text-blue-400" />
-            <p class="mt-4 text-gray-600"> {{ $t('home.noCommentsFound') }} </p>
-
-          </div>
-
         </div>
-         </template
-      >
+      </div>
     </div>
 
   </div>
    <!-- PaginationComponent -->
-  <div
-    v-if="!(!searchQuery && !filters.selmaho && !filters.username && !filters.word_type)"
-    class="mt-6"
-  >
+  <div v-if="!showTrendingHome" class="mt-6">
      <PaginationComponent
       :current-page="currentPage"
       :total-pages="totalPages"
@@ -298,6 +390,7 @@ import {
   getTrendingComments,
   getRecentChanges,
   searchWaves,
+  list_wave_threads,
   getCollections,
   getBulkVotes,
 } from '@/api'
@@ -306,7 +399,7 @@ import CommentItem from '@/components/CommentItem.vue'
 import SourceTypeBadge from '@/components/SourceTypeBadge.vue'
 import DictionaryEntries from '@/components/DictionaryEntries.vue'
 import LazyMathJax from '@/components/LazyMathJax.vue'
-import { IconButton } from '@packages/ui'
+import { Dropdown, IconButton } from '@packages/ui'
 import MuplisList from '@/components/MuplisList.vue'
 import PaginationComponent from '@/components/PaginationComponent.vue'
 import RecentChangeItem from '@/components/RecentChangeItem.vue'
@@ -338,6 +431,82 @@ function textParts(partsJson: unknown) {
       mime_type: p.mime_type || p.mimeType || 'text/plain',
       content: typeof p.content === 'string' ? p.content : p.content || '',
     }))
+}
+
+/** Map `/waves/threads` items to the same shape as `/waves/search` for the list UI. */
+function normalizeWaveThreadItems(items: unknown[]) {
+  return items.map((raw) => {
+    const item = raw as Record<string, unknown>
+    const src = item.source as string
+    if (src === 'mail') {
+      const preview = item.content_preview as string | undefined
+      return {
+        source: 'mail',
+        message: {
+          id: (item.cleaned_subject as string) || 'mail-thread',
+          subject: item.subject as string | undefined,
+          cleaned_subject: item.cleaned_subject as string,
+          from_address: item.from_address as string | undefined,
+          date:
+            typeof item.last_activity_time === 'number'
+              ? new Date(item.last_activity_time * 1000).toUTCString()
+              : '',
+          parts_json: preview
+            ? [{ mime_type: 'text/plain', content: preview }]
+            : null,
+        },
+      }
+    }
+    const firstRaw = item.first_comment_content
+    let content: Array<{ type: string; data?: string }> = []
+    if (Array.isArray(firstRaw)) {
+      content = firstRaw.map((p: { type?: string; data?: string }) => ({
+        type: p.type || 'text',
+        data: p.data ?? '',
+      }))
+    } else if (firstRaw && typeof firstRaw === 'object') {
+      try {
+        const arr = JSON.parse(JSON.stringify(firstRaw))
+        if (Array.isArray(arr)) {
+          content = arr.map((p: { type?: string; data?: string }) => ({
+            type: p.type || 'text',
+            data: p.data ?? '',
+          }))
+        }
+      } catch {
+        /* ignore */
+      }
+    }
+    const simple = item.simple_content as string | undefined
+    if (content.length === 0 && simple) {
+      content = [{ type: 'text', data: simple }]
+    }
+    const uname =
+      (item.last_comment_username as string | undefined) ||
+      (item.username as string | undefined) ||
+      ''
+    return {
+      source: 'comment',
+      import_source: item.import_source as string | undefined,
+      comment: {
+        comment_id: item.comment_id as number,
+        thread_id: item.thread_id as number,
+        parent_id: (item.last_comment_parent_id as number | null | undefined) ?? null,
+        username: uname,
+        subject: (item.first_comment_subject as string | undefined) || '',
+        time: item.last_activity_time as number,
+        content,
+        total_replies: item.total_replies as number,
+        total_reactions: (item.last_comment_reactions as number | undefined) ?? 0,
+        comment_num: (item.comment_num as number | undefined) ?? 0,
+        valsi_id: item.valsi_id as number | null | undefined,
+        definition_id: item.definition_id as number | null | undefined,
+        valsi_word: item.valsi_word as string | null | undefined,
+        definition: item.definition as string | null | undefined,
+        reactions: [],
+      },
+    }
+  })
 }
 
 defineEmits(['search', 'view-message', 'view-thread'])
@@ -436,6 +605,12 @@ const getInitialSearchMode = () => {
 }
 
 const searchMode = ref(getInitialSearchMode())
+
+/** Filter discussion waves: all site + mail, jbotcan imports, site comments only, or mail only. */
+const WAVE_SOURCES = ['all', 'jbotcan', 'comments', 'mail'] as const
+type WaveSource = (typeof WAVE_SOURCES)[number]
+
+const waveSource = ref<WaveSource>('all')
 const trendingComments = ref([])
 const isLoading = ref(true) // Loading state for search results
 const isInitialLoading = ref(true) // Loading state for initial component setup (languages etc.)
@@ -473,6 +648,25 @@ const pageDescription = computed(() => {
 })
 
 useSeoHead({ title: pageTitle, description: pageDescription })
+
+/** When true, show trending + recent changes; when false, show search / waves results. */
+const showTrendingHome = computed(() => {
+  const q = (searchQuery.value || '').trim()
+  const noFilters =
+    !filters.value.selmaho && !filters.value.username && !filters.value.word_type
+  if (searchMode.value === 'comments') return false
+  return !q && noFilters
+})
+
+const waveSourceTriggerLabel = computed(() => {
+  const m: Record<WaveSource, string> = {
+    all: t('home.waveSourceAll'),
+    jbotcan: t('home.waveSourceJbotcan'),
+    comments: t('home.waveSourceComments'),
+    mail: t('home.waveSourceMail'),
+  }
+  return m[waveSource.value]
+})
 
 // Filter state
 const languages = ref([])
@@ -720,6 +914,12 @@ const formatDate = (date: Date) =>
 // Generic data fetching for other modes
 const sortBy = ref(searchMode.value === 'messages' ? 'rank' : 'time')
 
+const sortByTriggerLabel = computed(() => {
+  if (sortBy.value === 'reactions') return t('sort.reactions')
+  if (sortBy.value === 'replies') return t('sort.replies')
+  return t('sort.time')
+})
+
 const toggleSortOrder = () => {
   sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc'
   if (searchMode.value === 'comments') {
@@ -738,6 +938,26 @@ const handleSortChange = () => {
   }
 }
 
+const setSortByField = (value: 'time' | 'reactions' | 'replies') => {
+  sortBy.value = value
+  handleSortChange()
+}
+
+const setWaveSource = (value: WaveSource) => {
+  waveSource.value = value
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('waveSource', value)
+  }
+  currentPage.value = 1
+  router.push({
+    query: {
+      ...route.query,
+      wave_source: value === 'all' ? undefined : value,
+      page: undefined,
+    },
+  })
+}
+
 const fetchWaves = async (page, search = '') => {
   isLoading.value = true
   error.value = null
@@ -745,25 +965,38 @@ const fetchWaves = async (page, search = '') => {
   const { requestId, signal } = wavesSearchQueue.createRequest()
 
   try {
-    const response = await searchWaves(
-      {
-        page,
-        per_page: 10,
-        search: search || undefined,
-        sort_by: sortBy.value,
-        sort_order: sortOrder.value,
-      },
-      signal
-    )
-
-    if (!wavesSearchQueue.shouldProcess(requestId)) {
-      return
+    const q = (search || '').trim()
+    const baseParams = {
+      page,
+      per_page: 10,
+      sort_by: sortBy.value,
+      sort_order: sortOrder.value,
+      source: waveSource.value,
     }
 
-    waveItems.value = response.data.items
-    total.value = response.data.total
-    currentPage.value = page
-    totalPages.value = Math.ceil(response.data.total / 10)
+    if (q) {
+      const response = await searchWaves({ ...baseParams, search: q }, signal)
+
+      if (!wavesSearchQueue.shouldProcess(requestId)) {
+        return
+      }
+
+      waveItems.value = response.data.items
+      total.value = response.data.total
+      currentPage.value = page
+      totalPages.value = Math.ceil(response.data.total / 10)
+    } else {
+      const response = await list_wave_threads(baseParams, signal)
+
+      if (!wavesSearchQueue.shouldProcess(requestId)) {
+        return
+      }
+
+      waveItems.value = normalizeWaveThreadItems(response.data.items)
+      total.value = response.data.total
+      currentPage.value = page
+      totalPages.value = Math.ceil(response.data.total / 10)
+    }
   } catch (e) {
     if (e.name === 'AbortError' || e.code === 'ERR_CANCELED' || e.message?.includes('canceled')) {
       return
@@ -779,6 +1012,11 @@ const fetchWaves = async (page, search = '') => {
   }
 }
 const fetchData = async () => {
+  if (searchMode.value === 'comments') {
+    await fetchWaves(currentPage.value, searchQuery.value)
+    return
+  }
+
   if (
     !searchQuery.value.trim() &&
     !filters.value.selmaho &&
@@ -808,8 +1046,6 @@ const fetchData = async () => {
   try {
     if (searchMode.value === 'dictionary' || searchMode.value === 'semantic') {
       await fetchDefinitions(currentPage.value, searchQuery.value)
-    } else if (searchMode.value === 'comments') {
-      await fetchWaves(currentPage.value, searchQuery.value)
     } else if (searchMode.value === 'muplis') {
       const { requestId, signal } = muplisSearchQueue.createRequest()
 
@@ -900,6 +1136,7 @@ const updateUrlWithFilters = () => {
       source_langid: filters.value.source_langid !== 1 ? filters.value.source_langid : undefined,
       group_by_thread: groupByThread.value ? 'true' : undefined,
       searchInPhrases: filters.value.searchInPhrases === false ? 'false' : undefined,
+      wave_source: waveSource.value !== 'all' ? waveSource.value : undefined,
     },
   })
 }
@@ -925,6 +1162,7 @@ const performSearch = ({ query, mode }: { query: string; mode: string }) => {
     username: filters.value.username || undefined,
     word_type: filters.value.word_type || undefined,
     searchInPhrases: filters.value.searchInPhrases === false ? 'false' : undefined,
+    wave_source: waveSource.value !== 'all' ? waveSource.value : undefined,
   }
 
   // Handle case where we might be on a localized Home-lang route
@@ -1070,6 +1308,18 @@ const syncFromRoute = () => {
   } else {
     filters.value.searchInPhrases = true
   }
+
+  if (query.wave_source !== undefined) {
+    const w = queryStr(query.wave_source)
+    if (WAVE_SOURCES.includes(w as WaveSource)) {
+      waveSource.value = w as WaveSource
+    }
+  } else {
+    const stored =
+      typeof window !== 'undefined' ? localStorage.getItem('waveSource') : null
+    waveSource.value =
+      stored && WAVE_SOURCES.includes(stored as WaveSource) ? (stored as WaveSource) : 'all'
+  }
 }
 
 const handleKeyDown = (event: KeyboardEvent) => {
@@ -1204,7 +1454,8 @@ watch(
       newQuery.username !== oldQuery?.username ||
       newQuery.word_type !== oldQuery?.word_type ||
       newQuery.source_langid !== oldQuery?.source_langid ||
-      newQuery.searchInPhrases !== oldQuery?.searchInPhrases
+      newQuery.searchInPhrases !== oldQuery?.searchInPhrases ||
+      newQuery.wave_source !== oldQuery?.wave_source
 
     const groupByThreadChanged = newQuery.group_by_thread !== oldQuery?.group_by_thread
     if (groupByThreadChanged) {

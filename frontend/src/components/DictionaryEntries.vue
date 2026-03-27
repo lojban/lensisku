@@ -1,8 +1,8 @@
 <template>
 
   <div class="dictionary-entries space-y-4">
-     <LoadingSpinner v-if="isLoading" /> <!-- Corpus entries with batched rendering -->
-    <div v-else-if="!isLoading && !error" class="grid gap-4 mb-6">
+    <!-- Keep previous entries visible while loading; HomePage shows overlay spinner -->
+    <div v-if="!error" class="grid gap-4 mb-6">
        <!-- Decomposition display --> <AlertComponent
         v-if="decomposition?.length"
         type="tip"
@@ -57,7 +57,6 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import AlertComponent from '@/components/AlertComponent.vue'
-import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import DefinitionCard from './DefinitionCard.vue'
 import type { PropType } from 'vue'
 

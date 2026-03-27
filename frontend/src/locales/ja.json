@@ -94,6 +94,10 @@
     "addDefinition": "定義",
     "newFreeThread": "フリーウェーブを始める",
     "noCommentsFound": "条件に一致するコメントはありません",
+    "waveSourceLabel": "波",
+    "waveSourceAll": "すべての種類",
+    "waveSourceJbotcan": "jbotcan",
+    "waveSourceComments": "コメント",
     "waveSourceMail": "メール"
   },
   "assistantChat": {
@@ -403,7 +407,7 @@
     "newRowBackAria": "新規項目の裏面",
     "newRowFrontPlaceholder": "表面…",
     "newRowBackPlaceholder": "裏面…",
-    "importButton": "CSV / TSV をインポート",
+    "importButton": "シートをインポート",
     "exportMenuLabel": "エクスポート",
     "exportCsv": "CSV をエクスポート",
     "exportTsv": "TSV をエクスポート",

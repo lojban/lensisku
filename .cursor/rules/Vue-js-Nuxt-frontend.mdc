@@ -1,5 +1,17 @@
 ---
+description: Conventions for the Vue/Nuxt frontend (pnpm, Tailwind, reusable styling).
 alwaysApply: true
 ---
 
-The frontend/ directory uses pnpm
+## Package manager
+
+- Use **pnpm** for anything under `frontend/` (install, scripts, workspace commands). Do not assume npm or yarn unless the repo explicitly documents an exception.
+
+## Brand book and Tailwind (`frontend/tailwind.config.js`)
+
+- Treat **`frontend/tailwind.config.js` as the brand book**: colors, typography, spacing, radii, shadows, breakpoints, CSS variables, and shared component classes (via `theme`, plugins, `addBase` / `addComponents`, etc.) belong here—not re-declared as raw values in individual components.
+- **Use the classes and utilities this file already defines** (e.g. shared patterns like `.btn-base` / `.aqua-base`, extended theme keys, plugin utilities). Reach for those **before** composing long one-off Tailwind strings or hard-coded colors in a `.vue` file so the UI stays consistent and nobody re-invents the same look each time.
+- **When something is missing**, extend the config (or shared layers/components that align with it) instead of hard-coding one-off hexes, font sizes, or spacing in a single `.vue` file. That keeps the brand book the single source of truth.
+- **Prefer standard, built-in approaches** from Vue, Nuxt, and the existing stack before adding new libraries or custom patterns.
+- **Avoid “spaghetti” classes**: do not pile many arbitrary utility overrides on one widget when the same look should be a named pattern from the config, a small wrapper component, or a Tailwind layer reused elsewhere.
+- **Minimize ad-hoc class overrides** in individual components when the same override repeats; extract to `tailwind.config.js`, a small wrapper component, or a shared class pattern so behavior stays consistent and maintainable.

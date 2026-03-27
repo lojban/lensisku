@@ -94,7 +94,11 @@
     "addDefinition": "Definition",
     "newFreeThread": "Start free wave",
     "noCommentsFound": "No comments found matching your search",
-    "waveSourceMail": "Mail"
+    "waveSourceLabel": "Waves",
+    "waveSourceAll": "All types",
+    "waveSourceJbotcan": "jbotcan",
+    "waveSourceComments": "Comments",
+    "waveSourceMail": "Mail messages"
   },
   "assistantChat": {
     "title": "Lojban Assistant",
@@ -408,7 +412,7 @@
     "newRowBackAria": "New item back content",
     "newRowFrontPlaceholder": "Front…",
     "newRowBackPlaceholder": "Back…",
-    "importButton": "Import CSV/TSV",
+    "importButton": "Import sheet",
     "exportMenuLabel": "Export",
     "exportCsv": "Export CSV",
     "exportTsv": "Export TSV",

@@ -92,6 +92,10 @@
     "addDefinition": "Определение",
     "newFreeThread": "Начать новую волну",
     "noCommentsFound": "Комментарии, соответствующие вашему поиску, не найдены",
+    "waveSourceLabel": "Волны",
+    "waveSourceAll": "Все типы",
+    "waveSourceJbotcan": "jbotcan",
+    "waveSourceComments": "Комментарии",
     "waveSourceMail": "Почта"
   },
   "assistantChat": {
@@ -378,7 +382,7 @@
     "newRowBackAria": "Оборот нового элемента",
     "newRowFrontPlaceholder": "Лицо…",
     "newRowBackPlaceholder": "Оборот…",
-    "importButton": "Импорт CSV/TSV",
+    "importButton": "Импорт листа",
     "exportMenuLabel": "Экспорт",
     "exportCsv": "Экспорт CSV",
     "exportTsv": "Экспорт TSV",

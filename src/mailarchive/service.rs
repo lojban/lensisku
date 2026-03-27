@@ -296,6 +296,7 @@ pub async fn list_mail_threads(
     page: i64,
     per_page: i64,
     sort_order: &str,
+    sort_by: &str,
 ) -> Result<(Vec<MailThreadSummary>, i64), Box<dyn std::error::Error>> {
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
@@ -304,6 +305,13 @@ pub async fn list_mail_threads(
         "ASC"
     } else {
         "DESC"
+    };
+
+    let order_expr = match sort_by {
+        "replies" | "comments" => "c.cnt",
+        // Mail threads have no reaction counts; fall back to last activity.
+        "reactions" => "l.sent_at",
+        _ => "l.sent_at",
     };
 
     let total: i64 = transaction
@@ -335,10 +343,10 @@ pub async fn list_mail_threads(
                 SELECT l.cleaned_subject, l.subject, l.from_address, l.sent_at, c.cnt as message_count, l.content_preview
                 FROM latest l
                 JOIN counts c ON c.cleaned_subject = l.cleaned_subject
-                ORDER BY l.sent_at {} NULLS LAST
+                ORDER BY {} {} NULLS LAST
                 LIMIT $1 OFFSET $2
                 "#,
-                order_dir
+                order_expr, order_dir
             ),
             &[&per_page, &offset],
         )
