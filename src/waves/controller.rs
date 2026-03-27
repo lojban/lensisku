@@ -16,14 +16,15 @@ use super::service;
         ("page" = Option<i64>, Query, description = "Page number"),
         ("per_page" = Option<i64>, Query, description = "Items per page"),
         ("sort_by" = Option<String>, Query, description = "Sort field"),
-        ("sort_order" = Option<String>, Query, description = "Sort order: asc, desc")
+        ("sort_order" = Option<String>, Query, description = "Sort order: asc, desc"),
+        ("source" = Option<String>, Query, description = "Filter: all, jbotcan, comments, mail")
     ),
     responses(
         (status = 200, description = "Combined search results (comments + mail)", body = crate::waves::dto::WavesSearchResponse),
         (status = 500, description = "Internal server error")
     ),
     summary = "Search waves (comments and mail)",
-    description = "Unified search across discussion comments and mail archive. Returns a merged, sorted list of comment and mail hits."
+    description = "Unified search across discussion comments and mail archive (comment search is implemented in comments::service::search_comments; this route merges with mail). Use query `source` to restrict to jbotcan, site comments, or mail only."
 )]
 #[get("/search")]
 pub async fn search_waves(
@@ -49,14 +50,15 @@ pub async fn search_waves(
         ("page" = Option<i64>, Query, description = "Page number"),
         ("per_page" = Option<i64>, Query, description = "Items per page"),
         ("sort_by" = Option<String>, Query, description = "Sort field"),
-        ("sort_order" = Option<String>, Query, description = "Sort order: asc, desc")
+        ("sort_order" = Option<String>, Query, description = "Sort order: asc, desc"),
+        ("source" = Option<String>, Query, description = "Filter: all, jbotcan, comments, mail")
     ),
     responses(
         (status = 200, description = "Combined thread list (comments + mail)", body = crate::waves::dto::WavesThreadsResponse),
         (status = 500, description = "Internal server error")
     ),
     summary = "List waves threads",
-    description = "Unified list of recent threads from discussion comments and mail archive, sorted by last activity."
+    description = "Unified list of recent threads from discussion comments and mail archive (replaces the former GET /comments/threads). Use query `source` to filter: all, jbotcan, comments, mail."
 )]
 #[get("/threads")]
 pub async fn list_wave_threads(

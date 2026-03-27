@@ -29,6 +29,8 @@ pub struct WavesSearchQuery {
     pub sort_by: Option<String>,
     #[schema(default = "desc")]
     pub sort_order: Option<String>,
+    /// `all` | `jbotcan` | `comments` | `mail`
+    pub source: Option<String>,
 }
 
 #[derive(Debug, Serialize, ToSchema)]
@@ -59,6 +61,14 @@ pub enum WaveThreadSummary {
         simple_content: Option<String>,
         valsi_id: Option<i32>,
         definition_id: Option<i32>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        valsi_word: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        definition: Option<String>,
+        /// Reactions on the last comment in the thread (for sorting / display).
+        last_comment_reactions: i64,
+        last_comment_parent_id: Option<i32>,
+        comment_num: i32,
     },
     Mail {
         cleaned_subject: String,
@@ -68,6 +78,8 @@ pub enum WaveThreadSummary {
         message_count: i64,
         #[serde(skip_serializing_if = "Option::is_none")]
         content_preview: Option<String>,
+        /// For unified sort with comment threads (mail has no reactions).
+        last_comment_reactions: i64,
     },
 }
 
@@ -81,6 +93,8 @@ pub struct WavesThreadsQuery {
     pub sort_by: Option<String>,
     #[schema(default = "desc")]
     pub sort_order: Option<String>,
+    /// `all` | `jbotcan` | `comments` | `mail`
+    pub source: Option<String>,
 }
 
 #[derive(Debug, Serialize, ToSchema)]

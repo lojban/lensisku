@@ -337,9 +337,18 @@ export default {
             '@apply btn-base text-gray-700 bg-gray-50 enabled:hover:bg-gray-200 border-gray-500':
               {},
           },
+          // Neutral “dismiss / clear” (brandbook §1.B): flat, subdued; inset surface like `input-field`.
           '.btn-empty': {
-            '@apply btn-base text-gray-600 bg-gray-50 enabled:hover:bg-gray-300 border-gray-300 enabled:hover:border-gray-400':
-              {},
+            '@apply btn-base text-gray-600 bg-white border-gray-300 shadow-inner shadow-slate-200': {},
+            '&:not(:disabled):hover': {
+              '@apply bg-slate-50 border-gray-400 text-gray-700': {},
+            },
+            '&:not(:disabled):active': {
+              '@apply bg-slate-100 border-gray-400': {},
+            },
+            '&:focus-visible:not(:disabled)': {
+              '@apply ring-2 ring-blue-400/45 ring-offset-1 ring-offset-white': {},
+            },
           },
           '.btn-error': {
             '@apply btn-base text-red-700 bg-red-50 enabled:hover:bg-red-200 border-red-600': {},

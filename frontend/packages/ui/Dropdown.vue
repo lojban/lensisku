@@ -3,7 +3,7 @@
   <div ref="rootRef" :class="rootClass">
 
     <div aria-haspopup="true" :aria-expanded="open" @click="open = !open">
-       <slot name="trigger"
+       <slot name="trigger" :open="open"
         > <button
           type="button"
           class="w-full sm:w-auto h-9 px-3 hover:bg-gray-100 rounded-full inline-flex items-center justify-between sm:justify-center gap-2 shrink-0"

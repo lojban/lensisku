@@ -65,15 +65,14 @@
              <Menu v-if="!isMenuOpen" class="h-6 w-6" /> <X v-else class="h-6 w-6" /> </button
           > <!-- Logo - Always visible --> <NavLink
             to="/"
-            class="navbar-item flex items-center"
+            class="navbar-item flex items-center italic"
             :class="{
-              '!text-gray-400 cursor-default pointer-events-none': isHomePage,
+              'cursor-default pointer-events-none': isHomePage,
             }"
             @click="triggerPyro"
             >
             <div
               class="flex h-8 w-8 shrink-0 items-center justify-center -skew-x-12"
-              :class="{ 'opacity-50': isHomePage }"
             >
               <div
                 v-html="logoSvgRaw"
@@ -310,8 +309,7 @@
             :is="Component"
             v-bind="metaProps(route.meta.props)"
             v-on="
-              route.name === 'Home' ||
-              (typeof route.name === 'string' && route.name.startsWith('Home-'))
+              isHomePage
                 ? {
                     search: performSearch,
                     'view-message': viewMessage,
@@ -702,11 +700,8 @@ const handleGlobalKeyDown = async (event) => {
   const localeMatch = currentPath.match(localeCaptureGroupRegex)
   const currentLocale = localeMatch ? localeMatch[1] : $locale.value || 'en'
 
-  // Check if we're already on the homepage
-  const isHomePage = route.name === 'Home' || (typeof route.name === 'string' && route.name.startsWith('Home-'))
-
   // Navigate to homepage if not already there
-  if (!isHomePage) {
+  if (!isHomePage.value) {
     await router.push(`/${currentLocale}`)
   }
 

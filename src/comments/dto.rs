@@ -135,18 +135,6 @@ pub struct PaginatedUserCommentsResponse {
 }
 
 #[derive(Debug, Deserialize, ToSchema)]
-pub struct FreeThreadQuery {
-    #[schema(default = 1)]
-    pub page: Option<i64>,
-    #[schema(default = 20)]
-    pub per_page: Option<i64>,
-    #[schema(default = "time", example = "subject")]
-    pub sort_by: Option<String>,
-    #[schema(default = "desc", example = "asc")]
-    pub sort_order: Option<String>,
-}
-
-#[derive(Debug, Deserialize, ToSchema)]
 pub struct ThreadQuery {
     pub valsi_id: Option<i32>,
     pub natlang_word_id: Option<i32>,
@@ -190,6 +178,8 @@ pub struct SearchCommentsParams {
     pub definition_id: Option<i32>,
     pub definition_link_id: Option<i32>,
     pub target_user_id: Option<i32>,
+    /// `jbotcan` | `comments` (site, non-jbotcan) — filters `comments.import_source`.
+    pub wave_source: Option<String>,
 }
 
 #[derive(Debug, Deserialize, ToSchema)]

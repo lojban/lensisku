@@ -1502,7 +1502,10 @@ pub async fn toggle_reaction(
     }
 }
 
-pub async fn search_comments(
+/// Full-text search over the **comments** table only. Unified discussion + mail search is
+/// [`crate::waves::service::search_waves`] (`GET /waves/search`); this function is a building block
+/// for that endpoint and is not exposed as its own HTTP route.
+pub(crate) async fn search_comments(
     pool: &Pool,
     search_params: SearchCommentsParams,
     current_user_id: Option<i32>,
@@ -1586,6 +1589,15 @@ pub async fn search_comments(
         conditions.push(format!("t.definition_link_id = ${}", param_count));
         query_params.push(&definition_link_id_value);
         param_count += 1;
+    }
+
+    if let Some(wave_source) = &search_params.wave_source {
+        match wave_source.as_str() {
+            "jbotcan" => conditions.push("c.import_source = 'jbotcan'".to_string()),
+            "comments" => conditions
+                .push("(c.import_source IS NULL OR c.import_source <> 'jbotcan')".to_string()),
+            _ => {}
+        }
     }
 
     // Construct the WHERE clause
@@ -1888,24 +1900,40 @@ async fn get_or_create_thread_id(
     }
 }
 
-pub async fn list_threads(
+/// Paginated **comment** threads (site + imports). Merged with mail threads in
+/// [`crate::waves::service::list_wave_threads`] (`GET /waves/threads`). Not exposed as
+/// `GET /comments/threads` anymore.
+pub(crate) async fn list_threads(
     pool: &Pool,
     page: i64,
     per_page: i64,
     sort_by: &str,
     sort_order: &str,
+    wave_source: Option<&str>,
 ) -> Result<PaginatedCommentsResponse, Box<dyn std::error::Error>> {
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
     let offset = (page - 1) * per_page;
 
+    let source_filter = match wave_source {
+        Some("jbotcan") => {
+            " AND (SELECT c.import_source FROM comments c WHERE c.threadid = t.threadid ORDER BY c.time ASC, c.commentid ASC LIMIT 1) = 'jbotcan'"
+        }
+        Some("comments") => {
+            " AND COALESCE((SELECT c.import_source FROM comments c WHERE c.threadid = t.threadid ORDER BY c.time ASC, c.commentid ASC LIMIT 1), '') <> 'jbotcan'"
+        }
+        _ => "",
+    };
+
     // Get total count
     let total: i64 = transaction
         .query_one(
-            "SELECT COUNT(t.threadid)
+            &format!(
+                "SELECT COUNT(t.threadid)
              FROM threads t
-             where t.total_comments > 0
-             ",
+             WHERE t.total_comments > 0
+             {source_filter}"
+            ),
             &[],
         )
         .await?
@@ -1913,8 +1941,9 @@ pub async fn list_threads(
 
     // Validate sort parameters
     let sort_column = match sort_by {
-        "comments" => "t.total_comments",
+        "comments" | "replies" => "t.total_comments",
         "subject" => "t.last_comment_subject",
+        "reactions" => "COALESCE(cc.total_reactions, 0)",
         _ => "t.last_comment_time", // default to time
     };
     let sort_dir = if sort_order.eq_ignore_ascii_case("asc") {
@@ -1946,13 +1975,19 @@ pub async fn list_threads(
                     ul.username as last_comment_username,
                     coalesce(t.last_comment_subject, '') as last_comment_subject,
                     t.last_comment_content::text as last_comment_content,
-                    coalesce(t.first_comment_subject, '') as first_comment_subject
+                    coalesce(t.first_comment_subject, '') as first_comment_subject,
+                    lc.parentid as last_parent_id,
+                    lc.commentnum as last_comment_num,
+                    COALESCE(cc.total_reactions, 0)::bigint as last_comment_reactions
                 FROM threads t
                 JOIN users u ON t.creator_user_id = u.userid
                 JOIN users ul ON t.last_comment_user_id = ul.userid
                 LEFT JOIN valsi v ON t.valsiid = v.valsiid
                 LEFT JOIN definitions d ON t.definitionid = d.definitionid
-                where t.total_comments > 0
+                LEFT JOIN comment_activity_counters cc ON cc.comment_id = t.last_comment_id
+                LEFT JOIN comments lc ON lc.commentid = t.last_comment_id
+                WHERE t.total_comments > 0
+                {source_filter}
                 ORDER BY {} {}
                 LIMIT $1 OFFSET $2",
                 sort_column, sort_dir
@@ -1988,11 +2023,11 @@ pub async fn list_threads(
             username: row.get("username"),
             realname: row.get("realname"),
             is_bookmarked: None,
-            total_reactions: 0,
+            total_reactions: row.get::<_, i64>("last_comment_reactions"),
             reactions: Vec::new(),
             user_id: row.get("userid"),
-            comment_num: 0,
-            parent_id: None,
+            comment_num: row.get::<_, i32>("last_comment_num"),
+            parent_id: row.get("last_parent_id"),
         })
         .collect();
 
@@ -2013,7 +2048,7 @@ pub async fn list_threads(
                 last_comment_username: ft.last_comment_username,
                 username: Some(ft.username),
                 realname: ft.realname,
-                total_reactions: 0, // Will get from joined data
+                total_reactions: ft.total_reactions,
                 total_replies: ft.total_comments,
                 is_bookmarked: ft.is_bookmarked,
                 valsi_id: ft.valsiid,

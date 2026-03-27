@@ -12,7 +12,6 @@ pub mod service;
 pub fn configure(cfg: &mut web::ServiceConfig) {
     cfg.service(
         web::scope("/comments")
-            .service(controller::list_threads)
             .service(controller::get_thread)
             .service(controller::get_user_comments)
             .service(controller::get_opinions)

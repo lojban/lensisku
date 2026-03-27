@@ -17,7 +17,7 @@ use crate::{
     auth::Claims,
     comments::{
         dto::{
-            BookmarkActionRequest, FreeThreadQuery, NewCommentParams, PaginationQuery,
+            BookmarkActionRequest, NewCommentParams, PaginationQuery,
             ReactionRequest, ThreadParams, TrendingQuery,
         },
         models::TrendingTimespan,
@@ -755,44 +755,5 @@ pub async fn toggle_reaction(
                 }))
             }
         }
-    }
-}
-
-#[utoipa::path(
-    get,
-    path = "/comments/threads",
-    tag = "comments",
-    params(
-        ("page" = Option<i64>, Query, description = "Page number starting from 1"),
-        ("per_page" = Option<i64>, Query, description = "Items per page"),
-        ("sort_by" = Option<String>, Query, description = "Sort field: time, subject", example = "time"),
-        ("sort_order" = Option<String>, Query, description = "Sort order: asc, desc", example = "desc")
-    ),
-    responses(
-        (status = 200, description = "Paginated threads with last comment", body = PaginatedCommentsResponse),
-        (status = 500, description = "Internal server error")
-    ),
-    security(
-        ("bearer_auth" = [])
-    ),
-    summary = "List threads",
-    description = "Lists threads sorted by last comment activity"
-)]
-#[get("/threads")]
-pub async fn list_threads(
-    pool: web::Data<Pool>,
-    query: web::Query<FreeThreadQuery>,
-) -> impl Responder {
-    let page = query.page.unwrap_or(1);
-    let per_page = query.per_page.unwrap_or(20);
-    let sort_by = query.sort_by.as_deref().unwrap_or("time").to_string();
-    let sort_order = query.sort_order.as_deref().unwrap_or("desc").to_string();
-
-    match service::list_threads(&pool, page, per_page, &sort_by, &sort_order).await {
-        Ok(response) => HttpResponse::Ok().json(response),
-        Err(e) => HttpResponse::InternalServerError().json(json!({
-            "error": "Failed to get free threads",
-            "details": e.to_string()
-        })),
     }
 }
