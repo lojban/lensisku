@@ -137,10 +137,13 @@
             > </label
           > <button
             v-if="auth.state.isLoggedIn"
+            type="button"
+            class="inline-flex items-center gap-2 btn-aqua-white"
+            :aria-label="t('commentList.newWave')"
             @click="handleNewTopLevelComment"
-            class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-lg transition-all transform hover:scale-105 active:scale-95 shadow-sm"
           >
-             <Plus class="h-4 w-4 mr-1" /> {{ t('commentList.newWave') }} </button
+             <AudioWaveform class="h-4 w-4 shrink-0 text-purple-600" />
+            <span>{{ t('commentList.newWave') }}</span> </button
           >
         </div>
 
@@ -227,10 +230,13 @@
           </p>
            <button
             v-if="auth.state.isLoggedIn"
+            type="button"
+            class="inline-flex items-center gap-2 btn-aqua-white h-12 text-base !px-5 mx-auto"
+            :aria-label="t('commentList.newDiscussionWave')"
             @click="handleNewTopLevelComment"
-            class="inline-flex items-center px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition-all shadow-md active:shadow-sm transform active:translate-y-0.5"
           >
-             <Plus class="h-5 w-5 mr-2" /> {{ t('commentList.newDiscussionWave') }} </button
+             <AudioWaveform class="h-6 w-6 shrink-0 text-purple-600" />
+            <span>{{ t('commentList.newDiscussionWave') }}</span> </button
           >
         </div>
 
@@ -245,9 +251,9 @@
 <script setup lang="ts">
 import {
   ArrowUpRight,
+  AudioWaveform,
   MessageCircle,
   MessageSquare,
-  Plus,
   Loader2,
   Link as LinkIcon,
 } from 'lucide-vue-next'

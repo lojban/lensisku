@@ -48,10 +48,13 @@
         > </label
       > <button
         v-if="auth.state.isLoggedIn && comments.length > 0"
-        class="btn-aqua-emerald"
+        type="button"
+        class="inline-flex items-center gap-2 btn-aqua-white"
+        :aria-label="t('commentList.newWave')"
         @click="handleNewTopLevelComment"
       >
-         <AudioWaveform class="h-4 w-4" /> <span> {{ t('commentList.newWave') }} </span> </button
+         <AudioWaveform class="h-4 w-4 shrink-0 text-purple-600" />
+        <span>{{ t('commentList.newWave') }}</span> </button
       > <button
         v-if="commentId > 0 && !!currentComment?.parent_id"
         class="inline-flex items-center btn-aqua-purple"
@@ -60,7 +63,9 @@
          <ArrowLeft class="h-5 w-5" /> {{ t('commentList.parent') }} </button
       > <button
         v-if="commentId > 0"
-        class="inline-flex items-center btn-aqua-rose"
+        type="button"
+        class="inline-flex items-center btn-aqua-slate"
+        :aria-label="t('commentList.waveRoot')"
         @click="goToRoot"
       >
          <Home class="h-5 w-5" /> {{ t('commentList.waveRoot') }} </button
@@ -169,10 +174,13 @@
       <p class="my-4 text-gray-600"> {{ t('commentList.noComments') }} </p>
        <button
         v-if="auth.state.isLoggedIn"
-        class="btn-aqua-emerald h-8 text-base mx-auto"
+        type="button"
+        class="inline-flex items-center gap-2 btn-aqua-white h-12 text-base !px-5 mx-auto"
+        :aria-label="t('commentList.newDiscussionWave')"
         @click="handleNewTopLevelComment"
       >
-         <AudioWaveform class="h-4 w-4" /> <span> {{ t('commentList.newDiscussionWave') }} </span> </button
+         <AudioWaveform class="h-6 w-6 shrink-0 text-purple-600" />
+        <span>{{ t('commentList.newDiscussionWave') }}</span> </button
       >
     </div>
      <!-- Floating quote button -->
