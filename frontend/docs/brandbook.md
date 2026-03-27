@@ -58,6 +58,33 @@ _(QA Note: Flat buttons should never be the absolute primary action on an empty 
 
 - `card-base`, `card-elevated`, `card-compact`: Standard container rules.
 
+#### E. Wave discussion actions (comments / “waves”)
+
+These patterns keep “start a new wave” and “go to wave root” visually consistent across entry discussions, definition-link discussions, the comments home view, and the floating action button.
+
+**New wave (root)** — start a new top-level wave in the current discussion context (not a reply).
+
+| Element | Specification |
+| :------ | :-------------- |
+| **Button classes** | `inline-flex items-center gap-2 btn-aqua-white` |
+| **Icon** | Lucide `AudioWaveform`, typically `h-4 w-4 shrink-0 text-purple-600` |
+| **Markup** | `type="button"`; optional `:aria-label` matching the visible label; icon, then `<span>` with the translated string |
+| **Sizing** | Default follows the toolbar (compact). For empty states, FAB, or other emphasis, add utilities such as `h-12 text-base !px-5` and scale the icon (e.g. `h-6 w-6`) — same token set, stronger presence. |
+
+Reference implementation: `CommentList.vue` (toolbar “New wave” when the list already has comments). Empty-state and FAB variants use the same classes with larger height/icon as above.
+
+**Wave root** — when viewing a deep-linked reply (`comment_id` &gt; 0), jump back to the root of that wave (`comment_id` cleared / zero).
+
+| Element | Specification |
+| :------ | :-------------- |
+| **Button classes** | `inline-flex items-center btn-aqua-slate` |
+| **Icon** | Lucide `Home`, `h-5 w-5` |
+| **Markup** | `type="button"`; `:aria-label` with `commentList.waveRoot`; icon and label text use `t('commentList.waveRoot')` |
+
+Reference implementation: `CommentList.vue` (“Wave root”). Any future wave-root control should reuse this pattern (not flat blue or ad-hoc `bg-blue-600` buttons).
+
+_(QA: “New wave” must look like the glossy white aqua + purple waveform icon; “Wave root” must be slate aqua + home icon. No `Plus` icon for these two actions.)_
+
 ---
 
 ## 2. Proposed System Improvements (Tailwind & CSS)
