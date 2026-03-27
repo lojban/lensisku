@@ -498,14 +498,14 @@ pub async fn list_custom_text_bulk_items(
     ),
     request_body = CustomTextBulkUpdateRequest,
     responses(
-        (status = 200, description = "Updated count", body = CustomTextBulkUpdateResponse),
+        (status = 200, description = "Updated and inserted counts", body = CustomTextBulkUpdateResponse),
         (status = 400, description = "Validation failed"),
         (status = 403, description = "Access denied"),
         (status = 500, description = "Internal server error")
     ),
     security(("bearer_auth" = [])),
     summary = "Bulk update custom front/back text",
-    description = "Owner only. Updates free_content_front and free_content_back for items that are custom-text-only (no definition_id). At most 500 items per request."
+    description = "Owner only. Updates existing custom-text-only rows (no definition_id) and optionally appends new ones in the same request. At most 500 total rows (updates + new) per request."
 )]
 #[put("/{id}/items/custom-text-bulk")]
 pub async fn bulk_update_custom_text_items(

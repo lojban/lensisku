@@ -5,7 +5,7 @@
     <div class="mb-4 flex w-full flex-col gap-3">
 
       <!-- Title row: collection name + export menu only -->
-      <div class="flex w-full flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+      <div class="flex w-full flex-row flex-nowrap items-start justify-between gap-3 sm:gap-4">
 
         <div class="min-w-0 w-full flex-1">
 
@@ -20,7 +20,7 @@
           </h1>
 
         </div>
-        <div v-if="!isLoading && isOwner" class="flex w-full shrink-0 justify-end sm:w-auto sm:justify-start">
+        <div v-if="!isLoading && isOwner" class="flex shrink-0 justify-end">
           <Dropdown :trigger-label="t('collectionCustomTextBulk.exportMenuLabel')">
             <button type="button"
               class="w-full px-4 py-2 text-left text-sm text-cyan-600 hover:bg-cyan-50 flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
@@ -104,11 +104,21 @@
         </div>
       </ModalComponent>
 
+      <DeleteConfirmationModal
+        :show="pendingDelete !== null"
+        :title="deleteModalTitle"
+        :message="deleteModalMessage"
+        :is-deleting="deleteModalIsDeleting"
+        class="z-[65]"
+        @confirm="confirmPendingDelete"
+        @cancel="cancelPendingDelete"
+      />
+
       <div class="flex flex-col gap-4 flex-1 min-h-0">
 
         <div class="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
-          <div class="flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
-            <div class="relative w-full sm:w-auto sm:max-w-md">
+          <div class="flex w-full flex-row flex-nowrap items-center gap-2 sm:gap-3">
+            <div class="relative flex-1 min-w-0 sm:max-w-md">
               <SearchInput
                 v-model="bulkFilterQuery"
                 :placeholder="t('collectionCustomTextBulk.filterPlaceholder')"
@@ -116,16 +126,16 @@
                 @clear="bulkFilterQuery = ''"
               />
             </div>
-            <p v-if="rows.length === 0 && !hasNewRowContent" class="text-sm text-gray-600">
+            <p v-if="rows.length === 0 && !hasNewRowContent" class="shrink-0 whitespace-nowrap text-sm text-gray-600">
               {{ t('collectionCustomTextBulk.empty') }}
             </p>
             <p
               v-else-if="isBulkFilterActive && filteredScreenRowCount === 0"
-              class="text-sm text-gray-600"
+              class="shrink-0 whitespace-nowrap text-sm text-gray-600"
             >
               {{ t('collectionCustomTextBulk.filterNoMatches') }}
             </p>
-            <p v-else class="text-sm text-gray-600">
+            <p v-else class="shrink-0 whitespace-nowrap text-sm text-gray-600">
               <template v-if="isBulkFilterActive">
                 {{
                   t('collectionCustomTextBulk.filterShowing', {
@@ -152,19 +162,18 @@
           class="flex min-h-0 flex-col overflow-hidden rounded-lg border border-gray-300 bg-white shadow-sm"
         >
           <div
-            class="sticky top-14 z-30 flex items-center border-b border-gray-300 bg-gray-100 px-2 py-2 text-left text-xs font-semibold text-gray-700 shadow-sm sm:top-12 md:hidden"
-          >
-            <div class="flex min-w-0 flex-1 gap-2">
-              <span class="min-w-0 flex-1 truncate">{{ t('collectionCustomTextBulk.colFront') }}</span>
-              <span class="min-w-0 flex-1 truncate">{{ t('collectionCustomTextBulk.colBack') }}</span>
-            </div>
-            <span class="sr-only">{{ t('collectionCustomTextBulk.colActions') }}</span>
-          </div>
-
-          <div
             ref="bulkScrollParentRef"
             class="bulk-scroll-viewport min-h-0 max-h-[70vh] overflow-auto overflow-x-auto"
           >
+            <div
+              class="sticky top-0 z-30 grid grid-cols-[minmax(0,1fr)_auto] grid-rows-2 items-center gap-x-2 gap-y-1 border-b border-gray-300 bg-gray-100 px-2 py-2 text-left text-xs font-semibold text-gray-700 md:hidden"
+            >
+              <span class="min-w-0 truncate">{{ t('collectionCustomTextBulk.colFront') }}</span>
+              <span class="row-span-2 whitespace-nowrap justify-self-end text-right">
+                {{ t('collectionCustomTextBulk.colActions') }}
+              </span>
+              <span class="min-w-0 truncate">{{ t('collectionCustomTextBulk.colBack') }}</span>
+            </div>
             <div
               class="sticky top-0 z-20 hidden min-w-full grid-cols-[minmax(12rem,1fr)_minmax(12rem,1fr)_6rem] border-b border-gray-300 bg-gray-100 px-2 py-2 text-left text-sm font-semibold text-gray-700 md:grid md:px-0"
             >
@@ -194,8 +203,8 @@
                   :deleting-item-id="deletingItemId"
                   :can-delete-draft="canDeleteDraft"
                   @input="onBulkTextInput"
-                  @delete-saved="deleteSavedRow"
-                  @delete-draft="deleteDraftRow"
+                  @delete-saved="requestDeleteSaved"
+                  @delete-draft="requestDeleteDraft"
                 />
               </div>
             </div>
@@ -215,7 +224,6 @@ import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import {
-  addCollectionItem,
   bulkUpdateCustomTextItems,
   getCollection,
   listCustomTextBulkItems,
@@ -226,6 +234,7 @@ import FileDropzone from '@/components/FileDropzone.vue'
 import CollectionCustomTextBulkRow, {
   type BulkVirtualRow,
 } from '@/components/CollectionCustomTextBulkRow.vue'
+import DeleteConfirmationModal from '@/components/DeleteConfirmation.vue'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import ModalComponent from '@/components/ModalComponent.vue'
 import SearchInput from '@/components/SearchInput.vue'
@@ -285,6 +294,11 @@ const snapshotJson = ref('')
 const isSaving = ref(false)
 const isImporting = ref(false)
 const deletingItemId = ref<number | null>(null)
+/** Pending delete shown in DeleteConfirmationModal (saved row or draft row). */
+type PendingDelete =
+  | { kind: 'saved'; idx: number }
+  | { kind: 'draft'; dIdx: number; isEmpty: boolean }
+const pendingDelete = ref<PendingDelete | null>(null)
 const showImportModal = ref(false)
 /** Shown while streaming file read + row merge (avoids loading the whole file as one string). */
 const importProgress = ref<{
@@ -306,11 +320,40 @@ const importProgressParams = computed(() => {
 })
 
 const MAX_IMPORT_ROWS = 2000
+/** Must match `MAX_CUSTOM_TEXT_BULK_ITEMS` in `src/collections/service.rs` (bulk PUT body limit). */
+const MAX_CUSTOM_TEXT_BULK_ITEMS = 500
+
+function chunkForBulkSave<T>(arr: T[], chunkSize: number): T[][] {
+  const out: T[][] = []
+  for (let i = 0; i < arr.length; i += chunkSize) {
+    out.push(arr.slice(i, i + chunkSize))
+  }
+  return out
+}
 
 const isOwner = computed(() => collection.value?.owner?.username === auth.state.username)
 
 const isRowActionDisabled = computed(
   () => isSaving.value || isImporting.value || deletingItemId.value !== null
+)
+
+const deleteModalTitle = computed(() => {
+  const p = pendingDelete.value
+  if (!p) return ''
+  if (p.kind === 'saved') return t('collectionCustomTextBulk.deleteSavedConfirmTitle')
+  return t('collectionCustomTextBulk.deleteDraftConfirmTitle')
+})
+
+const deleteModalMessage = computed(() => {
+  const p = pendingDelete.value
+  if (!p) return ''
+  if (p.kind === 'saved') return t('collectionCustomTextBulk.deleteSavedConfirm')
+  if (p.isEmpty) return t('collectionCustomTextBulk.deleteDraftEmptyConfirm')
+  return t('collectionCustomTextBulk.deleteDraftConfirm')
+})
+
+const deleteModalIsDeleting = computed(
+  () => pendingDelete.value?.kind === 'saved' && deletingItemId.value !== null
 )
 
 const hasNewRowContent = computed(() =>
@@ -439,10 +482,44 @@ function canDeleteDraft(dIdx: number) {
   return d.free_content_front.trim() !== '' || d.free_content_back.trim() !== ''
 }
 
-async function deleteSavedRow(idx: number) {
+function requestDeleteSaved(idx: number) {
   const row = rows.value[idx] as { item_id: number } | undefined
   if (!row || deletingItemId.value !== null) return
-  if (!window.confirm(t('collectionCustomTextBulk.deleteSavedConfirm'))) return
+  pendingDelete.value = { kind: 'saved', idx }
+}
+
+function requestDeleteDraft(dIdx: number) {
+  if (isRowActionDisabled.value || !canDeleteDraft(dIdx)) return
+  const draft = newRows.value[dIdx]
+  if (!draft) return
+  const hasContent =
+    draft.free_content_front.trim() !== '' || draft.free_content_back.trim() !== ''
+  pendingDelete.value = { kind: 'draft', dIdx, isEmpty: !hasContent }
+}
+
+function cancelPendingDelete() {
+  if (deletingItemId.value !== null) return
+  pendingDelete.value = null
+}
+
+async function confirmPendingDelete() {
+  const p = pendingDelete.value
+  if (!p) return
+  if (p.kind === 'draft') {
+    if (isRowActionDisabled.value || !canDeleteDraft(p.dIdx)) {
+      pendingDelete.value = null
+      return
+    }
+    newRows.value = newRows.value.filter((_, i) => i !== p.dIdx)
+    pendingDelete.value = null
+    return
+  }
+  await performDeleteSavedAtIndex(p.idx)
+}
+
+async function performDeleteSavedAtIndex(idx: number) {
+  const row = rows.value[idx] as { item_id: number } | undefined
+  if (!row || deletingItemId.value !== null) return
   deletingItemId.value = row.item_id
   clearError()
   try {
@@ -456,17 +533,8 @@ async function deleteSavedRow(idx: number) {
     showError(ax.response?.data?.error || ax.message || t('collectionCustomTextBulk.deleteError'))
   } finally {
     deletingItemId.value = null
+    pendingDelete.value = null
   }
-}
-
-function deleteDraftRow(dIdx: number) {
-  if (isRowActionDisabled.value || !canDeleteDraft(dIdx)) return
-  const draft = newRows.value[dIdx]
-  if (!draft) return
-  const hasContent =
-    draft.free_content_front.trim() !== '' || draft.free_content_back.trim() !== ''
-  if (hasContent && !window.confirm(t('collectionCustomTextBulk.deleteDraftConfirm'))) return
-  newRows.value = newRows.value.filter((_, i) => i !== dIdx)
 }
 
 const BULK_REFIT_CHUNK = 72
@@ -579,21 +647,28 @@ async function saveAll() {
   isSaving.value = true
   clearError()
   try {
-    if (rows.value.length > 0) {
-      const payload = {
-        items: rows.value.map((r) => ({
-          item_id: r.item_id,
-          free_content_front: r.free_content_front.trim(),
-          free_content_back: r.free_content_back.trim(),
-        })),
-      }
-      await bulkUpdateCustomTextItems(props.collectionId, payload)
-    }
+    const itemPayloads = rows.value.map((r) => ({
+      item_id: r.item_id,
+      free_content_front: r.free_content_front.trim(),
+      free_content_back: r.free_content_back.trim(),
+    }))
+    const newPayloads = draftsToAdd.map((d) => ({
+      free_content_front: d.free_content_front.trim(),
+      free_content_back: d.free_content_back.trim(),
+    }))
+    const itemChunks = chunkForBulkSave(itemPayloads, MAX_CUSTOM_TEXT_BULK_ITEMS)
+    const newChunks = chunkForBulkSave(newPayloads, MAX_CUSTOM_TEXT_BULK_ITEMS)
 
-    for (const d of draftsToAdd) {
-      await addCollectionItem(props.collectionId, {
-        free_content_front: d.free_content_front.trim(),
-        free_content_back: d.free_content_back.trim(),
+    for (const chunk of itemChunks) {
+      await bulkUpdateCustomTextItems(props.collectionId, {
+        items: chunk,
+        new_items: [],
+      })
+    }
+    for (const chunk of newChunks) {
+      await bulkUpdateCustomTextItems(props.collectionId, {
+        items: [],
+        new_items: chunk,
       })
     }
 

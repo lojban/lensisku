@@ -312,12 +312,23 @@ pub struct CustomTextBulkUpdateItem {
     pub free_content_back: String,
 }
 
+/// New custom-text-only rows to append (no `item_id` yet); same semantics as `POST /collections/{id}/items` without definition.
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct CustomTextBulkNewItem {
+    pub free_content_front: String,
+    pub free_content_back: String,
+}
+
 #[derive(Debug, Deserialize, ToSchema)]
 pub struct CustomTextBulkUpdateRequest {
+    #[serde(default)]
     pub items: Vec<CustomTextBulkUpdateItem>,
+    #[serde(default)]
+    pub new_items: Vec<CustomTextBulkNewItem>,
 }
 
 #[derive(Debug, Serialize, ToSchema)]
 pub struct CustomTextBulkUpdateResponse {
     pub updated: i32,
+    pub inserted: i32,
 }

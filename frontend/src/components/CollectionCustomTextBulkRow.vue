@@ -3,7 +3,7 @@
   <div
     v-if="entry.kind === 'saved'"
     ref="rowRootRef"
-    class="bulk-virtual-row flex flex-row items-start gap-2 border-b border-gray-300 px-2 py-2 hover:bg-gray-50/80 md:grid md:grid-cols-[minmax(12rem,1fr)_minmax(12rem,1fr)_6rem] md:items-stretch md:gap-0 md:px-0 md:py-0"
+    class="bulk-virtual-row flex flex-row items-start gap-2 border-b border-gray-300 px-0 py-0 hover:bg-gray-50/80 md:grid md:grid-cols-[minmax(12rem,1fr)_minmax(12rem,1fr)_6rem] md:items-stretch md:gap-0"
     :class="{ 'border-b-0': isLast }"
   >
     <div class="min-w-0 flex-1 md:contents">
@@ -50,7 +50,7 @@
   <div
     v-else
     ref="rowRootRef"
-    class="bulk-virtual-row flex flex-row items-start gap-2 border-b border-gray-300 bg-emerald-50/50 px-2 py-2 md:grid md:grid-cols-[minmax(12rem,1fr)_minmax(12rem,1fr)_6rem] md:items-stretch md:gap-0 md:bg-emerald-50/40 md:px-0 md:py-0"
+    class="bulk-virtual-row flex flex-row items-start gap-2 border-b border-gray-300 bg-emerald-50/50 px-0 py-0 md:grid md:grid-cols-[minmax(12rem,1fr)_minmax(12rem,1fr)_6rem] md:items-stretch md:gap-0 md:bg-emerald-50/40"
     :class="{
       'border-t border-gray-300': showDraftSectionTop,
       'border-b-0': isLast,
