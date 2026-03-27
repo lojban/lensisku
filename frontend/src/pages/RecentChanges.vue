@@ -45,7 +45,7 @@
 
 <script setup lang="ts">
 import { History, Waves, MessageSquare, Book } from 'lucide-vue-next'
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 
@@ -71,6 +71,14 @@ const tabs = computed(() => [
 ])
 
 const STORAGE_KEY_TAB = 'recentChanges_activeTab'
+
+/** Main app scroll is on `.main-content`, not the window (see App.vue). */
+function scrollMainContentToTop() {
+  if (typeof document === 'undefined') return
+  const el = document.querySelector('.main-content')
+  if (el) el.scrollTo({ top: 0, left: 0, behavior: 'instant' })
+  else window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
+}
 
 const route = useRoute()
 const router = useRouter()
@@ -255,6 +263,11 @@ const fetchData = async (tabKey: string) => {
   }
 }
 
+async function scrollListViewportToTop() {
+  await nextTick()
+  scrollMainContentToTop()
+}
+
 const isInitializing = ref(true)
 
 // Watch activeTab and save to localStorage
@@ -286,6 +299,7 @@ const handleTabClick = async (tabKey: string) => {
   } finally {
     isLoading.value = false
   }
+  await scrollListViewportToTop()
 }
 
 // Abort controller for canceling pending requests
@@ -297,6 +311,7 @@ onMounted(async () => {
   await fetchData(initialTab)
   activeTab.value = initialTab // Set activeTab after initial fetch
   isInitializing.value = false
+  await scrollListViewportToTop()
 })
 
 onUnmounted(() => {
@@ -380,6 +395,7 @@ watch(
       isHandlingRouteChange.value = true
       try {
         await fetchData(activeTab.value)
+        await scrollListViewportToTop()
       } finally {
         isHandlingRouteChange.value = false
       }
