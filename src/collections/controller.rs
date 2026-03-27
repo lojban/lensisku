@@ -490,6 +490,52 @@ pub async fn list_custom_text_bulk_items(
 }
 
 #[utoipa::path(
+    post,
+    path = "/collections/{id}/items/bulk-remove",
+    tag = "collections",
+    params(
+        ("id" = i32, Path, description = "Collection ID")
+    ),
+    request_body = BulkRemoveItemsRequest,
+    responses(
+        (status = 200, description = "Deleted counts", body = BulkRemoveItemsResponse),
+        (status = 400, description = "Validation failed"),
+        (status = 403, description = "Access denied"),
+        (status = 500, description = "Internal server error")
+    ),
+    security(("bearer_auth" = [])),
+    summary = "Bulk remove collection items",
+    description = "Owner only. Deletes multiple items in a single transaction (flashcard data and collection rows). At most 500 item ids per request."
+)]
+#[post("/{id}/items/bulk-remove")]
+pub async fn bulk_remove_items(
+    pool: web::Data<Pool>,
+    claims: Claims,
+    id: web::Path<i32>,
+    req: web::Json<BulkRemoveItemsRequest>,
+) -> impl Responder {
+    match service::remove_items_bulk(&pool, id.into_inner(), claims.sub, &req.item_ids).await {
+        Ok(response) => HttpResponse::Ok().json(response),
+        Err(e) => {
+            let msg = e.to_string();
+            if msg.contains("Access Denied") || msg.contains("does not belong") {
+                return HttpResponse::Forbidden().json(json!({ "error": msg }));
+            }
+            if msg.contains("Bad request")
+                || msg.contains("At most")
+                || msg.contains("item_ids")
+                || msg.contains("One or more items")
+            {
+                return HttpResponse::BadRequest().json(json!({ "error": msg }));
+            }
+            HttpResponse::InternalServerError().json(json!({
+                "error": format!("Failed to bulk remove items: {}", e)
+            }))
+        }
+    }
+}
+
+#[utoipa::path(
     put,
     path = "/collections/{id}/items/custom-text-bulk",
     tag = "collections",

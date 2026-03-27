@@ -11,7 +11,7 @@
       @click.stop
     >
 
-      <div class="flex items-center justify-between mb-4">
+      <div class="mb-4 flex shrink-0 items-center justify-between">
 
         <h3 class="text-lg font-medium select-none"> {{ title }} </h3>
          <button class="text-gray-400 hover:text-gray-600" @click="close">
@@ -19,8 +19,10 @@
           > </button
         >
       </div>
-       <slot /> <!-- Footer slot -->
-      <div v-if="$slots.footer" class="border-t pt-4 mt-4"> <slot name="footer" /> </div>
+      <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+        <slot />
+      </div>
+      <div v-if="$slots.footer" class="shrink-0 border-t pt-4 mt-4"> <slot name="footer" /> </div>
 
     </div>
 

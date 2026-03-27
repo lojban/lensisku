@@ -2392,6 +2392,115 @@ pub async fn remove_item(
     Ok(())
 }
 
+/// Removes many collection items in one transaction (flashcard history, progress, flashcards, then rows).
+/// Same semantics as repeated [`remove_item`], but atomic and bounded by [`MAX_BULK_REMOVE_ITEMS`].
+pub async fn remove_items_bulk(
+    pool: &Pool,
+    collection_id: i32,
+    user_id: i32,
+    item_ids: &[i32],
+) -> AppResult<BulkRemoveItemsResponse> {
+    const MAX_BULK_REMOVE_ITEMS: usize = 500;
+
+    let unique_set: HashSet<i32> = item_ids.iter().copied().filter(|&id| id > 0).collect();
+    if unique_set.is_empty() {
+        return Err(AppError::BadRequest(
+            "item_ids must contain at least one positive id".to_string(),
+        ));
+    }
+    if unique_set.len() > MAX_BULK_REMOVE_ITEMS {
+        return Err(AppError::BadRequest(format!(
+            "At most {} items per request",
+            MAX_BULK_REMOVE_ITEMS
+        )));
+    }
+
+    let mut unique: Vec<i32> = unique_set.into_iter().collect();
+    unique.sort_unstable();
+
+    let mut client = pool
+        .get()
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+    let transaction = client
+        .transaction()
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+    verify_collection_ownership(&transaction, collection_id, user_id).await?;
+
+    let rows = transaction
+        .query(
+            "SELECT item_id FROM collection_items WHERE collection_id = $1 AND item_id = ANY($2)",
+            &[&collection_id, &unique],
+        )
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+    if rows.len() != unique.len() {
+        return Err(AppError::BadRequest(
+            "One or more items are not in this collection".to_string(),
+        ));
+    }
+
+    transaction
+        .execute(
+            "DELETE FROM flashcard_review_history
+             WHERE flashcard_id IN (SELECT id FROM flashcards WHERE item_id = ANY($1))",
+            &[&unique],
+        )
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+    transaction
+        .execute(
+            "DELETE FROM user_flashcard_progress
+             WHERE flashcard_id IN (SELECT id FROM flashcards WHERE item_id = ANY($1))",
+            &[&unique],
+        )
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+    transaction
+        .execute(
+            "DELETE FROM flashcards WHERE item_id = ANY($1)",
+            &[&unique],
+        )
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+    let deleted = transaction
+        .execute(
+            "DELETE FROM collection_items WHERE collection_id = $1 AND item_id = ANY($2)",
+            &[&collection_id, &unique],
+        )
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+    if deleted as usize != unique.len() {
+        return Err(AppError::Database(
+            "Bulk delete removed fewer rows than expected".to_string(),
+        ));
+    }
+
+    transaction
+        .execute(
+            "UPDATE collections SET updated_at = $1 WHERE collection_id = $2",
+            &[&Utc::now(), &collection_id],
+        )
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+    transaction
+        .commit()
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+    Ok(BulkRemoveItemsResponse {
+        deleted: unique.len() as i32,
+    })
+}
+
 pub async fn clone_collection(
     pool: &Pool,
     source_collection_id: i32,
@@ -3302,7 +3411,7 @@ pub async fn list_custom_text_bulk_items(
 
     let rows = transaction
         .query(
-            "SELECT ci.item_id, ci.position, ci.free_content_front, ci.free_content_back
+            "SELECT ci.item_id, ci.position, ci.free_content_front, ci.free_content_back, ci.langid as language_id
              FROM collection_items ci
              WHERE ci.collection_id = $1
                AND ci.definition_id IS NULL
@@ -3323,6 +3432,7 @@ pub async fn list_custom_text_bulk_items(
             free_content_back: row
                 .get::<_, Option<String>>("free_content_back")
                 .unwrap_or_default(),
+            language_id: row.get("language_id"),
         })
         .collect();
 
@@ -3385,13 +3495,15 @@ pub async fn bulk_update_custom_text_items(
                 "UPDATE collection_items
                  SET free_content_front = $1,
                      free_content_back = $2,
-                     canonical_form = $3
-                 WHERE collection_id = $4
-                   AND item_id = $5
+                     langid = $3,
+                     canonical_form = $4
+                 WHERE collection_id = $5
+                   AND item_id = $6
                    AND definition_id IS NULL",
                 &[
                     &sanitized_front,
                     &sanitized_back,
+                    &item.language_id,
                     &canonical_form,
                     &collection_id,
                     &item.item_id,
@@ -3424,7 +3536,6 @@ pub async fn bulk_update_custom_text_items(
 
         let mut next_position: i32 = max_position + 1;
         let definition_id: Option<i32> = None;
-        let language_id: Option<i32> = None;
         let owner_user_id: Option<i32> = None;
         let license: Option<String> = None;
         let script: Option<String> = None;
@@ -3467,7 +3578,7 @@ pub async fn bulk_update_custom_text_items(
                         &definition_id,
                         &free_front,
                         &free_back,
-                        &language_id,
+                        &new_item.language_id,
                         &owner_user_id,
                         &license,
                         &script,

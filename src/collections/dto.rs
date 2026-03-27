@@ -298,6 +298,7 @@ pub struct CustomTextBulkItemRow {
     pub position: i32,
     pub free_content_front: String,
     pub free_content_back: String,
+    pub language_id: Option<i32>,
 }
 
 #[derive(Debug, Serialize, ToSchema)]
@@ -310,6 +311,7 @@ pub struct CustomTextBulkUpdateItem {
     pub item_id: i32,
     pub free_content_front: String,
     pub free_content_back: String,
+    pub language_id: Option<i32>,
 }
 
 /// New custom-text-only rows to append (no `item_id` yet); same semantics as `POST /collections/{id}/items` without definition.
@@ -317,6 +319,7 @@ pub struct CustomTextBulkUpdateItem {
 pub struct CustomTextBulkNewItem {
     pub free_content_front: String,
     pub free_content_back: String,
+    pub language_id: Option<i32>,
 }
 
 #[derive(Debug, Deserialize, ToSchema)]
@@ -331,4 +334,14 @@ pub struct CustomTextBulkUpdateRequest {
 pub struct CustomTextBulkUpdateResponse {
     pub updated: i32,
     pub inserted: i32,
+}
+
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct BulkRemoveItemsRequest {
+    pub item_ids: Vec<i32>,
+}
+
+#[derive(Debug, Serialize, ToSchema)]
+pub struct BulkRemoveItemsResponse {
+    pub deleted: i32,
 }

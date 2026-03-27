@@ -1,6 +1,9 @@
-/** Two columns: front (prompt) and back (answer). */
-
-type BulkImportRow = { free_content_front: string; free_content_back: string }
+/** Two columns: front (prompt) and back (answer), with optional item language. */
+type BulkImportRow = {
+  free_content_front: string
+  free_content_back: string
+  language_id?: number | null
+}
 
 /** Minimal CSV line parser (quoted fields, doubled quotes). */
 export function parseCsvLine(line: string): string[] {
@@ -90,6 +93,76 @@ export type BulkImportStreamProgress = {
   totalBytes: number
 }
 
+export type BulkImportParseOptions = {
+  frontColumnIndex?: number
+  backColumnIndex?: number
+  skipFirstRow?: boolean
+  languageId?: number | null
+}
+
+const PREVIEW_MAX_BYTES = 256 * 1024
+const DEFAULT_PREVIEW_MAX_LINES = 15
+
+/**
+ * Read only the start of a file and return the first non-empty lines split into cells
+ * (same delimiter rules as {@link eachBulkImportRowFromFile}).
+ */
+export async function previewBulkImportFile(
+  file: File,
+  maxLines: number = DEFAULT_PREVIEW_MAX_LINES
+): Promise<{
+  format: 'tsv' | 'csv'
+  lines: string[][]
+  truncated: boolean
+}> {
+  const sliceEnd = Math.min(file.size, PREVIEW_MAX_BYTES)
+  const chunk = await file.slice(0, sliceEnd).arrayBuffer()
+  let text = new TextDecoder('utf-8').decode(chunk)
+  text = text.replace(/^\uFEFF/, '')
+  const complete =
+    file.size <= PREVIEW_MAX_BYTES || /\r\n|\r|\n$/.test(text)
+  if (!complete) {
+    const lastNl = Math.max(
+      text.lastIndexOf('\n'),
+      text.lastIndexOf('\r')
+    )
+    if (lastNl >= 0) {
+      text = text.slice(0, lastNl)
+    } else {
+      text = ''
+    }
+  }
+
+  const rawLines = text.split(/\r\n|\r|\n/)
+  const lines: string[][] = []
+  let format: 'tsv' | 'csv' | null = null
+
+  for (const line of rawLines) {
+    if (line.trim().length === 0) continue
+    if (!format) {
+      const tabCount = (line.match(/\t/g) || []).length
+      const commaCount = (line.match(/,/g) || []).length
+      format =
+        /\.tsv$/i.test(file.name) || (tabCount > commaCount && tabCount > 0)
+          ? 'tsv'
+          : 'csv'
+    }
+    const cells = format === 'tsv' ? line.split('\t') : parseCsvLine(line)
+    lines.push(cells)
+    if (lines.length >= maxLines) {
+      break
+    }
+  }
+
+  const truncated =
+    file.size > PREVIEW_MAX_BYTES || lines.length >= maxLines
+  return {
+    format: format ?? (/\.tsv$/i.test(file.name) ? 'tsv' : 'csv'),
+    lines,
+    truncated,
+  }
+}
+
 function stripLeadingBom(line: string): string {
   return line.replace(/^\uFEFF/, '')
 }
@@ -100,7 +173,8 @@ function stripLeadingBom(line: string): string {
  */
 export async function* eachBulkImportRowFromFile(
   file: File,
-  onReadProgress?: (p: BulkImportStreamProgress) => void
+  onReadProgress?: (p: BulkImportStreamProgress) => void,
+  options: BulkImportParseOptions = {}
 ): AsyncGenerator<BulkImportRow, void, undefined> {
   let bytesRead = 0
   const totalBytes = file.size
@@ -110,6 +184,8 @@ export async function* eachBulkImportRowFromFile(
   let bomStripped = false
   let format: 'tsv' | 'csv' | null = null
   let firstNonEmptyHandled = false
+  const frontColumnIndex = Math.max(0, options.frontColumnIndex ?? 0)
+  const backColumnIndex = Math.max(0, options.backColumnIndex ?? 1)
 
   const emitProgress = () => {
     onReadProgress?.({ bytesRead, totalBytes })
@@ -117,9 +193,13 @@ export async function* eachBulkImportRowFromFile(
 
   const rowFromDataLine = (line: string): BulkImportRow => {
     const cells = format === 'tsv' ? line.split('\t') : parseCsvLine(line)
-    const front = (cells[0] ?? '').trim()
-    const back = (cells[1] ?? '').trim()
-    return { free_content_front: front, free_content_back: back }
+    const front = (cells[frontColumnIndex] ?? '').trim()
+    const back = (cells[backColumnIndex] ?? '').trim()
+    return {
+      free_content_front: front,
+      free_content_back: back,
+      language_id: options.languageId,
+    }
   }
 
   function* handlePhysicalLine(line: string): Generator<BulkImportRow> {
@@ -138,6 +218,9 @@ export async function* eachBulkImportRowFromFile(
       format = useTsv ? 'tsv' : 'csv'
       const probeCols = format === 'tsv' ? line.split('\t') : parseCsvLine(line)
       firstNonEmptyHandled = true
+      if (options.skipFirstRow) {
+        return
+      }
       if (probeCols.length >= 2 && isHeaderRow(probeCols)) {
         return
       }
@@ -187,12 +270,14 @@ export type BulkTableRow = {
   position: number
   free_content_front: string
   free_content_back: string
+  language_id: number | null
 }
 
 export type BulkDraftRow = {
   id: string
   free_content_front: string
   free_content_back: string
+  language_id: number | null
 }
 
 export type BulkMergeStats = {
@@ -233,6 +318,9 @@ export function mergeOneBulkImportRow(
   if (idxSavedFront !== -1) {
     rows[idxSavedFront].free_content_front = imp.free_content_front
     rows[idxSavedFront].free_content_back = imp.free_content_back
+    if (imp.language_id !== undefined) {
+      rows[idxSavedFront].language_id = imp.language_id
+    }
     stats.replacedByFront += 1
     return
   }
@@ -241,6 +329,9 @@ export function mergeOneBulkImportRow(
   if (idxSavedBack !== -1) {
     rows[idxSavedBack].free_content_front = imp.free_content_front
     rows[idxSavedBack].free_content_back = imp.free_content_back
+    if (imp.language_id !== undefined) {
+      rows[idxSavedBack].language_id = imp.language_id
+    }
     stats.replacedByBack += 1
     return
   }
@@ -249,6 +340,9 @@ export function mergeOneBulkImportRow(
   if (idxDraftFront !== -1) {
     newRows[idxDraftFront].free_content_front = imp.free_content_front
     newRows[idxDraftFront].free_content_back = imp.free_content_back
+    if (imp.language_id !== undefined) {
+      newRows[idxDraftFront].language_id = imp.language_id
+    }
     stats.replacedByFront += 1
     return
   }
@@ -257,6 +351,9 @@ export function mergeOneBulkImportRow(
   if (idxDraftBack !== -1) {
     newRows[idxDraftBack].free_content_front = imp.free_content_front
     newRows[idxDraftBack].free_content_back = imp.free_content_back
+    if (imp.language_id !== undefined) {
+      newRows[idxDraftBack].language_id = imp.language_id
+    }
     stats.replacedByBack += 1
     return
   }
@@ -264,6 +361,7 @@ export function mergeOneBulkImportRow(
   const draft = createDraftWithId()
   draft.free_content_front = imp.free_content_front
   draft.free_content_back = imp.free_content_back
+  draft.language_id = imp.language_id ?? null
   newRows.push(draft)
   stats.inserted += 1
 }
