@@ -248,6 +248,7 @@ const baseRoutes: Array<RouteRecordRaw> = [
     path: '/collections/:collectionId/custom-text-bulk',
     name: 'CollectionCustomTextBulk',
     component: () => import('../pages/CollectionCustomTextBulk.vue'),
+    meta: { hideFooter: true, fullHeight: true },
     props: (route) => ({
       collectionId: route.params.collectionId,
     }),

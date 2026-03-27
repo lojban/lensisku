@@ -96,9 +96,7 @@
               ? $t('home.searchResultsTitle.dictionary')
               : searchMode === 'semantic'
                 ? $t('home.searchResultsTitle.semantic')
-                : searchMode === 'muplis'
-                  ? $t('home.searchResultsTitle.muplis')
-                  : $t('home.searchResultsTitle.comments')
+                : $t('home.searchResultsTitle.comments')
           }}
         </h2>
 
@@ -274,11 +272,6 @@
             :decomposition="decomposition || []"
             @collection-updated="collections = $event"
           />
-          <MuplisList
-            v-else-if="searchMode === 'muplis'"
-            :entries="muplisEntries"
-            :search-term="searchQuery"
-          />
           <div v-else-if="searchMode === 'comments'" class="space-y-4">
 
             <div v-if="waveItems.length > 0">
@@ -383,7 +376,6 @@ import { ref, onMounted, watch, computed, onBeforeUnmount, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 
 import {
-  api,
   searchDefinitions,
   fastSearchDefinitions,
   getLanguages,
@@ -400,7 +392,6 @@ import SourceTypeBadge from '@/components/SourceTypeBadge.vue'
 import DictionaryEntries from '@/components/DictionaryEntries.vue'
 import LazyMathJax from '@/components/LazyMathJax.vue'
 import { Dropdown, IconButton } from '@packages/ui'
-import MuplisList from '@/components/MuplisList.vue'
 import PaginationComponent from '@/components/PaginationComponent.vue'
 import RecentChangeItem from '@/components/RecentChangeItem.vue'
 import SearchForm from '@/components/SearchForm.vue'
@@ -567,7 +558,6 @@ const props = defineProps({
 
 // State
 const waveItems = ref([])
-const muplisEntries = ref([])
 const definitions = ref([])
 const decomposition = ref([])
 const total = ref(0)
@@ -601,7 +591,9 @@ const getInitialSearchMode = () => {
   if (typeof window === 'undefined') return
   const storedMode = localStorage.getItem('searchMode')
   const mode = storedMode || props.urlSearchMode
-  return mode === 'messages' ? 'comments' : mode
+  const normalized = mode === 'messages' ? 'comments' : mode
+  if (normalized === 'muplis') return 'semantic'
+  return normalized
 }
 
 const searchMode = ref(getInitialSearchMode())
@@ -687,7 +679,6 @@ const filters = ref({
 // Search queues to prevent race conditions
 const definitionsSearchQueue = new SearchQueue()
 const wavesSearchQueue = new SearchQueue()
-const muplisSearchQueue = new SearchQueue()
 
 // Fetch corpus entries
 const fetchDefinitions = async (page, search = '') => {
@@ -1046,43 +1037,6 @@ const fetchData = async () => {
   try {
     if (searchMode.value === 'dictionary' || searchMode.value === 'semantic') {
       await fetchDefinitions(currentPage.value, searchQuery.value)
-    } else if (searchMode.value === 'muplis') {
-      const { requestId, signal } = muplisSearchQueue.createRequest()
-
-      try {
-        const response = await api.get('/muplis/search', {
-          params: {
-            query: searchQuery.value,
-            page: currentPage.value,
-            per_page: 10,
-          },
-          signal,
-        })
-
-        // Only process if this is still the latest request
-        if (!muplisSearchQueue.shouldProcess(requestId)) {
-          return
-        }
-
-        muplisEntries.value = response.data.entries
-        totalPages.value = Math.ceil(response.data.total / response.data.per_page)
-        isLoading.value = false
-      } catch (error) {
-        // Ignore abort errors
-        if (
-          error.name === 'AbortError' ||
-          error.code === 'ERR_CANCELED' ||
-          error.message?.includes('canceled')
-        ) {
-          return
-        }
-
-        // Only show errors for the latest request
-        if (muplisSearchQueue.shouldProcess(requestId)) {
-          console.error('Error fetching data:', error)
-          isLoading.value = false
-        }
-      }
     }
   } catch (error) {
     console.error('Error fetching data:', error)
@@ -1260,7 +1214,8 @@ const syncFromRoute = () => {
   }
 
   if (query.mode !== undefined) {
-    const mode = queryStr(query.mode) === 'messages' ? 'comments' : queryStr(query.mode)
+    let mode = queryStr(query.mode) === 'messages' ? 'comments' : queryStr(query.mode)
+    if (mode === 'muplis') mode = 'semantic'
     searchMode.value = mode
     if (typeof window !== 'undefined') localStorage.setItem('searchMode', mode)
   }

@@ -275,6 +275,9 @@
     :show="!!successToast"
     :message="successToast?.message ?? ''"
     :duration="successToast?.duration ?? DEFAULT_SUCCESS_TOAST_DURATION_MS"
+    :extra-component="successToast?.extraComponent ?? null"
+    :extra-props="successToast?.extraProps ?? null"
+    :close-label="$t('modal.close')"
     type="success"
     @close="clearSuccess"
   /> <!-- Main content -->

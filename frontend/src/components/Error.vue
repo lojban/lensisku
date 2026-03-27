@@ -4,6 +4,7 @@
     :message="displayMessage"
     type="error"
     :duration="0"
+    :close-label="t('modal.close')"
     @close="$emit('close')"
   />
 </template>

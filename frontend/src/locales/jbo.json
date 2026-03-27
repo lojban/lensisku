@@ -62,7 +62,6 @@
       "semantic": "smuni sisku",
       "comments": "casnu karni",
       "messages": "mrilu datni",
-      "muplis": "mupli jufra",
       "groupByThread": "gunma fi lo karni",
       "searchInPhrases": "kansa lo jufra"
     },
@@ -71,7 +70,6 @@
       "semantic": "ko sisku lo smuni .a lo sidbo...",
       "comments": "ko sisku lo nu casnu...",
       "messages": "ko sisku lo mrilu...",
-      "muplis": "ko sisku lo mupli...",
       "default": "sisku..."
     }
   },
@@ -81,7 +79,6 @@
     "searchResultsTitle": {
       "dictionary": "vlaste .e lo sarsku",
       "semantic": "smuni sisku",
-      "muplis": "mupli jufra",
       "comments": "casnu karni",
       "messages": "mrilu datni"
     },
@@ -387,7 +384,8 @@
     "backToCollection": "xruti fi lo liste",
     "ownerOnly": "le liste ponse po'o ka'e pilno ti",
     "empty": "no da ti klesi cu zvati",
-    "rowCount": "{count} da",
+    "rowCountSavedOnly": "{saved} da pu rejgasnu",
+    "rowCountSavedAndScreen": "{saved} da pu rejgasnu .i {screen} papri cu zvati le canlu",
     "colFront": "stedu",
     "colBack": "trixe",
     "cardLabel": "karda li {n}",
@@ -407,12 +405,16 @@
     "exportCsv": "rejgau lo CSV",
     "exportTsv": "rejgau lo TSV",
     "importing": "ca'o jmina...",
+    "importProgressLine": "tcidu {pct}% .i {rows} papri cu jmina",
+    "importProgressAria": "lo nunve'u be lo nu jmina",
     "importAria": "jmina lo CSV .a lo TSV datnyvei",
     "importWrongFileType": ".e'u ko cu'a lo datnyvei poi du'u lo te cmene cu fanmo fi lo'u .csv .a .tsv",
     "importHint": "lo nu jmina cu zukte fi lo samselpla .i ko jmina fi lo stedu .e lo trixe .e lo na rejgasnu papri .i ko rejgau ro da mu'i lo nu stika lo datni",
     "importEmpty": "no papri cu zvati le datnyvei",
     "importTooMany": "so'i papri cu zmadu {max} lo'i papri",
     "importSuccess": "jmina: {front} fi lo stedu .i {back} fi lo trixe .i {inserted} cnino papri .i {skipped} kunti cu cliva",
+    "importDiscardHint": "ko cnino jmina cu cliva .e ko jai gau lo datni poi pu zasti fi le judri pu lo nu ko kargau le papri .i ko kraga lo papri (.i lo na rejgasnu stika cu canci)",
+    "importReloadPage": "kraga lo papri",
     "importError": "fliba lo nu tcidu .a lo nu jimpe le datnyvei",
     "colActions": "nu gasnu",
     "deleteRow": "vimcu",
@@ -420,7 +422,10 @@
     "deleteDraftAria": "vimcu lo na rejgasnu papri",
     "deleteSavedConfirm": "xu do birti lo nu vimcu lo da fi lo liste? .i lo nu zukte ti na ku ka'e di'a zasti",
     "deleteDraftConfirm": "xu do birti lo nu cliva lo na rejgasnu papri?",
-    "deleteError": "fliba lo nu vimcu lo da"
+    "deleteError": "fliba lo nu vimcu lo da",
+    "filterPlaceholder": "sisti lo papri",
+    "filterNoMatches": "no papri cu sarxe lo sisto",
+    "filterShowing": "{visible} fi {total} papri cu zvati le canlu (lo sisto)"
   },
   "collectionDetail": {
     "pageHint": "lo liste",

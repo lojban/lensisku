@@ -24,7 +24,6 @@ mod jbovlaste;
 mod language;
 mod mailarchive;
 mod middleware;
-mod muplis;
 mod notifications;
 mod openapi;
 mod payments;
