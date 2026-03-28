@@ -19,8 +19,8 @@
       <div class="flex flex-row gap-2 justify-between items-center w-full">
          <RouterLink :to="`/collections/${props.collectionId}/flashcards`" class="ui-btn--danger-rose"
           > {{ t('flashcardLevels.viewFlashcards') }} </RouterLink
-        > <button type="button" class="ui-btn--warning-orange h-10 text-base" @click="startStudy">
-           {{ t('flashcardLevels.studyButton') }} </button
+        > <Button variant="warning-orange" size="lg" @click="startStudy">
+           {{ t('flashcardLevels.studyButton') }} </Button
         > <IconButton
           v-if="isOwner"
           :label="t('flashcardLevels.createLevel')"
@@ -595,7 +595,7 @@ import {
   deleteLevel, // Import the new function
 } from '@/api'
 import DefinitionCard from '@/components/DefinitionCard.vue'
-import { IconButton } from '@packages/ui'
+import { Button, IconButton } from '@packages/ui'
 import { useAuth } from '@/composables/useAuth'
 import { useAnonymousProgress, type LevelProgressData } from '@/composables/useAnonymousProgress'
 import { useSeoHead } from '@/composables/useSeoHead'
