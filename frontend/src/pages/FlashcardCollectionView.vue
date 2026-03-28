@@ -126,10 +126,11 @@
         v-if="auth.state.isLoggedIn"
         class="flex flex-row justify-center items-center gap-2 mt-4"
       >
-         <RouterLink
+         <Button
+          variant="warning-orange"
+          size="lg"
           :to="`/collections/${props.collectionId}/flashcards/study`"
-          class="ui-btn--warning-orange h-10 text-base inline-flex items-center justify-center gap-2"
-          > {{ t('flashcardCollection.studyNow', { count: dueCount }) }} </RouterLink
+          > {{ t('flashcardCollection.studyNow', { count: dueCount }) }} </Button
         > <RouterLink
           :to="`/collections/${props.collectionId}/levels`"
           class="ui-btn--neutral inline-flex items-center gap-2"
@@ -451,6 +452,7 @@ import AudioPlayer from '@/components/AudioPlayer.vue'
 import LazyMathJax from '@/components/LazyMathJax.vue'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import PaginationComponent from '@/components/PaginationComponent.vue'
+import { Button } from '@packages/ui'
 import { useAuth } from '@/composables/useAuth'
 import { useError } from '@/composables/useError'
 import { useSeoHead } from '@/composables/useSeoHead'
