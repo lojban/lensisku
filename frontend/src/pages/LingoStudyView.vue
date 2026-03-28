@@ -364,25 +364,37 @@
               <div class="grid grid-cols-3 gap-1.5 sm:gap-2">
                  <button
                   type="button"
-                  class="ui-btn--error flex w-full items-center justify-center gap-0.5 py-1.5 text-xs sm:py-2 sm:text-sm"
+                  class="ui-btn--error flex w-full items-center justify-center gap-1 py-1.5 text-xs sm:py-2 sm:text-sm"
                   @click="submitAnswer(1)"
                 >
-                   <XCircle class="h-3.5 w-3.5" /> {{ t('flashcardStudy.forgot')
-                  }}<span class="hidden sm:ml-0.5 sm:inline">(1)</span> </button
+                   <XCircle class="h-3.5 w-3.5 shrink-0" />
+                  <span class="inline-flex min-w-0 items-center gap-0.5">
+                    <span>{{ t('flashcardStudy.forgot') }}</span>
+                    <span class="hidden sm:inline">(1)</span>
+                  </span>
+                </button
                 > <button
                   type="button"
-                  class="ui-btn--warning flex w-full items-center justify-center gap-0.5 py-1.5 text-xs sm:py-2 sm:text-sm"
+                  class="ui-btn--warning flex w-full items-center justify-center gap-1 py-1.5 text-xs sm:py-2 sm:text-sm"
                   @click="submitAnswer(3)"
                 >
-                   <Smile class="h-3.5 w-3.5" /> {{ t('flashcardStudy.good')
-                  }}<span class="hidden sm:ml-0.5 sm:inline">(2)</span> </button
+                   <Smile class="h-3.5 w-3.5 shrink-0" />
+                  <span class="inline-flex min-w-0 items-center gap-0.5">
+                    <span>{{ t('flashcardStudy.good') }}</span>
+                    <span class="hidden sm:inline">(2)</span>
+                  </span>
+                </button
                 > <button
                   type="button"
-                  class="ui-btn--success flex w-full items-center justify-center gap-0.5 py-1.5 text-xs sm:py-2 sm:text-sm"
+                  class="ui-btn--success flex w-full items-center justify-center gap-1 py-1.5 text-xs sm:py-2 sm:text-sm"
                   @click="submitAnswer(4)"
                 >
-                   <Check class="h-3.5 w-3.5" /> {{ t('flashcardStudy.easy')
-                  }}<span class="hidden sm:ml-0.5 sm:inline">(3)</span> </button
+                   <Check class="h-3.5 w-3.5 shrink-0" />
+                  <span class="inline-flex min-w-0 items-center gap-0.5">
+                    <span>{{ t('flashcardStudy.easy') }}</span>
+                    <span class="hidden sm:inline">(3)</span>
+                  </span>
+                </button
                 >
               </div>
 

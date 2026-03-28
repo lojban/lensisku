@@ -100,9 +100,12 @@
                  <RouterLink
                   v-if="!disableDiscussionButton"
                   :to="`/valsi/${definition.valsiword ?? definition.word}`"
-                  class="ui-btn--empty"
-                  > <MessageSquarePlus v-if="definition.comment_count === 0" class="h-4 w-4" />
-                  <MessageSquareMore v-else class="h-4 w-4" /> <span
+                  class="ui-btn--empty inline-flex items-center gap-2"
+                  > <MessageSquarePlus
+                    v-if="definition.comment_count === 0"
+                    class="h-4 w-4 shrink-0"
+                  />
+                  <MessageSquareMore v-else class="h-4 w-4 shrink-0" /> <span
                     v-if="definition.comment_count"
                     class="bg-gray-100 px-2 py-0.5 rounded-full text-xs font-medium"
                     > {{ definition.comment_count }} </span
@@ -122,11 +125,11 @@
               <div class="flex items-center gap-2 flex-wrap">
                  <button
                   v-if="showEditButton"
-                  class="ui-btn--empty"
+                  class="ui-btn--empty inline-flex items-center gap-2"
                   @click.stop="$emit('edit-item')"
                   :title="t('components.definitionCard.editItemTitle')"
                 >
-                   <Pencil class="h-4 w-4" /> <span class="sr-only">{{
+                   <Pencil class="h-4 w-4 shrink-0" /> <span class="sr-only">{{
                     t('components.definitionCard.editButton')
                   }}</span
                   > </button
@@ -154,30 +157,30 @@
               >
                  <button
                   :disabled="isFirstItem || isReordering"
-                  class="ui-btn--group-item ui-btn--empty"
+                  class="ui-btn--group-item ui-btn--empty inline-flex items-center gap-2"
                   :title="t('components.definitionCard.moveUpTitle')"
                   @click.stop="$emit('move-up')"
                 >
-                   <ArrowUp class="h-4 w-4" /> <span class="sr-only">{{
+                   <ArrowUp class="h-4 w-4 shrink-0" /> <span class="sr-only">{{
                     t('components.definitionCard.moveUpTitle')
                   }}</span
                   > </button
-                > <button
+                >                  <button
                   :disabled="isLastItem || isReordering"
-                  class="ui-btn--group-item ui-btn--empty"
+                  class="ui-btn--group-item ui-btn--empty inline-flex items-center gap-2"
                   :title="t('components.definitionCard.moveDownTitle')"
                   @click.stop="$emit('move-down')"
                 >
-                   <ArrowDown class="h-4 w-4" /> <span class="sr-only">{{
+                   <ArrowDown class="h-4 w-4 shrink-0" /> <span class="sr-only">{{
                     t('components.definitionCard.moveDownTitle')
                   }}</span
                   > </button
-                > <button
-                  class="ui-btn--group-item ui-btn--empty hover:text-red-600"
+                >                  <button
+                  class="ui-btn--group-item ui-btn--empty inline-flex items-center gap-2 hover:text-red-600"
                   :title="t('components.definitionCard.removeItemTitle')"
                   @click.stop="$emit('remove')"
                 >
-                   <Trash2 class="h-4 w-4" /> <span class="sr-only">{{
+                   <Trash2 class="h-4 w-4 shrink-0" /> <span class="sr-only">{{
                     t('components.definitionCard.removeItemTitle')
                   }}</span
                   > </button
@@ -190,11 +193,11 @@
                 role="group"
               >
                  <button
-                  class="ui-btn--empty hover:text-red-600 flex items-center gap-1"
+                  class="ui-btn--empty inline-flex items-center gap-2 hover:text-red-600"
                   :title="t('components.definitionCard.removeFromLevelTitle')"
                   @click.stop="$emit('delete-item')"
                 >
-                   <MinusCircle class="h-4 w-4" /> <span>{{
+                   <MinusCircle class="h-4 w-4 shrink-0" /> <span>{{
                     t('components.definitionCard.removeFromLevelButton')
                   }}</span
                   > </button
@@ -436,9 +439,9 @@
 
         <div
           v-if="definition.owner_only && !props.disableOwnerOnlyLock"
-          class="flex items-center text-amber-600"
+          class="flex items-center gap-2 text-amber-600"
         >
-           <Lock class="h-5 w-5 mr-1" /> <span class="text-sm">{{
+           <Lock class="h-5 w-5 shrink-0" /> <span class="text-sm">{{
             t('components.definitionCard.ownerOnlyNote')
           }}</span
           >
@@ -473,31 +476,31 @@
         >
            <!-- Edit button --> <button
             v-if="auth.state.isLoggedIn && definition.can_edit"
-            class="ui-btn--update ui-btn--group-item text-center"
+            class="ui-btn--update ui-btn--group-item inline-flex items-center justify-center gap-2"
             @click="router.push(`/definition/${definition.definitionid}/edit`)"
           >
-             <Pencil class="h-4 w-4" /> {{ t('components.definitionCard.editButton') }} </button
+             <Pencil class="h-4 w-4 shrink-0" /> {{ t('components.definitionCard.editButton') }} </button
           > <!-- Delete button --> <button
             v-if="auth.state.isLoggedIn && auth.state.username === definition.username"
             @click="handleDeleteClick"
-            class="ui-btn--delete ui-btn--group-item text-center"
+            class="ui-btn--delete ui-btn--group-item inline-flex items-center justify-center gap-2"
           >
-             <Trash2 class="h-4 w-4" /> {{ t('components.definitionCard.deleteButton') }} </button
+             <Trash2 class="h-4 w-4 shrink-0" /> {{ t('components.definitionCard.deleteButton') }} </button
           > <!-- Version History --> <RouterLink
             v-if="auth.state.isLoggedIn && !props.hideHistory"
             :to="`/definition/${definition.definitionid}/history?valsi_id=${definition.valsiid}`"
-            class="ui-btn--history ui-btn--group-item text-center"
-            > <Clock class="h-4 w-4" /> {{ t('components.definitionCard.historyButton') }}
+            class="ui-btn--history ui-btn--group-item inline-flex items-center justify-center gap-2"
+            > <Clock class="h-4 w-4 shrink-0" /> {{ t('components.definitionCard.historyButton') }}
             </RouterLink
           > <!-- Comment --> <RouterLink
             v-if="auth.state.isLoggedIn && props.showCommentButton"
             :to="`/comments?valsi_id=${definition.valsiid}&definition_id=${definition.definitionid}`"
-            class="ui-btn--create ui-btn--group-item text-center"
-            > <MessageSquare class="h-4 w-4" /> {{ t('components.definitionCard.commentButton') }}
+            class="ui-btn--create ui-btn--group-item inline-flex items-center justify-center gap-2"
+            > <MessageSquare class="h-4 w-4 shrink-0" /> {{ t('components.definitionCard.commentButton') }}
             </RouterLink
           > <!-- Translate --> <button
             v-if="auth.state.isLoggedIn"
-            class="ui-btn--create ui-btn--group-item text-center"
+            class="ui-btn--create ui-btn--group-item inline-flex items-center justify-center gap-2"
             @click="router.push(`/valsi/add?word=${encodeURIComponent(definition.valsiword ?? definition.word ?? '')}${canLink ? '&translate_from_def=' + definition.definitionid : ''}`)"
             :title="
               canLink
@@ -505,19 +508,19 @@
                 : t('components.definitionCard.translateButtonTitle')
             "
           >
-             <Languages class="h-4 w-4" /> {{ t('components.definitionCard.translateButton') }} </button
+             <Languages class="h-4 w-4 shrink-0" /> {{ t('components.definitionCard.translateButton') }} </button
           > <!-- Link existing --> <button
             v-if="auth.state.isLoggedIn && canLink"
-            class="ui-btn--link ui-btn--group-item text-center"
+            class="ui-btn--link ui-btn--group-item inline-flex items-center justify-center gap-2"
             @click="showLinkModal = true"
             :title="t('components.definitionCard.linkExistingTitle')"
           >
-             <LinkIcon class="h-4 w-4" /> {{ t('components.definitionCard.linkExisting') }} </button
+             <LinkIcon class="h-4 w-4 shrink-0" /> {{ t('components.definitionCard.linkExisting') }} </button
           > <!-- Discussions --> <RouterLink
             v-if="disableDiscussionButton && !disableDiscussionToolbarButton"
             :to="`/comments?valsi_id=${definition.valsiid}&definition_id=${definition.definitionid}`"
-            class="ui-btn--get ui-btn--group-item text-center"
-            > <AudioWaveform class="h-4 w-4" /> <span
+            class="ui-btn--get ui-btn--group-item inline-flex items-center justify-center gap-2"
+            > <AudioWaveform class="h-4 w-4 shrink-0" /> <span
               v-if="definition.comment_count && definition.comment_count > 0"
               class="bg-gray-100 px-1.5 rounded-md border"
               > {{ definition.comment_count }} </span

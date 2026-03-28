@@ -181,14 +181,14 @@
      <!-- Actions -->
     <div class="flex flex-wrap gap-2 justify-end">
 
-      <div class="flex gap-2 items-center">
+        <div class="flex items-center gap-3">
 
         <div v-if="reactions.length" class="flex flex-wrap gap-1">
-           <button
+          <button
             v-for="reaction in reactions"
             :key="reaction.reaction"
-            class="gap-1.5 ui-btn--reaction transition-all duration-300"
-            :class="[reaction.reacted && 'enabled']"
+            class="gap-1.5 transition-all duration-300"
+            :class="reaction.reacted ? 'ui-btn--reaction-active' : 'ui-btn--reaction'"
             @click.stop="handleReactionClick(reaction.reaction)"
           >
              <span
@@ -200,9 +200,9 @@
           >
         </div>
 
-        <div v-if="auth.state.isLoggedIn" class="relative">
-           <button class="ml-3 ui-btn--empty" @click.stop="showReactionPicker = !showReactionPicker">
-             <ReactionPlusIcon /> <span class="sr-only">{{
+        <div v-if="auth.state.isLoggedIn" class="relative shrink-0">
+           <button class="ui-btn--empty inline-flex items-center gap-2" @click.stop="showReactionPicker = !showReactionPicker">
+             <ReactionPlusIcon class="shrink-0" /> <span class="sr-only">{{
               t('components.commentItem.addReaction')
             }}</span
             > </button
@@ -270,28 +270,25 @@
         class="gap-1.5 ui-btn--empty"
         :class="[
           processedComment.is_bookmarked
-            ? 'bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-200'
+            ? 'active'
             : '',
         ]"
         @click.stop="handleBookmarkClick"
       >
-
-        <div class="flex items-center">
-           <BookmarkCheck
-            v-if="processedComment.is_bookmarked"
-            class="h-5 w-5"
-            :class="{ 'animate-bounce-once': isBookmarkAnimating }"
-          /> <Bookmark
-            v-else
-            class="h-5 w-5"
-            :class="{ 'animate-bounce-once': isBookmarkAnimating }"
-          /> <span class="hidden sm:inline ml-1">{{
-            processedComment.is_bookmarked
-              ? t('components.commentItem.saved')
-              : t('components.commentItem.save')
-          }}</span
-          >
-        </div>
+         <BookmarkCheck
+          v-if="processedComment.is_bookmarked"
+          class="h-5 w-5"
+          :class="{ 'animate-bounce-once': isBookmarkAnimating }"
+        /> <Bookmark
+          v-else
+          class="h-5 w-5"
+          :class="{ 'animate-bounce-once': isBookmarkAnimating }"
+        /> <span class="hidden sm:inline">{{
+          processedComment.is_bookmarked
+            ? t('components.commentItem.saved')
+            : t('components.commentItem.save')
+        }}</span
+        >
          </button
       > <button
         v-if="
@@ -299,7 +296,7 @@
           auth.state.username === processedComment.username &&
           (processedComment.total_replies ?? 0) === 0
         "
-        class="inline-flex items-center ui-btn--empty text-red-600 hover:text-red-800"
+        class="inline-flex items-center gap-2 ui-btn--empty text-red-600 hover:text-red-800"
         :disabled="isProcessing"
         @click="handleDeleteClick"
       >
@@ -309,7 +306,7 @@
         > </button
       > <button
         v-if="auth.state.isLoggedIn && replyEnabled"
-        class="inline-flex items-center ui-btn--reply"
+        class="inline-flex items-center gap-2 ui-btn--reply"
         @click="handleReplyClick"
       >
          <Reply class="w-5 h-5" /> <span

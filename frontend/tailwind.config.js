@@ -11,6 +11,7 @@ export default {
   plugins: [
     function ({ addComponents, addBase }) {
       addBase({
+        /** Icon + label: use this flex `gap-*` only—do not put `mr-*` / `ml-*` on icons or labels (breaks when labels are hidden). */
         '.btn-base': {
           '@apply gap-2 px-4 py-1.5 text-xs font-medium flex items-center justify-center h-6 border rounded-full transition-all shadow-sm shadow-slate-200 disabled:opacity-40 select-none disabled:cursor-not-allowed whitespace-nowrap focus:outline-none':
             {},
@@ -25,6 +26,7 @@ export default {
             // background: "radial-gradient(circle at center, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0) 70%)",
           },
         },
+        /** Same as `btn-base`: icon + label spacing via `gap-*` on the control, not margin on children. */
         '.aqua-base': {
           '@apply flex items-center justify-center h-6 select-none whitespace-nowrap text-black select-none text-sm font-medium transition-all px-4 gap-2':
             {},
@@ -37,14 +39,15 @@ export default {
           cursor: 'default',
           outline: 'none',
           boxShadow:
-            '0 0.375em 0.5em rgba(0, 0, 0, 0.3),' +
-            '0 0.125em 0.125em hsla(var(--aqua-hue, 215), 100%, 36.7%, 0.5),' +
-            'inset 0 0.25em 0.5em hsla(calc(var(--aqua-hue, 215) + 4), 100%, 9.6%, 0.8),' +
-            'inset 0 0.375em 0.5em 0.25em hsla(var(--aqua-hue, 215), 100%, 36.7%, 0.75)',
+            '0 0.35em 0.45em rgba(2, 10, 26, 0.28),' +
+            '0 0.08em 0.18em hsla(var(--aqua-hue, 215), 85%, 46%, 0.42),' +
+            'inset 0 0.22em 0.45em hsla(calc(var(--aqua-hue, 215) - 8), 75%, 22%, 0.65),' +
+            'inset 0 0.4em 0.55em 0.2em hsla(var(--aqua-hue, 215), 95%, 68%, 0.28)',
           '&:not(:disabled)': {
-            '@apply hover:brightness-110 active:scale-[0.98]': {},
+            '@apply hover:brightness-105 hover:saturate-150 active:scale-[0.98]': {},
           },
-          '& span': {
+          /** Do not target `.sr-only` — that would override `position:absolute` and break flex centering on icon-only controls. */
+          '& span:not(.sr-only)': {
             position: 'relative',
             top: '0.75px',
             zIndex: 1,
@@ -82,11 +85,11 @@ export default {
           },
           '&:focus, &:active': {
             boxShadow:
-              '0 0.375em 0.5em rgba(0, 0, 0, 0.3),' +
-              '0 0.125em 0.125em hsla(var(--aqua-hue, 215), 100%, 36.7%, 0.5),' +
-              'inset 0 0.25em 0.5em hsla(calc(var(--aqua-hue, 215) + 4), 100%, 9.6%, 0.8),' +
-              'inset 0 0.375em 0.5em 0.25em hsla(var(--aqua-hue, 215), 100%, 36.7%, 0.75),' +
-              '0 0 0.5em hsla(var(--aqua-hue, 215), 75.8%, 54.7%, 0.5)',
+              '0 0.35em 0.45em rgba(2, 10, 26, 0.28),' +
+              '0 0.08em 0.18em hsla(var(--aqua-hue, 215), 85%, 46%, 0.42),' +
+              'inset 0 0.22em 0.45em hsla(calc(var(--aqua-hue, 215) - 8), 75%, 22%, 0.65),' +
+              'inset 0 0.4em 0.55em 0.2em hsla(var(--aqua-hue, 215), 95%, 68%, 0.28),' +
+              '0 0 0.5em hsla(var(--aqua-hue, 215), 78%, 58%, 0.45)',
             '&:disabled': {
               boxShadow:
                 '0 0.375em 0.5em rgba(0, 0, 0, 0.2), 0 0.125em 0.125em rgba(0, 0, 0, 0.3), inset 0 0.25em 0.25em rgba(0, 0, 0, 0.4), inset 0 0.375em 0.5em 0.25em #BBBBBB',
@@ -105,15 +108,6 @@ export default {
                 'linear-gradient(rgba(160, 160, 160, 0.625), rgba(255, 255, 255, 0.625)) !important',
               boxShadow:
                 '0 0.375em 0.5em rgba(0, 0, 0, 0.2), 0 0.125em 0.125em rgba(0, 0, 0, 0.3), inset 0 0.25em 0.25em rgba(0, 0, 0, 0.4), inset 0 0.375em 0.5em 0.25em #BBBBBB !important',
-            },
-          },
-          '&.secondary': {
-            background: 'linear-gradient(rgba(160, 160, 160, 0.625), rgba(255, 255, 255, 0.625))',
-            boxShadow:
-              '0 0.375em 0.5em rgba(0, 0, 0, 0.2), 0 0.125em 0.125em rgba(0, 0, 0, 0.3), inset 0 0.25em 0.25em rgba(0, 0, 0, 0.4), inset 0 0.375em 0.5em 0.25em #BBBBBB',
-            '&:focus, &:active': {
-              boxShadow:
-                '0 0.375em 0.5em rgba(0, 0, 0, 0.2), 0 0.125em 0.125em rgba(0, 0, 0, 0.3), inset 0 0.25em 0.25em rgba(0, 0, 0, 0.4), inset 0 0.375em 0.5em 0.25em #BBBBBB, 0 0 0.5em rgba(0, 0, 0, 0.25)',
             },
           },
         },
@@ -227,6 +221,11 @@ export default {
           '.read-box': {
             '@apply shadow-inner shadow-slate-200': {},
           },
+          /** Full-viewport loading veil: blur content behind spinner (used by LoadingSpinner page variant). */
+          '.page-loading-overlay': {
+            '@apply fixed inset-0 z-50 flex min-h-0 items-center justify-center bg-white/50 backdrop-blur-sm':
+              {},
+          },
           '.input-field': {
             '@apply px-4 py-1.5 text-sm h-8 text-gray-700 bg-white border border-gray-300 placeholder-blue-400 rounded-full transition-all focus:ring-1 focus:ring-blue-500 focus:border-blue-500 focus:outline-none focus:z-50 whitespace-nowrap shadow-inner shadow-slate-200':
               {},
@@ -283,6 +282,24 @@ export default {
           },
           '.btn-aqua': {
             '@apply aqua-base': {},
+          },
+          /** Blue glossy “primary” fill (`button.primary`); background only — shadows follow `--aqua-hue`. */
+          '.btn-aqua-primary': {
+            '@apply aqua-base': {},
+            background:
+              'linear-gradient(rgba(0, 65, 184, 0.625), rgba(45, 115, 199, 0.625), rgba(33, 160, 196, 0.625))',
+            '--aqua-hue': '217',
+          },
+          /** Gray glossy “secondary” look (was `.aqua-base.secondary`). */
+          '.btn-aqua-secondary': {
+            '@apply aqua-base': {},
+            background: 'linear-gradient(rgba(160, 160, 160, 0.625), rgba(255, 255, 255, 0.625))',
+            boxShadow:
+              '0 0.375em 0.5em rgba(0, 0, 0, 0.2), 0 0.125em 0.125em rgba(0, 0, 0, 0.3), inset 0 0.25em 0.25em rgba(0, 0, 0, 0.4), inset 0 0.375em 0.5em 0.25em #BBBBBB',
+            '&:focus, &:active': {
+              boxShadow:
+                '0 0.375em 0.5em rgba(0, 0, 0, 0.2), 0 0.125em 0.125em rgba(0, 0, 0, 0.3), inset 0 0.25em 0.25em rgba(0, 0, 0, 0.4), inset 0 0.375em 0.5em 0.25em #BBBBBB, 0 0 0.5em rgba(0, 0, 0, 0.25)',
+            },
           },
           '.btn-aqua-yellow': {
             '@apply aqua-base bg-yellow-500': {},
@@ -378,8 +395,7 @@ export default {
                 '0 0 0.5em rgba(255, 255, 255, 0.2)',
             },
           },
-          '.btn-aqua-white, html[data-button-theme="aqua"] .ui-btn--empty, html:not([data-button-theme]) .ui-btn--empty':
-            {
+          '.btn-aqua-white': {
             '@apply aqua-base bg-white': {},
             background: 'linear-gradient(rgba(180, 180, 180, 1), rgba(255, 255, 255, 0.625))',
             boxShadow:
@@ -413,10 +429,10 @@ export default {
               background: 'rgb(128 128 128)',
               '@apply text-white': {},
             },
-            '&.enabled': {
-              '@apply text-white border-blue-500 bg-blue-500': {},
-            },
-            '&.enabled:hover:not(:disabled)': {
+          },
+          '.btn-reaction-active': {
+            '@apply btn-base text-white border-blue-500 bg-blue-500': {},
+            '&:hover:not(:disabled)': {
               background: 'rgb(37, 99, 235)',
               '@apply border-blue-600': {},
             },
@@ -527,7 +543,7 @@ export default {
             '@apply btn-base text-pink-600 bg-white border-pink-600 enabled:hover:bg-pink-50 enabled:hover:text-pink-700':
               {},
           },
-          '.btn-group-item, html[data-button-theme="flat"] .ui-btn--group-item': {
+          '.btn-group-item': {
             '@apply border rounded-full': {},
             // Tailwind's `max-sm` variant; `@screen` only accepts `theme.screens` keys (not max-*).
             '@media (max-width: 639px)': {
@@ -570,8 +586,7 @@ export default {
                 'brightness(1.1) drop-shadow(0 0 0.3rem hsla(var(--aqua-hue, 215), 82%, 58%, 0.8)) drop-shadow(0 0 0.9rem hsla(var(--aqua-hue, 215), 78%, 55%, 0.55))',
             },
           },
-          '.btn-aqua-group-item, html[data-button-theme="aqua"] .ui-btn--group-item, html:not([data-button-theme]) .ui-btn--group-item':
-            aquaUiBtnGroupItemGeometry,
+          '.btn-aqua-group-item': aquaUiBtnGroupItemGeometry,
           '.btn-aqua-toggle': {
             '&.active': {
               '@apply aqua-base bg-red-400': {},
@@ -693,82 +708,89 @@ export default {
 
       const buttonUiThemeLayer = () => {
         const rules = {}
-        const aquaHtml =
-          'html[data-button-theme="aqua"] .CLASS, html:not([data-button-theme]) .CLASS'
-        const addPair = (cls, aquaPrims, flatPrims) => {
-          rules[aquaHtml.replace(/CLASS/g, cls)] = { [`@apply ${aquaPrims}`]: {} }
-          rules[`html[data-button-theme="flat"] .${cls}`] = { [`@apply ${flatPrims}`]: {} }
+        const themeSelectors = {
+          aqua: 'html[data-button-theme="aqua"] .CLASS, html:not([data-button-theme]) .CLASS',
+          flat: 'html[data-button-theme="flat"] .CLASS',
         }
-        const pairs = [
-          ['ui-btn--insert', 'btn-aqua-blue', 'btn-insert'],
-          ['ui-btn--create', 'btn-aqua-emerald', 'btn-create'],
-          ['ui-btn--update', 'btn-aqua-teal', 'btn-update'],
-          ['ui-btn--delete', 'btn-aqua-red', 'btn-delete'],
-          ['ui-btn--cancel', 'btn-aqua-zinc', 'btn-cancel'],
-          ['ui-btn--get', 'btn-aqua-get', 'btn-get'],
-          ['ui-btn--market', 'btn-aqua-rose', 'btn-market'],
-          ['ui-btn--error', 'btn-aqua-red', 'btn-error'],
-          ['ui-btn--warning', 'btn-aqua-orange', 'btn-warning'],
-          ['ui-btn--success', 'btn-aqua-emerald', 'btn-success'],
-          ['ui-btn--revert', 'btn-aqua-yellow', 'btn-revert'],
-          ['ui-btn--history', 'btn-aqua-purple', 'btn-history'],
-          ['ui-btn--link', 'btn-aqua-sky', 'btn-link'],
-          ['ui-btn--reaction', 'btn-aqua-zinc', 'btn-reaction'],
-          ['ui-btn--reply', 'btn-aqua-sky', 'btn-reply'],
-          ['ui-btn--action', 'btn-aqua-pink', 'btn-action'],
-          ['ui-btn--previous', 'btn-aqua-zinc', 'btn-previous'],
-          ['ui-btn--next', 'btn-aqua-zinc', 'btn-next'],
-          ['ui-btn--aqua-default', 'btn-aqua', 'btn-get'],
-          ['ui-btn--accent-purple', 'btn-aqua-purple', 'btn-link'],
-          ['ui-btn--danger-rose', 'btn-aqua-rose', 'btn-delete'],
-          ['ui-btn--warning-orange', 'btn-aqua-orange', 'btn-warning'],
-          ['ui-btn--warning-yellow', 'btn-aqua-yellow', 'btn-warning'],
-          ['ui-btn--amber', 'btn-aqua-amber', 'btn-warning'],
-          ['ui-btn--auth-login', 'btn-aqua-orange', 'btn-warning'],
-          ['ui-btn--auth-signup', 'btn-aqua-teal', 'btn-create'],
-          ['ui-btn--continue', 'btn-aqua', 'btn-get'],
-          ['ui-btn--study-wrong', 'btn-aqua-rose', 'btn-error'],
-          ['ui-btn--study-correct', 'btn-aqua-teal', 'btn-success'],
-          ['ui-btn--sort-sky', 'btn-aqua-sky', 'btn-get'],
-          ['ui-btn--sort-blue', 'btn-aqua-blue', 'btn-insert'],
-          ['ui-btn--sort-amber', 'btn-aqua-amber', 'btn-warning'],
-          ['ui-btn--sort-emerald', 'btn-aqua-emerald', 'btn-create'],
-          ['ui-btn--sort-active', 'btn-aqua-sort-active', 'btn-flat-sort-active'],
-          ['ui-btn--sort-idle', 'btn-aqua-sort-idle', 'btn-flat-sort-idle'],
-          ['ui-btn--neutral', 'btn-aqua-white', 'btn-empty'],
-          ['ui-btn--neutral-muted', 'btn-aqua-zinc', 'btn-cancel'],
-          ['ui-btn--neutral-slate', 'btn-aqua-slate', 'btn-get'],
-          ['ui-btn--primary', 'btn-aqua-emerald', 'btn-create'],
-        ]
-        const palette = [
-          ['palette-white', 'btn-aqua-white', 'btn-empty'],
-          ['palette-red', 'btn-aqua-red', 'btn-delete'],
-          ['palette-orange', 'btn-aqua-orange', 'btn-warning'],
-          ['palette-amber', 'btn-aqua-amber', 'btn-warning'],
-          ['palette-yellow', 'btn-aqua-yellow', 'btn-warning'],
-          ['palette-lime', 'btn-aqua-lime', 'btn-success'],
-          ['palette-teal', 'btn-aqua-teal', 'btn-create'],
-          ['palette-emerald', 'btn-aqua-emerald', 'btn-create'],
-          ['palette-cyan', 'btn-aqua-cyan', 'btn-insert'],
-          ['palette-sky', 'btn-aqua-sky', 'btn-get'],
-          ['palette-blue', 'btn-aqua-blue', 'btn-insert'],
-          ['palette-indigo', 'btn-aqua-indigo', 'btn-link'],
-          ['palette-violet', 'btn-aqua-violet', 'btn-link'],
-          ['palette-purple', 'btn-aqua-purple', 'btn-history'],
-          ['palette-fuchsia', 'btn-aqua-fuchsia', 'btn-market'],
-          ['palette-pink', 'btn-aqua-pink', 'btn-action'],
-          ['palette-rose', 'btn-aqua-rose', 'btn-market'],
-          ['palette-slate', 'btn-aqua-slate', 'btn-get'],
-          ['palette-zinc', 'btn-aqua-zinc', 'btn-cancel'],
-        ]
-        for (const [cls, a, f] of pairs) {
-          addPair(cls, a, f)
+        const selectorFor = (theme, cls) => themeSelectors[theme].replace(/CLASS/g, cls)
+        const addThemeMap = (themeMap) => {
+          for (const [cls, classesByTheme] of Object.entries(themeMap)) {
+            for (const [theme, primitives] of Object.entries(classesByTheme)) {
+              rules[selectorFor(theme, cls)] = { [`@apply ${primitives}`]: {} }
+            }
+          }
         }
-        for (const [name, a, f] of palette) {
-          addPair(`ui-btn--${name}`, a, f)
+        const buttonThemeClassMap = {
+          'ui-btn--insert': { aqua: 'btn-aqua-blue', flat: 'btn-insert' },
+          'ui-btn--create': { aqua: 'btn-aqua-emerald', flat: 'btn-create' },
+          'ui-btn--update': { aqua: 'btn-aqua-teal', flat: 'btn-update' },
+          'ui-btn--delete': { aqua: 'btn-aqua-red', flat: 'btn-delete' },
+          'ui-btn--cancel': { aqua: 'btn-aqua-zinc', flat: 'btn-cancel' },
+          'ui-btn--empty': { aqua: 'btn-aqua-white', flat: 'btn-empty' },
+          'ui-btn--reaction': { aqua: 'btn-aqua-cyan', flat: 'btn-reaction' },
+          'ui-btn--reaction-active': { aqua: 'btn-aqua-blue', flat: 'btn-reaction-active' },
+          'ui-btn--get': { aqua: 'btn-aqua-get', flat: 'btn-get' },
+          'ui-btn--market': { aqua: 'btn-aqua-rose', flat: 'btn-market' },
+          'ui-btn--error': { aqua: 'btn-aqua-red', flat: 'btn-error' },
+          'ui-btn--warning': { aqua: 'btn-aqua-orange', flat: 'btn-warning' },
+          'ui-btn--success': { aqua: 'btn-aqua-emerald', flat: 'btn-success' },
+          'ui-btn--revert': { aqua: 'btn-aqua-yellow', flat: 'btn-revert' },
+          'ui-btn--history': { aqua: 'btn-aqua-purple', flat: 'btn-history' },
+          'ui-btn--link': { aqua: 'btn-aqua-sky', flat: 'btn-link' },
+          'ui-btn--reply': { aqua: 'btn-aqua-sky', flat: 'btn-reply' },
+          'ui-btn--action': { aqua: 'btn-aqua-pink', flat: 'btn-action' },
+          'ui-btn--previous': { aqua: 'btn-aqua-zinc', flat: 'btn-previous' },
+          'ui-btn--next': { aqua: 'btn-aqua-zinc', flat: 'btn-next' },
+          'ui-btn--group-item': { aqua: 'btn-aqua-group-item', flat: 'btn-group-item' },
+          'ui-btn--aqua-default': { aqua: 'btn-aqua', flat: 'btn-get' },
+          'ui-btn--accent-purple': { aqua: 'btn-aqua-purple', flat: 'btn-link' },
+          'ui-btn--danger-rose': { aqua: 'btn-aqua-rose', flat: 'btn-delete' },
+          'ui-btn--warning-orange': { aqua: 'btn-aqua-orange', flat: 'btn-warning' },
+          'ui-btn--warning-yellow': { aqua: 'btn-aqua-yellow', flat: 'btn-warning' },
+          'ui-btn--amber': { aqua: 'btn-aqua-amber', flat: 'btn-warning' },
+          'ui-btn--auth-login': { aqua: 'btn-aqua-orange', flat: 'btn-warning' },
+          'ui-btn--auth-signup': { aqua: 'btn-aqua-teal', flat: 'btn-create' },
+          'ui-btn--continue': { aqua: 'btn-aqua', flat: 'btn-get' },
+          'ui-btn--study-wrong': { aqua: 'btn-aqua-rose', flat: 'btn-error' },
+          'ui-btn--study-correct': { aqua: 'btn-aqua-teal', flat: 'btn-success' },
+          'ui-btn--sort-sky': { aqua: 'btn-aqua-sky', flat: 'btn-get' },
+          'ui-btn--sort-blue': { aqua: 'btn-aqua-blue', flat: 'btn-insert' },
+          'ui-btn--sort-amber': { aqua: 'btn-aqua-amber', flat: 'btn-warning' },
+          'ui-btn--sort-emerald': { aqua: 'btn-aqua-emerald', flat: 'btn-create' },
+          'ui-btn--sort-active': { aqua: 'btn-aqua-sort-active', flat: 'btn-flat-sort-active' },
+          'ui-btn--sort-idle': { aqua: 'btn-aqua-sort-idle', flat: 'btn-flat-sort-idle' },
+          'ui-btn--neutral': { aqua: 'btn-aqua-white', flat: 'btn-empty' },
+          'ui-btn--neutral-muted': { aqua: 'btn-aqua-zinc', flat: 'btn-cancel' },
+          'ui-btn--neutral-slate': { aqua: 'btn-aqua-slate', flat: 'btn-get' },
+          'ui-btn--primary': { aqua: 'btn-aqua-emerald', flat: 'btn-create' },
+          'ui-btn--palette-white': { aqua: 'btn-aqua-white', flat: 'btn-empty' },
+          'ui-btn--palette-red': { aqua: 'btn-aqua-red', flat: 'btn-delete' },
+          'ui-btn--palette-orange': { aqua: 'btn-aqua-orange', flat: 'btn-warning' },
+          'ui-btn--palette-amber': { aqua: 'btn-aqua-amber', flat: 'btn-warning' },
+          'ui-btn--palette-yellow': { aqua: 'btn-aqua-yellow', flat: 'btn-warning' },
+          'ui-btn--palette-lime': { aqua: 'btn-aqua-lime', flat: 'btn-success' },
+          'ui-btn--palette-teal': { aqua: 'btn-aqua-teal', flat: 'btn-create' },
+          'ui-btn--palette-emerald': { aqua: 'btn-aqua-emerald', flat: 'btn-create' },
+          'ui-btn--palette-cyan': { aqua: 'btn-aqua-cyan', flat: 'btn-insert' },
+          'ui-btn--palette-sky': { aqua: 'btn-aqua-sky', flat: 'btn-get' },
+          'ui-btn--palette-blue': { aqua: 'btn-aqua-blue', flat: 'btn-insert' },
+          'ui-btn--palette-indigo': { aqua: 'btn-aqua-indigo', flat: 'btn-link' },
+          'ui-btn--palette-violet': { aqua: 'btn-aqua-violet', flat: 'btn-link' },
+          'ui-btn--palette-purple': { aqua: 'btn-aqua-purple', flat: 'btn-history' },
+          'ui-btn--palette-fuchsia': { aqua: 'btn-aqua-fuchsia', flat: 'btn-market' },
+          'ui-btn--palette-pink': { aqua: 'btn-aqua-pink', flat: 'btn-action' },
+          'ui-btn--palette-rose': { aqua: 'btn-aqua-rose', flat: 'btn-market' },
+          'ui-btn--palette-slate': { aqua: 'btn-aqua-slate', flat: 'btn-get' },
+          'ui-btn--palette-zinc': { aqua: 'btn-aqua-zinc', flat: 'btn-cancel' },
         }
-        rules['html[data-button-theme="flat"] .ui-btn--empty'] = {
-          '@apply btn-empty': {},
+        addThemeMap(buttonThemeClassMap)
+        /** Selected/saved state for neutral buttons (e.g. bookmark): push from slate to light blue. */
+        const activeNeutralMap = {
+          aqua: 'btn-aqua-sky',
+          flat: 'btn-get',
+        }
+        for (const [theme, primitives] of Object.entries(activeNeutralMap)) {
+          rules[selectorFor(theme, 'ui-btn--empty.active')] = { [`@apply ${primitives}`]: {} }
         }
         /** Outer elevation for FAB + overflow menu (does not replace aqua glossy box-shadow). Add per future [data-button-theme]. */
         const fabOuterShadowAqua =
@@ -788,24 +810,22 @@ export default {
           boxSizing: 'border-box',
           padding: '0.5rem',
         }
-        rules[
-          'html[data-button-theme="aqua"] .ui-btn--fab, html:not([data-button-theme]) .ui-btn--fab'
-        ] = {
+        const aquaRules = {}
+        const flatRules = {}
+        aquaRules[selectorFor('aqua', 'ui-btn--fab')] = {
           '@apply btn-aqua-rose': {},
           ...fabShell,
           filter: fabOuterShadowAqua,
         }
-        rules['html[data-button-theme="flat"] .ui-btn--fab'] = {
+        flatRules[selectorFor('flat', 'ui-btn--fab')] = {
           '@apply btn-market': {},
           ...fabShell,
           filter: fabOuterShadowFlat,
         }
-        rules[
-          'html[data-button-theme="aqua"] .fab-menu-action, html:not([data-button-theme]) .fab-menu-action'
-        ] = {
+        aquaRules[selectorFor('aqua', 'fab-menu-action')] = {
           filter: fabMenuOuterShadowAqua,
         }
-        rules['html[data-button-theme="flat"] .fab-menu-action'] = {
+        flatRules[selectorFor('flat', 'fab-menu-action')] = {
           filter: fabMenuOuterShadowFlat,
         }
         const toggleOffShadow =
@@ -813,29 +833,24 @@ export default {
           '0 0.125em 0.125em hsla(0, 0%, 36.7%, 0.5),' +
           'inset 0 0.15em 0.35em rgba(255, 255, 255, 0.7),' +
           'inset 0 -0.05em 0.2em rgba(0, 0, 0, 0.06)'
-        rules[
-          'html[data-button-theme="aqua"] .ui-btn--toggle.active, html:not([data-button-theme]) .ui-btn--toggle.active'
-        ] = {
+        aquaRules[selectorFor('aqua', 'ui-btn--toggle.active')] = {
           '@apply aqua-base bg-red-400': {},
           '--aqua-hue': '0',
         }
-        rules[
-          'html[data-button-theme="aqua"] .ui-btn--toggle:not(.active), html:not([data-button-theme]) .ui-btn--toggle:not(.active)'
-        ] = {
+        aquaRules[selectorFor('aqua', 'ui-btn--toggle:not(.active)')] = {
           '@apply btn-aqua-white': {},
           boxShadow: toggleOffShadow,
         }
-        rules['html[data-button-theme="flat"] .ui-btn--toggle.active'] = {
+        flatRules[selectorFor('flat', 'ui-btn--toggle.active')] = {
           '@apply btn-error': {},
         }
-        rules['html[data-button-theme="flat"] .ui-btn--toggle:not(.active)'] = {
+        flatRules[selectorFor('flat', 'ui-btn--toggle:not(.active)')] = {
           '@apply btn-empty': {},
         }
         /** Beats semantic ui-btn--* primitives (loaded above) so inner segments stay square in forced groups. */
-        rules[
-          'html[data-button-theme="aqua"] .btn-group-forced .ui-btn--group-item, html:not([data-button-theme]) .btn-group-forced .ui-btn--group-item'
-        ] = aquaUiBtnGroupItemGeometry
-        rules['html[data-button-theme="flat"] .btn-group-forced .ui-btn--group-item'] = {
+        aquaRules[selectorFor('aqua', 'btn-group-forced .ui-btn--group-item')] =
+          aquaUiBtnGroupItemGeometry
+        flatRules[selectorFor('flat', 'btn-group-forced .ui-btn--group-item')] = {
           '@apply rounded-none first:rounded-l-full last:rounded-r-full': {},
           '&:not(:last-child)': {
             '@apply border-r-0': {},
@@ -845,6 +860,7 @@ export default {
               {},
           },
         }
+        Object.assign(rules, aquaRules, flatRules)
         return rules
       }
       addComponents(buttonUiThemeLayer())

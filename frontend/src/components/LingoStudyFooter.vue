@@ -12,11 +12,11 @@
        <!-- Status message (correct / wrong) -->
       <div
         v-if="status === 'correct'"
-        class="flex items-center text-xs font-bold text-green-600 sm:text-sm"
+        class="flex items-center gap-1.5 text-xs font-bold text-green-600 sm:gap-2 sm:text-sm"
         :class="{ 'lg:text-base': !compact, 'lg:text-sm': compact }"
       >
          <CheckCircle
-          class="mr-1.5 h-4 w-4 shrink-0 sm:mr-2 sm:h-5 sm:w-5"
+          class="h-4 w-4 shrink-0 sm:h-5 sm:w-5"
           :class="{ 'lg:h-6 lg:w-6': !compact }"
         /> <span>{{ correctLabel }}</span
         >
@@ -24,11 +24,11 @@
 
       <div
         v-else-if="status === 'wrong'"
-        class="flex items-center text-xs font-bold text-rose-500 sm:text-sm"
+        class="flex items-center gap-1.5 text-xs font-bold text-rose-500 sm:gap-2 sm:text-sm"
         :class="{ 'lg:text-base': !compact, 'lg:text-sm': compact }"
       >
          <XCircle
-          class="mr-1.5 h-4 w-4 shrink-0 sm:mr-2 sm:h-5 sm:w-5"
+          class="h-4 w-4 shrink-0 sm:h-5 sm:w-5"
           :class="{ 'lg:h-6 lg:w-6': !compact }"
         /> <span>{{ wrongLabel }}</span
         >
