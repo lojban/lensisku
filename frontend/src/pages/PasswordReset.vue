@@ -34,7 +34,7 @@
           </div>
            <button
             type="submit"
-            class="w-full flex justify-center items-center btn-aqua-slate h-8 gap-2 py-3 rounded-full text-lg font-semibold transition-all"
+            class="w-full flex justify-center items-center ui-btn--neutral-slate h-8 gap-2 py-3 rounded-full text-lg font-semibold transition-all"
             :disabled="isLoading || !email"
           >
              <template v-if="isLoading"
@@ -119,7 +119,7 @@
           </div>
            <button
             type="submit"
-            class="w-full flex justify-center items-center btn-aqua-slate h-8 gap-2 py-3 rounded-full text-lg font-semibold transition-all"
+            class="w-full flex justify-center items-center ui-btn--neutral-slate h-8 gap-2 py-3 rounded-full text-lg font-semibold transition-all"
             :disabled="isLoading || !isValidPasswordReset"
           >
              <template v-if="isLoading"

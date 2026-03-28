@@ -76,22 +76,22 @@
 
         <div class="flex flex-wrap items-center gap-2 w-auto">
 
-          <div class="flex items-center gap-0" role="group">
+          <div class="btn-group-forced flex flex-wrap items-center gap-x-0 gap-y-2" role="group">
              <RouterLink
               :to="`/collections/${props.collectionId}`"
-              class="btn-aqua-zinc btn-aqua-group-item md:flex-none"
+              class="ui-btn--neutral-muted ui-btn--group-item md:flex-none"
               > <List class="w-4 h-4 shrink-0" aria-hidden="true" /> {{
                 t('components.flashcardCollectionView.collectionButton')
               }} </RouterLink
             > <template v-if="isOwner && collection?.item_count > existingFlashcardIds.size"
               > <RouterLink
                 :to="`/collections/${collection.collection_id}?mode=add_flashcard`"
-                class="btn-aqua-emerald btn-aqua-group-item md:flex-none"
+                class="ui-btn--create ui-btn--group-item md:flex-none"
                 > <PlusCircle class="w-4 h-4 shrink-0" aria-hidden="true" /> {{
                   t('components.flashcardCollectionView.addFlashcardButton')
                 }} </RouterLink
               > <button
-                class="btn-aqua-red btn-aqua-group-item md:flex-none"
+                class="ui-btn--delete ui-btn--group-item md:flex-none"
                 :disabled="isImporting"
                 @click="handleImport"
               >
@@ -106,11 +106,11 @@
               <div class="mt-2 gap-4">
                  <RouterLink
                   :to="`/collections/${props.collectionId}/levels`"
-                  class="btn-aqua-orange btn-aqua-group-item md:flex-none"
+                  class="ui-btn--warning-orange ui-btn--group-item md:flex-none"
                   > {{ t('anonymousProgress.viewLevels') }} </RouterLink
                 > <RouterLink
                   :to="`/collections/${props.collectionId}/levels`"
-                  class="btn-aqua-emerald btn-aqua-group-item md:flex-none"
+                  class="ui-btn--create ui-btn--group-item md:flex-none"
                   > {{ t('anonymousProgress.studyLevels') }} </RouterLink
                 >
               </div>
@@ -128,11 +128,11 @@
       >
          <RouterLink
           :to="`/collections/${props.collectionId}/flashcards/study`"
-          class="btn-aqua-orange h-10 text-base inline-flex items-center justify-center gap-2"
+          class="ui-btn--warning-orange h-10 text-base inline-flex items-center justify-center gap-2"
           > {{ t('flashcardCollection.studyNow', { count: dueCount }) }} </RouterLink
         > <RouterLink
           :to="`/collections/${props.collectionId}/levels`"
-          class="btn-aqua-white inline-flex items-center gap-2"
+          class="ui-btn--neutral inline-flex items-center gap-2"
           > <LayoutPanelTop class="w-4 h-4 shrink-0" aria-hidden="true" /> {{
             t('collectionDetail.levels')
           }} </RouterLink
@@ -358,7 +358,7 @@
 
           <div class="flex items-center gap-2 flex-wrap">
              <button
-              class="btn-empty flex items-center gap-1.5 hover:bg-orange-50 text-orange-600"
+              class="ui-btn--empty flex items-center gap-1.5 hover:bg-orange-50 text-orange-600"
               :title="t('components.flashcardCollectionView.reviewNowAction')"
               @click.stop="reviewSingleCard(card.flashcard.id)"
             >
@@ -368,7 +368,7 @@
               > </button
             > <button
               :disabled="index === 0 || isReordering"
-              class="btn-empty flex items-center gap-1.5"
+              class="ui-btn--empty flex items-center gap-1.5"
               :class="[
                 index === 0 || isReordering ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100',
               ]"
@@ -381,7 +381,7 @@
               > </button
             > <button
               :disabled="index === flashcards.length - 1 || isReordering"
-              class="btn-empty flex items-center gap-1.5"
+              class="ui-btn--empty flex items-center gap-1.5"
               :class="[
                 index === flashcards.length - 1 || isReordering
                   ? 'opacity-50 cursor-not-allowed'
@@ -857,18 +857,18 @@ const reviewSingleCard = (flashcardId) => {
 </script>
 
 <style scoped>
-.btn-previous,
-.btn-next {
+.ui-btn--previous,
+.ui-btn--next {
   @apply px-4 py-2 text-sm border rounded-md;
 }
 
-.btn-previous:disabled,
-.btn-next:disabled {
+.ui-btn--previous:disabled,
+.ui-btn--next:disabled {
   @apply opacity-50 cursor-not-allowed;
 }
 
-.btn-previous:not(:disabled),
-.btn-next:not(:disabled) {
+.ui-btn--previous:not(:disabled),
+.ui-btn--next:not(:disabled) {
   @apply hover:bg-gray-50;
 }
 

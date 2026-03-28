@@ -36,7 +36,7 @@
         </div>
          <button
           type="submit"
-          class="w-full flex justify-center items-center btn-aqua-slate h-8 gap-2 py-3 rounded-full text-lg font-semibold transition-all"
+          class="w-full flex justify-center items-center ui-btn--neutral-slate h-8 gap-2 py-3 rounded-full text-lg font-semibold transition-all"
           :disabled="isLoading || !currentPassword"
           :class="{ 'opacity-75 cursor-not-allowed': isLoading }"
         >
@@ -127,14 +127,14 @@
         <div class="flex gap-3">
            <button
             type="button"
-            class="btn-aqua-zinc flex-1 h-8"
+            class="ui-btn--neutral-muted flex-1 h-8"
             :disabled="isLoading"
             @click="resetForm"
           >
              {{ t('changePassword.startOverButton') }} </button
           > <button
             type="submit"
-            class="btn-aqua-teal flex-1 h-8"
+            class="ui-btn--auth-signup flex-1 h-8"
             :disabled="isLoading || !isValidPasswordChange"
           >
              <template v-if="isLoading"

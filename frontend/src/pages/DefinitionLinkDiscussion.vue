@@ -138,7 +138,7 @@
           > <button
             v-if="auth.state.isLoggedIn"
             type="button"
-            class="inline-flex items-center gap-2 btn-aqua-white"
+            class="inline-flex items-center gap-2 ui-btn--neutral"
             :aria-label="t('commentList.newWave')"
             @click="handleNewTopLevelComment"
           >
@@ -231,7 +231,7 @@
            <button
             v-if="auth.state.isLoggedIn"
             type="button"
-            class="inline-flex items-center gap-2 btn-aqua-white h-12 text-base !px-5 mx-auto"
+            class="inline-flex items-center gap-2 ui-btn--neutral h-12 text-base !px-5 mx-auto"
             :aria-label="t('commentList.newDiscussionWave')"
             @click="handleNewTopLevelComment"
           >

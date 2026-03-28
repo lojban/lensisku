@@ -39,7 +39,7 @@
         type="button"
         :disabled="disabled"
         :aria-disabled="disabled"
-        class="btn-aqua ml-auto text-sm"
+        class="ui-btn--aqua-default ml-auto text-sm"
         :class="[
           buttonClass,
           compact
@@ -98,8 +98,8 @@ const footerClass = computed(() => {
 })
 
 const buttonClass = computed(() => {
-  if (props.status === 'wrong') return 'btn-aqua-rose'
-  return 'btn-aqua-teal'
+  if (props.status === 'wrong') return 'ui-btn--danger-rose'
+  return 'ui-btn--auth-signup'
 })
 
 const buttonLabel = computed(() => {

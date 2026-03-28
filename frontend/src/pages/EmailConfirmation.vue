@@ -28,9 +28,9 @@
       <p class="text-gray-600 mb-6"> {{ t('emailConfirmation.successMessage') }} </p>
 
       <div class="space-y-3">
-         <RouterLink to="/" class="btn-get w-full block text-center"
+         <RouterLink to="/" class="ui-btn--get w-full block text-center"
           > {{ t('emailConfirmation.goToHomepage') }} </RouterLink
-        > <RouterLink to="/login" class="btn-create w-full block text-center"
+        > <RouterLink to="/login" class="ui-btn--create w-full block text-center"
           > {{ t('emailConfirmation.logIn') }} </RouterLink
         >
       </div>
@@ -63,11 +63,11 @@
       <p class="text-red-600 mb-6"> {{ error }} <!-- Keep error message as is, it's dynamic --> </p>
 
       <div class="space-y-3">
-         <RouterLink to="/" class="btn-get w-full block text-center"
+         <RouterLink to="/" class="ui-btn--get w-full block text-center"
           > {{ t('emailConfirmation.returnHome') }} </RouterLink
         > <button
           v-if="isExpired"
-          class="btn-create w-full"
+          class="ui-btn--create w-full"
           :disabled="isRequestingToken"
           @click="requestNewToken"
         >

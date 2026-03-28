@@ -59,7 +59,7 @@
           >
 
             <option v-for="loc in availableLocales" :key="`locale-${loc}`" :value="loc">
-               {{ loc.toUpperCase() }}
+               {{ localeNativeName(loc) }}
             </option>
              </select
           > <ChevronDown
@@ -111,6 +111,7 @@ import { useI18n } from 'vue-i18n'
 import { useRouter, useRoute } from 'vue-router'
 import { ChevronDown } from 'lucide-vue-next'
 
+import { localeNativeName } from '@/config/locales'
 import ModalComponent from './ModalComponent.vue'
 import SocialLinks from './SocialLinks.vue'
 

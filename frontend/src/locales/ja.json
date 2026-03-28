@@ -3,6 +3,11 @@
     "baseTitle": "ロジバン・ポータル",
     "defaultDescription": "ロジバンの辞書とコーパスを検索。語の定義、用例、コミュニティの議論（ロジバン la .lojban.）を見つけられます。"
   },
+  "buttonTheme": {
+    "label": "ボタンのスタイル",
+    "aqua": "光沢（アクア）",
+    "flat": "フラット（標準）"
+  },
   "notFoundPage": {
     "pageTitle": "404 — ページが見つかりません",
     "description": "お探しのページは存在しません。",

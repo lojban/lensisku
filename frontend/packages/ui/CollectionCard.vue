@@ -43,13 +43,13 @@
           <div class="btn-group-forced flex flex-nowrap justify-center" role="group">
              <RouterLink
               :to="`/collections/${collection.collection_id}`"
-              class="btn-empty btn-group-item"
+              class="ui-btn--empty ui-btn--group-item"
               > <List class="w-4 h-4 shrink-0" /> <span>{{ collectionButtonLabel }}</span
               > </RouterLink
             > <RouterLink
               v-if="collection.has_flashcards"
               :to="`/collections/${collection.collection_id}/flashcards`"
-              class="btn-empty btn-group-item"
+              class="ui-btn--empty ui-btn--group-item"
               > <LayoutGrid class="w-4 h-4 shrink-0" /> <span>{{ flashcardsButtonLabel }}</span
               > </RouterLink
             >
@@ -101,26 +101,27 @@ export interface CollectionCardCollection {
   owner: { user_id: number; username: string }
 }
 
-const AQUA_VARIANT_WHEEL = [
-  'aqua-white',
-  'aqua-red',
-  'aqua-orange',
-  'aqua-amber',
-  'aqua-yellow',
-  'aqua-lime',
-  'aqua-teal',
-  'aqua-emerald',
-  'aqua-cyan',
-  'aqua-sky',
-  'aqua-blue',
-  'aqua-indigo',
-  'aqua-violet',
-  'aqua-purple',
-  'aqua-fuchsia',
-  'aqua-pink',
-  'aqua-rose',
-  'aqua-slate',
-  'aqua-zinc',
+/** `Button` variant suffixes (`ui-btn--${id}`); rotates study CTA color by collection name. */
+const STUDY_BUTTON_VARIANT_WHEEL = [
+  'neutral',
+  'palette-red',
+  'warning-orange',
+  'amber',
+  'warning-yellow',
+  'palette-lime',
+  'palette-teal',
+  'palette-emerald',
+  'palette-cyan',
+  'palette-sky',
+  'palette-blue',
+  'palette-indigo',
+  'palette-violet',
+  'palette-purple',
+  'palette-fuchsia',
+  'palette-pink',
+  'palette-rose',
+  'palette-slate',
+  'palette-zinc',
 ]
 
 function hashString(str: string | undefined | null): number {
@@ -159,9 +160,9 @@ const props = defineProps({
 const studyButtonVariant = computed(() => {
   const name = props.collection?.name ?? ''
   const index =
-    ((hashString(name) % AQUA_VARIANT_WHEEL.length) + AQUA_VARIANT_WHEEL.length) %
-    AQUA_VARIANT_WHEEL.length
-  return AQUA_VARIANT_WHEEL[index]
+    ((hashString(name) % STUDY_BUTTON_VARIANT_WHEEL.length) + STUDY_BUTTON_VARIANT_WHEEL.length) %
+    STUDY_BUTTON_VARIANT_WHEEL.length
+  return STUDY_BUTTON_VARIANT_WHEEL[index]
 })
 
 defineEmits<{ study: [collection: CollectionCardCollection] }>()

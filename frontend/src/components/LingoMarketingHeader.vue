@@ -24,7 +24,7 @@
              {{ t('lingo.signOut') }} </button
           > </template
         > <template v-else
-          > <RouterLink to="/lingo/login" class="btn-aqua-zinc text-sm"
+          > <RouterLink to="/lingo/login" class="ui-btn--neutral-muted text-sm"
             > {{ t('lingo.login') }} </RouterLink
           > </template
         >

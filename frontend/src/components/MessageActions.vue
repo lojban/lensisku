@@ -1,15 +1,15 @@
 <template>
 
   <div class="flex gap-3">
-     <button class="btn-history" @click="goBack"> <ArrowLeft class="h-5 w-5" /> </button> <button
-      class="btn-market"
+     <button class="ui-btn--history" @click="goBack"> <ArrowLeft class="h-5 w-5" /> </button> <button
+      class="ui-btn--market"
       @click="viewThread"
     >
        {{ t('components.messageActions.viewThread') }} </button
     > <button
       v-if="showSpamButton"
-      class="btn-warning"
-      :class="currentUserVotedSpam ? 'btn-warning' : 'btn-empty'"
+      class="ui-btn--warning"
+      :class="currentUserVotedSpam ? 'ui-btn--warning' : 'ui-btn--empty'"
       @click="$emit('toggle-spam-vote')"
     >
        {{

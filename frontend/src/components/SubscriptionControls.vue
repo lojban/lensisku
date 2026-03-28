@@ -2,7 +2,7 @@
    <button
     v-if="auth.state.isLoggedIn"
     :class="[
-      isSubscribed ? 'btn-aqua-toggle active' : 'btn-aqua-toggle inactive',
+      isSubscribed ? 'ui-btn--toggle active' : 'ui-btn--toggle inactive',
       { 'cursor-wait': isLoading },
     ]"
     :disabled="isLoading"

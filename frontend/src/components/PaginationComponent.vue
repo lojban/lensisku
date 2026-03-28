@@ -21,7 +21,7 @@
     <div class="flex items-center space-x-2 flex-1 justify-center sm:justify-end">
        <button
         :disabled="currentPage === 1"
-        class="btn-previous"
+        class="ui-btn--previous"
         :class="
           currentPage === 1
             ? 'text-gray-400 border-gray-200'
@@ -35,7 +35,7 @@
         </span
       > <button
         :disabled="currentPage >= totalPages"
-        class="btn-next"
+        class="ui-btn--next"
         :class="
           currentPage >= totalPages
             ? 'text-gray-400 border-gray-200'

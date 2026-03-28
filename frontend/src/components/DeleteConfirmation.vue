@@ -65,9 +65,9 @@ function handleKeydown(e) {
       </div>
 
       <div class="flex justify-end gap-3">
-         <button class="btn-cancel" @click="$emit('cancel')">
+         <button class="ui-btn--cancel" @click="$emit('cancel')">
            {{ t('deleteConfirmation.cancel') }} </button
-        > <button :disabled="isDeleting" class="btn-delete" @click="$emit('confirm')">
+        > <button :disabled="isDeleting" class="ui-btn--delete" @click="$emit('confirm')">
            {{ isDeleting ? t('deleteConfirmation.deleting') : t('deleteConfirmation.delete') }} </button
         >
       </div>

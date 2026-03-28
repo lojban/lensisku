@@ -5,7 +5,7 @@
     </p>
     <button
       type="button"
-      class="btn-aqua-zinc inline-flex w-full shrink-0 items-center justify-center gap-2 px-3 py-2 text-sm sm:w-auto"
+      class="ui-btn--neutral-muted inline-flex w-full shrink-0 items-center justify-center gap-2 px-3 py-2 text-sm sm:w-auto"
       @click="reload"
     >
       <RefreshCw class="h-4 w-4 shrink-0" aria-hidden="true" />

@@ -14,14 +14,14 @@
       <div class="flex shrink-0 items-center gap-2">
          <IconButton
           :label="t('flashcardLevels.studyButton')"
-          button-classes="btn-aqua-orange h-10 px-4 text-sm font-semibold"
+          button-classes="ui-btn--warning-orange h-10 px-4 text-sm font-semibold"
           icon-classes="h-4 w-4"
           @click="startStudy"
           > <template #icon> <Dumbbell class="h-4 w-4" /> </template> </IconButton
         > <IconButton
           v-if="isOwner"
           :label="t('flashcardLevels.createLevel')"
-          button-classes="btn-aqua-emerald h-10"
+          button-classes="ui-btn--create h-10"
           @click="showCreateModal = true"
         />
       </div>
@@ -49,7 +49,7 @@
            <IconButton
             v-if="isOwner"
             :label="t('flashcardLevels.createFirst')"
-            button-classes="btn-aqua-emerald"
+            button-classes="ui-btn--create"
             @click="showCreateModal = true"
           />
         </div>
@@ -195,13 +195,13 @@
              <button
               v-if="showEditModal"
               type="button"
-              class="btn-delete mr-auto"
+              class="ui-btn--delete mr-auto"
               @click="showDeleteLevelConfirmDialog(currentLevel)"
             >
                {{ t('flashcardLevels.deleteLevelButton') }} </button
-            > <button type="button" class="btn-cancel" @click="closeModal">
+            > <button type="button" class="ui-btn--cancel" @click="closeModal">
                {{ t('flashcardLevels.cancelButton') }} </button
-            > <button type="submit" :disabled="isSubmitting" class="btn-create">
+            > <button type="submit" :disabled="isSubmitting" class="ui-btn--create">
                {{
                 isSubmitting
                   ? t('flashcardLevels.savingButton')
@@ -260,7 +260,7 @@
                   </div>
                    <button
                     :class="[
-                      selectedCards.includes(card.flashcard_id) ? 'btn-cancel' : 'btn-insert',
+                      selectedCards.includes(card.flashcard_id) ? 'ui-btn--cancel' : 'ui-btn--insert',
                     ]"
                     @click="toggleCardSelection(card)"
                   >
@@ -306,11 +306,11 @@
        <template #footer
         >
         <div class="flex justify-end gap-3">
-           <button class="btn-cancel" @click="closeCardsModal">
+           <button class="ui-btn--cancel" @click="closeCardsModal">
              {{ t('flashcardLevels.cancelButton') }} </button
           > <button
             :disabled="selectedCards.length === 0 || isAddingCards"
-            class="btn-create"
+            class="ui-btn--create"
             @click="addSelectedCards"
           >
              {{
@@ -398,7 +398,7 @@
           <div v-if="levelCardsTotal > 0" class="mt-6 flex justify-between items-center">
              <button
               :disabled="currentLevelCardsPage === 1"
-              class="btn-empty"
+              class="ui-btn--empty"
               @click="loadLevelCards(currentLevelCardsPage - 1)"
             >
                {{ t('flashcardLevels.previousPage') }} </button
@@ -411,7 +411,7 @@
               }} </span
             > <button
               :disabled="currentLevelCardsPage === totalLevelCardsPages"
-              class="btn-empty"
+              class="ui-btn--empty"
               @click="loadLevelCards(currentLevelCardsPage + 1)"
             >
                {{ t('flashcardLevels.nextPage') }} </button
@@ -424,7 +424,7 @@
        <!-- This closes the flex-1 overflow-y-auto --> <template #footer
         >
         <div class="flex justify-end">
-           <button class="btn-cancel" @click="closeLevelCardsModal">
+           <button class="ui-btn--cancel" @click="closeLevelCardsModal">
              {{ t('flashcardLevels.closeButton') }} </button
           >
         </div>
@@ -443,9 +443,9 @@
         <p class="text-gray-600 mb-6"> {{ t('flashcardLevels.deleteCardMessage') }} </p>
 
         <div class="flex justify-end gap-3">
-           <button class="btn-cancel" @click="showDeleteConfirmation = false">
+           <button class="ui-btn--cancel" @click="showDeleteConfirmation = false">
              {{ t('flashcardLevels.cancelButton') }} </button
-          > <button class="btn-delete" @click="deleteCard">
+          > <button class="ui-btn--delete" @click="deleteCard">
              {{ t('flashcardLevels.deleteButton') }} </button
           >
         </div>

@@ -109,34 +109,38 @@
 
           <div
             v-if="isOwner"
-            class="flex items-center gap-0"
+            class="btn-group-forced flex flex-wrap items-center gap-x-0 gap-y-2"
             role="group"
             aria-label="Collection editing"
           >
              <button
-              class="btn-aqua-emerald btn-aqua-group-item md:flex-none"
+              class="ui-btn--create ui-btn--group-item md:flex-none"
               @click="resetForm(); showAddModal = true"
             >
                <PlusCircle class="w-4 h-4" /> {{ t('collectionDetail.addItem') }} </button
             > <RouterLink
               :to="`/collections/${props.collectionId}/custom-text-bulk`"
-              class="btn-aqua-amber btn-aqua-group-item inline-flex items-center gap-2"
+              class="ui-btn--amber ui-btn--group-item inline-flex items-center gap-2"
               > <Table2 class="w-4 h-4 shrink-0" aria-hidden="true" /> {{
                 t('collectionDetail.bulkEditCustomText')
               }} </RouterLink
             >
           </div>
 
-          <div class="flex items-center gap-0" role="group" aria-label="Study">
+          <div
+            class="btn-group-forced flex flex-wrap items-center gap-x-0 gap-y-2"
+            role="group"
+            aria-label="Study"
+          >
              <RouterLink
               :to="`/collections/${props.collectionId}/flashcards`"
-              class="btn-aqua-rose btn-aqua-group-item md:flex-none"
+              class="ui-btn--danger-rose ui-btn--group-item md:flex-none"
               > <GalleryHorizontalIcon class="w-4 h-4" /> {{
                 t('collectionDetail.viewAsFlashcards')
               }} </RouterLink
             > <RouterLink
               :to="`/collections/${props.collectionId}/levels`"
-              class="btn-aqua-white btn-aqua-group-item inline-flex items-center gap-2"
+              class="ui-btn--neutral ui-btn--group-item inline-flex items-center gap-2"
               > <LayoutPanelTop class="w-4 h-4 shrink-0" aria-hidden="true" /> {{
                 t('collectionDetail.levels')
               }} </RouterLink
@@ -225,7 +229,7 @@
         <p class="text-gray-600"> {{ t('collectionDetail.noItems') }} </p>
 
         <div class="flex justify-center">
-           <button v-if="isOwner" class="mt-4 btn-aqua-emerald" @click="showAddModal = true">
+           <button v-if="isOwner" class="mt-4 ui-btn--create" @click="showAddModal = true">
              {{ t('collectionDetail.addItemButton') }} </button
           >
         </div>
@@ -278,9 +282,9 @@
         </div>
 
         <div class="mt-6 flex justify-end gap-3">
-           <button type="button" class="btn-cancel" @click="cancelEditCollectionModal()">
+           <button type="button" class="ui-btn--cancel" @click="cancelEditCollectionModal()">
              {{ t('collectionDetail.cancel') }} </button
-          > <button type="submit" :disabled="isSubmitting" class="btn-update">
+          > <button type="submit" :disabled="isSubmitting" class="ui-btn--update">
              {{ isSubmitting ? t('collectionDetail.saving') : t('collectionDetail.saveChanges') }} </button
           >
         </div>
@@ -303,9 +307,9 @@
       </div>
 
       <div class="mt-6 flex justify-end space-x-3">
-         <button type="button" class="btn-cancel" @click="showExportModal = false">
+         <button type="button" class="ui-btn--cancel" @click="showExportModal = false">
            {{ t('collectionDetail.cancel') }} </button
-        > <button :disabled="isExporting" class="btn-get" @click="handleExport">
+        > <button :disabled="isExporting" class="ui-btn--get" @click="handleExport">
            {{ isExporting ? t('collectionDetail.exporting') : t('collectionDetail.exportButton') }} </button
         >
       </div>
@@ -400,7 +404,7 @@
         </div>
 
         <div class="flex items-center space-x-2 mb-2">
-           <button type="button" class="btn-action" @click="toggleFlashcard">
+           <button type="button" class="ui-btn--action" @click="toggleFlashcard">
              <template v-if="enableFlashcard"
               > {{ t('collectionDetail.removeFlashcard') }} </template
             > <template v-else> {{ t('collectionDetail.createFlashcard') }} </template> </button
@@ -512,7 +516,7 @@
                   <h4 class="font-medium text-blue-600">
                      {{ selectedDefinition.valsiword || selectedDefinition.free_content_front }}
                   </h4>
-                   <button class="btn-empty"> {{ t('collectionDetail.deselect') }} </button>
+                   <button class="ui-btn--empty"> {{ t('collectionDetail.deselect') }} </button>
                 </div>
 
                 <div v-if="selectedDefinition.username" class="mt-2 text-sm text-gray-500">
@@ -549,7 +553,7 @@
                   <h4 class="font-medium text-blue-600">
                      {{ def.valsiword || def.free_content_front }}
                   </h4>
-                   <button class="btn-empty"> {{ t('collectionDetail.select') }} </button>
+                   <button class="ui-btn--empty"> {{ t('collectionDetail.select') }} </button>
                 </div>
 
                 <div v-if="def.username" class="mt-2 text-sm text-gray-500">
@@ -599,7 +603,7 @@
             @remove-sound="definitionRemoveSound = true"
           />
           <div class="flex items-center space-x-2 mb-2">
-             <button type="button" class="btn-action" @click="toggleFlashcard">
+             <button type="button" class="ui-btn--action" @click="toggleFlashcard">
                <template v-if="enableFlashcard"
                 > {{ t('collectionDetail.removeFlashcard') }} </template
               > <template v-else> {{ t('collectionDetail.createFlashcard') }} </template> </button
@@ -791,7 +795,7 @@
             <div class="flex items-center justify-end">
                <button
                 type="button"
-                class="w-auto h-8 btn-aqua-orange text-base"
+                class="w-auto h-8 ui-btn--warning-orange text-base"
                 :disabled="
                   isAnalyzingNewWord || isSubmittingNewDefinition || newDefinitionData.word === ''
                 "
@@ -826,7 +830,7 @@
             <div class="flex items-center gap-2 justify-start">
 
               <h2 class="font-semibold truncate">{{ newDefinitionRecommended }}</h2>
-               <button type="button" class="btn-update" @click="useNewDefinitionRecommended">
+               <button type="button" class="ui-btn--update" @click="useNewDefinitionRecommended">
                  <ArrowRight class="h-4 w-4" /> {{ t('upsertDefinition.useThisButton') }} </button
               >
             </div>
@@ -987,7 +991,7 @@
         </div>
 
         <div class="flex items-center space-x-2 mb-2">
-           <button type="button" class="btn-action" @click="toggleFlashcard">
+           <button type="button" class="ui-btn--action" @click="toggleFlashcard">
              <template v-if="enableFlashcard"
               > {{ t('collectionDetail.removeFlashcard') }} </template
             > <template v-else> {{ t('collectionDetail.createFlashcard') }} </template> </button
@@ -1068,13 +1072,13 @@
         <div class="flex justify-end gap-2">
            <button
             v-if="isEditingItem"
-            class="btn-error mr-auto"
+            class="ui-btn--error mr-auto"
             :disabled="isUpdatingItem"
             @click="itemToDelete = currentItem; showDeleteItemConfirm = true"
           >
              {{ t('collectionDetail.deleteItemButton') }} </button
           > <button
-            class="btn-cancel"
+            class="ui-btn--cancel"
             :disabled="isUpdatingItem"
             @click.stop="cancelEditItemModal()"
           >
@@ -1082,7 +1086,7 @@
           > <button
             v-if="itemType === 'custom' || itemType === 'quiz'"
             :disabled="!customContent.front.trim() || !customContent.back.trim() || isUpdatingItem"
-            class="btn-insert"
+            class="ui-btn--insert"
             @click="addCustomContent"
           >
              {{
@@ -1092,7 +1096,7 @@
             }} </button
           > <button
             v-else-if="itemType === 'definition' && selectedDefinition"
-            class="btn-insert"
+            class="ui-btn--insert"
             :disabled="isUpdatingItem"
             @click="addNewItem(selectedDefinition)"
           >
@@ -1103,7 +1107,7 @@
             }} </button
           > <button
             v-else-if="itemType === 'newDefinition'"
-            class="btn-insert"
+            class="ui-btn--insert"
             :disabled="
               isSubmittingNewDefinition ||
               !newDefinitionData.word ||
@@ -1180,9 +1184,9 @@
         </div>
          <!-- Action Buttons -->
         <div class="flex justify-end space-x-3 pt-4">
-           <button type="button" class="btn-cancel" @click="showMergeModal = false">
+           <button type="button" class="ui-btn--cancel" @click="showMergeModal = false">
              {{ t('collectionDetail.cancel') }} </button
-          > <button type="submit" :disabled="!isValidMerge || isMerging" class="btn-update">
+          > <button type="submit" :disabled="!isValidMerge || isMerging" class="ui-btn--update">
              {{ isMerging ? t('collectionDetail.merging') : t('collectionDetail.mergeButton') }} </button
           >
         </div>

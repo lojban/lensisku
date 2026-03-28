@@ -62,7 +62,7 @@
     </h1>
      <!-- Discussion Section -->
     <div class="flex flex-wrap gap-2 w-full lg:w-auto justify-center">
-       <RouterLink :to="`/comments?valsi_id=${valsi.valsiid}`" class="btn-aqua-slate"
+       <RouterLink :to="`/comments?valsi_id=${valsi.valsiid}`" class="ui-btn--neutral-slate"
         > <AudioWaveform class="w-4 h-4" /> <span
           v-if="(valsi.comment_count ?? 0) > 0"
           class="text-xs font-medium bg-white/40 px-1.5 rounded-md border border-white/30"
@@ -159,13 +159,13 @@
     </div>
      <!-- Action Buttons -->
     <div class="flex flex-wrap gap-3 pt-4 border-t">
-       <button class="btn-aqua-zinc" @click="goBack">
+       <button class="ui-btn--neutral-muted" @click="goBack">
          <ArrowLeft class="h-5 w-5" /> <span>{{ t('entryPage.dictionary') }}</span
         > </button
       > <IconButton
         v-if="auth.state.isLoggedIn"
         :label="t('entryPage.addDefinition')"
-        button-classes="btn-aqua-emerald"
+        button-classes="ui-btn--create"
         @click="router.push(`/valsi/add?word=${encodeURIComponent(valsi.word)}`)"
       />
     </div>

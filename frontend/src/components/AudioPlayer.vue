@@ -1,7 +1,7 @@
 <template>
 
   <div class="inline-flex items-center gap-2">
-     <button class="btn-get" :disabled="isLoading" @click="togglePlay">
+     <button class="ui-btn--get" :disabled="isLoading" @click="togglePlay">
        <PauseCircle v-if="isPlaying" class="w-4 h-4" /> <Loader
         v-else-if="isLoading"
         class="w-4 h-4 animate-spin"

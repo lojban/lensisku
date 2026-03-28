@@ -105,7 +105,7 @@
          <!-- When in 'my' mode: show an IconButton to switch back to public view --> <IconButton
           v-if="viewMode === 'my'"
           :label="t('collectionList.publicCollectionsLabel')"
-          button-classes="btn-aqua-white"
+          button-classes="ui-btn--neutral"
           @click="setViewMode('public')"
           > <template #icon> <ArrowBigRight class="h-4 w-4" /> </template> </IconButton
         > <Dropdown :trigger-label="t('collectionList.addActions')"
@@ -156,7 +156,7 @@
     <div class="flex flex-row items-center gap-2 sm:block">
 
       <div
-        class="flex flex-nowrap justify-center min-w-0 overflow-visible gap-0 py-2"
+        class="btn-group-forced flex flex-nowrap justify-center min-w-0 overflow-visible gap-0 py-2"
         role="group"
         aria-label="Sort order"
       >
@@ -164,10 +164,10 @@
           v-for="opt in sortOptions"
           :key="opt.value"
           type="button"
-          class="btn-aqua-group-item relative shrink-0 flex h-6 items-center justify-center gap-1.5 px-2 sm:px-4 !cursor-pointer"
+          class="ui-btn--group-item relative shrink-0 flex h-6 items-center justify-center gap-1.5 px-2 sm:px-4 !cursor-pointer"
           :class="[
-            sortBy === opt.value ? opt.aquaClass : 'btn-aqua-white',
-            sortBy === opt.value ? 'btn-aqua-sort-active' : 'btn-aqua-sort-idle',
+            sortBy === opt.value ? opt.aquaClass : 'ui-btn--neutral',
+            sortBy === opt.value ? 'ui-btn--sort-active' : 'ui-btn--sort-idle',
           ]"
           :title="opt.label"
           :aria-pressed="sortBy === opt.value"
@@ -243,7 +243,7 @@
   >
      <button
       v-if="viewMode === 'my' && auth.state.isLoggedIn"
-      class="mt-4 btn-aqua-emerald"
+      class="mt-4 ui-btn--create"
       @click="showCreateModal = true"
     >
        <CirclePlus class="h-4 w-4" /> <span>{{ t('collectionList.createFirstCollection') }}</span
@@ -293,9 +293,9 @@
         </div>
 
         <div class="mt-6 flex justify-end gap-3">
-           <button type="button" class="btn-cancel" @click="showCreateModal = false">
+           <button type="button" class="ui-btn--cancel" @click="showCreateModal = false">
              {{ t('collectionList.cancelButton') }} </button
-          > <button type="submit" :disabled="isSubmitting" class="btn-create">
+          > <button type="submit" :disabled="isSubmitting" class="ui-btn--create">
              {{
               isSubmitting ? t('collectionList.creatingButton') : t('collectionList.createButton')
             }} </button
@@ -386,25 +386,25 @@ const sortOptions = computed(() => [
     value: 'active_week',
     label: t('collectionList.sortActiveWeek'),
     icon: CalendarDays,
-    aquaClass: 'btn-aqua-sky',
+    aquaClass: 'ui-btn--sort-sky',
   },
   {
     value: 'active_month',
     label: t('collectionList.sortActiveMonth'),
     icon: Calendar,
-    aquaClass: 'btn-aqua-blue',
+    aquaClass: 'ui-btn--sort-blue',
   },
   {
     value: 'active_all',
     label: t('collectionList.sortActiveAll'),
     icon: Trophy,
-    aquaClass: 'btn-aqua-amber',
+    aquaClass: 'ui-btn--sort-amber',
   },
   {
     value: 'newest',
     label: t('collectionList.sortNewest'),
     icon: ArrowDown,
-    aquaClass: 'btn-aqua-emerald',
+    aquaClass: 'ui-btn--sort-emerald',
   },
 ])
 

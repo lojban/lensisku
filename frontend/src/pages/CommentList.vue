@@ -35,7 +35,7 @@
        <label
         class="inline-flex items-center"
         :disabled="flatStyleEnforced"
-        :class="[!flatStyle && !flatStyleEnforced ? ' btn-aqua-slate' : 'btn-aqua-white']"
+        :class="[!flatStyle && !flatStyleEnforced ? ' ui-btn--neutral-slate' : 'ui-btn--neutral']"
         > <input
           type="checkbox"
           class="checkmark-aqua"
@@ -49,7 +49,7 @@
       > <button
         v-if="auth.state.isLoggedIn && comments.length > 0"
         type="button"
-        class="inline-flex items-center gap-2 btn-aqua-white"
+        class="inline-flex items-center gap-2 ui-btn--neutral"
         :aria-label="t('commentList.newWave')"
         @click="handleNewTopLevelComment"
       >
@@ -57,14 +57,14 @@
         <span>{{ t('commentList.newWave') }}</span> </button
       > <button
         v-if="commentId > 0 && !!currentComment?.parent_id"
-        class="inline-flex items-center btn-aqua-purple"
+        class="inline-flex items-center ui-btn--accent-purple"
         @click="goToParent"
       >
          <ArrowLeft class="h-5 w-5" /> {{ t('commentList.parent') }} </button
       > <button
         v-if="commentId > 0"
         type="button"
-        class="inline-flex items-center btn-aqua-slate"
+        class="inline-flex items-center ui-btn--neutral-slate"
         :aria-label="t('commentList.waveRoot')"
         @click="goToRoot"
       >
@@ -175,7 +175,7 @@
        <button
         v-if="auth.state.isLoggedIn"
         type="button"
-        class="inline-flex items-center gap-2 btn-aqua-white h-12 text-base !px-5 mx-auto"
+        class="inline-flex items-center gap-2 ui-btn--neutral h-12 text-base !px-5 mx-auto"
         :aria-label="t('commentList.newDiscussionWave')"
         @click="handleNewTopLevelComment"
       >

@@ -142,7 +142,7 @@
             </h1>
              <button
               type="button"
-              class="hidden shrink-0 sm:inline-flex btn-aqua-emerald items-center gap-1.5 px-2.5 py-1.5 text-sm"
+              class="hidden shrink-0 sm:inline-flex ui-btn--create items-center gap-1.5 px-2.5 py-1.5 text-sm"
               @click="startNewChat"
             >
                <Plus class="w-4 h-4" /> {{ $t('assistantChat.newChat') }} </button
@@ -231,9 +231,9 @@
                       @blur="onAssistantFormControlBlur"
                     />
                     <div class="mx-2 my-2 flex justify-end gap-2">
-                       <button type="button" class="btn-cancel" @click="cancelEditMessage">
+                       <button type="button" class="ui-btn--cancel" @click="cancelEditMessage">
                          {{ $t('assistantChat.cancelEdit') }} </button
-                      > <button type="button" class="btn-insert" @click="commitEditMessage">
+                      > <button type="button" class="ui-btn--insert" @click="commitEditMessage">
                          {{ $t('assistantChat.saveEdit') }} </button
                       >
                     </div>

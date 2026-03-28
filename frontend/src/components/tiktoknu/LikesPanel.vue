@@ -9,7 +9,7 @@
       </h2>
        <button
         v-if="(likedArticles ?? []).length > 0"
-        class="btn-aqua-rose"
+        class="ui-btn--danger-rose"
         :title="t('components.tiktoknu.likesPanel.exportButtonTitle')"
         @click="$emit('export')"
       >
