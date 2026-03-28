@@ -187,11 +187,7 @@
 
   </div>
    <!-- Loading State -->
-  <div v-if="isLoading" class="flex justify-center py-8">
-
-    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
-
-  </div>
+  <LoadingSpinner v-if="isLoading" />
    <!-- Collections Card Grid -->
   <div v-else class="collections-section">
 
@@ -334,6 +330,7 @@ import {
   getLevels,
 } from '@/api'
 import { CollectionCard, Dropdown, IconButton } from '@packages/ui'
+import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import PaginationComponent from '@/components/PaginationComponent.vue'
 import { useAuth } from '@/composables/useAuth'
 import { useSeoHead } from '@/composables/useSeoHead'

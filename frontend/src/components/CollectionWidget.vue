@@ -15,7 +15,7 @@
         >
         <h3 class="text-xl font-bold"> {{ t('collectionWidget.modalTitle') }} </h3>
          </template
-      > <!-- Loading State --> <LoadingSpinner v-if="isLoading" class="py-4" /> <!-- Collections List -->
+      > <!-- Loading State --> <LoadingSpinner v-if="isLoading" variant="inline" class="py-4" /> <!-- Collections List -->
 
       <div v-else>
          <!-- Create New Collection --> <IconButton

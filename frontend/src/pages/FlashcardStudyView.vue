@@ -414,20 +414,32 @@
                 class="ui-btn--error w-full sm:min-w-[120px] flex items-center justify-center gap-1.5"
                 @click="submitAnswer(1)"
               >
-                 <XCircle class="h-4 w-4" /> {{ t('flashcardStudy.forgot')
-                }}<span class="hidden sm:inline ml-1">(1)</span> </button
+                 <XCircle class="h-4 w-4 shrink-0" />
+                <span class="inline-flex min-w-0 items-center gap-1">
+                  <span>{{ t('flashcardStudy.forgot') }}</span>
+                  <span class="hidden sm:inline">(1)</span>
+                </span>
+              </button
               > <button
                 class="ui-btn--warning w-full sm:min-w-[120px] flex items-center justify-center gap-1.5"
                 @click="submitAnswer(3)"
               >
-                 <Smile class="h-4 w-4" /> {{ t('flashcardStudy.good')
-                }}<span class="hidden sm:inline ml-1">(2)</span> </button
+                 <Smile class="h-4 w-4 shrink-0" />
+                <span class="inline-flex min-w-0 items-center gap-1">
+                  <span>{{ t('flashcardStudy.good') }}</span>
+                  <span class="hidden sm:inline">(2)</span>
+                </span>
+              </button
               > <button
                 class="ui-btn--success w-full sm:min-w-[120px] flex items-center justify-center gap-1.5"
                 @click="submitAnswer(4)"
               >
-                 <Check class="h-4 w-4" /> {{ t('flashcardStudy.easy')
-                }}<span class="hidden sm:inline ml-1">(3)</span> </button
+                 <Check class="h-4 w-4 shrink-0" />
+                <span class="inline-flex min-w-0 items-center gap-1">
+                  <span>{{ t('flashcardStudy.easy') }}</span>
+                  <span class="hidden sm:inline">(3)</span>
+                </span>
+              </button
               >
             </div>
 

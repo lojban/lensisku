@@ -13,10 +13,10 @@
     </div>
      <button
       type="button"
-      class="ui-btn--neutral hidden border-2 border-b-4 border-white/30 active:border-b-2 xl:inline-flex"
+      class="ui-btn--neutral hidden items-center gap-2 border-2 border-b-4 border-white/30 active:border-b-2 xl:inline-flex"
       @click="$emit('continue')"
     >
-       <BookOpen class="mr-2 h-5 w-5" /> {{ continueLabel }} </button
+       <BookOpen class="h-5 w-5 shrink-0" /> {{ continueLabel }} </button
     >
   </div>
 
