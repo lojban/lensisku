@@ -7,10 +7,10 @@
           var t = localStorage.getItem('lensisku.buttonTheme')
           document.documentElement.setAttribute(
             'data-button-theme',
-            t === 'aqua' ? 'aqua' : 'flat'
+            t === 'flat' ? 'flat' : 'aqua'
           )
         } catch (e) {
-          document.documentElement.setAttribute('data-button-theme', 'flat')
+          document.documentElement.setAttribute('data-button-theme', 'aqua')
         }
       })()
     </script>

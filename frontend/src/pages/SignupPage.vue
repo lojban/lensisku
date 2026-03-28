@@ -58,14 +58,28 @@
             >{{ t('signupPage.passwordLabel') }}</label
           >
           <div class="relative">
-             <input
+            <input
               id="password"
               v-model="password"
-              type="password"
+              :type="showPassword ? 'text' : 'password'"
               required
-              class="input-field w-full text-base h-10 pl-3 pr-10"
+              autocomplete="new-password"
+              class="input-field h-10 w-full pl-3 pr-10 text-base"
               :disabled="isLoading"
-            /> <Key class="h-5 w-5 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2" />
+            />
+            <button
+              type="button"
+              class="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-md text-gray-400 hover:bg-gray-100 hover:text-gray-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50"
+              :aria-label="
+                showPassword ? t('signupPage.hidePassword') : t('signupPage.showPassword')
+              "
+              :aria-pressed="showPassword"
+              :disabled="isLoading"
+              @click="showPassword = !showPassword"
+            >
+              <Eye v-if="!showPassword" class="h-5 w-5 shrink-0" aria-hidden="true" />
+              <EyeOff v-else class="h-5 w-5 shrink-0" aria-hidden="true" />
+            </button>
           </div>
 
         </div>
@@ -106,7 +120,7 @@
 </template>
 
 <script setup lang="ts">
-import { User, Mail, Key, Plus } from 'lucide-vue-next'
+import { User, Mail, Eye, EyeOff, Plus } from 'lucide-vue-next'
 
 import { Button } from '@packages/ui'
 import { ref } from 'vue'
@@ -121,6 +135,7 @@ import { useSeoHead } from '@/composables/useSeoHead'
 const username = ref('')
 const email = ref('')
 const password = ref('')
+const showPassword = ref(false)
 const isLoading = ref(false)
 const router = useRouter()
 const auth = useAuth()

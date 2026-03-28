@@ -5,14 +5,14 @@ export const BUTTON_THEME_STORAGE_KEY = 'lensisku.buttonTheme'
 export type ButtonThemeId = 'aqua' | 'flat'
 
 export function getStoredButtonTheme(): ButtonThemeId {
-  if (typeof window === 'undefined') return 'flat'
+  if (typeof window === 'undefined') return 'aqua'
   try {
-    const t = localStorage.getItem(BUTTON_THEME_STORAGE_KEY)
-    if (t === 'aqua' || t === 'flat') return t
+    const t = localStorage.getItem(BUTTON_THEME_STORAGE_KEY) as ButtonThemeId
+    if (['aqua','flat'].includes(t)) return t
   } catch {
     /* ignore */
   }
-  return 'flat'
+  return 'aqua'
 }
 
 export function applyButtonThemeToDocument(theme: ButtonThemeId): void {
