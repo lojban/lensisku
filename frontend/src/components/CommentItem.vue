@@ -187,7 +187,7 @@
            <button
             v-for="reaction in reactions"
             :key="reaction.reaction"
-            class="gap-1.5 btn-reaction transition-all duration-300"
+            class="gap-1.5 ui-btn--reaction transition-all duration-300"
             :class="[reaction.reacted && 'enabled']"
             @click.stop="handleReactionClick(reaction.reaction)"
           >
@@ -201,7 +201,7 @@
         </div>
 
         <div v-if="auth.state.isLoggedIn" class="relative">
-           <button class="ml-3 btn-empty" @click.stop="showReactionPicker = !showReactionPicker">
+           <button class="ml-3 ui-btn--empty" @click.stop="showReactionPicker = !showReactionPicker">
              <ReactionPlusIcon /> <span class="sr-only">{{
               t('components.commentItem.addReaction')
             }}</span
@@ -267,7 +267,7 @@
        <button
         v-if="auth.state.isLoggedIn"
         :disabled="isProcessing"
-        class="gap-1.5 btn-empty"
+        class="gap-1.5 ui-btn--empty"
         :class="[
           processedComment.is_bookmarked
             ? 'bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-200'
@@ -299,7 +299,7 @@
           auth.state.username === processedComment.username &&
           (processedComment.total_replies ?? 0) === 0
         "
-        class="inline-flex items-center btn-empty text-red-600 hover:text-red-800"
+        class="inline-flex items-center ui-btn--empty text-red-600 hover:text-red-800"
         :disabled="isProcessing"
         @click="handleDeleteClick"
       >
@@ -309,7 +309,7 @@
         > </button
       > <button
         v-if="auth.state.isLoggedIn && replyEnabled"
-        class="inline-flex items-center btn-reply"
+        class="inline-flex items-center ui-btn--reply"
         @click="handleReplyClick"
       >
          <Reply class="w-5 h-5" /> <span

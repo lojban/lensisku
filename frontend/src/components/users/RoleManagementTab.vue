@@ -17,7 +17,7 @@
             class="input-field w-full sm:flex-1"
             @input="$emit('update:newRoleName', inputValue($event))"
           /> <button
-            class="btn-aqua-emerald w-full sm:w-auto"
+            class="ui-btn--create w-full sm:w-auto"
             :disabled="!newRoleName.trim() || selectedPermissions.length === 0"
             @click="$emit('createRole')"
           >
@@ -78,7 +78,7 @@
           <h3 class="text-base sm:text-lg font-medium"> {{ translateRole(role.name) }} </h3>
            <button
             v-if="!['admin', 'user', 'editor'].includes(role.name.toLowerCase())"
-            class="btn-aqua-red w-full sm:w-auto"
+            class="ui-btn--delete w-full sm:w-auto"
             @click="$emit('deleteRole', role.name)"
           >
              {{ t('roleManagement.deleteRoleButton') }} </button
@@ -115,7 +115,7 @@
               </option>
                </select
             > <button
-              class="btn-aqua-emerald w-full sm:w-auto"
+              class="ui-btn--create w-full sm:w-auto"
               :disabled="!selectedPermissionMap[role.name]"
               @click="$emit('addPermission', role.name)"
             >
@@ -140,7 +140,7 @@
               </div>
                <button
                 v-if="role.name.toLowerCase() !== 'admin'"
-                class="btn-delete"
+                class="ui-btn--delete"
                 @click="$emit('deletePermission', { roleName: role.name, permission: perm.name })"
               >
                  <Trash2 class="w-4 h-4" /> <span class="sr-only">{{

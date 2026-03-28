@@ -1,6 +1,6 @@
 <template>
    <button
-    class="inline-flex items-center justify-center btn-empty"
+    class="inline-flex items-center justify-center ui-btn--empty"
     :title="title"
     @click.stop="copyToClipboard"
   >

@@ -3,6 +3,11 @@
     "baseTitle": "lojbo kibykarni",
     "defaultDescription": "ko sisku lo lojbo vlaste .e lo lojbo sarsku .i ko facki lo valsi se ciksi .e lo mupli jufra .e lo casnu karni pe la .lojban."
   },
+  "buttonTheme": {
+    "label": "datni judri lo batke",
+    "aqua": "cinky (aqua)",
+    "flat": "sutki (cnino)"
+  },
   "notFoundPage": {
     "pageTitle": "404 - no karni",
     "description": "lo karni poi do sisku cu na zasti.",

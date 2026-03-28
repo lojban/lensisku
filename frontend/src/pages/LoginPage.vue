@@ -54,22 +54,21 @@
         </div>
 
         <div>
-           <button
+          <Button
+            variant="warning-orange"
+            size="lg"
             type="submit"
-            class="w-full flex justify-center items-center btn-aqua-orange h-8 gap-2 py-3 rounded-full text-lg font-semibold transition-all"
+            class="w-full"
+            :loading="isLoading"
             :disabled="isLoading"
-            :class="{ 'opacity-75 cursor-not-allowed': isLoading }"
           >
-             <template v-if="isLoading"
-              > <Loader2 class="animate-spin h-5 w-5" /> <span>{{
-                t('loginPage.authenticating')
-              }}</span
-              > </template
-            > <template v-else
-              > <KeyRound class="h-5 w-5" /> <span>{{ t('loginPage.loginButton') }}</span
-              > </template
-            > </button
-          >
+            <template #icon>
+              <KeyRound class="h-6 w-6 shrink-0" />
+            </template>
+            {{
+              isLoading ? t('loginPage.authenticating') : t('loginPage.loginButton')
+            }}
+          </Button>
         </div>
 
       </form>
@@ -98,7 +97,9 @@
 </template>
 
 <script setup lang="ts">
-import { Loader2, User, Key, KeyRound } from 'lucide-vue-next'
+import { User, Key, KeyRound } from 'lucide-vue-next'
+
+import { Button } from '@packages/ui'
 import { ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'

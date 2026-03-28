@@ -39,7 +39,7 @@
         </div>
          <button
           ref="returnToDeckButtonRef"
-          class="btn-aqua-teal h-9 min-w-[140px] text-sm"
+          class="ui-btn--auth-signup h-9 min-w-[140px] text-sm"
           @click="router.push(returnToUrl)"
         >
            {{
@@ -364,21 +364,21 @@
               <div class="grid grid-cols-3 gap-1.5 sm:gap-2">
                  <button
                   type="button"
-                  class="btn-error flex w-full items-center justify-center gap-0.5 py-1.5 text-xs sm:py-2 sm:text-sm"
+                  class="ui-btn--error flex w-full items-center justify-center gap-0.5 py-1.5 text-xs sm:py-2 sm:text-sm"
                   @click="submitAnswer(1)"
                 >
                    <XCircle class="h-3.5 w-3.5" /> {{ t('flashcardStudy.forgot')
                   }}<span class="hidden sm:ml-0.5 sm:inline">(1)</span> </button
                 > <button
                   type="button"
-                  class="btn-warning flex w-full items-center justify-center gap-0.5 py-1.5 text-xs sm:py-2 sm:text-sm"
+                  class="ui-btn--warning flex w-full items-center justify-center gap-0.5 py-1.5 text-xs sm:py-2 sm:text-sm"
                   @click="submitAnswer(3)"
                 >
                    <Smile class="h-3.5 w-3.5" /> {{ t('flashcardStudy.good')
                   }}<span class="hidden sm:ml-0.5 sm:inline">(2)</span> </button
                 > <button
                   type="button"
-                  class="btn-success flex w-full items-center justify-center gap-0.5 py-1.5 text-xs sm:py-2 sm:text-sm"
+                  class="ui-btn--success flex w-full items-center justify-center gap-0.5 py-1.5 text-xs sm:py-2 sm:text-sm"
                   @click="submitAnswer(4)"
                 >
                    <Check class="h-3.5 w-3.5" /> {{ t('flashcardStudy.easy')

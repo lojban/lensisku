@@ -5,7 +5,7 @@
     <div class="flex justify-between items-center mb-6">
 
       <h2 class="text-2xl font-bold text-gray-800"> {{ t('versionHistory.title') }} </h2>
-       <RouterLink :to="`/valsi/${valsiId}`" class="btn-history"
+       <RouterLink :to="`/valsi/${valsiId}`" class="ui-btn--history"
         > <ArrowLeft class="h-5 w-5" /> </RouterLink
       >
     </div>
@@ -105,19 +105,19 @@
              {{ t('versionHistory.compareWith', { versionId: selectedVersion }) }} </button
           > <button
             v-else-if="!selectedVersion"
-            class="btn-get"
+            class="ui-btn--get"
             @click="selectedVersion = version.version_id"
           >
              {{ t('versionHistory.compareThis') }} </button
           > <button
             v-if="selectedVersion === version.version_id"
-            class="btn-cancel"
+            class="ui-btn--cancel"
             @click="selectedVersion = null"
           >
              {{ t('versionHistory.cancelSelection') }} </button
           > <button
             v-if="auth.state.isLoggedIn"
-            class="btn-revert"
+            class="ui-btn--revert"
             @click="performRevertToVersion(version.version_id)"
           >
              {{ t('versionHistory.revertToThis') }} </button

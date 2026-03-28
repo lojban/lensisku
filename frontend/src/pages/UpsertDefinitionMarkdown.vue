@@ -79,7 +79,7 @@
       </div>
        <!-- Submit Button -->
       <div class="flex justify-end">
-         <button type="submit" class="btn-create" :disabled="isSubmitting || !isValid">
+         <button type="submit" class="ui-btn--create" :disabled="isSubmitting || !isValid">
            {{
             isSubmitting
               ? t('upsertDefinitionMarkdown.saving')

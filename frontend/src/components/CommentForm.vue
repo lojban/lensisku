@@ -42,7 +42,7 @@
             </button> --> <button
               type="submit"
               :disabled="isSubmitting || characterCount > 10280"
-              class="inline-flex items-center btn-insert text-sm"
+              class="inline-flex items-center ui-btn--insert text-sm"
             >
 
               <div class="flex items-center">

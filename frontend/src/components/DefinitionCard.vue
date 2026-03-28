@@ -100,7 +100,7 @@
                  <RouterLink
                   v-if="!disableDiscussionButton"
                   :to="`/valsi/${definition.valsiword ?? definition.word}`"
-                  class="btn-empty"
+                  class="ui-btn--empty"
                   > <MessageSquarePlus v-if="definition.comment_count === 0" class="h-4 w-4" />
                   <MessageSquareMore v-else class="h-4 w-4" /> <span
                     v-if="definition.comment_count"
@@ -122,7 +122,7 @@
               <div class="flex items-center gap-2 flex-wrap">
                  <button
                   v-if="showEditButton"
-                  class="btn-empty"
+                  class="ui-btn--empty"
                   @click.stop="$emit('edit-item')"
                   :title="t('components.definitionCard.editItemTitle')"
                 >
@@ -149,12 +149,12 @@
 
               <div
                 v-if="showReorderControls"
-                class="ml-auto flex flex-wrap gap-2 md:gap-0 justify-end sm:justify-end w-auto flex-none"
+                class="btn-group-forced ml-auto flex flex-wrap gap-x-0 gap-y-2 justify-end sm:justify-end w-auto flex-none"
                 role="group"
               >
                  <button
                   :disabled="isFirstItem || isReordering"
-                  class="btn-group-item btn-empty"
+                  class="ui-btn--group-item ui-btn--empty"
                   :title="t('components.definitionCard.moveUpTitle')"
                   @click.stop="$emit('move-up')"
                 >
@@ -164,7 +164,7 @@
                   > </button
                 > <button
                   :disabled="isLastItem || isReordering"
-                  class="btn-group-item btn-empty"
+                  class="ui-btn--group-item ui-btn--empty"
                   :title="t('components.definitionCard.moveDownTitle')"
                   @click.stop="$emit('move-down')"
                 >
@@ -173,7 +173,7 @@
                   }}</span
                   > </button
                 > <button
-                  class="btn-group-item btn-empty hover:text-red-600"
+                  class="ui-btn--group-item ui-btn--empty hover:text-red-600"
                   :title="t('components.definitionCard.removeItemTitle')"
                   @click.stop="$emit('remove')"
                 >
@@ -190,7 +190,7 @@
                 role="group"
               >
                  <button
-                  class="btn-empty hover:text-red-600 flex items-center gap-1"
+                  class="ui-btn--empty hover:text-red-600 flex items-center gap-1"
                   :title="t('components.definitionCard.removeFromLevelTitle')"
                   @click.stop="$emit('delete-item')"
                 >
@@ -468,36 +468,36 @@
       <div v-if="!disableToolbar" class="mt-3">
 
         <div
-          class="flex flex-wrap gap-2 sm:gap-0 sm:space-x-2 md:space-x-0 space-x-0"
+          class="btn-group-forced flex flex-wrap gap-x-0 gap-y-2"
           role="group"
         >
            <!-- Edit button --> <button
             v-if="auth.state.isLoggedIn && definition.can_edit"
-            class="btn-update btn-group-item text-center"
+            class="ui-btn--update ui-btn--group-item text-center"
             @click="router.push(`/definition/${definition.definitionid}/edit`)"
           >
              <Pencil class="h-4 w-4" /> {{ t('components.definitionCard.editButton') }} </button
           > <!-- Delete button --> <button
             v-if="auth.state.isLoggedIn && auth.state.username === definition.username"
             @click="handleDeleteClick"
-            class="btn-delete btn-group-item text-center"
+            class="ui-btn--delete ui-btn--group-item text-center"
           >
              <Trash2 class="h-4 w-4" /> {{ t('components.definitionCard.deleteButton') }} </button
           > <!-- Version History --> <RouterLink
             v-if="auth.state.isLoggedIn && !props.hideHistory"
             :to="`/definition/${definition.definitionid}/history?valsi_id=${definition.valsiid}`"
-            class="btn-history btn-group-item text-center"
+            class="ui-btn--history ui-btn--group-item text-center"
             > <Clock class="h-4 w-4" /> {{ t('components.definitionCard.historyButton') }}
             </RouterLink
           > <!-- Comment --> <RouterLink
             v-if="auth.state.isLoggedIn && props.showCommentButton"
             :to="`/comments?valsi_id=${definition.valsiid}&definition_id=${definition.definitionid}`"
-            class="btn-create btn-group-item text-center"
+            class="ui-btn--create ui-btn--group-item text-center"
             > <MessageSquare class="h-4 w-4" /> {{ t('components.definitionCard.commentButton') }}
             </RouterLink
           > <!-- Translate --> <button
             v-if="auth.state.isLoggedIn"
-            class="btn-create btn-group-item text-center"
+            class="ui-btn--create ui-btn--group-item text-center"
             @click="router.push(`/valsi/add?word=${encodeURIComponent(definition.valsiword ?? definition.word ?? '')}${canLink ? '&translate_from_def=' + definition.definitionid : ''}`)"
             :title="
               canLink
@@ -508,7 +508,7 @@
              <Languages class="h-4 w-4" /> {{ t('components.definitionCard.translateButton') }} </button
           > <!-- Link existing --> <button
             v-if="auth.state.isLoggedIn && canLink"
-            class="btn-link btn-group-item text-center"
+            class="ui-btn--link ui-btn--group-item text-center"
             @click="showLinkModal = true"
             :title="t('components.definitionCard.linkExistingTitle')"
           >
@@ -516,7 +516,7 @@
           > <!-- Discussions --> <RouterLink
             v-if="disableDiscussionButton && !disableDiscussionToolbarButton"
             :to="`/comments?valsi_id=${definition.valsiid}&definition_id=${definition.definitionid}`"
-            class="btn-get btn-group-item text-center"
+            class="ui-btn--get ui-btn--group-item text-center"
             > <AudioWaveform class="h-4 w-4" /> <span
               v-if="definition.comment_count && definition.comment_count > 0"
               class="bg-gray-100 px-1.5 rounded-md border"
@@ -603,7 +603,7 @@
               </div>
 
             </div>
-             <button class="ml-2 btn-success py-1 px-3 text-sm">
+             <button class="ml-2 ui-btn--success py-1 px-3 text-sm">
                {{ t('components.definitionCard.link') }} </button
             >
           </div>

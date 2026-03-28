@@ -2,7 +2,7 @@
 
   <div class="collection-widget">
      <!-- Add to Collection Button --> <button
-      class="btn-empty flex items-center gap-2 hover:text-yellow-600"
+      class="ui-btn--empty flex items-center gap-2 hover:text-yellow-600"
       @click="openModal"
       :title="t('collectionWidget.addToCollection')"
     >
@@ -20,7 +20,7 @@
       <div v-else>
          <!-- Create New Collection --> <IconButton
           v-if="collections.length > 0"
-          button-classes="w-full btn-aqua-emerald mb-4"
+          button-classes="w-full ui-btn--create mb-4"
           :label="t('collectionWidget.createNew')"
           @click="showCreateForm = true"
         /> <!-- Empty State -->
@@ -28,7 +28,7 @@
 
           <p class="text-sm text-gray-500 mb-2"> {{ t('collectionWidget.noCollections') }} </p>
            <IconButton
-            button-classes="btn-aqua-emerald mt-4 mx-auto"
+            button-classes="ui-btn--create mt-4 mx-auto"
             :label="t('collectionWidget.createFirst')"
             @click="showCreateForm = true"
           />
@@ -111,12 +111,12 @@
             <div class="flex justify-end gap-2">
                <button
                 type="button"
-                class="btn-cancel"
+                class="ui-btn--cancel"
                 :disabled="isCreating"
                 @click="showCreateForm = false"
               >
                  {{ t('collectionWidget.cancel') }} </button
-              > <button type="submit" :disabled="isCreating" class="btn-create">
+              > <button type="submit" :disabled="isCreating" class="ui-btn--create">
                  {{
                   isCreating ? t('collectionDetail.saving') : t('collectionWidget.createAndAdd')
                 }} </button
@@ -152,13 +152,13 @@
 
           <div class="flex justify-end gap-2">
              <button
-              class="btn-cancel"
+              class="ui-btn--cancel"
               :disabled="isAddingTo === selectedCollectionId"
               @click="cancelAddWithNotes"
             >
                {{ t('collectionWidget.cancel') }} </button
             > <button
-              class="btn-insert"
+              class="ui-btn--insert"
               :disabled="isAddingTo === selectedCollectionId"
               @click="confirmAddWithNotes"
             >

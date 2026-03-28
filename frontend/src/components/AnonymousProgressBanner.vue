@@ -12,11 +12,11 @@
       <div class="flex items-center justify-center gap-2 shrink-0 order-2 sm:order-none">
          <RouterLink
           to="/signup"
-          class="btn-aqua-orange text-sm px-3 py-2 min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-md"
+          class="ui-btn--warning-orange text-sm px-3 py-2 min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-md"
           > {{ t('anonymousProgress.signUp') }} </RouterLink
         > <RouterLink
           to="/login"
-          class="btn-empty text-sm px-3 py-2 min-h-[44px] min-w-[44px] inline-flex items-center justify-center border border-gray-300 rounded-md hover:bg-gray-50"
+          class="ui-btn--empty text-sm px-3 py-2 min-h-[44px] min-w-[44px] inline-flex items-center justify-center border border-gray-300 rounded-md hover:bg-gray-50"
           > {{ t('anonymousProgress.logIn') }} </RouterLink
         > <button
           type="button"

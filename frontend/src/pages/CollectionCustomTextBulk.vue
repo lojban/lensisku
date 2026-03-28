@@ -40,28 +40,28 @@
 
       <!-- Actions: back, import, revert, save -->
       <div class="flex w-full flex-row flex-wrap items-center gap-2 sm:gap-3">
-        <div class="flex flex-row items-center gap-0" role="group">
+        <div class="btn-group-forced flex flex-row flex-wrap items-center gap-x-0 gap-y-2" role="group">
           <RouterLink :to="`/collections/${numericCollectionId}`"
-            class="btn-aqua-zinc btn-aqua-group-item">
+            class="ui-btn--neutral-muted ui-btn--group-item">
             <ArrowLeft class="w-4 h-4 shrink-0" aria-hidden="true" />
             {{ t('collectionCustomTextBulk.backToCollection') }}
           </RouterLink>
           <button v-if="!isLoading && isOwner" type="button"
-            class="btn-aqua-emerald btn-aqua-group-item"
+            class="ui-btn--create ui-btn--group-item"
             :disabled="isSaving || isImporting" @click="showImportModal = true">
             <FileDown class="h-4 w-4 shrink-0" aria-hidden="true" />
             {{ isImporting ? t('collectionCustomTextBulk.importing') : t('collectionCustomTextBulk.importButton') }}
           </button>
         </div>
-        <div v-if="!isLoading && isOwner" class="flex flex-row flex-wrap items-center gap-0" role="group">
+        <div v-if="!isLoading && isOwner" class="btn-group-forced flex flex-row flex-wrap items-center gap-x-0 gap-y-2" role="group">
           <button type="button"
-            class="btn-aqua-zinc btn-aqua-group-item inline-flex items-center gap-2"
+            class="ui-btn--neutral-muted ui-btn--group-item inline-flex items-center gap-2"
             :disabled="isSaving || !isDirty" @click="resetRows">
             <Undo2 class="h-5 w-5 shrink-0" aria-hidden="true" />
             {{ t('collectionCustomTextBulk.revert') }}
           </button>
           <button type="button"
-            class="btn-aqua-teal btn-aqua-group-item inline-flex items-center gap-2"
+            class="ui-btn--auth-signup ui-btn--group-item inline-flex items-center gap-2"
             :disabled="isSaving || !isDirty" :aria-busy="isSaving" @click="saveAll">
             <span class="inline-flex h-5 w-5 shrink-0 items-center justify-center" aria-hidden="true">
               <Loader2 v-if="isSaving" class="h-5 w-5 animate-spin" />
@@ -199,12 +199,12 @@
         </div>
         <template #footer>
           <div v-if="importAwaitingFinalConfirm" class="flex w-full flex-wrap items-center justify-end gap-2">
-            <button type="button" class="btn-aqua-zinc" :disabled="isImporting" @click="backFromImportConfirm">
+            <button type="button" class="ui-btn--neutral-muted" :disabled="isImporting" @click="backFromImportConfirm">
               {{ t('collectionCustomTextBulk.importBackToMapping') }}
             </button>
             <button
               type="button"
-              class="btn-aqua-emerald"
+              class="ui-btn--create"
               :disabled="!canExecuteImport"
               :aria-busy="isImporting"
               @click="executeImport"
@@ -213,12 +213,12 @@
             </button>
           </div>
           <div v-else class="flex w-full flex-wrap items-center justify-end gap-2">
-            <button type="button" class="btn-aqua-zinc" :disabled="isImporting" @click="closeImportModal">
+            <button type="button" class="ui-btn--neutral-muted" :disabled="isImporting" @click="closeImportModal">
               {{ t('collectionCustomTextBulk.importCancel') }}
             </button>
             <button
               type="button"
-              class="btn-aqua-emerald"
+              class="ui-btn--create"
               :disabled="!canProceedImportReview"
               @click="proceedToImportConfirm"
             >
@@ -266,7 +266,7 @@
             >
               <button
                 type="button"
-                class="btn-aqua-zinc"
+                class="ui-btn--neutral-muted"
                 :disabled="isRowActionDisabled || bulkDeleteInProgress"
                 @click="clearBulkSelection"
               >
@@ -274,7 +274,7 @@
               </button>
               <button
                 type="button"
-                class="btn-aqua-red"
+                class="ui-btn--delete"
                 :disabled="isRowActionDisabled || bulkDeleteInProgress"
                 @click="requestBulkDelete"
               >

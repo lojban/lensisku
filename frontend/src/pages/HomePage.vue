@@ -116,7 +116,7 @@
            <IconButton
             v-if="auth.state.isLoggedIn && decodedRole !== 'Unconfirmed'"
             :label="$t('home.addDefinition')"
-            button-classes="btn-aqua-emerald"
+            button-classes="ui-btn--create"
             @click="router.push('/valsi/add')"
           />
         </div>
@@ -128,7 +128,7 @@
            <IconButton
             v-if="auth.state.isLoggedIn"
             :label="$t('home.newFreeThread')"
-            button-classes="btn-aqua-white"
+            button-classes="ui-btn--neutral"
             @click="handleNewFreeComment"
             > <template #icon> <AudioWaveform class="h-4 w-4 text-purple-600" /> </template>
             </IconButton
@@ -145,7 +145,7 @@
             <template #trigger="{ open: waveMenuOpen }">
               <button
                 type="button"
-                class="btn-empty inline-flex h-8 min-w-0 w-auto max-w-[min(100vw-4rem,18rem)] items-center justify-between gap-1.5 px-3 text-sm"
+                class="ui-btn--empty inline-flex h-8 min-w-0 w-auto max-w-[min(100vw-4rem,18rem)] items-center justify-between gap-1.5 px-3 text-sm"
               >
                 <span class="truncate whitespace-nowrap">{{ waveSourceTriggerLabel }}</span>
                 <ChevronDown
@@ -189,7 +189,7 @@
             <template #trigger="{ open: sortMenuOpen }">
               <button
                 type="button"
-                class="btn-empty inline-flex h-8 min-w-0 w-auto max-w-[min(100vw-4rem,18rem)] items-center justify-between gap-1.5 px-3 text-sm"
+                class="ui-btn--empty inline-flex h-8 min-w-0 w-auto max-w-[min(100vw-4rem,18rem)] items-center justify-between gap-1.5 px-3 text-sm"
               >
                 <span class="truncate whitespace-nowrap">{{ sortByTriggerLabel }}</span>
                 <ChevronDown
@@ -224,7 +224,7 @@
 
           <button
             type="button"
-            class="btn-empty inline-flex h-8 min-w-0 w-auto items-center gap-1.5 whitespace-nowrap px-3 text-sm"
+            class="ui-btn--empty inline-flex h-8 min-w-0 w-auto items-center gap-1.5 whitespace-nowrap px-3 text-sm"
             :title="sortOrder === 'asc' ? $t('sort.ascending') : $t('sort.descending')"
             @click="toggleSortOrder"
           >

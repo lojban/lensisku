@@ -45,7 +45,7 @@
         <div class="pt-4">
            <button
             type="submit"
-            class="btn-aqua-emerald w-full sm:w-auto flex items-center justify-center gap-2"
+            class="ui-btn--create w-full sm:w-auto flex items-center justify-center gap-2"
             :disabled="isExporting || !isValid"
           >
              <Download v-if="!isExporting" class="h-5 w-5" /> <Loader2

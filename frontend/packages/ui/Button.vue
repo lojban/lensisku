@@ -8,10 +8,11 @@
     :class="buttonClasses"
     v-bind="$attrs"
     @click="handleClick"
-    > <slot v-if="!loading" name="icon" /> <component
+    > <slot v-if="!loading" name="icon" /> <span
       v-else
-      :is="Spinner"
-      class="w-4 h-4 shrink-0"
+      class="inline-block shrink-0 rounded-full border-2 border-current border-t-transparent animate-spin"
+      :class="spinnerSizeClass"
+      aria-hidden="true"
     /> <span v-if="$slots.default" class="relative top-px"><slot /></span> </component
   >
 </template>
@@ -20,37 +21,32 @@
 import { computed, type Component } from 'vue'
 import { RouterLink } from 'vue-router'
 
-const VARIANT_CLASSES: Record<string, string> = {
-  'aqua-white': 'btn-aqua-white',
-  'aqua-orange': 'btn-aqua-orange',
-  'aqua-amber': 'btn-aqua-amber',
-  'aqua-yellow': 'btn-aqua-yellow',
-  'aqua-lime': 'btn-aqua-lime',
-  'aqua-teal': 'btn-aqua-teal',
-  'aqua-emerald': 'btn-aqua-emerald',
-  'aqua-cyan': 'btn-aqua-cyan',
-  'aqua-sky': 'btn-aqua-sky',
-  'aqua-blue': 'btn-aqua-blue',
-  'aqua-indigo': 'btn-aqua-indigo',
-  'aqua-violet': 'btn-aqua-violet',
-  'aqua-purple': 'btn-aqua-purple',
-  'aqua-fuchsia': 'btn-aqua-fuchsia',
-  'aqua-pink': 'btn-aqua-pink',
-  'aqua-rose': 'btn-aqua-rose',
-  'aqua-slate': 'btn-aqua-slate',
-  'aqua-zinc': 'btn-aqua-zinc',
-  'aqua-gray': 'btn-aqua-gray',
-  'aqua-red': 'btn-aqua-red',
-  empty: 'btn-empty',
-  cancel: 'btn-cancel',
-  create: 'btn-create',
-  createBase: 'btn-base',
+/**
+ * Resolves `variant` to a `ui-btn--*` class from the Tailwind brand book (`buttonUiThemeLayer`).
+ * - Use the **suffix** after `ui-btn--` (e.g. `neutral`, `warning-orange`, `palette-teal`).
+ * - Or pass a **full** class string starting with `ui-btn--`.
+ */
+function resolveUiBtnClass(variant: string): string {
+  const v = variant.trim()
+  if (!v) return 'ui-btn--neutral'
+  if (v.startsWith('ui-btn--')) return v
+  return `ui-btn--${v}`
+}
+
+/** Layout + typography overrides; pairs with `ui-btn--*` (theme layer may set compact h-6 / text-sm). */
+const SIZE_CLASSES: Record<string, string> = {
+  md: '',
+  lg: '!h-10 !min-h-[2.5rem] !text-lg font-semibold leading-snug gap-2 rounded-full flex justify-center items-center transition-all disabled:opacity-75 disabled:cursor-not-allowed',
 }
 
 const props = defineProps({
+  /**
+   * Visual role: kebab-case **suffix** matching `tailwind.config.js` semantic classes
+   * (`neutral`, `create`, `warning-orange`, `palette-teal`, …), or a full `ui-btn--…` string.
+   */
   variant: {
     type: String,
-    default: 'aqua-white',
+    default: 'neutral',
   },
   /** 'button' | 'router-link' | 'a' */
   tag: { type: String, default: 'button' },
@@ -59,7 +55,13 @@ const props = defineProps({
   type: { type: String, default: undefined },
   disabled: { type: Boolean, default: false },
   loading: { type: Boolean, default: false },
-  /** Extra class names (e.g. h-8, px-6) */
+  /** `md` = default compact; `lg` = tall control + `text-lg` (e.g. auth form submit next to `h-10` inputs). */
+  size: {
+    type: String,
+    default: 'md',
+    validator: (v: string) => ['md', 'lg'].includes(v),
+  },
+  /** Extra class names (e.g. w-full, px-6) */
   class: { type: [String, Array, Object], default: '' },
 })
 
@@ -76,19 +78,16 @@ const isAnchor = computed(() => props.tag === 'a' || props.href != null)
 const isNativeButton = computed(() => tagComputed.value === 'button')
 
 const buttonClasses = computed(() => {
-  const base = VARIANT_CLASSES[props.variant] || props.variant || 'btn-aqua-white'
+  const base = resolveUiBtnClass(props.variant)
+  const size = SIZE_CLASSES[props.size] ?? ''
   const extra = Array.isArray(props.class) ? props.class.join(' ') : props.class
-  return extra ? [base, extra].filter(Boolean).join(' ') : base
+  return [base, size, extra].filter(Boolean).join(' ')
 })
+
+const spinnerSizeClass = computed(() => (props.size === 'lg' ? 'h-6 w-6' : 'h-4 w-4'))
 
 function handleClick(e: MouseEvent) {
   if (props.loading || props.disabled) return
   emit('click', e)
 }
-
-const Spinner: { template: string } = {
-  template:
-    '<span class="inline-block w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" aria-hidden="true" />',
-}
 </script>
-

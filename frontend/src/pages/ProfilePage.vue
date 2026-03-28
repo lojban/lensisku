@@ -22,8 +22,22 @@
           >
 
             <option v-for="loc in availableLocales" :key="`locale-${loc}`" :value="loc">
-               {{ loc.toUpperCase() }}
+               {{ localeNativeName(loc) }}
             </option>
+             </select
+          > <ChevronDown
+            class="h-4 w-4 text-gray-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none"
+          />
+        </div>
+         <div v-if="isOwnProfile" class="relative group">
+           <select
+            :value="buttonTheme"
+            class="input-field appearance-none !h-6 !py-0 !pr-8 !text-xs min-w-[8rem]"
+            :aria-label="t('buttonTheme.label')"
+            @change="onButtonThemeChange"
+          >
+             <option value="aqua">{{ t('buttonTheme.aqua') }}</option>
+            <option value="flat">{{ t('buttonTheme.flat') }}</option>
              </select
           > <ChevronDown
             class="h-4 w-4 text-gray-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none"
@@ -33,39 +47,39 @@
         <RouterLink
           v-if="isOwnProfile"
           to="/balance"
-          class="btn-aqua-rose"
+          class="ui-btn--danger-rose"
         >
           <Wallet class="h-4 w-4" />
           {{ t('profile.balance') }}
         </RouterLink>
         --> <!-- Aqua button group -->
-        <div class="flex">
+        <div class="btn-group-forced flex flex-wrap gap-x-0 gap-y-2">
            <RouterLink
             v-if="isOwnProfile"
             to="/change-password"
-            class="btn-aqua-orange btn-aqua-group-item"
+            class="ui-btn--warning-orange ui-btn--group-item"
             > <KeyRound class="h-4 w-4" /> {{ t('profile.changePassword') }} </RouterLink
           > <button
             v-if="isOwnProfile && !isEditing"
-            class="btn-aqua-yellow btn-aqua-group-item"
+            class="ui-btn--warning-yellow ui-btn--group-item"
             @click="toggleEdit"
           >
              <Pencil class="h-4 w-4" /> {{ t('profile.editProfile') }} </button
           >
         </div>
 
-        <div class="flex">
+        <div class="btn-group-forced flex flex-wrap gap-x-0 gap-y-2">
            <RouterLink
             :to="
               isOwnProfile
                 ? '/reactions?tab=definitions'
                 : `/user/${profileData.username}/activity?tab=definitions`
             "
-            class="btn-aqua-purple btn-aqua-group-item"
+            class="ui-btn--accent-purple ui-btn--group-item"
             > <Activity class="h-4 w-4" /> {{ t('profile.viewActivity') }} </RouterLink
           > <button
             v-if="isOwnProfile && auth.state.isLoggedIn"
-            class="btn-aqua btn-aqua-group-item"
+            class="ui-btn--aqua-default ui-btn--group-item"
             @click="auth.logout()"
           >
              <LogOut class="h-4 w-4" /> {{ t('nav.logout') }} </button
@@ -79,7 +93,7 @@
                {{ translateRole(role.name) }}
             </option>
              </select
-          > <button class="btn-aqua-emerald" :disabled="isAssigningRole" @click="performAssignRole">
+          > <button class="ui-btn--create" :disabled="isAssigningRole" @click="performAssignRole">
              {{ isAssigningRole ? t('profile.assigning') : t('profile.assignRole') }} </button
           >
         </div>
@@ -308,9 +322,9 @@
       </div>
 
       <div class="mt-6 flex justify-end gap-3">
-         <button type="button" class="btn-cancel" @click="toggleEdit">
+         <button type="button" class="ui-btn--cancel" @click="toggleEdit">
            {{ t('profile.cancel') }} </button
-        > <button type="submit" :disabled="isUpdating || isImageUploading" class="btn-update">
+        > <button type="submit" :disabled="isUpdating || isImageUploading" class="ui-btn--update">
            {{ isUpdating ? t('profile.saving') : t('profile.saveChanges') }} </button
         >
       </div>
@@ -348,12 +362,15 @@ import {
   getRoles,
 } from '@/api'
 
+import { localeNativeName } from '@/config/locales'
 import LazyMathJax from '@/components/LazyMathJax.vue'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import { useAuth } from '@/composables/useAuth'
 import { useError } from '@/composables/useError'
 import { useSuccessToast } from '@/composables/useSuccessToast'
 import { useSeoHead } from '@/composables/useSeoHead'
+import { useButtonTheme } from '@/composables/useButtonTheme'
+import type { ButtonThemeId } from '@/composables/useButtonTheme'
 
 /** JWT fields used on the profile page (decode + display). */
 interface ProfileJwtPayload {
@@ -374,6 +391,11 @@ const route = useRoute()
 const router = useRouter()
 const auth = useAuth()
 const { locale, availableLocales, t } = useI18n()
+const { buttonTheme, initButtonTheme, setButtonTheme } = useButtonTheme()
+
+function onButtonThemeChange(e: Event) {
+  setButtonTheme((e.target as HTMLSelectElement).value as ButtonThemeId)
+}
 
 // State
 const { showError, clearError } = useError()
@@ -866,6 +888,7 @@ watch(
 // Initialize
 
 onMounted(() => {
+  initButtonTheme()
   // The global router guard (setupRouterGuards in router/index.ts)
   // handles authentication checks. By the time onMounted is called,
   // auth.state.isLoggedIn (and other auth state like username) should be stable

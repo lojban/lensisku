@@ -3,6 +3,11 @@
     "baseTitle": "逻辑语门户",
     "defaultDescription": "检索逻辑语词典与语料库。查找词义、用例与社区讨论（逻辑语 la .lojban.）。"
   },
+  "buttonTheme": {
+    "label": "按钮样式",
+    "aqua": "光泽（玻璃质感）",
+    "flat": "扁平（标准）"
+  },
   "notFoundPage": {
     "pageTitle": "404 - 页面未找到",
     "description": "您访问的页面不存在。",

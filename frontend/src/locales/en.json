@@ -3,6 +3,11 @@
     "baseTitle": "Lojban Portal",
     "defaultDescription": "Search the Lojban dictionary and corpus. Find word definitions, usage examples, and community discussions in Lojban (la .lojban.)."
   },
+  "buttonTheme": {
+    "label": "Button style",
+    "aqua": "Glossy (aqua)",
+    "flat": "Flat (standard)"
+  },
   "notFoundPage": {
     "pageTitle": "404 - Page Not Found",
     "description": "The page you're looking for doesn't exist.",

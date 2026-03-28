@@ -3,7 +3,7 @@
   <h1 class="text-2xl font-bold text-gray-800"> {{ t('bulkImport.title') }} </h1>
 
   <div class="flex justify-between my-4">
-     <RouterLink to="/bulk-import/clients" class="btn-aqua-purple"
+     <RouterLink to="/bulk-import/clients" class="ui-btn--accent-purple"
       > {{ t('bulkImport.viewPastImportsLink') }} </RouterLink
     >
   </div>
@@ -107,7 +107,7 @@
     <div class="flex flex-col sm:flex-row justify-end gap-2 mt-4 sm:mt-0">
        <button
         type="button"
-        class="btn-aqua-emerald w-full sm:w-auto order-1"
+        class="ui-btn--create w-full sm:w-auto order-1"
         :disabled="!canSubmit || isLoading || isCancelling"
         @click="submitImport"
       >
@@ -117,7 +117,7 @@
       > <button
         v-if="importProcessId"
         type="button"
-        class="btn-aqua-white w-full sm:w-auto order-2"
+        class="ui-btn--neutral w-full sm:w-auto order-2"
         :disabled="isCancelling"
         @click="cancelJob"
       >
@@ -154,7 +154,7 @@
            <!-- Right Column -->
           <div class="flex items-center">
              <button
-              class="btn-aqua-red w-full sm:w-auto"
+              class="ui-btn--delete w-full sm:w-auto"
               :disabled="isDeleting"
               @click="deleteByClientId"
             >
@@ -187,7 +187,7 @@
             :placeholder="t('bulkImport.pasteClientIdPlaceholder')"
             class="input-field flex-1 text-xs sm:text-sm font-mono"
           /> <button
-            class="btn-aqua-red w-full sm:w-auto"
+            class="ui-btn--delete w-full sm:w-auto"
             :disabled="!inputClientId || isDeleting"
             @click="deleteByClientId"
           >

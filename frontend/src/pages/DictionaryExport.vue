@@ -5,7 +5,7 @@
   <div class="flex flex-wrap gap-2 w-full lg:w-auto justify-between my-4">
 
     <p class="text-gray-600"> {{ t('dictionaryExport.description') }} </p>
-     <RouterLink to="/export/cached" class="btn-aqua-purple"
+     <RouterLink to="/export/cached" class="ui-btn--accent-purple"
       > {{ t('dictionaryExport.viewCached') }} </RouterLink
     >
   </div>
@@ -143,7 +143,7 @@
       </div>
        <button
         :disabled="!canExport || isLoading"
-        class="inline-flex items-center btn-get"
+        class="inline-flex items-center ui-btn--get"
         @click="handleExport"
       >
          {{ t('dictionaryExport.exportButton') }} </button

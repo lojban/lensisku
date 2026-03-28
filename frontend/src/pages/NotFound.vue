@@ -5,7 +5,7 @@
     <h1 class="text-4xl font-bold mb-4">{{ $t('notFoundPage.pageTitle') }}</h1>
 
     <p class="text-gray-600 mb-8">{{ $t('notFoundPage.description') }}</p>
-     <RouterLink to="/" class="btn-aqua-blue px-6 py-2 text-lg"
+     <RouterLink to="/" class="ui-btn--get px-6 py-2 text-lg"
       > {{ $t('notFoundPage.returnHome') }} </RouterLink
     >
   </div>

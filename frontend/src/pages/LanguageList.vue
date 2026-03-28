@@ -79,15 +79,15 @@
          <!-- Mobile Layout -->
         <div class="sm:hidden space-y-3">
 
-          <div class="flex flex-wrap gap-2 md:gap-0" role="group">
-             <RouterLink :to="`/?mode=dictionary&langs=${lang.id}`" class="btn-get btn-group-item"
+          <div class="btn-group-forced flex flex-wrap gap-x-0 gap-y-2" role="group">
+             <RouterLink :to="`/?mode=dictionary&langs=${lang.id}`" class="ui-btn--get ui-btn--group-item"
               > {{ lang.english_name }} </RouterLink
             > <a
               v-if="lang.url"
               :href="lang.url"
               target="_blank"
               rel="noopener noreferrer"
-              class="btn-market btn-group-item"
+              class="ui-btn--market ui-btn--group-item"
               > {{ t('languageList.visitWebsite') }} </a
             >
           </div>
@@ -121,7 +121,7 @@
         <div class="hidden sm:block text-sm font-medium text-primary-900"> {{ lang.tag }} </div>
 
         <div class="hidden sm:block text-sm text-primary-800">
-           <RouterLink :to="`/?mode=dictionary&langs=${lang.id}`" class="btn-get"
+           <RouterLink :to="`/?mode=dictionary&langs=${lang.id}`" class="ui-btn--get"
             > {{ lang.english_name }} </RouterLink
           >
         </div>
@@ -144,7 +144,7 @@
             :href="lang.url"
             target="_blank"
             rel="noopener noreferrer"
-            class="btn-market"
+            class="ui-btn--market"
             > {{ t('languageList.visit') }} </a
           >
         </div>
@@ -170,7 +170,7 @@
   >
 
     <p class="text-gray-600"> {{ t('languageList.noMatchingLanguages') }} </p>
-     <button type="button" class="btn-get mt-3" @click="searchQuery = ''">
+     <button type="button" class="ui-btn--get mt-3" @click="searchQuery = ''">
        {{ t('languageList.clearSearch') }} </button
     >
   </div>

@@ -7,7 +7,7 @@
       :href="link.link"
       target="_blank"
       rel="noopener noreferrer"
-      :class="buttons ? 'text-gray-400 hover:text-blue-400 transition-colors' : 'btn-aqua-white'"
+      :class="buttons ? 'text-gray-400 hover:text-blue-400 transition-colors' : 'ui-btn--neutral'"
       > <img
         :src="`/assets/icons/${link.name}.svg`"
         :alt="link.name"

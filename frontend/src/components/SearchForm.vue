@@ -4,7 +4,9 @@
 
     <div class="flex flex-col sm:flex-row gap-2 sm:gap-0">
 
-      <div class="w-full sm:w-56 shrink-0 [&>div]:block [&>div]:w-full">
+      <div
+        class="relative z-10 w-full sm:w-56 shrink-0 [&>div]:block [&>div]:w-full"
+      >
          <Dropdown
           > <template #trigger
             > <button
@@ -33,7 +35,7 @@
         >
       </div>
 
-      <div class="relative flex-1 sm:-ml-px">
+      <div class="search-form-query-col">
          <input
           ref="searchInput"
           v-model="query"

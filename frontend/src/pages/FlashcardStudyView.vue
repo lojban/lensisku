@@ -25,9 +25,9 @@
         </div>
 
         <div class="flex gap-4 space-x-4">
-           <button class="btn-cancel" @click="router.back()">
+           <button class="ui-btn--cancel" @click="router.back()">
              {{ t('flashcardStudy.endSession') }} </button
-          > <button v-if="currentCard" class="btn-empty" @click="snoozeCard">
+          > <button v-if="currentCard" class="ui-btn--empty" @click="snoozeCard">
              {{ t('flashcardStudy.snooze') }} </button
           >
         </div>
@@ -56,7 +56,7 @@
       <div class="flex justify-center">
          <button
           ref="returnToDeckButtonRef"
-          class="btn-get w-auto h-10 text-base shadow-sm"
+          class="ui-btn--get w-auto h-10 text-base shadow-sm"
           @click="router.push(returnToUrl)"
         >
            {{
@@ -359,14 +359,14 @@
       >
          <button
           v-if="isFillInMode"
-          class="btn-get w-auto h-10 text-base shadow-sm"
+          class="ui-btn--get w-auto h-10 text-base shadow-sm"
           @click="submitAnswer()"
         >
            {{ t('flashcardStudy.submitAnswer') }} </button
         > <button
           v-else
           ref="showAnswerButtonRef"
-          class="btn-get w-auto h-10 text-base shadow-sm"
+          class="ui-btn--get w-auto h-10 text-base shadow-sm"
           @click="revealAnswerAndPlayAudio"
         >
            {{ t('flashcardStudy.showAnswer') }} </button
@@ -374,7 +374,7 @@
       </div>
        <!-- OK button for JustInformation mode -->
       <div v-else-if="isJustInformationMode && !showAnswer" class="flex justify-center px-4">
-         <button class="btn-get w-auto h-10 text-base shadow-sm" @click="submitAnswer(4)">
+         <button class="ui-btn--get w-auto h-10 text-base shadow-sm" @click="submitAnswer(4)">
            <Check class="h-4 w-4" /> </button
         >
       </div>
@@ -382,14 +382,14 @@
       <div v-else-if="quizResult" class="flex justify-center px-4 mt-4">
          <button
           v-if="remainingCards.length <= 0"
-          class="btn-get w-auto h-10 text-base shadow-sm"
+          class="ui-btn--get w-auto h-10 text-base shadow-sm"
           @click="router.back()"
         >
            {{ t('flashcardStudy.endSession') }} </button
         > <button
           v-else
           ref="nextCardButtonRef"
-          class="btn-get w-auto h-10 text-base shadow-sm"
+          class="ui-btn--get w-auto h-10 text-base shadow-sm"
           @click="handleQuizNextCard"
         >
            {{ t('flashcardStudy.nextCard') }} </button
@@ -411,19 +411,19 @@
 
             <div class="grid grid-cols-3 gap-2 sm:gap-4">
                <button
-                class="btn-error w-full sm:min-w-[120px] flex items-center justify-center gap-1.5"
+                class="ui-btn--error w-full sm:min-w-[120px] flex items-center justify-center gap-1.5"
                 @click="submitAnswer(1)"
               >
                  <XCircle class="h-4 w-4" /> {{ t('flashcardStudy.forgot')
                 }}<span class="hidden sm:inline ml-1">(1)</span> </button
               > <button
-                class="btn-warning w-full sm:min-w-[120px] flex items-center justify-center gap-1.5"
+                class="ui-btn--warning w-full sm:min-w-[120px] flex items-center justify-center gap-1.5"
                 @click="submitAnswer(3)"
               >
                  <Smile class="h-4 w-4" /> {{ t('flashcardStudy.good')
                 }}<span class="hidden sm:inline ml-1">(2)</span> </button
               > <button
-                class="btn-success w-full sm:min-w-[120px] flex items-center justify-center gap-1.5"
+                class="ui-btn--success w-full sm:min-w-[120px] flex items-center justify-center gap-1.5"
                 @click="submitAnswer(4)"
               >
                  <Check class="h-4 w-4" /> {{ t('flashcardStudy.easy')
@@ -450,14 +450,14 @@
           </div>
            <!-- When incorrect: correct answer is shown above; no error alert --> <button
             v-if="remainingCards.length <= 0"
-            class="btn-get w-auto h-10 text-base shadow-sm"
+            class="ui-btn--get w-auto h-10 text-base shadow-sm"
             @click="router.back()"
           >
              {{ t('flashcardStudy.endSession') }} </button
           > <button
             v-else
             ref="nextCardButtonRef"
-            class="btn-get w-auto h-10 text-base shadow-sm"
+            class="ui-btn--get w-auto h-10 text-base shadow-sm"
             @click="handleNextCard"
           >
              {{ t('flashcardStudy.nextCard') }} </button

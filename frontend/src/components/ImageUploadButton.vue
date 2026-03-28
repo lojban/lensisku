@@ -58,11 +58,11 @@
     </div>
      <!-- Upload/Remove Controls -->
     <div class="flex gap-2">
-       <label v-if="!isUploading" class="btn-update cursor-pointer"
+       <label v-if="!isUploading" class="ui-btn--update cursor-pointer"
         > <input type="file" class="hidden" accept="image/*" @change="handleFileChange" /> <Upload
           class="h-4 w-4 mr-1.5"
         /> {{ hasImage ? t('filters.changePhoto') : t('filters.uploadPhoto') }} </label
-      > <button v-if="hasImage && !isUploading" class="btn-delete" @click="handleRemove">
+      > <button v-if="hasImage && !isUploading" class="ui-btn--delete" @click="handleRemove">
          <Trash2 class="h-4 w-4 mr-1.5" /> {{ t('filters.removePhoto') }} </button
       >
     </div>

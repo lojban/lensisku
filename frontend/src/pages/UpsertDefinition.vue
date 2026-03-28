@@ -36,7 +36,7 @@
            <button
             v-if="!isEditMode"
             type="button"
-            class="w-auto h-8 btn-aqua-orange text-base"
+            class="w-auto h-8 ui-btn--warning-orange text-base"
             :disabled="isAnalyzing || isSubmitting || word === ''"
             @click="doAnalyzeWord"
           >
@@ -69,7 +69,7 @@
         <div class="flex items-center gap-2 justify-start">
 
           <h2 class="font-semibold truncate"> {{ recommended }} </h2>
-           <button type="button" class="btn-update" @click="useRecommended">
+           <button type="button" class="ui-btn--update" @click="useRecommended">
              <ArrowRight class="h-4 w-4" /> {{ t('upsertDefinition.useThisButton') }} </button
           >
         </div>
@@ -314,9 +314,9 @@
           class="flex-1 input-field w-full"
         />
         <div class="flex flex-wrap space-x-2">
-           <button type="button" class="sm:w-auto btn-aqua-red" @click="removeGlossKeyword(index)">
+           <button type="button" class="sm:w-auto ui-btn--delete" @click="removeGlossKeyword(index)">
              <CircleMinus class="h-4 w-4" /> {{ t('upsertDefinition.removeButton') }} </button
-          > <button type="button" class="btn-aqua-white" @click="addGlossKeyword">
+          > <button type="button" class="ui-btn--neutral" @click="addGlossKeyword">
              <CirclePlus class="h-4 w-4" /> {{ t('upsertDefinition.addGlossButton') }} </button
           >
         </div>
@@ -349,9 +349,9 @@
           class="flex-1 input-field w-full"
         />
         <div class="flex flex-wrap space-x-2">
-           <button type="button" class="sm:w-auto btn-aqua-red" @click="removePlaceKeyword(index)">
+           <button type="button" class="sm:w-auto ui-btn--delete" @click="removePlaceKeyword(index)">
              <CircleMinus class="h-4 w-4" /> {{ t('upsertDefinition.removeButton') }} </button
-          > <button type="button" class="w-auto btn-aqua-white" @click="addPlaceKeyword">
+          > <button type="button" class="w-auto ui-btn--neutral" @click="addPlaceKeyword">
              <CirclePlus class="h-4 w-4" /> {{ t('upsertDefinition.addPlaceButton') }} </button
           >
         </div>
@@ -379,7 +379,7 @@
        <!-- Show Submit button if form is valid and not submitting --> <button
         v-if="isValid && !isSubmitting"
         type="submit"
-        class="max-w-fit btn-aqua-emerald h-10 text-base"
+        class="max-w-fit ui-btn--create h-10 text-base"
       >
          {{
           isEditMode
@@ -391,7 +391,7 @@
       > <!-- Show Analyze button if form is invalid and not submitting --> <button
         v-else-if="!isValid && !isSubmitting"
         type="button"
-        class="max-w-fit btn-aqua-orange h-10 text-base"
+        class="max-w-fit ui-btn--warning-orange h-10 text-base"
         :disabled="isAnalyzing || word === ''"
         @click="analyzeAndScroll"
       >
@@ -407,7 +407,7 @@
       > <!-- Show disabled state during submission --> <button
         v-else-if="isSubmitting"
         type="button"
-        class="max-w-fit btn-aqua-emerald h-10 text-base"
+        class="max-w-fit ui-btn--create h-10 text-base"
         disabled
       >
          {{

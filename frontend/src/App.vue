@@ -150,6 +150,30 @@
                 @click="closeNavMenus"
                 > <Download class="h-4 w-4" /> {{ $t('nav.bulkImport') }} </NavLink
               >
+              <div
+                class="border-t border-gray-100 mt-1 pt-1 px-2 py-2"
+                role="group"
+                :aria-label="$t('buttonTheme.label')"
+              >
+                 <p class="text-xs text-gray-500 mb-1">{{ $t('buttonTheme.label') }}</p>
+                <div class="flex flex-col gap-0.5">
+                   <button
+                    type="button"
+                    class="navbar-item justify-start py-2 text-sm w-full"
+                    :class="{ 'nav-link-active': buttonTheme === 'aqua' }"
+                    @click="setButtonThemePreference('aqua'); closeNavMenus()"
+                  >
+                     {{ $t('buttonTheme.aqua') }} </button
+                  > <button
+                    type="button"
+                    class="navbar-item justify-start py-2 text-sm w-full"
+                    :class="{ 'nav-link-active': buttonTheme === 'flat' }"
+                    @click="setButtonThemePreference('flat'); closeNavMenus()"
+                  >
+                     {{ $t('buttonTheme.flat') }} </button
+                  >
+                </div>
+              </div>
             </div>
 
           </div>
@@ -355,31 +379,32 @@
         >
         <div
           v-show="showActionModal"
-          class="flex flex-col gap-3 mb-1 items-end pointer-events-auto pr-1"
+          class="flex flex-col gap-4 mb-1 items-end pointer-events-auto pr-1"
         >
            <IconButton
             :label="$t('nav.assistant')"
-            button-classes="btn-aqua-slate h-12 text-base !px-5"
+            button-classes="ui-btn--neutral-slate fab-menu-action"
             @click="handleAssistantChat"
             > <template #icon> <Bot class="h-6 w-6 text-indigo-600" /> </template> </IconButton
           > <IconButton
             v-if="auth.state.isLoggedIn"
             :label="$t('fab.newDiscussion')"
-            button-classes="btn-aqua-white h-12 text-base !px-5"
+            button-classes="ui-btn--neutral fab-menu-action"
             @click="handleNewFreeThread"
             > <template #icon> <AudioWaveform class="h-6 w-6 text-purple-600" /> </template>
             </IconButton
           > <IconButton
             v-if="auth.state.isLoggedIn"
             :label="$t('fab.addDefinition')"
-            icon-classes="h-5 w-5"
-            button-classes="btn-aqua-emerald h-12 text-base !px-5"
+            icon-classes="h-6 w-6"
+            button-classes="ui-btn--create fab-menu-action"
             @click="handleNewDefinition"
           />
         </div>
          </transition
       > <button
-        class="p-2 flex items-center justify-center w-[52px] h-[52px] btn-aqua-rose"
+        type="button"
+        class="inline-flex items-center justify-center ui-btn--fab"
         @click="showActionModal = !showActionModal"
       >
          <Plus
@@ -439,6 +464,7 @@ import {
   DEFAULT_SUCCESS_TOAST_DURATION_MS,
   provideSuccessToast,
 } from './composables/useSuccessToast'
+import { useButtonTheme } from './composables/useButtonTheme'
 import { localeCaptureGroupRegex, supportedLocales } from './config/locales'
 
 import logoSvgRaw from '../public/assets/icons/favicon.svg?raw'
@@ -475,6 +501,7 @@ function metaProps(p: unknown): Record<string, unknown> {
 const searchQuery = ref('')
 const searchMode = ref('messages')
 const auth = provideAuth()
+const { buttonTheme, initButtonTheme, setButtonTheme: setButtonThemePreference } = useButtonTheme()
 const { error, clearError } = provideError()
 const { successToast, clearSuccess } = provideSuccessToast()
 const isMenuOpen = ref(false)
@@ -744,6 +771,7 @@ const handleGlobalKeyDown = async (event) => {
 }
 
 onMounted(() => {
+  initButtonTheme()
   // Close mobile menu when window resizes to desktop width
   const handleResize = () => {
     if (window.innerWidth >= 640) {
