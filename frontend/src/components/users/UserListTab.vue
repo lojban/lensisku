@@ -98,7 +98,7 @@
         <div
           v-for="user in userList"
           :key="user.user_id"
-          class="bg-white p-4 sm:p-5 rounded-xl border border-gray-200 hover:border-blue-400/60 hover:shadow-md transition-all duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+          class="min-w-0 max-w-full bg-white p-4 sm:p-5 rounded-xl border border-gray-200 hover:border-blue-400/60 hover:shadow-md transition-all duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
           role="button"
           tabindex="0"
           @click="$emit('viewUser', user.username)"
@@ -131,15 +131,20 @@
              <!-- User Info -->
             <div class="min-w-0 flex-1">
 
-              <div class="flex justify-between items-start gap-2">
+              <div class="flex justify-between items-start gap-2 min-w-0">
 
-                <div class="min-w-0">
+                <div class="min-w-0 flex-1 pr-1">
 
-                  <h3 class="text-lg font-medium text-blue-600 truncate hover:text-blue-700">
+                  <h3
+                    class="text-lg font-medium text-blue-600 break-words [overflow-wrap:anywhere] hover:text-blue-700"
+                  >
                      {{ user.username }}
                   </h3>
 
-                  <p v-if="user.realname" class="text-gray-600 text-sm mt-0.5 truncate">
+                  <p
+                    v-if="user.realname"
+                    class="text-gray-600 text-sm mt-0.5 break-words [overflow-wrap:anywhere]"
+                  >
                      {{ user.realname }}
                   </p>
 
