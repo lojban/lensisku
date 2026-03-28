@@ -17,6 +17,9 @@
     "removePhoto": "Удалить фото",
     "fileTypes": "PNG, JPG, GIF до 5МБ",
     "selectLanguages": "Выберите языки",
+    "selectAll": "Выбрать все",
+    "searchLanguages": "Поиск языков...",
+    "noMatches": "Нет совпадений",
     "filterBy": {
       "wordType": "Фильтр по типу слова",
       "selmaho": "Фильтр по selma'o",

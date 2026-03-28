@@ -17,6 +17,9 @@
     "removePhoto": "Remove photo",
     "fileTypes": "PNG, JPG, GIF up to 5MB",
     "selectLanguages": "Select languages",
+    "selectAll": "Select all",
+    "searchLanguages": "Search languages...",
+    "noMatches": "No matches",
     "filterBy": {
       "wordType": "Filter by word type",
       "selmaho": "Filter by selma'o",

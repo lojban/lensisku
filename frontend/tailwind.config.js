@@ -160,6 +160,18 @@ export default {
               '@apply bg-gray-100 cursor-not-allowed opacity-75': {},
             },
           },
+          /** Closed trigger for toolbar dropdowns (search mode, language multiselect): matches input-field visual language at h-10. */
+          '.dropdown-trigger': {
+            '@apply w-full h-10 min-h-[2.5rem] shrink-0 flex items-center justify-between gap-2 px-3 text-left text-sm font-normal text-gray-700 bg-white border border-gray-300 rounded-full transition-all focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 focus:z-50 shadow-inner shadow-slate-200':
+              {},
+            '&:hover:not(:disabled)': {
+              '@apply border-blue-400': {},
+            },
+          },
+          /** Leading segment of the home search bar (flush join with the query input). */
+          '.dropdown-trigger--search-bar-leading': {
+            '@apply sm:rounded-l-full sm:rounded-r-none': {},
+          },
           '.input-group': {
             '@apply flex items-stretch w-full': {},
             '& .input-field': {

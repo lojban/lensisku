@@ -5,15 +5,18 @@
     <div
       class="flex flex-col sm:flex-row items-center sm:justify-between gap-4 md:p-4 md:bg-white md:rounded-lg md:shadow-sm"
     >
-       <MultiSelect
+       <MultiSelectDropdown
         v-model="selectedLangs"
         :options="languages"
         :max-selected-labels="3"
-        name="id"
-        :option-label="(lang) => `${lang.real_name} (${lang.english_name})`"
-        filter
+        :option-value="(lang: LanguageOption) => lang.id"
+        :option-label="(lang: LanguageOption) => `${lang.real_name} (${lang.english_name})`"
+        :search-field-keys="languageFilterSearchFieldKeys"
         :placeholder="t('filters.selectLanguages')"
-        class="w-full sm:w-80 !rounded-full"
+        :search-placeholder="t('filters.searchLanguages')"
+        :select-all-label="t('filters.selectAll')"
+        :empty-filter-label="t('filters.noMatches')"
+        class="w-full sm:w-80"
       />
       <div class="flex items-center gap-2 self-end md:self-center">
 
@@ -166,7 +169,7 @@
 
 <script setup lang="ts">
 import { ChevronDown, X } from 'lucide-vue-next'
-import MultiSelect from 'primevue/multiselect'
+import { MultiSelectDropdown } from '@packages/ui'
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 
 import { fetchDefinitionsTypes } from '@/api'
@@ -176,11 +179,20 @@ import { useI18n } from 'vue-i18n'
 import type { PropType } from 'vue'
 const { t } = useI18n()
 
+/** Fields used for language multiselect search (values only; case-insensitive substring). */
+const languageFilterSearchFieldKeys: string[] = [
+  'tag',
+  'english_name',
+  'lojban_name',
+  'real_name',
+]
+
 type LanguageOption = {
   id: number
   real_name: string
   english_name: string
   tag: string
+  lojban_name?: string
 }
 
 const props = defineProps({

@@ -2513,69 +2513,123 @@ Despite the mother singing beautifully, the child doesn't succeed in falling asl
 Alice said that she would meet Doris. ↔ la .alis. pu cusku le se du'u ri ba penmi la .doris.
 He is the first among my friends who keep silence together. ↔ le prenu cu pa moi le'i pendo be mi ku noi lu'o ke'a ca smaji
 I suggest that you eat something. ↔ mi stidi lo ka ce'u su'o da citka ce'e do
-Why do you say goodbye? ↔ ki'u ma do cusku zo co'o
-Move the car here! ↔ ko jai gau muvdu fai le karce fe ti
 This (no, I don't want another one!) apple is rotten. ↔ ti poi to vi'o nai do mi na ku djica tu'a su'o lo drata toi plise cu fusra
-Good. And then? ↔ ui .i je ba bo
-— Hello. How do you do? ↔ — coi .i xu do kanro
+I know what is the meaning of **coi**. ↔ mi djuno le du'u ma kau smuni zo coi
+Move the car here! ↔ ko jai gau muvdu fai le karce fe ti
+I made it so that my computer got broken. ↔ mi pu gasnu le nu le skami pe mi co'a spofu
+I have a dog, and I have two cats. ↔ mi ralte le pa gerku .i je mi ralte le re mlatu
 I will meet you in three days. ↔ mi penmi do fi'o prulamdeidzo be fi li ci
-What is this? ↔ ti mo
-What? (about objects) ↔ ma dacti gi'e
+Alice loves (Bob is happy) Kevin. ↔ la .alis. cu prami (sei la .bob. cu gleki) la .kevin.
+I was awake but didn't sense your arrival. ↔ pu ku mi cikna gi'e ku'i na ganse le nu do klama
+Are you playing (still in progress)? ↔ xu do ca'o kelci
+I like myself. ↔ mi nelci lo nei
+— How do you feel (emotionally)? ↔ — do cinmo le ka mo
+The people talk to me. ↔ le za'u prenu cu tavla mi
 Oh-no. ↔ .i .oi
 How to translate "What's up?" to Lojban? ↔ ma xe fanva zoi gy.What's up?.gy. la .lojban.
-More than two people together are heavy. ↔ lei za'u re prenu cu tilju
-A dog bites itself. ↔ pa gerku cu batci lo nei
 Alice and Kevin kiss each other ↔ la .alis. jo'u la .kevin. cu cinba zu'ai
-You won! (And Yan is happy about that!) ↔ do jinga sei la .ian. cu gleki
-That is my last rat. ↔ tu ro moi le'i ratcu pe mi
-Listening. ↔ re'i
-That's interesting! ↔ .a'u
-su'o ↔ at least
-We are all human. ↔ ma'a remna
-x₁ (possible event) is imagined by x₂ ↔ xanri
-Ball! ↔ bolci
-prami ↔ x₁ loves x₂
-Thanks. ↔ ki'e
-It is raining. ↔ carvi
-This is a ball near you. ↔ ta bolci
-Goodbye. ↔ co'o
-Yeah. ↔ ie
-Five. ↔ mu
-- Will it rain? ↔ - lakne
-Ha-ha-ha! ↔ .u'i sai
-Nice. ↔ zabna
+I don't buy. It's because it's expensive. ↔ mi na ku te vecnu .i ki'u bo kargu
+It's not true that only I like bananas. ↔ na ku mi se steci le ka nelci le'e badna
+I hope you will have a pleasant sleep. ↔ mi pacna le nu do ba pluka sipna
+I think that Lojban is cool. ↔ mi jinvi le du'u la .lojban. cu zabna
+I would be a governor if I had one million dollars. ↔ da'i mi turni fau le nu mi ponse le rupnusudu be li pa ki'o ki'o
 Someone runs. ↔ bajra
-Yes. ↔ bilma
-- Will it rain? ↔ - cumki
-It's pleasant. ↔ pluka
-What about the smell? ↔ panci pei
+Relax! ↔ ko surla
+The-word “Bob” is-the-name-of the-referent-of the-word “Bob”. ↔ zo .bob. cmene la'e zo .bob.
+Max has built this house. ↔ la .maks. pu mo'u zbasu ti voi dinju
+Karl is very young. ↔ la .karl. cu mutce citno
+I'm a professional translator ↔ mi fanva se jibri
+Please, watch the film! ↔ .e'o zgana le skina
+Take the pen on the left. ↔ ko jgari le panbi poi zunle
+I'm visiting Paris intentionally. ↔ mi te mukti klama la .paris.
+The meal is not ready yet. ↔ le sanmi ca pu'o bredi
+What was the price of the car? ↔ ma pu jdima le karce
+Could you take the phone, please? ↔ .e'o do lebna le fonxa
+You spend a long time coming to our country. ↔ do ze'u klama le mi'a gugde ze'u
+What is the location of your home? ↔ ma stuzi le zdani be do
+The sun is not shining. Therefore, it's night. ↔ le solri na ku te gusni .i se ni'i bo nicte
+Yan said, "Jane greeted me." ↔ la .ian. pu cusku lu la .djein. pu rinsa mi li'u
 
-## phrases (135; grammar-diverse sample from muplis-database)
+## phrases (235; grammar-diverse sample from muplis-database)
 
 Please don't forget to send out the letters. ↔ .i ko na co'u morji le du'u sarcu fa le nu do benji le za'u xatra vau goi ko'a .i je ko zukte ko'a
 Your mamma's so fat, she'd break London Bridge. ↔ i le mamta be do cu tai plana i da'i se ri'a bo ri jai gau spofau fai le cripu pe la .london.
+Is there anything you want to say? ↔ xu su'o da ckaji lo ka do djica le nu cusku ce'u
 One day there will be something so that I will be both sad and happy about. ↔ i ba ku ca pa djedi su'o da mi ge se badri gi gleki
-I can't speak French at all. ↔ mi mulno lo ka ce'u na'e kakne lo ka tavla fo lo fraso
-Is this the book you spoke of the other day? ↔ xu ti du le cukta poi du pu zu skicu
-What do you believe of 'pelmeni'? "Nothing, I don't know such word." ↔ lu do jinvi ma zo pelmeni li'u lu na'i go'i .i mi na se slabu le valsi li'u
-How goes it, Jacques? ↔ coi djaks do mo
-Just a little bit. ↔ so'u va'e
+When did you buy the watch? ↔ do pu te vecnu tu'a le junla ca ma
+I make lunch every day. ↔ ro da poi djedi zo'u mi zbasu su'o carni sanmi
+One way or round trip?' 'Um... let me think. Round trip.' ↔ lu klama fi vo'e je'i na'e bo vo'e li'u lu y vo'e li'u
+Hey cat, how are you? Are you sitting in the house? There are two cats. ↔ coi le mlatu do mo i xu do ca' ozutse bu'u le dinju i re da mlatu
+Those are very famous people. ↔ .i lei za'u va prenu cu mutce misno
 Steve is an American name. ↔ zoi gy.Steve.gy. merko glico cmene
-Aha, go on, what happened next? ↔ .a'a sei ko di'a co'e ma ba la'e do'i fasnu
 Don't say anything to anybody. ↔ ko na ku tavla su'o da ce'e su'o de
-I'm happy now that you've arrived. ↔ .ui bu'o do mo'u klama
-Are you the giver or the receiver of this rose? ↔ fi'a do dunda fe tu'a ti voi rozgu
-I told you, I disagree. ↔ .i ke'u mi na tugni
+That's the eject button. Don't touch it. ↔ lo nu vimcu cu se tekla sei ko na pilno
+As earlier mentioned, I was afraid. ↔ .i ke'u mi pu terpa
+A lot of buildings collapsed in Japan due to the earthquake yesterday. ↔ ca lo prulamdei bu'u le ponjo ri'a lo nu .oi cai le terdi cu desku vau so'i dinju co'a porpi
 He and I walked together. ↔ .i ra jo'u mi pu cadzu
+This book is yours. ↔ do ponse ti voi cukta
+Thank you for the information. ↔ ckire do lo ka jai gau djuno
+What country were you born in? ↔ ma gugde gi'e stuzi lo nu do co'a cifnu
+Obama said that Romney is forgetting what his own positions are — 'and he's betting that you will too'. ↔ la obamas pu xusra lo du'u la romni cu tolmo'i tu'a le se jinvi be ri i je cu'u obu boi ry kanpe lo nu do'o si'a tolmo'i
+I love you and vice versa. ↔ .i mi ce do simxu le ka prami
+He broke his leg skiing. ↔ .i le nanmu pu jai gau spofu fai lo tuple be le nei ze'a lo nu le nei cu skiji sakli
+Such a wonderful music! ↔ u'e melbi zgike
+I'm glad to hear that. ↔ ui zabna nuzba
+A crocodile has eaten Tom. ↔ pa krokodilo pu citka pa gerku
+You speak. ↔ do bacru
+You will regret this. ↔ do ba xenru
+Please keep it a secret. ↔ gau do .e'o sivni
+The vacation is over now. ↔ ca ba'o citsi lo nu surla
+How about running? ↔ .i pei mi'o bajra
+Are you the giver or the receiver of this rose? ↔ fi'a do dunda fe tu'a ti voi rozgu
+Do you want to play something? ↔ .au pei do kelci da
+He is a doctor and an author. ↔ .i ra mikce gi'e finti
+I want to have sex with her. ↔ .au mi gletu ra
+There's someone inside. ↔ .i su'o jmive ca nenri
+I don't like winter. ↔ mi na nelci lo'e dunra
+The light is green. ↔ le gusni cu crino
+When does that start? ↔ .i cfari ca ma
+For me this banana is sweet. ↔ i ti voi badna cu kukte mi
+Who did it? ↔ .i ma pu gasnu
+Greetings, old friend! ↔ sei mi do i'u rinsa
+You decide. ↔ .i do jdice
+I'm trying to hold it! ↔ .a'i mi troci lo ka ru'i jgari ti
+What are you up to? ↔ do cinmo lo ka pu'o zukte ma
+Please replace it. ↔ .i .e'o do jai gau basti
+Do you cry often? ↔ xu lo nu do klaku cu cafne
+I need some sugar. ↔ .i mi nitcu tu'a su'o sakta
+Thou shalt not kill. ↔ .i ei do na catra
+Tom wanted to find out. ↔ la tom pu djica le nu ri facki
+Do you need a bag? ↔ .i xu do nitcu tu'a lo'e dakli
+I'm not a doctor. ↔ mi na se cuntu lo ka mikce
+Tatoeba' means 'for example' in Japanese. ↔ fanva zoi py.Tatoeba.py. le lojbo le ponjo zo mu'a
+Tom is a priest. ↔ .i la tom cu catni le lijda
+You cheated. ↔ .i do pu zukte lo tcica
+Please go on with your story. ↔ .e'o do di'a skicu le do lisri
+Don't ask me for money. ↔ .i ko na cpedu tu'a lo jdini mi
+They became nervous. ↔ .i le za'u da pu co'a xanka
+You should be ashamed of your conduct. ↔ .ei do ckeji le nu do tarti
+I can't speak French at all. ↔ mi mulno lo ka ce'u na'e kakne lo ka tavla fo lo fraso
+If you see a mistake, then please correct it. ↔ .e'o va'o lo nu do ganse lo se srera kei do cikre
+The table in that room is very nice. ↔ le jubme pe ne'i le va kumfa cu mutce lo ka pluka
+Is he a teacher? ↔ .i xu ra poi nakni cu se jibri le ka ctuca
+My basket is full of books. ↔ .i le mi pa lanka cu culno za'u cukta
+Where is the fire extinguisher? ↔ .i ma se zvati le tutci be lo dicra be lo nu fagri
+I truly doubt it. ↔ .i mi stace be fi le ju'a mi senpi
+We are speaking about the same thing, just in different words. ↔ .i mi'ai ca'o tavla fi le mintu fo le sa'u ckaji be le ka lo valsi be fi ce'u cu drata
+On the gripping hand, if they're too young and healthy they will escape and attempt to eat you. ↔ .i ma'i le ci moi ba ku le za'u da ga nai du'e va'e le ka citno kei gi'e ricfu gi snada le ka rivbi kei gi'e troci le ka citka do
 Oh no! ↔ .a'onai
 That hurts. ↔ cortu
 How fascinating! ↔ .a'ucai
+There's no hope. ↔ .a'onaicai
 Do you understand? ↔ G
 Yes. ↔ je'u
+I am deeply interested in art. ↔ .a'ucai lardai
 I will do it myself. ↔ e'ei se'a
 This is not enough. ↔ be'u
 Crazy! ↔ fenki
 That's true. ↔ jetnu
+Just a little bit. ↔ so'u va'e
 I'm begging you. ↔ e'o cai
 How cold it is! ↔ u'e lenku
 Sam, no! ↔ doi sam. do'u .e'unai
@@ -2585,7 +2639,6 @@ Ah, this is easy. ↔ a'i cu'i
 My name is Jack. ↔ mi'e .djak.
 I'm Susan Greene. ↔ mi'e .suzyn.grin.
 What is it? ↔ mo
-Such a wonderful music! ↔ u'e melbi zgike
 Help yourself. ↔ e'i cu'i dai
 Are you all right? ↔ uu oi pei
 This is highly irregular. ↔ mutce vitci
@@ -2595,13 +2648,16 @@ How was your day today? ↔ cabdei pei
 Hello, Tom. ↔ coi tam
 Hello, old friend! ↔ coi .i'u
 Hi, Tom! ↔ coi .tam.
+Hi. ↔ coi ga'icu'i
 It's dangerous here. ↔ bu'u ckape
 The rain stopped at last. ↔ co'u je za'o carvi
 It's done! ↔ mo'u fasnu
+Hello, world! ↔ coi munje
+Hi, Tom. ↔ coi tam.
 Happy New Year! ↔ ui dai li'i cnino na'arcitsi
 This is Tom. ↔ mi'e .tom.
-I'm glad to hear that. ↔ ui zabna nuzba
 We are the Borg. ↔ mi'a du lai borg
+Hello, old friend! ↔ coi slabu pendo
 It's cold out there. ↔ lenku bu'u tu
 We try. ↔ mi'ai troci
 That's none of my business. ↔ la'e do'i a'u cu'i
@@ -2609,6 +2665,7 @@ Carmen is a Spanish name. ↔ zo .karmen. spano cmene
 Steve is an American name. ↔ zo .stiv. merko cmene
 Fool! ↔ ge'e jai zu'e bebna
 There's going to be a tsunami! ↔ .a'e ba vilxasybo'a
+It's going to be violent weather! ↔ .a'e ba vlile tcima
 We need to chat soon. ↔ .ei mi'o bazi casnu
 Let's finish the job. ↔ ko'oi mi'ai mo'u gunka
 Happy New Year! ↔ ui dai li'i co'a na'arcitsi
@@ -2616,7 +2673,6 @@ This'll be different. ↔ ba drata
 We'll wait. ↔ mi'a ba denpa
 I am not kidding. ↔ zo'o nai
 I can't. ↔ .e'e nai
-I'd like some plum jam. ↔ .au zirsmela pesxu
 We'll dance. ↔ mi'ai ba dansu
 I don't like chocolate. ↔ cakla .iu ru'e nai
 We'll win. ↔ mi'ai ba jinga
@@ -2642,7 +2698,6 @@ Don't ask any questions. ↔ ko na retsku
 Don't be silly. ↔ ko na bebna
 Don't give up. ↔ ko na co'u troci
 Where are we? ↔ mi'ai zvati ma
-One way or round trip?' 'Um... let me think. Round trip.' ↔ lu klama fi vo'e je'i na'e bo vo'e li'u lu y vo'e li'u
 What species of elk is it? ↔ ti mirli ma
 I did it, through much hard work, though it took but little thought. ↔ uo ru'e a'i sai ro'o bu'o nai a'i ru'e sai ro'e bu'o nai
 She would not disclose the secret. ↔ ba'a ra ba ca'o mipri
@@ -2656,12 +2711,11 @@ This apple is sweet. ↔ ti voi plise cu kukte
 Wow, there are seven people here! ↔ .u'e ze prenu cu zvati ti
 Long time, no see. ↔ ze'u ku na ku penmi
 Where does it leave from? ↔ klama fi ma
+Aha, go on, what happened next? ↔ .a'a sei ko di'a co'e ma ba la'e do'i fasnu
 Where can I find him? ↔ ra zvati ma ba'a dai
-A crocodile has eaten Tom. ↔ pa krokodilo pu citka pa gerku
 He has small feet. ↔ ra se jamfu za'u cmalu
 Where are we now? ↔ mi'ai ca zvati ma
 The result won't really be good. ↔ lei jalge na ku ba ku zabna
-You speak. ↔ do bacru
 You are a panda. ↔ do latcribe
 You are foolish. ↔ do bebna
 You've already forgotten. ↔ do pujenai morji
@@ -2669,16 +2723,14 @@ You're not a child anymore. ↔ do ba'o verba
 You may swim. ↔ .e'a do limna
 You may sit down. ↔ .e'a do zutse
 You CAN do it. ↔ do ba'e kakne
-You are a small person. ↔ do cmalu prenu
 Quit complaining. ↔ ko sisti lo ka pante
+You are a small person. ↔ do cmalu prenu
 You are a large person. ↔ do barda prenu
+You may go. ↔ .e'a do cliva
 It's the largest in the world. ↔ traji lo ka barda vau fo le'i munje
-Please sit down! ↔ .e'o do zutse
 Her legs are long. ↔ ra se tuple lo clani
 You're weird. ↔ do jai cizra
 Thank you very, very much! ↔ mutce mutce ckire do
-You will regret this. ↔ do ba xenru
-Please keep it a secret. ↔ gau do .e'o sivni
 Everything will be lost now. ↔ i ba zi ku no da ca'o zvati a'o nai
 Live and let live. ↔ ko jmive gi'e curmi lo nu jmive
 This is a good learning environment. ↔ vanbi co xamgu be lo ka cilre
@@ -2687,6 +2739,54 @@ It's me. ↔ mi'e mi
 I'm going to scream. ↔ .ai mi cmoni
 I'm going to bed. ↔ mi pu'o sipna
 I have to go to sleep. ↔ mi bai ei sipna
+I have to win. ↔ .ai sai mi jinga
+I'm only a customer. ↔ mi te vecnu po'o
+It should be fun. ↔ .i ba'a xajmi
+I don't want to be late. ↔ mi jai lerci aunai
+I'm happy now that you've arrived. ↔ .ui bu'o do mo'u klama
+You have to do it, whether you like it or not. ↔ do bilga gi'u djica
+Are you an animist? ↔ xu do xanmi
+The name of my name is 'Strange'. ↔ zo cizra cmene mi
+Are you angry? ↔ xu do fengu
+Do you remember? ↔ xu do morji
+I wish I knew. ↔ au da'i mi djuno
+This has to stop. ↔ .i ei co'u fasnu
+It's a cruel world. ↔ .i bu'u palci munje
+What's up? ↔ do ca mo
+You're in shock. ↔ do ca'a se jenca
+Steve is an American name. ↔ .i zo'oi Steve merko cmene
+Could we walk? ↔ .i pei mi'o cadzu
+Did you get it? ↔ xu do mo'u cpacu
+Are we friends? ↔ xu mi'ai simxu lo ka pendo
+Do you know it? ↔ xu do djuno
+Why are you meowing? ↔ mu'i ma .a'u do latcmo
+There it is. ↔ .i zvati tu
+La, la, la, I'm not listening. ↔ mi jundi a'a nai
+Foolish, foolish me. ↔ jai zu'e bebna bebna fa mi
+I'm hopeless! ↔ mi .a'o nai
+What's your name? ↔ ma cmene do
+He wants to come. ↔ ra aidji lo ka klama
+Are you crying? ↔ xu do ca'o klaku
+It's my son. ↔ ra bersa mi
+Would you like to go to a movie tomorrow night? ↔ ausai mi visra ra
+Today is going to be a good day! ↔ ba'a le cabdei zu zabna
+I'll definitely do that. ↔ ju'o .ai mi ba zukte
+Big Brother is watching you. ↔ i la barda bruna ru'i zgana do
+Are you new here? ↔ xu do cnino va'o ti
+I'd rather be a bird than a fish. ↔ au da'i mi cipni gi'e nai finpe
+We need something to eat. ↔ mi'ai nitcu lo nu mi'ai citka da
+Who am I? ↔ mi du ma
+That's what I want to know. ↔ au mi djuno fi la'e do'i
+You have to memorize this sentence. ↔ ei do na'o morji fi ti voi jufra
+We are in the forest. ↔ mi'ai zvati le ricfoi
+Are you ready? ↔ xu do ca bredi
+What's up? ↔ .i ma nuzba
+He calls me Pete. ↔ ra te cmene mi zo .pit.
+It's not fair. ↔ .i na vrude
+I had to try. ↔ mi pu bai troci
+I had to work. ↔ mi pu bai gunka
+We are the Borg. ↔ .i mi'a me la borg.
+I'll make an effort to get up early every morning. ↔ .a'i mi ca ro cerni co'a cikna
 
 ## phrases (33; math-, measure-, and formal-logic leaning from muplis-database)
 

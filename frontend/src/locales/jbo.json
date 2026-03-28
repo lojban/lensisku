@@ -17,6 +17,9 @@
     "removePhoto": "vimcu lo pixra",
     "fileTypes": ".png .jpg .gif poi mleca li 5 megbaitni",
     "selectLanguages": "cuxna lo bangu",
+    "selectAll": "cuxna ro",
+    "searchLanguages": "sisku lo bangu",
+    "noMatches": "no da se jimpe",
     "filterBy": {
       "wordType": "julne fi lo ka valsi klesi",
       "selmaho": "julne fi lo ka selma'o",

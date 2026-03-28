@@ -3,8 +3,6 @@ import Applic from './App.vue'
 import { routes, setupRouterGuards } from './router' // Import routes and guard setup
 import i18n from './i18n' // Import the i18n instance
 import './style.css' // Keep global styles if any
-import Aura from '@primeuix/themes/aura'
-import PrimeVue from 'primevue/config'
 import '@milkdown/crepe' // Eagerly import Crepe
 import '@milkdown/crepe/theme/common/style.css'
 import '@milkdown/crepe/theme/frame.css'
@@ -19,15 +17,6 @@ export const createApp = ViteSSG(
   ({ app, router, isClient }) => {
     // Setup navigation guards
     setupRouterGuards(router, isClient)
-
-    app.use(PrimeVue, {
-      theme: {
-        preset: Aura,
-        options: {
-          darkModeSelector: '.dark-mode',
-        },
-      },
-    })
 
     // Install i18n instance
     app.use(i18n)

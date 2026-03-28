@@ -9,7 +9,7 @@
           > <template #trigger
             > <button
               type="button"
-              class="w-full h-10 px-3 flex items-center justify-between gap-2 rounded-full sm:rounded-l-full sm:rounded-r-none border border-slate-300 bg-white shadow-none text-left"
+              class="dropdown-trigger dropdown-trigger--search-bar-leading"
             >
 
               <div v-if="mode" class="flex items-center gap-2 min-w-0">
@@ -38,7 +38,7 @@
           ref="searchInput"
           v-model="query"
           :placeholder="getPlaceholder"
-          :class="`input-field w-full text-base h-10 border border-slate-300 sm:rounded-l-none ${query ? 'pr-10' : ''}`"
+          :class="`input-field w-full text-base h-10 sm:rounded-l-none ${query ? 'pr-10' : ''}`"
           @input="handleInput"
         />
         <div class="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center">

@@ -17,6 +17,9 @@
     "removePhoto": "移除头像",
     "fileTypes": "PNG、JPG、GIF，最大 5MB",
     "selectLanguages": "选择语言",
+    "selectAll": "全选",
+    "searchLanguages": "搜索语言...",
+    "noMatches": "无匹配项",
     "filterBy": {
       "wordType": "按词类筛选",
       "selmaho": "按 selma'o 筛选",
