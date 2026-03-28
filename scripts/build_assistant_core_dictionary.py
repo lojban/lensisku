@@ -7,6 +7,7 @@ Build src/assistant/core_reference_dictionary.txt from archive/dict TSVs.
   tutorial/teaching notes per selma'o as `# …` comment lines before that class's entries.
 - English ↔ Lojban pairs from muplis-database.tsv (same ` ↔ ` separator as word lines):
   grammar-diverse greedy cover with **per-family caps** (attitudinals, vocatives, structural openers),
+  preferring new **grammar-tag** coverage and new **gismu** tokens (top corpus-score gismu subset),
   tie-breaking by **low sum of per-token corpus frequencies** in the pool (whole phrase, not just the start),
   and a reserved math- / logic-leaning batch.
 - Optional **tutorial** block from Markdown lesson files: core notions + example pairs scraped from Markdown.
@@ -184,9 +185,14 @@ for _sk in ("FAhA1", "FAhA2", "FAhA3", "FAhA4"):
     SELMAHO_NOTE_LINES[_sk] = list(_SELMAHO_FAhA_LEARN)
 
 # Phrase selection: total lines from muplis, split between grammar diversity and math emphasis.
-MUPLIS_PHRASE_TOTAL = 168
+MUPLIS_PHRASE_TOTAL = 268
 # Reserved for high math_phrase_score() lines (numbers, measure, logic, comparison) before greedy fill.
-MUPLIS_MATH_PHRASE_QUOTA = 48
+# Kept in proportion to MUPLIS_PHRASE_TOTAL (same ~28.6% share as at 168/48).
+MUPLIS_MATH_PHRASE_QUOTA = 77
+
+# Phrase diversity: which gismu tokens count toward "new gismu" coverage (not the full gismu.tsv).
+PHRASE_DIVERSITY_GISMU_TOP_N = 150
+PHRASE_DIVERSITY_GISMU_ENSURE: frozenset[str] = frozenset({"cusku", "simxu"})
 
 # English hints (regex, weight) for math-like content.
 MATH_SCORE_EN: list[tuple[str, int]] = [
@@ -395,6 +401,18 @@ def read_gismu_rows_prefer_non_numeric(
     return out[:want]
 
 
+def load_gismu_word_set(path: Path) -> frozenset[str]:
+    """Top `PHRASE_DIVERSITY_GISMU_TOP_N` gismu by corpus score (non-metrology first), plus ensured lemmas."""
+    rows = read_gismu_rows_prefer_non_numeric(path, want=PHRASE_DIVERSITY_GISMU_TOP_N)
+    words = {
+        (r.get("word") or "").strip().lower()
+        for r in rows
+        if (r.get("word") or "").strip()
+    }
+    words |= set(PHRASE_DIVERSITY_GISMU_ENSURE)
+    return frozenset(words)
+
+
 def format_word_definition_row(row: dict[str, str]) -> str:
     """Head word ↔ English definition (section implies gismu vs cmavo)."""
     w = (row.get("word") or "").strip()
@@ -544,6 +562,25 @@ def lojban_tokens(lo: str) -> list[str]:
     return [t.lower() for t in lo.split() if t]
 
 
+def bare_token_for_lexicon(tok: str) -> str:
+    """Strip common leading/trailing punctuation so `klama` matches `klama,` and `.klama`."""
+    t = normalize_apostrophe(tok).lower().strip()
+    t = t.lstrip(".")
+    while len(t) > 1 and t[-1] in ".,!?;:)]}\"'":
+        t = t[:-1]
+    return t
+
+
+def gismu_tokens_in(lo: str, gismu_words: frozenset[str]) -> set[str]:
+    """Tokens that appear in `lo` and in the phrase-diversity gismu subset."""
+    out: set[str] = set()
+    for t in lojban_tokens(lo):
+        b = bare_token_for_lexicon(t)
+        if b in gismu_words:
+            out.add(b)
+    return out
+
+
 def corpus_lojban_word_freq(rows: list[tuple[str, str]]) -> Counter[str]:
     wf: Counter[str] = Counter()
     for _, lo in rows:
@@ -558,36 +595,44 @@ def phrase_token_freq_mass(lo: str, wf: Counter[str]) -> int:
 
 
 # Per-family ceilings so one construction (e.g. .au) cannot dominate the phrase list.
+# Scaled with MUPLIS_PHRASE_TOTAL (from a 168-line baseline) so greedy + filler can keep similar diversity.
+_PHRASE_CAP_SCALE = MUPLIS_PHRASE_TOTAL / 168.0
+
+
+def _scaled_phrase_cap(n: int) -> int:
+    return max(1, round(n * _PHRASE_CAP_SCALE))
+
+
 PHRASE_FAMILY_CAPS: dict[str, int] = {
-    "att_want": 1,
-    "att_obligation": 1,
-    "att_hope": 1,
-    "att_attention": 2,
-    "att_alertness": 2,
-    "att_effort": 2,
-    "att_interest": 1,
-    "att_intent": 1,
-    "att_pain": 1,
-    "att_wonder": 1,
-    "att_sorrow": 1,
-    "att_insight": 1,
-    "att_approval": 1,
-    "att_misc": 5,
-    "att_request": 4,
-    "struct_vocative": 6,
-    "struct_ko": 10,
-    "struct_lu": 6,
-    "struct_ganai": 10,
-    "struct_xu": 10,
-    "struct_ma": 10,
-    "struct_le": 22,
-    "struct_lo": 14,
-    "struct_mi": 22,
-    "struct_do": 12,
-    "struct_la": 14,
-    "struct_relative": 8,
-    "struct_neg_head": 8,
-    "struct_empty": 2,
+    "att_want": _scaled_phrase_cap(1),
+    "att_obligation": _scaled_phrase_cap(1),
+    "att_hope": _scaled_phrase_cap(1),
+    "att_attention": _scaled_phrase_cap(2),
+    "att_alertness": _scaled_phrase_cap(2),
+    "att_effort": _scaled_phrase_cap(2),
+    "att_interest": _scaled_phrase_cap(1),
+    "att_intent": _scaled_phrase_cap(1),
+    "att_pain": _scaled_phrase_cap(1),
+    "att_wonder": _scaled_phrase_cap(1),
+    "att_sorrow": _scaled_phrase_cap(1),
+    "att_insight": _scaled_phrase_cap(1),
+    "att_approval": _scaled_phrase_cap(1),
+    "att_misc": _scaled_phrase_cap(5),
+    "att_request": _scaled_phrase_cap(4),
+    "struct_vocative": _scaled_phrase_cap(6),
+    "struct_ko": _scaled_phrase_cap(10),
+    "struct_lu": _scaled_phrase_cap(6),
+    "struct_ganai": _scaled_phrase_cap(10),
+    "struct_xu": _scaled_phrase_cap(10),
+    "struct_ma": _scaled_phrase_cap(10),
+    "struct_le": _scaled_phrase_cap(22),
+    "struct_lo": _scaled_phrase_cap(14),
+    "struct_mi": _scaled_phrase_cap(22),
+    "struct_do": _scaled_phrase_cap(12),
+    "struct_la": _scaled_phrase_cap(14),
+    "struct_relative": _scaled_phrase_cap(8),
+    "struct_neg_head": _scaled_phrase_cap(8),
+    "struct_empty": _scaled_phrase_cap(2),
     "struct_other": 9999,
 }
 
@@ -654,14 +699,16 @@ def select_muplis_diverse(
     n: int,
     *,
     caps: dict[str, int] | None = None,
+    gismu_words: frozenset[str] | None = None,
 ) -> list[tuple[str, str]]:
-    """Greedy grammar coverage with per-family caps; tie-break by low sum of token corpus frequencies."""
+    """Greedy grammar + gismu coverage with per-family caps; tie-break by pool token frequency mass."""
     caps = caps or PHRASE_FAMILY_CAPS
     indexed = [(i, en, lo) for i, (en, lo) in enumerate(rows)]
     word_freq = corpus_lojban_word_freq(rows)
     remaining = indexed.copy()
     selected: list[tuple[str, str]] = []
     covered: set[str] = set()
+    covered_gismu: set[str] = set()
     seen_lo: set[str] = set()
     fam_counts: Counter[str] = Counter()
 
@@ -670,7 +717,7 @@ def select_muplis_diverse(
 
     while len(selected) < n and remaining:
         best_item: tuple[int, str, str] | None = None
-        best_key: tuple[int, int, int, int, int] | None = None
+        best_key: tuple[int, int, int, int, int, int] | None = None
         for item in remaining:
             _i, _en, _lo = item
             if _lo in seen_lo:
@@ -681,10 +728,14 @@ def select_muplis_diverse(
             if fc >= lim:
                 continue
             m = len(tags_for_lojban(_lo) - covered)
+            g_new = (
+                len(gismu_tokens_in(_lo, gismu_words) - covered_gismu)
+                if gismu_words
+                else 0
+            )
             mass = phrase_token_freq_mass(_lo, word_freq)
-            # Prefer new grammar tags, then phrases whose tokens are less frequent in this pool
-            # (spread attention across the whole sentence, not only the first cmavo).
-            key = (m, -mass, -fc, -len(_lo), _i)
+            # Prefer new grammar tags, then new gismu, then rarer tokens in this pool (whole phrase).
+            key = (m, g_new, -mass, -fc, -len(_lo), _i)
             if best_key is None or key > best_key:
                 best_key = key
                 best_item = item
@@ -700,24 +751,41 @@ def select_muplis_diverse(
         seen_lo.add(lo)
         fam_counts[phrase_family_slot(lo)] += 1
         covered |= tags_for_lojban(lo)
+        if gismu_words:
+            covered_gismu |= gismu_tokens_in(lo, gismu_words)
         remaining = [x for x in remaining if x[2] not in seen_lo]
 
-    # Fill: prefer phrases with lower total token frequency mass in this pool; same family soft-caps.
+    # Fill: low token-frequency mass, then new gismu; same family soft-caps.
     if len(selected) < n:
         filler = [x for x in indexed if x[2] not in seen_lo]
-        filler.sort(
-            key=lambda it: (phrase_token_freq_mass(it[2], word_freq), it[0]),
-        )
-        for _i, en, lo in filler:
-            if len(selected) >= n:
+        while len(selected) < n and filler:
+            best_fill: tuple[int, str, str] | None = None
+            best_fill_key: tuple[int, int, int] | None = None
+            for item in filler:
+                _i, _en, lo = item
+                fam = phrase_family_slot(lo)
+                fill_relax = 3 if fam.startswith("att_") else 14
+                if fam_counts[fam] >= _family_cap(fam, caps) + fill_relax:
+                    continue
+                mass = phrase_token_freq_mass(lo, word_freq)
+                g_new = (
+                    len(gismu_tokens_in(lo, gismu_words) - covered_gismu)
+                    if gismu_words
+                    else 0
+                )
+                fk = (mass, -g_new, _i)
+                if best_fill_key is None or fk < best_fill_key:
+                    best_fill_key = fk
+                    best_fill = item
+            if best_fill is None:
                 break
-            fam = phrase_family_slot(lo)
-            fill_relax = 3 if fam.startswith("att_") else 14
-            if fam_counts[fam] >= _family_cap(fam, caps) + fill_relax:
-                continue
+            _i, en, lo = best_fill
             selected.append((en, lo))
             seen_lo.add(lo)
-            fam_counts[fam] += 1
+            fam_counts[phrase_family_slot(lo)] += 1
+            if gismu_words:
+                covered_gismu |= gismu_tokens_in(lo, gismu_words)
+            filler = [x for x in filler if x[2] != lo]
 
     # Last resort: fill length (should be rare).
     if len(selected) < n:
@@ -728,6 +796,8 @@ def select_muplis_diverse(
                 continue
             selected.append((en, lo))
             seen_lo.add(lo)
+            if gismu_words:
+                covered_gismu |= gismu_tokens_in(lo, gismu_words)
 
     return selected[:n]
 
@@ -864,6 +934,7 @@ def main() -> int:
             return 1
 
     gismu = read_gismu_rows_prefer_non_numeric(GISMU_PATH)
+    gismu_words = load_gismu_word_set(GISMU_PATH)
     cmavo_grouped, cmavo_n = cmavo_grouped_by_selmaho(CMAVO_PATH)
 
     muplis_rows: list[tuple[str, str]] = []
@@ -899,7 +970,9 @@ def main() -> int:
         ]
 
     tutorial_examples = (
-        select_muplis_diverse(tutorial_example_pool, TUTORIAL_EXAMPLE_QUOTA)
+        select_muplis_diverse(
+            tutorial_example_pool, TUTORIAL_EXAMPLE_QUOTA, gismu_words=gismu_words
+        )
         if tutorial_example_pool
         else []
     )
@@ -909,7 +982,9 @@ def main() -> int:
     math_phrases, math_lo = select_math_prioritized(indexed, math_quota)
     general_pool = [(en, lo) for en, lo in muplis_rows if lo not in math_lo]
     general_n = MUPLIS_PHRASE_TOTAL - len(math_phrases)
-    general_phrases = select_muplis_diverse(general_pool, general_n)
+    general_phrases = select_muplis_diverse(
+        general_pool, general_n, gismu_words=gismu_words
+    )
 
     lines: list[str] = [
         "# Assistant core reference dictionary (generated)",

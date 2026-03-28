@@ -17,6 +17,9 @@
     "removePhoto": "写真を削除",
     "fileTypes": "PNG、JPG、GIF（最大5MB）",
     "selectLanguages": "言語を選択",
+    "selectAll": "すべて選択",
+    "searchLanguages": "言語を検索...",
+    "noMatches": "該当なし",
     "filterBy": {
       "wordType": "語種で絞り込む",
       "selmaho": "selma'o で絞り込む",

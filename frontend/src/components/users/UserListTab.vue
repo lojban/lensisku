@@ -135,16 +135,11 @@
 
                 <div class="min-w-0 flex-1 pr-1">
 
-                  <h3
-                    class="text-lg font-medium text-blue-600 break-words [overflow-wrap:anywhere] hover:text-blue-700"
-                  >
+                  <h3 class="text-lg font-medium text-blue-600 break-words hover:text-blue-700">
                      {{ user.username }}
                   </h3>
 
-                  <p
-                    v-if="user.realname"
-                    class="text-gray-600 text-sm mt-0.5 break-words [overflow-wrap:anywhere]"
-                  >
+                  <p v-if="user.realname" class="text-gray-600 text-sm mt-0.5 break-words">
                      {{ user.realname }}
                   </p>
 
