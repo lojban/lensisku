@@ -844,6 +844,36 @@ export default {
         '.card-meta-date': {
           '@apply text-gray-400': {},
         },
+        /** Study streak strip (collections): seven columns that shrink in flex layouts; larger type than generic card-meta-date. */
+        '.card-streak': {
+          '@apply w-full min-w-0 max-w-full': {},
+        },
+        '.card-streak-header': {
+          '@apply mb-2 flex min-w-0 flex-wrap items-center justify-between gap-x-2 gap-y-1': {},
+        },
+        '.card-streak-title': {
+          '@apply min-w-0 flex-1 text-base font-semibold text-gray-800 sm:flex-none': {},
+        },
+        '.card-streak-meta': {
+          '@apply card-meta min-w-0 sm:shrink-0': {},
+        },
+        '.card-streak-week-grid': {
+          '@apply grid w-full min-w-0 gap-1 sm:gap-2': {},
+          gridTemplateColumns: 'repeat(7, minmax(0, 1fr))',
+        },
+        '.card-streak-day': {
+          '@apply flex min-w-0 flex-col items-center gap-1 text-center': {},
+        },
+        '.card-streak-day-label': {
+          '@apply w-full px-0.5 text-xs font-medium leading-tight text-gray-500 break-words sm:text-sm': {},
+        },
+        '.card-streak-day-points': {
+          '@apply w-full px-0.5 text-xs font-medium leading-tight text-gray-400 break-words sm:text-sm': {},
+        },
+        '.card-streak-day-count': {
+          '@apply flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-medium sm:h-8 sm:w-8 sm:text-sm':
+            {},
+        },
         '.card-nav-buttons': {
           '@apply flex flex-nowrap items-center justify-center gap-0 rounded-xl overflow-hidden border border-gray-200 bg-gray-50/50':
             {},

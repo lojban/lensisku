@@ -3,17 +3,17 @@
 
   <div
     v-if="auth.state.isLoggedIn"
-    class="card-base card-compact mb-4 p-4 sm:p-5 min-h-[7.6875rem]"
+    class="card-base card-compact card-streak mb-4 min-h-[8.75rem] p-4 sm:min-h-[9.5rem] sm:p-5"
   >
      <template v-if="!isLoadingStreak && streakData"
       >
-      <div class="flex items-center justify-between mb-2">
+      <div class="card-streak-header">
 
-        <h3 class="text-base font-semibold text-gray-800">
+        <h3 class="card-streak-title">
            {{ t('collectionList.studyStreak') }}
         </h3>
 
-        <div class="card-meta">
+        <div class="card-streak-meta">
            {{ t('collectionList.currentStreak') }}: <span class="font-semibold text-gray-700">{{
             t('collectionList.days', {
               count: streakData.current_streak,
@@ -24,20 +24,20 @@
 
       </div>
 
-      <div class="grid grid-cols-7 gap-1.5">
+      <div class="card-streak-week-grid">
 
         <div
           v-for="day in streakData.daily_progress.slice(0, 7).reverse()"
           :key="day.date"
-          class="flex flex-col items-center"
+          class="card-streak-day"
         >
 
-          <div class="card-meta-date text-[10px] leading-tight">
-             {{ new Date(day.date).toLocaleDateString(locale, { weekday: 'short' }) }}
+          <div class="card-streak-day-label">
+             {{ streakWeekdayShort(day.date) }}
           </div>
 
           <div
-            class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium"
+            class="card-streak-day-count"
             :class="
               day.reviews_count > 0 ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-400'
             "
@@ -45,7 +45,7 @@
              {{ day.reviews_count }}
           </div>
 
-          <div class="card-meta-date text-[10px] leading-tight">
+          <div class="card-streak-day-points">
              {{ t('collectionList.points', { count: day.points }) }}
           </div>
 
@@ -55,26 +55,19 @@
        </template
     > <!-- Skeleton: same structure and sizes as real content to avoid CLS (equal bounding rect) -->
 
-    <div v-else class="animate-pulse streak-skeleton" aria-hidden="true">
+    <div v-else class="streak-skeleton animate-pulse" aria-hidden="true">
 
-      <div class="flex items-center justify-between mb-2">
-         <!-- Match h3.text-base font-semibold line-height (1.5rem = 24px) -->
-        <div class="h-6 bg-gray-200 rounded w-1/3 shrink-0" />
-         <!-- Match .card-meta text-xs height -->
-        <div class="h-4 bg-gray-100 rounded w-1/4 shrink-0" />
-
+      <div class="card-streak-header">
+        <div class="h-6 w-1/3 min-w-[6rem] max-w-[12rem] rounded bg-gray-200" />
+        <div class="h-4 w-28 rounded bg-gray-100 sm:w-36" />
       </div>
 
-      <div class="grid grid-cols-7 gap-1.5">
+      <div class="card-streak-week-grid">
 
-        <div v-for="i in 7" :key="i" class="flex flex-col items-center">
-           <!-- Match .card-meta-date.text-[10px].leading-tight (~12.5px) -->
-          <div class="h-[13px] bg-gray-100 rounded w-full max-w-[32px] shrink-0" />
-
-          <div class="w-6 h-6 rounded-full bg-gray-100 shrink-0" />
-
-          <div class="h-[13px] bg-gray-100 rounded w-full max-w-[24px] shrink-0" />
-
+        <div v-for="i in 7" :key="i" class="card-streak-day">
+          <div class="h-8 w-full max-w-[3.5rem] rounded bg-gray-100 sm:h-9" />
+          <div class="card-streak-day-count bg-gray-100" />
+          <div class="h-4 w-full max-w-[2.25rem] rounded bg-gray-100" />
         </div>
 
       </div>
@@ -343,7 +336,17 @@ const VIEW_PARAM = 'view'
 const VIEW_STORAGE_KEY = 'collections-view'
 const validView = (v) => (v === 'my' || v === 'public' ? v : null)
 
-const { t, locale } = useI18n()
+const { t, locale, tm } = useI18n()
+
+/** Gregorian weekdays (JS getDay 0=Sun..6=Sat): color lujvo from sampu vlaste (xunre…zirpu + dei). */
+const streakWeekdayShort = (isoDate: string) => {
+  const d = new Date(isoDate)
+  if (locale.value !== 'jbo') {
+    return d.toLocaleDateString(locale.value, { weekday: 'short' })
+  }
+  const labels = tm('collectionList.weekdayGregorian') as Record<string, string>
+  return labels[String(d.getDay())] ?? d.toLocaleDateString('en-US', { weekday: 'short' })
+}
 
 // State: viewMode from URL param; when no param, from localStorage if set; else default by login
 const initialView = () => {
