@@ -1,7 +1,7 @@
 <template>
 
   <div
-    class="mt-3 mb-6 comment-item bg-white border rounded-lg p-3 my-2 hover:border-blue-300 transition-colors relative"
+    class="surface-comment-form comment-item"
   >
 
     <div class="border-b border-gray-100 last:border-0">

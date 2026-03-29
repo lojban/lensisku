@@ -11,35 +11,25 @@
 
   <div v-if="isWinterSeason && showPyro" class="pyro" />
 
-  <div v-if="showTestDataWarning"
-    class="select-none top-14 md:top-12 opacity-80 fixed w-fit mx-auto left-0 right-0 z-10 text-xs py-0 px-2 text-center border bg-red-100 border-red-200">
-    {{ $t('testDataWarning') }} <a :href="discordChatUrl" target="_blank" rel="noopener noreferrer"
-      class="text-blue-500 hover:text-red-800 underline"> {{ $t('discord') }} </a>
-  </div>
-
-  <div v-if="showUnconfirmedWarning"
-    class="select-none top-14 md:top-12 opacity-90 fixed w-full mx-auto left-0 right-0 z-10 text-sm py-2 px-4 text-center border bg-yellow-100 border-yellow-300">
-
-    <div class="max-w-4xl mx-auto flex items-center justify-center gap-2 flex-wrap">
-      <span>{{ $t('unconfirmedWarning') }}</span> <button @click="handleResendConfirmation"
-        :disabled="isResendingConfirmation"
-        class="text-blue-600 hover:text-blue-800 underline font-medium disabled:opacity-50 disabled:cursor-not-allowed">
-        {{
-          isResendingConfirmation ? $t('emailConfirmation.sending') : $t('unconfirmedWarningLink')
-        }} </button> <span v-if="resendConfirmationSuccess" class="text-green-600 text-xs ml-2"> {{
-          $t('unconfirmedWarningMessageSent') }} </span>
-    </div>
-
-  </div>
+  <AppFixedBanners
+    :show-test-data-warning="showTestDataWarning"
+    :show-unconfirmed-warning="showUnconfirmedWarning"
+    :discord-chat-url="discordChatUrl"
+    :is-resending-confirmation="isResendingConfirmation"
+    :resend-confirmation-success="resendConfirmationSuccess"
+    @resend-confirmation="handleResendConfirmation"
+  />
   <!-- Mobile-optimized header -->
-  <header class="bg-white border-b border-gray-200 sticky top-0 z-40">
+  <header class="app-header-bar">
 
     <div class="px-1 sm:px-2 max-w-4xl mx-auto">
       <!-- Main header content -->
       <div class="flex items-center justify-between h-14 sm:h-12">
         <!-- Logo + Toggle Menu Button -->
         <div class="flex items-center">
-          <button class="sm:hidden p-3 text-gray-600 hover:bg-gray-100 rounded-md z-15" :aria-label="$t('toggleMenu')"
+          <button
+            class="z-15 cursor-pointer rounded-md p-3 text-gray-600 transition-colors duration-200 hover:bg-gray-100 sm:hidden"
+            :aria-label="$t('toggleMenu')"
             @click.stop="isMenuOpen = !isMenuOpen">
             <Menu v-if="!isMenuOpen" class="h-6 w-6" />
             <X v-else class="h-6 w-6" />
@@ -49,7 +39,7 @@
           }" @click="triggerPyro">
             <div class="flex h-8 w-8 shrink-0 items-center justify-center -skew-x-12">
               <div v-html="logoSvgRaw" role="img" :aria-label="$t('logoText')"
-                class="flex h-full w-full items-center justify-center [&>svg]:block [&>svg]:h-full [&>svg]:w-full [&>svg]:max-h-full [&>svg]:max-w-full"
+                class="logo-svg-container"
                 :class="{ 'animate-rotate-3d': showPyro }"></div>
             </div>
             <span class="select-none font-medium leading-none">{{ $t('logoText') }}</span>
@@ -70,7 +60,7 @@
               <ChevronDown class="h-5 w-5" :stroke-width="2.5" :absolute-stroke-width="true" />
             </button>
             <div
-              class="absolute flex-col mt-0 bg-white border border-gray-200 rounded-md shadow-lg z-50 p-1 w-auto max-w-96"
+              class="nav-dropdown-panel"
               :class="isMoreNavOpen ? 'flex' : 'hidden group-hover:flex'">
               <NavLink v-if="auth.state.isLoggedIn" to="/users" class="navbar-item justify-start py-2"
                 @click="closeNavMenus">
@@ -150,57 +140,11 @@
         </div>
 
       </div>
-      <!-- Mobile Navigation Menu -->
-      <div v-show="isMenuOpen" class="fixed sm:hidden top-14 left-0 right-0 bg-white shadow-md py-2 space-y-1 z-50">
-        <NavLink to="/collections"
-          class="flex items-center px-4 py-2 text-base text-gray-600 hover:bg-gray-100 rounded-md transition-colors gap-2"
-          @click="isMenuOpen = false">
-          <GalleryVerticalEnd class="h-5 w-5" /> {{ $t('nav.courses') }}
-        </NavLink>
-        <NavLink to="/recent"
-          class="flex items-center px-4 py-2 text-base text-gray-600 hover:bg-gray-100 rounded-md transition-colors gap-2"
-          @click="isMenuOpen = false">
-          <Clock4 class="h-5 w-5" /> {{ $t('mobileNav.recentChanges') }}
-        </NavLink>
-        <NavLink v-if="auth.state.isLoggedIn" to="/users"
-          class="flex items-center px-4 py-2 text-base text-gray-600 hover:bg-gray-100 rounded-md transition-colors gap-2"
-          @click="isMenuOpen = false">
-          <Users class="h-5 w-5" /> {{
-            auth.state.authorities?.includes('manage_roles') ? $t('nav.iamUsers') : $t('nav.users')
-          }}
-        </NavLink>
-        <NavLink to="/languages"
-          class="flex items-center px-4 py-2 text-base text-gray-600 hover:bg-gray-100 rounded-md transition-colors gap-2"
-          @click="isMenuOpen = false">
-          <Globe class="h-5 w-5" /> {{ $t('nav.languages') }}
-        </NavLink>
-        <NavLink to="/assistant"
-          class="flex items-center px-4 py-2 text-base text-gray-600 hover:bg-gray-100 rounded-md transition-colors gap-2"
-          @click="isMenuOpen = false">
-          <Bot class="h-5 w-5" /> {{ $t('nav.assistant') }}
-        </NavLink>
-        <NavLink v-if="!auth.state.isLoggedIn" to="/export/cached"
-          class="flex items-center px-4 py-2 text-base text-gray-600 hover:bg-gray-100 rounded-md transition-colors gap-2"
-          @click="isMenuOpen = false">
-          <Download class="h-5 w-5" /> {{ $t('nav.cachedExports') }}
-        </NavLink>
-        <NavLink v-if="auth.state.isLoggedIn" to="/export"
-          class="flex items-center px-4 py-2 text-base text-gray-600 hover:bg-gray-100 rounded-md transition-colors gap-2"
-          @click="isMenuOpen = false">
-          <Upload class="h-5 w-5" /> {{ $t('nav.export') }}
-        </NavLink>
-        <NavLink v-if="auth.state.isLoggedIn && auth.state.authorities?.includes('bulk_import')" to="/bulk-import"
-          class="flex items-center px-4 py-2 text-base text-gray-600 hover:bg-gray-100 rounded-md transition-colors gap-2"
-          @click="isMenuOpen = false">
-          <Download class="h-5 w-5" /> {{ $t('nav.bulkImport') }}
-        </NavLink>
-        <div v-if="auth.state.isLoggedIn" class="my-1 border-t border-gray-200"></div>
-        <button v-if="auth.state.isLoggedIn"
-          class="flex items-center px-4 py-2 text-base text-[#007bff] hover:bg-gray-100 rounded-md transition-colors gap-2 w-full text-left"
-          @click="handleLogout">
-          <LogOut class="h-5 w-5" /> {{ $t('nav.logout') }}
-        </button>
-      </div>
+      <AppMobileNavMenu
+        :show="isMenuOpen"
+        @close="isMenuOpen = false"
+        @logout="handleLogout"
+      />
 
     </div>
 
@@ -262,10 +206,12 @@
       class="fixed md:absolute bottom-6 right-4 md:bottom-8 md:right-8 lg:-right-4 lg:-mr-4 z-50 flex flex-col items-end gap-3">
       <Dropdown>
         <template #trigger="{ open }">
-          <button type="button" class="inline-flex items-center justify-center ui-btn--fab"
-            :aria-label="$t('fab.actionsTitle')">
-            <Plus class="h-7 w-7 transition-all duration-200" :class="{ 'rotate-45': open }" />
-          </button>
+          <span class="fab-elevation-shell">
+            <button type="button" class="inline-flex items-center justify-center ui-btn--fab"
+              :aria-label="$t('fab.actionsTitle')">
+              <Plus class="h-7 w-7 transition-all duration-200" :class="{ 'rotate-45': open }" />
+            </button>
+          </span>
         </template>
         <ToolbarSelectDropdownItem class="!px-4 !py-3 !text-base" @click="handleAssistantChat">
           <span class="flex items-center gap-3">
@@ -304,7 +250,6 @@ import {
   User,
   ChevronDown,
   X,
-  Shield,
   Plus,
   FilePlus,
   AudioWaveform,
@@ -329,6 +274,8 @@ import { Dropdown, ToolbarSelectDropdownItem } from '@packages/ui'
 
 import BackgroundComponent from './components/BackgroundComponent.vue'
 import FooterComponent from './components/FooterComponent.vue'
+import AppFixedBanners from './components/layout/AppFixedBanners.vue'
+import AppMobileNavMenu from './components/layout/AppMobileNavMenu.vue'
 import NavLink from './components/NavLink.vue'
 import ModalComponent from '@/components/ModalComponent.vue'
 import { normalizeSearchQuery } from '@/utils/searchQueryUtils'

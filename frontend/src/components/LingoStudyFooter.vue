@@ -39,7 +39,7 @@
         type="button"
         :disabled="disabled"
         :aria-disabled="disabled"
-        class="ui-btn--aqua-default ml-auto text-sm"
+        class="ml-auto text-sm"
         :class="[
           buttonClass,
           compact

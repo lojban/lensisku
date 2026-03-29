@@ -33,23 +33,20 @@
         </div>
          <!-- Only show Analyze button when adding new word -->
         <div class="flex items-center justify-end">
-           <button
+           <Button
             v-if="!isEditMode"
-            type="button"
-            class="w-auto h-8 ui-btn--warning-orange text-base"
+            variant="warning-orange"
+            size="lg"
+            class="w-auto"
             :disabled="isAnalyzing || isSubmitting || word === ''"
+            :loading="isAnalyzing"
             @click="doAnalyzeWord"
           >
-
-            <div class="flex items-center gap-2">
-               <Loader v-if="isAnalyzing" class="h-4 w-4 animate-spin" /> <Search
-                v-else
-                class="h-4 w-4"
-              /> <span>{{ t('upsertDefinition.analyzeButton') }}</span
-              >
-            </div>
-             </button
-          >
+             <template #icon>
+               <Search class="h-6 w-6 shrink-0" aria-hidden="true" />
+            </template>
+             {{ t('upsertDefinition.analyzeButton') }}
+          </Button>
         </div>
 
       </div>
@@ -388,23 +385,20 @@
               ? t('upsertDefinition.addButton')
               : t('upsertDefinition.addEntryButton')
         }} </button
-      > <!-- Show Analyze button if form is invalid and not submitting --> <button
+      > <!-- Show Analyze button if form is invalid and not submitting --> <Button
         v-else-if="!isValid && !isSubmitting"
-        type="button"
-        class="max-w-fit ui-btn--warning-orange h-10 text-base"
+        variant="warning-orange"
+        size="lg"
+        class="max-w-fit"
         :disabled="isAnalyzing || word === ''"
+        :loading="isAnalyzing"
         @click="analyzeAndScroll"
       >
-
-        <div class="flex items-center gap-2">
-           <Loader v-if="isAnalyzing" class="h-4 w-4 animate-spin" /> <Search
-            v-else
-            class="h-4 w-4"
-          /> <span>{{ t('upsertDefinition.analyzeWordButton') }}</span
-          >
-        </div>
-         </button
-      > <!-- Show disabled state during submission --> <button
+         <template #icon>
+           <Search class="h-6 w-6 shrink-0" aria-hidden="true" />
+        </template>
+         {{ t('upsertDefinition.analyzeWordButton') }}
+      </Button> <!-- Show disabled state during submission --> <button
         v-else-if="isSubmitting"
         type="button"
         class="max-w-fit ui-btn--create h-10 text-base"
@@ -439,7 +433,7 @@
 </template>
 
 <script setup lang="ts">
-import { ArrowRight, Search, Loader, CirclePlus, CircleMinus } from 'lucide-vue-next'
+import { ArrowRight, Search, CirclePlus, CircleMinus } from 'lucide-vue-next'
 import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
@@ -453,6 +447,7 @@ import {
   getDefinition,
   linkDefinitions,
 } from '@/api'
+import { Button } from '@packages/ui'
 import AlertComponent from '@/components/AlertComponent.vue'
 import DynamicInput from '@/components/DynamicInput.vue'
 import ImageUpload from '@/components/ImageUpload.vue'

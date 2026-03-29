@@ -72,10 +72,7 @@
 
       <div v-else class="grid gap-3 sm:gap-4">
 
-        <div v-for="user in userList" :key="user.user_id"
-          class="min-w-0 max-w-full bg-white p-4 sm:p-5 rounded-xl border border-gray-200 hover:border-blue-400/60 hover:shadow-md transition-all duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-          role="button" tabindex="0" @click="$emit('viewUser', user.username)"
-          @keyup.enter="$emit('viewUser', user.username)">
+        <ListRowSurface v-for="user in userList" :key="user.user_id" @click="$emit('viewUser', user.username)">
 
           <div class="flex items-start gap-4">
             <!-- Avatar -->
@@ -87,8 +84,7 @@
                   class="w-full h-full object-cover" />
               </div>
 
-              <div v-else
-                class="w-12 h-12 rounded-full bg-gray-50 flex items-center justify-center text-gray-400 border border-gray-100 shadow-sm">
+              <div v-else class="avatar-placeholder-sm">
                 <User class="h-6 w-6" />
               </div>
 
@@ -127,7 +123,7 @@
 
           </div>
 
-        </div>
+        </ListRowSurface>
 
       </div>
 
@@ -145,7 +141,7 @@ import { computed, type PropType } from 'vue'
 import { getProfileImage } from '@/api'
 import PaginationComponent from '@/components/PaginationComponent.vue'
 import SearchInput from '@/components/SearchInput.vue'
-import { ToolbarSelectDropdown, ToolbarSelectDropdownItem } from '@packages/ui'
+import { ListRowSurface, ToolbarSelectDropdown, ToolbarSelectDropdownItem } from '@packages/ui'
 
 const { t, locale } = useI18n()
 

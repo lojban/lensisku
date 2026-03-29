@@ -56,9 +56,7 @@
 
           <div class="w-full flex flex-col gap-1.5 max-h-full min-h-0">
              <!-- Card - Duolingo style: rounded-xl border-2 border-b-4, compact padding -->
-            <div
-              class="flex flex-1 min-h-0 flex-col rounded-xl border-2 border-b-4 border-neutral-200 bg-white p-2 pb-2 shadow-sm hover:bg-black/5 shrink-0 sm:p-2.5 sm:pb-2.5 overflow-hidden"
-            >
+            <div class="lingo-study-card-shell">
 
               <div class="mb-0.5 text-[10px] text-slate-500 sm:text-xs">
                  {{
@@ -84,7 +82,7 @@
 
                 <div
                   v-if="isFillInMode && currentCard.flashcard.use_canonical_comparison"
-                  class="flex items-center justify-center gap-1 text-[10px] text-green-600 bg-green-50 border border-green-200 rounded px-1.5 py-0.5"
+                  class="badge-streak-success--compact"
                 >
                    <CheckCircle2 class="h-3 w-3" /> <span>{{
                     t('flashcardStudy.canonicalComparisonEnabled')
@@ -180,7 +178,7 @@
                         v-for="opt in quizImageOptions"
                         :key="opt.id"
                         type="button"
-                        class="flex flex-col items-center justify-center p-2 rounded-xl border-2 border-slate-200 bg-white hover:border-green-400 hover:bg-green-50/50 transition-colors disabled:opacity-60 disabled:pointer-events-none min-h-[80px]"
+                        class="study-quiz-option-lingo-image"
                         :disabled="isSubmitting"
                         @click="submitQuizOption(opt.id)"
                       >
@@ -195,7 +193,7 @@
                       v-for="(opt, idx) in currentCard.flashcard.quiz_options"
                       :key="idx"
                       type="button"
-                      class="p-2.5 rounded-xl border-2 border-slate-200 bg-white hover:border-green-400 hover:bg-green-50/50 transition-colors text-left text-xs sm:text-sm font-medium text-gray-800 disabled:opacity-60 disabled:pointer-events-none"
+                      class="study-quiz-option-lingo-text"
                       :disabled="isSubmitting"
                       @click="submitQuizOption(opt)"
                     >
@@ -312,7 +310,7 @@
                         </div>
 
                         <div
-                          class="text-[10px] text-gray-700 font-mono bg-blue-50/30 px-1.5 py-0.5 rounded border border-blue-100/30 inline-block mx-auto sm:text-xs"
+                          class="code-snippet-inline"
                         >
                            {{ currentCard.flashcard.canonical_form }}
                         </div>

@@ -1,13 +1,9 @@
 <template>
 
-  <div
-    class="flex min-h-full w-full flex-col items-center justify-center px-4 py-10 sm:px-6 sm:py-12"
-  >
-    <div
-      class="card-elevated flex w-full max-w-md flex-shrink-0 flex-col items-center rounded-2xl border border-gray-200/90 bg-white/95 p-8 ring-1 ring-gray-900/5 backdrop-blur-sm"
-    >
+  <div class="auth-page-shell">
+    <AuthFormCard>
 
-      <h2 class="mb-6 text-center text-2xl font-bold text-gray-900 sm:text-3xl">
+      <h2 class="auth-form-title">
          {{ t('signupPage.title') }}
       </h2>
 
@@ -27,7 +23,7 @@
               required
               class="input-field w-full text-base h-10 pl-3 pr-10"
               :disabled="isLoading"
-            /> <User class="h-5 w-5 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2" />
+            /> <User class="input-field-trailing-icon" aria-hidden="true" />
           </div>
 
         </div>
@@ -46,7 +42,7 @@
               required
               class="input-field w-full text-base h-10 pl-3 pr-10"
               :disabled="isLoading"
-            /> <Mail class="h-5 w-5 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2" />
+            /> <Mail class="input-field-trailing-icon" aria-hidden="true" />
           </div>
 
         </div>
@@ -69,7 +65,7 @@
             />
             <button
               type="button"
-              class="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-md text-gray-400 hover:bg-gray-100 hover:text-gray-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50"
+              class="input-field-password-toggle"
               :aria-label="
                 showPassword ? t('signupPage.hidePassword') : t('signupPage.showPassword')
               "
@@ -113,7 +109,7 @@
         >
       </p>
 
-    </div>
+    </AuthFormCard>
 
   </div>
 
@@ -122,7 +118,7 @@
 <script setup lang="ts">
 import { User, Mail, Eye, EyeOff, Plus } from 'lucide-vue-next'
 
-import { Button } from '@packages/ui'
+import { AuthFormCard, Button } from '@packages/ui'
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'

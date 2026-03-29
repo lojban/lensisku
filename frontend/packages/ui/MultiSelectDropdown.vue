@@ -19,7 +19,7 @@
 
     <div
       v-show="open"
-      class="absolute left-0 right-0 z-50 mt-1 flex min-h-0 flex-col rounded-lg border border-gray-200 bg-white py-2 shadow-lg"
+      class="dropdown-floating-panel"
       role="presentation"
       :style="panelViewportStyle"
     >

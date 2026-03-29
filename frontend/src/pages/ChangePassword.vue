@@ -1,12 +1,10 @@
 <template>
 
-  <div class="w-full min-h-[calc(100vh-12rem)] flex items-center justify-center relative">
+  <div class="auth-glass-page-shell">
 
-    <div
-      class="w-full max-w-md p-8 mx-auto rounded-2xl border border-blue-200 flex-shrink-0 backdrop-blur-xl bg-blue-50/90 shadow-lg transition-all duration-300 hover:shadow-xl flex flex-col items-center"
-    >
+    <AuthGlassCard>
 
-      <h2 class="text-2xl sm:text-3xl font-bold mb-6 text-blue-900 text-center">
+      <h2 class="auth-glass-title auth-glass-title--spaced">
          {{ t('changePassword.title') }}
       </h2>
        <!-- Step 1: Current Password -->
@@ -30,13 +28,13 @@
               class="input-field w-full text-base h-10 pl-3 pr-10"
               :disabled="isLoading"
               :placeholder="t('changePassword.currentPasswordPlaceholder')"
-            /> <Key class="h-5 w-5 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2" />
+            /> <Key class="input-field-trailing-icon" aria-hidden="true" />
           </div>
 
         </div>
          <button
           type="submit"
-          class="w-full flex justify-center items-center ui-btn--neutral-slate h-8 gap-2 py-3 rounded-full text-lg font-semibold transition-all"
+          class="auth-form-wide-submit ui-btn--neutral-slate h-8"
           :disabled="isLoading || !currentPassword"
           :class="{ 'opacity-75 cursor-not-allowed': isLoading }"
         >
@@ -64,7 +62,7 @@
               :placeholder="t('changePassword.verificationCodePlaceholder')"
               class="input-field w-full text-base h-10 pl-3 pr-10"
               :disabled="isLoading"
-            /> <Mail class="h-5 w-5 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2" />
+            /> <Mail class="input-field-trailing-icon" aria-hidden="true" />
           </div>
 
         </div>
@@ -83,7 +81,7 @@
               class="input-field w-full text-base h-10 pl-3 pr-10"
               :disabled="isLoading"
               :placeholder="t('changePassword.newPasswordPlaceholder')"
-            /> <Key class="h-5 w-5 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2" />
+            /> <Key class="input-field-trailing-icon" aria-hidden="true" />
           </div>
 
         </div>
@@ -102,7 +100,7 @@
               class="input-field w-full text-base h-10 pl-3 pr-10"
               :disabled="isLoading"
               :placeholder="t('changePassword.confirmPasswordPlaceholder')"
-            /> <Key class="h-5 w-5 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2" />
+            /> <Key class="input-field-trailing-icon" aria-hidden="true" />
           </div>
 
         </div>
@@ -160,7 +158,7 @@
         >
       </p>
 
-    </div>
+    </AuthGlassCard>
 
   </div>
 
@@ -172,6 +170,7 @@ import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 
+import { AuthGlassCard } from '@packages/ui'
 import { api } from '@/api'
 import { useAuth } from '@/composables/useAuth'
 import { useError } from '@/composables/useError'

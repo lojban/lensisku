@@ -1320,7 +1320,8 @@
       "filterBySelmao": "按 selma'o 筛选",
       "filterByAuthor": "按作者筛选",
       "placeholderSelmaho": "输入 selmaho…",
-      "placeholderUsername": "输入用户名…"
+      "placeholderUsername": "输入用户名…",
+      "clearFilter": "清除筛选"
     },
     "activityComments": {
       "noComments": "暂无评论"

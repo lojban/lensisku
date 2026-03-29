@@ -1315,7 +1315,8 @@
       "filterBySelmao": "selma'o で絞り込む",
       "filterByAuthor": "投稿者で絞り込む",
       "placeholderSelmaho": "selmaho を入力…",
-      "placeholderUsername": "ユーザー名を入力…"
+      "placeholderUsername": "ユーザー名を入力…",
+      "clearFilter": "フィルターをクリア"
     },
     "activityComments": {
       "noComments": "まだコメントはありません"

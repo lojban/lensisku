@@ -7,7 +7,7 @@
     >
        <RouterLink
         to="/lingo/courses"
-        class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-green-500"
+        class="icon-btn-header-back"
         aria-label="Back"
         > <ArrowLeft class="h-5 w-5" /> </RouterLink
       >

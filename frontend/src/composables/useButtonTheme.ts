@@ -3,7 +3,7 @@ import { readonly, ref } from 'vue'
 export const BUTTON_THEME_STORAGE_KEY = 'lensisku.buttonTheme'
 
 export type ButtonThemeId = 'aqua' | 'flat'
-export const DEFAULT_BUTTON_THEME: ButtonThemeId = 'aqua'
+export const DEFAULT_BUTTON_THEME: ButtonThemeId = 'flat'
 const BUTTON_THEMES: ReadonlySet<ButtonThemeId> = new Set(['aqua', 'flat'])
 
 function isButtonThemeId(value: unknown): value is ButtonThemeId {

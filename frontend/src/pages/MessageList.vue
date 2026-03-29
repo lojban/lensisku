@@ -2,10 +2,10 @@
 
   <div class="space-y-2">
 
-    <div
+    <MessageThreadCard
       v-for="message in messages"
       :key="message.id"
-      class="message-item bg-white border border-blue-200 rounded-lg hover:border-blue-300 transition-colors cursor-pointer shadow-sm"
+      clickable
       @click="handleClick(message)"
     >
 
@@ -13,9 +13,7 @@
          <!-- Message Header -->
         <div class="flex justify-between items-start">
 
-          <h3
-            class="text-lg font-semibold text-blue-700 hover:text-blue-800 hover:underline flex-grow"
-          >
+          <h3 class="link-message-title flex-grow">
              <LazyMathJax
               :content="message.subject || ''"
               :enable-markdown="true"
@@ -77,7 +75,7 @@
 
       </div>
 
-    </div>
+    </MessageThreadCard>
      <!-- Empty State -->
     <div
       v-if="messages.length === 0"
@@ -97,6 +95,7 @@ import { computed } from 'vue'
 import type { PropType } from 'vue'
 import { useI18n } from 'vue-i18n'
 
+import { MessageThreadCard } from '@packages/ui'
 import AttachmentIcon from '@/components/icons/AttachmentIcon.vue'
 import LazyMathJax from '@/components/LazyMathJax.vue'
 import { useSeoHead } from '@/composables/useSeoHead'
@@ -198,16 +197,6 @@ mark {
   line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
-}
-
-/* Hover effect */
-.message-item:hover {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-}
-
-/* Keep long email addresses from breaking layout */
-.message-item {
-  word-break: break-word;
 }
 </style>
 

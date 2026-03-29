@@ -1,14 +1,12 @@
 <template>
 
-  <div class="w-full min-h-[calc(100vh-12rem)] flex items-center justify-center relative">
+  <div class="auth-glass-page-shell">
 
-    <div
-      class="w-full max-w-md p-8 mx-auto rounded-2xl border border-blue-200 flex-shrink-0 backdrop-blur-xl bg-blue-50/90 shadow-lg transition-all duration-300 hover:shadow-xl flex flex-col items-center space-y-6"
-    >
+    <AuthGlassCard>
 
       <div v-if="!sessionId" class="w-full space-y-6">
 
-        <h2 class="text-2xl sm:text-3xl font-bold text-blue-900 text-center">
+        <h2 class="auth-glass-title">
            {{ t('passwordReset.resetTitle') }}
         </h2>
 
@@ -28,13 +26,13 @@
                 class="input-field w-full h-10 pl-3 pr-10"
                 :disabled="isLoading"
                 :placeholder="t('passwordReset.emailPlaceholder')"
-              /> <Mail class="h-5 w-5 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2" />
+              /> <Mail class="input-field-trailing-icon" aria-hidden="true" />
             </div>
 
           </div>
            <button
             type="submit"
-            class="w-full flex justify-center items-center ui-btn--neutral-slate h-8 gap-2 py-3 rounded-full text-lg font-semibold transition-all"
+            class="auth-form-wide-submit ui-btn--neutral-slate h-8"
             :disabled="isLoading || !email"
           >
              <template v-if="isLoading"
@@ -53,7 +51,7 @@
        <!-- Reset Password Form -->
       <div v-else class="w-full">
 
-        <h2 class="text-2xl sm:text-3xl font-bold text-blue-900 text-center">
+        <h2 class="auth-glass-title">
            {{ t('passwordReset.setNewPasswordTitle') }}
         </h2>
 
@@ -73,7 +71,7 @@
                 class="input-field w-full h-10 pl-3 pr-10"
                 :disabled="isLoading"
                 :placeholder="t('passwordReset.newPasswordPlaceholder')"
-              /> <Key class="h-5 w-5 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2" />
+              /> <Key class="input-field-trailing-icon" aria-hidden="true" />
             </div>
 
           </div>
@@ -92,7 +90,7 @@
                 class="input-field w-full h-10 pl-3 pr-10"
                 :disabled="isLoading"
                 :placeholder="t('passwordReset.confirmPasswordPlaceholder')"
-              /> <Key class="h-5 w-5 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2" />
+              /> <Key class="input-field-trailing-icon" aria-hidden="true" />
             </div>
 
           </div>
@@ -119,7 +117,7 @@
           </div>
            <button
             type="submit"
-            class="w-full flex justify-center items-center ui-btn--neutral-slate h-8 gap-2 py-3 rounded-full text-lg font-semibold transition-all"
+            class="auth-form-wide-submit ui-btn--neutral-slate h-8"
             :disabled="isLoading || !isValidPasswordReset"
           >
              <template v-if="isLoading"
@@ -151,7 +149,7 @@
         >
       </p>
 
-    </div>
+    </AuthGlassCard>
 
   </div>
 
@@ -169,6 +167,7 @@ import {
   api,
 } from '@/api'
 import AlertComponent from '@/components/AlertComponent.vue'
+import { AuthGlassCard } from '@packages/ui'
 import { useSeoHead } from '@/composables/useSeoHead'
 
 const route = useRoute()

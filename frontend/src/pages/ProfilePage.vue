@@ -110,7 +110,7 @@
            <!-- Skeleton for View Mode -->
           <div
             v-show="isViewProfileImageLoading"
-            class="w-32 h-32 rounded-full bg-gray-200 animate-pulse border-4 border-white shadow-lg"
+            class="avatar-placeholder-lg animate-pulse"
           ></div>
            <!-- Actual Image for View Mode --> <img
             v-show="!isViewProfileImageLoading && profileData.has_profile_image"
@@ -122,7 +122,7 @@
           /> <!-- Placeholder for View Mode (No Image or Error) -->
           <div
             v-show="!isViewProfileImageLoading && !profileData.has_profile_image"
-            class="w-32 h-32 rounded-full bg-gray-200 flex items-center justify-center text-gray-400 border-4 border-white shadow-lg"
+            class="avatar-placeholder-lg"
           >
              <User class="h-16 w-16" />
           </div>
@@ -220,7 +220,7 @@
            <!-- Skeleton for Edit Mode -->
           <div
             v-show="isEditProfileImageLoading"
-            class="w-32 h-32 rounded-full bg-gray-200 animate-pulse border-4 border-white shadow-lg"
+            class="avatar-placeholder-lg animate-pulse"
           ></div>
            <!-- Avatar Image or Placeholder for Edit Mode --> <img
             v-show="!isEditProfileImageLoading && currentImageUrl"
@@ -233,7 +233,7 @@
           />
           <div
             v-show="!isEditProfileImageLoading && !currentImageUrl"
-            class="w-32 h-32 rounded-full bg-gray-200 flex items-center justify-center text-gray-400 border-4 border-white shadow-lg"
+            class="avatar-placeholder-lg"
           >
              <User class="h-16 w-16" />
           </div>

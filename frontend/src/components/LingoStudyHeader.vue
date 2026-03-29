@@ -1,11 +1,9 @@
 <template>
 
-  <header
-    class="lingo-study-header sticky top-0 z-40 mx-auto flex w-full max-w-[1140px] items-center gap-x-2 border-b border-slate-200 bg-white px-3 py-2 sm:px-4 sm:py-2.5 lg:px-6 lg:py-3"
-  >
+  <header class="lingo-study-header-bar">
      <button
       type="button"
-      class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:opacity-80 focus:outline-none focus:ring-2 focus:ring-green-500 sm:h-9 sm:w-9"
+      class="icon-btn-header-back icon-btn-header-back--compact"
       :aria-label="t('flashcardStudy.endSession')"
       @click="$emit('exit')"
     >
@@ -51,10 +49,4 @@ defineEmits(['exit'])
 
 const { t } = useI18n()
 </script>
-
-<style scoped>
-.lingo-study-header {
-  -webkit-tap-highlight-color: transparent;
-}
-</style>
 

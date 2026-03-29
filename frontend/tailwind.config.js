@@ -6,7 +6,12 @@ export default {
     './packages/**/*.{vue,js,ts,jsx,tsx}',
   ],
   theme: {
-    extend: {},
+    extend: {
+      colors: {
+        /** Primary nav / legacy link blue (navbar-item, NavLink, mobile logout). */
+        'nav-link': '#007bff',
+      },
+    },
   },
   plugins: [
     function ({ addComponents, addBase }) {
@@ -305,7 +310,7 @@ export default {
           '@apply gap-2 py-1.5 text-base flex items-center h-9 min-w-12 flex items-center justify-center px-2 md:px-4 py-1.5 font-medium text-gray-600 rounded-full transition-colors select-none whitespace-nowrap':
             {},
           '&:not(.primary):not(.nav-link-active)': {
-            '@apply hover:bg-gray-200 text-[#007bff]': {},
+            '@apply hover:bg-gray-200 text-nav-link': {},
           },
         },
         '.btn-login': {
@@ -327,6 +332,41 @@ export default {
         '.page-loading-overlay': {
           '@apply fixed inset-0 z-50 flex min-h-0 items-center justify-center bg-white/50 backdrop-blur-sm':
             {},
+        },
+        /** Sticky app chrome (logo, nav, auth). */
+        '.app-header-bar': {
+          '@apply sticky top-0 z-40 border-b border-gray-200 bg-white': {},
+        },
+        /**
+         * FAB outer shell: `aqua-base` sets `overflow:hidden` (gloss), which clips the button’s own
+         * outer `box-shadow` in browsers — elevation lives on this wrapper instead (ui-ux-pro-max).
+         */
+        '.fab-elevation-shell': {
+          '@apply inline-flex cursor-pointer rounded-full ring-1 ring-slate-900/10 transition-[box-shadow] duration-200':
+            {},
+          boxShadow:
+            '0 10px 26px -8px rgba(15, 23, 42, 0.18), 0 6px 14px -6px rgba(225, 29, 72, 0.22)',
+          '&:hover': {
+            boxShadow:
+              '0 18px 36px -10px rgba(15, 23, 42, 0.22), 0 10px 22px -8px rgba(225, 29, 72, 0.32)',
+          },
+        },
+        /** Footer modal: iOS-style toggle track + thumb (pair thumb with translate-x-0 / translate-x-5). */
+        '.toggle-switch': {
+          '@apply relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2': {},
+        },
+        '.toggle-switch-thumb': {
+          '@apply pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transition duration-200 ease-in-out will-change-transform': {},
+        },
+        /** Fixed strip under app header (`PageBanner`, test-data warnings). */
+        '.page-banner-fixed': {
+          '@apply fixed left-0 right-0 top-14 z-10 mx-auto border text-center select-none md:top-12': {},
+        },
+        '.page-banner--warning': {
+          '@apply w-full px-4 py-2 text-sm opacity-90 bg-yellow-100 border-yellow-300': {},
+        },
+        '.page-banner--error': {
+          '@apply w-fit px-2 py-0 text-xs opacity-80 bg-red-100 border-red-200': {},
         },
         /** Centered toast / lightweight alert surface (`ToastFloat.vue`); matches card elevation + success/error borders. */
         '.toast-float-shell': {
@@ -363,6 +403,294 @@ export default {
           '@apply -m-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 focus-visible:ring-offset-white':
             {},
         },
+        /** Circular icon-only control (field clears, trailing actions); matches toast-close affordance at smaller hit target. */
+        '.icon-btn-ghost': {
+          '@apply inline-flex items-center justify-center shrink-0 rounded-full p-1 text-gray-400 transition-colors duration-200 hover:text-gray-600 hover:bg-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1':
+            {},
+          '&:hover > svg': {
+            '@apply text-gray-600': {},
+          },
+        },
+        '.icon-btn-ghost--compact': {
+          '@apply p-0.5': {},
+        },
+        /** Default flex layout for packages/ui IconButton (aqua / flat ui-btn). */
+        '.icon-btn-ui-layout': {
+          '@apply inline-flex items-center gap-2 w-auto md:flex-none': {},
+        },
+        /** Destructive icon control (e.g. delete in assistant chat list). */
+        '.icon-btn-ghost-danger': {
+          '@apply shrink-0 rounded p-1 text-gray-400 transition-colors hover:text-red-600 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-300 md:opacity-100': {},
+        },
+        '.icon-btn-ghost-danger--reveal-md': {
+          '@apply md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100': {},
+        },
+        /** Clickable list / grid row: bordered card with hover + focus ring (user list, pickers). */
+        '.surface-list-row': {
+          '@apply min-w-0 max-w-full bg-white p-4 sm:p-5 rounded-xl border border-gray-200 transition-all duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 hover:border-blue-400/60 hover:shadow-md':
+            {},
+        },
+        /** Selma\'o / definition tag chip (purple). */
+        '.badge-definition-tag': {
+          '@apply inline-flex items-center px-2 py-1 text-xs font-medium bg-purple-100 text-purple-700 rounded-md justify-center sm:justify-start hover:bg-purple-200 hover:text-purple-800 transition-colors min-w-0 max-w-full truncate':
+            {},
+        },
+        '.badge-definition-tag--pill': {
+          '@apply rounded-full': {},
+        },
+        /** Monospace snippet (canonical form, inline code blocks). */
+        '.code-snippet-surface': {
+          '@apply text-sm text-gray-700 font-mono bg-blue-50/30 p-2 rounded border border-blue-100/30 whitespace-pre-wrap leading-relaxed overflow-x-auto':
+            {},
+        },
+        /** Compact monospace chip (study UI). */
+        '.code-snippet-inline': {
+          '@apply text-[10px] text-gray-700 font-mono bg-blue-50/30 px-1.5 py-0.5 rounded border border-blue-100/30 inline-block mx-auto sm:text-xs':
+            {},
+        },
+        /** App mobile drawer row: layout + hover only — link color comes from `NavLink` (`text-nav-link` / `nav-link-active`). */
+        '.mobile-nav-row': {
+          '@apply flex cursor-pointer items-center gap-2 rounded-md px-4 py-2 text-base transition-colors duration-200 hover:bg-gray-100 hover:text-blue-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 focus-visible:ring-offset-white':
+            {},
+        },
+        /** Logout / primary action row in mobile nav. */
+        '.mobile-nav-row--emphasis': {
+          '@apply flex w-full cursor-pointer items-center gap-2 rounded-md px-4 py-2 text-left text-base text-nav-link transition-colors duration-200 hover:bg-gray-100 hover:text-blue-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 focus-visible:ring-offset-white':
+            {},
+        },
+        /** Desktop “More” dropdown panel under navbar. */
+        '.nav-dropdown-panel': {
+          '@apply absolute flex-col mt-0 bg-white border border-gray-200 rounded-md shadow-lg z-50 p-1 w-auto max-w-96':
+            {},
+        },
+        /** Assistant chat: scrollable message column shell. */
+        '.assistant-messages-pane': {
+          '@apply relative min-h-0 flex-1 overflow-x-hidden rounded-lg border border-gray-200 bg-white [overscroll-behavior-y:contain]':
+            {},
+        },
+        /** Assistant chat: sidebar chat search field. */
+        '.assistant-input-search': {
+          '@apply w-full rounded-lg border border-gray-200 bg-white py-2 pl-9 pr-3 text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400/30':
+            {},
+        },
+        /** Assistant chat: “New chat” dashed control in sidebar. */
+        '.assistant-new-chat-trigger': {
+          '@apply flex min-w-0 flex-1 items-center justify-center gap-2 rounded-lg border border-dashed border-gray-300 bg-white/80 py-2.5 text-sm font-medium text-gray-700 hover:border-blue-400 hover:bg-blue-50/60 hover:text-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-400/40 transition-colors':
+            {},
+        },
+        /** Assistant chat: session list item button (base). Pair with Tailwind `group` on the element for child reveal. */
+        '.assistant-session-row': {
+          '@apply w-full text-left rounded-lg px-2.5 py-2.5 transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-400/50':
+            {},
+        },
+        '.assistant-session-row--active': {
+          '@apply bg-blue-100/90 border border-blue-200/80 shadow-sm': {},
+        },
+        '.assistant-session-row--idle': {
+          '@apply border border-transparent hover:bg-gray-100/90': {},
+        },
+        /** Assistant: compact header icon (close sidebar, open drawer). */
+        '.assistant-icon-btn-soft': {
+          '@apply shrink-0 rounded-lg p-1.5 text-gray-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-400/50':
+            {},
+        },
+        '.assistant-icon-btn-panel': {
+          '@apply md:hidden shrink-0 p-2 rounded-lg border border-gray-200 bg-white text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-400/50':
+            {},
+        },
+        /** Message / thread list row (discussions, mail). Pair with `--clickable` when the row navigates on click. */
+        '.message-thread-card': {
+          '@apply bg-white border border-blue-200 rounded-lg transition-colors shadow-sm': {},
+          wordBreak: 'break-word',
+          '&:hover': {
+            '@apply border-blue-300': {},
+            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)',
+          },
+        },
+        '.message-thread-card--clickable': {
+          '@apply cursor-pointer': {},
+        },
+        /** Primary blue title inside message-thread-card / lists. */
+        '.link-message-title': {
+          '@apply text-lg font-semibold text-blue-700 hover:text-blue-800 hover:underline': {},
+        },
+        /** Inline nav / definition heading (truncated). */
+        '.link-heading-primary': {
+          '@apply text-base font-semibold flex-shrink-0 min-w-0 max-w-full truncate text-blue-700 hover:text-blue-800 hover:underline':
+            {},
+        },
+        /** Blue glass panel: password reset, change password, similar auth flows. */
+        '.auth-glass-card': {
+          '@apply w-full max-w-md p-8 mx-auto rounded-2xl border border-blue-200 flex-shrink-0 backdrop-blur-xl bg-blue-50/90 shadow-lg transition-all duration-300 hover:shadow-xl flex flex-col items-center space-y-6':
+            {},
+        },
+        /** Frosted white auth card: login, signup. */
+        '.auth-form-card': {
+          '@apply card-elevated flex w-full max-w-md flex-shrink-0 flex-col items-center rounded-2xl border border-gray-200/90 bg-white/95 p-8 ring-1 ring-gray-900/5 backdrop-blur-sm':
+            {},
+        },
+        /** Centered column for login / signup (frosted card). */
+        '.auth-page-shell': {
+          '@apply flex min-h-full w-full flex-col items-center justify-center px-4 py-10 sm:px-6 sm:py-12': {},
+        },
+        /** Centered column for glass auth flows (reset, change password). */
+        '.auth-glass-page-shell': {
+          '@apply relative flex w-full min-h-[calc(100vh-12rem)] items-center justify-center': {},
+        },
+        /** Frosted auth card (`AuthFormCard`) main heading. */
+        '.auth-form-title': {
+          '@apply mb-6 text-center text-2xl font-bold text-gray-900 sm:text-3xl': {},
+        },
+        /** Glass auth card headings (`AuthGlassCard`). */
+        '.auth-glass-title': {
+          '@apply text-center text-2xl font-bold text-blue-900 sm:text-3xl': {},
+        },
+        '.auth-glass-title--spaced': {
+          '@apply mb-6 w-full': {},
+        },
+        /** In-page H1-style title (tools, admin). */
+        '.page-section-title': {
+          '@apply text-2xl font-bold text-gray-800': {},
+        },
+        /** Full-width primary submit under auth forms; add `ui-btn--*` separately. */
+        '.auth-form-wide-submit': {
+          '@apply w-full flex justify-center items-center gap-2 py-3 rounded-full text-lg font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed':
+            {},
+        },
+        /** Centered empty / zero-state block (lists, collections). */
+        '.empty-state-panel': {
+          '@apply flex flex-col items-center justify-center text-center py-12 bg-gray-50 rounded-lg border border-blue-100':
+            {},
+        },
+        /** Teleported dropdown menu panel (FAB, ellipsis menus). */
+        '.dropdown-menu-panel': {
+          '@apply fixed z-50 w-fit min-w-0 max-w-[calc(100vw-1rem)] overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-lg py-1':
+            {},
+        },
+        /** Anchored multiselect / popover list under a trigger. */
+        '.dropdown-floating-panel': {
+          '@apply absolute left-0 right-0 z-50 mt-1 flex min-h-0 flex-col rounded-lg border border-gray-200 bg-white py-2 shadow-lg':
+            {},
+        },
+        /** Default trigger for `Dropdown.vue` (ellipsis). */
+        '.dropdown-ellipsis-trigger': {
+          '@apply w-full sm:w-auto h-9 px-3 hover:bg-gray-100 rounded-full inline-flex items-center justify-between sm:justify-center gap-2 shrink-0':
+            {},
+        },
+        /** Top strip on CombinedFilters (language row). */
+        '.filters-bar-row': {
+          '@apply flex flex-col sm:flex-row items-center sm:justify-between gap-4 md:p-4 md:bg-white md:rounded-lg md:shadow-sm':
+            {},
+        },
+        /** Compact definition preview card (list rows). */
+        '.surface-definition-compact': {
+          '@apply w-full bg-white border rounded-lg hover:border-blue-300 transition-colors shadow hover:shadow-none p-4':
+            {},
+        },
+        /** Activity “thread” row with blue hover border. */
+        '.surface-activity-row': {
+          '@apply space-y-2 bg-white p-4 rounded-lg border border-gray-200 hover:border-blue-200 transition-colors cursor-pointer':
+            {},
+        },
+        /** Indented quote / snippet in activity lists. */
+        '.activity-quote-snippet': {
+          '@apply text-sm text-gray-600 border-l-2 border-gray-300 pl-2 [&_img]:max-h-48 [&_img]:object-contain': {},
+        },
+        /** Small “streak / correct” pill (flashcard / study UI). */
+        '.badge-streak-success': {
+          '@apply flex items-center justify-center gap-1 text-xs text-green-600 bg-green-50 border border-green-200 rounded px-3 py-1.5':
+            {},
+        },
+        '.badge-streak-success--compact': {
+          '@apply flex items-center justify-center gap-1 text-[10px] text-green-600 bg-green-50 border border-green-200 rounded px-1.5 py-0.5':
+            {},
+        },
+        /** Flashcard study: quiz multiple-choice tiles (text + image). */
+        '.study-quiz-option-flashcard-text': {
+          '@apply cursor-pointer rounded-xl border-2 border-gray-200 bg-white p-4 text-left text-base font-medium text-gray-800 transition-colors duration-200 hover:border-blue-400 hover:bg-blue-50/50 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-60':
+            {},
+        },
+        '.study-quiz-option-flashcard-image': {
+          '@apply flex min-h-[100px] cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-gray-200 bg-white p-3 transition-colors duration-200 hover:border-blue-400 hover:bg-blue-50/50 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-60':
+            {},
+        },
+        /** Lingo compact study: same interaction, green accent + smaller type. */
+        '.study-quiz-option-lingo-text': {
+          '@apply cursor-pointer rounded-xl border-2 border-slate-200 bg-white p-2.5 text-left text-xs font-medium text-gray-800 transition-colors duration-200 hover:border-green-400 hover:bg-green-50/50 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-60 sm:text-sm':
+            {},
+        },
+        '.study-quiz-option-lingo-image': {
+          '@apply flex min-h-[80px] cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-slate-200 bg-white p-2 transition-colors duration-200 hover:border-green-400 hover:bg-green-50/50 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-60':
+            {},
+        },
+        /** Lingo study: main lesson card (Duolingo-style bottom border). */
+        '.lingo-study-card-shell': {
+          '@apply flex min-h-0 flex-1 shrink-0 flex-col overflow-hidden rounded-xl border-2 border-b-4 border-neutral-200 bg-white p-2 pb-2 shadow-sm transition-colors duration-200 hover:bg-black/5 sm:p-2.5 sm:pb-2.5': {},
+        },
+        /** Lingo study header row (tap highlight off for mobile). */
+        '.lingo-study-header-bar': {
+          '-webkit-tap-highlight-color': 'transparent',
+          '@apply sticky top-0 z-40 mx-auto flex w-full max-w-[1140px] items-center gap-x-2 border-b border-slate-200 bg-white px-3 py-2 sm:px-4 sm:py-2.5 lg:px-6 lg:py-3': {},
+        },
+        /** Lingo header back control. */
+        '.icon-btn-header-back': {
+          '@apply flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-lg text-slate-500 transition-colors duration-200 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-green-500':
+            {},
+        },
+        '.icon-btn-header-back--compact': {
+          '@apply h-9 w-9': {},
+        },
+        /** Comment composer shell. */
+        '.surface-comment-form': {
+          '@apply mt-3 mb-6 bg-white border rounded-lg p-3 hover:border-blue-300 transition-colors relative': {},
+        },
+        /** Flashcard collection summary row. */
+        '.surface-flashcard-summary': {
+          '@apply bg-white p-4 rounded-lg border hover:border-blue-300 shadow hover:shadow-none transition-all duration-200 max-w-full overflow-hidden':
+            {},
+        },
+        /** Mail thread attachment row chip. */
+        '.attachment-chip': {
+          '@apply px-3 py-1.5 bg-gray-50 rounded-lg border border-gray-200 hover:border-blue-200 transition-colors flex items-center gap-2':
+            {},
+        },
+        /** Avatar placeholder (list size ~3rem). */
+        '.avatar-placeholder-sm': {
+          '@apply w-12 h-12 rounded-full bg-gray-50 flex items-center justify-center text-gray-400 border border-gray-100 shadow-sm':
+            {},
+        },
+        /** Avatar upload target (profile, ~8rem). */
+        '.avatar-placeholder-lg': {
+          '@apply w-32 h-32 rounded-full bg-gray-200 flex items-center justify-center text-gray-400 border-4 border-white shadow-lg':
+            {},
+        },
+        /** Logo SVG wrapper in app header. */
+        '.logo-svg-container': {
+          '@apply flex h-full w-full items-center justify-center [&>svg]:block [&>svg]:h-full [&>svg]:w-full [&>svg]:max-h-full [&>svg]:max-w-full':
+            {},
+        },
+        /** Assistant bubble: user message. */
+        '.assistant-bubble-user': {
+          '@apply min-w-0 max-w-[calc(100%-2.5rem)] rounded-lg px-3 py-2 text-sm break-words bg-blue-600 text-white whitespace-pre-wrap':
+            {},
+        },
+        /** Assistant bubble: assistant markdown body. */
+        '.assistant-bubble-assistant': {
+          '@apply max-w-[80%] min-w-0 rounded-lg px-3 py-2 text-sm break-words bg-gray-100 text-gray-900': {},
+        },
+        /** Icon control inside assistant bubbles (copy, etc.). */
+        '.assistant-bubble-action': {
+          '@apply shrink-0 rounded-md p-1.5 text-gray-500 hover:bg-gray-100 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/40':
+            {},
+        },
+        '.assistant-bubble-thinking-shell': {
+          '@apply max-w-[80%] rounded-lg px-3 py-2.5 bg-gray-100 text-gray-600 text-sm': {},
+        },
+        /** Send / stop control in assistant composer textarea. */
+        '.assistant-composer-send': {
+          '@apply !rounded-full absolute bottom-3 right-3 z-10 flex h-8 w-8 shrink-0 items-center justify-center !p-0 border border-gray-300 bg-white text-black shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white focus:ring-gray-400/60 enabled:hover:bg-gray-50 enabled:hover:border-gray-400 disabled:cursor-not-allowed disabled:opacity-50':
+            {},
+        },
         '.toast-float-extra': {
           '@apply border-t border-gray-100 pt-3': {},
         },
@@ -378,6 +706,32 @@ export default {
           '&:disabled': {
             '@apply bg-gray-100 cursor-not-allowed opacity-75': {},
           },
+        },
+        /** Decorative icon inside `relative` input wrapper (user, mail, key). */
+        '.input-field-trailing-icon': {
+          '@apply pointer-events-none absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 shrink-0 text-gray-400': {},
+        },
+        /** Password visibility toggle in auth forms; pair with `input-field` + `pr-10`. */
+        '.input-field-password-toggle': {
+          '@apply absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 cursor-pointer items-center justify-center rounded-md text-gray-400 transition-colors duration-200 hover:bg-gray-100 hover:text-gray-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 disabled:cursor-not-allowed disabled:opacity-60':
+            {},
+        },
+        /** CSV / file picker control label (focus ring on inner input). */
+        '.file-input-label': {
+          '@apply relative cursor-pointer rounded-md bg-white font-medium text-blue-600 transition-colors duration-200 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-blue-500 focus-within:ring-offset-2': {},
+        },
+        /** Sound upload record / stop / pair actions. */
+        '.btn-media-record': {
+          '@apply flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-red-500 px-4 py-3 font-medium text-white transition-colors duration-200 hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50': {},
+        },
+        '.btn-media-stop': {
+          '@apply flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-gray-700 px-4 py-3 font-medium text-white transition-colors duration-200 hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2': {},
+        },
+        '.btn-panel-primary': {
+          '@apply flex-1 cursor-pointer rounded-lg bg-blue-600 px-3 py-2.5 font-medium text-white transition-colors duration-200 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2': {},
+        },
+        '.btn-panel-outline': {
+          '@apply flex-1 cursor-pointer rounded-lg border border-gray-300 bg-white px-3 py-2.5 font-medium text-gray-700 transition-colors duration-200 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2': {},
         },
         /** Closed trigger for toolbar dropdowns (search mode, language multiselect): matches input-field visual language at h-10. */
         '.dropdown-trigger': {
@@ -726,23 +1080,6 @@ export default {
               '@apply border-r-0': {},
             },
           },
-          '&.btn-group-item-selected': {
-            '@apply bg-blue-100 border-blue-500 text-blue-700 ring-1 ring-blue-400 ring-inset':
-              {},
-          },
-        },
-        // Collection list sort: selected = option color + glow; others = btn-aqua-white
-        '.btn-aqua-sort-idle': {
-          '@apply z-10 transition-[filter] duration-200 ease-out': {},
-        },
-        '.btn-aqua-sort-active': {
-          '@apply z-20 relative transition-[filter] duration-200 ease-out': {},
-          filter:
-            'drop-shadow(0 0 0.3rem hsla(var(--aqua-hue, 215), 82%, 58%, 0.75)) drop-shadow(0 0 0.9rem hsla(var(--aqua-hue, 215), 78%, 55%, 0.5))',
-          '&:hover:not(:disabled)': {
-            filter:
-              'brightness(1.1) drop-shadow(0 0 0.3rem hsla(var(--aqua-hue, 215), 82%, 58%, 0.8)) drop-shadow(0 0 0.9rem hsla(var(--aqua-hue, 215), 78%, 55%, 0.55))',
-          },
         },
         /** Segment joins from 512px up; below that, `ui-btn--*` primitives stay full pills (avoids broken wraps). */
         '.btn-aqua-group-item': {
@@ -756,13 +1093,6 @@ export default {
           '&:not(.active)': {
             '@apply btn-aqua-white': {},
           },
-        },
-        /** Flat theme: collection list sort chips (replaces btn-aqua-sort-* when data-button-theme=flat). */
-        '.btn-flat-sort-idle': {
-          '@apply z-10 transition-[filter,box-shadow] duration-200 ease-out': {},
-        },
-        '.btn-flat-sort-active': {
-          '@apply z-20 relative ring-2 ring-blue-400 ring-offset-1 ring-offset-white': {},
         },
         /** Flat theme: subscription toggle (replaces btn-aqua-toggle). */
         '.btn-flat-toggle': {
@@ -908,8 +1238,8 @@ export default {
       const buttonUiThemeLayer = () => {
         const rules = {}
         const themeSelectors = {
-          aqua: 'html[data-button-theme="aqua"] .CLASS, html:not([data-button-theme]) .CLASS',
-          flat: 'html[data-button-theme="flat"] .CLASS',
+          aqua: 'html[data-button-theme="aqua"] .CLASS',
+          flat: 'html[data-button-theme="flat"] .CLASS, html:not([data-button-theme]) .CLASS',
         }
         const selectorFor = (theme, cls) => themeSelectors[theme].replace(/CLASS/g, cls)
         const addThemeMap = (themeMap) => {
@@ -941,7 +1271,8 @@ export default {
           'ui-btn--previous': { aqua: 'btn-aqua-zinc', flat: 'btn-previous' },
           'ui-btn--next': { aqua: 'btn-aqua-zinc', flat: 'btn-next' },
           'ui-btn--group-item': { aqua: 'btn-aqua-group-item', flat: 'btn-group-item' },
-          'ui-btn--aqua-default': { aqua: 'btn-aqua-simple', flat: 'btn-get' },
+          /** Flat: neutral embossed `btn-empty` (not blue `btn-get`) — filter toggles, toolbars. */
+          'ui-btn--aqua-default': { aqua: 'btn-aqua-simple', flat: 'btn-empty' },
           'ui-btn--accent-purple': { aqua: 'btn-aqua-purple', flat: 'btn-link' },
           'ui-btn--danger-rose': { aqua: 'btn-aqua-rose', flat: 'btn-delete' },
           'ui-btn--warning-orange': { aqua: 'btn-aqua-orange', flat: 'btn-warning' },
@@ -952,12 +1283,10 @@ export default {
           'ui-btn--continue': { aqua: 'btn-aqua', flat: 'btn-get' },
           'ui-btn--study-wrong': { aqua: 'btn-aqua-rose', flat: 'btn-error' },
           'ui-btn--study-correct': { aqua: 'btn-aqua-teal', flat: 'btn-success' },
-          'ui-btn--sort-sky': { aqua: 'btn-aqua-sky', flat: 'btn-get' },
+          'ui-btn--sort-sky': { aqua: 'btn-aqua-sky', flat: 'btn-success' },
           'ui-btn--sort-blue': { aqua: 'btn-aqua-blue', flat: 'btn-insert' },
           'ui-btn--sort-amber': { aqua: 'btn-aqua-amber', flat: 'btn-warning' },
           'ui-btn--sort-emerald': { aqua: 'btn-aqua-emerald', flat: 'btn-create' },
-          'ui-btn--sort-active': { aqua: 'btn-aqua-sort-active', flat: 'btn-flat-sort-active' },
-          'ui-btn--sort-idle': { aqua: 'btn-aqua-sort-idle', flat: 'btn-flat-sort-idle' },
           'ui-btn--neutral': { aqua: 'btn-aqua-white', flat: 'btn-get' },
           'ui-btn--neutral-muted': { aqua: 'btn-aqua-zinc', flat: 'btn-cancel' },
           'ui-btn--neutral-slate': { aqua: 'btn-aqua-slate', flat: 'btn-get' },
@@ -996,10 +1325,10 @@ export default {
         const flatRules = {}
         /** Same rose/market primitives as `ui-btn--market`; larger touch target, pill, bigger type. */
         aquaRules[selectorFor('aqua', 'ui-btn--fab')] = {
-          '@apply btn-aqua-rose !h-14 !w-14 rounded-full !text-lg': {},
+          '@apply btn-aqua-rose !h-14 !w-14 cursor-pointer rounded-full !text-lg': {},
         }
         flatRules[selectorFor('flat', 'ui-btn--fab')] = {
-          '@apply btn-market !h-14 !w-14 rounded-full !text-lg': {},
+          '@apply btn-market !h-14 !w-14 cursor-pointer rounded-full !text-lg shadow-md': {},
         }
         aquaRules[selectorFor('aqua', 'ui-btn--toggle.active')] = {
           '@apply aqua-base bg-red-400': {},
@@ -1016,15 +1345,13 @@ export default {
           '@apply btn-empty': {},
         }
         /** Beats semantic ui-btn--* primitives (loaded above) so inner segments stay square in forced groups. */
-        aquaRules[selectorFor('aqua', 'btn-group-forced .ui-btn--group-item')] = aquaUiBtnGroupItemGeometry
+        aquaRules[selectorFor('aqua', 'btn-group-forced .ui-btn--group-item')] = {
+          ...aquaUiBtnGroupItemGeometry,
+        }
         flatRules[selectorFor('flat', 'btn-group-forced .ui-btn--group-item')] = {
           '@apply rounded-none first:rounded-l-full last:rounded-r-full': {},
           '&:not(:last-child)': {
             '@apply border-r-0': {},
-          },
-          '&.btn-group-item-selected': {
-            '@apply bg-blue-100 border-blue-500 text-blue-700 ring-1 ring-blue-400 ring-inset':
-              {},
           },
         }
         /** Cheetah aqua: `notebook > header` + tab chrome (#F5F5F5 strip, #9ac7e6 band, GTK tab gradients). */

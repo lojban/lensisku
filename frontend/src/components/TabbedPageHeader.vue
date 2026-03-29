@@ -13,7 +13,9 @@
       >
     </nav>
 
-    <h2 class="text-2xl font-bold text-gray-800 my-2 block md:hidden"> {{ pageTitle }} </h2>
+    <h2 class="my-2 block text-2xl font-bold text-gray-800 md:hidden">
+       {{ pageTitle }}
+    </h2>
 
   </div>
 

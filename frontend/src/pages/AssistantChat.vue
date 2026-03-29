@@ -32,16 +32,12 @@
          <button
           v-if="!isDesktop"
           type="button"
-          class="shrink-0 rounded-lg p-1.5 text-gray-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-400/50"
+          class="assistant-icon-btn-soft"
           :aria-label="$t('assistantChat.closeChatHistory')"
           @click="sidebarOpen = false"
         >
            <X class="h-5 w-5" /> </button
-        > <button
-          type="button"
-          class="flex min-w-0 flex-1 items-center justify-center gap-2 rounded-lg border border-dashed border-gray-300 bg-white/80 py-2.5 text-sm font-medium text-gray-700 hover:border-blue-400 hover:bg-blue-50/60 hover:text-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-400/40 transition-colors"
-          @click="startNewChat"
-        >
+        > <button type="button" class="assistant-new-chat-trigger" @click="startNewChat">
            <Plus class="h-4 w-4 shrink-0" /> {{ $t('assistantChat.newChat') }} </button
         >
       </div>
@@ -56,7 +52,7 @@
             v-model="chatSearchQuery"
             type="search"
             autocomplete="off"
-            class="w-full rounded-lg border border-gray-200 bg-white py-2 pl-9 pr-3 text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400/30"
+            class="assistant-input-search"
             :placeholder="$t('assistantChat.searchChatsPlaceholder')"
             @blur="onAssistantFormControlBlur"
           />
@@ -74,11 +70,11 @@
           :key="session.id"
           type="button"
           role="listitem"
-          class="group w-full text-left rounded-lg px-2.5 py-2.5 transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-400/50"
+          class="group assistant-session-row"
           :class="
             session.id === activeSessionId
-              ? 'bg-blue-100/90 border border-blue-200/80 shadow-sm'
-              : 'border border-transparent hover:bg-gray-100/90'
+              ? 'assistant-session-row--active'
+              : 'assistant-session-row--idle'
           "
           :aria-current="session.id === activeSessionId ? 'true' : undefined"
           :aria-label="
@@ -108,7 +104,7 @@
             </div>
              <button
               type="button"
-              class="shrink-0 p-1 rounded text-gray-400 hover:text-red-600 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-300 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100"
+              class="icon-btn-ghost-danger icon-btn-ghost-danger--reveal-md"
               :aria-label="$t('assistantChat.deleteChat')"
               @click="deleteSession(session.id, $event)"
             >
@@ -126,7 +122,7 @@
       <header class="assistant-main-header flex shrink-0 items-start gap-3 px-3 pt-3">
          <button
           type="button"
-          class="md:hidden shrink-0 p-2 rounded-lg border border-gray-200 bg-white text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-400/50"
+          class="assistant-icon-btn-panel"
           :aria-label="$t('assistantChat.openChatHistory')"
           :aria-expanded="sidebarOpen"
           @click="sidebarOpen = !sidebarOpen"
@@ -159,7 +155,7 @@
 
         <div
           ref="scrollContainer"
-          class="assistant-messages relative min-h-0 flex-1 overflow-x-hidden rounded-lg border border-gray-200 bg-white [overscroll-behavior-y:contain]"
+          class="assistant-messages assistant-messages-pane"
           :class="isRestoringScroll ? 'overflow-hidden' : 'overflow-y-auto'"
           @scroll.passive="onScrollAreaScroll"
         >
@@ -245,9 +241,7 @@
                     class="flex w-full max-w-[80%] flex-row items-end justify-end gap-1.5"
                   >
 
-                    <div
-                      class="min-w-0 max-w-[calc(100%-2.5rem)] rounded-lg px-3 py-2 text-sm break-words bg-blue-600 text-white whitespace-pre-wrap"
-                    >
+                    <div class="assistant-bubble-user">
                        <span class="mb-1 block text-[11px] font-semibold text-blue-100"
                         > {{ $t('assistantChat.userLabel') }} </span
                       > <span>{{ msg.content }}</span
@@ -256,7 +250,7 @@
                      <button
                       v-if="canEditMessages"
                       type="button"
-                      class="shrink-0 rounded-md p-1.5 text-gray-500 hover:bg-gray-100 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/40"
+                      class="assistant-bubble-action"
                       :aria-label="$t('assistantChat.editMessage')"
                       :title="$t('assistantChat.editMessage')"
                       @click="startEditMessage(index)"
@@ -275,7 +269,7 @@
                   <div
                     v-for="(reply, replyIdx) in assistantReplies(msg)"
                     :key="replyIdx"
-                    class="max-w-[80%] min-w-0 rounded-lg px-3 py-2 text-sm break-words bg-gray-100 text-gray-900 assistant-markdown"
+                    class="assistant-bubble-assistant assistant-markdown"
                   >
                      <span class="mb-1 block text-[11px] font-semibold text-gray-500"
                       > {{
@@ -321,7 +315,7 @@
                    <!-- Single top-level bubble when `replies` is empty -->
                   <div
                     v-if="assistantReplies(msg).length === 0"
-                    class="max-w-[80%] min-w-0 rounded-lg px-3 py-2 text-sm break-words bg-gray-100 text-gray-900 assistant-markdown"
+                    class="assistant-bubble-assistant assistant-markdown"
                   >
                      <span class="mb-1 block text-[11px] font-semibold text-gray-500"
                       > {{ $t('assistantChat.assistantLabel') }} </span
@@ -375,7 +369,7 @@
                 :aria-label="$t('assistantChat.thinking')"
               >
 
-                <div class="max-w-[80%] rounded-lg px-3 py-2.5 bg-gray-100 text-gray-600 text-sm">
+                <div class="assistant-bubble-thinking-shell">
                    <span class="block text-[11px] font-semibold text-gray-500 mb-1.5"
                     > {{ $t('assistantChat.assistantLabel') }} </span
                   >
@@ -412,7 +406,7 @@
               @blur="onAssistantFormControlBlur"
             /> <button
               :type="isStreamingThisSession ? 'button' : 'submit'"
-              class="assistant-composer-action !rounded-full absolute bottom-3 right-3 z-10 flex h-8 w-8 shrink-0 items-center justify-center !p-0 border border-gray-300 bg-white text-black shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white focus:ring-gray-400/60 enabled:hover:bg-gray-50 enabled:hover:border-gray-400 disabled:cursor-not-allowed disabled:opacity-50"
+              class="assistant-composer-send"
               :disabled="!isStreamingThisSession && !input.trim()"
               :aria-label="
                 isStreamingThisSession
@@ -440,7 +434,7 @@
               <p class="min-w-0 flex-1 truncate text-xs text-red-600"> {{ error }} </p>
                <button
                 type="button"
-                class="shrink-0 rounded p-1 text-red-600 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-300"
+                class="icon-btn-ghost-danger"
                 :aria-label="$t('assistantChat.retry')"
                 :title="$t('assistantChat.retry')"
                 @click="retryLast"

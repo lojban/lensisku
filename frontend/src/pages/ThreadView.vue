@@ -35,17 +35,13 @@
    <!-- Loading State --> <LoadingSpinner v-if="isLoading" class="py-12" /> <!-- Messages List -->
   <div v-else-if="!isLoading && messages.length > 0" class="space-y-4">
 
-    <div
-      v-for="message in messages"
-      :key="message.id"
-      class="message-item bg-white border border-blue-200 rounded-lg hover:border-blue-300 transition-colors shadow-sm"
-    >
+    <MessageThreadCard v-for="message in messages" :key="message.id">
 
       <div class="p-4">
          <!-- Message Header -->
         <div class="flex justify-between items-start mb-3">
 
-          <h3 class="text-lg font-semibold text-blue-700">
+          <h3 class="link-message-title">
              <LazyMathJax
               :content="message.subject || ''"
               :enable-markdown="true"
@@ -97,7 +93,7 @@
               <div
                 v-for="part in message.parts_json.filter((p) => !p.mime_type.startsWith('text/'))"
                 :key="part.id"
-                class="px-3 py-1.5 bg-gray-50 rounded-lg border border-gray-200 hover:border-blue-200 transition-colors flex items-center gap-2"
+                class="attachment-chip"
               >
                  <AttachmentIcon :mime-type="part.mime_type" class="w-4 h-4 flex-shrink-0" /> <span
                   class="text-sm text-gray-700"
@@ -113,7 +109,7 @@
 
       </div>
 
-    </div>
+    </MessageThreadCard>
 
   </div>
    <!-- Empty State -->
@@ -143,6 +139,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 
+import { MessageThreadCard } from '@packages/ui'
 import { getThread } from '@/api'
 import AttachmentIcon from '@/components/icons/AttachmentIcon.vue'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
@@ -290,15 +287,6 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* Hover effect */
-.message-item {
-  word-break: break-word;
-}
-
-.message-item:hover {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-}
-
 /* Control panel styles */
 select,
 input[type='checkbox'] {

@@ -1278,7 +1278,8 @@
       "filterBySelmao": "Фильтр по selma'o",
       "filterByAuthor": "Фильтр по автору",
       "placeholderSelmaho": "Введите selmaho...",
-      "placeholderUsername": "Введите имя пользователя..."
+      "placeholderUsername": "Введите имя пользователя...",
+      "clearFilter": "Очистить фильтр"
     },
     "activityComments": {
       "noComments": "Комментариев пока нет"

@@ -1330,7 +1330,8 @@
       "filterBySelmao": "Filter by selma'o",
       "filterByAuthor": "Filter by author",
       "placeholderSelmaho": "Enter selmaho...",
-      "placeholderUsername": "Enter username..."
+      "placeholderUsername": "Enter username...",
+      "clearFilter": "Clear filter"
     },
     "activityComments": {
       "noComments": "No comments yet"

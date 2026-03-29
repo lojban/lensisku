@@ -1,3 +1,10 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@media (prefers-reduced-motion: reduce) {
+  .toggle-switch,
+  .toggle-switch-thumb {
+    transition-duration: 0.01ms !important;
+  }
+}

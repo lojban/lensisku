@@ -2,7 +2,7 @@
    <component
     :is="isActive ? 'span' : 'RouterLink'"
     :to="to"
-    :class="{ 'nav-link': true, 'nav-link-active': isActive }"
+    :class="['nav-link', isActive ? 'nav-link-active' : 'text-nav-link']"
     > <slot /> </component
   >
 </template>
@@ -55,7 +55,6 @@ const isActive = computed(() => {
 <style scoped>
 .nav-link {
   text-decoration: none;
-  color: #007bff;
 }
 
 .nav-link-active {

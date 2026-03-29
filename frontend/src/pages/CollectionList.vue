@@ -147,34 +147,44 @@
     </div>
 
     <div class="flex flex-row items-center gap-2 sm:block">
+       <span id="collection-list-sort-legend" class="sr-only">{{ t('sort.sortByLabel') }}</span>
 
       <div
         class="btn-group-forced flex flex-nowrap justify-center min-w-0 overflow-visible py-2"
         role="group"
-        aria-label="Sort order"
+        aria-labelledby="collection-list-sort-legend"
+        aria-describedby="collection-list-sort-current"
       >
          <button
           v-for="opt in sortOptions"
           :key="opt.value"
           type="button"
-          class="ui-btn--group-item relative shrink-0 flex h-6 items-center justify-center gap-1.5 px-2 sm:px-4 !cursor-pointer"
+          class="ui-btn--group-item relative flex h-6 shrink-0 items-center justify-center gap-1.5 px-2 sm:px-4 !cursor-pointer"
           :class="[
             sortBy === opt.value ? opt.aquaClass : 'ui-btn--neutral',
-            sortBy === opt.value ? 'ui-btn--sort-active' : 'ui-btn--sort-idle',
           ]"
           :title="opt.label"
+          :aria-label="opt.label"
           :aria-pressed="sortBy === opt.value"
           @click="sortBy = opt.value"
         >
-           <component :is="opt.icon" class="h-4 w-4 shrink-0" aria-hidden="true" /> <span
-            class="hidden sm:inline"
-            >{{ opt.label }}</span
-          > </button
+           <component
+            :is="opt.icon"
+            class="h-4 w-4 shrink-0 transition-[opacity,filter] duration-200"
+            :class="
+              sortBy === opt.value
+                ? 'opacity-100 drop-shadow-[0_0_1px_rgba(30,64,175,0.9)]'
+                : 'opacity-55'
+            "
+            aria-hidden="true"
+          /> <span class="hidden sm:inline">{{ opt.label }}</span> </button
         >
       </div>
-       <span class="sm:hidden text-sm font-medium text-gray-700 shrink-0" aria-live="polite">{{
-        selectedSortLabel
-      }}</span
+       <span
+        id="collection-list-sort-current"
+        class="min-w-0 shrink-0 text-sm font-semibold text-blue-900 sm:hidden"
+        aria-live="polite"
+        >{{ selectedSortLabel }}</span
       >
     </div>
 
@@ -226,10 +236,7 @@
     />
   </div>
    <!-- Empty State -->
-  <div
-    v-if="!isLoading && collections.length === 0"
-    class="flex flex-col items-center justify-center text-center py-12 bg-gray-50 rounded-lg border border-blue-100"
-  >
+  <EmptyStatePanel v-if="!isLoading && collections.length === 0">
      <button
       v-if="viewMode === 'my' && auth.state.isLoggedIn"
       class="mt-4 ui-btn--create"
@@ -238,7 +245,7 @@
        <CirclePlus class="h-4 w-4" /> <span>{{ t('collectionList.createFirstCollection') }}</span
       > </button
     >
-  </div>
+  </EmptyStatePanel>
    <!-- Create Collection ModalComponent -->
   <div
     v-if="showCreateModal"
@@ -322,7 +329,7 @@ import {
   getStreak,
   getLevels,
 } from '@/api'
-import { CollectionCard, Dropdown, IconButton } from '@packages/ui'
+import { CollectionCard, Dropdown, EmptyStatePanel, IconButton } from '@packages/ui'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import PaginationComponent from '@/components/PaginationComponent.vue'
 import { useAuth } from '@/composables/useAuth'
