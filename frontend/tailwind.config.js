@@ -774,7 +774,7 @@ export default {
         },
         /** Leading segment of the home search bar (flush join with the query input). */
         '.dropdown-trigger--search-bar-leading': {
-          '@apply rounded-l-full rounded-r-none': {},
+          '@apply w-auto max-w-none rounded-l-full rounded-r-none': {},
         },
         /** Trailing query column: below mode selector (z-10) at rest; stacks above on hover/focus/active of the field. */
         '.search-form-query-col': {
@@ -1076,8 +1076,12 @@ export default {
           '@apply gap-0': {},
           '& .btn-group-item, & .ui-btn--group-item': {
             '@apply rounded-none first:rounded-l-full last:rounded-r-full': {},
+            /** Tighter inner joins: base controls use `px-3`; reduce horizontal padding at segment seams only. */
             '&:not(:last-child)': {
-              '@apply border-r-0': {},
+              '@apply border-r-0 pr-2': {},
+            },
+            '&:not(:first-child)': {
+              '@apply pl-2': {},
             },
           },
         },
@@ -1347,11 +1351,20 @@ export default {
         /** Beats semantic ui-btn--* primitives (loaded above) so inner segments stay square in forced groups. */
         aquaRules[selectorFor('aqua', 'btn-group-forced .ui-btn--group-item')] = {
           ...aquaUiBtnGroupItemGeometry,
+          '&:not(:last-child)': {
+            '@apply pr-2': {},
+          },
+          '&:not(:first-child)': {
+            '@apply pl-2': {},
+          },
         }
         flatRules[selectorFor('flat', 'btn-group-forced .ui-btn--group-item')] = {
           '@apply rounded-none first:rounded-l-full last:rounded-r-full': {},
           '&:not(:last-child)': {
-            '@apply border-r-0': {},
+            '@apply border-r-0 pr-2': {},
+          },
+          '&:not(:first-child)': {
+            '@apply pl-2': {},
           },
         }
         /** Cheetah aqua: `notebook > header` + tab chrome (#F5F5F5 strip, #9ac7e6 band, GTK tab gradients). */
