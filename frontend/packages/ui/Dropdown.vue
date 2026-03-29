@@ -14,22 +14,26 @@
       >
     </div>
 
-    <div
-      v-if="open"
-      class="absolute right-0 mt-2 m-2 w-fit min-w-0 max-w-[calc(100vw-1rem)] bg-white border rounded-lg shadow-lg py-1 z-30"
-      @click="open = false"
-    >
-
-      <div class="w-fit whitespace-nowrap"> <slot /> </div>
-
-    </div>
+    <Teleport to="body">
+      <div
+        v-if="open"
+        ref="panelRef"
+        class="fixed z-40 w-fit min-w-0 max-w-[calc(100vw-1rem)] bg-white border rounded-lg shadow-lg py-1"
+        :style="panelStyle"
+        @click="open = false"
+      >
+        <div class="w-fit whitespace-nowrap">
+          <slot />
+        </div>
+      </div>
+    </Teleport>
 
   </div>
 
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import { EllipsisVertical } from 'lucide-vue-next'
 
 defineOptions({ inheritAttrs: false })
@@ -39,17 +43,83 @@ defineProps({
   triggerLabel: { type: String, default: '' },
 })
 
+const VIEWPORT_MARGIN = 8
+
 const open = ref(false)
 const rootRef = ref<HTMLElement | null>(null)
+const panelRef = ref<HTMLElement | null>(null)
+const panelStyle = ref<Record<string, string>>({})
 
 const rootClass = 'relative inline-block'
 
-function handleClickOutside(event: MouseEvent) {
-  const el = event.target
-  if (rootRef.value && el instanceof Node && !rootRef.value.contains(el)) {
-    open.value = false
+function updatePanelPosition() {
+  const root = rootRef.value
+  const panel = panelRef.value
+  if (!root || !panel) return
+
+  const trigger = root.firstElementChild
+  if (!(trigger instanceof HTMLElement)) return
+
+  const tr = trigger.getBoundingClientRect()
+  const pr = panel.getBoundingClientRect()
+  if (pr.width <= 0 || pr.height <= 0) return
+
+  const vw = window.innerWidth
+  const vh = window.innerHeight
+
+  // Prefer aligning the menu’s right edge with the trigger (compact controls on the left).
+  let left = tr.right - pr.width
+  left = Math.max(VIEWPORT_MARGIN, Math.min(left, vw - pr.width - VIEWPORT_MARGIN))
+
+  let top = tr.bottom + VIEWPORT_MARGIN
+  if (top + pr.height > vh - VIEWPORT_MARGIN) {
+    const above = tr.top - pr.height - VIEWPORT_MARGIN
+    if (above >= VIEWPORT_MARGIN) {
+      top = above
+    } else {
+      top = Math.max(VIEWPORT_MARGIN, vh - pr.height - VIEWPORT_MARGIN)
+    }
+  }
+
+  panelStyle.value = {
+    top: `${top}px`,
+    left: `${left}px`,
   }
 }
+
+function handleClickOutside(event: MouseEvent) {
+  const el = event.target
+  if (!(el instanceof Node)) return
+  // Panel is teleported to <body>; count it as inside the control.
+  if (rootRef.value?.contains(el) || panelRef.value?.contains(el)) {
+    return
+  }
+  open.value = false
+}
+
+function onViewportChange() {
+  if (open.value) {
+    updatePanelPosition()
+  }
+}
+
+watch(open, async (isOpen) => {
+  if (isOpen) {
+    panelStyle.value = {}
+    await nextTick()
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        updatePanelPosition()
+      })
+    })
+    window.addEventListener('resize', onViewportChange)
+    window.addEventListener('scroll', onViewportChange, true)
+  } else {
+    panelStyle.value = {}
+    window.removeEventListener('resize', onViewportChange)
+    window.removeEventListener('scroll', onViewportChange, true)
+  }
+})
 
 onMounted(() => {
   document.addEventListener('mousedown', handleClickOutside)
@@ -57,6 +127,8 @@ onMounted(() => {
 
 onUnmounted(() => {
   document.removeEventListener('mousedown', handleClickOutside)
+  window.removeEventListener('resize', onViewportChange)
+  window.removeEventListener('scroll', onViewportChange, true)
 })
 </script>
 

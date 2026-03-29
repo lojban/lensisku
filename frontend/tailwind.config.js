@@ -28,7 +28,7 @@ export default {
         },
         /** Same as `btn-base`: icon + label spacing via `gap-*` on the control, not margin on children. */
         '.aqua-base': {
-          '@apply flex items-center justify-center h-6 select-none whitespace-nowrap text-black select-none text-sm font-medium transition-all px-4 gap-2':
+          '@apply flex items-center justify-center h-6 select-none whitespace-nowrap text-black select-none text-sm font-medium transition-all px-3 gap-2':
             {},
           textOverflow: 'ellipsis',
           gridRow: '1',
@@ -112,7 +112,11 @@ export default {
           },
         },
       });
-      /** Shared aqua segment geometry; also applied with higher specificity in buttonUiThemeLayer for .btn-group-forced (see addPair order). */
+      /**
+       * Shared aqua segment geometry (radii + glossy ::before/::after), without extra segment box-shadows —
+       * elevation stays on `aqua-base` / semantic primitives so wrappers and joins do not stack duplicate shadows.
+       * Applied with higher specificity in buttonUiThemeLayer for `.btn-group-forced` (see addPair order).
+       */
       const aquaUiBtnGroupItemGeometry = {
         borderRadius: 0,
         '&::after': {
@@ -249,14 +253,18 @@ export default {
         },
         /** Leading segment of the home search bar (flush join with the query input). */
         '.dropdown-trigger--search-bar-leading': {
-          '@apply sm:rounded-l-full sm:rounded-r-none': {},
+          '@apply rounded-l-full rounded-r-none': {},
         },
         /** Trailing query column: below mode selector (z-10) at rest; stacks above on hover/focus/active of the field. */
         '.search-form-query-col': {
-          '@apply relative z-0 flex-1 sm:-ml-px': {},
+          '@apply relative z-0 flex-1 -ml-px min-w-0': {},
           '&:hover, &:focus-within, &:has(:active)': {
             '@apply z-20': {},
           },
+        },
+        /** Label above fields in CombinedFilters advanced grid (aligned spacing vs. inputs and dropdowns). */
+        '.filters-field-label': {
+          '@apply block text-sm font-medium text-gray-700 mb-2 leading-snug': {},
         },
         '.input-group': {
           '@apply flex items-stretch w-full': {},

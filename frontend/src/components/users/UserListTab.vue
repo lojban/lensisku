@@ -57,20 +57,19 @@
             t('components.userListTab.sortByLabel')
           }}</label>
           <div
-            class="btn-group-forced flex w-auto shrink-0 flex-nowrap items-stretch"
-            data-group-joined="true"
+            class="flex w-auto shrink-0 flex-nowrap items-stretch"
             role="group"
             :aria-label="sortControlsAriaLabel"
           >
             <div
-              class="ui-btn--group-item relative flex min-h-8 w-auto shrink-0 flex-col justify-center [&>div]:w-auto"
+              class="relative flex min-h-8 w-auto shrink-0 flex-col justify-center min-w-0 [&>div]:w-auto"
             >
               <Dropdown>
                 <template #trigger="{ open: sortByMenuOpen }">
                   <button
                     id="user-list-sort-by"
                     type="button"
-                    class="inline-flex h-8 w-auto max-w-full min-w-0 items-center justify-between gap-1.5 border-0 bg-transparent px-3 text-left text-sm text-gray-700 shadow-none outline-none ring-0 rounded-none hover:bg-gray-50/90 focus-visible:ring-2 focus-visible:ring-blue-400/45"
+                    class="input-field inline-flex h-8 w-auto max-w-full min-w-0 items-center justify-between gap-1.5 px-3 text-sm text-left rounded-r-none border-r-0"
                   >
                     <span class="whitespace-nowrap">{{ sortByTriggerLabel }}</span>
                     <ChevronDown
@@ -104,13 +103,13 @@
               </Dropdown>
             </div>
             <div
-              class="ui-btn--group-item relative flex min-h-8 w-auto shrink-0 flex-col justify-center [&>div]:w-auto"
+              class="relative flex min-h-8 w-auto shrink-0 flex-col justify-center min-w-0 [&>div]:w-auto"
             >
               <Dropdown>
                 <template #trigger="{ open: orderMenuOpen }">
                   <button
                     type="button"
-                    class="inline-flex h-8 w-auto max-w-full min-w-0 items-center justify-between gap-1.5 border-0 bg-transparent px-3 text-left text-sm text-gray-700 shadow-none outline-none ring-0 rounded-none hover:bg-gray-50/90 focus-visible:ring-2 focus-visible:ring-blue-400/45"
+                    class="input-field inline-flex h-8 w-auto max-w-full min-w-0 items-center justify-between gap-1.5 px-3 text-sm text-left rounded-l-none border-l-0"
                     :aria-label="t('components.userListTab.sortOrderLabel')"
                   >
                     <span class="whitespace-nowrap">{{ sortOrderTriggerLabel }}</span>

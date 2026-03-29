@@ -1,11 +1,10 @@
 <template>
 
   <div class="filters space-y-4">
-     <!-- Language Filter Section -->
+    <!-- Language Filter Section -->
     <div
-      class="flex flex-col sm:flex-row items-center sm:justify-between gap-4 md:p-4 md:bg-white md:rounded-lg md:shadow-sm"
-    >
-       <MultiSelectDropdown
+      class="flex flex-col sm:flex-row items-center sm:justify-between gap-4 md:p-4 md:bg-white md:rounded-lg md:shadow-sm">
+      <MultiSelectDropdown
         v-model="selectedLangs"
         :options="languages"
         :max-selected-labels="3"
@@ -21,54 +20,53 @@
       <div class="flex items-center gap-2 self-end md:self-center">
 
         <div class="btn-group-forced flex items-center flex-row" role="group">
-           <button
+          <button
             class="ui-btn--aqua-default ui-btn--group-item"
             :title="t('searchForm.modes.semantic')"
             @click="toggleSemanticSearch"
           >
-             <input type="checkbox" class="checkmark-aqua" :checked="filters.isSemantic" /> <span
-              class="text-xs select-none whitespace-nowrap"
-              > {{ t('searchForm.modes.semantic') }} </span
-            > </button
-          > <button
+            <input type="checkbox" class="checkmark-aqua" :checked="filters.isSemantic" /> <span
+              class="text-xs select-none whitespace-nowrap"> {{ t('searchForm.modes.semantic') }} </span> </button>
+          <button
             class="ui-btn--aqua-default ui-btn--group-item"
             :class="[{ 'opacity-50 !cursor-not-allowed': filters.word_type }]"
             :title="t('searchForm.modes.searchInPhrases')"
             @click="toggleSearchInPhrases"
           >
-             <input
+            <input
               type="checkbox"
               class="checkmark-aqua"
               :checked="filters.searchInPhrases && !filters.word_type"
               :disabled="!!filters.word_type"
-            /> <span class="text-xs select-none whitespace-nowrap"
-              > {{ t('searchForm.modes.searchInPhrases') }} </span
-            > </button
-          >
+            />
+            <span class="text-xs select-none whitespace-nowrap">
+              {{ t('searchForm.modes.searchInPhrases') }}
+            </span>
+          </button>
         </div>
 
         <div class="btn-group-forced flex items-center flex-row" role="group">
-           <button
+          <button
             v-if="hasAnyActiveFilters"
             type="button"
             class="ui-btn--neutral ui-btn--group-item"
-            @click="resetAllFilters"
             :title="t('filters.resetAllFilters')"
+            @click="resetAllFilters"
           >
-             <span class="text-xs">{{ t('filters.resetAllFilters') }}</span
-            > </button
-          > <button
+            <span class="text-xs">{{ t('filters.resetAllFilters') }}</span>
+          </button>
+          <button
             type="button"
             class="ui-btn--neutral ui-btn--group-item"
-            @click="toggleExpanded"
             :title="expanded ? t('filters.collapse') : t('filters.expand')"
+            @click="toggleExpanded"
           >
-             <ChevronDown
+            <ChevronDown
               class="h-5 w-5 transition-transform duration-200"
               :class="{ 'rotate-180': expanded }"
               :stroke-width="2"
-            /> </button
-          >
+            />
+          </button>
         </div>
 
       </div>
@@ -77,90 +75,124 @@
 
     <div
       v-show="expanded"
-      class="mt-3 space-y-6 bg-white rounded-lg shadow-sm p-4"
+      class="mt-3 grid grid-cols-2 gap-x-3 gap-y-4 bg-white rounded-lg shadow-sm p-4"
       :class="{ 'animate-expandSection': expanded }"
     >
-       <!-- Advanced Filters -->
-      <div class="space-y-4">
-
-        <div v-if="showWordType">
-           <label class="block text-sm font-medium text-gray-700 mb-2">{{
-            t('filters.filterBy.wordType')
-          }}</label
-          >
-          <div class="relative">
-             <select
-              v-model="filters.word_type"
-              class="input-field w-full"
-              @change="handleWordTypeChange"
-            >
-
-              <option value="" disabled selected> {{ t('filters.selectWordType') }} </option>
-
-              <option v-for="type in wordTypes" :key="type.type_id" :value="type">
-                 {{ type.descriptor }}
-              </option>
-               </select
-            >
-          </div>
-
+      <div v-if="showWordType" class="flex min-w-0 flex-col">
+        <label class="filters-field-label">{{
+          t('filters.filterBy.wordType')
+          }}</label>
+        <div class="relative w-full [&>div]:block [&>div]:w-full">
+          <Dropdown class="block w-full">
+              <template #trigger="{ open: wordTypeMenuOpen }">
+                <button
+                  type="button"
+                  class="input-field w-full !flex h-8 cursor-pointer items-center justify-between gap-2 text-left font-normal"
+                  :aria-expanded="wordTypeMenuOpen"
+                >
+                  <span class="min-w-0 truncate text-gray-700">{{
+                    filters.word_type?.descriptor ?? t('filters.selectWordType')
+                  }}</span>
+                  <ChevronDown
+                    class="h-4 w-4 shrink-0 text-gray-500 transition-transform duration-200"
+                    :class="{ 'rotate-180': wordTypeMenuOpen }"
+                    :stroke-width="2"
+                  />
+                </button>
+              </template>
+              <div
+                class="max-h-[min(50vh,18rem)] overflow-y-auto whitespace-normal sm:min-w-[12rem]"
+              >
+                <button
+                  v-for="type in wordTypes"
+                  :key="type.type_id"
+                  type="button"
+                  class="block w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50"
+                  :class="{ 'bg-gray-100': filters.word_type?.type_id === type.type_id }"
+                  @click="selectWordType(type)"
+                >
+                  {{ type.descriptor }}
+                </button>
+              </div>
+          </Dropdown>
         </div>
-         <!-- Unified input fields with clear buttons -->
-        <div v-for="field in ['selmaho', 'username']" :key="field" class="relative">
-           <label class="block text-sm font-medium text-gray-700 mb-1"
-            > {{
-              field === 'selmaho'
-                ? t('components.combinedFilters.filterBySelmao')
-                : t('components.combinedFilters.filterByAuthor')
-            }} </label
-          >
-          <div class="relative">
-             <input
-              v-model="filters[field]"
-              type="text"
-              :placeholder="
-                t(
-                  `components.combinedFilters.placeholder${field.charAt(0).toUpperCase() + field.slice(1)}`
-                )
-              "
-              class="input-field w-full"
-              @input="debouncedFilterChange"
-            /> <button
-              v-if="filters[field]"
-              class="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors duration-200 [&>svg]:hover:text-current"
-              @click="clearFilter(field)"
-            >
-               <X class="h-5 w-5" /> </button
-            >
-          </div>
-
-        </div>
-
       </div>
-
-      <div>
-         <label class="block text-sm font-medium text-gray-700 mb-2">{{
-          t('filters.filterBy.sourceLanguage')
-        }}</label
-        >
+      <!-- Unified input fields with clear buttons -->
+      <div v-for="field in ['selmaho', 'username']" :key="field" class="flex min-w-0 flex-col">
+        <label class="filters-field-label">
+          {{
+            field === 'selmaho'
+              ? t('components.combinedFilters.filterBySelmao')
+              : t('components.combinedFilters.filterByAuthor')
+          }}
+        </label>
         <div class="relative">
-           <select v-model="filters.source_langid" class="input-field w-full" @change="emitUpdate">
-
-            <option :value="1">{{ t('filters.defaultSourceLanguage') }}</option>
-
-            <option
-              v-for="lang in languages.filter((l) => l.id !== 1)"
-              :key="lang.id"
-              :value="lang.id"
-            >
-               {{ lang.real_name }} ({{ lang.english_name }})
-            </option>
-             </select
+          <input
+            v-model="filters[field]"
+            type="text"
+            :placeholder="
+              t(
+                `components.combinedFilters.placeholder${field.charAt(0).toUpperCase() + field.slice(1)}`
+              )
+            "
+            class="input-field w-full h-8"
+            @input="debouncedFilterChange"
+          />
+          <button
+            v-if="filters[field]"
+            class="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors duration-200 [&>svg]:hover:text-current"
+            @click="clearFilter(field)"
           >
+            <X class="h-5 w-5" />
+          </button>
         </div>
-
       </div>
 
+      <div class="flex min-w-0 flex-col" :class="{ 'col-span-2': !showWordType }">
+        <label class="filters-field-label">{{
+          t('filters.filterBy.sourceLanguage')
+          }}</label>
+        <div class="relative w-full [&>div]:block [&>div]:w-full">
+          <Dropdown class="block w-full">
+            <template #trigger="{ open: sourceLangMenuOpen }">
+              <button
+                type="button"
+                class="input-field w-full !flex h-8 cursor-pointer items-center justify-between gap-2 text-left font-normal"
+                :aria-expanded="sourceLangMenuOpen"
+              >
+                <span class="min-w-0 truncate text-gray-700">{{ sourceLanguageLabel }}</span>
+                <ChevronDown
+                  class="h-4 w-4 shrink-0 text-gray-500 transition-transform duration-200"
+                  :class="{ 'rotate-180': sourceLangMenuOpen }"
+                  :stroke-width="2"
+                />
+              </button>
+            </template>
+            <div
+              class="max-h-[min(50vh,18rem)] overflow-y-auto whitespace-normal sm:min-w-[12rem]"
+            >
+              <button
+                type="button"
+                class="block w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50"
+                :class="{ 'bg-gray-100': filters.source_langid === 1 }"
+                @click="selectSourceLang(1)"
+              >
+                {{ t('filters.defaultSourceLanguage') }}
+              </button>
+              <button
+                v-for="lang in languages.filter((l) => l.id !== 1)"
+                :key="lang.id"
+                type="button"
+                class="block w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50"
+                :class="{ 'bg-gray-100': filters.source_langid === lang.id }"
+                @click="selectSourceLang(lang.id)"
+              >
+                {{ lang.real_name }} ({{ lang.english_name }})
+              </button>
+            </div>
+        </Dropdown>
+        </div>
+      </div>
     </div>
 
   </div>
@@ -169,7 +201,7 @@
 
 <script setup lang="ts">
 import { ChevronDown, X } from 'lucide-vue-next'
-import { MultiSelectDropdown } from '@packages/ui'
+import { Dropdown, MultiSelectDropdown } from '@packages/ui'
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 
 import { fetchDefinitionsTypes } from '@/api'
@@ -193,6 +225,11 @@ type LanguageOption = {
   english_name: string
   tag: string
   lojban_name?: string
+}
+
+type WordTypeOption = {
+  type_id: number
+  descriptor: string
 }
 
 const props = defineProps({
@@ -220,7 +257,7 @@ const emit = defineEmits(['update:modelValue', 'change', 'reset'])
 
 const selectedLangs = ref([])
 const expanded = ref(props.modelValue.isExpanded)
-const wordTypes = ref([])
+const wordTypes = ref<WordTypeOption[]>([])
 const filters = ref({
   selmaho: props.modelValue.selmaho,
   username: props.modelValue.username,
@@ -231,6 +268,14 @@ const filters = ref({
 })
 
 const showWordType = computed(() => !filters.value.selmaho)
+
+const sourceLanguageLabel = computed(() => {
+  if (filters.value.source_langid === 1) {
+    return t('filters.defaultSourceLanguage')
+  }
+  const lang = props.languages.find((l) => l.id === filters.value.source_langid)
+  return lang ? `${lang.real_name} (${lang.english_name})` : t('filters.defaultSourceLanguage')
+})
 
 const getLanguagesFromIds = (ids) => {
   return props.languages.filter((lang) => ids.includes(lang.id))
@@ -302,13 +347,13 @@ function clearDebounceTimer() {
 const hasAnyActiveFilters = computed(() => {
   return Boolean(
     selectedLangs.value.length > 0 ||
-      filters.value.selmaho ||
-      filters.value.username ||
-      filters.value.word_type ||
-      filters.value.source_langid !== 1 || // Check if source_langid is not default
-      !filters.value.isSemantic || // isSemantic is true by default, so if it's false, it's modified
-      !filters.value.searchInPhrases || // modified if false
-      expanded.value
+    filters.value.selmaho ||
+    filters.value.username ||
+    filters.value.word_type ||
+    filters.value.source_langid !== 1 || // Check if source_langid is not default
+    !filters.value.isSemantic || // isSemantic is true by default, so if it's false, it's modified
+    !filters.value.searchInPhrases || // modified if false
+    expanded.value
   )
 })
 
@@ -336,11 +381,13 @@ const debouncedFilterChange = () => {
   }, DEBOUNCE_DELAY)
 }
 
-const handleWordTypeChange = (event) => {
-  const selectedType = wordTypes.value.find((type) => type.type_id === event.target.value?.type_id)
-  if (selectedType) {
-    filters.value.word_type = selectedType
-  }
+function selectWordType(type: WordTypeOption) {
+  filters.value.word_type = type
+  emitUpdate()
+}
+
+function selectSourceLang(id: number) {
+  filters.value.source_langid = id
   emitUpdate()
 }
 
@@ -475,4 +522,3 @@ watch(
   }
 }
 </style>
-

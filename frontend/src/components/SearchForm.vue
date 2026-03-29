@@ -2,10 +2,10 @@
 
   <div class="search-form max-w-3xl mx-auto">
 
-    <div class="flex flex-col sm:flex-row gap-2 sm:gap-0">
+    <div class="flex flex-row gap-0 items-stretch">
 
       <div
-        class="relative z-10 w-full sm:w-56 shrink-0 [&>div]:block [&>div]:w-full"
+        class="relative z-10 w-16 shrink-0 sm:w-56 [&>div]:block [&>div]:w-full"
       >
          <Dropdown
           > <template #trigger
@@ -16,7 +16,7 @@
 
               <div v-if="mode" class="flex items-center gap-2 min-w-0">
                  <component :is="mode.icon" class="h-4 w-4 shrink-0" :class="mode.color" /> <span
-                  class="truncate"
+                  class="hidden truncate sm:inline"
                   >{{ mode.name }}</span
                 >
               </div>
@@ -40,7 +40,7 @@
           ref="searchInput"
           v-model="query"
           :placeholder="getPlaceholder"
-          :class="`input-field w-full text-base h-10 sm:rounded-l-none ${query ? 'pr-10' : ''}`"
+          :class="`input-field w-full text-base h-10 rounded-l-none ${query ? 'pr-10' : ''}`"
           @input="handleInput"
         />
         <div class="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center">
