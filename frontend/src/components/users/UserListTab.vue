@@ -2,145 +2,61 @@
 
   <div class="space-y-6">
     <!-- Search and Filter Controls (compact single row) -->
-    <div class="bg-white border border-gray-200 rounded-xl shadow-sm p-3 sm:p-4">
-
-      <div class="flex flex-wrap items-center gap-3 sm:gap-4">
-        <!-- Search: compact width -->
-        <div class="w-full sm:w-auto sm:min-w-[220px] sm:max-w-[280px] flex-1 sm:flex-initial">
+    <div class="toolbar-panel">
+      <div class="toolbar-row">
+        <div class="toolbar-search-slot">
           <SearchInput :model-value="searchQuery" :is-loading="isSearching"
             :placeholder="t('userList.searchPlaceholder')" :show-search-icon="true"
             @update:model-value="$emit('update:searchQuery', $event)" @keyup.enter="$emit('updateSearch')"
             @clear="$emit('clearSearch')" />
         </div>
-        <!-- Role Filter -->
-        <div class="flex items-center gap-2 shrink-0">
-          <label class="text-sm font-medium text-gray-700 whitespace-nowrap">{{
-            t('components.userListTab.roleLabel')
-          }}</label>
-          <div class="relative shrink-0">
-            <Dropdown>
-              <template #trigger="{ open: roleMenuOpen }">
-                <button
-                  type="button"
-                  class="input-field inline-flex h-8 w-auto max-w-[min(100vw-4rem,14rem)] items-center justify-between gap-1.5 px-3 text-sm"
-                >
-                  <span class="whitespace-nowrap truncate">{{ roleFilterTriggerLabel }}</span>
-                  <ChevronDown
-                    class="h-4 w-4 shrink-0 opacity-60 transition-transform duration-200"
-                    :class="{ 'rotate-180': roleMenuOpen }"
-                    :stroke-width="2"
-                  />
-                </button>
-              </template>
-              <button
-                type="button"
-                class="block w-full whitespace-nowrap px-3 py-2 text-left text-sm hover:bg-gray-50"
-                @click="$emit('update:roleFilter', '')"
-              >
+        <div class="toolbar-field-row">
+          <label class="toolbar-control-label">{{ t('components.userListTab.roleLabel') }}</label>
+          <div class="toolbar-dropdown-anchor">
+            <ToolbarSelectDropdown variant="role" truncate-label>
+              <template #label>{{ roleFilterTriggerLabel }}</template>
+              <ToolbarSelectDropdownItem @click="$emit('update:roleFilter', '')">
                 {{ t('components.userListTab.allRoles') }}
-              </button>
-              <button
+              </ToolbarSelectDropdownItem>
+              <ToolbarSelectDropdownItem
                 v-for="role in availableRoles"
                 :key="role.name"
-                type="button"
-                class="block w-full whitespace-nowrap px-3 py-2 text-left text-sm hover:bg-gray-50"
                 @click="$emit('update:roleFilter', role.name)"
               >
                 {{ translateRole(role.name) }}
-              </button>
-            </Dropdown>
+              </ToolbarSelectDropdownItem>
+            </ToolbarSelectDropdown>
           </div>
         </div>
-        <!-- Sort by + order (button group) -->
-        <div class="flex w-auto max-w-full min-w-0 shrink-0 items-center gap-2">
-          <label class="w-auto shrink-0 text-sm font-medium text-gray-700 whitespace-nowrap" for="user-list-sort-by">{{
+        <div class="toolbar-field-row">
+          <label class="toolbar-control-label" for="user-list-sort-by">{{
             t('components.userListTab.sortByLabel')
           }}</label>
-          <div
-            class="flex w-auto shrink-0 flex-nowrap items-stretch"
-            role="group"
-            :aria-label="sortControlsAriaLabel"
-          >
-            <div
-              class="relative flex min-h-8 w-auto shrink-0 flex-col justify-center min-w-0 [&>div]:w-auto"
-            >
-              <Dropdown>
-                <template #trigger="{ open: sortByMenuOpen }">
-                  <button
-                    id="user-list-sort-by"
-                    type="button"
-                    class="input-field inline-flex h-8 w-auto max-w-full min-w-0 items-center justify-between gap-1.5 px-3 text-sm text-left rounded-r-none border-r-0"
-                  >
-                    <span class="whitespace-nowrap">{{ sortByTriggerLabel }}</span>
-                    <ChevronDown
-                      class="h-4 w-4 shrink-0 opacity-60 transition-transform duration-200"
-                      :class="{ 'rotate-180': sortByMenuOpen }"
-                      :stroke-width="2"
-                    />
-                  </button>
-                </template>
-                <button
-                  type="button"
-                  class="block w-full whitespace-nowrap px-3 py-2 text-left text-sm hover:bg-gray-50"
-                  @click="$emit('update:sortBy', 'created_at')"
-                >
-                  {{ t('components.userListTab.createdAtSort') }}
-                </button>
-                <button
-                  type="button"
-                  class="block w-full whitespace-nowrap px-3 py-2 text-left text-sm hover:bg-gray-50"
-                  @click="$emit('update:sortBy', 'username')"
-                >
-                  {{ t('components.userListTab.usernameSort') }}
-                </button>
-                <button
-                  type="button"
-                  class="block w-full whitespace-nowrap px-3 py-2 text-left text-sm hover:bg-gray-50"
-                  @click="$emit('update:sortBy', 'realname')"
-                >
-                  {{ t('components.userListTab.realNameSort') }}
-                </button>
-              </Dropdown>
-            </div>
-            <div
-              class="relative flex min-h-8 w-auto shrink-0 flex-col justify-center min-w-0 [&>div]:w-auto"
-            >
-              <Dropdown>
-                <template #trigger="{ open: orderMenuOpen }">
-                  <button
-                    type="button"
-                    class="input-field inline-flex h-8 w-auto max-w-full min-w-0 items-center justify-between gap-1.5 px-3 text-sm text-left rounded-l-none border-l-0"
-                    :aria-label="t('components.userListTab.sortOrderLabel')"
-                  >
-                    <span class="whitespace-nowrap">{{ sortOrderTriggerLabel }}</span>
-                    <ChevronDown
-                      class="h-4 w-4 shrink-0 opacity-60 transition-transform duration-200"
-                      :class="{ 'rotate-180': orderMenuOpen }"
-                      :stroke-width="2"
-                    />
-                  </button>
-                </template>
-                <button
-                  type="button"
-                  class="block w-full whitespace-nowrap px-3 py-2 text-left text-sm hover:bg-gray-50"
-                  @click="$emit('update:sortOrder', 'asc')"
-                >
-                  {{ t('components.userListTab.ascSort') }}
-                </button>
-                <button
-                  type="button"
-                  class="block w-full whitespace-nowrap px-3 py-2 text-left text-sm hover:bg-gray-50"
-                  @click="$emit('update:sortOrder', 'desc')"
-                >
-                  {{ t('components.userListTab.descSort') }}
-                </button>
-              </Dropdown>
-            </div>
+          <div class="toolbar-inline-actions" role="group" :aria-label="sortControlsAriaLabel">
+            <ToolbarSelectDropdown id="user-list-sort-by">
+              <template #label>{{ sortByTriggerLabel }}</template>
+              <ToolbarSelectDropdownItem @click="$emit('update:sortBy', 'created_at')">
+                {{ t('components.userListTab.createdAtSort') }}
+              </ToolbarSelectDropdownItem>
+              <ToolbarSelectDropdownItem @click="$emit('update:sortBy', 'username')">
+                {{ t('components.userListTab.usernameSort') }}
+              </ToolbarSelectDropdownItem>
+              <ToolbarSelectDropdownItem @click="$emit('update:sortBy', 'realname')">
+                {{ t('components.userListTab.realNameSort') }}
+              </ToolbarSelectDropdownItem>
+            </ToolbarSelectDropdown>
+            <ToolbarSelectDropdown :aria-label="t('components.userListTab.sortOrderLabel')">
+              <template #label>{{ sortOrderTriggerLabel }}</template>
+              <ToolbarSelectDropdownItem @click="$emit('update:sortOrder', 'asc')">
+                {{ t('components.userListTab.ascSort') }}
+              </ToolbarSelectDropdownItem>
+              <ToolbarSelectDropdownItem @click="$emit('update:sortOrder', 'desc')">
+                {{ t('components.userListTab.descSort') }}
+              </ToolbarSelectDropdownItem>
+            </ToolbarSelectDropdown>
           </div>
         </div>
-
       </div>
-
     </div>
     <!-- User list -->
     <div class="min-h-[400px]">
@@ -223,13 +139,13 @@
 </template>
 
 <script setup lang="ts">
-import { Calendar, ChevronDown, User } from 'lucide-vue-next'
+import { Calendar, User } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 import { computed, type PropType } from 'vue'
 import { getProfileImage } from '@/api'
 import PaginationComponent from '@/components/PaginationComponent.vue'
 import SearchInput from '@/components/SearchInput.vue'
-import { Dropdown } from '@packages/ui'
+import { ToolbarSelectDropdown, ToolbarSelectDropdownItem } from '@packages/ui'
 
 const { t, locale } = useI18n()
 
