@@ -759,6 +759,7 @@
     "adding": "Adding...",
     "updateSuccess": "Word updated successfully!",
     "existingWordNote": "A new definition has been added to the existing word.",
+    "createSuccess": "Definition added successfully!",
     "loadDefinitionError": "Failed to load definition data",
     "loadLanguagesError": "Failed to load languages",
     "analyzeError": "Failed to analyze text",

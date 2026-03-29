@@ -209,7 +209,8 @@
           <span class="fab-elevation-shell">
             <button type="button" class="inline-flex items-center justify-center ui-btn--fab"
               :aria-label="$t('fab.actionsTitle')">
-              <Plus class="h-7 w-7 transition-all duration-200" :class="{ 'rotate-45': open }" />
+              <Plus class="transition-all duration-200" :stroke-width="3"
+                :class="{ 'rotate-45': open }" />
             </button>
           </span>
         </template>

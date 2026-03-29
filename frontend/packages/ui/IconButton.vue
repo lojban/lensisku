@@ -7,7 +7,7 @@
     :disabled="disabled"
     @click="$emit('click', $event)"
   >
-     <slot name="icon"> <CirclePlus :class="iconClasses" /> </slot> <span
+     <slot name="icon"> <Plus :class="iconClasses" /> </slot> <span
       v-if="label"
       class="inline-flex items-center gap-2"
       >{{ label }}</span
@@ -17,7 +17,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { CirclePlus } from 'lucide-vue-next'
+import { Plus } from 'lucide-vue-next'
 
 const props = defineProps({
   /** Optional; when omitted, button is icon-only (use ariaLabel for a11y) */

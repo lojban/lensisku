@@ -759,6 +759,7 @@
     "adding": "ca'o jmina...",
     "updateSuccess": "snada lo nu galfi lo valsi!",
     "existingWordNote": "jmina lo cnino ciksi lo zasti valsi.",
+    "createSuccess": "snada lo nu jmina lo ciksi!",
     "loadDefinitionError": "fliba lo nu jgari lo ciksi datni",
     "loadLanguagesError": "fliba lo nu jgari lo bangu",
     "analyzeError": "fliba lo nu lanli lo jufra",

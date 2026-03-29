@@ -744,6 +744,7 @@
     "adding": "追加中…",
     "updateSuccess": "語を更新しました。",
     "existingWordNote": "既存の語に新しい定義を追加しました。",
+    "createSuccess": "定義を追加しました。",
     "loadDefinitionError": "定義データを読み込めませんでした",
     "loadLanguagesError": "言語一覧を読み込めませんでした",
     "analyzeError": "テキストを解析できませんでした",

@@ -749,6 +749,7 @@
     "adding": "添加中…",
     "updateSuccess": "词条已更新！",
     "existingWordNote": "已在现有词条上添加新释义。",
+    "createSuccess": "释义已添加！",
     "loadDefinitionError": "无法加载释义数据",
     "loadLanguagesError": "无法加载语言列表",
     "analyzeError": "分析文本失败",
