@@ -9,23 +9,24 @@
          {{ t('anonymousProgress.bannerMessage') }}
       </p>
 
-      <div class="flex items-center justify-center gap-2 shrink-0 order-2 sm:order-none">
-         <RouterLink
-          to="/signup"
-          class="ui-btn--warning-orange text-sm px-3 py-2 min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-md"
-          > {{ t('anonymousProgress.signUp') }} </RouterLink
-        > <RouterLink
+      <div class="order-2 flex shrink-0 items-center justify-center gap-2 sm:order-none">
+        <RouterLink to="/signup" class="anon-banner-cta ui-btn--warning-orange">
+          {{ t('anonymousProgress.signUp') }}
+        </RouterLink>
+        <RouterLink
           to="/login"
-          class="ui-btn--empty text-sm px-3 py-2 min-h-[44px] min-w-[44px] inline-flex items-center justify-center border border-gray-300 rounded-md hover:bg-gray-50"
-          > {{ t('anonymousProgress.logIn') }} </RouterLink
-        > <button
+          class="anon-banner-cta ui-btn--empty border border-gray-300 hover:bg-gray-50"
+        >
+          {{ t('anonymousProgress.logIn') }}
+        </RouterLink>
+        <button
           type="button"
-          class="p-2.5 min-h-[44px] min-w-[44px] flex items-center justify-center text-gray-400 hover:text-gray-600 rounded-md hover:bg-gray-100"
+          class="anon-banner-dismiss"
           :aria-label="t('anonymousProgress.dismiss')"
           @click="dismiss"
         >
-           <X class="h-5 w-5" /> </button
-        >
+          <X class="h-5 w-5" />
+        </button>
       </div>
 
     </div>
@@ -98,7 +99,9 @@ function dismiss() {
   dismissed.value = true
   try {
     sessionStorage.setItem(DISMISS_KEY, '1')
-  } catch (_) {}
+  } catch {
+    /* ignore */
+  }
 }
 
 watch(
@@ -106,7 +109,9 @@ watch(
   () => {
     try {
       if (sessionStorage.getItem(DISMISS_KEY)) dismissed.value = true
-    } catch (_) {}
+    } catch {
+      /* ignore */
+    }
   },
   { immediate: true }
 )

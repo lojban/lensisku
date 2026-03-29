@@ -11,6 +11,10 @@ export default {
         /** Primary nav / legacy link blue (navbar-item, NavLink, mobile logout). */
         'nav-link': '#007bff',
       },
+      /** Global UI stack; glossy `.aqua-base` inherits via `@apply font-sans` (see `docs/brandbook.md`). */
+      fontFamily: {
+        sans: ['"Open Sans"', 'system-ui', 'Tahoma', 'sans-serif'],
+      },
     },
   },
   plugins: [
@@ -33,11 +37,10 @@ export default {
         },
         /** Same as `btn-base`: icon + label spacing via `gap-*` on the control, not margin on children. */
         '.aqua-base': {
-          '@apply flex items-center justify-center h-6 select-none whitespace-nowrap text-black select-none text-sm font-medium transition-all px-3 gap-2':
+          '@apply flex items-center justify-center h-6 select-none whitespace-nowrap text-black select-none text-sm font-medium font-sans transition-all px-3 gap-2':
             {},
           textOverflow: 'ellipsis',
           gridRow: '1',
-          fontFamily: '"open sans", system-ui, tahoma',
           borderRadius: '1000px',
           position: 'relative',
           overflow: 'hidden',
@@ -122,11 +125,10 @@ export default {
          * `btn-aqua-white`, not here.
          */
         '.aqua-base-secondary': {
-          '@apply flex items-center justify-center h-6 select-none whitespace-nowrap text-black select-none text-sm font-medium transition-all px-3 gap-2':
+          '@apply flex items-center justify-center h-6 select-none whitespace-nowrap text-black select-none text-sm font-medium font-sans transition-all px-3 gap-2':
             {},
           textOverflow: 'ellipsis',
           gridRow: '1',
-          fontFamily: '"open sans", system-ui, tahoma',
           borderRadius: '1000px',
           position: 'relative',
           overflow: 'hidden',
@@ -207,7 +209,13 @@ export default {
             },
           },
         },
-      });
+      })
+
+      addBase({
+        html: {
+          '@apply font-sans antialiased': {},
+        },
+      })
 
       const toggleOffShadow =
       '0 0.375em 0.5em rgba(0, 0, 0, 0.3),' +
@@ -358,6 +366,22 @@ export default {
         '.toggle-switch-thumb': {
           '@apply pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transition duration-200 ease-in-out will-change-transform': {},
         },
+        /**
+         * Checkbox sibling track (`CommentList` / definition link discussion): put `peer` + `sr-only` on the `<input>`;
+         * this class goes on the following `<div>` (do not add `peer` here).
+         */
+        '.toggle-switch-peer-track': {
+          '@apply relative h-5 w-9 shrink-0 rounded-full bg-gray-200 after:absolute after:left-[2px] after:top-[2px] after:h-4 after:w-4 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[\'\'] peer-focus:outline-none peer-checked:after:translate-x-full peer-checked:after:border-white peer-checked:bg-nav-link':
+            {},
+        },
+        /** Anonymous progress banner: touch-sized auth links (`RouterLink` + `ui-btn--*`). */
+        '.anon-banner-cta': {
+          '@apply min-h-[44px] min-w-[44px] items-center justify-center rounded-md px-3 py-2 text-sm inline-flex': {},
+        },
+        /** Dismiss control (icon-only, 44px min). */
+        '.anon-banner-dismiss': {
+          '@apply icon-btn-ghost flex min-h-[44px] min-w-[44px] items-center justify-center rounded-md p-2.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600': {},
+        },
         /** Fixed strip under app header (`PageBanner`, test-data warnings). */
         '.page-banner-fixed': {
           '@apply fixed left-0 right-0 top-14 z-10 mx-auto border text-center select-none md:top-12': {},
@@ -497,6 +521,28 @@ export default {
         '.assistant-icon-btn-panel': {
           '@apply md:hidden shrink-0 p-2 rounded-lg border border-gray-200 bg-white text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-400/50':
             {},
+        },
+        /** Assistant tool-step: `<details>` blocks (batched semantic search UI). */
+        '.assistant-fold-details': {
+          '@apply rounded border border-gray-200 bg-gray-50/80 px-2 py-1': {},
+        },
+        '.assistant-fold-details-nested': {
+          '@apply rounded border border-gray-100 bg-white px-2 py-1 text-xs': {},
+        },
+        '.assistant-fold-summary': {
+          '@apply cursor-pointer list-none select-none text-xs font-medium text-gray-700 hover:underline [&::-webkit-details-marker]:hidden':
+            {},
+        },
+        '.assistant-fold-summary-row': {
+          '@apply flex cursor-pointer list-none flex-wrap items-baseline gap-x-1 gap-y-0 select-none text-gray-800 hover:underline [&::-webkit-details-marker]:hidden':
+            {},
+        },
+        '.assistant-fold-summary-warning': {
+          '@apply cursor-pointer list-none select-none font-medium text-amber-900 hover:underline [&::-webkit-details-marker]:hidden':
+            {},
+        },
+        '.assistant-fold-details-warning': {
+          '@apply rounded border border-amber-100 bg-amber-50/60 px-2 py-1 text-xs': {},
         },
         /** Message / thread list row (discussions, mail). Pair with `--clickable` when the row navigates on click. */
         '.message-thread-card': {
@@ -1196,17 +1242,25 @@ export default {
           gridTemplateColumns: 'repeat(7, minmax(0, 1fr))',
         },
         '.card-streak-day': {
-          '@apply flex min-w-0 flex-col items-center gap-1 text-center': {},
+          '@apply flex h-[6rem] min-h-0 min-w-0 flex-col items-center justify-center gap-1 overflow-hidden text-center sm:h-[7.25rem]':
+            {},
         },
         '.card-streak-day-label': {
-          '@apply w-full px-0.5 text-xs font-medium leading-tight text-gray-500 break-words sm:text-sm': {},
+          '@apply line-clamp-2 w-full px-0.5 text-xs font-medium leading-tight text-gray-500 break-words sm:text-sm': {},
         },
         '.card-streak-day-points': {
-          '@apply w-full px-0.5 text-xs font-medium leading-tight text-gray-400 break-words sm:text-sm': {},
+          '@apply line-clamp-2 w-full px-0.5 text-xs font-medium leading-tight text-gray-400 break-words sm:text-sm': {},
         },
         '.card-streak-day-count': {
           '@apply flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-medium sm:h-8 sm:w-8 sm:text-sm':
             {},
+        },
+        /** Pulse bars: heights match `.card-streak-day-label` / `.card-streak-day-points` line boxes (no CLS vs loaded streak). */
+        '.card-streak-skeleton-line': {
+          '@apply mx-auto h-[0.9375rem] w-full max-w-[3.5rem] shrink-0 rounded bg-gray-100 sm:h-[1.09375rem]': {},
+        },
+        '.card-streak-skeleton-line--points': {
+          '@apply max-w-[2.25rem]': {},
         },
         '.card-nav-buttons': {
           '@apply flex flex-nowrap items-center justify-center gap-0 rounded-xl overflow-hidden border border-gray-200 bg-gray-50/50':

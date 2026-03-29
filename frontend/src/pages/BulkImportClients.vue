@@ -78,32 +78,28 @@
             <div v-else>
 
               <ul class="space-y-2">
-
                 <li
                   v-for="def in expandedClients[client.client_id].definitions"
                   :key="def.id"
-                  class="text-sm border-b pb-1"
+                  class="border-b pb-1 text-sm"
                 >
-                   <span class="italic mr-2">{{ def.langrealname }}</span
-                  > <span class="font-medium">{{ def.valsiword }}</span
-                  >: {{ truncateDefinition(def.definition) }} <!-- Add link to full definition page if needed -->
-                  <!-- <router-link :to="{ name: 'valsi-detail', params: { id: def.valsi_id } }" class="text-blue-500 hover:underline ml-2">View</router-link> -->
-
+                  <span class="mr-2 italic">{{ def.langrealname }}</span>
+                  <span class="font-medium">{{ def.valsiword }}</span>: {{ truncateDefinition(def.definition) }}
                 </li>
-
               </ul>
-               <button
+              <Button
                 v-if="expandedClients[client.client_id]?.hasMore"
-                @click="loadMoreDefinitions(client.client_id)"
+                variant="insert"
+                class="mt-3 text-sm"
                 :disabled="expandedClients[client.client_id]?.loadingMore"
-                class="mt-3 px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50 text-sm"
+                @click="loadMoreDefinitions(client.client_id)"
               >
-                 {{
+                {{
                   expandedClients[client.client_id]?.loadingMore
                     ? t('bulkImportClients.loadingMore')
                     : t('bulkImportClients.loadMore')
-                }} </button
-              >
+                }}
+              </Button>
               <div
                 v-if="expandedClients[client.client_id]?.loadMoreError"
                 class="mt-2 bg-red-100 border border-red-400 text-red-700 px-3 py-2 rounded text-sm"
@@ -131,6 +127,8 @@
 <script setup lang="ts">
 import { ref, onMounted, reactive } from 'vue'
 import { useI18n } from 'vue-i18n'
+
+import { Button } from '@packages/ui'
 import { useSeoHead } from '@/composables/useSeoHead'
 import { getBulkImportClients, getBulkImportClientDefinitions } from '@/api'
 

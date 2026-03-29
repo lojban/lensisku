@@ -120,22 +120,19 @@
           >
         </div>
 
-        <div class="flex items-center space-x-3">
-           <label class="inline-flex items-center cursor-pointer group"
-            > <input
+        <div class="flex items-center gap-3">
+          <label class="group inline-flex cursor-pointer items-center gap-2">
+            <input
               type="checkbox"
-              class="sr-only peer"
+              class="peer sr-only"
               :checked="flatStyle"
               @change="toggleFlatStyle"
             />
-            <div
-              class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600 relative"
-            ></div>
-             <span class="ml-2 text-sm text-gray-600 group-hover:text-gray-900 transition-colors">{{
+            <div class="toggle-switch-peer-track" role="presentation" />
+            <span class="text-sm text-gray-600 transition-colors group-hover:text-gray-900">{{
               t('commentList.threaded')
-            }}</span
-            > </label
-          > <button
+            }}</span>
+          </label> <button
             v-if="auth.state.isLoggedIn"
             type="button"
             class="inline-flex items-center gap-2 ui-btn--neutral"

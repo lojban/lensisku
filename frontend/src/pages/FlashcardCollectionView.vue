@@ -732,7 +732,7 @@ const getProgressWidth = (progress) => {
 
 const getStatusTextClass = (status) => {
   const classes = {
-    new: 'text-blue-600',
+    new: 'text-nav-link',
     learning: 'text-yellow-600',
     review: 'text-green-600',
     graduated: 'text-purple-600',
@@ -742,7 +742,7 @@ const getStatusTextClass = (status) => {
 
 const getProgressBarClass = (status) => {
   const classes = {
-    new: 'bg-blue-500',
+    new: 'bg-nav-link',
     learning: 'bg-yellow-500',
     review: 'bg-green-500',
     graduated: 'bg-purple-500',

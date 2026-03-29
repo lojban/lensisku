@@ -1,59 +1,46 @@
 <template>
-   <!-- Streak Stats (card-base per brandbook). Min-height reserves space so skeleton and content have equal bounding rect (no CLS). -->
+  <!-- Streak stats: `.card-streak-day` uses fixed height in tailwind (skeleton + loaded share layout; card min-h matches). -->
 
-  <div
-    v-if="auth.state.isLoggedIn"
-    class="card-base card-compact card-streak mb-4 min-h-[8.75rem] p-4 sm:min-h-[9.5rem] sm:p-5"
-  >
-     <template v-if="!isLoadingStreak && streakData"
-      >
+  <div v-if="auth.state.isLoggedIn"
+    class="card-base card-compact card-streak mb-4 min-h-[11rem] p-4 sm:min-h-[13rem] sm:p-5">
+    <template v-if="!isLoadingStreak && streakData">
       <div class="card-streak-header">
 
         <h3 class="card-streak-title">
-           {{ t('collectionList.studyStreak') }}
+          {{ t('collectionList.studyStreak') }}
         </h3>
 
         <div class="card-streak-meta">
-           {{ t('collectionList.currentStreak') }}: <span class="font-semibold text-gray-700">{{
-            t('collectionList.days', {
+          <span class="font-semibold text-gray-700">{{
+            t('collectionList.currentStreakWithDays', {
               count: streakData.current_streak,
             })
-          }}</span
-          >
+          }}</span>
         </div>
 
       </div>
 
       <div class="card-streak-week-grid">
 
-        <div
-          v-for="day in streakData.daily_progress.slice(0, 7).reverse()"
-          :key="day.date"
-          class="card-streak-day"
-        >
+        <div v-for="day in streakData.daily_progress.slice(0, 7).reverse()" :key="day.date" class="card-streak-day">
 
           <div class="card-streak-day-label">
-             {{ streakWeekdayShort(day.date) }}
+            {{ streakWeekdayShort(day.date) }}
           </div>
 
-          <div
-            class="card-streak-day-count"
-            :class="
-              day.reviews_count > 0 ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-400'
-            "
-          >
-             {{ day.reviews_count }}
+          <div class="card-streak-day-count" :class="day.reviews_count > 0 ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-400'
+            ">
+            {{ day.reviews_count }}
           </div>
 
           <div class="card-streak-day-points">
-             {{ t('collectionList.points', { count: day.points }) }}
+            {{ t('collectionList.points', { count: day.points }) }}
           </div>
 
         </div>
 
       </div>
-       </template
-    > <!-- Skeleton: same structure and sizes as real content to avoid CLS (equal bounding rect) -->
+    </template> <!-- Skeleton: same structure and sizes as real content to avoid CLS (equal bounding rect) -->
 
     <div v-else class="streak-skeleton animate-pulse" aria-hidden="true">
 
@@ -65,9 +52,9 @@
       <div class="card-streak-week-grid">
 
         <div v-for="i in 7" :key="i" class="card-streak-day">
-          <div class="h-8 w-full max-w-[3.5rem] rounded bg-gray-100 sm:h-9" />
+          <div class="card-streak-skeleton-line" />
           <div class="card-streak-day-count bg-gray-100" />
-          <div class="h-4 w-full max-w-[2.25rem] rounded bg-gray-100" />
+          <div class="card-streak-skeleton-line card-streak-skeleton-line--points" />
         </div>
 
       </div>
@@ -75,11 +62,11 @@
     </div>
 
   </div>
-   <!-- Header -->
+  <!-- Header -->
   <div class="flex flex-row flex-wrap justify-between items-center gap-2 mb-4">
 
     <h2 class="text-xl sm:text-2xl font-bold text-gray-800">
-       {{
+      {{
         viewMode !== 'my'
           ? t('collectionList.publicCollections')
           : t('collectionList.myCollections')
@@ -87,170 +74,104 @@
     </h2>
 
     <div class="flex flex-row justify-end flex-grow gap-2">
-       <input
-        ref="importFileInput"
-        type="file"
-        accept=".json"
-        class="hidden"
-        @change="handleImportFile"
-      />
+      <input ref="importFileInput" type="file" accept=".json" class="hidden" @change="handleImportFile" />
       <div v-if="auth.state.isLoggedIn" class="flex flex-row gap-2 items-center">
-         <!-- When in 'my' mode: show an IconButton to switch back to public view --> <IconButton
-          v-if="viewMode === 'my'"
-          :label="t('collectionList.publicCollectionsLabel')"
-          button-classes="ui-btn--neutral"
-          @click="setViewMode('public')"
-          > <template #icon> <ArrowBigRight class="h-4 w-4" /> </template> </IconButton
-        > <Dropdown :trigger-label="t('collectionList.addActions')"
-          > <button
-            type="button"
+        <!-- When in 'my' mode: show an IconButton to switch back to public view -->
+        <IconButton v-if="viewMode === 'my'" :label="t('collectionList.publicCollectionsLabel')"
+          button-classes="ui-btn--neutral" @click="setViewMode('public')"> <template #icon>
+            <ArrowBigRight class="h-4 w-4" />
+          </template> </IconButton>
+        <Dropdown :trigger-label="t('collectionList.addActions')"> <button type="button"
             class="w-full px-4 py-2 text-left text-sm text-orange-600 hover:bg-orange-50 flex items-center gap-2"
-            @click="setViewMode('my')"
-          >
-             <BookOpen class="h-4 w-4 shrink-0" /> {{ t('collectionList.myCollectionsLabel') }} </button
-          > <button
-            type="button"
+            @click="setViewMode('my')">
+            <BookOpen class="h-4 w-4 shrink-0" /> {{ t('collectionList.myCollectionsLabel') }}
+          </button> <button type="button"
             class="w-full px-4 py-2 text-left text-sm text-cyan-600 hover:bg-cyan-50 flex items-center gap-2"
-            :disabled="isImporting"
-            @click="triggerImport"
-          >
-             <Import class="h-4 w-4 shrink-0" /> {{ t('collectionList.importCollection') }} </button
-          > <button
-            type="button"
+            :disabled="isImporting" @click="triggerImport">
+            <Import class="h-4 w-4 shrink-0" /> {{ t('collectionList.importCollection') }}
+          </button> <button type="button"
             class="w-full px-4 py-2 text-left text-sm text-emerald-600 hover:bg-emerald-50 flex items-center gap-2"
-            @click="showCreateModal = true"
-          >
-             <CirclePlus class="h-4 w-4 shrink-0" /> {{ t('collectionList.createCollection') }} </button
-          > </Dropdown
-        >
+            @click="showCreateModal = true">
+            <CirclePlus class="h-4 w-4 shrink-0" /> {{ t('collectionList.createCollection') }}
+          </button> </Dropdown>
       </div>
 
     </div>
 
   </div>
-   <!-- Sort & filter controls (card-base, input-field, checkbox-toggle per brandbook). overflow-visible so sort glow/drop-shadow is not clipped by card-base overflow-hidden. -->
+  <!-- Sort & filter controls (card-base, input-field, checkbox-toggle per brandbook). overflow-visible so sort glow/drop-shadow is not clipped by card-base overflow-hidden. -->
   <div class="card-base card-compact mb-4 p-4 sm:p-5 flex flex-col gap-4 overflow-visible">
 
     <div class="flex flex-row flex-wrap items-center gap-3">
-       <input
-        v-model="searchQuery"
-        type="text"
-        class="input-field flex-1 min-w-0 max-w-md"
-        :placeholder="t('collectionList.searchPlaceholder')"
-      /> <label
-        class="inline-flex items-center gap-2 text-sm font-medium text-gray-700 select-none cursor-pointer"
-        > <input v-model="hasFlashcardsOnly" type="checkbox" class="checkbox-toggle" /> <span>{{
-          t('collectionList.onlyWithFlashcards')
-        }}</span
-        > </label
-      >
+      <input v-model="searchQuery" type="text" class="input-field flex-1 min-w-0 max-w-md"
+        :placeholder="t('collectionList.searchPlaceholder')" /> <label
+        class="inline-flex items-center gap-2 text-sm font-medium text-gray-700 select-none cursor-pointer"> <input
+          v-model="hasFlashcardsOnly" type="checkbox" class="checkbox-toggle" /> <span>{{
+            t('collectionList.onlyWithFlashcards')
+          }}</span> </label>
     </div>
 
     <div class="flex flex-row items-center gap-2 sm:block">
-       <span id="collection-list-sort-legend" class="sr-only">{{ t('sort.sortByLabel') }}</span>
+      <span id="collection-list-sort-legend" class="sr-only">{{ t('sort.sortByLabel') }}</span>
 
-      <div
-        class="btn-group-forced flex flex-nowrap justify-center min-w-0 overflow-visible py-2"
-        role="group"
-        aria-labelledby="collection-list-sort-legend"
-        aria-describedby="collection-list-sort-current"
-      >
-         <button
-          v-for="opt in sortOptions"
-          :key="opt.value"
-          type="button"
+      <div class="btn-group-forced flex flex-nowrap justify-center min-w-0 overflow-visible py-2" role="group"
+        aria-labelledby="collection-list-sort-legend" aria-describedby="collection-list-sort-current">
+        <button v-for="opt in sortOptions" :key="opt.value" type="button"
           class="ui-btn--group-item relative flex h-6 shrink-0 items-center justify-center gap-1.5 px-2 sm:px-4 !cursor-pointer"
           :class="[
-            sortBy === opt.value ? opt.aquaClass : 'ui-btn--neutral',
-          ]"
-          :title="opt.label"
-          :aria-label="opt.label"
-          :aria-pressed="sortBy === opt.value"
-          @click="sortBy = opt.value"
-        >
-           <component
-            :is="opt.icon"
-            class="h-4 w-4 shrink-0 transition-[opacity,filter] duration-200"
-            :class="
-              sortBy === opt.value
-                ? 'opacity-100 drop-shadow-[0_0_1px_rgba(30,64,175,0.9)]'
-                : 'opacity-55'
-            "
-            aria-hidden="true"
-          /> <span class="hidden sm:inline">{{ opt.label }}</span> </button
-        >
+            sortBy === opt.value ? opt.aquaClass : 'ui-btn--empty',
+          ]" :title="opt.label" :aria-label="opt.label" :aria-pressed="sortBy === opt.value"
+          @click="sortBy = opt.value">
+          <component :is="opt.icon" class="h-4 w-4 shrink-0 transition-[opacity,filter] duration-200" :class="sortBy === opt.value
+              ? 'opacity-100 drop-shadow-[0_0_1px_rgba(30,64,175,0.9)]'
+              : 'opacity-55'
+            " aria-hidden="true" /><span class="hidden sm:inline">{{ opt.label }}</span>
+        </button>
       </div>
-       <span
-        id="collection-list-sort-current"
-        class="min-w-0 shrink-0 text-sm font-semibold text-blue-900 sm:hidden"
-        aria-live="polite"
-        >{{ selectedSortLabel }}</span
-      >
+      <span id="collection-list-sort-current" class="min-w-0 shrink-0 text-sm font-semibold text-blue-900 sm:hidden"
+        aria-live="polite">{{ selectedSortLabel }}</span>
     </div>
 
   </div>
-   <!-- Loading State -->
+  <!-- Loading State -->
   <LoadingSpinner v-if="isLoading" />
-   <!-- Collections Card Grid -->
+  <!-- Collections Card Grid -->
   <div v-else class="collections-section">
 
     <p class="text-slate-600 text-sm mb-6 max-w-2xl">
-       <template v-if="auth.state.isLoggedIn">{{
+      <template v-if="auth.state.isLoggedIn">{{
         t('collectionList.collectionDescription')
-      }}</template
-      > <i18n-t v-else keypath="collectionList.collectionDescriptionLoggedOut" tag="span"
-        > <RouterLink to="/login" class="text-blue-600 hover:text-blue-800 underline font-medium">{{
+        }}</template> <i18n-t v-else keypath="collectionList.collectionDescriptionLoggedOut" tag="span">
+        <RouterLink to="/login" class="text-blue-600 hover:text-blue-800 underline font-medium">{{
           t('collectionList.loginTo')
-        }}</RouterLink
-        > </i18n-t
-      >
+          }}</RouterLink>
+      </i18n-t>
     </p>
 
     <div class="collections-grid">
-       <CollectionCard
-        v-for="collection in collections"
-        :key="collection.collection_id"
-        :collection="collection"
-        :study-loading="studyLoadingId === collection.collection_id"
-        :format-date="formatDate"
+      <CollectionCard v-for="collection in collections" :key="collection.collection_id" :collection="collection"
+        :study-loading="studyLoadingId === collection.collection_id" :format-date="formatDate"
         :study-button-label="t('collectionList.studyButton')"
         :collection-button-label="t('collectionList.collectionButton')"
         :flashcards-button-label="t('collectionList.flashcardsButton')"
-        :created-by-label="t('collectionList.createdBy')"
-        :updated-label="t('collectionList.updatedAt')"
-        :public-label="t('collectionList.publicStatus')"
-        :private-label="t('collectionList.privateStatus')"
+        :created-by-label="t('collectionList.createdBy')" :updated-label="t('collectionList.updatedAt')"
+        :public-label="t('collectionList.publicStatus')" :private-label="t('collectionList.privateStatus')"
         :items-count-label="t('collectionList.itemsCount', { count: collection.item_count })"
-        @study="startStudy(collection)"
-      />
+        @study="startStudy(collection)" />
     </div>
-     <PaginationComponent
-      v-if="totalPages > 1"
-      :current-page="currentPage"
-      :total-pages="totalPages"
-      :total="totalCollections"
-      :per-page="perPage"
-      class="w-full"
-      @prev="prevPage"
-      @next="nextPage"
-    />
+    <PaginationComponent v-if="totalPages > 1" :current-page="currentPage" :total-pages="totalPages"
+      :total="totalCollections" :per-page="perPage" class="w-full" @prev="prevPage" @next="nextPage" />
   </div>
-   <!-- Empty State -->
+  <!-- Empty State -->
   <EmptyStatePanel v-if="!isLoading && collections.length === 0">
-     <button
-      v-if="viewMode === 'my' && auth.state.isLoggedIn"
-      class="mt-4 ui-btn--create"
-      @click="showCreateModal = true"
-    >
-       <CirclePlus class="h-4 w-4" /> <span>{{ t('collectionList.createFirstCollection') }}</span
-      > </button
-    >
+    <button v-if="viewMode === 'my' && auth.state.isLoggedIn" class="mt-4 ui-btn--create"
+      @click="showCreateModal = true">
+      <CirclePlus class="h-4 w-4" /> <span>{{ t('collectionList.createFirstCollection') }}</span>
+    </button>
   </EmptyStatePanel>
-   <!-- Create Collection ModalComponent -->
-  <div
-    v-if="showCreateModal"
-    class="z-[1000] fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4"
-  >
+  <!-- Create Collection ModalComponent -->
+  <div v-if="showCreateModal"
+    class="z-[1000] fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
 
     <div class="bg-white rounded-lg max-w-md w-full p-6">
 
@@ -261,41 +182,32 @@
         <div class="space-y-4">
 
           <div>
-             <label class="block text-sm font-medium text-gray-700 mb-1">{{
+            <label class="block text-sm font-medium text-gray-700 mb-1">{{
               t('collectionList.nameLabel')
-            }}</label
-            > <input v-model="newCollection.name" type="text" required class="w-full input-field" />
+              }}</label> <input v-model="newCollection.name" type="text" required class="w-full input-field" />
 
           </div>
 
           <div>
-             <label class="block text-sm font-medium text-gray-700 mb-1">{{
+            <label class="block text-sm font-medium text-gray-700 mb-1">{{
               t('collectionList.descriptionLabel')
-            }}</label
-            > <textarea v-model="newCollection.description" rows="3" class="textarea-field" />
+              }}</label> <textarea v-model="newCollection.description" rows="3" class="textarea-field" />
           </div>
 
           <div class="flex items-center gap-2">
-             <input
-              id="is_public"
-              v-model="newCollection.is_public"
-              type="checkbox"
-              class="checkbox-toggle"
-            /> <label for="is_public" class="text-sm text-gray-700"
-              > {{ t('collectionList.makePublicLabel') }} </label
-            >
+            <input id="is_public" v-model="newCollection.is_public" type="checkbox" class="checkbox-toggle" /> <label
+              for="is_public" class="text-sm text-gray-700"> {{ t('collectionList.makePublicLabel') }} </label>
           </div>
 
         </div>
 
         <div class="mt-6 flex justify-end gap-3">
-           <button type="button" class="ui-btn--cancel" @click="showCreateModal = false">
-             {{ t('collectionList.cancelButton') }} </button
-          > <button type="submit" :disabled="isSubmitting" class="ui-btn--create">
-             {{
+          <button type="button" class="ui-btn--cancel" @click="showCreateModal = false">
+            {{ t('collectionList.cancelButton') }} </button> <button type="submit" :disabled="isSubmitting"
+            class="ui-btn--create">
+            {{
               isSubmitting ? t('collectionList.creatingButton') : t('collectionList.createButton')
-            }} </button
-          >
+            }} </button>
         </div>
 
       </form>
@@ -673,6 +585,7 @@ onBeforeUnmount(() => {
 .collections-section {
   @apply w-full;
 }
+
 .collections-grid {
   @apply grid gap-4 sm:gap-5 items-stretch grid-cols-1 sm:grid-cols-2 lg:grid-cols-3;
 }
@@ -693,4 +606,3 @@ onBeforeUnmount(() => {
   }
 }
 </style>
-

@@ -24,15 +24,9 @@
     > <!-- Batched semantic search: one block per query string -->
     <div v-if="batchSearches.length" class="mt-1.5 not-italic space-y-2">
 
-      <details
-        v-for="(block, bi) in batchSearches"
-        :key="bi"
-        class="rounded border border-gray-200 bg-gray-50/80 px-2 py-1"
-      >
+      <details v-for="(block, bi) in batchSearches" :key="bi" class="assistant-fold-details">
 
-        <summary
-          class="cursor-pointer text-gray-700 text-xs font-medium hover:underline select-none list-none [&::-webkit-details-marker]:hidden"
-        >
+        <summary class="assistant-fold-summary">
            <span class="font-mono text-[11px]">{{ block.query }}</span>
           —
           <template v-if="block.error">{{ $t('assistantChat.toolErrorSummary') }}</template>
@@ -45,11 +39,9 @@
 
           <li v-for="(row, i) in block.results" :key="i">
 
-            <details class="rounded border border-gray-100 bg-white px-2 py-1 text-xs">
+            <details class="assistant-fold-details-nested">
 
-              <summary
-                class="cursor-pointer text-gray-800 hover:underline select-none list-none flex flex-wrap items-baseline gap-x-1 gap-y-0 [&::-webkit-details-marker]:hidden"
-              >
+              <summary class="assistant-fold-summary-row">
                  <span class="font-mono font-semibold">{{ row.valsi }}</span
                 > <span v-if="row.lang" class="text-gray-500 font-normal">· {{ row.lang }}</span
                 > <span v-if="row.similarity != null" class="text-gray-400 font-normal text-[10px]"
@@ -93,11 +85,9 @@
      <!-- Structured semantic search results (legacy single-query JSON): nested foldables -->
     <div v-else-if="semanticPayload?.results?.length" class="mt-1.5 not-italic space-y-1">
 
-      <details class="rounded border border-gray-200 bg-gray-50/80 px-2 py-1">
+      <details class="assistant-fold-details">
 
-        <summary
-          class="cursor-pointer text-gray-700 text-xs font-medium hover:underline select-none list-none [&::-webkit-details-marker]:hidden"
-        >
+        <summary class="assistant-fold-summary">
            {{ $t('assistantChat.returnedDefinitions', { n: semanticPayload.results.length }) }}
         </summary>
 
@@ -105,11 +95,9 @@
 
           <li v-for="(row, i) in semanticPayload.results" :key="i">
 
-            <details class="rounded border border-gray-100 bg-white px-2 py-1 text-xs">
+            <details class="assistant-fold-details-nested">
 
-              <summary
-                class="cursor-pointer text-gray-800 hover:underline select-none list-none flex flex-wrap items-baseline gap-x-1 gap-y-0 [&::-webkit-details-marker]:hidden"
-              >
+              <summary class="assistant-fold-summary-row">
                  <span class="font-mono font-semibold">{{ row.valsi }}</span
                 > <span v-if="row.lang" class="text-gray-500 font-normal">· {{ row.lang }}</span
                 > <span v-if="row.similarity != null" class="text-gray-400 font-normal text-[10px]"
@@ -158,11 +146,9 @@
      <!-- Tool returned an error object -->
     <div v-else-if="semanticPayload?.error" class="mt-1.5 not-italic">
 
-      <details class="rounded border border-amber-100 bg-amber-50/60 px-2 py-1 text-xs">
+      <details class="assistant-fold-details-warning">
 
-        <summary
-          class="cursor-pointer text-amber-900 font-medium hover:underline select-none list-none [&::-webkit-details-marker]:hidden"
-        >
+        <summary class="assistant-fold-summary-warning">
            {{ $t('assistantChat.toolErrorSummary') }}
         </summary>
 
