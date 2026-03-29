@@ -4,9 +4,7 @@
 
     <div class="flex flex-row gap-0 items-stretch">
 
-      <div
-        class="relative z-10 w-16 shrink-0 sm:w-56 [&>div]:block [&>div]:w-full"
-      >
+      <div class="relative z-10 w-auto shrink-0">
          <Dropdown
           > <template #trigger
             > <button
