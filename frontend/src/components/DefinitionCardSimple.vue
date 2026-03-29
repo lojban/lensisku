@@ -6,7 +6,7 @@
       <!-- Word and Type Info -->
       <div class="flex-1 w-full min-w-0 space-y-3">
 
-        <div class="w-full">
+        <div class="w-full flex flex-col gap-2">
 
           <div class="flex flex-wrap items-center justify-between gap-2">
 
@@ -21,21 +21,25 @@
                 </RouterLink>
               </h2>
 
-              <span v-if="definition.type_name && showWordType" class="px-2 py-1 text-xs font-medium rounded-full"
-                :class="getTypeClass(definition.type_name)">
-                {{ t(`wordTypes.${definition.type_name.replace(/'/g,
-                  'h').replace(/ /g, '-')}`) }}
-              </span>
-              <RouterLink v-if="definition.selmaho" :to="{ path: '/', query: selmahoLinkQuery }"
-                class="px-2 py-1 text-xs font-medium rounded-full bg-purple-100 text-purple-700 hover:bg-purple-200 min-w-0 max-w-full truncate inline-block"
-                :title="definition.selmaho.length > MAX_VALSI_DISPLAY_LENGTH
-                  ? definition.selmaho
-                  : undefined
-                  ">
-                {{ displayedSelmaho }}
-              </RouterLink>
             </div>
 
+          </div>
+          <div
+            v-if="definition.definitionid && ((definition.type_name && showWordType) || definition.selmaho)"
+            class="flex flex-wrap items-center gap-2">
+            <span v-if="definition.type_name && showWordType" class="px-2 py-1 text-xs font-medium rounded-full"
+              :class="getTypeClass(definition.type_name)">
+              {{ t(`wordTypes.${definition.type_name.replace(/'/g,
+                'h').replace(/ /g, '-')}`) }}
+            </span>
+            <RouterLink v-if="definition.selmaho" :to="{ path: '/', query: selmahoLinkQuery }"
+              class="px-2 py-1 text-xs font-medium rounded-full bg-purple-100 text-purple-700 hover:bg-purple-200 min-w-0 max-w-full truncate inline-block"
+              :title="definition.selmaho.length > MAX_VALSI_DISPLAY_LENGTH
+                ? definition.selmaho
+                : undefined
+                ">
+              {{ displayedSelmaho }}
+            </RouterLink>
           </div>
           <!-- Definition Content -->
           <div v-if="showExpandedFrontContent"

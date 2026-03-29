@@ -13,8 +13,8 @@
         <!-- Word and Type Info -->
         <div class="flex-1 w-full min-w-0 space-y-3">
           <!-- Compact Header Layout -->
-          <div class="w-full">
-            <!-- Main Content -->
+          <div class="w-full flex flex-col gap-2">
+            <!-- Main Content: title + primary actions -->
             <div class="flex flex-wrap items-center justify-between gap-2">
 
               <div v-if="definition.definitionid"
@@ -36,18 +36,6 @@
                   </template>
                 </h2>
               </div>
-              <span v-if="definition.type_name && props.showWordType" class="px-2 py-1 text-xs font-medium rounded-full"
-                :class="getTypeClass(definition.type_name)"> {{
-                  t(`wordTypes.${definition.type_name.replace(/'/g, 'h').replace(/ /g, '-')}`)
-                }}
-              </span>
-              <RouterLink v-if="definition.selmaho" :to="{ path: '/', query: selmahoLinkQuery }"
-                class="inline-flex items-center px-2 py-1 text-xs font-medium bg-purple-100 text-purple-700 rounded-md justify-center sm:justify-start hover:bg-purple-200 hover:text-purple-800 transition-colors min-w-0 max-w-full truncate"
-                :title="definition.selmaho.length > MAX_VALSI_DISPLAY_LENGTH
-                  ? definition.selmaho
-                  : undefined
-                  " @click.stop> {{ t('components.definitionCard.selmaoLabel') }} {{ displayedSelmaho }}
-              </RouterLink>
               <span v-if="definition.rafsi"
                 class="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-700 rounded-full"> {{
                   definition.rafsi }}
@@ -64,10 +52,6 @@
                 class="cursor-pointer" @click.stop="$emit('edit-item')">
                 <GalleryHorizontalIcon class="h-4 w-4 text-purple-600 hover:text-purple-800" />
               </span>
-              <AudioPlayer v-if="(definition.sound_url || itemSoundUrl) && props.showAudio"
-                :url="String(definition.sound_url || itemSoundUrl || '')"
-                :collection-id="useApiForSound ? (props.collectionId ?? undefined) : undefined"
-                :item-id="useApiForSound ? (props.itemId ?? undefined) : undefined" class="shrink-0" />
 
               <div v-if="(definition.comment_count && definition.comment_count > 0) || (props.showVoteButtons && definition.definitionid)" class="flex items-center gap-2 flex-wrap">
                 <RouterLink
@@ -138,6 +122,27 @@
                 </button>
               </div>
 
+            </div>
+            <!-- Audio, word type, selma'o — second row under title -->
+            <div
+              v-if="(definition.type_name && props.showWordType) || definition.selmaho || ((definition.sound_url || itemSoundUrl) && props.showAudio)"
+              class="flex flex-wrap items-center gap-2">
+              <AudioPlayer v-if="(definition.sound_url || itemSoundUrl) && props.showAudio"
+                :url="String(definition.sound_url || itemSoundUrl || '')"
+                :collection-id="useApiForSound ? (props.collectionId ?? undefined) : undefined"
+                :item-id="useApiForSound ? (props.itemId ?? undefined) : undefined" class="shrink-0" />
+              <span v-if="definition.type_name && props.showWordType" class="px-2 py-1 text-xs font-medium rounded-full"
+                :class="getTypeClass(definition.type_name)"> {{
+                  t(`wordTypes.${definition.type_name.replace(/'/g, 'h').replace(/ /g, '-')}`)
+                }}
+              </span>
+              <RouterLink v-if="definition.selmaho" :to="{ path: '/', query: selmahoLinkQuery }"
+                class="inline-flex items-center px-2 py-1 text-xs font-medium bg-purple-100 text-purple-700 rounded-md justify-center sm:justify-start hover:bg-purple-200 hover:text-purple-800 transition-colors min-w-0 max-w-full truncate"
+                :title="definition.selmaho.length > MAX_VALSI_DISPLAY_LENGTH
+                  ? definition.selmaho
+                  : undefined
+                  " @click.stop> {{ t('components.definitionCard.selmaoLabel') }} {{ displayedSelmaho }}
+              </RouterLink>
             </div>
             <!-- Metadata Row -->
             <div class="flex flex-wrap items-center gap-2 mt-1 text-sm text-gray-500">

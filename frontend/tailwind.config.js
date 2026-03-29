@@ -251,6 +251,37 @@ export default {
             '@apply border-blue-400': {},
           },
         },
+        /** Compact toolbar panel used by list filters and controls. */
+        '.toolbar-panel': {
+          '@apply bg-white border border-gray-200 rounded-xl shadow-sm p-3 sm:p-4': {},
+        },
+        /** Inline labels beside compact toolbar controls. */
+        '.toolbar-control-label': {
+          '@apply text-sm font-medium text-gray-700 whitespace-nowrap': {},
+        },
+        /** Main flex row inside toolbar-panel (search + filters). */
+        '.toolbar-row': {
+          '@apply flex flex-wrap items-center gap-3 sm:gap-4': {},
+        },
+        /** Search column: full width on small screens, bounded width on sm+. */
+        '.toolbar-search-slot': {
+          '@apply w-full sm:w-auto sm:min-w-[220px] sm:max-w-[280px] flex-1 sm:flex-initial': {},
+        },
+        /** Label + control cluster (role filter, sort group). */
+        '.toolbar-field-row': {
+          '@apply flex w-auto max-w-full min-w-0 shrink-0 items-center gap-2': {},
+          '& > .toolbar-control-label': {
+            '@apply w-auto shrink-0': {},
+          },
+        },
+        /** Positioning wrapper for Dropdown root. */
+        '.toolbar-dropdown-anchor': {
+          '@apply relative shrink-0': {},
+        },
+        /** Separate toolbar controls (e.g. sort field + order) with normal spacing between. */
+        '.toolbar-inline-actions': {
+          '@apply flex w-auto max-w-full min-w-0 shrink-0 flex-wrap items-center gap-2': {},
+        },
         /** Leading segment of the home search bar (flush join with the query input). */
         '.dropdown-trigger--search-bar-leading': {
           '@apply rounded-l-full rounded-r-none': {},
@@ -715,9 +746,8 @@ export default {
         '.card-study-area': {
           '@apply flex items-center justify-center min-h-[5.5rem] py-6 sm:py-8 flex-shrink-0': {},
         },
-        /** Next to the main FAB: overrides aqua-base / btn-base compact h-6 + text-sm for touch-friendly targets. */
         '.fab-menu-action': {
-          '@apply !min-h-[2rem] !h-auto !py-2 !px-6 !text-lg !gap-3': {},
+          '@apply !h-auto !py-2 !px-6 !text-lg !gap-3': {},
         },
         /**
          * Page tab row (`TabbedPageHeader` / `NotebookTab`). Aqua: Cheetah GTK notebook strip + tabs;
@@ -821,41 +851,15 @@ export default {
         for (const [theme, primitives] of Object.entries(activeNeutralMap)) {
           rules[selectorFor(theme, 'ui-btn--empty.active')] = { [`@apply ${primitives}`]: {} }
         }
-        /** Outer elevation for FAB + overflow menu (does not replace aqua glossy box-shadow). Add per future [data-button-theme]. */
-        const fabOuterShadowAqua =
-          'drop-shadow(0 14px 32px hsla(215, 42%, 12%, 0.44)) drop-shadow(0 4px 12px hsla(215, 38%, 22%, 0.28))'
-        const fabOuterShadowFlat =
-          'drop-shadow(0 12px 28px rgba(15, 23, 42, 0.22)) drop-shadow(0 4px 14px rgba(15, 23, 42, 0.14))'
-        const fabMenuOuterShadowAqua =
-          'drop-shadow(0 10px 24px hsla(215, 38%, 14%, 0.38)) drop-shadow(0 3px 10px hsla(215, 34%, 20%, 0.24))'
-        const fabMenuOuterShadowFlat =
-          'drop-shadow(0 10px 22px rgba(15, 23, 42, 0.17)) drop-shadow(0 3px 10px rgba(15, 23, 42, 0.11))'
-        const fabShell = {
-          minHeight: '52px',
-          width: '52px',
-          height: '52px',
-          borderRadius: '1000px',
-          flexShrink: '0',
-          boxSizing: 'border-box',
-          padding: '0.5rem',
-        }
+        /** Overflow menu row: outer drop shadow (aqua glossy inner shadow stays on the button primitive). */
         const aquaRules = {}
         const flatRules = {}
+        /** Same rose/market primitives as `ui-btn--market`; larger touch target, pill, bigger type. */
         aquaRules[selectorFor('aqua', 'ui-btn--fab')] = {
-          '@apply btn-aqua-rose': {},
-          ...fabShell,
-          filter: fabOuterShadowAqua,
+          '@apply btn-aqua-rose !h-14 !w-14 rounded-full !text-lg': {},
         }
         flatRules[selectorFor('flat', 'ui-btn--fab')] = {
-          '@apply btn-market': {},
-          ...fabShell,
-          filter: fabOuterShadowFlat,
-        }
-        aquaRules[selectorFor('aqua', 'fab-menu-action')] = {
-          filter: fabMenuOuterShadowAqua,
-        }
-        flatRules[selectorFor('flat', 'fab-menu-action')] = {
-          filter: fabMenuOuterShadowFlat,
+          '@apply btn-market !h-14 !w-14 rounded-full !text-lg': {},
         }
         const toggleOffShadow =
           '0 0.375em 0.5em rgba(0, 0, 0, 0.3),' +
@@ -919,6 +923,7 @@ export default {
           border: '1px solid #07067b',
           borderLeftColor: '#5397e7',
           borderRightColor: '#5397e7',
+          borderTopColor: '#5397e7',
           borderBottom: 'none',
           borderRadius: '6px 6px 0 0',
           boxShadow: 'inset 0 4px 3px -2px #ffffff',
