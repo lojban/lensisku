@@ -3,7 +3,7 @@
   <div class="filters space-y-4">
     <!-- Language Filter Section -->
     <div
-      class="flex flex-col sm:flex-row items-center sm:justify-between gap-4 md:p-4 md:bg-white md:rounded-lg md:shadow-sm">
+      class="filters-bar-row">
       <MultiSelectDropdown
         v-model="selectedLangs"
         :options="languages"
@@ -138,13 +138,14 @@
             class="input-field w-full h-8"
             @input="debouncedFilterChange"
           />
-          <button
+          <IconButtonGhost
             v-if="filters[field]"
-            class="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors duration-200 [&>svg]:hover:text-current"
+            class="absolute right-2 top-1/2 -translate-y-1/2"
+            :aria-label="t('components.combinedFilters.clearFilter')"
             @click="clearFilter(field)"
           >
             <X class="h-5 w-5" />
-          </button>
+          </IconButtonGhost>
         </div>
       </div>
 
@@ -201,7 +202,7 @@
 
 <script setup lang="ts">
 import { ChevronDown, X } from 'lucide-vue-next'
-import { Dropdown, MultiSelectDropdown } from '@packages/ui'
+import { Dropdown, IconButtonGhost, MultiSelectDropdown } from '@packages/ui'
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 
 import { fetchDefinitionsTypes } from '@/api'

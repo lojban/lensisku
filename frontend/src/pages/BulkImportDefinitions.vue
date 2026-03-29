@@ -1,6 +1,6 @@
 <template>
 
-  <h1 class="text-2xl font-bold text-gray-800"> {{ t('bulkImport.title') }} </h1>
+  <h1 class="page-section-title"> {{ t('bulkImport.title') }} </h1>
 
   <div class="flex justify-between my-4">
      <RouterLink to="/bulk-import/clients" class="ui-btn--accent-purple"
@@ -28,7 +28,7 @@
           <div class="flex justify-center text-sm text-gray-600">
              <label
               for="file-upload"
-              class="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500"
+              class="file-input-label"
               > <span>{{ t('bulkImport.uploadFile') }}</span
               > <input
                 id="file-upload"

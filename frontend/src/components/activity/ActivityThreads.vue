@@ -9,7 +9,7 @@
         :key="
           thread.source === 'comment' ? thread.thread_id : 'mail-' + (thread.cleaned_subject || '')
         "
-        class="space-y-2 bg-white p-4 rounded-lg border border-gray-200 hover:border-blue-200 transition-colors cursor-pointer"
+        class="surface-activity-row"
         @click="
           thread.source === 'comment'
             ? router.push(
@@ -74,10 +74,7 @@
               >
             </div>
 
-            <div
-              v-if="thread.simple_content"
-              class="border-l-2 border-gray-300 pl-2 text-gray-500 [&_img]:max-h-48 [&_img]:object-contain"
-            >
+            <div v-if="thread.simple_content" class="activity-quote-snippet">
                <LazyMathJax :content="thread.simple_content" :enable-markdown="true" />
             </div>
 
@@ -113,10 +110,7 @@
             >
           </div>
 
-          <div
-            v-if="thread.content_preview"
-            class="text-sm text-gray-600 border-l-2 border-gray-300 pl-2 text-gray-500 [&_img]:max-h-48 [&_img]:object-contain"
-          >
+          <div v-if="thread.content_preview" class="activity-quote-snippet">
              <LazyMathJax :content="thread.content_preview" :enable-markdown="true" />
           </div>
 

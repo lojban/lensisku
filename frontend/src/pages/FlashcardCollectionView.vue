@@ -249,7 +249,7 @@
       :key="card.flashcard.id"
       :class="{ 'cursor-pointer': isOwner }"
       @click="isOwner && openFlashcard(card)"
-      class="bg-white p-4 rounded-lg border hover:border-blue-300 shadow hover:shadow-none transition-all duration-200 max-w-full overflow-hidden"
+      class="surface-flashcard-summary"
     >
        <!-- Card Content -->
       <div class="flex justify-between items-start gap-4">

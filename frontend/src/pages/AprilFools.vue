@@ -11,7 +11,7 @@
     <div class="w-full bg-gray-800 bg-opacity-80 backdrop-blur-md shadow-2xl md:p-12">
        <button
         @click="toggleAudio"
-        class="z-20 mx-auto mb-8 bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-full flex items-center space-x-2 transform transition-transform hover:scale-110 shadow-lg"
+        class="z-20 mx-auto mb-8 flex items-center gap-2 rounded-full bg-purple-600 px-6 py-3 font-bold text-white shadow-lg transition-[filter,box-shadow] duration-200 hover:bg-purple-700 hover:shadow-xl hover:brightness-110"
       >
          <Pause v-if="isPlaying" class="h-6 w-6" /> <Play v-else class="h-6 w-6" /> <span>{{
           isPlaying ? 'Pause' : 'Play Lojban Demo'

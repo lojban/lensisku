@@ -104,7 +104,7 @@
            <!-- Canonical Comparison Indicator for Fill-in Mode -->
           <div
             v-if="isFillInMode && currentCard.flashcard.use_canonical_comparison"
-            class="flex items-center justify-center gap-2 text-xs text-green-600 bg-green-50 border border-green-200 rounded px-3 py-1.5"
+            class="badge-streak-success"
           >
              <CheckCircle2 class="h-3.5 w-3.5" /> <span>{{
               t('flashcardStudy.canonicalComparisonEnabled')
@@ -195,7 +195,7 @@
                   v-for="opt in quizImageOptions"
                   :key="opt.id"
                   type="button"
-                  class="flex flex-col items-center justify-center p-3 rounded-xl border-2 border-gray-200 bg-white hover:border-blue-400 hover:bg-blue-50/50 transition-colors disabled:opacity-60 disabled:pointer-events-none min-h-[100px]"
+                  class="study-quiz-option-flashcard-image"
                   :disabled="isSubmitting"
                   @click="submitQuizOption(opt.id)"
                 >
@@ -210,7 +210,7 @@
                 v-for="(opt, idx) in currentCard.flashcard.quiz_options"
                 :key="idx"
                 type="button"
-                class="p-4 rounded-xl border-2 border-gray-200 bg-white hover:border-blue-400 hover:bg-blue-50/50 transition-colors text-left text-base font-medium text-gray-800 disabled:opacity-60 disabled:pointer-events-none"
+                class="study-quiz-option-flashcard-text"
                 :disabled="isSubmitting"
                 @click="submitQuizOption(opt)"
               >
@@ -319,7 +319,7 @@
                   </div>
 
                   <div
-                    class="text-sm text-gray-700 font-mono bg-blue-50/30 p-2 rounded border border-blue-100/30 inline-block mx-auto"
+                    class="code-snippet-surface inline-block mx-auto"
                   >
                      {{ currentCard.flashcard.canonical_form }}
                   </div>

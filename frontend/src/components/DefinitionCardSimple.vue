@@ -1,6 +1,6 @@
 <template>
 
-  <div class="w-full bg-white border rounded-lg hover:border-blue-300 transition-colors shadow hover:shadow-none p-4">
+  <div class="surface-definition-compact">
     <!-- Header Section -->
     <div class="flex flex-col sm:flex-row justify-between items-start gap-4">
       <!-- Word and Type Info -->
@@ -12,8 +12,7 @@
 
             <div v-if="definition.definitionid" class="w-auto min-w-0 max-w-[14rem] sm:max-w-[18rem] md:max-w-[22rem]">
 
-              <h2 v-if="(definition.valsiword ?? definition.word)"
-                class="text-base font-semibold truncate flex-shrink-0 min-w-0 max-w-full text-blue-700 hover:text-blue-800 hover:underline">
+              <h2 v-if="(definition.valsiword ?? definition.word)" class="link-heading-primary">
                 <span v-if="isValsiTruncated" class="cursor-pointer"
                   :title="t('components.definitionCard.clickToSeeFullWord')" @click="showValsiModal = true"> {{
                     displayedValsi }} </span>
@@ -33,7 +32,7 @@
                 'h').replace(/ /g, '-')}`) }}
             </span>
             <RouterLink v-if="definition.selmaho" :to="{ path: '/', query: selmahoLinkQuery }"
-              class="px-2 py-1 text-xs font-medium rounded-full bg-purple-100 text-purple-700 hover:bg-purple-200 min-w-0 max-w-full truncate inline-block"
+              class="badge-definition-tag badge-definition-tag--pill inline-block"
               :title="definition.selmaho.length > MAX_VALSI_DISPLAY_LENGTH
                 ? definition.selmaho
                 : undefined

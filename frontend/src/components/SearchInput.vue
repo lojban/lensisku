@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Loader2, Search, X } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
+import { IconButtonGhost } from '@packages/ui'
 import { normalizeSearchQuery } from '@/utils/searchQueryUtils'
 
 const { t } = useI18n()
@@ -55,15 +56,14 @@ function onInput(e: Event) {
         v-if="isLoading"
         class="h-4 w-4 text-blue-500 animate-spin shrink-0"
         aria-hidden="true"
-      /> <button
+      /> <IconButtonGhost
         v-else-if="modelValue"
-        type="button"
-        class="p-0.5 rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1"
+        compact
         :aria-label="t('components.searchInput.clearAria')"
         @click="$emit('clear')"
       >
-         <X class="h-4 w-4" /> </button
-      >
+        <X class="h-4 w-4" />
+      </IconButtonGhost>
     </div>
 
   </div>

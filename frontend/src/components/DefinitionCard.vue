@@ -19,8 +19,7 @@
 
               <div v-if="definition.definitionid"
                 class="w-auto min-w-0 max-w-[14rem] sm:max-w-[18rem] md:max-w-[22rem]">
-                <h2
-                  class="text-base font-semibold flex-shrink-0 min-w-0 max-w-full truncate text-blue-700 hover:text-blue-800 hover:underline">
+                <h2 class="link-heading-primary">
                   <template v-if="definition.definitionid">
                     <template v-if="isValsiTruncated">
                       <span class="cursor-pointer" :title="t('components.definitionCard.clickToSeeFullWord')"
@@ -137,7 +136,7 @@
                 }}
               </span>
               <RouterLink v-if="definition.selmaho" :to="{ path: '/', query: selmahoLinkQuery }"
-                class="inline-flex items-center px-2 py-1 text-xs font-medium bg-purple-100 text-purple-700 rounded-md justify-center sm:justify-start hover:bg-purple-200 hover:text-purple-800 transition-colors min-w-0 max-w-full truncate"
+                class="badge-definition-tag"
                 :title="definition.selmaho.length > MAX_VALSI_DISPLAY_LENGTH
                   ? definition.selmaho
                   : undefined
@@ -345,8 +344,7 @@
           }}</span>
         </div>
 
-        <div
-          class="text-sm text-gray-700 font-mono bg-blue-50/30 p-2 rounded border border-blue-100/30 whitespace-pre-wrap leading-relaxed overflow-x-auto">
+        <div class="code-snippet-surface">
           {{ flashcard?.canonical_form ?? definition.canonical_form }}
         </div>
 

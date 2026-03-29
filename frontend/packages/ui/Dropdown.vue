@@ -6,7 +6,7 @@
        <slot name="trigger" :open="open"
         > <button
           type="button"
-          class="w-full sm:w-auto h-9 px-3 hover:bg-gray-100 rounded-full inline-flex items-center justify-between sm:justify-center gap-2 shrink-0"
+          class="dropdown-ellipsis-trigger"
         >
            <span v-if="triggerLabel" class="text-sm text-gray-600">{{ triggerLabel }}</span
           > <EllipsisVertical class="w-4 h-4" /> </button
@@ -18,7 +18,7 @@
       <div
         v-if="open"
         ref="panelRef"
-        class="fixed z-50 w-fit min-w-0 max-w-[calc(100vw-1rem)] overflow-y-auto bg-white border rounded-lg shadow-lg py-1"
+        class="dropdown-menu-panel"
         :style="panelStyle"
         @click="open = false"
       >

@@ -1,6 +1,7 @@
 <template>
    <button
     type="button"
+    class="icon-btn-ui-layout"
     :class="buttonClasses"
     :aria-label="ariaLabelComputed"
     :disabled="disabled"
@@ -32,10 +33,4 @@ defineEmits<{ click: [e: MouseEvent] }>()
 
 const ariaLabelComputed = computed(() => props.ariaLabel || props.label || undefined)
 </script>
-
-<style scoped>
-button {
-  @apply inline-flex items-center gap-2 w-auto md:flex-none;
-}
-</style>
 

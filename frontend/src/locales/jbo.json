@@ -32,7 +32,7 @@
       "sourceLanguage": "krasi bangu"
     },
     "defaultSourceLanguage": "fadni (la .lojban.)",
-    "resetAllFilters": "na julne",
+    "resetAllFilters": "co'u julne",
     "selectWordType": "cuxna lo valsi klesi",
     "expand": "fanmo fa'a lo julne",
     "collapse": "mipri lo julne"
@@ -52,16 +52,16 @@
     "button": "di'a ca'a se jaspu",
     "authenticating": "pu'o ca'a se jaspu",
     "forgotPassword": "xu do tolmo'i lo do japyvla?",
-    "noAccount": "xu do na jasypu'ense?",
+    "noAccount": "xu do na se jaspu",
     "signUpLink": "pu'o pu'i se jaspu"
   },
   "signup": {
-    "title": "co'a se jasypu'ense",
+    "title": "co'a se jaspu",
     "usernameLabel": "pilno cmene",
     "emailLabel": "samymri judri",
     "passwordLabel": "japyvla",
-    "button": "finti lo jasypu'ense",
-    "creating": "ca'o finti lo jasypu'ense...",
+    "button": "gau ko mi se jaspu",
+    "creating": "ca'o gunka fi lo nu do se jaspu",
     "haveAccount": "xu do pu'i se jaspu",
     "logInLink": "di'a ca'a se jaspu"
   },
@@ -87,10 +87,10 @@
     "trendingComments": "casnu karni poi misno",
     "recentChanges": "cnino nu galfi",
     "searchResultsTitle": {
-      "dictionary": "vlaste .e lo sarsku",
-      "semantic": "smuni sisku",
-      "comments": "casnu karni",
-      "messages": "mrilu datni"
+      "dictionary": "pentoi le vlapoi",
+      "semantic": "pentoi lu'e le se smuni",
+      "comments": "pinka",
+      "messages": "se mrilu"
     },
     "searchTitle": "sisku: {query}",
     "defaultTitle": "jicmu",
@@ -212,7 +212,7 @@
   },
   "testDataWarning": "mu'i lo nu cipra po'o .i lo datni cu ru'i vimcu .i ko notci lo nu fliba ne'i",
   "discord": "la .discord.",
-  "unconfirmedWarning": "lo do mrilu judri na ku se birti .i ko tcidu lo do mrilu gi'e cuxna lo birti selyli'e mu'i lo nu cfari lo jasypu'ense.",
+  "unconfirmedWarning": "lo do mrilu judri na ku se birti .i ko tcidu lo do mrilu gi'e cuxna lo birti selyli'e mu'i lo nu cfari lo do se jaspu.",
   "unconfirmedWarningLink": "za'u re'u benji lo birti nuzba",
   "unconfirmedWarningMessageSent": "benji lo birti nuzba .i ko tcidu lo do samymri judri.",
   "toggleMenu": "mipri .a viska lo liste",
@@ -318,12 +318,12 @@
   },
   "profile": {
     "removeConfirm": "xu do birti lo nu vimcu lo do pixra?",
-    "yourProfile": "do jasypu'ense",
-    "userProfile": "{username} jasypu'ense",
+    "yourProfile": "lo predatni be do",
+    "userProfile": "lo predatni be la'ei {username}",
     "balance": "jdini canlu",
     "changePassword": "galfi le japyvla",
     "viewActivity": "viska lo gasnu",
-    "editProfile": "galfi lo jasypu'ense datni",
+    "editProfile": "galfi lo predatni be do",
     "assignRole": "dunda lo pikta",
     "assigning": "ca'o dunda...",
     "username": "pilno cmene",
@@ -345,7 +345,7 @@
       "readError": "fliba lo nu tcidu lo pixra.",
       "uploadFailed": "fliba lo nu punji lo pixra."
     },
-    "updateSuccess": "snada lo nu galfi lo jasypu'ense",
+    "updateSuccess": "snada lo nu galfi lo predatni be do",
     "roleAssignedSuccess": "snada lo nu dunda lo pikta",
     "usernameTakenError": "le pilno cmene ba'o se pilno .i ko cuxna lo drata."
   },
@@ -889,7 +889,7 @@
   "languageList": {
     "title": "se bangu liste",
     "description": "bangu poi se curmi lo nu fanva .e lo nu ciksi",
-    "totalLabel": "ro bangu li {count}",
+    "totalLabel": "{count} da ca bangu",
     "showingCount": "viska li {count} pe li {total} bangu",
     "searchPlaceholder": "ko sisku lo cmene .a lo te tcila...",
     "noMatchingLanguages": "no bangu cu se facki",
@@ -924,7 +924,7 @@
     "loginButton": "co'a samse'u",
     "authenticating": "ca'o birti lo nu samse'u...",
     "forgotPasswordLink": "xu do tolmo'i lo do japyvla?",
-    "noAccountPrompt": "xu do na jasypu'ense?",
+    "noAccountPrompt": "xu do na se jaspu?",
     "signUpLink": "terbejbi'o",
     "loginError": "fliba lo nu co'a samse'u",
     "rateLimitError": "za'u re'u ce'u ce'u cpedu lo nu co'a samse'u .i ko denpa ze'i"
@@ -935,7 +935,7 @@
     "emailPlaceholder": "ko ciska lo do samymri judri",
     "requestButton": "cpedu lo nu galfi lo japyvla",
     "sendingRequest": "ca'o benji lo nu cpedu...",
-    "requestSentSuccess": "mrilu lo birti nuzba lo do samymri judri va'o lo nu do jasypu'ense ne'i lo ciste .i ko tcidu lo do mrilu.",
+    "requestSentSuccess": "mrilu lo birti nuzba lo do samymri judri va'o lo nu do se jaspu ne'i lo ciste .i ko tcidu lo do mrilu.",
     "setNewPasswordTitle": "vreji lo cnino japyvla",
     "newPasswordLabel": "cnino japyvla",
     "newPasswordPlaceholder": "ko ciska lo cnino japyvla",
@@ -980,7 +980,7 @@
     "changingPassword": "ca'o galfi...",
     "changePasswordButton": "galfi lo japyvla",
     "successMessage": "snada lo nu galfi lo japyvla! .i ca'o klama lo nu co'a samse'u...",
-    "backToProfile": "klama lo jasypu'ense papri",
+    "backToProfile": "klama lo do predatni papri",
     "verificationCodeSent": "benji lo birti nuzba lo do samymri",
     "initiateFailedError": "fliba lo nu cfari lo nu galfi lo japyvla",
     "completeFailedError": "fliba lo nu galfi lo japyvla",
@@ -988,17 +988,17 @@
     "invalidCode": "lo birti nuzba na birti ji'a mudyfau"
   },
   "signupPage": {
-    "title": "co'a se jasypu'ense",
+    "title": "co'a se jaspu",
     "usernameLabel": "pilno cmene",
     "emailLabel": "samymri judri",
     "passwordLabel": "japyvla",
     "showPassword": "viska lo japyvla",
     "hidePassword": "mipri lo japyvla",
-    "createAccountButton": "finti lo jasypu'ense",
+    "createAccountButton": "gau ko do se jaspu",
     "creatingAccount": "ca'o finti...",
-    "haveAccountPrompt": "xu do jasypu'ense?",
+    "haveAccountPrompt": "xu do pu'i se jaspu?",
     "loginLink": "co'a samse'u",
-    "signupError": "fliba lo nu co'a se jasypu'ense",
+    "signupError": "fliba lo nu co'a se jaspu",
     "userExists": "lo pilno cmene ja lo samymri judri ba'o se pilno"
   },
   "bulkImport": {
@@ -1318,7 +1318,8 @@
       "filterBySelmao": "julne fi lo ka selma'o",
       "filterByAuthor": "julne fi lo ka finti",
       "placeholderSelmaho": "ko ciska lo selma'o...",
-      "placeholderUsername": "ko ciska lo pilno cmene..."
+      "placeholderUsername": "ko ciska lo pilno cmene...",
+      "clearFilter": "vimcu lo julne"
     },
     "activityComments": {
       "noComments": "no casnu karni cu zasti"
@@ -1379,8 +1380,8 @@
     "flashcardsButton": "karda",
     "itemsCount": "{count} lo se liste",
     "makePublicLabel": "gubni lo liste",
-    "myCollections": "mi liste .e lo karda cu'u",
-    "myCollectionsLabel": "mi liste .e lo karda cu'u",
+    "myCollections": "lei liste pe mi",
+    "myCollectionsLabel": "lei liste pe mi",
     "nameLabel": "cmene",
     "onlyWithFlashcards": "le po'o ctuste",
     "points": "{count} pt",
@@ -1461,7 +1462,7 @@
     "deleteLevelConfirmMessage": "xu do birti lo nu vimcu lo klesi la'ei '{levelName}'? .i lo nu zukte ti na ku ka'e di'a zasti."
   },
   "anonymousProgress": {
-    "bannerMessage": "ko jasypu'ense mu'i lo nu vreji lo do zenba ne'i lo drata skami",
+    "bannerMessage": "ko co'a se jaspu mu'i lo nu vreji lo do zenba ne'i lo drata skami",
     "signUp": "terbejbi'o",
     "logIn": "co'a samse'u",
     "dismiss": "canpa",
@@ -1470,7 +1471,7 @@
     "signInToSaveProgress": "ko co'a samse'u mu'i lo nu vreji lo do zenba .e lo nu tadni si'o lo djedi.",
     "studyByLevelHint": "do kakne lo nu tadni sepi'o lo klesi bu'u tu'a ga'u .i lo do zenba cu se vreji ne'i ti skami bi'i lo nu do co'a samse'u.",
     "useLevelsToStudy": "ko pilno lo selyli'e pe ga'u mu'i lo nu viska lo klesi gi'e cfari lo nu tadni.",
-    "mergeSuccess": "lo do zenba ba'o se vreji ne'i lo do jasypu'ense."
+    "mergeSuccess": "lo do zenba ba'o se vreji ne'i lo do se jaspu."
   },
   "audioPlayer": {
     "loadError": "fliba lo nu jgari lo sance",
@@ -1494,7 +1495,7 @@
     "title": "snada lo nu mrilu lo jdini",
     "thankYou": "cko'i lo do jdini mrilu .i lo nu mrilu lo jdini cu mulno .i lo nu vreji lo klani be lo do vecnu cu ba'o se mrilu lo do mrilu judri.",
     "viewDetails": "do kakne lo nu co'a samse'u ne'i la .PayPal. mu'i lo nu viska lo tcila.",
-    "goToProfile": "klama lo do jasypu'ense papri"
+    "goToProfile": "klama lo do predatni papri"
   },
   "messageList": {
     "noMessages": "no nuzba cu se facki"
@@ -1538,7 +1539,7 @@
     "heroTitle": "ko cilre .e ko tadni .e ko cimni fi la .lingo.",
     "continueLearning": "di'a tadni",
     "getStarted": "cfari",
-    "haveAccount": "mi ba'o jasypu'ense",
+    "haveAccount": "mi ba'o se jaspu",
     "signOut": "de'a ca'a se jaspu",
     "login": "co'a samse'u",
     "shop": "vecnu",

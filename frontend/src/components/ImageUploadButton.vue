@@ -11,7 +11,7 @@
       />
       <div
         v-else
-        class="w-32 h-32 rounded-full bg-gray-200 flex items-center justify-center text-gray-400 border-4 border-white shadow-lg"
+        class="avatar-placeholder-lg"
       >
          <User class="h-16 w-16" />
       </div>

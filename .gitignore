@@ -11,6 +11,7 @@ dist
 node_modules
 archive/*
 .specstory/*
+.cursor/skills/*
 
 # Vim
 [._]*.sw[a-p]

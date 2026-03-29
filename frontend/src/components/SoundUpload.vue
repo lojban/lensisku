@@ -107,7 +107,7 @@
           <p class="text-sm text-gray-600 mb-3"> {{ t('soundUpload.recordHint') }} </p>
            <button
             type="button"
-            class="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-medium text-white bg-red-500 hover:bg-red-600 focus:ring-2 focus:ring-red-400 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            class="btn-media-record"
             :disabled="isRequestingMic"
             @click="startRecording"
           >
@@ -135,7 +135,7 @@
           </div>
            <button
             type="button"
-            class="w-full mt-3 flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-medium text-white bg-gray-700 hover:bg-gray-800 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+            class="btn-media-stop mt-3"
             @click="stopRecording"
           >
              <Square class="h-5 w-5" /> {{ t('soundUpload.stopRecording') }} </button
@@ -147,13 +147,13 @@
             <div class="flex gap-2">
                <button
                 type="button"
-                class="flex-1 py-2.5 px-3 rounded-lg font-medium text-white bg-blue-600 hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                class="btn-panel-primary"
                 @click="useRecording"
               >
                  {{ t('soundUpload.useRecording') }} </button
               > <button
                 type="button"
-                class="flex-1 py-2.5 px-3 rounded-lg font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
+                class="btn-panel-outline"
                 @click="discardRecording"
               >
                  {{ t('soundUpload.reRecord') }} </button
