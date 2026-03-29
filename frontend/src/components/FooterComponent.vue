@@ -9,7 +9,7 @@
       > <button
         type="button"
         class="toggle-switch"
-        :class="marqueeEnabled ? 'bg-blue-500' : 'bg-gray-200'"
+        :class="marqueeEnabled ? 'bg-nav-link' : 'bg-gray-200'"
         :aria-pressed="marqueeEnabled"
         @click="toggleMarquee"
       >
