@@ -109,7 +109,7 @@
 
           <div
             v-if="isOwner"
-            class="btn-group-forced flex flex-wrap items-center gap-x-0 gap-y-2"
+            class="btn-group-forced flex flex-wrap items-center md:gap-y-2"
             role="group"
             aria-label="Collection editing"
           >
@@ -128,7 +128,7 @@
           </div>
 
           <div
-            class="btn-group-forced flex flex-wrap items-center gap-x-0 gap-y-2"
+            class="btn-group-forced flex flex-wrap items-center md:gap-y-2"
             role="group"
             aria-label="Study"
           >

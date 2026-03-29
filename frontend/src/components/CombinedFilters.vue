@@ -20,9 +20,9 @@
       />
       <div class="flex items-center gap-2 self-end md:self-center">
 
-        <div class="btn-group-forced flex items-center flex-wrap gap-x-0 gap-y-2" role="group">
+        <div class="btn-group-forced flex items-center flex-row" role="group">
            <button
-            class="ui-btn--aqua-default ui-btn--group-item px-3"
+            class="ui-btn--aqua-default ui-btn--group-item"
             :title="t('searchForm.modes.semantic')"
             @click="toggleSemanticSearch"
           >
@@ -31,7 +31,7 @@
               > {{ t('searchForm.modes.semantic') }} </span
             > </button
           > <button
-            class="ui-btn--aqua-default ui-btn--group-item px-3"
+            class="ui-btn--aqua-default ui-btn--group-item"
             :class="[{ 'opacity-50 !cursor-not-allowed': filters.word_type }]"
             :title="t('searchForm.modes.searchInPhrases')"
             @click="toggleSearchInPhrases"
@@ -47,11 +47,11 @@
           >
         </div>
 
-        <div class="btn-group-forced flex items-center flex-wrap gap-x-0 gap-y-2" role="group">
+        <div class="btn-group-forced flex items-center flex-row" role="group">
            <button
             v-if="hasAnyActiveFilters"
             type="button"
-            class="ui-btn--neutral ui-btn--group-item px-3"
+            class="ui-btn--neutral ui-btn--group-item"
             @click="resetAllFilters"
             :title="t('filters.resetAllFilters')"
           >
@@ -59,7 +59,7 @@
             > </button
           > <button
             type="button"
-            class="ui-btn--neutral ui-btn--group-item px-3"
+            class="ui-btn--neutral ui-btn--group-item"
             @click="toggleExpanded"
             :title="expanded ? t('filters.collapse') : t('filters.expand')"
           >

@@ -76,7 +76,7 @@
 
         <div class="flex flex-wrap items-center gap-2 w-auto">
 
-          <div class="btn-group-forced flex flex-wrap items-center gap-x-0 gap-y-2" role="group">
+          <div class="btn-group-forced flex flex-wrap items-center md:gap-y-2" role="group">
              <RouterLink
               :to="`/collections/${props.collectionId}`"
               class="ui-btn--neutral-muted ui-btn--group-item md:flex-none"

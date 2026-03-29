@@ -40,7 +40,7 @@
 
       <!-- Actions: back, import, revert, save -->
       <div class="flex w-full flex-row flex-wrap items-center gap-2 sm:gap-3">
-        <div class="btn-group-forced flex flex-row flex-wrap items-center gap-x-0 gap-y-2" role="group">
+        <div class="btn-group-forced flex flex-row flex-wrap items-center md:gap-y-2" role="group">
           <RouterLink :to="`/collections/${numericCollectionId}`"
             class="ui-btn--neutral-muted ui-btn--group-item">
             <ArrowLeft class="w-4 h-4 shrink-0" aria-hidden="true" />
@@ -53,7 +53,7 @@
             {{ isImporting ? t('collectionCustomTextBulk.importing') : t('collectionCustomTextBulk.importButton') }}
           </button>
         </div>
-        <div v-if="!isLoading && isOwner" class="btn-group-forced flex flex-row flex-wrap items-center gap-x-0 gap-y-2" role="group">
+        <div v-if="!isLoading && isOwner" class="btn-group-forced flex flex-row flex-wrap items-center md:gap-y-2" role="group">
           <button type="button"
             class="ui-btn--neutral-muted ui-btn--group-item inline-flex items-center gap-2"
             :disabled="isSaving || !isDirty" @click="resetRows">

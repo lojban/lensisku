@@ -156,7 +156,7 @@
     <div class="flex flex-row items-center gap-2 sm:block">
 
       <div
-        class="btn-group-forced flex flex-nowrap justify-center min-w-0 overflow-visible gap-0 py-2"
+        class="btn-group-forced flex flex-nowrap justify-center min-w-0 overflow-visible py-2"
         role="group"
         aria-label="Sort order"
       >
