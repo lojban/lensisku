@@ -4,7 +4,7 @@
     "defaultDescription": "ko sisku lo jbovlaste .e lo sarsku .i ko facki lo valsi se ciksi .e lo mupli .e lo casnu be la .lojban."
   },
   "buttonTheme": {
-    "label": "tarmi be lo batke",
+    "label": "tarmi be lo tekla",
     "aqua": "djacu staile",
     "flat": "panpi staile"
   },
@@ -32,7 +32,7 @@
       "sourceLanguage": "krasi bangu"
     },
     "defaultSourceLanguage": "fadni (la .lojban.)",
-    "resetAllFilters": "xruti fi lo fadni be lo julne",
+    "resetAllFilters": "na julne",
     "selectWordType": "cuxna lo valsi klesi",
     "expand": "fanmo fa'a lo julne",
     "collapse": "mipri lo julne"
@@ -68,12 +68,12 @@
   "searchForm": {
     "selectSearchMode": "cuxna lo sisku tadji",
     "modes": {
-      "dictionary": "vlaste .e lo sarsku",
-      "semantic": "smuni sisku",
-      "comments": "casnu karni",
+      "dictionary": "valsi",
+      "semantic": "smusisku",
+      "comments": "snuboxna",
       "messages": "mrilu datni",
       "groupByThread": "gunma fi lo karni",
-      "searchInPhrases": "kansa lo jufra"
+      "searchInPhrases": "lo ji'a jufra"
     },
     "placeholder": {
       "dictionary": "ko sisku lo valsi .e lo ciksi .e lo notci .e lo lisri...",
@@ -96,7 +96,7 @@
     "defaultTitle": "jicmu",
     "metaDescription": "ko sisku lo jbovlaste .e lo sarsku .i ko facki lo ciksi .e lo casnu .e lo mupli.",
     "searchMetaDescription": "ko viska lo se facki be la'ei \"{query}\" ne'i lo lojbo vlaste.",
-    "addDefinition": "valsi ciksi",
+    "addDefinition": "cnino velsku",
     "newFreeThread": "cfari lo karni",
     "noCommentsFound": "no pinka cu sarxe lo do sisku",
     "waveSourceLabel": "boxna",
@@ -227,28 +227,28 @@
   },
   "nav": {
     "addEntry": "jmina lo valsi",
-    "courses": "ctuca selyli'e",
+    "courses": "tadni",
     "recent": "cnino",
     "more": "drata",
-    "users": "pilno",
+    "users": "le'i pilno",
     "languages": "bangu",
     "cachedExports": "ba'o se cupra",
     "export": "cupra",
-    "bulkImport": "jmina so'i valsi",
+    "bulkImport": "jmina le so'imei",
     "manageRoles": "jitro lo pikta",
     "myActivity": "mi gasnu",
-    "logout": "co'u samse'u",
-    "iamUsers": "IAM / le'i pilno",
-    "signUp": "co'a se jasypu'ense",
-    "logIn": "co'a samse'u",
-    "assistant": "rutni se menli gi'e sidju"
+    "logout": "de'a ca'a se jaspu",
+    "iamUsers": "le'i pilno",
+    "signUp": "co'a se jaspu",
+    "logIn": "di'a ca'a se jaspu",
+    "assistant": "rutni sidju"
   },
   "mobileNav": {
     "recentChanges": "cnino nu galfi"
   },
   "fab": {
     "addDefinition": "jmina lo ciksi",
-    "newDiscussion": "cnino casnu karni",
+    "newDiscussion": "cnino snuboxna",
     "actionsTitle": "nu gasnu"
   },
   "error": {
@@ -1530,7 +1530,7 @@
     "continueLearning": "di'a tadni",
     "getStarted": "cfari",
     "haveAccount": "mi ba'o jasypu'ense",
-    "signOut": "co'u samse'u",
+    "signOut": "de'a ca'a se jaspu",
     "login": "co'a samse'u",
     "shop": "vecnu",
     "shopDescription": "ko pilno lo do jbera mu'i lo nu terpa'e",

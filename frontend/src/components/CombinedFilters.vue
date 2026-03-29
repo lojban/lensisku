@@ -49,7 +49,7 @@
           <button
             v-if="hasAnyActiveFilters"
             type="button"
-            class="ui-btn--neutral ui-btn--group-item"
+            class="ui-btn--aqua-default ui-btn--group-item"
             :title="t('filters.resetAllFilters')"
             @click="resetAllFilters"
           >
@@ -57,7 +57,7 @@
           </button>
           <button
             type="button"
-            class="ui-btn--neutral ui-btn--group-item"
+            class="ui-btn--aqua-default ui-btn--group-item"
             :title="expanded ? t('filters.collapse') : t('filters.expand')"
             @click="toggleExpanded"
           >
