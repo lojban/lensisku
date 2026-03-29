@@ -2,7 +2,7 @@
 
   <div class="mb-2">
 
-    <nav class="flex flex-wrap gap-x-2 gap-y-0" aria-label="Tabs">
+    <nav class="ui-tab-strip" aria-label="Tabs">
        <NotebookTab
         v-for="tab in tabs"
         :key="tab.key"

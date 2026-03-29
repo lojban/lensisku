@@ -79,7 +79,7 @@
          <!-- Mobile Layout -->
         <div class="sm:hidden space-y-3">
 
-          <div class="btn-group-forced flex flex-wrap gap-x-0 gap-y-2" role="group">
+          <div class="btn-group-forced flex flex-wrap" role="group">
              <RouterLink :to="`/?mode=dictionary&langs=${lang.id}`" class="ui-btn--get ui-btn--group-item"
               > {{ lang.english_name }} </RouterLink
             > <a
