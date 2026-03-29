@@ -1,32 +1,34 @@
 <template>
 
-  <div
-    v-if="show"
-    class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-[60]"
-    @click="close"
-  >
-
+  <Teleport to="body">
     <div
-      class="bg-white rounded-lg max-w-2xl w-full p-4 sm:p-6 max-h-[90vh] flex flex-col overflow-hidden"
-      @click.stop
+      v-if="show"
+      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-[60]"
+      @click="close"
     >
 
-      <div class="mb-4 flex shrink-0 items-center justify-between">
+      <div
+        class="bg-white rounded-lg max-w-2xl w-full p-4 sm:p-6 max-h-[90vh] flex flex-col overflow-hidden"
+        @click.stop
+      >
 
-        <h3 class="text-lg font-medium select-none"> {{ title }} </h3>
-         <button class="text-gray-400 hover:text-gray-600" @click="close">
-           <span class="text-xl font-medium"> <X class="h-6 w-6" :title="t('modal.close')" /> </span
-          > </button
-        >
+        <div class="mb-4 flex shrink-0 items-center justify-between">
+
+          <h3 class="text-lg font-medium select-none"> {{ title }} </h3>
+           <button class="text-gray-400 hover:text-gray-600" @click="close">
+             <span class="text-xl font-medium"> <X class="h-6 w-6" :title="t('modal.close')" /> </span
+            > </button
+          >
+        </div>
+        <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+          <slot />
+        </div>
+        <div v-if="$slots.footer" class="shrink-0 border-t pt-4 mt-4"> <slot name="footer" /> </div>
+
       </div>
-      <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain">
-        <slot />
-      </div>
-      <div v-if="$slots.footer" class="shrink-0 border-t pt-4 mt-4"> <slot name="footer" /> </div>
 
     </div>
-
-  </div>
+  </Teleport>
 
 </template>
 

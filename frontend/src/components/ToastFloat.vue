@@ -1,36 +1,52 @@
 <template>
   <Teleport to="body">
-    <Transition name="fade">
+    <Transition name="toast-float">
       <div
         v-if="show"
-        class="fixed left-1/2 top-1/2 z-[65] mx-auto w-fit max-w-[min(90vw,28rem)] -translate-x-1/2 -translate-y-1/2 rounded-lg px-4 py-3 shadow-lg"
-        :class="{
-          'border border-green-400 bg-green-100 text-green-800': type === 'success',
-          'border border-red-400 bg-red-100 text-red-800': type === 'error',
-        }"
+        class="toast-float-shell"
+        role="presentation"
       >
-        <div class="flex flex-col gap-2 text-lg">
-          <div class="flex items-start justify-end gap-2">
-            <div class="min-w-0 flex-1 whitespace-pre-wrap break-words">
-              <slot name="message">{{ message }}</slot>
-            </div>
-            <button
-              type="button"
-              class="shrink-0 rounded px-1 leading-none text-current hover:opacity-80"
-              :aria-label="closeLabel"
-              @click="closeToast"
-            >
-              &times;
-            </button>
-          </div>
-          <!-- Injected Vue components (or pass #extra from parent). Default: extraComponent + extraProps. -->
-          <slot name="extra">
+        <div
+          class="toast-float-panel"
+          :class="panelVariantClass"
+          :role="type === 'error' ? 'alert' : 'status'"
+          :aria-live="type === 'error' ? 'assertive' : 'polite'"
+        >
+          <div class="toast-float-body">
             <component
-              :is="extraComponent"
-              v-if="extraComponent"
-              v-bind="extraProps || {}"
+              :is="iconComponent"
+              class="toast-float-icon h-6 w-6"
+              :class="iconVariantClass"
+              aria-hidden="true"
             />
-          </slot>
+            <div class="flex min-w-0 flex-1 flex-col gap-3">
+              <div class="flex items-center gap-2">
+                <div class="toast-float-message whitespace-pre-wrap break-words">
+                  <slot name="message">{{ message }}</slot>
+                </div>
+                <button
+                  type="button"
+                  class="toast-float-close"
+                  :aria-label="closeLabel"
+                  @click="closeToast"
+                >
+                  <X class="h-4 w-4" aria-hidden="true" />
+                </button>
+              </div>
+              <div
+                v-if="$slots.extra || extraComponent"
+                class="toast-float-extra"
+              >
+                <slot name="extra">
+                  <component
+                    :is="extraComponent"
+                    v-if="extraComponent"
+                    v-bind="extraProps || {}"
+                  />
+                </slot>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </Transition>
@@ -38,8 +54,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onUnmounted, type Component } from 'vue'
+import { ref, watch, onUnmounted, computed, type Component } from 'vue'
 import type { PropType } from 'vue'
+import { CheckCircle2, CircleAlert, X } from 'lucide-vue-next'
 
 const props = defineProps({
   show: {
@@ -78,6 +95,18 @@ const emit = defineEmits(['close'])
 
 const show = ref(props.show)
 
+const iconComponent = computed(() =>
+  props.type === 'success' ? CheckCircle2 : CircleAlert
+)
+
+const panelVariantClass = computed(() =>
+  props.type === 'success' ? 'toast-float-panel--success' : 'toast-float-panel--error'
+)
+
+const iconVariantClass = computed(() =>
+  props.type === 'success' ? 'toast-float-icon--success' : 'toast-float-icon--error'
+)
+
 let hideTimer: ReturnType<typeof setTimeout> | null = null
 
 const closeToast = () => {
@@ -109,27 +138,26 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.2s ease;
+.toast-float-enter-active,
+.toast-float-leave-active {
+  transition: opacity 0.22s ease;
 }
-.fade-enter-from,
-.fade-leave-to {
+
+.toast-float-enter-from,
+.toast-float-leave-to {
   opacity: 0;
 }
 
-@keyframes fade-in-up {
-  from {
-    opacity: 0;
-    transform: translateY(1rem);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+.toast-float-enter-active .toast-float-panel,
+.toast-float-leave-active .toast-float-panel {
+  transition:
+    transform 0.22s cubic-bezier(0.34, 1.2, 0.64, 1),
+    opacity 0.22s ease;
 }
 
-.animate-fade-in-up {
-  animation: fade-in-up 0.3s ease-out;
+.toast-float-enter-from .toast-float-panel,
+.toast-float-leave-to .toast-float-panel {
+  opacity: 0;
+  transform: scale(0.94) translateY(0.375rem);
 }
 </style>

@@ -17,7 +17,7 @@ export default {
             {},
           '&:not(:disabled)': {
             '--tw-ring-color': 'var(--btn-color, currentColor)',
-            '@apply active:scale-[0.98]': {},
+            '@apply active:scale-x-[1.02]': {},
           },
           '&:not(:disabled):hover': {
             background:
@@ -44,7 +44,7 @@ export default {
             'inset 0 0.25em 0.5em hsla(calc(var(--aqua-hue, 215) + 4), 100%, 9.6%, 0.8),' +
             'inset 0 0.375em 0.5em 0.25em hsla(var(--aqua-hue, 215), 100%, 36.7%, 0.75)',
           '&:not(:disabled)': {
-            '@apply hover:brightness-105 hover:saturate-150 active:scale-[0.98]': {},
+            '@apply hover:brightness-105 hover:saturate-150 active:scale-x-[1.02]': {},
           },
           /** Do not target `.sr-only` — that would override `position:absolute` and break flex centering on icon-only controls. */
           '& span:not(.sr-only)': {
@@ -111,7 +111,105 @@ export default {
             },
           },
         },
+        /**
+         * Neutral glossy chrome matching reference `button.secondary`: gray depth shadows, dark insets + #BBBBBB lip,
+         * focus glow `rgba(0,0,0,0.25)`, blurred ::before/::after shine. Fill gradient lives on `btn-aqua-secondary` /
+         * `btn-aqua-white`, not here.
+         */
+        '.aqua-base-secondary': {
+          '@apply flex items-center justify-center h-6 select-none whitespace-nowrap text-black select-none text-sm font-medium transition-all px-3 gap-2':
+            {},
+          textOverflow: 'ellipsis',
+          gridRow: '1',
+          fontFamily: '"open sans", system-ui, tahoma',
+          borderRadius: '1000px',
+          position: 'relative',
+          overflow: 'hidden',
+          cursor: 'default',
+          outline: 'none',
+          boxShadow:
+            '0 0.375em 0.5em rgba(0, 0, 0, 0.2),' +
+            '0 0.125em 0.125em rgba(0, 0, 0, 0.3),' +
+            'inset 0 0.25em 0.25em rgba(0, 0, 0, 0.4),' +
+            'inset 0 0.375em 0.5em 0.25em #BBBBBB',
+          '&:not(:disabled)': {
+            '@apply hover:brightness-110 active:scale-x-[1.02]': {},
+          },
+          '& span:not(.sr-only)': {
+            position: 'relative',
+            // top: '-1px',
+            zIndex: 1,
+            // letterSpacing: '0.0375em',
+            textShadow: '0 0.25em 0.2em rgba(0, 0, 0, 0.25)',
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            maxWidth: '100%',
+          },
+          '&:before': {
+            content: "''",
+            position: 'absolute',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            height: '33%',
+            background: 'linear-gradient(rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.3))',
+            width: 'calc(100% - 0.875em)',
+            borderRadius: '2em 2em 0.5em 0.5em',
+            top: '5%',
+            filter: 'blur(1px)',
+            zIndex: '2',
+          },
+          '&.rounded-corner:before': {
+            borderRadius: '30em 30em 2em 2em',
+          },
+          '&:after': {
+            content: "''",
+            position: 'absolute',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            height: '33%',
+            background: 'linear-gradient(rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.5))',
+            width: 'calc(100% - 1.25em)',
+            borderRadius: '0.75em',
+            bottom: '10%',
+            filter: 'blur(3px)',
+          },
+          '&:focus, &:active': {
+            boxShadow:
+              '0 0.375em 0.5em rgba(0, 0, 0, 0.2),' +
+              '0 0.125em 0.125em rgba(0, 0, 0, 0.3),' +
+              'inset 0 0.25em 0.25em rgba(0, 0, 0, 0.4),' +
+              'inset 0 0.375em 0.5em 0.25em #BBBBBB,' +
+              '0 0 0.5em rgba(0, 0, 0, 0.25)',
+            '&:disabled': {
+              boxShadow:
+                '0 0.375em 0.5em rgba(0, 0, 0, 0.2), 0 0.125em 0.125em rgba(0, 0, 0, 0.3), inset 0 0.25em 0.25em rgba(0, 0, 0, 0.4), inset 0 0.375em 0.5em 0.25em #BBBBBB',
+            },
+          },
+          '&[disabled]:not([disabled="false"]), .disabled': {
+            opacity: 0.5,
+            background:
+              'linear-gradient(rgba(160, 160, 160, 0.625), rgba(255, 255, 255, 0.625)) !important',
+            boxShadow:
+              '0 0.375em 0.5em rgba(0, 0, 0, 0.2), 0 0.125em 0.125em rgba(0, 0, 0, 0.3), inset 0 0.25em 0.25em rgba(0, 0, 0, 0.4), inset 0 0.375em 0.5em 0.25em #BBBBBB !important',
+            '&:hover, &:focus, &:active': {
+              transform: 'none !important',
+              filter: 'none !important',
+              background:
+                'linear-gradient(rgba(160, 160, 160, 0.625), rgba(255, 255, 255, 0.625)) !important',
+              boxShadow:
+                '0 0.375em 0.5em rgba(0, 0, 0, 0.2), 0 0.125em 0.125em rgba(0, 0, 0, 0.3), inset 0 0.25em 0.25em rgba(0, 0, 0, 0.4), inset 0 0.375em 0.5em 0.25em #BBBBBB !important',
+            },
+          },
+        },
       });
+
+      const toggleOffShadow =
+      '0 0.375em 0.5em rgba(0, 0, 0, 0.3),' +
+      '0 0.125em 0.125em hsla(0, 0%, 36.7%, 0.5),' +
+      'inset 0 0.15em 0.35em rgba(255, 255, 255, 0.7),' +
+      'inset 0 -0.05em 0.2em rgba(0, 0, 0, 0.06)'
+      
       /**
        * Shared aqua segment geometry (radii + glossy ::before/::after), without extra segment box-shadows —
        * elevation stays on `aqua-base` / semantic primitives so wrappers and joins do not stack duplicate shadows.
@@ -230,6 +328,44 @@ export default {
           '@apply fixed inset-0 z-50 flex min-h-0 items-center justify-center bg-white/50 backdrop-blur-sm':
             {},
         },
+        /** Centered toast / lightweight alert surface (`ToastFloat.vue`); matches card elevation + success/error borders. */
+        '.toast-float-shell': {
+          '@apply pointer-events-none fixed inset-0 z-[65] flex items-center justify-center p-4': {},
+        },
+        '.toast-float-panel': {
+          '@apply pointer-events-auto w-full max-w-[min(90vw,28rem)] overflow-hidden rounded-2xl border border-gray-200 bg-white text-gray-800':
+            {},
+          boxShadow: '0 0.75px 3px rgba(0, 0, 0, 0.04), 0 6px 16px rgba(0, 0, 0, 0.06)',
+        },
+        '.toast-float-panel--success': {
+          '@apply border-green-300': {},
+        },
+        '.toast-float-panel--error': {
+          '@apply border-red-300': {},
+        },
+        '.toast-float-body': {
+          '@apply flex items-center gap-3 p-4 sm:p-5': {},
+        },
+        '.toast-float-icon': {
+          '@apply shrink-0 self-center': {},
+        },
+        '.toast-float-icon--success': {
+          '@apply text-green-600': {},
+        },
+        '.toast-float-icon--error': {
+          '@apply text-red-600': {},
+        },
+        '.toast-float-message': {
+          '@apply min-w-0 flex-1 text-sm font-medium leading-snug text-gray-800 sm:text-base': {},
+        },
+        /** Dismiss control: same affordance family as modal chrome (neutral hover, visible focus). */
+        '.toast-float-close': {
+          '@apply -m-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 focus-visible:ring-offset-white':
+            {},
+        },
+        '.toast-float-extra': {
+          '@apply border-t border-gray-100 pt-3': {},
+        },
         '.input-field': {
           '@apply px-4 py-1.5 text-sm h-8 text-gray-700 bg-white border border-gray-300 placeholder-blue-400 rounded-full transition-all focus:ring-1 focus:ring-blue-500 focus:border-blue-500 focus:outline-none focus:z-50 whitespace-nowrap shadow-inner shadow-slate-200':
             {},
@@ -329,16 +465,10 @@ export default {
             'linear-gradient(rgba(0, 65, 184, 0.625), rgba(45, 115, 199, 0.625), rgba(33, 160, 196, 0.625))',
           '--aqua-hue': '217',
         },
-        /** Gray glossy “secondary” look (was `.aqua-base.secondary`). */
+        /** Gray glossy “secondary” look (was `.aqua-base.secondary`); uses neutral `aqua-base-secondary` chrome. */
         '.btn-aqua-secondary': {
-          '@apply aqua-base': {},
+          '@apply aqua-base-secondary': {},
           background: 'linear-gradient(rgba(160, 160, 160, 0.625), rgba(255, 255, 255, 0.625))',
-          boxShadow:
-            '0 0.375em 0.5em rgba(0, 0, 0, 0.2), 0 0.125em 0.125em rgba(0, 0, 0, 0.3), inset 0 0.25em 0.25em rgba(0, 0, 0, 0.4), inset 0 0.375em 0.5em 0.25em #BBBBBB',
-          '&:focus, &:active': {
-            boxShadow:
-              '0 0.375em 0.5em rgba(0, 0, 0, 0.2), 0 0.125em 0.125em rgba(0, 0, 0, 0.3), inset 0 0.25em 0.25em rgba(0, 0, 0, 0.4), inset 0 0.375em 0.5em 0.25em #BBBBBB, 0 0 0.5em rgba(0, 0, 0, 0.25)',
-          },
         },
         '.btn-aqua-yellow': {
           '@apply aqua-base bg-yellow-500': {},
@@ -442,28 +572,13 @@ export default {
           },
         },
         '.btn-aqua-white': {
-          '@apply aqua-base bg-white': {},
+          '@apply aqua-base-secondary': {},
+          boxShadow: toggleOffShadow,
           background: 'linear-gradient(rgba(180, 180, 180, 1), rgba(255, 255, 255, 0.625))',
-          boxShadow:
-            '0 0.375em 0.5em rgba(0, 0, 0, 0.3),' +
-            '0 0.125em 0.125em hsla(0, 0%, 36.7%, 0.5),' +
-            'inset 0 0.15em 0.35em rgba(255, 255, 255, 0.7),' +
-            'inset 0 -0.05em 0.2em rgba(0, 0, 0, 0.06)',
-          '&:not(:disabled)': {
-            '@apply hover:brightness-110 active:scale-[0.98]': {},
-          },
-          '&:focus, &:active': {
-            boxShadow:
-              '0 0.375em 0.5em rgba(0, 0, 0, 0.3),' +
-              '0 0.125em 0.125em hsla(0, 0%, 36.7%, 0.5),' +
-              'inset 0 0.15em 0.35em rgba(255, 255, 255, 0.7),' +
-              'inset 0 -0.05em 0.2em rgba(0, 0, 0, 0.06),' +
-              '0 0 0.5em hsla(0, 0%, 54.7%, 0.5)',
-            '&:disabled': {
-              boxShadow:
-                '0 0.375em 0.5em rgba(0, 0, 0, 0.2), 0 0.125em 0.125em rgba(0, 0, 0, 0.3), inset 0 0.25em 0.25em rgba(0, 0, 0, 0.4), inset 0 0.375em 0.5em 0.25em #BBBBBB',
-            },
-          },
+          // ...aquaUiBtnGroupItemGeometry,
+          '&::after': {
+          background: 'none',
+        },
         },
         '.btn-insert': {
           '@apply btn-base text-white bg-gradient-to-b from-blue-400 to-blue-500 border-blue-500 text-white enabled:hover:text-blue-500 enabled:hover:bg-gradient-to-b enabled:hover:from-white enabled:hover:to-white':
@@ -592,7 +707,7 @@ export default {
         '.btn-group-item': {
           '@apply border rounded-full': {},
           '&:not(:disabled):active': {
-            '@apply scale-[1.02]': {},
+            '@apply scale-x-[1.02]': {},
           },
           /** Segment bar from 512px up (aligned with `.btn-group-forced`). */
           '@media (min-width: 512px)': {
@@ -640,11 +755,6 @@ export default {
           },
           '&:not(.active)': {
             '@apply btn-aqua-white': {},
-            boxShadow:
-              '0 0.375em 0.5em rgba(0, 0, 0, 0.3),' +
-              '0 0.125em 0.125em hsla(0, 0%, 36.7%, 0.5),' +
-              'inset 0 0.15em 0.35em rgba(255, 255, 255, 0.7),' +
-              'inset 0 -0.05em 0.2em rgba(0, 0, 0, 0.06)',
           },
         },
         /** Flat theme: collection list sort chips (replaces btn-aqua-sort-* when data-button-theme=flat). */
@@ -785,7 +895,7 @@ export default {
           'ui-btn--update': { aqua: 'btn-aqua-teal', flat: 'btn-update' },
           'ui-btn--delete': { aqua: 'btn-aqua-red', flat: 'btn-delete' },
           'ui-btn--cancel': { aqua: 'btn-aqua-zinc', flat: 'btn-cancel' },
-          'ui-btn--empty': { aqua: 'btn-aqua-secondary', flat: 'btn-empty' },
+          'ui-btn--empty': { aqua: 'btn-aqua-white', flat: 'btn-empty' },
           'ui-btn--reaction': { aqua: 'btn-aqua-cyan', flat: 'btn-reaction' },
           'ui-btn--reaction-active': { aqua: 'btn-aqua-blue', flat: 'btn-reaction-active' },
           'ui-btn--get': { aqua: 'btn-aqua-get', flat: 'btn-get' },
@@ -861,11 +971,6 @@ export default {
         flatRules[selectorFor('flat', 'ui-btn--fab')] = {
           '@apply btn-market !h-14 !w-14 rounded-full !text-lg': {},
         }
-        const toggleOffShadow =
-          '0 0.375em 0.5em rgba(0, 0, 0, 0.3),' +
-          '0 0.125em 0.125em hsla(0, 0%, 36.7%, 0.5),' +
-          'inset 0 0.15em 0.35em rgba(255, 255, 255, 0.7),' +
-          'inset 0 -0.05em 0.2em rgba(0, 0, 0, 0.06)'
         aquaRules[selectorFor('aqua', 'ui-btn--toggle.active')] = {
           '@apply aqua-base bg-red-400': {},
           '--aqua-hue': '0',
