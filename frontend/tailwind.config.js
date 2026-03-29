@@ -785,7 +785,7 @@ export default {
           'ui-btn--update': { aqua: 'btn-aqua-teal', flat: 'btn-update' },
           'ui-btn--delete': { aqua: 'btn-aqua-red', flat: 'btn-delete' },
           'ui-btn--cancel': { aqua: 'btn-aqua-zinc', flat: 'btn-cancel' },
-          'ui-btn--empty': { aqua: 'btn-aqua-white', flat: 'btn-empty' },
+          'ui-btn--empty': { aqua: 'btn-aqua-secondary', flat: 'btn-empty' },
           'ui-btn--reaction': { aqua: 'btn-aqua-cyan', flat: 'btn-reaction' },
           'ui-btn--reaction-active': { aqua: 'btn-aqua-blue', flat: 'btn-reaction-active' },
           'ui-btn--get': { aqua: 'btn-aqua-get', flat: 'btn-get' },

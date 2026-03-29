@@ -18,7 +18,7 @@
       <div
         v-if="open"
         ref="panelRef"
-        class="fixed z-40 w-fit min-w-0 max-w-[calc(100vw-1rem)] bg-white border rounded-lg shadow-lg py-1"
+        class="fixed z-50 w-fit min-w-0 max-w-[calc(100vw-1rem)] overflow-y-auto bg-white border rounded-lg shadow-lg py-1"
         :style="panelStyle"
         @click="open = false"
       >
@@ -45,6 +45,15 @@ defineProps({
 
 const VIEWPORT_MARGIN = 8
 
+/** Keep the teleported panel at or below the app sticky header so it is not clipped (same z-layer as header). */
+function getAppHeaderBottom(): number {
+  const header = document.querySelector('#app > header')
+  if (header instanceof HTMLElement) {
+    return header.getBoundingClientRect().bottom
+  }
+  return VIEWPORT_MARGIN
+}
+
 const open = ref(false)
 const rootRef = ref<HTMLElement | null>(null)
 const panelRef = ref<HTMLElement | null>(null)
@@ -66,24 +75,32 @@ function updatePanelPosition() {
 
   const vw = window.innerWidth
   const vh = window.innerHeight
+  const minTop = getAppHeaderBottom() + VIEWPORT_MARGIN
 
   // Prefer aligning the menu’s right edge with the trigger (compact controls on the left).
   let left = tr.right - pr.width
   left = Math.max(VIEWPORT_MARGIN, Math.min(left, vw - pr.width - VIEWPORT_MARGIN))
 
   let top = tr.bottom + VIEWPORT_MARGIN
+  let maxHeight: string | undefined
+
   if (top + pr.height > vh - VIEWPORT_MARGIN) {
     const above = tr.top - pr.height - VIEWPORT_MARGIN
-    if (above >= VIEWPORT_MARGIN) {
+    if (above >= minTop) {
       top = above
     } else {
-      top = Math.max(VIEWPORT_MARGIN, vh - pr.height - VIEWPORT_MARGIN)
+      top = minTop
+      maxHeight = `${vh - minTop - VIEWPORT_MARGIN}px`
     }
+  } else if (top < minTop) {
+    top = minTop
+    maxHeight = `${vh - minTop - VIEWPORT_MARGIN}px`
   }
 
   panelStyle.value = {
     top: `${top}px`,
     left: `${left}px`,
+    ...(maxHeight ? { maxHeight } : {}),
   }
 }
 

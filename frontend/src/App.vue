@@ -254,40 +254,38 @@
     </div>
 
   </main>
-  <!-- Action Overlay -->
-  <div v-if="showActionModal" class="fixed inset-0 z-40" @click="showActionModal = false"></div>
-  <!-- Floating Action Button -->
+  <!-- Floating action menu (FAB trigger + standard dropdown panel) -->
   <div class="max-w-4xl mx-auto relative"
     v-if="auth.state.isLoggedIn && route.name !== 'flashcard-study' && !route.meta.fullHeight">
 
     <div
       class="fixed md:absolute bottom-6 right-4 md:bottom-8 md:right-8 lg:-right-4 lg:-mr-4 z-50 flex flex-col items-end gap-3">
-      <!-- Action Buttons -->
-      <transition enter-active-class="transition ease-out duration-200"
-        enter-from-class="opacity-0 translate-y-2 pointer-events-none"
-        enter-to-class="opacity-100 translate-y-0 pointer-events-auto"
-        leave-active-class="transition ease-in duration-150"
-        leave-from-class="opacity-100 translate-y-0 pointer-events-auto"
-        leave-to-class="opacity-0 translate-y-2 pointer-events-none">
-        <div v-show="showActionModal" class="flex flex-col gap-4 mb-1 items-end pointer-events-auto pr-1">
-          <IconButton :label="$t('nav.assistant')" button-classes="ui-btn--neutral-slate fab-menu-action"
-            @click="handleAssistantChat"> <template #icon>
-              <Bot class="h-6 w-6 text-indigo-600" />
-            </template>
-          </IconButton>
-          <IconButton v-if="auth.state.isLoggedIn" :label="$t('fab.newDiscussion')"
-            button-classes="ui-btn--neutral fab-menu-action" @click="handleNewFreeThread">
-            <template #icon>
-              <AudioWaveform class="h-6 w-6 text-purple-600" />
-            </template>
-          </IconButton>
-          <IconButton v-if="auth.state.isLoggedIn" :label="$t('fab.addDefinition')" icon-classes="h-6 w-6"
-            button-classes="ui-btn--create fab-menu-action" @click="handleNewDefinition" />
-        </div>
-      </transition> <button type="button" class="inline-flex items-center justify-center ui-btn--fab"
-        @click="showActionModal = !showActionModal">
-        <Plus class="h-7 w-7 transition-all duration-200" :class="{ 'rotate-45': showActionModal }" />
-      </button>
+      <Dropdown>
+        <template #trigger="{ open }">
+          <button type="button" class="inline-flex items-center justify-center ui-btn--fab"
+            :aria-label="$t('fab.actionsTitle')">
+            <Plus class="h-7 w-7 transition-all duration-200" :class="{ 'rotate-45': open }" />
+          </button>
+        </template>
+        <ToolbarSelectDropdownItem class="!px-4 !py-3 !text-base" @click="handleAssistantChat">
+          <span class="flex items-center gap-3">
+            <Bot class="h-6 w-6 shrink-0 text-indigo-600" stroke-width="2" />
+            {{ $t('nav.assistant') }}
+          </span>
+        </ToolbarSelectDropdownItem>
+        <ToolbarSelectDropdownItem class="!px-4 !py-3 !text-base" @click="handleNewFreeThread">
+          <span class="flex items-center gap-3">
+            <AudioWaveform class="h-6 w-6 shrink-0 text-purple-600" stroke-width="2" />
+            {{ $t('fab.newDiscussion') }}
+          </span>
+        </ToolbarSelectDropdownItem>
+        <ToolbarSelectDropdownItem class="!px-4 !py-3 !text-base" @click="handleNewDefinition">
+          <span class="flex items-center gap-3">
+            <FilePlus class="h-6 w-6 shrink-0 text-emerald-600" stroke-width="2" />
+            {{ $t('fab.addDefinition') }}
+          </span>
+        </ToolbarSelectDropdownItem>
+      </Dropdown>
     </div>
 
   </div>
@@ -308,6 +306,7 @@ import {
   X,
   Shield,
   Plus,
+  FilePlus,
   AudioWaveform,
   BookmarkCheck,
   Clock4,
@@ -326,7 +325,7 @@ import Error from '@/components/Error.vue'
 import ToastFloat from '@/components/ToastFloat.vue'
 import { resendConfirmation } from '@/api'
 import CoursesIcon from '@/components/icons/CoursesIcon.vue'
-import { IconButton } from '@packages/ui'
+import { Dropdown, ToolbarSelectDropdownItem } from '@packages/ui'
 
 import BackgroundComponent from './components/BackgroundComponent.vue'
 import FooterComponent from './components/FooterComponent.vue'
@@ -383,7 +382,6 @@ const { successToast, clearSuccess } = provideSuccessToast()
 const isMenuOpen = ref(false)
 const isMoreNavOpen = ref(false)
 const moreNavRef = ref(null)
-const showActionModal = ref(false)
 const showPyro = ref(false)
 const discordChatUrl = 'https://discord.gg/4KhzRzpmVr'
 const showTestDataWarning = import.meta.env.VITE_SHOW_TEST_DATA_WARNING === 'true'
@@ -421,17 +419,14 @@ const snowflakes = ref(generateSnowflakes())
 
 const handleNewDefinition = () => {
   router.push('/valsi/add')
-  showActionModal.value = false // Close modal
 }
 
 const handleAssistantChat = () => {
   router.push('/assistant')
-  showActionModal.value = false
 }
 
 const handleNewFreeThread = () => {
   router.push('/comments/new-thread')
-  showActionModal.value = false // Close modal
 }
 
 const triggerPyro = () => {
