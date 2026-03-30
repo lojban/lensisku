@@ -1,4 +1,4 @@
-//! Kitten TTS Mini 0.8 ONNX inference (phoneme path), ported from `KittenTTS/kittentts/onnx_model.py`.
+//! Kitten TTS Nano 0.8 ONNX inference (phoneme path), ported from `KittenTTS/kittentts/onnx_model.py`.
 #![allow(clippy::expect_used)] // fixed tokenizer pattern
 
 use std::collections::HashMap;
@@ -16,8 +16,8 @@ use regex::Regex;
 use super::lojban_ipa::lojban_to_ipa;
 
 const HF_BASE: &str =
-    "https://huggingface.co/KittenML/kitten-tts-mini-0.8/resolve/main";
-const MODEL_FILENAME: &str = "kitten_tts_mini_v0_8.onnx";
+    "https://huggingface.co/KittenML/kitten-tts-nano-0.8/resolve/main";
+const MODEL_FILENAME: &str = "kitten_tts_nano_v0_8.onnx";
 const VOICES_FILENAME: &str = "voices.npz";
 const TRIM_TAIL_SAMPLES: usize = 5000;
 pub const SAMPLE_RATE_HZ: u32 = 24_000;
@@ -104,12 +104,12 @@ fn phoneme_tokens(ipa: &str) -> Vec<i64> {
 
 fn cache_dir() -> PathBuf {
     if let Ok(xdg) = std::env::var("XDG_CACHE_HOME") {
-        return PathBuf::from(xdg).join("lensisku/kitten-tts-mini-0.8");
+        return PathBuf::from(xdg).join("lensisku/kitten-tts-nano-0.8");
     }
     if let Ok(home) = std::env::var("HOME") {
-        return PathBuf::from(home).join(".cache/lensisku/kitten-tts-mini-0.8");
+        return PathBuf::from(home).join(".cache/lensisku/kitten-tts-nano-0.8");
     }
-    std::env::temp_dir().join("lensisku/kitten-tts-mini-0.8")
+    std::env::temp_dir().join("lensisku/kitten-tts-nano-0.8")
 }
 
 /// Ensures ONNX + `voices.npz` exist under [`cache_dir`]. Safe to call every batch; the download

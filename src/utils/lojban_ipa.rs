@@ -1,4 +1,4 @@
-//! Lojban text → IPA, ported from `KittenTTS/lojban.py` for Kitten TTS phoneme input.
+//! Lojban text → IPA, matching `lojban_speak.py` / `lojban2ipa` for Kitten TTS phoneme input.
 
 #![allow(clippy::expect_used)] // compile-time-fixed patterns
 
@@ -25,29 +25,6 @@ fn krulermorna(text: &str) -> String {
     DOT.replace_all(&text, "").to_string()
 }
 
-/// Matches Python `re.split(r'(?=[aeiouyąęǫḁ])', word)` (Rust `regex` has no look-around).
-fn split_before_vowels(word: &str) -> Vec<String> {
-    let mut pieces = Vec::new();
-    let mut buf = String::new();
-    for ch in word.chars() {
-        if matches!(
-            ch,
-            'a' | 'e' | 'i' | 'o' | 'u' | 'y' | 'ą' | 'ę' | 'ǫ' | 'ḁ'
-        ) {
-            if !buf.is_empty() {
-                pieces.push(std::mem::take(&mut buf));
-            }
-            buf.push(ch);
-        } else {
-            buf.push(ch);
-        }
-    }
-    if !buf.is_empty() {
-        pieces.push(buf);
-    }
-    pieces
-}
-
 fn krulermorna_words<const N: usize>(words: [&str; N]) -> [String; N] {
     let mut out: [String; N] = std::array::from_fn(|_| String::new());
     for (i, w) in words.iter().enumerate() {
@@ -72,10 +49,28 @@ static TERMINATOR_WORDS: Lazy<std::collections::HashSet<String>> = Lazy::new(|| 
         .collect()
 });
 
-/// Sorted by pattern key length descending (matches Python `sorted(ipa_map.items(), ...)`).
-/// `r` is handled manually (needs negative lookahead in Python).
+/// Syllable nuclei after krulermorna: diphthong letters, glide + vowel, or a simple vowel.
+static NUCLEUS_PATTERN: Lazy<Regex> = Lazy::new(|| {
+    Regex::new(r"ą|ę|ǫ|ḁ|ɩ[aeiouy]|[aeiouy]").expect("nucleus_pattern")
+});
+
+/// Index *before* which to insert primary stress (ˈ), Lojban penultimate syllable.
+fn stress_insert_index(word: &str) -> Option<usize> {
+    let indices: Vec<usize> = NUCLEUS_PATTERN
+        .find_iter(word)
+        .map(|m| m.start())
+        .collect();
+    if indices.len() <= 1 {
+        return None;
+    }
+    Some(indices[indices.len() - 2])
+}
+
+/// Sorted by pattern key length descending (matches Python `sorted(ipa_vits.items(), ...)`).
 static IPA_RULES: Lazy<Vec<(Regex, &'static str)>> = Lazy::new(|| {
     let mut raw: Vec<(&str, &str)> = vec![
+        // Longer `r` before short `r` (same as Python ipa_vits order by length)
+        (r"r(?![ˈaeiouyḁąęǫ])", "ɹɹ"),
         ("ɩa", "jaː"),
         ("ɩe", "jɛː"),
         ("ɩi", "jiː"),
@@ -89,8 +84,8 @@ static IPA_RULES: Lazy<Vec<(Regex, &'static str)>> = Lazy::new(|| {
         ("wu", "wuː"),
         ("wy", "wəː"),
         ("ng", "n.g"),
-        ("a$", "aː"),
-        ("a", "aː"),
+        ("a$", "ɑː"),
+        ("a", "ɑː"),
         ("e", "ɛː"),
         ("i", "iː"),
         ("o", "oː"),
@@ -110,6 +105,7 @@ static IPA_RULES: Lazy<Vec<(Regex, &'static str)>> = Lazy::new(|| {
         ("v", "v"),
         ("x", "hhhh"),
         ("'", "h"),
+        ("r", "ɹ"),
         ("n", "n"),
         ("m", "m"),
         ("l", "l"),
@@ -131,31 +127,12 @@ static IPA_RULES: Lazy<Vec<(Regex, &'static str)>> = Lazy::new(|| {
         .collect()
 });
 
-fn ipa_r_substitution(tail: &str) -> Option<&'static str> {
-    if !tail.starts_with('r') {
-        return None;
-    }
-    let after = tail['r'.len_utf8()..].chars().next();
-    let use_rr = match after {
-        None => true,
-        Some(c) => {
-            !matches!(c, 'ˈ' | 'a' | 'e' | 'i' | 'o' | 'u' | 'y' | 'ḁ' | 'ą' | 'ę' | 'ǫ')
-        }
-    };
-    Some(if use_rr { "ɹɹ" } else { "ɹ" })
-}
-
 fn ipa_transform_word(modified_word: &str) -> String {
     let mut rebuilt = String::with_capacity(modified_word.len() * 2);
     let mut byte_i = 0;
     let total = modified_word.len();
     while byte_i < total {
         let tail = &modified_word[byte_i..];
-        if let Some(sub) = ipa_r_substitution(tail) {
-            rebuilt.push_str(sub);
-            byte_i += 'r'.len_utf8();
-            continue;
-        }
         let mut matched = false;
         for (re, val) in IPA_RULES.iter() {
             if let Some(m) = re.find(tail) {
@@ -186,10 +163,9 @@ fn char_is_vowel(ch: char) -> bool {
     )
 }
 
-/// Lojban text → IPA string, matching `lojban2ipa` in `KittenTTS/lojban.py`.
+/// Lojban text → IPA string, matching `lojban2ipa` in the Python Kitten TTS script.
 pub fn lojban_to_ipa(text: &str) -> String {
-    let text_trim = text.trim();
-    let krul = krulermorna(text_trim);
+    let krul = krulermorna(text.trim());
     let words: Vec<&str> = krul.split(' ').filter(|w| !w.is_empty()).collect();
     let mut rebuilt_words: Vec<String> = Vec::with_capacity(words.len());
 
@@ -200,52 +176,29 @@ pub fn lojban_to_ipa(text: &str) -> String {
 
         if QUESTION_WORDS.contains(*word) {
             postfix.push('?');
-            prefix.push(' ');
+            prefix = format!(" {prefix}");
         }
         if STARTER_WORDS.contains(*word) {
-            prefix.push(' ');
+            prefix = format!(" {prefix}");
         }
         if TERMINATOR_WORDS.contains(*word) {
-            postfix.push_str(", ");
+            postfix = ", ".to_string();
         }
 
-        if index == 0 || *word == "ni'o" || *word == "i" {
-            prefix.insert_str(0, ", ");
+        if index > 0 && (*word == "ni'o" || *word == "i") {
+            prefix = format!(", {prefix}");
         }
 
-        let split_word = split_before_vowels(word);
-        let n = split_word.len();
-        let tail_word: &[String] = if n >= 2 {
-            &split_word[n - 2..]
-        } else {
-            &[]
-        };
-
-        if tail_word.len() == 2
-            && !tail_word[0].is_empty()
-            && tail_word[0].chars().next().is_some_and(char_is_vowel)
-            && tail_word[1].chars().next().is_some_and(char_is_vowel)
-        {
-            let head_word = split_word[..n.saturating_sub(2)].join("");
-            modified_word = format!("{}ˈ{}{}", head_word, tail_word[0], tail_word[1]);
-            postfix.push(' ');
-        } else if tail_word.len() == 2
-            && !tail_word[0].is_empty()
-            && tail_word[1]
-                .chars()
-                .next()
-                .is_some_and(|c| matches!(c, 'ą' | 'ę' | 'ǫ' | 'ḁ'))
-        {
-            let head_word = split_word[..n.saturating_sub(2)].join("");
-            modified_word = format!(
-                "{}{}ˈ{}",
-                head_word, tail_word[0], tail_word[1]
-            );
-            postfix.push(' ');
+        if let Some(si) = stress_insert_index(word) {
+            modified_word = format!("{}ˈ{}", &word[..si], &word[si..]);
+            let n_nuclei = NUCLEUS_PATTERN.find_iter(word).count();
+            if n_nuclei >= 2 {
+                postfix.push(' ');
+            }
         }
 
         if !(index > 0 && STARTER_WORDS.contains(words[index - 1])) {
-            prefix.insert(0, ' ');
+            prefix = format!(" {prefix}");
         }
 
         let rebuilt_word = ipa_transform_word(&modified_word);
@@ -275,5 +228,11 @@ mod tests {
     fn klama_stress_and_shape() {
         let ipa = lojban_to_ipa("klama");
         assert!(ipa.contains('ˈ') || ipa.contains('k'));
+    }
+
+    #[test]
+    fn uses_open_back_a() {
+        let ipa = lojban_to_ipa("a");
+        assert!(ipa.contains('ɑ'));
     }
 }
