@@ -5,6 +5,7 @@ use crate::{
     mailarchive::{check_for_new_emails, import_maildir},
     notifications::run_email_notifications,
 };
+use super::valsi_tts;
 use chrono::Local;
 use deadpool_postgres::Pool;
 use log::{error, info};
@@ -284,6 +285,9 @@ pub async fn spawn_background_tasks(
     tokio::spawn(async move {
         run_email_notifications(email_pool).await;
     });
+
+    // Generate missing valsi sounds (Lojban, Kitten TTS Mini 0.8 / Bruno) every 5 minutes
+    valsi_tts::spawn_valsi_sound_generation(pool.clone());
 
     // Cache dictionary exports
     let export_lock = Arc::new(Mutex::new(()));
