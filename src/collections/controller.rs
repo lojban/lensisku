@@ -310,7 +310,7 @@ pub async fn delete_collection(
     ),
     security(("bearer_auth" = [])),
     summary = "Upload collection cover image",
-    description = "Uploads or replaces the collection logo. Owner only; same format and limits as profile images."
+    description = "Uploads or replaces the collection logo. Owner only. Raster types (JPEG, PNG, WebP) are compressed to WebP; SVG is stored as UTF-8 after validation (no scripts). Max 5MB decoded."
 )]
 #[post("/{id}/image")]
 pub async fn post_collection_image(

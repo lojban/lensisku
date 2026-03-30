@@ -11,19 +11,36 @@
       <div class="flex flex-wrap justify-between items-center gap-4">
 
         <div class="flex flex-col sm:flex-row sm:items-center gap-3 min-w-0 flex-1">
-          <div v-if="collectionCoverDisplayUrl" class="collection-card-logo overflow-hidden shrink-0 mx-auto sm:mx-0">
-            <img
-              :src="collectionCoverDisplayUrl"
-              :alt="
-                collectionMeta?.name
-                  ? t('collectionDetail.coverImageAlt', { name: collectionMeta.name })
-                  : t('flashcardStudy.title')
-              "
-              class="h-full w-full object-cover"
-              loading="lazy"
-              decoding="async"
-            />
-          </div>
+          <CollectionCoverLightbox
+            v-if="collectionCoverDisplayUrl"
+            :image-url="collectionCoverDisplayUrl"
+            :alt="
+              collectionMeta?.name
+                ? t('collectionDetail.coverImageAlt', { name: collectionMeta.name })
+                : t('flashcardStudy.title')
+            "
+            :aria-label="
+              collectionMeta?.name
+                ? t('collectionDetail.coverLightboxDialog', { name: collectionMeta.name })
+                : t('flashcardStudy.title')
+            "
+            :close-aria-label="t('collectionDetail.coverLightboxClose')"
+            class="shrink-0 mx-auto sm:mx-0"
+          >
+            <div class="collection-card-logo overflow-hidden">
+              <img
+                :src="collectionCoverDisplayUrl"
+                :alt="
+                  collectionMeta?.name
+                    ? t('collectionDetail.coverImageAlt', { name: collectionMeta.name })
+                    : t('flashcardStudy.title')
+                "
+                class="h-full w-full object-cover"
+                loading="lazy"
+                decoding="async"
+              />
+            </div>
+          </CollectionCoverLightbox>
           <div
             v-else
             class="collection-card-logo-placeholder shrink-0 mx-auto sm:mx-0"
@@ -522,6 +539,7 @@ import { ref, onMounted, computed, watch, nextTick, onBeforeUnmount } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import AnonymousProgressBanner from '@/components/AnonymousProgressBanner.vue'
+import { CollectionCoverLightbox } from '@packages/ui'
 
 import {
   getDueCards,

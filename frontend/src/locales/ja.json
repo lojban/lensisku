@@ -500,6 +500,8 @@
     "noItems": "項目がありません。",
     "editCollectionTitle": "コレクションを編集",
     "coverImageAlt": "「{name}」のカバー画像",
+    "coverLightboxClose": "プレビューを閉じる",
+    "coverLightboxDialog": "「{name}」のカバー画像プレビュー",
     "collectionCoverUploadTitle": "カバー画像をアップロード",
     "collectionCoverRemoveTitle": "カバー画像を削除",
     "collectionCoverRemoveConfirm": "このコレクションのカバー画像を削除しますか？",

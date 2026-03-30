@@ -471,6 +471,8 @@
     "noItems": "Элементы не найдены.",
     "editCollectionTitle": "Редактировать коллекцию",
     "coverImageAlt": "Обложка коллекции «{name}»",
+    "coverLightboxClose": "Закрыть просмотр",
+    "coverLightboxDialog": "Обложка коллекции «{name}»",
     "collectionCoverUploadTitle": "Загрузить обложку",
     "collectionCoverRemoveTitle": "Удалить обложку",
     "collectionCoverRemoveConfirm": "Удалить обложку этой коллекции?",

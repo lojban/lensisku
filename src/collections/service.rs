@@ -5,9 +5,59 @@ use crate::utils::remove_html_tags;
 use crate::{
     auth_utils::verify_collection_ownership, export::models::CollectionExportItem,
     flashcards::models::FlashcardDirection, middleware::image::ImageProcessor,
-    utils::validate_item_audio, utils::validate_item_image,     users::dto::ProfileImageRequest, users::validate_profile_image, AppError, AppResult,
+    utils::validate_item_audio, utils::validate_item_image, users::dto::ProfileImageRequest,
+    AppError, AppResult,
 };
 use base64::{engine::general_purpose::STANDARD as BASE64, Engine};
+
+/// Max decoded logo size (same order of magnitude as profile images).
+const MAX_COLLECTION_LOGO_SIZE: usize = 5 * 1024 * 1024;
+
+fn mime_base(mime: &str) -> &str {
+    mime.split(';').next().unwrap_or(mime).trim()
+}
+
+/// Raster types go through WebP compression; SVG is stored as UTF-8 after light checks.
+fn validate_collection_logo(req: &ProfileImageRequest) -> Result<Vec<u8>, String> {
+    let decoded = BASE64
+        .decode(&req.data)
+        .map_err(|_| "Invalid base64 data".to_string())?;
+
+    if decoded.len() > MAX_COLLECTION_LOGO_SIZE {
+        return Err("Image size exceeds 5MB limit".to_string());
+    }
+
+    let mime = mime_base(&req.mime_type);
+    if mime.eq_ignore_ascii_case("image/svg+xml") {
+        validate_svg_logo(&decoded)?;
+        return Ok(decoded);
+    }
+
+    if !["image/jpeg", "image/png", "image/webp"].contains(&mime) {
+        return Err(
+            "Invalid image type. Supported types: JPEG, PNG, WebP, SVG".to_string(),
+        );
+    }
+
+    Ok(decoded)
+}
+
+fn validate_svg_logo(data: &[u8]) -> Result<(), String> {
+    let text = std::str::from_utf8(data).map_err(|_| "SVG must be valid UTF-8".to_string())?;
+    let lower = text.to_ascii_lowercase();
+    if !lower.contains("<svg") {
+        return Err("Invalid SVG: expected an <svg> document".to_string());
+    }
+    if lower.contains("<script") || lower.contains("javascript:") {
+        return Err("SVG must not contain scripts".to_string());
+    }
+    for needle in [" onload=", " onerror=", " onfocus=", "href=\"javascript:"] {
+        if lower.contains(needle) {
+            return Err("SVG must not contain executable handlers".to_string());
+        }
+    }
+    Ok(())
+}
 use chrono::{DateTime, Utc};
 use deadpool_postgres::{Pool, Transaction};
 use std::collections::HashSet;
@@ -3682,9 +3732,14 @@ pub async fn upsert_collection_image(
     user_id: i32,
     req: &ProfileImageRequest,
 ) -> AppResult<()> {
-    let image_data = validate_profile_image(req).map_err(AppError::BadRequest)?;
-    let (compressed_data, new_mime_type) = ImageProcessor::compress_avatar(&image_data, &req.mime_type)
-        .map_err(AppError::BadRequest)?;
+    let image_data = validate_collection_logo(req).map_err(AppError::BadRequest)?;
+    let (stored_data, new_mime_type) =
+        if mime_base(&req.mime_type).eq_ignore_ascii_case("image/svg+xml") {
+            (image_data, "image/svg+xml".to_string())
+        } else {
+            ImageProcessor::compress_avatar(&image_data, mime_base(&req.mime_type))
+                .map_err(AppError::BadRequest)?
+        };
 
     let mut client = pool
         .get()
@@ -3706,7 +3761,7 @@ pub async fn upsert_collection_image(
                 image_data = EXCLUDED.image_data,
                 mime_type = EXCLUDED.mime_type,
                 updated_at = CURRENT_TIMESTAMP",
-            &[&collection_id, &compressed_data, &new_mime_type],
+            &[&collection_id, &stored_data, &new_mime_type],
         )
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;

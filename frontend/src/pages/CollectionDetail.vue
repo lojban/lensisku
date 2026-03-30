@@ -5,15 +5,23 @@
     <div class="bg-white border rounded-lg p-4 sm:p-6 mb-6 flex flex-col gap-4">
       <div class="flex flex-col gap-3 sm:gap-4">
         <div class="flex flex-row items-stretch gap-3 sm:gap-4">
-          <div v-if="collectionCoverDisplayUrl" class="collection-header-logo">
-            <img
-              :src="collectionCoverDisplayUrl"
-              :alt="t('collectionDetail.coverImageAlt', { name: collection.name })"
-              class="h-full w-full object-cover"
-              loading="lazy"
-              decoding="async"
-            />
-          </div>
+          <CollectionCoverLightbox
+            v-if="collectionCoverDisplayUrl"
+            :image-url="collectionCoverDisplayUrl"
+            :alt="t('collectionDetail.coverImageAlt', { name: collection.name })"
+            :aria-label="t('collectionDetail.coverLightboxDialog', { name: collection.name })"
+            :close-aria-label="t('collectionDetail.coverLightboxClose')"
+          >
+            <div class="collection-header-logo">
+              <img
+                :src="collectionCoverDisplayUrl"
+                :alt="t('collectionDetail.coverImageAlt', { name: collection.name })"
+                class="h-full w-full object-cover"
+                loading="lazy"
+                decoding="async"
+              />
+            </div>
+          </CollectionCoverLightbox>
           <div v-else class="collection-header-logo-placeholder" aria-hidden="true">
             <BookOpen class="h-5 w-5 sm:h-7 sm:w-7 md:h-9 md:w-9" />
           </div>
@@ -1363,7 +1371,7 @@ import ModalComponent from '@/components/ModalComponent.vue'
 import PaginationComponent from '@/components/PaginationComponent.vue'
 import SearchInput from '@/components/SearchInput.vue'
 import TabbedPageHeader from '@/components/TabbedPageHeader.vue'
-import { Dropdown } from '@packages/ui'
+import { Dropdown, CollectionCoverLightbox } from '@packages/ui'
 import { useAuth } from '@/composables/useAuth'
 import { useError } from '@/composables/useError'
 import { useSeoHead } from '@/composables/useSeoHead'

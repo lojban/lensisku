@@ -786,6 +786,17 @@ export default {
           '@apply w-28 h-28 rounded-xl bg-gray-200 flex items-center justify-center text-gray-400 border-4 border-white shadow-lg':
             {},
         },
+        /** Full-screen collection cover preview (CollectionCoverLightbox). */
+        '.collection-cover-lightbox-backdrop': {
+          '@apply fixed inset-0 z-[10050] flex items-center justify-center bg-black/85 p-4 sm:p-8': {},
+        },
+        '.collection-cover-lightbox-image': {
+          '@apply max-h-[min(92vh,100%)] max-w-[min(92vw,100%)] w-auto h-auto object-contain rounded-lg shadow-2xl ring-1 ring-white/10': {},
+        },
+        '.collection-cover-lightbox-close': {
+          '@apply absolute top-3 right-3 sm:top-5 sm:right-5 rounded-full bg-white/15 p-2 text-white hover:bg-white/25 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white/80':
+            {},
+        },
         /** Logo SVG wrapper in app header. */
         '.logo-svg-container': {
           '@apply flex h-full w-full items-center justify-center [&>svg]:block [&>svg]:h-full [&>svg]:w-full [&>svg]:max-h-full [&>svg]:max-w-full':
