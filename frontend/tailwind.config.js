@@ -58,7 +58,7 @@ export default {
           /** Do not target `.sr-only` — that would override `position:absolute` and break flex centering on icon-only controls. */
           '& span:not(.sr-only)': {
             position: 'relative',
-            top: '0.75px',
+            top: 0,
             zIndex: 1,
             whiteSpace: 'nowrap',
             overflow: 'hidden',
@@ -1037,9 +1037,9 @@ export default {
         '.btn-delete': {
           '@apply btn-base text-red-700 bg-red-50 enabled:hover:bg-red-200 border-red-400': {},
         },
-        /** Flat “get / slate-neutral”: blue surface so it does not read like btn-empty (white/gray). */
+        /** Flat “get / slate-neutral”: teal surface so it does not read like btn-empty (white/gray). */
         '.btn-get': {
-          '@apply btn-base text-blue-700 bg-blue-50 enabled:hover:bg-blue-100 border-blue-400':
+          '@apply btn-base text-teal-700 bg-teal-50 enabled:hover:bg-teal-100 border-teal-400':
             {},
         },
         '.btn-market': {
@@ -1147,13 +1147,17 @@ export default {
             },
           },
         },
+        /** Below 512px: separate pills with gap (no segment bar). From 512px up: fused segment control. */
         '.btn-group-forced': {
-          '@apply gap-0': {},
-          '& .btn-group-item, & .ui-btn--group-item': {
-            '@apply rounded-none first:rounded-l-full last:rounded-r-full': {},
-            /** Tighter inner joins: base controls use `px-3`; reduce horizontal padding at segment seams only. */
-            '&:not(:last-child)': {
-              '@apply border-r-0': {},
+          '@apply gap-2': {},
+          '@media (min-width: 512px)': {
+            '@apply gap-0': {},
+            '& .btn-group-item, & .ui-btn--group-item': {
+              '@apply rounded-none first:rounded-l-full last:rounded-r-full': {},
+              /** Tighter inner joins: base controls use `px-3`; reduce horizontal padding at segment seams only. */
+              '&:not(:last-child)': {
+                '@apply border-r-0': {},
+              },
             },
           },
         },
@@ -1430,12 +1434,16 @@ export default {
         flatRules[selectorFor('flat', 'ui-btn--toggle:not(.active)')] = {
           '@apply btn-empty': {},
         }
-        /** Beats semantic ui-btn--* primitives (loaded above) so inner segments stay square in forced groups. */
-        aquaRules[selectorFor('aqua', 'btn-group-forced .ui-btn--group-item')] = aquaUiBtnGroupItemGeometry
+        /** Beats semantic ui-btn--* primitives so inner segments stay square in forced groups (512px+ only; mobile uses normal pills). */
+        aquaRules[selectorFor('aqua', 'btn-group-forced .ui-btn--group-item')] = {
+          '@media (min-width: 512px)': aquaUiBtnGroupItemGeometry,
+        }
         flatRules[selectorFor('flat', 'btn-group-forced .ui-btn--group-item')] = {
-          '@apply rounded-none first:rounded-l-full last:rounded-r-full': {},
-          '&:not(:last-child)': {
-            '@apply border-r-0': {},
+          '@media (min-width: 512px)': {
+            '@apply rounded-none first:rounded-l-full last:rounded-r-full': {},
+            '&:not(:last-child)': {
+              '@apply border-r-0': {},
+            },
           },
         }
         /** Cheetah aqua: `notebook > header` + tab chrome (#F5F5F5 strip, #9ac7e6 band, GTK tab gradients). */
