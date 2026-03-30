@@ -2,65 +2,28 @@
 
   <div v-if="collection">
      <!-- Header -->
-    <div class="bg-white border rounded-lg p-4 sm:p-6 mb-6 flex flex-col gap-4">
-      <div class="flex flex-col gap-3 sm:gap-4">
-        <div class="flex flex-row items-stretch gap-3 sm:gap-4">
-          <CollectionCoverLightbox
-            v-if="collectionCoverDisplayUrl"
-            :image-url="collectionCoverDisplayUrl"
-            :alt="t('collectionDetail.coverImageAlt', { name: collection.name })"
-            :aria-label="t('collectionDetail.coverLightboxDialog', { name: collection.name })"
-            :close-aria-label="t('collectionDetail.coverLightboxClose')"
-          >
-            <div class="collection-header-logo">
-              <img
-                :src="collectionCoverDisplayUrl"
-                :alt="t('collectionDetail.coverImageAlt', { name: collection.name })"
-                class="h-full w-full object-cover"
-                loading="lazy"
-                decoding="async"
-              />
-            </div>
-          </CollectionCoverLightbox>
-          <div v-else class="collection-header-logo-placeholder" aria-hidden="true">
-            <BookOpen class="h-5 w-5 sm:h-7 sm:w-7 md:h-9 md:w-9" />
-          </div>
-          <div class="min-w-0 flex-1 flex flex-col gap-2 pt-0.5">
-            <div class="flex items-center gap-2 text-gray-500 italic text-sm mb-1">
-              <List class="w-5 h-5 shrink-0" aria-hidden="true" />
-              <span>{{ t('collectionDetail.pageHint') }}</span>
-            </div>
-            <h2 class="text-xl sm:text-2xl font-bold text-gray-800">{{ collection.name }}</h2>
-          </div>
+    <CollectionPageHeader
+      :collection="collection"
+      :cover-image-url="collectionCoverDisplayUrl"
+      :cover-image-alt="t('collectionDetail.coverImageAlt', { name: collection.name })"
+      :cover-lightbox-dialog-label="t('collectionDetail.coverLightboxDialog', { name: collection.name })"
+      :cover-lightbox-close-label="t('collectionDetail.coverLightboxClose')"
+      :public-label="t('collectionDetail.public')"
+      :private-label="t('collectionDetail.private')"
+      :created-by-label="t('collectionDetail.createdBy')"
+      :items-count-label="t('collectionDetail.itemsCount', { count: collection.item_count })"
+    >
+      <template #hint>
+        <div class="flex items-center gap-2 text-gray-500 italic text-sm mb-1">
+          <List class="w-5 h-5 shrink-0" aria-hidden="true" />
+          <span>{{ t('collectionDetail.pageHint') }}</span>
         </div>
-        <div v-if="collection.description" class="w-full min-w-0">
-          <div class="max-h-32 text-sm overflow-y-auto border rounded p-2 w-full read-box">
-            <LazyMathJax :content="collection.description" />
-          </div>
-        </div>
-      </div>
-       <!-- Row: public + owner + count + actions -->
-      <div class="flex flex-row gap-2 items-center justify-between text-sm text-gray-500">
-
-        <div class="flex flex-wrap items-center gap-2">
-           <span
-            class="text-sm px-2 py-1 rounded-full select-none shrink-0"
-            :class="
-              collection.is_public ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
-            "
-            > {{
-              collection.is_public ? t('collectionDetail.public') : t('collectionDetail.private')
-            }} </span
-          > <span
-            > {{ t('collectionDetail.createdBy') }} <RouterLink
-              :to="`/user/${collection.owner.username}`"
-              class="text-blue-600 hover:text-blue-800 hover:underline"
-              > {{ collection.owner.username }} </RouterLink
-            > </span
-          > <span>{{ t('collectionDetail.itemsCount', { count: collection.item_count }) }}</span
-          >
-        </div>
-         <Dropdown v-if="auth.state.isLoggedIn" :trigger-label="t('collectionDetail.actions')"
+      </template>
+      <template #title>
+        <h2 class="text-xl sm:text-2xl font-bold text-gray-800">{{ collection.name }}</h2>
+      </template>
+      <template #meta-actions>
+        <Dropdown v-if="auth.state.isLoggedIn" :trigger-label="t('collectionDetail.actions')"
           > <button
             v-if="isOwner"
             type="button"
@@ -104,73 +67,72 @@
              {{ t('collectionDetail.deleteCollection') }} </button
           > </Dropdown
         >
-      </div>
-       <!-- Hidden file input for JSON import --> <input
-        ref="jsonImportInput"
-        type="file"
-        accept=".json"
-        class="hidden"
-        @change="handleJsonFileSelect"
-      /> <!-- Row 4: Search and Actions -->
-      <div class="space-y-4 md:space-y-0">
+      </template>
+      <template #toolbar>
+        <input
+          ref="jsonImportInput"
+          type="file"
+          accept=".json"
+          class="hidden"
+          @change="handleJsonFileSelect"
+        />
+        <div class="space-y-4 md:space-y-0">
+          <div class="flex w-full flex-wrap items-center justify-center gap-x-2 gap-y-2">
+            <div class="relative w-full md:w-auto shrink-0">
+              <SearchInput
+                v-model="itemSearchQuery"
+                :placeholder="t('collectionDetail.searchItemsPlaceholder')"
+                :is-loading="isSearching"
+                @update:model-value="handleSearch"
+                @clear="clearItemSearch"
+              />
+            </div>
 
-        <div class="flex flex-wrap items-center gap-2 w-auto">
-
-          <div class="relative w-full md:w-auto">
-             <SearchInput
-              v-model="itemSearchQuery"
-              :placeholder="t('collectionDetail.searchItemsPlaceholder')"
-              :is-loading="isSearching"
-              @update:model-value="handleSearch"
-              @clear="clearItemSearch"
-            />
-          </div>
-
-          <div
-            v-if="isOwner"
-            class="btn-group-forced flex flex-wrap items-center md:gap-y-2"
-            role="group"
-            aria-label="Collection editing"
-          >
-             <button
-              class="ui-btn--create ui-btn--group-item md:flex-none"
-              @click="resetForm(); showAddModal = true"
+            <div
+              v-if="isOwner"
+              class="btn-group-forced flex flex-wrap items-center justify-center md:gap-y-2"
+              role="group"
+              aria-label="Collection editing"
             >
-               <PlusCircle class="w-4 h-4" /> {{ t('collectionDetail.addItem') }} </button
-            > <RouterLink
-              :to="`/collections/${props.collectionId}/custom-text-bulk`"
-              class="ui-btn--amber ui-btn--group-item inline-flex items-center gap-2"
-              > <Table2 class="w-4 h-4 shrink-0" aria-hidden="true" /> {{
-                t('collectionDetail.bulkEditCustomText')
-              }} </RouterLink
-            >
-          </div>
+              <button
+                class="ui-btn--create ui-btn--group-item md:flex-none"
+                @click="resetForm(); showAddModal = true"
+              >
+                <PlusCircle class="w-4 h-4" /> {{ t('collectionDetail.addItem') }}
+              </button>
+              <RouterLink
+                :to="`/collections/${props.collectionId}/custom-text-bulk`"
+                class="ui-btn--amber ui-btn--group-item inline-flex items-center gap-2"
+              >
+                <Table2 class="w-4 h-4 shrink-0" aria-hidden="true" />
+                {{ t('collectionDetail.bulkEditCustomText') }}
+              </RouterLink>
+            </div>
 
-          <div
-            class="btn-group-forced flex flex-wrap items-center md:gap-y-2"
-            role="group"
-            aria-label="Study"
-          >
-             <RouterLink
-              :to="`/collections/${props.collectionId}/flashcards`"
-              class="ui-btn--danger-rose ui-btn--group-item md:flex-none"
-              > <GalleryHorizontalIcon class="w-4 h-4" /> {{
-                t('collectionDetail.viewAsFlashcards')
-              }} </RouterLink
-            > <RouterLink
-              :to="`/collections/${props.collectionId}/levels`"
-              class="ui-btn--neutral ui-btn--group-item inline-flex items-center gap-2"
-              > <LayoutPanelTop class="w-4 h-4 shrink-0" aria-hidden="true" /> {{
-                t('collectionDetail.levels')
-              }} </RouterLink
+            <div
+              class="btn-group-forced flex flex-wrap items-center justify-center md:gap-y-2"
+              role="group"
+              aria-label="Study"
             >
+              <RouterLink
+                :to="`/collections/${props.collectionId}/flashcards`"
+                class="ui-btn--danger-rose ui-btn--group-item md:flex-none"
+              >
+                <GalleryHorizontalIcon class="w-4 h-4" />
+                {{ t('collectionDetail.viewAsFlashcards') }}
+              </RouterLink>
+              <RouterLink
+                :to="`/collections/${props.collectionId}/levels`"
+                class="ui-btn--neutral ui-btn--group-item inline-flex items-center gap-2"
+              >
+                <LayoutPanelTop class="w-4 h-4 shrink-0" aria-hidden="true" />
+                {{ t('collectionDetail.levels') }}
+              </RouterLink>
+            </div>
           </div>
-
         </div>
-
-      </div>
-
-    </div>
+      </template>
+    </CollectionPageHeader>
      <!-- Loading State --> <LoadingSpinner v-if="isLoading" class="py-12" /> <!-- Items List -->
     <div
       v-if="isOwner && isAddFlashcardMode"
@@ -279,15 +241,27 @@
                 v-show="isEditCollectionImageLoading"
                 class="collection-edit-logo-placeholder animate-pulse"
               />
-              <img
-                v-show="!isEditCollectionImageLoading && editCollectionImageUrl"
-                :key="editCollectionImageUrl || 'none'"
-                :src="editCollectionImageUrl"
+              <CollectionCoverLightbox
+                v-if="editCollectionImageUrl"
+                v-show="!isEditCollectionImageLoading"
+                :image-url="editCollectionImageUrl"
                 :alt="t('collectionDetail.coverImageAlt', { name: editForm.name })"
-                class="collection-edit-logo"
-                @load="handleEditCollectionImageLoad"
-                @error="handleEditCollectionImageError"
-              />
+                :aria-label="t('collectionDetail.coverLightboxDialog', { name: editForm.name })"
+                :close-aria-label="t('collectionDetail.coverLightboxClose')"
+              >
+                <div class="collection-edit-logo overflow-hidden">
+                  <img
+                    :key="editCollectionImageUrl || 'none'"
+                    :src="editCollectionImageUrl"
+                    :alt="t('collectionDetail.coverImageAlt', { name: editForm.name })"
+                    class="h-full w-full object-cover"
+                    loading="eager"
+                    decoding="async"
+                    @load="handleEditCollectionImageLoad"
+                    @error="handleEditCollectionImageError"
+                  />
+                </div>
+              </CollectionCoverLightbox>
               <div
                 v-show="!isEditCollectionImageLoading && !editCollectionImageUrl"
                 class="collection-edit-logo-placeholder"
@@ -1365,13 +1339,14 @@ import DeleteConfirmationModal from '@/components/DeleteConfirmation.vue'
 import DynamicInput from '@/components/DynamicInput.vue'
 import ImageUpload from '@/components/ImageUpload.vue'
 import SoundUpload from '@/components/SoundUpload.vue'
+import CollectionPageHeader from '@/components/CollectionPageHeader.vue'
 import LazyMathJax from '@/components/LazyMathJax.vue'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import ModalComponent from '@/components/ModalComponent.vue'
 import PaginationComponent from '@/components/PaginationComponent.vue'
 import SearchInput from '@/components/SearchInput.vue'
 import TabbedPageHeader from '@/components/TabbedPageHeader.vue'
-import { Dropdown, CollectionCoverLightbox } from '@packages/ui'
+import { Dropdown } from '@packages/ui'
 import { useAuth } from '@/composables/useAuth'
 import { useError } from '@/composables/useError'
 import { useSeoHead } from '@/composables/useSeoHead'
