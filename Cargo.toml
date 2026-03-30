@@ -71,6 +71,8 @@ num_cpus = "1.17"
 futures = "0.3.32"
 tokio = { version = "1.50", features = ["full", "time", "sync"] }
 jsonwebtoken = { version = "10.3", features = ["rust_crypto"] }
+# Transitive (`jsonwebtoken` → `rsa`). 0.8.4 trips rustc future-incompat (private `vec!`, rust#120192); keep ≥0.8.6.
+num-bigint-dig = "0.8.6"
 bcrypt = "0.19"
 actix-web-httpauth = "0.8.2"
 oauth2 = "5.0"
@@ -127,7 +129,6 @@ ndarray-npy = "0.10"
 ogg-opus = "0.1.2"
 [dev-dependencies]
 criterion = "0.8"
-
 
 [lints.clippy]
 panic = "warn"
