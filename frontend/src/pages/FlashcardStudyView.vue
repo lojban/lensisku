@@ -46,7 +46,7 @@
             class="collection-card-logo-placeholder shrink-0 mx-auto sm:mx-0"
             aria-hidden="true"
           >
-            <BookOpen class="h-7 w-7" />
+            <BookOpen class="h-8 w-8" />
           </div>
           <div class="min-w-0 text-center sm:text-left">
           <h2 class="text-xl font-bold text-gray-800"> {{ t('flashcardStudy.title') }} </h2>

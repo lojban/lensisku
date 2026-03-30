@@ -227,6 +227,12 @@ export default {
       'inset 0 -0.05em 0.2em rgba(0, 0, 0, 0.06)'
       
       /**
+       * Controls in a button bar (ignore whitespace/comments so `:first-child` on the flex item still works).
+       * Use with `:nth-child(An+B of …)` / `:nth-last-child` for segment joins.
+       */
+      const btnGroupControlOfList = 'button, a'
+
+      /**
        * Shared aqua segment geometry (radii + glossy ::before/::after), without extra segment box-shadows —
        * elevation stays on `aqua-base` / semantic primitives so wrappers and joins do not stack duplicate shadows.
        * Applied with higher specificity in buttonUiThemeLayer for `.btn-group-forced` (all breakpoints; see addPair order).
@@ -236,7 +242,7 @@ export default {
         '&::after': {
           background: 'none',
         },
-        '&:first-child:not(:last-child)': {
+        [`&:nth-child(1 of ${btnGroupControlOfList}):not(:nth-last-child(1 of ${btnGroupControlOfList}))`]: {
           '@apply z-10': {},
           borderTopLeftRadius: '1000px',
           borderBottomLeftRadius: '1000px',
@@ -260,7 +266,7 @@ export default {
             transform: 'none',
           },
         },
-        '&:last-child:not(:first-child)': {
+        [`&:nth-last-child(1 of ${btnGroupControlOfList}):not(:nth-child(1 of ${btnGroupControlOfList}))`]: {
           '@apply z-10': {},
           borderTopLeftRadius: 0,
           borderBottomLeftRadius: 0,
@@ -286,7 +292,7 @@ export default {
             transform: 'none',
           },
         },
-        '&:not(:first-child):not(:last-child)': {
+        [`&:not(:nth-child(1 of ${btnGroupControlOfList})):not(:nth-last-child(1 of ${btnGroupControlOfList}))`]: {
           '@apply z-10': {},
           boxShadow:
             '0 0.375em 0.5em rgba(0, 0, 0, 0.3),' +
@@ -306,7 +312,7 @@ export default {
             transform: 'none',
           },
         },
-        '&:only-child': {
+        [`&:nth-child(1 of ${btnGroupControlOfList}):nth-last-child(1 of ${btnGroupControlOfList})`]: {
           borderRadius: '1000px',
         },
       }
@@ -760,22 +766,22 @@ export default {
           '@apply w-32 h-32 rounded-full bg-gray-200 flex items-center justify-center text-gray-400 border-4 border-white shadow-lg':
             {},
         },
-        /** Collection cover on list cards: compact on mobile, slightly larger from `sm` up. */
+        /** Collection cover on list cards: compact on mobile, larger from `sm` up. */
         '.collection-card-logo': {
-          '@apply w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl object-cover border border-gray-100 shadow-sm bg-white shrink-0':
+          '@apply w-12 h-12 sm:w-16 sm:h-16 rounded-lg sm:rounded-xl object-cover border border-gray-100 shadow-sm bg-white shrink-0':
             {},
         },
         '.collection-card-logo-placeholder': {
-          '@apply w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-gray-50 flex items-center justify-center text-gray-400 border border-gray-100 shadow-sm shrink-0':
+          '@apply w-12 h-12 sm:w-16 sm:h-16 rounded-lg sm:rounded-xl bg-gray-50 flex items-center justify-center text-gray-400 border border-gray-100 shadow-sm shrink-0':
             {},
         },
         /** Collection detail header: fixed width, height follows hint+title row (`items-stretch`). */
         '.collection-header-logo': {
-          '@apply w-11 sm:w-16 md:w-24 lg:w-28 self-stretch min-h-0 rounded-lg sm:rounded-xl object-cover border border-gray-100 shadow-md bg-white shrink-0 overflow-hidden':
+          '@apply w-16 md:w-24 lg:w-28 self-stretch min-h-0 rounded-lg sm:rounded-xl object-cover border border-gray-100 shadow-md bg-white shrink-0 overflow-hidden':
             {},
         },
         '.collection-header-logo-placeholder': {
-          '@apply w-11 sm:w-16 md:w-24 lg:w-28 self-stretch min-h-0 rounded-lg sm:rounded-xl bg-gray-50 flex items-center justify-center text-gray-400 border border-gray-100 shadow-md shrink-0':
+          '@apply w-16 md:w-24 lg:w-28 self-stretch min-h-0 rounded-lg sm:rounded-xl bg-gray-50 flex items-center justify-center text-gray-400 border border-gray-100 shadow-md shrink-0':
             {},
         },
         /** Collection cover in edit modal (matches profile avatar target size, square). */
@@ -1080,7 +1086,7 @@ export default {
         },
         /** Flat “get / slate-neutral”: teal surface so it does not read like btn-empty (white/gray). */
         '.btn-get': {
-          '@apply btn-base text-teal-700 bg-teal-50 enabled:hover:bg-teal-100 border-teal-400':
+          '@apply btn-base text-cyan-700 bg-cyan-50 enabled:hover:bg-cyan-100 enabled:hover:border-cyan-600 border-cyan-400':
             {},
         },
         '.btn-market': {
@@ -1179,13 +1185,9 @@ export default {
           '&:not(:disabled):active': {
             '@apply scale-x-[1.02]': {},
           },
-          /** Segment bar from 512px up (pair with `.btn-group`; always fused in `.btn-group-forced`). */
+          /** Segment bar from 512px up (pair with `.btn-group`; joins use `of button, a` on `.btn-group` — not `:first-child`). */
           '@media (min-width: 512px)': {
-            '@apply rounded-none first:rounded-l-full last:rounded-r-full first:border-l last:border-r':
-              {},
-            '&:not(:last-child)': {
-              '@apply border-r-0': {},
-            },
+            '@apply rounded-none': {},
           },
         },
         /**
@@ -1196,16 +1198,31 @@ export default {
           '@apply flex flex-wrap gap-2': {},
           '@media (min-width: 512px)': {
             '@apply gap-0': {},
+            [`& > :nth-child(1 of ${btnGroupControlOfList})`]: {
+              '@apply rounded-l-full border-l': {},
+            },
+            [`& > :nth-last-child(1 of ${btnGroupControlOfList})`]: {
+              '@apply rounded-r-full border-r': {},
+            },
+            [`& > :is(${btnGroupControlOfList}):not(:nth-last-child(1 of ${btnGroupControlOfList}))`]: {
+              '@apply border-r-0': {},
+            },
           },
         },
         /** Fused segment control at every breakpoint (spacing + item joins; use where wrapping must stay one bar). */
         '.btn-group-forced': {
           '@apply gap-0': {},
+          [`& > :nth-child(1 of ${btnGroupControlOfList})`]: {
+            '@apply rounded-l-full border-l': {},
+          },
+          [`& > :nth-last-child(1 of ${btnGroupControlOfList})`]: {
+            '@apply rounded-r-full border-r': {},
+          },
+          [`& > :is(${btnGroupControlOfList}):not(:nth-last-child(1 of ${btnGroupControlOfList}))`]: {
+            '@apply border-r-0': {},
+          },
           '& .btn-group-item, & .ui-btn--group-item': {
-            '@apply rounded-none first:rounded-l-full last:rounded-r-full': {},
-            '&:not(:last-child)': {
-              '@apply border-r-0': {},
-            },
+            '@apply rounded-none': {},
           },
         },
         /** Segment joins from 512px up; below that, `ui-btn--*` primitives stay full pills (avoids broken wraps). */
@@ -1489,10 +1506,30 @@ export default {
         }
         /** Beats semantic ui-btn--* primitives so inner segments stay joined in forced groups (all breakpoints). */
         aquaRules[selectorFor('aqua', 'btn-group-forced .ui-btn--group-item')] = aquaUiBtnGroupItemGeometry
+        /** Same as `.btn-aqua-group-item` @512px+ but wins over stacked primitives (e.g. `ui-btn--history` + `ui-btn--group-item`). */
+        aquaRules[selectorFor('aqua', 'btn-group .ui-btn--group-item')] = {
+          '@media (min-width: 512px)': aquaUiBtnGroupItemGeometry,
+        }
         flatRules[selectorFor('flat', 'btn-group-forced .ui-btn--group-item')] = {
-          '@apply rounded-none first:rounded-l-full last:rounded-r-full': {},
-          '&:not(:last-child)': {
-            '@apply border-r-0': {},
+          /** Full borders on every segment; `-ml-px` overlaps adjacent 1px borders; hover/focus z-index reveals full outline. */
+          '@apply relative z-0 rounded-none border-r first:ml-0 -ml-px first:rounded-l-full last:rounded-r-full': {},
+          '&:hover': {
+            '@apply z-10': {},
+          },
+          '&:focus-visible': {
+            '@apply z-10': {},
+          },
+        }
+        /** Pairs with `.btn-group` segment join @512px+; higher specificity than lone `ui-btn--*` maps. */
+        flatRules[selectorFor('flat', 'btn-group .ui-btn--group-item')] = {
+          '@media (min-width: 512px)': {
+            '@apply relative z-0 rounded-none border-r first:ml-0 -ml-px first:rounded-l-full last:rounded-r-full': {},
+            '&:hover': {
+              '@apply z-10': {},
+            },
+            '&:focus-visible': {
+              '@apply z-10': {},
+            },
           },
         }
         /** Cheetah aqua: `notebook > header` + tab chrome (#F5F5F5 strip, #9ac7e6 band, GTK tab gradients). */

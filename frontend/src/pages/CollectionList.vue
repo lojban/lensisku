@@ -163,7 +163,6 @@
         :created-by-label="t('collectionList.createdBy')" :updated-label="t('collectionList.updatedAt')"
         :public-label="t('collectionList.publicStatus')" :private-label="t('collectionList.privateStatus')"
         :items-count-label="t('collectionList.itemsCount', { count: collection.item_count })"
-        :cover-lightbox-close-label="t('collectionDetail.coverLightboxClose')"
         @study="startStudy(collection)" />
     </div>
     <PaginationComponent v-if="totalPages > 1" :current-page="currentPage" :total-pages="totalPages"

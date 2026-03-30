@@ -1,147 +1,101 @@
 <template>
-   <!-- Header: row order matches CollectionDetail.vue (Title → Description → meta) -->
-  <div class="bg-white border rounded-lg p-4 sm:p-6 mb-6 flex flex-col gap-2">
-     <!-- Skeleton: same layout shape to avoid CLS while loading --> <template
-      v-if="isHeaderLoading"
-      >
-      <div class="h-4 w-20 bg-gray-200 animate-pulse rounded" aria-hidden="true" />
-
-      <div class="h-8 w-72 max-w-full bg-gray-200 animate-pulse rounded" aria-hidden="true" />
-
-      <div class="flex flex-wrap gap-2">
-
-        <div class="h-6 w-16 bg-gray-200 animate-pulse rounded" />
-
-        <div class="h-6 w-24 bg-gray-200 animate-pulse rounded" />
-
-      </div>
-
-      <div class="flex flex-wrap justify-center md:justify-start gap-2">
-
-        <div class="h-10 w-24 bg-gray-200 animate-pulse rounded" />
-
-        <div class="h-10 w-28 bg-gray-200 animate-pulse rounded" />
-
-        <div class="h-10 w-20 bg-gray-200 animate-pulse rounded" />
-
-      </div>
-       </template
-    > <template v-else
-      > <!-- Row 1: Hint (flashcards) + Title -->
+  <CollectionPageHeader
+    :loading="!collection"
+    :collection="collection"
+    :cover-image-url="collectionCoverDisplayUrl"
+    :cover-image-alt="collection ? t('collectionDetail.coverImageAlt', { name: collection.name }) : ''"
+    :cover-lightbox-dialog-label="
+      collection ? t('collectionDetail.coverLightboxDialog', { name: collection.name }) : ''
+    "
+    :cover-lightbox-close-label="t('collectionDetail.coverLightboxClose')"
+    :public-label="t('collectionDetail.public')"
+    :private-label="t('collectionDetail.private')"
+    :created-by-label="t('collectionDetail.createdBy')"
+    :items-count-label="t('collectionDetail.itemsCount', { count: collection?.item_count ?? 0 })"
+  >
+    <template #hint>
       <div class="flex items-center gap-2 text-gray-500 italic text-sm mb-1">
-         <GalleryHorizontalIcon class="w-5 h-5 shrink-0" aria-hidden="true" /> <span>{{
-          t('components.flashcardCollectionView.pageHint')
-        }}</span
-        >
+        <GalleryHorizontalIcon class="w-5 h-5 shrink-0" aria-hidden="true" />
+        <span>{{ t('components.flashcardCollectionView.pageHint') }}</span>
       </div>
-
+    </template>
+    <template #title>
       <h2 class="text-xl sm:text-2xl font-bold text-gray-800">
-         {{ t('components.flashcardCollectionView.title', { collectionName: collection?.name }) }}
+        {{ t('components.flashcardCollectionView.title', { collectionName: collection?.name }) }}
       </h2>
-       <!-- Row 2: Description -->
-      <div v-if="collection?.description" class="w-full">
-
-        <div class="max-h-32 text-sm overflow-y-auto border rounded p-2 w-full read-box">
-           <LazyMathJax :content="collection.description" />
-        </div>
-
-      </div>
-       <!-- Row 3: public + owner + count -->
-      <div class="flex flex-row gap-2 items-center text-sm text-gray-500">
-
-        <div class="flex flex-wrap items-center gap-2">
-           <span
-            class="text-sm px-2 py-1 rounded-full select-none shrink-0"
-            :class="
-              collection?.is_public ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
-            "
-            > {{
-              collection?.is_public ? t('collectionDetail.public') : t('collectionDetail.private')
-            }} </span
-          > <span v-if="collection?.owner"
-            > {{ t('collectionDetail.createdBy') }} <RouterLink
-              :to="`/user/${collection.owner.username}`"
-              class="text-blue-600 hover:text-blue-800 hover:underline"
-              > {{ collection.owner.username }} </RouterLink
-            > </span
-          > <span>{{
-            t('collectionDetail.itemsCount', { count: collection?.item_count ?? 0 })
-          }}</span
-          >
-        </div>
-
-      </div>
-       <!-- Row 4: Action buttons -->
+    </template>
+    <template #toolbar>
       <div class="space-y-4 md:space-y-0">
-
         <div class="flex flex-wrap items-center gap-2 w-auto">
-
           <div class="btn-group-forced flex flex-wrap items-center md:gap-y-2" role="group">
-             <RouterLink
+            <RouterLink
               :to="`/collections/${props.collectionId}`"
               class="ui-btn--neutral-muted ui-btn--group-item md:flex-none"
-              > <List class="w-4 h-4 shrink-0" aria-hidden="true" /> {{
-                t('components.flashcardCollectionView.collectionButton')
-              }} </RouterLink
-            > <template v-if="isOwner && collection?.item_count > existingFlashcardIds.size"
-              > <RouterLink
+            >
+              <List class="w-4 h-4 shrink-0" aria-hidden="true" />
+              {{ t('components.flashcardCollectionView.collectionButton') }}
+            </RouterLink>
+            <template v-if="isOwner && collection && collection.item_count > existingFlashcardIds.size">
+              <RouterLink
                 :to="`/collections/${collection.collection_id}?mode=add_flashcard`"
                 class="ui-btn--create ui-btn--group-item md:flex-none"
-                > <PlusCircle class="w-4 h-4 shrink-0" aria-hidden="true" /> {{
-                  t('components.flashcardCollectionView.addFlashcardButton')
-                }} </RouterLink
-              > <button
+              >
+                <PlusCircle class="w-4 h-4 shrink-0" aria-hidden="true" />
+                {{ t('components.flashcardCollectionView.addFlashcardButton') }}
+              </RouterLink>
+              <button
                 class="ui-btn--delete ui-btn--group-item md:flex-none"
                 :disabled="isImporting"
                 @click="handleImport"
               >
-                 <Import class="w-4 h-4 shrink-0" aria-hidden="true" /> {{
+                <Import class="w-4 h-4 shrink-0" aria-hidden="true" />
+                {{
                   isImporting
                     ? t('components.flashcardCollectionView.importing')
                     : t('components.flashcardCollectionView.importAllButton')
-                }} </button
-              > </template
-            > <template v-if="!auth.state.isLoggedIn"
-              >
-              <div class="mt-2 gap-4">
-                 <RouterLink
+                }}
+              </button>
+            </template>
+            <template v-if="!auth.state.isLoggedIn">
+              <div class="mt-2 gap-4 flex flex-wrap">
+                <RouterLink
                   :to="`/collections/${props.collectionId}/levels`"
                   class="ui-btn--warning-orange ui-btn--group-item md:flex-none"
-                  > {{ t('anonymousProgress.viewLevels') }} </RouterLink
-                > <RouterLink
+                >
+                  {{ t('anonymousProgress.viewLevels') }}
+                </RouterLink>
+                <RouterLink
                   :to="`/collections/${props.collectionId}/levels`"
                   class="ui-btn--create ui-btn--group-item md:flex-none"
-                  > {{ t('anonymousProgress.studyLevels') }} </RouterLink
                 >
+                  {{ t('anonymousProgress.studyLevels') }}
+                </RouterLink>
               </div>
-               </template
-            >
+            </template>
           </div>
-
         </div>
-
       </div>
-       <!-- Row 5: Study (full session) + Levels, centered, not grouped -->
       <div
-        v-if="auth.state.isLoggedIn"
+        v-if="auth.state.isLoggedIn && collection"
         class="flex flex-row justify-center items-center gap-2 mt-4"
       >
-         <Button
+        <Button
           variant="warning-orange"
           size="lg"
           :to="`/collections/${props.collectionId}/flashcards/study`"
-          > {{ t('flashcardCollection.studyNow', { count: dueCount }) }} </Button
-        > <RouterLink
+        >
+          {{ t('flashcardCollection.studyNow', { count: dueCount }) }}
+        </Button>
+        <RouterLink
           :to="`/collections/${props.collectionId}/levels`"
           class="ui-btn--neutral inline-flex items-center gap-2"
-          > <LayoutPanelTop class="w-4 h-4 shrink-0" aria-hidden="true" /> {{
-            t('collectionDetail.levels')
-          }} </RouterLink
         >
+          <LayoutPanelTop class="w-4 h-4 shrink-0" aria-hidden="true" />
+          {{ t('collectionDetail.levels') }}
+        </RouterLink>
       </div>
-       </template
-    >
-  </div>
+    </template>
+  </CollectionPageHeader>
    <!-- Anonymous: sign-in prompt -->
   <div
     v-if="isAnonView"
@@ -447,8 +401,10 @@ import {
   updateCardPosition,
   importFromCollection,
   getCollection,
+  getCollectionImage,
 } from '@/api'
 import AudioPlayer from '@/components/AudioPlayer.vue'
+import CollectionPageHeader from '@/components/CollectionPageHeader.vue'
 import LazyMathJax from '@/components/LazyMathJax.vue'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import PaginationComponent from '@/components/PaginationComponent.vue'
@@ -789,8 +745,10 @@ useSeoHead({ title: pageTitle })
 
 const isAnonView = computed(() => !auth.state.isLoggedIn)
 
-/** True while collection or flashcards are loading; used to show header skeleton and avoid CLS */
-const isHeaderLoading = computed(() => !collection.value || isLoading.value)
+const collectionCoverDisplayUrl = computed(() => {
+  if (!collection.value?.has_collection_image) return null
+  return getCollectionImage(props.collectionId, { cached: true })
+})
 
 onMounted(async () => {
   syncFromRoute()

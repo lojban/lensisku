@@ -3,34 +3,27 @@
     > <template #header
       >
       <div class="flex flex-row items-center gap-3 w-full min-w-0">
-        <CollectionCoverLightbox
+        <RouterLink
           v-if="coverImageUrl"
-          :image-url="coverImageUrl"
-          :alt="collection.name"
-          :close-aria-label="coverLightboxCloseLabel || undefined"
+          :to="collectionHeaderTo"
+          class="inline-flex shrink-0 max-w-full rounded-lg sm:rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60 focus-visible:ring-offset-2"
+          :aria-label="collection.name"
         >
           <div class="collection-card-logo overflow-hidden">
             <img
               :src="coverImageUrl"
-              :alt="collection.name"
+              alt=""
               class="h-full w-full object-cover"
               loading="lazy"
               decoding="async"
             />
           </div>
-        </CollectionCoverLightbox>
+        </RouterLink>
         <div v-else class="collection-card-logo-placeholder" aria-hidden="true">
-          <BookOpen class="h-5 w-5 sm:h-6 sm:w-6" />
+          <BookOpen class="h-6 w-6 sm:h-8 sm:w-8" />
         </div>
         <div class="min-w-0 flex-1 flex flex-col gap-1.5 text-left">
-          <RouterLink
-            :to="
-              collection.has_flashcards
-                ? `/collections/${collection.collection_id}/flashcards`
-                : `/collections/${collection.collection_id}`
-            "
-            class="card-title--multiline"
-          >
+          <RouterLink :to="collectionHeaderTo" class="card-title--multiline">
             {{ collection.name }}
           </RouterLink>
           <p v-if="collection.description" class="card-description">
@@ -108,7 +101,6 @@ import { computed } from 'vue'
 import { BookOpen, GraduationCap, List, LayoutGrid, CalendarClock } from 'lucide-vue-next'
 import Card from './Card.vue'
 import Button from './Button.vue'
-import CollectionCoverLightbox from './CollectionCoverLightbox.vue'
 
 export interface CollectionCardCollection {
   collection_id: number
@@ -176,9 +168,13 @@ const props = defineProps({
   itemsCountLabel: { type: String, default: '0 items' },
   /** Resolved image URL when `has_collection_image`; omit for placeholder icon. */
   coverImageUrl: { type: String, default: null },
-  /** Optional label for the full-screen close control (e.g. i18n). */
-  coverLightboxCloseLabel: { type: String, default: '' },
 })
+
+const collectionHeaderTo = computed(() =>
+  props.collection.has_flashcards
+    ? `/collections/${props.collection.collection_id}/flashcards`
+    : `/collections/${props.collection.collection_id}`,
+)
 
 const studyButtonVariant = computed(() => {
   const name = props.collection?.name ?? ''
