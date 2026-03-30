@@ -1,6 +1,19 @@
 <template>
 
-  <div class="surface-definition-compact">
+  <div
+    class="surface-definition-compact relative"
+    :class="{ '!pt-6': props.showScore && definition.similarity }"
+  >
+    <span
+      v-if="props.showScore && definition.similarity"
+      class="badge-definition-similarity"
+    >
+      {{
+        t('components.definitionCard.similarity', {
+          percent: Math.round(definition.similarity * 100),
+        })
+      }}
+    </span>
     <!-- Header Section -->
     <div class="flex flex-col sm:flex-row justify-between items-start gap-4">
       <!-- Word and Type Info -->
@@ -73,12 +86,7 @@
                 t('components.definitionCard.by') }} <RouterLink :to="`/user/${definition.username}`"
                 class="text-blue-600 hover:text-blue-800 hover:underline"> {{ definition.username }} </RouterLink>
             </span> <span v-if="definition.created_at && definition.username">·</span> <span
-              v-if="definition.created_at"> {{ formatDate(definition.created_at) }} </span> <span
-              v-if="props.showScore && definition.similarity" class="italic"> · {{
-                t('components.definitionCard.similarity', {
-                  percent: Math.round(definition.similarity * 100),
-                })
-              }} </span>
+              v-if="definition.created_at"> {{ formatDate(definition.created_at) }} </span>
           </div>
 
         </div>

@@ -7,18 +7,19 @@ export default {
   ],
   theme: {
     extend: {
-      colors: {
-        /** Primary nav / legacy link blue (navbar-item, NavLink, mobile logout). */
-        'nav-link': '#007bff',
-      },
       /** Global UI stack; glossy `.aqua-base` inherits via `@apply font-sans` (see `docs/brandbook.md`). */
       fontFamily: {
         sans: ['"Open Sans"', 'system-ui', 'Tahoma', 'sans-serif'],
+      },
+      colors: {
+        /** Primary nav / legacy link blue (navbar-item, NavLink, mobile logout). */
+        'nav-link': '#007bff',
       },
     },
   },
   plugins: [
     function ({ addComponents, addBase }) {
+      /** Base layer: shared pill control geometry + aqua chrome (`btn-base`, `aqua-base`, `aqua-base-secondary`). */
       addBase({
         /** Icon + label: use this flex `gap-*` only—do not put `mr-*` / `ml-*` on icons or labels (breaks when labels are hidden). */
         '.btn-base': {
@@ -211,12 +212,14 @@ export default {
         },
       })
 
+      /** Global document defaults. */
       addBase({
         html: {
           '@apply font-sans antialiased': {},
         },
       })
 
+      /** Shadow for aqua toggle “off” state (`buttonUiThemeLayer`); pair with `aquaUiBtnGroupItemGeometry` for segment bars. */
       const toggleOffShadow =
       '0 0.375em 0.5em rgba(0, 0, 0, 0.3),' +
       '0 0.125em 0.125em hsla(0, 0%, 36.7%, 0.5),' +
@@ -307,15 +310,23 @@ export default {
           borderRadius: '1000px',
         },
       }
+      /**
+       * Component registry (purpose / theme order for readability):
+       * prose → app shell → nav → banners & toasts → icon buttons → surfaces & lists → assistant →
+       * auth & empty states → dropdowns & filters → study & lingo → avatars & attachments →
+       * forms & toolbar → aqua buttons → flat buttons → groups & toggles → cards & badges → tabs.
+       */
       addComponents({
+        // --- Typography & prose ---
         blockquote: {
           '@apply pl-4 border-l-4 border-gray-300 my-4 text-sm italic': {},
           '& p': {
             '@apply text-gray-600': {},
           },
         },
+        // --- Navigation (desktop + mobile) ---
         '.navbar-item': {
-          '@apply gap-2 py-1.5 text-base flex items-center h-9 min-w-12 flex items-center justify-center px-2 md:px-4 py-1.5 font-medium text-gray-600 rounded-full transition-colors select-none whitespace-nowrap':
+          '@apply flex h-9 min-w-12 items-center justify-center gap-2 rounded-full px-2 py-1.5 text-base font-medium text-gray-600 transition-colors select-none whitespace-nowrap md:px-4':
             {},
           '&:not(.primary):not(.nav-link-active)': {
             '@apply hover:bg-gray-200 text-nav-link': {},
@@ -333,6 +344,7 @@ export default {
             '@apply !text-gray-400 border-gray-200': {},
           },
         },
+        // --- App shell & global chrome ---
         '.read-box': {
           '@apply shadow-inner shadow-slate-200': {},
         },
@@ -349,6 +361,7 @@ export default {
          * FAB outer shell: `aqua-base` sets `overflow:hidden` (gloss), which clips the button’s own
          * outer `box-shadow` in browsers — elevation lives on this wrapper instead (ui-ux-pro-max).
          */
+        // --- FAB & toggles (chrome-adjacent) ---
         '.fab-elevation-shell': {
           '@apply inline-flex cursor-pointer rounded-full ring-1 ring-slate-900/10 transition-[box-shadow] duration-200':
             {},
@@ -374,6 +387,7 @@ export default {
           '@apply relative h-5 w-9 shrink-0 rounded-full bg-gray-200 after:absolute after:left-[2px] after:top-[2px] after:h-4 after:w-4 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[\'\'] peer-focus:outline-none peer-checked:after:translate-x-full peer-checked:after:border-white peer-checked:bg-nav-link':
             {},
         },
+        // --- Banners & toasts ---
         /** Anonymous progress banner: touch-sized auth links (`RouterLink` + `ui-btn--*`). */
         '.anon-banner-cta': {
           '@apply min-h-[44px] min-w-[44px] items-center justify-center rounded-md px-3 py-2 text-sm inline-flex': {},
@@ -427,6 +441,10 @@ export default {
           '@apply -m-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 focus-visible:ring-offset-white':
             {},
         },
+        '.toast-float-extra': {
+          '@apply border-t border-gray-100 pt-3': {},
+        },
+        // --- Icon buttons ---
         /** Circular icon-only control (field clears, trailing actions); matches toast-close affordance at smaller hit target. */
         '.icon-btn-ghost': {
           '@apply inline-flex items-center justify-center shrink-0 rounded-full p-1 text-gray-400 transition-colors duration-200 hover:text-gray-600 hover:bg-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1':
@@ -449,6 +467,7 @@ export default {
         '.icon-btn-ghost-danger--reveal-md': {
           '@apply md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100': {},
         },
+        // --- Surfaces, chips & list rows ---
         /** Clickable list / grid row: bordered card with hover + focus ring (user list, pickers). */
         '.surface-list-row': {
           '@apply min-w-0 max-w-full bg-white p-4 sm:p-5 rounded-xl border border-gray-200 transition-all duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 hover:border-blue-400/60 hover:shadow-md':
@@ -461,6 +480,11 @@ export default {
         },
         '.badge-definition-tag--pill': {
           '@apply rounded-full': {},
+        },
+        /** Search similarity pill on definition cards (centered on top edge, straddles border). */
+        '.badge-definition-similarity': {
+          '@apply pointer-events-none absolute left-1/2 top-0 z-10 -translate-x-1/2 -translate-y-1/2 rounded-full border border-gray-200 bg-gray-100 px-2.5 py-1 text-xs font-medium italic text-gray-600 shadow-sm':
+            {},
         },
         /** Monospace snippet (canonical form, inline code blocks). */
         '.code-snippet-surface': {
@@ -487,6 +511,7 @@ export default {
           '@apply absolute flex-col mt-0 bg-white border border-gray-200 rounded-md shadow-lg z-50 p-1 w-auto max-w-96':
             {},
         },
+        // --- Assistant (chat UI) ---
         /** Assistant chat: scrollable message column shell. */
         '.assistant-messages-pane': {
           '@apply relative min-h-0 flex-1 overflow-x-hidden rounded-lg border border-gray-200 bg-white [overscroll-behavior-y:contain]':
@@ -520,6 +545,28 @@ export default {
         },
         '.assistant-icon-btn-panel': {
           '@apply md:hidden shrink-0 p-2 rounded-lg border border-gray-200 bg-white text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-400/50':
+            {},
+        },
+        /** Assistant bubble: user message. */
+        '.assistant-bubble-user': {
+          '@apply min-w-0 max-w-[calc(100%-2.5rem)] rounded-lg px-3 py-2 text-sm break-words bg-blue-600 text-white whitespace-pre-wrap':
+            {},
+        },
+        /** Assistant bubble: assistant markdown body. */
+        '.assistant-bubble-assistant': {
+          '@apply max-w-[80%] min-w-0 rounded-lg px-3 py-2 text-sm break-words bg-gray-100 text-gray-900': {},
+        },
+        /** Icon control inside assistant bubbles (copy, etc.). */
+        '.assistant-bubble-action': {
+          '@apply shrink-0 rounded-md p-1.5 text-gray-500 hover:bg-gray-100 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/40':
+            {},
+        },
+        '.assistant-bubble-thinking-shell': {
+          '@apply max-w-[80%] rounded-lg px-3 py-2.5 bg-gray-100 text-gray-600 text-sm': {},
+        },
+        /** Send / stop control in assistant composer textarea. */
+        '.assistant-composer-send': {
+          '@apply !rounded-full absolute bottom-3 right-3 z-10 flex h-8 w-8 shrink-0 items-center justify-center !p-0 border border-gray-300 bg-white text-black shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white focus:ring-gray-400/60 enabled:hover:bg-gray-50 enabled:hover:border-gray-400 disabled:cursor-not-allowed disabled:opacity-50':
             {},
         },
         /** Assistant tool-step: `<details>` blocks (batched semantic search UI). */
@@ -565,6 +612,7 @@ export default {
           '@apply text-base font-semibold flex-shrink-0 min-w-0 max-w-full truncate text-blue-700 hover:text-blue-800 hover:underline':
             {},
         },
+        // --- Auth & empty states ---
         /** Blue glass panel: password reset, change password, similar auth flows. */
         '.auth-glass-card': {
           '@apply w-full max-w-md p-8 mx-auto rounded-2xl border border-blue-200 flex-shrink-0 backdrop-blur-xl bg-blue-50/90 shadow-lg transition-all duration-300 hover:shadow-xl flex flex-col items-center space-y-6':
@@ -608,6 +656,7 @@ export default {
           '@apply flex flex-col items-center justify-center text-center py-12 bg-gray-50 rounded-lg border border-blue-100':
             {},
         },
+        // --- Dropdowns & filters ---
         /** Teleported dropdown menu panel (FAB, ellipsis menus). */
         '.dropdown-menu-panel': {
           '@apply fixed z-50 w-fit min-w-0 max-w-[calc(100vw-1rem)] overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-lg py-1':
@@ -651,6 +700,7 @@ export default {
           '@apply flex items-center justify-center gap-1 text-[10px] text-green-600 bg-green-50 border border-green-200 rounded px-1.5 py-0.5':
             {},
         },
+        // --- Study & lingo ---
         /** Flashcard study: quiz multiple-choice tiles (text + image). */
         '.study-quiz-option-flashcard-text': {
           '@apply cursor-pointer rounded-xl border-2 border-gray-200 bg-white p-4 text-left text-base font-medium text-gray-800 transition-colors duration-200 hover:border-blue-400 hover:bg-blue-50/50 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-60':
@@ -715,31 +765,7 @@ export default {
           '@apply flex h-full w-full items-center justify-center [&>svg]:block [&>svg]:h-full [&>svg]:w-full [&>svg]:max-h-full [&>svg]:max-w-full':
             {},
         },
-        /** Assistant bubble: user message. */
-        '.assistant-bubble-user': {
-          '@apply min-w-0 max-w-[calc(100%-2.5rem)] rounded-lg px-3 py-2 text-sm break-words bg-blue-600 text-white whitespace-pre-wrap':
-            {},
-        },
-        /** Assistant bubble: assistant markdown body. */
-        '.assistant-bubble-assistant': {
-          '@apply max-w-[80%] min-w-0 rounded-lg px-3 py-2 text-sm break-words bg-gray-100 text-gray-900': {},
-        },
-        /** Icon control inside assistant bubbles (copy, etc.). */
-        '.assistant-bubble-action': {
-          '@apply shrink-0 rounded-md p-1.5 text-gray-500 hover:bg-gray-100 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/40':
-            {},
-        },
-        '.assistant-bubble-thinking-shell': {
-          '@apply max-w-[80%] rounded-lg px-3 py-2.5 bg-gray-100 text-gray-600 text-sm': {},
-        },
-        /** Send / stop control in assistant composer textarea. */
-        '.assistant-composer-send': {
-          '@apply !rounded-full absolute bottom-3 right-3 z-10 flex h-8 w-8 shrink-0 items-center justify-center !p-0 border border-gray-300 bg-white text-black shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white focus:ring-gray-400/60 enabled:hover:bg-gray-50 enabled:hover:border-gray-400 disabled:cursor-not-allowed disabled:opacity-50':
-            {},
-        },
-        '.toast-float-extra': {
-          '@apply border-t border-gray-100 pt-3': {},
-        },
+        // --- Forms, toolbar & media controls ---
         '.input-field': {
           '@apply px-4 py-1.5 text-sm h-8 text-gray-700 bg-white border border-gray-300 placeholder-blue-400 rounded-full transition-all focus:ring-1 focus:ring-blue-500 focus:border-blue-500 focus:outline-none focus:z-50 whitespace-nowrap shadow-inner shadow-slate-200':
             {},
@@ -855,6 +881,7 @@ export default {
             '@apply bg-gray-100 cursor-not-allowed opacity-75': {},
           },
         },
+        // --- Buttons: aqua (glossy) theme primitives ---
         '.btn-aqua': {
           '@apply aqua-base': {},
         },
@@ -980,8 +1007,9 @@ export default {
           background: 'none',
         },
         },
+        // --- Buttons: flat theme primitives ---
         '.btn-insert': {
-          '@apply btn-base text-white bg-gradient-to-b from-blue-400 to-blue-500 border-blue-500 text-white enabled:hover:text-blue-500 enabled:hover:bg-gradient-to-b enabled:hover:from-white enabled:hover:to-white':
+          '@apply btn-base text-white bg-gradient-to-b from-blue-400 to-blue-500 border-blue-400 text-white enabled:hover:text-blue-500 enabled:hover:bg-gradient-to-b enabled:hover:from-white enabled:hover:to-white':
             {},
         },
         '.btn-reaction': {
@@ -992,38 +1020,38 @@ export default {
           },
         },
         '.btn-reaction-active': {
-          '@apply btn-base text-white border-blue-500 bg-blue-500': {},
+          '@apply btn-base text-white border-blue-400 bg-blue-500': {},
           '&:hover:not(:disabled)': {
             background: 'rgb(37, 99, 235)',
-            '@apply border-blue-600': {},
+            '@apply border-blue-400': {},
           },
         },
         '.btn-create': {
-          '@apply btn-base text-green-700 bg-gradient-to-b from-green-100 to-green-50 enabled:hover:from-green-200 enabled:hover:to-green-100 border-green-500 enabled:hover:border-green-700':
+          '@apply btn-base text-green-700 bg-gradient-to-b from-green-100 to-green-50 enabled:hover:from-green-200 enabled:hover:to-green-100 border-green-400 enabled:hover:border-green-700':
             {},
         },
         '.btn-update': {
-          '@apply btn-base text-teal-700 bg-teal-50 enabled:hover:bg-green-200 border-teal-600':
+          '@apply btn-base text-teal-700 bg-teal-50 enabled:hover:bg-green-200 border-teal-400':
             {},
         },
         '.btn-delete': {
-          '@apply btn-base text-red-700 bg-red-50 enabled:hover:bg-red-200 border-red-600': {},
+          '@apply btn-base text-red-700 bg-red-50 enabled:hover:bg-red-200 border-red-400': {},
         },
         /** Flat “get / slate-neutral”: blue surface so it does not read like btn-empty (white/gray). */
         '.btn-get': {
-          '@apply btn-base text-blue-700 bg-blue-50 enabled:hover:bg-blue-100 border-blue-500':
+          '@apply btn-base text-blue-700 bg-blue-50 enabled:hover:bg-blue-100 border-blue-400':
             {},
         },
         '.btn-market': {
           '@apply btn-base text-rose-400 bg-white enabled:hover:bg-rose-200 border-rose-400': {},
         },
         '.btn-cancel': {
-          '@apply btn-base text-gray-700 bg-gray-50 enabled:hover:bg-gray-200 border-gray-500':
+          '@apply btn-base text-gray-700 bg-gray-50 enabled:hover:bg-gray-200 border-gray-400':
             {},
         },
         // Neutral “dismiss / clear” (brandbook §1.B): subtle raised/embossed default with pressed active state.
         '.btn-empty': {
-          '@apply btn-base text-gray-700 bg-gradient-to-b from-white to-slate-50 border-gray-300': {},
+          '@apply btn-base text-gray-700 bg-gradient-to-b from-white to-slate-50 border-gray-400': {},
           boxShadow:
             'inset 0 1px 0 rgba(255, 255, 255, 0.9), inset 0 -1px 0 rgba(148, 163, 184, 0.18), 0 1px 2px rgba(15, 23, 42, 0.08)',
           '&:not(:disabled):hover': {
@@ -1041,30 +1069,30 @@ export default {
           },
         },
         '.btn-error': {
-          '@apply btn-base text-red-700 bg-red-50 enabled:hover:bg-red-200 border-red-600': {},
+          '@apply btn-base text-red-700 bg-red-50 enabled:hover:bg-red-200 border-red-400': {},
         },
         '.btn-warning': {
-          '@apply btn-base text-amber-700 bg-amber-50 enabled:hover:bg-amber-200 border-amber-600':
+          '@apply btn-base text-amber-700 bg-amber-50 enabled:hover:bg-amber-200 border-amber-400':
             {},
         },
         '.btn-success': {
-          '@apply btn-base text-green-700 bg-green-50 enabled:hover:bg-green-200 border-green-600':
+          '@apply btn-base text-green-700 bg-green-50 enabled:hover:bg-green-200 border-green-400':
             {},
         },
         '.btn-revert': {
-          '@apply btn-base text-yellow-700 bg-yellow-50 enabled:hover:bg-yellow-200 border-yellow-600':
+          '@apply btn-base text-yellow-700 bg-yellow-50 enabled:hover:bg-yellow-200 border-yellow-400':
             {},
         },
         '.btn-history': {
-          '@apply btn-base text-purple-700 bg-purple-50 enabled:hover:bg-purple-200 border-purple-600':
+          '@apply btn-base text-purple-700 bg-purple-50 enabled:hover:bg-purple-200 border-purple-400':
             {},
         },
         '.btn-link': {
-          '@apply btn-base text-blue-700 bg-blue-50 enabled:hover:bg-blue-200 border-blue-600':
+          '@apply btn-base text-blue-700 bg-blue-50 enabled:hover:bg-blue-200 border-blue-400':
             {},
         },
         '.btn-previous, .btn-next': {
-          '@apply btn-base text-gray-700 bg-gray-50 enabled:hover:bg-gray-200 border-gray-500':
+          '@apply btn-base text-gray-700 bg-gray-50 enabled:hover:bg-gray-200 border-gray-400':
             {},
         },
         '.checkbox-toggle': {
@@ -1098,12 +1126,13 @@ export default {
           outline: 'none',
         },
         '.btn-reply': {
-          '@apply btn-base text-sky-700 bg-sky-50 hover:bg-sky-200 border-sky-600': {},
+          '@apply btn-base text-sky-700 bg-sky-50 hover:bg-sky-200 border-sky-400': {},
         },
         '.btn-action': {
-          '@apply btn-base text-pink-600 bg-white border-pink-600 enabled:hover:bg-pink-50 enabled:hover:text-pink-700':
+          '@apply btn-base text-pink-600 bg-white border-pink-400 enabled:hover:bg-pink-50 enabled:hover:text-pink-700':
             {},
         },
+        // --- Button groups & theme toggles ---
         '.btn-group-item': {
           '@apply border rounded-full': {},
           '&:not(:disabled):active': {
@@ -1124,10 +1153,7 @@ export default {
             '@apply rounded-none first:rounded-l-full last:rounded-r-full': {},
             /** Tighter inner joins: base controls use `px-3`; reduce horizontal padding at segment seams only. */
             '&:not(:last-child)': {
-              '@apply border-r-0 pr-2': {},
-            },
-            '&:not(:first-child)': {
-              '@apply pl-2': {},
+              '@apply border-r-0': {},
             },
           },
         },
@@ -1153,6 +1179,7 @@ export default {
             '@apply btn-empty': {},
           },
         },
+        // --- Cards, badges & streak UI ---
         '.card-base': {
           '@apply bg-white rounded-2xl border border-gray-200 overflow-hidden transition-all duration-200 h-full flex flex-col min-h-0':
             {},
@@ -1277,6 +1304,7 @@ export default {
         '.fab-menu-action': {
           '@apply !h-auto !py-2 !px-6 !text-lg !gap-3': {},
         },
+        // --- Tab strips (aqua vs flat styled in `buttonUiThemeLayer`) ---
         /**
          * Page tab row (`TabbedPageHeader` / `NotebookTab`). Aqua: Cheetah GTK notebook strip + tabs;
          * flat: underline tabs (legacy).
@@ -1308,66 +1336,66 @@ export default {
           }
         }
         const buttonThemeClassMap = {
-          'ui-btn--insert': { aqua: 'btn-aqua-blue', flat: 'btn-insert' },
-          'ui-btn--create': { aqua: 'btn-aqua-emerald', flat: 'btn-create' },
-          'ui-btn--update': { aqua: 'btn-aqua-teal', flat: 'btn-update' },
-          'ui-btn--delete': { aqua: 'btn-aqua-red', flat: 'btn-delete' },
-          'ui-btn--cancel': { aqua: 'btn-aqua-zinc', flat: 'btn-cancel' },
-          'ui-btn--empty': { aqua: 'btn-aqua-white', flat: 'btn-empty' },
-          'ui-btn--reaction': { aqua: 'btn-aqua-cyan', flat: 'btn-reaction' },
-          'ui-btn--reaction-active': { aqua: 'btn-aqua-blue', flat: 'btn-reaction-active' },
-          'ui-btn--get': { aqua: 'btn-aqua-get', flat: 'btn-get' },
-          'ui-btn--market': { aqua: 'btn-aqua-rose', flat: 'btn-market' },
-          'ui-btn--error': { aqua: 'btn-aqua-red', flat: 'btn-error' },
-          'ui-btn--warning': { aqua: 'btn-aqua-orange', flat: 'btn-warning' },
-          'ui-btn--success': { aqua: 'btn-aqua-emerald', flat: 'btn-success' },
-          'ui-btn--revert': { aqua: 'btn-aqua-yellow', flat: 'btn-revert' },
-          'ui-btn--history': { aqua: 'btn-aqua-purple', flat: 'btn-history' },
-          'ui-btn--link': { aqua: 'btn-aqua-sky', flat: 'btn-link' },
-          'ui-btn--reply': { aqua: 'btn-aqua-sky', flat: 'btn-reply' },
+          'ui-btn--accent-purple': { aqua: 'btn-aqua-purple', flat: 'btn-link' },
           'ui-btn--action': { aqua: 'btn-aqua-pink', flat: 'btn-action' },
-          'ui-btn--previous': { aqua: 'btn-aqua-zinc', flat: 'btn-previous' },
-          'ui-btn--next': { aqua: 'btn-aqua-zinc', flat: 'btn-next' },
-          'ui-btn--group-item': { aqua: 'btn-aqua-group-item', flat: 'btn-group-item' },
+          'ui-btn--amber': { aqua: 'btn-aqua-amber', flat: 'btn-warning' },
           /** Flat: neutral embossed `btn-empty` (not blue `btn-get`) — filter toggles, toolbars. */
           'ui-btn--aqua-default': { aqua: 'btn-aqua-simple', flat: 'btn-empty' },
-          'ui-btn--accent-purple': { aqua: 'btn-aqua-purple', flat: 'btn-link' },
-          'ui-btn--danger-rose': { aqua: 'btn-aqua-rose', flat: 'btn-delete' },
-          'ui-btn--warning-orange': { aqua: 'btn-aqua-orange', flat: 'btn-warning' },
-          'ui-btn--warning-yellow': { aqua: 'btn-aqua-yellow', flat: 'btn-warning' },
-          'ui-btn--amber': { aqua: 'btn-aqua-amber', flat: 'btn-warning' },
           'ui-btn--auth-login': { aqua: 'btn-aqua-orange', flat: 'btn-warning' },
           'ui-btn--auth-signup': { aqua: 'btn-aqua-teal', flat: 'btn-create' },
+          'ui-btn--cancel': { aqua: 'btn-aqua-zinc', flat: 'btn-cancel' },
           'ui-btn--continue': { aqua: 'btn-aqua', flat: 'btn-get' },
-          'ui-btn--study-wrong': { aqua: 'btn-aqua-rose', flat: 'btn-error' },
-          'ui-btn--study-correct': { aqua: 'btn-aqua-teal', flat: 'btn-success' },
-          'ui-btn--sort-sky': { aqua: 'btn-aqua-sky', flat: 'btn-success' },
-          'ui-btn--sort-blue': { aqua: 'btn-aqua-blue', flat: 'btn-insert' },
-          'ui-btn--sort-amber': { aqua: 'btn-aqua-amber', flat: 'btn-warning' },
-          'ui-btn--sort-emerald': { aqua: 'btn-aqua-emerald', flat: 'btn-create' },
+          'ui-btn--create': { aqua: 'btn-aqua-emerald', flat: 'btn-create' },
+          'ui-btn--danger-rose': { aqua: 'btn-aqua-rose', flat: 'btn-delete' },
+          'ui-btn--delete': { aqua: 'btn-aqua-red', flat: 'btn-delete' },
+          'ui-btn--empty': { aqua: 'btn-aqua-white', flat: 'btn-empty' },
+          'ui-btn--error': { aqua: 'btn-aqua-red', flat: 'btn-error' },
+          'ui-btn--get': { aqua: 'btn-aqua-get', flat: 'btn-get' },
+          'ui-btn--group-item': { aqua: 'btn-aqua-group-item', flat: 'btn-group-item' },
+          'ui-btn--history': { aqua: 'btn-aqua-purple', flat: 'btn-history' },
+          'ui-btn--insert': { aqua: 'btn-aqua-blue', flat: 'btn-insert' },
+          'ui-btn--link': { aqua: 'btn-aqua-sky', flat: 'btn-link' },
+          'ui-btn--market': { aqua: 'btn-aqua-rose', flat: 'btn-market' },
           'ui-btn--neutral': { aqua: 'btn-aqua-white', flat: 'btn-get' },
           'ui-btn--neutral-muted': { aqua: 'btn-aqua-zinc', flat: 'btn-cancel' },
           'ui-btn--neutral-slate': { aqua: 'btn-aqua-slate', flat: 'btn-get' },
-          'ui-btn--primary': { aqua: 'btn-aqua-emerald', flat: 'btn-create' },
-          'ui-btn--palette-white': { aqua: 'btn-aqua-white', flat: 'btn-empty' },
-          'ui-btn--palette-red': { aqua: 'btn-aqua-red', flat: 'btn-delete' },
-          'ui-btn--palette-orange': { aqua: 'btn-aqua-orange', flat: 'btn-warning' },
+          'ui-btn--next': { aqua: 'btn-aqua-zinc', flat: 'btn-next' },
           'ui-btn--palette-amber': { aqua: 'btn-aqua-amber', flat: 'btn-warning' },
-          'ui-btn--palette-yellow': { aqua: 'btn-aqua-yellow', flat: 'btn-warning' },
-          'ui-btn--palette-lime': { aqua: 'btn-aqua-lime', flat: 'btn-success' },
-          'ui-btn--palette-teal': { aqua: 'btn-aqua-teal', flat: 'btn-create' },
-          'ui-btn--palette-emerald': { aqua: 'btn-aqua-emerald', flat: 'btn-create' },
-          'ui-btn--palette-cyan': { aqua: 'btn-aqua-cyan', flat: 'btn-insert' },
-          'ui-btn--palette-sky': { aqua: 'btn-aqua-sky', flat: 'btn-get' },
           'ui-btn--palette-blue': { aqua: 'btn-aqua-blue', flat: 'btn-insert' },
-          'ui-btn--palette-indigo': { aqua: 'btn-aqua-indigo', flat: 'btn-link' },
-          'ui-btn--palette-violet': { aqua: 'btn-aqua-violet', flat: 'btn-link' },
-          'ui-btn--palette-purple': { aqua: 'btn-aqua-purple', flat: 'btn-history' },
+          'ui-btn--palette-cyan': { aqua: 'btn-aqua-cyan', flat: 'btn-insert' },
+          'ui-btn--palette-emerald': { aqua: 'btn-aqua-emerald', flat: 'btn-create' },
           'ui-btn--palette-fuchsia': { aqua: 'btn-aqua-fuchsia', flat: 'btn-market' },
+          'ui-btn--palette-indigo': { aqua: 'btn-aqua-indigo', flat: 'btn-link' },
+          'ui-btn--palette-lime': { aqua: 'btn-aqua-lime', flat: 'btn-success' },
+          'ui-btn--palette-orange': { aqua: 'btn-aqua-orange', flat: 'btn-warning' },
           'ui-btn--palette-pink': { aqua: 'btn-aqua-pink', flat: 'btn-action' },
+          'ui-btn--palette-purple': { aqua: 'btn-aqua-purple', flat: 'btn-history' },
+          'ui-btn--palette-red': { aqua: 'btn-aqua-red', flat: 'btn-delete' },
           'ui-btn--palette-rose': { aqua: 'btn-aqua-rose', flat: 'btn-market' },
+          'ui-btn--palette-sky': { aqua: 'btn-aqua-sky', flat: 'btn-get' },
           'ui-btn--palette-slate': { aqua: 'btn-aqua-slate', flat: 'btn-get' },
+          'ui-btn--palette-teal': { aqua: 'btn-aqua-teal', flat: 'btn-create' },
+          'ui-btn--palette-violet': { aqua: 'btn-aqua-violet', flat: 'btn-link' },
+          'ui-btn--palette-white': { aqua: 'btn-aqua-white', flat: 'btn-empty' },
+          'ui-btn--palette-yellow': { aqua: 'btn-aqua-yellow', flat: 'btn-warning' },
           'ui-btn--palette-zinc': { aqua: 'btn-aqua-zinc', flat: 'btn-cancel' },
+          'ui-btn--previous': { aqua: 'btn-aqua-zinc', flat: 'btn-previous' },
+          'ui-btn--primary': { aqua: 'btn-aqua-emerald', flat: 'btn-create' },
+          'ui-btn--reaction': { aqua: 'btn-aqua-cyan', flat: 'btn-reaction' },
+          'ui-btn--reaction-active': { aqua: 'btn-aqua-blue', flat: 'btn-reaction-active' },
+          'ui-btn--reply': { aqua: 'btn-aqua-sky', flat: 'btn-reply' },
+          'ui-btn--revert': { aqua: 'btn-aqua-yellow', flat: 'btn-revert' },
+          'ui-btn--sort-amber': { aqua: 'btn-aqua-amber', flat: 'btn-warning' },
+          'ui-btn--sort-blue': { aqua: 'btn-aqua-blue', flat: 'btn-insert' },
+          'ui-btn--sort-emerald': { aqua: 'btn-aqua-emerald', flat: 'btn-create' },
+          'ui-btn--sort-sky': { aqua: 'btn-aqua-sky', flat: 'btn-success' },
+          'ui-btn--study-correct': { aqua: 'btn-aqua-teal', flat: 'btn-success' },
+          'ui-btn--study-wrong': { aqua: 'btn-aqua-rose', flat: 'btn-error' },
+          'ui-btn--success': { aqua: 'btn-aqua-emerald', flat: 'btn-success' },
+          'ui-btn--update': { aqua: 'btn-aqua-teal', flat: 'btn-update' },
+          'ui-btn--warning': { aqua: 'btn-aqua-orange', flat: 'btn-warning' },
+          'ui-btn--warning-orange': { aqua: 'btn-aqua-orange', flat: 'btn-warning' },
+          'ui-btn--warning-yellow': { aqua: 'btn-aqua-yellow', flat: 'btn-warning' },
         }
         addThemeMap(buttonThemeClassMap)
         /** Selected/saved state for neutral buttons (e.g. bookmark): push from slate to light blue. */
@@ -1403,22 +1431,11 @@ export default {
           '@apply btn-empty': {},
         }
         /** Beats semantic ui-btn--* primitives (loaded above) so inner segments stay square in forced groups. */
-        aquaRules[selectorFor('aqua', 'btn-group-forced .ui-btn--group-item')] = {
-          ...aquaUiBtnGroupItemGeometry,
-          '&:not(:last-child)': {
-            '@apply pr-2': {},
-          },
-          '&:not(:first-child)': {
-            '@apply pl-2': {},
-          },
-        }
+        aquaRules[selectorFor('aqua', 'btn-group-forced .ui-btn--group-item')] = aquaUiBtnGroupItemGeometry
         flatRules[selectorFor('flat', 'btn-group-forced .ui-btn--group-item')] = {
           '@apply rounded-none first:rounded-l-full last:rounded-r-full': {},
           '&:not(:last-child)': {
-            '@apply border-r-0 pr-2': {},
-          },
-          '&:not(:first-child)': {
-            '@apply pl-2': {},
+            '@apply border-r-0': {},
           },
         }
         /** Cheetah aqua: `notebook > header` + tab chrome (#F5F5F5 strip, #9ac7e6 band, GTK tab gradients). */

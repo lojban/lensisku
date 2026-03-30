@@ -6,8 +6,24 @@
       ? 'bg-white border rounded-lg hover:border-blue-300 transition-colors shadow hover:shadow-none'
       : '',
   ]" :data-definition-id="definitionId">
+    <span
+      v-if="props.showScore && definition.similarity"
+      class="badge-definition-similarity"
+    >
+      {{
+        t('components.definitionCard.similarity', {
+          percent: Math.round(definition.similarity * 100),
+        })
+      }}
+    </span>
     <!-- Header Section -->
-    <div :class="[disableBorder ? '' : 'p-4']">
+    <div :class="[
+      disableBorder
+        ? ''
+        : props.showScore && definition.similarity
+          ? 'px-4 pb-4 pt-6'
+          : 'p-4',
+    ]">
 
       <div class="flex flex-col sm:flex-row justify-between items-start gap-4">
         <!-- Word and Type Info -->
@@ -152,13 +168,7 @@
                   class="text-blue-600 hover:text-blue-800 hover:underline"> {{ definition.username }} </RouterLink>
               </span> <span v-if="definition.created_at && definition.username">·</span> <span
                 v-if="definition.created_at"> {{
-                  formatDate(definition.created_at) }} </span> <span v-if="props.showScore && definition.similarity"
-                class="italic"> ·
-                {{
-                  t('components.definitionCard.similarity', {
-                    percent: Math.round(definition.similarity * 100),
-                  })
-                }} </span>
+                  formatDate(definition.created_at) }} </span>
             </div>
 
           </div>
