@@ -515,6 +515,8 @@
     "noItems": "no da su'o liste cu zvati.",
     "editCollectionTitle": "galfi lo liste",
     "coverImageAlt": "pixra lo liste {name}",
+    "coverLightboxClose": "vimcu lo muvysti",
+    "coverLightboxDialog": "muvysti lo pixra be lo liste {name}",
     "collectionCoverUploadTitle": "jmina lo pixra be lo liste",
     "collectionCoverRemoveTitle": "vimcu lo pixra be lo liste",
     "collectionCoverRemoveConfirm": "xu vimcu lo pixra be lo liste",

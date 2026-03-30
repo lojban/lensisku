@@ -515,6 +515,8 @@
     "noItems": "No items found.",
     "editCollectionTitle": "Edit collection",
     "coverImageAlt": "Cover image for {name}",
+    "coverLightboxClose": "Close preview",
+    "coverLightboxDialog": "Collection cover for {name}",
     "collectionCoverUploadTitle": "Upload cover image",
     "collectionCoverRemoveTitle": "Remove cover image",
     "collectionCoverRemoveConfirm": "Remove this collection's cover image?",

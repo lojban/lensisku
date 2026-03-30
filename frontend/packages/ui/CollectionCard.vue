@@ -3,15 +3,22 @@
     > <template #header
       >
       <div class="flex flex-row items-center gap-3 w-full min-w-0">
-        <div v-if="coverImageUrl" class="collection-card-logo overflow-hidden">
-          <img
-            :src="coverImageUrl"
-            :alt="collection.name"
-            class="h-full w-full object-cover"
-            loading="lazy"
-            decoding="async"
-          />
-        </div>
+        <CollectionCoverLightbox
+          v-if="coverImageUrl"
+          :image-url="coverImageUrl"
+          :alt="collection.name"
+          :close-aria-label="coverLightboxCloseLabel || undefined"
+        >
+          <div class="collection-card-logo overflow-hidden">
+            <img
+              :src="coverImageUrl"
+              :alt="collection.name"
+              class="h-full w-full object-cover"
+              loading="lazy"
+              decoding="async"
+            />
+          </div>
+        </CollectionCoverLightbox>
         <div v-else class="collection-card-logo-placeholder" aria-hidden="true">
           <BookOpen class="h-5 w-5 sm:h-6 sm:w-6" />
         </div>
@@ -101,6 +108,7 @@ import { computed } from 'vue'
 import { BookOpen, GraduationCap, List, LayoutGrid, CalendarClock } from 'lucide-vue-next'
 import Card from './Card.vue'
 import Button from './Button.vue'
+import CollectionCoverLightbox from './CollectionCoverLightbox.vue'
 
 export interface CollectionCardCollection {
   collection_id: number
@@ -168,6 +176,8 @@ const props = defineProps({
   itemsCountLabel: { type: String, default: '0 items' },
   /** Resolved image URL when `has_collection_image`; omit for placeholder icon. */
   coverImageUrl: { type: String, default: null },
+  /** Optional label for the full-screen close control (e.g. i18n). */
+  coverLightboxCloseLabel: { type: String, default: '' },
 })
 
 const studyButtonVariant = computed(() => {

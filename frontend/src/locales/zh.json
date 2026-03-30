@@ -505,6 +505,8 @@
     "noItems": "未找到条目。",
     "editCollectionTitle": "编辑合集",
     "coverImageAlt": "「{name}」的封面图",
+    "coverLightboxClose": "关闭预览",
+    "coverLightboxDialog": "「{name}」合集封面",
     "collectionCoverUploadTitle": "上传封面图",
     "collectionCoverRemoveTitle": "移除封面图",
     "collectionCoverRemoveConfirm": "要移除此合集的封面图吗？",
