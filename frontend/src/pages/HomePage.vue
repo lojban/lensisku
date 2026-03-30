@@ -267,6 +267,8 @@
             :error="error"
             :languages="languages"
             :show-scores="auth.state.isLoggedIn"
+            :semantic-search="searchMode === 'semantic'"
+            :search-query="searchQuery"
             :show-vote-buttons="auth.state.isLoggedIn"
             :collections="collections"
             :decomposition="decomposition || []"

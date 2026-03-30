@@ -11,7 +11,7 @@ use std::io::{Cursor, Write};
 use std::process::Command;
 use tempfile::tempdir;
 use xml::writer::{EventWriter, XmlEvent};
-use zip::write::{FileOptions, ZipWriter};
+use zip::write::{SimpleFileOptions, ZipWriter};
 
 use super::models::CachedExport;
 use super::models::CollectionExportItem;
@@ -504,7 +504,8 @@ fn zip_tsv_content(
     let mut zip_buffer = Vec::new();
     {
         let mut zip = ZipWriter::new(Cursor::new(&mut zip_buffer));
-        let options = FileOptions::default().compression_method(zip::CompressionMethod::Deflated);
+        let options =
+            SimpleFileOptions::default().compression_method(zip::CompressionMethod::Deflated);
 
         zip.start_file(filename, options)?;
         zip.write_all(tsv_content.as_bytes())?;

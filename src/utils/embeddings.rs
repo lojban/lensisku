@@ -53,7 +53,7 @@ pub async fn get_embedding(text: &str) -> AppResult<Vec<f32>> {
     let text = text.to_owned();
     tokio::task::spawn_blocking(move || {
         let model_mutex = get_model()?;
-        let model = model_mutex.lock();
+        let mut model = model_mutex.lock();
         let mut results = model
             .embed(vec![text.as_str()], None)
             .map_err(|e| AppError::Internal(format!("Embedding failed: {e}")))?;
@@ -75,7 +75,7 @@ pub async fn get_batch_embeddings(texts: Vec<String>) -> AppResult<Vec<Vec<f32>>
     }
     tokio::task::spawn_blocking(move || {
         let model_mutex = get_model()?;
-        let model = model_mutex.lock();
+        let mut model = model_mutex.lock();
         let refs: Vec<&str> = texts.iter().map(|s| s.as_str()).collect();
         model
             .embed(refs, None)

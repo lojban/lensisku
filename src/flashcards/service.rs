@@ -3,8 +3,8 @@ use chrono::{DateTime, Duration, Utc};
 use deadpool_postgres::Pool;
 use deadpool_postgres::Transaction;
 use fsrs::{
-    extract_simulator_config, FSRSItem, FSRSReview, ItemProgress, ItemState, MemoryState,
-    NextStates, RevlogEntry, RevlogReviewKind, FSRS,
+    extract_simulator_config, Card, DEFAULT_PARAMETERS, FSRSItem, FSRSReview, ItemProgress,
+    ItemState, MemoryState, NextStates, RevlogEntry, RevlogReviewKind, FSRS,
 };
 use log::{debug, error, info};
 use std::collections::HashMap;
@@ -1411,7 +1411,13 @@ pub async fn calculate_optimal_retention(
     // Use a progress callback that always returns true to avoid interruption
     let progress_callback = |_: ItemProgress| true;
 
-    match fsrs.optimal_retention(&config, &[], progress_callback) {
+    match fsrs.optimal_retention(
+        &config,
+        DEFAULT_PARAMETERS.as_slice(),
+        progress_callback,
+        None::<Vec<Card>>,
+        None,
+    ) {
         Ok(optimal_retention) => {
             // Cache the optimal retention value in the database for this user
             transaction
