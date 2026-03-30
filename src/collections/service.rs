@@ -4,8 +4,8 @@ use crate::jbovlaste::service::get_valsi_sound_urls_from_db;
 use crate::utils::remove_html_tags;
 use crate::{
     auth_utils::verify_collection_ownership, export::models::CollectionExportItem,
-    flashcards::models::FlashcardDirection, utils::validate_item_audio, utils::validate_item_image,
-    AppError, AppResult,
+    flashcards::models::FlashcardDirection, middleware::image::ImageProcessor,
+    utils::validate_item_audio, utils::validate_item_image,     users::dto::ProfileImageRequest, users::validate_profile_image, AppError, AppResult,
 };
 use base64::{engine::general_purpose::STANDARD as BASE64, Engine};
 use chrono::{DateTime, Utc};
@@ -61,6 +61,7 @@ pub async fn create_collection(
         updated_at: row.get("updated_at"),
         item_count: 0,
         has_flashcards: false,
+        has_collection_image: false,
         owner: CollectionOwner { user_id, username },
     };
 
@@ -297,6 +298,7 @@ async fn query_collections(
         "SELECT c.*, u.userid, u.username,
                 (SELECT COUNT(*) FROM collection_items ci WHERE ci.collection_id = c.collection_id) AS item_count,
                 EXISTS(SELECT 1 FROM flashcards f2 WHERE f2.collection_id = c.collection_id) AS has_flashcards,
+                EXISTS(SELECT 1 FROM collection_images cimg WHERE cimg.collection_id = c.collection_id) AS has_collection_image,
                 {search_rank_select}
                 c.updated_at AS _rank_tiebreak
          FROM collections c
@@ -333,6 +335,7 @@ async fn query_collections(
             updated_at: row.get("updated_at"),
             item_count: row.get("item_count"),
             has_flashcards: row.get("has_flashcards"),
+            has_collection_image: row.get("has_collection_image"),
             owner: CollectionOwner {
                 user_id: row.get("userid"),
                 username: row
@@ -373,6 +376,7 @@ pub async fn refresh_collection_sort_cache(
                 updated_at: row.get("updated_at"),
                 item_count: row.get("item_count"),
                 has_flashcards: row.get("has_flashcards"),
+                has_collection_image: row.get("has_collection_image"),
                 owner: CollectionOwner {
                     user_id: row.get("userid"),
                     username: row
@@ -449,7 +453,8 @@ fn build_collections_query(where_clause: &str, sort: Option<&str>, user_owned: b
     format!(
         "SELECT c.*, {extra_select}u.username,
                 (SELECT COUNT(*) FROM collection_items ci WHERE ci.collection_id = c.collection_id) AS item_count,
-                EXISTS(SELECT 1 FROM flashcards f WHERE f.collection_id = c.collection_id) AS has_flashcards
+                EXISTS(SELECT 1 FROM flashcards f WHERE f.collection_id = c.collection_id) AS has_flashcards,
+                EXISTS(SELECT 1 FROM collection_images cimg WHERE cimg.collection_id = c.collection_id) AS has_collection_image
          FROM collections c
          JOIN users u ON c.user_id = u.userid
          {active_join}
@@ -479,7 +484,8 @@ pub async fn get_collection(
     .query_one(
         "SELECT c.*, u.userid, u.username, 
         (SELECT COUNT(*) FROM collection_items ci WHERE ci.collection_id = c.collection_id) as item_count,
-        EXISTS(SELECT 1 FROM flashcards f WHERE f.collection_id = c.collection_id) as has_flashcards
+        EXISTS(SELECT 1 FROM flashcards f WHERE f.collection_id = c.collection_id) as has_flashcards,
+        EXISTS(SELECT 1 FROM collection_images cimg WHERE cimg.collection_id = c.collection_id) as has_collection_image
         FROM collections c
         JOIN users u ON c.user_id = u.userid
              WHERE c.collection_id = $1",
@@ -504,6 +510,7 @@ pub async fn get_collection(
         updated_at: collection_row.get("updated_at"),
         item_count: collection_row.get("item_count"),
         has_flashcards: collection_row.get("has_flashcards"),
+        has_collection_image: collection_row.get("has_collection_image"),
         owner: CollectionOwner {
             user_id: owner_id,
             username: collection_row
@@ -594,6 +601,16 @@ pub async fn update_collection(
         .try_get::<_, bool>(0)
         .map_err(|e| AppError::Database(e.to_string()))?;
 
+    let has_collection_image = transaction
+        .query_one(
+            "SELECT EXISTS(SELECT 1 FROM collection_images WHERE collection_id = $1)",
+            &[&collection_id],
+        )
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?
+        .try_get::<_, bool>(0)
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
     transaction
         .commit()
         .await
@@ -608,6 +625,7 @@ pub async fn update_collection(
         updated_at: row.get("updated_at"),
         item_count,
         has_flashcards,
+        has_collection_image,
         owner: CollectionOwner { user_id, username },
     })
 }
@@ -821,6 +839,7 @@ pub async fn import_json(
         updated_at: row.get("updated_at"),
         item_count: imported_count as i64,
         has_flashcards: false,
+        has_collection_image: false,
         owner: CollectionOwner { user_id, username },
     };
 
@@ -1307,6 +1326,7 @@ pub async fn import_full(
         updated_at: row.get("updated_at"),
         item_count: imported_count as i64,
         has_flashcards: false,
+        has_collection_image: false,
         owner: CollectionOwner { user_id, username },
     };
 
@@ -2596,6 +2616,7 @@ pub async fn clone_collection(
         updated_at: new_collection.get("updated_at"),
         item_count,
         has_flashcards: false,
+        has_collection_image: false,
         owner: CollectionOwner { user_id, username },
     })
 }
@@ -2674,7 +2695,8 @@ pub async fn merge_collections(
         .query_one(
             "SELECT c.*, u.userid, u.username,
             (SELECT COUNT(*) FROM collection_items ci WHERE ci.collection_id = c.collection_id) as item_count,
-            EXISTS(SELECT 1 FROM flashcards f WHERE f.collection_id = c.collection_id) as has_flashcards
+            EXISTS(SELECT 1 FROM flashcards f WHERE f.collection_id = c.collection_id) as has_flashcards,
+            EXISTS(SELECT 1 FROM collection_images cimg WHERE cimg.collection_id = c.collection_id) as has_collection_image
             FROM collections c
             JOIN users u ON c.user_id = u.userid
             WHERE c.collection_id = $1",
@@ -2691,6 +2713,7 @@ pub async fn merge_collections(
         updated_at: collection_row.get("updated_at"),
         item_count: collection_row.get("item_count"),
         has_flashcards: collection_row.get("has_flashcards"),
+        has_collection_image: collection_row.get("has_collection_image"),
         owner: CollectionOwner {
             user_id: collection_row.get("userid"),
             username: collection_row.get("username"),
@@ -3603,4 +3626,130 @@ pub async fn bulk_update_custom_text_items(
         .map_err(|e| AppError::Database(e.to_string()))?;
 
     Ok(CustomTextBulkUpdateResponse { updated, inserted })
+}
+
+async fn invalidate_public_collections_cache(redis: &crate::middleware::cache::RedisCache) {
+    if let Err(e) = redis.invalidate("collections_public:*").await {
+        log::warn!("Failed to invalidate public collections cache: {e}");
+    }
+}
+
+/// Returns `None` when the collection has no image row (caller may respond with 404).
+pub async fn get_collection_image_bytes(
+    pool: &Pool,
+    collection_id: i32,
+    user_id: Option<i32>,
+) -> AppResult<Option<(Vec<u8>, String)>> {
+    let client = pool
+        .get()
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+    let row = client
+        .query_opt(
+            "SELECT user_id, is_public FROM collections WHERE collection_id = $1",
+            &[&collection_id],
+        )
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+    let Some(row) = row else {
+        return Err(AppError::NotFound("Collection not found".to_string()));
+    };
+
+    let is_public: bool = row.get("is_public");
+    let owner_id: i32 = row.get("user_id");
+
+    if !is_public && Some(owner_id) != user_id {
+        return Err(AppError::Unauthorized("Access denied".to_string()));
+    }
+
+    let img = client
+        .query_opt(
+            "SELECT image_data, mime_type FROM collection_images WHERE collection_id = $1",
+            &[&collection_id],
+        )
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+    Ok(img.map(|r| (r.get("image_data"), r.get("mime_type"))))
+}
+
+pub async fn upsert_collection_image(
+    pool: &Pool,
+    redis: &crate::middleware::cache::RedisCache,
+    collection_id: i32,
+    user_id: i32,
+    req: &ProfileImageRequest,
+) -> AppResult<()> {
+    let image_data = validate_profile_image(req).map_err(AppError::BadRequest)?;
+    let (compressed_data, new_mime_type) = ImageProcessor::compress_avatar(&image_data, &req.mime_type)
+        .map_err(AppError::BadRequest)?;
+
+    let mut client = pool
+        .get()
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+    let transaction = client
+        .transaction()
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+    verify_collection_ownership(&transaction, collection_id, user_id).await?;
+
+    transaction
+        .execute(
+            "INSERT INTO collection_images (collection_id, image_data, mime_type, updated_at)
+             VALUES ($1, $2, $3, CURRENT_TIMESTAMP)
+             ON CONFLICT (collection_id)
+             DO UPDATE SET
+                image_data = EXCLUDED.image_data,
+                mime_type = EXCLUDED.mime_type,
+                updated_at = CURRENT_TIMESTAMP",
+            &[&collection_id, &compressed_data, &new_mime_type],
+        )
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+    transaction
+        .commit()
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+    invalidate_public_collections_cache(redis).await;
+    Ok(())
+}
+
+pub async fn remove_collection_image(
+    pool: &Pool,
+    redis: &crate::middleware::cache::RedisCache,
+    collection_id: i32,
+    user_id: i32,
+) -> AppResult<()> {
+    let mut client = pool
+        .get()
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+    let transaction = client
+        .transaction()
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+    verify_collection_ownership(&transaction, collection_id, user_id).await?;
+
+    transaction
+        .execute(
+            "DELETE FROM collection_images WHERE collection_id = $1",
+            &[&collection_id],
+        )
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+    transaction
+        .commit()
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+    invalidate_public_collections_cache(redis).await;
+    Ok(())
 }

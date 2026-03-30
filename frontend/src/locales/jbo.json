@@ -343,7 +343,8 @@
       "invalidType": "ko cuxna lo pixra datni po'o.",
       "tooLarge": "pixra datni poi mleca li 5 megbaitni.",
       "readError": "fliba lo nu tcidu lo pixra.",
-      "uploadFailed": "fliba lo nu punji lo pixra."
+      "uploadFailed": "fliba lo nu punji lo pixra.",
+      "payloadTooLarge": "lo nu benji cu barda tumfa lo sarvi .i ko troci lo cmalu pixra .a lo nu mligau ke'a"
     },
     "updateSuccess": "snada lo nu galfi lo predatni be do",
     "roleAssignedSuccess": "snada lo nu dunda lo pikta",
@@ -513,6 +514,13 @@
     "onlyItemsWithoutFlashcards": "da poi na se karda po'o",
     "noItems": "no da su'o liste cu zvati.",
     "editCollectionTitle": "galfi lo liste",
+    "coverImageAlt": "pixra lo liste {name}",
+    "collectionCoverUploadTitle": "jmina lo pixra be lo liste",
+    "collectionCoverRemoveTitle": "vimcu lo pixra be lo liste",
+    "collectionCoverRemoveConfirm": "xu vimcu lo pixra be lo liste",
+    "collectionCoverUploadSuccess": "lo pixra cu cnici.",
+    "collectionCoverRemoveSuccess": "lo pixra cu vimcu.",
+    "collectionCoverRemoveError": "lo nu vimcu cu snuti.",
     "nameLabel": "cmene",
     "descriptionLabel": "skicu",
     "makePublicLabel": "gubni lo liste",

@@ -343,7 +343,8 @@
       "invalidType": "请选择图片文件。",
       "tooLarge": "图片须小于 5MB。",
       "readError": "读取图片失败。",
-      "uploadFailed": "上传失败。"
+      "uploadFailed": "上传失败。",
+      "payloadTooLarge": "上传体积超过服务器限制。请换用更小的图片或更强的压缩。"
     },
     "updateSuccess": "资料已更新！",
     "roleAssignedSuccess": "角色已分配！",
@@ -503,6 +504,13 @@
     "onlyItemsWithoutFlashcards": "仅无闪卡的合集条目",
     "noItems": "未找到条目。",
     "editCollectionTitle": "编辑合集",
+    "coverImageAlt": "「{name}」的封面图",
+    "collectionCoverUploadTitle": "上传封面图",
+    "collectionCoverRemoveTitle": "移除封面图",
+    "collectionCoverRemoveConfirm": "要移除此合集的封面图吗？",
+    "collectionCoverUploadSuccess": "封面图已更新。",
+    "collectionCoverRemoveSuccess": "封面图已移除。",
+    "collectionCoverRemoveError": "无法移除封面图。",
     "nameLabel": "名称",
     "descriptionLabel": "描述",
     "makePublicLabel": "公开此合集",

@@ -760,6 +760,32 @@ export default {
           '@apply w-32 h-32 rounded-full bg-gray-200 flex items-center justify-center text-gray-400 border-4 border-white shadow-lg':
             {},
         },
+        /** Collection cover on list cards: compact on mobile, slightly larger from `sm` up. */
+        '.collection-card-logo': {
+          '@apply w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl object-cover border border-gray-100 shadow-sm bg-white shrink-0':
+            {},
+        },
+        '.collection-card-logo-placeholder': {
+          '@apply w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-gray-50 flex items-center justify-center text-gray-400 border border-gray-100 shadow-sm shrink-0':
+            {},
+        },
+        /** Collection detail header: fixed width, height follows hint+title row (`items-stretch`). */
+        '.collection-header-logo': {
+          '@apply w-11 sm:w-16 md:w-24 lg:w-28 self-stretch min-h-0 rounded-lg sm:rounded-xl object-cover border border-gray-100 shadow-md bg-white shrink-0 overflow-hidden':
+            {},
+        },
+        '.collection-header-logo-placeholder': {
+          '@apply w-11 sm:w-16 md:w-24 lg:w-28 self-stretch min-h-0 rounded-lg sm:rounded-xl bg-gray-50 flex items-center justify-center text-gray-400 border border-gray-100 shadow-md shrink-0':
+            {},
+        },
+        /** Collection cover in edit modal (matches profile avatar target size, square). */
+        '.collection-edit-logo': {
+          '@apply w-28 h-28 rounded-xl object-cover border-4 border-white shadow-lg': {},
+        },
+        '.collection-edit-logo-placeholder': {
+          '@apply w-28 h-28 rounded-xl bg-gray-200 flex items-center justify-center text-gray-400 border-4 border-white shadow-lg':
+            {},
+        },
         /** Logo SVG wrapper in app header. */
         '.logo-svg-container': {
           '@apply flex h-full w-full items-center justify-center [&>svg]:block [&>svg]:h-full [&>svg]:w-full [&>svg]:max-h-full [&>svg]:max-w-full':
@@ -1229,6 +1255,12 @@ export default {
         },
         '.card-title': {
           '@apply text-lg font-semibold text-gray-800 block truncate transition-colors': {},
+          '&:hover': { '@apply text-blue-600': {} },
+          '&:focus': { '@apply text-blue-600 outline-none': {} },
+        },
+        /** Title next to a thumbnail (e.g. collection card); multi-line clamp, no single-line truncate. */
+        '.card-title--multiline': {
+          '@apply text-lg font-semibold text-gray-800 min-w-0 leading-snug line-clamp-3 transition-colors': {},
           '&:hover': { '@apply text-blue-600': {} },
           '&:focus': { '@apply text-blue-600 outline-none': {} },
         },

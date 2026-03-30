@@ -516,6 +516,24 @@ export const removeProfileImage = () => {
   return api.delete('/users/profile-image')
 }
 
+export const getCollectionImage = (
+  collectionId: number | string,
+  options: { cached?: boolean } = { cached: false }
+) => {
+  return `${apiBaseUrl}/collections/${collectionId}/image?${options.cached ? '' : Date.now()}`
+}
+
+export const updateCollectionImage = (
+  collectionId: number | string,
+  imageData: Record<string, unknown>
+) => {
+  return api.post(`/collections/${collectionId}/image`, imageData)
+}
+
+export const removeCollectionImage = (collectionId: number | string) => {
+  return api.delete(`/collections/${collectionId}/image`)
+}
+
 export const getTrendingComments = (params?: Record<string, unknown>) =>
   api.get('/comments/trending', { params })
 

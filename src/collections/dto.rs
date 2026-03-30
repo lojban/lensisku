@@ -57,6 +57,7 @@ pub struct CollectionResponse {
     pub updated_at: DateTime<Utc>,
     pub item_count: i64,
     pub has_flashcards: bool,
+    pub has_collection_image: bool,
     pub owner: CollectionOwner,
 }
 

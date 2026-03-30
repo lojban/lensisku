@@ -10,6 +10,8 @@ use serde_json::json;
 
 use super::{dto::*, service};
 use crate::auth::Claims;
+use crate::users::dto::{ProfileImageRequest, ProfileImageResponse};
+use crate::AppError;
 
 #[utoipa::path(
     post,
@@ -132,6 +134,52 @@ pub async fn get_collection_flashcards(
 
 #[utoipa::path(
     get,
+    path = "/collections/{id}/image",
+    tag = "collections",
+    params(
+        ("id" = i32, Path, description = "Collection ID")
+    ),
+    responses(
+        (status = 200, description = "Collection cover image", content_type = "image/*"),
+        (status = 404, description = "Collection or image not found"),
+        (status = 403, description = "Access denied (private collection)"),
+        (status = 500, description = "Internal server error")
+    ),
+    summary = "Get collection cover image",
+    description = "Returns the collection logo image. Public collections are readable without auth; private collections require the owner."
+)]
+#[get("/{id}/image")]
+pub async fn get_collection_image(
+    pool: web::Data<Pool>,
+    claims: Option<Claims>,
+    id: web::Path<i32>,
+) -> impl Responder {
+    let collection_id = id.into_inner();
+    let uid = claims.map(|c| c.sub);
+    match service::get_collection_image_bytes(&pool, collection_id, uid).await {
+        Ok(Some((image_data, mime_type))) => {
+            let cd = ContentDisposition {
+                disposition: DispositionType::Inline,
+                parameters: vec![],
+            };
+            HttpResponse::Ok()
+                .content_type(mime_type)
+                .insert_header(cd)
+                .body(image_data)
+        }
+        Ok(None) => HttpResponse::NotFound().finish(),
+        Err(e) => match e {
+            AppError::NotFound(_) => HttpResponse::NotFound().finish(),
+            AppError::Unauthorized(_) => HttpResponse::Forbidden().finish(),
+            _ => HttpResponse::InternalServerError().json(json!({
+                "error": format!("Failed to get collection image: {}", e)
+            })),
+        },
+    }
+}
+
+#[utoipa::path(
+    get,
     path = "/collections/{id}",
     tag = "collections",
     params(
@@ -243,6 +291,91 @@ pub async fn delete_collection(
                 "error": format!("Failed to delete collection: {}", e)
             })),
         },
+    }
+}
+
+#[utoipa::path(
+    post,
+    path = "/collections/{id}/image",
+    tag = "collections",
+    params(
+        ("id" = i32, Path, description = "Collection ID")
+    ),
+    request_body = ProfileImageRequest,
+    responses(
+        (status = 200, description = "Image updated", body = ProfileImageResponse),
+        (status = 400, description = "Invalid image"),
+        (status = 403, description = "Access denied"),
+        (status = 500, description = "Internal server error")
+    ),
+    security(("bearer_auth" = [])),
+    summary = "Upload collection cover image",
+    description = "Uploads or replaces the collection logo. Owner only; same format and limits as profile images."
+)]
+#[post("/{id}/image")]
+pub async fn post_collection_image(
+    pool: web::Data<Pool>,
+    redis: web::Data<crate::middleware::cache::RedisCache>,
+    claims: Claims,
+    id: web::Path<i32>,
+    req: web::Json<ProfileImageRequest>,
+) -> impl Responder {
+    match service::upsert_collection_image(&pool, &redis, id.into_inner(), claims.sub, &req).await {
+        Ok(()) => HttpResponse::Ok().json(ProfileImageResponse {
+            success: true,
+            message: "Collection image updated successfully".to_string(),
+        }),
+        Err(AppError::BadRequest(msg)) => HttpResponse::BadRequest().json(ProfileImageResponse {
+            success: false,
+            message: msg,
+        }),
+        Err(AppError::Auth(_)) => HttpResponse::Forbidden().json(ProfileImageResponse {
+            success: false,
+            message: "Access denied".to_string(),
+        }),
+        Err(e) => HttpResponse::InternalServerError().json(ProfileImageResponse {
+            success: false,
+            message: e.to_string(),
+        }),
+    }
+}
+
+#[utoipa::path(
+    delete,
+    path = "/collections/{id}/image",
+    tag = "collections",
+    params(
+        ("id" = i32, Path, description = "Collection ID")
+    ),
+    responses(
+        (status = 200, description = "Image removed", body = ProfileImageResponse),
+        (status = 403, description = "Access denied"),
+        (status = 500, description = "Internal server error")
+    ),
+    security(("bearer_auth" = [])),
+    summary = "Remove collection cover image",
+    description = "Deletes the collection logo. Owner only."
+)]
+#[delete("/{id}/image")]
+pub async fn delete_collection_image(
+    pool: web::Data<Pool>,
+    redis: web::Data<crate::middleware::cache::RedisCache>,
+    claims: Claims,
+    id: web::Path<i32>,
+) -> impl Responder {
+    match service::remove_collection_image(&pool, &redis, id.into_inner(), claims.sub).await {
+        Ok(()) => HttpResponse::Ok().json(ProfileImageResponse {
+            success: true,
+            message: "Collection image removed successfully".to_string(),
+        }),
+        Err(AppError::Auth(_)) => HttpResponse::Forbidden().json(ProfileImageResponse {
+            success: false,
+            message: "Access denied".to_string(),
+        }),
+        Err(e) => HttpResponse::InternalServerError().json(ProfileImageResponse {
+            success: false,
+            message: e.to_string(),
+        }),
     }
 }
 

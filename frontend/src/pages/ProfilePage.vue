@@ -371,6 +371,7 @@ import { useSuccessToast } from '@/composables/useSuccessToast'
 import { useSeoHead } from '@/composables/useSeoHead'
 import { useButtonTheme } from '@/composables/useButtonTheme'
 import type { ButtonThemeId } from '@/composables/useButtonTheme'
+import { uploadImageErrorMessage } from '@/utils/apiError'
 
 /** JWT fields used on the profile page (decode + display). */
 interface ProfileJwtPayload {
@@ -574,8 +575,7 @@ const handleFileChange = async (event: Event) => {
         }, 500)
       } catch (err) {
         console.error('Upload error:', err)
-        imageUploadError.value =
-          err.response?.data?.message || t('profile.uploadError.uploadFailed')
+        imageUploadError.value = uploadImageErrorMessage(err, t)
         isImageUploading.value = false
         isEditProfileImageLoading.value = false // Error during preview setup or upload
         uploadProgress.value = 0
