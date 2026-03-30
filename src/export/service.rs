@@ -450,10 +450,14 @@ pub async fn export_with_access_check(
         options,
         options.collection_id,
         source_langid,
+        true,
     )
     .await
 }
 
+/// `use_dictionary_cache`: when true, serve a recent row from `cached_dictionary_exports` (up to 4 days)
+/// instead of regenerating. Background refresh must pass `false` so exports actually rebuild after the
+/// daily skip window, instead of re-reading stale cache rows.
 pub async fn export_dictionary(
     pool: &Pool,
     lang: &str,
@@ -461,39 +465,42 @@ pub async fn export_dictionary(
     options: &ExportOptions,
     collection_id: Option<i32>,
     source_langid: i32,
+    use_dictionary_cache: bool,
 ) -> Result<(Vec<u8>, String, String), Box<dyn std::error::Error + Send + Sync>> {
     // For collection exports, bypass cache
     if collection_id.is_some() {
         return generate_export(pool, lang, format, options, collection_id, source_langid).await;
     }
 
-    let mut client = pool.get().await?;
-    let transaction = client.transaction().await?;
+    if use_dictionary_cache {
+        let mut client = pool.get().await?;
+        let transaction = client.transaction().await?;
 
-    // Try to get from cache first using transaction
-    if let Some(row) = transaction
-        .query_opt(
-            "SELECT content, content_type, filename
-             FROM cached_dictionary_exports
-             WHERE language_tag = $1 AND format = $2
-             AND created_at > NOW() - INTERVAL '4 days'",
-            &[&lang, &format.to_string()],
-        )
-        .await?
-    {
-        // Commit transaction since we successfully found a cached result
+        // Try to get from cache first using transaction
+        if let Some(row) = transaction
+            .query_opt(
+                "SELECT content, content_type, filename
+                 FROM cached_dictionary_exports
+                 WHERE language_tag = $1 AND format = $2
+                 AND created_at > NOW() - INTERVAL '4 days'",
+                &[&lang, &format.to_string()],
+            )
+            .await?
+        {
+            // Commit transaction since we successfully found a cached result
+            transaction.commit().await?;
+            return Ok((
+                row.get("content"),
+                row.get("content_type"),
+                row.get("filename"),
+            ));
+        }
+
+        // Commit transaction since we'll generate a new export
         transaction.commit().await?;
-        return Ok((
-            row.get("content"),
-            row.get("content_type"),
-            row.get("filename"),
-        ));
     }
 
-    // Commit transaction since we'll generate a new export
-    transaction.commit().await?;
-
-    // If not in cache, generate new export
+    // If not in cache, or batch refresh bypassed cache read, generate
     generate_export(pool, lang, format, options, collection_id, source_langid).await
 }
 
@@ -1831,18 +1838,17 @@ pub async fn get_cached_export(
 }
 
 pub async fn export_all_dictionaries(pool: &Pool) -> Result<(), Box<dyn Error + Send + Sync>> {
-    let mut client = pool.get().await?;
-    let transaction = client.transaction().await?;
+    let client = pool.get().await?;
 
-    let languages = transaction
+    let languages = client
         .query("SELECT tag FROM languages", &[])
         .await?
         .iter()
         .map(|row| row.get::<_, String>("tag"))
         .collect::<Vec<_>>();
 
-    // Check existing cached exports
-    let cached_exports_rows = transaction
+    // Check existing cached exports (do not hold a transaction across long-running generates)
+    let cached_exports_rows = client
         .query(
             "SELECT language_tag, format, MAX(created_at) as last_export FROM cached_dictionary_exports GROUP BY language_tag, format",
             &[],
@@ -1884,9 +1890,21 @@ pub async fn export_all_dictionaries(pool: &Pool) -> Result<(), Box<dyn Error + 
                 lang, format
             );
 
-            match export_dictionary(pool, &lang, *format, &Default::default(), None, 1).await {
+            // Must bypass DB cache read or we would keep re-storing stale blobs (< 4 days old).
+            match export_dictionary(
+                pool,
+                &lang,
+                *format,
+                &Default::default(),
+                None,
+                1,
+                false,
+            )
+            .await
+            {
                 Ok((content, content_type, filename)) => {
-                    if let Err(e) = transaction
+                    let c = pool.get().await?;
+                    if let Err(e) = c
                         .execute(
                             "INSERT INTO cached_dictionary_exports
                              (language_tag, format, content, content_type, filename)
@@ -1915,6 +1933,5 @@ pub async fn export_all_dictionaries(pool: &Pool) -> Result<(), Box<dyn Error + 
         }
     }
 
-    transaction.commit().await?;
     Ok(())
 }

@@ -1,5 +1,6 @@
 use super::models::CachedExport;
 use super::service;
+use actix_web::http::header;
 use actix_web::{get, web, HttpResponse, Responder};
 use deadpool_postgres::Pool;
 
@@ -56,9 +57,10 @@ pub async fn download_cached_export(
 
     match service::get_cached_export(&pool, &language_tag, &format).await {
         Ok((content, content_type, filename)) => HttpResponse::Ok()
+            .insert_header((header::CACHE_CONTROL, "no-store"))
             .content_type(content_type)
             .append_header((
-                "Content-Disposition",
+                header::CONTENT_DISPOSITION,
                 format!("attachment; filename=\"{}\"", filename),
             ))
             .body(content),
