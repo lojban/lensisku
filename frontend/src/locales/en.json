@@ -343,7 +343,8 @@
       "invalidType": "Please select an image file.",
       "tooLarge": "Image must be less than 5MB.",
       "readError": "Failed to read image file.",
-      "uploadFailed": "Failed to upload image."
+      "uploadFailed": "Failed to upload image.",
+      "payloadTooLarge": "The upload exceeds the server size limit. Try a smaller image or stronger compression."
     },
     "updateSuccess": "Profile updated successfully!",
     "roleAssignedSuccess": "Role assigned successfully!",
@@ -513,6 +514,13 @@
     "onlyItemsWithoutFlashcards": "Only collection items that lack flashcards",
     "noItems": "No items found.",
     "editCollectionTitle": "Edit collection",
+    "coverImageAlt": "Cover image for {name}",
+    "collectionCoverUploadTitle": "Upload cover image",
+    "collectionCoverRemoveTitle": "Remove cover image",
+    "collectionCoverRemoveConfirm": "Remove this collection's cover image?",
+    "collectionCoverUploadSuccess": "Cover image updated.",
+    "collectionCoverRemoveSuccess": "Cover image removed.",
+    "collectionCoverRemoveError": "Could not remove the cover image.",
     "nameLabel": "Name",
     "descriptionLabel": "Description",
     "makePublicLabel": "Make this collection public",

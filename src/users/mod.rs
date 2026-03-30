@@ -2,6 +2,8 @@ pub mod controller;
 pub mod dto;
 mod service;
 
+pub use service::validate_profile_image;
+
 use actix_web::web;
 
 pub fn configure(cfg: &mut web::ServiceConfig) {

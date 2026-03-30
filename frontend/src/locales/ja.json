@@ -343,7 +343,8 @@
       "invalidType": "画像ファイルを選択してください。",
       "tooLarge": "画像は5MB未満にしてください。",
       "readError": "画像を読み込めませんでした。",
-      "uploadFailed": "画像をアップロードできませんでした。"
+      "uploadFailed": "画像をアップロードできませんでした。",
+      "payloadTooLarge": "送信サイズがサーバーの上限を超えています。より小さい画像にするか、圧縮を強めてください。"
     },
     "updateSuccess": "プロフィールを更新しました。",
     "roleAssignedSuccess": "ロールを割り当てました。",
@@ -498,6 +499,13 @@
     "onlyItemsWithoutFlashcards": "フラッシュカードがない項目のみ",
     "noItems": "項目がありません。",
     "editCollectionTitle": "コレクションを編集",
+    "coverImageAlt": "「{name}」のカバー画像",
+    "collectionCoverUploadTitle": "カバー画像をアップロード",
+    "collectionCoverRemoveTitle": "カバー画像を削除",
+    "collectionCoverRemoveConfirm": "このコレクションのカバー画像を削除しますか？",
+    "collectionCoverUploadSuccess": "カバー画像を更新しました。",
+    "collectionCoverRemoveSuccess": "カバー画像を削除しました。",
+    "collectionCoverRemoveError": "カバー画像を削除できませんでした。",
     "nameLabel": "名前",
     "descriptionLabel": "説明",
     "makePublicLabel": "このコレクションを公開する",

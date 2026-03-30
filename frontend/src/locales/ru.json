@@ -318,7 +318,8 @@
       "invalidType": "Пожалуйста, выберите файл изображения.",
       "tooLarge": "Размер изображения должен быть меньше 5МБ.",
       "readError": "Не удалось прочитать файл изображения.",
-      "uploadFailed": "Не удалось загрузить изображение."
+      "uploadFailed": "Не удалось загрузить изображение.",
+      "payloadTooLarge": "Запрос слишком большой для сервера. Выберите файл меньше или сильнее сожмите изображение."
     },
     "updateSuccess": "Профиль успешно обновлен!",
     "roleAssignedSuccess": "Роль успешно назначена!",
@@ -469,6 +470,13 @@
     "onlyItemsWithoutFlashcards": "Только элементы коллекции без карточек",
     "noItems": "Элементы не найдены.",
     "editCollectionTitle": "Редактировать коллекцию",
+    "coverImageAlt": "Обложка коллекции «{name}»",
+    "collectionCoverUploadTitle": "Загрузить обложку",
+    "collectionCoverRemoveTitle": "Удалить обложку",
+    "collectionCoverRemoveConfirm": "Удалить обложку этой коллекции?",
+    "collectionCoverUploadSuccess": "Обложка обновлена.",
+    "collectionCoverRemoveSuccess": "Обложка удалена.",
+    "collectionCoverRemoveError": "Не удалось удалить обложку.",
     "nameLabel": "Название",
     "descriptionLabel": "Описание",
     "makePublicLabel": "Сделать эту коллекцию публичной",

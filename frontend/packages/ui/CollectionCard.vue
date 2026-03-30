@@ -2,24 +2,34 @@
    <Card elevated class="collection-card"
     > <template #header
       >
-      <div class="space-y-2 flex flex-col items-center">
-
-        <div class="flex items-center justify-center gap-2 w-full min-w-0">
-           <RouterLink
+      <div class="flex flex-row items-center gap-3 w-full min-w-0">
+        <div v-if="coverImageUrl" class="collection-card-logo overflow-hidden">
+          <img
+            :src="coverImageUrl"
+            :alt="collection.name"
+            class="h-full w-full object-cover"
+            loading="lazy"
+            decoding="async"
+          />
+        </div>
+        <div v-else class="collection-card-logo-placeholder" aria-hidden="true">
+          <BookOpen class="h-5 w-5 sm:h-6 sm:w-6" />
+        </div>
+        <div class="min-w-0 flex-1 flex flex-col gap-1.5 text-left">
+          <RouterLink
             :to="
               collection.has_flashcards
                 ? `/collections/${collection.collection_id}/flashcards`
                 : `/collections/${collection.collection_id}`
             "
-            class="card-title min-w-0 flex-1 line-clamp-2 whitespace-normal text-center"
-            > {{ collection.name }} </RouterLink
+            class="card-title--multiline"
           >
+            {{ collection.name }}
+          </RouterLink>
+          <p v-if="collection.description" class="card-description">
+            {{ collection.description }}
+          </p>
         </div>
-
-        <p v-if="collection.description" class="card-description text-center">
-           {{ collection.description }}
-        </p>
-
       </div>
        </template
     > <template #footer
@@ -88,7 +98,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { GraduationCap, List, LayoutGrid, CalendarClock } from 'lucide-vue-next'
+import { BookOpen, GraduationCap, List, LayoutGrid, CalendarClock } from 'lucide-vue-next'
 import Card from './Card.vue'
 import Button from './Button.vue'
 
@@ -97,6 +107,7 @@ export interface CollectionCardCollection {
   name: string
   description?: string | null
   has_flashcards: boolean
+  has_collection_image?: boolean
   updated_at: string
   owner: { user_id: number; username: string }
 }
@@ -155,6 +166,8 @@ const props = defineProps({
   publicLabel: { type: String, default: 'Public' },
   privateLabel: { type: String, default: 'Private' },
   itemsCountLabel: { type: String, default: '0 items' },
+  /** Resolved image URL when `has_collection_image`; omit for placeholder icon. */
+  coverImageUrl: { type: String, default: null },
 })
 
 const studyButtonVariant = computed(() => {

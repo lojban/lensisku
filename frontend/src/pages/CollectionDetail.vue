@@ -2,25 +2,36 @@
 
   <div v-if="collection">
      <!-- Header -->
-    <div class="bg-white border rounded-lg p-4 sm:p-6 mb-6 flex flex-col gap-2">
-       <!-- Row 1: Hint (collection) + Title -->
-      <div class="flex items-center gap-2 text-gray-500 italic text-sm mb-1">
-         <List class="w-5 h-5 shrink-0" aria-hidden="true" /> <span>{{
-          t('collectionDetail.pageHint')
-        }}</span
-        >
-      </div>
-
-      <h2 class="text-xl sm:text-2xl font-bold text-gray-800"> {{ collection.name }} </h2>
-       <!-- Row 2: Description -->
-      <div v-if="collection.description" class="w-full">
-
-        <div class="max-h-32 text-sm overflow-y-auto border rounded p-2 w-full read-box">
-           <LazyMathJax :content="collection.description" />
+    <div class="bg-white border rounded-lg p-4 sm:p-6 mb-6 flex flex-col gap-4">
+      <div class="flex flex-col gap-3 sm:gap-4">
+        <div class="flex flex-row items-stretch gap-3 sm:gap-4">
+          <div v-if="collectionCoverDisplayUrl" class="collection-header-logo">
+            <img
+              :src="collectionCoverDisplayUrl"
+              :alt="t('collectionDetail.coverImageAlt', { name: collection.name })"
+              class="h-full w-full object-cover"
+              loading="lazy"
+              decoding="async"
+            />
+          </div>
+          <div v-else class="collection-header-logo-placeholder" aria-hidden="true">
+            <BookOpen class="h-5 w-5 sm:h-7 sm:w-7 md:h-9 md:w-9" />
+          </div>
+          <div class="min-w-0 flex-1 flex flex-col gap-2 pt-0.5">
+            <div class="flex items-center gap-2 text-gray-500 italic text-sm mb-1">
+              <List class="w-5 h-5 shrink-0" aria-hidden="true" />
+              <span>{{ t('collectionDetail.pageHint') }}</span>
+            </div>
+            <h2 class="text-xl sm:text-2xl font-bold text-gray-800">{{ collection.name }}</h2>
+          </div>
         </div>
-
+        <div v-if="collection.description" class="w-full min-w-0">
+          <div class="max-h-32 text-sm overflow-y-auto border rounded p-2 w-full read-box">
+            <LazyMathJax :content="collection.description" />
+          </div>
+        </div>
       </div>
-       <!-- Row 3: public + owner + count + actions -->
+       <!-- Row: public + owner + count + actions -->
       <div class="flex flex-row gap-2 items-center justify-between text-sm text-gray-500">
 
         <div class="flex flex-wrap items-center gap-2">
@@ -46,7 +57,7 @@
             v-if="isOwner"
             type="button"
             class="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
-            @click="showEditModal = true"
+            @click="openEditCollectionModal"
           >
              {{ t('collectionDetail.editCollectionInfo') }} </button
           > <button
@@ -254,6 +265,77 @@
 
         <div class="space-y-4">
 
+          <div v-if="isOwner" class="flex flex-col items-center mb-2">
+            <div class="relative group w-28 h-28">
+              <div
+                v-show="isEditCollectionImageLoading"
+                class="collection-edit-logo-placeholder animate-pulse"
+              />
+              <img
+                v-show="!isEditCollectionImageLoading && editCollectionImageUrl"
+                :key="editCollectionImageUrl || 'none'"
+                :src="editCollectionImageUrl"
+                :alt="t('collectionDetail.coverImageAlt', { name: editForm.name })"
+                class="collection-edit-logo"
+                @load="handleEditCollectionImageLoad"
+                @error="handleEditCollectionImageError"
+              />
+              <div
+                v-show="!isEditCollectionImageLoading && !editCollectionImageUrl"
+                class="collection-edit-logo-placeholder"
+              >
+                <BookOpen class="h-14 w-14" />
+              </div>
+              <div
+                v-if="isCollectionImageUploading"
+                class="absolute inset-0 rounded-xl bg-black bg-opacity-50 flex items-center justify-center"
+              >
+                <svg class="w-16 h-16 transform -rotate-90" viewBox="0 0 100 100">
+                  <circle cx="50" cy="50" r="45" fill="none" stroke="#4B5563" stroke-width="8" />
+                  <circle
+                    cx="50"
+                    cy="50"
+                    r="45"
+                    fill="none"
+                    stroke="#3B82F6"
+                    stroke-width="8"
+                    :stroke-dasharray="collectionImageCircumference"
+                    :stroke-dashoffset="collectionImageCircumference - (collectionImageUploadProgress / 100) * collectionImageCircumference"
+                    class="transition-all duration-300"
+                  />
+                </svg>
+                <span class="absolute text-white text-sm font-medium">{{
+                  Math.round(collectionImageUploadProgress)
+                }}%</span>
+              </div>
+              <div
+                v-if="!isCollectionImageUploading"
+                class="absolute -bottom-4 left-1/2 transform -translate-x-1/2 flex gap-3"
+              >
+                <label
+                  class="cursor-pointer p-2 bg-white border border-gray-300 rounded-full text-blue-600 hover:bg-blue-50 transition-all shadow-md"
+                  :title="t('collectionDetail.collectionCoverUploadTitle')"
+                >
+                  <input type="file" class="hidden" accept="image/*" @change="handleCollectionCoverFileChange" />
+                  <Camera class="h-5 w-5" />
+                </label>
+                <button
+                  v-if="collection?.has_collection_image"
+                  type="button"
+                  class="p-2 bg-white border border-gray-300 rounded-full text-red-600 hover:bg-red-50 transition-all shadow-md"
+                  :title="t('collectionDetail.collectionCoverRemoveTitle')"
+                  @click.stop="handleCollectionCoverRemove"
+                >
+                  <Trash2 class="h-5 w-5" />
+                </button>
+              </div>
+            </div>
+            <div class="h-6" />
+            <p v-if="collectionImageUploadError" class="mt-2 text-sm text-red-600">
+              {{ collectionImageUploadError }}
+            </p>
+          </div>
+
           <div>
              <label class="block text-sm font-medium text-gray-700 mb-1">{{
               t('collectionDetail.nameLabel')
@@ -284,7 +366,11 @@
         <div class="mt-6 flex justify-end gap-3">
            <button type="button" class="ui-btn--cancel" @click="cancelEditCollectionModal()">
              {{ t('collectionDetail.cancel') }} </button
-          > <button type="submit" :disabled="isSubmitting" class="ui-btn--update">
+          > <button
+            type="submit"
+            :disabled="isSubmitting || isCollectionImageUploading"
+            class="ui-btn--update"
+          >
              {{ isSubmitting ? t('collectionDetail.saving') : t('collectionDetail.saveChanges') }} </button
           >
         </div>
@@ -1232,6 +1318,8 @@ import {
   Search as SearchIcon,
   Loader,
   ArrowRight,
+  Camera,
+  Trash2,
 } from 'lucide-vue-next'
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
@@ -1239,7 +1327,10 @@ import { useRouter, useRoute } from 'vue-router'
 import {
   getCollection,
   getCollections,
+  getCollectionImage,
   updateCollection,
+  updateCollectionImage,
+  removeCollectionImage,
   deleteCollection,
   addCollectionItem,
   removeCollectionItem,
@@ -1281,6 +1372,7 @@ import { useI18n } from 'vue-i18n'
 import { SearchQueue } from '@/utils/searchQueue'
 import { queryStr } from '@/utils/routeQuery'
 import { normalizeSearchQuery } from '@/utils/searchQueryUtils'
+import { getApiErrorMessage, uploadImageErrorMessage } from '@/utils/apiError'
 
 /** Row from listCollectionItems / searchItems (template + reorder). */
 interface CollectionDetailListItem {
@@ -1932,8 +2024,149 @@ const openEditItemModal = async (item) => {
 
 function cancelEditCollectionModal() {
   showEditModal.value = false
-  // Reset edit form if needed, or handle potential unsaved changes
-  // For now, just closing the modal.
+  collectionImageUploadError.value = ''
+}
+
+function openEditCollectionModal() {
+  showEditModal.value = true
+  collectionImageUploadError.value = ''
+  refreshEditCollectionCoverUrl()
+}
+
+const isCollectionImageUploading = ref(false)
+const collectionImageUploadError = ref('')
+const collectionImageUploadProgress = ref(0)
+const collectionImageCircumference = computed(() => 2 * Math.PI * 45)
+const isEditCollectionImageLoading = ref(false)
+const editCollectionImageUrl = ref<string | null>(null)
+
+const collectionCoverDisplayUrl = computed(() => {
+  if (!collection.value?.has_collection_image) return null
+  return getCollectionImage(props.collectionId, { cached: true })
+})
+
+function handleEditCollectionImageLoad() {
+  isEditCollectionImageLoading.value = false
+}
+
+function handleEditCollectionImageError() {
+  console.error('Collection cover image failed to load (edit modal).')
+  isEditCollectionImageLoading.value = false
+  editCollectionImageUrl.value = null
+}
+
+function refreshEditCollectionCoverUrl() {
+  if (collection.value?.has_collection_image) {
+    isEditCollectionImageLoading.value = true
+    editCollectionImageUrl.value = `${getCollectionImage(props.collectionId)}?t=${Date.now()}`
+  } else {
+    editCollectionImageUrl.value = null
+    isEditCollectionImageLoading.value = false
+  }
+}
+
+async function handleCollectionCoverFileChange(event: Event) {
+  const file = (event.target as HTMLInputElement).files?.[0]
+  const input = event.target as HTMLInputElement
+  if (input) input.value = ''
+  if (!file) return
+
+  collectionImageUploadError.value = ''
+  collectionImageUploadProgress.value = 0
+
+  if (!file.type.startsWith('image/')) {
+    collectionImageUploadError.value = t('profile.uploadError.invalidType')
+    return
+  }
+  if (file.size > 5 * 1024 * 1024) {
+    collectionImageUploadError.value = t('profile.uploadError.tooLarge')
+    return
+  }
+
+  try {
+    isCollectionImageUploading.value = true
+    const reader = new FileReader()
+    reader.onload = async (e) => {
+      let progressInterval: ReturnType<typeof setInterval> | undefined
+      try {
+        const raw = e.target?.result
+        const base64Data = typeof raw === 'string' ? raw.split(',')[1] ?? '' : ''
+        const imageData = { data: base64Data, mime_type: file.type }
+
+        isEditCollectionImageLoading.value = true
+        editCollectionImageUrl.value = URL.createObjectURL(file)
+
+        let progress = 0
+        progressInterval = setInterval(() => {
+          progress += 10
+          if (progress > 90 && progressInterval) clearInterval(progressInterval)
+          collectionImageUploadProgress.value = Math.min(progress, 90)
+        }, 100)
+
+        await updateCollectionImage(props.collectionId, imageData)
+        if (progressInterval) clearInterval(progressInterval)
+        collectionImageUploadProgress.value = 100
+
+        const meta = await getCollection(props.collectionId)
+        collection.value = meta.data
+        editForm.value = {
+          name: meta.data.name,
+          description: meta.data.description || '',
+          is_public: meta.data.is_public,
+        }
+        refreshEditCollectionCoverUrl()
+        showSuccess(t('collectionDetail.collectionCoverUploadSuccess'))
+
+        setTimeout(() => {
+          isCollectionImageUploading.value = false
+          collectionImageUploadProgress.value = 0
+        }, 500)
+      } catch (err: unknown) {
+        if (progressInterval) clearInterval(progressInterval)
+        console.error('Collection cover upload error:', err)
+        collectionImageUploadError.value = uploadImageErrorMessage(err, t)
+        isCollectionImageUploading.value = false
+        isEditCollectionImageLoading.value = false
+        collectionImageUploadProgress.value = 0
+      }
+    }
+    reader.onerror = () => {
+      collectionImageUploadError.value = t('profile.uploadError.readError')
+      isCollectionImageUploading.value = false
+      isEditCollectionImageLoading.value = false
+      collectionImageUploadProgress.value = 0
+    }
+    reader.readAsDataURL(file)
+  } catch {
+    collectionImageUploadError.value = t('profile.uploadError.uploadFailed')
+    isCollectionImageUploading.value = false
+    collectionImageUploadProgress.value = 0
+  }
+}
+
+async function handleCollectionCoverRemove() {
+  if (!confirm(t('collectionDetail.collectionCoverRemoveConfirm'))) return
+
+  try {
+    isCollectionImageUploading.value = true
+    collectionImageUploadError.value = ''
+    await removeCollectionImage(props.collectionId)
+    const meta = await getCollection(props.collectionId)
+    collection.value = meta.data
+    editForm.value = {
+      name: meta.data.name,
+      description: meta.data.description || '',
+      is_public: meta.data.is_public,
+    }
+    editCollectionImageUrl.value = null
+    isEditCollectionImageLoading.value = false
+    showSuccess(t('collectionDetail.collectionCoverRemoveSuccess'))
+  } catch (err: unknown) {
+    collectionImageUploadError.value =
+      getApiErrorMessage(err) || t('collectionDetail.collectionCoverRemoveError')
+  } finally {
+    isCollectionImageUploading.value = false
+  }
 }
 
 function cancelEditItemModal() {

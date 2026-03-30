@@ -10,8 +10,28 @@
 
       <div class="flex flex-wrap justify-between items-center gap-4">
 
-        <div>
-
+        <div class="flex flex-col sm:flex-row sm:items-center gap-3 min-w-0 flex-1">
+          <div v-if="collectionCoverDisplayUrl" class="collection-card-logo overflow-hidden shrink-0 mx-auto sm:mx-0">
+            <img
+              :src="collectionCoverDisplayUrl"
+              :alt="
+                collectionMeta?.name
+                  ? t('collectionDetail.coverImageAlt', { name: collectionMeta.name })
+                  : t('flashcardStudy.title')
+              "
+              class="h-full w-full object-cover"
+              loading="lazy"
+              decoding="async"
+            />
+          </div>
+          <div
+            v-else
+            class="collection-card-logo-placeholder shrink-0 mx-auto sm:mx-0"
+            aria-hidden="true"
+          >
+            <BookOpen class="h-7 w-7" />
+          </div>
+          <div class="min-w-0 text-center sm:text-left">
           <h2 class="text-xl font-bold text-gray-800"> {{ t('flashcardStudy.title') }} </h2>
 
           <p v-if="showNewCardsMessage" class="text-sm text-orange-600 font-medium mt-1">
@@ -22,6 +42,7 @@
              {{ t('flashcardStudy.remainingCards', { count: remainingCards.length }) }}
           </p>
 
+          </div>
         </div>
 
         <div class="flex gap-4 space-x-4">
@@ -489,7 +510,14 @@
 </template>
 
 <script setup lang="ts">
-import { XCircle, Check, Smile, CheckCircle2, EqualApproximately } from 'lucide-vue-next'
+import {
+  XCircle,
+  Check,
+  Smile,
+  CheckCircle2,
+  EqualApproximately,
+  BookOpen,
+} from 'lucide-vue-next'
 import { ref, onMounted, computed, watch, nextTick, onBeforeUnmount } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
@@ -506,6 +534,8 @@ import {
   getLevelCards,
   getLevels,
   getCollectionFlashcardsPublic,
+  getCollection,
+  getCollectionImage,
 } from '@/api'
 import LazyMathJax from '@/components/LazyMathJax.vue'
 import AudioPlayer from '@/components/AudioPlayer.vue'
@@ -537,6 +567,29 @@ const isAnonNoLevelsMode = ref(false) // anon studying collection with no levels
 const anonLevelMeta = ref(null) // { min_cards, min_success_rate } when in anon level mode
 
 const collectionIdParam = computed(() => queryStr(route.params.collectionId))
+
+/** Set when GET /collections/:id succeeds (for cover image + alt text). */
+const collectionMeta = ref<{ name?: string; has_collection_image?: boolean } | null>(null)
+
+const collectionCoverDisplayUrl = computed(() => {
+  const cid = collectionIdParam.value
+  if (!cid || !collectionMeta.value?.has_collection_image) return null
+  return getCollectionImage(cid, { cached: true })
+})
+
+async function fetchCollectionMeta() {
+  const cid = collectionIdParam.value
+  if (!cid) return
+  try {
+    const res = await getCollection(cid)
+    collectionMeta.value = {
+      name: res.data.name,
+      has_collection_image: res.data.has_collection_image,
+    }
+  } catch {
+    collectionMeta.value = null
+  }
+}
 
 const returnToUrl = computed(() => {
   const cid = collectionIdParam.value
@@ -1074,6 +1127,8 @@ onMounted(async () => {
   try {
     const langsResponse = await getLanguages()
     languages.value = langsResponse.data
+
+    await fetchCollectionMeta()
 
     if (isAnonLevelMode.value) {
       await loadLevelCardsForAnon()
