@@ -53,7 +53,7 @@
           {{ t('profile.balance') }}
         </RouterLink>
         --> <!-- Aqua button group -->
-        <div class="btn-group-forced flex flex-wrap md:gap-y-2">
+        <div class="btn-group md:gap-y-2">
            <RouterLink
             v-if="isOwnProfile"
             to="/change-password"
@@ -68,7 +68,7 @@
           >
         </div>
 
-        <div class="btn-group-forced flex flex-wrap md:gap-y-2">
+        <div class="btn-group md:gap-y-2">
            <RouterLink
             :to="
               isOwnProfile

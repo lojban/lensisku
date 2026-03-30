@@ -102,10 +102,11 @@
   <!-- Sort & filter controls (card-base, input-field, checkbox-toggle per brandbook). overflow-visible so sort glow/drop-shadow is not clipped by card-base overflow-hidden. -->
   <div class="card-base card-compact mb-4 p-4 sm:p-5 flex flex-col gap-4 overflow-visible">
 
-    <div class="flex flex-row flex-wrap items-center gap-3">
-      <input v-model="searchQuery" type="text" class="input-field flex-1 min-w-0 max-w-md"
-        :placeholder="t('collectionList.searchPlaceholder')" /> <label
-        class="inline-flex items-center gap-2 text-sm font-medium text-gray-700 select-none cursor-pointer"> <input
+    <div class="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+      <input v-model="searchQuery" type="text"
+        class="input-field w-full min-w-0 sm:flex-1 sm:max-w-md"
+        :placeholder="hasFlashcardsOnly ? t('collectionList.searchPlaceholder') : t('collectionList.searchPlaceholderCollections')" /> <label
+        class="inline-flex items-center gap-2 self-end text-sm font-medium text-gray-700 select-none cursor-pointer sm:self-auto"> <input
           v-model="hasFlashcardsOnly" type="checkbox" class="checkbox-toggle" /> <span>{{
             t('collectionList.onlyWithFlashcards')
           }}</span> </label>
@@ -128,7 +129,7 @@
             " aria-hidden="true" /><span class="hidden sm:inline">{{ opt.label }}</span>
         </button>
       </div>
-      <span id="collection-list-sort-current" class="min-w-0 shrink-0 text-sm font-semibold text-blue-900 sm:hidden"
+      <span id="collection-list-sort-current" class="min-w-0 shrink-0 text-sm text-gray-700 sm:hidden"
         aria-live="polite">{{ selectedSortLabel }}</span>
     </div>
 
@@ -138,15 +139,19 @@
   <!-- Collections Card Grid -->
   <div v-else class="collections-section">
 
-    <p class="text-slate-600 text-sm mb-6 max-w-2xl">
-      <template v-if="auth.state.isLoggedIn">{{
-        t('collectionList.collectionDescription')
-        }}</template> <i18n-t v-else keypath="collectionList.collectionDescriptionLoggedOut" tag="span">
-        <RouterLink to="/login" class="text-blue-600 hover:text-blue-800 underline font-medium">{{
-          t('collectionList.loginTo')
-          }}</RouterLink>
-      </i18n-t>
-    </p>
+    <div class="mb-6 flex max-w-2xl flex-col gap-2 text-sm text-slate-600">
+      <template v-if="auth.state.isLoggedIn">
+        <p class="m-0">{{ t('collectionList.collectionDescriptionCourse') }}</p>
+        <p class="m-0">{{ t('collectionList.collectionDescriptionIntro') }}</p>
+      </template>
+      <p v-else class="m-0">
+        <i18n-t keypath="collectionList.collectionDescriptionLoggedOut" tag="span">
+          <RouterLink to="/login" class="font-medium text-blue-600 underline hover:text-blue-800">{{
+            t('collectionList.loginTo')
+            }}</RouterLink>
+        </i18n-t>
+      </p>
+    </div>
 
     <div class="collections-grid">
       <CollectionCard v-for="collection in collections" :key="collection.collection_id" :collection="collection"
