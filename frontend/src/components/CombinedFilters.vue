@@ -20,59 +20,80 @@
       <div class="flex items-center gap-2 self-end md:self-center">
 
         <div class="btn-group-forced flex items-center flex-row" role="group">
-          <button
-            class="ui-btn--aqua-default ui-btn--group-item"
+          <Button
+            type="button"
+            variant="aqua-default"
+            class="ui-btn--group-item"
             :title="t('searchForm.modes.semantic')"
             @click="toggleSemanticSearch"
           >
-            <input type="checkbox" class="checkmark-aqua" :checked="filters.isSemantic" /> <span
-              class="text-xs select-none whitespace-nowrap"> {{ t('searchForm.modes.semantic') }} </span> </button>
-          <button
-            class="ui-btn--aqua-default ui-btn--group-item"
-            :class="[{ 'opacity-50 !cursor-not-allowed': filters.word_type }]"
+            <template #icon>
+              <input
+                type="checkbox"
+                class="checkmark-aqua pointer-events-none shrink-0"
+                :checked="filters.isSemantic"
+                tabindex="-1"
+                aria-hidden="true"
+              />
+            </template>
+            <span class="text-xs select-none whitespace-nowrap">{{
+              t('searchForm.modes.semantic')
+            }}</span>
+          </Button>
+          <Button
+            type="button"
+            variant="aqua-default"
+            class="ui-btn--group-item"
+            :disabled="!!filters.word_type"
             :title="t('searchForm.modes.searchInPhrases')"
             @click="toggleSearchInPhrases"
           >
-            <input
-              type="checkbox"
-              class="checkmark-aqua"
-              :checked="filters.searchInPhrases && !filters.word_type"
-              :disabled="!!filters.word_type"
-            />
+            <template #icon>
+              <input
+                type="checkbox"
+                class="checkmark-aqua pointer-events-none shrink-0"
+                :checked="filters.searchInPhrases && !filters.word_type"
+                :disabled="!!filters.word_type"
+                tabindex="-1"
+                aria-hidden="true"
+              />
+            </template>
             <span class="text-xs select-none whitespace-nowrap">
               {{ t('searchForm.modes.searchInPhrases') }}
             </span>
-          </button>
+          </Button>
         </div>
 
         <div class="btn-group-forced flex items-center flex-row" role="group">
-          <button
+          <Button
             v-if="hasAnyActiveFilters"
             type="button"
-            class="ui-btn--aqua-default ui-btn--group-item"
+            variant="aqua-default"
+            class="ui-btn--group-item"
             :title="t('filters.resetAllFilters')"
             @click="resetAllFilters"
           >
             <span class="text-xs">{{ t('filters.resetAllFilters') }}</span>
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
-            class="ui-btn--aqua-default ui-btn--group-item"
+            variant="aqua-default"
+            class="ui-btn--group-item"
             :title="expanded ? t('filters.collapse') : t('filters.expand')"
             @click="toggleExpanded"
           >
-            <ChevronDown
-              class="h-5 w-5 transition-transform duration-200"
-              :class="{ 'rotate-180': expanded }"
-              :stroke-width="2"
-            />
-          </button>
+            <template #icon>
+              <ChevronDown
+                class="-ml-1 h-5 w-5 shrink-0 transition-transform duration-200"
+                :class="{ 'rotate-180': expanded }"
+                :stroke-width="2"
+                aria-hidden="true"
+              />
+            </template>
+          </Button>
         </div>
-
       </div>
-
     </div>
-
     <div
       v-show="expanded"
       class="mt-3 grid grid-cols-2 gap-x-3 gap-y-4 bg-white rounded-lg shadow-sm p-4"
@@ -202,7 +223,7 @@
 
 <script setup lang="ts">
 import { ChevronDown, X } from 'lucide-vue-next'
-import { Dropdown, IconButtonGhost, MultiSelectDropdown } from '@packages/ui'
+import { Button, Dropdown, IconButtonGhost, MultiSelectDropdown } from '@packages/ui'
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 
 import { fetchDefinitionsTypes } from '@/api'

@@ -1,4 +1,6 @@
 pub mod embeddings;
+pub mod kitten_tts;
+pub mod lojban_ipa;
 pub mod openrouter_models;
 pub mod tersmu;
 
