@@ -1560,13 +1560,16 @@ pub async fn google_oauth_signup(pool: &Pool, code: &str, _state: &str) -> AppRe
     let google_redirect_url =
         env::var("GOOGLE_REDIRECT_URL").expect("GOOGLE_REDIRECT_URL must be set");
 
-    let client = oauth2::basic::BasicClient::new(
-        ClientId::new(google_client_id),
-        Some(ClientSecret::new(google_client_secret)),
-        AuthUrl::new("https://accounts.google.com/o/oauth2/auth".to_string()).unwrap(),
-        Some(TokenUrl::new("https://oauth2.googleapis.com/token".to_string()).unwrap()),
-    )
-    .set_redirect_uri(RedirectUrl::new(google_redirect_url).unwrap());
+    let client = oauth2::basic::BasicClient::new(ClientId::new(google_client_id))
+        .set_client_secret(ClientSecret::new(google_client_secret))
+        .set_auth_uri(AuthUrl::new("https://accounts.google.com/o/oauth2/auth".to_string()).unwrap())
+        .set_token_uri(TokenUrl::new("https://oauth2.googleapis.com/token".to_string()).unwrap())
+        .set_redirect_uri(RedirectUrl::new(google_redirect_url).unwrap());
+
+    let http_client = reqwest::ClientBuilder::new()
+        .redirect(reqwest::redirect::Policy::none())
+        .build()
+        .map_err(|e| AppError::Auth(format!("Failed to build OAuth HTTP client: {}", e)))?;
 
     // 1. Verify the state parameter
     // TODO: Implement CSRF token verification
@@ -1574,7 +1577,7 @@ pub async fn google_oauth_signup(pool: &Pool, code: &str, _state: &str) -> AppRe
     // 2. Exchange the code for an access token
     let token_result = client
         .exchange_code(AuthorizationCode::new(code.to_string()))
-        .request_async(oauth2::reqwest::async_http_client)
+        .request_async(&http_client)
         .await
         .map_err(|e| AppError::Auth(format!("Failed to exchange code for token: {}", e)))?;
 

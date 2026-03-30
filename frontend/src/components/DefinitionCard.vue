@@ -7,7 +7,7 @@
       : '',
   ]" :data-definition-id="definitionId">
     <span
-      v-if="props.showScore && definition.similarity"
+      v-if="showSimilarityBadge"
       class="badge-definition-similarity"
     >
       {{
@@ -20,7 +20,7 @@
     <div :class="[
       disableBorder
         ? ''
-        : props.showScore && definition.similarity
+        : showSimilarityBadge
           ? 'px-4 pb-4 pt-6'
           : 'p-4',
     ]">
@@ -105,7 +105,7 @@
               </div>
 
               <div v-if="showReorderControls"
-                class="btn-group-forced ml-auto flex flex-wrap md:gap-y-2 justify-end sm:justify-end w-auto flex-none"
+                class="btn-group ml-auto flex flex-wrap md:gap-y-2 justify-end sm:justify-end w-auto flex-none"
                 role="group">
                 <button :disabled="isFirstItem || isReordering"
                   class="ui-btn--group-item ui-btn--empty inline-flex items-center gap-2"
@@ -362,7 +362,7 @@
       <!-- Control Section -->
       <div v-if="!disableToolbar" class="mt-3">
 
-        <div class="btn-group-forced flex flex-wrap md:gap-y-2" role="group">
+        <div class="btn-group flex flex-wrap md:gap-y-2" role="group">
           <!-- Edit button --> <button v-if="auth.state.isLoggedIn && definition.can_edit"
             class="ui-btn--update ui-btn--group-item inline-flex items-center justify-center gap-2"
             @click="router.push(`/definition/${definition.definitionid}/edit`)">
@@ -564,6 +564,7 @@ import ModalComponent from '@/components/ModalComponent.vue'
 import VoteButtons from '@/components/VoteButtons.vue'
 import { useAuth } from '@/composables/useAuth'
 import { useError } from '@/composables/useError'
+import { isSemanticPreciseMatch } from '@/utils/searchQueryUtils'
 import AudioPlayer from './AudioPlayer.vue'
 import LazyMathJax from './LazyMathJax.vue'
 
@@ -642,6 +643,15 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  /** When set with showScore, suppress similarity badge for valsi/gloss exact matches (semantic search). */
+  semanticSearch: {
+    type: Boolean,
+    default: false,
+  },
+  searchQuery: {
+    type: String,
+    default: '',
+  },
   showEditButton: {
     type: Boolean,
     default: false,
@@ -697,6 +707,18 @@ const collections = ref(props.collections)
 const showDeleteConfirm = ref(false)
 const showValsiModal = ref(false)
 const isDeleting = ref(false)
+
+const showSimilarityBadge = computed(() => {
+  if (!props.showScore || props.definition.similarity == null) return false
+  if (
+    props.semanticSearch &&
+    props.searchQuery &&
+    isSemanticPreciseMatch(props.definition, props.searchQuery)
+  ) {
+    return false
+  }
+  return true
+})
 
 const valsiWord = computed(() => props.definition.valsiword ?? props.definition.word ?? '')
 const displayedValsi = computed(() =>

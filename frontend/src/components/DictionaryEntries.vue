@@ -33,6 +33,8 @@
             :definition="def"
             :languages="languages"
             :show-score="props.showScores"
+            :semantic-search="props.semanticSearch"
+            :search-query="props.searchQuery"
             :show-vote-buttons="props.showVoteButtons"
             :disable-toolbar="true"
             :disable-owner-only-lock="true"
@@ -95,6 +97,15 @@ const props = defineProps({
   showVoteButtons: {
     type: Boolean,
     default: true,
+  },
+  /** When true, hide the vector similarity badge for valsi/gloss precise matches (semantic search). */
+  semanticSearch: {
+    type: Boolean,
+    default: false,
+  },
+  searchQuery: {
+    type: String,
+    default: '',
   },
   collections: {
     type: Array as PropType<unknown[]>,

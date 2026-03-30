@@ -2,10 +2,10 @@
 
   <div
     class="surface-definition-compact relative"
-    :class="{ '!pt-6': props.showScore && definition.similarity }"
+    :class="{ '!pt-6': showSimilarityBadge }"
   >
     <span
-      v-if="props.showScore && definition.similarity"
+      v-if="showSimilarityBadge"
       class="badge-definition-similarity"
     >
       {{
@@ -107,6 +107,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { isSemanticPreciseMatch } from '@/utils/searchQueryUtils'
 import { RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { getTypeClass } from '@/utils/wordTypeUtils'
@@ -138,6 +139,26 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  semanticSearch: {
+    type: Boolean,
+    default: false,
+  },
+  searchQuery: {
+    type: String,
+    default: '',
+  },
+})
+
+const showSimilarityBadge = computed(() => {
+  if (!props.showScore || props.definition.similarity == null) return false
+  if (
+    props.semanticSearch &&
+    props.searchQuery &&
+    isSemanticPreciseMatch(props.definition, props.searchQuery)
+  ) {
+    return false
+  }
+  return true
 })
 
 const valsiWord = computed(() => props.definition.valsiword ?? props.definition.word)

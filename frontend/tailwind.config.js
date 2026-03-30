@@ -229,7 +229,7 @@ export default {
       /**
        * Shared aqua segment geometry (radii + glossy ::before/::after), without extra segment box-shadows —
        * elevation stays on `aqua-base` / semantic primitives so wrappers and joins do not stack duplicate shadows.
-       * Applied with higher specificity in buttonUiThemeLayer for `.btn-group-forced` (see addPair order).
+       * Applied with higher specificity in buttonUiThemeLayer for `.btn-group-forced` (all breakpoints; see addPair order).
        */
       const aquaUiBtnGroupItemGeometry = {
         borderRadius: 0,
@@ -1138,7 +1138,7 @@ export default {
           '&:not(:disabled):active': {
             '@apply scale-x-[1.02]': {},
           },
-          /** Segment bar from 512px up (aligned with `.btn-group-forced`). */
+          /** Segment bar from 512px up (pair with `.btn-group`; always fused in `.btn-group-forced`). */
           '@media (min-width: 512px)': {
             '@apply rounded-none first:rounded-l-full last:rounded-r-full first:border-l last:border-r':
               {},
@@ -1147,17 +1147,23 @@ export default {
             },
           },
         },
-        /** Below 512px: separate pills with gap (no segment bar). From 512px up: fused segment control. */
-        '.btn-group-forced': {
-          '@apply gap-2': {},
+        /**
+         * Default group wrapper: spaced pills below 512px, flush join at 512px+.
+         * Pair with `btn-group-item` / `ui-btn--group-item` (responsive segment styling on items).
+         */
+        '.btn-group': {
+          '@apply flex flex-wrap gap-2': {},
           '@media (min-width: 512px)': {
             '@apply gap-0': {},
-            '& .btn-group-item, & .ui-btn--group-item': {
-              '@apply rounded-none first:rounded-l-full last:rounded-r-full': {},
-              /** Tighter inner joins: base controls use `px-3`; reduce horizontal padding at segment seams only. */
-              '&:not(:last-child)': {
-                '@apply border-r-0': {},
-              },
+          },
+        },
+        /** Fused segment control at every breakpoint (spacing + item joins; use where wrapping must stay one bar). */
+        '.btn-group-forced': {
+          '@apply gap-0': {},
+          '& .btn-group-item, & .ui-btn--group-item': {
+            '@apply rounded-none first:rounded-l-full last:rounded-r-full': {},
+            '&:not(:last-child)': {
+              '@apply border-r-0': {},
             },
           },
         },
@@ -1434,16 +1440,12 @@ export default {
         flatRules[selectorFor('flat', 'ui-btn--toggle:not(.active)')] = {
           '@apply btn-empty': {},
         }
-        /** Beats semantic ui-btn--* primitives so inner segments stay square in forced groups (512px+ only; mobile uses normal pills). */
-        aquaRules[selectorFor('aqua', 'btn-group-forced .ui-btn--group-item')] = {
-          '@media (min-width: 512px)': aquaUiBtnGroupItemGeometry,
-        }
+        /** Beats semantic ui-btn--* primitives so inner segments stay joined in forced groups (all breakpoints). */
+        aquaRules[selectorFor('aqua', 'btn-group-forced .ui-btn--group-item')] = aquaUiBtnGroupItemGeometry
         flatRules[selectorFor('flat', 'btn-group-forced .ui-btn--group-item')] = {
-          '@media (min-width: 512px)': {
-            '@apply rounded-none first:rounded-l-full last:rounded-r-full': {},
-            '&:not(:last-child)': {
-              '@apply border-r-0': {},
-            },
+          '@apply rounded-none first:rounded-l-full last:rounded-r-full': {},
+          '&:not(:last-child)': {
+            '@apply border-r-0': {},
           },
         }
         /** Cheetah aqua: `notebook > header` + tab chrome (#F5F5F5 strip, #9ac7e6 band, GTK tab gradients). */

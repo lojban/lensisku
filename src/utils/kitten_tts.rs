@@ -226,21 +226,27 @@ impl KittenTts {
     }
 
     /// Synthesize Lojban `word` to Ogg Opus bytes (RFC 7845), Bruno voice, speed 1.0.
-    pub fn lojban_word_to_ogg_opus(&self, word: &str) -> Result<Vec<u8>, String> {
+    pub fn lojban_word_to_ogg_opus(&mut self, word: &str) -> Result<Vec<u8>, String> {
         let ipa = lojban_to_ipa(word);
         self.ipa_to_ogg_opus(&ipa, "Bruno", 1.0)
     }
 
-    pub fn ipa_to_ogg_opus(&self, ipa: &str, voice_display: &str, speed: f32) -> Result<Vec<u8>, String> {
+    pub fn ipa_to_ogg_opus(
+        &mut self,
+        ipa: &str,
+        voice_display: &str,
+        speed: f32,
+    ) -> Result<Vec<u8>, String> {
         let voice = self.resolve_voice(voice_display)?;
         let style_table = self
             .voices
             .get(&voice)
-            .ok_or_else(|| format!("missing voice tensor {voice}"))?;
+            .ok_or_else(|| format!("missing voice tensor {voice}"))?
+            .clone();
 
         let mut chunks: Vec<f32> = Vec::new();
         for chunk_text in chunk_phoneme_text(ipa, 400) {
-            let audio = self.run_chunk(&chunk_text, style_table, speed)?;
+            let audio = self.run_chunk(&chunk_text, &style_table, speed)?;
             chunks.extend(audio);
         }
 
@@ -248,7 +254,7 @@ impl KittenTts {
     }
 
     fn run_chunk(
-        &self,
+        &mut self,
         text: &str,
         style_table: &Array2<f32>,
         speed: f32,
@@ -293,7 +299,7 @@ impl KittenTts {
         let view = outputs[0]
             .try_extract_tensor::<f32>()
             .map_err(|e| e.to_string())?;
-        let flat: Vec<f32> = view.iter().copied().collect();
+        let flat: Vec<f32> = view.1.to_vec();
         let len = flat.len();
         let trim = TRIM_TAIL_SAMPLES.min(len);
         let trimmed = if len > trim {
