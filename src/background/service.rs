@@ -295,6 +295,13 @@ pub async fn spawn_background_tasks(
 
     tokio::spawn(async move {
         loop {
+            // Acquire lock before starting export (run once at startup, then after each midnight)
+            let _lock = export_lock.lock().await;
+            if let Err(e) = export_all_dictionaries(&pool_clone).await {
+                error!("Failed to export dictionaries: {}", e);
+            }
+            drop(_lock);
+
             let now = Local::now();
             let next_midnight = match (now + chrono::Duration::days(1))
                 .date_naive()
@@ -331,12 +338,6 @@ pub async fn spawn_background_tasks(
             let sleep_duration = Duration::from_secs(duration_until_midnight.num_seconds() as u64);
 
             sleep(sleep_duration).await;
-
-            // Acquire lock before starting export
-            let _lock = export_lock.lock().await;
-            if let Err(e) = export_all_dictionaries(&pool_clone).await {
-                error!("Failed to export dictionaries: {}", e);
-            }
         }
     });
 }
