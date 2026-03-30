@@ -1,16 +1,16 @@
 import { readonly, ref } from 'vue'
 
-export const BUTTON_THEME_STORAGE_KEY = 'lensisku.buttonTheme'
+const BUTTON_THEME_STORAGE_KEY = 'lensisku.buttonTheme'
 
 export type ButtonThemeId = 'aqua' | 'flat'
-export const DEFAULT_BUTTON_THEME: ButtonThemeId = 'flat'
+const DEFAULT_BUTTON_THEME: ButtonThemeId = 'flat'
 const BUTTON_THEMES: ReadonlySet<ButtonThemeId> = new Set(['aqua', 'flat'])
 
 function isButtonThemeId(value: unknown): value is ButtonThemeId {
   return typeof value === 'string' && BUTTON_THEMES.has(value as ButtonThemeId)
 }
 
-export function getStoredButtonTheme(): ButtonThemeId {
+function getStoredButtonTheme(): ButtonThemeId {
   if (typeof window === 'undefined') return DEFAULT_BUTTON_THEME
   try {
     const storedTheme = localStorage.getItem(BUTTON_THEME_STORAGE_KEY)
@@ -21,12 +21,12 @@ export function getStoredButtonTheme(): ButtonThemeId {
   return DEFAULT_BUTTON_THEME
 }
 
-export function applyButtonThemeToDocument(theme: ButtonThemeId): void {
+function applyButtonThemeToDocument(theme: ButtonThemeId): void {
   if (typeof document === 'undefined') return
   document.documentElement.dataset.buttonTheme = theme
 }
 
-export function setButtonTheme(theme: ButtonThemeId): void {
+function persistButtonTheme(theme: ButtonThemeId): void {
   applyButtonThemeToDocument(theme)
   try {
     localStorage.setItem(BUTTON_THEME_STORAGE_KEY, theme)
@@ -36,7 +36,7 @@ export function setButtonTheme(theme: ButtonThemeId): void {
 }
 
 /** Sync document + storage; call once on client after load (inline script may have run already). */
-export function initButtonThemeFromStorage(): ButtonThemeId {
+function initButtonThemeFromStorage(): ButtonThemeId {
   const t = getStoredButtonTheme()
   applyButtonThemeToDocument(t)
   return t
@@ -51,7 +51,7 @@ export function useButtonTheme() {
 
   const updateButtonTheme = (theme: ButtonThemeId) => {
     buttonThemeRef.value = theme
-    setButtonTheme(theme)
+    persistButtonTheme(theme)
   }
 
   return {

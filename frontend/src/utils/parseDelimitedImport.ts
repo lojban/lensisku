@@ -6,7 +6,7 @@ type BulkImportRow = {
 }
 
 /** Minimal CSV line parser (quoted fields, doubled quotes). */
-export function parseCsvLine(line: string): string[] {
+function parseCsvLine(line: string): string[] {
   const out: string[] = []
   let cur = ''
   let i = 0
@@ -46,54 +46,18 @@ export function parseCsvLine(line: string): string[] {
   return out
 }
 
-export function isHeaderRow(cols: string[]): boolean {
+function isHeaderRow(cols: string[]): boolean {
   const a = (cols[0] || '').trim().toLowerCase()
   const b = (cols[1] || '').trim().toLowerCase()
   return (a === 'front' && b === 'back') || (a === 'prompt' && b === 'answer')
 }
 
-export function parseCsvOrTsvFile(
-  text: string,
-  filename?: string
-): { rows: BulkImportRow[]; warnings: string[] } {
-  const warnings: string[] = []
-  const raw = text.replace(/^\uFEFF/, '')
-  const lines = raw.split(/\r?\n/).map((l) => l.replace(/\r$/, ''))
-  const nonEmpty = lines.filter((l) => l.trim().length > 0)
-  if (nonEmpty.length === 0) {
-    warnings.push('empty')
-    return { rows: [], warnings }
-  }
-
-  const first = nonEmpty[0]
-  const tabCount = (first.match(/\t/g) || []).length
-  const commaCount = (first.match(/,/g) || []).length
-  const useTsv = /\.tsv$/i.test(filename || '') || (tabCount > commaCount && tabCount > 0)
-
-  const rows: BulkImportRow[] = []
-  let start = 0
-  const probeCols = useTsv ? first.split('\t') : parseCsvLine(first)
-  if (probeCols.length >= 2 && isHeaderRow(probeCols)) {
-    start = 1
-  }
-
-  for (let li = start; li < nonEmpty.length; li++) {
-    const line = nonEmpty[li]
-    const cells = useTsv ? line.split('\t') : parseCsvLine(line)
-    const front = (cells[0] ?? '').trim()
-    const back = (cells[1] ?? '').trim()
-    rows.push({ free_content_front: front, free_content_back: back })
-  }
-
-  return { rows, warnings }
-}
-
-export type BulkImportStreamProgress = {
+type BulkImportStreamProgress = {
   bytesRead: number
   totalBytes: number
 }
 
-export type BulkImportParseOptions = {
+type BulkImportParseOptions = {
   frontColumnIndex?: number
   backColumnIndex?: number
   skipFirstRow?: boolean
@@ -169,7 +133,7 @@ function stripLeadingBom(line: string): string {
 
 /**
  * Reads the file as a stream (no single huge `file.text()` string) and yields one row per
- * non-empty line, matching {@link parseCsvOrTsvFile} semantics (no embedded newlines in fields).
+ * non-empty line (no embedded newlines in fields), same delimiter rules as {@link previewBulkImportFile}.
  */
 export async function* eachBulkImportRowFromFile(
   file: File,
@@ -380,33 +344,4 @@ export function finalizeBulkImportDraftRows(
     return [...newRows, createDraftWithId()]
   }
   return newRows
-}
-
-/**
- * Merge file rows into existing table + drafts (all client-side).
- * Order per row: match saved row by trimmed front → replace; else by trimmed back → replace;
- * else match draft by front; else by back; else append draft. Trailing empty draft is preserved via caller watch.
- */
-export function mergeBulkImportRows(
-  parsed: BulkImportRow[],
-  existingRows: BulkTableRow[],
-  drafts: BulkDraftRow[],
-  createDraftWithId: () => BulkDraftRow
-): { rows: BulkTableRow[]; newRows: BulkDraftRow[]; stats: BulkMergeStats } {
-  const rows = existingRows.map((r) => ({ ...r }))
-  let newRows = stripTrailingEmptyDrafts(drafts.map((d) => ({ ...d })))
-  const stats: BulkMergeStats = {
-    replacedByFront: 0,
-    replacedByBack: 0,
-    inserted: 0,
-    skippedEmpty: 0,
-  }
-
-  for (const imp of parsed) {
-    mergeOneBulkImportRow(imp, rows, newRows, createDraftWithId, stats)
-  }
-
-  newRows = finalizeBulkImportDraftRows(newRows, createDraftWithId)
-
-  return { rows, newRows, stats }
 }
