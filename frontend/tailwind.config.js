@@ -779,6 +779,10 @@ export default {
             '@apply bg-gray-100 cursor-not-allowed opacity-75': {},
           },
         },
+        /** Native `<select>`: vertical padding stacks with fixed `h-8` and clips option text — keep full height for the control chrome. */
+        'select.input-field': {
+          '@apply py-0': {},
+        },
         /** Decorative icon inside `relative` input wrapper (user, mail, key). */
         '.input-field-trailing-icon': {
           '@apply pointer-events-none absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 shrink-0 text-gray-400': {},
