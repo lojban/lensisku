@@ -1,6 +1,6 @@
 /** Rows match bulk custom-text import: columns front, back (see parseDelimitedImport). */
 
-export type BulkCustomTextExportRow = {
+type BulkCustomTextExportRow = {
   free_content_front: string
   free_content_back: string
 }
