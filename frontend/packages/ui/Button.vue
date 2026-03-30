@@ -13,7 +13,7 @@
       class="inline-block shrink-0 rounded-full border-2 border-current border-t-transparent animate-spin"
       :class="spinnerSizeClass"
       aria-hidden="true"
-    /> <span v-if="$slots.default" class="relative top-px"><slot /></span> </component
+    /> <span v-if="$slots.default" class="inline-flex min-w-0 items-center"><slot /></span> </component
   >
 </template>
 

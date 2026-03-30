@@ -84,7 +84,7 @@
           >
             <template #icon>
               <ChevronDown
-                class="-ml-1 h-5 w-5 shrink-0 transition-transform duration-200"
+                class="h-5 w-5 shrink-0 transition-transform duration-200"
                 :class="{ 'rotate-180': expanded }"
                 :stroke-width="2"
                 aria-hidden="true"
