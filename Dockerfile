@@ -94,10 +94,12 @@ COPY --from=frontend-builder /usr/src/app/dist /var/www/html
 
 # Scripts (e.g. import_valsi_sounds) and tools to run them
 COPY scripts ./scripts
+# libopus0: dynamic lib for Opus encoding (valsi TTS → audio/ogg); linked at build, loaded at runtime
 RUN apt-get update && apt-get install -y --no-install-recommends \
     nginx \
     python3 \
     python3-psycopg2 \
+    libopus0 \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy Nginx configuration
