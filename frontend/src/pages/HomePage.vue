@@ -567,7 +567,6 @@ const currentPage = ref(parseInt(queryStr(route.query.page), 10) || 1)
 const totalPages = ref(1)
 const sortOrder = ref('desc')
 const includeContent = ref(true)
-const initialized = ref(false)
 
 // Get search query from localStorage or use default
 const getInitialSearchQuery = () => {
@@ -1455,11 +1454,13 @@ watch(
       // Auth state is now determined
       if (auth.state.isLoggedIn) {
         await fetchCollections()
-      }
-      // Always fetch data once auth is resolved and component is initialized
-      // The route watcher's immediate run handles the very initial state sync.
-      // This ensures data loads even if the route doesn't change after auth resolves.
-      if (initialized.value) {
+        /**
+         * The route watcher runs with `{ immediate: true }` before `checkAuthStatus` finishes, so
+         * `auth.state.isLoggedIn` is still false and `fetchDefinitions` uses `fastSearchDefinitions`
+         * (`fast: true`). The API then uses fast search and omits `comment_count` (see backend
+         * `fast_search_definitions`). After auth resolves, refetch so dictionary search uses full
+         * `searchDefinitions` with `include_comments` and discussion links show stable counts.
+         */
         await fetchData()
       }
     }
