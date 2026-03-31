@@ -292,10 +292,10 @@
               </div>
               <div
                 v-if="!isCollectionImageUploading"
-                class="absolute -bottom-4 left-1/2 transform -translate-x-1/2 flex gap-3"
+                class="absolute -bottom-4 left-1/2 transform -translate-x-1/2 flex gap-3 pointer-events-none"
               >
                 <label
-                  class="cursor-pointer p-2 bg-white border border-gray-300 rounded-full text-blue-600 hover:bg-blue-50 transition-all shadow-md"
+                  class="cursor-pointer p-2 bg-white border border-gray-300 rounded-full text-blue-600 hover:bg-blue-50 transition-all shadow-md pointer-events-auto"
                   :title="t('collectionDetail.collectionCoverUploadTitle')"
                 >
                   <input type="file" class="hidden" accept="image/*" @change="handleCollectionCoverFileChange" />
@@ -304,7 +304,7 @@
                 <button
                   v-if="collection?.has_collection_image"
                   type="button"
-                  class="p-2 bg-white border border-gray-300 rounded-full text-red-600 hover:bg-red-50 transition-all shadow-md"
+                  class="p-2 bg-white border border-gray-300 rounded-full text-red-600 hover:bg-red-50 transition-all shadow-md pointer-events-auto"
                   :title="t('collectionDetail.collectionCoverRemoveTitle')"
                   @click.stop="handleCollectionCoverRemove"
                 >
@@ -1346,7 +1346,7 @@ import ModalComponent from '@/components/ModalComponent.vue'
 import PaginationComponent from '@/components/PaginationComponent.vue'
 import SearchInput from '@/components/SearchInput.vue'
 import TabbedPageHeader from '@/components/TabbedPageHeader.vue'
-import { Dropdown } from '@packages/ui'
+import { CollectionCoverLightbox, Dropdown } from '@packages/ui'
 import { useAuth } from '@/composables/useAuth'
 import { useError } from '@/composables/useError'
 import { useSeoHead } from '@/composables/useSeoHead'
