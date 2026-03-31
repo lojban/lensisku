@@ -29,6 +29,8 @@ This document is the **human-readable contract** for product, design, QA, and en
 | Asset | Role |
 |-------|------|
 | **`tailwind.config.js`** | Brand tokens (`colors.nav-link`, `fontFamily.sans`), shared **component classes** (`.btn-base`, `.aqua-base`, `.input-field`, …), **semantic button mapping** (`ui-btn--*` → aqua/flat primitives via `data-button-theme`). |
+| **`tailwind.flat-buttons.mjs`** | **Flat** theme: `.btn-flat-surface` + semantic `btn-*` palettes (imported into `tailwind.config.js`). |
+| **`tailwind.aqua-buttons.mjs`** | **Aqua** theme: `.aqua-base` / `.aqua-base-secondary`, semantic `btn-aqua-*`, segment geometry helper, toggle-off shadow. |
 | **`packages/ui/*.vue`** | **Reusable, mostly stateless** building blocks (`Button`, `IconButton`, `Card`, `Dropdown`, …). They must **not** import from `src/`. |
 | **`src/components/**`** | Domain-aware UI (search, definitions, filters, Lingo study, …). Prefer composing `packages/ui` + Tailwind named classes. |
 | **`src/composables/useButtonTheme.ts`** | Persists `aqua` \| `flat` in `localStorage`, sets `document.documentElement.dataset.buttonTheme`. |
@@ -65,8 +67,21 @@ This document is the **human-readable contract** for product, design, QA, and en
 
 | Family | Base class | Character |
 |--------|------------|-----------|
-| **Glossy / Aqua** | `.aqua-base` (+ `btn-aqua-*` fills) | 3D, high-gloss, strong shadow; **primary chrome** for “hero” actions when Aqua theme is on. |
-| **Flat** | `.btn-base` (+ `btn-*` semantic fills) | 2D, bordered, subdued; default for **inline**, **toolbar**, and **list** actions when Flat theme is on. |
+| **Glossy / Aqua** | `.aqua-base` (+ `btn-aqua-*` fills) — `tailwind.aqua-buttons.mjs` | 3D, high-gloss, strong shadow; **primary chrome** for “hero” actions when Aqua theme is on. |
+| **Flat** | `.btn-base` → `.btn-flat-surface` (+ semantic `btn-*`) — `tailwind.flat-buttons.mjs` | 2D, bordered, subdued; default for **inline**, **toolbar**, and **list** actions when Flat theme is on. |
+
+#### 6.2a Flat theme: layered model (machine source: `tailwind.config.js`)
+
+Flat controls share one interaction recipe; **only palette + label color** change per role.
+
+| Layer | Class | Responsibility |
+|--------|--------|----------------|
+| **Geometry** | `.btn-base` | Pill shape, padding, border radius, disabled opacity, default outer shadow, `cursor-pointer`, press nudge (`active:scale-x`). |
+| **Surface + motion** | `.btn-flat-surface` | `@apply btn-base`. **Default** gradient on `::before` and **hover/active** gradient on `::after` (opacity crossfade ~220ms). Both layers use **`z-index: -1`** so they paint **behind** all in-flow label text (including unwrapped text nodes—no `z-index` on icons only). **Active** swaps `::after` to the darker `--bf-*` pair. Border on the root tracks hover/active. **Focus**: `ring-2` + `--bf-ring`. **`prefers-reduced-motion`**: shorten the opacity transition. |
+| **Embossed neutral** | `.btn-empty` | **Not** `.btn-flat-surface`: **inset** emboss on the root; same **`::before` / `::after`** stacking (`z-index: -1`) for hover/active fills. |
+| **Role / hue** | `btn-get`, `btn-update`, `btn-delete`, … | Set **text color** + `--bf-*` tokens. Most hues use a **shared generator** (`100/50` → `200/100` → `300/200` stops, borders `400`→`600`→`700`). **CTA** (`btn-insert`, `btn-reaction-active`) and **soft** rows (`btn-market`, `btn-action`, `btn-reaction`) set custom `--bf-*` explicitly. |
+
+**Do not** use Tailwind’s `enabled:hover:*` on flat primitives for fills that must apply to **`<a>` / `RouterLink`**: `:enabled` does not match anchors. The flat layer uses **`:hover:not(:disabled)`** etc. on `.btn-flat-surface` so buttons and links behave the same.
 
 ### 6.3 Semantic API for components: `ui-btn--*`
 
@@ -173,7 +188,7 @@ Application code and **`Button.vue`** / **`IconButton.vue`** should use **semant
 
 ## 11. Motion & seasons
 
-- Respect **`prefers-reduced-motion`** where transitions are decorative (see `style.css` for toggles).
+- Respect **`prefers-reduced-motion`** where transitions are decorative (see `style.css` for toggles). **Flat** `.btn-flat-surface` and **`.btn-empty`** shorten the **gradient overlay** opacity transition when reduced motion is requested.
 - Seasonal effects (e.g. winter snowflakes) must use **`aria-hidden="true"`** on decorative containers.
 
 ---
