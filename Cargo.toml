@@ -52,7 +52,19 @@ name = "test"
 path = "test/test.rs"
 
 [dependencies]
-actix-web = { version = "4.13", features = ["rustls"] }
+# Default features include `compress-zstd`, which pulls `zstd` 0.13 while `wasmtime-cache` uses 0.11.
+# Omit `compress-zstd` so we only compile one `zstd` (via Wasmtime). Brotli + gzip compression stay enabled.
+actix-web = { version = "4.13", default-features = false, features = [
+	"macros",
+	"compress-brotli",
+	"compress-gzip",
+	"cookies",
+	"http2",
+	"unicode",
+	"compat",
+	"ws",
+	"rustls",
+] }
 tokio-postgres = { version = "0.7.17", features = ["with-chrono-0_4", "with-serde_json-1", "with-uuid-1"] }
 deadpool = "0.12.2"
 deadpool-postgres = "0.14.1"
@@ -117,7 +129,8 @@ vlazba = "0.7.14"
 parking_lot = "0.12.5"
 tokio-stream = "0.1.18"
 actix-web-lab = "0.26"
-zip = "6.0"
+# Default features enable `zstd` 0.13; we only write Deflate (`export` TSV zips). Match `ndarray-npy` (`zip/deflate`).
+zip = { version = "6.0", default-features = false, features = ["deflate"] }
 wasmtime = "17.0.0"
 wasmtime-wasi = "17.0.0"
 anyhow = "1.0"
