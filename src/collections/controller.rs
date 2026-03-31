@@ -10,6 +10,7 @@ use serde_json::json;
 
 use super::{dto::*, service};
 use crate::auth::Claims;
+use crate::middleware::cache::RedisCache;
 use crate::users::dto::{ProfileImageRequest, ProfileImageResponse};
 use crate::AppError;
 
@@ -32,10 +33,11 @@ use crate::AppError;
 #[post("")]
 pub async fn create_collection(
     pool: web::Data<Pool>,
+    redis_cache: web::Data<RedisCache>,
     claims: Claims,
     req: web::Json<CreateCollectionRequest>,
 ) -> impl Responder {
-    match service::create_collection(&pool, claims.sub, &req).await {
+    match service::create_collection(&pool, &redis_cache, claims.sub, &req).await {
         Ok(collection) => HttpResponse::Ok().json(collection),
         Err(e) => HttpResponse::InternalServerError().json(json!({
             "error": format!("Failed to create collection: {}", e)
@@ -87,7 +89,7 @@ pub async fn list_collections(
 #[get("/public")]
 pub async fn list_public_collections(
     pool: web::Data<Pool>,
-    redis_cache: web::Data<crate::middleware::cache::RedisCache>,
+    redis_cache: web::Data<RedisCache>,
     query: web::Query<ListCollectionsQuery>,
 ) -> impl Responder {
     match service::list_public_collections(&pool, &redis_cache, &query).await {
@@ -238,11 +240,12 @@ pub async fn get_collection(
 #[put("/{id}")]
 pub async fn update_collection(
     pool: web::Data<Pool>,
+    redis_cache: web::Data<RedisCache>,
     claims: Claims,
     id: web::Path<i32>,
     req: web::Json<UpdateCollectionRequest>,
 ) -> impl Responder {
-    match service::update_collection(&pool, id.into_inner(), claims.sub, &req).await {
+    match service::update_collection(&pool, &redis_cache, id.into_inner(), claims.sub, &req).await {
         Ok(collection) => HttpResponse::Ok().json(collection),
         Err(e) => match e.to_string().as_str() {
             "Collection not found" => HttpResponse::NotFound().finish(),
@@ -276,10 +279,11 @@ pub async fn update_collection(
 #[delete("/{id}")]
 pub async fn delete_collection(
     pool: web::Data<Pool>,
+    redis_cache: web::Data<RedisCache>,
     claims: Claims,
     id: web::Path<i32>,
 ) -> impl Responder {
-    match service::delete_collection(&pool, id.into_inner(), claims.sub).await {
+    match service::delete_collection(&pool, &redis_cache, id.into_inner(), claims.sub).await {
         Ok(_) => HttpResponse::Ok().json(json!({
             "success": true,
             "message": "Collection deleted successfully"
@@ -315,7 +319,7 @@ pub async fn delete_collection(
 #[post("/{id}/image")]
 pub async fn post_collection_image(
     pool: web::Data<Pool>,
-    redis: web::Data<crate::middleware::cache::RedisCache>,
+    redis: web::Data<RedisCache>,
     claims: Claims,
     id: web::Path<i32>,
     req: web::Json<ProfileImageRequest>,
@@ -359,7 +363,7 @@ pub async fn post_collection_image(
 #[delete("/{id}/image")]
 pub async fn delete_collection_image(
     pool: web::Data<Pool>,
-    redis: web::Data<crate::middleware::cache::RedisCache>,
+    redis: web::Data<RedisCache>,
     claims: Claims,
     id: web::Path<i32>,
 ) -> impl Responder {
@@ -402,11 +406,12 @@ pub async fn delete_collection_image(
 #[post("/{id}/items")]
 pub async fn upsert_item(
     pool: web::Data<Pool>,
+    redis_cache: web::Data<RedisCache>,
     claims: Claims,
     id: web::Path<i32>,
     req: web::Json<AddItemRequest>,
 ) -> impl Responder {
-    match service::upsert_item(&pool, id.into_inner(), claims.sub, &req).await {
+    match service::upsert_item(&pool, &redis_cache, id.into_inner(), claims.sub, &req).await {
         Ok(item_response) => HttpResponse::Ok().json(item_response),
         Err(e) => {
             log::error!("Failed to upsert item: {:?}", e);
@@ -446,11 +451,20 @@ pub async fn upsert_item(
 #[put("/{id}/items/{item_id}/position")]
 pub async fn update_item_position(
     pool: web::Data<Pool>,
+    redis_cache: web::Data<RedisCache>,
     claims: Claims,
     path: web::Path<(i32, i32)>,
     req: web::Json<UpdateItemPositionRequest>,
 ) -> impl Responder {
-    match service::update_item_position(&pool, path.0, path.1, claims.sub, req.position).await {
+    match service::update_item_position(
+        &pool,
+        &redis_cache,
+        path.0,
+        path.1,
+        claims.sub,
+        req.position,
+    )
+    .await {
         Ok(_) => HttpResponse::Ok().json(json!({
             "message": "Position updated successfully",
             "collection_id": path.0,
@@ -489,12 +503,13 @@ pub async fn update_item_position(
 #[delete("/{id}/items/{item_id}")]
 pub async fn remove_item(
     pool: web::Data<Pool>,
+    redis_cache: web::Data<RedisCache>,
     claims: Claims,
     path: web::Path<(i32, i32)>,
 ) -> impl Responder {
     let (collection_id, item_id) = path.into_inner();
     // Delete flashcards first, then remove the item
-    match service::remove_item(&pool, collection_id, item_id, claims.sub).await {
+    match service::remove_item(&pool, &redis_cache, collection_id, item_id, claims.sub).await {
         Ok(_) => HttpResponse::Ok().json(json!({
             "message": "Item removed successfully",
             "collection_id": collection_id,
@@ -535,10 +550,11 @@ pub async fn remove_item(
 #[post("/{id}/clone")]
 pub async fn clone_collection(
     pool: web::Data<Pool>,
+    redis_cache: web::Data<RedisCache>,
     claims: Claims,
     id: web::Path<i32>,
 ) -> impl Responder {
-    match service::clone_collection(&pool, id.into_inner(), claims.sub).await {
+    match service::clone_collection(&pool, &redis_cache, id.into_inner(), claims.sub).await {
         Ok(collection) => HttpResponse::Ok().json(collection),
         Err(e) => match e.to_string().as_str() {
             "Collection not found" => HttpResponse::NotFound().finish(),
@@ -570,10 +586,11 @@ pub async fn clone_collection(
 #[post("/merge")]
 pub async fn merge_collections(
     pool: web::Data<Pool>,
+    redis_cache: web::Data<RedisCache>,
     claims: Claims,
     req: web::Json<MergeCollectionsRequest>,
 ) -> impl Responder {
-    match service::merge_collections(&pool, claims.sub, &req).await {
+    match service::merge_collections(&pool, &redis_cache, claims.sub, &req).await {
         Ok(collection) => HttpResponse::Ok().json(collection),
         Err(e) => match e.to_string().as_str() {
             "Collection not found" => HttpResponse::NotFound().finish(),
@@ -643,11 +660,19 @@ pub async fn list_custom_text_bulk_items(
 #[post("/{id}/items/bulk-remove")]
 pub async fn bulk_remove_items(
     pool: web::Data<Pool>,
+    redis_cache: web::Data<RedisCache>,
     claims: Claims,
     id: web::Path<i32>,
     req: web::Json<BulkRemoveItemsRequest>,
 ) -> impl Responder {
-    match service::remove_items_bulk(&pool, id.into_inner(), claims.sub, &req.item_ids).await {
+    match service::remove_items_bulk(
+        &pool,
+        &redis_cache,
+        id.into_inner(),
+        claims.sub,
+        &req.item_ids,
+    )
+    .await {
         Ok(response) => HttpResponse::Ok().json(response),
         Err(e) => {
             let msg = e.to_string();
@@ -689,11 +714,19 @@ pub async fn bulk_remove_items(
 #[put("/{id}/items/custom-text-bulk")]
 pub async fn bulk_update_custom_text_items(
     pool: web::Data<Pool>,
+    redis_cache: web::Data<RedisCache>,
     claims: Claims,
     id: web::Path<i32>,
     req: web::Json<CustomTextBulkUpdateRequest>,
 ) -> impl Responder {
-    match service::bulk_update_custom_text_items(&pool, id.into_inner(), claims.sub, &req).await {
+    match service::bulk_update_custom_text_items(
+        &pool,
+        &redis_cache,
+        id.into_inner(),
+        claims.sub,
+        &req,
+    )
+    .await {
         Ok(response) => HttpResponse::Ok().json(response),
         Err(e) => {
             let msg = e.to_string();
@@ -789,11 +822,20 @@ pub async fn list_collection_items(
 #[put("/{id}/items/{item_id}/notes")]
 pub async fn update_item_notes(
     pool: web::Data<Pool>,
+    redis_cache: web::Data<RedisCache>,
     claims: Claims,
     path: web::Path<(i32, i32)>,
     req: web::Json<UpdateItemNotesRequest>,
 ) -> impl Responder {
-    match service::update_item_notes(&pool, path.0, path.1, claims.sub, &req).await {
+    match service::update_item_notes(
+        &pool,
+        &redis_cache,
+        path.0,
+        path.1,
+        claims.sub,
+        &req,
+    )
+    .await {
         Ok(item) => HttpResponse::Ok().json(item),
         Err(e) => match e.to_string().as_str() {
             "Collection not found" => HttpResponse::NotFound().finish(),
@@ -983,10 +1025,11 @@ warnings."
 #[post("/import/json")]
 pub async fn import_json(
     pool: web::Data<Pool>,
+    redis_cache: web::Data<RedisCache>,
     claims: Claims,
     req: web::Json<ImportJsonRequest>,
 ) -> impl Responder {
-    match service::import_json(&pool, claims.sub, &req).await {
+    match service::import_json(&pool, &redis_cache, claims.sub, &req).await {
         Ok(response) => HttpResponse::Ok().json(response),
         Err(e) => HttpResponse::InternalServerError().json(json!({
             "error": format!("Failed to import collection: {}", e)
@@ -1017,12 +1060,14 @@ or free content."
 #[post("/{id}/import/json")]
 pub async fn import_collection_from_json(
     pool: web::Data<Pool>,
+    redis_cache: web::Data<RedisCache>,
     claims: Claims,
     id: web::Path<i32>,
     req: web::Json<ImportCollectionJsonRequest>,
 ) -> impl Responder {
     match super::service::import_collection_from_json(
         &pool,
+        &redis_cache,
         id.into_inner(),
         claims.sub,
         &req.items,
@@ -1089,10 +1134,11 @@ pub async fn export_collection_full(
 #[post("/import/full")]
 pub async fn import_full(
     pool: web::Data<Pool>,
+    redis_cache: web::Data<RedisCache>,
     claims: Claims,
     req: web::Json<ImportFullRequest>,
 ) -> impl Responder {
-    match service::import_full(&pool, claims.sub, &req).await {
+    match service::import_full(&pool, &redis_cache, claims.sub, &req).await {
         Ok(response) => HttpResponse::Ok().json(response),
         Err(e) => HttpResponse::InternalServerError().json(json!({
             "error": format!("Failed to import: {}", e)

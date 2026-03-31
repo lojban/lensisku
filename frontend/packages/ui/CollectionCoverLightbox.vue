@@ -1,18 +1,21 @@
 <template>
-  <div
+  <button
+    type="button"
     :class="[
       imageUrl ? 'cursor-zoom-in max-w-full' : 'max-w-full',
-      'inline-flex shrink-0',
+      'inline-flex shrink-0 border-0 bg-transparent p-0 text-inherit',
     ]"
+    :disabled="!imageUrl"
+    :aria-label="ariaLabel || alt || 'Collection cover'"
     @click="onThumbClick"
   >
     <slot />
-  </div>
+  </button>
   <Teleport to="body">
     <Transition name="collection-cover-lightbox-fade">
       <div
         v-if="open && imageUrl"
-        class="collection-cover-lightbox-backdrop"
+        class="fixed inset-0 z-[10050] flex items-center justify-center bg-black/85 p-4 sm:p-8"
         role="dialog"
         aria-modal="true"
         :aria-label="ariaLabel || alt || 'Collection cover'"
@@ -20,7 +23,7 @@
       >
         <button
           type="button"
-          class="collection-cover-lightbox-close"
+          class="absolute top-3 right-3 sm:top-5 sm:right-5 rounded-full bg-white/15 p-2 text-white transition-colors hover:bg-white/25 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/80"
           :aria-label="closeAriaLabel"
           @click.stop="close"
         >
@@ -29,7 +32,7 @@
         <img
           :src="imageUrl"
           :alt="alt"
-          class="collection-cover-lightbox-image"
+          class="max-h-[min(92vh,100%)] max-w-[min(92vw,100%)] h-auto w-auto rounded-lg object-contain shadow-2xl ring-1 ring-white/10"
           @click.stop="close"
         />
       </div>

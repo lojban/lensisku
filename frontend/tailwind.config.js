@@ -756,12 +756,12 @@ export default {
         },
         /** Title next to a thumbnail (e.g. collection card); multi-line clamp, no single-line truncate. */
         '.card-title--multiline': {
-          '@apply text-lg font-semibold text-gray-800 min-w-0 leading-snug line-clamp-3 transition-colors': {},
+          '@apply text-lg font-semibold text-gray-800 min-w-0 leading-snug line-clamp-4 transition-colors': {},
           '&:hover': { '@apply text-blue-600': {} },
           '&:focus': { '@apply text-blue-600 outline-none': {} },
         },
         '.card-description': {
-          '@apply text-gray-600 text-sm line-clamp-2 leading-snug': {},
+          '@apply text-gray-600 text-sm line-clamp-3 leading-snug': {},
         },
         '.card-footer-inner': {
           '@apply flex flex-wrap items-center justify-between gap-2': {},

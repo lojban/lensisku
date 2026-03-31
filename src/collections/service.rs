@@ -4,9 +4,9 @@ use crate::jbovlaste::service::get_valsi_sound_urls_from_db;
 use crate::utils::remove_html_tags;
 use crate::{
     auth_utils::verify_collection_ownership, export::models::CollectionExportItem,
-    flashcards::models::FlashcardDirection, middleware::image::ImageProcessor,
-    utils::validate_item_audio, utils::validate_item_image, users::dto::ProfileImageRequest,
-    AppError, AppResult,
+    flashcards::models::FlashcardDirection, middleware::cache::RedisCache,
+    middleware::image::ImageProcessor, utils::validate_item_audio, utils::validate_item_image,
+    users::dto::ProfileImageRequest, AppError, AppResult,
 };
 use base64::{engine::general_purpose::STANDARD as BASE64, Engine};
 
@@ -65,6 +65,7 @@ use tokio_postgres::types::ToSql;
 
 pub async fn create_collection(
     pool: &Pool,
+    redis: &RedisCache,
     user_id: i32,
     req: &CreateCollectionRequest,
 ) -> AppResult<CollectionResponse> {
@@ -119,6 +120,8 @@ pub async fn create_collection(
         .commit()
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
+
+    invalidate_public_collections_cache(redis).await;
     Ok(response)
 }
 
@@ -158,7 +161,7 @@ pub async fn list_collections(
 
 pub async fn list_public_collections(
     pool: &Pool,
-    redis: &crate::middleware::cache::RedisCache,
+    redis: &RedisCache,
     query: &ListCollectionsQuery,
 ) -> AppResult<CollectionListResponse> {
     let sort_key = query.sort.as_deref().unwrap_or("active_week");
@@ -402,7 +405,7 @@ async fn query_collections(
 /// store them in Redis. Called by the background job every few hours.
 pub async fn refresh_collection_sort_cache(
     pool: &Pool,
-    redis: &crate::middleware::cache::RedisCache,
+    redis: &RedisCache,
 ) -> AppResult<()> {
     let client = pool
         .get()
@@ -459,6 +462,14 @@ pub async fn refresh_collection_sort_cache(
     }
 
     Ok(())
+}
+
+/// Drop Redis snapshots for [`list_public_collections`] (all sort keys). Call after any change
+/// that can affect public listing rows, ordering, or tie-breakers (`updated_at`, activity, counts).
+pub async fn invalidate_public_collections_cache(redis: &RedisCache) {
+    if let Err(e) = redis.invalidate("collections_public:*").await {
+        log::warn!("Failed to invalidate public collections cache: {e}");
+    }
 }
 
 /// Build the SQL query for listing collections with a configurable ORDER BY.
@@ -572,6 +583,7 @@ pub async fn get_collection(
 
 pub async fn update_collection(
     pool: &Pool,
+    redis: &RedisCache,
     collection_id: i32,
     user_id: i32,
     req: &UpdateCollectionRequest,
@@ -666,6 +678,8 @@ pub async fn update_collection(
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
 
+    invalidate_public_collections_cache(redis).await;
+
     Ok(CollectionResponse {
         collection_id,
         name: row.get("name"),
@@ -680,7 +694,12 @@ pub async fn update_collection(
     })
 }
 
-pub async fn delete_collection(pool: &Pool, collection_id: i32, user_id: i32) -> AppResult<()> {
+pub async fn delete_collection(
+    pool: &Pool,
+    redis: &RedisCache,
+    collection_id: i32,
+    user_id: i32,
+) -> AppResult<()> {
     let mut client = pool
         .get()
         .await
@@ -758,6 +777,8 @@ pub async fn delete_collection(pool: &Pool, collection_id: i32, user_id: i32) ->
         .commit()
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
+
+    invalidate_public_collections_cache(redis).await;
     Ok(())
 }
 
@@ -780,6 +801,7 @@ async fn mark_progress_graduated(
 
 pub async fn import_json(
     pool: &Pool,
+    redis: &RedisCache,
     user_id: i32,
     req: &ImportJsonRequest,
 ) -> AppResult<ImportJsonResponse> {
@@ -898,6 +920,8 @@ pub async fn import_json(
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
 
+    invalidate_public_collections_cache(redis).await;
+
     Ok(ImportJsonResponse {
         collection,
         imported_count,
@@ -933,6 +957,7 @@ fn decode_data_url(url: &str) -> AppResult<(String, Vec<u8>)> {
 
 pub async fn import_collection_from_json(
     pool: &Pool,
+    redis: &RedisCache,
     target_collection_id: i32,
     user_id: i32,
     items: &[CollectionExportItem],
@@ -1073,6 +1098,8 @@ pub async fn import_collection_from_json(
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
 
+    invalidate_public_collections_cache(redis).await;
+
     Ok(ImportCollectionJsonResponse {
         imported_count,
         skipped_count,
@@ -1104,6 +1131,7 @@ fn parse_export_direction(s: Option<&String>) -> FlashcardDirection {
 /// Full import: create collection, items, then (if levels present) flashcards and levels.
 pub async fn import_full(
     pool: &Pool,
+    redis: &RedisCache,
     user_id: i32,
     req: &ImportFullRequest,
 ) -> AppResult<ImportFullResponse> {
@@ -1385,6 +1413,8 @@ pub async fn import_full(
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
 
+    invalidate_public_collections_cache(redis).await;
+
     Ok(ImportFullResponse {
         collection: collection_resp,
         imported_count,
@@ -1588,6 +1618,7 @@ async fn initialize_flashcard_progress(
 
 pub async fn upsert_item(
     pool: &Pool,
+    redis: &RedisCache,
     collection_id: i32,
     user_id: i32,
     req: &AddItemRequest,
@@ -2236,6 +2267,8 @@ pub async fn upsert_item(
         .commit()
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
+
+    invalidate_public_collections_cache(redis).await;
     Ok(response)
 }
 
@@ -2279,6 +2312,7 @@ async fn restore_or_initialize_progress(
 
 pub async fn update_item_position(
     pool: &Pool,
+    redis: &RedisCache,
     collection_id: i32,
     item_id: i32,
     user_id: i32,
@@ -2370,11 +2404,14 @@ pub async fn update_item_position(
         .commit()
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
+
+    invalidate_public_collections_cache(redis).await;
     Ok(())
 }
 
 pub async fn remove_item(
     pool: &Pool,
+    redis: &RedisCache,
     collection_id: i32,
     item_id: i32,
     user_id: i32,
@@ -2459,6 +2496,8 @@ pub async fn remove_item(
         .commit()
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
+
+    invalidate_public_collections_cache(redis).await;
     Ok(())
 }
 
@@ -2466,6 +2505,7 @@ pub async fn remove_item(
 /// Same semantics as repeated [`remove_item`], but atomic and bounded by [`MAX_BULK_REMOVE_ITEMS`].
 pub async fn remove_items_bulk(
     pool: &Pool,
+    redis: &RedisCache,
     collection_id: i32,
     user_id: i32,
     item_ids: &[i32],
@@ -2566,6 +2606,8 @@ pub async fn remove_items_bulk(
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
 
+    invalidate_public_collections_cache(redis).await;
+
     Ok(BulkRemoveItemsResponse {
         deleted: unique.len() as i32,
     })
@@ -2573,6 +2615,7 @@ pub async fn remove_items_bulk(
 
 pub async fn clone_collection(
     pool: &Pool,
+    redis: &RedisCache,
     source_collection_id: i32,
     user_id: i32,
 ) -> AppResult<CollectionResponse> {
@@ -2657,6 +2700,8 @@ pub async fn clone_collection(
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
 
+    invalidate_public_collections_cache(redis).await;
+
     Ok(CollectionResponse {
         collection_id: new_collection.get("collection_id"),
         name: format!("Copy of {}", source.get::<_, String>("name")),
@@ -2673,6 +2718,7 @@ pub async fn clone_collection(
 
 pub async fn merge_collections(
     pool: &Pool,
+    redis: &RedisCache,
     user_id: i32,
     req: &MergeCollectionsRequest,
 ) -> AppResult<CollectionResponse> {
@@ -2774,6 +2820,8 @@ pub async fn merge_collections(
         .commit()
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
+
+    invalidate_public_collections_cache(redis).await;
 
     Ok(result)
 }
@@ -3016,6 +3064,7 @@ pub async fn list_collection_items(
 
 pub async fn update_item_notes(
     pool: &Pool,
+    redis: &RedisCache,
     collection_id: i32,
     item_id: i32,
     user_id: i32,
@@ -3105,6 +3154,8 @@ pub async fn update_item_notes(
         .commit()
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
+
+    invalidate_public_collections_cache(redis).await;
 
     Ok(CollectionItemResponse {
         item_id,
@@ -3519,6 +3570,7 @@ pub async fn list_custom_text_bulk_items(
 
 pub async fn bulk_update_custom_text_items(
     pool: &Pool,
+    redis: &RedisCache,
     collection_id: i32,
     user_id: i32,
     req: &CustomTextBulkUpdateRequest,
@@ -3675,13 +3727,9 @@ pub async fn bulk_update_custom_text_items(
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
 
-    Ok(CustomTextBulkUpdateResponse { updated, inserted })
-}
+    invalidate_public_collections_cache(redis).await;
 
-async fn invalidate_public_collections_cache(redis: &crate::middleware::cache::RedisCache) {
-    if let Err(e) = redis.invalidate("collections_public:*").await {
-        log::warn!("Failed to invalidate public collections cache: {e}");
-    }
+    Ok(CustomTextBulkUpdateResponse { updated, inserted })
 }
 
 /// Returns `None` when the collection has no image row (caller may respond with 404).
@@ -3727,7 +3775,7 @@ pub async fn get_collection_image_bytes(
 
 pub async fn upsert_collection_image(
     pool: &Pool,
-    redis: &crate::middleware::cache::RedisCache,
+    redis: &RedisCache,
     collection_id: i32,
     user_id: i32,
     req: &ProfileImageRequest,
@@ -3777,7 +3825,7 @@ pub async fn upsert_collection_image(
 
 pub async fn remove_collection_image(
     pool: &Pool,
-    redis: &crate::middleware::cache::RedisCache,
+    redis: &RedisCache,
     collection_id: i32,
     user_id: i32,
 ) -> AppResult<()> {

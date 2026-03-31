@@ -13,23 +13,29 @@ include .env
 export
 
 # Targets
-.PHONY: up down logs ps clean build build-prod help psql
+.PHONY: up down logs ps clean clean-rust build build-prod help psql
 
 # Default target
 help:
 	@echo "$(CYAN)Lojban Lens Search Development Environment$(NC)"
 	@echo "Usage:"
-	@echo "  make up      - Start the development environment"
+	@echo "  make up      - Clean Rust target/, then start the development environment"
 	@echo "  make down    - Stop the development environment"
 	@echo "  make logs    - View logs from all containers"
 	@echo "  make ps      - List running containers"
-	@echo "  make clean   - Remove all containers and volumes"
+	@echo "  make clean      - Remove all containers and volumes"
+	@echo "  make clean-rust - cargo clean (target/); up runs this first"
 	@echo "  make build       - Rebuild dev Docker images (db, redis)"
 	@echo "  make build-prod  - Build production app image (faster Rust: uses BuildKit cache)"
 	@echo "  make psql    - Enter PostgreSQL container and connect to the database"
 	@echo "  make redis   - Enter Redis container and connect to the storage"
 
-up:
+# Reset target/ before dev so incremental artifacts do not accumulate without bound
+clean-rust:
+	@echo "$(CYAN)Cleaning Rust build artifacts (target/)...$(NC)"
+	cargo clean
+
+up: clean-rust
 	@echo "$(CYAN)Starting development environment...$(NC)"
 	$(DC) -f $(DC_FILE) up -d
 

@@ -8,7 +8,7 @@
     >
 
       <div
-        class="bg-white rounded-lg max-w-2xl w-full p-4 sm:p-6 max-h-[90vh] flex flex-col overflow-hidden"
+        class="bg-white rounded-lg max-w-2xl w-full p-3 sm:p-5 max-h-[90vh] flex flex-col overflow-hidden"
         @click.stop
       >
 
@@ -20,7 +20,9 @@
             > </button
           >
         </div>
-        <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+        <div
+          class="min-h-0 flex-1 overflow-y-auto overscroll-contain px-1 py-1"
+        >
           <slot />
         </div>
         <div v-if="$slots.footer" class="shrink-0 border-t pt-4 mt-4"> <slot name="footer" /> </div>
