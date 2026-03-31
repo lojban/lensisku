@@ -817,18 +817,18 @@ const reviewSingleCard = (flashcardId) => {
 </script>
 
 <style scoped>
-.ui-btn--previous,
-.ui-btn--next {
+.ui-btn--back,
+.ui-btn--forward {
   @apply px-4 py-2 text-sm border rounded-md;
 }
 
-.ui-btn--previous:disabled,
-.ui-btn--next:disabled {
+.ui-btn--back:disabled,
+.ui-btn--forward:disabled {
   @apply opacity-50 cursor-not-allowed;
 }
 
-.ui-btn--previous:not(:disabled),
-.ui-btn--next:not(:disabled) {
+.ui-btn--back:not(:disabled),
+.ui-btn--forward:not(:disabled) {
   @apply hover:bg-gray-50;
 }
 

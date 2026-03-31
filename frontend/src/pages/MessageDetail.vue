@@ -143,7 +143,7 @@
 
             </div>
              <button
-              class="ui-btn--get"
+              class="ui-btn--read"
               :title="t('components.messageDetail.downloadAttachmentTitle')"
               @click="downloadAttachment(part)"
             >

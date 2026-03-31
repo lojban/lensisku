@@ -22,18 +22,20 @@ export default {
       /** Base layer: shared pill control geometry + aqua chrome (`btn-base`, `aqua-base`, `aqua-base-secondary`). */
       addBase({
         /** Icon + label: use this flex `gap-*` only—do not put `mr-*` / `ml-*` on icons or labels (breaks when labels are hidden). */
+        /**
+         * Flat pill chrome: geometry + shadow + press nudge. Semantic `.btn-*` primitives supply the **same**
+         * hover / focus-visible / active fill + border progression; only palette tokens differ (see flat buttons block).
+         * Do not add a generic hover background here — it fought per-variant fills and made Delete vs History inconsistent.
+         */
         '.btn-base': {
-          '@apply gap-2 px-3 md:px-4 py-1.5 text-xs font-medium flex items-center justify-center h-6 border rounded-full transition-all shadow-sm shadow-slate-200 disabled:opacity-40 select-none disabled:cursor-not-allowed whitespace-nowrap focus:outline-none':
+          '@apply gap-2 px-3 md:px-4 py-1.5 text-xs font-medium flex items-center justify-center h-6 border rounded-full transition-colors duration-200 shadow-sm shadow-slate-200 disabled:opacity-40 select-none disabled:cursor-not-allowed whitespace-nowrap focus:outline-none cursor-pointer':
             {},
           '&:not(:disabled)': {
             '--tw-ring-color': 'var(--btn-color, currentColor)',
             '@apply active:scale-x-[1.02]': {},
           },
           '&:not(:disabled):hover': {
-            background:
-              'linear-gradient(to bottom, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0.3) 50%, rgba(255,255,255,0.1) 100%)',
             '@apply ring-0 shadow-none': {},
-            // background: "radial-gradient(circle at center, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0) 70%)",
           },
         },
         /** Same as `btn-base`: icon + label spacing via `gap-*` on the control, not margin on children. */
@@ -956,7 +958,7 @@ export default {
           '@apply aqua-base bg-sky-400': {},
           '--aqua-hue': '199',
         },
-        /** Aqua “get / open” — lighter sky-blue than btn-aqua-sky; used by ui-btn--get only. */
+        /** Aqua “get / open” — lighter sky-blue than btn-aqua-sky; used by `ui-btn--read` / `ui-btn--get`. */
         '.btn-aqua-get': {
           '@apply aqua-base bg-sky-300': {},
           '--aqua-hue': '199',
@@ -1055,46 +1057,118 @@ export default {
         },
         },
         // --- Buttons: flat theme primitives ---
+        /**
+         * Interactive states use `&:hover:not(:disabled)` (not `enabled:hover:`): `:enabled` does not match
+         * `<a>` / `RouterLink`, so links were missing hover/active/focus styling while `<button>` had it.
+         */
         '.btn-insert': {
-          '@apply btn-base text-white bg-gradient-to-b from-blue-400 to-blue-500 border-blue-400 text-white enabled:hover:text-blue-500 enabled:hover:bg-gradient-to-b enabled:hover:from-white enabled:hover:to-white':
-            {},
+          '@apply btn-base text-white bg-gradient-to-b from-blue-400 to-blue-500 border-blue-400': {},
+          '&:hover:not(:disabled)': {
+            '@apply from-blue-500 to-blue-600 border-blue-600': {},
+          },
+          '&:active:not(:disabled)': {
+            '@apply from-blue-600 to-blue-700 border-blue-700': {},
+          },
+          '&:focus-visible:not(:disabled)': {
+            '@apply ring-2 ring-blue-400/60 ring-offset-1 ring-offset-white': {},
+          },
         },
         '.btn-reaction': {
-          '@apply btn-base text-gray-600 bg-gray-50 border-gray-300 shadow-sm': {},
+          '@apply btn-base text-gray-700 bg-gradient-to-b from-gray-100 to-gray-50 border-gray-300 shadow-sm': {},
           '&:hover:not(:disabled)': {
-            background: 'rgb(128 128 128)',
-            '@apply text-white': {},
+            '@apply from-gray-200 to-gray-100 border-gray-400': {},
+          },
+          '&:active:not(:disabled)': {
+            '@apply from-gray-300 to-gray-200 border-gray-500': {},
+          },
+          '&:focus-visible:not(:disabled)': {
+            '@apply ring-2 ring-gray-400/50 ring-offset-1 ring-offset-white': {},
           },
         },
         '.btn-reaction-active': {
-          '@apply btn-base text-white border-blue-400 bg-blue-500': {},
+          '@apply btn-base text-white bg-gradient-to-b from-blue-500 to-blue-600 border-blue-500 shadow-sm': {},
           '&:hover:not(:disabled)': {
-            background: 'rgb(37, 99, 235)',
-            '@apply border-blue-400': {},
+            '@apply from-blue-600 to-blue-700 border-blue-700': {},
+          },
+          '&:active:not(:disabled)': {
+            '@apply from-blue-700 to-blue-800 border-blue-800': {},
+          },
+          '&:focus-visible:not(:disabled)': {
+            '@apply ring-2 ring-blue-400/60 ring-offset-1 ring-offset-white': {},
           },
         },
         '.btn-create': {
-          '@apply btn-base text-green-700 bg-gradient-to-b from-green-100 to-green-50 enabled:hover:from-green-200 enabled:hover:to-green-100 border-green-400 enabled:hover:border-green-700':
-            {},
+          '@apply btn-base text-green-700 bg-gradient-to-b from-green-100 to-green-50 border-green-400': {},
+          '&:hover:not(:disabled)': {
+            '@apply from-green-200 to-green-100 border-green-600': {},
+          },
+          '&:active:not(:disabled)': {
+            '@apply from-green-300 to-green-200 border-green-700': {},
+          },
+          '&:focus-visible:not(:disabled)': {
+            '@apply ring-2 ring-green-400/50 ring-offset-1 ring-offset-white': {},
+          },
         },
         '.btn-update': {
-          '@apply btn-base text-teal-700 bg-teal-50 enabled:hover:bg-green-200 border-teal-400':
-            {},
+          '@apply btn-base text-teal-700 bg-gradient-to-b from-teal-100 to-teal-50 border-teal-400': {},
+          '&:hover:not(:disabled)': {
+            '@apply from-teal-200 to-teal-100 border-teal-600': {},
+          },
+          '&:active:not(:disabled)': {
+            '@apply from-teal-300 to-teal-200 border-teal-700': {},
+          },
+          '&:focus-visible:not(:disabled)': {
+            '@apply ring-2 ring-teal-400/50 ring-offset-1 ring-offset-white': {},
+          },
         },
         '.btn-delete': {
-          '@apply btn-base text-red-700 bg-red-50 enabled:hover:bg-red-200 border-red-400': {},
+          '@apply btn-base text-red-700 bg-gradient-to-b from-red-100 to-red-50 border-red-400': {},
+          '&:hover:not(:disabled)': {
+            '@apply from-red-200 to-red-100 border-red-600': {},
+          },
+          '&:active:not(:disabled)': {
+            '@apply from-red-300 to-red-200 border-red-700': {},
+          },
+          '&:focus-visible:not(:disabled)': {
+            '@apply ring-2 ring-red-400/50 ring-offset-1 ring-offset-white': {},
+          },
         },
         /** Flat “get / slate-neutral”: teal surface so it does not read like btn-empty (white/gray). */
         '.btn-get': {
-          '@apply btn-base text-cyan-700 bg-cyan-50 enabled:hover:bg-cyan-100 enabled:hover:border-cyan-600 border-cyan-400':
-            {},
+          '@apply btn-base text-cyan-700 bg-gradient-to-b from-cyan-100 to-cyan-50 border-cyan-400': {},
+          '&:hover:not(:disabled)': {
+            '@apply from-cyan-200 to-cyan-100 border-cyan-600': {},
+          },
+          '&:active:not(:disabled)': {
+            '@apply from-cyan-300 to-cyan-200 border-cyan-700': {},
+          },
+          '&:focus-visible:not(:disabled)': {
+            '@apply ring-2 ring-cyan-400/50 ring-offset-1 ring-offset-white': {},
+          },
         },
         '.btn-market': {
-          '@apply btn-base text-rose-400 bg-white enabled:hover:bg-rose-200 border-rose-400': {},
+          '@apply btn-base text-rose-700 bg-gradient-to-b from-rose-50 to-white border-rose-300': {},
+          '&:hover:not(:disabled)': {
+            '@apply from-rose-100 to-rose-50 border-rose-500': {},
+          },
+          '&:active:not(:disabled)': {
+            '@apply from-rose-200 to-rose-100 border-rose-600': {},
+          },
+          '&:focus-visible:not(:disabled)': {
+            '@apply ring-2 ring-rose-400/50 ring-offset-1 ring-offset-white': {},
+          },
         },
         '.btn-cancel': {
-          '@apply btn-base text-gray-700 bg-gray-50 enabled:hover:bg-gray-200 border-gray-400':
-            {},
+          '@apply btn-base text-gray-700 bg-gradient-to-b from-gray-100 to-gray-50 border-gray-400': {},
+          '&:hover:not(:disabled)': {
+            '@apply from-gray-200 to-gray-100 border-gray-500': {},
+          },
+          '&:active:not(:disabled)': {
+            '@apply from-gray-300 to-gray-200 border-gray-600': {},
+          },
+          '&:focus-visible:not(:disabled)': {
+            '@apply ring-2 ring-gray-400/50 ring-offset-1 ring-offset-white': {},
+          },
         },
         // Neutral “dismiss / clear” (brandbook §1.B): subtle raised/embossed default with pressed active state.
         '.btn-empty': {
@@ -1116,31 +1190,88 @@ export default {
           },
         },
         '.btn-error': {
-          '@apply btn-base text-red-700 bg-red-50 enabled:hover:bg-red-200 border-red-400': {},
+          '@apply btn-base text-red-700 bg-gradient-to-b from-red-100 to-red-50 border-red-400': {},
+          '&:hover:not(:disabled)': {
+            '@apply from-red-200 to-red-100 border-red-600': {},
+          },
+          '&:active:not(:disabled)': {
+            '@apply from-red-300 to-red-200 border-red-700': {},
+          },
+          '&:focus-visible:not(:disabled)': {
+            '@apply ring-2 ring-red-400/50 ring-offset-1 ring-offset-white': {},
+          },
         },
         '.btn-warning': {
-          '@apply btn-base text-amber-700 bg-amber-50 enabled:hover:bg-amber-200 border-amber-400':
-            {},
+          '@apply btn-base text-amber-700 bg-gradient-to-b from-amber-100 to-amber-50 border-amber-400': {},
+          '&:hover:not(:disabled)': {
+            '@apply from-amber-200 to-amber-100 border-amber-600': {},
+          },
+          '&:active:not(:disabled)': {
+            '@apply from-amber-300 to-amber-200 border-amber-700': {},
+          },
+          '&:focus-visible:not(:disabled)': {
+            '@apply ring-2 ring-amber-400/50 ring-offset-1 ring-offset-white': {},
+          },
         },
         '.btn-success': {
-          '@apply btn-base text-green-700 bg-green-50 enabled:hover:bg-green-200 border-green-400':
-            {},
+          '@apply btn-base text-green-700 bg-gradient-to-b from-green-100 to-green-50 border-green-400': {},
+          '&:hover:not(:disabled)': {
+            '@apply from-green-200 to-green-100 border-green-600': {},
+          },
+          '&:active:not(:disabled)': {
+            '@apply from-green-300 to-green-200 border-green-700': {},
+          },
+          '&:focus-visible:not(:disabled)': {
+            '@apply ring-2 ring-green-400/50 ring-offset-1 ring-offset-white': {},
+          },
         },
         '.btn-revert': {
-          '@apply btn-base text-yellow-700 bg-yellow-50 enabled:hover:bg-yellow-200 border-yellow-400':
-            {},
+          '@apply btn-base text-yellow-700 bg-gradient-to-b from-yellow-100 to-yellow-50 border-yellow-400': {},
+          '&:hover:not(:disabled)': {
+            '@apply from-yellow-200 to-yellow-100 border-yellow-600': {},
+          },
+          '&:active:not(:disabled)': {
+            '@apply from-yellow-300 to-yellow-200 border-yellow-700': {},
+          },
+          '&:focus-visible:not(:disabled)': {
+            '@apply ring-2 ring-yellow-400/50 ring-offset-1 ring-offset-white': {},
+          },
         },
         '.btn-history': {
-          '@apply btn-base text-purple-700 bg-purple-50 enabled:hover:bg-purple-200 border-purple-400':
-            {},
+          '@apply btn-base text-purple-700 bg-gradient-to-b from-purple-100 to-purple-50 border-purple-400': {},
+          '&:hover:not(:disabled)': {
+            '@apply from-purple-200 to-purple-100 border-purple-600': {},
+          },
+          '&:active:not(:disabled)': {
+            '@apply from-purple-300 to-purple-200 border-purple-700': {},
+          },
+          '&:focus-visible:not(:disabled)': {
+            '@apply ring-2 ring-purple-400/50 ring-offset-1 ring-offset-white': {},
+          },
         },
         '.btn-link': {
-          '@apply btn-base text-blue-700 bg-blue-50 enabled:hover:bg-blue-200 border-blue-400':
-            {},
+          '@apply btn-base text-blue-700 bg-gradient-to-b from-blue-100 to-blue-50 border-blue-400': {},
+          '&:hover:not(:disabled)': {
+            '@apply from-blue-200 to-blue-100 border-blue-600': {},
+          },
+          '&:active:not(:disabled)': {
+            '@apply from-blue-300 to-blue-200 border-blue-700': {},
+          },
+          '&:focus-visible:not(:disabled)': {
+            '@apply ring-2 ring-blue-400/50 ring-offset-1 ring-offset-white': {},
+          },
         },
         '.btn-previous, .btn-next': {
-          '@apply btn-base text-gray-700 bg-gray-50 enabled:hover:bg-gray-200 border-gray-400':
-            {},
+          '@apply btn-base text-gray-700 bg-gradient-to-b from-gray-100 to-gray-50 border-gray-400': {},
+          '&:hover:not(:disabled)': {
+            '@apply from-gray-200 to-gray-100 border-gray-500': {},
+          },
+          '&:active:not(:disabled)': {
+            '@apply from-gray-300 to-gray-200 border-gray-600': {},
+          },
+          '&:focus-visible:not(:disabled)': {
+            '@apply ring-2 ring-gray-400/50 ring-offset-1 ring-offset-white': {},
+          },
         },
         '.checkbox-toggle': {
           '@apply w-6 h-6 text-blue-600 border-gray-300 rounded focus:ring-blue-500 cursor-pointer transition-colors':
@@ -1173,11 +1304,28 @@ export default {
           outline: 'none',
         },
         '.btn-reply': {
-          '@apply btn-base text-sky-700 bg-sky-50 hover:bg-sky-200 border-sky-400': {},
+          '@apply btn-base text-sky-700 bg-gradient-to-b from-sky-100 to-sky-50 border-sky-400': {},
+          '&:hover:not(:disabled)': {
+            '@apply from-sky-200 to-sky-100 border-sky-600': {},
+          },
+          '&:active:not(:disabled)': {
+            '@apply from-sky-300 to-sky-200 border-sky-700': {},
+          },
+          '&:focus-visible:not(:disabled)': {
+            '@apply ring-2 ring-sky-400/50 ring-offset-1 ring-offset-white': {},
+          },
         },
         '.btn-action': {
-          '@apply btn-base text-pink-600 bg-white border-pink-400 enabled:hover:bg-pink-50 enabled:hover:text-pink-700':
-            {},
+          '@apply btn-base text-pink-700 bg-gradient-to-b from-pink-50 to-white border-pink-300': {},
+          '&:hover:not(:disabled)': {
+            '@apply from-pink-100 to-pink-50 border-pink-500': {},
+          },
+          '&:active:not(:disabled)': {
+            '@apply from-pink-200 to-pink-100 border-pink-600': {},
+          },
+          '&:focus-visible:not(:disabled)': {
+            '@apply ring-2 ring-pink-400/50 ring-offset-1 ring-offset-white': {},
+          },
         },
         // --- Button groups & theme toggles ---
         '.btn-group-item': {
@@ -1185,29 +1333,14 @@ export default {
           '&:not(:disabled):active': {
             '@apply scale-x-[1.02]': {},
           },
-          /** Segment bar from 512px up (pair with `.btn-group`; joins use `of button, a` on `.btn-group` — not `:first-child`). */
-          '@media (min-width: 512px)': {
-            '@apply rounded-none': {},
-          },
         },
         /**
-         * Default group wrapper: spaced pills below 512px, flush join at 512px+.
-         * Pair with `btn-group-item` / `ui-btn--group-item` (responsive segment styling on items).
+         * Default group: wrapped pill row(s), gap between actions — no horizontal scrollbar, no broken
+         * segment joins when wrapping. For a single fused segment bar (filters, compact controls), use
+         * `.btn-group-forced`.
          */
         '.btn-group': {
-          '@apply flex flex-wrap gap-2': {},
-          '@media (min-width: 512px)': {
-            '@apply gap-0': {},
-            [`& > :nth-child(1 of ${btnGroupControlOfList})`]: {
-              '@apply rounded-l-full border-l': {},
-            },
-            [`& > :nth-last-child(1 of ${btnGroupControlOfList})`]: {
-              '@apply rounded-r-full border-r': {},
-            },
-            [`& > :is(${btnGroupControlOfList}):not(:nth-last-child(1 of ${btnGroupControlOfList}))`]: {
-              '@apply border-r-0': {},
-            },
-          },
+          '@apply flex flex-wrap gap-2 min-w-0': {},
         },
         /** Fused segment control at every breakpoint (spacing + item joins; use where wrapping must stay one bar). */
         '.btn-group-forced': {
@@ -1225,9 +1358,9 @@ export default {
             '@apply rounded-none': {},
           },
         },
-        /** Segment joins from 512px up; below that, `ui-btn--*` primitives stay full pills (avoids broken wraps). */
+        /** Hook for aqua theme map (`ui-btn--group-item`); stacked primitives supply visuals; segment CSS only in `.btn-group-forced`. */
         '.btn-aqua-group-item': {
-          '@media (min-width: 512px)': aquaUiBtnGroupItemGeometry,
+          '@apply shrink-0': {},
         },
         '.btn-aqua-toggle': {
           '&.active': {
@@ -1409,21 +1542,35 @@ export default {
             }
           }
         }
+        /**
+         * Semantic button **roles** (flat + aqua primitives via `@apply`).
+         * Canonical names: `read`, `edit`, `create`, `remove`, `dismiss`, `back`, `forward`, `toolbar`, …
+         * Legacy synonyms stay in the map so older strings keep working (`get`≈`read`, `update`≈`edit`, …).
+         * Authoritative human table: `frontend/docs/brandbook.md` §6.3.
+         */
         const buttonThemeClassMap = {
           'ui-btn--accent-purple': { aqua: 'btn-aqua-purple', flat: 'btn-link' },
           'ui-btn--action': { aqua: 'btn-aqua-pink', flat: 'btn-action' },
           'ui-btn--amber': { aqua: 'btn-aqua-amber', flat: 'btn-warning' },
           /** Flat: neutral embossed `btn-empty` (not blue `btn-get`) — filter toggles, toolbars. */
           'ui-btn--aqua-default': { aqua: 'btn-aqua-simple', flat: 'btn-empty' },
+          /** Role: default toolbar / filter chrome — synonym of `aqua-default`. */
+          'ui-btn--toolbar': { aqua: 'btn-aqua-simple', flat: 'btn-empty' },
           'ui-btn--auth-login': { aqua: 'btn-aqua-orange', flat: 'btn-warning' },
           'ui-btn--auth-signup': { aqua: 'btn-aqua-teal', flat: 'btn-create' },
           'ui-btn--cancel': { aqua: 'btn-aqua-zinc', flat: 'btn-cancel' },
+          /** Role: dismiss modal / abandon branch — synonym of `cancel`. */
+          'ui-btn--dismiss': { aqua: 'btn-aqua-zinc', flat: 'btn-cancel' },
           'ui-btn--continue': { aqua: 'btn-aqua', flat: 'btn-get' },
           'ui-btn--create': { aqua: 'btn-aqua-emerald', flat: 'btn-create' },
           'ui-btn--danger-rose': { aqua: 'btn-aqua-rose', flat: 'btn-delete' },
           'ui-btn--delete': { aqua: 'btn-aqua-red', flat: 'btn-delete' },
+          /** Role: destructive remove — synonym of `delete`. */
+          'ui-btn--remove': { aqua: 'btn-aqua-red', flat: 'btn-delete' },
           'ui-btn--empty': { aqua: 'btn-aqua-white', flat: 'btn-empty' },
           'ui-btn--error': { aqua: 'btn-aqua-red', flat: 'btn-error' },
+          /** Role: read / open / navigate / neutral forward — canonical; `get` is legacy synonym. */
+          'ui-btn--read': { aqua: 'btn-aqua-get', flat: 'btn-get' },
           'ui-btn--get': { aqua: 'btn-aqua-get', flat: 'btn-get' },
           'ui-btn--group-item': { aqua: 'btn-aqua-group-item', flat: 'btn-group-item' },
           'ui-btn--history': { aqua: 'btn-aqua-purple', flat: 'btn-history' },
@@ -1434,6 +1581,8 @@ export default {
           'ui-btn--neutral-muted': { aqua: 'btn-aqua-zinc', flat: 'btn-cancel' },
           'ui-btn--neutral-slate': { aqua: 'btn-aqua-slate', flat: 'btn-get' },
           'ui-btn--next': { aqua: 'btn-aqua-zinc', flat: 'btn-next' },
+          /** Role: pagination / sequence forward — synonym of `next`. */
+          'ui-btn--forward': { aqua: 'btn-aqua-zinc', flat: 'btn-next' },
           'ui-btn--palette-amber': { aqua: 'btn-aqua-amber', flat: 'btn-warning' },
           'ui-btn--palette-blue': { aqua: 'btn-aqua-blue', flat: 'btn-insert' },
           'ui-btn--palette-cyan': { aqua: 'btn-aqua-cyan', flat: 'btn-insert' },
@@ -1454,6 +1603,8 @@ export default {
           'ui-btn--palette-yellow': { aqua: 'btn-aqua-yellow', flat: 'btn-warning' },
           'ui-btn--palette-zinc': { aqua: 'btn-aqua-zinc', flat: 'btn-cancel' },
           'ui-btn--previous': { aqua: 'btn-aqua-zinc', flat: 'btn-previous' },
+          /** Role: pagination / go back — synonym of `previous`. */
+          'ui-btn--back': { aqua: 'btn-aqua-zinc', flat: 'btn-previous' },
           'ui-btn--primary': { aqua: 'btn-aqua-emerald', flat: 'btn-create' },
           'ui-btn--reaction': { aqua: 'btn-aqua-cyan', flat: 'btn-reaction' },
           'ui-btn--reaction-active': { aqua: 'btn-aqua-blue', flat: 'btn-reaction-active' },
@@ -1467,9 +1618,12 @@ export default {
           'ui-btn--study-wrong': { aqua: 'btn-aqua-rose', flat: 'btn-error' },
           'ui-btn--success': { aqua: 'btn-aqua-emerald', flat: 'btn-success' },
           'ui-btn--update': { aqua: 'btn-aqua-teal', flat: 'btn-update' },
+          /** Role: save edits / apply changes — synonym of `update`. */
+          'ui-btn--edit': { aqua: 'btn-aqua-teal', flat: 'btn-update' },
           'ui-btn--warning': { aqua: 'btn-aqua-orange', flat: 'btn-warning' },
           'ui-btn--warning-orange': { aqua: 'btn-aqua-orange', flat: 'btn-warning' },
-          'ui-btn--warning-yellow': { aqua: 'btn-aqua-yellow', flat: 'btn-warning' },
+          /** Flat: `btn-revert` (yellow) vs `btn-warning` (amber) so orange/yellow variants stay distinct. */
+          'ui-btn--warning-yellow': { aqua: 'btn-aqua-yellow', flat: 'btn-revert' },
         }
         addThemeMap(buttonThemeClassMap)
         /** Selected/saved state for neutral buttons (e.g. bookmark): push from slate to light blue. */
@@ -1506,10 +1660,6 @@ export default {
         }
         /** Beats semantic ui-btn--* primitives so inner segments stay joined in forced groups (all breakpoints). */
         aquaRules[selectorFor('aqua', 'btn-group-forced .ui-btn--group-item')] = aquaUiBtnGroupItemGeometry
-        /** Same as `.btn-aqua-group-item` @512px+ but wins over stacked primitives (e.g. `ui-btn--history` + `ui-btn--group-item`). */
-        aquaRules[selectorFor('aqua', 'btn-group .ui-btn--group-item')] = {
-          '@media (min-width: 512px)': aquaUiBtnGroupItemGeometry,
-        }
         flatRules[selectorFor('flat', 'btn-group-forced .ui-btn--group-item')] = {
           /** Full borders on every segment; `-ml-px` overlaps adjacent 1px borders; hover/focus z-index reveals full outline. */
           '@apply relative z-0 rounded-none border-r first:ml-0 -ml-px first:rounded-l-full last:rounded-r-full': {},
@@ -1518,18 +1668,6 @@ export default {
           },
           '&:focus-visible': {
             '@apply z-10': {},
-          },
-        }
-        /** Pairs with `.btn-group` segment join @512px+; higher specificity than lone `ui-btn--*` maps. */
-        flatRules[selectorFor('flat', 'btn-group .ui-btn--group-item')] = {
-          '@media (min-width: 512px)': {
-            '@apply relative z-0 rounded-none border-r first:ml-0 -ml-px first:rounded-l-full last:rounded-r-full': {},
-            '&:hover': {
-              '@apply z-10': {},
-            },
-            '&:focus-visible': {
-              '@apply z-10': {},
-            },
           },
         }
         /** Cheetah aqua: `notebook > header` + tab chrome (#F5F5F5 strip, #9ac7e6 band, GTK tab gradients). */

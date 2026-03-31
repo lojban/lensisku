@@ -57,11 +57,11 @@
            <RouterLink
             v-if="isOwnProfile"
             to="/change-password"
-            class="ui-btn--warning-orange ui-btn--group-item"
+            class="ui-btn--read ui-btn--group-item"
             > <KeyRound class="h-4 w-4" /> {{ t('profile.changePassword') }} </RouterLink
           > <button
             v-if="isOwnProfile && !isEditing"
-            class="ui-btn--warning-yellow ui-btn--group-item"
+            class="ui-btn--edit ui-btn--group-item"
             @click="toggleEdit"
           >
              <Pencil class="h-4 w-4" /> {{ t('profile.editProfile') }} </button
@@ -79,7 +79,7 @@
             > <Activity class="h-4 w-4" /> {{ t('profile.viewActivity') }} </RouterLink
           > <button
             v-if="isOwnProfile && auth.state.isLoggedIn"
-            class="ui-btn--aqua-default ui-btn--group-item"
+            class="ui-btn--toolbar ui-btn--group-item"
             @click="auth.logout()"
           >
              <LogOut class="h-4 w-4" /> {{ t('nav.logout') }} </button
@@ -324,7 +324,7 @@
       <div class="mt-6 flex justify-end gap-3">
          <button type="button" class="ui-btn--cancel" @click="toggleEdit">
            {{ t('profile.cancel') }} </button
-        > <button type="submit" :disabled="isUpdating || isImageUploading" class="ui-btn--update">
+        > <button type="submit" :disabled="isUpdating || isImageUploading" class="ui-btn--edit">
            {{ isUpdating ? t('profile.saving') : t('profile.saveChanges') }} </button
         >
       </div>

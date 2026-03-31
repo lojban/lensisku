@@ -22,7 +22,7 @@
         <div class="btn-group-forced flex items-center flex-row" role="group">
           <Button
             type="button"
-            variant="aqua-default"
+            variant="toolbar"
             class="ui-btn--group-item"
             :title="t('searchForm.modes.semantic')"
             @click="toggleSemanticSearch"
@@ -42,7 +42,7 @@
           </Button>
           <Button
             type="button"
-            variant="aqua-default"
+            variant="toolbar"
             class="ui-btn--group-item"
             :disabled="!!filters.word_type"
             :title="t('searchForm.modes.searchInPhrases')"
@@ -68,7 +68,7 @@
           <Button
             v-if="hasAnyActiveFilters"
             type="button"
-            variant="aqua-default"
+            variant="toolbar"
             class="ui-btn--group-item"
             :title="t('filters.resetAllFilters')"
             @click="resetAllFilters"
@@ -77,7 +77,7 @@
           </Button>
           <Button
             type="button"
-            variant="aqua-default"
+            variant="toolbar"
             class="ui-btn--group-item"
             :title="expanded ? t('filters.collapse') : t('filters.expand')"
             @click="toggleExpanded"

@@ -105,7 +105,7 @@
               </div>
 
               <div v-if="showReorderControls"
-                class="btn-group ml-auto flex flex-wrap md:gap-y-2 justify-end sm:justify-end w-auto flex-none"
+                class="btn-group ml-auto justify-end sm:justify-end w-auto flex-none"
                 role="group">
                 <button :disabled="isFirstItem || isReordering"
                   class="ui-btn--group-item ui-btn--empty inline-flex items-center gap-2"
@@ -362,9 +362,9 @@
       <!-- Control Section -->
       <div v-if="!disableToolbar" class="mt-3">
 
-        <div class="btn-group flex flex-wrap md:gap-y-2" role="group">
+        <div class="btn-group" role="group">
           <!-- Edit button --> <button v-if="auth.state.isLoggedIn && definition.can_edit"
-            class="ui-btn--update ui-btn--group-item inline-flex items-center justify-center gap-2"
+            class="ui-btn--edit ui-btn--group-item inline-flex items-center justify-center gap-2"
             @click="router.push(`/definition/${definition.definitionid}/edit`)">
             <Pencil class="h-4 w-4 shrink-0" /> {{ t('components.definitionCard.editButton') }}
           </button> <!-- Delete button --> <button
@@ -396,7 +396,7 @@
           </button> <!-- Discussions -->
           <RouterLink v-if="disableDiscussionButton && !disableDiscussionToolbarButton"
             :to="`/comments?valsi_id=${definition.valsiid}&definition_id=${definition.definitionid}`"
-            class="ui-btn--get ui-btn--group-item inline-flex items-center justify-center gap-2">
+            class="ui-btn--read ui-btn--group-item inline-flex items-center justify-center gap-2">
             <AudioWaveform class="h-4 w-4 shrink-0" /> <span
               v-if="definition.comment_count && definition.comment_count > 0"
               class="bg-gray-100 px-1.5 rounded-md border"> {{ definition.comment_count }} </span> {{

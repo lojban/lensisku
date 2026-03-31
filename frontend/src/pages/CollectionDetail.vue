@@ -351,7 +351,7 @@
           > <button
             type="submit"
             :disabled="isSubmitting || isCollectionImageUploading"
-            class="ui-btn--update"
+            class="ui-btn--edit"
           >
              {{ isSubmitting ? t('collectionDetail.saving') : t('collectionDetail.saveChanges') }} </button
           >
@@ -377,7 +377,7 @@
       <div class="mt-6 flex justify-end space-x-3">
          <button type="button" class="ui-btn--cancel" @click="showExportModal = false">
            {{ t('collectionDetail.cancel') }} </button
-        > <button :disabled="isExporting" class="ui-btn--get" @click="handleExport">
+        > <button :disabled="isExporting" class="ui-btn--read" @click="handleExport">
            {{ isExporting ? t('collectionDetail.exporting') : t('collectionDetail.exportButton') }} </button
         >
       </div>
@@ -898,7 +898,7 @@
             <div class="flex items-center gap-2 justify-start">
 
               <h2 class="font-semibold truncate">{{ newDefinitionRecommended }}</h2>
-               <button type="button" class="ui-btn--update" @click="useNewDefinitionRecommended">
+               <button type="button" class="ui-btn--edit" @click="useNewDefinitionRecommended">
                  <ArrowRight class="h-4 w-4" /> {{ t('upsertDefinition.useThisButton') }} </button
               >
             </div>
@@ -1254,7 +1254,7 @@
         <div class="flex justify-end space-x-3 pt-4">
            <button type="button" class="ui-btn--cancel" @click="showMergeModal = false">
              {{ t('collectionDetail.cancel') }} </button
-          > <button type="submit" :disabled="!isValidMerge || isMerging" class="ui-btn--update">
+          > <button type="submit" :disabled="!isValidMerge || isMerging" class="ui-btn--edit">
              {{ isMerging ? t('collectionDetail.merging') : t('collectionDetail.mergeButton') }} </button
           >
         </div>

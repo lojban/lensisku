@@ -94,7 +94,7 @@
       <div class="flex justify-center">
          <button
           ref="returnToDeckButtonRef"
-          class="ui-btn--get w-auto h-10 text-base shadow-sm"
+          class="ui-btn--read w-auto h-10 text-base shadow-sm"
           @click="router.push(returnToUrl)"
         >
            {{
@@ -397,14 +397,14 @@
       >
          <button
           v-if="isFillInMode"
-          class="ui-btn--get w-auto h-10 text-base shadow-sm"
+          class="ui-btn--read w-auto h-10 text-base shadow-sm"
           @click="submitAnswer()"
         >
            {{ t('flashcardStudy.submitAnswer') }} </button
         > <button
           v-else
           ref="showAnswerButtonRef"
-          class="ui-btn--get w-auto h-10 text-base shadow-sm"
+          class="ui-btn--read w-auto h-10 text-base shadow-sm"
           @click="revealAnswerAndPlayAudio"
         >
            {{ t('flashcardStudy.showAnswer') }} </button
@@ -412,7 +412,7 @@
       </div>
        <!-- OK button for JustInformation mode -->
       <div v-else-if="isJustInformationMode && !showAnswer" class="flex justify-center px-4">
-         <button class="ui-btn--get w-auto h-10 text-base shadow-sm" @click="submitAnswer(4)">
+         <button class="ui-btn--read w-auto h-10 text-base shadow-sm" @click="submitAnswer(4)">
            <Check class="h-4 w-4" /> </button
         >
       </div>
@@ -420,14 +420,14 @@
       <div v-else-if="quizResult" class="flex justify-center px-4 mt-4">
          <button
           v-if="remainingCards.length <= 0"
-          class="ui-btn--get w-auto h-10 text-base shadow-sm"
+          class="ui-btn--read w-auto h-10 text-base shadow-sm"
           @click="router.back()"
         >
            {{ t('flashcardStudy.endSession') }} </button
         > <button
           v-else
           ref="nextCardButtonRef"
-          class="ui-btn--get w-auto h-10 text-base shadow-sm"
+          class="ui-btn--read w-auto h-10 text-base shadow-sm"
           @click="handleQuizNextCard"
         >
            {{ t('flashcardStudy.nextCard') }} </button
@@ -500,14 +500,14 @@
           </div>
            <!-- When incorrect: correct answer is shown above; no error alert --> <button
             v-if="remainingCards.length <= 0"
-            class="ui-btn--get w-auto h-10 text-base shadow-sm"
+            class="ui-btn--read w-auto h-10 text-base shadow-sm"
             @click="router.back()"
           >
              {{ t('flashcardStudy.endSession') }} </button
           > <button
             v-else
             ref="nextCardButtonRef"
-            class="ui-btn--get w-auto h-10 text-base shadow-sm"
+            class="ui-btn--read w-auto h-10 text-base shadow-sm"
             @click="handleNextCard"
           >
              {{ t('flashcardStudy.nextCard') }} </button
