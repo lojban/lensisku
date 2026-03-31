@@ -23,7 +23,7 @@ import { RouterLink } from 'vue-router'
 
 /**
  * Resolves `variant` to a `ui-btn--*` class from the Tailwind brand book (`buttonUiThemeLayer`).
- * - Use the **suffix** after `ui-btn--` (e.g. `neutral`, `warning-orange`, `palette-teal`).
+ * - Use the **suffix** after `ui-btn--` (e.g. `read`, `edit`, `toolbar`, `neutral`, `warning-orange`, `palette-teal`).
  * - Or pass a **full** class string starting with `ui-btn--`.
  */
 function resolveUiBtnClass(variant: string): string {
@@ -42,7 +42,7 @@ const SIZE_CLASSES: Record<string, string> = {
 const props = defineProps({
   /**
    * Visual role: kebab-case **suffix** matching `tailwind.config.js` semantic classes
-   * (`neutral`, `create`, `warning-orange`, `palette-teal`, …), or a full `ui-btn--…` string.
+   * (`read`, `edit`, `toolbar`, `create`, `warning-orange`, `palette-teal`, …), or a full `ui-btn--…` string.
    */
   variant: {
     type: String,

@@ -158,12 +158,8 @@
 
     </div>
      <!-- Action Buttons -->
-    <div class="flex flex-wrap gap-3 pt-4 border-t">
-       <button class="ui-btn--neutral-muted" @click="goBack">
-         <ArrowLeft class="h-5 w-5" /> <span>{{ t('entryPage.dictionary') }}</span
-        > </button
-      > <IconButton
-        v-if="auth.state.isLoggedIn"
+    <div v-if="auth.state.isLoggedIn" class="flex flex-wrap gap-3 pt-4 border-t">
+      <IconButton
         :label="t('entryPage.addDefinition')"
         button-classes="ui-btn--create"
         @click="router.push(`/valsi/add?word=${encodeURIComponent(valsi.word)}`)"
@@ -175,7 +171,7 @@
 </template>
 
 <script setup lang="ts">
-import { ArrowLeft, AudioWaveform, BookOpen, Trash2, MessageCircle } from 'lucide-vue-next'
+import { AudioWaveform, BookOpen, Trash2, MessageCircle } from 'lucide-vue-next'
 import { ref, onMounted, watch, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
@@ -283,10 +279,6 @@ const fetchDefinitionsDetails = async () => {
   } finally {
     isLoading.value = false
   }
-}
-
-const goBack = () => {
-  router.back()
 }
 
 // Watch for route changes to handle navigation between different valsi

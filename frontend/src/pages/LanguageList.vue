@@ -80,7 +80,7 @@
         <div class="sm:hidden space-y-3">
 
           <div class="btn-group-forced flex flex-wrap" role="group">
-             <RouterLink :to="`/?mode=dictionary&langs=${lang.id}`" class="ui-btn--get ui-btn--group-item"
+             <RouterLink :to="`/?mode=dictionary&langs=${lang.id}`" class="ui-btn--read ui-btn--group-item"
               > {{ lang.english_name }} </RouterLink
             > <a
               v-if="lang.url"
@@ -121,7 +121,7 @@
         <div class="hidden sm:block text-sm font-medium text-primary-900"> {{ lang.tag }} </div>
 
         <div class="hidden sm:block text-sm text-primary-800">
-           <RouterLink :to="`/?mode=dictionary&langs=${lang.id}`" class="ui-btn--get"
+           <RouterLink :to="`/?mode=dictionary&langs=${lang.id}`" class="ui-btn--read"
             > {{ lang.english_name }} </RouterLink
           >
         </div>
@@ -170,7 +170,7 @@
   >
 
     <p class="text-gray-600"> {{ t('languageList.noMatchingLanguages') }} </p>
-     <button type="button" class="ui-btn--get mt-3" @click="searchQuery = ''">
+     <button type="button" class="ui-btn--read mt-3" @click="searchQuery = ''">
        {{ t('languageList.clearSearch') }} </button
     >
   </div>

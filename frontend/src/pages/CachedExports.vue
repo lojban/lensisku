@@ -138,7 +138,7 @@ onMounted(async () => {
             <div class="text-sm text-gray-500"> {{ formatDate(exportItem.created_at) }} </div>
 
           </div>
-           <a :href="downloadHref(exportItem)" :download="exportItem.filename" class="ui-btn--get"
+           <a :href="downloadHref(exportItem)" :download="exportItem.filename" class="ui-btn--read"
             > {{ t('cachedExports.download') }} </a
           >
         </div>
@@ -153,7 +153,7 @@ onMounted(async () => {
     >
 
       <p class="text-gray-600"> {{ t('cachedExports.noMatchingExports') }} </p>
-       <button type="button" class="ui-btn--get mt-3" @click="searchQuery = ''">
+       <button type="button" class="ui-btn--read mt-3" @click="searchQuery = ''">
          {{ t('cachedExports.clearSearch') }} </button
       >
     </div>

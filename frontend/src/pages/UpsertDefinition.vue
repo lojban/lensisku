@@ -47,7 +47,7 @@
         <div class="flex items-center gap-2 justify-start">
 
           <h2 class="font-semibold truncate"> {{ recommended }} </h2>
-          <button type="button" class="ui-btn--update" @click="useRecommended">
+          <button type="button" class="ui-btn--edit" @click="useRecommended">
             <ArrowRight class="h-4 w-4" /> {{ t('upsertDefinition.useThisButton') }}
           </button>
         </div>

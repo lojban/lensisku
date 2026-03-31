@@ -105,7 +105,7 @@
              {{ t('versionHistory.compareWith', { versionId: selectedVersion }) }} </button
           > <button
             v-else-if="!selectedVersion"
-            class="ui-btn--get"
+            class="ui-btn--read"
             @click="selectedVersion = version.version_id"
           >
              {{ t('versionHistory.compareThis') }} </button

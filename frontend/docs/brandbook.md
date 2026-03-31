@@ -70,26 +70,45 @@ This document is the **human-readable contract** for product, design, QA, and en
 
 ### 6.3 Semantic API for components: `ui-btn--*`
 
-Application code and **`Button.vue`** / **`IconButton.vue`** should use **semantic** classes whose names start with **`ui-btn--`** (or pass `variant="neutral"` etc., which resolves to `ui-btn--neutral`).
+Application code and **`Button.vue`** / **`IconButton.vue`** should use **semantic** classes whose names start with **`ui-btn--`** (or pass `variant="neutral"` etc., which resolves to `ui-btn--neutral`). Each **role** maps to **one flat primitive** (`btn-*`) and **one aqua primitive** (`btn-aqua-*`) in `buttonThemeClassMap` inside **`tailwind.config.js`** (authoritative list).
 
-Examples:
+**Prefer canonical role names** in new code; **legacy synonyms** stay in the map so older templates keep working.
 
-| `variant` / class | Intended use (semantic) |
-|-------------------|-------------------------|
-| `ui-btn--primary` | Default positive / main action in a compact control. |
-| `ui-btn--create` | Create / add content. |
-| `ui-btn--delete` | Destructive remove. |
-| `ui-btn--cancel` / `ui-btn--empty` | Dismiss, neutral, low emphasis. |
-| `ui-btn--get` | Open / load / neutral forward. |
-| `ui-btn--group-item` | Segmented control inner (pair with `.btn-group-forced`). |
-
-**Full map**: see `buttonThemeClassMap` in `tailwind.config.js`—that object is authoritative.
+| Action role | Canonical class | Typical use |
+|-------------|-----------------|-------------|
+| **Read / open / navigate** | `ui-btn--read` | Links, “open”, export/download, neutral forward. *Legacy:* `ui-btn--get`. |
+| **Edit / apply** | `ui-btn--edit` | Save profile, merge, apply recommendation. *Legacy:* `ui-btn--update`. |
+| **Create / add** | `ui-btn--create` | Submit new entity, add row. Often paired with **`ui-btn--primary`** (same mapping). |
+| **Delete / remove** | `ui-btn--delete` | Destructive removal. *Synonym:* `ui-btn--remove` (same mapping). |
+| **Dismiss / cancel** | `ui-btn--cancel` | Close modal, secondary “no”. *Synonym:* `ui-btn--dismiss`. |
+| **Toolbar / filter chrome** | `ui-btn--toolbar` | Compact toggles, reset filters (`Button variant="toolbar"`). *Legacy:* `ui-btn--aqua-default`. |
+| **Neutral / low emphasis** | `ui-btn--empty` | Deselect, clipboard, embossed default. |
+| **Neutral (tinted)** | `ui-btn--neutral`, `neutral-muted`, `neutral-slate` | Secondary pills, back links, muted actions. |
+| **Pagination back / forward** | `ui-btn--back`, `ui-btn--forward` | Prev/next page. *Legacy:* `previous`, `next`. |
+| **Continue** | `ui-btn--continue` | Resume flow (maps like read/get). |
+| **Market / commerce** | `ui-btn--market` | Rose / market styling. |
+| **History / versions** | `ui-btn--history` | Version list, purple history. |
+| **Insert / inline add** | `ui-btn--insert` | Add to selection, blue insert. |
+| **Link / outbound** | `ui-btn--link` | Blue link-style. |
+| **Accent (activity)** | `ui-btn--accent-purple` | “View activity” and similar. |
+| **Generic action (pink)** | `ui-btn--action` | Promotional / emphasis CTA. |
+| **Reply** | `ui-btn--reply` | Thread reply. |
+| **Reaction** | `ui-btn--reaction`, `reaction-active` | Toggle reactions. |
+| **Auth** | `ui-btn--auth-login`, `auth-signup` | Login vs signup emphasis. |
+| **Status** | `ui-btn--success`, `error`, `warning`, `danger-rose` | Result / alert / destructive rose. |
+| **Revert** | `ui-btn--revert` | Undo to old revision (yellow). |
+| **Study grading** | `study-correct`, `study-wrong` | Flashcard / Lingo result. |
+| **Warning shades** | `warning`, `warning-orange`, `warning-yellow` | Caution; yellow uses flat **`btn-revert`** vs amber **`btn-warning`**. |
+| **Sort / palette** | `sort-*`, `palette-*` | Rotating colors in lists (see map). |
+| **Segmented group** | `ui-btn--group-item` | Inner segment (with `.btn-group` / `.btn-group-forced`). |
+| **Special** | `ui-btn--fab`, `toggle` | FAB and toggle have extra rules in the same Tailwind layer. |
 
 **Rules**
 
 1. Prefer **`<Button variant="…">`** or **`<IconButton button-classes="…">`** over raw `class="btn-aqua-emerald"` in new code—keeps theme switching coherent.
-2. **Flat theme**: major empty-state CTAs may still use **`ui-btn--*`**; do not mix random `bg-blue-600` full-width buttons unless using an existing pattern (e.g. `.btn-panel-primary` for specific panels).
-3. **Icon-only**: must have **`aria-label`** (or visible text). `IconButton` derives `aria-label` from `ariaLabel` or `label`.
+2. **Account / profile toolbars**: pair **read** (`ui-btn--read`, e.g. change password) with **edit** (`ui-btn--edit`). Do not use **`ui-btn--warning-*`** for routine account actions—they read as caution chrome; **`warning-yellow`** in flat theme maps to **`btn-revert`** (yellow) to stay distinct from amber **`btn-warning`**.
+3. **Flat theme**: major empty-state CTAs may still use **`ui-btn--*`**; do not mix random `bg-blue-600` full-width buttons unless using an existing pattern (e.g. `.btn-panel-primary` for specific panels).
+4. **Icon-only**: must have **`aria-label`** (or visible text). `IconButton` derives `aria-label` from `ariaLabel` or `label`.
 
 ### 6.4 When Aqua vs Flat “wins”
 
@@ -180,7 +199,8 @@ Examples:
 
 ## 14. Evolution
 
-- **Adding a new semantic button**: extend **`buttonThemeClassMap`** with both **aqua** and **flat** primitive targets, then document the intent here in §6.3.
+- **Adding a new semantic button**: extend **`buttonThemeClassMap`** with both **aqua** and **flat** primitive targets, then document the intent here in §6.3 (role row + legacy synonym if any).
+- **Renaming for clarity**: keep **legacy** keys in the map when renaming (e.g. `get`→`read`) so third-party forks and old strings do not break.
 - **Adding a new surface**: add a **single** class in `tailwind.config.js` and reuse—avoid scattering the same 6 Tailwind utilities across files.
 
 ---

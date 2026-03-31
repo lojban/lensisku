@@ -143,7 +143,7 @@
       </div>
        <button
         :disabled="!canExport || isLoading"
-        class="inline-flex items-center ui-btn--get"
+        class="inline-flex items-center ui-btn--read"
         @click="handleExport"
       >
          {{ t('dictionaryExport.exportButton') }} </button
