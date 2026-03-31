@@ -13,8 +13,10 @@
 
       <div v-else>
         <!-- Create New Collection -->
-        <IconButton v-if="collections.length > 0" button-classes="w-full ui-btn--create mb-4"
-          :label="t('collectionWidget.createNew')" @click="showCreateForm = true" /> <!-- Empty State -->
+        <div v-if="collections.length > 0" class="flex justify-center mb-4">
+          <IconButton button-classes="ui-btn--create"
+            :label="t('collectionWidget.createNew')" @click="showCreateForm = true" />
+        </div> <!-- Empty State -->
         <div v-if="collections.length === 0" class="px-3 py-4 text-center">
 
           <p class="text-sm text-gray-500 mb-2"> {{ t('collectionWidget.noCollections') }} </p>
@@ -32,10 +34,10 @@
               'hover:bg-gray-100': selectedCollectionId !== collection.collection_id,
             }" @click="addToCollection(collection.collection_id)">
 
-            <div class="flex items-center gap-2">
-              <span class="text-gray-700">{{ collection.name }}</span> <span class="text-xs text-gray-500">{{
-                t('collectionWidget.itemsCount', { count: collection.item_count })
-                }}</span>
+            <div class="min-w-0 flex-1 flex flex-wrap items-baseline gap-x-2 gap-y-0.5 text-left">
+              <span class="text-sm text-gray-700 break-words">{{ collection.name }}</span>
+              <span class="shrink-0 italic text-xs text-gray-500 whitespace-nowrap">
+                {{ t('collectionWidget.itemsCount', { count: collection.item_count }) }}</span>
             </div>
             <span v-if="isAddingTo === collection.collection_id" class="text-indigo-600 animate-spin text-sm">↻</span>
             <span v-else class="text-gray-400 invisible group-hover:visible">{{
