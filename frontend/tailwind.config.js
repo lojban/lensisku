@@ -1,3 +1,12 @@
+import { buildFlatButtonLayer } from './tailwind.flat-buttons.mjs'
+import {
+  aquaToggleOffShadow,
+  buildAquaBaseLayer,
+  buildAquaButtonGroupLayer,
+  buildAquaButtonPrimitives,
+  buildAquaUiBtnGroupItemGeometry,
+} from './tailwind.aqua-buttons.mjs'
+
 /** @type {import('tailwindcss').Config} */
 export default {
   content: [
@@ -5,6 +14,12 @@ export default {
     './src/**/*.{vue,js,ts,jsx,tsx}',
     './packages/**/*.{vue,js,ts,jsx,tsx}',
   ],
+  /**
+   * `packages/ui/Button.vue` resolves `variant` to `ui-btn--${suffix}` at runtime. Those strings are not
+   * static in source, so JIT would otherwise skip `buttonUiThemeLayer` rules and the `btn-aqua-*` /
+   * `btn-*` primitives they `@apply` (e.g. study CTA palette buttons on collection cards).
+   */
+  safelist: [{ pattern: /^ui-btn--[a-z0-9-]+$/ }],
   theme: {
     extend: {
       /** Global UI stack; glossy `.aqua-base` inherits via `@apply font-sans` (see `docs/brandbook.md`). */
@@ -18,200 +33,32 @@ export default {
     },
   },
   plugins: [
-    function ({ addComponents, addBase }) {
-      /** Base layer: shared pill control geometry + aqua chrome (`btn-base`, `aqua-base`, `aqua-base-secondary`). */
+    function ({ addComponents, addBase, theme }) {
+      /** Base layer: `btn-base` + Aqua theme bases (`tailwind.aqua-buttons.mjs`). */
       addBase({
         /** Icon + label: use this flex `gap-*` only—do not put `mr-*` / `ml-*` on icons or labels (breaks when labels are hidden). */
         /**
-         * Flat pill chrome: geometry + shadow + press nudge. Semantic `.btn-*` primitives supply the **same**
-         * hover / focus-visible / active fill + border progression; only palette tokens differ (see flat buttons block).
-         * Do not add a generic hover background here — it fought per-variant fills and made Delete vs History inconsistent.
+         * Shared pill geometry for **Flat** (with `.btn-flat-surface` / semantic `btn-*`) and other controls.
+         * Tinted flat fills inherit interaction from `.btn-flat-surface` (CSS variables); do not add a generic hover fill here.
+         *
+         * **Core** omits hover `shadow-none` so embossed `.btn-empty` can own hover box-shadow without a duplicate
+         * rule fighting `btn-base` (links + buttons both use the same primitives via `ui-btn--empty` → `@apply`).
          */
-        '.btn-base': {
+        '.btn-base-core': {
           '@apply gap-2 px-3 md:px-4 py-1.5 text-xs font-medium flex items-center justify-center h-6 border rounded-full transition-colors duration-200 shadow-sm shadow-slate-200 disabled:opacity-40 select-none disabled:cursor-not-allowed whitespace-nowrap focus:outline-none cursor-pointer':
             {},
           '&:not(:disabled)': {
             '--tw-ring-color': 'var(--btn-color, currentColor)',
             '@apply active:scale-x-[1.02]': {},
           },
+        },
+        '.btn-base': {
+          '@apply btn-base-core': {},
           '&:not(:disabled):hover': {
             '@apply ring-0 shadow-none': {},
           },
         },
-        /** Same as `btn-base`: icon + label spacing via `gap-*` on the control, not margin on children. */
-        '.aqua-base': {
-          '@apply flex items-center justify-center h-6 select-none whitespace-nowrap text-black select-none text-sm font-medium font-sans transition-all px-3 gap-2':
-            {},
-          textOverflow: 'ellipsis',
-          gridRow: '1',
-          borderRadius: '1000px',
-          position: 'relative',
-          overflow: 'hidden',
-          cursor: 'default',
-          outline: 'none',
-          boxShadow:
-            '0 0.375em 0.5em rgba(0, 0, 0, 0.3),' +
-            '0 0.125em 0.125em hsla(var(--aqua-hue, 215), 100%, 36.7%, 0.5),' +
-            'inset 0 0.25em 0.5em hsla(calc(var(--aqua-hue, 215) + 4), 100%, 9.6%, 0.8),' +
-            'inset 0 0.375em 0.5em 0.25em hsla(var(--aqua-hue, 215), 100%, 36.7%, 0.75)',
-          '&:not(:disabled)': {
-            '@apply hover:brightness-105 hover:saturate-150 active:scale-x-[1.02]': {},
-          },
-          /** Do not target `.sr-only` — that would override `position:absolute` and break flex centering on icon-only controls. */
-          '& span:not(.sr-only)': {
-            position: 'relative',
-            top: 0,
-            zIndex: 1,
-            whiteSpace: 'nowrap',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            maxWidth: '100%',
-          },
-          '&:before': {
-            content: "''",
-            position: 'absolute',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            height: '33%',
-            background: 'linear-gradient(rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.3))',
-            width: 'calc(100% - 0.875em)',
-            borderRadius: '2em 2em 0.5em 0.5em',
-            top: '5%',
-            zIndex: '2',
-          },
-          '&.rounded-corner:before': {
-            borderRadius: '30em 30em 2em 2em',
-          },
-          '&:after': {
-            content: "''",
-            position: 'absolute',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            height: '33%',
-            background: 'linear-gradient(rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.5))',
-            width: 'calc(100% - 1.25em)',
-            borderRadius: '0.75em',
-            bottom: '10%',
-            filter: 'blur(0.75px)',
-          },
-          '&:focus, &:active': {
-            boxShadow:
-              '0 0.35em 0.45em rgba(2, 10, 26, 0.28),' +
-              '0 0.08em 0.18em hsla(var(--aqua-hue, 215), 85%, 46%, 0.42),' +
-              'inset 0 0.22em 0.45em hsla(calc(var(--aqua-hue, 215) - 8), 75%, 22%, 0.65),' +
-              'inset 0 0.4em 0.55em 0.2em hsla(var(--aqua-hue, 215), 95%, 68%, 0.28),' +
-              '0 0 0.5em hsla(var(--aqua-hue, 215), 78%, 58%, 0.45)',
-            '&:disabled': {
-              boxShadow:
-                '0 0.375em 0.5em rgba(0, 0, 0, 0.2), 0 0.125em 0.125em rgba(0, 0, 0, 0.3), inset 0 0.25em 0.25em rgba(0, 0, 0, 0.4), inset 0 0.375em 0.5em 0.25em #BBBBBB',
-            },
-          },
-          '&[disabled]:not([disabled="false"]), .disabled': {
-            opacity: 0.5,
-            background:
-              'linear-gradient(rgba(160, 160, 160, 0.625), rgba(255, 255, 255, 0.625)) !important',
-            boxShadow:
-              '0 0.375em 0.5em rgba(0, 0, 0, 0.2), 0 0.125em 0.125em rgba(0, 0, 0, 0.3), inset 0 0.25em 0.25em rgba(0, 0, 0, 0.4), inset 0 0.375em 0.5em 0.25em #BBBBBB !important',
-            '&:hover, &:focus, &:active': {
-              transform: 'none !important',
-              filter: 'none !important',
-              background:
-                'linear-gradient(rgba(160, 160, 160, 0.625), rgba(255, 255, 255, 0.625)) !important',
-              boxShadow:
-                '0 0.375em 0.5em rgba(0, 0, 0, 0.2), 0 0.125em 0.125em rgba(0, 0, 0, 0.3), inset 0 0.25em 0.25em rgba(0, 0, 0, 0.4), inset 0 0.375em 0.5em 0.25em #BBBBBB !important',
-            },
-          },
-        },
-        /**
-         * Neutral glossy chrome matching reference `button.secondary`: gray depth shadows, dark insets + #BBBBBB lip,
-         * focus glow `rgba(0,0,0,0.25)`, blurred ::before/::after shine. Fill gradient lives on `btn-aqua-secondary` /
-         * `btn-aqua-white`, not here.
-         */
-        '.aqua-base-secondary': {
-          '@apply flex items-center justify-center h-6 select-none whitespace-nowrap text-black select-none text-sm font-medium font-sans transition-all px-3 gap-2':
-            {},
-          textOverflow: 'ellipsis',
-          gridRow: '1',
-          borderRadius: '1000px',
-          position: 'relative',
-          overflow: 'hidden',
-          cursor: 'default',
-          outline: 'none',
-          boxShadow:
-            '0 0.375em 0.5em rgba(0, 0, 0, 0.2),' +
-            '0 0.125em 0.125em rgba(0, 0, 0, 0.3),' +
-            'inset 0 0.25em 0.25em rgba(0, 0, 0, 0.4),' +
-            'inset 0 0.375em 0.5em 0.25em #BBBBBB',
-          '&:not(:disabled)': {
-            '@apply hover:brightness-110 active:scale-x-[1.02]': {},
-          },
-          '& span:not(.sr-only)': {
-            position: 'relative',
-            // top: '-1px',
-            zIndex: 1,
-            // letterSpacing: '0.0375em',
-            textShadow: '0 0.25em 0.2em rgba(0, 0, 0, 0.25)',
-            whiteSpace: 'nowrap',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            maxWidth: '100%',
-          },
-          '&:before': {
-            content: "''",
-            position: 'absolute',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            height: '33%',
-            background: 'linear-gradient(rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.3))',
-            width: 'calc(100% - 0.875em)',
-            borderRadius: '2em 2em 0.5em 0.5em',
-            top: '5%',
-            filter: 'blur(1px)',
-            zIndex: '2',
-          },
-          '&.rounded-corner:before': {
-            borderRadius: '30em 30em 2em 2em',
-          },
-          '&:after': {
-            content: "''",
-            position: 'absolute',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            height: '33%',
-            background: 'linear-gradient(rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.5))',
-            width: 'calc(100% - 1.25em)',
-            borderRadius: '0.75em',
-            bottom: '10%',
-            filter: 'blur(3px)',
-          },
-          '&:focus, &:active': {
-            boxShadow:
-              '0 0.375em 0.5em rgba(0, 0, 0, 0.2),' +
-              '0 0.125em 0.125em rgba(0, 0, 0, 0.3),' +
-              'inset 0 0.25em 0.25em rgba(0, 0, 0, 0.4),' +
-              'inset 0 0.375em 0.5em 0.25em #BBBBBB,' +
-              '0 0 0.5em rgba(0, 0, 0, 0.25)',
-            '&:disabled': {
-              boxShadow:
-                '0 0.375em 0.5em rgba(0, 0, 0, 0.2), 0 0.125em 0.125em rgba(0, 0, 0, 0.3), inset 0 0.25em 0.25em rgba(0, 0, 0, 0.4), inset 0 0.375em 0.5em 0.25em #BBBBBB',
-            },
-          },
-          '&[disabled]:not([disabled="false"]), .disabled': {
-            opacity: 0.5,
-            background:
-              'linear-gradient(rgba(160, 160, 160, 0.625), rgba(255, 255, 255, 0.625)) !important',
-            boxShadow:
-              '0 0.375em 0.5em rgba(0, 0, 0, 0.2), 0 0.125em 0.125em rgba(0, 0, 0, 0.3), inset 0 0.25em 0.25em rgba(0, 0, 0, 0.4), inset 0 0.375em 0.5em 0.25em #BBBBBB !important',
-            '&:hover, &:focus, &:active': {
-              transform: 'none !important',
-              filter: 'none !important',
-              background:
-                'linear-gradient(rgba(160, 160, 160, 0.625), rgba(255, 255, 255, 0.625)) !important',
-              boxShadow:
-                '0 0.375em 0.5em rgba(0, 0, 0, 0.2), 0 0.125em 0.125em rgba(0, 0, 0, 0.3), inset 0 0.25em 0.25em rgba(0, 0, 0, 0.4), inset 0 0.375em 0.5em 0.25em #BBBBBB !important',
-            },
-          },
-        },
+        ...buildAquaBaseLayer(),
       })
 
       /** Global document defaults. */
@@ -221,103 +68,6 @@ export default {
         },
       })
 
-      /** Shadow for aqua toggle “off” state (`buttonUiThemeLayer`); pair with `aquaUiBtnGroupItemGeometry` for segment bars. */
-      const toggleOffShadow =
-      '0 0.375em 0.5em rgba(0, 0, 0, 0.3),' +
-      '0 0.125em 0.125em hsla(0, 0%, 36.7%, 0.5),' +
-      'inset 0 0.15em 0.35em rgba(255, 255, 255, 0.7),' +
-      'inset 0 -0.05em 0.2em rgba(0, 0, 0, 0.06)'
-      
-      /**
-       * Controls in a button bar (ignore whitespace/comments so `:first-child` on the flex item still works).
-       * Use with `:nth-child(An+B of …)` / `:nth-last-child` for segment joins.
-       */
-      const btnGroupControlOfList = 'button, a'
-
-      /**
-       * Shared aqua segment geometry (radii + glossy ::before/::after), without extra segment box-shadows —
-       * elevation stays on `aqua-base` / semantic primitives so wrappers and joins do not stack duplicate shadows.
-       * Applied with higher specificity in buttonUiThemeLayer for `.btn-group-forced` (all breakpoints; see addPair order).
-       */
-      const aquaUiBtnGroupItemGeometry = {
-        borderRadius: 0,
-        '&::after': {
-          background: 'none',
-        },
-        [`&:nth-child(1 of ${btnGroupControlOfList}):not(:nth-last-child(1 of ${btnGroupControlOfList}))`]: {
-          '@apply z-10': {},
-          borderTopLeftRadius: '1000px',
-          borderBottomLeftRadius: '1000px',
-          borderTopRightRadius: 0,
-          borderBottomRightRadius: 0,
-          boxShadow:
-            '0 0.375em 0.5em rgba(0, 0, 0, 0.3),' +
-            '0 0.125em 0.125em hsla(var(--aqua-hue, 215), 100%, 36.7%, 0.5),' +
-            'inset 0.25em 0.25em 0.5em hsla(calc(var(--aqua-hue, 215) + 4), 100%, 9.6%, 0.8),' +
-            'inset 0.25em 0.375em 0.5em -0.125em hsla(var(--aqua-hue, 215), 100%, 36.7%, 0.75)',
-          '&::before': {
-            borderRadius: '2em 0 0 0.5em',
-            left: '0.4375em',
-            width: 'calc(100% - 0.4375em)',
-            transform: 'none',
-          },
-          '&::after': {
-            borderRadius: '0.75em 0 0 0.75em',
-            left: '0.4375em',
-            width: 'calc(100% - 0.4375em)',
-            transform: 'none',
-          },
-        },
-        [`&:nth-last-child(1 of ${btnGroupControlOfList}):not(:nth-child(1 of ${btnGroupControlOfList}))`]: {
-          '@apply z-10': {},
-          borderTopLeftRadius: 0,
-          borderBottomLeftRadius: 0,
-          borderTopRightRadius: '1000px',
-          borderBottomRightRadius: '1000px',
-          boxShadow:
-            '0 0.375em 0.5em rgba(0, 0, 0, 0.3),' +
-            '0 0.125em 0.125em hsla(var(--aqua-hue, 215), 100%, 36.7%, 0.5),' +
-            'inset -0.25em 0.25em 0.5em hsla(calc(var(--aqua-hue, 215) + 4), 100%, 9.6%, 0.8),' +
-            'inset -0.25em 0.375em 0.5em -0.125em hsla(var(--aqua-hue, 215), 100%, 36.7%, 0.75)',
-          '&::before': {
-            borderRadius: '0 2em 0.5em 0',
-            left: 'auto',
-            right: '0.4375em',
-            width: 'calc(100% - 0.4375em)',
-            transform: 'none',
-          },
-          '&::after': {
-            borderRadius: '0 0.75em 0.75em 0',
-            left: 'auto',
-            right: '0.4375em',
-            width: 'calc(100% - 0.4375em)',
-            transform: 'none',
-          },
-        },
-        [`&:not(:nth-child(1 of ${btnGroupControlOfList})):not(:nth-last-child(1 of ${btnGroupControlOfList}))`]: {
-          '@apply z-10': {},
-          boxShadow:
-            '0 0.375em 0.5em rgba(0, 0, 0, 0.3),' +
-            '0 0.125em 0.125em hsla(var(--aqua-hue, 215), 100%, 36.7%, 0.5),' +
-            'inset 0 0.25em 0.5em -0.25em hsla(calc(var(--aqua-hue, 215) + 4), 100%, 9.6%, 0.8),' +
-            'inset 0 0.375em 0.5em -0.25em hsla(var(--aqua-hue, 215), 100%, 36.7%, 0.75)',
-          '&::before': {
-            borderRadius: 0,
-            left: 0,
-            width: '100%',
-            transform: 'none',
-          },
-          '&::after': {
-            borderRadius: 0,
-            left: 0,
-            width: '100%',
-            transform: 'none',
-          },
-        },
-        [`&:nth-child(1 of ${btnGroupControlOfList}):nth-last-child(1 of ${btnGroupControlOfList})`]: {
-          borderRadius: '1000px',
-        },
-      }
       /**
        * Component registry (purpose / theme order for readability):
        * prose → app shell → nav → banners & toasts → icon buttons → surfaces & lists → assistant →
@@ -930,349 +680,11 @@ export default {
             '@apply bg-gray-100 cursor-not-allowed opacity-75': {},
           },
         },
-        // --- Buttons: aqua (glossy) theme primitives ---
-        '.btn-aqua': {
-          '@apply aqua-base': {},
-        },
-        /** Blue glossy “primary” fill (`button.primary`); background only — shadows follow `--aqua-hue`. */
-        '.btn-aqua-primary': {
-          '@apply aqua-base': {},
-          background:
-            'linear-gradient(rgba(0, 65, 184, 0.625), rgba(45, 115, 199, 0.625), rgba(33, 160, 196, 0.625))',
-          '--aqua-hue': '217',
-        },
-        /** Gray glossy “secondary” look (was `.aqua-base.secondary`); uses neutral `aqua-base-secondary` chrome. */
-        '.btn-aqua-secondary': {
-          '@apply aqua-base-secondary': {},
-          background: 'linear-gradient(rgba(160, 160, 160, 0.625), rgba(255, 255, 255, 0.625))',
-        },
-        '.btn-aqua-yellow': {
-          '@apply aqua-base bg-yellow-500': {},
-          '--aqua-hue': '45',
-        },
-        '.btn-aqua-blue': {
-          '@apply aqua-base bg-blue-400': {},
-          '--aqua-hue': '217',
-        },
-        '.btn-aqua-sky': {
-          '@apply aqua-base bg-sky-400': {},
-          '--aqua-hue': '199',
-        },
-        /** Aqua “get / open” — lighter sky-blue than btn-aqua-sky; used by `ui-btn--read` / `ui-btn--get`. */
-        '.btn-aqua-get': {
-          '@apply aqua-base bg-sky-300': {},
-          '--aqua-hue': '199',
-        },
-        '.btn-aqua-purple': {
-          '@apply aqua-base bg-purple-400': {},
-          '--aqua-hue': '270',
-        },
-        '.btn-aqua-simple': {
-          '@apply aqua-base': {},
-          boxShadow: '0 0.35em 0.45em rgba(2, 10, 26, 0.28),' +
-            '0 0.08em 0.18em hsla(var(--aqua-hue, 215), 85%, 46%, 0.42),' +
-            'inset 0 0.22em 0.45em hsla(calc(var(--aqua-hue, 215) - 8), 75%, 22%, 0.65),' +
-            'inset 0 0.4em 0.55em 0.2em hsla(var(--aqua-hue, 215), 95%, 68%, 0.28)',
-        },
-        '.btn-aqua-emerald': {
-          '@apply aqua-base bg-emerald-400': {},
-          '--aqua-hue': '160',
-        },
-        '.btn-aqua-rose': {
-          '@apply aqua-base bg-rose-400': {},
-          '--aqua-hue': '350',
-        },
-        '.btn-aqua-orange': {
-          '@apply aqua-base bg-orange-400': {},
-          '--aqua-hue': '27',
-        },
-        '.btn-aqua-red': {
-          '@apply aqua-base bg-red-400': {},
-          '--aqua-hue': '0',
-        },
-        '.btn-aqua-amber': {
-          '@apply aqua-base bg-amber-400': {},
-          '--aqua-hue': '38',
-        },
-        '.btn-aqua-lime': {
-          '@apply aqua-base bg-lime-400': {},
-          '--aqua-hue': '84',
-        },
-        '.btn-aqua-teal': {
-          '@apply aqua-base bg-teal-400': {},
-          '--aqua-hue': '173',
-        },
-        '.btn-aqua-cyan': {
-          '@apply aqua-base bg-cyan-400': {},
-          '--aqua-hue': '188',
-        },
-        '.btn-aqua-indigo': {
-          '@apply aqua-base bg-indigo-400': {},
-          '--aqua-hue': '243',
-        },
-        '.btn-aqua-violet': {
-          '@apply aqua-base bg-violet-400': {},
-          '--aqua-hue': '260',
-        },
-        '.btn-aqua-fuchsia': {
-          '@apply aqua-base bg-fuchsia-400': {},
-          '--aqua-hue': '292',
-        },
-        '.btn-aqua-pink': {
-          '@apply aqua-base bg-pink-400': {},
-          '--aqua-hue': '330',
-        },
-        '.btn-aqua-zinc': {
-          '@apply aqua-base bg-zinc-300': {},
-          '--aqua-hue': '240',
-        },
-        /** Distinct from btn-aqua-white / zinc: cooler, slightly deeper fill so “slate” ≠ generic gray. */
-        '.btn-aqua-slate': {
-          '@apply aqua-base bg-slate-400': {},
-          '--aqua-hue': '215',
-        },
-        '.btn-aqua-gray': {
-          '@apply aqua-base bg-gray-800 !text-white': {},
-          boxShadow:
-            '0 0.375em 0.5em rgba(0, 0, 0, 0.4),' +
-            '0 0.125em 0.125em rgba(0, 0, 0, 0.3),' +
-            'inset 0 0.25em 0.5em rgba(0, 0, 0, 0.8),' +
-            'inset 0 0.375em 0.5em 0.25em rgba(255, 255, 255, 0.1)',
-          '&:focus, &:active': {
-            boxShadow:
-              '0 0.375em 0.5em rgba(0, 0, 0, 0.4),' +
-              '0 0.125em 0.125em rgba(0, 0, 0, 0.3),' +
-              'inset 0 0.25em 0.5em rgba(0, 0, 0, 0.8),' +
-              'inset 0 0.375em 0.5em 0.25em rgba(255, 255, 255, 0.15),' +
-              '0 0 0.5em rgba(255, 255, 255, 0.2)',
-          },
-        },
-        '.btn-aqua-white': {
-          '@apply aqua-base-secondary': {},
-          boxShadow: toggleOffShadow,
-          background: 'linear-gradient(rgba(180, 180, 180, 1), rgba(255, 255, 255, 0.625))',
-          // ...aquaUiBtnGroupItemGeometry,
-          '&::after': {
-          background: 'none',
-        },
-        },
-        // --- Buttons: flat theme primitives ---
-        /**
-         * Interactive states use `&:hover:not(:disabled)` (not `enabled:hover:`): `:enabled` does not match
-         * `<a>` / `RouterLink`, so links were missing hover/active/focus styling while `<button>` had it.
-         */
-        '.btn-insert': {
-          '@apply btn-base text-white bg-gradient-to-b from-blue-400 to-blue-500 border-blue-400': {},
-          '&:hover:not(:disabled)': {
-            '@apply from-blue-500 to-blue-600 border-blue-600': {},
-          },
-          '&:active:not(:disabled)': {
-            '@apply from-blue-600 to-blue-700 border-blue-700': {},
-          },
-          '&:focus-visible:not(:disabled)': {
-            '@apply ring-2 ring-blue-400/60 ring-offset-1 ring-offset-white': {},
-          },
-        },
-        '.btn-reaction': {
-          '@apply btn-base text-gray-700 bg-gradient-to-b from-gray-100 to-gray-50 border-gray-300 shadow-sm': {},
-          '&:hover:not(:disabled)': {
-            '@apply from-gray-200 to-gray-100 border-gray-400': {},
-          },
-          '&:active:not(:disabled)': {
-            '@apply from-gray-300 to-gray-200 border-gray-500': {},
-          },
-          '&:focus-visible:not(:disabled)': {
-            '@apply ring-2 ring-gray-400/50 ring-offset-1 ring-offset-white': {},
-          },
-        },
-        '.btn-reaction-active': {
-          '@apply btn-base text-white bg-gradient-to-b from-blue-500 to-blue-600 border-blue-500 shadow-sm': {},
-          '&:hover:not(:disabled)': {
-            '@apply from-blue-600 to-blue-700 border-blue-700': {},
-          },
-          '&:active:not(:disabled)': {
-            '@apply from-blue-700 to-blue-800 border-blue-800': {},
-          },
-          '&:focus-visible:not(:disabled)': {
-            '@apply ring-2 ring-blue-400/60 ring-offset-1 ring-offset-white': {},
-          },
-        },
-        '.btn-create': {
-          '@apply btn-base text-green-700 bg-gradient-to-b from-green-100 to-green-50 border-green-400': {},
-          '&:hover:not(:disabled)': {
-            '@apply from-green-200 to-green-100 border-green-600': {},
-          },
-          '&:active:not(:disabled)': {
-            '@apply from-green-300 to-green-200 border-green-700': {},
-          },
-          '&:focus-visible:not(:disabled)': {
-            '@apply ring-2 ring-green-400/50 ring-offset-1 ring-offset-white': {},
-          },
-        },
-        '.btn-update': {
-          '@apply btn-base text-teal-700 bg-gradient-to-b from-teal-100 to-teal-50 border-teal-400': {},
-          '&:hover:not(:disabled)': {
-            '@apply from-teal-200 to-teal-100 border-teal-600': {},
-          },
-          '&:active:not(:disabled)': {
-            '@apply from-teal-300 to-teal-200 border-teal-700': {},
-          },
-          '&:focus-visible:not(:disabled)': {
-            '@apply ring-2 ring-teal-400/50 ring-offset-1 ring-offset-white': {},
-          },
-        },
-        '.btn-delete': {
-          '@apply btn-base text-red-700 bg-gradient-to-b from-red-100 to-red-50 border-red-400': {},
-          '&:hover:not(:disabled)': {
-            '@apply from-red-200 to-red-100 border-red-600': {},
-          },
-          '&:active:not(:disabled)': {
-            '@apply from-red-300 to-red-200 border-red-700': {},
-          },
-          '&:focus-visible:not(:disabled)': {
-            '@apply ring-2 ring-red-400/50 ring-offset-1 ring-offset-white': {},
-          },
-        },
-        /** Flat “get / slate-neutral”: teal surface so it does not read like btn-empty (white/gray). */
-        '.btn-get': {
-          '@apply btn-base text-cyan-700 bg-gradient-to-b from-cyan-100 to-cyan-50 border-cyan-400': {},
-          '&:hover:not(:disabled)': {
-            '@apply from-cyan-200 to-cyan-100 border-cyan-600': {},
-          },
-          '&:active:not(:disabled)': {
-            '@apply from-cyan-300 to-cyan-200 border-cyan-700': {},
-          },
-          '&:focus-visible:not(:disabled)': {
-            '@apply ring-2 ring-cyan-400/50 ring-offset-1 ring-offset-white': {},
-          },
-        },
-        '.btn-market': {
-          '@apply btn-base text-rose-700 bg-gradient-to-b from-rose-50 to-white border-rose-300': {},
-          '&:hover:not(:disabled)': {
-            '@apply from-rose-100 to-rose-50 border-rose-500': {},
-          },
-          '&:active:not(:disabled)': {
-            '@apply from-rose-200 to-rose-100 border-rose-600': {},
-          },
-          '&:focus-visible:not(:disabled)': {
-            '@apply ring-2 ring-rose-400/50 ring-offset-1 ring-offset-white': {},
-          },
-        },
-        '.btn-cancel': {
-          '@apply btn-base text-gray-700 bg-gradient-to-b from-gray-100 to-gray-50 border-gray-400': {},
-          '&:hover:not(:disabled)': {
-            '@apply from-gray-200 to-gray-100 border-gray-500': {},
-          },
-          '&:active:not(:disabled)': {
-            '@apply from-gray-300 to-gray-200 border-gray-600': {},
-          },
-          '&:focus-visible:not(:disabled)': {
-            '@apply ring-2 ring-gray-400/50 ring-offset-1 ring-offset-white': {},
-          },
-        },
-        // Neutral “dismiss / clear” (brandbook §1.B): subtle raised/embossed default with pressed active state.
-        '.btn-empty': {
-          '@apply btn-base text-gray-700 bg-gradient-to-b from-white to-slate-50 border-gray-400': {},
-          boxShadow:
-            'inset 0 1px 0 rgba(255, 255, 255, 0.9), inset 0 -1px 0 rgba(148, 163, 184, 0.18), 0 1px 2px rgba(15, 23, 42, 0.08)',
-          '&:not(:disabled):hover': {
-            '@apply bg-gradient-to-b from-white to-slate-100 border-gray-400 text-gray-800': {},
-            boxShadow:
-              'inset 0 1px 0 rgba(255, 255, 255, 0.95), inset 0 -1px 0 rgba(148, 163, 184, 0.22), 0 2px 4px rgba(15, 23, 42, 0.1)',
-          },
-          '&:not(:disabled):active': {
-            '@apply bg-gradient-to-b from-slate-100 to-slate-200 border-gray-400 text-gray-800': {},
-            boxShadow:
-              'inset 0 1px 2px rgba(15, 23, 42, 0.16), inset 0 -1px 0 rgba(255, 255, 255, 0.45), 0 0 0 rgba(15, 23, 42, 0)',
-          },
-          '&:focus-visible:not(:disabled)': {
-            '@apply ring-2 ring-blue-400/45 ring-offset-1 ring-offset-white': {},
-          },
-        },
-        '.btn-error': {
-          '@apply btn-base text-red-700 bg-gradient-to-b from-red-100 to-red-50 border-red-400': {},
-          '&:hover:not(:disabled)': {
-            '@apply from-red-200 to-red-100 border-red-600': {},
-          },
-          '&:active:not(:disabled)': {
-            '@apply from-red-300 to-red-200 border-red-700': {},
-          },
-          '&:focus-visible:not(:disabled)': {
-            '@apply ring-2 ring-red-400/50 ring-offset-1 ring-offset-white': {},
-          },
-        },
-        '.btn-warning': {
-          '@apply btn-base text-amber-700 bg-gradient-to-b from-amber-100 to-amber-50 border-amber-400': {},
-          '&:hover:not(:disabled)': {
-            '@apply from-amber-200 to-amber-100 border-amber-600': {},
-          },
-          '&:active:not(:disabled)': {
-            '@apply from-amber-300 to-amber-200 border-amber-700': {},
-          },
-          '&:focus-visible:not(:disabled)': {
-            '@apply ring-2 ring-amber-400/50 ring-offset-1 ring-offset-white': {},
-          },
-        },
-        '.btn-success': {
-          '@apply btn-base text-green-700 bg-gradient-to-b from-green-100 to-green-50 border-green-400': {},
-          '&:hover:not(:disabled)': {
-            '@apply from-green-200 to-green-100 border-green-600': {},
-          },
-          '&:active:not(:disabled)': {
-            '@apply from-green-300 to-green-200 border-green-700': {},
-          },
-          '&:focus-visible:not(:disabled)': {
-            '@apply ring-2 ring-green-400/50 ring-offset-1 ring-offset-white': {},
-          },
-        },
-        '.btn-revert': {
-          '@apply btn-base text-yellow-700 bg-gradient-to-b from-yellow-100 to-yellow-50 border-yellow-400': {},
-          '&:hover:not(:disabled)': {
-            '@apply from-yellow-200 to-yellow-100 border-yellow-600': {},
-          },
-          '&:active:not(:disabled)': {
-            '@apply from-yellow-300 to-yellow-200 border-yellow-700': {},
-          },
-          '&:focus-visible:not(:disabled)': {
-            '@apply ring-2 ring-yellow-400/50 ring-offset-1 ring-offset-white': {},
-          },
-        },
-        '.btn-history': {
-          '@apply btn-base text-purple-700 bg-gradient-to-b from-purple-100 to-purple-50 border-purple-400': {},
-          '&:hover:not(:disabled)': {
-            '@apply from-purple-200 to-purple-100 border-purple-600': {},
-          },
-          '&:active:not(:disabled)': {
-            '@apply from-purple-300 to-purple-200 border-purple-700': {},
-          },
-          '&:focus-visible:not(:disabled)': {
-            '@apply ring-2 ring-purple-400/50 ring-offset-1 ring-offset-white': {},
-          },
-        },
-        '.btn-link': {
-          '@apply btn-base text-blue-700 bg-gradient-to-b from-blue-100 to-blue-50 border-blue-400': {},
-          '&:hover:not(:disabled)': {
-            '@apply from-blue-200 to-blue-100 border-blue-600': {},
-          },
-          '&:active:not(:disabled)': {
-            '@apply from-blue-300 to-blue-200 border-blue-700': {},
-          },
-          '&:focus-visible:not(:disabled)': {
-            '@apply ring-2 ring-blue-400/50 ring-offset-1 ring-offset-white': {},
-          },
-        },
-        '.btn-previous, .btn-next': {
-          '@apply btn-base text-gray-700 bg-gradient-to-b from-gray-100 to-gray-50 border-gray-400': {},
-          '&:hover:not(:disabled)': {
-            '@apply from-gray-200 to-gray-100 border-gray-500': {},
-          },
-          '&:active:not(:disabled)': {
-            '@apply from-gray-300 to-gray-200 border-gray-600': {},
-          },
-          '&:focus-visible:not(:disabled)': {
-            '@apply ring-2 ring-gray-400/50 ring-offset-1 ring-offset-white': {},
-          },
-        },
+        // Aqua theme primitives (`tailwind.aqua-buttons.mjs`)
+        ...buildAquaButtonPrimitives(),
+        ...buildAquaButtonGroupLayer(),
+        // Flat theme primitives (gradient layers sit behind text — see `tailwind.flat-buttons.mjs`)
+        ...buildFlatButtonLayer(theme),
         '.checkbox-toggle': {
           '@apply w-6 h-6 text-blue-600 border-gray-300 rounded focus:ring-blue-500 cursor-pointer transition-colors':
             {},
@@ -1302,83 +714,6 @@ export default {
           overflow: 'hidden',
           cursor: 'default',
           outline: 'none',
-        },
-        '.btn-reply': {
-          '@apply btn-base text-sky-700 bg-gradient-to-b from-sky-100 to-sky-50 border-sky-400': {},
-          '&:hover:not(:disabled)': {
-            '@apply from-sky-200 to-sky-100 border-sky-600': {},
-          },
-          '&:active:not(:disabled)': {
-            '@apply from-sky-300 to-sky-200 border-sky-700': {},
-          },
-          '&:focus-visible:not(:disabled)': {
-            '@apply ring-2 ring-sky-400/50 ring-offset-1 ring-offset-white': {},
-          },
-        },
-        '.btn-action': {
-          '@apply btn-base text-pink-700 bg-gradient-to-b from-pink-50 to-white border-pink-300': {},
-          '&:hover:not(:disabled)': {
-            '@apply from-pink-100 to-pink-50 border-pink-500': {},
-          },
-          '&:active:not(:disabled)': {
-            '@apply from-pink-200 to-pink-100 border-pink-600': {},
-          },
-          '&:focus-visible:not(:disabled)': {
-            '@apply ring-2 ring-pink-400/50 ring-offset-1 ring-offset-white': {},
-          },
-        },
-        // --- Button groups & theme toggles ---
-        '.btn-group-item': {
-          '@apply border rounded-full': {},
-          '&:not(:disabled):active': {
-            '@apply scale-x-[1.02]': {},
-          },
-        },
-        /**
-         * Default group: wrapped pill row(s), gap between actions — no horizontal scrollbar, no broken
-         * segment joins when wrapping. For a single fused segment bar (filters, compact controls), use
-         * `.btn-group-forced`.
-         */
-        '.btn-group': {
-          '@apply flex flex-wrap gap-2 min-w-0': {},
-        },
-        /** Fused segment control at every breakpoint (spacing + item joins; use where wrapping must stay one bar). */
-        '.btn-group-forced': {
-          '@apply gap-0': {},
-          [`& > :nth-child(1 of ${btnGroupControlOfList})`]: {
-            '@apply rounded-l-full border-l': {},
-          },
-          [`& > :nth-last-child(1 of ${btnGroupControlOfList})`]: {
-            '@apply rounded-r-full border-r': {},
-          },
-          [`& > :is(${btnGroupControlOfList}):not(:nth-last-child(1 of ${btnGroupControlOfList}))`]: {
-            '@apply border-r-0': {},
-          },
-          '& .btn-group-item, & .ui-btn--group-item': {
-            '@apply rounded-none': {},
-          },
-        },
-        /** Hook for aqua theme map (`ui-btn--group-item`); stacked primitives supply visuals; segment CSS only in `.btn-group-forced`. */
-        '.btn-aqua-group-item': {
-          '@apply shrink-0': {},
-        },
-        '.btn-aqua-toggle': {
-          '&.active': {
-            '@apply aqua-base bg-red-400': {},
-            '--aqua-hue': '0',
-          },
-          '&:not(.active)': {
-            '@apply btn-aqua-white': {},
-          },
-        },
-        /** Flat theme: subscription toggle (replaces btn-aqua-toggle). */
-        '.btn-flat-toggle': {
-          '&.active': {
-            '@apply btn-error': {},
-          },
-          '&:not(.active)': {
-            '@apply btn-empty': {},
-          },
         },
         // --- Cards, badges & streak UI ---
         '.card-base': {
@@ -1650,7 +985,7 @@ export default {
         }
         aquaRules[selectorFor('aqua', 'ui-btn--toggle:not(.active)')] = {
           '@apply btn-aqua-white': {},
-          boxShadow: toggleOffShadow,
+          boxShadow: aquaToggleOffShadow,
         }
         flatRules[selectorFor('flat', 'ui-btn--toggle.active')] = {
           '@apply btn-error': {},
@@ -1659,7 +994,8 @@ export default {
           '@apply btn-empty': {},
         }
         /** Beats semantic ui-btn--* primitives so inner segments stay joined in forced groups (all breakpoints). */
-        aquaRules[selectorFor('aqua', 'btn-group-forced .ui-btn--group-item')] = aquaUiBtnGroupItemGeometry
+        aquaRules[selectorFor('aqua', 'btn-group-forced .ui-btn--group-item')] =
+          buildAquaUiBtnGroupItemGeometry()
         flatRules[selectorFor('flat', 'btn-group-forced .ui-btn--group-item')] = {
           /** Full borders on every segment; `-ml-px` overlaps adjacent 1px borders; hover/focus z-index reveals full outline. */
           '@apply relative z-0 rounded-none border-r first:ml-0 -ml-px first:rounded-l-full last:rounded-r-full': {},
