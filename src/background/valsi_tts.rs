@@ -32,7 +32,17 @@ pub fn spawn_valsi_sound_generation(pool: Pool) {
             let pool = pool.clone();
             let running = running.clone();
             tokio::spawn(async move {
-                let result = run_valsi_sound_batch(&pool).await;
+                let result = async {
+                    let mut total = 0usize;
+                    loop {
+                        let (inserted, had_rows) = run_valsi_sound_batch(&pool).await?;
+                        total += inserted;
+                        if !had_rows {
+                            return Ok::<usize, String>(total);
+                        }
+                    }
+                }
+                .await;
                 running.store(false, Ordering::Release);
                 match result {
                     Ok(n) if n > 0 => {
@@ -46,7 +56,9 @@ pub fn spawn_valsi_sound_generation(pool: Pool) {
     });
 }
 
-async fn run_valsi_sound_batch(pool: &Pool) -> Result<usize, String> {
+/// One batch of at most [`BATCH_LIMIT`] valsi. Returns `(inserted_count, had_rows)` where `had_rows`
+/// is false iff the SELECT returned no work — callers should stop draining only when `had_rows` is false.
+async fn run_valsi_sound_batch(pool: &Pool) -> Result<(usize, bool), String> {
     let rows: Vec<(i32, String)> = {
         let client = pool
             .get()
@@ -79,7 +91,7 @@ async fn run_valsi_sound_batch(pool: &Pool) -> Result<usize, String> {
     };
 
     if rows.is_empty() {
-        return Ok(0);
+        return Ok((0, false));
     }
 
     // One blocking task: load ONNX into RAM, synthesize every row, then drop the session so memory
@@ -132,5 +144,5 @@ async fn run_valsi_sound_batch(pool: &Pool) -> Result<usize, String> {
         }
     }
 
-    Ok(done)
+    Ok((done, true))
 }
