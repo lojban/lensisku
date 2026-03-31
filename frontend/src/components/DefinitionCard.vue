@@ -51,10 +51,6 @@
                   </template>
                 </h2>
               </div>
-              <span v-if="definition.rafsi"
-                class="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-700 rounded-full"> {{
-                  definition.rafsi }}
-              </span>
               <span v-if="definition.decomposition?.length"
                 class="px-2 py-1 text-xs font-medium bg-amber-50 text-amber-800 rounded-full inline-flex items-center gap-0.5 flex-wrap">
                 <template v-for="(word, index) in definition.decomposition" :key="word">
@@ -94,7 +90,7 @@
                     t('components.definitionCard.editButton')
                   }}</span>
                 </button>
-                <ClipboardButton :content="(
+                <ClipboardButton v-if="!showWordMetaRow" :content="(
                   definition.definition +
                   (definition.notes ? ' Notes: ' + definition.notes : '')
                 ).trim()
@@ -138,26 +134,39 @@
               </div>
 
             </div>
-            <!-- Audio, word type, selma'o — second row under title -->
+            <!-- Audio, word type, selma'o, rafsi — second row under title; copy aligned right -->
             <div
-              v-if="(definition.type_name && props.showWordType) || definition.selmaho || ((definition.sound_url || itemSoundUrl) && props.showAudio)"
-              class="flex flex-wrap items-center gap-2">
-              <AudioPlayer v-if="(definition.sound_url || itemSoundUrl) && props.showAudio"
-                :url="String(definition.sound_url || itemSoundUrl || '')"
-                :collection-id="useApiForSound ? (props.collectionId ?? undefined) : undefined"
-                :item-id="useApiForSound ? (props.itemId ?? undefined) : undefined" class="shrink-0" />
-              <span v-if="definition.type_name && props.showWordType" class="px-2 py-1 text-xs font-medium rounded-full"
-                :class="getTypeClass(definition.type_name)"> {{
-                  t(`wordTypes.${definition.type_name.replace(/'/g, 'h').replace(/ /g, '-')}`)
-                }}
-              </span>
-              <RouterLink v-if="definition.selmaho" :to="{ path: '/', query: selmahoLinkQuery }"
-                class="badge-definition-tag"
-                :title="definition.selmaho.length > MAX_VALSI_DISPLAY_LENGTH
-                  ? definition.selmaho
-                  : undefined
-                  " @click.stop> {{ t('components.definitionCard.selmaoLabel') }} {{ displayedSelmaho }}
-              </RouterLink>
+              v-if="showWordMetaRow"
+              class="flex w-full flex-wrap items-center justify-between gap-2">
+              <div class="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+                <AudioPlayer v-if="(definition.sound_url || itemSoundUrl) && props.showAudio"
+                  :url="String(definition.sound_url || itemSoundUrl || '')"
+                  :collection-id="useApiForSound ? (props.collectionId ?? undefined) : undefined"
+                  :item-id="useApiForSound ? (props.itemId ?? undefined) : undefined" class="shrink-0" />
+                <span v-if="definition.type_name && props.showWordType" class="px-2 py-1 text-xs font-medium rounded-full"
+                  :class="getTypeClass(definition.type_name)"> {{
+                    t(`wordTypes.${definition.type_name.replace(/'/g, 'h').replace(/ /g, '-')}`)
+                  }}
+                </span>
+                <RouterLink v-if="definition.selmaho" :to="{ path: '/', query: selmahoLinkQuery }"
+                  class="badge-definition-tag"
+                  :title="definition.selmaho.length > MAX_VALSI_DISPLAY_LENGTH
+                    ? definition.selmaho
+                    : undefined
+                    " @click.stop> {{ t('components.definitionCard.selmaoLabel') }} {{ displayedSelmaho }}
+                </RouterLink>
+                <span v-if="definition.rafsi"
+                  class="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-700 rounded-full">
+                  {{ definition.rafsi }}
+                </span>
+              </div>
+              <div class="ml-auto flex shrink-0 items-center">
+                <ClipboardButton :content="(
+                  definition.definition +
+                  (definition.notes ? ' Notes: ' + definition.notes : '')
+                ).trim()
+                  " :title="t('components.definitionCard.copyTitle')" />
+              </div>
             </div>
             <!-- Metadata Row -->
             <div class="flex flex-wrap items-center gap-2 mt-1 text-sm text-gray-500">
@@ -775,6 +784,16 @@ const itemSoundUrl = computed(() => {
   if (!props.showAudio || !props.definition?.has_sound || !props.collectionId || !props.itemId)
     return null
   return `/api/collections/${props.collectionId}/items/${props.itemId}/sound`
+})
+
+/** Second row: audio, word type, selma'o, rafsi — copy sits on the right of this row when shown. */
+const showWordMetaRow = computed(() => {
+  const hasAudio =
+    Boolean((props.definition.sound_url || itemSoundUrl.value) && props.showAudio)
+  const hasType = Boolean(props.definition.type_name && props.showWordType)
+  const hasSelmaho = Boolean(props.definition.selmaho)
+  const hasRafsi = Boolean(props.definition.rafsi)
+  return hasAudio || hasType || hasSelmaho || hasRafsi
 })
 
 /** True when sound should be loaded via api (getItemSoundBlob) so Bearer is sent; false for external URLs. */
