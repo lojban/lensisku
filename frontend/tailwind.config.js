@@ -103,9 +103,6 @@ export default {
           },
         },
         // --- App shell & global chrome ---
-        '.read-box': {
-          '@apply shadow-inner shadow-slate-200': {},
-        },
         /** Full-viewport loading veil: blur content behind spinner (used by LoadingSpinner page variant). */
         '.page-loading-overlay': {
           '@apply fixed inset-0 z-50 flex min-h-0 items-center justify-center bg-white/50 backdrop-blur-sm':
@@ -544,17 +541,6 @@ export default {
           '@apply w-28 h-28 rounded-xl bg-gray-200 flex items-center justify-center text-gray-400 border-4 border-white shadow-lg':
             {},
         },
-        /** Full-screen collection cover preview (CollectionCoverLightbox). */
-        '.collection-cover-lightbox-backdrop': {
-          '@apply fixed inset-0 z-[10050] flex items-center justify-center bg-black/85 p-4 sm:p-8': {},
-        },
-        '.collection-cover-lightbox-image': {
-          '@apply max-h-[min(92vh,100%)] max-w-[min(92vw,100%)] w-auto h-auto object-contain rounded-lg shadow-2xl ring-1 ring-white/10': {},
-        },
-        '.collection-cover-lightbox-close': {
-          '@apply absolute top-3 right-3 sm:top-5 sm:right-5 rounded-full bg-white/15 p-2 text-white hover:bg-white/25 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white/80':
-            {},
-        },
         /** Logo SVG wrapper in app header. */
         '.logo-svg-container': {
           '@apply flex h-full w-full items-center justify-center [&>svg]:block [&>svg]:h-full [&>svg]:w-full [&>svg]:max-h-full [&>svg]:max-w-full':
@@ -590,9 +576,6 @@ export default {
         /** CSV / file picker control label (focus ring on inner input). */
         '.file-input-label': {
           '@apply relative cursor-pointer rounded-md bg-white font-medium text-blue-600 transition-colors duration-200 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-blue-500 focus-within:ring-offset-2': {},
-        },
-        '.btn-media-stop': {
-          '@apply flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-gray-700 px-4 py-3 font-medium text-white transition-colors duration-200 hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2': {},
         },
         '.btn-panel-primary': {
           '@apply flex-1 cursor-pointer rounded-lg bg-blue-600 px-3 py-2.5 font-medium text-white transition-colors duration-200 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2': {},
@@ -745,11 +728,6 @@ export default {
         '.card-compact .card-actions': {
           '@apply pt-3': {},
         },
-        '.card-title': {
-          '@apply text-lg font-semibold text-gray-800 block truncate transition-colors': {},
-          '&:hover': { '@apply text-blue-600': {} },
-          '&:focus': { '@apply text-blue-600 outline-none': {} },
-        },
         /** Title next to a thumbnail (e.g. collection card); multi-line clamp, no single-line truncate. */
         '.card-title--multiline': {
           '@apply text-lg font-semibold text-gray-800 min-w-0 leading-snug line-clamp-4 transition-colors': {},
@@ -762,17 +740,8 @@ export default {
         '.card-footer-inner': {
           '@apply flex flex-wrap items-center justify-between gap-2': {},
         },
-        '.card-badges': {
-          '@apply flex flex-wrap gap-2': {},
-        },
         '.badge': {
           '@apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium': {},
-        },
-        '.badge-public': {
-          '@apply bg-green-100 text-green-700': {},
-        },
-        '.badge-private': {
-          '@apply bg-gray-100 text-gray-600': {},
         },
         '.badge-muted': {
           '@apply bg-gray-50 text-gray-500': {},
@@ -827,20 +796,8 @@ export default {
         '.card-streak-skeleton-line--points': {
           '@apply max-w-[2.25rem]': {},
         },
-        '.card-nav-buttons': {
-          '@apply flex flex-nowrap items-center justify-center gap-0 rounded-xl overflow-hidden border border-gray-200 bg-gray-50/50':
-            {},
-        },
-        '.card-nav-btn': {
-          '@apply flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-gray-600 flex-1 justify-center border-r border-gray-200 last:border-r-0 transition-colors':
-            {},
-          '&:hover': { '@apply bg-gray-100 text-gray-800': {} },
-        },
         '.card-study-area': {
           '@apply flex items-center justify-center min-h-[5.5rem] py-6 sm:py-8 flex-shrink-0': {},
-        },
-        '.fab-menu-action': {
-          '@apply !h-auto !py-2 !px-6 !text-lg !gap-3': {},
         },
         // --- Tab strips (aqua vs flat styled in `buttonUiThemeLayer`) ---
         /**
