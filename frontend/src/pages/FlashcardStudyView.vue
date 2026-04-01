@@ -27,7 +27,7 @@
             :close-aria-label="t('collectionDetail.coverLightboxClose')"
             class="shrink-0 mx-auto sm:mx-0"
           >
-            <div class="collection-card-logo overflow-hidden">
+            <div class="collection-card-logo h-12 sm:h-16 overflow-hidden">
               <img
                 :src="collectionCoverDisplayUrl"
                 :alt="
@@ -43,7 +43,7 @@
           </CollectionCoverLightbox>
           <div
             v-else
-            class="collection-card-logo-placeholder shrink-0 mx-auto sm:mx-0"
+            class="collection-card-logo-placeholder h-12 sm:h-16 shrink-0 mx-auto sm:mx-0"
             aria-hidden="true"
           >
             <BookOpen class="h-8 w-8" />
