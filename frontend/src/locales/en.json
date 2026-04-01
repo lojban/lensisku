@@ -165,7 +165,7 @@
     "dragDrop": "or drag and drop",
     "fileTypes": "MP3, OGG, WEBM up to 5MB",
     "invalidFileType": "WAV is not supported. Please upload MP3, OGG, or WEBM audio.",
-    "uploadTab": "Upload file",
+    "uploadTab": "Upload",
     "recordTab": "Record",
     "recordHint": "Record your own pronunciation from the microphone.",
     "startRecording": "Start recording",
@@ -176,7 +176,16 @@
     "reRecord": "Re-record",
     "recordedAudio": "Recorded audio",
     "micPermissionDenied": "Microphone access was denied. Allow access in your browser to record.",
-    "micError": "Could not access the microphone. Check permissions and try again."
+    "micError": "Could not access the microphone. Check permissions and try again.",
+    "generateTab": "Generate",
+    "generateHint": "Synthesize Lojban text with Kitten TTS (server-side, rate limited).",
+    "generateTextLabel": "Lojban text to speak",
+    "voiceLabel": "Voice",
+    "generateButton": "Generate audio",
+    "generating": "Generating…",
+    "generatedAudio": "Generated audio",
+    "rateLimitExceeded": "Too many requests. Try again later.",
+    "generateFailed": "Could not generate audio."
   },
   "activity": {
     "noDefinitions": "No definitions yet",

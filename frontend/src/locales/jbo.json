@@ -165,7 +165,7 @@
     "dragDrop": ".a ko lacpu gi'e punji",
     "fileTypes": ".mp3 .ogg .webm poi mleca li 5 megbaitni",
     "invalidFileType": "la .WAV. na se curmi .i ko punji lo .mp3 .a lo .ogg .a lo .webm sance.",
-    "uploadTab": "punji lo datni",
+    "uploadTab": "punji",
     "recordTab": "sacyvreji",
     "recordHint": "ko vreji lo do sance sepi'o lo sance jgari.",
     "startRecording": "cfari lo nu sacyvreji",
@@ -176,7 +176,16 @@
     "reRecord": "za'u re'u vreji",
     "recordedAudio": "se vreji sance",
     "micPermissionDenied": "na ku se curmi lo nu pilno lo snaveitci .i ko curmi fi lo kibygau.",
-    "micError": "na ku kakne lo nu pilno lo snaveitci .i ko tcidu lo nu curmi gi'e troci ranji."
+    "micError": "na ku kakne lo nu pilno lo snaveitci .i ko tcidu lo nu curmi gi'e troci ranji.",
+    "generateTab": "fasnu",
+    "generateHint": "ko pilno lo lojbo te pinka ta'i la .kitten. .tts. (lo sersi ca'e lo nu clira)",
+    "generateTextLabel": "lojbo te pinka poi sance",
+    "voiceLabel": "sance",
+    "generateButton": "fasnu lo sance",
+    "generating": "ca'o fasnu...",
+    "generatedAudio": "sance poi se fasnu",
+    "rateLimitExceeded": "lo nu cpedu cu du'e .i ko troci ranji",
+    "generateFailed": "na ku kakne lo nu fasnu lo sance"
   },
   "activity": {
     "noDefinitions": "no valsi ciksi cu zasti",

@@ -591,10 +591,6 @@ export default {
         '.file-input-label': {
           '@apply relative cursor-pointer rounded-md bg-white font-medium text-blue-600 transition-colors duration-200 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-blue-500 focus-within:ring-offset-2': {},
         },
-        /** Sound upload record / stop / pair actions. */
-        '.btn-media-record': {
-          '@apply flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-red-500 px-4 py-3 font-medium text-white transition-colors duration-200 hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50': {},
-        },
         '.btn-media-stop': {
           '@apply flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-gray-700 px-4 py-3 font-medium text-white transition-colors duration-200 hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2': {},
         },

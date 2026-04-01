@@ -92,6 +92,17 @@ pub struct ListCollectionItemsQuery {
     pub exclude_with_flashcards: Option<bool>,
 }
 
+/// Lojban text → Ogg Opus via Kitten TTS (authenticated, rate-limited).
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct KittenTtsGenerateRequest {
+    /// Lojban text to convert to IPA and synthesize.
+    pub text: String,
+    /// Voice name (e.g. Bella, Bruno) or `expr-voice-*` embedding key.
+    pub voice: String,
+    /// Speech speed; clamped server-side (default 1.0).
+    pub speed: Option<f32>,
+}
+
 #[derive(Debug, Deserialize, ToSchema)]
 pub struct UpdateItemPositionRequest {
     pub position: i32,

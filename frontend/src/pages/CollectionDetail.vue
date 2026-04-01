@@ -456,6 +456,7 @@
           :collection-id="numericCollectionId"
           :item-id="currentItem?.item_id"
           :has-existing-sound="currentItem?.has_sound"
+          :default-tts-text="customContent.front"
           :label="t('collectionDetail.soundLabel')"
           @remove-sound="customContent.removeSound = true"
         /> <!-- Notes Field -->
@@ -667,6 +668,11 @@
             :collection-id="numericCollectionId"
             :item-id="currentItem?.item_id"
             :has-existing-sound="currentItem?.has_sound"
+            :default-tts-text="
+              selectedDefinition
+                ? selectedDefinition.valsiword || selectedDefinition.free_content_front || ''
+                : ''
+            "
             :label="t('collectionDetail.soundLabel')"
             @remove-sound="definitionRemoveSound = true"
           />
@@ -998,7 +1004,11 @@
           :label="t('collectionDetail.imageLabel')"
           @image-loaded="handleNewDefinitionImageLoaded"
           @remove-image="handleNewDefinitionRemoveImage"
-        /> <SoundUpload v-model="newDefinitionSound" :label="t('collectionDetail.soundLabel')" /> <!-- Notes Input -->
+        /> <SoundUpload
+          v-model="newDefinitionSound"
+          :default-tts-text="newDefinitionData.word"
+          :label="t('collectionDetail.soundLabel')"
+        /> <!-- Notes Input -->
 
         <div>
            <label for="new-notes" class="block text-sm font-medium text-blue-700"

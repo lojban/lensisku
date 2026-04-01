@@ -7,7 +7,12 @@ use crate::{
     error::{AppError, AppResult},
     export, jbovlaste, language,
     mailarchive::{self},
-    middleware::{self, cache::RedisCache, limiter::{LoginLimiter, PasswordResetLimiter}, panic_handler::CatchPanicWithMessage},
+    middleware::{
+        self,
+        cache::RedisCache,
+        limiter::{KittenTtsLimiter, LoginLimiter, PasswordResetLimiter},
+        panic_handler::CatchPanicWithMessage,
+    },
     sessions, subscriptions, users,
     versions::{self},
     waves,
@@ -54,6 +59,13 @@ pub async fn start_server(
 
     let login_limiter = web::Data::new(LoginLimiter::new(&redis_url).map_err(|e| {
         AppError::ExternalService(format!("Failed to initialize login rate limiter: {}", e))
+    })?);
+
+    let kitten_tts_limiter = web::Data::new(KittenTtsLimiter::new(&redis_url).map_err(|e| {
+        AppError::ExternalService(format!(
+            "Failed to initialize Kitten TTS rate limiter: {}",
+            e
+        ))
     })?);
 
     let redis_cache_data = web::Data::from(redis_cache);
@@ -113,6 +125,7 @@ pub async fn start_server(
             .app_data(password_reset_limiter.clone())
             .app_data(email_confirmation_limiter.clone())
             .app_data(login_limiter.clone())
+            .app_data(kitten_tts_limiter.clone())
             .app_data(redis_cache_data.clone())
             .configure(auth::configure)
             .configure(users::configure)
