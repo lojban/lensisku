@@ -118,19 +118,23 @@
          <!-- Permission / not started --> <template v-if="!isRecording && !recordedBlob"
           >
           <p class="text-sm text-gray-600 mb-3"> {{ t('soundUpload.recordHint') }} </p>
-           <button
-            type="button"
-            class="inline-flex w-full min-h-[44px] h-12 items-center justify-center gap-2 text-base ui-btn--danger-rose"
-            :disabled="isRequestingMic"
-            @click="startRecording"
-          >
-             <Mic v-if="!isRequestingMic" class="h-5 w-5 shrink-0" /> <Loader
-              v-else
-              class="h-5 w-5 shrink-0 animate-spin"
-            /> {{
-              isRequestingMic ? t('soundUpload.requestingMic') : t('soundUpload.startRecording')
-            }} </button
-          >
+           <div class="flex w-full justify-center">
+             <Button
+              variant="danger-rose"
+              size="lg"
+              class="w-full sm:w-auto"
+              :loading="isRequestingMic"
+              :disabled="isRequestingMic"
+              @click="startRecording"
+            >
+               <template #icon>
+                <Mic v-if="!isRequestingMic" class="h-5 w-5 shrink-0" />
+              </template>
+              {{
+                isRequestingMic ? t('soundUpload.requestingMic') : t('soundUpload.startRecording')
+              }} </Button
+            >
+          </div>
           <p v-if="recordingError" class="mt-2 text-sm text-red-600" role="alert">
              {{ recordingError }}
           </p>
@@ -146,30 +150,41 @@
               > {{ t('soundUpload.recordingTime', { seconds: recordingSeconds }) }} </span
             >
           </div>
-           <button
-            type="button"
-            class="mt-3 inline-flex w-full min-h-[44px] h-12 items-center justify-center gap-2 text-base ui-btn--cancel"
-            @click="stopRecording"
-          >
-             <Square class="h-5 w-5 shrink-0" /> {{ t('soundUpload.stopRecording') }} </button
-          > </template
+           <div class="mt-3 flex w-full justify-center">
+             <Button variant="cancel" size="lg" class="w-full sm:w-auto" @click="stopRecording">
+               <template #icon>
+                <Square class="h-5 w-5 shrink-0" />
+              </template>
+              {{ t('soundUpload.stopRecording') }} </Button
+            >
+          </div> </template
         > <!-- Recorded preview: use or re-record --> <template v-else-if="recordedBlob"
           >
           <div class="space-y-3">
              <audio :src="recordedPreviewUrl" controls class="w-full h-10" />
-            <div class="flex gap-2">
-               <button
-                type="button"
-                class="btn-panel-primary"
+            <div
+              class="flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-center sm:gap-3"
+            >
+               <Button
+                variant="insert"
+                size="lg"
+                class="w-full sm:w-auto"
                 @click="useRecording"
               >
-                 {{ t('soundUpload.useRecording') }} </button
-              > <button
-                type="button"
-                class="btn-panel-outline"
+                 <template #icon>
+                  <Check class="h-5 w-5 shrink-0" aria-hidden="true" />
+                </template>
+                {{ t('soundUpload.useRecording') }} </Button
+              > <Button
+                variant="cancel"
+                size="lg"
+                class="w-full sm:w-auto"
                 @click="discardRecording"
               >
-                 {{ t('soundUpload.reRecord') }} </button
+                 <template #icon>
+                  <RotateCcw class="h-5 w-5 shrink-0" aria-hidden="true" />
+                </template>
+                {{ t('soundUpload.reRecord') }} </Button
               >
             </div>
 
@@ -211,17 +226,23 @@
          <p v-if="generateError" class="text-sm text-red-600" role="alert">
            {{ generateError }}
         </p>
-         <button
-          type="button"
-          class="inline-flex w-full min-h-[44px] h-12 items-center justify-center gap-2 px-5 text-base sm:w-auto ui-btn--insert"
-          :disabled="isGenerating || !generateText.trim()"
-          @click="runKittenGenerate"
-        >
-           <Loader v-if="isGenerating" class="h-5 w-5 shrink-0 animate-spin" />
-          {{
-            isGenerating ? t('soundUpload.generating') : t('soundUpload.generateButton')
-          }} </button
-        >
+         <div class="flex w-full justify-center">
+           <Button
+            variant="insert"
+            size="lg"
+            class="w-full sm:w-auto"
+            :loading="isGenerating"
+            :disabled="isGenerating || !generateText.trim()"
+            @click="runKittenGenerate"
+          >
+             <template #icon>
+              <Sparkles v-if="!isGenerating" class="h-5 w-5 shrink-0" />
+            </template>
+            {{
+              isGenerating ? t('soundUpload.generating') : t('soundUpload.generateButton')
+            }} </Button
+          >
+        </div>
       </div>
 
     </div>
@@ -231,7 +252,7 @@
 </template>
 
 <script setup lang="ts">
-import { Mic, Volume2, Upload, Loader, Square, Sparkles } from 'lucide-vue-next'
+import { Check, Mic, RotateCcw, Square, Sparkles, Upload, Volume2 } from 'lucide-vue-next'
 import { useDropZone } from '@vueuse/core'
 import { ref, watch, onMounted, onUnmounted, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -239,6 +260,7 @@ import { useI18n } from 'vue-i18n'
 const { t } = useI18n()
 
 import { useError } from '../composables/useError'
+import { Button } from '@packages/ui'
 import { generateKittenTts, getItemSoundBlob } from '@/api'
 import { getApiErrorMessage } from '@/utils/apiError'
 
