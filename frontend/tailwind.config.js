@@ -298,9 +298,13 @@ export default {
           '@apply shrink-0 rounded-lg p-1.5 text-gray-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-400/50':
             {},
         },
-        '.assistant-icon-btn-panel': {
-          '@apply md:hidden shrink-0 p-2 rounded-lg border border-gray-200 bg-white text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-400/50':
+        /** Assistant: compact header icon (new chat, etc.) — matches panel control look without responsive hide rules. */
+        '.assistant-icon-btn-header': {
+          '@apply shrink-0 inline-flex items-center justify-center p-2 rounded-lg border border-gray-200 bg-white text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-400/50':
             {},
+        },
+        '.assistant-icon-btn-panel': {
+          '@apply assistant-icon-btn-header md:hidden': {},
         },
         /** Assistant bubble: user message. */
         '.assistant-bubble-user': {

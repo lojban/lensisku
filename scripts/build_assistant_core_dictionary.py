@@ -1,21 +1,27 @@
 #!/usr/bin/env python3
 """
-Build src/assistant/core_reference_dictionary.txt from archive/dict TSVs.
+Build src/assistant/assistant_system_prompt.txt — the full assistant system prompt for the LLM.
 
-- Full gismu.tsv and cmavo.tsv: all gismu (score order, metrology powers-of-ten after others);
+Static instructions live in scripts/assistant_system_instructions_static.txt (role, tools, guardrails, …).
+This script appends the **Core reference dictionary** sections (gismu, cmavo, tutorial notions, phrases)
+from archive/dict TSVs and korpora. Rebuild after editing either the static instructions or dictionary inputs.
+
+- gismu.tsv: top **GISMU_REFERENCE_TOP_N** gismu by corpus score (metrology powers-of-ten after others within the slice), with **GISMU_REFERENCE_ENSURE** always included;
+  cmavo.tsv: all cmavo;
   all cmavo grouped by **selma'o** (`### SELMAHO`); PA1 digits no…so (0–9) in fixed order within PA1;
   tutorial/teaching notes per selma'o as `# …` comment lines before that class's entries.
-- English ↔ Lojban pairs from muplis-database.tsv (same ` ↔ ` separator as word lines):
-  grammar-diverse greedy cover with **per-family caps** (attitudinals, vocatives, structural openers),
-  preferring new **grammar-tag** coverage and new **gismu** tokens (top corpus-score gismu subset),
-  tie-breaking by **low sum of per-token corpus frequencies** in the pool (whole phrase, not just the start),
-  and a reserved math- / logic-leaning batch.
-- Optional **tutorial** block from Markdown lesson files: core notions + example pairs scraped from Markdown.
+- English ↔ Lojban pairs from korpora TSVs (see `PHRASE_SOURCE_TSV_NAMES` under `KORPORA_DIR`) plus optional Markdown lesson examples (merged into one pool):
+  greedy **lexical diversity** — each bare word (not cmevla-shaped) is tracked; phrases are chosen to maximize
+  **new** such words per phrase (approximating minimum phrases to expose vocabulary); cmevla tokens (name-shape:
+  end in a consonant) are ignored for this score; tie-break by lower corpus token-frequency mass in the pool.
+  A reserved math- / logic-leaning batch is still picked first by heuristics.
+- Optional **tutorial** block from Markdown: English↔English notions only (Lojban lesson lines are merged into the phrase pool).
+  A common auto-detected path is `…/data/pages/en/books/learn-lojban` (e.g. Grav book sources next to this repo).
 
 Environment:
   ASSISTANT_TUTORIAL_BOOK_DIR — directory with numbered lesson `*.md` (e.g. `1.md` … `13.md`).
   If unset, the build tries LEARN_LOJBAN_BOOK_DIR (legacy), then auto-detects `*/data/pages/en/books/*`
-  under sibling directories of this repo when `1.md` is present.
+  under sibling directories of this repo when `1.md` is present (includes **learn-lojban** when checked out alongside lensisku).
 
 Run from repo root:
   python3 scripts/build_assistant_core_dictionary.py
@@ -32,17 +38,55 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
 ARCHIVE = REPO / "archive" / "dict"
-OUT = REPO / "src" / "assistant" / "core_reference_dictionary.txt"
+SCRIPT_DIR = Path(__file__).resolve().parent
+# Editable LLM instructions (jbovlaste behavior); concatenated with reference data below.
+ASSISTANT_STATIC_INSTRUCTIONS_PATH = SCRIPT_DIR / "assistant_system_instructions_static.txt"
+OUT = REPO / "src" / "assistant" / "assistant_system_prompt.txt"
 
 GISMU_PATH = ARCHIVE / "gismu.tsv"
 CMAVO_PATH = ARCHIVE / "cmavo.tsv"
-MUPLIS_PATH = ARCHIVE / "muplis-database.tsv"
+# Bundled copy used only when sibling korpora checkout is absent.
+MUPLIS_FALLBACK_PATH = ARCHIVE / "muplis-database.tsv"
 
-# Tutorial example pairs cap (diversity-selected) when Markdown lessons are available.
-TUTORIAL_EXAMPLE_QUOTA = 40
+# Sibling checkout: lojban/korpora2/korpora/… (paths are stable relative to this repo).
+KORPORA_DIR = REPO.parent / "korpora2" / "korpora"
+PHRASE_SOURCE_TSV_NAMES: tuple[str, ...] = (
+    "forest-nymph.tsv",
+    "how-the-enemy-came-to-thlunrana.tsv",
+    "muplis-database.tsv",
+    "terry-the-tiger-visits-the-big-city.tsv",
+    "the-north-wind-and-the-sun.tsv",
+    "tlon-uqbar.tsv",
+)
+
+# Quotas: merged korpora phrase TSVs + tutorial Markdown examples, then math batch + lexical-diversity fill.
+MUPLIS_PHRASE_TOTAL = 300
+MUPLIS_MATH_PHRASE_QUOTA = 115
+
+# Gismu section: top-N by corpus score (non-metrology first); these lemmas are always present even if below rank N.
+GISMU_REFERENCE_TOP_N = 300
+GISMU_REFERENCE_ENSURE: frozenset[str] = frozenset({"cusku", "simxu"})
 
 # Single column separator for every data line (valsi↔gloss, English↔Lojban). U+2194, spaced.
 COL_SEP = " ↔ "
+
+# LLM-facing preamble at the top of the bundled file (not build logs—describes sections and sources).
+REFERENCE_INTRO_LINES: list[str] = [
+    "## About this reference",
+    "",
+    "The reference sections below are the assistant's offline Lojban bundle. Every data row in those sections uses the same separator: spaced ↔ (Unicode U+2194).",
+    "",
+    "The **gismu** section lists the top gismu by corpus score (fixed cap at build time; metrology powers-of-ten gismu deprioritized within that cap). A small set of high-value lemmas is always included even if they would fall below the cutoff.",
+    "",
+    "The **cmavo** section lists all cmavo by selma'o (`### SELMAHO` headings). Optional `#` lines introduce each class; rows are `particle ↔ English gloss`. Within **PA1**, digit cmavo appear in fixed order 0–9 (no…so).",
+    "",
+    "The **tutorial (notions)** section gives short English↔English notes (alphabet, bridi shape, word classes); they are a compact summary, not the full course.",
+    "",
+    "The **phrases** sections are English↔Lojban in two parts: (1) lexical spread from korpora; (2) math-, measure-, and logic-leaning lines.",
+    "",
+    "For lujvo, fu'ivla, experimental entries, long jbovlaste notes, or exhaustive examples, use jbovlaste search when the tool is available.",
+    "",
+]
 
 # One-line notions: course-wide themes not tied to a single selma'o (particle detail lives under **## cmavo**).
 TUTORIAL_NOTION_LINES: list[str] = [
@@ -184,16 +228,6 @@ SELMAHO_NOTE_LINES: dict[str, list[str]] = {
 for _sk in ("FAhA1", "FAhA2", "FAhA3", "FAhA4"):
     SELMAHO_NOTE_LINES[_sk] = list(_SELMAHO_FAhA_LEARN)
 
-# Phrase selection: total lines from muplis, split between grammar diversity and math emphasis.
-MUPLIS_PHRASE_TOTAL = 268
-# Reserved for high math_phrase_score() lines (numbers, measure, logic, comparison) before greedy fill.
-# Kept in proportion to MUPLIS_PHRASE_TOTAL (same ~28.6% share as at 168/48).
-MUPLIS_MATH_PHRASE_QUOTA = 77
-
-# Phrase diversity: which gismu tokens count toward "new gismu" coverage (not the full gismu.tsv).
-PHRASE_DIVERSITY_GISMU_TOP_N = 150
-PHRASE_DIVERSITY_GISMU_ENSURE: frozenset[str] = frozenset({"cusku", "simxu"})
-
 # English hints (regex, weight) for math-like content.
 MATH_SCORE_EN: list[tuple[str, int]] = [
     (r"logically equivalent", 10),
@@ -240,64 +274,6 @@ MATH_SCORE_LO: list[tuple[str, int]] = [
     (r"ronru'u|ki'o", 3),
 ]
 
-# (tag_id, regex on Lojban text) — broad heuristics for instructional diversity.
-GRAMMAR_TAG_PATTERNS: list[tuple[str, re.Pattern[str]]] = [
-    ("bridi_sep_i", re.compile(r"(?:^|\s)\.i(?:\s|$)")),
-    ("imperative_ko", re.compile(r"(?:^|\s)ko(?:\s|$)")),
-    ("question_xu", re.compile(r"(?:^|\s)xu(?:\s|$)")),
-    ("question_ma", re.compile(r"(?:^|\s)ma(?:\s|$)")),
-    ("sumti_da_de_di", re.compile(r"(?:^|\s)d[aei](?:\s|$)")),
-    ("abstraction_nu", re.compile(r"(?:^|\s)nu(?:\s|$)")),
-    ("abstraction_duu", re.compile(r"du['’]u")),
-    ("abstraction_ka", re.compile(r"(?:^|\s)ka(?:\s|$)")),
-    ("relative_noi_poi", re.compile(r"\bnoi\b|\bpoi\b")),
-    ("quotes_lu", re.compile(r"\blu\b|\bli['’]u\b")),
-    ("names_la", re.compile(r"\bla\s*\.[a-z]")),
-    ("articles_le_lo", re.compile(r"(?:^|\s)le(?:\s|$)|(?:^|\s)lo(?:\s|$)")),
-    ("cu", re.compile(r"(?:^|\s)cu(?:\s|$)")),
-    ("tense_pu", re.compile(r"(?:^|\s)pu(?:\s|$)")),
-    ("tense_ca", re.compile(r"(?:^|\s)ca(?:\s|$)")),
-    ("tense_ba", re.compile(r"(?:^|\s)ba(?:\s|$)")),
-    ("connective_je_ja", re.compile(r"(?:^|\s|\.)je(?:\s|$)|(?:^|\s|\.)ja(?:\s|$)")),
-    ("logical_ij", re.compile(r"\.i\s+j|\.i\s+na\.i")),
-    ("negation_na", re.compile(r"(?:^|\s)na(?:\s|$)|na['’]e")),
-    ("modal_bai_gau", re.compile(r"\bbai\b|\bgau\b|mu['’]i|ki['’]u|ni['’]i")),
-    ("be_bei", re.compile(r"\bbe\b|\bbei\b|\bbe['’]o\b")),
-    ("fa_family", re.compile(r"(?:^|\s)fa(?:\s|$)|(?:^|\s)fe(?:\s|$)|(?:^|\s)fi(?:\s|$)")),
-    ("se_te_ve", re.compile(r"(?:^|\s)se\s+|(?:^|\s)te\s+|(?:^|\s)ve\s+")),
-    ("attitudinal", re.compile(r"\.[a-z][a-z'’]*(?:\s|$)")),
-    ("vocative_co", re.compile(r"\bco[iou]['’]?\b|\bcoi\b|\bre['’]i\b")),
-    ("subscript_xi", re.compile(r"\bxi\s|vo['’]e|ce['’]u")),
-    ("zoi_quote", re.compile(r"\bzoi\b")),
-    ("numerals_pa", re.compile(r"\bpa\b|\bre\b|\bci\b|\bvo\b|\bmu\b|\bxa\b")),
-    ("ke_group", re.compile(r"\bke\b|\bke['’]e\b")),
-    ("gi_connective", re.compile(r"\bgi\b")),
-    ("joi_je", re.compile(r"\bjoi\b|\bjo['’]u\b|\bce['’]o\b")),
-    ("fi_fi", re.compile(r"\bfi['’]o\b|\bfi'o\b")),
-    ("nahe", re.compile(r"na['’]e|to['’]e|je['’]a")),
-    ("ui_discursive", re.compile(r"\.ui\b|\.ua\b|\.uu\b|\.oi\b")),
-    ("zo_quote", re.compile(r"\bzo\b")),
-    ("ri_ra", re.compile(r"\bri\b|\bra\b|\bru\b")),
-    ("fi_o_modal", re.compile(r"\bfi['’]o\b|\bfi'o\b")),
-    ("tu_a_raising", re.compile(r"\btu['’]a\b|\btu'a\b")),
-    ("jai_conversion", re.compile(r"\bjai\b")),
-    ("co_tanru", re.compile(r"\bco\b")),
-    ("pe_ne_po", re.compile(r"\bpe\b|\bne\b|\bpo\b|\bpo'e\b|\bge'u\b")),
-    ("goi_assign", re.compile(r"\bgoi\b|\bnei\b|\bno'u\b")),
-    ("ce_u_mass", re.compile(r"\bce['’]u\b|\bce'u\b")),
-    ("tu_o_output", re.compile(r"\btu['’]o\b|\btu'o\b")),
-    ("si_erase", re.compile(r"\bsi\b|\bsa\b|\bsu\b")),
-    ("za_hi_tense", re.compile(r"\bza['’]u\b|\bze['’]a\b|\bzu['’]a\b")),
-    ("vu_hi_space", re.compile(r"\bvu\b|\bvi\b|\bva\b|\bvu'o\b")),
-    ("mo_interjection", re.compile(r"(?:^|\s)mo(?:\s|$)")),
-    ("xu_kau_indir", re.compile(r"xu\s+kau|kau\s+xu")),
-    ("du_metaling", re.compile(r"\bdu\s+da\b|\bme\s+li\b")),
-    ("toi_sub_bridi", re.compile(r"\btoi\b|\bto\s+da\b")),
-    ("sei_discourse", re.compile(r"\bsei\b")),
-    ("zoq_quote", re.compile(r"zo['’]i\b|lo'u\b|le'u\b")),
-    ("termsets", re.compile(r"\bce'e\b|\bnu'i\b")),
-]
-
 
 def one_line(s: str) -> str:
     return " ".join(s.replace("\n", " ").split())
@@ -307,19 +283,6 @@ def _is_numeric_scale_gismu(definition: str) -> bool:
     """High-score metrology gismu (powers of ten); deprioritize for learner-focused core list."""
     d = definition
     return "$10^" in d or "$10^{" in d or "10^{-" in d
-
-
-def read_scored_rows(path: Path, want: int) -> list[dict[str, str]]:
-    with path.open(newline="", encoding="utf-8") as f:
-        r = csv.DictReader(f, delimiter="\t")
-        rows = list(r)
-    for row in rows:
-        try:
-            row["_score"] = int((row.get("score") or "0").strip() or "0")
-        except ValueError:
-            row["_score"] = 0
-    rows.sort(key=lambda x: (-x["_score"], x.get("word", "")))
-    return rows[:want]
 
 
 # Decimal digit cmavo (selma'o PA1): fixed order no=0 … so=9.
@@ -401,16 +364,35 @@ def read_gismu_rows_prefer_non_numeric(
     return out[:want]
 
 
-def load_gismu_word_set(path: Path) -> frozenset[str]:
-    """Top `PHRASE_DIVERSITY_GISMU_TOP_N` gismu by corpus score (non-metrology first), plus ensured lemmas."""
-    rows = read_gismu_rows_prefer_non_numeric(path, want=PHRASE_DIVERSITY_GISMU_TOP_N)
-    words = {
-        (r.get("word") or "").strip().lower()
-        for r in rows
-        if (r.get("word") or "").strip()
-    }
-    words |= set(PHRASE_DIVERSITY_GISMU_ENSURE)
-    return frozenset(words)
+def select_gismu_reference_rows(path: Path) -> list[dict[str, str]]:
+    """Top `GISMU_REFERENCE_TOP_N` gismu by score; always include `GISMU_REFERENCE_ENSURE` (swap out lowest-ranked)."""
+    top = read_gismu_rows_prefer_non_numeric(path, want=GISMU_REFERENCE_TOP_N)
+    have = {(r.get("word") or "").strip().lower() for r in top}
+    missing = sorted(GISMU_REFERENCE_ENSURE - have)
+    if not missing:
+        return top
+    full = read_gismu_rows_prefer_non_numeric(path, want=None)
+    by_word = {(r.get("word") or "").strip().lower(): r for r in full}
+    for w in missing:
+        if w not in by_word:
+            print(f"warning: GISMU_REFERENCE_ENSURE missing from TSV: {w!r}", file=sys.stderr)
+    to_add = [by_word[w] for w in missing if w in by_word]
+    if not to_add:
+        return top
+    # Drop lowest-priority rows from the tail to keep length N.
+    combined = top[: GISMU_REFERENCE_TOP_N - len(to_add)] + to_add
+    combined.sort(key=lambda x: (-x["_score"], x.get("word", "")))
+    seen: set[str] = set()
+    out: list[dict[str, str]] = []
+    for r in combined:
+        w = (r.get("word") or "").strip().lower()
+        if w in seen:
+            continue
+        seen.add(w)
+        out.append(r)
+        if len(out) >= GISMU_REFERENCE_TOP_N:
+            break
+    return out
 
 
 def format_word_definition_row(row: dict[str, str]) -> str:
@@ -436,124 +418,10 @@ def format_cmavo_selmaho_sections(
     return lines
 
 
-def tags_for_lojban(lo: str) -> set[str]:
-    out: set[str] = set()
-    for tid, pat in GRAMMAR_TAG_PATTERNS:
-        if pat.search(lo):
-            out.add(tid)
-    return out
-
-
 def normalize_apostrophe(s: str) -> str:
     for c in "\u2019\u2018’‘":
         s = s.replace(c, "'")
     return s
-
-
-def first_content_token(lo: str) -> str:
-    lo = normalize_apostrophe(lo)
-    toks = lo.split()
-    i = 0
-    while i < len(toks) and toks[i] == ".i":
-        i += 1
-    return toks[i] if i < len(toks) else ""
-
-
-# Longest match first: (Lojban prefix, stable family id for capping).
-_ATT_PREFIXES: list[tuple[str, str]] = sorted(
-    [
-        (".a'onaicai", "att_hope"),
-        (".a'onai", "att_hope"),
-        (".a'o", "att_hope"),
-        (".aunai", "att_want"),
-        (".au", "att_want"),
-        (".e'enai", "att_request"),
-        (".e'e", "att_request"),
-        (".e'unai", "att_request"),
-        (".e'u", "att_request"),
-        (".e'onai", "att_request"),
-        (".e'o", "att_request"),
-        (".einai", "att_obligation"),
-        (".ei", "att_obligation"),
-        (".a'acu'i", "att_attention"),
-        (".a'anai", "att_attention"),
-        (".a'a", "att_attention"),
-        (".a'ecai", "att_alertness"),
-        (".a'enai", "att_alertness"),
-        (".a'e", "att_alertness"),
-        (".a'icai", "att_effort"),
-        (".a'inai", "att_effort"),
-        (".a'i", "att_effort"),
-        (".a'ucai", "att_interest"),
-        (".a'unai", "att_interest"),
-        (".a'u", "att_interest"),
-        (".ainai", "att_intent"),
-        (".ai", "att_intent"),
-        (".oinai", "att_pain"),
-        (".oi", "att_pain"),
-        (".uinai", "att_wonder"),
-        (".ui", "att_wonder"),
-        (".uucai", "att_sorrow"),
-        (".uu", "att_sorrow"),
-        (".uanai", "att_insight"),
-        (".ua", "att_insight"),
-        (".iu", "att_approval"),
-    ],
-    key=lambda x: -len(x[0]),
-)
-
-
-def attitudinal_family(first_tok: str) -> str | None:
-    raw = normalize_apostrophe(first_tok)
-    t = raw.lower()
-    # jb2en-style lines sometimes omit the leading dot on UI / request cmavo.
-    if re.match(r"^e'o", t) or re.match(r"^e'e", t):
-        return "att_request"
-    if not raw.startswith("."):
-        return None
-    for pref, fam in _ATT_PREFIXES:
-        if t.startswith(pref.lower()):
-            return fam
-    if len(t) >= 2:
-        return "att_misc"
-    return None
-
-
-def phrase_family_slot(lo: str) -> str:
-    tok = first_content_token(lo)
-    if not tok:
-        return "struct_empty"
-    att = attitudinal_family(tok)
-    if att is not None:
-        return att
-    t = normalize_apostrophe(tok).lower()
-    if re.match(r"^coi", t) or re.match(r"^co'o", t) or t == "doi" or t.startswith("doi"):
-        return "struct_vocative"
-    if t == "ko":
-        return "struct_ko"
-    if t == "lu" or t.startswith("lu"):
-        return "struct_lu"
-    if t.startswith("ganai"):
-        return "struct_ganai"
-    if t == "xu":
-        return "struct_xu"
-    if t == "ma":
-        return "struct_ma"
-    if t in ("le", "lei", "le'i"):
-        return "struct_le"
-    if t in ("lo", "loi"):
-        return "struct_lo"
-    if t == "mi":
-        return "struct_mi"
-    if t == "do":
-        return "struct_do"
-    if t.startswith("la"):
-        return "struct_la"
-    if t.startswith("noi") or t.startswith("poi"):
-        return "struct_relative"
-    if t in ("no", "na", "na'i", "nago'i", "naku"):
-        return "struct_neg_head"
-    return "struct_other"
 
 
 def lojban_tokens(lo: str) -> list[str]:
@@ -571,13 +439,29 @@ def bare_token_for_lexicon(tok: str) -> str:
     return t
 
 
-def gismu_tokens_in(lo: str, gismu_words: frozenset[str]) -> set[str]:
-    """Tokens that appear in `lo` and in the phrase-diversity gismu subset."""
+_LOJBAN_VOWELS = frozenset("aeiouy")
+
+
+def is_lojban_cmevla_shape(bare: str) -> bool:
+    """True if bare token looks like a cmevla (content word that ends in a consonant letter)."""
+    if not bare:
+        return False
+    last = bare[-1].lower()
+    if not last.isalpha():
+        return False
+    return last not in _LOJBAN_VOWELS
+
+
+def diversity_lexicon_words(lo: str) -> set[str]:
+    """Bare-word types for phrase diversity, excluding cmevla-shaped names and non-letter tokens."""
     out: set[str] = set()
     for t in lojban_tokens(lo):
         b = bare_token_for_lexicon(t)
-        if b in gismu_words:
-            out.add(b)
+        if not b or not any(c.isalpha() for c in b):
+            continue
+        if is_lojban_cmevla_shape(b):
+            continue
+        out.add(b)
     return out
 
 
@@ -592,57 +476,6 @@ def corpus_lojban_word_freq(rows: list[tuple[str, str]]) -> Counter[str]:
 def phrase_token_freq_mass(lo: str, wf: Counter[str]) -> int:
     """Sum of corpus occurrence counts for each token in this phrase; lower => rarer words overall."""
     return sum(wf.get(t, 0) for t in lojban_tokens(lo))
-
-
-# Per-family ceilings so one construction (e.g. .au) cannot dominate the phrase list.
-# Scaled with MUPLIS_PHRASE_TOTAL (from a 168-line baseline) so greedy + filler can keep similar diversity.
-_PHRASE_CAP_SCALE = MUPLIS_PHRASE_TOTAL / 168.0
-
-
-def _scaled_phrase_cap(n: int) -> int:
-    return max(1, round(n * _PHRASE_CAP_SCALE))
-
-
-PHRASE_FAMILY_CAPS: dict[str, int] = {
-    "att_want": _scaled_phrase_cap(1),
-    "att_obligation": _scaled_phrase_cap(1),
-    "att_hope": _scaled_phrase_cap(1),
-    "att_attention": _scaled_phrase_cap(2),
-    "att_alertness": _scaled_phrase_cap(2),
-    "att_effort": _scaled_phrase_cap(2),
-    "att_interest": _scaled_phrase_cap(1),
-    "att_intent": _scaled_phrase_cap(1),
-    "att_pain": _scaled_phrase_cap(1),
-    "att_wonder": _scaled_phrase_cap(1),
-    "att_sorrow": _scaled_phrase_cap(1),
-    "att_insight": _scaled_phrase_cap(1),
-    "att_approval": _scaled_phrase_cap(1),
-    "att_misc": _scaled_phrase_cap(5),
-    "att_request": _scaled_phrase_cap(4),
-    "struct_vocative": _scaled_phrase_cap(6),
-    "struct_ko": _scaled_phrase_cap(10),
-    "struct_lu": _scaled_phrase_cap(6),
-    "struct_ganai": _scaled_phrase_cap(10),
-    "struct_xu": _scaled_phrase_cap(10),
-    "struct_ma": _scaled_phrase_cap(10),
-    "struct_le": _scaled_phrase_cap(22),
-    "struct_lo": _scaled_phrase_cap(14),
-    "struct_mi": _scaled_phrase_cap(22),
-    "struct_do": _scaled_phrase_cap(12),
-    "struct_la": _scaled_phrase_cap(14),
-    "struct_relative": _scaled_phrase_cap(8),
-    "struct_neg_head": _scaled_phrase_cap(8),
-    "struct_empty": _scaled_phrase_cap(2),
-    "struct_other": 9999,
-}
-
-
-def _family_cap(fam: str, caps: dict[str, int]) -> int:
-    if fam in caps:
-        return caps[fam]
-    if fam.startswith("att_misc"):
-        return caps.get("att_misc", 5)
-    return caps.get("struct_other", 9999)
 
 
 def math_phrase_score(en: str, lo: str) -> int:
@@ -694,100 +527,35 @@ def select_math_prioritized(
     return out, seen_lo
 
 
-def select_muplis_diverse(
-    rows: list[tuple[str, str]],
-    n: int,
-    *,
-    caps: dict[str, int] | None = None,
-    gismu_words: frozenset[str] | None = None,
-) -> list[tuple[str, str]]:
-    """Greedy grammar + gismu coverage with per-family caps; tie-break by pool token frequency mass."""
-    caps = caps or PHRASE_FAMILY_CAPS
+def select_muplis_diverse(rows: list[tuple[str, str]], n: int) -> list[tuple[str, str]]:
+    """Greedy lexical spread: prefer phrases that introduce the most new diversity words (non-cmevla bare types)."""
     indexed = [(i, en, lo) for i, (en, lo) in enumerate(rows)]
     word_freq = corpus_lojban_word_freq(rows)
-    remaining = indexed.copy()
+    covered_words: set[str] = set()
     selected: list[tuple[str, str]] = []
-    covered: set[str] = set()
-    covered_gismu: set[str] = set()
     seen_lo: set[str] = set()
-    fam_counts: Counter[str] = Counter()
-
-    relax = 0
-    max_relax = 45
+    remaining = [x for x in indexed if x[2] not in seen_lo]
 
     while len(selected) < n and remaining:
         best_item: tuple[int, str, str] | None = None
-        best_key: tuple[int, int, int, int, int, int] | None = None
+        best_key: tuple[int, int, int, int] | None = None
         for item in remaining:
-            _i, _en, _lo = item
-            if _lo in seen_lo:
-                continue
-            fam = phrase_family_slot(_lo)
-            fc = fam_counts[fam]
-            lim = _family_cap(fam, caps) + relax
-            if fc >= lim:
-                continue
-            m = len(tags_for_lojban(_lo) - covered)
-            g_new = (
-                len(gismu_tokens_in(_lo, gismu_words) - covered_gismu)
-                if gismu_words
-                else 0
-            )
-            mass = phrase_token_freq_mass(_lo, word_freq)
-            # Prefer new grammar tags, then new gismu, then rarer tokens in this pool (whole phrase).
-            key = (m, g_new, -mass, -fc, -len(_lo), _i)
+            _i, _en, lo = item
+            div = diversity_lexicon_words(lo)
+            new_n = len(div - covered_words)
+            mass = phrase_token_freq_mass(lo, word_freq)
+            key = (new_n, -mass, -len(lo), _i)
             if best_key is None or key > best_key:
                 best_key = key
                 best_item = item
-
         if best_item is None:
-            relax += 1
-            if relax > max_relax:
-                break
-            continue
-
+            break
         _i, en, lo = best_item
         selected.append((en, lo))
         seen_lo.add(lo)
-        fam_counts[phrase_family_slot(lo)] += 1
-        covered |= tags_for_lojban(lo)
-        if gismu_words:
-            covered_gismu |= gismu_tokens_in(lo, gismu_words)
-        remaining = [x for x in remaining if x[2] not in seen_lo]
+        covered_words |= diversity_lexicon_words(lo)
+        remaining = [x for x in remaining if x[2] != lo]
 
-    # Fill: low token-frequency mass, then new gismu; same family soft-caps.
-    if len(selected) < n:
-        filler = [x for x in indexed if x[2] not in seen_lo]
-        while len(selected) < n and filler:
-            best_fill: tuple[int, str, str] | None = None
-            best_fill_key: tuple[int, int, int] | None = None
-            for item in filler:
-                _i, _en, lo = item
-                fam = phrase_family_slot(lo)
-                fill_relax = 3 if fam.startswith("att_") else 14
-                if fam_counts[fam] >= _family_cap(fam, caps) + fill_relax:
-                    continue
-                mass = phrase_token_freq_mass(lo, word_freq)
-                g_new = (
-                    len(gismu_tokens_in(lo, gismu_words) - covered_gismu)
-                    if gismu_words
-                    else 0
-                )
-                fk = (mass, -g_new, _i)
-                if best_fill_key is None or fk < best_fill_key:
-                    best_fill_key = fk
-                    best_fill = item
-            if best_fill is None:
-                break
-            _i, en, lo = best_fill
-            selected.append((en, lo))
-            seen_lo.add(lo)
-            fam_counts[phrase_family_slot(lo)] += 1
-            if gismu_words:
-                covered_gismu |= gismu_tokens_in(lo, gismu_words)
-            filler = [x for x in filler if x[2] != lo]
-
-    # Last resort: fill length (should be rare).
     if len(selected) < n:
         for _i, en, lo in sorted(indexed, key=lambda x: x[0]):
             if len(selected) >= n:
@@ -796,8 +564,6 @@ def select_muplis_diverse(
                 continue
             selected.append((en, lo))
             seen_lo.add(lo)
-            if gismu_words:
-                covered_gismu |= gismu_tokens_in(lo, gismu_words)
 
     return selected[:n]
 
@@ -927,24 +693,116 @@ def load_tutorial_example_pool(book_dir: Path) -> list[tuple[str, str]]:
     return out
 
 
+def merge_phrase_sources(
+    tutorial_first: list[tuple[str, str]],
+    corpus_pairs: list[tuple[str, str]],
+) -> list[tuple[str, str]]:
+    """Tutorial pairs first (deduped), then corpus rows whose Lojban text was not already seen."""
+
+    def norm_lo(lo: str) -> str:
+        return re.sub(r"\s+", " ", lo.lower())
+
+    seen: set[str] = set()
+    out: list[tuple[str, str]] = []
+    for en, lo in tutorial_first:
+        k = norm_lo(lo)
+        if k in seen:
+            continue
+        seen.add(k)
+        out.append((en, lo))
+    for en, lo in corpus_pairs:
+        k = norm_lo(lo)
+        if k in seen:
+            continue
+        seen.add(k)
+        out.append((en, lo))
+    return out
+
+
+def _phrase_en_lo_keys(fieldnames: list[str]) -> tuple[str, str] | None:
+    """Map TSV header row to (English column name, Lojban column name)."""
+    stripped = [f.strip() for f in fieldnames if f and f.strip()]
+    lower_to_orig: dict[str, str] = {}
+    for f in stripped:
+        lower_to_orig.setdefault(f.lower(), f)
+    lo = lower_to_orig.get("lojban") or lower_to_orig.get("lojbo")
+    en = lower_to_orig.get("english") or lower_to_orig.get("glico")
+    if not lo or not en:
+        return None
+    return (en, lo)
+
+
+def phrase_source_tsv_paths() -> list[Path]:
+    """Load listed korpora TSVs when present; otherwise bundled archive muplis only."""
+    if not KORPORA_DIR.is_dir():
+        if MUPLIS_FALLBACK_PATH.is_file():
+            print(
+                f"korpora dir not found ({KORPORA_DIR}); using {MUPLIS_FALLBACK_PATH}",
+                file=sys.stderr,
+            )
+            return [MUPLIS_FALLBACK_PATH]
+        return []
+    out: list[Path] = []
+    missing: list[str] = []
+    for name in PHRASE_SOURCE_TSV_NAMES:
+        p = KORPORA_DIR / name
+        if p.is_file():
+            out.append(p)
+        else:
+            missing.append(name)
+    if missing:
+        print("missing korpora phrase TSV(s): " + ", ".join(missing), file=sys.stderr)
+    if out:
+        return out
+    if MUPLIS_FALLBACK_PATH.is_file():
+        print(f"no korpora phrase files; using {MUPLIS_FALLBACK_PATH}", file=sys.stderr)
+        return [MUPLIS_FALLBACK_PATH]
+    return []
+
+
+def load_phrase_pairs_from_tsv(path: Path) -> list[tuple[str, str]]:
+    with path.open(newline="", encoding="utf-8") as f:
+        r = csv.DictReader(f, delimiter="\t")
+        fn = r.fieldnames
+        if not fn:
+            return []
+        keys = _phrase_en_lo_keys(list(fn))
+        if keys is None:
+            print(f"skip phrases (need English+glico and Lojban+lojbo columns): {path}", file=sys.stderr)
+            return []
+        en_key, lo_key = keys
+        rows: list[tuple[str, str]] = []
+        for row in r:
+            en = (row.get(en_key) or "").strip()
+            lo = (row.get(lo_key) or "").strip()
+            if en and lo:
+                rows.append((en, lo))
+    return rows
+
+
 def main() -> int:
-    for p in (GISMU_PATH, CMAVO_PATH, MUPLIS_PATH):
+    for p in (GISMU_PATH, CMAVO_PATH, ASSISTANT_STATIC_INSTRUCTIONS_PATH):
         if not p.is_file():
             print(f"missing: {p}", file=sys.stderr)
             return 1
 
-    gismu = read_gismu_rows_prefer_non_numeric(GISMU_PATH)
-    gismu_words = load_gismu_word_set(GISMU_PATH)
+    phrase_paths = phrase_source_tsv_paths()
+    if not phrase_paths:
+        print(
+            "missing phrase sources: install korpora under "
+            f"{KORPORA_DIR} or provide {MUPLIS_FALLBACK_PATH}",
+            file=sys.stderr,
+        )
+        return 1
+
+    gismu = select_gismu_reference_rows(GISMU_PATH)
     cmavo_grouped, cmavo_n = cmavo_grouped_by_selmaho(CMAVO_PATH)
 
-    muplis_rows: list[tuple[str, str]] = []
-    with MUPLIS_PATH.open(newline="", encoding="utf-8") as f:
-        r = csv.DictReader(f, delimiter="\t")
-        for row in r:
-            en = (row.get("English") or row.get("english") or "").strip()
-            lo = (row.get("Lojban") or row.get("lojban") or "").strip()
-            if en and lo:
-                muplis_rows.append((en, lo))
+    phrase_corpus_rows: list[tuple[str, str]] = []
+    for path in phrase_paths:
+        chunk = load_phrase_pairs_from_tsv(path)
+        phrase_corpus_rows.extend(chunk)
+        print(f"phrases {path.name}: {len(chunk)} pairs")
 
     book_dir = resolve_tutorial_book_dir()
     tutorial_example_pool: list[tuple[str, str]] = []
@@ -959,89 +817,61 @@ def main() -> int:
             file=sys.stderr,
         )
 
-    tutorial_lo_keys = {
-        re.sub(r"\s+", " ", lo.lower()) for _, lo in tutorial_example_pool
-    }
-    if tutorial_lo_keys:
-        muplis_rows = [
-            (e, l)
-            for e, l in muplis_rows
-            if re.sub(r"\s+", " ", l.lower()) not in tutorial_lo_keys
-        ]
+    phrase_pool = merge_phrase_sources(tutorial_example_pool, phrase_corpus_rows)
 
-    tutorial_examples = (
-        select_muplis_diverse(
-            tutorial_example_pool, TUTORIAL_EXAMPLE_QUOTA, gismu_words=gismu_words
-        )
-        if tutorial_example_pool
-        else []
-    )
-
-    indexed = [(i, en, lo) for i, (en, lo) in enumerate(muplis_rows)]
+    indexed = [(i, en, lo) for i, (en, lo) in enumerate(phrase_pool)]
     math_quota = min(MUPLIS_MATH_PHRASE_QUOTA, MUPLIS_PHRASE_TOTAL)
     math_phrases, math_lo = select_math_prioritized(indexed, math_quota)
-    general_pool = [(en, lo) for en, lo in muplis_rows if lo not in math_lo]
+    general_pool = [(en, lo) for en, lo in phrase_pool if lo not in math_lo]
     general_n = MUPLIS_PHRASE_TOTAL - len(math_phrases)
-    general_phrases = select_muplis_diverse(
-        general_pool, general_n, gismu_words=gismu_words
-    )
+    general_phrases = select_muplis_diverse(general_pool, general_n)
 
-    lines: list[str] = [
-        "# Assistant core reference dictionary (generated)",
-        "# Source: archive/dict/{gismu,cmavo,muplis-database}.tsv; optional tutorial lesson Markdown.",
-        "#   python3 scripts/build_assistant_core_dictionary.py",
-        "# Format: every non-comment data line is `left ↔ right` (Unicode U+2194, spaces).",
-        "#   Gismu: valsi ↔ English definition.",
-        "#   Cmavo: `### selma'o` subsections; optional `#` teaching note lines; then valsi ↔ English.",
-        "#   Tutorial: English↔English notions + English↔Lojban examples (from bundled Markdown when present).",
-        "#   Phrase sections: English ↔ Lojban (muplis; grammar-diverse + math-leaning subset).",
-        "",
-        f"## gismu ({len(gismu)}; full list; by corpus score; metrology powers-of-ten after others)",
-        "",
-    ]
-    lines.extend(format_word_definition_row(row) for row in gismu)
-    lines.append("")
-    lines.append(
+    static = ASSISTANT_STATIC_INSTRUCTIONS_PATH.read_text(encoding="utf-8").rstrip()
+
+    ref_lines: list[str] = list(REFERENCE_INTRO_LINES)
+    ref_lines.extend(
+        [
+            f"## gismu (top {len(gismu)} by corpus score).",
+            "",
+        ]
+    )
+    ref_lines.extend(format_word_definition_row(row) for row in gismu)
+    ref_lines.append("")
+    ref_lines.append(
         f"## cmavo ({cmavo_n}; full list by selma'o; PA1 digits 0–9 in order within PA1; "
         f"other classes sorted by corpus score then word)"
     )
-    lines.append("")
-    lines.extend(format_cmavo_selmaho_sections(cmavo_grouped))
-    lines.append("## tutorial (notions; English ↔ English)")
-    lines.append("")
-    lines.extend(TUTORIAL_NOTION_LINES)
-    lines.append("")
-    lines.append(
-        f"## tutorial (examples; English ↔ Lojban; {len(tutorial_examples)} lines, "
-        f"quota {TUTORIAL_EXAMPLE_QUOTA})"
+    ref_lines.append("")
+    ref_lines.extend(format_cmavo_selmaho_sections(cmavo_grouped))
+    ref_lines.append("## tutorial (notions; English ↔ English)")
+    ref_lines.append("")
+    ref_lines.extend(TUTORIAL_NOTION_LINES)
+    ref_lines.append("")
+    ref_lines.append(
+        f"## phrases ({len(general_phrases)}; lexical spread over korpora phrase TSVs + lesson examples)"
     )
-    lines.append("")
-    if tutorial_examples:
-        for en, lo in tutorial_examples:
-            lines.append(f"{en}{COL_SEP}{lo}")
-    else:
-        lines.append(
-            "(No examples bundled: set ASSISTANT_TUTORIAL_BOOK_DIR or LEARN_LOJBAN_BOOK_DIR, "
-            "or add auto-discovered */data/pages/en/books/*/1.md.)"
-        )
-    lines.append("")
-    lines.append(
-        f"## phrases ({len(general_phrases)}; grammar-diverse sample from muplis-database)"
-    )
-    lines.append("")
+    ref_lines.append("")
     for en, lo in general_phrases:
-        lines.append(f"{en}{COL_SEP}{lo}")
-    lines.append("")
-    lines.append(
-        f"## phrases ({len(math_phrases)}; math-, measure-, and formal-logic leaning from muplis-database)"
+        ref_lines.append(f"{en}{COL_SEP}{lo}")
+    ref_lines.append("")
+    ref_lines.append(
+        f"## phrases ({len(math_phrases)}; math-, measure-, formal-logic; merged pool)"
     )
-    lines.append("")
+    ref_lines.append("")
     for en, lo in math_phrases:
-        lines.append(f"{en}{COL_SEP}{lo}")
+        ref_lines.append(f"{en}{COL_SEP}{lo}")
+
+    body = (
+        static
+        + "\n\n## Core reference dictionary\n\n"
+        + "\n".join(ref_lines)
+        + "\n"
+    )
+    nlines = len(body.splitlines())
 
     OUT.parent.mkdir(parents=True, exist_ok=True)
-    OUT.write_text("\n".join(lines) + "\n", encoding="utf-8")
-    print(f"Wrote {OUT} ({len(lines)} lines)")
+    OUT.write_text(body, encoding="utf-8")
+    print(f"Wrote {OUT} ({nlines} lines)")
     return 0
 
 

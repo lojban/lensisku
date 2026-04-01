@@ -138,10 +138,11 @@
             </h1>
              <button
               type="button"
-              class="hidden shrink-0 sm:inline-flex ui-btn--create items-center gap-1.5 px-2.5 py-1.5 text-sm"
+              class="assistant-icon-btn-header"
+              :aria-label="$t('assistantChat.newChat')"
               @click="startNewChat"
             >
-               <Plus class="w-4 h-4" /> {{ $t('assistantChat.newChat') }} </button
+               <Plus class="h-5 w-5" /> </button
             >
           </div>
 
