@@ -572,6 +572,13 @@ export const getItemSoundBlob = (collectionId: number | string, itemId: number |
   })
 }
 
+/** Authenticated. Synthesizes Lojban text to Ogg Opus (rate-limited server-side). */
+export const generateKittenTts = (data: { text: string; voice: string; speed?: number }) =>
+  api.post('/collections/kitten-tts', data, {
+    responseType: 'blob',
+    timeout: 120000,
+  })
+
 export const getBalance = () => api.get('/payments/balance')
 
 export const assignRole = (user_id: number | string, role: string) =>

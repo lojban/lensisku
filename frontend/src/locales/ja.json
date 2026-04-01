@@ -165,7 +165,7 @@
     "dragDrop": "またはドラッグ＆ドロップ",
     "fileTypes": "MP3、OGG、WEBM（最大5MB）",
     "invalidFileType": "WAV は対応していません。MP3、OGG、または WEBM をアップロードしてください。",
-    "uploadTab": "ファイルをアップロード",
+    "uploadTab": "アップロード",
     "recordTab": "録音",
     "recordHint": "マイクから自分の発音を録音します。",
     "startRecording": "録音を開始",
@@ -176,7 +176,16 @@
     "reRecord": "録り直す",
     "recordedAudio": "録音した音声",
     "micPermissionDenied": "マイクへのアクセスが拒否されました。ブラウザで許可してください。",
-    "micError": "マイクにアクセスできません。権限を確認して再試行してください。"
+    "micError": "マイクにアクセスできません。権限を確認して再試行してください。",
+    "generateTab": "生成",
+    "generateHint": "Kitten TTS でロジバン文を合成します（サーバー側、利用回数制限あり）。",
+    "generateTextLabel": "読み上げるロジバン文",
+    "voiceLabel": "声",
+    "generateButton": "音声を生成",
+    "generating": "生成中…",
+    "generatedAudio": "生成した音声",
+    "rateLimitExceeded": "リクエストが多すぎます。しばらくしてから再試行してください。",
+    "generateFailed": "音声を生成できませんでした。"
   },
   "activity": {
     "noDefinitions": "まだ定義はありません",

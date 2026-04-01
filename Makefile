@@ -35,7 +35,7 @@ clean-rust:
 	@echo "$(CYAN)Cleaning Rust build artifacts (target/)...$(NC)"
 	cargo clean
 
-up: clean-rust
+up:
 	@echo "$(CYAN)Starting development environment...$(NC)"
 	$(DC) -f $(DC_FILE) up -d
 
@@ -74,6 +74,7 @@ check:
 
 # Run backend development server
 back:
+	clean-rust
 	make up
 	@echo "$(CYAN)Waiting for services to be ready...$(NC)"
 	sleep 2

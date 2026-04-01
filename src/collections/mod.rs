@@ -37,6 +37,7 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
                     .service(controller::remove_item)
                     .service(controller::clone_collection)
                     .service(controller::merge_collections)
+                    .service(controller::post_kitten_tts)
                     .service(controller::update_item_media)
                     .service(controller::import_json)
                     .service(controller::import_collection_from_json)

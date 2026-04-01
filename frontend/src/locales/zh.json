@@ -165,7 +165,7 @@
     "dragDrop": "或拖放到此处",
     "fileTypes": "MP3、OGG、WEBM，最大 5MB",
     "invalidFileType": "不支持 WAV，请上传 MP3、OGG 或 WEBM。",
-    "uploadTab": "上传文件",
+    "uploadTab": "上传",
     "recordTab": "录音",
     "recordHint": "使用麦克风录制您的发音。",
     "startRecording": "开始录音",
@@ -176,7 +176,16 @@
     "reRecord": "重新录制",
     "recordedAudio": "已录制的音频",
     "micPermissionDenied": "麦克风权限被拒绝。请在浏览器中允许访问后再录。",
-    "micError": "无法访问麦克风，请检查权限后重试。"
+    "micError": "无法访问麦克风，请检查权限后重试。",
+    "generateTab": "生成",
+    "generateHint": "使用 Kitten TTS 合成 Lojban 文本（服务器端，有频率限制）。",
+    "generateTextLabel": "要朗读的 Lojban 文本",
+    "voiceLabel": "声音",
+    "generateButton": "生成音频",
+    "generating": "正在生成…",
+    "generatedAudio": "生成的音频",
+    "rateLimitExceeded": "请求过于频繁，请稍后再试。",
+    "generateFailed": "无法生成音频。"
   },
   "activity": {
     "noDefinitions": "暂无释义",

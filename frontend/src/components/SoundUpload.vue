@@ -30,38 +30,51 @@
     </div>
      <!-- No sound: choose Upload or Record -->
     <div v-if="!modelValue && !loadedSound" class="mt-2 space-y-3">
-       <!-- Tabs: Upload | Record -->
+       <!-- Tabs: Upload | Record | Generate (voices: keep in sync with src/utils/kitten_tts.rs voice_aliases) -->
       <div
-        class="flex rounded-lg border border-gray-200 p-1 bg-gray-50"
+        class="flex flex-wrap rounded-lg border border-gray-200 p-1 bg-gray-50 gap-1"
         role="tablist"
-        aria-label="Add sound by"
+        aria-label="Add sound by upload, record, or generate"
       >
          <button
           type="button"
           role="tab"
           :aria-selected="inputMode === 'upload'"
           :class="[
-            'flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-md text-sm font-medium transition-colors',
+            'flex-1 min-w-[5.5rem] flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-md text-sm font-medium transition-colors',
             inputMode === 'upload'
               ? 'bg-white text-blue-600 shadow-sm'
               : 'text-gray-600 hover:text-gray-900',
           ]"
           @click="inputMode = 'upload'"
         >
-           <Upload class="h-4 w-4" /> {{ t('soundUpload.uploadTab') }} </button
+           <Upload class="h-4 w-4 shrink-0" /> {{ t('soundUpload.uploadTab') }} </button
         > <button
           type="button"
           role="tab"
           :aria-selected="inputMode === 'record'"
           :class="[
-            'flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-md text-sm font-medium transition-colors',
+            'flex-1 min-w-[5.5rem] flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-md text-sm font-medium transition-colors',
             inputMode === 'record'
               ? 'bg-white text-blue-600 shadow-sm'
               : 'text-gray-600 hover:text-gray-900',
           ]"
           @click="inputMode = 'record'; recordingError = ''"
         >
-           <Mic class="h-4 w-4" /> {{ t('soundUpload.recordTab') }} </button
+           <Mic class="h-4 w-4 shrink-0" /> {{ t('soundUpload.recordTab') }} </button
+        > <button
+          type="button"
+          role="tab"
+          :aria-selected="inputMode === 'generate'"
+          :class="[
+            'flex-1 min-w-[5.5rem] flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-md text-sm font-medium transition-colors',
+            inputMode === 'generate'
+              ? 'bg-white text-blue-600 shadow-sm'
+              : 'text-gray-600 hover:text-gray-900',
+          ]"
+          @click="onSelectGenerateTab"
+        >
+           <Sparkles class="h-4 w-4 shrink-0" /> {{ t('soundUpload.generateTab') }} </button
         >
       </div>
        <!-- Upload panel -->
@@ -107,13 +120,13 @@
           <p class="text-sm text-gray-600 mb-3"> {{ t('soundUpload.recordHint') }} </p>
            <button
             type="button"
-            class="btn-media-record"
+            class="inline-flex w-full min-h-[44px] h-12 items-center justify-center gap-2 text-base ui-btn--danger-rose"
             :disabled="isRequestingMic"
             @click="startRecording"
           >
-             <Mic v-if="!isRequestingMic" class="h-5 w-5" /> <Loader
+             <Mic v-if="!isRequestingMic" class="h-5 w-5 shrink-0" /> <Loader
               v-else
-              class="h-5 w-5 animate-spin"
+              class="h-5 w-5 shrink-0 animate-spin"
             /> {{
               isRequestingMic ? t('soundUpload.requestingMic') : t('soundUpload.startRecording')
             }} </button
@@ -135,10 +148,10 @@
           </div>
            <button
             type="button"
-            class="btn-media-stop mt-3"
+            class="mt-3 inline-flex w-full min-h-[44px] h-12 items-center justify-center gap-2 text-base ui-btn--cancel"
             @click="stopRecording"
           >
-             <Square class="h-5 w-5" /> {{ t('soundUpload.stopRecording') }} </button
+             <Square class="h-5 w-5 shrink-0" /> {{ t('soundUpload.stopRecording') }} </button
           > </template
         > <!-- Recorded preview: use or re-record --> <template v-else-if="recordedBlob"
           >
@@ -164,6 +177,52 @@
            </template
         >
       </div>
+       <!-- Generate panel (Kitten TTS) -->
+      <div
+        v-show="inputMode === 'generate'"
+        class="border border-gray-200 rounded-lg p-4 bg-gray-50/50 space-y-3"
+      >
+         <p class="text-sm text-gray-600"> {{ t('soundUpload.generateHint') }} </p>
+        <div>
+           <label class="block text-sm font-medium text-gray-700 mb-1"
+            >{{ t('soundUpload.generateTextLabel') }}</label
+          > <textarea
+            v-model="generateText"
+            rows="3"
+            class="textarea-field w-full text-sm"
+            :disabled="isGenerating"
+          />
+        </div>
+        <div>
+           <label class="block text-sm font-medium text-gray-700 mb-1"
+            >{{ t('soundUpload.voiceLabel') }}</label
+          > <select
+            v-model="selectedVoice"
+            class="input-field w-full text-sm"
+            :disabled="isGenerating"
+          >
+
+            <option v-for="v in KITTEN_VOICES" :key="v" :value="v">
+               {{ v }}
+            </option>
+             </select
+          >
+        </div>
+         <p v-if="generateError" class="text-sm text-red-600" role="alert">
+           {{ generateError }}
+        </p>
+         <button
+          type="button"
+          class="inline-flex w-full min-h-[44px] h-12 items-center justify-center gap-2 px-5 text-base sm:w-auto ui-btn--insert"
+          :disabled="isGenerating || !generateText.trim()"
+          @click="runKittenGenerate"
+        >
+           <Loader v-if="isGenerating" class="h-5 w-5 shrink-0 animate-spin" />
+          {{
+            isGenerating ? t('soundUpload.generating') : t('soundUpload.generateButton')
+          }} </button
+        >
+      </div>
 
     </div>
 
@@ -172,7 +231,7 @@
 </template>
 
 <script setup lang="ts">
-import { Mic, Volume2, Upload, Loader, Square } from 'lucide-vue-next'
+import { Mic, Volume2, Upload, Loader, Square, Sparkles } from 'lucide-vue-next'
 import { useDropZone } from '@vueuse/core'
 import { ref, watch, onMounted, onUnmounted, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -180,7 +239,8 @@ import { useI18n } from 'vue-i18n'
 const { t } = useI18n()
 
 import { useError } from '../composables/useError'
-import { getItemSoundBlob } from '@/api'
+import { generateKittenTts, getItemSoundBlob } from '@/api'
+import { getApiErrorMessage } from '@/utils/apiError'
 
 const { showError, clearError } = useError()
 const props = defineProps({
@@ -208,7 +268,15 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  /** Prefills the Generate tab when empty (e.g. card front / word). */
+  defaultTtsText: {
+    type: String,
+    default: '',
+  },
 })
+
+/** Display names accepted by the server (`src/utils/kitten_tts.rs` voice_aliases). */
+const KITTEN_VOICES = ['Bella', 'Jasper', 'Luna', 'Bruno', 'Rosie', 'Hugo', 'Kiki', 'Leo']
 
 const emit = defineEmits(['update:modelValue', 'sound-loaded', 'remove-sound'])
 
@@ -220,6 +288,10 @@ const fileName = ref('')
 
 // Record-from-mic state
 const inputMode = ref('upload')
+const generateText = ref('')
+const selectedVoice = ref('Bruno')
+const isGenerating = ref(false)
+const generateError = ref('')
 const isRecording = ref(false)
 const isRequestingMic = ref(false)
 const recordingError = ref('')
@@ -295,6 +367,73 @@ function stopRecording() {
   }
 }
 
+function syncGenerateTextFromDefault() {
+  const d = props.defaultTtsText?.trim()
+  if (d && !generateText.value.trim()) {
+    generateText.value = d
+  }
+}
+
+function onSelectGenerateTab() {
+  inputMode.value = 'generate'
+  recordingError.value = ''
+  syncGenerateTextFromDefault()
+}
+
+async function extractAxiosErrorMessage(err) {
+  const res = err?.response
+  if (res?.data instanceof Blob) {
+    try {
+      const txt = await res.data.text()
+      const j = JSON.parse(txt)
+      if (typeof j.error === 'string') return j.error
+      return txt
+    } catch {
+      return t('soundUpload.generateFailed')
+    }
+  }
+  return (
+    getApiErrorMessage(err) ||
+    (typeof err?.message === 'string' ? err.message : '') ||
+    t('soundUpload.generateFailed')
+  )
+}
+
+async function runKittenGenerate() {
+  generateError.value = ''
+  const text = generateText.value.trim()
+  if (!text) return
+  isGenerating.value = true
+  try {
+    const response = await generateKittenTts({
+      text,
+      voice: selectedVoice.value,
+      speed: 1.0,
+    })
+    const blob = response.data
+    if (!(blob instanceof Blob)) {
+      throw new Error(t('soundUpload.generateFailed'))
+    }
+    const base64 = await blobToBase64(blob)
+    fileName.value = t('soundUpload.generatedAudio')
+    emit('update:modelValue', {
+      data: base64,
+      mime_type: blob.type || 'audio/ogg',
+    })
+    clearError()
+  } catch (e) {
+    const status = e?.response?.status
+    if (status === 429) {
+      generateError.value = t('soundUpload.rateLimitExceeded')
+    } else {
+      generateError.value = await extractAxiosErrorMessage(e)
+    }
+    showError(generateError.value)
+  } finally {
+    isGenerating.value = false
+  }
+}
+
 function blobToBase64(blob) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
@@ -355,6 +494,7 @@ const clearSound = () => {
   loadedSound.value = null
   fileName.value = ''
   discardRecording()
+  generateError.value = ''
 }
 
 const handleRemove = () => {
@@ -450,6 +590,14 @@ watch(
       clearSound()
     }
   }
+)
+
+watch(
+  () => props.defaultTtsText,
+  () => {
+    syncGenerateTextFromDefault()
+  },
+  { immediate: true }
 )
 
 watch(

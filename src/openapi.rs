@@ -37,6 +37,7 @@ use utoipauto::utoipauto;
         crate::sessions::dto::UserSessionDto,
         crate::flashcards::dto::SubmitQuizAnswerDto,
         crate::flashcards::dto::QuizAnswerResultDto,
+        crate::collections::dto::KittenTtsGenerateRequest,
         crate::mailarchive::dto::SpamVoteResponse,
         crate::sessions::dto::PaginatedUserSessionsResponse,
         crate::waves::dto::WavesSearchResponse,
