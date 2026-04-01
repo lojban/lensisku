@@ -518,13 +518,13 @@ export default {
           '@apply w-32 h-32 rounded-full bg-gray-200 flex items-center justify-center text-gray-400 border-4 border-white shadow-lg':
             {},
         },
-        /** Collection cover on list cards: compact on mobile, larger from `sm` up. */
+        /** Collection cover on list cards: fixed width; pair with `h-full` on the element when header uses `items-stretch`. */
         '.collection-card-logo': {
-          '@apply w-12 h-12 sm:w-16 sm:h-16 rounded-lg sm:rounded-xl object-cover border border-gray-100 shadow-sm bg-white shrink-0':
+          '@apply flex w-12 sm:w-16 min-h-0 rounded-lg sm:rounded-xl border border-gray-100 shadow-sm bg-white shrink-0 overflow-hidden':
             {},
         },
         '.collection-card-logo-placeholder': {
-          '@apply w-12 h-12 sm:w-16 sm:h-16 rounded-lg sm:rounded-xl bg-gray-50 flex items-center justify-center text-gray-400 border border-gray-100 shadow-sm shrink-0':
+          '@apply flex w-12 sm:w-16 min-h-0 rounded-lg sm:rounded-xl bg-gray-50 items-center justify-center text-gray-400 border border-gray-100 shadow-sm shrink-0':
             {},
         },
         /** Collection detail header: fixed width, height follows hint+title row (`items-stretch`). */
