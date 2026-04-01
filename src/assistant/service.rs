@@ -32,8 +32,8 @@ use super::dto::{AssistantStep, ChatMessage, ChatRequest, ToolCallDto};
 use super::persist::ChatPersistState;
 
 /// When `true`, streaming runs two OpenRouter models in parallel when two candidates exist.
-/// **Off by default**: doubles provider cost/latency for marginal redundancy; enable only when needed.
-const ASSISTANT_PARALLEL_DUAL_MODEL: bool = false;
+/// Doubles provider cost/latency for parallel redundancy; set to `false` to use a single model.
+const ASSISTANT_PARALLEL_DUAL_MODEL: bool = true;
 
 /// In-process cache for `languages.tag` → `langid` (clears on process restart; disable via `ASSISTANT_LANG_TAG_CACHE_DISABLE`).
 static JBOVLASTE_LANG_TAG_CACHE: Lazy<RwLock<HashMap<String, i32>>> =
