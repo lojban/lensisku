@@ -123,7 +123,7 @@ export function buildFlatButtonLayer(theme) {
   })
 
   const custom = {
-    '.btn-insert': cta('shadow-sm'),
+    '.btn-insert': cta('shadow-sm !border-0'),
     /**
      * Reactions: solid fill on the button (no ::before/::after layers).
      * Pseudo-gradients used the same border-radius as the outer box while sitting in the padding box,

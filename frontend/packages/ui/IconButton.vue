@@ -3,6 +3,7 @@
     tag="button"
     type="button"
     :variant="resolvedVariant"
+    :size="size"
     :class="rootClass"
     :disabled="disabled"
     :aria-label="ariaLabelComputed"
@@ -38,6 +39,8 @@ const props = defineProps({
   ariaLabel: { type: String, default: '' },
   /** One `ui-btn--*` token plus optional Tailwind utilities (e.g. `w-full ui-btn--create mb-4`). */
   buttonClasses: { type: String, default: 'ui-btn--primary' },
+  /** Matches `Button` sizes (`md` compact, `lg` tall + `text-lg`). */
+  size: { type: String, default: 'md', validator: (v: string) => ['md', 'lg'].includes(v) },
   iconClasses: { type: String, default: 'h-4 w-4' },
   disabled: { type: Boolean, default: false },
 })

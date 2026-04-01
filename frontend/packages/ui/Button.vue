@@ -8,12 +8,14 @@
     :class="buttonClasses"
     v-bind="$attrs"
     @click="handleClick"
-    > <slot v-if="!loading" name="icon" /> <span
-      v-else
-      class="inline-block shrink-0 rounded-full border-2 border-current border-t-transparent animate-spin"
-      :class="spinnerSizeClass"
-      aria-hidden="true"
-    /> <span v-if="$slots.default" class="inline-flex min-w-0 items-center"><slot /></span> </component
+    ><span
+      class="inline-flex min-h-0 min-w-0 max-w-full items-center justify-center gap-2 [&_svg]:shrink-0"
+      ><slot v-if="!loading" name="icon" /><span
+        v-else
+        class="inline-block shrink-0 rounded-full border-2 border-current border-t-transparent animate-spin"
+        :class="spinnerSizeClass"
+        aria-hidden="true"
+      /><span v-if="$slots.default" class="min-w-0 leading-none"><slot /></span></span></component
   >
 </template>
 
