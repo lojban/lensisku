@@ -20,9 +20,7 @@
             > </button
           >
         </div>
-        <div
-          class="min-h-0 flex-1 overflow-y-auto overscroll-contain px-1 py-1"
-        >
+        <div class="modal-scroll-body">
           <slot />
         </div>
         <div v-if="$slots.footer" class="shrink-0 border-t pt-4 mt-4"> <slot name="footer" /> </div>
