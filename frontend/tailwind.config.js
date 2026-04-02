@@ -196,6 +196,10 @@ export default {
           '@apply -m-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 focus-visible:ring-offset-white':
             {},
         },
+        /** `ModalComponent` default slot: scroll area. Padding inset keeps button box-shadows and focus rings inside the scrollport (they paint outside the border box and would otherwise clip). */
+        '.modal-scroll-body': {
+          '@apply min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 pt-2 pb-6 sm:px-3 sm:pb-7': {},
+        },
         '.toast-float-extra': {
           '@apply border-t border-gray-100 pt-3': {},
         },
@@ -295,12 +299,12 @@ export default {
         },
         /** Assistant: compact header icon (close sidebar, open drawer). */
         '.assistant-icon-btn-soft': {
-          '@apply shrink-0 rounded-lg p-1.5 text-gray-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-400/50':
+          '@apply shrink-0 rounded-lg p-1.5 text-gray-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-400/50':
             {},
         },
-        /** Assistant: compact header icon (new chat, etc.) — matches panel control look without responsive hide rules. */
+        /** Assistant: compact header icon (new chat, etc.) — matches panel control look without responsive hide rules. Inset ring so focus/active visuals stay inside the box under `overflow-hidden` ancestors (assistant main column). */
         '.assistant-icon-btn-header': {
-          '@apply shrink-0 inline-flex items-center justify-center p-2 rounded-lg border border-gray-200 bg-white text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-400/50':
+          '@apply shrink-0 inline-flex items-center justify-center p-2 rounded-lg border border-gray-200 bg-white text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-400/50':
             {},
         },
         '.assistant-icon-btn-panel': {

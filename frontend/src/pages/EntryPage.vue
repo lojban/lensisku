@@ -7,59 +7,56 @@
   </div>
    <!-- Content: semantic article for SEO and accessibility -->
   <article v-else-if="valsi" class="space-y-3" itemscope itemtype="https://schema.org/DefinedTerm">
-     <!-- Header Section -->
-    <h1 class="border-b p-2 min-w-0 rounded-md">
-
-      <div class="flex flex-wrap gap-2 w-full lg:w-auto justify-between min-w-0">
-
-        <div class="flex items-center gap-3 min-w-0 max-w-full">
-           <BookOpen class="flex-shrink-0 w-8 h-8 text-gray-500" aria-hidden="true" />
-          <h1
-            class="text-3xl font-bold text-gray-800 min-w-0 max-w-full break-words"
-            itemprop="name"
-          >
-             {{ valsi.word }} <AudioPlayer
-              v-if="definitions.length > 0 && definitions[0].sound_url"
-              :url="definitions[0].sound_url"
-              :valsi-id-or-word="paramStr(route.params.id)"
-              class="flex-shrink-0"
-            />
-          </h1>
-
-        </div>
-
-        <div class="flex flex-wrap items-center gap-2">
-           <span
-            class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium"
-            :class="getTypeClass(valsi.type_name)"
-            > {{ getWordTypeLabel(valsi.type_name) }} </span
-          > <span
-            v-if="valsi.rafsi"
-            class="inline-flex items-center px-3 py-1 bg-gray-100 rounded-full text-sm font-medium text-gray-700"
-            > {{ t('entryPage.rafsiLabel') }} {{ valsi.rafsi }} </span
-          >
-          <div
-            v-if="valsi.decomposition"
-            class="inline-flex items-center gap-1 text-sm text-gray-700"
-          >
-             <span class="font-medium">{{ t('entryPage.decompositionLabel') }}</span
-            > <template v-for="(word, index) in valsi.decomposition" :key="word"
-              > <RouterLink
-                :to="{
-                  path: `/valsi/${word.replace(/ /g, '_')}`,
-                  query: { langid: valsi.source_langid },
-                }"
-                class="text-blue-600 hover:text-blue-800 hover:underline"
-                > {{ word }} </RouterLink
-              > <span v-if="Number(index) < valsi.decomposition.length - 1">+</span> </template
+     <!-- Header: icon + title + meta (three flex items; meta wrapped so chips stay grouped) -->
+    <header
+      class="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2 rounded-md border-b p-2"
+    >
+      <BookOpen class="h-8 w-8 shrink-0 text-gray-500" aria-hidden="true" />
+      <h1
+        class="flex min-w-0 flex-1 flex-wrap items-center gap-2 break-words text-3xl font-bold text-gray-800"
+        itemprop="name"
+      >
+        {{ valsi.word }}
+        <AudioPlayer
+          v-if="definitions.length > 0 && definitions[0].sound_url"
+          :url="definitions[0].sound_url"
+          :valsi-id-or-word="paramStr(route.params.id)"
+          class="shrink-0"
+        />
+      </h1>
+      <div class="flex min-w-0 flex-wrap items-center gap-2">
+        <span
+          class="inline-flex items-center rounded-full px-3 py-1 text-sm font-medium"
+          :class="getTypeClass(valsi.type_name)"
+        >
+          {{ getWordTypeLabel(valsi.type_name) }}
+        </span>
+        <span
+          v-if="valsi.rafsi"
+          class="inline-flex items-center rounded-full bg-gray-100 px-3 py-1 text-sm font-medium text-gray-700"
+        >
+          {{ t('entryPage.rafsiLabel') }} {{ valsi.rafsi }}
+        </span>
+        <div
+          v-if="valsi.decomposition"
+          class="inline-flex items-center gap-1 text-sm text-gray-700"
+        >
+          <span class="font-medium">{{ t('entryPage.decompositionLabel') }}</span>
+          <template v-for="(word, index) in valsi.decomposition" :key="word">
+            <RouterLink
+              :to="{
+                path: `/valsi/${word.replace(/ /g, '_')}`,
+                query: { langid: valsi.source_langid },
+              }"
+              class="text-blue-600 hover:text-blue-800 hover:underline"
             >
-          </div>
-
+              {{ word }}
+            </RouterLink>
+            <span v-if="Number(index) < valsi.decomposition.length - 1">+</span>
+          </template>
         </div>
-
       </div>
-
-    </h1>
+    </header>
      <!-- Discussion Section -->
     <div class="flex flex-wrap gap-2 w-full lg:w-auto justify-center">
        <RouterLink :to="`/comments?valsi_id=${valsi.valsiid}`" class="ui-btn--neutral-slate"
