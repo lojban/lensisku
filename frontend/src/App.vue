@@ -209,7 +209,7 @@
           <span class="fab-elevation-shell">
             <button type="button" class="inline-flex items-center justify-center ui-btn--fab"
               :aria-label="$t('fab.actionsTitle')">
-              <Plus class="transition-all duration-200" :stroke-width="3"
+              <Plus class="h-9 w-9 shrink-0 transition-all duration-200" stroke-width="1"
                 :class="{ 'rotate-45': open }" />
             </button>
           </span>
@@ -270,7 +270,6 @@ import { jwtDecode } from 'jwt-decode'
 import Error from '@/components/Error.vue'
 import ToastFloat from '@/components/ToastFloat.vue'
 import { resendConfirmation } from '@/api'
-import CoursesIcon from '@/components/icons/CoursesIcon.vue'
 import { Dropdown, ToolbarSelectDropdownItem } from '@packages/ui'
 
 import BackgroundComponent from './components/BackgroundComponent.vue'

@@ -84,7 +84,7 @@
           :readonly="prefilledWord || isEditMode">
           <!-- Default Lojban option -->
           <option v-for="lang in languages" :key="lang.id" :value="lang.id">
-            {{ lang.real_name }} ({{ lang.english_name }})
+            {{ lang.real_name }}
           </option>
         </select>
         <p class="mt-1 text-xs text-gray-500">
@@ -111,7 +111,7 @@
           <option value=""> {{ t('upsertDefinition.selectLanguagePlaceholder') }} </option>
 
           <option v-for="lang in languages" :key="lang.id" :value="lang.id">
-            {{ lang.real_name }} ({{ lang.english_name }})
+            {{ lang.real_name }}
           </option>
         </select>
       </div>
