@@ -30,7 +30,7 @@
           <option value=""> {{ t('dictionaryExport.sourceLangDefault') }} </option>
 
           <option v-for="lang in languages" :key="lang.id" :value="lang.tag">
-             {{ lang.real_name }} ({{ lang.english_name }})
+             {{ lang.real_name }}
           </option>
            </select
         > <select
@@ -42,7 +42,7 @@
           <option value=""> {{ t('dictionaryExport.selectLanguage') }} </option>
 
           <option v-for="lang in languages" :key="lang.id" :value="lang.tag">
-             {{ lang.real_name }} ({{ lang.english_name }})
+             {{ lang.real_name }}
           </option>
            </select
         >

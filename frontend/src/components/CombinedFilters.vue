@@ -9,7 +9,7 @@
         :options="languages"
         :max-selected-labels="3"
         :option-value="(lang: LanguageOption) => lang.id"
-        :option-label="(lang: LanguageOption) => `${lang.real_name} (${lang.english_name})`"
+        :option-label="(lang: LanguageOption) => lang.real_name"
         :search-field-keys="languageFilterSearchFieldKeys"
         :placeholder="t('filters.selectLanguages')"
         :search-placeholder="t('filters.searchLanguages')"
@@ -209,7 +209,7 @@
                 :class="{ 'bg-gray-100': filters.source_langid === lang.id }"
                 @click="selectSourceLang(lang.id)"
               >
-                {{ lang.real_name }} ({{ lang.english_name }})
+                {{ lang.real_name }}
               </button>
             </div>
         </Dropdown>
@@ -296,7 +296,7 @@ const sourceLanguageLabel = computed(() => {
     return t('filters.defaultSourceLanguage')
   }
   const lang = props.languages.find((l) => l.id === filters.value.source_langid)
-  return lang ? `${lang.real_name} (${lang.english_name})` : t('filters.defaultSourceLanguage')
+  return lang ? lang.real_name : t('filters.defaultSourceLanguage')
 })
 
 const getLanguagesFromIds = (ids) => {

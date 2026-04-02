@@ -704,8 +704,10 @@ function chunkForBulkSave<T>(arr: T[], chunkSize: number): T[][] {
 }
 
 function languageLabel(lang: LanguageOption): string {
-  const pieces = [lang.english_name, lang.real_name].filter((x): x is string => !!x && x.trim() !== '')
-  const title = pieces.length > 0 ? pieces.join(' / ') : `#${lang.id}`
+  const title =
+    (lang.real_name && lang.real_name.trim()) ||
+    (lang.english_name && lang.english_name.trim()) ||
+    `#${lang.id}`
   return lang.tag ? `${title} (${lang.tag})` : title
 }
 

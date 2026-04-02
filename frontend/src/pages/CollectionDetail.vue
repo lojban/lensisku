@@ -960,7 +960,7 @@
             <option value="">{{ t('upsertDefinition.selectLanguagePlaceholder') }}</option>
 
             <option v-for="lang in languages" :key="lang.id" :value="lang.id">
-               {{ lang.real_name }} ({{ lang.english_name }})
+               {{ lang.real_name }}
             </option>
              </select
           >
