@@ -399,6 +399,7 @@
 
           <div class="relative min-w-0">
              <textarea
+              ref="composerTextareaRef"
               v-model="input"
               class="textarea-field min-h-[88px] max-h-40 w-full resize-y pl-3 pr-12 pb-11 pt-2.5"
               :placeholder="$t('assistantChat.placeholder')"
@@ -530,6 +531,7 @@ const isStreamingThisSession = computed(
 )
 const error = ref('')
 const scrollContainer = ref(null)
+const composerTextareaRef = ref<HTMLTextAreaElement | null>(null)
 /** When true, skip auto scroll-to-bottom (restore / session switch). */
 const suppressAutoScroll = ref(false)
 /** After scroll restore: show message pane (opacity 1). Hidden until then for non-empty chats. */
@@ -1314,6 +1316,7 @@ async function startNewChat() {
     if (scrollContainer.value) scrollContainer.value.scrollTop = 0
     suppressAutoScroll.value = false
     persistToStorage()
+    composerTextareaRef.value?.focus({ preventScroll: true })
   })
 }
 
