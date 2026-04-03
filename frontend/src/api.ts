@@ -8,6 +8,11 @@ import axios, {
 
 const apiBaseUrl = import.meta.env.VITE_BASE_URL ?? '/api'
 
+/** Encode a username for a single `/users/{username}/...` path segment (e.g. `foo@jbotcan`). */
+function userPathSegment(username: string): string {
+  return encodeURIComponent(username)
+}
+
 /** Injected by useAuth / setAuthInstance for token refresh on 401. */
 export interface ApiAuthInstance {
   state: { accessToken: string }
@@ -161,7 +166,8 @@ export const performBackendLogout = () => {
 export const getProfile = () => api.get('/auth/profile')
 export const updateProfile = (profileData: Record<string, unknown>) =>
   api.put('/auth/profile', profileData)
-export const getUserProfile = (username: string) => api.get(`/users/${username}/profile`)
+export const getUserProfile = (username: string) =>
+  api.get(`/users/${userPathSegment(username)}/profile`)
 
 export const listUsers = (params?: Record<string, unknown>) => api.get('/users', { params })
 
@@ -381,10 +387,10 @@ export const getMyReactions = (params?: Record<string, unknown>) =>
   api.get('/comments/reactions/my', { params })
 
 export const getUserComments = (username: string, params?: Record<string, unknown>) =>
-  api.get(`/users/${username}/comments`, { params })
+  api.get(`/users/${userPathSegment(username)}/comments`, { params })
 
 export const getUserDefinitions = (username: string, params?: Record<string, unknown>) =>
-  api.get(`/users/${username}/definitions`, { params })
+  api.get(`/users/${userPathSegment(username)}/definitions`, { params })
 
 export const getUserVotes = (params?: Record<string, unknown>) =>
   api.get(`/users/votes`, { params })
@@ -505,7 +511,7 @@ export const getProfileImage = (
   username: string,
   options: { cached?: boolean } = { cached: false }
 ) => {
-  return `${apiBaseUrl}/users/${username}/profile-image?${options.cached ? '' : Date.now()}`
+  return `${apiBaseUrl}/users/${userPathSegment(username)}/profile-image?${options.cached ? '' : Date.now()}`
 }
 
 export const updateProfileImage = (imageData: FormData | Record<string, unknown>) => {

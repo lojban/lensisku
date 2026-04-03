@@ -11,12 +11,13 @@ from archive/dict TSVs and korpora. Rebuild after editing either the static inst
   all cmavo grouped by **selma'o** (`### SELMAHO`); PA1 digits no…so (0–9) in fixed order within PA1;
   tutorial/teaching notes per selma'o as `# …` comment lines before that class's entries.
 - English ↔ Lojban pairs from korpora TSVs (see `PHRASE_SOURCE_TSV_NAMES` under `KORPORA_DIR`) plus optional Markdown lesson examples (merged into one pool):
-  greedy **lexical diversity** — each bare word (not cmevla-shaped) is tracked; phrases are chosen to maximize
-  **new** such words per phrase (approximating minimum phrases to expose vocabulary); cmevla tokens (name-shape:
-  end in a consonant) are ignored for this score; tie-break by lower corpus token-frequency mass in the pool.
+  greedy **lexical diversity** plus **collocation diversity** (bigrams, trigrams, and short-window skip-gram pairs over
+  bare content tokens—no fixed vocabulary list); phrases maximize **new** word types and **new** collocation keys per phrase;
+  cmevla-shaped names are skipped for both; tie-break by lower corpus token-frequency mass in the pool.
   A reserved math- / logic-leaning batch is still picked first by heuristics.
 - Optional **tutorial** block from Markdown: English↔English notions only (Lojban lesson lines are merged into the phrase pool).
   A common auto-detected path is `…/data/pages/en/books/learn-lojban` (e.g. Grav book sources next to this repo).
+- **Articles (sets, masses, typical elements)** and **place-type / slot matching** are summarized in `TUTORIAL_NOTION_LINES` and `SELMAHO_NOTE_LINES["LE"]`; rebuild keeps the assistant aligned without scraping those files at build time.
 
 Environment:
   ASSISTANT_TUTORIAL_BOOK_DIR — directory with numbered lesson `*.md` (e.g. `1.md` … `13.md`).
@@ -60,8 +61,8 @@ PHRASE_SOURCE_TSV_NAMES: tuple[str, ...] = (
 )
 
 # Quotas: merged korpora phrase TSVs + tutorial Markdown examples, then math batch + lexical-diversity fill.
-MUPLIS_PHRASE_TOTAL = 300
-MUPLIS_MATH_PHRASE_QUOTA = 115
+MUPLIS_PHRASE_TOTAL = 370
+MUPLIS_MATH_PHRASE_QUOTA = 45
 
 # Gismu section: top-N by corpus score (non-metrology first); these lemmas are always present even if below rank N.
 GISMU_REFERENCE_TOP_N = 300
@@ -80,7 +81,7 @@ REFERENCE_INTRO_LINES: list[str] = [
     "",
     "The **cmavo** section lists all cmavo by selma'o (`### SELMAHO` headings). Optional `#` lines introduce each class; rows are `particle ↔ English gloss`. Within **PA1**, digit cmavo appear in fixed order 0–9 (no…so).",
     "",
-    "The **tutorial (notions)** section gives short English↔English notes (alphabet, bridi shape, word classes); they are a compact summary, not the full course.",
+    "The **tutorial (notions)** section gives short English↔English notes (alphabet, bridi shape, articles for sets/masses/typicals, place-type matching, word classes); they are a compact summary, not the full course.",
     "",
     "The **phrases** sections are English↔Lojban in two parts: (1) lexical spread from korpora; (2) math-, measure-, and logic-leaning lines.",
     "",
@@ -96,6 +97,10 @@ TUTORIAL_NOTION_LINES: list[str] = [
     f"cmavo{COL_SEP}Particle: consonant + vowel (+ optional 'V sequences); may be run together (e.g. lenu, naku); grammar class = **selma'o** (subsection titles in **## cmavo**).",
     f"cmevla{COL_SEP}Name word: ends in a consonant; often written .name. with pauses matching dots.",
     f"Bridi{COL_SEP}A clause: sumti fill numbered places x₁ x₂ … of one selbri (relation).",
+    f"Articles: typical elements (le'e, lo'e){COL_SEP}Stereotype / 'in general': the typical exemplar of a type (e.g. liking cats) without implying specific individuals present; contrast plain le/lo (generic arguments, typicals).",
+    f"Articles: sets (le'i, lo'i){COL_SEP}The set of those described (le'i) vs those that really are (lo'i), treated as a set; use when the relation needs a set in a place (e.g. example among a set); some predicates mark set slots in the dictionary.",
+    f"Articles: masses (lei, loi){COL_SEP}Collective/mass reading: the group as one for the predicate, not necessarily each member separately (crowd silent vs each person silent; total weight vs each item); match mass sumti to mass places (e.g. gunma); distributive le/lo vs mass lei/loi.",
+    f"Place types (slot filling){COL_SEP}A filled place must be a sumti compatible with that place's type: direct or union match; compared arguments share one type parameter; unary-property / ka-style places use consistent set-shaped readings with the dictionary; predicate-derived sumti (e.g. su'o broda) can satisfy a slot when the predicate's x₁ type matches; tu'a can raise explicitly.",
 ]
 
 # Per-selma'o teaching notes (`# …` lines) below each `### SELMAHO` heading before word rows.
@@ -168,7 +173,11 @@ SELMAHO_NOTE_LINES: dict[str, list[str]] = {
         "# ku: closes LE/LO descriptions and similar sumti; elidable in many positions.",
     ],
     "LE": [
-        "# Non-veridical descriptors (le, le'i, …): 'the one(s) described as…'; close with ku.",
+        "# Gadri in this archive column include both non-veridical (le, lei, le'i, le'e, …) and veridical (lo, loi, lo'i, lo'e, …) — check each row's gloss.",
+        "# le vs lei: le distributes to individuals; lei is the mass/collective (action or property of the group, not necessarily each member).",
+        "# le'i vs lo'i: the set described vs the set that really are; use set articles when a place must be a set (dictionary often marks set slots).",
+        "# le'e vs lo'e: stereotypical / typical instance vs typical among those that really are; use for 'X in general' without pointing at specific objects.",
+        "# Non-veridical le-family: 'the one(s) described as…'; veridical lo-family: 'those which really are…'; close with ku where applicable (sets, masses, typicals).",
     ],
     "LIhU": [
         "# li'u: closes lu … quotation; often elidable at end of text.",
@@ -465,6 +474,37 @@ def diversity_lexicon_words(lo: str) -> set[str]:
     return out
 
 
+def bare_content_tokens(lo: str) -> list[str]:
+    """Ordered bare tokens for n-gram / skipgram features (same filters as lexical diversity)."""
+    out: list[str] = []
+    for t in lojban_tokens(lo):
+        b = bare_token_for_lexicon(t)
+        if not b or not any(c.isalpha() for c in b):
+            continue
+        if is_lojban_cmevla_shape(b):
+            continue
+        out.append(b)
+    return out
+
+
+def collocation_signature_keys(lo: str) -> frozenset[tuple[str, ...]]:
+    """
+    Opaque keys for adjacent bigrams, trigrams, and skip-gram pairs (token distance 2–4).
+    Used only to spread multi-token patterns in the phrase pool—no semantic labels.
+    """
+    toks = bare_content_tokens(lo)
+    keys: set[tuple[str, ...]] = set()
+    n = len(toks)
+    for i in range(n - 1):
+        keys.add((2, toks[i], toks[i + 1]))
+    for i in range(n - 2):
+        keys.add((3, toks[i], toks[i + 1], toks[i + 2]))
+    for i in range(n):
+        for j in range(i + 2, min(i + 5, n)):
+            keys.add(("s", j - i, toks[i], toks[j]))
+    return frozenset(keys)
+
+
 def corpus_lojban_word_freq(rows: list[tuple[str, str]]) -> Counter[str]:
     wf: Counter[str] = Counter()
     for _, lo in rows:
@@ -528,23 +568,26 @@ def select_math_prioritized(
 
 
 def select_muplis_diverse(rows: list[tuple[str, str]], n: int) -> list[tuple[str, str]]:
-    """Greedy lexical spread: prefer phrases that introduce the most new diversity words (non-cmevla bare types)."""
+    """Greedy spread: maximize new bare-word types, then new bigram/trigram/skipgram keys, then rarity tie-breaks."""
     indexed = [(i, en, lo) for i, (en, lo) in enumerate(rows)]
     word_freq = corpus_lojban_word_freq(rows)
     covered_words: set[str] = set()
+    covered_collocs: set[tuple[str, ...]] = set()
     selected: list[tuple[str, str]] = []
     seen_lo: set[str] = set()
     remaining = [x for x in indexed if x[2] not in seen_lo]
 
     while len(selected) < n and remaining:
         best_item: tuple[int, str, str] | None = None
-        best_key: tuple[int, int, int, int] | None = None
+        best_key: tuple[int, int, int, int, int] | None = None
         for item in remaining:
             _i, _en, lo = item
             div = diversity_lexicon_words(lo)
-            new_n = len(div - covered_words)
+            new_words = len(div - covered_words)
+            sig = collocation_signature_keys(lo)
+            new_collocs = len(sig - covered_collocs)
             mass = phrase_token_freq_mass(lo, word_freq)
-            key = (new_n, -mass, -len(lo), _i)
+            key = (new_words, new_collocs, -mass, -len(lo), _i)
             if best_key is None or key > best_key:
                 best_key = key
                 best_item = item
@@ -554,6 +597,7 @@ def select_muplis_diverse(rows: list[tuple[str, str]], n: int) -> list[tuple[str
         selected.append((en, lo))
         seen_lo.add(lo)
         covered_words |= diversity_lexicon_words(lo)
+        covered_collocs |= collocation_signature_keys(lo)
         remaining = [x for x in remaining if x[2] != lo]
 
     if len(selected) < n:

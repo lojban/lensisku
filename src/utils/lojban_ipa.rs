@@ -102,7 +102,7 @@ static IPA_RULES: Lazy<Vec<(Regex, &'static str)>> = Lazy::new(|| {
         ("z", "z"),
         ("f", "f"),
         ("v", "v"),
-        ("x", "hhhh"),
+        ("x", "hhh"),
         ("'", "h"),
         ("r", "ɹ"),
         ("n", "n"),

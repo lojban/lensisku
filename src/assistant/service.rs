@@ -576,8 +576,8 @@ fn jbovlaste_tool_schema() -> Tool {
         r#type: "function".to_string(),
         function: ToolFunction {
             name: "jbovlaste_semantic_search".to_string(),
-            description: "Semantic search over jbovlaste definition text (embedding \
-                          similarity). Your ONLY tool—call before stating facts about \
+            description: "Semantic search over jbovlaste definition text (embeddings). \
+                          Your ONLY tool—call before stating facts about \
                           Lojban words or meanings, unless the system message **core reference \
                           dictionary** already answers. \
                           **Always pass every lookup in one call** via the **`queries` array** \
@@ -624,10 +624,10 @@ fn jbovlaste_tool_schema() -> Tool {
                     "limit": {
                         "type": "integer",
                         "minimum": 1,
-                        "maximum": 10,
-                        "default": 10,
-                        "description": "How many top matches **per query** (max 10). Use fewer \
-                            for a known valsi or narrow term; use 10 for broad English concepts \
+                        "maximum": 15,
+                        "default": 15,
+                        "description": "How many top matches **per query** (max 15). Use fewer \
+                            for a known valsi or narrow term; use 15 for broad English concepts \
                             or when refining after weak results."
                     },
                     "languages": {
@@ -702,7 +702,7 @@ fn parse_tool_calls_from_content(content: &str) -> Option<Vec<ToolCall>> {
 }
 
 /// Maximum results per semantic search for the assistant tool.
-const SEMANTIC_SEARCH_MAX_LIMIT: u32 = 10;
+const SEMANTIC_SEARCH_MAX_LIMIT: u32 = 15;
 
 /// Max parallel jbovlaste lookups bundled in **one** `jbovlaste_semantic_search` call (`queries` array).
 const SEMANTIC_SEARCH_MAX_QUERIES_PER_CALL: usize = 24;
@@ -851,13 +851,15 @@ async fn run_jbovlaste_semantic_search_core(
         .unwrap_or(SEMANTIC_SEARCH_MAX_LIMIT)
         .clamp(1, SEMANTIC_SEARCH_MAX_LIMIT) as i64;
 
+    // `sort_by` / `sort_order` are **not** read by `jbovlaste::service::semantic_search`—SQL fixes order:
+    // `exact_match_rank`, then embedding distance. Same field values as `GET /jbovlaste/semantic-search` for parity only.
     let params = SearchDefinitionsParams {
         page: 1,
         per_page: limit,
         search_term: query.clone(),
         include_comments: false,
-        sort_by: "score".to_string(),
-        sort_order: "desc".to_string(),
+        sort_by: "similarity".to_string(),
+        sort_order: "asc".to_string(),
         languages: filters.languages_langids.clone(),
         selmaho: None,
         username: None,
@@ -955,7 +957,6 @@ fn summarise_definition(def: &DefinitionDetail) -> serde_json::Value {
         "notes": def.notes.as_deref(),
         "lang": def.langrealname,
         "score": def.score,
-        "similarity": def.similarity,
         "selmaho": def.selmaho.as_deref(),
         "jargon": def.jargon.as_deref(),
     })
@@ -973,9 +974,6 @@ fn semantic_tool_results_plain_text_for_llm(query: &str, definitions: &[Definiti
         out.push_str(&format!("--- {} ---\n", i + 1));
         out.push_str(&format!("valsi: {}\n", def.valsiword));
         out.push_str(&format!("language: {}\n", def.langrealname));
-        if let Some(sim) = def.similarity {
-            out.push_str(&format!("relevance: {:.4}\n", sim));
-        }
         out.push_str("definition:\n");
         out.push_str(&def.definition);
         out.push('\n');
