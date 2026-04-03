@@ -74,7 +74,6 @@ check:
 
 # Run backend development server
 back:
-	clean-rust
 	make up
 	@echo "$(CYAN)Waiting for services to be ready...$(NC)"
 	sleep 2
