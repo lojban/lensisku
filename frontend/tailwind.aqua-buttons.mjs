@@ -321,6 +321,10 @@ export function buildAquaButtonPrimitives() {
       '@apply aqua-base bg-rose-400': {},
       '--aqua-hue': '350',
     },
+    '.btn-aqua-cornflower': {
+      '@apply aqua-base bg-cornflower-400': {},
+      '--aqua-hue': '219',
+    },
     '.btn-aqua-orange': {
       '@apply aqua-base bg-orange-400': {},
       '--aqua-hue': '27',

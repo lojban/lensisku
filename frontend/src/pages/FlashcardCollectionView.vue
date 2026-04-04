@@ -20,9 +20,7 @@
       </div>
     </template>
     <template #title>
-      <h2 class="text-xl sm:text-2xl font-bold text-gray-800">
-        {{ t('components.flashcardCollectionView.title', { collectionName: collection?.name }) }}
-      </h2>
+      {{ t('components.flashcardCollectionView.title', { collectionName: collection?.name }) }}
     </template>
     <template #toolbar>
       <div class="space-y-4 md:space-y-0">

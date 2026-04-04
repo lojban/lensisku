@@ -29,6 +29,13 @@ export default {
       colors: {
         /** Primary nav / legacy link blue (navbar-item, NavLink, mobile logout). */
         'nav-link': '#007bff',
+        /** FAB / accent — classic cornflower blue and steps for hover/active. */
+        cornflower: {
+          400: '#6495ED',
+          500: '#5789E8',
+          600: '#4B7DDB',
+          700: '#3D6BC4',
+        },
       },
     },
   },
@@ -523,9 +530,9 @@ export default {
           '@apply w-32 h-32 rounded-full bg-gray-200 flex items-center justify-center text-gray-400 border-4 border-white shadow-lg':
             {},
         },
-        /** Collection cover on list cards: fixed width; pair with `h-full` on the element when header uses `items-stretch`. */
+        /** Collection cover on list cards: fixed square; image uses `.collection-cover-thumb` (contain, no crop). */
         '.collection-card-logo': {
-          '@apply flex w-12 sm:w-16 min-h-0 rounded-lg sm:rounded-xl border border-gray-100 shadow-sm bg-white shrink-0 overflow-hidden':
+          '@apply flex h-12 w-12 sm:h-16 sm:w-16 shrink-0 items-center justify-center rounded-lg sm:rounded-xl border border-gray-100 bg-white shadow-sm overflow-hidden':
             {},
         },
         '.collection-card-logo-placeholder': {
@@ -534,16 +541,25 @@ export default {
         },
         /** Collection detail header: fixed width, height follows hint+title row (`items-stretch`). */
         '.collection-header-logo': {
-          '@apply w-16 md:w-24 lg:w-28 self-stretch min-h-0 rounded-lg sm:rounded-xl object-cover border border-gray-100 shadow-md bg-white shrink-0 overflow-hidden':
+          '@apply box-border flex h-full min-h-0 w-max max-w-24 shrink-0 items-center justify-center rounded-lg sm:rounded-xl border border-gray-100 bg-white shadow-md overflow-hidden':
             {},
         },
         '.collection-header-logo-placeholder': {
-          '@apply w-16 md:w-24 lg:w-28 self-stretch min-h-0 rounded-lg sm:rounded-xl bg-gray-50 flex items-center justify-center text-gray-400 border border-gray-100 shadow-md shrink-0':
+          '@apply box-border flex h-full min-h-0 w-16 shrink-0 items-center justify-center rounded-lg sm:rounded-xl bg-gray-50 text-gray-400 border border-gray-100 shadow-md md:w-24 lg:w-28':
             {},
+        },
+        /** Image inside collection thumbs: fill frame without cropping (letterboxing as needed). */
+        '.collection-cover-thumb': {
+          '@apply h-full w-full max-h-full max-w-full object-contain': {},
+        },
+        /** Collection header cover: full row height, intrinsic width (contain, no crop). */
+        '.collection-header-cover-thumb': {
+          '@apply block h-full w-auto max-h-full max-w-full object-contain': {},
         },
         /** Collection cover in edit modal (matches profile avatar target size, square). */
         '.collection-edit-logo': {
-          '@apply w-28 h-28 rounded-xl object-cover border-4 border-white shadow-lg': {},
+          '@apply flex h-28 w-28 items-center justify-center rounded-xl border-4 border-white bg-white shadow-lg overflow-hidden':
+            {},
         },
         '.collection-edit-logo-placeholder': {
           '@apply w-28 h-28 rounded-xl bg-gray-200 flex items-center justify-center text-gray-400 border-4 border-white shadow-lg':
@@ -934,11 +950,34 @@ export default {
         const aquaRules = {}
         const flatRules = {}
         /** Same rose/market primitives as `ui-btn--market`; larger touch target, pill, bigger type. */
+        /** Inline `aqua-base` + fill (not `@apply btn-aqua-cornflower`): that primitive lives in an earlier
+         * `addComponents` object; a second `addComponents(buttonUiThemeLayer)` pass cannot `@apply` it. */
         aquaRules[selectorFor('aqua', 'ui-btn--fab')] = {
-          '@apply btn-aqua-rose !h-14 !w-14 cursor-pointer rounded-full !text-lg': {},
+          '@apply aqua-base bg-cornflower-400 !h-12 !w-12 cursor-pointer rounded-full !text-lg !text-white':
+            {},
+          '--aqua-hue': '219',
         }
         flatRules[selectorFor('flat', 'ui-btn--fab')] = {
-          '@apply btn-market !h-14 !w-14 cursor-pointer rounded-full !text-lg shadow-md': {},
+          '@apply btn-fab !h-12 !w-12 cursor-pointer rounded-full !text-lg': {},
+        }
+        /** Flat FAB: no outer ring; soft cornflower-tinted float shadow (ui-btn--fab is borderless). */
+        flatRules[selectorFor('flat', 'fab-elevation-shell')] = {
+          '@apply ring-0': {},
+          boxShadow:
+            '0 12px 28px -10px rgba(61, 107, 196, 0.38), 0 8px 18px -10px rgba(100, 149, 237, 0.32)',
+          '&:hover': {
+            boxShadow:
+              '0 16px 36px -12px rgba(61, 107, 196, 0.42), 0 10px 22px -10px rgba(100, 149, 237, 0.38)',
+          },
+        }
+        /** Aqua FAB: elevation matches cornflower hue (replaces rose-tinted shell). */
+        aquaRules[selectorFor('aqua', 'fab-elevation-shell')] = {
+          boxShadow:
+            '0 10px 26px -8px rgba(15, 23, 42, 0.16), 0 6px 14px -6px rgba(100, 149, 237, 0.32)',
+          '&:hover': {
+            boxShadow:
+              '0 18px 36px -10px rgba(15, 23, 42, 0.2), 0 10px 22px -8px rgba(87, 137, 232, 0.38)',
+          },
         }
         aquaRules[selectorFor('aqua', 'ui-btn--toggle.active')] = {
           '@apply aqua-base bg-red-400': {},

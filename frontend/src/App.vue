@@ -203,13 +203,13 @@
     v-if="auth.state.isLoggedIn && route.name !== 'flashcard-study' && !route.meta.fullHeight">
 
     <div
-      class="fixed md:absolute bottom-6 right-4 md:bottom-8 md:right-8 lg:-right-4 lg:-mr-4 z-50 flex flex-col items-end gap-3">
+      class="fixed md:absolute bottom-6 right-4 md:right-6 lg:-right-4 lg:-mr-4 z-50 flex flex-col items-end gap-3">
       <Dropdown>
         <template #trigger="{ open }">
           <span class="fab-elevation-shell">
             <button type="button" class="inline-flex items-center justify-center ui-btn--fab"
               :aria-label="$t('fab.actionsTitle')">
-              <Plus class="h-9 w-9 shrink-0 transition-all duration-200" stroke-width="1"
+              <Plus class="h-8 w-8 shrink-0 transition-transform duration-200" stroke-width="2.75"
                 :class="{ 'rotate-45': open }" />
             </button>
           </span>

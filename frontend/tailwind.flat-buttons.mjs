@@ -21,6 +21,7 @@ const flatStandardHue = (theme, hue) => ({
 /** Shared `.btn-flat-surface` + semantic `btn-*` rows (only `color` + `--bf-*` differ). */
 export function buildFlatButtonLayer(theme) {
   const ring = (c) => flatRing(theme, c)
+  const emptyRippleBorder = ring(theme('colors.slate.500'))
 
   const surface = {
     '.btn-flat-surface': {
@@ -61,9 +62,11 @@ export function buildFlatButtonLayer(theme) {
         transition: 'opacity 220ms cubic-bezier(0.4, 0, 0.2, 1)',
       },
       '&:hover:not(:disabled)': { borderColor: 'var(--bf-hbr)' },
-      '&:hover:not(:disabled)::after': {
+      /** Hover fill + ripple on the host `::after` only (same for `button`, `a` / `RouterLink`, etc.). */
+      '&:hover:not(:disabled):not([aria-disabled="true"])::after': {
         opacity: 1,
-        animation: 'btn-flat-gradient-shift 2.2s ease-in-out infinite alternate',
+        animation:
+          'btn-flat-gradient-shift 2.2s ease-in-out infinite alternate, btn-flat-ripple 1.6s ease-out infinite',
       },
       '&:active:not(:disabled)': { borderColor: 'var(--bf-abr)' },
       '&:active:not(:disabled)::after': {
@@ -182,6 +185,31 @@ export function buildFlatButtonLayer(theme) {
         backgroundColor: 'var(--bf-ab)',
       },
     },
+    /**
+     * Primary FAB (flat theme): solid cornflower, no visible border, white glyph.
+     * Paired with `.fab-elevation-shell` overrides in `buttonUiThemeLayer`.
+     */
+    '.btn-fab': {
+      '@apply btn-base-core cursor-pointer rounded-full border-transparent text-white shadow-none': {},
+      backgroundColor: theme('colors.cornflower.400'),
+      transitionProperty: 'background-color, color, transform, border-color',
+      '--tw-ring-color': ring(theme('colors.cornflower.500')),
+      '&:not(:disabled):hover': {
+        '@apply border-transparent ring-0 shadow-none': {},
+        backgroundColor: theme('colors.cornflower.500'),
+      },
+      '&:not(:disabled):active': {
+        '@apply border-transparent': {},
+        backgroundColor: theme('colors.cornflower.600'),
+      },
+      '&:focus-visible:not(:disabled)': {
+        '@apply outline-none ring-2 ring-offset-2 ring-offset-white': {},
+        borderColor: 'transparent',
+      },
+      '@media (prefers-reduced-motion: reduce)': {
+        '&:not(:disabled):hover': { transitionDuration: '0.01ms' },
+      },
+    },
     '.btn-market': {
       '@apply btn-flat-surface': {},
       color: theme('colors.rose.700'),
@@ -221,6 +249,8 @@ export function buildFlatButtonLayer(theme) {
     },
     '.btn-empty': {
       '@apply btn-base-core text-gray-700 border-gray-400': {},
+      /** Ripple keyframes read `var(--bf-ring)`; tinted surfaces set it via `flatStandardHue`. */
+      '--bf-ring': emptyRippleBorder,
       position: 'relative',
       isolation: 'isolate',
       overflow: 'hidden',
@@ -260,9 +290,10 @@ export function buildFlatButtonLayer(theme) {
         boxShadow:
           'inset 0 1px 0 rgba(255, 255, 255, 0.95), inset 0 -1px 0 rgba(148, 163, 184, 0.22), 0 2px 4px rgba(15, 23, 42, 0.1)',
       },
-      '&:not(:disabled):hover::after': {
+      '&:not(:disabled):not([aria-disabled="true"]):hover::after': {
         opacity: 1,
-        animation: 'btn-flat-gradient-shift 2.2s ease-in-out infinite alternate',
+        animation:
+          'btn-flat-gradient-shift 2.2s ease-in-out infinite alternate, btn-flat-ripple 1.6s ease-out infinite',
       },
       '&:not(:disabled):active': {
         '@apply ring-0 border-gray-700 text-gray-800': {},
@@ -294,6 +325,17 @@ export function buildFlatButtonLayer(theme) {
     '@keyframes btn-flat-gradient-shift': {
       '0%': { backgroundPosition: '50% 0%' },
       '100%': { backgroundPosition: '50% 100%' },
+    },
+    /**
+     * Inset pulse on the hover layer (`::after`) so the wave stays inside `overflow: hidden` pills
+     * for both `button` and `a` / `RouterLink` (outset shadows are easy to miss or clip).
+     */
+    '@keyframes btn-flat-ripple': {
+      '0%': { boxShadow: 'inset 0 0 0 0 transparent' },
+      '45%': {
+        boxShadow: 'inset 0 0 1.75rem 1.75rem color-mix(in srgb, var(--bf-ring) 38%, transparent)',
+      },
+      '100%': { boxShadow: 'inset 0 0 0 0 transparent' },
     },
     ...surface,
     ...tinted,
