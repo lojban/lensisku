@@ -107,6 +107,9 @@ export interface CollectionCardCollection {
   name: string
   description?: string | null
   has_flashcards: boolean
+  /** Collection cover thumbnail (`collection_images`). */
+  has_cover_image?: boolean
+  /** Cover or item card images (Tiktoknu CTA, etc.). */
   has_collection_image?: boolean
   updated_at: string
   owner: { user_id: number; username: string }
@@ -166,7 +169,7 @@ const props = defineProps({
   publicLabel: { type: String, default: 'Public' },
   privateLabel: { type: String, default: 'Private' },
   itemsCountLabel: { type: String, default: '0 items' },
-  /** Resolved image URL when `has_collection_image`; omit for placeholder icon. */
+  /** Resolved cover URL when `has_cover_image`; omit for placeholder icon. */
   coverImageUrl: { type: String, default: null },
 })
 

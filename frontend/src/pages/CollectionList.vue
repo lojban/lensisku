@@ -177,7 +177,7 @@
 
     <div class="collections-grid">
       <CollectionCard v-for="collection in collections" :key="collection.collection_id" :collection="collection"
-        :cover-image-url="collection.has_collection_image ? getCollectionImage(collection.collection_id, { cached: true }) : null"
+        :cover-image-url="collection.has_cover_image ? getCollectionImage(collection.collection_id, { cached: true }) : null"
         :study-loading="studyLoadingId === collection.collection_id" :format-date="formatDate"
         :study-button-label="t('collectionList.studyButton')"
         :collection-button-label="t('collectionList.collectionButton')"

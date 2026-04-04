@@ -518,6 +518,7 @@
     "skippedItemsHeader": "Skipped items",
     "andMoreSkipped": "and {count} more...",
     "viewAsFlashcards": "As flashcards",
+    "viewAsTiktoknu": "Swipe view",
     "bulkEditCustomText": "Bulk edit",
     "levels": "Levels",
     "onlyItemsWithoutFlashcards": "Only collection items that lack flashcards",
@@ -1323,7 +1324,8 @@
       "nextReviewLabel": "Next:",
       "reviewNowAction": "Review now",
       "moveUpAction": "Move up",
-      "moveDownAction": "Move down"
+      "moveDownAction": "Move down",
+      "viewAsTiktoknu": "Swipe view"
     },
     "userListTab": {
       "roleLabel": "Role:",
@@ -1377,6 +1379,13 @@
         "readMore": "Read more →",
         "shareError": "Error sharing:",
         "copySuccess": "Link copied to clipboard!"
+      },
+      "collectionReel": {
+        "backToCollection": "← Collection",
+        "empty": "No cards with images in this collection.",
+        "frontLabel": "Front",
+        "backLabel": "Back",
+        "openEntry": "Open entry"
       }
     }
   },

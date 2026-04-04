@@ -112,6 +112,7 @@ pub async fn create_collection(
         updated_at: row.get("updated_at"),
         item_count: 0,
         has_flashcards: false,
+        has_cover_image: false,
         has_collection_image: false,
         owner: CollectionOwner { user_id, username },
     };
@@ -351,7 +352,15 @@ async fn query_collections(
         "SELECT c.*, u.userid, u.username,
                 (SELECT COUNT(*) FROM collection_items ci WHERE ci.collection_id = c.collection_id) AS item_count,
                 EXISTS(SELECT 1 FROM flashcards f2 WHERE f2.collection_id = c.collection_id) AS has_flashcards,
-                EXISTS(SELECT 1 FROM collection_images cimg WHERE cimg.collection_id = c.collection_id) AS has_collection_image,
+                EXISTS(SELECT 1 FROM collection_images cimg WHERE cimg.collection_id = c.collection_id) AS has_cover_image,
+                (
+                    EXISTS(SELECT 1 FROM collection_images cimg WHERE cimg.collection_id = c.collection_id)
+                    OR EXISTS (
+                        SELECT 1 FROM collection_item_images cii
+                        INNER JOIN collection_items ci2 ON ci2.item_id = cii.item_id
+                        WHERE ci2.collection_id = c.collection_id AND cii.side IN ('front', 'back')
+                    )
+                ) AS has_collection_image,
                 {search_rank_select}
                 c.updated_at AS _rank_tiebreak
          FROM collections c
@@ -388,6 +397,7 @@ async fn query_collections(
             updated_at: row.get("updated_at"),
             item_count: row.get("item_count"),
             has_flashcards: row.get("has_flashcards"),
+            has_cover_image: row.get("has_cover_image"),
             has_collection_image: row.get("has_collection_image"),
             owner: CollectionOwner {
                 user_id: row.get("userid"),
@@ -429,6 +439,7 @@ pub async fn refresh_collection_sort_cache(
                 updated_at: row.get("updated_at"),
                 item_count: row.get("item_count"),
                 has_flashcards: row.get("has_flashcards"),
+                has_cover_image: row.get("has_cover_image"),
                 has_collection_image: row.get("has_collection_image"),
                 owner: CollectionOwner {
                     user_id: row.get("userid"),
@@ -515,7 +526,15 @@ fn build_collections_query(where_clause: &str, sort: Option<&str>, user_owned: b
         "SELECT c.*, {extra_select}u.username,
                 (SELECT COUNT(*) FROM collection_items ci WHERE ci.collection_id = c.collection_id) AS item_count,
                 EXISTS(SELECT 1 FROM flashcards f WHERE f.collection_id = c.collection_id) AS has_flashcards,
-                EXISTS(SELECT 1 FROM collection_images cimg WHERE cimg.collection_id = c.collection_id) AS has_collection_image
+                EXISTS(SELECT 1 FROM collection_images cimg WHERE cimg.collection_id = c.collection_id) AS has_cover_image,
+                (
+                    EXISTS(SELECT 1 FROM collection_images cimg WHERE cimg.collection_id = c.collection_id)
+                    OR EXISTS (
+                        SELECT 1 FROM collection_item_images cii
+                        INNER JOIN collection_items ci2 ON ci2.item_id = cii.item_id
+                        WHERE ci2.collection_id = c.collection_id AND cii.side IN ('front', 'back')
+                    )
+                ) AS has_collection_image
          FROM collections c
          JOIN users u ON c.user_id = u.userid
          {active_join}
@@ -546,7 +565,15 @@ pub async fn get_collection(
         "SELECT c.*, u.userid, u.username, 
         (SELECT COUNT(*) FROM collection_items ci WHERE ci.collection_id = c.collection_id) as item_count,
         EXISTS(SELECT 1 FROM flashcards f WHERE f.collection_id = c.collection_id) as has_flashcards,
-        EXISTS(SELECT 1 FROM collection_images cimg WHERE cimg.collection_id = c.collection_id) as has_collection_image
+        EXISTS(SELECT 1 FROM collection_images cimg WHERE cimg.collection_id = c.collection_id) as has_cover_image,
+        (
+            EXISTS(SELECT 1 FROM collection_images cimg WHERE cimg.collection_id = c.collection_id)
+            OR EXISTS (
+                SELECT 1 FROM collection_item_images cii
+                INNER JOIN collection_items ci2 ON ci2.item_id = cii.item_id
+                WHERE ci2.collection_id = c.collection_id AND cii.side IN ('front', 'back')
+            )
+        ) as has_collection_image
         FROM collections c
         JOIN users u ON c.user_id = u.userid
              WHERE c.collection_id = $1",
@@ -571,6 +598,7 @@ pub async fn get_collection(
         updated_at: collection_row.get("updated_at"),
         item_count: collection_row.get("item_count"),
         has_flashcards: collection_row.get("has_flashcards"),
+        has_cover_image: collection_row.get("has_cover_image"),
         has_collection_image: collection_row.get("has_collection_image"),
         owner: CollectionOwner {
             user_id: owner_id,
@@ -663,14 +691,21 @@ pub async fn update_collection(
         .try_get::<_, bool>(0)
         .map_err(|e| AppError::Database(e.to_string()))?;
 
-    let has_collection_image = transaction
+    let image_flags = transaction
         .query_one(
-            "SELECT EXISTS(SELECT 1 FROM collection_images WHERE collection_id = $1)",
+            "SELECT
+                EXISTS(SELECT 1 FROM collection_images WHERE collection_id = $1) AS has_cover_image,
+                (
+                    EXISTS(SELECT 1 FROM collection_images WHERE collection_id = $1)
+                    OR EXISTS (
+                        SELECT 1 FROM collection_item_images cii
+                        INNER JOIN collection_items ci2 ON ci2.item_id = cii.item_id
+                        WHERE ci2.collection_id = $1 AND cii.side IN ('front', 'back')
+                    )
+                ) AS has_collection_image",
             &[&collection_id],
         )
         .await
-        .map_err(|e| AppError::Database(e.to_string()))?
-        .try_get::<_, bool>(0)
         .map_err(|e| AppError::Database(e.to_string()))?;
 
     transaction
@@ -689,7 +724,8 @@ pub async fn update_collection(
         updated_at: row.get("updated_at"),
         item_count,
         has_flashcards,
-        has_collection_image,
+        has_cover_image: image_flags.get("has_cover_image"),
+        has_collection_image: image_flags.get("has_collection_image"),
         owner: CollectionOwner { user_id, username },
     })
 }
@@ -911,6 +947,7 @@ pub async fn import_json(
         updated_at: row.get("updated_at"),
         item_count: imported_count as i64,
         has_flashcards: false,
+        has_cover_image: false,
         has_collection_image: false,
         owner: CollectionOwner { user_id, username },
     };
@@ -1404,6 +1441,7 @@ pub async fn import_full(
         updated_at: row.get("updated_at"),
         item_count: imported_count as i64,
         has_flashcards: false,
+        has_cover_image: false,
         has_collection_image: false,
         owner: CollectionOwner { user_id, username },
     };
@@ -2711,6 +2749,7 @@ pub async fn clone_collection(
         updated_at: new_collection.get("updated_at"),
         item_count,
         has_flashcards: false,
+        has_cover_image: false,
         has_collection_image: false,
         owner: CollectionOwner { user_id, username },
     })
@@ -2792,7 +2831,15 @@ pub async fn merge_collections(
             "SELECT c.*, u.userid, u.username,
             (SELECT COUNT(*) FROM collection_items ci WHERE ci.collection_id = c.collection_id) as item_count,
             EXISTS(SELECT 1 FROM flashcards f WHERE f.collection_id = c.collection_id) as has_flashcards,
-            EXISTS(SELECT 1 FROM collection_images cimg WHERE cimg.collection_id = c.collection_id) as has_collection_image
+            EXISTS(SELECT 1 FROM collection_images cimg WHERE cimg.collection_id = c.collection_id) as has_cover_image,
+            (
+                EXISTS(SELECT 1 FROM collection_images cimg WHERE cimg.collection_id = c.collection_id)
+                OR EXISTS (
+                    SELECT 1 FROM collection_item_images cii
+                    INNER JOIN collection_items ci2 ON ci2.item_id = cii.item_id
+                    WHERE ci2.collection_id = c.collection_id AND cii.side IN ('front', 'back')
+                )
+            ) as has_collection_image
             FROM collections c
             JOIN users u ON c.user_id = u.userid
             WHERE c.collection_id = $1",
@@ -2809,6 +2856,7 @@ pub async fn merge_collections(
         updated_at: collection_row.get("updated_at"),
         item_count: collection_row.get("item_count"),
         has_flashcards: collection_row.get("has_flashcards"),
+        has_cover_image: collection_row.get("has_cover_image"),
         has_collection_image: collection_row.get("has_collection_image"),
         owner: CollectionOwner {
             user_id: collection_row.get("userid"),
@@ -2836,6 +2884,7 @@ pub async fn list_collection_items(
     search: Option<String>,
     item_id: Option<i32>,
     exclude_with_flashcards: Option<bool>,
+    has_card_image_only: Option<bool>,
 ) -> AppResult<CollectionItemListResponse> {
     let mut client = pool
         .get()
@@ -2887,7 +2936,11 @@ pub async fn list_collection_items(
          LEFT JOIN flashcards f ON ci.item_id = f.item_id
          WHERE ci.collection_id = $1 
            AND ($2::int IS NULL OR ci.item_id = $2)
-           AND ($3::boolean IS NULL OR ($3::boolean = true AND f.id IS NULL))",
+           AND ($3::boolean IS NULL OR ($3::boolean = true AND f.id IS NULL))
+           AND ($4::boolean IS DISTINCT FROM true OR EXISTS (
+               SELECT 1 FROM collection_item_images cii_img
+               WHERE cii_img.item_id = ci.item_id AND cii_img.side IN ('front', 'back')
+           ))",
     );
 
     // Create vectors to store parameters and the search pattern
@@ -2895,8 +2948,9 @@ pub async fn list_collection_items(
         Box::new(collection_id),
         Box::new(item_id),
         Box::new(exclude_with_flashcards),
+        Box::new(has_card_image_only),
     ];
-    let mut param_count = 4;
+    let mut param_count = 5;
 
     // Store search pattern if search is provided
     let search_pattern = search.map(|s| format!("%{}%", s));
@@ -3012,17 +3066,28 @@ pub async fn list_collection_items(
         }
     }
 
-    // Build and execute count query
+    // Count mirrors list filters (join flashcards when excluding flashcard rows)
     let mut count_query = String::from(
-        "SELECT COUNT(*) 
+        "SELECT COUNT(DISTINCT ci.item_id)
          FROM collection_items ci
          LEFT JOIN definitions d ON ci.definition_id = d.definitionid
          LEFT JOIN valsi v ON d.valsiid = v.valsiid
-         WHERE ci.collection_id = $1 AND ($2::int IS NULL OR ci.item_id = $2)",
+         LEFT JOIN flashcards f ON ci.item_id = f.item_id
+         WHERE ci.collection_id = $1
+           AND ($2::int IS NULL OR ci.item_id = $2)
+           AND ($3::boolean IS NULL OR ($3::boolean = true AND f.id IS NULL))
+           AND ($4::boolean IS DISTINCT FROM true OR EXISTS (
+               SELECT 1 FROM collection_item_images cii_img
+               WHERE cii_img.item_id = ci.item_id AND cii_img.side IN ('front', 'back')
+           ))",
     );
 
-    let mut count_params: Vec<Box<dyn tokio_postgres::types::ToSql + Sync>> =
-        vec![Box::new(collection_id), Box::new(item_id)];
+    let mut count_params: Vec<Box<dyn tokio_postgres::types::ToSql + Sync>> = vec![
+        Box::new(collection_id),
+        Box::new(item_id),
+        Box::new(exclude_with_flashcards),
+        Box::new(has_card_image_only),
+    ];
 
     if let Some(pattern) = &search_pattern {
         count_query.push_str(&format!(
@@ -3031,12 +3096,10 @@ pub async fn list_collection_items(
             v.word ILIKE ${} OR
             d.definition ILIKE ${} OR
             d.notes ILIKE ${}
-        )
-        AND ($5::boolean IS NULL OR ($5::boolean = true AND f.id IS NULL))",
-            3, 3, 3, 3
+        )",
+            5, 5, 5, 5
         ));
         count_params.push(Box::new(pattern.clone()));
-        count_params.push(Box::new(exclude_with_flashcards));
     }
 
     let total: i64 = transaction

@@ -518,6 +518,7 @@
     "skippedItemsHeader": "cliva da",
     "andMoreSkipped": ".e so'o {count} drata...",
     "viewAsFlashcards": "zgana le ckini karda",
+    "viewAsTiktoknu": "zgana lo swipe",
     "bulkEditCustomText": "so'i karda",
     "levels": "klesi",
     "onlyItemsWithoutFlashcards": "da poi na se karda po'o",
@@ -1323,7 +1324,8 @@
       "nextReviewLabel": "bavla'i:",
       "reviewNowAction": "viska ca",
       "moveUpAction": "mo'i ga'u muvdu",
-      "moveDownAction": "mo'i ni'a muvdu"
+      "moveDownAction": "mo'i ni'a muvdu",
+      "viewAsTiktoknu": "zgana lo swipe"
     },
     "activityReactions": {
       "noReactedComments": "no cinmo casnu cu se facki."
@@ -1365,6 +1367,13 @@
         "readMore": "tcidu lo mulno —>",
         "shareError": "srera lo nu gubysku:",
         "copySuccess": "snada lo nu fukpi lo kibyjudri!"
+      },
+      "collectionReel": {
+        "backToCollection": "← lo liste",
+        "empty": "no karda poi pixra cu zasti lo liste.",
+        "frontLabel": "crane",
+        "backLabel": "trixe",
+        "openEntry": "fungau lo valsi"
       }
     },
     "userListTab": {

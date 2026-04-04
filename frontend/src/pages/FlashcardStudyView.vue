@@ -593,11 +593,11 @@ const anonLevelMeta = ref(null) // { min_cards, min_success_rate } when in anon 
 const collectionIdParam = computed(() => queryStr(route.params.collectionId))
 
 /** Set when GET /collections/:id succeeds (for cover image + alt text). */
-const collectionMeta = ref<{ name?: string; has_collection_image?: boolean } | null>(null)
+const collectionMeta = ref<{ name?: string; has_cover_image?: boolean } | null>(null)
 
 const collectionCoverDisplayUrl = computed(() => {
   const cid = collectionIdParam.value
-  if (!cid || !collectionMeta.value?.has_collection_image) return null
+  if (!cid || !collectionMeta.value?.has_cover_image) return null
   return getCollectionImage(cid, { cached: true })
 })
 
@@ -608,7 +608,7 @@ async function fetchCollectionMeta() {
     const res = await getCollection(cid)
     collectionMeta.value = {
       name: res.data.name,
-      has_collection_image: res.data.has_collection_image,
+      has_cover_image: res.data.has_cover_image,
     }
   } catch {
     collectionMeta.value = null

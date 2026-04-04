@@ -57,6 +57,9 @@ pub struct CollectionResponse {
     pub updated_at: DateTime<Utc>,
     pub item_count: i64,
     pub has_flashcards: bool,
+    /// True when the collection has a cover image (`collection_images`).
+    pub has_cover_image: bool,
+    /// True when there is a cover or at least one item with a front/back card image (Tiktoknu / visual study).
     pub has_collection_image: bool,
     pub owner: CollectionOwner,
 }
@@ -90,6 +93,8 @@ pub struct ListCollectionItemsQuery {
     pub item_id: Option<i32>,
     /// Filter items that have no associated flashcards
     pub exclude_with_flashcards: Option<bool>,
+    /// When true, only items that have a front or back image
+    pub has_card_image_only: Option<bool>,
 }
 
 /// Lojban text → Ogg Opus via Kitten TTS (authenticated, rate-limited).

@@ -122,6 +122,14 @@
                 {{ t('collectionDetail.viewAsFlashcards') }}
               </RouterLink>
               <RouterLink
+                v-if="collection?.has_collection_image"
+                :to="`/collections/${props.collectionId}/tiktoknu`"
+                class="ui-btn--accent-purple ui-btn--group-item inline-flex items-center gap-2"
+              >
+                <Clapperboard class="w-4 h-4 shrink-0" aria-hidden="true" />
+                {{ t('collectionDetail.viewAsTiktoknu') }}
+              </RouterLink>
+              <RouterLink
                 :to="`/collections/${props.collectionId}/levels`"
                 class="ui-btn--neutral ui-btn--group-item inline-flex items-center gap-2"
               >
@@ -302,7 +310,7 @@
                   <Camera class="h-5 w-5" />
                 </label>
                 <button
-                  v-if="collection?.has_collection_image"
+                  v-if="collection?.has_cover_image"
                   type="button"
                   class="p-2 bg-white border border-gray-300 rounded-full text-red-600 hover:bg-red-50 transition-all shadow-md pointer-events-auto"
                   :title="t('collectionDetail.collectionCoverRemoveTitle')"
@@ -1320,6 +1328,7 @@ import {
   ArrowRight,
   Camera,
   Trash2,
+  Clapperboard,
 } from 'lucide-vue-next'
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
@@ -2060,7 +2069,7 @@ const isEditCollectionImageLoading = ref(false)
 const editCollectionImageUrl = ref<string | null>(null)
 
 const collectionCoverDisplayUrl = computed(() => {
-  if (!collection.value?.has_collection_image) return null
+  if (!collection.value?.has_cover_image) return null
   return getCollectionImage(props.collectionId, { cached: true })
 })
 
@@ -2075,7 +2084,7 @@ function handleEditCollectionImageError() {
 }
 
 function refreshEditCollectionCoverUrl() {
-  if (collection.value?.has_collection_image) {
+  if (collection.value?.has_cover_image) {
     isEditCollectionImageLoading.value = true
     editCollectionImageUrl.value = `${getCollectionImage(props.collectionId)}?t=${Date.now()}`
   } else {
