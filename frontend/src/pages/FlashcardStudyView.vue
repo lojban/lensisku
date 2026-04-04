@@ -5,74 +5,79 @@
       v-if="cardsAnsweredInSession >= 4"
       position="top"
       @visible="anonBannerVisible = $event"
-    /> <!-- Session Header -->
-    <div class="bg-white border rounded-lg p-4 mb-6">
-
-      <div class="flex flex-wrap justify-between items-center gap-4">
-
-        <div class="flex flex-col sm:flex-row sm:items-center gap-3 min-w-0 flex-1">
-          <CollectionCoverLightbox
-            v-if="collectionCoverDisplayUrl"
-            :image-url="collectionCoverDisplayUrl"
-            :alt="
-              collectionMeta?.name
-                ? t('collectionDetail.coverImageAlt', { name: collectionMeta.name })
-                : t('flashcardStudy.title')
-            "
-            :aria-label="
-              collectionMeta?.name
-                ? t('collectionDetail.coverLightboxDialog', { name: collectionMeta.name })
-                : t('flashcardStudy.title')
-            "
-            :close-aria-label="t('collectionDetail.coverLightboxClose')"
-            class="shrink-0 mx-auto sm:mx-0"
-          >
-            <div class="collection-card-logo h-12 sm:h-16 overflow-hidden">
-              <img
-                :src="collectionCoverDisplayUrl"
-                :alt="
-                  collectionMeta?.name
-                    ? t('collectionDetail.coverImageAlt', { name: collectionMeta.name })
-                    : t('flashcardStudy.title')
-                "
-                class="h-full w-full object-cover"
-                loading="lazy"
-                decoding="async"
-              />
-            </div>
-          </CollectionCoverLightbox>
-          <div
-            v-else
-            class="collection-card-logo-placeholder h-12 sm:h-16 shrink-0 mx-auto sm:mx-0"
-            aria-hidden="true"
-          >
-            <BookOpen class="h-8 w-8" />
+    />
+    <PageHeader
+      layout="split"
+      title-as="h2"
+      title-tone="secondary"
+    >
+      <template #leading>
+        <CollectionCoverLightbox
+          v-if="collectionCoverDisplayUrl"
+          :image-url="collectionCoverDisplayUrl"
+          :alt="
+            collectionMeta?.name
+              ? t('collectionDetail.coverImageAlt', { name: collectionMeta.name })
+              : t('flashcardStudy.title')
+          "
+          :aria-label="
+            collectionMeta?.name
+              ? t('collectionDetail.coverLightboxDialog', { name: collectionMeta.name })
+              : t('flashcardStudy.title')
+          "
+          :close-aria-label="t('collectionDetail.coverLightboxClose')"
+          class="shrink-0"
+        >
+          <div class="collection-card-logo">
+            <img
+              :src="collectionCoverDisplayUrl"
+              :alt="
+                collectionMeta?.name
+                  ? t('collectionDetail.coverImageAlt', { name: collectionMeta.name })
+                  : t('flashcardStudy.title')
+              "
+              class="collection-cover-thumb"
+              loading="lazy"
+              decoding="async"
+            />
           </div>
-          <div class="min-w-0 text-center sm:text-left">
-          <h2 class="text-xl font-bold text-gray-800"> {{ t('flashcardStudy.title') }} </h2>
-
-          <p v-if="showNewCardsMessage" class="text-sm text-orange-600 font-medium mt-1">
-             {{ t('flashcardStudy.newCardsMessage') }}
-          </p>
-
-          <p v-else class="text-sm text-gray-600 mt-1">
-             {{ t('flashcardStudy.remainingCards', { count: remainingCards.length }) }}
-          </p>
-
-          </div>
+        </CollectionCoverLightbox>
+        <div
+          v-else
+          class="collection-card-logo-placeholder shrink-0"
+          aria-hidden="true"
+        >
+          <BookOpen class="h-8 w-8" />
         </div>
-
-        <div class="flex gap-4 space-x-4">
-           <button class="ui-btn--cancel" @click="router.back()">
-             {{ t('flashcardStudy.endSession') }} </button
-          > <button v-if="currentCard" class="ui-btn--empty" @click="snoozeCard">
-             {{ t('flashcardStudy.snooze') }} </button
-          >
-        </div>
-
-      </div>
-
-    </div>
+      </template>
+      <template #title>
+        {{ t('flashcardStudy.title') }}
+      </template>
+      <template #description>
+        <p
+          v-if="showNewCardsMessage"
+          class="mt-1 text-sm font-medium text-orange-600"
+        >
+          {{ t('flashcardStudy.newCardsMessage') }}
+        </p>
+        <p v-else class="mt-1 text-sm text-gray-600">
+          {{ t('flashcardStudy.remainingCards', { count: remainingCards.length }) }}
+        </p>
+      </template>
+      <template #trailing>
+        <button type="button" class="ui-btn--cancel" @click="router.back()">
+          {{ t('flashcardStudy.endSession') }}
+        </button>
+        <button
+          v-if="currentCard"
+          type="button"
+          class="ui-btn--empty"
+          @click="snoozeCard"
+        >
+          {{ t('flashcardStudy.snooze') }}
+        </button>
+      </template>
+    </PageHeader>
      <!-- Loading State -->
     <div v-if="isLoading" class="flex justify-center py-8">
 
@@ -539,6 +544,7 @@ import { ref, onMounted, computed, watch, nextTick, onBeforeUnmount } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import AnonymousProgressBanner from '@/components/AnonymousProgressBanner.vue'
+import PageHeader from '@/components/layout/PageHeader.vue'
 import { CollectionCoverLightbox } from '@packages/ui'
 
 import {

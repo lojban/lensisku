@@ -1,10 +1,8 @@
 <template>
   <button
     type="button"
-    :class="[
-      imageUrl ? 'cursor-zoom-in max-w-full' : 'max-w-full',
-      'inline-flex shrink-0 border-0 bg-transparent p-0 text-inherit',
-    ]"
+    v-bind="buttonAttrs"
+    :class="buttonClass"
     :disabled="!imageUrl"
     :aria-label="ariaLabel || alt || 'Collection cover'"
     @click="onThumbClick"
@@ -42,7 +40,11 @@
 
 <script setup lang="ts">
 import { X } from 'lucide-vue-next'
-import { ref, watch, onMounted, onUnmounted } from 'vue'
+import { ref, watch, onMounted, onUnmounted, useAttrs, computed } from 'vue'
+
+defineOptions({ inheritAttrs: false })
+
+const attrs = useAttrs()
 
 const props = withDefaults(
   defineProps<{
@@ -60,6 +62,17 @@ const props = withDefaults(
     closeAriaLabel: 'Close',
   }
 )
+
+const buttonAttrs = computed(() => {
+  const { class: _cls, ...rest } = attrs as Record<string, unknown>
+  return rest
+})
+
+const buttonClass = computed(() => [
+  props.imageUrl ? 'cursor-zoom-in max-w-full' : 'max-w-full',
+  'inline-flex h-full min-h-0 shrink-0 items-stretch border-0 bg-transparent p-0 text-inherit',
+  attrs.class as string | string[] | Record<string, boolean> | undefined,
+])
 
 const open = ref(false)
 

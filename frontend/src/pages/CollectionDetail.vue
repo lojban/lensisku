@@ -20,7 +20,7 @@
         </div>
       </template>
       <template #title>
-        <h2 class="text-xl sm:text-2xl font-bold text-gray-800">{{ collection.name }}</h2>
+        {{ collection.name }}
       </template>
       <template #meta-actions>
         <Dropdown v-if="auth.state.isLoggedIn" :trigger-label="t('collectionDetail.actions')"
@@ -249,12 +249,12 @@
                 :aria-label="t('collectionDetail.coverLightboxDialog', { name: editForm.name })"
                 :close-aria-label="t('collectionDetail.coverLightboxClose')"
               >
-                <div class="collection-edit-logo overflow-hidden">
+                <div class="collection-edit-logo">
                   <img
                     :key="editCollectionImageUrl || 'none'"
                     :src="editCollectionImageUrl"
                     :alt="t('collectionDetail.coverImageAlt', { name: editForm.name })"
-                    class="h-full w-full object-cover"
+                    class="collection-cover-thumb"
                     loading="eager"
                     decoding="async"
                     @load="handleEditCollectionImageLoad"

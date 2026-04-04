@@ -1,35 +1,30 @@
 <template>
 
   <div class="flex flex-col min-h-[calc(100vh-6rem)]">
-     <!-- Header -->
-    <div class="mb-4 flex-shrink-0">
-
-      <div class="flex items-center justify-between mb-4">
-
-        <div class="flex items-center space-x-3">
-
-          <h2 class="text-2xl font-bold inline-flex items-center gap-2">
-             {{ collection?.name }}
-          </h2>
-
+    <PageHeader title-as="h2" stack-gap="comfortable" class="shrink-0">
+      <template #title>{{ collection?.name }}</template>
+      <template #toolbar>
+        <div
+          class="flex w-full flex-row flex-wrap items-center justify-between gap-2"
+        >
+          <RouterLink
+            :to="`/collections/${props.collectionId}/flashcards`"
+            class="ui-btn--danger-rose"
+          >
+            {{ t('flashcardLevels.viewFlashcards') }}
+          </RouterLink>
+          <Button variant="warning-orange" size="lg" @click="startStudy">
+            {{ t('flashcardLevels.studyButton') }}
+          </Button>
+          <IconButton
+            v-if="isOwner"
+            :label="t('flashcardLevels.createLevel')"
+            button-classes="ui-btn--create"
+            @click="showCreateModal = true"
+          />
         </div>
-
-      </div>
-
-      <div class="flex flex-row gap-2 justify-between items-center w-full">
-         <RouterLink :to="`/collections/${props.collectionId}/flashcards`" class="ui-btn--danger-rose"
-          > {{ t('flashcardLevels.viewFlashcards') }} </RouterLink
-        > <Button variant="warning-orange" size="lg" @click="startStudy">
-           {{ t('flashcardLevels.studyButton') }} </Button
-        > <IconButton
-          v-if="isOwner"
-          :label="t('flashcardLevels.createLevel')"
-          button-classes="ui-btn--create"
-          @click="showCreateModal = true"
-        />
-      </div>
-
-    </div>
+      </template>
+    </PageHeader>
      <!-- Loading State -->
     <div v-if="isLoading" class="flex justify-center py-8">
 
@@ -582,6 +577,7 @@ import { RouterLink, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import DeleteConfirmationModal from '@/components/DeleteConfirmation.vue'
 import ModalComponent from '@/components/ModalComponent.vue'
+import PageHeader from '@/components/layout/PageHeader.vue'
 
 import {
   getCollection,

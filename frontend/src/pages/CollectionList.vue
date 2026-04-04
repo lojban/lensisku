@@ -62,43 +62,65 @@
     </div>
 
   </div>
-  <!-- Header -->
-  <div class="flex flex-row flex-wrap justify-between items-center gap-2 mb-4">
-
-    <h2 class="text-xl sm:text-2xl font-bold text-gray-800">
+  <PageHeader title-as="h2" title-tone="secondary">
+    <template #title>
       {{
         viewMode !== 'my'
           ? t('collectionList.publicCollections')
           : t('collectionList.myCollections')
       }}
-    </h2>
-
-    <div class="flex flex-row justify-end flex-grow gap-2">
-      <input ref="importFileInput" type="file" accept=".json" class="hidden" @change="handleImportFile" />
-      <div v-if="auth.state.isLoggedIn" class="flex flex-row gap-2 items-center">
-        <!-- When in 'my' mode: show an IconButton to switch back to public view -->
-        <IconButton v-if="viewMode === 'my'" :label="t('collectionList.publicCollectionsLabel')"
-          button-classes="ui-btn--neutral" @click="setViewMode('public')"> <template #icon>
-            <ArrowBigRight class="h-4 w-4" />
-          </template> </IconButton>
-        <Dropdown :trigger-label="t('collectionList.addActions')"> <button type="button"
-            class="w-full px-4 py-2 text-left text-sm text-orange-600 hover:bg-orange-50 flex items-center gap-2"
-            @click="setViewMode('my')">
-            <BookOpen class="h-4 w-4 shrink-0" /> {{ t('collectionList.myCollectionsLabel') }}
-          </button> <button type="button"
-            class="w-full px-4 py-2 text-left text-sm text-cyan-600 hover:bg-cyan-50 flex items-center gap-2"
-            :disabled="isImporting" @click="triggerImport">
-            <Import class="h-4 w-4 shrink-0" /> {{ t('collectionList.importCollection') }}
-          </button> <button type="button"
-            class="w-full px-4 py-2 text-left text-sm text-emerald-600 hover:bg-emerald-50 flex items-center gap-2"
-            @click="showCreateModal = true">
-            <CirclePlus class="h-4 w-4 shrink-0" /> {{ t('collectionList.createCollection') }}
-          </button> </Dropdown>
+    </template>
+    <template v-if="auth.state.isLoggedIn" #trailing>
+      <div class="flex min-w-0 flex-grow flex-row flex-wrap justify-end gap-2">
+        <input
+          ref="importFileInput"
+          type="file"
+          accept=".json"
+          class="hidden"
+          @change="handleImportFile"
+        />
+        <div class="flex flex-row items-center gap-2">
+          <IconButton
+            v-if="viewMode === 'my'"
+            :label="t('collectionList.publicCollectionsLabel')"
+            button-classes="ui-btn--neutral"
+            @click="setViewMode('public')"
+          >
+            <template #icon>
+              <ArrowBigRight class="h-4 w-4" />
+            </template>
+          </IconButton>
+          <Dropdown :trigger-label="t('collectionList.addActions')">
+            <button
+              type="button"
+              class="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-orange-600 hover:bg-orange-50"
+              @click="setViewMode('my')"
+            >
+              <BookOpen class="h-4 w-4 shrink-0" />
+              {{ t('collectionList.myCollectionsLabel') }}
+            </button>
+            <button
+              type="button"
+              class="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-cyan-600 hover:bg-cyan-50"
+              :disabled="isImporting"
+              @click="triggerImport"
+            >
+              <Import class="h-4 w-4 shrink-0" />
+              {{ t('collectionList.importCollection') }}
+            </button>
+            <button
+              type="button"
+              class="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-emerald-600 hover:bg-emerald-50"
+              @click="showCreateModal = true"
+            >
+              <CirclePlus class="h-4 w-4 shrink-0" />
+              {{ t('collectionList.createCollection') }}
+            </button>
+          </Dropdown>
+        </div>
       </div>
-
-    </div>
-
-  </div>
+    </template>
+  </PageHeader>
   <!-- Sort & filter controls (card-base, input-field, checkbox-toggle per brandbook). overflow-visible so sort glow/drop-shadow is not clipped by card-base overflow-hidden. -->
   <div class="card-base card-compact mb-4 p-4 sm:p-5 flex flex-col gap-4 overflow-visible">
 
@@ -249,6 +271,7 @@ import {
   getCollectionImage,
 } from '@/api'
 import { CollectionCard, Dropdown, EmptyStatePanel, IconButton } from '@packages/ui'
+import PageHeader from '@/components/layout/PageHeader.vue'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import PaginationComponent from '@/components/PaginationComponent.vue'
 import { useAuth } from '@/composables/useAuth'

@@ -2,24 +2,24 @@
    <Card elevated class="collection-card"
     > <template #header
       >
-      <div class="flex flex-row items-stretch gap-3 w-full min-w-0">
+      <div class="flex flex-row items-start gap-3 w-full min-w-0">
         <RouterLink
           v-if="coverImageUrl"
           :to="collectionHeaderTo"
-          class="flex shrink-0 self-stretch min-h-0 max-w-full rounded-lg sm:rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60 focus-visible:ring-offset-2"
+          class="flex shrink-0 max-w-full rounded-lg sm:rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60 focus-visible:ring-offset-2"
           :aria-label="collection.name"
         >
-          <div class="collection-card-logo h-full overflow-hidden">
+          <div class="collection-card-logo">
             <img
               :src="coverImageUrl"
               alt=""
-              class="h-full w-full object-cover"
+              class="collection-cover-thumb"
               loading="lazy"
               decoding="async"
             />
           </div>
         </RouterLink>
-        <div v-else class="collection-card-logo-placeholder h-full" aria-hidden="true">
+        <div v-else class="collection-card-logo-placeholder" aria-hidden="true">
           <BookOpen class="h-6 w-6 sm:h-8 sm:w-8" />
         </div>
         <div class="min-w-0 flex-1 flex flex-col gap-1.5 text-left">
