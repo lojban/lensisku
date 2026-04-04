@@ -9,12 +9,45 @@ use crate::{
     users::dto::ProfileImageRequest, AppError, AppResult,
 };
 use base64::{engine::general_purpose::STANDARD as BASE64, Engine};
+use sha2::{Digest, Sha256};
 
 /// Max decoded logo size (same order of magnitude as profile images).
 const MAX_COLLECTION_LOGO_SIZE: usize = 5 * 1024 * 1024;
 
 fn mime_base(mime: &str) -> &str {
     mime.split(';').next().unwrap_or(mime).trim()
+}
+
+/// Insert or reuse a row in `collection_images` (content-addressed by SHA-256 of stored bytes).
+async fn get_or_insert_collection_image_id(
+    client: &impl GenericClient,
+    image_data: &[u8],
+    mime_type: &str,
+) -> AppResult<i32> {
+    let mut hasher = Sha256::new();
+    hasher.update(image_data);
+    let hash: Vec<u8> = hasher.finalize().to_vec();
+    let row_opt = client
+        .query_opt(
+            "INSERT INTO collection_images (content_sha256, image_data, mime_type)
+             VALUES ($1, $2, $3)
+             ON CONFLICT (content_sha256) DO NOTHING
+             RETURNING collection_image_id",
+            &[&hash, &image_data, &mime_type],
+        )
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+    if let Some(row) = row_opt {
+        return Ok(row.get("collection_image_id"));
+    }
+    let row = client
+        .query_one(
+            "SELECT collection_image_id FROM collection_images WHERE content_sha256 = $1",
+            &[&hash],
+        )
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+    Ok(row.get("collection_image_id"))
 }
 
 /// Raster types go through WebP compression; SVG is stored as UTF-8 after light checks.
@@ -59,7 +92,7 @@ fn validate_svg_logo(data: &[u8]) -> Result<(), String> {
     Ok(())
 }
 use chrono::{DateTime, Utc};
-use deadpool_postgres::{Pool, Transaction};
+use deadpool_postgres::{GenericClient, Pool, Transaction};
 use std::collections::HashSet;
 use tokio_postgres::types::ToSql;
 
@@ -352,9 +385,9 @@ async fn query_collections(
         "SELECT c.*, u.userid, u.username,
                 (SELECT COUNT(*) FROM collection_items ci WHERE ci.collection_id = c.collection_id) AS item_count,
                 EXISTS(SELECT 1 FROM flashcards f2 WHERE f2.collection_id = c.collection_id) AS has_flashcards,
-                EXISTS(SELECT 1 FROM collection_images cimg WHERE cimg.collection_id = c.collection_id) AS has_cover_image,
+                (c.cover_collection_image_id IS NOT NULL) AS has_cover_image,
                 (
-                    EXISTS(SELECT 1 FROM collection_images cimg WHERE cimg.collection_id = c.collection_id)
+                    (c.cover_collection_image_id IS NOT NULL)
                     OR EXISTS (
                         SELECT 1 FROM collection_item_images cii
                         INNER JOIN collection_items ci2 ON ci2.item_id = cii.item_id
@@ -526,9 +559,9 @@ fn build_collections_query(where_clause: &str, sort: Option<&str>, user_owned: b
         "SELECT c.*, {extra_select}u.username,
                 (SELECT COUNT(*) FROM collection_items ci WHERE ci.collection_id = c.collection_id) AS item_count,
                 EXISTS(SELECT 1 FROM flashcards f WHERE f.collection_id = c.collection_id) AS has_flashcards,
-                EXISTS(SELECT 1 FROM collection_images cimg WHERE cimg.collection_id = c.collection_id) AS has_cover_image,
+                (c.cover_collection_image_id IS NOT NULL) AS has_cover_image,
                 (
-                    EXISTS(SELECT 1 FROM collection_images cimg WHERE cimg.collection_id = c.collection_id)
+                    (c.cover_collection_image_id IS NOT NULL)
                     OR EXISTS (
                         SELECT 1 FROM collection_item_images cii
                         INNER JOIN collection_items ci2 ON ci2.item_id = cii.item_id
@@ -565,9 +598,9 @@ pub async fn get_collection(
         "SELECT c.*, u.userid, u.username, 
         (SELECT COUNT(*) FROM collection_items ci WHERE ci.collection_id = c.collection_id) as item_count,
         EXISTS(SELECT 1 FROM flashcards f WHERE f.collection_id = c.collection_id) as has_flashcards,
-        EXISTS(SELECT 1 FROM collection_images cimg WHERE cimg.collection_id = c.collection_id) as has_cover_image,
+        (c.cover_collection_image_id IS NOT NULL) as has_cover_image,
         (
-            EXISTS(SELECT 1 FROM collection_images cimg WHERE cimg.collection_id = c.collection_id)
+            (c.cover_collection_image_id IS NOT NULL)
             OR EXISTS (
                 SELECT 1 FROM collection_item_images cii
                 INNER JOIN collection_items ci2 ON ci2.item_id = cii.item_id
@@ -694,15 +727,16 @@ pub async fn update_collection(
     let image_flags = transaction
         .query_one(
             "SELECT
-                EXISTS(SELECT 1 FROM collection_images WHERE collection_id = $1) AS has_cover_image,
+                (c.cover_collection_image_id IS NOT NULL) AS has_cover_image,
                 (
-                    EXISTS(SELECT 1 FROM collection_images WHERE collection_id = $1)
+                    c.cover_collection_image_id IS NOT NULL
                     OR EXISTS (
                         SELECT 1 FROM collection_item_images cii
                         INNER JOIN collection_items ci2 ON ci2.item_id = cii.item_id
                         WHERE ci2.collection_id = $1 AND cii.side IN ('front', 'back')
                     )
-                ) AS has_collection_image",
+                ) AS has_collection_image
+             FROM collections c WHERE c.collection_id = $1",
             &[&collection_id],
         )
         .await
@@ -1120,10 +1154,16 @@ pub async fn import_collection_from_json(
                         new_item_id, side
                     )));
                 }
-                transaction.execute(
-                    "INSERT INTO collection_item_images (item_id, image_data, mime_type, side) VALUES ($1, $2, $3, $4)",
-                    &[&new_item_id, &image_data, &mime_type, &side]
-                ).await.map_err(|e| AppError::Database(e.to_string()))?;
+                let image_id =
+                    get_or_insert_collection_image_id(&transaction, &image_data, &mime_type)
+                        .await?;
+                transaction
+                    .execute(
+                        "INSERT INTO collection_item_images (item_id, collection_image_id, side) VALUES ($1, $2, $3)",
+                        &[&new_item_id, &image_id, &side],
+                    )
+                    .await
+                    .map_err(|e| AppError::Database(e.to_string()))?;
             }
         }
 
@@ -1286,12 +1326,17 @@ pub async fn import_full(
             if let Some(url) = url_option {
                 if let Ok((mime_type, image_data)) = decode_data_url(url) {
                     if image_data.len() <= 5 * 1024 * 1024 {
-                        let _ = transaction
-                            .execute(
-                                "INSERT INTO collection_item_images (item_id, image_data, mime_type, side) VALUES ($1, $2, $3, $4)",
-                                &[&new_item_id, &image_data, &mime_type, &side],
-                            )
-                            .await;
+                        if let Ok(image_id) =
+                            get_or_insert_collection_image_id(&transaction, &image_data, &mime_type)
+                                .await
+                        {
+                            let _ = transaction
+                                .execute(
+                                    "INSERT INTO collection_item_images (item_id, collection_image_id, side) VALUES ($1, $2, $3)",
+                                    &[&new_item_id, &image_id, &side],
+                                )
+                                .await;
+                        }
                     }
                 }
             }
@@ -1488,10 +1533,18 @@ pub async fn export_collection_full(
                 ci.langid as language_id, ci.owner_user_id, ci.license,
                 v.word, d.definition, d.notes as definition_notes, d.jargon, t.descriptor as word_type,
                 c.rafsi, c.selmaho,
-                (SELECT image_data FROM collection_item_images WHERE item_id = ci.item_id AND side = 'front') as front_image_data,
-                (SELECT mime_type FROM collection_item_images WHERE item_id = ci.item_id AND side = 'front') as front_image_mime,
-                (SELECT image_data FROM collection_item_images WHERE item_id = ci.item_id AND side = 'back') as back_image_data,
-                (SELECT mime_type FROM collection_item_images WHERE item_id = ci.item_id AND side = 'back') as back_image_mime,
+                (SELECT img.image_data FROM collection_item_images cii
+                    INNER JOIN collection_images img ON img.collection_image_id = cii.collection_image_id
+                    WHERE cii.item_id = ci.item_id AND cii.side = 'front') as front_image_data,
+                (SELECT img.mime_type FROM collection_item_images cii
+                    INNER JOIN collection_images img ON img.collection_image_id = cii.collection_image_id
+                    WHERE cii.item_id = ci.item_id AND cii.side = 'front') as front_image_mime,
+                (SELECT img.image_data FROM collection_item_images cii
+                    INNER JOIN collection_images img ON img.collection_image_id = cii.collection_image_id
+                    WHERE cii.item_id = ci.item_id AND cii.side = 'back') as back_image_data,
+                (SELECT img.mime_type FROM collection_item_images cii
+                    INNER JOIN collection_images img ON img.collection_image_id = cii.collection_image_id
+                    WHERE cii.item_id = ci.item_id AND cii.side = 'back') as back_image_mime,
                 f.direction::text as flashcard_direction
             FROM collection_items ci
             LEFT JOIN definitions d ON ci.definition_id = d.definitionid
@@ -1853,14 +1906,15 @@ pub async fn upsert_item(
         let image_data = BASE64
             .decode(&image.data)
             .map_err(|e| AppError::BadRequest(format!("Invalid front image base64: {}", e)))?;
+        let image_id =
+            get_or_insert_collection_image_id(&transaction, &image_data, &image.mime_type).await?;
         transaction
             .execute(
-                "INSERT INTO collection_item_images (item_id, image_data, mime_type, side)
-                 VALUES ($1, $2, $3, 'front')
+                "INSERT INTO collection_item_images (item_id, collection_image_id, side)
+                 VALUES ($1, $2, 'front')
                  ON CONFLICT (item_id, side) DO UPDATE SET
-                   image_data = EXCLUDED.image_data,
-                   mime_type = EXCLUDED.mime_type",
-                &[&item_id, &image_data, &image.mime_type],
+                   collection_image_id = EXCLUDED.collection_image_id",
+                &[&item_id, &image_id],
             )
             .await
             .map_err(|e| AppError::Database(e.to_string()))?;
@@ -1871,14 +1925,15 @@ pub async fn upsert_item(
         let image_data = BASE64
             .decode(&image.data)
             .map_err(|e| AppError::BadRequest(format!("Invalid back image base64: {}", e)))?;
+        let image_id =
+            get_or_insert_collection_image_id(&transaction, &image_data, &image.mime_type).await?;
         transaction
             .execute(
-                "INSERT INTO collection_item_images (item_id, image_data, mime_type, side)
-                 VALUES ($1, $2, $3, 'back')
+                "INSERT INTO collection_item_images (item_id, collection_image_id, side)
+                 VALUES ($1, $2, 'back')
                  ON CONFLICT (item_id, side) DO UPDATE SET
-                   image_data = EXCLUDED.image_data,
-                   mime_type = EXCLUDED.mime_type",
-                &[&item_id, &image_data, &image.mime_type],
+                   collection_image_id = EXCLUDED.collection_image_id",
+                &[&item_id, &image_id],
             )
             .await
             .map_err(|e| AppError::Database(e.to_string()))?;
@@ -2666,52 +2721,87 @@ pub async fn clone_collection(
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
 
-    // Get source collection
+    // Get source collection (including shared cover blob reference)
     let source = transaction
         .query_one(
-            "SELECT name, description, is_public 
-             FROM collections 
+            "SELECT name, description, is_public, cover_collection_image_id
+             FROM collections
              WHERE collection_id = $1",
             &[&source_collection_id],
         )
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
 
-    // Create new collection
+    // Create new collection (reuse source cover_collection_image_id — no blob copy)
     let new_collection = transaction
         .query_one(
-            "INSERT INTO collections (user_id, name, description, is_public)
-             VALUES ($1, $2, $3, false)
+            "INSERT INTO collections (user_id, name, description, is_public, cover_collection_image_id)
+             VALUES ($1, $2, $3, false, $4)
              RETURNING collection_id, created_at, updated_at",
             &[
                 &user_id,
                 &format!("Copy of {}", source.get::<_, String>("name")),
                 &source.get::<_, Option<String>>("description"),
+                &source.get::<_, Option<i32>>("cover_collection_image_id"),
             ],
         )
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
 
-    // Copy items that have either definition_id or free content
+    let new_collection_id: i32 = new_collection.get("collection_id");
+
+    // Copy items that have either definition_id or free content (stable order for pairing with clones)
     transaction
         .execute(
-            "INSERT INTO collection_items (collection_id, definition_id, 
-                free_content_front, free_content_back, 
-                langid, owner_user_id, license, script, is_original, 
+            "INSERT INTO collection_items (collection_id, definition_id,
+                free_content_front, free_content_back,
+                langid, owner_user_id, license, script, is_original,
                 notes, position, auto_progress, canonical_form)
-            SELECT $1, definition_id, 
-                   free_content_front, free_content_back, 
-                   langid, owner_user_id, license, script, is_original, 
+            SELECT $1, definition_id,
+                   free_content_front, free_content_back,
+                   langid, owner_user_id, license, script, is_original,
                    notes, position, auto_progress, canonical_form
-            FROM collection_items 
+            FROM collection_items
             WHERE collection_id = $2
-            AND (definition_id IS NOT NULL 
-                 OR free_content_front IS NOT NULL 
-                 OR free_content_back IS NOT NULL)",
-            &[
-                &new_collection.get::<_, i32>("collection_id"),
-                &source_collection_id,
-            ],
+            AND (definition_id IS NOT NULL
+                 OR free_content_front IS NOT NULL
+                 OR free_content_back IS NOT NULL)
+            ORDER BY position NULLS LAST, item_id",
+            &[&new_collection_id, &source_collection_id],
+        )
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+    // Reuse the same collection_image_id rows for card images (no BYTEA duplication)
+    transaction
+        .execute(
+            "INSERT INTO collection_item_images (item_id, side, collection_image_id)
+             SELECT paired.new_item_id, cii.side, cii.collection_image_id
+             FROM collection_item_images cii
+             INNER JOIN (
+                 WITH old_items AS (
+                     SELECT item_id,
+                            row_number() OVER (ORDER BY position NULLS LAST, item_id) AS rn
+                     FROM collection_items
+                     WHERE collection_id = $1
+                       AND (definition_id IS NOT NULL
+                            OR free_content_front IS NOT NULL
+                            OR free_content_back IS NOT NULL)
+                 ),
+                 new_items AS (
+                     SELECT item_id,
+                            row_number() OVER (ORDER BY position NULLS LAST, item_id) AS rn
+                     FROM collection_items
+                     WHERE collection_id = $2
+                       AND (definition_id IS NOT NULL
+                            OR free_content_front IS NOT NULL
+                            OR free_content_back IS NOT NULL)
+                 )
+                 SELECT o.item_id AS old_item_id, n.item_id AS new_item_id
+                 FROM old_items o
+                 INNER JOIN new_items n ON n.rn = o.rn
+             ) AS paired ON paired.old_item_id = cii.item_id",
+            &[&source_collection_id, &new_collection_id],
         )
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
@@ -2726,11 +2816,25 @@ pub async fn clone_collection(
     let item_count = transaction
         .query_one(
             "SELECT COUNT(*) FROM collection_items WHERE collection_id = $1",
-            &[&new_collection.get::<_, i32>("collection_id")],
+            &[&new_collection_id],
         )
         .await
         .map_err(|e| AppError::Database(e.to_string()))?
         .try_get::<_, i64>(0)
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+    let image_flags = transaction
+        .query_one(
+            "SELECT (c.cover_collection_image_id IS NOT NULL) AS has_cover_image,
+                    (c.cover_collection_image_id IS NOT NULL OR EXISTS (
+                        SELECT 1 FROM collection_item_images cii
+                        INNER JOIN collection_items ci2 ON ci2.item_id = cii.item_id
+                        WHERE ci2.collection_id = $1 AND cii.side IN ('front', 'back')
+                    )) AS has_collection_image
+             FROM collections c WHERE c.collection_id = $1",
+            &[&new_collection_id],
+        )
+        .await
         .map_err(|e| AppError::Database(e.to_string()))?;
 
     transaction
@@ -2741,7 +2845,7 @@ pub async fn clone_collection(
     invalidate_public_collections_cache(redis).await;
 
     Ok(CollectionResponse {
-        collection_id: new_collection.get("collection_id"),
+        collection_id: new_collection_id,
         name: format!("Copy of {}", source.get::<_, String>("name")),
         description: source.get("description"),
         is_public: source.get("is_public"),
@@ -2749,8 +2853,8 @@ pub async fn clone_collection(
         updated_at: new_collection.get("updated_at"),
         item_count,
         has_flashcards: false,
-        has_cover_image: false,
-        has_collection_image: false,
+        has_cover_image: image_flags.get("has_cover_image"),
+        has_collection_image: image_flags.get("has_collection_image"),
         owner: CollectionOwner { user_id, username },
     })
 }
@@ -2831,9 +2935,9 @@ pub async fn merge_collections(
             "SELECT c.*, u.userid, u.username,
             (SELECT COUNT(*) FROM collection_items ci WHERE ci.collection_id = c.collection_id) as item_count,
             EXISTS(SELECT 1 FROM flashcards f WHERE f.collection_id = c.collection_id) as has_flashcards,
-            EXISTS(SELECT 1 FROM collection_images cimg WHERE cimg.collection_id = c.collection_id) as has_cover_image,
+            (c.cover_collection_image_id IS NOT NULL) as has_cover_image,
             (
-                EXISTS(SELECT 1 FROM collection_images cimg WHERE cimg.collection_id = c.collection_id)
+                (c.cover_collection_image_id IS NOT NULL)
                 OR EXISTS (
                     SELECT 1 FROM collection_item_images cii
                     INNER JOIN collection_items ci2 ON ci2.item_id = cii.item_id
@@ -3288,9 +3392,10 @@ pub async fn get_item_image(
 
     let result = client
         .query_opt(
-            "SELECT image_data, mime_type 
-             FROM collection_item_images 
-             WHERE item_id = $1 AND side = $2",
+            "SELECT img.image_data, img.mime_type
+             FROM collection_item_images cii
+             INNER JOIN collection_images img ON img.collection_image_id = cii.collection_image_id
+             WHERE cii.item_id = $1 AND cii.side = $2",
             &[&item_id, &side],
         )
         .await
@@ -3386,11 +3491,13 @@ pub async fn update_item_images(
         let image_data = BASE64
             .decode(&image.data)
             .map_err(|e| AppError::BadRequest(format!("Invalid front image base64: {}", e)))?;
+        let image_id =
+            get_or_insert_collection_image_id(&transaction, &image_data, &image.mime_type).await?;
         transaction
             .execute(
-                "INSERT INTO collection_item_images (item_id, image_data, mime_type, side)
-             VALUES ($1, $2, $3, 'front')",
-                &[&item_id, &image_data, &image.mime_type],
+                "INSERT INTO collection_item_images (item_id, collection_image_id, side)
+             VALUES ($1, $2, 'front')",
+                &[&item_id, &image_id],
             )
             .await
             .map_err(|e| AppError::Database(e.to_string()))?;
@@ -3412,11 +3519,13 @@ pub async fn update_item_images(
         let image_data = BASE64
             .decode(&image.data)
             .map_err(|e| AppError::BadRequest(format!("Invalid back image base64: {}", e)))?;
+        let image_id =
+            get_or_insert_collection_image_id(&transaction, &image_data, &image.mime_type).await?;
         transaction
             .execute(
-                "INSERT INTO collection_item_images (item_id, image_data, mime_type, side)
-             VALUES ($1, $2, $3, 'back')",
-                &[&item_id, &image_data, &image.mime_type],
+                "INSERT INTO collection_item_images (item_id, collection_image_id, side)
+             VALUES ($1, $2, 'back')",
+                &[&item_id, &image_id],
             )
             .await
             .map_err(|e| AppError::Database(e.to_string()))?;
@@ -3827,7 +3936,10 @@ pub async fn get_collection_image_bytes(
 
     let img = client
         .query_opt(
-            "SELECT image_data, mime_type FROM collection_images WHERE collection_id = $1",
+            "SELECT img.image_data, img.mime_type
+             FROM collections c
+             INNER JOIN collection_images img ON img.collection_image_id = c.cover_collection_image_id
+             WHERE c.collection_id = $1",
             &[&collection_id],
         )
         .await
@@ -3863,16 +3975,15 @@ pub async fn upsert_collection_image(
 
     verify_collection_ownership(&transaction, collection_id, user_id).await?;
 
+    let image_id =
+        get_or_insert_collection_image_id(&transaction, &stored_data, &new_mime_type).await?;
     transaction
         .execute(
-            "INSERT INTO collection_images (collection_id, image_data, mime_type, updated_at)
-             VALUES ($1, $2, $3, CURRENT_TIMESTAMP)
-             ON CONFLICT (collection_id)
-             DO UPDATE SET
-                image_data = EXCLUDED.image_data,
-                mime_type = EXCLUDED.mime_type,
-                updated_at = CURRENT_TIMESTAMP",
-            &[&collection_id, &stored_data, &new_mime_type],
+            "UPDATE collections
+             SET cover_collection_image_id = $1,
+                 updated_at = CURRENT_TIMESTAMP
+             WHERE collection_id = $2",
+            &[&image_id, &collection_id],
         )
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
@@ -3905,7 +4016,10 @@ pub async fn remove_collection_image(
 
     transaction
         .execute(
-            "DELETE FROM collection_images WHERE collection_id = $1",
+            "UPDATE collections
+             SET cover_collection_image_id = NULL,
+                 updated_at = CURRENT_TIMESTAMP
+             WHERE collection_id = $1",
             &[&collection_id],
         )
         .await

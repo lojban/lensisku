@@ -121,6 +121,7 @@ webp = "0.3.1"
 async-trait = "0.1.89"
 validator = { version = "0.20.0", features = ["derive"] }
 crc32fast = "1.5"
+sha2 = "0.10"
 
 camxes-rs = "0.1.5"
 openssl = "0.10.76"
