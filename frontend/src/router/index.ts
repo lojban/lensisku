@@ -228,6 +228,19 @@ const baseRoutes: Array<RouteRecordRaw> = [
     }),
   },
   {
+    path: '/collections/:collectionId/tiktoknu',
+    name: 'CollectionTiktoknu',
+    component: () => import('../pages/TiktoknuPage.vue'),
+    meta: {
+      hideFooter: true,
+      fullHeight: true,
+      contentTopPaddingMainOnly: true,
+    },
+    props: (route) => ({
+      collectionId: route.params.collectionId,
+    }),
+  },
+  {
     path: '/collections/:collectionId/flashcards/study',
     name: 'FlashcardStudy',
     component: () => import('../pages/FlashcardStudyView.vue'),

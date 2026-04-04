@@ -508,6 +508,7 @@
     "skippedItemsHeader": "已跳过条目",
     "andMoreSkipped": "另有 {count} 条…",
     "viewAsFlashcards": "作为闪卡",
+    "viewAsTiktoknu": "滑动浏览",
     "bulkEditCustomText": "批量编辑",
     "levels": "等级",
     "onlyItemsWithoutFlashcards": "仅无闪卡的合集条目",
@@ -1313,7 +1314,8 @@
       "nextReviewLabel": "下次复习：",
       "reviewNowAction": "立即复习",
       "moveUpAction": "上移",
-      "moveDownAction": "下移"
+      "moveDownAction": "下移",
+      "viewAsTiktoknu": "滑动浏览"
     },
     "userListTab": {
       "roleLabel": "角色：",
@@ -1367,6 +1369,13 @@
         "readMore": "阅读更多 →",
         "shareError": "分享出错：",
         "copySuccess": "链接已复制！"
+      },
+      "collectionReel": {
+        "backToCollection": "← 合集",
+        "empty": "该合集中没有带图片的卡片。",
+        "frontLabel": "正面",
+        "backLabel": "背面",
+        "openEntry": "打开词条"
       }
     }
   },

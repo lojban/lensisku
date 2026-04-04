@@ -503,6 +503,7 @@
     "skippedItemsHeader": "スキップした項目",
     "andMoreSkipped": "ほか {count} 件…",
     "viewAsFlashcards": "フラッシュカードとして見る",
+    "viewAsTiktoknu": "スワイプ表示",
     "bulkEditCustomText": "一括編集",
     "levels": "レベル",
     "onlyItemsWithoutFlashcards": "フラッシュカードがない項目のみ",
@@ -1308,7 +1309,8 @@
       "nextReviewLabel": "次回：",
       "reviewNowAction": "今すぐ復習",
       "moveUpAction": "上へ",
-      "moveDownAction": "下へ"
+      "moveDownAction": "下へ",
+      "viewAsTiktoknu": "スワイプ表示"
     },
     "userListTab": {
       "roleLabel": "ロール：",
@@ -1362,6 +1364,13 @@
         "readMore": "続きを読む →",
         "shareError": "共有エラー：",
         "copySuccess": "リンクをクリップボードにコピーしました。"
+      },
+      "collectionReel": {
+        "backToCollection": "← コレクション",
+        "empty": "画像付きのカードがありません。",
+        "frontLabel": "表面",
+        "backLabel": "裏面",
+        "openEntry": "項目を開く"
       }
     }
   },

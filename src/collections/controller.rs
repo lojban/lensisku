@@ -887,6 +887,7 @@ pub async fn list_collection_items(
         query.search.clone(),
         query.item_id,
         query.exclude_with_flashcards,
+        query.has_card_image_only,
     )
     .await
     {

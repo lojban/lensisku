@@ -33,6 +33,14 @@
               <List class="w-4 h-4 shrink-0" aria-hidden="true" />
               {{ t('components.flashcardCollectionView.collectionButton') }}
             </RouterLink>
+            <RouterLink
+              v-if="collection?.has_collection_image"
+              :to="`/collections/${props.collectionId}/tiktoknu`"
+              class="ui-btn--accent-purple ui-btn--group-item inline-flex items-center gap-2"
+            >
+              <Clapperboard class="w-4 h-4 shrink-0" aria-hidden="true" />
+              {{ t('components.flashcardCollectionView.viewAsTiktoknu') }}
+            </RouterLink>
             <template v-if="isOwner && collection && collection.item_count > existingFlashcardIds.size">
               <RouterLink
                 :to="`/collections/${collection.collection_id}?mode=add_flashcard`"
@@ -388,6 +396,7 @@ import {
   LayoutPanelTop,
   PlusCircle,
   Import,
+  Clapperboard,
 } from 'lucide-vue-next'
 import { ref, computed, onMounted, watch, onBeforeUnmount } from 'vue'
 import { useRouter, RouterLink, useRoute } from 'vue-router'
@@ -744,7 +753,7 @@ useSeoHead({ title: pageTitle })
 const isAnonView = computed(() => !auth.state.isLoggedIn)
 
 const collectionCoverDisplayUrl = computed(() => {
-  if (!collection.value?.has_collection_image) return null
+  if (!collection.value?.has_cover_image) return null
   return getCollectionImage(props.collectionId, { cached: true })
 })
 

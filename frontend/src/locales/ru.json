@@ -465,6 +465,7 @@
     "skippedItemsHeader": "Пропущенные элементы",
     "andMoreSkipped": "и еще {count}...",
     "viewAsFlashcards": "Как карточки",
+    "viewAsTiktoknu": "Свайп-просмотр",
     "bulkEditCustomText": "Масс. редакт.",
     "levels": "Уровни",
     "onlyItemsWithoutFlashcards": "Только элементы коллекции без карточек",
@@ -1262,7 +1263,8 @@
       "nextReviewLabel": "Следующее:",
       "reviewNowAction": "Повторить сейчас",
       "moveUpAction": "Переместить вверх",
-      "moveDownAction": "Переместить вниз"
+      "moveDownAction": "Переместить вниз",
+      "viewAsTiktoknu": "Свайп-просмотр"
     },
     "userListTab": {
       "roleLabel": "Роль:",
@@ -1316,6 +1318,13 @@
         "readMore": "Читать далее →",
         "shareError": "Ошибка при отправке:",
         "copySuccess": "Ссылка скопирована в буфер обмена!"
+      },
+      "collectionReel": {
+        "backToCollection": "← Коллекция",
+        "empty": "В коллекции нет карточек с изображениями.",
+        "frontLabel": "Лицевая сторона",
+        "backLabel": "Оборот",
+        "openEntry": "Открыть словарную статью"
       }
     }
   },
