@@ -613,7 +613,9 @@
     "analyzeWordFirstError": "Analyze the word first to set its word type.",
     "addDefinitionFailed": "Could not create the definition.",
     "addDefinitionItemFailed": "The definition was created but could not be added to this collection.",
-    "mergeSuccess": "Collections merged successfully."
+    "mergeSuccess": "Collections merged successfully.",
+    "payloadTooLarge": "This item is too large to send (for example images or very long text exceed the server limit). Remove or shrink images, shorten content, or split the item.",
+    "itemSaveFailed": "Could not save this collection item."
   },
   "dictionaryExport": {
     "title": "Dictionary export",

@@ -1147,6 +1147,14 @@
 
         </div>
 
+        <p
+          v-if="addItemModalError"
+          class="text-sm text-red-600 rounded-md border border-red-200 bg-red-50 px-3 py-2"
+          role="alert"
+        >
+          {{ addItemModalError }}
+        </p>
+
         <div class="flex justify-end gap-2">
            <button
             v-if="isEditingItem"
@@ -1365,7 +1373,11 @@ import { useI18n } from 'vue-i18n'
 import { SearchQueue } from '@/utils/searchQueue'
 import { queryStr } from '@/utils/routeQuery'
 import { normalizeSearchQuery } from '@/utils/searchQueryUtils'
-import { getApiErrorMessage, uploadImageErrorMessage } from '@/utils/apiError'
+import {
+  getApiErrorMessage,
+  getCollectionItemSaveErrorMessage,
+  uploadImageErrorMessage,
+} from '@/utils/apiError'
 
 /** Row from listCollectionItems / searchItems (template + reorder). */
 interface CollectionDetailListItem {
@@ -1434,6 +1446,7 @@ const isExporting = ref(false)
 const exportError = ref('')
 const exportProgress = ref('')
 const showValidation = ref(false)
+const addItemModalError = ref('')
 
 const ITEM_TYPE_STORAGE_KEY = 'collectionDetail_itemType'
 
@@ -1629,6 +1642,7 @@ const addNewDefinitionAndItem = async () => {
 
   isSubmittingNewDefinition.value = true
   clearError()
+  addItemModalError.value = ''
 
   try {
     // 1. Add the new definition (valsi)
@@ -1667,7 +1681,13 @@ const addNewDefinitionAndItem = async () => {
     await Promise.all([fetchItems(), fetchCollection()])
   } catch (error) {
     console.error('Error adding new definition and item:', error)
-    showError(error.message || t('collectionDetail.addDefinitionItemFailed'))
+    const err = error as { message?: string; response?: unknown }
+    const msg =
+      err.response != null
+        ? getCollectionItemSaveErrorMessage(error, t)
+        : err.message?.trim() || t('collectionDetail.addDefinitionItemFailed')
+    addItemModalError.value = msg
+    showError(msg)
   } finally {
     isSubmittingNewDefinition.value = false
   }
@@ -1739,6 +1759,8 @@ const addCustomContent = async () => {
     return
   }
 
+  addItemModalError.value = ''
+
   if (isEditingItem.value) {
     isUpdatingItem.value = true
   }
@@ -1791,6 +1813,9 @@ const addCustomContent = async () => {
     }
   } catch (error) {
     console.error('Error adding custom content:', error)
+    const msg = getCollectionItemSaveErrorMessage(error, t)
+    addItemModalError.value = msg
+    showError(msg)
   } finally {
     isUpdatingItem.value = false
   }
@@ -1837,6 +1862,7 @@ const openEditItemModal = async (item) => {
   editingItem.value = item
   isEditingItem.value = true
   showAddModal.value = true
+  addItemModalError.value = ''
 
   await nextTick(() => {
     if (customContentContainer.value) {
@@ -2163,6 +2189,7 @@ async function handleCollectionCoverRemove() {
 }
 
 function cancelEditItemModal() {
+  addItemModalError.value = ''
   if (editItemId.value) {
     router.push(`/collections/${props.collectionId}/flashcards`)
   } else {
@@ -2628,6 +2655,7 @@ const selectDefinition = async (definition) => {
 }
 
 const resetForm = () => {
+  addItemModalError.value = ''
   if (editItemId.value) {
     router.push(`/collections/${props.collectionId}/flashcards`)
   } else {
@@ -2657,6 +2685,7 @@ const resetForm = () => {
 }
 
 const addNewItem = async (definition) => {
+  addItemModalError.value = ''
   if (isEditingItem.value) {
     isUpdatingItem.value = true
   }
@@ -2681,6 +2710,9 @@ const addNewItem = async (definition) => {
     await Promise.all([fetchItems(), fetchCollection()])
   } catch (error) {
     console.error('Error adding definition:', error)
+    const msg = getCollectionItemSaveErrorMessage(error, t)
+    addItemModalError.value = msg
+    showError(msg)
   } finally {
     isUpdatingItem.value = false
   }

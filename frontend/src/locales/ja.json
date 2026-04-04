@@ -598,7 +598,9 @@
     "analyzeWordFirstError": "まず語を解析して語種を設定してください。",
     "addDefinitionFailed": "定義を作成できませんでした。",
     "addDefinitionItemFailed": "定義は作成されましたが、このコレクションに追加できませんでした。",
-    "mergeSuccess": "コレクションをマージしました。"
+    "mergeSuccess": "コレクションをマージしました。",
+    "payloadTooLarge": "送信サイズがサーバーの上限を超えています（画像や長いテキストが大きすぎることがあります）。画像を削除・縮小するか、本文を短くするか、項目を分けてください。",
+    "itemSaveFailed": "コレクション項目を保存できませんでした。"
   },
   "dictionaryExport": {
     "title": "辞書のエクスポート",

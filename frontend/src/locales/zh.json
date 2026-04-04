@@ -603,7 +603,9 @@
     "analyzeWordFirstError": "请先分析词以设置词类。",
     "addDefinitionFailed": "无法创建释义。",
     "addDefinitionItemFailed": "释义已创建，但未能加入此合集。",
-    "mergeSuccess": "合集合并成功。"
+    "mergeSuccess": "合集合并成功。",
+    "payloadTooLarge": "此项数据过大，无法提交（例如图片或过长正文超过服务器限制）。请删除或压缩图片、缩短内容，或拆成多条。",
+    "itemSaveFailed": "无法保存该合集条目。"
   },
   "dictionaryExport": {
     "title": "词典导出",

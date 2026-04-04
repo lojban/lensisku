@@ -613,7 +613,9 @@
     "analyzeWordFirstError": "ko pamoi lanli lo valsi mu'i lo nu vreji lo valsi klesi.",
     "addDefinitionFailed": "na snada lo nu finti lo ciksi.",
     "addDefinitionItemFailed": "snada lo nu finti lo ciksi .i ku'i na kakne lo nu jmina fi lo liste.",
-    "mergeSuccess": "snada lo nu jicla lo liste."
+    "mergeSuccess": "snada lo nu jicla lo liste.",
+    "payloadTooLarge": "lo datni cu barda tumfa lo sarvi .i lo pixra .a lo clani notci cu ka'e rinka .i ko vimcu .a cmalo lo pixra .a cmalu lo notci .a sepli lo jmina",
+    "itemSaveFailed": "na snada lo nu vreji lo liste jmina."
   },
   "dictionaryExport": {
     "title": "vlaste cupra",
