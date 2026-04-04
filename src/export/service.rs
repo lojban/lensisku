@@ -674,10 +674,18 @@ async fn generate_xml(
                 ci.langid as language_id, ci.owner_user_id, ci.license,
                 v.word, d.definition, d.notes as definition_notes, d.jargon, t.descriptor as word_type,
                 c.rafsi, c.selmaho,
-                (SELECT image_data FROM collection_item_images WHERE item_id = ci.item_id AND side = 'front') as front_image_data,
-                (SELECT mime_type FROM collection_item_images WHERE item_id = ci.item_id AND side = 'front') as front_image_mime,
-                (SELECT image_data FROM collection_item_images WHERE item_id = ci.item_id AND side = 'back') as back_image_data,
-                (SELECT mime_type FROM collection_item_images WHERE item_id = ci.item_id AND side = 'back') as back_image_mime
+                (SELECT img.image_data FROM collection_item_images cii
+                    INNER JOIN collection_images img ON img.collection_image_id = cii.collection_image_id
+                    WHERE cii.item_id = ci.item_id AND cii.side = 'front') as front_image_data,
+                (SELECT img.mime_type FROM collection_item_images cii
+                    INNER JOIN collection_images img ON img.collection_image_id = cii.collection_image_id
+                    WHERE cii.item_id = ci.item_id AND cii.side = 'front') as front_image_mime,
+                (SELECT img.image_data FROM collection_item_images cii
+                    INNER JOIN collection_images img ON img.collection_image_id = cii.collection_image_id
+                    WHERE cii.item_id = ci.item_id AND cii.side = 'back') as back_image_data,
+                (SELECT img.mime_type FROM collection_item_images cii
+                    INNER JOIN collection_images img ON img.collection_image_id = cii.collection_image_id
+                    WHERE cii.item_id = ci.item_id AND cii.side = 'back') as back_image_mime
             FROM collection_items ci
             LEFT JOIN definitions d ON ci.definition_id = d.definitionid
             LEFT JOIN valsi v ON d.valsiid = v.valsiid
@@ -718,10 +726,18 @@ async fn generate_xml(
                 ci.langid as language_id, ci.owner_user_id, ci.license,
                 v.word, d.definition, d.notes as definition_notes, d.jargon, t.descriptor as word_type,
                 c.rafsi, c.selmaho,
-                (SELECT image_data FROM collection_item_images WHERE item_id = ci.item_id AND side = 'front') as front_image_data,
-                (SELECT mime_type FROM collection_item_images WHERE item_id = ci.item_id AND side = 'front') as front_image_mime,
-                (SELECT image_data FROM collection_item_images WHERE item_id = ci.item_id AND side = 'back') as back_image_data,
-                (SELECT mime_type FROM collection_item_images WHERE item_id = ci.item_id AND side = 'back') as back_image_mime
+                (SELECT img.image_data FROM collection_item_images cii
+                    INNER JOIN collection_images img ON img.collection_image_id = cii.collection_image_id
+                    WHERE cii.item_id = ci.item_id AND cii.side = 'front') as front_image_data,
+                (SELECT img.mime_type FROM collection_item_images cii
+                    INNER JOIN collection_images img ON img.collection_image_id = cii.collection_image_id
+                    WHERE cii.item_id = ci.item_id AND cii.side = 'front') as front_image_mime,
+                (SELECT img.image_data FROM collection_item_images cii
+                    INNER JOIN collection_images img ON img.collection_image_id = cii.collection_image_id
+                    WHERE cii.item_id = ci.item_id AND cii.side = 'back') as back_image_data,
+                (SELECT img.mime_type FROM collection_item_images cii
+                    INNER JOIN collection_images img ON img.collection_image_id = cii.collection_image_id
+                    WHERE cii.item_id = ci.item_id AND cii.side = 'back') as back_image_mime
             FROM collection_items ci
             LEFT JOIN definitions d ON ci.definition_id = d.definitionid
             LEFT JOIN valsi v ON d.valsiid = v.valsiid
@@ -971,10 +987,18 @@ async fn generate_latex(
                 ci.langid as language_id, ci.owner_user_id, ci.license,
                 v.word, d.definition, d.notes as definition_notes, t.descriptor as word_type,
                 c.rafsi, c.selmaho,
-                (SELECT image_data FROM collection_item_images WHERE item_id = ci.item_id AND side = 'front') as front_image_data,
-                (SELECT mime_type FROM collection_item_images WHERE item_id = ci.item_id AND side = 'front') as front_image_mime,
-                (SELECT image_data FROM collection_item_images WHERE item_id = ci.item_id AND side = 'back') as back_image_data,
-                (SELECT mime_type FROM collection_item_images WHERE item_id = ci.item_id AND side = 'back') as back_image_mime
+                (SELECT img.image_data FROM collection_item_images cii
+                    INNER JOIN collection_images img ON img.collection_image_id = cii.collection_image_id
+                    WHERE cii.item_id = ci.item_id AND cii.side = 'front') as front_image_data,
+                (SELECT img.mime_type FROM collection_item_images cii
+                    INNER JOIN collection_images img ON img.collection_image_id = cii.collection_image_id
+                    WHERE cii.item_id = ci.item_id AND cii.side = 'front') as front_image_mime,
+                (SELECT img.image_data FROM collection_item_images cii
+                    INNER JOIN collection_images img ON img.collection_image_id = cii.collection_image_id
+                    WHERE cii.item_id = ci.item_id AND cii.side = 'back') as back_image_data,
+                (SELECT img.mime_type FROM collection_item_images cii
+                    INNER JOIN collection_images img ON img.collection_image_id = cii.collection_image_id
+                    WHERE cii.item_id = ci.item_id AND cii.side = 'back') as back_image_mime
             FROM collection_items ci
             LEFT JOIN definitions d ON ci.definition_id = d.definitionid
             LEFT JOIN valsi v ON d.valsiid = v.valsiid
@@ -1405,10 +1429,18 @@ async fn generate_tsv(
                 ci.langid as language_id, ci.owner_user_id, ci.license,
                 v.word, d.definition, d.notes as definition_notes, d.jargon, t.descriptor as word_type,
                 c.rafsi, c.selmaho,
-                (SELECT image_data FROM collection_item_images WHERE item_id = ci.item_id AND side = 'front') as front_image_data,
-                (SELECT mime_type FROM collection_item_images WHERE item_id = ci.item_id AND side = 'front') as front_image_mime,
-                (SELECT image_data FROM collection_item_images WHERE item_id = ci.item_id AND side = 'back') as back_image_data,
-                (SELECT mime_type FROM collection_item_images WHERE item_id = ci.item_id AND side = 'back') as back_image_mime
+                (SELECT img.image_data FROM collection_item_images cii
+                    INNER JOIN collection_images img ON img.collection_image_id = cii.collection_image_id
+                    WHERE cii.item_id = ci.item_id AND cii.side = 'front') as front_image_data,
+                (SELECT img.mime_type FROM collection_item_images cii
+                    INNER JOIN collection_images img ON img.collection_image_id = cii.collection_image_id
+                    WHERE cii.item_id = ci.item_id AND cii.side = 'front') as front_image_mime,
+                (SELECT img.image_data FROM collection_item_images cii
+                    INNER JOIN collection_images img ON img.collection_image_id = cii.collection_image_id
+                    WHERE cii.item_id = ci.item_id AND cii.side = 'back') as back_image_data,
+                (SELECT img.mime_type FROM collection_item_images cii
+                    INNER JOIN collection_images img ON img.collection_image_id = cii.collection_image_id
+                    WHERE cii.item_id = ci.item_id AND cii.side = 'back') as back_image_mime
             FROM collection_items ci
             LEFT JOIN definitions d ON ci.definition_id = d.definitionid
             LEFT JOIN valsi v ON d.valsiid = v.valsiid
@@ -1661,10 +1693,18 @@ async fn generate_json(
                 ci.langid as language_id, ci.owner_user_id, ci.license,
                 v.word, d.definition, d.notes as definition_notes, d.jargon, t.descriptor as word_type,
                 c.rafsi, c.selmaho,
-                (SELECT image_data FROM collection_item_images WHERE item_id = ci.item_id AND side = 'front') as front_image_data,
-                (SELECT mime_type FROM collection_item_images WHERE item_id = ci.item_id AND side = 'front') as front_image_mime,
-                (SELECT image_data FROM collection_item_images WHERE item_id = ci.item_id AND side = 'back') as back_image_data,
-                (SELECT mime_type FROM collection_item_images WHERE item_id = ci.item_id AND side = 'back') as back_image_mime
+                (SELECT img.image_data FROM collection_item_images cii
+                    INNER JOIN collection_images img ON img.collection_image_id = cii.collection_image_id
+                    WHERE cii.item_id = ci.item_id AND cii.side = 'front') as front_image_data,
+                (SELECT img.mime_type FROM collection_item_images cii
+                    INNER JOIN collection_images img ON img.collection_image_id = cii.collection_image_id
+                    WHERE cii.item_id = ci.item_id AND cii.side = 'front') as front_image_mime,
+                (SELECT img.image_data FROM collection_item_images cii
+                    INNER JOIN collection_images img ON img.collection_image_id = cii.collection_image_id
+                    WHERE cii.item_id = ci.item_id AND cii.side = 'back') as back_image_data,
+                (SELECT img.mime_type FROM collection_item_images cii
+                    INNER JOIN collection_images img ON img.collection_image_id = cii.collection_image_id
+                    WHERE cii.item_id = ci.item_id AND cii.side = 'back') as back_image_mime
             FROM collection_items ci
             LEFT JOIN definitions d ON ci.definition_id = d.definitionid
             LEFT JOIN valsi v ON d.valsiid = v.valsiid
