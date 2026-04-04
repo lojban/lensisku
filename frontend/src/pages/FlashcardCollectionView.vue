@@ -38,7 +38,7 @@
               :to="`/collections/${props.collectionId}/tiktoknu`"
               class="ui-btn--accent-purple ui-btn--group-item inline-flex items-center gap-2"
             >
-              <Clapperboard class="w-4 h-4 shrink-0" aria-hidden="true" />
+              <GalleryVerticalIcon class="w-4 h-4 shrink-0" aria-hidden="true" />
               {{ t('components.flashcardCollectionView.viewAsTiktoknu') }}
             </RouterLink>
             <template v-if="isOwner && collection && collection.item_count > existingFlashcardIds.size">
@@ -392,11 +392,11 @@ import {
   Repeat1,
   EqualApproximately,
   GalleryHorizontalIcon,
+  GalleryVerticalIcon,
   List,
   LayoutPanelTop,
   PlusCircle,
   Import,
-  Clapperboard,
 } from 'lucide-vue-next'
 import { ref, computed, onMounted, watch, onBeforeUnmount } from 'vue'
 import { useRouter, RouterLink, useRoute } from 'vue-router'

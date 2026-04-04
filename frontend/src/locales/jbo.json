@@ -518,7 +518,7 @@
     "skippedItemsHeader": "cliva da",
     "andMoreSkipped": ".e so'o {count} drata...",
     "viewAsFlashcards": "zgana le ckini karda",
-    "viewAsTiktoknu": "zgana lo swipe",
+    "viewAsTiktoknu": "lacpu",
     "bulkEditCustomText": "so'i karda",
     "levels": "klesi",
     "onlyItemsWithoutFlashcards": "da poi na se karda po'o",
@@ -1325,7 +1325,7 @@
       "reviewNowAction": "viska ca",
       "moveUpAction": "mo'i ga'u muvdu",
       "moveDownAction": "mo'i ni'a muvdu",
-      "viewAsTiktoknu": "zgana lo swipe"
+      "viewAsTiktoknu": "lacpu"
     },
     "activityReactions": {
       "noReactedComments": "no cinmo casnu cu se facki."

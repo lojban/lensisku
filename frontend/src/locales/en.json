@@ -518,7 +518,7 @@
     "skippedItemsHeader": "Skipped items",
     "andMoreSkipped": "and {count} more...",
     "viewAsFlashcards": "As flashcards",
-    "viewAsTiktoknu": "Swipe view",
+    "viewAsTiktoknu": "Reels",
     "bulkEditCustomText": "Bulk edit",
     "levels": "Levels",
     "onlyItemsWithoutFlashcards": "Only collection items that lack flashcards",
@@ -1325,7 +1325,7 @@
       "reviewNowAction": "Review now",
       "moveUpAction": "Move up",
       "moveDownAction": "Move down",
-      "viewAsTiktoknu": "Swipe view"
+      "viewAsTiktoknu": "Reels"
     },
     "userListTab": {
       "roleLabel": "Role:",

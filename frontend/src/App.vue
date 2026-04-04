@@ -48,7 +48,7 @@
         <!-- Desktop Navigation - Hidden on mobile -->
         <nav class="hidden sm:ml-4 sm:flex items-center space-x-0 md:space-x-1 lg:space-x-2">
           <NavLink to="/collections" class="navbar-item">
-            <GalleryVerticalEnd class="h-5 w-5" /> {{ $t('nav.courses') }}
+            <GraduationCap class="h-5 w-5" /> {{ $t('nav.courses') }}
           </NavLink>
           <NavLink to="/recent" class="navbar-item">
             <Clock4 class="h-5 w-5" /> {{ $t('nav.recent') }}
@@ -256,7 +256,7 @@ import {
   AudioWaveform,
   BookmarkCheck,
   Clock4,
-  GalleryVerticalEnd,
+  GraduationCap,
   Bot,
 } from 'lucide-vue-next'
 import { Menu } from 'lucide-vue-next' // Explicitly import Menu if it was missed by auto-sort
