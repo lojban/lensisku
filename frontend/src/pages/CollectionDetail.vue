@@ -126,7 +126,7 @@
                 :to="`/collections/${props.collectionId}/tiktoknu`"
                 class="ui-btn--accent-purple ui-btn--group-item inline-flex items-center gap-2"
               >
-                <Clapperboard class="w-4 h-4 shrink-0" aria-hidden="true" />
+                <GalleryVerticalIcon class="w-4 h-4 shrink-0" aria-hidden="true" />
                 {{ t('collectionDetail.viewAsTiktoknu') }}
               </RouterLink>
               <RouterLink
@@ -1315,6 +1315,7 @@
 <script setup lang="ts">
 import {
   GalleryHorizontalIcon,
+  GalleryVerticalIcon,
   LayoutPanelTop,
   List,
   Table2,
@@ -1328,7 +1329,6 @@ import {
   ArrowRight,
   Camera,
   Trash2,
-  Clapperboard,
 } from 'lucide-vue-next'
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'

@@ -4,7 +4,7 @@
     class="fixed sm:hidden top-14 left-0 right-0 bg-white shadow-md py-2 space-y-1 z-50"
   >
     <NavLink to="/collections" class="mobile-nav-row" @click="$emit('close')">
-      <GalleryVerticalEnd class="h-5 w-5" /> {{ t('nav.courses') }}
+      <GraduationCap class="h-5 w-5" /> {{ t('nav.courses') }}
     </NavLink>
     <NavLink to="/recent" class="mobile-nav-row" @click="$emit('close')">
       <Clock4 class="h-5 w-5" /> {{ t('mobileNav.recentChanges') }}
@@ -69,7 +69,7 @@ import {
   Upload,
   LogOut,
   Clock4,
-  GalleryVerticalEnd,
+  GraduationCap,
   Bot,
 } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'

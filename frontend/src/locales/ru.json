@@ -465,7 +465,7 @@
     "skippedItemsHeader": "Пропущенные элементы",
     "andMoreSkipped": "и еще {count}...",
     "viewAsFlashcards": "Как карточки",
-    "viewAsTiktoknu": "Свайп-просмотр",
+    "viewAsTiktoknu": "Свайп",
     "bulkEditCustomText": "Масс. редакт.",
     "levels": "Уровни",
     "onlyItemsWithoutFlashcards": "Только элементы коллекции без карточек",
@@ -1264,7 +1264,7 @@
       "reviewNowAction": "Повторить сейчас",
       "moveUpAction": "Переместить вверх",
       "moveDownAction": "Переместить вниз",
-      "viewAsTiktoknu": "Свайп-просмотр"
+      "viewAsTiktoknu": "Свайп"
     },
     "userListTab": {
       "roleLabel": "Роль:",
