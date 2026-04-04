@@ -37,7 +37,31 @@ export function getApiErrorMessage(error: unknown): string | undefined {
   return undefined
 }
 
-const PAYLOAD_LIMIT_PATTERN = /payload.*larger than allowed|larger than allowed.*limit/i
+const PAYLOAD_LIMIT_PATTERN =
+  /payload.*larger than allowed|larger than allowed.*limit|JSON payload.*larger than allowed/i
+
+/** True when the server (or proxy) rejected the request body for exceeding size limits. */
+export function isPayloadLimitError(error: unknown): boolean {
+  const e = error as { response?: { status?: number }; message?: string }
+  if (e.response?.status === 413) return true
+  const raw = getApiErrorMessage(error)
+  if (raw && PAYLOAD_LIMIT_PATTERN.test(raw)) return true
+  if (e.message && PAYLOAD_LIMIT_PATTERN.test(e.message)) return true
+  return false
+}
+
+/** User-facing message when saving a collection item (add/update) fails. */
+export function getCollectionItemSaveErrorMessage(
+  error: unknown,
+  t: (key: string) => string
+): string {
+  if (isPayloadLimitError(error)) {
+    return t('collectionDetail.payloadTooLarge')
+  }
+  const api = getApiErrorMessage(error)
+  if (api?.trim()) return api
+  return t('collectionDetail.itemSaveFailed')
+}
 
 /** Localized message for profile/collection image upload failures. */
 export function uploadImageErrorMessage(
