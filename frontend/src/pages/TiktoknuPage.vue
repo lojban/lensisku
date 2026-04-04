@@ -23,14 +23,14 @@
       />
       <div
         v-if="reelLoading && reelItems.length === 0"
-        class="h-screen w-full flex items-center justify-center gap-2"
+        class="h-dvh max-h-dvh w-full flex shrink-0 items-center justify-center gap-2"
       >
         <Loader2 class="h-6 w-6 animate-spin" />
         <span>{{ t('components.tiktoknu.loading') }}</span>
       </div>
       <div
         v-else-if="!reelLoading && reelItems.length === 0 && !reelHasMore"
-        class="h-screen w-full flex items-center justify-center px-6 text-center text-white/80"
+        class="h-dvh max-h-dvh w-full flex shrink-0 items-center justify-center px-6 text-center text-white/80"
       >
         {{ t('components.tiktoknu.collectionReel.empty') }}
       </div>
