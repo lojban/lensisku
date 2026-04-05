@@ -96,8 +96,13 @@ fn validate_svg_logo(data: &[u8]) -> Result<(), String> {
 }
 use chrono::{DateTime, Utc};
 use deadpool_postgres::{GenericClient, Pool, Transaction};
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
+use std::io::{Cursor, Read};
+use std::path::Path;
 use tokio_postgres::types::ToSql;
+use zip::ZipArchive;
+
+use crate::utils::{detect_image_mime_from_content, validate_item_image_bytes};
 
 pub async fn create_collection(
     pool: &Pool,
@@ -4064,4 +4069,382 @@ pub async fn remove_collection_image(
 
     invalidate_public_collections_cache(redis).await;
     Ok(())
+}
+
+// --- Bulk media import (multipart + ZIP) ------------------------------------
+
+type MediaBulkFileMap = HashMap<String, Vec<u8>>;
+
+/// Max rows in manifest (multipart or ZIP).
+const MAX_MEDIA_BULK_MANIFEST_ENTRIES: usize = 250;
+/// Max compressed ZIP body size.
+const MAX_MEDIA_BULK_ZIP_BYTES: usize = 100 * 1024 * 1024;
+/// Cap sum of declared uncompressed sizes (zip bomb mitigation).
+const MAX_MEDIA_BULK_ZIP_UNCOMPRESSED_TOTAL: u64 = 128 * 1024 * 1024;
+const MAX_MEDIA_BULK_MANIFEST_JSON_BYTES: usize = 512 * 1024;
+
+pub(crate) fn media_bulk_safe_basename(name: &str) -> Option<String> {
+    let base = Path::new(name).file_name()?.to_str()?;
+    if base.is_empty() || base == "." || base == ".." {
+        return None;
+    }
+    if base.contains('/') || base.contains('\\') || base.contains("..") {
+        return None;
+    }
+    Some(base.to_string())
+}
+
+pub fn parse_media_bulk_manifest_str(raw: &str) -> AppResult<Vec<MediaBulkManifestEntry>> {
+    if raw.len() > MAX_MEDIA_BULK_MANIFEST_JSON_BYTES {
+        return Err(AppError::BadRequest(format!(
+            "manifest JSON exceeds {} KiB",
+            MAX_MEDIA_BULK_MANIFEST_JSON_BYTES / 1024
+        )));
+    }
+    let v: Vec<MediaBulkManifestEntry> = serde_json::from_str(raw).map_err(|e| {
+        AppError::BadRequest(format!("Invalid manifest JSON: {}", e))
+    })?;
+    if v.is_empty() {
+        return Err(AppError::BadRequest("manifest array is empty".to_string()));
+    }
+    if v.len() > MAX_MEDIA_BULK_MANIFEST_ENTRIES {
+        return Err(AppError::BadRequest(format!(
+            "At most {} manifest entries allowed",
+            MAX_MEDIA_BULK_MANIFEST_ENTRIES
+        )));
+    }
+    Ok(v)
+}
+
+/// Reads `manifest.json` (exact basename) and image files; keys in the map are entry basenames.
+pub fn load_media_bulk_zip(bytes: &[u8]) -> AppResult<(Vec<MediaBulkManifestEntry>, MediaBulkFileMap)> {
+    if bytes.len() > MAX_MEDIA_BULK_ZIP_BYTES {
+        return Err(AppError::BadRequest(format!(
+            "ZIP file exceeds {} MiB (compressed)",
+            MAX_MEDIA_BULK_ZIP_BYTES / (1024 * 1024)
+        )));
+    }
+    let cursor = Cursor::new(bytes);
+    let mut archive = ZipArchive::new(cursor)
+        .map_err(|e| AppError::BadRequest(format!("Invalid or unsupported ZIP: {}", e)))?;
+    if archive.len() > MAX_MEDIA_BULK_MANIFEST_ENTRIES + 64 {
+        return Err(AppError::BadRequest(
+            "ZIP contains too many entries".to_string(),
+        ));
+    }
+
+    let mut manifest: Option<Vec<MediaBulkManifestEntry>> = None;
+    let mut files: MediaBulkFileMap = HashMap::new();
+    let mut total_uncompressed: u64 = 0;
+
+    for i in 0..archive.len() {
+        let mut file = archive
+            .by_index(i)
+            .map_err(|e| AppError::BadRequest(format!("ZIP read error: {}", e)))?;
+        if file.is_dir() {
+            continue;
+        }
+        let Some(enclosed) = file.enclosed_name() else {
+            return Err(AppError::BadRequest(
+                "ZIP contains an entry with an unsafe path".to_string(),
+            ));
+        };
+        let path_str = enclosed.to_string_lossy();
+        if path_str.starts_with('/') || path_str.contains("..") {
+            return Err(AppError::BadRequest(
+                "ZIP path traversal is not allowed".to_string(),
+            ));
+        }
+
+        let declared = file.size();
+        total_uncompressed = total_uncompressed.saturating_add(declared);
+        if total_uncompressed > MAX_MEDIA_BULK_ZIP_UNCOMPRESSED_TOTAL {
+            return Err(AppError::BadRequest(
+                "ZIP uncompressed size budget exceeded (rejected as possible zip bomb)".to_string(),
+            ));
+        }
+
+        let cap = if path_str.to_ascii_lowercase().ends_with("manifest.json") {
+            MAX_MEDIA_BULK_MANIFEST_JSON_BYTES
+        } else {
+            MAX_ITEM_IMAGE_BYTES
+        };
+        if declared > cap as u64 {
+            return Err(AppError::BadRequest(format!(
+                "ZIP entry too large: {}",
+                path_str
+            )));
+        }
+
+        let mut buf = Vec::new();
+        file
+            .read_to_end(&mut buf)
+            .map_err(|e| AppError::BadRequest(format!("ZIP decompress failed: {}", e)))?;
+        if buf.len() > cap {
+            return Err(AppError::BadRequest(format!(
+                "ZIP entry expanded past limit: {}",
+                path_str
+            )));
+        }
+
+        let basename = enclosed
+            .file_name()
+            .and_then(|s| s.to_str())
+            .unwrap_or("")
+            .to_string();
+
+        if basename.eq_ignore_ascii_case("manifest.json") {
+            if manifest.is_some() {
+                return Err(AppError::BadRequest(
+                    "ZIP must contain exactly one manifest.json".to_string(),
+                ));
+            }
+            let s = std::str::from_utf8(&buf).map_err(|e| {
+                AppError::BadRequest(format!("manifest.json is not valid UTF-8: {}", e))
+            })?;
+            manifest = Some(parse_media_bulk_manifest_str(s)?);
+            continue;
+        }
+
+        let key = media_bulk_safe_basename(&basename).ok_or_else(|| {
+            AppError::BadRequest(format!("Invalid ZIP entry basename: {}", basename))
+        })?;
+        files.insert(key, buf);
+    }
+
+    let manifest_vec = manifest.ok_or_else(|| {
+        AppError::BadRequest(
+            "ZIP must include a manifest.json file (any folder depth)".to_string(),
+        )
+    })?;
+
+    Ok((manifest_vec, files))
+}
+
+pub async fn bulk_import_collection_item_media(
+    pool: &Pool,
+    redis: &RedisCache,
+    collection_id: i32,
+    user_id: i32,
+    manifest: Vec<MediaBulkManifestEntry>,
+    files: &MediaBulkFileMap,
+) -> AppResult<MediaBulkImportResponse> {
+    let mut client = pool
+        .get()
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+    let transaction = client
+        .transaction()
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+    verify_collection_ownership(&transaction, collection_id, user_id).await?;
+
+    let mut attached: u32 = 0;
+    let mut created_items: u32 = 0;
+    let mut warnings: Vec<String> = Vec::new();
+
+    for (idx, entry) in manifest.iter().enumerate() {
+        let row_no = idx + 1;
+        let key = match media_bulk_safe_basename(&entry.filename) {
+            Some(k) => k,
+            None => {
+                warnings.push(format!(
+                    "Row {row_no}: invalid or unsafe filename {:?}",
+                    entry.filename
+                ));
+                continue;
+            }
+        };
+        let data = match files.get(&key) {
+            Some(d) => d.as_slice(),
+            None => {
+                warnings.push(format!(
+                    "Row {row_no}: no uploaded file with basename {:?} (manifest filename must match)",
+                    key
+                ));
+                continue;
+            }
+        };
+
+        let side_lc = entry.side.to_lowercase();
+        if side_lc != "front" && side_lc != "back" {
+            warnings.push(format!(
+                "Row {row_no}: side must be \"front\" or \"back\", got {:?}",
+                entry.side
+            ));
+            continue;
+        }
+
+        let mime = match detect_image_mime_from_content(data, &entry.filename) {
+            Ok(m) => m,
+            Err(e) => {
+                warnings.push(format!("Row {row_no}: {e}"));
+                continue;
+            }
+        };
+        if let Err(e) = validate_item_image_bytes(mime.as_str(), data) {
+            warnings.push(format!("Row {row_no}: {e}"));
+            continue;
+        }
+
+        let sp = format!("mb_{idx}");
+        if let Err(e) = transaction.batch_execute(&format!("SAVEPOINT {sp}")).await {
+            return Err(AppError::Database(e.to_string()));
+        }
+
+        let row_result: Result<bool, AppError> = async {
+            let (target_item_id, created_new): (i32, bool) = if let Some(iid) = entry.item_id {
+                let ok = transaction
+                    .query_opt(
+                        "SELECT 1 FROM collection_items WHERE collection_id = $1 AND item_id = $2",
+                        &[&collection_id, &iid],
+                    )
+                    .await
+                    .map_err(|e| AppError::Database(e.to_string()))?
+                    .is_some();
+                if !ok {
+                    return Err(AppError::BadRequest(format!(
+                        "item_id {iid} not found in this collection"
+                    )));
+                }
+                (iid, false)
+            } else if let Some(pos) = entry.position {
+                let row_opt = transaction
+                    .query_opt(
+                        "SELECT item_id FROM collection_items WHERE collection_id = $1 AND position = $2",
+                        &[&collection_id, &pos],
+                    )
+                    .await
+                    .map_err(|e| AppError::Database(e.to_string()))?;
+                let Some(r) = row_opt else {
+                    return Err(AppError::BadRequest(format!(
+                        "no item at position {pos} in this collection"
+                    )));
+                };
+                (r.get::<_, i32>(0), false)
+            } else {
+                let Some(ref ff) = entry.free_content_front else {
+                    return Err(AppError::BadRequest(
+                        "create entry requires free_content_front (or set item_id / position)"
+                            .to_string(),
+                    ));
+                };
+                let Some(ref fb) = entry.free_content_back else {
+                    return Err(AppError::BadRequest(
+                        "create entry requires free_content_back (or set item_id / position)"
+                            .to_string(),
+                    ));
+                };
+                let sanitized_front = sanitize_html(ff);
+                let sanitized_back = sanitize_html(fb);
+                let canonical_form =
+                    crate::utils::tersmu::get_canonical_form(sanitized_front.as_str());
+                let max_position: i32 = transaction
+                    .query_one(
+                        "SELECT COALESCE(MAX(position), -1) FROM collection_items WHERE collection_id = $1",
+                        &[&collection_id],
+                    )
+                    .await
+                    .map_err(|e| AppError::Database(e.to_string()))?
+                    .get(0);
+                let next_position = max_position + 1;
+                let free_front = Some(sanitized_front);
+                let free_back = Some(sanitized_back);
+                let definition_id: Option<i32> = None;
+                let notes: Option<String> = None;
+                let owner_user_id: Option<i32> = None;
+                let license: Option<String> = None;
+                let script: Option<String> = None;
+                let row = transaction
+                    .query_one(
+                        "INSERT INTO collection_items (
+                    collection_id, definition_id,
+                    free_content_front, free_content_back,
+                    langid, owner_user_id, license, script, is_original,
+                    notes, position, auto_progress, canonical_form
+                )
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+                RETURNING item_id",
+                        &[
+                            &collection_id,
+                            &definition_id,
+                            &free_front,
+                            &free_back,
+                            &entry.language_id,
+                            &owner_user_id,
+                            &license,
+                            &script,
+                            &true,
+                            &notes,
+                            &next_position,
+                            &true,
+                            &canonical_form,
+                        ],
+                    )
+                    .await
+                    .map_err(|e| AppError::Database(e.to_string()))?;
+                (row.get::<_, i32>("item_id"), true)
+            };
+
+            transaction
+                .execute(
+                    "DELETE FROM collection_item_images WHERE item_id = $1 AND side = $2",
+                    &[&target_item_id, &side_lc],
+                )
+                .await
+                .map_err(|e| AppError::Database(e.to_string()))?;
+
+            let image_id =
+                get_or_insert_collection_image_id(&transaction, data, mime.as_str()).await?;
+            transaction
+                .execute(
+                    "INSERT INTO collection_item_images (item_id, collection_image_id, side)
+                     VALUES ($1, $2, $3)",
+                    &[&target_item_id, &image_id, &side_lc],
+                )
+                .await
+                .map_err(|e| AppError::Database(e.to_string()))?;
+
+            Ok(created_new)
+        }
+        .await;
+
+        match row_result {
+            Ok(created_new) => {
+                if let Err(e) = transaction
+                    .batch_execute(&format!("RELEASE SAVEPOINT {sp}"))
+                    .await
+                {
+                    return Err(AppError::Database(e.to_string()));
+                }
+                attached += 1;
+                if created_new {
+                    created_items += 1;
+                }
+            }
+            Err(e) => {
+                if let Err(rb) = transaction
+                    .batch_execute(&format!("ROLLBACK TO SAVEPOINT {sp}"))
+                    .await
+                {
+                    return Err(AppError::Database(rb.to_string()));
+                }
+                warnings.push(format!("Row {row_no}: {e}"));
+            }
+        }
+    }
+
+    transaction
+        .commit()
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+    invalidate_public_collections_cache(redis).await;
+
+    Ok(MediaBulkImportResponse {
+        attached,
+        created_items,
+        warnings,
+    })
 }

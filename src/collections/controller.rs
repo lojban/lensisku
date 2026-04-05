@@ -1,14 +1,17 @@
 use std::collections::HashMap;
 
+use actix_multipart::Multipart;
 use actix_web::{
     delete, get,
     http::header::{ContentDisposition, DispositionType},
     post, put, web, HttpResponse, Responder,
 };
 use deadpool_postgres::Pool;
+use futures::TryStreamExt;
 use serde_json::json;
 
 use super::{dto::*, service};
+use crate::utils::MAX_ITEM_IMAGE_BYTES;
 use crate::auth::Claims;
 use crate::middleware::cache::RedisCache;
 use crate::middleware::limiter::KittenTtsLimiter;
@@ -429,6 +432,193 @@ pub async fn upsert_item(
                 _ => HttpResponse::InternalServerError().json(json!({
                     "error": format!("Failed to add item: {}", e)
                 })),
+            }
+        }
+    }
+}
+
+const MULTIPART_MANIFEST_MAX_BYTES: usize = 512 * 1024;
+
+#[utoipa::path(
+    post,
+    path = "/collections/{id}/items/media-bulk",
+    tag = "collections",
+    params(("id" = i32, Path, description = "Collection ID")),
+    responses(
+        (status = 200, description = "Import finished", body = MediaBulkImportResponse),
+        (status = 400, description = "Invalid multipart or manifest"),
+        (status = 403, description = "Forbidden"),
+        (status = 500, description = "Server error")
+    ),
+    security(("bearer_auth" = [])),
+    summary = "Bulk attach item images (multipart)",
+    description = "multipart/form-data with field `manifest` (JSON array) and file parts whose filenames match each manifest entry basename."
+)]
+#[post("/{id}/items/media-bulk")]
+pub async fn post_collection_media_bulk_multipart(
+    pool: web::Data<Pool>,
+    redis_cache: web::Data<RedisCache>,
+    claims: Claims,
+    id: web::Path<i32>,
+    mut multipart: Multipart,
+) -> impl Responder {
+    let collection_id = id.into_inner();
+    let mut manifest_str: Option<String> = None;
+    let mut files: HashMap<String, Vec<u8>> = HashMap::new();
+
+    loop {
+        let mut field = match multipart.try_next().await {
+            Ok(Some(f)) => f,
+            Ok(None) => break,
+            Err(e) => {
+                return HttpResponse::BadRequest()
+                    .json(json!({ "error": format!("multipart read error: {}", e) }));
+            }
+        };
+
+        if field.name() == Some("manifest") {
+            let bytes = match field.bytes(MULTIPART_MANIFEST_MAX_BYTES).await {
+                Err(_) => {
+                    return HttpResponse::BadRequest().json(json!({
+                        "error": format!(
+                            "manifest field exceeds {} KiB",
+                            MULTIPART_MANIFEST_MAX_BYTES / 1024
+                        )
+                    }));
+                }
+                Ok(Err(e)) => {
+                    return HttpResponse::BadRequest()
+                        .json(json!({ "error": format!("manifest field: {}", e) }));
+                }
+                Ok(Ok(b)) => b,
+            };
+            manifest_str = Some(String::from_utf8_lossy(&bytes).into_owned());
+            continue;
+        }
+
+        let fname = field
+            .content_disposition()
+            .and_then(ContentDisposition::get_filename)
+            .map(std::string::ToString::to_string);
+        let fname = match fname {
+            Some(f) => f,
+            None => continue,
+        };
+        let key = match service::media_bulk_safe_basename(&fname) {
+            Some(k) => k,
+            None => {
+                return HttpResponse::BadRequest().json(json!({
+                    "error": format!("invalid multipart filename {:?}", fname)
+                }));
+            }
+        };
+        let bytes = match field.bytes(MAX_ITEM_IMAGE_BYTES).await {
+            Err(_) => {
+                return HttpResponse::BadRequest().json(json!({
+                    "error": format!("file {:?} exceeds image size limit", fname)
+                }));
+            }
+            Ok(Err(e)) => {
+                return HttpResponse::BadRequest()
+                    .json(json!({ "error": format!("file {:?}: {}", fname, e) }));
+            }
+            Ok(Ok(b)) => b,
+        };
+        files.insert(key, bytes.to_vec());
+    }
+
+    let Some(ms) = manifest_str else {
+        return HttpResponse::BadRequest().json(json!({
+            "error": "missing multipart field \"manifest\" (JSON array)"
+        }));
+    };
+
+    let manifest = match service::parse_media_bulk_manifest_str(&ms) {
+        Ok(m) => m,
+        Err(e) => {
+            return HttpResponse::BadRequest().json(json!({ "error": e.to_string() }));
+        }
+    };
+
+    match service::bulk_import_collection_item_media(
+        &pool,
+        &redis_cache,
+        collection_id,
+        claims.sub,
+        manifest,
+        &files,
+    )
+    .await
+    {
+        Ok(res) => HttpResponse::Ok().json(res),
+        Err(e) => {
+            let msg = e.to_string();
+            if msg.contains("Access Denied") || msg.contains("Authorization error") {
+                HttpResponse::Forbidden().json(json!({ "error": msg }))
+            } else if msg.contains("Bad request") || msg.contains("not found") {
+                HttpResponse::BadRequest().json(json!({ "error": msg }))
+            } else {
+                log::error!("media-bulk multipart: {}", msg);
+                HttpResponse::InternalServerError().json(json!({ "error": msg }))
+            }
+        }
+    }
+}
+
+#[utoipa::path(
+    post,
+    path = "/collections/{id}/items/media-bulk-zip",
+    tag = "collections",
+    params(("id" = i32, Path, description = "Collection ID")),
+    request_body(content = Vec<u8>, description = "application/zip body"),
+    responses(
+        (status = 200, description = "Import finished", body = MediaBulkImportResponse),
+        (status = 400, description = "Invalid ZIP or manifest"),
+        (status = 403, description = "Forbidden"),
+        (status = 500, description = "Server error")
+    ),
+    security(("bearer_auth" = [])),
+    summary = "Bulk attach item images (ZIP)",
+    description = "application/zip containing exactly one manifest.json plus image files (basenames must match manifest filenames)."
+)]
+#[post("/{id}/items/media-bulk-zip")]
+pub async fn post_collection_media_bulk_zip(
+    pool: web::Data<Pool>,
+    redis_cache: web::Data<RedisCache>,
+    claims: Claims,
+    id: web::Path<i32>,
+    body: web::Bytes,
+) -> impl Responder {
+    let collection_id = id.into_inner();
+    if body.is_empty() {
+        return HttpResponse::BadRequest().json(json!({ "error": "empty ZIP body" }));
+    }
+    let (manifest, files) = match service::load_media_bulk_zip(&body) {
+        Ok(x) => x,
+        Err(e) => {
+            return HttpResponse::BadRequest().json(json!({ "error": e.to_string() }));
+        }
+    };
+    match service::bulk_import_collection_item_media(
+        &pool,
+        &redis_cache,
+        collection_id,
+        claims.sub,
+        manifest,
+        &files,
+    )
+    .await
+    {
+        Ok(res) => HttpResponse::Ok().json(res),
+        Err(e) => {
+            let msg = e.to_string();
+            if msg.contains("Access Denied") || msg.contains("Authorization error") {
+                HttpResponse::Forbidden().json(json!({ "error": msg }))
+            } else if msg.contains("Bad request") || msg.contains("not found") {
+                HttpResponse::BadRequest().json(json!({ "error": msg }))
+            } else {
+                log::error!("media-bulk zip: {}", msg);
+                HttpResponse::InternalServerError().json(json!({ "error": msg }))
             }
         }
     }

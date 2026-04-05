@@ -38,6 +38,8 @@ use utoipauto::utoipauto;
         crate::flashcards::dto::SubmitQuizAnswerDto,
         crate::flashcards::dto::QuizAnswerResultDto,
         crate::collections::dto::KittenTtsGenerateRequest,
+        crate::collections::dto::MediaBulkManifestEntry,
+        crate::collections::dto::MediaBulkImportResponse,
         crate::mailarchive::dto::SpamVoteResponse,
         crate::sessions::dto::PaginatedUserSessionsResponse,
         crate::waves::dto::WavesSearchResponse,

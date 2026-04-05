@@ -312,6 +312,13 @@ export const listCustomTextBulkItems = (collectionId: number | string) =>
 export const bulkUpdateCustomTextItems = (collectionId: number | string, data: unknown) =>
   api.put(`/collections/${collectionId}/items/custom-text-bulk`, data)
 
+/** Raw ZIP body (`application/zip`) with `manifest.json` + image files. */
+export const uploadCollectionMediaBulkZip = (collectionId: number | string, zipBlob: Blob) =>
+  api.post(`/collections/${collectionId}/items/media-bulk-zip`, zipBlob, {
+    headers: { 'Content-Type': 'application/zip' },
+    timeout: 600_000,
+  })
+
 export const searchItems = (
   params: { user_id: number | string; q: string },
   signal?: AbortSignal

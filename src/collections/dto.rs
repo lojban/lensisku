@@ -362,3 +362,31 @@ pub struct BulkRemoveItemsRequest {
 pub struct BulkRemoveItemsResponse {
     pub deleted: i32,
 }
+
+/// One row in `manifest.json` for `POST /collections/{id}/items/media-bulk` (multipart) or `.../media-bulk-zip`.
+#[derive(Debug, Clone, Deserialize, Serialize, ToSchema)]
+pub struct MediaBulkManifestEntry {
+    /// Basename only; must match an uploaded file (multipart filename or ZIP entry basename).
+    pub filename: String,
+    /// `front` or `back`.
+    pub side: String,
+    #[serde(default)]
+    pub item_id: Option<i32>,
+    /// Matches `collection_items.position` for this collection.
+    #[serde(default)]
+    pub position: Option<i32>,
+    /// Required when both `item_id` and `position` are omitted (creates a new custom-text item).
+    #[serde(default)]
+    pub free_content_front: Option<String>,
+    #[serde(default)]
+    pub free_content_back: Option<String>,
+    #[serde(default)]
+    pub language_id: Option<i32>,
+}
+
+#[derive(Debug, Serialize, ToSchema)]
+pub struct MediaBulkImportResponse {
+    pub attached: u32,
+    pub created_items: u32,
+    pub warnings: Vec<String>,
+}
