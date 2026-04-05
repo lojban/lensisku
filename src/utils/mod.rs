@@ -101,16 +101,19 @@ pub fn decode_html_entities(text: &str) -> String {
 }
 
 pub fn validate_item_image(image: &ImageData) -> Result<(), String> {
-    if !["image/jpeg", "image/png", "image/gif", "image/webp"].contains(&image.mime_type.as_str()) {
+    let decoded = BASE64
+        .decode(&image.data)
+        .map_err(|_| "Invalid base64 data".to_string())?;
+    validate_item_image_bytes(image.mime_type.as_str(), &decoded)
+}
+
+/// Raw image bytes + MIME (e.g. from multipart or ZIP); same rules as [`validate_item_image`].
+pub fn validate_item_image_bytes(mime_type: &str, data: &[u8]) -> Result<(), String> {
+    if !["image/jpeg", "image/png", "image/gif", "image/webp"].contains(&mime_type) {
         return Err("Invalid image type. Supported types: JPEG, PNG, GIF, WebP".to_string());
     }
 
-    let decoded_size = BASE64
-        .decode(&image.data)
-        .map_err(|_| "Invalid base64 data".to_string())?
-        .len();
-
-    if decoded_size > MAX_ITEM_IMAGE_BYTES {
+    if data.len() > MAX_ITEM_IMAGE_BYTES {
         return Err(format!(
             "Image size exceeds {}MB limit",
             MAX_ITEM_IMAGE_BYTES / (1024 * 1024)
@@ -118,6 +121,38 @@ pub fn validate_item_image(image: &ImageData) -> Result<(), String> {
     }
 
     Ok(())
+}
+
+/// Infer MIME from magic bytes, then filename extension; used for bulk uploads without a trusted client Content-Type.
+pub fn detect_image_mime_from_content(data: &[u8], filename_hint: &str) -> Result<String, String> {
+    if data.len() >= 12 && &data[0..4] == b"RIFF" && data.len() >= 12 && &data[8..12] == b"WEBP" {
+        return Ok("image/webp".to_string());
+    }
+    if data.len() >= 3 && data[0] == 0xFF && data[1] == 0xD8 && data[2] == 0xFF {
+        return Ok("image/jpeg".to_string());
+    }
+    if data.len() >= 8 && (&data[0..6] == b"GIF87a" || &data[0..6] == b"GIF89a") {
+        return Ok("image/gif".to_string());
+    }
+    if data.len() >= 8 && data[0] == 0x89 && &data[1..4] == b"PNG" && &data[4..8] == b"\r\n\x1a\n" {
+        return Ok("image/png".to_string());
+    }
+
+    let lower = filename_hint.to_lowercase();
+    let ext = std::path::Path::new(&lower)
+        .extension()
+        .and_then(|e| e.to_str())
+        .unwrap_or("");
+    match ext {
+        "jpg" | "jpeg" => Ok("image/jpeg".to_string()),
+        "png" => Ok("image/png".to_string()),
+        "gif" => Ok("image/gif".to_string()),
+        "webp" => Ok("image/webp".to_string()),
+        _ => Err(
+            "Could not detect image type (unsupported or corrupt file); use JPEG, PNG, GIF, or WebP"
+                .to_string(),
+        ),
+    }
 }
 
 const ALLOWED_AUDIO_MIME_PREFIXES: &[&str] =

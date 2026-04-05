@@ -42,6 +42,12 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
                     .service(controller::import_json)
                     .service(
                         web::scope("")
+                            .app_data(web::PayloadConfig::new(100 * 1024 * 1024))
+                            .service(controller::post_collection_media_bulk_multipart)
+                            .service(controller::post_collection_media_bulk_zip),
+                    )
+                    .service(
+                        web::scope("")
                             .app_data(
                                 web::JsonConfig::default().limit(100 * 1024 * 1024), // large data URL payloads
                             )
