@@ -40,8 +40,14 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
                     .service(controller::post_kitten_tts)
                     .service(controller::update_item_media)
                     .service(controller::import_json)
-                    .service(controller::import_collection_from_json)
-                    .service(controller::import_full),
+                    .service(
+                        web::scope("")
+                            .app_data(
+                                web::JsonConfig::default().limit(100 * 1024 * 1024), // large data URL payloads
+                            )
+                            .service(controller::import_collection_from_json)
+                            .service(controller::import_full),
+                    ),
             ),
     );
 }
