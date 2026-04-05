@@ -93,7 +93,11 @@ pub struct DictionaryEntry {
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct CollectionExportItem {
+    /// Omitted or zero when authoring an import file by hand (server assigns real ids).
+    #[serde(default)]
     pub item_id: i32,
+    /// Omitted or zero when authoring an import file; full import uses array order for positions.
+    #[serde(default)]
     pub position: i32,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub collection_note: Option<String>,

@@ -19,8 +19,8 @@
     :resend-confirmation-success="resendConfirmationSuccess"
     @resend-confirmation="handleResendConfirmation"
   />
-  <!-- Mobile-optimized header -->
-  <header class="app-header-bar">
+  <!-- Mobile-optimized header (omit on routes with meta.hideTopBar, e.g. full-bleed experiences) -->
+  <header v-if="!route.meta.hideTopBar" class="app-header-bar">
 
     <div class="px-1 sm:px-2 max-w-4xl mx-auto">
       <!-- Main header content -->
@@ -162,10 +162,14 @@
     :duration="successToast?.duration ?? DEFAULT_SUCCESS_TOAST_DURATION_MS"
     :extra-component="successToast?.extraComponent ?? null" :extra-props="successToast?.extraProps ?? null"
     :close-label="$t('modal.close')" type="success" @close="clearSuccess" /> <!-- Main content -->
-  <main class="main-content" :class="[
-    { 'scrollbar-always': route.meta.alwaysShowScrollbar },
-    route.meta.fullHeight ? 'main-content--no-scroll' : '',
-  ]">
+  <main
+    class="main-content"
+    :class="[
+      { 'scrollbar-always': route.meta.alwaysShowScrollbar },
+      route.meta.fullHeight ? 'main-content--no-scroll' : '',
+      route.meta.hideTopBar ? 'main-content--no-topbar' : '',
+    ]"
+  >
 
     <div class="max-w-4xl mx-auto relative flex flex-col" :class="[
       route.meta.contentTopPaddingMainOnly || route.meta.authFullBleed ? 'pt-0' : 'pt-3',
@@ -658,6 +662,17 @@ footer {
   }
 }
 
+/* No global header: only reserve fixed footer strip (h-6 in FooterComponent). */
+.main-content.main-content--no-topbar:not(.main-content--no-scroll) {
+  height: calc(100vh - 24px);
+}
+
+@media (min-width: 640px) {
+  .main-content.main-content--no-topbar:not(.main-content--no-scroll) {
+    height: calc(100vh - 24px);
+  }
+}
+
 /* Aqua Scrollbar Styles */
 ::-webkit-scrollbar {
   width: 15px;
@@ -793,6 +808,19 @@ footer {
   .main-content.main-content--no-scroll {
     height: calc(100vh - 49px);
     height: calc(100svh - 49px);
+  }
+}
+
+/* Full-height child + no app header: fill viewport (global footer already hidden via meta.fullHeight). */
+.main-content.main-content--no-scroll.main-content--no-topbar {
+  height: 100vh;
+  height: 100svh;
+}
+
+@media (min-width: 640px) {
+  .main-content.main-content--no-scroll.main-content--no-topbar {
+    height: 100vh;
+    height: 100svh;
   }
 }
 

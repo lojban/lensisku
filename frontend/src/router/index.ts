@@ -50,6 +50,7 @@ const baseRoutes: Array<RouteRecordRaw> = [
     name: 'Tiktoknu',
     component: () => import('../pages/TiktoknuPage.vue'),
     meta: {
+      hideTopBar: true,
       hideFooter: true,
       fullHeight: true,
       contentTopPaddingMainOnly: true,
@@ -232,6 +233,7 @@ const baseRoutes: Array<RouteRecordRaw> = [
     name: 'CollectionTiktoknu',
     component: () => import('../pages/TiktoknuPage.vue'),
     meta: {
+      hideTopBar: true,
       hideFooter: true,
       fullHeight: true,
       contentTopPaddingMainOnly: true,

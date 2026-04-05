@@ -5,7 +5,10 @@ use crate::utils::remove_html_tags;
 use crate::{
     auth_utils::verify_collection_ownership, export::models::CollectionExportItem,
     flashcards::models::FlashcardDirection, middleware::cache::RedisCache,
-    middleware::image::ImageProcessor, utils::validate_item_audio, utils::validate_item_image,
+    middleware::image::ImageProcessor,
+    utils::validate_item_audio,
+    utils::validate_item_image,
+    utils::MAX_ITEM_IMAGE_BYTES,
     users::dto::ProfileImageRequest, AppError, AppResult,
 };
 use base64::{engine::general_purpose::STANDARD as BASE64, Engine};
@@ -1147,11 +1150,12 @@ pub async fn import_collection_from_json(
         ] {
             if let Some(url) = url_option {
                 let (mime_type, image_data) = decode_data_url(url)?;
-                // Basic validation (could reuse validate_item_image if needed)
-                if image_data.len() > 5 * 1024 * 1024 {
+                if image_data.len() > MAX_ITEM_IMAGE_BYTES {
                     return Err(AppError::BadRequest(format!(
-                        "Image for item {} ({}) exceeds 5MB limit",
-                        new_item_id, side
+                        "Image for item {} ({}) exceeds {}MB limit",
+                        new_item_id,
+                        side,
+                        MAX_ITEM_IMAGE_BYTES / (1024 * 1024)
                     )));
                 }
                 let image_id =
@@ -1324,20 +1328,48 @@ pub async fn import_full(
             ("back", &item.back_image_url),
         ] {
             if let Some(url) = url_option {
-                if let Ok((mime_type, image_data)) = decode_data_url(url) {
-                    if image_data.len() <= 5 * 1024 * 1024 {
-                        if let Ok(image_id) =
-                            get_or_insert_collection_image_id(&transaction, &image_data, &mime_type)
-                                .await
-                        {
-                            let _ = transaction
-                                .execute(
-                                    "INSERT INTO collection_item_images (item_id, collection_image_id, side) VALUES ($1, $2, $3)",
-                                    &[&new_item_id, &image_id, &side],
-                                )
-                                .await;
+                match decode_data_url(url) {
+                    Ok((mime_type, image_data)) => {
+                        if image_data.len() > MAX_ITEM_IMAGE_BYTES {
+                            warnings.push(format!(
+                                "Item at position {}: {} image exceeds {}MB after decode, skipped",
+                                pos,
+                                side,
+                                MAX_ITEM_IMAGE_BYTES / (1024 * 1024)
+                            ));
+                        } else {
+                            match get_or_insert_collection_image_id(
+                                &transaction,
+                                &image_data,
+                                &mime_type,
+                            )
+                            .await
+                            {
+                                Ok(image_id) => {
+                                    if let Err(e) = transaction
+                                        .execute(
+                                            "INSERT INTO collection_item_images (item_id, collection_image_id, side) VALUES ($1, $2, $3)",
+                                            &[&new_item_id, &image_id, &side],
+                                        )
+                                        .await
+                                    {
+                                        warnings.push(format!(
+                                            "Item at position {}: failed to attach {} image: {}",
+                                            pos, side, e
+                                        ));
+                                    }
+                                }
+                                Err(e) => warnings.push(format!(
+                                    "Item at position {}: failed to store {} image: {}",
+                                    pos, side, e
+                                )),
+                            }
                         }
                     }
+                    Err(e) => warnings.push(format!(
+                        "Item at position {}: invalid {} image data URL: {}",
+                        pos, side, e
+                    )),
                 }
             }
         }

@@ -13,6 +13,9 @@ use std::collections::HashSet;
 
 use crate::collections::models::{ImageData, SoundData};
 
+/// Maximum decoded size for a collection item image (multipart upload and JSON import).
+pub const MAX_ITEM_IMAGE_BYTES: usize = 8 * 1024 * 1024;
+
 pub fn remove_html_tags(html: &str) -> String {
     static AMMONIA: Lazy<AmmoniaBuilder<'static>> = Lazy::new(|| {
         let mut builder = AmmoniaBuilder::default();
@@ -107,8 +110,11 @@ pub fn validate_item_image(image: &ImageData) -> Result<(), String> {
         .map_err(|_| "Invalid base64 data".to_string())?
         .len();
 
-    if decoded_size > 5 * 1024 * 1024 {
-        return Err("Image size exceeds 5MB limit".to_string());
+    if decoded_size > MAX_ITEM_IMAGE_BYTES {
+        return Err(format!(
+            "Image size exceeds {}MB limit",
+            MAX_ITEM_IMAGE_BYTES / (1024 * 1024)
+        ));
     }
 
     Ok(())
