@@ -427,7 +427,7 @@ export const setupRouterGuards = (router: any, isClient: boolean) => {
         }
 
         return {
-          name: `Login-${targetLocale}`, // Use the extracted locale for the Login route name
+          name: `Login-${targetLocale}`,
           query: { redirect_loop: from.name ? '1' : undefined },
         }
       }
@@ -466,7 +466,7 @@ export const routes: Array<RouteRecordRaw> = [
           ? (localStorage.getItem('selectedLocale') as SupportedLocale | null)
           : null
       const preferredLocale =
-        storedLocale && supportedLocales.includes(storedLocale) ? storedLocale : defaultLocale // Use defaultLocale as a reliable fallback
+        storedLocale && supportedLocales.includes(storedLocale) ? storedLocale : defaultLocale
 
       return `/${preferredLocale}/${path}`
     },

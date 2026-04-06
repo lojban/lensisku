@@ -208,7 +208,7 @@ const formatFieldName = (field) => {
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .map((word) =>
       t(`components.recentChangeItem.fields.${word}`, word.charAt(0).toUpperCase() + word.slice(1))
-    ) // Use t() with fallback
+    )
     .join(' ')
 }
 

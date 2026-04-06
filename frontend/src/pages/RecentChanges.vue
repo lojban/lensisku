@@ -109,7 +109,7 @@ const getInitialTab = () => {
   if (typeof window === 'undefined') return 'changes'
   const storedTab = localStorage.getItem(STORAGE_KEY_TAB)
   const queryTab = queryStr(route.query.tab)
-  const validTabs = tabs.value.map((t) => t.key) // Use tabs.value here
+  const validTabs = tabs.value.map((t) => t.key)
   if (queryTab && validTabs.includes(queryTab)) return queryTab
   if (storedTab && validTabs.includes(storedTab)) return storedTab
   return 'changes'

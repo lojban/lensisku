@@ -163,7 +163,7 @@ const fetchData = async (tabKey) => {
     }
     perPage.value = response.data.per_page
   } catch (e) {
-    showError(e.response?.data?.error || t('reactionsPage.loadError')) // Use t()
+    showError(e.response?.data?.error || t('reactionsPage.loadError'))
   } finally {
     isLoading.value = false
   }
@@ -188,7 +188,7 @@ const handleTabClick = async (tabKey) => {
       query: { ...route.query, tab: tabKey },
     })
   } catch (e) {
-    showError(e.response?.data?.error || t('reactionsPage.loadError')) // Use t()
+    showError(e.response?.data?.error || t('reactionsPage.loadError'))
   } finally {
     isLoading.value = false
   }
@@ -211,7 +211,7 @@ useSeoHead({ title: pageTitle })
 watch(
   activeTab,
   (newTab) => {
-    pageTitle.value = `${tabs.value.find((t) => t.key === newTab)?.label || t('reactionsPage.activity')}` // Use tabs.value and t()
+    pageTitle.value = `${tabs.value.find((t) => t.key === newTab)?.label || t('reactionsPage.activity')}`
   },
   { immediate: true }
 )

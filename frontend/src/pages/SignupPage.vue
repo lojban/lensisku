@@ -150,11 +150,10 @@ const performSignup = async () => {
       password: password.value,
     })
     if (response.data.token) {
-      // Assuming signup response provides tokens needed for login
-      auth.login(response.data.token, response.data.refresh_token, username.value) // Adjust if API response differs
+      auth.login(response.data.token, response.data.refresh_token, username.value)
       const redirectPath = sessionStorage.getItem('redirectPath')
       sessionStorage.removeItem('redirectPath')
-      router.push(redirectPath || '/') // Redirect to stored path or home
+      router.push(redirectPath || '/')
     }
   } catch (err) {
     if (err.response?.status === 409 || err.response?.data?.error === 'user_exists') {

@@ -9,7 +9,6 @@
   </div>
 
   <div class="bg-white shadow rounded-lg p-4 sm:p-6">
-     <!-- File Upload -->
     <div class="mb-6">
        <label class="block text-base sm:text-sm font-medium text-gray-700 mb-2"
         > {{ t('bulkImport.uploadCsvLabel') }} </label
@@ -42,7 +41,6 @@
             <p class="pl-1"> {{ t('bulkImport.dragAndDrop') }} </p>
 
           </div>
-           <!-- File name display and clear button -->
           <div v-if="csvFile" class="mt-2 text-sm text-gray-600">
 
             <div class="flex items-center justify-center space-x-2">
@@ -84,7 +82,6 @@
       </div>
 
     </div>
-     <!-- Language Selection -->
     <div class="mb-6">
        <label for="language" class="block text-sm font-medium text-gray-700 mb-2"
         > {{ t('bulkImport.targetLanguageLabel') }} </label
@@ -103,7 +100,6 @@
          </select
       >
     </div>
-     <!-- Submit Button -->
     <div class="flex flex-col sm:flex-row justify-end gap-2 mt-4 sm:mt-0">
        <button
         type="button"
@@ -126,13 +122,11 @@
         > </button
       >
     </div>
-     <!-- Client ID and Delete (using storedClientId from completion event) -->
     <div v-if="storedClientId" class="my-2">
 
       <div class="bg-blue-50 border-l-4 border-blue-400 p-3 sm:p-4">
 
         <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-           <!-- Left Column -->
           <div class="space-y-2">
 
             <p class="text-sm text-blue-700">
@@ -151,7 +145,6 @@
             <p class="text-xs text-blue-600"> {{ t('bulkImport.saveIdNote') }} </p>
 
           </div>
-           <!-- Right Column -->
           <div class="flex items-center">
              <button
               class="ui-btn--delete w-full sm:w-auto"
@@ -169,7 +162,6 @@
       </div>
 
     </div>
-     <!-- Manual Client ID Input -->
     <div v-if="!storedClientId" class="mb-6 mt-6">
 
       <div class="bg-gray-100 p-3 sm:p-4 rounded-lg border-2 border-gray-200 shadow-sm space-y-3">
@@ -200,9 +192,7 @@
       </div>
 
     </div>
-     <!-- Status and Results -->
     <div class="mb-6 space-y-4">
-       <!-- Final Status -->
       <div
         v-if="statusMessage"
         class="border-l-4 p-4"
@@ -215,7 +205,6 @@
         <p class="text-sm"> {{ statusMessage }} </p>
 
       </div>
-       <!-- Progress Log -->
       <div
         ref="logContainerRef"
         v-if="logs.length"
@@ -280,7 +269,6 @@ const csvFile = ref(null)
 const languages = ref([])
 const isLoading = ref(false)
 const isCancelling = ref(false)
-// Use a more descriptive name, this ID is now for the active process (cancellation) and later deletion
 const importProcessId = ref(
   typeof window === 'undefined' ? '' : localStorage.getItem('lastImportProcessId') || ''
 )
@@ -294,7 +282,6 @@ const { isOverDropZone } = useDropZone(dropZoneRef, (files) => {
   }
 })
 
-// Load available languages
 const loadLanguages = async () => {
   try {
     const response = await getLanguages()
@@ -304,7 +291,6 @@ const loadLanguages = async () => {
   }
 }
 
-// Handle file upload
 const handleFileUpload = (event) => {
   const input = event.target
   const files = input.files
@@ -313,10 +299,8 @@ const handleFileUpload = (event) => {
   }
 }
 
-// Clear selected file
 const clearFile = () => {
   csvFile.value = null
-  // Clear the file input value
   const fileInput = document.getElementById('file-upload') as HTMLInputElement | null
   if (fileInput) {
     fileInput.value = ''
@@ -333,7 +317,6 @@ const MAX_LOG_LINES = 200
 const abortController = ref(null)
 const logContainerRef = ref(null)
 
-// Watch for changes in logs and scroll to bottom
 watch(
   logs,
   async () => {
@@ -345,26 +328,9 @@ watch(
   { deep: true }
 )
 
-// Sync inputClientId when storedClientId changes
 watch(storedClientId, (newVal) => {
   if (newVal) {
     inputClientId.value = newVal
-  }
-})
-
-// Check for existing import process ID on mount
-onMounted(() => {
-  if (typeof window === 'undefined') return
-
-  const savedProcessId = localStorage.getItem('lastImportProcessId')
-  if (savedProcessId) {
-    importProcessId.value = savedProcessId
-    logs.value.push({
-      type: 'info',
-      details: t('bulkImport.status.foundExistingProcess'),
-      current: 0,
-      word: '',
-    })
   }
 })
 
@@ -378,8 +344,8 @@ const submitImport = async () => {
   logs.value = []
   importProcessId.value = ''
   storedClientId.value = ''
-  localStorage.removeItem('lastImportProcessId') // Clear from storage
-  localStorage.removeItem('lastImportClientId') // Clear deletion ID from storage
+  localStorage.removeItem('lastImportProcessId')
+  localStorage.removeItem('lastImportClientId')
   abortController.value = new AbortController()
 
   try {
@@ -424,18 +390,16 @@ const submitImport = async () => {
       const values = value
         .split(/\n/)
         .filter(Boolean)
-        .map((el) => el.replace(/^data: */, '')) // Remove "data: " prefix
+        .map((el) => el.replace(/^data: */, ''))
 
       for (const rawValue of values) {
         try {
-          // Ensure we only parse if it looks like JSON
           if (rawValue.trim().startsWith('{')) {
             const event = JSON.parse(rawValue)
 
             if (event.type === 'client_id') {
-              // Expect client_id now
-              importProcessId.value = event.client_id // Store the active process ID
-              localStorage.setItem('lastImportProcessId', event.client_id) // Save for potential resume/cancel later
+              importProcessId.value = event.client_id
+              localStorage.setItem('lastImportProcessId', event.client_id)
               storedClientId.value = event.client_id
               logs.value.push({
                 type: 'info',
@@ -459,7 +423,7 @@ const submitImport = async () => {
             } else if (event.type === 'start') {
               logs.value.push({
                 type: 'info',
-                details: `Starting import of ${event.total} records.`, // Keep dynamic part
+                details: `Starting import of ${event.total} records.`,
                 current: 0,
                 word: '',
               })
@@ -468,7 +432,7 @@ const submitImport = async () => {
                 type: event.success ? 'success' : 'error',
                 details: event.success
                   ? `Imported successfully. (${event.success_count}✓ ${event.error_count}✗)`
-                  : `${t('bulkImport.status.importError')} ${event.error} (${event.success_count}✓ ${event.error_count}✗)`, // Keep dynamic part
+                  : `${t('bulkImport.status.importError')} ${event.error} (${event.success_count}✓ ${event.error_count}✗)`,
                 current: event.current,
                 word: event.word,
               })
@@ -491,15 +455,14 @@ const submitImport = async () => {
                 current: event.total_processed,
                 word: t('bulkImport.status.endMarker'),
               })
-              break // Exit loop on complete
+              break
             } else if (event.type === 'error') {
-              // Fatal error from backend process
               setStatus(`${t('bulkImport.status.importFailed')}: ${event.error}`, 'error')
               logs.value.push({
                 type: 'error',
                 details: `${t('bulkImport.status.fatalError')} ${event.error}`,
               })
-              break // Stop processing on fatal error
+              break
             }
           }
         } catch (error) {
@@ -508,19 +471,15 @@ const submitImport = async () => {
             message: 'Error processing SSE event',
             details: `Raw data: ${rawValue}. Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
           })
-          // Decide if we should break the loop on parsing error
-          // break;
         }
       }
     }
 
-    // Check if status was set, if not, maybe indicate an unexpected end
     if (!statusMessage.value && !abortController.value?.signal.aborted) {
       setStatus(t('bulkImport.status.unexpectedEnd'), 'error')
       logs.value.push({ type: 'error', details: t('bulkImport.status.connectionClosed') })
     }
   } catch (error) {
-    // Handle fetch errors (network, CORS, etc.) or errors thrown explicitly
     logs.value.push({
       type: 'error',
       message: t('bulkImport.status.importFailed'),
@@ -531,39 +490,42 @@ const submitImport = async () => {
     isLoading.value = false
     isCancelling.value = false
     abortController.value = null
-    importProcessId.value = '' // Clear active process ID on completion/error
-    localStorage.removeItem('lastImportProcessId') // Clear from storage
+    importProcessId.value = ''
+    localStorage.removeItem('lastImportProcessId')
   }
 }
 
-// Set status message
 const setStatus = (message, type = 'success') => {
   statusMessage.value = message
   statusType.value = type
 }
 
-// Computed properties
 const canSubmit = computed(() => {
   return selectedLanguage.value && csvFile.value && !isLoading.value
 })
 
-// Load languages when component mounts
 onMounted(() => {
-  loadLanguages()
+  void loadLanguages()
+  const savedProcessId = localStorage.getItem('lastImportProcessId')
+  if (savedProcessId) {
+    importProcessId.value = savedProcessId
+    logs.value.push({
+      type: 'info',
+      details: t('bulkImport.status.foundExistingProcess'),
+      current: 0,
+      word: '',
+    })
+  }
 })
 
 const cancelJob = async () => {
-  if (!importProcessId.value) return // Use the active process ID
+  if (!importProcessId.value) return
 
   isCancelling.value = true
   try {
-    // Call the updated API function with the client ID
     const response = await cancelBulkImport(importProcessId.value)
 
-    // Assuming cancelBulkImport now returns the raw fetch response or throws on error
-    // Check if the status code indicates success (typically 2xx)
     if (!(response.status >= 200 && response.status < 300)) {
-      // Use status and statusText for error message from Axios response
       throw new Error(`Failed to cancel job: ${response.status} ${response.statusText}`)
     }
 
@@ -573,7 +535,7 @@ const cancelJob = async () => {
       current: 0,
       word: '',
     })
-    statusMessage.value = t('bulkImport.status.cancellationRequested') // Use same key for status
+    statusMessage.value = t('bulkImport.status.cancellationRequested')
   } catch (error) {
     logs.value.push({
       type: 'error',

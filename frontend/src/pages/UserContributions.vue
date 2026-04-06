@@ -92,7 +92,7 @@ const fetchComments = async () => {
     }))
     total.value = response.data.total
   } catch (e) {
-    showError(t('userContributions.loadCommentsError')) // Use t()
+    showError(t('userContributions.loadCommentsError'))
   } finally {
     isLoading.value = false
   }
@@ -110,7 +110,7 @@ const fetchDefinitions = async () => {
     definitions.value = response.data.items
     total.value = response.data.total
   } catch (e) {
-    showError(t('userContributions.loadDefinitionsError')) // Use t()
+    showError(t('userContributions.loadDefinitionsError'))
   } finally {
     isLoading.value = false
   }
@@ -128,7 +128,7 @@ const fetchVotes = async () => {
     votes.value = response.data.items
     total.value = response.data.total
   } catch (e) {
-    showError(t('userContributions.loadVotesError')) // Use t()
+    showError(t('userContributions.loadVotesError'))
   } finally {
     isLoading.value = false
   }
@@ -185,7 +185,7 @@ const handleTabClick = async (tabKey) => {
       query: { ...route.query, tab: tabKey, page: 1 },
     })
   } catch (e) {
-    showError(t('userContributions.loadDataError')) // Use t()
+    showError(t('userContributions.loadDataError'))
   } finally {
     isLoading.value = false
     isUpdatingRoute.value = false
@@ -193,7 +193,7 @@ const handleTabClick = async (tabKey) => {
 }
 
 // Reactive page title
-const pageTitle = ref(t('userContributions.activityTitle', { username: props.username })) // Use t()
+const pageTitle = ref(t('userContributions.activityTitle', { username: props.username }))
 useSeoHead({ title: pageTitle })
 
 // Configure tabs
@@ -201,25 +201,24 @@ const tabs = computed(() => [
   // Make tabs computed
   {
     key: 'comments',
-    label: t('userContributions.comments'), // Use t()
+    label: t('userContributions.comments'),
     icon: MessageSquare,
   },
   {
     key: 'definitions',
-    label: t('userContributions.definitions'), // Use t()
+    label: t('userContributions.definitions'),
     icon: Book,
   },
 ])
 
-// Update title when tab changes or username changes
 watch(
   [activeTab, () => props.username],
   ([newTab, newUsername]) => {
     const tabTitle =
       tabs.value.find((t) => t.key === newTab)?.label ||
-      t('userContributions.activityTitle', { username: '' }) // Use tabs.value and t()
+      t('userContributions.activityTitle', { username: '' })
     pageTitle.value =
-      t('userContributions.activityTitle', { username: newUsername }) + ` - ${tabTitle}` // Use t()
+      t('userContributions.activityTitle', { username: newUsername }) + ` - ${tabTitle}`
   },
   { immediate: true }
 )

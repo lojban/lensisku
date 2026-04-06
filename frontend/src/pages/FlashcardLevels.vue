@@ -1044,7 +1044,7 @@ const performDeleteLevel = async () => {
   isDeletingLevel.value = true
 
   try {
-    await deleteLevel(levelToDelete.value.level_id) // Use the new API function
+    await deleteLevel(levelToDelete.value.level_id)
     await fetchLevels() // Refresh the list
     showDeleteLevelConfirm.value = false
     levelToDelete.value = null
