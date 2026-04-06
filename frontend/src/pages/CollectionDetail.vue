@@ -1494,7 +1494,6 @@ const addItemTabs = computed(() => [
 
 // Computed properties
 const isOwner = computed(() => {
-  console.log(collection.value?.owner?.username, auth.state.username)
   return collection.value?.owner?.username === auth.state.username
 })
 
