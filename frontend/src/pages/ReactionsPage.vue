@@ -126,7 +126,6 @@ const fetchData = async (tabKey) => {
         break
       case 'comments':
         if (!auth.state.username) {
-          console.warn(t('reactionsPage.warnNoUsernameComments')) // Use t()
           comments.value = [] // Clear or handle appropriately
           total.value = 0
           break // Skip API call
@@ -139,7 +138,6 @@ const fetchData = async (tabKey) => {
         break
       case 'definitions':
         if (!auth.state.username) {
-          console.warn(t('reactionsPage.warnNoUsernameDefinitions')) // Use t()
           definitions.value = [] // Clear or handle appropriately
           total.value = 0
           break // Skip API call

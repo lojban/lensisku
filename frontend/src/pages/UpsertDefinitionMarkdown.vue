@@ -173,7 +173,6 @@ onMounted(async () => {
           )
 
           const result = await response.json()
-          console.log(result)
           if (!response.ok) throw new Error(result.error)
 
           return `/api/jbovlaste/definition_image/${editDefinitionId.value}/image?image_id=${result.image_id}`

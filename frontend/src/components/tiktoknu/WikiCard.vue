@@ -94,7 +94,6 @@ defineEmits(['like'])
 const imageLoaded = ref(false)
 
 const handleImageError = () => {
-  console.error('Image failed to load')
   imageLoaded.value = true
 }
 

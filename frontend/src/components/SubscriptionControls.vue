@@ -48,9 +48,8 @@ const fetchState = async () => {
   try {
     const response = await getSubscriptionState(props.valsiId)
     isSubscribed.value = response.data.is_subscribed
-  } catch (err) {
+  } catch {
     error.value = t('components.subscriptionControls.loadError')
-    console.error(err)
   }
 }
 
@@ -66,11 +65,10 @@ const toggleSubscription = async () => {
       await subscribeToValsi(props.valsiId, 'edit')
       isSubscribed.value = true
     }
-  } catch (err) {
+  } catch {
     error.value = isSubscribed.value
       ? t('components.subscriptionControls.unsubscribeError')
       : t('components.subscriptionControls.subscribeError')
-    console.error(err)
   } finally {
     isLoading.value = false
   }

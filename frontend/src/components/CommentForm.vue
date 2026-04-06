@@ -275,9 +275,6 @@ const handleSubmit = () => {
     // Check against the limit
     if (totalSize > MAX_PAYLOAD_SIZE) {
       showError('components.commentForm.errorTooLarge')
-      console.error(
-        `Comment payload size (${totalSize} bytes) exceeds limit (${MAX_PAYLOAD_SIZE} bytes).`
-      )
       return // Prevent submission
     }
 

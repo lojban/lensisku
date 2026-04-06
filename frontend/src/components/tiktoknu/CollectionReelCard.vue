@@ -118,7 +118,6 @@ function stripHtml(s: string | null | undefined): string {
 }
 
 const handleImageError = () => {
-  console.error('Collection reel image failed to load')
   imageLoaded.value = true
 }
 </script>

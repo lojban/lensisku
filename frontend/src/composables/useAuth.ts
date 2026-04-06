@@ -174,9 +174,6 @@ export function provideAuth(): AuthApi {
 
   async function logout(): Promise<void> {
     performBackendLogout()
-      .then(() => {
-        console.log('Backend logout successful')
-      })
       .catch((error: unknown) => {
         console.error('Backend logout failed. Proceeding with client-side logout.', error)
       })
@@ -212,8 +209,6 @@ export function provideAuth(): AuthApi {
     isRefreshing = false
     refreshSubscribers = []
 
-    console.log('Client-side logout completed.')
-
     if (router) {
       void router.push('/login')
     } else {
@@ -228,7 +223,6 @@ export function provideAuth(): AuthApi {
 
     const now = Math.floor(Date.now() / 1000)
     const timeUntilRefresh = Math.max(0, expiryTime - REFRESH_MARGIN - now)
-    console.log('Scheduling token refresh in', timeUntilRefresh, 'seconds')
 
     refreshTimer = setTimeout(() => {
       void refreshAccessToken()
@@ -241,7 +235,6 @@ export function provideAuth(): AuthApi {
     }
 
     verificationTimer = setInterval(async () => {
-      console.log('Token verification check at', new Date().toISOString())
       const isValid = await verifyAndRefreshToken()
       if (!isValid && state.isLoggedIn) {
         console.warn('Token invalid during verification check, logging out')
@@ -251,7 +244,6 @@ export function provideAuth(): AuthApi {
 
     visibilityHandler = () => {
       if (document.visibilityState === 'visible') {
-        console.log('Tab became visible, triggering immediate token check')
         void verifyAndRefreshToken()
       }
     }

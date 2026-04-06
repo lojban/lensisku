@@ -427,12 +427,10 @@ const submitImport = async () => {
         .map((el) => el.replace(/^data: */, '')) // Remove "data: " prefix
 
       for (const rawValue of values) {
-        console.log('Raw SSE received:', rawValue) // Log raw value
         try {
           // Ensure we only parse if it looks like JSON
           if (rawValue.trim().startsWith('{')) {
             const event = JSON.parse(rawValue)
-            console.log('Parsed SSE event:', event) // Log parsed event
 
             if (event.type === 'client_id') {
               // Expect client_id now
@@ -502,13 +500,7 @@ const submitImport = async () => {
                 details: `${t('bulkImport.status.fatalError')} ${event.error}`,
               })
               break // Stop processing on fatal error
-            } else {
-              console.warn('Received unknown SSE event type:', event.type, event)
             }
-            console.log(logs.value)
-          } else if (rawValue.trim()) {
-            // Log non-JSON, non-empty messages if any
-            console.log('Received non-JSON SSE message:', rawValue)
           }
         } catch (error) {
           logs.value.push({
@@ -516,14 +508,12 @@ const submitImport = async () => {
             message: 'Error processing SSE event',
             details: `Raw data: ${rawValue}. Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
           })
-          console.error('Error parsing SSE event:', error, 'Raw value:', rawValue)
           // Decide if we should break the loop on parsing error
           // break;
         }
       }
     }
 
-    console.log('SSE reading loop finished. Aborted:', abortController.value?.signal.aborted)
     // Check if status was set, if not, maybe indicate an unexpected end
     if (!statusMessage.value && !abortController.value?.signal.aborted) {
       setStatus(t('bulkImport.status.unexpectedEnd'), 'error')
@@ -531,7 +521,6 @@ const submitImport = async () => {
     }
   } catch (error) {
     // Handle fetch errors (network, CORS, etc.) or errors thrown explicitly
-    console.error('Error during bulk import fetch/processing:', error)
     logs.value.push({
       type: 'error',
       message: t('bulkImport.status.importFailed'),
