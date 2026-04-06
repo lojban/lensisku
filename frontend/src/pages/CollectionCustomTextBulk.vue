@@ -56,8 +56,8 @@
             v-if="!isLoading && isOwner"
             type="button"
             class="ui-btn--neutral-muted ui-btn--group-item inline-flex items-center gap-2"
-            :disabled="isSaving || isImporting || isUploadingMediaBulk"
-            @click="openMediaBulkModal"
+            :disabled="isSaving || isImporting || mediaBulkBusy"
+            @click="showMediaBulkModal = true"
           >
             <Package class="h-4 w-4 shrink-0" aria-hidden="true" />
             {{ t('collectionCustomTextBulk.mediaBulkZipButton') }}
@@ -238,70 +238,12 @@
         </template>
       </ModalComponent>
 
-      <ModalComponent
-        :show="showMediaBulkModal"
-        :title="t('collectionCustomTextBulk.mediaBulkModalTitle')"
-        @close="closeMediaBulkModal"
-      >
-        <div class="max-h-[min(70vh,32rem)] space-y-4 overflow-y-auto text-sm text-gray-700">
-          <p class="font-medium text-gray-900">
-            {{ t('collectionCustomTextBulk.mediaBulkIntro') }}
-          </p>
-          <ol class="list-decimal space-y-2 pl-5 text-gray-700">
-            <li>{{ t('collectionCustomTextBulk.mediaBulkStep1') }}</li>
-            <li>{{ t('collectionCustomTextBulk.mediaBulkStep2') }}</li>
-            <li>{{ t('collectionCustomTextBulk.mediaBulkStep3') }}</li>
-            <li>{{ t('collectionCustomTextBulk.mediaBulkStep4') }}</li>
-          </ol>
-          <pre
-            class="overflow-x-auto rounded-md border border-gray-200 bg-gray-50 p-3 text-xs text-gray-800 whitespace-pre-wrap"
-            >{{ t('collectionCustomTextBulk.mediaBulkManifestExample') }}</pre
-          >
-          <p class="text-xs text-gray-600">
-            {{ t('collectionCustomTextBulk.mediaBulkLimits') }}
-          </p>
-          <p class="text-xs text-gray-600">
-            {{ t('collectionCustomTextBulk.mediaBulkMultipartHint') }}
-          </p>
-          <FileDropzone
-            accept=".zip,application/zip"
-            :choose-file-text="t('fileDropzone.chooseFile')"
-            :or-drag-drop-text="t('fileDropzone.orDragDrop')"
-            :types-note-text="t('collectionCustomTextBulk.mediaBulkAcceptZip')"
-            :dropzone-aria-label="t('collectionCustomTextBulk.mediaBulkDropAria')"
-            :input-aria-label="t('collectionCustomTextBulk.mediaBulkInputAria')"
-            :disabled="isUploadingMediaBulk"
-            :validate-file="isLikelyZipFile"
-            @select="onMediaBulkZipSelected"
-            @reject="onMediaBulkZipRejected"
-          />
-          <p v-if="mediaBulkFile" class="text-sm text-gray-800">
-            {{ t('collectionCustomTextBulk.mediaBulkSelected', { name: mediaBulkFile.name }) }}
-          </p>
-          <div class="flex flex-wrap justify-end gap-2 border-t border-gray-100 pt-3">
-            <button
-              type="button"
-              class="ui-btn--neutral-muted"
-              :disabled="isUploadingMediaBulk"
-              @click="closeMediaBulkModal"
-            >
-              {{ t('collectionCustomTextBulk.importCancel') }}
-            </button>
-            <button
-              type="button"
-              class="ui-btn--create"
-              :disabled="!mediaBulkFile || isUploadingMediaBulk"
-              @click="submitMediaBulkZip"
-            >
-              {{
-                isUploadingMediaBulk
-                  ? t('collectionCustomTextBulk.mediaBulkUploading')
-                  : t('collectionCustomTextBulk.mediaBulkSubmit')
-              }}
-            </button>
-          </div>
-        </div>
-      </ModalComponent>
+      <CollectionMediaBulkZipModal
+        v-model="showMediaBulkModal"
+        :collection-id="numericCollectionId"
+        @success="load(true)"
+        @busy="onMediaBulkBusy"
+      />
 
       <DeleteConfirmationModal
         :show="pendingDelete !== null"
@@ -482,10 +424,9 @@ import {
   getCollection,
   listCustomTextBulkItems,
   removeCollectionItem,
-  uploadCollectionMediaBulkZip,
 } from '@/api'
 import SaveChangesIcon from '@/components/icons/SaveChangesIcon.vue'
-import FileDropzone from '@/components/FileDropzone.vue'
+import CollectionMediaBulkZipModal from '@/components/CollectionMediaBulkZipModal.vue'
 import CollectionCustomTextBulkRow, {
   type BulkVirtualRow,
 } from '@/components/CollectionCustomTextBulkRow.vue'
@@ -567,8 +508,11 @@ type PendingDelete =
 const pendingDelete = ref<PendingDelete | null>(null)
 const showImportModal = ref(false)
 const showMediaBulkModal = ref(false)
-const mediaBulkFile = ref<File | null>(null)
-const isUploadingMediaBulk = ref(false)
+const mediaBulkBusy = ref(false)
+
+function onMediaBulkBusy(b: boolean) {
+  mediaBulkBusy.value = b
+}
 const languageOptions = ref<LanguageOption[]>([])
 /** Shown while streaming file read + row merge (avoids loading the whole file as one string). */
 const importProgress = ref<{
@@ -690,68 +634,6 @@ function closeImportModal() {
   importProgress.value = null
 }
 
-function isLikelyZipFile(file: File): boolean {
-  const n = file.name.toLowerCase()
-  return (
-    n.endsWith('.zip') ||
-    file.type === 'application/zip' ||
-    file.type === 'application/x-zip-compressed'
-  )
-}
-
-function openMediaBulkModal() {
-  showMediaBulkModal.value = true
-  mediaBulkFile.value = null
-  clearError()
-}
-
-function closeMediaBulkModal() {
-  if (isUploadingMediaBulk.value) return
-  showMediaBulkModal.value = false
-  mediaBulkFile.value = null
-}
-
-function onMediaBulkZipSelected(file: File) {
-  mediaBulkFile.value = file
-}
-
-function onMediaBulkZipRejected() {
-  showError(t('collectionCustomTextBulk.mediaBulkWrongFileType'))
-}
-
-async function submitMediaBulkZip() {
-  const file = mediaBulkFile.value
-  if (!file) return
-  isUploadingMediaBulk.value = true
-  clearError()
-  try {
-    const { data } = await uploadCollectionMediaBulkZip(numericCollectionId.value, file)
-    const d = data as { attached: number; created_items: number; warnings?: string[] }
-    let msg = t('collectionCustomTextBulk.mediaBulkSuccess', {
-      attached: d.attached,
-      created: d.created_items,
-    })
-    if (d.warnings?.length) {
-      msg +=
-        '\n\n' +
-        d.warnings.slice(0, 8).join('\n') +
-        (d.warnings.length > 8 ? `\n… ${d.warnings.length - 8} more` : '')
-    }
-    isUploadingMediaBulk.value = false
-    showSuccess(msg, 8000)
-    showMediaBulkModal.value = false
-    mediaBulkFile.value = null
-    await load(true)
-  } catch (e: unknown) {
-    const ax = e as { response?: { data?: { error?: string } }; message?: string }
-    showError(
-      ax.response?.data?.error || ax.message || t('collectionCustomTextBulk.mediaBulkError')
-    )
-  } finally {
-    isUploadingMediaBulk.value = false
-  }
-}
-
 function proceedToImportConfirm() {
   if (!canProceedImportReview.value) return
   importAwaitingFinalConfirm.value = true
@@ -858,7 +740,7 @@ const isRowActionDisabled = computed(
   () =>
     isSaving.value ||
     isImporting.value ||
-    isUploadingMediaBulk.value ||
+    mediaBulkBusy.value ||
     deletingItemId.value !== null
 )
 
