@@ -275,7 +275,7 @@ const fetchDefinitionsDetails = async () => {
       })
       return
     }
-    showError(e.response?.data || t('entryPage.loadError')) // Use t()
+    showError(e.response?.data || t('entryPage.loadError'))
     console.error('Error fetching valsi details:', e)
   } finally {
     isLoading.value = false

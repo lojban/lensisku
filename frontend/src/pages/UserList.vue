@@ -241,7 +241,7 @@ const prevPage = () => {
 // Methods for RoleManagementTab
 const fetchRolesAndPermissions = async () => {
   if (!hasManageRolesPermission.value) return
-  isLoading.value = true // Use the same loading flag for simplicity
+  isLoading.value = true
   try {
     const [rolesRes, permsRes] = await Promise.all([getRoles(), getPermissions()])
     roles.value = rolesRes.data.roles
@@ -253,7 +253,7 @@ const fetchRolesAndPermissions = async () => {
       }
     })
   } catch (error) {
-    showError(t('userList.loadRolesError')) // Use translation key
+    showError(t('userList.loadRolesError'))
     console.error('Error loading role data:', error)
   } finally {
     isLoading.value = false
@@ -282,7 +282,7 @@ const handleCreateRole = async () => {
     await fetchRolesAndPermissions() // Refresh roles
     newRoleName.value = ''
   } catch (error) {
-    showError(t('userList.createRoleError')) // Use translation key
+    showError(t('userList.createRoleError'))
     console.error('Error creating role:', error)
   }
 }
@@ -299,7 +299,7 @@ const handleAddPermission = async (roleName) => {
     await fetchRolesAndPermissions() // Refresh roles
     selectedPermissionMap.value[roleName] = null // Reset selection for this role
   } catch (error) {
-    showError(t('userList.addPermissionError')) // Use translation key
+    showError(t('userList.addPermissionError'))
     console.error('Error adding permission:', error)
   }
 }
@@ -318,7 +318,7 @@ const performDeletePermission = async (roleName, permission) => {
     await updateRole(roleName, { permissions: newPermissions })
     await fetchRolesAndPermissions() // Refresh roles
   } catch (error) {
-    showError(t('userList.removePermissionError')) // Use translation key
+    showError(t('userList.removePermissionError'))
     console.error('Error removing permission:', error)
   } finally {
     isDeletingPermission.value = false
@@ -345,7 +345,7 @@ const performDeleteRole = async () => {
     newRoleName.value = ''
     selectedPermissions.value = []
   } catch (error) {
-    showError(t('userList.deleteRoleError')) // Use translation key
+    showError(t('userList.deleteRoleError'))
     console.error('Error deleting role:', error)
   } finally {
     isDeletingRole.value = false
@@ -410,7 +410,7 @@ watch(
     } else {
       const titleParts = []
       if (searchQuery.value) {
-        titleParts.push(`${t('searchForm.modes.dictionary')}: "${searchQuery.value}"`) // Assuming dictionary search context
+        titleParts.push(`${t('searchForm.modes.dictionary')}: "${searchQuery.value}"`)
       }
       if (roleFilter.value) {
         titleParts.push(`${t('profile.role')}: ${roleFilter.value}`)

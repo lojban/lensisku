@@ -398,14 +398,12 @@ function onButtonThemeChange(e: Event) {
   setButtonTheme((e.target as HTMLSelectElement).value as ButtonThemeId)
 }
 
-// State
 const { showError, clearError } = useError()
 const { showSuccess } = useSuccessToast()
 const isLoading = ref(true)
 const isEditing = ref(false)
 const isUpdating = ref(false)
 
-// --- Profile Image Loading States & Handlers ---
 const isViewProfileImageLoading = ref(false)
 const handleViewProfileImageLoad = () => {
   isViewProfileImageLoading.value = false
@@ -420,17 +418,16 @@ const handleEditProfileImageLoad = () => {
 }
 const handleEditProfileImageError = () => {
   isEditProfileImageLoading.value = false
-  currentImageUrl.value = null // Keep original behavior for edit mode
+  currentImageUrl.value = null
 }
-// --- End Profile Image Loading States & Handlers ---
 
-const isImageUploading = ref(false) // Keep track of upload state
+const isImageUploading = ref(false)
 const imageUploadError = ref('')
 const updateSuccess = ref(false)
 const memberSince = ref('')
-const currentImageUrl = ref(null) // URL for display
-const uploadProgress = ref(0) // For progress indicator
-const circumference = computed(() => 2 * Math.PI * 45) // For circular progress
+const currentImageUrl = ref(null)
+const uploadProgress = ref(0)
+const circumference = computed(() => 2 * Math.PI * 45)
 
 const profileData = ref({
   username: '',
@@ -517,7 +514,6 @@ const fetchProfileImageUrl = async () => {
   }
 }
 
-// --- Integrated Image Upload Logic ---
 const handleFileChange = async (event: Event) => {
   const file = (event.target as HTMLInputElement).files?.[0]
   if (!file) return
@@ -546,11 +542,9 @@ const handleFileChange = async (event: Event) => {
         const base64Data = typeof raw === 'string' ? raw.split(',')[1] ?? '' : ''
         const imageData = { data: base64Data, mime_type: file.type }
 
-        isEditProfileImageLoading.value = true // Set loading for preview
-        // Show preview immediately
-        currentImageUrl.value = URL.createObjectURL(file) // Temporary preview
+        isEditProfileImageLoading.value = true
+        currentImageUrl.value = URL.createObjectURL(file)
 
-        // Simulate upload progress
         let progress = 0
         const progressInterval = setInterval(() => {
           progress += 10
@@ -558,14 +552,12 @@ const handleFileChange = async (event: Event) => {
           uploadProgress.value = Math.min(progress, 90)
         }, 100)
 
-        // Perform the actual upload
         await updateProfileImage(imageData)
 
-        // Complete progress and update state
         uploadProgress.value = 100
         profileData.value.has_profile_image = true
         updateSuccess.value = true
-        await fetchProfileImageUrl() // Fetch the potentially updated image URL from server
+        await fetchProfileImageUrl()
 
         setTimeout(() => {
           isImageUploading.value = false
@@ -575,16 +567,14 @@ const handleFileChange = async (event: Event) => {
         console.error('Upload error:', err)
         imageUploadError.value = uploadImageErrorMessage(err, t)
         isImageUploading.value = false
-        isEditProfileImageLoading.value = false // Error during preview setup or upload
+        isEditProfileImageLoading.value = false
         uploadProgress.value = 0
-        // Revert preview if upload failed? Or keep it? For now, keep preview.
-        // await fetchProfileImageUrl(); // Re-fetch original if needed
       }
     }
     reader.onerror = () => {
       imageUploadError.value = t('profile.uploadError.readError')
       isImageUploading.value = false
-      isEditProfileImageLoading.value = false // Error reading file
+      isEditProfileImageLoading.value = false
       uploadProgress.value = 0
     }
     reader.readAsDataURL(file)
@@ -599,12 +589,12 @@ const handleImageRemove = async () => {
   if (!confirm(t('profile.removeConfirm'))) return
 
   try {
-    isImageUploading.value = true // Use same flag to disable buttons
+    isImageUploading.value = true
     imageUploadError.value = ''
     await removeProfileImage()
     profileData.value.has_profile_image = false
-    currentImageUrl.value = null // Clear the image URL
-    isEditProfileImageLoading.value = false // No image, so not loading
+    currentImageUrl.value = null
+    isEditProfileImageLoading.value = false
     updateSuccess.value = true
   } catch (err) {
     imageUploadError.value = err.response?.data?.message || 'Failed to remove image.'
@@ -612,7 +602,6 @@ const handleImageRemove = async () => {
     isImageUploading.value = false
   }
 }
-// --- End Integrated Image Upload Logic ---
 
 const decodedToken = computed((): ProfileJwtPayload | null => {
   if (typeof window === 'undefined') return null

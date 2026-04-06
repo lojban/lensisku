@@ -548,7 +548,6 @@ const submitComment = async (formData: { subject: string; content: string }) => 
     }
   } catch (error) {
     console.error('Error submitting comment:', error)
-    // Use the useError composable to show the error
     showError(
       error.response?.data?.error || 'Failed to submit comment',
       error.response?.data?.details

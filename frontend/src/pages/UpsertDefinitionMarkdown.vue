@@ -151,10 +151,8 @@ onMounted(async () => {
             reader.onload = () => resolve(typeof reader.result === 'string' ? reader.result : '')
           })
 
-          // Extract mime type and data
           const [mimeType, data] = dataUrl.split(',', 2)
 
-          // Use definition ID from current context
           const response = await fetch(
             `/api/jbovlaste/definition_image/${editDefinitionId.value}/image`,
             {

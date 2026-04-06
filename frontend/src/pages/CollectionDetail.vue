@@ -1690,9 +1690,9 @@ const addNewDefinitionAndItem = async () => {
     // 2. Add the new definition to the collection
     const addItemPayload = {
       definition_id: newDefinitionId,
-      notes: addItemNotes.value, // Use the general notes field for the collection item
-      auto_progress: customContent.value.auto_progress, // Use the general auto_progress
-      direction: enableFlashcard.value ? addItemDirection.value : null, // Use general flashcard settings
+      notes: addItemNotes.value,
+      auto_progress: customContent.value.auto_progress,
+      direction: enableFlashcard.value ? addItemDirection.value : null,
       sound: newDefinitionSound.value,
       // Images are handled by the definition itself, not duplicated here
     }
@@ -1912,31 +1912,29 @@ const openEditItemModal = async (item) => {
         // Set selected definition with full data
         const def = response.data
         selectedDefinition.value = {
-          ...def, // Spread definition properties
+          ...def,
           free_content_front: item.free_content_front,
           free_content_back: item.free_content_back,
           has_front_image: item.has_front_image,
           has_back_image: item.has_back_image,
         }
 
-        searchQuery.value = normalizeSearchQuery(String(def.valsiword ?? '')) // Keep setting search query for context
+        searchQuery.value = normalizeSearchQuery(String(def.valsiword ?? ''))
 
-        addItemResults.value = [def] // Keep setting results for consistency, though only one is selected
+        addItemResults.value = [def]
 
-        // Initialize images
         const initImage = async (side) => {
           if (item[`has_${side}_image`]) {
             try {
               const response = await getItemImage(props.collectionId, item.item_id, side)
               const blob = new Blob([response.data], { type: response.headers['content-type'] })
 
-              // Convert blob to base64
               return new Promise((resolve) => {
                 const reader = new FileReader()
                 reader.onload = () => {
                   const raw = reader.result
                   const base64 =
-                    typeof raw === 'string' ? raw.split(',')[1] ?? '' : '' // Get only the base64 part
+                    typeof raw === 'string' ? raw.split(',')[1] ?? '' : ''
                   resolve({
                     data: base64,
                     mime_type: response.headers['content-type'],
