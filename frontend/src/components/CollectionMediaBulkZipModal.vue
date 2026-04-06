@@ -4,7 +4,7 @@
     :title="t('collectionCustomTextBulk.mediaBulkModalTitle')"
     @close="close"
   >
-    <div class="max-h-[min(70vh,32rem)] space-y-4 overflow-y-auto text-sm text-gray-700">
+    <div class="space-y-4 text-sm text-gray-700">
       <p class="font-medium text-gray-900">
         {{ t('collectionCustomTextBulk.mediaBulkIntro') }}
       </p>
@@ -14,9 +14,12 @@
         <li>{{ t('collectionCustomTextBulk.mediaBulkStep3') }}</li>
         <li>{{ t('collectionCustomTextBulk.mediaBulkStep4') }}</li>
       </ol>
+      <p class="text-xs font-medium text-gray-800">
+        {{ t('collectionCustomTextBulk.mediaBulkManifestExampleCaption') }}
+      </p>
       <pre
         class="overflow-x-auto rounded-md border border-gray-200 bg-gray-50 p-3 text-xs text-gray-800 whitespace-pre-wrap"
-        >{{ t('collectionCustomTextBulk.mediaBulkManifestExample') }}</pre
+        >{{ MANIFEST_JSON_EXAMPLE }}</pre
       >
       <p class="text-xs text-gray-600">
         {{ t('collectionCustomTextBulk.mediaBulkLimits') }}
@@ -39,7 +42,9 @@
       <p v-if="file" class="text-sm text-gray-800">
         {{ t('collectionCustomTextBulk.mediaBulkSelected', { name: file.name }) }}
       </p>
-      <div class="flex flex-wrap justify-end gap-2 border-t border-gray-100 pt-3">
+    </div>
+    <template #footer>
+      <div class="flex flex-wrap justify-end gap-2">
         <button
           type="button"
           class="ui-btn--neutral-muted"
@@ -61,7 +66,7 @@
           }}
         </button>
       </div>
-    </div>
+    </template>
   </ModalComponent>
 </template>
 
@@ -73,6 +78,13 @@ import ModalComponent from '@/components/ModalComponent.vue'
 import { uploadCollectionMediaBulkZip } from '@/api'
 import { useError } from '@/composables/useError'
 import { useSuccessToast } from '@/composables/useSuccessToast'
+
+/** Kept in code, not locale files: JSON `{{` breaks vue-i18n message compilation. */
+const MANIFEST_JSON_EXAMPLE = `[
+  { "filename": "a.webp", "side": "front", "item_id": 123 },
+  { "filename": "b.jpg", "side": "back", "position": 4 },
+  { "filename": "c.png", "side": "front", "free_content_front": "Hello", "free_content_back": "coi" }
+]`
 
 const props = defineProps<{
   /** v-model visibility */

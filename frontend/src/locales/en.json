@@ -500,7 +500,7 @@
     "mediaBulkStep2": "Each manifest row needs filename (basename only, e.g. photo.webp), side (\"front\" or \"back\"), and a target: either item_id, or position (collection item position), or both free_content_front and free_content_back to create a new custom-text item.",
     "mediaBulkStep3": "Add image files anywhere in the ZIP. Each basename must match a manifest filename (e.g. images/foo.webp matches \"foo.webp\").",
     "mediaBulkStep4": "JPEG, PNG, GIF, or WebP only; each file up to 8 MiB; at most 250 manifest rows; ZIP up to about 100 MiB compressed.",
-    "mediaBulkManifestExample": "[\n  { \"filename\": \"a.webp\", \"side\": \"front\", \"item_id\": 123 },\n  { \"filename\": \"b.jpg\", \"side\": \"back\", \"position\": 4 },\n  { \"filename\": \"c.png\", \"side\": \"front\", \"free_content_front\": \"Hello\", \"free_content_back\": \"coi\" }\n]",
+    "mediaBulkManifestExampleCaption": "Example manifest.json (UTF-8):",
     "mediaBulkLimits": "The server rejects path traversal inside the ZIP and caps total uncompressed size to mitigate zip bombs. Rows that fail validation are skipped; successful rows are still applied.",
     "mediaBulkMultipartHint": "For scripts or API clients you can also POST multipart/form-data to /api/collections/{id}/items/media-bulk: field \"manifest\" (same JSON string) plus one part per file with a filename matching each manifest basename.",
     "mediaBulkAcceptZip": ".zip — application/zip",
