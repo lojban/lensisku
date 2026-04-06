@@ -2092,7 +2092,6 @@ function handleEditCollectionImageLoad() {
 }
 
 function handleEditCollectionImageError() {
-  console.error('Collection cover image failed to load (edit modal).')
   isEditCollectionImageLoading.value = false
   editCollectionImageUrl.value = null
 }
@@ -2866,7 +2865,6 @@ const performMerge = async () => {
 
     showSuccess(t('collectionDetail.mergeSuccess'))
   } catch (err) {
-    console.error(err)
     showError(err.response?.data?.error || 'Failed to merge collections')
   } finally {
     isMerging.value = false

@@ -1610,9 +1610,6 @@ async function performRequest(
         const event = JSON.parse(data)
         // Debug-only SSE payloads from the backend (model plan, per-model errors). Not shown in UI.
         if (event.type === 'stream_debug') {
-          if (import.meta.env.DEV) {
-            console.debug('[assistant stream_debug]', event.debug)
-          }
           continue
         }
         if (event.type === 'parallel_branches') {

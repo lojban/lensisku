@@ -411,7 +411,6 @@ const handleViewProfileImageLoad = () => {
   isViewProfileImageLoading.value = false
 }
 const handleViewProfileImageError = () => {
-  console.error('Profile image failed to load (view mode).')
   isViewProfileImageLoading.value = false
 }
 
@@ -420,7 +419,6 @@ const handleEditProfileImageLoad = () => {
   isEditProfileImageLoading.value = false
 }
 const handleEditProfileImageError = () => {
-  console.error('Profile image failed to load (edit mode).')
   isEditProfileImageLoading.value = false
   currentImageUrl.value = null // Keep original behavior for edit mode
 }
@@ -705,7 +703,6 @@ const fetchProfileData = async () => {
     } catch (profileErr) {
       // If profile lookup fails and this is own profile, try refreshing token
       if (isOwnProfile.value && auth && auth.refreshAccessToken) {
-        console.log('Profile lookup failed, attempting token refresh...')
         const refreshSuccess = await auth.refreshAccessToken()
         if (refreshSuccess) {
           // Retry with potentially updated token

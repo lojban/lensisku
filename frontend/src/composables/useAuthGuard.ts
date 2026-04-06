@@ -38,10 +38,8 @@ export async function checkAuthStateForGuard(): Promise<boolean | undefined> {
 
   if (!authInstance) {
     // Path 1: No globalAuth instance, check localStorage directly
-    console.log('checkAuthStateForGuard: No globalAuth instance. Checking localStorage.')
     const accessToken = localStorage.getItem('accessToken')
     if (!accessToken) {
-      console.log('checkAuthStateForGuard: No access token in localStorage.')
       return false // Not logged in
     }
 
@@ -49,7 +47,6 @@ export async function checkAuthStateForGuard(): Promise<boolean | undefined> {
       const decoded = jwtDecode<DecodedToken>(accessToken)
       const now = Math.floor(Date.now() / 1000)
       const isValid = now < decoded.exp
-      console.log(`checkAuthStateForGuard: Token valid based on expiry? ${isValid}`)
       if (!isValid) {
         // Optional: Clean up expired token? Original didn't explicitly do this here.
         // localStorage.removeItem('accessToken');
@@ -65,13 +62,11 @@ export async function checkAuthStateForGuard(): Promise<boolean | undefined> {
     }
   } else {
     // Path 2: globalAuth instance exists, use its checkAuthStatus method
-    console.log('checkAuthStateForGuard: Using globalAuth instance.')
     try {
       // The original called checkAuthStatus and then returned state.isLoggedIn.
       // Let's replicate that. checkAuthStatus might handle refresh internally.
       await authInstance.checkAuthStatus() // Ensure status is up-to-date
       const isLoggedIn = authInstance.state.isLoggedIn
-      console.log('checkAuthStateForGuard: globalAuth check complete. Logged in:', isLoggedIn)
       return isLoggedIn // Return the state after checking
     } catch (error) {
       console.error('checkAuthStateForGuard: Error during globalAuth.checkAuthStatus().', error)
