@@ -61,6 +61,13 @@
           > <button
             v-if="isOwner"
             type="button"
+            class="w-full px-4 py-2 text-left text-sm text-teal-600 hover:bg-teal-50 flex items-center gap-2"
+            @click="showMediaBulkZipModal = true"
+          >
+             {{ t('collectionCustomTextBulk.mediaBulkZipButton') }} </button
+          > <button
+            v-if="isOwner"
+            type="button"
             class="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
             @click="handleDelete"
           >
@@ -390,7 +397,13 @@
         >
       </div>
        </ModalComponent
-    > <!-- Add/Edit Item Modal --> <ModalComponent
+    >
+    <CollectionMediaBulkZipModal
+      v-model="showMediaBulkZipModal"
+      :collection-id="props.collectionId"
+      @success="onMediaBulkZipSuccess"
+    />
+    <!-- Add/Edit Item Modal --> <ModalComponent
       :show="showAddModal"
       :title="
         isEditingItem ? t('collectionDetail.editItemTitle') : t('collectionDetail.addItemTitle')
@@ -1369,6 +1382,7 @@ import SoundUpload from '@/components/SoundUpload.vue'
 import CollectionPageHeader from '@/components/CollectionPageHeader.vue'
 import LazyMathJax from '@/components/LazyMathJax.vue'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
+import CollectionMediaBulkZipModal from '@/components/CollectionMediaBulkZipModal.vue'
 import ModalComponent from '@/components/ModalComponent.vue'
 import PaginationComponent from '@/components/PaginationComponent.vue'
 import SearchInput from '@/components/SearchInput.vue'
@@ -1451,6 +1465,7 @@ const editingItem = ref(null)
 const numericCollectionId = computed(() => Number(props.collectionId))
 
 const showExportModal = ref(false)
+const showMediaBulkZipModal = ref(false)
 const isExporting = ref(false)
 const exportError = ref('')
 const exportProgress = ref('')
@@ -2371,6 +2386,23 @@ const fetchUserCollections = async () => {
   } catch (error) {
     console.error('Error fetching user collections:', error)
   }
+}
+
+const onMediaBulkZipSuccess = async () => {
+  try {
+    const response = await getCollection(props.collectionId)
+    collection.value = response.data
+    if (collection.value) {
+      editForm.value = {
+        name: collection.value.name,
+        description: collection.value.description || '',
+        is_public: collection.value.is_public,
+      }
+    }
+  } catch (e) {
+    console.error('Failed to refresh collection after bulk images:', e)
+  }
+  await fetchItems()
 }
 
 // Fetch collection details
