@@ -24,6 +24,22 @@ pub struct SearchDefinitionsParams {
     pub include_total_count: bool,
 }
 
+/// Parameters for building the semantic similarity graph (embedding neighborhood + k-NN edges).
+#[derive(Debug, Clone)]
+pub struct SemanticGraphParams {
+    pub search_term: String,
+    pub languages: Option<Vec<i32>>,
+    pub selmaho: Option<String>,
+    pub username: Option<String>,
+    pub word_type: Option<i16>,
+    pub source_langid: Option<i32>,
+    pub search_in_phrases: Option<bool>,
+    pub min_vote: i32,
+    pub limit: i64,
+    pub k_neighbors: usize,
+    pub min_similarity: f32,
+}
+
 #[derive(Debug, Serialize, ToSchema)]
 pub struct ValsiEntry {
     pub valsiid: i32,
@@ -104,6 +120,18 @@ pub struct DefinitionResponse {
     pub total: i64,
 }
 
+/// Vote aggregates should be selected as `::bigint` (`definitionvotes.value` is REAL, so `SUM` is float8 otherwise).
+#[inline]
+pub(crate) fn row_vote_score_i32(row: &tokio_postgres::Row, column: &str) -> i32 {
+    let v: i64 = row.get(column);
+    v.clamp(i32::MIN as i64, i32::MAX as i64) as i32
+}
+
+#[inline]
+pub(crate) fn row_vote_score_f32(row: &tokio_postgres::Row, column: &str) -> f32 {
+    row_vote_score_i32(row, column) as f32
+}
+
 impl From<tokio_postgres::Row> for DefinitionDetail {
     fn from(row: tokio_postgres::Row) -> Self {
         Self {
@@ -125,7 +153,7 @@ impl From<tokio_postgres::Row> for DefinitionDetail {
             time: row.get("time"),
             type_name: row.get("type_name"),
             rafsi: row.try_get("rafsi").ok().flatten(), // Use try_get in case column is missing in some queries
-            score: row.get("score"),
+            score: row_vote_score_f32(&row, "score"),
             user_vote: row.get("user_vote"),
             comment_count: row.get("comment_count"),
             gloss_keywords: None, // These get filled in separately

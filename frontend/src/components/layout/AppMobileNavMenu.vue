@@ -25,6 +25,9 @@
     <NavLink to="/assistant" class="mobile-nav-row" @click="$emit('close')">
       <Bot class="h-5 w-5" /> {{ t('nav.assistant') }}
     </NavLink>
+    <NavLink to="/semantic-graph" class="mobile-nav-row" @click="$emit('close')">
+      <Share2 class="h-5 w-5" /> {{ t('nav.semanticGraph') }}
+    </NavLink>
     <NavLink
       v-if="!auth.state.isLoggedIn"
       to="/export/cached"
@@ -71,6 +74,7 @@ import {
   Clock4,
   GraduationCap,
   Bot,
+  Share2,
 } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 import NavLink from '@/components/NavLink.vue'

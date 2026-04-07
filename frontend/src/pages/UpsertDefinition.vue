@@ -140,12 +140,20 @@
     <!-- Definition Input -->
     <div>
 
-      <div class="flex items-center justify-between">
-        <label for="definition" class="block text-sm font-medium text-blue-700">{{ t('upsertDefinition.definitionLabel')
-        }}
-          <span class="text-red-500">{{
-            t('upsertDefinition.required')
-          }}</span></label> <span class="text-xs text-gray-500">{{ t('upsertDefinition.requiredUnlessImage') }}</span>
+      <div class="flex flex-wrap items-center justify-between gap-2 mb-1">
+        <div class="flex flex-wrap items-center gap-2">
+          <label for="definition" class="block text-sm font-medium text-blue-700">{{ t('upsertDefinition.definitionLabel')
+          }}
+            <span class="text-red-500">{{
+              t('upsertDefinition.required')
+            }}</span></label>
+          <button type="button" class="ui-btn--empty inline-flex items-center gap-1 text-xs py-0.5 px-2"
+            :title="t('upsertDefinition.previewDefinitionTitle')" @click="openDefinitionPreview">
+            <Eye class="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+            {{ t('upsertDefinition.previewButton') }}
+          </button>
+        </div>
+        <span class="text-xs text-gray-500">{{ t('upsertDefinition.requiredUnlessImage') }}</span>
       </div>
       <textarea id="definition" v-model="definition" :required="!imageData" rows="4" :class="{
         'textarea-field': true,
@@ -166,17 +174,24 @@
     </div>
 
     <div>
-      {{ imageData }}
       <ImageUpload v-model="imageData" :definition-id="editDefinitionId" :has-existing-image="hasImage"
         :note="t('upsertDefinition.requiredUnlessDefinitionProvided')" @image-loaded="handleImageLoaded"
         @remove-image="handleRemoveImage" />
     </div>
     <!-- Notes Input -->
     <div>
-      <label for="notes" class="block text-sm font-medium text-blue-700"> {{ t('upsertDefinition.notesLabel') }} <span
-          class="text-gray-500 font-normal">{{
-            t('upsertDefinition.optional')
-          }}</span> </label> <textarea id="notes" v-model="notes" rows="3" class="textarea-field"
+      <div class="flex flex-wrap items-center gap-2 mb-1">
+        <label for="notes" class="block text-sm font-medium text-blue-700"> {{ t('upsertDefinition.notesLabel') }} <span
+            class="text-gray-500 font-normal">{{
+              t('upsertDefinition.optional')
+            }}</span> </label>
+        <button type="button" class="ui-btn--empty inline-flex items-center gap-1 text-xs py-0.5 px-2"
+          :title="t('upsertDefinition.previewNotesTitle')" @click="openNotesPreview">
+          <Eye class="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+          {{ t('upsertDefinition.previewButton') }}
+        </button>
+      </div>
+      <textarea id="notes" v-model="notes" rows="3" class="textarea-field"
         :disabled="isSubmitting" />
     </div>
     <!-- Etymology Input -->
@@ -289,10 +304,22 @@
       </Button>
     </div>
   </form>
+
+  <ModalComponent :show="previewKind !== null" :title="previewModalTitle" @close="closePreview">
+    <div v-if="previewKind === 'definition'" class="text-sm prose prose-sm max-w-none text-gray-700 overflow-y-auto">
+      <LazyMathJax v-if="definition.trim()" :content="definition" />
+      <p v-else class="text-gray-500 text-sm">{{ t('upsertDefinition.previewEmpty') }}</p>
+    </div>
+    <div v-else-if="previewKind === 'notes'" class="w-full text-sm text-gray-600 bg-gray-100 p-2 rounded-md overflow-y-auto">
+      <h4 class="italic text-gray-600">{{ t('upsertDefinition.notesLabel') }}</h4>
+      <LazyMathJax v-if="notes.trim()" :content="notes" :enable-markdown="true" />
+      <p v-else class="text-gray-500 text-sm">{{ t('upsertDefinition.previewEmpty') }}</p>
+    </div>
+  </ModalComponent>
 </template>
 
 <script setup lang="ts">
-import { ArrowRight, Search, CirclePlus, CircleMinus } from 'lucide-vue-next'
+import { ArrowRight, Search, CirclePlus, CircleMinus, Eye } from 'lucide-vue-next'
 import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
@@ -310,6 +337,8 @@ import { Button } from '@packages/ui'
 import AlertComponent from '@/components/AlertComponent.vue'
 import DynamicInput from '@/components/DynamicInput.vue'
 import ImageUpload from '@/components/ImageUpload.vue'
+import LazyMathJax from '@/components/LazyMathJax.vue'
+import ModalComponent from '@/components/ModalComponent.vue'
 import { useAuth } from '@/composables/useAuth'
 import { useError } from '@/composables/useError'
 import { useSuccessToast } from '@/composables/useSuccessToast'
@@ -391,6 +420,27 @@ const isEditMode = ref(false)
 const isAuthor = ref(false)
 const editDefinitionId = ref(null)
 const showSourceLanguageSelector = ref(false) // State to control visibility
+
+/** Matches DefinitionCard: definition = MathJax only; notes = markdown + MathJax */
+const previewKind = ref<null | 'definition' | 'notes'>(null)
+
+const previewModalTitle = computed(() => {
+  if (previewKind.value === 'definition') return t('upsertDefinition.previewDefinitionTitle')
+  if (previewKind.value === 'notes') return t('upsertDefinition.previewNotesTitle')
+  return ''
+})
+
+const openDefinitionPreview = () => {
+  previewKind.value = 'definition'
+}
+
+const openNotesPreview = () => {
+  previewKind.value = 'notes'
+}
+
+const closePreview = () => {
+  previewKind.value = null
+}
 
 const handleRemoveImage = () => {
   hasImage.value = false

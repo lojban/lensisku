@@ -6,7 +6,9 @@ use deadpool_postgres::Pool;
 use serde_json::json;
 
 use super::dto::ClientIdGroup;
-use super::{BulkImportRequest, SearchDefinitionsQuery, UserVoteResponse};
+use super::{
+    BulkImportRequest, SearchDefinitionsQuery, SemanticGraphQuery, UserVoteResponse,
+};
 use crate::auth::Claims;
 // Removed unused Permission import
 use crate::jbovlaste::broadcast::Broadcaster;
@@ -16,12 +18,15 @@ use crate::jbovlaste::{
     service, AddDefinitionRequest, AddValsiResponse, BulkImportParams, BulkVoteRequest,
     BulkVoteResponse, DefinitionDetail, DefinitionListResponse, DefinitionTranslation,
     ExportPairsQuery, GetImageDefinitionQuery, ImageUploadRequest, LinkDefinitionsRequest,
-    RecentChangesQuery, RecentChangesResponse, SearchDefinitionsParams, UpdateDefinitionRequest,
-    UpdateDefinitionResponse, ValsiDefinitionsQuery, ValsiDetail, ValsiTypeListResponse,
-    VoteRequest, VoteResponse,
+    RecentChangesQuery, RecentChangesResponse, SearchDefinitionsParams, SemanticGraphParams,
+    SemanticGraphResponse, UpdateDefinitionRequest, UpdateDefinitionResponse, ValsiDefinitionsQuery,
+    ValsiDetail, ValsiTypeListResponse, VoteRequest, VoteResponse,
 };
 use crate::language::{validate_mathjax_fields, MathJaxValidationOptions};
-use crate::middleware::cache::{generate_search_cache_key, RedisCache};
+use crate::middleware::cache::{
+    generate_search_cache_key, generate_semantic_graph_cache_key,
+    generate_semantic_graph_preview_cache_key, RedisCache,
+};
 use camxes_rs::peg::grammar::Peg;
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -116,6 +121,143 @@ pub async fn semantic_search(
             per_page,
             decomposition: response.decomposition,
         }),
+        Err(e) => HttpResponse::InternalServerError().body(format!("Error: {}", e)),
+    }
+}
+
+#[utoipa::path(
+    get,
+    tag = "jbovlaste",
+    path = "/jbovlaste/semantic-graph",
+    params(
+        ("query" = SemanticGraphQuery, Query, description = "Anchor search text, filters, and graph limits")
+    ),
+    responses(
+        (status = 200, description = "Nodes and pairwise similarity edges", body = SemanticGraphResponse),
+        (status = 400, description = "Missing or invalid parameters"),
+        (status = 503, description = "Embeddings disabled"),
+        (status = 500, description = "Internal server error")
+    ),
+    security(
+        ("bearer_auth" = [])
+    ),
+    summary = "Semantic similarity graph",
+    description = "With `preview=true`, returns a stratified sample (top definitions per word type by vote) and k-NN edges without a query embedding. Otherwise returns up to N definitions closest to the query embedding (with filters), plus k-NN edges. Does not expose raw vectors."
+)]
+#[get("/semantic-graph")]
+pub async fn semantic_graph(
+    pool: web::Data<Pool>,
+    redis_cache: web::Data<RedisCache>,
+    query: web::Query<SemanticGraphQuery>,
+) -> impl Responder {
+    let languages = query.languages.as_ref().and_then(|langs| {
+        let parsed: Result<Vec<i32>, _> = langs
+            .split(',')
+            .filter(|s| !s.is_empty())
+            .map(str::parse::<i32>)
+            .collect();
+        parsed.ok()
+    });
+
+    let is_preview = query.preview == Some(true);
+
+    if !is_preview && crate::utils::embeddings::embeddings_disabled() {
+        return HttpResponse::ServiceUnavailable().json(json!({
+            "error": "Semantic graph is disabled (DISABLE_EMBEDDINGS is set)."
+        }));
+    }
+
+    let processed_text = query.search.as_deref().unwrap_or("").trim().to_string();
+    if !is_preview && processed_text.is_empty() {
+        return HttpResponse::BadRequest().json(json!({
+            "error": "Query parameter `search` is required unless `preview=true`."
+        }));
+    }
+
+    let limit = query
+        .limit
+        .unwrap_or(80)
+        .clamp(1, service::SEMANTIC_GRAPH_MAX_LIMIT);
+    let k_neighbors = query.k_neighbors.unwrap_or(6).clamp(1, 30) as usize;
+    let min_similarity = query.min_similarity.unwrap_or(0.15_f32);
+    let min_vote = query.min_vote.unwrap_or(1);
+
+    let params = SemanticGraphParams {
+        search_term: processed_text.clone(),
+        languages,
+        selmaho: query.selmaho.clone(),
+        username: query.username.clone(),
+        word_type: query.word_type,
+        source_langid: query.source_langid,
+        search_in_phrases: query.search_in_phrases,
+        min_vote,
+        limit,
+        k_neighbors,
+        min_similarity,
+    };
+
+    if is_preview {
+        let cache_key = generate_semantic_graph_preview_cache_key(&query);
+        let pool_fetch = pool.clone();
+        let params_fetch = params.clone();
+        return match redis_cache
+            .get_or_set(
+                &cache_key,
+                || async move { service::semantic_graph_preview(&pool_fetch, params_fetch).await },
+                None,
+            )
+            .await
+        {
+            Ok(response) => HttpResponse::Ok().json(response),
+            Err(e) => HttpResponse::InternalServerError().body(format!("Error: {}", e)),
+        };
+    }
+
+    let cache_key = generate_semantic_graph_cache_key(&query);
+
+    let anchor_from_english_valsi = query.semantic == Some(false);
+    let embedding = if anchor_from_english_valsi {
+        match service::semantic_graph_anchor_embedding_english_valsi(pool.get_ref(), &processed_text)
+            .await
+        {
+            Ok(Some(emb)) => emb,
+            Ok(None) => {
+                return HttpResponse::BadRequest().json(json!({
+                    "error": "No English definition embedding found for that valsi. Check the spelling, or turn on \"By meaning\" to anchor on query text instead."
+                }));
+            }
+            Err(e) => {
+                return HttpResponse::InternalServerError().json(json!({
+                    "error": format!("Failed to resolve valsi embedding: {}", e)
+                }));
+            }
+        }
+    } else {
+        match crate::utils::embeddings::get_embedding(&processed_text).await {
+            Ok(emb) => emb,
+            Err(e) => {
+                return HttpResponse::InternalServerError().json(json!({
+                    "error": format!("Failed to generate embedding: {}", e)
+                }));
+            }
+        }
+    };
+
+    let pool_fetch = pool.clone();
+    let params_fetch = params.clone();
+    let embedding_fetch = embedding.clone();
+
+    match redis_cache
+        .get_or_set(
+            &cache_key,
+            || async move {
+                service::semantic_graph(&pool_fetch, params_fetch, embedding_fetch).await
+            },
+            None,
+        )
+        .await
+    {
+        Ok(response) => HttpResponse::Ok().json(response),
         Err(e) => HttpResponse::InternalServerError().body(format!("Error: {}", e)),
     }
 }

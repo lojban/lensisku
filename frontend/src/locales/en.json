@@ -16,6 +16,29 @@
   "aprilFools": {
     "pageTitle": "Lojban 2025"
   },
+  "semanticGraph": {
+    "title": "Semantic graph",
+    "description": "Explore words whose definitions are close in embedding space. An overview loads automatically: a sample of high‑vote entries spread across word types, linked by pairwise similarity. Type a word or phrase. Pan and zoom; tap a node for a short definition preview.",
+    "overview": "Overview graph",
+    "anchorPlaceholder": "Type a word or phrase…",
+    "build": "Build graph",
+    "export": "Export",
+    "import": "Import",
+    "minVote": "Min vote score",
+    "nodeLimit": "Max nodes",
+    "kNeighbors": "Neighbors per node",
+    "minPairwiseSim": "Min edge similarity",
+    "closePreview": "Close preview",
+    "openEntry": "Open full entry in new tab",
+    "loading": "Loading graph",
+    "errorNeedSearch": "Enter a search phrase to build the graph.",
+    "errorNotReady": "The graph viewer is still loading. Try again in a moment.",
+    "errorLoad": "Could not load the semantic graph.",
+    "errorDisabled": "Semantic graph is unavailable because embeddings are disabled on this server.",
+    "errorPreview": "Could not load definition preview.",
+    "errorImport": "Could not read that graph file.",
+    "errorLanguages": "Could not load languages."
+  },
   "filters": {
     "changePhoto": "Change photo",
     "uploadPhoto": "Upload photo",
@@ -250,7 +273,8 @@
     "iamUsers": "IAM / Users",
     "signUp": "Sign up",
     "logIn": "Log in",
-    "assistant": "AI Assistant"
+    "assistant": "AI Assistant",
+    "semanticGraph": "Semantic graph"
   },
   "mobileNav": {
     "recentChanges": "Recent changes"
@@ -819,7 +843,11 @@
     "sourceLanguageNote": "The language the word itself belongs to. Cannot be changed after creation.",
     "rafsiConflict": "Rafsi already used by non-experimental word '{word}' ({type})",
     "addTranslationTitle": "Add translation",
-    "linkError": "Failed to link definition"
+    "linkError": "Failed to link definition",
+    "previewButton": "Preview",
+    "previewDefinitionTitle": "Definition preview",
+    "previewNotesTitle": "Notes preview",
+    "previewEmpty": "Nothing to preview yet."
   },
   "flashcardStudy": {
     "title": "Study session",

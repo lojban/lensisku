@@ -25,7 +25,11 @@
         {{ t('collectionCustomTextBulk.mediaBulkLimits') }}
       </p>
       <p class="text-xs text-gray-600">
-        {{ t('collectionCustomTextBulk.mediaBulkMultipartHint') }}
+        {{
+          t('collectionCustomTextBulk.mediaBulkMultipartHint', {
+            id: String(props.collectionId),
+          })
+        }}
       </p>
       <FileDropzone
         accept=".zip,application/zip"

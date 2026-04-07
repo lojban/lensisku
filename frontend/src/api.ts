@@ -193,6 +193,15 @@ export const fastSearchDefinitions = (params: Record<string, unknown>, signal?: 
   }
   return api.get('/jbovlaste/definitions', { params: finalParams, signal })
 }
+
+/** Semantic similarity graph: top-K definitions near the query embedding + k-NN edges (no raw vectors). */
+export const fetchSemanticGraph = (params: Record<string, unknown>, signal?: AbortSignal) => {
+  const finalParams = { ...params }
+  if (finalParams.source_langid === 1) {
+    delete finalParams.source_langid
+  }
+  return api.get('/jbovlaste/semantic-graph', { params: finalParams, signal })
+}
 export const getValsiDetails = (id: number | string) => api.get(`/jbovlaste/valsi/${id}`)
 export const getValsiDefinitions = (id: number | string) =>
   api.get(`/jbovlaste/valsi/${id}/definitions`)

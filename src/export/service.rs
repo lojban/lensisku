@@ -796,7 +796,7 @@ async fn generate_xml(
     writer.write(XmlEvent::end_element())?;
 
     let score_condition = if options.positive_scores_only.unwrap_or(false) {
-        "AND (SELECT COALESCE(SUM(value), 0) FROM definitionvotes WHERE definitionid = vbg.definitionid) > 0"
+        "AND (SELECT COALESCE(SUM(value), 0)::bigint FROM definitionvotes WHERE definitionid = vbg.definitionid) > 0"
     } else {
         ""
     };
@@ -811,7 +811,7 @@ async fn generate_xml(
     let query = format!(
         "SELECT v.word, vbg.definitionid, c.rafsi, c.selmaho, c.definition,
                 c.notes, d.jargon, t.descriptor,
-                (SELECT COALESCE(SUM(value), 0) FROM definitionvotes WHERE definitionid = vbg.definitionid) as score
+                (SELECT COALESCE(SUM(value), 0)::bigint FROM definitionvotes WHERE definitionid = vbg.definitionid) AS score
          FROM valsibestguesses vbg
          JOIN valsi v ON v.valsiid = vbg.valsiid
          JOIN convenientdefinitions c ON c.definitionid = vbg.definitionid
@@ -886,7 +886,7 @@ async fn generate_xml(
 
         writer.write(XmlEvent::start_element("score"))?;
         writer.write(XmlEvent::Characters(
-            &row.get::<_, f32>("score").to_string(),
+            &row.get::<_, i64>("score").to_string(),
         ))?;
         writer.write(XmlEvent::end_element())?;
 
@@ -1495,7 +1495,7 @@ async fn generate_tsv(
     }
 
     let score_condition = if options.positive_scores_only.unwrap_or(false) {
-        "AND (SELECT COALESCE(SUM(value), 0) FROM definitionvotes WHERE definitionid = vbg.definitionid) > 0"
+        "AND (SELECT COALESCE(SUM(value), 0)::bigint FROM definitionvotes WHERE definitionid = vbg.definitionid) > 0"
     } else {
         ""
     };
@@ -1513,7 +1513,7 @@ async fn generate_tsv(
     let query = format!(
         "SELECT v.word, vbg.definitionid, c.rafsi, c.selmaho, c.definition,
                 c.notes, d.jargon, t.descriptor{},
-                (SELECT COALESCE(SUM(value), 0) FROM definitionvotes WHERE definitionid = vbg.definitionid) as score
+                (SELECT COALESCE(SUM(value), 0)::bigint FROM definitionvotes WHERE definitionid = vbg.definitionid) AS score
          FROM valsibestguesses vbg
          JOIN valsi v ON v.valsiid = vbg.valsiid
          JOIN convenientdefinitions c ON c.definitionid = vbg.definitionid
@@ -1574,7 +1574,7 @@ async fn generate_tsv(
         let notes: Option<String> = row.get("notes");
         let jargon: Option<String> = row.get("jargon");
         let collection_note: Option<String> = row.get("collection_note");
-        let score: f32 = row.get("score");
+        let score: i64 = row.get("score");
 
         let gloss_keywords = gloss_map.get(&definition_id).cloned().unwrap_or_default();
         let place_keywords = place_map.get(&definition_id).cloned().unwrap_or_default();
@@ -1737,7 +1737,7 @@ async fn generate_json(
     }
 
     let score_condition = if options.positive_scores_only.unwrap_or(false) {
-        "AND (SELECT COALESCE(SUM(value), 0) FROM definitionvotes WHERE definitionid = vbg.definitionid) > 0"
+        "AND (SELECT COALESCE(SUM(value), 0)::bigint FROM definitionvotes WHERE definitionid = vbg.definitionid) > 0"
     } else {
         ""
     };
@@ -1755,7 +1755,7 @@ async fn generate_json(
     let query = format!(
         "SELECT v.word, vbg.definitionid, c.rafsi, c.selmaho, c.definition,
                 c.notes, d.etymology, d.jargon, t.descriptor{}, u.username, u.realname,
-                (SELECT COALESCE(SUM(value), 0) FROM definitionvotes WHERE definitionid = vbg.definitionid) as score
+                (SELECT COALESCE(SUM(value), 0)::bigint FROM definitionvotes WHERE definitionid = vbg.definitionid) AS score
          FROM valsibestguesses vbg
          JOIN valsi v ON v.valsiid = vbg.valsiid
          JOIN convenientdefinitions c ON c.definitionid = vbg.definitionid
@@ -1802,7 +1802,7 @@ async fn generate_json(
                 etymology: row.get("etymology"),
                 jargon: row.get("jargon"),
                 collection_note: row.get("collection_note"),
-                score: row.get("score"),
+                score: row.get::<_, i64>("score") as f32,
                 gloss_keywords: gloss_map.get(&definition_id).cloned(),
                 place_keywords: place_map.get(&definition_id).cloned(),
                 user: row.get::<_, Option<String>>("username").map(|user| User {

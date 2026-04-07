@@ -16,6 +16,29 @@
   "aprilFools": {
     "pageTitle": "Lojban 2025"
   },
+  "semanticGraph": {
+    "title": "意味グラフ",
+    "description": "埋め込み空間で近い定義を持つ語を探索します。語種ごとの高票サンプルから概要グラフが自動で読み込まれ、類似度で結ばれます。語や短文を入力してください。拡大・移動し、ノードをタップしてプレビューします。",
+    "overview": "概要グラフ",
+    "anchorPlaceholder": "語や短文を入力…",
+    "build": "グラフを作成",
+    "export": "エクスポート",
+    "import": "インポート",
+    "minVote": "最小投票合計",
+    "nodeLimit": "最大ノード数",
+    "kNeighbors": "ノードあたりの近傍",
+    "minPairwiseSim": "辺の最小類似度",
+    "closePreview": "プレビューを閉じる",
+    "openEntry": "詳細を新しいタブで開く",
+    "loading": "読み込み中",
+    "errorNeedSearch": "グラフを作るには検索語を入力してください。",
+    "errorNotReady": "ビューアの準備中です。少し待ってから再試行してください。",
+    "errorLoad": "意味グラフを読み込めませんでした。",
+    "errorDisabled": "埋め込みが無効なため利用できません。",
+    "errorPreview": "定義のプレビューを読み込めませんでした。",
+    "errorImport": "グラフファイルを読み取れませんでした。",
+    "errorLanguages": "言語一覧を読み込めませんでした。"
+  },
   "filters": {
     "changePhoto": "写真を変更",
     "uploadPhoto": "写真をアップロード",
@@ -250,7 +273,8 @@
     "iamUsers": "IAM / ユーザー",
     "signUp": "新規登録",
     "logIn": "ログイン",
-    "assistant": "AI アシスタント"
+    "assistant": "AI アシスタント",
+    "semanticGraph": "意味グラフ"
   },
   "mobileNav": {
     "recentChanges": "最近の更新"
@@ -804,7 +828,11 @@
     "sourceLanguageNote": "語そのものの言語です。作成後は変更できません。",
     "rafsiConflict": "rafsi は非実験語「{word}」（{type}）が既に使用しています",
     "addTranslationTitle": "訳を追加",
-    "linkError": "定義をリンクできませんでした"
+    "linkError": "定義をリンクできませんでした",
+    "previewButton": "プレビュー",
+    "previewDefinitionTitle": "定義のプレビュー",
+    "previewNotesTitle": "注のプレビュー",
+    "previewEmpty": "まだプレビューする内容がありません。"
   },
   "flashcardStudy": {
     "title": "学習セッション",
