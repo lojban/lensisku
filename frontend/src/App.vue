@@ -76,6 +76,9 @@
               <NavLink to="/assistant" class="navbar-item justify-start py-2" @click="closeNavMenus">
                 <Bot class="h-4 w-4" /> {{ $t('nav.assistant') }}
               </NavLink>
+              <NavLink to="/semantic-graph" class="navbar-item justify-start py-2" @click="closeNavMenus">
+                <Share2 class="h-4 w-4" /> {{ $t('nav.semanticGraph') }}
+              </NavLink>
               <NavLink v-if="!auth.state.isLoggedIn" to="/export/cached" class="navbar-item justify-start py-2"
                 @click="closeNavMenus">
                 <Download class="h-4 w-4" /> {{ $t('nav.cachedExports') }}
@@ -207,7 +210,7 @@
     v-if="auth.state.isLoggedIn && route.name !== 'flashcard-study' && !route.meta.fullHeight">
 
     <div
-      class="fixed md:absolute bottom-6 right-4 md:right-6 lg:-right-4 lg:-mr-4 z-50 flex flex-col items-end gap-3">
+      class="fixed md:absolute bottom-8 right-4 md:right-6 lg:-right-4 lg:-mr-4 z-50 flex flex-col items-end gap-3">
       <Dropdown>
         <template #trigger="{ open }">
           <span class="fab-elevation-shell">
@@ -222,6 +225,12 @@
           <span class="flex items-center gap-3">
             <Bot class="h-6 w-6 shrink-0 text-indigo-600" stroke-width="2" />
             {{ $t('nav.assistant') }}
+          </span>
+        </ToolbarSelectDropdownItem>
+        <ToolbarSelectDropdownItem class="!px-4 !py-3 !text-base" @click="handleSemanticGraph">
+          <span class="flex items-center gap-3">
+            <Share2 class="h-6 w-6 shrink-0 text-cornflower-500" stroke-width="2" />
+            {{ $t('nav.semanticGraph') }}
           </span>
         </ToolbarSelectDropdownItem>
         <ToolbarSelectDropdownItem class="!px-4 !py-3 !text-base" @click="handleNewFreeThread">
@@ -262,6 +271,7 @@ import {
   Clock4,
   GraduationCap,
   Bot,
+  Share2,
 } from 'lucide-vue-next'
 import { Menu } from 'lucide-vue-next' // Explicitly import Menu if it was missed by auto-sort
 import { ref, onMounted, onBeforeUnmount, watch, computed, nextTick } from 'vue'
@@ -374,6 +384,10 @@ const handleNewDefinition = () => {
 
 const handleAssistantChat = () => {
   router.push('/assistant')
+}
+
+const handleSemanticGraph = () => {
+  router.push('/semantic-graph')
 }
 
 const handleNewFreeThread = () => {

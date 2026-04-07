@@ -108,6 +108,28 @@ export function buildFlatButtonLayer(theme) {
     '.btn-link': tint('blue.700', 'blue'),
     '.btn-cancel, .btn-previous, .btn-next': tint('gray.700', 'gray'),
     '.btn-reply': tint('sky.700', 'sky'),
+    /**
+     * Flat `ui-btn--palette-*` — one tinted surface per hue (parallels `btn-aqua-*` in aqua theme).
+     * `palette-white` is neutral chrome (`btn-empty`), not a saturated `tint()`.
+     */
+    '.btn-palette-amber': tint('amber.700', 'amber'),
+    '.btn-palette-blue': tint('blue.700', 'blue'),
+    '.btn-palette-cyan': tint('cyan.700', 'cyan'),
+    '.btn-palette-emerald': tint('emerald.700', 'emerald'),
+    '.btn-palette-fuchsia': tint('fuchsia.700', 'fuchsia'),
+    '.btn-palette-indigo': tint('indigo.700', 'indigo'),
+    '.btn-palette-lime': tint('lime.700', 'lime'),
+    '.btn-palette-orange': tint('orange.700', 'orange'),
+    '.btn-palette-pink': tint('pink.700', 'pink'),
+    '.btn-palette-purple': tint('purple.700', 'purple'),
+    '.btn-palette-red': tint('red.700', 'red'),
+    '.btn-palette-rose': tint('rose.700', 'rose'),
+    '.btn-palette-sky': tint('sky.700', 'sky'),
+    '.btn-palette-slate': tint('slate.700', 'slate'),
+    '.btn-palette-teal': tint('teal.700', 'teal'),
+    '.btn-palette-violet': tint('violet.700', 'violet'),
+    '.btn-palette-yellow': tint('yellow.700', 'yellow'),
+    '.btn-palette-zinc': tint('zinc.700', 'zinc'),
   }
 
   const cta = (extra = '') => ({
@@ -318,6 +340,10 @@ export function buildFlatButtonLayer(theme) {
           backgroundPosition: '50% 50%',
         },
       },
+    },
+    /** Flat counterpart to `btn-aqua-white` — light neutral pill, not a saturated hue. */
+    '.btn-palette-white': {
+      '@apply btn-empty': {},
     },
   }
 

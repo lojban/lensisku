@@ -15,7 +15,7 @@
         class="inline-block shrink-0 rounded-full border-2 border-current border-t-transparent animate-spin"
         :class="spinnerSizeClass"
         aria-hidden="true"
-      /><span v-if="$slots.default" class="min-w-0 leading-none"><slot /></span></span></component
+      /><span v-if="$slots.default" class="min-w-0"><slot /></span></span></component
   >
 </template>
 

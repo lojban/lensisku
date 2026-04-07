@@ -253,3 +253,56 @@ pub struct ExportPairsQuery {
     pub from_lang: i32,
     pub to_lang: i32,
 }
+
+/// Query parameters for [`GET /jbovlaste/semantic-graph`](crate::jbovlaste::controller::semantic_graph).
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct SemanticGraphQuery {
+    /// When true, returns a stratified preview (no `search` or embedding): top definitions per word type by vote score, then k-NN edges. Cached separately from anchored graphs.
+    #[serde(default)]
+    pub preview: Option<bool>,
+    /// When `true` or omitted, the anchor vector is computed from the raw `search` text. When `false`, the server resolves `search` as a valsi and uses the stored embedding of its **English** (`langid` 2) definition as the anchor (no on-the-fly embedding of the query string).
+    #[serde(default)]
+    pub semantic: Option<bool>,
+    pub search: Option<String>,
+    pub languages: Option<String>,
+    pub selmaho: Option<String>,
+    pub word_type: Option<i16>,
+    pub username: Option<String>,
+    pub source_langid: Option<i32>,
+    pub search_in_phrases: Option<bool>,
+    /// Minimum aggregate vote score (sum of votes per definition). Default 1 (matches classic semantic search `score > 0`).
+    pub min_vote: Option<i32>,
+    /// Max nodes (hard-capped server-side).
+    pub limit: Option<i64>,
+    /// Per-node top-k neighbors used to build sparse edges.
+    pub k_neighbors: Option<i64>,
+    /// Drop edges with pairwise cosine similarity below this (0..=1).
+    pub min_similarity: Option<f32>,
+}
+
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
+pub struct SemanticGraphNode {
+    pub id: String,
+    pub definitionid: i32,
+    pub word: String,
+    /// Short label for the node (word plus optional hint).
+    pub label: String,
+    pub type_name: String,
+    pub lang_name: String,
+    pub score: i32,
+    /// Similarity to the anchor query (1 - cosine distance), when available.
+    pub query_similarity: Option<f32>,
+}
+
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
+pub struct SemanticGraphEdge {
+    pub source: String,
+    pub target: String,
+    pub similarity: f32,
+}
+
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
+pub struct SemanticGraphResponse {
+    pub nodes: Vec<SemanticGraphNode>,
+    pub edges: Vec<SemanticGraphEdge>,
+}

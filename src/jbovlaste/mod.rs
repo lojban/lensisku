@@ -24,6 +24,7 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
             .service(controller::get_entry_details)
             .service(controller::search_definitions)
             .service(controller::semantic_search)
+            .service(controller::semantic_graph)
             .service(controller::get_definition)
             .service(controller::list_definitions)
             .service(controller::list_non_lojban_definitions)

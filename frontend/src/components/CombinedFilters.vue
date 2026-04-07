@@ -1,10 +1,10 @@
 <template>
 
   <div class="filters space-y-4">
-    <!-- Language Filter Section -->
-    <div
-      class="filters-bar-row">
+    <!-- Language row: top by default; on semantic graph page (`languagesInExpandedPanel`) it lives inside the expanded panel. -->
+    <div class="filters-bar-row" :class="{ 'sm:!justify-end': languagesInExpandedPanel }">
       <MultiSelectDropdown
+        v-if="!languagesInExpandedPanel"
         v-model="selectedLangs"
         :options="languages"
         :max-selected-labels="3"
@@ -99,6 +99,24 @@
       class="mt-3 grid grid-cols-2 gap-x-3 gap-y-4 bg-white rounded-lg shadow-sm p-4"
       :class="{ 'animate-expandSection': expanded }"
     >
+      <div v-if="languagesInExpandedPanel" class="col-span-2 flex min-w-0 flex-col">
+        <label class="filters-field-label">{{ t('filters.selectLanguages') }}</label>
+        <div class="relative w-full min-w-0 [&>div]:block [&>div]:w-full">
+          <MultiSelectDropdown
+            v-model="selectedLangs"
+            :options="languages"
+            :max-selected-labels="3"
+            :option-value="(lang: LanguageOption) => lang.id"
+            :option-label="(lang: LanguageOption) => lang.real_name"
+            :search-field-keys="languageFilterSearchFieldKeys"
+            :placeholder="t('filters.selectLanguages')"
+            :search-placeholder="t('filters.searchLanguages')"
+            :select-all-label="t('filters.selectAll')"
+            :empty-filter-label="t('filters.noMatches')"
+            class="w-full max-w-full sm:w-80"
+          />
+        </div>
+      </div>
       <div v-if="showWordType" class="flex min-w-0 flex-col">
         <label class="filters-field-label">{{
           t('filters.filterBy.wordType')
@@ -217,6 +235,59 @@
       </div>
     </div>
 
+    <div
+      v-if="graphBuildParams != null"
+      class="grid grid-cols-2 gap-3 rounded-lg bg-white p-3 shadow-sm sm:grid-cols-3 md:grid-cols-5"
+    >
+      <div class="flex min-w-0 flex-col">
+        <label class="filters-field-label" for="cf-sg-min-vote">{{ t('semanticGraph.minVote') }}</label>
+        <input
+          id="cf-sg-min-vote"
+          v-model.number="graphBuildParams.minVote"
+          type="number"
+          class="input-field h-8 w-full"
+          min="-999"
+          step="1"
+        />
+      </div>
+      <div class="flex min-w-0 flex-col">
+        <label class="filters-field-label" for="cf-sg-limit">{{ t('semanticGraph.nodeLimit') }}</label>
+        <input
+          id="cf-sg-limit"
+          v-model.number="graphBuildParams.graphLimit"
+          type="number"
+          class="input-field h-8 w-full"
+          min="1"
+          max="120"
+          step="1"
+        />
+      </div>
+      <div class="flex min-w-0 flex-col">
+        <label class="filters-field-label" for="cf-sg-k">{{ t('semanticGraph.kNeighbors') }}</label>
+        <input
+          id="cf-sg-k"
+          v-model.number="graphBuildParams.kNeighbors"
+          type="number"
+          class="input-field h-8 w-full"
+          min="1"
+          max="30"
+          step="1"
+        />
+      </div>
+      <div class="flex min-w-0 flex-col">
+        <label class="filters-field-label" for="cf-sg-min-sim">{{ t('semanticGraph.minPairwiseSim') }}</label>
+        <input
+          id="cf-sg-min-sim"
+          v-model.number="graphBuildParams.minPairwiseSim"
+          type="number"
+          class="input-field h-8 w-full"
+          min="0"
+          max="1"
+          step="0.05"
+        />
+      </div>
+    </div>
+
   </div>
 
 </template>
@@ -232,6 +303,17 @@ import { defaultFilterLanguageTags } from '@/config/locales'
 import { useI18n } from 'vue-i18n'
 import type { PropType } from 'vue'
 const { t } = useI18n()
+
+export type SemanticGraphBuildParams = {
+  minVote: number
+  graphLimit: number
+  kNeighbors: number
+  minPairwiseSim: number
+}
+
+const graphBuildParams = defineModel<SemanticGraphBuildParams | undefined>('graphBuildParams', {
+  required: false,
+})
 
 /** Fields used for language multiselect search (values only; case-insensitive substring). */
 const languageFilterSearchFieldKeys: string[] = [
@@ -272,6 +354,11 @@ const props = defineProps({
   languages: {
     type: Array as PropType<LanguageOption[]>,
     required: true,
+  },
+  /** When true, language multiselect is only inside the expandable advanced panel (e.g. semantic graph page). */
+  languagesInExpandedPanel: {
+    type: Boolean,
+    default: false,
   },
 })
 

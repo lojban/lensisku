@@ -16,6 +16,29 @@
   "aprilFools": {
     "pageTitle": "la .lojban. 2025"
   },
+  "semanticGraph": {
+    "title": "lo smuni jorne",
+    "description": "ko zgana lo valsi poi lo smuni be ke'a cu simsa fi lo nenri be lo samrkomidi .i lo sedje'u cu cpedu ca lo nu kalri .i ko ciska lo valsi .a lo jufra .i ko jorne gi'e catlu",
+    "overview": "jorne sedje'u",
+    "anchorPlaceholder": "ko ciska lo valsi .a lo jufra…",
+    "build": "zbasu lo jorne",
+    "export": "bartu benji",
+    "import": "nenri benji",
+    "minVote": "nelci ji'e",
+    "nodeLimit": "su'e lo jorne",
+    "kNeighbors": "lamji lo jorne",
+    "minPairwiseSim": "ji'e lo simsa be lo jorne",
+    "closePreview": "ganlo lo zgana",
+    "openEntry": "kalri lo papri lo cnita canko",
+    "loading": "ca'o cpedu",
+    "errorNeedSearch": ".e'u ciska lo sisku",
+    "errorNotReady": "lo zgana ca'o cpedu",
+    "errorLoad": "fliba lo nu cpedu lo jorne",
+    "errorDisabled": "lo samrkomidi na kakne",
+    "errorPreview": "fliba lo nu catlu lo ciksi",
+    "errorImport": "fliba lo nu tcidu lo datnyvei",
+    "errorLanguages": "fliba lo nu cpedu lo bangu liste"
+  },
   "filters": {
     "changePhoto": "galfi lo pixra",
     "uploadPhoto": "punji lo pixra",
@@ -250,7 +273,8 @@
     "iamUsers": "le'i pilno",
     "signUp": "co'a se jaspu",
     "logIn": "di'a ca'a se jaspu",
-    "assistant": "rutni sidju"
+    "assistant": "rutni sidju",
+    "semanticGraph": "sesmai pe'a jorne"
   },
   "mobileNav": {
     "recentChanges": "cnino nu galfi"
@@ -819,7 +843,11 @@
     "sourceLanguageNote": "lo bangu pe lo valsi .i na ku ka'e galfi ti ba lo nu finti.",
     "rafsiConflict": "lo rafsi ba'o se pilno lo na'e nu'o birti valsi la'ei '{word}' ({type})",
     "addTranslationTitle": "jmina lo xe fanva",
-    "linkError": "fliba lo nu jmina lo xe fanva"
+    "linkError": "fliba lo nu jmina lo xe fanva",
+    "previewButton": "zgana",
+    "previewDefinitionTitle": "zgana lo ciksi",
+    "previewNotesTitle": "zgana lo notci",
+    "previewEmpty": "no da zvati lo nu zgana"
   },
   "flashcardStudy": {
     "title": "tadni nu casnu",

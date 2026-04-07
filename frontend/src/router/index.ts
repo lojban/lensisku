@@ -28,6 +28,15 @@ const baseRoutes: Array<RouteRecordRaw> = [
     meta: { alwaysShowScrollbar: true },
   },
   {
+    path: '/semantic-graph',
+    name: 'SemanticGraph',
+    component: () => import('../pages/SemanticGraphPage.vue'),
+    meta: {
+      hideFooter: true,
+      contentTopPaddingMainOnly: true,
+    },
+  },
+  {
     path: '/message/:id',
     name: 'MessageDetail',
     component: () => import('../pages/MessageDetail.vue'),

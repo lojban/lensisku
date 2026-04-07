@@ -2,7 +2,7 @@ use redis::{AsyncCommands, Client, RedisError};
 use serde::{de::DeserializeOwned, Serialize};
 use std::time::Duration;
 
-use crate::jbovlaste::SearchDefinitionsQuery;
+use crate::jbovlaste::{SearchDefinitionsQuery, SemanticGraphQuery};
 
 pub struct RedisCache {
     pub client: Client,
@@ -82,7 +82,7 @@ impl RedisCache {
     /// (keyword search, fast search, semantic search). Call when definitions
     /// or votes change so cached results stay correct.
     pub async fn invalidate_definition_search_caches(&self) -> Result<(), RedisError> {
-        for pattern in &["search:*", "fast_search:*", "semantic_search:*"] {
+        for pattern in &["search:*", "fast_search:*", "semantic_search:*", "semantic_graph:*"] {
             self.invalidate(pattern).await?;
         }
         Ok(())
@@ -133,6 +133,52 @@ pub fn generate_semantic_search_cache_key(query: &SearchDefinitionsQuery) -> Str
         query.word_type.unwrap_or(0),
         query.source_langid.unwrap_or(1) // Note: sort_by and sort_order are fixed to 'similarity asc' for semantic search
                                          // Note: include_comments is fixed to false for semantic search
+    )
+}
+
+/// Cache key for semantic similarity graph (embedding neighbors + pairwise edges).
+pub fn generate_semantic_graph_cache_key(query: &SemanticGraphQuery) -> String {
+    let semantic_key = match query.semantic {
+        Some(false) => "0",
+        _ => "1",
+    };
+    format!(
+        "semantic_graph:v2:{}:{}:{}:{}:{}:{}:{}:{}:{}:{}:{}:{}",
+        semantic_key,
+        query.search.as_deref().unwrap_or(""),
+        query.languages.as_deref().unwrap_or(""),
+        query.selmaho.as_deref().unwrap_or(""),
+        query.username.as_deref().unwrap_or(""),
+        query.word_type.unwrap_or(0),
+        query.source_langid.unwrap_or(1),
+        query.search_in_phrases.map(i32::from).unwrap_or(-1),
+        query.min_vote.unwrap_or(1),
+        query.limit.unwrap_or(80),
+        query.k_neighbors.unwrap_or(6),
+        query
+            .min_similarity
+            .map(|f| format!("{:.6}", f))
+            .unwrap_or_else(|| "default".to_string()),
+    )
+}
+
+/// Cache key for stratified preview graph (no anchor embedding).
+pub fn generate_semantic_graph_preview_cache_key(query: &SemanticGraphQuery) -> String {
+    format!(
+        "semantic_graph:preview:v1:{}:{}:{}:{}:{}:{}:{}:{}:{}:{}",
+        query.languages.as_deref().unwrap_or(""),
+        query.selmaho.as_deref().unwrap_or(""),
+        query.username.as_deref().unwrap_or(""),
+        query.word_type.unwrap_or(0),
+        query.source_langid.unwrap_or(1),
+        query.search_in_phrases.map(i32::from).unwrap_or(-1),
+        query.min_vote.unwrap_or(1),
+        query.limit.unwrap_or(80),
+        query.k_neighbors.unwrap_or(6),
+        query
+            .min_similarity
+            .map(|f| format!("{:.6}", f))
+            .unwrap_or_else(|| "default".to_string()),
     )
 }
 

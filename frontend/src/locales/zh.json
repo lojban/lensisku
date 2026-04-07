@@ -16,6 +16,29 @@
   "aprilFools": {
     "pageTitle": "Lojban 2025"
   },
+  "semanticGraph": {
+    "title": "语义图",
+    "description": "探索在嵌入空间中定义相近的词。打开页面会自动加载概览图：按词类选取高票样本并以相似度连边；输入词或短语。可缩放、平移；点按节点查看简要释义。",
+    "overview": "概览图",
+    "anchorPlaceholder": "输入词或短语…",
+    "build": "生成图",
+    "export": "导出",
+    "import": "导入",
+    "minVote": "最低投票总分",
+    "nodeLimit": "最大节点数",
+    "kNeighbors": "每节点邻居数",
+    "minPairwiseSim": "边最小相似度",
+    "closePreview": "关闭预览",
+    "openEntry": "在新标签页打开完整词条",
+    "loading": "加载中",
+    "errorNeedSearch": "请输入搜索词以生成图。",
+    "errorNotReady": "查看器仍在加载，请稍后再试。",
+    "errorLoad": "无法加载语义图。",
+    "errorDisabled": "服务器已禁用嵌入，无法使用此功能。",
+    "errorPreview": "无法加载释义预览。",
+    "errorImport": "无法读取该图文件。",
+    "errorLanguages": "无法加载语言列表。"
+  },
   "filters": {
     "changePhoto": "更换头像",
     "uploadPhoto": "上传头像",
@@ -250,7 +273,8 @@
     "iamUsers": "IAM / 用户",
     "signUp": "注册",
     "logIn": "登录",
-    "assistant": "AI 助手"
+    "assistant": "AI 助手",
+    "semanticGraph": "语义图"
   },
   "mobileNav": {
     "recentChanges": "最近更新"
@@ -809,7 +833,11 @@
     "sourceLanguageNote": "词本身所属语言。创建后不可更改。",
     "rafsiConflict": "rafsi 已被非实验词「{word}」（{type}）使用",
     "addTranslationTitle": "添加翻译",
-    "linkError": "链接释义失败"
+    "linkError": "链接释义失败",
+    "previewButton": "预览",
+    "previewDefinitionTitle": "释义预览",
+    "previewNotesTitle": "注释预览",
+    "previewEmpty": "暂无可预览内容。"
   },
   "flashcardStudy": {
     "title": "学习会话",

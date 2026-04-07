@@ -88,6 +88,68 @@ function normalizeLinkAnchors(text) {
   return text.replace(/(https?:)(\\_){2}/g, '$1//').replace(/(https?)__(?=[^\s\]])/g, '$1://')
 }
 
+const MATH_PLACEHOLDER = (i) => `MJXPH${i}MJXEND`
+
+/**
+ * Replace TeX math spans with placeholders so marked (curly links, emphasis, etc.)
+ * does not treat `{...}` inside `$x_{(n+1)}$` as valsi links.
+ */
+function protectMathForMarkdown(text) {
+  if (!text || typeof text !== 'string') return { text, parts: [] }
+  const parts = []
+  let out = ''
+  let i = 0
+  while (i < text.length) {
+    if (text.startsWith('$$', i)) {
+      const j = text.indexOf('$$', i + 2)
+      if (j !== -1) {
+        parts.push(text.slice(i, j + 2))
+        out += MATH_PLACEHOLDER(parts.length - 1)
+        i = j + 2
+        continue
+      }
+    }
+    if (text.startsWith('\\[', i)) {
+      const j = text.indexOf('\\]', i + 2)
+      if (j !== -1) {
+        parts.push(text.slice(i, j + 2))
+        out += MATH_PLACEHOLDER(parts.length - 1)
+        i = j + 2
+        continue
+      }
+    }
+    if (text.startsWith('\\(', i)) {
+      const j = text.indexOf('\\)', i + 2)
+      if (j !== -1) {
+        parts.push(text.slice(i, j + 2))
+        out += MATH_PLACEHOLDER(parts.length - 1)
+        i = j + 2
+        continue
+      }
+    }
+    if (text[i] === '$' && text[i + 1] !== '$') {
+      const j = text.indexOf('$', i + 1)
+      if (j !== -1) {
+        parts.push(text.slice(i, j + 1))
+        out += MATH_PLACEHOLDER(parts.length - 1)
+        i = j + 1
+        continue
+      }
+    }
+    out += text[i]
+    i += 1
+  }
+  return { text: out, parts }
+}
+
+function restoreMathAfterMarkdown(html, parts) {
+  if (!parts.length || !html) return html
+  return html.replace(/MJXPH(\d+)MJXEND/g, (_, n) => {
+    const idx = Number(n)
+    return parts[idx] ?? ''
+  })
+}
+
 const renderContent = async () => {
   if (!contentRef.value || !props.content) return
 
@@ -101,6 +163,9 @@ const renderContent = async () => {
     finalContent = finalContent.replace(/\n{3,}/g, (match) => {
       return '\n\n' + '<br>'.repeat(match.length - 2) + '\n\n'
     })
+
+    const { text: mdInput, parts: mathParts } = protectMathForMarkdown(finalContent)
+    finalContent = mdInput
 
     const extensions = props.enableCurlyLinks
       ? [
@@ -156,6 +221,7 @@ const renderContent = async () => {
     mdParser.use({ extensions, renderer: renderer as RendererObject })
     const parsed = mdParser.parse(finalContent)
     finalContent = typeof parsed === 'string' ? parsed : await parsed
+    finalContent = restoreMathAfterMarkdown(finalContent, mathParts)
   }
 
   // Apply highlighting if searchTerm is provided

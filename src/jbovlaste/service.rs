@@ -2,7 +2,7 @@ use crate::utils::remove_html_tags;
 use camxes_rs::peg::grammar::Peg;
 use chrono::TimeZone;
 use serde_json::json;
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeMap, HashMap, HashSet};
 use std::env;
 use std::sync::Arc;
 use tokio::sync::mpsc;
@@ -16,9 +16,12 @@ use super::{
     AddDefinitionRequest, BulkImportParams, DefinitionListResponse, DefinitionResponse, Example,
     GetImageDefinitionQuery, ImageData, KeywordMapping, ListDefinitionsQuery,
     NonLojbanDefinitionsQuery, RecentChange, RecentChangesResponse, SearchDefinitionsParams,
-    UpdateDefinitionRequest, ValsiDetail, ValsiType,
+    SemanticGraphEdge, SemanticGraphNode, SemanticGraphResponse, UpdateDefinitionRequest,
+    ValsiDetail, ValsiType,
 };
-use crate::jbovlaste::models::DefinitionDetail;
+use crate::jbovlaste::models::{
+    DefinitionDetail, SemanticGraphParams, row_vote_score_f32, row_vote_score_i32,
+};
 use vlazba::jvokaha::jvokaha;
 
 use crate::auth::Claims;
@@ -114,7 +117,7 @@ pub async fn semantic_search(
         let count_query = format!(
             r#"
         WITH vote_scores AS (
-            SELECT definitionid, COALESCE(SUM(value), 0) as score
+            SELECT definitionid, COALESCE(SUM(value), 0)::bigint AS score
             FROM definitionvotes
             GROUP BY definitionid
         ),
@@ -122,7 +125,7 @@ pub async fn semantic_search(
             SELECT 
                 d.definitionid,
                 d.embedding <=> $1::vector as similarity,
-                COALESCE(dv.score, 0) as score,
+                COALESCE(dv.score, 0)::bigint AS score,
                 CASE 
                     WHEN v.word = $3 THEN 0 
                     WHEN v.word ILIKE $3 THEN 1
@@ -169,7 +172,7 @@ pub async fn semantic_search(
     let query_string = format!(
         r#"
         WITH vote_scores AS (
-            SELECT definitionid, COALESCE(SUM(value), 0) as score
+            SELECT definitionid, COALESCE(SUM(value), 0)::bigint AS score
             FROM definitionvotes
             GROUP BY definitionid
         ),
@@ -187,7 +190,7 @@ pub async fn semantic_search(
                 u.username,
                 l.realname as langrealname,
                 vt.descriptor as type_name,
-                COALESCE(dv.score, 0) as score,
+                COALESCE(dv.score, 0)::bigint AS score,
                 COALESCE(cc.comment_count, 0) as comment_count,
                 (di.definition_id IS NOT NULL) as has_image,
                 d.embedding <=> $1::vector as similarity,
@@ -265,7 +268,7 @@ pub async fn semantic_search(
             username: row.get("username"),
             time: row.get("time"),
             type_name: row.get("type_name"),
-            score: row.get("score"),
+            score: row_vote_score_f32(&row, "score"),
             comment_count: if params.include_comments {
                 Some(row.get("comment_count"))
             } else {
@@ -306,6 +309,450 @@ pub async fn semantic_search(
         decomposition,
         total,
     })
+}
+
+/// Max definitions in one semantic graph response ([`SemanticGraphParams::limit`] is clamped to this).
+pub const SEMANTIC_GRAPH_MAX_LIMIT: i64 = 120;
+
+/// English definition rows (`languages.tag` typically `en`) used as anchor embeddings when graph `semantic=false`.
+pub const SEMANTIC_GRAPH_ANCHOR_ENGLISH_LANGID: i32 = 2;
+
+fn normalize_semantic_graph_valsi_lookup_key(search_term: &str) -> String {
+    search_term.trim().replace(' ', "_")
+}
+
+/// Stored embedding for the English definition of a valsi matching `search_term` (exact match preferred, then case-insensitive).
+pub async fn semantic_graph_anchor_embedding_english_valsi(
+    pool: &Pool,
+    search_term: &str,
+) -> Result<Option<Vec<f32>>, Box<dyn std::error::Error>> {
+    let key = normalize_semantic_graph_valsi_lookup_key(search_term);
+    if key.is_empty() {
+        return Ok(None);
+    }
+    let client = pool.get().await?;
+    let lang_id = SEMANTIC_GRAPH_ANCHOR_ENGLISH_LANGID;
+    let row = client
+        .query_opt(
+            r#"
+            WITH vote_scores AS (
+                SELECT definitionid, COALESCE(SUM(value), 0)::bigint AS score
+                FROM definitionvotes
+                GROUP BY definitionid
+            )
+            SELECT d.embedding
+            FROM definitions d
+            JOIN valsi v ON d.valsiid = v.valsiid
+            LEFT JOIN vote_scores dv ON dv.definitionid = d.definitionid
+            WHERE d.langid = $2
+              AND d.embedding IS NOT NULL
+              AND d.definition != ''
+              AND (v.word = $1 OR lower(v.word) = lower($1))
+            ORDER BY
+              CASE WHEN v.word = $1 THEN 0 ELSE 1 END,
+              COALESCE(dv.score, 0) DESC
+            LIMIT 1
+            "#,
+            &[&key, &lang_id],
+        )
+        .await?;
+    let Some(row) = row else {
+        return Ok(None);
+    };
+    let emb: pgvector::Vector = row.get(0);
+    Ok(Some(emb.into()))
+}
+
+fn build_semantic_graph_knn_edges(
+    embeddings: &[Vec<f32>],
+    k_neighbors: usize,
+    min_similarity: f32,
+    node_ids: &[String],
+) -> Vec<SemanticGraphEdge> {
+    let n = embeddings.len();
+    if n < 2 {
+        return Vec::new();
+    }
+    let mut best: BTreeMap<(usize, usize), f32> = BTreeMap::new();
+    for i in 0..n {
+        let mut pairs: Vec<(usize, f32)> = Vec::with_capacity(n.saturating_sub(1));
+        for j in 0..n {
+            if i == j {
+                continue;
+            }
+            let s: f32 = embeddings[i]
+                .iter()
+                .zip(&embeddings[j])
+                .map(|(a, b)| a * b)
+                .sum();
+            pairs.push((j, s));
+        }
+        pairs.sort_by(|a, b| {
+            b.1.partial_cmp(&a.1)
+                .unwrap_or(std::cmp::Ordering::Equal)
+        });
+        for (j, s) in pairs.into_iter().take(k_neighbors) {
+            if s < min_similarity {
+                continue;
+            }
+            let lo = i.min(j);
+            let hi = i.max(j);
+            best.entry((lo, hi))
+                .and_modify(|e| *e = (*e).max(s))
+                .or_insert(s);
+        }
+    }
+    best.into_iter()
+        .map(|((i, j), s)| SemanticGraphEdge {
+            source: node_ids[i].clone(),
+            target: node_ids[j].clone(),
+            similarity: s,
+        })
+        .collect()
+}
+
+/// Top definitions by similarity to the query embedding, plus sparse k-NN edges by pairwise cosine
+/// similarity (embeddings are L2-normalized). Does not expose raw vectors to the client.
+pub async fn semantic_graph(
+    pool: &Pool,
+    params: SemanticGraphParams,
+    query_embedding: Vec<f32>,
+) -> Result<SemanticGraphResponse, Box<dyn std::error::Error>> {
+    let limit = params.limit.clamp(1, SEMANTIC_GRAPH_MAX_LIMIT);
+    let k_neighbors = params.k_neighbors.clamp(1, 30);
+    let min_sim = params.min_similarity.clamp(0.0, 1.0);
+
+    let mut client = pool.get().await?;
+    let transaction = client.transaction().await?;
+
+    let languages_slice: Option<&[i32]> = match params.languages.as_deref() {
+        Some(&[1]) => Some(&[]),
+        other => other,
+    };
+
+    let vector = pgvector::Vector::from(query_embedding);
+    let mut query_params: Vec<&(dyn tokio_postgres::types::ToSql + Sync)> =
+        vec![&vector, &languages_slice, &params.search_term];
+
+    let mut conditions = vec![];
+
+    if let Some(selmaho) = &params.selmaho {
+        conditions.push(format!("AND d.selmaho = ${}", query_params.len() + 1));
+        query_params.push(selmaho);
+    }
+
+    if let Some(username) = &params.username {
+        conditions.push(format!("AND u.username = ${}", query_params.len() + 1));
+        query_params.push(username);
+    }
+
+    let word_type_value;
+    if let Some(word_type) = params.word_type {
+        // valsi.typeid / valsitypes.typeid are SMALLINT; bind as i16 (INT2).
+        word_type_value = word_type;
+        conditions.push(format!("AND v.typeid = ${}", query_params.len() + 1));
+        query_params.push(&word_type_value);
+    }
+
+    let source_langid_value = params.source_langid.unwrap_or(1);
+    conditions.push(format!("AND v.source_langid = ${}", query_params.len() + 1));
+    query_params.push(&source_langid_value);
+
+    if params.word_type.is_none() {
+        if let Some(false) = params.search_in_phrases {
+            conditions.push("AND v.typeid != 15".to_string());
+        }
+    }
+
+    let additional_conditions = conditions.join(" ");
+
+    // Vote `value` is REAL in the schema, so SUM(value) is float8 unless cast. Cast to bigint so
+    // `score >= $min_vote` infers INT8 and matches the i64 bind (avoids ToSql mismatch on prepare/bind).
+    let min_vote_pg: i64 = i64::from(params.min_vote);
+    let min_vote_param = query_params.len() + 1;
+    query_params.push(&min_vote_pg);
+    let limit_param = query_params.len() + 1;
+    query_params.push(&limit);
+
+    let query_string = format!(
+        r#"
+        WITH vote_scores AS (
+            SELECT definitionid, COALESCE(SUM(value), 0)::bigint AS score
+            FROM definitionvotes
+            GROUP BY definitionid
+        ),
+        vector_search AS (
+            SELECT
+                d.definitionid,
+                v.word as valsiword,
+                vt.descriptor as type_name,
+                l.realname as langrealname,
+                COALESCE(dv.score, 0)::bigint AS score,
+                d.embedding <=> $1::vector as similarity,
+                d.embedding,
+                CASE
+                    WHEN v.word = $3 THEN 0
+                    WHEN v.word ILIKE $3 THEN 1
+                    ELSE 2
+                END as exact_match_rank
+            FROM definitions d
+            JOIN valsi v ON d.valsiid = v.valsiid
+            JOIN valsitypes vt ON v.typeid = vt.typeid
+            JOIN users u ON d.userid = u.userid
+            JOIN languages l ON d.langid = l.langid
+            LEFT JOIN vote_scores dv ON dv.definitionid = d.definitionid
+            WHERE d.langid != 1
+              AND (d.langid = ANY($2) OR $2 IS NULL)
+              AND d.definition != ''
+              AND d.embedding IS NOT NULL
+            {additional_conditions}
+            ORDER BY exact_match_rank ASC, d.embedding <=> $1::vector ASC
+            LIMIT 2000
+        ),
+        ranked_results AS (
+            SELECT DISTINCT ON (definitionid) *
+            FROM vector_search
+            WHERE score >= ${min_vote_param}
+            ORDER BY definitionid, exact_match_rank ASC, similarity ASC
+        )
+        SELECT
+            r.definitionid,
+            r.valsiword,
+            r.type_name,
+            r.langrealname,
+            r.score,
+            r.similarity,
+            r.embedding
+        FROM ranked_results r
+        ORDER BY r.exact_match_rank ASC, r.similarity ASC
+        LIMIT ${limit_param}
+        "#,
+        additional_conditions = additional_conditions,
+        min_vote_param = min_vote_param,
+        limit_param = limit_param,
+    );
+
+    let rows = transaction.query(&query_string, &query_params).await?;
+    transaction.commit().await?;
+
+    let mut nodes: Vec<SemanticGraphNode> = Vec::with_capacity(rows.len());
+    let mut embeddings: Vec<Vec<f32>> = Vec::with_capacity(rows.len());
+    let mut node_ids: Vec<String> = Vec::with_capacity(rows.len());
+
+    for row in rows {
+        let definitionid: i32 = row.get("definitionid");
+        let word: String = row.get("valsiword");
+        let type_name: String = row.get("type_name");
+        let lang_name: String = row.get("langrealname");
+        let score = row_vote_score_i32(&row, "score");
+        let similarity: f64 = row.get("similarity");
+        let query_similarity = Some((1.0 - similarity).max(0.0) as f32);
+
+        let emb: pgvector::Vector = row.get("embedding");
+        let vec: Vec<f32> = emb.into();
+
+        let id = format!("def:{definitionid}");
+        let label = format!("{word} · {type_name}");
+
+        node_ids.push(id.clone());
+        embeddings.push(vec);
+        nodes.push(SemanticGraphNode {
+            id,
+            definitionid,
+            word,
+            label,
+            type_name,
+            lang_name,
+            score,
+            query_similarity,
+        });
+    }
+
+    let edges = build_semantic_graph_knn_edges(
+        &embeddings,
+        k_neighbors,
+        min_sim,
+        &node_ids,
+    );
+
+    Ok(SemanticGraphResponse { nodes, edges })
+}
+
+/// Stratified sample across valsi types (top by aggregate vote within each type), then sparse k-NN
+/// edges. Does not use a query embedding; node `query_similarity` is always `None`.
+pub async fn semantic_graph_preview(
+    pool: &Pool,
+    params: SemanticGraphParams,
+) -> Result<SemanticGraphResponse, Box<dyn std::error::Error>> {
+    let limit = params.limit.clamp(1, SEMANTIC_GRAPH_MAX_LIMIT);
+    let k_neighbors = params.k_neighbors.clamp(1, 30);
+    let min_sim = params.min_similarity.clamp(0.0, 1.0);
+    // Spread the node budget across word types (~15–25 distinct typeids); cap each type's share.
+    let per_type_cap: i64 = ((limit + 19) / 20).clamp(2, 25);
+
+    let mut client = pool.get().await?;
+    let transaction = client.transaction().await?;
+
+    let languages_slice: Option<&[i32]> = match params.languages.as_deref() {
+        Some(&[1]) => Some(&[]),
+        other => other,
+    };
+
+    let mut query_params: Vec<&(dyn tokio_postgres::types::ToSql + Sync)> = vec![&languages_slice];
+
+    let mut conditions = vec![];
+
+    if let Some(selmaho) = &params.selmaho {
+        conditions.push(format!("AND d.selmaho = ${}", query_params.len() + 1));
+        query_params.push(selmaho);
+    }
+
+    if let Some(username) = &params.username {
+        conditions.push(format!("AND u.username = ${}", query_params.len() + 1));
+        query_params.push(username);
+    }
+
+    let word_type_value;
+    if let Some(word_type) = params.word_type {
+        // valsi.typeid / valsitypes.typeid are SMALLINT; bind as i16 (INT2).
+        word_type_value = word_type;
+        conditions.push(format!("AND v.typeid = ${}", query_params.len() + 1));
+        query_params.push(&word_type_value);
+    }
+
+    let source_langid_value = params.source_langid.unwrap_or(1);
+    conditions.push(format!("AND v.source_langid = ${}", query_params.len() + 1));
+    query_params.push(&source_langid_value);
+
+    if params.word_type.is_none() {
+        if let Some(false) = params.search_in_phrases {
+            conditions.push("AND v.typeid != 15".to_string());
+        }
+    }
+
+    let additional_conditions = conditions.join(" ");
+
+    // `score` / `COALESCE(dv.score,0)` are bigint; `>= $n` is inferred as INT8. Use i64 (i32 maps only to INT4).
+    // `ROW_NUMBER()` is bigint; `rn <= $n` and `LIMIT $n` follow the same inference in practice.
+    let min_vote_pg: i64 = i64::from(params.min_vote);
+    let min_vote_param = query_params.len() + 1;
+    query_params.push(&min_vote_pg);
+
+    let per_type_cap_param = query_params.len() + 1;
+    query_params.push(&per_type_cap);
+
+    let limit_param = query_params.len() + 1;
+    query_params.push(&limit);
+
+    let query_string = format!(
+        r#"
+        WITH vote_scores AS (
+            SELECT definitionid, COALESCE(SUM(value), 0)::bigint AS score
+            FROM definitionvotes
+            GROUP BY definitionid
+        ),
+        typed AS (
+            SELECT
+                d.definitionid,
+                v.word AS valsiword,
+                vt.descriptor AS type_name,
+                l.realname AS langrealname,
+                COALESCE(dv.score, 0)::bigint AS score,
+                d.embedding,
+                ROW_NUMBER() OVER (
+                    PARTITION BY v.typeid
+                    ORDER BY COALESCE(dv.score, 0)::bigint DESC, d.definitionid ASC
+                ) AS rn
+            FROM definitions d
+            JOIN valsi v ON d.valsiid = v.valsiid
+            JOIN valsitypes vt ON v.typeid = vt.typeid
+            JOIN users u ON d.userid = u.userid
+            JOIN languages l ON d.langid = l.langid
+            LEFT JOIN vote_scores dv ON dv.definitionid = d.definitionid
+            WHERE d.langid != 1
+              AND (d.langid = ANY($1) OR $1 IS NULL)
+              AND d.definition != ''
+              AND d.embedding IS NOT NULL
+            {additional_conditions}
+              AND COALESCE(dv.score, 0)::bigint >= ${min_vote_param}
+        ),
+        picked AS (
+            SELECT * FROM typed WHERE rn <= ${per_type_cap_param}
+        )
+        SELECT
+            p.definitionid,
+            p.valsiword,
+            p.type_name,
+            p.langrealname,
+            p.score,
+            p.embedding
+        FROM picked p
+        ORDER BY p.score DESC
+        LIMIT ${limit_param}
+        "#,
+        additional_conditions = additional_conditions,
+        min_vote_param = min_vote_param,
+        per_type_cap_param = per_type_cap_param,
+        limit_param = limit_param,
+    );
+
+    let rows = match transaction.query(&query_string, &query_params).await {
+        Ok(r) => r,
+        Err(e) => {
+            let param_types = match transaction.prepare(&query_string).await {
+                Ok(stmt) => stmt
+                    .params()
+                    .iter()
+                    .enumerate()
+                    .map(|(i, t)| format!("${}={}", i + 1, t.name()))
+                    .collect::<Vec<_>>()
+                    .join(", "),
+                Err(pe) => format!("(prepare failed: {})", pe),
+            };
+            log::error!(
+                "semantic_graph_preview: {}; bind_count={}; {}",
+                e,
+                query_params.len(),
+                param_types
+            );
+            return Err(Box::new(e));
+        }
+    };
+    transaction.commit().await?;
+
+    let mut nodes: Vec<SemanticGraphNode> = Vec::with_capacity(rows.len());
+    let mut embeddings: Vec<Vec<f32>> = Vec::with_capacity(rows.len());
+    let mut node_ids: Vec<String> = Vec::with_capacity(rows.len());
+
+    for row in rows {
+        let definitionid: i32 = row.get("definitionid");
+        let word: String = row.get("valsiword");
+        let type_name: String = row.get("type_name");
+        let lang_name: String = row.get("langrealname");
+        let score = row_vote_score_i32(&row, "score");
+        let emb: pgvector::Vector = row.get("embedding");
+        let vec: Vec<f32> = emb.into();
+
+        let id = format!("def:{definitionid}");
+        let label = format!("{word} · {type_name}");
+
+        node_ids.push(id.clone());
+        embeddings.push(vec);
+        nodes.push(SemanticGraphNode {
+            id,
+            definitionid,
+            word,
+            label,
+            type_name,
+            lang_name,
+            score,
+            query_similarity: None,
+        });
+    }
+
+    let edges = build_semantic_graph_knn_edges(&embeddings, k_neighbors, min_sim, &node_ids);
+
+    Ok(SemanticGraphResponse { nodes, edges })
 }
 
 /// Parse cached_decomposition from DB (JSON array string) into Option<Vec<String>>.
@@ -466,7 +913,7 @@ pub async fn search_definitions(
         format!(
             r#"
         WITH vote_scores AS (
-            SELECT definitionid, COALESCE(SUM(value), 0) as score
+            SELECT definitionid, COALESCE(SUM(value), 0)::bigint AS score
             FROM definitionvotes
             GROUP BY definitionid
         ),
@@ -484,7 +931,7 @@ pub async fn search_definitions(
                 d.cached_type_name as type_name,
                 d.cached_rafsi as rafsi,
                 d.cached_decomposition as cached_decomposition,
-                COALESCE(dv.score, 0) as score,
+                COALESCE(dv.score, 0)::bigint AS score,
                 COALESCE(cc.comment_count, 0) as comment_count,
                 (di.definition_id IS NOT NULL) as has_image,
                 CASE
@@ -531,7 +978,7 @@ pub async fn search_definitions(
         format!(
             r#"
         WITH vote_scores AS (
-            SELECT definitionid, COALESCE(SUM(value), 0) as score
+            SELECT definitionid, COALESCE(SUM(value), 0)::bigint AS score
             FROM definitionvotes
             GROUP BY definitionid
         ),
@@ -549,7 +996,7 @@ pub async fn search_definitions(
                 d.cached_type_name as type_name,
                 d.cached_rafsi as rafsi,
                 d.cached_decomposition as cached_decomposition,
-                COALESCE(dv.score, 0) as score,
+                COALESCE(dv.score, 0)::bigint AS score,
                 (di.definition_id IS NOT NULL) as has_image,
                 CASE
                     WHEN d.cached_valsiword = $1 THEN 13
@@ -624,7 +1071,7 @@ pub async fn search_definitions(
             username: row.get("username"),
             time: row.get("time"),
             type_name: row.get("type_name"),
-            score: row.get("score"),
+            score: row_vote_score_f32(&row, "score"),
             comment_count: if params.include_comments {
                 Some(row.get("comment_count"))
             } else {
@@ -861,7 +1308,7 @@ pub async fn fast_search_definitions(
             d.cached_username as username,
             d.cached_langrealname as langrealname,
             d.cached_type_name as type_name,
-            0.0::real as score,
+            0::bigint AS score,
             CASE
                 WHEN d.cached_valsiword = $1::text THEN 13
                 WHEN d.cached_glosswords IS NOT NULL AND d.cached_glosswords != '' 
@@ -922,7 +1369,7 @@ pub async fn fast_search_definitions(
             username: row.get("username"),
             time: 0, // Not fetched in fast search (using created_at instead)
             type_name: row.get("type_name"),
-            score: row.get("score"),
+            score: row_vote_score_f32(&row, "score"),
             comment_count: None, // Not included in fast search
             gloss_keywords: gloss_keywords_map.get(&def_id).cloned(),
             place_keywords: place_keywords_map.get(&def_id).cloned(),
@@ -1552,6 +1999,7 @@ async fn add_definition_in_transaction(
                 .await?;
 
             // Create keywordmapping
+            let place: i16 = i16::try_from(i + 1).unwrap_or(i16::MAX);
             transaction
                 .execute(
                     "INSERT INTO keywordmapping (definitionid, place, natlangwordid)
@@ -1562,7 +2010,7 @@ async fn add_definition_in_transaction(
                  LIMIT 1",
                     &[
                         &definition_id,
-                        &((i + 1) as i32),
+                        &place,
                         &request.lang_id,
                         &sanitized_word,
                         &sanitized_meaning,
@@ -1793,7 +2241,7 @@ pub async fn get_definition(
                     ELSE false
                 END as can_edit,
                 COALESCE((SELECT SUM(value) FROM definitionvotes
-                      WHERE definitionid = d.definitionid), 0) as score,
+                      WHERE definitionid = d.definitionid), 0)::bigint AS score,
                 CASE WHEN $2::int IS NOT NULL THEN
                     (SELECT value::int FROM definitionvotes
                      WHERE userid = $2 AND definitionid = d.definitionid)
@@ -1898,7 +2346,7 @@ pub async fn get_definition(
         selmaho: row.get("selmaho"),
         jargon: row.get("jargon"),
         definitionnum: row.get("definitionnum"),
-        score: row.get("score"),
+        score: row_vote_score_f32(&row, "score"),
         langrealname: row.get("langrealname"),
         username: row.get("username"),
         time: row.get("time"),
@@ -2213,6 +2661,7 @@ pub async fn update_definition(
                 .await?;
 
             // Then create keywordmapping
+            let place: i16 = i16::try_from(i + 1).unwrap_or(i16::MAX);
             transaction
                 .execute(
                     "INSERT INTO keywordmapping (definitionid, place, natlangwordid)
@@ -2223,7 +2672,7 @@ pub async fn update_definition(
                  LIMIT 1",
                     &[
                         &definition_id,
-                        &((i + 1) as i32),
+                        &place,
                         &request.lang_id,
                         &sanitized_word,
                         &sanitized_meaning,
@@ -2438,7 +2887,7 @@ pub async fn list_definitions(
             u.username,
             l.realname as langrealname,
             vt.descriptor as type_name,
-            (SELECT COALESCE(SUM(value), 0) FROM definitionvotes WHERE definitionid = d.definitionid) as score,
+            (SELECT COALESCE(SUM(value), 0)::bigint FROM definitionvotes WHERE definitionid = d.definitionid) AS score,
             EXISTS(SELECT 1 FROM definition_images WHERE definition_id = d.definitionid) as has_image,
             CASE
                 WHEN $1::int IS NOT NULL THEN can_edit_definition(d.definitionid, $1)
@@ -2492,7 +2941,7 @@ pub async fn list_definitions(
             username: row.get("username"),
             time: row.get("time"),
             type_name: row.get("type_name"),
-            score: row.get("score"),
+            score: row_vote_score_f32(row, "score"),
             comment_count: None, // Not requested for this endpoint
             gloss_keywords: None,
             place_keywords: None,
@@ -2618,7 +3067,7 @@ pub async fn list_non_lojban_definitions(
             u.username,
             l.realname as langrealname,
             vt.descriptor as type_name,
-            (SELECT COALESCE(SUM(value), 0) FROM definitionvotes WHERE definitionid = d.definitionid) as score,
+            (SELECT COALESCE(SUM(value), 0)::bigint FROM definitionvotes WHERE definitionid = d.definitionid) AS score,
             EXISTS(SELECT 1 FROM definition_images WHERE definition_id = d.definitionid) as has_image
         FROM definitions d
         JOIN valsi v ON d.valsiid = v.valsiid
@@ -2660,7 +3109,7 @@ pub async fn list_non_lojban_definitions(
             username: row.get("username"),
             time: row.get("time"),
             type_name: row.get("type_name"),
-            score: row.get("score"),
+            score: row_vote_score_f32(row, "score"),
             comment_count: None,  // Comments are typically on Lojban valsi
             gloss_keywords: None, // Keywords are typically for Lojban valsi
             place_keywords: None,
@@ -2791,16 +3240,19 @@ pub async fn update_vote(
         )
         .await?;
 
-    // Get the new total vote value
-    let score = transaction
-        .query_one(
-            "SELECT COALESCE(SUM(value)::int, 0) as total_vote
-             FROM definitionvotes
-             WHERE definitionid = $1",
-            &[&definition_id],
-        )
-        .await?
-        .get::<_, i32>("total_vote");
+    // Get the new total vote value (`value` is REAL; cast aggregate to bigint for stable typing).
+    let score = {
+        let raw: i64 = transaction
+            .query_one(
+                "SELECT COALESCE(SUM(value), 0)::bigint AS total_vote
+                 FROM definitionvotes
+                 WHERE definitionid = $1",
+                &[&definition_id],
+            )
+            .await?
+            .get("total_vote");
+        raw.clamp(i32::MIN as i64, i32::MAX as i64) as i32
+    };
 
     if let Err(e) = redis_cache.invalidate_definition_search_caches().await {
         log::error!(
@@ -2945,7 +3397,7 @@ pub async fn get_definitions_by_entry(
     // Get vote scores in bulk
     let vote_scores = transaction
         .query(
-            "SELECT definitionid, COALESCE(SUM(value), 0) as score
+            "SELECT definitionid, COALESCE(SUM(value), 0)::bigint AS score
              FROM definitionvotes
              WHERE definitionid = ANY($1)
              GROUP BY definitionid",
@@ -2998,7 +3450,7 @@ pub async fn get_definitions_by_entry(
             .iter()
             .find(|r| r.get::<_, i32>("definitionid") == def.definitionid)
         {
-            def.score = row.get("score");
+            def.score = row_vote_score_f32(row, "score");
         }
 
         // Update user vote
