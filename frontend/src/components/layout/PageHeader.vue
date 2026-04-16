@@ -185,7 +185,7 @@ const metaRowJustifyClass = computed(() => {
               <div v-if="hasEyebrow" class="min-w-0">
                 <slot name="eyebrow" />
               </div>
-              <div class="flex w-full min-w-0 items-center gap-3 sm:gap-4">
+              <div class="flex w-full min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:gap-3 sm:gap-4">
                 <div :class="titleRowClass">
                   <span
                     v-if="hasIcon"
@@ -223,7 +223,7 @@ const metaRowJustifyClass = computed(() => {
             <div v-if="hasEyebrow" class="min-w-0">
               <slot name="eyebrow" />
             </div>
-            <div class="flex w-full min-w-0 items-center gap-3 sm:gap-4">
+            <div class="flex w-full min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:gap-3 sm:gap-4">
               <div :class="titleRowClass">
                 <span
                   v-if="hasIcon"
