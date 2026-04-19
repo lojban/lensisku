@@ -165,7 +165,51 @@
       >
     </div>
 
-    <div class="space-y-4">
+     <!-- Items / Discussion tabs -->
+    <div
+      class="btn-group-forced flex flex-wrap items-center justify-center gap-y-2 my-4"
+      role="tablist"
+      :aria-label="t('collectionDetail.tabsAriaLabel')"
+    >
+      <button
+        type="button"
+        role="tab"
+        :aria-selected="activeTab === 'items'"
+        :tabindex="activeTab === 'items' ? 0 : -1"
+        class="ui-btn--group-item inline-flex items-center gap-2 transition-colors duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500"
+        :class="activeTab === 'items' ? 'ui-btn--neutral' : 'ui-btn--toolbar'"
+        @click="setActiveTab('items')"
+      >
+        <List class="w-4 h-4 shrink-0" aria-hidden="true" />
+        <span>{{ t('collectionDetail.itemsTab') }}</span>
+        <span
+          v-if="collection.item_count > 0"
+          class="inline-flex items-center justify-center rounded-full bg-gray-200/80 text-gray-700 text-xs font-semibold min-w-5 h-5 px-1.5"
+        >
+          {{ collection.item_count }}
+        </span>
+      </button>
+      <button
+        type="button"
+        role="tab"
+        :aria-selected="activeTab === 'discussion'"
+        :tabindex="activeTab === 'discussion' ? 0 : -1"
+        class="ui-btn--group-item inline-flex items-center gap-2 transition-colors duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500"
+        :class="activeTab === 'discussion' ? 'ui-btn--neutral' : 'ui-btn--toolbar'"
+        @click="setActiveTab('discussion')"
+      >
+        <MessagesSquare class="w-4 h-4 shrink-0" aria-hidden="true" />
+        <span>{{ t('collectionDetail.discussionTab') }}</span>
+        <span
+          v-if="collection.comment_count > 0"
+          class="inline-flex items-center justify-center rounded-full bg-blue-100 text-blue-800 text-xs font-semibold min-w-5 h-5 px-1.5"
+        >
+          {{ collection.comment_count }}
+        </span>
+      </button>
+    </div>
+
+    <div v-show="activeTab === 'items'" class="space-y-4" role="tabpanel">
        <!-- Loading state for items --> <LoadingSpinner v-if="isLoadingItems" class="py-8" /> <!-- Items grid -->
 
       <div v-else class="grid gap-4">
@@ -239,6 +283,13 @@
         :per-page="itemsPerPage"
         @prev="prevPage"
         @next="nextPage"
+      />
+    </div>
+
+    <div v-show="activeTab === 'discussion'" class="pt-2" role="tabpanel">
+      <CommentList
+        :collection-id="collection.collection_id"
+        :embedded="true"
       />
     </div>
      <!-- Edit Collection Modal --> <ModalComponent
@@ -1342,6 +1393,7 @@ import {
   ArrowRight,
   Camera,
   Trash2,
+  MessagesSquare,
 } from 'lucide-vue-next'
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
@@ -1374,6 +1426,7 @@ import {
   validateMathJax,
 } from '@/api'
 import AlertComponent from '@/components/AlertComponent.vue'
+import CommentList from '@/pages/CommentList.vue'
 import DefinitionCard from '@/components/DefinitionCard.vue'
 import DeleteConfirmationModal from '@/components/DeleteConfirmation.vue'
 import DynamicInput from '@/components/DynamicInput.vue'
@@ -1441,6 +1494,15 @@ const auth = useAuth()
 // PaginationComponent state
 const currentPage = ref(parseInt(queryStr(route.query.page), 10) || 1)
 const itemsPerPage = 10
+
+type CollectionTab = 'items' | 'discussion'
+const activeTab = ref<CollectionTab>(
+  queryStr(route.query.tab) === 'discussion' ? 'discussion' : 'items'
+)
+const setActiveTab = (tab: CollectionTab) => {
+  activeTab.value = tab
+  router.replace({ query: { ...route.query, tab: tab === 'items' ? undefined : tab } })
+}
 
 // Check for flashcard mode
 const isAddFlashcardMode = computed(() => route.query.mode === 'add_flashcard')

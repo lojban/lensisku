@@ -61,9 +61,25 @@ pub async fn get_thread(
         && query.natlang_word_id.is_none()
         && query.definition_id.is_none()
         && query.target_user_id.is_none()
+        && query.collection_id.is_none()
     {
         return HttpResponse::BadRequest()
-            .body("Must specify at least one of: thread_id, comment_id, valsi_id, natlang_word_id, definition_id, or target_user_id.");
+            .body("Must specify at least one of: thread_id, comment_id, valsi_id, natlang_word_id, definition_id, collection_id, or target_user_id.");
+    }
+
+    if let Some(collection_id) = query.collection_id {
+        if let Err(e) = crate::auth_utils::verify_collection_read_access_pool(
+            &pool,
+            collection_id,
+            claims.as_ref().map(|c| c.sub),
+        )
+        .await
+        {
+            return HttpResponse::Forbidden().json(json!({
+                "error": "Access denied",
+                "details": e.to_string()
+            }));
+        }
     }
 
     let params = ThreadParams {
@@ -73,6 +89,7 @@ pub async fn get_thread(
         definition_id: query.definition_id,
         definition_link_id: query.definition_link_id,
         target_user_id: query.target_user_id,
+        collection_id: query.collection_id,
         comment_id: query.comment_id,
         scroll_to: query.scroll_to,
         current_user_id: claims.map(|c| c.sub),
@@ -164,6 +181,21 @@ pub async fn add_comment(
         }
     };
 
+    if let Some(collection_id) = request.collection_id {
+        if let Err(e) = crate::auth_utils::verify_collection_read_access_pool(
+            &pool,
+            collection_id,
+            Some(claims.sub),
+        )
+        .await
+        {
+            return HttpResponse::Forbidden().json(json!({
+                "error": "Access denied",
+                "details": e.to_string()
+            }));
+        }
+    }
+
     let params = NewCommentParams {
         pool: pool.get_ref().clone(),
         user_id: claims.sub,
@@ -172,6 +204,7 @@ pub async fn add_comment(
         definition_id: request.definition_id,
         definition_link_id: request.definition_link_id,
         target_user_id: request.target_user_id,
+        collection_id: request.collection_id,
         parent_id: request.parent_id,
         subject: request.subject.clone(),
         content: content_json,

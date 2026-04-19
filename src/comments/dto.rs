@@ -14,6 +14,7 @@ pub struct NewCommentParams {
     pub definition_id: Option<i32>,
     pub definition_link_id: Option<i32>,
     pub target_user_id: Option<i32>,
+    pub collection_id: Option<i32>,
     pub parent_id: Option<i32>,
     pub subject: String,
     pub content: String,
@@ -82,6 +83,8 @@ pub struct NewCommentRequest {
     #[serde(default)]
     pub definition_link_id: Option<i32>,
     #[serde(default)]
+    pub collection_id: Option<i32>,
+    #[serde(default)]
     pub parent_id: Option<i32>, // None or 0 for top-level comments
     pub subject: String,
     pub content: Vec<ContentPart>,
@@ -141,6 +144,7 @@ pub struct ThreadQuery {
     pub definition_id: Option<i32>,
     pub definition_link_id: Option<i32>,
     pub target_user_id: Option<i32>,
+    pub collection_id: Option<i32>,
     pub comment_id: Option<i32>,
     pub scroll_to: Option<i32>,
     pub thread_id: Option<i32>,
@@ -178,6 +182,7 @@ pub struct SearchCommentsParams {
     pub definition_id: Option<i32>,
     pub definition_link_id: Option<i32>,
     pub target_user_id: Option<i32>,
+    pub collection_id: Option<i32>,
     /// `jbotcan` | `comments` (site, non-jbotcan) — filters `comments.import_source`.
     pub wave_source: Option<String>,
 }
@@ -200,6 +205,7 @@ pub struct ThreadParams {
     pub definition_id: Option<i32>,
     pub definition_link_id: Option<i32>,
     pub target_user_id: Option<i32>,
+    pub collection_id: Option<i32>,
     pub comment_id: Option<i32>,
     pub scroll_to: Option<i32>,
     pub current_user_id: Option<i32>,

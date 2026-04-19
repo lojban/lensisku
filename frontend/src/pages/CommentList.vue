@@ -251,6 +251,14 @@ const props = defineProps({
     type: Number,
     default: 0,
   },
+  collectionId: {
+    type: Number,
+    default: 0,
+  },
+  embedded: {
+    type: Boolean,
+    default: false,
+  },
 })
 
 // Setup
@@ -364,7 +372,12 @@ const getReplyMargin = (level: number) => {
 }
 
 const handleNewTopLevelComment = () => {
-  if (props.valsiId === 0 && props.definitionId === 0) {
+  if (
+    props.valsiId === 0 &&
+    props.definitionId === 0 &&
+    props.collectionId === 0 &&
+    props.natlangWordId === 0
+  ) {
     router.push('/comments/new-thread')
   } else {
     showTopLevelForm.value = true
@@ -502,6 +515,7 @@ const buildQueryString = (includePage = true) => {
   if (props.valsiId) params.append('valsi_id', String(props.valsiId))
   if (props.natlangWordId) params.append('natlang_word_id', String(props.natlangWordId))
   if (props.definitionId) params.append('definition_id', String(props.definitionId))
+  if (props.collectionId) params.append('collection_id', String(props.collectionId))
   if (props.commentId) params.append('comment_id', String(props.commentId))
   if (props.scrollTo) params.append('scroll_to', String(props.scrollTo))
   if (props.threadId) params.append('thread_id', String(props.threadId))
@@ -527,6 +541,7 @@ const submitComment = async (formData: { subject: string; content: string }) => 
       valsi_id: props.valsiId || undefined,
       natlang_word_id: props.natlangWordId || undefined,
       definition_id: props.definitionId,
+      collection_id: props.collectionId || undefined,
       parent_id: replyToId.value || undefined,
       subject: formData.subject,
       content: formData.content,
@@ -616,11 +631,13 @@ const metaDescription = computed(() => {
 
 const canonicalPath = computed(() => route.fullPath)
 
-useSeoHead({
-  title: pageTitle,
-  description: metaDescription,
-  canonical: canonicalPath,
-})
+if (!props.embedded) {
+  useSeoHead({
+    title: pageTitle,
+    description: metaDescription,
+    canonical: canonicalPath,
+  })
+}
 
 const fetchDefinitionsAndDetails = async () => {
   if (props.valsiId) {
@@ -646,10 +663,12 @@ onMounted(async () => {
 
 // Watch for route changes to refresh comments
 watchEffect(async () => {
+  if (props.embedded) return
   const needsRefresh =
     route.query.valsi_id ||
     route.query.natlang_word_id ||
     route.query.definition_id ||
+    route.query.collection_id ||
     route.query.comment_id ||
     route.query.thread_id
 

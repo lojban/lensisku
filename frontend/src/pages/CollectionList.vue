@@ -182,6 +182,7 @@
         :study-button-label="t('collectionList.studyButton')"
         :collection-button-label="t('collectionList.collectionButton')"
         :flashcards-button-label="t('collectionList.flashcardsButton')"
+        :discussion-button-label="t('collectionList.discussionButton')"
         :created-by-label="t('collectionList.createdBy')" :updated-label="t('collectionList.updatedAt')"
         :public-label="t('collectionList.publicStatus')" :private-label="t('collectionList.privateStatus')"
         :items-count-label="t('collectionList.itemsCount', { count: collection.item_count })"

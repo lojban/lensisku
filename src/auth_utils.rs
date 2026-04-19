@@ -1,5 +1,5 @@
 use crate::{AppError, AppResult};
-use deadpool_postgres::Transaction;
+use deadpool_postgres::{Pool, Transaction};
 
 /// Verifies that the user (or anonymous) may read collection data.
 /// Anonymous (user_id None): only public collections.
@@ -25,6 +25,31 @@ pub async fn verify_collection_read_access(
         }
         _ => Ok(()),
     }
+}
+
+/// Pool-based convenience wrapper around [`verify_collection_read_access`] for
+/// callers that don't already hold an open transaction (e.g. the comments
+/// controllers, which only need a one-shot access check before handing off to
+/// the service).
+pub async fn verify_collection_read_access_pool(
+    pool: &Pool,
+    collection_id: i32,
+    user_id: Option<i32>,
+) -> AppResult<()> {
+    let mut client = pool
+        .get()
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+    let transaction = client
+        .transaction()
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+    verify_collection_read_access(&transaction, collection_id, user_id).await?;
+    transaction
+        .commit()
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+    Ok(())
 }
 
 pub async fn verify_collection_ownership(

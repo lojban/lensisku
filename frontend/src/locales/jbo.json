@@ -539,6 +539,10 @@
   },
   "collectionDetail": {
     "pageHint": "lo liste",
+    "itemsTab": "lo se liste",
+    "discussionTab": "lo nu casnu",
+    "tabsAriaLabel": "lo pagbu be le liste",
+    "discussionEmpty": "no da pu cfari lo nu casnu ti",
     "public": "gubni",
     "private": "sivni",
     "createdBy": "fi'e la",
@@ -1456,6 +1460,7 @@
     "currentStreakWithDays": "le nu ru'i tadni cu djedi li {count}",
     "descriptionLabel": "skicu",
     "flashcardsButton": "karda",
+    "discussionButton": "nu casnu",
     "itemsCount": "{count} lo se liste",
     "makePublicLabel": "gubni lo liste",
     "myCollections": "lei liste pe mi",

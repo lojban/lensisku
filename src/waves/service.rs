@@ -182,6 +182,7 @@ pub async fn search_waves(
         definition_id: None,
         definition_link_id: None,
         target_user_id: None,
+        collection_id: None,
         wave_source: wave_source.clone(),
     };
 

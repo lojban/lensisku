@@ -55,6 +55,7 @@ pub async fn get_thread_comments(
             params.definition_id,
             params.definition_link_id,
             params.target_user_id,
+            params.collection_id,
         )
         .await?
     };
@@ -83,6 +84,7 @@ pub async fn get_thread_comments(
                         c.valsiid,
                         c.definitionid,
                         c.definition_link_id,
+                        c.collection_id,
                         c.content::text as content,
                         cc.total_reactions as counter_reactions,
                         cc.total_replies as counter_replies,
@@ -113,6 +115,7 @@ pub async fn get_thread_comments(
                         c.valsiid,
                         c.definitionid,
                         c.definition_link_id,
+                        c.collection_id,
                         c.content::text as content,
                         cc.total_reactions as counter_reactions,
                         cc.total_replies as counter_replies,
@@ -185,6 +188,8 @@ pub async fn get_thread_comments(
                 valsi_id: row.get("valsiid"),
                 definition_id: row.get("definitionid"),
                 definition_link_id: row.get("definition_link_id"),
+                collection_id: row.get("collection_id"),
+                collection_name: None,
                 reactions: reactions_map.get(&comment_id).cloned().unwrap_or_default(),
                 parent_content: row
                     .get::<_, Option<String>>("parent_content")
@@ -229,6 +234,7 @@ pub async fn add_comment(params: NewCommentParams) -> Result<Comment, Box<dyn st
             params.definition_id,
             params.definition_link_id,
             params.target_user_id,
+            params.collection_id,
         )
         .await?
     };
@@ -459,6 +465,7 @@ async fn get_thread_id_by_context(
     definition_id: Option<i32>,
     definition_link_id: Option<i32>,
     target_user_id: Option<i32>,
+    collection_id: Option<i32>,
 ) -> Result<Option<i32>, Box<dyn std::error::Error>> {
     // Ensure only one context type is primarily active or it's a free-standing thread context
     let mut active_contexts = 0;
@@ -470,6 +477,9 @@ async fn get_thread_id_by_context(
         active_contexts += 1;
     }
     if target_user_id.is_some() {
+        active_contexts += 1;
+    }
+    if collection_id.is_some() {
         active_contexts += 1;
     }
 
@@ -488,6 +498,7 @@ async fn get_thread_id_by_context(
               AND (t.definitionid = $3 OR ($3 IS NULL AND (t.definitionid IS NULL OR t.definitionid = 0)))
               AND (t.definition_link_id = $4 OR ($4 IS NULL AND (t.definition_link_id IS NULL OR t.definition_link_id = 0)))
               AND (t.target_user_id = $5 OR ($5 IS NULL AND t.target_user_id IS NULL))
+              AND (t.collection_id = $6 OR ($6 IS NULL AND t.collection_id IS NULL))
             LIMIT 1",
             &[
                 &valsi_id,
@@ -495,6 +506,7 @@ async fn get_thread_id_by_context(
                 &definition_id,
                 &definition_link_id,
                 &target_user_id,
+                &collection_id,
             ],
         )
         .await?
@@ -523,6 +535,7 @@ async fn get_comment_by_id(
                     c.valsiid,
                     c.definitionid,
                     c.definition_link_id,
+                    c.collection_id,
                     c.content::text as content,
                     cc.total_reactions,
                     cc.total_replies,
@@ -557,6 +570,8 @@ async fn get_comment_by_id(
         valsi_id: row.get("valsiid"),
         definition_id: row.get("definitionid"),
         definition_link_id: row.get("definition_link_id"),
+        collection_id: row.get("collection_id"),
+        collection_name: None,
         reactions,
         valsi_word: None,
         definition: None,
@@ -647,6 +662,8 @@ pub async fn get_bookmarked_comments(
                 valsi_id: row.get("valsiid"),
                 definition_id: row.get("definitionid"),
                 definition_link_id: row.get("definition_link_id"),
+                collection_id: row.get("collection_id"),
+                collection_name: None,
                 reactions: reactions_map.get(&comment_id).cloned().unwrap_or_default(),
                 valsi_word: None,
                 definition: None,
@@ -759,6 +776,7 @@ pub async fn get_user_comments(
                     c.valsiid,
                     c.definitionid,
                     c.definition_link_id,
+                    c.collection_id,
                     c.content::text as content,
                     COALESCE(cc.total_reactions, 0) as total_reactions,
                     COALESCE(cc.total_replies, 0) as total_replies,
@@ -802,6 +820,8 @@ pub async fn get_user_comments(
                 valsi_id: row.get("valsiid"),
                 definition_id: row.get("definitionid"),
                 definition_link_id: row.get("definition_link_id"),
+                collection_id: row.get("collection_id"),
+                collection_name: None,
                 reactions: reactions_map.get(&comment_id).cloned().unwrap_or_default(),
                 valsi_word: None,
                 definition: None,
@@ -1009,6 +1029,7 @@ pub async fn get_trending_comments(
                     c.valsiid,
                     c.definitionid,
                     c.definition_link_id,
+                    c.collection_id,
                     c.content::text as content,
                     pc.content::text as parent_content,
                     t.valsiid,
@@ -1062,6 +1083,8 @@ pub async fn get_trending_comments(
                 valsi_id: row.get("valsiid"),
                 definition_id: row.get("definitionid"),
                 definition_link_id: row.get("definition_link_id"),
+                collection_id: row.get("collection_id"),
+                collection_name: None,
                 reactions: reactions_map.get(&comment_id).cloned().unwrap_or_default(),
                 valsi_word: None,
                 definition: None,
@@ -1134,6 +1157,7 @@ pub async fn get_most_bookmarked_comments(
                 c.valsiid,
                 c.definitionid,
                 c.definition_link_id,
+                c.collection_id,
                 c.content::text as content,
                 ac.total_reactions, ac.total_replies,
                 CASE WHEN cb.user_id IS NOT NULL THEN true ELSE false END as is_bookmarked
@@ -1171,6 +1195,8 @@ pub async fn get_most_bookmarked_comments(
                 valsi_id: row.get("valsiid"),
                 definition_id: row.get("definitionid"),
                 definition_link_id: row.get("definition_link_id"),
+                collection_id: row.get("collection_id"),
+                collection_name: None,
                 reactions: reactions_map.get(&comment_id).cloned().unwrap_or_default(),
                 valsi_word: None,
                 definition: None,
@@ -1266,7 +1292,7 @@ pub async fn get_comments_by_hashtag(
             SELECT c.commentid, c.threadid, c.parentid, c.userid,
                    c.commentnum, c.time, c.subject, c.content::text as content,
                    c.username, c.realname,
-                   c.valsiid, c.definitionid, c.definition_link_id,
+                   c.valsiid, c.definitionid, c.definition_link_id, c.collection_id,
                    cc.total_reactions, cc.total_replies,
                    CASE WHEN cb.user_id IS NOT NULL THEN true ELSE false END as is_bookmarked
             FROM convenientcomments c
@@ -1307,6 +1333,8 @@ pub async fn get_comments_by_hashtag(
                 valsi_id: row.get("valsiid"),
                 definition_id: row.get("definitionid"),
                 definition_link_id: row.get("definition_link_id"),
+                collection_id: row.get("collection_id"),
+                collection_name: None,
                 reactions: reactions_map.get(&comment_id).cloned().unwrap_or_default(),
                 valsi_word: None,
                 definition: None,
@@ -1533,6 +1561,7 @@ pub(crate) async fn search_comments(
             t.valsiid,
             t.definitionid,
             t.definition_link_id,
+            t.collection_id,
             u.username,
             t.target_user_id,
             v.word as valsi_word,
@@ -1588,6 +1617,14 @@ pub(crate) async fn search_comments(
         definition_link_id_value = definition_link_id;
         conditions.push(format!("t.definition_link_id = ${}", param_count));
         query_params.push(&definition_link_id_value);
+        param_count += 1;
+    }
+
+    let collection_id_value: i32;
+    if let Some(collection_id) = search_params.collection_id {
+        collection_id_value = collection_id;
+        conditions.push(format!("t.collection_id = ${}", param_count));
+        query_params.push(&collection_id_value);
         param_count += 1;
     }
 
@@ -1670,6 +1707,8 @@ pub(crate) async fn search_comments(
                 valsi_id: row.get("valsiid"),
                 definition_id: row.get("definitionid"),
                 definition_link_id: row.get("definition_link_id"),
+                collection_id: row.get("collection_id"),
+                collection_name: None,
                 reactions: reactions_map.get(&comment_id).cloned().unwrap_or_default(),
                 valsi_word: row.get("valsi_word"),
                 definition: row.get("definition"),
@@ -1772,6 +1811,8 @@ pub async fn get_my_reactions(
                 valsi_id: row.get("valsiid"),
                 definition_id: row.get("definitionid"),
                 definition_link_id: row.get("definition_link_id"),
+                collection_id: row.get("collection_id"),
+                collection_name: None,
                 reactions: reactions_map.get(&comment_id).cloned().unwrap_or_default(),
                 valsi_word: None,
                 definition: None,
@@ -1838,6 +1879,7 @@ async fn get_or_create_thread_id(
     definition_id: Option<i32>,
     definition_link_id: Option<i32>,
     target_user_id: Option<i32>,
+    collection_id: Option<i32>,
 ) -> Result<i32, Box<dyn std::error::Error>> {
     // Validate that only one context type is primarily active or it's a free-standing thread
     let mut active_contexts = 0;
@@ -1849,6 +1891,9 @@ async fn get_or_create_thread_id(
         active_contexts += 1;
     }
     if target_user_id.is_some() {
+        active_contexts += 1;
+    }
+    if collection_id.is_some() {
         active_contexts += 1;
     }
 
@@ -1863,6 +1908,7 @@ async fn get_or_create_thread_id(
           AND (definitionid = $3 OR ($3 IS NULL AND definitionid IS NULL))
           AND (definition_link_id = $4 OR ($4 IS NULL AND definition_link_id IS NULL))
           AND (target_user_id = $5 OR ($5 IS NULL AND target_user_id IS NULL))
+          AND (collection_id = $6 OR ($6 IS NULL AND collection_id IS NULL))
         LIMIT 1";
 
     if let Some(row) = transaction
@@ -1874,6 +1920,7 @@ async fn get_or_create_thread_id(
                 &definition_id,
                 &definition_link_id,
                 &target_user_id,
+                &collection_id,
             ],
         )
         .await?
@@ -1881,8 +1928,8 @@ async fn get_or_create_thread_id(
         Ok(row.get("threadid"))
     } else {
         let query_insert = "
-            INSERT INTO threads (valsiid, natlangwordid, definitionid, definition_link_id, target_user_id)
-            VALUES ($1, $2, $3, $4, $5)
+            INSERT INTO threads (valsiid, natlangwordid, definitionid, definition_link_id, target_user_id, collection_id)
+            VALUES ($1, $2, $3, $4, $5, $6)
             RETURNING threadid";
         Ok(transaction
             .query_one(
@@ -1893,6 +1940,7 @@ async fn get_or_create_thread_id(
                     &definition_id,
                     &definition_link_id,
                     &target_user_id,
+                    &collection_id,
                 ],
             )
             .await?
@@ -1961,6 +2009,8 @@ pub(crate) async fn list_threads(
                     t.valsiid,
                     t.definitionid,
                     t.definition_link_id,
+                    t.collection_id,
+                    col.name as collection_name,
                     t.target_user_id,
                     v.word as valsi_word,
                     d.definition,
@@ -1984,6 +2034,7 @@ pub(crate) async fn list_threads(
                 JOIN users ul ON t.last_comment_user_id = ul.userid
                 LEFT JOIN valsi v ON t.valsiid = v.valsiid
                 LEFT JOIN definitions d ON t.definitionid = d.definitionid
+                LEFT JOIN collections col ON t.collection_id = col.collection_id
                 LEFT JOIN comment_activity_counters cc ON cc.comment_id = t.last_comment_id
                 LEFT JOIN comments lc ON lc.commentid = t.last_comment_id
                 WHERE t.total_comments > 0
@@ -2004,6 +2055,8 @@ pub(crate) async fn list_threads(
             definitionid: row.get("definitionid"),
             target_user_id: row.get("target_user_id"),
             definition_link_id: row.get("definition_link_id"),
+            collection_id: row.get("collection_id"),
+            collection_name: row.get("collection_name"),
             valsi_word: row.get("valsi_word"),
             definition: row.get("definition"),
             last_comment_id: row.get("last_comment_id"),
@@ -2054,6 +2107,8 @@ pub(crate) async fn list_threads(
                 valsi_id: ft.valsiid,
                 definition_id: ft.definitionid,
                 definition_link_id: ft.definition_link_id,
+                collection_id: ft.collection_id,
+                collection_name: ft.collection_name,
                 reactions: vec![],
                 parent_content: None,
                 valsi_word: ft.valsi_word,
@@ -2108,6 +2163,7 @@ pub async fn list_comments(
             t.valsiid,
             t.definitionid,
             t.definition_link_id,
+            t.collection_id,
             u.username,
             u.realname,
             v.word as valsi_word,
@@ -2154,6 +2210,8 @@ pub async fn list_comments(
                 valsi_id: row.get("valsiid"),
                 definition_id: row.get("definitionid"),
                 definition_link_id: row.get("definition_link_id"),
+                collection_id: row.get("collection_id"),
+                collection_name: None,
                 reactions: reactions_map.get(&comment_id).cloned().unwrap_or_default(),
                 valsi_word: row.get("valsi_word"),
                 definition: row.get("definition"),

@@ -541,6 +541,10 @@
   },
   "collectionDetail": {
     "pageHint": "Collection",
+    "itemsTab": "Items",
+    "discussionTab": "Discussion",
+    "tabsAriaLabel": "Collection sections",
+    "discussionEmpty": "No one has started a wave on this collection yet.",
     "public": "Public",
     "private": "Private",
     "createdBy": "by",
@@ -1468,6 +1472,7 @@
     "creatingButton": "Creating...",
     "currentStreakWithDays": "Current streak: {count} day | Current streak: {count} days",
     "descriptionLabel": "Description",
+    "discussionButton": "Discussion",
     "flashcardsButton": "Flashcards",
     "itemsCount": "{count} item | {count} items",
     "makePublicLabel": "Make this collection public",
