@@ -72,9 +72,7 @@
                 >
                   <MessageSquarePlus v-if="definition.comment_count === 0" class="h-4 w-4 shrink-0" />
                   <MessageSquareMore v-else class="h-4 w-4 shrink-0" />
-                  <span
-                    class="bg-gray-100 px-2 py-0.5 rounded-full text-xs font-medium"
-                  >
+                  <span class="text-xs font-medium">
                     {{ definition.comment_count }}
                   </span>
                 </RouterLink>
