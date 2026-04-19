@@ -236,7 +236,7 @@
     </div>
 
     <div
-      v-if="graphBuildParams != null"
+      v-if="graphBuildParams != null && !hideSemanticGraphMetrics"
       class="grid grid-cols-2 gap-3 rounded-lg bg-white p-3 shadow-sm sm:grid-cols-3 md:grid-cols-5"
     >
       <div class="flex min-w-0 flex-col">
@@ -258,7 +258,7 @@
           type="number"
           class="input-field h-8 w-full"
           min="1"
-          max="120"
+          :max="semanticGraphMaxNodes"
           step="1"
         />
       </div>
@@ -359,6 +359,16 @@ const props = defineProps({
   languagesInExpandedPanel: {
     type: Boolean,
     default: false,
+  },
+  /** Hide the semantic graph metrics grid (min vote, limit, …) when rendered elsewhere (e.g. below the graph). */
+  hideSemanticGraphMetrics: {
+    type: Boolean,
+    default: false,
+  },
+  /** Upper bound for “max nodes” on the semantic graph page (server `SEMANTIC_GRAPH_MAX_LIMIT`). */
+  semanticGraphMaxNodes: {
+    type: Number,
+    default: 120,
   },
 })
 

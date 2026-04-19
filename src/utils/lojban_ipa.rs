@@ -116,7 +116,7 @@ static IPA_RULES: Lazy<Vec<(Regex, &'static str)>> = Lazy::new(|| {
         ("t", "t"),
         ("h", "h"),
     ];
-    raw.sort_by(|a, b| b.0.len().cmp(&a.0.len()));
+    raw.sort_by_key(|b| std::cmp::Reverse(b.0.len()));
     raw
         .into_iter()
         .filter_map(|(pat, rep)| {

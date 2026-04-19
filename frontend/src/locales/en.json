@@ -120,6 +120,8 @@
     "metaDescription": "Search the Lojban dictionary and corpus. Find definitions, examples, and discussions.",
     "searchMetaDescription": "Search results for \"{query}\" in the Lojban dictionary.",
     "addDefinition": "Definition",
+    "createDefinition": "Create definition",
+    "addAllToCollection": "Add all to collection",
     "newFreeThread": "Start free wave",
     "noCommentsFound": "No comments found matching your search",
     "waveSourceLabel": "Waves",
@@ -699,6 +701,17 @@
     "sourceLangLabel": "Source language (words)",
     "selectSourceLanguage": "Select source language",
     "sourceLangDefault": "Lojban (default)"
+  },
+  "addAllToCollection": {
+    "modalTitle": "Add all definitions to collection",
+    "warningMessage": "All definitions from all pages of the current search results will be copied to the collection you pick.",
+    "createAndSelect": "Create & select",
+    "confirmButton": "Copy all definitions",
+    "collectingIds": "Collecting definitions across all pages…",
+    "collectingProgress": "Collecting definitions across all pages… {current} / {total}",
+    "addingProgress": "Adding {current} of {total}…",
+    "success": "Done. Added {added}, skipped {skipped} already in collection.",
+    "nothingToAdd": "No matching definitions to add."
   },
   "collectionWidget": {
     "itemsCount": "{count} items",

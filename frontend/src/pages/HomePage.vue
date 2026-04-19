@@ -113,12 +113,43 @@
           v-else-if="searchMode === 'dictionary' || searchMode === 'semantic'"
           class="flex flex-col sm:flex-row items-end sm:items-center gap-3 sm:space-x-4 ml-auto"
         >
-           <IconButton
+          <Dropdown
             v-if="auth.state.isLoggedIn && decodedRole !== 'Unconfirmed'"
-            :label="$t('home.addDefinition')"
-            button-classes="ui-btn--create"
-            @click="router.push('/valsi/add')"
-          />
+            class="relative inline-block"
+          >
+            <template #trigger="{ open: menuOpen }">
+              <button
+                type="button"
+                class="ui-btn--create icon-btn-ui-layout"
+                :aria-expanded="menuOpen"
+                :aria-label="$t('home.addDefinition')"
+              >
+                <Plus class="h-4 w-4" />
+                <span>{{ $t('home.addDefinition') }}</span>
+                <ChevronDown
+                  class="h-4 w-4 opacity-70 transition-transform duration-200"
+                  :class="{ 'rotate-180': menuOpen }"
+                  :stroke-width="2"
+                />
+              </button>
+            </template>
+            <button
+              type="button"
+              class="block w-full whitespace-nowrap px-3 py-2 text-left text-sm hover:bg-gray-50"
+              @click="router.push('/valsi/add')"
+            >
+              {{ $t('home.createDefinition') }}
+            </button>
+            <button
+              type="button"
+              class="block w-full whitespace-nowrap px-3 py-2 text-left text-sm hover:bg-gray-50"
+              :disabled="!hasSearchResults"
+              :class="{ 'opacity-50 cursor-not-allowed': !hasSearchResults }"
+              @click="hasSearchResults && (showAddAllModal = true)"
+            >
+              {{ $t('home.addAllToCollection') }}
+            </button>
+          </Dropdown>
         </div>
 
         <div
@@ -356,6 +387,13 @@
     </div>
 
   </div>
+   <!-- Add-all-to-collection modal (triggered from dictionary action menu) -->
+  <AddAllToCollectionWidget
+    v-model="showAddAllModal"
+    :external-collections="collections"
+    :load-all-definition-ids="loadAllDefinitionIdsForCurrentSearch"
+    @collection-updated="collections = $event"
+  />
    <!-- PaginationComponent -->
   <div v-if="!showTrendingHome" class="mt-6">
      <PaginationComponent
@@ -373,7 +411,7 @@
 
 <script setup lang="ts">
 import { jwtDecode } from 'jwt-decode'
-import { MessageSquare, ChevronDown, ChevronUp, AudioWaveform } from 'lucide-vue-next'
+import { MessageSquare, ChevronDown, ChevronUp, AudioWaveform, Plus } from 'lucide-vue-next'
 import { ref, onMounted, watch, computed, onBeforeUnmount, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 
@@ -388,6 +426,7 @@ import {
   getCollections,
   getBulkVotes,
 } from '@/api'
+import AddAllToCollectionWidget from '@/components/AddAllToCollectionWidget.vue'
 import CombinedFilters from '@/components/CombinedFilters.vue'
 import CommentItem from '@/components/CommentItem.vue'
 import SourceTypeBadge from '@/components/SourceTypeBadge.vue'
@@ -563,6 +602,12 @@ const waveItems = ref([])
 const definitions = ref([])
 const decomposition = ref([])
 const total = ref(0)
+const showAddAllModal = ref(false)
+const hasSearchResults = computed(
+  () =>
+    (searchMode.value === 'dictionary' || searchMode.value === 'semantic') &&
+    total.value > 0
+)
 const currentPage = ref(parseInt(queryStr(route.query.page), 10) || 1)
 const totalPages = ref(1)
 const sortOrder = ref('desc')
@@ -798,6 +843,96 @@ const fetchDefinitions = async (page, search = '') => {
       isLoading.value = false
     }
   }
+}
+
+/**
+ * Fetch every definition id matching the current search filters across **all** pages
+ * (not just the page currently rendered), for the "Add all to collection" action.
+ *
+ * We deliberately re-issue the same dictionary search endpoint with `per_page=500`,
+ * incrementing `page` until either the reported `total` is exhausted, the server
+ * returns an empty page, or the safety cap [`ADD_ALL_MAX_DEFINITIONS`] is reached.
+ * The server applies the same access/privacy rules it uses for the normal search.
+ */
+const ADD_ALL_MAX_DEFINITIONS = 5000
+const ADD_ALL_PER_PAGE = 500
+const ADD_ALL_PAGE_CAP = Math.ceil(ADD_ALL_MAX_DEFINITIONS / ADD_ALL_PER_PAGE) + 1
+
+type LoadAllProgress = (current: number, expectedTotal: number) => void
+
+const loadAllDefinitionIdsForCurrentSearch = async (
+  onProgress?: LoadAllProgress
+): Promise<number[]> => {
+  if (searchMode.value !== 'dictionary' && searchMode.value !== 'semantic') {
+    return []
+  }
+
+  const baseParams: Record<string, unknown> = {
+    per_page: ADD_ALL_PER_PAGE,
+    search: (searchQuery.value || '').trim(),
+    include_comments: false,
+    username: filters.value.username || undefined,
+  }
+  if (filters.value.selectedLanguages.length > 0) {
+    baseParams.languages = filters.value.selectedLanguages.join(',')
+  }
+  if (!filters.value.selmaho) {
+    baseParams.word_type = filters.value.word_type || undefined
+  } else {
+    baseParams.selmaho = filters.value.selmaho
+  }
+  if (filters.value.source_langid && filters.value.source_langid !== 1) {
+    baseParams.source_langid = filters.value.source_langid
+  }
+  if (
+    filters.value.searchInPhrases !== undefined &&
+    filters.value.searchInPhrases !== null
+  ) {
+    baseParams.search_in_phrases = filters.value.searchInPhrases
+  }
+
+  const isSemantic = searchMode.value === 'semantic'
+  const collected: number[] = []
+  const seen = new Set<number>()
+  let page = 1
+  let expectedTotal = 0
+  let pagesFetched = 0
+
+  while (collected.length < ADD_ALL_MAX_DEFINITIONS && pagesFetched < ADD_ALL_PAGE_CAP) {
+    const params: Record<string, unknown> = { ...baseParams, page }
+    let response
+    if (auth.state.isLoggedIn || isSemantic) {
+      response = await searchDefinitions({ ...params, semantic: isSemantic })
+    } else {
+      const fastParams = { ...params } as Record<string, unknown>
+      delete fastParams.include_comments
+      response = await fastSearchDefinitions(fastParams)
+    }
+    pagesFetched += 1
+
+    const defs = (response.data?.definitions || []) as Array<{ definitionid: number }>
+    const reportedTotal = Number(response.data?.total ?? 0)
+    if (page === 1) {
+      expectedTotal = Math.min(reportedTotal, ADD_ALL_MAX_DEFINITIONS)
+    }
+
+    for (const d of defs) {
+      if (typeof d.definitionid === 'number' && !seen.has(d.definitionid)) {
+        seen.add(d.definitionid)
+        collected.push(d.definitionid)
+        if (collected.length >= ADD_ALL_MAX_DEFINITIONS) break
+      }
+    }
+
+    onProgress?.(collected.length, expectedTotal)
+
+    // Stop when server reports we're on/past the last page, or when it returned nothing.
+    const lastPage = Math.max(1, Math.ceil(reportedTotal / ADD_ALL_PER_PAGE))
+    if (defs.length === 0 || page >= lastPage) break
+    page += 1
+  }
+
+  return collected
 }
 
 type RecentChangeRow = { time: number; [key: string]: unknown }

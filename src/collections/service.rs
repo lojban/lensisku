@@ -2743,6 +2743,235 @@ pub async fn remove_items_bulk(
     })
 }
 
+/// Bulk-copies existing dictionary definitions into a collection.
+///
+/// Backing the "Add all to collection" action that sweeps every page of a dictionary
+/// search result. Idempotent by `(collection_id, definition_id)`: definitions that
+/// already exist in the collection are counted as `skipped` and not duplicated.
+///
+/// Bounded by [`MAX_BULK_ADD_DEFINITIONS`] to prevent abuse. Definitions that do not
+/// exist in `definitions` are returned in `invalid_definition_ids` but do not fail the
+/// request. The auto_progress flag is set to true (same default as single-add).
+pub async fn add_items_bulk_by_definition_ids(
+    pool: &Pool,
+    redis: &RedisCache,
+    collection_id: i32,
+    user_id: i32,
+    definition_ids: &[i32],
+    notes: Option<&str>,
+) -> AppResult<BulkAddDefinitionsResponse> {
+    const MAX_BULK_ADD_DEFINITIONS: usize = 5000;
+
+    let unique_set: HashSet<i32> = definition_ids
+        .iter()
+        .copied()
+        .filter(|&id| id > 0)
+        .collect();
+    if unique_set.is_empty() {
+        return Err(AppError::BadRequest(
+            "definition_ids must contain at least one positive id".to_string(),
+        ));
+    }
+    if unique_set.len() > MAX_BULK_ADD_DEFINITIONS {
+        return Err(AppError::BadRequest(format!(
+            "At most {} definitions per request",
+            MAX_BULK_ADD_DEFINITIONS
+        )));
+    }
+
+    let mut unique: Vec<i32> = unique_set.into_iter().collect();
+    unique.sort_unstable();
+
+    let sanitized_notes = notes.map(sanitize_html);
+
+    let mut client = pool
+        .get()
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+    let transaction = client
+        .transaction()
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+    verify_collection_ownership(&transaction, collection_id, user_id).await?;
+
+    // Split requested ids into (valid definition ids present in DB) and invalid ones.
+    let existing_def_rows = transaction
+        .query(
+            "SELECT d.definitionid, v.word
+               FROM definitions d
+               JOIN valsi v ON v.valsiid = d.valsiid
+              WHERE d.definitionid = ANY($1)",
+            &[&unique],
+        )
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+    let mut valid_ids: Vec<i32> = Vec::with_capacity(existing_def_rows.len());
+    let mut word_by_def_id: HashMap<i32, String> = HashMap::with_capacity(existing_def_rows.len());
+    for row in &existing_def_rows {
+        let did: i32 = row.get("definitionid");
+        let word: String = row.get("word");
+        word_by_def_id.insert(did, word);
+        valid_ids.push(did);
+    }
+    valid_ids.sort_unstable();
+
+    let valid_set: HashSet<i32> = valid_ids.iter().copied().collect();
+    let invalid_definition_ids: Vec<i32> = unique
+        .iter()
+        .copied()
+        .filter(|id| !valid_set.contains(id))
+        .collect();
+
+    if valid_ids.is_empty() {
+        transaction
+            .rollback()
+            .await
+            .map_err(|e| AppError::Database(e.to_string()))?;
+        return Ok(BulkAddDefinitionsResponse {
+            added: 0,
+            skipped: 0,
+            invalid_definition_ids,
+        });
+    }
+
+    // Existing memberships so we report `skipped` and only insert new rows.
+    let already_rows = transaction
+        .query(
+            "SELECT definition_id
+               FROM collection_items
+              WHERE collection_id = $1
+                AND definition_id = ANY($2)",
+            &[&collection_id, &valid_ids],
+        )
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+    let already_set: HashSet<i32> = already_rows
+        .into_iter()
+        .map(|r| r.get::<_, i32>("definition_id"))
+        .collect();
+
+    let to_insert: Vec<i32> = valid_ids
+        .iter()
+        .copied()
+        .filter(|id| !already_set.contains(id))
+        .collect();
+    let skipped_already_present = already_set.len() as i32;
+
+    if to_insert.is_empty() {
+        transaction
+            .commit()
+            .await
+            .map_err(|e| AppError::Database(e.to_string()))?;
+        return Ok(BulkAddDefinitionsResponse {
+            added: 0,
+            skipped: skipped_already_present,
+            invalid_definition_ids,
+        });
+    }
+
+    let max_position: i32 = transaction
+        .query_one(
+            "SELECT COALESCE(MAX(position), -1) FROM collection_items WHERE collection_id = $1",
+            &[&collection_id],
+        )
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?
+        .try_get(0)
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+    // Release the DB connection during CPU-bound Lojban parsing. Holding a transaction
+    // open while we spin up tersmu for thousands of words would both pin a pool slot
+    // and risk a statement timeout. We'll re-verify ownership in the write transaction.
+    transaction
+        .rollback()
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+    drop(client);
+
+    // Build the input for the tersmu batch (one element per row we're about to insert,
+    // in the same order as `to_insert`).
+    let words_for_canonical: Vec<Option<String>> = to_insert
+        .iter()
+        .map(|id| word_by_def_id.get(id).cloned())
+        .collect();
+
+    let canonical_forms: Vec<Option<String>> = tokio::task::spawn_blocking(move || {
+        crate::utils::tersmu::get_canonical_forms_batch(&words_for_canonical)
+    })
+    .await
+    .map_err(|e| AppError::Internal(format!("canonical-form task failed: {e}")))?;
+
+    // Positions are assigned contiguously after the current max. A concurrent
+    // single-item add could race, but collection_items has UNIQUE(collection_id,
+    // definition_id) so the worst case is a few position duplicates (not crashes).
+    let positions: Vec<i32> = (0..to_insert.len() as i32)
+        .map(|i| max_position + 1 + i)
+        .collect();
+
+    // Write phase: one round-trip, atomic, idempotent via ON CONFLICT. This replaces
+    // the previous 5000-iteration `execute` loop.
+    let mut client = pool
+        .get()
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+    let write_tx = client
+        .transaction()
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+    verify_collection_ownership(&write_tx, collection_id, user_id).await?;
+
+    let inserted_rows = write_tx
+        .execute(
+            "INSERT INTO collection_items (
+                 collection_id, definition_id, notes, position,
+                 auto_progress, canonical_form, is_original
+             )
+             SELECT $1, x.def_id, $2, x.pos, true, x.canonical, true
+               FROM UNNEST($3::int4[], $4::int4[], $5::text[])
+                    AS x(def_id, pos, canonical)
+             ON CONFLICT (collection_id, definition_id) DO NOTHING",
+            &[
+                &collection_id,
+                &sanitized_notes,
+                &to_insert,
+                &positions,
+                &canonical_forms,
+            ],
+        )
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+    write_tx
+        .execute(
+            "UPDATE collections SET updated_at = $1 WHERE collection_id = $2",
+            &[&Utc::now(), &collection_id],
+        )
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+    write_tx
+        .commit()
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+    invalidate_public_collections_cache(redis).await;
+
+    let added = inserted_rows as i32;
+    // Rows we *planned* to insert but `ON CONFLICT` skipped — a concurrent add
+    // beat us to them, so count them as skipped for an accurate response.
+    let raced_skipped = to_insert.len() as i32 - added;
+    let skipped = skipped_already_present + raced_skipped.max(0);
+
+    Ok(BulkAddDefinitionsResponse {
+        added,
+        skipped,
+        invalid_definition_ids,
+    })
+}
+
 pub async fn clone_collection(
     pool: &Pool,
     redis: &RedisCache,
