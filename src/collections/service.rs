@@ -155,6 +155,7 @@ pub async fn create_collection(
         has_flashcards: false,
         has_cover_image: false,
         has_collection_image: false,
+        comment_count: 0,
         owner: CollectionOwner { user_id, username },
     };
 
@@ -440,6 +441,7 @@ async fn query_collections(
             has_flashcards: row.get("has_flashcards"),
             has_cover_image: row.get("has_cover_image"),
             has_collection_image: row.get("has_collection_image"),
+            comment_count: row.get("comment_count"),
             owner: CollectionOwner {
                 user_id: row.get("userid"),
                 username: row
@@ -482,6 +484,7 @@ pub async fn refresh_collection_sort_cache(
                 has_flashcards: row.get("has_flashcards"),
                 has_cover_image: row.get("has_cover_image"),
                 has_collection_image: row.get("has_collection_image"),
+                comment_count: row.get("comment_count"),
                 owner: CollectionOwner {
                     user_id: row.get("userid"),
                     username: row
@@ -575,7 +578,10 @@ fn build_collections_query(where_clause: &str, sort: Option<&str>, user_owned: b
                         INNER JOIN collection_items ci2 ON ci2.item_id = cii.item_id
                         WHERE ci2.collection_id = c.collection_id AND cii.side IN ('front', 'back')
                     )
-                ) AS has_collection_image
+                ) AS has_collection_image,
+                (SELECT COUNT(*) FROM comments cm
+                    JOIN threads t ON cm.threadid = t.threadid
+                    WHERE t.collection_id = c.collection_id) AS comment_count
          FROM collections c
          JOIN users u ON c.user_id = u.userid
          {active_join}
@@ -614,7 +620,10 @@ pub async fn get_collection(
                 INNER JOIN collection_items ci2 ON ci2.item_id = cii.item_id
                 WHERE ci2.collection_id = c.collection_id AND cii.side IN ('front', 'back')
             )
-        ) as has_collection_image
+        ) as has_collection_image,
+        (SELECT COUNT(*) FROM comments cm
+            JOIN threads t ON cm.threadid = t.threadid
+            WHERE t.collection_id = c.collection_id) as comment_count
         FROM collections c
         JOIN users u ON c.user_id = u.userid
              WHERE c.collection_id = $1",
@@ -641,6 +650,7 @@ pub async fn get_collection(
         has_flashcards: collection_row.get("has_flashcards"),
         has_cover_image: collection_row.get("has_cover_image"),
         has_collection_image: collection_row.get("has_collection_image"),
+        comment_count: collection_row.try_get("comment_count").unwrap_or(0),
         owner: CollectionOwner {
             user_id: owner_id,
             username: collection_row
@@ -768,6 +778,7 @@ pub async fn update_collection(
         has_flashcards,
         has_cover_image: image_flags.get("has_cover_image"),
         has_collection_image: image_flags.get("has_collection_image"),
+        comment_count: 0,
         owner: CollectionOwner { user_id, username },
     })
 }
@@ -991,6 +1002,7 @@ pub async fn import_json(
         has_flashcards: false,
         has_cover_image: false,
         has_collection_image: false,
+        comment_count: 0,
         owner: CollectionOwner { user_id, username },
     };
 
@@ -1525,6 +1537,7 @@ pub async fn import_full(
         has_flashcards: false,
         has_cover_image: false,
         has_collection_image: false,
+        comment_count: 0,
         owner: CollectionOwner { user_id, username },
     };
 
@@ -3121,6 +3134,7 @@ pub async fn clone_collection(
         has_flashcards: false,
         has_cover_image: image_flags.get("has_cover_image"),
         has_collection_image: image_flags.get("has_collection_image"),
+        comment_count: 0,
         owner: CollectionOwner { user_id, username },
     })
 }
@@ -3228,6 +3242,7 @@ pub async fn merge_collections(
         has_flashcards: collection_row.get("has_flashcards"),
         has_cover_image: collection_row.get("has_cover_image"),
         has_collection_image: collection_row.get("has_collection_image"),
+        comment_count: collection_row.try_get("comment_count").unwrap_or(0),
         owner: CollectionOwner {
             user_id: collection_row.get("userid"),
             username: collection_row.get("username"),

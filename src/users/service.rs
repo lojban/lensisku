@@ -386,7 +386,7 @@ pub async fn get_user_comments(
             "SELECT
                 c.commentid, c.threadid, c.content::text as content, c.time,
                 c.subject, c.commentnum, c.userid, c.parentid,
-                t.valsiid, t.definitionid, t.definition_link_id,
+                t.valsiid, t.definitionid, t.definition_link_id, t.collection_id,
                 v.word as valsi_word,
                 d.definition,
                 u.username,
@@ -447,6 +447,8 @@ pub async fn get_user_comments(
                 valsi_id: row.get("valsiid"),
                 definition_id: row.get("definitionid"),
                 definition_link_id: row.get("definition_link_id"),
+                collection_id: row.get("collection_id"),
+                collection_name: None,
                 parent_id: row.get("parentid"),
                 user_id: row.get("userid"),
                 comment_num: row.get("commentnum"),

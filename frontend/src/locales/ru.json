@@ -490,6 +490,10 @@
   },
   "collectionDetail": {
     "pageHint": "Коллекция",
+    "itemsTab": "Элементы",
+    "discussionTab": "Обсуждение",
+    "tabsAriaLabel": "Разделы коллекции",
+    "discussionEmpty": "Ещё никто не начал волну обсуждения в этой коллекции.",
     "public": "Публичная",
     "private": "Частная",
     "createdBy": "Создана",
@@ -1392,6 +1396,7 @@
     "currentStreakWithDays": "Текущая серия: {count} дн.",
     "descriptionLabel": "Описание",
     "flashcardsButton": "Карточки",
+    "discussionButton": "Обсуждение",
     "itemsCount": "{count} эл.",
     "makePublicLabel": "Сделать эту коллекцию публичной",
     "myCollections": "Мои курсы и коллекции",

@@ -529,6 +529,10 @@
   },
   "collectionDetail": {
     "pageHint": "合集",
+    "itemsTab": "条目",
+    "discussionTab": "讨论",
+    "tabsAriaLabel": "合集板块",
+    "discussionEmpty": "还没有人在此合集发起讨论波。",
     "public": "公开",
     "private": "私有",
     "createdBy": "创建者",
@@ -1446,6 +1450,7 @@
     "currentStreakWithDays": "连续学习：{count} 天",
     "descriptionLabel": "描述",
     "flashcardsButton": "闪卡",
+    "discussionButton": "讨论",
     "itemsCount": "{count} 条 | {count} 条",
     "makePublicLabel": "公开此合集",
     "myCollections": "我的课程与合集",

@@ -524,6 +524,10 @@
   },
   "collectionDetail": {
     "pageHint": "コレクション",
+    "itemsTab": "項目",
+    "discussionTab": "ディスカッション",
+    "tabsAriaLabel": "コレクションのセクション",
+    "discussionEmpty": "このコレクションにはまだ波が立っていません。",
     "public": "公開",
     "private": "非公開",
     "createdBy": "作成者",
@@ -1441,6 +1445,7 @@
     "currentStreakWithDays": "現在の連続日数：{count}日",
     "descriptionLabel": "説明",
     "flashcardsButton": "フラッシュカード",
+    "discussionButton": "ディスカッション",
     "itemsCount": "{count}件 | {count}件",
     "makePublicLabel": "このコレクションを公開する",
     "myCollections": "マイコース・コレクション",
