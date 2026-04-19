@@ -779,3 +779,39 @@ pub async fn analyze_word_in_pool(
     transaction.commit().await?;
     Ok(response)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Regression: classical lujvo with a cvvr hyphen must decompose into
+    /// individual rafsi (including the bare CVV rafsi `tei`) so that the
+    /// downstream DB selrafsi lookup can resolve `tei -> temci`.
+    /// `get_source_words` in jbovlaste prefers jvokaha, so this is the
+    /// format the rest of the pipeline sees.
+    #[test]
+    fn jvokaha_decomposes_teirmretci_including_tei() {
+        let segments = jvokaha("teirmretci").expect("teirmretci should decompose");
+        assert_eq!(segments, vec!["tei", "r", "mre", "tci"]);
+    }
+
+    #[test]
+    fn jvokaha_decomposes_classical_lujvo() {
+        assert_eq!(
+            jvokaha("bramlatu").expect("bramlatu"),
+            vec!["bra", "mlatu"]
+        );
+        assert_eq!(
+            jvokaha("toirbroda").expect("toirbroda"),
+            vec!["toi", "r", "broda"]
+        );
+        assert_eq!(
+            jvokaha("ca'irgau").expect("ca'irgau"),
+            vec!["ca'i", "r", "gau"]
+        );
+        assert_eq!(
+            jvokaha("klamyseltru").expect("klamyseltru"),
+            vec!["klam", "y", "sel", "tru"]
+        );
+    }
+}

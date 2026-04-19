@@ -1477,26 +1477,35 @@ async fn get_source_words(
     transaction: &tokio_postgres::Transaction<'_>,
     parsers: Option<&Arc<HashMap<i32, Peg>>>,
 ) -> Result<Vec<String>, Box<dyn std::error::Error>> {
-    let mut parts = Vec::new();
+    // Prefer jvokaha: it decomposes classical lujvo (incl. cvvr hyphens like
+    // "teir" -> "tei" + "r") directly into the rafsi list we feed the DB lookup.
+    // Fall back to camxes only for fu'ivla-rafsi lujvo (e.g. "cidjrspageti"),
+    // which jvokaha can't handle.
+    let mut parts = jvokaha(word).unwrap_or_default();
 
-    // Try camxes if we have the parsers and this is a Lojban word (langid 1)
-    if let Some(parsers) = parsers {
-        if let Some(parser) = parsers.get(&1) {
-            let ParseResult(_, _, result) = parser.parse(word);
-            if let Ok(tokens) = result.as_ref() {
-                if let Some(segments) = lujvo_segments_from_nodes(word, tokens) {
-                    parts = segments;
+    if parts.is_empty() {
+        if let Some(parsers) = parsers {
+            if let Some(parser) = parsers.get(&1) {
+                let ParseResult(_, _, result) = parser.parse(word);
+                if let Ok(tokens) = result.as_ref() {
+                    if let Some(segments) = lujvo_segments_from_nodes(word, tokens) {
+                        parts = segments;
+                    }
                 }
             }
         }
     }
 
     if parts.is_empty() {
-        parts = jvokaha(word).unwrap_or_else(|_| {
-            debug!("Failed to decompose word '{}'", word);
-            Vec::new()
-        });
+        debug!("Failed to decompose word '{}'", word);
     }
+
+    // Drop lujvo hyphens ("y", "r", "n", "'y") — they are syntactic glue,
+    // not source words. Without this the cmavo "y" (hesitation) would get
+    // matched as an exact word and surface as a clickable decomposition
+    // entry for lujvo like "klamyseltru".
+    parts.retain(|p| !matches!(p.as_str(), "y" | "r" | "n" | "'y"));
+
     let rafsi_parts: Vec<&str> = parts.iter().map(|s| s.as_str()).collect();
 
     // First try to find exact word matches
