@@ -9,28 +9,52 @@
       </p>
 
       <form class="flex flex-col gap-2 sm:flex-row sm:items-center" @submit.prevent="onSearchEnter">
-        <div class="min-w-0 flex-1">
+        <div class="sg-search-group flex min-w-0 flex-1 items-center gap-2">
           <input
             id="semantic-graph-search"
             v-model="searchQuery"
             type="search"
-            class="input-field w-full min-w-0 max-w-full"
+            class="input-field sg-search-input w-full min-w-0 max-w-full"
             :placeholder="t('semanticGraph.anchorPlaceholder')"
             :aria-label="t('semanticGraph.anchorPlaceholder')"
             autocomplete="off"
           />
+          <Button
+            type="button"
+            variant="ui-btn--empty"
+            :disabled="isResetDisabled"
+            :title="t('semanticGraph.reset')"
+            @click="onResetClick"
+          >
+            <template #icon>
+              <RotateCcw :size="14" aria-hidden="true" />
+            </template>
+            {{ t('semanticGraph.reset') }}
+          </Button>
         </div>
-        <div class="toolbar-inline-actions">
-          <Button type="button" variant="palette-emerald" @click="onBuildGraphClick">
-            {{ t('semanticGraph.build') }}
-          </Button>
-          <Button type="button" variant="palette-sky" @click="onOverviewClick">
-            {{ t('semanticGraph.overview') }}
-          </Button>
-          <Button type="button" variant="palette-slate" :disabled="!cyReady" @click="exportGraphFile">
+        <div class="btn-group flex items-stretch" role="group"
+          :aria-label="t('semanticGraph.ioGroupLabel')">
+          <Button
+            type="button"
+            variant="read"
+            :disabled="!cyReady"
+            :title="t('semanticGraph.export')"
+            @click="exportGraphFile"
+          >
+            <template #icon>
+              <Upload :size="14" aria-hidden="true" />
+            </template>
             {{ t('semanticGraph.export') }}
           </Button>
-          <Button type="button" variant="palette-teal" @click="triggerImport">
+          <Button
+            type="button"
+            variant="insert"
+y            :title="t('semanticGraph.import')"
+            @click="triggerImport"
+          >
+            <template #icon>
+              <Download :size="14" aria-hidden="true" />
+            </template>
             {{ t('semanticGraph.import') }}
           </Button>
           <input ref="importInputRef" type="file" accept="application/json,.json" class="sr-only"
@@ -144,7 +168,8 @@
 
 <script setup lang="ts">
 import { Button } from '@packages/ui'
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { Download, RotateCcw, Upload } from 'lucide-vue-next'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import type { Core, ElementDefinition, LayoutOptions } from 'cytoscape'
@@ -217,12 +242,25 @@ const graphLoading = ref(false)
 const graphError = ref<string | null>(null)
 
 const graphMode = ref<'preview' | 'anchor'>('preview')
-/** Last full anchor API payload (used for viewport LOD when pool > visible cap). */
-const lastAnchorPayload = ref<SemanticGraphApiPayload | null>(null)
 const anchorNodeId = ref<string | null>(null)
 
-let viewportLodTimer: ReturnType<typeof setTimeout> | null = null
+/** Reference zoom captured right after each anchor-mode layout/fit; used to detect zoom-in/out. */
+let anchorBaselineZoom = 1
+/** Last `min_similarity` actually sent to the server for anchor mode. */
+let anchorActiveMinSim: number | null = null
+/** In-flight anchor request id (drop stale responses). */
+let anchorFetchSeq = 0
+let anchorRenderInProgress = false
+/** Blocks zoom-triggered refetches while we programmatically run layout/fit. */
+let suppressZoomRefetch = false
+let zoomRefetchTimer: ReturnType<typeof setTimeout> | null = null
 let cyZoomPanHandler: (() => void) | null = null
+
+/** Zoom-level → `min_similarity` delta. Zoom in → tighter (higher similarity); zoom out → looser. */
+const ZOOM_MIN_SIM_K = 0.22
+/** Refetch once zoom ratio crosses ~10% (|log2| >= 0.14). Keeps wheel-tick refetches meaningful. */
+const ZOOM_RATIO_LOG_GATE = 0.14
+const ZOOM_REFETCH_DEBOUNCE_MS = 260
 
 type PreviewDefinition = {
   valsiword?: string
@@ -253,21 +291,20 @@ const previewEntryHref = computed(() => {
   }).href
 })
 
-/** Larger fetch for anchor mode so zoom/pan can keep ~`graphLimit` nodes in view from a pool. */
-function anchorFetchPoolLimit(): number {
-  const visible = Math.max(1, Math.min(GRAPH_METRICS_MAX, graphBuildParams.value.graphLimit))
-  return Math.min(GRAPH_METRICS_MAX, Math.max(120, visible * 2))
-}
-
-function buildGraphParams(opts?: { preview?: boolean }): Record<string, unknown> {
+function buildGraphParams(opts?: {
+  preview?: boolean
+  minSimilarityOverride?: number
+}): Record<string, unknown> {
   const f = combinedFiltersModel.value
   const preview = opts?.preview === true
   const g = graphBuildParams.value
+  const effectiveMinSim =
+    opts?.minSimilarityOverride != null ? opts.minSimilarityOverride : g.minPairwiseSim
   const params: Record<string, unknown> = {
     min_vote: g.minVote,
-    limit: preview ? g.graphLimit : anchorFetchPoolLimit(),
+    limit: Math.max(1, Math.min(GRAPH_METRICS_MAX, g.graphLimit)),
     k_neighbors: g.kNeighbors,
-    min_similarity: g.minPairwiseSim,
+    min_similarity: effectiveMinSim,
   }
   if (preview) {
     params.preview = true
@@ -292,154 +329,111 @@ function buildGraphParams(opts?: { preview?: boolean }): Record<string, unknown>
   return params
 }
 
-function detachCyZoomPanHandlers() {
+function detachCyZoomHandlers() {
   if (cy && cyZoomPanHandler) {
     cy.off('zoom.sgvp', cyZoomPanHandler)
-    cy.off('pan.sgvp', cyZoomPanHandler)
     cyZoomPanHandler = null
   }
 }
 
-function clearViewportLod() {
-  if (viewportLodTimer != null) {
-    clearTimeout(viewportLodTimer)
-    viewportLodTimer = null
+function clearZoomRefetch() {
+  if (zoomRefetchTimer != null) {
+    clearTimeout(zoomRefetchTimer)
+    zoomRefetchTimer = null
   }
-  detachCyZoomPanHandlers()
-  lastAnchorPayload.value = null
+  detachCyZoomHandlers()
   anchorNodeId.value = null
+  anchorActiveMinSim = null
+  anchorBaselineZoom = 1
 }
 
+/** Pick the anchor node. Exact case-insensitive `word` match wins; otherwise trust the backend's
+ *  ordering (first node = best match — the server surfaces the searched valsi first by design). */
 function pickAnchorNodeId(
   nodes: SemanticGraphApiPayload['nodes'],
   searchTrim: string,
 ): string | null {
-  const q = searchTrim.toLowerCase()
-  for (const n of nodes) {
-    const w = (n.word || '').trim().toLowerCase()
-    if (w && w === q) return n.id
-  }
-  let bestId: string | null = null
-  let bestQs = -1
-  for (const n of nodes) {
-    const qs = n.query_similarity
-    if (qs != null && qs > bestQs) {
-      bestQs = qs
-      bestId = n.id
+  if (nodes.length === 0) return null
+  const q = searchTrim.trim().toLowerCase()
+  if (q) {
+    for (const n of nodes) {
+      const w = (n.word || '').trim().toLowerCase()
+      if (w && w === q) return n.id
+    }
+    for (const n of nodes) {
+      const w = (n.word || '').trim().toLowerCase()
+      if (w && (w.startsWith(`${q} `) || w.startsWith(`${q}-`))) return n.id
     }
   }
-  return bestId
+  return nodes[0].id
 }
 
 function applyZoomStabilizedNodeSizes(core: Core) {
   if (graphMode.value !== 'anchor') return
   const z = Math.max(0.12, Math.min(core.zoom(), 6))
   const inv = 1 / z
-  const base = 26 * inv
-  const anchorBase = 54 * inv
+  const base = 28 * inv
+  const anchorBase = 78 * inv
   const fs = 10 * inv
-  const afs = 12 * inv
+  const afs = 14 * inv
+  const anchorBorder = 5 * inv
   core
     .style()
-    .selector('node:not(.sg-lod-hidden)')
-    .style({
-      width: base,
-      height: base,
-      'font-size': fs,
-    })
-    .selector('node[isAnchor = "yes"]:not(.sg-lod-hidden)')
+    .selector('node')
+    .style({ width: base, height: base, 'font-size': fs })
+    .selector('node[isAnchor = "yes"]')
     .style({
       width: anchorBase,
       height: anchorBase,
       'font-size': afs,
+      'font-weight': 700,
+      'border-width': anchorBorder,
     })
-    .selector('node.sg-lod-hidden')
-    .style({ display: 'none' })
-    .selector('edge.sg-lod-hidden')
-    .style({ display: 'none' })
     .update()
 }
 
-function applyAnchorViewportLod() {
-  if (!cy || graphMode.value !== 'anchor') return
-  const cap = Math.max(1, Math.min(GRAPH_METRICS_MAX, graphBuildParams.value.graphLimit))
-  const pool = lastAnchorPayload.value?.nodes.length ?? 0
-  if (pool <= cap) {
-    cy.batch(() => {
-      cy!.nodes().removeClass('sg-lod-hidden')
-      cy!.edges().removeClass('sg-lod-hidden')
-    })
-    applyZoomStabilizedNodeSizes(cy)
-    return
-  }
-
-  const pan = cy.pan()
-  const zm = cy.zoom()
-  const w = cy.width()
-  const h = cy.height()
-  const x1 = -pan.x / zm
-  const y1 = -pan.y / zm
-  const x2 = (-pan.x + w) / zm
-  const y2 = (-pan.y + h) / zm
-  const cx = (x1 + x2) / 2
-  const cyM = (y1 + y2) / 2
-  const span = Math.max(x2 - x1, y2 - y1, 1)
-  const margin = span * 0.1
-
-  const inView = (x: number, y: number) =>
-    x >= x1 - margin && x <= x2 + margin && y >= y1 - margin && y <= y2 + margin
-
-  type Scored = { id: string; d: number }
-  const scored: Scored[] = []
-  cy.nodes().forEach((ele) => {
-    const p = ele.position()
-    if (!inView(p.x, p.y)) return
-    const d = (p.x - cx) ** 2 + (p.y - cyM) ** 2
-    scored.push({ id: ele.id(), d })
-  })
-  scored.sort((a, b) => a.d - b.d)
-
-  const visible = new Set<string>()
-  const anchor = anchorNodeId.value
-  if (anchor) visible.add(anchor)
-  for (const s of scored) {
-    if (visible.size >= cap) break
-    visible.add(s.id)
-  }
-  if (visible.size < cap) {
-    const all: Scored[] = []
-    cy.nodes().forEach((ele) => {
-      const p = ele.position()
-      const d = (p.x - cx) ** 2 + (p.y - cyM) ** 2
-      all.push({ id: ele.id(), d })
-    })
-    all.sort((a, b) => a.d - b.d)
-    for (const s of all) {
-      if (visible.size >= cap) break
-      visible.add(s.id)
-    }
-  }
-
-  cy.batch(() => {
-    cy!.nodes().forEach((n) => {
-      if (visible.has(n.id())) n.removeClass('sg-lod-hidden')
-      else n.addClass('sg-lod-hidden')
-    })
-    cy!.edges().forEach((e) => {
-      if (visible.has(e.source().id()) && visible.has(e.target().id())) e.removeClass('sg-lod-hidden')
-      else e.addClass('sg-lod-hidden')
-    })
-  })
-  applyZoomStabilizedNodeSizes(cy)
+/** Map current zoom ratio (vs. baseline) to an effective `min_similarity`. */
+function minSimForZoom(base: number, ratio: number): number {
+  if (!isFinite(ratio) || ratio <= 0) return base
+  const delta = ZOOM_MIN_SIM_K * Math.log2(ratio)
+  const effective = base + delta
+  return Math.max(0, Math.min(0.99, effective))
 }
 
-function scheduleAnchorViewportLod() {
-  if (graphMode.value !== 'anchor' || !cy) return
-  if (viewportLodTimer != null) clearTimeout(viewportLodTimer)
-  viewportLodTimer = setTimeout(() => {
-    viewportLodTimer = null
-    applyAnchorViewportLod()
-  }, 140)
+async function refetchAnchorForZoom() {
+  if (!cy || graphMode.value !== 'anchor' || anchorRenderInProgress || suppressZoomRefetch) return
+  const q = normalizeSearchQuery(searchQuery.value).trim()
+  if (!q) return
+  const ratio = cy.zoom() / (anchorBaselineZoom || 1)
+  if (!isFinite(ratio) || ratio <= 0) return
+  if (Math.abs(Math.log2(ratio)) < ZOOM_RATIO_LOG_GATE) return
+
+  const nextSim = minSimForZoom(graphBuildParams.value.minPairwiseSim, ratio)
+  const seq = ++anchorFetchSeq
+  anchorRenderInProgress = true
+  anchorActiveMinSim = nextSim
+  graphLoading.value = true
+  try {
+    const res = await fetchSemanticGraph(
+      buildGraphParams({ preview: false, minSimilarityOverride: nextSim }),
+    )
+    if (seq !== anchorFetchSeq || !cy) return
+    await renderGraph(res.data, 'anchor', q)
+  } catch {
+    /* silently ignore — keep previous rendering on zoom-triggered failures */
+  } finally {
+    if (seq === anchorFetchSeq) graphLoading.value = false
+    anchorRenderInProgress = false
+  }
+}
+
+function scheduleAnchorZoomRefetch() {
+  if (graphMode.value !== 'anchor' || !cy || suppressZoomRefetch) return
+  if (zoomRefetchTimer != null) clearTimeout(zoomRefetchTimer)
+  zoomRefetchTimer = setTimeout(() => {
+    zoomRefetchTimer = null
+    void refetchAnchorForZoom()
+  }, ZOOM_REFETCH_DEBOUNCE_MS)
 }
 
 async function loadPreviewGraph() {
@@ -450,8 +444,9 @@ async function loadPreviewGraph() {
   graphError.value = null
   graphLoading.value = true
   try {
-    clearViewportLod()
+    clearZoomRefetch()
     graphMode.value = 'preview'
+    anchorFetchSeq++
     const res = await fetchSemanticGraph(buildGraphParams({ preview: true }))
     await renderGraph(res.data, 'preview')
   } catch (e: unknown) {
@@ -479,10 +474,15 @@ async function buildGraph() {
   graphError.value = null
   graphLoading.value = true
   try {
-    clearViewportLod()
+    clearZoomRefetch()
     graphMode.value = 'anchor'
-    const res = await fetchSemanticGraph(buildGraphParams({ preview: false }))
-    lastAnchorPayload.value = res.data
+    anchorActiveMinSim = graphBuildParams.value.minPairwiseSim
+    const seq = ++anchorFetchSeq
+    anchorRenderInProgress = true
+    const res = await fetchSemanticGraph(
+      buildGraphParams({ preview: false, minSimilarityOverride: anchorActiveMinSim }),
+    )
+    if (seq !== anchorFetchSeq) return
     await renderGraph(res.data, 'anchor', q)
   } catch (e: unknown) {
     const err = e as { response?: { data?: { error?: string }; status?: number } }
@@ -493,6 +493,7 @@ async function buildGraph() {
     graphError.value = typeof msg === 'string' ? msg : t('semanticGraph.errorLoad')
   } finally {
     graphLoading.value = false
+    anchorRenderInProgress = false
   }
 }
 
@@ -558,16 +559,17 @@ function onSearchEnter() {
   syncSearchQueryToRoute()
 }
 
-function onOverviewClick() {
+async function onResetClick() {
+  searchQuery.value = ''
+  await nextTick()
   cancelSearchDebounce()
-  void loadPreviewGraph()
+  syncSearchQueryToRoute()
+  await loadPreviewGraph()
 }
 
-function onBuildGraphClick() {
-  cancelSearchDebounce()
-  void buildGraph()
-  syncSearchQueryToRoute()
-}
+const isResetDisabled = computed(
+  () => graphMode.value === 'preview' && !searchQuery.value.trim(),
+)
 
 /** FNV-1a 32-bit — stable, fast hash for palette picking from valsi text. */
 function hashString32(s: string): number {
@@ -684,7 +686,7 @@ async function renderGraph(
   anchorSearchTrim = '',
 ) {
   if (!cy || !cyContainerRef.value) return
-  detachCyZoomPanHandlers()
+  detachCyZoomHandlers()
   cy.elements().remove()
   const anchorId = mode === 'anchor' ? pickAnchorNodeId(apiData.nodes, anchorSearchTrim) : null
   anchorNodeId.value = anchorId
@@ -695,24 +697,39 @@ async function renderGraph(
   cy.add(els)
   ensureNodePaletteColors(cy)
 
-  if (mode === 'anchor' && anchorId) {
-    try {
-      cy.layout({
-        name: 'concentric',
-        fit: true,
-        padding: 28,
-        startAngle: -Math.PI / 2,
-        clockwise: true,
-        minNodeSpacing: 52,
-        avoidOverlap: true,
-        equidistant: false,
-        spacingFactor: 1.45,
+  suppressZoomRefetch = true
+  try {
+    if (mode === 'anchor' && anchorId) {
+      // Similarity-weighted spring layout with the anchor pinned at the origin.
+      // More-similar neighbors pull tighter, repulsion keeps labels from stacking.
+      const layoutOpts = {
+        name: 'fcose',
+        quality: 'proof',
+        randomize: true,
         animate: true,
-        animationDuration: 420,
-        concentric: (node) => (node.data('isAnchor') === 'yes' ? 1000 : Math.max(1, node.degree(false))),
-        levelWidth: () => 1,
-      } as LayoutOptions).run()
-    } catch {
+        animationDuration: 500,
+        fit: true,
+        padding: 32,
+        nodeRepulsion: () => 18000,
+        idealEdgeLength: (edge: { data: (k: string) => unknown }) => {
+          const s = Number(edge.data('similarity')) || 0
+          // similarity in [0..1]: closer neighbors get shorter springs (~70),
+          // weakest similarity pushes to ~320. Anchor-touching edges get a small extra pull.
+          const isAnchorEdge = edge.data('isAnchorEdge') === 'yes'
+          const base = 70 + 250 * (1 - Math.max(0, Math.min(1, s)))
+          return isAnchorEdge ? base * 0.78 : base
+        },
+        edgeElasticity: 0.2,
+        gravity: 0.25,
+        gravityRangeCompound: 1.5,
+        nodeSeparation: 90,
+        nestingFactor: 0.9,
+        numIter: 3500,
+        tile: false,
+        fixedNodeConstraint: [{ nodeId: anchorId, position: { x: 0, y: 0 } }],
+      } as unknown as LayoutOptions
+      cy.layout(layoutOpts).run()
+    } else {
       cy.layout({
         name: 'fcose',
         quality: 'default',
@@ -723,46 +740,31 @@ async function renderGraph(
         padding: 16,
       } as LayoutOptions).run()
     }
-  } else {
-    cy.layout({
-      name: 'fcose',
-      quality: 'default',
-      randomize: true,
-      animate: true,
-      animationDuration: 400,
-      fit: true,
-      padding: 16,
-    } as LayoutOptions).run()
-  }
-  cy.fit(undefined, 24)
+    cy.fit(undefined, 32)
 
-  if (mode === 'anchor') {
-    cyZoomPanHandler = () => {
-      applyZoomStabilizedNodeSizes(cy!)
-      scheduleAnchorViewportLod()
+    if (mode === 'anchor') {
+      anchorBaselineZoom = cy.zoom() || 1
+      applyZoomStabilizedNodeSizes(cy)
+      cyZoomPanHandler = () => {
+        if (!cy) return
+        applyZoomStabilizedNodeSizes(cy)
+        scheduleAnchorZoomRefetch()
+      }
+      cy.on('zoom.sgvp', cyZoomPanHandler)
+    } else {
+      cy.style()
+        .selector('node')
+        .style({ width: 26, height: 26, 'font-size': 10 })
+        .selector('node[isAnchor = "yes"]')
+        .style({ width: 26, height: 26, 'font-size': 10 })
+        .update()
     }
-    cy.on('zoom.sgvp', cyZoomPanHandler)
-    cy.on('pan.sgvp', cyZoomPanHandler)
-    applyAnchorViewportLod()
-  } else {
-    cy.style()
-      .selector('node')
-      .style({
-        width: 26,
-        height: 26,
-        'font-size': 10,
-      })
-      .selector('node[isAnchor = "yes"]')
-      .style({
-        width: 26,
-        height: 26,
-        'font-size': 10,
-      })
-      .selector('node.sg-lod-hidden')
-      .style({ display: 'element' })
-      .selector('edge.sg-lod-hidden')
-      .style({ display: 'element' })
-      .update()
+  } finally {
+    // Give the animated layout/fit time to settle before accepting zoom-driven refetches.
+    setTimeout(() => {
+      suppressZoomRefetch = false
+      if (cy && mode === 'anchor') anchorBaselineZoom = cy.zoom() || 1
+    }, 650)
   }
 }
 
@@ -829,18 +831,6 @@ async function initCy() {
           'border-color': '#15803d',
         },
       },
-      {
-        selector: 'node.sg-lod-hidden',
-        style: {
-          display: 'none',
-        },
-      },
-      {
-        selector: 'edge.sg-lod-hidden',
-        style: {
-          display: 'none',
-        },
-      },
     ],
     elements: [],
   })
@@ -902,7 +892,7 @@ function onImportFile(ev: Event) {
         pan?: { x: number; y: number }
       }
       if (!parsed.elements?.length) return
-      clearViewportLod()
+      clearZoomRefetch()
       graphMode.value = 'preview'
       cy!.elements().remove()
       cy!.add(parsed.elements as ElementDefinition[])
@@ -937,7 +927,7 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   cancelSearchDebounce()
-  clearViewportLod()
+  clearZoomRefetch()
   if (cy) {
     cy.destroy()
     cy = null
@@ -959,5 +949,33 @@ onBeforeUnmount(() => {
 
 .semantic-graph-root {
   position: relative;
+}
+
+.sg-search-input::-webkit-search-cancel-button,
+.sg-search-input::-webkit-search-decoration {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+/** Join Export/Import as a forced segmented pair while preserving each button's semantic palette
+ *  (brandbook §6.3: distinct roles `read` vs `insert`; stock `.btn-group-forced` rule only targets
+ *  `.ui-btn--group-item`, so geometry is applied locally to non-group-item segments). */
+.sg-io-group .sg-io-segment {
+  position: relative;
+  border-radius: 0;
+  margin-left: -1px;
+}
+.sg-io-group .sg-io-segment:first-child {
+  margin-left: 0;
+  border-top-left-radius: 9999px;
+  border-bottom-left-radius: 9999px;
+}
+.sg-io-group .sg-io-segment:last-of-type {
+  border-top-right-radius: 9999px;
+  border-bottom-right-radius: 9999px;
+}
+.sg-io-group .sg-io-segment:hover,
+.sg-io-group .sg-io-segment:focus-visible {
+  z-index: 1;
 }
 </style>
