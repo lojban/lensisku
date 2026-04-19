@@ -512,7 +512,9 @@ pub async fn semantic_graph(
         ranked_results AS (
             SELECT DISTINCT ON (definitionid) *
             FROM vector_search
-            WHERE score >= ${min_vote_param}
+            -- Always let the anchor (exact-match) surface so the searched valsi is
+            -- in the result set even when its definitions don't clear the vote gate.
+            WHERE score >= ${min_vote_param} OR exact_match_rank = 0
             ORDER BY definitionid, exact_match_rank ASC, similarity ASC
         )
         SELECT
