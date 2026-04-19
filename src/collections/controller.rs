@@ -985,6 +985,61 @@ pub async fn bulk_remove_items(
 }
 
 #[utoipa::path(
+    post,
+    path = "/collections/{id}/items/bulk-add",
+    tag = "collections",
+    params(
+        ("id" = i32, Path, description = "Collection ID")
+    ),
+    request_body = BulkAddDefinitionsRequest,
+    responses(
+        (status = 200, description = "Inserted / skipped / invalid counts", body = BulkAddDefinitionsResponse),
+        (status = 400, description = "Validation failed"),
+        (status = 403, description = "Access denied"),
+        (status = 500, description = "Internal server error")
+    ),
+    security(("bearer_auth" = [])),
+    summary = "Bulk add dictionary definitions to a collection",
+    description = "Owner only. Copies a batch of existing dictionary definitions into the collection in a single transaction. Idempotent: definitions already present are reported as skipped and not duplicated. At most 5000 definition ids per request."
+)]
+#[post("/{id}/items/bulk-add")]
+pub async fn bulk_add_items(
+    pool: web::Data<Pool>,
+    redis_cache: web::Data<RedisCache>,
+    claims: Claims,
+    id: web::Path<i32>,
+    req: web::Json<BulkAddDefinitionsRequest>,
+) -> impl Responder {
+    match service::add_items_bulk_by_definition_ids(
+        &pool,
+        &redis_cache,
+        id.into_inner(),
+        claims.sub,
+        &req.definition_ids,
+        req.notes.as_deref(),
+    )
+    .await
+    {
+        Ok(response) => HttpResponse::Ok().json(response),
+        Err(e) => {
+            let msg = e.to_string();
+            if msg.contains("Access Denied") || msg.contains("does not belong") {
+                return HttpResponse::Forbidden().json(json!({ "error": msg }));
+            }
+            if msg.contains("Bad request")
+                || msg.contains("At most")
+                || msg.contains("definition_ids")
+            {
+                return HttpResponse::BadRequest().json(json!({ "error": msg }));
+            }
+            HttpResponse::InternalServerError().json(json!({
+                "error": format!("Failed to bulk add definitions: {}", e)
+            }))
+        }
+    }
+}
+
+#[utoipa::path(
     put,
     path = "/collections/{id}/items/custom-text-bulk",
     tag = "collections",

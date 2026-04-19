@@ -150,3 +150,36 @@ pub fn get_canonical_form(text: &str) -> Option<String> {
     }
     None
 }
+
+/// Parse a whole batch of Lojban strings with a **single** WASM parser instance.
+///
+/// Instantiating the parser is expensive (new Wasmtime `Store`, Haskell RTS init,
+/// tersmu init). Reusing one instance for N words turns what would be N × RTS-boot
+/// into 1 × RTS-boot + N × parses, which is the difference between "hits the HTTP
+/// timeout" and "tens of milliseconds per word" for bulk operations.
+///
+/// Blocking. Call from `tokio::task::spawn_blocking`.
+pub fn get_canonical_forms_batch(texts: &[Option<String>]) -> Vec<Option<String>> {
+    if texts.is_empty() {
+        return Vec::new();
+    }
+    let mut parser = match TersmuParser::new() {
+        Ok(p) => p,
+        Err(_) => return vec![None; texts.len()],
+    };
+
+    texts
+        .iter()
+        .map(|opt| {
+            let text = opt.as_deref()?.trim();
+            if text.is_empty() {
+                return None;
+            }
+            let json_str = parser.parse(text).ok()?;
+            let val: serde_json::Value = serde_json::from_str(&json_str).ok()?;
+            val.get("canonical")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string())
+        })
+        .collect()
+}

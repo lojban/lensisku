@@ -309,6 +309,21 @@ export const bulkRemoveCollectionItems = (
   itemIds: number[]
 ) => api.post(`/collections/${collectionId}/items/bulk-remove`, { item_ids: itemIds })
 
+/**
+ * Add a batch of existing dictionary definitions to a collection.
+ * Idempotent server-side (already-present definitions come back as `skipped`).
+ * Hard-capped at 5000 `definition_ids` per call.
+ */
+export const bulkAddDefinitionsToCollection = (
+  collectionId: number | string,
+  definitionIds: number[],
+  notes?: string
+) =>
+  api.post(`/collections/${collectionId}/items/bulk-add`, {
+    definition_ids: definitionIds,
+    notes: notes || undefined,
+  })
+
 export const listCollectionItems = (
   collectionId: number | string,
   params?: Record<string, unknown>,

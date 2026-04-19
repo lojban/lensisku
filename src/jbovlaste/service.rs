@@ -312,7 +312,7 @@ pub async fn semantic_search(
 }
 
 /// Max definitions in one semantic graph response ([`SemanticGraphParams::limit`] is clamped to this).
-pub const SEMANTIC_GRAPH_MAX_LIMIT: i64 = 120;
+pub const SEMANTIC_GRAPH_MAX_LIMIT: i64 = 200;
 
 /// English definition rows (`languages.tag` typically `en`) used as anchor embeddings when graph `semantic=false`.
 pub const SEMANTIC_GRAPH_ANCHOR_ENGLISH_LANGID: i32 = 2;

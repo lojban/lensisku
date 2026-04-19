@@ -363,6 +363,27 @@ pub struct BulkRemoveItemsResponse {
     pub deleted: i32,
 }
 
+/// Adds many existing dictionary definitions to a collection in one transaction.
+/// Used by the "Add all to collection" action on search-result pages.
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct BulkAddDefinitionsRequest {
+    /// Definition IDs to copy into the collection.
+    pub definition_ids: Vec<i32>,
+    /// Optional note applied to every inserted row (HTML sanitized server-side).
+    #[serde(default)]
+    pub notes: Option<String>,
+}
+
+#[derive(Debug, Serialize, ToSchema)]
+pub struct BulkAddDefinitionsResponse {
+    /// Number of new `collection_items` rows inserted.
+    pub added: i32,
+    /// Definitions that were already in the collection (idempotent; not re-inserted).
+    pub skipped: i32,
+    /// Definition IDs rejected because they do not exist in the database.
+    pub invalid_definition_ids: Vec<i32>,
+}
+
 /// One row in `manifest.json` for `POST /collections/{id}/items/media-bulk` (multipart) or `.../media-bulk-zip`.
 #[derive(Debug, Clone, Deserialize, Serialize, ToSchema)]
 pub struct MediaBulkManifestEntry {

@@ -1786,7 +1786,7 @@ async fn run_agent_loop_inner(
                         let embeddings = get_batch_embeddings(trimmed.clone()).await?;
 
                         let outcomes = join_all(
-                            trimmed.iter().zip(embeddings.into_iter()).map(|(q, emb)| {
+                            trimmed.iter().zip(embeddings).map(|(q, emb)| {
                                 let pool = pool_clone.clone();
                                 let filters = filters.clone();
                                 let sem = sem.clone();

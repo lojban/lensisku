@@ -1,5 +1,5 @@
 <template>
-  <div class="semantic-graph-root flex w-full min-w-0 flex-col gap-3 px-2 pb-3 pt-2 md:px-4">
+  <div class="semantic-graph-root flex min-h-0 min-w-0 w-full flex-1 flex-col gap-3 px-2 pb-3 pt-2 md:px-4">
     <div class="shrink-0 space-y-3">
       <h1 class="text-lg font-semibold text-gray-900 md:text-xl">
         {{ t('semanticGraph.title') }}
@@ -8,7 +8,7 @@
         {{ t('semanticGraph.description') }}
       </p>
 
-      <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
+      <form class="flex flex-col gap-2 sm:flex-row sm:items-center" @submit.prevent="onSearchEnter">
         <div class="min-w-0 flex-1">
           <input
             id="semantic-graph-search"
@@ -18,15 +18,14 @@
             :placeholder="t('semanticGraph.anchorPlaceholder')"
             :aria-label="t('semanticGraph.anchorPlaceholder')"
             autocomplete="off"
-            @keydown.enter.prevent="onSearchEnter"
           />
         </div>
         <div class="toolbar-inline-actions">
-          <Button type="button" variant="palette-sky" @click="onOverviewClick">
-            {{ t('semanticGraph.overview') }}
-          </Button>
           <Button type="button" variant="palette-emerald" @click="onBuildGraphClick">
             {{ t('semanticGraph.build') }}
+          </Button>
+          <Button type="button" variant="palette-sky" @click="onOverviewClick">
+            {{ t('semanticGraph.overview') }}
           </Button>
           <Button type="button" variant="palette-slate" :disabled="!cyReady" @click="exportGraphFile">
             {{ t('semanticGraph.export') }}
@@ -37,13 +36,15 @@
           <input ref="importInputRef" type="file" accept="application/json,.json" class="sr-only"
             @change="onImportFile" />
         </div>
-      </div>
+      </form>
 
       <CombinedFilters
         v-model="combinedFiltersModel"
         v-model:graph-build-params="graphBuildParams"
         :languages="languages"
         languages-in-expanded-panel
+        hide-semantic-graph-metrics
+        :semantic-graph-max-nodes="GRAPH_METRICS_MAX"
         class="w-full"
       />
 
@@ -58,6 +59,59 @@
       class="cy-shell min-h-[min(60dvh,22rem)] w-full shrink-0 rounded-lg border border-gray-200 bg-gradient-to-br from-slate-50 via-white to-slate-100/90 sm:min-h-[min(50vh,28rem)] md:min-h-[min(55vh,34rem)]"
       aria-label="Semantic similarity graph"
     />
+
+    <div
+      v-if="graphBuildParams"
+      class="shrink-0 grid grid-cols-2 gap-3 rounded-lg bg-white p-3 shadow-sm sm:grid-cols-3 md:grid-cols-5"
+    >
+      <div class="flex min-w-0 flex-col">
+        <label class="filters-field-label" for="cf-sg-min-vote">{{ t('semanticGraph.minVote') }}</label>
+        <input
+          id="cf-sg-min-vote"
+          v-model.number="graphBuildParams.minVote"
+          type="number"
+          class="input-field h-8 w-full"
+          min="-999"
+          step="1"
+        />
+      </div>
+      <div class="flex min-w-0 flex-col">
+        <label class="filters-field-label" for="cf-sg-limit">{{ t('semanticGraph.nodeLimit') }}</label>
+        <input
+          id="cf-sg-limit"
+          v-model.number="graphBuildParams.graphLimit"
+          type="number"
+          class="input-field h-8 w-full"
+          min="1"
+          :max="GRAPH_METRICS_MAX"
+          step="1"
+        />
+      </div>
+      <div class="flex min-w-0 flex-col">
+        <label class="filters-field-label" for="cf-sg-k">{{ t('semanticGraph.kNeighbors') }}</label>
+        <input
+          id="cf-sg-k"
+          v-model.number="graphBuildParams.kNeighbors"
+          type="number"
+          class="input-field h-8 w-full"
+          min="1"
+          max="30"
+          step="1"
+        />
+      </div>
+      <div class="flex min-w-0 flex-col">
+        <label class="filters-field-label" for="cf-sg-min-sim">{{ t('semanticGraph.minPairwiseSim') }}</label>
+        <input
+          id="cf-sg-min-sim"
+          v-model.number="graphBuildParams.minPairwiseSim"
+          type="number"
+          class="input-field h-8 w-full"
+          min="0"
+          max="1"
+          step="0.05"
+        />
+      </div>
+    </div>
 
     <ModalComponent
       :show="!!previewDef"
@@ -107,6 +161,20 @@ const { t, locale } = useI18n()
 const route = useRoute()
 const router = useRouter()
 
+/** Must match server `SEMANTIC_GRAPH_MAX_LIMIT` (anchor fetch pool cap). */
+const GRAPH_METRICS_MAX = 200
+
+type SemanticGraphApiPayload = {
+  nodes: Array<{
+    id: string
+    definitionid: number
+    label: string
+    word: string
+    query_similarity?: number | null
+  }>
+  edges: Array<{ source: string; target: string; similarity: number }>
+}
+
 useSeoHead({ title: computed(() => t('semanticGraph.title')) })
 
 function querySearchToString(q: unknown): string {
@@ -148,6 +216,14 @@ let cy: Core | null = null
 const graphLoading = ref(false)
 const graphError = ref<string | null>(null)
 
+const graphMode = ref<'preview' | 'anchor'>('preview')
+/** Last full anchor API payload (used for viewport LOD when pool > visible cap). */
+const lastAnchorPayload = ref<SemanticGraphApiPayload | null>(null)
+const anchorNodeId = ref<string | null>(null)
+
+let viewportLodTimer: ReturnType<typeof setTimeout> | null = null
+let cyZoomPanHandler: (() => void) | null = null
+
 type PreviewDefinition = {
   valsiword?: string
   word?: string
@@ -177,13 +253,19 @@ const previewEntryHref = computed(() => {
   }).href
 })
 
+/** Larger fetch for anchor mode so zoom/pan can keep ~`graphLimit` nodes in view from a pool. */
+function anchorFetchPoolLimit(): number {
+  const visible = Math.max(1, Math.min(GRAPH_METRICS_MAX, graphBuildParams.value.graphLimit))
+  return Math.min(GRAPH_METRICS_MAX, Math.max(120, visible * 2))
+}
+
 function buildGraphParams(opts?: { preview?: boolean }): Record<string, unknown> {
   const f = combinedFiltersModel.value
   const preview = opts?.preview === true
   const g = graphBuildParams.value
   const params: Record<string, unknown> = {
     min_vote: g.minVote,
-    limit: g.graphLimit,
+    limit: preview ? g.graphLimit : anchorFetchPoolLimit(),
     k_neighbors: g.kNeighbors,
     min_similarity: g.minPairwiseSim,
   }
@@ -210,6 +292,156 @@ function buildGraphParams(opts?: { preview?: boolean }): Record<string, unknown>
   return params
 }
 
+function detachCyZoomPanHandlers() {
+  if (cy && cyZoomPanHandler) {
+    cy.off('zoom.sgvp', cyZoomPanHandler)
+    cy.off('pan.sgvp', cyZoomPanHandler)
+    cyZoomPanHandler = null
+  }
+}
+
+function clearViewportLod() {
+  if (viewportLodTimer != null) {
+    clearTimeout(viewportLodTimer)
+    viewportLodTimer = null
+  }
+  detachCyZoomPanHandlers()
+  lastAnchorPayload.value = null
+  anchorNodeId.value = null
+}
+
+function pickAnchorNodeId(
+  nodes: SemanticGraphApiPayload['nodes'],
+  searchTrim: string,
+): string | null {
+  const q = searchTrim.toLowerCase()
+  for (const n of nodes) {
+    const w = (n.word || '').trim().toLowerCase()
+    if (w && w === q) return n.id
+  }
+  let bestId: string | null = null
+  let bestQs = -1
+  for (const n of nodes) {
+    const qs = n.query_similarity
+    if (qs != null && qs > bestQs) {
+      bestQs = qs
+      bestId = n.id
+    }
+  }
+  return bestId
+}
+
+function applyZoomStabilizedNodeSizes(core: Core) {
+  if (graphMode.value !== 'anchor') return
+  const z = Math.max(0.12, Math.min(core.zoom(), 6))
+  const inv = 1 / z
+  const base = 26 * inv
+  const anchorBase = 54 * inv
+  const fs = 10 * inv
+  const afs = 12 * inv
+  core
+    .style()
+    .selector('node:not(.sg-lod-hidden)')
+    .style({
+      width: base,
+      height: base,
+      'font-size': fs,
+    })
+    .selector('node[isAnchor = "yes"]:not(.sg-lod-hidden)')
+    .style({
+      width: anchorBase,
+      height: anchorBase,
+      'font-size': afs,
+    })
+    .selector('node.sg-lod-hidden')
+    .style({ display: 'none' })
+    .selector('edge.sg-lod-hidden')
+    .style({ display: 'none' })
+    .update()
+}
+
+function applyAnchorViewportLod() {
+  if (!cy || graphMode.value !== 'anchor') return
+  const cap = Math.max(1, Math.min(GRAPH_METRICS_MAX, graphBuildParams.value.graphLimit))
+  const pool = lastAnchorPayload.value?.nodes.length ?? 0
+  if (pool <= cap) {
+    cy.batch(() => {
+      cy!.nodes().removeClass('sg-lod-hidden')
+      cy!.edges().removeClass('sg-lod-hidden')
+    })
+    applyZoomStabilizedNodeSizes(cy)
+    return
+  }
+
+  const pan = cy.pan()
+  const zm = cy.zoom()
+  const w = cy.width()
+  const h = cy.height()
+  const x1 = -pan.x / zm
+  const y1 = -pan.y / zm
+  const x2 = (-pan.x + w) / zm
+  const y2 = (-pan.y + h) / zm
+  const cx = (x1 + x2) / 2
+  const cyM = (y1 + y2) / 2
+  const span = Math.max(x2 - x1, y2 - y1, 1)
+  const margin = span * 0.1
+
+  const inView = (x: number, y: number) =>
+    x >= x1 - margin && x <= x2 + margin && y >= y1 - margin && y <= y2 + margin
+
+  type Scored = { id: string; d: number }
+  const scored: Scored[] = []
+  cy.nodes().forEach((ele) => {
+    const p = ele.position()
+    if (!inView(p.x, p.y)) return
+    const d = (p.x - cx) ** 2 + (p.y - cyM) ** 2
+    scored.push({ id: ele.id(), d })
+  })
+  scored.sort((a, b) => a.d - b.d)
+
+  const visible = new Set<string>()
+  const anchor = anchorNodeId.value
+  if (anchor) visible.add(anchor)
+  for (const s of scored) {
+    if (visible.size >= cap) break
+    visible.add(s.id)
+  }
+  if (visible.size < cap) {
+    const all: Scored[] = []
+    cy.nodes().forEach((ele) => {
+      const p = ele.position()
+      const d = (p.x - cx) ** 2 + (p.y - cyM) ** 2
+      all.push({ id: ele.id(), d })
+    })
+    all.sort((a, b) => a.d - b.d)
+    for (const s of all) {
+      if (visible.size >= cap) break
+      visible.add(s.id)
+    }
+  }
+
+  cy.batch(() => {
+    cy!.nodes().forEach((n) => {
+      if (visible.has(n.id())) n.removeClass('sg-lod-hidden')
+      else n.addClass('sg-lod-hidden')
+    })
+    cy!.edges().forEach((e) => {
+      if (visible.has(e.source().id()) && visible.has(e.target().id())) e.removeClass('sg-lod-hidden')
+      else e.addClass('sg-lod-hidden')
+    })
+  })
+  applyZoomStabilizedNodeSizes(cy)
+}
+
+function scheduleAnchorViewportLod() {
+  if (graphMode.value !== 'anchor' || !cy) return
+  if (viewportLodTimer != null) clearTimeout(viewportLodTimer)
+  viewportLodTimer = setTimeout(() => {
+    viewportLodTimer = null
+    applyAnchorViewportLod()
+  }, 140)
+}
+
 async function loadPreviewGraph() {
   if (!cyReady.value || !cy) {
     graphError.value = t('semanticGraph.errorNotReady')
@@ -218,8 +450,10 @@ async function loadPreviewGraph() {
   graphError.value = null
   graphLoading.value = true
   try {
+    clearViewportLod()
+    graphMode.value = 'preview'
     const res = await fetchSemanticGraph(buildGraphParams({ preview: true }))
-    await renderGraph(res.data)
+    await renderGraph(res.data, 'preview')
   } catch (e: unknown) {
     const err = e as { response?: { data?: { error?: string }; status?: number } }
     const msg =
@@ -245,8 +479,11 @@ async function buildGraph() {
   graphError.value = null
   graphLoading.value = true
   try {
+    clearViewportLod()
+    graphMode.value = 'anchor'
     const res = await fetchSemanticGraph(buildGraphParams({ preview: false }))
-    await renderGraph(res.data)
+    lastAnchorPayload.value = res.data
+    await renderGraph(res.data, 'anchor', q)
   } catch (e: unknown) {
     const err = e as { response?: { data?: { error?: string }; status?: number } }
     const msg =
@@ -401,16 +638,7 @@ function ensureNodePaletteColors(core: Core) {
   })
 }
 
-function elementsFromApi(data: {
-  nodes: Array<{
-    id: string
-    definitionid: number
-    label: string
-    word: string
-    query_similarity?: number | null
-  }>
-  edges: Array<{ source: string; target: string; similarity: number }>
-}) {
+function elementsFromApi(data: SemanticGraphApiPayload, anchorId: string | null) {
   const nodes = data.nodes.map((n) => {
     const valsiKey = (n.word || n.label || n.id || '').trim()
     const displayLabel =
@@ -420,6 +648,7 @@ function elementsFromApi(data: {
         ?.trim() ||
       n.id
     const { bgColor, borderColor } = nodeColorsFromValsiKey(valsiKey)
+    const isAnchor = anchorId != null && n.id === anchorId ? 'yes' : 'no'
     return {
       data: {
         id: n.id,
@@ -429,50 +658,112 @@ function elementsFromApi(data: {
         qs: n.query_similarity ?? undefined,
         bgColor,
         borderColor,
+        isAnchor,
       },
     }
   })
-  const edges = data.edges.map((e, i) => ({
-    data: {
-      id: `e${i}-${e.source}-${e.target}`,
-      source: e.source,
-      target: e.target,
-      similarity: e.similarity,
-    },
-  }))
+  const edges = data.edges.map((e, i) => {
+    const touchAnchor =
+      anchorId != null && (e.source === anchorId || e.target === anchorId)
+    return {
+      data: {
+        id: `e${i}-${e.source}-${e.target}`,
+        source: e.source,
+        target: e.target,
+        similarity: e.similarity,
+        isAnchorEdge: touchAnchor ? 'yes' : 'no',
+      },
+    }
+  })
   return [...nodes, ...edges]
 }
 
-type SemanticGraphApiPayload = {
-  nodes: Array<{
-    id: string
-    definitionid: number
-    label: string
-    word: string
-    query_similarity?: number | null
-  }>
-  edges: Array<{ source: string; target: string; similarity: number }>
-}
-
-async function renderGraph(apiData: SemanticGraphApiPayload) {
+async function renderGraph(
+  apiData: SemanticGraphApiPayload,
+  mode: 'preview' | 'anchor',
+  anchorSearchTrim = '',
+) {
   if (!cy || !cyContainerRef.value) return
+  detachCyZoomPanHandlers()
   cy.elements().remove()
-  const els = elementsFromApi(apiData)
+  const anchorId = mode === 'anchor' ? pickAnchorNodeId(apiData.nodes, anchorSearchTrim) : null
+  anchorNodeId.value = anchorId
+  const els = elementsFromApi(apiData, anchorId)
   if (els.length === 0) {
     return
   }
   cy.add(els)
   ensureNodePaletteColors(cy)
-  cy.layout({
-    name: 'fcose',
-    quality: 'default',
-    randomize: true,
-    animate: true,
-    animationDuration: 400,
-    fit: true,
-    padding: 16,
-  } as LayoutOptions).run()
+
+  if (mode === 'anchor' && anchorId) {
+    try {
+      cy.layout({
+        name: 'concentric',
+        fit: true,
+        padding: 28,
+        startAngle: -Math.PI / 2,
+        clockwise: true,
+        minNodeSpacing: 52,
+        avoidOverlap: true,
+        equidistant: false,
+        spacingFactor: 1.45,
+        animate: true,
+        animationDuration: 420,
+        concentric: (node) => (node.data('isAnchor') === 'yes' ? 1000 : Math.max(1, node.degree(false))),
+        levelWidth: () => 1,
+      } as LayoutOptions).run()
+    } catch {
+      cy.layout({
+        name: 'fcose',
+        quality: 'default',
+        randomize: true,
+        animate: true,
+        animationDuration: 400,
+        fit: true,
+        padding: 16,
+      } as LayoutOptions).run()
+    }
+  } else {
+    cy.layout({
+      name: 'fcose',
+      quality: 'default',
+      randomize: true,
+      animate: true,
+      animationDuration: 400,
+      fit: true,
+      padding: 16,
+    } as LayoutOptions).run()
+  }
   cy.fit(undefined, 24)
+
+  if (mode === 'anchor') {
+    cyZoomPanHandler = () => {
+      applyZoomStabilizedNodeSizes(cy!)
+      scheduleAnchorViewportLod()
+    }
+    cy.on('zoom.sgvp', cyZoomPanHandler)
+    cy.on('pan.sgvp', cyZoomPanHandler)
+    applyAnchorViewportLod()
+  } else {
+    cy.style()
+      .selector('node')
+      .style({
+        width: 26,
+        height: 26,
+        'font-size': 10,
+      })
+      .selector('node[isAnchor = "yes"]')
+      .style({
+        width: 26,
+        height: 26,
+        'font-size': 10,
+      })
+      .selector('node.sg-lod-hidden')
+      .style({ display: 'element' })
+      .selector('edge.sg-lod-hidden')
+      .style({ display: 'element' })
+      .update()
+  }
 }
 
 async function initCy() {
@@ -516,11 +807,38 @@ async function initCy() {
         },
       },
       {
+        selector: 'edge[isAnchorEdge = "yes"]',
+        style: {
+          'line-color': '#94a3b8',
+          opacity: 0.95,
+          width: 'mapData(similarity, 0.15, 1, 2.5, 7)',
+        },
+      },
+      {
         selector: 'node:selected',
         style: {
           'border-width': 3,
           'border-color': '#3D6BC4',
           'background-color': '#5789E8',
+        },
+      },
+      {
+        selector: 'node[isAnchor = "yes"]',
+        style: {
+          'border-width': 4,
+          'border-color': '#15803d',
+        },
+      },
+      {
+        selector: 'node.sg-lod-hidden',
+        style: {
+          display: 'none',
+        },
+      },
+      {
+        selector: 'edge.sg-lod-hidden',
+        style: {
+          display: 'none',
         },
       },
     ],
@@ -584,6 +902,8 @@ function onImportFile(ev: Event) {
         pan?: { x: number; y: number }
       }
       if (!parsed.elements?.length) return
+      clearViewportLod()
+      graphMode.value = 'preview'
       cy!.elements().remove()
       cy!.add(parsed.elements as ElementDefinition[])
       ensureNodePaletteColors(cy!)
@@ -617,6 +937,7 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   cancelSearchDebounce()
+  clearViewportLod()
   if (cy) {
     cy.destroy()
     cy = null
