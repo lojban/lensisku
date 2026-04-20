@@ -403,6 +403,9 @@ async fn query_collections(
                         WHERE ci2.collection_id = c.collection_id AND cii.side IN ('front', 'back')
                     )
                 ) AS has_collection_image,
+                (SELECT COUNT(*) FROM comments cm
+                    JOIN threads t ON cm.threadid = t.threadid
+                    WHERE t.collection_id = c.collection_id) AS comment_count,
                 {search_rank_select}
                 c.updated_at AS _rank_tiebreak
          FROM collections c
