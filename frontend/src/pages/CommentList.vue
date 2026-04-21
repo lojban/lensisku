@@ -540,7 +540,7 @@ const submitComment = async (formData: { subject: string; content: string }) => 
     const response = await addComment({
       valsi_id: props.valsiId || undefined,
       natlang_word_id: props.natlangWordId || undefined,
-      definition_id: props.definitionId,
+      definition_id: props.definitionId || undefined,
       collection_id: props.collectionId || undefined,
       parent_id: replyToId.value || undefined,
       subject: formData.subject,
