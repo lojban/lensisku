@@ -174,6 +174,7 @@
       <p class="my-4 text-gray-600"> {{ t('commentList.noComments') }} </p>
        <button
         v-if="auth.state.isLoggedIn"
+        v-show="!showTopLevelForm"
         type="button"
         class="inline-flex items-center gap-2 ui-btn--neutral h-12 text-base !px-5 mx-auto"
         :aria-label="t('commentList.newDiscussionWave')"
@@ -239,6 +240,10 @@ const props = defineProps({
     type: Number,
     default: 0,
   },
+  definitionLinkId: {
+    type: Number,
+    default: 0,
+  },
   commentId: {
     type: Number,
     default: 0,
@@ -258,6 +263,14 @@ const props = defineProps({
   embedded: {
     type: Boolean,
     default: false,
+  },
+  showComposerWhenEmpty: {
+    type: Boolean,
+    default: false,
+  },
+  initialSubject: {
+    type: String,
+    default: '',
   },
 })
 
@@ -382,6 +395,9 @@ const handleNewTopLevelComment = () => {
   } else {
     showTopLevelForm.value = true
     replyToId.value = null
+    if (props.initialSubject && !newComment.value.subject) {
+      newComment.value.subject = props.initialSubject
+    }
   }
 }
 
@@ -515,6 +531,7 @@ const buildQueryString = (includePage = true) => {
   if (props.valsiId) params.append('valsi_id', String(props.valsiId))
   if (props.natlangWordId) params.append('natlang_word_id', String(props.natlangWordId))
   if (props.definitionId) params.append('definition_id', String(props.definitionId))
+  if (props.definitionLinkId) params.append('definition_link_id', String(props.definitionLinkId))
   if (props.collectionId) params.append('collection_id', String(props.collectionId))
   if (props.commentId) params.append('comment_id', String(props.commentId))
   if (props.scrollTo) params.append('scroll_to', String(props.scrollTo))
@@ -541,6 +558,7 @@ const submitComment = async (formData: { subject: string; content: string }) => 
       valsi_id: props.valsiId || undefined,
       natlang_word_id: props.natlangWordId || undefined,
       definition_id: props.definitionId || undefined,
+      definition_link_id: props.definitionLinkId || undefined,
       collection_id: props.collectionId || undefined,
       parent_id: replyToId.value || undefined,
       subject: formData.subject,
@@ -656,9 +674,15 @@ const fetchDefinitionsAndDetails = async () => {
 }
 
 onMounted(async () => {
+  if (props.initialSubject && !newComment.value.subject) {
+    newComment.value.subject = props.initialSubject
+  }
   await fetchDefinitionsAndDetails()
   // Pass true for initial load
   await performFetchComments(true)
+  if (props.showComposerWhenEmpty && auth.state.isLoggedIn && comments.value.length === 0) {
+    showTopLevelForm.value = true
+  }
 })
 
 // Watch for route changes to refresh comments
@@ -668,6 +692,7 @@ watchEffect(async () => {
     route.query.valsi_id ||
     route.query.natlang_word_id ||
     route.query.definition_id ||
+    route.query.definition_link_id ||
     route.query.collection_id ||
     route.query.comment_id ||
     route.query.thread_id

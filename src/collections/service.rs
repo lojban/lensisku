@@ -2765,9 +2765,9 @@ pub async fn remove_items_bulk(
 /// search result. Idempotent by `(collection_id, definition_id)`: definitions that
 /// already exist in the collection are counted as `skipped` and not duplicated.
 ///
-/// Bounded by [`MAX_BULK_ADD_DEFINITIONS`] to prevent abuse. Definitions that do not
-/// exist in `definitions` are returned in `invalid_definition_ids` but do not fail the
-/// request. The auto_progress flag is set to true (same default as single-add).
+/// Definitions that do not exist in `definitions` are returned in
+/// `invalid_definition_ids` but do not fail the request. The auto_progress flag is set
+/// to true (same default as single-add).
 pub async fn add_items_bulk_by_definition_ids(
     pool: &Pool,
     redis: &RedisCache,
@@ -2776,8 +2776,6 @@ pub async fn add_items_bulk_by_definition_ids(
     definition_ids: &[i32],
     notes: Option<&str>,
 ) -> AppResult<BulkAddDefinitionsResponse> {
-    const MAX_BULK_ADD_DEFINITIONS: usize = 5000;
-
     let unique_set: HashSet<i32> = definition_ids
         .iter()
         .copied()
@@ -2787,12 +2785,6 @@ pub async fn add_items_bulk_by_definition_ids(
         return Err(AppError::BadRequest(
             "definition_ids must contain at least one positive id".to_string(),
         ));
-    }
-    if unique_set.len() > MAX_BULK_ADD_DEFINITIONS {
-        return Err(AppError::BadRequest(format!(
-            "At most {} definitions per request",
-            MAX_BULK_ADD_DEFINITIONS
-        )));
     }
 
     let mut unique: Vec<i32> = unique_set.into_iter().collect();

@@ -6,7 +6,7 @@
     <template v-if="!isLoadingStreak && streakData">
       <div class="card-streak-header">
 
-        <h3 class="card-streak-title">
+        <h3 class="card-streak-title select-none">
           {{ t('collectionList.studyStreak') }}
         </h3>
 
@@ -64,11 +64,13 @@
   </div>
   <PageHeader title-as="h2" title-tone="secondary">
     <template #title>
-      {{
-        viewMode !== 'my'
-          ? t('collectionList.publicCollections')
-          : t('collectionList.myCollections')
-      }}
+      <span class="select-none">
+        {{
+          viewMode !== 'my'
+            ? t('collectionList.publicCollections')
+            : t('collectionList.myCollections')
+        }}
+      </span>
     </template>
     <template v-if="auth.state.isLoggedIn" #trailing>
       <div class="flex min-w-0 flex-grow flex-row flex-wrap justify-end gap-2">

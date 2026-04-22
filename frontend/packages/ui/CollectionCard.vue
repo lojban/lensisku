@@ -60,15 +60,8 @@
               v-if="collection.has_flashcards"
               :to="`/collections/${collection.collection_id}/flashcards`"
               class="ui-btn--empty ui-btn--group-item"
-              > <LayoutGrid class="w-4 h-4 shrink-0" /> <span>{{ flashcardsButtonLabel }}</span
+              > <GalleryHorizontalEnd class="w-4 h-4 shrink-0" /> <span>{{ flashcardsButtonLabel }}</span
               > </RouterLink
-            > <RouterLink
-              v-if="(collection.comment_count ?? 0) > 0"
-              :to="`/collections/${collection.collection_id}?tab=discussion`"
-              class="ui-btn--empty ui-btn--group-item"
-              :aria-label="discussionButtonLabel"
-              > <MessagesSquare class="w-4 h-4 shrink-0" /> <span>{{ collection.comment_count }}</span>
-              </RouterLink
             >
           </div>
 
@@ -105,7 +98,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { BookOpen, GraduationCap, List, LayoutGrid, CalendarClock, MessagesSquare } from 'lucide-vue-next'
+import { BookOpen, GraduationCap, List, GalleryHorizontalEnd, CalendarClock } from 'lucide-vue-next'
 import Card from './Card.vue'
 import Button from './Button.vue'
 
@@ -173,7 +166,6 @@ const props = defineProps({
   studyButtonLabel: { type: String, default: 'Study' },
   collectionButtonLabel: { type: String, default: 'Collection' },
   flashcardsButtonLabel: { type: String, default: 'Flashcards' },
-  discussionButtonLabel: { type: String, default: 'Discussion' },
   createdByLabel: { type: String, default: 'by' },
   updatedLabel: { type: String, default: 'Updated' },
   publicLabel: { type: String, default: 'Public' },

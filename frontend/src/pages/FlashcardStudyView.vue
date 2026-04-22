@@ -71,6 +71,15 @@
         <button
           v-if="currentCard"
           type="button"
+          class="ui-btn--neutral inline-flex items-center gap-2"
+          @click="openWavesModal"
+        >
+          <MessagesSquare class="h-4 w-4 shrink-0" />
+          {{ t('flashcardStudy.wavesButton') }}
+        </button>
+        <button
+          v-if="currentCard"
+          type="button"
           class="ui-btn--empty"
           @click="snoozeCard"
         >
@@ -400,19 +409,21 @@
         v-if="!showAnswer && !fillinResult && !quizResult && !isJustInformationMode && !isQuizMode"
         class="flex justify-center px-4"
       >
-         <button
+         <Button
           v-if="isFillInMode"
-          class="ui-btn--read w-auto h-10 text-base shadow-sm"
+          variant="read"
+          class="w-auto !h-auto px-5 py-2.5 rounded-xl text-sm shadow-sm"
           @click="submitAnswer()"
         >
-           {{ t('flashcardStudy.submitAnswer') }} </button
-        > <button
+           {{ t('flashcardStudy.submitAnswer') }} </Button
+        > <Button
           v-else
           ref="showAnswerButtonRef"
-          class="ui-btn--read w-auto h-10 text-base shadow-sm"
+          variant="read"
+          class="w-auto !h-auto px-5 py-2.5 rounded-xl text-sm shadow-sm"
           @click="revealAnswerAndPlayAudio"
         >
-           {{ t('flashcardStudy.showAnswer') }} </button
+           {{ t('flashcardStudy.showAnswer') }} </Button
         >
       </div>
        <!-- OK button for JustInformation mode -->
@@ -453,36 +464,39 @@
           <div class="w-full max-w-xl">
 
             <div class="grid grid-cols-3 gap-2 sm:gap-4">
-               <button
-                class="ui-btn--error w-full sm:min-w-[120px] flex items-center justify-center gap-1.5"
+               <IconButton
+                :button-classes="'ui-btn--error w-full sm:min-w-[120px]'"
+                :disabled="isSubmitting"
+                :label="`${t('flashcardStudy.forgot')} (1)`"
                 @click="submitAnswer(1)"
               >
-                 <XCircle class="h-4 w-4 shrink-0" />
-                <span class="inline-flex min-w-0 items-center gap-1">
-                  <span>{{ t('flashcardStudy.forgot') }}</span>
-                  <span class="hidden sm:inline">(1)</span>
-                </span>
-              </button
-              > <button
-                class="ui-btn--warning w-full sm:min-w-[120px] flex items-center justify-center gap-1.5"
+                <template #icon>
+                  <Loader2 v-if="isSubmitting" class="h-4 w-4 shrink-0 animate-spin" />
+                  <XCircle v-else class="h-4 w-4 shrink-0" />
+                </template>
+              </IconButton
+              > <IconButton
+                :button-classes="'ui-btn--warning w-full sm:min-w-[120px]'"
+                :disabled="isSubmitting"
+                :label="`${t('flashcardStudy.good')} (2)`"
                 @click="submitAnswer(3)"
               >
-                 <Smile class="h-4 w-4 shrink-0" />
-                <span class="inline-flex min-w-0 items-center gap-1">
-                  <span>{{ t('flashcardStudy.good') }}</span>
-                  <span class="hidden sm:inline">(2)</span>
-                </span>
-              </button
-              > <button
-                class="ui-btn--success w-full sm:min-w-[120px] flex items-center justify-center gap-1.5"
+                <template #icon>
+                  <Loader2 v-if="isSubmitting" class="h-4 w-4 shrink-0 animate-spin" />
+                  <Smile v-else class="h-4 w-4 shrink-0" />
+                </template>
+              </IconButton
+              > <IconButton
+                :button-classes="'ui-btn--success w-full sm:min-w-[120px]'"
+                :disabled="isSubmitting"
+                :label="`${t('flashcardStudy.easy')} (3)`"
                 @click="submitAnswer(4)"
               >
-                 <Check class="h-4 w-4 shrink-0" />
-                <span class="inline-flex min-w-0 items-center gap-1">
-                  <span>{{ t('flashcardStudy.easy') }}</span>
-                  <span class="hidden sm:inline">(3)</span>
-                </span>
-              </button
+                <template #icon>
+                  <Loader2 v-if="isSubmitting" class="h-4 w-4 shrink-0 animate-spin" />
+                  <Check v-else class="h-4 w-4 shrink-0" />
+                </template>
+              </IconButton
               >
             </div>
 
@@ -529,6 +543,22 @@
 
   </div>
 
+  <ModalComponent
+    :show="showWavesModal"
+    :title="t('flashcardStudy.wavesModalTitle', { id: currentFlashcardId })"
+    @close="showWavesModal = false"
+  >
+    <div v-if="currentCard?.flashcard?.id" class="pt-1">
+      <CommentList
+        :collection-id="currentCard.flashcard.collection_id"
+        :definition-link-id="currentCard.flashcard.id"
+        :initial-subject="currentFlashcardTag"
+        :show-composer-when-empty="true"
+        :embedded="true"
+      />
+    </div>
+  </ModalComponent>
+
 </template>
 
 <script setup lang="ts">
@@ -539,13 +569,15 @@ import {
   CheckCircle2,
   EqualApproximately,
   BookOpen,
+  MessagesSquare,
 } from 'lucide-vue-next'
 import { ref, onMounted, computed, watch, nextTick, onBeforeUnmount } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import AnonymousProgressBanner from '@/components/AnonymousProgressBanner.vue'
+import ModalComponent from '@/components/ModalComponent.vue'
 import PageHeader from '@/components/layout/PageHeader.vue'
-import { CollectionCoverLightbox } from '@packages/ui'
+import { Button, CollectionCoverLightbox, IconButton } from '@packages/ui'
 
 import {
   getDueCards,
@@ -563,6 +595,7 @@ import {
 } from '@/api'
 import LazyMathJax from '@/components/LazyMathJax.vue'
 import AudioPlayer from '@/components/AudioPlayer.vue'
+import CommentList from '@/pages/CommentList.vue'
 import { useSeoHead } from '@/composables/useSeoHead'
 import { useAuth } from '@/composables/useAuth'
 import { useAnonymousProgress, type LevelProgressData } from '@/composables/useAnonymousProgress'
@@ -635,6 +668,18 @@ const answerAudioPlayerRef = ref(null)
 const questionAudioPlayerRef = ref(null)
 
 const languages = ref([])
+const showWavesModal = ref(false)
+
+const currentFlashcardTag = computed(() => {
+  const id = currentCard.value?.flashcard?.id
+  if (!id) return ''
+  return `#[${id}]`
+})
+
+const currentFlashcardId = computed(() => {
+  const id = currentCard.value?.flashcard?.id
+  return id ? String(id) : ''
+})
 
 const isFillInMode = computed(() => {
   const dir = currentCard.value?.flashcard?.direction
@@ -998,12 +1043,23 @@ const revealAnswerAndPlayAudio = async () => {
   }
 }
 
+const openWavesModal = () => {
+  if (!currentCard.value) return
+  showWavesModal.value = true
+}
+
 const handleNextCard = async () => {
   fillinResult.value = null
   userAnswer.value = ''
   loadNextCard()
   if (!isAnonLevelMode.value && !isAnonNoLevelsMode.value) await checkForDueChanges()
 }
+
+watch(currentCard, () => {
+  if (showWavesModal.value) {
+    showWavesModal.value = false
+  }
+})
 
 const newCardsMessage = ref('')
 const showNewCardsMessage = ref(false)

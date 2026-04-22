@@ -1000,7 +1000,7 @@ pub async fn bulk_remove_items(
     ),
     security(("bearer_auth" = [])),
     summary = "Bulk add dictionary definitions to a collection",
-    description = "Owner only. Copies a batch of existing dictionary definitions into the collection in a single transaction. Idempotent: definitions already present are reported as skipped and not duplicated. At most 5000 definition ids per request."
+    description = "Owner only. Copies a batch of existing dictionary definitions into the collection in a single transaction. Idempotent: definitions already present are reported as skipped and not duplicated."
 )]
 #[post("/{id}/items/bulk-add")]
 pub async fn bulk_add_items(

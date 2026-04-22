@@ -893,6 +893,8 @@
     "good": "Good",
     "easy": "Easy",
     "nextCard": "Next card",
+    "wavesButton": "Wave",
+    "wavesModalTitle": "Wave for flashcard {id}",
     "thanksSession": "Thanks for the session!",
     "loadError": "Error loading cards:",
     "submitError": "Error submitting answer:",

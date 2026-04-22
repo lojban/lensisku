@@ -820,6 +820,8 @@
     "good": "Хорошо",
     "easy": "Легко",
     "nextCard": "Следующая карточка",
+    "wavesButton": "Волна",
+    "wavesModalTitle": "Волна для карточки {id}",
     "thanksSession": "Спасибо за сессию!",
     "loadError": "Ошибка загрузки карточек:",
     "submitError": "Ошибка отправки ответа:",

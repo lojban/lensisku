@@ -1,6 +1,7 @@
 use actix_web::{delete, get, post, web, HttpResponse, Responder};
 use actix_web_grants::protect;
 use deadpool_postgres::Pool;
+use regex::Regex;
 use serde_json::json;
 
 use crate::middleware::cache::RedisCache;
@@ -23,6 +24,54 @@ use crate::{
         models::TrendingTimespan,
     },
 };
+
+fn extract_flashcard_tag_id(subject: &str) -> Option<i32> {
+    let re = Regex::new(r"#\[(\d+)\]").ok()?;
+    let captures = re.captures(subject)?;
+    captures
+        .get(1)
+        .and_then(|m| m.as_str().parse::<i32>().ok())
+        .filter(|id| *id > 0)
+}
+
+async fn validate_flashcard_thread_context(
+    pool: &Pool,
+    collection_id: Option<i32>,
+    definition_link_id: Option<i32>,
+    subject: Option<&str>,
+) -> Result<(), String> {
+    let Some(collection_id) = collection_id else {
+        return Ok(());
+    };
+
+    let subject_tag_id = subject.and_then(extract_flashcard_tag_id);
+    if let (Some(tag_id), Some(link_id)) = (subject_tag_id, definition_link_id) {
+        if tag_id != link_id {
+            return Err("Flashcard tag does not match definition_link_id".to_string());
+        }
+    }
+
+    let flashcard_id = definition_link_id.or(subject_tag_id);
+    let Some(flashcard_id) = flashcard_id else {
+        return Ok(());
+    };
+
+    let client = pool.get().await.map_err(|e| e.to_string())?;
+    let exists = client
+        .query_opt(
+            "SELECT 1 FROM flashcards WHERE id = $1 AND collection_id = $2",
+            &[&flashcard_id, &collection_id],
+        )
+        .await
+        .map_err(|e| e.to_string())?
+        .is_some();
+
+    if exists {
+        Ok(())
+    } else {
+        Err("Flashcard does not belong to collection".to_string())
+    }
+}
 
 #[utoipa::path(
     get,
@@ -80,6 +129,20 @@ pub async fn get_thread(
                 "details": e.to_string()
             }));
         }
+    }
+
+    if let Err(e) = validate_flashcard_thread_context(
+        &pool,
+        query.collection_id,
+        query.definition_link_id,
+        None,
+    )
+    .await
+    {
+        return HttpResponse::Forbidden().json(json!({
+            "error": "Invalid flashcard thread context",
+            "details": e
+        }));
     }
 
     let params = ThreadParams {
@@ -194,6 +257,20 @@ pub async fn add_comment(
                 "details": e.to_string()
             }));
         }
+    }
+
+    if let Err(e) = validate_flashcard_thread_context(
+        &pool,
+        request.collection_id,
+        request.definition_link_id,
+        Some(&request.subject),
+    )
+    .await
+    {
+        return HttpResponse::Forbidden().json(json!({
+            "error": "Invalid flashcard thread context",
+            "details": e
+        }));
     }
 
     let params = NewCommentParams {

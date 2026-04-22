@@ -125,7 +125,7 @@
                 :to="`/collections/${props.collectionId}/flashcards`"
                 class="ui-btn--danger-rose ui-btn--group-item md:flex-none"
               >
-                <GalleryHorizontalIcon class="w-4 h-4" />
+                <GalleryHorizontalEnd class="w-4 h-4" />
                 {{ t('collectionDetail.viewAsFlashcards') }}
               </RouterLink>
               <RouterLink
@@ -1378,7 +1378,7 @@
 
 <script setup lang="ts">
 import {
-  GalleryHorizontalIcon,
+  GalleryHorizontalEnd,
   GalleryVerticalIcon,
   LayoutPanelTop,
   List,
