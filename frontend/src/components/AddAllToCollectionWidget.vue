@@ -225,6 +225,15 @@ const newCollection = ref({
 
 const showModal = ref(false)
 
+function resetTransientState() {
+  showCreateForm.value = false
+  showConfirm.value = false
+  selectedCollectionId.value = null
+  notes.value = ''
+  progressText.value = ''
+  newCollection.value = { name: '', description: '', is_public: true }
+}
+
 watch(
   () => props.modelValue,
   async (open) => {
@@ -243,15 +252,6 @@ watch(
   },
   { immediate: true }
 )
-
-const resetTransientState = () => {
-  showCreateForm.value = false
-  showConfirm.value = false
-  selectedCollectionId.value = null
-  notes.value = ''
-  progressText.value = ''
-  newCollection.value = { name: '', description: '', is_public: true }
-}
 
 const fetchCollections = async () => {
   try {
