@@ -1,7 +1,7 @@
 <template>
   <div :class="{ 'pt-for-anon-banner': anonBannerVisible }">
     <AnonymousProgressBanner v-if="cardsAnsweredInSession >= 4" position="top" @visible="anonBannerVisible = $event" />
-    <header class="rounded-lg border border-gray-200 bg-white p-4 sm:p-6 mb-6">
+    <header class="-mt-3 border border-gray-200 border-t-0 rounded-b-lg p-3 mb-4">
       <div class="flex w-full min-w-0 items-start gap-3 sm:gap-4">
         <button v-if="collectionCoverDisplayUrl" type="button" class="cursor-pointer max-w-full inline-flex h-full min-h-0 shrink-0 items-stretch border-0 bg-transparent p-0 text-inherit shrink-0 self-start"
           :aria-label="collectionMeta?.name
@@ -381,6 +381,7 @@ import {
   XCircle,
   Check,
   Smile,
+  Loader2,
   CheckCircle2,
   EqualApproximately,
   BookOpen,
@@ -1093,4 +1094,5 @@ onMounted(async () => {
     0 0 0 1px rgba(147, 197, 253, 0.5),
     0 10px 22px -14px rgba(30, 64, 175, 0.45);
 }
+
 </style>
