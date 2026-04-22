@@ -485,9 +485,13 @@ const viewThread = (subject: string) => {
 // Close mobile menu and clear errors on route change
 watch(
   () => route.fullPath,
-  () => {
+  async () => {
     closeNavMenus()
     clearError()
+    if (!route.meta.scrollMainToTopOnNavigate) return
+    await nextTick()
+    const mainContent = document.querySelector('.main-content') as HTMLElement | null
+    mainContent?.scrollTo({ top: 0, behavior: 'auto' })
   }
 )
 

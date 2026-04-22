@@ -235,6 +235,7 @@ const baseRoutes: Array<RouteRecordRaw> = [
     path: '/collections/:collectionId/flashcards',
     name: 'FlashcardCollection',
     component: () => import('../pages/FlashcardCollectionView.vue'),
+    meta: { scrollMainToTopOnNavigate: true },
     props: (route) => ({
       collectionId: route.params.collectionId,
     }),

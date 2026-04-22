@@ -32,7 +32,9 @@
               :label="t('components.flashcardCollectionView.collectionButton')"
               button-classes="ui-btn--neutral-muted ui-btn--group-item md:flex-none"
             >
-              <List class="w-4 h-4 shrink-0" aria-hidden="true" />
+              <template #icon>
+                <List class="w-4 h-4 shrink-0" aria-hidden="true" />
+              </template>
             </IconButton>
             <IconButton
               v-if="collection?.has_collection_image"
@@ -41,7 +43,9 @@
               :label="t('components.flashcardCollectionView.viewAsTiktoknu')"
               button-classes="ui-btn--accent-purple ui-btn--group-item"
             >
-              <GalleryVerticalIcon class="w-4 h-4 shrink-0" aria-hidden="true" />
+              <template #icon>
+                <GalleryVerticalIcon class="w-4 h-4 shrink-0" aria-hidden="true" />
+              </template>
             </IconButton>
           </div>
           <div
@@ -55,7 +59,9 @@
               :label="t('components.flashcardCollectionView.addFlashcardButton')"
               button-classes="ui-btn--create ui-btn--group-item md:flex-none"
             >
-              <PlusCircle class="w-4 h-4 shrink-0" aria-hidden="true" />
+              <template #icon>
+                <PlusCircle class="w-4 h-4 shrink-0" aria-hidden="true" />
+              </template>
             </IconButton>
             <IconButton
               :label="
@@ -67,7 +73,9 @@
               :disabled="isImporting"
               @click="handleImport"
             >
-              <Import class="w-4 h-4 shrink-0" aria-hidden="true" />
+              <template #icon>
+                <Import class="w-4 h-4 shrink-0" aria-hidden="true" />
+              </template>
             </IconButton>
           </div>
           <template v-if="!auth.state.isLoggedIn">
@@ -78,7 +86,9 @@
                 :label="t('anonymousProgress.viewLevels')"
                 button-classes="ui-btn--warning-orange ui-btn--group-item md:flex-none"
               >
-                <LayoutPanelTop class="w-4 h-4 shrink-0" aria-hidden="true" />
+                <template #icon>
+                  <LayoutPanelTop class="w-4 h-4 shrink-0" aria-hidden="true" />
+                </template>
               </IconButton>
               <IconButton
                 tag="router-link"
@@ -86,7 +96,9 @@
                 :label="t('anonymousProgress.studyLevels')"
                 button-classes="ui-btn--create ui-btn--group-item md:flex-none"
               >
-                <Repeat1 class="w-4 h-4 shrink-0" aria-hidden="true" />
+                <template #icon>
+                  <Repeat1 class="w-4 h-4 shrink-0" aria-hidden="true" />
+                </template>
               </IconButton>
             </div>
           </template>
@@ -103,7 +115,9 @@
           :label="t('flashcardCollection.studyNow', { count: dueCount })"
           button-classes="ui-btn--warning-orange"
         >
-          <Repeat1 class="w-4 h-4 shrink-0" aria-hidden="true" />
+          <template #icon>
+            <Repeat1 class="w-4 h-4 shrink-0" aria-hidden="true" />
+          </template>
         </IconButton>
         <IconButton
           tag="router-link"
@@ -111,7 +125,9 @@
           :label="t('collectionDetail.levels')"
           button-classes="ui-btn--neutral"
         >
-          <LayoutPanelTop class="w-4 h-4 shrink-0" aria-hidden="true" />
+          <template #icon>
+            <LayoutPanelTop class="w-4 h-4 shrink-0" aria-hidden="true" />
+          </template>
         </IconButton>
       </div>
     </template>
