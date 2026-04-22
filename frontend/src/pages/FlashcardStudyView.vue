@@ -18,21 +18,25 @@
         <div v-else class="collection-card-logo-placeholder shrink-0 self-start" aria-hidden="true">
           <BookOpen class="h-8 w-8" />
         </div>
-        <div class="ml-auto flex w-auto max-w-full flex-wrap items-center justify-end gap-2">
-          <button type="button" class="ui-btn--cancel" @click="router.back()">
-            {{ t('flashcardStudy.endSession') }}
-          </button>
-          <button v-if="currentCard" type="button" class="ui-btn--neutral inline-flex items-center gap-2"
-            @click="openWavesModal">
-            <MessagesSquare class="h-4 w-4 shrink-0" />
-            {{ t('flashcardStudy.wavesButton') }}
-          </button>
-          <button v-if="currentCard" type="button" class="ui-btn--empty" @click="snoozeCard">
-            {{ t('flashcardStudy.snooze') }}
-          </button>
-          <p class="text-sm text-gray-600">
-            {{ t('flashcardStudy.remainingCards', { count: remainingCards.length }) }}
-          </p>
+        <div class="ml-auto flex w-auto max-w-full flex-col gap-3 flex-wrap items-end justify-end">
+          <div class="flex flex-row gap-2 flex-wrap w-full justify-end items-center">
+            <p class="text-sm text-gray-600">
+              {{ t('flashcardStudy.remainingCards', { count: remainingCards.length }) }}
+            </p>
+            <button v-if="currentCard" type="button" class="ui-btn--neutral inline-flex items-center gap-2"
+              @click="openWavesModal">
+              <MessagesSquare class="h-4 w-4 shrink-0" />
+              {{ t('flashcardStudy.wavesButton') }}
+            </button>
+          </div>
+          <div class="flex flex-row gap-2 flex-wrap w-full justify-end items-center">
+            <button type="button" class="ui-btn--cancel" @click="router.back()">
+              {{ t('flashcardStudy.endSession') }}
+            </button>
+            <button v-if="currentCard" type="button" class="ui-btn--empty" @click="snoozeCard">
+              {{ t('flashcardStudy.snooze') }}
+            </button>
+          </div>
         </div>
       </div>
     </header>
