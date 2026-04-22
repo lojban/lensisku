@@ -880,6 +880,8 @@
     "good": "zabna",
     "easy": "frili",
     "nextCard": "bavla'i karda",
+    "wavesButton": "nu casnu",
+    "wavesModalTitle": "lo nu casnu be le karda pe li {id}",
     "thanksSession": "ki'e lo nu tadni!",
     "loadError": "fliba lo nu jgari lo karda:",
     "submitError": "fliba lo nu benji lo spuda:",

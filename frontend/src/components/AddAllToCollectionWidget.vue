@@ -320,7 +320,7 @@ const confirmAddAll = async () => {
       return
     }
 
-    // Server cap = 5000 per request; chunk defensively so we survive larger result sets.
+    // Chunk defensively so very large result sets don't create huge single requests.
     const CHUNK = 2000
     const collectionId = selectedCollectionId.value
     const notesPayload = notes.value.trim() ? notes.value : undefined

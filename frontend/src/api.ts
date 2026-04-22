@@ -312,7 +312,6 @@ export const bulkRemoveCollectionItems = (
 /**
  * Add a batch of existing dictionary definitions to a collection.
  * Idempotent server-side (already-present definitions come back as `skipped`).
- * Hard-capped at 5000 `definition_ids` per call.
  */
 export const bulkAddDefinitionsToCollection = (
   collectionId: number | string,

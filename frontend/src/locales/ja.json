@@ -865,6 +865,8 @@
     "good": "まあまあ",
     "easy": "簡単",
     "nextCard": "次のカード",
+    "wavesButton": "ウェーブ",
+    "wavesModalTitle": "フラッシュカード {id} のウェーブ",
     "thanksSession": "お疲れさまでした！",
     "loadError": "カードの読み込みエラー：",
     "submitError": "解答送信エラー：",

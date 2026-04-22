@@ -468,19 +468,26 @@ async fn get_thread_id_by_context(
     collection_id: Option<i32>,
 ) -> Result<Option<i32>, Box<dyn std::error::Error>> {
     // Ensure only one context type is primarily active or it's a free-standing thread context
+    let has_entry_context = valsi_id.is_some() || natlang_word_id.is_some() || definition_id.is_some();
+    let has_link_context = definition_link_id.is_some();
+    let has_profile_context = target_user_id.is_some();
+    let has_collection_context = collection_id.is_some();
+
+    let allow_flashcard_combo =
+        has_collection_context && has_link_context && !has_entry_context && !has_profile_context;
+
     let mut active_contexts = 0;
-    if valsi_id.is_some()
-        || natlang_word_id.is_some()
-        || definition_id.is_some()
-        || definition_link_id.is_some()
-    {
+    if has_entry_context || (has_link_context && !allow_flashcard_combo) {
         active_contexts += 1;
     }
-    if target_user_id.is_some() {
+    if has_profile_context {
         active_contexts += 1;
     }
-    if collection_id.is_some() {
+    if has_collection_context {
         active_contexts += 1;
+    }
+    if allow_flashcard_combo {
+        active_contexts -= 1;
     }
 
     if active_contexts > 1 {
@@ -1882,19 +1889,26 @@ async fn get_or_create_thread_id(
     collection_id: Option<i32>,
 ) -> Result<i32, Box<dyn std::error::Error>> {
     // Validate that only one context type is primarily active or it's a free-standing thread
+    let has_entry_context = valsi_id.is_some() || natlang_word_id.is_some() || definition_id.is_some();
+    let has_link_context = definition_link_id.is_some();
+    let has_profile_context = target_user_id.is_some();
+    let has_collection_context = collection_id.is_some();
+
+    let allow_flashcard_combo =
+        has_collection_context && has_link_context && !has_entry_context && !has_profile_context;
+
     let mut active_contexts = 0;
-    if valsi_id.is_some()
-        || natlang_word_id.is_some()
-        || definition_id.is_some()
-        || definition_link_id.is_some()
-    {
+    if has_entry_context || (has_link_context && !allow_flashcard_combo) {
         active_contexts += 1;
     }
-    if target_user_id.is_some() {
+    if has_profile_context {
         active_contexts += 1;
     }
-    if collection_id.is_some() {
+    if has_collection_context {
         active_contexts += 1;
+    }
+    if allow_flashcard_combo {
+        active_contexts -= 1;
     }
 
     if active_contexts > 1 {

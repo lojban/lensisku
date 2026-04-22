@@ -851,12 +851,11 @@ const fetchDefinitions = async (page, search = '') => {
  *
  * We deliberately re-issue the same dictionary search endpoint with `per_page=500`,
  * incrementing `page` until either the reported `total` is exhausted, the server
- * returns an empty page, or the safety cap [`ADD_ALL_MAX_DEFINITIONS`] is reached.
+ * returns an empty page, or a high page guard trips (to avoid accidental infinite loops).
  * The server applies the same access/privacy rules it uses for the normal search.
  */
-const ADD_ALL_MAX_DEFINITIONS = 5000
 const ADD_ALL_PER_PAGE = 500
-const ADD_ALL_PAGE_CAP = Math.ceil(ADD_ALL_MAX_DEFINITIONS / ADD_ALL_PER_PAGE) + 1
+const ADD_ALL_PAGE_GUARD = 10000
 
 type LoadAllProgress = (current: number, expectedTotal: number) => void
 
@@ -898,7 +897,7 @@ const loadAllDefinitionIdsForCurrentSearch = async (
   let expectedTotal = 0
   let pagesFetched = 0
 
-  while (collected.length < ADD_ALL_MAX_DEFINITIONS && pagesFetched < ADD_ALL_PAGE_CAP) {
+  while (pagesFetched < ADD_ALL_PAGE_GUARD) {
     const params: Record<string, unknown> = { ...baseParams, page }
     let response
     if (auth.state.isLoggedIn || isSemantic) {
@@ -913,14 +912,13 @@ const loadAllDefinitionIdsForCurrentSearch = async (
     const defs = (response.data?.definitions || []) as Array<{ definitionid: number }>
     const reportedTotal = Number(response.data?.total ?? 0)
     if (page === 1) {
-      expectedTotal = Math.min(reportedTotal, ADD_ALL_MAX_DEFINITIONS)
+      expectedTotal = reportedTotal
     }
 
     for (const d of defs) {
       if (typeof d.definitionid === 'number' && !seen.has(d.definitionid)) {
         seen.add(d.definitionid)
         collected.push(d.definitionid)
-        if (collected.length >= ADD_ALL_MAX_DEFINITIONS) break
       }
     }
 

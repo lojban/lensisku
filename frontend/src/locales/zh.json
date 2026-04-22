@@ -870,6 +870,8 @@
     "good": "还行",
     "easy": "简单",
     "nextCard": "下一张",
+    "wavesButton": "讨论波",
+    "wavesModalTitle": "闪卡 {id} 的讨论波",
     "thanksSession": "感谢本次学习！",
     "loadError": "加载卡片出错：",
     "submitError": "提交答案出错：",
