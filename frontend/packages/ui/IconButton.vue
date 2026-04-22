@@ -42,6 +42,12 @@ const props = defineProps({
   /** Matches `Button` sizes (`md` compact, `lg` tall + `text-lg`). */
   size: { type: String, default: 'md', validator: (v: string) => ['md', 'lg'].includes(v) },
   iconClasses: { type: String, default: 'h-4 w-4' },
+  /** `inline` keeps icon + label in one row, `stacked` puts icon above label. */
+  contentLayout: {
+    type: String,
+    default: 'inline',
+    validator: (v: string) => ['inline', 'stacked'].includes(v),
+  },
   disabled: { type: Boolean, default: false },
 })
 
@@ -51,7 +57,15 @@ const parsed = computed(() => parseButtonClasses(props.buttonClasses))
 
 const resolvedVariant = computed(() => parsed.value.variant)
 
-const rootClass = computed(() => ['icon-btn-ui-layout', parsed.value.utilities].filter(Boolean).join(' '))
+const contentLayoutClass = computed(() =>
+  props.contentLayout === 'stacked'
+    ? '!h-auto !min-h-0 !rounded-md [&>span]:flex-col [&>span]:items-center [&>span]:justify-center [&>span]:text-center'
+    : ''
+)
+
+const rootClass = computed(() =>
+  ['icon-btn-ui-layout', contentLayoutClass.value, parsed.value.utilities].filter(Boolean).join(' ')
+)
 
 const ariaLabelComputed = computed(() => props.ariaLabel || props.label || undefined)
 </script>

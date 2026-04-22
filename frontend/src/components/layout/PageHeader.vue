@@ -92,6 +92,12 @@ const titleRowClass = computed(() =>
     : 'flex w-fit max-w-full min-w-0 flex-wrap items-center gap-x-2 gap-y-1',
 )
 
+const titleShellClass = computed(() =>
+  hasTrailing.value
+    ? 'flex w-full min-w-0 items-center justify-between gap-2'
+    : 'flex w-full min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:gap-3 sm:gap-4',
+)
+
 const titleClass = computed(() => {
   const base =
     'my-0 inline-flex min-w-0 max-w-full items-center break-words font-bold text-gray-800'
@@ -223,7 +229,7 @@ const metaRowJustifyClass = computed(() => {
             <div v-if="hasEyebrow" class="min-w-0">
               <slot name="eyebrow" />
             </div>
-            <div class="flex w-full min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:gap-3 sm:gap-4">
+            <div :class="titleShellClass">
               <div :class="titleRowClass">
                 <span
                   v-if="hasIcon"

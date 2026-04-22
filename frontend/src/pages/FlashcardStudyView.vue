@@ -7,7 +7,7 @@
       @visible="anonBannerVisible = $event"
     />
     <PageHeader
-      layout="split"
+      stack-gap="comfortable"
       title-as="h2"
       title-tone="secondary"
     >
@@ -56,11 +56,11 @@
       <template #description>
         <p
           v-if="showNewCardsMessage"
-          class="mt-1 text-sm font-medium text-orange-600"
+          class="mt-1 text-right text-sm font-medium text-orange-600"
         >
           {{ t('flashcardStudy.newCardsMessage') }}
         </p>
-        <p v-else class="mt-1 text-sm text-gray-600">
+        <p v-else class="mt-1 text-right text-sm text-gray-600">
           {{ t('flashcardStudy.remainingCards', { count: remainingCards.length }) }}
         </p>
       </template>
@@ -420,7 +420,8 @@
           v-else
           ref="showAnswerButtonRef"
           variant="read"
-          class="w-auto !h-auto px-5 py-2.5 rounded-xl text-sm shadow-sm"
+          size="lg"
+          class="w-auto shadow-sm"
           @click="revealAnswerAndPlayAudio"
         >
            {{ t('flashcardStudy.showAnswer') }} </Button
@@ -464,8 +465,9 @@
           <div class="w-full max-w-xl">
 
             <div class="grid grid-cols-3 gap-2 sm:gap-4">
-               <IconButton
-                :button-classes="'ui-btn--error w-full sm:min-w-[120px]'"
+              <IconButton
+                :button-classes="'ui-btn--error justify-self-center !w-auto sm:min-w-[120px]'"
+                content-layout="stacked"
                 :disabled="isSubmitting"
                 :label="`${t('flashcardStudy.forgot')} (1)`"
                 @click="submitAnswer(1)"
@@ -476,7 +478,8 @@
                 </template>
               </IconButton
               > <IconButton
-                :button-classes="'ui-btn--warning w-full sm:min-w-[120px]'"
+                :button-classes="'ui-btn--warning justify-self-center !w-auto sm:min-w-[120px]'"
+                content-layout="stacked"
                 :disabled="isSubmitting"
                 :label="`${t('flashcardStudy.good')} (2)`"
                 @click="submitAnswer(3)"
@@ -487,7 +490,8 @@
                 </template>
               </IconButton
               > <IconButton
-                :button-classes="'ui-btn--success w-full sm:min-w-[120px]'"
+                :button-classes="'ui-btn--success justify-self-center !w-auto sm:min-w-[120px]'"
+                content-layout="stacked"
                 :disabled="isSubmitting"
                 :label="`${t('flashcardStudy.easy')} (3)`"
                 @click="submitAnswer(4)"
@@ -602,6 +606,7 @@ import { useAnonymousProgress, type LevelProgressData } from '@/composables/useA
 import { queryStr } from '@/utils/routeQuery'
 
 const ANON_BANNER_ANSWERED_KEY = 'lensisku_study_cards_answered'
+const STUDY_MAIN_SCROLLBAR_CLASS = 'flashcard-study-main-scrollbar'
 
 const anonBannerVisible = ref(false)
 const cardsAnsweredInSession = ref(0)
@@ -1178,10 +1183,12 @@ const handleKeydown = (event) => {
 }
 
 onMounted(() => {
+  document.body.classList.add(STUDY_MAIN_SCROLLBAR_CLASS)
   window.addEventListener('keydown', handleKeydown)
 })
 
 onBeforeUnmount(() => {
+  document.body.classList.remove(STUDY_MAIN_SCROLLBAR_CLASS)
   window.removeEventListener('keydown', handleKeydown)
 })
 
@@ -1232,6 +1239,10 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+:global(body.flashcard-study-main-scrollbar .lingo-main) {
+  overflow-y: scroll;
+}
+
 .flashcard-study-root.pt-for-anon-banner {
   padding-top: 5.5rem;
 }

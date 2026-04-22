@@ -15,7 +15,7 @@
   >
     <template #hint>
       <div class="flex items-center gap-2 text-gray-500 italic text-sm mb-1">
-        <GalleryHorizontalIcon class="w-5 h-5 shrink-0" aria-hidden="true" />
+        <GalleryHorizontalEnd class="w-5 h-5 shrink-0" aria-hidden="true" />
         <span>{{ t('components.flashcardCollectionView.pageHint') }}</span>
       </div>
     </template>
@@ -391,7 +391,7 @@ import {
   ArrowDown,
   Repeat1,
   EqualApproximately,
-  GalleryHorizontalIcon,
+  GalleryHorizontalEnd,
   GalleryVerticalIcon,
   List,
   LayoutPanelTop,
