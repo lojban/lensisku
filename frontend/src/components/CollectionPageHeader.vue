@@ -98,7 +98,7 @@
       </template>
       <template #meta>
         <span
-          class="shrink-0 select-none rounded-full px-2 py-1 text-sm"
+          class="inline-flex h-6 shrink-0 items-center select-none rounded-full px-2 py-1 text-xs"
           :class="
             collection.is_public
               ? 'bg-green-100 text-green-700'
@@ -107,16 +107,16 @@
         >
           {{ collection.is_public ? publicLabel : privateLabel }}
         </span>
-        <span v-if="collection.owner">
+        <span v-if="collection.owner" class="inline-flex h-6 items-center text-xs text-gray-600">
           {{ createdByLabel }}
           <RouterLink
             :to="`/user/${collection.owner.username}`"
-            class="text-blue-600 hover:text-blue-800 hover:underline"
+            class="ml-1 text-blue-600 hover:text-blue-800 hover:underline"
           >
             {{ collection.owner.username }}
           </RouterLink>
         </span>
-        <span>{{ itemsCountLabel }}</span>
+        <span class="inline-flex h-6 items-center text-xs text-gray-600">{{ itemsCountLabel }}</span>
       </template>
       <template #meta-trailing>
         <slot name="meta-actions" />

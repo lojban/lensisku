@@ -24,81 +24,95 @@
     </template>
     <template #toolbar>
       <div class="space-y-4 md:space-y-0">
-        <div class="flex flex-wrap items-center gap-2 w-auto">
+        <div class="flex w-full flex-wrap items-center justify-center gap-2">
           <div class="btn-group-forced flex flex-wrap items-center md:gap-y-2" role="group">
-            <RouterLink
+            <IconButton
+              tag="router-link"
               :to="`/collections/${props.collectionId}`"
-              class="ui-btn--neutral-muted ui-btn--group-item md:flex-none"
+              :label="t('components.flashcardCollectionView.collectionButton')"
+              button-classes="ui-btn--neutral-muted ui-btn--group-item md:flex-none"
             >
               <List class="w-4 h-4 shrink-0" aria-hidden="true" />
-              {{ t('components.flashcardCollectionView.collectionButton') }}
-            </RouterLink>
-            <RouterLink
+            </IconButton>
+            <IconButton
               v-if="collection?.has_collection_image"
+              tag="router-link"
               :to="`/collections/${props.collectionId}/tiktoknu`"
-              class="ui-btn--accent-purple ui-btn--group-item inline-flex items-center gap-2"
+              :label="t('components.flashcardCollectionView.viewAsTiktoknu')"
+              button-classes="ui-btn--accent-purple ui-btn--group-item"
             >
               <GalleryVerticalIcon class="w-4 h-4 shrink-0" aria-hidden="true" />
-              {{ t('components.flashcardCollectionView.viewAsTiktoknu') }}
-            </RouterLink>
-            <template v-if="isOwner && collection && collection.item_count > existingFlashcardIds.size">
-              <RouterLink
-                :to="`/collections/${collection.collection_id}?mode=add_flashcard`"
-                class="ui-btn--create ui-btn--group-item md:flex-none"
-              >
-                <PlusCircle class="w-4 h-4 shrink-0" aria-hidden="true" />
-                {{ t('components.flashcardCollectionView.addFlashcardButton') }}
-              </RouterLink>
-              <button
-                class="ui-btn--delete ui-btn--group-item md:flex-none"
-                :disabled="isImporting"
-                @click="handleImport"
-              >
-                <Import class="w-4 h-4 shrink-0" aria-hidden="true" />
-                {{
-                  isImporting
-                    ? t('components.flashcardCollectionView.importing')
-                    : t('components.flashcardCollectionView.importAllButton')
-                }}
-              </button>
-            </template>
-            <template v-if="!auth.state.isLoggedIn">
-              <div class="mt-2 gap-4 flex flex-wrap">
-                <RouterLink
-                  :to="`/collections/${props.collectionId}/levels`"
-                  class="ui-btn--warning-orange ui-btn--group-item md:flex-none"
-                >
-                  {{ t('anonymousProgress.viewLevels') }}
-                </RouterLink>
-                <RouterLink
-                  :to="`/collections/${props.collectionId}/levels`"
-                  class="ui-btn--create ui-btn--group-item md:flex-none"
-                >
-                  {{ t('anonymousProgress.studyLevels') }}
-                </RouterLink>
-              </div>
-            </template>
+            </IconButton>
           </div>
+          <div
+            v-if="isOwner && collection && collection.item_count > existingFlashcardIds.size"
+            class="btn-group-forced flex flex-wrap items-center md:gap-y-2"
+            role="group"
+          >
+            <IconButton
+              tag="router-link"
+              :to="`/collections/${collection.collection_id}?mode=add_flashcard`"
+              :label="t('components.flashcardCollectionView.addFlashcardButton')"
+              button-classes="ui-btn--create ui-btn--group-item md:flex-none"
+            >
+              <PlusCircle class="w-4 h-4 shrink-0" aria-hidden="true" />
+            </IconButton>
+            <IconButton
+              :label="
+                isImporting
+                  ? t('components.flashcardCollectionView.importing')
+                  : t('components.flashcardCollectionView.importAllButton')
+              "
+              button-classes="ui-btn--delete ui-btn--group-item md:flex-none"
+              :disabled="isImporting"
+              @click="handleImport"
+            >
+              <Import class="w-4 h-4 shrink-0" aria-hidden="true" />
+            </IconButton>
+          </div>
+          <template v-if="!auth.state.isLoggedIn">
+            <div class="mt-2 gap-4 flex flex-wrap">
+              <IconButton
+                tag="router-link"
+                :to="`/collections/${props.collectionId}/levels`"
+                :label="t('anonymousProgress.viewLevels')"
+                button-classes="ui-btn--warning-orange ui-btn--group-item md:flex-none"
+              >
+                <LayoutPanelTop class="w-4 h-4 shrink-0" aria-hidden="true" />
+              </IconButton>
+              <IconButton
+                tag="router-link"
+                :to="`/collections/${props.collectionId}/levels`"
+                :label="t('anonymousProgress.studyLevels')"
+                button-classes="ui-btn--create ui-btn--group-item md:flex-none"
+              >
+                <Repeat1 class="w-4 h-4 shrink-0" aria-hidden="true" />
+              </IconButton>
+            </div>
+          </template>
         </div>
       </div>
       <div
         v-if="auth.state.isLoggedIn && collection"
         class="flex flex-row justify-center items-center gap-2 mt-4"
       >
-        <Button
-          variant="warning-orange"
+        <IconButton
+          tag="router-link"
           size="lg"
           :to="`/collections/${props.collectionId}/flashcards/study`"
+          :label="t('flashcardCollection.studyNow', { count: dueCount })"
+          button-classes="ui-btn--warning-orange"
         >
-          {{ t('flashcardCollection.studyNow', { count: dueCount }) }}
-        </Button>
-        <RouterLink
+          <Repeat1 class="w-4 h-4 shrink-0" aria-hidden="true" />
+        </IconButton>
+        <IconButton
+          tag="router-link"
           :to="`/collections/${props.collectionId}/levels`"
-          class="ui-btn--neutral inline-flex items-center gap-2"
+          :label="t('collectionDetail.levels')"
+          button-classes="ui-btn--neutral"
         >
           <LayoutPanelTop class="w-4 h-4 shrink-0" aria-hidden="true" />
-          {{ t('collectionDetail.levels') }}
-        </RouterLink>
+        </IconButton>
       </div>
     </template>
   </CollectionPageHeader>
@@ -211,18 +225,15 @@
       @click="isOwner && openFlashcard(card)"
       class="surface-flashcard-summary"
     >
-       <!-- Card Content -->
+      <!-- Card Content -->
       <div class="flex justify-between items-start gap-4">
-
         <div class="min-w-0 flex-1">
-
           <div class="flex flex-wrap items-center gap-2 min-w-0">
-
             <h3 class="text-lg font-medium text-gray-800">
-               {{ card.flashcard.word ?? card.flashcard.free_content_front }}
+              {{ card.flashcard.word ?? card.flashcard.free_content_front }}
             </h3>
-             <span v-if="card.flashcard.sound_url" class="shrink-0" @click.stop
-              > <AudioPlayer
+            <span v-if="card.flashcard.sound_url" class="shrink-0" @click.stop>
+              <AudioPlayer
                 :url="card.flashcard.sound_url"
                 :collection-id="
                   card.flashcard.sound_url?.startsWith?.('/api/')
@@ -235,39 +246,12 @@
                     : undefined
                 "
                 class="shrink-0"
-              /> </span
-            >
+              />
+            </span>
           </div>
-
-          <div v-if="showCanonicalForCard(card)" class="mt-2 flex flex-col gap-1">
-
-            <div
-              class="flex items-center gap-2 text-xs font-semibold text-gray-400 uppercase tracking-wider"
-            >
-               <EqualApproximately class="h-3.5 w-3.5 text-blue-400 shrink-0" /> <span>{{
-                t('components.definitionCard.canonicalLabel')
-              }}</span
-              >
-            </div>
-
-            <div
-              class="text-sm text-gray-700 font-mono bg-blue-50/30 p-2 rounded border border-blue-100/30"
-            >
-               {{ card.flashcard.canonical_form }}
-            </div>
-
-          </div>
-
-          <div class="text-sm text-gray-600 mt-1">
-             <LazyMathJax
-              :content="card.flashcard.definition ?? card.flashcard.free_content_back"
-            />
-          </div>
-
           <div v-if="card.flashcard.has_front_image || card.flashcard.has_back_image" class="mt-2">
-
             <div v-if="card.flashcard.has_front_image" class="mb-2">
-               <img
+              <img
                 :src="`/api/collections/${card.flashcard.collection_id}/items/${card.flashcard.item_id}/image/front`"
                 class="max-h-40 rounded-lg object-contain bg-gray-100"
                 alt="Front image"
@@ -275,97 +259,85 @@
             </div>
 
             <div v-if="card.flashcard.has_back_image">
-               <img
+              <img
                 :src="`/api/collections/${card.flashcard.collection_id}/items/${card.flashcard.item_id}/image/back`"
                 class="max-h-40 rounded-lg object-contain bg-gray-100"
                 alt="Back image"
               />
             </div>
-
           </div>
-
           <div v-if="card.flashcard.notes" class="text-sm text-gray-500 mt-1">
-             Notes: <LazyMathJax :content="card.flashcard.notes" :enable-markdown="true" />
+            Notes: <LazyMathJax :content="card.flashcard.notes" :enable-markdown="true" />
           </div>
-
         </div>
-         <!-- Progress section -->
+        <!-- Progress section -->
         <div class="flex flex-col items-end gap-3">
-
           <div v-for="progress in card.progress" :key="progress.card_side" class="w-32">
-
             <div class="flex items-center justify-between mb-1">
-               <span class="text-xs font-medium text-gray-600">{{ progress.card_side }}</span
-              > <span class="text-xs font-medium" :class="getStatusTextClass(progress.status)"
-                > {{ progress.status }} </span
-              >
+              <span class="text-xs font-medium text-gray-600">{{ progress.card_side }}</span>
+              <span class="text-xs font-medium" :class="getStatusTextClass(progress.status)">
+                {{ progress.status }}
+              </span>
             </div>
-
             <div class="w-full bg-gray-200 rounded-full h-2">
-
               <div
                 class="h-2 rounded-full transition-all duration-300"
                 :class="getProgressBarClass(progress.status)"
                 :style="{ width: getProgressWidth(progress) }"
               />
-
             </div>
-
             <div v-if="progress.next_review_at" class="text-xs text-gray-500 mt-1 text-right">
-               Next: {{ formatDate(progress.next_review_at) }}
+              Next: {{ formatDate(progress.next_review_at) }}
             </div>
-
           </div>
-
           <div class="flex items-center gap-2 flex-wrap">
-             <button
-              class="ui-btn--empty flex items-center gap-1.5 hover:bg-orange-50 text-orange-600"
-              :title="t('components.flashcardCollectionView.reviewNowAction')"
+            <IconButton
+              :aria-label="t('components.flashcardCollectionView.reviewNowAction')"
+              :button-classes="'ui-btn--empty text-orange-600 hover:bg-orange-50'"
               @click.stop="reviewSingleCard(card.flashcard.id)"
             >
-               <Repeat1 class="h-4 w-4" /> <span class="sr-only">{{
-                t('components.flashcardCollectionView.reviewNowAction')
-              }}</span
-              > </button
-            > <button
+              <template #icon>
+                <Repeat1 class="h-4 w-4" />
+              </template>
+            </IconButton>
+            <IconButton
               :disabled="index === 0 || isReordering"
-              class="ui-btn--empty flex items-center gap-1.5"
-              :class="[
-                index === 0 || isReordering ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100',
-              ]"
-              :title="t('components.flashcardCollectionView.moveUpAction')"
+              :aria-label="t('components.flashcardCollectionView.moveUpAction')"
+              :button-classes="
+                `ui-btn--empty ${index === 0 || isReordering ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100'}`
+              "
               @click.stop="moveCard(card, 'up')"
             >
-               <ArrowUp class="h-4 w-4" /> <span class="sr-only">{{
-                t('components.flashcardCollectionView.moveUpAction')
-              }}</span
-              > </button
-            > <button
+              <template #icon>
+                <ArrowUp class="h-4 w-4" />
+              </template>
+            </IconButton>
+            <IconButton
               :disabled="index === flashcards.length - 1 || isReordering"
-              class="ui-btn--empty flex items-center gap-1.5"
-              :class="[
-                index === flashcards.length - 1 || isReordering
-                  ? 'opacity-50 cursor-not-allowed'
-                  : 'hover:bg-gray-100',
-              ]"
-              :title="t('components.flashcardCollectionView.moveDownAction')"
-              @click="moveCard(card, 'down')"
+              :aria-label="t('components.flashcardCollectionView.moveDownAction')"
+              :button-classes="
+                `ui-btn--empty ${index === flashcards.length - 1 || isReordering ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100'}`
+              "
+              @click.stop="moveCard(card, 'down')"
             >
-               <ArrowDown class="h-4 w-4" /> <span class="sr-only">{{
-                t('components.flashcardCollectionView.moveDownAction')
-              }}</span
-              > </button
-            >
+              <template #icon>
+                <ArrowDown class="h-4 w-4" />
+              </template>
+            </IconButton>
           </div>
-
         </div>
-
       </div>
-
-      <div class="text-sm text-gray-600 mt-1">
-         {{ t('components.flashcardCollectionView.directionLabel') }} <span class="font-medium"
-          > {{ t(`flashcardCollection.directions.${card.flashcard.direction}`) }} </span
-        >
+      <div v-if="showCanonicalForCard(card)" class="mt-2 flex w-full flex-col gap-1">
+        <div class="flex items-center gap-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+          <EqualApproximately class="h-3.5 w-3.5 text-blue-400 shrink-0" />
+          <span>{{ t('components.definitionCard.canonicalLabel') }}</span>
+        </div>
+        <div class="text-sm text-gray-700 font-mono bg-blue-50/30 p-2 rounded border border-blue-100/30">
+          {{ card.flashcard.canonical_form }}
+        </div>
+      </div>
+      <div class="mt-2 w-full text-sm text-gray-600">
+        <LazyMathJax :content="card.flashcard.definition ?? card.flashcard.free_content_back" />
       </div>
 
     </div>
@@ -415,7 +387,7 @@ import CollectionPageHeader from '@/components/CollectionPageHeader.vue'
 import LazyMathJax from '@/components/LazyMathJax.vue'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import PaginationComponent from '@/components/PaginationComponent.vue'
-import { Button } from '@packages/ui'
+import { IconButton } from '@packages/ui'
 import { useAuth } from '@/composables/useAuth'
 import { useError } from '@/composables/useError'
 import { useSeoHead } from '@/composables/useSeoHead'
