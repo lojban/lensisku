@@ -1,52 +1,23 @@
 <template>
-
-  <div class="flashcard-study-root" :class="{ 'pt-for-anon-banner': anonBannerVisible }">
-     <AnonymousProgressBanner
-      v-if="cardsAnsweredInSession >= 4"
-      position="top"
-      @visible="anonBannerVisible = $event"
-    />
-    <PageHeader
-      stack-gap="comfortable"
-      title-as="h2"
-      title-tone="secondary"
-    >
+  <div :class="{ 'pt-for-anon-banner': anonBannerVisible }">
+    <AnonymousProgressBanner v-if="cardsAnsweredInSession >= 4" position="top" @visible="anonBannerVisible = $event" />
+    <PageHeader stack-gap="comfortable" title-as="h2" title-tone="secondary">
       <template #leading>
-        <CollectionCoverLightbox
-          v-if="collectionCoverDisplayUrl"
-          :image-url="collectionCoverDisplayUrl"
-          :alt="
-            collectionMeta?.name
-              ? t('collectionDetail.coverImageAlt', { name: collectionMeta.name })
-              : t('flashcardStudy.title')
-          "
-          :aria-label="
-            collectionMeta?.name
+        <CollectionCoverLightbox v-if="collectionCoverDisplayUrl" :image-url="collectionCoverDisplayUrl" :alt="collectionMeta?.name
+            ? t('collectionDetail.coverImageAlt', { name: collectionMeta.name })
+            : t('flashcardStudy.title')
+          " :aria-label="collectionMeta?.name
               ? t('collectionDetail.coverLightboxDialog', { name: collectionMeta.name })
               : t('flashcardStudy.title')
-          "
-          :close-aria-label="t('collectionDetail.coverLightboxClose')"
-          class="shrink-0"
-        >
+            " :close-aria-label="t('collectionDetail.coverLightboxClose')" class="shrink-0">
           <div class="collection-card-logo">
-            <img
-              :src="collectionCoverDisplayUrl"
-              :alt="
-                collectionMeta?.name
-                  ? t('collectionDetail.coverImageAlt', { name: collectionMeta.name })
-                  : t('flashcardStudy.title')
-              "
-              class="collection-cover-thumb"
-              loading="lazy"
-              decoding="async"
-            />
+            <img :src="collectionCoverDisplayUrl" :alt="collectionMeta?.name
+                ? t('collectionDetail.coverImageAlt', { name: collectionMeta.name })
+                : t('flashcardStudy.title')
+              " class="collection-cover-thumb" loading="lazy" decoding="async" />
           </div>
         </CollectionCoverLightbox>
-        <div
-          v-else
-          class="collection-card-logo-placeholder shrink-0"
-          aria-hidden="true"
-        >
+        <div v-else class="collection-card-logo-placeholder shrink-0" aria-hidden="true">
           <BookOpen class="h-8 w-8" />
         </div>
       </template>
@@ -54,10 +25,7 @@
         {{ t('flashcardStudy.title') }}
       </template>
       <template #description>
-        <p
-          v-if="showNewCardsMessage"
-          class="mt-1 text-right text-sm font-medium text-orange-600"
-        >
+        <p v-if="showNewCardsMessage" class="mt-1 text-right text-sm font-medium text-orange-600">
           {{ t('flashcardStudy.newCardsMessage') }}
         </p>
         <p v-else class="mt-1 text-right text-sm text-gray-600">
@@ -68,498 +36,347 @@
         <button type="button" class="ui-btn--cancel" @click="router.back()">
           {{ t('flashcardStudy.endSession') }}
         </button>
-        <button
-          v-if="currentCard"
-          type="button"
-          class="ui-btn--neutral inline-flex items-center gap-2"
-          @click="openWavesModal"
-        >
+        <button v-if="currentCard" type="button" class="ui-btn--neutral inline-flex items-center gap-2"
+          @click="openWavesModal">
           <MessagesSquare class="h-4 w-4 shrink-0" />
           {{ t('flashcardStudy.wavesButton') }}
         </button>
-        <button
-          v-if="currentCard"
-          type="button"
-          class="ui-btn--empty"
-          @click="snoozeCard"
-        >
+        <button v-if="currentCard" type="button" class="ui-btn--empty" @click="snoozeCard">
           {{ t('flashcardStudy.snooze') }}
         </button>
       </template>
     </PageHeader>
-     <!-- Loading State -->
+    <!-- Loading State -->
     <div v-if="isLoading" class="flex justify-center py-8">
 
       <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
 
     </div>
-     <!-- No Cards State -->
-    <div
-      v-else-if="!currentCard && remainingCards.length === 0"
-      class="text-center py-12 bg-white rounded-lg border"
-    >
+    <!-- No Cards State -->
+    <div v-else-if="!currentCard && remainingCards.length === 0" class="text-center py-12 bg-white rounded-lg border">
 
       <h3 class="text-lg font-medium text-gray-800 mb-2">
-         {{ t('flashcardStudy.allCaughtUp') }}
+        {{ t('flashcardStudy.allCaughtUp') }}
       </h3>
 
       <p class="text-gray-600 mb-4"> {{ t('flashcardStudy.allReviewed') }} </p>
 
       <div class="flex justify-center">
-         <button
-          ref="returnToDeckButtonRef"
-          class="ui-btn--read w-auto h-10 text-base shadow-sm"
-          @click="router.push(returnToUrl)"
-        >
-           {{
+        <button ref="returnToDeckButtonRef" class="ui-btn--read w-auto h-10 text-base shadow-sm"
+          @click="router.push(returnToUrl)">
+          {{
             levelIdParam != null
               ? t('flashcardStudy.returnToLevels')
               : t('flashcardStudy.returnToDeck')
-          }} </button
-        >
+          }} </button>
       </div>
 
     </div>
-     <!-- Current Card -->
-    <div v-else-if="currentCard" class="flex flex-col gap-4">
-       <!-- Card Display -->
-      <div class="bg-white border rounded-lg p-4 sm:p-6">
-         <!-- Progress indicator -->
-        <div
-          v-for="progress in currentCard.progress"
-          :key="progress.card_side"
-          class="flex justify-between items-center mb-4 text-xs sm:text-sm text-gray-600"
-        >
-           <span>{{
-            t('flashcardStudy.cardOfTotal', {
-              current: totalCards - remainingCards.length,
-              total: totalCards,
-            })
-          }}</span
-          > <span :class="getStatusClass(progress.status)"
-            > {{ progress.card_side }}: {{ progress.status }} </span
-          >
-        </div>
-         <!-- Card content -->
-        <div class="flex flex-col gap-4">
-
-          <div
-            v-if="currentCard.flashcard.definition_language_id"
-            class="text-sm text-gray-600 text-center"
-          >
-             {{
-              t('flashcardStudy.definitionLanguage', {
-                language: getLanguageName(currentCard.flashcard.definition_language_id),
+    <!-- Current Card -->
+    <div v-else-if="currentCard" class="study-session-layout">
+      <div class="study-session-scroll-area">
+        <!-- Card Display -->
+        <div class="study-card-panel bg-white border rounded-lg p-4 sm:p-6">
+          <!-- Progress indicator -->
+          <div v-for="progress in currentCard.progress" :key="progress.card_side"
+            class="flex justify-between items-center mb-4 text-xs sm:text-sm text-gray-600">
+            <span>{{
+              t('flashcardStudy.cardOfTotal', {
+                current: totalCards - remainingCards.length,
+                total: totalCards,
               })
-            }}
+              }}</span> <span :class="getStatusClass(progress.status)"> {{ progress.card_side }}: {{ progress.status }}
+            </span>
           </div>
-           <!-- Canonical Comparison Indicator for Fill-in Mode -->
-          <div
-            v-if="isFillInMode && currentCard.flashcard.use_canonical_comparison"
-            class="badge-streak-success"
-          >
-             <CheckCircle2 class="h-3.5 w-3.5" /> <span>{{
-              t('flashcardStudy.canonicalComparisonEnabled')
-            }}</span
-            >
-          </div>
-           <!-- Question --> <!-- For quiz mode prefer question_text when present --> <!-- Display Word/Front for 'direct' side -->
+          <!-- Card content -->
+          <div class="flex flex-col gap-4">
 
-          <div v-if="currentCard.progress[0].card_side === 'direct'">
+            <div v-if="currentCard.flashcard.definition_language_id" class="text-sm text-gray-600 text-center">
+              {{
+                t('flashcardStudy.definitionLanguage', {
+                  language: getLanguageName(currentCard.flashcard.definition_language_id),
+                })
+              }}
+            </div>
+            <!-- Canonical Comparison Indicator for Fill-in Mode -->
+            <div v-if="isFillInMode && currentCard.flashcard.use_canonical_comparison" class="badge-streak-success">
+              <CheckCircle2 class="h-3.5 w-3.5" /> <span>{{
+                t('flashcardStudy.canonicalComparisonEnabled')
+                }}</span>
+            </div>
+            <!-- Question --> <!-- For quiz mode prefer question_text when present -->
+            <!-- Display Word/Front for 'direct' side -->
 
-            <div class="flex items-center justify-center gap-2">
+            <div v-if="currentCard.progress[0].card_side === 'direct'">
 
-              <h3 class="text-2xl font-bold text-gray-800">
-                 {{
-                  currentCard.flashcard.question_text ??
-                  currentCard.flashcard.word ??
-                  currentCard.flashcard.free_content_front
-                }}
-              </h3>
-               <AudioPlayer
-                v-if="currentCard.flashcard.sound_url"
-                :key="'q-' + currentCard.flashcard.id"
-                ref="questionAudioPlayerRef"
-                :url="currentCard.flashcard.sound_url"
-                :collection-id="
-                  currentCard.flashcard.sound_url?.startsWith?.('/api/')
-                    ? currentCard.flashcard.collection_id
-                    : undefined
-                "
-                :item-id="
-                  currentCard.flashcard.sound_url?.startsWith?.('/api/')
+              <div class="flex items-center justify-center gap-2">
+
+                <h3 class="text-2xl font-bold text-gray-800">
+                  {{
+                    currentCard.flashcard.question_text ??
+                    currentCard.flashcard.word ??
+                    currentCard.flashcard.free_content_front
+                  }}
+                </h3>
+                <AudioPlayer v-if="currentCard.flashcard.sound_url" :key="'q-' + currentCard.flashcard.id"
+                  ref="questionAudioPlayerRef" :url="currentCard.flashcard.sound_url" :collection-id="currentCard.flashcard.sound_url?.startsWith?.('/api/')
+                      ? currentCard.flashcard.collection_id
+                      : undefined
+                    " :item-id="currentCard.flashcard.sound_url?.startsWith?.('/api/')
                     ? currentCard.flashcard.item_id
                     : undefined
-                "
-                :suppress-play-errors="true"
-                class="h-6 w-6"
-              />
+                  " :suppress-play-errors="true" class="h-6 w-6" />
+              </div>
+
+              <div v-if="currentCard.flashcard.has_front_image" class="mt-4 flex justify-center">
+                <img
+                  :src="`/api/collections/${currentCard.flashcard.collection_id}/items/${currentCard.flashcard.item_id}/image/front`"
+                  class="max-h-48 rounded-lg object-contain bg-gray-100" alt="Front image" />
+              </div>
+
             </div>
+            <!-- Display Definition/Back for 'reverse' side -->
+            <div v-else>
 
-            <div v-if="currentCard.flashcard.has_front_image" class="mt-4 flex justify-center">
-               <img
-                :src="`/api/collections/${currentCard.flashcard.collection_id}/items/${currentCard.flashcard.item_id}/image/front`"
-                class="max-h-48 rounded-lg object-contain bg-gray-100"
-                alt="Front image"
-              />
-            </div>
-
-          </div>
-           <!-- Display Definition/Back for 'reverse' side -->
-          <div v-else>
-
-            <div class="text-center text-gray-800 text-2xl">
-               <LazyMathJax
-                :content="
-                  currentCard.flashcard.question_text ??
+              <div class="text-center text-gray-800 text-2xl">
+                <LazyMathJax :content="currentCard.flashcard.question_text ??
                   currentCard.flashcard.definition ??
                   currentCard.flashcard.free_content_back
-                "
-              />
-              <div v-if="currentCard.flashcard.has_back_image" class="mt-4 flex justify-center">
-                 <img
-                  :src="`/api/collections/${currentCard.flashcard.collection_id}/items/${currentCard.flashcard.item_id}/image/back`"
-                  class="max-h-48 rounded-lg object-contain bg-gray-100"
-                  alt="Back image"
-                />
+                  " />
+                <div v-if="currentCard.flashcard.has_back_image" class="mt-4 flex justify-center">
+                  <img
+                    :src="`/api/collections/${currentCard.flashcard.collection_id}/items/${currentCard.flashcard.item_id}/image/back`"
+                    class="max-h-48 rounded-lg object-contain bg-gray-100" alt="Back image" />
+                </div>
+
+              </div>
+
+            </div>
+            <!-- Quiz: multiple-choice options (text or image) -->
+            <div v-if="
+              isQuizMode &&
+              !quizResult &&
+              (currentCard.flashcard.quiz_options?.length || quizImageOptions?.length)
+            " class="mt-4">
+
+              <p class="text-sm text-gray-600 text-center mb-3">
+                {{ t('flashcardStudy.selectOption') }}
+              </p>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
+                <template v-if="quizImageOptions?.length"> <button v-for="opt in quizImageOptions" :key="opt.id"
+                    type="button" class="study-quiz-option-flashcard-image" :disabled="isSubmitting"
+                    @click="submitQuizOption(opt.id)">
+                    <img :src="opt.imageUrl" class="w-full h-24 sm:h-28 object-contain rounded-lg" :alt="opt.id" />
+                  </button> </template> <button v-else v-for="(opt, idx) in currentCard.flashcard.quiz_options"
+                  :key="idx" type="button" class="study-quiz-option-flashcard-text" :disabled="isSubmitting"
+                  @click="submitQuizOption(opt)">
+                  <LazyMathJax :content="opt" />
+                </button>
+              </div>
+
+            </div>
+            <!-- Answer Input (for fill-in modes) -->
+            <div v-if="isFillInMode" class="mt-4">
+              <textarea ref="fillInTextareaRef" v-model="userAnswer" type="text" rows="1"
+                class="textarea-field w-full text-center text-xl" :placeholder="t('flashcardStudy.typeAnswer')"
+                @keydown.enter.prevent="() => submitAnswer()" :disabled="!!fillinResult" />
+            </div>
+            <!-- Quiz result (correct/incorrect + correct answer) -->
+            <div v-if="quizResult" class="flex flex-col gap-4 pt-4 border-t">
+
+              <div :class="quizResult.correct ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'
+                " class="text-center text-lg">
+                {{
+                  quizResult.correct
+                    ? t('flashcardStudy.answerCorrect')
+                    : t('flashcardStudy.answerIncorrect')
+                }}
+              </div>
+
+              <p v-if="!quizResult.correct && quizResult.message" class="text-center text-gray-700">
+                {{ quizResult.message }}
+              </p>
+
+            </div>
+            <!-- Answer Display (shown after revealing, or after fill-in when incorrect) -->
+            <div v-if="(showAnswer || (fillinResult && !isFillinCorrect)) && !quizResult"
+              class="flex flex-col gap-4 pt-4 border-t">
+
+              <div class="prose max-w-none text-center text-lg">
+
+                <h4 class="text-sm text-center text-gray-700 mb-2">
+                  {{ t('flashcardStudy.correctAnswer') }}
+                </h4>
+                <!-- Show the OTHER side as the correct answer --> <template
+                  v-if="currentCard.progress[0].card_side === 'direct'">
+                  <!-- If question was front/word, show back/definition -->
+                  <LazyMathJax :content="currentCard.flashcard.definition ?? currentCard.flashcard.free_content_back
+                    " />
+                  <div v-if="currentCard.flashcard.has_back_image" class="mt-4 flex justify-center">
+                    <img
+                      :src="`/api/collections/${currentCard.flashcard.collection_id}/items/${currentCard.flashcard.item_id}/image/back`"
+                      class="max-h-48 rounded-lg object-contain bg-gray-100" alt="Back image" />
+                  </div>
+                </template> <template v-else> <!-- If question was back/definition, show front/word -->
+                  <div class="flex items-center justify-center gap-2">
+                    <span>{{
+                      currentCard.flashcard.word ?? currentCard.flashcard.free_content_front
+                      }}</span>
+                    <AudioPlayer ref="answerAudioPlayerRef" v-if="currentCard.flashcard.sound_url"
+                      :url="currentCard.flashcard.sound_url" :collection-id="currentCard.flashcard.sound_url?.startsWith?.('/api/')
+                          ? currentCard.flashcard.collection_id
+                          : undefined
+                        " :item-id="currentCard.flashcard.sound_url?.startsWith?.('/api/')
+                        ? currentCard.flashcard.item_id
+                        : undefined
+                      " :suppress-play-errors="true" class="h-6 w-6 inline-block" />
+                  </div>
+
+                  <div v-if="showCanonicalForm" class="mt-3 pt-3 border-t flex flex-col gap-1.5 text-center">
+
+                    <div
+                      class="flex items-center justify-center gap-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                      <EqualApproximately class="h-3.5 w-3.5 text-blue-400" /> <span>{{
+                        t('components.definitionCard.canonicalLabel')
+                        }}</span>
+                    </div>
+
+                    <div class="code-snippet-surface inline-block mx-auto">
+                      {{ currentCard.flashcard.canonical_form }}
+                    </div>
+
+                  </div>
+
+                  <div v-if="currentCard.flashcard.has_front_image" class="mt-4 flex justify-center">
+                    <img
+                      :src="`/api/collections/${currentCard.flashcard.collection_id}/items/${currentCard.flashcard.item_id}/image/front`"
+                      class="max-h-48 rounded-lg object-contain bg-gray-100" alt="Front image" />
+                  </div>
+                </template>
+              </div>
+              <!-- Display Notes only when showing the definition side -->
+              <div v-if="currentCard.flashcard.notes && currentCard.progress[0].card_side === 'direct'">
+
+                <h4 class="text-sm font-medium text-gray-700 mb-2">
+                  {{ t('flashcardStudy.notes') }}
+                </h4>
+                <LazyMathJax :content="currentCard.flashcard.notes" :enable-markdown="true" />
               </div>
 
             </div>
 
           </div>
-           <!-- Quiz: multiple-choice options (text or image) -->
-          <div
-            v-if="
-              isQuizMode &&
-              !quizResult &&
-              (currentCard.flashcard.quiz_options?.length || quizImageOptions?.length)
-            "
-            class="mt-4"
-          >
-
-            <p class="text-sm text-gray-600 text-center mb-3">
-               {{ t('flashcardStudy.selectOption') }}
-            </p>
-
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
-               <template v-if="quizImageOptions?.length"
-                > <button
-                  v-for="opt in quizImageOptions"
-                  :key="opt.id"
-                  type="button"
-                  class="study-quiz-option-flashcard-image"
-                  :disabled="isSubmitting"
-                  @click="submitQuizOption(opt.id)"
-                >
-                   <img
-                    :src="opt.imageUrl"
-                    class="w-full h-24 sm:h-28 object-contain rounded-lg"
-                    :alt="opt.id"
-                  /> </button
-                > </template
-              > <button
-                v-else
-                v-for="(opt, idx) in currentCard.flashcard.quiz_options"
-                :key="idx"
-                type="button"
-                class="study-quiz-option-flashcard-text"
-                :disabled="isSubmitting"
-                @click="submitQuizOption(opt)"
-              >
-                 <LazyMathJax :content="opt" /> </button
-              >
-            </div>
-
-          </div>
-           <!-- Answer Input (for fill-in modes) -->
-          <div v-if="isFillInMode" class="mt-4">
-             <textarea
-              ref="fillInTextareaRef"
-              v-model="userAnswer"
-              type="text"
-              rows="1"
-              class="textarea-field w-full text-center text-xl"
-              :placeholder="t('flashcardStudy.typeAnswer')"
-              @keydown.enter.prevent="() => submitAnswer()"
-              :disabled="!!fillinResult"
-            />
-          </div>
-           <!-- Quiz result (correct/incorrect + correct answer) -->
-          <div v-if="quizResult" class="flex flex-col gap-4 pt-4 border-t">
-
-            <div
-              :class="
-                quizResult.correct ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'
-              "
-              class="text-center text-lg"
-            >
-               {{
-                quizResult.correct
-                  ? t('flashcardStudy.answerCorrect')
-                  : t('flashcardStudy.answerIncorrect')
-              }}
-            </div>
-
-            <p v-if="!quizResult.correct && quizResult.message" class="text-center text-gray-700">
-               {{ quizResult.message }}
-            </p>
-
-          </div>
-           <!-- Answer Display (shown after revealing, or after fill-in when incorrect) -->
-          <div
-            v-if="(showAnswer || (fillinResult && !isFillinCorrect)) && !quizResult"
-            class="flex flex-col gap-4 pt-4 border-t"
-          >
-
-            <div class="prose max-w-none text-center text-lg">
-
-              <h4 class="text-sm text-center text-gray-700 mb-2">
-                 {{ t('flashcardStudy.correctAnswer') }}
-              </h4>
-               <!-- Show the OTHER side as the correct answer --> <template
-                v-if="currentCard.progress[0].card_side === 'direct'"
-                > <!-- If question was front/word, show back/definition --> <LazyMathJax
-                  :content="
-                    currentCard.flashcard.definition ?? currentCard.flashcard.free_content_back
-                  "
-                />
-                <div v-if="currentCard.flashcard.has_back_image" class="mt-4 flex justify-center">
-                   <img
-                    :src="`/api/collections/${currentCard.flashcard.collection_id}/items/${currentCard.flashcard.item_id}/image/back`"
-                    class="max-h-48 rounded-lg object-contain bg-gray-100"
-                    alt="Back image"
-                  />
-                </div>
-                 </template
-              > <template v-else
-                > <!-- If question was back/definition, show front/word -->
-                <div class="flex items-center justify-center gap-2">
-                   <span>{{
-                    currentCard.flashcard.word ?? currentCard.flashcard.free_content_front
-                  }}</span
-                  > <AudioPlayer
-                    ref="answerAudioPlayerRef"
-                    v-if="currentCard.flashcard.sound_url"
-                    :url="currentCard.flashcard.sound_url"
-                    :collection-id="
-                      currentCard.flashcard.sound_url?.startsWith?.('/api/')
-                        ? currentCard.flashcard.collection_id
-                        : undefined
-                    "
-                    :item-id="
-                      currentCard.flashcard.sound_url?.startsWith?.('/api/')
-                        ? currentCard.flashcard.item_id
-                        : undefined
-                    "
-                    :suppress-play-errors="true"
-                    class="h-6 w-6 inline-block"
-                  />
-                </div>
-
-                <div
-                  v-if="showCanonicalForm"
-                  class="mt-3 pt-3 border-t flex flex-col gap-1.5 text-center"
-                >
-
-                  <div
-                    class="flex items-center justify-center gap-2 text-xs font-semibold text-gray-400 uppercase tracking-wider"
-                  >
-                     <EqualApproximately class="h-3.5 w-3.5 text-blue-400" /> <span>{{
-                      t('components.definitionCard.canonicalLabel')
-                    }}</span
-                    >
-                  </div>
-
-                  <div
-                    class="code-snippet-surface inline-block mx-auto"
-                  >
-                     {{ currentCard.flashcard.canonical_form }}
-                  </div>
-
-                </div>
-
-                <div v-if="currentCard.flashcard.has_front_image" class="mt-4 flex justify-center">
-                   <img
-                    :src="`/api/collections/${currentCard.flashcard.collection_id}/items/${currentCard.flashcard.item_id}/image/front`"
-                    class="max-h-48 rounded-lg object-contain bg-gray-100"
-                    alt="Front image"
-                  />
-                </div>
-                 </template
-              >
-            </div>
-             <!-- Display Notes only when showing the definition side -->
-            <div
-              v-if="currentCard.flashcard.notes && currentCard.progress[0].card_side === 'direct'"
-            >
-
-              <h4 class="text-sm font-medium text-gray-700 mb-2">
-                 {{ t('flashcardStudy.notes') }}
-              </h4>
-               <LazyMathJax :content="currentCard.flashcard.notes" :enable-markdown="true" />
-            </div>
-
-          </div>
 
         </div>
-
       </div>
-       <!-- Review Controls (quiz mode uses option buttons in card, no extra button) -->
-      <div
-        v-if="!showAnswer && !fillinResult && !quizResult && !isJustInformationMode && !isQuizMode"
-        class="flex justify-center px-4"
-      >
-         <Button
-          v-if="isFillInMode"
-          variant="read"
-          class="w-auto !h-auto px-5 py-2.5 rounded-xl text-sm shadow-sm"
-          @click="submitAnswer()"
-        >
-           {{ t('flashcardStudy.submitAnswer') }} </Button
-        > <Button
-          v-else
-          ref="showAnswerButtonRef"
-          variant="read"
-          size="lg"
-          class="w-auto shadow-sm"
-          @click="revealAnswerAndPlayAudio"
-        >
-           {{ t('flashcardStudy.showAnswer') }} </Button
-        >
-      </div>
-       <!-- OK button for JustInformation mode -->
-      <div v-else-if="isJustInformationMode && !showAnswer" class="flex justify-center px-4">
-         <button class="ui-btn--read w-auto h-10 text-base shadow-sm" @click="submitAnswer(4)">
-           <Check class="h-4 w-4" /> </button
-        >
-      </div>
-       <!-- Quiz: Next card after answering -->
-      <div v-else-if="quizResult" class="flex justify-center px-4 mt-4">
-         <button
-          v-if="remainingCards.length <= 0"
-          class="ui-btn--read w-auto h-10 text-base shadow-sm"
-          @click="router.back()"
-        >
-           {{ t('flashcardStudy.endSession') }} </button
-        > <button
-          v-else
-          ref="nextCardButtonRef"
-          class="ui-btn--read w-auto h-10 text-base shadow-sm"
-          @click="handleQuizNextCard"
-        >
-           {{ t('flashcardStudy.nextCard') }} </button
-        >
-      </div>
-       <!-- Rating buttons (for non-fill-in modes after showing answer) -->
-      <div
-        v-else-if="showAnswer && !isFillInMode && !isJustInformationMode"
-        class="bg-white border rounded-lg p-4 sm:p-6"
-      >
+      <div class="study-controls-placeholder" aria-hidden="true" />
+      <div class="study-controls-dock">
+        <div class="study-controls-surface bg-white border rounded-lg p-4 sm:p-4 w-full">
+          <!-- Review Controls (quiz mode uses option buttons in card, no extra button) -->
+          <div v-if="!showAnswer && !fillinResult && !quizResult && !isJustInformationMode && !isQuizMode"
+            class="flex justify-center px-4">
+            <Button v-if="isFillInMode" variant="read" class="w-auto !h-auto px-5 py-2.5 rounded-xl text-sm shadow-sm"
+              @click="submitAnswer()">
+              {{ t('flashcardStudy.submitAnswer') }}
+            </Button>
+            <Button v-else ref="showAnswerButtonRef" variant="read" size="lg" class="w-auto shadow-sm"
+              @click="revealAnswerAndPlayAudio">
+              {{ t('flashcardStudy.showAnswer') }}
+            </Button>
+          </div>
+          <!-- OK button for JustInformation mode -->
+          <div v-else-if="isJustInformationMode && !showAnswer" class="flex justify-center px-4">
+            <button class="ui-btn--read w-auto h-10 text-base shadow-sm" @click="submitAnswer(4)">
+              <Check class="h-4 w-4" />
+            </button>
+          </div>
+          <!-- Quiz: Next card after answering -->
+          <div v-else-if="quizResult" class="flex justify-center px-4 mt-4">
+            <button v-if="remainingCards.length <= 0" class="ui-btn--read w-auto h-10 text-base shadow-sm"
+              @click="router.back()">
+              {{ t('flashcardStudy.endSession') }}
+            </button>
+            <button v-else ref="nextCardButtonRef" class="ui-btn--read w-auto h-10 text-base shadow-sm"
+              @click="handleQuizNextCard">
+              {{ t('flashcardStudy.nextCard') }}
+            </button>
+          </div>
+          <!-- Rating buttons (for non-fill-in modes after showing answer) -->
+          <div v-else-if="showAnswer && !isFillInMode && !isJustInformationMode" class="flex flex-col gap-4">
 
-        <h4 class="text-lg font-medium text-center text-gray-700 mb-6">
-           {{ t('flashcardStudy.howWellRemembered') }}
-        </h4>
+            <h4 class="text-lg font-medium text-center text-gray-700">
+              {{ t('flashcardStudy.howWellRemembered') }}
+            </h4>
 
-        <div class="flex justify-center px-4 sm:px-6">
+            <div class="flex justify-center px-4 sm:px-6">
 
-          <div class="w-full max-w-xl">
+              <div class="w-full max-w-xl">
 
-            <div class="grid grid-cols-3 gap-2 sm:gap-4">
-              <IconButton
-                :button-classes="'ui-btn--error justify-self-center !w-auto sm:min-w-[120px]'"
-                content-layout="stacked"
-                :disabled="isSubmitting"
-                :label="`${t('flashcardStudy.forgot')} (1)`"
-                @click="submitAnswer(1)"
-              >
-                <template #icon>
-                  <Loader2 v-if="isSubmitting" class="h-4 w-4 shrink-0 animate-spin" />
-                  <XCircle v-else class="h-4 w-4 shrink-0" />
-                </template>
-              </IconButton
-              > <IconButton
-                :button-classes="'ui-btn--warning justify-self-center !w-auto sm:min-w-[120px]'"
-                content-layout="stacked"
-                :disabled="isSubmitting"
-                :label="`${t('flashcardStudy.good')} (2)`"
-                @click="submitAnswer(3)"
-              >
-                <template #icon>
-                  <Loader2 v-if="isSubmitting" class="h-4 w-4 shrink-0 animate-spin" />
-                  <Smile v-else class="h-4 w-4 shrink-0" />
-                </template>
-              </IconButton
-              > <IconButton
-                :button-classes="'ui-btn--success justify-self-center !w-auto sm:min-w-[120px]'"
-                content-layout="stacked"
-                :disabled="isSubmitting"
-                :label="`${t('flashcardStudy.easy')} (3)`"
-                @click="submitAnswer(4)"
-              >
-                <template #icon>
-                  <Loader2 v-if="isSubmitting" class="h-4 w-4 shrink-0 animate-spin" />
-                  <Check v-else class="h-4 w-4 shrink-0" />
-                </template>
-              </IconButton
-              >
+                <div class="grid grid-cols-3 gap-2">
+                  <IconButton :button-classes="'ui-btn--error justify-self-center !w-auto sm:min-w-[120px]'"
+                    content-layout="stacked" :disabled="isSubmitting" :label="`${t('flashcardStudy.forgot')} (1)`"
+                    @click="submitAnswer(1)">
+                    <template #icon>
+                      <Loader2 v-if="isSubmitting" class="h-4 w-4 shrink-0 animate-spin" />
+                      <XCircle v-else class="h-4 w-4 shrink-0" />
+                    </template>
+                  </IconButton>
+                  <IconButton :button-classes="'ui-btn--warning justify-self-center !w-auto sm:min-w-[120px]'"
+                    content-layout="stacked" :disabled="isSubmitting" :label="`${t('flashcardStudy.good')} (2)`"
+                    @click="submitAnswer(3)">
+                    <template #icon>
+                      <Loader2 v-if="isSubmitting" class="h-4 w-4 shrink-0 animate-spin" />
+                      <Smile v-else class="h-4 w-4 shrink-0" />
+                    </template>
+                  </IconButton>
+                  <IconButton :button-classes="'ui-btn--success justify-self-center !w-auto sm:min-w-[120px]'"
+                    content-layout="stacked" :disabled="isSubmitting" :label="`${t('flashcardStudy.easy')} (3)`"
+                    @click="submitAnswer(4)">
+                    <template #icon>
+                      <Loader2 v-if="isSubmitting" class="h-4 w-4 shrink-0 animate-spin" />
+                      <Check v-else class="h-4 w-4 shrink-0" />
+                    </template>
+                  </IconButton>
+                </div>
+
+              </div>
+
             </div>
 
           </div>
+          <!-- Next Card button (for fill-in modes after submitting) -->
+          <div v-else-if="fillinResult" class="flex justify-center px-4">
 
-        </div>
+            <div class="flex flex-col gap-2 mt-4 items-center">
+              <!-- When correct: show a clear success message only -->
+              <div v-if="isFillinCorrect" class="flex items-center gap-2 text-green-600 font-medium text-lg">
+                <Check class="h-6 w-6 shrink-0" /> <span>{{ t('flashcardStudy.answerCorrect') }}</span>
+              </div>
+              <!-- When incorrect: correct answer is shown above; no error alert --> <button
+                v-if="remainingCards.length <= 0" class="ui-btn--read w-auto h-10 text-base shadow-sm"
+                @click="router.back()">
+                {{ t('flashcardStudy.endSession') }} </button> <button v-else ref="nextCardButtonRef"
+                class="ui-btn--read w-auto h-10 text-base shadow-sm" @click="handleNextCard">
+                {{ t('flashcardStudy.nextCard') }} </button>
+              <div v-if="remainingCards.length === 0" class="text-center text-gray-600 mt-2">
+                {{ t('flashcardStudy.thanksSession') }}
+              </div>
 
-      </div>
-       <!-- Next Card button (for fill-in modes after submitting) -->
-      <div v-else-if="fillinResult" class="flex justify-center px-4">
+            </div>
 
-        <div class="flex flex-col gap-2 mt-4 items-center">
-           <!-- When correct: show a clear success message only -->
-          <div
-            v-if="isFillinCorrect"
-            class="flex items-center gap-2 text-green-600 font-medium text-lg"
-          >
-             <Check class="h-6 w-6 shrink-0" /> <span>{{ t('flashcardStudy.answerCorrect') }}</span
-            >
           </div>
-           <!-- When incorrect: correct answer is shown above; no error alert --> <button
-            v-if="remainingCards.length <= 0"
-            class="ui-btn--read w-auto h-10 text-base shadow-sm"
-            @click="router.back()"
-          >
-             {{ t('flashcardStudy.endSession') }} </button
-          > <button
-            v-else
-            ref="nextCardButtonRef"
-            class="ui-btn--read w-auto h-10 text-base shadow-sm"
-            @click="handleNextCard"
-          >
-             {{ t('flashcardStudy.nextCard') }} </button
-          >
-          <div v-if="remainingCards.length === 0" class="text-center text-gray-600 mt-2">
-             {{ t('flashcardStudy.thanksSession') }}
-          </div>
-
         </div>
-
       </div>
-
     </div>
 
   </div>
 
-  <ModalComponent
-    :show="showWavesModal"
-    :title="t('flashcardStudy.wavesModalTitle', { id: currentFlashcardId })"
-    @close="showWavesModal = false"
-  >
+  <ModalComponent :show="showWavesModal" :title="t('flashcardStudy.wavesModalTitle', { id: currentFlashcardId })"
+    @close="showWavesModal = false">
     <div v-if="currentCard?.flashcard?.id" class="pt-1">
-      <CommentList
-        :collection-id="currentCard.flashcard.collection_id"
-        :definition-link-id="currentCard.flashcard.id"
-        :initial-subject="currentFlashcardTag"
-        :show-composer-when-empty="true"
-        :embedded="true"
-      />
+      <CommentList :collection-id="currentCard.flashcard.collection_id" :definition-link-id="currentCard.flashcard.id"
+        :initial-subject="currentFlashcardTag" :show-composer-when-empty="true" :embedded="true" />
     </div>
   </ModalComponent>
 
@@ -606,8 +423,6 @@ import { useAnonymousProgress, type LevelProgressData } from '@/composables/useA
 import { queryStr } from '@/utils/routeQuery'
 
 const ANON_BANNER_ANSWERED_KEY = 'lensisku_study_cards_answered'
-const STUDY_MAIN_SCROLLBAR_CLASS = 'flashcard-study-main-scrollbar'
-
 const anonBannerVisible = ref(false)
 const cardsAnsweredInSession = ref(0)
 
@@ -930,7 +745,7 @@ const submitAnswer = async (rating?: number) => {
     cardsAnsweredInSession.value = next
     try {
       sessionStorage.setItem(ANON_BANNER_ANSWERED_KEY, String(next))
-    } catch (_) {}
+    } catch (_) { }
     if (isAnonLevelMode.value || isAnonNoLevelsMode.value) {
       let correct
       if (isFillInMode.value) {
@@ -986,7 +801,7 @@ const submitQuizOption = async (selectedOption) => {
     cardsAnsweredInSession.value = next
     try {
       sessionStorage.setItem(ANON_BANNER_ANSWERED_KEY, String(next))
-    } catch (_) {}
+    } catch (_) { }
     if (isAnonLevelMode.value || isAnonNoLevelsMode.value) {
       const correct =
         String(selectedOption).trim().toLowerCase() ===
@@ -1183,12 +998,10 @@ const handleKeydown = (event) => {
 }
 
 onMounted(() => {
-  document.body.classList.add(STUDY_MAIN_SCROLLBAR_CLASS)
   window.addEventListener('keydown', handleKeydown)
 })
 
 onBeforeUnmount(() => {
-  document.body.classList.remove(STUDY_MAIN_SCROLLBAR_CLASS)
   window.removeEventListener('keydown', handleKeydown)
 })
 
@@ -1210,7 +1023,7 @@ onMounted(async () => {
   try {
     const stored = sessionStorage.getItem(ANON_BANNER_ANSWERED_KEY)
     cardsAnsweredInSession.value = parseInt(stored || '0', 10)
-  } catch (_) {}
+  } catch (_) { }
   try {
     const langsResponse = await getLanguages()
     languages.value = langsResponse.data
@@ -1239,12 +1052,46 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-:global(body.flashcard-study-main-scrollbar .lingo-main) {
-  overflow-y: scroll;
+.study-session-layout {
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100dvh - 14rem);
 }
 
-.flashcard-study-root.pt-for-anon-banner {
-  padding-top: 5.5rem;
+.study-session-scroll-area {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.study-card-panel {
+  border-color: #d1d5db;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.55);
+}
+
+.study-controls-placeholder {
+  min-height: 12rem;
+}
+
+.study-controls-dock {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));
+  z-index: 10;
+  padding: 0 2rem 0;
+  box-sizing: border-box;
+}
+
+.study-controls-surface {
+  width: min(100%, calc(100vw - 2rem));
+  margin-inline: auto;
+  border-color: #93c5fd;
+  border-bottom-width: 0;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+  box-shadow:
+    0 0 0 1px rgba(147, 197, 253, 0.5),
+    0 10px 22px -14px rgba(30, 64, 175, 0.45);
 }
 </style>
-
