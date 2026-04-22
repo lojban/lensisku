@@ -257,7 +257,7 @@ const baseRoutes: Array<RouteRecordRaw> = [
     path: '/collections/:collectionId/flashcards/study',
     name: 'FlashcardStudy',
     component: () => import('../pages/FlashcardStudyView.vue'),
-    meta: { hideFooter: true },
+    meta: { hideFooter: true, alwaysShowScrollbar: true },
   },
   {
     path: '/collections/:collectionId/lingo/study',

@@ -72,6 +72,21 @@
         }}
       </span>
     </template>
+    <template #description>
+      <div class="flex max-w-2xl flex-col gap-2 text-sm text-slate-600">
+        <template v-if="auth.state.isLoggedIn">
+          <p class="m-0">{{ t('collectionList.collectionDescriptionCourse') }}</p>
+          <p class="m-0">{{ t('collectionList.collectionDescriptionIntro') }}</p>
+        </template>
+        <p v-else class="m-0">
+          <i18n-t keypath="collectionList.collectionDescriptionLoggedOut" tag="span">
+            <RouterLink to="/login" class="font-medium text-blue-600 underline hover:text-blue-800">{{
+              t('collectionList.loginTo')
+              }}</RouterLink>
+          </i18n-t>
+        </p>
+      </div>
+    </template>
     <template v-if="auth.state.isLoggedIn" #trailing>
       <div class="flex min-w-0 flex-grow flex-row flex-wrap justify-end gap-2">
         <input
@@ -130,7 +145,7 @@
       <input v-model="searchQuery" type="text"
         class="input-field w-full min-w-0 sm:flex-1 sm:max-w-md"
         :placeholder="hasFlashcardsOnly ? t('collectionList.searchPlaceholder') : t('collectionList.searchPlaceholderCollections')" /> <label
-        class="inline-flex items-center gap-2 self-end text-sm font-medium text-gray-700 select-none cursor-pointer sm:self-auto"> <input
+        class="inline-flex items-center gap-2 self-end text-base font-medium text-gray-700 select-none cursor-pointer sm:self-auto"> <input
           v-model="hasFlashcardsOnly" type="checkbox" class="checkbox-toggle" /> <span>{{
             t('collectionList.onlyWithFlashcards')
           }}</span> </label>
@@ -162,21 +177,6 @@
   <LoadingSpinner v-if="isLoading" />
   <!-- Collections Card Grid -->
   <div v-else class="collections-section">
-
-    <div class="mb-6 flex max-w-2xl flex-col gap-2 text-sm text-slate-600">
-      <template v-if="auth.state.isLoggedIn">
-        <p class="m-0">{{ t('collectionList.collectionDescriptionCourse') }}</p>
-        <p class="m-0">{{ t('collectionList.collectionDescriptionIntro') }}</p>
-      </template>
-      <p v-else class="m-0">
-        <i18n-t keypath="collectionList.collectionDescriptionLoggedOut" tag="span">
-          <RouterLink to="/login" class="font-medium text-blue-600 underline hover:text-blue-800">{{
-            t('collectionList.loginTo')
-            }}</RouterLink>
-        </i18n-t>
-      </p>
-    </div>
-
     <div class="collections-grid">
       <CollectionCard v-for="collection in collections" :key="collection.collection_id" :collection="collection"
         :cover-image-url="collection.has_cover_image ? getCollectionImage(collection.collection_id, { cached: true }) : null"
