@@ -1,7 +1,9 @@
 <template>
   <Button
-    tag="button"
-    type="button"
+    :tag="tag"
+    :to="to"
+    :href="href"
+    :type="resolvedType"
     :variant="resolvedVariant"
     :size="size"
     :class="rootClass"
@@ -14,7 +16,7 @@
         <Plus :class="iconClasses" />
       </slot>
     </template>
-    <template v-if="label">{{ label }}</template>
+    <template v-if="hasLabel" #default>{{ label }}</template>
   </Button>
 </template>
 
@@ -26,13 +28,23 @@ import Button from './Button.vue'
 /** Split `ui-btn--foo` from optional utilities (`w-full`, `mb-4`, …). */
 function parseButtonClasses(input: string): { variant: string; utilities: string } {
   const tokens = input.trim().split(/\s+/).filter(Boolean)
-  const ui = tokens.find((t) => t.startsWith('ui-btn--'))
-  const variant = ui ? ui.slice('ui-btn--'.length) : 'primary'
-  const utilities = tokens.filter((t) => !t.startsWith('ui-btn--')).join(' ')
+  const variantIdx = tokens.findIndex((t) => t.startsWith('ui-btn--'))
+  const variantToken = variantIdx >= 0 ? tokens[variantIdx] : null
+  const variant = variantToken ? variantToken.slice('ui-btn--'.length) : 'primary'
+  // Preserve other utility classes, including extra `ui-btn--*` tokens like `ui-btn--group-item`.
+  const utilities = tokens.filter((_, idx) => idx !== variantIdx).join(' ')
   return { variant, utilities }
 }
 
 const props = defineProps({
+  /** Underlying element/tag (`button`, `router-link`, `a`). */
+  tag: { type: String, default: 'button' },
+  /** Router destination when `tag="router-link"` (or when using implicit router mode). */
+  to: { type: [String, Object], default: undefined },
+  /** Anchor href when `tag="a"` (or when using implicit anchor mode). */
+  href: { type: String, default: undefined },
+  /** Native button type (defaults to `button` only for native button usage). */
+  type: { type: String, default: undefined },
   /** Optional; when omitted, button is icon-only (use ariaLabel for a11y) */
   label: { type: String, default: '' },
   /** Aria-label for icon-only buttons; falls back to label when present */
@@ -68,4 +80,8 @@ const rootClass = computed(() =>
 )
 
 const ariaLabelComputed = computed(() => props.ariaLabel || props.label || undefined)
+const hasLabel = computed(() => props.label.trim().length > 0)
+const resolvedType = computed(() =>
+  props.tag === 'button' && !props.to && !props.href ? props.type || 'button' : props.type
+)
 </script>
