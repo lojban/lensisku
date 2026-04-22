@@ -1,51 +1,41 @@
 <template>
   <div :class="{ 'pt-for-anon-banner': anonBannerVisible }">
     <AnonymousProgressBanner v-if="cardsAnsweredInSession >= 4" position="top" @visible="anonBannerVisible = $event" />
-    <PageHeader stack-gap="comfortable" title-as="h2" title-tone="secondary">
-      <template #leading>
-        <CollectionCoverLightbox v-if="collectionCoverDisplayUrl" :image-url="collectionCoverDisplayUrl" :alt="collectionMeta?.name
-            ? t('collectionDetail.coverImageAlt', { name: collectionMeta.name })
+    <header class="rounded-lg border border-gray-200 bg-white p-4 sm:p-6 mb-6">
+      <div class="flex w-full min-w-0 items-start gap-3 sm:gap-4">
+        <button v-if="collectionCoverDisplayUrl" type="button" class="cursor-pointer max-w-full inline-flex h-full min-h-0 shrink-0 items-stretch border-0 bg-transparent p-0 text-inherit shrink-0 self-start"
+          :aria-label="collectionMeta?.name
+            ? t('collectionDetail.coverLightboxDialog', { name: collectionMeta.name })
             : t('flashcardStudy.title')
-          " :aria-label="collectionMeta?.name
-              ? t('collectionDetail.coverLightboxDialog', { name: collectionMeta.name })
-              : t('flashcardStudy.title')
-            " :close-aria-label="t('collectionDetail.coverLightboxClose')" class="shrink-0">
+          " @click="router.push(flashcardCollectionUrl)">
           <div class="collection-card-logo">
             <img :src="collectionCoverDisplayUrl" :alt="collectionMeta?.name
                 ? t('collectionDetail.coverImageAlt', { name: collectionMeta.name })
                 : t('flashcardStudy.title')
               " class="collection-cover-thumb" loading="lazy" decoding="async" />
           </div>
-        </CollectionCoverLightbox>
-        <div v-else class="collection-card-logo-placeholder shrink-0" aria-hidden="true">
+        </button>
+        <div v-else class="collection-card-logo-placeholder shrink-0 self-start" aria-hidden="true">
           <BookOpen class="h-8 w-8" />
         </div>
-      </template>
-      <template #title>
-        {{ t('flashcardStudy.title') }}
-      </template>
-      <template #description>
-        <p v-if="showNewCardsMessage" class="mt-1 text-right text-sm font-medium text-orange-600">
-          {{ t('flashcardStudy.newCardsMessage') }}
-        </p>
-        <p v-else class="mt-1 text-right text-sm text-gray-600">
-          {{ t('flashcardStudy.remainingCards', { count: remainingCards.length }) }}
-        </p>
-      </template>
-      <template #trailing>
-        <button type="button" class="ui-btn--cancel" @click="router.back()">
-          {{ t('flashcardStudy.endSession') }}
-        </button>
-        <button v-if="currentCard" type="button" class="ui-btn--neutral inline-flex items-center gap-2"
-          @click="openWavesModal">
-          <MessagesSquare class="h-4 w-4 shrink-0" />
-          {{ t('flashcardStudy.wavesButton') }}
-        </button>
-        <button v-if="currentCard" type="button" class="ui-btn--empty" @click="snoozeCard">
-          {{ t('flashcardStudy.snooze') }}
-        </button>
-      </template>
-    </PageHeader>
+        <div class="ml-auto flex w-auto max-w-full flex-wrap items-center justify-end gap-2">
+          <button type="button" class="ui-btn--cancel" @click="router.back()">
+            {{ t('flashcardStudy.endSession') }}
+          </button>
+          <button v-if="currentCard" type="button" class="ui-btn--neutral inline-flex items-center gap-2"
+            @click="openWavesModal">
+            <MessagesSquare class="h-4 w-4 shrink-0" />
+            {{ t('flashcardStudy.wavesButton') }}
+          </button>
+          <button v-if="currentCard" type="button" class="ui-btn--empty" @click="snoozeCard">
+            {{ t('flashcardStudy.snooze') }}
+          </button>
+          <p class="text-sm text-gray-600">
+            {{ t('flashcardStudy.remainingCards', { count: remainingCards.length }) }}
+          </p>
+        </div>
+      </div>
+    </header>
     <!-- Loading State -->
     <div v-if="isLoading" class="flex justify-center py-8">
 
@@ -398,7 +388,7 @@ import { useRoute, useRouter } from 'vue-router'
 import AnonymousProgressBanner from '@/components/AnonymousProgressBanner.vue'
 import ModalComponent from '@/components/ModalComponent.vue'
 import PageHeader from '@/components/layout/PageHeader.vue'
-import { Button, CollectionCoverLightbox, IconButton } from '@packages/ui'
+import { Button, IconButton } from '@packages/ui'
 
 import {
   getDueCards,
@@ -472,6 +462,11 @@ const returnToUrl = computed(() => {
   const cid = collectionIdParam.value
   if (levelIdParam.value != null) return `/collections/${cid}/levels`
   if (isAnonNoLevelsMode.value) return `/collections/${cid}/flashcards`
+  return `/collections/${cid}/flashcards`
+})
+
+const flashcardCollectionUrl = computed(() => {
+  const cid = collectionIdParam.value
   return `/collections/${cid}/flashcards`
 })
 
