@@ -100,7 +100,7 @@
           <IconButton
             v-if="viewMode === 'my'"
             :label="t('collectionList.publicCollectionsLabel')"
-            button-classes="ui-btn--neutral"
+            button-classes="ui-btn--neutral [&>span>span]:hidden sm:[&>span>span]:inline"
             @click="setViewMode('public')"
           >
             <template #icon>

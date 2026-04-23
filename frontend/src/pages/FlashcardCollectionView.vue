@@ -288,7 +288,7 @@
         </div>
         <!-- Progress section -->
         <div class="flex flex-col items-end gap-3">
-          <div v-for="progress in card.progress" :key="progress.card_side" class="w-32">
+          <div v-for="progress in getOrderedProgress(card.progress)" :key="progress.card_side" class="w-32">
             <div class="flex items-center justify-between mb-1">
               <span class="text-xs font-medium text-gray-600">{{ progress.card_side }}</span>
               <span class="text-xs font-medium" :class="getStatusTextClass(progress.status)">
@@ -699,6 +699,19 @@ const getProgressBarClass = (status) => {
     graduated: 'bg-purple-500',
   }
   return classes[status] || 'bg-gray-400'
+}
+
+const getOrderedProgress = (progressList = []) => {
+  const sideOrder = {
+    direct: 0,
+    reverse: 1,
+  }
+
+  return [...progressList].sort((a, b) => {
+    const left = sideOrder[a.card_side] ?? Number.MAX_SAFE_INTEGER
+    const right = sideOrder[b.card_side] ?? Number.MAX_SAFE_INTEGER
+    return left - right
+  })
 }
 
 watch(searchQuery, () => {
