@@ -84,6 +84,12 @@ fn is_placeholder_or_router_only_model(id: &str) -> bool {
     matches!(id, "openrouter/free" | "openrouter/auto")
 }
 
+/// Checks if a model ID belongs to a preferred provider (nvidia, google, anthropic, openai, minimax).
+fn is_preferred_provider(model_id: &str) -> bool {
+    const PREFERRED_PROVIDERS: &[&str] = &["nvidia/", "google/", "anthropic/", "openai/", "minimax/"];
+    PREFERRED_PROVIDERS.iter().any(|prefix| model_id.starts_with(prefix))
+}
+
 async fn fetch_openrouter_models_list(
     base_url: &str,
     api_key: &str,
@@ -126,6 +132,9 @@ async fn fetch_openrouter_models_list(
 /// Uses the full model list (not `/models/user`). Excludes router placeholders (`openrouter/free`,
 /// `openrouter/auto`) so parallel runs use real provider slugs when any exist. Prefers long context
 /// (100k+), then falls back to 32k+. Sorted by `created` descending.
+///
+/// Prioritizes models from preferred providers (nvidia, google, anthropic, openai, minimax) by checking
+/// them first before other providers.
 pub async fn fetch_latest_openrouter_models(
     base_url: &str,
     api_key: &str,
@@ -186,7 +195,15 @@ pub async fn fetch_latest_openrouter_models(
             })
             .collect();
 
-        eligible.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap_or(std::cmp::Ordering::Equal));
+        eligible.sort_by(|a, b| {
+            let a_preferred = is_preferred_provider(&a.1);
+            let b_preferred = is_preferred_provider(&b.1);
+            match (a_preferred, b_preferred) {
+                (true, false) => std::cmp::Ordering::Less,
+                (false, true) => std::cmp::Ordering::Greater,
+                _ => b.0.partial_cmp(&a.0).unwrap_or(std::cmp::Ordering::Equal),
+            }
+        });
         eligible
             .into_iter()
             .map(|(_, id, name)| (id, name))
