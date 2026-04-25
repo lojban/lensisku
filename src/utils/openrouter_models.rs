@@ -2,7 +2,6 @@
 //! Used by the assistant (fast path) and [`crate::background::service`] (periodic probe/update).
 
 use serde::{Deserialize, Serialize};
-use serde_json::json;
 
 use crate::error::AppError;
 use crate::middleware::cache::RedisCache;
@@ -225,64 +224,6 @@ pub async fn fetch_latest_openrouter_models(
     Ok(top)
 }
 
-/// Minimal `POST /chat/completions` to verify the model accepts requests (no tools).
-pub async fn probe_openrouter_model_chat_ok(
-    base_url: &str,
-    api_key: &str,
-    model_id: &str,
-) -> Result<(), AppError> {
-    let client = reqwest::Client::new();
-    let body = json!({
-        "model": model_id,
-        "messages": [{"role": "user", "content": "."}],
-    });
-    let res = client
-        .post(format!(
-            "{}/chat/completions",
-            base_url.trim_end_matches('/')
-        ))
-        .header("Authorization", format!("Bearer {}", api_key))
-        .header("Content-Type", "application/json")
-        .json(&body)
-        .send()
-        .await?;
-
-    let status = res.status();
-    let text = res
-        .text()
-        .await
-        .map_err(|e| AppError::ExternalService(format!("OpenRouter probe read body: {}", e)))?;
-
-    if !status.is_success() {
-        return Err(AppError::ExternalServiceWithRaw {
-            message: format!("OpenRouter probe returned {}", status),
-            raw_response: text,
-        });
-    }
-
-    let v: serde_json::Value = serde_json::from_str(&text).map_err(|e| {
-        AppError::ExternalService(format!("OpenRouter probe JSON parse error: {}", e))
-    })?;
-
-    if v.get("error").is_some() {
-        let raw = text.clone();
-        return Err(AppError::ExternalServiceWithRaw {
-            message: "OpenRouter probe returned error object in body".to_string(),
-            raw_response: raw,
-        });
-    }
-
-    let choices = v.get("choices").and_then(|c| c.as_array());
-    if choices.is_none_or(|c| c.is_empty()) {
-        return Err(AppError::ExternalServiceWithRaw {
-            message: "OpenRouter probe: missing or empty choices".to_string(),
-            raw_response: text,
-        });
-    }
-
-    Ok(())
-}
-
 /// Reads two model ids from Redis if present and valid (non-empty ids, exactly two entries).
 pub async fn load_cached_openrouter_assistant_models(
     redis: &RedisCache,
@@ -337,18 +278,63 @@ pub async fn load_or_fetch_openrouter_candidates(
     Ok((full, false))
 }
 
-/// Walks catalog order, probes each model with a minimal chat request, stores the first two that succeed.
-pub async fn refresh_openrouter_assistant_models_cache(
+/// Removes a model id from the cached assistant models pair in Redis.
+///
+/// If the cached entry contains the given id, the whole key is invalidated so the next request
+/// either uses a fresh catalog fetch or waits for the next background refresh to repopulate it
+/// with two probed models. Missing key / id-not-present is a no-op.
+pub async fn evict_openrouter_assistant_model_from_cache(
+    redis: &RedisCache,
+    model_id: &str,
+) -> Result<(), AppError> {
+    let cached = match redis
+        .get::<CachedOpenRouterAssistantModels>(REDIS_KEY_OPENROUTER_ASSISTANT_MODELS)
+        .await
+    {
+        Ok(Some(c)) => c,
+        Ok(None) => return Ok(()),
+        Err(e) => {
+            return Err(AppError::ExternalService(format!(
+                "Redis read assistant models for eviction: {}",
+                e
+            )));
+        }
+    };
+    if !cached.models.iter().any(|m| m.id == model_id) {
+        return Ok(());
+    }
+    log::warn!(
+        "OpenRouter assistant: evicting failing model `{}` from Redis cache",
+        model_id
+    );
+    redis
+        .invalidate(REDIS_KEY_OPENROUTER_ASSISTANT_MODELS)
+        .await
+        .map_err(|e| AppError::ExternalService(format!("Redis del assistant models: {}", e)))?;
+    Ok(())
+}
+
+/// Walks catalog order, probes each candidate via `probe`, stores the first two that succeed.
+///
+/// The `probe` callback receives `(model_id, model_name)`; returning `Ok(())` accepts the candidate,
+/// any error skips it. Callers supply a probe that runs the real assistant chat path against the
+/// model so that only models which actually produce a non-empty reply are cached.
+pub async fn refresh_openrouter_assistant_models_cache<F, Fut>(
     redis: &RedisCache,
     base_url: &str,
     api_key: &str,
-) -> Result<(), Box<dyn std::error::Error>> {
+    mut probe: F,
+) -> Result<(), Box<dyn std::error::Error>>
+where
+    F: FnMut(String, String) -> Fut,
+    Fut: std::future::Future<Output = Result<(), AppError>>,
+{
     let catalog = fetch_latest_openrouter_models(base_url, api_key).await
         .map_err(|e| -> Box<dyn std::error::Error> { format!("{}", e).into() })?;
 
     let mut picked: Vec<ModelEntry> = Vec::new();
     for (id, name) in catalog {
-        match probe_openrouter_model_chat_ok(base_url, api_key, &id).await {
+        match probe(id.clone(), name.clone()).await {
             Ok(()) => {
                 log::debug!("OpenRouter cache refresh: probe ok for {}", id);
                 picked.push(ModelEntry { id, name });

@@ -223,9 +223,16 @@ pub async fn spawn_background_tasks(
     });
 
     // Probe OpenRouter models and cache two working ids in Redis for the assistant (fast path).
+    // Each candidate is exercised through the real assistant chat path
+    // (`crate::assistant::service::run_agent_loop_inner`) with a fixed test prompt; only models
+    // that return a non-empty trimmed reply within the health timeout are stored in the cache.
     let redis_openrouter = redis.clone();
-    tokio::spawn(async move {
+    let pool_openrouter = pool.clone();
+    // `actix_web::rt::spawn` uses the local LocalSet (no Send requirement) so the probe can
+    // exercise the assistant chat path, which transitively touches !Send parser memoisation.
+    actix_web::rt::spawn(async move {
         async fn try_refresh(
+            pool: &Pool,
             redis: &crate::middleware::cache::RedisCache,
         ) -> Result<(), Box<dyn std::error::Error>> {
             let api_key = match std::env::var("OPENROUTER_API_KEY") {
@@ -241,6 +248,15 @@ pub async fn spawn_background_tasks(
                 redis,
                 &base_url,
                 &api_key,
+                |id, name| async move {
+                    crate::assistant::probe_openrouter_model_full_chat(
+                        pool,
+                        Some(redis),
+                        &id,
+                        &name,
+                    )
+                    .await
+                },
             )
             .await
         }
@@ -248,7 +264,7 @@ pub async fn spawn_background_tasks(
         let mut interval = time::interval(Duration::from_secs(60 * 60)); // hourly; first tick fires immediately
         loop {
             interval.tick().await;
-            if let Err(e) = try_refresh(&redis_openrouter).await {
+            if let Err(e) = try_refresh(&pool_openrouter, &redis_openrouter).await {
                 error!("Failed OpenRouter assistant model cache refresh: {}", e);
             }
         }
