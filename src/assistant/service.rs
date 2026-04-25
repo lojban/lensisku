@@ -22,7 +22,8 @@ use crate::error::AppError;
 use crate::jbovlaste::models::{DefinitionDetail, DefinitionResponse, SearchDefinitionsParams};
 use crate::middleware::cache::{generate_assistant_semantic_cache_key, RedisCache};
 use crate::utils::openrouter_models::{
-    fetch_latest_openrouter_models, load_or_fetch_openrouter_candidates, ModelIdName,
+    evict_openrouter_assistant_model_from_cache, fetch_latest_openrouter_models,
+    load_or_fetch_openrouter_candidates, ModelIdName,
 };
 use crate::jbovlaste::service::semantic_search;
 use std::borrow::Cow;
@@ -1296,8 +1297,12 @@ async fn run_agent_loop_with_candidates(
         let p1 = persist.clone();
         let p2 = persist.clone();
         let (mut r1, mut r2) = tokio::join!(
-            run_agent_loop_inner(&pool1, &req1, &m1_id, &m1_name, Some(tx1), p1, redis),
-            run_agent_loop_inner(&pool2, &req2, &m2_id, &m2_name, Some(tx2), p2, redis),
+            run_agent_loop_inner_health_checked(
+                &pool1, &req1, &m1_id, &m1_name, Some(tx1), p1, redis
+            ),
+            run_agent_loop_inner_health_checked(
+                &pool2, &req2, &m2_id, &m2_name, Some(tx2), p2, redis
+            ),
         );
         sse_stream_debug_parallel_branch_finished(&post_debug_tx, &m1_id, &m1_name, &r1).await;
         sse_stream_debug_parallel_branch_finished(&post_debug_tx, &m2_id, &m2_name, &r2).await;
@@ -1310,7 +1315,7 @@ async fn run_agent_loop_with_candidates(
             if r1.is_err() {
                 let (nid, nname) = candidates[next_idx].clone();
                 next_idx += 1;
-                let res = run_agent_loop_inner(
+                let res = run_agent_loop_inner_health_checked(
                     &pool1,
                     &req1,
                     &nid,
@@ -1334,7 +1339,7 @@ async fn run_agent_loop_with_candidates(
             if r2.is_err() && next_idx < candidates.len() {
                 let (nid, nname) = candidates[next_idx].clone();
                 next_idx += 1;
-                let res = run_agent_loop_inner(
+                let res = run_agent_loop_inner_health_checked(
                     &pool2,
                     &req2,
                     &nid,
@@ -1374,7 +1379,7 @@ async fn run_agent_loop_with_candidates(
 
         for (model_id, model_name) in candidates {
             let tx = event_tx.clone();
-            match run_agent_loop_inner(
+            match run_agent_loop_inner_health_checked(
                 pool,
                 request,
                 model_id,
@@ -1422,7 +1427,104 @@ async fn run_agent_loop_with_candidates(
     }
 }
 
-async fn run_agent_loop_inner(
+/// Test phrase used as the user message when probing a candidate model with the real assistant
+/// chat path. The probe expects any non-empty trimmed reply within
+/// [`ASSISTANT_MODEL_HEALTH_TIMEOUT`] for the model to be considered healthy.
+pub const ASSISTANT_MODEL_PROBE_PHRASE: &str = "The big brown fox jumps over the lazy dog";
+
+/// Hard ceiling for a single `run_agent_loop_inner` invocation in both probe and real-chat paths;
+/// candidates exceeding this are treated as unhealthy and (in real chat) evicted from the Redis
+/// assistant model cache.
+pub const ASSISTANT_MODEL_HEALTH_TIMEOUT: Duration = Duration::from_secs(60);
+
+/// Runs the real assistant chat path against `model` with a fixed test prompt and verifies the
+/// final reply (including any tool calls) is returned within [`ASSISTANT_MODEL_HEALTH_TIMEOUT`]
+/// and is non-empty after trimming. Used by the background OpenRouter model cache refresh.
+pub async fn probe_openrouter_model_full_chat(
+    pool: &Pool,
+    redis: Option<&RedisCache>,
+    model_id: &str,
+    model_name: &str,
+) -> Result<(), AppError> {
+    let request = ChatRequest {
+        messages: vec![ChatMessage {
+            role: "user".to_string(),
+            content: ASSISTANT_MODEL_PROBE_PHRASE.to_string(),
+            tool_calls: None,
+            tool_call_id: None,
+            name: None,
+        }],
+        locale: None,
+    };
+    let fut = run_agent_loop_inner(pool, &request, model_id, model_name, None, None, redis);
+    let outcome = tokio::time::timeout(ASSISTANT_MODEL_HEALTH_TIMEOUT, fut).await;
+    match outcome {
+        Err(_) => Err(AppError::ExternalService(format!(
+            "OpenRouter probe: model {} did not return a final reply within {}s",
+            model_id,
+            ASSISTANT_MODEL_HEALTH_TIMEOUT.as_secs()
+        ))),
+        Ok(Err(e)) => Err(e),
+        Ok(Ok((reply, _steps))) => {
+            if reply.trim().is_empty() {
+                Err(AppError::ExternalService(format!(
+                    "OpenRouter probe: model {} returned empty reply (trimmed)",
+                    model_id
+                )))
+            } else {
+                Ok(())
+            }
+        }
+    }
+}
+
+/// Wraps [`run_agent_loop_inner`] for real-chat use: enforces the same timeout / empty-reply
+/// health check used by the probe, and on failure removes the offending model id from the
+/// Redis assistant model cache so the next request picks a different candidate.
+async fn run_agent_loop_inner_health_checked(
+    pool: &Pool,
+    request: &ChatRequest,
+    model: &str,
+    model_name: &str,
+    event_tx: Option<mpsc::Sender<sse::Event>>,
+    persist: Option<Arc<ChatPersistState>>,
+    redis: Option<&RedisCache>,
+) -> Result<(String, Vec<AssistantStep>), AppError> {
+    let fut = run_agent_loop_inner(pool, request, model, model_name, event_tx, persist, redis);
+    let outcome = tokio::time::timeout(ASSISTANT_MODEL_HEALTH_TIMEOUT, fut).await;
+    let result = match outcome {
+        Err(_) => Err(AppError::ExternalService(format!(
+            "Assistant: model {} did not return a final reply within {}s",
+            model,
+            ASSISTANT_MODEL_HEALTH_TIMEOUT.as_secs()
+        ))),
+        Ok(Err(e)) => Err(e),
+        Ok(Ok((reply, steps))) => {
+            if reply.trim().is_empty() {
+                Err(AppError::ExternalService(format!(
+                    "Assistant: model {} returned empty reply (trimmed)",
+                    model
+                )))
+            } else {
+                Ok((reply, steps))
+            }
+        }
+    };
+    if result.is_err() {
+        if let Some(r) = redis {
+            if let Err(e) = evict_openrouter_assistant_model_from_cache(r, model).await {
+                log::warn!(
+                    "Assistant: failed to evict failing model `{}` from Redis cache: {}",
+                    model,
+                    e
+                );
+            }
+        }
+    }
+    result
+}
+
+pub(crate) async fn run_agent_loop_inner(
     pool: &Pool,
     request: &ChatRequest,
     model: &str,
