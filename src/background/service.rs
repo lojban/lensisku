@@ -223,6 +223,8 @@ pub async fn spawn_background_tasks(
     });
 
     // Probe OpenRouter models and cache two working ids in Redis for the assistant (fast path).
+    // Cached order is provider-priority aware; within the same priority class, faster final
+    // probe replies are ranked first.
     // Each candidate is exercised through the real assistant chat path
     // (`crate::assistant::service::run_agent_loop_inner`) with a fixed test prompt; only models
     // that return a non-empty trimmed reply within the health timeout are stored in the cache.
