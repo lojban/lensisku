@@ -2,6 +2,7 @@
 //! Used by the assistant (fast path) and [`crate::background::service`] (periodic probe/update).
 
 use serde::{Deserialize, Serialize};
+use std::time::{Duration, Instant};
 
 use crate::error::AppError;
 use crate::middleware::cache::RedisCache;
@@ -332,12 +333,18 @@ where
     let catalog = fetch_latest_openrouter_models(base_url, api_key).await
         .map_err(|e| -> Box<dyn std::error::Error> { format!("{}", e).into() })?;
 
-    let mut picked: Vec<ModelEntry> = Vec::new();
+    let mut picked: Vec<(ModelEntry, Duration)> = Vec::new();
     for (id, name) in catalog {
+        let started_at = Instant::now();
         match probe(id.clone(), name.clone()).await {
             Ok(()) => {
-                log::debug!("OpenRouter cache refresh: probe ok for {}", id);
-                picked.push(ModelEntry { id, name });
+                let probe_duration = started_at.elapsed();
+                log::debug!(
+                    "OpenRouter cache refresh: probe ok for {} ({} ms)",
+                    id,
+                    probe_duration.as_millis()
+                );
+                picked.push((ModelEntry { id, name }, probe_duration));
                 if picked.len() == 2 {
                     break;
                 }
@@ -349,14 +356,34 @@ where
     }
 
     if picked.len() == 2 {
+        // Preserve provider priority while preferring faster successful probes.
+        picked.sort_by(|(a_entry, a_duration), (b_entry, b_duration)| {
+            let a_preferred = is_preferred_provider(&a_entry.id);
+            let b_preferred = is_preferred_provider(&b_entry.id);
+            match (a_preferred, b_preferred) {
+                (true, false) => std::cmp::Ordering::Less,
+                (false, true) => std::cmp::Ordering::Greater,
+                _ => a_duration.cmp(b_duration),
+            }
+        });
+
+        let ordered_models: Vec<ModelEntry> = picked
+            .iter()
+            .map(|(entry, _)| entry.clone())
+            .collect();
+
         redis
             .set(
                 REDIS_KEY_OPENROUTER_ASSISTANT_MODELS,
-                &CachedOpenRouterAssistantModels { models: picked },
+                &CachedOpenRouterAssistantModels {
+                    models: ordered_models,
+                },
                 None,
             )
             .await?;
-        log::info!("OpenRouter assistant model cache updated in Redis (two probed models).");
+        log::info!(
+            "OpenRouter assistant model cache updated in Redis (two probed models, provider+probe-speed ranked)."
+        );
     } else {
         log::warn!(
             "OpenRouter cache refresh: found {} working model(s); keeping previous Redis entry if any",
