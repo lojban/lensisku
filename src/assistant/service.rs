@@ -1271,6 +1271,7 @@ async fn run_agent_loop_with_candidates(
     persist: Option<Arc<ChatPersistState>>,
     redis: Option<&RedisCache>,
 ) -> Result<(String, Vec<AssistantStep>), AppError> {
+    let candidates = &candidates[..candidates.len().min(2)];
     let parallel_models: Vec<ModelIdName> = candidates.iter().take(2).cloned().collect();
     let is_streaming = event_tx.is_some();
     let run_parallel =
@@ -1435,7 +1436,7 @@ pub const ASSISTANT_MODEL_PROBE_PHRASE: &str = "The big brown fox jumps over the
 /// Hard ceiling for a single `run_agent_loop_inner` invocation in both probe and real-chat paths;
 /// candidates exceeding this are treated as unhealthy and (in real chat) evicted from the Redis
 /// assistant model cache.
-pub const ASSISTANT_MODEL_HEALTH_TIMEOUT: Duration = Duration::from_secs(60);
+pub const ASSISTANT_MODEL_HEALTH_TIMEOUT: Duration = Duration::from_secs(120);
 
 /// Runs the real assistant chat path against `model` with a fixed test prompt and verifies the
 /// final reply (including any tool calls) is returned within [`ASSISTANT_MODEL_HEALTH_TIMEOUT`]
