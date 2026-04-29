@@ -94,7 +94,7 @@ const titleRowClass = computed(() =>
 
 const titleShellClass = computed(() =>
   hasTrailing.value
-    ? 'flex w-full min-w-0 items-center justify-between gap-2'
+    ? 'flex w-full min-w-0 items-start justify-between gap-2'
     : 'flex w-full min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:gap-3 sm:gap-4',
 )
 
