@@ -185,7 +185,10 @@
         route.meta.contentTopPaddingMainOnly || route.meta.authFullBleed ? 'px-0' : 'px-3',
         { 'main-child-inner-full-height': route.meta.fullHeight },
       ]">
-        <router-view v-slot="{ Component, route }">
+        <div v-if="auth.state.isLoading" class="flex h-full w-full items-center justify-center min-h-[50vh]">
+          <div class="h-8 w-8 animate-spin rounded-full border-4 border-gray-200 border-t-blue-600"></div>
+        </div>
+        <router-view v-else v-slot="{ Component, route }">
           <component :is="Component" v-bind="metaProps(route.meta.props)" v-on="isHomePage
               ? {
                 search: performSearch,
