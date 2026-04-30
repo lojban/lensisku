@@ -68,9 +68,7 @@ export function provideAuth(): AuthApi {
     email_confirmed: false,
   })
 
-  setTimeout(() => {
-    void checkAuthStatus()
-  }, 0)
+  void checkAuthStatus()
 
   let refreshTimer: ReturnType<typeof setTimeout> | null = null
   let verificationTimer: ReturnType<typeof setInterval> | null = null

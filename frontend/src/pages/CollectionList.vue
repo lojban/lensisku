@@ -87,8 +87,8 @@
         </p>
       </div>
     </template>
-    <template v-if="auth.state.isLoggedIn" #trailing>
-      <div class="flex min-w-0 flex-grow flex-row flex-wrap justify-end gap-2">
+    <template #trailing>
+      <div v-if="auth.state.isLoggedIn" class="flex min-w-0 flex-grow flex-row flex-wrap justify-end gap-2">
         <input
           ref="importFileInput"
           type="file"

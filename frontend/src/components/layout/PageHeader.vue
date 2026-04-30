@@ -99,7 +99,7 @@ const titleRowClass = () =>
 const titleShellClass = () =>
   hasTrailing()
     ? 'flex w-full min-w-0 items-start justify-between gap-2'
-    : 'flex w-full min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:gap-3 sm:gap-4'
+    : 'flex w-full min-w-0 flex-col gap-2 sm:flex-row sm:items-start sm:gap-3 sm:gap-4'
 
 const titleClass = computed(() => {
   const base =
@@ -170,7 +170,7 @@ const metaRowJustifyClass = () => {
           </div>
           <div
             v-if="hasMetaTrailing()"
-            class="flex shrink-0 flex-wrap items-center justify-end gap-2"
+            class="flex shrink-0 flex-wrap items-start justify-end gap-2"
           >
             <slot name="meta-trailing" />
           </div>
