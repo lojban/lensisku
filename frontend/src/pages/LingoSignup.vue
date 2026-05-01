@@ -78,7 +78,7 @@ const { t, locale } = useI18n()
 
 const returnTo = computed(() => queryStr(route.query.returnTo) || '/lingo/courses')
 
-useSeoHead({ title: t('signupPage.title') })
+useSeoHead({ title: t('signupPage.title'), robots: 'noindex, nofollow' })
 
 async function performSignup() {
   error.value = ''

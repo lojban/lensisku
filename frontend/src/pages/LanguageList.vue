@@ -237,6 +237,6 @@ watch(languages, (newLanguages) => {
   }
 })
 
-useSeoHead({ title: pageTitle })
+useSeoHead({ title: pageTitle, pathWithoutLocale: '/languages' })
 </script>
 

@@ -154,7 +154,7 @@ const searchFormRef = ref(null)
 
 const { t, locale } = useI18n()
 const pageTitle = computed(() => searchQuery.value?.trim() || 'Fast Search')
-useSeoHead({ title: pageTitle })
+useSeoHead({ title: pageTitle, pathWithoutLocale: '/fast-search' })
 
 // Filter state
 const languages = ref([])

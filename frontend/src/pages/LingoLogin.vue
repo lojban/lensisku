@@ -69,7 +69,7 @@ const { t, locale } = useI18n()
 
 const returnTo = computed(() => queryStr(route.query.returnTo) || '/lingo/courses')
 
-useSeoHead({ title: t('loginPage.title') })
+useSeoHead({ title: t('loginPage.title'), robots: 'noindex, nofollow' })
 
 async function performLogin() {
   error.value = ''

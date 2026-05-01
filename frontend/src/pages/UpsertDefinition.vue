@@ -409,7 +409,7 @@ const hasImage = ref(false)
 const imageData = ref(null)
 const removeImage = ref(false)
 
-useSeoHead({ title: () => t('upsertDefinition.addEntryTitle') })
+useSeoHead({ title: () => t('upsertDefinition.addEntryTitle'), robots: 'noindex, nofollow' })
 // UI state
 const definitionError = ref('')
 const isAnalyzing = ref(false)
@@ -589,7 +589,7 @@ onMounted(async () => {
   const definitionId = Array.isArray(rawRouteId) ? rawRouteId[0] : rawRouteId
   if (definitionId) {
     isEditMode.value = true
-    useSeoHead({ title: () => 'Updating entry' })
+    useSeoHead({ title: () => 'Updating entry', robots: 'noindex, nofollow' })
     editDefinitionId.value = definitionId
     await loadDefinitionData(definitionId) // This will set sourceLangId from loaded data
   } else {
@@ -619,7 +619,7 @@ onMounted(async () => {
         word.value = sourceDef.valsiword
         prefilledWord.value = true
       }
-      useSeoHead({ title: () => t('upsertDefinition.addTranslationTitle') })
+      useSeoHead({ title: () => t('upsertDefinition.addTranslationTitle'), robots: 'noindex, nofollow' })
     } catch (e) {
       console.error('Error loading source definition for translation:', e)
     }

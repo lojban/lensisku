@@ -120,7 +120,7 @@ const pageTitle = computed(() => {
   return t('emailConfirmation.successTitle') // Default or fallback title
 })
 
-useSeoHead({ title: pageTitle })
+useSeoHead({ title: pageTitle, robots: 'noindex, nofollow' })
 
 const confirmEmailToken = async (token) => {
   try {

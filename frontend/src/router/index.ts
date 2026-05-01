@@ -451,7 +451,7 @@ export const setupRouterGuards = (router: any, isClient: boolean) => {
 // Export the routes array with a root redirect and locale-specific routes
 export const routes: Array<RouteRecordRaw> = [
   {
-    // Redirect root to default locale
+    // Redirect root to default locale (client-side fallback; nginx should handle this with 302)
     path: '/',
     redirect: () => {
       const storedLocale =

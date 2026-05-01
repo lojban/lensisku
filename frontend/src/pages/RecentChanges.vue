@@ -361,7 +361,7 @@ const pageTitle = computed(() => {
   const currentTab = tabs.value.find((t) => t.key === activeTab.value)
   return currentTab ? currentTab.label : t('recentChanges.activityTitle')
 })
-useSeoHead({ title: pageTitle })
+useSeoHead({ title: pageTitle, pathWithoutLocale: '/recent' })
 
 // Unified route watcher
 // Additional flag to prevent race conditions with route changes

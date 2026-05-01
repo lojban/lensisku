@@ -6,7 +6,7 @@ import { Button } from '@packages/ui'
 import { useSeoHead } from '@/composables/useSeoHead'
 
 const { t } = useI18n()
-useSeoHead({ title: t('paypalReturn.title') })
+useSeoHead({ title: t('paypalReturn.title'), robots: 'noindex, nofollow' })
 </script>
 
 <template>

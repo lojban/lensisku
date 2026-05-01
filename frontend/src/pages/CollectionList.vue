@@ -373,7 +373,7 @@ const newCollection = ref({
 const pageTitle = ref(
   t(viewMode.value === 'my' ? 'collectionList.myCollections' : 'collectionList.publicCollections')
 )
-useSeoHead({ title: pageTitle })
+useSeoHead({ title: pageTitle, pathWithoutLocale: '/collections' })
 
 const fetchStreakData = async () => {
   if (!auth.state.isLoggedIn) return

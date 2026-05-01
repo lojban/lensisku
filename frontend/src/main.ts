@@ -3,9 +3,7 @@ import Applic from './App.vue'
 import { routes, setupRouterGuards } from './router'
 import i18n from './i18n'
 import './style.css'
-import '@milkdown/crepe'
-import '@milkdown/crepe/theme/common/style.css'
-import '@milkdown/crepe/theme/frame.css'
+// @milkdown/crepe imports moved to client-side only (in components that use it) to avoid breaking SSG
 
 export const createApp = ViteSSG(
   Applic,
@@ -43,6 +41,5 @@ export const createApp = ViteSSG(
       }
       loadMathJax()
     }
-  },
-  {}
+  }
 )

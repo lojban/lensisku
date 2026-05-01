@@ -18,6 +18,6 @@ import { useSeoHead } from '@/composables/useSeoHead'
 import { useI18n } from 'vue-i18n'
 
 const { t } = useI18n()
-useSeoHead({ title: t('notFoundPage.pageTitle') })
+useSeoHead({ title: t('notFoundPage.pageTitle'), robots: 'noindex, nofollow' })
 </script>
 
