@@ -8335,7 +8335,7 @@ version = "0.8.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c1c97747dbf44bb1ca44a561ece23508e99cb592e862f22222dcf42f51d1e451"
 dependencies = [
- "heck 0.4.1",
+ "heck 0.5.0",
  "proc-macro2",
  "quote",
  "syn 2.0.117",
@@ -10028,9 +10028,9 @@ checksum = "0b928f33d975fc6ad9f86c8f283853ad26bdd5b10b7f1542aa2fa15e2289105a"
 
 [[package]]
 name = "vlazba"
-version = "0.7.14"
+version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4f75a4d13b386d5ff19773503ddad38e06f9ecfc20b38c90c4d206aa388d7337"
+checksum = "c428b2c405c3df9ebccc25a77f2a85cbf1c60bffaa2be4ea82a7d09427848055"
 dependencies = [
  "anyhow",
  "clap 4.6.0",

@@ -27,7 +27,7 @@
           > <button
             v-if="isOwner"
             type="button"
-            class="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+            class="w-full pl-4 pr-0 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
             @click="openEditCollectionModal"
           >
              {{ t('collectionDetail.editCollectionInfo') }} </button
@@ -83,18 +83,23 @@
           class="hidden"
           @change="handleJsonFileSelect"
         />
-        <div class="space-y-4 md:space-y-0">
+        <div class="space-y-4">
+          <div class="w-full space-y-3">
+            <SearchForm
+              :initial-query="itemSearchQuery"
+              :initial-mode="searchMode"
+              class="w-full"
+              @search="handleItemSearch"
+            />
+            <CombinedFilters
+              v-model="itemFilters"
+              :languages="languages"
+              class="w-full"
+              @change="handleItemFiltersChange"
+              @reset="handleItemFiltersReset"
+            />
+          </div>
           <div class="flex w-full flex-wrap items-center justify-center gap-x-2 gap-y-2">
-            <div class="relative w-full md:w-auto shrink-0">
-              <SearchInput
-                v-model="itemSearchQuery"
-                :placeholder="t('collectionDetail.searchItemsPlaceholder')"
-                :is-loading="isSearching"
-                @update:model-value="handleSearch"
-                @clear="clearItemSearch"
-              />
-            </div>
-
             <div
               v-if="isOwner"
               class="btn-group-forced flex flex-wrap items-center justify-center md:gap-y-2"
@@ -1418,7 +1423,6 @@ import {
   getLanguages,
   updateItemPosition,
   exportCollectionFull,
-  searchItems,
   getItemImage,
   deleteFlashcard,
   addValsi,
@@ -1436,8 +1440,10 @@ import CollectionPageHeader from '@/components/CollectionPageHeader.vue'
 import LazyMathJax from '@/components/LazyMathJax.vue'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import CollectionMediaBulkZipModal from '@/components/CollectionMediaBulkZipModal.vue'
+import CombinedFilters from '@/components/CombinedFilters.vue'
 import ModalComponent from '@/components/ModalComponent.vue'
 import PaginationComponent from '@/components/PaginationComponent.vue'
+import SearchForm from '@/components/SearchForm.vue'
 import SearchInput from '@/components/SearchInput.vue'
 import TabbedPageHeader from '@/components/TabbedPageHeader.vue'
 import { CollectionCoverLightbox, Dropdown } from '@packages/ui'
@@ -2295,98 +2301,67 @@ const searchQuery = ref('')
 const itemSearchQuery = ref('')
 const addItemResults = ref([])
 const isSearching = ref(false)
-let searchTimeoutFilter = null
 
 // Debounce delay: 450ms is optimal for search inputs (400-500ms range)
-// This balances responsiveness with reducing unnecessary API calls
+// This balances responsiveness with reducing unnecessary API calls. Used by the in-modal
+// definition-search debouncer below; SearchForm has its own equivalent debounce internally.
 const DEBOUNCE_DELAY = 450
 
-// Search queues to prevent race conditions
+// Search queues to prevent race conditions across overlapping fetches.
 const itemsSearchQueue = new SearchQueue()
 const definitionsSearchQueue = new SearchQueue()
 
-function clearSearchTimeoutFilter() {
-  if (searchTimeoutFilter) {
-    clearTimeout(searchTimeoutFilter)
-    searchTimeoutFilter = null
-  }
-  isSearching.value = false
+// Search mode + filter state, mirroring HomePage. Comments mode is irrelevant inside a collection,
+// so SearchForm only exposes 'dictionary' / 'semantic' (plus the legacy 'semantic' alias).
+const searchMode = ref<'dictionary' | 'semantic'>('dictionary')
+
+interface ItemFiltersValue {
+  selmaho: string
+  username: string
+  word_type: number | null
+  isExpanded: boolean
+  selectedLanguages: number[]
+  source_langid: number
+  isSemantic: boolean
+  searchInPhrases: boolean
 }
 
-const handleSearch = () => {
-  // Clear any pending timeouts to prevent stale searches
-  clearSearchTimeoutFilter()
+const itemFilters = ref<ItemFiltersValue>({
+  selmaho: '',
+  username: '',
+  word_type: null,
+  isExpanded: false,
+  selectedLanguages: [],
+  source_langid: 1,
+  isSemantic: true,
+  searchInPhrases: true,
+})
 
-  // Capture current query value to check in timeout
-  const currentQuery = itemSearchQuery.value
-
-  // Debounce the search - only trigger after user stops typing
-  // This prevents excessive API calls while user is actively typing
-  searchTimeoutFilter = setTimeout(() => {
-    // Only perform search if query hasn't changed (to prevent race conditions)
-    if (itemSearchQuery.value === currentQuery) {
-      // Show loading spinner when search actually starts
-      if (itemSearchQuery.value.trim()) {
-        isSearching.value = true
-      }
-      performSearch()
-    }
-    searchTimeoutFilter = null
-  }, DEBOUNCE_DELAY)
+/**
+ * SearchForm emits `{query, mode}` after debouncing. We treat this as the canonical input for the
+ * collection's search state: update the local query/mode, jump back to page 1, and refresh.
+ */
+const handleItemSearch = ({ query, mode }: { query: string; mode: string }) => {
+  itemSearchQuery.value = normalizeSearchQuery(query || '')
+  searchMode.value = mode === 'semantic' ? 'semantic' : 'dictionary'
+  if (currentPage.value !== 1) {
+    // Bounce to page 1 via the router so the URL stays consistent with the watcher.
+    router.push({ query: { ...route.query, page: 1 } })
+  }
+  fetchItems()
 }
 
-const performSearch = async () => {
-  let requestId = null
-
-  try {
-    if (!itemSearchQuery.value.trim()) {
-      // If search is empty, fetch regular items
-      await fetchItems()
-      return
-    }
-
-    const request = itemsSearchQueue.createRequest()
-    requestId = request.requestId
-    const { signal } = request
-
-    const response = await searchItems(
-      {
-        q: normalizeSearchQuery(itemSearchQuery.value),
-        user_id: collection.value?.owner?.user_id,
-      },
-      signal
-    )
-
-    // Only process if this is still the latest request
-    if (!itemsSearchQueue.shouldProcess(requestId)) {
-      return
-    }
-
-    paginatedItems.value = {
-      items: response.data.items,
-      total: response.data.total,
-      page: 1,
-      per_page: itemsPerPage,
-    }
-  } catch (error) {
-    // Ignore abort errors
-    if (
-      error.name === 'AbortError' ||
-      error.code === 'ERR_CANCELED' ||
-      error.message?.includes('canceled')
-    ) {
-      return
-    }
-
-    console.error('Error searching items:', error)
-  } finally {
-    // Only update loading state if this is still the latest request
-    if (requestId && itemsSearchQueue.shouldProcess(requestId)) {
-      isSearching.value = false
-    } else if (!itemsSearchQueue.hasActiveRequest()) {
-      isSearching.value = false
-    }
+const handleItemFiltersChange = () => {
+  if (currentPage.value !== 1) {
+    router.push({ query: { ...route.query, page: 1 } })
   }
+  fetchItems()
+}
+
+const handleItemFiltersReset = () => {
+  // CombinedFilters re-emits update:modelValue with defaults right after the reset event; the
+  // resulting watcher on `itemFilters` will trigger `handleItemFiltersChange` via the change emit.
+  // Nothing else to do here.
 }
 
 const addItemNotes = ref('')
@@ -2496,15 +2471,49 @@ const fetchCollection = async () => {
 // Fetch paginated items
 const fetchItems = async () => {
   isLoadingItems.value = true
+  if (itemSearchQuery.value.trim()) {
+    isSearching.value = true
+  }
+
+  const { requestId, signal } = itemsSearchQueue.createRequest()
 
   try {
-    const response = await listCollectionItems(props.collectionId, {
+    const trimmedQuery = normalizeSearchQuery(itemSearchQuery.value).trim()
+    // Mirrors HomePage.fetchDefinitions: build the param bag from the SearchForm + CombinedFilters
+    // state. The collection-items endpoint applies dictionary-style filters where applicable and
+    // still keeps custom-text-only items visible.
+    const params: Record<string, unknown> = {
       page: currentPage.value,
       per_page: itemsPerPage,
-      search: normalizeSearchQuery(itemSearchQuery.value).trim() || undefined,
+      search: trimmedQuery || undefined,
       item_id: editItemId.value,
       exclude_with_flashcards: isAddFlashcardMode.value || undefined,
-    })
+      username: itemFilters.value.username || undefined,
+      semantic: searchMode.value === 'semantic' || undefined,
+    }
+
+    if (itemFilters.value.selectedLanguages.length > 0) {
+      params.languages = itemFilters.value.selectedLanguages.join(',')
+    }
+    if (itemFilters.value.selmaho) {
+      params.selmaho = itemFilters.value.selmaho
+    } else if (itemFilters.value.word_type) {
+      params.word_type = itemFilters.value.word_type
+    }
+    if (itemFilters.value.source_langid && itemFilters.value.source_langid !== 1) {
+      params.source_langid = itemFilters.value.source_langid
+    }
+    if (itemFilters.value.searchInPhrases !== undefined && itemFilters.value.searchInPhrases !== null) {
+      params.search_in_phrases = itemFilters.value.searchInPhrases
+    }
+
+    const response = await listCollectionItems(props.collectionId, params, signal)
+
+    // Discard stale responses (e.g. user kept typing).
+    if (!itemsSearchQueue.shouldProcess(requestId)) {
+      return
+    }
+
     paginatedItems.value = response.data
 
     // Check if we need to open edit modal from query param
@@ -2515,9 +2524,20 @@ const fetchItems = async () => {
       }
     }
   } catch (e) {
+    const err = e as { name?: string; code?: string; message?: string }
+    if (
+      err?.name === 'AbortError' ||
+      err?.code === 'ERR_CANCELED' ||
+      err?.message?.includes('canceled')
+    ) {
+      return
+    }
     console.error('Error fetching items:', e)
   } finally {
-    isLoadingItems.value = false
+    if (itemsSearchQueue.shouldProcess(requestId)) {
+      isLoadingItems.value = false
+      isSearching.value = false
+    }
   }
 }
 
@@ -2724,12 +2744,8 @@ const performSearchDefinitions = async () => {
   }
 }
 
-const clearItemSearch = () => {
-  // Clear any pending timeouts first to prevent them from firing after clearing
-  clearSearchTimeoutFilter()
-  itemSearchQuery.value = ''
-  fetchItems()
-}
+// Removed `clearItemSearch`: the new SearchForm exposes its own clear button which re-emits
+// `@search` with an empty query, going through `handleItemSearch`.
 
 const clearDefinitionSearch = () => {
   // Clear any pending timeouts first to prevent them from firing after clearing
@@ -3026,7 +3042,6 @@ useSeoHead({
 
 onUnmounted(() => {
   // Clean up any pending search timeouts
-  clearSearchTimeoutFilter()
   clearSearchTimeout()
 })
 

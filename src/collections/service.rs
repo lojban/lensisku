@@ -3265,6 +3265,7 @@ pub async fn list_collection_items(
     item_id: Option<i32>,
     exclude_with_flashcards: Option<bool>,
     has_card_image_only: Option<bool>,
+    filters: ListCollectionItemsFilters,
 ) -> AppResult<CollectionItemListResponse> {
     let mut client = pool
         .get()
@@ -3332,26 +3333,115 @@ pub async fn list_collection_items(
     ];
     let mut param_count = 5;
 
-    // Store search pattern if search is provided
-    let search_pattern = search.map(|s| format!("%{}%", s));
+    // Store search pattern if search is provided. Searching also matches custom-text items
+    // (free_content_front/back) so they remain visible alongside dictionary-backed rows.
+    let search_pattern = search
+        .as_ref()
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
+        .map(|s| format!("%{}%", s));
 
-    // Add search condition if search term provided
+    // Build a helper that records a filter clause with the "OR ci.definition_id IS NULL" escape
+    // hatch so custom-text-only rows are not dropped by dictionary-targeted filters.
+    let mut extra_clauses: Vec<String> = Vec::new();
+
     if let Some(pattern) = &search_pattern {
-        query.push_str(&format!(
+        extra_clauses.push(format!(
             " AND (
-            ci.notes ILIKE ${} OR
-            v.word ILIKE ${} OR
-            d.definition ILIKE ${} OR
-            d.notes ILIKE ${}
-        )",
-            param_count, param_count, param_count, param_count
+                ci.notes ILIKE ${idx} OR
+                v.word ILIKE ${idx} OR
+                d.definition ILIKE ${idx} OR
+                d.notes ILIKE ${idx} OR
+                ci.free_content_front ILIKE ${idx} OR
+                ci.free_content_back ILIKE ${idx}
+            )",
+            idx = param_count
         ));
         params.push(Box::new(pattern.clone()));
         param_count += 1;
     }
 
-    // Add ordering and pagination
-    query.push_str(" ORDER BY ci.position ASC, ci.added_at DESC");
+    if let Some(selmaho) = filters.selmaho.as_ref().filter(|s| !s.is_empty()) {
+        extra_clauses.push(format!(
+            " AND (d.selmaho = ${idx} OR ci.definition_id IS NULL)",
+            idx = param_count
+        ));
+        params.push(Box::new(selmaho.clone()));
+        param_count += 1;
+    }
+
+    if let Some(username) = filters.username.as_ref().filter(|s| !s.is_empty()) {
+        extra_clauses.push(format!(
+            " AND (u.username = ${idx} OR ci.definition_id IS NULL)",
+            idx = param_count
+        ));
+        params.push(Box::new(username.clone()));
+        param_count += 1;
+    }
+
+    if let Some(word_type) = filters.word_type {
+        extra_clauses.push(format!(
+            " AND (v.typeid = ${idx} OR ci.definition_id IS NULL)",
+            idx = param_count
+        ));
+        params.push(Box::new(word_type));
+        param_count += 1;
+    }
+
+    // source_langid: only apply when explicitly non-default to keep behaviour additive.
+    if let Some(source_langid) = filters.source_langid.filter(|&v| v != 1) {
+        extra_clauses.push(format!(
+            " AND (v.source_langid = ${idx} OR ci.definition_id IS NULL)",
+            idx = param_count
+        ));
+        params.push(Box::new(source_langid));
+        param_count += 1;
+    }
+
+    if let Some(langs) = filters.languages.as_ref().filter(|l| !l.is_empty()) {
+        extra_clauses.push(format!(
+            " AND (d.langid = ANY(${idx}) OR ci.definition_id IS NULL)",
+            idx = param_count
+        ));
+        params.push(Box::new(langs.clone()));
+        param_count += 1;
+    }
+
+    // search_in_phrases=false → exclude phrase-typed valsi (typeid 15) like dictionary search.
+    // word_type takes precedence (matches the dictionary search behaviour).
+    if filters.word_type.is_none() && filters.search_in_phrases == Some(false) {
+        extra_clauses.push(" AND (v.typeid IS DISTINCT FROM 15 OR ci.definition_id IS NULL)".to_string());
+    }
+
+    for clause in &extra_clauses {
+        query.push_str(clause);
+    }
+
+    // Ordering: when semantic mode is requested with a non-empty search and an embedding was
+    // computed, rank rows by cosine distance to the embedding. Custom-text items (no embedding)
+    // sort to the bottom in their natural order.
+    let semantic_vector_idx = if let Some(ref embedding) = filters.semantic_embedding {
+        if search_pattern.is_some() {
+            let idx = param_count;
+            params.push(Box::new(embedding.clone()));
+            param_count += 1;
+            Some(idx)
+        } else {
+            None
+        }
+    } else {
+        None
+    };
+
+    if let Some(idx) = semantic_vector_idx {
+        query.push_str(&format!(
+            " ORDER BY (CASE WHEN d.embedding IS NULL THEN 1 ELSE 0 END) ASC, \
+              d.embedding <=> ${idx}::vector ASC NULLS LAST, ci.position ASC, ci.added_at DESC",
+            idx = idx
+        ));
+    } else {
+        query.push_str(" ORDER BY ci.position ASC, ci.added_at DESC");
+    }
     query.push_str(&format!(
         " LIMIT ${} OFFSET ${}",
         param_count,
@@ -3452,6 +3542,7 @@ pub async fn list_collection_items(
          FROM collection_items ci
          LEFT JOIN definitions d ON ci.definition_id = d.definitionid
          LEFT JOIN valsi v ON d.valsiid = v.valsiid
+         LEFT JOIN users u ON d.userid = u.userid
          LEFT JOIN flashcards f ON ci.item_id = f.item_id
          WHERE ci.collection_id = $1
            AND ($2::int IS NULL OR ci.item_id = $2)
@@ -3468,19 +3559,76 @@ pub async fn list_collection_items(
         Box::new(exclude_with_flashcards),
         Box::new(has_card_image_only),
     ];
+    let mut count_param_idx = 5;
 
     if let Some(pattern) = &search_pattern {
         count_query.push_str(&format!(
             " AND (
-            ci.notes ILIKE ${} OR
-            v.word ILIKE ${} OR
-            d.definition ILIKE ${} OR
-            d.notes ILIKE ${}
-        )",
-            5, 5, 5, 5
+                ci.notes ILIKE ${idx} OR
+                v.word ILIKE ${idx} OR
+                d.definition ILIKE ${idx} OR
+                d.notes ILIKE ${idx} OR
+                ci.free_content_front ILIKE ${idx} OR
+                ci.free_content_back ILIKE ${idx}
+            )",
+            idx = count_param_idx
         ));
         count_params.push(Box::new(pattern.clone()));
+        count_param_idx += 1;
     }
+
+    if let Some(selmaho) = filters.selmaho.as_ref().filter(|s| !s.is_empty()) {
+        count_query.push_str(&format!(
+            " AND (d.selmaho = ${idx} OR ci.definition_id IS NULL)",
+            idx = count_param_idx
+        ));
+        count_params.push(Box::new(selmaho.clone()));
+        count_param_idx += 1;
+    }
+
+    if let Some(username) = filters.username.as_ref().filter(|s| !s.is_empty()) {
+        count_query.push_str(&format!(
+            " AND (u.username = ${idx} OR ci.definition_id IS NULL)",
+            idx = count_param_idx
+        ));
+        count_params.push(Box::new(username.clone()));
+        count_param_idx += 1;
+    }
+
+    if let Some(word_type) = filters.word_type {
+        count_query.push_str(&format!(
+            " AND (v.typeid = ${idx} OR ci.definition_id IS NULL)",
+            idx = count_param_idx
+        ));
+        count_params.push(Box::new(word_type));
+        count_param_idx += 1;
+    }
+
+    if let Some(source_langid) = filters.source_langid.filter(|&v| v != 1) {
+        count_query.push_str(&format!(
+            " AND (v.source_langid = ${idx} OR ci.definition_id IS NULL)",
+            idx = count_param_idx
+        ));
+        count_params.push(Box::new(source_langid));
+        count_param_idx += 1;
+    }
+
+    if let Some(langs) = filters.languages.as_ref().filter(|l| !l.is_empty()) {
+        count_query.push_str(&format!(
+            " AND (d.langid = ANY(${idx}) OR ci.definition_id IS NULL)",
+            idx = count_param_idx
+        ));
+        count_params.push(Box::new(langs.clone()));
+        let _ = count_param_idx; // silence unused-after-last-push lint when no later push
+        count_param_idx += 1;
+    }
+
+    if filters.word_type.is_none() && filters.search_in_phrases == Some(false) {
+        count_query.push_str(
+            " AND (v.typeid IS DISTINCT FROM 15 OR ci.definition_id IS NULL)",
+        );
+    }
+    let _ = count_param_idx;
 
     let total: i64 = transaction
         .query_one(
