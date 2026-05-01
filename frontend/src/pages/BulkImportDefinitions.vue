@@ -261,7 +261,7 @@ import { useError } from '@/composables/useError'
 const { t, locale } = useI18n()
 const { showError } = useError()
 
-useSeoHead({ title: t('bulkImport.title') })
+useSeoHead({ title: t('bulkImport.title'), robots: 'noindex, nofollow' })
 
 const selectedLanguage = ref('')
 const csvFile = ref(null)

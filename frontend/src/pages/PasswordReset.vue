@@ -283,8 +283,7 @@ const resetPassword = async () => {
   }
 }
 
-useSeoHead({
+  useSeoHead({ robots: 'noindex, nofollow',
   title: sessionId.value ? t('passwordReset.setNewPasswordTitle') : t('passwordReset.resetTitle'),
 })
 </script>
-

@@ -129,7 +129,7 @@ const auth = useAuth()
 const { showError, clearError } = useError()
 const { t, locale } = useI18n()
 
-useSeoHead({ title: t('loginPage.title') })
+useSeoHead({ title: t('loginPage.title'), robots: 'noindex, nofollow' })
 
 const performLogin = async () => {
   clearError()

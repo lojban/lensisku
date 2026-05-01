@@ -144,7 +144,7 @@ watch(amount, (newVal) => {
   }
 })
 
-useSeoHead({ title: t('payment.title') })
+useSeoHead({ title: t('payment.title'), robots: 'noindex, nofollow' })
 
 onMounted(() => {
   fetchBalance()

@@ -448,7 +448,7 @@ const editForm = ref({
 })
 
 // Computed
-useSeoHead({ title: computed(() => profileData.value?.username || '') })
+useSeoHead({ title: computed(() => profileData.value?.username || ''), robots: 'noindex, nofollow' })
 
 const hasImage = computed(() => profileData.value.has_profile_image)
 

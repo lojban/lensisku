@@ -177,7 +177,7 @@ import { useError } from '@/composables/useError'
 import { useSeoHead } from '@/composables/useSeoHead'
 
 const { t, locale } = useI18n()
-useSeoHead({ title: t('changePassword.title') })
+useSeoHead({ title: t('changePassword.title'), robots: 'noindex, nofollow' })
 
 const router = useRouter()
 const auth = useAuth()

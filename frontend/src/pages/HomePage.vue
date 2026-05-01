@@ -685,7 +685,7 @@ const pageDescription = computed(() => {
   return t('home.metaDescription')
 })
 
-useSeoHead({ title: pageTitle, description: pageDescription })
+useSeoHead({ title: pageTitle, description: pageDescription, pathWithoutLocale: '' })
 
 /** When true, show trending + recent changes; when false, show search / waves results. */
 const showTrendingHome = computed(() => {

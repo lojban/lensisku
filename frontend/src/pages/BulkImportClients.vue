@@ -133,7 +133,7 @@ import { useSeoHead } from '@/composables/useSeoHead'
 import { getBulkImportClients, getBulkImportClientDefinitions } from '@/api'
 
 const { t } = useI18n()
-useSeoHead({ title: t('bulkImportClients.title') })
+useSeoHead({ title: t('bulkImportClients.title'), robots: 'noindex, nofollow' })
 
 const clients = ref([])
 const loadingClients = ref(true)

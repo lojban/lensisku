@@ -210,7 +210,7 @@ const pageTitle = computed(() =>
     ? t('upsertDefinitionMarkdown.editTitle')
     : t('upsertDefinitionMarkdown.addTitle')
 )
-useSeoHead({ title: pageTitle })
+useSeoHead({ title: pageTitle, robots: 'noindex, nofollow' })
 
 const isValid = computed(() => {
   return langId.value && definition.value.trim()

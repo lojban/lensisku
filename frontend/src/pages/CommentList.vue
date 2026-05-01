@@ -650,7 +650,7 @@ const metaDescription = computed(() => {
 const canonicalPath = computed(() => route.fullPath)
 
 if (!props.embedded) {
-  useSeoHead({
+  useSeoHead({ pathWithoutLocale: '/comments',
     title: pageTitle,
     description: metaDescription,
     canonical: canonicalPath,

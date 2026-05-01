@@ -1334,7 +1334,7 @@ watch(
   () => load()
 )
 
-useSeoHead({ title: computed(() => t('collectionCustomTextBulk.documentTitle')) })
+useSeoHead({ title: computed(() => t('collectionCustomTextBulk.documentTitle')), robots: 'noindex, nofollow' })
 </script>
 
 <style scoped>

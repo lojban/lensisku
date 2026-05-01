@@ -113,7 +113,7 @@ const seoTitle = computed(() => {
   }
   return t('components.tiktoknu.pageTitle')
 })
-useSeoHead({ title: seoTitle })
+useSeoHead({ title: seoTitle, robots: 'noindex, nofollow' })
 
 const PER_PAGE = 30
 const reelItems = ref<

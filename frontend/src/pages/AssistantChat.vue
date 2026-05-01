@@ -499,7 +499,7 @@ const STORAGE_KEY = 'lensisku-assistant-chats-v1'
 const MAX_SESSIONS = 100
 
 const { locale, t } = useI18n()
-useSeoHead({ title: t('assistantChat.title') })
+useSeoHead({ title: t('assistantChat.title'), robots: 'noindex, nofollow' })
 
 const auth = useAuth()
 /** Logged-in users persist chats to PostgreSQL; anonymous users use localStorage. */

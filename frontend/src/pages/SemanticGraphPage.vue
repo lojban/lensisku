@@ -200,7 +200,7 @@ type SemanticGraphApiPayload = {
   edges: Array<{ source: string; target: string; similarity: number }>
 }
 
-useSeoHead({ title: computed(() => t('semanticGraph.title')) })
+useSeoHead({ title: computed(() => t('semanticGraph.title')), pathWithoutLocale: '/semantic-graph' })
 
 function querySearchToString(q: unknown): string {
   if (typeof q === 'string') return q
