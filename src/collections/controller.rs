@@ -1123,6 +1123,49 @@ pub async fn list_collection_items(
     let page = query.page.unwrap_or(1);
     let per_page = query.per_page.unwrap_or(20);
 
+    // Parse comma-separated language ids; ignore malformed input rather than 400ing.
+    let languages = query.languages.as_ref().and_then(|langs| {
+        let parsed: Result<Vec<i32>, _> = langs
+            .split(',')
+            .filter(|s| !s.is_empty())
+            .map(str::parse::<i32>)
+            .collect();
+        parsed.ok().filter(|v| !v.is_empty())
+    });
+
+    // Compute the query embedding for semantic ranking when requested. We only embed if there is
+    // a non-empty search term and embeddings are not disabled; otherwise we silently fall back to
+    // text search (mirrors how /jbovlaste/definitions decays for non-logged-in users).
+    let semantic_embedding = if query.semantic == Some(true)
+        && !crate::utils::embeddings::embeddings_disabled()
+    {
+        let processed = query.search.as_deref().unwrap_or("").trim().to_string();
+        if processed.is_empty() {
+            None
+        } else {
+            match crate::utils::embeddings::get_embedding(&processed).await {
+                Ok(emb) => Some(pgvector::Vector::from(emb)),
+                Err(e) => {
+                    return HttpResponse::InternalServerError().json(json!({
+                        "error": format!("Failed to generate embedding: {}", e)
+                    }));
+                }
+            }
+        }
+    } else {
+        None
+    };
+
+    let filters = ListCollectionItemsFilters {
+        languages,
+        selmaho: query.selmaho.clone(),
+        word_type: query.word_type,
+        username: query.username.clone(),
+        source_langid: query.source_langid,
+        search_in_phrases: query.search_in_phrases,
+        semantic_embedding,
+    };
+
     match service::list_collection_items(
         &pool,
         id.into_inner(),
@@ -1133,6 +1176,7 @@ pub async fn list_collection_items(
         query.item_id,
         query.exclude_with_flashcards,
         query.has_card_image_only,
+        filters,
     )
     .await
     {

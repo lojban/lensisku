@@ -98,6 +98,39 @@ pub struct ListCollectionItemsQuery {
     pub exclude_with_flashcards: Option<bool>,
     /// When true, only items that have a front or back image
     pub has_card_image_only: Option<bool>,
+    /// Comma-separated definition language ids (matches `definitions.langid`).
+    pub languages: Option<String>,
+    /// Filter by selmaho on the linked definition.
+    pub selmaho: Option<String>,
+    /// Filter by valsi typeid (word type) on the linked definition.
+    pub word_type: Option<i16>,
+    /// Filter by definition author username.
+    pub username: Option<String>,
+    /// Filter by valsi source language id (defaults to 1 = Lojban when unset).
+    pub source_langid: Option<i32>,
+    /// Mirrors dictionary search: when explicitly false, exclude phrase-typed valsi (typeid 15).
+    pub search_in_phrases: Option<bool>,
+    /// When true, rank definition-backed items by semantic similarity to `search`. Custom-text-only
+    /// items (no `definition_id`) are appended after ranked rows in their natural order so they
+    /// remain visible.
+    pub semantic: Option<bool>,
+}
+
+/// Resolved filter inputs for `service::list_collection_items`. Built by the controller from
+/// `ListCollectionItemsQuery` (parsing `languages`, materialising the semantic embedding, etc.)
+/// so the service stays SQL-only.
+#[derive(Debug, Default, Clone)]
+pub struct ListCollectionItemsFilters {
+    pub languages: Option<Vec<i32>>,
+    pub selmaho: Option<String>,
+    pub word_type: Option<i16>,
+    pub username: Option<String>,
+    pub source_langid: Option<i32>,
+    pub search_in_phrases: Option<bool>,
+    /// Pre-computed query embedding when semantic mode is active. The service treats it as the
+    /// signal that semantic ranking should be applied; the controller is responsible for deciding
+    /// whether to compute it.
+    pub semantic_embedding: Option<pgvector::Vector>,
 }
 
 /// Lojban text → Ogg Opus via Kitten TTS (authenticated, rate-limited).
