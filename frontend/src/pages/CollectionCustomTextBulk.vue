@@ -34,6 +34,18 @@
               <FileUp class="h-4 w-4 shrink-0" aria-hidden="true" />
               {{ t('collectionCustomTextBulk.exportTsv') }}
             </button>
+            <button type="button"
+              class="w-full px-4 py-2 text-left text-sm text-blue-600 hover:bg-blue-50 flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
+              :disabled="isSaving || isImporting" @click="showImportModal = true">
+              <FileDown class="h-4 w-4 shrink-0" aria-hidden="true" />
+              {{ isImporting ? t('collectionCustomTextBulk.importing') : t('collectionCustomTextBulk.importButton') }}
+            </button>
+            <button type="button"
+              class="w-full px-4 py-2 text-left text-sm text-purple-600 hover:bg-purple-50 flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
+              :disabled="isSaving || isImporting || mediaBulkBusy" @click="showMediaBulkModal = true">
+              <Package class="h-4 w-4 shrink-0" aria-hidden="true" />
+              {{ t('collectionCustomTextBulk.mediaBulkZipButton') }}
+            </button>
           </Dropdown>
         </div>
       </div>
@@ -46,22 +58,6 @@
             <ArrowLeft class="w-4 h-4 shrink-0" aria-hidden="true" />
             {{ t('collectionCustomTextBulk.backToCollection') }}
           </RouterLink>
-          <button v-if="!isLoading && isOwner" type="button"
-            class="ui-btn--create ui-btn--group-item"
-            :disabled="isSaving || isImporting" @click="showImportModal = true">
-            <FileDown class="h-4 w-4 shrink-0" aria-hidden="true" />
-            {{ isImporting ? t('collectionCustomTextBulk.importing') : t('collectionCustomTextBulk.importButton') }}
-          </button>
-          <button
-            v-if="!isLoading && isOwner"
-            type="button"
-            class="ui-btn--neutral-muted ui-btn--group-item inline-flex items-center gap-2"
-            :disabled="isSaving || isImporting || mediaBulkBusy"
-            @click="showMediaBulkModal = true"
-          >
-            <Package class="h-4 w-4 shrink-0" aria-hidden="true" />
-            {{ t('collectionCustomTextBulk.mediaBulkZipButton') }}
-          </button>
         </div>
         <div v-if="!isLoading && isOwner" class="btn-group-forced flex flex-row flex-wrap items-center md:gap-y-2" role="group">
           <button type="button"
