@@ -31,6 +31,9 @@ pub struct WavesSearchQuery {
     pub sort_order: Option<String>,
     /// `all` | `jbotcan` | `comments` | `mail`
     pub source: Option<String>,
+    /// Restrict comment hits to threads attached to this collection. When set, the mail half of
+    /// the unified search is suppressed because mail messages are not collection-scoped.
+    pub collection_id: Option<i32>,
 }
 
 #[derive(Debug, Serialize, ToSchema)]

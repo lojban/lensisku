@@ -2,7 +2,7 @@
 
   <div class="flex min-h-0 flex-1 flex-col pb-3">
 
-    <div class="mb-4 flex w-full flex-col gap-3">
+    <div class="page-header-shell mb-4 flex w-full flex-col gap-3">
 
       <!-- Title row: collection name + export menu only -->
       <div class="flex w-full flex-row flex-nowrap items-start justify-between gap-3 sm:gap-4">

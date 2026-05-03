@@ -182,9 +182,13 @@ pub async fn search_waves(
         definition_id: None,
         definition_link_id: None,
         target_user_id: None,
-        collection_id: None,
+        collection_id: query.collection_id,
         wave_source: wave_source.clone(),
     };
+
+    // Mail messages are not collection-scoped, so when the caller restricts to a collection we
+    // silently drop the mail half of the unified search regardless of `source`.
+    let collection_scoped = query.collection_id.is_some();
 
     let mail_query = mailarchive::SearchQuery {
         query: search_term.clone(),
@@ -200,7 +204,7 @@ pub async fn search_waves(
     let mail_res;
 
     match source {
-        "mail" => {
+        "mail" if !collection_scoped => {
             comments_res = None;
             mail_res = Some(
                 mailarchive_service::search_messages(pool, mail_query)
@@ -210,7 +214,22 @@ pub async fn search_waves(
                     })?,
             );
         }
+        "mail" => {
+            // Collection scope makes mail-only search empty.
+            comments_res = None;
+            mail_res = None;
+        }
         "jbotcan" | "comments" => {
+            mail_res = None;
+            comments_res = Some(
+                comments_service::search_comments(pool, comments_params, current_user_id)
+                    .await
+                    .map_err(|e| -> Box<dyn std::error::Error + Send + Sync> {
+                        Box::new(io::Error::other(e.to_string()))
+                    })?,
+            );
+        }
+        _ if collection_scoped => {
             mail_res = None;
             comments_res = Some(
                 comments_service::search_comments(pool, comments_params, current_user_id)
