@@ -556,6 +556,22 @@ export default {
         '.collection-header-cover-thumb': {
           '@apply block h-full w-auto max-h-full max-w-full object-contain': {},
         },
+        /**
+         * Default `PageHeader` card shell: mobile-only full-bleed (cancels `#main-child` `pt-3` + inner `px-3`
+         * from `App.vue`), square corners; from `sm` restores inset + `rounded-lg`.
+         */
+        '.page-header-shell': {
+          '@apply -mx-3 -mt-3 rounded-none border border-gray-200 bg-white p-4 sm:p-6 sm:mx-0 sm:mt-0 sm:rounded-lg':
+            {},
+        },
+        /**
+         * Flashcard study session strip under the app bar (`border-t-0`, bottom radius only from `sm`).
+         * Same mobile horizontal / top bleed as `.page-header-shell`.
+         */
+        '.page-header-study-strip': {
+          '@apply -mx-3 -mt-3 rounded-none border border-gray-200 border-t-0 bg-white p-3 mb-4 sm:mx-0 sm:mt-0 sm:rounded-b-lg':
+            {},
+        },
         /** Collection cover in edit modal (matches profile avatar target size, square). */
         '.collection-edit-logo': {
           '@apply flex h-28 w-28 items-center justify-center rounded-xl border-4 border-white bg-white shadow-lg overflow-hidden':

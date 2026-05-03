@@ -71,7 +71,8 @@ const hasDescription = computed(() => slotHasContent(slots.description))
 const hasToolbar = computed(() => slotHasContent(slots.toolbar))
 
 const headerClass = computed(() => {
-  const shell = 'rounded-lg border border-gray-200 bg-white p-4 sm:p-6'
+  /** Shared shell: mobile bleed + square corners (see `tailwind.config.js` `.page-header-shell`). */
+  const shell = 'page-header-shell'
   const margin = props.margin === 'section' ? 'mb-6' : ''
   const extra = attrs.class
   return [shell, margin, extra].filter(Boolean)

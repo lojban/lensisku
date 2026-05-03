@@ -1,7 +1,7 @@
 <template>
   <div
     v-if="loading"
-    class="mb-6 rounded-lg border border-gray-200 bg-white p-4 sm:p-6"
+    class="page-header-shell mb-6"
   >
     <div class="flex flex-col gap-4">
         <div class="flex flex-row items-stretch gap-3 sm:gap-4">

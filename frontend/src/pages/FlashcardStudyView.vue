@@ -1,7 +1,7 @@
 <template>
   <div :class="{ 'pt-for-anon-banner': anonBannerVisible }">
     <AnonymousProgressBanner v-if="cardsAnsweredInSession >= 4" position="top" @visible="anonBannerVisible = $event" />
-    <header class="-mt-3 border border-gray-200 border-t-0 rounded-b-lg p-3 mb-4">
+    <header class="page-header-study-strip">
       <div class="flex w-full min-w-0 items-start gap-3 sm:gap-4">
         <button v-if="collectionCoverDisplayUrl" type="button" class="cursor-pointer max-w-full inline-flex h-full min-h-0 shrink-0 items-stretch border-0 bg-transparent p-0 text-inherit shrink-0 self-start"
           :aria-label="collectionMeta?.name
@@ -392,7 +392,6 @@ import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import AnonymousProgressBanner from '@/components/AnonymousProgressBanner.vue'
 import ModalComponent from '@/components/ModalComponent.vue'
-import PageHeader from '@/components/layout/PageHeader.vue'
 import { Button, IconButton } from '@packages/ui'
 
 import {

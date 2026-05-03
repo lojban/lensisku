@@ -292,7 +292,53 @@
     </div>
 
     <div v-show="activeTab === 'discussion'" class="pt-2" role="tabpanel">
+      <div
+        v-if="searchMode === 'comments' && itemSearchQuery.trim()"
+        class="space-y-4"
+      >
+        <LoadingSpinner v-if="isLoadingWaves" class="py-8" />
+        <template v-else>
+          <div v-if="waveItems.length > 0" class="space-y-3">
+            <div
+              v-for="item in waveItems"
+              :key="item.source === 'comment' ? `c-${item.comment.comment_id}` : `m-${item.message.id}`"
+              class="cursor-pointer"
+              @click="
+                item.source === 'comment'
+                  ? router.push(
+                      `/comments?thread_id=${item.comment.thread_id}&comment_id=${item.comment.parent_id || 0}&scroll_to=${item.comment.comment_id}&collection_id=${numericCollectionId}`
+                    )
+                  : null
+              "
+            >
+              <CommentItem
+                v-if="item.source === 'comment'"
+                :comment="item.comment"
+                :reply-enabled="false"
+                :show-context="true"
+              />
+            </div>
+          </div>
+          <div
+            v-else
+            class="text-center py-12 bg-blue-50 rounded-lg border border-blue-100"
+          >
+            <MessageSquare class="mx-auto h-12 w-12 text-blue-400" />
+            <p class="mt-4 text-gray-600">{{ t('home.noCommentsFound') }}</p>
+          </div>
+          <PaginationComponent
+            v-if="waveTotal > 10"
+            :current-page="waveCurrentPage"
+            :total-pages="waveTotalPages"
+            :total="waveTotal"
+            :per-page="10"
+            @prev="fetchWaves(waveCurrentPage - 1)"
+            @next="fetchWaves(waveCurrentPage + 1)"
+          />
+        </template>
+      </div>
       <CommentList
+        v-else
         :collection-id="collection.collection_id"
         :embedded="true"
       />
@@ -1399,6 +1445,7 @@ import {
   Camera,
   Trash2,
   MessagesSquare,
+  MessageSquare,
 } from 'lucide-vue-next'
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
@@ -1423,6 +1470,7 @@ import {
   getLanguages,
   updateItemPosition,
   exportCollectionFull,
+  searchWaves,
   getItemImage,
   deleteFlashcard,
   addValsi,
@@ -1430,6 +1478,7 @@ import {
   validateMathJax,
 } from '@/api'
 import AlertComponent from '@/components/AlertComponent.vue'
+import CommentItem from '@/components/CommentItem.vue'
 import CommentList from '@/pages/CommentList.vue'
 import DefinitionCard from '@/components/DefinitionCard.vue'
 import DeleteConfirmationModal from '@/components/DeleteConfirmation.vue'
@@ -2311,9 +2360,23 @@ const DEBOUNCE_DELAY = 450
 const itemsSearchQueue = new SearchQueue()
 const definitionsSearchQueue = new SearchQueue()
 
-// Search mode + filter state, mirroring HomePage. Comments mode is irrelevant inside a collection,
-// so SearchForm only exposes 'dictionary' / 'semantic' (plus the legacy 'semantic' alias).
-const searchMode = ref<'dictionary' | 'semantic'>('dictionary')
+// Search mode + filter state, mirroring HomePage. SearchForm exposes both 'dictionary' and
+// 'comments' modes; selecting 'comments' switches to the discussion tab and searches the
+// collection's discussion comments via the unified `/waves/search` endpoint (collection-scoped).
+const searchMode = ref<'dictionary' | 'semantic' | 'comments'>('dictionary')
+const wavesSearchQueue = new SearchQueue()
+const isLoadingWaves = ref(false)
+type WaveItem =
+  | {
+      source: 'comment'
+      comment: { comment_id: number; thread_id: number; parent_id?: number | null; valsi_id?: number | null; definition_id?: number | null; [key: string]: unknown }
+      import_source?: string | null
+    }
+  | { source: 'mail'; message: { id: number; [key: string]: unknown } }
+const waveItems = ref<WaveItem[]>([])
+const waveTotal = ref(0)
+const waveCurrentPage = ref(1)
+const waveTotalPages = computed(() => Math.max(1, Math.ceil(waveTotal.value / 10)))
 
 interface ItemFiltersValue {
   selmaho: string
@@ -2343,12 +2406,70 @@ const itemFilters = ref<ItemFiltersValue>({
  */
 const handleItemSearch = ({ query, mode }: { query: string; mode: string }) => {
   itemSearchQuery.value = normalizeSearchQuery(query || '')
+  if (mode === 'comments') {
+    searchMode.value = 'comments'
+    if (activeTab.value !== 'discussion') {
+      setActiveTab('discussion')
+    }
+    waveCurrentPage.value = 1
+    fetchWaves(1)
+    return
+  }
   searchMode.value = mode === 'semantic' ? 'semantic' : 'dictionary'
   if (currentPage.value !== 1) {
     // Bounce to page 1 via the router so the URL stays consistent with the watcher.
     router.push({ query: { ...route.query, page: 1 } })
   }
   fetchItems()
+}
+
+/**
+ * Fetch a page of wave (comment) hits scoped to this collection. Mirrors HomePage.fetchWaves but
+ * always restricts to `collection_id` so the mail half is suppressed server-side, and we only
+ * surface comment hits.
+ */
+const fetchWaves = async (page: number) => {
+  const q = (itemSearchQuery.value || '').trim()
+  if (!q) {
+    waveItems.value = []
+    waveTotal.value = 0
+    waveCurrentPage.value = 1
+    return
+  }
+  isLoadingWaves.value = true
+  const { requestId, signal } = wavesSearchQueue.createRequest()
+  try {
+    const response = await searchWaves(
+      {
+        page,
+        per_page: 10,
+        sort_by: 'time',
+        sort_order: 'desc',
+        source: 'comments',
+        collection_id: numericCollectionId.value,
+        search: q,
+      },
+      signal,
+    )
+    if (!wavesSearchQueue.shouldProcess(requestId)) return
+    waveItems.value = response.data.items || []
+    waveTotal.value = response.data.total || 0
+    waveCurrentPage.value = page
+  } catch (e) {
+    const err = e as { name?: string; code?: string; message?: string }
+    if (
+      err?.name === 'AbortError' ||
+      err?.code === 'ERR_CANCELED' ||
+      err?.message?.includes('canceled')
+    ) {
+      return
+    }
+    console.error('Error searching collection discussions:', e)
+  } finally {
+    if (wavesSearchQueue.shouldProcess(requestId)) {
+      isLoadingWaves.value = false
+    }
+  }
 }
 
 const handleItemFiltersChange = () => {
