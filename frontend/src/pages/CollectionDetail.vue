@@ -1504,6 +1504,7 @@ import { useI18n } from 'vue-i18n'
 import { SearchQueue } from '@/utils/searchQueue'
 import { queryStr } from '@/utils/routeQuery'
 import { normalizeSearchQuery } from '@/utils/searchQueryUtils'
+import type { CommentItemApiComment } from '@/types/comment'
 import {
   getApiErrorMessage,
   getCollectionItemSaveErrorMessage,
@@ -2369,7 +2370,7 @@ const isLoadingWaves = ref(false)
 type WaveItem =
   | {
       source: 'comment'
-      comment: { comment_id: number; thread_id: number; parent_id?: number | null; valsi_id?: number | null; definition_id?: number | null; [key: string]: unknown }
+      comment: CommentItemApiComment
       import_source?: string | null
     }
   | { source: 'mail'; message: { id: number; [key: string]: unknown } }
