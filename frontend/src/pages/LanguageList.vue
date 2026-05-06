@@ -1,6 +1,6 @@
 <template>
   <!-- Header with stats -->
-  <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+  <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
     <div>
       <h2 class="text-2xl font-bold text-gray-800">{{ t('languageList.title') }}</h2>
 
@@ -22,7 +22,7 @@
     </div>
   </div>
   <!-- Search bar (client-side) -->
-  <div v-if="!isLoading && languages.length > 0" class="mb-6">
+  <div v-if="!isLoading && languages.length > 0">
     <div class="bg-white border border-gray-200 rounded-xl shadow-sm p-4">
       <SearchInput
         v-model="searchQuery"

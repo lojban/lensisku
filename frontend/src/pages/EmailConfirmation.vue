@@ -76,7 +76,7 @@
     </div>
   </div>
   <!-- Request Success Message -->
-  <div v-if="requestSuccess" class="mt-4 p-4 bg-blue-50 text-blue-700 rounded-lg text-center">
+  <div v-if="requestSuccess" class="p-4 bg-blue-50 text-blue-700 rounded-lg text-center">
     {{ t('emailConfirmation.requestSuccess') }}
   </div>
 </template>

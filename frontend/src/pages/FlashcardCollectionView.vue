@@ -129,16 +129,13 @@
     </template>
   </CollectionPageHeader>
   <!-- Anonymous: sign-in prompt -->
-  <div
-    v-if="isAnonView"
-    class="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6 text-center"
-  >
+  <div v-if="isAnonView" class="bg-amber-50 border border-amber-200 rounded-lg p-4 text-center">
     <p class="text-gray-700 mb-3">{{ t('anonymousProgress.signInToSaveProgress') }}</p>
 
     <p class="text-sm text-gray-600">{{ t('anonymousProgress.studyByLevelHint') }}</p>
   </div>
   <!-- Stats Overview -->
-  <div v-if="!isAnonView" class="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-6">
+  <div v-if="!isAnonView" class="grid grid-cols-1 sm:grid-cols-4 gap-4">
     <div class="bg-white p-4 rounded-lg border shadow-sm">
       <h3 class="text-sm font-medium text-gray-600">
         {{ t('components.flashcardCollectionView.stats.new') }}
@@ -172,7 +169,7 @@
     </div>
   </div>
   <!-- Filters -->
-  <div v-if="!isAnonView" class="bg-white p-4 rounded-lg border shadow-sm mb-6">
+  <div v-if="!isAnonView" class="bg-white p-4 rounded-lg border shadow-sm">
     <div class="flex flex-wrap gap-4">
       <select v-model="filters.status" class="input-field">
         <option value="">{{ t('components.flashcardCollectionView.filters.allStatus') }}</option>
