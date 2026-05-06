@@ -1,31 +1,29 @@
 <template>
   <!-- Search and Filter Section -->
-  <div class="space-y-4 mt-4 sm:mt-6">
-    <!-- Skeletons -->
-    <SearchFormSkeleton v-if="isInitialLoading" />
-    <CombinedFiltersSkeleton v-if="isInitialLoading" />
-    <!-- Actual Components (hidden while loading) -->
-    <SearchForm
-      ref="searchFormRef"
-      :initial-query="searchQuery"
-      :initial-mode="'semantic'"
-      class="w-full transition-opacity duration-300"
-      :class="{ 'opacity-0 pointer-events-none h-0 overflow-hidden': isInitialLoading }"
-      @search="performSearch"
-    />
-    <CombinedFilters
-      v-model="filters"
-      :languages="languages"
-      class="w-full transition-opacity duration-300"
-      :class="{ 'opacity-0 pointer-events-none h-0 overflow-hidden': isInitialLoading }"
-      @change="handleFilterChange"
-      @reset="handleFiltersReset"
-    />
-  </div>
+  <!-- Skeletons -->
+  <SearchFormSkeleton v-if="isInitialLoading" />
+  <CombinedFiltersSkeleton v-if="isInitialLoading" />
+  <!-- Actual Components (hidden while loading) -->
+  <SearchForm
+    ref="searchFormRef"
+    :initial-query="searchQuery"
+    :initial-mode="'semantic'"
+    class="w-full transition-opacity duration-300"
+    :class="{ 'opacity-0 pointer-events-none h-0 overflow-hidden': isInitialLoading }"
+    @search="performSearch"
+  />
+  <CombinedFilters
+    v-model="filters"
+    :languages="languages"
+    class="w-full transition-opacity duration-300"
+    :class="{ 'opacity-0 pointer-events-none h-0 overflow-hidden': isInitialLoading }"
+    @change="handleFilterChange"
+    @reset="handleFiltersReset"
+  />
 
   <div
     v-if="searchQuery || filters.selmaho || filters.username || filters.word_type"
-    class="min-h-[400px] mt-4 sm:mt-6"
+    class="min-h-[400px]"
   >
     <div class="space-y-4">
       <div
@@ -84,7 +82,7 @@
     </div>
   </div>
   <!-- PaginationComponent -->
-  <div v-if="searchQuery || filters.selmaho || filters.username || filters.word_type" class="mt-6">
+  <div v-if="searchQuery || filters.selmaho || filters.username || filters.word_type">
     <PaginationComponent
       :current-page="currentPage"
       :total-pages="totalPages"

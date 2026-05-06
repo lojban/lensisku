@@ -119,6 +119,10 @@ export default {
         '.app-header-bar': {
           '@apply sticky top-0 z-40 border-b border-gray-200 bg-white': {},
         },
+        /** Canonical vertical rhythm for normal page routes (applied directly in App.vue). */
+        '.page-sections': {
+          '@apply flex flex-col gap-4 sm:gap-5': {},
+        },
         /**
          * FAB outer shell: `aqua-base` sets `overflow:hidden` (gloss), which clips the button’s own
          * outer `box-shadow` in browsers — elevation lives on this wrapper instead (ui-ux-pro-max).

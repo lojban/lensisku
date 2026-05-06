@@ -1,6 +1,6 @@
 <template>
   <!-- Thread Header -->
-  <div class="bg-white border border-blue-200 rounded-lg p-4 mb-4 shadow-sm">
+  <div class="bg-white border border-blue-200 rounded-lg p-4 shadow-sm">
     <h2 class="text-xl font-semibold text-gray-700 mb-4">{{ cleanedSubject }}</h2>
 
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">

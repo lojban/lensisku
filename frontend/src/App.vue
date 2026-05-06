@@ -245,6 +245,11 @@
         :class="[
           route.meta.contentTopPaddingMainOnly || route.meta.authFullBleed ? 'px-0' : 'px-3',
           { 'main-child-inner-full-height': route.meta.fullHeight },
+          !route.meta.authFullBleed &&
+          !route.meta.fullHeight &&
+          !route.meta.contentTopPaddingMainOnly
+            ? 'flex flex-col gap-4'
+            : '',
         ]"
       >
         <div

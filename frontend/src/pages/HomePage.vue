@@ -1,33 +1,31 @@
 <template>
   <!-- Search and Filter Section -->
-  <div class="space-y-4 mt-4 sm:mt-6">
-    <!-- Skeletons -->
-    <SearchFormSkeleton v-if="isInitialLoading" />
-    <CombinedFiltersSkeleton
-      v-if="isInitialLoading && (searchMode === 'dictionary' || searchMode === 'semantic')"
-    />
-    <!-- Actual Components (hidden while loading) -->
-    <SearchForm
-      ref="searchFormRef"
-      :initial-query="searchQuery"
-      :initial-mode="searchMode"
-      :initial-group-by-thread="groupByThread"
-      class="w-full transition-opacity duration-300"
-      :class="{ 'opacity-0 pointer-events-none h-0 overflow-hidden': isInitialLoading }"
-      @search="performSearch"
-    />
-    <CombinedFilters
-      v-if="searchMode === 'dictionary' || searchMode === 'semantic'"
-      v-model="filters"
-      :languages="languages"
-      class="w-full transition-opacity duration-300"
-      :class="{ 'opacity-0 pointer-events-none h-0 overflow-hidden': isInitialLoading }"
-      @change="handleFilterChange"
-      @reset="handleFiltersReset"
-    />
-  </div>
+  <!-- Skeletons -->
+  <SearchFormSkeleton v-if="isInitialLoading" />
+  <CombinedFiltersSkeleton
+    v-if="isInitialLoading && (searchMode === 'dictionary' || searchMode === 'semantic')"
+  />
+  <!-- Actual Components (hidden while loading) -->
+  <SearchForm
+    ref="searchFormRef"
+    :initial-query="searchQuery"
+    :initial-mode="searchMode"
+    :initial-group-by-thread="groupByThread"
+    class="w-full transition-opacity duration-300"
+    :class="{ 'opacity-0 pointer-events-none h-0 overflow-hidden': isInitialLoading }"
+    @search="performSearch"
+  />
+  <CombinedFilters
+    v-if="searchMode === 'dictionary' || searchMode === 'semantic'"
+    v-model="filters"
+    :languages="languages"
+    class="w-full transition-opacity duration-300"
+    :class="{ 'opacity-0 pointer-events-none h-0 overflow-hidden': isInitialLoading }"
+    @change="handleFilterChange"
+    @reset="handleFiltersReset"
+  />
 
-  <div v-if="showTrendingHome" class="min-h-[400px] mt-4 sm:mt-6">
+  <div v-if="showTrendingHome" class="min-h-[400px]">
     <div v-if="isLoadingTrending" class="flex justify-center py-8">
       <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
     </div>
@@ -72,7 +70,7 @@
     </div>
   </div>
 
-  <div v-else ref="searchResultsRef" class="min-h-[400px] mt-4 sm:mt-6">
+  <div v-else ref="searchResultsRef" class="min-h-[400px]">
     <div class="space-y-4">
       <div
         class="flex flex-wrap justify-between items-center gap-3 sm:space-x-4 w-full sm:w-auto ml-auto"
@@ -365,7 +363,7 @@
     @collection-updated="collections = $event"
   />
   <!-- PaginationComponent -->
-  <div v-if="!showTrendingHome" class="mt-6">
+  <div v-if="!showTrendingHome">
     <PaginationComponent
       :current-page="currentPage"
       :total-pages="totalPages"

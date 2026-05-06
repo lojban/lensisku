@@ -1,6 +1,6 @@
 <template>
   <!-- Header with word being discussed -->
-  <div class="mb-6">
+  <div>
     <div v-if="valsiDetails" class="mb-4">
       <h2 v-if="!definitionId" class="text-2xl font-bold space-x-2 select-none">
         <span class="text-gray-500 italic">{{ t('commentList.discussingEntry') }}</span>
@@ -75,7 +75,7 @@
     </div>
   </div>
   <!-- New top-level comment form -->
-  <div v-if="showTopLevelForm" class="mb-6">
+  <div v-if="showTopLevelForm">
     <CommentForm
       :is-submitting="isSubmitting"
       :initial-values="newComment"

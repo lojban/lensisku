@@ -62,7 +62,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+  <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
     <div>
       <h2 class="text-2xl font-bold text-gray-800">{{ t('cachedExports.title') }}</h2>
 
@@ -84,7 +84,7 @@ onMounted(async () => {
     </div>
   </div>
   <!-- Search bar -->
-  <div v-if="!isLoading && exports.length > 0" class="mb-6">
+  <div v-if="!isLoading && exports.length > 0">
     <div class="bg-white border border-gray-200 rounded-xl shadow-sm p-4">
       <SearchInput
         v-model="searchQuery"

@@ -49,7 +49,7 @@ const props = withDefaults(
   {
     titleAs: 'h1',
     titleAttrs: () => ({}),
-    margin: 'section',
+    margin: 'none',
     layout: 'stack',
     stackGap: 'compact',
     titleTone: 'primary',

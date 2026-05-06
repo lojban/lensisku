@@ -1,7 +1,7 @@
 <template>
   <h1 class="page-section-title">{{ t('bulkImport.title') }}</h1>
 
-  <div class="flex justify-between my-4">
+  <div class="flex justify-between">
     <RouterLink to="/bulk-import/clients" class="ui-btn--accent-purple">
       {{ t('bulkImport.viewPastImportsLink') }}
     </RouterLink>
