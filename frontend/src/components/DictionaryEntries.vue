@@ -1,35 +1,34 @@
 <template>
-
   <div class="dictionary-entries space-y-4">
     <!-- Keep previous entries visible while loading; HomePage shows overlay spinner -->
     <div v-if="!error" class="grid gap-4 mb-6">
-       <!-- Decomposition display --> <AlertComponent
+      <!-- Decomposition display -->
+      <AlertComponent
         v-if="decomposition?.length"
         type="tip"
         :label="t('components.dictionaryEntries.decomposition')"
-        >
+      >
         <div class="inline-flex items-center gap-1">
-           <template v-for="(word, index) in decomposition" :key="word"
-            >
+          <template v-for="(word, index) in decomposition" :key="word">
             <h2
               class="text-base font-semibold text-blue-700 hover:text-blue-800 hover:underline truncate flex-shrink-0"
             >
-               <RouterLink
+              <RouterLink
                 :to="{
                   path: `/valsi/${word.replace(/ /g, '_')}`,
                   query: { langid: definitions[0]?.langid },
                 }"
-                > {{ word }} </RouterLink
               >
+                {{ word }}
+              </RouterLink>
             </h2>
-             <span v-if="index < decomposition.length - 1" class="text-aqua-500">+</span> </template
-          >
+            <span v-if="index < decomposition.length - 1" class="text-aqua-500">+</span>
+          </template>
         </div>
-         </AlertComponent
-      > <template v-for="(batch, batchIndex) in definitionBatches" :key="batchIndex"
-        >
+      </AlertComponent>
+      <template v-for="(batch, batchIndex) in definitionBatches" :key="batchIndex">
         <div v-for="def in batch" v-show="isVisible(batchIndex)" :key="def.definitionid">
-           <DefinitionCard
+          <DefinitionCard
             :definition="def"
             :languages="languages"
             :show-score="props.showScores"
@@ -42,16 +41,13 @@
             @collection-updated="$emit('collection-updated', $event)"
           />
         </div>
-         </template
-      >
+      </template>
     </div>
 
     <div v-if="!isLoading && definitions.length === 0" class="text-center py-8 text-gray-600">
-       {{ t('components.dictionaryEntries.noEntries') }}
+      {{ t('components.dictionaryEntries.noEntries') }}
     </div>
-
   </div>
-
 </template>
 
 <script setup lang="ts">
@@ -169,4 +165,3 @@ watch(
   { deep: true }
 )
 </script>
-

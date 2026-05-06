@@ -1,31 +1,36 @@
 <template>
-   <TabbedPageHeader
+  <TabbedPageHeader
     :tabs="tabs"
     :active-tab="activeTab"
     :page-title="pageTitle"
     @tab-click="handleTabClick"
-  /> <!-- Loading State with Skeleton -->
-  <div v-if="isLoading" class="space-y-4"> <SkeletonActivityItem v-for="n in 5" :key="n" /> </div>
-   <!-- Content -->
+  />
+  <!-- Loading State with Skeleton -->
+  <div v-if="isLoading" class="space-y-4"><SkeletonActivityItem v-for="n in 5" :key="n" /></div>
+  <!-- Content -->
   <div v-if="!error" class="space-y-4">
-     <ActivityChanges
+    <ActivityChanges
       v-if="activeTab === 'changes'"
       :grouped-changes="groupedChanges"
       :format-date="formatDate"
-    /> <ActivityThreads
+    />
+    <ActivityThreads
       v-if="activeTab === 'threads'"
       :threads="threads"
       :format-date-for-thread="formatDateForThread"
       :format-time="formatTime"
-    /> <ActivityComments
+    />
+    <ActivityComments
       v-if="activeTab === 'all_comments'"
       :comments="allComments"
       :format-date="formatDateForThread"
-    /> <ActivityDefinitions
+    />
+    <ActivityDefinitions
       v-if="activeTab === 'all_definitions'"
       :definitions="allDefinitions"
       :format-date="formatDateForThread"
-    /> <PaginationComponent
+    />
+    <PaginationComponent
       v-if="
         (activeTab === 'changes' && (currentPage > 1 || nextCursor)) ||
         (['threads', 'all_comments', 'all_definitions'].includes(activeTab) && totalPages > 1)
@@ -40,7 +45,6 @@
       @next="changePage(currentPage + 1)"
     />
   </div>
-
 </template>
 
 <script setup lang="ts">
@@ -185,7 +189,7 @@ const fetchData = async (tabKey: string) => {
               if (content && typeof content === 'string') {
                 try {
                   return JSON.parse(content)
-                } catch (e) {
+                } catch {
                   return [{ type: 'text', data: content }]
                 }
               }
@@ -404,4 +408,3 @@ watch(
   { deep: true, immediate: true }
 )
 </script>
-

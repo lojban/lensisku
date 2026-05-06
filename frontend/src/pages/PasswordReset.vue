@@ -1,24 +1,16 @@
 <template>
-
   <div class="auth-glass-page-shell">
-
     <AuthGlassCard>
-
       <div v-if="!sessionId" class="w-full space-y-6">
-
-        <h2 class="auth-glass-title">
-           {{ t('passwordReset.resetTitle') }}
-        </h2>
+        <h2 class="auth-glass-title">{{ t('passwordReset.resetTitle') }}</h2>
 
         <form class="space-y-6 w-full" @submit.prevent="requestPasswordReset">
-
           <div>
-             <label for="email" class="block text-sm font-medium text-blue-700">{{
+            <label for="email" class="block text-sm font-medium text-blue-700">{{
               t('passwordReset.emailLabel')
-            }}</label
-            >
+            }}</label>
             <div class="relative">
-               <input
+              <input
                 id="email"
                 v-model="email"
                 type="email"
@@ -26,44 +18,42 @@
                 class="input-field w-full h-10 pl-3 pr-10"
                 :disabled="isLoading"
                 :placeholder="t('passwordReset.emailPlaceholder')"
-              /> <Mail class="input-field-trailing-icon" aria-hidden="true" />
+              />
+              <Mail class="input-field-trailing-icon" aria-hidden="true" />
             </div>
-
           </div>
-           <button
+          <button
             type="submit"
             class="auth-form-wide-submit ui-btn--neutral-slate h-8"
             :disabled="isLoading || !email"
           >
-             <template v-if="isLoading"
-              > <Loader2 class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" /> {{
-                t('passwordReset.sendingRequest')
-              }} </template
-            > <template v-else> {{ t('passwordReset.requestButton') }} </template> </button
-          >
+            <template v-if="isLoading">
+              <Loader2 class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" />
+              {{ t('passwordReset.sendingRequest') }}
+            </template>
+            <template v-else> {{ t('passwordReset.requestButton') }} </template>
+          </button>
         </form>
-         <!-- Error Display --> <AlertComponent v-if="error" type="error" class="mx-auto"
-          > {{ error.message }} </AlertComponent
-        > <!-- Success Message --> <AlertComponent v-if="requestSent" type="success" class="mx-auto"
-          > {{ t('passwordReset.requestSentSuccess') }} </AlertComponent
-        >
+        <!-- Error Display -->
+        <AlertComponent v-if="error" type="error" class="mx-auto">
+          {{ error.message }}
+        </AlertComponent>
+        <!-- Success Message -->
+        <AlertComponent v-if="requestSent" type="success" class="mx-auto">
+          {{ t('passwordReset.requestSentSuccess') }}
+        </AlertComponent>
       </div>
-       <!-- Reset Password Form -->
+      <!-- Reset Password Form -->
       <div v-else class="w-full">
-
-        <h2 class="auth-glass-title">
-           {{ t('passwordReset.setNewPasswordTitle') }}
-        </h2>
+        <h2 class="auth-glass-title">{{ t('passwordReset.setNewPasswordTitle') }}</h2>
 
         <form class="space-y-6 w-full" @submit.prevent="resetPassword">
-
           <div>
-             <label for="newPassword" class="block text-sm font-medium text-blue-700">{{
+            <label for="newPassword" class="block text-sm font-medium text-blue-700">{{
               t('passwordReset.newPasswordLabel')
-            }}</label
-            >
+            }}</label>
             <div class="relative">
-               <input
+              <input
                 id="newPassword"
                 v-model="newPassword"
                 type="password"
@@ -71,18 +61,17 @@
                 class="input-field w-full h-10 pl-3 pr-10"
                 :disabled="isLoading"
                 :placeholder="t('passwordReset.newPasswordPlaceholder')"
-              /> <Key class="input-field-trailing-icon" aria-hidden="true" />
+              />
+              <Key class="input-field-trailing-icon" aria-hidden="true" />
             </div>
-
           </div>
 
           <div>
-             <label for="confirmPassword" class="block text-sm font-medium text-blue-700">{{
+            <label for="confirmPassword" class="block text-sm font-medium text-blue-700">{{
               t('passwordReset.confirmPasswordLabel')
-            }}</label
-            >
+            }}</label>
             <div class="relative">
-               <input
+              <input
                 id="confirmPassword"
                 v-model="confirmPassword"
                 type="password"
@@ -90,69 +79,61 @@
                 class="input-field w-full h-10 pl-3 pr-10"
                 :disabled="isLoading"
                 :placeholder="t('passwordReset.confirmPasswordPlaceholder')"
-              /> <Key class="input-field-trailing-icon" aria-hidden="true" />
+              />
+              <Key class="input-field-trailing-icon" aria-hidden="true" />
             </div>
-
           </div>
 
           <div
             v-if="showValidationErrors"
             class="mt-4 p-3 bg-yellow-50 border border-yellow-200 text-yellow-800 rounded-md"
           >
-
-            <p class="font-medium mb-1"> {{ t('passwordReset.validationErrorTitle') }} </p>
+            <p class="font-medium mb-1">{{ t('passwordReset.validationErrorTitle') }}</p>
 
             <ul class="list-disc list-inside">
-
               <li
                 v-for="validationError in passwordValidationErrors"
                 :key="validationError"
                 class="text-sm"
               >
-                 {{ validationError }}
+                {{ validationError }}
               </li>
-
             </ul>
-
           </div>
-           <button
+          <button
             type="submit"
             class="auth-form-wide-submit ui-btn--neutral-slate h-8"
             :disabled="isLoading || !isValidPasswordReset"
           >
-             <template v-if="isLoading"
-              > <Loader2 class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" /> {{
-                t('passwordReset.resettingPassword')
-              }} </template
-            > <template v-else> {{ t('passwordReset.resetPasswordButton') }} </template> </button
-          >
+            <template v-if="isLoading">
+              <Loader2 class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" />
+              {{ t('passwordReset.resettingPassword') }}
+            </template>
+            <template v-else> {{ t('passwordReset.resetPasswordButton') }} </template>
+          </button>
         </form>
-         <!-- Error Display -->
-        <div v-if="error" class="mb-4 text-center text-red-600"> {{ error.message }} </div>
-         <!-- Success Message -->
+        <!-- Error Display -->
+        <div v-if="error" class="mb-4 text-center text-red-600">{{ error.message }}</div>
+        <!-- Success Message -->
         <div
           v-if="resetSuccess"
           class="w-full mt-4 p-3 bg-emerald-100 border border-emerald-200 text-emerald-700 rounded-md text-center"
         >
-           {{ t('passwordReset.resetSuccess') }} <RouterLink
-            to="/login"
-            class="text-green-700 hover:text-green-800 font-medium"
-            > {{ t('passwordReset.loginLink') }} </RouterLink
-          > .
+          {{ t('passwordReset.resetSuccess') }}
+          <RouterLink to="/login" class="text-green-700 hover:text-green-800 font-medium">
+            {{ t('passwordReset.loginLink') }}
+          </RouterLink>
+          .
         </div>
-
       </div>
-       <!-- Back to Login Link -->
+      <!-- Back to Login Link -->
       <p class="text-sm text-white text-center w-full">
-         <RouterLink to="/login" class="font-medium text-blue-900 hover:text-blue-700"
-          > {{ t('passwordReset.backToLogin') }} </RouterLink
-        >
+        <RouterLink to="/login" class="font-medium text-blue-900 hover:text-blue-700">
+          {{ t('passwordReset.backToLogin') }}
+        </RouterLink>
       </p>
-
     </AuthGlassCard>
-
   </div>
-
 </template>
 
 <script setup lang="ts">
@@ -164,7 +145,6 @@ import { useI18n } from 'vue-i18n'
 import {
   requestPasswordReset as apiRequestPasswordReset,
   restorePassword as apiRestorePassword,
-  api,
 } from '@/api'
 import AlertComponent from '@/components/AlertComponent.vue'
 import { AuthGlassCard } from '@packages/ui'
@@ -172,7 +152,7 @@ import { useSeoHead } from '@/composables/useSeoHead'
 
 const route = useRoute()
 const router = useRouter()
-const { t, locale } = useI18n()
+const { t } = useI18n()
 
 const email = ref('')
 const newPassword = ref('')
@@ -283,7 +263,8 @@ const resetPassword = async () => {
   }
 }
 
-  useSeoHead({ robots: 'noindex, nofollow',
+useSeoHead({
+  robots: 'noindex, nofollow',
   title: sessionId.value ? t('passwordReset.setNewPasswordTitle') : t('passwordReset.resetTitle'),
 })
 </script>

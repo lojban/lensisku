@@ -12,9 +12,7 @@
     @click="$emit('click', $event)"
   >
     <template #icon>
-      <slot name="icon">
-        <Plus :class="iconClasses" />
-      </slot>
+      <slot name="icon"> <Plus :class="iconClasses" /> </slot>
     </template>
     <template v-if="hasLabel" #default>{{ label }}</template>
   </Button>

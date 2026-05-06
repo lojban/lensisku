@@ -1,25 +1,23 @@
 <template>
-
   <footer
     class="lingo-study-footer sticky bottom-0 z-30 border-t-2 transition-colors shrink-0"
     :class="[footerClass, compact ? 'lingo-study-footer--compact' : '']"
   >
-
     <div
       class="mx-auto flex h-full max-w-[1140px] items-center justify-between gap-3 px-3 py-2 sm:px-4 sm:py-2.5 lg:px-6"
       :class="compact ? 'min-h-[56px] sm:min-h-[60px]' : 'min-h-[72px] sm:py-3 lg:min-h-[88px]'"
     >
-       <!-- Status message (correct / wrong) -->
+      <!-- Status message (correct / wrong) -->
       <div
         v-if="status === 'correct'"
         class="flex items-center gap-1.5 text-xs font-bold text-green-600 sm:gap-2 sm:text-sm"
         :class="{ 'lg:text-base': !compact, 'lg:text-sm': compact }"
       >
-         <CheckCircle
+        <CheckCircle
           class="h-4 w-4 shrink-0 sm:h-5 sm:w-5"
           :class="{ 'lg:h-6 lg:w-6': !compact }"
-        /> <span>{{ correctLabel }}</span
-        >
+        />
+        <span>{{ correctLabel }}</span>
       </div>
 
       <div
@@ -27,15 +25,13 @@
         class="flex items-center gap-1.5 text-xs font-bold text-rose-500 sm:gap-2 sm:text-sm"
         :class="{ 'lg:text-base': !compact, 'lg:text-sm': compact }"
       >
-         <XCircle
-          class="h-4 w-4 shrink-0 sm:h-5 sm:w-5"
-          :class="{ 'lg:h-6 lg:w-6': !compact }"
-        /> <span>{{ wrongLabel }}</span
-        >
+        <XCircle class="h-4 w-4 shrink-0 sm:h-5 sm:w-5" :class="{ 'lg:h-6 lg:w-6': !compact }" />
+        <span>{{ wrongLabel }}</span>
       </div>
 
       <div v-else class="flex-1" />
-       <!-- Main action button --> <button
+      <!-- Main action button -->
+      <button
         type="button"
         :disabled="disabled"
         :aria-disabled="disabled"
@@ -48,12 +44,10 @@
         ]"
         @click="$emit('check')"
       >
-         {{ buttonLabel }} </button
-      >
+        {{ buttonLabel }}
+      </button>
     </div>
-
   </footer>
-
 </template>
 
 <script setup lang="ts">
@@ -118,4 +112,3 @@ const buttonLabel = computed(() => {
   cursor: not-allowed;
 }
 </style>
-

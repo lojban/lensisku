@@ -16,6 +16,7 @@ useSeoHead({ title: t('paypalReturn.title'), robots: 'noindex, nofollow' })
 
       <div class="space-y-4 text-gray-700">
         <p>{{ t('paypalReturn.thankYou') }}</p>
+
         <p>{{ t('paypalReturn.viewDetails') }}</p>
 
         <div class="mt-6">
@@ -26,9 +27,7 @@ useSeoHead({ title: t('paypalReturn.title'), robots: 'noindex, nofollow' })
             size="lg"
             class="inline-flex items-center gap-2 rounded-md px-5 py-2.5"
           >
-            <template #icon>
-              <User class="h-5 w-5 shrink-0" />
-            </template>
+            <template #icon> <User class="h-5 w-5 shrink-0" /> </template>
             {{ t('paypalReturn.goToProfile') }}
           </Button>
         </div>

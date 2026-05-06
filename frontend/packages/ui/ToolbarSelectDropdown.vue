@@ -2,8 +2,8 @@
   <Dropdown>
     <template #trigger="{ open }">
       <button
-        type="button"
         :id="id"
+        type="button"
         :aria-label="ariaLabel"
         class="input-field inline-flex h-8 w-auto max-w-full min-w-0 items-center justify-between gap-1.5 px-3 text-left text-sm"
         :class="variant === 'role' ? 'max-w-[min(100vw-4rem,14rem)]' : ''"
@@ -40,6 +40,6 @@ withDefaults(
   {
     variant: 'default',
     truncateLabel: false,
-  },
+  }
 )
 </script>

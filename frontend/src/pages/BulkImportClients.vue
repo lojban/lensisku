@@ -1,13 +1,10 @@
 <template>
-
   <div class="container mx-auto p-4">
-
     <h1 class="text-2xl font-bold mb-4">{{ t('bulkImportClients.title') }}</h1>
 
     <div v-if="loadingClients" class="text-center">
-
       <p>{{ t('bulkImportClients.loadingGroups') }}</p>
-       <!-- Add a spinner or loading animation if available -->
+      <!-- Add a spinner or loading animation if available -->
     </div>
 
     <div
@@ -15,47 +12,40 @@
       class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4"
       role="alert"
     >
-       <strong class="font-bold">{{ t('bulkImportClients.errorTitle') }}</strong
-      > <span class="block sm:inline"> {{ clientsError }}</span
-      >
+      <strong class="font-bold">{{ t('bulkImportClients.errorTitle') }}</strong>
+      <span class="block sm:inline"> {{ clientsError }}</span>
     </div>
 
     <div v-else-if="clients.length === 0" class="text-center text-gray-500">
-       {{ t('bulkImportClients.noGroups') }}
+      {{ t('bulkImportClients.noGroups') }}
     </div>
 
     <div v-else>
-
       <ul class="space-y-4">
-
         <li v-for="client in clients" :key="client.client_id" class="border rounded p-4 shadow">
-
           <div
             class="flex justify-between items-center cursor-pointer"
             @click="toggleClient(client.client_id)"
           >
-
             <div class="space-x-1">
-               <span class="italic">{{ t('bulkImportClients.clientIdLabel') }}</span
-              > <span class="font-semibold">{{ client.client_id }}</span
-              >
+              <span class="italic">{{ t('bulkImportClients.clientIdLabel') }}</span>
+              <span class="font-semibold">{{ client.client_id }}</span>
             </div>
-             <span class="text-sm text-gray-600">{{
+            <span class="text-sm text-gray-600">{{
               t('bulkImportClients.definitionsCount', { count: client.count })
-            }}</span
-            > <button class="text-blue-500 hover:text-blue-700 text-sm">
-               {{
+            }}</span>
+            <button class="text-blue-500 hover:text-blue-700 text-sm">
+              {{
                 isExpanded(client.client_id)
                   ? t('bulkImportClients.collapse')
                   : t('bulkImportClients.expand')
-              }} </button
-            >
+              }}
+            </button>
           </div>
 
           <div v-if="isExpanded(client.client_id)" class="mt-4 pt-4 border-t">
-
             <div v-if="expandedClients[client.client_id]?.loading" class="text-center text-sm">
-               {{ t('bulkImportClients.loadingDefinitions') }}
+              {{ t('bulkImportClients.loadingDefinitions') }}
             </div>
 
             <div
@@ -63,20 +53,18 @@
               class="bg-red-100 border border-red-400 text-red-700 px-3 py-2 rounded text-sm"
               role="alert"
             >
-               {{ t('bulkImportClients.loadDefinitionsError') }} {{
-                expandedClients[client.client_id].error
-              }}
+              {{ t('bulkImportClients.loadDefinitionsError') }}
+              {{ expandedClients[client.client_id].error }}
             </div>
 
             <div
               v-else-if="expandedClients[client.client_id]?.definitions.length === 0"
               class="text-sm text-gray-500"
             >
-               {{ t('bulkImportClients.noDefinitions') }}
+              {{ t('bulkImportClients.noDefinitions') }}
             </div>
 
             <div v-else>
-
               <ul class="space-y-2">
                 <li
                   v-for="def in expandedClients[client.client_id].definitions"
@@ -84,7 +72,8 @@
                   class="border-b pb-1 text-sm"
                 >
                   <span class="mr-2 italic">{{ def.langrealname }}</span>
-                  <span class="font-medium">{{ def.valsiword }}</span>: {{ truncateDefinition(def.definition) }}
+                  <span class="font-medium">{{ def.valsiword }}</span
+                  >: {{ truncateDefinition(def.definition) }}
                 </li>
               </ul>
               <Button
@@ -105,23 +94,15 @@
                 class="mt-2 bg-red-100 border border-red-400 text-red-700 px-3 py-2 rounded text-sm"
                 role="alert"
               >
-                 {{ t('bulkImportClients.loadMoreError') }} {{
-                  expandedClients[client.client_id].loadMoreError
-                }}
+                {{ t('bulkImportClients.loadMoreError') }}
+                {{ expandedClients[client.client_id].loadMoreError }}
               </div>
-
             </div>
-
           </div>
-
         </li>
-
       </ul>
-
     </div>
-
   </div>
-
 </template>
 
 <script setup lang="ts">
@@ -243,4 +224,3 @@ onMounted(() => {
   fetchClients()
 })
 </script>
-

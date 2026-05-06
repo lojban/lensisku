@@ -1,24 +1,19 @@
 <template>
-
   <div class="mb-2">
-
     <nav class="ui-tab-strip" aria-label="Tabs">
-       <NotebookTab
+      <NotebookTab
         v-for="tab in tabs"
         :key="tab.key"
         :active="activeTab === tab.key"
         :label="tab.label"
         @click="$emit('tab-click', tab.key)"
-        > <template #icon> <component :is="tab.icon" v-if="tab.icon" /> </template> </NotebookTab
       >
+        <template #icon> <component :is="tab.icon" v-if="tab.icon" /> </template>
+      </NotebookTab>
     </nav>
 
-    <h2 class="my-2 block text-2xl font-bold text-gray-800 md:hidden">
-       {{ pageTitle }}
-    </h2>
-
+    <h2 class="my-2 block text-2xl font-bold text-gray-800 md:hidden">{{ pageTitle }}</h2>
   </div>
-
 </template>
 
 <script setup lang="ts">
@@ -42,4 +37,3 @@ defineProps({
 
 defineEmits(['tab-click'])
 </script>
-

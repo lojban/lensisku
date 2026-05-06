@@ -16,7 +16,8 @@
     "format:check": "prettier --check .",
     "knip": "knip --no-config-hints",
     "i18n:check": "node scripts/check-i18n-keys.mjs",
-    "check": "pnpm run typecheck && pnpm run lint && pnpm knip && pnpm run i18n:check"
+    "check": "pnpm run typecheck && pnpm run lint && pnpm run format:check && pnpm knip && pnpm run i18n:check",
+    "prepare": "cd .. && husky frontend/.husky"
   },
   "dependencies": {
     "@milkdown/core": "^7.19.1",
@@ -45,26 +46,33 @@
     "vue-router": "^5.0.4"
   },
   "devDependencies": {
-    "@typescript-eslint/eslint-plugin": "^7.18.0",
-    "@typescript-eslint/parser": "^7.18.0",
+    "@eslint/js": "^10.0.1",
     "@vitejs/plugin-vue": "^6.0.5",
     "@vue/tsconfig": "^0.9.0",
     "autoprefixer": "^10.4.27",
-    "eslint": "^8.57.1",
+    "eslint": "^10.3.0",
     "eslint-config-prettier": "^10.1.8",
-    "eslint-import-resolver-alias": "^1.1.2",
-    "eslint-import-resolver-vite": "^2.1.0",
-    "eslint-plugin-import": "^2.31.0",
-    "eslint-plugin-vue": "^9.33.0",
+    "eslint-plugin-vue": "^10.9.1",
+    "globals": "^17.6.0",
     "husky": "^9.1.7",
-    "knip": "^6.0.2",
+    "knip": "^6.11.0",
     "lint-staged": "^15.5.0",
     "postcss": "^8.5.8",
-    "prettier": "^3.5.3",
-    "prettier-plugin-vue": "^1.1.6",
+    "prettier": "^3.8.3",
     "tailwindcss": "^3.4.17",
     "typescript": "~5.9.3",
+    "typescript-eslint": "^8.59.2",
     "vite": "^8.0.1",
+    "vue-eslint-parser": "^10.4.0",
     "vue-tsc": "^3.2.6"
+  },
+  "lint-staged": {
+    "*.{vue,ts,tsx,js,jsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,css,html,md}": [
+      "prettier --write"
+    ]
   }
 }

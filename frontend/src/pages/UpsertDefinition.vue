@@ -1,5 +1,4 @@
 <template>
-
   <h2 class="text-xl sm:text-2xl font-bold text-gray-800 select-none">
     {{
       isEditMode
@@ -13,75 +12,93 @@
   <form class="space-y-4 sm:space-y-6" @submit.prevent="submitValsi">
     <!-- Word Input and Analysis -->
     <div>
-      <label for="word" class="block text-sm font-medium text-blue-700">{{ t('upsertDefinition.wordLabel') }} <span
-          class="text-red-500">{{
-            t('upsertDefinition.required')
-          }}</span></label>
+      <label for="word" class="block text-sm font-medium text-blue-700"
+        >{{ t('upsertDefinition.wordLabel') }}
+        <span class="text-red-500">{{ t('upsertDefinition.required') }}</span></label
+      >
       <div class="flex flex-col sm:flex-row gap-2 sm:space-x-2">
-
         <div class="flex-1 w-full">
           <!-- Added wrapper div with flex-1 -->
-          <DynamicInput id="word" v-model="word" :is-analyzing="isAnalyzing" :is-submitting="isSubmitting"
-            :prefilled-word="prefilledWord" :is-edit-mode="isEditMode" @clear-analysis="clearAnalysis" />
+          <DynamicInput
+            id="word"
+            v-model="word"
+            :is-analyzing="isAnalyzing"
+            :is-submitting="isSubmitting"
+            :prefilled-word="prefilledWord"
+            :is-edit-mode="isEditMode"
+            @clear-analysis="clearAnalysis"
+          />
         </div>
         <!-- Only show Analyze button when adding new word -->
         <div class="flex items-center justify-end">
-          <Button v-if="!isEditMode" variant="warning-orange" size="lg" class="w-auto"
-            :disabled="isAnalyzing || isSubmitting || word === ''" :loading="isAnalyzing" @click="doAnalyzeWord">
-            <template #icon>
-              <Search class="h-6 w-6 shrink-0" aria-hidden="true" />
-            </template>
+          <Button
+            v-if="!isEditMode"
+            variant="warning-orange"
+            size="lg"
+            class="w-auto"
+            :disabled="isAnalyzing || isSubmitting || word === ''"
+            :loading="isAnalyzing"
+            @click="doAnalyzeWord"
+          >
+            <template #icon> <Search class="h-6 w-6 shrink-0" aria-hidden="true" /> </template>
             {{ t('upsertDefinition.analyzeButton') }}
           </Button>
         </div>
-
       </div>
-
     </div>
     <!-- Word Type Display -->
     <div v-if="!isEditMode && wordType" class="space-y-4">
       <AlertComponent type="info" :label="t('upsertDefinition.detectedTypeLabel')">
-        <p class="font-semibold"> {{ wordType }} </p>
+        <p class="font-semibold">{{ wordType }}</p>
       </AlertComponent>
-      <AlertComponent v-if="recommended" type="tip" :label="t('upsertDefinition.recommendedWordLabel')">
+      <AlertComponent
+        v-if="recommended"
+        type="tip"
+        :label="t('upsertDefinition.recommendedWordLabel')"
+      >
         <div class="flex items-center gap-2 justify-start">
-
-          <h2 class="font-semibold truncate"> {{ recommended }} </h2>
+          <h2 class="font-semibold truncate">{{ recommended }}</h2>
           <button type="button" class="ui-btn--edit" @click="useRecommended">
             <ArrowRight class="h-4 w-4" /> {{ t('upsertDefinition.useThisButton') }}
           </button>
         </div>
       </AlertComponent>
       <div v-if="problems" class="space-y-4">
-
         <div v-for="(issues, category) in problems" :key="category">
-          <AlertComponent v-if="issues.length > 0" type="error" :label="category === 'regular'
-            ? t('upsertDefinition.similarRegularGismu')
-            : t('upsertDefinition.similarExperimentalGismu')
-            ">
+          <AlertComponent
+            v-if="issues.length > 0"
+            type="error"
+            :label="
+              category === 'regular'
+                ? t('upsertDefinition.similarRegularGismu')
+                : t('upsertDefinition.similarExperimentalGismu')
+            "
+          >
             <ul class="list-disc list-inside space-y-1">
-
               <li v-for="(problem, index) in issues" :key="index" class="font-semibold truncate">
                 {{ problem }}
               </li>
-
             </ul>
           </AlertComponent>
         </div>
-
       </div>
-
     </div>
     <!-- Combined Language Selectors -->
     <div class="flex flex-col sm:flex-row gap-4">
       <!-- Optional Entry Language Selection (Only for new entries) -->
       <div class="flex-1">
-        <label for="source-language" class="block text-sm font-medium text-blue-700">{{
-          t('upsertDefinition.sourceLanguageLabel') }} <span class="text-red-500">{{
-            t('upsertDefinition.required')
-          }}</span></label> <select id="source-language" v-model="sourceLangId" required
-          class="input-field w-full h-10" :disabled="isLoading || isSubmitting || isEditMode || prefilledWord"
-          :readonly="prefilledWord || isEditMode">
+        <label for="source-language" class="block text-sm font-medium text-blue-700"
+          >{{ t('upsertDefinition.sourceLanguageLabel') }}
+          <span class="text-red-500">{{ t('upsertDefinition.required') }}</span></label
+        >
+        <select
+          id="source-language"
+          v-model="sourceLangId"
+          required
+          class="input-field w-full h-10"
+          :disabled="isLoading || isSubmitting || isEditMode || prefilledWord"
+          :readonly="prefilledWord || isEditMode"
+        >
           <!-- Default Lojban option -->
           <option v-for="lang in languages" :key="lang.id" :value="lang.id">
             {{ lang.real_name }}
@@ -96,73 +113,99 @@
             )
           }}
         </p>
-
       </div>
       <!-- Language Selection -->
       <div class="flex-1">
-        <label for="language" class="block text-sm font-medium text-blue-700">{{ t('upsertDefinition.languageLabel') }}
-          <span class="text-red-500">{{
-            t('upsertDefinition.required')
-          }}</span></label> <select id="language" v-model="langId" required class="input-field w-full h-10" :class="{
-              'border-red-500 focus:ring-red-500 focus:border-red-500':
-                shouldHighlightMissing && missingFields.langId,
-            }" :disabled="isLoading || isSubmitting">
-
-          <option value=""> {{ t('upsertDefinition.selectLanguagePlaceholder') }} </option>
+        <label for="language" class="block text-sm font-medium text-blue-700"
+          >{{ t('upsertDefinition.languageLabel') }}
+          <span class="text-red-500">{{ t('upsertDefinition.required') }}</span></label
+        >
+        <select
+          id="language"
+          v-model="langId"
+          required
+          class="input-field w-full h-10"
+          :class="{
+            'border-red-500 focus:ring-red-500 focus:border-red-500':
+              shouldHighlightMissing && missingFields.langId,
+          }"
+          :disabled="isLoading || isSubmitting"
+        >
+          <option value="">{{ t('upsertDefinition.selectLanguagePlaceholder') }}</option>
 
           <option v-for="lang in languages" :key="lang.id" :value="lang.id">
             {{ lang.real_name }}
           </option>
         </select>
       </div>
-
     </div>
     <!-- Rafsi Input (Lojban only) -->
     <div v-if="Number(sourceLangId) === 1">
-      <label for="rafsi" class="block text-sm font-medium text-blue-700"> {{ t('upsertDefinition.rafsiLabel') }} <span
-          class="text-gray-500 font-normal">{{
-            t('upsertDefinition.optional')
-          }}</span> </label> <input id="rafsi" v-model="rafsi" type="text"
-        :placeholder="t('upsertDefinition.rafsiPlaceholder')" class="input-field w-full" :disabled="isSubmitting" />
-      <p class="mt-1 text-xs text-gray-500"> {{ t('upsertDefinition.rafsiNote') }} </p>
-
+      <label for="rafsi" class="block text-sm font-medium text-blue-700">
+        {{ t('upsertDefinition.rafsiLabel') }}
+        <span class="text-gray-500 font-normal">{{ t('upsertDefinition.optional') }}</span>
+      </label>
+      <input
+        id="rafsi"
+        v-model="rafsi"
+        type="text"
+        :placeholder="t('upsertDefinition.rafsiPlaceholder')"
+        class="input-field w-full"
+        :disabled="isSubmitting"
+      />
+      <p class="mt-1 text-xs text-gray-500">{{ t('upsertDefinition.rafsiNote') }}</p>
     </div>
     <!-- Selmaho Input (cmavo / experimental cmavo only) -->
     <div v-if="showSelmahoField">
-      <label for="selmaho" class="block text-sm font-medium text-blue-700"> {{ t('upsertDefinition.selmahoLabel') }}
-        <span class="text-gray-500 font-normal">{{
-          t('upsertDefinition.optional')
-        }}</span> </label> <input id="selmaho" v-model="selmaho" type="text"
-        :placeholder="t('upsertDefinition.selmahoPlaceholder')" class="input-field w-full" :disabled="isSubmitting" />
-      <p class="mt-1 text-xs text-gray-500"> {{ t('upsertDefinition.selmahoNote') }} </p>
-
+      <label for="selmaho" class="block text-sm font-medium text-blue-700">
+        {{ t('upsertDefinition.selmahoLabel') }}
+        <span class="text-gray-500 font-normal">{{ t('upsertDefinition.optional') }}</span>
+      </label>
+      <input
+        id="selmaho"
+        v-model="selmaho"
+        type="text"
+        :placeholder="t('upsertDefinition.selmahoPlaceholder')"
+        class="input-field w-full"
+        :disabled="isSubmitting"
+      />
+      <p class="mt-1 text-xs text-gray-500">{{ t('upsertDefinition.selmahoNote') }}</p>
     </div>
     <!-- Definition Input -->
     <div>
-
       <div class="flex flex-wrap items-center justify-between gap-2 mb-1">
         <div class="flex flex-wrap items-center gap-2">
-          <label for="definition" class="block text-sm font-medium text-blue-700">{{ t('upsertDefinition.definitionLabel')
-          }}
-            <span class="text-red-500">{{
-              t('upsertDefinition.required')
-            }}</span></label>
-          <button type="button" class="ui-btn--empty inline-flex items-center gap-1 text-xs py-0.5 px-2"
-            :title="t('upsertDefinition.previewDefinitionTitle')" @click="openDefinitionPreview">
+          <label for="definition" class="block text-sm font-medium text-blue-700"
+            >{{ t('upsertDefinition.definitionLabel') }}
+            <span class="text-red-500">{{ t('upsertDefinition.required') }}</span></label
+          >
+          <button
+            type="button"
+            class="ui-btn--empty inline-flex items-center gap-1 text-xs py-0.5 px-2"
+            :title="t('upsertDefinition.previewDefinitionTitle')"
+            @click="openDefinitionPreview"
+          >
             <Eye class="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
             {{ t('upsertDefinition.previewButton') }}
           </button>
         </div>
         <span class="text-xs text-gray-500">{{ t('upsertDefinition.requiredUnlessImage') }}</span>
       </div>
-      <textarea id="definition" v-model="definition" :required="!imageData" rows="4" :class="{
-        'textarea-field': true,
-        'border-red-300 focus:ring-red-500 focus:border-red-500': definitionError,
-        'border-red-500 focus:ring-red-500 focus:border-red-500':
-          shouldHighlightMissing && missingFields.definition && !definitionError,
-        'border-blue-300 focus:ring-blue-500 focus:border-blue-500':
-          !definitionError && !(shouldHighlightMissing && missingFields.definition),
-      }" :disabled="isSubmitting" />
+      <textarea
+        id="definition"
+        v-model="definition"
+        :required="!imageData"
+        rows="4"
+        :class="{
+          'textarea-field': true,
+          'border-red-300 focus:ring-red-500 focus:border-red-500': definitionError,
+          'border-red-500 focus:ring-red-500 focus:border-red-500':
+            shouldHighlightMissing && missingFields.definition && !definitionError,
+          'border-blue-300 focus:ring-blue-500 focus:border-blue-500':
+            !definitionError && !(shouldHighlightMissing && missingFields.definition),
+        }"
+        :disabled="isSubmitting"
+      />
       <p v-if="definitionError" class="mt-2 text-xs sm:text-sm text-red-600">
         {{ definitionError }}
       </p>
@@ -170,106 +213,159 @@
       <p v-if="!definitionError" class="mt-2 text-xs sm:text-sm text-gray-500">
         {{ t('upsertDefinition.mathjaxNote') }}
       </p>
-
     </div>
 
     <div>
-      <ImageUpload v-model="imageData" :definition-id="editDefinitionId" :has-existing-image="hasImage"
-        :note="t('upsertDefinition.requiredUnlessDefinitionProvided')" @image-loaded="handleImageLoaded"
-        @remove-image="handleRemoveImage" />
+      <ImageUpload
+        v-model="imageData"
+        :definition-id="editDefinitionId"
+        :has-existing-image="hasImage"
+        :note="t('upsertDefinition.requiredUnlessDefinitionProvided')"
+        @image-loaded="handleImageLoaded"
+        @remove-image="handleRemoveImage"
+      />
     </div>
     <!-- Notes Input -->
     <div>
       <div class="flex flex-wrap items-center gap-2 mb-1">
-        <label for="notes" class="block text-sm font-medium text-blue-700"> {{ t('upsertDefinition.notesLabel') }} <span
-            class="text-gray-500 font-normal">{{
-              t('upsertDefinition.optional')
-            }}</span> </label>
-        <button type="button" class="ui-btn--empty inline-flex items-center gap-1 text-xs py-0.5 px-2"
-          :title="t('upsertDefinition.previewNotesTitle')" @click="openNotesPreview">
+        <label for="notes" class="block text-sm font-medium text-blue-700">
+          {{ t('upsertDefinition.notesLabel') }}
+          <span class="text-gray-500 font-normal">{{ t('upsertDefinition.optional') }}</span>
+        </label>
+        <button
+          type="button"
+          class="ui-btn--empty inline-flex items-center gap-1 text-xs py-0.5 px-2"
+          :title="t('upsertDefinition.previewNotesTitle')"
+          @click="openNotesPreview"
+        >
           <Eye class="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
           {{ t('upsertDefinition.previewButton') }}
         </button>
       </div>
-      <textarea id="notes" v-model="notes" rows="3" class="textarea-field"
-        :disabled="isSubmitting" />
+      <textarea
+        id="notes"
+        v-model="notes"
+        rows="3"
+        class="textarea-field"
+        :disabled="isSubmitting"
+      />
     </div>
     <!-- Etymology Input -->
     <div>
-      <label for="etymology" class="block text-sm font-medium text-blue-700"> {{ t('upsertDefinition.etymologyLabel') }}
-        <span class="text-gray-500 font-normal">{{
-          t('upsertDefinition.optional')
-        }}</span> </label> <textarea id="etymology" v-model="etymology" rows="3" class="textarea-field"
-        :disabled="isSubmitting" />
+      <label for="etymology" class="block text-sm font-medium text-blue-700">
+        {{ t('upsertDefinition.etymologyLabel') }}
+        <span class="text-gray-500 font-normal">{{ t('upsertDefinition.optional') }}</span>
+      </label>
+      <textarea
+        id="etymology"
+        v-model="etymology"
+        rows="3"
+        class="textarea-field"
+        :disabled="isSubmitting"
+      />
     </div>
     <!-- Jargon Input -->
     <div>
-      <label for="jargon" class="block text-sm font-medium text-blue-700"> {{ t('upsertDefinition.jargonLabel') }} <span
-          class="text-gray-500 font-normal">{{
-            t('upsertDefinition.optional')
-          }}</span> </label> <textarea id="jargon" v-model="jargon" rows="2" class="textarea-field"
-        :disabled="isSubmitting" />
+      <label for="jargon" class="block text-sm font-medium text-blue-700">
+        {{ t('upsertDefinition.jargonLabel') }}
+        <span class="text-gray-500 font-normal">{{ t('upsertDefinition.optional') }}</span>
+      </label>
+      <textarea
+        id="jargon"
+        v-model="jargon"
+        rows="2"
+        class="textarea-field"
+        :disabled="isSubmitting"
+      />
     </div>
     <!-- Gloss Keywords -->
     <div>
-      <label class="block text-sm font-medium text-blue-700 mb-2"> {{ t('upsertDefinition.glossKeywordsLabel') }} <span
-          class="text-gray-500 font-normal">{{
-            t('upsertDefinition.optional')
-          }}</span> </label>
-      <div v-for="(keyword, index) in glossKeywords" :key="'gloss' + index"
-        class="flex flex-col sm:flex-row gap-2 sm:space-x-2 mb-2 items-center">
-        <input v-model="keyword.word" type="text" :placeholder="t('upsertDefinition.keywordPlaceholder')"
-          class="flex-1 input-field w-full" /> <input v-model="keyword.meaning" type="text"
-          :placeholder="t('upsertDefinition.meaningPlaceholder')" class="flex-1 input-field w-full" />
+      <label class="block text-sm font-medium text-blue-700 mb-2">
+        {{ t('upsertDefinition.glossKeywordsLabel') }}
+        <span class="text-gray-500 font-normal">{{ t('upsertDefinition.optional') }}</span>
+      </label>
+      <div
+        v-for="(keyword, index) in glossKeywords"
+        :key="'gloss' + index"
+        class="flex flex-col sm:flex-row gap-2 sm:space-x-2 mb-2 items-center"
+      >
+        <input
+          v-model="keyword.word"
+          type="text"
+          :placeholder="t('upsertDefinition.keywordPlaceholder')"
+          class="flex-1 input-field w-full"
+        />
+        <input
+          v-model="keyword.meaning"
+          type="text"
+          :placeholder="t('upsertDefinition.meaningPlaceholder')"
+          class="flex-1 input-field w-full"
+        />
         <div class="flex flex-wrap space-x-2">
           <button type="button" class="sm:w-auto ui-btn--delete" @click="removeGlossKeyword(index)">
             <CircleMinus class="h-4 w-4" /> {{ t('upsertDefinition.removeButton') }}
-          </button> <button type="button" class="ui-btn--neutral" @click="addGlossKeyword">
+          </button>
+          <button type="button" class="ui-btn--neutral" @click="addGlossKeyword">
             <CirclePlus class="h-4 w-4" /> {{ t('upsertDefinition.addGlossButton') }}
           </button>
         </div>
-
       </div>
-
     </div>
     <!-- Place Keywords -->
     <div>
-      <label class="block text-sm font-medium text-blue-700 mb-2"> {{ t('upsertDefinition.placeKeywordsLabel') }} <span
-          class="text-gray-500 font-normal">{{
-            t('upsertDefinition.optional')
-          }}</span> </label>
-      <div v-for="(keyword, index) in placeKeywords" :key="'place' + index"
-        class="flex flex-col sm:flex-row gap-2 sm:space-x-2 mb-2 items-center">
-        <input v-model="keyword.word" type="text" :placeholder="t('upsertDefinition.keywordPlaceholder')"
-          class="flex-1 input-field w-full" /> <input v-model="keyword.meaning" type="text"
-          :placeholder="t('upsertDefinition.meaningPlaceholder')" class="flex-1 input-field w-full" />
+      <label class="block text-sm font-medium text-blue-700 mb-2">
+        {{ t('upsertDefinition.placeKeywordsLabel') }}
+        <span class="text-gray-500 font-normal">{{ t('upsertDefinition.optional') }}</span>
+      </label>
+      <div
+        v-for="(keyword, index) in placeKeywords"
+        :key="'place' + index"
+        class="flex flex-col sm:flex-row gap-2 sm:space-x-2 mb-2 items-center"
+      >
+        <input
+          v-model="keyword.word"
+          type="text"
+          :placeholder="t('upsertDefinition.keywordPlaceholder')"
+          class="flex-1 input-field w-full"
+        />
+        <input
+          v-model="keyword.meaning"
+          type="text"
+          :placeholder="t('upsertDefinition.meaningPlaceholder')"
+          class="flex-1 input-field w-full"
+        />
         <div class="flex flex-wrap space-x-2">
           <button type="button" class="sm:w-auto ui-btn--delete" @click="removePlaceKeyword(index)">
             <CircleMinus class="h-4 w-4" /> {{ t('upsertDefinition.removeButton') }}
-          </button> <button type="button" class="w-auto ui-btn--neutral" @click="addPlaceKeyword">
+          </button>
+          <button type="button" class="w-auto ui-btn--neutral" @click="addPlaceKeyword">
             <CirclePlus class="h-4 w-4" /> {{ t('upsertDefinition.addPlaceButton') }}
           </button>
         </div>
-
       </div>
-
     </div>
 
     <div v-if="!isEditMode || (isEditMode && isAuthor)" class="mb-4">
-      <label class="flex items-center space-x-2"> <input v-model="ownerOnly" type="checkbox" class="checkbox-toggle" />
-        <span class="text-xs sm:text-sm text-gray-700">{{ t('upsertDefinition.ownerOnlyLabel') }} <span
-            class="text-gray-500">{{
-              t('upsertDefinition.optional')
-            }}</span></span> </label>
+      <label class="flex items-center space-x-2">
+        <input v-model="ownerOnly" type="checkbox" class="checkbox-toggle" />
+        <span class="text-xs sm:text-sm text-gray-700"
+          >{{ t('upsertDefinition.ownerOnlyLabel') }}
+          <span class="text-gray-500">{{ t('upsertDefinition.optional') }}</span></span
+        >
+      </label>
       <p class="mt-1 text-xs sm:text-sm text-gray-500">
         {{ t('upsertDefinition.ownerOnlyNote') }}
       </p>
-
     </div>
     <!-- Submit / Analyze Button -->
     <div class="flex justify-center w-full">
       <!-- Show Submit button if form is valid and not submitting -->
-      <Button v-if="isValid && !isSubmitting" type="submit" size="lg" class="max-w-fit ui-btn--create h-10 text-base">
+      <Button
+        v-if="isValid && !isSubmitting"
+        type="submit"
+        size="lg"
+        class="max-w-fit ui-btn--create h-10 text-base"
+      >
         {{
           isEditMode
             ? t('upsertDefinition.updateButton')
@@ -279,15 +375,26 @@
         }}
       </Button>
       <!-- Show Analyze button if form is invalid and not submitting -->
-      <Button v-else-if="!isValid && !isSubmitting" variant="warning-orange" size="lg" class="max-w-fit"
-        :disabled="isAnalyzing || word === ''" :loading="isAnalyzing" @click="analyzeAndScroll">
-        <template #icon>
-          <Search class="h-6 w-6 shrink-0" aria-hidden="true" />
-        </template>
+      <Button
+        v-else-if="!isValid && !isSubmitting"
+        variant="warning-orange"
+        size="lg"
+        class="max-w-fit"
+        :disabled="isAnalyzing || word === ''"
+        :loading="isAnalyzing"
+        @click="analyzeAndScroll"
+      >
+        <template #icon> <Search class="h-6 w-6 shrink-0" aria-hidden="true" /> </template>
         {{ t('upsertDefinition.analyzeWordButton') }}
       </Button>
       <!-- Show disabled state during submission -->
-      <Button v-else-if="isSubmitting" type="button" size="lg" class="max-w-fit ui-btn--create h-10 text-base" disabled>
+      <Button
+        v-else-if="isSubmitting"
+        type="button"
+        size="lg"
+        class="max-w-fit ui-btn--create h-10 text-base"
+        disabled
+      >
         {{
           isEditMode
             ? isSubmitting
@@ -304,13 +411,19 @@
       </Button>
     </div>
   </form>
-
   <ModalComponent :show="previewKind !== null" :title="previewModalTitle" @close="closePreview">
-    <div v-if="previewKind === 'definition'" class="text-sm prose prose-sm max-w-none text-gray-700 overflow-y-auto">
+    <div
+      v-if="previewKind === 'definition'"
+      class="text-sm prose prose-sm max-w-none text-gray-700 overflow-y-auto"
+    >
       <LazyMathJax v-if="definition.trim()" :content="definition" />
       <p v-else class="text-gray-500 text-sm">{{ t('upsertDefinition.previewEmpty') }}</p>
     </div>
-    <div v-else-if="previewKind === 'notes'" class="w-full text-sm text-gray-600 bg-gray-100 p-2 rounded-md overflow-y-auto">
+
+    <div
+      v-else-if="previewKind === 'notes'"
+      class="w-full text-sm text-gray-600 bg-gray-100 p-2 rounded-md overflow-y-auto"
+    >
       <h4 class="italic text-gray-600">{{ t('upsertDefinition.notesLabel') }}</h4>
       <LazyMathJax v-if="notes.trim()" :content="notes" :enable-markdown="true" />
       <p v-else class="text-gray-500 text-sm">{{ t('upsertDefinition.previewEmpty') }}</p>
@@ -419,8 +532,6 @@ const prefilledWord = ref(false)
 const isEditMode = ref(false)
 const isAuthor = ref(false)
 const editDefinitionId = ref(null)
-const showSourceLanguageSelector = ref(false) // State to control visibility
-
 /** Matches DefinitionCard: definition = MathJax only; notes = markdown + MathJax */
 const previewKind = ref<null | 'definition' | 'notes'>(null)
 
@@ -619,7 +730,10 @@ onMounted(async () => {
         word.value = sourceDef.valsiword
         prefilledWord.value = true
       }
-      useSeoHead({ title: () => t('upsertDefinition.addTranslationTitle'), robots: 'noindex, nofollow' })
+      useSeoHead({
+        title: () => t('upsertDefinition.addTranslationTitle'),
+        robots: 'noindex, nofollow',
+      })
     } catch (e) {
       console.error('Error loading source definition for translation:', e)
     }
@@ -662,7 +776,7 @@ const doAnalyzeWord = async () => {
       wordType.value = ''
       showError(t('upsertDefinition.analyzeError'))
     }
-  } catch (e) {
+  } catch {
     showError(t('upsertDefinition.analyzeErrorGeneric'))
   } finally {
     isAnalyzing.value = false

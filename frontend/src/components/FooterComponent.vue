@@ -1,81 +1,69 @@
 <template>
-   <!-- Popup for chat controls --> <ModalComponent
-    :show="showPopup"
-    :title="t('footer.chatSettings')"
-    @close="showPopup = false"
-    > <SocialLinks class="mb-4" /> <!-- Toggle for marquee -->
+  <!-- Popup for chat controls -->
+  <ModalComponent :show="showPopup" :title="t('footer.chatSettings')" @close="showPopup = false">
+    <SocialLinks class="mb-4" />
+    <!-- Toggle for marquee -->
     <div class="flex items-center justify-between mb-4">
-       <span class="text-gray-700">{{ t('footer.marqueeToggle') }}</span
-      > <button
+      <span class="text-gray-700">{{ t('footer.marqueeToggle') }}</span>
+      <button
         type="button"
         class="toggle-switch"
         :class="marqueeEnabled ? 'bg-nav-link' : 'bg-gray-200'"
         :aria-pressed="marqueeEnabled"
         @click="toggleMarquee"
       >
-         <span
+        <span
           aria-hidden="true"
           class="toggle-switch-thumb"
           :class="marqueeEnabled ? 'translate-x-5' : 'translate-x-0'"
-        /> </button
-      >
+        />
+      </button>
     </div>
-     <!-- Last 10 messages -->
+    <!-- Last 10 messages -->
     <div class="space-y-2">
-
-      <h4 class="text-gray-700 font-medium mb-2"> {{ t('footer.recentMessages') }} </h4>
+      <h4 class="text-gray-700 font-medium mb-2">{{ t('footer.recentMessages') }}</h4>
 
       <div v-if="messageStack.length > 0" class="max-h-[60vh] overflow-y-auto pr-2">
-
         <div
           v-for="(msg, index) in messageStack.slice()"
           :key="index"
           class="p-2 bg-gray-50 rounded break-words whitespace-normal"
         >
-           <span class="font-medium text-blue-600">{{ msg.w }}:</span> <span
-            class="text-gray-700 ml-1"
-            >{{ msg.d }}</span
-          >
+          <span class="font-medium text-blue-600">{{ msg.w }}:</span>
+          <span class="text-gray-700 ml-1">{{ msg.d }}</span>
         </div>
-
       </div>
 
-      <div v-else class="text-gray-500"> {{ t('footer.noRecentMessages') }} </div>
-
+      <div v-else class="text-gray-500">{{ t('footer.noRecentMessages') }}</div>
     </div>
-     </ModalComponent
-  >
+  </ModalComponent>
   <footer
     class="fixed bottom-0 left-0 right-0 h-6 bg-white border-t border-gray-200 z-40 shadow-sm"
   >
-
     <div class="max-w-6xl w-full mx-auto h-full flex items-center justify-between pl-4">
-
       <div class="flex items-center w-full">
-         <SocialLinks class="mr-2" :buttons="true" />
+        <SocialLinks class="mr-2" :buttons="true" />
         <div class="relative group mr-4 hidden md:flex">
-           <select
+          <select
             :value="locale"
             class="input-field appearance-none !h-5 !py-0 !pr-8 !text-xs"
             @change="switchLanguage"
           >
-
             <option v-for="loc in availableLocales" :key="`locale-${loc}`" :value="loc">
-               {{ localeNativeName(loc) }}
+              {{ localeNativeName(loc) }}
             </option>
-             </select
-          > <ChevronDown
+          </select>
+          <ChevronDown
             class="z-[80] h-4 w-4 text-gray-600 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none"
           />
         </div>
 
         <div class="overflow-hidden flex-1 min-w-0 relative" @click="showPopup = true">
-
           <div
             class="marquee whitespace-nowrap"
             :class="{ '!hidden': !marqueeEnabled || messageStack.length === 0 }"
           >
-             <span
+            <span
               id="velsku_sebenji"
               class="text-blue-500 italic hover:opacity-80 transition-colors text-sm"
             />
@@ -90,20 +78,15 @@
           />
 
           <div class="whitespace-nowrap" :class="{ hidden: marqueeEnabled }">
-             <span
+            <span
               class="cursor-pointer text-blue-500 italic hover:opacity-80 transition-colors text-sm"
               >{{ $t('footer.liveChat') }}</span
             >
           </div>
-
         </div>
-
       </div>
-
     </div>
-
   </footer>
-
 </template>
 
 <script setup lang="ts">
@@ -231,4 +214,3 @@ onMounted(() => {
   }
 }
 </style>
-

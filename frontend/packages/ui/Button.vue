@@ -1,5 +1,5 @@
 <template>
-   <component
+  <component
     :is="tagComputed"
     :type="isNativeButton ? type || 'button' : undefined"
     :to="isRouterLink ? to : undefined"
@@ -14,9 +14,8 @@
         v-else
         class="inline-block shrink-0 rounded-full border-2 border-current border-t-transparent animate-spin"
         :class="spinnerSizeClass"
-        aria-hidden="true"
-      /><span v-if="$slots.default" class="min-w-0"><slot /></span></span></component
-  >
+        aria-hidden="true" /><span v-if="$slots.default" class="min-w-0"><slot /></span></span
+  ></component>
 </template>
 
 <script setup lang="ts">
@@ -87,6 +86,8 @@ const buttonClasses = computed(() => {
 })
 
 const spinnerSizeClass = computed(() => (props.size === 'lg' ? 'h-6 w-6' : 'h-4 w-4'))
+
+defineOptions({ name: 'UiButton' })
 
 function handleClick(e: MouseEvent) {
   if (props.loading || props.disabled) return

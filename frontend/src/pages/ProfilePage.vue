@@ -1,11 +1,12 @@
 <template>
-   <!-- Loading State --> <LoadingSpinner v-if="isLoading" class="py-8" /> <!-- Profile Content -->
+  <!-- Loading State -->
+  <LoadingSpinner v-if="isLoading" class="py-8" />
+  <!-- Profile Content -->
   <div v-else>
-     <!-- Header -->
+    <!-- Header -->
     <div class="flex flex-col lg:flex-row justify-between items-center gap-4 mb-6">
-
       <h2 class="text-2xl font-bold text-gray-800 text-center sm:text-left flex-1 min-w-[200px]">
-         {{
+        {{
           isOwnProfile
             ? t('profile.yourProfile')
             : t('profile.userProfile', { username: profileData.username })
@@ -13,37 +14,38 @@
       </h2>
 
       <div class="flex flex-wrap gap-2 w-full lg:w-auto justify-center items-center">
-         <!-- Language Selector -->
+        <!-- Language Selector -->
         <div v-if="isOwnProfile" class="relative group">
-           <select
+          <select
             :value="locale"
             class="input-field appearance-none !h-6 !py-0 !pr-8 !text-xs"
             @change="switchLanguage"
           >
-
             <option v-for="loc in availableLocales" :key="`locale-${loc}`" :value="loc">
-               {{ localeNativeName(loc) }}
+              {{ localeNativeName(loc) }}
             </option>
-             </select
-          > <ChevronDown
+          </select>
+          <ChevronDown
             class="h-4 w-4 text-gray-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none"
           />
         </div>
-         <div v-if="isOwnProfile" class="relative group">
-           <select
+
+        <div v-if="isOwnProfile" class="relative group">
+          <select
             :value="buttonTheme"
             class="input-field appearance-none !h-6 !py-0 !pr-8 !text-xs min-w-[8rem]"
             :aria-label="t('buttonTheme.label')"
             @change="onButtonThemeChange"
           >
-             <option value="aqua">{{ t('buttonTheme.aqua') }}</option>
+            <option value="aqua">{{ t('buttonTheme.aqua') }}</option>
+
             <option value="flat">{{ t('buttonTheme.flat') }}</option>
-             </select
-          > <ChevronDown
+          </select>
+          <ChevronDown
             class="h-4 w-4 text-gray-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none"
           />
         </div>
-         <!--
+        <!--
         <RouterLink
           v-if="isOwnProfile"
           to="/balance"
@@ -52,177 +54,152 @@
           <Wallet class="h-4 w-4" />
           {{ t('profile.balance') }}
         </RouterLink>
-        --> <!-- Aqua button group -->
+        -->
+        <!-- Aqua button group -->
         <div class="btn-group md:gap-y-2">
-           <RouterLink
+          <RouterLink
             v-if="isOwnProfile"
             to="/change-password"
             class="ui-btn--read ui-btn--group-item"
-            > <KeyRound class="h-4 w-4" /> {{ t('profile.changePassword') }} </RouterLink
-          > <button
+          >
+            <KeyRound class="h-4 w-4" /> {{ t('profile.changePassword') }}
+          </RouterLink>
+          <button
             v-if="isOwnProfile && !isEditing"
             class="ui-btn--edit ui-btn--group-item"
             @click="toggleEdit"
           >
-             <Pencil class="h-4 w-4" /> {{ t('profile.editProfile') }} </button
-          >
+            <Pencil class="h-4 w-4" /> {{ t('profile.editProfile') }}
+          </button>
         </div>
 
         <div class="btn-group md:gap-y-2">
-           <RouterLink
+          <RouterLink
             :to="
               isOwnProfile
                 ? '/reactions?tab=definitions'
                 : `/user/${profileData.username}/activity?tab=definitions`
             "
             class="ui-btn--accent-purple ui-btn--group-item"
-            > <Activity class="h-4 w-4" /> {{ t('profile.viewActivity') }} </RouterLink
-          > <button
+          >
+            <Activity class="h-4 w-4" /> {{ t('profile.viewActivity') }}
+          </RouterLink>
+          <button
             v-if="isOwnProfile && auth.state.isLoggedIn"
             class="ui-btn--toolbar ui-btn--group-item"
             @click="auth.logout()"
           >
-             <LogOut class="h-4 w-4" /> {{ t('nav.logout') }} </button
-          >
+            <LogOut class="h-4 w-4" /> {{ t('nav.logout') }}
+          </button>
         </div>
-         <!-- Role Assignment Section -->
+        <!-- Role Assignment Section -->
         <div v-if="canAssignRoles && !isOwnProfile" class="flex gap-2 items-center form-group">
-           <select v-model="selectedRole" class="input-field h-6 py-0">
-
+          <select v-model="selectedRole" class="input-field h-6 py-0">
             <option v-for="role in assignableRoles" :key="role.name" :value="role.name">
-               {{ translateRole(role.name) }}
+              {{ translateRole(role.name) }}
             </option>
-             </select
-          > <button class="ui-btn--create" :disabled="isAssigningRole" @click="performAssignRole">
-             {{ isAssigningRole ? t('profile.assigning') : t('profile.assignRole') }} </button
-          >
+          </select>
+          <button class="ui-btn--create" :disabled="isAssigningRole" @click="performAssignRole">
+            {{ isAssigningRole ? t('profile.assigning') : t('profile.assignRole') }}
+          </button>
         </div>
-
       </div>
-
     </div>
-     <!-- View Mode -->
+    <!-- View Mode -->
     <div v-if="!isEditing" class="bg-white p-4 rounded-lg border space-y-4">
-
       <div class="">
-         <!-- Profile Image -->
+        <!-- Profile Image -->
         <div class="mb-6 flex flex-col items-center">
-           <!-- Skeleton for View Mode -->
-          <div
-            v-show="isViewProfileImageLoading"
-            class="avatar-placeholder-lg animate-pulse"
-          ></div>
-           <!-- Actual Image for View Mode --> <img
+          <!-- Skeleton for View Mode -->
+          <div v-show="isViewProfileImageLoading" class="avatar-placeholder-lg animate-pulse"></div>
+          <!-- Actual Image for View Mode -->
+          <img
             v-show="!isViewProfileImageLoading && profileData.has_profile_image"
             :src="profileImageUrl"
             :alt="`${profileData.username}'s profile picture`"
             class="w-32 h-32 rounded-full object-cover border-4 border-white shadow-lg"
             @load="handleViewProfileImageLoad"
             @error="handleViewProfileImageError"
-          /> <!-- Placeholder for View Mode (No Image or Error) -->
+          />
+          <!-- Placeholder for View Mode (No Image or Error) -->
           <div
             v-show="!isViewProfileImageLoading && !profileData.has_profile_image"
             class="avatar-placeholder-lg"
           >
-             <User class="h-16 w-16" />
+            <User class="h-16 w-16" />
           </div>
-
         </div>
-         <!-- Profile Info -->
+        <!-- Profile Info -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
-           <!-- Left Column -->
+          <!-- Left Column -->
           <div class="space-y-4">
-
             <div>
-               <span class="text-sm font-medium text-gray-500">{{ t('profile.username') }}</span
-              >
-              <p class="mt-1 text-gray-900"> {{ profileData.username }} </p>
-
+              <span class="text-sm font-medium text-gray-500">{{ t('profile.username') }}</span>
+              <p class="mt-1 text-gray-900">{{ profileData.username }}</p>
             </div>
 
             <div>
-               <span class="text-sm font-medium text-gray-500">{{ t('profile.role') }}</span
-              >
-              <p class="mt-1 text-gray-900"> {{ translateRole(profileData.role) }} </p>
-
+              <span class="text-sm font-medium text-gray-500">{{ t('profile.role') }}</span>
+              <p class="mt-1 text-gray-900">{{ translateRole(profileData.role) }}</p>
             </div>
 
             <div v-if="isOwnProfile || profileData.email">
-               <span class="text-sm font-medium text-gray-500">{{ t('profile.email') }}</span
-              >
-              <p class="mt-1 text-gray-900"> {{ profileData.email }} </p>
-
+              <span class="text-sm font-medium text-gray-500">{{ t('profile.email') }}</span>
+              <p class="mt-1 text-gray-900">{{ profileData.email }}</p>
             </div>
 
             <div>
-               <span class="text-sm font-medium text-gray-500">{{ t('profile.realName') }}</span
-              >
-              <p class="mt-1 text-gray-900"> {{ profileData.realname || t('profile.notSet') }} </p>
-
+              <span class="text-sm font-medium text-gray-500">{{ t('profile.realName') }}</span>
+              <p class="mt-1 text-gray-900">{{ profileData.realname || t('profile.notSet') }}</p>
             </div>
-
           </div>
-           <!-- Right Column -->
+          <!-- Right Column -->
           <div class="space-y-4">
-
             <div>
-               <span class="text-sm font-medium text-gray-500">{{ t('profile.url') }}</span
-              >
+              <span class="text-sm font-medium text-gray-500">{{ t('profile.url') }}</span>
               <p class="mt-1">
-                 <a
+                <a
                   v-if="profileData.url"
                   :href="profileData.url"
                   target="_blank"
                   class="text-blue-600 hover:underline"
                   >{{ profileData.url }}</a
-                > <span v-else class="text-gray-900">{{ t('profile.notSet') }}</span
                 >
+                <span v-else class="text-gray-900">{{ t('profile.notSet') }}</span>
               </p>
-
             </div>
 
             <div>
-               <span class="text-sm font-medium text-gray-500">{{ t('profile.personalInfo') }}</span
-              >
+              <span class="text-sm font-medium text-gray-500">{{ t('profile.personalInfo') }}</span>
               <p class="mt-1 text-gray-900">
-                 <LazyMathJax
+                <LazyMathJax
                   :content="profileData.personal || t('profile.notSet')"
                   class="inline"
                 />
               </p>
-
             </div>
 
             <div>
-               <span class="text-sm font-medium text-gray-500">{{ t('profile.memberSince') }}</span
-              >
-              <p class="mt-1 text-gray-900"> {{ memberSince }} </p>
-
+              <span class="text-sm font-medium text-gray-500">{{ t('profile.memberSince') }}</span>
+              <p class="mt-1 text-gray-900">{{ memberSince }}</p>
             </div>
-
           </div>
-
         </div>
-
       </div>
-
     </div>
-     <!-- Edit Mode -->
+    <!-- Edit Mode -->
     <form
       v-else
       class="bg-white p-4 rounded-lg border space-y-4"
       @submit.prevent="performUpdateProfile"
     >
-       <!-- Integrated Avatar Upload UI -->
+      <!-- Integrated Avatar Upload UI -->
       <div class="flex flex-col items-center mb-6">
-
         <div class="relative group w-32 h-32">
-           <!-- Skeleton for Edit Mode -->
-          <div
-            v-show="isEditProfileImageLoading"
-            class="avatar-placeholder-lg animate-pulse"
-          ></div>
-           <!-- Avatar Image or Placeholder for Edit Mode --> <img
+          <!-- Skeleton for Edit Mode -->
+          <div v-show="isEditProfileImageLoading" class="avatar-placeholder-lg animate-pulse"></div>
+          <!-- Avatar Image or Placeholder for Edit Mode -->
+          <img
             v-show="!isEditProfileImageLoading && currentImageUrl"
             :key="currentImageUrl"
             :src="currentImageUrl"
@@ -235,15 +212,14 @@
             v-show="!isEditProfileImageLoading && !currentImageUrl"
             class="avatar-placeholder-lg"
           >
-             <User class="h-16 w-16" />
+            <User class="h-16 w-16" />
           </div>
-           <!-- Loading/Progress Overlay -->
+          <!-- Loading/Progress Overlay -->
           <div
             v-if="isImageUploading"
             class="absolute inset-0 rounded-full bg-black bg-opacity-50 flex items-center justify-center"
           >
-             <svg class="w-16 h-16 transform -rotate-90" viewBox="0 0 100 100">
-
+            <svg class="w-16 h-16 transform -rotate-90" viewBox="0 0 100 100">
               <circle cx="50" cy="50" r="45" fill="none" stroke="#4B5563" stroke-width="8" />
 
               <circle
@@ -257,42 +233,43 @@
                 :stroke-dashoffset="circumference - (uploadProgress / 100) * circumference"
                 class="transition-all duration-300"
               />
-               </svg
-            > <span class="absolute text-white text-sm font-medium"
+            </svg>
+            <span class="absolute text-white text-sm font-medium"
               >{{ Math.round(uploadProgress) }}%</span
             >
           </div>
-           <!-- Action Buttons (Always visible below when not uploading) -->
+          <!-- Action Buttons (Always visible below when not uploading) -->
           <div
             v-if="!isImageUploading"
             class="absolute -bottom-4 left-1/2 transform -translate-x-1/2 flex gap-3"
           >
-             <label
+            <label
               class="cursor-pointer p-2 bg-white border border-gray-300 rounded-full text-blue-600 hover:bg-blue-50 transition-all shadow-md"
               :title="t('profile.uploadNewPhoto')"
-              > <input type="file" class="hidden" accept="image/*" @change="handleFileChange" />
-              <Camera class="h-5 w-5" /> </label
-            > <button
+            >
+              <input type="file" class="hidden" accept="image/*" @change="handleFileChange" />
+              <Camera class="h-5 w-5" />
+            </label>
+            <button
               v-if="hasImage"
               class="p-2 bg-white border border-gray-300 rounded-full text-red-600 hover:bg-red-50 transition-all shadow-md"
               :title="t('profile.removePhoto')"
               @click.stop="handleImageRemove"
             >
-               <Trash2 class="h-5 w-5" /> </button
-            >
+              <Trash2 class="h-5 w-5" />
+            </button>
           </div>
-
         </div>
-         <!-- Spacer to prevent overlap with buttons -->
+        <!-- Spacer to prevent overlap with buttons -->
         <div class="h-6" />
-         <!-- Upload Error Message -->
-        <p v-if="imageUploadError" class="mt-2 text-sm text-red-600"> {{ imageUploadError }} </p>
-
+        <!-- Upload Error Message -->
+        <p v-if="imageUploadError" class="mt-2 text-sm text-red-600">{{ imageUploadError }}</p>
       </div>
-       <!-- End Integrated Avatar Upload UI --> <!-- Rest of the form fields -->
+      <!-- End Integrated Avatar Upload UI -->
+      <!-- Rest of the form fields -->
       <div>
-         <label class="block text-sm font-medium text-gray-700">{{ t('profile.username') }}</label
-        > <input
+        <label class="block text-sm font-medium text-gray-700">{{ t('profile.username') }}</label>
+        <input
           v-model="editForm.username"
           type="text"
           class="input-field w-full"
@@ -301,44 +278,41 @@
       </div>
 
       <div>
-         <label class="block text-sm font-medium text-gray-700">{{ t('profile.realName') }}</label
-        > <input v-model="editForm.realname" type="text" class="input-field w-full" />
+        <label class="block text-sm font-medium text-gray-700">{{ t('profile.realName') }}</label>
+        <input v-model="editForm.realname" type="text" class="input-field w-full" />
       </div>
 
       <div>
-         <label class="block text-sm font-medium text-gray-700">{{ t('profile.url') }}</label
-        > <input v-model="editForm.url" type="url" class="input-field w-full" />
+        <label class="block text-sm font-medium text-gray-700">{{ t('profile.url') }}</label>
+        <input v-model="editForm.url" type="url" class="input-field w-full" />
       </div>
 
       <div>
-         <label class="block text-sm font-medium text-gray-700">{{
+        <label class="block text-sm font-medium text-gray-700">{{
           t('profile.personalInfo')
-        }}</label
-        > <textarea v-model="editForm.personal" rows="4" class="textarea-field" />
+        }}</label>
+        <textarea v-model="editForm.personal" rows="4" class="textarea-field" />
       </div>
 
       <div v-if="updateSuccess" class="text-green-600 text-sm">
-         {{ t('profile.updateSuccess') }}
+        {{ t('profile.updateSuccess') }}
       </div>
 
       <div class="mt-6 flex justify-end gap-3">
-         <button type="button" class="ui-btn--cancel" @click="toggleEdit">
-           {{ t('profile.cancel') }} </button
-        > <button type="submit" :disabled="isUpdating || isImageUploading" class="ui-btn--edit">
-           {{ isUpdating ? t('profile.saving') : t('profile.saveChanges') }} </button
-        >
+        <button type="button" class="ui-btn--cancel" @click="toggleEdit">
+          {{ t('profile.cancel') }}
+        </button>
+        <button type="submit" :disabled="isUpdating || isImageUploading" class="ui-btn--edit">
+          {{ isUpdating ? t('profile.saving') : t('profile.saveChanges') }}
+        </button>
       </div>
-
     </form>
-
   </div>
-
 </template>
 
 <script setup lang="ts">
 import { jwtDecode } from 'jwt-decode'
 import {
-  Wallet,
   KeyRound,
   Activity,
   Pencil,
@@ -448,7 +422,10 @@ const editForm = ref({
 })
 
 // Computed
-useSeoHead({ title: computed(() => profileData.value?.username || ''), robots: 'noindex, nofollow' })
+useSeoHead({
+  title: computed(() => profileData.value?.username || ''),
+  robots: 'noindex, nofollow',
+})
 
 const hasImage = computed(() => profileData.value.has_profile_image)
 
@@ -539,7 +516,7 @@ const handleFileChange = async (event: Event) => {
     reader.onload = async (e) => {
       try {
         const raw = e.target?.result
-        const base64Data = typeof raw === 'string' ? raw.split(',')[1] ?? '' : ''
+        const base64Data = typeof raw === 'string' ? (raw.split(',')[1] ?? '') : ''
         const imageData = { data: base64Data, mime_type: file.type }
 
         isEditProfileImageLoading.value = true
@@ -578,7 +555,7 @@ const handleFileChange = async (event: Event) => {
       uploadProgress.value = 0
     }
     reader.readAsDataURL(file)
-  } catch (err) {
+  } catch {
     imageUploadError.value = t('profile.uploadError.uploadFailed')
     isImageUploading.value = false
     uploadProgress.value = 0
@@ -882,4 +859,3 @@ onMounted(() => {
   fetchProfileData()
 })
 </script>
-

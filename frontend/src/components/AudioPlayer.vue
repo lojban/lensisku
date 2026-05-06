@@ -1,14 +1,11 @@
 <template>
-
   <div class="inline-flex items-center gap-2">
-     <button class="ui-btn--read" :disabled="isLoading" @click="togglePlay">
-       <PauseCircle v-if="isPlaying" class="w-4 h-4" /> <Loader
-        v-else-if="isLoading"
-        class="w-4 h-4 animate-spin"
-      /> <PlayCircle v-else class="w-4 h-4" /> </button
-    >
+    <button class="ui-btn--read" :disabled="isLoading" @click="togglePlay">
+      <PauseCircle v-if="isPlaying" class="w-4 h-4" />
+      <Loader v-else-if="isLoading" class="w-4 h-4 animate-spin" />
+      <PlayCircle v-else class="w-4 h-4" />
+    </button>
   </div>
-
 </template>
 
 <script setup lang="ts">
@@ -59,7 +56,9 @@ const loadCacheFromStorage = async (): Promise<AudioCache> => {
 
   try {
     const cached = localStorage.getItem(CACHE_KEY)
-    const cache: AudioCache = cached ? new Map(JSON.parse(cached) as [string, AudioCacheEntry][]) : new Map()
+    const cache: AudioCache = cached
+      ? new Map(JSON.parse(cached) as [string, AudioCacheEntry][])
+      : new Map()
 
     // Validate all blob URLs in cache
     for (const [key, value] of cache.entries()) {
@@ -227,4 +226,3 @@ defineExpose({
   play: togglePlay,
 })
 </script>
-

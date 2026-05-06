@@ -34,13 +34,13 @@ function onInput(e: Event) {
 </script>
 
 <template>
-
   <div class="relative flex-1 min-w-0">
-     <Search
+    <Search
       v-if="showSearchIcon"
       class="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none"
       aria-hidden="true"
-    /> <input
+    />
+    <input
       :value="modelValue"
       type="text"
       :placeholder="placeholder"
@@ -52,11 +52,12 @@ function onInput(e: Event) {
       @input="onInput"
     />
     <div class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
-       <Loader2
+      <Loader2
         v-if="isLoading"
         class="h-4 w-4 text-blue-500 animate-spin shrink-0"
         aria-hidden="true"
-      /> <IconButtonGhost
+      />
+      <IconButtonGhost
         v-else-if="modelValue"
         compact
         :aria-label="t('components.searchInput.clearAria')"
@@ -65,8 +66,5 @@ function onInput(e: Event) {
         <X class="h-4 w-4" />
       </IconButtonGhost>
     </div>
-
   </div>
-
 </template>
-

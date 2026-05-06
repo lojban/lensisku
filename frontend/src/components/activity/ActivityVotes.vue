@@ -1,13 +1,10 @@
 <template>
-
   <div class="space-y-4">
-
     <div v-if="votes.length === 0" class="text-center py-8 bg-gray-50 rounded-lg">
-       <Vote class="mx-auto h-12 w-12 text-blue-400" />
-      <p class="text-gray-600"> {{ t('components.activityVotes.noVotes') }} </p>
-
+      <Vote class="mx-auto h-12 w-12 text-blue-400" />
+      <p class="text-gray-600">{{ t('components.activityVotes.noVotes') }}</p>
     </div>
-     <DefinitionCard
+    <DefinitionCard
       v-for="vote in votes"
       v-else
       :key="`${vote.definition_id}-${vote.voted_at}`"
@@ -19,7 +16,6 @@
       :show-audio="true"
     />
   </div>
-
 </template>
 
 <script setup lang="ts">
@@ -35,7 +31,9 @@ const { t } = useI18n()
 
 defineProps({
   votes: {
-    type: Array as PropType<Array<{ definition_id: number; voted_at: string | number } & Record<string, unknown>>>,
+    type: Array as PropType<
+      Array<{ definition_id: number; voted_at: string | number } & Record<string, unknown>>
+    >,
     required: true,
   },
   formatDate: {
@@ -68,4 +66,3 @@ onMounted(async () => {
   }
 })
 </script>
-

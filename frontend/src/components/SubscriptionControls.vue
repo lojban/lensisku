@@ -1,5 +1,5 @@
 <template>
-   <button
+  <button
     v-if="auth.state.isLoggedIn"
     :class="[
       isSubscribed ? 'ui-btn--toggle active' : 'ui-btn--toggle inactive',
@@ -8,14 +8,15 @@
     :disabled="isLoading"
     @click="toggleSubscription"
   >
-     <span class="inline-block align-middle"
-      > <BellRing v-if="isSubscribed" class="h-4 w-4" /> <BellOff v-else class="h-4 w-4" /> </span
-    > {{
+    <span class="inline-block align-middle">
+      <BellRing v-if="isSubscribed" class="h-4 w-4" /> <BellOff v-else class="h-4 w-4" />
+    </span>
+    {{
       isSubscribed
         ? t('components.subscriptionControls.gettingAlerts')
         : t('components.subscriptionControls.notGettingAlerts')
-    }} </button
-  >
+    }}
+  </button>
 </template>
 
 <script setup lang="ts">
@@ -76,4 +77,3 @@ const toggleSubscription = async () => {
 
 onMounted(fetchState)
 </script>
-

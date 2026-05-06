@@ -1,7 +1,6 @@
 <template>
-   <Card elevated class="collection-card"
-    > <template #header
-      >
+  <Card elevated class="collection-card">
+    <template #header>
       <div class="flex flex-row items-start gap-3 w-full min-w-0">
         <RouterLink
           v-if="coverImageUrl"
@@ -22,6 +21,7 @@
         <div v-else class="collection-card-logo-placeholder" aria-hidden="true">
           <BookOpen class="h-6 w-6 sm:h-8 sm:w-8" />
         </div>
+
         <div class="min-w-0 flex-1 flex flex-col gap-1.5 text-left">
           <RouterLink :to="collectionHeaderTo" class="card-title--multiline">
             {{ collection.name }}
@@ -31,69 +31,66 @@
           </p>
         </div>
       </div>
-       </template
-    > <template #footer
-      >
+    </template>
+    <template #footer>
       <div class="card-footer-block">
-
         <div v-if="collection.has_flashcards" class="card-study-area card-study-area-compact">
-           <Button
+          <Button
             :variant="studyButtonVariant"
             :loading="studyLoading"
             class="!h-auto px-5 py-2.5 rounded-xl text-sm"
             @click="$emit('study', collection)"
-            > <template #icon
-              > <GraduationCap v-if="!studyLoading" class="w-4 h-4 shrink-0" /> </template
-            > {{ studyButtonLabel }} </Button
           >
+            <template #icon>
+              <GraduationCap v-if="!studyLoading" class="w-4 h-4 shrink-0" />
+            </template>
+            {{ studyButtonLabel }}
+          </Button>
         </div>
 
         <div class="card-actions">
-
           <div class="btn-group-forced flex flex-nowrap justify-center" role="group">
-             <RouterLink
+            <RouterLink
               :to="`/collections/${collection.collection_id}`"
               class="ui-btn--empty ui-btn--group-item"
-              > <List class="w-4 h-4 shrink-0" /> <span>{{ collectionButtonLabel }}</span
-              > </RouterLink
-            > <RouterLink
+            >
+              <List class="w-4 h-4 shrink-0" /> <span>{{ collectionButtonLabel }}</span>
+            </RouterLink>
+            <RouterLink
               v-if="collection.has_flashcards"
               :to="`/collections/${collection.collection_id}/flashcards`"
               class="ui-btn--empty ui-btn--group-item"
-              > <GalleryHorizontalEnd class="w-4 h-4 shrink-0" /> <span>{{ flashcardsButtonLabel }}</span
-              > </RouterLink
             >
+              <GalleryHorizontalEnd class="w-4 h-4 shrink-0" />
+              <span>{{ flashcardsButtonLabel }}</span>
+            </RouterLink>
           </div>
-
         </div>
 
         <div class="card-footer-inner border-t border-gray-100 pt-3 mt-3 w-full">
-
           <div class="card-meta card-meta-row">
-             <span class="card-meta-by"
-              > {{ createdByLabel }} <RouterLink
-                :to="`/user/${collection.owner.user_id}`"
-                class="card-meta-link"
-                > {{ collection.owner.username }} </RouterLink
-              > </span
-            > <span
+            <span class="card-meta-by">
+              {{ createdByLabel }}
+              <RouterLink :to="`/user/${collection.owner.user_id}`" class="card-meta-link">
+                {{ collection.owner.username }}
+              </RouterLink>
+            </span>
+            <span
               class="card-meta-date"
               :aria-label="updatedLabel + ' ' + formatDate(collection.updated_at)"
               :title="updatedLabel + ' ' + formatDate(collection.updated_at)"
-              > <CalendarClock class="card-meta-icon" aria-hidden="true" /> {{
-                formatDate(collection.updated_at)
-              }} </span
-            > <!-- <span class="badge badge-muted">
+            >
+              <CalendarClock class="card-meta-icon" aria-hidden="true" />
+              {{ formatDate(collection.updated_at) }}
+            </span>
+            <!-- <span class="badge badge-muted">
               {{ itemsCountLabel }}
             </span> -->
           </div>
-
         </div>
-
       </div>
-       </template
-    > </Card
-  >
+    </template>
+  </Card>
 </template>
 
 <script setup lang="ts">
@@ -178,7 +175,7 @@ const props = defineProps({
 const collectionHeaderTo = computed(() =>
   props.collection.has_flashcards
     ? `/collections/${props.collection.collection_id}/flashcards`
-    : `/collections/${props.collection.collection_id}`,
+    : `/collections/${props.collection.collection_id}`
 )
 
 const studyButtonVariant = computed(() => {
@@ -211,4 +208,3 @@ defineEmits<{ study: [collection: CollectionCardCollection] }>()
   @apply w-3.5 h-3.5 inline-block align-middle mr-0.5 text-gray-400;
 }
 </style>
-

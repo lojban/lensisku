@@ -1,16 +1,19 @@
 <template>
-   <!-- Search and Filter Section -->
+  <!-- Search and Filter Section -->
   <div class="space-y-4 mt-4 sm:mt-6">
-     <!-- Skeletons --> <SearchFormSkeleton v-if="isInitialLoading" /> <CombinedFiltersSkeleton
-      v-if="isInitialLoading"
-    /> <!-- Actual Components (hidden while loading) --> <SearchForm
+    <!-- Skeletons -->
+    <SearchFormSkeleton v-if="isInitialLoading" />
+    <CombinedFiltersSkeleton v-if="isInitialLoading" />
+    <!-- Actual Components (hidden while loading) -->
+    <SearchForm
       ref="searchFormRef"
       :initial-query="searchQuery"
       :initial-mode="'semantic'"
       class="w-full transition-opacity duration-300"
       :class="{ 'opacity-0 pointer-events-none h-0 overflow-hidden': isInitialLoading }"
       @search="performSearch"
-    /> <CombinedFilters
+    />
+    <CombinedFilters
       v-model="filters"
       :languages="languages"
       class="w-full transition-opacity duration-300"
@@ -24,52 +27,46 @@
     v-if="searchQuery || filters.selmaho || filters.username || filters.word_type"
     class="min-h-[400px] mt-4 sm:mt-6"
   >
-
     <div class="space-y-4">
-
       <div
         class="flex flex-wrap justify-between items-center gap-3 sm:space-x-4 w-full sm:w-auto ml-auto"
       >
-
         <h2 class="text-xl sm:text-2xl font-bold text-gray-800 select-none">
-           {{ $t('home.searchResultsTitle.dictionary') }}
+          {{ $t('home.searchResultsTitle.dictionary') }}
         </h2>
-
       </div>
 
       <div v-if="isLoading" class="flex justify-center py-8">
-
         <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
-
       </div>
-       <template v-else
-        >
+      <template v-else>
         <div v-if="!isLoading && !error" class="grid gap-4 mb-6">
-           <!-- Decomposition display --> <AlertComponent
+          <!-- Decomposition display -->
+          <AlertComponent
             v-if="decomposition?.length"
             type="tip"
             :label="$t('components.dictionaryEntries.decomposition')"
-            >
+          >
             <div class="inline-flex items-center gap-1">
-               <template v-for="(word, index) in decomposition" :key="word"
-                >
+              <template v-for="(word, index) in decomposition" :key="word">
                 <h2
                   class="text-base font-semibold text-blue-700 hover:text-blue-800 hover:underline truncate flex-shrink-0"
                 >
-                   <RouterLink
+                  <RouterLink
                     :to="{
                       path: `/valsi/${word.replace(/ /g, '_')}`,
                       query: { langid: definitions[0]?.langid },
                     }"
-                    > {{ word }} </RouterLink
                   >
+                    {{ word }}
+                  </RouterLink>
                 </h2>
-                 <span v-if="index < decomposition.length - 1" class="text-aqua-500">+</span>
-                </template
-              >
+                <span v-if="index < decomposition.length - 1" class="text-aqua-500">+</span>
+              </template>
             </div>
-             </AlertComponent
-          > <!-- Definition Cards --> <DefinitionCardSimple
+          </AlertComponent>
+          <!-- Definition Cards -->
+          <DefinitionCardSimple
             v-for="def in definitions"
             :key="def.definitionid"
             :definition="def"
@@ -79,18 +76,16 @@
         </div>
 
         <div v-if="!isLoading && definitions.length === 0" class="text-center py-8 text-gray-600">
-           {{ $t('components.dictionaryEntries.noEntries') }}
+          {{ $t('components.dictionaryEntries.noEntries') }}
         </div>
 
-        <div v-if="error" class="text-center py-8 text-red-600"> {{ error }} </div>
-         </template
-      >
+        <div v-if="error" class="text-center py-8 text-red-600">{{ error }}</div>
+      </template>
     </div>
-
   </div>
-   <!-- PaginationComponent -->
+  <!-- PaginationComponent -->
   <div v-if="searchQuery || filters.selmaho || filters.username || filters.word_type" class="mt-6">
-     <PaginationComponent
+    <PaginationComponent
       :current-page="currentPage"
       :total-pages="totalPages"
       :total="total"
@@ -100,13 +95,11 @@
       @next="nextPage"
     />
   </div>
-
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, watch, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { useI18n } from 'vue-i18n'
 import { nextTick } from 'vue'
 
 import { fastSearchDefinitions, getLanguages } from '@/api'
@@ -152,7 +145,6 @@ const isInitialLoading = ref(true)
 const error = ref(null)
 const searchFormRef = ref(null)
 
-const { t, locale } = useI18n()
 const pageTitle = computed(() => searchQuery.value?.trim() || 'Fast Search')
 useSeoHead({ title: pageTitle, pathWithoutLocale: '/fast-search' })
 
@@ -453,7 +445,10 @@ onMounted(async () => {
   } finally {
     isInitialLoading.value = false
 
-    if (route.name === 'FastSearch' || (typeof route.name === 'string' && route.name.startsWith('FastSearch-'))) {
+    if (
+      route.name === 'FastSearch' ||
+      (typeof route.name === 'string' && route.name.startsWith('FastSearch-'))
+    ) {
       await nextTick()
       if (searchFormRef.value && !isInitialLoading.value) {
         searchFormRef.value.focusInput()
@@ -492,7 +487,8 @@ watch(
       await fetchData()
 
       if (
-        (route.name === 'FastSearch' || (typeof route.name === 'string' && route.name.startsWith('FastSearch-'))) &&
+        (route.name === 'FastSearch' ||
+          (typeof route.name === 'string' && route.name.startsWith('FastSearch-'))) &&
         searchFormRef.value &&
         !isInitialLoading.value
       ) {
@@ -504,4 +500,3 @@ watch(
   { deep: true, immediate: true }
 )
 </script>
-

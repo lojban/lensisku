@@ -1,7 +1,5 @@
 <template>
-
   <div class="space-y-4">
-
     <div
       v-for="comment in comments"
       :key="comment.comment_id"
@@ -12,7 +10,7 @@
         )
       "
     >
-       <CommentItem
+      <CommentItem
         :comment="comment"
         :valsi-id="comment.valsi_id"
         :natlang-word-id="comment.natlang_word_id"
@@ -24,13 +22,9 @@
       v-if="comments.length === 0"
       class="text-center py-8 sm:py-12 px-4 bg-gray-50 rounded-lg border border-gray-200"
     >
-
-      <p class="text-gray-600"> {{ t('components.activityReactions.noReactedComments') }} </p>
-
+      <p class="text-gray-600">{{ t('components.activityReactions.noReactedComments') }}</p>
     </div>
-
   </div>
-
 </template>
 
 <script setup lang="ts">
@@ -52,4 +46,3 @@ defineProps({
   },
 })
 </script>
-

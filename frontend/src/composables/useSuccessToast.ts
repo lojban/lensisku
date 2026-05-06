@@ -1,12 +1,4 @@
-import {
-  ref,
-  provide,
-  inject,
-  markRaw,
-  type Ref,
-  type InjectionKey,
-  type Component,
-} from 'vue'
+import { ref, provide, inject, markRaw, type Ref, type InjectionKey, type Component } from 'vue'
 
 /** Default global success toast visibility: 2.9 × 2 seconds (milliseconds). */
 export const DEFAULT_SUCCESS_TOAST_DURATION_MS = 2.9 * 2 * 1000
@@ -39,10 +31,7 @@ export function provideSuccessToast() {
 
   function showSuccess(message: string, durationMs?: number): void
   function showSuccess(message: string, options: SuccessToastOptions): void
-  function showSuccess(
-    message: string,
-    durationOrOptions?: number | SuccessToastOptions
-  ): void {
+  function showSuccess(message: string, durationOrOptions?: number | SuccessToastOptions): void {
     if (durationOrOptions == null) {
       successToast.value = { message }
       return

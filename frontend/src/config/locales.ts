@@ -12,9 +12,7 @@ export const localeNativeNames = {
 } as const satisfies Record<SupportedLocale, string>
 
 export function localeNativeName(code: string): string {
-  return code in localeNativeNames
-    ? localeNativeNames[code as SupportedLocale]
-    : code
+  return code in localeNativeNames ? localeNativeNames[code as SupportedLocale] : code
 }
 
 export const defaultLocale: SupportedLocale = 'en'

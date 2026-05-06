@@ -1,129 +1,88 @@
 <template>
-  <div
-    v-if="loading"
-    class="page-header-shell mb-6"
-  >
+  <div v-if="loading" class="page-header-shell mb-6">
     <div class="flex flex-col gap-4">
-        <div class="flex flex-row items-stretch gap-3 sm:gap-4">
-          <div
-            class="w-16 shrink-0 self-stretch animate-pulse rounded-lg bg-gray-200 sm:rounded-xl md:w-24 lg:w-28"
-            aria-hidden="true"
-          />
-          <div class="flex min-w-0 flex-1 flex-col gap-2 pt-0.5">
-            <div
-              class="h-4 w-32 animate-pulse rounded bg-gray-200"
-              aria-hidden="true"
-            />
-            <div
-              class="h-8 w-72 max-w-full animate-pulse rounded bg-gray-200"
-              aria-hidden="true"
-            />
-            <div
-              class="h-12 w-full max-w-md animate-pulse rounded bg-gray-200"
-              aria-hidden="true"
-            />
-          </div>
+      <div class="flex flex-row items-stretch gap-3 sm:gap-4">
+        <div
+          class="w-16 shrink-0 self-stretch animate-pulse rounded-lg bg-gray-200 sm:rounded-xl md:w-24 lg:w-28"
+          aria-hidden="true"
+        />
+
+        <div class="flex min-w-0 flex-1 flex-col gap-2 pt-0.5">
+          <div class="h-4 w-32 animate-pulse rounded bg-gray-200" aria-hidden="true" />
+
+          <div class="h-8 w-72 max-w-full animate-pulse rounded bg-gray-200" aria-hidden="true" />
+
+          <div class="h-12 w-full max-w-md animate-pulse rounded bg-gray-200" aria-hidden="true" />
         </div>
-        <div class="flex flex-wrap gap-2">
-          <div
-            class="h-6 w-16 animate-pulse rounded bg-gray-200"
-            aria-hidden="true"
-          />
-          <div
-            class="h-6 w-24 animate-pulse rounded bg-gray-200"
-            aria-hidden="true"
-          />
+      </div>
+
+      <div class="flex flex-wrap gap-2">
+        <div class="h-6 w-16 animate-pulse rounded bg-gray-200" aria-hidden="true" />
+
+        <div class="h-6 w-24 animate-pulse rounded bg-gray-200" aria-hidden="true" />
+      </div>
+      <slot name="toolbar-skeleton">
+        <div class="flex flex-wrap justify-center gap-2 md:justify-start">
+          <div class="h-10 w-24 animate-pulse rounded bg-gray-200" aria-hidden="true" />
+
+          <div class="h-10 w-28 animate-pulse rounded bg-gray-200" aria-hidden="true" />
+
+          <div class="h-10 w-20 animate-pulse rounded bg-gray-200" aria-hidden="true" />
         </div>
-        <slot name="toolbar-skeleton">
-          <div class="flex flex-wrap justify-center gap-2 md:justify-start">
-            <div
-              class="h-10 w-24 animate-pulse rounded bg-gray-200"
-              aria-hidden="true"
-            />
-            <div
-              class="h-10 w-28 animate-pulse rounded bg-gray-200"
-              aria-hidden="true"
-            />
-            <div
-              class="h-10 w-20 animate-pulse rounded bg-gray-200"
-              aria-hidden="true"
-            />
-          </div>
-        </slot>
+      </slot>
     </div>
   </div>
-  <PageHeader
-    v-else-if="collection"
-    title-as="h2"
-    title-tone="secondary"
-    stack-gap="comfortable"
-  >
-      <template #leading>
-        <CollectionCoverLightbox
-          v-if="coverImageUrl"
-          class="shrink-0 self-stretch"
-          :image-url="coverImageUrl"
-          :alt="coverImageAlt"
-          :aria-label="coverLightboxDialogLabel"
-          :close-aria-label="coverLightboxCloseLabel"
-        >
-          <div class="collection-header-logo">
-            <img
-              :src="coverImageUrl"
-              :alt="coverImageAlt"
-              class="collection-header-cover-thumb"
-              loading="lazy"
-              decoding="async"
-            />
-          </div>
-        </CollectionCoverLightbox>
-        <div
-          v-else
-          class="collection-header-logo-placeholder self-stretch"
-          aria-hidden="true"
-        >
-          <BookOpen class="h-5 w-5 sm:h-7 sm:w-7 md:h-9 md:w-9" />
+  <PageHeader v-else-if="collection" title-as="h2" title-tone="secondary" stack-gap="comfortable">
+    <template #leading>
+      <CollectionCoverLightbox
+        v-if="coverImageUrl"
+        class="shrink-0 self-stretch"
+        :image-url="coverImageUrl"
+        :alt="coverImageAlt"
+        :aria-label="coverLightboxDialogLabel"
+        :close-aria-label="coverLightboxCloseLabel"
+      >
+        <div class="collection-header-logo">
+          <img
+            :src="coverImageUrl"
+            :alt="coverImageAlt"
+            class="collection-header-cover-thumb"
+            loading="lazy"
+            decoding="async"
+          />
         </div>
-      </template>
-      <template #eyebrow>
-        <slot name="hint" />
-      </template>
-      <template #title>
-        <slot name="title" />
-      </template>
-      <template v-if="collection.description" #description>
-        <div class="max-h-32 min-w-0 overflow-y-auto text-sm">
-          <LazyMathJax :content="collection.description" />
-        </div>
-      </template>
-      <template #meta>
-        <span
-          class="inline-flex h-6 shrink-0 items-center select-none rounded-full px-2 py-1 text-xs"
-          :class="
-            collection.is_public
-              ? 'bg-green-100 text-green-700'
-              : 'bg-gray-100 text-gray-700'
-          "
+      </CollectionCoverLightbox>
+      <div v-else class="collection-header-logo-placeholder self-stretch" aria-hidden="true">
+        <BookOpen class="h-5 w-5 sm:h-7 sm:w-7 md:h-9 md:w-9" />
+      </div>
+    </template>
+    <template #eyebrow> <slot name="hint" /> </template>
+    <template #title> <slot name="title" /> </template>
+    <template v-if="collection.description" #description>
+      <div class="max-h-32 min-w-0 overflow-y-auto text-sm">
+        <LazyMathJax :content="collection.description" />
+      </div>
+    </template>
+    <template #meta>
+      <span
+        class="inline-flex h-6 shrink-0 items-center select-none rounded-full px-2 py-1 text-xs"
+        :class="collection.is_public ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'"
+      >
+        {{ collection.is_public ? publicLabel : privateLabel }}
+      </span>
+      <span v-if="collection.owner" class="inline-flex h-6 items-center text-xs text-gray-600">
+        {{ createdByLabel }}
+        <RouterLink
+          :to="`/user/${collection.owner.username}`"
+          class="ml-1 text-blue-600 hover:text-blue-800 hover:underline"
         >
-          {{ collection.is_public ? publicLabel : privateLabel }}
-        </span>
-        <span v-if="collection.owner" class="inline-flex h-6 items-center text-xs text-gray-600">
-          {{ createdByLabel }}
-          <RouterLink
-            :to="`/user/${collection.owner.username}`"
-            class="ml-1 text-blue-600 hover:text-blue-800 hover:underline"
-          >
-            {{ collection.owner.username }}
-          </RouterLink>
-        </span>
-        <span class="inline-flex h-6 items-center text-xs text-gray-600">{{ itemsCountLabel }}</span>
-      </template>
-      <template #meta-trailing>
-        <slot name="meta-actions" />
-      </template>
-      <template #toolbar>
-        <slot name="toolbar" />
-      </template>
+          {{ collection.owner.username }}
+        </RouterLink>
+      </span>
+      <span class="inline-flex h-6 items-center text-xs text-gray-600">{{ itemsCountLabel }}</span>
+    </template>
+    <template #meta-trailing> <slot name="meta-actions" /> </template>
+    <template #toolbar> <slot name="toolbar" /> </template>
   </PageHeader>
 </template>
 

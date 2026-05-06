@@ -1,5 +1,5 @@
 <template>
-   <ToastFloat
+  <ToastFloat
     :show="!!message"
     :message="displayMessage"
     type="error"
@@ -26,6 +26,7 @@ const displayMessage = computed(() => {
   return props.details ? `${t(props.message)}\n\n${t(props.details)}` : t(props.message)
 })
 
+defineOptions({ name: 'ErrorAlert' })
+
 defineEmits(['close'])
 </script>
-

@@ -14,9 +14,7 @@ function vnodeIsVisible(vn: VNode): boolean {
   if (vn.type === Comment) return false
   if (vn.type === Fragment) {
     const ch = vn.children
-    return (
-      Array.isArray(ch) && ch.some((c) => vnodeIsVisible(c as VNode))
-    )
+    return Array.isArray(ch) && ch.some((c) => vnodeIsVisible(c as VNode))
   }
   if (typeof vn.type === 'symbol') {
     return String(vn.children ?? '').trim().length > 0
@@ -55,7 +53,7 @@ const props = withDefaults(
     layout: 'stack',
     stackGap: 'compact',
     titleTone: 'primary',
-  },
+  }
 )
 
 const attrs = useAttrs()
@@ -83,29 +81,24 @@ const passthroughAttrs = computed(() => {
   return rest
 })
 
-const stackGapClass = computed(() =>
-  props.stackGap === 'comfortable' ? 'gap-4' : 'gap-2',
-)
+const stackGapClass = computed(() => (props.stackGap === 'comfortable' ? 'gap-4' : 'gap-2'))
 
 const titleRowClass = computed(() =>
   hasTrailing.value
     ? 'flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1'
-    : 'flex w-fit max-w-full min-w-0 flex-wrap items-center gap-x-2 gap-y-1',
+    : 'flex w-fit max-w-full min-w-0 flex-wrap items-center gap-x-2 gap-y-1'
 )
 
 const titleShellClass = computed(() =>
   hasTrailing.value
     ? 'flex w-full min-w-0 items-start justify-between gap-2'
-    : 'flex w-full min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:gap-3 sm:gap-4',
+    : 'flex w-full min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:gap-3 sm:gap-4'
 )
 
 const titleClass = computed(() => {
   const base =
     'my-0 inline-flex min-w-0 max-w-full items-center break-words font-bold text-gray-800'
-  const tone =
-    props.titleTone === 'secondary'
-      ? 'text-xl sm:text-2xl'
-      : 'text-2xl sm:text-3xl'
+  const tone = props.titleTone === 'secondary' ? 'text-xl sm:text-2xl' : 'text-2xl sm:text-3xl'
   return `${base} ${tone}`
 })
 
@@ -121,32 +114,21 @@ const metaRowJustifyClass = computed(() => {
     <!-- Split: leading + title block | trailing -->
     <template v-if="layout === 'split'">
       <div class="flex w-full min-w-0 flex-col" :class="stackGapClass">
-        <div
-          class="flex w-full min-w-0 flex-wrap items-center justify-between gap-4"
-        >
+        <div class="flex w-full min-w-0 flex-wrap items-center justify-between gap-4">
           <div
             class="flex min-w-0 flex-1 flex-col gap-3 sm:flex-row sm:items-center sm:gap-3 md:gap-4"
           >
-            <div
-              v-if="hasLeading"
-              class="mx-auto shrink-0 sm:mx-0"
-            >
-              <slot name="leading" />
-            </div>
-            <div
-              class="min-w-0 flex-1 text-center sm:text-left"
-            >
-              <div v-if="hasEyebrow" class="min-w-0">
-                <slot name="eyebrow" />
-              </div>
+            <div v-if="hasLeading" class="mx-auto shrink-0 sm:mx-0"><slot name="leading" /></div>
+
+            <div class="min-w-0 flex-1 text-center sm:text-left">
+              <div v-if="hasEyebrow" class="min-w-0"><slot name="eyebrow" /></div>
               <component :is="titleAs" v-bind="titleAttrs" :class="titleClass">
                 <slot name="title" />
               </component>
-              <div v-if="hasDescription" class="min-w-0">
-                <slot name="description" />
-              </div>
+              <div v-if="hasDescription" class="min-w-0"><slot name="description" /></div>
             </div>
           </div>
+
           <div
             v-if="hasTrailing"
             class="flex w-full shrink-0 flex-wrap items-center justify-center gap-2 sm:w-auto sm:justify-end"
@@ -160,12 +142,10 @@ const metaRowJustifyClass = computed(() => {
           class="flex w-full min-w-0 flex-wrap items-center gap-x-2 gap-y-2"
           :class="metaRowJustifyClass"
         >
-          <div
-            v-if="hasMeta"
-            class="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1"
-          >
+          <div v-if="hasMeta" class="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
             <slot name="meta" />
           </div>
+
           <div
             v-if="hasMetaTrailing"
             class="flex shrink-0 flex-wrap items-center justify-end gap-2"
@@ -174,43 +154,34 @@ const metaRowJustifyClass = computed(() => {
           </div>
         </div>
 
-        <div v-if="hasToolbar" class="w-full min-w-0">
-          <slot name="toolbar" />
-        </div>
+        <div v-if="hasToolbar" class="w-full min-w-0"><slot name="toolbar" /></div>
       </div>
     </template>
-
     <!-- Stack (default) -->
     <template v-else>
       <div class="flex w-full min-w-0 flex-col" :class="stackGapClass">
         <template v-if="hasLeading">
           <div class="flex flex-row items-stretch gap-3 sm:gap-4">
-            <div class="shrink-0">
-              <slot name="leading" />
-            </div>
+            <div class="shrink-0"><slot name="leading" /></div>
+
             <div class="flex min-w-0 flex-1 flex-col gap-2 text-left">
-              <div v-if="hasEyebrow" class="min-w-0">
-                <slot name="eyebrow" />
-              </div>
-              <div class="flex w-full min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:gap-3 sm:gap-4">
+              <div v-if="hasEyebrow" class="min-w-0"><slot name="eyebrow" /></div>
+
+              <div
+                class="flex w-full min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:gap-3 sm:gap-4"
+              >
                 <div :class="titleRowClass">
-                  <span
-                    v-if="hasIcon"
-                    class="inline-flex shrink-0 items-center text-gray-500"
-                  >
+                  <span v-if="hasIcon" class="inline-flex shrink-0 items-center text-gray-500">
                     <slot name="icon" />
                   </span>
-                  <component
-                    :is="titleAs"
-                    v-bind="titleAttrs"
-                    :class="titleClass"
-                  >
+                  <component :is="titleAs" v-bind="titleAttrs" :class="titleClass">
                     <slot name="title" />
                   </component>
                   <span class="inline-flex shrink-0 items-center empty:hidden">
                     <slot name="title-after" />
                   </span>
                 </div>
+
                 <div
                   v-if="hasTrailing"
                   class="flex shrink-0 flex-wrap items-center justify-end gap-2"
@@ -218,24 +189,18 @@ const metaRowJustifyClass = computed(() => {
                   <slot name="trailing" />
                 </div>
               </div>
-              <div v-if="hasDescription" class="min-w-0">
-                <slot name="description" />
-              </div>
+
+              <div v-if="hasDescription" class="min-w-0"><slot name="description" /></div>
             </div>
           </div>
         </template>
-
         <template v-else>
           <div class="flex w-full min-w-0 flex-col gap-2 text-left">
-            <div v-if="hasEyebrow" class="min-w-0">
-              <slot name="eyebrow" />
-            </div>
+            <div v-if="hasEyebrow" class="min-w-0"><slot name="eyebrow" /></div>
+
             <div :class="titleShellClass">
               <div :class="titleRowClass">
-                <span
-                  v-if="hasIcon"
-                  class="inline-flex shrink-0 items-center text-gray-500"
-                >
+                <span v-if="hasIcon" class="inline-flex shrink-0 items-center text-gray-500">
                   <slot name="icon" />
                 </span>
                 <component :is="titleAs" v-bind="titleAttrs" :class="titleClass">
@@ -245,6 +210,7 @@ const metaRowJustifyClass = computed(() => {
                   <slot name="title-after" />
                 </span>
               </div>
+
               <div
                 v-if="hasTrailing"
                 class="flex shrink-0 flex-wrap items-center justify-end gap-2"
@@ -252,23 +218,19 @@ const metaRowJustifyClass = computed(() => {
                 <slot name="trailing" />
               </div>
             </div>
-            <div v-if="hasDescription" class="min-w-0">
-              <slot name="description" />
-            </div>
+
+            <div v-if="hasDescription" class="min-w-0"><slot name="description" /></div>
           </div>
         </template>
-
         <div
           v-if="hasMeta || hasMetaTrailing"
           class="flex w-full min-w-0 flex-wrap items-center gap-x-2 gap-y-2"
           :class="metaRowJustifyClass"
         >
-          <div
-            v-if="hasMeta"
-            class="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1"
-          >
+          <div v-if="hasMeta" class="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
             <slot name="meta" />
           </div>
+
           <div
             v-if="hasMetaTrailing"
             class="flex shrink-0 flex-wrap items-center justify-end gap-2"
@@ -277,9 +239,7 @@ const metaRowJustifyClass = computed(() => {
           </div>
         </div>
 
-        <div v-if="hasToolbar" class="w-full min-w-0">
-          <slot name="toolbar" />
-        </div>
+        <div v-if="hasToolbar" class="w-full min-w-0"><slot name="toolbar" /></div>
       </div>
     </template>
   </header>

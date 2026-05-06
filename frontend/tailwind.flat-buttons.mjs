@@ -52,8 +52,7 @@ export function buildFlatButtonLayer(theme) {
         borderRadius: 'inherit',
         zIndex: -1,
         pointerEvents: 'none',
-        backgroundImage:
-          'linear-gradient(to bottom, var(--bf-ha), var(--bf-hb), var(--bf-ha))',
+        backgroundImage: 'linear-gradient(to bottom, var(--bf-ha), var(--bf-hb), var(--bf-ha))',
         backgroundSize: '100% 300%',
         backgroundPosition: '50% 0%',
         backgroundRepeat: 'no-repeat',
@@ -212,7 +211,8 @@ export function buildFlatButtonLayer(theme) {
      * Paired with `.fab-elevation-shell` overrides in `buttonUiThemeLayer`.
      */
     '.btn-fab': {
-      '@apply btn-base-core cursor-pointer rounded-full border-transparent text-white shadow-none': {},
+      '@apply btn-base-core cursor-pointer rounded-full border-transparent text-white shadow-none':
+        {},
       backgroundColor: theme('colors.cornflower.400'),
       transitionProperty: 'background-color, color, transform, border-color',
       '--tw-ring-color': ring(theme('colors.cornflower.500')),

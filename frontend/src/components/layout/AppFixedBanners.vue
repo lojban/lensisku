@@ -1,11 +1,15 @@
 <template>
   <PageBanner variant="error" :show="showTestDataWarning">
     {{ t('testDataWarning') }}
-    <a :href="discordChatUrl" target="_blank" rel="noopener noreferrer" class="text-blue-500 hover:text-red-800 underline">
+    <a
+      :href="discordChatUrl"
+      target="_blank"
+      rel="noopener noreferrer"
+      class="text-blue-500 hover:text-red-800 underline"
+    >
       {{ t('discord') }}
     </a>
   </PageBanner>
-
   <PageBanner variant="warning" :show="showUnconfirmedWarning">
     <div class="max-w-4xl mx-auto flex items-center justify-center gap-2 flex-wrap">
       <span>{{ t('unconfirmedWarning') }}</span>
@@ -15,9 +19,7 @@
         class="text-blue-600 hover:text-blue-800 underline font-medium disabled:opacity-50 disabled:cursor-not-allowed"
         @click="$emit('resend-confirmation')"
       >
-        {{
-          isResendingConfirmation ? t('emailConfirmation.sending') : t('unconfirmedWarningLink')
-        }}
+        {{ isResendingConfirmation ? t('emailConfirmation.sending') : t('unconfirmedWarningLink') }}
       </button>
       <span v-if="resendConfirmationSuccess" class="text-green-600 text-xs ml-2">
         {{ t('unconfirmedWarningMessageSent') }}

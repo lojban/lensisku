@@ -1,41 +1,47 @@
 <template>
-   <TabbedPageHeader
+  <TabbedPageHeader
     :tabs="tabs"
     :active-tab="activeTab"
     :page-title="pageTitle"
     @tab-click="handleTabClick"
-  /> <!-- Loading State with Skeleton -->
-  <div v-if="isLoading" class="space-y-4"> <SkeletonActivityItem v-for="n in 5" :key="n" /> </div>
-   <!-- Content -->
+  />
+  <!-- Loading State with Skeleton -->
+  <div v-if="isLoading" class="space-y-4"><SkeletonActivityItem v-for="n in 5" :key="n" /></div>
+  <!-- Content -->
   <div v-else class="space-y-4">
-     <ActivityBookmarks
+    <ActivityBookmarks
       v-if="activeTab === 'bookmarked'"
       :comments="bookmarks"
       :format-date="formatDate"
       :no-items-message="t('reactionsPage.noBookmarks')"
-    /> <ActivityReactions
+    />
+    <ActivityReactions
       v-else-if="activeTab === 'reactions'"
       :comments="reactions"
       :format-date="formatDate"
       :no-items-message="t('reactionsPage.noReactions')"
-    /> <ActivityComments
+    />
+    <ActivityComments
       v-else-if="activeTab === 'comments'"
       :comments="comments"
       :format-date="formatDate"
       :no-items-message="t('reactionsPage.noComments')"
-    /> <ActivityDefinitions
+    />
+    <ActivityDefinitions
       v-else-if="activeTab === 'definitions'"
       :definitions="definitions"
       :format-date="formatDate"
       :no-items-message="t('reactionsPage.noDefinitions')"
-    /> <ActivityVotes
+    />
+    <ActivityVotes
       v-else-if="activeTab === 'votes'"
       :votes="votes"
       :format-date="formatDate"
       :no-items-message="t('reactionsPage.noVotes')"
-    /> <!-- PaginationComponent -->
+    />
+    <!-- PaginationComponent -->
     <div v-if="total > perPage">
-       <PaginationComponent
+      <PaginationComponent
         :current-page="currentPage"
         :total-pages="totalPages"
         :total="total"
@@ -44,9 +50,7 @@
         @next="() => changePage(currentPage + 1)"
       />
     </div>
-
   </div>
-
 </template>
 
 <script setup lang="ts">
@@ -236,4 +240,3 @@ onMounted(() => {
   )
 })
 </script>
-

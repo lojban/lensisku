@@ -1,142 +1,205 @@
 <template>
-
   <div class="flex min-h-0 flex-1 flex-col pb-3">
-
     <div class="page-header-shell mb-4 flex w-full flex-col gap-3">
-
       <!-- Title row: collection name + export menu only -->
       <div class="flex w-full flex-row flex-nowrap items-start justify-between gap-3 sm:gap-4">
-
         <div class="min-w-0 w-full flex-1">
-
           <div class="flex items-center gap-2 text-gray-500 italic text-sm mb-1">
-            <List class="w-5 h-5 shrink-0" aria-hidden="true" /> <span>{{
-              t('collectionCustomTextBulk.pageHint')
-              }}</span>
+            <List class="w-5 h-5 shrink-0" aria-hidden="true" />
+            <span>{{ t('collectionCustomTextBulk.pageHint') }}</span>
           </div>
 
           <h1 class="text-xl sm:text-2xl font-bold text-gray-800">
             {{ collection?.name || '…' }}
           </h1>
-
         </div>
+
         <div v-if="!isLoading && isOwner" class="flex shrink-0 justify-end">
           <Dropdown :trigger-label="t('collectionCustomTextBulk.exportMenuLabel')">
-            <button type="button"
+            <button
+              type="button"
               class="w-full px-4 py-2 text-left text-sm text-cyan-600 hover:bg-cyan-50 flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
-              :disabled="isSaving || isImporting" @click="exportListAsCsv">
+              :disabled="isSaving || isImporting"
+              @click="exportListAsCsv"
+            >
               <FileUp class="h-4 w-4 shrink-0" aria-hidden="true" />
               {{ t('collectionCustomTextBulk.exportCsv') }}
             </button>
-            <button type="button"
+            <button
+              type="button"
               class="w-full px-4 py-2 text-left text-sm text-emerald-600 hover:bg-emerald-50 flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
-              :disabled="isSaving || isImporting" @click="exportListAsTsv">
+              :disabled="isSaving || isImporting"
+              @click="exportListAsTsv"
+            >
               <FileUp class="h-4 w-4 shrink-0" aria-hidden="true" />
               {{ t('collectionCustomTextBulk.exportTsv') }}
             </button>
-            <button type="button"
+            <button
+              type="button"
               class="w-full px-4 py-2 text-left text-sm text-blue-600 hover:bg-blue-50 flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
-              :disabled="isSaving || isImporting" @click="showImportModal = true">
+              :disabled="isSaving || isImporting"
+              @click="showImportModal = true"
+            >
               <FileDown class="h-4 w-4 shrink-0" aria-hidden="true" />
-              {{ isImporting ? t('collectionCustomTextBulk.importing') : t('collectionCustomTextBulk.importButton') }}
+              {{
+                isImporting
+                  ? t('collectionCustomTextBulk.importing')
+                  : t('collectionCustomTextBulk.importButton')
+              }}
             </button>
-            <button type="button"
+            <button
+              type="button"
               class="w-full px-4 py-2 text-left text-sm text-purple-600 hover:bg-purple-50 flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
-              :disabled="isSaving || isImporting || mediaBulkBusy" @click="showMediaBulkModal = true">
+              :disabled="isSaving || isImporting || mediaBulkBusy"
+              @click="showMediaBulkModal = true"
+            >
               <Package class="h-4 w-4 shrink-0" aria-hidden="true" />
               {{ t('collectionCustomTextBulk.mediaBulkZipButton') }}
             </button>
           </Dropdown>
         </div>
       </div>
-
       <!-- Actions: back, import, revert, save -->
       <div class="flex w-full flex-row flex-wrap items-center gap-2 sm:gap-3">
         <div class="btn-group-forced flex flex-row flex-wrap items-center md:gap-y-2" role="group">
-          <RouterLink :to="`/collections/${numericCollectionId}`"
-            class="ui-btn--neutral-muted ui-btn--group-item">
+          <RouterLink
+            :to="`/collections/${numericCollectionId}`"
+            class="ui-btn--neutral-muted ui-btn--group-item"
+          >
             <ArrowLeft class="w-4 h-4 shrink-0" aria-hidden="true" />
             {{ t('collectionCustomTextBulk.backToCollection') }}
           </RouterLink>
         </div>
-        <div v-if="!isLoading && isOwner" class="btn-group-forced flex flex-row flex-wrap items-center md:gap-y-2" role="group">
-          <button type="button"
+
+        <div
+          v-if="!isLoading && isOwner"
+          class="btn-group-forced flex flex-row flex-wrap items-center md:gap-y-2"
+          role="group"
+        >
+          <button
+            type="button"
             class="ui-btn--neutral-muted ui-btn--group-item inline-flex items-center gap-2"
-            :disabled="isSaving || !isDirty" @click="resetRows">
+            :disabled="isSaving || !isDirty"
+            @click="resetRows"
+          >
             <Undo2 class="h-5 w-5 shrink-0" aria-hidden="true" />
             {{ t('collectionCustomTextBulk.revert') }}
           </button>
-          <button type="button"
+          <button
+            type="button"
             class="ui-btn--auth-signup ui-btn--group-item inline-flex items-center gap-2"
-            :disabled="isSaving || !isDirty" :aria-busy="isSaving" @click="saveAll">
-            <span class="inline-flex h-5 w-5 shrink-0 items-center justify-center" aria-hidden="true">
+            :disabled="isSaving || !isDirty"
+            :aria-busy="isSaving"
+            @click="saveAll"
+          >
+            <span
+              class="inline-flex h-5 w-5 shrink-0 items-center justify-center"
+              aria-hidden="true"
+            >
               <Loader2 v-if="isSaving" class="h-5 w-5 animate-spin" />
               <SaveChangesIcon v-else class="h-5 w-5" />
             </span>
-            {{ isSaving ? t('collectionCustomTextBulk.saving') : t('collectionCustomTextBulk.saveAll') }}
+            {{
+              isSaving
+                ? t('collectionCustomTextBulk.saving')
+                : t('collectionCustomTextBulk.saveAll')
+            }}
           </button>
         </div>
       </div>
 
-      <p class="w-full text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-md px-3 py-2">
+      <p
+        class="w-full text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-md px-3 py-2"
+      >
         {{ t('collectionCustomTextBulk.disclaimer') }}
       </p>
-
     </div>
     <LoadingSpinner v-if="isLoading" class="py-12" />
     <div v-else-if="!isOwner" class="text-center py-12 text-gray-600">
       {{ t('collectionCustomTextBulk.ownerOnly') }}
     </div>
     <template v-else>
-      <ModalComponent :show="showImportModal" :title="t('collectionCustomTextBulk.importButton')"
-        @close="closeImportModal">
-        <p class="mb-4 text-sm text-gray-600">
-          {{ t('collectionCustomTextBulk.importHint') }}
-        </p>
+      <ModalComponent
+        :show="showImportModal"
+        :title="t('collectionCustomTextBulk.importButton')"
+        @close="closeImportModal"
+      >
+        <p class="mb-4 text-sm text-gray-600">{{ t('collectionCustomTextBulk.importHint') }}</p>
+
         <div class="mb-4 grid grid-cols-1 gap-3 rounded-md border border-gray-200 bg-gray-50 p-3">
           <label class="inline-flex items-center gap-2 text-sm text-gray-700">
-            <input v-model="importSkipFirstRow" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-cyan-600 focus:ring-cyan-500">
+            <input
+              v-model="importSkipFirstRow"
+              type="checkbox"
+              class="h-4 w-4 rounded border-gray-300 text-cyan-600 focus:ring-cyan-500"
+            />
             <span>{{ t('collectionCustomTextBulk.importSkipFirstRowLabel') }}</span>
           </label>
           <label class="flex flex-col gap-1 text-sm text-gray-700">
             <span>{{ t('collectionCustomTextBulk.importPersistLanguageFromLabel') }}</span>
             <select v-model="importPersistLanguageFrom" class="input-field">
-              <option value="front">{{ t('collectionCustomTextBulk.importPersistFromFront') }}</option>
-              <option value="back">{{ t('collectionCustomTextBulk.importPersistFromBack') }}</option>
+              <option value="front">
+                {{ t('collectionCustomTextBulk.importPersistFromFront') }}
+              </option>
+
+              <option value="back">
+                {{ t('collectionCustomTextBulk.importPersistFromBack') }}
+              </option>
             </select>
           </label>
         </div>
-        <FileDropzone accept=".csv,.tsv,text/csv,text/tab-separated-values"
-          :choose-file-text="t('fileDropzone.chooseFile')" :or-drag-drop-text="t('fileDropzone.orDragDrop')"
-          :types-note-text="t('fileDropzone.acceptsCsvTsv')" :dropzone-aria-label="t('fileDropzone.ariaLabel')"
-          :input-aria-label="t('collectionCustomTextBulk.importAria')" :disabled="isSaving || isImporting || importPreviewLoading"
-          :validate-file="isLikelyCsvOrTsvFile" @select="onImportFileSelected" @reject="onImportFileInvalid" />
+        <FileDropzone
+          accept=".csv,.tsv,text/csv,text/tab-separated-values"
+          :choose-file-text="t('fileDropzone.chooseFile')"
+          :or-drag-drop-text="t('fileDropzone.orDragDrop')"
+          :types-note-text="t('fileDropzone.acceptsCsvTsv')"
+          :dropzone-aria-label="t('fileDropzone.ariaLabel')"
+          :input-aria-label="t('collectionCustomTextBulk.importAria')"
+          :disabled="isSaving || isImporting || importPreviewLoading"
+          :validate-file="isLikelyCsvOrTsvFile"
+          @select="onImportFileSelected"
+          @reject="onImportFileInvalid"
+        />
         <p v-if="importPreviewLoading" class="mt-3 text-sm text-gray-600">
           {{ t('collectionCustomTextBulk.importPreviewLoading') }}
         </p>
-        <div v-else-if="importAwaitingFinalConfirm && importPendingFile" class="mt-4 space-y-3 rounded-md border border-cyan-200 bg-cyan-50/40 p-3">
+
+        <div
+          v-else-if="importAwaitingFinalConfirm && importPendingFile"
+          class="mt-4 space-y-3 rounded-md border border-cyan-200 bg-cyan-50/40 p-3"
+        >
           <p class="text-sm font-medium text-gray-800">
             {{ t('collectionCustomTextBulk.importFinalConfirmTitle') }}
           </p>
+
           <p class="text-sm text-gray-700">
-            {{ t('collectionCustomTextBulk.importFinalConfirmBody', { name: importPendingFile.name }) }}
+            {{
+              t('collectionCustomTextBulk.importFinalConfirmBody', {
+                name: importPendingFile.name,
+              })
+            }}
           </p>
+
           <p class="text-xs text-gray-600">
             {{ t('collectionCustomTextBulk.importFinalConfirmHint') }}
           </p>
         </div>
+
         <div v-else-if="importPreviewLines && importColumnConfigs.length" class="mt-4 space-y-2">
           <div class="flex flex-wrap items-end justify-between gap-2">
             <p class="text-sm font-medium text-gray-800">
               {{ t('collectionCustomTextBulk.importPreviewTitle') }}
             </p>
+
             <p v-if="importPreviewTruncated" class="text-xs text-gray-500">
               {{ t('collectionCustomTextBulk.importPreviewTruncated') }}
             </p>
           </div>
+
           <p class="text-xs text-gray-600">
             {{ t('collectionCustomTextBulk.importColumnMappingHint') }}
           </p>
+
           <div class="overflow-x-auto rounded-md border border-gray-200">
             <table class="min-w-full border-collapse text-left text-xs text-gray-800">
               <thead>
@@ -146,15 +209,27 @@
                     :key="`import-col-h-${colIdx}`"
                     class="min-w-[10rem] border-b border-gray-200 bg-gray-100 p-2 align-bottom font-normal"
                   >
-                    <div class="mb-1 text-[0.65rem] font-semibold uppercase tracking-wide text-gray-500">
+                    <div
+                      class="mb-1 text-[0.65rem] font-semibold uppercase tracking-wide text-gray-500"
+                    >
                       {{ t('collectionCustomTextBulk.importColumnHeading', { n: colIdx + 1 }) }}
                     </div>
                     <label class="mb-1 block text-[0.7rem] text-gray-600">
                       {{ t('collectionCustomTextBulk.importColumnLanguageLabel') }}
                     </label>
-                    <select v-model.number="col.languageId" class="input-field mb-2 w-full py-1 text-xs">
-                      <option :value="null">{{ t('collectionCustomTextBulk.importLanguageUnset') }}</option>
-                      <option v-for="lang in languageOptions" :key="`bulk-col-lang-${colIdx}-${lang.id}`" :value="lang.id">
+                    <select
+                      v-model.number="col.languageId"
+                      class="input-field mb-2 w-full py-1 text-xs"
+                    >
+                      <option :value="null">
+                        {{ t('collectionCustomTextBulk.importLanguageUnset') }}
+                      </option>
+
+                      <option
+                        v-for="lang in languageOptions"
+                        :key="`bulk-col-lang-${colIdx}-${lang.id}`"
+                        :value="lang.id"
+                      >
                         {{ languageLabel(lang) }}
                       </option>
                     </select>
@@ -166,15 +241,27 @@
                       :value="col.role"
                       @change="onImportColumnRoleChange(colIdx, $event)"
                     >
-                      <option value="none">{{ t('collectionCustomTextBulk.importColumnRoleNone') }}</option>
-                      <option value="front">{{ t('collectionCustomTextBulk.importColumnRoleFront') }}</option>
-                      <option value="back">{{ t('collectionCustomTextBulk.importColumnRoleBack') }}</option>
+                      <option value="none">
+                        {{ t('collectionCustomTextBulk.importColumnRoleNone') }}
+                      </option>
+
+                      <option value="front">
+                        {{ t('collectionCustomTextBulk.importColumnRoleFront') }}
+                      </option>
+
+                      <option value="back">
+                        {{ t('collectionCustomTextBulk.importColumnRoleBack') }}
+                      </option>
                     </select>
                   </th>
                 </tr>
               </thead>
+
               <tbody>
-                <tr v-for="(line, lineIdx) in importPreviewLines" :key="`import-preview-${lineIdx}`">
+                <tr
+                  v-for="(line, lineIdx) in importPreviewLines"
+                  :key="`import-preview-${lineIdx}`"
+                >
                   <td
                     v-for="(col, colIdx) in importColumnConfigs"
                     :key="`import-cell-${lineIdx}-${colIdx}`"
@@ -186,26 +273,44 @@
               </tbody>
             </table>
           </div>
+
           <p v-if="importPendingFile && !importMappingValid" class="text-xs text-red-700">
             {{ t('collectionCustomTextBulk.importMappingInvalid') }}
           </p>
         </div>
+
         <div v-else-if="!importPreviewLoading" class="mt-3 text-sm text-gray-500">
           {{ t('collectionCustomTextBulk.importChooseFileFirst') }}
         </div>
-        <div v-if="isImporting && importProgress" class="mt-4 space-y-2" role="status"
-          :aria-label="t('collectionCustomTextBulk.importProgressAria')">
+
+        <div
+          v-if="isImporting && importProgress"
+          class="mt-4 space-y-2"
+          role="status"
+          :aria-label="t('collectionCustomTextBulk.importProgressAria')"
+        >
           <div class="h-2 rounded-full bg-gray-200 overflow-hidden">
-            <div class="h-full bg-cyan-600 transition-[width] duration-150 ease-out"
-              :style="{ width: `${importReadPct}%` }" />
+            <div
+              class="h-full bg-cyan-600 transition-[width] duration-150 ease-out"
+              :style="{ width: `${importReadPct}%` }"
+            />
           </div>
+
           <p class="text-xs text-gray-600">
             {{ t('collectionCustomTextBulk.importProgressLine', importProgressParams) }}
           </p>
         </div>
         <template #footer>
-          <div v-if="importAwaitingFinalConfirm" class="flex w-full flex-wrap items-center justify-end gap-2">
-            <button type="button" class="ui-btn--neutral-muted" :disabled="isImporting" @click="backFromImportConfirm">
+          <div
+            v-if="importAwaitingFinalConfirm"
+            class="flex w-full flex-wrap items-center justify-end gap-2"
+          >
+            <button
+              type="button"
+              class="ui-btn--neutral-muted"
+              :disabled="isImporting"
+              @click="backFromImportConfirm"
+            >
               {{ t('collectionCustomTextBulk.importBackToMapping') }}
             </button>
             <button
@@ -215,11 +320,21 @@
               :aria-busy="isImporting"
               @click="executeImport"
             >
-              {{ isImporting ? t('collectionCustomTextBulk.importing') : t('collectionCustomTextBulk.importConfirmRun') }}
+              {{
+                isImporting
+                  ? t('collectionCustomTextBulk.importing')
+                  : t('collectionCustomTextBulk.importConfirmRun')
+              }}
             </button>
           </div>
+
           <div v-else class="flex w-full flex-wrap items-center justify-end gap-2">
-            <button type="button" class="ui-btn--neutral-muted" :disabled="isImporting" @click="closeImportModal">
+            <button
+              type="button"
+              class="ui-btn--neutral-muted"
+              :disabled="isImporting"
+              @click="closeImportModal"
+            >
               {{ t('collectionCustomTextBulk.importCancel') }}
             </button>
             <button
@@ -233,14 +348,12 @@
           </div>
         </template>
       </ModalComponent>
-
       <CollectionMediaBulkZipModal
         v-model="showMediaBulkModal"
         :collection-id="numericCollectionId"
         @success="load(true)"
         @busy="onMediaBulkBusy"
       />
-
       <DeleteConfirmationModal
         :show="pendingDelete !== null"
         :title="deleteModalTitle"
@@ -250,20 +363,21 @@
         @confirm="confirmPendingDelete"
         @cancel="cancelPendingDelete"
       />
-
       <DeleteConfirmationModal
         :show="bulkDeletePending"
         :title="t('collectionCustomTextBulk.bulkDeleteConfirmTitle')"
-        :message="t('collectionCustomTextBulk.bulkDeleteConfirmMessage', { count: selectedBulkCount })"
+        :message="
+          t('collectionCustomTextBulk.bulkDeleteConfirmMessage', { count: selectedBulkCount })
+        "
         :is-deleting="bulkDeleteInProgress"
         class="z-[65]"
         @confirm="confirmBulkDelete"
         @cancel="cancelBulkDelete"
       />
-
       <div class="flex flex-col gap-4 flex-1 min-h-0">
-
-        <div class="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+        <div
+          class="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between"
+        >
           <div class="flex w-full flex-row flex-nowrap items-center gap-2 sm:gap-3">
             <div class="relative flex-1 min-w-0 sm:max-w-md">
               <SearchInput
@@ -273,10 +387,8 @@
                 @clear="bulkFilterQuery = ''"
               />
             </div>
-            <div
-              v-if="selectedBulkCount > 0"
-              class="flex shrink-0 flex-wrap items-center gap-2"
-            >
+
+            <div v-if="selectedBulkCount > 0" class="flex shrink-0 flex-wrap items-center gap-2">
               <button
                 type="button"
                 class="ui-btn--neutral-muted"
@@ -294,15 +406,21 @@
                 {{ t('collectionCustomTextBulk.bulkDeleteSelected', { count: selectedBulkCount }) }}
               </button>
             </div>
-            <p v-if="rows.length === 0 && !hasNewRowContent" class="shrink-0 whitespace-nowrap text-sm text-gray-600">
+
+            <p
+              v-if="rows.length === 0 && !hasNewRowContent"
+              class="shrink-0 whitespace-nowrap text-sm text-gray-600"
+            >
               {{ t('collectionCustomTextBulk.empty') }}
             </p>
+
             <p
               v-else-if="isBulkFilterActive && filteredScreenRowCount === 0"
               class="shrink-0 whitespace-nowrap text-sm text-gray-600"
             >
               {{ t('collectionCustomTextBulk.filterNoMatches') }}
             </p>
+
             <p v-else class="shrink-0 whitespace-nowrap text-sm text-gray-600">
               <template v-if="isBulkFilterActive">
                 {{
@@ -337,7 +455,9 @@
               class="sticky top-0 z-30 grid grid-cols-[minmax(0,1fr)_auto] grid-rows-2 items-center gap-x-2 gap-y-1 border-b border-gray-300 bg-gray-100 px-2 py-2 text-left text-xs font-semibold text-gray-700 sm:hidden"
             >
               <span class="min-w-0 truncate">{{ t('collectionCustomTextBulk.colFront') }}</span>
-              <span class="row-span-2 flex flex-col items-end justify-center gap-1 whitespace-nowrap text-right">
+              <span
+                class="row-span-2 flex flex-col items-end justify-center gap-1 whitespace-nowrap text-right"
+              >
                 <span class="sr-only">{{ t('collectionCustomTextBulk.bulkSelectColumn') }}</span>
                 <input
                   ref="bulkSelectAllCheckboxMobileRef"
@@ -351,12 +471,21 @@
               </span>
               <span class="min-w-0 truncate">{{ t('collectionCustomTextBulk.colBack') }}</span>
             </div>
+
             <div
               class="sticky top-0 z-20 hidden min-w-full grid-cols-[minmax(12rem,1fr)_minmax(12rem,1fr)_7rem] border-b border-gray-300 bg-gray-100 px-2 py-2 text-left text-sm font-semibold text-gray-700 sm:grid sm:px-0"
             >
-              <div class="min-w-[12rem] border-r border-gray-300 pl-2 pr-2">{{ t('collectionCustomTextBulk.colFront') }}</div>
-              <div class="min-w-[12rem] border-r border-gray-300 pl-2 pr-2">{{ t('collectionCustomTextBulk.colBack') }}</div>
-              <div class="flex w-full min-w-[7rem] items-center justify-end gap-2 whitespace-nowrap pl-2 pr-2 text-right">
+              <div class="min-w-[12rem] border-r border-gray-300 pl-2 pr-2">
+                {{ t('collectionCustomTextBulk.colFront') }}
+              </div>
+
+              <div class="min-w-[12rem] border-r border-gray-300 pl-2 pr-2">
+                {{ t('collectionCustomTextBulk.colBack') }}
+              </div>
+
+              <div
+                class="flex w-full min-w-[7rem] items-center justify-end gap-2 whitespace-nowrap pl-2 pr-2 text-right"
+              >
                 <input
                   ref="bulkSelectAllCheckboxRef"
                   type="checkbox"
@@ -368,10 +497,8 @@
                 <span>{{ t('collectionCustomTextBulk.colActions') }}</span>
               </div>
             </div>
-            <div
-              class="relative w-full"
-              :style="{ height: `${bulkTotalSize}px` }"
-            >
+
+            <div class="relative w-full" :style="{ height: `${bulkTotalSize}px` }">
               <div
                 v-for="virtualRow in bulkVirtualItems"
                 :key="String(virtualRow.key)"
@@ -400,12 +527,9 @@
             </div>
           </div>
         </div>
-
       </div>
     </template>
-
   </div>
-
 </template>
 
 <script setup lang="ts">
@@ -571,8 +695,12 @@ const importMappingValid = computed(() => {
   return fi >= 0 && bi >= 0 && fi !== bi
 })
 
-const importFrontColumn = computed(() => importColumnConfigs.value.findIndex((c) => c.role === 'front'))
-const importBackColumn = computed(() => importColumnConfigs.value.findIndex((c) => c.role === 'back'))
+const importFrontColumn = computed(() =>
+  importColumnConfigs.value.findIndex((c) => c.role === 'front')
+)
+const importBackColumn = computed(() =>
+  importColumnConfigs.value.findIndex((c) => c.role === 'back')
+)
 
 const hasImportColumnConflict = computed(() => {
   const f = importFrontColumn.value
@@ -615,9 +743,7 @@ function bulkVirtualRowKey(entry: BulkVirtualRow): string {
 
 function isBulkRowSelectable(entry: BulkVirtualRow): boolean {
   if (entry.kind === 'saved') return true
-  return (
-    entry.draft.free_content_front.trim() !== '' || entry.draft.free_content_back.trim() !== ''
-  )
+  return entry.draft.free_content_front.trim() !== '' || entry.draft.free_content_back.trim() !== ''
 }
 
 function closeImportModal() {
@@ -733,11 +859,7 @@ function languageLabel(lang: LanguageOption): string {
 const isOwner = computed(() => collection.value?.owner?.username === auth.state.username)
 
 const isRowActionDisabled = computed(
-  () =>
-    isSaving.value ||
-    isImporting.value ||
-    mediaBulkBusy.value ||
-    deletingItemId.value !== null
+  () => isSaving.value || isImporting.value || mediaBulkBusy.value || deletingItemId.value !== null
 )
 
 const deleteModalTitle = computed(() => {
@@ -795,7 +917,9 @@ const filteredDraftRowsForDisplay = computed(() => {
   const q = bulkFilterQuery.value
   return newRows.value
     .map((draft, dIdx) => ({ draft, dIdx }))
-    .filter(({ draft }) => bulkRowMatchesFilter(draft.free_content_front, draft.free_content_back, q))
+    .filter(({ draft }) =>
+      bulkRowMatchesFilter(draft.free_content_front, draft.free_content_back, q)
+    )
 })
 
 const filteredScreenRowCount = computed(
@@ -804,8 +928,16 @@ const filteredScreenRowCount = computed(
 
 /** Single list for virtualization: saved rows then drafts (same order as before). */
 const bulkVirtualRows = computed((): BulkVirtualRow[] => [
-  ...filteredSavedRowsForDisplay.value.map((x) => ({ kind: 'saved' as const, row: x.row, idx: x.idx })),
-  ...filteredDraftRowsForDisplay.value.map((x) => ({ kind: 'draft' as const, draft: x.draft, dIdx: x.dIdx })),
+  ...filteredSavedRowsForDisplay.value.map((x) => ({
+    kind: 'saved' as const,
+    row: x.row,
+    idx: x.idx,
+  })),
+  ...filteredDraftRowsForDisplay.value.map((x) => ({
+    kind: 'draft' as const,
+    draft: x.draft,
+    dIdx: x.dIdx,
+  })),
 ])
 
 const bulkSelectableVirtualRows = computed(() => bulkVirtualRows.value.filter(isBulkRowSelectable))
@@ -960,8 +1092,7 @@ function requestDeleteDraft(dIdx: number) {
   if (isRowActionDisabled.value || !canDeleteDraft(dIdx)) return
   const draft = newRows.value[dIdx]
   if (!draft) return
-  const hasContent =
-    draft.free_content_front.trim() !== '' || draft.free_content_back.trim() !== ''
+  const hasContent = draft.free_content_front.trim() !== '' || draft.free_content_back.trim() !== ''
   pendingDelete.value = { kind: 'draft', dIdx, isEmpty: !hasContent }
 }
 
@@ -1207,11 +1338,7 @@ function getExportableRows(): { free_content_front: string; free_content_back: s
 function exportListAsCsv() {
   const data = getExportableRows()
   const csv = buildBulkCustomTextCsv(data)
-  downloadTextFile(
-    `collection-${numericCollectionId.value}-custom-text.csv`,
-    csv,
-    'text/csv'
-  )
+  downloadTextFile(`collection-${numericCollectionId.value}-custom-text.csv`, csv, 'text/csv')
 }
 
 function exportListAsTsv() {
@@ -1330,7 +1457,10 @@ watch(
   () => load()
 )
 
-useSeoHead({ title: computed(() => t('collectionCustomTextBulk.documentTitle')), robots: 'noindex, nofollow' })
+useSeoHead({
+  title: computed(() => t('collectionCustomTextBulk.documentTitle')),
+  robots: 'noindex, nofollow',
+})
 </script>
 
 <style scoped>
@@ -1356,5 +1486,4 @@ useSeoHead({ title: computed(() => t('collectionCustomTextBulk.documentTitle')),
   min-height: calc(2 * lh + 1rem);
   @apply focus:border-0 hover:border-0;
 }
-
 </style>

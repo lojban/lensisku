@@ -1,18 +1,9 @@
 <template>
-
   <div :id="id" :class="['background-root', classes]">
-    <div
-      class="bg-layer"
-      :class="{ 'bg-layer--top': activeLayer === 0 }"
-      :style="layer0Style"
-    />
-    <div
-      class="bg-layer"
-      :class="{ 'bg-layer--top': activeLayer === 1 }"
-      :style="layer1Style"
-    />
-  </div>
+    <div class="bg-layer" :class="{ 'bg-layer--top': activeLayer === 0 }" :style="layer0Style" />
 
+    <div class="bg-layer" :class="{ 'bg-layer--top': activeLayer === 1 }" :style="layer1Style" />
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -21,7 +12,7 @@ import { computed, onMounted, onUnmounted, ref } from 'vue'
 const TRANSITION_S = 2.9
 const transitionDurationCss = `${TRANSITION_S}s`
 
-const props = defineProps({
+defineProps({
   id: {
     type: String,
     default: 'background-container',

@@ -1,69 +1,56 @@
 <template>
-
   <div class="max-w-4xl mx-auto p-4 sm:p-6 lg:p-8">
-
     <h1 class="text-3xl font-bold text-gray-800 mb-6">{{ t('exportPairs.title') }}</h1>
 
     <div class="bg-white rounded-lg shadow p-6">
-
       <p class="text-gray-600 mb-6">{{ t('exportPairs.description') }}</p>
 
-      <form @submit.prevent="handleExport" class="space-y-6">
-
+      <form class="space-y-6" @submit.prevent="handleExport">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-           <!-- From Language -->
+          <!-- From Language -->
           <div>
-             <label for="fromLang" class="block text-sm font-medium text-gray-700 mb-2"
-              > {{ t('exportPairs.fromLanguage') }} </label
-            > <select id="fromLang" v-model="fromLang" class="input-field w-full" required>
-
+            <label for="fromLang" class="block text-sm font-medium text-gray-700 mb-2">
+              {{ t('exportPairs.fromLanguage') }}
+            </label>
+            <select id="fromLang" v-model="fromLang" class="input-field w-full" required>
               <option value="" disabled>{{ t('exportPairs.selectLanguage') }}</option>
 
               <option v-for="lang in languages" :key="lang.id" :value="lang.id">
-                 {{ lang.real_name }}
+                {{ lang.real_name }}
               </option>
-               </select
-            >
+            </select>
           </div>
-           <!-- To Language -->
+          <!-- To Language -->
           <div>
-             <label for="toLang" class="block text-sm font-medium text-gray-700 mb-2"
-              > {{ t('exportPairs.toLanguage') }} </label
-            > <select id="toLang" v-model="toLang" class="input-field w-full" required>
-
+            <label for="toLang" class="block text-sm font-medium text-gray-700 mb-2">
+              {{ t('exportPairs.toLanguage') }}
+            </label>
+            <select id="toLang" v-model="toLang" class="input-field w-full" required>
               <option value="" disabled>{{ t('exportPairs.selectLanguage') }}</option>
 
               <option v-for="lang in languages" :key="lang.id" :value="lang.id">
-                 {{ lang.real_name }}
+                {{ lang.real_name }}
               </option>
-               </select
-            >
+            </select>
           </div>
-
         </div>
 
         <div class="pt-4">
-           <button
+          <button
             type="submit"
             class="ui-btn--create w-full sm:w-auto flex items-center justify-center gap-2"
             :disabled="isExporting || !isValid"
           >
-             <Download v-if="!isExporting" class="h-5 w-5" /> <Loader2
-              v-else
-              class="h-5 w-5 animate-spin"
-            /> <span>{{
+            <Download v-if="!isExporting" class="h-5 w-5" />
+            <Loader2 v-else class="h-5 w-5 animate-spin" />
+            <span>{{
               isExporting ? t('exportPairs.exporting') : t('exportPairs.exportButton')
-            }}</span
-            > </button
-          >
+            }}</span>
+          </button>
         </div>
-
       </form>
-
     </div>
-
   </div>
-
 </template>
 
 <script setup lang="ts">
@@ -74,7 +61,7 @@ import { getLanguages, exportLinkedPairs } from '@/api'
 import { useSeoHead } from '@/composables/useSeoHead'
 import { useError } from '@/composables/useError'
 
-const { t, locale } = useI18n()
+const { t } = useI18n()
 const { showError } = useError()
 
 useSeoHead({
@@ -131,4 +118,3 @@ const handleExport = async () => {
   }
 }
 </script>
-

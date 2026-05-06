@@ -83,13 +83,9 @@ export async function previewBulkImportFile(
   const chunk = await file.slice(0, sliceEnd).arrayBuffer()
   let text = new TextDecoder('utf-8').decode(chunk)
   text = text.replace(/^\uFEFF/, '')
-  const complete =
-    file.size <= PREVIEW_MAX_BYTES || /\r\n|\r|\n$/.test(text)
+  const complete = file.size <= PREVIEW_MAX_BYTES || /\r\n|\r|\n$/.test(text)
   if (!complete) {
-    const lastNl = Math.max(
-      text.lastIndexOf('\n'),
-      text.lastIndexOf('\r')
-    )
+    const lastNl = Math.max(text.lastIndexOf('\n'), text.lastIndexOf('\r'))
     if (lastNl >= 0) {
       text = text.slice(0, lastNl)
     } else {
@@ -106,10 +102,7 @@ export async function previewBulkImportFile(
     if (!format) {
       const tabCount = (line.match(/\t/g) || []).length
       const commaCount = (line.match(/,/g) || []).length
-      format =
-        /\.tsv$/i.test(file.name) || (tabCount > commaCount && tabCount > 0)
-          ? 'tsv'
-          : 'csv'
+      format = /\.tsv$/i.test(file.name) || (tabCount > commaCount && tabCount > 0) ? 'tsv' : 'csv'
     }
     const cells = format === 'tsv' ? line.split('\t') : parseCsvLine(line)
     lines.push(cells)
@@ -118,8 +111,7 @@ export async function previewBulkImportFile(
     }
   }
 
-  const truncated =
-    file.size > PREVIEW_MAX_BYTES || lines.length >= maxLines
+  const truncated = file.size > PREVIEW_MAX_BYTES || lines.length >= maxLines
   return {
     format: format ?? (/\.tsv$/i.test(file.name) ? 'tsv' : 'csv'),
     lines,
@@ -177,8 +169,7 @@ export async function* eachBulkImportRowFromFile(
     if (!firstNonEmptyHandled) {
       const tabCount = (line.match(/\t/g) || []).length
       const commaCount = (line.match(/,/g) || []).length
-      const useTsv =
-        /\.tsv$/i.test(file.name) || (tabCount > commaCount && tabCount > 0)
+      const useTsv = /\.tsv$/i.test(file.name) || (tabCount > commaCount && tabCount > 0)
       format = useTsv ? 'tsv' : 'csv'
       const probeCols = format === 'tsv' ? line.split('\t') : parseCsvLine(line)
       firstNonEmptyHandled = true
@@ -256,8 +247,7 @@ export function stripTrailingEmptyDrafts(newRows: BulkDraftRow[]): BulkDraftRow[
   const out = [...newRows]
   while (out.length > 0) {
     const last = out[out.length - 1]
-    const empty =
-      !last.free_content_front.trim() && !last.free_content_back.trim()
+    const empty = !last.free_content_front.trim() && !last.free_content_back.trim()
     if (!empty) break
     out.pop()
   }
@@ -338,8 +328,7 @@ export function finalizeBulkImportDraftRows(
     return [createDraftWithId()]
   }
   const last = newRows[newRows.length - 1]
-  const lastEmpty =
-    !last.free_content_front.trim() && !last.free_content_back.trim()
+  const lastEmpty = !last.free_content_front.trim() && !last.free_content_back.trim()
   if (!lastEmpty) {
     return [...newRows, createDraftWithId()]
   }

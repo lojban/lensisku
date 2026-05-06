@@ -1,8 +1,8 @@
 <template>
-  <div class="mt-2 flex flex-col gap-2 border-t border-green-300/80 pt-2 text-sm font-normal text-green-900">
-    <p class="leading-snug">
-      {{ t('collectionCustomTextBulk.importDiscardHint') }}
-    </p>
+  <div
+    class="mt-2 flex flex-col gap-2 border-t border-green-300/80 pt-2 text-sm font-normal text-green-900"
+  >
+    <p class="leading-snug">{{ t('collectionCustomTextBulk.importDiscardHint') }}</p>
     <button
       type="button"
       class="ui-btn--neutral-muted inline-flex w-full shrink-0 items-center justify-center gap-2 px-3 py-2 text-sm sm:w-auto"

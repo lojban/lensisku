@@ -19,7 +19,10 @@
         @error="handleImageError"
       />
       <div v-if="!imageLoaded" class="absolute inset-0 bg-gray-900 animate-pulse" />
-      <div class="absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-black/85 pointer-events-none" />
+
+      <div
+        class="absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-black/85 pointer-events-none"
+      />
     </div>
 
     <div
@@ -45,12 +48,15 @@
           <p class="text-xs uppercase tracking-wide text-white/60 mb-1">
             {{ t('components.tiktoknu.collectionReel.frontLabel') }}
           </p>
+
           <p class="break-words [overflow-wrap:anywhere]">{{ frontPlain }}</p>
         </div>
+
         <div>
           <p class="text-xs uppercase tracking-wide text-white/60 mb-1">
             {{ t('components.tiktoknu.collectionReel.backLabel') }}
           </p>
+
           <p class="break-words [overflow-wrap:anywhere]">{{ backPlain }}</p>
         </div>
       </div>
@@ -95,12 +101,12 @@ const heading = computed(() => {
   return stripHtml(props.item.free_content_front) || '—'
 })
 
-const frontPlain = computed(() =>
-  stripHtml(props.item.word ?? props.item.free_content_front) || '—'
+const frontPlain = computed(
+  () => stripHtml(props.item.word ?? props.item.free_content_front) || '—'
 )
 
-const backPlain = computed(() =>
-  stripHtml(props.item.definition ?? props.item.free_content_back) || '—'
+const backPlain = computed(
+  () => stripHtml(props.item.definition ?? props.item.free_content_back) || '—'
 )
 
 const entryHref = computed(() => {

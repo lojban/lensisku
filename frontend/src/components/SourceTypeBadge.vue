@@ -1,9 +1,9 @@
 <template>
-   <span
+  <span
     :class="[config.bg, config.text, 'px-2.5 py-0.5 rounded-full inline-flex items-center gap-1.5']"
-    > <component :is="config.icon" class="size-3.5 shrink-0" /> <span>{{ label }}</span
-    > </span
   >
+    <component :is="config.icon" class="size-3.5 shrink-0" /> <span>{{ label }}</span>
+  </span>
 </template>
 
 <script setup lang="ts">
@@ -61,4 +61,3 @@ const defaultLabels = {
 const config = computed(() => typeConfig[props.type])
 const label = computed(() => (props.label ? props.label : defaultLabels[props.type]()))
 </script>
-

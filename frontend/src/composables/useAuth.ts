@@ -173,10 +173,9 @@ export function provideAuth(): AuthApi {
   }
 
   async function logout(): Promise<void> {
-    performBackendLogout()
-      .catch((error: unknown) => {
-        console.error('Backend logout failed. Proceeding with client-side logout.', error)
-      })
+    performBackendLogout().catch((error: unknown) => {
+      console.error('Backend logout failed. Proceeding with client-side logout.', error)
+    })
 
     localStorage.removeItem('accessToken')
     localStorage.removeItem('refreshToken')

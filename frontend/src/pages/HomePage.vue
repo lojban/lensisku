@@ -1,9 +1,13 @@
 <template>
-   <!-- Search and Filter Section -->
+  <!-- Search and Filter Section -->
   <div class="space-y-4 mt-4 sm:mt-6">
-     <!-- Skeletons --> <SearchFormSkeleton v-if="isInitialLoading" /> <CombinedFiltersSkeleton
+    <!-- Skeletons -->
+    <SearchFormSkeleton v-if="isInitialLoading" />
+    <CombinedFiltersSkeleton
       v-if="isInitialLoading && (searchMode === 'dictionary' || searchMode === 'semantic')"
-    /> <!-- Actual Components (hidden while loading) --> <SearchForm
+    />
+    <!-- Actual Components (hidden while loading) -->
+    <SearchForm
       ref="searchFormRef"
       :initial-query="searchQuery"
       :initial-mode="searchMode"
@@ -11,7 +15,8 @@
       class="w-full transition-opacity duration-300"
       :class="{ 'opacity-0 pointer-events-none h-0 overflow-hidden': isInitialLoading }"
       @search="performSearch"
-    /> <CombinedFilters
+    />
+    <CombinedFilters
       v-if="searchMode === 'dictionary' || searchMode === 'semantic'"
       v-model="filters"
       :languages="languages"
@@ -22,21 +27,14 @@
     />
   </div>
 
-  <div
-    v-if="showTrendingHome"
-    class="min-h-[400px] mt-4 sm:mt-6"
-  >
-
+  <div v-if="showTrendingHome" class="min-h-[400px] mt-4 sm:mt-6">
     <div v-if="isLoadingTrending" class="flex justify-center py-8">
-
       <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
-
     </div>
-     <!-- Trending Comments -->
+    <!-- Trending Comments -->
     <div v-if="trendingComments.length > 0" class="space-y-4">
-
       <h2 class="text-xl sm:text-2xl font-bold text-gray-800 select-none">
-         {{ $t('home.trendingComments') }}
+        {{ $t('home.trendingComments') }}
       </h2>
 
       <div
@@ -49,49 +47,38 @@
           )
         "
       >
-         <CommentItem :comment="comment" :reply-enabled="true" @reply="handleReply" />
+        <CommentItem :comment="comment" :reply-enabled="true" @reply="handleReply" />
       </div>
-
     </div>
-     <!-- Recent Changes -->
+    <!-- Recent Changes -->
     <div v-if="recentChanges.length > 0" class="space-y-4 mt-8">
-
       <div
         class="flex flex-col md:flex-row justify-between items-start sm:items-center gap-3 sm:space-x-2 w-full sm:w-auto ml-auto"
       >
-
         <h2 class="text-xl sm:text-2xl font-bold text-gray-800 select-none">
-           {{ $t('home.recentChanges') }}
+          {{ $t('home.recentChanges') }}
         </h2>
-
       </div>
 
       <div v-for="(group, index) in groupedChanges" :key="index" class="mb-8">
-
         <h3 class="text-base font-semibold text-gray-700 mb-4 pt-4 border-t">
-           {{ formatDate(group.date) }}
+          {{ formatDate(group.date) }}
         </h3>
 
         <div class="space-y-3">
-           <RecentChangeItem v-for="change in group.changes" :key="change.time" :change="change" />
+          <RecentChangeItem v-for="change in group.changes" :key="change.time" :change="change" />
         </div>
-
       </div>
-
     </div>
-
   </div>
 
   <div v-else ref="searchResultsRef" class="min-h-[400px] mt-4 sm:mt-6">
-
     <div class="space-y-4">
-
       <div
         class="flex flex-wrap justify-between items-center gap-3 sm:space-x-4 w-full sm:w-auto ml-auto"
       >
-
         <h2 class="text-xl sm:text-2xl font-bold text-gray-800 select-none">
-           {{
+          {{
             searchMode === 'dictionary'
               ? $t('home.searchResultsTitle.dictionary')
               : searchMode === 'semantic'
@@ -104,9 +91,8 @@
           v-if="auth.state.isLoading"
           class="flex flex-col sm:flex-row items-end sm:items-center gap-3 sm:space-x-4 ml-auto"
         >
-           <!-- Skeleton loader shown while auth state loads -->
+          <!-- Skeleton loader shown while auth state loads -->
           <div class="w-[120px] h-6 bg-gray-100 animate-pulse rounded-full" />
-
         </div>
 
         <div
@@ -124,8 +110,7 @@
                 :aria-expanded="menuOpen"
                 :aria-label="$t('home.addDefinition')"
               >
-                <Plus class="h-4 w-4" />
-                <span>{{ $t('home.addDefinition') }}</span>
+                <Plus class="h-4 w-4" /> <span>{{ $t('home.addDefinition') }}</span>
                 <ChevronDown
                   class="h-4 w-4 opacity-70 transition-transform duration-200"
                   :class="{ 'rotate-180': menuOpen }"
@@ -156,14 +141,14 @@
           v-else-if="searchMode === 'comments'"
           class="flex flex-col sm:flex-row items-end sm:items-center gap-3 sm:space-x-4 ml-auto"
         >
-           <IconButton
+          <IconButton
             v-if="auth.state.isLoggedIn"
             :label="$t('home.newFreeThread')"
             button-classes="ui-btn--neutral"
             @click="handleNewFreeComment"
-            > <template #icon> <AudioWaveform class="h-4 w-4 text-purple-600" /> </template>
-            </IconButton
           >
+            <template #icon> <AudioWaveform class="h-4 w-4 text-purple-600" /> </template>
+          </IconButton>
         </div>
 
         <div
@@ -215,7 +200,6 @@
               {{ $t('home.waveSourceMail') }}
             </button>
           </Dropdown>
-
           <Dropdown class="relative block w-auto min-w-0 shrink">
             <template #trigger="{ open: sortMenuOpen }">
               <button
@@ -252,7 +236,6 @@
               {{ $t('sort.replies') }}
             </button>
           </Dropdown>
-
           <button
             type="button"
             class="ui-btn--empty inline-flex h-8 min-w-0 w-auto items-center gap-1.5 whitespace-nowrap px-3 text-sm"
@@ -264,17 +247,12 @@
               class="h-4 w-4 shrink-0 opacity-60"
               :stroke-width="2"
             />
-            <ChevronDown
-              v-else
-              class="h-4 w-4 shrink-0 opacity-60"
-              :stroke-width="2"
-            />
+            <ChevronDown v-else class="h-4 w-4 shrink-0 opacity-60" :stroke-width="2" />
             <span class="whitespace-nowrap">{{
               sortOrder === 'asc' ? $t('sort.asc') : $t('sort.desc')
             }}</span>
           </button>
         </div>
-
       </div>
 
       <div class="relative" :class="{ 'min-h-[200px]': isLoading }">
@@ -287,10 +265,7 @@
           <div class="animate-spin rounded-full h-8 w-8 shrink-0 border-b-2 border-blue-600" />
         </div>
 
-        <div
-          class="relative z-0"
-          :class="{ 'pointer-events-none select-none': isLoading }"
-        >
+        <div class="relative z-0" :class="{ 'pointer-events-none select-none': isLoading }">
           <DictionaryEntries
             v-if="searchMode === 'dictionary' || searchMode === 'semantic'"
             :definitions="definitions"
@@ -306,12 +281,12 @@
             @collection-updated="collections = $event"
           />
           <div v-else-if="searchMode === 'comments'" class="space-y-4">
-
             <div v-if="waveItems.length > 0">
-
               <div
-                v-for="(item, idx) in waveItems"
-                :key="item.source === 'comment' ? item.comment.comment_id : 'mail-' + item.message.id"
+                v-for="item in waveItems"
+                :key="
+                  item.source === 'comment' ? item.comment.comment_id : 'mail-' + item.message.id
+                "
                 class="cursor-pointer"
                 @click="
                   item.source === 'comment'
@@ -340,14 +315,15 @@
                   v-else
                   class="comment-item bg-white border rounded-lg p-3 my-2 hover:border-blue-300 transition-colors min-w-48"
                 >
-
                   <div
                     class="mb-2 text-sm text-gray-600 whitespace-nowrap overflow-hidden flex items-center"
                   >
-                    <SourceTypeBadge type="mail" /> <span
+                    <SourceTypeBadge type="mail" />
+                    <span
                       class="text-blue-700 font-medium ml-1.5 truncate inline-block max-w-[calc(100%-120px)]"
-                    > {{ item.message.subject || item.message.cleaned_subject || '-' }} </span
                     >
+                      {{ item.message.subject || item.message.cleaned_subject || '-' }}
+                    </span>
                   </div>
 
                   <div class="text-xs text-gray-500 mb-2">
@@ -365,11 +341,8 @@
                       :enable-markdown="part.mime_type === 'text/plain'"
                     />
                   </div>
-
                 </div>
-
               </div>
-
             </div>
 
             <div
@@ -377,26 +350,23 @@
               class="text-center py-12 bg-blue-50 rounded-lg border border-blue-100"
             >
               <MessageSquare class="mx-auto h-12 w-12 text-blue-400" />
-              <p class="mt-4 text-gray-600"> {{ $t('home.noCommentsFound') }} </p>
-
+              <p class="mt-4 text-gray-600">{{ $t('home.noCommentsFound') }}</p>
             </div>
-
           </div>
         </div>
       </div>
     </div>
-
   </div>
-   <!-- Add-all-to-collection modal (triggered from dictionary action menu) -->
+  <!-- Add-all-to-collection modal (triggered from dictionary action menu) -->
   <AddAllToCollectionWidget
     v-model="showAddAllModal"
     :external-collections="collections"
     :load-all-definition-ids="loadAllDefinitionIdsForCurrentSearch"
     @collection-updated="collections = $event"
   />
-   <!-- PaginationComponent -->
+  <!-- PaginationComponent -->
   <div v-if="!showTrendingHome" class="mt-6">
-     <PaginationComponent
+    <PaginationComponent
       :current-page="currentPage"
       :total-pages="totalPages"
       :total="total"
@@ -406,7 +376,6 @@
       @next="nextPage"
     />
   </div>
-
 </template>
 
 <script setup lang="ts">
@@ -483,9 +452,7 @@ function normalizeWaveThreadItems(items: unknown[]) {
             typeof item.last_activity_time === 'number'
               ? new Date(item.last_activity_time * 1000).toUTCString()
               : '',
-          parts_json: preview
-            ? [{ mime_type: 'text/plain', content: preview }]
-            : null,
+          parts_json: preview ? [{ mime_type: 'text/plain', content: preview }] : null,
         },
       }
     }
@@ -604,14 +571,11 @@ const decomposition = ref([])
 const total = ref(0)
 const showAddAllModal = ref(false)
 const hasSearchResults = computed(
-  () =>
-    (searchMode.value === 'dictionary' || searchMode.value === 'semantic') &&
-    total.value > 0
+  () => (searchMode.value === 'dictionary' || searchMode.value === 'semantic') && total.value > 0
 )
 const currentPage = ref(parseInt(queryStr(route.query.page), 10) || 1)
 const totalPages = ref(1)
 const sortOrder = ref('desc')
-const includeContent = ref(true)
 
 // Get search query from localStorage or use default
 const getInitialSearchQuery = () => {
@@ -690,8 +654,7 @@ useSeoHead({ title: pageTitle, description: pageDescription, pathWithoutLocale: 
 /** When true, show trending + recent changes; when false, show search / waves results. */
 const showTrendingHome = computed(() => {
   const q = (searchQuery.value || '').trim()
-  const noFilters =
-    !filters.value.selmaho && !filters.value.username && !filters.value.word_type
+  const noFilters = !filters.value.selmaho && !filters.value.username && !filters.value.word_type
   if (searchMode.value === 'comments') return false
   return !q && noFilters
 })
@@ -883,10 +846,7 @@ const loadAllDefinitionIdsForCurrentSearch = async (
   if (filters.value.source_langid && filters.value.source_langid !== 1) {
     baseParams.source_langid = filters.value.source_langid
   }
-  if (
-    filters.value.searchInPhrases !== undefined &&
-    filters.value.searchInPhrases !== null
-  ) {
+  if (filters.value.searchInPhrases !== undefined && filters.value.searchInPhrases !== null) {
     baseParams.search_in_phrases = filters.value.searchInPhrases
   }
 
@@ -1158,16 +1118,6 @@ const fetchData = async () => {
   // Set loading true only if we are actually fetching search results
   isLoading.value = true
 
-  const params = {
-    page: currentPage.value,
-    per_page: 10,
-    query: searchQuery.value.trim(),
-    sort_by: sortBy.value,
-    sort_order: sortOrder.value,
-    include_content: includeContent.value,
-    group_by_thread: groupByThread.value, // Pass groupByThread here
-  }
-
   try {
     if (searchMode.value === 'dictionary' || searchMode.value === 'semantic') {
       await fetchDefinitions(currentPage.value, searchQuery.value)
@@ -1322,13 +1272,6 @@ const nextPage = () => {
   }
 }
 
-const viewMessage = (messageId: string | number) => {
-  // Extract locale from the current route path
-  const currentLocale = route.path.split('/')[1] || 'en' // Default to 'en' if locale is missing
-  const routeName = `MessageDetail-${currentLocale}`
-  router.push({ name: routeName, params: { id: messageId } })
-}
-
 const handleViewThreadSummary = (subject: string) => {
   const currentLocale = route.path.split('/')[1] || 'en'
   const routeName = `ThreadView-${currentLocale}`
@@ -1404,8 +1347,7 @@ const syncFromRoute = () => {
       waveSource.value = w as WaveSource
     }
   } else {
-    const stored =
-      typeof window !== 'undefined' ? localStorage.getItem('waveSource') : null
+    const stored = typeof window !== 'undefined' ? localStorage.getItem('waveSource') : null
     waveSource.value =
       stored && WAVE_SOURCES.includes(stored as WaveSource) ? (stored as WaveSource) : 'all'
   }
@@ -1491,7 +1433,10 @@ onMounted(async () => {
     isInitialLoading.value = false
 
     // Focus search input if on home page
-    if (route.name === 'Home' || (typeof route.name === 'string' && route.name.startsWith('Home-'))) {
+    if (
+      route.name === 'Home' ||
+      (typeof route.name === 'string' && route.name.startsWith('Home-'))
+    ) {
       await nextTick()
       if (searchFormRef.value && !isInitialLoading.value) {
         searchFormRef.value.focusInput()
@@ -1600,4 +1545,3 @@ watch(
   }
 )
 </script>
-

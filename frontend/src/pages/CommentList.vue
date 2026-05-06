@@ -1,28 +1,26 @@
 <template>
-   <!-- Header with word being discussed -->
+  <!-- Header with word being discussed -->
   <div class="mb-6">
-
     <div v-if="valsiDetails" class="mb-4">
-
       <h2 v-if="!definitionId" class="text-2xl font-bold space-x-2 select-none">
-         <span class="text-gray-500 italic">{{ t('commentList.discussingEntry') }}</span
-        > <RouterLink
+        <span class="text-gray-500 italic">{{ t('commentList.discussingEntry') }}</span>
+        <RouterLink
           v-if="valsiDetails.valsiid"
           :to="`/valsi/${valsiDetails.word.replace(/ /g, '_')}`"
           class="text-blue-700 hover:text-blue-800 hover:underline"
-          > {{ valsiDetails.word }} </RouterLink
-        > <span v-else class="text-blue-700"> {{ valsiDetails.word }} </span>
+        >
+          {{ valsiDetails.word }}
+        </RouterLink>
+        <span v-else class="text-blue-700"> {{ valsiDetails.word }} </span>
       </h2>
 
       <h2 v-else class="text-2xl font-bold space-x-2 select-none">
-         <span class="text-gray-500 italic">{{ t('commentList.discussingDefinition') }}</span
-        >
+        <span class="text-gray-500 italic">{{ t('commentList.discussingDefinition') }}</span>
       </h2>
-
     </div>
 
     <div v-if="valsiDetails && definitionDetails" class="mb-4">
-       <DefinitionCard
+      <DefinitionCard
         :definition="definitionDetails"
         :languages="languages"
         :disable-discussion-button="true"
@@ -30,52 +28,55 @@
         :show-definition-number="true"
       />
     </div>
-     <!-- Action buttons -->
+    <!-- Action buttons -->
     <div class="flex flex-wrap gap-2 w-full lg:w-auto justify-center">
-       <label
+      <label
         class="inline-flex items-center"
         :disabled="flatStyleEnforced"
         :class="[!flatStyle && !flatStyleEnforced ? ' ui-btn--neutral-slate' : 'ui-btn--neutral']"
-        > <input
+      >
+        <input
           type="checkbox"
           class="checkmark-aqua"
           :checked="!flatStyle && !flatStyleEnforced"
           :disabled="flatStyleEnforced"
           @change="toggleFlatStyle"
-        /> <span class="text-sm select-none" :class="{ 'text-gray-400': flatStyleEnforced }">{{
+        />
+        <span class="text-sm select-none" :class="{ 'text-gray-400': flatStyleEnforced }">{{
           t('commentList.threaded')
-        }}</span
-        > </label
-      > <button
+        }}</span>
+      </label>
+      <button
         v-if="auth.state.isLoggedIn && comments.length > 0"
         type="button"
         class="inline-flex items-center gap-2 ui-btn--neutral"
         :aria-label="t('commentList.newWave')"
         @click="handleNewTopLevelComment"
       >
-         <AudioWaveform class="h-4 w-4 shrink-0 text-purple-600" />
-        <span>{{ t('commentList.newWave') }}</span> </button
-      > <button
+        <AudioWaveform class="h-4 w-4 shrink-0 text-purple-600" />
+        <span>{{ t('commentList.newWave') }}</span>
+      </button>
+      <button
         v-if="commentId > 0 && !!currentComment?.parent_id"
         class="inline-flex items-center ui-btn--accent-purple"
         @click="goToParent"
       >
-         <ArrowLeft class="h-5 w-5" /> {{ t('commentList.parent') }} </button
-      > <button
+        <ArrowLeft class="h-5 w-5" /> {{ t('commentList.parent') }}
+      </button>
+      <button
         v-if="commentId > 0"
         type="button"
         class="inline-flex items-center ui-btn--neutral-slate"
         :aria-label="t('commentList.waveRoot')"
         @click="goToRoot"
       >
-         <Home class="h-5 w-5" /> {{ t('commentList.waveRoot') }} </button
-      >
+        <Home class="h-5 w-5" /> {{ t('commentList.waveRoot') }}
+      </button>
     </div>
-
   </div>
-   <!-- New top-level comment form -->
+  <!-- New top-level comment form -->
   <div v-if="showTopLevelForm" class="mb-6">
-     <CommentForm
+    <CommentForm
       :is-submitting="isSubmitting"
       :initial-values="newComment"
       class="border border-blue-200 rounded-lg shadow-sm"
@@ -83,18 +84,18 @@
       @cancel="cancelComment"
     />
   </div>
-   <!-- Comments list -->
+  <!-- Comments list -->
   <div class="space-y-4">
-     <template v-if="!isLoading"
-      > <!-- Process all comments --> <template v-if="commentId > 0"
-        > <!-- Single comment thread view -->
+    <template v-if="!isLoading">
+      <!-- Process all comments -->
+      <template v-if="commentId > 0">
+        <!-- Single comment thread view -->
         <div v-for="comment in targetCommentThread" :key="comment.comment_id" class="relative">
-
           <div
             :style="{ marginLeft: `${flatStyle ? 0 : getReplyMargin(comment.level)}rem` }"
             @mouseup="handleTextSelection(comment.comment_id, $event)"
           >
-             <CommentItem
+            <CommentItem
               :comment="comment"
               :valsi-id="valsiId"
               :natlang-word-id="natlangWordId"
@@ -102,9 +103,10 @@
               :reply-enabled="true"
               :flat-style="flatStyle"
               @reply="handleReply"
-            /> <!-- Inline reply form -->
+            />
+            <!-- Inline reply form -->
             <div v-if="replyToId === comment.comment_id" class="ml-4">
-               <CommentForm
+              <CommentForm
                 :is-submitting="isSubmitting"
                 :initial-values="newComment"
                 :is-reply="true"
@@ -112,20 +114,17 @@
                 @cancel="cancelComment"
               />
             </div>
-
           </div>
-
         </div>
-         </template
-      > <template v-else
-        > <!-- All comments in order -->
+      </template>
+      <template v-else>
+        <!-- All comments in order -->
         <div v-for="comment in processedComments" :key="comment.comment_id" class="relative">
-
           <div
             :style="{ marginLeft: `${getReplyMargin(comment.level)}rem` }"
             @mouseup="handleTextSelection(comment.comment_id, $event)"
           >
-             <CommentItem
+            <CommentItem
               :comment="comment"
               :level="comment.level"
               :valsi-id="valsiId"
@@ -134,9 +133,10 @@
               :reply-enabled="true"
               :flat-style="flatStyle"
               @reply="handleReply"
-            /> <!-- Inline reply form -->
+            />
+            <!-- Inline reply form -->
             <div v-if="replyToId === comment.comment_id" class="ml-4">
-               <CommentForm
+              <CommentForm
                 :is-submitting="isSubmitting"
                 :initial-values="newComment"
                 :is-reply="true"
@@ -144,15 +144,12 @@
                 @cancel="cancelComment"
               />
             </div>
-
           </div>
-
         </div>
-         </template
-      > </template
-    >
+      </template>
+    </template>
     <div v-if="!isLoading && totalPages > 1" class="mt-6">
-       <PaginationComponent
+      <PaginationComponent
         :current-page="currentPage"
         :total-pages="totalPages"
         :total="total"
@@ -161,18 +158,18 @@
         @next="changePage(currentPage + 1)"
       />
     </div>
-     <!-- Loading state -->
+    <!-- Loading state -->
     <div v-if="isLoading" class="flex justify-center py-8">
-       <Loader2 class="animate-spin h-8 w-8 text-blue-600" />
+      <Loader2 class="animate-spin h-8 w-8 text-blue-600" />
     </div>
-     <!-- Empty state -->
+    <!-- Empty state -->
     <div
       v-if="!isLoading && comments.length === 0"
       class="flex flex-col justify-center text-center py-12 bg-blue-50 rounded-lg border border-blue-100 p-4"
     >
-       <MessageSquare class="mx-auto h-12 w-12 text-blue-400" />
-      <p class="my-4 text-gray-600"> {{ t('commentList.noComments') }} </p>
-       <button
+      <MessageSquare class="mx-auto h-12 w-12 text-blue-400" />
+      <p class="my-4 text-gray-600">{{ t('commentList.noComments') }}</p>
+      <button
         v-if="auth.state.isLoggedIn"
         v-show="!showTopLevelForm"
         type="button"
@@ -180,11 +177,11 @@
         :aria-label="t('commentList.newDiscussionWave')"
         @click="handleNewTopLevelComment"
       >
-         <AudioWaveform class="h-6 w-6 shrink-0 text-purple-600" />
-        <span>{{ t('commentList.newDiscussionWave') }}</span> </button
-      >
+        <AudioWaveform class="h-6 w-6 shrink-0 text-purple-600" />
+        <span>{{ t('commentList.newDiscussionWave') }}</span>
+      </button>
     </div>
-     <!-- Floating quote button -->
+    <!-- Floating quote button -->
     <div
       v-if="quotePosition.visible"
       class="fixed z-50 bg-white border border-gray-300 rounded-md shadow-sm p-1"
@@ -193,16 +190,14 @@
         top: `${quotePosition.y}px`,
       }"
     >
-       <button
-        @click="handleQuote"
+      <button
         class="text-sm px-2 py-1 hover:bg-gray-100 rounded-md flex items-center"
+        @click="handleQuote"
       >
-         <Quote class="w-4 h-4 mr-1" /> {{ t('commentList.quoteSelectedText') }} </button
-      >
+        <Quote class="w-4 h-4 mr-1" /> {{ t('commentList.quoteSelectedText') }}
+      </button>
     </div>
-
   </div>
-
 </template>
 
 <script setup lang="ts">
@@ -279,7 +274,7 @@ const route = useRoute()
 const router = useRouter()
 const auth = useAuth()
 const { showError } = useError() // Get showError function
-const { t, locale } = useI18n()
+const { t } = useI18n()
 
 const levelMap = new Map()
 
@@ -311,7 +306,10 @@ const toggleFlatStyle = () => {
 
 const processedComments = ref([])
 
-const processComments = (comments: Array<Record<string, unknown> & { comment_id: number; parent_id: number }>, isFlat: boolean) => {
+const processComments = (
+  comments: Array<Record<string, unknown> & { comment_id: number; parent_id: number }>,
+  isFlat: boolean
+) => {
   levelMap.clear()
   return comments.map((comment) => {
     let level = 0
@@ -650,7 +648,8 @@ const metaDescription = computed(() => {
 const canonicalPath = computed(() => route.fullPath)
 
 if (!props.embedded) {
-  useSeoHead({ pathWithoutLocale: '/comments',
+  useSeoHead({
+    pathWithoutLocale: '/comments',
     title: pageTitle,
     description: metaDescription,
     canonical: canonicalPath,
@@ -721,4 +720,3 @@ watchEffect(async () => {
   }
 }
 </style>
-

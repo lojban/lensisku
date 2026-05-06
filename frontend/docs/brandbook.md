@@ -6,13 +6,13 @@ This document is the **human-readable contract** for product, design, QA, and en
 
 ## 1. Goals
 
-| Goal | What it means in practice |
-|------|---------------------------|
-| **Recognizable product** | Glossy **Aqua** controls and flat **toolbar** controls are both “Lensisku”; users can switch themes without breaking layouts. |
-| **Predictable actions** | Primary flows (save, search, destructive) map to **semantic** `ui-btn--*` names, not random Tailwind color utilities on `<button>`. |
-| **Accessible by default** | Visible focus states (`focus-visible` / rings), icon-only controls require **accessible names** (`aria-label` or visible `label`). |
-| **Maintainable UI** | New screens use **named patterns** from the Tailwind layer (`input-field`, `toolbar-panel`, `card-elevated`, …) and shared **`packages/ui`** primitives. |
-| **No layout hacks for icons** | Icon + text controls use **`gap-*` on the parent**—never `mr-*` / `ml-*` on icons (breaks when labels are hidden or translated). |
+| Goal                          | What it means in practice                                                                                                                                |
+| ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Recognizable product**      | Glossy **Aqua** controls and flat **toolbar** controls are both “Lensisku”; users can switch themes without breaking layouts.                            |
+| **Predictable actions**       | Primary flows (save, search, destructive) map to **semantic** `ui-btn--*` names, not random Tailwind color utilities on `<button>`.                      |
+| **Accessible by default**     | Visible focus states (`focus-visible` / rings), icon-only controls require **accessible names** (`aria-label` or visible `label`).                       |
+| **Maintainable UI**           | New screens use **named patterns** from the Tailwind layer (`input-field`, `toolbar-panel`, `card-elevated`, …) and shared **`packages/ui`** primitives. |
+| **No layout hacks for icons** | Icon + text controls use **`gap-*` on the parent**—never `mr-*` / `ml-*` on icons (breaks when labels are hidden or translated).                         |
 
 ---
 
@@ -26,15 +26,15 @@ This document is the **human-readable contract** for product, design, QA, and en
 
 ## 3. Source of truth & file roles
 
-| Asset | Role |
-|-------|------|
-| **`tailwind.config.js`** | Brand tokens (`colors.nav-link`, `fontFamily.sans`), shared **component classes** (`.btn-base`, `.aqua-base`, `.input-field`, …), **semantic button mapping** (`ui-btn--*` → aqua/flat primitives via `data-button-theme`). |
-| **`tailwind.flat-buttons.mjs`** | **Flat** theme: `.btn-flat-surface` + semantic `btn-*` palettes (imported into `tailwind.config.js`). |
-| **`tailwind.aqua-buttons.mjs`** | **Aqua** theme: `.aqua-base` / `.aqua-base-secondary`, semantic `btn-aqua-*`, segment geometry helper, toggle-off shadow. |
-| **`packages/ui/*.vue`** | **Reusable, mostly stateless** building blocks (`Button`, `IconButton`, `Card`, `Dropdown`, …). They must **not** import from `src/`. |
-| **`src/components/**`** | Domain-aware UI (search, definitions, filters, Lingo study, …). Prefer composing `packages/ui` + Tailwind named classes. |
-| **`src/composables/useButtonTheme.ts`** | Persists `aqua` \| `flat` in `localStorage`, sets `document.documentElement.dataset.buttonTheme`. |
-| **`index.html`** | Inline script sets `data-button-theme` before paint (avoids flash); global font loading. |
+| Asset                                   | Role                                                                                                                                                                                                                        |
+| --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **`tailwind.config.js`**                | Brand tokens (`colors.nav-link`, `fontFamily.sans`), shared **component classes** (`.btn-base`, `.aqua-base`, `.input-field`, …), **semantic button mapping** (`ui-btn--*` → aqua/flat primitives via `data-button-theme`). |
+| **`tailwind.flat-buttons.mjs`**         | **Flat** theme: `.btn-flat-surface` + semantic `btn-*` palettes (imported into `tailwind.config.js`).                                                                                                                       |
+| **`tailwind.aqua-buttons.mjs`**         | **Aqua** theme: `.aqua-base` / `.aqua-base-secondary`, semantic `btn-aqua-*`, segment geometry helper, toggle-off shadow.                                                                                                   |
+| **`packages/ui/*.vue`**                 | **Reusable, mostly stateless** building blocks (`Button`, `IconButton`, `Card`, `Dropdown`, …). They must **not** import from `src/`.                                                                                       |
+| **`src/components/**`\*\*               | Domain-aware UI (search, definitions, filters, Lingo study, …). Prefer composing `packages/ui` + Tailwind named classes.                                                                                                    |
+| **`src/composables/useButtonTheme.ts`** | Persists `aqua` \| `flat` in `localStorage`, sets `document.documentElement.dataset.buttonTheme`.                                                                                                                           |
+| **`index.html`**                        | Inline script sets `data-button-theme` before paint (avoids flash); global font loading.                                                                                                                                    |
 
 ---
 
@@ -65,21 +65,21 @@ This document is the **human-readable contract** for product, design, QA, and en
 
 ### 6.2 Primitives
 
-| Family | Base class | Character |
-|--------|------------|-----------|
-| **Glossy / Aqua** | `.aqua-base` (+ `btn-aqua-*` fills) — `tailwind.aqua-buttons.mjs` | 3D, high-gloss, strong shadow; **primary chrome** for “hero” actions when Aqua theme is on. |
-| **Flat** | `.btn-base` → `.btn-flat-surface` (+ semantic `btn-*`) — `tailwind.flat-buttons.mjs` | 2D, bordered, subdued; default for **inline**, **toolbar**, and **list** actions when Flat theme is on. |
+| Family            | Base class                                                                           | Character                                                                                               |
+| ----------------- | ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------- |
+| **Glossy / Aqua** | `.aqua-base` (+ `btn-aqua-*` fills) — `tailwind.aqua-buttons.mjs`                    | 3D, high-gloss, strong shadow; **primary chrome** for “hero” actions when Aqua theme is on.             |
+| **Flat**          | `.btn-base` → `.btn-flat-surface` (+ semantic `btn-*`) — `tailwind.flat-buttons.mjs` | 2D, bordered, subdued; default for **inline**, **toolbar**, and **list** actions when Flat theme is on. |
 
 #### 6.2a Flat theme: layered model (machine source: `tailwind.config.js`)
 
 Flat controls share one interaction recipe; **only palette + label color** change per role.
 
-| Layer | Class | Responsibility |
-|--------|--------|----------------|
-| **Geometry** | `.btn-base` | Pill shape, padding, border radius, disabled opacity, default outer shadow, `cursor-pointer`, press nudge (`active:scale-x`). |
-| **Surface + motion** | `.btn-flat-surface` | `@apply btn-base`. **Default** gradient on `::before` and **hover/active** gradient on `::after` (opacity crossfade ~220ms). Both layers use **`z-index: -1`** so they paint **behind** all in-flow label text (including unwrapped text nodes—no `z-index` on icons only). **Active** swaps `::after` to the darker `--bf-*` pair. Border on the root tracks hover/active. **Focus**: `ring-2` + `--bf-ring`. **`prefers-reduced-motion`**: shorten the opacity transition. |
-| **Embossed neutral** | `.btn-empty` | **Not** `.btn-flat-surface`: **inset** emboss on the root; same **`::before` / `::after`** stacking (`z-index: -1`) for hover/active fills. |
-| **Role / hue** | `btn-get`, `btn-update`, `btn-delete`, … | Set **text color** + `--bf-*` tokens. Most hues use a **shared generator** (`100/50` → `200/100` → `300/200` stops, borders `400`→`600`→`700`). **CTA** (`btn-insert`, `btn-reaction-active`) and **soft** rows (`btn-market`, `btn-action`, `btn-reaction`) set custom `--bf-*` explicitly. |
+| Layer                | Class                                    | Responsibility                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| -------------------- | ---------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Geometry**         | `.btn-base`                              | Pill shape, padding, border radius, disabled opacity, default outer shadow, `cursor-pointer`, press nudge (`active:scale-x`).                                                                                                                                                                                                                                                                                                                                                |
+| **Surface + motion** | `.btn-flat-surface`                      | `@apply btn-base`. **Default** gradient on `::before` and **hover/active** gradient on `::after` (opacity crossfade ~220ms). Both layers use **`z-index: -1`** so they paint **behind** all in-flow label text (including unwrapped text nodes—no `z-index` on icons only). **Active** swaps `::after` to the darker `--bf-*` pair. Border on the root tracks hover/active. **Focus**: `ring-2` + `--bf-ring`. **`prefers-reduced-motion`**: shorten the opacity transition. |
+| **Embossed neutral** | `.btn-empty`                             | **Not** `.btn-flat-surface`: **inset** emboss on the root; same **`::before` / `::after`** stacking (`z-index: -1`) for hover/active fills.                                                                                                                                                                                                                                                                                                                                  |
+| **Role / hue**       | `btn-get`, `btn-update`, `btn-delete`, … | Set **text color** + `--bf-*` tokens. Most hues use a **shared generator** (`100/50` → `200/100` → `300/200` stops, borders `400`→`600`→`700`). **CTA** (`btn-insert`, `btn-reaction-active`) and **soft** rows (`btn-market`, `btn-action`, `btn-reaction`) set custom `--bf-*` explicitly.                                                                                                                                                                                 |
 
 **Do not** use Tailwind’s `enabled:hover:*` on flat primitives for fills that must apply to **`<a>` / `RouterLink`**: `:enabled` does not match anchors. The flat layer uses **`:hover:not(:disabled)`** etc. on `.btn-flat-surface` so buttons and links behave the same.
 
@@ -89,34 +89,34 @@ Application code and **`Button.vue`** / **`IconButton.vue`** should use **semant
 
 **Prefer canonical role names** in new code; **legacy synonyms** stay in the map so older templates keep working.
 
-| Action role | Canonical class | Typical use |
-|-------------|-----------------|-------------|
-| **Read / open / navigate** | `ui-btn--read` | Links, “open”, export/download, neutral forward. *Legacy:* `ui-btn--get`. |
-| **Edit / apply** | `ui-btn--edit` | Save profile, merge, apply recommendation. *Legacy:* `ui-btn--update`. |
-| **Create / add** | `ui-btn--create` | Submit new entity, add row. Often paired with **`ui-btn--primary`** (same mapping). |
-| **Delete / remove** | `ui-btn--delete` | Destructive removal. *Synonym:* `ui-btn--remove` (same mapping). |
-| **Dismiss / cancel** | `ui-btn--cancel` | Close modal, secondary “no”. *Synonym:* `ui-btn--dismiss`. |
-| **Toolbar / filter chrome** | `ui-btn--toolbar` | Compact toggles, reset filters (`Button variant="toolbar"`). *Legacy:* `ui-btn--aqua-default`. |
-| **Neutral / low emphasis** | `ui-btn--empty` | Deselect, clipboard, embossed default. |
-| **Neutral (tinted)** | `ui-btn--neutral`, `neutral-muted`, `neutral-slate` | Secondary pills, back links, muted actions. |
-| **Pagination back / forward** | `ui-btn--back`, `ui-btn--forward` | Prev/next page. *Legacy:* `previous`, `next`. |
-| **Continue** | `ui-btn--continue` | Resume flow (maps like read/get). |
-| **Market / commerce** | `ui-btn--market` | Rose / market styling. |
-| **History / versions** | `ui-btn--history` | Version list, purple history. |
-| **Insert / inline add** | `ui-btn--insert` | Add to selection, blue insert. |
-| **Link / outbound** | `ui-btn--link` | Blue link-style. |
-| **Accent (activity)** | `ui-btn--accent-purple` | “View activity” and similar. |
-| **Generic action (pink)** | `ui-btn--action` | Promotional / emphasis CTA. |
-| **Reply** | `ui-btn--reply` | Thread reply. |
-| **Reaction** | `ui-btn--reaction`, `reaction-active` | Toggle reactions. |
-| **Auth** | `ui-btn--auth-login`, `auth-signup` | Login vs signup emphasis. |
-| **Status** | `ui-btn--success`, `error`, `warning`, `danger-rose` | Result / alert / destructive rose. |
-| **Revert** | `ui-btn--revert` | Undo to old revision (yellow). |
-| **Study grading** | `study-correct`, `study-wrong` | Flashcard / Lingo result. |
-| **Warning shades** | `warning`, `warning-orange`, `warning-yellow` | Caution; yellow uses flat **`btn-revert`** vs amber **`btn-warning`**. |
-| **Sort / palette** | `sort-*`, `palette-*` | Rotating colors in lists (see map). |
-| **Segmented group** | `ui-btn--group-item` | Inner segment (with `.btn-group` / `.btn-group-forced`). |
-| **Special** | `ui-btn--fab`, `toggle` | FAB and toggle have extra rules in the same Tailwind layer. |
+| Action role                   | Canonical class                                      | Typical use                                                                                    |
+| ----------------------------- | ---------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| **Read / open / navigate**    | `ui-btn--read`                                       | Links, “open”, export/download, neutral forward. _Legacy:_ `ui-btn--get`.                      |
+| **Edit / apply**              | `ui-btn--edit`                                       | Save profile, merge, apply recommendation. _Legacy:_ `ui-btn--update`.                         |
+| **Create / add**              | `ui-btn--create`                                     | Submit new entity, add row. Often paired with **`ui-btn--primary`** (same mapping).            |
+| **Delete / remove**           | `ui-btn--delete`                                     | Destructive removal. _Synonym:_ `ui-btn--remove` (same mapping).                               |
+| **Dismiss / cancel**          | `ui-btn--cancel`                                     | Close modal, secondary “no”. _Synonym:_ `ui-btn--dismiss`.                                     |
+| **Toolbar / filter chrome**   | `ui-btn--toolbar`                                    | Compact toggles, reset filters (`Button variant="toolbar"`). _Legacy:_ `ui-btn--aqua-default`. |
+| **Neutral / low emphasis**    | `ui-btn--empty`                                      | Deselect, clipboard, embossed default.                                                         |
+| **Neutral (tinted)**          | `ui-btn--neutral`, `neutral-muted`, `neutral-slate`  | Secondary pills, back links, muted actions.                                                    |
+| **Pagination back / forward** | `ui-btn--back`, `ui-btn--forward`                    | Prev/next page. _Legacy:_ `previous`, `next`.                                                  |
+| **Continue**                  | `ui-btn--continue`                                   | Resume flow (maps like read/get).                                                              |
+| **Market / commerce**         | `ui-btn--market`                                     | Rose / market styling.                                                                         |
+| **History / versions**        | `ui-btn--history`                                    | Version list, purple history.                                                                  |
+| **Insert / inline add**       | `ui-btn--insert`                                     | Add to selection, blue insert.                                                                 |
+| **Link / outbound**           | `ui-btn--link`                                       | Blue link-style.                                                                               |
+| **Accent (activity)**         | `ui-btn--accent-purple`                              | “View activity” and similar.                                                                   |
+| **Generic action (pink)**     | `ui-btn--action`                                     | Promotional / emphasis CTA.                                                                    |
+| **Reply**                     | `ui-btn--reply`                                      | Thread reply.                                                                                  |
+| **Reaction**                  | `ui-btn--reaction`, `reaction-active`                | Toggle reactions.                                                                              |
+| **Auth**                      | `ui-btn--auth-login`, `auth-signup`                  | Login vs signup emphasis.                                                                      |
+| **Status**                    | `ui-btn--success`, `error`, `warning`, `danger-rose` | Result / alert / destructive rose.                                                             |
+| **Revert**                    | `ui-btn--revert`                                     | Undo to old revision (yellow).                                                                 |
+| **Study grading**             | `study-correct`, `study-wrong`                       | Flashcard / Lingo result.                                                                      |
+| **Warning shades**            | `warning`, `warning-orange`, `warning-yellow`        | Caution; yellow uses flat **`btn-revert`** vs amber **`btn-warning`**.                         |
+| **Sort / palette**            | `sort-*`, `palette-*`                                | Rotating colors in lists (see map).                                                            |
+| **Segmented group**           | `ui-btn--group-item`                                 | Inner segment (with `.btn-group` / `.btn-group-forced`).                                       |
+| **Special**                   | `ui-btn--fab`, `toggle`                              | FAB and toggle have extra rules in the same Tailwind layer.                                    |
 
 **Rules**
 
@@ -152,14 +152,14 @@ Application code and **`Button.vue`** / **`IconButton.vue`** should use **semant
 
 ## 8. Layout & shells
 
-| Class | Use |
-|-------|-----|
-| `.app-header-bar` | Sticky top chrome (logo, nav, auth). |
-| `.page-loading-overlay` | Full-screen loading veil. |
-| `.auth-page-shell` / `.auth-form-card` / `.auth-glass-card` | Login, signup, password flows. |
-| `.toolbar-panel` + `.toolbar-row` | Search + filter toolbars. |
-| `.page-section-title` | In-page H1-style tool titles. |
-| `.empty-state-panel` | Zero-state blocks. |
+| Class                                                       | Use                                  |
+| ----------------------------------------------------------- | ------------------------------------ |
+| `.app-header-bar`                                           | Sticky top chrome (logo, nav, auth). |
+| `.page-loading-overlay`                                     | Full-screen loading veil.            |
+| `.auth-page-shell` / `.auth-form-card` / `.auth-glass-card` | Login, signup, password flows.       |
+| `.toolbar-panel` + `.toolbar-row`                           | Search + filter toolbars.            |
+| `.page-section-title`                                       | In-page H1-style tool titles.        |
+| `.empty-state-panel`                                        | Zero-state blocks.                   |
 
 ---
 

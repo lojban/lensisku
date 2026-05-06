@@ -1,6 +1,5 @@
 <template>
-   <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24">
-
+  <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24">
     <circle cx="12" cy="12" r="10" fill="#FFD700" stroke="#DBA800" stroke-width="2" />
 
     <path d="M8 14s1.5 2 4 2 4-2 4-2" stroke="#DB8800" stroke-width="2" fill="none" />
@@ -16,7 +15,5 @@
       stroke-width="3"
       stroke-linecap="round"
     />
-     </svg
-  >
+  </svg>
 </template>
-

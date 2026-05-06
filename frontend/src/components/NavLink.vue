@@ -1,10 +1,11 @@
 <template>
-   <component
+  <component
     :is="isActive ? 'span' : 'RouterLink'"
     :to="to"
     :class="['nav-link', isActive ? 'nav-link-active' : 'text-nav-link']"
-    > <slot /> </component
   >
+    <slot />
+  </component>
 </template>
 
 <script setup lang="ts">
@@ -62,4 +63,3 @@ const isActive = computed(() => {
   cursor: default;
 }
 </style>
-

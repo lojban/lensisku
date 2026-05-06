@@ -1,7 +1,5 @@
 <template>
-
   <div ref="contentRef" :key="contentKey" class="mathjax-content break-words" />
-
 </template>
 
 <script setup lang="ts">
@@ -412,4 +410,3 @@ onBeforeUnmount(() => {
   margin-left: 0.2em;
 }
 </style>
-

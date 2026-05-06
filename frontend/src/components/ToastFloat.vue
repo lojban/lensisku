@@ -1,11 +1,7 @@
 <template>
   <Teleport to="body">
     <Transition name="toast-float">
-      <div
-        v-if="show"
-        class="toast-float-shell"
-        role="presentation"
-      >
+      <div v-if="show" class="toast-float-shell" role="presentation">
         <div
           class="toast-float-panel"
           :class="panelVariantClass"
@@ -33,16 +29,10 @@
                   <X class="h-4 w-4" aria-hidden="true" />
                 </button>
               </div>
-              <div
-                v-if="$slots.extra || extraComponent"
-                class="toast-float-extra"
-              >
+
+              <div v-if="$slots.extra || extraComponent" class="toast-float-extra">
                 <slot name="extra">
-                  <component
-                    :is="extraComponent"
-                    v-if="extraComponent"
-                    v-bind="extraProps || {}"
-                  />
+                  <component :is="extraComponent" v-if="extraComponent" v-bind="extraProps || {}" />
                 </slot>
               </div>
             </div>
@@ -95,9 +85,7 @@ const emit = defineEmits(['close'])
 
 const show = ref(props.show)
 
-const iconComponent = computed(() =>
-  props.type === 'success' ? CheckCircle2 : CircleAlert
-)
+const iconComponent = computed(() => (props.type === 'success' ? CheckCircle2 : CircleAlert))
 
 const panelVariantClass = computed(() =>
   props.type === 'success' ? 'toast-float-panel--success' : 'toast-float-panel--error'

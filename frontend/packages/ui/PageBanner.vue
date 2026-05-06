@@ -1,7 +1,5 @@
 <template>
-  <div v-if="show" :class="bannerClasses" role="status">
-    <slot />
-  </div>
+  <div v-if="show" :class="bannerClasses" role="status"><slot /></div>
 </template>
 
 <script setup lang="ts">

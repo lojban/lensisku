@@ -24,6 +24,6 @@ defineEmits<{ click: [e: MouseEvent] }>()
 const ariaLabelComputed = computed(() => props.ariaLabel || undefined)
 
 const buttonClass = computed(() =>
-  ['icon-btn-ghost', props.compact && 'icon-btn-ghost--compact'].filter(Boolean).join(' '),
+  ['icon-btn-ghost', props.compact && 'icon-btn-ghost--compact'].filter(Boolean).join(' ')
 )
 </script>
