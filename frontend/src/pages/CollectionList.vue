@@ -3,7 +3,7 @@
 
   <div
     v-if="auth.state.isLoggedIn"
-    class="card-base card-compact card-streak mb-4 min-h-[11rem] p-4 sm:min-h-[13rem] sm:p-5"
+    class="card-base card-compact card-streak my-4 min-h-[11rem] p-3 sm:min-h-[13rem]"
   >
     <template v-if="!isLoadingStreak && streakData">
       <div class="card-streak-header">
@@ -35,8 +35,12 @@
             {{ day.reviews_count }}
           </div>
 
-          <div class="card-streak-day-points">
-            {{ t('collectionList.points', { count: day.points }) }}
+          <div
+            class="card-streak-day-points"
+            :title="t('collectionList.points', { count: day.points })"
+            :aria-label="t('collectionList.points', { count: day.points })"
+          >
+            {{ streakPointsEmoji(day.points) }}
           </div>
         </div>
       </div>
@@ -153,7 +157,7 @@
         "
       />
       <label
-        class="inline-flex items-center gap-2 self-end text-base font-medium text-gray-700 select-none cursor-pointer sm:self-auto"
+        class="inline-flex items-center gap-2 self-end text-sm text-gray-700 select-none cursor-pointer sm:self-auto"
       >
         <input v-model="hasFlashcardsOnly" type="checkbox" class="checkbox-toggle" />
         <span>{{ t('collectionList.onlyWithFlashcards') }}</span>
@@ -340,6 +344,15 @@ const VIEW_STORAGE_KEY = 'collections-view'
 const validView = (v) => (v === 'my' || v === 'public' ? v : null)
 
 const { t, locale, tm } = useI18n()
+
+/** Maps daily points to a threshold-based emoji indicator. */
+const streakPointsEmoji = (points: number): string => {
+  if (points <= 0) return '—'
+  if (points < 10) return '🟦'
+  if (points < 25) return '⭐'
+  if (points < 50) return '🔥'
+  return '🏆'
+}
 
 /** Gregorian weekdays (JS getDay 0=Sun..6=Sat): color lujvo from sampu vlaste (xunre…zirpu + dei). */
 const streakWeekdayShort = (isoDate: string) => {
