@@ -1,41 +1,41 @@
 <template>
-
   <div
     class="comment-item bg-white border rounded-lg p-3 my-2 hover:border-blue-300 transition-colors min-w-48"
     :data-comment-id="processedComment.comment_id"
   >
-
     <div
       v-if="showContext && (processedComment.definition || processedComment.valsi_id)"
       class="mb-2 text-sm text-gray-600 whitespace-nowrap overflow-hidden flex items-center"
     >
-       <SourceTypeBadge :type="processedComment.definition_id ? 'definition' : 'valsi'" />
+      <SourceTypeBadge :type="processedComment.definition_id ? 'definition' : 'valsi'" />
       <RouterLink
         v-if="processedComment.definition"
         :to="`/valsi/${processedComment.valsi_word}?highlight_definition_id=${processedComment.definition_id}`"
         class="hover:underline text-blue-700 font-medium ml-1.5 truncate inline-block max-w-[calc(100%-120px)]"
-        > <LazyMathJax :content="processedComment.definition" class="inline" /> </RouterLink
-      > <RouterLink
+      >
+        <LazyMathJax :content="processedComment.definition" class="inline" />
+      </RouterLink>
+      <RouterLink
         v-else-if="processedComment.valsi_id"
         :to="`/valsi/${processedComment.valsi_word}`"
         class="hover:underline text-blue-700 font-medium ml-1.5 truncate inline-block max-w-[calc(100%-120px)]"
-        > {{ processedComment.valsi_word || t('components.commentItem.untitledEntry') }}
-        </RouterLink
       >
+        {{ processedComment.valsi_word || t('components.commentItem.untitledEntry') }}
+      </RouterLink>
     </div>
-     <!-- Comment Header -->
+    <!-- Comment Header -->
     <div class="flex flex-col mb-2">
-
       <div class="flex items-start justify-between">
-         <!-- Left side: Profile image and basic info -->
+        <!-- Left side: Profile image and basic info -->
         <div class="flex items-start space-x-2">
-           <RouterLink :to="`/user/${processedComment.username}`" class="flex-shrink-0"
-            > <!-- Skeleton while loading -->
+          <RouterLink :to="`/user/${processedComment.username}`" class="flex-shrink-0">
+            <!-- Skeleton while loading -->
             <div
               v-show="isProfileImageLoading"
               class="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gray-200 animate-pulse border-2 border-white shadow-sm"
             ></div>
-             <!-- Actual image when loaded --> <img
+            <!-- Actual image when loaded -->
+            <img
               v-if="hasProfileImage"
               v-show="!isProfileImageLoading"
               :src="getProfileImageUrl(processedComment.username)"
@@ -43,146 +43,124 @@
               class="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover border-2 border-white shadow-sm"
               @load="handleImageLoad"
               @error="handleImageError"
-            /> <!-- Placeholder when no image -->
+            />
+            <!-- Placeholder when no image -->
             <div
               v-if="!hasProfileImage"
               v-show="!isProfileImageLoading"
               class="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-400"
             >
-               <User class="h-4 w-4 sm:h-6 sm:w-6" />
+              <User class="h-4 w-4 sm:h-6 sm:w-6" />
             </div>
-             </RouterLink
-          >
+          </RouterLink>
           <div class="flex-1 min-w-0">
-
             <div class="flex flex-wrap items-baseline gap-1.5">
-               <RouterLink
+              <RouterLink
                 :to="`/user/${processedComment.username}`"
                 class="text-sm font-medium text-gray-700 hover:text-blue-600 hover:underline truncate"
-                > {{ processedComment.username }} </RouterLink
               >
+                {{ processedComment.username }}
+              </RouterLink>
             </div>
 
-            <div class="text-xs text-gray-500"> {{ formatDate(processedComment.time) }} </div>
-
+            <div class="text-xs text-gray-500">{{ formatDate(processedComment.time) }}</div>
           </div>
-
         </div>
 
         <div class="flex flex-row items-center gap-3">
-           <RouterLink
+          <RouterLink
             :to="`/comments/?comment_id=${processedComment.parent_id}&scroll_to=${processedComment.comment_id}&valsi_id=${props.valsiId || 0}&definition_id=${props.definitionId || 0}`"
             class="text-sm text-gray-500 hover:text-blue-600 hover:underline break-all"
-            > #{{ processedComment.comment_num }} </RouterLink
           >
+            #{{ processedComment.comment_num }}
+          </RouterLink>
         </div>
-
       </div>
 
       <div class="mt-2">
-         <template v-if="processedComment.subject"
-          >
+        <template v-if="processedComment.subject">
           <h4 class="font-medium text-blue-700 text-sm sm:text-base">
-             <LazyMathJax
+            <LazyMathJax
               :content="processedComment.subject"
               :enable-markdown="true"
               class="inline"
             />
           </h4>
-           </template
-        >
+        </template>
       </div>
-
     </div>
 
     <div v-if="flatStyle && processedComment.parent_content" class="min-w-48 overflow-x-auto">
-
       <div class="mb-2 ml-6 pl-2 border rounded-md border-l-2 border-gray-300">
-         <RouterLink
+        <RouterLink
           :to="`/comments/?thread_id=${processedComment.thread_id}&comment_id=${processedComment.parent_id}&scroll_to=${processedComment.parent_id}&valsi_id=${valsiId || 0}&definition_id=${definitionId || 0}`"
           class="text-xs text-gray-600 hover:text-blue-500"
-          >
+        >
           <div class="text-sm">
-
             <div class="flex items-center gap-1 mb-1">
-               <span class="text-xs">{{ t('components.commentItem.replyingTo') }}</span
-              > #{{ processedComment.comment_num - 1 }}
+              <span class="text-xs">{{ t('components.commentItem.replyingTo') }}</span> #{{
+                processedComment.comment_num - 1
+              }}
             </div>
 
             <div class="italic prose prose-sm max-w-none [&_img]:max-h-48 [&_img]:object-contain">
-               <template v-for="(part, index) in processedComment.parent_content" :key="index"
-                >
+              <template v-for="(part, index) in processedComment.parent_content" :key="index">
                 <div v-if="['text', 'header'].includes(part.type)">
-                   <LazyMathJax :content="part.data" :enable-markdown="true" />
+                  <LazyMathJax :content="part.data" :enable-markdown="true" />
                 </div>
-                 </template
-              >
+              </template>
             </div>
-
           </div>
-           </RouterLink
-        >
+        </RouterLink>
       </div>
-
     </div>
 
     <div
       v-if="showParentInThread && processedComment.parent_content"
       class="min-w-48 overflow-x-auto"
     >
-
       <div class="pl-2 border rounded-md border-l-2 border-gray-300">
-         <RouterLink
+        <RouterLink
           :to="`/comments/?thread_id=${processedComment.thread_id}&comment_id=${processedComment.parent_id}&scroll_to=${processedComment.parent_id}&valsi_id=${valsiId || 0}&definition_id=${definitionId || 0}`"
           class="text-xs text-gray-600 hover:text-blue-500"
-          >
+        >
           <div class="text-sm">
-
             <div class="flex items-center gap-1 mb-1">
-               <span class="text-xs">{{ t('components.commentItem.parentComment') }}</span
-              > #{{ processedComment.comment_num - 1 }}
+              <span class="text-xs">{{ t('components.commentItem.parentComment') }}</span> #{{
+                processedComment.comment_num - 1
+              }}
             </div>
 
             <div class="italic prose prose-sm max-w-none [&_img]:max-h-48 [&_img]:object-contain">
-               <template v-for="(part, index) in processedComment.parent_content" :key="index"
-                >
+              <template v-for="(part, index) in processedComment.parent_content" :key="index">
                 <div v-if="['text', 'header'].includes(part.type)">
-                   <LazyMathJax :content="part.data" :enable-markdown="true" />
+                  <LazyMathJax :content="part.data" :enable-markdown="true" />
                 </div>
-                 </template
-              >
+              </template>
             </div>
-
           </div>
-           </RouterLink
-        >
+        </RouterLink>
       </div>
-
     </div>
-     <button
+    <button
       v-if="!flatStyle && processedComment.parent_id"
       class="text-gray-500 italic hover:text-blue-600 flex items-center text-xs mb-2"
       @click.stop="showParentInThread = !showParentInThread"
     >
-       <ArrowUp class="h-3 w-3" /> <span>{{ t('components.commentItem.showParent') }}</span
-      > </button
-    >
+      <ArrowUp class="h-3 w-3" /> <span>{{ t('components.commentItem.showParent') }}</span>
+    </button>
     <div class="min-w-48 overflow-x-auto">
-
       <div
         class="prose prose-sm max-w-none text-gray-700 mb-3 [&_img]:max-h-48 [&_img]:object-contain"
       >
-         <template v-for="(part, index) in processedComment.plain_content" :key="index"
-          > <LazyMathJax :content="part.data" :enable-markdown="true" /> </template
-        >
+        <template v-for="(part, index) in processedComment.plain_content" :key="index">
+          <LazyMathJax :content="part.data" :enable-markdown="true" />
+        </template>
       </div>
-
     </div>
-     <!-- Actions -->
+    <!-- Actions -->
     <div class="flex flex-wrap gap-2 justify-end">
-
-        <div class="flex items-center gap-3">
-
+      <div class="flex items-center gap-3">
         <div v-if="reactions.length" class="flex flex-wrap gap-1">
           <button
             v-for="reaction in reactions"
@@ -191,33 +169,33 @@
             :class="reaction.reacted ? 'ui-btn--reaction-active' : 'ui-btn--reaction'"
             @click.stop="handleReactionClick(reaction.reaction)"
           >
-             <span
+            <span
               class="inline-block text-base"
               :class="{ 'animate-emoji-rotate': reaction.reacted && reaction.isNew }"
-              > {{ reaction.reaction }} </span
-            > <span v-if="reaction.count > 0" class="text-sm font-bold"> {{ reaction.count }} </span
-            > </button
-          >
+            >
+              {{ reaction.reaction }}
+            </span>
+            <span v-if="reaction.count > 0" class="text-sm font-bold"> {{ reaction.count }} </span>
+          </button>
         </div>
 
         <div v-if="auth.state.isLoggedIn" class="relative shrink-0">
-           <button class="ui-btn--empty inline-flex items-center gap-2" @click.stop="showReactionPicker = !showReactionPicker">
-             <ReactionPlusIcon class="shrink-0" /> <span class="sr-only">{{
-              t('components.commentItem.addReaction')
-            }}</span
-            > </button
-          > <Teleport to="body"
-            >
+          <button
+            class="ui-btn--empty inline-flex items-center gap-2"
+            @click.stop="showReactionPicker = !showReactionPicker"
+          >
+            <ReactionPlusIcon class="shrink-0" />
+            <span class="sr-only">{{ t('components.commentItem.addReaction') }}</span>
+          </button>
+          <Teleport to="body">
             <div
               v-if="showReactionPicker"
               class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
               @click="showReactionPicker = false"
             >
-
               <div class="bg-white rounded-lg shadow-lg max-w-sm w-full m-4 p-2" @click.stop>
-
                 <div class="mb-2 px-1">
-                   <input
+                  <input
                     v-model="customEmoji"
                     :placeholder="t('components.commentItem.customEmojiPlaceholder')"
                     class="w-full px-3 py-2 border rounded text-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none"
@@ -229,19 +207,18 @@
                 </div>
 
                 <div class="grid grid-cols-5 auto-rows-fr gap-0">
-                   <button
+                  <button
                     v-for="emoji in emojiList"
                     :key="emoji.symbol"
                     class="group p-1 hover:bg-gray-100 rounded transition-colors"
                     :class="{ 'bg-blue-100': isReactionSelected(emoji.symbol) }"
                     @click="addReaction(emoji.symbol)"
                   >
-
                     <div class="flex flex-col items-center justify-between">
-                       <span class="text-base group-hover:scale-110 transition-transform mb-1">{{
+                      <span class="text-base group-hover:scale-110 transition-transform mb-1">{{
                         emoji.symbol
-                      }}</span
-                      > <span
+                      }}</span>
+                      <span
                         class="text-xs text-gray-600 text-center break-words"
                         :lang="locale"
                         style="hyphens: auto"
@@ -252,45 +229,33 @@
                         }}</span
                       >
                     </div>
-                     </button
-                  >
+                  </button>
                 </div>
-
               </div>
-
             </div>
-             </Teleport
-          >
+          </Teleport>
         </div>
-
       </div>
-       <button
+      <button
         v-if="auth.state.isLoggedIn"
         :disabled="isProcessing"
         class="gap-1.5 ui-btn--empty"
-        :class="[
-          processedComment.is_bookmarked
-            ? 'active'
-            : '',
-        ]"
+        :class="[processedComment.is_bookmarked ? 'active' : '']"
         @click.stop="handleBookmarkClick"
       >
-         <BookmarkCheck
+        <BookmarkCheck
           v-if="processedComment.is_bookmarked"
           class="h-5 w-5"
           :class="{ 'animate-bounce-once': isBookmarkAnimating }"
-        /> <Bookmark
-          v-else
-          class="h-5 w-5"
-          :class="{ 'animate-bounce-once': isBookmarkAnimating }"
-        /> <span class="hidden sm:inline">{{
+        />
+        <Bookmark v-else class="h-5 w-5" :class="{ 'animate-bounce-once': isBookmarkAnimating }" />
+        <span class="hidden sm:inline">{{
           processedComment.is_bookmarked
             ? t('components.commentItem.saved')
             : t('components.commentItem.save')
-        }}</span
-        >
-         </button
-      > <button
+        }}</span>
+      </button>
+      <button
         v-if="
           auth.state.isLoggedIn &&
           auth.state.username === processedComment.username &&
@@ -300,26 +265,23 @@
         :disabled="isProcessing"
         @click="handleDeleteClick"
       >
-         <Trash2 class="h-4 w-4" /> <span class="sr-only">{{
-          t('components.commentItem.delete')
-        }}</span
-        > </button
-      > <button
+        <Trash2 class="h-4 w-4" />
+        <span class="sr-only">{{ t('components.commentItem.delete') }}</span>
+      </button>
+      <button
         v-if="auth.state.isLoggedIn && replyEnabled"
         class="inline-flex items-center gap-2 ui-btn--reply"
         @click="handleReplyClick"
       >
-         <Reply class="w-5 h-5" /> <span
-          v-if="processedComment.total_replies > 0"
-          class="text-xs font-bold"
-          >{{ processedComment.total_replies }}</span
-        > <span>{{ t('components.commentItem.reply') }}</span
-        > </button
-      >
+        <Reply class="w-5 h-5" />
+        <span v-if="processedComment.total_replies > 0" class="text-xs font-bold">{{
+          processedComment.total_replies
+        }}</span>
+        <span>{{ t('components.commentItem.reply') }}</span>
+      </button>
     </div>
-
   </div>
-   <DeleteConfirmationModal
+  <DeleteConfirmationModal
     :show="showDeleteConfirm"
     :title="t('components.commentItem.deleteConfirmTitle')"
     :message="t('components.commentItem.deleteConfirmMessage')"
@@ -394,11 +356,13 @@ type ProcessedComment = CommentItemApiComment & {
   subject?: string
 }
 
-const processedComment = computed((): ProcessedComment => ({
-  ...props.comment,
-  plain_content: props.comment.content.filter((part) => part.type === 'text'),
-  subject: props.comment.content.find((part) => part.type === 'header')?.data,
-}))
+const processedComment = computed(
+  (): ProcessedComment => ({
+    ...props.comment,
+    plain_content: props.comment.content.filter((part) => part.type === 'text'),
+    subject: props.comment.content.find((part) => part.type === 'header')?.data,
+  })
+)
 const isBookmarkAnimating = ref(false)
 const showReactionPicker = ref(false)
 const showDeleteConfirm = ref(false)
@@ -837,4 +801,3 @@ const formatDate = (timestamp: number) => {
   }
 }
 </style>
-

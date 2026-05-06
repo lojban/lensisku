@@ -1,12 +1,13 @@
 <template>
-  <div class="semantic-graph-root flex min-h-0 min-w-0 w-full flex-1 flex-col gap-3 px-2 pb-3 pt-2 md:px-4">
+  <div
+    class="semantic-graph-root flex min-h-0 min-w-0 w-full flex-1 flex-col gap-3 px-2 pb-3 pt-2 md:px-4"
+  >
     <div class="shrink-0 space-y-3">
       <h1 class="text-lg font-semibold text-gray-900 md:text-xl">
         {{ t('semanticGraph.title') }}
       </h1>
-      <p class="text-sm text-gray-600">
-        {{ t('semanticGraph.description') }}
-      </p>
+
+      <p class="text-sm text-gray-600">{{ t('semanticGraph.description') }}</p>
 
       <form class="flex flex-col gap-2 sm:flex-row sm:items-center" @submit.prevent="onSearchEnter">
         <div class="sg-search-group flex min-w-0 flex-1 items-center gap-2">
@@ -26,14 +27,16 @@
             :title="t('semanticGraph.reset')"
             @click="onResetClick"
           >
-            <template #icon>
-              <RotateCcw :size="14" aria-hidden="true" />
-            </template>
+            <template #icon> <RotateCcw :size="14" aria-hidden="true" /> </template>
             {{ t('semanticGraph.reset') }}
           </Button>
         </div>
-        <div class="btn-group flex items-stretch" role="group"
-          :aria-label="t('semanticGraph.ioGroupLabel')">
+
+        <div
+          class="btn-group flex items-stretch"
+          role="group"
+          :aria-label="t('semanticGraph.ioGroupLabel')"
+        >
           <Button
             type="button"
             variant="read"
@@ -41,27 +44,28 @@
             :title="t('semanticGraph.export')"
             @click="exportGraphFile"
           >
-            <template #icon>
-              <Upload :size="14" aria-hidden="true" />
-            </template>
+            <template #icon> <Upload :size="14" aria-hidden="true" /> </template>
             {{ t('semanticGraph.export') }}
           </Button>
           <Button
             type="button"
             variant="insert"
-y            :title="t('semanticGraph.import')"
+            y
+            :title="t('semanticGraph.import')"
             @click="triggerImport"
           >
-            <template #icon>
-              <Download :size="14" aria-hidden="true" />
-            </template>
+            <template #icon> <Download :size="14" aria-hidden="true" /> </template>
             {{ t('semanticGraph.import') }}
           </Button>
-          <input ref="importInputRef" type="file" accept="application/json,.json" class="sr-only"
-            @change="onImportFile" />
+          <input
+            ref="importInputRef"
+            type="file"
+            accept="application/json,.json"
+            class="sr-only"
+            @change="onImportFile"
+          />
         </div>
       </form>
-
       <CombinedFilters
         v-model="combinedFiltersModel"
         v-model:graph-build-params="graphBuildParams"
@@ -71,9 +75,11 @@ y            :title="t('semanticGraph.import')"
         :semantic-graph-max-nodes="GRAPH_METRICS_MAX"
         class="w-full"
       />
-
-      <div v-if="graphError" class="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800"
-        role="alert">
+      <div
+        v-if="graphError"
+        class="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800"
+        role="alert"
+      >
         {{ graphError }}
       </div>
     </div>
@@ -89,7 +95,9 @@ y            :title="t('semanticGraph.import')"
       class="shrink-0 grid grid-cols-2 gap-3 rounded-lg bg-white p-3 shadow-sm sm:grid-cols-3 md:grid-cols-5"
     >
       <div class="flex min-w-0 flex-col">
-        <label class="filters-field-label" for="cf-sg-min-vote">{{ t('semanticGraph.minVote') }}</label>
+        <label class="filters-field-label" for="cf-sg-min-vote">{{
+          t('semanticGraph.minVote')
+        }}</label>
         <input
           id="cf-sg-min-vote"
           v-model.number="graphBuildParams.minVote"
@@ -99,8 +107,11 @@ y            :title="t('semanticGraph.import')"
           step="1"
         />
       </div>
+
       <div class="flex min-w-0 flex-col">
-        <label class="filters-field-label" for="cf-sg-limit">{{ t('semanticGraph.nodeLimit') }}</label>
+        <label class="filters-field-label" for="cf-sg-limit">{{
+          t('semanticGraph.nodeLimit')
+        }}</label>
         <input
           id="cf-sg-limit"
           v-model.number="graphBuildParams.graphLimit"
@@ -111,6 +122,7 @@ y            :title="t('semanticGraph.import')"
           step="1"
         />
       </div>
+
       <div class="flex min-w-0 flex-col">
         <label class="filters-field-label" for="cf-sg-k">{{ t('semanticGraph.kNeighbors') }}</label>
         <input
@@ -123,8 +135,11 @@ y            :title="t('semanticGraph.import')"
           step="1"
         />
       </div>
+
       <div class="flex min-w-0 flex-col">
-        <label class="filters-field-label" for="cf-sg-min-sim">{{ t('semanticGraph.minPairwiseSim') }}</label>
+        <label class="filters-field-label" for="cf-sg-min-sim">{{
+          t('semanticGraph.minPairwiseSim')
+        }}</label>
         <input
           id="cf-sg-min-sim"
           v-model.number="graphBuildParams.minPairwiseSim"
@@ -136,15 +151,11 @@ y            :title="t('semanticGraph.import')"
         />
       </div>
     </div>
-
-    <ModalComponent
-      :show="!!previewDef"
-      :title="previewModalTitle"
-      @close="previewDef = null"
-    >
+    <ModalComponent :show="!!previewDef" :title="previewModalTitle" @close="previewDef = null">
       <p v-if="previewDef?.type_name" class="mb-2 text-xs text-gray-500">
         {{ previewDef.type_name }}
       </p>
+
       <div class="text-sm prose prose-sm max-w-none text-gray-700">
         <LazyMathJax :content="previewDef?.definition ?? ''" />
       </div>
@@ -158,10 +169,15 @@ y            :title="t('semanticGraph.import')"
         {{ t('semanticGraph.openEntry') }}
       </a>
     </ModalComponent>
-
-    <div v-if="graphLoading" class="pointer-events-none fixed inset-0 z-30 flex items-center justify-center bg-white/40"
-      aria-busy="true" :aria-label="t('semanticGraph.loading')">
-      <div class="h-10 w-10 animate-spin rounded-full border-2 border-cornflower-500 border-t-transparent" />
+    <div
+      v-if="graphLoading"
+      class="pointer-events-none fixed inset-0 z-30 flex items-center justify-center bg-white/40"
+      aria-busy="true"
+      :aria-label="t('semanticGraph.loading')"
+    >
+      <div
+        class="h-10 w-10 animate-spin rounded-full border-2 border-cornflower-500 border-t-transparent"
+      />
     </div>
   </div>
 </template>
@@ -200,7 +216,10 @@ type SemanticGraphApiPayload = {
   edges: Array<{ source: string; target: string; similarity: number }>
 }
 
-useSeoHead({ title: computed(() => t('semanticGraph.title')), pathWithoutLocale: '/semantic-graph' })
+useSeoHead({
+  title: computed(() => t('semanticGraph.title')),
+  pathWithoutLocale: '/semantic-graph',
+})
 
 function querySearchToString(q: unknown): string {
   if (typeof q === 'string') return q
@@ -208,9 +227,7 @@ function querySearchToString(q: unknown): string {
   return ''
 }
 
-const searchQuery = ref(
-  normalizeSearchQuery(querySearchToString(route.query.search)) as string,
-)
+const searchQuery = ref(normalizeSearchQuery(querySearchToString(route.query.search)) as string)
 const languages = ref<
   Array<{ id: number; real_name: string; english_name: string; tag: string; lojban_name?: string }>
 >([])
@@ -351,7 +368,7 @@ function clearZoomRefetch() {
  *  ordering (first node = best match — the server surfaces the searched valsi first by design). */
 function pickAnchorNodeId(
   nodes: SemanticGraphApiPayload['nodes'],
-  searchTrim: string,
+  searchTrim: string
 ): string | null {
   if (nodes.length === 0) return null
   const q = searchTrim.trim().toLowerCase()
@@ -415,7 +432,7 @@ async function refetchAnchorForZoom() {
   graphLoading.value = true
   try {
     const res = await fetchSemanticGraph(
-      buildGraphParams({ preview: false, minSimilarityOverride: nextSim }),
+      buildGraphParams({ preview: false, minSimilarityOverride: nextSim })
     )
     if (seq !== anchorFetchSeq || !cy) return
     await renderGraph(res.data, 'anchor', q)
@@ -480,7 +497,7 @@ async function buildGraph() {
     const seq = ++anchorFetchSeq
     anchorRenderInProgress = true
     const res = await fetchSemanticGraph(
-      buildGraphParams({ preview: false, minSimilarityOverride: anchorActiveMinSim }),
+      buildGraphParams({ preview: false, minSimilarityOverride: anchorActiveMinSim })
     )
     if (seq !== anchorFetchSeq) return
     await renderGraph(res.data, 'anchor', q)
@@ -550,7 +567,7 @@ watch(
     searchQuery.value = fromRouteTrimmed
     cancelSearchDebounce()
     scheduleSearchBuild()
-  },
+  }
 )
 
 function onSearchEnter() {
@@ -567,9 +584,7 @@ async function onResetClick() {
   await loadPreviewGraph()
 }
 
-const isResetDisabled = computed(
-  () => graphMode.value === 'preview' && !searchQuery.value.trim(),
-)
+const isResetDisabled = computed(() => graphMode.value === 'preview' && !searchQuery.value.trim())
 
 /** FNV-1a 32-bit — stable, fast hash for palette picking from valsi text. */
 function hashString32(s: string): number {
@@ -644,11 +659,7 @@ function elementsFromApi(data: SemanticGraphApiPayload, anchorId: string | null)
   const nodes = data.nodes.map((n) => {
     const valsiKey = (n.word || n.label || n.id || '').trim()
     const displayLabel =
-      (n.word || '').trim() ||
-      (n.label || '')
-        .split(/\s*·\s*/)[0]
-        ?.trim() ||
-      n.id
+      (n.word || '').trim() || (n.label || '').split(/\s*·\s*/)[0]?.trim() || n.id
     const { bgColor, borderColor } = nodeColorsFromValsiKey(valsiKey)
     const isAnchor = anchorId != null && n.id === anchorId ? 'yes' : 'no'
     return {
@@ -665,8 +676,7 @@ function elementsFromApi(data: SemanticGraphApiPayload, anchorId: string | null)
     }
   })
   const edges = data.edges.map((e, i) => {
-    const touchAnchor =
-      anchorId != null && (e.source === anchorId || e.target === anchorId)
+    const touchAnchor = anchorId != null && (e.source === anchorId || e.target === anchorId)
     return {
       data: {
         id: `e${i}-${e.source}-${e.target}`,
@@ -683,7 +693,7 @@ function elementsFromApi(data: SemanticGraphApiPayload, anchorId: string | null)
 async function renderGraph(
   apiData: SemanticGraphApiPayload,
   mode: 'preview' | 'anchor',
-  anchorSearchTrim = '',
+  anchorSearchTrim = ''
 ) {
   if (!cy || !cyContainerRef.value) return
   detachCyZoomHandlers()
@@ -934,7 +944,6 @@ onBeforeUnmount(() => {
   }
   cyReady.value = false
 })
-
 </script>
 
 <style scoped>

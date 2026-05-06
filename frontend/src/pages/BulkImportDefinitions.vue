@@ -1,18 +1,17 @@
 <template>
-
-  <h1 class="page-section-title"> {{ t('bulkImport.title') }} </h1>
+  <h1 class="page-section-title">{{ t('bulkImport.title') }}</h1>
 
   <div class="flex justify-between my-4">
-     <RouterLink to="/bulk-import/clients" class="ui-btn--accent-purple"
-      > {{ t('bulkImport.viewPastImportsLink') }} </RouterLink
-    >
+    <RouterLink to="/bulk-import/clients" class="ui-btn--accent-purple">
+      {{ t('bulkImport.viewPastImportsLink') }}
+    </RouterLink>
   </div>
 
   <div class="bg-white shadow rounded-lg p-4 sm:p-6">
     <div class="mb-6">
-       <label class="block text-base sm:text-sm font-medium text-gray-700 mb-2"
-        > {{ t('bulkImport.uploadCsvLabel') }} </label
-      >
+      <label class="block text-base sm:text-sm font-medium text-gray-700 mb-2">
+        {{ t('bulkImport.uploadCsvLabel') }}
+      </label>
       <div
         ref="dropZoneRef"
         class="mt-1 flex justify-center px-3 sm:px-6 pt-4 sm:pt-5 pb-4 sm:pb-6 border-2 border-dashed rounded-md transition-colors"
@@ -21,177 +20,156 @@
           'border-gray-300': !isOverDropZone,
         }"
       >
-
         <div class="space-y-1 text-center">
-           <ImagePlus class="mx-auto h-12 w-12 text-gray-300" :stroke-width="1" />
+          <ImagePlus class="mx-auto h-12 w-12 text-gray-300" :stroke-width="1" />
           <div class="flex justify-center text-sm text-gray-600">
-             <label
-              for="file-upload"
-              class="file-input-label"
-              > <span>{{ t('bulkImport.uploadFile') }}</span
-              > <input
+            <label for="file-upload" class="file-input-label">
+              <span>{{ t('bulkImport.uploadFile') }}</span>
+              <input
                 id="file-upload"
                 name="file-upload"
                 type="file"
                 class="sr-only"
                 accept=".csv"
                 @change="handleFileUpload"
-              /> </label
-            >
-            <p class="pl-1"> {{ t('bulkImport.dragAndDrop') }} </p>
-
+              />
+            </label>
+            <p class="pl-1">{{ t('bulkImport.dragAndDrop') }}</p>
           </div>
-          <div v-if="csvFile" class="mt-2 text-sm text-gray-600">
 
+          <div v-if="csvFile" class="mt-2 text-sm text-gray-600">
             <div class="flex items-center justify-center space-x-2">
-               <span class="truncate max-w-[200px]">{{ csvFile.name }}</span
-              > <button type="button" class="text-red-500 hover:text-red-700" @click="clearFile">
-                 <svg
+              <span class="truncate max-w-[200px]">{{ csvFile.name }}</span>
+              <button type="button" class="text-red-500 hover:text-red-700" @click="clearFile">
+                <svg
                   xmlns="http://www.w3.org/2000/svg"
                   class="h-4 w-4"
                   viewBox="0 0 20 20"
                   fill="currentColor"
                 >
-
                   <path
                     fill-rule="evenodd"
                     d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
                     clip-rule="evenodd"
                   />
-                   </svg
-                > </button
-              >
+                </svg>
+              </button>
             </div>
-
           </div>
 
           <p class="text-xs text-gray-500 text-left space-y-1 mt-3">
-             <span class="font-medium block">{{ t('bulkImport.csvFormat.title') }}</span
-            > <span class="block">{{ t('bulkImport.csvFormat.lineDesc') }}</span
-            > <span class="block">{{ t('bulkImport.csvFormat.glossDesc') }}</span
-            > <span class="block">{{ t('bulkImport.csvFormat.meaningDesc') }}</span
-            > <span class="block">{{ t('bulkImport.csvFormat.example') }}</span
-            > <code class="block bg-gray-50 p-2 rounded text-[11px] break-all"
-              > bajra,$x_1$ runs,Describes fast or slow running,jogging.;slow run,sprint;fast run
-              </code
-            >
+            <span class="font-medium block">{{ t('bulkImport.csvFormat.title') }}</span>
+            <span class="block">{{ t('bulkImport.csvFormat.lineDesc') }}</span>
+            <span class="block">{{ t('bulkImport.csvFormat.glossDesc') }}</span>
+            <span class="block">{{ t('bulkImport.csvFormat.meaningDesc') }}</span>
+            <span class="block">{{ t('bulkImport.csvFormat.example') }}</span>
+            <code class="block bg-gray-50 p-2 rounded text-[11px] break-all">
+              bajra,$x_1$ runs,Describes fast or slow running,jogging.;slow run,sprint;fast run
+            </code>
           </p>
-
         </div>
-
       </div>
-
     </div>
+
     <div class="mb-6">
-       <label for="language" class="block text-sm font-medium text-gray-700 mb-2"
-        > {{ t('bulkImport.targetLanguageLabel') }} </label
-      > <select
+      <label for="language" class="block text-sm font-medium text-gray-700 mb-2">
+        {{ t('bulkImport.targetLanguageLabel') }}
+      </label>
+      <select
         id="language"
         v-model="selectedLanguage"
         class="input-field w-full h-8"
         :disabled="isLoading"
       >
-
-        <option value=""> {{ t('bulkImport.selectLanguagePlaceholder') }} </option>
+        <option value="">{{ t('bulkImport.selectLanguagePlaceholder') }}</option>
 
         <option v-for="lang in languages" :key="lang.id" :value="lang.id">
-           {{ lang.real_name }}
+          {{ lang.real_name }}
         </option>
-         </select
-      >
+      </select>
     </div>
+
     <div class="flex flex-col sm:flex-row justify-end gap-2 mt-4 sm:mt-0">
-       <button
+      <button
         type="button"
         class="ui-btn--create w-full sm:w-auto order-1"
         :disabled="!canSubmit || isLoading || isCancelling"
         @click="submitImport"
       >
-         <span v-if="isLoading"> {{ t('bulkImport.processing') }} </span> <span v-else
-          > {{ t('bulkImport.importButton') }} </span
-        > </button
-      > <button
+        <span v-if="isLoading"> {{ t('bulkImport.processing') }} </span>
+        <span v-else> {{ t('bulkImport.importButton') }} </span>
+      </button>
+      <button
         v-if="importProcessId"
         type="button"
         class="ui-btn--neutral w-full sm:w-auto order-2"
         :disabled="isCancelling"
         @click="cancelJob"
       >
-         <span v-if="isCancelling"> {{ t('bulkImport.cancelling') }} </span> <span v-else
-          > {{ t('bulkImport.cancelButton') }} </span
-        > </button
-      >
+        <span v-if="isCancelling"> {{ t('bulkImport.cancelling') }} </span>
+        <span v-else> {{ t('bulkImport.cancelButton') }} </span>
+      </button>
     </div>
+
     <div v-if="storedClientId" class="my-2">
-
       <div class="bg-blue-50 border-l-4 border-blue-400 p-3 sm:p-4">
-
         <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
           <div class="space-y-2">
-
             <p class="text-sm text-blue-700">
-               <span class="block sm:inline">{{ t('bulkImport.clientIdLabel') }}</span
-              > <span class="flex items-center gap-2 mt-1 sm:mt-0"
-                > <strong class="break-all text-xs sm:text-sm font-mono">{{
-                  storedClientId
-                }}</strong
-                > <ClipboardButton
+              <span class="block sm:inline">{{ t('bulkImport.clientIdLabel') }}</span>
+              <span class="flex items-center gap-2 mt-1 sm:mt-0">
+                <strong class="break-all text-xs sm:text-sm font-mono">{{ storedClientId }}</strong>
+                <ClipboardButton
                   :content="storedClientId"
                   :title="t('bulkImport.copyClientIdTitle')"
-                /> </span
-              >
+                />
+              </span>
             </p>
 
-            <p class="text-xs text-blue-600"> {{ t('bulkImport.saveIdNote') }} </p>
-
+            <p class="text-xs text-blue-600">{{ t('bulkImport.saveIdNote') }}</p>
           </div>
+
           <div class="flex items-center">
-             <button
+            <button
               class="ui-btn--delete w-full sm:w-auto"
               :disabled="isDeleting"
               @click="deleteByClientId"
             >
-               <span v-if="isDeleting">{{ t('bulkImport.deleting') }}</span
-              > <span v-else>{{ t('bulkImport.deleteDefinitionsButton') }}</span
-              > </button
-            >
+              <span v-if="isDeleting">{{ t('bulkImport.deleting') }}</span>
+              <span v-else>{{ t('bulkImport.deleteDefinitionsButton') }}</span>
+            </button>
           </div>
-
         </div>
-
       </div>
-
     </div>
+
     <div v-if="!storedClientId" class="mb-6 mt-6">
-
       <div class="bg-gray-100 p-3 sm:p-4 rounded-lg border-2 border-gray-200 shadow-sm space-y-3">
-
         <div class="flex justify-between items-center">
-           <label class="block text-base sm:text-sm font-semibold text-gray-700"
-            > {{ t('bulkImport.deleteByIdTitle') }} </label
-          >
+          <label class="block text-base sm:text-sm font-semibold text-gray-700">
+            {{ t('bulkImport.deleteByIdTitle') }}
+          </label>
         </div>
 
         <div class="flex flex-col sm:flex-row gap-2 sm:gap-4 w-full">
-           <input
+          <input
             v-model="inputClientId"
             type="text"
             :placeholder="t('bulkImport.pasteClientIdPlaceholder')"
             class="input-field flex-1 text-xs sm:text-sm font-mono"
-          /> <button
+          />
+          <button
             class="ui-btn--delete w-full sm:w-auto"
             :disabled="!inputClientId || isDeleting"
             @click="deleteByClientId"
           >
-             <span v-if="isDeleting">{{ t('bulkImport.deleting') }}</span
-            > <span v-else>{{ t('bulkImport.deleteButton') }}</span
-            > </button
-          >
+            <span v-if="isDeleting">{{ t('bulkImport.deleting') }}</span>
+            <span v-else>{{ t('bulkImport.deleteButton') }}</span>
+          </button>
         </div>
-
       </div>
-
     </div>
+
     <div class="mb-6 space-y-4">
       <div
         v-if="statusMessage"
@@ -201,16 +179,14 @@
           'bg-red-50 border-red-400 text-red-700': statusType === 'error',
         }"
       >
-
-        <p class="text-sm"> {{ statusMessage }} </p>
-
+        <p class="text-sm">{{ statusMessage }}</p>
       </div>
+
       <div
-        ref="logContainerRef"
         v-if="logs.length"
+        ref="logContainerRef"
         class="border rounded-lg p-3 sm:p-4 bg-gray-50 max-h-48 overflow-y-auto text-sm sm:text-base"
       >
-
         <div
           v-for="(log, index) in logs.slice().reverse()"
           :key="index"
@@ -221,24 +197,19 @@
             'text-red-600': log.type === 'error',
           }"
         >
-           <span class="font-medium">{{ log.current }}. </span> <span class="font-medium"
-            >Processed</span
-          > <span v-if="log.word" class="font-medium">: </span> <span
+          <span class="font-medium">{{ log.current }}. </span>
+          <span class="font-medium">Processed</span>
+          <span v-if="log.word" class="font-medium">: </span>
+          <span
             v-if="log.word"
             class="font-medium text-slate-600 p-1 border border-slate-300 rounded"
             >{{ log.word }}</span
-          > <span v-if="log.details" class="text-gray-600 text-xs block mt-1">{{
-            log.details
-          }}</span
           >
+          <span v-if="log.details" class="text-gray-600 text-xs block mt-1">{{ log.details }}</span>
         </div>
-
       </div>
-
     </div>
-
   </div>
-
 </template>
 
 <script setup lang="ts">
@@ -258,7 +229,7 @@ import ClipboardButton from '@/components/ClipboardButton.vue'
 import { useSeoHead } from '@/composables/useSeoHead'
 import { useError } from '@/composables/useError'
 
-const { t, locale } = useI18n()
+const { t } = useI18n()
 const { showError } = useError()
 
 useSeoHead({ title: t('bulkImport.title'), robots: 'noindex, nofollow' })
@@ -286,7 +257,7 @@ const loadLanguages = async () => {
   try {
     const response = await getLanguages()
     languages.value = response.data
-  } catch (error) {
+  } catch {
     showError(t('bulkImport.status.loadLanguagesError'))
   }
 }
@@ -407,19 +378,6 @@ const submitImport = async () => {
                 current: 0,
                 word: '',
               })
-            } else if (event.type === 'progress') {
-              logs.value.push({
-                type: event.success ? 'success' : 'error',
-                details: event.success
-                  ? t('bulkImport.status.importedSuccess')
-                  : `${t('bulkImport.status.importError')} ${event.error}`,
-                current: event.current,
-                word: event.word,
-              })
-
-              if (logs.value.length > MAX_LOG_LINES) {
-                logs.value.shift()
-              }
             } else if (event.type === 'start') {
               logs.value.push({
                 type: 'info',
@@ -600,4 +558,3 @@ onBeforeUnmount(() => {
   }
 })
 </script>
-

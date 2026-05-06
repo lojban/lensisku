@@ -1,19 +1,13 @@
 <template>
-
   <div ref="rootRef" :class="rootClass">
-
     <div aria-haspopup="true" :aria-expanded="open" @click="open = !open">
-       <slot name="trigger" :open="open"
-        > <button
-          type="button"
-          class="dropdown-ellipsis-trigger"
-        >
-           <span v-if="triggerLabel" class="text-sm text-gray-600">{{ triggerLabel }}</span
-          > <EllipsisVertical class="w-4 h-4" /> </button
-        > </slot
-      >
+      <slot name="trigger" :open="open">
+        <button type="button" class="dropdown-ellipsis-trigger">
+          <span v-if="triggerLabel" class="text-sm text-gray-600">{{ triggerLabel }}</span>
+          <EllipsisVertical class="w-4 h-4" />
+        </button>
+      </slot>
     </div>
-
     <Teleport to="body">
       <div
         v-if="open"
@@ -22,21 +16,17 @@
         :style="panelStyle"
         @click="open = false"
       >
-        <div class="w-fit whitespace-nowrap">
-          <slot />
-        </div>
+        <div class="w-fit whitespace-nowrap"><slot /></div>
       </div>
     </Teleport>
-
   </div>
-
 </template>
 
 <script setup lang="ts">
 import { ref, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import { EllipsisVertical } from 'lucide-vue-next'
 
-defineOptions({ inheritAttrs: false })
+defineOptions({ name: 'UiDropdown', inheritAttrs: false })
 
 defineProps({
   /** Optional label shown next to the three-dot icon when using default trigger */
@@ -148,4 +138,3 @@ onUnmounted(() => {
   window.removeEventListener('scroll', onViewportChange, true)
 })
 </script>
-

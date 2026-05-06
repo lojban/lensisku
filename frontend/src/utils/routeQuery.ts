@@ -8,4 +8,3 @@ export function queryStr(v: string | string[] | null | undefined): string {
 export function paramStr(v: string | string[] | null | undefined): string {
   return queryStr(v)
 }
-

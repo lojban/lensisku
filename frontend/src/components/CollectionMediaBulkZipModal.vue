@@ -5,25 +5,29 @@
     @close="close"
   >
     <div class="space-y-4 text-sm text-gray-700">
-      <p class="font-medium text-gray-900">
-        {{ t('collectionCustomTextBulk.mediaBulkIntro') }}
-      </p>
+      <p class="font-medium text-gray-900">{{ t('collectionCustomTextBulk.mediaBulkIntro') }}</p>
+
       <ol class="list-decimal space-y-2 pl-5 text-gray-700">
         <li>{{ t('collectionCustomTextBulk.mediaBulkStep1') }}</li>
+
         <li>{{ t('collectionCustomTextBulk.mediaBulkStep2') }}</li>
+
         <li>{{ t('collectionCustomTextBulk.mediaBulkStep3') }}</li>
+
         <li>{{ t('collectionCustomTextBulk.mediaBulkStep4') }}</li>
       </ol>
+
       <p class="text-xs font-medium text-gray-800">
         {{ t('collectionCustomTextBulk.mediaBulkManifestExampleCaption') }}
       </p>
+
       <pre
         class="overflow-x-auto rounded-md border border-gray-200 bg-gray-50 p-3 text-xs text-gray-800 whitespace-pre-wrap"
         >{{ MANIFEST_JSON_EXAMPLE }}</pre
       >
-      <p class="text-xs text-gray-600">
-        {{ t('collectionCustomTextBulk.mediaBulkLimits') }}
-      </p>
+
+      <p class="text-xs text-gray-600">{{ t('collectionCustomTextBulk.mediaBulkLimits') }}</p>
+
       <p class="text-xs text-gray-600">
         {{
           t('collectionCustomTextBulk.mediaBulkMultipartHint', {
@@ -49,20 +53,10 @@
     </div>
     <template #footer>
       <div class="flex flex-wrap justify-end gap-2">
-        <button
-          type="button"
-          class="ui-btn--neutral-muted"
-          :disabled="uploading"
-          @click="close"
-        >
+        <button type="button" class="ui-btn--neutral-muted" :disabled="uploading" @click="close">
           {{ t('collectionCustomTextBulk.importCancel') }}
         </button>
-        <button
-          type="button"
-          class="ui-btn--create"
-          :disabled="!file || uploading"
-          @click="submit"
-        >
+        <button type="button" class="ui-btn--create" :disabled="!file || uploading" @click="submit">
           {{
             uploading
               ? t('collectionCustomTextBulk.mediaBulkUploading')
@@ -126,9 +120,7 @@ watch(
 function isLikelyZipFile(f: File): boolean {
   const n = f.name.toLowerCase()
   return (
-    n.endsWith('.zip') ||
-    f.type === 'application/zip' ||
-    f.type === 'application/x-zip-compressed'
+    n.endsWith('.zip') || f.type === 'application/zip' || f.type === 'application/x-zip-compressed'
   )
 }
 

@@ -47,9 +47,7 @@ export const useLanguageSelection = () => {
     }
 
     const defaultLanguages = availableLanguages
-      .filter((lang) =>
-        (defaultFilterLanguageTags as readonly string[]).includes(lang.tag)
-      )
+      .filter((lang) => (defaultFilterLanguageTags as readonly string[]).includes(lang.tag))
       .map((lang) => lang.id)
     saveLanguages(defaultLanguages)
     return defaultLanguages

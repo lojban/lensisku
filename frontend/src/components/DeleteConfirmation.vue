@@ -40,24 +40,21 @@ function handleKeydown(e) {
 </script>
 
 <template>
-
   <div
     v-if="show"
     class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
-    @keydown.escape="handleKeydown"
     tabindex="-1"
     role="dialog"
     aria-modal="true"
+    @keydown.escape="handleKeydown"
   >
-
     <div class="bg-white rounded-lg p-6 max-w-md w-full">
+      <h3 class="text-lg font-medium mb-4">{{ translatedTitle }}</h3>
 
-      <h3 class="text-lg font-medium mb-4"> {{ translatedTitle }} </h3>
-
-      <p class="text-gray-600 mb-6"> {{ translatedMessage }} </p>
+      <p class="text-gray-600 mb-6">{{ translatedMessage }}</p>
 
       <div class="sr-only" aria-live="polite">
-         {{
+        {{
           isDeleting
             ? t('deleteConfirmation.deletionInProgress')
             : t('deleteConfirmation.readyForDeletion')
@@ -65,16 +62,13 @@ function handleKeydown(e) {
       </div>
 
       <div class="flex justify-end gap-3">
-         <button class="ui-btn--cancel" @click="$emit('cancel')">
-           {{ t('deleteConfirmation.cancel') }} </button
-        > <button :disabled="isDeleting" class="ui-btn--delete" @click="$emit('confirm')">
-           {{ isDeleting ? t('deleteConfirmation.deleting') : t('deleteConfirmation.delete') }} </button
-        >
+        <button class="ui-btn--cancel" @click="$emit('cancel')">
+          {{ t('deleteConfirmation.cancel') }}
+        </button>
+        <button :disabled="isDeleting" class="ui-btn--delete" @click="$emit('confirm')">
+          {{ isDeleting ? t('deleteConfirmation.deleting') : t('deleteConfirmation.delete') }}
+        </button>
       </div>
-
     </div>
-
   </div>
-
 </template>
-

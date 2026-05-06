@@ -1,5 +1,3 @@
 <template>
-  <div class="auth-glass-card">
-    <slot />
-  </div>
+  <div class="auth-glass-card"><slot /></div>
 </template>

@@ -1,11 +1,11 @@
 <template>
-   <button
+  <button
     class="inline-flex items-center justify-center ui-btn--empty"
     :title="title"
     @click.stop="copyToClipboard"
   >
-     <ClipboardCopy class="w-4 h-4" /> </button
-  >
+    <ClipboardCopy class="w-4 h-4" />
+  </button>
 </template>
 
 <script setup lang="ts">
@@ -44,4 +44,3 @@ const copyToClipboard = async () => {
   }
 }
 </script>
-

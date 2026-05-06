@@ -1,42 +1,40 @@
 <template>
-
   <div>
-
     <div class="flex items-center justify-between">
-       <label class="block text-sm font-medium text-blue-700"
-        > {{ label || t('soundUpload.sound') }} </label
-      > <button
+      <label class="block text-sm font-medium text-blue-700">
+        {{ label || t('soundUpload.sound') }}
+      </label>
+      <button
         v-if="modelValue || loadedSound"
         type="button"
         class="text-sm text-red-600 hover:text-red-700"
         @click="handleRemove"
       >
-         {{ t('soundUpload.removeSound') }} </button
-      > <span v-else-if="note" class="text-xs text-gray-500"> {{ note }} </span>
+        {{ t('soundUpload.removeSound') }}
+      </button>
+      <span v-else-if="note" class="text-xs text-gray-500"> {{ note }} </span>
     </div>
-     <!-- Sound Preview -->
+    <!-- Sound Preview -->
     <div
       v-if="modelValue || loadedSound"
       class="relative flex flex-col items-center mt-2 p-4 border rounded-lg bg-gray-50"
     >
-
       <div class="flex items-center gap-4 mb-2">
-         <Volume2 class="h-8 w-8 text-blue-500" /> <span class="text-sm text-gray-600">{{
-          fileName || 'Custom Audio'
-        }}</span
-        >
+        <Volume2 class="h-8 w-8 text-blue-500" />
+        <span class="text-sm text-gray-600">{{ fileName || 'Custom Audio' }}</span>
       </div>
-       <audio controls :src="audioUrl" class="w-full h-10" />
+      <audio controls :src="audioUrl" class="w-full h-10" />
     </div>
-     <!-- No sound: choose Upload or Record -->
+    <!-- No sound: choose Upload or Record -->
     <div v-if="!modelValue && !loadedSound" class="mt-2 space-y-3">
-       <!-- Tabs: Upload | Record | Generate (voices: keep in sync with src/utils/kitten_tts.rs voice_aliases) -->
+      <!-- Tabs: Upload | Record | Generate (voices: keep in sync with src/utils/kitten_tts.rs voice_aliases) -->
+
       <div
         class="flex flex-wrap rounded-lg border border-gray-200 p-1 bg-gray-50 gap-1"
         role="tablist"
         aria-label="Add sound by upload, record, or generate"
       >
-         <button
+        <button
           type="button"
           role="tab"
           :aria-selected="inputMode === 'upload'"
@@ -48,8 +46,9 @@
           ]"
           @click="inputMode = 'upload'"
         >
-           <Upload class="h-4 w-4 shrink-0" /> {{ t('soundUpload.uploadTab') }} </button
-        > <button
+          <Upload class="h-4 w-4 shrink-0" /> {{ t('soundUpload.uploadTab') }}
+        </button>
+        <button
           type="button"
           role="tab"
           :aria-selected="inputMode === 'record'"
@@ -59,10 +58,11 @@
               ? 'bg-white text-blue-600 shadow-sm'
               : 'text-gray-600 hover:text-gray-900',
           ]"
-          @click="inputMode = 'record'; recordingError = ''"
+          @click="setRecordMode"
         >
-           <Mic class="h-4 w-4 shrink-0" /> {{ t('soundUpload.recordTab') }} </button
-        > <button
+          <Mic class="h-4 w-4 shrink-0" /> {{ t('soundUpload.recordTab') }}
+        </button>
+        <button
           type="button"
           role="tab"
           :aria-selected="inputMode === 'generate'"
@@ -74,10 +74,10 @@
           ]"
           @click="onSelectGenerateTab"
         >
-           <Sparkles class="h-4 w-4 shrink-0" /> {{ t('soundUpload.generateTab') }} </button
-        >
+          <Sparkles class="h-4 w-4 shrink-0" /> {{ t('soundUpload.generateTab') }}
+        </button>
       </div>
-       <!-- Upload panel -->
+      <!-- Upload panel -->
       <div
         v-show="inputMode === 'upload'"
         ref="dropZoneRef"
@@ -87,39 +87,37 @@
           'border-gray-300': !isOverDropZone,
         }"
       >
-
         <div class="space-y-1 text-center">
-           <Upload class="mx-auto h-12 w-12 text-gray-300" :stroke-width="1" />
+          <Upload class="mx-auto h-12 w-12 text-gray-300" :stroke-width="1" />
           <div class="flex flex-wrap justify-center gap-x-1 text-sm text-gray-600">
-             <label
+            <label
               class="relative cursor-pointer rounded-md font-medium text-blue-600 hover:text-blue-500"
-              > <span>{{ t('soundUpload.uploadPrompt') }}</span
-              > <input
+            >
+              <span>{{ t('soundUpload.uploadPrompt') }}</span>
+              <input
                 type="file"
                 class="sr-only"
                 accept="audio/mpeg,audio/mp3,audio/ogg,audio/webm"
                 @change="handleFileSelect"
-              /> </label
-            >
+              />
+            </label>
             <p>{{ t('soundUpload.dragDrop') }}</p>
-
           </div>
 
-          <p class="text-xs text-gray-500"> {{ t('soundUpload.fileTypes') }} </p>
-
+          <p class="text-xs text-gray-500">{{ t('soundUpload.fileTypes') }}</p>
         </div>
-
       </div>
-       <!-- Record panel -->
+      <!-- Record panel -->
       <div
         v-show="inputMode === 'record'"
         class="border border-gray-200 rounded-lg p-4 bg-gray-50/50"
       >
-         <!-- Permission / not started --> <template v-if="!isRecording && !recordedBlob"
-          >
-          <p class="text-sm text-gray-600 mb-3"> {{ t('soundUpload.recordHint') }} </p>
-           <div class="flex w-full justify-center">
-             <Button
+        <!-- Permission / not started -->
+        <template v-if="!isRecording && !recordedBlob">
+          <p class="text-sm text-gray-600 mb-3">{{ t('soundUpload.recordHint') }}</p>
+
+          <div class="flex w-full justify-center">
+            <Button
               variant="danger-rose"
               size="lg"
               class="w-full sm:w-auto"
@@ -127,107 +125,95 @@
               :disabled="isRequestingMic"
               @click="startRecording"
             >
-               <template #icon>
-                <Mic v-if="!isRequestingMic" class="h-5 w-5 shrink-0" />
-              </template>
+              <template #icon> <Mic v-if="!isRequestingMic" class="h-5 w-5 shrink-0" /> </template>
               {{
                 isRequestingMic ? t('soundUpload.requestingMic') : t('soundUpload.startRecording')
-              }} </Button
-            >
+              }}
+            </Button>
           </div>
+
           <p v-if="recordingError" class="mt-2 text-sm text-red-600" role="alert">
-             {{ recordingError }}
+            {{ recordingError }}
           </p>
-           </template
-        > <!-- Recording in progress --> <template v-else-if="isRecording"
-          >
+        </template>
+        <!-- Recording in progress -->
+        <template v-else-if="isRecording">
           <div class="flex items-center justify-center gap-3 py-2">
-             <span class="relative flex h-3 w-3" aria-hidden="true"
-              > <span
+            <span class="relative flex h-3 w-3" aria-hidden="true">
+              <span
                 class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"
-              /> <span class="relative inline-flex rounded-full h-3 w-3 bg-red-500" /> </span
-            > <span class="text-sm font-medium text-gray-700 tabular-nums"
-              > {{ t('soundUpload.recordingTime', { seconds: recordingSeconds }) }} </span
-            >
+              />
+              <span class="relative inline-flex rounded-full h-3 w-3 bg-red-500" />
+            </span>
+            <span class="text-sm font-medium text-gray-700 tabular-nums">
+              {{ t('soundUpload.recordingTime', { seconds: recordingSeconds }) }}
+            </span>
           </div>
-           <div class="mt-3 flex w-full justify-center">
-             <Button variant="cancel" size="lg" class="w-full sm:w-auto" @click="stopRecording">
-               <template #icon>
-                <Square class="h-5 w-5 shrink-0" />
-              </template>
-              {{ t('soundUpload.stopRecording') }} </Button
-            >
-          </div> </template
-        > <!-- Recorded preview: use or re-record --> <template v-else-if="recordedBlob"
-          >
+
+          <div class="mt-3 flex w-full justify-center">
+            <Button variant="cancel" size="lg" class="w-full sm:w-auto" @click="stopRecording">
+              <template #icon> <Square class="h-5 w-5 shrink-0" /> </template>
+              {{ t('soundUpload.stopRecording') }}
+            </Button>
+          </div>
+        </template>
+        <!-- Recorded preview: use or re-record -->
+        <template v-else-if="recordedBlob">
           <div class="space-y-3">
-             <audio :src="recordedPreviewUrl" controls class="w-full h-10" />
+            <audio :src="recordedPreviewUrl" controls class="w-full h-10" />
             <div
               class="flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-center sm:gap-3"
             >
-               <Button
-                variant="insert"
-                size="lg"
-                class="w-full sm:w-auto"
-                @click="useRecording"
-              >
-                 <template #icon>
-                  <Check class="h-5 w-5 shrink-0" aria-hidden="true" />
-                </template>
-                {{ t('soundUpload.useRecording') }} </Button
-              > <Button
-                variant="cancel"
-                size="lg"
-                class="w-full sm:w-auto"
-                @click="discardRecording"
-              >
-                 <template #icon>
+              <Button variant="insert" size="lg" class="w-full sm:w-auto" @click="useRecording">
+                <template #icon> <Check class="h-5 w-5 shrink-0" aria-hidden="true" /> </template>
+                {{ t('soundUpload.useRecording') }}
+              </Button>
+              <Button variant="cancel" size="lg" class="w-full sm:w-auto" @click="discardRecording">
+                <template #icon>
                   <RotateCcw class="h-5 w-5 shrink-0" aria-hidden="true" />
                 </template>
-                {{ t('soundUpload.reRecord') }} </Button
-              >
+                {{ t('soundUpload.reRecord') }}
+              </Button>
             </div>
-
           </div>
-           </template
-        >
+        </template>
       </div>
-       <!-- Generate panel (Kitten TTS) -->
+      <!-- Generate panel (Kitten TTS) -->
       <div
         v-show="inputMode === 'generate'"
         class="border border-gray-200 rounded-lg p-4 bg-gray-50/50 space-y-3"
       >
-         <p class="text-sm text-gray-600"> {{ t('soundUpload.generateHint') }} </p>
+        <p class="text-sm text-gray-600">{{ t('soundUpload.generateHint') }}</p>
+
         <div>
-           <label class="block text-sm font-medium text-gray-700 mb-1"
-            >{{ t('soundUpload.generateTextLabel') }}</label
-          > <textarea
+          <label class="block text-sm font-medium text-gray-700 mb-1">{{
+            t('soundUpload.generateTextLabel')
+          }}</label>
+          <textarea
             v-model="generateText"
             rows="3"
             class="textarea-field w-full text-sm"
             :disabled="isGenerating"
           />
         </div>
+
         <div>
-           <label class="block text-sm font-medium text-gray-700 mb-1"
-            >{{ t('soundUpload.voiceLabel') }}</label
-          > <select
+          <label class="block text-sm font-medium text-gray-700 mb-1">{{
+            t('soundUpload.voiceLabel')
+          }}</label>
+          <select
             v-model="selectedVoice"
             class="input-field w-full text-sm"
             :disabled="isGenerating"
           >
-
-            <option v-for="v in KITTEN_VOICES" :key="v" :value="v">
-               {{ v }}
-            </option>
-             </select
-          >
+            <option v-for="v in KITTEN_VOICES" :key="v" :value="v">{{ v }}</option>
+          </select>
         </div>
-         <p v-if="generateError" class="text-sm text-red-600" role="alert">
-           {{ generateError }}
-        </p>
-         <div class="flex w-full justify-center">
-           <Button
+
+        <p v-if="generateError" class="text-sm text-red-600" role="alert">{{ generateError }}</p>
+
+        <div class="flex w-full justify-center">
+          <Button
             variant="insert"
             size="lg"
             class="w-full sm:w-auto"
@@ -235,20 +221,13 @@
             :disabled="isGenerating || !generateText.trim()"
             @click="runKittenGenerate"
           >
-             <template #icon>
-              <Sparkles v-if="!isGenerating" class="h-5 w-5 shrink-0" />
-            </template>
-            {{
-              isGenerating ? t('soundUpload.generating') : t('soundUpload.generateButton')
-            }} </Button
-          >
+            <template #icon> <Sparkles v-if="!isGenerating" class="h-5 w-5 shrink-0" /> </template>
+            {{ isGenerating ? t('soundUpload.generating') : t('soundUpload.generateButton') }}
+          </Button>
         </div>
       </div>
-
     </div>
-
   </div>
-
 </template>
 
 <script setup lang="ts">
@@ -605,6 +584,11 @@ const handleFileSelect = (event) => {
   }
 }
 
+const setRecordMode = () => {
+  inputMode.value = 'record'
+  recordingError.value = ''
+}
+
 watch(
   () => props.modelValue,
   (newValue) => {
@@ -657,4 +641,3 @@ onUnmounted(() => {
   }
 })
 </script>
-

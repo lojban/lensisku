@@ -1,10 +1,12 @@
 <template>
-   <TabbedPageHeader
+  <TabbedPageHeader
     :tabs="tabs"
     :active-tab="activeTab"
     :page-title="activeTab === 'users' ? t('userList.users') : t('userList.roleManagement')"
     @tab-click="handleTabClick"
-  /> <!-- Users Tab Content --> <UserListTab
+  />
+  <!-- Users Tab Content -->
+  <UserListTab
     v-if="activeTab === 'users'"
     :user-list="userList"
     :total="total"
@@ -18,16 +20,18 @@
     :role-filter="roleFilter"
     :sort-by="sortBy"
     :sort-order="sortOrder"
-    @update:search-query="searchQuery = normalizeSearchQuery(String($event)) as string; updateSearch()"
-    @update:role-filter="roleFilter = $event; updateSearch()"
-    @update:sort-by="sortBy = $event; updateSearch()"
-    @update:sort-order="sortOrder = $event; updateSearch()"
-    @updateSearch="updateSearch"
-    @clearSearch="clearSearch"
-    @prevPage="prevPage"
-    @nextPage="nextPage"
-    @viewUser="viewUser"
-  /> <!-- Roles Tab Content --> <RoleManagementTab
+    @update:search-query="handleSearchQueryUpdate"
+    @update:role-filter="handleRoleFilterUpdate"
+    @update:sort-by="handleSortByUpdate"
+    @update:sort-order="handleSortOrderUpdate"
+    @update-search="updateSearch"
+    @clear-search="clearSearch"
+    @prev-page="prevPage"
+    @next-page="nextPage"
+    @view-user="viewUser"
+  />
+  <!-- Roles Tab Content -->
+  <RoleManagementTab
     v-if="activeTab === 'roles' && hasManageRolesPermission"
     :roles="roles"
     :available-permissions="permissions"
@@ -36,12 +40,14 @@
     :selected-permission-map="selectedPermissionMap"
     @update:new-role-name="newRoleName = $event"
     @update:selected-permission="handleUpdateSelectedPermission"
-    @createRole="handleCreateRole"
-    @deleteRole="handleDeleteRole"
-    @addPermission="handleAddPermission"
-    @deletePermission="handleDeletePermission"
-    @togglePermission="handleTogglePermission"
-  /> <!-- Confirmation Modals (remain in the parent) --> <DeleteConfirmationModal
+    @create-role="handleCreateRole"
+    @delete-role="handleDeleteRole"
+    @add-permission="handleAddPermission"
+    @delete-permission="handleDeletePermission"
+    @toggle-permission="handleTogglePermission"
+  />
+  <!-- Confirmation Modals (remain in the parent) -->
+  <DeleteConfirmationModal
     :show="showDeletePermissionConfirm"
     :title="t('roleManagement.deletePermissionConfirmTitle')"
     :message="
@@ -53,7 +59,8 @@
     :is-deleting="isDeletingPermission"
     @confirm="performDeletePermission(permissionToDelete.roleName, permissionToDelete.permission)"
     @cancel="showDeletePermissionConfirm = false"
-  /> <DeleteConfirmationModal
+  />
+  <DeleteConfirmationModal
     :show="showDeleteRoleConfirm"
     :title="t('roleManagement.deleteRoleConfirmTitle')"
     :message="t('roleManagement.deleteRoleConfirmMessage', { roleName: roleToDelete })"
@@ -71,7 +78,6 @@ import { useRouter, useRoute } from 'vue-router'
 
 import { listUsers, getRoles, getPermissions, createRole, updateRole, deleteRole } from '@/api'
 import DeleteConfirmationModal from '@/components/DeleteConfirmation.vue'
-import PaginationComponent from '@/components/PaginationComponent.vue'
 import TabbedPageHeader from '@/components/TabbedPageHeader.vue'
 import RoleManagementTab from '@/components/users/RoleManagementTab.vue'
 import UserListTab from '@/components/users/UserListTab.vue'
@@ -85,7 +91,7 @@ const router = useRouter()
 const route = useRoute()
 const auth = useAuth()
 const { showError, clearError } = useError()
-const { t, locale } = useI18n()
+const { t } = useI18n()
 
 // LocalStorage keys
 const STORAGE_KEY_PREFIX = 'userList_'
@@ -207,6 +213,26 @@ const fetchUsers = async () => {
     isLoading.value = false
     isSearching.value = false
   }
+}
+
+const handleSearchQueryUpdate = (val: string) => {
+  searchQuery.value = normalizeSearchQuery(String(val)) as string
+  updateSearch()
+}
+
+const handleRoleFilterUpdate = (val: string) => {
+  roleFilter.value = val
+  updateSearch()
+}
+
+const handleSortByUpdate = (val: string) => {
+  sortBy.value = val
+  updateSearch()
+}
+
+const handleSortOrderUpdate = (val: string) => {
+  sortOrder.value = val
+  updateSearch()
 }
 
 const updateSearch = () => {
@@ -449,4 +475,3 @@ onMounted(async () => {
   }
 })
 </script>
-

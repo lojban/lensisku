@@ -3,13 +3,10 @@
     <template #header>
       <h3 class="text-xl font-bold">{{ t('addAllToCollection.modalTitle') }}</h3>
     </template>
-
     <AlertComponent type="warning" class="mb-3">
       {{ t('addAllToCollection.warningMessage') }}
     </AlertComponent>
-
     <LoadingSpinner v-if="isLoading" variant="inline" class="py-4" />
-
     <div v-else>
       <div v-if="collections.length > 0" class="flex justify-center mb-4">
         <IconButton
@@ -35,8 +32,7 @@
           :disabled="isSubmitting"
           class="w-full px-3 py-2 text-left text-sm rounded-md flex items-center justify-between group transition-colors"
           :class="{
-            'bg-indigo-100 hover:bg-indigo-200':
-              selectedCollectionId === collection.collection_id,
+            'bg-indigo-100 hover:bg-indigo-200': selectedCollectionId === collection.collection_id,
             'hover:bg-gray-100': selectedCollectionId !== collection.collection_id,
           }"
           @click="selectCollection(collection.collection_id)"
@@ -71,11 +67,7 @@
           <label class="block text-xs font-medium text-gray-700 mb-1">
             {{ t('collectionWidget.descriptionLabel') }}
           </label>
-          <textarea
-            v-model="newCollection.description"
-            rows="2"
-            class="textarea-field"
-          />
+          <textarea v-model="newCollection.description" rows="2" class="textarea-field" />
         </div>
 
         <div class="flex items-center space-x-2">
@@ -91,10 +83,7 @@
         </div>
 
         <div class="mt-2 flex flex-col gap-2">
-          <div
-            v-if="isCreating"
-            class="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden"
-          >
+          <div v-if="isCreating" class="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden">
             <div class="h-full w-1/3 bg-indigo-500 rounded-full progress-indeterminate" />
           </div>
 
@@ -127,29 +116,18 @@
         :placeholder="t('collectionWidget.notesPlaceholder')"
         class="textarea-field"
       />
-
       <div class="mt-2 flex flex-col gap-2">
         <p v-if="progressText" class="text-xs text-gray-500">{{ progressText }}</p>
-        <div
-          v-if="isSubmitting"
-          class="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden"
-        >
+
+        <div v-if="isSubmitting" class="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden">
           <div class="h-full w-1/3 bg-indigo-500 rounded-full progress-indeterminate" />
         </div>
 
         <div class="flex justify-end gap-2">
-          <button
-            class="ui-btn--cancel"
-            :disabled="isSubmitting"
-            @click="cancelConfirm"
-          >
+          <button class="ui-btn--cancel" :disabled="isSubmitting" @click="cancelConfirm">
             {{ t('collectionWidget.cancel') }}
           </button>
-          <button
-            class="ui-btn--insert"
-            :disabled="isSubmitting"
-            @click="confirmAddAll"
-          >
+          <button class="ui-btn--insert" :disabled="isSubmitting" @click="confirmAddAll">
             {{ t('addAllToCollection.confirmButton') }}
           </button>
         </div>
@@ -162,11 +140,7 @@
 import { ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
-import {
-  api,
-  bulkAddDefinitionsToCollection,
-  getCollections,
-} from '@/api'
+import { api, bulkAddDefinitionsToCollection, getCollections } from '@/api'
 import AlertComponent from '@/components/AlertComponent.vue'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import ModalComponent from '@/components/ModalComponent.vue'

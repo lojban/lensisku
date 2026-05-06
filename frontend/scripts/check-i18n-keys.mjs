@@ -169,7 +169,7 @@ function main() {
       .map((m) => m.code)
       .join(', ')
     console.error(
-      `i18n check failed for: ${failed}. Add keys to src/locales/en.json and/or the overlay locale files (jbo.json, ru.json, ja.json, zh.json) as in src/i18n.ts.`,
+      `i18n check failed for: ${failed}. Add keys to src/locales/en.json and/or the overlay locale files (jbo.json, ru.json, ja.json, zh.json) as in src/i18n.ts.`
     )
   }
   process.exit(exitCode)

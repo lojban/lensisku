@@ -1,67 +1,52 @@
 <template>
-
-  <div
-    class="surface-comment-form comment-item"
-  >
-
+  <div class="surface-comment-form comment-item">
     <div class="border-b border-gray-100 last:border-0">
-
       <form @submit.prevent="handleSubmit">
-
         <div v-if="showSubjectField || !isReply" class="mb-2">
-
           <div class="flex justify-between items-center">
-             <input
+            <input
               ref="subjectInputRef"
               v-model="form.subject"
               type="text"
               :placeholder="t('components.commentForm.subjectPlaceholder')"
               class="input-field w-full text-lg bg-transparent placeholder-gray-500 focus:outline-none"
-            /> <button
+            />
+            <button
               v-if="isReply"
               type="button"
               class="ml-2 text-sm text-gray-500 hover:text-gray-700 focus:outline-none"
               @click="showSubjectField = false"
             >
-               {{ t('components.commentForm.hideSubject') }} </button
-            >
+              {{ t('components.commentForm.hideSubject') }}
+            </button>
           </div>
-
         </div>
 
         <div ref="editor" class="milkdown-editor z-index-1" />
 
         <div class="flex items-center justify-end mt-1">
-
           <div class="flex items-center space-x-3">
-             <!-- <button v-if="isReply && !showSubjectField" type="button"
+            <!-- <button v-if="isReply && !showSubjectField" type="button"
               @click="showSubjectField = true; nextTick(() => subjectInputRef?.focus())"
               class="text-sm text-gray-500 hover:text-gray-700 focus:outline-none inline-flex items-center gap-1 mr-2">
               <Plus class="w-4 h-4" />
               {{ t('components.commentForm.addSubject') }}
-            </button> --> <button
+            </button> -->
+            <button
               type="submit"
               :disabled="isSubmitting || characterCount > 10280"
               class="inline-flex items-center ui-btn--insert text-sm"
             >
-
               <div class="flex items-center">
-                 <Loader v-if="isSubmitting" class="animate-spin -ml-1 mr-2 h-4 w-4" /> {{
-                  submitButtonText
-                }}
+                <Loader v-if="isSubmitting" class="animate-spin -ml-1 mr-2 h-4 w-4" />
+                {{ submitButtonText }}
               </div>
-               </button
-            >
+            </button>
           </div>
-
         </div>
-
       </form>
-
     </div>
-
   </div>
-
 </template>
 
 <script setup lang="ts">
@@ -70,7 +55,6 @@ import { editorViewCtx } from '@milkdown/core'
 import { Loader } from 'lucide-vue-next'
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { insert } from '@milkdown/utils'
-import TurndownService from 'turndown'
 import '@milkdown/crepe/theme/common/style.css'
 import '@milkdown/crepe/theme/frame.css'
 import { useI18n } from 'vue-i18n'
@@ -85,8 +69,6 @@ const MAX_PAYLOAD_SIZE = 5 * 1024 * 1024
 
 const editor = ref(null)
 let crepe = null
-const turndownService = new TurndownService()
-let handlePaste = null
 /** Cleanup for Space-exits-link keydown listener (remove on unmount). */
 let spaceExitLinkCleanup = null
 
@@ -326,4 +308,3 @@ milkdown-slash-menu {
   }
 }
 </style>
-

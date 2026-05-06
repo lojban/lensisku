@@ -2,7 +2,7 @@ import { jwtDecode } from 'jwt-decode'
 
 interface DecodedToken {
   exp: number
-  [key: string]: any
+  [key: string]: unknown
 }
 
 interface AuthInstance {

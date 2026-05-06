@@ -15,9 +15,8 @@
       class="mobile-nav-row"
       @click="$emit('close')"
     >
-      <Users class="h-5 w-5" /> {{
-        auth.state.authorities?.includes('manage_roles') ? t('nav.iamUsers') : t('nav.users')
-      }}
+      <Users class="h-5 w-5" />
+      {{ auth.state.authorities?.includes('manage_roles') ? t('nav.iamUsers') : t('nav.users') }}
     </NavLink>
     <NavLink to="/languages" class="mobile-nav-row" @click="$emit('close')">
       <Globe class="h-5 w-5" /> {{ t('nav.languages') }}

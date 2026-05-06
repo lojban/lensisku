@@ -1,5 +1,5 @@
 <template>
-   <RouterLink
+  <RouterLink
     :to="href"
     class="lingo-sidebar-item flex items-center font-medium transition-colors"
     :class="[
@@ -12,12 +12,10 @@
           ? ''
           : 'text-slate-600 hover:bg-slate-100',
     ]"
-    > <component
-      :is="iconComponent"
-      :class="horizontal ? 'h-5 w-5 shrink-0' : 'h-8 w-8 shrink-0'"
-    /> <span>{{ label }}</span
-    > </RouterLink
   >
+    <component :is="iconComponent" :class="horizontal ? 'h-5 w-5 shrink-0' : 'h-8 w-8 shrink-0'" />
+    <span>{{ label }}</span>
+  </RouterLink>
 </template>
 
 <script setup lang="ts">
@@ -53,4 +51,3 @@ const iconComponent = computed(() => {
   return map[props.icon] || BookOpen
 })
 </script>
-

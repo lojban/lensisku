@@ -12,9 +12,8 @@
           {{ t('components.tiktoknu.collectionReel.backToCollection') }}
         </RouterLink>
       </div>
-      <div class="absolute top-4 right-4 z-30">
-        <LanguageSelector />
-      </div>
+
+      <div class="absolute top-4 right-4 z-30"><LanguageSelector /></div>
       <CollectionReelCard
         v-for="item in reelItems"
         :key="item.item_id"
@@ -25,24 +24,23 @@
         v-if="reelLoading && reelItems.length === 0"
         class="h-dvh max-h-dvh w-full flex shrink-0 items-center justify-center gap-2"
       >
-        <Loader2 class="h-6 w-6 animate-spin" />
-        <span>{{ t('components.tiktoknu.loading') }}</span>
+        <Loader2 class="h-6 w-6 animate-spin" /> <span>{{ t('components.tiktoknu.loading') }}</span>
       </div>
+
       <div
         v-else-if="!reelLoading && reelItems.length === 0 && !reelHasMore"
         class="h-dvh max-h-dvh w-full flex shrink-0 items-center justify-center px-6 text-center text-white/80"
       >
         {{ t('components.tiktoknu.collectionReel.empty') }}
       </div>
+
       <div
         v-if="reelLoading && reelItems.length > 0"
         class="h-24 w-full flex items-center justify-center gap-2 text-white/70"
       >
-        <Loader2 class="h-5 w-5 animate-spin" />
-        <span>{{ t('components.tiktoknu.loading') }}</span>
+        <Loader2 class="h-5 w-5 animate-spin" /> <span>{{ t('components.tiktoknu.loading') }}</span>
       </div>
     </template>
-
     <template v-else>
       <div class="absolute top-4 right-4 z-30 flex flex-col items-end gap-2">
         <button
@@ -61,8 +59,7 @@
         @like="toggleLike(article)"
       />
       <div v-if="loading" class="h-screen w-full flex items-center justify-center gap-2">
-        <Loader2 class="h-6 w-6 animate-spin" />
-        <span>{{ t('components.tiktoknu.loading') }}</span>
+        <Loader2 class="h-6 w-6 animate-spin" /> <span>{{ t('components.tiktoknu.loading') }}</span>
       </div>
       <ModalComponent :show="showLikes" class="mt-16" @close="showLikes = false">
         <LikesPanel
@@ -75,7 +72,6 @@
         />
       </ModalComponent>
     </template>
-
     <div ref="observerTarget" class="h-1 w-full mb-[10rem]" aria-hidden="true" />
   </div>
 </template>
@@ -103,7 +99,9 @@ const props = defineProps<{
 
 const { t } = useI18n()
 
-const isCollectionMode = computed(() => Boolean(props.collectionId && String(props.collectionId).trim()))
+const isCollectionMode = computed(() =>
+  Boolean(props.collectionId && String(props.collectionId).trim())
+)
 const collectionIdStr = computed(() => (props.collectionId ? String(props.collectionId) : ''))
 
 const collectionTitle = ref('')
@@ -142,7 +140,7 @@ async function fetchMoreReels() {
       per_page: PER_PAGE,
       has_card_image_only: true,
     })
-    const total = Number(res.data.total) ?? 0
+    const total = Number(res.data.total ?? 0)
     const batch = res.data.items ?? []
     reelTotal.value = total
     reelItems.value.push(...batch)

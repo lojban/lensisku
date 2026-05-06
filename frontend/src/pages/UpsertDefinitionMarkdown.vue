@@ -1,9 +1,7 @@
 <template>
-
   <div class="container mx-auto p-4">
-
     <h2 class="text-xl sm:text-2xl font-bold text-gray-800 select-none mb-4">
-       {{
+      {{
         isEditMode
           ? t('upsertDefinitionMarkdown.editTitle')
           : t('upsertDefinitionMarkdown.addTitle')
@@ -11,11 +9,12 @@
     </h2>
 
     <form class="space-y-4" @submit.prevent="submitValsi">
-       <!-- Word Input -->
+      <!-- Word Input -->
       <div>
-         <label for="word" class="block text-sm font-medium text-blue-700"
-          > {{ t('upsertDefinitionMarkdown.wordLabel') }} </label
-        > <input
+        <label for="word" class="block text-sm font-medium text-blue-700">
+          {{ t('upsertDefinitionMarkdown.wordLabel') }}
+        </label>
+        <input
           id="word"
           v-model="word"
           type="text"
@@ -25,79 +24,69 @@
           :placeholder="t('upsertDefinitionMarkdown.wordPlaceholder')"
         />
       </div>
-       <!-- Language Selection -->
+      <!-- Language Selection -->
       <div>
-         <label for="language" class="block text-sm font-medium text-blue-700"
-          > {{ t('upsertDefinitionMarkdown.languageLabel') }} </label
-        > <select
+        <label for="language" class="block text-sm font-medium text-blue-700">
+          {{ t('upsertDefinitionMarkdown.languageLabel') }}
+        </label>
+        <select
           id="language"
           v-model="langId"
           required
           class="input-field w-full h-10"
           :disabled="isLoading || isSubmitting"
         >
-
-          <option value=""> {{ t('upsertDefinitionMarkdown.languagePlaceholder') }} </option>
+          <option value="">{{ t('upsertDefinitionMarkdown.languagePlaceholder') }}</option>
 
           <option v-for="lang in languages" :key="lang.id" :value="lang.id">
-             {{ lang.real_name }}
+            {{ lang.real_name }}
           </option>
-           </select
-        >
+        </select>
       </div>
-       <!-- Entry Language Selection (Only for new entries) -->
+      <!-- Entry Language Selection (Only for new entries) -->
       <div v-if="!isEditMode">
-         <label for="source-language" class="block text-sm font-medium text-blue-700"
-          >{{ t('upsertDefinition.sourceLanguageLabel') }} <span class="text-red-500">{{
-            t('upsertDefinition.required')
-          }}</span></label
-        > <select
+        <label for="source-language" class="block text-sm font-medium text-blue-700"
+          >{{ t('upsertDefinition.sourceLanguageLabel') }}
+          <span class="text-red-500">{{ t('upsertDefinition.required') }}</span></label
+        >
+        <select
           id="source-language"
           v-model="sourceLangId"
           required
           class="input-field w-full h-10"
           :disabled="isLoading || isSubmitting || isEditMode"
         >
-
           <option value="">{{ t('upsertDefinition.selectLanguagePlaceholder') }}</option>
 
           <option v-for="lang in languages" :key="lang.id" :value="lang.id">
-             {{ lang.real_name }}
+            {{ lang.real_name }}
           </option>
-           </select
-        >
-        <p class="mt-1 text-xs text-gray-500"> {{ t('upsertDefinition.sourceLanguageNote') }} </p>
-
+        </select>
+        <p class="mt-1 text-xs text-gray-500">{{ t('upsertDefinition.sourceLanguageNote') }}</p>
       </div>
-       <!-- Definition Editor -->
+      <!-- Definition Editor -->
       <div>
-         <label class="block text-sm font-medium text-blue-700 mb-2"
-          > {{ t('upsertDefinitionMarkdown.definitionLabel') }} </label
-        >
+        <label class="block text-sm font-medium text-blue-700 mb-2">
+          {{ t('upsertDefinitionMarkdown.definitionLabel') }}
+        </label>
         <div ref="editor" class="milkdown-editor" />
-
       </div>
-       <!-- Submit Button -->
+      <!-- Submit Button -->
       <div class="flex justify-end">
-         <button type="submit" class="ui-btn--create" :disabled="isSubmitting || !isValid">
-           {{
+        <button type="submit" class="ui-btn--create" :disabled="isSubmitting || !isValid">
+          {{
             isSubmitting
               ? t('upsertDefinitionMarkdown.saving')
               : t('upsertDefinitionMarkdown.saveButton')
-          }} </button
-        >
+          }}
+        </button>
       </div>
-
     </form>
-
   </div>
-
 </template>
 
 <script setup lang="ts">
 import { Crepe } from '@milkdown/crepe'
-import { insert } from '@milkdown/utils'
-import TurndownService from 'turndown'
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
@@ -105,12 +94,10 @@ import { useI18n } from 'vue-i18n'
 import { getLanguages, addValsi, updateValsi, getDefinition } from '@/api'
 import '@milkdown/crepe/theme/common/style.css'
 import '@milkdown/crepe/theme/frame.css'
-import { useAuth } from '@/composables/useAuth'
 import { useSeoHead } from '@/composables/useSeoHead'
 
 const route = useRoute()
 const router = useRouter()
-const auth = useAuth()
 const { t } = useI18n()
 
 // Form state
@@ -120,9 +107,6 @@ const definition = ref('')
 const sourceLangId = ref(1)
 const editor = ref(null)
 let crepe = null
-const turndownService = new TurndownService()
-let handlePaste = null
-
 onMounted(async () => {
   await loadLanguages()
 
@@ -316,4 +300,3 @@ onMounted(async () => {
   /* min-height: 300px; */
 }
 </style>
-

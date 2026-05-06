@@ -1,12 +1,12 @@
 <template>
-   <button
+  <button
     type="button"
     class="ui-tab"
     :class="active ? 'ui-tab--active' : 'ui-tab--inactive'"
     @click="$emit('click')"
   >
-     <slot name="icon" /> <span class="hidden md:block"> {{ label }} </span> </button
-  >
+    <slot name="icon" /> <span class="hidden md:block"> {{ label }} </span>
+  </button>
 </template>
 
 <script setup lang="ts">
@@ -20,4 +20,3 @@ defineProps({
 
 defineEmits(['click'])
 </script>
-

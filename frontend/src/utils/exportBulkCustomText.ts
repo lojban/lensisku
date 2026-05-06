@@ -20,8 +20,7 @@ function sanitizeTsvCell(s: string): string {
 export function buildBulkCustomTextCsv(rows: BulkCustomTextExportRow[]): string {
   const header = 'front,back'
   const lines = rows.map(
-    (r) =>
-      `${escapeCsvField(r.free_content_front)},${escapeCsvField(r.free_content_back)}`
+    (r) => `${escapeCsvField(r.free_content_front)},${escapeCsvField(r.free_content_back)}`
   )
   return [header, ...lines].join('\r\n')
 }
@@ -29,8 +28,7 @@ export function buildBulkCustomTextCsv(rows: BulkCustomTextExportRow[]): string 
 export function buildBulkCustomTextTsv(rows: BulkCustomTextExportRow[]): string {
   const header = 'front\tback'
   const lines = rows.map(
-    (r) =>
-      `${sanitizeTsvCell(r.free_content_front)}\t${sanitizeTsvCell(r.free_content_back)}`
+    (r) => `${sanitizeTsvCell(r.free_content_front)}\t${sanitizeTsvCell(r.free_content_back)}`
   )
   return [header, ...lines].join('\r\n')
 }

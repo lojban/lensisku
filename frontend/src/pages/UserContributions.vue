@@ -1,24 +1,29 @@
 <template>
-   <TabbedPageHeader
+  <TabbedPageHeader
     :tabs="tabs"
     :active-tab="activeTab"
     :page-title="pageTitle"
     @tab-click="handleTabClick"
-  /> <!-- Loading State with Skeleton -->
-  <div v-if="isLoading" class="space-y-4"> <SkeletonActivityItem v-for="n in 5" :key="n" /> </div>
-   <!-- Content -->
+  />
+  <!-- Loading State with Skeleton -->
+  <div v-if="isLoading" class="space-y-4"><SkeletonActivityItem v-for="n in 5" :key="n" /></div>
+  <!-- Content -->
   <div v-else class="space-y-4">
-     <!-- Comments Tab --> <ActivityComments
+    <!-- Comments Tab -->
+    <ActivityComments
       v-if="activeTab === 'comments'"
       :comments="comments"
       :format-date="formatDate"
-    /> <!-- Definitions Tab --> <ActivityDefinitions
+    />
+    <!-- Definitions Tab -->
+    <ActivityDefinitions
       v-if="activeTab === 'definitions'"
       :definitions="definitions"
       :format-date="formatDate"
-    /> <!-- PaginationComponent -->
+    />
+    <!-- PaginationComponent -->
     <div v-if="totalPages > 1">
-       <PaginationComponent
+      <PaginationComponent
         :current-page="currentPage"
         :total-pages="totalPages"
         :total="total"
@@ -27,9 +32,7 @@
         @next="() => changePage(currentPage + 1)"
       />
     </div>
-
   </div>
-
 </template>
 
 <script setup lang="ts">
@@ -41,7 +44,6 @@ import { useRoute, useRouter } from 'vue-router'
 import { getUserComments, getUserDefinitions, getUserVotes } from '@/api'
 import ActivityComments from '@/components/activity/ActivityComments.vue'
 import ActivityDefinitions from '@/components/activity/ActivityDefinitions.vue'
-import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import PaginationComponent from '@/components/PaginationComponent.vue'
 import SkeletonActivityItem from '@/components/activity/SkeletonActivityItem.vue'
 import TabbedPageHeader from '@/components/TabbedPageHeader.vue'
@@ -91,7 +93,7 @@ const fetchComments = async () => {
       username: props.username,
     }))
     total.value = response.data.total
-  } catch (e) {
+  } catch {
     showError(t('userContributions.loadCommentsError'))
   } finally {
     isLoading.value = false
@@ -109,7 +111,7 @@ const fetchDefinitions = async () => {
     })
     definitions.value = response.data.items
     total.value = response.data.total
-  } catch (e) {
+  } catch {
     showError(t('userContributions.loadDefinitionsError'))
   } finally {
     isLoading.value = false
@@ -127,7 +129,7 @@ const fetchVotes = async () => {
     })
     votes.value = response.data.items
     total.value = response.data.total
-  } catch (e) {
+  } catch {
     showError(t('userContributions.loadVotesError'))
   } finally {
     isLoading.value = false
@@ -184,7 +186,7 @@ const handleTabClick = async (tabKey) => {
     await router.replace({
       query: { ...route.query, tab: tabKey, page: 1 },
     })
-  } catch (e) {
+  } catch {
     showError(t('userContributions.loadDataError'))
   } finally {
     isLoading.value = false
@@ -225,8 +227,7 @@ watch(
 
 onMounted(() => {
   const tabQ = queryStr(route.query.tab)
-  const initialTab =
-    tabQ && ['comments', 'definitions'].includes(tabQ) ? tabQ : 'comments'
+  const initialTab = tabQ && ['comments', 'definitions'].includes(tabQ) ? tabQ : 'comments'
   activeTab.value = initialTab
 
   // Read page from URL query parameter
@@ -249,8 +250,7 @@ watch(
     if (isUpdatingRoute.value) return
 
     const tabQ = queryStr(newQuery.tab)
-    const newTab =
-      tabQ && ['comments', 'definitions'].includes(tabQ) ? tabQ : 'comments'
+    const newTab = tabQ && ['comments', 'definitions'].includes(tabQ) ? tabQ : 'comments'
 
     const pageFromQuery = parseInt(queryStr(newQuery.page), 10)
     const newPage = pageFromQuery && pageFromQuery >= 1 ? pageFromQuery : 1
@@ -271,4 +271,3 @@ watch(
   }
 )
 </script>
-

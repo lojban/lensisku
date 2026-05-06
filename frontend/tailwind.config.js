@@ -136,31 +136,36 @@ export default {
         },
         /** Footer modal: iOS-style toggle track + thumb (pair thumb with translate-x-0 / translate-x-5). */
         '.toggle-switch': {
-          '@apply relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2': {},
+          '@apply relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2':
+            {},
         },
         '.toggle-switch-thumb': {
-          '@apply pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transition duration-200 ease-in-out will-change-transform': {},
+          '@apply pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transition duration-200 ease-in-out will-change-transform':
+            {},
         },
         /**
          * Checkbox sibling track (`CommentList` / definition link discussion): put `peer` + `sr-only` on the `<input>`;
          * this class goes on the following `<div>` (do not add `peer` here).
          */
         '.toggle-switch-peer-track': {
-          '@apply relative h-5 w-9 shrink-0 rounded-full bg-gray-200 after:absolute after:left-[2px] after:top-[2px] after:h-4 after:w-4 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[\'\'] peer-focus:outline-none peer-checked:after:translate-x-full peer-checked:after:border-white peer-checked:bg-nav-link':
+          "@apply relative h-5 w-9 shrink-0 rounded-full bg-gray-200 after:absolute after:left-[2px] after:top-[2px] after:h-4 after:w-4 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-focus:outline-none peer-checked:after:translate-x-full peer-checked:after:border-white peer-checked:bg-nav-link":
             {},
         },
         // --- Banners & toasts ---
         /** Anonymous progress banner: touch-sized auth links (`RouterLink` + `ui-btn--*`). */
         '.anon-banner-cta': {
-          '@apply min-h-[44px] min-w-[44px] items-center justify-center rounded-md px-3 py-2 text-sm inline-flex': {},
+          '@apply min-h-[44px] min-w-[44px] items-center justify-center rounded-md px-3 py-2 text-sm inline-flex':
+            {},
         },
         /** Dismiss control (icon-only, 44px min). */
         '.anon-banner-dismiss': {
-          '@apply icon-btn-ghost flex min-h-[44px] min-w-[44px] items-center justify-center rounded-md p-2.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600': {},
+          '@apply icon-btn-ghost flex min-h-[44px] min-w-[44px] items-center justify-center rounded-md p-2.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600':
+            {},
         },
         /** Fixed strip under app header (`PageBanner`, test-data warnings). */
         '.page-banner-fixed': {
-          '@apply fixed left-0 right-0 top-14 z-10 mx-auto border text-center select-none md:top-12': {},
+          '@apply fixed left-0 right-0 top-14 z-10 mx-auto border text-center select-none md:top-12':
+            {},
         },
         '.page-banner--warning': {
           '@apply w-full px-4 py-2 text-sm opacity-90 bg-yellow-100 border-yellow-300': {},
@@ -170,7 +175,8 @@ export default {
         },
         /** Centered toast / lightweight alert surface (`ToastFloat.vue`); matches card elevation + success/error borders. */
         '.toast-float-shell': {
-          '@apply pointer-events-none fixed inset-0 z-[65] flex items-center justify-center p-4': {},
+          '@apply pointer-events-none fixed inset-0 z-[65] flex items-center justify-center p-4':
+            {},
         },
         '.toast-float-panel': {
           '@apply pointer-events-auto w-full max-w-[min(90vw,28rem)] overflow-hidden rounded-2xl border border-gray-200 bg-white text-gray-800':
@@ -205,7 +211,8 @@ export default {
         },
         /** `ModalComponent` default slot: scroll area. Padding inset keeps button box-shadows and focus rings inside the scrollport (they paint outside the border box and would otherwise clip). */
         '.modal-scroll-body': {
-          '@apply min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 pt-2 pb-6 sm:px-3 sm:pb-7': {},
+          '@apply min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 pt-2 pb-6 sm:px-3 sm:pb-7':
+            {},
         },
         '.toast-float-extra': {
           '@apply border-t border-gray-100 pt-3': {},
@@ -228,7 +235,8 @@ export default {
         },
         /** Destructive icon control (e.g. delete in assistant chat list). */
         '.icon-btn-ghost-danger': {
-          '@apply shrink-0 rounded p-1 text-gray-400 transition-colors hover:text-red-600 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-300 md:opacity-100': {},
+          '@apply shrink-0 rounded p-1 text-gray-400 transition-colors hover:text-red-600 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-300 md:opacity-100':
+            {},
         },
         '.icon-btn-ghost-danger--reveal-md': {
           '@apply md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100': {},
@@ -324,7 +332,8 @@ export default {
         },
         /** Assistant bubble: assistant markdown body. */
         '.assistant-bubble-assistant': {
-          '@apply max-w-[80%] min-w-0 rounded-lg px-3 py-2 text-sm break-words bg-gray-100 text-gray-900': {},
+          '@apply max-w-[80%] min-w-0 rounded-lg px-3 py-2 text-sm break-words bg-gray-100 text-gray-900':
+            {},
         },
         /** Icon control inside assistant bubbles (copy, etc.). */
         '.assistant-bubble-action': {
@@ -395,7 +404,8 @@ export default {
         },
         /** Centered column for login / signup (frosted card). */
         '.auth-page-shell': {
-          '@apply flex min-h-full w-full flex-col items-center justify-center px-4 py-10 sm:px-6 sm:py-12': {},
+          '@apply flex min-h-full w-full flex-col items-center justify-center px-4 py-10 sm:px-6 sm:py-12':
+            {},
         },
         /** Centered column for glass auth flows (reset, change password). */
         '.auth-glass-page-shell': {
@@ -459,7 +469,8 @@ export default {
         },
         /** Indented quote / snippet in activity lists. */
         '.activity-quote-snippet': {
-          '@apply text-sm text-gray-600 border-l-2 border-gray-300 pl-2 [&_img]:max-h-48 [&_img]:object-contain': {},
+          '@apply text-sm text-gray-600 border-l-2 border-gray-300 pl-2 [&_img]:max-h-48 [&_img]:object-contain':
+            {},
         },
         /** Small “streak / correct” pill (flashcard / study UI). */
         '.badge-streak-success': {
@@ -491,12 +502,14 @@ export default {
         },
         /** Lingo study: main lesson card (Duolingo-style bottom border). */
         '.lingo-study-card-shell': {
-          '@apply flex min-h-0 flex-1 shrink-0 flex-col overflow-hidden rounded-xl border-2 border-b-4 border-neutral-200 bg-white p-2 pb-2 shadow-sm transition-colors duration-200 hover:bg-black/5 sm:p-2.5 sm:pb-2.5': {},
+          '@apply flex min-h-0 flex-1 shrink-0 flex-col overflow-hidden rounded-xl border-2 border-b-4 border-neutral-200 bg-white p-2 pb-2 shadow-sm transition-colors duration-200 hover:bg-black/5 sm:p-2.5 sm:pb-2.5':
+            {},
         },
         /** Lingo study header row (tap highlight off for mobile). */
         '.lingo-study-header-bar': {
           '-webkit-tap-highlight-color': 'transparent',
-          '@apply sticky top-0 z-40 mx-auto flex w-full max-w-[1140px] items-center gap-x-2 border-b border-slate-200 bg-white px-3 py-2 sm:px-4 sm:py-2.5 lg:px-6 lg:py-3': {},
+          '@apply sticky top-0 z-40 mx-auto flex w-full max-w-[1140px] items-center gap-x-2 border-b border-slate-200 bg-white px-3 py-2 sm:px-4 sm:py-2.5 lg:px-6 lg:py-3':
+            {},
         },
         /** Lingo header back control. */
         '.icon-btn-header-back': {
@@ -508,7 +521,8 @@ export default {
         },
         /** Comment composer shell. */
         '.surface-comment-form': {
-          '@apply mt-3 mb-6 bg-white border rounded-lg p-3 hover:border-blue-300 transition-colors relative': {},
+          '@apply mt-3 mb-6 bg-white border rounded-lg p-3 hover:border-blue-300 transition-colors relative':
+            {},
         },
         /** Flashcard collection summary row. */
         '.surface-flashcard-summary': {
@@ -606,7 +620,8 @@ export default {
         },
         /** Decorative icon inside `relative` input wrapper (user, mail, key). */
         '.input-field-trailing-icon': {
-          '@apply pointer-events-none absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 shrink-0 text-gray-400': {},
+          '@apply pointer-events-none absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 shrink-0 text-gray-400':
+            {},
         },
         /** Password visibility toggle in auth forms; pair with `input-field` + `pr-10`. */
         '.input-field-password-toggle': {
@@ -615,13 +630,16 @@ export default {
         },
         /** CSV / file picker control label (focus ring on inner input). */
         '.file-input-label': {
-          '@apply relative cursor-pointer rounded-md bg-white font-medium text-blue-600 transition-colors duration-200 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-blue-500 focus-within:ring-offset-2': {},
+          '@apply relative cursor-pointer rounded-md bg-white font-medium text-blue-600 transition-colors duration-200 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-blue-500 focus-within:ring-offset-2':
+            {},
         },
         '.btn-panel-primary': {
-          '@apply flex-1 cursor-pointer rounded-lg bg-blue-600 px-3 py-2.5 font-medium text-white transition-colors duration-200 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2': {},
+          '@apply flex-1 cursor-pointer rounded-lg bg-blue-600 px-3 py-2.5 font-medium text-white transition-colors duration-200 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2':
+            {},
         },
         '.btn-panel-outline': {
-          '@apply flex-1 cursor-pointer rounded-lg border border-gray-300 bg-white px-3 py-2.5 font-medium text-gray-700 transition-colors duration-200 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2': {},
+          '@apply flex-1 cursor-pointer rounded-lg border border-gray-300 bg-white px-3 py-2.5 font-medium text-gray-700 transition-colors duration-200 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2':
+            {},
         },
         /** Closed trigger for toolbar dropdowns (search mode, language multiselect): matches input-field visual language at h-10. */
         '.dropdown-trigger': {
@@ -770,7 +788,8 @@ export default {
         },
         /** Title next to a thumbnail (e.g. collection card); multi-line clamp, no single-line truncate. */
         '.card-title--multiline': {
-          '@apply text-lg font-semibold text-gray-800 min-w-0 leading-snug line-clamp-4 transition-colors': {},
+          '@apply text-lg font-semibold text-gray-800 min-w-0 leading-snug line-clamp-4 transition-colors':
+            {},
           '&:hover': { '@apply text-blue-600': {} },
           '&:focus': { '@apply text-blue-600 outline-none': {} },
         },
@@ -820,10 +839,12 @@ export default {
             {},
         },
         '.card-streak-day-label': {
-          '@apply line-clamp-2 w-full px-0.5 text-xs font-medium leading-tight text-gray-500 break-words sm:text-sm': {},
+          '@apply line-clamp-2 w-full px-0.5 text-xs font-medium leading-tight text-gray-500 break-words sm:text-sm':
+            {},
         },
         '.card-streak-day-points': {
-          '@apply line-clamp-2 w-full px-0.5 text-xs font-medium leading-tight text-gray-400 break-words sm:text-sm': {},
+          '@apply line-clamp-2 w-full px-0.5 text-xs font-medium leading-tight text-gray-400 break-words sm:text-sm':
+            {},
         },
         '.card-streak-day-count': {
           '@apply flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-medium sm:h-8 sm:w-8 sm:text-sm':
@@ -831,7 +852,8 @@ export default {
         },
         /** Pulse bars: heights match `.card-streak-day-label` / `.card-streak-day-points` line boxes (no CLS vs loaded streak). */
         '.card-streak-skeleton-line': {
-          '@apply mx-auto h-[0.9375rem] w-full max-w-[3.5rem] shrink-0 rounded bg-gray-100 sm:h-[1.09375rem]': {},
+          '@apply mx-auto h-[0.9375rem] w-full max-w-[3.5rem] shrink-0 rounded bg-gray-100 sm:h-[1.09375rem]':
+            {},
         },
         '.card-streak-skeleton-line--points': {
           '@apply max-w-[2.25rem]': {},
@@ -1014,7 +1036,8 @@ export default {
           buildAquaUiBtnGroupItemGeometry()
         flatRules[selectorFor('flat', 'btn-group-forced .ui-btn--group-item')] = {
           /** Full borders on every segment; `-ml-px` overlaps adjacent 1px borders; hover/focus z-index reveals full outline. */
-          '@apply relative z-0 rounded-none border-r first:ml-0 -ml-px first:rounded-l-full last:rounded-r-full': {},
+          '@apply relative z-0 rounded-none border-r first:ml-0 -ml-px first:rounded-l-full last:rounded-r-full':
+            {},
           '&:hover': {
             '@apply z-10': {},
           },

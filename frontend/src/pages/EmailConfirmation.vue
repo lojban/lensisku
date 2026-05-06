@@ -1,92 +1,84 @@
 <template>
-   <!-- Loading State --> <LoadingSpinner v-if="isLoading"
-    > {{ t('emailConfirmation.loading') }} </LoadingSpinner
-  > <!-- Success State -->
+  <!-- Loading State -->
+  <LoadingSpinner v-if="isLoading"> {{ t('emailConfirmation.loading') }} </LoadingSpinner>
+  <!-- Success State -->
   <div v-else-if="success" class="text-center">
-
     <div class="bg-white p-8 rounded-lg shadow-sm border border-green-200">
-
       <div
         class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4"
       >
-         <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-
+        <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
             stroke-linecap="round"
             stroke-linejoin="round"
             stroke-width="2"
             d="M5 13l4 4L19 7"
           />
-           </svg
-        >
+        </svg>
       </div>
 
       <h2 class="text-2xl font-bold text-gray-800 mb-2">
-         {{ t('emailConfirmation.successTitle') }}
+        {{ t('emailConfirmation.successTitle') }}
       </h2>
 
-      <p class="text-gray-600 mb-6"> {{ t('emailConfirmation.successMessage') }} </p>
+      <p class="text-gray-600 mb-6">{{ t('emailConfirmation.successMessage') }}</p>
 
       <div class="space-y-3">
-         <RouterLink to="/" class="ui-btn--read w-full block text-center"
-          > {{ t('emailConfirmation.goToHomepage') }} </RouterLink
-        > <RouterLink to="/login" class="ui-btn--create w-full block text-center"
-          > {{ t('emailConfirmation.logIn') }} </RouterLink
-        >
+        <RouterLink to="/" class="ui-btn--read w-full block text-center">
+          {{ t('emailConfirmation.goToHomepage') }}
+        </RouterLink>
+        <RouterLink to="/login" class="ui-btn--create w-full block text-center">
+          {{ t('emailConfirmation.logIn') }}
+        </RouterLink>
       </div>
-
     </div>
-
   </div>
-   <!-- Error State -->
+  <!-- Error State -->
   <div v-else-if="error" class="text-center">
-
     <div class="bg-white p-8 rounded-lg shadow-sm border border-red-200">
-
       <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-         <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-
+        <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
             stroke-linecap="round"
             stroke-linejoin="round"
             stroke-width="2"
             d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
           />
-           </svg
-        >
+        </svg>
       </div>
 
       <h2 class="text-2xl font-bold text-gray-800 mb-2">
-         {{ t('emailConfirmation.failedTitle') }}
+        {{ t('emailConfirmation.failedTitle') }}
       </h2>
 
-      <p class="text-red-600 mb-6"> {{ error }} <!-- Keep error message as is, it's dynamic --> </p>
+      <p class="text-red-600 mb-6">
+        {{ error }}
+        <!-- Keep error message as is, it's dynamic -->
+      </p>
 
       <div class="space-y-3">
-         <RouterLink to="/" class="ui-btn--read w-full block text-center"
-          > {{ t('emailConfirmation.returnHome') }} </RouterLink
-        > <button
+        <RouterLink to="/" class="ui-btn--read w-full block text-center">
+          {{ t('emailConfirmation.returnHome') }}
+        </RouterLink>
+        <button
           v-if="isExpired"
           class="ui-btn--create w-full"
           :disabled="isRequestingToken"
           @click="requestNewToken"
         >
-           {{
+          {{
             isRequestingToken
               ? t('emailConfirmation.sending')
               : t('emailConfirmation.requestNewToken')
-          }} </button
-        >
+          }}
+        </button>
       </div>
-
     </div>
-
   </div>
-   <!-- Request Success Message -->
+  <!-- Request Success Message -->
   <div v-if="requestSuccess" class="mt-4 p-4 bg-blue-50 text-blue-700 rounded-lg text-center">
-     {{ t('emailConfirmation.requestSuccess') }}
+    {{ t('emailConfirmation.requestSuccess') }}
   </div>
-
 </template>
 
 <script setup lang="ts">
@@ -100,7 +92,7 @@ import { useSeoHead } from '@/composables/useSeoHead'
 import { useAuth } from '@/composables/useAuth'
 import { queryStr } from '@/utils/routeQuery'
 
-const { t, locale } = useI18n()
+const { t } = useI18n()
 const auth = useAuth()
 
 // State
@@ -210,4 +202,3 @@ onMounted(() => {
   confirmEmailToken(token)
 })
 </script>
-

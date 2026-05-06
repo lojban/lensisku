@@ -1,7 +1,7 @@
 <template>
-
   <div class="filters space-y-4">
     <!-- Language row: top by default; on semantic graph page (`languagesInExpandedPanel`) it lives inside the expanded panel. -->
+
     <div class="filters-bar-row" :class="{ 'sm:!justify-end': languagesInExpandedPanel }">
       <MultiSelectDropdown
         v-if="!languagesInExpandedPanel"
@@ -18,7 +18,6 @@
         class="w-full sm:w-80"
       />
       <div class="flex items-center gap-2 self-end md:self-center">
-
         <div class="btn-group-forced flex items-center flex-row" role="group">
           <Button
             type="button"
@@ -94,6 +93,7 @@
         </div>
       </div>
     </div>
+
     <div
       v-show="expanded"
       class="mt-3 grid grid-cols-2 gap-x-3 gap-y-4 bg-white rounded-lg shadow-sm p-4"
@@ -117,42 +117,39 @@
           />
         </div>
       </div>
+
       <div v-if="showWordType" class="flex min-w-0 flex-col">
-        <label class="filters-field-label">{{
-          t('filters.filterBy.wordType')
-          }}</label>
+        <label class="filters-field-label">{{ t('filters.filterBy.wordType') }}</label>
         <div class="relative w-full [&>div]:block [&>div]:w-full">
           <Dropdown class="block w-full">
-              <template #trigger="{ open: wordTypeMenuOpen }">
-                <button
-                  type="button"
-                  class="input-field w-full !flex h-8 cursor-pointer items-center justify-between gap-2 text-left font-normal"
-                  :aria-expanded="wordTypeMenuOpen"
-                >
-                  <span class="min-w-0 truncate text-gray-700">{{
-                    filters.word_type?.descriptor ?? t('filters.selectWordType')
-                  }}</span>
-                  <ChevronDown
-                    class="h-4 w-4 shrink-0 text-gray-500 transition-transform duration-200"
-                    :class="{ 'rotate-180': wordTypeMenuOpen }"
-                    :stroke-width="2"
-                  />
-                </button>
-              </template>
-              <div
-                class="max-h-[min(50vh,18rem)] overflow-y-auto whitespace-normal sm:min-w-[12rem]"
+            <template #trigger="{ open: wordTypeMenuOpen }">
+              <button
+                type="button"
+                class="input-field w-full !flex h-8 cursor-pointer items-center justify-between gap-2 text-left font-normal"
+                :aria-expanded="wordTypeMenuOpen"
               >
-                <button
-                  v-for="type in wordTypes"
-                  :key="type.type_id"
-                  type="button"
-                  class="block w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50"
-                  :class="{ 'bg-gray-100': filters.word_type?.type_id === type.type_id }"
-                  @click="selectWordType(type)"
-                >
-                  {{ type.descriptor }}
-                </button>
-              </div>
+                <span class="min-w-0 truncate text-gray-700">{{
+                  filters.word_type?.descriptor ?? t('filters.selectWordType')
+                }}</span>
+                <ChevronDown
+                  class="h-4 w-4 shrink-0 text-gray-500 transition-transform duration-200"
+                  :class="{ 'rotate-180': wordTypeMenuOpen }"
+                  :stroke-width="2"
+                />
+              </button>
+            </template>
+            <div class="max-h-[min(50vh,18rem)] overflow-y-auto whitespace-normal sm:min-w-[12rem]">
+              <button
+                v-for="type in wordTypes"
+                :key="type.type_id"
+                type="button"
+                class="block w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50"
+                :class="{ 'bg-gray-100': filters.word_type?.type_id === type.type_id }"
+                @click="selectWordType(type)"
+              >
+                {{ type.descriptor }}
+              </button>
+            </div>
           </Dropdown>
         </div>
       </div>
@@ -189,9 +186,7 @@
       </div>
 
       <div class="flex min-w-0 flex-col" :class="{ 'col-span-2': !showWordType }">
-        <label class="filters-field-label">{{
-          t('filters.filterBy.sourceLanguage')
-          }}</label>
+        <label class="filters-field-label">{{ t('filters.filterBy.sourceLanguage') }}</label>
         <div class="relative w-full [&>div]:block [&>div]:w-full">
           <Dropdown class="block w-full">
             <template #trigger="{ open: sourceLangMenuOpen }">
@@ -208,9 +203,7 @@
                 />
               </button>
             </template>
-            <div
-              class="max-h-[min(50vh,18rem)] overflow-y-auto whitespace-normal sm:min-w-[12rem]"
-            >
+            <div class="max-h-[min(50vh,18rem)] overflow-y-auto whitespace-normal sm:min-w-[12rem]">
               <button
                 type="button"
                 class="block w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50"
@@ -230,7 +223,7 @@
                 {{ lang.real_name }}
               </button>
             </div>
-        </Dropdown>
+          </Dropdown>
         </div>
       </div>
     </div>
@@ -240,7 +233,9 @@
       class="grid grid-cols-2 gap-3 rounded-lg bg-white p-3 shadow-sm sm:grid-cols-3 md:grid-cols-5"
     >
       <div class="flex min-w-0 flex-col">
-        <label class="filters-field-label" for="cf-sg-min-vote">{{ t('semanticGraph.minVote') }}</label>
+        <label class="filters-field-label" for="cf-sg-min-vote">{{
+          t('semanticGraph.minVote')
+        }}</label>
         <input
           id="cf-sg-min-vote"
           v-model.number="graphBuildParams.minVote"
@@ -250,8 +245,11 @@
           step="1"
         />
       </div>
+
       <div class="flex min-w-0 flex-col">
-        <label class="filters-field-label" for="cf-sg-limit">{{ t('semanticGraph.nodeLimit') }}</label>
+        <label class="filters-field-label" for="cf-sg-limit">{{
+          t('semanticGraph.nodeLimit')
+        }}</label>
         <input
           id="cf-sg-limit"
           v-model.number="graphBuildParams.graphLimit"
@@ -262,6 +260,7 @@
           step="1"
         />
       </div>
+
       <div class="flex min-w-0 flex-col">
         <label class="filters-field-label" for="cf-sg-k">{{ t('semanticGraph.kNeighbors') }}</label>
         <input
@@ -274,8 +273,11 @@
           step="1"
         />
       </div>
+
       <div class="flex min-w-0 flex-col">
-        <label class="filters-field-label" for="cf-sg-min-sim">{{ t('semanticGraph.minPairwiseSim') }}</label>
+        <label class="filters-field-label" for="cf-sg-min-sim">{{
+          t('semanticGraph.minPairwiseSim')
+        }}</label>
         <input
           id="cf-sg-min-sim"
           v-model.number="graphBuildParams.minPairwiseSim"
@@ -287,9 +289,7 @@
         />
       </div>
     </div>
-
   </div>
-
 </template>
 
 <script setup lang="ts">
@@ -316,12 +316,7 @@ const graphBuildParams = defineModel<SemanticGraphBuildParams | undefined>('grap
 })
 
 /** Fields used for language multiselect search (values only; case-insensitive substring). */
-const languageFilterSearchFieldKeys: string[] = [
-  'tag',
-  'english_name',
-  'lojban_name',
-  'real_name',
-]
+const languageFilterSearchFieldKeys: string[] = ['tag', 'english_name', 'lojban_name', 'real_name']
 
 type LanguageOption = {
   id: number

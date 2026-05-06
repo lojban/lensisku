@@ -1,22 +1,22 @@
 <template>
-
   <div>
-
     <div class="flex items-center justify-between">
-       <label for="definition" class="block text-sm font-medium text-blue-700"
-        > {{ label || t('imageUpload.image') }} </label
-      > <button
+      <label for="definition" class="block text-sm font-medium text-blue-700">
+        {{ label || t('imageUpload.image') }}
+      </label>
+      <button
         v-if="modelValue || loadedImage"
         type="button"
         class="text-sm text-red-600 hover:text-red-700"
         @click="handleRemove"
       >
-         {{ t('imageUpload.removeImage') }} </button
-      > <span v-else-if="note" class="text-xs text-gray-500"> {{ note }} </span>
+        {{ t('imageUpload.removeImage') }}
+      </button>
+      <span v-else-if="note" class="text-xs text-gray-500"> {{ note }} </span>
     </div>
-     <!-- Image Preview -->
+    <!-- Image Preview -->
     <div v-if="modelValue || loadedImage" class="relative flex justify-center">
-       <img
+      <img
         :src="
           modelValue?.dataUri ||
           (modelValue ? `data:${modelValue.mime_type};base64,${modelValue.data}` : previewUrl)
@@ -27,9 +27,8 @@
       <div
         class="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-10 transition-opacity rounded-lg"
       />
-
     </div>
-     <!-- Upload Button -->
+    <!-- Upload Button -->
     <div
       v-if="!modelValue && !loadedImage"
       ref="dropZoneRef"
@@ -39,28 +38,22 @@
         'border-gray-300': !isOverDropZone,
       }"
     >
-
       <div class="space-y-1 text-center">
-         <ImagePlus class="mx-auto h-12 w-12 text-gray-300" :stroke-width="1" />
+        <ImagePlus class="mx-auto h-12 w-12 text-gray-300" :stroke-width="1" />
         <div class="flex text-sm text-gray-600">
-           <label
+          <label
             class="relative cursor-pointer rounded-md font-medium text-blue-600 hover:text-blue-500"
-            > <span>{{ t('imageUpload.uploadPrompt') }}</span
-            > <input type="file" class="sr-only" accept="image/*" @change="handleFileSelect" />
-            </label
           >
-          <p class="pl-1"> {{ t('imageUpload.dragDrop') }} </p>
-
+            <span>{{ t('imageUpload.uploadPrompt') }}</span>
+            <input type="file" class="sr-only" accept="image/*" @change="handleFileSelect" />
+          </label>
+          <p class="pl-1">{{ t('imageUpload.dragDrop') }}</p>
         </div>
 
-        <p class="text-xs text-gray-500"> {{ t('imageUpload.fileTypes') }} </p>
-
+        <p class="text-xs text-gray-500">{{ t('imageUpload.fileTypes') }}</p>
       </div>
-
     </div>
-
   </div>
-
 </template>
 
 <script setup lang="ts">
@@ -276,4 +269,3 @@ onMounted(() => {
   }
 })
 </script>
-

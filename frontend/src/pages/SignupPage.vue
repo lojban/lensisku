@@ -1,58 +1,47 @@
 <template>
-
   <div class="auth-page-shell">
     <AuthFormCard>
-
-      <h2 class="auth-form-title">
-         {{ t('signupPage.title') }}
-      </h2>
+      <h2 class="auth-form-title">{{ t('signupPage.title') }}</h2>
 
       <form class="w-full space-y-6" @submit.prevent="performSignup">
-
         <div>
-           <label
-            for="username"
-            class="mb-1 block text-sm font-medium text-gray-700"
-            >{{ t('signupPage.usernameLabel') }}</label
-          >
+          <label for="username" class="mb-1 block text-sm font-medium text-gray-700">{{
+            t('signupPage.usernameLabel')
+          }}</label>
           <div class="relative">
-             <input
+            <input
               id="username"
               v-model="username"
               type="text"
               required
               class="input-field w-full text-base h-10 pl-3 pr-10"
               :disabled="isLoading"
-            /> <User class="input-field-trailing-icon" aria-hidden="true" />
+            />
+            <User class="input-field-trailing-icon" aria-hidden="true" />
           </div>
-
         </div>
 
         <div>
-           <label
-            for="email"
-            class="mb-1 block text-sm font-medium text-gray-700"
-            >{{ t('signupPage.emailLabel') }}</label
-          >
+          <label for="email" class="mb-1 block text-sm font-medium text-gray-700">{{
+            t('signupPage.emailLabel')
+          }}</label>
           <div class="relative">
-             <input
+            <input
               id="email"
               v-model="email"
               type="email"
               required
               class="input-field w-full text-base h-10 pl-3 pr-10"
               :disabled="isLoading"
-            /> <Mail class="input-field-trailing-icon" aria-hidden="true" />
+            />
+            <Mail class="input-field-trailing-icon" aria-hidden="true" />
           </div>
-
         </div>
 
         <div>
-           <label
-            for="password"
-            class="mb-1 block text-sm font-medium text-gray-700"
-            >{{ t('signupPage.passwordLabel') }}</label
-          >
+          <label for="password" class="mb-1 block text-sm font-medium text-gray-700">{{
+            t('signupPage.passwordLabel')
+          }}</label>
           <div class="relative">
             <input
               id="password"
@@ -77,7 +66,6 @@
               <EyeOff v-else class="h-5 w-5 shrink-0" aria-hidden="true" />
             </button>
           </div>
-
         </div>
 
         <div>
@@ -89,30 +77,23 @@
             :loading="isLoading"
             :disabled="isLoading"
           >
-            <template #icon>
-              <Plus class="h-6 w-6 shrink-0" />
-            </template>
-            {{
-              isLoading ? t('signupPage.creatingAccount') : t('signupPage.createAccountButton')
-            }}
+            <template #icon> <Plus class="h-6 w-6 shrink-0" /> </template>
+            {{ isLoading ? t('signupPage.creatingAccount') : t('signupPage.createAccountButton') }}
           </Button>
         </div>
-
       </form>
 
       <p class="mt-4 w-full text-center text-sm text-gray-600">
-         {{ t('signupPage.haveAccountPrompt') }}
-         <RouterLink
+        {{ t('signupPage.haveAccountPrompt') }}
+        <RouterLink
           to="/login"
           class="font-medium text-blue-600 underline-offset-2 hover:text-blue-800 hover:underline"
-          > {{ t('signupPage.loginLink') }} </RouterLink
         >
+          {{ t('signupPage.loginLink') }}
+        </RouterLink>
       </p>
-
     </AuthFormCard>
-
   </div>
-
 </template>
 
 <script setup lang="ts">
@@ -136,7 +117,7 @@ const isLoading = ref(false)
 const router = useRouter()
 const auth = useAuth()
 const { showError, clearError } = useError()
-const { t, locale } = useI18n()
+const { t } = useI18n()
 
 useSeoHead({ title: t('signupPage.title'), robots: 'noindex, nofollow' })
 
@@ -170,4 +151,3 @@ const performSignup = async () => {
   }
 }
 </script>
-

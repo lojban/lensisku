@@ -1,22 +1,15 @@
 <template>
-
   <div class="auth-page-shell">
     <AuthFormCard>
-
-      <h2 class="auth-form-title">
-         {{ t('loginPage.title') }}
-      </h2>
+      <h2 class="auth-form-title">{{ t('loginPage.title') }}</h2>
 
       <form class="w-full space-y-6" @submit.prevent="performLogin">
-
         <div>
-           <label
-            for="username"
-            class="mb-1 block text-sm font-medium text-gray-700"
-            >{{ t('loginPage.usernameLabel') }}</label
-          >
+          <label for="username" class="mb-1 block text-sm font-medium text-gray-700">{{
+            t('loginPage.usernameLabel')
+          }}</label>
           <div class="relative">
-             <input
+            <input
               id="username"
               v-model="username"
               type="text"
@@ -24,17 +17,15 @@
               class="input-field h-10 w-full pl-3 pr-10 text-base"
               :disabled="isLoading"
               :placeholder="t('loginPage.usernamePlaceholder')"
-            /> <User class="input-field-trailing-icon" aria-hidden="true" />
+            />
+            <User class="input-field-trailing-icon" aria-hidden="true" />
           </div>
-
         </div>
 
         <div>
-           <label
-            for="password"
-            class="mb-1 block text-sm font-medium text-gray-700"
-            >{{ t('loginPage.passwordLabel') }}</label
-          >
+          <label for="password" class="mb-1 block text-sm font-medium text-gray-700">{{
+            t('loginPage.passwordLabel')
+          }}</label>
           <div class="relative">
             <input
               id="password"
@@ -49,9 +40,7 @@
             <button
               type="button"
               class="input-field-password-toggle"
-              :aria-label="
-                showPassword ? t('loginPage.hidePassword') : t('loginPage.showPassword')
-              "
+              :aria-label="showPassword ? t('loginPage.hidePassword') : t('loginPage.showPassword')"
               :aria-pressed="showPassword"
               :disabled="isLoading"
               @click="showPassword = !showPassword"
@@ -60,7 +49,6 @@
               <EyeOff v-else class="h-5 w-5 shrink-0" aria-hidden="true" />
             </button>
           </div>
-
         </div>
 
         <div>
@@ -72,38 +60,32 @@
             :loading="isLoading"
             :disabled="isLoading"
           >
-            <template #icon>
-              <KeyRound class="h-6 w-6 shrink-0" />
-            </template>
-            {{
-              isLoading ? t('loginPage.authenticating') : t('loginPage.loginButton')
-            }}
+            <template #icon> <KeyRound class="h-6 w-6 shrink-0" /> </template>
+            {{ isLoading ? t('loginPage.authenticating') : t('loginPage.loginButton') }}
           </Button>
         </div>
-
       </form>
 
       <p class="mt-4 w-full text-center text-sm text-gray-600">
-         <RouterLink
+        <RouterLink
           to="/reset-password"
           class="font-medium text-blue-600 underline-offset-2 hover:text-blue-800 hover:underline"
-          > {{ t('loginPage.forgotPasswordLink') }} </RouterLink
         >
+          {{ t('loginPage.forgotPasswordLink') }}
+        </RouterLink>
       </p>
 
       <p class="mt-4 w-full text-center text-sm text-gray-600">
-         {{ t('loginPage.noAccountPrompt') }}
-         <RouterLink
+        {{ t('loginPage.noAccountPrompt') }}
+        <RouterLink
           to="/signup"
           class="font-medium text-blue-600 underline-offset-2 hover:text-blue-800 hover:underline"
-          > {{ t('loginPage.signUpLink') }} </RouterLink
         >
+          {{ t('loginPage.signUpLink') }}
+        </RouterLink>
       </p>
-
     </AuthFormCard>
-
   </div>
-
 </template>
 
 <script setup lang="ts">
@@ -111,7 +93,7 @@ import { User, Eye, EyeOff, KeyRound } from 'lucide-vue-next'
 
 import { AuthFormCard, Button } from '@packages/ui'
 import { ref } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
+import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 
 import { login } from '@/api'
@@ -124,10 +106,9 @@ const password = ref('')
 const showPassword = ref(false)
 const isLoading = ref(false)
 const router = useRouter()
-const route = useRoute()
 const auth = useAuth()
 const { showError, clearError } = useError()
-const { t, locale } = useI18n()
+const { t } = useI18n()
 
 useSeoHead({ title: t('loginPage.title'), robots: 'noindex, nofollow' })
 
@@ -160,4 +141,3 @@ const performLogin = async () => {
   }
 }
 </script>
-

@@ -1,40 +1,32 @@
 <template>
-
   <div class="search-form max-w-3xl mx-auto">
-
     <div class="flex flex-row gap-0 items-stretch">
-
       <div class="relative z-10 w-auto shrink-0">
-         <Dropdown
-          > <template #trigger
-            > <button
-              type="button"
-              class="dropdown-trigger dropdown-trigger--search-bar-leading"
-            >
-
+        <Dropdown>
+          <template #trigger>
+            <button type="button" class="dropdown-trigger dropdown-trigger--search-bar-leading">
               <div v-if="mode" class="flex items-center gap-2 min-w-0">
-                 <component :is="mode.icon" class="h-4 w-4 shrink-0" :class="mode.color" /> <span
-                  class="hidden truncate sm:inline"
-                  >{{ mode.name }}</span
-                >
+                <component :is="mode.icon" class="h-4 w-4 shrink-0" :class="mode.color" />
+                <span class="hidden truncate sm:inline">{{ mode.name }}</span>
               </div>
-               <span v-else class="text-gray-500">{{ $t('searchForm.selectSearchMode') }}</span
-              > <ChevronDown class="h-4 w-4 shrink-0 text-gray-500" /> </button
-            > </template
-          > <button
+              <span v-else class="text-gray-500">{{ $t('searchForm.selectSearchMode') }}</span>
+              <ChevronDown class="h-4 w-4 shrink-0 text-gray-500" />
+            </button>
+          </template>
+          <button
             v-for="m in modes"
             :key="m.value"
             type="button"
             class="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
             @click="selectMode(m)"
           >
-             <component :is="m.icon" class="h-4 w-4 shrink-0" :class="m.color" /> {{ m.name }} </button
-          > </Dropdown
-        >
+            <component :is="m.icon" class="h-4 w-4 shrink-0" :class="m.color" /> {{ m.name }}
+          </button>
+        </Dropdown>
       </div>
 
       <div class="search-form-query-col">
-         <input
+        <input
           ref="searchInput"
           v-model="query"
           :placeholder="getPlaceholder"
@@ -42,26 +34,21 @@
           @input="handleInput"
         />
         <div class="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center">
-
           <div
             v-if="isSearching"
             class="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-500"
           />
-           <button
+          <button
             v-else-if="query"
             class="text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors duration-200 p-1 rounded-full"
             @click="clearInput"
           >
-             <X class="h-5 w-5" /> </button
-          >
+            <X class="h-5 w-5" />
+          </button>
         </div>
-
       </div>
-
     </div>
-
   </div>
-
 </template>
 
 <script setup lang="ts">
@@ -218,4 +205,3 @@ defineExpose({
   focusInput,
 })
 </script>
-

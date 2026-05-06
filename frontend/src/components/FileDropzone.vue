@@ -24,15 +24,14 @@
         :aria-label="inputAriaLabel"
         @change="onNativeFileChange"
         @click.stop
-      >
+      />
       <Upload class="h-10 w-10 text-gray-300" :stroke-width="1" aria-hidden="true" />
       <div class="flex flex-wrap items-center justify-center gap-x-1 text-sm text-gray-600">
         <span class="font-medium text-blue-600">{{ chooseFileText }}</span>
         <span>{{ orDragDropText }}</span>
       </div>
-      <p v-if="typesNoteText" class="text-xs text-gray-500">
-        {{ typesNoteText }}
-      </p>
+
+      <p v-if="typesNoteText" class="text-xs text-gray-500">{{ typesNoteText }}</p>
     </label>
   </div>
 </template>

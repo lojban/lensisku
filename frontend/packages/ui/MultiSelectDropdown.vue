@@ -1,5 +1,4 @@
 <template>
-
   <div ref="rootRef" :class="rootClass" v-bind="wrapperAttrs">
     <button
       type="button"
@@ -9,27 +8,27 @@
       @click="toggleOpen"
       @keydown.escape.prevent="open = false"
     >
-       <span class="min-w-0 flex-1 truncate">{{ summaryText }}</span>
+      <span class="min-w-0 flex-1 truncate">{{ summaryText }}</span>
       <ChevronDown
         class="h-4 w-4 shrink-0 text-gray-500 transition-transform duration-200"
         :class="{ 'rotate-180': open }"
         aria-hidden="true"
       />
     </button>
-
     <div
       v-show="open"
       class="dropdown-floating-panel"
       role="presentation"
       :style="panelViewportStyle"
     >
-       <!-- Search: see `searchFieldKeys` prop, else values-only deep match -->
+      <!-- Search: see `searchFieldKeys` prop, else values-only deep match -->
       <div class="border-b border-gray-100 px-2 pb-2">
-         <div class="relative">
-           <Search
+        <div class="relative">
+          <Search
             class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400"
             aria-hidden="true"
-          /> <input
+          />
+          <input
             v-model="searchQuery"
             type="search"
             :placeholder="searchPlaceholder"
@@ -39,59 +38,59 @@
           />
         </div>
       </div>
-
-       <!-- Select all (applies to the filtered list) -->
+      <!-- Select all (applies to the filtered list) -->
       <div class="border-b border-gray-100 px-2 py-1.5">
-         <label
+        <label
           class="flex cursor-pointer items-center gap-2 rounded-md px-1 py-1 text-sm text-gray-700 hover:bg-gray-50"
           :class="{ 'pointer-events-none opacity-50': !filteredOptions.length }"
         >
-           <input
+          <input
             ref="selectAllInputRef"
             type="checkbox"
             class="checkmark-aqua shrink-0"
             :checked="allFilteredSelected"
             :disabled="!filteredOptions.length"
             @change="toggleSelectAll"
-          /> <span class="select-none">{{ selectAllLabel }}</span>
+          />
+          <span class="select-none">{{ selectAllLabel }}</span>
         </label>
       </div>
 
-       <ul class="min-h-0 flex-1 overflow-y-auto overscroll-contain px-1 py-0.5" role="listbox" aria-multiselectable="true">
-         <li v-for="(opt, idx) in filteredOptions" :key="optionKey(opt, idx)" role="option" :aria-selected="isSelected(opt)">
-           <label
+      <ul
+        class="min-h-0 flex-1 overflow-y-auto overscroll-contain px-1 py-0.5"
+        role="listbox"
+        aria-multiselectable="true"
+      >
+        <li
+          v-for="(opt, idx) in filteredOptions"
+          :key="optionKey(opt, idx)"
+          role="option"
+          :aria-selected="isSelected(opt)"
+        >
+          <label
             class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-2 text-sm text-gray-700 hover:bg-gray-50"
           >
-             <input
+            <input
               type="checkbox"
               class="checkmark-aqua shrink-0"
               :checked="isSelected(opt)"
               @change="toggleOption(opt)"
-            /> <span class="min-w-0 flex-1">{{ optionLabel(opt) }}</span>
+            />
+            <span class="min-w-0 flex-1">{{ optionLabel(opt) }}</span>
           </label>
         </li>
-         <li v-if="!filteredOptions.length" class="px-3 py-4 text-center text-sm text-gray-500">
-           {{ emptyFilterLabel }}
+
+        <li v-if="!filteredOptions.length" class="px-3 py-4 text-center text-sm text-gray-500">
+          {{ emptyFilterLabel }}
         </li>
       </ul>
     </div>
-
   </div>
-
 </template>
 
 <script setup lang="ts">
 import { ChevronDown, Search } from 'lucide-vue-next'
-import {
-  ref,
-  computed,
-  watch,
-  watchEffect,
-  nextTick,
-  onMounted,
-  onUnmounted,
-  useAttrs,
-} from 'vue'
+import { ref, computed, watch, watchEffect, nextTick, onMounted, onUnmounted, useAttrs } from 'vue'
 import type { PropType } from 'vue'
 
 defineOptions({ inheritAttrs: false })
@@ -229,11 +228,7 @@ function haystackIncludesNeedle(haystack: string, needleLower: string): boolean 
 }
 
 /** Value-only substring match (keys on the option object are not searched). */
-function listedFieldValuesMatch(
-  item: unknown,
-  needleLower: string,
-  keys: string[]
-): boolean {
+function listedFieldValuesMatch(item: unknown, needleLower: string, keys: string[]): boolean {
   if (item === null || typeof item !== 'object') return false
   const rec = item as Record<string, unknown>
   for (const key of keys) {
@@ -264,7 +259,11 @@ function valueMatchesNeedle(value: unknown, needleLower: string): boolean {
 }
 
 /** Nested values only; property names are not matched. */
-function deepFieldSubstringMatch(value: unknown, needleLower: string, seen: WeakSet<object>): boolean {
+function deepFieldSubstringMatch(
+  value: unknown,
+  needleLower: string,
+  seen: WeakSet<object>
+): boolean {
   if (value === null || value === undefined) return false
   const t = typeof value
   if (t === 'string') return haystackIncludesNeedle(value as string, needleLower)

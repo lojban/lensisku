@@ -1,3 +1,66 @@
 {
-    "specstory.cloudSync.enabled": "always"
+    "specstory.cloudSync.enabled": "always",
+
+    // ── Prettier ────────────────────────────────────────────────────────────
+    // Only run when a .prettierrc config is found (prevents formatting Rust/TOML/etc.)
+    "prettier.requireConfig": true,
+
+    // ── Formatting ──────────────────────────────────────────────────────────
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+
+    "[vue]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[typescript]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[typescriptreact]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[javascript]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[javascriptreact]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[json]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[jsonc]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[css]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[html]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[markdown]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+
+    // ── Vue Official (Volar) ─────────────────────────────────────────────────
+    // Disable Volar's own formatter — Prettier handles .vue files above
+    "vue.format.enable": false,
+
+    // ── ESLint ───────────────────────────────────────────────────────────────
+    // ESLint 10 uses flat config only; make this explicit for the extension
+    "eslint.useFlatConfig": true,
+    // Run ESLint auto-fix on explicit save (after Prettier formats)
+    "editor.codeActionsOnSave": {
+        "source.fixAll.eslint": "explicit"
+    },
+    // Include vue since it's not in the extension's default probe set
+    "eslint.validate": [
+        "javascript",
+        "javascriptreact",
+        "typescript",
+        "typescriptreact",
+        "vue"
+    ],
+    // Point ESLint at the frontend subdirectory where eslint.config.js lives
+    "eslint.workingDirectories": [
+        { "directory": "./frontend", "changeProcessCWD": true }
+    ]
 }

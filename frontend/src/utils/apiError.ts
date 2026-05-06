@@ -64,10 +64,7 @@ export function getCollectionItemSaveErrorMessage(
 }
 
 /** Localized message for profile/collection image upload failures. */
-export function uploadImageErrorMessage(
-  error: unknown,
-  t: (key: string) => string
-): string {
+export function uploadImageErrorMessage(error: unknown, t: (key: string) => string): string {
   const status = (error as { response?: { status?: number } }).response?.status
   const raw = getApiErrorMessage(error)
 

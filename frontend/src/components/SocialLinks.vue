@@ -1,21 +1,20 @@
 <template>
-
   <div class="flex items-center space-x-3">
-     <a
+    <a
       v-for="link in links"
       :key="link.name"
       :href="link.link"
       target="_blank"
       rel="noopener noreferrer"
       :class="buttons ? 'text-gray-400 hover:text-blue-400 transition-colors' : 'ui-btn--neutral'"
-      > <img
+    >
+      <img
         :src="`/assets/icons/${link.name}.svg`"
         :alt="link.name"
         class="icon p-1 h-6 w-6 hover:opacity-80"
-      /> </a
-    >
+      />
+    </a>
   </div>
-
 </template>
 
 <script setup lang="ts">
@@ -41,4 +40,3 @@ const links: { name: string; link: string }[] = [
   },
 ]
 </script>
-

@@ -1,18 +1,13 @@
 <template>
-   <!-- Loading State -->
+  <!-- Loading State -->
   <div v-if="isLoading" class="flex justify-center py-8">
-
     <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
-
   </div>
-   <!-- Content: semantic article for SEO and accessibility -->
+  <!-- Content: semantic article for SEO and accessibility -->
   <article v-else-if="valsi" class="space-y-3" itemscope itemtype="https://schema.org/DefinedTerm">
     <PageHeader title-as="h1" :title-attrs="{ itemprop: 'name' }">
       <template #icon>
-        <BookOpen
-          class="h-7 w-7 shrink-0 sm:h-8 sm:w-8"
-          aria-hidden="true"
-        />
+        <BookOpen class="h-7 w-7 shrink-0 sm:h-8 sm:w-8" aria-hidden="true" />
       </template>
       <template #title>{{ valsi.word }}</template>
       <template #title-after>
@@ -54,33 +49,37 @@
               >
                 {{ word }}
               </RouterLink>
-              <span v-if="Number(index) < valsi.decomposition.length - 1" class="text-gray-500">+</span>
+              <span v-if="Number(index) < valsi.decomposition.length - 1" class="text-gray-500"
+                >+</span
+              >
             </template>
           </span>
         </div>
       </template>
     </PageHeader>
-     <!-- Discussion Section -->
+    <!-- Discussion Section -->
     <div class="flex flex-wrap gap-2 w-full lg:w-auto justify-center">
-       <RouterLink :to="`/comments?valsi_id=${valsi.valsiid}`" class="ui-btn--neutral-slate"
-        > <AudioWaveform class="w-4 h-4" /> <span
+      <RouterLink :to="`/comments?valsi_id=${valsi.valsiid}`" class="ui-btn--neutral-slate">
+        <AudioWaveform class="w-4 h-4" />
+        <span
           v-if="(valsi.comment_count ?? 0) > 0"
           class="text-xs font-medium bg-white/40 px-1.5 rounded-md border border-white/30"
-          > {{ valsi.comment_count }} </span
-        > <span>{{ t('entryPage.discussEntry') }}</span
-        > </RouterLink
-      > <SubscriptionControls :valsi-id="valsi.valsiid" :auth="auth" />
+        >
+          {{ valsi.comment_count }}
+        </span>
+        <span>{{ t('entryPage.discussEntry') }}</span>
+      </RouterLink>
+      <SubscriptionControls :valsi-id="valsi.valsiid" :auth="auth" />
     </div>
-     <!-- Definitions Section -->
+    <!-- Definitions Section -->
     <div class="space-y-4">
-
       <h3 class="text-xl font-semibold text-gray-700 flex items-center gap-2">
-         <span>{{ t('entryPage.definitions') }}</span
-        > <span class="text-sm font-normal text-gray-500">({{ definitions.length }})</span>
+        <span>{{ t('entryPage.definitions') }}</span>
+        <span class="text-sm font-normal text-gray-500">({{ definitions.length }})</span>
       </h3>
 
       <div class="space-y-4">
-         <DefinitionCard
+        <DefinitionCard
           v-for="def in definitions"
           :key="def.definitionid"
           :definition="def"
@@ -96,68 +95,61 @@
           @refresh-definitions="fetchDefinitionsDetails"
         />
       </div>
-       <!-- No Definitions State -->
+      <!-- No Definitions State -->
       <div
         v-if="definitions.length === 0"
         class="text-center py-8 bg-gray-50 rounded-lg text-gray-600"
       >
-         {{ t('entryPage.noDefinitions') }}
+        {{ t('entryPage.noDefinitions') }}
       </div>
-
     </div>
-     <!-- Translations Section -->
+    <!-- Translations Section -->
     <div v-if="translations.length > 0" class="space-y-4 pt-4 border-t">
-
       <h3 class="text-xl font-semibold text-gray-700 flex items-center gap-2">
-         <span>{{ t('entryPage.translationsLabel') }}</span
-        > <span class="text-sm font-normal text-gray-500">({{ translations.length }})</span>
+        <span>{{ t('entryPage.translationsLabel') }}</span>
+        <span class="text-sm font-normal text-gray-500">({{ translations.length }})</span>
       </h3>
 
       <div class="space-y-4">
-
         <div
           v-for="trans in translations"
           :key="trans.definitionid"
           class="p-3 bg-gray-50 rounded-lg border"
         >
-
           <div class="flex justify-between items-start">
-
             <div>
-               <RouterLink
+              <RouterLink
                 :to="`/valsi/${trans.valsiword}?highlight_definition_id=${trans.definitionid}`"
                 class="font-bold text-blue-600 hover:underline"
-                > {{ trans.valsiword }} </RouterLink
-              > <span class="text-gray-500 text-sm ml-2">({{ trans.lang_name }})</span>
+              >
+                {{ trans.valsiword }}
+              </RouterLink>
+              <span class="text-gray-500 text-sm ml-2">({{ trans.lang_name }})</span>
               <div class="mt-1 text-gray-800">{{ trans.definition }}</div>
 
               <div class="mt-2 flex items-center space-x-3">
-                 <RouterLink
+                <RouterLink
                   :to="`/definition_link/${trans.link_id}/discussion`"
                   class="text-xs font-bold text-blue-500 hover:text-blue-700 flex items-center bg-blue-50 px-2 py-1 rounded transition-colors"
-                  > <MessageCircle class="h-3 w-3 mr-1" /> {{
-                    t('definitionLinkDiscussion.discussion')
-                  }} </RouterLink
                 >
+                  <MessageCircle class="h-3 w-3 mr-1" />
+                  {{ t('definitionLinkDiscussion.discussion') }}
+                </RouterLink>
               </div>
-
             </div>
-             <button
+            <button
               v-if="auth.state.isLoggedIn"
-              @click="unlinkTranslation(trans)"
               class="text-red-500 hover:text-red-700 p-1"
               :title="t('entryPage.unlinkTranslation')"
+              @click="unlinkTranslation(trans)"
             >
-               <Trash2 class="h-4 w-4" /> </button
-            >
+              <Trash2 class="h-4 w-4" />
+            </button>
           </div>
-
         </div>
-
       </div>
-
     </div>
-     <!-- Action Buttons -->
+    <!-- Action Buttons -->
     <div v-if="auth.state.isLoggedIn" class="flex flex-wrap gap-3 pt-4 border-t">
       <IconButton
         :label="t('entryPage.addDefinition')"
@@ -165,9 +157,7 @@
         @click="router.push(`/valsi/add?word=${encodeURIComponent(valsi.word)}`)"
       />
     </div>
-
   </article>
-
 </template>
 
 <script setup lang="ts">
@@ -214,7 +204,7 @@ const props = defineProps({
 
 const router = useRouter()
 const auth = useAuth()
-const { t, locale } = useI18n()
+const { t } = useI18n()
 
 const languages = ref([])
 
@@ -419,4 +409,3 @@ watch(definitions, async (newDefs) => {
   animation: highlight-definition 5.8s ease-out;
 }
 </style>
-

@@ -1,12 +1,13 @@
 <template>
-
   <div v-if="collection">
-     <!-- Header -->
+    <!-- Header -->
     <CollectionPageHeader
       :collection="collection"
       :cover-image-url="collectionCoverDisplayUrl"
       :cover-image-alt="t('collectionDetail.coverImageAlt', { name: collection.name })"
-      :cover-lightbox-dialog-label="t('collectionDetail.coverLightboxDialog', { name: collection.name })"
+      :cover-lightbox-dialog-label="
+        t('collectionDetail.coverLightboxDialog', { name: collection.name })
+      "
       :cover-lightbox-close-label="t('collectionDetail.coverLightboxClose')"
       :public-label="t('collectionDetail.public')"
       :private-label="t('collectionDetail.private')"
@@ -19,61 +20,65 @@
           <span>{{ t('collectionDetail.pageHint') }}</span>
         </div>
       </template>
-      <template #title>
-        {{ collection.name }}
-      </template>
+      <template #title> {{ collection.name }} </template>
       <template #meta-actions>
-        <Dropdown v-if="auth.state.isLoggedIn" :trigger-label="t('collectionDetail.actions')"
-          > <button
+        <Dropdown v-if="auth.state.isLoggedIn" :trigger-label="t('collectionDetail.actions')">
+          <button
             v-if="isOwner"
             type="button"
             class="w-full pl-4 pr-0 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
             @click="openEditCollectionModal"
           >
-             {{ t('collectionDetail.editCollectionInfo') }} </button
-          > <button
+            {{ t('collectionDetail.editCollectionInfo') }}
+          </button>
+          <button
             type="button"
             class="w-full px-4 py-2 text-left text-sm text-indigo-600 hover:bg-indigo-50 flex items-center gap-2"
             @click="handleCloneCollection"
           >
-             {{ t('collectionDetail.cloneCollection') }} </button
-          > <button
+            {{ t('collectionDetail.cloneCollection') }}
+          </button>
+          <button
             v-if="collection.is_public || isOwner"
             type="button"
             class="w-full px-4 py-2 text-left text-sm text-purple-600 hover:bg-purple-50 flex items-center gap-2"
             @click="showExportModal = true"
           >
-             {{ t('collectionDetail.exportCollection') }} </button
-          > <button
+            {{ t('collectionDetail.exportCollection') }}
+          </button>
+          <button
             v-if="isOwner"
             type="button"
             class="w-full px-4 py-2 text-left text-sm text-green-600 hover:bg-green-50 flex items-center gap-2"
-            @click="showMergeModal = true; loadAvailableCollections()"
+            @click="openMergeModal"
           >
-             {{ t('collectionDetail.mergeCollections') }} </button
-          > <button
+            {{ t('collectionDetail.mergeCollections') }}
+          </button>
+          <button
             v-if="isOwner"
             type="button"
             class="w-full px-4 py-2 text-left text-sm text-cyan-600 hover:bg-cyan-50 flex items-center gap-2"
             @click="triggerJsonImport"
           >
-             {{ t('collectionDetail.importFullButton') }} </button
-          > <button
+            {{ t('collectionDetail.importFullButton') }}
+          </button>
+          <button
             v-if="isOwner"
             type="button"
             class="w-full px-4 py-2 text-left text-sm text-teal-600 hover:bg-teal-50 flex items-center gap-2"
             @click="showMediaBulkZipModal = true"
           >
-             {{ t('collectionCustomTextBulk.mediaBulkZipButton') }} </button
-          > <button
+            {{ t('collectionCustomTextBulk.mediaBulkZipButton') }}
+          </button>
+          <button
             v-if="isOwner"
             type="button"
             class="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
             @click="handleDelete"
           >
-             {{ t('collectionDetail.deleteCollection') }} </button
-          > </Dropdown
-        >
+            {{ t('collectionDetail.deleteCollection') }}
+          </button>
+        </Dropdown>
       </template>
       <template #toolbar>
         <input
@@ -99,6 +104,7 @@
               @reset="handleItemFiltersReset"
             />
           </div>
+
           <div class="flex w-full flex-wrap items-center justify-center gap-x-2 gap-y-2">
             <div
               v-if="isOwner"
@@ -106,10 +112,7 @@
               role="group"
               aria-label="Collection editing"
             >
-              <button
-                class="ui-btn--create ui-btn--group-item md:flex-none"
-                @click="resetForm(); showAddModal = true"
-              >
+              <button class="ui-btn--create ui-btn--group-item md:flex-none" @click="openAddModal">
                 <PlusCircle class="w-4 h-4" /> {{ t('collectionDetail.addItem') }}
               </button>
               <RouterLink
@@ -153,24 +156,26 @@
         </div>
       </template>
     </CollectionPageHeader>
-     <!-- Loading State --> <LoadingSpinner v-if="isLoading" class="py-12" /> <!-- Items List -->
+    <!-- Loading State -->
+    <LoadingSpinner v-if="isLoading" class="py-12" />
+    <!-- Items List -->
     <div
       v-if="isOwner && isAddFlashcardMode"
       class="flex flex-row flex-wrap items-center gap-3 px-3 py-2 my-2"
     >
-       <label
+      <label
         class="inline-flex items-center gap-2 text-sm font-medium text-gray-700 select-none cursor-pointer"
-        > <input
+      >
+        <input
           type="checkbox"
           class="checkbox-toggle"
           :checked="isAddFlashcardMode"
           @change="toggleAddFlashcardMode"
-        /> <span>{{ t('collectionDetail.onlyItemsWithoutFlashcards') }}</span
-        > </label
-      >
+        />
+        <span>{{ t('collectionDetail.onlyItemsWithoutFlashcards') }}</span>
+      </label>
     </div>
-
-     <!-- Items / Discussion tabs -->
+    <!-- Items / Discussion tabs -->
     <div
       class="btn-group-forced flex flex-wrap items-center justify-center gap-y-2 my-4"
       role="tablist"
@@ -215,16 +220,17 @@
     </div>
 
     <div v-show="activeTab === 'items'" class="space-y-4" role="tabpanel">
-       <!-- Loading state for items --> <LoadingSpinner v-if="isLoadingItems" class="py-8" /> <!-- Items grid -->
+      <!-- Loading state for items -->
+      <LoadingSpinner v-if="isLoadingItems" class="py-8" />
+      <!-- Items grid -->
 
       <div v-else class="grid gap-4">
-
         <div
           v-for="(item, index) in paginatedItems.items"
           :key="item.item_id"
           class="relative w-full max-w-full overflow-visible"
         >
-           <DefinitionCard
+          <DefinitionCard
             :show-edit-button="isOwner"
             :show-reorder-controls="isOwner"
             :is-owner="isOwner"
@@ -252,35 +258,33 @@
             :item-id="item.item_id"
             :languages="languages"
             :collections="userCollections"
-            @collection-updated="userCollections = $event"
             :disable-discussion-button="true"
             :disable-toolbar="true"
             :notes="item.ci_notes"
             :show-notes-edit="isOwner"
+            @collection-updated="userCollections = $event"
             @move-up="moveItem(item, 'up')"
             @move-down="moveItem(item, 'down')"
             @remove="confirmRemoveItem(item)"
             @edit-item="openEditItemModal(item)"
           />
         </div>
-
       </div>
-       <!-- Empty State -->
+      <!-- Empty State -->
       <div
         v-if="!isLoadingItems && paginatedItems.items.length === 0"
         class="text-center py-12 bg-gray-50 rounded-lg border border-gray-200"
       >
-
-        <p class="text-gray-600"> {{ t('collectionDetail.noItems') }} </p>
+        <p class="text-gray-600">{{ t('collectionDetail.noItems') }}</p>
 
         <div class="flex justify-center">
-           <button v-if="isOwner" class="mt-4 ui-btn--create" @click="showAddModal = true">
-             {{ t('collectionDetail.addItemButton') }} </button
-          >
+          <button v-if="isOwner" class="mt-4 ui-btn--create" @click="showAddModal = true">
+            {{ t('collectionDetail.addItemButton') }}
+          </button>
         </div>
-
       </div>
-       <!-- PaginationComponent --> <PaginationComponent
+      <!-- PaginationComponent -->
+      <PaginationComponent
         v-if="paginatedItems.total > itemsPerPage"
         :current-page="currentPage"
         :total-pages="totalPages"
@@ -292,16 +296,15 @@
     </div>
 
     <div v-show="activeTab === 'discussion'" class="pt-2" role="tabpanel">
-      <div
-        v-if="searchMode === 'comments' && itemSearchQuery.trim()"
-        class="space-y-4"
-      >
+      <div v-if="searchMode === 'comments' && itemSearchQuery.trim()" class="space-y-4">
         <LoadingSpinner v-if="isLoadingWaves" class="py-8" />
         <template v-else>
           <div v-if="waveItems.length > 0" class="space-y-3">
             <div
               v-for="item in waveItems"
-              :key="item.source === 'comment' ? `c-${item.comment.comment_id}` : `m-${item.message.id}`"
+              :key="
+                item.source === 'comment' ? `c-${item.comment.comment_id}` : `m-${item.message.id}`
+              "
               class="cursor-pointer"
               @click="
                 item.source === 'comment'
@@ -319,10 +322,8 @@
               />
             </div>
           </div>
-          <div
-            v-else
-            class="text-center py-12 bg-blue-50 rounded-lg border border-blue-100"
-          >
+
+          <div v-else class="text-center py-12 bg-blue-50 rounded-lg border border-blue-100">
             <MessageSquare class="mx-auto h-12 w-12 text-blue-400" />
             <p class="mt-4 text-gray-600">{{ t('home.noCommentsFound') }}</p>
           </div>
@@ -337,21 +338,16 @@
           />
         </template>
       </div>
-      <CommentList
-        v-else
-        :collection-id="collection.collection_id"
-        :embedded="true"
-      />
+      <CommentList v-else :collection-id="collection.collection_id" :embedded="true" />
     </div>
-     <!-- Edit Collection Modal --> <ModalComponent
+    <!-- Edit Collection Modal -->
+    <ModalComponent
       :show="showEditModal"
       :title="t('collectionDetail.editCollectionTitle')"
       @close="cancelEditCollectionModal()"
-      >
+    >
       <form @submit.prevent="performUpdateCollection">
-
         <div class="space-y-4">
-
           <div v-if="isOwner" class="flex flex-col items-center mb-2">
             <div class="relative group w-28 h-28">
               <div
@@ -385,12 +381,14 @@
               >
                 <BookOpen class="h-14 w-14" />
               </div>
+
               <div
                 v-if="isCollectionImageUploading"
                 class="absolute inset-0 rounded-xl bg-black bg-opacity-50 flex items-center justify-center"
               >
                 <svg class="w-16 h-16 transform -rotate-90" viewBox="0 0 100 100">
                   <circle cx="50" cy="50" r="45" fill="none" stroke="#4B5563" stroke-width="8" />
+
                   <circle
                     cx="50"
                     cy="50"
@@ -399,14 +397,18 @@
                     stroke="#3B82F6"
                     stroke-width="8"
                     :stroke-dasharray="collectionImageCircumference"
-                    :stroke-dashoffset="collectionImageCircumference - (collectionImageUploadProgress / 100) * collectionImageCircumference"
+                    :stroke-dashoffset="
+                      collectionImageCircumference -
+                      (collectionImageUploadProgress / 100) * collectionImageCircumference
+                    "
                     class="transition-all duration-300"
                   />
                 </svg>
-                <span class="absolute text-white text-sm font-medium">{{
-                  Math.round(collectionImageUploadProgress)
-                }}%</span>
+                <span class="absolute text-white text-sm font-medium"
+                  >{{ Math.round(collectionImageUploadProgress) }}%</span
+                >
               </div>
+
               <div
                 v-if="!isCollectionImageUploading"
                 class="absolute -bottom-4 left-1/2 transform -translate-x-1/2 flex gap-3 pointer-events-none"
@@ -415,7 +417,12 @@
                   class="cursor-pointer p-2 bg-white border border-gray-300 rounded-full text-blue-600 hover:bg-blue-50 transition-all shadow-md pointer-events-auto"
                   :title="t('collectionDetail.collectionCoverUploadTitle')"
                 >
-                  <input type="file" class="hidden" accept="image/*" @change="handleCollectionCoverFileChange" />
+                  <input
+                    type="file"
+                    class="hidden"
+                    accept="image/*"
+                    @change="handleCollectionCoverFileChange"
+                  />
                   <Camera class="h-5 w-5" />
                 </label>
                 <button
@@ -429,119 +436,121 @@
                 </button>
               </div>
             </div>
+
             <div class="h-6" />
+
             <p v-if="collectionImageUploadError" class="mt-2 text-sm text-red-600">
               {{ collectionImageUploadError }}
             </p>
           </div>
 
           <div>
-             <label class="block text-sm font-medium text-gray-700 mb-1">{{
+            <label class="block text-sm font-medium text-gray-700 mb-1">{{
               t('collectionDetail.nameLabel')
-            }}</label
-            > <input v-model="editForm.name" type="text" required class="input-field w-full" />
+            }}</label>
+            <input v-model="editForm.name" type="text" required class="input-field w-full" />
           </div>
 
           <div>
-             <label class="block text-sm font-medium text-gray-700 mb-1">{{
+            <label class="block text-sm font-medium text-gray-700 mb-1">{{
               t('collectionDetail.descriptionLabel')
-            }}</label
-            > <textarea v-model="editForm.description" rows="3" class="textarea-field" />
+            }}</label>
+            <textarea v-model="editForm.description" rows="3" class="textarea-field" />
           </div>
 
           <div class="flex items-center">
-             <input
+            <input
               id="edit_is_public"
               v-model="editForm.is_public"
               type="checkbox"
               class="checkbox-toggle"
-            /> <label for="edit_is_public" class="ml-2 text-sm text-gray-700"
-              > {{ t('collectionDetail.makePublicLabel') }} </label
-            >
+            />
+            <label for="edit_is_public" class="ml-2 text-sm text-gray-700">
+              {{ t('collectionDetail.makePublicLabel') }}
+            </label>
           </div>
-
         </div>
 
         <div class="mt-6 flex justify-end gap-3">
-           <button type="button" class="ui-btn--cancel" @click="cancelEditCollectionModal()">
-             {{ t('collectionDetail.cancel') }} </button
-          > <button
+          <button type="button" class="ui-btn--cancel" @click="cancelEditCollectionModal()">
+            {{ t('collectionDetail.cancel') }}
+          </button>
+          <button
             type="submit"
             :disabled="isSubmitting || isCollectionImageUploading"
             class="ui-btn--edit"
           >
-             {{ isSubmitting ? t('collectionDetail.saving') : t('collectionDetail.saveChanges') }} </button
-          >
+            {{ isSubmitting ? t('collectionDetail.saving') : t('collectionDetail.saveChanges') }}
+          </button>
         </div>
-
       </form>
-       </ModalComponent
-    > <!-- Export Collection Modal (full: items + levels + flashcard directions) --> <ModalComponent
+    </ModalComponent>
+    <!-- Export Collection Modal (full: items + levels + flashcard directions) -->
+    <ModalComponent
       :show="showExportModal"
       :title="t('collectionDetail.exportCollectionTitle')"
       @close="showExportModal = false"
-      >
+    >
       <div class="space-y-4">
+        <p class="text-sm text-gray-600">{{ t('collectionDetail.exportFullDescription') }}</p>
 
-        <p class="text-sm text-gray-600"> {{ t('collectionDetail.exportFullDescription') }} </p>
+        <div v-if="exportProgress" class="text-sm text-blue-600 mt-2">{{ exportProgress }}</div>
 
-        <div v-if="exportProgress" class="text-sm text-blue-600 mt-2"> {{ exportProgress }} </div>
-
-        <div v-if="exportError" class="text-sm text-red-600 mt-2"> {{ exportError }} </div>
-
+        <div v-if="exportError" class="text-sm text-red-600 mt-2">{{ exportError }}</div>
       </div>
 
       <div class="mt-6 flex justify-end space-x-3">
-         <button type="button" class="ui-btn--cancel" @click="showExportModal = false">
-           {{ t('collectionDetail.cancel') }} </button
-        > <button :disabled="isExporting" class="ui-btn--read" @click="handleExport">
-           {{ isExporting ? t('collectionDetail.exporting') : t('collectionDetail.exportButton') }} </button
-        >
+        <button type="button" class="ui-btn--cancel" @click="showExportModal = false">
+          {{ t('collectionDetail.cancel') }}
+        </button>
+        <button :disabled="isExporting" class="ui-btn--read" @click="handleExport">
+          {{ isExporting ? t('collectionDetail.exporting') : t('collectionDetail.exportButton') }}
+        </button>
       </div>
-       </ModalComponent
-    >
+    </ModalComponent>
     <CollectionMediaBulkZipModal
       v-model="showMediaBulkZipModal"
       :collection-id="props.collectionId"
       @success="onMediaBulkZipSuccess"
     />
-    <!-- Add/Edit Item Modal --> <ModalComponent
+    <!-- Add/Edit Item Modal -->
+    <ModalComponent
       :show="showAddModal"
       :title="
         isEditingItem ? t('collectionDetail.editItemTitle') : t('collectionDetail.addItemTitle')
       "
       @close="cancelEditItemModal()"
-      > <!-- Item Type Selection --> <TabbedPageHeader
+    >
+      <!-- Item Type Selection -->
+      <TabbedPageHeader
         :tabs="addItemTabs"
         :active-tab="itemType"
         :page-title="addItemTabs.find((t) => t.key === itemType)?.label || ''"
         @tab-click="itemType = $event"
-      /> <!-- Custom Content Form -->
+      />
+      <!-- Custom Content Form -->
       <div
         v-if="itemType === 'custom'"
-        class="flex-1 overflow-y-auto space-y-2 p-2"
         ref="customContentContainer"
+        class="flex-1 overflow-y-auto space-y-2 p-2"
       >
-
         <div>
-           <label class="block text-sm font-medium text-gray-700 mb-1">{{
+          <label class="block text-sm font-medium text-gray-700 mb-1">{{
             t('collectionDetail.frontContentLabel')
-          }}</label
-          > <textarea
+          }}</label>
+          <textarea
             v-model="customContent.front"
             rows="3"
             :placeholder="t('collectionDetail.frontContentPlaceholder')"
             class="textarea-field"
             :class="{ 'border-red-300': showValidation && !customContent.front.trim() }"
-          /> <span
-            v-if="showValidation && !customContent.front.trim()"
-            class="text-sm text-red-600"
-            >{{ t('collectionDetail.frontContentRequired') }}</span
-          >
+          />
+          <span v-if="showValidation && !customContent.front.trim()" class="text-sm text-red-600">{{
+            t('collectionDetail.frontContentRequired')
+          }}</span>
           <p class="text-xs text-gray-500 mt-1">{{ t('collectionDetail.semicolonHint') }}</p>
-
         </div>
-         <ImageUpload
+        <ImageUpload
           v-model="customContent.frontImage"
           :collection-id="numericCollectionId"
           :item-id="null"
@@ -550,31 +559,30 @@
           @image-loaded="handleFrontImageLoaded"
         />
         <div>
-           <label class="block text-sm font-medium text-gray-700 mb-1">{{
+          <label class="block text-sm font-medium text-gray-700 mb-1">{{
             t('collectionDetail.backContentLabel')
-          }}</label
-          > <textarea
+          }}</label>
+          <textarea
             v-model="customContent.back"
             rows="3"
             :placeholder="t('collectionDetail.backContentPlaceholder')"
             class="textarea-field"
             :class="{ 'border-red-300': showValidation && !customContent.back.trim() }"
-          /> <span
-            v-if="showValidation && !customContent.back.trim()"
-            class="text-sm text-red-600"
-            >{{ t('collectionDetail.backContentRequired') }}</span
-          >
+          />
+          <span v-if="showValidation && !customContent.back.trim()" class="text-sm text-red-600">{{
+            t('collectionDetail.backContentRequired')
+          }}</span>
           <p class="text-xs text-gray-500 mt-1">{{ t('collectionDetail.semicolonHint') }}</p>
-
         </div>
-         <ImageUpload
+        <ImageUpload
           v-model="customContent.backImage"
           :collection-id="numericCollectionId"
           :item-id="null"
           side="back"
           :label="t('collectionDetail.backImageLabel')"
           @image-loaded="handleBackImageLoaded"
-        /> <SoundUpload
+        />
+        <SoundUpload
           v-model="customContent.sound"
           :collection-id="numericCollectionId"
           :item-id="currentItem?.item_id"
@@ -582,12 +590,13 @@
           :default-tts-text="customContent.front"
           :label="t('collectionDetail.soundLabel')"
           @remove-sound="customContent.removeSound = true"
-        /> <!-- Notes Field -->
+        />
+        <!-- Notes Field -->
         <div class="mt-4">
-           <label class="block text-sm font-medium text-gray-700 mb-1">{{
+          <label class="block text-sm font-medium text-gray-700 mb-1">{{
             t('collectionDetail.notesLabel')
-          }}</label
-          > <textarea
+          }}</label>
+          <textarea
             v-model="addItemNotes"
             rows="2"
             class="textarea-field"
@@ -596,22 +605,19 @@
         </div>
 
         <div class="flex items-center space-x-2 mb-2">
-           <button type="button" class="ui-btn--action" @click="toggleFlashcard">
-             <template v-if="enableFlashcard"
-              > {{ t('collectionDetail.removeFlashcard') }} </template
-            > <template v-else> {{ t('collectionDetail.createFlashcard') }} </template> </button
-          >
+          <button type="button" class="ui-btn--action" @click="toggleFlashcard">
+            <template v-if="enableFlashcard">
+              {{ t('collectionDetail.removeFlashcard') }}
+            </template>
+            <template v-else> {{ t('collectionDetail.createFlashcard') }} </template>
+          </button>
         </div>
 
         <div v-if="enableFlashcard" class="space-y-2">
-           <label class="block text-sm font-medium text-gray-700 mb-2">{{
+          <label class="block text-sm font-medium text-gray-700 mb-2">{{
             t('collectionDetail.studyDirectionLabel')
-          }}</label
-          > <select
-            v-model="addItemDirection"
-            class="w-full input-field text-sm"
-          >
-
+          }}</label>
+          <select v-model="addItemDirection" class="w-full input-field text-sm">
             <option value="direct">{{ t('collectionDetail.direction.direct') }}</option>
 
             <option value="reverse">{{ t('collectionDetail.direction.reverse') }}</option>
@@ -621,59 +627,57 @@
             <option value="fillin">{{ t('collectionDetail.direction.fillin') }}</option>
 
             <option value="fillin_reverse">
-               {{ t('collectionDetail.direction.fillin_reverse') }}
+              {{ t('collectionDetail.direction.fillin_reverse') }}
             </option>
 
             <option value="fillin_both">{{ t('collectionDetail.direction.fillin_both') }}</option>
 
             <option value="justinformation">
-               {{ t('collectionDetail.direction.justinformation') }}
+              {{ t('collectionDetail.direction.justinformation') }}
             </option>
-             </select
-          >
+          </select>
           <div class="flex items-center space-x-2">
-             <input
+            <input
               id="auto_progress"
               v-model="customContent.auto_progress"
               type="checkbox"
               class="checkbox-toggle"
-            /> <label for="auto_progress" class="text-sm text-gray-700"
-              > {{ t('collectionDetail.autoProgressLabel') }} </label
-            >
+            />
+            <label for="auto_progress" class="text-sm text-gray-700">
+              {{ t('collectionDetail.autoProgressLabel') }}
+            </label>
           </div>
 
-          <p class="text-xs text-gray-500"> {{ t('collectionDetail.autoProgressDescription') }} </p>
-           <!-- Canonical Comparison Checkbox for Fill-in Mode -->
+          <p class="text-xs text-gray-500">{{ t('collectionDetail.autoProgressDescription') }}</p>
+          <!-- Canonical Comparison Checkbox for Fill-in Mode -->
           <div
             v-if="addItemDirection.toLowerCase().includes('fillin')"
             class="flex items-center space-x-2 mt-3"
           >
-             <input
+            <input
               id="use_canonical_comparison"
               v-model="useCanonicalComparison"
               type="checkbox"
               class="checkbox-toggle"
-            /> <label for="use_canonical_comparison" class="text-sm text-gray-700"
-              > {{ t('collectionDetail.useCanonicalComparisonLabel') }} </label
-            >
+            />
+            <label for="use_canonical_comparison" class="text-sm text-gray-700">
+              {{ t('collectionDetail.useCanonicalComparisonLabel') }}
+            </label>
           </div>
 
           <p v-if="addItemDirection.toLowerCase().includes('fillin')" class="text-xs text-gray-500">
-             {{ t('collectionDetail.useCanonicalComparisonDescription') }}
+            {{ t('collectionDetail.useCanonicalComparisonDescription') }}
           </p>
-
         </div>
-
       </div>
-       <!-- Definition Search -->
+      <!-- Definition Search -->
       <div
         v-else-if="itemType === 'definition'"
-        class="flex-1 overflow-y-auto space-y-2 p-2"
         ref="searchContentContainer"
+        class="flex-1 overflow-y-auto space-y-2 p-2"
       >
-
         <div class="mb-4">
-           <SearchInput
+          <SearchInput
             v-model="searchQuery"
             :placeholder="t('collectionDetail.searchDefinitionsPlaceholder')"
             :is-loading="isSearching"
@@ -682,54 +686,46 @@
             @clear="clearDefinitionSearch"
           />
         </div>
-         <!-- Search Results -->
+        <!-- Search Results -->
         <div class="flex-1 pr-2" :class="{ 'overflow-y-auto': !selectedDefinition }">
-
           <div v-if="!searchQuery" class="text-center py-8 text-gray-600">
-             {{ t('collectionDetail.searchPrompt') }}
+            {{ t('collectionDetail.searchPrompt') }}
           </div>
 
           <div v-else-if="addItemResults.length === 0" class="text-center py-8 text-gray-600">
-             {{ t('collectionDetail.noDefinitionsFound') }}
+            {{ t('collectionDetail.noDefinitionsFound') }}
           </div>
 
           <div v-else-if="!!selectedDefinition">
-
             <div
               class="border rounded-lg p-4 hover:border-blue-300 cursor-pointer border-blue-500 bg-blue-50"
               :data-definition-id="selectedDefinition.definitionid"
               @click="selectDefinition(selectedDefinition)"
             >
-
               <div>
-
                 <div class="flex justify-between items-center w-full">
-
                   <h4 class="font-medium text-blue-600">
-                     {{ selectedDefinition.valsiword || selectedDefinition.free_content_front }}
+                    {{ selectedDefinition.valsiword || selectedDefinition.free_content_front }}
                   </h4>
-                   <button class="ui-btn--empty"> {{ t('collectionDetail.deselect') }} </button>
+                  <button class="ui-btn--empty">{{ t('collectionDetail.deselect') }}</button>
                 </div>
 
                 <div v-if="selectedDefinition.username" class="mt-2 text-sm text-gray-500">
-                   {{
+                  {{
                     t('collectionDetail.addedByIn', {
                       username: selectedDefinition.username,
                       language: selectedDefinition.langrealname,
                     })
                   }}
                 </div>
-                 <LazyMathJax
+                <LazyMathJax
                   :content="selectedDefinition.definition || selectedDefinition.free_content_back"
                 />
               </div>
-
             </div>
-
           </div>
 
           <div v-else class="space-y-4">
-
             <div
               v-for="def in addItemResults"
               :key="def.definitionid"
@@ -737,48 +733,42 @@
               :data-definition-id="def.definitionid"
               @click="selectDefinition(def)"
             >
-
               <div>
-
                 <div class="flex justify-between items-center w-full mb-2">
-
                   <h4 class="font-medium text-blue-600">
-                     {{ def.valsiword || def.free_content_front }}
+                    {{ def.valsiword || def.free_content_front }}
                   </h4>
-                   <button class="ui-btn--empty"> {{ t('collectionDetail.select') }} </button>
+                  <button class="ui-btn--empty">{{ t('collectionDetail.select') }}</button>
                 </div>
 
                 <div v-if="def.username" class="mt-2 text-sm text-gray-500">
-                   {{
+                  {{
                     t('collectionDetail.addedByIn', {
                       username: def.username,
                       language: def.langrealname,
                     })
                   }}
                 </div>
-                 <LazyMathJax :content="def.definition || def.free_content_back" />
+                <LazyMathJax :content="def.definition || def.free_content_back" />
               </div>
-
             </div>
-
           </div>
-
         </div>
-         <!-- Notes Field -->
+        <!-- Notes Field -->
         <div v-if="selectedDefinition" class="space-y-2">
-
           <div class="mt-4">
-             <label class="block text-sm font-medium text-gray-700 mb-1">{{
+            <label class="block text-sm font-medium text-gray-700 mb-1">{{
               t('collectionDetail.notesLabel')
-            }}</label
-            > <textarea
+            }}</label>
+            <textarea
               v-model="addItemNotes"
               rows="2"
               class="textarea-field"
               :placeholder="t('collectionDetail.notesPlaceholder')"
             />
           </div>
-           <!-- Image Upload --> <ImageUpload
+          <!-- Image Upload -->
+          <ImageUpload
             v-model="definitionBackImage"
             :collection-id="numericCollectionId"
             :item-id="null"
@@ -786,7 +776,8 @@
             :label="t('collectionDetail.backImageLabel')"
             class="mb-4"
             @image-loaded="handleDefinitionBackImageLoaded"
-          /> <SoundUpload
+          />
+          <SoundUpload
             v-model="definitionSound"
             :collection-id="numericCollectionId"
             :item-id="currentItem?.item_id"
@@ -800,19 +791,19 @@
             @remove-sound="definitionRemoveSound = true"
           />
           <div class="flex items-center space-x-2 mb-2">
-             <button type="button" class="ui-btn--action" @click="toggleFlashcard">
-               <template v-if="enableFlashcard"
-                > {{ t('collectionDetail.removeFlashcard') }} </template
-              > <template v-else> {{ t('collectionDetail.createFlashcard') }} </template> </button
-            >
+            <button type="button" class="ui-btn--action" @click="toggleFlashcard">
+              <template v-if="enableFlashcard">
+                {{ t('collectionDetail.removeFlashcard') }}
+              </template>
+              <template v-else> {{ t('collectionDetail.createFlashcard') }} </template>
+            </button>
           </div>
 
           <div v-if="enableFlashcard">
-             <label class="block text-sm font-medium text-gray-700">{{
+            <label class="block text-sm font-medium text-gray-700">{{
               t('collectionDetail.studyDirectionLabel')
-            }}</label
-            > <select v-model="addItemDirection" class="w-full input-field text-sm">
-
+            }}</label>
+            <select v-model="addItemDirection" class="w-full input-field text-sm">
               <option value="direct">{{ t('collectionDetail.direction.direct') }}</option>
 
               <option value="reverse">{{ t('collectionDetail.direction.reverse') }}</option>
@@ -822,81 +813,78 @@
               <option value="fillin">{{ t('collectionDetail.direction.fillin') }}</option>
 
               <option value="fillin_reverse">
-                 {{ t('collectionDetail.direction.fillin_reverse') }}
+                {{ t('collectionDetail.direction.fillin_reverse') }}
               </option>
 
               <option value="fillin_both">{{ t('collectionDetail.direction.fillin_both') }}</option>
 
               <option value="justinformation">
-                 {{ t('collectionDetail.direction.justinformation') }}
+                {{ t('collectionDetail.direction.justinformation') }}
               </option>
-               </select
-            >
+            </select>
           </div>
 
           <div v-if="enableFlashcard" class="flex items-center space-x-2">
-             <input
+            <input
               id="definition_auto_progress"
               v-model="customContent.auto_progress"
               type="checkbox"
               class="checkbox-toggle"
-            /> <label for="definition_auto_progress" class="text-sm text-gray-700"
-              > {{ t('collectionDetail.autoProgressLabel') }} </label
-            >
+            />
+            <label for="definition_auto_progress" class="text-sm text-gray-700">
+              {{ t('collectionDetail.autoProgressLabel') }}
+            </label>
           </div>
 
           <p v-if="enableFlashcard" class="text-xs text-gray-500">
-             {{ t('collectionDetail.autoProgressDescription') }}
+            {{ t('collectionDetail.autoProgressDescription') }}
           </p>
-           <!-- Canonical Comparison for Definition Fill-in -->
+          <!-- Canonical Comparison for Definition Fill-in -->
           <div
             v-if="enableFlashcard && addItemDirection.toLowerCase().includes('fillin')"
             class="flex items-center space-x-2 mt-3"
           >
-             <input
+            <input
               id="definition_canonical_comparison"
               v-model="useCanonicalComparison"
               type="checkbox"
               class="checkbox-toggle"
-            /> <label for="definition_canonical_comparison" class="text-sm text-gray-700"
-              > {{ t('collectionDetail.useCanonicalComparisonLabel') }} </label
-            >
+            />
+            <label for="definition_canonical_comparison" class="text-sm text-gray-700">
+              {{ t('collectionDetail.useCanonicalComparisonLabel') }}
+            </label>
           </div>
 
           <p
             v-if="enableFlashcard && addItemDirection.toLowerCase().includes('fillin')"
             class="text-xs text-gray-500"
           >
-             {{ t('collectionDetail.useCanonicalComparisonDescription') }}
+            {{ t('collectionDetail.useCanonicalComparisonDescription') }}
           </p>
-
         </div>
-
       </div>
-       <!-- Quiz Content Form -->
+      <!-- Quiz Content Form -->
       <div
         v-else-if="itemType === 'quiz'"
-        class="flex-1 overflow-y-auto space-y-2 p-2"
         ref="quizContentContainer"
+        class="flex-1 overflow-y-auto space-y-2 p-2"
       >
-
         <div>
-           <label class="block text-sm font-medium text-gray-700 mb-1">{{
+          <label class="block text-sm font-medium text-gray-700 mb-1">{{
             t('collectionDetail.frontContentLabel')
-          }}</label
-          > <textarea
+          }}</label>
+          <textarea
             v-model="customContent.front"
             rows="3"
             :placeholder="t('collectionDetail.frontContentPlaceholder')"
             class="textarea-field"
             :class="{ 'border-red-300': showValidation && !customContent.front.trim() }"
-          /> <span
-            v-if="showValidation && !customContent.front.trim()"
-            class="text-sm text-red-600"
-            >{{ t('collectionDetail.frontContentRequired') }}</span
-          >
+          />
+          <span v-if="showValidation && !customContent.front.trim()" class="text-sm text-red-600">{{
+            t('collectionDetail.frontContentRequired')
+          }}</span>
         </div>
-         <ImageUpload
+        <ImageUpload
           v-model="customContent.frontImage"
           :collection-id="numericCollectionId"
           :item-id="null"
@@ -905,22 +893,21 @@
           @image-loaded="handleFrontImageLoaded"
         />
         <div>
-           <label class="block text-sm font-medium text-gray-700 mb-1">{{
+          <label class="block text-sm font-medium text-gray-700 mb-1">{{
             t('collectionDetail.backContentLabel')
-          }}</label
-          > <textarea
+          }}</label>
+          <textarea
             v-model="customContent.back"
             rows="3"
             :placeholder="t('collectionDetail.backContentPlaceholder')"
             class="textarea-field"
             :class="{ 'border-red-300': showValidation && !customContent.back.trim() }"
-          /> <span
-            v-if="showValidation && !customContent.back.trim()"
-            class="text-sm text-red-600"
-            >{{ t('collectionDetail.backContentRequired') }}</span
-          >
+          />
+          <span v-if="showValidation && !customContent.back.trim()" class="text-sm text-red-600">{{
+            t('collectionDetail.backContentRequired')
+          }}</span>
         </div>
-         <ImageUpload
+        <ImageUpload
           v-model="customContent.backImage"
           :collection-id="numericCollectionId"
           :item-id="null"
@@ -929,21 +916,20 @@
           @image-loaded="handleBackImageLoaded"
         />
         <div class="mt-4">
-           <label class="block text-sm font-medium text-gray-700 mb-1">{{
+          <label class="block text-sm font-medium text-gray-700 mb-1">{{
             t('collectionDetail.notesLabel')
-          }}</label
-          > <textarea
+          }}</label>
+          <textarea
             v-model="addItemNotes"
             rows="2"
             class="textarea-field"
             :placeholder="t('collectionDetail.notesPlaceholder')"
           />
         </div>
-         <label class="block text-sm font-medium text-gray-700 mb-2">{{
+        <label class="block text-sm font-medium text-gray-700 mb-2">{{
           t('collectionDetail.quizDirectionLabel')
-        }}</label
-        > <select v-model="addItemDirection" class="w-full input-field text-sm">
-
+        }}</label>
+        <select v-model="addItemDirection" class="w-full input-field text-sm">
           <option value="quiz_direct">{{ t('collectionDetail.direction.direct') }}</option>
 
           <option value="quiz_reverse">{{ t('collectionDetail.direction.reverse') }}</option>
@@ -951,36 +937,33 @@
           <option value="quiz_both">{{ t('collectionDetail.direction.both') }}</option>
 
           <option value="quiz_image_direct">
-             {{ t('collectionDetail.direction.quizImageDirect') }}
+            {{ t('collectionDetail.direction.quizImageDirect') }}
           </option>
 
           <option value="quiz_image_reverse">
-             {{ t('collectionDetail.direction.quizImageReverse') }}
+            {{ t('collectionDetail.direction.quizImageReverse') }}
           </option>
 
           <option value="quiz_image_both">
-             {{ t('collectionDetail.direction.quizImageBoth') }}
+            {{ t('collectionDetail.direction.quizImageBoth') }}
           </option>
-           </select
-        >
+        </select>
       </div>
-       <!-- New Definition Form -->
+      <!-- New Definition Form -->
       <div
         v-else-if="itemType === 'newDefinition'"
-        class="flex-1 overflow-y-auto space-y-4 p-2"
         ref="newDefinitionContainer"
+        class="flex-1 overflow-y-auto space-y-4 p-2"
       >
-         <!-- Word Input and Analysis -->
+        <!-- Word Input and Analysis -->
         <div>
-           <label for="new-word" class="block text-sm font-medium text-blue-700"
-            >{{ t('upsertDefinition.wordLabel') }} <span class="text-red-500">{{
-              t('upsertDefinition.required')
-            }}</span></label
+          <label for="new-word" class="block text-sm font-medium text-blue-700"
+            >{{ t('upsertDefinition.wordLabel') }}
+            <span class="text-red-500">{{ t('upsertDefinition.required') }}</span></label
           >
           <div class="flex flex-col sm:flex-row gap-2 sm:space-x-2">
-
             <div class="flex-1 w-full">
-               <DynamicInput
+              <DynamicInput
                 id="new-word"
                 v-model="newDefinitionData.word"
                 :is-analyzing="isAnalyzingNewWord"
@@ -990,7 +973,7 @@
             </div>
 
             <div class="flex items-center justify-end">
-               <button
+              <button
                 type="button"
                 class="w-auto h-8 ui-btn--warning-orange text-base"
                 :disabled="
@@ -998,48 +981,38 @@
                 "
                 @click="doAnalyzeNewWord"
               >
-
                 <div class="flex items-center gap-2">
-                   <Loader v-if="isAnalyzingNewWord" class="h-4 w-4 animate-spin" /> <SearchIcon
-                    v-else
-                    class="h-4 w-4"
-                  /> <span>{{ t('upsertDefinition.analyzeButton') }}</span
-                  >
+                  <Loader v-if="isAnalyzingNewWord" class="h-4 w-4 animate-spin" />
+                  <SearchIcon v-else class="h-4 w-4" />
+                  <span>{{ t('upsertDefinition.analyzeButton') }}</span>
                 </div>
-                 </button
-              >
+              </button>
             </div>
-
           </div>
-
         </div>
-         <!-- Word Type Display -->
+        <!-- Word Type Display -->
         <div v-if="newDefinitionWordType" class="space-y-4">
-           <AlertComponent type="info" :label="t('upsertDefinition.detectedTypeLabel')"
-            >
+          <AlertComponent type="info" :label="t('upsertDefinition.detectedTypeLabel')">
             <p class="font-semibold">{{ newDefinitionWordType }}</p>
-             </AlertComponent
-          > <AlertComponent
+          </AlertComponent>
+          <AlertComponent
             v-if="newDefinitionRecommended"
             type="tip"
             :label="t('upsertDefinition.recommendedWordLabel')"
-            >
-            <div class="flex items-center gap-2 justify-start">
-
-              <h2 class="font-semibold truncate">{{ newDefinitionRecommended }}</h2>
-               <button type="button" class="ui-btn--edit" @click="useNewDefinitionRecommended">
-                 <ArrowRight class="h-4 w-4" /> {{ t('upsertDefinition.useThisButton') }} </button
-              >
-            </div>
-             </AlertComponent
           >
+            <div class="flex items-center gap-2 justify-start">
+              <h2 class="font-semibold truncate">{{ newDefinitionRecommended }}</h2>
+              <button type="button" class="ui-btn--edit" @click="useNewDefinitionRecommended">
+                <ArrowRight class="h-4 w-4" /> {{ t('upsertDefinition.useThisButton') }}
+              </button>
+            </div>
+          </AlertComponent>
           <div
             v-if="newDefinitionProblems && Object.keys(newDefinitionProblems).length > 0"
             class="space-y-4"
           >
-
             <div v-for="(issues, category) in newDefinitionProblems" :key="category">
-               <AlertComponent
+              <AlertComponent
                 v-if="issues.length > 0"
                 type="error"
                 :label="
@@ -1047,61 +1020,52 @@
                     ? t('upsertDefinition.similarRegularGismu')
                     : t('upsertDefinition.similarExperimentalGismu')
                 "
-                >
+              >
                 <ul class="list-disc list-inside space-y-1">
-
                   <li
                     v-for="(problem, index) in issues"
                     :key="index"
                     class="font-semibold truncate"
                   >
-                     {{ problem }}
+                    {{ problem }}
                   </li>
-
                 </ul>
-                 </AlertComponent
-              >
+              </AlertComponent>
             </div>
-
           </div>
-
         </div>
-         <!-- Language Selection -->
+        <!-- Language Selection -->
         <div>
-           <label for="new-language" class="block text-sm font-medium text-blue-700"
-            >{{ t('upsertDefinition.languageLabel') }} <span class="text-red-500">{{
-              t('upsertDefinition.required')
-            }}</span></label
-          > <select
+          <label for="new-language" class="block text-sm font-medium text-blue-700"
+            >{{ t('upsertDefinition.languageLabel') }}
+            <span class="text-red-500">{{ t('upsertDefinition.required') }}</span></label
+          >
+          <select
             id="new-language"
             v-model="newDefinitionData.langId"
             required
             class="input-field w-full h-10"
             :disabled="isLoading || isSubmittingNewDefinition"
           >
-
             <option value="">{{ t('upsertDefinition.selectLanguagePlaceholder') }}</option>
 
             <option v-for="lang in languages" :key="lang.id" :value="lang.id">
-               {{ lang.real_name }}
+              {{ lang.real_name }}
             </option>
-             </select
-          >
+          </select>
         </div>
-         <!-- Definition Input -->
+        <!-- Definition Input -->
         <div>
-
           <div class="flex items-center justify-between">
-             <label for="new-definition" class="block text-sm font-medium text-blue-700"
-              >{{ t('upsertDefinition.definitionLabel') }} <span class="text-red-500">{{
-                t('upsertDefinition.required')
-              }}</span></label
-            > <span class="text-xs text-gray-500">{{
-              t('upsertDefinition.requiredUnlessImage')
-            }}</span
+            <label for="new-definition" class="block text-sm font-medium text-blue-700"
+              >{{ t('upsertDefinition.definitionLabel') }}
+              <span class="text-red-500">{{ t('upsertDefinition.required') }}</span></label
             >
+            <span class="text-xs text-gray-500">{{
+              t('upsertDefinition.requiredUnlessImage')
+            }}</span>
           </div>
-           <textarea
+          <textarea
             id="new-definition"
             v-model="newDefinitionData.definition"
             :required="!newDefinitionImage"
@@ -1114,31 +1078,34 @@
             :disabled="isSubmittingNewDefinition"
           />
           <p v-if="newDefinitionError" class="mt-2 text-xs sm:text-sm text-red-600">
-             {{ newDefinitionError }}
+            {{ newDefinitionError }}
           </p>
 
           <p v-else class="mt-2 text-xs sm:text-sm text-gray-500">
-             {{ t('upsertDefinition.mathjaxNote') }}
+            {{ t('upsertDefinition.mathjaxNote') }}
           </p>
-
         </div>
-         <!-- Image Upload --> <ImageUpload
+        <!-- Image Upload -->
+        <ImageUpload
           v-model="newDefinitionImage"
           :label="t('collectionDetail.imageLabel')"
           @image-loaded="handleNewDefinitionImageLoaded"
           @remove-image="handleNewDefinitionRemoveImage"
-        /> <SoundUpload
+        />
+        <SoundUpload
           v-model="newDefinitionSound"
           :default-tts-text="newDefinitionData.word"
           :label="t('collectionDetail.soundLabel')"
-        /> <!-- Notes Input -->
-
+        />
+        <!-- Notes Input -->
         <div>
-           <label for="new-notes" class="block text-sm font-medium text-blue-700"
-            >{{ t('upsertDefinition.notesLabel') }} <span class="text-gray-500 font-normal">{{
+          <label for="new-notes" class="block text-sm font-medium text-blue-700"
+            >{{ t('upsertDefinition.notesLabel') }}
+            <span class="text-gray-500 font-normal">{{
               t('upsertDefinition.optional')
             }}</span></label
-          > <textarea
+          >
+          <textarea
             id="new-notes"
             v-model="newDefinitionData.notes"
             rows="3"
@@ -1146,13 +1113,15 @@
             :disabled="isSubmittingNewDefinition"
           />
         </div>
-         <!-- Etymology Input -->
+        <!-- Etymology Input -->
         <div>
-           <label for="new-etymology" class="block text-sm font-medium text-blue-700"
-            >{{ t('upsertDefinition.etymologyLabel') }} <span class="text-gray-500 font-normal">{{
+          <label for="new-etymology" class="block text-sm font-medium text-blue-700"
+            >{{ t('upsertDefinition.etymologyLabel') }}
+            <span class="text-gray-500 font-normal">{{
               t('upsertDefinition.optional')
             }}</span></label
-          > <textarea
+          >
+          <textarea
             id="new-etymology"
             v-model="newDefinitionData.etymology"
             rows="3"
@@ -1160,30 +1129,25 @@
             :disabled="isSubmittingNewDefinition"
           />
         </div>
-         <!-- Owner Only Checkbox -->
+        <!-- Owner Only Checkbox -->
         <div class="mb-4">
-           <label class="flex items-center space-x-2"
-            > <input
-              v-model="newDefinitionData.ownerOnly"
-              type="checkbox"
-              class="checkbox-toggle"
-            /> <span class="text-xs sm:text-sm text-gray-700"
-              >{{ t('upsertDefinition.ownerOnlyLabel') }} <span class="text-gray-500">{{
-                t('upsertDefinition.optional')
-              }}</span></span
-            > </label
-          >
+          <label class="flex items-center space-x-2">
+            <input v-model="newDefinitionData.ownerOnly" type="checkbox" class="checkbox-toggle" />
+            <span class="text-xs sm:text-sm text-gray-700"
+              >{{ t('upsertDefinition.ownerOnlyLabel') }}
+              <span class="text-gray-500">{{ t('upsertDefinition.optional') }}</span></span
+            >
+          </label>
           <p class="mt-1 text-xs sm:text-sm text-gray-500">
-             {{ t('upsertDefinition.ownerOnlyNote') }}
+            {{ t('upsertDefinition.ownerOnlyNote') }}
           </p>
-
         </div>
-         <!-- Flashcard Settings for New Definition -->
+        <!-- Flashcard Settings for New Definition -->
         <div class="mt-4">
-           <label class="block text-sm font-medium text-gray-700 mb-1">{{
+          <label class="block text-sm font-medium text-gray-700 mb-1">{{
             t('collectionDetail.notesLabel')
-          }}</label
-          > <textarea
+          }}</label>
+          <textarea
             v-model="addItemNotes"
             rows="2"
             class="textarea-field"
@@ -1192,19 +1156,19 @@
         </div>
 
         <div class="flex items-center space-x-2 mb-2">
-           <button type="button" class="ui-btn--action" @click="toggleFlashcard">
-             <template v-if="enableFlashcard"
-              > {{ t('collectionDetail.removeFlashcard') }} </template
-            > <template v-else> {{ t('collectionDetail.createFlashcard') }} </template> </button
-          >
+          <button type="button" class="ui-btn--action" @click="toggleFlashcard">
+            <template v-if="enableFlashcard">
+              {{ t('collectionDetail.removeFlashcard') }}
+            </template>
+            <template v-else> {{ t('collectionDetail.createFlashcard') }} </template>
+          </button>
         </div>
 
         <div v-if="enableFlashcard" class="space-y-2">
-           <label class="block text-sm font-medium text-gray-700 mb-2">{{
+          <label class="block text-sm font-medium text-gray-700 mb-2">{{
             t('collectionDetail.studyDirectionLabel')
-          }}</label
-          > <select v-model="addItemDirection" class="w-full input-field text-sm">
-
+          }}</label>
+          <select v-model="addItemDirection" class="w-full input-field text-sm">
             <option value="direct">{{ t('collectionDetail.direction.direct') }}</option>
 
             <option value="reverse">{{ t('collectionDetail.direction.reverse') }}</option>
@@ -1214,60 +1178,57 @@
             <option value="fillin">{{ t('collectionDetail.direction.fillin') }}</option>
 
             <option value="fillin_reverse">
-               {{ t('collectionDetail.direction.fillin_reverse') }}
+              {{ t('collectionDetail.direction.fillin_reverse') }}
             </option>
 
             <option value="fillin_both">{{ t('collectionDetail.direction.fillin_both') }}</option>
 
             <option value="justinformation">
-               {{ t('collectionDetail.direction.justinformation') }}
+              {{ t('collectionDetail.direction.justinformation') }}
             </option>
-             </select
-          >
+          </select>
           <div class="flex items-center space-x-2">
-             <input
+            <input
               id="new_def_auto_progress"
               v-model="customContent.auto_progress"
               type="checkbox"
               class="checkbox-toggle"
-            /> <label for="new_def_auto_progress" class="text-sm text-gray-700"
-              > {{ t('collectionDetail.autoProgressLabel') }} </label
-            >
+            />
+            <label for="new_def_auto_progress" class="text-sm text-gray-700">
+              {{ t('collectionDetail.autoProgressLabel') }}
+            </label>
           </div>
 
           <p class="text-xs text-gray-500">{{ t('collectionDetail.autoProgressDescription') }}</p>
-           <!-- Canonical Comparison for New Definition Fill-in -->
+          <!-- Canonical Comparison for New Definition Fill-in -->
           <div
             v-if="addItemDirection.toLowerCase().includes('fillin')"
             class="flex items-center space-x-2 mt-3"
           >
-             <input
+            <input
               id="new_def_canonical_comparison"
               v-model="useCanonicalComparison"
               type="checkbox"
               class="checkbox-toggle"
-            /> <label for="new_def_canonical_comparison" class="text-sm text-gray-700"
-              > {{ t('collectionDetail.useCanonicalComparisonLabel') }} </label
-            >
+            />
+            <label for="new_def_canonical_comparison" class="text-sm text-gray-700">
+              {{ t('collectionDetail.useCanonicalComparisonLabel') }}
+            </label>
           </div>
 
           <p v-if="addItemDirection.toLowerCase().includes('fillin')" class="text-xs text-gray-500">
-             {{ t('collectionDetail.useCanonicalComparisonDescription') }}
+            {{ t('collectionDetail.useCanonicalComparisonDescription') }}
           </p>
-
         </div>
-
       </div>
-       <!-- Action Buttons -->
+      <!-- Action Buttons -->
       <div class="mt-4 flex flex-col gap-2">
-         <!-- Progress bar when updating item -->
+        <!-- Progress bar when updating item -->
         <div
           v-if="isEditingItem && isUpdatingItem"
           class="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden"
         >
-
           <div class="h-full w-1/3 bg-indigo-500 rounded-full progress-indeterminate" />
-
         </div>
 
         <p
@@ -1279,42 +1240,44 @@
         </p>
 
         <div class="flex justify-end gap-2">
-           <button
+          <button
             v-if="isEditingItem"
             class="ui-btn--error mr-auto"
             :disabled="isUpdatingItem"
-            @click="itemToDelete = currentItem; showDeleteItemConfirm = true"
+            @click="confirmDeleteItem"
           >
-             {{ t('collectionDetail.deleteItemButton') }} </button
-          > <button
+            {{ t('collectionDetail.deleteItemButton') }}
+          </button>
+          <button
             class="ui-btn--cancel"
             :disabled="isUpdatingItem"
             @click.stop="cancelEditItemModal()"
           >
-             {{ t('collectionDetail.cancel') }} </button
-          > <button
+            {{ t('collectionDetail.cancel') }}
+          </button>
+          <button
             v-if="itemType === 'custom' || itemType === 'quiz'"
             :disabled="!customContent.front.trim() || !customContent.back.trim() || isUpdatingItem"
             class="ui-btn--insert"
             @click="addCustomContent"
           >
-             {{
-              isEditingItem
-                ? t('collectionDetail.updateItem')
-                : t('collectionDetail.addItemButton')
-            }} </button
-          > <button
+            {{
+              isEditingItem ? t('collectionDetail.updateItem') : t('collectionDetail.addItemButton')
+            }}
+          </button>
+          <button
             v-else-if="itemType === 'definition' && selectedDefinition"
             class="ui-btn--insert"
             :disabled="isUpdatingItem"
             @click="addNewItem(selectedDefinition)"
           >
-             {{
+            {{
               isEditingItem
                 ? t('collectionDetail.updateItem')
                 : t('collectionDetail.addSelectedDefinition')
-            }} </button
-          > <button
+            }}
+          </button>
+          <button
             v-else-if="itemType === 'newDefinition'"
             class="ui-btn--insert"
             :disabled="
@@ -1326,64 +1289,61 @@
             "
             @click="addNewDefinitionAndItem"
           >
-             {{
+            {{
               isSubmittingNewDefinition
                 ? t('collectionDetail.adding')
                 : t('collectionDetail.addNewDefinitionButton')
-            }} </button
-          >
+            }}
+          </button>
         </div>
-
       </div>
-       </ModalComponent
-    > <!-- Merge Collection Modal --> <ModalComponent
+    </ModalComponent>
+    <!-- Merge Collection Modal -->
+    <ModalComponent
       :show="showMergeModal"
       :title="t('collectionDetail.mergeCollectionTitle')"
       @close="showMergeModal = false"
-      >
+    >
       <div v-if="isLoadingCollections" class="flex justify-center py-4">
-
         <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-500" />
-
       </div>
 
       <form v-else class="space-y-4" @submit.prevent="performMerge">
-         <!-- Collection Selection -->
+        <!-- Collection Selection -->
         <div>
-           <label class="block text-sm font-medium text-gray-700 mb-1">{{
+          <label class="block text-sm font-medium text-gray-700 mb-1">{{
             t('collectionDetail.selectCollectionToMergeLabel')
-          }}</label
-          > <select v-model="selectedCollectionToMerge" class="input-field w-full" required>
-
-            <option value=""> {{ t('collectionDetail.selectCollectionPlaceholder') }} </option>
+          }}</label>
+          <select v-model="selectedCollectionToMerge" class="input-field w-full" required>
+            <option value="">{{ t('collectionDetail.selectCollectionPlaceholder') }}</option>
 
             <option
               v-for="c in availableCollections"
               :key="c.collection_id"
               :value="c.collection_id"
             >
-               {{ c.name }} ({{ t('collectionDetail.itemsCount', { count: c.item_count }) }})
+              {{ c.name }} ({{ t('collectionDetail.itemsCount', { count: c.item_count }) }})
             </option>
-             </select
-          >
+          </select>
         </div>
-         <!-- New Collection Option -->
+        <!-- New Collection Option -->
         <div class="flex items-center space-x-2">
-           <input
+          <input
             id="createNew"
             v-model="createNewCollection"
             type="checkbox"
             class="checkbox-toggle"
-          /> <label for="createNew" class="text-sm text-gray-700"
-            > {{ t('collectionDetail.createNewFromMergeLabel') }} </label
-          >
+          />
+          <label for="createNew" class="text-sm text-gray-700">
+            {{ t('collectionDetail.createNewFromMergeLabel') }}
+          </label>
         </div>
-         <!-- New Collection Name (if creating new) -->
+        <!-- New Collection Name (if creating new) -->
         <div v-if="createNewCollection">
-           <label class="block text-sm font-medium text-gray-700 mb-1">{{
+          <label class="block text-sm font-medium text-gray-700 mb-1">{{
             t('collectionDetail.newCollectionNameLabel')
-          }}</label
-          > <input
+          }}</label>
+          <input
             v-model="newMergedCollectionName"
             type="text"
             required
@@ -1391,20 +1351,20 @@
             :placeholder="t('collectionDetail.newCollectionNamePlaceholder')"
           />
         </div>
-         <!-- Action Buttons -->
+        <!-- Action Buttons -->
         <div class="flex justify-end space-x-3 pt-4">
-           <button type="button" class="ui-btn--cancel" @click="showMergeModal = false">
-             {{ t('collectionDetail.cancel') }} </button
-          > <button type="submit" :disabled="!isValidMerge || isMerging" class="ui-btn--edit">
-             {{ isMerging ? t('collectionDetail.merging') : t('collectionDetail.mergeButton') }} </button
-          >
+          <button type="button" class="ui-btn--cancel" @click="showMergeModal = false">
+            {{ t('collectionDetail.cancel') }}
+          </button>
+          <button type="submit" :disabled="!isValidMerge || isMerging" class="ui-btn--edit">
+            {{ isMerging ? t('collectionDetail.merging') : t('collectionDetail.mergeButton') }}
+          </button>
         </div>
-
       </form>
-       </ModalComponent
-    > <!-- Edit Notes Modal -->
+    </ModalComponent>
+    <!-- Edit Notes Modal -->
   </div>
-   <DeleteConfirmationModal
+  <DeleteConfirmationModal
     :show="showDeleteItemConfirm"
     :title="t('collectionDetail.deleteItemConfirmTitle')"
     class="z-[65]"
@@ -1416,7 +1376,8 @@
     :is-deleting="isDeletingItem"
     @confirm="removeItem(itemToDelete?.item_id)"
     @cancel="showDeleteItemConfirm = false"
-  /> <DeleteConfirmationModal
+  />
+  <DeleteConfirmationModal
     :show="showDeleteCollectionConfirm"
     :title="t('collectionDetail.confirmDeleteTitle')"
     class="z-[65]"
@@ -1532,7 +1493,7 @@ interface CollectionDetailListItem {
   auto_progress?: boolean
 }
 
-const { t, locale } = useI18n()
+const { t } = useI18n()
 const { showSuccess } = useSuccessToast()
 
 const props = defineProps({
@@ -1744,7 +1705,7 @@ const doAnalyzeNewWord = async () => {
       newDefinitionWordType.value = ''
       showError(t('upsertDefinition.analyzeError'))
     }
-  } catch (e) {
+  } catch {
     showError(t('upsertDefinition.analyzeErrorGeneric'))
   } finally {
     isAnalyzingNewWord.value = false
@@ -2051,8 +2012,7 @@ const openEditItemModal = async (item) => {
                 const reader = new FileReader()
                 reader.onload = () => {
                   const raw = reader.result
-                  const base64 =
-                    typeof raw === 'string' ? raw.split(',')[1] ?? '' : ''
+                  const base64 = typeof raw === 'string' ? (raw.split(',')[1] ?? '') : ''
                   resolve({
                     data: base64,
                     mime_type: response.headers['content-type'],
@@ -2247,7 +2207,7 @@ async function handleCollectionCoverFileChange(event: Event) {
       let progressInterval: ReturnType<typeof setInterval> | undefined
       try {
         const raw = e.target?.result
-        const base64Data = typeof raw === 'string' ? raw.split(',')[1] ?? '' : ''
+        const base64Data = typeof raw === 'string' ? (raw.split(',')[1] ?? '') : ''
         const imageData = { data: base64Data, mime_type: file.type }
 
         isEditCollectionImageLoading.value = true
@@ -2450,7 +2410,7 @@ const fetchWaves = async (page: number) => {
         collection_id: numericCollectionId.value,
         search: q,
       },
-      signal,
+      signal
     )
     if (!wavesSearchQueue.shouldProcess(requestId)) return
     waveItems.value = response.data.items || []
@@ -2565,6 +2525,7 @@ const fetchCollection = async () => {
   isLoading.value = true
   clearError()
 
+  let accessOk = false
   try {
     const response = await getCollection(props.collectionId)
     collection.value = response.data
@@ -2578,15 +2539,20 @@ const fetchCollection = async () => {
       is_public: collection.value.is_public,
     }
 
-    // Fetch first page of items
-    await fetchItems()
     const langsResponse = await getLanguages()
     languages.value = langsResponse.data
+    accessOk = true
   } catch (e) {
     showError(e.response?.data?.error || 'Failed to load collection')
     console.error('Error fetching collection:', e)
   } finally {
     isLoading.value = false
+  }
+
+  // Fetch items separately so the page-wide spinner (isLoading) is gone before items load.
+  // Items use their own isLoadingItems spinner inside the items tab panel.
+  if (accessOk) {
+    fetchItems()
   }
 }
 
@@ -2625,7 +2591,10 @@ const fetchItems = async () => {
     if (itemFilters.value.source_langid && itemFilters.value.source_langid !== 1) {
       params.source_langid = itemFilters.value.source_langid
     }
-    if (itemFilters.value.searchInPhrases !== undefined && itemFilters.value.searchInPhrases !== null) {
+    if (
+      itemFilters.value.searchInPhrases !== undefined &&
+      itemFilters.value.searchInPhrases !== null
+    ) {
       params.search_in_phrases = itemFilters.value.searchInPhrases
     }
 
@@ -2828,9 +2797,8 @@ const performSearchDefinitions = async () => {
     return
   }
 
-  let requestId = null
   const request = definitionsSearchQueue.createRequest()
-  requestId = request.requestId
+  const requestId = request.requestId
   const { signal } = request
 
   try {
@@ -3017,6 +2985,21 @@ const isValidMerge = computed(() => {
   return selectedCollectionToMerge.value !== props.collectionId // Can't merge with self
 })
 
+const openMergeModal = () => {
+  showMergeModal.value = true
+  loadAvailableCollections()
+}
+
+const openAddModal = () => {
+  resetForm()
+  showAddModal.value = true
+}
+
+const confirmDeleteItem = () => {
+  itemToDelete.value = currentItem.value
+  showDeleteItemConfirm.value = true
+}
+
 const loadAvailableCollections = async () => {
   isLoadingCollections.value = true
   try {
@@ -3158,7 +3141,10 @@ useSeoHead({
   description: computed(() => {
     const raw = collection.value?.description
     if (!raw?.trim()) return undefined
-    return raw.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()
+    return raw
+      .replace(/<[^>]*>/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
   }),
 })
 
@@ -3193,4 +3179,3 @@ watch(
   animation: indeterminate 1.2s ease-in-out infinite;
 }
 </style>
-

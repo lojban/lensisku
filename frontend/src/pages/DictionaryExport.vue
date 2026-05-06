@@ -1,62 +1,53 @@
 <template>
-
-  <h1 class="text-2xl font-bold text-gray-800"> {{ t('dictionaryExport.title') }} </h1>
+  <h1 class="text-2xl font-bold text-gray-800">{{ t('dictionaryExport.title') }}</h1>
 
   <div class="flex flex-wrap gap-2 w-full lg:w-auto justify-between my-4">
-
-    <p class="text-gray-600"> {{ t('dictionaryExport.description') }} </p>
-     <RouterLink to="/export/cached" class="ui-btn--accent-purple"
-      > {{ t('dictionaryExport.viewCached') }} </RouterLink
-    >
+    <p class="text-gray-600">{{ t('dictionaryExport.description') }}</p>
+    <RouterLink to="/export/cached" class="ui-btn--accent-purple">
+      {{ t('dictionaryExport.viewCached') }}
+    </RouterLink>
   </div>
-   <!-- Export Form -->
+  <!-- Export Form -->
   <div class="p-6 bg-white rounded-lg shadow-sm space-y-6">
-     <!-- Language selection (one row, input group) -->
+    <!-- Language selection (one row, input group) -->
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2">
-       <label class="block text-sm font-medium text-gray-700 sm:block">{{
+      <label class="block text-sm font-medium text-gray-700 sm:block">{{
         t('dictionaryExport.languageFrom')
-      }}</label
-      > <label class="block text-sm font-medium text-gray-700 sm:block">{{
+      }}</label>
+      <label class="block text-sm font-medium text-gray-700 sm:block">{{
         t('dictionaryExport.languageTo')
-      }}</label
-      >
+      }}</label>
       <div class="input-group sm:col-span-2">
-         <select
+        <select
           v-model="selectedSourceLanguage"
           class="input-field w-full"
           :aria-label="t('dictionaryExport.languageFrom')"
         >
-
-          <option value=""> {{ t('dictionaryExport.sourceLangDefault') }} </option>
+          <option value="">{{ t('dictionaryExport.sourceLangDefault') }}</option>
 
           <option v-for="lang in languages" :key="lang.id" :value="lang.tag">
-             {{ lang.real_name }}
+            {{ lang.real_name }}
           </option>
-           </select
-        > <select
+        </select>
+        <select
           v-model="selectedLanguage"
           class="input-field w-full"
           :aria-label="t('dictionaryExport.languageTo')"
         >
-
-          <option value=""> {{ t('dictionaryExport.selectLanguage') }} </option>
+          <option value="">{{ t('dictionaryExport.selectLanguage') }}</option>
 
           <option v-for="lang in languages" :key="lang.id" :value="lang.tag">
-             {{ lang.real_name }}
+            {{ lang.real_name }}
           </option>
-           </select
-        >
+        </select>
       </div>
-
     </div>
-     <!-- Format Selection -->
+    <!-- Format Selection -->
     <div class="space-y-2">
-       <label class="block text-sm font-medium text-gray-700">{{
+      <label class="block text-sm font-medium text-gray-700">{{
         t('dictionaryExport.formatLabel')
-      }}</label
-      >
+      }}</label>
       <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-
         <div
           v-for="format in exportFormats"
           :key="format.value"
@@ -67,91 +58,70 @@
           }"
           @click="selectedFormat = format.value"
         >
-
           <div class="p-4">
-
             <div class="flex items-center justify-between">
-
               <div class="flex items-center">
-
                 <div class="flex-shrink-0 h-6 w-6" />
 
                 <div class="ml-3">
-
                   <h3 class="text-sm font-medium text-gray-900">
-                     {{ t(`dictionaryExport.formats.${format.value}.label`) }}
+                    {{ t(`dictionaryExport.formats.${format.value}.label`) }}
                   </h3>
-
                 </div>
-
               </div>
 
               <div v-if="selectedFormat === format.value" class="text-blue-500">
-                 <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-
+                <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
                   <path
                     fill-rule="evenodd"
                     d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
                     clip-rule="evenodd"
                   />
-                   </svg
-                >
+                </svg>
               </div>
-
             </div>
 
             <p class="mt-2 text-sm text-gray-500">
-               {{ t(`dictionaryExport.formats.${format.value}.description`) }}
+              {{ t(`dictionaryExport.formats.${format.value}.description`) }}
             </p>
-
           </div>
-
         </div>
-
       </div>
-
     </div>
-     <!-- Options -->
+    <!-- Options -->
     <div class="space-y-2">
-       <label class="block text-sm font-medium text-gray-700">{{
+      <label class="block text-sm font-medium text-gray-700">{{
         t('dictionaryExport.optionsLabel')
-      }}</label
-      >
+      }}</label>
       <div class="bg-gray-50 rounded-lg p-4 space-y-4">
-
         <div class="flex items-center space-x-2">
-           <input
+          <input
             id="positiveScoresOnly"
             v-model="positiveScoresOnly"
             type="checkbox"
             class="checkbox-toggle"
-          /> <label for="positiveScoresOnly" class="block text-sm text-gray-700"
-            > {{ t('dictionaryExport.positiveScoresOnly') }} </label
-          >
+          />
+          <label for="positiveScoresOnly" class="block text-sm text-gray-700">
+            {{ t('dictionaryExport.positiveScoresOnly') }}
+          </label>
         </div>
-
       </div>
-
     </div>
-     <!-- Action Buttons -->
+    <!-- Action Buttons -->
     <div class="flex items-center justify-end space-x-4 pt-4">
-
       <div v-if="isLoading" class="flex items-center text-gray-500">
-         <Loader2 class="animate-spin -ml-1 mr-3 h-5 w-5 text-blue-500" /> {{
-          t('dictionaryExport.generating')
-        }}
+        <Loader2 class="animate-spin -ml-1 mr-3 h-5 w-5 text-blue-500" />
+        {{ t('dictionaryExport.generating') }}
       </div>
-       <button
+      <button
         :disabled="!canExport || isLoading"
         class="inline-flex items-center ui-btn--read"
         @click="handleExport"
       >
-         {{ t('dictionaryExport.exportButton') }} </button
-      >
+        {{ t('dictionaryExport.exportButton') }}
+      </button>
     </div>
-
   </div>
-
 </template>
 
 <script setup lang="ts">
@@ -163,7 +133,7 @@ import { getLanguages, exportDictionary } from '@/api'
 import { useError } from '@/composables/useError'
 import { useSeoHead } from '@/composables/useSeoHead'
 
-const { t, locale } = useI18n()
+const { t } = useI18n()
 
 const { showError, clearError } = useError()
 const languages = ref([])
@@ -230,8 +200,7 @@ const exportFormats = [
 useSeoHead({
   title: computed(() => {
     const languageName =
-      languages.value.find((lang) => lang.tag === selectedLanguage.value)?.real_name ||
-      'Dictionary'
+      languages.value.find((lang) => lang.tag === selectedLanguage.value)?.real_name || 'Dictionary'
     const formatName =
       exportFormats.find((f) => f.value === selectedFormat.value)?.label || 'Export'
     return `${languageName} ${formatName}`
@@ -251,7 +220,7 @@ onMounted(async () => {
     const candidateLanguage = getInitialLanguage(languages.value)
     if (candidateLanguage) selectedLanguage.value = candidateLanguage
     selectedSourceLanguage.value = getInitialSourceLanguage(languages.value)
-  } catch (err) {
+  } catch {
     showError('Failed to load languages')
   }
 })
@@ -328,4 +297,3 @@ const handleExport = async () => {
   }
 }
 </script>
-

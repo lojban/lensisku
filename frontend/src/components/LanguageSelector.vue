@@ -1,31 +1,26 @@
 <template>
-
   <div ref="dropdownRef" class="relative inline-flex items-center">
-     <button
+    <button
       class="text-sm text-white/70 hover:text-white transition-colors"
       @click.stop="showDropdown = !showDropdown"
     >
-       {{ currentLanguage.name }} </button
-    >
+      {{ currentLanguage.name }}
+    </button>
     <div
       v-if="showDropdown"
       class="absolute overflow-y-auto max-h-[205px] py-2 w-48 right-0 top-full mt-1 bg-gray-900 rounded-md shadow-lg z-50"
     >
-       <button
+      <button
         v-for="language in [...LANGUAGES].sort((a, b) => a.name.localeCompare(b.name))"
         :key="language.id"
         class="w-full items-center flex gap-3 px-3 py-1 hover:bg-gray-800"
         @click="setLanguage(language.id)"
       >
-         <img class="w-5" :src="language.flag" :alt="language.name" /> <span class="text-xs">{{
-          language.name
-        }}</span
-        > </button
-      >
+        <img class="w-5" :src="language.flag" :alt="language.name" />
+        <span class="text-xs">{{ language.name }}</span>
+      </button>
     </div>
-
   </div>
-
 </template>
 
 <script setup lang="ts">
@@ -51,4 +46,3 @@ onUnmounted(() => {
   document.removeEventListener('mousedown', handleClickOutside)
 })
 </script>
-

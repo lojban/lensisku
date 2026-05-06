@@ -1,4 +1,4 @@
-import type { RouteRecordRaw } from 'vue-router'
+import type { RouteRecordRaw, Router, RouteLocationNormalized, RouteRecord } from 'vue-router'
 
 import { checkAuthStateForGuard } from '../composables/useAuthGuard'
 
@@ -396,9 +396,9 @@ const localeRoutes = supportedLocales.flatMap((locale) =>
   })
 ) as Array<RouteRecordRaw>
 
-export const setupRouterGuards = (router: any, isClient: boolean) => {
-  router.beforeEach(async (to: any, from: any) => {
-    const baseToName = to.name?.split('-')[0]
+export const setupRouterGuards = (router: Router, isClient: boolean) => {
+  router.beforeEach(async (to: RouteLocationNormalized, from: RouteLocationNormalized) => {
+    const baseToName = typeof to.name === 'string' ? to.name.split('-')[0] : undefined
 
     if (to.query.redirect_loop) {
       if (baseToName === 'Login') {
@@ -415,7 +415,7 @@ export const setupRouterGuards = (router: any, isClient: boolean) => {
     if (isClient) {
       const authRoutes = ['Login', 'Signup', 'ResetPassword', 'ConfirmEmail']
       const isNotFoundRoute = baseToName === 'NotFound'
-      const routeRequiresAuth = to.matched.some((record: any) => record.meta.requiresAuth)
+      const routeRequiresAuth = to.matched.some((record: RouteRecord) => record.meta.requiresAuth)
 
       const isAuthenticated = await checkAuthStateForGuard()
       if (

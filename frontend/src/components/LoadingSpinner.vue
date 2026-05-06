@@ -1,19 +1,13 @@
 <template>
-
   <div :class="wrapperClass">
-     <div class="flex flex-col items-center justify-center">
-
+    <div class="flex flex-col items-center justify-center">
       <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
 
       <p class="text-gray-600 mt-2">
-         <slot>{{ t('components.loadingSpinner.loadingDefault') }}</slot
-        >
+        <slot>{{ t('components.loadingSpinner.loadingDefault') }}</slot>
       </p>
-
     </div>
-
   </div>
-
 </template>
 
 <script setup lang="ts">

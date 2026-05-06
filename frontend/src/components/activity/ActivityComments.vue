@@ -1,11 +1,8 @@
 <template>
-
   <div class="space-y-4">
-
     <div v-if="comments.length === 0" class="text-center py-8 bg-gray-50 rounded-lg">
-       <MessageSquare class="mx-auto h-12 w-12 text-blue-400" />
-      <p class="text-gray-600"> {{ t('components.activityComments.noComments') }} </p>
-
+      <MessageSquare class="mx-auto h-12 w-12 text-blue-400" />
+      <p class="text-gray-600">{{ t('components.activityComments.noComments') }}</p>
     </div>
 
     <div
@@ -18,7 +15,7 @@
         )
       "
     >
-       <CommentItem
+      <CommentItem
         :key="comment.comment_id"
         :comment="comment"
         :flat-style="true"
@@ -27,9 +24,7 @@
         :definition-id="comment.definition_id"
       />
     </div>
-
   </div>
-
 </template>
 
 <script setup lang="ts">
@@ -54,4 +49,3 @@ defineProps({
   },
 })
 </script>
-

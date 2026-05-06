@@ -3,7 +3,9 @@
     :loading="!collection"
     :collection="collection"
     :cover-image-url="collectionCoverDisplayUrl"
-    :cover-image-alt="collection ? t('collectionDetail.coverImageAlt', { name: collection.name }) : ''"
+    :cover-image-alt="
+      collection ? t('collectionDetail.coverImageAlt', { name: collection.name }) : ''
+    "
     :cover-lightbox-dialog-label="
       collection ? t('collectionDetail.coverLightboxDialog', { name: collection.name }) : ''
     "
@@ -32,9 +34,7 @@
               :label="t('components.flashcardCollectionView.collectionButton')"
               button-classes="ui-btn--neutral-muted ui-btn--group-item md:flex-none"
             >
-              <template #icon>
-                <List class="w-4 h-4 shrink-0" aria-hidden="true" />
-              </template>
+              <template #icon> <List class="w-4 h-4 shrink-0" aria-hidden="true" /> </template>
             </IconButton>
             <IconButton
               v-if="collection?.has_collection_image"
@@ -48,6 +48,7 @@
               </template>
             </IconButton>
           </div>
+
           <div
             v-if="isOwner && collection && collection.item_count > existingFlashcardIds.size"
             class="btn-group-forced flex flex-wrap items-center md:gap-y-2"
@@ -73,9 +74,7 @@
               :disabled="isImporting"
               @click="handleImport"
             >
-              <template #icon>
-                <Import class="w-4 h-4 shrink-0" aria-hidden="true" />
-              </template>
+              <template #icon> <Import class="w-4 h-4 shrink-0" aria-hidden="true" /> </template>
             </IconButton>
           </div>
           <template v-if="!auth.state.isLoggedIn">
@@ -96,14 +95,13 @@
                 :label="t('anonymousProgress.studyLevels')"
                 button-classes="ui-btn--create ui-btn--group-item md:flex-none"
               >
-                <template #icon>
-                  <Repeat1 class="w-4 h-4 shrink-0" aria-hidden="true" />
-                </template>
+                <template #icon> <Repeat1 class="w-4 h-4 shrink-0" aria-hidden="true" /> </template>
               </IconButton>
             </div>
           </template>
         </div>
       </div>
+
       <div
         v-if="auth.state.isLoggedIn && collection"
         class="flex flex-row justify-center items-center gap-2 mt-4"
@@ -115,9 +113,7 @@
           :label="t('flashcardCollection.studyNow', { count: dueCount })"
           button-classes="ui-btn--warning-orange"
         >
-          <template #icon>
-            <Repeat1 class="w-4 h-4 shrink-0" aria-hidden="true" />
-          </template>
+          <template #icon> <Repeat1 class="w-4 h-4 shrink-0" aria-hidden="true" /> </template>
         </IconButton>
         <IconButton
           tag="router-link"
@@ -132,114 +128,95 @@
       </div>
     </template>
   </CollectionPageHeader>
-   <!-- Anonymous: sign-in prompt -->
+  <!-- Anonymous: sign-in prompt -->
   <div
     v-if="isAnonView"
     class="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6 text-center"
   >
+    <p class="text-gray-700 mb-3">{{ t('anonymousProgress.signInToSaveProgress') }}</p>
 
-    <p class="text-gray-700 mb-3"> {{ t('anonymousProgress.signInToSaveProgress') }} </p>
-
-    <p class="text-sm text-gray-600"> {{ t('anonymousProgress.studyByLevelHint') }} </p>
-
+    <p class="text-sm text-gray-600">{{ t('anonymousProgress.studyByLevelHint') }}</p>
   </div>
-   <!-- Stats Overview -->
+  <!-- Stats Overview -->
   <div v-if="!isAnonView" class="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-6">
-
     <div class="bg-white p-4 rounded-lg border shadow-sm">
-
       <h3 class="text-sm font-medium text-gray-600">
-         {{ t('components.flashcardCollectionView.stats.new') }}
+        {{ t('components.flashcardCollectionView.stats.new') }}
       </h3>
 
-      <p class="text-2xl font-bold text-blue-600"> {{ stats.new }} </p>
-
+      <p class="text-2xl font-bold text-blue-600">{{ stats.new }}</p>
     </div>
 
     <div class="bg-white p-4 rounded-lg border shadow-sm">
-
       <h3 class="text-sm font-medium text-gray-600">
-         {{ t('components.flashcardCollectionView.stats.learning') }}
+        {{ t('components.flashcardCollectionView.stats.learning') }}
       </h3>
 
-      <p class="text-2xl font-bold text-yellow-600"> {{ stats.learning }} </p>
-
+      <p class="text-2xl font-bold text-yellow-600">{{ stats.learning }}</p>
     </div>
 
     <div class="bg-white p-4 rounded-lg border shadow-sm">
-
       <h3 class="text-sm font-medium text-gray-600">
-         {{ t('components.flashcardCollectionView.stats.review') }}
+        {{ t('components.flashcardCollectionView.stats.review') }}
       </h3>
 
-      <p class="text-2xl font-bold text-green-600"> {{ stats.review }} </p>
-
+      <p class="text-2xl font-bold text-green-600">{{ stats.review }}</p>
     </div>
 
     <div class="bg-white p-4 rounded-lg border shadow-sm">
-
       <h3 class="text-sm font-medium text-gray-600">
-         {{ t('components.flashcardCollectionView.stats.graduated') }}
+        {{ t('components.flashcardCollectionView.stats.graduated') }}
       </h3>
 
-      <p class="text-2xl font-bold text-purple-600"> {{ stats.graduated }} </p>
-
+      <p class="text-2xl font-bold text-purple-600">{{ stats.graduated }}</p>
     </div>
-
   </div>
-   <!-- Filters -->
+  <!-- Filters -->
   <div v-if="!isAnonView" class="bg-white p-4 rounded-lg border shadow-sm mb-6">
-
     <div class="flex flex-wrap gap-4">
-       <select v-model="filters.status" class="input-field">
+      <select v-model="filters.status" class="input-field">
+        <option value="">{{ t('components.flashcardCollectionView.filters.allStatus') }}</option>
 
-        <option value=""> {{ t('components.flashcardCollectionView.filters.allStatus') }} </option>
-
-        <option value="new"> {{ t('components.flashcardCollectionView.stats.new') }} </option>
+        <option value="new">{{ t('components.flashcardCollectionView.stats.new') }}</option>
 
         <option value="learning">
-           {{ t('components.flashcardCollectionView.stats.learning') }}
+          {{ t('components.flashcardCollectionView.stats.learning') }}
         </option>
 
-        <option value="review"> {{ t('components.flashcardCollectionView.stats.review') }} </option>
+        <option value="review">{{ t('components.flashcardCollectionView.stats.review') }}</option>
 
         <option value="graduated">
-           {{ t('components.flashcardCollectionView.stats.graduated') }}
+          {{ t('components.flashcardCollectionView.stats.graduated') }}
         </option>
-         </select
-      > <label class="flex items-center gap-2"
-        > <input v-model="filters.onlyDue" type="checkbox" class="checkbox-toggle" /> <span
-          class="text-sm text-gray-700"
-          >{{ t('components.flashcardCollectionView.filters.dueCardsOnly') }}</span
-        > </label
-      >
+      </select>
+      <label class="flex items-center gap-2">
+        <input v-model="filters.onlyDue" type="checkbox" class="checkbox-toggle" />
+        <span class="text-sm text-gray-700">{{
+          t('components.flashcardCollectionView.filters.dueCardsOnly')
+        }}</span>
+      </label>
     </div>
-
   </div>
-   <!-- Flashcard List --> <LoadingSpinner v-if="!isAnonView && isLoading" class="py-12" />
+  <!-- Flashcard List -->
+  <LoadingSpinner v-if="!isAnonView && isLoading" class="py-12" />
   <div v-else-if="isAnonView" class="text-center py-8 bg-gray-50 rounded-lg border border-blue-100">
-
     <p class="text-gray-600 mb-4">{{ t('anonymousProgress.useLevelsToStudy') }}</p>
-
   </div>
 
   <div
     v-else-if="flashcards.length === 0"
     class="text-center py-12 bg-gray-50 rounded-lg border border-blue-100"
   >
-
-    <p class="text-gray-600"> {{ t('components.flashcardCollectionView.noFlashcards') }} </p>
-
+    <p class="text-gray-600">{{ t('components.flashcardCollectionView.noFlashcards') }}</p>
   </div>
 
   <div v-else class="space-y-4">
-
     <div
       v-for="(card, index) in flashcards"
       :key="card.flashcard.id"
       :class="{ 'cursor-pointer': isOwner }"
-      @click="isOwner && openFlashcard(card)"
       class="surface-flashcard-summary"
+      @click="isOwner && openFlashcard(card)"
     >
       <!-- Card Content -->
       <div class="flex justify-between items-start gap-4">
@@ -265,6 +242,7 @@
               />
             </span>
           </div>
+
           <div v-if="card.flashcard.has_front_image || card.flashcard.has_back_image" class="mt-2">
             <div v-if="card.flashcard.has_front_image" class="mb-2">
               <img
@@ -282,19 +260,25 @@
               />
             </div>
           </div>
+
           <div v-if="card.flashcard.notes" class="text-sm text-gray-500 mt-1">
             Notes: <LazyMathJax :content="card.flashcard.notes" :enable-markdown="true" />
           </div>
         </div>
         <!-- Progress section -->
         <div class="flex flex-col items-end gap-3">
-          <div v-for="progress in getOrderedProgress(card.progress)" :key="progress.card_side" class="w-32">
+          <div
+            v-for="progress in getOrderedProgress(card.progress)"
+            :key="progress.card_side"
+            class="w-32"
+          >
             <div class="flex items-center justify-between mb-1">
               <span class="text-xs font-medium text-gray-600">{{ progress.card_side }}</span>
               <span class="text-xs font-medium" :class="getStatusTextClass(progress.status)">
                 {{ progress.status }}
               </span>
             </div>
+
             <div class="w-full bg-gray-200 rounded-full h-2">
               <div
                 class="h-2 rounded-full transition-all duration-300"
@@ -302,66 +286,63 @@
                 :style="{ width: getProgressWidth(progress) }"
               />
             </div>
+
             <div v-if="progress.next_review_at" class="text-xs text-gray-500 mt-1 text-right">
               Next: {{ formatDate(progress.next_review_at) }}
             </div>
           </div>
+
           <div class="flex items-center gap-2 flex-wrap">
             <IconButton
               :aria-label="t('components.flashcardCollectionView.reviewNowAction')"
               :button-classes="'ui-btn--empty text-orange-600 hover:bg-orange-50'"
               @click.stop="reviewSingleCard(card.flashcard.id)"
             >
-              <template #icon>
-                <Repeat1 class="h-4 w-4" />
-              </template>
+              <template #icon> <Repeat1 class="h-4 w-4" /> </template>
             </IconButton>
             <IconButton
               :disabled="index === 0 || isReordering"
               :aria-label="t('components.flashcardCollectionView.moveUpAction')"
-              :button-classes="
-                `ui-btn--empty ${index === 0 || isReordering ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100'}`
-              "
+              :button-classes="`ui-btn--empty ${index === 0 || isReordering ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100'}`"
               @click.stop="moveCard(card, 'up')"
             >
-              <template #icon>
-                <ArrowUp class="h-4 w-4" />
-              </template>
+              <template #icon> <ArrowUp class="h-4 w-4" /> </template>
             </IconButton>
             <IconButton
               :disabled="index === flashcards.length - 1 || isReordering"
               :aria-label="t('components.flashcardCollectionView.moveDownAction')"
-              :button-classes="
-                `ui-btn--empty ${index === flashcards.length - 1 || isReordering ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100'}`
-              "
+              :button-classes="`ui-btn--empty ${index === flashcards.length - 1 || isReordering ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100'}`"
               @click.stop="moveCard(card, 'down')"
             >
-              <template #icon>
-                <ArrowDown class="h-4 w-4" />
-              </template>
+              <template #icon> <ArrowDown class="h-4 w-4" /> </template>
             </IconButton>
           </div>
         </div>
       </div>
+
       <div v-if="showCanonicalForCard(card)" class="mt-2 flex w-full flex-col gap-1">
-        <div class="flex items-center gap-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+        <div
+          class="flex items-center gap-2 text-xs font-semibold text-gray-400 uppercase tracking-wider"
+        >
           <EqualApproximately class="h-3.5 w-3.5 text-blue-400 shrink-0" />
           <span>{{ t('components.definitionCard.canonicalLabel') }}</span>
         </div>
-        <div class="text-sm text-gray-700 font-mono bg-blue-50/30 p-2 rounded border border-blue-100/30">
+
+        <div
+          class="text-sm text-gray-700 font-mono bg-blue-50/30 p-2 rounded border border-blue-100/30"
+        >
           {{ card.flashcard.canonical_form }}
         </div>
       </div>
+
       <div class="mt-2 w-full text-sm text-gray-600">
         <LazyMathJax :content="card.flashcard.definition ?? card.flashcard.free_content_back" />
       </div>
-
     </div>
-
   </div>
 
   <div v-if="totalPages > 1">
-     <PaginationComponent
+    <PaginationComponent
       :current-page="currentPage"
       :total-pages="totalPages"
       :total="flashcards.length"
@@ -370,7 +351,6 @@
       @next="handlePageChange(currentPage + 1)"
     />
   </div>
-
 </template>
 
 <script setup lang="ts">
@@ -386,12 +366,11 @@ import {
   PlusCircle,
   Import,
 } from 'lucide-vue-next'
-import { ref, computed, onMounted, watch, onBeforeUnmount } from 'vue'
-import { useRouter, RouterLink, useRoute } from 'vue-router'
+import { ref, computed, onMounted, watch } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 
 import {
   getFlashcards,
-  listCollectionItems,
   getLanguages,
   updateCardPosition,
   importFromCollection,
@@ -405,11 +384,8 @@ import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import PaginationComponent from '@/components/PaginationComponent.vue'
 import { IconButton } from '@packages/ui'
 import { useAuth } from '@/composables/useAuth'
-import { useError } from '@/composables/useError'
 import { useSeoHead } from '@/composables/useSeoHead'
 import { useI18n } from 'vue-i18n'
-import { SearchQueue } from '@/utils/searchQueue'
-import { normalizeSearchQuery } from '@/utils/searchQueryUtils'
 import { queryStr } from '@/utils/routeQuery'
 
 const props = defineProps({
@@ -427,11 +403,8 @@ const isOwner = computed(() => {
 })
 
 // State
-const { showError } = useError()
 const flashcards = ref([])
 const isLoading = ref(true)
-const isLoadingDefinitions = ref(true)
-const definitions = ref([])
 const searchQuery = ref('')
 const isImporting = ref(false)
 const successMessage = ref('')
@@ -463,14 +436,6 @@ const handleImport = async () => {
     isImporting.value = false
   }
 }
-
-const selectedDefinition = ref(null)
-const newCard = ref({
-  notes: '',
-  direction: '',
-  frontImage: null,
-  backImage: null,
-})
 
 const dueCount = ref(0)
 const stats = ref({
@@ -523,100 +488,6 @@ const loadFlashcards = async () => {
     console.error('Error loading flashcards:', error)
   } finally {
     isLoading.value = false
-  }
-}
-
-// Search debouncing
-let searchTimeout = null
-
-// Debounce delay: 450ms is optimal for search inputs (400-500ms range)
-// This balances responsiveness with reducing unnecessary API calls
-const DEBOUNCE_DELAY = 450
-
-function clearSearchTimeout() {
-  if (searchTimeout) {
-    clearTimeout(searchTimeout)
-    searchTimeout = null
-  }
-}
-
-// Search queue to prevent race conditions
-const definitionsSearchQueue = new SearchQueue()
-
-const debouncedSearch = () => {
-  // Clear any pending timeouts to prevent stale searches
-  clearSearchTimeout()
-
-  // Capture current query value to check in timeout
-  const currentQuery = searchQuery.value
-
-  // Debounce the search - only trigger after user stops typing
-  // This prevents excessive API calls while user is actively typing
-  searchTimeout = setTimeout(() => {
-    // Only perform search if query hasn't changed (to prevent race conditions)
-    if (searchQuery.value === currentQuery) {
-      currentPage.value = 1 // Reset to first page when searching
-      loadDefinitions()
-    }
-    searchTimeout = null
-  }, DEBOUNCE_DELAY)
-}
-
-const modalCurrentPage = ref(1)
-const modalItemsPerPage = ref(10)
-
-const loadDefinitions = async (page = modalCurrentPage.value) => {
-  isLoadingDefinitions.value = true
-
-  let requestId = null
-  const request = definitionsSearchQueue.createRequest()
-  requestId = request.requestId
-  const { signal } = request
-
-  try {
-    const response = await listCollectionItems(
-      props.collectionId,
-      {
-        page,
-        per_page: modalItemsPerPage.value,
-        search: normalizeSearchQuery(searchQuery.value) || undefined,
-      },
-      signal
-    )
-
-    // Only process if this is still the latest request
-    if (!definitionsSearchQueue.shouldProcess(requestId)) {
-      return
-    }
-
-    definitions.value = response.data.items.map((item) => ({
-      ...item,
-      definitionid: item.definition_id,
-      word: item.word,
-      definition: item.definition,
-    }))
-  } catch (err) {
-    // Ignore abort errors
-    if (
-      err.name === 'AbortError' ||
-      err.code === 'ERR_CANCELED' ||
-      err.message?.includes('canceled')
-    ) {
-      return
-    }
-
-    // Only show errors for the latest request
-    if (definitionsSearchQueue.shouldProcess(requestId)) {
-      console.error('Error loading definitions:', err)
-      showError('Failed to load definitions')
-    }
-  } finally {
-    // Only update loading state if this is still the latest request
-    if (requestId && definitionsSearchQueue.shouldProcess(requestId)) {
-      isLoadingDefinitions.value = false
-    } else if (!definitionsSearchQueue.hasActiveRequest()) {
-      isLoadingDefinitions.value = false
-    }
   }
 }
 
@@ -775,18 +646,9 @@ onMounted(async () => {
   }
 })
 
-onBeforeUnmount(() => {
-  // Clean up any pending search timeout
-  clearSearchTimeout()
-})
-
 const router = useRouter()
 
 const isReordering = ref(false)
-
-const isShowingDueCards = computed(() => {
-  return filters.value.onlyDue
-})
 
 const moveCard = async (card, direction) => {
   if (isReordering.value) return
@@ -844,4 +706,3 @@ const reviewSingleCard = (flashcardId) => {
   transition: width 0.3s ease-in-out;
 }
 </style>
-

@@ -16,6 +16,7 @@
           @input="onTextareaInput"
         />
       </div>
+
       <div class="flex h-full flex-col border-gray-200 sm:border-gray-300 p-0 sm:border-r">
         <textarea
           v-model="entry.row.free_content_back"
@@ -26,6 +27,7 @@
         />
       </div>
     </div>
+
     <div
       class="flex min-h-[2.75rem] shrink-0 items-start gap-1 pl-1 pt-0.5 sm:min-h-0 sm:items-center sm:justify-end sm:gap-2 sm:px-2 sm:py-0 sm:pl-2 sm:pt-0"
     >
@@ -80,6 +82,7 @@
           @input="onTextareaInput"
         />
       </div>
+
       <div class="flex h-full flex-col border-gray-300 p-0 sm:border-r">
         <textarea
           v-model="entry.draft.free_content_back"
@@ -95,6 +98,7 @@
         />
       </div>
     </div>
+
     <div
       class="flex min-h-[2.75rem] shrink-0 items-start gap-1 pl-1 pt-0.5 sm:min-h-0 sm:items-center sm:justify-end sm:gap-2 sm:px-2 sm:py-0 sm:pl-2 sm:pt-0"
     >
@@ -127,8 +131,16 @@ import { computed, nextTick, onMounted, onUpdated, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 export type BulkVirtualRow =
-  | { kind: 'saved'; row: { item_id: number; free_content_front: string; free_content_back: string }; idx: number }
-  | { kind: 'draft'; draft: { id: string; free_content_front: string; free_content_back: string }; dIdx: number }
+  | {
+      kind: 'saved'
+      row: { item_id: number; free_content_front: string; free_content_back: string }
+      idx: number
+    }
+  | {
+      kind: 'draft'
+      draft: { id: string; free_content_front: string; free_content_back: string }
+      dIdx: number
+    }
 
 const props = defineProps<{
   entry: BulkVirtualRow

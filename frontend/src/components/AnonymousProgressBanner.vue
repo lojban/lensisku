@@ -1,12 +1,10 @@
 <template>
-   <Transition :name="transitionName"
-    >
+  <Transition :name="transitionName">
     <div v-if="show" ref="bannerRef" :class="bannerClasses">
-
       <p
         class="text-sm text-gray-700 flex-1 min-w-0 text-center sm:text-left order-1 sm:order-none"
       >
-         {{ t('anonymousProgress.bannerMessage') }}
+        {{ t('anonymousProgress.bannerMessage') }}
       </p>
 
       <div class="order-2 flex shrink-0 items-center justify-center gap-2 sm:order-none">
@@ -28,10 +26,8 @@
           <X class="h-5 w-5" />
         </button>
       </div>
-
     </div>
-     </Transition
-  >
+  </Transition>
 </template>
 
 <script setup lang="ts">
@@ -143,4 +139,3 @@ watch(show, (v) => emit('visible', v), { immediate: true })
   transform: translateY(-100%);
 }
 </style>
-

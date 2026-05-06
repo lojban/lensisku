@@ -1,16 +1,17 @@
 <template>
   <BackgroundComponent />
   <div v-if="isWinterSeason" class="snowflakes" aria-hidden="true">
-
-    <div v-for="(flake, index) in snowflakes" :key="index" class="sihesle"
-      :style="{ left: `${flake.left}%`, 'animation-delay': `${flake.delay1}s, ${flake.delay2}s` }">
+    <div
+      v-for="(flake, index) in snowflakes"
+      :key="index"
+      class="sihesle"
+      :style="{ left: `${flake.left}%`, 'animation-delay': `${flake.delay1}s, ${flake.delay2}s` }"
+    >
       {{ index % 2 === 0 ? '❅' : '❆' }}
     </div>
-
   </div>
 
   <div v-if="isWinterSeason && showPyro" class="pyro" />
-
   <AppFixedBanners
     :show-test-data-warning="showTestDataWarning"
     :show-unconfirmed-warning="showUnconfirmedWarning"
@@ -20,8 +21,8 @@
     @resend-confirmation="handleResendConfirmation"
   />
   <!-- Mobile-optimized header (omit on routes with meta.hideTopBar, e.g. full-bleed experiences) -->
-  <header v-if="!route.meta.hideTopBar" class="app-header-bar">
 
+  <header v-if="!route.meta.hideTopBar" class="app-header-bar">
     <div class="px-1 sm:px-2 max-w-4xl mx-auto">
       <!-- Main header content -->
       <div class="flex items-center justify-between h-14 sm:h-12">
@@ -30,17 +31,27 @@
           <button
             class="z-15 cursor-pointer rounded-md p-3 text-gray-600 transition-colors duration-200 hover:bg-gray-100 sm:hidden"
             :aria-label="$t('toggleMenu')"
-            @click.stop="isMenuOpen = !isMenuOpen">
-            <Menu v-if="!isMenuOpen" class="h-6 w-6" />
-            <X v-else class="h-6 w-6" />
-          </button> <!-- Logo - Always visible -->
-          <NavLink to="/" class="navbar-item flex items-center italic" :class="{
-            'cursor-default pointer-events-none': isHomePage,
-          }" @click="triggerPyro">
+            @click.stop="isMenuOpen = !isMenuOpen"
+          >
+            <Menu v-if="!isMenuOpen" class="h-6 w-6" /> <X v-else class="h-6 w-6" />
+          </button>
+          <!-- Logo - Always visible -->
+          <NavLink
+            to="/"
+            class="navbar-item flex items-center italic"
+            :class="{
+              'cursor-default pointer-events-none': isHomePage,
+            }"
+            @click="triggerPyro"
+          >
             <div class="flex h-8 w-8 shrink-0 items-center justify-center -skew-x-12">
-              <div v-html="logoSvgRaw" role="img" :aria-label="$t('logoText')"
+              <div
+                role="img"
+                :aria-label="$t('logoText')"
                 class="logo-svg-container"
-                :class="{ 'animate-rotate-3d': showPyro }"></div>
+                :class="{ 'animate-rotate-3d': showPyro }"
+                v-html="logoSvgRaw"
+              ></div>
             </div>
             <span class="select-none font-medium leading-none">{{ $t('logoText') }}</span>
           </NavLink>
@@ -54,117 +65,163 @@
             <Clock4 class="h-5 w-5" /> {{ $t('nav.recent') }}
           </NavLink>
           <div ref="moreNavRef" class="relative group">
-            <button type="button" class="navbar-item" :aria-expanded="isMoreNavOpen" aria-haspopup="true"
-              @click.stop="isMoreNavOpen = !isMoreNavOpen">
+            <button
+              type="button"
+              class="navbar-item"
+              :aria-expanded="isMoreNavOpen"
+              aria-haspopup="true"
+              @click.stop="isMoreNavOpen = !isMoreNavOpen"
+            >
               <span class="hidden lg:inline"> {{ $t('nav.more') }} </span>
               <ChevronDown class="h-5 w-5" :stroke-width="2.5" :absolute-stroke-width="true" />
             </button>
             <div
               class="nav-dropdown-panel"
-              :class="isMoreNavOpen ? 'flex' : 'hidden group-hover:flex'">
-              <NavLink v-if="auth.state.isLoggedIn" to="/users" class="navbar-item justify-start py-2"
-                @click="closeNavMenus">
-                <Users class="h-4 w-4" /> {{
+              :class="isMoreNavOpen ? 'flex' : 'hidden group-hover:flex'"
+            >
+              <NavLink
+                v-if="auth.state.isLoggedIn"
+                to="/users"
+                class="navbar-item justify-start py-2"
+                @click="closeNavMenus"
+              >
+                <Users class="h-4 w-4" />
+                {{
                   auth.state.authorities?.includes('manage_roles')
                     ? $t('nav.iamUsers')
                     : $t('nav.users')
                 }}
               </NavLink>
-              <NavLink to="/languages" class="navbar-item justify-start py-2" @click="closeNavMenus">
+              <NavLink
+                to="/languages"
+                class="navbar-item justify-start py-2"
+                @click="closeNavMenus"
+              >
                 <Globe class="h-4 w-4" /> {{ $t('nav.languages') }}
               </NavLink>
-              <NavLink to="/assistant" class="navbar-item justify-start py-2" @click="closeNavMenus">
+              <NavLink
+                to="/assistant"
+                class="navbar-item justify-start py-2"
+                @click="closeNavMenus"
+              >
                 <Bot class="h-4 w-4" /> {{ $t('nav.assistant') }}
               </NavLink>
-              <NavLink to="/semantic-graph" class="navbar-item justify-start py-2" @click="closeNavMenus">
+              <NavLink
+                to="/semantic-graph"
+                class="navbar-item justify-start py-2"
+                @click="closeNavMenus"
+              >
                 <Share2 class="h-4 w-4" /> {{ $t('nav.semanticGraph') }}
               </NavLink>
-              <NavLink v-if="!auth.state.isLoggedIn" to="/export/cached" class="navbar-item justify-start py-2"
-                @click="closeNavMenus">
+              <NavLink
+                v-if="!auth.state.isLoggedIn"
+                to="/export/cached"
+                class="navbar-item justify-start py-2"
+                @click="closeNavMenus"
+              >
                 <Download class="h-4 w-4" /> {{ $t('nav.cachedExports') }}
               </NavLink>
-              <NavLink v-if="auth.state.isLoggedIn" to="/export" class="navbar-item justify-start py-2"
-                @click="closeNavMenus">
+              <NavLink
+                v-if="auth.state.isLoggedIn"
+                to="/export"
+                class="navbar-item justify-start py-2"
+                @click="closeNavMenus"
+              >
                 <Upload class="h-4 w-4" /> {{ $t('nav.export') }}
               </NavLink>
-              <NavLink v-if="auth.state.isLoggedIn && auth.state.authorities?.includes('bulk_import')" to="/bulk-import"
-                class="navbar-item justify-start py-2" @click="closeNavMenus">
+              <NavLink
+                v-if="auth.state.isLoggedIn && auth.state.authorities?.includes('bulk_import')"
+                to="/bulk-import"
+                class="navbar-item justify-start py-2"
+                @click="closeNavMenus"
+              >
                 <Download class="h-4 w-4" /> {{ $t('nav.bulkImport') }}
               </NavLink>
-              <div class="border-t border-gray-100 mt-1 pt-1 px-2 py-2" role="group"
-                :aria-label="$t('buttonTheme.label')">
+              <div
+                class="border-t border-gray-100 mt-1 pt-1 px-2 py-2"
+                role="group"
+                :aria-label="$t('buttonTheme.label')"
+              >
                 <p class="text-xs text-gray-500 mb-1">{{ $t('buttonTheme.label') }}</p>
+
                 <div class="flex flex-col gap-0.5">
-                  <button type="button" class="navbar-item justify-start py-2 text-sm w-full"
+                  <button
+                    type="button"
+                    class="navbar-item justify-start py-2 text-sm w-full"
                     :class="{ 'nav-link-active': buttonTheme === 'aqua' }"
-                    @click="setButtonThemePreference('aqua'); closeNavMenus()">
-                    {{ $t('buttonTheme.aqua') }} </button> <button type="button"
+                    @click="setTheme('aqua')"
+                  >
+                    {{ $t('buttonTheme.aqua') }}
+                  </button>
+                  <button
+                    type="button"
                     class="navbar-item justify-start py-2 text-sm w-full"
                     :class="{ 'nav-link-active': buttonTheme === 'flat' }"
-                    @click="setButtonThemePreference('flat'); closeNavMenus()">
-                    {{ $t('buttonTheme.flat') }} </button>
+                    @click="setTheme('flat')"
+                  >
+                    {{ $t('buttonTheme.flat') }}
+                  </button>
                 </div>
               </div>
             </div>
-
           </div>
-
         </nav>
         <!-- Auth Buttons - Optimized for mobile -->
         <div class="flex items-center space-x-2">
-          <!-- Only show auth buttons when loading is complete --> <template v-if="!auth.state.isLoading"> <template
-              v-if="auth.state.isLoggedIn">
+          <!-- Only show auth buttons when loading is complete -->
+          <template v-if="!auth.state.isLoading">
+            <template v-if="auth.state.isLoggedIn">
               <NavLink v-if="auth.state.isLoggedIn" to="/reactions" class="navbar-item">
-                <BookmarkCheck class="h-5 w-5" /> <span class="hidden sm:inline">{{
-                  $t('nav.myActivity')
-                  }}</span>
+                <BookmarkCheck class="h-5 w-5" />
+                <span class="hidden sm:inline">{{ $t('nav.myActivity') }}</span>
               </NavLink>
               <NavLink to="/profile" class="navbar-item">
-                <User class="h-5 w-5" /> <span class="hidden sm:inline">{{
-                  auth.state.username
-                  }}</span>
-              </NavLink> <button class="navbar-item hidden sm:flex" @click="handleLogout">
-                <LogOut class="h-5 w-5" /> <span class="hidden md:inline">{{
-                  $t('nav.logout')
-                  }}</span>
+                <User class="h-5 w-5" />
+                <span class="hidden sm:inline">{{ auth.state.username }}</span>
+              </NavLink>
+              <button class="navbar-item hidden sm:flex" @click="handleLogout">
+                <LogOut class="h-5 w-5" />
+                <span class="hidden md:inline">{{ $t('nav.logout') }}</span>
               </button>
-            </template> <template v-else>
+            </template>
+            <template v-else>
               <NavLink to="/signup" class="btn-signup">
-                <UserPlus class="h-5 w-5" /> <span class="hidden sm:inline">{{
-                  $t('nav.signUp')
-                  }}</span>
+                <UserPlus class="h-5 w-5" />
+                <span class="hidden sm:inline">{{ $t('nav.signUp') }}</span>
               </NavLink>
               <NavLink to="/login" class="btn-login">
-                <LogIn class="h-5 w-5" /> <span class="hidden sm:inline">{{
-                  $t('nav.logIn')
-                  }}</span>
+                <LogIn class="h-5 w-5" />
+                <span class="hidden sm:inline">{{ $t('nav.logIn') }}</span>
               </NavLink>
-            </template> </template>
+            </template>
+          </template>
         </div>
-
       </div>
-      <AppMobileNavMenu
-        :show="isMenuOpen"
-        @close="isMenuOpen = false"
-        @logout="handleLogout"
-      />
-
+      <AppMobileNavMenu :show="isMenuOpen" @close="isMenuOpen = false" @logout="handleLogout" />
     </div>
-
   </header>
   <!-- Global Error Display -->
   <div class="flex justify-center">
-
     <div v-if="error?.message" class="w-full max-w-lg px-4">
-      <Error v-if="error?.message" :message="error.message"
-        :details="error.details != null ? String(error.details) : ''" @close="clearError" />
+      <Error
+        v-if="error?.message"
+        :message="error.message"
+        :details="error.details != null ? String(error.details) : ''"
+        @close="clearError"
+      />
     </div>
-
   </div>
-  <ToastFloat :show="!!successToast" :message="successToast?.message ?? ''"
+  <ToastFloat
+    :show="!!successToast"
+    :message="successToast?.message ?? ''"
     :duration="successToast?.duration ?? DEFAULT_SUCCESS_TOAST_DURATION_MS"
-    :extra-component="successToast?.extraComponent ?? null" :extra-props="successToast?.extraProps ?? null"
-    :close-label="$t('modal.close')" type="success" @close="clearSuccess" /> <!-- Main content -->
+    :extra-component="successToast?.extraComponent ?? null"
+    :extra-props="successToast?.extraProps ?? null"
+    :close-label="$t('modal.close')"
+    type="success"
+    @close="clearSuccess"
+  />
+  <!-- Main content -->
   <main
     class="main-content"
     :class="[
@@ -173,54 +230,77 @@
       route.meta.hideTopBar ? 'main-content--no-topbar' : '',
     ]"
   >
-
-    <div class="max-w-4xl mx-auto relative flex flex-col" :class="[
-      route.meta.contentTopPaddingMainOnly || route.meta.authFullBleed ? 'pt-0' : 'pt-3',
-      route.meta.fullHeight ? 'main-child-full-height w-full' : 'min-h-[calc(100vh-12rem)]',
-      route.meta.authFullBleed ? 'main-child--auth-fullbleed' : '',
-      route.path.startsWith('/lingo') ? 'lg:pl-64' : '',
-    ]" id="main-child">
-
-      <div class="flex-1" :class="[
-        route.meta.contentTopPaddingMainOnly || route.meta.authFullBleed ? 'px-0' : 'px-3',
-        { 'main-child-inner-full-height': route.meta.fullHeight },
-      ]">
-        <div v-if="auth.state.isLoading" class="flex h-full w-full items-center justify-center min-h-[50vh]">
-          <div class="h-8 w-8 animate-spin rounded-full border-4 border-gray-200 border-t-blue-600"></div>
+    <div
+      id="main-child"
+      class="max-w-4xl mx-auto relative flex flex-col"
+      :class="[
+        route.meta.contentTopPaddingMainOnly || route.meta.authFullBleed ? 'pt-0' : 'pt-3',
+        route.meta.fullHeight ? 'main-child-full-height w-full' : 'min-h-[calc(100vh-12rem)]',
+        route.meta.authFullBleed ? 'main-child--auth-fullbleed' : '',
+        route.path.startsWith('/lingo') ? 'lg:pl-64' : '',
+      ]"
+    >
+      <div
+        class="flex-1"
+        :class="[
+          route.meta.contentTopPaddingMainOnly || route.meta.authFullBleed ? 'px-0' : 'px-3',
+          { 'main-child-inner-full-height': route.meta.fullHeight },
+        ]"
+      >
+        <div
+          v-if="auth.state.isLoading"
+          class="flex h-full w-full items-center justify-center min-h-[50vh]"
+        >
+          <div
+            class="h-8 w-8 animate-spin rounded-full border-4 border-gray-200 border-t-blue-600"
+          ></div>
         </div>
         <router-view v-else v-slot="{ Component, route }">
-          <component :is="Component" v-bind="metaProps(route.meta.props)" v-on="isHomePage
-              ? {
-                search: performSearch,
-                'view-message': viewMessage,
-                'view-thread': viewThread,
-              }
-              : {}
-            " />
+          <component
+            :is="Component"
+            v-bind="metaProps(route.meta.props)"
+            v-on="
+              isHomePage
+                ? {
+                    search: performSearch,
+                    'view-message': viewMessage,
+                    'view-thread': viewThread,
+                  }
+                : {}
+            "
+          />
         </router-view>
       </div>
 
-      <footer v-if="!route.meta.hideFooter"
-        class="mt-6 max-w-full break-words px-3 py-3 text-center text-xs text-gray-500 leading-relaxed">
+      <footer
+        v-if="!route.meta.hideFooter"
+        class="mt-6 max-w-full break-words px-3 py-3 text-center text-xs text-gray-500 leading-relaxed"
+      >
         {{ $t('footer.publicDomainNotice') }}
       </footer>
-
     </div>
-
   </main>
   <!-- Floating action menu (FAB trigger + standard dropdown panel) -->
-  <div class="max-w-4xl mx-auto relative"
-    v-if="auth.state.isLoggedIn && route.name !== 'flashcard-study' && !route.meta.fullHeight">
-
+  <div
+    v-if="auth.state.isLoggedIn && route.name !== 'flashcard-study' && !route.meta.fullHeight"
+    class="max-w-4xl mx-auto relative"
+  >
     <div
-      class="fixed md:absolute bottom-8 right-4 md:right-6 lg:-right-4 lg:-mr-4 z-50 flex flex-col items-end gap-3">
+      class="fixed md:absolute bottom-8 right-4 md:right-6 lg:-right-4 lg:-mr-4 z-50 flex flex-col items-end gap-3"
+    >
       <Dropdown>
         <template #trigger="{ open }">
           <span class="fab-elevation-shell">
-            <button type="button" class="inline-flex items-center justify-center ui-btn--fab"
-              :aria-label="$t('fab.actionsTitle')">
-              <Plus class="h-8 w-8 shrink-0 transition-transform duration-200" stroke-width="2.75"
-                :class="{ 'rotate-45': open }" />
+            <button
+              type="button"
+              class="inline-flex items-center justify-center ui-btn--fab"
+              :aria-label="$t('fab.actionsTitle')"
+            >
+              <Plus
+                class="h-8 w-8 shrink-0 transition-transform duration-200"
+                stroke-width="2.75"
+                :class="{ 'rotate-45': open }"
+              />
             </button>
           </span>
         </template>
@@ -250,7 +330,6 @@
         </ToolbarSelectDropdownItem>
       </Dropdown>
     </div>
-
   </div>
   <FooterComponent v-if="!route.meta.fullHeight" />
 </template>
@@ -277,7 +356,7 @@ import {
   Share2,
 } from 'lucide-vue-next'
 import { Menu } from 'lucide-vue-next' // Explicitly import Menu if it was missed by auto-sort
-import { ref, onMounted, onBeforeUnmount, watch, computed, nextTick } from 'vue'
+import { ref, onMounted, watch, computed, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 
 import { useI18n } from 'vue-i18n'
@@ -294,7 +373,6 @@ import FooterComponent from './components/FooterComponent.vue'
 import AppFixedBanners from './components/layout/AppFixedBanners.vue'
 import AppMobileNavMenu from './components/layout/AppMobileNavMenu.vue'
 import NavLink from './components/NavLink.vue'
-import ModalComponent from '@/components/ModalComponent.vue'
 import { normalizeSearchQuery } from '@/utils/searchQueryUtils'
 import { queryStr } from '@/utils/routeQuery'
 import { provideAuth } from './composables/useAuth'
@@ -304,7 +382,7 @@ import {
   provideSuccessToast,
 } from './composables/useSuccessToast'
 import { useButtonTheme } from './composables/useButtonTheme'
-import { localeCaptureGroupRegex, supportedLocales } from './config/locales'
+import { localeCaptureGroupRegex } from './config/locales'
 
 import logoSvgRaw from '../public/assets/icons/favicon.svg?raw'
 
@@ -327,9 +405,7 @@ const router = useRouter()
 const route = useRoute()
 
 const isHomePage = computed(
-  () =>
-    route.name === 'Home' ||
-    (typeof route.name === 'string' && route.name.startsWith('Home-'))
+  () => route.name === 'Home' || (typeof route.name === 'string' && route.name.startsWith('Home-'))
 )
 
 function metaProps(p: unknown): Record<string, unknown> {
@@ -427,6 +503,11 @@ const syncFromRoute = () => {
 const closeNavMenus = () => {
   isMenuOpen.value = false
   isMoreNavOpen.value = false
+}
+
+const setTheme = (theme: Parameters<typeof setButtonThemePreference>[0]) => {
+  setButtonThemePreference(theme)
+  closeNavMenus()
 }
 
 const handleLogout = () => {
@@ -531,23 +612,6 @@ onMounted(() => {
     $locale.value = localeMatch[1]
   }
 })
-
-const setLocale = (newLocale) => {
-  const currentRoute = router.currentRoute.value
-  const currentPath = currentRoute.path
-  // Get the current $locale from the path
-  const currentLocaleMatch = currentPath.match(localeCaptureGroupRegex)
-  const currentLocale = currentLocaleMatch ? currentLocaleMatch[1] : ''
-
-  if (currentLocale && supportedLocales.includes(newLocale)) {
-    // Replace the $locale prefix in the current path
-    const newPath = currentPath.replace(`/${currentLocale}`, `/${newLocale}`)
-    router.push(newPath)
-  } else {
-    // Fallback: just add the new $locale prefix
-    router.push(`/${newLocale}`)
-  }
-}
 
 // Global keyboard handler for "/" key to navigate to homepage and focus search
 const handleGlobalKeyDown = async (event) => {
@@ -667,13 +731,13 @@ footer {
   height: calc(100vh - 57px - 24px);
 }
 
-.main-content>* {
+.main-content > * {
   @apply bg-transparent md:bg-zinc-50/75 md:border-x;
   min-height: 100%;
 }
 
 /* Login / signup: global BackgroundComponent + body::before stay visible; no zinc column over the art */
-.main-content>#main-child.main-child--auth-fullbleed {
+.main-content > #main-child.main-child--auth-fullbleed {
   @apply bg-transparent md:bg-transparent md:border-0;
 }
 
@@ -706,13 +770,15 @@ footer {
 }
 
 ::-webkit-scrollbar-thumb {
-  background-image: linear-gradient(to right,
-      #375abb 0%,
-      #8bb4e3 21%,
-      #84b4e9 38%,
-      #3f8ae0 40%,
-      #95e0ff 86%,
-      #63abf2 100%);
+  background-image: linear-gradient(
+    to right,
+    #375abb 0%,
+    #8bb4e3 21%,
+    #84b4e9 38%,
+    #3f8ae0 40%,
+    #95e0ff 86%,
+    #63abf2 100%
+  );
   box-shadow:
     inset 0 1px #0028ab,
     inset 0 -1px #0028ab,
@@ -723,13 +789,15 @@ footer {
 }
 
 ::-webkit-scrollbar-thumb:horizontal {
-  background-image: linear-gradient(to bottom,
-      #375abb 0%,
-      #8bb4e3 21%,
-      #84b4e9 36%,
-      #3f8ae0 44%,
-      #95e0ff 86%,
-      #63abf2 100%);
+  background-image: linear-gradient(
+    to bottom,
+    #375abb 0%,
+    #8bb4e3 21%,
+    #84b4e9 36%,
+    #3f8ae0 44%,
+    #95e0ff 86%,
+    #63abf2 100%
+  );
   border-top-width: 0px;
   border-bottom-width: 0px;
   border-radius: 6px;
@@ -743,13 +811,15 @@ footer {
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background-image: linear-gradient(to left,
-      #375abb 0%,
-      #8bb4e3 21%,
-      #84b4e9 38%,
-      #3f8ae0 40%,
-      #95e0ff 86%,
-      #63abf2 100%);
+  background-image: linear-gradient(
+    to left,
+    #375abb 0%,
+    #8bb4e3 21%,
+    #84b4e9 38%,
+    #3f8ae0 40%,
+    #95e0ff 86%,
+    #63abf2 100%
+  );
   border-radius: 6px;
   box-shadow:
     inset 0 1px #0028ab,
@@ -761,13 +831,15 @@ footer {
 }
 
 ::-webkit-scrollbar-thumb:hover:horizontal {
-  background-image: linear-gradient(to top,
-      #375abb 0%,
-      #8bb4e3 21%,
-      #84b4e9 36%,
-      #3f8ae0 44%,
-      #95e0ff 86%,
-      #63abf2 100%);
+  background-image: linear-gradient(
+    to top,
+    #375abb 0%,
+    #8bb4e3 21%,
+    #84b4e9 36%,
+    #3f8ae0 44%,
+    #95e0ff 86%,
+    #63abf2 100%
+  );
   border-top-width: 0px;
   border-bottom-width: 0px;
   border-radius: 6px;
@@ -845,7 +917,7 @@ footer {
   }
 }
 
-.main-content.main-content--no-scroll>#main-child {
+.main-content.main-content--no-scroll > #main-child {
   flex: 1 1 0;
   min-height: 0;
   overflow: hidden;
@@ -1053,7 +1125,6 @@ body:has(.main-content.main-content--no-scroll) {
 }
 
 @keyframes position {
-
   0%,
   19.9% {
     margin-top: 10%;

@@ -2,7 +2,7 @@ import { computed, toValue } from 'vue'
 import type { MaybeRefOrGetter } from 'vue'
 import { useHead } from '@vueuse/head'
 import { useI18n } from 'vue-i18n'
-import { supportedLocales, defaultLocale } from '@/config/locales'
+import { supportedLocales } from '@/config/locales'
 
 type MetaTag = {
   name?: string
@@ -55,7 +55,9 @@ export function useSeoHead(config: SeoConfig) {
     }
     const ogImage = config.ogImage ? toValue(config.ogImage) : null
     if (ogImage) {
-      const imageUrl = ogImage.startsWith('http') ? ogImage : `${typeof window !== 'undefined' ? window.location.origin : ''}${ogImage}`
+      const imageUrl = ogImage.startsWith('http')
+        ? ogImage
+        : `${typeof window !== 'undefined' ? window.location.origin : ''}${ogImage}`
       tags.push({ property: 'og:image', content: imageUrl })
     }
     return tags
@@ -68,11 +70,7 @@ export function useSeoHead(config: SeoConfig) {
   )
 
   const metaTags = computed(() => {
-    const tags = [
-      ...ogTags.value,
-      ...descriptionMeta.value,
-      ...(config.meta || []),
-    ]
+    const tags = [...ogTags.value, ...descriptionMeta.value, ...(config.meta || [])]
 
     // Twitter Card meta tags
     const twitterCard = config.twitterCard ? toValue(config.twitterCard) : 'summary_large_image'
@@ -83,7 +81,9 @@ export function useSeoHead(config: SeoConfig) {
     }
     const ogImage = config.ogImage ? toValue(config.ogImage) : null
     if (ogImage) {
-      const imageUrl = ogImage.startsWith('http') ? ogImage : `${typeof window !== 'undefined' ? window.location.origin : ''}${ogImage}`
+      const imageUrl = ogImage.startsWith('http')
+        ? ogImage
+        : `${typeof window !== 'undefined' ? window.location.origin : ''}${ogImage}`
       tags.push({ name: 'twitter:image', content: imageUrl })
     }
 

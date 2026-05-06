@@ -1,7 +1,6 @@
 <template>
-
   <div>
-     <input
+    <input
       v-if="!useTextarea"
       :id="id"
       v-model="inputValue"
@@ -11,7 +10,8 @@
       :readonly="prefilledWord || isEditMode"
       @input="handleInput"
       @paste="handlePaste"
-    /> <textarea
+    />
+    <textarea
       v-else
       :id="id"
       v-model="inputValue"
@@ -24,7 +24,6 @@
       @paste="handlePaste"
     />
   </div>
-
 </template>
 
 <script setup lang="ts">
@@ -85,4 +84,3 @@ watch(
   }
 )
 </script>
-

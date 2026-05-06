@@ -1,25 +1,22 @@
 <template>
-
   <div class="flex gap-3">
-     <button class="ui-btn--back" @click="goBack"> <ArrowLeft class="h-5 w-5" /> </button> <button
-      class="ui-btn--market"
-      @click="viewThread"
-    >
-       {{ t('components.messageActions.viewThread') }} </button
-    > <button
+    <button class="ui-btn--back" @click="goBack"><ArrowLeft class="h-5 w-5" /></button>
+    <button class="ui-btn--market" @click="viewThread">
+      {{ t('components.messageActions.viewThread') }}
+    </button>
+    <button
       v-if="showSpamButton"
       class="ui-btn--warning"
       :class="currentUserVotedSpam ? 'ui-btn--warning' : 'ui-btn--empty'"
       @click="$emit('toggle-spam-vote')"
     >
-       {{
+      {{
         currentUserVotedSpam
           ? t('components.messageDetail.unlabelAsSpam', { count: spamVoteCount })
           : t('components.messageDetail.labelAsSpam', { count: spamVoteCount })
-      }} </button
-    >
+      }}
+    </button>
   </div>
-
 </template>
 
 <script setup lang="ts">
@@ -72,4 +69,3 @@ const viewThread = () => {
   }
 }
 </script>
-

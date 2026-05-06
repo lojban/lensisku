@@ -5,6 +5,4 @@
 import { FileCheck } from 'lucide-vue-next'
 </script>
 
-<template>
-  <FileCheck aria-hidden="true" v-bind="$attrs" />
-</template>
+<template><FileCheck aria-hidden="true" v-bind="$attrs" /></template>

@@ -1,5 +1,3 @@
 <template>
-  <div class="empty-state-panel">
-    <slot />
-  </div>
+  <div class="empty-state-panel"><slot /></div>
 </template>
