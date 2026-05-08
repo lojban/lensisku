@@ -3,6 +3,7 @@ use utoipa::ToSchema;
 
 use crate::comments::models::Comment;
 use crate::mailarchive::Message;
+use crate::wiki::dto::{WikiSearchHit, WikiThreadSummary};
 
 /// Single search hit: either a comment or a mail message.
 #[derive(Debug, Serialize, ToSchema)]
@@ -15,6 +16,9 @@ pub enum WaveSearchHit {
     },
     Mail {
         message: Message,
+    },
+    Wiki {
+        article: WikiSearchHit,
     },
 }
 
@@ -29,10 +33,10 @@ pub struct WavesSearchQuery {
     pub sort_by: Option<String>,
     #[schema(default = "desc")]
     pub sort_order: Option<String>,
-    /// `all` | `jbotcan` | `comments` | `mail`
+    /// `all` | `jbotcan` | `comments` | `mail` | `wiki`
     pub source: Option<String>,
-    /// Restrict comment hits to threads attached to this collection. When set, the mail half of
-    /// the unified search is suppressed because mail messages are not collection-scoped.
+    /// Restrict comment hits to threads attached to this collection. When set, the mail and wiki
+    /// halves of the unified search are suppressed because they are not collection-scoped.
     pub collection_id: Option<i32>,
 }
 
@@ -84,6 +88,13 @@ pub enum WaveThreadSummary {
         /// For unified sort with comment threads (mail has no reactions).
         last_comment_reactions: i64,
     },
+    Wiki {
+        summary: WikiThreadSummary,
+        /// Unix timestamp of `last_edited` (or 0) for unified sort.
+        last_activity_time: i64,
+        /// Always 0 (wiki has no reactions); kept for unified sort.
+        last_comment_reactions: i64,
+    },
 }
 
 #[derive(Debug, Deserialize, ToSchema)]
@@ -96,7 +107,7 @@ pub struct WavesThreadsQuery {
     pub sort_by: Option<String>,
     #[schema(default = "desc")]
     pub sort_order: Option<String>,
-    /// `all` | `jbotcan` | `comments` | `mail`
+    /// `all` | `jbotcan` | `comments` | `mail` | `wiki`
     pub source: Option<String>,
 }
 

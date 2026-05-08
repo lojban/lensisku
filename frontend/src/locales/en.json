@@ -130,7 +130,16 @@
     "waveSourceAll": "All types",
     "waveSourceJbotcan": "jbotcan",
     "waveSourceComments": "Comments",
-    "waveSourceMail": "Mail messages"
+    "waveSourceMail": "Mail messages",
+    "waveSourceWiki": "Wiki articles"
+  },
+  "wiki": {
+    "back": "Back",
+    "lastEdited": "Last edited",
+    "viewOnMediawiki": "View on mw.lojban.org",
+    "redirectNotice": "This page is a redirect.",
+    "notFound": "Wiki article not found.",
+    "loadFailed": "Failed to load wiki article."
   },
   "assistantChat": {
     "title": "Lojban Assistant",

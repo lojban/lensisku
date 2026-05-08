@@ -15,7 +15,7 @@ use crate::{
     },
     sessions, subscriptions, users,
     versions::{self},
-    waves,
+    waves, wiki,
 };
 use actix_cors::Cors;
 use actix_limitation::RateLimiter;
@@ -134,6 +134,7 @@ pub async fn start_server(
             .configure(jbovlaste::configure)
             .configure(comments::configure)
             .configure(waves::configure)
+            .configure(wiki::configure)
             .configure(versions::configure)
             .configure(export::configure)
             .configure(subscriptions::configure)

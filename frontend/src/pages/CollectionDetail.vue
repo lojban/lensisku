@@ -303,7 +303,11 @@
             <div
               v-for="item in waveItems"
               :key="
-                item.source === 'comment' ? `c-${item.comment.comment_id}` : `m-${item.message.id}`
+                item.source === 'comment'
+                  ? `c-${item.comment.comment_id}`
+                  : item.source === 'wiki'
+                    ? `w-${item.article.page_id}`
+                    : `m-${item.message.id}`
               "
               class="cursor-pointer"
               @click="
@@ -2334,6 +2338,17 @@ type WaveItem =
       import_source?: string | null
     }
   | { source: 'mail'; message: { id: number; [key: string]: unknown } }
+  | {
+      source: 'wiki'
+      article: {
+        page_id: number
+        namespace: number
+        title: string
+        last_edited: string | null
+        content_preview: string | null
+        article_url: string
+      }
+    }
 const waveItems = ref<WaveItem[]>([])
 const waveTotal = ref(0)
 const waveCurrentPage = ref(1)

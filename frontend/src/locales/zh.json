@@ -128,7 +128,16 @@
     "waveSourceAll": "全部类型",
     "waveSourceJbotcan": "jbotcan",
     "waveSourceComments": "评论",
-    "waveSourceMail": "邮件"
+    "waveSourceMail": "邮件",
+    "waveSourceWiki": "维基文章"
+  },
+  "wiki": {
+    "back": "返回",
+    "lastEdited": "最后编辑",
+    "viewOnMediawiki": "在 mw.lojban.org 上查看",
+    "redirectNotice": "此页面是一个重定向。",
+    "notFound": "未找到维基文章。",
+    "loadFailed": "加载维基文章失败。"
   },
   "assistantChat": {
     "title": "逻辑语助手",
