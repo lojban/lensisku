@@ -128,7 +128,16 @@
     "waveSourceAll": "すべての種類",
     "waveSourceJbotcan": "jbotcan",
     "waveSourceComments": "コメント",
-    "waveSourceMail": "メール"
+    "waveSourceMail": "メール",
+    "waveSourceWiki": "Wiki記事"
+  },
+  "wiki": {
+    "back": "戻る",
+    "lastEdited": "最終編集",
+    "viewOnMediawiki": "mw.lojban.org で表示",
+    "redirectNotice": "このページはリダイレクトです。",
+    "notFound": "Wiki記事が見つかりません。",
+    "loadFailed": "Wiki記事の読み込みに失敗しました。"
   },
   "assistantChat": {
     "title": "ロジバンアシスタント",

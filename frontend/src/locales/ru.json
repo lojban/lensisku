@@ -126,7 +126,16 @@
     "waveSourceAll": "Все типы",
     "waveSourceJbotcan": "jbotcan",
     "waveSourceComments": "Комментарии",
-    "waveSourceMail": "Почта"
+    "waveSourceMail": "Почта",
+    "waveSourceWiki": "Вики-статьи"
+  },
+  "wiki": {
+    "back": "Назад",
+    "lastEdited": "Последнее изменение",
+    "viewOnMediawiki": "Открыть на mw.lojban.org",
+    "redirectNotice": "Эта страница является перенаправлением.",
+    "notFound": "Вики-статья не найдена.",
+    "loadFailed": "Не удалось загрузить вики-статью."
   },
   "assistantChat": {
     "title": "Помощник по ложбану",

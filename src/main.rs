@@ -34,6 +34,7 @@ mod users;
 mod utils;
 mod versions;
 mod waves;
+mod wiki;
 
 #[actix_web::main]
 async fn main() -> AppResult<()> {

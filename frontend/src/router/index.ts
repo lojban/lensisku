@@ -124,6 +124,14 @@ const baseRoutes: Array<RouteRecordRaw> = [
     component: () => import('../pages/PasswordReset.vue'),
   },
   {
+    path: '/wiki/:title',
+    name: 'WikiArticle',
+    component: () => import('../pages/WikiArticle.vue'),
+    props: (route) => ({
+      title: decodeURIComponent(route.params.title as string),
+    }),
+  },
+  {
     path: '/comments',
     name: 'CommentList',
     component: () => import('../pages/CommentList.vue'),

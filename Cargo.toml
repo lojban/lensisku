@@ -143,6 +143,8 @@ ort = { version = "=2.0.0-rc.11", default-features = false, features = ["downloa
 ndarray = "0.17"
 ndarray-npy = "0.10"
 ogg-opus = "0.1.2"
+parse-wiki-text-2 = "0.2"
+urlencoding = "2.1"
 [dev-dependencies]
 criterion = "0.8"
 

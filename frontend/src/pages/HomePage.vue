@@ -197,6 +197,13 @@
             >
               {{ $t('home.waveSourceMail') }}
             </button>
+            <button
+              type="button"
+              class="block w-full whitespace-nowrap px-3 py-2 text-left text-sm hover:bg-gray-50"
+              @click="setWaveSource('wiki')"
+            >
+              {{ $t('home.waveSourceWiki') }}
+            </button>
           </Dropdown>
           <Dropdown class="relative block w-auto min-w-0 shrink">
             <template #trigger="{ open: sortMenuOpen }">
@@ -283,7 +290,11 @@
               <div
                 v-for="item in waveItems"
                 :key="
-                  item.source === 'comment' ? item.comment.comment_id : 'mail-' + item.message.id
+                  item.source === 'comment'
+                    ? item.comment.comment_id
+                    : item.source === 'wiki'
+                      ? 'wiki-' + item.article.page_id
+                      : 'mail-' + item.message.id
                 "
                 class="cursor-pointer"
                 @click="
@@ -291,9 +302,11 @@
                     ? router.push(
                         `/comments?thread_id=${item.comment.thread_id}&comment_id=${item.comment.parent_id}&scroll_to=${item.comment.comment_id}&valsi_id=${item.comment.valsi_id}&definition_id=${item.comment.definition_id || 0}`
                       )
-                    : handleViewThreadSummary(
-                        item.message.cleaned_subject || item.message.subject || ''
-                      )
+                    : item.source === 'wiki'
+                      ? router.push(`/wiki/${encodeURIComponent(item.article.title)}`)
+                      : handleViewThreadSummary(
+                          item.message.cleaned_subject || item.message.subject || ''
+                        )
                 "
               >
                 <div
@@ -309,6 +322,30 @@
                   :show-context="true"
                   @reply="handleReply"
                 />
+                <div
+                  v-else-if="item.source === 'wiki'"
+                  class="comment-item bg-white border rounded-lg p-3 my-2 hover:border-blue-300 transition-colors min-w-48"
+                >
+                  <div
+                    class="mb-2 text-sm text-gray-600 whitespace-nowrap overflow-hidden flex items-center"
+                  >
+                    <SourceTypeBadge type="wiki" />
+                    <span
+                      class="text-blue-700 font-medium ml-1.5 truncate inline-block max-w-[calc(100%-120px)]"
+                    >
+                      {{ item.article.title }}
+                    </span>
+                  </div>
+                  <div v-if="item.article.last_edited" class="text-xs text-gray-500 mb-2">
+                    {{ new Date(item.article.last_edited).toLocaleString() }}
+                  </div>
+                  <div
+                    v-if="item.article.content_preview"
+                    class="text-sm text-gray-700 border-t border-gray-100 pt-2 mt-2"
+                  >
+                    {{ item.article.content_preview }}
+                  </div>
+                </div>
                 <div
                   v-else
                   class="comment-item bg-white border rounded-lg p-3 my-2 hover:border-blue-300 transition-colors min-w-48"
@@ -437,6 +474,20 @@ function normalizeWaveThreadItems(items: unknown[]) {
   return items.map((raw) => {
     const item = raw as Record<string, unknown>
     const src = item.source as string
+    if (src === 'wiki') {
+      const summary = (item.summary as Record<string, unknown>) || {}
+      return {
+        source: 'wiki',
+        article: {
+          page_id: summary.page_id as number,
+          namespace: summary.namespace as number,
+          title: summary.title as string,
+          last_edited: summary.last_edited as string | null,
+          content_preview: summary.content_preview as string | null,
+          article_url: summary.article_url as string,
+        },
+      }
+    }
     if (src === 'mail') {
       const preview = item.content_preview as string | undefined
       return {
@@ -607,7 +658,7 @@ const getInitialSearchMode = () => {
 const searchMode = ref(getInitialSearchMode())
 
 /** Filter discussion waves: all site + mail, jbotcan imports, site comments only, or mail only. */
-const WAVE_SOURCES = ['all', 'jbotcan', 'comments', 'mail'] as const
+const WAVE_SOURCES = ['all', 'jbotcan', 'comments', 'mail', 'wiki'] as const
 type WaveSource = (typeof WAVE_SOURCES)[number]
 
 const waveSource = ref<WaveSource>('all')
@@ -663,6 +714,7 @@ const waveSourceTriggerLabel = computed(() => {
     jbotcan: t('home.waveSourceJbotcan'),
     comments: t('home.waveSourceComments'),
     mail: t('home.waveSourceMail'),
+    wiki: t('home.waveSourceWiki'),
   }
   return m[waveSource.value]
 })

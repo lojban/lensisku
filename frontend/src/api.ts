@@ -576,6 +576,9 @@ export const searchWaves = (params?: Record<string, unknown>, signal?: AbortSign
 export const list_wave_threads = (params?: Record<string, unknown>, signal?: AbortSignal) =>
   api.get('/waves/threads', { params, signal })
 
+export const getWikiArticle = (title: string, signal?: AbortSignal) =>
+  api.get(`/wiki/${encodeURIComponent(title)}`, { signal })
+
 export const getRoles = () => api.get('/auth/roles')
 export const getPermissions = () => api.get('/auth/permissions')
 export const createRole = (data: Record<string, unknown>) => api.post('/auth/roles', data)

@@ -7,7 +7,7 @@
 </template>
 
 <script setup lang="ts">
-import { BookOpen, BookMarked, Mail, Image } from 'lucide-vue-next'
+import { BookOpen, BookMarked, Mail, Image, Globe } from 'lucide-vue-next'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 
@@ -17,7 +17,7 @@ const props = defineProps({
     type: String,
     required: true,
     validator: (v: unknown) =>
-      typeof v === 'string' && ['definition', 'valsi', 'mail', 'jbotcan'].includes(v),
+      typeof v === 'string' && ['definition', 'valsi', 'mail', 'jbotcan', 'wiki'].includes(v),
   },
   /** Override translated label; if not set, uses default for type */
   label: {
@@ -49,6 +49,11 @@ const typeConfig = {
     bg: 'bg-amber-50',
     text: 'text-amber-700',
   },
+  wiki: {
+    icon: Globe,
+    bg: 'bg-teal-50',
+    text: 'text-teal-700',
+  },
 }
 
 const defaultLabels = {
@@ -56,6 +61,7 @@ const defaultLabels = {
   valsi: () => t('components.commentItem.inValsi'),
   mail: () => t('home.waveSourceMail'),
   jbotcan: () => 'jbotcan',
+  wiki: () => t('home.waveSourceWiki'),
 }
 
 const config = computed(() => typeConfig[props.type])

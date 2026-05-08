@@ -128,7 +128,16 @@
     "waveSourceAll": "ro klesi",
     "waveSourceJbotcan": "jbotcan",
     "waveSourceComments": "lo pinka",
-    "waveSourceMail": "mu'e mrilu"
+    "waveSourceMail": "mu'e mrilu",
+    "waveSourceWiki": "vlaste papri"
+  },
+  "wiki": {
+    "back": "xrukla",
+    "lastEdited": "romoi se galfi",
+    "viewOnMediawiki": "viska fi la mw.lojban.org",
+    "redirectNotice": "ti vi papri cu galfybi'o",
+    "notFound": "na facki lo papri",
+    "loadFailed": "na cumki fa lo nu cpacu lo papri"
   },
   "assistantChat": {
     "title": "lojbo sidju",

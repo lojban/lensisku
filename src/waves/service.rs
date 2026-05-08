@@ -12,6 +12,7 @@ use crate::mailarchive::{
     service as mailarchive_service,
 };
 use crate::waves::dto::{WaveSearchHit, WaveThreadSummary, WavesSearchQuery, WavesThreadsQuery};
+use crate::wiki::service as wiki_service;
 
 use super::dto::{WavesSearchResponse, WavesThreadsResponse};
 
@@ -110,9 +111,16 @@ fn wave_hit_sort_key(hit: &WaveSearchHit, sort_by: &str) -> i64 {
         ("reactions", WaveSearchHit::Mail { .. }) => 0,
         ("replies", WaveSearchHit::Mail { .. }) => 0,
         ("time", WaveSearchHit::Mail { message: m }) => message_timestamp(m.date.as_ref()),
+        ("time", WaveSearchHit::Wiki { article }) => {
+            article.last_edited.map(|d| d.timestamp()).unwrap_or(0)
+        }
+        ("reactions" | "replies", WaveSearchHit::Wiki { .. }) => 0,
         _ => match hit {
             WaveSearchHit::Comment { comment: c, .. } => c.time as i64,
             WaveSearchHit::Mail { message: m } => message_timestamp(m.date.as_ref()),
+            WaveSearchHit::Wiki { article } => {
+                article.last_edited.map(|d| d.timestamp()).unwrap_or(0)
+            }
         },
     }
 }
@@ -140,11 +148,19 @@ fn thread_summary_sort_key(summary: &WaveThreadSummary, sort_by: &str) -> i64 {
             last_activity_time,
             ..
         }) => *last_activity_time,
+        ("time", WaveThreadSummary::Wiki { last_activity_time, .. }) => *last_activity_time,
+        ("reactions", WaveThreadSummary::Wiki { last_comment_reactions, .. }) => {
+            *last_comment_reactions
+        }
+        ("replies", WaveThreadSummary::Wiki { .. }) => 0,
         _ => match summary {
             WaveThreadSummary::Comment {
                 last_activity_time, ..
             } => *last_activity_time as i64,
             WaveThreadSummary::Mail {
+                last_activity_time, ..
+            } => *last_activity_time,
+            WaveThreadSummary::Wiki {
                 last_activity_time, ..
             } => *last_activity_time,
         },
@@ -200,60 +216,51 @@ pub async fn search_waves(
         group_by_thread: Some(false),
     };
 
-    let comments_res;
-    let mail_res;
+    // Decide which sources to query for this request.
+    let want_comments = matches!(source, "all" | "jbotcan" | "comments") || collection_scoped;
+    let want_mail = matches!(source, "all" | "mail") && !collection_scoped;
+    let want_wiki = matches!(source, "all" | "wiki") && !collection_scoped;
 
-    match source {
-        "mail" if !collection_scoped => {
-            comments_res = None;
-            mail_res = Some(
-                mailarchive_service::search_messages(pool, mail_query)
-                    .await
-                    .map_err(|e| -> Box<dyn std::error::Error + Send + Sync> {
-                        Box::new(io::Error::other(e.to_string()))
-                    })?,
-            );
-        }
-        "mail" => {
-            // Collection scope makes mail-only search empty.
-            comments_res = None;
-            mail_res = None;
-        }
-        "jbotcan" | "comments" => {
-            mail_res = None;
-            comments_res = Some(
-                comments_service::search_comments(pool, comments_params, current_user_id)
-                    .await
-                    .map_err(|e| -> Box<dyn std::error::Error + Send + Sync> {
-                        Box::new(io::Error::other(e.to_string()))
-                    })?,
-            );
-        }
-        _ if collection_scoped => {
-            mail_res = None;
-            comments_res = Some(
-                comments_service::search_comments(pool, comments_params, current_user_id)
-                    .await
-                    .map_err(|e| -> Box<dyn std::error::Error + Send + Sync> {
-                        Box::new(io::Error::other(e.to_string()))
-                    })?,
-            );
-        }
-        _ => {
-            let (c, m) = tokio::try_join!(
-                comments_service::search_comments(pool, comments_params, current_user_id),
-                mailarchive_service::search_messages(pool, mail_query),
-            )
-            .map_err(|e| -> Box<dyn std::error::Error + Send + Sync> {
-                Box::new(io::Error::other(e.to_string()))
-            })?;
-            comments_res = Some(c);
-            mail_res = Some(m);
-        }
+    let mut comments_res = None;
+    let mut mail_res = None;
+    let mut wiki_hits: Vec<crate::wiki::dto::WikiSearchHit> = Vec::new();
+    let mut wiki_total: i64 = 0;
+
+    if want_comments {
+        comments_res = Some(
+            comments_service::search_comments(pool, comments_params, current_user_id)
+                .await
+                .map_err(|e| -> Box<dyn std::error::Error + Send + Sync> {
+                    Box::new(io::Error::other(e.to_string()))
+                })?,
+        );
+    }
+    if want_mail {
+        mail_res = Some(
+            mailarchive_service::search_messages(pool, mail_query)
+                .await
+                .map_err(|e| -> Box<dyn std::error::Error + Send + Sync> {
+                    Box::new(io::Error::other(e.to_string()))
+                })?,
+        );
+    }
+    if want_wiki {
+        let (h, t) = wiki_service::search_wiki(
+            pool,
+            &search_term,
+            sort_by,
+            sort_order,
+            1,
+            fetch_per_source,
+        )
+        .await?;
+        wiki_hits = h;
+        wiki_total = t;
     }
 
     let total = comments_res.as_ref().map(|c| c.total).unwrap_or(0)
-        + mail_res.as_ref().map(|m| m.total).unwrap_or(0);
+        + mail_res.as_ref().map(|m| m.total).unwrap_or(0)
+        + wiki_total;
 
     let comment_ids: Vec<i32> = comments_res
         .as_ref()
@@ -275,6 +282,9 @@ pub async fn search_waves(
         for msg in m.messages {
             merged.push(WaveSearchHit::Mail { message: msg });
         }
+    }
+    for article in wiki_hits {
+        merged.push(WaveSearchHit::Wiki { article });
     }
 
     merged.sort_by(|a, b| {
@@ -330,70 +340,52 @@ pub async fn list_wave_threads(
         _ => None,
     };
 
-    let comment_res;
-    let mail_threads;
-    let mail_total;
+    let want_comments = matches!(source, "all" | "jbotcan" | "comments");
+    let want_mail = matches!(source, "all" | "mail");
+    let want_wiki = matches!(source, "all" | "wiki");
 
-    match source {
-        "mail" => {
-            comment_res = None;
-            let (mt, mt_total) = mailarchive_service::list_mail_threads(
+    let mut comment_res = None;
+    let mut mail_threads = Vec::new();
+    let mut mail_total: i64 = 0;
+    let mut wiki_summaries: Vec<crate::wiki::dto::WikiThreadSummary> = Vec::new();
+    let mut wiki_total: i64 = 0;
+
+    if want_comments {
+        comment_res = Some(
+            comments_service::list_threads(
                 pool,
                 1,
                 fetch_per_source,
+                threads_sort_by,
                 sort_order,
-                mail_sort_by,
+                wave_source,
             )
             .await
             .map_err(|e| -> Box<dyn std::error::Error + Send + Sync> {
                 Box::new(io::Error::other(e.to_string()))
-            })?;
-            mail_threads = mt;
-            mail_total = mt_total;
-        }
-        "jbotcan" | "comments" => {
-            mail_threads = Vec::new();
-            mail_total = 0;
-            comment_res = Some(
-                comments_service::list_threads(
-                    pool,
-                    1,
-                    fetch_per_source,
-                    threads_sort_by,
-                    sort_order,
-                    wave_source,
-                )
-                .await
-                .map_err(|e| -> Box<dyn std::error::Error + Send + Sync> {
-                    Box::new(io::Error::other(e.to_string()))
-                })?,
-            );
-        }
-        _ => {
-            let (cr, (mt, mt_total)) = tokio::try_join!(
-                comments_service::list_threads(
-                    pool,
-                    1,
-                    fetch_per_source,
-                    threads_sort_by,
-                    sort_order,
-                    wave_source,
-                ),
-                mailarchive_service::list_mail_threads(
-                    pool,
-                    1,
-                    fetch_per_source,
-                    sort_order,
-                    mail_sort_by,
-                ),
-            )
-            .map_err(|e| -> Box<dyn std::error::Error + Send + Sync> {
-                Box::new(io::Error::other(e.to_string()))
-            })?;
-            comment_res = Some(cr);
-            mail_threads = mt;
-            mail_total = mt_total;
-        }
+            })?,
+        );
+    }
+    if want_mail {
+        let (mt, mt_total) = mailarchive_service::list_mail_threads(
+            pool,
+            1,
+            fetch_per_source,
+            sort_order,
+            mail_sort_by,
+        )
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error + Send + Sync> {
+            Box::new(io::Error::other(e.to_string()))
+        })?;
+        mail_threads = mt;
+        mail_total = mt_total;
+    }
+    if want_wiki {
+        let (ws, wt) =
+            wiki_service::list_wiki_threads(pool, 1, fetch_per_source, sort_order).await?;
+        wiki_summaries = ws;
+        wiki_total = wt;
     }
 
     let mut items: Vec<WaveThreadSummary> = Vec::new();
@@ -454,6 +446,14 @@ pub async fn list_wave_threads(
             last_comment_reactions: 0,
         });
     }
+    for w in wiki_summaries {
+        let last_activity_time = w.last_edited.map(|d| d.timestamp()).unwrap_or(0);
+        items.push(WaveThreadSummary::Wiki {
+            summary: w,
+            last_activity_time,
+            last_comment_reactions: 0,
+        });
+    }
 
     items.sort_by(|a, b| {
         let ka = thread_summary_sort_key(a, sort_by_raw);
@@ -465,7 +465,7 @@ pub async fn list_wave_threads(
         }
     });
 
-    let total = comment_res.as_ref().map(|c| c.total).unwrap_or(0) + mail_total;
+    let total = comment_res.as_ref().map(|c| c.total).unwrap_or(0) + mail_total + wiki_total;
     let start = ((page - 1) * per_page) as usize;
     let items: Vec<WaveThreadSummary> = items
         .into_iter()
