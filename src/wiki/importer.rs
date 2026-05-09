@@ -1,5 +1,5 @@
 //! Pulls articles from `mw.lojban.org` via the MediaWiki API and stores them in
-//! `wiki_articles`. Run from `src/background/service.rs` on startup and weekly.
+//! `wiki_articles`. Run from `src/background/service.rs` on startup and daily.
 //!
 //! Only the latest revision is mirrored. Namespaces 0 (Main) and 2 (User) are
 //! included per product decision. Templates are NOT expanded.
