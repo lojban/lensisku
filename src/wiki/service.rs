@@ -4,7 +4,7 @@
 use deadpool_postgres::Pool;
 
 use super::dto::{WikiArticleDetail, WikiSearchHit, WikiThreadSummary};
-use super::markdown::wiki_target_url;
+use super::markdown::rewrite_wiki_links_for_lensisku;
 
 const PREVIEW_LEN: usize = 400;
 
@@ -211,14 +211,15 @@ pub async fn get_article_by_title(
         let title: String = r.get("title");
         let target = title.replace(' ', "_");
         let source_url = format!(
-            "https://mw.lojban.org/index.php?title={}",
+            "https://mw.lojban.org/papri/{}",
             urlencoding::encode(&target)
         );
+        let markdown: String = r.get("markdown");
         WikiArticleDetail {
             page_id: r.get("page_id"),
             namespace: r.get("namespace"),
             title,
-            markdown: r.get("markdown"),
+            markdown: rewrite_wiki_links_for_lensisku(&markdown),
             last_edited: r.try_get("last_edited").ok().flatten(),
             is_redirect: r.try_get("is_redirect").unwrap_or(false),
             source_url,
@@ -231,7 +232,6 @@ fn row_to_hit(r: tokio_postgres::Row) -> WikiSearchHit {
     let plain: String = r.get("plain_text");
     let last_edited: Option<chrono::DateTime<chrono::Utc>> = r.try_get("last_edited").ok().flatten();
     let article_url = format!("/wiki/{}", urlencoding::encode(&title));
-    let _ = wiki_target_url(&title); // keep import used to avoid dead_code if not referenced
     WikiSearchHit {
         page_id: r.get("page_id"),
         namespace: r.get("namespace"),

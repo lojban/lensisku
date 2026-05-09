@@ -1,18 +1,13 @@
 <template>
   <div class="container mx-auto px-3 sm:px-6 py-6 max-w-4xl">
-    <div class="mb-4 flex items-center gap-2">
-      <button
-        type="button"
-        class="ui-btn--empty inline-flex items-center gap-1 px-3 py-1.5 text-sm"
-        @click="router.back()"
-      >
-        <ArrowLeft class="h-4 w-4" />
-        <span>{{ t('wiki.back') }}</span>
+    <div class="mb-6 flex items-center gap-3">
+      <button type="button" class="ui-btn--back" @click="router.back()">
+        <ArrowLeft class="h-5 w-5" />
       </button>
       <SourceTypeBadge type="wiki" />
     </div>
 
-    <div v-if="loading" class="flex justify-center py-12">
+    <div v-if="loading" class="bg-white border border-blue-200 rounded-lg p-6 flex justify-center">
       <Loader2 class="h-8 w-8 animate-spin text-gray-400" />
     </div>
 
@@ -20,36 +15,57 @@
       {{ error }}
     </div>
 
-    <article v-else-if="article" class="prose prose-sm sm:prose-base max-w-none">
-      <header class="mb-4 not-prose">
-        <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">
-          {{ article.title }}
-        </h1>
-        <div class="mt-2 text-xs text-gray-500 flex flex-wrap gap-x-4">
-          <span v-if="article.last_edited">
-            {{ t('wiki.lastEdited') }}:
-            {{ new Date(article.last_edited).toLocaleString() }}
-          </span>
-          <a
-            :href="article.source_url"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="text-blue-600 hover:underline"
-          >
-            {{ t('wiki.viewOnMediawiki') }}
-          </a>
-        </div>
-      </header>
+    <div v-else-if="article">
+      <div class="p-4 bg-white rounded-lg shadow-sm border border-gray-100">
+        <div class="space-y-6">
+          <h1 class="text-2xl font-bold text-gray-800 mb-4 pb-4 border-b border-gray-100">
+            {{ article.title }}
+          </h1>
 
-      <div
-        v-if="article.is_redirect"
-        class="mb-4 p-3 bg-yellow-50 border border-yellow-100 rounded text-sm text-yellow-800"
-      >
-        {{ t('wiki.redirectNotice') }}
+          <div class="flex flex-col md:flex-row gap-4 md:gap-6">
+            <div class="space-y-4 md:space-y-6 md:flex-1 min-w-[280px]">
+              <div v-if="article.last_edited" class="space-y-1">
+                <div class="text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  {{ t('wiki.lastEdited') }}
+                </div>
+                <div class="text-gray-700">
+                  {{ new Date(article.last_edited).toLocaleString() }}
+                </div>
+              </div>
+            </div>
+
+            <div class="space-y-4 md:space-y-6 md:flex-1 min-w-[280px]">
+              <div class="space-y-1">
+                <div class="text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  {{ t('wiki.viewOnMediawiki') }}
+                </div>
+                <a
+                  :href="article.source_url"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="text-gray-700 text-sm break-words hover:text-blue-600 hover:underline"
+                >
+                  {{ article.source_url }}
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <LazyMathJax :content="article.markdown" :enable-markdown="true" />
-    </article>
+      <div class="mt-6 p-4 bg-white rounded-lg shadow-sm border border-gray-100 space-y-6">
+        <div
+          v-if="article.is_redirect"
+          class="p-3 bg-yellow-50 border border-yellow-100 rounded text-sm text-yellow-800"
+        >
+          {{ t('wiki.redirectNotice') }}
+        </div>
+
+        <div class="prose max-w-none text-gray-700 message-content">
+          <LazyMathJax :content="article.markdown" :enable-markdown="true" />
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 

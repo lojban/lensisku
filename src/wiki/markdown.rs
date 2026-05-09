@@ -13,8 +13,6 @@ use parse_wiki_text_2::{
     TableCaption, TableCell, TableCellType, TableRow,
 };
 
-const WIKI_BASE: &str = "https://mw.lojban.org/index.php?title=";
-
 /// Convert MediaWiki source to (markdown, plain_text).
 pub fn wikitext_to_markdown(input: &str) -> (String, String) {
     let cfg = Configuration::default();
@@ -34,10 +32,15 @@ pub fn wikitext_to_markdown(input: &str) -> (String, String) {
     (md, plain)
 }
 
-/// Build a wiki URL for a `[[Target]]` link target.
+/// Build a relative MediaWiki page target for a `[[Target]]` link target.
 pub fn wiki_target_url(target: &str) -> String {
     let t = target.trim().replace(' ', "_");
-    format!("{WIKI_BASE}{}", urlencoding::encode(&t))
+    format!("/papri/{}", urlencoding::encode(&t))
+}
+
+/// Rewrite imported MediaWiki-relative page links for the Lensisku article route.
+pub fn rewrite_wiki_links_for_lensisku(markdown: &str) -> String {
+    markdown.replace("](/papri/", "](/wiki/")
 }
 
 fn render_nodes(nodes: &[Node<'_>], md: &mut String, plain: &mut String, depth: usize) {
@@ -443,8 +446,15 @@ mod tests {
     #[test]
     fn internal_link_with_label() {
         let (md, _) = wikitext_to_markdown("See [[Lojban|the language]] for details.");
-        assert!(md.contains("[the language]("), "md={md}");
-        assert!(md.contains("Lojban"), "md={md}");
+        assert!(md.contains("[the language](/papri/Lojban)"), "md={md}");
+    }
+
+    #[test]
+    fn rewrites_internal_links_for_lensisku_route() {
+        let markdown = "See [the language](/papri/Lojban) and [external](https://example.com).";
+        let rewritten = rewrite_wiki_links_for_lensisku(markdown);
+        assert!(rewritten.contains("[the language](/wiki/Lojban)"), "rewritten={rewritten}");
+        assert!(rewritten.contains("[external](https://example.com)"), "rewritten={rewritten}");
     }
 
     #[test]
