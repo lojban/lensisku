@@ -140,7 +140,7 @@
       </div>
     </div>
     <!-- Rafsi Input (Lojban only) -->
-    <div v-if="Number(sourceLangId) === 1">
+    <div v-if="Number(sourceLangId) === 1 && showLojbanWordFields">
       <label for="rafsi" class="block text-sm font-medium text-blue-700">
         {{ t('upsertDefinition.rafsiLabel') }}
         <span class="text-gray-500 font-normal">{{ t('upsertDefinition.optional') }}</span>
@@ -156,7 +156,7 @@
       <p class="mt-1 text-xs text-gray-500">{{ t('upsertDefinition.rafsiNote') }}</p>
     </div>
     <!-- Selmaho Input (cmavo / experimental cmavo only) -->
-    <div v-if="showSelmahoField">
+    <div v-if="showSelmahoField && showLojbanWordFields">
       <label for="selmaho" class="block text-sm font-medium text-blue-700">
         {{ t('upsertDefinition.selmahoLabel') }}
         <span class="text-gray-500 font-normal">{{ t('upsertDefinition.optional') }}</span>
@@ -279,7 +279,7 @@
       />
     </div>
     <!-- Gloss Keywords -->
-    <div>
+    <div v-if="showLojbanWordFields">
       <label class="block text-sm font-medium text-blue-700 mb-2">
         {{ t('upsertDefinition.glossKeywordsLabel') }}
         <span class="text-gray-500 font-normal">{{ t('upsertDefinition.optional') }}</span>
@@ -312,7 +312,7 @@
       </div>
     </div>
     <!-- Place Keywords -->
-    <div>
+    <div v-if="showLojbanWordFields">
       <label class="block text-sm font-medium text-blue-700 mb-2">
         {{ t('upsertDefinition.placeKeywordsLabel') }}
         <span class="text-gray-500 font-normal">{{ t('upsertDefinition.optional') }}</span>
@@ -633,6 +633,11 @@ const shouldHighlightMissing = computed(() => {
 const showSelmahoField = computed(() => {
   const t = wordType.value || ''
   return t === 'cmavo' || t === 'experimental cmavo'
+})
+
+// Hide Lojban word-specific fields for phrases
+const showLojbanWordFields = computed(() => {
+  return wordType.value !== 'phrase'
 })
 
 // Methods for keywords
