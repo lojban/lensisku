@@ -1,5 +1,5 @@
 use crate::utils::remove_html_tags;
-use camxes_rs::peg::grammar::Peg;
+use camxes_rs::camxes::peg::grammar::Peg;
 use chrono::TimeZone;
 use serde_json::json;
 use std::collections::{BTreeMap, HashMap, HashSet};
@@ -35,7 +35,7 @@ use crate::versions::service::{get_diff, get_version_with_transaction};
 use crate::versions::{Change, ChangeType, VersionContent, VersionDiff};
 use base64::engine::general_purpose::STANDARD as BASE64;
 use base64::Engine;
-use camxes_rs::peg::parsing::ParseResult;
+use camxes_rs::camxes::peg::parsing::ParseResult;
 
 use chrono::{DateTime, Utc};
 
@@ -1486,7 +1486,7 @@ async fn get_source_words(
     if parts.is_empty() {
         if let Some(parsers) = parsers {
             if let Some(parser) = parsers.get(&1) {
-                let ParseResult(_, _, result) = parser.parse(word);
+                let ParseResult(_, _, _, result) = parser.parse(word);
                 if let Ok(tokens) = result.as_ref() {
                     if let Some(segments) = lujvo_segments_from_nodes(word, tokens) {
                         parts = segments;

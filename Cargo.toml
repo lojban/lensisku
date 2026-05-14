@@ -125,7 +125,7 @@ validator = { version = "0.20.0", features = ["derive"] }
 crc32fast = "1.5"
 sha2 = "0.10"
 
-camxes-rs = "0.1.5"
+camxes-rs = "1.0.0"
 openssl = "0.10.76"
 csv = "1.4"
 vlazba = "0.8.0"
@@ -134,9 +134,6 @@ tokio-stream = "0.1.18"
 actix-web-lab = "0.26"
 # Default features enable `zstd` 0.13; we only write Deflate (`export` TSV zips). Match `ndarray-npy` (`zip/deflate`).
 zip = { version = "6.0", default-features = false, features = ["deflate"] }
-wasmtime = "17.0.0"
-wasmtime-wasi = "17.0.0"
-anyhow = "1.0"
 fastembed = { version = "5.13", default-features = false, features = ["hf-hub", "ort-download-binaries"] }
 # Same `ort` as fastembed: default-features = false (no CUDA/TensorRT/etc. Cargo features). Prebuilt ORT is CPU-only.
 ort = { version = "=2.0.0-rc.11", default-features = false, features = ["download-binaries", "ndarray"] }

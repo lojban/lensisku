@@ -1,4 +1,4 @@
-use camxes_rs::peg::parsing::ParseNode;
+use camxes_rs::camxes::peg::parsing::ParseNode;
 use serde::{Deserialize, Serialize};
 use std::error::Error as StdError;
 use tokio_postgres::Row;

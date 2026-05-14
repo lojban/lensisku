@@ -959,7 +959,7 @@ pub async fn import_json(
                 .await.map_err(|e| AppError::Database(e.to_string()))?
                 .try_get(0).map_err(|e| AppError::Database(e.to_string()))?;
 
-            let canonical_form = crate::utils::tersmu::get_canonical_form(&item.word);
+            let canonical_form = crate::utils::canonical::get_canonical_form(&item.word);
 
             // Add item
             transaction
@@ -1139,11 +1139,11 @@ pub async fn import_collection_from_json(
 
         let canonical_form = sanitized_front
             .as_ref()
-            .and_then(|front| crate::utils::tersmu::get_canonical_form(front))
+            .and_then(|front| crate::utils::canonical::get_canonical_form(front))
             .or_else(|| {
                 item.word
                     .as_ref()
-                    .and_then(|w| crate::utils::tersmu::get_canonical_form(w))
+                    .and_then(|w| crate::utils::canonical::get_canonical_form(w))
             });
 
         let new_item_id: i32 = transaction
@@ -1317,11 +1317,11 @@ pub async fn import_full(
         let sanitized_note = item.collection_note.as_ref().map(|n| sanitize_html(n));
         let canonical_form = sanitized_front
             .as_ref()
-            .and_then(|f| crate::utils::tersmu::get_canonical_form(f))
+            .and_then(|f| crate::utils::canonical::get_canonical_form(f))
             .or_else(|| {
                 item.word
                     .as_ref()
-                    .and_then(|w| crate::utils::tersmu::get_canonical_form(w))
+                    .and_then(|w| crate::utils::canonical::get_canonical_form(w))
             });
 
         let new_item_id: i32 = transaction
@@ -1845,7 +1845,7 @@ pub async fn upsert_item(
     // Create or update item
     let mut canonical_form = sanitized_front
         .as_ref()
-        .and_then(|front| crate::utils::tersmu::get_canonical_form(front));
+        .and_then(|front| crate::utils::canonical::get_canonical_form(front));
 
     // For dictionary items without free content, try to use the word from the definition
     if canonical_form.is_none() {
@@ -1855,7 +1855,7 @@ pub async fn upsert_item(
                 &[&def_id]
             ).await {
                 let word: String = row.get(0);
-                canonical_form = crate::utils::tersmu::get_canonical_form(&word);
+                canonical_form = crate::utils::canonical::get_canonical_form(&word);
             }
         }
     }
@@ -2906,7 +2906,7 @@ pub async fn add_items_bulk_by_definition_ids(
         .collect();
 
     let canonical_forms: Vec<Option<String>> = tokio::task::spawn_blocking(move || {
-        crate::utils::tersmu::get_canonical_forms_batch(&words_for_canonical)
+        crate::utils::canonical::get_canonical_forms_batch(&words_for_canonical)
     })
     .await
     .map_err(|e| AppError::Internal(format!("canonical-form task failed: {e}")))?;
@@ -4208,7 +4208,7 @@ pub async fn bulk_update_custom_text_items(
         let canonical_form = if sanitized_front.trim().is_empty() {
             None
         } else {
-            crate::utils::tersmu::get_canonical_form(sanitized_front.as_str())
+            crate::utils::canonical::get_canonical_form(sanitized_front.as_str())
         };
 
         let n = transaction
@@ -4283,7 +4283,7 @@ pub async fn bulk_update_custom_text_items(
 
             let canonical_form = free_front
                 .as_ref()
-                .and_then(|front| crate::utils::tersmu::get_canonical_form(front.as_str()));
+                .and_then(|front| crate::utils::canonical::get_canonical_form(front.as_str()));
 
             transaction
                 .execute(
@@ -4726,7 +4726,7 @@ pub async fn bulk_import_collection_item_media(
                 let sanitized_front = sanitize_html(ff);
                 let sanitized_back = sanitize_html(fb);
                 let canonical_form =
-                    crate::utils::tersmu::get_canonical_form(sanitized_front.as_str());
+                    crate::utils::canonical::get_canonical_form(sanitized_front.as_str());
                 let max_position: i32 = transaction
                     .query_one(
                         "SELECT COALESCE(MAX(position), -1) FROM collection_items WHERE collection_id = $1",
