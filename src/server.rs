@@ -20,7 +20,7 @@ use crate::{
 use actix_cors::Cors;
 use actix_limitation::RateLimiter;
 use actix_web::{http::header, middleware::Logger, web, App, HttpServer};
-use camxes_rs::peg::grammar::Peg;
+use camxes_rs::camxes::peg::grammar::Peg;
 use log::{error, info};
 use std::{collections::HashMap, env, sync::Arc};
 

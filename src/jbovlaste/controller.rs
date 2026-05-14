@@ -27,7 +27,7 @@ use crate::middleware::cache::{
     generate_search_cache_key, generate_semantic_graph_cache_key,
     generate_semantic_graph_preview_cache_key, RedisCache,
 };
-use camxes_rs::peg::grammar::Peg;
+use camxes_rs::camxes::peg::grammar::Peg;
 use std::collections::HashMap;
 use std::sync::Arc;
 

@@ -1,5 +1,5 @@
 use actix_web::{get, post, web, HttpResponse, Responder};
-use camxes_rs::peg::grammar::Peg;
+use camxes_rs::camxes::peg::grammar::Peg;
 use deadpool_postgres::Pool;
 use std::collections::HashMap;
 use std::sync::Arc;

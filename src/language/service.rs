@@ -2,8 +2,8 @@ use std::{collections::HashMap, sync::Arc};
 
 use crate::language::dto::*;
 use crate::language::models::{Language, LojbanToken};
-use camxes_rs::peg::parsing::ParseNode;
-use camxes_rs::peg::{grammar::Peg, parsing::ParseResult};
+use camxes_rs::camxes::peg::parsing::ParseNode;
+use camxes_rs::camxes::peg::{grammar::Peg, parsing::ParseResult};
 use deadpool_postgres::{Pool, Transaction};
 use log::warn;
 use regex::Regex;
@@ -48,7 +48,7 @@ pub fn parse_lojban(parsers: &Arc<HashMap<i32, Peg>>, input: &str) -> LojbanPars
         }
     };
 
-    let ParseResult(_, _, result) = parser.parse(input);
+    let ParseResult(_, _, _, result) = parser.parse(input);
 
     match result.as_ref() {
         Ok(tokens) => {
@@ -214,7 +214,7 @@ pub async fn analyze_word(
         }
     };
 
-    let ParseResult(_, _, result) = parser.parse(word);
+    let ParseResult(_, _, _, result) = parser.parse(word);
 
     match result.as_ref() {
         Ok(tokens) => {
