@@ -86,8 +86,19 @@ fn is_placeholder_or_router_only_model(id: &str) -> bool {
 
 /// Checks if a model ID belongs to a preferred provider (nvidia, google, anthropic, openai, minimax).
 fn is_preferred_provider(model_id: &str) -> bool {
-    const PREFERRED_PROVIDERS: &[&str] = &["nvidia/", "google/", "anthropic/", "openai/", "minimax/"];
-    PREFERRED_PROVIDERS.iter().any(|prefix| model_id.starts_with(prefix))
+    const PREFERRED_PROVIDERS: &[&str] = &[
+        "nvidia/",
+        "google/",
+        "anthropic/",
+        "openai/",
+        "minimax/",
+        "deepseek/",
+        "moonshotai/",
+        "qwen/",
+    ];
+    PREFERRED_PROVIDERS
+        .iter()
+        .any(|prefix| model_id.starts_with(prefix))
 }
 
 async fn fetch_openrouter_models_list(
@@ -95,22 +106,23 @@ async fn fetch_openrouter_models_list(
     api_key: &str,
     query: &str,
 ) -> Result<Vec<OpenRouterModel>, AppError> {
-    let url = format!(
-        "{}/models{}",
-        base_url.trim_end_matches('/'),
-        query
-    );
+    let url = format!("{}/models{}", base_url.trim_end_matches('/'), query);
     let client = reqwest::Client::new();
     let res = client
         .get(&url)
         .header("Authorization", format!("Bearer {}", api_key))
         .send()
         .await
-        .map_err(|e| AppError::ExternalService(format!("OpenRouter models request failed: {}", e)))?;
+        .map_err(|e| {
+            AppError::ExternalService(format!("OpenRouter models request failed: {}", e))
+        })?;
 
     let status = res.status();
     if !status.is_success() {
-        let body = res.text().await.unwrap_or_else(|_| String::from("(no body)"));
+        let body = res
+            .text()
+            .await
+            .unwrap_or_else(|_| String::from("(no body)"));
         return Err(AppError::ExternalServiceWithRaw {
             message: format!("OpenRouter models returned {}", status),
             raw_response: body,
@@ -220,7 +232,10 @@ pub async fn fetch_latest_openrouter_models(
         log::warn!(
             "OpenRouter: no free (zero-priced) text models matched filters; falling back to openrouter/free"
         );
-        return Ok(vec![("openrouter/free".to_string(), "OpenRouter Free".to_string())]);
+        return Ok(vec![(
+            "openrouter/free".to_string(),
+            "OpenRouter Free".to_string(),
+        )]);
     }
     Ok(top)
 }
@@ -262,7 +277,8 @@ pub async fn load_or_fetch_openrouter_candidates(
             Ok(Some(pair)) if pair.len() == 2 => {
                 log::debug!(
                     "OpenRouter assistant: using two cached models from Redis: {}, {}",
-                    pair[0].0, pair[1].0
+                    pair[0].0,
+                    pair[1].0
                 );
                 return Ok((pair, true));
             }
@@ -330,7 +346,8 @@ where
     F: FnMut(String, String) -> Fut,
     Fut: std::future::Future<Output = Result<(), AppError>>,
 {
-    let catalog = fetch_latest_openrouter_models(base_url, api_key).await
+    let catalog = fetch_latest_openrouter_models(base_url, api_key)
+        .await
         .map_err(|e| -> Box<dyn std::error::Error> { format!("{}", e).into() })?;
 
     let mut picked: Vec<(ModelEntry, Duration)> = Vec::new();
@@ -367,10 +384,8 @@ where
             }
         });
 
-        let ordered_models: Vec<ModelEntry> = picked
-            .iter()
-            .map(|(entry, _)| entry.clone())
-            .collect();
+        let ordered_models: Vec<ModelEntry> =
+            picked.iter().map(|(entry, _)| entry.clone()).collect();
 
         redis
             .set(
