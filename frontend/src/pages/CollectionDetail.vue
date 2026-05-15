@@ -253,6 +253,7 @@
               has_back_image: item.has_back_image,
               has_sound: item.has_sound,
               sound_url: item.sound_url,
+              canonical_form: item.canonical_form,
             }"
             :collection-id="collection.collection_id"
             :item-id="item.item_id"
@@ -1493,6 +1494,7 @@ interface CollectionDetailListItem {
   has_sound?: boolean
   sound_url?: string | null
   ci_notes?: string | null
+  canonical_form?: string | null
   flashcard?: { canonical_form?: string; direction?: string; [key: string]: unknown } | null
   auto_progress?: boolean
 }
