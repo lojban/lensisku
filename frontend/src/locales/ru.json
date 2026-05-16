@@ -165,7 +165,7 @@
     "totalMatchingHint": "Всего совпадений в базе: {total} (выше показаны только лучшие).",
     "notesLabel": "Примечания:",
     "toolErrorSummary": "Ошибка поиска",
-    "reasoningLabel": "Сообщение ассистента (до инструмента)",
+    "reasoningLabel": "Ассистент рассуждает...",
     "showRawOutput": "Показать сырой JSON",
     "hideRawOutput": "Скрыть сырой JSON",
     "editMessage": "Изменить",

@@ -169,7 +169,7 @@
     "totalMatchingHint": "{total} definitions matched in total (only the top results are listed above).",
     "notesLabel": "Notes:",
     "toolErrorSummary": "Search error",
-    "reasoningLabel": "Assistant message (before tool)",
+    "reasoningLabel": "Assistant thinking...",
     "showRawOutput": "Show raw search result",
     "hideRawOutput": "Hide raw search result",
     "editMessage": "Edit",
