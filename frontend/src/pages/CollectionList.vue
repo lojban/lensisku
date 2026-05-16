@@ -79,9 +79,8 @@
       <template #description>
         <div class="flex max-w-2xl flex-col gap-2 text-sm text-slate-600">
           <template v-if="auth.state.isLoggedIn">
-            <p class="m-0">{{ t('collectionList.collectionDescriptionCourse') }}</p>
-
             <p class="m-0">{{ t('collectionList.collectionDescriptionIntro') }}</p>
+            <p class="m-0">{{ t('collectionList.collectionDescriptionCourse') }}</p>
           </template>
           <p v-else class="m-0">
             <i18n-t keypath="collectionList.collectionDescriptionLoggedOut" tag="span">
