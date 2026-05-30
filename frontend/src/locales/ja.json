@@ -820,8 +820,8 @@
     "addButton": "定義を追加",
     "addEntryButton": "新しいエントリを追加",
     "analyzeWordButton": "解析",
-    "updating": "更新中…",
-    "adding": "追加中…",
+    "updating": "更新中",
+    "adding": "追加中",
     "updateSuccess": "語を更新しました。",
     "existingWordNote": "既存の語に新しい定義を追加しました。",
     "createSuccess": "定義を追加しました。",
@@ -1558,7 +1558,7 @@
     "languageLabel": "言語",
     "languagePlaceholder": "言語を選択",
     "definitionLabel": "定義",
-    "saving": "保存中…",
+    "saving": "保存中",
     "saveButton": "定義を保存"
   },
   "activityBookmarks": {

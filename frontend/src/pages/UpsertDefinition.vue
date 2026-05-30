@@ -395,19 +395,8 @@
         class="max-w-fit ui-btn--create h-10 text-base"
         disabled
       >
-        {{
-          isEditMode
-            ? isSubmitting
-              ? t('upsertDefinition.updating')
-              : t('upsertDefinition.updateButton')
-            : prefilledWord
-              ? isSubmitting
-                ? t('upsertDefinition.adding')
-                : t('upsertDefinition.addButton')
-              : isSubmitting
-                ? t('upsertDefinition.adding')
-                : t('upsertDefinition.addEntryButton')
-        }}
+        {{ isEditMode ? t('upsertDefinition.updating') : t('upsertDefinition.adding')
+        }}<AnimatedDots />
       </Button>
     </div>
   </form>
@@ -448,6 +437,7 @@ import {
 } from '@/api'
 import { Button } from '@packages/ui'
 import AlertComponent from '@/components/AlertComponent.vue'
+import AnimatedDots from '@/components/AnimatedDots.vue'
 import DynamicInput from '@/components/DynamicInput.vue'
 import ImageUpload from '@/components/ImageUpload.vue'
 import LazyMathJax from '@/components/LazyMathJax.vue'

@@ -74,11 +74,10 @@
       <!-- Submit Button -->
       <div class="flex justify-end">
         <button type="submit" class="ui-btn--create" :disabled="isSubmitting || !isValid">
-          {{
-            isSubmitting
-              ? t('upsertDefinitionMarkdown.saving')
-              : t('upsertDefinitionMarkdown.saveButton')
-          }}
+          <template v-if="isSubmitting"
+            >{{ t('upsertDefinitionMarkdown.saving') }}<AnimatedDots
+          /></template>
+          <template v-else>{{ t('upsertDefinitionMarkdown.saveButton') }}</template>
         </button>
       </div>
     </form>
@@ -92,6 +91,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 
 import { getLanguages, addValsi, updateValsi, getDefinition } from '@/api'
+import AnimatedDots from '@/components/AnimatedDots.vue'
 import '@milkdown/crepe/theme/common/style.css'
 import '@milkdown/crepe/theme/frame.css'
 import { useSeoHead } from '@/composables/useSeoHead'

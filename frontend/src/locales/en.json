@@ -848,8 +848,8 @@
     "addButton": "Add definition",
     "addEntryButton": "Add new entry",
     "analyzeWordButton": "Analyze",
-    "updating": "Updating...",
-    "adding": "Adding...",
+    "updating": "Updating",
+    "adding": "Adding",
     "updateSuccess": "Word updated successfully!",
     "existingWordNote": "A new definition has been added to the existing word.",
     "createSuccess": "Definition added successfully!",
@@ -1586,7 +1586,7 @@
     "languageLabel": "Language",
     "languagePlaceholder": "Select a language",
     "definitionLabel": "Definition",
-    "saving": "Saving...",
+    "saving": "Saving",
     "saveButton": "Save definition"
   },
   "activityBookmarks": {

@@ -825,8 +825,8 @@
     "addButton": "添加释义",
     "addEntryButton": "添加新词条",
     "analyzeWordButton": "分析",
-    "updating": "更新中…",
-    "adding": "添加中…",
+    "updating": "更新中",
+    "adding": "添加中",
     "updateSuccess": "词条已更新！",
     "existingWordNote": "已在现有词条上添加新释义。",
     "createSuccess": "释义已添加！",
@@ -1563,7 +1563,7 @@
     "languageLabel": "语言",
     "languagePlaceholder": "选择语言",
     "definitionLabel": "释义",
-    "saving": "保存中…",
+    "saving": "保存中",
     "saveButton": "保存释义"
   },
   "activityBookmarks": {

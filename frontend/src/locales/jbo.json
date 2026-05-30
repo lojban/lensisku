@@ -835,8 +835,8 @@
     "addButton": "jmina lo ciksi",
     "addEntryButton": "jmina lo cnino valsi",
     "analyzeWordButton": "lanli",
-    "updating": "ca'o vreji...",
-    "adding": "ca'o jmina...",
+    "updating": "ca'o vreji",
+    "adding": "ca'o jmina",
     "updateSuccess": "snada lo nu galfi lo valsi!",
     "existingWordNote": "jmina lo cnino ciksi lo zasti valsi.",
     "createSuccess": "snada lo nu jmina lo ciksi!",
@@ -1582,7 +1582,7 @@
     "languageLabel": "bangu",
     "languagePlaceholder": "ko cuxna pa bangu",
     "definitionLabel": "ciksi",
-    "saving": "ca'o vreji...",
+    "saving": "ca'o vreji",
     "saveButton": "vreji lo ciksi"
   },
   "activityBookmarks": {
