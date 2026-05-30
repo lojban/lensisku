@@ -546,7 +546,8 @@ const changePage = (page: number) => {
   currentPage.value = page
   // Subsequent page changes should include page parameter
   performFetchComments(false)
-  // window.scrollTo({ top: 0, behavior: 'smooth' });
+  const mainContent = document.querySelector('.main-content') as HTMLElement | null
+  mainContent?.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
 const submitComment = async (formData: { subject: string; content: string }) => {

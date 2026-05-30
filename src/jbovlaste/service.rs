@@ -2010,7 +2010,7 @@ async fn add_definition_in_transaction(
                 .await?;
 
             // Create keywordmapping
-            let place: i16 = i16::try_from(i + 1).unwrap_or(i16::MAX);
+            let place: i32 = (i + 1) as i32;
             transaction
                 .execute(
                     "INSERT INTO keywordmapping (definitionid, place, natlangwordid)
@@ -2672,7 +2672,7 @@ pub async fn update_definition(
                 .await?;
 
             // Then create keywordmapping
-            let place: i16 = i16::try_from(i + 1).unwrap_or(i16::MAX);
+            let place: i32 = (i + 1) as i32;
             transaction
                 .execute(
                     "INSERT INTO keywordmapping (definitionid, place, natlangwordid)
