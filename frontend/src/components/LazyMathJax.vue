@@ -353,6 +353,35 @@ onBeforeUnmount(() => {
   @apply block;
 }
 
+/* Ensure headings override inline styles and retain block + size */
+.mathjax-content :deep(> h1),
+.mathjax-content :deep(> h2),
+.mathjax-content :deep(> h3),
+.mathjax-content :deep(> h4),
+.mathjax-content :deep(> h5),
+.mathjax-content :deep(> h6) {
+  display: block !important;
+  font-weight: 600 !important;
+  margin-top: 0.75em !important;
+  margin-bottom: 0.25em !important;
+  line-height: 1.4 !important;
+}
+
+.mathjax-content :deep(> h1) {
+  font-size: 1.5em !important;
+}
+.mathjax-content :deep(> h2) {
+  font-size: 1.3em !important;
+}
+.mathjax-content :deep(> h3) {
+  font-size: 1.15em !important;
+}
+.mathjax-content :deep(> h4),
+.mathjax-content :deep(> h5),
+.mathjax-content :deep(> h6) {
+  font-size: 1em !important;
+}
+
 /* Ensure blockquote overrides inline styles */
 .mathjax-content :deep(> blockquote) {
   display: block !important;
