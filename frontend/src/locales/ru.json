@@ -775,8 +775,8 @@
     "addButton": "Добавить определение",
     "addEntryButton": "Добавить новую запись",
     "analyzeWordButton": "Анализировать",
-    "updating": "Обновление...",
-    "adding": "Добавление...",
+    "updating": "Обновление",
+    "adding": "Добавление",
     "updateSuccess": "Слово успешно обновлено!",
     "existingWordNote": "Новое определение было добавлено к существующему слову.",
     "createSuccess": "Определение успешно добавлено!",
@@ -1512,7 +1512,7 @@
     "languageLabel": "Язык",
     "languagePlaceholder": "Выберите язык",
     "definitionLabel": "Определение",
-    "saving": "Сохранение...",
+    "saving": "Сохранение",
     "saveButton": "Сохранить определение"
   },
   "activityBookmarks": {
