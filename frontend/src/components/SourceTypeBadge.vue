@@ -1,6 +1,10 @@
 <template>
   <span
-    :class="[config.bg, config.text, 'px-2.5 py-0.5 rounded-full inline-flex items-center gap-1.5']"
+    :class="[
+      config.bg,
+      config.text,
+      'select-none px-2.5 py-0.5 rounded-full inline-flex items-center gap-1.5',
+    ]"
   >
     <component :is="config.icon" class="size-3.5 shrink-0" /> <span>{{ label }}</span>
   </span>

@@ -16,7 +16,7 @@ use super::service;
     ),
     summary = "Fetch a mirrored mw.lojban.org article rendered as Markdown",
 )]
-#[get("/{title}")]
+#[get("/{title:.*}")]
 pub async fn get_wiki_article(
     pool: web::Data<Pool>,
     path: web::Path<String>,

@@ -124,7 +124,7 @@ const baseRoutes: Array<RouteRecordRaw> = [
     component: () => import('../pages/PasswordReset.vue'),
   },
   {
-    path: '/wiki/:title',
+    path: '/wiki/:title(.*)',
     name: 'WikiArticle',
     component: () => import('../pages/WikiArticle.vue'),
     props: (route) => ({

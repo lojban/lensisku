@@ -140,6 +140,35 @@ fn sync_disabled() -> bool {
     matches!(std::env::var("DISABLE_WIKI_SYNC").ok().as_deref(), Some("1") | Some("true"))
 }
 
+/// Re-render `markdown` and `plain_text` for every row from its stored `wikitext`,
+/// without hitting the network.  Called after converter improvements so existing
+/// articles pick up the new rendering on the next startup.
+pub async fn rerender_all_markdown(pool: &Pool) -> Result<(), WikiSyncError> {
+    let client = pool.get().await.map_err(|e| WikiSyncError::Db(e.to_string()))?;
+    let rows = client
+        .query("SELECT id, wikitext FROM wiki_articles", &[])
+        .await
+        .map_err(|e| WikiSyncError::Db(e.to_string()))?;
+    let total = rows.len();
+    info!("wiki: re-rendering markdown for {total} articles");
+    let mut updated = 0usize;
+    for row in &rows {
+        let id: i32 = row.get("id");
+        let wikitext: &str = row.get("wikitext");
+        let (md, plain) = wikitext_to_markdown(wikitext);
+        let c = pool.get().await.map_err(|e| WikiSyncError::Db(e.to_string()))?;
+        c.execute(
+            "UPDATE wiki_articles SET markdown = $1, plain_text = $2 WHERE id = $3",
+            &[&md, &plain, &id],
+        )
+        .await
+        .map_err(|e| WikiSyncError::Db(e.to_string()))?;
+        updated += 1;
+    }
+    info!("wiki: re-render complete ({updated}/{total})");
+    Ok(())
+}
+
 /// Decide on startup whether to do a full sync (table empty) or incremental.
 pub async fn sync_on_startup(pool: &Pool) -> Result<(), WikiSyncError> {
     if sync_disabled() {
@@ -157,7 +186,8 @@ pub async fn sync_on_startup(pool: &Pool) -> Result<(), WikiSyncError> {
         info!("wiki_articles empty -> running full wiki sync");
         run_full_sync(pool).await
     } else {
-        debug!("wiki_articles has {count} rows -> running incremental wiki sync");
+        info!("wiki_articles has {count} rows -> re-rendering + incremental sync on startup");
+        rerender_all_markdown(pool).await?;
         run_incremental_sync(pool).await
     }
 }
