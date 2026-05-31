@@ -313,78 +313,228 @@ fn render_template(
     }
 
     // Process template based on type
-    let name_lower = name.to_lowercase();
-    match name_lower.as_str() {
-        // Metadata templates - strip completely
-        "ind" | "dsp" | "judri" | "lex" | "ssp" | "startchapter" | "bookcat"
-        | "bpfk section box open" | "bpfk section box close" | "bpfk section from tiki"
-        | "bpfk section poll" | "se inspekte/en" | "jbocre/en" | "comment" => {
-            // Strip from both markdown and plain text
-        }
-
-        // Lojban words - render as bold
-        "vla" | "jbo" | "c" | "vlapoi" | "cmevla" | "selmaho" => {
-            let text = args.first().unwrap_or(&name.to_string()).to_string();
+    let name_lower = name.trim().to_lowercase();
+    let name_lower = name_lower.trim();
+    match name_lower {
+        // ── Lojban word templates ────────────────────────────────────────────
+        // Render as bold (the word itself)
+        "vla" | "jbo" | "c" | "vlapoi" | "cmevla" | "selmaho" | "selma'o" => {
+            let text = args.first().map(|s| s.as_str()).unwrap_or(name);
             md.push_str(&format!("**{}**", text));
-            plain.push_str(&text);
+            plain.push_str(text);
         }
 
-        // English gloss - render as quoted text
-        "gl" => {
-            let text = args.first().unwrap_or(&String::new()).to_string();
-            if !text.is_empty() {
-                md.push_str(&format!("\"{}\"", text));
-                plain.push_str(&text);
-            }
+        // Cmavo / grammar word classes — bold
+        "cmavo" | "grammar" | "nunjikca" | "jikca" | "gln"
+        | "cc" | "ir" | "mv" | "vj" | "ep" | "lg" | "leng" => {
+            let text = args.first().map(|s| s.as_str()).unwrap_or(name);
+            md.push_str(&format!("**{}**", text));
+            plain.push_str(text);
         }
 
-        // Variables and placeholders - render as italic
-        "ma" | "lerfu" | "mu" | "mo" | "l" => {
-            let text = args.first().unwrap_or(&name.to_string()).to_string();
-            md.push_str(&format!("_{}_", text));
-            plain.push_str(&text);
-        }
-
-        // Selma'o (word class) - render as italic uppercase
+        // Selma'o (word class) — italic uppercase
         "s" => {
-            let text = args.first().unwrap_or(&String::new()).to_string();
+            let text = args.first().map(|s| s.as_str()).unwrap_or("");
             if !text.is_empty() {
                 md.push_str(&format!("*{}*", text.to_uppercase()));
                 plain.push_str(&text.to_uppercase());
             }
         }
 
-        // Math expressions - render as code
-        "math" => {
-            let text = args.first().unwrap_or(&String::new()).to_string();
+        // English gloss — quoted
+        "gl" => {
+            let text = args.first().map(|s| s.as_str()).unwrap_or("");
             if !text.is_empty() {
-                md.push_str(&format!("`{}`", text));
-                plain.push_str(&text);
+                md.push_str(&format!("\"{}\"", text));
+                plain.push_str(text);
             }
         }
 
-        // Citations - render as superscript reference
-        "irci" | "reltonga" => {
-            let text = args.first().unwrap_or(&String::new()).to_string();
-            if !text.is_empty() {
-                md.push_str(&format!("[^{}]", text));
+        // Variables / placeholders — italic
+        "ma" | "lerfu" | "mu" | "mo" | "l" => {
+            let text = args.first().map(|s| s.as_str()).unwrap_or(name);
+            md.push_str(&format!("_{}_", text));
+            plain.push_str(text);
+        }
+
+        // ── Link shortcuts ───────────────────────────────────────────────────
+        "ls" | "lch" | "raf" | "ms" | "llg" => {
+            if let Some(target) = args.first() {
+                md.push_str(&format!("[{}]({})", target, wiki_target_url(target)));
+                plain.push_str(target);
             }
         }
 
-        // Jbovlaste links - convert to external link
+        // Jbovlaste link
         "jvs" => {
-            let word = args.first().unwrap_or(&String::new()).to_string();
+            let word = args.first().map(|s| s.as_str()).unwrap_or("");
             if !word.is_empty() {
                 md.push_str(&format!(
                     "[{}](https://jbovlaste.lojban.org/dict/{})",
                     word,
-                    urlencoding::encode(&word)
+                    urlencoding::encode(word)
                 ));
-                plain.push_str(&word);
+                plain.push_str(word);
             }
         }
 
-        // Example blocks - render as blockquote
+        // Wikipedia link
+        "wikipedia" => {
+            if let Some(article) = args.first() {
+                md.push_str(&format!(
+                    "[Wikipedia: {}](https://en.wikipedia.org/wiki/{})",
+                    article,
+                    urlencoding::encode(article)
+                ));
+                plain.push_str(article);
+            }
+        }
+
+        // Lojban StackExchange shortcut
+        "lojban stackexchange" => {
+            md.push_str("[Lojban StackExchange](https://linguistics.stackexchange.com/questions/tagged/lojban)");
+            plain.push_str("Lojban StackExchange");
+        }
+
+        // ── Inline formatting pass-throughs ─────────────────────────────────
+        // Math expressions — code span
+        "math" => {
+            let text = args.first().map(|s| s.as_str()).unwrap_or("");
+            if !text.is_empty() {
+                md.push_str(&format!("`{}`", text));
+                plain.push_str(text);
+            }
+        }
+
+        // IPA / phonetics — code span
+        "ipa" | "x-sampa" => {
+            let text = args.first().map(|s| s.as_str()).unwrap_or("");
+            if !text.is_empty() {
+                md.push_str(&format!("`{}`", text));
+                plain.push_str(text);
+            }
+        }
+
+        // Inline text-formatting helpers — pass content through
+        "color" | "colour" | "small" | "sc" | "overline" | "nobr" | "uc" | "lc"
+        | "lang-en" | "lang-de" | "lang" => {
+            // For lang: first arg is language code, second is text.
+            // For others: first arg is the text (or second if first is a colour spec).
+            let text = if name_lower == "color" || name_lower == "colour" {
+                // {{color|#hex|text}}
+                args.get(1).or_else(|| args.first()).map(|s| s.as_str()).unwrap_or("")
+            } else if name_lower == "lang" {
+                args.get(1).map(|s| s.as_str()).unwrap_or("")
+            } else {
+                args.first().map(|s| s.as_str()).unwrap_or("")
+            };
+            if !text.is_empty() {
+                md.push_str(text);
+                plain.push_str(text);
+            }
+        }
+
+        // Superscript / keyboard key — backtick span
+        "keypress" | "key" => {
+            let text = args.first().map(|s| s.as_str()).unwrap_or("");
+            if !text.is_empty() {
+                md.push_str(&format!("`{}`", text));
+                plain.push_str(text);
+            }
+        }
+
+        // Anchor — strip (invisible marker)
+        "anchor" => {}
+
+        // Nihongo / Japanese text — render first arg (the text)
+        "nihongo2" => {
+            let text = args.first().map(|s| s.as_str()).unwrap_or("");
+            if !text.is_empty() {
+                md.push_str(text);
+                plain.push_str(text);
+            }
+        }
+
+        // ── Citations ────────────────────────────────────────────────────────
+        // Inline citation markers — drop silently (no useful text)
+        "irci" | "reltonga" | "ref" | "efn" => {}
+
+        // Cite templates — render as bracketed reference text
+        "cite" | "cite book" | "cite web" | "cite journal" | "cite news" => {
+            // Extract title= and url= named params if present
+            let mut title = String::new();
+            let mut url = String::new();
+            let mut author = String::new();
+            for arg in &args {
+                if let Some(v) = arg.strip_prefix("title=") {
+                    title = v.to_string();
+                } else if let Some(v) = arg.strip_prefix("url=") {
+                    url = v.to_string();
+                } else if let Some(v) = arg.strip_prefix("author=") {
+                    author = v.to_string();
+                } else if let Some(v) = arg.strip_prefix("last=") {
+                    if author.is_empty() { author = v.to_string(); }
+                }
+            }
+            if title.is_empty() && !args.is_empty() {
+                title = args[0].clone();
+            }
+            if !title.is_empty() {
+                let cite_text = if !author.is_empty() {
+                    format!("{}: {}", author, title)
+                } else {
+                    title.clone()
+                };
+                if !url.is_empty() {
+                    md.push_str(&format!("[{}]({})", cite_text, url));
+                } else {
+                    md.push_str(&format!("_{}_", cite_text));
+                }
+                plain.push_str(&cite_text);
+            }
+        }
+
+        // Reflist / footnote containers — strip
+        "reflist" | "refbegin" | "refend" | "refs" => {}
+
+        // ── Block / section templates ────────────────────────────────────────
+        // See also
+        "see also" | "see_also" => {
+            // Positional args are page titles; named args (e.g. label1=) are ignored.
+            let links: Vec<&str> = args.iter()
+                .filter(|a| !a.contains('='))
+                .map(|s| s.as_str())
+                .collect();
+            if !links.is_empty() {
+                md.push_str("\n\n**See also:** ");
+                for (i, link) in links.iter().enumerate() {
+                    if i > 0 { md.push_str(", "); }
+                    md.push_str(&format!("[{}]({})", link, wiki_target_url(link)));
+                    plain.push_str(link);
+                    if i + 1 < links.len() { plain.push_str(", "); }
+                }
+                md.push_str("\n\n");
+            }
+        }
+
+        // Hatnote / disambiguation / notice boxes — strip (navigation cruft)
+        "hatnote" | "main" | "ombox" | "ambox" | "note" | "side box"
+        | "about" | "for" | "redirect" | "distinguish" => {
+            // Could render as blockquote, but they're mostly navigation noise.
+        }
+
+        // Quotation blocks — blockquote
+        "quotation" | "quote box" | "rquote" => {
+            let text = args.iter().find(|a| !a.contains('=')).map(|s| s.as_str()).unwrap_or("");
+            if !text.is_empty() {
+                md.push_str("\n> ");
+                md.push_str(text);
+                md.push('\n');
+                plain.push_str(text);
+            }
+        }
+
+        // Example blocks — blockquote
         "example" => {
             if !args.is_empty() {
                 md.push_str("\n> ");
@@ -394,162 +544,7 @@ fn render_template(
             }
         }
 
-        // Language tags - render content only
-        "lang" => {
-            if args.len() >= 2 {
-                md.push_str(&args[1]);
-                plain.push_str(&args[1]);
-            }
-        }
-
-        // IPA and phonetic - render as code
-        "ipa" | "x-sampa" => {
-            let text = args.first().unwrap_or(&String::new()).to_string();
-            if !text.is_empty() {
-                md.push_str(&format!("`{}`", text));
-                plain.push_str(&text);
-            }
-        }
-
-        // See also / navigation links - convert to markdown links
-        "see also" | "see_also" => {
-            if !args.is_empty() {
-                md.push_str("\n\n**See also:** ");
-                for (i, link) in args.iter().enumerate() {
-                    if i > 0 {
-                        md.push_str(", ");
-                    }
-                    md.push_str(&format!("[{}]({})", link, wiki_target_url(link)));
-                    plain.push_str(link);
-                    if i < args.len() - 1 {
-                        plain.push_str(", ");
-                    }
-                }
-                md.push_str("\n\n");
-            }
-        }
-
-        // Quotation blocks - render as blockquote
-        "quotation" => {
-            if !args.is_empty() {
-                md.push_str("\n> ");
-                md.push_str(&args.join(" "));
-                md.push('\n');
-                plain.push_str(&args.join(" "));
-            }
-        }
-
-        // lm (Lojban-Math-gloss triple) - format as table row
-        "lm" => {
-            if args.len() >= 3 {
-                // Format: Lojban | Math | Gloss
-                md.push_str("\n| ");
-                md.push_str(&args[0]);
-                md.push_str(" | ");
-                md.push_str(&args[1]);
-                md.push_str(" | ");
-                md.push_str(&args[2]);
-                md.push_str(" |\n");
-                plain.push_str(&format!("{} {} {}", args[0], args[1], args[2]));
-            } else if !args.is_empty() {
-                // Fallback for incomplete lm templates
-                md.push_str(&args.join(" | "));
-                plain.push_str(&args.join(" "));
-            }
-        }
-
-        // Navigation templates - render as simple text
-        "navigation" | "newpage" => {
-            // Strip navigation metadata
-        }
-
-        // List templates - render content
-        "ordered list" => {
-            if !args.is_empty() {
-                md.push_str("\n");
-                for (i, item) in args.iter().enumerate() {
-                    md.push_str(&format!("{}. {}\n", i + 1, item));
-                    plain.push_str(item);
-                    plain.push(' ');
-                }
-            }
-        }
-
-        // Audio/media templates - render as link or strip
-        "wave" | "sbcaudio" | "sbcaudiolojbanpodline" => {
-            if let Some(filename) = args.first() {
-                md.push_str(&format!("[Audio: {}]", filename));
-            }
-        }
-
-        // Spanish/Portuguese learning templates - strip (language-specific)
-        "sbctabulatedlinenolojbannoengishlojbanpod" | "sbctabulatedlinenolojbanlojbanpod"
-        | "sbctabulatedlinelojbanpod" | "sbctabulatedlinenoengishlojbanpod"
-        | "sbcexamplelinelojbanpod" | "sbcphrase" | "sbcquestion\n" | "sbcquestionprint\n"
-        | "sbcnounf" | "sbcverbinf" | "sbcnounm" | "sbcforumspanishpod" | "sbcverbpt"
-        | "sbcinf" | "sbcheader" | "sbcadjectivemf" => {
-            // Strip language-learning scaffolding templates
-        }
-
-        // All Sbc* (Spanish/Portuguese course) templates - strip completely
-        t if t.starts_with("sbc") => {
-            // Strip all Spanish/Portuguese course scaffolding
-        }
-
-        // Wiki formatting templates
-        "•" | "=" | "nobr" | "clear" | "false" => {
-            // Strip formatting markers
-        }
-
-        // Wikipedia and external links
-        "wikipedia" => {
-            if let Some(article) = args.first() {
-                md.push_str(&format!("[Wikipedia: {}](https://en.wikipedia.org/wiki/{})",
-                    article, urlencoding::encode(article)));
-                plain.push_str(article);
-            }
-        }
-
-        // Language-specific wave/audio templates
-        "волны ложбана" | "onde" | "wave chunks" => {
-            // Strip language-specific audio templates
-        }
-
-        // Grammar and linguistic templates
-        "cmavo" | "grammar" | "nunjikca" | "jikca" | "gln" => {
-            if let Some(term) = args.first() {
-                md.push_str(&format!("**{}**", term));
-                plain.push_str(term);
-            }
-        }
-
-        // Quote box - render as blockquote
-        "quote box" => {
-            if !args.is_empty() {
-                md.push_str("\n> ");
-                md.push_str(&args.join(" "));
-                md.push('\n');
-                plain.push_str(&args.join(" "));
-            }
-        }
-
-        // Language tags
-        "lang-en" => {
-            if let Some(text) = args.first() {
-                md.push_str(text);
-                plain.push_str(text);
-            }
-        }
-
-        // Link shortcuts - render as links
-        "ls" | "lch" | "raf" | "ms" | "llg" => {
-            if let Some(target) = args.first() {
-                md.push_str(&format!("[{}]({})", target, wiki_target_url(target)));
-                plain.push_str(target);
-            }
-        }
-
-        // mupli (example) - render as blockquote
+        // mupli (Lojban example) — blockquote
         "mupli" => {
             if !args.is_empty() {
                 md.push_str("\n> Example: ");
@@ -559,28 +554,93 @@ fn render_template(
             }
         }
 
-        // Rare metadata/formatting templates - strip or simplify
-        "notci" | "secmavo" | "personal" | "csp"
-        | "int:tadni-url" | "webchat url qwebirc" | "lfk" | "bpfk" => {
-            // Strip formatting/metadata templates
+        // Ordered list
+        "ordered list" => {
+            if !args.is_empty() {
+                md.push('\n');
+                for (i, item) in args.iter().enumerate() {
+                    md.push_str(&format!("{}. {}\n", i + 1, item));
+                    plain.push_str(item);
+                    plain.push(' ');
+                }
+            }
         }
 
-        // Organization/community links - render as text or link
-        "lojban stackexchange" => {
-            md.push_str("[Lojban StackExchange](https://linguistics.stackexchange.com/questions/tagged/lojban)");
-            plain.push_str("Lojban StackExchange");
+        // lm (Lojban-Math-gloss triple) — GFM table row
+        "lm" => {
+            if args.len() >= 3 {
+                md.push_str("\n| ");
+                md.push_str(&args[0]);
+                md.push_str(" | ");
+                md.push_str(&args[1]);
+                md.push_str(" | ");
+                md.push_str(&args[2]);
+                md.push_str(" |\n");
+                plain.push_str(&format!("{} {} {}", args[0], args[1], args[2]));
+            } else if !args.is_empty() {
+                md.push_str(&args.join(" "));
+                plain.push_str(&args.join(" "));
+            }
         }
 
-        // Unknown templates - render as visible but non-intrusive
-        _ => {
-            let joined = if args.is_empty() {
-                format!("{{{{{}}}}}", name)
-            } else {
-                format!("{{{{{}|{}}}}}", name, args.join("|"))
-            };
-            md.push_str(&format!("_{}_", joined));
-            plain.push_str(&joined);
+        // ── Audio / media ────────────────────────────────────────────────────
+        // Strip audio embeds (can't play in markdown)
+        "wave" | "audio" | "listen" => {
+            if let Some(filename) = args.first() {
+                // Render as a label so readers know something is there
+                let label = filename.trim_end_matches(|c: char| c == ',' || c.is_whitespace());
+                if !label.is_empty() {
+                    md.push_str(&format!("🔊 _{}_", label));
+                    plain.push_str(label);
+                }
+            }
         }
+
+        // ── Metadata / index / structure — strip silently ────────────────────
+        "ind" | "dsp" | "judri" | "lex" | "ssp" | "startchapter" | "bookcat"
+        | "bpfk section box open" | "bpfk section box close" | "bpfk section from tiki"
+        | "bpfk section poll" | "bpfk"
+        | "se inspekte/en" | "se_inspekte/en" | "se_inspekte/jbo" | "se_inspekte/ru"
+        | "jbocre/en" | "jbocre/ja" | "jbocre/fr" | "jbocre/jbo" | "jbocre"
+        | "nalylojbo/en" | "comment" | "navigation" | "newpage"
+        | "notci" | "secmavo" | "personal" | "csp" | "lfk"
+        | "•" | "=" | "clear" | "false" | "robox" | "robox/close"
+        | "colwidth" | "div col" | "div col end" | "extraclasses"
+        | "int:tadni-url" | "webchat url qwebirc" | "webchat url kiwi" | "webchat url"
+        | "fullpagename" | "fullpagenamee" | "pagename" | "basepagename"
+        | "basepagenamee" | "subpagename" | "namespace" | "ns"
+        | "pageid" | "pagesize" | "numberofarticles" | "currentyear"
+        | "currentday" | "currentmonth" | "currentversion" | "server"
+        | "fullurl" | "localurl" | "canonicalurl" | "filepath" | "urlencode"
+        | "formatnum" | "lcfirst" | "ucfirst" | "subst" | "defaultsort"
+        | "displaytitle" | "int" | "subjectspace" | "subjectpagename"
+        | "doc" | "template" | "template page" | "subject page"
+        | "refimprove section" | "citation needed" | "by whom?" | "clarify" | "sic"
+        | "unsolved" | "status" | "featured article" | "did you know"
+        | "in the news" | "print version" | "print version notice"
+        | "latest news" | "categorylist" | "languages" | "gfdl"
+        | "associated wikimedia" | "wiktionarycat" | "commons"
+        | "sbcnewline" | "sbcnewline2"
+        | "волны ложбана" | "onde" | "wave chunks"
+        | "guglgirzu lojban-soudan nuzyfle"
+        | "guglgirzu ponjo_lojbo_citno_girzu nuzyfle"
+        | "remoisocial" | "ennuzba" | "nuzba/jbo" | "nalcatni"
+        | "infobox person" | "grammatical moods" | "lexical categories"
+        | "val" | "vajni" | "mun"
+        | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
+        | "-" | "!" | "a" | "t" | "g" | "p/s" => {}
+
+        // All sbc* (Spanish/Portuguese audio-course) templates — strip
+        t if t.starts_with("sbc") => {}
+
+        // Transclusion of sub-pages (e.g. {{:ELG. Introduction}}) — strip
+        t if t.starts_with(':') => {}
+
+        // MediaWiki i18n magic words — strip
+        t if t.starts_with("int:") => {}
+
+        // Unknown templates — drop silently (no raw {{...}} noise in output)
+        _ => {}
     }
 }
 
@@ -731,9 +791,10 @@ mod tests {
     }
 
     #[test]
-    fn template_renders_as_italic() {
-        let (md, _) = wikitext_to_markdown("{{stub|reason=test}}");
-        assert!(md.contains("_{{stub|reason=test}}_"), "md={md}");
+    fn unknown_template_dropped_silently() {
+        let (md, _) = wikitext_to_markdown("before {{stub|reason=test}} after");
+        assert!(!md.contains("{{"), "md should not contain raw template syntax: {md}");
+        assert!(md.contains("before") && md.contains("after"), "surrounding text preserved: {md}");
     }
 
     #[test]
