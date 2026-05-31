@@ -881,6 +881,7 @@ footer {
 
 .main-content {
   overflow-y: auto;
+  scrollbar-gutter: stable;
 }
 
 .main-content.scrollbar-always {
