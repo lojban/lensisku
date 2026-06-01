@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  coturn-dev:
+    image: coturn/coturn:latest
+    container_name: lensisku-coturn-dev
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      - TURN_USERNAME=lensisku-dev
+      - TURN_SECRET=${TURN_SECRET:-lensisku-dev-turn-secret-key}
+      - TURN_REALM=localhost
+      - TURN_PORT=3479
+      - TURN_TLS_PORT=5350
+    volumes:
+      - ./coturn-dev.conf:/etc/coturn/turnserver.conf:ro
+      - ./turnserver-dev.log:/var/log/turnserver.log
+    command: >
+      --log-file=/var/log/turnserver.log
+      --simple-log
+      --use-auth-secret
+      --static-auth-secret=${TURN_SECRET:-lensisku-dev-turn-secret-key}
+      --realm=localhost
+      --total-quota=50
+      --user-quota=6
+      --max-bps=32000
+      --stale-nonce
+      --cert=/etc/ssl/certs/localhost.crt
+      --pkey=/etc/ssl/private/localhost.key
+      --cipher-list="ALL"
+      --dh-file=/etc/ssl/certs/dhparam.pem
+      --listening-port=3479
+      --tls-listening-port=5350
+    ports:
+      - "3479:3479/udp"
+      - "3479:3479/tcp"
+      - "5350:5350/tcp"
+      - "49252-65535:49252-65535/udp"
+
+networks:
+  default:
+    name: lensisku-dev-network

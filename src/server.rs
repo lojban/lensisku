@@ -7,6 +7,7 @@ use crate::{
     error::{AppError, AppResult},
     export, jbovlaste, language,
     mailarchive::{self},
+    messaging,
     middleware::{
         self,
         cache::RedisCache,
@@ -70,6 +71,9 @@ pub async fn start_server(
 
     let redis_cache_data = web::Data::from(redis_cache);
 
+    // Initialize messaging service
+    let messaging_service = web::Data::new(messaging::MessagingService::new(pool.clone()));
+
     let perm_cache = web::Data::from(PermissionCache::new(pool.clone()));
     perm_cache
         .load_permissions()
@@ -105,12 +109,23 @@ pub async fn start_server(
 
         let cors = Cors::default()
             .allow_any_origin()
-            .allowed_methods(vec!["GET", "POST", "PUT", "DELETE"])
+            .allowed_methods(vec!["GET", "POST", "PUT", "DELETE", "OPTIONS"])
             .allowed_headers(vec![
                 header::AUTHORIZATION,
                 header::ACCEPT,
                 header::CONTENT_TYPE,
+                header::UPGRADE,
+                header::CONNECTION,
+                header::SEC_WEBSOCKET_KEY,
+                header::SEC_WEBSOCKET_VERSION,
+                header::SEC_WEBSOCKET_PROTOCOL,
             ])
+            .expose_headers(vec![
+                header::UPGRADE,
+                header::CONNECTION,
+                header::SEC_WEBSOCKET_ACCEPT,
+            ])
+            .supports_credentials()
             .max_age(3600);
 
         App::new()
@@ -127,6 +142,7 @@ pub async fn start_server(
             .app_data(login_limiter.clone())
             .app_data(kitten_tts_limiter.clone())
             .app_data(redis_cache_data.clone())
+            .app_data(messaging_service.clone())
             .configure(auth::configure)
             .configure(users::configure)
             .configure(language::configure)
@@ -143,6 +159,7 @@ pub async fn start_server(
             .configure(crate::openapi::configure)
             .configure(crate::payments::configure)
             .configure(sessions::controller::init_routes)
+            .configure(messaging::configure)
             .configure(assistant::configure)
     })
     .workers(num_workers)

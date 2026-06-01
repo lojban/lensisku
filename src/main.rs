@@ -23,6 +23,7 @@ mod flashcards;
 mod jbovlaste;
 mod language;
 mod mailarchive;
+mod messaging;
 mod middleware;
 mod notifications;
 mod openapi;

@@ -171,6 +171,8 @@
           <!-- Only show auth buttons when loading is complete -->
           <template v-if="!auth.state.isLoading">
             <template v-if="auth.state.isLoggedIn">
+              <!-- Messaging Icon -->
+              <MessagingIcon />
               <NavLink v-if="auth.state.isLoggedIn" to="/reactions" class="navbar-item">
                 <BookmarkCheck class="h-5 w-5" />
                 <span class="hidden sm:inline">{{ $t('nav.myActivity') }}</span>
@@ -370,6 +372,7 @@ import { jwtDecode } from 'jwt-decode'
 
 import Error from '@/components/Error.vue'
 import ToastFloat from '@/components/ToastFloat.vue'
+import MessagingIcon from '@/components/messaging/navigation/MessagingIcon.vue'
 import { resendConfirmation } from '@/api'
 import { Dropdown, ToolbarSelectDropdownItem } from '@packages/ui'
 
