@@ -381,6 +381,37 @@ const baseRoutes: Array<RouteRecordRaw> = [
       contentTopPaddingMainOnly: true,
     },
   },
+  // Private Messaging Routes
+  {
+    path: '/messages',
+    name: 'Messages',
+    component: () => import('../pages/messaging/MessagesPage.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/messages/:threadId',
+    name: 'Chat',
+    component: () => import('../pages/messaging/ChatPage.vue'),
+    meta: { requiresAuth: true },
+    props: (route) => ({
+      threadId: parseInt(route.params.threadId as string),
+    }),
+  },
+  {
+    path: '/messages/new',
+    name: 'NewChat',
+    component: () => import('../pages/messaging/NewChatPage.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/call/:callId',
+    name: 'VideoCall',
+    component: () => import('../pages/messaging/CallPage.vue'),
+    meta: { requiresAuth: true },
+    props: (route) => ({
+      callId: route.params.callId as string,
+    }),
+  },
   // NotFound route must be last among base routes to catch all unmatched paths within a locale
   {
     path: '/:pathMatch(.*)*',

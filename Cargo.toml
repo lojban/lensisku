@@ -117,6 +117,8 @@ redis = { version = "0.30", features = ["tokio-comp"] }
 unicode-segmentation = "1.13"
 bytes = "1.11"
 actix-web-grants = "4.1.2"
+actix = "0.13"
+actix-web-actors = "4.3"
 fsrs = "5.2"
 image = { version = "0.25.10", features = ["jpeg", "png"] }
 webp = "0.3.1"

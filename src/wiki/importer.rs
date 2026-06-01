@@ -8,7 +8,7 @@ use std::time::Duration;
 
 use chrono::{DateTime, Utc};
 use deadpool_postgres::Pool;
-use log::{debug, info, warn};
+use log::{info, warn};
 use serde::Deserialize;
 
 use super::markdown::wikitext_to_markdown;
