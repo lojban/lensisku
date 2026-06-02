@@ -1,12 +1,10 @@
 import { api } from '@/api'
 import type {
-  Message,
   SendMessageRequest,
   UpdateMessageRequest,
   GetMessagesQuery,
   MessageListResponse,
   MessageResponse,
-  Thread,
   CreateThreadRequest,
   UpdateThreadRequest,
   AddParticipantRequest,
@@ -44,7 +42,10 @@ export const createThread = async (request: CreateThreadRequest): Promise<Thread
   return response.data
 }
 
-export const updateThread = async (threadId: number, request: UpdateThreadRequest): Promise<ThreadResponse> => {
+export const updateThread = async (
+  threadId: number,
+  request: UpdateThreadRequest
+): Promise<ThreadResponse> => {
   const response = await api.put(`/messaging/threads/${threadId}`, request)
   return response.data
 }
@@ -54,7 +55,10 @@ export const deleteThread = async (threadId: number): Promise<void> => {
 }
 
 // Messages API
-export const getMessages = async (threadId: number, query: GetMessagesQuery = {}): Promise<MessageListResponse> => {
+export const getMessages = async (
+  threadId: number,
+  query: GetMessagesQuery = {}
+): Promise<MessageListResponse> => {
   const params = new URLSearchParams()
   if (query.page) params.append('page', query.page.toString())
   if (query.per_page) params.append('per_page', query.per_page.toString())
@@ -75,7 +79,10 @@ export const sendMessage = async (request: SendMessageRequest): Promise<MessageR
   return response.data
 }
 
-export const updateMessage = async (messageId: number, request: UpdateMessageRequest): Promise<MessageResponse> => {
+export const updateMessage = async (
+  messageId: number,
+  request: UpdateMessageRequest
+): Promise<MessageResponse> => {
   const response = await api.put(`/messaging/messages/${messageId}`, request)
   return response.data
 }
@@ -85,17 +92,23 @@ export const deleteMessage = async (messageId: number): Promise<void> => {
 }
 
 // Thread Participants API
-export const getThreadParticipants = async (threadId: number): Promise<any> => {
+export const getThreadParticipants = async (threadId: number): Promise<unknown> => {
   const response = await api.get(`/messaging/threads/${threadId}/participants`)
   return response.data
 }
 
-export const addParticipant = async (threadId: number, request: AddParticipantRequest): Promise<any> => {
+export const addParticipant = async (
+  threadId: number,
+  request: AddParticipantRequest
+): Promise<unknown> => {
   const response = await api.post(`/messaging/threads/${threadId}/participants`, request)
   return response.data
 }
 
-export const updateParticipantRole = async (threadId: number, request: UpdateParticipantRoleRequest): Promise<any> => {
+export const updateParticipantRole = async (
+  threadId: number,
+  request: UpdateParticipantRoleRequest
+): Promise<unknown> => {
   const response = await api.put(`/messaging/threads/${threadId}/participants`, request)
   return response.data
 }

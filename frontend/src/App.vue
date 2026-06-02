@@ -223,6 +223,9 @@
     type="success"
     @close="clearSuccess"
   />
+
+  <!-- PWA Install Prompt -->
+  <PWAInstallPrompt />
   <!-- Main content -->
   <main
     class="main-content"
@@ -373,6 +376,7 @@ import { jwtDecode } from 'jwt-decode'
 import Error from '@/components/Error.vue'
 import ToastFloat from '@/components/ToastFloat.vue'
 import MessagingIcon from '@/components/messaging/navigation/MessagingIcon.vue'
+import PWAInstallPrompt from '@/components/messaging/shared/PWAInstallPrompt.vue'
 import { resendConfirmation } from '@/api'
 import { Dropdown, ToolbarSelectDropdownItem } from '@packages/ui'
 
@@ -389,6 +393,7 @@ import {
   DEFAULT_SUCCESS_TOAST_DURATION_MS,
   provideSuccessToast,
 } from './composables/useSuccessToast'
+import { useNotifications } from '@/services/messaging/NotificationService'
 import { useButtonTheme } from './composables/useButtonTheme'
 import { localeCaptureGroupRegex } from './config/locales'
 
@@ -619,6 +624,10 @@ onMounted(() => {
   if (localeMatch) {
     $locale.value = localeMatch[1]
   }
+
+  // Initialize notification service and PWA install prompt
+  const { setupInstallPrompt } = useNotifications()
+  setupInstallPrompt()
 })
 
 // Global keyboard handler for "/" key to navigate to homepage and focus search

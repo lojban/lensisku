@@ -13,8 +13,8 @@
           </div>
         </div>
         <button
-          @click="showNewChatModal = true"
           class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          @click="showNewChatModal = true"
         >
           <Plus class="h-4 w-4 mr-1" />
           New Chat
@@ -24,7 +24,9 @@
       <!-- Search and Filter -->
       <div class="mt-4 flex flex-col sm:flex-row gap-3">
         <div class="flex-1 relative">
-          <Search class="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Search
+            class="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400"
+          />
           <input
             v-model="searchQuery"
             type="text"
@@ -51,18 +53,25 @@
         <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
       </div>
 
-      <div v-else-if="filteredThreads.length === 0" class="flex flex-col items-center justify-center h-full text-center px-4">
+      <div
+        v-else-if="filteredThreads.length === 0"
+        class="flex flex-col items-center justify-center h-full text-center px-4"
+      >
         <MessageCircle class="h-12 w-12 text-gray-400 mb-4" />
         <h3 class="text-lg font-medium text-gray-900 mb-2">
           {{ searchQuery ? 'No conversations found' : 'No conversations yet' }}
         </h3>
         <p class="text-gray-500 mb-4">
-          {{ searchQuery ? 'Try adjusting your search terms' : 'Start a new conversation to get started' }}
+          {{
+            searchQuery
+              ? 'Try adjusting your search terms'
+              : 'Start a new conversation to get started'
+          }}
         </p>
         <button
           v-if="!searchQuery"
-          @click="showNewChatModal = true"
           class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+          @click="showNewChatModal = true"
         >
           <Plus class="h-4 w-4 mr-2" />
           Start New Chat
@@ -75,18 +84,18 @@
           @thread-click="handleThreadClick"
           @thread-delete="handleThreadDelete"
         />
-        
+
         <!-- Load More -->
-        <div
-          v-if="hasMore"
-          class="p-4 text-center"
-        >
+        <div v-if="hasMore" class="p-4 text-center">
           <button
-            @click="loadMore"
             :disabled="isLoadingMore"
             class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+            @click="loadMore"
           >
-            <div v-if="isLoadingMore" class="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600 mr-2"></div>
+            <div
+              v-if="isLoadingMore"
+              class="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600 mr-2"
+            ></div>
             {{ isLoadingMore ? 'Loading...' : 'Load More' }}
           </button>
         </div>
@@ -109,18 +118,33 @@ import { MessageCircle, Plus, Search } from 'lucide-vue-next'
 import { useAuth } from '@/composables/useAuth'
 import { getThreads, deleteThread } from '@/services/messaging/messagingApi'
 import { webSocketService } from '@/services/messaging/WebSocketService'
+import { useMobileOptimizations, debounce } from '@/utils/mobileOptimization'
 import ThreadList from '@/components/messaging/chat/ThreadList.vue'
 import NewChatModal from '@/components/messaging/chat/NewChatModal.vue'
 import type { Thread, GetThreadsQuery } from '@/types/messaging'
 
 const router = useRouter()
 const auth = useAuth()
+const { isMobile, isTablet } = useMobileOptimizations()
 
 // Reactive state
 const threads = ref<Thread[]>([])
 const isLoading = ref(true)
 const isLoadingMore = ref(false)
 const searchQuery = ref('')
+
+// Mobile-optimized search with debounce
+const debouncedSearch = debounce((_query: string) => {
+  fetchThreads(1, false)
+}, 300)
+
+// Responsive classes
+const _responsiveClasses = computed(() => ({
+  container: isMobile.value ? 'px-2 py-1' : isTablet.value ? 'px-4 py-2' : 'px-6 py-4',
+  input: isMobile.value ? 'text-base' : 'text-sm',
+  button: isMobile.value ? 'p-2' : 'px-4 py-2',
+  spacing: isMobile.value ? 'space-y-2' : 'space-y-4',
+}))
 const filterType = ref<'all' | 'direct' | 'group'>('all')
 const showNewChatModal = ref(false)
 const currentPage = ref(1)
@@ -134,15 +158,16 @@ const filteredThreads = computed(() => {
   // Apply search filter
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase()
-    filtered = filtered.filter(thread => 
-      thread.thread_name?.toLowerCase().includes(query) ||
-      thread.participants?.some(p => p.username.toLowerCase().includes(query))
+    filtered = filtered.filter(
+      (thread) =>
+        thread.thread_name?.toLowerCase().includes(query) ||
+        thread.participants?.some((p) => p.username.toLowerCase().includes(query))
     )
   }
 
   // Apply type filter
   if (filterType.value !== 'all') {
-    filtered = filtered.filter(thread => thread.thread_type === filterType.value)
+    filtered = filtered.filter((thread) => thread.thread_type === filterType.value)
   }
 
   return filtered
@@ -165,11 +190,11 @@ const fetchThreads = async (page: number = 1, append: boolean = false) => {
       page,
       per_page: 20,
       thread_type: filterType.value !== 'all' ? filterType.value : undefined,
-      search: searchQuery.value || undefined
+      search: searchQuery.value || undefined,
     }
 
     const response = await getThreads(query)
-    
+
     if (append) {
       threads.value.push(...response.threads)
     } else {
@@ -179,7 +204,6 @@ const fetchThreads = async (page: number = 1, append: boolean = false) => {
     total.value = response.total
     hasMore.value = response.has_more
     currentPage.value = page
-
   } catch (error) {
     console.error('Failed to fetch threads:', error)
   } finally {
@@ -195,11 +219,7 @@ const loadMore = async () => {
 }
 
 const handleSearch = () => {
-  // Debounce search
-  clearTimeout(searchDebounce.value)
-  searchDebounce.value = setTimeout(() => {
-    fetchThreads(1, false)
-  }, 300)
+  debouncedSearch(searchQuery.value)
 }
 
 const handleFilter = () => {
@@ -214,7 +234,7 @@ const handleThreadDelete = async (thread: Thread) => {
   if (confirm(`Are you sure you want to delete this conversation?`)) {
     try {
       await deleteThread(thread.thread_id)
-      threads.value = threads.value.filter(t => t.thread_id !== thread.thread_id)
+      threads.value = threads.value.filter((t) => t.thread_id !== thread.thread_id)
     } catch (error) {
       console.error('Failed to delete thread:', error)
     }
@@ -236,17 +256,17 @@ const handleThreadUpdate = () => {
 }
 
 // Debounce for search
-const searchDebounce = ref<number>()
+const _searchDebounce = ref<number>()
 
 // Lifecycle
 onMounted(async () => {
   if (auth.state.isLoggedIn) {
     await fetchThreads()
-    
+
     // Set up WebSocket listeners
     webSocketService.on('message:new', handleNewMessage)
     webSocketService.on('thread:updated', handleThreadUpdate)
-    
+
     // Connect to WebSocket
     try {
       await webSocketService.connect()
@@ -257,13 +277,16 @@ onMounted(async () => {
 })
 
 // Watch for auth changes
-watch(() => auth.state.isLoggedIn, (isLoggedIn) => {
-  if (isLoggedIn) {
-    fetchThreads()
-  } else {
-    threads.value = []
+watch(
+  () => auth.state.isLoggedIn,
+  (isLoggedIn) => {
+    if (isLoggedIn) {
+      fetchThreads()
+    } else {
+      threads.value = []
+    }
   }
-})
+)
 </script>
 
 <style scoped>

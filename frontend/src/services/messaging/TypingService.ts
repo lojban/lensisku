@@ -24,7 +24,7 @@ class TypingService {
 
   private handleTypingIndicator(indicator: TypingIndicator) {
     const userId = indicator.user_id
-    const threadId = indicator.thread_id
+    const _threadId = indicator.thread_id
 
     if (indicator.is_typing) {
       // User started typing
@@ -88,13 +88,14 @@ class TypingService {
 
   public getTypingUsersInThread(threadId: number): TypingIndicator[] {
     return Array.from(this.typingIndicators.values()).filter(
-      indicator => indicator.thread_id === threadId
+      (indicator) => indicator.thread_id === threadId
     )
   }
 
   public getTypingText(threadId: number, currentUserId: number): string {
-    const typingUsers = this.getTypingUsersInThread(threadId)
-      .filter(indicator => indicator.user_id !== currentUserId)
+    const typingUsers = this.getTypingUsersInThread(threadId).filter(
+      (indicator) => indicator.user_id !== currentUserId
+    )
 
     if (typingUsers.length === 0) {
       return ''
@@ -110,7 +111,7 @@ class TypingService {
   // Cleanup
   public cleanup() {
     // Clear all timeouts
-    this.typingTimeouts.forEach(timeout => clearTimeout(timeout))
+    this.typingTimeouts.forEach((timeout) => clearTimeout(timeout))
     this.typingTimeouts.clear()
 
     // Clear state

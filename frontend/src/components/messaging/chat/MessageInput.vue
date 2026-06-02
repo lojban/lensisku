@@ -1,12 +1,12 @@
 <template>
   <div class="message-input">
-    <form @submit.prevent="handleSubmit" class="flex items-end space-x-2">
+    <form class="flex items-end space-x-2" @submit.prevent="handleSubmit">
       <!-- Attachment button -->
       <button
         type="button"
-        @click="handleAttachment"
         class="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full transition-colors"
         title="Attach file"
+        @click="handleAttachment"
       >
         <Paperclip class="h-5 w-5" />
       </button>
@@ -14,6 +14,7 @@
       <!-- Message input -->
       <div class="flex-1 relative">
         <textarea
+          ref="textareaRef"
           v-model="messageText"
           :placeholder="placeholder"
           :disabled="disabled"
@@ -23,9 +24,8 @@
           @keydown="handleKeydown"
           @focus="handleFocus"
           @blur="handleBlur"
-          ref="textareaRef"
         ></textarea>
-        
+
         <!-- Character count for long messages -->
         <div
           v-if="messageText.length > 100"
@@ -42,7 +42,10 @@
         class="p-2 text-white bg-blue-600 hover:bg-blue-700 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         title="Send message"
       >
-        <div v-if="isSending" class="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+        <div
+          v-if="isSending"
+          class="animate-spin rounded-full h-5 w-5 border-b-2 border-white"
+        ></div>
         <Send v-else class="h-5 w-5" />
       </button>
     </form>
@@ -52,8 +55,8 @@
       ref="fileInputRef"
       type="file"
       class="hidden"
-      @change="handleFileSelect"
       accept="image/*,application/pdf,.doc,.docx,.txt"
+      @change="handleFileSelect"
     />
   </div>
 </template>
@@ -73,7 +76,7 @@ interface Props {
 
 const props = withDefaults(defineProps<Props>(), {
   disabled: false,
-  placeholder: 'Type a message...'
+  placeholder: 'Type a message...',
 })
 
 const emit = defineEmits<{
@@ -82,7 +85,7 @@ const emit = defineEmits<{
   'typing-stop': []
 }>()
 
-const auth = useAuth()
+const _auth = useAuth()
 
 // Reactive state
 const messageText = ref('')
@@ -104,7 +107,7 @@ const handleSubmit = async () => {
   if (!content) return
 
   isSending.value = true
-  
+
   try {
     // This is a simplified implementation
     // In a real app, you would encrypt the message content here
@@ -116,14 +119,13 @@ const handleSubmit = async () => {
     }
 
     const response = await sendMessage(request)
-    
+
     // Clear input
     messageText.value = ''
     resizeTextarea()
-    
+
     // Emit the sent message
     emit('message-sent', response.message)
-    
   } catch (error) {
     console.error('Failed to send message:', error)
     // Show error to user (could add toast notification)
@@ -134,15 +136,15 @@ const handleSubmit = async () => {
 
 const handleInput = () => {
   resizeTextarea()
-  
+
   // Emit typing events
   emit('typing-start')
-  
+
   // Clear existing timeout
   if (typingTimeout.value) {
     clearTimeout(typingTimeout.value)
   }
-  
+
   // Set new timeout to stop typing after 1 second of inactivity
   typingTimeout.value = setTimeout(() => {
     emit('typing-stop')
@@ -179,14 +181,14 @@ const handleFileSelect = (event: Event) => {
 
 const resizeTextarea = () => {
   if (!textareaRef.value) return
-  
+
   const textarea = textareaRef.value
   textarea.style.height = 'auto'
-  
+
   // Calculate new height (max 5 rows)
   const maxHeight = parseInt(getComputedStyle(textarea).lineHeight) * 5
   const newHeight = Math.min(textarea.scrollHeight, maxHeight)
-  
+
   textarea.style.height = `${newHeight}px`
 }
 
@@ -216,7 +218,7 @@ defineExpose({
   clear: () => {
     messageText.value = ''
     resizeTextarea()
-  }
+  },
 })
 </script>
 

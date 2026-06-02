@@ -1,7 +1,7 @@
 import { ref, reactive } from 'vue'
-import { sendSignal, getPendingSignals, markSignalProcessed, getWebRTCConfig } from '@/services/messaging/messagingApi'
+import { sendSignal, markSignalProcessed, getWebRTCConfig } from '@/services/messaging/messagingApi'
 import { webSocketService } from './WebSocketService'
-import type { WebRTCConfig, CallState, CallUser, WebRTCSignal, ActiveCall } from '@/types/messaging'
+import type { CallState, CallUser, WebRTCSignal } from '@/types/messaging'
 
 class WebRTCService {
   private peerConnection: RTCPeerConnection | null = null
@@ -25,7 +25,7 @@ class WebRTCService {
     participants: [],
     call_status: 'ended',
     call_type: 'video',
-    duration: 0
+    duration: 0,
   })
 
   constructor() {
@@ -37,7 +37,7 @@ class WebRTCService {
       this.handleIncomingSignal(signal)
     })
 
-    webSocketService.on('webrtc:call', (callData: any) => {
+    webSocketService.on('webrtc:call', (callData: unknown) => {
       this.handleIncomingCall(callData)
     })
   }
@@ -47,24 +47,24 @@ class WebRTCService {
 
     try {
       const signalData = JSON.parse(signal.signal_data)
-      
+
       if (signal.signal_type === 'offer') {
         await this.peerConnection.setRemoteDescription(new RTCSessionDescription(signalData))
         const answer = await this.peerConnection.createAnswer()
         await this.peerConnection.setLocalDescription(answer)
-        
+
         // Send answer back
         await sendSignal({
           signal_type: 'answer',
           signal_data: JSON.stringify(answer),
-          to_user_id: signal.from_user_id
+          to_user_id: signal.from_user_id,
         })
       } else if (signal.signal_type === 'answer') {
         await this.peerConnection.setRemoteDescription(new RTCSessionDescription(signalData))
       } else if (signal.signal_type === 'ice-candidate') {
         await this.peerConnection.addIceCandidate(new RTCIceCandidate(signalData))
       }
-      
+
       // Mark signal as processed
       await markSignalProcessed(signal.signal_id)
     } catch (error) {
@@ -72,7 +72,7 @@ class WebRTCService {
     }
   }
 
-  private handleIncomingCall(callData: any) {
+  private handleIncomingCall(callData: unknown) {
     // Handle incoming call logic
     console.log('Incoming call:', callData)
     // This would trigger a call UI or notification
@@ -82,10 +82,10 @@ class WebRTCService {
     try {
       // Get WebRTC configuration
       const config = await getWebRTCConfig()
-      
+
       // Create peer connection
       this.peerConnection = new RTCPeerConnection({
-        iceServers: config.ice_servers
+        iceServers: config.ice_servers,
       })
 
       // Setup peer connection event handlers
@@ -94,11 +94,11 @@ class WebRTCService {
       // Get local media stream
       this.localStreamRef = await navigator.mediaDevices.getUserMedia({
         video: isVideo,
-        audio: true
+        audio: true,
       })
 
       // Add local stream to peer connection
-      this.localStreamRef.getTracks().forEach(track => {
+      this.localStreamRef.getTracks().forEach((track) => {
         this.peerConnection?.addTrack(track, this.localStreamRef!)
       })
 
@@ -106,9 +106,8 @@ class WebRTCService {
       this.callType.value = isVideo ? 'video' : 'audio'
       this.isInitiator.value = true
       this.callStatus.value = 'ringing'
-      
-      this.updateCallState()
 
+      this.updateCallState()
     } catch (error) {
       console.error('Failed to initialize call:', error)
       throw error
@@ -150,14 +149,14 @@ class WebRTCService {
     }
   }
 
-  private async sendSignalToPeer(type: 'offer' | 'answer' | 'ice-candidate', data: any) {
+  private async sendSignalToPeer(type: 'offer' | 'answer' | 'ice-candidate', data: unknown) {
     try {
-      const signalData = type === 'ice-candidate' ? data : JSON.stringify(data)
+      const signalData = type === 'ice-candidate' ? JSON.stringify(data) : JSON.stringify(data)
       // In a real implementation, you'd send this to the specific peer
       await sendSignal({
         signal_type: type,
         signal_data: signalData,
-        to_user_id: 1 // This would be the actual peer user ID
+        to_user_id: 1, // This would be the actual peer user ID
       })
     } catch (error) {
       console.error('Failed to send signal:', error)
@@ -170,7 +169,7 @@ class WebRTCService {
     try {
       const offer = await this.peerConnection.createOffer()
       await this.peerConnection.setLocalDescription(offer)
-      
+
       // Send offer to peer
       await this.sendSignalToPeer('offer', offer)
     } catch (error) {
@@ -195,14 +194,14 @@ class WebRTCService {
     // Send reject signal via WebSocket
     webSocketService.sendMessage({
       type: 'call_reject',
-      call_id: callId
+      call_id: callId,
     })
   }
 
   public endCall(): void {
     // Stop local stream
     if (this.localStreamRef) {
-      this.localStreamRef.getTracks().forEach(track => track.stop())
+      this.localStreamRef.getTracks().forEach((track) => track.stop())
       this.localStreamRef = null
     }
 
@@ -231,14 +230,14 @@ class WebRTCService {
     if (this.currentCallId.value) {
       webSocketService.sendMessage({
         type: 'call_ended',
-        call_id: this.currentCallId.value
+        call_id: this.currentCallId.value,
       })
     }
   }
 
   public toggleAudio(enabled: boolean): void {
     if (this.localStreamRef) {
-      this.localStreamRef.getAudioTracks().forEach(track => {
+      this.localStreamRef.getAudioTracks().forEach((track) => {
         track.enabled = enabled
       })
     }
@@ -246,7 +245,7 @@ class WebRTCService {
 
   public toggleVideo(enabled: boolean): void {
     if (this.localStreamRef) {
-      this.localStreamRef.getVideoTracks().forEach(track => {
+      this.localStreamRef.getVideoTracks().forEach((track) => {
         track.enabled = enabled
       })
     }
@@ -269,7 +268,7 @@ class WebRTCService {
       participants: Array.from(this.participants.values()),
       call_status: this.callStatus.value,
       call_type: this.callType.value,
-      duration: this.callDuration.value
+      duration: this.callDuration.value,
     }
   }
 

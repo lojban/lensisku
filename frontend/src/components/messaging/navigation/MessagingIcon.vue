@@ -59,8 +59,8 @@
       </div>
       <div class="p-2 border-t border-gray-100">
         <button
-          @click="goToMessages"
           class="w-full text-center text-sm text-blue-600 hover:text-blue-800 font-medium"
+          @click="goToMessages"
         >
           View all messages
         </button>
@@ -106,21 +106,21 @@ const fetchUnreadCount = async () => {
   try {
     const response = await getThreads({ per_page: 50 })
     threads.value = response.threads
-    
+
     // Calculate total unread count
     unreadCount.value = response.threads.reduce((total, thread) => total + thread.unread_count, 0)
-    
+
     // Create recent notifications from threads with unread messages
     recentNotifications.value = response.threads
-      .filter(thread => thread.unread_count > 0)
+      .filter((thread) => thread.unread_count > 0)
       .slice(0, 5)
-      .map(thread => ({
+      .map((thread) => ({
         id: `thread-${thread.thread_id}`,
         sender_name: getOtherParticipantName(thread),
         preview: thread.last_message_preview || 'New message',
         thread_id: thread.thread_id,
         created_at: thread.last_message_at || thread.updated_at,
-        is_read: thread.unread_count === 0
+        is_read: thread.unread_count === 0,
       }))
   } catch (error) {
     console.error('Failed to fetch unread count:', error)
@@ -130,7 +130,9 @@ const fetchUnreadCount = async () => {
 const getOtherParticipantName = (thread: Thread): string => {
   // For direct messages, return the other participant's name
   if (thread.thread_type === 'direct' && thread.participants) {
-    const otherParticipant = thread.participants.find(p => p.user_id !== (auth.state.username as any))
+    const otherParticipant = thread.participants.find(
+      (p) => p.user_id !== (auth.state.username as unknown)
+    )
     return otherParticipant?.username || 'Unknown'
   }
   // For group messages, return thread name or "Group Chat"
@@ -178,11 +180,11 @@ const handleThreadUpdate = () => {
 onMounted(async () => {
   if (auth.state.isLoggedIn) {
     await fetchUnreadCount()
-    
+
     // Set up WebSocket listeners
     webSocketService.on('message:new', handleNewMessage)
     webSocketService.on('thread:updated', handleThreadUpdate)
-    
+
     // Connect to WebSocket for real-time updates
     try {
       await webSocketService.connect()

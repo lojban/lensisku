@@ -84,6 +84,13 @@
           >
             <Activity class="h-4 w-4" /> {{ t('profile.viewActivity') }}
           </RouterLink>
+          <!-- Message Button for other users -->
+          <MessageButton
+            v-if="!isOwnProfile && profileData.user_id"
+            :user-id="parseInt(profileData.user_id)"
+            :username="profileData.username"
+            class="ui-btn--accent-blue ui-btn--group-item"
+          />
           <button
             v-if="isOwnProfile && auth.state.isLoggedIn"
             class="ui-btn--toolbar ui-btn--group-item"
@@ -339,6 +346,7 @@ import {
 import { localeNativeName } from '@/config/locales'
 import LazyMathJax from '@/components/LazyMathJax.vue'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
+import MessageButton from '@/components/messaging/navigation/MessageButton.vue'
 import { useAuth } from '@/composables/useAuth'
 import { useError } from '@/composables/useError'
 import { useSuccessToast } from '@/composables/useSuccessToast'

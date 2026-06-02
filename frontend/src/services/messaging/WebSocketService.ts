@@ -1,5 +1,5 @@
 import { io, type Socket } from 'socket.io-client'
-import { ref, reactive } from 'vue'
+import { ref } from 'vue'
 import type { Message, Thread, UserStatus, TypingIndicator, WebRTCSignal } from '@/types/messaging'
 
 export interface WebSocketEvents {
@@ -11,8 +11,8 @@ export interface WebSocketEvents {
   'user:status': (status: UserStatus) => void
   'user:typing': (indicator: TypingIndicator) => void
   'webrtc:signal': (signal: WebRTCSignal) => void
-  'webrtc:call': (callData: any) => void
-  'notification:new': (notification: any) => void
+  'webrtc:call': (callData: unknown) => void
+  'notification:new': (notification: unknown) => void
 }
 
 class WebSocketService {
@@ -27,7 +27,7 @@ class WebSocketService {
   public connectionError = ref<string | null>(null)
 
   // Event listeners
-  private eventListeners = new Map<keyof WebSocketEvents, Set<Function>>()
+  private eventListeners = new Map<keyof WebSocketEvents, Set<(...args: unknown[]) => void>>()
 
   constructor() {
     this.setupEventHandlers()
@@ -37,7 +37,7 @@ class WebSocketService {
     // Initialize event listener maps
     const events: (keyof WebSocketEvents)[] = [
       'message:new',
-      'message:updated', 
+      'message:updated',
       'message:read',
       'thread:new',
       'thread:updated',
@@ -45,10 +45,10 @@ class WebSocketService {
       'user:typing',
       'webrtc:signal',
       'webrtc:call',
-      'notification:new'
+      'notification:new',
     ]
 
-    events.forEach(event => {
+    events.forEach((event) => {
       this.eventListeners.set(event, new Set())
     })
   }
@@ -94,7 +94,7 @@ class WebSocketService {
         this.isConnecting.value = false
         this.connectionError.value = error.message
         this.reconnectAttempts++
-        
+
         if (this.reconnectAttempts >= this.maxReconnectAttempts) {
           reject(new Error('Failed to connect to WebSocket'))
         }
@@ -133,21 +133,41 @@ class WebSocketService {
     })
   }
 
-  private handleIncomingMessage(data: any) {
+  private handleIncomingMessage(data: unknown) {
+    const messageData = data as Partial<Message>
     const message: Message = {
-      ...data,
+      message_id: messageData.message_id || 0,
+      thread_id: messageData.thread_id || 0,
+      sender_id: messageData.sender_id || 0,
+      username: messageData.username || '',
+      message_type: messageData.message_type || 'text',
+      encrypted_content: messageData.encrypted_content || '',
+      content_nonce: messageData.content_nonce || '',
+      sender_key_signature: messageData.sender_key_signature,
+      reply_to_message_id: messageData.reply_to_message_id,
+      created_at: messageData.created_at || new Date().toISOString(),
+      updated_at: messageData.updated_at || new Date().toISOString(),
+      is_deleted: messageData.is_deleted || false,
+      edit_count: messageData.edit_count || 0,
+      last_edited_at: messageData.last_edited_at,
+      is_from_sender: messageData.is_from_sender || false,
+      is_read: false,
       delivery_status: 'delivered',
-      is_read: false
     }
     this.emit('message:new', message)
   }
 
   private handleReconnect() {
     if (this.reconnectAttempts < this.maxReconnectAttempts) {
-      setTimeout(() => {
-        console.log(`Attempting to reconnect... (${this.reconnectAttempts + 1}/${this.maxReconnectAttempts})`)
-        this.connect()
-      }, this.reconnectDelay * Math.pow(2, this.reconnectAttempts))
+      setTimeout(
+        () => {
+          console.log(
+            `Attempting to reconnect... (${this.reconnectAttempts + 1}/${this.maxReconnectAttempts})`
+          )
+          this.connect()
+        },
+        this.reconnectDelay * Math.pow(2, this.reconnectAttempts)
+      )
     }
   }
 
@@ -178,7 +198,7 @@ class WebSocketService {
   private emit<K extends keyof WebSocketEvents>(event: K, ...args: Parameters<WebSocketEvents[K]>) {
     const listeners = this.eventListeners.get(event)
     if (listeners) {
-      listeners.forEach(callback => {
+      listeners.forEach((callback) => {
         try {
           callback(...args)
         } catch (error) {
@@ -189,7 +209,7 @@ class WebSocketService {
   }
 
   // Send messages
-  public sendMessage(message: any) {
+  public sendMessage(message: unknown) {
     if (this.socket?.connected) {
       this.socket.emit('message', message)
     } else {
@@ -220,7 +240,7 @@ class WebSocketService {
     return {
       isConnected: this.isConnected.value,
       isConnecting: this.isConnecting.value,
-      error: this.connectionError.value
+      error: this.connectionError.value,
     }
   }
 }

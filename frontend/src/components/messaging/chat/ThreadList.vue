@@ -3,14 +3,16 @@
     <div
       v-for="thread in threads"
       :key="thread.thread_id"
-      @click="$emit('thread-click', thread)"
       class="thread-item flex items-center p-4 hover:bg-gray-50 cursor-pointer transition-colors duration-200 border-b border-gray-100"
       :class="{ 'bg-blue-50': thread.unread_count > 0 }"
+      @click="$emit('thread-click', thread)"
     >
       <!-- Avatar -->
       <div class="flex-shrink-0 mr-3">
         <div class="relative">
-          <div class="h-12 w-12 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-medium">
+          <div
+            class="h-12 w-12 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-medium"
+          >
             {{ getThreadInitials(thread) }}
           </div>
           <!-- Online indicator for direct messages -->
@@ -31,7 +33,7 @@
             {{ formatTime(thread.last_message_at || thread.updated_at) }}
           </span>
         </div>
-        
+
         <div class="flex items-center justify-between">
           <p class="text-sm text-gray-600 truncate">
             {{ thread.last_message_preview || 'No messages yet' }}
@@ -41,11 +43,14 @@
             <div
               v-if="thread.unread_count > 0"
               class="inline-flex items-center justify-center px-2 py-1 text-xs font-medium text-white bg-blue-600 rounded-full"
-              :class="{ 'h-5 w-5 text-xs': thread.unread_count <= 9, 'px-2': thread.unread_count > 9 }"
+              :class="{
+                'h-5 w-5 text-xs': thread.unread_count <= 9,
+                'px-2': thread.unread_count > 9,
+              }"
             >
               {{ thread.unread_count > 99 ? '99+' : thread.unread_count }}
             </div>
-            
+
             <!-- Thread type indicator -->
             <div class="flex items-center text-gray-400">
               <Users v-if="thread.thread_type === 'group'" class="h-3 w-3" />
@@ -68,12 +73,12 @@
       <div class="flex-shrink-0 ml-3">
         <div class="relative">
           <button
-            @click.stop="toggleThreadMenu(thread)"
             class="p-1 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition-colors"
+            @click.stop="toggleThreadMenu(thread)"
           >
             <MoreVertical class="h-4 w-4" />
           </button>
-          
+
           <!-- Dropdown menu -->
           <div
             v-if="activeMenu === thread.thread_id"
@@ -81,20 +86,20 @@
           >
             <div class="py-1">
               <button
-                @click.stop="markAsRead(thread)"
                 class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                @click.stop="markAsRead(thread)"
               >
                 Mark as read
               </button>
               <button
-                @click.stop="muteThread(thread)"
                 class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                @click.stop="muteThread(thread)"
               >
                 Mute notifications
               </button>
               <button
-                @click.stop="$emit('thread-delete', thread)"
                 class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
+                @click.stop="$emit('thread-delete', thread)"
               >
                 Delete conversation
               </button>
@@ -129,7 +134,7 @@ interface Props {
 
 defineProps<Props>()
 
-const emit = defineEmits<{
+const _emit = defineEmits<{
   'thread-click': [thread: Thread]
   'thread-delete': [thread: Thread]
 }>()
@@ -145,34 +150,38 @@ const getThreadDisplayName = (thread: Thread): string => {
   if (thread.thread_name) {
     return thread.thread_name
   }
-  
+
   if (thread.thread_type === 'direct' && thread.participants) {
-    const otherParticipant = thread.participants.find(p => p.user_id !== (auth.state.username as any))
+    const otherParticipant = thread.participants.find(
+      (p) => p.user_id !== (auth.state.username as unknown)
+    )
     return otherParticipant?.username || 'Unknown User'
   }
-  
+
   return thread.thread_type === 'group' ? 'Group Chat' : 'Unknown'
 }
 
 const getThreadInitials = (thread: Thread): string => {
   const name = getThreadDisplayName(thread)
-  
+
   if (thread.thread_type === 'group') {
     return name
       .split(' ')
-      .map(word => word[0])
+      .map((word) => word[0])
       .join('')
       .toUpperCase()
       .slice(0, 2)
   }
-  
+
   // For direct messages, use the other user's initial
   return name[0]?.toUpperCase() || '?'
 }
 
 const getOtherParticipantId = (thread: Thread): number => {
   if (thread.thread_type === 'direct' && thread.participants) {
-    const otherParticipant = thread.participants.find(p => p.user_id !== (auth.state.username as any))
+    const otherParticipant = thread.participants.find(
+      (p) => p.user_id !== (auth.state.username as unknown)
+    )
     return otherParticipant?.user_id || 0
   }
   return 0
@@ -207,12 +216,12 @@ const toggleThreadMenu = (thread: Thread) => {
   }
 }
 
-const markAsRead = (thread: Thread) => {
+const markAsRead = (_thread: Thread) => {
   // Implementation would call API to mark all messages as read
   activeMenu.value = null
 }
 
-const muteThread = (thread: Thread) => {
+const muteThread = (_thread: Thread) => {
   // Implementation would call API to mute notifications
   activeMenu.value = null
 }

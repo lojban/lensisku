@@ -1,10 +1,10 @@
 <template>
   <div class="message-button-container">
     <button
-      @click="handleMessageClick"
       :disabled="isLoading || !canMessage"
       class="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
       :class="buttonClass"
+      @click="handleMessageClick"
     >
       <MessageSquare class="h-4 w-4 mr-2" />
       <span v-if="!isLoading">{{ buttonText }}</span>
@@ -15,18 +15,12 @@
     </button>
 
     <!-- Error message -->
-    <div
-      v-if="error"
-      class="mt-2 text-sm text-red-600"
-    >
+    <div v-if="error" class="mt-2 text-sm text-red-600">
       {{ error }}
     </div>
 
     <!-- Success message -->
-    <div
-      v-if="success"
-      class="mt-2 text-sm text-green-600"
-    >
+    <div v-if="success" class="mt-2 text-sm text-green-600">
       {{ success }}
     </div>
   </div>
@@ -53,7 +47,7 @@ const props = withDefaults(defineProps<Props>(), {
   variant: 'primary',
   size: 'md',
   fullWidth: false,
-  disabled: false
+  disabled: false,
 })
 
 const router = useRouter()
@@ -66,9 +60,9 @@ const success = ref<string | null>(null)
 
 // Computed properties
 const canMessage = computed(() => {
-  return auth.state.isLoggedIn && 
-         props.userId !== (auth.state.username as any) && 
-         !props.disabled
+  return (
+    auth.state.isLoggedIn && props.userId !== (auth.state.username as unknown) && !props.disabled
+  )
 })
 
 const buttonText = computed(() => {
@@ -104,7 +98,9 @@ const buttonClass = computed(() => {
       classes.push('bg-gray-600 hover:bg-gray-700 focus:ring-gray-500')
       break
     case 'outline':
-      classes.push('bg-transparent border-blue-600 text-blue-600 hover:bg-blue-50 focus:ring-blue-500')
+      classes.push(
+        'bg-transparent border-blue-600 text-blue-600 hover:bg-blue-50 focus:ring-blue-500'
+      )
       break
     default: // primary
       classes.push('bg-blue-600 hover:bg-blue-700 focus:ring-blue-500 text-white')
@@ -133,29 +129,30 @@ const handleMessageClick = async () => {
     // Check if a thread already exists with this user
     // For now, we'll create a new thread, but in a real implementation
     // you might want to check for existing threads first
-    
+
     const request: CreateThreadRequest = {
       thread_type: 'direct',
-      participant_ids: [props.userId]
+      participant_ids: [props.userId],
     }
 
     const response = await createThread(request)
-    const thread = response.thread
+    const thread = (response as { thread: unknown }).thread
 
     // Navigate to the thread
-    router.push(`/messages/${thread.thread_id}`)
-    
+    router.push(`/messages/${(thread as { thread_id: number }).thread_id}`)
+
     success.value = 'Thread created successfully!'
-    
+
     // Clear success message after 3 seconds
     setTimeout(() => {
       success.value = null
     }, 3000)
-
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Failed to create thread:', err)
-    error.value = err.response?.data?.message || 'Failed to start conversation'
-    
+    error.value =
+      (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+      'Failed to start conversation'
+
     // Clear error message after 5 seconds
     setTimeout(() => {
       error.value = null
@@ -173,7 +170,7 @@ const clearMessages = () => {
 
 // Expose method to clear messages (for parent components)
 defineExpose({
-  clearMessages
+  clearMessages,
 })
 </script>
 

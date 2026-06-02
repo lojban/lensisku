@@ -4,8 +4,8 @@
     <header class="flex items-center justify-between p-4 bg-gray-800">
       <div class="flex items-center space-x-3">
         <button
-          @click="$emit('call-ended')"
           class="p-2 hover:bg-gray-700 rounded-full transition-colors"
+          @click="$emit('call-ended')"
         >
           <ArrowLeft class="h-5 w-5" />
         </button>
@@ -40,10 +40,7 @@
 
       <!-- Remote Video(s) -->
       <div class="h-full flex items-center justify-center">
-        <div
-          v-if="remoteStreams.size === 0 && isConnected"
-          class="text-center"
-        >
+        <div v-if="remoteStreams.size === 0 && isConnected" class="text-center">
           <div class="animate-pulse">
             <User class="h-16 w-16 mx-auto mb-4 text-gray-600" />
             <p class="text-gray-400">Waiting for participant...</p>
@@ -65,18 +62,15 @@
               autoplay
               class="w-full h-full object-contain"
             />
-            <div class="absolute bottom-4 left-4 text-lg font-medium">
-              User {{ userId }}
-            </div>
+            <div class="absolute bottom-4 left-4 text-lg font-medium">User {{ userId }}</div>
           </div>
         </div>
 
         <!-- Audio-only call interface -->
-        <div
-          v-else-if="callType === 'audio' && isConnected"
-          class="text-center"
-        >
-          <div class="h-32 w-32 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center mx-auto mb-4">
+        <div v-else-if="callType === 'audio' && isConnected" class="text-center">
+          <div
+            class="h-32 w-32 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center mx-auto mb-4"
+          >
             <User class="h-16 w-16 text-white" />
           </div>
           <h3 class="text-xl font-semibold mb-2">Audio Call</h3>
@@ -84,10 +78,7 @@
         </div>
 
         <!-- Ringing state -->
-        <div
-          v-else-if="isRinging"
-          class="text-center"
-        >
+        <div v-else-if="isRinging" class="text-center">
           <div class="animate-pulse">
             <Phone class="h-16 w-16 mx-auto mb-4 text-green-400" />
             <h3 class="text-xl font-semibold mb-2">Ringing...</h3>
@@ -122,7 +113,7 @@ interface Props {
   callId: string
 }
 
-const props = defineProps<Props>()
+const _props = defineProps<Props>()
 
 defineEmits<{
   'call-ended': []
@@ -134,10 +125,10 @@ const {
   isRinging,
   duration,
   localStream,
-  remoteStreamMap,
+  remoteStreamMap: _remoteStreamMap,
   toggleAudio,
   toggleVideo,
-  endCall
+  endCall: _endCall,
 } = useWebRTC()
 
 // Reactive state
@@ -183,25 +174,29 @@ const formatDuration = (seconds: number): string => {
   return `${minutes}:${secs.toString().padStart(2, '0')}`
 }
 
-const handleToggleAudio = () => {
+const _handleToggleAudio = () => {
   isAudioEnabled.value = !isAudioEnabled.value
   toggleAudio(isAudioEnabled.value)
 }
 
-const handleToggleVideo = () => {
+const _handleToggleVideo = () => {
   isVideoEnabled.value = !isVideoEnabled.value
   toggleVideo(isVideoEnabled.value)
 }
 
 // Watch for remote streams changes and set up video elements
-watch(remoteStreams, (newStreams) => {
-  newStreams.forEach((stream, userId) => {
-    const videoElement = remoteVideoRefs.value.get(userId)
-    if (videoElement) {
-      videoElement.srcObject = stream
-    }
-  })
-}, { deep: true })
+watch(
+  remoteStreams,
+  (newStreams) => {
+    newStreams.forEach((stream, userId) => {
+      const videoElement = remoteVideoRefs.value.get(userId)
+      if (videoElement) {
+        videoElement.srcObject = stream
+      }
+    })
+  },
+  { deep: true }
+)
 
 // Watch for local stream changes
 watch(localStream, (newStream) => {
@@ -221,8 +216,8 @@ onUnmounted(() => {
   if (localVideoRef.value) {
     localVideoRef.value.srcObject = null
   }
-  
-  remoteVideoRefs.value.forEach(video => {
+
+  remoteVideoRefs.value.forEach((video) => {
     video.srcObject = null
   })
 })
@@ -246,7 +241,8 @@ video {
 
 /* Animation for ringing state */
 @keyframes pulse {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
   }
   50% {

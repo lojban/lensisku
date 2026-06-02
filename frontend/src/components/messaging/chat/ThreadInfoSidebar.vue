@@ -2,7 +2,7 @@
   <div class="fixed inset-0 z-50 overflow-hidden">
     <!-- Background overlay -->
     <div class="absolute inset-0 bg-black bg-opacity-50" @click="$emit('close')"></div>
-    
+
     <!-- Sidebar -->
     <div class="absolute right-0 top-0 h-full w-full max-w-md bg-white shadow-xl">
       <div class="h-full flex flex-col">
@@ -10,8 +10,8 @@
         <div class="flex items-center justify-between p-4 border-b border-gray-200">
           <h2 class="text-lg font-semibold text-gray-900">Thread Info</h2>
           <button
-            @click="$emit('close')"
             class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full"
+            @click="$emit('close')"
           >
             <X class="h-5 w-5" />
           </button>
@@ -22,7 +22,9 @@
           <!-- Thread details -->
           <div class="p-4 border-b border-gray-200">
             <div class="flex items-center space-x-3 mb-4">
-              <div class="h-12 w-12 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-medium">
+              <div
+                class="h-12 w-12 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-medium"
+              >
                 {{ getThreadInitials() }}
               </div>
               <div>
@@ -34,7 +36,7 @@
                 </p>
               </div>
             </div>
-            
+
             <div class="space-y-2 text-sm text-gray-600">
               <div class="flex justify-between">
                 <span>Created:</span>
@@ -57,13 +59,13 @@
               <h3 class="text-lg font-medium text-gray-900">Participants</h3>
               <button
                 v-if="thread.thread_type === 'group' && thread.is_admin"
-                @click="showAddParticipant = true"
                 class="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                @click="showAddParticipant = true"
               >
                 Add
               </button>
             </div>
-            
+
             <div class="space-y-3">
               <div
                 v-for="participant in participants"
@@ -72,7 +74,9 @@
               >
                 <div class="flex items-center space-x-3">
                   <div class="relative">
-                    <div class="h-8 w-8 rounded-full bg-gray-300 flex items-center justify-center text-sm font-medium text-gray-600">
+                    <div
+                      class="h-8 w-8 rounded-full bg-gray-300 flex items-center justify-center text-sm font-medium text-gray-600"
+                    >
                       {{ participant.username[0]?.toUpperCase() }}
                     </div>
                     <div
@@ -89,22 +93,26 @@
                     </p>
                   </div>
                 </div>
-                
+
                 <!-- Actions -->
                 <div class="flex items-center space-x-2">
                   <button
-                    v-if="thread.thread_type === 'group' && thread.is_admin && participant.user_id !== currentUserId"
-                    @click="updateParticipantRole(participant)"
+                    v-if="
+                      thread.thread_type === 'group' &&
+                      thread.is_admin &&
+                      participant.user_id !== currentUserId
+                    "
                     class="text-gray-400 hover:text-gray-600"
                     title="Change role"
+                    @click="updateParticipantRole(participant)"
                   >
                     <Shield class="h-4 w-4" />
                   </button>
                   <button
                     v-if="canRemoveParticipant(participant)"
-                    @click="removeParticipant(participant)"
                     class="text-red-400 hover:text-red-600"
                     title="Remove from thread"
+                    @click="removeParticipant(participant)"
                   >
                     <UserMinus class="h-4 w-4" />
                   </button>
@@ -118,14 +126,14 @@
             <div class="space-y-2">
               <button
                 v-if="thread.thread_type === 'group' && !thread.is_admin"
-                @click="leaveThread"
                 class="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 rounded-lg"
+                @click="leaveThread"
               >
                 Leave Group
               </button>
               <button
-                @click="deleteThread"
                 class="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 rounded-lg"
+                @click="deleteThread"
               >
                 Delete Conversation
               </button>
@@ -166,13 +174,13 @@ const emit = defineEmits<{
 }>()
 
 const auth = useAuth()
-const { isUserOnline } = usePresence()
+const { isUserOnline: _isUserOnline } = usePresence()
 
 // Reactive state
 const showAddParticipant = ref(false)
 
 // Computed properties
-const currentUserId = computed(() => (auth.state.username as any))
+const currentUserId = computed(() => auth.state.username as unknown)
 const participants = computed(() => {
   return props.thread.participants || []
 })
@@ -182,27 +190,27 @@ const getThreadDisplayName = (): string => {
   if (props.thread.thread_name) {
     return props.thread.thread_name
   }
-  
+
   if (props.thread.thread_type === 'direct') {
-    const otherParticipant = participants.value.find(p => p.user_id !== currentUserId.value)
+    const otherParticipant = participants.value.find((p) => p.user_id !== currentUserId.value)
     return otherParticipant?.username || 'Unknown User'
   }
-  
+
   return 'Group Chat'
 }
 
 const getThreadInitials = (): string => {
   const name = getThreadDisplayName()
-  
+
   if (props.thread.thread_type === 'group') {
     return name
       .split(' ')
-      .map(word => word[0])
+      .map((word) => word[0])
       .join('')
       .toUpperCase()
       .slice(0, 2)
   }
-  
+
   return name[0]?.toUpperCase() || '?'
 }
 
@@ -226,9 +234,11 @@ const canRemoveParticipant = (participant: ThreadParticipant): boolean => {
   // - You are the thread creator/admin
   // - You are removing yourself
   // - It's a direct message (both can leave)
-  return props.thread.is_admin || 
-         participant.user_id === currentUserId.value ||
-         props.thread.thread_type === 'direct'
+  return (
+    props.thread.is_admin ||
+    participant.user_id === currentUserId.value ||
+    props.thread.thread_type === 'direct'
+  )
 }
 
 const updateParticipantRole = (participant: ThreadParticipant) => {
@@ -250,7 +260,7 @@ const handleParticipantAdded = (userId: number) => {
 
 const leaveThread = () => {
   if (confirm('Are you sure you want to leave this group?')) {
-    emit('participant-remove', currentUserId.value)
+    emit('participant-remove', currentUserId.value as number)
   }
 }
 
