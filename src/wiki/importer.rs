@@ -474,8 +474,8 @@ async fn upsert_page(pool: &Pool, p: &PageWithRev) -> Result<(), WikiSyncError> 
 
 async fn last_sync_at(pool: &Pool) -> Result<Option<DateTime<Utc>>, WikiSyncError> {
     let client = pool.get().await.map_err(|e| WikiSyncError::Db(e.to_string()))?;
-    let row = client
-        .query_one(
+    let row_opt = client
+        .query_opt(
             "SELECT GREATEST(
                 COALESCE(last_incremental_sync, '-infinity'::timestamptz),
                 COALESCE(last_full_sync, '-infinity'::timestamptz)
@@ -484,7 +484,7 @@ async fn last_sync_at(pool: &Pool) -> Result<Option<DateTime<Utc>>, WikiSyncErro
         )
         .await
         .map_err(|e| WikiSyncError::Db(e.to_string()))?;
-    let ts: Option<DateTime<Utc>> = row.try_get("ts").ok();
+    let ts: Option<DateTime<Utc>> = row_opt.and_then(|r| r.try_get("ts").ok());
     // GREATEST of two -infinity becomes -infinity; treat that as None.
     Ok(ts.filter(|d| d.timestamp() > 0))
 }
