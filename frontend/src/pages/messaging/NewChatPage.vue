@@ -4,8 +4,8 @@
     <header class="bg-white border-b border-gray-200 px-4 py-3 sm:px-6">
       <div class="flex items-center space-x-3">
         <button
-          @click="$router.back()"
           class="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-full"
+          @click="$router.back()"
         >
           <ArrowLeft class="h-5 w-5" />
         </button>

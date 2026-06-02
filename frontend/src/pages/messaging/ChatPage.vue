@@ -6,16 +6,18 @@
         <div class="flex items-center space-x-3">
           <!-- Back button on mobile -->
           <button
-            @click="$router.back()"
             class="sm:hidden p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-full"
+            @click="$router.back()"
           >
             <ArrowLeft class="h-5 w-5" />
           </button>
-          
+
           <!-- Thread info -->
           <div class="flex items-center space-x-3">
             <div class="relative">
-              <div class="h-10 w-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-medium">
+              <div
+                class="h-10 w-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-medium"
+              >
                 {{ getThreadInitials() }}
               </div>
               <!-- Online indicator for direct messages -->
@@ -38,16 +40,16 @@
         <!-- Header actions -->
         <div class="flex items-center space-x-2">
           <button
-            @click="startCall"
             class="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-colors"
             title="Start video call"
+            @click="startCall"
           >
             <Video class="h-5 w-5" />
           </button>
           <button
-            @click="showThreadInfo = true"
             class="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-colors"
             title="Thread info"
+            @click="showThreadInfo = true"
           >
             <Info class="h-5 w-5" />
           </button>
@@ -63,19 +65,32 @@
       </div>
 
       <!-- Messages list -->
-      <div v-else-if="messages.length > 0" ref="messagesContainer" class="flex-1 overflow-y-auto px-4 py-4">
+      <div
+        v-else-if="messages.length > 0"
+        ref="messagesContainer"
+        class="flex-1 overflow-y-auto px-4 py-4"
+      >
         <MessageList
           :messages="messages"
-          :current-user-id="currentUserId"
+          :current-user-id="currentUserId as number"
           @message-click="handleMessageClick"
         />
-        
+
         <!-- Typing indicator -->
         <div v-if="typingText" class="flex items-center space-x-2 px-4 py-2 text-sm text-gray-500">
           <div class="flex space-x-1">
-            <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0ms"></div>
-            <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 150ms"></div>
-            <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 300ms"></div>
+            <div
+              class="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+              style="animation-delay: 0ms"
+            ></div>
+            <div
+              class="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+              style="animation-delay: 150ms"
+            ></div>
+            <div
+              class="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+              style="animation-delay: 300ms"
+            ></div>
           </div>
           <span>{{ typingText }}</span>
         </div>
@@ -139,7 +154,7 @@ const messages = ref<Message[]>([])
 const isLoading = ref(true)
 const showThreadInfo = ref(false)
 const messagesContainer = ref<HTMLElement>()
-const currentUserId = computed(() => (auth.state.username as any))
+const currentUserId = computed(() => auth.state.username as unknown)
 
 // Computed properties
 const threadId = computed(() => parseInt(route.params.threadId as string))
@@ -173,51 +188,55 @@ const loadMessages = async () => {
 
 const getThreadDisplayName = (): string => {
   if (!thread.value) return 'Unknown'
-  
+
   if (thread.value.thread_name) {
     return thread.value.thread_name
   }
-  
+
   if (thread.value.thread_type === 'direct' && thread.value.participants) {
-    const otherParticipant = thread.value.participants.find(p => p.user_id !== currentUserId.value)
+    const otherParticipant = thread.value.participants.find(
+      (p) => p.user_id !== currentUserId.value
+    )
     return otherParticipant?.username || 'Unknown User'
   }
-  
+
   return thread.value.thread_type === 'group' ? 'Group Chat' : 'Unknown'
 }
 
 const getThreadInitials = (): string => {
   const name = getThreadDisplayName()
-  
+
   if (thread.value?.thread_type === 'group') {
     return name
       .split(' ')
-      .map(word => word[0])
+      .map((word) => word[0])
       .join('')
       .toUpperCase()
       .slice(0, 2)
   }
-  
+
   return name[0]?.toUpperCase() || '?'
 }
 
 const getOtherParticipantId = (): number => {
   if (!thread.value || thread.value.thread_type !== 'direct') return 0
-  
-  const otherParticipant = thread.value.participants?.find(p => p.user_id !== currentUserId.value)
+
+  const otherParticipant = thread.value.participants?.find((p) => p.user_id !== currentUserId.value)
   return otherParticipant?.user_id || 0
 }
 
 const getThreadSubtitle = (): string => {
   if (!thread.value) return ''
-  
+
   if (thread.value.thread_type === 'direct') {
-    const otherParticipant = thread.value.participants?.find(p => p.user_id !== currentUserId.value)
+    const otherParticipant = thread.value.participants?.find(
+      (p) => p.user_id !== currentUserId.value
+    )
     if (otherParticipant) {
       return isUserOnline(otherParticipant.user_id) ? 'Online' : 'Offline'
     }
   }
-  
+
   return `${thread.value.participant_count} members`
 }
 
@@ -271,7 +290,7 @@ const handleNewMessage = (message: Message) => {
   if (message.thread_id === threadId.value) {
     messages.value.push(message)
     scrollToBottom()
-    
+
     // Mark message as read
     webSocketService.markMessageRead(message.message_id)
   }
@@ -282,12 +301,15 @@ const handleThreadUpdate = () => {
 }
 
 // Watch for route changes
-watch(() => route.params.threadId, (newThreadId) => {
-  if (newThreadId) {
-    loadThread()
-    loadMessages()
+watch(
+  () => route.params.threadId,
+  (newThreadId) => {
+    if (newThreadId) {
+      loadThread()
+      loadMessages()
+    }
   }
-})
+)
 
 // Lifecycle
 onMounted(async () => {
@@ -332,7 +354,9 @@ onUnmounted(() => {
 
 /* Typing indicator animation */
 @keyframes bounce {
-  0%, 80%, 100% {
+  0%,
+  80%,
+  100% {
     transform: scale(0);
   }
   40% {

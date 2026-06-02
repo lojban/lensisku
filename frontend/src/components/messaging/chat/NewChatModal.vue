@@ -1,11 +1,18 @@
 <template>
   <div class="fixed inset-0 z-50 overflow-y-auto">
-    <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+    <div
+      class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0"
+    >
       <!-- Background overlay -->
-      <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" @click="$emit('close')"></div>
+      <div
+        class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
+        @click="$emit('close')"
+      ></div>
 
       <!-- Modal panel -->
-      <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+      <div
+        class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full"
+      >
         <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
           <div class="sm:flex sm:items-start">
             <div class="w-full">
@@ -15,26 +22,14 @@
 
               <!-- Chat Type Selection -->
               <div class="mb-4">
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                  Chat Type
-                </label>
+                <label class="block text-sm font-medium text-gray-700 mb-2"> Chat Type </label>
                 <div class="flex space-x-4">
                   <label class="flex items-center">
-                    <input
-                      v-model="chatType"
-                      type="radio"
-                      value="direct"
-                      class="mr-2"
-                    >
+                    <input v-model="chatType" type="radio" value="direct" class="mr-2" />
                     <span class="text-sm text-gray-700">Direct Message</span>
                   </label>
                   <label class="flex items-center">
-                    <input
-                      v-model="chatType"
-                      type="radio"
-                      value="group"
-                      class="mr-2"
-                    >
+                    <input v-model="chatType" type="radio" value="group" class="mr-2" />
                     <span class="text-sm text-gray-700">Group Chat</span>
                   </label>
                 </div>
@@ -51,7 +46,7 @@
                   type="text"
                   placeholder="Enter group name"
                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
+                />
               </div>
 
               <!-- Participants Search -->
@@ -60,7 +55,9 @@
                   Participants
                 </label>
                 <div class="relative">
-                  <Search class="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Search
+                    class="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400"
+                  />
                   <input
                     id="participants"
                     v-model="searchQuery"
@@ -68,7 +65,7 @@
                     placeholder="Search users..."
                     class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     @input="handleSearch"
-                  >
+                  />
                 </div>
               </div>
 
@@ -82,8 +79,8 @@
                   >
                     {{ participant.username }}
                     <button
-                      @click="removeParticipant(participant.user_id)"
                       class="ml-2 text-blue-600 hover:text-blue-800"
+                      @click="removeParticipant(participant.user_id)"
                     >
                       <X class="h-3 w-3" />
                     </button>
@@ -97,28 +94,35 @@
                   <div
                     v-for="user in searchResults"
                     :key="user.user_id"
-                    @click="toggleParticipant(user)"
                     class="flex items-center p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0"
+                    @click="toggleParticipant(user)"
                   >
                     <input
                       type="checkbox"
                       :checked="isParticipantSelected(user.user_id)"
                       class="mr-3"
                       @click.stop
+                    />
+                    <div
+                      class="h-8 w-8 rounded-full bg-gray-300 flex items-center justify-center text-sm font-medium text-gray-600 mr-3"
                     >
-                    <div class="h-8 w-8 rounded-full bg-gray-300 flex items-center justify-center text-sm font-medium text-gray-600 mr-3">
                       {{ user.username[0]?.toUpperCase() }}
                     </div>
                     <div class="flex-1">
                       <p class="text-sm font-medium text-gray-900">{{ user.username }}</p>
-                      <p class="text-xs text-gray-500">{{ user.is_online ? 'Online' : 'Offline' }}</p>
+                      <p class="text-xs text-gray-500">
+                        {{ user.is_online ? 'Online' : 'Offline' }}
+                      </p>
                     </div>
                   </div>
                 </div>
               </div>
 
               <!-- No Results -->
-              <div v-if="searchQuery && searchResults.length === 0 && !isSearching" class="text-center py-4 text-gray-500">
+              <div
+                v-if="searchQuery && searchResults.length === 0 && !isSearching"
+                class="text-center py-4 text-gray-500"
+              >
                 No users found
               </div>
             </div>
@@ -128,16 +132,19 @@
         <!-- Modal Actions -->
         <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
           <button
-            @click="createThread"
             :disabled="!canCreate || isCreating"
             class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            @click="createThread"
           >
-            <div v-if="isCreating" class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+            <div
+              v-if="isCreating"
+              class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"
+            ></div>
             {{ isCreating ? 'Creating...' : 'Create Chat' }}
           </button>
           <button
-            @click="$emit('close')"
             class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+            @click="$emit('close')"
           >
             Cancel
           </button>
@@ -195,16 +202,17 @@ const handleSearch = async () => {
   isSearching.value = true
   try {
     // Mock search - in real implementation, call user search API
-    await new Promise(resolve => setTimeout(resolve, 300))
-    
+    await new Promise((resolve) => setTimeout(resolve, 300))
+
     // Mock data - replace with actual API call
     searchResults.value = [
       { user_id: 2, username: 'alice', is_online: true },
       { user_id: 3, username: 'bob', is_online: false },
       { user_id: 4, username: 'charlie', is_online: true },
-    ].filter(user => 
-      user.username.toLowerCase().includes(searchQuery.value.toLowerCase()) &&
-      user.user_id !== (auth.state.username as any)
+    ].filter(
+      (user) =>
+        user.username.toLowerCase().includes(searchQuery.value.toLowerCase()) &&
+        user.user_id !== (auth.state.username as unknown)
     )
   } catch (error) {
     console.error('Failed to search users:', error)
@@ -228,11 +236,11 @@ const toggleParticipant = (user: User) => {
 }
 
 const isParticipantSelected = (userId: number): boolean => {
-  return selectedParticipants.value.some(p => p.user_id === userId)
+  return selectedParticipants.value.some((p) => p.user_id === userId)
 }
 
 const removeParticipant = (userId: number) => {
-  selectedParticipants.value = selectedParticipants.value.filter(p => p.user_id !== userId)
+  selectedParticipants.value = selectedParticipants.value.filter((p) => p.user_id !== userId)
 }
 
 const createThread = async () => {
@@ -243,7 +251,7 @@ const createThread = async () => {
     const request = {
       thread_type: chatType.value,
       thread_name: chatType.value === 'group' ? threadName.value.trim() : undefined,
-      participant_ids: selectedParticipants.value.map(p => p.user_id)
+      participant_ids: selectedParticipants.value.map((p) => p.user_id),
     }
 
     const response = await createThreadApi(request)
@@ -256,13 +264,13 @@ const createThread = async () => {
 }
 
 // Watch for chat type changes to clear participants
-const handleChatTypeChange = () => {
+const _handleChatTypeChange = () => {
   selectedParticipants.value = []
   threadName.value = ''
 }
 
 // Add watcher
-const unwatch = () => {
+const _unwatch = () => {
   // This would be set up in onMounted/onUnmounted
 }
 </script>

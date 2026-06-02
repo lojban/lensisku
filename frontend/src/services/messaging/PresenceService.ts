@@ -28,7 +28,7 @@ class PresenceService {
       user_id: status.user_id,
       status: status.is_online ? 'online' : 'offline',
       last_seen: status.last_seen,
-      current_thread: status.typing_in_thread
+      current_thread: status.typing_in_thread,
     }
 
     this.userPresences.set(status.user_id, presence)
@@ -100,7 +100,7 @@ class PresenceService {
   }
 
   // Update current user's typing status
-  public setCurrentThread(threadId: number | null) {
+  public setCurrentThread(_threadId: number | null) {
     // This would be called when user navigates to a thread
     // Implementation depends on backend requirements
   }
