@@ -130,11 +130,13 @@ import { MessageCircle } from 'lucide-vue-next'
 import { RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { getTypeClass } from '@/utils/wordTypeUtils'
+import { useDateFormat } from '@/composables/useDateFormat'
 
 import CommentItem from '@/components/CommentItem.vue'
 import LazyMathJax from '@/components/LazyMathJax.vue'
 
-const { t, locale } = useI18n()
+const { t } = useI18n()
+const { formatTime } = useDateFormat()
 
 const props = defineProps({
   change: {
@@ -184,12 +186,6 @@ const getChangeLink = (change) => {
   }
   return `/valsi/${change.word.replace(/ /g, '_')}?highlight_definition_id=${change.definition_id}`
 }
-
-const formatTime = (timestamp) =>
-  new Date(timestamp * 1000).toLocaleTimeString(locale.value, {
-    hour: '2-digit',
-    minute: '2-digit',
-  })
 
 const getChangeTypeLabel = (changeType) => t(`recentChanges.changeTypes.${changeType}`)
 

@@ -8,6 +8,11 @@
     "aqua": "djacu staile",
     "flat": "panpi staile"
   },
+  "date": {
+    "date": "de'i li nanca bu {year} masti bu {month} djedi bu {day}",
+    "time": "cacra bu {hours} mennu bu {minutes}",
+    "dateTime": "de'i li nanca bu {year} masti bu {month} djedi bu {day} cacra bu {hours} mennu bu {minutes}"
+  },
   "notFoundPage": {
     "pageTitle": "404 — le papri na zasti",
     "description": "lo karni poi do sisku cu na zasti.",

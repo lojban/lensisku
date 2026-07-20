@@ -58,6 +58,7 @@ import ActivityChanges from '@/components/activity/ActivityChanges.vue'
 import ActivityComments from '@/components/activity/ActivityComments.vue'
 import ActivityDefinitions from '@/components/activity/ActivityDefinitions.vue'
 import ActivityThreads from '@/components/activity/ActivityThreads.vue'
+import { useDateFormat } from '@/composables/useDateFormat'
 import PaginationComponent from '@/components/PaginationComponent.vue'
 import SkeletonActivityItem from '@/components/activity/SkeletonActivityItem.vue'
 import TabbedPageHeader from '@/components/TabbedPageHeader.vue'
@@ -65,7 +66,8 @@ import { useError } from '@/composables/useError'
 import { useSeoHead } from '@/composables/useSeoHead'
 import { queryStr } from '@/utils/routeQuery'
 
-const { t, locale } = useI18n()
+const { t } = useI18n()
+const { formatDate, formatTime, formatDateTime } = useDateFormat()
 
 const tabs = computed(() => [
   { key: 'changes', label: t('recentChanges.recentChanges'), icon: History },
@@ -324,14 +326,18 @@ onUnmounted(() => {
   }
 })
 
+const dateKey = (d: Date) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+
 const groupedChanges = computed(() => {
   const groups = changes.value.reduce<Record<string, { date: Date; changes: ChangeRow[] }>>(
     (acc, change) => {
-      const date = new Date(change.time * 1000).toLocaleDateString(locale.value)
-      if (!acc[date]) {
-        acc[date] = { date: new Date(change.time * 1000), changes: [] }
+      const d = new Date(change.time * 1000)
+      const key = dateKey(d)
+      if (!acc[key]) {
+        acc[key] = { date: d, changes: [] }
       }
-      acc[date].changes.push(change)
+      acc[key].changes.push(change)
       return acc
     },
     {}
@@ -339,26 +345,10 @@ const groupedChanges = computed(() => {
   return Object.values(groups).sort((a, b) => b.date.getTime() - a.date.getTime())
 })
 
-const formatDate = (date: Date) =>
-  new Intl.DateTimeFormat(locale.value, {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  }).format(date)
+const formatDateForThread = (timestamp: number) => formatDate(timestamp)
 
-const formatTime = (timestamp: number) =>
-  new Date(timestamp * 1000).toLocaleTimeString(locale.value, {
-    hour: '2-digit',
-    minute: '2-digit',
-  })
-
-const formatDateForThread = (timestamp: number) =>
-  new Date(timestamp * 1000).toLocaleDateString(locale.value, {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  })
+// Re-export date+time formatter for components that need a single combined string
+const _formatDateTime = formatDateTime
 
 // Reactive page title
 const pageTitle = computed(() => {
