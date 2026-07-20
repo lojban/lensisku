@@ -1,17 +1,13 @@
 <template>
   <div class="message-list space-y-4">
     <!-- Date divider -->
-    <div
-      v-for="(group, date) in groupedMessages"
-      :key="date"
-      class="space-y-4"
-    >
+    <div v-for="(group, date) in groupedMessages" :key="date" class="space-y-4">
       <div class="flex items-center justify-center">
-        <div class="bg-gray-100 rounded-full px-3 py-1 text-xs font-medium text-gray-500">
+        <span class="badge badge-muted">
           {{ formatDate(date) }}
-        </div>
+        </span>
       </div>
-      
+
       <!-- Messages for this date -->
       <div
         v-for="message in group"
@@ -48,15 +44,15 @@ defineEmits<{
 // Group messages by date
 const groupedMessages = computed(() => {
   const groups: Record<string, Message[]> = {}
-  
-  props.messages.forEach(message => {
+
+  props.messages.forEach((message) => {
     const date = new Date(message.created_at).toDateString()
     if (!groups[date]) {
       groups[date] = []
     }
     groups[date].push(message)
   })
-  
+
   return groups
 })
 
@@ -65,27 +61,22 @@ const formatDate = (dateString: string): string => {
   const today = new Date()
   const yesterday = new Date(today)
   yesterday.setDate(yesterday.getDate() - 1)
-  
+
   if (date.toDateString() === today.toDateString()) {
     return 'Today'
   } else if (date.toDateString() === yesterday.toDateString()) {
     return 'Yesterday'
   } else {
-    return date.toLocaleDateString('en-US', { 
-      month: 'short', 
-      day: 'numeric', 
-      year: date.getFullYear() !== today.getFullYear() ? 'numeric' : undefined 
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: date.getFullYear() !== today.getFullYear() ? 'numeric' : undefined,
     })
   }
 }
 </script>
 
 <style scoped>
-.message-list {
-  @apply px-4;
-}
-
-/* Smooth scroll behavior */
 .message-list {
   scroll-behavior: smooth;
 }

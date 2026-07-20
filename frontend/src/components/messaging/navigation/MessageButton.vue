@@ -1,18 +1,18 @@
 <template>
-  <div class="message-button-container">
-    <button
+  <div class="inline-block">
+    <Button
       :disabled="isLoading || !canMessage"
-      class="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
-      :class="buttonClass"
+      :loading="isLoading"
+      :variant="buttonVariant"
+      :size="buttonSize"
+      :class="[{ 'w-full': fullWidth }, size === 'sm' ? '!text-xs !px-3 !py-1.5' : '']"
       @click="handleMessageClick"
     >
-      <MessageSquare class="h-4 w-4 mr-2" />
-      <span v-if="!isLoading">{{ buttonText }}</span>
-      <div v-else class="flex items-center">
-        <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-        Loading...
-      </div>
-    </button>
+      <template #icon>
+        <MessageSquare class="h-4 w-4" />
+      </template>
+      <span>{{ buttonText }}</span>
+    </Button>
 
     <!-- Error message -->
     <div v-if="error" class="mt-2 text-sm text-red-600">
@@ -30,6 +30,7 @@
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { MessageSquare } from 'lucide-vue-next'
+import { Button } from '@packages/ui'
 import { useAuth } from '@/composables/useAuth'
 import { createThread } from '@/services/messaging/messagingApi'
 import type { CreateThreadRequest } from '@/types/messaging'
@@ -72,42 +73,18 @@ const buttonText = computed(() => {
   return 'Message'
 })
 
-const buttonClass = computed(() => {
-  const classes = []
-
-  // Size classes
-  switch (props.size) {
-    case 'sm':
-      classes.push('px-3 py-1.5 text-xs')
-      break
-    case 'lg':
-      classes.push('px-6 py-3 text-base')
-      break
-    default: // md
-      classes.push('px-4 py-2 text-sm')
-  }
-
-  // Width
-  if (props.fullWidth) {
-    classes.push('w-full')
-  }
-
-  // Variant classes
+const buttonVariant = computed(() => {
   switch (props.variant) {
     case 'secondary':
-      classes.push('bg-gray-600 hover:bg-gray-700 focus:ring-gray-500')
-      break
+      return 'neutral-muted'
     case 'outline':
-      classes.push(
-        'bg-transparent border-blue-600 text-blue-600 hover:bg-blue-50 focus:ring-blue-500'
-      )
-      break
-    default: // primary
-      classes.push('bg-blue-600 hover:bg-blue-700 focus:ring-blue-500 text-white')
+      return 'link'
+    default:
+      return 'primary'
   }
-
-  return classes.join(' ')
 })
+
+const buttonSize = computed(() => (props.size === 'lg' ? 'lg' : 'md'))
 
 // Methods
 const handleMessageClick = async () => {
@@ -173,22 +150,3 @@ defineExpose({
   clearMessages,
 })
 </script>
-
-<style scoped>
-.message-button-container {
-  @apply inline-block;
-}
-
-.animate-spin {
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-</style>

@@ -25,7 +25,7 @@ const props = withDefaults(defineProps<Props>(), {
 const { isMobile, isTablet: _isTablet } = useMobileOptimizations()
 
 const containerClasses = computed(() => {
-  const classes = ['responsive-container']
+  const classes = ['responsive-container w-full transition-all duration-200 ease-out']
 
   // Max width classes
   const maxWidthClasses = {
@@ -77,31 +77,31 @@ const containerStyles = computed(() => {
 
 <style scoped>
 .responsive-container {
-  @apply w-full transition-all duration-200 ease-out;
+  width: 100%;
+  transition: all 0.2s ease-out;
 }
 
 /* Mobile-specific optimizations */
 @media (max-width: 768px) {
   .responsive-container {
-    @apply select-none;
+    user-select: none;
+    touch-action: manipulation;
   }
 
   .responsive-container * {
-    @apply touch-manipulation;
+    touch-action: manipulation;
+  }
+
+  .responsive-container input,
+  .responsive-container textarea,
+  .responsive-container select {
+    font-size: 1rem;
+    line-height: 1.5rem;
   }
 }
 
 /* Smooth transitions */
 .responsive-container {
-  @apply transform-gpu;
-}
-
-/* Prevent zoom on iOS */
-@media (max-width: 768px) {
-  .responsive-container input,
-  .responsive-container textarea,
-  .responsive-container select {
-    @apply text-base;
-  }
+  transform: translate3d(0, 0, 0);
 }
 </style>

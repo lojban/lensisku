@@ -175,8 +175,9 @@ onUnmounted(() => {
 
 <style scoped>
 .touch-gestures {
-  @apply relative;
+  position: relative;
   touch-action: pan-y pinch-zoom;
+  transition: transform 0.2s ease-out;
 }
 
 .touch-gestures--disabled {
@@ -184,19 +185,21 @@ onUnmounted(() => {
 }
 
 .touch-gestures--swiping {
-  @apply select-none;
+  user-select: none;
 }
 
 /* Visual feedback for swiping */
 .touch-gestures--swiping::after {
   content: '';
-  @apply absolute inset-0 bg-blue-500 opacity-5 pointer-events-none;
+  position: absolute;
+  inset: 0;
+  background-color: rgba(59, 130, 246, 0.05);
+  pointer-events: none;
   transition: opacity 0.2s ease-out;
 }
 
 /* Prevent text selection during swipe */
 .touch-gestures--swiping * {
-  @apply select-none;
   user-select: none;
   -webkit-user-select: none;
 }
@@ -206,11 +209,6 @@ onUnmounted(() => {
   .touch-gestures {
     min-height: 44px; /* iOS touch target minimum */
   }
-}
-
-/* Smooth transitions */
-.touch-gestures {
-  @apply transition-transform duration-200 ease-out;
 }
 
 /* Reduce motion for users who prefer it */

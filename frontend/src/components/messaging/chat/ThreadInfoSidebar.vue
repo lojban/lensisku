@@ -1,18 +1,17 @@
 <template>
   <div class="fixed inset-0 z-50 overflow-hidden">
     <!-- Background overlay -->
-    <div class="absolute inset-0 bg-black bg-opacity-50" @click="$emit('close')"></div>
+    <div class="absolute inset-0 bg-black/50" @click="$emit('close')"></div>
 
     <!-- Sidebar -->
-    <div class="absolute right-0 top-0 h-full w-full max-w-md bg-white shadow-xl">
+    <div
+      class="card-base absolute right-0 top-0 h-full w-full max-w-md shadow-xl rounded-r-none rounded-l-2xl"
+    >
       <div class="h-full flex flex-col">
         <!-- Header -->
         <div class="flex items-center justify-between p-4 border-b border-gray-200">
           <h2 class="text-lg font-semibold text-gray-900">Thread Info</h2>
-          <button
-            class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full"
-            @click="$emit('close')"
-          >
+          <button type="button" class="icon-btn-ghost" @click="$emit('close')">
             <X class="h-5 w-5" />
           </button>
         </div>
@@ -21,10 +20,8 @@
         <div class="flex-1 overflow-y-auto">
           <!-- Thread details -->
           <div class="p-4 border-b border-gray-200">
-            <div class="flex items-center space-x-3 mb-4">
-              <div
-                class="h-12 w-12 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-medium"
-              >
+            <div class="flex items-center gap-3 mb-4">
+              <div class="avatar-placeholder-sm">
                 {{ getThreadInitials() }}
               </div>
               <div>
@@ -59,24 +56,23 @@
               <h3 class="text-lg font-medium text-gray-900">Participants</h3>
               <button
                 v-if="thread.thread_type === 'group' && thread.is_admin"
-                class="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                type="button"
+                class="ui-btn--create"
                 @click="showAddParticipant = true"
               >
                 Add
               </button>
             </div>
 
-            <div class="space-y-3">
+            <div class="space-y-2">
               <div
                 v-for="participant in participants"
                 :key="participant.user_id"
-                class="flex items-center justify-between"
+                class="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50"
               >
-                <div class="flex items-center space-x-3">
+                <div class="flex items-center gap-3">
                   <div class="relative">
-                    <div
-                      class="h-8 w-8 rounded-full bg-gray-300 flex items-center justify-center text-sm font-medium text-gray-600"
-                    >
+                    <div class="avatar-placeholder-sm !h-8 !w-8 text-xs">
                       {{ participant.username[0]?.toUpperCase() }}
                     </div>
                     <div
@@ -95,14 +91,15 @@
                 </div>
 
                 <!-- Actions -->
-                <div class="flex items-center space-x-2">
+                <div class="flex items-center gap-2">
                   <button
                     v-if="
                       thread.thread_type === 'group' &&
                       thread.is_admin &&
                       participant.user_id !== currentUserId
                     "
-                    class="text-gray-400 hover:text-gray-600"
+                    type="button"
+                    class="icon-btn-ghost"
                     title="Change role"
                     @click="updateParticipantRole(participant)"
                   >
@@ -110,7 +107,8 @@
                   </button>
                   <button
                     v-if="canRemoveParticipant(participant)"
-                    class="text-red-400 hover:text-red-600"
+                    type="button"
+                    class="icon-btn-ghost-danger"
                     title="Remove from thread"
                     @click="removeParticipant(participant)"
                   >
@@ -122,22 +120,18 @@
           </div>
 
           <!-- Actions -->
-          <div class="p-4 border-t border-gray-200">
-            <div class="space-y-2">
-              <button
-                v-if="thread.thread_type === 'group' && !thread.is_admin"
-                class="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 rounded-lg"
-                @click="leaveThread"
-              >
-                Leave Group
-              </button>
-              <button
-                class="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 rounded-lg"
-                @click="deleteThread"
-              >
-                Delete Conversation
-              </button>
-            </div>
+          <div class="p-4 border-t border-gray-200 space-y-2">
+            <button
+              v-if="thread.thread_type === 'group' && !thread.is_admin"
+              type="button"
+              class="ui-btn--neutral-muted w-full justify-start"
+              @click="leaveThread"
+            >
+              Leave Group
+            </button>
+            <button type="button" class="ui-btn--delete w-full justify-start" @click="deleteThread">
+              Delete Conversation
+            </button>
           </div>
         </div>
       </div>

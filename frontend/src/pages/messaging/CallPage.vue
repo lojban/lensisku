@@ -1,10 +1,7 @@
 <template>
   <div class="call-page h-full flex flex-col bg-gray-900">
     <!-- Call Interface -->
-    <CallInterface
-      :call-id="callId"
-      @call-ended="handleCallEnded"
-    />
+    <CallInterface :call-id="callId" @call-ended="handleCallEnded" />
   </div>
 </template>
 
