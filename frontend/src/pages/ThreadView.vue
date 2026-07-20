@@ -62,12 +62,14 @@
         <!-- Message Parts -->
         <div v-if="includeContent && message.parts_json" class="mt-4 pt-4 border-t border-gray-100">
           <!-- Text parts -->
+          <!-- eslint-disable vue/no-v-html -->
           <div
             v-for="part in message.parts_json.filter((p) => p.mime_type.startsWith('text/'))"
             :key="part.id"
             class="text-gray-700 text-sm prose max-w-none"
             v-html="highlightText(part.content)"
-          />
+          ></div>
+          <!-- eslint-enable vue/no-v-html -->
           <!-- Attachments -->
           <div
             v-if="message.parts_json.filter((p) => !p.mime_type.startsWith('text/')).length"

@@ -334,7 +334,6 @@ type WordTypeOption = {
 const props = defineProps({
   modelValue: {
     type: Object,
-    required: true,
     default: () => ({
       selmaho: '',
       username: '',

@@ -36,12 +36,14 @@
         <!-- Message Parts -->
         <div v-if="showContent && message.parts_json" class="mt-1 pt-1 border-t border-gray-100">
           <!-- Show first text/plain part -->
+          <!-- eslint-disable vue/no-v-html -->
           <div
             v-for="part in message.parts_json.filter((p) => p.mime_type === 'text/plain')"
             :key="part.id"
             class="text-gray-700 text-sm line-clamp-3"
             v-html="highlightTextPlain(part.content)"
-          />
+          ></div>
+          <!-- eslint-enable vue/no-v-html -->
           <!-- Attachments -->
           <div
             v-if="message.parts_json.filter((p) => p.mime_type !== 'text/plain').length"

@@ -45,6 +45,7 @@
             @click="triggerPyro"
           >
             <div class="flex h-8 w-8 shrink-0 items-center justify-center -skew-x-12">
+              <!-- eslint-disable vue/no-v-html -->
               <div
                 role="img"
                 :aria-label="$t('logoText')"
@@ -52,6 +53,7 @@
                 :class="{ 'animate-rotate-3d': showPyro }"
                 v-html="logoSvgRaw"
               ></div>
+              <!-- eslint-enable vue/no-v-html -->
             </div>
             <span class="select-none font-medium leading-none">{{ $t('logoText') }}</span>
           </NavLink>
@@ -172,7 +174,7 @@
           <template v-if="!auth.state.isLoading">
             <template v-if="auth.state.isLoggedIn">
               <!-- Messaging Icon -->
-              <MessagingIcon />
+              <!-- <MessagingIcon /> -->
               <NavLink v-if="auth.state.isLoggedIn" to="/reactions" class="navbar-item">
                 <BookmarkCheck class="h-5 w-5" />
                 <span class="hidden sm:inline">{{ $t('nav.myActivity') }}</span>
@@ -265,10 +267,10 @@
             class="h-8 w-8 animate-spin rounded-full border-4 border-gray-200 border-t-blue-600"
           ></div>
         </div>
-        <router-view v-else v-slot="{ Component, route }">
+        <router-view v-else v-slot="{ Component, route: childRoute }">
           <component
             :is="Component"
-            v-bind="metaProps(route.meta.props)"
+            v-bind="metaProps(childRoute.meta.props)"
             v-on="
               isHomePage
                 ? {
@@ -375,7 +377,6 @@ import { jwtDecode } from 'jwt-decode'
 
 import Error from '@/components/Error.vue'
 import ToastFloat from '@/components/ToastFloat.vue'
-import MessagingIcon from '@/components/messaging/navigation/MessagingIcon.vue'
 import PWAInstallPrompt from '@/components/messaging/shared/PWAInstallPrompt.vue'
 import { resendConfirmation } from '@/api'
 import { Dropdown, ToolbarSelectDropdownItem } from '@packages/ui'

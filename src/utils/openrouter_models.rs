@@ -84,22 +84,22 @@ fn is_placeholder_or_router_only_model(id: &str) -> bool {
     matches!(id, "openrouter/free" | "openrouter/auto")
 }
 
-/// Checks if a model ID belongs to a preferred provider (nvidia, google, anthropic, openai, minimax).
-fn is_preferred_provider(model_id: &str) -> bool {
-    const PREFERRED_PROVIDERS: &[&str] = &[
-        "nvidia/",
-        "google/",
-        "anthropic/",
-        "openai/",
-        "minimax/",
-        "deepseek/",
-        "moonshotai/",
-        "qwen/",
-    ];
-    PREFERRED_PROVIDERS
-        .iter()
-        .any(|prefix| model_id.starts_with(prefix))
-}
+// /// Checks if a model ID belongs to a preferred provider (nvidia, google, anthropic, openai, minimax).
+// fn is_preferred_provider(model_id: &str) -> bool {
+//     const PREFERRED_PROVIDERS: &[&str] = &[
+//         "nvidia/",
+//         "google/",
+//         "anthropic/",
+//         "openai/",
+//         "minimax/",
+//         "deepseek/",
+//         "moonshotai/",
+//         "qwen/",
+//     ];
+//     PREFERRED_PROVIDERS
+//         .iter()
+//         .any(|prefix| model_id.starts_with(prefix))
+// }
 
 async fn fetch_openrouter_models_list(
     base_url: &str,
@@ -145,8 +145,7 @@ async fn fetch_openrouter_models_list(
 /// `openrouter/auto`) so parallel runs use real provider slugs when any exist. Prefers long context
 /// (100k+), then falls back to 32k+. Sorted by `created` descending.
 ///
-/// Prioritizes models from preferred providers (nvidia, google, anthropic, openai, minimax) by checking
-/// them first before other providers.
+/// Does not prioritize any provider; sorts purely by `created` descending.
 pub async fn fetch_latest_openrouter_models(
     base_url: &str,
     api_key: &str,
@@ -208,13 +207,15 @@ pub async fn fetch_latest_openrouter_models(
             .collect();
 
         eligible.sort_by(|a, b| {
-            let a_preferred = is_preferred_provider(&a.1);
-            let b_preferred = is_preferred_provider(&b.1);
-            match (a_preferred, b_preferred) {
-                (true, false) => std::cmp::Ordering::Less,
-                (false, true) => std::cmp::Ordering::Greater,
-                _ => b.0.partial_cmp(&a.0).unwrap_or(std::cmp::Ordering::Equal),
-            }
+            // Provider priority disabled: do not limit models to certain companies.
+            // let a_preferred = is_preferred_provider(&a.1);
+            // let b_preferred = is_preferred_provider(&b.1);
+            // match (a_preferred, b_preferred) {
+            //     (true, false) => std::cmp::Ordering::Less,
+            //     (false, true) => std::cmp::Ordering::Greater,
+            //     _ => b.0.partial_cmp(&a.0).unwrap_or(std::cmp::Ordering::Equal),
+            // }
+            b.0.partial_cmp(&a.0).unwrap_or(std::cmp::Ordering::Equal)
         });
         eligible
             .into_iter()
@@ -373,15 +374,16 @@ where
     }
 
     if picked.len() == 2 {
-        // Preserve provider priority while preferring faster successful probes.
-        picked.sort_by(|(a_entry, a_duration), (b_entry, b_duration)| {
-            let a_preferred = is_preferred_provider(&a_entry.id);
-            let b_preferred = is_preferred_provider(&b_entry.id);
-            match (a_preferred, b_preferred) {
-                (true, false) => std::cmp::Ordering::Less,
-                (false, true) => std::cmp::Ordering::Greater,
-                _ => a_duration.cmp(b_duration),
-            }
+        // Provider priority disabled: rank only by probe speed.
+        picked.sort_by(|(_a_entry, a_duration), (_b_entry, b_duration)| {
+            // let a_preferred = is_preferred_provider(&a_entry.id);
+            // let b_preferred = is_preferred_provider(&b_entry.id);
+            // match (a_preferred, b_preferred) {
+            //     (true, false) => std::cmp::Ordering::Less,
+            //     (false, true) => std::cmp::Ordering::Greater,
+            //     _ => a_duration.cmp(b_duration),
+            // }
+            a_duration.cmp(b_duration)
         });
 
         let ordered_models: Vec<ModelEntry> =
@@ -397,7 +399,7 @@ where
             )
             .await?;
         log::info!(
-            "OpenRouter assistant model cache updated in Redis (two probed models, provider+probe-speed ranked)."
+            "OpenRouter assistant model cache updated in Redis (two probed models, probe-speed ranked)."
         );
     } else {
         log::warn!(
