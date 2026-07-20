@@ -1,4 +1,3 @@
-import { io, type Socket } from 'socket.io-client'
 import { ref } from 'vue'
 import type { Message, Thread, UserStatus, TypingIndicator, WebRTCSignal } from '@/types/messaging'
 
@@ -15,11 +14,21 @@ export interface WebSocketEvents {
   'notification:new': (notification: unknown) => void
 }
 
+// Minimal message envelope coming from the backend WebSocket handler.
+interface ServerMessage {
+  type: string
+  [key: string]: unknown
+}
+
 class WebSocketService {
-  private socket: Socket | null = null
+  private ws: WebSocket | null = null
   private reconnectAttempts = 0
   private maxReconnectAttempts = 5
   private reconnectDelay = 1000
+  private currentThreadId?: number
+  private connectResolve: (() => void) | null = null
+  private connectReject: ((err: Error) => void) | null = null
+  private reconnectTimer: ReturnType<typeof setTimeout> | null = null
 
   // Reactive state
   public isConnected = ref(false)
@@ -34,7 +43,6 @@ class WebSocketService {
   }
 
   private setupEventHandlers() {
-    // Initialize event listener maps
     const events: (keyof WebSocketEvents)[] = [
       'message:new',
       'message:updated',
@@ -53,129 +61,239 @@ class WebSocketService {
     })
   }
 
+  private getString(data: ServerMessage, key: string, fallback = ''): string {
+    const value = data[key]
+    if (typeof value === 'string') return value
+    if (value === undefined || value === null) return fallback
+    return String(value)
+  }
+
+  private getNumber(data: ServerMessage, key: string, fallback = 0): number {
+    const value = data[key]
+    if (typeof value === 'number') return value
+    if (typeof value === 'string') return Number(value) || fallback
+    return fallback
+  }
+
+  private getBoolean(data: ServerMessage, key: string, fallback = false): boolean {
+    const value = data[key]
+    if (typeof value === 'boolean') return value
+    if (typeof value === 'string') return value === 'true'
+    return fallback
+  }
+
+  private resolveBaseUrl(): string {
+    const envUrl = import.meta.env.VITE_WS_URL as string | undefined
+    if (envUrl) {
+      return envUrl
+    }
+    if (typeof window !== 'undefined') {
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+      return `${protocol}//${window.location.host}`
+    }
+    return 'ws://localhost:20380'
+  }
+
   public connect(threadId?: number): Promise<void> {
     return new Promise((resolve, reject) => {
-      if (this.socket?.connected) {
+      if (
+        this.ws &&
+        (this.ws.readyState === WebSocket.CONNECTING || this.ws.readyState === WebSocket.OPEN)
+      ) {
         resolve()
         return
       }
 
       this.isConnecting.value = true
       this.connectionError.value = null
+      this.connectResolve = resolve
+      this.connectReject = reject
+      this.currentThreadId = threadId
 
-      const wsUrl = import.meta.env.VITE_WS_URL || 'ws://localhost:20380'
+      const baseUrl = this.resolveBaseUrl()
       const endpoint = threadId ? `/messaging/ws/${threadId}` : '/messaging/ws'
+      const url = `${baseUrl}${endpoint}`
 
-      this.socket = io(`${wsUrl}${endpoint}`, {
-        transports: ['websocket'],
-        upgrade: false,
-        rememberUpgrade: false,
-        timeout: 10000,
-        forceNew: true,
-      })
+      try {
+        this.ws = new WebSocket(url)
+      } catch (err) {
+        this.isConnecting.value = false
+        this.connectionError.value =
+          err instanceof Error ? err.message : 'Failed to create WebSocket'
+        reject(new Error(this.connectionError.value))
+        return
+      }
 
-      this.socket.on('connect', () => {
+      this.ws.onopen = () => {
         console.log('WebSocket connected')
         this.isConnected.value = true
         this.isConnecting.value = false
         this.connectionError.value = null
         this.reconnectAttempts = 0
-        resolve()
-      })
 
-      this.socket.on('disconnect', (reason) => {
-        console.log('WebSocket disconnected:', reason)
+        const resolveFn = this.connectResolve
+        this.connectResolve = null
+        this.connectReject = null
+        resolveFn?.()
+      }
+
+      this.ws.onmessage = (event) => {
+        this.handleMessage(event.data)
+      }
+
+      this.ws.onclose = () => {
+        console.log('WebSocket disconnected')
         this.isConnected.value = false
-        this.handleReconnect()
-      })
-
-      this.socket.on('connect_error', (error) => {
-        console.error('WebSocket connection error:', error)
         this.isConnecting.value = false
-        this.connectionError.value = error.message
-        this.reconnectAttempts++
 
-        if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-          reject(new Error('Failed to connect to WebSocket'))
+        if (this.connectReject) {
+          this.connectReject(new Error('WebSocket closed before connecting'))
+          this.connectReject = null
+          this.connectResolve = null
         }
-      })
 
-      // Set up message handlers
-      this.setupMessageHandlers()
+        this.handleReconnect()
+      }
+
+      this.ws.onerror = () => {
+        console.error('WebSocket connection error')
+        this.isConnecting.value = false
+        this.connectionError.value = 'WebSocket connection error'
+
+        if (this.connectReject) {
+          this.connectReject(new Error(this.connectionError.value))
+          this.connectReject = null
+          this.connectResolve = null
+        }
+      }
     })
   }
 
-  private setupMessageHandlers() {
-    if (!this.socket) return
+  private handleMessage(data: unknown) {
+    if (typeof data !== 'string') {
+      return
+    }
 
-    this.socket.on('message', (data) => {
-      this.handleIncomingMessage(data)
-    })
+    let parsed: ServerMessage
+    try {
+      parsed = JSON.parse(data) as ServerMessage
+    } catch {
+      return
+    }
 
-    this.socket.on('thread_updated', (data) => {
-      this.emit('thread:updated', data)
-    })
+    if (!parsed || typeof parsed !== 'object' || !parsed.type) {
+      return
+    }
 
-    this.socket.on('user_status', (data) => {
-      this.emit('user:status', data)
-    })
-
-    this.socket.on('typing_indicator', (data) => {
-      this.emit('user:typing', data)
-    })
-
-    this.socket.on('webrtc_signal', (data) => {
-      this.emit('webrtc:signal', data)
-    })
-
-    this.socket.on('notification', (data) => {
-      this.emit('notification:new', data)
-    })
+    switch (parsed.type) {
+      case 'chat': {
+        this.emit('message:new', this.toMessage(parsed))
+        break
+      }
+      case 'typing': {
+        this.emit('user:typing', this.toTypingIndicator(parsed))
+        break
+      }
+      case 'user_status': {
+        this.emit('user:status', this.toUserStatus(parsed))
+        break
+      }
+      case 'webrtc_signal':
+      case 'webrtc': {
+        this.emit('webrtc:signal', parsed as unknown as WebRTCSignal)
+        this.emit('webrtc:call', parsed as unknown)
+        break
+      }
+      case 'notification': {
+        this.emit('notification:new', parsed)
+        break
+      }
+      case 'error': {
+        console.warn('WebSocket server error:', this.getString(parsed, 'message'))
+        break
+      }
+      default:
+        break
+    }
   }
 
-  private handleIncomingMessage(data: unknown) {
-    const messageData = data as Partial<Message>
-    const message: Message = {
-      message_id: messageData.message_id || 0,
-      thread_id: messageData.thread_id || 0,
-      sender_id: messageData.sender_id || 0,
-      username: messageData.username || '',
-      message_type: messageData.message_type || 'text',
-      encrypted_content: messageData.encrypted_content || '',
-      content_nonce: messageData.content_nonce || '',
-      sender_key_signature: messageData.sender_key_signature,
-      reply_to_message_id: messageData.reply_to_message_id,
-      created_at: messageData.created_at || new Date().toISOString(),
-      updated_at: messageData.updated_at || new Date().toISOString(),
-      is_deleted: messageData.is_deleted || false,
-      edit_count: messageData.edit_count || 0,
-      last_edited_at: messageData.last_edited_at,
-      is_from_sender: messageData.is_from_sender || false,
+  private toMessage(data: ServerMessage): Message {
+    const timestamp = this.getString(data, 'timestamp', new Date().toISOString())
+    return {
+      message_id: this.getNumber(data, 'id'),
+      thread_id: this.getNumber(data, 'thread_id'),
+      sender_id: this.getNumber(data, 'sender_id'),
+      username: this.getString(data, 'sender_name'),
+      message_type: 'text',
+      encrypted_content: this.getString(data, 'content'),
+      content_nonce: '',
+      sender_key_signature: undefined,
+      reply_to_message_id: undefined,
+      created_at: timestamp,
+      updated_at: timestamp,
+      is_deleted: false,
+      edit_count: 0,
+      last_edited_at: undefined,
+      is_from_sender: false,
       is_read: false,
       delivery_status: 'delivered',
     }
-    this.emit('message:new', message)
+  }
+
+  private toTypingIndicator(data: ServerMessage): TypingIndicator {
+    return {
+      user_id: this.getNumber(data, 'user_id', this.getNumber(data, 'sender_id')),
+      username: this.getString(data, 'user_name', this.getString(data, 'sender_name')),
+      thread_id: this.getNumber(data, 'thread_id'),
+      is_typing: this.getBoolean(data, 'is_typing'),
+      timestamp: new Date().toISOString(),
+    }
+  }
+
+  private toUserStatus(data: ServerMessage): UserStatus {
+    return {
+      user_id: this.getNumber(data, 'user_id'),
+      username: this.getString(data, 'user_name'),
+      is_online: this.getString(data, 'status').toLowerCase() === 'online',
+      last_seen: new Date().toISOString(),
+      is_typing: false,
+      typing_in_thread: this.getNumber(data, 'thread_id') || undefined,
+    }
   }
 
   private handleReconnect() {
-    if (this.reconnectAttempts < this.maxReconnectAttempts) {
-      setTimeout(
-        () => {
-          console.log(
-            `Attempting to reconnect... (${this.reconnectAttempts + 1}/${this.maxReconnectAttempts})`
-          )
-          this.connect()
-        },
-        this.reconnectDelay * Math.pow(2, this.reconnectAttempts)
-      )
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer)
     }
+
+    if (this.reconnectAttempts >= this.maxReconnectAttempts) {
+      console.warn('Max WebSocket reconnect attempts reached')
+      return
+    }
+
+    this.reconnectAttempts++
+    const delay = this.reconnectDelay * Math.pow(2, this.reconnectAttempts)
+
+    this.reconnectTimer = setTimeout(() => {
+      console.log(
+        `Attempting to reconnect... (${this.reconnectAttempts}/${this.maxReconnectAttempts})`
+      )
+      this.connect(this.currentThreadId).catch(() => {})
+    }, delay)
   }
 
   public disconnect() {
-    if (this.socket) {
-      this.socket.disconnect()
-      this.socket = null
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer)
+      this.reconnectTimer = null
     }
+
+    if (this.ws) {
+      this.ws.onclose = null
+      this.ws.close()
+      this.ws = null
+    }
+
     this.isConnected.value = false
     this.isConnecting.value = false
   }
@@ -210,28 +328,53 @@ class WebSocketService {
 
   // Send messages
   public sendMessage(message: unknown) {
-    if (this.socket?.connected) {
-      this.socket.emit('message', message)
-    } else {
-      console.warn('WebSocket not connected, cannot send message')
+    if (!message || typeof message !== 'object' || Array.isArray(message)) {
+      return
     }
+
+    const msg = message as Record<string, unknown>
+    const type = typeof msg.type === 'string' ? msg.type : ''
+    let payload: Record<string, unknown>
+
+    if (type === 'heartbeat') {
+      payload = { type: 'ping' }
+    } else if (type === 'call_reject' || type === 'call_ended') {
+      // WebRTC control messages are not yet handled by the backend; avoid sending
+      // malformed payloads.
+      return
+    } else if (type) {
+      payload = msg
+    } else {
+      payload = { type: 'chat', ...msg }
+    }
+
+    this.sendJson(payload)
   }
 
   public sendTypingIndicator(threadId: number, isTyping: boolean) {
-    if (this.socket?.connected) {
-      this.socket.emit('typing', { thread_id: threadId, is_typing: isTyping })
-    }
+    this.sendJson({
+      type: 'typing',
+      thread_id: threadId,
+      is_typing: isTyping,
+    })
   }
 
-  public markMessageRead(messageId: number) {
-    if (this.socket?.connected) {
-      this.socket.emit('mark_read', { message_id: messageId })
-    }
+  public markMessageRead(_messageId: number) {
+    // Not yet implemented on the backend; avoid sending unknown payloads.
   }
 
   public sendWebRTCSignal(signal: WebRTCSignal) {
-    if (this.socket?.connected) {
-      this.socket.emit('webrtc_signal', signal)
+    this.sendJson({
+      type: 'webrtc_signal',
+      ...signal,
+    })
+  }
+
+  private sendJson(payload: Record<string, unknown>) {
+    if (this.ws?.readyState === WebSocket.OPEN) {
+      this.ws.send(JSON.stringify(payload))
+    } else {
+      console.warn('WebSocket not connected, cannot send message')
     }
   }
 
