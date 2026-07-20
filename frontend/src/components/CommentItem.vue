@@ -305,11 +305,13 @@ import SourceTypeBadge from '@/components/SourceTypeBadge.vue'
 import LazyMathJax from '@/components/LazyMathJax.vue'
 import { useAvatarStore } from '@/composables/avatarStore'
 import { useAuth } from '@/composables/useAuth'
+import { useDateFormat } from '@/composables/useDateFormat'
 import { useError } from '@/composables/useError'
 import { useSuccessToast } from '@/composables/useSuccessToast'
 import type { CommentItemApiComment } from '@/types/comment'
 
 const { t, locale } = useI18n()
+const { formatDateTime } = useDateFormat()
 const { showSuccess } = useSuccessToast()
 const { showError } = useError()
 
@@ -656,13 +658,7 @@ const handleBookmarkClick = async (e) => {
 }
 
 const formatDate = (timestamp: number) => {
-  return new Date(timestamp * 1000).toLocaleString(locale.value, {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
+  return formatDateTime(timestamp)
 }
 </script>
 

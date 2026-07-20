@@ -8,6 +8,11 @@
     "aqua": "光沢（アクア）",
     "flat": "フラット（標準）"
   },
+  "date": {
+    "date": "{year}年{month}月{day}日",
+    "time": "{hours}:{minutes}",
+    "dateTime": "{year}年{month}月{day}日 {hours}:{minutes}"
+  },
   "notFoundPage": {
     "pageTitle": "404 — ページが見つかりません",
     "description": "お探しのページは存在しません。",

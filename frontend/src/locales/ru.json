@@ -8,6 +8,11 @@
     "aqua": "Глянцевый (aqua)",
     "flat": "Плоский (стандартный)"
   },
+  "date": {
+    "date": "{day}.{month}.{year}",
+    "time": "{hours}:{minutes}",
+    "dateTime": "{day}.{month}.{year} {hours}:{minutes}"
+  },
   "notFoundPage": {
     "pageTitle": "404 — Страница не найдена",
     "description": "Запрашиваемая страница не существует.",

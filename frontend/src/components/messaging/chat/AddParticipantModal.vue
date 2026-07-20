@@ -72,9 +72,7 @@
               </div>
               <div class="min-w-0 flex-1 text-left">
                 <p class="text-sm font-medium text-gray-900">{{ user.username }}</p>
-                <p class="text-xs text-gray-500">
-                  {{ user.is_online ? 'Online' : 'Offline' }}
-                </p>
+                <p v-if="user.realname" class="text-xs text-gray-500">{{ user.realname }}</p>
               </div>
             </button>
           </div>
@@ -119,6 +117,7 @@ import { ref } from 'vue'
 import { Search, X } from 'lucide-vue-next'
 import { useAuth } from '@/composables/useAuth'
 import { addParticipant } from '@/services/messaging/messagingApi'
+import { listUsers } from '@/api'
 
 interface Props {
   threadId: number
@@ -133,44 +132,51 @@ const emit = defineEmits<{
 
 const auth = useAuth()
 
+interface UserSearchResult {
+  user_id: number
+  username: string
+  realname?: string
+}
+
 // Reactive state
 const searchQuery = ref('')
-const searchResults = ref<Array<{ user_id: number; username: string; is_online: boolean }>>([])
-const selectedUsers = ref<Array<{ user_id: number; username: string; is_online: boolean }>>([])
+const searchResults = ref<UserSearchResult[]>([])
+const selectedUsers = ref<UserSearchResult[]>([])
 const isSearching = ref(false)
 const isAdding = ref(false)
 
+let searchTimeout: ReturnType<typeof setTimeout> | null = null
+
 // Methods
 const handleSearch = async () => {
-  if (!searchQuery.value.trim()) {
+  const query = searchQuery.value.trim()
+  if (!query) {
     searchResults.value = []
+    isSearching.value = false
     return
   }
 
-  isSearching.value = true
-  try {
-    // Mock search - in real implementation, call user search API
-    await new Promise((resolve) => setTimeout(resolve, 300))
-
-    // Mock data - replace with actual API call
-    searchResults.value = [
-      { user_id: 5, username: 'david', is_online: true },
-      { user_id: 6, username: 'eve', is_online: false },
-      { user_id: 7, username: 'frank', is_online: true },
-    ].filter(
-      (user) =>
-        user.username.toLowerCase().includes(searchQuery.value.toLowerCase()) &&
-        user.user_id !== (auth.state.username as unknown)
-    )
-  } catch (error) {
-    console.error('Failed to search users:', error)
-    searchResults.value = []
-  } finally {
-    isSearching.value = false
+  if (searchTimeout) {
+    clearTimeout(searchTimeout)
   }
+
+  isSearching.value = true
+  searchResults.value = []
+  searchTimeout = setTimeout(async () => {
+    try {
+      const response = await listUsers({ search: query, per_page: 20 })
+      const users = (response.data.users ?? []) as UserSearchResult[]
+      searchResults.value = users.filter((user) => user.username !== auth.state.username)
+    } catch (error) {
+      console.error('Failed to search users:', error)
+      searchResults.value = []
+    } finally {
+      isSearching.value = false
+    }
+  }, 300)
 }
 
-const toggleUser = (user: { user_id: number; username: string; is_online: boolean }) => {
+const toggleUser = (user: UserSearchResult) => {
   if (isUserSelected(user.user_id)) {
     removeUser(user.user_id)
   } else {

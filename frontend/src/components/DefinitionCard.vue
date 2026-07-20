@@ -709,15 +709,17 @@ import DeleteConfirmation from '@/components/DeleteConfirmation.vue'
 import ModalComponent from '@/components/ModalComponent.vue'
 import VoteButtons from '@/components/VoteButtons.vue'
 import { useAuth } from '@/composables/useAuth'
+import { useDateFormat } from '@/composables/useDateFormat'
 import { useError } from '@/composables/useError'
 import { isSemanticPreciseMatch } from '@/utils/searchQueryUtils'
 import AudioPlayer from './AudioPlayer.vue'
 import LazyMathJax from './LazyMathJax.vue'
 
-const { t, locale } = useI18n()
+const { t } = useI18n()
 const auth = useAuth()
 const router = useRouter()
 const { showError } = useError()
+const { formatDateTime } = useDateFormat()
 
 const props = defineProps({
   collections: {
@@ -1046,13 +1048,7 @@ const getLanguageName = (langId: number | undefined) => {
 }
 
 const formatDate = (timestamp: string | number) => {
-  return new Date(timestamp).toLocaleString(locale.value, {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    hour: 'numeric',
-    minute: 'numeric',
-  })
+  return formatDateTime(timestamp)
 }
 
 const handleDeleteClick = () => {

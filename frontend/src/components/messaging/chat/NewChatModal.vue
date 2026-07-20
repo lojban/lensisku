@@ -98,9 +98,7 @@
               </div>
               <div class="min-w-0 flex-1 text-left">
                 <p class="text-sm font-medium text-gray-900">{{ user.username }}</p>
-                <p class="text-xs text-gray-500">
-                  {{ user.is_online ? 'Online' : 'Offline' }}
-                </p>
+                <p v-if="user.realname" class="text-xs text-gray-500">{{ user.realname }}</p>
               </div>
             </button>
           </div>
@@ -141,12 +139,13 @@ import { ref, computed, watch } from 'vue'
 import { Search, X } from 'lucide-vue-next'
 import { useAuth } from '@/composables/useAuth'
 import { createThread as createThreadApi } from '@/services/messaging/messagingApi'
+import { listUsers } from '@/api'
 import type { Thread } from '@/types/messaging'
 
-interface User {
+interface UserSearchResult {
   user_id: number
   username: string
-  is_online: boolean
+  realname?: string
 }
 
 const emit = defineEmits<{
@@ -160,10 +159,12 @@ const auth = useAuth()
 const chatType = ref<'direct' | 'group'>('direct')
 const threadName = ref('')
 const searchQuery = ref('')
-const searchResults = ref<User[]>([])
-const selectedParticipants = ref<User[]>([])
+const searchResults = ref<UserSearchResult[]>([])
+const selectedParticipants = ref<UserSearchResult[]>([])
 const isSearching = ref(false)
 const isCreating = ref(false)
+
+let searchTimeout: ReturnType<typeof setTimeout> | null = null
 
 // Computed properties
 const canCreate = computed(() => {
@@ -176,35 +177,34 @@ const canCreate = computed(() => {
 
 // Methods
 const handleSearch = async () => {
-  if (!searchQuery.value.trim()) {
+  const query = searchQuery.value.trim()
+  if (!query) {
     searchResults.value = []
+    isSearching.value = false
     return
   }
 
-  isSearching.value = true
-  try {
-    // Mock search - in real implementation, call user search API
-    await new Promise((resolve) => setTimeout(resolve, 300))
-
-    // Mock data - replace with actual API call
-    searchResults.value = [
-      { user_id: 2, username: 'alice', is_online: true },
-      { user_id: 3, username: 'bob', is_online: false },
-      { user_id: 4, username: 'charlie', is_online: true },
-    ].filter(
-      (user) =>
-        user.username.toLowerCase().includes(searchQuery.value.toLowerCase()) &&
-        user.user_id !== (auth.state.username as unknown)
-    )
-  } catch (error) {
-    console.error('Failed to search users:', error)
-    searchResults.value = []
-  } finally {
-    isSearching.value = false
+  if (searchTimeout) {
+    clearTimeout(searchTimeout)
   }
+
+  isSearching.value = true
+  searchResults.value = []
+  searchTimeout = setTimeout(async () => {
+    try {
+      const response = await listUsers({ search: query, per_page: 20 })
+      const users = (response.data.users ?? []) as UserSearchResult[]
+      searchResults.value = users.filter((user) => user.username !== auth.state.username)
+    } catch (error) {
+      console.error('Failed to search users:', error)
+      searchResults.value = []
+    } finally {
+      isSearching.value = false
+    }
+  }, 300)
 }
 
-const toggleParticipant = (user: User) => {
+const toggleParticipant = (user: UserSearchResult) => {
   if (isParticipantSelected(user.user_id)) {
     removeParticipant(user.user_id)
   } else {

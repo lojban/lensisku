@@ -8,6 +8,11 @@
     "aqua": "光泽（玻璃质感）",
     "flat": "扁平（标准）"
   },
+  "date": {
+    "date": "{year}年{month}月{day}日",
+    "time": "{hours}:{minutes}",
+    "dateTime": "{year}年{month}月{day}日 {hours}:{minutes}"
+  },
   "notFoundPage": {
     "pageTitle": "404 - 页面未找到",
     "description": "您访问的页面不存在。",

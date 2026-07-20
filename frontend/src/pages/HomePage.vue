@@ -445,6 +445,7 @@ import SearchFormSkeleton from '@/components/skeletons/SearchFormSkeleton.vue'
 import { useAuth } from '@/composables/useAuth'
 import { useLanguageSelection } from '@/composables/useLanguageSelection'
 import { useSeoHead } from '@/composables/useSeoHead'
+import { useDateFormat } from '@/composables/useDateFormat'
 import { useI18n } from 'vue-i18n'
 import { SearchQueue } from '@/utils/searchQueue'
 import { queryStr } from '@/utils/routeQuery'
@@ -670,7 +671,8 @@ const error = ref(null)
 const searchFormRef = ref(null)
 const searchResultsRef = ref(null)
 
-const { t, locale } = useI18n()
+const { t } = useI18n()
+const { formatDate } = useDateFormat()
 
 // Truncate search query for page title (max 50 characters)
 const truncatedSearchQuery = computed(() => {
@@ -1024,27 +1026,23 @@ const fetchTrendingAndChanges = async () => {
   }
 }
 
+const dateKey = (d: Date) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+
 const groupedChanges = computed(() => {
   const groups = recentChanges.value.reduce<
     Record<string, { date: Date; changes: RecentChangeRow[] }>
   >((acc, change) => {
-    const date = new Date(change.time * 1000).toLocaleDateString(locale.value)
-    if (!acc[date]) {
-      acc[date] = { date: new Date(change.time * 1000), changes: [] }
+    const d = new Date(change.time * 1000)
+    const key = dateKey(d)
+    if (!acc[key]) {
+      acc[key] = { date: d, changes: [] }
     }
-    acc[date].changes.push(change)
+    acc[key].changes.push(change)
     return acc
   }, {})
   return Object.values(groups).sort((a, b) => b.date.getTime() - a.date.getTime())
 })
-
-const formatDate = (date: Date) =>
-  new Intl.DateTimeFormat(locale.value, {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  }).format(date)
 
 // Generic data fetching for other modes
 const sortBy = ref(searchMode.value === 'messages' ? 'rank' : 'time')
