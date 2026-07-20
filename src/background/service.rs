@@ -325,11 +325,19 @@ pub async fn spawn_background_tasks(
     // Generate missing valsi sounds (Lojban, Kitten TTS Nano 0.8 / Bruno) every 5 minutes
     valsi_tts::spawn_valsi_sound_generation(pool.clone());
 
-    // Cache dictionary exports
-    let export_lock = Arc::new(Mutex::new(()));
-    let pool_clone = pool.clone();
+    // Cache dictionary exports. Skipped when DISABLE_DICTIONARY_EXPORT=1/true/yes
+    // because it runs xelatex at startup and can freeze low-resource dev containers.
+    if std::env::var("DISABLE_DICTIONARY_EXPORT")
+        .ok()
+        .map(|v| matches!(v.to_lowercase().as_str(), "1" | "true" | "yes"))
+        .unwrap_or(false)
+    {
+        info!("DISABLE_DICTIONARY_EXPORT set; skipping dictionary export background task");
+    } else {
+        let export_lock = Arc::new(Mutex::new(()));
+        let pool_clone = pool.clone();
 
-    tokio::spawn(async move {
+        tokio::spawn(async move {
         loop {
             // Acquire lock before starting export (run once at startup, then after each midnight)
             let _lock = export_lock.lock().await;
@@ -376,4 +384,5 @@ pub async fn spawn_background_tasks(
             sleep(sleep_duration).await;
         }
     });
+    }
 }
