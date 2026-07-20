@@ -43,6 +43,10 @@ class NotificationService {
   }
 
   private async checkSupport() {
+    if (typeof window === 'undefined' || typeof navigator === 'undefined') {
+      this.isSupported.value = false
+      return
+    }
     this.isSupported.value =
       'Notification' in window && 'serviceWorker' in navigator && 'PushManager' in window
 
@@ -53,6 +57,9 @@ class NotificationService {
   }
 
   private async getRegistration() {
+    if (typeof navigator === 'undefined') {
+      return
+    }
     if ('serviceWorker' in navigator) {
       this.registration = await navigator.serviceWorker.ready
     }
@@ -69,60 +76,62 @@ class NotificationService {
   }
 
   private async handleIncomingNotification(notification: unknown) {
-    if (document.hidden) {
-      const notif = notification as {
-        id: string
-        title: string
-        body: string
-        thread_id?: number
-        message_id?: number
-      }
-      await this.showNotification({
-        id: notif.id,
-        title: notif.title,
-        body: notif.body,
-        icon: '/icons/icon-192x192.png',
-        badge: '/icons/badge-72x72.png',
-        tag: notif.thread_id?.toString(),
-        data: {
-          threadId: notif.thread_id,
-          messageId: notif.message_id,
-          type: 'message',
-        },
-        requireInteraction: true,
-        actions: [
-          {
-            action: 'reply',
-            title: 'Reply',
-            icon: '/icons/reply.png',
-          },
-          {
-            action: 'mark-read',
-            title: 'Mark as Read',
-            icon: '/icons/check.png',
-          },
-        ],
-      })
+    if (typeof document === 'undefined' || !document.hidden) {
+      return
     }
+    const notif = notification as {
+      id: string
+      title: string
+      body: string
+      thread_id?: number
+      message_id?: number
+    }
+    await this.showNotification({
+      id: notif.id,
+      title: notif.title,
+      body: notif.body,
+      icon: '/icons/icon-192x192.png',
+      badge: '/icons/badge-72x72.png',
+      tag: notif.thread_id?.toString(),
+      data: {
+        threadId: notif.thread_id,
+        messageId: notif.message_id,
+        type: 'message',
+      },
+      requireInteraction: true,
+      actions: [
+        {
+          action: 'reply',
+          title: 'Reply',
+          icon: '/icons/reply.png',
+        },
+        {
+          action: 'mark-read',
+          title: 'Mark as Read',
+          icon: '/icons/check.png',
+        },
+      ],
+    })
   }
 
   private async handleNewMessage(message: Message) {
-    if (document.hidden && message.is_from_sender === false) {
-      await this.showNotification({
-        id: `message-${message.message_id}`,
-        title: 'New Message',
-        body: 'You have a new message',
-        icon: '/icons/icon-192x192.png',
-        badge: '/icons/badge-72x72.png',
-        tag: `thread-${message.thread_id}`,
-        data: {
-          threadId: message.thread_id,
-          messageId: message.message_id,
-          type: 'message',
-        },
-        requireInteraction: false,
-      })
+    if (typeof document === 'undefined' || !document.hidden || message.is_from_sender) {
+      return
     }
+    await this.showNotification({
+      id: `message-${message.message_id}`,
+      title: 'New Message',
+      body: 'You have a new message',
+      icon: '/icons/icon-192x192.png',
+      badge: '/icons/badge-72x72.png',
+      tag: `thread-${message.thread_id}`,
+      data: {
+        threadId: message.thread_id,
+        messageId: message.message_id,
+        type: 'message',
+      },
+      requireInteraction: false,
+    })
   }
 
   public async requestPermission(): Promise<NotificationPermission> {
@@ -171,6 +180,9 @@ class NotificationService {
   }
 
   private handleNotificationClick(data: unknown) {
+    if (typeof window === 'undefined') {
+      return
+    }
     const notificationData = data as {
       type?: string
       threadId?: number
@@ -256,6 +268,9 @@ class NotificationService {
   private urlBase64ToUint8Array(base64String: string): Uint8Array {
     const padding = '='.repeat((4 - (base64String.length % 4)) % 4)
     const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/')
+    if (typeof window === 'undefined' || typeof window.atob !== 'function') {
+      throw new Error('urlBase64ToUint8Array requires a browser environment')
+    }
     const rawData = window.atob(base64)
     const outputArray = new Uint8Array(rawData.length)
 
@@ -270,6 +285,9 @@ class NotificationService {
   private deferredPrompt: BeforeInstallPromptEvent | null = null
 
   public setupInstallPrompt() {
+    if (typeof window === 'undefined') {
+      return
+    }
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault()
       this.deferredPrompt = e as BeforeInstallPromptEvent

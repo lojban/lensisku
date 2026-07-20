@@ -247,7 +247,7 @@ if (typeof window !== 'undefined') {
 }
 
 .thread-item:active {
-  @apply transform scale-98;
+  @apply transform scale-95;
 }
 
 /* Custom scrollbar for thread list */
