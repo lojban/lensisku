@@ -16,8 +16,8 @@ import { useI18n } from 'vue-i18n'
 import ToastFloat from './ToastFloat.vue'
 
 const props = defineProps({
-  message: String,
-  details: String,
+  message: { type: String, default: undefined },
+  details: { type: String, default: undefined },
 })
 
 const { t } = useI18n()

@@ -783,8 +783,8 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
-  collectionId: { type: Number },
-  itemId: { type: Number },
+  collectionId: { type: Number, default: undefined },
+  itemId: { type: Number, default: undefined },
   showScore: {
     type: Boolean,
     default: false,

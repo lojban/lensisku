@@ -21,10 +21,12 @@
             <div
               class="flex-grow p-4 bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200"
             >
+              <!-- eslint-disable vue/no-v-html -->
               <div
                 class="prose prose-sm max-w-none text-gray-600"
                 v-html="renderMarkdown(linkDetails.def1_content)"
               ></div>
+              <!-- eslint-enable vue/no-v-html -->
 
               <div class="mt-4">
                 <RouterLink
@@ -50,10 +52,12 @@
             <div
               class="flex-grow p-4 bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200"
             >
+              <!-- eslint-disable vue/no-v-html -->
               <div
                 class="prose prose-sm max-w-none text-gray-600"
                 v-html="renderMarkdown(linkDetails.def2_content)"
               ></div>
+              <!-- eslint-enable vue/no-v-html -->
 
               <div class="mt-4">
                 <RouterLink

@@ -38,6 +38,8 @@ withDefaults(
     variant?: 'default' | 'role'
   }>(),
   {
+    id: undefined,
+    ariaLabel: undefined,
     variant: 'default',
     truncateLabel: false,
   }

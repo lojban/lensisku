@@ -26,6 +26,10 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
+  swipeLeftAction: undefined,
+  swipeRightAction: undefined,
+  swipeUpAction: undefined,
+  swipeDownAction: undefined,
   swipeThreshold: 50,
   preventDefault: true,
   disabled: false,

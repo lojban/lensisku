@@ -52,6 +52,8 @@ import { useI18n } from 'vue-i18n'
 
 const { t } = useI18n()
 
+defineEmits(['prev', 'next'])
+
 const props = defineProps({
   currentPage: {
     type: Number,

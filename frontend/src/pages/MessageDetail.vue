@@ -87,12 +87,14 @@
     <div class="mt-6 p-4 bg-white rounded-lg shadow-sm border border-gray-100 space-y-6">
       <!-- Text Parts -->
       <template v-for="part in message.parts_json.filter((p) => p.mime_type.startsWith('text/'))">
+        <!-- eslint-disable vue/no-v-html -->
         <div
           v-if="part.mime_type === 'text/plain' || part.mime_type === 'text/html'"
           :key="part.id"
           class="prose max-w-none text-gray-700 message-content"
           v-html="highlightText(replaceCidReferences(part.content, part.mime_type))"
-        />
+        ></div>
+        <!-- eslint-enable vue/no-v-html -->
       </template>
       <!-- Attachments -->
       <div
