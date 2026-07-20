@@ -8,8 +8,9 @@ use log::info;
 use log::{debug, error};
 use std::error::Error;
 use std::io::{Cursor, Write};
-use std::process::Command;
 use tempfile::tempdir;
+use tokio::process::Command;
+use tokio::time::{timeout, Duration};
 use xml::writer::{EventWriter, XmlEvent};
 use zip::write::{SimpleFileOptions, ZipWriter};
 
@@ -38,7 +39,7 @@ pub async fn generate_pdf(
     debug!("LaTeX file written to: {:?}", file_path);
 
     // Set HOME to temp dir to avoid permission issues
-    let mut command = std::process::Command::new("xelatex");
+    let mut command = Command::new("xelatex");
     command
         .current_dir(dir_path)
         .env("HOME", dir_path)
@@ -53,13 +54,18 @@ pub async fn generate_pdf(
                 .ok_or_else(|| format!("Invalid UTF-8 in temporary file path: {:?}", file_path))?,
         );
 
-    // Run xelatex and capture output
+    // Run xelatex and capture output with a hard timeout so a hung TeX
+    // process cannot freeze the async runtime / startup.
     debug!("Executing command: {:?}", command);
-    let output = match command.output() {
-        Ok(out) => out,
-        Err(e) => {
-            error!("Failed to execute xelatex: {}", e);
+    let output = match timeout(Duration::from_secs(300), command.output()).await {
+        Ok(Ok(out)) => out,
+        Ok(Err(e)) => {
+            error!("xelatex failed to run: {}", e);
             return Err(Box::new(e));
+        }
+        Err(_) => {
+            error!("xelatex timed out after 300s");
+            return Err("xelatex timed out after 300s".into());
         }
     };
 
@@ -85,6 +91,7 @@ pub async fn generate_pdf(
         let which_output = Command::new("which")
             .arg("xelatex")
             .output()
+            .await
             .map(|out| String::from_utf8_lossy(&out.stdout).into_owned())
             .unwrap_or_else(|_| "not found".to_string());
         error!("xelatex path: {}", which_output);
