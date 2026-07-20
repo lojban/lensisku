@@ -67,7 +67,7 @@ import { useSeoHead } from '@/composables/useSeoHead'
 import { queryStr } from '@/utils/routeQuery'
 
 const { t } = useI18n()
-const { formatDate, formatTime, formatDateTime } = useDateFormat()
+const { formatDate, formatTime } = useDateFormat()
 
 const tabs = computed(() => [
   { key: 'changes', label: t('recentChanges.recentChanges'), icon: History },
@@ -346,9 +346,6 @@ const groupedChanges = computed(() => {
 })
 
 const formatDateForThread = (timestamp: number) => formatDate(timestamp)
-
-// Re-export date+time formatter for components that need a single combined string
-const _formatDateTime = formatDateTime
 
 // Reactive page title
 const pageTitle = computed(() => {

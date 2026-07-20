@@ -10,8 +10,8 @@
   },
   "date": {
     "date": "de'i li nanca bu {year} masti bu {month} djedi bu {day}",
-    "time": "cacra bu {hours} mennu bu {minutes}",
-    "dateTime": "de'i li nanca bu {year} masti bu {month} djedi bu {day} cacra bu {hours} mennu bu {minutes}"
+    "time": "ti'u li cacra bu {hours} mentu bu {minutes}",
+    "dateTime": "de'i li nanca bu {year} masti bu {month} djedi bu {day} cacra bu {hours} mentu bu {minutes}"
   },
   "notFoundPage": {
     "pageTitle": "404 — le papri na zasti",
