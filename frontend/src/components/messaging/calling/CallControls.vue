@@ -1,10 +1,10 @@
 <template>
-  <div class="call-controls">
-    <div class="flex items-center justify-center space-x-4">
+  <div class="call-controls relative px-2 md:px-0">
+    <div class="flex items-center justify-center gap-4">
       <!-- Microphone Toggle -->
       <button
-        :class="audioButtonClass"
-        class="p-4 rounded-full transition-all duration-200 focus:outline-none focus:ring-4"
+        type="button"
+        :class="[audioButtonClass, '!h-12 !w-12 !p-0 md:!h-14 md:!w-14']"
         :title="isAudioEnabled ? 'Mute microphone' : 'Unmute microphone'"
         @click="$emit('toggle-audio')"
       >
@@ -15,8 +15,8 @@
       <!-- Video Toggle (only for video calls) -->
       <button
         v-if="callType === 'video'"
-        :class="videoButtonClass"
-        class="p-4 rounded-full transition-all duration-200 focus:outline-none focus:ring-4"
+        type="button"
+        :class="[videoButtonClass, '!h-12 !w-12 !p-0 md:!h-14 md:!w-14']"
         :title="isVideoEnabled ? 'Turn off camera' : 'Turn on camera'"
         @click="$emit('toggle-video')"
       >
@@ -26,7 +26,8 @@
 
       <!-- End Call -->
       <button
-        class="p-4 bg-red-600 hover:bg-red-700 rounded-full transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-red-300"
+        type="button"
+        class="ui-btn--delete !h-12 !w-12 !p-0 md:!h-14 md:!w-14"
         title="End call"
         @click="$emit('end-call')"
       >
@@ -38,8 +39,8 @@
         <!-- Screen Share (desktop only) -->
         <button
           v-if="callType === 'video' && !isMobile"
-          :class="screenShareButtonClass"
-          class="p-4 rounded-full transition-all duration-200 focus:outline-none focus:ring-4"
+          type="button"
+          :class="[screenShareButtonClass, '!h-12 !w-12 !p-0 md:!h-14 md:!w-14']"
           title="Share screen"
           @click="toggleScreenShare"
         >
@@ -49,7 +50,8 @@
 
         <!-- More Options -->
         <button
-          class="p-4 bg-gray-600 hover:bg-gray-700 rounded-full transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-gray-300"
+          type="button"
+          class="ui-btn--neutral-muted !h-12 !w-12 !p-0 md:!h-14 md:!w-14"
           title="More options"
           @click="showMoreOptions = !showMoreOptions"
         >
@@ -61,25 +63,28 @@
     <!-- More Options Dropdown -->
     <div
       v-if="showMoreOptions"
-      class="absolute bottom-20 left-1/2 transform -translate-x-1/2 bg-gray-800 rounded-lg shadow-lg p-2 min-w-48"
+      class="absolute bottom-20 left-1/2 -translate-x-1/2 bg-gray-800 rounded-lg shadow-lg p-2 min-w-40 sm:min-w-48 z-10"
     >
       <button
         v-if="callType === 'video'"
-        class="w-full text-left px-4 py-2 text-sm hover:bg-gray-700 rounded flex items-center space-x-2"
+        type="button"
+        class="w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700 rounded flex items-center gap-2"
         @click="toggleCamera"
       >
         <Camera class="h-4 w-4" />
         <span>Switch Camera</span>
       </button>
       <button
-        class="w-full text-left px-4 py-2 text-sm hover:bg-gray-700 rounded flex items-center space-x-2"
+        type="button"
+        class="w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700 rounded flex items-center gap-2"
         @click="toggleSpeaker"
       >
         <Speaker class="h-4 w-4" />
         <span>{{ isSpeakerOn ? 'Mute Speaker' : 'Unmute Speaker' }}</span>
       </button>
       <button
-        class="w-full text-left px-4 py-2 text-sm hover:bg-gray-700 rounded flex items-center space-x-2"
+        type="button"
+        class="w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700 rounded flex items-center gap-2"
         @click="toggleFullscreen"
       >
         <Maximize class="h-4 w-4" />
@@ -87,7 +92,8 @@
       </button>
       <hr class="my-2 border-gray-700" />
       <button
-        class="w-full text-left px-4 py-2 text-sm hover:bg-gray-700 rounded flex items-center space-x-2 text-red-400"
+        type="button"
+        class="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-gray-700 rounded flex items-center gap-2"
         @click="reportIssue"
       >
         <Flag class="h-4 w-4" />
@@ -136,23 +142,17 @@ const isSpeakerOn = ref(true)
 const isMobile = ref(false)
 
 // Computed properties
-const audioButtonClass = computed(() => {
-  return props.isAudioEnabled
-    ? 'bg-gray-600 hover:bg-gray-700 focus:ring-gray-300'
-    : 'bg-red-600 hover:bg-red-700 focus:ring-red-300'
-})
+const audioButtonClass = computed(() =>
+  props.isAudioEnabled ? 'ui-btn--neutral-muted' : 'ui-btn--delete'
+)
 
-const videoButtonClass = computed(() => {
-  return props.isVideoEnabled
-    ? 'bg-gray-600 hover:bg-gray-700 focus:ring-gray-300'
-    : 'bg-red-600 hover:bg-red-700 focus:ring-red-300'
-})
+const videoButtonClass = computed(() =>
+  props.isVideoEnabled ? 'ui-btn--neutral-muted' : 'ui-btn--delete'
+)
 
-const screenShareButtonClass = computed(() => {
-  return isScreenSharing.value
-    ? 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-300'
-    : 'bg-gray-600 hover:bg-gray-700 focus:ring-gray-300'
-})
+const screenShareButtonClass = computed(() =>
+  isScreenSharing.value ? 'ui-btn--create' : 'ui-btn--neutral-muted'
+)
 
 // Methods
 const toggleScreenShare = async () => {
@@ -233,65 +233,15 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-.call-controls {
-  @apply relative;
+.call-controls button {
+  transition: transform 0.2s ease-in-out;
 }
 
-/* Button hover effects */
-button {
-  @apply transform transition-transform duration-200;
+.call-controls button:hover:not(:disabled) {
+  transform: scale(1.05);
 }
 
-button:hover {
-  @apply scale-105;
-}
-
-button:active {
-  @apply scale-95;
-}
-
-/* Dropdown animation */
-.absolute {
-  @apply transition-all duration-200 ease-out;
-}
-
-/* Focus ring styles */
-.focus\:ring-4:focus {
-  @apply ring-4 ring-opacity-50;
-}
-
-/* Mobile optimizations */
-@media (max-width: 640px) {
-  .call-controls {
-    @apply px-2;
-  }
-
-  button {
-    @apply p-3;
-  }
-
-  .min-w-48 {
-    @apply min-w-40;
-  }
-}
-
-/* Dark mode specific styles */
-.bg-gray-800 {
-  @apply shadow-2xl;
-}
-
-/* Animation for screen share indicator */
-@keyframes pulse-blue {
-  0%,
-  100% {
-    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7);
-  }
-  70% {
-    box-shadow: 0 0 0 10px rgba(59, 130, 246, 0);
-  }
-}
-
-.bg-blue-600 {
-  animation: pulse-blue 2s infinite;
+.call-controls button:active:not(:disabled) {
+  transform: scale(0.95);
 }
 </style>

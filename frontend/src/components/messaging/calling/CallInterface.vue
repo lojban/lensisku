@@ -1,10 +1,11 @@
 <template>
-  <div class="call-interface h-full flex flex-col bg-gray-900 text-white">
+  <div class="call-interface h-full min-h-screen flex flex-col bg-gray-900 text-white">
     <!-- Call Header -->
     <header class="flex items-center justify-between p-4 bg-gray-800">
-      <div class="flex items-center space-x-3">
+      <div class="flex items-center gap-3">
         <button
-          class="p-2 hover:bg-gray-700 rounded-full transition-colors"
+          type="button"
+          class="icon-btn-ghost !text-white hover:!bg-gray-700"
           @click="$emit('call-ended')"
         >
           <ArrowLeft class="h-5 w-5" />
@@ -31,11 +32,9 @@
           :srcObject="localStream"
           autoplay
           muted
-          class="w-full h-full object-cover"
+          class="w-full h-full object-cover bg-gray-800"
         />
-        <div class="absolute bottom-2 left-2 text-xs bg-black bg-opacity-50 px-1 py-0.5 rounded">
-          You
-        </div>
+        <div class="absolute bottom-2 left-2 text-xs bg-black/50 px-1 py-0.5 rounded">You</div>
       </div>
 
       <!-- Remote Video(s) -->
@@ -57,10 +56,14 @@
             class="relative w-full h-full max-w-4xl"
           >
             <video
-              :ref="`remoteVideo-${userId}`"
+              :ref="
+                (el) => {
+                  if (el) remoteVideoRefs.set(userId, el as HTMLVideoElement)
+                }
+              "
               :srcObject="stream"
               autoplay
-              class="w-full h-full object-contain"
+              class="w-full h-full object-contain bg-gray-800"
             />
             <div class="absolute bottom-4 left-4 text-lg font-medium">User {{ userId }}</div>
           </div>
@@ -222,35 +225,3 @@ onUnmounted(() => {
   })
 })
 </script>
-
-<style scoped>
-.call-interface {
-  @apply min-h-screen;
-}
-
-@media (max-width: 640px) {
-  .call-interface {
-    @apply h-screen;
-  }
-}
-
-/* Video element styling */
-video {
-  @apply bg-gray-800;
-}
-
-/* Animation for ringing state */
-@keyframes pulse {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
-}
-
-.animate-pulse {
-  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
-</style>

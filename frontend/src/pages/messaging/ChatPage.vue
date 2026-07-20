@@ -1,23 +1,18 @@
 <template>
-  <div class="chat-page h-full flex flex-col bg-gray-50">
+  <div class="chat-page page-sections h-full min-h-0">
     <!-- Chat Header -->
-    <header class="bg-white border-b border-gray-200 px-4 py-3 sm:px-6">
-      <div class="flex items-center justify-between">
-        <div class="flex items-center space-x-3">
+    <header class="page-header-shell">
+      <div class="flex items-center justify-between gap-3">
+        <div class="flex items-center gap-3">
           <!-- Back button on mobile -->
-          <button
-            class="sm:hidden p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-full"
-            @click="$router.back()"
-          >
+          <button type="button" class="icon-btn-ghost sm:hidden" @click="$router.back()">
             <ArrowLeft class="h-5 w-5" />
           </button>
 
           <!-- Thread info -->
-          <div class="flex items-center space-x-3">
+          <div class="flex items-center gap-3">
             <div class="relative">
-              <div
-                class="h-10 w-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-medium"
-              >
+              <div class="avatar-placeholder-sm">
                 {{ getThreadInitials() }}
               </div>
               <!-- Online indicator for direct messages -->
@@ -38,16 +33,13 @@
         </div>
 
         <!-- Header actions -->
-        <div class="flex items-center space-x-2">
-          <button
-            class="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-colors"
-            title="Start video call"
-            @click="startCall"
-          >
+        <div class="flex items-center gap-2">
+          <button type="button" class="icon-btn-ghost" title="Start video call" @click="startCall">
             <Video class="h-5 w-5" />
           </button>
           <button
-            class="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-colors"
+            type="button"
+            class="icon-btn-ghost"
             title="Thread info"
             @click="showThreadInfo = true"
           >
@@ -58,17 +50,20 @@
     </header>
 
     <!-- Messages Area -->
-    <main class="flex-1 overflow-hidden flex flex-col">
+    <main class="assistant-messages-pane flex flex-col flex-1 min-h-0 overflow-hidden">
       <!-- Loading state -->
-      <div v-if="isLoading" class="flex items-center justify-center h-full">
-        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      <div v-if="isLoading" class="card-study-area">
+        <span
+          class="inline-block h-8 w-8 animate-spin rounded-full border-b-2 border-blue-600"
+          aria-hidden="true"
+        />
       </div>
 
       <!-- Messages list -->
       <div
         v-else-if="messages.length > 0"
         ref="messagesContainer"
-        class="flex-1 overflow-y-auto px-4 py-4"
+        class="flex-1 min-h-0 overflow-y-auto px-4 py-4"
       >
         <MessageList
           :messages="messages"
@@ -77,8 +72,8 @@
         />
 
         <!-- Typing indicator -->
-        <div v-if="typingText" class="flex items-center space-x-2 px-4 py-2 text-sm text-gray-500">
-          <div class="flex space-x-1">
+        <div v-if="typingText" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-500">
+          <div class="flex gap-1">
             <div
               class="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
               style="animation-delay: 0ms"
@@ -97,12 +92,10 @@
       </div>
 
       <!-- Empty state -->
-      <div v-else class="flex-1 flex items-center justify-center text-center px-4">
-        <div>
-          <MessageCircle class="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <h3 class="text-lg font-medium text-gray-900 mb-2">No messages yet</h3>
-          <p class="text-gray-500">Start the conversation with a message</p>
-        </div>
+      <div v-else class="empty-state-panel flex-1 justify-center">
+        <MessageCircle class="h-12 w-12 text-gray-400 mb-4" />
+        <h3 class="text-lg font-medium text-gray-900 mb-2">No messages yet</h3>
+        <p class="text-gray-500">Start the conversation with a message</p>
       </div>
 
       <!-- Message Input -->
@@ -343,12 +336,12 @@ onUnmounted(() => {
 
 <style scoped>
 .chat-page {
-  @apply min-h-screen;
+  min-height: 100vh;
 }
 
 @media (max-width: 640px) {
   .chat-page {
-    @apply h-screen;
+    height: 100vh;
   }
 }
 

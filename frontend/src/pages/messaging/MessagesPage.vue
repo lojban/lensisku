@@ -1,45 +1,33 @@
 <template>
-  <div class="messages-page h-full flex flex-col bg-gray-50">
+  <div class="messages-page page-sections h-full min-h-0">
     <!-- Header -->
-    <header class="bg-white border-b border-gray-200 px-4 py-3 sm:px-6">
-      <div class="flex items-center justify-between">
-        <div class="flex items-center space-x-3">
-          <h1 class="text-xl font-semibold text-gray-900">Messages</h1>
-          <div
-            v-if="unreadCount > 0"
-            class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
-          >
-            {{ unreadCount }} unread
-          </div>
+    <header class="page-header-shell">
+      <div class="flex items-center justify-between gap-3">
+        <div class="flex items-center gap-3">
+          <h1 class="page-section-title">Messages</h1>
+          <span v-if="unreadCount > 0" class="badge badge-muted"> {{ unreadCount }} unread </span>
         </div>
-        <button
-          class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-          @click="showNewChatModal = true"
-        >
-          <Plus class="h-4 w-4 mr-1" />
+        <button type="button" class="ui-btn--create" @click="showNewChatModal = true">
+          <Plus class="h-4 w-4" />
           New Chat
         </button>
       </div>
 
       <!-- Search and Filter -->
-      <div class="mt-4 flex flex-col sm:flex-row gap-3">
-        <div class="flex-1 relative">
+      <div class="toolbar-row mt-4">
+        <div class="toolbar-search-slot relative">
           <Search
-            class="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400"
+            class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400"
           />
           <input
             v-model="searchQuery"
             type="text"
             placeholder="Search conversations..."
-            class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            class="input-field pl-9"
             @input="handleSearch"
           />
         </div>
-        <select
-          v-model="filterType"
-          class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          @change="handleFilter"
-        >
+        <select v-model="filterType" class="input-field" @change="handleFilter">
           <option value="all">All</option>
           <option value="direct">Direct Messages</option>
           <option value="group">Group Chats</option>
@@ -48,20 +36,20 @@
     </header>
 
     <!-- Thread List -->
-    <main class="flex-1 overflow-hidden">
-      <div v-if="isLoading" class="flex items-center justify-center h-full">
-        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+    <main class="assistant-messages-pane flex flex-col min-h-0 flex-1 overflow-hidden">
+      <div v-if="isLoading" class="card-study-area">
+        <span
+          class="inline-block h-8 w-8 animate-spin rounded-full border-b-2 border-blue-600"
+          aria-hidden="true"
+        />
       </div>
 
-      <div
-        v-else-if="filteredThreads.length === 0"
-        class="flex flex-col items-center justify-center h-full text-center px-4"
-      >
+      <div v-else-if="filteredThreads.length === 0" class="empty-state-panel flex-1 justify-center">
         <MessageCircle class="h-12 w-12 text-gray-400 mb-4" />
         <h3 class="text-lg font-medium text-gray-900 mb-2">
           {{ searchQuery ? 'No conversations found' : 'No conversations yet' }}
         </h3>
-        <p class="text-gray-500 mb-4">
+        <p class="text-gray-500 mb-4 max-w-xs">
           {{
             searchQuery
               ? 'Try adjusting your search terms'
@@ -70,32 +58,32 @@
         </p>
         <button
           v-if="!searchQuery"
-          class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+          type="button"
+          class="ui-btn--create"
           @click="showNewChatModal = true"
         >
-          <Plus class="h-4 w-4 mr-2" />
+          <Plus class="h-4 w-4" />
           Start New Chat
         </button>
       </div>
 
-      <div v-else class="h-full overflow-y-auto">
-        <ThreadList
-          :threads="filteredThreads"
-          @thread-click="handleThreadClick"
-          @thread-delete="handleThreadDelete"
-        />
+      <div v-else class="flex flex-col min-h-0 flex-1 overflow-hidden">
+        <div class="flex-1 overflow-y-auto min-h-0">
+          <ThreadList
+            :threads="filteredThreads"
+            @thread-click="handleThreadClick"
+            @thread-delete="handleThreadDelete"
+          />
+        </div>
 
         <!-- Load More -->
-        <div v-if="hasMore" class="p-4 text-center">
-          <button
-            :disabled="isLoadingMore"
-            class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
-            @click="loadMore"
-          >
-            <div
+        <div v-if="hasMore" class="p-4 text-center shrink-0 border-t border-gray-200">
+          <button type="button" :disabled="isLoadingMore" class="ui-btn--empty" @click="loadMore">
+            <span
               v-if="isLoadingMore"
-              class="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600 mr-2"
-            ></div>
+              class="inline-block h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"
+              aria-hidden="true"
+            ></span>
             {{ isLoadingMore ? 'Loading...' : 'Load More' }}
           </button>
         </div>
@@ -118,14 +106,13 @@ import { MessageCircle, Plus, Search } from 'lucide-vue-next'
 import { useAuth } from '@/composables/useAuth'
 import { getThreads, deleteThread } from '@/services/messaging/messagingApi'
 import { webSocketService } from '@/services/messaging/WebSocketService'
-import { useMobileOptimizations, debounce } from '@/utils/mobileOptimization'
+import { debounce } from '@/utils/mobileOptimization'
 import ThreadList from '@/components/messaging/chat/ThreadList.vue'
 import NewChatModal from '@/components/messaging/chat/NewChatModal.vue'
 import type { Thread, GetThreadsQuery } from '@/types/messaging'
 
 const router = useRouter()
 const auth = useAuth()
-const { isMobile, isTablet } = useMobileOptimizations()
 
 // Reactive state
 const threads = ref<Thread[]>([])
@@ -138,13 +125,6 @@ const debouncedSearch = debounce((_query: string) => {
   fetchThreads(1, false)
 }, 300)
 
-// Responsive classes
-const _responsiveClasses = computed(() => ({
-  container: isMobile.value ? 'px-2 py-1' : isTablet.value ? 'px-4 py-2' : 'px-6 py-4',
-  input: isMobile.value ? 'text-base' : 'text-sm',
-  button: isMobile.value ? 'p-2' : 'px-4 py-2',
-  spacing: isMobile.value ? 'space-y-2' : 'space-y-4',
-}))
 const filterType = ref<'all' | 'direct' | 'group'>('all')
 const showNewChatModal = ref(false)
 const currentPage = ref(1)

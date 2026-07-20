@@ -1,24 +1,22 @@
 <template>
   <div
-    class="message-bubble max-w-xs lg:max-w-md"
-    :class="{ 'message-sent': isFromSender, 'message-received': !isFromSender }"
+    class="message-bubble cursor-pointer transition-all duration-200"
+    :class="{ 'ml-auto': isFromSender, 'mr-auto': !isFromSender }"
     @click="$emit('click', message)"
   >
-    <div class="relative px-4 py-2 rounded-lg shadow-sm" :class="bubbleClasses">
+    <div class="relative rounded-lg shadow-sm" :class="bubbleClasses">
       <!-- Reply indicator -->
       <div
         v-if="message.reply_to_message_id"
-        class="flex items-center space-x-2 mb-1 text-xs opacity-70"
+        class="flex items-center gap-2 mb-1 text-xs opacity-70"
       >
         <Reply class="h-3 w-3" />
         <span>Replying to a message</span>
       </div>
 
       <!-- Message content -->
-      <div class="text-sm whitespace-pre-wrap break-words" :class="textClasses">
-        <!-- For now, show encrypted content as placeholder -->
-        <!-- In real implementation, this would be decrypted -->
-        <div class="flex items-center space-x-2">
+      <div class="whitespace-pre-wrap break-words">
+        <div class="flex items-center gap-2">
           <Lock class="h-4 w-4 opacity-50" />
           <span>{{ getMessagePreview() }}</span>
         </div>
@@ -27,12 +25,12 @@
       <!-- Message metadata -->
       <div class="flex items-center justify-between mt-1 text-xs" :class="metadataClasses">
         <span>{{ formatTime(message.created_at) }}</span>
-        <div class="flex items-center space-x-1">
+        <div class="flex items-center gap-1">
           <!-- Edit indicator -->
           <span v-if="message.edit_count > 0" class="italic">(edited)</span>
 
           <!-- Delivery status for sent messages -->
-          <div v-if="isFromSender" class="flex items-center space-x-1">
+          <div v-if="isFromSender" class="flex items-center gap-1">
             <Check
               v-if="message.delivery_status === 'sent'"
               class="h-3 w-3"
@@ -45,7 +43,8 @@
             />
             <CheckCheck
               v-else-if="message.delivery_status === 'read'"
-              class="h-3 w-3 text-blue-500"
+              class="h-3 w-3"
+              :class="statusIconClasses"
             />
             <Clock v-else-if="message.delivery_status === 'sending'" class="h-3 w-3 animate-spin" />
           </div>
@@ -72,27 +71,17 @@ defineEmits<{
 }>()
 
 // Computed properties
-const bubbleClasses = computed(() => {
-  const base = 'transition-all duration-200 hover:shadow-md'
+const bubbleClasses = computed(() =>
+  props.message.is_from_sender ? 'assistant-bubble-user' : 'assistant-bubble-assistant'
+)
 
-  if (props.message.is_from_sender) {
-    return `${base} bg-blue-600 text-white`
-  } else {
-    return `${base} bg-white text-gray-900 border border-gray-200`
-  }
-})
+const metadataClasses = computed(() =>
+  props.message.is_from_sender ? 'text-white/70' : 'text-gray-500'
+)
 
-const textClasses = computed(() => {
-  return props.message.is_from_sender ? 'text-blue-50' : 'text-gray-900'
-})
-
-const metadataClasses = computed(() => {
-  return props.message.is_from_sender ? 'text-blue-100' : 'text-gray-500'
-})
-
-const statusIconClasses = computed(() => {
-  return props.message.is_from_sender ? 'text-blue-100' : 'text-gray-400'
-})
+const statusIconClasses = computed(() =>
+  props.message.is_from_sender ? 'text-white/80' : 'text-gray-400'
+)
 
 // Methods
 const getMessagePreview = (): string => {
@@ -135,43 +124,17 @@ const formatTime = (timestamp: string): string => {
 
 <style scoped>
 .message-bubble {
-  @apply transition-all duration-200;
+  cursor: pointer;
+  transition: transform 0.2s ease-in-out;
 }
 
-.message-sent {
-  @apply ml-auto;
+.message-bubble:hover {
+  transform: scale(1.01);
 }
 
-.message-received {
-  @apply mr-auto;
-}
-
-/* Hover effects */
-.message-bubble:hover .relative {
-  @apply transform scale-105;
-}
-
-/* Message status animations */
-.animate-spin {
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-/* Typing indicator for sending messages */
-.message-sent .relative {
-  @apply transition-all duration-200;
-}
-
-/* Focus styles for accessibility */
-.message-bubble:focus {
-  @apply outline-none ring-2 ring-blue-500 ring-offset-2;
+.message-bubble:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px #3b82f6;
+  outline-offset: 2px;
 }
 </style>

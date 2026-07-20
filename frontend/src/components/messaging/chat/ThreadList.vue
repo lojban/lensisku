@@ -1,119 +1,109 @@
 <template>
-  <div class="thread-list">
+  <div class="thread-list divide-y divide-gray-100">
     <div
       v-for="thread in threads"
       :key="thread.thread_id"
-      class="thread-item flex items-center p-4 hover:bg-gray-50 cursor-pointer transition-colors duration-200 border-b border-gray-100"
-      :class="{ 'bg-blue-50': thread.unread_count > 0 }"
+      class="message-thread-card message-thread-card--clickable flex items-center gap-3 p-3 sm:p-4"
+      :class="{ 'bg-blue-50/60': thread.unread_count > 0 }"
       @click="$emit('thread-click', thread)"
     >
       <!-- Avatar -->
-      <div class="flex-shrink-0 mr-3">
+      <div class="shrink-0">
         <div class="relative">
-          <div
-            class="h-12 w-12 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-medium"
-          >
+          <div class="avatar-placeholder-sm">
             {{ getThreadInitials(thread) }}
           </div>
           <!-- Online indicator for direct messages -->
           <div
             v-if="thread.thread_type === 'direct' && isUserOnline(getOtherParticipantId(thread))"
-            class="absolute -bottom-0.5 -right-0.5 h-4 w-4 rounded-full border-2 border-white bg-green-400"
+            class="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full border-2 border-white bg-green-400"
           />
         </div>
       </div>
 
       <!-- Thread Info -->
-      <div class="flex-1 min-w-0">
-        <div class="flex items-center justify-between mb-1">
-          <h3 class="text-sm font-medium text-gray-900 truncate">
+      <div class="min-w-0 flex-1">
+        <div class="flex items-center justify-between gap-2 mb-0.5">
+          <h3 class="link-heading-primary">
             {{ getThreadDisplayName(thread) }}
           </h3>
-          <span class="text-xs text-gray-500 whitespace-nowrap ml-2">
+          <span class="card-meta-date whitespace-nowrap">
             {{ formatTime(thread.last_message_at || thread.updated_at) }}
           </span>
         </div>
 
-        <div class="flex items-center justify-between">
-          <p class="text-sm text-gray-600 truncate">
+        <div class="flex items-center justify-between gap-2">
+          <p class="card-description truncate">
             {{ thread.last_message_preview || 'No messages yet' }}
           </p>
-          <div class="flex items-center space-x-2 ml-2">
+          <div class="flex items-center gap-2 shrink-0">
             <!-- Unread count badge -->
-            <div
+            <span
               v-if="thread.unread_count > 0"
-              class="inline-flex items-center justify-center px-2 py-1 text-xs font-medium text-white bg-blue-600 rounded-full"
-              :class="{
-                'h-5 w-5 text-xs': thread.unread_count <= 9,
-                'px-2': thread.unread_count > 9,
-              }"
+              class="inline-flex items-center justify-center rounded-full text-xs font-medium bg-blue-600 text-white"
+              :class="thread.unread_count > 9 ? 'px-2 py-0.5' : 'h-5 w-5'"
             >
               {{ thread.unread_count > 99 ? '99+' : thread.unread_count }}
-            </div>
+            </span>
 
             <!-- Thread type indicator -->
-            <div class="flex items-center text-gray-400">
+            <span class="text-gray-400">
               <Users v-if="thread.thread_type === 'group'" class="h-3 w-3" />
               <User v-else class="h-3 w-3" />
-            </div>
+            </span>
           </div>
         </div>
 
         <!-- Participants for group chats -->
         <div
           v-if="thread.thread_type === 'group' && thread.participants"
-          class="mt-1 flex items-center text-xs text-gray-500"
+          class="mt-1 flex items-center gap-1 text-xs text-gray-500"
         >
-          <Users class="h-3 w-3 mr-1" />
+          <Users class="h-3 w-3" />
           {{ thread.participant_count }} members
         </div>
       </div>
 
       <!-- Actions -->
-      <div class="flex-shrink-0 ml-3">
+      <div class="shrink-0">
         <div class="relative">
-          <button
-            class="p-1 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition-colors"
-            @click.stop="toggleThreadMenu(thread)"
-          >
+          <button type="button" class="icon-btn-ghost" @click.stop="toggleThreadMenu(thread)">
             <MoreVertical class="h-4 w-4" />
           </button>
 
           <!-- Dropdown menu -->
           <div
             v-if="activeMenu === thread.thread_id"
-            class="absolute right-0 top-full z-10 mt-1 w-48 rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5"
+            class="dropdown-menu-panel absolute right-0 top-full mt-1 w-48 py-1"
           >
-            <div class="py-1">
-              <button
-                class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                @click.stop="markAsRead(thread)"
-              >
-                Mark as read
-              </button>
-              <button
-                class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                @click.stop="muteThread(thread)"
-              >
-                Mute notifications
-              </button>
-              <button
-                class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
-                @click.stop="$emit('thread-delete', thread)"
-              >
-                Delete conversation
-              </button>
-            </div>
+            <button
+              type="button"
+              class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+              @click.stop="markAsRead(thread)"
+            >
+              Mark as read
+            </button>
+            <button
+              type="button"
+              class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+              @click.stop="muteThread(thread)"
+            >
+              Mute notifications
+            </button>
+            <button
+              type="button"
+              class="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+              @click.stop="$emit('thread-delete', thread)"
+            >
+              Delete conversation
+            </button>
           </div>
         </div>
       </div>
     </div>
 
     <!-- Empty state -->
-    <div
-      v-if="threads.length === 0"
-      class="flex flex-col items-center justify-center py-12 text-center"
-    >
+    <div v-if="threads.length === 0" class="empty-state-panel">
       <MessageCircle class="h-12 w-12 text-gray-400 mb-4" />
       <h3 class="text-lg font-medium text-gray-900 mb-2">No conversations</h3>
       <p class="text-gray-500">Start a new conversation to see it here</p>
@@ -122,7 +112,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { MessageCircle, Users, User, MoreVertical } from 'lucide-vue-next'
 import { useAuth } from '@/composables/useAuth'
 import { usePresence } from '@/services/messaging/PresenceService'
@@ -134,7 +124,7 @@ interface Props {
 
 defineProps<Props>()
 
-const _emit = defineEmits<{
+defineEmits<{
   'thread-click': [thread: Thread]
   'thread-delete': [thread: Thread]
 }>()
@@ -144,6 +134,7 @@ const { isUserOnline } = usePresence()
 
 // Reactive state
 const activeMenu = ref<number | null>(null)
+let clickOutsideCleanup: (() => void) | null = null
 
 // Methods
 const getThreadDisplayName = (thread: Thread): string => {
@@ -231,25 +222,17 @@ const handleClickOutside = () => {
   activeMenu.value = null
 }
 
-// Add click outside listener
-if (typeof window !== 'undefined') {
+onMounted(() => {
   document.addEventListener('click', handleClickOutside)
-}
+  clickOutsideCleanup = () => document.removeEventListener('click', handleClickOutside)
+})
+
+onUnmounted(() => {
+  clickOutsideCleanup?.()
+})
 </script>
 
 <style scoped>
-.thread-item {
-  @apply transition-all duration-200;
-}
-
-.thread-item:hover {
-  @apply transform translate-x-1;
-}
-
-.thread-item:active {
-  @apply transform scale-95;
-}
-
 /* Custom scrollbar for thread list */
 .thread-list {
   scrollbar-width: thin;

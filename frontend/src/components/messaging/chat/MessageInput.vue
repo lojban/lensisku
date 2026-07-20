@@ -1,13 +1,8 @@
 <template>
-  <div class="message-input">
-    <form class="flex items-end space-x-2" @submit.prevent="handleSubmit">
+  <div class="message-input surface-comment-form !m-0">
+    <form class="flex items-end gap-2" @submit.prevent="handleSubmit">
       <!-- Attachment button -->
-      <button
-        type="button"
-        class="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full transition-colors"
-        title="Attach file"
-        @click="handleAttachment"
-      >
+      <button type="button" class="icon-btn-ghost" title="Attach file" @click="handleAttachment">
         <Paperclip class="h-5 w-5" />
       </button>
 
@@ -19,7 +14,7 @@
           :placeholder="placeholder"
           :disabled="disabled"
           rows="1"
-          class="w-full px-4 py-2 pr-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none disabled:opacity-50 disabled:cursor-not-allowed"
+          class="textarea-field resize-none pr-12"
           @input="handleInput"
           @keydown="handleKeydown"
           @focus="handleFocus"
@@ -39,14 +34,15 @@
       <button
         type="submit"
         :disabled="!canSend || isSending"
-        class="p-2 text-white bg-blue-600 hover:bg-blue-700 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        class="ui-btn--primary"
         title="Send message"
       >
-        <div
+        <span
           v-if="isSending"
-          class="animate-spin rounded-full h-5 w-5 border-b-2 border-white"
-        ></div>
-        <Send v-else class="h-5 w-5" />
+          class="inline-block h-4 w-4 animate-spin rounded-full border-b-2 border-current"
+          aria-hidden="true"
+        />
+        <Send v-else class="h-4 w-4" />
       </button>
     </form>
 
@@ -223,10 +219,6 @@ defineExpose({
 </script>
 
 <style scoped>
-.message-input {
-  @apply bg-white rounded-lg border border-gray-200 p-2;
-}
-
 /* Custom scrollbar for textarea */
 textarea {
   scrollbar-width: thin;
@@ -248,31 +240,5 @@ textarea::-webkit-scrollbar-thumb {
 
 textarea::-webkit-scrollbar-thumb:hover {
   background-color: #d1d5db;
-}
-
-/* Animation for send button */
-.animate-spin {
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-/* Focus styles */
-textarea:focus {
-  @apply ring-2 ring-blue-500 ring-offset-0;
-}
-
-/* Mobile optimizations */
-@media (max-width: 640px) {
-  .message-input {
-    @apply rounded-none border-l-0 border-r-0 border-b-0;
-  }
 }
 </style>

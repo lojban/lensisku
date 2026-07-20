@@ -2,7 +2,7 @@
   <div class="relative">
     <NavLink
       to="/messages"
-      class="navbar-item relative p-2 text-gray-600 transition-colors duration-200 hover:bg-gray-100 hover:text-gray-900"
+      class="navbar-item relative"
       :class="{ 'text-blue-600': isActive }"
       :aria-label="`Messages${unreadCount > 0 ? ` (${unreadCount} unread)` : ''}`"
     >
@@ -11,8 +11,8 @@
         <!-- Notification badge -->
         <div
           v-if="unreadCount > 0"
-          class="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs font-medium text-white"
-          :class="{ 'h-6 w-6 text-xs': unreadCount > 99 }"
+          class="absolute -top-1 -right-1 inline-flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs font-medium text-white"
+          :class="unreadCount > 99 ? 'h-6 w-6' : ''"
         >
           {{ unreadCount > 99 ? '99+' : unreadCount }}
         </div>
@@ -23,45 +23,43 @@
     <!-- Quick notification dropdown for desktop -->
     <div
       v-if="showNotifications && recentNotifications.length > 0"
-      class="absolute right-0 top-full z-50 mt-2 w-80 rounded-lg bg-white shadow-lg ring-1 ring-black ring-opacity-5"
+      class="card-base card-elevated absolute right-0 top-full z-50 mt-2 w-80 overflow-hidden"
     >
       <div class="p-3 border-b border-gray-100">
         <h3 class="text-sm font-medium text-gray-900">Recent Messages</h3>
       </div>
       <div class="max-h-96 overflow-y-auto">
-        <div
+        <button
           v-for="notification in recentNotifications"
           :key="notification.id"
-          class="flex items-start space-x-3 p-3 hover:bg-gray-50 cursor-pointer transition-colors"
+          type="button"
+          class="flex items-start gap-3 w-full p-3 hover:bg-gray-100 transition-colors text-left"
           @click="handleNotificationClick(notification)"
         >
-          <div class="flex-shrink-0">
-            <div class="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center">
+          <div class="shrink-0">
+            <div class="avatar-placeholder-sm !h-8 !w-8">
               <User class="h-4 w-4 text-gray-500" />
             </div>
           </div>
-          <div class="flex-1 min-w-0">
+          <div class="min-w-0 flex-1">
             <p class="text-sm font-medium text-gray-900 truncate">
               {{ notification.sender_name }}
             </p>
-            <p class="text-sm text-gray-500 truncate">
+            <p class="card-description truncate">
               {{ notification.preview }}
             </p>
-            <p class="text-xs text-gray-400 mt-1">
+            <p class="card-meta-date mt-1">
               {{ formatTime(notification.created_at) }}
             </p>
           </div>
           <div
             v-if="!notification.is_read"
-            class="flex-shrink-0 h-2 w-2 rounded-full bg-blue-500 mt-2"
+            class="shrink-0 h-2 w-2 rounded-full bg-blue-500 mt-2"
           />
-        </div>
+        </button>
       </div>
       <div class="p-2 border-t border-gray-100">
-        <button
-          class="w-full text-center text-sm text-blue-600 hover:text-blue-800 font-medium"
-          @click="goToMessages"
-        >
+        <button type="button" class="ui-btn--link w-full" @click="goToMessages">
           View all messages
         </button>
       </div>
@@ -216,9 +214,3 @@ onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside)
 })
 </script>
-
-<style scoped>
-.navbar-item {
-  @apply relative;
-}
-</style>
