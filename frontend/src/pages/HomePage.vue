@@ -5,14 +5,14 @@
   <CombinedFiltersSkeleton
     v-if="isInitialLoading && (searchMode === 'dictionary' || searchMode === 'semantic')"
   />
-  <!-- Actual Components (hidden while loading) -->
+  <!-- Search Form -->
   <SearchForm
+    v-if="!isInitialLoading"
     ref="searchFormRef"
     :initial-query="searchQuery"
     :initial-mode="searchMode"
     :initial-group-by-thread="groupByThread"
-    class="w-full transition-opacity duration-300"
-    :class="{ 'opacity-0 pointer-events-none h-0 overflow-hidden': isInitialLoading }"
+    class="w-full"
     @search="performSearch"
   />
   <CombinedFilters

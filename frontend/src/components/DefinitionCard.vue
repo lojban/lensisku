@@ -591,10 +591,11 @@
               <div class="text-sm text-gray-600 line-clamp-2">{{ res.definition }}</div>
 
               <div class="mt-1 flex items-center gap-2 text-xs text-gray-400">
-                <span
-                  >{{ t('components.definitionCard.language') }}
-                  {{ getLanguageName(res.langid) }}</span
-                >
+                <span>{{
+                  t('components.activityVotes.inLanguage', {
+                    language: getLanguageName(res.langid),
+                  })
+                }}</span>
                 <span>·</span>
                 <span>{{ t('components.definitionCard.wordType') }} {{ res.type_name }}</span>
               </div>
@@ -700,6 +701,7 @@ interface LinkSearchDefinition {
 interface LanguageOption {
   id: number
   real_name: string
+  lojban_name?: string
 }
 
 import { deleteDefinition, searchDefinitions, linkDefinitions } from '@/api'
@@ -714,8 +716,7 @@ import { useError } from '@/composables/useError'
 import { isSemanticPreciseMatch } from '@/utils/searchQueryUtils'
 import AudioPlayer from './AudioPlayer.vue'
 import LazyMathJax from './LazyMathJax.vue'
-
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const auth = useAuth()
 const router = useRouter()
 const { showError } = useError()
@@ -1044,7 +1045,11 @@ const selmahoLinkQuery = computed(() => {
 
 const getLanguageName = (langId: number | undefined) => {
   const lang = props.languages.find((l) => l.id === langId)
-  return lang ? lang.real_name : ''
+  if (!lang) return ''
+  if (locale.value === 'jbo') {
+    return lang.lojban_name || lang.real_name
+  }
+  return lang.real_name
 }
 
 const formatDate = (timestamp: string | number) => {

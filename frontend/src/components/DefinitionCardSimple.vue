@@ -140,12 +140,12 @@ import LazyMathJax from './LazyMathJax.vue'
 import ModalComponent from '@/components/ModalComponent.vue'
 import type { PropType } from 'vue'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 
 const MAX_VALSI_DISPLAY_LENGTH = 30
 const showValsiModal = ref(false)
 
-type LanguageRow = { langid: number; realname: string }
+type LanguageRow = { langid: number; realname: string; lojbanname?: string; lojban_name?: string }
 
 const props = defineProps({
   definition: {
@@ -216,7 +216,11 @@ const selmahoLinkQuery = computed(() => ({
 
 const getLanguageName = (langId: number) => {
   const lang = props.languages.find((l) => l.langid === langId)
-  return lang ? lang.realname : ''
+  if (!lang) return ''
+  if (locale.value === 'jbo') {
+    return lang.lojbanname || lang.lojban_name || lang.realname
+  }
+  return lang.realname
 }
 
 const formatDate = (dateString: string) => {
