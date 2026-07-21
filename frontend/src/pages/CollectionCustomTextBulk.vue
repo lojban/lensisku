@@ -180,7 +180,7 @@
             }}
           </p>
 
-          <p class="text-xs text-gray-600">
+          <p class="text-xs text-gray-500">
             {{ t('collectionCustomTextBulk.importFinalConfirmHint') }}
           </p>
         </div>
@@ -196,7 +196,7 @@
             </p>
           </div>
 
-          <p class="text-xs text-gray-600">
+          <p class="text-xs text-gray-500">
             {{ t('collectionCustomTextBulk.importColumnMappingHint') }}
           </p>
 
@@ -296,7 +296,7 @@
             />
           </div>
 
-          <p class="text-xs text-gray-600">
+          <p class="text-xs text-gray-500">
             {{ t('collectionCustomTextBulk.importProgressLine', importProgressParams) }}
           </p>
         </div>

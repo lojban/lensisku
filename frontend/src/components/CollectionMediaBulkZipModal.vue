@@ -26,9 +26,9 @@
         >{{ MANIFEST_JSON_EXAMPLE }}</pre
       >
 
-      <p class="text-xs text-gray-600">{{ t('collectionCustomTextBulk.mediaBulkLimits') }}</p>
+      <p class="text-xs text-gray-500">{{ t('collectionCustomTextBulk.mediaBulkLimits') }}</p>
 
-      <p class="text-xs text-gray-600">
+      <p class="text-xs text-gray-500">
         {{
           t('collectionCustomTextBulk.mediaBulkMultipartHint', {
             id: String(props.collectionId),
