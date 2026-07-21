@@ -94,7 +94,7 @@
       <div class="mb-2 ml-6 pl-2 border rounded-md border-l-2 border-gray-300">
         <RouterLink
           :to="`/comments/?thread_id=${processedComment.thread_id}&comment_id=${processedComment.parent_id}&scroll_to=${processedComment.parent_id}&valsi_id=${valsiId || 0}&definition_id=${definitionId || 0}`"
-          class="text-xs text-gray-600 hover:text-blue-500"
+          class="text-xs text-gray-500 hover:text-blue-500"
         >
           <div class="text-sm">
             <div class="flex items-center gap-1 mb-1">
@@ -122,7 +122,7 @@
       <div class="pl-2 border rounded-md border-l-2 border-gray-300">
         <RouterLink
           :to="`/comments/?thread_id=${processedComment.thread_id}&comment_id=${processedComment.parent_id}&scroll_to=${processedComment.parent_id}&valsi_id=${valsiId || 0}&definition_id=${definitionId || 0}`"
-          class="text-xs text-gray-600 hover:text-blue-500"
+          class="text-xs text-gray-500 hover:text-blue-500"
         >
           <div class="text-sm">
             <div class="flex items-center gap-1 mb-1">
@@ -219,7 +219,7 @@
                         emoji.symbol
                       }}</span>
                       <span
-                        class="text-xs text-gray-600 text-center break-words"
+                        class="text-xs text-gray-500 text-center break-words"
                         :lang="locale"
                         style="hyphens: auto"
                         >{{

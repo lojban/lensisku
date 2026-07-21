@@ -191,6 +191,8 @@ pub struct RecentChange {
     pub username: String,
     pub time: i32,
     pub language_name: Option<String>,
+    pub language_english_name: Option<String>,
+    pub language_lojban_name: Option<String>,
     pub diff: Option<VersionDiff>,
     // Comment-type only (optional so non-comment changes stay small)
     pub comment_num: Option<i32>,

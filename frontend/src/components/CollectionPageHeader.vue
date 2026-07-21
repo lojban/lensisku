@@ -70,7 +70,7 @@
       >
         {{ collection.is_public ? publicLabel : privateLabel }}
       </span>
-      <span v-if="collection.owner" class="inline-flex h-6 items-center text-xs text-gray-600">
+      <span v-if="collection.owner" class="inline-flex h-6 items-center text-xs text-gray-500">
         {{ createdByLabel }}
         <RouterLink
           :to="`/user/${collection.owner.username}`"
@@ -79,7 +79,7 @@
           {{ collection.owner.username }}
         </RouterLink>
       </span>
-      <span class="inline-flex h-6 items-center text-xs text-gray-600">{{ itemsCountLabel }}</span>
+      <span class="inline-flex h-6 items-center text-xs text-gray-500">{{ itemsCountLabel }}</span>
     </template>
     <template #meta-trailing> <slot name="meta-actions" /> </template>
     <template #toolbar> <slot name="toolbar" /> </template>

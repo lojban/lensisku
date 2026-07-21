@@ -21,8 +21,8 @@
         >
           {{ getChangeTypeLabel(change.change_type) }}
         </span>
-        <span class="text-xs text-gray-500"> {{ formatTime(change.time) }} </span>
-        <span class="text-xs text-gray-600 italic">
+        <span class="text-xs text-gray-500 italic"> {{ formatTime(change.time) }} </span>
+        <span class="text-xs text-gray-500 italic">
           {{ t('recentChanges.by') }}
           <RouterLink
             v-if="change.change_type !== 'message'"
@@ -48,7 +48,7 @@
             v-if="change.language_name && change.change_type === 'definition'"
             class="italic text-gray-600"
           >
-            {{ t('recentChanges.in') }} {{ change.language_name }}
+            {{ t('recentChanges.in', { language: changeLanguage }) }}
           </span>
           <div
             v-if="change.change_type === 'definition' && change.diff"
@@ -135,7 +135,7 @@ import { useDateFormat } from '@/composables/useDateFormat'
 import CommentItem from '@/components/CommentItem.vue'
 import LazyMathJax from '@/components/LazyMathJax.vue'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const { formatTime } = useDateFormat()
 
 const props = defineProps({
@@ -143,6 +143,14 @@ const props = defineProps({
     type: Object,
     required: true,
   },
+})
+
+const changeLanguage = computed(() => {
+  const c = props.change
+  if (locale.value === 'jbo') {
+    return c.language_lojban_name || c.language_name
+  }
+  return c.language_english_name || c.language_name
 })
 
 // Map recent-change (comment type) to the shape CommentItem expects (reactions, save, etc.)
