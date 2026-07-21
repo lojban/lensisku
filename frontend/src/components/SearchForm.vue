@@ -4,7 +4,10 @@
       <div class="relative z-10 w-auto shrink-0">
         <Dropdown>
           <template #trigger>
-            <button type="button" class="dropdown-trigger dropdown-trigger--search-bar-leading">
+            <button
+              type="button"
+              class="dropdown-trigger dropdown-trigger--search-bar-leading w-16 sm:w-60"
+            >
               <div v-if="mode" class="flex items-center gap-2 min-w-0">
                 <component :is="mode.icon" class="h-4 w-4 shrink-0" :class="mode.color" />
                 <span class="hidden truncate sm:inline">{{ mode.name }}</span>

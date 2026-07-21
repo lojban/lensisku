@@ -1272,7 +1272,7 @@
     },
     "activityVotes": {
       "noVotes": "no votu datni cu zasti",
-      "inLanguage": "bu'u la {language}"
+      "inLanguage": "bau la {language}"
     },
     "voteButtons": {
       "upvoteTitle": "zanru votu",
