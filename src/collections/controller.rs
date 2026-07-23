@@ -11,11 +11,11 @@ use futures::TryStreamExt;
 use serde_json::json;
 
 use super::{dto::*, service};
-use crate::utils::MAX_ITEM_IMAGE_BYTES;
 use crate::auth::Claims;
 use crate::middleware::cache::RedisCache;
 use crate::middleware::limiter::KittenTtsLimiter;
 use crate::users::dto::{ProfileImageRequest, ProfileImageResponse};
+use crate::utils::MAX_ITEM_IMAGE_BYTES;
 use crate::AppError;
 
 const KITTEN_TTS_MAX_TEXT_CHARS: usize = 2000;
@@ -659,7 +659,8 @@ pub async fn update_item_position(
         claims.sub,
         req.position,
     )
-    .await {
+    .await
+    {
         Ok(_) => HttpResponse::Ok().json(json!({
             "message": "Position updated successfully",
             "collection_id": path.0,
@@ -871,9 +872,7 @@ pub async fn post_kitten_tts(
     })
     .await
     {
-        Ok(Ok(bytes)) => HttpResponse::Ok()
-            .content_type("audio/ogg")
-            .body(bytes),
+        Ok(Ok(bytes)) => HttpResponse::Ok().content_type("audio/ogg").body(bytes),
         Ok(Err(msg)) => {
             log::warn!("Kitten TTS synthesis failed: {}", msg);
             if msg.contains("unknown voice") {
@@ -963,7 +962,8 @@ pub async fn bulk_remove_items(
         claims.sub,
         &req.item_ids,
     )
-    .await {
+    .await
+    {
         Ok(response) => HttpResponse::Ok().json(response),
         Err(e) => {
             let msg = e.to_string();
@@ -1072,7 +1072,8 @@ pub async fn bulk_update_custom_text_items(
         claims.sub,
         &req,
     )
-    .await {
+    .await
+    {
         Ok(response) => HttpResponse::Ok().json(response),
         Err(e) => {
             let msg = e.to_string();
@@ -1136,25 +1137,24 @@ pub async fn list_collection_items(
     // Compute the query embedding for semantic ranking when requested. We only embed if there is
     // a non-empty search term and embeddings are not disabled; otherwise we silently fall back to
     // text search (mirrors how /jbovlaste/definitions decays for non-logged-in users).
-    let semantic_embedding = if query.semantic == Some(true)
-        && !crate::utils::embeddings::embeddings_disabled()
-    {
-        let processed = query.search.as_deref().unwrap_or("").trim().to_string();
-        if processed.is_empty() {
-            None
-        } else {
-            match crate::utils::embeddings::get_embedding(&processed).await {
-                Ok(emb) => Some(pgvector::Vector::from(emb)),
-                Err(e) => {
-                    return HttpResponse::InternalServerError().json(json!({
-                        "error": format!("Failed to generate embedding: {}", e)
-                    }));
+    let semantic_embedding =
+        if query.semantic == Some(true) && !crate::utils::embeddings::embeddings_disabled() {
+            let processed = query.search.as_deref().unwrap_or("").trim().to_string();
+            if processed.is_empty() {
+                None
+            } else {
+                match crate::utils::embeddings::get_embedding(&processed).await {
+                    Ok(emb) => Some(pgvector::Vector::from(emb)),
+                    Err(e) => {
+                        return HttpResponse::InternalServerError().json(json!({
+                            "error": format!("Failed to generate embedding: {}", e)
+                        }));
+                    }
                 }
             }
-        }
-    } else {
-        None
-    };
+        } else {
+            None
+        };
 
     let filters = ListCollectionItemsFilters {
         languages,
@@ -1218,15 +1218,7 @@ pub async fn update_item_notes(
     path: web::Path<(i32, i32)>,
     req: web::Json<UpdateItemNotesRequest>,
 ) -> impl Responder {
-    match service::update_item_notes(
-        &pool,
-        &redis_cache,
-        path.0,
-        path.1,
-        claims.sub,
-        &req,
-    )
-    .await {
+    match service::update_item_notes(&pool, &redis_cache, path.0, path.1, claims.sub, &req).await {
         Ok(item) => HttpResponse::Ok().json(item),
         Err(e) => match e.to_string().as_str() {
             "Collection not found" => HttpResponse::NotFound().finish(),

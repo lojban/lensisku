@@ -1938,16 +1938,7 @@ pub async fn export_all_dictionaries(pool: &Pool) -> Result<(), Box<dyn Error + 
             );
 
             // Must bypass DB cache read or we would keep re-storing stale blobs (< 4 days old).
-            match export_dictionary(
-                pool,
-                &lang,
-                *format,
-                &Default::default(),
-                None,
-                1,
-                false,
-            )
-            .await
+            match export_dictionary(pool, &lang, *format, &Default::default(), None, 1, false).await
             {
                 Ok((content, content_type, filename)) => {
                     let c = pool.get().await?;

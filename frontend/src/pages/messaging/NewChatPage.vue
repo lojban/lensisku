@@ -17,8 +17,10 @@
     <main class="flex-1 overflow-hidden">
       <NewChatModal
         :is-full-page="true"
+        :existing-threads="[]"
         @close="$router.back()"
-        @thread-created="handleThreadCreated"
+        @thread-created="openChat"
+        @open-thread="openChat"
       />
     </main>
   </div>
@@ -32,7 +34,7 @@ import type { Thread } from '@/types/messaging'
 
 const router = useRouter()
 
-const handleThreadCreated = (thread: Thread) => {
+const openChat = (thread: Thread) => {
   router.push(`/messages/${thread.thread_id}`)
 }
 </script>

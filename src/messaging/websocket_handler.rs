@@ -1,11 +1,11 @@
 // Simple WebSocket handler for real-time messaging
 // This implementation avoids the complex actor system for easier deployment
 
-use actix_web::{web, HttpRequest, HttpResponse, Result, Error};
-use actix_web_actors::ws;
 use actix::prelude::*;
-use serde::{Deserialize, Serialize};
+use actix_web::{web, Error, HttpRequest, HttpResponse, Result};
+use actix_web_actors::ws;
 use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
 
 use super::service::MessagingService;
 
@@ -37,9 +37,7 @@ pub enum WsMessage {
         thread_id: Option<i64>,
     },
     #[serde(rename = "error")]
-    Error {
-        message: String,
-    },
+    Error { message: String },
     #[serde(rename = "ping")]
     Ping,
     #[serde(rename = "pong")]
@@ -81,7 +79,7 @@ impl Actor for WsSession {
 
     fn started(&mut self, ctx: &mut Self::Context) {
         self.hb(ctx);
-        
+
         // Notify others that user is online
         let status_msg = WsMessage::UserStatus {
             user_id: self.user_id,
@@ -89,7 +87,7 @@ impl Actor for WsSession {
             status: "online".to_string(),
             thread_id: Some(self.thread_id),
         };
-        
+
         if let Ok(msg_text) = serde_json::to_string(&status_msg) {
             ctx.text(msg_text);
         }
@@ -135,7 +133,9 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsSession {
 impl WsSession {
     fn handle_message(&mut self, msg: WsMessage, ctx: &mut ws::WebsocketContext<Self>) {
         match msg {
-            WsMessage::Chat { thread_id, content, .. } => {
+            WsMessage::Chat {
+                thread_id, content, ..
+            } => {
                 // For now, echo back the message
                 // In a real implementation, this would save to database and broadcast
                 let response = WsMessage::Chat {
@@ -146,12 +146,16 @@ impl WsSession {
                     content,
                     timestamp: Utc::now(),
                 };
-                
+
                 if let Ok(msg_text) = serde_json::to_string(&response) {
                     ctx.text(msg_text);
                 }
             }
-            WsMessage::Typing { thread_id, is_typing, .. } => {
+            WsMessage::Typing {
+                thread_id,
+                is_typing,
+                ..
+            } => {
                 // Broadcast typing indicator
                 let typing_msg = WsMessage::Typing {
                     thread_id,
@@ -159,7 +163,7 @@ impl WsSession {
                     user_name: self.username.clone(),
                     is_typing,
                 };
-                
+
                 if let Ok(msg_text) = serde_json::to_string(&typing_msg) {
                     ctx.text(msg_text);
                 }
@@ -189,11 +193,11 @@ pub async fn websocket_handler(
     _service: web::Data<MessagingService>,
 ) -> Result<HttpResponse, Error> {
     let thread_id = path.into_inner();
-    
+
     // For now, create a simple WebSocket session without authentication
     // TODO: Implement proper JWT authentication
     let ws_session = WsSession::new(1, "user".to_string(), thread_id);
-    
+
     ws::start(ws_session, &req, stream)
 }
 
@@ -205,6 +209,6 @@ pub async fn websocket_index_handler(
     // For now, create a simple WebSocket session without authentication
     // TODO: Implement proper JWT authentication
     let ws_session = WsSession::new(1, "user".to_string(), 0);
-    
+
     ws::start(ws_session, &req, stream)
 }

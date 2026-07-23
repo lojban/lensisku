@@ -1,13 +1,12 @@
 // Functional WebRTC signaling handler for peer-to-peer communication
 
 use actix_web::{web, HttpResponse, Result};
-use serde::{Deserialize, Serialize};
 use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
 
-use crate::{AppError, auth::Claims};
-use super::service::MessagingService;
 use super::models::SignalType;
-
+use super::service::MessagingService;
+use crate::{auth::Claims, AppError};
 
 // Request/Response DTOs
 #[derive(Debug, Deserialize)]
@@ -35,7 +34,6 @@ pub struct SignalListResponse {
     total: i64,
 }
 
-
 // Send WebRTC signal
 pub async fn send_signal(
     claims: Claims,
@@ -43,17 +41,19 @@ pub async fn send_signal(
     service: web::Data<MessagingService>,
 ) -> Result<HttpResponse, AppError> {
     let req = request.into_inner();
-    
+
     // Validate signal type manually
     match req.signal_type {
-        SignalType::Offer | SignalType::Answer | SignalType::IceCandidate => {},
+        SignalType::Offer | SignalType::Answer | SignalType::IceCandidate => {}
     }
-    
+
     // Check if users are blocking each other
     if service.is_user_blocked(req.to_user_id, claims.sub).await? {
-        return Err(AppError::Auth("Cannot send signal to blocked user".to_string()));
+        return Err(AppError::Auth(
+            "Cannot send signal to blocked user".to_string(),
+        ));
     }
-    
+
     // Create signal
     let signal = service
         .send_webrtc_signal(
@@ -63,7 +63,7 @@ pub async fn send_signal(
             req.signal_data.clone(),
         )
         .await?;
-    
+
     let response = SignalResponse {
         id: signal.signal_id,
         signal_type: signal.signal_type,
@@ -74,7 +74,7 @@ pub async fn send_signal(
         created_at: signal.created_at,
         expires_at: signal.expires_at,
     };
-    
+
     Ok(HttpResponse::Created().json(response))
 }
 
@@ -85,16 +85,14 @@ pub async fn get_pending_signals(
     service: web::Data<MessagingService>,
 ) -> Result<HttpResponse, AppError> {
     let user_id = path.into_inner();
-    
+
     // Users can only get their own signals
     if claims.sub != user_id {
         return Err(AppError::Auth("Access denied".to_string()));
     }
-    
-    let signals = service
-        .get_pending_webrtc_signals(user_id)
-        .await?;
-    
+
+    let signals = service.get_pending_webrtc_signals(user_id).await?;
+
     let response_signals: Vec<SignalResponse> = signals
         .into_iter()
         .map(|signal| SignalResponse {
@@ -108,13 +106,13 @@ pub async fn get_pending_signals(
             expires_at: signal.expires_at,
         })
         .collect();
-    
+
     let total = response_signals.len() as i64;
     let response = SignalListResponse {
         signals: response_signals,
         total,
     };
-    
+
     Ok(HttpResponse::Ok().json(response))
 }
 
@@ -125,12 +123,12 @@ pub async fn mark_signal_processed(
     service: web::Data<MessagingService>,
 ) -> Result<HttpResponse, AppError> {
     let signal_id = path.into_inner();
-    
+
     // Mark signal as processed
     service
         .mark_webrtc_signal_processed(signal_id, claims.sub)
         .await?;
-    
+
     Ok(HttpResponse::Ok().json(serde_json::json!({
         "message": "Signal marked as processed",
         "signal_id": signal_id
@@ -138,9 +136,7 @@ pub async fn mark_signal_processed(
 }
 
 // Get WebRTC configuration for client
-pub async fn get_webrtc_config(
-    claims: Claims,
-) -> Result<HttpResponse, AppError> {
+pub async fn get_webrtc_config(claims: Claims) -> Result<HttpResponse, AppError> {
     let config = serde_json::json!({
         "ice_servers": [
             {
@@ -159,7 +155,7 @@ pub async fn get_webrtc_config(
         "user_id": claims.sub,
         "timestamp": Utc::now()
     });
-    
+
     Ok(HttpResponse::Ok().json(config))
 }
 
@@ -170,7 +166,7 @@ pub async fn cleanup_expired_signals(
 ) -> Result<HttpResponse, AppError> {
     // TODO: Add admin permission check
     let cleaned_count = service.cleanup_expired_webrtc_signals().await?;
-    
+
     Ok(HttpResponse::Ok().json(serde_json::json!({
         "message": "Expired signals cleaned up",
         "cleaned_count": cleaned_count
@@ -183,7 +179,7 @@ pub async fn get_active_calls(
     service: web::Data<MessagingService>,
 ) -> Result<HttpResponse, AppError> {
     let active_calls = service.get_active_webrtc_calls(claims.sub).await?;
-    
+
     Ok(HttpResponse::Ok().json(serde_json::json!({
         "active_calls": active_calls,
         "user_id": claims.sub

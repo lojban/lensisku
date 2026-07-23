@@ -1,9 +1,9 @@
+pub mod canonical;
 pub mod embeddings;
 pub mod kitten_tts;
 pub mod kitten_tts_singleton;
 pub mod lojban_ipa;
 pub mod openrouter_models;
-pub mod canonical;
 
 use actix_web::{HttpResponse, ResponseError};
 use ammonia::Builder as AmmoniaBuilder;

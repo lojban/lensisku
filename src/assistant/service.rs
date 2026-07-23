@@ -6,8 +6,8 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use actix_web_lab::sse;
-use futures::future::join_all;
 use deadpool_postgres::Pool;
+use futures::future::join_all;
 use parking_lot::RwLock;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -17,15 +17,15 @@ use tokio::time::sleep;
 use once_cell::sync::Lazy;
 use regex::Regex;
 
-use crate::utils::embeddings::get_batch_embeddings;
 use crate::error::AppError;
 use crate::jbovlaste::models::{DefinitionDetail, DefinitionResponse, SearchDefinitionsParams};
+use crate::jbovlaste::service::semantic_search;
 use crate::middleware::cache::{generate_assistant_semantic_cache_key, RedisCache};
+use crate::utils::embeddings::get_batch_embeddings;
 use crate::utils::openrouter_models::{
     evict_openrouter_assistant_model_from_cache, fetch_latest_openrouter_models,
     load_or_fetch_openrouter_candidates, ModelIdName,
 };
-use crate::jbovlaste::service::semantic_search;
 use std::borrow::Cow;
 
 use super::context_compress;
@@ -433,11 +433,7 @@ async fn resolve_jbovlaste_language_tags_to_langids(
 
     let mut ids = Vec::with_capacity(norm.len());
     for t in &norm {
-        ids.push(
-            *resolved_map
-                .get(t)
-                .expect("all norm tags resolved"),
-        );
+        ids.push(*resolved_map.get(t).expect("all norm tags resolved"));
     }
     Ok(Some(ids))
 }
@@ -460,7 +456,8 @@ async fn resolve_optional_source_language_tag(
             return Ok(Some(id));
         }
     }
-    let resolved = resolve_jbovlaste_language_tags_to_langids(pool, std::slice::from_ref(&key)).await?;
+    let resolved =
+        resolve_jbovlaste_language_tags_to_langids(pool, std::slice::from_ref(&key)).await?;
     let Some(v) = resolved else {
         return Err(AppError::Internal(
             "language tag resolution returned None unexpectedly".into(),
@@ -488,11 +485,8 @@ async fn resolve_semantic_search_language_filters(
         None | Some([]) => None,
         Some(tags) => resolve_jbovlaste_language_tags_to_langids(pool, tags).await?,
     };
-    let source_langid = resolve_optional_source_language_tag(
-        pool,
-        source_language.map(|s| s.as_str()),
-    )
-    .await?;
+    let source_langid =
+        resolve_optional_source_language_tag(pool, source_language.map(|s| s.as_str())).await?;
     Ok(ResolvedSemanticFilters {
         languages_langids,
         source_langid,
@@ -762,7 +756,6 @@ impl ToolArgs {
         }
         Ok(v)
     }
-
 }
 
 #[derive(Debug, Clone)]
@@ -775,9 +768,7 @@ struct SearchBatch {
 
 /// Extract a jbovlaste language tag from a locale string (e.g. "en-US" → "en").
 fn language_tag_from_locale(locale: &str) -> Option<String> {
-    let tag = locale
-        .split(['-', '_'])
-        .next()?;
+    let tag = locale.split(['-', '_']).next()?;
     let tag = tag.trim().to_lowercase();
     if tag.len() >= 2 {
         Some(tag)
@@ -897,18 +888,17 @@ async fn run_jbovlaste_semantic_search_core(
         Ok(Some(cached)) => return Ok(cached),
         Ok(None) => {}
         Err(e) => {
-            log::warn!("Assistant semantic cache read failed ({}); running search", e);
+            log::warn!(
+                "Assistant semantic cache read failed ({}); running search",
+                e
+            );
         }
     }
 
     let response = run_db().await?;
 
     if let Err(e) = redis
-        .set(
-            &cache_key,
-            &response,
-            Some(assistant_semantic_cache_ttl()),
-        )
+        .set(&cache_key, &response, Some(assistant_semantic_cache_ttl()))
         .await
     {
         log::warn!("Assistant semantic cache write failed: {}", e);
@@ -931,9 +921,8 @@ async fn run_jbovlaste_semantic_search_with_retry(
             Err(e @ AppError::BadRequest(_)) => return Err(e),
             Err(e) => {
                 if attempt < TOOL_MAX_ATTEMPTS {
-                    let delay = Duration::from_millis(
-                        TOOL_INITIAL_BACKOFF_MS * 2_u64.pow(attempt - 1),
-                    );
+                    let delay =
+                        Duration::from_millis(TOOL_INITIAL_BACKOFF_MS * 2_u64.pow(attempt - 1));
                     log::info!(
                         "Assistant semantic search retry {}/{} for query \"{}\" after {:?}",
                         attempt,
@@ -964,7 +953,10 @@ fn summarise_definition(def: &DefinitionDetail) -> serde_json::Value {
 }
 
 /// Plain-text tool results for the LLM (avoids echoing JSON fragments in the final reply).
-fn semantic_tool_results_plain_text_for_llm(query: &str, definitions: &[DefinitionDetail]) -> String {
+fn semantic_tool_results_plain_text_for_llm(
+    query: &str,
+    definitions: &[DefinitionDetail],
+) -> String {
     let mut out = String::new();
     out.push_str(&format!("Semantic search for: \"{}\"\n\n", query));
     if definitions.is_empty() {
@@ -1274,8 +1266,7 @@ async fn run_agent_loop_with_candidates(
     let candidates = &candidates[..candidates.len().min(2)];
     let parallel_models: Vec<ModelIdName> = candidates.iter().take(2).cloned().collect();
     let is_streaming = event_tx.is_some();
-    let run_parallel =
-        ASSISTANT_PARALLEL_DUAL_MODEL && is_streaming && parallel_models.len() == 2;
+    let run_parallel = ASSISTANT_PARALLEL_DUAL_MODEL && is_streaming && parallel_models.len() == 2;
 
     if let Some(ref tx) = event_tx {
         sse_stream_debug_models_plan(tx, candidates, run_parallel, &parallel_models).await;
@@ -1299,10 +1290,22 @@ async fn run_agent_loop_with_candidates(
         let p2 = persist.clone();
         let (mut r1, mut r2) = tokio::join!(
             run_agent_loop_inner_health_checked(
-                &pool1, &req1, &m1_id, &m1_name, Some(tx1), p1, redis
+                &pool1,
+                &req1,
+                &m1_id,
+                &m1_name,
+                Some(tx1),
+                p1,
+                redis
             ),
             run_agent_loop_inner_health_checked(
-                &pool2, &req2, &m2_id, &m2_name, Some(tx2), p2, redis
+                &pool2,
+                &req2,
+                &m2_id,
+                &m2_name,
+                Some(tx2),
+                p2,
+                redis
             ),
         );
         sse_stream_debug_parallel_branch_finished(&post_debug_tx, &m1_id, &m1_name, &r1).await;
@@ -1546,10 +1549,8 @@ pub(crate) async fn run_agent_loop_inner(
     let system_content = system_prompt_with_dictionary(pool, request.locale.as_deref()).await;
     let context_budget =
         context_compress::ContextBudget::from_env_and_system_prompt(system_content.len());
-    let mut client_round = context_compress::compress_chat_history_for_request(
-        &request.messages,
-        &context_budget,
-    );
+    let mut client_round =
+        context_compress::compress_chat_history_for_request(&request.messages, &context_budget);
     let mut messages: Vec<ChatCompletionMessageRequest> = Vec::new();
     messages.push(ChatCompletionMessageRequest {
         role: "system".to_string(),
@@ -1794,8 +1795,7 @@ pub(crate) async fn run_agent_loop_inner(
                             "You have already searched for \"{}\" {} time(s). \
                              The results are already in this conversation. \
                              Stop searching and formulate your answer now.",
-                            search_query_for_llm,
-                            prior
+                            search_query_for_llm, prior
                         ),
                     });
                     continue;
@@ -1888,24 +1888,22 @@ pub(crate) async fn run_agent_loop_inner(
 
                         let embeddings = get_batch_embeddings(trimmed.clone()).await?;
 
-                        let outcomes = join_all(
-                            trimmed.iter().zip(embeddings).map(|(q, emb)| {
-                                let pool = pool_clone.clone();
-                                let filters = filters.clone();
-                                let sem = sem.clone();
-                                let core = batch.call_core(q);
-                                async move {
-                                    let _permit = sem
-                                        .acquire()
-                                        .await
-                                        .expect("assistant semantic subquery semaphore");
-                                    run_jbovlaste_semantic_search_with_retry(
-                                        &pool, &core, &filters, emb, redis,
-                                    )
+                        let outcomes = join_all(trimmed.iter().zip(embeddings).map(|(q, emb)| {
+                            let pool = pool_clone.clone();
+                            let filters = filters.clone();
+                            let sem = sem.clone();
+                            let core = batch.call_core(q);
+                            async move {
+                                let _permit = sem
+                                    .acquire()
                                     .await
-                                }
-                            }),
-                        )
+                                    .expect("assistant semantic subquery semaphore");
+                                run_jbovlaste_semantic_search_with_retry(
+                                    &pool, &core, &filters, emb, redis,
+                                )
+                                .await
+                            }
+                        }))
                         .await;
                         batch_outcomes_by_slot.insert(slot_i, outcomes);
                     }
@@ -1952,10 +1950,8 @@ pub(crate) async fn run_agent_loop_inner(
                         let (result_summary, tool_payload_value, tool_content_for_llm) =
                             combine_batch_search_outcomes(&batch.queries, outcomes);
 
-                        let tool_content_json =
-                            serde_json::to_string(&tool_payload_value).unwrap_or_else(|_| {
-                                "{}".to_string()
-                            });
+                        let tool_content_json = serde_json::to_string(&tool_payload_value)
+                            .unwrap_or_else(|_| "{}".to_string());
 
                         let step = AssistantStep {
                             action: action_desc.clone(),
@@ -2000,11 +1996,7 @@ pub(crate) async fn run_agent_loop_inner(
         } else {
             // No tool calls: this is the final assistant reply.
             let reply = strip_llm_corner_bracket_segments(
-                &choice
-                    .message
-                    .content
-                    .clone()
-                    .unwrap_or_else(String::new),
+                &choice.message.content.clone().unwrap_or_else(String::new),
             );
 
             // Stuck-recovery: if the model returned empty content with no tools while search
@@ -2017,7 +2009,9 @@ pub(crate) async fn run_agent_loop_inner(
                 );
                 messages.push(ChatCompletionMessageRequest {
                     role: "user".to_string(),
-                    content: "You have search results above. Please use them to answer my question now.".to_string(),
+                    content:
+                        "You have search results above. Please use them to answer my question now."
+                            .to_string(),
                     tool_call_id: None,
                     name: None,
                     tool_calls: None,
@@ -2104,10 +2098,14 @@ mod chat_message_map_tests {
     #[test]
     fn error_indicates_context_detects_keywords() {
         use crate::error::AppError;
-        assert!(super::error_indicates_context_limit(&AppError::ExternalServiceWithRaw {
-            message: "x".into(),
-            raw_response: "prompt is too long".into(),
-        }));
-        assert!(!super::error_indicates_context_limit(&AppError::BadRequest("nope".into())));
+        assert!(super::error_indicates_context_limit(
+            &AppError::ExternalServiceWithRaw {
+                message: "x".into(),
+                raw_response: "prompt is too long".into(),
+            }
+        ));
+        assert!(!super::error_indicates_context_limit(
+            &AppError::BadRequest("nope".into())
+        ));
     }
 }

@@ -13,11 +13,7 @@ pub fn spawn_valsi_sound_generation(pool: Pool) {
         loop {
             sleep(Duration::from_secs(5 * 60)).await;
 
-            if std::env::var("DISABLE_VALSI_TTS")
-                .ok()
-                .as_deref()
-                == Some("1")
-            {
+            if std::env::var("DISABLE_VALSI_TTS").ok().as_deref() == Some("1") {
                 continue;
             }
 
@@ -60,10 +56,7 @@ pub fn spawn_valsi_sound_generation(pool: Pool) {
 /// is false iff the SELECT returned no work — callers should stop draining only when `had_rows` is false.
 async fn run_valsi_sound_batch(pool: &Pool) -> Result<(usize, bool), String> {
     let rows: Vec<(i32, String)> = {
-        let client = pool
-            .get()
-            .await
-            .map_err(|e| format!("db pool: {e}"))?;
+        let client = pool.get().await.map_err(|e| format!("db pool: {e}"))?;
         let rows = client
             .query(
                 "SELECT v.valsiid, v.word
@@ -84,8 +77,7 @@ async fn run_valsi_sound_batch(pool: &Pool) -> Result<(usize, bool), String> {
             )
             .await
             .map_err(|e| e.to_string())?;
-        rows
-            .into_iter()
+        rows.into_iter()
             .map(|row| (row.get("valsiid"), row.get("word")))
             .collect()
     };
@@ -97,28 +89,24 @@ async fn run_valsi_sound_batch(pool: &Pool) -> Result<(usize, bool), String> {
     // One blocking task: load ONNX into RAM, synthesize every row, then drop the session so memory
     // is released until the next interval. `ensure_model_files_cached` inside `load_blocking` only
     // downloads HF artifacts once per process.
-    let synthesized: Vec<(i32, Vec<u8>, String)> =
-        tokio::task::spawn_blocking(move || {
-            let mut engine = crate::utils::kitten_tts::KittenTts::load_blocking()?;
-            let mut out = Vec::new();
-            for (valsi_id, word) in rows {
-                if word.split_whitespace().count() > 5 {
-                    continue;
-                }
-                let ogg = engine.lojban_word_to_ogg_opus(&word)?;
-                out.push((valsi_id, ogg, word));
+    let synthesized: Vec<(i32, Vec<u8>, String)> = tokio::task::spawn_blocking(move || {
+        let mut engine = crate::utils::kitten_tts::KittenTts::load_blocking()?;
+        let mut out = Vec::new();
+        for (valsi_id, word) in rows {
+            if word.split_whitespace().count() > 5 {
+                continue;
             }
-            Ok::<_, String>(out)
-        })
-        .await
-        .map_err(|e| format!("join: {e}"))??;
+            let ogg = engine.lojban_word_to_ogg_opus(&word)?;
+            out.push((valsi_id, ogg, word));
+        }
+        Ok::<_, String>(out)
+    })
+    .await
+    .map_err(|e| format!("join: {e}"))??;
 
     let mut done = 0usize;
     for (valsi_id, ogg, word) in synthesized {
-        let client = pool
-            .get()
-            .await
-            .map_err(|e| format!("db pool: {e}"))?;
+        let client = pool.get().await.map_err(|e| format!("db pool: {e}"))?;
         let insert = client
             .execute(
                 "INSERT INTO valsi_sounds (valsi_id, sound_data, mime_type)

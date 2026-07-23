@@ -2,9 +2,9 @@
 // This module will handle signaling server for direct P2P connections
 
 use crate::{AppError, AppResult};
+use chrono::{Duration, Utc};
 use deadpool_postgres::Pool;
 use serde_json::Value;
-use chrono::{Utc, Duration};
 
 use super::models::{SignalType, WebRTCSignaling};
 
@@ -34,14 +34,14 @@ impl WebRTCService {
         signal_data: Value,
     ) -> AppResult<WebRTCSignaling> {
         let client = self.pool.get().await?;
-        
+
         // Check if users are blocking each other
         if self.is_user_blocked(to_user_id, from_user_id).await? {
             return Err(AppError::Auth("User is blocked".to_string()));
         }
 
         let expires_at = Utc::now() + Duration::minutes(5);
-        
+
         let row = client
             .query_one(
                 "INSERT INTO webrtc_signaling (from_user_id, to_user_id, signal_type, signal_data, expires_at)

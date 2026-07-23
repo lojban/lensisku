@@ -3,8 +3,8 @@ use chrono::{DateTime, Duration, Utc};
 use deadpool_postgres::Pool;
 use deadpool_postgres::Transaction;
 use fsrs::{
-    extract_simulator_config, Card, DEFAULT_PARAMETERS, FSRSItem, FSRSReview, ItemProgress,
-    ItemState, MemoryState, NextStates, RevlogEntry, RevlogReviewKind, FSRS,
+    extract_simulator_config, Card, FSRSItem, FSRSReview, ItemProgress, ItemState, MemoryState,
+    NextStates, RevlogEntry, RevlogReviewKind, DEFAULT_PARAMETERS, FSRS,
 };
 use log::{debug, error, info};
 use std::collections::HashMap;

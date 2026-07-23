@@ -3,9 +3,9 @@ pub mod context_compress;
 pub mod controller;
 pub mod dto;
 pub mod persist;
+mod service;
 pub mod sse_ui_sync;
 pub mod stored_messages;
-mod service;
 
 use actix_web::web;
 

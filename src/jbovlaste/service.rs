@@ -20,7 +20,7 @@ use super::{
     ValsiDetail, ValsiType,
 };
 use crate::jbovlaste::models::{
-    DefinitionDetail, SemanticGraphParams, row_vote_score_f32, row_vote_score_i32,
+    row_vote_score_f32, row_vote_score_i32, DefinitionDetail, SemanticGraphParams,
 };
 use vlazba::jvokaha::jvokaha;
 
@@ -387,10 +387,7 @@ fn build_semantic_graph_knn_edges(
                 .sum();
             pairs.push((j, s));
         }
-        pairs.sort_by(|a, b| {
-            b.1.partial_cmp(&a.1)
-                .unwrap_or(std::cmp::Ordering::Equal)
-        });
+        pairs.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
         for (j, s) in pairs.into_iter().take(k_neighbors) {
             if s < min_similarity {
                 continue;
@@ -570,12 +567,7 @@ pub async fn semantic_graph(
         });
     }
 
-    let edges = build_semantic_graph_knn_edges(
-        &embeddings,
-        k_neighbors,
-        min_sim,
-        &node_ids,
-    );
+    let edges = build_semantic_graph_knn_edges(&embeddings, k_neighbors, min_sim, &node_ids);
 
     Ok(SemanticGraphResponse { nodes, edges })
 }
@@ -1383,8 +1375,8 @@ pub async fn fast_search_definitions(
             sound_url: sound_urls.get(&word).cloned().flatten(),
             embedding: None,
             metadata: None,
-            rafsi: None,           // Not returned in fast search for performance
-            decomposition: None,  // Not returned in fast search for performance
+            rafsi: None,         // Not returned in fast search for performance
+            decomposition: None, // Not returned in fast search for performance
             examples: None,
         });
     }

@@ -6,9 +6,7 @@ use deadpool_postgres::Pool;
 use serde_json::json;
 
 use super::dto::ClientIdGroup;
-use super::{
-    BulkImportRequest, SearchDefinitionsQuery, SemanticGraphQuery, UserVoteResponse,
-};
+use super::{BulkImportRequest, SearchDefinitionsQuery, SemanticGraphQuery, UserVoteResponse};
 use crate::auth::Claims;
 // Removed unused Permission import
 use crate::jbovlaste::broadcast::Broadcaster;
@@ -19,8 +17,8 @@ use crate::jbovlaste::{
     BulkVoteResponse, DefinitionDetail, DefinitionListResponse, DefinitionTranslation,
     ExportPairsQuery, GetImageDefinitionQuery, ImageUploadRequest, LinkDefinitionsRequest,
     RecentChangesQuery, RecentChangesResponse, SearchDefinitionsParams, SemanticGraphParams,
-    SemanticGraphResponse, UpdateDefinitionRequest, UpdateDefinitionResponse, ValsiDefinitionsQuery,
-    ValsiDetail, ValsiTypeListResponse, VoteRequest, VoteResponse,
+    SemanticGraphResponse, UpdateDefinitionRequest, UpdateDefinitionResponse,
+    ValsiDefinitionsQuery, ValsiDetail, ValsiTypeListResponse, VoteRequest, VoteResponse,
 };
 use crate::language::{validate_mathjax_fields, MathJaxValidationOptions};
 use crate::middleware::cache::{
@@ -217,8 +215,11 @@ pub async fn semantic_graph(
 
     let anchor_from_english_valsi = query.semantic == Some(false);
     let embedding = if anchor_from_english_valsi {
-        match service::semantic_graph_anchor_embedding_english_valsi(pool.get_ref(), &processed_text)
-            .await
+        match service::semantic_graph_anchor_embedding_english_valsi(
+            pool.get_ref(),
+            &processed_text,
+        )
+        .await
         {
             Ok(Some(emb)) => emb,
             Ok(None) => {

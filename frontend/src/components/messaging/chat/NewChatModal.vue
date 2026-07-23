@@ -12,6 +12,15 @@
       </div>
 
       <div class="modal-scroll-body px-4 pt-2 pb-6">
+        <!-- Error Message -->
+        <div
+          v-if="errorMessage"
+          role="alert"
+          class="mb-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-600"
+        >
+          {{ errorMessage }}
+        </div>
+
         <!-- Chat Type Selection -->
         <div class="mb-4">
           <label class="filters-field-label">Chat Type</label>
@@ -78,27 +87,42 @@
         <!-- User Search Results -->
         <div v-if="searchResults.length > 0" class="mb-4">
           <div
-            class="max-h-48 overflow-y-auto rounded-lg border border-gray-200 divide-y divide-gray-100"
+            role="list"
+            class="max-h-48 overflow-y-auto rounded-lg border border-gray-200 p-2 space-y-1"
           >
             <button
               v-for="user in searchResults"
               :key="user.user_id"
               type="button"
-              class="surface-list-row flex items-center gap-3 !p-3"
-              @click="toggleParticipant(user)"
+              role="listitem"
+              class="group assistant-session-row flex w-full items-center gap-3"
+              :class="
+                isParticipantSelected(user.user_id)
+                  ? 'assistant-session-row--active'
+                  : 'assistant-session-row--idle'
+              "
+              :aria-pressed="
+                chatType === 'direct' ? isParticipantSelected(user.user_id) : undefined
+              "
+              :aria-label="user.username"
+              @click="handleUserClick(user)"
             >
               <input
+                v-if="chatType === 'group'"
                 type="checkbox"
                 :checked="isParticipantSelected(user.user_id)"
-                class="checkbox-toggle"
+                class="checkbox-toggle shrink-0"
                 @click.stop
+                @change="toggleParticipant(user)"
               />
-              <div class="avatar-placeholder-sm !h-8 !w-8 text-xs">
+              <div class="avatar-placeholder-sm !h-8 !w-8 shrink-0 text-xs">
                 {{ user.username[0]?.toUpperCase() }}
               </div>
               <div class="min-w-0 flex-1 text-left">
-                <p class="text-sm font-medium text-gray-900">{{ user.username }}</p>
-                <p v-if="user.realname" class="text-xs text-gray-500">{{ user.realname }}</p>
+                <p class="truncate text-sm font-medium text-gray-900">{{ user.username }}</p>
+                <p v-if="user.realname" class="truncate text-xs text-gray-500">
+                  {{ user.realname }}
+                </p>
               </div>
             </button>
           </div>
@@ -148,9 +172,19 @@ interface UserSearchResult {
   realname?: string
 }
 
+const props = withDefaults(
+  defineProps<{
+    existingThreads?: Thread[]
+  }>(),
+  {
+    existingThreads: () => [],
+  }
+)
+
 const emit = defineEmits<{
   close: []
   'thread-created': [thread: Thread]
+  'open-thread': [thread: Thread]
 }>()
 
 const auth = useAuth()
@@ -163,6 +197,7 @@ const searchResults = ref<UserSearchResult[]>([])
 const selectedParticipants = ref<UserSearchResult[]>([])
 const isSearching = ref(false)
 const isCreating = ref(false)
+const errorMessage = ref('')
 
 let searchTimeout: ReturnType<typeof setTimeout> | null = null
 
@@ -189,6 +224,7 @@ const handleSearch = async () => {
   }
 
   isSearching.value = true
+  errorMessage.value = ''
   searchResults.value = []
   searchTimeout = setTimeout(async () => {
     try {
@@ -196,6 +232,7 @@ const handleSearch = async () => {
       const users = (response.data.users ?? []) as UserSearchResult[]
       searchResults.value = users.filter((user) => user.username !== auth.state.username)
     } catch (error) {
+      errorMessage.value = 'Failed to search users. Please try again.'
       console.error('Failed to search users:', error)
       searchResults.value = []
     } finally {
@@ -204,16 +241,21 @@ const handleSearch = async () => {
   }, 300)
 }
 
+const handleUserClick = (user: UserSearchResult) => {
+  errorMessage.value = ''
+  if (chatType.value === 'direct') {
+    selectedParticipants.value = [user]
+    createThread()
+  } else {
+    toggleParticipant(user)
+  }
+}
+
 const toggleParticipant = (user: UserSearchResult) => {
   if (isParticipantSelected(user.user_id)) {
     removeParticipant(user.user_id)
   } else {
-    if (chatType.value === 'direct') {
-      // For direct messages, only allow one participant
-      selectedParticipants.value = [user]
-    } else {
-      selectedParticipants.value.push(user)
-    }
+    selectedParticipants.value.push(user)
   }
 }
 
@@ -226,10 +268,23 @@ const removeParticipant = (userId: number) => {
 }
 
 const createThread = async () => {
-  if (!canCreate.value) return
+  if (isCreating.value || !canCreate.value) return
 
   isCreating.value = true
+  errorMessage.value = ''
+
   try {
+    if (chatType.value === 'direct') {
+      const user = selectedParticipants.value[0]
+      const existingThread = props.existingThreads.find(
+        (t) => t.thread_type === 'direct' && t.participants?.some((p) => p.user_id === user.user_id)
+      )
+      if (existingThread) {
+        emit('open-thread', existingThread)
+        return
+      }
+    }
+
     const request = {
       thread_type: chatType.value,
       thread_name: chatType.value === 'group' ? threadName.value.trim() : undefined,
@@ -239,6 +294,7 @@ const createThread = async () => {
     const response = await createThreadApi(request)
     emit('thread-created', response.thread)
   } catch (error) {
+    errorMessage.value = 'Failed to create chat. Please try again.'
     console.error('Failed to create thread:', error)
   } finally {
     isCreating.value = false
@@ -249,5 +305,6 @@ const createThread = async () => {
 watch(chatType, () => {
   selectedParticipants.value = []
   threadName.value = ''
+  errorMessage.value = ''
 })
 </script>

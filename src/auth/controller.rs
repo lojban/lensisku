@@ -390,9 +390,8 @@ pub async fn login(
         .await
         .unwrap_or(false)
     {
-        return Ok(HttpResponse::TooManyRequests().json(
-            "Too many login attempts from this IP. Please try again later.",
-        ));
+        return Ok(HttpResponse::TooManyRequests()
+            .json("Too many login attempts from this IP. Please try again later."));
     }
 
     if login_limiter
@@ -400,9 +399,8 @@ pub async fn login(
         .await
         .unwrap_or(false)
     {
-        return Ok(HttpResponse::TooManyRequests().json(
-            "Too many failed attempts for this account. Please try again later.",
-        ));
+        return Ok(HttpResponse::TooManyRequests()
+            .json("Too many failed attempts for this account. Please try again later."));
     }
 
     match service::login(&pool, &user_data, ip_address, user_agent).await {

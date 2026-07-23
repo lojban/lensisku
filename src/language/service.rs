@@ -141,10 +141,9 @@ pub fn lujvo_segments_from_nodes(input: &str, nodes: &[ParseNode]) -> Option<Vec
                         if nname == "onset" && ne <= e {
                             rafsi_end = rafsi_end.max(ne);
                         }
-                        if (nname == "h" || nname == "y")
-                            && ns < hy_start {
-                                hy_start = ns;
-                            }
+                        if (nname == "h" || nname == "y") && ns < hy_start {
+                            hy_start = ns;
+                        }
                     }
                 }
                 if rafsi_end > s {
@@ -164,14 +163,12 @@ pub fn lujvo_segments_from_nodes(input: &str, nodes: &[ParseNode]) -> Option<Vec
                     } = n
                     {
                         let (ns, ne) = (nspan.0, nspan.1);
-                        if nname != "h" && nname != "y"
-                            && ne > rafsi_end {
-                                rafsi_end = ne;
-                            }
-                        if (nname == "h" || nname == "y")
-                            && ns < hy_start {
-                                hy_start = ns;
-                            }
+                        if nname != "h" && nname != "y" && ne > rafsi_end {
+                            rafsi_end = ne;
+                        }
+                        if (nname == "h" || nname == "y") && ns < hy_start {
+                            hy_start = ns;
+                        }
                     }
                 }
                 if rafsi_end > s {
@@ -797,10 +794,7 @@ mod tests {
 
     #[test]
     fn jvokaha_decomposes_classical_lujvo() {
-        assert_eq!(
-            jvokaha("bramlatu").expect("bramlatu"),
-            vec!["bra", "mlatu"]
-        );
+        assert_eq!(jvokaha("bramlatu").expect("bramlatu"), vec!["bra", "mlatu"]);
         assert_eq!(
             jvokaha("toirbroda").expect("toirbroda"),
             vec!["toi", "r", "broda"]

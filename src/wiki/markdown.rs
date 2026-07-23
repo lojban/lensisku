@@ -95,7 +95,11 @@ fn render_node(node: &Node<'_>, md: &mut String, plain: &mut String, depth: usiz
                     buf
                 }
             };
-            md.push_str(&format!("[{}]({})", label.replace(']', "\\]"), wiki_target_url(target)));
+            md.push_str(&format!(
+                "[{}]({})",
+                label.replace(']', "\\]"),
+                wiki_target_url(target)
+            ));
             plain.push_str(&label);
         }
         Node::ExternalLink { nodes, start, end } => {
@@ -120,11 +124,7 @@ fn render_node(node: &Node<'_>, md: &mut String, plain: &mut String, depth: usiz
             let mut alt = String::new();
             let mut sink = String::new();
             render_nodes(text, &mut alt, &mut sink, depth);
-            md.push_str(&format!(
-                "![{}]({})",
-                alt.trim(),
-                wiki_target_url(target)
-            ));
+            md.push_str(&format!("![{}]({})", alt.trim(), wiki_target_url(target)));
         }
         Node::Category { target, .. } => {
             md.push_str(&format!(
@@ -197,11 +197,7 @@ fn render_node(node: &Node<'_>, md: &mut String, plain: &mut String, depth: usiz
             }
         }
         Node::EndTag { .. } | Node::Comment { .. } | Node::MagicWord { .. } => {}
-        Node::Table {
-            captions,
-            rows,
-            ..
-        } => {
+        Node::Table { captions, rows, .. } => {
             render_table(captions, rows, md, plain, depth);
         }
         Node::Template {
@@ -325,8 +321,8 @@ fn render_template(
         }
 
         // Cmavo / grammar word classes — bold
-        "cmavo" | "grammar" | "nunjikca" | "jikca" | "gln"
-        | "cc" | "ir" | "mv" | "vj" | "ep" | "lg" | "leng" => {
+        "cmavo" | "grammar" | "nunjikca" | "jikca" | "gln" | "cc" | "ir" | "mv" | "vj" | "ep"
+        | "lg" | "leng" => {
             let text = args.first().map(|s| s.as_str()).unwrap_or(name);
             md.push_str(&format!("**{}**", text));
             plain.push_str(text);
@@ -416,13 +412,16 @@ fn render_template(
         }
 
         // Inline text-formatting helpers — pass content through
-        "color" | "colour" | "small" | "sc" | "overline" | "nobr" | "uc" | "lc"
-        | "lang-en" | "lang-de" | "lang" => {
+        "color" | "colour" | "small" | "sc" | "overline" | "nobr" | "uc" | "lc" | "lang-en"
+        | "lang-de" | "lang" => {
             // For lang: first arg is language code, second is text.
             // For others: first arg is the text (or second if first is a colour spec).
             let text = if name_lower == "color" || name_lower == "colour" {
                 // {{color|#hex|text}}
-                args.get(1).or_else(|| args.first()).map(|s| s.as_str()).unwrap_or("")
+                args.get(1)
+                    .or_else(|| args.first())
+                    .map(|s| s.as_str())
+                    .unwrap_or("")
             } else if name_lower == "lang" {
                 args.get(1).map(|s| s.as_str()).unwrap_or("")
             } else {
@@ -473,7 +472,9 @@ fn render_template(
                 } else if let Some(v) = arg.strip_prefix("author=") {
                     author = v.to_string();
                 } else if let Some(v) = arg.strip_prefix("last=") {
-                    if author.is_empty() { author = v.to_string(); }
+                    if author.is_empty() {
+                        author = v.to_string();
+                    }
                 }
             }
             if title.is_empty() && !args.is_empty() {
@@ -501,31 +502,40 @@ fn render_template(
         // See also
         "see also" | "see_also" => {
             // Positional args are page titles; named args (e.g. label1=) are ignored.
-            let links: Vec<&str> = args.iter()
+            let links: Vec<&str> = args
+                .iter()
                 .filter(|a| !a.contains('='))
                 .map(|s| s.as_str())
                 .collect();
             if !links.is_empty() {
                 md.push_str("\n\n**See also:** ");
                 for (i, link) in links.iter().enumerate() {
-                    if i > 0 { md.push_str(", "); }
+                    if i > 0 {
+                        md.push_str(", ");
+                    }
                     md.push_str(&format!("[{}]({})", link, wiki_target_url(link)));
                     plain.push_str(link);
-                    if i + 1 < links.len() { plain.push_str(", "); }
+                    if i + 1 < links.len() {
+                        plain.push_str(", ");
+                    }
                 }
                 md.push_str("\n\n");
             }
         }
 
         // Hatnote / disambiguation / notice boxes — strip (navigation cruft)
-        "hatnote" | "main" | "ombox" | "ambox" | "note" | "side box"
-        | "about" | "for" | "redirect" | "distinguish" => {
+        "hatnote" | "main" | "ombox" | "ambox" | "note" | "side box" | "about" | "for"
+        | "redirect" | "distinguish" => {
             // Could render as blockquote, but they're mostly navigation noise.
         }
 
         // Quotation blocks — blockquote
         "quotation" | "quote box" | "rquote" => {
-            let text = args.iter().find(|a| !a.contains('=')).map(|s| s.as_str()).unwrap_or("");
+            let text = args
+                .iter()
+                .find(|a| !a.contains('='))
+                .map(|s| s.as_str())
+                .unwrap_or("");
             if !text.is_empty() {
                 md.push_str("\n> ");
                 md.push_str(text);
@@ -597,38 +607,135 @@ fn render_template(
         }
 
         // ── Metadata / index / structure — strip silently ────────────────────
-        "ind" | "dsp" | "judri" | "lex" | "ssp" | "startchapter" | "bookcat"
-        | "bpfk section box open" | "bpfk section box close" | "bpfk section from tiki"
-        | "bpfk section poll" | "bpfk"
-        | "se inspekte/en" | "se_inspekte/en" | "se_inspekte/jbo" | "se_inspekte/ru"
-        | "jbocre/en" | "jbocre/ja" | "jbocre/fr" | "jbocre/jbo" | "jbocre"
-        | "nalylojbo/en" | "comment" | "navigation" | "newpage"
-        | "notci" | "secmavo" | "personal" | "csp" | "lfk"
-        | "•" | "=" | "clear" | "false" | "robox" | "robox/close"
-        | "colwidth" | "div col" | "div col end" | "extraclasses"
-        | "int:tadni-url" | "webchat url qwebirc" | "webchat url kiwi" | "webchat url"
-        | "fullpagename" | "fullpagenamee" | "pagename" | "basepagename"
-        | "basepagenamee" | "subpagename" | "namespace" | "ns"
-        | "pageid" | "pagesize" | "numberofarticles" | "currentyear"
-        | "currentday" | "currentmonth" | "currentversion" | "server"
-        | "fullurl" | "localurl" | "canonicalurl" | "filepath" | "urlencode"
-        | "formatnum" | "lcfirst" | "ucfirst" | "subst" | "defaultsort"
-        | "displaytitle" | "int" | "subjectspace" | "subjectpagename"
-        | "doc" | "template" | "template page" | "subject page"
-        | "refimprove section" | "citation needed" | "by whom?" | "clarify" | "sic"
-        | "unsolved" | "status" | "featured article" | "did you know"
-        | "in the news" | "print version" | "print version notice"
-        | "latest news" | "categorylist" | "languages" | "gfdl"
-        | "associated wikimedia" | "wiktionarycat" | "commons"
-        | "sbcnewline" | "sbcnewline2"
-        | "волны ложбана" | "onde" | "wave chunks"
+        "ind"
+        | "dsp"
+        | "judri"
+        | "lex"
+        | "ssp"
+        | "startchapter"
+        | "bookcat"
+        | "bpfk section box open"
+        | "bpfk section box close"
+        | "bpfk section from tiki"
+        | "bpfk section poll"
+        | "bpfk"
+        | "se inspekte/en"
+        | "se_inspekte/en"
+        | "se_inspekte/jbo"
+        | "se_inspekte/ru"
+        | "jbocre/en"
+        | "jbocre/ja"
+        | "jbocre/fr"
+        | "jbocre/jbo"
+        | "jbocre"
+        | "nalylojbo/en"
+        | "comment"
+        | "navigation"
+        | "newpage"
+        | "notci"
+        | "secmavo"
+        | "personal"
+        | "csp"
+        | "lfk"
+        | "•"
+        | "="
+        | "clear"
+        | "false"
+        | "robox"
+        | "robox/close"
+        | "colwidth"
+        | "div col"
+        | "div col end"
+        | "extraclasses"
+        | "int:tadni-url"
+        | "webchat url qwebirc"
+        | "webchat url kiwi"
+        | "webchat url"
+        | "fullpagename"
+        | "fullpagenamee"
+        | "pagename"
+        | "basepagename"
+        | "basepagenamee"
+        | "subpagename"
+        | "namespace"
+        | "ns"
+        | "pageid"
+        | "pagesize"
+        | "numberofarticles"
+        | "currentyear"
+        | "currentday"
+        | "currentmonth"
+        | "currentversion"
+        | "server"
+        | "fullurl"
+        | "localurl"
+        | "canonicalurl"
+        | "filepath"
+        | "urlencode"
+        | "formatnum"
+        | "lcfirst"
+        | "ucfirst"
+        | "subst"
+        | "defaultsort"
+        | "displaytitle"
+        | "int"
+        | "subjectspace"
+        | "subjectpagename"
+        | "doc"
+        | "template"
+        | "template page"
+        | "subject page"
+        | "refimprove section"
+        | "citation needed"
+        | "by whom?"
+        | "clarify"
+        | "sic"
+        | "unsolved"
+        | "status"
+        | "featured article"
+        | "did you know"
+        | "in the news"
+        | "print version"
+        | "print version notice"
+        | "latest news"
+        | "categorylist"
+        | "languages"
+        | "gfdl"
+        | "associated wikimedia"
+        | "wiktionarycat"
+        | "commons"
+        | "sbcnewline"
+        | "sbcnewline2"
+        | "волны ложбана"
+        | "onde"
+        | "wave chunks"
         | "guglgirzu lojban-soudan nuzyfle"
         | "guglgirzu ponjo_lojbo_citno_girzu nuzyfle"
-        | "remoisocial" | "ennuzba" | "nuzba/jbo" | "nalcatni"
-        | "infobox person" | "grammatical moods" | "lexical categories"
-        | "val" | "vajni" | "mun"
-        | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
-        | "-" | "!" | "a" | "t" | "g" | "p/s" => {}
+        | "remoisocial"
+        | "ennuzba"
+        | "nuzba/jbo"
+        | "nalcatni"
+        | "infobox person"
+        | "grammatical moods"
+        | "lexical categories"
+        | "val"
+        | "vajni"
+        | "mun"
+        | "1"
+        | "2"
+        | "3"
+        | "4"
+        | "5"
+        | "6"
+        | "7"
+        | "8"
+        | "9"
+        | "-"
+        | "!"
+        | "a"
+        | "t"
+        | "g"
+        | "p/s" => {}
 
         // All sbc* (Spanish/Portuguese audio-course) templates — strip
         t if t.starts_with("sbc") => {}
@@ -702,8 +809,11 @@ fn render_table(
 }
 
 fn pick_header_row(rows: &[TableRow<'_>]) -> Option<usize> {
-    rows.iter()
-        .position(|r| r.cells.iter().all(|c| matches!(c.type_, TableCellType::Heading)))
+    rows.iter().position(|r| {
+        r.cells
+            .iter()
+            .all(|c| matches!(c.type_, TableCellType::Heading))
+    })
 }
 
 fn write_table_row(cells: &[TableCell<'_>], md: &mut String, plain: &mut String) {
@@ -779,8 +889,14 @@ mod tests {
     fn rewrites_internal_links_for_lensisku_route() {
         let markdown = "See [the language](/papri/Lojban) and [external](https://example.com).";
         let rewritten = rewrite_wiki_links_for_lensisku(markdown);
-        assert!(rewritten.contains("[the language](/wiki/Lojban)"), "rewritten={rewritten}");
-        assert!(rewritten.contains("[external](https://example.com)"), "rewritten={rewritten}");
+        assert!(
+            rewritten.contains("[the language](/wiki/Lojban)"),
+            "rewritten={rewritten}"
+        );
+        assert!(
+            rewritten.contains("[external](https://example.com)"),
+            "rewritten={rewritten}"
+        );
     }
 
     #[test]
@@ -793,8 +909,14 @@ mod tests {
     #[test]
     fn unknown_template_dropped_silently() {
         let (md, _) = wikitext_to_markdown("before {{stub|reason=test}} after");
-        assert!(!md.contains("{{"), "md should not contain raw template syntax: {md}");
-        assert!(md.contains("before") && md.contains("after"), "surrounding text preserved: {md}");
+        assert!(
+            !md.contains("{{"),
+            "md should not contain raw template syntax: {md}"
+        );
+        assert!(
+            md.contains("before") && md.contains("after"),
+            "surrounding text preserved: {md}"
+        );
     }
 
     #[test]
@@ -816,7 +938,10 @@ mod tests {
         let (md, _plain) = wikitext_to_markdown("Text {{ind|index|entry}} more {{dsp|id}} text.");
         assert!(!md.contains("ind"), "md={md}");
         assert!(!md.contains("dsp"), "md={md}");
-        assert!(md.contains("Text") && md.contains("more") && md.contains("text"), "md={md}");
+        assert!(
+            md.contains("Text") && md.contains("more") && md.contains("text"),
+            "md={md}"
+        );
     }
 
     #[test]
@@ -828,7 +953,10 @@ mod tests {
     #[test]
     fn jbovlaste_link_template() {
         let (md, plain) = wikitext_to_markdown("See {{jvs|broda}} for details.");
-        assert!(md.contains("[broda](https://jbovlaste.lojban.org/dict/broda)"), "md={md}");
+        assert!(
+            md.contains("[broda](https://jbovlaste.lojban.org/dict/broda)"),
+            "md={md}"
+        );
         assert!(plain.contains("broda"), "plain={plain}");
     }
 
@@ -849,7 +977,10 @@ mod tests {
     fn see_also_template_renders_links() {
         let (md, _) = wikitext_to_markdown("{{See also|Lojban orthographies}}");
         assert!(md.contains("**See also:**"), "md={md}");
-        assert!(md.contains("[Lojban orthographies](/papri/Lojban_orthographies)"), "md={md}");
+        assert!(
+            md.contains("[Lojban orthographies](/papri/Lojban_orthographies)"),
+            "md={md}"
+        );
     }
 
     #[test]
@@ -861,7 +992,10 @@ mod tests {
     #[test]
     fn lm_template_renders_table_row() {
         let (md, _) = wikitext_to_markdown("{{lm|mi prami do|I love you|gloss}}");
-        assert!(md.contains("| mi prami do | I love you | gloss |"), "md={md}");
+        assert!(
+            md.contains("| mi prami do | I love you | gloss |"),
+            "md={md}"
+        );
     }
 
     #[test]
@@ -869,7 +1003,10 @@ mod tests {
         let (md, _) = wikitext_to_markdown("Text {{Navigation}} more {{Newpage}} text");
         assert!(!md.contains("Navigation"), "md={md}");
         assert!(!md.contains("Newpage"), "md={md}");
-        assert!(md.contains("Text") && md.contains("more") && md.contains("text"), "md={md}");
+        assert!(
+            md.contains("Text") && md.contains("more") && md.contains("text"),
+            "md={md}"
+        );
     }
 
     #[test]

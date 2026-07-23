@@ -50,4 +50,3 @@ pub struct AssistantStep {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub assistant_reasoning: Option<String>,
 }
-

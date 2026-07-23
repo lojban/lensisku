@@ -17,10 +17,7 @@ use super::service;
     summary = "Fetch a mirrored mw.lojban.org article rendered as Markdown",
 )]
 #[get("/{title:.*}")]
-pub async fn get_wiki_article(
-    pool: web::Data<Pool>,
-    path: web::Path<String>,
-) -> impl Responder {
+pub async fn get_wiki_article(pool: web::Data<Pool>, path: web::Path<String>) -> impl Responder {
     let title_raw = path.into_inner();
     let title = match urlencoding::decode(&title_raw) {
         Ok(s) => s.into_owned(),

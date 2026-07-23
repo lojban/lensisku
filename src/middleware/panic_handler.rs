@@ -3,11 +3,7 @@
 //! Requires `panic = 'unwind'` in Cargo.toml (dev and release). Do not use as a replacement
 //! for proper error handling.
 
-use std::{
-    future::ready,
-    panic::AssertUnwindSafe,
-    rc::Rc,
-};
+use std::{future::ready, panic::AssertUnwindSafe, rc::Rc};
 
 use actix_web::{
     dev::{forward_ready, Service, ServiceRequest, ServiceResponse, Transform},
@@ -85,28 +81,21 @@ where
     type Response = ServiceResponse<B>;
     type Error = Error;
     type Future = std::pin::Pin<
-        Box<
-            dyn std::future::Future<Output = Result<ServiceResponse<B>, Error>>
-                + 'static,
-        >,
+        Box<dyn std::future::Future<Output = Result<ServiceResponse<B>, Error>> + 'static>,
     >;
 
     forward_ready!(service);
 
     fn call(&self, req: ServiceRequest) -> Self::Future {
         let fut = self.service.call(req);
-        Box::pin(
-            AssertUnwindSafe(fut)
-                .catch_unwind()
-                .map(|res| match res {
-                    Ok(Ok(resp)) => Ok(resp),
-                    Ok(Err(e)) => Err(e),
-                    Err(panic_payload) => {
-                        let message = panic_message(panic_payload);
-                        log::error!("Handler panicked: {}", message);
-                        Err(Error::from(PanicError { message }))
-                    }
-                }),
-        )
+        Box::pin(AssertUnwindSafe(fut).catch_unwind().map(|res| match res {
+            Ok(Ok(resp)) => Ok(resp),
+            Ok(Err(e)) => Err(e),
+            Err(panic_payload) => {
+                let message = panic_message(panic_payload);
+                log::error!("Handler panicked: {}", message);
+                Err(Error::from(PanicError { message }))
+            }
+        }))
     }
 }
