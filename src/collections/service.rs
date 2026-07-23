@@ -5,11 +5,8 @@ use crate::utils::remove_html_tags;
 use crate::{
     auth_utils::verify_collection_ownership, export::models::CollectionExportItem,
     flashcards::models::FlashcardDirection, middleware::cache::RedisCache,
-    middleware::image::ImageProcessor,
-    utils::validate_item_audio,
-    utils::validate_item_image,
-    utils::MAX_ITEM_IMAGE_BYTES,
-    users::dto::ProfileImageRequest, AppError, AppResult,
+    middleware::image::ImageProcessor, users::dto::ProfileImageRequest, utils::validate_item_audio,
+    utils::validate_item_image, utils::MAX_ITEM_IMAGE_BYTES, AppError, AppResult,
 };
 use base64::{engine::general_purpose::STANDARD as BASE64, Engine};
 use sha2::{Digest, Sha256};
@@ -70,9 +67,7 @@ fn validate_collection_logo(req: &ProfileImageRequest) -> Result<Vec<u8>, String
     }
 
     if !["image/jpeg", "image/png", "image/webp"].contains(&mime) {
-        return Err(
-            "Invalid image type. Supported types: JPEG, PNG, WebP, SVG".to_string(),
-        );
+        return Err("Invalid image type. Supported types: JPEG, PNG, WebP, SVG".to_string());
     }
 
     Ok(decoded)
@@ -459,10 +454,7 @@ async fn query_collections(
 
 /// Recompute all four sort-order snapshots for the public collections list and
 /// store them in Redis. Called by the background job every few hours.
-pub async fn refresh_collection_sort_cache(
-    pool: &Pool,
-    redis: &RedisCache,
-) -> AppResult<()> {
+pub async fn refresh_collection_sort_cache(pool: &Pool, redis: &RedisCache) -> AppResult<()> {
     let client = pool
         .get()
         .await
@@ -2718,10 +2710,7 @@ pub async fn remove_items_bulk(
         .map_err(|e| AppError::Database(e.to_string()))?;
 
     transaction
-        .execute(
-            "DELETE FROM flashcards WHERE item_id = ANY($1)",
-            &[&unique],
-        )
+        .execute("DELETE FROM flashcards WHERE item_id = ANY($1)", &[&unique])
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
 
@@ -3410,7 +3399,8 @@ pub async fn list_collection_items(
     // search_in_phrases=false → exclude phrase-typed valsi (typeid 15) like dictionary search.
     // word_type takes precedence (matches the dictionary search behaviour).
     if filters.word_type.is_none() && filters.search_in_phrases == Some(false) {
-        extra_clauses.push(" AND (v.typeid IS DISTINCT FROM 15 OR ci.definition_id IS NULL)".to_string());
+        extra_clauses
+            .push(" AND (v.typeid IS DISTINCT FROM 15 OR ci.definition_id IS NULL)".to_string());
     }
 
     for clause in &extra_clauses {
@@ -3498,7 +3488,9 @@ pub async fn list_collection_items(
                 has_sound,
                 sound_url,
                 canonical_form: row.get("canonical_form"),
-                flashcard: row.get::<_, Option<i32>>("flashcard_id").map(|flashcard_id| FlashcardResponse {
+                flashcard: row
+                    .get::<_, Option<i32>>("flashcard_id")
+                    .map(|flashcard_id| FlashcardResponse {
                         id: flashcard_id,
                         direction: row.get("flashcard_direction"),
                         created_at: row.get("flashcard_created_at"),
@@ -3624,9 +3616,7 @@ pub async fn list_collection_items(
     }
 
     if filters.word_type.is_none() && filters.search_in_phrases == Some(false) {
-        count_query.push_str(
-            " AND (v.typeid IS DISTINCT FROM 15 OR ci.definition_id IS NULL)",
-        );
+        count_query.push_str(" AND (v.typeid IS DISTINCT FROM 15 OR ci.definition_id IS NULL)");
     }
     let _ = count_param_idx;
 
@@ -4488,9 +4478,8 @@ pub fn parse_media_bulk_manifest_str(raw: &str) -> AppResult<Vec<MediaBulkManife
             MAX_MEDIA_BULK_MANIFEST_JSON_BYTES / 1024
         )));
     }
-    let v: Vec<MediaBulkManifestEntry> = serde_json::from_str(raw).map_err(|e| {
-        AppError::BadRequest(format!("Invalid manifest JSON: {}", e))
-    })?;
+    let v: Vec<MediaBulkManifestEntry> = serde_json::from_str(raw)
+        .map_err(|e| AppError::BadRequest(format!("Invalid manifest JSON: {}", e)))?;
     if v.is_empty() {
         return Err(AppError::BadRequest("manifest array is empty".to_string()));
     }
@@ -4504,7 +4493,9 @@ pub fn parse_media_bulk_manifest_str(raw: &str) -> AppResult<Vec<MediaBulkManife
 }
 
 /// Reads `manifest.json` (exact basename) and image files; keys in the map are entry basenames.
-pub fn load_media_bulk_zip(bytes: &[u8]) -> AppResult<(Vec<MediaBulkManifestEntry>, MediaBulkFileMap)> {
+pub fn load_media_bulk_zip(
+    bytes: &[u8],
+) -> AppResult<(Vec<MediaBulkManifestEntry>, MediaBulkFileMap)> {
     if bytes.len() > MAX_MEDIA_BULK_ZIP_BYTES {
         return Err(AppError::BadRequest(format!(
             "ZIP file exceeds {} MiB (compressed)",
@@ -4564,8 +4555,7 @@ pub fn load_media_bulk_zip(bytes: &[u8]) -> AppResult<(Vec<MediaBulkManifestEntr
         }
 
         let mut buf = Vec::new();
-        file
-            .read_to_end(&mut buf)
+        file.read_to_end(&mut buf)
             .map_err(|e| AppError::BadRequest(format!("ZIP decompress failed: {}", e)))?;
         if buf.len() > cap {
             return Err(AppError::BadRequest(format!(
@@ -4600,9 +4590,7 @@ pub fn load_media_bulk_zip(bytes: &[u8]) -> AppResult<(Vec<MediaBulkManifestEntr
     }
 
     let manifest_vec = manifest.ok_or_else(|| {
-        AppError::BadRequest(
-            "ZIP must include a manifest.json file (any folder depth)".to_string(),
-        )
+        AppError::BadRequest("ZIP must include a manifest.json file (any folder depth)".to_string())
     })?;
 
     Ok((manifest_vec, files))

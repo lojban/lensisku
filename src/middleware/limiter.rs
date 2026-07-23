@@ -65,9 +65,9 @@ impl LoginLimiter {
     pub fn new(redis_url: &str) -> Result<Self, redis::RedisError> {
         Ok(Self {
             client: Client::open(redis_url)?,
-            attempt_window_secs: 15 * 60,      // 15 minutes
+            attempt_window_secs: 15 * 60, // 15 minutes
             max_attempts_per_ip: 20,
-            failure_window_secs: 15 * 60,      // 15 minutes
+            failure_window_secs: 15 * 60, // 15 minutes
             max_failures_per_identifier: 5,
         })
     }

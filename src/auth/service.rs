@@ -13,7 +13,7 @@ use tokio::task;
 use actix_web::{dev::ServiceRequest, error::ErrorUnauthorized, HttpMessage};
 use actix_web::{web, Error};
 use actix_web_httpauth::extractors::bearer::BearerAuth;
-use jsonwebtoken::{decode, DecodingKey, Algorithm, Validation};
+use jsonwebtoken::{decode, Algorithm, DecodingKey, Validation};
 
 use deadpool_postgres::Pool;
 use rand::{rng, Rng};
@@ -1562,7 +1562,9 @@ pub async fn google_oauth_signup(pool: &Pool, code: &str, _state: &str) -> AppRe
 
     let client = oauth2::basic::BasicClient::new(ClientId::new(google_client_id))
         .set_client_secret(ClientSecret::new(google_client_secret))
-        .set_auth_uri(AuthUrl::new("https://accounts.google.com/o/oauth2/auth".to_string()).unwrap())
+        .set_auth_uri(
+            AuthUrl::new("https://accounts.google.com/o/oauth2/auth".to_string()).unwrap(),
+        )
         .set_token_uri(TokenUrl::new("https://oauth2.googleapis.com/token".to_string()).unwrap())
         .set_redirect_uri(RedirectUrl::new(google_redirect_url).unwrap());
 

@@ -60,9 +60,10 @@ pub struct ImportBody {
 }
 
 pub async fn count_user_chats(pool: &Pool, user_id: i32) -> Result<i64, AppError> {
-    let client = pool.get().await.map_err(|e| {
-        AppError::Database(format!("assistant_chats count pool: {}", e))
-    })?;
+    let client = pool
+        .get()
+        .await
+        .map_err(|e| AppError::Database(format!("assistant_chats count pool: {}", e)))?;
     let row = client
         .query_one(
             "SELECT COUNT(*)::bigint FROM assistant_chats WHERE user_id = $1",
@@ -73,13 +74,11 @@ pub async fn count_user_chats(pool: &Pool, user_id: i32) -> Result<i64, AppError
     Ok(row.get::<_, i64>(0))
 }
 
-pub async fn list_chats(
-    pool: &Pool,
-    user_id: i32,
-) -> Result<Vec<AssistantChatListItem>, AppError> {
-    let client = pool.get().await.map_err(|e| {
-        AppError::Database(format!("assistant_chats list pool: {}", e))
-    })?;
+pub async fn list_chats(pool: &Pool, user_id: i32) -> Result<Vec<AssistantChatListItem>, AppError> {
+    let client = pool
+        .get()
+        .await
+        .map_err(|e| AppError::Database(format!("assistant_chats list pool: {}", e)))?;
     let rows = client
         .query(
             "SELECT id, title, updated_at FROM assistant_chats WHERE user_id = $1 ORDER BY updated_at DESC LIMIT $2",
@@ -103,9 +102,10 @@ pub async fn get_chat(
     user_id: i32,
     chat_id: Uuid,
 ) -> Result<Option<AssistantChatRow>, AppError> {
-    let client = pool.get().await.map_err(|e| {
-        AppError::Database(format!("assistant_chats get pool: {}", e))
-    })?;
+    let client = pool
+        .get()
+        .await
+        .map_err(|e| AppError::Database(format!("assistant_chats get pool: {}", e)))?;
     let row = client
         .query_opt(
             "SELECT id, user_id, title, messages, primary_model_id, scroll_top, updated_at, created_at \
@@ -134,9 +134,10 @@ pub async fn create_chat(pool: &Pool, user_id: i32) -> Result<ChatCreateResult, 
             MAX_CHATS_PER_USER
         )));
     }
-    let client = pool.get().await.map_err(|e| {
-        AppError::Database(format!("assistant_chats create pool: {}", e))
-    })?;
+    let client = pool
+        .get()
+        .await
+        .map_err(|e| AppError::Database(format!("assistant_chats create pool: {}", e)))?;
     let row = client
         .query_one(
             "INSERT INTO assistant_chats (user_id, title, messages) VALUES ($1, $2, $3::jsonb) \
@@ -166,9 +167,10 @@ pub async fn update_chat(
     chat_id: Uuid,
     body: &AssistantChatPutBody,
 ) -> Result<(), AppError> {
-    let client = pool.get().await.map_err(|e| {
-        AppError::Database(format!("assistant_chats update pool: {}", e))
-    })?;
+    let client = pool
+        .get()
+        .await
+        .map_err(|e| AppError::Database(format!("assistant_chats update pool: {}", e)))?;
     let n = client
         .execute(
             "UPDATE assistant_chats SET title = $1, messages = $2::jsonb, \
@@ -199,9 +201,10 @@ pub async fn persist_messages_and_maybe_model(
     messages: &Value,
     primary_model_from_done: Option<&str>,
 ) -> Result<(), AppError> {
-    let client = pool.get().await.map_err(|e| {
-        AppError::Database(format!("assistant_chats persist pool: {}", e))
-    })?;
+    let client = pool
+        .get()
+        .await
+        .map_err(|e| AppError::Database(format!("assistant_chats persist pool: {}", e)))?;
     if let Some(mid) = primary_model_from_done {
         let n = client
             .execute(
@@ -232,9 +235,10 @@ pub async fn persist_messages_and_maybe_model(
 }
 
 pub async fn delete_chat(pool: &Pool, user_id: i32, chat_id: Uuid) -> Result<(), AppError> {
-    let client = pool.get().await.map_err(|e| {
-        AppError::Database(format!("assistant_chats delete pool: {}", e))
-    })?;
+    let client = pool
+        .get()
+        .await
+        .map_err(|e| AppError::Database(format!("assistant_chats delete pool: {}", e)))?;
     let n = client
         .execute(
             "DELETE FROM assistant_chats WHERE id = $1 AND user_id = $2",
@@ -268,9 +272,10 @@ pub async fn import_sessions(
     if sessions.len() as i64 > MAX_CHATS_PER_USER {
         sessions.truncate(MAX_CHATS_PER_USER as usize);
     }
-    let mut client = pool.get().await.map_err(|e| {
-        AppError::Database(format!("assistant_chats import pool: {}", e))
-    })?;
+    let mut client = pool
+        .get()
+        .await
+        .map_err(|e| AppError::Database(format!("assistant_chats import pool: {}", e)))?;
     let tx = client
         .transaction()
         .await

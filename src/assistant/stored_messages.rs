@@ -131,10 +131,7 @@ pub fn build_chat_messages_from_stored(
                         }
                     }
                 } else {
-                    let text = reply
-                        .get("content")
-                        .and_then(|c| c.as_str())
-                        .unwrap_or("");
+                    let text = reply.get("content").and_then(|c| c.as_str()).unwrap_or("");
                     out.push(ChatMessage {
                         role: "assistant".into(),
                         content: text.to_string(),
@@ -144,10 +141,7 @@ pub fn build_chat_messages_from_stored(
                     });
                 }
             } else {
-                let text = reply
-                    .get("content")
-                    .and_then(|c| c.as_str())
-                    .unwrap_or("");
+                let text = reply.get("content").and_then(|c| c.as_str()).unwrap_or("");
                 out.push(ChatMessage {
                     role: "assistant".into(),
                     content: text.to_string(),

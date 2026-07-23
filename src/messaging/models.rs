@@ -1,8 +1,8 @@
 use chrono::{DateTime, Utc};
-use serde::{Deserialize, Serialize};
-use utoipa::ToSchema;
 use postgres_types::{FromSql, ToSql};
+use serde::{Deserialize, Serialize};
 use std::fmt;
+use utoipa::ToSchema;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, ToSchema)]
 #[serde(rename_all = "lowercase")]
@@ -22,10 +22,13 @@ impl fmt::Display for ThreadType {
 
 impl FromSql<'_> for ThreadType {
     fn accepts(ty: &postgres_types::Type) -> bool {
-        ty.name() == "thread_type"
+        ty.name() == "thread_type" || ty.name() == "text" || ty.name() == "varchar"
     }
 
-    fn from_sql(_ty: &postgres_types::Type, raw: &[u8]) -> Result<Self, Box<dyn std::error::Error + Sync + Send>> {
+    fn from_sql(
+        _ty: &postgres_types::Type,
+        raw: &[u8],
+    ) -> Result<Self, Box<dyn std::error::Error + Sync + Send>> {
         let value = String::from_utf8(raw.to_vec())?;
         match value.as_str() {
             "direct" => Ok(ThreadType::Direct),
@@ -36,16 +39,24 @@ impl FromSql<'_> for ThreadType {
 }
 
 impl ToSql for ThreadType {
-    fn to_sql(&self, _ty: &postgres_types::Type, out: &mut postgres_types::private::BytesMut) -> Result<postgres_types::IsNull, Box<dyn std::error::Error + Sync + Send>> {
+    fn to_sql(
+        &self,
+        _ty: &postgres_types::Type,
+        out: &mut postgres_types::private::BytesMut,
+    ) -> Result<postgres_types::IsNull, Box<dyn std::error::Error + Sync + Send>> {
         out.extend_from_slice(self.to_string().as_bytes());
         Ok(postgres_types::IsNull::No)
     }
 
     fn accepts(ty: &postgres_types::Type) -> bool {
-        matches!(*ty, postgres_types::Type::TEXT)
+        ty.name() == "text" || ty.name() == "varchar"
     }
 
-    fn to_sql_checked(&self, ty: &postgres_types::Type, out: &mut postgres_types::private::BytesMut) -> Result<postgres_types::IsNull, Box<dyn std::error::Error + Sync + Send>> {
+    fn to_sql_checked(
+        &self,
+        ty: &postgres_types::Type,
+        out: &mut postgres_types::private::BytesMut,
+    ) -> Result<postgres_types::IsNull, Box<dyn std::error::Error + Sync + Send>> {
         self.to_sql(ty, out)
     }
 }
@@ -68,10 +79,13 @@ impl fmt::Display for ParticipantRole {
 
 impl FromSql<'_> for ParticipantRole {
     fn accepts(ty: &postgres_types::Type) -> bool {
-        ty.name() == "participant_role"
+        ty.name() == "participant_role" || ty.name() == "text" || ty.name() == "varchar"
     }
 
-    fn from_sql(_ty: &postgres_types::Type, raw: &[u8]) -> Result<Self, Box<dyn std::error::Error + Sync + Send>> {
+    fn from_sql(
+        _ty: &postgres_types::Type,
+        raw: &[u8],
+    ) -> Result<Self, Box<dyn std::error::Error + Sync + Send>> {
         let value = String::from_utf8(raw.to_vec())?;
         match value.as_str() {
             "admin" => Ok(ParticipantRole::Admin),
@@ -82,16 +96,24 @@ impl FromSql<'_> for ParticipantRole {
 }
 
 impl ToSql for ParticipantRole {
-    fn to_sql(&self, _ty: &postgres_types::Type, out: &mut postgres_types::private::BytesMut) -> Result<postgres_types::IsNull, Box<dyn std::error::Error + Sync + Send>> {
+    fn to_sql(
+        &self,
+        _ty: &postgres_types::Type,
+        out: &mut postgres_types::private::BytesMut,
+    ) -> Result<postgres_types::IsNull, Box<dyn std::error::Error + Sync + Send>> {
         out.extend_from_slice(self.to_string().as_bytes());
         Ok(postgres_types::IsNull::No)
     }
 
     fn accepts(ty: &postgres_types::Type) -> bool {
-        matches!(*ty, postgres_types::Type::TEXT)
+        ty.name() == "text" || ty.name() == "varchar"
     }
 
-    fn to_sql_checked(&self, ty: &postgres_types::Type, out: &mut postgres_types::private::BytesMut) -> Result<postgres_types::IsNull, Box<dyn std::error::Error + Sync + Send>> {
+    fn to_sql_checked(
+        &self,
+        ty: &postgres_types::Type,
+        out: &mut postgres_types::private::BytesMut,
+    ) -> Result<postgres_types::IsNull, Box<dyn std::error::Error + Sync + Send>> {
         self.to_sql(ty, out)
     }
 }
@@ -118,10 +140,13 @@ impl fmt::Display for MessageType {
 
 impl FromSql<'_> for MessageType {
     fn accepts(ty: &postgres_types::Type) -> bool {
-        ty.name() == "message_type"
+        ty.name() == "message_type" || ty.name() == "text" || ty.name() == "varchar"
     }
 
-    fn from_sql(_ty: &postgres_types::Type, raw: &[u8]) -> Result<Self, Box<dyn std::error::Error + Sync + Send>> {
+    fn from_sql(
+        _ty: &postgres_types::Type,
+        raw: &[u8],
+    ) -> Result<Self, Box<dyn std::error::Error + Sync + Send>> {
         let value = String::from_utf8(raw.to_vec())?;
         match value.as_str() {
             "text" => Ok(MessageType::Text),
@@ -134,16 +159,24 @@ impl FromSql<'_> for MessageType {
 }
 
 impl ToSql for MessageType {
-    fn to_sql(&self, _ty: &postgres_types::Type, out: &mut postgres_types::private::BytesMut) -> Result<postgres_types::IsNull, Box<dyn std::error::Error + Sync + Send>> {
+    fn to_sql(
+        &self,
+        _ty: &postgres_types::Type,
+        out: &mut postgres_types::private::BytesMut,
+    ) -> Result<postgres_types::IsNull, Box<dyn std::error::Error + Sync + Send>> {
         out.extend_from_slice(self.to_string().as_bytes());
         Ok(postgres_types::IsNull::No)
     }
 
     fn accepts(ty: &postgres_types::Type) -> bool {
-        matches!(*ty, postgres_types::Type::TEXT)
+        ty.name() == "text" || ty.name() == "varchar"
     }
 
-    fn to_sql_checked(&self, ty: &postgres_types::Type, out: &mut postgres_types::private::BytesMut) -> Result<postgres_types::IsNull, Box<dyn std::error::Error + Sync + Send>> {
+    fn to_sql_checked(
+        &self,
+        ty: &postgres_types::Type,
+        out: &mut postgres_types::private::BytesMut,
+    ) -> Result<postgres_types::IsNull, Box<dyn std::error::Error + Sync + Send>> {
         self.to_sql(ty, out)
     }
 }
@@ -168,10 +201,13 @@ impl fmt::Display for NotificationType {
 
 impl FromSql<'_> for NotificationType {
     fn accepts(ty: &postgres_types::Type) -> bool {
-        ty.name() == "notification_type"
+        ty.name() == "notification_type" || ty.name() == "text" || ty.name() == "varchar"
     }
 
-    fn from_sql(_ty: &postgres_types::Type, raw: &[u8]) -> Result<Self, Box<dyn std::error::Error + Sync + Send>> {
+    fn from_sql(
+        _ty: &postgres_types::Type,
+        raw: &[u8],
+    ) -> Result<Self, Box<dyn std::error::Error + Sync + Send>> {
         let value = String::from_utf8(raw.to_vec())?;
         match value.as_str() {
             "new_message" => Ok(NotificationType::NewMessage),
@@ -183,16 +219,24 @@ impl FromSql<'_> for NotificationType {
 }
 
 impl ToSql for NotificationType {
-    fn to_sql(&self, _ty: &postgres_types::Type, out: &mut postgres_types::private::BytesMut) -> Result<postgres_types::IsNull, Box<dyn std::error::Error + Sync + Send>> {
+    fn to_sql(
+        &self,
+        _ty: &postgres_types::Type,
+        out: &mut postgres_types::private::BytesMut,
+    ) -> Result<postgres_types::IsNull, Box<dyn std::error::Error + Sync + Send>> {
         out.extend_from_slice(self.to_string().as_bytes());
         Ok(postgres_types::IsNull::No)
     }
 
     fn accepts(ty: &postgres_types::Type) -> bool {
-        matches!(*ty, postgres_types::Type::TEXT)
+        ty.name() == "text" || ty.name() == "varchar"
     }
 
-    fn to_sql_checked(&self, ty: &postgres_types::Type, out: &mut postgres_types::private::BytesMut) -> Result<postgres_types::IsNull, Box<dyn std::error::Error + Sync + Send>> {
+    fn to_sql_checked(
+        &self,
+        ty: &postgres_types::Type,
+        out: &mut postgres_types::private::BytesMut,
+    ) -> Result<postgres_types::IsNull, Box<dyn std::error::Error + Sync + Send>> {
         self.to_sql(ty, out)
     }
 }
@@ -217,10 +261,13 @@ impl fmt::Display for SignalType {
 
 impl FromSql<'_> for SignalType {
     fn accepts(ty: &postgres_types::Type) -> bool {
-        ty.name() == "signal_type"
+        ty.name() == "signal_type" || ty.name() == "text" || ty.name() == "varchar"
     }
 
-    fn from_sql(_ty: &postgres_types::Type, raw: &[u8]) -> Result<Self, Box<dyn std::error::Error + Sync + Send>> {
+    fn from_sql(
+        _ty: &postgres_types::Type,
+        raw: &[u8],
+    ) -> Result<Self, Box<dyn std::error::Error + Sync + Send>> {
         let value = String::from_utf8(raw.to_vec())?;
         match value.as_str() {
             "offer" => Ok(SignalType::Offer),
@@ -232,16 +279,24 @@ impl FromSql<'_> for SignalType {
 }
 
 impl ToSql for SignalType {
-    fn to_sql(&self, _ty: &postgres_types::Type, out: &mut postgres_types::private::BytesMut) -> Result<postgres_types::IsNull, Box<dyn std::error::Error + Sync + Send>> {
+    fn to_sql(
+        &self,
+        _ty: &postgres_types::Type,
+        out: &mut postgres_types::private::BytesMut,
+    ) -> Result<postgres_types::IsNull, Box<dyn std::error::Error + Sync + Send>> {
         out.extend_from_slice(self.to_string().as_bytes());
         Ok(postgres_types::IsNull::No)
     }
 
     fn accepts(ty: &postgres_types::Type) -> bool {
-        matches!(*ty, postgres_types::Type::TEXT)
+        ty.name() == "text" || ty.name() == "varchar"
     }
 
-    fn to_sql_checked(&self, ty: &postgres_types::Type, out: &mut postgres_types::private::BytesMut) -> Result<postgres_types::IsNull, Box<dyn std::error::Error + Sync + Send>> {
+    fn to_sql_checked(
+        &self,
+        ty: &postgres_types::Type,
+        out: &mut postgres_types::private::BytesMut,
+    ) -> Result<postgres_types::IsNull, Box<dyn std::error::Error + Sync + Send>> {
         self.to_sql(ty, out)
     }
 }

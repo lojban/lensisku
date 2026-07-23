@@ -86,10 +86,9 @@ pub fn estimate_messages_bytes(messages: &[ChatMessage]) -> usize {
         acc + m.content.len()
             + m.tool_call_id.as_deref().map_or(0, str::len)
             + m.name.as_deref().map_or(0, str::len)
-            + m
-                .tool_calls
-                .as_ref()
-                .map_or(0, |tc| tc.iter().fold(0, |a, c| a + estimate_tool_call_bytes(c)))
+            + m.tool_calls.as_ref().map_or(0, |tc| {
+                tc.iter().fold(0, |a, c| a + estimate_tool_call_bytes(c))
+            })
     })
 }
 
@@ -135,7 +134,8 @@ pub fn should_compress_history(messages: &[ChatMessage], budget: &ContextBudget)
 }
 
 fn effective_max_history_bytes(allowed_history_tokens: u32, budget: &ContextBudget) -> usize {
-    let base = (allowed_history_tokens as usize).saturating_mul(budget.bytes_per_token_estimate as usize);
+    let base =
+        (allowed_history_tokens as usize).saturating_mul(budget.bytes_per_token_estimate as usize);
     let capped = match std::env::var("ASSISTANT_MAX_INPUT_CHARS")
         .ok()
         .and_then(|s| s.parse().ok())
@@ -176,7 +176,10 @@ pub fn compress_chat_history(messages: &[ChatMessage], max_input_bytes: usize) -
 }
 
 /// Roo-aligned entry: compress only when estimated history exceeds the allowed slice of the context window.
-pub fn compress_chat_history_for_budget(messages: &[ChatMessage], budget: &ContextBudget) -> Vec<ChatMessage> {
+pub fn compress_chat_history_for_budget(
+    messages: &[ChatMessage],
+    budget: &ContextBudget,
+) -> Vec<ChatMessage> {
     if messages.is_empty() {
         return vec![];
     }
@@ -189,12 +192,18 @@ pub fn compress_chat_history_for_budget(messages: &[ChatMessage], budget: &Conte
 }
 
 /// Backwards-compatible alias: prefer [`compress_chat_history_for_budget`] with a real [`ContextBudget`].
-pub fn compress_chat_history_for_request(messages: &[ChatMessage], budget: &ContextBudget) -> Vec<ChatMessage> {
+pub fn compress_chat_history_for_request(
+    messages: &[ChatMessage],
+    budget: &ContextBudget,
+) -> Vec<ChatMessage> {
     compress_chat_history_for_budget(messages, budget)
 }
 
 /// Aggressive compression after the provider reports a context overflow (Roo: forced reduction / sliding window).
-pub fn compress_chat_history_aggressive(messages: &[ChatMessage], budget: &ContextBudget) -> Vec<ChatMessage> {
+pub fn compress_chat_history_aggressive(
+    messages: &[ChatMessage],
+    budget: &ContextBudget,
+) -> Vec<ChatMessage> {
     if messages.is_empty() {
         return vec![];
     }
@@ -256,9 +265,7 @@ fn drop_oldest_turn(msgs: &mut Vec<ChatMessage>) -> bool {
     };
     let after = &msgs[first_user + 1..rest];
     let second_user_rel = after.iter().position(|m| m.role == "user");
-    let end = first_user
-        + 1
-        + second_user_rel.unwrap_or(after.len()); // exclusive end within 0..rest
+    let end = first_user + 1 + second_user_rel.unwrap_or(after.len()); // exclusive end within 0..rest
     if end <= first_user {
         return false;
     }

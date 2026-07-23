@@ -82,7 +82,12 @@ impl RedisCache {
     /// (keyword search, fast search, semantic search). Call when definitions
     /// or votes change so cached results stay correct.
     pub async fn invalidate_definition_search_caches(&self) -> Result<(), RedisError> {
-        for pattern in &["search:*", "fast_search:*", "semantic_search:*", "semantic_graph:*"] {
+        for pattern in &[
+            "search:*",
+            "fast_search:*",
+            "semantic_search:*",
+            "semantic_graph:*",
+        ] {
             self.invalidate(pattern).await?;
         }
         Ok(())
@@ -202,7 +207,9 @@ pub fn generate_assistant_semantic_cache_key(
         search_term,
         per_page,
         langs_str,
-        source_langid.map(|i| i.to_string()).unwrap_or_else(|| "default".to_string())
+        source_langid
+            .map(|i| i.to_string())
+            .unwrap_or_else(|| "default".to_string())
     );
     let digest = format!("{:x}", md5::compute(payload.as_bytes()));
     format!("semantic_search:assistant:{}", digest)

@@ -33,11 +33,8 @@ fn krulermorna_words<const N: usize>(words: [&str; N]) -> [String; N] {
     out
 }
 
-static QUESTION_WORDS: Lazy<std::collections::HashSet<String>> = Lazy::new(|| {
-    krulermorna_words(["ma", "mo", "xu"])
-        .into_iter()
-        .collect()
-});
+static QUESTION_WORDS: Lazy<std::collections::HashSet<String>> =
+    Lazy::new(|| krulermorna_words(["ma", "mo", "xu"]).into_iter().collect());
 static STARTER_WORDS: Lazy<std::collections::HashSet<String>> = Lazy::new(|| {
     krulermorna_words(["le", "lo", "lei", "loi"])
         .into_iter()
@@ -50,16 +47,12 @@ static TERMINATOR_WORDS: Lazy<std::collections::HashSet<String>> = Lazy::new(|| 
 });
 
 /// Syllable nuclei after krulermorna: diphthong letters, glide + vowel, or a simple vowel.
-static NUCLEUS_PATTERN: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r"ą|ę|ǫ|ḁ|ɩ[aeiouy]|[aeiouy]").expect("nucleus_pattern")
-});
+static NUCLEUS_PATTERN: Lazy<Regex> =
+    Lazy::new(|| Regex::new(r"ą|ę|ǫ|ḁ|ɩ[aeiouy]|[aeiouy]").expect("nucleus_pattern"));
 
 /// Index *before* which to insert primary stress (ˈ), Lojban penultimate syllable.
 fn stress_insert_index(word: &str) -> Option<usize> {
-    let indices: Vec<usize> = NUCLEUS_PATTERN
-        .find_iter(word)
-        .map(|m| m.start())
-        .collect();
+    let indices: Vec<usize> = NUCLEUS_PATTERN.find_iter(word).map(|m| m.start()).collect();
     if indices.len() <= 1 {
         return None;
     }
@@ -117,8 +110,7 @@ static IPA_RULES: Lazy<Vec<(Regex, &'static str)>> = Lazy::new(|| {
         ("h", "h"),
     ];
     raw.sort_by_key(|b| std::cmp::Reverse(b.0.len()));
-    raw
-        .into_iter()
+    raw.into_iter()
         .filter_map(|(pat, rep)| {
             let r = Regex::new(&format!("^{pat}")).ok()?;
             Some((r, rep))

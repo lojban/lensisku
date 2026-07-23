@@ -47,13 +47,14 @@ pub async fn search_wiki(
     page: i64,
     per_page: i64,
 ) -> Result<(Vec<WikiSearchHit>, i64), Box<dyn std::error::Error + Send + Sync>> {
-    let client = pool
-        .get()
-        .await
-        .map_err(box_err)?;
+    let client = pool.get().await.map_err(box_err)?;
 
     let offset = ((page - 1).max(0)) * per_page;
-    let order_dir = if sort_order.eq_ignore_ascii_case("asc") { "ASC" } else { "DESC" };
+    let order_dir = if sort_order.eq_ignore_ascii_case("asc") {
+        "ASC"
+    } else {
+        "DESC"
+    };
 
     if search_term.trim().is_empty() {
         // No query → most-recently-edited (or oldest with asc).
@@ -108,7 +109,8 @@ pub async fn search_wiki(
              ORDER BY last_edited {order_dir} NULLS LAST
              LIMIT $2 OFFSET $3"
         );
-        let params: Vec<&(dyn tokio_postgres::types::ToSql + Sync)> = vec![&pattern, &per_page, &offset];
+        let params: Vec<&(dyn tokio_postgres::types::ToSql + Sync)> =
+            vec![&pattern, &per_page, &offset];
         (sql, params)
     } else {
         let sql = format!(
@@ -124,13 +126,11 @@ pub async fn search_wiki(
                last_edited DESC NULLS LAST
              LIMIT $3 OFFSET $4"
         );
-        let params: Vec<&(dyn tokio_postgres::types::ToSql + Sync)> = vec![&pattern, &search_term, &per_page, &offset];
+        let params: Vec<&(dyn tokio_postgres::types::ToSql + Sync)> =
+            vec![&pattern, &search_term, &per_page, &offset];
         (sql, params)
     };
-    let rows = client
-        .query(&sql, &params)
-        .await
-        .map_err(box_err)?;
+    let rows = client.query(&sql, &params).await.map_err(box_err)?;
     let hits = rows.into_iter().map(row_to_hit).collect();
     Ok((hits, total))
 }
@@ -144,7 +144,11 @@ pub async fn list_wiki_threads(
 ) -> Result<(Vec<WikiThreadSummary>, i64), Box<dyn std::error::Error + Send + Sync>> {
     let client = pool.get().await.map_err(box_err)?;
     let offset = ((page - 1).max(0)) * per_page;
-    let order_dir = if sort_order.eq_ignore_ascii_case("asc") { "ASC" } else { "DESC" };
+    let order_dir = if sort_order.eq_ignore_ascii_case("asc") {
+        "ASC"
+    } else {
+        "DESC"
+    };
 
     let total_row = client
         .query_one(
@@ -230,7 +234,8 @@ pub async fn get_article_by_title(
 fn row_to_hit(r: tokio_postgres::Row) -> WikiSearchHit {
     let title: String = r.get("title");
     let plain: String = r.get("plain_text");
-    let last_edited: Option<chrono::DateTime<chrono::Utc>> = r.try_get("last_edited").ok().flatten();
+    let last_edited: Option<chrono::DateTime<chrono::Utc>> =
+        r.try_get("last_edited").ok().flatten();
     let article_url = format!("/wiki/{}", urlencoding::encode(&title));
     WikiSearchHit {
         page_id: r.get("page_id"),

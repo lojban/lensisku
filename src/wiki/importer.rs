@@ -137,7 +137,10 @@ fn http_client() -> Result<reqwest::Client, WikiSyncError> {
 }
 
 fn sync_disabled() -> bool {
-    matches!(std::env::var("DISABLE_WIKI_SYNC").ok().as_deref(), Some("1") | Some("true"))
+    matches!(
+        std::env::var("DISABLE_WIKI_SYNC").ok().as_deref(),
+        Some("1") | Some("true")
+    )
 }
 
 /// Startup re-render of all stored wiki markdown is expensive and can freeze the app on
@@ -153,7 +156,10 @@ fn rerender_enabled_on_startup() -> bool {
 /// without hitting the network.  Called after converter improvements so existing
 /// articles pick up the new rendering on the next startup.
 pub async fn rerender_all_markdown(pool: &Pool) -> Result<(), WikiSyncError> {
-    let client = pool.get().await.map_err(|e| WikiSyncError::Db(e.to_string()))?;
+    let client = pool
+        .get()
+        .await
+        .map_err(|e| WikiSyncError::Db(e.to_string()))?;
     let rows = client
         .query("SELECT id, wikitext FROM wiki_articles", &[])
         .await
@@ -165,7 +171,10 @@ pub async fn rerender_all_markdown(pool: &Pool) -> Result<(), WikiSyncError> {
         let id: i32 = row.get("id");
         let wikitext: &str = row.get("wikitext");
         let (md, plain) = wikitext_to_markdown(wikitext);
-        let c = pool.get().await.map_err(|e| WikiSyncError::Db(e.to_string()))?;
+        let c = pool
+            .get()
+            .await
+            .map_err(|e| WikiSyncError::Db(e.to_string()))?;
         c.execute(
             "UPDATE wiki_articles SET markdown = $1, plain_text = $2 WHERE id = $3",
             &[&md, &plain, &id],
@@ -184,7 +193,10 @@ pub async fn sync_on_startup(pool: &Pool) -> Result<(), WikiSyncError> {
         info!("DISABLE_WIKI_SYNC set; skipping wiki sync");
         return Ok(());
     }
-    let client = pool.get().await.map_err(|e| WikiSyncError::Db(e.to_string()))?;
+    let client = pool
+        .get()
+        .await
+        .map_err(|e| WikiSyncError::Db(e.to_string()))?;
     let row = client
         .query_one("SELECT COUNT(*)::BIGINT AS c FROM wiki_articles", &[])
         .await
@@ -283,7 +295,10 @@ pub async fn run_incremental_sync(pool: &Pool) -> Result<(), WikiSyncError> {
         }
     }
     if !to_delete.is_empty() {
-        let client = pool.get().await.map_err(|e| WikiSyncError::Db(e.to_string()))?;
+        let client = pool
+            .get()
+            .await
+            .map_err(|e| WikiSyncError::Db(e.to_string()))?;
         let _ = client
             .execute(
                 "DELETE FROM wiki_articles WHERE page_id = ANY($1::int[])",
@@ -296,7 +311,10 @@ pub async fn run_incremental_sync(pool: &Pool) -> Result<(), WikiSyncError> {
     Ok(())
 }
 
-async fn list_all_pages(http: &reqwest::Client, namespace: i32) -> Result<Vec<PageRef>, WikiSyncError> {
+async fn list_all_pages(
+    http: &reqwest::Client,
+    namespace: i32,
+) -> Result<Vec<PageRef>, WikiSyncError> {
     let mut out: Vec<PageRef> = Vec::new();
     let mut apcontinue: Option<String> = None;
     loop {
@@ -322,7 +340,12 @@ async fn list_all_pages(http: &reqwest::Client, namespace: i32) -> Result<Vec<Pa
         if let Some(q) = resp.query {
             out.extend(q.allpages);
         }
-        match resp.cont.as_ref().and_then(|v| v.get("apcontinue")).and_then(|v| v.as_str()) {
+        match resp
+            .cont
+            .as_ref()
+            .and_then(|v| v.get("apcontinue"))
+            .and_then(|v| v.as_str())
+        {
             Some(s) => apcontinue = Some(s.to_string()),
             None => break,
         }
@@ -337,7 +360,11 @@ async fn fetch_revisions(
     if page_ids.is_empty() {
         return Ok(vec![]);
     }
-    let ids = page_ids.iter().map(|i| i.to_string()).collect::<Vec<_>>().join("|");
+    let ids = page_ids
+        .iter()
+        .map(|i| i.to_string())
+        .collect::<Vec<_>>()
+        .join("|");
     let params: Vec<(&str, String)> = vec![
         ("action", "query".into()),
         ("format", "json".into()),
@@ -355,7 +382,10 @@ async fn fetch_revisions(
         .error_for_status()?
         .json()
         .await?;
-    let pages_value = resp.query.map(|q| q.pages).unwrap_or(serde_json::Value::Null);
+    let pages_value = resp
+        .query
+        .map(|q| q.pages)
+        .unwrap_or(serde_json::Value::Null);
     let mut out: Vec<PageWithRev> = Vec::new();
     // formatversion=2 returns an array; older formats returned an object map.
     if let Some(arr) = pages_value.as_array() {
@@ -415,7 +445,12 @@ async fn list_recent_changes(
         if let Some(q) = resp.query {
             out.extend(q.recentchanges);
         }
-        match resp.cont.as_ref().and_then(|v| v.get("rccontinue")).and_then(|v| v.as_str()) {
+        match resp
+            .cont
+            .as_ref()
+            .and_then(|v| v.get("rccontinue"))
+            .and_then(|v| v.as_str())
+        {
             Some(s) => rccontinue = Some(s.to_string()),
             None => break,
         }
@@ -425,7 +460,10 @@ async fn list_recent_changes(
 
 async fn upsert_page(pool: &Pool, p: &PageWithRev) -> Result<(), WikiSyncError> {
     if p.missing.unwrap_or(false) {
-        let client = pool.get().await.map_err(|e| WikiSyncError::Db(e.to_string()))?;
+        let client = pool
+            .get()
+            .await
+            .map_err(|e| WikiSyncError::Db(e.to_string()))?;
         let _ = client
             .execute(
                 "DELETE FROM wiki_articles WHERE page_id = $1",
@@ -446,13 +484,20 @@ async fn upsert_page(pool: &Pool, p: &PageWithRev) -> Result<(), WikiSyncError> 
         .and_then(|m| m.content.clone().or_else(|| m.star.clone()))
         .unwrap_or_default();
     let (md, plain) = wikitext_to_markdown(&wikitext);
-    let is_redirect = wikitext.trim_start().to_lowercase().starts_with("#redirect");
+    let is_redirect = wikitext
+        .trim_start()
+        .to_lowercase()
+        .starts_with("#redirect");
     let revid = rev.revid;
-    let last_edited: Option<DateTime<Utc>> = rev
-        .timestamp
-        .as_deref()
-        .and_then(|s| DateTime::parse_from_rfc3339(s).ok().map(|d| d.with_timezone(&Utc)));
-    let client = pool.get().await.map_err(|e| WikiSyncError::Db(e.to_string()))?;
+    let last_edited: Option<DateTime<Utc>> = rev.timestamp.as_deref().and_then(|s| {
+        DateTime::parse_from_rfc3339(s)
+            .ok()
+            .map(|d| d.with_timezone(&Utc))
+    });
+    let client = pool
+        .get()
+        .await
+        .map_err(|e| WikiSyncError::Db(e.to_string()))?;
     client
         .execute(
             "INSERT INTO wiki_articles
@@ -486,7 +531,10 @@ async fn upsert_page(pool: &Pool, p: &PageWithRev) -> Result<(), WikiSyncError> 
 }
 
 async fn last_sync_at(pool: &Pool) -> Result<Option<DateTime<Utc>>, WikiSyncError> {
-    let client = pool.get().await.map_err(|e| WikiSyncError::Db(e.to_string()))?;
+    let client = pool
+        .get()
+        .await
+        .map_err(|e| WikiSyncError::Db(e.to_string()))?;
     let row_opt = client
         .query_opt(
             "SELECT GREATEST(
@@ -503,7 +551,10 @@ async fn last_sync_at(pool: &Pool) -> Result<Option<DateTime<Utc>>, WikiSyncErro
 }
 
 async fn mark_full_sync_done(pool: &Pool) -> Result<(), WikiSyncError> {
-    let client = pool.get().await.map_err(|e| WikiSyncError::Db(e.to_string()))?;
+    let client = pool
+        .get()
+        .await
+        .map_err(|e| WikiSyncError::Db(e.to_string()))?;
     client
         .execute(
             "UPDATE wiki_sync_state
@@ -517,7 +568,10 @@ async fn mark_full_sync_done(pool: &Pool) -> Result<(), WikiSyncError> {
 }
 
 async fn mark_incremental_sync_done(pool: &Pool, ts: DateTime<Utc>) -> Result<(), WikiSyncError> {
-    let client = pool.get().await.map_err(|e| WikiSyncError::Db(e.to_string()))?;
+    let client = pool
+        .get()
+        .await
+        .map_err(|e| WikiSyncError::Db(e.to_string()))?;
     client
         .execute(
             "UPDATE wiki_sync_state SET last_incremental_sync = $1 WHERE id = 1",
@@ -565,6 +619,17 @@ mod tests {
         let arr = pages_val.as_array().unwrap();
         let p: PageWithRev = serde_json::from_value(arr[0].clone()).unwrap();
         assert_eq!(p.pageid, 5);
-        assert_eq!(p.revisions[0].slots.as_ref().unwrap().main.as_ref().unwrap().content.as_deref(), Some("hello"));
+        assert_eq!(
+            p.revisions[0]
+                .slots
+                .as_ref()
+                .unwrap()
+                .main
+                .as_ref()
+                .unwrap()
+                .content
+                .as_deref(),
+            Some("hello")
+        );
     }
 }

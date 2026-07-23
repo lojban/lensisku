@@ -15,8 +15,7 @@ use regex::Regex;
 
 use super::lojban_ipa::lojban_to_ipa;
 
-const HF_BASE: &str =
-    "https://huggingface.co/KittenML/kitten-tts-nano-0.8/resolve/main";
+const HF_BASE: &str = "https://huggingface.co/KittenML/kitten-tts-nano-0.8/resolve/main";
 const MODEL_FILENAME: &str = "kitten_tts_nano_v0_8.onnx";
 const VOICES_FILENAME: &str = "voices.npz";
 const TRIM_TAIL_SAMPLES: usize = 5000;
@@ -28,9 +27,8 @@ static KITTEN_SYMBOL_TABLE: Lazy<HashMap<char, i64>> = Lazy::new(|| {
     S.chars().enumerate().map(|(i, c)| (c, i as i64)).collect()
 });
 
-static TOKENIZE_RE: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r"(?u)\w+|[^\w\s]").expect("tokenize regex")
-});
+static TOKENIZE_RE: Lazy<Regex> =
+    Lazy::new(|| Regex::new(r"(?u)\w+|[^\w\s]").expect("tokenize regex"));
 
 fn basic_english_tokenize(text: &str) -> Vec<String> {
     TOKENIZE_RE
@@ -121,14 +119,8 @@ pub fn ensure_model_files_cached() -> Result<(), String> {
             let dir = cache_dir();
             let model_path = dir.join(MODEL_FILENAME);
             let voices_path = dir.join(VOICES_FILENAME);
-            download_file_blocking(
-                &format!("{HF_BASE}/{MODEL_FILENAME}"),
-                &model_path,
-            )?;
-            download_file_blocking(
-                &format!("{HF_BASE}/{VOICES_FILENAME}"),
-                &voices_path,
-            )?;
+            download_file_blocking(&format!("{HF_BASE}/{MODEL_FILENAME}"), &model_path)?;
+            download_file_blocking(&format!("{HF_BASE}/{VOICES_FILENAME}"), &voices_path)?;
             Ok(())
         })
         .clone()
@@ -286,15 +278,11 @@ impl KittenTts {
         inputs.insert(
             "speed",
             SessionInputValue::from(
-                Tensor::<f32>::from_array((vec![1i64], vec![speed]))
-                    .map_err(|e| e.to_string())?,
+                Tensor::<f32>::from_array((vec![1i64], vec![speed])).map_err(|e| e.to_string())?,
             ),
         );
 
-        let outputs = self
-            .session
-            .run(inputs)
-            .map_err(|e| e.to_string())?;
+        let outputs = self.session.run(inputs).map_err(|e| e.to_string())?;
 
         let view = outputs[0]
             .try_extract_tensor::<f32>()
@@ -327,4 +315,3 @@ fn pcm_f32_to_ogg_opus(samples: &[f32]) -> Result<Vec<u8>, String> {
     }
     ogg_opus::encode::<24000, 1>(&pcm).map_err(|e| e.to_string())
 }
-

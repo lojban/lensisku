@@ -1,3 +1,4 @@
+use super::valsi_tts;
 use crate::{
     db,
     error::{AppError, AppResult},
@@ -5,7 +6,6 @@ use crate::{
     mailarchive::{check_for_new_emails, import_maildir},
     notifications::run_email_notifications,
 };
-use super::valsi_tts;
 use chrono::Local;
 use deadpool_postgres::Pool;
 use log::{error, info};
@@ -131,7 +131,8 @@ async fn calculate_missing_embeddings(pool: &Pool) -> AppResult<()> {
         );
 
         // Generate embeddings in-process via fastembed (AllMiniLML6V2, mean pooling, L2-normalised)
-        let embeddings = crate::utils::embeddings::get_batch_embeddings(texts_chunk.to_vec()).await?;
+        let embeddings =
+            crate::utils::embeddings::get_batch_embeddings(texts_chunk.to_vec()).await?;
 
         for (i, (embedding, processed_text)) in
             embeddings.into_iter().zip(texts_chunk.iter()).enumerate()
@@ -338,51 +339,53 @@ pub async fn spawn_background_tasks(
         let pool_clone = pool.clone();
 
         tokio::spawn(async move {
-        loop {
-            // Acquire lock before starting export (run once at startup, then after each midnight)
-            let _lock = export_lock.lock().await;
-            if let Err(e) = export_all_dictionaries(&pool_clone).await {
-                error!("Failed to export dictionaries: {}", e);
-            }
-            drop(_lock);
+            loop {
+                // Acquire lock before starting export (run once at startup, then after each midnight)
+                let _lock = export_lock.lock().await;
+                if let Err(e) = export_all_dictionaries(&pool_clone).await {
+                    error!("Failed to export dictionaries: {}", e);
+                }
+                drop(_lock);
 
-            let now = Local::now();
-            let next_midnight = match (now + chrono::Duration::days(1))
-                .date_naive()
-                .and_hms_opt(0, 0, 0)
-            {
-                Some(time) => time,
-                None => {
-                    error!("Failed initial midnight calculation, trying alternative approach");
-                    match now
-                        .naive_local()
-                        .date()
-                        .checked_add_days(chrono::Days::new(1))
-                    {
-                        Some(next_date) => match next_date.and_hms_opt(0, 0, 0) {
-                            Some(time) => time,
-                            None => {
-                                error!("Failed to set time on next date, using 24hr incremental approach");
-                                now.naive_local().checked_add_signed(chrono::Duration::hours(24))
+                let now = Local::now();
+                let next_midnight = match (now + chrono::Duration::days(1))
+                    .date_naive()
+                    .and_hms_opt(0, 0, 0)
+                {
+                    Some(time) => time,
+                    None => {
+                        error!("Failed initial midnight calculation, trying alternative approach");
+                        match now
+                            .naive_local()
+                            .date()
+                            .checked_add_days(chrono::Days::new(1))
+                        {
+                            Some(next_date) => match next_date.and_hms_opt(0, 0, 0) {
+                                Some(time) => time,
+                                None => {
+                                    error!("Failed to set time on next date, using 24hr incremental approach");
+                                    now.naive_local().checked_add_signed(chrono::Duration::hours(24))
                                     .and_then(|dt| dt.date().and_hms_opt(0, 0, 0))
                                     .unwrap_or_else(|| {
                                         error!("All fallback methods failed, using current time + 1 minute");
                                         now.naive_local() + chrono::Duration::minutes(1)
                                     })
+                                }
+                            },
+                            None => {
+                                error!("Date overflow, using current time + 1 minute");
+                                now.naive_local() + chrono::Duration::minutes(1)
                             }
-                        },
-                        None => {
-                            error!("Date overflow, using current time + 1 minute");
-                            now.naive_local() + chrono::Duration::minutes(1)
                         }
                     }
-                }
-            };
-            let duration_until_midnight = next_midnight.signed_duration_since(now.naive_local());
-            let sleep_duration = Duration::from_secs(duration_until_midnight.num_seconds() as u64);
+                };
+                let duration_until_midnight =
+                    next_midnight.signed_duration_since(now.naive_local());
+                let sleep_duration =
+                    Duration::from_secs(duration_until_midnight.num_seconds() as u64);
 
-            sleep(sleep_duration).await;
-        }
-    });
+                sleep(sleep_duration).await;
+            }
+        });
     }
 }

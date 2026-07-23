@@ -1,8 +1,8 @@
 use actix_web::{delete, get, post, put, web, HttpResponse, Result};
 use validator::Validate;
 
-use crate::{AppError, auth::Claims};
-use super::{service::MessagingService, dto::*};
+use super::{dto::*, service::MessagingService};
+use crate::{auth::Claims, AppError};
 
 #[utoipa::path(
     get,
@@ -30,12 +30,14 @@ pub async fn get_threads(
     query: web::Query<GetThreadsQuery>,
     service: web::Data<MessagingService>,
 ) -> Result<HttpResponse, AppError> {
-    query.validate().map_err(|e| AppError::Validation(e.to_string()))?;
-    
+    query
+        .validate()
+        .map_err(|e| AppError::Validation(e.to_string()))?;
+
     let result = service
         .get_user_threads(claims.sub, query.into_inner())
         .await?;
-    
+
     Ok(HttpResponse::Ok().json(result))
 }
 
@@ -62,12 +64,14 @@ pub async fn create_thread(
     request: web::Json<CreateThreadRequest>,
     service: web::Data<MessagingService>,
 ) -> Result<HttpResponse, AppError> {
-    request.validate().map_err(|e| AppError::Validation(e.to_string()))?;
-    
+    request
+        .validate()
+        .map_err(|e| AppError::Validation(e.to_string()))?;
+
     let result = service
         .create_thread(claims.sub, request.into_inner())
         .await?;
-    
+
     Ok(HttpResponse::Created().json(result))
 }
 
@@ -97,7 +101,7 @@ pub async fn get_thread(
 ) -> Result<HttpResponse, AppError> {
     let thread_id = path.into_inner();
     let result = service.get_thread(thread_id, claims.sub).await?;
-    
+
     Ok(HttpResponse::Ok().json(result))
 }
 
@@ -130,12 +134,14 @@ pub async fn update_thread(
     service: web::Data<MessagingService>,
 ) -> Result<HttpResponse, AppError> {
     let thread_id = path.into_inner();
-    request.validate().map_err(|e| AppError::Validation(e.to_string()))?;
-    
+    request
+        .validate()
+        .map_err(|e| AppError::Validation(e.to_string()))?;
+
     let result = service
         .update_thread(thread_id, claims.sub, request.into_inner())
         .await?;
-    
+
     Ok(HttpResponse::Ok().json(result))
 }
 
@@ -166,7 +172,7 @@ pub async fn delete_thread(
 ) -> Result<HttpResponse, AppError> {
     let thread_id = path.into_inner();
     service.delete_thread(thread_id, claims.sub).await?;
-    
+
     Ok(HttpResponse::NoContent().finish())
 }
 
@@ -201,14 +207,16 @@ pub async fn get_thread_messages(
     service: web::Data<MessagingService>,
 ) -> Result<HttpResponse, AppError> {
     let thread_id = path.into_inner();
-    query.validate().map_err(|e| AppError::Validation(e.to_string()))?;
-    
+    query
+        .validate()
+        .map_err(|e| AppError::Validation(e.to_string()))?;
+
     let query_data = query.into_inner();
-    
+
     let result = service
         .get_thread_messages(thread_id, claims.sub, query_data)
         .await?;
-    
+
     Ok(HttpResponse::Ok().json(result))
 }
 
@@ -235,12 +243,14 @@ pub async fn send_message(
     request: web::Json<SendMessageRequest>,
     service: web::Data<MessagingService>,
 ) -> Result<HttpResponse, AppError> {
-    request.validate().map_err(|e| AppError::Validation(e.to_string()))?;
-    
+    request
+        .validate()
+        .map_err(|e| AppError::Validation(e.to_string()))?;
+
     let result = service
         .send_message(claims.sub, request.into_inner())
         .await?;
-    
+
     Ok(HttpResponse::Created().json(result))
 }
 
@@ -270,7 +280,7 @@ pub async fn get_message(
 ) -> Result<HttpResponse, AppError> {
     let message_id = path.into_inner();
     let result = service.get_message(message_id, claims.sub).await?;
-    
+
     Ok(HttpResponse::Ok().json(result))
 }
 
@@ -304,7 +314,9 @@ pub async fn update_message(
 ) -> Result<HttpResponse, AppError> {
     let _message_id = path.into_inner();
     // TODO: Implement message update functionality
-    Err(AppError::Internal("Message update not yet implemented".to_string()))
+    Err(AppError::Internal(
+        "Message update not yet implemented".to_string(),
+    ))
 }
 
 #[utoipa::path(
@@ -334,7 +346,9 @@ pub async fn delete_message(
 ) -> Result<HttpResponse, AppError> {
     let _message_id = path.into_inner();
     // TODO: Implement message delete functionality
-    Err(AppError::Internal("Message delete not yet implemented".to_string()))
+    Err(AppError::Internal(
+        "Message delete not yet implemented".to_string(),
+    ))
 }
 
 #[utoipa::path(
@@ -367,7 +381,9 @@ pub async fn add_participant(
 ) -> Result<HttpResponse, AppError> {
     let _thread_id = path.into_inner();
     // TODO: Implement add participant functionality
-    Err(AppError::Internal("Add participant not yet implemented".to_string()))
+    Err(AppError::Internal(
+        "Add participant not yet implemented".to_string(),
+    ))
 }
 
 #[utoipa::path(
@@ -398,7 +414,9 @@ pub async fn remove_participant(
 ) -> Result<HttpResponse, AppError> {
     let (_thread_id, _user_id) = path.into_inner();
     // TODO: Implement remove participant functionality
-    Err(AppError::Internal("Remove participant not yet implemented".to_string()))
+    Err(AppError::Internal(
+        "Remove participant not yet implemented".to_string(),
+    ))
 }
 
 #[utoipa::path(
@@ -432,7 +450,9 @@ pub async fn update_participant_role(
 ) -> Result<HttpResponse, AppError> {
     let (_thread_id, _user_id) = path.into_inner();
     // TODO: Implement update participant role functionality
-    Err(AppError::Internal("Update participant role not yet implemented".to_string()))
+    Err(AppError::Internal(
+        "Update participant role not yet implemented".to_string(),
+    ))
 }
 
 #[utoipa::path(
@@ -458,7 +478,9 @@ pub async fn block_user(
     _service: web::Data<MessagingService>,
 ) -> Result<HttpResponse, AppError> {
     // TODO: Implement block user functionality
-    Err(AppError::Internal("Block user not yet implemented".to_string()))
+    Err(AppError::Internal(
+        "Block user not yet implemented".to_string(),
+    ))
 }
 
 #[utoipa::path(
@@ -487,7 +509,9 @@ pub async fn unblock_user(
 ) -> Result<HttpResponse, AppError> {
     let _user_id = path.into_inner();
     // TODO: Implement unblock user functionality
-    Err(AppError::Internal("Unblock user not yet implemented".to_string()))
+    Err(AppError::Internal(
+        "Unblock user not yet implemented".to_string(),
+    ))
 }
 
 #[utoipa::path(
@@ -510,7 +534,9 @@ pub async fn get_blocked_users(
     _service: web::Data<MessagingService>,
 ) -> Result<HttpResponse, AppError> {
     // TODO: Implement get blocked users functionality
-    Err(AppError::Internal("Get blocked users not yet implemented".to_string()))
+    Err(AppError::Internal(
+        "Get blocked users not yet implemented".to_string(),
+    ))
 }
 
 #[utoipa::path(
@@ -540,7 +566,9 @@ pub async fn get_notifications(
     _service: web::Data<MessagingService>,
 ) -> Result<HttpResponse, AppError> {
     // TODO: Implement get notifications functionality
-    Err(AppError::Internal("Get notifications not yet implemented".to_string()))
+    Err(AppError::Internal(
+        "Get notifications not yet implemented".to_string(),
+    ))
 }
 
 #[utoipa::path(
@@ -569,7 +597,9 @@ pub async fn mark_notification_read(
 ) -> Result<HttpResponse, AppError> {
     let _notification_id = path.into_inner();
     // TODO: Implement mark notification read functionality
-    Err(AppError::Internal("Mark notification read not yet implemented".to_string()))
+    Err(AppError::Internal(
+        "Mark notification read not yet implemented".to_string(),
+    ))
 }
 
 #[utoipa::path(
@@ -666,14 +696,12 @@ pub async fn health_check() -> Result<HttpResponse, AppError> {
             }
         }
     });
-    
+
     Ok(HttpResponse::Ok().json(health_status))
 }
 
 // Additional WebRTC endpoints
-pub async fn get_webrtc_config(
-    claims: Claims,
-) -> Result<HttpResponse, AppError> {
+pub async fn get_webrtc_config(claims: Claims) -> Result<HttpResponse, AppError> {
     super::webrtc_handler::get_webrtc_config(claims).await
 }
 

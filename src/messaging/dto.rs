@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 use validator::Validate;
 
-use super::models::{ThreadType, ParticipantRole, MessageType, NotificationType, SignalType};
+use super::models::{MessageType, NotificationType, ParticipantRole, SignalType, ThreadType};
 
 #[derive(Debug, Serialize, Deserialize, ToSchema, Validate)]
 pub struct CreateThreadRequest {
@@ -110,7 +110,7 @@ pub struct MessageResponse {
     pub username: String,
     pub message_type: MessageType,
     pub encrypted_content: String,
-    pub content_nonce: String, // Base64 encoded for JSON
+    pub content_nonce: String,                // Base64 encoded for JSON
     pub sender_key_signature: Option<String>, // Base64 encoded for JSON
     pub reply_to_message_id: Option<i64>,
     pub created_at: DateTime<Utc>,
@@ -231,9 +231,7 @@ pub enum WebSocketMessage {
         deleted_by: i32,
     },
     #[serde(rename = "thread_updated")]
-    ThreadUpdated {
-        thread: ThreadResponse,
-    },
+    ThreadUpdated { thread: ThreadResponse },
     #[serde(rename = "participant_added")]
     ParticipantAdded {
         thread_id: i64,
@@ -265,19 +263,11 @@ pub enum WebSocketMessage {
         username: String,
     },
     #[serde(rename = "user_online")]
-    UserOnline {
-        user_id: i32,
-        username: String,
-    },
+    UserOnline { user_id: i32, username: String },
     #[serde(rename = "user_offline")]
-    UserOffline {
-        user_id: i32,
-        username: String,
-    },
+    UserOffline { user_id: i32, username: String },
     #[serde(rename = "new_notification")]
-    NewNotification {
-        notification: NotificationResponse,
-    },
+    NewNotification { notification: NotificationResponse },
     #[serde(rename = "error")]
     Error {
         message: String,

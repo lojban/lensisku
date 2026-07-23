@@ -1,10 +1,10 @@
 use crate::{AppError, AppResult};
-use deadpool_postgres::Pool;
+use base64::{engine::general_purpose, Engine as _};
 use chrono::Utc;
-use base64::{Engine as _, engine::general_purpose};
+use deadpool_postgres::Pool;
 
-use super::models::*;
 use super::dto::*;
+use super::models::*;
 
 // Helper function to build dynamic message query
 fn build_message_query(
@@ -42,7 +42,9 @@ fn build_message_query(
          WHERE {}
          ORDER BY m.created_at DESC
          LIMIT ${} OFFSET ${}",
-        where_clause, param_index, param_index + 1
+        where_clause,
+        param_index,
+        param_index + 1
     );
 
     params.push(Box::new(query.per_page));
@@ -81,8 +83,10 @@ impl MessagingService {
         let mut threads = Vec::new();
         for row in rows {
             let thread_id: i64 = row.get("thread_id");
-            let participants = self.get_thread_participants(thread_id, Some(user_id)).await?;
-            
+            let participants = self
+                .get_thread_participants(thread_id, Some(user_id))
+                .await?;
+
             threads.push(ThreadResponse {
                 thread_id: row.get("thread_id"),
                 thread_name: row.get("thread_name"),
@@ -200,7 +204,9 @@ impl MessagingService {
             .await?;
 
         if participant_row.is_none() {
-            return Err(AppError::NotFound("Thread not found or access denied".to_string()));
+            return Err(AppError::NotFound(
+                "Thread not found or access denied".to_string(),
+            ));
         }
 
         // Get thread details
@@ -215,7 +221,9 @@ impl MessagingService {
             )
             .await?;
 
-        let participants = self.get_thread_participants(thread_id, Some(user_id)).await?;
+        let participants = self
+            .get_thread_participants(thread_id, Some(user_id))
+            .await?;
 
         Ok(ThreadResponse {
             thread_id: thread_row.get("thread_id"),
@@ -291,20 +299,57 @@ impl MessagingService {
         let _result = if let Some(ref name) = request.thread_name {
             if let Some(max_participants) = request.max_participants {
                 if let Some(is_active) = request.is_active {
-                    client.execute(&query, &[&name as &(dyn postgres_types::ToSql + Sync), &max_participants, &is_active, &thread_id]).await?
+                    client
+                        .execute(
+                            &query,
+                            &[
+                                &name as &(dyn postgres_types::ToSql + Sync),
+                                &max_participants,
+                                &is_active,
+                                &thread_id,
+                            ],
+                        )
+                        .await?
                 } else {
-                    client.execute(&query, &[&name as &(dyn postgres_types::ToSql + Sync), &max_participants, &thread_id]).await?
+                    client
+                        .execute(
+                            &query,
+                            &[
+                                &name as &(dyn postgres_types::ToSql + Sync),
+                                &max_participants,
+                                &thread_id,
+                            ],
+                        )
+                        .await?
                 }
             } else if let Some(is_active) = request.is_active {
-                client.execute(&query, &[&name as &(dyn postgres_types::ToSql + Sync), &is_active, &thread_id]).await?
+                client
+                    .execute(
+                        &query,
+                        &[
+                            &name as &(dyn postgres_types::ToSql + Sync),
+                            &is_active,
+                            &thread_id,
+                        ],
+                    )
+                    .await?
             } else {
-                client.execute(&query, &[&name as &(dyn postgres_types::ToSql + Sync), &thread_id]).await?
+                client
+                    .execute(
+                        &query,
+                        &[&name as &(dyn postgres_types::ToSql + Sync), &thread_id],
+                    )
+                    .await?
             }
         } else if let Some(max_participants) = request.max_participants {
             if let Some(is_active) = request.is_active {
-                client.execute(&query, &[&max_participants, &is_active, &thread_id]).await?
+                client
+                    .execute(&query, &[&max_participants, &is_active, &thread_id])
+                    .await?
             } else {
-                client.execute(&query, &[&max_participants, &thread_id]).await?
+                client
+                    .execute(&query, &[&max_participants, &thread_id])
+                    .await?
             }
         } else if let Some(is_active) = request.is_active {
             client.execute(&query, &[&is_active, &thread_id]).await?
@@ -331,7 +376,9 @@ impl MessagingService {
             .is_some();
 
         if !can_delete {
-            return Err(AppError::Auth("Only admins or creators can delete threads".to_string()));
+            return Err(AppError::Auth(
+                "Only admins or creators can delete threads".to_string(),
+            ));
         }
 
         // Soft delete the thread
@@ -365,22 +412,21 @@ impl MessagingService {
             .is_some();
 
         if !is_participant {
-            return Err(AppError::NotFound("Thread not found or access denied".to_string()));
+            return Err(AppError::NotFound(
+                "Thread not found or access denied".to_string(),
+            ));
         }
 
         let offset = (query.page - 1) * query.per_page;
-        
+
         // Build dynamic query based on parameters
         let (query_str, params) = build_message_query(&query, thread_id, offset);
-        
+
         // Convert Box<dyn ToSql> to references for the query
-        let param_refs: Vec<&(dyn postgres_types::ToSql + Sync)> = params.iter()
-            .map(|p| p.as_ref())
-            .collect();
-        
-        let rows = client
-            .query(&query_str, &param_refs)
-            .await?;
+        let param_refs: Vec<&(dyn postgres_types::ToSql + Sync)> =
+            params.iter().map(|p| p.as_ref()).collect();
+
+        let rows = client.query(&query_str, &param_refs).await?;
 
         let mut messages = Vec::new();
         for row in rows {
@@ -395,7 +441,8 @@ impl MessagingService {
                 message_type: row.get("message_type"),
                 encrypted_content: row.get("encrypted_content"),
                 content_nonce: general_purpose::STANDARD.encode(&content_nonce),
-                sender_key_signature: sender_key_signature.map(|sig| general_purpose::STANDARD.encode(&sig)),
+                sender_key_signature: sender_key_signature
+                    .map(|sig| general_purpose::STANDARD.encode(&sig)),
                 reply_to_message_id: row.get("reply_to_message_id"),
                 created_at: row.get("created_at"),
                 updated_at: row.get("updated_at"),
@@ -447,14 +494,18 @@ impl MessagingService {
             .await?;
 
         if participant_check.is_none() {
-            return Err(AppError::NotFound("Thread not found or access denied".to_string()));
+            return Err(AppError::NotFound(
+                "Thread not found or access denied".to_string(),
+            ));
         }
 
         // Decode base64 nonce
-        let content_nonce = general_purpose::STANDARD.decode(&request.content_nonce)
+        let content_nonce = general_purpose::STANDARD
+            .decode(&request.content_nonce)
             .map_err(|_| AppError::BadRequest("Invalid content nonce format".to_string()))?;
 
-        let sender_key_signature = request.sender_key_signature
+        let sender_key_signature = request
+            .sender_key_signature
             .as_ref()
             .and_then(|sig| general_purpose::STANDARD.decode(sig).ok());
 
@@ -510,7 +561,7 @@ impl MessagingService {
 
         if let Some(row) = row {
             let thread_id: i64 = row.get("thread_id");
-            
+
             // Check if user is a participant
             let is_participant = client
                 .query_opt(
@@ -536,7 +587,8 @@ impl MessagingService {
                 message_type: row.get("message_type"),
                 encrypted_content: row.get("encrypted_content"),
                 content_nonce: general_purpose::STANDARD.encode(&content_nonce),
-                sender_key_signature: sender_key_signature.map(|sig| general_purpose::STANDARD.encode(&sig)),
+                sender_key_signature: sender_key_signature
+                    .map(|sig| general_purpose::STANDARD.encode(&sig)),
                 reply_to_message_id: row.get("reply_to_message_id"),
                 created_at: row.get("created_at"),
                 updated_at: row.get("updated_at"),
@@ -551,7 +603,11 @@ impl MessagingService {
     }
 
     // Helper methods
-    async fn get_thread_participants(&self, thread_id: i64, exclude_user_id: Option<i32>) -> AppResult<Vec<ThreadParticipantResponse>> {
+    async fn get_thread_participants(
+        &self,
+        thread_id: i64,
+        exclude_user_id: Option<i32>,
+    ) -> AppResult<Vec<ThreadParticipantResponse>> {
         let client = self.pool.get().await?;
 
         let query = if let Some(exclude_id) = exclude_user_id {
@@ -616,14 +672,14 @@ impl MessagingService {
         signal_data: String,
     ) -> AppResult<WebRTCSignaling> {
         let client = self.pool.get().await?;
-        
+
         // Check if users are blocking each other
         if self.is_user_blocked(to_user_id, from_user_id).await? {
             return Err(AppError::Auth("User is blocked".to_string()));
         }
 
         let expires_at = Utc::now() + chrono::Duration::minutes(5);
-        
+
         let row = client
             .query_one(
                 "INSERT INTO webrtc_signaling (from_user_id, to_user_id, signal_type, signal_data, expires_at)
@@ -642,7 +698,10 @@ impl MessagingService {
         Ok(WebRTCSignaling::from(row))
     }
 
-    pub async fn get_pending_webrtc_signals(&self, user_id: i32) -> AppResult<Vec<WebRTCSignaling>> {
+    pub async fn get_pending_webrtc_signals(
+        &self,
+        user_id: i32,
+    ) -> AppResult<Vec<WebRTCSignaling>> {
         let client = self.pool.get().await?;
 
         let rows = client
@@ -664,7 +723,11 @@ impl MessagingService {
         Ok(signals)
     }
 
-    pub async fn mark_webrtc_signal_processed(&self, signal_id: i64, user_id: i32) -> AppResult<()> {
+    pub async fn mark_webrtc_signal_processed(
+        &self,
+        signal_id: i64,
+        user_id: i32,
+    ) -> AppResult<()> {
         let client = self.pool.get().await?;
 
         client

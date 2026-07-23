@@ -1,7 +1,7 @@
 use actix_web::{dev::Payload, Error as ActixError, FromRequest, HttpRequest};
 use chrono::{DateTime, Utc};
 use futures::future::{ready, Ready};
-use jsonwebtoken::{decode, DecodingKey, Algorithm, Validation};
+use jsonwebtoken::{decode, Algorithm, DecodingKey, Validation};
 use serde::{Deserialize, Serialize};
 use std::{env, error::Error, str::FromStr};
 use utoipa::ToSchema;

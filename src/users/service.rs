@@ -440,9 +440,7 @@ pub async fn get_user_comments(
             Comment {
                 comment_id: row.get("commentid"),
                 thread_id: row.get("threadid"),
-                subject: row
-                    .get::<_, Option<String>>("subject")
-                    .unwrap_or_default(),
+                subject: row.get::<_, Option<String>>("subject").unwrap_or_default(),
                 content: serde_json::from_str(&row.get::<_, String>("content")).unwrap_or_default(),
                 valsi_id: row.get("valsiid"),
                 definition_id: row.get("definitionid"),

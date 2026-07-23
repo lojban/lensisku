@@ -63,8 +63,7 @@ fn steps_mut<'a>(
         let o = r
             .as_object_mut()
             .ok_or_else(|| AppError::BadRequest("reply not object".into()))?;
-        o.entry("steps".to_string())
-            .or_insert_with(|| json!([]));
+        o.entry("steps".to_string()).or_insert_with(|| json!([]));
         if !o["steps"].is_array() {
             o.insert("steps".to_string(), json!([]));
         }
@@ -75,8 +74,7 @@ fn steps_mut<'a>(
     let o = msg
         .as_object_mut()
         .ok_or_else(|| AppError::BadRequest("assistant not object".into()))?;
-    o.entry("steps".to_string())
-        .or_insert_with(|| json!([]));
+    o.entry("steps".to_string()).or_insert_with(|| json!([]));
     if !o["steps"].is_array() {
         o.insert("steps".to_string(), json!([]));
     }
@@ -104,10 +102,7 @@ pub fn apply_sse_event_to_messages(
     assistant_index: usize,
     event: &Value,
 ) -> Result<(), AppError> {
-    let ty = event
-        .get("type")
-        .and_then(|t| t.as_str())
-        .unwrap_or("");
+    let ty = event.get("type").and_then(|t| t.as_str()).unwrap_or("");
     if ty == "stream_debug" {
         return Ok(());
     }
@@ -314,10 +309,7 @@ pub fn apply_sse_event_to_messages(
             }
         }
         "done" => {
-            let reply_text = event
-                .get("reply")
-                .and_then(|r| r.as_str())
-                .unwrap_or("");
+            let reply_text = event.get("reply").and_then(|r| r.as_str()).unwrap_or("");
             let done_seg = json!({
                 "role": "assistant",
                 "content": reply_text,
@@ -340,9 +332,7 @@ pub fn apply_sse_event_to_messages(
                 let o = msg.as_object_mut().unwrap();
                 o.insert("content".into(), json!(reply_text));
                 o.insert("streamFinished".into(), json!(true));
-                let trace = o
-                    .entry("apiTrace".to_string())
-                    .or_insert_with(|| json!([]));
+                let trace = o.entry("apiTrace".to_string()).or_insert_with(|| json!([]));
                 if let Some(a) = trace.as_array_mut() {
                     a.push(done_seg);
                 }

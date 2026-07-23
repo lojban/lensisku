@@ -71,7 +71,7 @@
         <div class="flex-1 overflow-y-auto min-h-0">
           <ThreadList
             :threads="filteredThreads"
-            @thread-click="handleThreadClick"
+            @thread-click="openChat"
             @thread-delete="handleThreadDelete"
           />
         </div>
@@ -93,8 +93,10 @@
     <!-- New Chat Modal -->
     <NewChatModal
       v-if="showNewChatModal"
+      :existing-threads="threads"
       @close="showNewChatModal = false"
-      @thread-created="handleThreadCreated"
+      @thread-created="openChat"
+      @open-thread="openChat"
     />
   </div>
 </template>
@@ -206,7 +208,8 @@ const handleFilter = () => {
   fetchThreads(1, false)
 }
 
-const handleThreadClick = (thread: Thread) => {
+const openChat = (thread: Thread) => {
+  showNewChatModal.value = false
   router.push(`/messages/${thread.thread_id}`)
 }
 
@@ -219,11 +222,6 @@ const handleThreadDelete = async (thread: Thread) => {
       console.error('Failed to delete thread:', error)
     }
   }
-}
-
-const handleThreadCreated = (thread: Thread) => {
-  showNewChatModal.value = false
-  router.push(`/messages/${thread.thread_id}`)
 }
 
 // WebSocket event handlers

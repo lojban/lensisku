@@ -3,14 +3,8 @@ use std::io;
 use chrono::{DateTime, Utc};
 use deadpool_postgres::Pool;
 
-use crate::comments::{
-    dto::SearchCommentsParams,
-    service as comments_service,
-};
-use crate::mailarchive::{
-    self as mailarchive,
-    service as mailarchive_service,
-};
+use crate::comments::{dto::SearchCommentsParams, service as comments_service};
+use crate::mailarchive::{self as mailarchive, service as mailarchive_service};
 use crate::waves::dto::{WaveSearchHit, WaveThreadSummary, WavesSearchQuery, WavesThreadsQuery};
 use crate::wiki::service as wiki_service;
 
@@ -135,23 +129,39 @@ fn thread_summary_sort_key(summary: &WaveThreadSummary, sort_by: &str) -> i64 {
             },
         ) => *last_comment_reactions,
         ("replies", WaveThreadSummary::Comment { total_replies, .. }) => *total_replies,
-        ("time", WaveThreadSummary::Comment {
-            last_activity_time,
-            ..
-        }) => *last_activity_time as i64,
-        ("reactions", WaveThreadSummary::Mail {
-            last_comment_reactions,
-            ..
-        }) => *last_comment_reactions,
+        (
+            "time",
+            WaveThreadSummary::Comment {
+                last_activity_time, ..
+            },
+        ) => *last_activity_time as i64,
+        (
+            "reactions",
+            WaveThreadSummary::Mail {
+                last_comment_reactions,
+                ..
+            },
+        ) => *last_comment_reactions,
         ("replies", WaveThreadSummary::Mail { message_count, .. }) => *message_count,
-        ("time", WaveThreadSummary::Mail {
-            last_activity_time,
-            ..
-        }) => *last_activity_time,
-        ("time", WaveThreadSummary::Wiki { last_activity_time, .. }) => *last_activity_time,
-        ("reactions", WaveThreadSummary::Wiki { last_comment_reactions, .. }) => {
-            *last_comment_reactions
-        }
+        (
+            "time",
+            WaveThreadSummary::Mail {
+                last_activity_time, ..
+            },
+        ) => *last_activity_time,
+        (
+            "time",
+            WaveThreadSummary::Wiki {
+                last_activity_time, ..
+            },
+        ) => *last_activity_time,
+        (
+            "reactions",
+            WaveThreadSummary::Wiki {
+                last_comment_reactions,
+                ..
+            },
+        ) => *last_comment_reactions,
         ("replies", WaveThreadSummary::Wiki { .. }) => 0,
         _ => match summary {
             WaveThreadSummary::Comment {
@@ -245,15 +255,9 @@ pub async fn search_waves(
         );
     }
     if want_wiki {
-        let (h, t) = wiki_service::search_wiki(
-            pool,
-            &search_term,
-            sort_by,
-            sort_order,
-            1,
-            fetch_per_source,
-        )
-        .await?;
+        let (h, t) =
+            wiki_service::search_wiki(pool, &search_term, sort_by, sort_order, 1, fetch_per_source)
+                .await?;
         wiki_hits = h;
         wiki_total = t;
     }
@@ -412,9 +416,10 @@ pub async fn list_wave_threads(
                 comment_id: c.comment_id,
                 import_source: root_imports.get(&c.thread_id).cloned().flatten(),
                 first_comment_subject: c.first_comment_subject.clone(),
-                first_comment_content: c.first_comment_content.as_ref().map(|v| {
-                    serde_json::to_value(v).unwrap_or(serde_json::Value::Null)
-                }),
+                first_comment_content: c
+                    .first_comment_content
+                    .as_ref()
+                    .map(|v| serde_json::to_value(v).unwrap_or(serde_json::Value::Null)),
                 username: c.username.clone(),
                 last_comment_username: c.last_comment_username.clone(),
                 last_activity_time: c.time,

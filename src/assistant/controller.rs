@@ -12,12 +12,12 @@ use crate::auth::models::Claims;
 use crate::error::AppError;
 use crate::middleware::cache::RedisCache;
 
-use super::chat_store::{
-    self, AssistantChatPutBody, ChatCreateResult, ImportBody, ImportResponse,
-};
+use super::chat_store::{self, AssistantChatPutBody, ChatCreateResult, ImportBody, ImportResponse};
 use super::dto::ChatRequest;
 use super::persist::ChatPersistState;
-use super::stored_messages::{build_chat_messages_from_stored, strip_trailing_empty_assistant_stub};
+use super::stored_messages::{
+    build_chat_messages_from_stored, strip_trailing_empty_assistant_stub,
+};
 
 const DEBUG_BODY_LIMIT: usize = 2000;
 
@@ -118,7 +118,8 @@ pub async fn import_chats(
     claims: Claims,
     body: web::Json<ImportBody>,
 ) -> Result<HttpResponse, AppError> {
-    let res: ImportResponse = chat_store::import_sessions(pool.get_ref(), claims.sub, &body).await?;
+    let res: ImportResponse =
+        chat_store::import_sessions(pool.get_ref(), claims.sub, &body).await?;
     Ok(HttpResponse::Ok().json(res))
 }
 
@@ -173,11 +174,7 @@ pub async fn chat_stream_by_id(
         .ok_or_else(|| AppError::NotFound("assistant chat not found".into()))?;
 
     let primary = chat.primary_model_id.clone();
-    let arr: Vec<Value> = chat
-        .messages
-        .as_array()
-        .cloned()
-        .unwrap_or_default();
+    let arr: Vec<Value> = chat.messages.as_array().cloned().unwrap_or_default();
     if arr.is_empty() {
         return Err(AppError::BadRequest("no messages in chat".into()));
     }
@@ -252,18 +249,16 @@ pub async fn chat_stream_by_id(
 
 pub fn configure(cfg: &mut web::ServiceConfig) {
     cfg.service(
-        web::scope("assistant")
-            .service(chat_stream_public)
-            .service(
-                web::scope("")
-                    .wrap(HttpAuthentication::bearer(crate::auth::validator))
-                    .service(list_chats)
-                    .service(create_chat)
-                    .service(import_chats)
-                    .service(get_chat)
-                    .service(put_chat)
-                    .service(delete_chat)
-                    .service(chat_stream_by_id),
-            ),
+        web::scope("assistant").service(chat_stream_public).service(
+            web::scope("")
+                .wrap(HttpAuthentication::bearer(crate::auth::validator))
+                .service(list_chats)
+                .service(create_chat)
+                .service(import_chats)
+                .service(get_chat)
+                .service(put_chat)
+                .service(delete_chat)
+                .service(chat_stream_by_id),
+        ),
     );
 }

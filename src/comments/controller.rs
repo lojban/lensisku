@@ -18,8 +18,8 @@ use crate::{
     auth::Claims,
     comments::{
         dto::{
-            BookmarkActionRequest, NewCommentParams, PaginationQuery,
-            ReactionRequest, ThreadParams, TrendingQuery,
+            BookmarkActionRequest, NewCommentParams, PaginationQuery, ReactionRequest,
+            ThreadParams, TrendingQuery,
         },
         models::TrendingTimespan,
     },
