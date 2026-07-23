@@ -9,9 +9,9 @@
     "flat": "panpi staile"
   },
   "date": {
-    "date": "de'i li nanca bu {year} masti bu {month} djedi bu {day}",
-    "time": "ti'u li cacra bu {hours} mentu bu {minutes}",
-    "dateTime": "de'i li nanca bu {year} masti bu {month} djedi bu {day} cacra bu {hours} mentu bu {minutes}"
+    "date": "de'i li {year} pi'e {month} pi'e {day}",
+    "time": "ti'u li {hours} pi'e {minutes}",
+    "dateTime": "de'i li {year} pi'e {month} pi'e {day} ti'u li {hours} pi'e {minutes}"
   },
   "notFoundPage": {
     "pageTitle": "404 — le papri na zasti",
@@ -42,7 +42,7 @@
     "errorNotReady": "lo zgana ca'o cpedu",
     "errorLoad": "fliba lo nu cpedu lo jorne",
     "errorDisabled": "lo samrkomidi na kakne",
-    "errorPreview": "fliba lo nu catlu lo ciksi",
+    "errorPreview": "fliba lo ka catlu",
     "errorImport": "fliba lo nu tcidu lo datnyvei",
     "errorLanguages": "fliba lo nu cpedu lo bangu liste"
   },
@@ -106,7 +106,7 @@
       "searchInPhrases": "lo ji'a jufra"
     },
     "placeholder": {
-      "dictionary": "ko sisku lo valsi .e lo ciksi .e lo notci .e lo lisri...",
+      "dictionary": "ko sisku lo valsi .e lo velckivei .e lo notci .e lo lisri li'o",
       "semantic": "ko sisku lo smuni .a lo sidbo...",
       "comments": "ko sisku lo nu casnu...",
       "messages": "ko sisku lo mrilu...",
@@ -124,7 +124,7 @@
     },
     "searchTitle": "sisku: {query}",
     "defaultTitle": "jicmu",
-    "metaDescription": "ko sisku lo jbovlaste .e lo sarsku .i ko facki lo ciksi .e lo casnu .e lo mupli.",
+    "metaDescription": "ko sisku lo jbovlaste .e lo sarsku .i ko penmi lo velckivei .e lo casnu .e lo mupli.",
     "searchMetaDescription": "ko viska lo se facki be la'ei \"{query}\" ne'i lo lojbo vlaste.",
     "addDefinition": "cnino velsku",
     "newFreeThread": "cfari lo karni",
