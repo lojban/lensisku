@@ -342,7 +342,9 @@ pub fn extract_token_text(tokens: &[LojbanToken]) -> Vec<String> {
             | "non_terminal_cmavo"
             | "non_terminal_cmevla"
             | "non_terminal_gismu"
-            | "non_terminal_fuhivla" => {
+            | "non_terminal_fuhivla"
+            | "non_terminal_lerfu_string"
+            | "non_terminal_BY_clause" => {
                 text_fields.push(token.text.clone());
             }
             _ => {
@@ -369,7 +371,8 @@ pub fn analyze_word_type(tokens: &[LojbanToken]) -> String {
             | "non_terminal_cmavo"
             | "non_terminal_cmevla"
             | "non_terminal_gismu"
-            | "non_terminal_fuhivla" => {
+            | "non_terminal_fuhivla"
+            | "non_terminal_BY_clause" => {
                 any_words.push(token.kind.clone());
             }
             _ => {
@@ -392,6 +395,7 @@ pub fn analyze_word_type(tokens: &[LojbanToken]) -> String {
             "non_terminal_cmevla" => return "cmevla".to_string(),
             "non_terminal_gismu" => return "gismu".to_string(),
             "non_terminal_fuhivla" => return "fu'ivla".to_string(),
+            "non_terminal_BY_clause" => return "bu-letteral".to_string(),
             _ => return "nalvla".to_string(),
         }
     }
@@ -407,6 +411,7 @@ pub fn analyze_word_type(tokens: &[LojbanToken]) -> String {
                     | "non_terminal_cmevla"
                     | "non_terminal_gismu"
                     | "non_terminal_fuhivla"
+                    | "non_terminal_BY_clause"
             )
         });
 
@@ -807,5 +812,66 @@ mod tests {
             jvokaha("klamyseltru").expect("klamyseltru"),
             vec!["klam", "y", "sel", "tru"]
         );
+    }
+
+    fn parse_word(word: &str) -> Vec<LojbanToken> {
+        use std::path::Path;
+
+        let grammar = std::fs::read_to_string(
+            Path::new(env!("CARGO_MANIFEST_DIR")).join("src/grammar/lojban.peg"),
+        )
+        .expect("lojban.peg should be readable");
+        let parser = Peg::new("text", &grammar).expect("lojban.peg should be a valid PEG");
+        let ParseResult(_, _, _, result) = parser.parse(word);
+        let nodes = result.as_ref().clone().expect("parse should succeed");
+        let mut tokens: Vec<LojbanToken> =
+            nodes.iter().cloned().map(LojbanToken::from).collect();
+        for token in &mut tokens {
+            fill_text(token, word);
+        }
+        tokens
+    }
+
+    fn word_type(word: &str) -> String {
+        analyze_word_type(&parse_word(word))
+    }
+
+    fn word_texts(word: &str) -> Vec<String> {
+        extract_token_text(&parse_word(word))
+    }
+
+    #[test]
+    fn bu_letteral_detection() {
+        assert_eq!(word_type("nu bu"), "bu-letteral");
+        assert_eq!(word_type("mlatu bu"), "bu-letteral");
+        assert_eq!(word_type("ab bu"), "bu-letteral");
+        assert_eq!(word_type("a bu"), "bu-letteral");
+        assert_eq!(word_type("abu"), "bu-letteral");
+        assert_eq!(word_type("lau mlatu bu"), "bu-letteral");
+        assert_eq!(word_type("tei mlatu bu foi"), "bu-letteral");
+        assert_eq!(word_type("mlatu zei mlatu bu"), "bu-letteral");
+
+        assert_eq!(word_type("bu"), "cmavo");
+        assert_eq!(word_type("nu"), "cmavo");
+        assert_eq!(word_type("by"), "cmavo");
+
+        assert_eq!(word_type("mlatu"), "gismu");
+        assert_eq!(word_type("ab"), "cmevla");
+
+        assert_eq!(word_type("mlatu bu zdani"), "phrase");
+        // Without a pause, the legacy fuhivla rule greedily consumes these
+        // strings. The important property is they are not `bu-letteral`.
+        assert_eq!(word_type("mlatunu"), "fu'ivla");
+        assert_eq!(word_type("mlatubu"), "fu'ivla");
+
+        assert_eq!(word_type("ui ki'u"), "cmavo-compound");
+    }
+
+    #[test]
+    fn bu_letteral_text_extraction() {
+        assert_eq!(word_texts("lau mlatu bu"), vec!["lau mlatu bu"]);
+        assert_eq!(word_texts("tei mlatu bu foi"), vec!["tei mlatu bu foi"]);
+        assert_eq!(word_texts("mlatu zei mlatu bu"), vec!["mlatu zei mlatu bu"]);
+        assert_eq!(word_texts("mlatu bu zdani"), vec!["mlatu bu", "zdani"]);
     }
 }
