@@ -1,6 +1,21 @@
 text <- any_word+
 
-any_word <- jbovla
+any_word <- lerfu_string / jbovla
+
+lerfu_string <- lerfu_word (pause_0? !'foi' (lerfu_word / cmavo))*
+
+lerfu_word <- BY_clause / LAU_clause lerfu_word / TEI_clause lerfu_string FOI_clause
+
+BY_clause <- (valsi_word (pause_0? 'zei' pause_0? valsi_word)*) pause_0 'bu' &post_word
+           / pa_zei_karsna 'bu' &post_word
+
+valsi_word <- lojban_letter+ &post_word
+lojban_letter <- zunsna / pa_zei_karsna / re_zei_karsna / y / h / digit
+digit <- [0-9]
+
+LAU_clause <- ('lau' / 'tau' / 'zai' / 'ce' h 'a') pause_0?
+TEI_clause <- 'tei' pause_0?
+FOI_clause <- pause_0? 'foi' &post_word
 
 jbovla <- pause_0 / cmevla / (cmavo) / (gismu) / (!gismu !fuhivla !cmavo !(ccv h y onset) lujvo_core) / (fuhivla)
 
