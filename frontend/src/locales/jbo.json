@@ -122,7 +122,7 @@
       "comments": "pinka",
       "messages": "se mrilu"
     },
-    "searchTitle": "sisku: {query}",
+    "searchTitle": "pentoi {query}",
     "defaultTitle": "jicmu",
     "metaDescription": "ko sisku lo jbovlaste .e lo sarsku .i ko penmi lo velckivei .e lo casnu .e lo mupli.",
     "searchMetaDescription": "ko viska lo se facki be la'ei \"{query}\" ne'i lo lojbo vlaste.",
@@ -1500,13 +1500,13 @@
     "sortActiveAll": "lei misno",
     "sortNewest": "cnino pa mai",
     "weekdayGregorian": {
-      "0": "xundei",
-      "1": "najdei",
-      "2": "peldei",
-      "3": "ri'odje",
-      "4": "cicnydei",
-      "5": "bladei",
-      "6": "zirdei"
+      "0": "zeldei",
+      "1": "pavdei",
+      "2": "reldei",
+      "3": "cibdei",
+      "4": "vondei",
+      "5": "mumdei",
+      "6": "xavdei"
     }
   },
   "flashcardLevels": {
