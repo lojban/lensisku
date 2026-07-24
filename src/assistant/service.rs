@@ -948,6 +948,7 @@ fn summarise_definition(def: &DefinitionDetail) -> serde_json::Value {
         "lang": def.langrealname,
         "score": def.score,
         "selmaho": def.selmaho.as_deref(),
+        "rafsi": def.rafsi.as_deref(),
         "jargon": def.jargon.as_deref(),
     })
 }
@@ -980,6 +981,11 @@ fn semantic_tool_results_plain_text_for_llm(
         if let Some(s) = def.selmaho.as_ref() {
             if !s.trim().is_empty() {
                 out.push_str(&format!("selmaho: {}\n", s));
+            }
+        }
+        if let Some(r) = def.rafsi.as_ref() {
+            if !r.trim().is_empty() {
+                out.push_str(&format!("rafsi: {}\n", r));
             }
         }
         out.push('\n');
