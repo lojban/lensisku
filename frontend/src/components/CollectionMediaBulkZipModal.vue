@@ -23,8 +23,7 @@
 
       <pre
         class="overflow-x-auto rounded-md border border-gray-200 bg-gray-50 p-3 text-xs text-gray-800 whitespace-pre-wrap"
-        >{{ MANIFEST_JSON_EXAMPLE }}</pre
-      >
+        >{{ MANIFEST_JSON_EXAMPLE }}</pre>
 
       <p class="text-xs text-gray-500">{{ t('collectionCustomTextBulk.mediaBulkLimits') }}</p>
 

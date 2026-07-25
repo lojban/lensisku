@@ -68,7 +68,7 @@
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
-export type CollectionReelItem = {
+type CollectionReelItem = {
   item_id: number
   has_front_image: boolean
   has_back_image: boolean

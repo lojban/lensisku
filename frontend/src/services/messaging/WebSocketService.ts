@@ -1,7 +1,7 @@
 import { ref } from 'vue'
 import type { Message, Thread, UserStatus, TypingIndicator, WebRTCSignal } from '@/types/messaging'
 
-export interface WebSocketEvents {
+interface WebSocketEvents {
   'message:new': (message: Message) => void
   'message:updated': (message: Message) => void
   'message:read': (messageId: number, userId: number) => void
@@ -390,20 +390,3 @@ class WebSocketService {
 
 // Create singleton instance
 export const webSocketService = new WebSocketService()
-
-// Export composable for Vue components
-export function useWebSocket() {
-  return {
-    isConnected: webSocketService.isConnected,
-    isConnecting: webSocketService.isConnecting,
-    connectionError: webSocketService.connectionError,
-    connect: webSocketService.connect.bind(webSocketService),
-    disconnect: webSocketService.disconnect.bind(webSocketService),
-    sendMessage: webSocketService.sendMessage.bind(webSocketService),
-    sendTypingIndicator: webSocketService.sendTypingIndicator.bind(webSocketService),
-    markMessageRead: webSocketService.markMessageRead.bind(webSocketService),
-    sendWebRTCSignal: webSocketService.sendWebRTCSignal.bind(webSocketService),
-    on: webSocketService.on.bind(webSocketService),
-    off: webSocketService.off.bind(webSocketService),
-  }
-}

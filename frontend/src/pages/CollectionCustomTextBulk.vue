@@ -623,8 +623,7 @@ const isImporting = ref(false)
 const deletingItemId = ref<number | null>(null)
 /** Pending delete shown in DeleteConfirmationModal (saved row or draft row). */
 type PendingDelete =
-  | { kind: 'saved'; idx: number }
-  | { kind: 'draft'; dIdx: number; isEmpty: boolean }
+  { kind: 'saved'; idx: number } | { kind: 'draft'; dIdx: number; isEmpty: boolean }
 const pendingDelete = ref<PendingDelete | null>(null)
 const showImportModal = ref(false)
 const showMediaBulkModal = ref(false)

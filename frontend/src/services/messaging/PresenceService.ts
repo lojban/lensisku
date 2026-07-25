@@ -114,7 +114,7 @@ class PresenceService {
 }
 
 // Create singleton instance
-export const presenceService = new PresenceService()
+const presenceService = new PresenceService()
 
 // Export composable for Vue components
 export function usePresence() {

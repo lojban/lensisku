@@ -26,6 +26,9 @@
     "src/config/lingoConstants.ts": ["exports"],
     "src/config/locales.ts": ["exports"],
     "src/router/index.ts": ["types"],
-    "src/utils/searchQueue.ts": ["exports"]
+    "src/utils/searchQueue.ts": ["exports"],
+    "src/services/messaging/messagingApi.ts": ["exports"],
+    "src/types/messaging/user.types.ts": ["types"],
+    "src/utils/mobileOptimization.ts": ["exports", "types"]
   }
 }

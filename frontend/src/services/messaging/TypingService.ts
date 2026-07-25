@@ -121,7 +121,7 @@ class TypingService {
 }
 
 // Create singleton instance
-export const typingService = new TypingService()
+const typingService = new TypingService()
 
 // Export composable for Vue components
 export function useTyping() {

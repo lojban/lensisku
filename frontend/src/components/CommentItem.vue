@@ -358,13 +358,11 @@ type ProcessedComment = CommentItemApiComment & {
   subject?: string
 }
 
-const processedComment = computed(
-  (): ProcessedComment => ({
-    ...props.comment,
-    plain_content: props.comment.content.filter((part) => part.type === 'text'),
-    subject: props.comment.content.find((part) => part.type === 'header')?.data,
-  })
-)
+const processedComment = computed((): ProcessedComment => ({
+  ...props.comment,
+  plain_content: props.comment.content.filter((part) => part.type === 'text'),
+  subject: props.comment.content.find((part) => part.type === 'header')?.data,
+}))
 const isBookmarkAnimating = ref(false)
 const showReactionPicker = ref(false)
 const showDeleteConfirm = ref(false)

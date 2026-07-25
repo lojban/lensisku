@@ -41,7 +41,7 @@ const PAYLOAD_LIMIT_PATTERN =
   /payload.*larger than allowed|larger than allowed.*limit|JSON payload.*larger than allowed/i
 
 /** True when the server (or proxy) rejected the request body for exceeding size limits. */
-export function isPayloadLimitError(error: unknown): boolean {
+function isPayloadLimitError(error: unknown): boolean {
   const e = error as { response?: { status?: number }; message?: string }
   if (e.response?.status === 413) return true
   const raw = getApiErrorMessage(error)

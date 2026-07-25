@@ -150,8 +150,7 @@
       <pre
         v-show="showRawOutput"
         class="mt-1 p-1.5 rounded bg-gray-200 text-[10px] overflow-x-auto max-h-48 overflow-y-auto whitespace-pre-wrap break-all"
-        >{{ step.tool_output }}</pre
-      >
+        >{{ step.tool_output }}</pre>
     </div>
   </div>
 </template>

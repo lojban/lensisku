@@ -330,7 +330,7 @@ class NotificationService {
 }
 
 // Create singleton instance
-export const notificationService = new NotificationService()
+const notificationService = new NotificationService()
 
 // Export composable for Vue components
 export function useNotifications() {

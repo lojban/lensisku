@@ -93,7 +93,7 @@ import PageHeader from '@/components/layout/PageHeader.vue'
 import { CollectionCoverLightbox } from '@packages/ui'
 
 /** Minimal collection shape for header + meta row. */
-export interface CollectionPageHeaderModel {
+interface CollectionPageHeaderModel {
   name: string
   description?: string | null
   is_public: boolean

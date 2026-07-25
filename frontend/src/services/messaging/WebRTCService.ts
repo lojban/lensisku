@@ -299,7 +299,7 @@ class WebRTCService {
 }
 
 // Create singleton instance
-export const webRTCService = new WebRTCService()
+const webRTCService = new WebRTCService()
 
 // Export composable for Vue components
 export function useWebRTC() {

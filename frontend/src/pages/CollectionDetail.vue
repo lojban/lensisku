@@ -2012,7 +2012,9 @@ const openEditItemModal = async (item) => {
           if (item[`has_${side}_image`]) {
             try {
               const response = await getItemImage(props.collectionId, item.item_id, side)
-              const blob = new Blob([response.data], { type: response.headers['content-type'] })
+              const blob = new Blob([response.data], {
+                type: String(response.headers['content-type']),
+              })
 
               return new Promise((resolve) => {
                 const reader = new FileReader()
@@ -2021,7 +2023,7 @@ const openEditItemModal = async (item) => {
                   const base64 = typeof raw === 'string' ? (raw.split(',')[1] ?? '') : ''
                   resolve({
                     data: base64,
-                    mime_type: response.headers['content-type'],
+                    mime_type: String(response.headers['content-type']),
                   })
                 }
                 reader.readAsDataURL(blob)
@@ -2066,7 +2068,7 @@ const openEditItemModal = async (item) => {
       if (item[`has_${side}_image`]) {
         try {
           const response = await getItemImage(props.collectionId, item.item_id, side)
-          const blob = new Blob([response.data], { type: response.headers['content-type'] })
+          const blob = new Blob([response.data], { type: String(response.headers['content-type']) })
           // Convert to base64 data URI
           return new Promise<LoadedSideImage>((resolve) => {
             const reader = new FileReader()
@@ -2075,7 +2077,7 @@ const openEditItemModal = async (item) => {
               const asString = typeof raw === 'string' ? raw : ''
               resolve({
                 data: asString.split(',')[1] ?? '',
-                mime_type: response.headers['content-type'],
+                mime_type: String(response.headers['content-type']),
                 dataUri: asString,
               })
             }
@@ -2111,10 +2113,10 @@ const openEditItemModal = async (item) => {
     if (item.has_front_image) {
       try {
         const response = await getItemImage(props.collectionId, item.item_id, 'front')
-        const blob = new Blob([response.data], { type: response.headers['content-type'] })
+        const blob = new Blob([response.data], { type: String(response.headers['content-type']) })
         customContent.value.frontImage = {
           data: URL.createObjectURL(blob),
-          mime_type: response.headers['content-type'],
+          mime_type: String(response.headers['content-type']),
         }
       } catch (error) {
         console.error('Error loading front image:', error)
@@ -2124,7 +2126,7 @@ const openEditItemModal = async (item) => {
     if (item.has_back_image) {
       try {
         const response = await getItemImage(props.collectionId, item.item_id, 'back')
-        const blob = new Blob([response.data], { type: response.headers['content-type'] })
+        const blob = new Blob([response.data], { type: String(response.headers['content-type']) })
 
         customContent.value.backImage = await new Promise<LoadedSideImage>((resolve) => {
           const reader = new FileReader()
@@ -2133,7 +2135,7 @@ const openEditItemModal = async (item) => {
             const asString = typeof raw === 'string' ? raw : ''
             resolve({
               data: asString.split(',')[1] ?? '',
-              mime_type: response.headers['content-type'],
+              mime_type: String(response.headers['content-type']),
               dataUri: asString,
             })
           }

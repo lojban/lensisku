@@ -21,8 +21,7 @@
 
         <pre
           class="text-gray-200 whitespace-pre-wrap text-center font-mono text-sm leading-relaxed"
-          >{{ lojbanLyrics }}</pre
-        >
+          >{{ lojbanLyrics }}</pre>
       </div>
 
       <h1
