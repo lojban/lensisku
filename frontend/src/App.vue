@@ -298,7 +298,7 @@
     class="max-w-4xl mx-auto relative"
   >
     <div
-      class="fixed md:absolute bottom-8 right-4 md:right-6 lg:-right-4 lg:-mr-4 z-50 flex flex-col items-end gap-3"
+      class="fixed md:absolute bottom-4 right-4 md:right-6 lg:-right-4 lg:-mr-4 z-50 flex flex-col items-end gap-3"
     >
       <Dropdown>
         <template #trigger="{ open }">

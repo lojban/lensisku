@@ -15,19 +15,18 @@ use std::{fs, path::PathBuf};
 use tokio_postgres::Client;
 use walkdir::WalkDir;
 
-use lazy_static::lazy_static;
 use log::{error, info, warn};
 use regex::Regex;
+use std::sync::LazyLock;
 use tokio::time::{sleep, Duration};
 
-lazy_static! {
-    static ref HEADER_SPLIT_REGEX: Regex =
-        Regex::new(r"[;\n]|\\n").expect("Invalid header split regex pattern");
-    static ref PARENTHESES_CLEAN_REGEX: Regex =
-        Regex::new(r"\([^)]*\)").expect("Invalid parentheses cleanup regex pattern");
-    static ref DAY_OF_WEEK_REGEX: Regex = Regex::new(r"^(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun)\s+")
-        .expect("Invalid day of week regex pattern");
-}
+static HEADER_SPLIT_REGEX: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"[;\n]|\\n").expect("Invalid header split regex pattern"));
+static PARENTHESES_CLEAN_REGEX: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"\([^)]*\)").expect("Invalid parentheses cleanup regex pattern"));
+static DAY_OF_WEEK_REGEX: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(r"^(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun)\s+").expect("Invalid day of week regex pattern")
+});
 
 const BATCH_SIZE: usize = 1000;
 const BATCH_DELAY: Duration = Duration::from_millis(100);
@@ -504,7 +503,7 @@ async fn process_email(
 
     // Parse email using processed headers
     let message_body_str = content_str[index_headers_end..].trim();
-    let mail_content = format!("{}\r\n\r\n{}", headers_str, &message_body_str);
+    let mail_content = format!("{}\r\n\r\n{}", headers_str, message_body_str);
 
     let parsed_mail = parse_mail(mail_content.as_bytes())?;
 
@@ -535,7 +534,7 @@ async fn process_email(
     };
 
     // Parse email using processed content
-    let mail_content = format!("{}\r\n\r\n{}", headers_str, &message_body_str);
+    let mail_content = format!("{}\r\n\r\n{}", headers_str, message_body_str);
     let parsed_mail = parse_mail(mail_content.as_bytes())?;
 
     // Process all parts of the email

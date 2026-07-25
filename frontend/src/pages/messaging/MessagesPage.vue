@@ -183,7 +183,7 @@ const fetchThreads = async (page: number = 1, append: boolean = false) => {
       threads.value = response.threads
     }
 
-    total.value = response.total
+    total.value = response.total_count
     hasMore.value = response.has_more
     currentPage.value = page
   } catch (error) {

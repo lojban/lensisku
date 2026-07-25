@@ -73,8 +73,16 @@ impl MessagingService {
 
         let rows = client
             .query(
-                "SELECT * FROM get_user_message_threads($1)
-                 ORDER BY last_message_at DESC NULLS LAST, created_at DESC
+                "SELECT mt.*,
+                        COALESCE(tp.unread_count, 0) as unread_count,
+                        (SELECT COUNT(*) FROM thread_participants tp2 WHERE tp2.thread_id = mt.thread_id AND tp2.is_active = TRUE) as participant_count,
+                        (tp.role = 'admin') as is_admin
+                 FROM message_threads mt
+                 JOIN thread_participants tp ON mt.thread_id = tp.thread_id
+                 WHERE tp.user_id = $1
+                   AND tp.is_active = TRUE
+                   AND mt.is_active = TRUE
+                 ORDER BY mt.last_message_at DESC NULLS LAST, mt.created_at DESC
                  LIMIT $2 OFFSET $3",
                 &[&user_id, &query.per_page, &offset],
             )

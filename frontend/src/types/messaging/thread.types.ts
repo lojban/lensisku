@@ -60,15 +60,13 @@ export interface GetThreadsQuery {
 
 export interface ThreadListResponse {
   threads: Thread[]
-  total: number
+  total_count: number
   page: number
   per_page: number
   has_more: boolean
 }
 
-export interface ThreadResponse {
-  thread: Thread
-}
+export type ThreadResponse = Thread
 
 // Re-import Message type for last_message
 import type { Message } from './message.types'

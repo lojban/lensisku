@@ -113,10 +113,9 @@ const handleMessageClick = async () => {
     }
 
     const response = await createThread(request)
-    const thread = (response as { thread: unknown }).thread
 
     // Navigate to the thread
-    router.push(`/messages/${(thread as { thread_id: number }).thread_id}`)
+    router.push(`/messages/${response.thread_id}`)
 
     success.value = 'Thread created successfully!'
 

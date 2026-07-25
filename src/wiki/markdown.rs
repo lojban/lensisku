@@ -168,10 +168,10 @@ fn render_node(node: &Node<'_>, md: &mut String, plain: &mut String, depth: usiz
             let n = name.as_ref();
             match n {
                 "code" | "tt" | "pre" => {
-                    md.push_str("`");
+                    md.push('`');
                     let mut inner_plain = String::new();
                     render_nodes(nodes, md, &mut inner_plain, depth);
-                    md.push_str("`");
+                    md.push('`');
                     plain.push_str(&inner_plain);
                 }
                 "nowiki" => {

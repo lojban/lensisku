@@ -16,7 +16,7 @@ use actix_web_httpauth::extractors::bearer::BearerAuth;
 use jsonwebtoken::{decode, Algorithm, DecodingKey, Validation};
 
 use deadpool_postgres::Pool;
-use rand::{rng, Rng};
+use rand::{rng, RngExt};
 use serde_json::json;
 use std::time::{SystemTime, UNIX_EPOCH};
 use uuid::Uuid;

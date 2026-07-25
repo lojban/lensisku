@@ -712,7 +712,7 @@ fn compile_latex_and_capture_log(latex_document: String) -> Result<(), MathJaxVa
     let config = tectonic::config::PersistentConfig::open(false)
         .map_err(|e| MathJaxValidationError::Tectonic(format!("Failed to open config: {}", e)))?;
     let bundle = config
-        .default_bundle(false, &mut status)
+        .default_bundle(false)
         .map_err(|e| MathJaxValidationError::Tectonic(format!("Failed to load bundle: {}", e)))?;
     let format_cache_path = config.format_cache_path().map_err(|e| {
         MathJaxValidationError::Tectonic(format!("Failed to get format cache path: {}", e))
@@ -783,6 +783,7 @@ pub async fn analyze_word_in_pool(
 }
 
 #[cfg(test)]
+#[allow(clippy::expect_used)]
 mod tests {
     use super::*;
 
@@ -824,8 +825,7 @@ mod tests {
         let parser = Peg::new("text", &grammar).expect("lojban.peg should be a valid PEG");
         let ParseResult(_, _, _, result) = parser.parse(word);
         let nodes = result.as_ref().clone().expect("parse should succeed");
-        let mut tokens: Vec<LojbanToken> =
-            nodes.iter().cloned().map(LojbanToken::from).collect();
+        let mut tokens: Vec<LojbanToken> = nodes.iter().cloned().map(LojbanToken::from).collect();
         for token in &mut tokens {
             fill_text(token, word);
         }

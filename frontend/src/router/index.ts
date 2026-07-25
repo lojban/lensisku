@@ -392,7 +392,12 @@ const baseRoutes: Array<RouteRecordRaw> = [
     path: '/messages/:threadId',
     name: 'Chat',
     component: () => import('../pages/messaging/ChatPage.vue'),
-    meta: { requiresAuth: true },
+    meta: {
+      requiresAuth: true,
+      fullHeight: true,
+      hideFooter: true,
+      contentTopPaddingMainOnly: true,
+    },
     props: (route) => ({
       threadId: parseInt(route.params.threadId as string),
     }),

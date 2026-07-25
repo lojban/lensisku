@@ -292,7 +292,7 @@ const createThread = async () => {
     }
 
     const response = await createThreadApi(request)
-    emit('thread-created', response.thread)
+    emit('thread-created', response)
   } catch (error) {
     errorMessage.value = 'Failed to create chat. Please try again.'
     console.error('Failed to create thread:', error)

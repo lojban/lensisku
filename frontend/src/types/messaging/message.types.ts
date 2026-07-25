@@ -43,12 +43,10 @@ export interface GetMessagesQuery {
 
 export interface MessageListResponse {
   messages: Message[]
-  total: number
+  total_count: number
   page: number
   per_page: number
   has_more: boolean
 }
 
-export interface MessageResponse {
-  message: Message
-}
+export type MessageResponse = Message

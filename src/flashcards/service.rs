@@ -3,8 +3,9 @@ use chrono::{DateTime, Duration, Utc};
 use deadpool_postgres::Pool;
 use deadpool_postgres::Transaction;
 use fsrs::{
-    extract_simulator_config, Card, FSRSItem, FSRSReview, ItemProgress, ItemState, MemoryState,
-    NextStates, RevlogEntry, RevlogReviewKind, DEFAULT_PARAMETERS, FSRS,
+    current_retrievability, extract_simulator_config, optimal_retention, Card, FSRSItem,
+    FSRSReview, ItemProgress, ItemState, MemoryState, NextStates, RevlogEntry, RevlogReviewKind,
+    DEFAULT_PARAMETERS, FSRS,
 };
 use log::{debug, error, info};
 use std::collections::HashMap;
@@ -802,7 +803,7 @@ pub async fn list_flashcards(
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
 
-    let fsrs = FSRS::new(Some(&[]))?;
+    let fsrs = FSRS::new(&[])?;
 
     // Get base flashcards including free content
     let rows = transaction
@@ -947,7 +948,7 @@ pub async fn list_flashcards(
             let last_review: Option<DateTime<Utc>> = row.get("last_reviewed_at");
             if let Some(last) = last_review {
                 let days_elapsed = (Utc::now() - last).num_days().max(0) as u32;
-                fsrs.current_retrievability(memory_state, days_elapsed, -0.5)
+                current_retrievability(memory_state, days_elapsed as f32, -0.5)
             } else {
                 1.0
             }
@@ -1406,12 +1407,12 @@ pub async fn calculate_optimal_retention(
     let config = extract_simulator_config(revlogs, day_cutoff, true);
 
     // Calculate optimal retention
-    let fsrs = fsrs::FSRS::new(Some(&[]))?;
+    let _fsrs = FSRS::new(&[])?;
 
     // Use a progress callback that always returns true to avoid interruption
     let progress_callback = |_: ItemProgress| true;
 
-    match fsrs.optimal_retention(
+    match optimal_retention(
         &config,
         DEFAULT_PARAMETERS.as_slice(),
         progress_callback,
@@ -1570,7 +1571,7 @@ pub async fn review_flashcard(
         0
     };
 
-    let fsrs = FSRS::new(Some(&[]))?;
+    let fsrs = FSRS::new(&[])?;
     //todo: uncomment to use hardcoded desired_retention
     // let desired_retention: f32 = 0.9;
     let desired_retention = get_optimal_retention(&transaction, user_id).await?;
@@ -2306,7 +2307,7 @@ pub async fn review_flashcard_serverside(
         | (&FlashcardDirection::Both, _) => {
             return Err(format!(
                 "Fill-in endpoint called for non-fill-in direction '{:?}'",
-                &flashcard.direction
+                flashcard.direction
             )
             .into());
         }
@@ -2480,7 +2481,7 @@ async fn record_review(
         0
     };
 
-    let fsrs = FSRS::new(Some(&[]))?;
+    let fsrs = FSRS::new(&[])?;
     let desired_retention = 0.9;
 
     let next_states = match fsrs.next_states(current_state, desired_retention, elapsed_days) {

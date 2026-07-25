@@ -92,7 +92,7 @@
 import { User, Eye, EyeOff, KeyRound } from 'lucide-vue-next'
 
 import { AuthFormCard, Button } from '@packages/ui'
-import { ref } from 'vue'
+import { ref, onBeforeMount } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 
@@ -100,6 +100,7 @@ import { login } from '@/api'
 import { useAuth } from '@/composables/useAuth'
 import { useError } from '@/composables/useError'
 import { useSeoHead } from '@/composables/useSeoHead'
+import { localePrefixRegex } from '@/config/locales'
 
 const username = ref('')
 const password = ref('')
@@ -111,6 +112,29 @@ const { showError, clearError } = useError()
 const { t } = useI18n()
 
 useSeoHead({ title: t('loginPage.title'), robots: 'noindex, nofollow' })
+
+onBeforeMount(async () => {
+  const isAuthenticated = await auth.checkAuthStatus()
+  if (isAuthenticated) {
+    sessionStorage.removeItem('redirectPath')
+    await router.push('/')
+  }
+})
+
+function isAuthRedirect(path: string): boolean {
+  try {
+    const pathname = new URL(path, window.location.origin).pathname
+    const normalized = pathname.replace(localePrefixRegex, '') || '/'
+    return (
+      normalized === '/login' ||
+      normalized === '/signup' ||
+      normalized.startsWith('/login/') ||
+      normalized.startsWith('/signup/')
+    )
+  } catch {
+    return false
+  }
+}
 
 const performLogin = async () => {
   clearError()
@@ -124,7 +148,8 @@ const performLogin = async () => {
       auth.login(response.data.access_token, response.data.refresh_token, username.value)
       const redirectPath = sessionStorage.getItem('redirectPath')
       sessionStorage.removeItem('redirectPath')
-      router.push(redirectPath || '/')
+      const target = redirectPath && !isAuthRedirect(redirectPath) ? redirectPath : '/'
+      router.push(target)
     }
   } catch (err) {
     if (err.response?.status === 429) {

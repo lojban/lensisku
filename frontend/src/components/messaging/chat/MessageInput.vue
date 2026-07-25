@@ -121,7 +121,7 @@ const handleSubmit = async () => {
     resizeTextarea()
 
     // Emit the sent message
-    emit('message-sent', response.message)
+    emit('message-sent', response)
   } catch (error) {
     console.error('Failed to send message:', error)
     // Show error to user (could add toast notification)

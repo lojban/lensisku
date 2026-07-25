@@ -1,7 +1,7 @@
 <template>
-  <div class="chat-page page-sections h-full min-h-0">
+  <div class="chat-page h-full min-h-0 flex flex-col overflow-hidden">
     <!-- Chat Header -->
-    <header class="page-header-shell">
+    <header class="page-header-shell shrink-0">
       <div class="flex items-center justify-between gap-3">
         <div class="flex items-center gap-3">
           <!-- Back button on mobile -->
@@ -50,7 +50,7 @@
     </header>
 
     <!-- Messages Area -->
-    <main class="assistant-messages-pane flex flex-col flex-1 min-h-0 overflow-hidden">
+    <main class="assistant-messages-pane flex flex-col flex-1 min-h-0 overflow-hidden relative">
       <!-- Loading state -->
       <div v-if="isLoading" class="card-study-area">
         <span
@@ -99,7 +99,7 @@
       </div>
 
       <!-- Message Input -->
-      <div class="bg-white border-t border-gray-200 px-4 py-3">
+      <div class="bg-white border-t border-gray-200 px-4 py-3 shrink-0">
         <MessageInput
           :thread-id="threadId"
           :disabled="!thread"
@@ -160,7 +160,7 @@ const typingText = computed(() => {
 const loadThread = async () => {
   try {
     const response = await getThread(threadId.value)
-    thread.value = response.thread
+    thread.value = response
   } catch (error) {
     console.error('Failed to load thread:', error)
     router.push('/messages')
@@ -336,13 +336,9 @@ onUnmounted(() => {
 
 <style scoped>
 .chat-page {
-  min-height: 100vh;
-}
-
-@media (max-width: 640px) {
-  .chat-page {
-    height: 100vh;
-  }
+  /* fill the full-height parent from route meta.fullHeight */
+  height: 100%;
+  min-height: 0;
 }
 
 /* Typing indicator animation */

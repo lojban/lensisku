@@ -583,6 +583,7 @@ async fn mark_incremental_sync_done(pool: &Pool, ts: DateTime<Utc>) -> Result<()
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
 
