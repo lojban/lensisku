@@ -18,8 +18,8 @@ use once_cell::sync::Lazy;
 use regex::Regex;
 
 use crate::error::AppError;
-use crate::jbovlaste::models::{DefinitionDetail, DefinitionResponse, SearchDefinitionsParams};
-use crate::jbovlaste::service::semantic_search;
+use crate::jbovlaste::models::{DefinitionDetail, DefinitionResponse, Example, SearchDefinitionsParams};
+use crate::jbovlaste::service::{get_definition, semantic_search};
 use crate::middleware::cache::{generate_assistant_semantic_cache_key, RedisCache};
 use crate::utils::embeddings::get_batch_embeddings;
 use crate::utils::openrouter_models::{
@@ -159,7 +159,7 @@ impl AgentState {
             aggressive_context_retry: false,
             client_round,
             context_budget,
-            tools: vec![jbovlaste_tool_schema()],
+            tools: vec![jbovlaste_tool_schema(), jbovlaste_resolve_results_tool_schema()],
             system_content,
             candidates: candidates.to_vec(),
             client,
@@ -737,6 +737,277 @@ fn jbovlaste_tool_schema() -> Tool {
     }
 }
 
+fn jbovlaste_resolve_results_tool_schema() -> Tool {
+    Tool {
+        r#type: "function".to_string(),
+        function: ToolFunction {
+            name: "jbovlaste_resolve_results".to_string(),
+            description: "Submit the final set of jbovlaste references that answer the user's question. \
+                          This is the **only** way to finish a turn. The backend will validate every \
+                          reference (definitionid, field, and exact_text) against the real database and, \
+                          if all references are valid, build the printable answer. If any reference is \
+                          wrong, the backend will return a list of errors—fix them and call this tool again. \
+                          Do **not** output Markdown or prose; use this tool. \
+                          For fields: `definition`, `notes`, `etymology`, `rafsi`, `example` (requires exampleid), \
+                          `decomposition`. Copy `exact_text` exactly from the tool output, preserving `$...$` delimiters."
+                .to_string(),
+            parameters: json!({
+                "type": "object",
+                "properties": {
+                    "references": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "definitionid": {
+                                    "type": "integer",
+                                    "description": "jbovlaste definitionid from the search results."
+                                },
+                                "field": {
+                                    "type": "string",
+                                    "enum": ["definition", "notes", "etymology", "rafsi", "example", "decomposition"],
+                                    "description": "Which part of the definition entry the exact_text comes from."
+                                },
+                                "exampleid": {
+                                    "type": "integer",
+                                    "description": "Required when field is `example`; the exampleid from the search results."
+                                },
+                                "exact_text": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "description": "The exact substring to quote, copied verbatim from the search result. Preserve $...$ math delimiters."
+                                }
+                            },
+                            "required": ["definitionid", "field", "exact_text"]
+                        },
+                        "minItems": 1,
+                        "description": "Ordered list of references that form the answer."
+                    },
+                    "message": {
+                        "type": "string",
+                        "minLength": 1,
+                        "description": "Use instead of `references` when no Lojban evidence is found. Briefly explain why no answer is possible."
+                    }
+                }
+            }),
+        },
+    }
+}
+
+#[derive(Debug, Clone)]
+struct ValidatedReference {
+    definitionid: i32,
+    valsiword: String,
+    type_name: String,
+    langrealname: String,
+    selmaho: Option<String>,
+    rafsi: Option<String>,
+    field: String,
+    exampleid: Option<i32>,
+    exact_text: String,
+}
+
+#[derive(Debug, Clone)]
+struct ReferenceError {
+    index: usize,
+    definitionid: i32,
+    field: String,
+    exact_text: String,
+    reason: String,
+}
+
+enum ResolveOutcome {
+    Valid(Vec<ValidatedReference>),
+    Invalid(Vec<ReferenceError>),
+}
+
+/// Validates that every reference points to a real definition (and, for examples, a real example)
+/// and that `exact_text` actually occurs in the requested field.
+async fn resolve_references(
+    pool: &Pool,
+    references: &[ResolveReference],
+) -> Result<ResolveOutcome, AppError> {
+    let mut validated = Vec::with_capacity(references.len());
+    let mut errors = Vec::new();
+
+    for (index, r) in references.iter().enumerate() {
+        let field = r.field.trim().to_lowercase();
+        let needle = r.exact_text.as_deref().unwrap_or("").trim();
+        if needle.is_empty() {
+            errors.push(ReferenceError {
+                index,
+                definitionid: r.definitionid,
+                field: r.field.clone(),
+                exact_text: r.exact_text.clone().unwrap_or_default(),
+                reason: "exact_text is empty after trimming".to_string(),
+            });
+            continue;
+        }
+
+        let def = match get_definition(pool, r.definitionid, None).await {
+            Ok(Some(d)) => d,
+            Ok(None) => {
+                errors.push(ReferenceError {
+                    index,
+                    definitionid: r.definitionid,
+                    field: r.field.clone(),
+                    exact_text: r.exact_text.clone().unwrap_or_default(),
+                    reason: format!("definitionid {} not found", r.definitionid),
+                });
+                continue;
+            }
+            Err(e) => {
+                return Err(AppError::ExternalService(format!(
+                    "Failed to load definition {}: {}",
+                    r.definitionid, e
+                )));
+            }
+        };
+
+        let valid = match field.as_str() {
+            "definition" => def.definition.contains(needle),
+            "notes" => match def.notes.as_ref() {
+                Some(notes) => notes.contains(needle),
+                None => false,
+            },
+            "etymology" => match def.etymology.as_ref() {
+                Some(et) => et.contains(needle),
+                None => false,
+            },
+            "rafsi" => match def.rafsi.as_ref() {
+                Some(r) => r.contains(needle),
+                None => false,
+            },
+            "decomposition" => match def.decomposition.as_ref() {
+                Some(d) => d.iter().any(|s| s.contains(needle)),
+                None => false,
+            },
+            "example" => match def.examples.as_ref() {
+                Some(examples) => match examples.iter().find(|e| Some(e.exampleid) == r.exampleid) {
+                    Some(ex) => ex.content.contains(needle),
+                    None => {
+                        errors.push(ReferenceError {
+                            index,
+                            definitionid: r.definitionid,
+                            field: r.field.clone(),
+                            exact_text: r.exact_text.clone().unwrap_or_default(),
+                            reason: format!(
+                                "exampleid {} not found for definitionid {}",
+                                r.exampleid.unwrap_or(-1),
+                                r.definitionid
+                            ),
+                        });
+                        continue;
+                    }
+                },
+                None => {
+                    errors.push(ReferenceError {
+                        index,
+                        definitionid: r.definitionid,
+                        field: r.field.clone(),
+                        exact_text: r.exact_text.clone().unwrap_or_default(),
+                        reason: format!(
+                            "definitionid {} has no examples",
+                            r.definitionid
+                        ),
+                    });
+                    continue;
+                }
+            },
+            _ => {
+                errors.push(ReferenceError {
+                    index,
+                    definitionid: r.definitionid,
+                    field: r.field.clone(),
+                    exact_text: r.exact_text.clone().unwrap_or_default(),
+                    reason: format!("unknown field `{}`", r.field),
+                });
+                continue;
+            }
+        };
+
+        if !valid {
+            errors.push(ReferenceError {
+                index,
+                definitionid: r.definitionid,
+                field: r.field.clone(),
+                exact_text: r.exact_text.clone().unwrap_or_default(),
+                reason: format!(
+                    "exact_text not found in {} for definitionid {}",
+                    field, r.definitionid
+                ),
+            });
+            continue;
+        }
+
+        validated.push(ValidatedReference {
+            definitionid: r.definitionid,
+            valsiword: def.valsiword,
+            type_name: def.type_name,
+            langrealname: def.langrealname,
+            selmaho: def.selmaho,
+            rafsi: def.rafsi,
+            field,
+            exampleid: r.exampleid,
+            exact_text: needle.to_string(),
+        });
+    }
+
+    if !errors.is_empty() {
+        return Ok(ResolveOutcome::Invalid(errors));
+    }
+    Ok(ResolveOutcome::Valid(validated))
+}
+
+fn build_printable_markdown(validated: &[ValidatedReference]) -> String {
+    if validated.is_empty() {
+        return "No references to display.".to_string();
+    }
+
+    let mut groups: Vec<(i32, Vec<&ValidatedReference>)> = Vec::new();
+    let mut group_index: HashMap<i32, usize> = HashMap::new();
+    for r in validated {
+        match group_index.get(&r.definitionid) {
+            Some(&idx) => groups[idx].1.push(r),
+            None => {
+                group_index.insert(r.definitionid, groups.len());
+                groups.push((r.definitionid, vec![r]));
+            }
+        }
+    }
+
+    let mut out = String::new();
+    for (did, refs) in groups {
+        let first = refs[0];
+        out.push_str(&format!("## {} ({})\n\n", first.valsiword, first.type_name));
+        out.push_str(&format!("- **definitionid:** {}\n", did));
+        out.push_str(&format!("- **language:** {}\n", first.langrealname));
+        if let Some(s) = first.selmaho.as_ref() {
+            out.push_str(&format!("- **selmaho:** {}\n", s));
+        }
+        if let Some(r) = first.rafsi.as_ref() {
+            out.push_str(&format!("- **rafsi:** {}\n", r));
+        }
+        out.push('\n');
+        for r in refs {
+            let label = match r.field.as_str() {
+                "definition" => "Definition".to_string(),
+                "notes" => "Notes".to_string(),
+                "etymology" => "Etymology".to_string(),
+                "rafsi" => "Rafsi".to_string(),
+                "decomposition" => "Decomposition".to_string(),
+                "example" => format!("Example (exampleid: {})", r.exampleid.unwrap_or(-1)),
+                _ => r.field.clone(),
+            };
+            out.push_str(&format!("### {}\n\n", label));
+            out.push_str(&r.exact_text);
+            out.push_str("\n\n");
+        }
+        out.push_str("---\n\n");
+    }
+    out
+}
+
 static LLM_CORNER_BRACKET_SEGMENTS: Lazy<Regex> =
     Lazy::new(|| Regex::new(r"【.*?】").expect("valid regex"));
 
@@ -847,6 +1118,71 @@ impl ToolArgs {
     }
 }
 
+#[derive(Debug, Deserialize, Clone)]
+struct ResolveReference {
+    definitionid: i32,
+    field: String,
+    #[serde(default)]
+    exampleid: Option<i32>,
+    #[serde(default)]
+    exact_text: Option<String>,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+struct ResolveArgs {
+    #[serde(default)]
+    references: Vec<ResolveReference>,
+    #[serde(default)]
+    message: Option<String>,
+}
+
+impl ResolveArgs {
+    fn normalized(&self) -> Result<(Vec<ResolveReference>, Option<String>), String> {
+        if let Some(msg) = self.message.as_ref() {
+            let t = msg.trim();
+            if t.is_empty() {
+                return Err("`message` must not be empty if provided.".to_string());
+            }
+            if !self.references.is_empty() {
+                return Err("Provide either `references` or `message`, not both.".to_string());
+            }
+            return Ok((Vec::new(), Some(t.to_string())));
+        }
+        if self.references.is_empty() {
+            return Err(
+                "`references` must not be empty unless `message` is provided.".to_string(),
+            );
+        }
+        for (i, r) in self.references.iter().enumerate() {
+            let f = r.field.trim().to_lowercase();
+            let valid = matches!(
+                f.as_str(),
+                "definition" | "notes" | "etymology" | "rafsi" | "example" | "decomposition"
+            );
+            if !valid {
+                return Err(format!(
+                    "references[{}].field `{}` is not one of: definition, notes, etymology, rafsi, example, decomposition",
+                    i, r.field
+                ));
+            }
+            if f == "example" && r.exampleid.is_none() {
+                return Err(format!(
+                    "references[{}].exampleid is required when field is `example`",
+                    i
+                ));
+            }
+            let exact = r.exact_text.as_deref().unwrap_or("").trim();
+            if exact.is_empty() {
+                return Err(format!(
+                    "references[{}].exact_text is required and must not be empty",
+                    i
+                ));
+            }
+        }
+        Ok((self.references.clone(), None))
+    }
+}
+
 #[derive(Debug, Clone)]
 struct SearchBatch {
     queries: Vec<String>,
@@ -911,6 +1247,15 @@ enum PreparedToolSlot {
         global_step_index: usize,
         action_desc: String,
     },
+    Resolve {
+        tool_call_id: Option<String>,
+        name: Option<String>,
+        refs: Vec<ResolveReference>,
+        message: Option<String>,
+        assistant_reasoning: Option<String>,
+        global_step_index: usize,
+        action_desc: String,
+    },
 }
 
 async fn run_jbovlaste_semantic_search_core(
@@ -962,7 +1307,9 @@ async fn run_jbovlaste_semantic_search_core(
     };
 
     if assistant_semantic_cache_disabled() || redis.is_none() {
-        return run_db().await;
+        let mut response = run_db().await?;
+        attach_examples_to_definitions(pool, &mut response.definitions).await?;
+        return Ok(response);
     }
 
     let redis = redis.expect("checked");
@@ -984,7 +1331,8 @@ async fn run_jbovlaste_semantic_search_core(
         }
     }
 
-    let response = run_db().await?;
+    let mut response = run_db().await?;
+    attach_examples_to_definitions(pool, &mut response.definitions).await?;
 
     if let Err(e) = redis
         .set(&cache_key, &response, Some(assistant_semantic_cache_ttl()))
@@ -1031,14 +1379,19 @@ async fn run_jbovlaste_semantic_search_with_retry(
 
 fn summarise_definition(def: &DefinitionDetail) -> serde_json::Value {
     json!({
+        "definitionid": def.definitionid,
+        "valsiid": def.valsiid,
         "valsi": def.valsiword,
-        "definition": &def.definition,
-        "notes": def.notes.as_deref(),
+        "type": def.type_name,
         "lang": def.langrealname,
         "score": def.score,
         "selmaho": def.selmaho.as_deref(),
         "rafsi": def.rafsi.as_deref(),
         "jargon": def.jargon.as_deref(),
+        "definition": &def.definition,
+        "notes": def.notes.as_deref(),
+        "etymology": def.etymology.as_deref(),
+        "decomposition": def.decomposition.as_ref(),
     })
 }
 
@@ -1055,16 +1408,14 @@ fn semantic_tool_results_plain_text_for_llm(
     }
     for (i, def) in definitions.iter().enumerate() {
         out.push_str(&format!("--- {} ---\n", i + 1));
+        out.push_str(&format!("definitionid: {}\n", def.definitionid));
+        out.push_str(&format!("valsiid: {}\n", def.valsiid));
         out.push_str(&format!("valsi: {}\n", def.valsiword));
+        out.push_str(&format!("type: {}\n", def.type_name));
         out.push_str(&format!("language: {}\n", def.langrealname));
-        out.push_str("definition:\n");
-        out.push_str(&def.definition);
-        out.push('\n');
-        if let Some(notes) = def.notes.as_ref() {
-            if !notes.trim().is_empty() {
-                out.push_str("notes:\n");
-                out.push_str(notes);
-                out.push('\n');
+        if let Some(j) = def.jargon.as_ref() {
+            if !j.trim().is_empty() {
+                out.push_str(&format!("jargon: {}\n", j));
             }
         }
         if let Some(s) = def.selmaho.as_ref() {
@@ -1075,6 +1426,38 @@ fn semantic_tool_results_plain_text_for_llm(
         if let Some(r) = def.rafsi.as_ref() {
             if !r.trim().is_empty() {
                 out.push_str(&format!("rafsi: {}\n", r));
+            }
+        }
+        if let Some(d) = def.decomposition.as_ref() {
+            if !d.is_empty() {
+                out.push_str(&format!("decomposition: {}\n", d.join(", ")));
+            }
+        }
+        out.push_str("definition:\n");
+        out.push_str(&def.definition);
+        out.push('\n');
+        if let Some(notes) = def.notes.as_ref() {
+            if !notes.trim().is_empty() {
+                out.push_str("notes:\n");
+                out.push_str(notes);
+                out.push('\n');
+            }
+        }
+        if let Some(et) = def.etymology.as_ref() {
+            if !et.trim().is_empty() {
+                out.push_str("etymology:\n");
+                out.push_str(et);
+                out.push('\n');
+            }
+        }
+        if let Some(examples) = def.examples.as_ref() {
+            if !examples.is_empty() {
+                out.push_str("examples:\n");
+                for ex in examples {
+                    out.push_str(&format!("exampleid: {}\n", ex.exampleid));
+                    out.push_str(&ex.content);
+                    out.push('\n');
+                }
             }
         }
         out.push('\n');
@@ -1145,6 +1528,52 @@ fn combine_batch_search_outcomes(
 
     let payload = json!({ "searches": searches });
     (summary, payload, plain.trim_end().to_string())
+}
+
+/// Fetches examples in bulk for definitions returned by semantic search and attaches them.
+async fn attach_examples_to_definitions(
+    pool: &Pool,
+    definitions: &mut [DefinitionDetail],
+) -> Result<(), AppError> {
+    if definitions.is_empty() {
+        return Ok(());
+    }
+    let def_ids: Vec<i32> = definitions.iter().map(|d| d.definitionid).collect();
+    let client = pool
+        .get()
+        .await
+        .map_err(|e| AppError::ExternalService(e.to_string()))?;
+    let rows = client
+        .query(
+            "SELECT e.definitionid, e.exampleid, e.content, e.examplenum, e.time, u.username
+             FROM example e
+             JOIN users u ON e.userid = u.userid
+             WHERE e.definitionid = ANY($1)
+             ORDER BY e.definitionid, e.examplenum",
+            &[&def_ids],
+        )
+        .await
+        .map_err(|e| AppError::ExternalService(format!("Failed to load examples: {}", e)))?;
+    let mut map: HashMap<i32, Vec<Example>> = HashMap::new();
+    for row in rows {
+        let did: i32 = row.get("definitionid");
+        let ex = Example {
+            exampleid: row.get("exampleid"),
+            content: row.get("content"),
+            examplenum: row.get("examplenum"),
+            time: row.get("time"),
+            username: row.get("username"),
+        };
+        map.entry(did).or_default().push(ex);
+    }
+    for def in definitions {
+        if let Some(examples) = map.remove(&def.definitionid) {
+            if !examples.is_empty() {
+                def.examples = Some(examples);
+            }
+        }
+    }
+    Ok(())
 }
 
 /// Max retries for a single tool call (e.g. semantic search) on transient failure.
@@ -1785,6 +2214,8 @@ pub(crate) async fn run_agent_loop_inner(
     // times in a row, inject a tool-level reminder instead of running it again.
     // This mirrors Roo-Code's ToolRepetitionDetector pattern.
     const MAX_QUERY_REPETITIONS: u32 = 2;
+    const MAX_RESOLVE_ATTEMPTS: u32 = 3;
+    let mut resolve_attempts = 0u32;
 
     // Agent loop: call LLM until it returns a final reply (no tool_calls).
     for iteration in 1..=*max_iterations {
@@ -1962,16 +2393,77 @@ pub(crate) async fn run_agent_loop_inner(
             let mut is_first_semantic_in_batch = true;
 
             for call in calls.iter() {
-                if call.function.name.as_deref() != Some("jbovlaste_semantic_search") {
+                let tool_name = call.function.name.as_deref().unwrap_or("unknown");
+                if tool_name != "jbovlaste_semantic_search" && tool_name != "jbovlaste_resolve_results" {
                     log::error!(
                         "Assistant: unexpected tool call '{}' — not in schema",
-                        call.function.name.as_deref().unwrap_or("unknown")
+                        tool_name
                     );
                     prepared.push(PreparedToolSlot::Immediate {
                         tool_call_id: call.id.clone(),
                         name: call.function.name.clone(),
-                        content: "Unknown tool. Use jbovlaste_semantic_search.".to_string(),
+                        content: "Unknown tool. Use jbovlaste_semantic_search or jbovlaste_resolve_results.".to_string(),
                     });
+                    continue;
+                }
+
+                if tool_name == "jbovlaste_resolve_results" {
+                    let global_step_index = base_step_index + pending_search_ordinal;
+                    pending_search_ordinal += 1;
+                    let ar = content_str.trim();
+                    let assistant_reasoning = if ar.is_empty() { None } else { Some(ar.to_string()) };
+                    let args_json: &str = match call.function.arguments.as_deref() {
+                        None | Some("") => "{}",
+                        Some(s) => s,
+                    };
+                    let args: ResolveArgs = match serde_json::from_str(args_json) {
+                        Ok(a) => a,
+                        Err(e) => {
+                            log::warn!(
+                                "Resolve tool arguments JSON parse error: {}; raw arguments: {:?}",
+                                e,
+                                call.function.arguments
+                            );
+                            prepared.push(PreparedToolSlot::Immediate {
+                                tool_call_id: call.id.clone(),
+                                name: call.function.name.clone(),
+                                content: format!("Tool error: jbovlaste_resolve_results: invalid JSON: {}", e),
+                            });
+                            continue;
+                        }
+                    };
+                    match args.normalized() {
+                        Ok((refs, None)) => {
+                            let refs_count = refs.len();
+                            prepared.push(PreparedToolSlot::Resolve {
+                                tool_call_id: call.id.clone(),
+                                name: call.function.name.clone(),
+                                refs,
+                                message: None,
+                                assistant_reasoning,
+                                global_step_index,
+                                action_desc: format!("Resolve references: {} item(s)", refs_count),
+                            });
+                        }
+                        Ok((_, Some(msg))) => {
+                            prepared.push(PreparedToolSlot::Resolve {
+                                tool_call_id: call.id.clone(),
+                                name: call.function.name.clone(),
+                                refs: Vec::new(),
+                                message: Some(msg),
+                                assistant_reasoning,
+                                global_step_index,
+                                action_desc: "Resolve: no results".to_string(),
+                            });
+                        }
+                        Err(msg) => {
+                            prepared.push(PreparedToolSlot::Immediate {
+                                tool_call_id: call.id.clone(),
+                                name: call.function.name.clone(),
+                                content: format!("Tool error: jbovlaste_resolve_results: {}", msg),
+                            });
+                        }
+                    }
                     continue;
                 }
 
@@ -2098,6 +2590,13 @@ pub(crate) async fn run_agent_loop_inner(
                             tool_call_id,
                             assistant_reasoning,
                             ..
+                        }
+                        | PreparedToolSlot::Resolve {
+                            global_step_index,
+                            action_desc,
+                            tool_call_id,
+                            assistant_reasoning,
+                            ..
                         } = slot
                         {
                             let mut start_payload = json!({
@@ -2178,6 +2677,137 @@ pub(crate) async fn run_agent_loop_inner(
                             tool_calls: None,
                         });
                     }
+                    PreparedToolSlot::Resolve {
+                        tool_call_id,
+                        name,
+                        refs,
+                        message,
+                        assistant_reasoning,
+                        global_step_index,
+                        action_desc,
+                    } => {
+                        if let Some(msg) = message {
+                            let result = msg.clone();
+                            if let Some(ref tx) = event_tx {
+                                let mut payload = json!({
+                                    "type": "step",
+                                    "model": model.clone(),
+                                    "model_name": model_name.clone(),
+                                    "index": global_step_index,
+                                    "action": action_desc,
+                                    "result": "No results",
+                                    "tool_call_id": tool_call_id,
+                                    "tool_content_plain": result,
+                                });
+                                if let Some(ref ar) = assistant_reasoning {
+                                    payload["assistant_reasoning"] = serde_json::Value::String(ar.clone());
+                                }
+                                emit_sse_user_visible(&persist, tx, payload).await?;
+                                let done_payload = json!({
+                                    "type": "done",
+                                    "model": model.clone(),
+                                    "model_name": model_name.clone(),
+                                    "reply": result
+                                });
+                                emit_sse_user_visible(&persist, tx, done_payload).await?;
+                            }
+                            return Ok((result, steps.clone()));
+                        }
+
+                        resolve_attempts += 1;
+                        if resolve_attempts > MAX_RESOLVE_ATTEMPTS {
+                            let err = "Too many attempts to resolve references. Please start a new search.".to_string();
+                            if let Some(ref tx) = event_tx {
+                                let payload = json!({
+                                    "type": "done",
+                                    "model": model.clone(),
+                                    "model_name": model_name.clone(),
+                                    "reply": err
+                                });
+                                emit_sse_user_visible(&persist, tx, payload).await?;
+                            }
+                            return Ok((err, steps.clone()));
+                        }
+
+                        match resolve_references(pool, &refs).await? {
+                            ResolveOutcome::Valid(validated) => {
+                                let markdown = build_printable_markdown(&validated);
+                                let result_summary = format!("Resolved {} reference(s)", validated.len());
+                                let tool_content_for_llm = "References validated; printable answer generated.".to_string();
+                                let step = AssistantStep {
+                                    action: action_desc,
+                                    result: result_summary,
+                                    tool_output: None,
+                                    assistant_reasoning,
+                                };
+                                steps.push(step.clone());
+                                if let Some(ref tx) = event_tx {
+                                    let mut payload = json!({
+                                        "type": "step",
+                                        "model": model.clone(),
+                                        "model_name": model_name.clone(),
+                                        "index": global_step_index,
+                                        "action": step.action,
+                                        "result": step.result,
+                                        "tool_call_id": tool_call_id,
+                                        "tool_content_plain": tool_content_for_llm,
+                                    });
+                                    if let Some(ref ar) = step.assistant_reasoning {
+                                        payload["assistant_reasoning"] = serde_json::Value::String(ar.clone());
+                                    }
+                                    emit_sse_user_visible(&persist, tx, payload).await?;
+                                    let done_payload = json!({
+                                        "type": "done",
+                                        "model": model.clone(),
+                                        "model_name": model_name.clone(),
+                                        "reply": markdown
+                                    });
+                                    emit_sse_user_visible(&persist, tx, done_payload).await?;
+                                }
+                                return Ok((markdown, steps.clone()));
+                            }
+                            ResolveOutcome::Invalid(errors) => {
+                                let mut err_lines = String::from("Some references are invalid. Fix them and call jbovlaste_resolve_results again:\n");
+                                for e in &errors {
+                                    err_lines.push_str(&format!(
+                                        "- index {} (definitionid {}, field '{}', exact_text '{}'): {}\n",
+                                        e.index, e.definitionid, e.field, e.exact_text, e.reason
+                                    ));
+                                }
+                                let result_summary = format!("Invalid: {} reference(s) failed validation", errors.len());
+                                let step = AssistantStep {
+                                    action: action_desc,
+                                    result: result_summary,
+                                    tool_output: None,
+                                    assistant_reasoning,
+                                };
+                                steps.push(step.clone());
+                                if let Some(ref tx) = event_tx {
+                                    let mut payload = json!({
+                                        "type": "step",
+                                        "model": model.clone(),
+                                        "model_name": model_name.clone(),
+                                        "index": global_step_index,
+                                        "action": step.action,
+                                        "result": step.result,
+                                        "tool_call_id": tool_call_id,
+                                        "tool_content_plain": err_lines.clone(),
+                                    });
+                                    if let Some(ref ar) = step.assistant_reasoning {
+                                        payload["assistant_reasoning"] = serde_json::Value::String(ar.clone());
+                                    }
+                                    emit_sse_user_visible(&persist, tx, payload).await?;
+                                }
+                                messages.push(ChatCompletionMessageRequest {
+                                    role: "tool".to_string(),
+                                    content: err_lines,
+                                    tool_call_id,
+                                    name,
+                                    tool_calls: None,
+                                });
+                            }
+                        }
+                    }
                     PreparedToolSlot::Search {
                         tool_call_id,
                         name,
@@ -2247,42 +2877,30 @@ pub(crate) async fn run_agent_loop_inner(
             }
             // Loop again so the model can see tool results and either call more tools or reply.
         } else {
-            // No tool calls: this is the final assistant reply.
+            // No tool calls: nudge the model toward the required tools.
             let reply = strip_llm_corner_bracket_segments(
                 &choice.message.content.clone().unwrap_or_else(String::new),
             );
 
-            // Stuck-recovery: if the model returned empty content with no tools while search
-            // results exist in this conversation, inject a brief nudge message and continue the
-            // loop. This mirrors Roo's noToolsUsed / recovery pattern for stalled agents.
-            if reply.trim().is_empty() && iteration < *max_iterations && !steps.is_empty() {
+            if iteration < *max_iterations {
                 log::warn!(
-                    "Assistant: empty reply with no tool calls at iteration {}; injecting recovery nudge",
+                    "Assistant: no tool calls at iteration {}; injecting resolve nudge",
                     iteration
                 );
+                let nudge = if reply.trim().is_empty() {
+                    "Use jbovlaste_semantic_search to find evidence, then finish by calling jbovlaste_resolve_results with exact references. Do not write prose."
+                } else {
+                    "Do not write prose. Submit your answer by calling jbovlaste_resolve_results with exact references from the search results."
+                };
                 messages.push(ChatCompletionMessageRequest {
                     role: "user".to_string(),
-                    content:
-                        "You have search results above. Please use them to answer my question now."
-                            .to_string(),
+                    content: nudge.to_string(),
                     tool_call_id: None,
                     name: None,
                     tool_calls: None,
                 });
                 continue;
             }
-
-            if let Some(tx) = event_tx {
-                let payload = json!({
-                    "type": "done",
-                    "model": model.clone(),
-                    "model_name": model_name.clone(),
-                    "reply": reply
-                });
-                emit_sse_user_visible(&persist, &tx, payload).await?;
-                drop(tx);
-            }
-            return Ok((reply, steps.clone()));
         }
     }
 
