@@ -1302,6 +1302,7 @@ pub async fn fast_search_definitions(
             d.cached_username as username,
             d.cached_langrealname as langrealname,
             d.cached_type_name as type_name,
+            d.cached_rafsi as rafsi,
             0::bigint AS score,
             CASE
                 WHEN d.cached_valsiword = $1::text THEN 13
@@ -1375,7 +1376,7 @@ pub async fn fast_search_definitions(
             sound_url: sound_urls.get(&word).cloned().flatten(),
             embedding: None,
             metadata: None,
-            rafsi: None,         // Not returned in fast search for performance
+            rafsi: row.try_get::<_, Option<String>>("rafsi").ok().flatten(),
             decomposition: None, // Not returned in fast search for performance
             examples: None,
         });
