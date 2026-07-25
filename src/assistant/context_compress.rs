@@ -5,6 +5,8 @@
 //! then subtract the **system prompt** footprint so the **history** alone is budgeted.
 //! No compression runs while estimated history fits in that allowance.
 
+use std::collections::HashSet;
+
 use super::dto::ChatMessage;
 
 /// Same as Roo-Code `TOKEN_BUFFER_PERCENTAGE`: leave headroom before hitting the hard context limit.
@@ -12,6 +14,19 @@ pub const TOKEN_BUFFER_PERCENTAGE: f64 = 0.1;
 
 const TRUNCATE_MARKER: &str = "\n\n[Truncated for context size.]";
 const OMIT_TURN: &str = "[Earlier discussion omitted.]";
+
+/// Number of most recent messages to always keep when compressing history.
+/// The first user message is also preserved. Increase if you want more recent
+/// tool results/turns kept intact; decrease if you need more aggressive savings.
+const DEFAULT_PRESERVE_RECENT_TURNS: usize = 3;
+
+fn preserve_recent_turns() -> usize {
+    std::env::var("ASSISTANT_PRESERVE_RECENT_TURNS")
+        .ok()
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(DEFAULT_PRESERVE_RECENT_TURNS)
+        .max(1)
+}
 
 /// Budget for deciding whether to compress client history (Roo-style).
 #[derive(Debug, Clone, Copy)]
@@ -153,8 +168,26 @@ fn default_tool_body_max_bytes() -> usize {
         .unwrap_or(12_000)
 }
 
-/// Truncate oldest tool bodies first, then drop oldest turns (never removes the last message).
-pub fn compress_chat_history(messages: &[ChatMessage], max_input_bytes: usize) -> Vec<ChatMessage> {
+/// Indices that must not be dropped or truncated during compression:
+/// the first user message and the last `preserve_last_n` messages.
+fn anchor_indices(msgs: &[ChatMessage], preserve_last_n: usize) -> HashSet<usize> {
+    let mut anchors = HashSet::new();
+    if let Some(i) = msgs.iter().position(|m| m.role == "user") {
+        anchors.insert(i);
+    }
+    let n = preserve_last_n.min(msgs.len());
+    for i in (msgs.len() - n)..msgs.len() {
+        anchors.insert(i);
+    }
+    anchors
+}
+
+/// Truncate oldest tool bodies first, then drop oldest turns (never removes anchored messages).
+pub fn compress_chat_history(
+    messages: &[ChatMessage],
+    max_input_bytes: usize,
+    preserve_last_n: usize,
+) -> Vec<ChatMessage> {
     if messages.is_empty() {
         return vec![];
     }
@@ -164,10 +197,11 @@ pub fn compress_chat_history(messages: &[ChatMessage], max_input_bytes: usize) -
     let mut guard = 0u32;
     while estimate_messages_bytes(&out) > max_input_bytes && guard < 10_000 {
         guard += 1;
-        if truncate_oldest_tool_body(&mut out, tool_cap) {
+        let anchors = anchor_indices(&out, preserve_last_n);
+        if truncate_oldest_tool_body(&mut out, tool_cap, &anchors) {
             continue;
         }
-        if drop_oldest_turn(&mut out) {
+        if drop_oldest_turn(&mut out, &anchors, preserve_last_n) {
             continue;
         }
         break;
@@ -188,7 +222,7 @@ pub fn compress_chat_history_for_budget(
     }
     let allowed = allowed_history_tokens(budget);
     let max_bytes = effective_max_history_bytes(allowed, budget);
-    compress_chat_history(messages, max_bytes)
+    compress_chat_history(messages, max_bytes, preserve_recent_turns())
 }
 
 /// Backwards-compatible alias: prefer [`compress_chat_history_for_budget`] with a real [`ContextBudget`].
@@ -218,10 +252,11 @@ pub fn compress_chat_history_aggressive(
     let mut guard = 0u32;
     while estimate_messages_bytes(&out) > max_bytes && guard < 10_000 {
         guard += 1;
-        if truncate_oldest_tool_body(&mut out, tool_cap) {
+        let anchors = anchor_indices(&out, preserve_recent_turns());
+        if truncate_oldest_tool_body(&mut out, tool_cap, &anchors) {
             continue;
         }
-        if drop_oldest_turn(&mut out) {
+        if drop_oldest_turn(&mut out, &anchors, preserve_recent_turns()) {
             continue;
         }
         break;
@@ -229,16 +264,23 @@ pub fn compress_chat_history_aggressive(
     out
 }
 
-fn truncate_oldest_tool_body(msgs: &mut [ChatMessage], max_body: usize) -> bool {
-    let idx = msgs.iter().position(|m| {
+fn truncate_oldest_tool_body(
+    msgs: &mut [ChatMessage],
+    max_body: usize,
+    anchors: &HashSet<usize>,
+) -> bool {
+    let idx = msgs.iter().enumerate().position(|(i, m)| {
         m.role == "tool"
             && m.name.as_deref() == Some("jbovlaste_semantic_search")
             && m.content.len() > max_body
+            && !anchors.contains(&i)
     });
     let Some(i) = idx else {
         return false;
     };
-    let truncated = truncate_utf8(&msgs[i].content, max_body);
+    // Account for the marker so the final content fits within the tool cap.
+    let effective_max = max_body.saturating_sub(TRUNCATE_MARKER.len());
+    let truncated = truncate_utf8(&msgs[i].content, effective_max);
     msgs[i].content = format!("{}{}", truncated, TRUNCATE_MARKER);
     true
 }
@@ -254,18 +296,62 @@ fn truncate_utf8(s: &str, max_bytes: usize) -> &str {
     &s[..end]
 }
 
-/// Drops the first complete "turn" before the final message (the final message is the active user query).
-fn drop_oldest_turn(msgs: &mut Vec<ChatMessage>) -> bool {
+/// Finds the earliest complete turn whose indices are not anchored and whose end is before the final message.
+fn find_oldest_droppable_turn(
+    msgs: &[ChatMessage],
+    anchors: &HashSet<usize>,
+) -> Option<(usize, usize)> {
     if msgs.len() < 2 {
-        return false;
+        return None;
     }
-    let rest = msgs.len() - 1;
-    let Some(first_user) = msgs[..rest].iter().position(|m| m.role == "user") else {
+    let rest = msgs.len() - 1; // preserve final message
+    let mut start: Option<usize> = None;
+    for (i, m) in msgs[..rest].iter().enumerate() {
+        if m.role == "user" {
+            if let Some(s) = start {
+                let end = i;
+                if !(s..end).any(|idx| anchors.contains(&idx)) {
+                    return Some((s, end));
+                }
+            }
+            start = Some(i);
+        }
+    }
+    if let Some(s) = start {
+        if s < rest && !(s..rest).any(|idx| anchors.contains(&idx)) {
+            return Some((s, rest));
+        }
+    }
+    None
+}
+
+fn recent_only_anchor_indices(msgs: &[ChatMessage], preserve_last_n: usize) -> HashSet<usize> {
+    let mut anchors = HashSet::new();
+    let n = preserve_last_n.min(msgs.len());
+    for i in (msgs.len() - n)..msgs.len() {
+        anchors.insert(i);
+    }
+    anchors
+}
+
+/// Drops the first complete unanchored "turn" before the final message.
+/// If no non-anchored turn exists, falls back to dropping the oldest turn
+/// while still preserving the most recent `preserve_last_n` messages.
+fn drop_oldest_turn(
+    msgs: &mut Vec<ChatMessage>,
+    anchors: &HashSet<usize>,
+    preserve_last_n: usize,
+) -> bool {
+    let mut turn = find_oldest_droppable_turn(msgs, anchors);
+    if turn.is_none() {
+        // Last resort: allow dropping the oldest (first user) turn as long as the
+        // suffix of recent messages is preserved.
+        let recent = recent_only_anchor_indices(msgs, preserve_last_n);
+        turn = find_oldest_droppable_turn(msgs, &recent);
+    }
+    let Some((first_user, end)) = turn else {
         return false;
     };
-    let after = &msgs[first_user + 1..rest];
-    let second_user_rel = after.iter().position(|m| m.role == "user");
-    let end = first_user + 1 + second_user_rel.unwrap_or(after.len()); // exclusive end within 0..rest
     if end <= first_user {
         return false;
     }
@@ -327,7 +413,7 @@ mod tests {
             user("next"),
         ];
         let before = estimate_messages_bytes(&v);
-        let out = compress_chat_history(&v, before / 2);
+        let out = compress_chat_history(&v, before / 2, 0);
         assert!(
             estimate_messages_bytes(&out) < before,
             "expected smaller estimate"
@@ -343,7 +429,7 @@ mod tests {
     #[test]
     fn compress_drops_oldest_turn_when_tools_small() {
         let v = vec![user("old-turn-xxxxxxxx"), user("new-turn-yyyy")];
-        let out = compress_chat_history(&v, 8);
+        let out = compress_chat_history(&v, 8, 0);
         assert_eq!(out.len(), 1);
         assert_eq!(out[0].content, "new-turn-yyyy");
     }
@@ -372,5 +458,39 @@ mod tests {
         let msgs = vec![user("hi")];
         let budget = ContextBudget::huge_for_tests(1_000);
         assert!(!should_compress_history(&msgs, &budget));
+    }
+
+    #[test]
+    fn compression_preserves_first_user_and_recent_turns() {
+        // history: u1, a1, t1, u2, a2, t2, u3 (current query)
+        let v = vec![
+            user("first-question-xxxxxxxxxxxx"),
+            ChatMessage {
+                role: "assistant".into(),
+                content: "a1".into(),
+                tool_calls: None,
+                tool_call_id: None,
+                name: None,
+            },
+            tool_body(15_000),
+            user("second-question"),
+            ChatMessage {
+                role: "assistant".into(),
+                content: "a2".into(),
+                tool_calls: None,
+                tool_call_id: None,
+                name: None,
+            },
+            tool_body(15_000),
+            user("current-question"),
+        ];
+        let out = compress_chat_history(&v, 14_000, 1);
+        // first user and final user survive; the middle turn is dropped
+        assert!(out
+            .iter()
+            .any(|m| m.content == "first-question-xxxxxxxxxxxx"));
+        assert!(out.iter().any(|m| m.content == "current-question"));
+        assert!(!out.iter().any(|m| m.content == "second-question"));
+        assert!(estimate_messages_bytes(&out) <= 14_000);
     }
 }

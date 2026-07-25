@@ -410,4 +410,50 @@ mod stream_finished_tests {
         assert_eq!(replies.len(), 1);
         assert_eq!(replies[0]["streamFinished"], true);
     }
+
+    #[test]
+    fn error_without_model_sets_stream_finished() {
+        let mut messages = json!([
+            {"role": "user", "content": "hi"},
+            {
+                "role": "assistant",
+                "content": "",
+                "steps": [],
+                "streamFinished": false
+            }
+        ]);
+        let ev = json!({"type": "error", "error": "model failed"});
+        apply_sse_event_to_messages(&mut messages, 1, &ev).unwrap();
+        let m = &messages[1];
+        assert_eq!(m["streamFinished"], true);
+        assert!(m["content"].as_str().unwrap().contains("model failed"));
+    }
+
+    #[test]
+    fn error_with_model_sets_reply_stream_finished() {
+        let mut messages = json!([
+            {"role": "user", "content": "hi"},
+            {
+                "role": "assistant",
+                "content": "",
+                "steps": [],
+                "streamFinished": false,
+                "replies": []
+            }
+        ]);
+        let ev = json!({
+            "type": "error",
+            "error": "model failed",
+            "model": "openrouter/x",
+            "model_name": "X"
+        });
+        apply_sse_event_to_messages(&mut messages, 1, &ev).unwrap();
+        let replies = messages[1]["replies"].as_array().unwrap();
+        assert_eq!(replies.len(), 1);
+        assert_eq!(replies[0]["streamFinished"], true);
+        assert!(replies[0]["content"]
+            .as_str()
+            .unwrap()
+            .contains("model failed"));
+    }
 }

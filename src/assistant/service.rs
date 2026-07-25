@@ -92,6 +92,85 @@ fn assistant_iteration_timeout() -> Duration {
     )
 }
 
+/// Mutable conversation and loop state for a single assistant turn.
+///
+/// Grouping fields here makes failover, context compression retries, and
+/// tests easier to reason about.
+struct AgentState {
+    messages: Vec<ChatCompletionMessageRequest>,
+    steps: Vec<AssistantStep>,
+    query_seen_count: HashMap<String, u32>,
+    current_model_idx: usize,
+    model: String,
+    model_name: String,
+    aggressive_context_retry: bool,
+    client_round: Vec<ChatMessage>,
+    context_budget: context_compress::ContextBudget,
+    tools: Vec<Tool>,
+    system_content: String,
+    candidates: Vec<ModelIdName>,
+    client: reqwest::Client,
+    api_key: String,
+    base_url: String,
+    iteration_timeout: Duration,
+    max_iterations: u32,
+}
+
+impl AgentState {
+    async fn new(
+        pool: &Pool,
+        request: &ChatRequest,
+        candidates: &[ModelIdName],
+    ) -> Result<Self, AppError> {
+        let api_key = env::var("OPENROUTER_API_KEY").map_err(|_| {
+            AppError::ExternalService("OPENROUTER_API_KEY is not set in the environment".into())
+        })?;
+        let base_url = env::var("OPENROUTER_API_BASE")
+            .unwrap_or_else(|_| "https://openrouter.ai/api/v1".to_string());
+        let client = reqwest::Client::new();
+        let system_content = system_prompt_with_dictionary(pool, request.locale.as_deref()).await;
+        let context_budget =
+            context_compress::ContextBudget::from_env_and_system_prompt(system_content.len());
+        let client_round =
+            context_compress::compress_chat_history_for_request(&request.messages, &context_budget);
+        let mut messages = Vec::new();
+        messages.push(ChatCompletionMessageRequest {
+            role: "system".to_string(),
+            content: system_content.clone(),
+            tool_call_id: None,
+            name: None,
+            tool_calls: None,
+        });
+        messages.extend(map_chat_messages(&client_round));
+
+        if candidates.is_empty() {
+            return Err(AppError::ExternalService(
+                "Assistant: no OpenRouter model candidates provided".into(),
+            ));
+        }
+
+        Ok(Self {
+            messages,
+            steps: Vec::new(),
+            query_seen_count: HashMap::new(),
+            current_model_idx: 0,
+            model: candidates[0].0.clone(),
+            model_name: candidates[0].1.clone(),
+            aggressive_context_retry: false,
+            client_round,
+            context_budget,
+            tools: vec![jbovlaste_tool_schema()],
+            system_content,
+            candidates: candidates.to_vec(),
+            client,
+            api_key,
+            base_url,
+            iteration_timeout: assistant_iteration_timeout(),
+            max_iterations: agent_max_iterations(),
+        })
+    }
+}
+
 #[derive(Debug, Clone, Serialize)]
 struct ToolFunction {
     name: String,
@@ -1235,6 +1314,151 @@ async fn sse_stream_debug_parallel_branch_finished(
     sse_send_stream_debug(tx, debug).await;
 }
 
+fn assistant_request_analysis_enabled() -> bool {
+    env::var("ASSISTANT_REQUEST_ANALYSIS")
+        .ok()
+        .map(|v| !matches!(v.to_lowercase().as_str(), "0" | "false" | "no" | "off"))
+        .unwrap_or(false)
+}
+
+#[derive(Debug, Deserialize)]
+struct RequestAnalysis {
+    intent: String,
+    #[serde(default)]
+    on_topic: bool,
+    #[serde(default = "default_true")]
+    needs_search: bool,
+    #[serde(default)]
+    search_queries: Vec<String>,
+    ambiguity_note: Option<String>,
+}
+
+fn default_true() -> bool {
+    true
+}
+
+impl Default for RequestAnalysis {
+    fn default() -> Self {
+        Self {
+            intent: String::new(),
+            on_topic: true,
+            needs_search: true,
+            search_queries: Vec::new(),
+            ambiguity_note: None,
+        }
+    }
+}
+
+/// Ask a low-temperature classifier to scrutinize the user's request before the
+/// main assistant loop. On parse/call failure it returns a permissive default so
+/// the chat is not blocked.
+async fn analyze_request(
+    request: &ChatRequest,
+    candidate: &ModelIdName,
+    api_key: &str,
+    base_url: &str,
+) -> RequestAnalysis {
+    let Some(last_user) = request.messages.iter().rev().find(|m| m.role == "user") else {
+        return RequestAnalysis::default();
+    };
+
+    let classifier_prompt = "You are a request classifier for a Lojban dictionary assistant. \
+The user message is the last user turn below. \
+Respond ONLY with valid JSON, no markdown, no explanation. \
+Use this schema: \
+{\"intent\": \"<one-sentence restatement>\", \"on_topic\": <true|false>, \"needs_search\": <true|false>, \"search_queries\": [\"...\"], \"ambiguity_note\": \"<optional clarification note>\"} \
+Rules: \
+- on_topic = true only if the question is about Lojban language, jbovlaste entries, or your own capabilities. \
+- needs_search = true if the answer requires jbovlaste evidence not already in this conversation. \
+- search_queries = 1-6 short gloss-style strings in the user's language (use the user's exact words when possible). \
+- ambiguity_note = brief clarification if the request is ambiguous; otherwise empty string.";
+
+    let body = ChatCompletionRequest {
+        model: candidate.0.clone(),
+        messages: vec![
+            ChatCompletionMessageRequest {
+                role: "system".to_string(),
+                content: classifier_prompt.to_string(),
+                tool_call_id: None,
+                name: None,
+                tool_calls: None,
+            },
+            ChatCompletionMessageRequest {
+                role: "user".to_string(),
+                content: last_user.content.clone(),
+                tool_call_id: None,
+                name: None,
+                tool_calls: None,
+            },
+        ],
+        tools: None,
+        tool_choice: None,
+        parallel_tool_calls: None,
+    };
+
+    let client = reqwest::Client::new();
+    let label = "request analysis";
+    let api_fut = openrouter_chat_with_retry(label, {
+        let client = client.clone();
+        let base_url = base_url.to_string();
+        let api_key = api_key.to_string();
+        let body = body.clone();
+        let label = label.to_string();
+        move || {
+            let client = client.clone();
+            let base_url = base_url.clone();
+            let api_key = api_key.clone();
+            let body = body.clone();
+            let label = label.clone();
+            async move {
+                let res = client
+                    .post(format!("{}/chat/completions", base_url))
+                    .header("Authorization", format!("Bearer {}", api_key))
+                    .header("Content-Type", "application/json")
+                    .json(&body)
+                    .send()
+                    .await?;
+                let ok = ensure_openrouter_status(res, &label).await?;
+                parse_chat_response(ok, &label).await
+            }
+        }
+    });
+
+    let timeout = Duration::from_secs(20);
+    match tokio::time::timeout(timeout, api_fut).await {
+        Ok(Ok(resp)) => {
+            let raw = resp
+                .choices
+                .into_iter()
+                .next()
+                .and_then(|c| c.message.content)
+                .unwrap_or_default();
+            match serde_json::from_str::<RequestAnalysis>(&raw) {
+                Ok(a) => a,
+                Err(e) => {
+                    log::warn!(
+                        "Assistant: failed to parse request analysis JSON: {} (raw: {})",
+                        e,
+                        raw
+                    );
+                    RequestAnalysis::default()
+                }
+            }
+        }
+        Ok(Err(e)) => {
+            log::warn!("Assistant: request analysis call failed: {}", e);
+            RequestAnalysis::default()
+        }
+        Err(_) => {
+            log::warn!(
+                "Assistant: request analysis timed out after {}s",
+                timeout.as_secs()
+            );
+            RequestAnalysis::default()
+        }
+    }
+}
+
 /// Runs the agent loop. If event_tx is Some, streams step/done/error events (with optional "model" key for parallel runs).
 /// When event_tx is Some and we have 2 models, runs both in parallel and streams both; **if either branch fails**,
 /// retries that slot with the next unused candidates from the same list (see
@@ -1264,6 +1488,39 @@ pub async fn run_agent_loop(
                 return Err(e);
             }
         };
+
+    // Optional pre-loop request analysis: refuse off-topic questions early and
+    // avoid wasting model iterations on out-of-scope requests.
+    if assistant_request_analysis_enabled() && !candidates.is_empty() {
+        let analysis = analyze_request(request, &candidates[0], &api_key, &base_url).await;
+        log::debug!(
+            "Assistant: request analysis intent='{}' on_topic={} needs_search={} search_queries={:?}",
+            analysis.intent,
+            analysis.on_topic,
+            analysis.needs_search,
+            analysis.search_queries
+        );
+        if !analysis.on_topic {
+            let refusal = analysis.ambiguity_note.unwrap_or_else(|| {
+                "I am a Lojban dictionary assistant and can only help with questions about the Lojban language, jbovlaste entries, or my own capabilities. Please ask a Lojban-related question.".to_string()
+            });
+            if let Some(ref tx) = event_tx {
+                let payload = json!({
+                    "type": "done",
+                    "model": candidates[0].0,
+                    "model_name": candidates[0].1,
+                    "reply": refusal
+                });
+                if let Err(e) = emit_sse_user_visible(&persist, tx, payload).await {
+                    log::warn!(
+                        "Assistant: failed to emit SSE done for off-topic refusal: {}",
+                        e
+                    );
+                }
+            }
+            return Ok((refusal, Vec::new()));
+        }
+    }
 
     loop {
         match run_agent_loop_with_candidates(
@@ -1493,54 +1750,44 @@ pub(crate) async fn run_agent_loop_inner(
     persist: Option<Arc<ChatPersistState>>,
     redis: Option<&RedisCache>,
 ) -> Result<(String, Vec<AssistantStep>), AppError> {
-    let api_key = env::var("OPENROUTER_API_KEY").map_err(|_| {
-        AppError::ExternalService("OPENROUTER_API_KEY is not set in the environment".into())
-    })?;
+    let mut state = AgentState::new(pool, request, candidates).await?;
 
-    let base_url = env::var("OPENROUTER_API_BASE")
-        .unwrap_or_else(|_| "https://openrouter.ai/api/v1".to_string());
+    // Destructure mutable references to the state fields we will update in the loop.
+    // api_key/base_url/client/system_content/tools are cloned once to owned values
+    // so they can be moved into async closures.
+    let AgentState {
+        ref mut messages,
+        ref mut steps,
+        ref mut query_seen_count,
+        ref mut current_model_idx,
+        ref mut model,
+        ref mut model_name,
+        ref mut aggressive_context_retry,
+        ref mut client_round,
+        ref system_content,
+        ref context_budget,
+        ref tools,
+        ref candidates,
+        ref client,
+        ref api_key,
+        ref base_url,
+        ref iteration_timeout,
+        ref max_iterations,
+    } = state;
 
-    let client = reqwest::Client::new();
+    let api_key = api_key.clone();
+    let base_url = base_url.clone();
+    let client = client.clone();
+    let system_content = system_content.clone();
+    let tools = tools.clone();
 
-    let system_content = system_prompt_with_dictionary(pool, request.locale.as_deref()).await;
-    let context_budget =
-        context_compress::ContextBudget::from_env_and_system_prompt(system_content.len());
-    let mut client_round =
-        context_compress::compress_chat_history_for_request(&request.messages, &context_budget);
-    let mut messages: Vec<ChatCompletionMessageRequest> = Vec::new();
-    messages.push(ChatCompletionMessageRequest {
-        role: "system".to_string(),
-        content: system_content.clone(),
-        tool_call_id: None,
-        name: None,
-        tool_calls: None,
-    });
-    messages.extend(map_chat_messages(&client_round));
-
-    if candidates.is_empty() {
-        return Err(AppError::ExternalService(
-            "Assistant: no OpenRouter model candidates provided".into(),
-        ));
-    }
-    let mut current_model_idx: usize = 0;
-    let mut model = candidates[0].0.clone();
-    let mut model_name = candidates[0].1.clone();
-
-    let tools = vec![jbovlaste_tool_schema()];
-    let mut steps = Vec::new();
-    let mut aggressive_context_retry = false;
     // Per-query repetition counter: if the model calls the same search query too many
     // times in a row, inject a tool-level reminder instead of running it again.
     // This mirrors Roo-Code's ToolRepetitionDetector pattern.
-    let mut query_seen_count: std::collections::HashMap<String, u32> =
-        std::collections::HashMap::new();
     const MAX_QUERY_REPETITIONS: u32 = 2;
 
-    let agent_max_iter = agent_max_iterations();
-    let iteration_timeout = assistant_iteration_timeout();
-
     // Agent loop: call LLM until it returns a final reply (no tool_calls).
-    for iteration in 1..=agent_max_iter {
+    for iteration in 1..=*max_iterations {
         let label = format!("chat/completions iteration {}", iteration);
         let response = loop {
             let request_body = ChatCompletionRequest {
@@ -1575,7 +1822,7 @@ pub(crate) async fn run_agent_loop_inner(
                     }
                 }
             });
-            let err: AppError = match tokio::time::timeout(iteration_timeout, api_fut).await {
+            let err: AppError = match tokio::time::timeout(*iteration_timeout, api_fut).await {
                 Ok(Ok(r)) => break r,
                 Ok(Err(e)) => e,
                 Err(_) => AppError::ExternalServiceRetryable {
@@ -1588,23 +1835,23 @@ pub(crate) async fn run_agent_loop_inner(
                 },
             };
 
-            if iteration == 1 && !aggressive_context_retry && error_indicates_context_limit(&err) {
-                aggressive_context_retry = true;
+            if iteration == 1 && !*aggressive_context_retry && error_indicates_context_limit(&err) {
+                *aggressive_context_retry = true;
                 log::warn!(
                     "Assistant: context limit error on first iteration; retrying with aggressive history compression"
                 );
-                client_round = context_compress::compress_chat_history_aggressive(
+                *client_round = context_compress::compress_chat_history_aggressive(
                     &request.messages,
-                    &context_budget,
+                    context_budget,
                 );
-                messages = vec![ChatCompletionMessageRequest {
+                *messages = vec![ChatCompletionMessageRequest {
                     role: "system".to_string(),
                     content: system_content.clone(),
                     tool_call_id: None,
                     name: None,
                     tool_calls: None,
                 }];
-                messages.extend(map_chat_messages(&client_round));
+                messages.extend(map_chat_messages(&*client_round));
                 continue;
             }
 
@@ -1612,7 +1859,8 @@ pub(crate) async fn run_agent_loop_inner(
             // continue the same iteration with the next model. This keeps the
             // conversation state (messages, steps) intact when a model fails.
             if let Some(r) = redis {
-                if let Err(e) = evict_openrouter_assistant_model_from_cache(r, &model).await {
+                if let Err(e) = evict_openrouter_assistant_model_from_cache(r, model.as_str()).await
+                {
                     log::warn!(
                         "Assistant: failed to evict failing model `{}` from Redis cache: {}",
                         model,
@@ -1621,12 +1869,18 @@ pub(crate) async fn run_agent_loop_inner(
                 }
             }
             if let Some(ref tx) = event_tx {
-                sse_stream_debug_model_attempt_failed(tx, &model, &model_name, &err).await;
+                sse_stream_debug_model_attempt_failed(
+                    tx,
+                    model.as_str(),
+                    model_name.as_str(),
+                    &err,
+                )
+                .await;
             }
-            if current_model_idx + 1 < candidates.len() {
-                current_model_idx += 1;
-                model = candidates[current_model_idx].0.clone();
-                model_name = candidates[current_model_idx].1.clone();
+            if *current_model_idx + 1 < candidates.len() {
+                *current_model_idx += 1;
+                *model = candidates[*current_model_idx].0.clone();
+                *model_name = candidates[*current_model_idx].1.clone();
                 log::warn!(
                     "Assistant: switching to fallback model {} ({}) for iteration {} after error: {}",
                     model,
@@ -1668,8 +1922,8 @@ pub(crate) async fn run_agent_loop_inner(
             if let Some(ref tx) = event_tx {
                 let payload = json!({
                     "type": "assistant_tool_calls",
-                    "model": model,
-                    "model_name": model_name,
+                    "model": model.clone(),
+                    "model_name": model_name.clone(),
                     "content": content_str,
                     "tool_calls": calls,
                 });
@@ -1848,8 +2102,8 @@ pub(crate) async fn run_agent_loop_inner(
                         {
                             let mut start_payload = json!({
                                 "type": "step_start",
-                                "model": model,
-                                "model_name": model_name,
+                                "model": model.clone(),
+                                "model_name": model_name.clone(),
                                 "index": global_step_index,
                                 "action": action_desc,
                                 "tool_call_id": tool_call_id,
@@ -1963,8 +2217,8 @@ pub(crate) async fn run_agent_loop_inner(
                         if let Some(ref tx) = event_tx {
                             let mut payload = json!({
                                 "type": "step",
-                                "model": model,
-                                "model_name": model_name,
+                                "model": model.clone(),
+                                "model_name": model_name.clone(),
                                 "index": global_step_index,
                                 "action": step.action,
                                 "result": step.result,
@@ -2001,7 +2255,7 @@ pub(crate) async fn run_agent_loop_inner(
             // Stuck-recovery: if the model returned empty content with no tools while search
             // results exist in this conversation, inject a brief nudge message and continue the
             // loop. This mirrors Roo's noToolsUsed / recovery pattern for stalled agents.
-            if reply.trim().is_empty() && iteration < agent_max_iter && !steps.is_empty() {
+            if reply.trim().is_empty() && iteration < *max_iterations && !steps.is_empty() {
                 log::warn!(
                     "Assistant: empty reply with no tool calls at iteration {}; injecting recovery nudge",
                     iteration
@@ -2021,14 +2275,14 @@ pub(crate) async fn run_agent_loop_inner(
             if let Some(tx) = event_tx {
                 let payload = json!({
                     "type": "done",
-                    "model": model,
-                    "model_name": model_name,
+                    "model": model.clone(),
+                    "model_name": model_name.clone(),
                     "reply": reply
                 });
                 emit_sse_user_visible(&persist, &tx, payload).await?;
                 drop(tx);
             }
-            return Ok((reply, steps));
+            return Ok((reply, steps.clone()));
         }
     }
 
@@ -2045,14 +2299,14 @@ pub(crate) async fn run_agent_loop_inner(
     if let Some(tx) = event_tx {
         let payload = json!({
             "type": "done",
-            "model": model,
-            "model_name": model_name,
+            "model": model.clone(),
+            "model_name": model_name.clone(),
             "reply": &last_content
         });
         emit_sse_user_visible(&persist, &tx, payload).await?;
         drop(tx);
     }
-    Ok((last_content, steps))
+    Ok((last_content, steps.clone()))
 }
 
 #[cfg(test)]
@@ -2106,5 +2360,37 @@ mod chat_message_map_tests {
         assert!(!super::error_indicates_context_limit(
             &AppError::BadRequest("nope".into())
         ));
+    }
+}
+
+#[cfg(test)]
+mod request_analysis_tests {
+    use super::RequestAnalysis;
+
+    #[test]
+    fn parses_request_analysis_json() {
+        let raw = r#"{"intent": "lookup fox", "on_topic": true, "needs_search": true, "search_queries": ["fox", "animal"], "ambiguity_note": ""}"#;
+        let a: RequestAnalysis = serde_json::from_str(raw).unwrap();
+        assert_eq!(a.intent, "lookup fox");
+        assert!(a.on_topic);
+        assert!(a.needs_search);
+        assert_eq!(a.search_queries, vec!["fox", "animal"]);
+        assert_eq!(a.ambiguity_note.as_deref(), Some(""));
+    }
+
+    #[test]
+    fn default_request_analysis_is_permissive() {
+        let a = RequestAnalysis::default();
+        assert!(a.on_topic);
+        assert!(a.needs_search);
+        assert!(a.search_queries.is_empty());
+    }
+
+    #[test]
+    fn request_analysis_parses_off_topic() {
+        let raw = r#"{"intent": "weather", "on_topic": false, "needs_search": false}"#;
+        let a: RequestAnalysis = serde_json::from_str(raw).unwrap();
+        assert!(!a.on_topic);
+        assert!(!a.needs_search);
     }
 }
