@@ -1103,6 +1103,24 @@ export default {
         return rules
       }
       addComponents(buttonUiThemeLayer())
+
+      // --- Assistant page Button theme (used only by AssistantChat.vue) ---
+      /**
+       * Maps @packages/ui Button variants to the legacy assistant classes so the
+       * chat page keeps its pre-refactor look while still using the shared Button.
+       */
+      addComponents({
+        '.ui-btn--assistant-icon-soft': { '@apply assistant-icon-btn-soft': {} },
+        '.ui-btn--assistant-new-chat': { '@apply assistant-new-chat-trigger': {} },
+        '.ui-btn--assistant-session': {
+          '@apply assistant-session-row': {},
+          '& > span': { '@apply block w-full': {} },
+        },
+        '.ui-btn--assistant-icon-header': { '@apply assistant-icon-btn-header': {} },
+        '.ui-btn--assistant-icon-panel': { '@apply assistant-icon-btn-panel': {} },
+        '.ui-btn--assistant-bubble-action': { '@apply assistant-bubble-action': {} },
+        '.ui-btn--assistant-composer-send': { '@apply assistant-composer-send': {} },
+      })
     },
   ],
 }

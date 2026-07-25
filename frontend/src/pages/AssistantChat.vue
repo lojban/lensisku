@@ -31,20 +31,14 @@
       <div class="flex items-center gap-2 border-b border-gray-200/60 bg-white/40 px-2 py-2">
         <Button
           v-if="!isDesktop"
-          variant="neutral"
+          variant="assistant-icon-soft"
           type="button"
-          class="assistant-icon-btn-soft"
           :aria-label="$t('assistantChat.closeChatHistory')"
           @click="sidebarOpen = false"
         >
           <X class="h-5 w-5" />
         </Button>
-        <Button
-          variant="neutral"
-          type="button"
-          class="assistant-new-chat-trigger"
-          @click="startNewChat"
-        >
+        <Button variant="assistant-new-chat" type="button" @click="startNewChat">
           <Plus class="h-4 w-4 shrink-0" /> {{ $t('assistantChat.newChat') }}
         </Button>
       </div>
@@ -73,10 +67,10 @@
         <Button
           v-for="session in filteredSessions"
           :key="session.id"
-          variant="neutral"
+          variant="assistant-session"
           type="button"
           role="listitem"
-          class="group assistant-session-row"
+          class="group"
           :class="
             session.id === activeSessionId
               ? 'assistant-session-row--active'
@@ -106,7 +100,7 @@
               </p>
             </div>
             <IconButtonGhost
-              class="-danger -danger--reveal-md"
+              class="icon-btn-ghost-danger icon-btn-ghost-danger--reveal-md"
               :aria-label="$t('assistantChat.deleteChat')"
               @click="deleteSession(session.id, $event)"
             >
@@ -120,9 +114,8 @@
     <div class="assistant-main flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
       <header class="assistant-main-header flex shrink-0 items-start gap-3 px-3 pt-3">
         <Button
-          variant="neutral"
+          variant="assistant-icon-panel"
           type="button"
-          class="assistant-icon-btn-panel"
           :aria-label="$t('assistantChat.openChatHistory')"
           :aria-expanded="sidebarOpen"
           @click="sidebarOpen = !sidebarOpen"
@@ -135,9 +128,8 @@
               {{ $t('assistantChat.title') }}
             </h1>
             <Button
-              variant="neutral"
+              variant="assistant-icon-header"
               type="button"
-              class="assistant-icon-btn-header"
               :aria-label="$t('assistantChat.newChat')"
               @click="startNewChat"
             >
@@ -195,7 +187,7 @@
               <div
                 v-for="(msg, index) in messages"
                 :key="index"
-                class="flex flex-col gap-1"
+                class="flex flex-col gap-3"
                 :class="msg.role === 'user' ? 'items-end' : 'items-start'"
               >
                 <!-- User message: bubble + edit (row, pencil to the right of the bubble) -->
@@ -239,9 +231,8 @@
                     </div>
                     <Button
                       v-if="canEditMessages"
-                      variant="neutral"
+                      variant="assistant-bubble-action"
                       type="button"
-                      class="assistant-bubble-action"
                       :aria-label="$t('assistantChat.editMessage')"
                       :title="$t('assistantChat.editMessage')"
                       @click="startEditMessage(index)"
@@ -391,9 +382,8 @@
               @blur="onAssistantFormControlBlur"
             />
             <Button
-              variant="neutral"
+              variant="assistant-composer-send"
               :type="isStreamingThisSession ? 'button' : 'submit'"
-              class="assistant-composer-send"
               :disabled="!isStreamingThisSession && !input.trim()"
               :aria-label="
                 isStreamingThisSession
@@ -419,7 +409,7 @@
             <div v-if="error" class="flex min-w-0 flex-1 items-center gap-2">
               <p class="min-w-0 flex-1 truncate text-xs text-red-600">{{ error }}</p>
               <IconButtonGhost
-                class="-danger"
+                class="icon-btn-ghost-danger"
                 :aria-label="$t('assistantChat.retry')"
                 :title="$t('assistantChat.retry')"
                 @click="retryLast"

@@ -1,9 +1,8 @@
 <template>
   <Button
-    variant="neutral"
+    :variant="buttonVariant"
     type="button"
     class="inline-flex items-center justify-center"
-    :class="buttonClass"
     :title="currentTitle"
     :aria-label="currentTitle"
     @click.stop="copyToClipboard"
@@ -51,10 +50,10 @@ const currentTitle = computed(() =>
   copied.value ? t('components.error.copiedToClipboard') : props.title
 )
 
-const buttonClass = computed(() => {
+const buttonVariant = computed(() => {
   if (props.variant === 'ghost') return 'assistant-bubble-action'
-  if (props.variant === 'unstyled') return ''
-  return 'ui-btn--empty'
+  if (props.variant === 'unstyled') return 'neutral'
+  return 'empty'
 })
 
 const copyToClipboard = async () => {
