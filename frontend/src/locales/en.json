@@ -64,6 +64,7 @@
     "defaultSourceLanguage": "Default (Lojban)",
     "resetAllFilters": "Reset",
     "selectWordType": "Select word type",
+    "allWordTypes": "All words",
     "expand": "Expand filters",
     "collapse": "Collapse filters"
   },
@@ -179,7 +180,8 @@
     "hideRawOutput": "Hide raw search result",
     "editMessage": "Edit",
     "saveEdit": "Save",
-    "cancelEdit": "Cancel"
+    "cancelEdit": "Cancel",
+    "copyMessage": "Copy message"
   },
   "deleteConfirmation": {
     "title": "Confirm delete",

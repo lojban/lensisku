@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Button } from '@packages/ui'
 import { useI18n } from 'vue-i18n'
 import { computed } from 'vue'
 
@@ -62,12 +63,12 @@ function handleKeydown(e) {
       </div>
 
       <div class="flex justify-end gap-3">
-        <button class="ui-btn--cancel" @click="$emit('cancel')">
+        <Button variant="cancel" @click="$emit('cancel')">
           {{ t('deleteConfirmation.cancel') }}
-        </button>
-        <button :disabled="isDeleting" class="ui-btn--delete" @click="$emit('confirm')">
+        </Button>
+        <Button variant="delete" :disabled="isDeleting" @click="$emit('confirm')">
           {{ isDeleting ? t('deleteConfirmation.deleting') : t('deleteConfirmation.delete') }}
-        </button>
+        </Button>
       </div>
     </div>
   </div>

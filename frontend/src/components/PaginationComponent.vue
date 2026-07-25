@@ -15,7 +15,8 @@
     </div>
 
     <div class="flex items-center space-x-2 flex-1 justify-center sm:justify-end">
-      <button
+      <Button
+        variant="neutral"
         :disabled="currentPage === 1"
         class="ui-btn--back"
         :class="
@@ -26,11 +27,12 @@
         @click="$emit('prev')"
       >
         {{ t('pagination.previous') }}
-      </button>
+      </Button>
       <span class="text-sm text-gray-600 whitespace-nowrap">
         {{ t('pagination.page', { currentPage: currentPage, totalPages: totalPages || 1 }) }}
       </span>
-      <button
+      <Button
+        variant="neutral"
         :disabled="currentPage >= totalPages"
         class="ui-btn--forward"
         :class="
@@ -41,12 +43,13 @@
         @click="$emit('next')"
       >
         {{ t('pagination.next') }}
-      </button>
+      </Button>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { Button } from '@packages/ui'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 

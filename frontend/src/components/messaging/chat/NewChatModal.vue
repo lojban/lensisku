@@ -26,11 +26,11 @@
           <label class="filters-field-label">Chat Type</label>
           <div class="flex gap-4">
             <label class="flex items-center gap-2">
-              <input v-model="chatType" type="radio" value="direct" class="checkbox-toggle" />
+              <Radio v-model="chatType" type="radio" value="direct" class="checkbox-toggle" />
               <span class="text-sm text-gray-700">Direct Message</span>
             </label>
             <label class="flex items-center gap-2">
-              <input v-model="chatType" type="radio" value="group" class="checkbox-toggle" />
+              <Radio v-model="chatType" type="radio" value="group" class="checkbox-toggle" />
               <span class="text-sm text-gray-700">Group Chat</span>
             </label>
           </div>
@@ -39,7 +39,7 @@
         <!-- Thread Name (for group chats) -->
         <div v-if="chatType === 'group'" class="mb-4">
           <label for="thread-name" class="filters-field-label">Group Name</label>
-          <input
+          <Input
             id="thread-name"
             v-model="threadName"
             type="text"
@@ -55,7 +55,7 @@
             <Search
               class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400"
             />
-            <input
+            <Input
               id="participants"
               v-model="searchQuery"
               type="text"
@@ -74,13 +74,9 @@
             class="badge bg-blue-100 text-blue-800 inline-flex items-center gap-1"
           >
             {{ participant.username }}
-            <button
-              type="button"
-              class="icon-btn-ghost icon-btn-ghost--compact"
-              @click="removeParticipant(participant.user_id)"
-            >
+            <IconButtonGhost class="--compact" @click="removeParticipant(participant.user_id)">
               <X class="h-3 w-3" />
-            </button>
+            </IconButtonGhost>
           </div>
         </div>
 
@@ -90,9 +86,10 @@
             role="list"
             class="max-h-48 overflow-y-auto rounded-lg border border-gray-200 p-2 space-y-1"
           >
-            <button
+            <Button
               v-for="user in searchResults"
               :key="user.user_id"
+              variant="neutral"
               type="button"
               role="listitem"
               class="group assistant-session-row flex w-full items-center gap-3"
@@ -107,9 +104,8 @@
               :aria-label="user.username"
               @click="handleUserClick(user)"
             >
-              <input
+              <Checkbox
                 v-if="chatType === 'group'"
-                type="checkbox"
                 :checked="isParticipantSelected(user.user_id)"
                 class="checkbox-toggle shrink-0"
                 @click.stop
@@ -124,7 +120,7 @@
                   {{ user.realname }}
                 </p>
               </div>
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -139,11 +135,11 @@
 
       <!-- Modal Actions -->
       <div class="px-5 pb-5 pt-3 border-t border-gray-100 flex justify-end gap-3 shrink-0">
-        <button type="button" class="ui-btn--cancel" @click="$emit('close')">Cancel</button>
-        <button
+        <Button variant="cancel" type="button" @click="$emit('close')">Cancel</Button>
+        <Button
+          variant="create"
           type="button"
           :disabled="!canCreate || isCreating"
-          class="ui-btn--create"
           @click="createThread"
         >
           <span
@@ -152,13 +148,14 @@
             aria-hidden="true"
           />
           {{ isCreating ? 'Creating...' : 'Create Chat' }}
-        </button>
+        </Button>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { Button, Checkbox, IconButtonGhost, Input, Radio } from '@packages/ui'
 import { ref, computed, watch } from 'vue'
 import { Search, X } from 'lucide-vue-next'
 import { useAuth } from '@/composables/useAuth'

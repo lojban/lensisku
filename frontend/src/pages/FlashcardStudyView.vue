@@ -7,8 +7,9 @@
     />
     <header class="page-header-study-strip">
       <div class="flex w-full min-w-0 items-start gap-3 sm:gap-4">
-        <button
+        <Button
           v-if="collectionCoverDisplayUrl"
+          variant="neutral"
           type="button"
           class="cursor-pointer max-w-full inline-flex h-full min-h-0 shrink-0 items-stretch border-0 bg-transparent p-0 text-inherit shrink-0 self-start"
           :aria-label="
@@ -31,7 +32,7 @@
               decoding="async"
             />
           </div>
-        </button>
+        </Button>
         <div v-else class="collection-card-logo-placeholder shrink-0 self-start" aria-hidden="true">
           <BookOpen class="h-8 w-8" />
         </div>
@@ -41,23 +42,24 @@
             <p class="text-sm text-gray-600">
               {{ t('flashcardStudy.remainingCards', { count: remainingCards.length }) }}
             </p>
-            <button
+            <Button
               v-if="currentCard"
+              variant="neutral"
               type="button"
-              class="ui-btn--neutral inline-flex items-center gap-2"
+              class="inline-flex items-center gap-2"
               @click="openWavesModal"
             >
               <MessagesSquare class="h-4 w-4 shrink-0" /> {{ t('flashcardStudy.wavesButton') }}
-            </button>
+            </Button>
           </div>
 
           <div class="flex flex-row gap-2 flex-wrap w-full justify-end items-center">
-            <button type="button" class="ui-btn--cancel" @click="router.back()">
+            <Button variant="cancel" type="button" @click="router.back()">
               {{ t('flashcardStudy.endSession') }}
-            </button>
-            <button v-if="currentCard" type="button" class="ui-btn--empty" @click="snoozeCard">
+            </Button>
+            <Button v-if="currentCard" variant="empty" type="button" @click="snoozeCard">
               {{ t('flashcardStudy.snooze') }}
-            </button>
+            </Button>
           </div>
         </div>
       </div>
@@ -78,9 +80,10 @@
       <p class="text-gray-600 mb-4">{{ t('flashcardStudy.allReviewed') }}</p>
 
       <div class="flex justify-center">
-        <button
+        <Button
           ref="returnToDeckButtonRef"
-          class="ui-btn--read w-auto h-10 text-base shadow-sm"
+          variant="read"
+          class="w-auto h-10 text-base shadow-sm"
           @click="router.push(returnToUrl)"
         >
           {{
@@ -88,7 +91,7 @@
               ? t('flashcardStudy.returnToLevels')
               : t('flashcardStudy.returnToDeck')
           }}
-        </button>
+        </Button>
       </div>
     </div>
     <!-- Current Card -->
@@ -207,9 +210,10 @@
 
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
                 <template v-if="quizImageOptions?.length">
-                  <button
+                  <Button
                     v-for="opt in quizImageOptions"
                     :key="opt.id"
+                    variant="neutral"
                     type="button"
                     class="study-quiz-option-flashcard-image"
                     :disabled="isSubmitting"
@@ -220,24 +224,25 @@
                       class="w-full h-24 sm:h-28 object-contain rounded-lg"
                       :alt="opt.id"
                     />
-                  </button>
+                  </Button>
                 </template>
-                <button
+                <Button
                   v-for="(opt, idx) in currentCard.flashcard.quiz_options"
                   v-else
                   :key="idx"
+                  variant="neutral"
                   type="button"
                   class="study-quiz-option-flashcard-text"
                   :disabled="isSubmitting"
                   @click="submitQuizOption(opt)"
                 >
                   <LazyMathJax :content="opt" />
-                </button>
+                </Button>
               </div>
             </div>
             <!-- Answer Input (for fill-in modes) -->
             <div v-if="isFillInMode" class="mt-4">
-              <textarea
+              <Textarea
                 ref="fillInTextareaRef"
                 v-model="userAnswer"
                 type="text"
@@ -391,27 +396,29 @@
           </div>
           <!-- OK button for JustInformation mode -->
           <div v-else-if="isJustInformationMode && !showAnswer" class="flex justify-center px-4">
-            <button class="ui-btn--read w-auto h-10 text-base shadow-sm" @click="submitAnswer(4)">
+            <Button variant="read" class="w-auto h-10 text-base shadow-sm" @click="submitAnswer(4)">
               <Check class="h-4 w-4" />
-            </button>
+            </Button>
           </div>
           <!-- Quiz: Next card after answering -->
           <div v-else-if="quizResult" class="flex justify-center px-4 mt-4">
-            <button
+            <Button
               v-if="remainingCards.length <= 0"
-              class="ui-btn--read w-auto h-10 text-base shadow-sm"
+              variant="read"
+              class="w-auto h-10 text-base shadow-sm"
               @click="router.back()"
             >
               {{ t('flashcardStudy.endSession') }}
-            </button>
-            <button
+            </Button>
+            <Button
               v-else
               ref="nextCardButtonRef"
-              class="ui-btn--read w-auto h-10 text-base shadow-sm"
+              variant="read"
+              class="w-auto h-10 text-base shadow-sm"
               @click="handleQuizNextCard"
             >
               {{ t('flashcardStudy.nextCard') }}
-            </button>
+            </Button>
           </div>
           <!-- Rating buttons (for non-fill-in modes after showing answer) -->
           <div
@@ -477,21 +484,23 @@
                 <span>{{ t('flashcardStudy.answerCorrect') }}</span>
               </div>
               <!-- When incorrect: correct answer is shown above; no error alert -->
-              <button
+              <Button
                 v-if="remainingCards.length <= 0"
-                class="ui-btn--read w-auto h-10 text-base shadow-sm"
+                variant="read"
+                class="w-auto h-10 text-base shadow-sm"
                 @click="router.back()"
               >
                 {{ t('flashcardStudy.endSession') }}
-              </button>
-              <button
+              </Button>
+              <Button
                 v-else
                 ref="nextCardButtonRef"
-                class="ui-btn--read w-auto h-10 text-base shadow-sm"
+                variant="read"
+                class="w-auto h-10 text-base shadow-sm"
                 @click="handleNextCard"
               >
                 {{ t('flashcardStudy.nextCard') }}
-              </button>
+              </Button>
               <div v-if="remainingCards.length === 0" class="text-center text-gray-600 mt-2">
                 {{ t('flashcardStudy.thanksSession') }}
               </div>
@@ -534,7 +543,7 @@ import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import AnonymousProgressBanner from '@/components/AnonymousProgressBanner.vue'
 import ModalComponent from '@/components/ModalComponent.vue'
-import { Button, IconButton } from '@packages/ui'
+import { Button, IconButton, Textarea } from '@packages/ui'
 
 import {
   getDueCards,

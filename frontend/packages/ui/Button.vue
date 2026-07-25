@@ -8,13 +8,18 @@
     :class="buttonClasses"
     v-bind="$attrs"
     @click="handleClick"
-    ><span
-      class="inline-flex min-h-0 min-w-0 max-w-full items-center justify-center gap-2 [&_svg]:shrink-0"
+    ><template v-if="isTopbar"
       ><slot v-if="!loading" name="icon" /><span
         v-else
         class="inline-block shrink-0 rounded-full border-2 border-current border-t-transparent animate-spin"
         :class="spinnerSizeClass"
-        aria-hidden="true" /><span v-if="$slots.default" class="min-w-0"><slot /></span></span
+        aria-hidden="true" /><slot /></template
+    ><span v-else class="inline-flex items-center gap-2 whitespace-nowrap"
+      ><slot v-if="!loading" name="icon" /><span
+        v-else
+        class="inline-block shrink-0 rounded-full border-2 border-current border-t-transparent animate-spin"
+        :class="spinnerSizeClass"
+        aria-hidden="true" /><slot /></span
   ></component>
 </template>
 
@@ -31,13 +36,16 @@ function resolveUiBtnClass(variant: string): string {
   const v = variant.trim()
   if (!v) return 'ui-btn--neutral'
   if (v.startsWith('ui-btn--')) return v
+  if (v === 'topbar') return 'navbar-item'
+  if (v === 'login') return 'btn-login'
+  if (v === 'signup') return 'btn-signup'
   return `ui-btn--${v}`
 }
 
 /** Layout + typography overrides; pairs with `ui-btn--*` (theme layer may set compact h-6 / text-sm). */
 const SIZE_CLASSES: Record<string, string> = {
   md: '',
-  lg: '!h-10 !min-h-[2.5rem] !text-lg font-semibold leading-snug gap-2 rounded-full flex justify-center items-center transition-all disabled:opacity-75 disabled:cursor-not-allowed',
+  lg: '!h-10 !min-h-[2.5rem] !text-lg font-semibold leading-snug gap-2 rounded-full inline-flex justify-center items-center transition-all disabled:opacity-75 disabled:cursor-not-allowed',
 }
 
 const props = defineProps({
@@ -78,11 +86,14 @@ const isRouterLink = computed(() => props.tag === 'router-link' || props.to != n
 const isAnchor = computed(() => props.tag === 'a' || props.href != null)
 const isNativeButton = computed(() => tagComputed.value === 'button')
 
+const isTopbar = computed(() => ['topbar', 'login', 'signup'].includes(props.variant))
+
 const buttonClasses = computed(() => {
   const base = resolveUiBtnClass(props.variant)
-  const size = SIZE_CLASSES[props.size] ?? ''
+  const navColor = props.variant === 'topbar' ? 'text-nav-link' : ''
+  const size = isTopbar.value ? '' : (SIZE_CLASSES[props.size] ?? '')
   const extra = Array.isArray(props.class) ? props.class.join(' ') : props.class
-  return [base, size, extra].filter(Boolean).join(' ')
+  return [base, navColor, size, extra].filter(Boolean).join(' ')
 })
 
 const spinnerSizeClass = computed(() => (props.size === 'lg' ? 'h-6 w-6' : 'h-4 w-4'))

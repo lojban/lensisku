@@ -10,7 +10,7 @@
               t('passwordReset.emailLabel')
             }}</label>
             <div class="relative">
-              <input
+              <Input
                 id="email"
                 v-model="email"
                 type="email"
@@ -22,9 +22,10 @@
               <Mail class="input-field-trailing-icon" aria-hidden="true" />
             </div>
           </div>
-          <button
+          <Button
+            variant="neutral-slate"
             type="submit"
-            class="auth-form-wide-submit ui-btn--neutral-slate h-8"
+            class="auth-form-wide-submit h-8"
             :disabled="isLoading || !email"
           >
             <template v-if="isLoading">
@@ -32,7 +33,7 @@
               {{ t('passwordReset.sendingRequest') }}
             </template>
             <template v-else> {{ t('passwordReset.requestButton') }} </template>
-          </button>
+          </Button>
         </form>
         <!-- Error Display -->
         <AlertComponent v-if="error" type="error" class="mx-auto">
@@ -53,7 +54,7 @@
               t('passwordReset.newPasswordLabel')
             }}</label>
             <div class="relative">
-              <input
+              <Input
                 id="newPassword"
                 v-model="newPassword"
                 type="password"
@@ -71,7 +72,7 @@
               t('passwordReset.confirmPasswordLabel')
             }}</label>
             <div class="relative">
-              <input
+              <Input
                 id="confirmPassword"
                 v-model="confirmPassword"
                 type="password"
@@ -100,9 +101,10 @@
               </li>
             </ul>
           </div>
-          <button
+          <Button
+            variant="neutral-slate"
             type="submit"
-            class="auth-form-wide-submit ui-btn--neutral-slate h-8"
+            class="auth-form-wide-submit h-8"
             :disabled="isLoading || !isValidPasswordReset"
           >
             <template v-if="isLoading">
@@ -110,7 +112,7 @@
               {{ t('passwordReset.resettingPassword') }}
             </template>
             <template v-else> {{ t('passwordReset.resetPasswordButton') }} </template>
-          </button>
+          </Button>
         </form>
         <!-- Error Display -->
         <div v-if="error" class="mb-4 text-center text-red-600">{{ error.message }}</div>
@@ -147,7 +149,7 @@ import {
   restorePassword as apiRestorePassword,
 } from '@/api'
 import AlertComponent from '@/components/AlertComponent.vue'
-import { AuthGlassCard } from '@packages/ui'
+import { AuthGlassCard, Button, Input } from '@packages/ui'
 import { useSeoHead } from '@/composables/useSeoHead'
 
 const route = useRoute()

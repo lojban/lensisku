@@ -4,18 +4,19 @@
       <h2 class="text-xl font-bold text-gray-900">
         {{ t('components.tiktoknu.likesPanel.title') }}
       </h2>
-      <button
+      <Button
         v-if="(likedArticles ?? []).length > 0"
+        variant="danger-rose"
         class="ui-btn--danger-rose"
         :title="t('components.tiktoknu.likesPanel.exportButtonTitle')"
         @click="$emit('export')"
       >
         <Download class="w-4 h-4" /> {{ t('components.tiktoknu.likesPanel.exportButton') }}
-      </button>
+      </Button>
     </div>
 
     <div class="relative mb-4">
-      <input
+      <Input
         type="text"
         :value="searchQuery"
         :placeholder="t('components.tiktoknu.likesPanel.searchPlaceholder')"
@@ -56,13 +57,14 @@
               >
                 {{ article.title }}
               </a>
-              <button
+              <Button
+                variant="neutral"
                 class="text-gray-500 hover:text-red-600 p-1 rounded-full md:opacity-0 md:group-hover:opacity-100 transition-opacity"
                 :aria-label="t('components.tiktoknu.likesPanel.removeFromLikes')"
                 @click.stop="$emit('remove', article)"
               >
                 <X class="w-4 h-4" />
-              </button>
+              </Button>
             </div>
 
             <p class="text-sm text-gray-600 line-clamp-2">{{ article.extract }}</p>
@@ -74,6 +76,7 @@
 </template>
 
 <script setup lang="ts">
+import { Button, Input } from '@packages/ui'
 import { Download, Search, X } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 

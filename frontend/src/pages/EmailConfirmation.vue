@@ -60,9 +60,10 @@
         <RouterLink to="/" class="ui-btn--read w-full block text-center">
           {{ t('emailConfirmation.returnHome') }}
         </RouterLink>
-        <button
+        <Button
           v-if="isExpired"
-          class="ui-btn--create w-full"
+          variant="create"
+          class="w-full"
           :disabled="isRequestingToken"
           @click="requestNewToken"
         >
@@ -71,7 +72,7 @@
               ? t('emailConfirmation.sending')
               : t('emailConfirmation.requestNewToken')
           }}
-        </button>
+        </Button>
       </div>
     </div>
   </div>
@@ -82,6 +83,7 @@
 </template>
 
 <script setup lang="ts">
+import { Button } from '@packages/ui'
 import { ref, onMounted, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'

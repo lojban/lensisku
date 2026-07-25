@@ -3,12 +3,13 @@
     <!-- Header -->
     <header class="bg-white border-b border-gray-200 px-4 py-3 sm:px-6">
       <div class="flex items-center space-x-3">
-        <button
+        <Button
+          variant="neutral"
           class="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-full"
           @click="$router.back()"
         >
           <ArrowLeft class="h-5 w-5" />
-        </button>
+        </Button>
         <h1 class="text-lg font-semibold text-gray-900">New Conversation</h1>
       </div>
     </header>
@@ -27,6 +28,7 @@
 </template>
 
 <script setup lang="ts">
+import { Button } from '@packages/ui'
 import { useRouter } from 'vue-router'
 import { ArrowLeft } from 'lucide-vue-next'
 import NewChatModal from '@/components/messaging/chat/NewChatModal.vue'

@@ -139,14 +139,15 @@
     </div>
     <!-- Unparseable or non-semantic payload: raw fold -->
     <div v-else-if="step.tool_output" class="mt-1 text-gray-400 not-italic">
-      <button
+      <Button
+        variant="neutral"
         type="button"
         class="text-left underline hover:no-underline focus:outline-none text-xs"
         :aria-expanded="showRawOutput"
         @click="$emit('toggleRaw')"
       >
         {{ showRawOutput ? $t('assistantChat.hideRawOutput') : $t('assistantChat.showRawOutput') }}
-      </button>
+      </Button>
       <pre
         v-show="showRawOutput"
         class="mt-1 p-1.5 rounded bg-gray-200 text-[10px] overflow-x-auto max-h-48 overflow-y-auto whitespace-pre-wrap break-all"
@@ -156,6 +157,7 @@
 </template>
 
 <script setup lang="ts">
+import { Button } from '@packages/ui'
 import { computed } from 'vue'
 
 import LazyMathJax from '@/components/LazyMathJax.vue'

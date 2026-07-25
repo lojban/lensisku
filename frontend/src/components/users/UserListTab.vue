@@ -128,7 +128,7 @@
               <div class="flex items-center gap-1.5 mt-3 text-xs text-gray-400">
                 <Calendar class="h-3.5 w-3.5" />
                 <span>{{
-                  t('components.userListTab.joinedAt', { date: formatDate(user.created_at) })
+                  t('components.userListTab.joinedAt', { date: formatDate(user.created_at ?? '') })
                 }}</span>
               </div>
             </div>
@@ -157,8 +157,10 @@ import { getProfileImage } from '@/api'
 import PaginationComponent from '@/components/PaginationComponent.vue'
 import SearchInput from '@/components/SearchInput.vue'
 import { ListRowSurface, ToolbarSelectDropdown, ToolbarSelectDropdownItem } from '@packages/ui'
+import { useDateFormat } from '@/composables/useDateFormat'
 
-const { t, locale } = useI18n()
+const { t } = useI18n()
+const { formatDate } = useDateFormat()
 
 type UserRow = {
   user_id: string | number
@@ -217,11 +219,6 @@ defineEmits([
   'nextPage',
   'viewUser',
 ])
-
-const formatDate = (dateString: string | undefined) => {
-  if (!dateString) return ''
-  return new Date(dateString).toLocaleDateString(locale.value)
-}
 
 const translateRole = (role: string | undefined) => {
   if (!role || typeof role !== 'string') {

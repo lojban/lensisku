@@ -73,27 +73,30 @@
             >
               <template #menu>
                 <div class="flex flex-row">
-                  <button
+                  <Button
+                    variant="neutral"
                     type="button"
                     class="flex items-center gap-1.5 px-3 py-1.5 text-left text-sm text-slate-700 hover:bg-slate-100"
                     @click.stop="editLevel(level)"
                   >
                     <Settings class="h-4 w-4" /> {{ t('flashcardLevels.actions.edit') }}
-                  </button>
-                  <button
+                  </Button>
+                  <Button
+                    variant="neutral"
                     type="button"
                     class="flex items-center gap-1.5 px-3 py-1.5 text-left text-sm text-slate-700 hover:bg-slate-100"
                     @click.stop="showAddCardsModal(level)"
                   >
                     <PlusCircle class="h-4 w-4" /> {{ t('flashcardLevels.actions.addCards') }}
-                  </button>
-                  <button
+                  </Button>
+                  <Button
+                    variant="neutral"
                     type="button"
                     class="flex items-center gap-1.5 px-3 py-1.5 text-left text-sm text-slate-700 hover:bg-slate-100"
                     @click.stop="showLevelCards(level)"
                   >
                     <BookOpen class="h-4 w-4" /> {{ t('flashcardLevels.actions.viewCards') }}
-                  </button>
+                  </Button>
                 </div>
               </template>
             </LingoLessonButton>
@@ -120,33 +123,31 @@
             <label class="block text-sm font-medium text-gray-700 mb-1">{{
               t('flashcardLevels.nameLabel')
             }}</label>
-            <input v-model="levelForm.name" type="text" required class="w-full input-field" />
+            <Input v-model="levelForm.name" type="text" required class="w-full input-field" />
           </div>
 
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">{{
               t('flashcardLevels.descriptionLabel')
             }}</label>
-            <textarea v-model="levelForm.description" rows="3" class="textarea-field" />
+            <Textarea v-model="levelForm.description" rows="3" class="textarea-field" />
           </div>
 
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">{{
               t('flashcardLevels.prerequisitesLabel')
             }}</label>
-            <select
+            <Select
               v-model="levelForm.prerequisite_ids"
               multiple
               class="w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option
-                v-for="level in availablePrerequisites"
-                :key="level.level_id"
-                :value="level.level_id"
-              >
-                {{ level.name }}
-              </option>
-            </select>
+              :options="[
+                ...availablePrerequisites.map((level) => ({
+                  value: level.level_id,
+                  label: level.name,
+                })),
+              ]"
+            />
           </div>
 
           <div class="grid grid-cols-2 gap-4">
@@ -154,7 +155,7 @@
               <label class="block text-sm font-medium text-gray-700 mb-1">{{
                 t('flashcardLevels.minCardsLabel')
               }}</label>
-              <input
+              <Input
                 v-model.number="levelForm.min_cards"
                 type="number"
                 min="1"
@@ -166,7 +167,7 @@
               <label class="block text-sm font-medium text-gray-700 mb-1">{{
                 t('flashcardLevels.minSuccessRateLabel')
               }}</label>
-              <input
+              <Input
                 v-model.number="levelForm.min_success_rate"
                 type="number"
                 min="0"
@@ -177,18 +178,19 @@
           </div>
 
           <div class="flex justify-end gap-3 pt-4">
-            <button
+            <Button
               v-if="showEditModal"
+              variant="delete"
               type="button"
-              class="ui-btn--delete mr-auto"
+              class="mr-auto"
               @click="showDeleteLevelConfirmDialog(currentLevel)"
             >
               {{ t('flashcardLevels.deleteLevelButton') }}
-            </button>
-            <button type="button" class="ui-btn--cancel" @click="closeModal">
+            </Button>
+            <Button variant="cancel" type="button" @click="closeModal">
               {{ t('flashcardLevels.cancelButton') }}
-            </button>
-            <button type="submit" :disabled="isSubmitting" class="ui-btn--create">
+            </Button>
+            <Button variant="create" type="submit" :disabled="isSubmitting">
               {{
                 isSubmitting
                   ? t('flashcardLevels.savingButton')
@@ -196,7 +198,7 @@
                     ? t('flashcardLevels.saveChangesButton')
                     : t('flashcardLevels.createLevelButton')
               }}
-            </button>
+            </Button>
           </div>
         </form>
       </div>
@@ -235,7 +237,8 @@
                       {{ card.progress.total_attempts }}</span
                     >
                   </div>
-                  <button
+                  <Button
+                    variant="cancel"
                     :class="[
                       selectedCards.includes(card.flashcard_id)
                         ? 'ui-btn--cancel'
@@ -248,7 +251,7 @@
                         ? t('flashcardLevels.selected')
                         : t('flashcardLevels.select')
                     }}
-                  </button>
+                  </Button>
                 </div>
                 <DefinitionCard
                   :definition="{
@@ -280,12 +283,12 @@
       </div>
       <template #footer>
         <div class="flex justify-end gap-3">
-          <button class="ui-btn--cancel" @click="closeCardsModal">
+          <Button variant="cancel" @click="closeCardsModal">
             {{ t('flashcardLevels.cancelButton') }}
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="create"
             :disabled="selectedCards.length === 0 || isAddingCards"
-            class="ui-btn--create"
             @click="addSelectedCards"
           >
             {{
@@ -295,7 +298,7 @@
                     count: selectedCards.length,
                   })
             }}
-          </button>
+          </Button>
         </div>
       </template>
     </ModalComponent>
@@ -361,13 +364,13 @@
           </div>
           <!-- PaginationComponent -->
           <div v-if="levelCardsTotal > 0" class="mt-6 flex justify-between items-center">
-            <button
+            <Button
+              variant="empty"
               :disabled="currentLevelCardsPage === 1"
-              class="ui-btn--empty"
               @click="loadLevelCards(currentLevelCardsPage - 1)"
             >
               {{ t('flashcardLevels.previousPage') }}
-            </button>
+            </Button>
             <span class="text-sm text-gray-600">
               {{
                 t('flashcardLevels.pageInfo', {
@@ -376,13 +379,13 @@
                 })
               }}
             </span>
-            <button
+            <Button
+              variant="empty"
               :disabled="currentLevelCardsPage === totalLevelCardsPages"
-              class="ui-btn--empty"
               @click="loadLevelCards(currentLevelCardsPage + 1)"
             >
               {{ t('flashcardLevels.nextPage') }}
-            </button>
+            </Button>
           </div>
         </div>
         <!-- This closes the v-else -->
@@ -390,9 +393,9 @@
       <!-- This closes the flex-1 overflow-y-auto -->
       <template #footer>
         <div class="flex justify-end">
-          <button class="ui-btn--cancel" @click="closeLevelCardsModal">
+          <Button variant="cancel" @click="closeLevelCardsModal">
             {{ t('flashcardLevels.closeButton') }}
-          </button>
+          </Button>
         </div>
       </template>
     </ModalComponent>
@@ -407,12 +410,12 @@
         <p class="text-gray-600 mb-6">{{ t('flashcardLevels.deleteCardMessage') }}</p>
 
         <div class="flex justify-end gap-3">
-          <button class="ui-btn--cancel" @click="showDeleteConfirmation = false">
+          <Button variant="cancel" @click="showDeleteConfirmation = false">
             {{ t('flashcardLevels.cancelButton') }}
-          </button>
-          <button class="ui-btn--delete" @click="deleteCard">
+          </Button>
+          <Button variant="delete" @click="deleteCard">
             {{ t('flashcardLevels.deleteButton') }}
-          </button>
+          </Button>
         </div>
       </div>
     </div>
@@ -450,7 +453,7 @@ import {
   deleteLevel, // Import the new function
 } from '@/api'
 import DefinitionCard from '@/components/DefinitionCard.vue'
-import { IconButton } from '@packages/ui'
+import { Button, IconButton, Input, Select, Textarea } from '@packages/ui'
 import { useAuth } from '@/composables/useAuth'
 import { useAnonymousProgress, type LevelProgressData } from '@/composables/useAnonymousProgress'
 import { useSeoHead } from '@/composables/useSeoHead'

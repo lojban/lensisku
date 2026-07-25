@@ -11,33 +11,40 @@
           <label for="fromLang" class="block text-sm font-medium text-gray-700 mb-2">
             {{ t('exportPairs.fromLanguage') }}
           </label>
-          <select id="fromLang" v-model="fromLang" class="input-field w-full" required>
-            <option value="" disabled>{{ t('exportPairs.selectLanguage') }}</option>
-
-            <option v-for="lang in languages" :key="lang.id" :value="lang.id">
-              {{ lang.real_name }}
-            </option>
-          </select>
+          <Select
+            id="fromLang"
+            v-model="fromLang"
+            class="input-field w-full"
+            required
+            :options="[
+              { value: '', label: t('exportPairs.selectLanguage'), disabled: true },
+              ...languages.map((lang) => ({ value: lang.id, label: lang.real_name })),
+            ]"
+          />
         </div>
         <!-- To Language -->
         <div>
           <label for="toLang" class="block text-sm font-medium text-gray-700 mb-2">
             {{ t('exportPairs.toLanguage') }}
           </label>
-          <select id="toLang" v-model="toLang" class="input-field w-full" required>
-            <option value="" disabled>{{ t('exportPairs.selectLanguage') }}</option>
-
-            <option v-for="lang in languages" :key="lang.id" :value="lang.id">
-              {{ lang.real_name }}
-            </option>
-          </select>
+          <Select
+            id="toLang"
+            v-model="toLang"
+            class="input-field w-full"
+            required
+            :options="[
+              { value: '', label: t('exportPairs.selectLanguage'), disabled: true },
+              ...languages.map((lang) => ({ value: lang.id, label: lang.real_name })),
+            ]"
+          />
         </div>
       </div>
 
       <div class="pt-4">
-        <button
+        <Button
+          variant="create"
           type="submit"
-          class="ui-btn--create w-full sm:w-auto flex items-center justify-center gap-2"
+          class="w-full sm:w-auto flex items-center justify-center gap-2"
           :disabled="isExporting || !isValid"
         >
           <Download v-if="!isExporting" class="h-5 w-5" />
@@ -45,13 +52,14 @@
           <span>{{
             isExporting ? t('exportPairs.exporting') : t('exportPairs.exportButton')
           }}</span>
-        </button>
+        </Button>
       </div>
     </form>
   </div>
 </template>
 
 <script setup lang="ts">
+import { Button, Select } from '@packages/ui'
 import { ref, onMounted, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { Download, Loader2 } from 'lucide-vue-next'

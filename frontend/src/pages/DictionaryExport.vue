@@ -18,28 +18,24 @@
         t('dictionaryExport.languageTo')
       }}</label>
       <div class="input-group sm:col-span-2">
-        <select
+        <Select
           v-model="selectedSourceLanguage"
           class="input-field w-full"
           :aria-label="t('dictionaryExport.languageFrom')"
-        >
-          <option value="">{{ t('dictionaryExport.sourceLangDefault') }}</option>
-
-          <option v-for="lang in languages" :key="lang.id" :value="lang.tag">
-            {{ lang.real_name }}
-          </option>
-        </select>
-        <select
+          :options="[
+            { value: '', label: t('dictionaryExport.sourceLangDefault') },
+            ...languages.map((lang) => ({ value: lang.tag, label: lang.real_name })),
+          ]"
+        />
+        <Select
           v-model="selectedLanguage"
           class="input-field w-full"
           :aria-label="t('dictionaryExport.languageTo')"
-        >
-          <option value="">{{ t('dictionaryExport.selectLanguage') }}</option>
-
-          <option v-for="lang in languages" :key="lang.id" :value="lang.tag">
-            {{ lang.real_name }}
-          </option>
-        </select>
+          :options="[
+            { value: '', label: t('dictionaryExport.selectLanguage') },
+            ...languages.map((lang) => ({ value: lang.tag, label: lang.real_name })),
+          ]"
+        />
       </div>
     </div>
     <!-- Format Selection -->
@@ -95,12 +91,7 @@
       }}</label>
       <div class="bg-gray-50 rounded-lg p-4 space-y-4">
         <div class="flex items-center space-x-2">
-          <input
-            id="positiveScoresOnly"
-            v-model="positiveScoresOnly"
-            type="checkbox"
-            class="checkbox-toggle"
-          />
+          <Checkbox id="positiveScoresOnly" v-model="positiveScoresOnly" class="checkbox-toggle" />
           <label for="positiveScoresOnly" class="block text-sm text-gray-700">
             {{ t('dictionaryExport.positiveScoresOnly') }}
           </label>
@@ -113,18 +104,20 @@
         <Loader2 class="animate-spin -ml-1 mr-3 h-5 w-5 text-blue-500" />
         {{ t('dictionaryExport.generating') }}
       </div>
-      <button
+      <Button
+        variant="read"
         :disabled="!canExport || isLoading"
-        class="inline-flex items-center ui-btn--read"
+        class="inline-flex items-center"
         @click="handleExport"
       >
         {{ t('dictionaryExport.exportButton') }}
-      </button>
+      </Button>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { Button, Checkbox, Select } from '@packages/ui'
 import { Loader2 } from 'lucide-vue-next'
 import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'

@@ -13,7 +13,7 @@
             t('changePassword.currentPasswordLabel')
           }}</label>
           <div class="relative">
-            <input
+            <Input
               id="currentPassword"
               v-model="currentPassword"
               type="password"
@@ -25,7 +25,8 @@
             <Key class="input-field-trailing-icon" aria-hidden="true" />
           </div>
         </div>
-        <button
+        <Button
+          variant="neutral"
           type="submit"
           class="auth-form-wide-submit ui-btn--neutral-slate h-8"
           :disabled="isLoading || !currentPassword"
@@ -36,7 +37,7 @@
             {{ t('changePassword.verifying') }}
           </template>
           <template v-else> {{ t('changePassword.continueButton') }} </template>
-        </button>
+        </Button>
       </form>
       <!-- Step 2: Verification Code and New Password -->
       <form v-else class="w-full space-y-6" @submit.prevent="completePasswordChange">
@@ -45,7 +46,7 @@
             t('changePassword.verificationCodeLabel')
           }}</label>
           <div class="relative">
-            <input
+            <Input
               id="verificationCode"
               v-model="verificationCode"
               type="text"
@@ -63,7 +64,7 @@
             t('changePassword.newPasswordLabel')
           }}</label>
           <div class="relative">
-            <input
+            <Input
               id="newPassword"
               v-model="newPassword"
               type="password"
@@ -81,7 +82,7 @@
             t('changePassword.confirmPasswordLabel')
           }}</label>
           <div class="relative">
-            <input
+            <Input
               id="confirmPassword"
               v-model="confirmPassword"
               type="password"
@@ -108,17 +109,19 @@
         </div>
 
         <div class="flex gap-3">
-          <button
+          <Button
+            variant="neutral-muted"
             type="button"
-            class="ui-btn--neutral-muted flex-1 h-8"
+            class="flex-1 h-8"
             :disabled="isLoading"
             @click="resetForm"
           >
             {{ t('changePassword.startOverButton') }}
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="auth-signup"
             type="submit"
-            class="ui-btn--auth-signup flex-1 h-8"
+            class="flex-1 h-8"
             :disabled="isLoading || !isValidPasswordChange"
           >
             <template v-if="isLoading">
@@ -126,7 +129,7 @@
               {{ t('changePassword.changingPassword') }}
             </template>
             <template v-else> {{ t('changePassword.changePasswordButton') }} </template>
-          </button>
+          </Button>
         </div>
       </form>
 
@@ -152,7 +155,7 @@ import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 
-import { AuthGlassCard } from '@packages/ui'
+import { AuthGlassCard, Button, Input } from '@packages/ui'
 import { api } from '@/api'
 import { useAuth } from '@/composables/useAuth'
 import { useError } from '@/composables/useError'

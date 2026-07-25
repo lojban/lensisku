@@ -52,22 +52,23 @@
     </div>
     <template #footer>
       <div class="flex flex-wrap justify-end gap-2">
-        <button type="button" class="ui-btn--neutral-muted" :disabled="uploading" @click="close">
+        <Button variant="neutral-muted" type="button" :disabled="uploading" @click="close">
           {{ t('collectionCustomTextBulk.importCancel') }}
-        </button>
-        <button type="button" class="ui-btn--create" :disabled="!file || uploading" @click="submit">
+        </Button>
+        <Button variant="create" type="button" :disabled="!file || uploading" @click="submit">
           {{
             uploading
               ? t('collectionCustomTextBulk.mediaBulkUploading')
               : t('collectionCustomTextBulk.mediaBulkSubmit')
           }}
-        </button>
+        </Button>
       </div>
     </template>
   </ModalComponent>
 </template>
 
 <script setup lang="ts">
+import { Button } from '@packages/ui'
 import { ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import FileDropzone from '@/components/FileDropzone.vue'

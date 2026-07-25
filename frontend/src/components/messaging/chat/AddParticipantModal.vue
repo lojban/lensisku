@@ -18,7 +18,7 @@
             <Search
               class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400"
             />
-            <input
+            <Input
               v-model="searchQuery"
               type="text"
               placeholder="Search users..."
@@ -38,13 +38,9 @@
               class="badge bg-blue-100 text-blue-800 inline-flex items-center gap-1"
             >
               {{ user.username }}
-              <button
-                type="button"
-                class="icon-btn-ghost icon-btn-ghost--compact"
-                @click="removeUser(user.user_id)"
-              >
+              <IconButtonGhost class="--compact" @click="removeUser(user.user_id)">
                 <X class="h-3 w-3" />
-              </button>
+              </IconButtonGhost>
             </div>
           </div>
         </div>
@@ -54,15 +50,15 @@
           <div
             class="max-h-64 overflow-y-auto rounded-lg border border-gray-200 divide-y divide-gray-100"
           >
-            <button
+            <Button
               v-for="user in searchResults"
               :key="user.user_id"
+              variant="neutral"
               type="button"
               class="surface-list-row flex items-center gap-3 !p-3"
               @click="toggleUser(user)"
             >
-              <input
-                type="checkbox"
+              <Checkbox
                 :checked="isUserSelected(user.user_id)"
                 class="checkbox-toggle"
                 @click.stop
@@ -74,7 +70,7 @@
                 <p class="text-sm font-medium text-gray-900">{{ user.username }}</p>
                 <p v-if="user.realname" class="text-xs text-gray-500">{{ user.realname }}</p>
               </div>
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -89,11 +85,11 @@
 
       <!-- Modal Actions -->
       <div class="px-5 pb-5 pt-3 border-t border-gray-100 flex justify-end gap-3 shrink-0">
-        <button type="button" class="ui-btn--cancel" @click="$emit('close')">Cancel</button>
-        <button
+        <Button variant="cancel" type="button" @click="$emit('close')">Cancel</Button>
+        <Button
+          variant="create"
           type="button"
           :disabled="selectedUsers.length === 0 || isAdding"
-          class="ui-btn--create"
           @click="addParticipants"
         >
           <span
@@ -106,13 +102,14 @@
               ? 'Adding...'
               : `Add ${selectedUsers.length} Participant${selectedUsers.length !== 1 ? 's' : ''}`
           }}
-        </button>
+        </Button>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { Button, Checkbox, IconButtonGhost, Input } from '@packages/ui'
 import { ref } from 'vue'
 import { Search, X } from 'lucide-vue-next'
 import { useAuth } from '@/composables/useAuth'

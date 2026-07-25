@@ -31,7 +31,8 @@
 
       <div v-else class="flex-1" />
       <!-- Main action button -->
-      <button
+      <Button
+        variant="neutral"
         type="button"
         :disabled="disabled"
         :aria-disabled="disabled"
@@ -45,12 +46,13 @@
         @click="$emit('check')"
       >
         {{ buttonLabel }}
-      </button>
+      </Button>
     </div>
   </footer>
 </template>
 
 <script setup lang="ts">
+import { Button } from '@packages/ui'
 import { CheckCircle, XCircle } from 'lucide-vue-next'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'

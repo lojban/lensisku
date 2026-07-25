@@ -37,9 +37,10 @@
         <div class="flex w-full max-w-xs flex-col gap-2 sm:flex-row sm:max-w-sm justify-center">
           <LingoResultCard variant="points" :value="cardsAnsweredInSession * 10" />
         </div>
-        <button
+        <Button
           ref="returnToDeckButtonRef"
-          class="ui-btn--auth-signup h-9 min-w-[140px] text-sm"
+          variant="auth-signup"
+          class="h-9 min-w-[140px] text-sm"
           @click="router.push(returnToUrl)"
         >
           {{
@@ -47,7 +48,7 @@
               ? t('flashcardStudy.returnToLevels')
               : t('flashcardStudy.returnToDeck')
           }}
-        </button>
+        </Button>
       </div>
       <!-- Lesson: compact card + rating + footer, no scroll -->
       <div v-else-if="currentCard" class="flex flex-1 flex-col min-h-0 overflow-hidden">
@@ -162,9 +163,10 @@
 
                   <div class="grid grid-cols-2 gap-1.5 sm:gap-2">
                     <template v-if="quizImageOptions?.length">
-                      <button
+                      <Button
                         v-for="opt in quizImageOptions"
                         :key="opt.id"
+                        variant="neutral"
                         type="button"
                         class="study-quiz-option-lingo-image"
                         :disabled="isSubmitting"
@@ -175,24 +177,25 @@
                           class="w-full h-16 sm:h-20 object-contain rounded-lg"
                           :alt="opt.id"
                         />
-                      </button>
+                      </Button>
                     </template>
-                    <button
+                    <Button
                       v-for="(opt, idx) in currentCard.flashcard.quiz_options"
                       v-else
                       :key="idx"
+                      variant="neutral"
                       type="button"
                       class="study-quiz-option-lingo-text"
                       :disabled="isSubmitting"
                       @click="submitQuizOption(opt)"
                     >
                       <LazyMathJax :content="opt" />
-                    </button>
+                    </Button>
                   </div>
                 </div>
                 <!-- Answer Input (fill-in) -->
                 <div v-if="isFillInMode" class="mt-1">
-                  <textarea
+                  <Textarea
                     ref="fillInTextareaRef"
                     v-model="userAnswer"
                     type="text"
@@ -331,9 +334,10 @@
               </h4>
 
               <div class="grid grid-cols-3 gap-1.5 sm:gap-2">
-                <button
+                <Button
+                  variant="error"
                   type="button"
-                  class="ui-btn--error flex w-full items-center justify-center gap-1 py-1.5 text-xs sm:py-2 sm:text-sm"
+                  class="flex w-full items-center justify-center gap-1 py-1.5 text-xs sm:py-2 sm:text-sm"
                   @click="submitAnswer(1)"
                 >
                   <XCircle class="h-3.5 w-3.5 shrink-0" />
@@ -341,10 +345,11 @@
                     <span>{{ t('flashcardStudy.forgot') }}</span>
                     <span class="hidden sm:inline">(1)</span>
                   </span>
-                </button>
-                <button
+                </Button>
+                <Button
+                  variant="warning"
                   type="button"
-                  class="ui-btn--warning flex w-full items-center justify-center gap-1 py-1.5 text-xs sm:py-2 sm:text-sm"
+                  class="flex w-full items-center justify-center gap-1 py-1.5 text-xs sm:py-2 sm:text-sm"
                   @click="submitAnswer(3)"
                 >
                   <Smile class="h-3.5 w-3.5 shrink-0" />
@@ -352,10 +357,11 @@
                     <span>{{ t('flashcardStudy.good') }}</span>
                     <span class="hidden sm:inline">(2)</span>
                   </span>
-                </button>
-                <button
+                </Button>
+                <Button
+                  variant="success"
                   type="button"
-                  class="ui-btn--success flex w-full items-center justify-center gap-1 py-1.5 text-xs sm:py-2 sm:text-sm"
+                  class="flex w-full items-center justify-center gap-1 py-1.5 text-xs sm:py-2 sm:text-sm"
                   @click="submitAnswer(4)"
                 >
                   <Check class="h-3.5 w-3.5 shrink-0" />
@@ -363,7 +369,7 @@
                     <span>{{ t('flashcardStudy.easy') }}</span>
                     <span class="hidden sm:inline">(3)</span>
                   </span>
-                </button>
+                </Button>
               </div>
             </div>
           </div>
@@ -392,6 +398,7 @@
 </template>
 
 <script setup lang="ts">
+import { Button, Textarea } from '@packages/ui'
 import { XCircle, Check, Smile, CheckCircle2, EqualApproximately } from 'lucide-vue-next'
 import { ref, onMounted, computed, watch, nextTick, onBeforeUnmount } from 'vue'
 import { useI18n } from 'vue-i18n'

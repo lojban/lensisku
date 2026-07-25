@@ -29,9 +29,10 @@
         <h3 class="text-sm font-medium text-gray-900">Recent Messages</h3>
       </div>
       <div class="max-h-96 overflow-y-auto">
-        <button
+        <Button
           v-for="notification in recentNotifications"
           :key="notification.id"
+          variant="neutral"
           type="button"
           class="flex items-start gap-3 w-full p-3 hover:bg-gray-100 transition-colors text-left"
           @click="handleNotificationClick(notification)"
@@ -56,18 +57,19 @@
             v-if="!notification.is_read"
             class="shrink-0 h-2 w-2 rounded-full bg-blue-500 mt-2"
           />
-        </button>
+        </Button>
       </div>
       <div class="p-2 border-t border-gray-100">
-        <button type="button" class="ui-btn--link w-full" @click="goToMessages">
+        <Button variant="link" type="button" class="w-full" @click="goToMessages">
           View all messages
-        </button>
+        </Button>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { Button } from '@packages/ui'
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { MessageCircle, User } from 'lucide-vue-next'

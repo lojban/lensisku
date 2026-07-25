@@ -9,7 +9,7 @@
     <h2 class="mb-6 text-xl font-semibold text-slate-800">{{ t('loginPage.title') }}</h2>
 
     <form class="flex w-full max-w-[400px] flex-col gap-4" @submit.prevent="performLogin">
-      <input
+      <Input
         v-model="username"
         type="text"
         :placeholder="t('loginPage.usernamePlaceholder')"
@@ -17,7 +17,7 @@
         class="input-field w-full rounded-lg px-4 py-2.5"
         :disabled="isLoading"
       />
-      <input
+      <Input
         v-model="password"
         type="password"
         :placeholder="t('loginPage.passwordLabel')"
@@ -26,10 +26,15 @@
         :disabled="isLoading"
       />
       <p v-if="error" class="text-sm text-red-600" role="alert">{{ error }}</p>
-      <button type="submit" class="ui-btn--auth-signup h-12 w-full text-base" :disabled="isLoading">
+      <Button
+        variant="auth-signup"
+        type="submit"
+        class="h-12 w-full text-base"
+        :disabled="isLoading"
+      >
         <Loader2 v-if="isLoading" class="mx-auto h-5 w-5 animate-spin" />
         <span v-else>{{ t('loginPage.loginButton') }}</span>
-      </button>
+      </Button>
     </form>
 
     <p class="mt-6 text-center text-sm text-slate-500">
@@ -42,6 +47,7 @@
 </template>
 
 <script setup lang="ts">
+import { Button, Input } from '@packages/ui'
 import { ref, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'

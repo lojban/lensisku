@@ -11,11 +11,11 @@
       >
         <div class="mb-4 flex shrink-0 items-center justify-between">
           <h3 class="text-lg font-medium select-none">{{ title }}</h3>
-          <button class="text-gray-400 hover:text-gray-600" @click="close">
+          <Button variant="neutral" class="text-gray-400 hover:text-gray-600" @click="close">
             <span class="text-xl font-medium">
               <X class="h-6 w-6" :title="t('modal.close')" />
             </span>
-          </button>
+          </Button>
         </div>
 
         <div class="modal-scroll-body"><slot /></div>
@@ -27,6 +27,7 @@
 </template>
 
 <script setup lang="ts">
+import { Button } from '@packages/ui'
 import { useI18n } from 'vue-i18n'
 const { t } = useI18n()
 import { X } from 'lucide-vue-next'

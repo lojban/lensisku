@@ -6,7 +6,7 @@
       <h1 class="text-2xl font-bold text-neutral-700">{{ t('lingo.languageCourses') }}</h1>
 
       <div class="mt-4">
-        <input
+        <Input
           v-model="searchQuery"
           type="text"
           class="input-field w-full sm:max-w-md"
@@ -51,6 +51,7 @@
 </template>
 
 <script setup lang="ts">
+import { Input } from '@packages/ui'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'

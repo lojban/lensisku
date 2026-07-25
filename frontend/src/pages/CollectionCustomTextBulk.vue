@@ -16,7 +16,8 @@
 
         <div v-if="!isLoading && isOwner" class="flex shrink-0 justify-end">
           <Dropdown :trigger-label="t('collectionCustomTextBulk.exportMenuLabel')">
-            <button
+            <Button
+              variant="neutral"
               type="button"
               class="w-full px-4 py-2 text-left text-sm text-cyan-600 hover:bg-cyan-50 flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
               :disabled="isSaving || isImporting"
@@ -24,8 +25,9 @@
             >
               <FileUp class="h-4 w-4 shrink-0" aria-hidden="true" />
               {{ t('collectionCustomTextBulk.exportCsv') }}
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="neutral"
               type="button"
               class="w-full px-4 py-2 text-left text-sm text-emerald-600 hover:bg-emerald-50 flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
               :disabled="isSaving || isImporting"
@@ -33,8 +35,9 @@
             >
               <FileUp class="h-4 w-4 shrink-0" aria-hidden="true" />
               {{ t('collectionCustomTextBulk.exportTsv') }}
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="neutral"
               type="button"
               class="w-full px-4 py-2 text-left text-sm text-blue-600 hover:bg-blue-50 flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
               :disabled="isSaving || isImporting"
@@ -46,8 +49,9 @@
                   ? t('collectionCustomTextBulk.importing')
                   : t('collectionCustomTextBulk.importButton')
               }}
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="neutral"
               type="button"
               class="w-full px-4 py-2 text-left text-sm text-purple-600 hover:bg-purple-50 flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
               :disabled="isSaving || isImporting || mediaBulkBusy"
@@ -55,7 +59,7 @@
             >
               <Package class="h-4 w-4 shrink-0" aria-hidden="true" />
               {{ t('collectionCustomTextBulk.mediaBulkZipButton') }}
-            </button>
+            </Button>
           </Dropdown>
         </div>
       </div>
@@ -76,18 +80,20 @@
           class="btn-group-forced flex flex-row flex-wrap items-center md:gap-y-2"
           role="group"
         >
-          <button
+          <Button
+            variant="neutral-muted"
             type="button"
-            class="ui-btn--neutral-muted ui-btn--group-item inline-flex items-center gap-2"
+            class="ui-btn--group-item inline-flex items-center gap-2"
             :disabled="isSaving || !isDirty"
             @click="resetRows"
           >
             <Undo2 class="h-5 w-5 shrink-0" aria-hidden="true" />
             {{ t('collectionCustomTextBulk.revert') }}
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="auth-signup"
             type="button"
-            class="ui-btn--auth-signup ui-btn--group-item inline-flex items-center gap-2"
+            class="ui-btn--group-item inline-flex items-center gap-2"
             :disabled="isSaving || !isDirty"
             :aria-busy="isSaving"
             @click="saveAll"
@@ -104,7 +110,7 @@
                 ? t('collectionCustomTextBulk.saving')
                 : t('collectionCustomTextBulk.saveAll')
             }}
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -128,24 +134,22 @@
 
         <div class="mb-4 grid grid-cols-1 gap-3 rounded-md border border-gray-200 bg-gray-50 p-3">
           <label class="inline-flex items-center gap-2 text-sm text-gray-700">
-            <input
+            <Checkbox
               v-model="importSkipFirstRow"
-              type="checkbox"
               class="h-4 w-4 rounded border-gray-300 text-cyan-600 focus:ring-cyan-500"
             />
             <span>{{ t('collectionCustomTextBulk.importSkipFirstRowLabel') }}</span>
           </label>
           <label class="flex flex-col gap-1 text-sm text-gray-700">
             <span>{{ t('collectionCustomTextBulk.importPersistLanguageFromLabel') }}</span>
-            <select v-model="importPersistLanguageFrom" class="input-field">
-              <option value="front">
-                {{ t('collectionCustomTextBulk.importPersistFromFront') }}
-              </option>
-
-              <option value="back">
-                {{ t('collectionCustomTextBulk.importPersistFromBack') }}
-              </option>
-            </select>
+            <Select
+              v-model="importPersistLanguageFrom"
+              class="input-field"
+              :options="[
+                { value: 'front', label: t('collectionCustomTextBulk.importPersistFromFront') },
+                { value: 'back', label: t('collectionCustomTextBulk.importPersistFromBack') },
+              ]"
+            />
           </label>
         </div>
         <FileDropzone
@@ -217,42 +221,39 @@
                     <label class="mb-1 block text-[0.7rem] text-gray-600">
                       {{ t('collectionCustomTextBulk.importColumnLanguageLabel') }}
                     </label>
-                    <select
+                    <Select
                       v-model.number="col.languageId"
                       class="input-field mb-2 w-full py-1 text-xs"
-                    >
-                      <option :value="null">
-                        {{ t('collectionCustomTextBulk.importLanguageUnset') }}
-                      </option>
-
-                      <option
-                        v-for="lang in languageOptions"
-                        :key="`bulk-col-lang-${colIdx}-${lang.id}`"
-                        :value="lang.id"
-                      >
-                        {{ languageLabel(lang) }}
-                      </option>
-                    </select>
+                      :options="[
+                        { value: null, label: t('collectionCustomTextBulk.importLanguageUnset') },
+                        ...languageOptions.map((lang) => ({
+                          value: lang.id,
+                          label: languageLabel(lang),
+                        })),
+                      ]"
+                    />
                     <label class="mb-1 block text-[0.7rem] text-gray-600">
                       {{ t('collectionCustomTextBulk.importColumnRoleLabel') }}
                     </label>
-                    <select
+                    <Select
                       class="input-field w-full py-1 text-xs"
                       :value="col.role"
+                      :options="[
+                        {
+                          value: 'none',
+                          label: t('collectionCustomTextBulk.importColumnRoleNone'),
+                        },
+                        {
+                          value: 'front',
+                          label: t('collectionCustomTextBulk.importColumnRoleFront'),
+                        },
+                        {
+                          value: 'back',
+                          label: t('collectionCustomTextBulk.importColumnRoleBack'),
+                        },
+                      ]"
                       @change="onImportColumnRoleChange(colIdx, $event)"
-                    >
-                      <option value="none">
-                        {{ t('collectionCustomTextBulk.importColumnRoleNone') }}
-                      </option>
-
-                      <option value="front">
-                        {{ t('collectionCustomTextBulk.importColumnRoleFront') }}
-                      </option>
-
-                      <option value="back">
-                        {{ t('collectionCustomTextBulk.importColumnRoleBack') }}
-                      </option>
-                    </select>
+                    />
                   </th>
                 </tr>
               </thead>
@@ -305,17 +306,17 @@
             v-if="importAwaitingFinalConfirm"
             class="flex w-full flex-wrap items-center justify-end gap-2"
           >
-            <button
+            <Button
+              variant="neutral-muted"
               type="button"
-              class="ui-btn--neutral-muted"
               :disabled="isImporting"
               @click="backFromImportConfirm"
             >
               {{ t('collectionCustomTextBulk.importBackToMapping') }}
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="create"
               type="button"
-              class="ui-btn--create"
               :disabled="!canExecuteImport"
               :aria-busy="isImporting"
               @click="executeImport"
@@ -325,26 +326,26 @@
                   ? t('collectionCustomTextBulk.importing')
                   : t('collectionCustomTextBulk.importConfirmRun')
               }}
-            </button>
+            </Button>
           </div>
 
           <div v-else class="flex w-full flex-wrap items-center justify-end gap-2">
-            <button
+            <Button
+              variant="neutral-muted"
               type="button"
-              class="ui-btn--neutral-muted"
               :disabled="isImporting"
               @click="closeImportModal"
             >
               {{ t('collectionCustomTextBulk.importCancel') }}
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="create"
               type="button"
-              class="ui-btn--create"
               :disabled="!canProceedImportReview"
               @click="proceedToImportConfirm"
             >
               {{ t('collectionCustomTextBulk.importContinueReview') }}
-            </button>
+            </Button>
           </div>
         </template>
       </ModalComponent>
@@ -389,22 +390,22 @@
             </div>
 
             <div v-if="selectedBulkCount > 0" class="flex shrink-0 flex-wrap items-center gap-2">
-              <button
+              <Button
+                variant="neutral-muted"
                 type="button"
-                class="ui-btn--neutral-muted"
                 :disabled="isRowActionDisabled || bulkDeleteInProgress"
                 @click="clearBulkSelection"
               >
                 {{ t('collectionCustomTextBulk.bulkClearSelection') }}
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="delete"
                 type="button"
-                class="ui-btn--delete"
                 :disabled="isRowActionDisabled || bulkDeleteInProgress"
                 @click="requestBulkDelete"
               >
                 {{ t('collectionCustomTextBulk.bulkDeleteSelected', { count: selectedBulkCount }) }}
-              </button>
+              </Button>
             </div>
 
             <p
@@ -459,9 +460,8 @@
                 class="row-span-2 flex flex-col items-end justify-center gap-1 whitespace-nowrap text-right"
               >
                 <span class="sr-only">{{ t('collectionCustomTextBulk.bulkSelectColumn') }}</span>
-                <input
+                <Checkbox
                   ref="bulkSelectAllCheckboxMobileRef"
-                  type="checkbox"
                   class="h-4 w-4 rounded border-gray-300 text-cyan-600 focus:ring-cyan-500"
                   :checked="bulkSelectAllChecked"
                   :aria-label="t('collectionCustomTextBulk.bulkSelectAllAria')"
@@ -486,9 +486,8 @@
               <div
                 class="flex w-full min-w-[7rem] items-center justify-end gap-2 whitespace-nowrap pl-2 pr-2 text-right"
               >
-                <input
+                <Checkbox
                   ref="bulkSelectAllCheckboxRef"
-                  type="checkbox"
                   class="h-4 w-4 shrink-0 rounded border-gray-300 text-cyan-600 focus:ring-cyan-500"
                   :checked="bulkSelectAllChecked"
                   :aria-label="t('collectionCustomTextBulk.bulkSelectAllAria')"
@@ -555,7 +554,7 @@ import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import ModalComponent from '@/components/ModalComponent.vue'
 import SearchInput from '@/components/SearchInput.vue'
 import SuccessToastImportReloadHint from '@/components/SuccessToastImportReloadHint.vue'
-import { Dropdown } from '@packages/ui'
+import { Button, Checkbox, Dropdown, Select } from '@packages/ui'
 import { useAuth } from '@/composables/useAuth'
 import { useError } from '@/composables/useError'
 import { useSuccessToast } from '@/composables/useSuccessToast'

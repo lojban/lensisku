@@ -171,23 +171,19 @@
   <!-- Filters -->
   <div v-if="!isAnonView" class="bg-white p-4 rounded-lg border shadow-sm">
     <div class="flex flex-wrap gap-4">
-      <select v-model="filters.status" class="input-field">
-        <option value="">{{ t('components.flashcardCollectionView.filters.allStatus') }}</option>
-
-        <option value="new">{{ t('components.flashcardCollectionView.stats.new') }}</option>
-
-        <option value="learning">
-          {{ t('components.flashcardCollectionView.stats.learning') }}
-        </option>
-
-        <option value="review">{{ t('components.flashcardCollectionView.stats.review') }}</option>
-
-        <option value="graduated">
-          {{ t('components.flashcardCollectionView.stats.graduated') }}
-        </option>
-      </select>
+      <Select
+        v-model="filters.status"
+        class="input-field"
+        :options="[
+          { value: '', label: t('components.flashcardCollectionView.filters.allStatus') },
+          { value: 'new', label: t('components.flashcardCollectionView.stats.new') },
+          { value: 'learning', label: t('components.flashcardCollectionView.stats.learning') },
+          { value: 'review', label: t('components.flashcardCollectionView.stats.review') },
+          { value: 'graduated', label: t('components.flashcardCollectionView.stats.graduated') },
+        ]"
+      />
       <label class="flex items-center gap-2">
-        <input v-model="filters.onlyDue" type="checkbox" class="checkbox-toggle" />
+        <Checkbox v-model="filters.onlyDue" class="checkbox-toggle" />
         <span class="text-sm text-gray-700">{{
           t('components.flashcardCollectionView.filters.dueCardsOnly')
         }}</span>
@@ -379,7 +375,7 @@ import CollectionPageHeader from '@/components/CollectionPageHeader.vue'
 import LazyMathJax from '@/components/LazyMathJax.vue'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import PaginationComponent from '@/components/PaginationComponent.vue'
-import { IconButton } from '@packages/ui'
+import { Checkbox, IconButton, Select } from '@packages/ui'
 import { useAuth } from '@/composables/useAuth'
 import { useSeoHead } from '@/composables/useSeoHead'
 import { useI18n } from 'vue-i18n'

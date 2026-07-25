@@ -52,18 +52,20 @@
       <Download class="h-5 w-5" /> {{ t('nav.bulkImport') }}
     </NavLink>
     <div v-if="auth.state.isLoggedIn" class="my-1 border-t border-gray-200" />
-    <button
+    <Button
       v-if="auth.state.isLoggedIn"
+      variant="neutral"
       type="button"
       class="mobile-nav-row--emphasis"
       @click="$emit('logout')"
     >
       <LogOut class="h-5 w-5" /> {{ t('nav.logout') }}
-    </button>
+    </Button>
   </div>
 </template>
 
 <script setup lang="ts">
+import { Button } from '@packages/ui'
 import {
   Users,
   Globe,

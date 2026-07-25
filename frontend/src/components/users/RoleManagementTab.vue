@@ -8,19 +8,20 @@
 
       <div class="flex flex-col gap-3 sm:gap-4">
         <div class="flex flex-col sm:flex-row gap-2 sm:gap-4 items-stretch sm:items-center">
-          <input
+          <Input
             :value="newRoleName"
             :placeholder="t('roleManagement.roleNamePlaceholder')"
             class="input-field w-full sm:flex-1"
             @input="$emit('update:newRoleName', inputValue($event))"
           />
-          <button
-            class="ui-btn--create w-full sm:w-auto"
+          <Button
+            variant="create"
+            class="w-full sm:w-auto"
             :disabled="!newRoleName.trim() || selectedPermissions.length === 0"
             @click="$emit('createRole')"
           >
             {{ t('roleManagement.createRoleButton') }}
-          </button>
+          </Button>
         </div>
 
         <div v-if="newRoleName.trim()" class="flex flex-col gap-2">
@@ -35,8 +36,7 @@
               :class="{ 'bg-gray-100': selectedPermissions.includes(perm.name) }"
               @click="$emit('togglePermission', perm.name)"
             >
-              <input
-                type="checkbox"
+              <Checkbox
                 :checked="selectedPermissions.includes(perm.name)"
                 class="mr-2"
                 @click.stop
@@ -62,13 +62,14 @@
           class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-4 mb-3 sm:mb-4"
         >
           <h3 class="text-base sm:text-lg font-medium">{{ translateRole(role.name) }}</h3>
-          <button
+          <Button
             v-if="!['admin', 'user', 'editor'].includes(role.name.toLowerCase())"
-            class="ui-btn--delete w-full sm:w-auto"
+            variant="delete"
+            class="w-full sm:w-auto"
             @click="$emit('deleteRole', role.name)"
           >
             {{ t('roleManagement.deleteRoleButton') }}
-          </button>
+          </Button>
         </div>
         <!-- Permissions Section -->
         <div class="sm:pl-4">
@@ -76,35 +77,33 @@
             v-if="availablePermissions.filter((p) => !role.permissions.includes(p.name)).length > 0"
             class="flex flex-col sm:flex-row justify-center items-stretch sm:items-center gap-2 sm:gap-4 mb-3 sm:mb-4"
           >
-            <select
+            <Select
               :value="selectedPermissionMap[role.name]"
               class="input-field w-full sm:flex-1 h-6 py-0"
+              :options="[
+                { value: '', label: t('roleManagement.selectPermission'), disabled: true },
+                ...availablePermissions
+                  .filter((p) => !role.permissions.includes(p.name))
+                  .map((perm) => ({
+                    value: JSON.stringify(perm),
+                    label: `${perm.name} - ${perm.description}`,
+                  })),
+              ]"
               @change="
                 $emit('update:selectedPermission', {
                   roleName: role.name,
                   permission: JSON.parse(selectValue($event)),
                 })
               "
-            >
-              <option value="" disabled>{{ t('roleManagement.selectPermission') }}</option>
-
-              <option
-                v-for="perm in availablePermissions.filter(
-                  (p) => !role.permissions.includes(p.name)
-                )"
-                :key="perm.name"
-                :value="JSON.stringify(perm)"
-              >
-                {{ perm.name }} - {{ perm.description }}
-              </option>
-            </select>
-            <button
-              class="ui-btn--create w-full sm:w-auto"
+            />
+            <Button
+              variant="create"
+              class="w-full sm:w-auto"
               :disabled="!selectedPermissionMap[role.name]"
               @click="$emit('addPermission', role.name)"
             >
               {{ t('roleManagement.addPermissionButton') }}
-            </button>
+            </Button>
           </div>
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -118,14 +117,14 @@
 
                 <div class="text-sm text-gray-600">{{ perm.description }}</div>
               </div>
-              <button
+              <Button
                 v-if="role.name.toLowerCase() !== 'admin'"
-                class="ui-btn--delete"
+                variant="delete"
                 @click="$emit('deletePermission', { roleName: role.name, permission: perm.name })"
               >
                 <Trash2 class="w-4 h-4" />
                 <span class="sr-only">{{ t('roleManagement.removePermissionButton') }}</span>
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -135,6 +134,7 @@
 </template>
 
 <script setup lang="ts">
+import { Button, Checkbox, Input } from '@packages/ui'
 import { Trash2 } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 import type { PropType } from 'vue'

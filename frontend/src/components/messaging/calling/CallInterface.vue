@@ -3,13 +3,9 @@
     <!-- Call Header -->
     <header class="flex items-center justify-between p-4 bg-gray-800">
       <div class="flex items-center gap-3">
-        <button
-          type="button"
-          class="icon-btn-ghost !text-white hover:!bg-gray-700"
-          @click="$emit('call-ended')"
-        >
+        <IconButtonGhost class="!text-white hover:!bg-gray-700" @click="$emit('call-ended')">
           <ArrowLeft class="h-5 w-5" />
-        </button>
+        </IconButtonGhost>
         <div>
           <h2 class="text-lg font-semibold">{{ callTitle }}</h2>
           <p class="text-sm text-gray-400">{{ callStatusText }}</p>
@@ -107,6 +103,7 @@
 </template>
 
 <script setup lang="ts">
+import { IconButtonGhost } from '@packages/ui'
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { ArrowLeft, User, Phone } from 'lucide-vue-next'
 import { useWebRTC } from '@/services/messaging/WebRTCService'

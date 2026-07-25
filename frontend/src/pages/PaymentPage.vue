@@ -13,7 +13,7 @@
         <label class="block text-sm font-medium text-gray-700 mb-1">{{
           t('payment.amountLabel')
         }}</label>
-        <input
+        <Input
           v-model="amount"
           type="number"
           min="1"
@@ -32,6 +32,7 @@
 </template>
 
 <script setup lang="ts">
+import { Input } from '@packages/ui'
 import { loadScript } from '@paypal/paypal-js'
 import { ref, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'

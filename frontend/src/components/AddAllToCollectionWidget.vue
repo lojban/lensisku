@@ -26,9 +26,10 @@
       </div>
 
       <div v-else class="max-h-64 overflow-y-auto space-y-1">
-        <button
+        <Button
           v-for="collection in collections"
           :key="collection.collection_id"
+          variant="neutral"
           :disabled="isSubmitting"
           class="w-full px-3 py-2 text-left text-sm rounded-md flex items-center justify-between group transition-colors"
           :class="{
@@ -50,7 +51,7 @@
                 : t('collectionWidget.select')
             }}
           </span>
-        </button>
+        </Button>
       </div>
     </div>
 
@@ -60,21 +61,20 @@
           <label class="block text-xs font-medium text-gray-700 mb-1">
             {{ t('collectionWidget.collectionNameLabel') }}
           </label>
-          <input v-model="newCollection.name" type="text" required class="w-full input-field" />
+          <Input v-model="newCollection.name" type="text" required class="w-full input-field" />
         </div>
 
         <div>
           <label class="block text-xs font-medium text-gray-700 mb-1">
             {{ t('collectionWidget.descriptionLabel') }}
           </label>
-          <textarea v-model="newCollection.description" rows="2" class="textarea-field" />
+          <Textarea v-model="newCollection.description" rows="2" class="textarea-field" />
         </div>
 
         <div class="flex items-center space-x-2">
-          <input
+          <Checkbox
             id="addall_is_public"
             v-model="newCollection.is_public"
-            type="checkbox"
             class="checkbox-toggle"
           />
           <label for="addall_is_public" class="text-xs text-gray-700">
@@ -88,19 +88,19 @@
           </div>
 
           <div class="flex justify-end gap-2">
-            <button
+            <Button
+              variant="cancel"
               type="button"
-              class="ui-btn--cancel"
               :disabled="isCreating"
               @click="showCreateForm = false"
             >
               {{ t('collectionWidget.cancel') }}
-            </button>
-            <button type="submit" :disabled="isCreating" class="ui-btn--create">
+            </Button>
+            <Button variant="create" type="submit" :disabled="isCreating">
               {{
                 isCreating ? t('collectionDetail.saving') : t('addAllToCollection.createAndSelect')
               }}
-            </button>
+            </Button>
           </div>
         </div>
       </form>
@@ -110,7 +110,7 @@
       <label class="block text-xs font-medium text-gray-700 mb-1">
         {{ t('collectionWidget.notesLabel') }}
       </label>
-      <textarea
+      <Textarea
         v-model="notes"
         rows="2"
         :placeholder="t('collectionWidget.notesPlaceholder')"
@@ -124,12 +124,12 @@
         </div>
 
         <div class="flex justify-end gap-2">
-          <button class="ui-btn--cancel" :disabled="isSubmitting" @click="cancelConfirm">
+          <Button variant="cancel" :disabled="isSubmitting" @click="cancelConfirm">
             {{ t('collectionWidget.cancel') }}
-          </button>
-          <button class="ui-btn--insert" :disabled="isSubmitting" @click="confirmAddAll">
+          </Button>
+          <Button variant="insert" :disabled="isSubmitting" @click="confirmAddAll">
             {{ t('addAllToCollection.confirmButton') }}
-          </button>
+          </Button>
         </div>
       </div>
     </div>
@@ -144,7 +144,7 @@ import { api, bulkAddDefinitionsToCollection, getCollections } from '@/api'
 import AlertComponent from '@/components/AlertComponent.vue'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import ModalComponent from '@/components/ModalComponent.vue'
-import { IconButton } from '@packages/ui'
+import { Button, Checkbox, IconButton, Input, Textarea } from '@packages/ui'
 import { useSuccessToast } from '@/composables/useSuccessToast'
 
 const { t } = useI18n()

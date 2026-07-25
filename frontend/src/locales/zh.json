@@ -177,7 +177,8 @@
     "hideRawOutput": "隐藏原始搜索结果",
     "editMessage": "编辑",
     "saveEdit": "保存",
-    "cancelEdit": "取消"
+    "cancelEdit": "取消",
+    "copyMessage": "复制消息"
   },
   "deleteConfirmation": {
     "title": "确认删除",

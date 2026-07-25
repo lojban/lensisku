@@ -34,7 +34,7 @@
           v-if="auth.state.isLoggedIn"
           class="flex min-w-0 flex-grow flex-row flex-wrap justify-end gap-2"
         >
-          <input
+          <FileInput
             ref="importFileInput"
             type="file"
             accept=".json"
@@ -51,28 +51,31 @@
               <template #icon> <ArrowBigRight class="h-4 w-4" /> </template>
             </IconButton>
             <Dropdown :trigger-label="t('collectionList.addActions')">
-              <button
+              <Button
+                variant="neutral"
                 type="button"
                 class="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-orange-600 hover:bg-orange-50"
                 @click="setViewMode('my')"
               >
                 <BookOpen class="h-4 w-4 shrink-0" /> {{ t('collectionList.myCollectionsLabel') }}
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="neutral"
                 type="button"
                 class="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-cyan-600 hover:bg-cyan-50"
                 :disabled="isImporting"
                 @click="triggerImport"
               >
                 <Import class="h-4 w-4 shrink-0" /> {{ t('collectionList.importCollection') }}
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="neutral"
                 type="button"
                 class="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-emerald-600 hover:bg-emerald-50"
                 @click="showCreateModal = true"
               >
                 <CirclePlus class="h-4 w-4 shrink-0" /> {{ t('collectionList.createCollection') }}
-              </button>
+              </Button>
             </Dropdown>
           </div>
         </div>
@@ -82,7 +85,7 @@
 
     <div class="card-base card-compact p-4 sm:p-5 flex flex-col gap-4 overflow-visible">
       <div class="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-        <input
+        <Input
           v-model="searchQuery"
           type="text"
           class="input-field w-full min-w-0 sm:flex-1 sm:max-w-md"
@@ -95,7 +98,7 @@
         <label
           class="inline-flex items-center gap-2 self-end text-sm text-gray-700 select-none cursor-pointer sm:self-auto"
         >
-          <input v-model="hasFlashcardsOnly" type="checkbox" class="checkbox-toggle" />
+          <Checkbox v-model="hasFlashcardsOnly" class="checkbox-toggle" />
           <span>{{ t('collectionList.onlyWithFlashcards') }}</span>
         </label>
       </div>
@@ -108,9 +111,10 @@
           aria-labelledby="collection-list-sort-legend"
           aria-describedby="collection-list-sort-current"
         >
-          <button
+          <Button
             v-for="opt in sortOptions"
             :key="opt.value"
+            variant="empty"
             type="button"
             class="ui-btn--group-item relative flex h-6 shrink-0 items-center justify-center gap-1.5 px-2 sm:px-4 !cursor-pointer"
             :class="[sortBy === opt.value ? opt.aquaClass : 'ui-btn--empty']"
@@ -129,7 +133,7 @@
               "
               aria-hidden="true"
             /><span class="hidden sm:inline">{{ opt.label }}</span>
-          </button>
+          </Button>
         </div>
         <span
           id="collection-list-sort-current"
@@ -180,13 +184,14 @@
     </div>
     <!-- Empty State -->
     <EmptyStatePanel v-if="!isLoading && collections.length === 0">
-      <button
+      <Button
         v-if="viewMode === 'my' && auth.state.isLoggedIn"
-        class="mt-4 ui-btn--create"
+        variant="create"
+        class="mt-4"
         @click="showCreateModal = true"
       >
         <CirclePlus class="h-4 w-4" /> <span>{{ t('collectionList.createFirstCollection') }}</span>
-      </button>
+      </Button>
     </EmptyStatePanel>
   </div>
   <!-- Create Collection ModalComponent -->
@@ -203,23 +208,18 @@
             <label class="block text-sm font-medium text-gray-700 mb-1">{{
               t('collectionList.nameLabel')
             }}</label>
-            <input v-model="newCollection.name" type="text" required class="w-full input-field" />
+            <Input v-model="newCollection.name" type="text" required class="w-full input-field" />
           </div>
 
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">{{
               t('collectionList.descriptionLabel')
             }}</label>
-            <textarea v-model="newCollection.description" rows="3" class="textarea-field" />
+            <Textarea v-model="newCollection.description" rows="3" class="textarea-field" />
           </div>
 
           <div class="flex items-center gap-2">
-            <input
-              id="is_public"
-              v-model="newCollection.is_public"
-              type="checkbox"
-              class="checkbox-toggle"
-            />
+            <Checkbox id="is_public" v-model="newCollection.is_public" class="checkbox-toggle" />
             <label for="is_public" class="text-sm text-gray-700">
               {{ t('collectionList.makePublicLabel') }}
             </label>
@@ -227,14 +227,14 @@
         </div>
 
         <div class="mt-6 flex justify-end gap-3">
-          <button type="button" class="ui-btn--cancel" @click="showCreateModal = false">
+          <Button variant="cancel" type="button" @click="showCreateModal = false">
             {{ t('collectionList.cancelButton') }}
-          </button>
-          <button type="submit" :disabled="isSubmitting" class="ui-btn--create">
+          </Button>
+          <Button variant="create" type="submit" :disabled="isSubmitting">
             {{
               isSubmitting ? t('collectionList.creatingButton') : t('collectionList.createButton')
             }}
-          </button>
+          </Button>
         </div>
       </form>
     </div>
@@ -264,7 +264,17 @@ import {
   getLevels,
   getCollectionImage,
 } from '@/api'
-import { CollectionCard, Dropdown, EmptyStatePanel, IconButton } from '@packages/ui'
+import {
+  Button,
+  Checkbox,
+  CollectionCard,
+  Dropdown,
+  EmptyStatePanel,
+  FileInput,
+  IconButton,
+  Input,
+  Textarea,
+} from '@packages/ui'
 import PageHeader from '@/components/layout/PageHeader.vue'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import PaginationComponent from '@/components/PaginationComponent.vue'

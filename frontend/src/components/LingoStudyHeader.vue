@@ -1,13 +1,14 @@
 <template>
   <header class="lingo-study-header-bar">
-    <button
+    <Button
+      variant="neutral"
       type="button"
       class="icon-btn-header-back icon-btn-header-back--compact"
       :aria-label="t('flashcardStudy.endSession')"
       @click="$emit('exit')"
     >
       <X class="h-5 w-5 sm:h-5 sm:w-5" />
-    </button>
+    </Button>
     <!-- Progress bar: fills remaining width so green reaches end of row -->
     <div class="min-w-0 flex-1 pl-2 pr-0 sm:pl-3 sm:pr-0">
       <div
@@ -29,6 +30,7 @@
 </template>
 
 <script setup lang="ts">
+import { Button } from '@packages/ui'
 import { X } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 

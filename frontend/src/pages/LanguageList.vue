@@ -154,13 +154,14 @@
     class="text-center py-12 bg-gray-50 rounded-xl border border-gray-200"
   >
     <p class="text-gray-600">{{ t('languageList.noMatchingLanguages') }}</p>
-    <button type="button" class="ui-btn--read mt-3" @click="searchQuery = ''">
+    <Button variant="read" type="button" class="mt-3" @click="searchQuery = ''">
       {{ t('languageList.clearSearch') }}
-    </button>
+    </Button>
   </div>
 </template>
 
 <script setup lang="ts">
+import { Button } from '@packages/ui'
 import { ref, computed, onMounted, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'

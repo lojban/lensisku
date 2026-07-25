@@ -5,9 +5,9 @@
       <div class="flex items-center justify-between gap-3">
         <div class="flex items-center gap-3">
           <!-- Back button on mobile -->
-          <button type="button" class="icon-btn-ghost sm:hidden" @click="$router.back()">
+          <IconButtonGhost class="sm:hidden" @click="$router.back()">
             <ArrowLeft class="h-5 w-5" />
-          </button>
+          </IconButtonGhost>
 
           <!-- Thread info -->
           <div class="flex items-center gap-3">
@@ -34,17 +34,12 @@
 
         <!-- Header actions -->
         <div class="flex items-center gap-2">
-          <button type="button" class="icon-btn-ghost" title="Start video call" @click="startCall">
+          <IconButtonGhost title="Start video call" @click="startCall">
             <Video class="h-5 w-5" />
-          </button>
-          <button
-            type="button"
-            class="icon-btn-ghost"
-            title="Thread info"
-            @click="showThreadInfo = true"
-          >
+          </IconButtonGhost>
+          <IconButtonGhost title="Thread info" @click="showThreadInfo = true">
             <Info class="h-5 w-5" />
-          </button>
+          </IconButtonGhost>
         </div>
       </div>
     </header>
@@ -122,6 +117,7 @@
 </template>
 
 <script setup lang="ts">
+import { IconButtonGhost } from '@packages/ui'
 import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ArrowLeft, Video, Info, MessageCircle } from 'lucide-vue-next'

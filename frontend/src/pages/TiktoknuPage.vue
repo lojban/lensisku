@@ -43,12 +43,13 @@
     </template>
     <template v-else>
       <div class="absolute top-4 right-4 z-30 flex flex-col items-end gap-2">
-        <button
+        <Button
+          variant="neutral"
           class="text-sm text-white/70 hover:text-white transition-colors"
           @click="showLikes = true"
         >
           {{ t('components.tiktoknu.likesCount', { count: likedArticlesCount }) }}
-        </button>
+        </Button>
         <LanguageSelector />
       </div>
       <WikiCard
@@ -77,6 +78,7 @@
 </template>
 
 <script setup lang="ts">
+import { Button } from '@packages/ui'
 import { useIntersectionObserver } from '@vueuse/core'
 import { Loader2 } from 'lucide-vue-next'
 import { ref, onMounted, computed } from 'vue'

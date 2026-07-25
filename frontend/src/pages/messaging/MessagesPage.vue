@@ -7,10 +7,10 @@
           <h1 class="page-section-title">Messages</h1>
           <span v-if="unreadCount > 0" class="badge badge-muted"> {{ unreadCount }} unread </span>
         </div>
-        <button type="button" class="ui-btn--create" @click="showNewChatModal = true">
+        <Button variant="create" type="button" @click="showNewChatModal = true">
           <Plus class="h-4 w-4" />
           New Chat
-        </button>
+        </Button>
       </div>
 
       <!-- Search and Filter -->
@@ -19,7 +19,7 @@
           <Search
             class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400"
           />
-          <input
+          <Input
             v-model="searchQuery"
             type="text"
             placeholder="Search conversations..."
@@ -27,11 +27,16 @@
             @input="handleSearch"
           />
         </div>
-        <select v-model="filterType" class="input-field" @change="handleFilter">
-          <option value="all">All</option>
-          <option value="direct">Direct Messages</option>
-          <option value="group">Group Chats</option>
-        </select>
+        <Select
+          v-model="filterType"
+          class="input-field"
+          :options="[
+            { value: 'all', label: 'All' },
+            { value: 'direct', label: 'Direct Messages' },
+            { value: 'group', label: 'Group Chats' },
+          ]"
+          @change="handleFilter"
+        />
       </div>
     </header>
 
@@ -56,15 +61,10 @@
               : 'Start a new conversation to get started'
           }}
         </p>
-        <button
-          v-if="!searchQuery"
-          type="button"
-          class="ui-btn--create"
-          @click="showNewChatModal = true"
-        >
+        <Button v-if="!searchQuery" variant="create" type="button" @click="showNewChatModal = true">
           <Plus class="h-4 w-4" />
           Start New Chat
-        </button>
+        </Button>
       </div>
 
       <div v-else class="flex flex-col min-h-0 flex-1 overflow-hidden">
@@ -78,14 +78,14 @@
 
         <!-- Load More -->
         <div v-if="hasMore" class="p-4 text-center shrink-0 border-t border-gray-200">
-          <button type="button" :disabled="isLoadingMore" class="ui-btn--empty" @click="loadMore">
+          <Button variant="empty" type="button" :disabled="isLoadingMore" @click="loadMore">
             <span
               v-if="isLoadingMore"
               class="inline-block h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"
               aria-hidden="true"
             ></span>
             {{ isLoadingMore ? 'Loading...' : 'Load More' }}
-          </button>
+          </Button>
         </div>
       </div>
     </main>
@@ -102,6 +102,7 @@
 </template>
 
 <script setup lang="ts">
+import { Button, Input, Select } from '@packages/ui'
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { MessageCircle, Plus, Search } from 'lucide-vue-next'

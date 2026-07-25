@@ -33,7 +33,8 @@
             <h2 class="text-2xl font-bold drop-shadow-lg">{{ article.title }}</h2>
           </a>
           <div class="flex gap-2">
-            <button
+            <Button
+              variant="neutral"
               :class="[
                 'p-2 rounded-full backdrop-blur-sm transition-colors',
                 isLiked ? 'bg-red-500 hover:bg-red-600' : 'bg-white/10 hover:bg-white/20',
@@ -42,14 +43,23 @@
               @click="$emit('like', article)"
             >
               <Heart :class="['w-5 h-5', { 'fill-white': isLiked }]" />
-            </button>
-            <button
+            </Button>
+            <Button
+              v-if="canShare"
+              variant="neutral"
               class="p-2 rounded-full bg-white/10 backdrop-blur-sm hover:bg-white/20 transition-colors"
               :aria-label="t('components.tiktoknu.wikiCard.shareArticle')"
               @click="handleShare"
             >
               <Share2 class="w-5 h-5" />
-            </button>
+            </Button>
+            <ClipboardButton
+              v-else
+              variant="unstyled"
+              :content="article.url"
+              :title="t('components.tiktoknu.wikiCard.shareArticle')"
+              class="p-2 rounded-full bg-white/10 backdrop-blur-sm text-white hover:bg-white/20 transition-colors"
+            />
           </div>
         </div>
 
@@ -68,10 +78,12 @@
 </template>
 
 <script setup lang="ts">
+import { Button } from '@packages/ui'
 import { Heart, Share2 } from 'lucide-vue-next'
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
+import ClipboardButton from '@/components/ClipboardButton.vue'
 import type { WikiArticle } from '../../types/wiki'
 
 const { t } = useI18n()
@@ -85,26 +97,22 @@ defineEmits(['like'])
 
 const imageLoaded = ref(false)
 
+const canShare = computed(() => typeof navigator !== 'undefined' && !!navigator.share)
+
 const handleImageError = () => {
   imageLoaded.value = true
 }
 
 const handleShare = async () => {
-  if (navigator.share) {
-    try {
-      await navigator.share({
-        title: props.article.title,
-        text: props.article.extract || '',
-        url: props.article.url,
-      })
-    } catch (error) {
-      console.error(t('components.tiktoknu.wikiCard.shareError'), error)
-    }
-  } else {
-    if (props.article.url) {
-      await navigator.clipboard.writeText(props.article.url)
-      alert(t('components.tiktoknu.wikiCard.copySuccess'))
-    }
+  if (!canShare.value) return
+  try {
+    await navigator.share({
+      title: props.article.title,
+      text: props.article.extract || '',
+      url: props.article.url,
+    })
+  } catch (error) {
+    console.error(t('components.tiktoknu.wikiCard.shareError'), error)
   }
 }
 </script>

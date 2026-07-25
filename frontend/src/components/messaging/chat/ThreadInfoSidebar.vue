@@ -11,9 +11,9 @@
         <!-- Header -->
         <div class="flex items-center justify-between p-4 border-b border-gray-200">
           <h2 class="text-lg font-semibold text-gray-900">Thread Info</h2>
-          <button type="button" class="icon-btn-ghost" @click="$emit('close')">
+          <IconButtonGhost @click="$emit('close')">
             <X class="h-5 w-5" />
-          </button>
+          </IconButtonGhost>
         </div>
 
         <!-- Content -->
@@ -54,14 +54,14 @@
           <div class="p-4">
             <div class="flex items-center justify-between mb-4">
               <h3 class="text-lg font-medium text-gray-900">Participants</h3>
-              <button
+              <Button
                 v-if="thread.thread_type === 'group' && thread.is_admin"
+                variant="create"
                 type="button"
-                class="ui-btn--create"
                 @click="showAddParticipant = true"
               >
                 Add
-              </button>
+              </Button>
             </div>
 
             <div class="space-y-2">
@@ -92,28 +92,25 @@
 
                 <!-- Actions -->
                 <div class="flex items-center gap-2">
-                  <button
+                  <IconButtonGhost
                     v-if="
                       thread.thread_type === 'group' &&
                       thread.is_admin &&
                       participant.user_id !== currentUserId
                     "
-                    type="button"
-                    class="icon-btn-ghost"
                     title="Change role"
                     @click="updateParticipantRole(participant)"
                   >
                     <Shield class="h-4 w-4" />
-                  </button>
-                  <button
+                  </IconButtonGhost>
+                  <IconButtonGhost
                     v-if="canRemoveParticipant(participant)"
-                    type="button"
-                    class="icon-btn-ghost-danger"
+                    class="-danger"
                     title="Remove from thread"
                     @click="removeParticipant(participant)"
                   >
                     <UserMinus class="h-4 w-4" />
-                  </button>
+                  </IconButtonGhost>
                 </div>
               </div>
             </div>
@@ -121,17 +118,23 @@
 
           <!-- Actions -->
           <div class="p-4 border-t border-gray-200 space-y-2">
-            <button
+            <Button
               v-if="thread.thread_type === 'group' && !thread.is_admin"
+              variant="neutral-muted"
               type="button"
-              class="ui-btn--neutral-muted w-full justify-start"
+              class="w-full justify-start"
               @click="leaveThread"
             >
               Leave Group
-            </button>
-            <button type="button" class="ui-btn--delete w-full justify-start" @click="deleteThread">
+            </Button>
+            <Button
+              variant="delete"
+              type="button"
+              class="w-full justify-start"
+              @click="deleteThread"
+            >
               Delete Conversation
-            </button>
+            </Button>
           </div>
         </div>
       </div>
@@ -148,6 +151,7 @@
 </template>
 
 <script setup lang="ts">
+import { Button, IconButtonGhost } from '@packages/ui'
 import { ref, computed } from 'vue'
 import { X, Shield, UserMinus } from 'lucide-vue-next'
 import { useAuth } from '@/composables/useAuth'

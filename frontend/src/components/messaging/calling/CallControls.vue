@@ -2,7 +2,8 @@
   <div class="call-controls relative px-2 md:px-0">
     <div class="flex items-center justify-center gap-4">
       <!-- Microphone Toggle -->
-      <button
+      <Button
+        variant="neutral"
         type="button"
         :class="[audioButtonClass, '!h-12 !w-12 !p-0 md:!h-14 md:!w-14']"
         :title="isAudioEnabled ? 'Mute microphone' : 'Unmute microphone'"
@@ -10,11 +11,12 @@
       >
         <Mic v-if="isAudioEnabled" class="h-6 w-6" />
         <MicOff v-else class="h-6 w-6" />
-      </button>
+      </Button>
 
       <!-- Video Toggle (only for video calls) -->
-      <button
+      <Button
         v-if="callType === 'video'"
+        variant="neutral"
         type="button"
         :class="[videoButtonClass, '!h-12 !w-12 !p-0 md:!h-14 md:!w-14']"
         :title="isVideoEnabled ? 'Turn off camera' : 'Turn on camera'"
@@ -22,23 +24,25 @@
       >
         <Video v-if="isVideoEnabled" class="h-6 w-6" />
         <VideoOff v-else class="h-6 w-6" />
-      </button>
+      </Button>
 
       <!-- End Call -->
-      <button
+      <Button
+        variant="delete"
         type="button"
-        class="ui-btn--delete !h-12 !w-12 !p-0 md:!h-14 md:!w-14"
+        class="!h-12 !w-12 !p-0 md:!h-14 md:!w-14"
         title="End call"
         @click="$emit('end-call')"
       >
         <PhoneOff class="h-6 w-6" />
-      </button>
+      </Button>
 
       <!-- Additional Controls (when connected) -->
       <template v-if="isConnected">
         <!-- Screen Share (desktop only) -->
-        <button
+        <Button
           v-if="callType === 'video' && !isMobile"
+          variant="neutral"
           type="button"
           :class="[screenShareButtonClass, '!h-12 !w-12 !p-0 md:!h-14 md:!w-14']"
           title="Share screen"
@@ -46,17 +50,18 @@
         >
           <Monitor v-if="!isScreenSharing" class="h-6 w-6" />
           <MonitorOff v-else class="h-6 w-6" />
-        </button>
+        </Button>
 
         <!-- More Options -->
-        <button
+        <Button
+          variant="neutral-muted"
           type="button"
-          class="ui-btn--neutral-muted !h-12 !w-12 !p-0 md:!h-14 md:!w-14"
+          class="!h-12 !w-12 !p-0 md:!h-14 md:!w-14"
           title="More options"
           @click="showMoreOptions = !showMoreOptions"
         >
           <MoreVertical class="h-6 w-6" />
-        </button>
+        </Button>
       </template>
     </div>
 
@@ -65,45 +70,50 @@
       v-if="showMoreOptions"
       class="absolute bottom-20 left-1/2 -translate-x-1/2 bg-gray-800 rounded-lg shadow-lg p-2 min-w-40 sm:min-w-48 z-10"
     >
-      <button
+      <Button
         v-if="callType === 'video'"
+        variant="neutral"
         type="button"
         class="w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700 rounded flex items-center gap-2"
         @click="toggleCamera"
       >
         <Camera class="h-4 w-4" />
         <span>Switch Camera</span>
-      </button>
-      <button
+      </Button>
+      <Button
+        variant="neutral"
         type="button"
         class="w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700 rounded flex items-center gap-2"
         @click="toggleSpeaker"
       >
         <Speaker class="h-4 w-4" />
         <span>{{ isSpeakerOn ? 'Mute Speaker' : 'Unmute Speaker' }}</span>
-      </button>
-      <button
+      </Button>
+      <Button
+        variant="neutral"
         type="button"
         class="w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-700 rounded flex items-center gap-2"
         @click="toggleFullscreen"
       >
         <Maximize class="h-4 w-4" />
         <span>Toggle Fullscreen</span>
-      </button>
+      </Button>
       <hr class="my-2 border-gray-700" />
-      <button
+      <Button
+        variant="neutral"
         type="button"
         class="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-gray-700 rounded flex items-center gap-2"
         @click="reportIssue"
       >
         <Flag class="h-4 w-4" />
         <span>Report Issue</span>
-      </button>
+      </Button>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { Button } from '@packages/ui'
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import {
   Mic,

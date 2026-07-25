@@ -20,14 +20,15 @@
                 <div class="toast-float-message whitespace-pre-wrap break-words">
                   <slot name="message">{{ message }}</slot>
                 </div>
-                <button
+                <Button
+                  variant="neutral"
                   type="button"
                   class="toast-float-close"
                   :aria-label="closeLabel"
                   @click="closeToast"
                 >
                   <X class="h-4 w-4" aria-hidden="true" />
-                </button>
+                </Button>
               </div>
 
               <div v-if="$slots.extra || extraComponent" class="toast-float-extra">
@@ -44,6 +45,7 @@
 </template>
 
 <script setup lang="ts">
+import { Button } from '@packages/ui'
 import { ref, watch, onUnmounted, computed, type Component } from 'vue'
 import type { PropType } from 'vue'
 import { CheckCircle2, CircleAlert, X } from 'lucide-vue-next'

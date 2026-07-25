@@ -36,13 +36,10 @@
             <Menu v-if="!isMenuOpen" class="h-6 w-6" /> <X v-else class="h-6 w-6" />
           </button>
           <!-- Logo - Always visible -->
-          <NavLink
-            to="/"
-            class="navbar-item flex items-center italic"
-            :class="{
-              'cursor-default pointer-events-none': isHomePage,
-            }"
-            @click="triggerPyro"
+          <a
+            :href="homePath"
+            class="input-field flex items-center gap-2 !h-10 !py-1 no-underline cursor-pointer select-none"
+            @click.prevent="handleLogoClick"
           >
             <div class="flex h-8 w-8 shrink-0 items-center justify-center -skew-x-12">
               <!-- eslint-disable vue/no-v-html -->
@@ -55,8 +52,8 @@
               ></div>
               <!-- eslint-enable vue/no-v-html -->
             </div>
-            <span class="select-none font-medium leading-none">{{ $t('logoText') }}</span>
-          </NavLink>
+            <span class="select-none font-medium italic leading-none">{{ $t('logoText') }}</span>
+          </a>
         </div>
         <!-- Desktop Navigation - Hidden on mobile -->
         <nav class="hidden sm:ml-4 sm:flex items-center space-x-0 md:space-x-1 lg:space-x-2">
@@ -67,16 +64,16 @@
             <Clock4 class="h-5 w-5" /> {{ $t('nav.recent') }}
           </NavLink>
           <div ref="moreNavRef" class="relative group">
-            <button
+            <Button
+              variant="topbar"
               type="button"
-              class="navbar-item"
               :aria-expanded="isMoreNavOpen"
               aria-haspopup="true"
               @click.stop="isMoreNavOpen = !isMoreNavOpen"
             >
               <span class="hidden lg:inline"> {{ $t('nav.more') }} </span>
               <ChevronDown class="h-5 w-5" :stroke-width="2.5" :absolute-stroke-width="true" />
-            </button>
+            </Button>
             <div
               class="nav-dropdown-panel"
               :class="isMoreNavOpen ? 'flex' : 'hidden group-hover:flex'"
@@ -147,22 +144,24 @@
                 <p class="text-xs text-gray-500 mb-1">{{ $t('buttonTheme.label') }}</p>
 
                 <div class="flex flex-col gap-0.5">
-                  <button
+                  <Button
+                    variant="topbar"
                     type="button"
-                    class="navbar-item justify-start py-2 text-sm w-full"
+                    class="justify-start py-2 text-sm w-full"
                     :class="{ 'nav-link-active': buttonTheme === 'aqua' }"
                     @click="setTheme('aqua')"
                   >
                     {{ $t('buttonTheme.aqua') }}
-                  </button>
-                  <button
+                  </Button>
+                  <Button
+                    variant="topbar"
                     type="button"
-                    class="navbar-item justify-start py-2 text-sm w-full"
+                    class="justify-start py-2 text-sm w-full"
                     :class="{ 'nav-link-active': buttonTheme === 'flat' }"
                     @click="setTheme('flat')"
                   >
                     {{ $t('buttonTheme.flat') }}
-                  </button>
+                  </Button>
                 </div>
               </div>
             </div>
@@ -183,10 +182,10 @@
                 <User class="h-5 w-5" />
                 <span class="hidden sm:inline">{{ auth.state.username }}</span>
               </NavLink>
-              <button class="navbar-item hidden sm:flex" @click="handleLogout">
+              <Button variant="topbar" class="hidden sm:flex" @click="handleLogout">
                 <LogOut class="h-5 w-5" />
                 <span class="hidden md:inline">{{ $t('nav.logout') }}</span>
-              </button>
+              </Button>
             </template>
             <template v-else>
               <NavLink to="/signup" class="btn-signup">
@@ -303,17 +302,13 @@
       <Dropdown>
         <template #trigger="{ open }">
           <span class="fab-elevation-shell">
-            <button
-              type="button"
-              class="inline-flex items-center justify-center ui-btn--fab"
-              :aria-label="$t('fab.actionsTitle')"
-            >
+            <FabButton :aria-label="$t('fab.actionsTitle')">
               <Plus
                 class="h-8 w-8 shrink-0 transition-transform duration-200"
                 stroke-width="2.75"
                 :class="{ 'rotate-45': open }"
               />
-            </button>
+            </FabButton>
           </span>
         </template>
         <ToolbarSelectDropdownItem class="!px-4 !py-3 !text-base" @click="handleAssistantChat">
@@ -379,7 +374,7 @@ import Error from '@/components/Error.vue'
 import ToastFloat from '@/components/ToastFloat.vue'
 import PWAInstallPrompt from '@/components/messaging/shared/PWAInstallPrompt.vue'
 import { resendConfirmation } from '@/api'
-import { Dropdown, ToolbarSelectDropdownItem } from '@packages/ui'
+import { Button, Dropdown, FabButton, ToolbarSelectDropdownItem } from '@packages/ui'
 
 import BackgroundComponent from './components/BackgroundComponent.vue'
 import FooterComponent from './components/FooterComponent.vue'
@@ -421,6 +416,11 @@ const route = useRoute()
 const isHomePage = computed(
   () => route.name === 'Home' || (typeof route.name === 'string' && route.name.startsWith('Home-'))
 )
+
+const homePath = computed(() => {
+  const localeMatch = route.path.match(localeCaptureGroupRegex)
+  return `/${localeMatch ? localeMatch[1] : ($locale.value as string) || 'en'}`
+})
 
 function metaProps(p: unknown): Record<string, unknown> {
   return p !== null && typeof p === 'object' && !Array.isArray(p)
@@ -492,6 +492,18 @@ const triggerPyro = () => {
   setTimeout(() => {
     showPyro.value = false
   }, 3000)
+}
+
+const handleLogoClick = async () => {
+  triggerPyro()
+
+  if (!isHomePage.value) {
+    await router.push(homePath.value)
+    await nextTick()
+  }
+
+  const mainContent = document.querySelector('.main-content') as HTMLElement | null
+  mainContent?.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
 const performSearch = ({ query, mode }: { query: string; mode: string }) => {

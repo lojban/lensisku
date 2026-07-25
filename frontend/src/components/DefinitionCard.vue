@@ -110,15 +110,16 @@
               </div>
 
               <div class="flex items-center gap-2 flex-wrap">
-                <button
+                <Button
                   v-if="showEditButton"
-                  class="ui-btn--empty inline-flex items-center gap-2"
+                  variant="empty"
+                  class="inline-flex items-center gap-2"
                   :title="t('components.definitionCard.editItemTitle')"
                   @click.stop="$emit('edit-item')"
                 >
                   <Pencil class="h-4 w-4 shrink-0" />
                   <span class="sr-only">{{ t('components.definitionCard.editButton') }}</span>
-                </button>
+                </Button>
                 <ClipboardButton
                   v-if="!showWordMetaRow"
                   :content="
@@ -143,32 +144,35 @@
                 class="btn-group ml-auto justify-end sm:justify-end w-auto flex-none"
                 role="group"
               >
-                <button
+                <Button
+                  variant="group-item"
                   :disabled="isFirstItem || isReordering"
-                  class="ui-btn--group-item ui-btn--empty inline-flex items-center gap-2"
+                  class="ui-btn--empty inline-flex items-center gap-2"
                   :title="t('components.definitionCard.moveUpTitle')"
                   @click.stop="$emit('move-up')"
                 >
                   <ArrowUp class="h-4 w-4 shrink-0" />
                   <span class="sr-only">{{ t('components.definitionCard.moveUpTitle') }}</span>
-                </button>
-                <button
+                </Button>
+                <Button
+                  variant="group-item"
                   :disabled="isLastItem || isReordering"
-                  class="ui-btn--group-item ui-btn--empty inline-flex items-center gap-2"
+                  class="ui-btn--empty inline-flex items-center gap-2"
                   :title="t('components.definitionCard.moveDownTitle')"
                   @click.stop="$emit('move-down')"
                 >
                   <ArrowDown class="h-4 w-4 shrink-0" />
                   <span class="sr-only">{{ t('components.definitionCard.moveDownTitle') }}</span>
-                </button>
-                <button
-                  class="ui-btn--group-item ui-btn--empty inline-flex items-center gap-2 hover:text-red-600"
+                </Button>
+                <Button
+                  variant="group-item"
+                  class="ui-btn--empty inline-flex items-center gap-2 hover:text-red-600"
                   :title="t('components.definitionCard.removeItemTitle')"
                   @click.stop="$emit('remove')"
                 >
                   <Trash2 class="h-4 w-4 shrink-0" />
                   <span class="sr-only">{{ t('components.definitionCard.removeItemTitle') }}</span>
-                </button>
+                </Button>
               </div>
 
               <div
@@ -176,14 +180,15 @@
                 class="flex flex-wrap justify-end ml-auto"
                 role="group"
               >
-                <button
-                  class="ui-btn--empty inline-flex items-center gap-2 hover:text-red-600"
+                <Button
+                  variant="empty"
+                  class="inline-flex items-center gap-2 hover:text-red-600"
                   :title="t('components.definitionCard.removeFromLevelTitle')"
                   @click.stop="$emit('delete-item')"
                 >
                   <MinusCircle class="h-4 w-4 shrink-0" />
                   <span>{{ t('components.definitionCard.removeFromLevelButton') }}</span>
-                </button>
+                </Button>
               </div>
             </div>
             <!-- Audio, word type, selma'o, rafsi — second row under title; copy aligned right -->
@@ -455,21 +460,23 @@
       <div v-if="!disableToolbar" class="mt-3">
         <div class="btn-group" role="group">
           <!-- Edit button -->
-          <button
+          <Button
             v-if="auth.state.isLoggedIn && definition.can_edit"
-            class="ui-btn--edit ui-btn--group-item inline-flex items-center justify-center gap-2"
+            variant="edit"
+            class="ui-btn--group-item inline-flex items-center justify-center gap-2"
             @click="router.push(`/definition/${definition.definitionid}/edit`)"
           >
             <Pencil class="h-4 w-4 shrink-0" /> {{ t('components.definitionCard.editButton') }}
-          </button>
+          </Button>
           <!-- Delete button -->
-          <button
+          <Button
             v-if="auth.state.isLoggedIn && auth.state.username === definition.username"
-            class="ui-btn--delete ui-btn--group-item inline-flex items-center justify-center gap-2"
+            variant="delete"
+            class="ui-btn--group-item inline-flex items-center justify-center gap-2"
             @click="handleDeleteClick"
           >
             <Trash2 class="h-4 w-4 shrink-0" /> {{ t('components.definitionCard.deleteButton') }}
-          </button>
+          </Button>
           <!-- Version History -->
           <RouterLink
             v-if="auth.state.isLoggedIn && !props.hideHistory"
@@ -488,9 +495,10 @@
             {{ t('components.definitionCard.commentButton') }}
           </RouterLink>
           <!-- Translate -->
-          <button
+          <Button
             v-if="auth.state.isLoggedIn"
-            class="ui-btn--create ui-btn--group-item inline-flex items-center justify-center gap-2"
+            variant="create"
+            class="ui-btn--group-item inline-flex items-center justify-center gap-2"
             :title="
               canLink
                 ? t('components.definitionCard.translateButtonTitlePhrase')
@@ -504,16 +512,17 @@
           >
             <Languages class="h-4 w-4 shrink-0" />
             {{ t('components.definitionCard.translateButton') }}
-          </button>
+          </Button>
           <!-- Link existing -->
-          <button
+          <Button
             v-if="auth.state.isLoggedIn && canLink"
-            class="ui-btn--link ui-btn--group-item inline-flex items-center justify-center gap-2"
+            variant="link"
+            class="ui-btn--group-item inline-flex items-center justify-center gap-2"
             :title="t('components.definitionCard.linkExistingTitle')"
             @click="showLinkModal = true"
           >
             <LinkIcon class="h-4 w-4 shrink-0" /> {{ t('components.definitionCard.linkExisting') }}
-          </button>
+          </Button>
           <!-- Discussions -->
           <RouterLink
             v-if="disableDiscussionButton && !disableDiscussionToolbarButton"
@@ -555,7 +564,7 @@
   >
     <div class="space-y-4">
       <div class="relative">
-        <input
+        <Input
           v-model="linkSearchQuery"
           type="text"
           :placeholder="t('components.definitionCard.searchPlaceholder')"
@@ -600,9 +609,9 @@
                 <span>{{ t('components.definitionCard.wordType') }} {{ res.type_name }}</span>
               </div>
             </div>
-            <button class="ml-2 ui-btn--success py-1 px-3 text-sm">
+            <Button variant="success" class="ml-2 py-1 px-3 text-sm">
               {{ t('components.definitionCard.link') }}
-            </button>
+            </Button>
           </div>
         </div>
       </div>
@@ -623,6 +632,7 @@
 </template>
 
 <script setup lang="ts">
+import { Button, Input } from '@packages/ui'
 import {
   ArrowUp,
   ArrowDown,

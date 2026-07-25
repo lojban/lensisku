@@ -35,7 +35,7 @@ function persistButtonTheme(theme: ButtonThemeId): void {
   }
 }
 
-/** Sync document + storage; call once on client after load (inline script may have run already). */
+/** Sync document + storage; call once on client after load. */
 function initButtonThemeFromStorage(): ButtonThemeId {
   const t = getStoredButtonTheme()
   applyButtonThemeToDocument(t)

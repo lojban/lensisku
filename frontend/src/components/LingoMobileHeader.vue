@@ -2,14 +2,15 @@
   <header
     class="lingo-mobile-header fixed left-0 right-0 top-0 z-50 flex h-14 items-center border-b border-white/20 bg-green-500 px-4 lg:hidden"
   >
-    <button
+    <Button
+      variant="neutral"
       type="button"
       class="flex h-10 w-10 items-center justify-center rounded-lg text-white transition hover:bg-white/20"
       aria-label="Menu"
       @click="showSidebar = true"
     >
       <Menu class="h-6 w-6" />
-    </button>
+    </Button>
     <RouterLink to="/lingo/courses" class="ml-3 flex items-center gap-2">
       <GraduationCap class="h-8 w-8 text-white" />
       <span class="text-xl font-bold text-white">{{ t('lingo.appName') }}</span>
@@ -31,14 +32,15 @@
         >
           <div class="flex items-center justify-between border-b border-slate-200 p-4">
             <span class="text-lg font-bold text-green-600">Menu</span>
-            <button
+            <Button
+              variant="neutral"
               type="button"
               class="rounded-lg p-2 text-slate-500 hover:bg-slate-100"
               aria-label="Close"
               @click="showSidebar = false"
             >
               <X class="h-5 w-5" />
-            </button>
+            </Button>
           </div>
 
           <div class="p-4" @click="showSidebar = false"><LingoSidebar :hide-logo="true" /></div>
@@ -49,6 +51,7 @@
 </template>
 
 <script setup lang="ts">
+import { Button } from '@packages/ui'
 import { ref } from 'vue'
 import { Menu, X, GraduationCap } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'

@@ -4,21 +4,22 @@
       <form @submit.prevent="handleSubmit">
         <div v-if="showSubjectField || !isReply" class="mb-2">
           <div class="flex justify-between items-center">
-            <input
+            <Input
               ref="subjectInputRef"
               v-model="form.subject"
               type="text"
               :placeholder="t('components.commentForm.subjectPlaceholder')"
               class="input-field w-full text-lg bg-transparent placeholder-gray-500 focus:outline-none"
             />
-            <button
+            <Button
               v-if="isReply"
+              variant="neutral"
               type="button"
               class="ml-2 text-sm text-gray-500 hover:text-gray-700 focus:outline-none"
               @click="showSubjectField = false"
             >
               {{ t('components.commentForm.hideSubject') }}
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -26,13 +27,9 @@
 
         <div class="flex items-center justify-end mt-1">
           <div class="flex items-center space-x-3">
-            <!-- <button v-if="isReply && !showSubjectField" type="button"
-              @click="showSubjectField = true; nextTick(() => subjectInputRef?.focus())"
-              class="text-sm text-gray-500 hover:text-gray-700 focus:outline-none inline-flex items-center gap-1 mr-2">
-              <Plus class="w-4 h-4" />
-              {{ t('components.commentForm.addSubject') }}
-            </button> -->
-            <button
+            <!-- add subject control removed in favor of subject Input field -->
+            <Button
+              variant="insert"
               type="submit"
               :disabled="isSubmitting || characterCount > 10280"
               class="inline-flex items-center ui-btn--insert text-sm"
@@ -41,7 +38,7 @@
                 <Loader v-if="isSubmitting" class="animate-spin -ml-1 mr-2 h-4 w-4" />
                 {{ submitButtonText }}
               </div>
-            </button>
+            </Button>
           </div>
         </div>
       </form>
@@ -50,6 +47,7 @@
 </template>
 
 <script setup lang="ts">
+import { Button, Input } from '@packages/ui'
 import { Crepe } from '@milkdown/crepe'
 import { editorViewCtx } from '@milkdown/core'
 import { Loader } from 'lucide-vue-next'

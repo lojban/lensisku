@@ -11,7 +11,7 @@
 
       <form class="flex flex-col gap-2 sm:flex-row sm:items-center" @submit.prevent="onSearchEnter">
         <div class="sg-search-group flex min-w-0 flex-1 items-center gap-2">
-          <input
+          <Input
             id="semantic-graph-search"
             v-model="searchQuery"
             type="search"
@@ -57,7 +57,7 @@
             <template #icon> <Download :size="14" aria-hidden="true" /> </template>
             {{ t('semanticGraph.import') }}
           </Button>
-          <input
+          <FileInput
             ref="importInputRef"
             type="file"
             accept="application/json,.json"
@@ -98,7 +98,7 @@
         <label class="filters-field-label" for="cf-sg-min-vote">{{
           t('semanticGraph.minVote')
         }}</label>
-        <input
+        <Input
           id="cf-sg-min-vote"
           v-model.number="graphBuildParams.minVote"
           type="number"
@@ -112,7 +112,7 @@
         <label class="filters-field-label" for="cf-sg-limit">{{
           t('semanticGraph.nodeLimit')
         }}</label>
-        <input
+        <Input
           id="cf-sg-limit"
           v-model.number="graphBuildParams.graphLimit"
           type="number"
@@ -125,7 +125,7 @@
 
       <div class="flex min-w-0 flex-col">
         <label class="filters-field-label" for="cf-sg-k">{{ t('semanticGraph.kNeighbors') }}</label>
-        <input
+        <Input
           id="cf-sg-k"
           v-model.number="graphBuildParams.kNeighbors"
           type="number"
@@ -140,7 +140,7 @@
         <label class="filters-field-label" for="cf-sg-min-sim">{{
           t('semanticGraph.minPairwiseSim')
         }}</label>
-        <input
+        <Input
           id="cf-sg-min-sim"
           v-model.number="graphBuildParams.minPairwiseSim"
           type="number"
@@ -183,7 +183,7 @@
 </template>
 
 <script setup lang="ts">
-import { Button } from '@packages/ui'
+import { Button, FileInput, Input } from '@packages/ui'
 import { Download, RotateCcw, Upload } from 'lucide-vue-next'
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'

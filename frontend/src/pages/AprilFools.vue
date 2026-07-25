@@ -6,13 +6,14 @@
       <source src="/assets/music/rikroli.mp3" type="audio/mpeg" />
     </audio>
     <div class="w-full bg-gray-800 bg-opacity-80 backdrop-blur-md shadow-2xl md:p-12">
-      <button
+      <Button
+        variant="neutral"
         class="z-20 mx-auto mb-8 flex items-center gap-2 rounded-full bg-purple-600 px-6 py-3 font-bold text-white shadow-lg transition-[filter,box-shadow] duration-200 hover:bg-purple-700 hover:shadow-xl hover:brightness-110"
         @click="toggleAudio"
       >
         <Pause v-if="isPlaying" class="h-6 w-6" /> <Play v-else class="h-6 w-6" />
         <span>{{ isPlaying ? 'Pause' : 'Play Lojban Demo' }}</span>
-      </button>
+      </Button>
       <div
         v-if="showLyrics"
         class="mt-8 p-6 bg-gray-700 bg-opacity-70 rounded-lg shadow-inner max-w-2xl mx-auto"
@@ -82,6 +83,7 @@
 </template>
 
 <script setup lang="ts">
+import { Button } from '@packages/ui'
 import { ref, onMounted } from 'vue'
 import { Play, Pause } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'

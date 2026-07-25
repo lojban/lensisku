@@ -177,7 +177,8 @@
     "hideRawOutput": "生の検索結果を隠す",
     "editMessage": "編集",
     "saveEdit": "保存",
-    "cancelEdit": "キャンセル"
+    "cancelEdit": "キャンセル",
+    "copyMessage": "メッセージをコピー"
   },
   "deleteConfirmation": {
     "title": "削除の確認",

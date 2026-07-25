@@ -17,20 +17,22 @@
         >
           {{ t('anonymousProgress.logIn') }}
         </RouterLink>
-        <button
+        <Button
+          variant="neutral"
           type="button"
           class="anon-banner-dismiss"
           :aria-label="t('anonymousProgress.dismiss')"
           @click="dismiss"
         >
           <X class="h-5 w-5" />
-        </button>
+        </Button>
       </div>
     </div>
   </Transition>
 </template>
 
 <script setup lang="ts">
+import { Button } from '@packages/ui'
 import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'

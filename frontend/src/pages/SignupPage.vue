@@ -9,7 +9,7 @@
             t('signupPage.usernameLabel')
           }}</label>
           <div class="relative">
-            <input
+            <Input
               id="username"
               v-model="username"
               type="text"
@@ -26,7 +26,7 @@
             t('signupPage.emailLabel')
           }}</label>
           <div class="relative">
-            <input
+            <Input
               id="email"
               v-model="email"
               type="email"
@@ -43,7 +43,7 @@
             t('signupPage.passwordLabel')
           }}</label>
           <div class="relative">
-            <input
+            <Input
               id="password"
               v-model="password"
               :type="showPassword ? 'text' : 'password'"
@@ -52,8 +52,7 @@
               class="input-field h-10 w-full pl-3 pr-10 text-base"
               :disabled="isLoading"
             />
-            <button
-              type="button"
+            <IconButtonGhost
               class="input-field-password-toggle"
               :aria-label="
                 showPassword ? t('signupPage.hidePassword') : t('signupPage.showPassword')
@@ -64,7 +63,7 @@
             >
               <Eye v-if="!showPassword" class="h-5 w-5 shrink-0" aria-hidden="true" />
               <EyeOff v-else class="h-5 w-5 shrink-0" aria-hidden="true" />
-            </button>
+            </IconButtonGhost>
           </div>
         </div>
 
@@ -99,7 +98,7 @@
 <script setup lang="ts">
 import { User, Mail, Eye, EyeOff, Plus } from 'lucide-vue-next'
 
-import { AuthFormCard, Button } from '@packages/ui'
+import { AuthFormCard, Button, IconButtonGhost, Input } from '@packages/ui'
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'

@@ -27,10 +27,9 @@
             @click="toggleSemanticSearch"
           >
             <template #icon>
-              <input
-                type="checkbox"
+              <Checkbox
                 class="checkmark-aqua pointer-events-none shrink-0"
-                :checked="filters.isSemantic"
+                :model-value="filters.isSemantic"
                 tabindex="-1"
                 aria-hidden="true"
               />
@@ -48,10 +47,9 @@
             @click="toggleSearchInPhrases"
           >
             <template #icon>
-              <input
-                type="checkbox"
+              <Checkbox
                 class="checkmark-aqua pointer-events-none shrink-0"
-                :checked="filters.searchInPhrases && !filters.word_type"
+                :model-value="filters.searchInPhrases && !filters.word_type"
                 :disabled="!!filters.word_type"
                 tabindex="-1"
                 aria-hidden="true"
@@ -121,36 +119,28 @@
       <div v-if="showWordType" class="flex min-w-0 flex-col">
         <label class="filters-field-label">{{ t('filters.filterBy.wordType') }}</label>
         <div class="relative w-full [&>div]:block [&>div]:w-full">
-          <Dropdown class="block w-full">
-            <template #trigger="{ open: wordTypeMenuOpen }">
-              <button
-                type="button"
-                class="input-field w-full !flex h-8 cursor-pointer items-center justify-between gap-2 text-left font-normal"
-                :aria-expanded="wordTypeMenuOpen"
-              >
-                <span class="min-w-0 truncate text-gray-700">{{
-                  filters.word_type?.descriptor ?? t('filters.selectWordType')
-                }}</span>
-                <ChevronDown
-                  class="h-4 w-4 shrink-0 text-gray-500 transition-transform duration-200"
-                  :class="{ 'rotate-180': wordTypeMenuOpen }"
-                  :stroke-width="2"
-                />
-              </button>
+          <ToolbarSelectDropdown
+            id="cf-word-type"
+            :aria-label="t('filters.filterBy.wordType')"
+            trigger-class="w-full cursor-pointer"
+            truncate-label
+          >
+            <template #label>
+              {{ selectedWordTypeLabel }}
             </template>
-            <div class="max-h-[min(50vh,18rem)] overflow-y-auto whitespace-normal sm:min-w-[12rem]">
-              <button
-                v-for="type in wordTypes"
-                :key="type.type_id"
-                type="button"
-                class="block w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50"
-                :class="{ 'bg-gray-100': filters.word_type?.type_id === type.type_id }"
-                @click="selectWordType(type)"
-              >
-                {{ type.descriptor }}
-              </button>
-            </div>
-          </Dropdown>
+            <ToolbarSelectDropdownItem
+              v-for="type in wordTypeOptions"
+              :key="type.type_id ?? 'all'"
+              :class="{
+                'bg-gray-100': filters.word_type
+                  ? filters.word_type.type_id === type.type_id
+                  : type.type_id === null,
+              }"
+              @click="selectWordType(type)"
+            >
+              {{ type.descriptor }}
+            </ToolbarSelectDropdownItem>
+          </ToolbarSelectDropdown>
         </div>
       </div>
       <!-- Unified input fields with clear buttons -->
@@ -163,7 +153,7 @@
           }}
         </label>
         <div class="relative">
-          <input
+          <Input
             v-model="filters[field]"
             type="text"
             :placeholder="
@@ -188,42 +178,30 @@
       <div class="flex min-w-0 flex-col" :class="{ 'col-span-2': !showWordType }">
         <label class="filters-field-label">{{ t('filters.filterBy.sourceLanguage') }}</label>
         <div class="relative w-full [&>div]:block [&>div]:w-full">
-          <Dropdown class="block w-full">
-            <template #trigger="{ open: sourceLangMenuOpen }">
-              <button
-                type="button"
-                class="input-field w-full !flex h-8 cursor-pointer items-center justify-between gap-2 text-left font-normal"
-                :aria-expanded="sourceLangMenuOpen"
-              >
-                <span class="min-w-0 truncate text-gray-700">{{ sourceLanguageLabel }}</span>
-                <ChevronDown
-                  class="h-4 w-4 shrink-0 text-gray-500 transition-transform duration-200"
-                  :class="{ 'rotate-180': sourceLangMenuOpen }"
-                  :stroke-width="2"
-                />
-              </button>
+          <ToolbarSelectDropdown
+            id="cf-source-language"
+            :aria-label="t('filters.filterBy.sourceLanguage')"
+            trigger-class="w-full cursor-pointer"
+            truncate-label
+          >
+            <template #label>
+              {{ sourceLanguageLabel }}
             </template>
-            <div class="max-h-[min(50vh,18rem)] overflow-y-auto whitespace-normal sm:min-w-[12rem]">
-              <button
-                type="button"
-                class="block w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50"
-                :class="{ 'bg-gray-100': filters.source_langid === 1 }"
-                @click="selectSourceLang(1)"
-              >
-                {{ t('filters.defaultSourceLanguage') }}
-              </button>
-              <button
-                v-for="lang in languages.filter((l) => l.id !== 1)"
-                :key="lang.id"
-                type="button"
-                class="block w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50"
-                :class="{ 'bg-gray-100': filters.source_langid === lang.id }"
-                @click="selectSourceLang(lang.id)"
-              >
-                {{ lang.real_name }}
-              </button>
-            </div>
-          </Dropdown>
+            <ToolbarSelectDropdownItem
+              :class="{ 'bg-gray-100': filters.source_langid === 1 }"
+              @click="selectSourceLang(1)"
+            >
+              {{ t('filters.defaultSourceLanguage') }}
+            </ToolbarSelectDropdownItem>
+            <ToolbarSelectDropdownItem
+              v-for="lang in languages.filter((l) => l.id !== 1)"
+              :key="lang.id"
+              :class="{ 'bg-gray-100': filters.source_langid === lang.id }"
+              @click="selectSourceLang(lang.id)"
+            >
+              {{ lang.real_name }}
+            </ToolbarSelectDropdownItem>
+          </ToolbarSelectDropdown>
         </div>
       </div>
     </div>
@@ -236,7 +214,7 @@
         <label class="filters-field-label" for="cf-sg-min-vote">{{
           t('semanticGraph.minVote')
         }}</label>
-        <input
+        <Input
           id="cf-sg-min-vote"
           v-model.number="graphBuildParams.minVote"
           type="number"
@@ -250,7 +228,7 @@
         <label class="filters-field-label" for="cf-sg-limit">{{
           t('semanticGraph.nodeLimit')
         }}</label>
-        <input
+        <Input
           id="cf-sg-limit"
           v-model.number="graphBuildParams.graphLimit"
           type="number"
@@ -263,7 +241,7 @@
 
       <div class="flex min-w-0 flex-col">
         <label class="filters-field-label" for="cf-sg-k">{{ t('semanticGraph.kNeighbors') }}</label>
-        <input
+        <Input
           id="cf-sg-k"
           v-model.number="graphBuildParams.kNeighbors"
           type="number"
@@ -278,7 +256,7 @@
         <label class="filters-field-label" for="cf-sg-min-sim">{{
           t('semanticGraph.minPairwiseSim')
         }}</label>
-        <input
+        <Input
           id="cf-sg-min-sim"
           v-model.number="graphBuildParams.minPairwiseSim"
           type="number"
@@ -294,7 +272,15 @@
 
 <script setup lang="ts">
 import { ChevronDown, X } from 'lucide-vue-next'
-import { Button, Dropdown, IconButtonGhost, MultiSelectDropdown } from '@packages/ui'
+import {
+  Button,
+  Checkbox,
+  IconButtonGhost,
+  Input,
+  MultiSelectDropdown,
+  ToolbarSelectDropdown,
+  ToolbarSelectDropdownItem,
+} from '@packages/ui'
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 
 import { fetchDefinitionsTypes } from '@/api'
@@ -327,7 +313,7 @@ type LanguageOption = {
 }
 
 type WordTypeOption = {
-  type_id: number
+  type_id: number | null
   descriptor: string
 }
 
@@ -374,7 +360,7 @@ const wordTypes = ref<WordTypeOption[]>([])
 const filters = ref({
   selmaho: props.modelValue.selmaho,
   username: props.modelValue.username,
-  word_type: null,
+  word_type: null as WordTypeOption | null,
   source_langid: props.modelValue.source_langid || 1, // Initialize from prop or default
   isSemantic: props.modelValue.isSemantic !== false, // Default to true
   searchInPhrases: props.modelValue.searchInPhrases !== false,
@@ -389,6 +375,15 @@ const sourceLanguageLabel = computed(() => {
   const lang = props.languages.find((l) => l.id === filters.value.source_langid)
   return lang ? lang.real_name : t('filters.defaultSourceLanguage')
 })
+
+const selectedWordTypeLabel = computed(() => {
+  return filters.value.word_type?.descriptor ?? t('filters.allWordTypes')
+})
+
+const wordTypeOptions = computed<WordTypeOption[]>(() => [
+  { type_id: null, descriptor: t('filters.allWordTypes') },
+  ...wordTypes.value,
+])
 
 const getLanguagesFromIds = (ids) => {
   return props.languages.filter((lang) => ids.includes(lang.id))
@@ -495,7 +490,7 @@ const debouncedFilterChange = () => {
 }
 
 function selectWordType(type: WordTypeOption) {
-  filters.value.word_type = type
+  filters.value.word_type = type.type_id === null ? null : type
   emitUpdate()
 }
 

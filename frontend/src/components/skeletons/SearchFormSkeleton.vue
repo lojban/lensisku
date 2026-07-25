@@ -1,14 +1,14 @@
 <template>
-  <div class="search-form max-w-3xl mx-auto animate-pulse" aria-hidden="true">
-    <div class="flex flex-row gap-0 items-stretch">
+  <div class="search-form max-w-3xl mx-auto w-full animate-pulse" aria-hidden="true">
+    <div class="relative flex w-full min-w-0">
       <!-- Mode Selector Skeleton -->
-      <div class="relative z-10 w-auto shrink-0">
+      <div class="shrink-0">
         <div
-          class="dropdown-trigger dropdown-trigger--search-bar-leading w-16 sm:w-60 pointer-events-none bg-gray-200 border-gray-200 text-transparent"
+          class="dropdown-trigger dropdown-trigger--search-bar-leading w-11 sm:w-auto pointer-events-none bg-gray-200 border-gray-200 text-transparent"
         >
           <div class="flex items-center gap-2 min-w-0">
             <div class="h-4 w-4 shrink-0 rounded-full bg-gray-300" />
-            <span class="hidden sm:inline-block h-4 w-20 bg-gray-300 rounded" />
+            <span class="hidden sm:inline-block h-4 w-28 bg-gray-300 rounded" />
           </div>
           <div class="h-4 w-4 shrink-0 rounded-full bg-gray-300" />
         </div>

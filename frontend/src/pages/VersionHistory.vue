@@ -82,34 +82,35 @@
         </div>
         <!-- Action Buttons -->
         <div class="mt-4 flex items-center space-x-4">
-          <button
+          <Button
             v-if="selectedVersion && selectedVersion !== version.version_id"
+            variant="neutral"
             class="px-3 py-1 text-sm bg-blue-50 text-blue-600 rounded hover:bg-blue-100"
             @click="compareVersions(version.version_id)"
           >
             {{ t('versionHistory.compareWith', { versionId: selectedVersion }) }}
-          </button>
-          <button
+          </Button>
+          <Button
             v-else-if="!selectedVersion"
-            class="ui-btn--read"
+            variant="read"
             @click="selectedVersion = version.version_id"
           >
             {{ t('versionHistory.compareThis') }}
-          </button>
-          <button
+          </Button>
+          <Button
             v-if="selectedVersion === version.version_id"
-            class="ui-btn--cancel"
+            variant="cancel"
             @click="selectedVersion = null"
           >
             {{ t('versionHistory.cancelSelection') }}
-          </button>
-          <button
+          </Button>
+          <Button
             v-if="auth.state.isLoggedIn"
-            class="ui-btn--revert"
+            variant="revert"
             @click="performRevertToVersion(version.version_id)"
           >
             {{ t('versionHistory.revertToThis') }}
-          </button>
+          </Button>
         </div>
       </div>
     </div>
@@ -167,6 +168,7 @@
 </template>
 
 <script setup lang="ts">
+import { Button } from '@packages/ui'
 import { ArrowLeft } from 'lucide-vue-next'
 import { ref, onMounted, computed } from 'vue'
 import { useI18n } from 'vue-i18n'

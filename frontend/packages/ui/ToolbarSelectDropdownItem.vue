@@ -1,7 +1,7 @@
 <template>
   <button
     type="button"
-    class="block w-full whitespace-nowrap px-3 py-2 text-left text-sm hover:bg-gray-50"
+    class="flex items-center gap-2 w-full whitespace-nowrap px-3 py-2 text-left text-sm hover:bg-gray-50"
     v-bind="$attrs"
   >
     <slot />

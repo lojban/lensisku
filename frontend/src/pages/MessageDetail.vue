@@ -122,13 +122,13 @@
 
               <div class="text-xs text-gray-500 mt-1">{{ part.mime_type }}</div>
             </div>
-            <button
-              class="ui-btn--read"
+            <Button
+              variant="read"
               :title="t('components.messageDetail.downloadAttachmentTitle')"
               @click="downloadAttachment(part)"
             >
               <Download class="h-5 w-5" />
-            </button>
+            </Button>
           </div>
         </div>
       </div>
@@ -148,6 +148,7 @@
 </template>
 
 <script setup lang="ts">
+import { Button } from '@packages/ui'
 import { Download } from 'lucide-vue-next'
 import { marked } from 'marked'
 import { ref, watch, computed } from 'vue'

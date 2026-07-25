@@ -8,7 +8,7 @@
   >
     <div class="min-w-0 flex-1 sm:contents">
       <div class="flex h-full flex-col border-gray-200 sm:border-gray-300 p-0 sm:border-r">
-        <textarea
+        <Textarea
           v-model="entry.row.free_content_front"
           rows="1"
           class="input-field bulk-sheet-input bulk-sheet-input--table js-bulk-auto-text sm:rounded-none"
@@ -18,7 +18,7 @@
       </div>
 
       <div class="flex h-full flex-col border-gray-200 sm:border-gray-300 p-0 sm:border-r">
-        <textarea
+        <Textarea
           v-model="entry.row.free_content_back"
           rows="1"
           class="input-field bulk-sheet-input bulk-sheet-input--table js-bulk-auto-text sm:rounded-none"
@@ -31,16 +31,16 @@
     <div
       class="flex min-h-[2.75rem] shrink-0 items-start gap-1 pl-1 pt-0.5 sm:min-h-0 sm:items-center sm:justify-end sm:gap-2 sm:px-2 sm:py-0 sm:pl-2 sm:pt-0"
     >
-      <input
+      <Checkbox
         v-if="showBulkCheckbox"
-        type="checkbox"
         class="mt-1 h-4 w-4 shrink-0 rounded border-gray-300 text-cyan-600 focus:ring-cyan-500 sm:mt-0"
         :checked="isRowSelected"
         :disabled="isRowActionDisabled"
         :aria-label="t('collectionCustomTextBulk.bulkSelectRowAria')"
         @change="emit('toggle-select')"
       />
-      <button
+      <Button
+        variant="neutral"
         type="button"
         class="inline-flex items-center justify-center rounded-md p-1.5 text-red-600 hover:bg-red-50 disabled:opacity-40 sm:p-1.5"
         :disabled="isRowActionDisabled"
@@ -54,7 +54,7 @@
           aria-hidden="true"
         />
         <Trash2 v-else class="h-3.5 w-3.5 sm:h-4 sm:w-4" aria-hidden="true" />
-      </button>
+      </Button>
     </div>
   </div>
 
@@ -69,7 +69,7 @@
   >
     <div class="min-w-0 flex-1 sm:contents">
       <div class="flex h-full flex-col border-gray-300 p-0 sm:border-r">
-        <textarea
+        <Textarea
           v-model="entry.draft.free_content_front"
           rows="1"
           class="input-field bulk-sheet-input bulk-sheet-input--table js-bulk-auto-text sm:rounded-none"
@@ -84,7 +84,7 @@
       </div>
 
       <div class="flex h-full flex-col border-gray-300 p-0 sm:border-r">
-        <textarea
+        <Textarea
           v-model="entry.draft.free_content_back"
           rows="1"
           class="input-field bulk-sheet-input bulk-sheet-input--table js-bulk-auto-text sm:rounded-none"
@@ -102,16 +102,16 @@
     <div
       class="flex min-h-[2.75rem] shrink-0 items-start gap-1 pl-1 pt-0.5 sm:min-h-0 sm:items-center sm:justify-end sm:gap-2 sm:px-2 sm:py-0 sm:pl-2 sm:pt-0"
     >
-      <input
+      <Checkbox
         v-if="showBulkCheckbox"
-        type="checkbox"
         class="mt-1 h-4 w-4 shrink-0 rounded border-gray-300 text-cyan-600 focus:ring-cyan-500 sm:mt-0"
         :checked="isRowSelected"
         :disabled="isRowActionDisabled"
         :aria-label="t('collectionCustomTextBulk.bulkSelectRowAria')"
         @change="emit('toggle-select')"
       />
-      <button
+      <Button
+        variant="neutral"
         type="button"
         class="inline-flex items-center justify-center rounded-md p-1.5 text-red-600 hover:bg-red-50 disabled:opacity-40 sm:p-1.5"
         :disabled="isRowActionDisabled || !canDeleteDraft(entry.dIdx)"
@@ -120,12 +120,13 @@
         @click="emit('delete-draft', entry.dIdx)"
       >
         <Trash2 class="h-3.5 w-3.5 sm:h-4 sm:w-4" aria-hidden="true" />
-      </button>
+      </Button>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { Button, Checkbox, Textarea } from '@packages/ui'
 import { Loader2, Trash2 } from 'lucide-vue-next'
 import { computed, nextTick, onMounted, onUpdated, ref } from 'vue'
 import { useI18n } from 'vue-i18n'

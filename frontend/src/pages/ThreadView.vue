@@ -7,20 +7,19 @@
       <!-- Sort Controls -->
       <div class="flex items-center space-x-3">
         <label class="text-sm text-gray-600 font-medium">{{ t('sort.sortByLabel') }}</label>
-        <select v-model="sortOrder" class="input-field" @change="fetchThread">
-          <option value="desc">{{ t('threadView.newestFirst') }}</option>
-
-          <option value="asc">{{ t('threadView.oldestFirst') }}</option>
-        </select>
+        <Select
+          v-model="sortOrder"
+          class="input-field"
+          :options="[
+            { value: 'desc', label: t('threadView.newestFirst') },
+            { value: 'asc', label: t('threadView.oldestFirst') },
+          ]"
+          @change="fetchThread"
+        />
       </div>
       <!-- Content Toggle -->
       <div class="flex items-center space-x-3">
-        <input
-          v-model="includeContent"
-          type="checkbox"
-          class="checkbox-toggle"
-          @change="fetchThread"
-        />
+        <Checkbox v-model="includeContent" class="checkbox-toggle" @change="fetchThread" />
         <label class="text-sm text-gray-600 font-medium whitespace-nowrap cursor-pointer">{{
           t('threadView.showContent')
         }}</label>
@@ -120,7 +119,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 
-import { MessageThreadCard } from '@packages/ui'
+import { Checkbox, MessageThreadCard, Select } from '@packages/ui'
 import { getThread } from '@/api'
 import AttachmentIcon from '@/components/icons/AttachmentIcon.vue'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'

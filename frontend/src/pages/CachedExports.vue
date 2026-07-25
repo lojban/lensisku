@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Button } from '@packages/ui'
 import { File } from 'lucide-vue-next'
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -134,9 +135,9 @@ onMounted(async () => {
       class="text-center py-12 bg-gray-50 rounded-xl border border-gray-200"
     >
       <p class="text-gray-600">{{ t('cachedExports.noMatchingExports') }}</p>
-      <button type="button" class="ui-btn--read mt-3" @click="searchQuery = ''">
+      <Button variant="read" type="button" class="mt-3" @click="searchQuery = ''">
         {{ t('cachedExports.clearSearch') }}
-      </button>
+      </Button>
     </div>
   </div>
 </template>

@@ -58,7 +58,8 @@
     </RouterLink>
     <!-- Owner menu to the side: trigger + dropdown (does not overlap the level button) -->
     <div v-if="showOwnerMenu" class="relative z-20 flex shrink-0 items-center" @click.stop>
-      <button
+      <Button
+        variant="neutral"
         type="button"
         class="flex h-8 w-8 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-200 hover:text-slate-700"
         :class="{ 'bg-slate-100 text-slate-700': menuOpen }"
@@ -68,7 +69,7 @@
         @click.prevent="menuOpen = !menuOpen"
       >
         <Settings class="h-4 w-4" />
-      </button>
+      </Button>
       <!-- Dropdown to the right of the gear so the level button stays clickable -->
       <div
         v-if="menuOpen"
@@ -97,7 +98,8 @@
     </div>
 
     <div class="relative z-20 flex shrink-0 items-center" @click.stop>
-      <button
+      <Button
+        variant="neutral"
         type="button"
         class="flex h-8 w-8 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-200 hover:text-slate-700"
         :class="{ 'bg-slate-100 text-slate-700': menuOpen }"
@@ -107,7 +109,7 @@
         @click.prevent="menuOpen = !menuOpen"
       >
         <Settings class="h-4 w-4" />
-      </button>
+      </Button>
       <div
         v-if="menuOpen"
         class="absolute left-full top-1/2 z-[50] ml-1 min-w-[180px] -translate-y-1/2 rounded-lg border border-slate-200 bg-white py-1 shadow-lg"
@@ -137,6 +139,7 @@
 </template>
 
 <script setup lang="ts">
+import { Button } from '@packages/ui'
 import { ref, computed } from 'vue'
 import { RouterLink } from 'vue-router'
 import { Check, Crown, Star, Settings } from 'lucide-vue-next'

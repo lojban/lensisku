@@ -19,29 +19,28 @@
         </p>
 
         <div class="flex items-center gap-2">
-          <button :disabled="isInstalling" class="ui-btn--create flex-1" @click="installApp">
+          <Button variant="create" :disabled="isInstalling" class="flex-1" @click="installApp">
             <span
               v-if="isInstalling"
               class="inline-block h-4 w-4 animate-spin rounded-full border-b-2 border-current"
               aria-hidden="true"
             />
             {{ isInstalling ? 'Installing...' : 'Install App' }}
-          </button>
+          </Button>
 
-          <button type="button" class="ui-btn--neutral-muted" @click="dismissPrompt">
-            Not now
-          </button>
+          <Button variant="neutral-muted" type="button" @click="dismissPrompt"> Not now </Button>
         </div>
       </div>
 
-      <button type="button" class="icon-btn-ghost shrink-0" @click="dismissPrompt">
+      <IconButtonGhost class="shrink-0" @click="dismissPrompt">
         <X class="h-4 w-4" />
-      </button>
+      </IconButtonGhost>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { Button, IconButtonGhost } from '@packages/ui'
 import { ref, onMounted } from 'vue'
 import { Download, X } from 'lucide-vue-next'
 import { useNotifications } from '@/services/messaging/NotificationService'

@@ -16,31 +16,28 @@
       <div class="flex flex-wrap gap-2 w-full lg:w-auto justify-center items-center">
         <!-- Language Selector -->
         <div v-if="isOwnProfile" class="relative group">
-          <select
+          <Select
             :value="locale"
             class="input-field appearance-none !h-6 !py-0 !pr-8 !text-xs"
+            :options="availableLocales.map((loc) => ({ value: loc, label: localeNativeName(loc) }))"
             @change="switchLanguage"
-          >
-            <option v-for="loc in availableLocales" :key="`locale-${loc}`" :value="loc">
-              {{ localeNativeName(loc) }}
-            </option>
-          </select>
+          />
           <ChevronDown
             class="h-4 w-4 text-gray-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none"
           />
         </div>
 
         <div v-if="isOwnProfile" class="relative group">
-          <select
-            :value="buttonTheme"
-            class="input-field appearance-none !h-6 !py-0 !pr-8 !text-xs min-w-[8rem]"
-            :aria-label="t('buttonTheme.label')"
-            @change="onButtonThemeChange"
-          >
-            <option value="aqua">{{ t('buttonTheme.aqua') }}</option>
-
-            <option value="flat">{{ t('buttonTheme.flat') }}</option>
-          </select>
+          <Select
+            :model-value="buttonTheme"
+            :options="[
+              { value: 'aqua', label: t('buttonTheme.aqua') },
+              { value: 'flat', label: t('buttonTheme.flat') },
+            ]"
+            select-class="input-field appearance-none !h-6 !py-0 !pr-8 !text-xs min-w-[8rem]"
+            :label="t('buttonTheme.label')"
+            @update:model-value="setButtonTheme"
+          />
           <ChevronDown
             class="h-4 w-4 text-gray-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none"
           />
@@ -64,13 +61,14 @@
           >
             <KeyRound class="h-4 w-4" /> {{ t('profile.changePassword') }}
           </RouterLink>
-          <button
+          <Button
             v-if="isOwnProfile && !isEditing"
-            class="ui-btn--edit ui-btn--group-item"
+            variant="edit"
+            class="ui-btn--group-item"
             @click="toggleEdit"
           >
             <Pencil class="h-4 w-4" /> {{ t('profile.editProfile') }}
-          </button>
+          </Button>
         </div>
 
         <div class="btn-group md:gap-y-2">
@@ -91,24 +89,27 @@
             :username="profileData.username"
             class="ui-btn--accent-blue ui-btn--group-item"
           />
-          <button
+          <Button
             v-if="isOwnProfile && auth.state.isLoggedIn"
-            class="ui-btn--toolbar ui-btn--group-item"
+            variant="toolbar"
+            class="ui-btn--group-item"
             @click="auth.logout()"
           >
             <LogOut class="h-4 w-4" /> {{ t('nav.logout') }}
-          </button>
+          </Button>
         </div>
         <!-- Role Assignment Section -->
         <div v-if="canAssignRoles && !isOwnProfile" class="flex gap-2 items-center form-group">
-          <select v-model="selectedRole" class="input-field h-6 py-0">
-            <option v-for="role in assignableRoles" :key="role.name" :value="role.name">
-              {{ translateRole(role.name) }}
-            </option>
-          </select>
-          <button class="ui-btn--create" :disabled="isAssigningRole" @click="performAssignRole">
+          <Select
+            v-model="selectedRole"
+            class="input-field h-6 py-0"
+            :options="
+              assignableRoles.map((role) => ({ value: role.name, label: translateRole(role.name) }))
+            "
+          />
+          <Button variant="create" :disabled="isAssigningRole" @click="performAssignRole">
             {{ isAssigningRole ? t('profile.assigning') : t('profile.assignRole') }}
-          </button>
+          </Button>
         </div>
       </div>
     </div>
@@ -254,17 +255,18 @@
               class="cursor-pointer p-2 bg-white border border-gray-300 rounded-full text-blue-600 hover:bg-blue-50 transition-all shadow-md"
               :title="t('profile.uploadNewPhoto')"
             >
-              <input type="file" class="hidden" accept="image/*" @change="handleFileChange" />
+              <FileInput type="file" class="hidden" accept="image/*" @change="handleFileChange" />
               <Camera class="h-5 w-5" />
             </label>
-            <button
+            <Button
               v-if="hasImage"
+              variant="neutral"
               class="p-2 bg-white border border-gray-300 rounded-full text-red-600 hover:bg-red-50 transition-all shadow-md"
               :title="t('profile.removePhoto')"
               @click.stop="handleImageRemove"
             >
               <Trash2 class="h-5 w-5" />
-            </button>
+            </Button>
           </div>
         </div>
         <!-- Spacer to prevent overlap with buttons -->
@@ -276,7 +278,7 @@
       <!-- Rest of the form fields -->
       <div>
         <label class="block text-sm font-medium text-gray-700">{{ t('profile.username') }}</label>
-        <input
+        <Input
           v-model="editForm.username"
           type="text"
           class="input-field w-full"
@@ -286,19 +288,19 @@
 
       <div>
         <label class="block text-sm font-medium text-gray-700">{{ t('profile.realName') }}</label>
-        <input v-model="editForm.realname" type="text" class="input-field w-full" />
+        <Input v-model="editForm.realname" type="text" class="input-field w-full" />
       </div>
 
       <div>
         <label class="block text-sm font-medium text-gray-700">{{ t('profile.url') }}</label>
-        <input v-model="editForm.url" type="url" class="input-field w-full" />
+        <Input v-model="editForm.url" type="url" class="input-field w-full" />
       </div>
 
       <div>
         <label class="block text-sm font-medium text-gray-700">{{
           t('profile.personalInfo')
         }}</label>
-        <textarea v-model="editForm.personal" rows="4" class="textarea-field" />
+        <Textarea v-model="editForm.personal" rows="4" class="textarea-field" />
       </div>
 
       <div v-if="updateSuccess" class="text-green-600 text-sm">
@@ -306,12 +308,12 @@
       </div>
 
       <div class="mt-6 flex justify-end gap-3">
-        <button type="button" class="ui-btn--cancel" @click="toggleEdit">
+        <Button variant="cancel" type="button" @click="toggleEdit">
           {{ t('profile.cancel') }}
-        </button>
-        <button type="submit" :disabled="isUpdating || isImageUploading" class="ui-btn--edit">
+        </Button>
+        <Button variant="edit" type="submit" :disabled="isUpdating || isImageUploading">
           {{ isUpdating ? t('profile.saving') : t('profile.saveChanges') }}
-        </button>
+        </Button>
       </div>
     </form>
   </div>
@@ -352,8 +354,9 @@ import { useError } from '@/composables/useError'
 import { useSuccessToast } from '@/composables/useSuccessToast'
 import { useSeoHead } from '@/composables/useSeoHead'
 import { useButtonTheme } from '@/composables/useButtonTheme'
-import type { ButtonThemeId } from '@/composables/useButtonTheme'
+import { useDateFormat } from '@/composables/useDateFormat'
 import { uploadImageErrorMessage } from '@/utils/apiError'
+import { Button, FileInput, Input, Select, Textarea } from '@packages/ui'
 
 /** JWT fields used on the profile page (decode + display). */
 interface ProfileJwtPayload {
@@ -376,12 +379,9 @@ const auth = useAuth()
 const { locale, availableLocales, t } = useI18n()
 const { buttonTheme, initButtonTheme, setButtonTheme } = useButtonTheme()
 
-function onButtonThemeChange(e: Event) {
-  setButtonTheme((e.target as HTMLSelectElement).value as ButtonThemeId)
-}
-
 const { showError, clearError } = useError()
 const { showSuccess } = useSuccessToast()
+const { formatDate } = useDateFormat()
 const isLoading = ref(true)
 const isEditing = ref(false)
 const isUpdating = ref(false)
@@ -736,7 +736,7 @@ const fetchProfileData = async () => {
 
     await fetchProfileImageUrl()
 
-    memberSince.value = join_date ? new Date(join_date).toLocaleDateString(locale.value) : 'N/A'
+    memberSince.value = join_date ? formatDate(join_date) : 'N/A'
     editForm.value = {
       username: resolvedUsername,
       realname,

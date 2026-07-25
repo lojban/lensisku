@@ -108,27 +108,23 @@
 
         <div class="flex items-center gap-3">
           <label class="group inline-flex cursor-pointer items-center gap-2">
-            <input
-              type="checkbox"
-              class="peer sr-only"
-              :checked="flatStyle"
-              @change="toggleFlatStyle"
-            />
+            <Checkbox class="peer sr-only" :checked="flatStyle" @change="toggleFlatStyle" />
             <div class="toggle-switch-peer-track" role="presentation" />
             <span class="text-sm text-gray-600 transition-colors group-hover:text-gray-900">{{
               t('commentList.threaded')
             }}</span>
           </label>
-          <button
+          <Button
             v-if="auth.state.isLoggedIn"
+            variant="neutral"
             type="button"
-            class="inline-flex items-center gap-2 ui-btn--neutral"
+            class="inline-flex items-center gap-2"
             :aria-label="t('commentList.newWave')"
             @click="handleNewTopLevelComment"
           >
             <AudioWaveform class="h-4 w-4 shrink-0 text-purple-600" />
             <span>{{ t('commentList.newWave') }}</span>
-          </button>
+          </Button>
         </div>
       </div>
       <!-- New top-level comment form -->
@@ -205,16 +201,17 @@
           <p class="text-gray-500 max-w-sm mb-8">
             {{ t('definitionLinkDiscussion.noCommentsHint') }}
           </p>
-          <button
+          <Button
             v-if="auth.state.isLoggedIn"
+            variant="neutral"
             type="button"
-            class="inline-flex items-center gap-2 ui-btn--neutral h-12 text-base !px-5 mx-auto"
+            class="inline-flex items-center gap-2 h-12 text-base !px-5 mx-auto"
             :aria-label="t('commentList.newDiscussionWave')"
             @click="handleNewTopLevelComment"
           >
             <AudioWaveform class="h-6 w-6 shrink-0 text-purple-600" />
             <span>{{ t('commentList.newDiscussionWave') }}</span>
-          </button>
+          </Button>
         </div>
       </div>
     </div>
@@ -222,6 +219,7 @@
 </template>
 
 <script setup lang="ts">
+import { Button, Checkbox } from '@packages/ui'
 import {
   ArrowUpRight,
   AudioWaveform,

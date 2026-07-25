@@ -5,10 +5,16 @@
         :id="id"
         type="button"
         :aria-label="ariaLabel"
-        class="input-field inline-flex h-8 w-auto max-w-full min-w-0 items-center justify-between gap-1.5 px-3 text-left text-sm"
-        :class="variant === 'role' ? 'max-w-[min(100vw-4rem,14rem)]' : ''"
+        class="input-field inline-flex w-auto max-w-full min-w-0 items-center justify-between gap-1.5 px-3 text-left text-sm"
+        :class="[variant === 'role' ? 'max-w-[min(100vw-4rem,14rem)]' : '', triggerClass]"
       >
-        <span :class="truncateLabel ? 'min-w-0 truncate whitespace-nowrap' : 'whitespace-nowrap'">
+        <span
+          :class="
+            truncateLabel
+              ? 'min-w-0 truncate whitespace-nowrap inline-flex items-center gap-2'
+              : 'whitespace-nowrap inline-flex items-center gap-2'
+          "
+        >
           <slot name="label" />
         </span>
         <ChevronDown
@@ -36,12 +42,15 @@ withDefaults(
     truncateLabel?: boolean
     /** `role` caps trigger width on small viewports. */
     variant?: 'default' | 'role'
+    /** Extra classes to override the trigger button styling. */
+    triggerClass?: string
   }>(),
   {
     id: undefined,
     ariaLabel: undefined,
     variant: 'default',
     truncateLabel: false,
+    triggerClass: '',
   }
 )
 </script>

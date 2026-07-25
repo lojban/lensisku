@@ -1,25 +1,25 @@
 <template>
-  <div class="message-input surface-comment-form !m-0">
+  <div class="message-input surface-comment-form !m-0 rounded-xl p-2 shadow-sm">
     <form class="flex items-end gap-2" @submit.prevent="handleSubmit">
       <!-- Attachment button -->
-      <button type="button" class="icon-btn-ghost" title="Attach file" @click="handleAttachment">
+      <IconButtonGhost title="Attach file" @click="handleAttachment">
         <Paperclip class="h-5 w-5" />
-      </button>
+      </IconButtonGhost>
 
       <!-- Message input -->
       <div class="flex-1 relative">
-        <textarea
+        <Textarea
           ref="textareaRef"
           v-model="messageText"
           :placeholder="placeholder"
           :disabled="disabled"
-          rows="1"
+          rows="3"
           class="textarea-field resize-none pr-12"
           @input="handleInput"
           @keydown="handleKeydown"
           @focus="handleFocus"
           @blur="handleBlur"
-        ></textarea>
+        />
 
         <!-- Character count for long messages -->
         <div
@@ -31,10 +31,10 @@
       </div>
 
       <!-- Send button -->
-      <button
+      <Button
+        variant="primary"
         type="submit"
         :disabled="!canSend || isSending"
-        class="ui-btn--primary"
         title="Send message"
       >
         <span
@@ -43,11 +43,11 @@
           aria-hidden="true"
         />
         <Send v-else class="h-4 w-4" />
-      </button>
+      </Button>
     </form>
 
     <!-- File input (hidden) -->
-    <input
+    <FileInput
       ref="fileInputRef"
       type="file"
       class="hidden"
@@ -58,7 +58,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, nextTick, onMounted, onUnmounted } from 'vue'
+import { Button, FileInput, IconButtonGhost, Textarea } from '@packages/ui'
+import { ref, computed, nextTick, onMounted, onUnmounted, type ComponentPublicInstance } from 'vue'
 import { Paperclip, Send } from 'lucide-vue-next'
 import { useAuth } from '@/composables/useAuth'
 import { sendMessage } from '@/services/messaging/messagingApi'
@@ -83,10 +84,12 @@ const emit = defineEmits<{
 
 const _auth = useAuth()
 
+type TextareaInstance = ComponentPublicInstance & { focus: () => void; blur: () => void }
+
 // Reactive state
 const messageText = ref('')
 const isSending = ref(false)
-const textareaRef = ref<HTMLTextAreaElement>()
+const textareaRef = ref<TextareaInstance | null>(null)
 const fileInputRef = ref<HTMLInputElement>()
 const typingTimeout = ref<number>()
 
@@ -178,7 +181,9 @@ const handleFileSelect = (event: Event) => {
 const resizeTextarea = () => {
   if (!textareaRef.value) return
 
-  const textarea = textareaRef.value
+  const textarea = textareaRef.value?.$el as HTMLTextAreaElement | undefined
+  if (!textarea) return
+
   textarea.style.height = 'auto'
 
   // Calculate new height (max 5 rows)

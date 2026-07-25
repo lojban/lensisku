@@ -29,18 +29,24 @@
     >
       <!-- Row 1: close (mobile) + new chat -->
       <div class="flex items-center gap-2 border-b border-gray-200/60 bg-white/40 px-2 py-2">
-        <button
+        <Button
           v-if="!isDesktop"
+          variant="neutral"
           type="button"
           class="assistant-icon-btn-soft"
           :aria-label="$t('assistantChat.closeChatHistory')"
           @click="sidebarOpen = false"
         >
           <X class="h-5 w-5" />
-        </button>
-        <button type="button" class="assistant-new-chat-trigger" @click="startNewChat">
+        </Button>
+        <Button
+          variant="neutral"
+          type="button"
+          class="assistant-new-chat-trigger"
+          @click="startNewChat"
+        >
           <Plus class="h-4 w-4 shrink-0" /> {{ $t('assistantChat.newChat') }}
-        </button>
+        </Button>
       </div>
       <!-- Row 2: search -->
       <div class="border-b border-gray-200/60 bg-white/40 px-2 py-2">
@@ -49,7 +55,7 @@
             class="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400"
             aria-hidden="true"
           />
-          <input
+          <Input
             v-model="chatSearchQuery"
             type="search"
             autocomplete="off"
@@ -64,9 +70,10 @@
         <p v-if="filteredSessions.length === 0" class="px-2 py-6 text-center text-sm text-gray-500">
           {{ $t('assistantChat.noChatsMatch') }}
         </p>
-        <button
+        <Button
           v-for="session in filteredSessions"
           :key="session.id"
+          variant="neutral"
           type="button"
           role="listitem"
           class="group assistant-session-row"
@@ -98,22 +105,22 @@
                 {{ formatSessionTime(session.updatedAt) }}
               </p>
             </div>
-            <button
-              type="button"
-              class="icon-btn-ghost-danger icon-btn-ghost-danger--reveal-md"
+            <IconButtonGhost
+              class="-danger -danger--reveal-md"
               :aria-label="$t('assistantChat.deleteChat')"
               @click="deleteSession(session.id, $event)"
             >
               <Trash2 class="w-3.5 h-3.5" />
-            </button>
+            </IconButtonGhost>
           </div>
-        </button>
+        </Button>
       </div>
     </aside>
     <!-- Main column: flex column — header | flex-1 messages | footer composer -->
     <div class="assistant-main flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
       <header class="assistant-main-header flex shrink-0 items-start gap-3 px-3 pt-3">
-        <button
+        <Button
+          variant="neutral"
           type="button"
           class="assistant-icon-btn-panel"
           :aria-label="$t('assistantChat.openChatHistory')"
@@ -121,20 +128,21 @@
           @click="sidebarOpen = !sidebarOpen"
         >
           <PanelLeft class="w-5 h-5" />
-        </button>
+        </Button>
         <div class="min-w-0 flex-1">
           <div class="flex min-w-0 items-start justify-between gap-3">
             <h1 class="min-w-0 text-2xl font-bold text-gray-800">
               {{ $t('assistantChat.title') }}
             </h1>
-            <button
+            <Button
+              variant="neutral"
               type="button"
               class="assistant-icon-btn-header"
               :aria-label="$t('assistantChat.newChat')"
               @click="startNewChat"
             >
               <Plus class="h-5 w-5" />
-            </button>
+            </Button>
           </div>
         </div>
       </header>
@@ -187,7 +195,7 @@
               <div
                 v-for="(msg, index) in messages"
                 :key="index"
-                class="flex flex-col gap-3"
+                class="flex flex-col gap-1"
                 :class="msg.role === 'user' ? 'items-end' : 'items-start'"
               >
                 <!-- User message: bubble + edit (row, pencil to the right of the bubble) -->
@@ -201,7 +209,7 @@
                     <label class="sr-only" :for="'assistant-edit-' + index">{{
                       $t('assistantChat.editMessage')
                     }}</label>
-                    <textarea
+                    <Textarea
                       :id="'assistant-edit-' + index"
                       v-model="editingMessageDraft"
                       class="textarea-field min-h-[4.5rem] w-full resize-y text-sm text-gray-900"
@@ -210,12 +218,12 @@
                       @blur="onAssistantFormControlBlur"
                     />
                     <div class="mx-2 my-2 flex justify-end gap-2">
-                      <button type="button" class="ui-btn--cancel" @click="cancelEditMessage">
+                      <Button variant="cancel" type="button" @click="cancelEditMessage">
                         {{ $t('assistantChat.cancelEdit') }}
-                      </button>
-                      <button type="button" class="ui-btn--insert" @click="commitEditMessage">
+                      </Button>
+                      <Button variant="insert" type="button" @click="commitEditMessage">
                         {{ $t('assistantChat.saveEdit') }}
-                      </button>
+                      </Button>
                     </div>
                   </div>
 
@@ -229,8 +237,9 @@
                       </span>
                       <span>{{ msg.content }}</span>
                     </div>
-                    <button
+                    <Button
                       v-if="canEditMessages"
+                      variant="neutral"
                       type="button"
                       class="assistant-bubble-action"
                       :aria-label="$t('assistantChat.editMessage')"
@@ -238,7 +247,7 @@
                       @click="startEditMessage(index)"
                     >
                       <Pencil class="h-4 w-4" aria-hidden="true" />
-                    </button>
+                    </Button>
                   </div>
                 </div>
                 <!-- Assistant: one bubble per reply (multi-model) or single top-level bubble -->
@@ -332,6 +341,13 @@
                     />
                   </div>
                 </div>
+
+                <ClipboardButton
+                  v-if="plainTextForEdit(msg)"
+                  variant="ghost"
+                  :content="plainTextForEdit(msg)"
+                  :title="$t('assistantChat.copyMessage')"
+                />
               </div>
               <!-- Thinking indicator when no assistant message yet (e.g. before stream starts) -->
 
@@ -365,7 +381,7 @@
       >
         <form class="assistant-composer flex flex-col gap-2" @submit.prevent="handleSend">
           <div class="relative min-w-0">
-            <textarea
+            <Textarea
               ref="composerTextareaRef"
               v-model="input"
               class="textarea-field min-h-[88px] max-h-40 w-full resize-y pl-3 pr-12 pb-11 pt-2.5"
@@ -374,7 +390,8 @@
               @keydown.enter.exact.prevent="handleSend"
               @blur="onAssistantFormControlBlur"
             />
-            <button
+            <Button
+              variant="neutral"
               :type="isStreamingThisSession ? 'button' : 'submit'"
               class="assistant-composer-send"
               :disabled="!isStreamingThisSession && !input.trim()"
@@ -395,21 +412,20 @@
                 aria-hidden="true"
               />
               <ArrowUp v-else class="h-6 w-6 text-black" stroke-width="2.25" aria-hidden="true" />
-            </button>
+            </Button>
           </div>
 
           <div class="flex min-w-0 items-center gap-2 px-0.5 pt-0.5">
             <div v-if="error" class="flex min-w-0 flex-1 items-center gap-2">
               <p class="min-w-0 flex-1 truncate text-xs text-red-600">{{ error }}</p>
-              <button
-                type="button"
-                class="icon-btn-ghost-danger"
+              <IconButtonGhost
+                class="-danger"
                 :aria-label="$t('assistantChat.retry')"
                 :title="$t('assistantChat.retry')"
                 @click="retryLast"
               >
                 <RotateCw class="h-4 w-4" />
-              </button>
+              </IconButtonGhost>
             </div>
 
             <p
@@ -429,6 +445,7 @@
 </template>
 
 <script setup lang="ts">
+import { Button, IconButtonGhost, Input, Textarea } from '@packages/ui'
 import { ref, watch, nextTick, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useDebounceFn, useMediaQuery, onKeyStroke } from '@vueuse/core'
@@ -446,6 +463,7 @@ import {
 } from 'lucide-vue-next'
 
 import AssistantThoughtStep from '@/components/AssistantThoughtStep.vue'
+import ClipboardButton from '@/components/ClipboardButton.vue'
 import LazyMathJax from '@/components/LazyMathJax.vue'
 import { useSeoHead } from '@/composables/useSeoHead'
 import { useAuth } from '@/composables/useAuth'

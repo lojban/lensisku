@@ -1,15 +1,22 @@
 <template>
-  <button
-    class="inline-flex items-center justify-center ui-btn--empty"
-    :title="title"
+  <Button
+    variant="neutral"
+    type="button"
+    class="inline-flex items-center justify-center"
+    :class="buttonClass"
+    :title="currentTitle"
+    :aria-label="currentTitle"
     @click.stop="copyToClipboard"
   >
-    <ClipboardCopy class="w-4 h-4" />
-  </button>
+    <Check v-if="copied" class="w-4 h-4" aria-hidden="true" />
+    <ClipboardCopy v-else class="w-4 h-4" aria-hidden="true" />
+  </Button>
 </template>
 
 <script setup lang="ts">
-import { ClipboardCopy } from 'lucide-vue-next'
+import { Button } from '@packages/ui'
+import { ref, computed, onUnmounted } from 'vue'
+import { ClipboardCopy, Check } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 
 import { useError } from '@/composables/useError'
@@ -24,6 +31,11 @@ const props = defineProps({
     type: String,
     default: 'Copy to clipboard',
   },
+  variant: {
+    type: String,
+    default: 'button',
+    validator: (value: string) => ['button', 'ghost', 'unstyled'].indexOf(value) !== -1,
+  },
 })
 
 const emit = defineEmits(['copied', 'error'])
@@ -32,15 +44,38 @@ const { t } = useI18n()
 const { showSuccess } = useSuccessToast()
 const { showError } = useError()
 
+const copied = ref(false)
+const copiedTimer = ref<ReturnType<typeof setTimeout> | null>(null)
+
+const currentTitle = computed(() =>
+  copied.value ? t('components.error.copiedToClipboard') : props.title
+)
+
+const buttonClass = computed(() => {
+  if (props.variant === 'ghost') return 'assistant-bubble-action'
+  if (props.variant === 'unstyled') return ''
+  return 'ui-btn--empty'
+})
+
 const copyToClipboard = async () => {
   try {
     await navigator.clipboard.writeText(props.content)
+    copied.value = true
     showSuccess(t('components.error.copiedToClipboard'))
     emit('copied')
+    if (copiedTimer.value) clearTimeout(copiedTimer.value)
+    copiedTimer.value = setTimeout(() => {
+      copied.value = false
+      copiedTimer.value = null
+    }, 2000)
   } catch (err) {
     console.error('Failed to copy:', err)
-    showError('components.error.failedToCopy')
+    showError(t('components.error.failedToCopy'))
     emit('error', err)
   }
 }
+
+onUnmounted(() => {
+  if (copiedTimer.value) clearTimeout(copiedTimer.value)
+})
 </script>

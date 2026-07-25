@@ -1,8 +1,8 @@
 {
-  "subject_definition_updated_word": "la .jbovlaste: lo velckivei be la'ei {} pu se galfi",
-  "subject_definition_updated": "la .jbovlaste: lo velckivei pu se galfi",
-  "subject_other_word": "la .jbovlaste: {} - {}",
-  "subject_other": "la .jbovlaste: {}",
+  "subject_definition_updated_word": "la jbovlaste zo'u lo velckivei be la'ei {} pu se galfi",
+  "subject_definition_updated": "la jbovlaste zo'u lo velckivei pu se galfi",
+  "subject_other_word": "la jbovlaste zo'u {} - {}",
+  "subject_other": "la jbovlaste zo'u {}",
   "text_def_updated_for": "lo velckivei be la'ei {} pu se galfi",
   "text_updated_by": "pu galfi gau la'o zoi. {}. zoi",
   "text_new_def": "cnino velckivei:",
@@ -18,7 +18,7 @@
   "html_changes_label": "se galfi",
   "html_new_valsi_added": "cnino valsi pu se jmina:",
   "html_def_updated_for": "galfi lo velckivei be la'ei",
-  "html_view_dictionary": "viska pa'o la .jbovlaste.",
-  "footer_sent_by": "ti se benji la .jbovlaste.",
-  "footer_copyright": "© {} la .jbovlaste."
+  "html_view_dictionary": "viska pa'o la jbovlaste",
+  "footer_sent_by": "ti se benji la jbovlaste",
+  "footer_copyright": "© {} la jbovlaste"
 }

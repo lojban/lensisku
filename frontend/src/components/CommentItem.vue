@@ -142,13 +142,14 @@
         </RouterLink>
       </div>
     </div>
-    <button
+    <Button
       v-if="!flatStyle && processedComment.parent_id"
+      variant="neutral"
       class="text-gray-500 italic hover:text-blue-600 flex items-center text-xs mb-2"
       @click.stop="showParentInThread = !showParentInThread"
     >
       <ArrowUp class="h-3 w-3" /> <span>{{ t('components.commentItem.showParent') }}</span>
-    </button>
+    </Button>
     <div class="min-w-48 overflow-x-auto">
       <div
         class="prose prose-sm max-w-none text-gray-700 mb-3 [&_img]:max-h-48 [&_img]:object-contain"
@@ -162,9 +163,10 @@
     <div class="flex flex-wrap gap-2 justify-end">
       <div class="flex items-center gap-3">
         <div v-if="reactions.length" class="flex flex-wrap gap-1">
-          <button
+          <Button
             v-for="reaction in reactions"
             :key="reaction.reaction"
+            variant="reaction-active"
             class="gap-1.5 transition-all duration-300"
             :class="reaction.reacted ? 'ui-btn--reaction-active' : 'ui-btn--reaction'"
             @click.stop="handleReactionClick(reaction.reaction)"
@@ -176,17 +178,18 @@
               {{ reaction.reaction }}
             </span>
             <span v-if="reaction.count > 0" class="text-sm font-bold"> {{ reaction.count }} </span>
-          </button>
+          </Button>
         </div>
 
         <div v-if="auth.state.isLoggedIn" class="relative shrink-0">
-          <button
-            class="ui-btn--empty inline-flex items-center gap-2"
+          <Button
+            variant="empty"
+            class="inline-flex items-center gap-2"
             @click.stop="showReactionPicker = !showReactionPicker"
           >
             <ReactionPlusIcon class="shrink-0" />
             <span class="sr-only">{{ t('components.commentItem.addReaction') }}</span>
-          </button>
+          </Button>
           <Teleport to="body">
             <div
               v-if="showReactionPicker"
@@ -195,7 +198,7 @@
             >
               <div class="bg-white rounded-lg shadow-lg max-w-sm w-full m-4 p-2" @click.stop>
                 <div class="mb-2 px-1">
-                  <input
+                  <Input
                     v-model="customEmoji"
                     :placeholder="t('components.commentItem.customEmojiPlaceholder')"
                     class="w-full px-3 py-2 border rounded text-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none"
@@ -207,9 +210,10 @@
                 </div>
 
                 <div class="grid grid-cols-5 auto-rows-fr gap-0">
-                  <button
+                  <Button
                     v-for="emoji in emojiList"
                     :key="emoji.symbol"
+                    variant="neutral"
                     class="group p-1 hover:bg-gray-100 rounded transition-colors"
                     :class="{ 'bg-blue-100': isReactionSelected(emoji.symbol) }"
                     @click="addReaction(emoji.symbol)"
@@ -229,15 +233,16 @@
                         }}</span
                       >
                     </div>
-                  </button>
+                  </Button>
                 </div>
               </div>
             </div>
           </Teleport>
         </div>
       </div>
-      <button
+      <Button
         v-if="auth.state.isLoggedIn"
+        variant="neutral"
         :disabled="isProcessing"
         class="gap-1.5 ui-btn--empty"
         :class="[processedComment.is_bookmarked ? 'active' : '']"
@@ -254,23 +259,25 @@
             ? t('components.commentItem.saved')
             : t('components.commentItem.save')
         }}</span>
-      </button>
-      <button
+      </Button>
+      <Button
         v-if="
           auth.state.isLoggedIn &&
           auth.state.username === processedComment.username &&
           (processedComment.total_replies ?? 0) === 0
         "
-        class="inline-flex items-center gap-2 ui-btn--empty text-red-600 hover:text-red-800"
+        variant="empty"
+        class="inline-flex items-center gap-2 text-red-600 hover:text-red-800"
         :disabled="isProcessing"
         @click="handleDeleteClick"
       >
         <Trash2 class="h-4 w-4" />
         <span class="sr-only">{{ t('components.commentItem.delete') }}</span>
-      </button>
-      <button
+      </Button>
+      <Button
         v-if="auth.state.isLoggedIn && replyEnabled"
-        class="inline-flex items-center gap-2 ui-btn--reply"
+        variant="reply"
+        class="inline-flex items-center gap-2"
         @click="handleReplyClick"
       >
         <Reply class="w-5 h-5" />
@@ -278,7 +285,7 @@
           processedComment.total_replies
         }}</span>
         <span>{{ t('components.commentItem.reply') }}</span>
-      </button>
+      </Button>
     </div>
   </div>
   <DeleteConfirmationModal
@@ -292,6 +299,7 @@
 </template>
 
 <script setup lang="ts">
+import { Button, Input } from '@packages/ui'
 import { Bookmark, BookmarkCheck, Reply, User, Trash2, ArrowUp } from 'lucide-vue-next'
 import { ref, onMounted, onUnmounted, computed } from 'vue'
 import type { PropType } from 'vue'

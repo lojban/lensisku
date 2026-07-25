@@ -1,7 +1,8 @@
 <template>
   <div class="flex items-center space-x-1">
     <!-- Upvote button -->
-    <button
+    <Button
+      variant="neutral"
       :disabled="!hasVotePermission || isLoading || userVote === 1"
       :class="[
         'p-0 rounded-md transition-colors text-gray-600',
@@ -18,11 +19,12 @@
       @click="handleVote(false)"
     >
       <ThumbsUp class="w-5 h-5 m-1" :stroke-width="1.3" />
-    </button>
+    </Button>
     <!-- Score display -->
     <span class="text-sm"> {{ score }} </span>
     <!-- Downvote button -->
-    <button
+    <Button
+      variant="neutral"
       :disabled="!hasVotePermission || isLoading || userVote === -1"
       :class="[
         'p-0 rounded-md transition-colors text-gray-600',
@@ -39,11 +41,12 @@
       @click="handleVote(true)"
     >
       <ThumbsDown class="w-5 h-5 m-1" :stroke-width="1.3" />
-    </button>
+    </Button>
   </div>
 </template>
 
 <script setup lang="ts">
+import { Button } from '@packages/ui'
 import { ThumbsUp, ThumbsDown } from 'lucide-vue-next'
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'

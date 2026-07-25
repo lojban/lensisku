@@ -4,14 +4,15 @@
       <label for="definition" class="block text-sm font-medium text-blue-700">
         {{ label || t('imageUpload.image') }}
       </label>
-      <button
+      <Button
         v-if="modelValue || loadedImage"
+        variant="neutral"
         type="button"
         class="text-sm text-red-600 hover:text-red-700"
         @click="handleRemove"
       >
         {{ t('imageUpload.removeImage') }}
-      </button>
+      </Button>
       <span v-else-if="note" class="text-xs text-gray-500"> {{ note }} </span>
     </div>
     <!-- Image Preview -->
@@ -45,7 +46,7 @@
             class="relative cursor-pointer rounded-md font-medium text-blue-600 hover:text-blue-500"
           >
             <span>{{ t('imageUpload.uploadPrompt') }}</span>
-            <input type="file" class="sr-only" accept="image/*" @change="handleFileSelect" />
+            <FileInput type="file" class="sr-only" accept="image/*" @change="handleFileSelect" />
           </label>
           <p class="pl-1">{{ t('imageUpload.dragDrop') }}</p>
         </div>
@@ -57,6 +58,7 @@
 </template>
 
 <script setup lang="ts">
+import { Button, FileInput } from '@packages/ui'
 import { ImagePlus } from 'lucide-vue-next'
 import { useDropZone } from '@vueuse/core'
 import { ref, watch, onMounted } from 'vue'

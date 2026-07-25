@@ -1,6 +1,7 @@
 <template>
-  <button
+  <Button
     v-if="auth.state.isLoggedIn"
+    variant="toggle"
     :class="[
       isSubscribed ? 'ui-btn--toggle active' : 'ui-btn--toggle inactive',
       { 'cursor-wait': isLoading },
@@ -16,10 +17,11 @@
         ? t('components.subscriptionControls.gettingAlerts')
         : t('components.subscriptionControls.notGettingAlerts')
     }}
-  </button>
+  </Button>
 </template>
 
 <script setup lang="ts">
+import { Button } from '@packages/ui'
 import { BellOff, BellRing } from 'lucide-vue-next'
 import { ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'

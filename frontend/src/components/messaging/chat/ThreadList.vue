@@ -67,36 +67,39 @@
       <!-- Actions -->
       <div class="shrink-0">
         <div class="relative">
-          <button type="button" class="icon-btn-ghost" @click.stop="toggleThreadMenu(thread)">
+          <IconButtonGhost @click.stop="toggleThreadMenu(thread)">
             <MoreVertical class="h-4 w-4" />
-          </button>
+          </IconButtonGhost>
 
           <!-- Dropdown menu -->
           <div
             v-if="activeMenu === thread.thread_id"
             class="dropdown-menu-panel absolute right-0 top-full mt-1 w-48 py-1"
           >
-            <button
+            <Button
+              variant="neutral"
               type="button"
               class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
               @click.stop="markAsRead(thread)"
             >
               Mark as read
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="neutral"
               type="button"
               class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
               @click.stop="muteThread(thread)"
             >
               Mute notifications
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="neutral"
               type="button"
               class="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
               @click.stop="$emit('thread-delete', thread)"
             >
               Delete conversation
-            </button>
+            </Button>
           </div>
         </div>
       </div>
@@ -112,6 +115,7 @@
 </template>
 
 <script setup lang="ts">
+import { Button, IconButtonGhost } from '@packages/ui'
 import { ref, onMounted, onUnmounted } from 'vue'
 import { MessageCircle, Users, User, MoreVertical } from 'lucide-vue-next'
 import { useAuth } from '@/composables/useAuth'

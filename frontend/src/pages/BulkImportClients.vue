@@ -34,13 +34,13 @@
             <span class="text-sm text-gray-600">{{
               t('bulkImportClients.definitionsCount', { count: client.count })
             }}</span>
-            <button class="text-blue-500 hover:text-blue-700 text-sm">
+            <Button variant="neutral" class="text-blue-500 hover:text-blue-700 text-sm">
               {{
                 isExpanded(client.client_id)
                   ? t('bulkImportClients.collapse')
                   : t('bulkImportClients.expand')
               }}
-            </button>
+            </Button>
           </div>
 
           <div v-if="isExpanded(client.client_id)" class="mt-4 pt-4 border-t">

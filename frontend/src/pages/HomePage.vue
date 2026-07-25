@@ -102,9 +102,10 @@
             class="relative inline-block"
           >
             <template #trigger="{ open: menuOpen }">
-              <button
+              <Button
+                variant="create"
                 type="button"
-                class="ui-btn--create icon-btn-ui-layout"
+                class="icon-btn-ui-layout"
                 :aria-expanded="menuOpen"
                 :aria-label="$t('home.addDefinition')"
               >
@@ -114,16 +115,18 @@
                   :class="{ 'rotate-180': menuOpen }"
                   :stroke-width="2"
                 />
-              </button>
+              </Button>
             </template>
-            <button
+            <Button
+              variant="neutral"
               type="button"
               class="block w-full whitespace-nowrap px-3 py-2 text-left text-sm hover:bg-gray-50"
               @click="router.push('/valsi/add')"
             >
               {{ $t('home.createDefinition') }}
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="neutral"
               type="button"
               class="block w-full whitespace-nowrap px-3 py-2 text-left text-sm hover:bg-gray-50"
               :disabled="!hasSearchResults"
@@ -131,7 +134,7 @@
               @click="hasSearchResults && (showAddAllModal = true)"
             >
               {{ $t('home.addAllToCollection') }}
-            </button>
+            </Button>
           </Dropdown>
         </div>
 
@@ -157,9 +160,10 @@
         >
           <Dropdown class="relative block w-auto min-w-0 shrink">
             <template #trigger="{ open: waveMenuOpen }">
-              <button
+              <Button
+                variant="empty"
                 type="button"
-                class="ui-btn--empty inline-flex h-8 min-w-0 w-auto max-w-[min(100vw-4rem,18rem)] items-center justify-between gap-1.5 px-3 text-sm"
+                class="inline-flex h-8 min-w-0 w-auto max-w-[min(100vw-4rem,18rem)] items-center justify-between gap-1.5 px-3 text-sm"
               >
                 <span class="truncate whitespace-nowrap">{{ waveSourceTriggerLabel }}</span>
                 <ChevronDown
@@ -167,49 +171,55 @@
                   :class="{ 'rotate-180': waveMenuOpen }"
                   :stroke-width="2"
                 />
-              </button>
+              </Button>
             </template>
-            <button
+            <Button
+              variant="neutral"
               type="button"
               class="block w-full whitespace-nowrap px-3 py-2 text-left text-sm hover:bg-gray-50"
               @click="setWaveSource('all')"
             >
               {{ $t('home.waveSourceAll') }}
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="neutral"
               type="button"
               class="block w-full whitespace-nowrap px-3 py-2 text-left text-sm hover:bg-gray-50"
               @click="setWaveSource('jbotcan')"
             >
               {{ $t('home.waveSourceJbotcan') }}
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="neutral"
               type="button"
               class="block w-full whitespace-nowrap px-3 py-2 text-left text-sm hover:bg-gray-50"
               @click="setWaveSource('comments')"
             >
               {{ $t('home.waveSourceComments') }}
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="neutral"
               type="button"
               class="block w-full whitespace-nowrap px-3 py-2 text-left text-sm hover:bg-gray-50"
               @click="setWaveSource('mail')"
             >
               {{ $t('home.waveSourceMail') }}
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="neutral"
               type="button"
               class="block w-full whitespace-nowrap px-3 py-2 text-left text-sm hover:bg-gray-50"
               @click="setWaveSource('wiki')"
             >
               {{ $t('home.waveSourceWiki') }}
-            </button>
+            </Button>
           </Dropdown>
           <Dropdown class="relative block w-auto min-w-0 shrink">
             <template #trigger="{ open: sortMenuOpen }">
-              <button
+              <Button
+                variant="empty"
                 type="button"
-                class="ui-btn--empty inline-flex h-8 min-w-0 w-auto max-w-[min(100vw-4rem,18rem)] items-center justify-between gap-1.5 px-3 text-sm"
+                class="inline-flex h-8 min-w-0 w-auto max-w-[min(100vw-4rem,18rem)] items-center justify-between gap-1.5 px-3 text-sm"
               >
                 <span class="truncate whitespace-nowrap">{{ sortByTriggerLabel }}</span>
                 <ChevronDown
@@ -217,33 +227,37 @@
                   :class="{ 'rotate-180': sortMenuOpen }"
                   :stroke-width="2"
                 />
-              </button>
+              </Button>
             </template>
-            <button
+            <Button
+              variant="neutral"
               type="button"
               class="block w-full whitespace-nowrap px-3 py-2 text-left text-sm hover:bg-gray-50"
               @click="setSortByField('time')"
             >
               {{ $t('sort.time') }}
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="neutral"
               type="button"
               class="block w-full whitespace-nowrap px-3 py-2 text-left text-sm hover:bg-gray-50"
               @click="setSortByField('reactions')"
             >
               {{ $t('sort.reactions') }}
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="neutral"
               type="button"
               class="block w-full whitespace-nowrap px-3 py-2 text-left text-sm hover:bg-gray-50"
               @click="setSortByField('replies')"
             >
               {{ $t('sort.replies') }}
-            </button>
+            </Button>
           </Dropdown>
-          <button
+          <Button
+            variant="empty"
             type="button"
-            class="ui-btn--empty inline-flex h-8 min-w-0 w-auto items-center gap-1.5 whitespace-nowrap px-3 text-sm"
+            class="inline-flex h-8 min-w-0 w-auto items-center gap-1.5 whitespace-nowrap px-3 text-sm"
             :title="sortOrder === 'asc' ? $t('sort.ascending') : $t('sort.descending')"
             @click="toggleSortOrder"
           >
@@ -256,7 +270,7 @@
             <span class="whitespace-nowrap">{{
               sortOrder === 'asc' ? $t('sort.asc') : $t('sort.desc')
             }}</span>
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -436,7 +450,7 @@ import CommentItem from '@/components/CommentItem.vue'
 import SourceTypeBadge from '@/components/SourceTypeBadge.vue'
 import DictionaryEntries from '@/components/DictionaryEntries.vue'
 import LazyMathJax from '@/components/LazyMathJax.vue'
-import { Dropdown, IconButton } from '@packages/ui'
+import { Button, Dropdown, IconButton } from '@packages/ui'
 import PaginationComponent from '@/components/PaginationComponent.vue'
 import RecentChangeItem from '@/components/RecentChangeItem.vue'
 import SearchForm from '@/components/SearchForm.vue'

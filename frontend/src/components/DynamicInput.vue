@@ -1,6 +1,6 @@
 <template>
   <div>
-    <input
+    <Input
       v-if="!useTextarea"
       :id="id"
       v-model="inputValue"
@@ -11,7 +11,7 @@
       @input="handleInput"
       @paste="handlePaste"
     />
-    <textarea
+    <Textarea
       v-else
       :id="id"
       v-model="inputValue"
@@ -27,6 +27,7 @@
 </template>
 
 <script setup lang="ts">
+import { Input, Textarea } from '@packages/ui'
 import { ref, watch } from 'vue'
 
 const props = defineProps({

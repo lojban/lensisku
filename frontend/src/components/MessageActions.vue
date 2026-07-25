@@ -1,12 +1,12 @@
 <template>
   <div class="flex gap-3">
-    <button class="ui-btn--back" @click="goBack"><ArrowLeft class="h-5 w-5" /></button>
-    <button class="ui-btn--market" @click="viewThread">
+    <Button variant="back" @click="goBack"><ArrowLeft class="h-5 w-5" /></Button>
+    <Button variant="market" @click="viewThread">
       {{ t('components.messageActions.viewThread') }}
-    </button>
-    <button
+    </Button>
+    <Button
       v-if="showSpamButton"
-      class="ui-btn--warning"
+      variant="warning"
       :class="currentUserVotedSpam ? 'ui-btn--warning' : 'ui-btn--empty'"
       @click="$emit('toggle-spam-vote')"
     >
@@ -15,11 +15,12 @@
           ? t('components.messageDetail.unlabelAsSpam', { count: spamVoteCount })
           : t('components.messageDetail.labelAsSpam', { count: spamVoteCount })
       }}
-    </button>
+    </Button>
   </div>
 </template>
 
 <script setup lang="ts">
+import { Button } from '@packages/ui'
 import { ArrowLeft } from 'lucide-vue-next'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'

@@ -1,112 +1,79 @@
 <template>
-  <div class="search-form max-w-3xl mx-auto">
-    <div class="flex flex-row gap-0 items-stretch">
-      <div class="relative z-10 w-auto shrink-0">
-        <Dropdown>
-          <template #trigger>
-            <button
-              type="button"
-              class="dropdown-trigger dropdown-trigger--search-bar-leading w-16 sm:w-60"
-            >
-              <div v-if="mode" class="flex items-center gap-2 min-w-0">
-                <component :is="mode.icon" class="h-4 w-4 shrink-0" :class="mode.color" />
-                <span class="hidden truncate sm:inline">{{ mode.name }}</span>
-              </div>
-              <span v-else class="text-gray-500">{{ $t('searchForm.selectSearchMode') }}</span>
-              <ChevronDown class="h-4 w-4 shrink-0 text-gray-500" />
-            </button>
+  <div class="search-form max-w-3xl mx-auto w-full">
+    <div class="relative flex w-full min-w-0">
+      <div class="shrink-0">
+        <ToolbarSelectDropdown
+          id="search-mode"
+          aria-label="Search mode"
+          trigger-class="h-10 rounded-l-full rounded-r-none bg-gray-50"
+        >
+          <template #label>
+            <component :is="selectedMode.icon" class="h-4 w-4 shrink-0" aria-hidden="true" />
+            <span class="hidden sm:inline">{{ selectedMode.label }}</span>
           </template>
-          <button
+          <ToolbarSelectDropdownItem
             v-for="m in modes"
             :key="m.value"
-            type="button"
-            class="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
-            @click="selectMode(m)"
+            @click="handleModeUpdate(m.value)"
           >
-            <component :is="m.icon" class="h-4 w-4 shrink-0" :class="m.color" /> {{ m.name }}
-          </button>
-        </Dropdown>
+            <div class="inline-flex items-center gap-2">
+              <component :is="m.icon" class="h-4 w-4 shrink-0" aria-hidden="true" />
+              <span>{{ m.label }}</span>
+            </div>
+          </ToolbarSelectDropdownItem>
+        </ToolbarSelectDropdown>
       </div>
-
-      <div class="search-form-query-col">
-        <input
-          ref="searchInput"
-          v-model="query"
-          :placeholder="getPlaceholder"
-          :class="`input-field w-full text-base h-10 rounded-l-none ${query ? 'pr-10' : ''}`"
-          @input="handleInput"
-        />
-        <div class="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center">
-          <div
-            v-if="isSearching"
-            class="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-500"
-          />
-          <button
-            v-else-if="query"
-            class="text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors duration-200 p-1 rounded-full"
-            @click="clearInput"
-          >
-            <X class="h-5 w-5" />
-          </button>
-        </div>
-      </div>
+      <SearchInput
+        ref="searchInput"
+        class="flex-1"
+        :model-value="query"
+        :mode-value="modeValue"
+        :placeholder="getPlaceholder"
+        :is-loading="isSearching"
+        @update:model-value="handleQueryUpdate"
+        @search="handleSearch"
+        @clear="handleClear"
+      />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { Book, ChevronDown, Waves, X } from 'lucide-vue-next'
-import { Dropdown } from '@packages/ui'
-import { ref, computed, watch, onBeforeUnmount } from 'vue'
+import { computed, ref, watch, onBeforeUnmount } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { BookOpen, MessageSquare } from 'lucide-vue-next'
+import { ToolbarSelectDropdown, ToolbarSelectDropdownItem } from '@packages/ui'
+import SearchInput from '@/components/SearchInput.vue'
 import { normalizeSearchQuery } from '@/utils/searchQueryUtils'
 
 const { t } = useI18n()
 
 const modes = ref([
-  {
-    name: t('searchForm.modes.dictionary'),
-    value: 'dictionary',
-    icon: Book,
-    color: 'text-blue-500',
-  },
-  {
-    name: t('searchForm.modes.comments'),
-    value: 'comments',
-    icon: Waves,
-    color: 'text-purple-500',
-  },
+  { label: t('searchForm.modes.dictionary'), value: 'dictionary', icon: BookOpen },
+  { label: t('searchForm.modes.comments'), value: 'comments', icon: MessageSquare },
 ])
 
 const props = defineProps({
-  initialQuery: {
-    type: String,
-    default: '',
-  },
-  initialMode: {
-    type: String,
-    default: 'semantic',
-  },
+  initialQuery: { type: String, default: '' },
+  initialMode: { type: String, default: 'semantic' },
 })
 
 const emit = defineEmits(['search'])
 
-const searchInput = ref(null)
+const searchInput = ref<InstanceType<typeof SearchInput> | null>(null)
 const query = ref(normalizeSearchQuery(props.initialQuery))
-const mode = ref(
-  modes.value.find(
-    (m) => m.value === (props.initialMode === 'semantic' ? 'dictionary' : props.initialMode)
-  ) || modes.value[0]
-)
+const modeValue = ref(props.initialMode === 'semantic' ? 'dictionary' : props.initialMode)
 const isSearching = ref(false)
-let searchTimeout = null
+let searchTimeout: number | null = null
 
-// Debounce delay: 450ms is optimal for search inputs (400-500ms range)
-// This balances responsiveness with reducing unnecessary API calls
 const DEBOUNCE_DELAY = 450
 
+const selectedMode = computed(
+  () => modes.value.find((m) => m.value === modeValue.value) ?? modes.value[0]
+)
+
 const getPlaceholder = computed(() => {
-  switch (mode.value?.value) {
+  switch (modeValue.value) {
     case 'dictionary':
       return t('searchForm.placeholder.dictionary')
     case 'comments':
@@ -117,66 +84,62 @@ const getPlaceholder = computed(() => {
 })
 
 function clearSearchTimeout() {
-  if (searchTimeout) {
+  if (searchTimeout !== null) {
     window.clearTimeout(searchTimeout)
     searchTimeout = null
   }
-  isSearching.value = false
 }
 
-function handleInput() {
-  query.value = normalizeSearchQuery(query.value)
-  // Clear any pending timeouts to prevent stale searches
+function emitSearch() {
+  emit('search', { query: normalizeSearchQuery(query.value), mode: modeValue.value })
+}
+
+function handleQueryUpdate(value: string) {
+  query.value = value
   clearSearchTimeout()
 
-  // Capture current query value to check in timeout
-  const currentQuery = query.value
+  if (!value.trim()) {
+    isSearching.value = false
+    emitSearch()
+    return
+  }
 
-  // Debounce the search - only trigger after user stops typing
-  // This prevents excessive API calls while user is actively typing
+  isSearching.value = true
+  const currentQuery = value
+
   searchTimeout = window.setTimeout(() => {
-    // Only emit if query hasn't changed (to prevent race conditions)
     if (query.value === currentQuery) {
-      // Show loading spinner when search actually starts
-      if (query.value.trim()) {
-        isSearching.value = true
-      }
       emitSearch()
-      // Note: isSearching will be cleared by parent component when search completes
-      // or by next input/clear action
+    } else {
+      isSearching.value = false
     }
     searchTimeout = null
   }, DEBOUNCE_DELAY)
 }
 
-function emitSearch() {
-  let effectiveMode = mode.value.value
-  emit('search', { query: normalizeSearchQuery(query.value), mode: effectiveMode })
+function handleSearch() {
+  clearSearchTimeout()
+  isSearching.value = true
+  emitSearch()
 }
 
-function clearInput() {
-  // Clear any pending timeouts first to prevent them from firing after clearing
+function handleClear() {
   clearSearchTimeout()
   query.value = ''
+  isSearching.value = false
   emitSearch()
-  focusInput()
+  searchInput.value?.focus()
 }
 
-function onModeChange() {
-  // Clear any pending timeouts when mode changes to prevent stale searches
+function handleModeUpdate(value: string) {
+  modeValue.value = value
   clearSearchTimeout()
   emitSearch()
-}
-
-function selectMode(m) {
-  mode.value = m
-  onModeChange()
 }
 
 watch(
   () => props.initialQuery,
   (newValue) => {
-    // Clear any pending timeouts when query changes externally
     clearSearchTimeout()
     query.value = normalizeSearchQuery(newValue)
   }
@@ -185,26 +148,19 @@ watch(
 watch(
   () => props.initialMode,
   (newValue) => {
-    const targetModeValue = newValue === 'semantic' ? 'dictionary' : newValue
-    const newMode = modes.value.find((m) => m.value === targetModeValue)
-    if (newMode) {
-      // Clear any pending timeouts when mode changes externally
+    const target = newValue === 'semantic' ? 'dictionary' : newValue
+    if (modes.value.some((m) => m.value === target)) {
       clearSearchTimeout()
-      mode.value = newMode
+      modeValue.value = target
     }
   }
 )
 
-// Clean up timeout on component unmount
 onBeforeUnmount(() => {
   clearSearchTimeout()
 })
 
-function focusInput() {
-  searchInput.value?.focus()
-}
-
 defineExpose({
-  focusInput,
+  focusInput: () => searchInput.value?.focus(),
 })
 </script>

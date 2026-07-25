@@ -25,7 +25,7 @@
           <div class="flex justify-center text-sm text-gray-600">
             <label for="file-upload" class="file-input-label">
               <span>{{ t('bulkImport.uploadFile') }}</span>
-              <input
+              <FileInput
                 id="file-upload"
                 name="file-upload"
                 type="file"
@@ -40,7 +40,12 @@
           <div v-if="csvFile" class="mt-2 text-sm text-gray-600">
             <div class="flex items-center justify-center space-x-2">
               <span class="truncate max-w-[200px]">{{ csvFile.name }}</span>
-              <button type="button" class="text-red-500 hover:text-red-700" @click="clearFile">
+              <Button
+                variant="neutral"
+                type="button"
+                class="text-red-500 hover:text-red-700"
+                @click="clearFile"
+              >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   class="h-4 w-4"
@@ -53,7 +58,7 @@
                     clip-rule="evenodd"
                   />
                 </svg>
-              </button>
+              </Button>
             </div>
           </div>
 
@@ -75,40 +80,40 @@
       <label for="language" class="block text-sm font-medium text-gray-700 mb-2">
         {{ t('bulkImport.targetLanguageLabel') }}
       </label>
-      <select
+      <Select
         id="language"
         v-model="selectedLanguage"
         class="input-field w-full h-8"
         :disabled="isLoading"
-      >
-        <option value="">{{ t('bulkImport.selectLanguagePlaceholder') }}</option>
-
-        <option v-for="lang in languages" :key="lang.id" :value="lang.id">
-          {{ lang.real_name }}
-        </option>
-      </select>
+        :options="[
+          { value: '', label: t('bulkImport.selectLanguagePlaceholder') },
+          ...languages.map((lang) => ({ value: lang.id, label: lang.real_name })),
+        ]"
+      />
     </div>
 
     <div class="flex flex-col sm:flex-row justify-end gap-2 mt-4 sm:mt-0">
-      <button
+      <Button
+        variant="create"
         type="button"
-        class="ui-btn--create w-full sm:w-auto order-1"
+        class="w-full sm:w-auto order-1"
         :disabled="!canSubmit || isLoading || isCancelling"
         @click="submitImport"
       >
         <span v-if="isLoading"> {{ t('bulkImport.processing') }} </span>
         <span v-else> {{ t('bulkImport.importButton') }} </span>
-      </button>
-      <button
+      </Button>
+      <Button
         v-if="importProcessId"
+        variant="neutral"
         type="button"
-        class="ui-btn--neutral w-full sm:w-auto order-2"
+        class="w-full sm:w-auto order-2"
         :disabled="isCancelling"
         @click="cancelJob"
       >
         <span v-if="isCancelling"> {{ t('bulkImport.cancelling') }} </span>
         <span v-else> {{ t('bulkImport.cancelButton') }} </span>
-      </button>
+      </Button>
     </div>
 
     <div v-if="storedClientId" class="my-2">
@@ -130,14 +135,15 @@
           </div>
 
           <div class="flex items-center">
-            <button
-              class="ui-btn--delete w-full sm:w-auto"
+            <Button
+              variant="delete"
+              class="w-full sm:w-auto"
               :disabled="isDeleting"
               @click="deleteByClientId"
             >
               <span v-if="isDeleting">{{ t('bulkImport.deleting') }}</span>
               <span v-else>{{ t('bulkImport.deleteDefinitionsButton') }}</span>
-            </button>
+            </Button>
           </div>
         </div>
       </div>
@@ -152,20 +158,21 @@
         </div>
 
         <div class="flex flex-col sm:flex-row gap-2 sm:gap-4 w-full">
-          <input
+          <Input
             v-model="inputClientId"
             type="text"
             :placeholder="t('bulkImport.pasteClientIdPlaceholder')"
             class="input-field flex-1 text-xs sm:text-sm font-mono"
           />
-          <button
-            class="ui-btn--delete w-full sm:w-auto"
+          <Button
+            variant="delete"
+            class="w-full sm:w-auto"
             :disabled="!inputClientId || isDeleting"
             @click="deleteByClientId"
           >
             <span v-if="isDeleting">{{ t('bulkImport.deleting') }}</span>
             <span v-else>{{ t('bulkImport.deleteButton') }}</span>
-          </button>
+          </Button>
         </div>
       </div>
     </div>
@@ -213,6 +220,7 @@
 </template>
 
 <script setup lang="ts">
+import { Button, FileInput, Input, Select } from '@packages/ui'
 import { useDropZone } from '@vueuse/core'
 import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'

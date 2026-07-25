@@ -16,7 +16,7 @@
       class="flex min-h-[9rem] cursor-pointer flex-col items-center justify-center gap-2 px-4 py-6 text-center"
       :class="disabled ? 'pointer-events-none cursor-not-allowed opacity-50' : ''"
     >
-      <input
+      <FileInput
         type="file"
         class="sr-only"
         :accept="accept"
@@ -37,6 +37,7 @@
 </template>
 
 <script setup lang="ts">
+import { FileInput } from '@packages/ui'
 import { Upload } from 'lucide-vue-next'
 import { useDropZone } from '@vueuse/core'
 import { ref } from 'vue'

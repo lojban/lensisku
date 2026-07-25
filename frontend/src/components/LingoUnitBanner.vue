@@ -7,17 +7,19 @@
 
       <p v-if="description" class="text-lg opacity-95">{{ description }}</p>
     </div>
-    <button
+    <Button
+      variant="neutral"
       type="button"
-      class="ui-btn--neutral hidden items-center gap-2 border-2 border-b-4 border-white/30 active:border-b-2 xl:inline-flex"
+      class="hidden items-center gap-2 border-2 border-b-4 border-white/30 active:border-b-2 xl:inline-flex"
       @click="$emit('continue')"
     >
       <BookOpen class="h-5 w-5 shrink-0" /> {{ continueLabel }}
-    </button>
+    </Button>
   </div>
 </template>
 
 <script setup lang="ts">
+import { Button } from '@packages/ui'
 import { BookOpen } from 'lucide-vue-next'
 
 defineProps({

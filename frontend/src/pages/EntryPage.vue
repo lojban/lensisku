@@ -137,14 +137,15 @@
                 </RouterLink>
               </div>
             </div>
-            <button
+            <Button
               v-if="auth.state.isLoggedIn"
+              variant="neutral"
               class="text-red-500 hover:text-red-700 p-1"
               :title="t('entryPage.unlinkTranslation')"
               @click="unlinkTranslation(trans)"
             >
               <Trash2 class="h-4 w-4" />
-            </button>
+            </Button>
           </div>
         </div>
       </div>
@@ -178,7 +179,7 @@ import {
 import AudioPlayer from '@/components/AudioPlayer.vue'
 import DefinitionCard from '@/components/DefinitionCard.vue'
 import PageHeader from '@/components/layout/PageHeader.vue'
-import { IconButton } from '@packages/ui'
+import { Button, IconButton } from '@packages/ui'
 import SubscriptionControls from '@/components/SubscriptionControls.vue'
 import { useAuth } from '@/composables/useAuth'
 import { useError } from '@/composables/useError'

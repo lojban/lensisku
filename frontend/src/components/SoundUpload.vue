@@ -4,14 +4,15 @@
       <label class="block text-sm font-medium text-blue-700">
         {{ label || t('soundUpload.sound') }}
       </label>
-      <button
+      <Button
         v-if="modelValue || loadedSound"
+        variant="neutral"
         type="button"
         class="text-sm text-red-600 hover:text-red-700"
         @click="handleRemove"
       >
         {{ t('soundUpload.removeSound') }}
-      </button>
+      </Button>
       <span v-else-if="note" class="text-xs text-gray-500"> {{ note }} </span>
     </div>
     <!-- Sound Preview -->
@@ -34,7 +35,8 @@
         role="tablist"
         aria-label="Add sound by upload, record, or generate"
       >
-        <button
+        <Button
+          variant="neutral"
           type="button"
           role="tab"
           :aria-selected="inputMode === 'upload'"
@@ -47,8 +49,9 @@
           @click="inputMode = 'upload'"
         >
           <Upload class="h-4 w-4 shrink-0" /> {{ t('soundUpload.uploadTab') }}
-        </button>
-        <button
+        </Button>
+        <Button
+          variant="neutral"
           type="button"
           role="tab"
           :aria-selected="inputMode === 'record'"
@@ -61,8 +64,9 @@
           @click="setRecordMode"
         >
           <Mic class="h-4 w-4 shrink-0" /> {{ t('soundUpload.recordTab') }}
-        </button>
-        <button
+        </Button>
+        <Button
+          variant="neutral"
           type="button"
           role="tab"
           :aria-selected="inputMode === 'generate'"
@@ -75,7 +79,7 @@
           @click="onSelectGenerateTab"
         >
           <Sparkles class="h-4 w-4 shrink-0" /> {{ t('soundUpload.generateTab') }}
-        </button>
+        </Button>
       </div>
       <!-- Upload panel -->
       <div
@@ -94,7 +98,7 @@
               class="relative cursor-pointer rounded-md font-medium text-blue-600 hover:text-blue-500"
             >
               <span>{{ t('soundUpload.uploadPrompt') }}</span>
-              <input
+              <FileInput
                 type="file"
                 class="sr-only"
                 accept="audio/mpeg,audio/mp3,audio/ogg,audio/webm"
@@ -189,7 +193,7 @@
           <label class="block text-sm font-medium text-gray-700 mb-1">{{
             t('soundUpload.generateTextLabel')
           }}</label>
-          <textarea
+          <Textarea
             v-model="generateText"
             rows="3"
             class="textarea-field w-full text-sm"
@@ -201,13 +205,12 @@
           <label class="block text-sm font-medium text-gray-700 mb-1">{{
             t('soundUpload.voiceLabel')
           }}</label>
-          <select
+          <Select
             v-model="selectedVoice"
             class="input-field w-full text-sm"
             :disabled="isGenerating"
-          >
-            <option v-for="v in KITTEN_VOICES" :key="v" :value="v">{{ v }}</option>
-          </select>
+            :options="KITTEN_VOICES.map((v) => ({ value: v, label: v }))"
+          />
         </div>
 
         <p v-if="generateError" class="text-sm text-red-600" role="alert">{{ generateError }}</p>
@@ -239,7 +242,7 @@ import { useI18n } from 'vue-i18n'
 const { t } = useI18n()
 
 import { useError } from '../composables/useError'
-import { Button } from '@packages/ui'
+import { Button, FileInput, Select, Textarea } from '@packages/ui'
 import { generateKittenTts, getItemSoundBlob } from '@/api'
 import { getApiErrorMessage } from '@/utils/apiError'
 

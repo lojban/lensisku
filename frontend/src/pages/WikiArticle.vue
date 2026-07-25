@@ -1,9 +1,9 @@
 <template>
   <div class="container mx-auto px-3 sm:px-6 py-6 max-w-4xl">
     <div class="mb-6 flex items-center gap-3">
-      <button type="button" class="ui-btn--back" @click="router.back()">
+      <Button variant="back" type="button" @click="router.back()">
         <ArrowLeft class="h-5 w-5" />
-      </button>
+      </Button>
       <SourceTypeBadge type="wiki" />
     </div>
 
@@ -70,6 +70,7 @@
 </template>
 
 <script setup lang="ts">
+import { Button } from '@packages/ui'
 import { onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'

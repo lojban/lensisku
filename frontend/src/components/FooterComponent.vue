@@ -5,7 +5,8 @@
     <!-- Toggle for marquee -->
     <div class="flex items-center justify-between mb-4">
       <span class="text-gray-700">{{ t('footer.marqueeToggle') }}</span>
-      <button
+      <Button
+        variant="neutral"
         type="button"
         class="toggle-switch"
         :class="marqueeEnabled ? 'bg-nav-link' : 'bg-gray-200'"
@@ -17,7 +18,7 @@
           class="toggle-switch-thumb"
           :class="marqueeEnabled ? 'translate-x-5' : 'translate-x-0'"
         />
-      </button>
+      </Button>
     </div>
     <!-- Last 10 messages -->
     <div class="space-y-2">
@@ -44,15 +45,12 @@
       <div class="flex items-center w-full">
         <SocialLinks class="mr-2" :buttons="true" />
         <div class="relative group mr-4 hidden md:flex">
-          <select
+          <Select
             :value="locale"
             class="input-field appearance-none !h-5 !py-0 !pr-8 !text-xs"
+            :options="availableLocales.map((loc) => ({ value: loc, label: localeNativeName(loc) }))"
             @change="switchLanguage"
-          >
-            <option v-for="loc in availableLocales" :key="`locale-${loc}`" :value="loc">
-              {{ localeNativeName(loc) }}
-            </option>
-          </select>
+          />
           <ChevronDown
             class="z-[80] h-4 w-4 text-gray-600 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none"
           />
@@ -90,6 +88,7 @@
 </template>
 
 <script setup lang="ts">
+import { Button, Select } from '@packages/ui'
 import { io } from 'socket.io-client'
 import { ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'

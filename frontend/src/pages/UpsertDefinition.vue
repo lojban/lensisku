@@ -58,9 +58,9 @@
       >
         <div class="flex items-center gap-2 justify-start">
           <h2 class="font-semibold truncate">{{ recommended }}</h2>
-          <button type="button" class="ui-btn--edit" @click="useRecommended">
+          <Button variant="edit" type="button" @click="useRecommended">
             <ArrowRight class="h-4 w-4" /> {{ t('upsertDefinition.useThisButton') }}
-          </button>
+          </Button>
         </div>
       </AlertComponent>
       <div v-if="problems" class="space-y-4">
@@ -91,19 +91,15 @@
           >{{ t('upsertDefinition.sourceLanguageLabel') }}
           <span class="text-red-500">{{ t('upsertDefinition.required') }}</span></label
         >
-        <select
+        <Select
           id="source-language"
           v-model="sourceLangId"
           required
           class="input-field w-full h-10"
           :disabled="isLoading || isSubmitting || isEditMode || prefilledWord"
           :readonly="prefilledWord || isEditMode"
-        >
-          <!-- Default Lojban option -->
-          <option v-for="lang in languages" :key="lang.id" :value="lang.id">
-            {{ lang.real_name }}
-          </option>
-        </select>
+          :options="languages.map((lang) => ({ value: lang.id, label: lang.real_name }))"
+        />
         <p class="mt-1 text-xs text-gray-500">
           {{
             t(
@@ -120,7 +116,7 @@
           >{{ t('upsertDefinition.languageLabel') }}
           <span class="text-red-500">{{ t('upsertDefinition.required') }}</span></label
         >
-        <select
+        <Select
           id="language"
           v-model="langId"
           required
@@ -130,13 +126,11 @@
               shouldHighlightMissing && missingFields.langId,
           }"
           :disabled="isLoading || isSubmitting"
-        >
-          <option value="">{{ t('upsertDefinition.selectLanguagePlaceholder') }}</option>
-
-          <option v-for="lang in languages" :key="lang.id" :value="lang.id">
-            {{ lang.real_name }}
-          </option>
-        </select>
+          :options="[
+            { value: '', label: t('upsertDefinition.selectLanguagePlaceholder') },
+            ...languages.map((lang) => ({ value: lang.id, label: lang.real_name })),
+          ]"
+        />
       </div>
     </div>
     <!-- Rafsi Input (Lojban only) -->
@@ -145,7 +139,7 @@
         {{ t('upsertDefinition.rafsiLabel') }}
         <span class="text-gray-500 font-normal">{{ t('upsertDefinition.optional') }}</span>
       </label>
-      <input
+      <Input
         id="rafsi"
         v-model="rafsi"
         type="text"
@@ -161,7 +155,7 @@
         {{ t('upsertDefinition.selmahoLabel') }}
         <span class="text-gray-500 font-normal">{{ t('upsertDefinition.optional') }}</span>
       </label>
-      <input
+      <Input
         id="selmaho"
         v-model="selmaho"
         type="text"
@@ -179,19 +173,20 @@
             >{{ t('upsertDefinition.definitionLabel') }}
             <span class="text-red-500">{{ t('upsertDefinition.required') }}</span></label
           >
-          <button
+          <Button
+            variant="empty"
             type="button"
-            class="ui-btn--empty inline-flex items-center gap-1 text-xs py-0.5 px-2"
+            class="inline-flex items-center gap-1 text-xs py-0.5 px-2"
             :title="t('upsertDefinition.previewDefinitionTitle')"
             @click="openDefinitionPreview"
           >
             <Eye class="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
             {{ t('upsertDefinition.previewButton') }}
-          </button>
+          </Button>
         </div>
         <span class="text-xs text-gray-500">{{ t('upsertDefinition.requiredUnlessImage') }}</span>
       </div>
-      <textarea
+      <Textarea
         id="definition"
         v-model="definition"
         :required="!imageData"
@@ -232,17 +227,18 @@
           {{ t('upsertDefinition.notesLabel') }}
           <span class="text-gray-500 font-normal">{{ t('upsertDefinition.optional') }}</span>
         </label>
-        <button
+        <Button
+          variant="empty"
           type="button"
-          class="ui-btn--empty inline-flex items-center gap-1 text-xs py-0.5 px-2"
+          class="inline-flex items-center gap-1 text-xs py-0.5 px-2"
           :title="t('upsertDefinition.previewNotesTitle')"
           @click="openNotesPreview"
         >
           <Eye class="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
           {{ t('upsertDefinition.previewButton') }}
-        </button>
+        </Button>
       </div>
-      <textarea
+      <Textarea
         id="notes"
         v-model="notes"
         rows="3"
@@ -256,7 +252,7 @@
         {{ t('upsertDefinition.etymologyLabel') }}
         <span class="text-gray-500 font-normal">{{ t('upsertDefinition.optional') }}</span>
       </label>
-      <textarea
+      <Textarea
         id="etymology"
         v-model="etymology"
         rows="3"
@@ -270,7 +266,7 @@
         {{ t('upsertDefinition.jargonLabel') }}
         <span class="text-gray-500 font-normal">{{ t('upsertDefinition.optional') }}</span>
       </label>
-      <textarea
+      <Textarea
         id="jargon"
         v-model="jargon"
         rows="2"
@@ -289,25 +285,30 @@
         :key="'gloss' + index"
         class="flex flex-col sm:flex-row gap-2 sm:space-x-2 mb-2 items-center"
       >
-        <input
+        <Input
           v-model="keyword.word"
           type="text"
           :placeholder="t('upsertDefinition.keywordPlaceholder')"
           class="flex-1 input-field w-full"
         />
-        <input
+        <Input
           v-model="keyword.meaning"
           type="text"
           :placeholder="t('upsertDefinition.meaningPlaceholder')"
           class="flex-1 input-field w-full"
         />
         <div class="flex flex-wrap space-x-2">
-          <button type="button" class="sm:w-auto ui-btn--delete" @click="removeGlossKeyword(index)">
+          <Button
+            variant="delete"
+            type="button"
+            class="sm:w-auto"
+            @click="removeGlossKeyword(index)"
+          >
             <CircleMinus class="h-4 w-4" /> {{ t('upsertDefinition.removeButton') }}
-          </button>
-          <button type="button" class="ui-btn--neutral" @click="addGlossKeyword">
+          </Button>
+          <Button variant="neutral" type="button" @click="addGlossKeyword">
             <CirclePlus class="h-4 w-4" /> {{ t('upsertDefinition.addGlossButton') }}
-          </button>
+          </Button>
         </div>
       </div>
     </div>
@@ -322,32 +323,37 @@
         :key="'place' + index"
         class="flex flex-col sm:flex-row gap-2 sm:space-x-2 mb-2 items-center"
       >
-        <input
+        <Input
           v-model="keyword.word"
           type="text"
           :placeholder="t('upsertDefinition.keywordPlaceholder')"
           class="flex-1 input-field w-full"
         />
-        <input
+        <Input
           v-model="keyword.meaning"
           type="text"
           :placeholder="t('upsertDefinition.meaningPlaceholder')"
           class="flex-1 input-field w-full"
         />
         <div class="flex flex-wrap space-x-2">
-          <button type="button" class="sm:w-auto ui-btn--delete" @click="removePlaceKeyword(index)">
+          <Button
+            variant="delete"
+            type="button"
+            class="sm:w-auto"
+            @click="removePlaceKeyword(index)"
+          >
             <CircleMinus class="h-4 w-4" /> {{ t('upsertDefinition.removeButton') }}
-          </button>
-          <button type="button" class="w-auto ui-btn--neutral" @click="addPlaceKeyword">
+          </Button>
+          <Button variant="neutral" type="button" class="w-auto" @click="addPlaceKeyword">
             <CirclePlus class="h-4 w-4" /> {{ t('upsertDefinition.addPlaceButton') }}
-          </button>
+          </Button>
         </div>
       </div>
     </div>
 
     <div v-if="!isEditMode || (isEditMode && isAuthor)" class="mb-4">
       <label class="flex items-center space-x-2">
-        <input v-model="ownerOnly" type="checkbox" class="checkbox-toggle" />
+        <Checkbox v-model="ownerOnly" class="checkbox-toggle" />
         <span class="text-xs sm:text-sm text-gray-700"
           >{{ t('upsertDefinition.ownerOnlyLabel') }}
           <span class="text-gray-500">{{ t('upsertDefinition.optional') }}</span></span
@@ -435,7 +441,7 @@ import {
   getDefinition,
   linkDefinitions,
 } from '@/api'
-import { Button } from '@packages/ui'
+import { Button, Checkbox, Input, Select, Textarea } from '@packages/ui'
 import AlertComponent from '@/components/AlertComponent.vue'
 import AnimatedDots from '@/components/AnimatedDots.vue'
 import DynamicInput from '@/components/DynamicInput.vue'

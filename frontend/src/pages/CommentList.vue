@@ -35,8 +35,7 @@
         :disabled="flatStyleEnforced"
         :class="[!flatStyle && !flatStyleEnforced ? ' ui-btn--neutral-slate' : 'ui-btn--neutral']"
       >
-        <input
-          type="checkbox"
+        <Checkbox
           class="checkmark-aqua"
           :checked="!flatStyle && !flatStyleEnforced"
           :disabled="flatStyleEnforced"
@@ -46,8 +45,9 @@
           t('commentList.threaded')
         }}</span>
       </label>
-      <button
+      <Button
         v-if="auth.state.isLoggedIn && comments.length > 0"
+        variant="neutral"
         type="button"
         class="inline-flex items-center gap-2 ui-btn--neutral"
         :aria-label="t('commentList.newWave')"
@@ -55,23 +55,25 @@
       >
         <AudioWaveform class="h-4 w-4 shrink-0 text-purple-600" />
         <span>{{ t('commentList.newWave') }}</span>
-      </button>
-      <button
+      </Button>
+      <Button
         v-if="commentId > 0 && !!currentComment?.parent_id"
+        variant="accent-purple"
         class="inline-flex items-center ui-btn--accent-purple"
         @click="goToParent"
       >
         <ArrowLeft class="h-5 w-5" /> {{ t('commentList.parent') }}
-      </button>
-      <button
+      </Button>
+      <Button
         v-if="commentId > 0"
+        variant="neutral-slate"
         type="button"
         class="inline-flex items-center ui-btn--neutral-slate"
         :aria-label="t('commentList.waveRoot')"
         @click="goToRoot"
       >
         <Home class="h-5 w-5" /> {{ t('commentList.waveRoot') }}
-      </button>
+      </Button>
     </div>
   </div>
   <!-- New top-level comment form -->
@@ -169,17 +171,18 @@
     >
       <MessageSquare class="mx-auto h-12 w-12 text-blue-400" />
       <p class="my-4 text-gray-600">{{ t('commentList.noComments') }}</p>
-      <button
+      <Button
         v-if="auth.state.isLoggedIn"
         v-show="!showTopLevelForm"
+        variant="neutral"
         type="button"
-        class="inline-flex items-center gap-2 ui-btn--neutral h-12 text-base !px-5 mx-auto"
+        class="inline-flex items-center gap-2 h-12 text-base !px-5 mx-auto"
         :aria-label="t('commentList.newDiscussionWave')"
         @click="handleNewTopLevelComment"
       >
         <AudioWaveform class="h-6 w-6 shrink-0 text-purple-600" />
         <span>{{ t('commentList.newDiscussionWave') }}</span>
-      </button>
+      </Button>
     </div>
     <!-- Floating quote button -->
     <div
@@ -190,17 +193,19 @@
         top: `${quotePosition.y}px`,
       }"
     >
-      <button
+      <Button
+        variant="neutral"
         class="text-sm px-2 py-1 hover:bg-gray-100 rounded-md flex items-center"
         @click="handleQuote"
       >
         <Quote class="w-4 h-4 mr-1" /> {{ t('commentList.quoteSelectedText') }}
-      </button>
+      </Button>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { Button, Checkbox } from '@packages/ui'
 import { ArrowLeft, Home, MessageSquare, AudioWaveform, Loader2, Quote } from 'lucide-vue-next'
 import { ref, computed, onMounted, watchEffect, nextTick, watch } from 'vue'
 import { useI18n } from 'vue-i18n'

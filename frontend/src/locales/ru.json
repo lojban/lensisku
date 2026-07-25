@@ -175,7 +175,8 @@
     "hideRawOutput": "Скрыть сырой JSON",
     "editMessage": "Изменить",
     "saveEdit": "Сохранить",
-    "cancelEdit": "Отмена"
+    "cancelEdit": "Отмена",
+    "copyMessage": "Копировать сообщение"
   },
   "deleteConfirmation": {
     "title": "Подтвердите удаление",
