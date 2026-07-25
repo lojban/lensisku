@@ -78,8 +78,18 @@ fn agent_max_iterations() -> u32 {
     env::var("ASSISTANT_MAX_ITERATIONS")
         .ok()
         .and_then(|s| s.parse().ok())
-        .unwrap_or(15)
-        .clamp(1, 30)
+        .unwrap_or(25)
+        .clamp(1, 50)
+}
+
+fn assistant_iteration_timeout() -> Duration {
+    Duration::from_secs(
+        env::var("ASSISTANT_ITERATION_TIMEOUT_SECS")
+            .ok()
+            .and_then(|s| s.parse().ok())
+            .unwrap_or(60)
+            .clamp(10, 300),
+    )
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -1107,6 +1117,19 @@ async fn emit_sse_user_visible(
     Ok(())
 }
 
+async fn emit_sse_error(
+    tx: &Option<mpsc::Sender<sse::Event>>,
+    persist: &Option<Arc<ChatPersistState>>,
+    e: &AppError,
+) {
+    if let Some(ref sender) = tx {
+        let payload = sse_error_payload(e);
+        if let Err(send_err) = emit_sse_user_visible(persist, sender, payload).await {
+            log::warn!("Assistant: failed to emit SSE error event: {}", send_err);
+        }
+    }
+}
+
 /// Debug-only SSE events (`type: "stream_debug"`). Clients should ignore these; useful for inspecting
 /// model selection and per-attempt failures in the Network tab or custom tooling.
 async fn sse_send_stream_debug(tx: &mpsc::Sender<sse::Event>, debug: serde_json::Value) {
@@ -1234,7 +1257,13 @@ pub async fn run_agent_loop(
         .unwrap_or_else(|_| "https://openrouter.ai/api/v1".to_string());
 
     let (mut candidates, mut from_redis_only) =
-        load_or_fetch_openrouter_candidates(redis, &base_url, &api_key).await?;
+        match load_or_fetch_openrouter_candidates(redis, &base_url, &api_key).await {
+            Ok(v) => v,
+            Err(e) => {
+                emit_sse_error(&event_tx, &persist, &e).await;
+                return Err(e);
+            }
+        };
 
     loop {
         match run_agent_loop_with_candidates(
@@ -1253,7 +1282,13 @@ pub async fn run_agent_loop(
                     "OpenRouter: Redis-cached assistant models failed ({}); loading full catalog once",
                     e
                 );
-                candidates = fetch_latest_openrouter_models(&base_url, &api_key).await?;
+                candidates = match fetch_latest_openrouter_models(&base_url, &api_key).await {
+                    Ok(v) => v,
+                    Err(e2) => {
+                        emit_sse_error(&event_tx, &persist, &e2).await;
+                        return Err(e2);
+                    }
+                };
                 from_redis_only = false;
             }
             Err(e) => return Err(e),
@@ -1264,176 +1299,105 @@ pub async fn run_agent_loop(
 async fn run_agent_loop_with_candidates(
     pool: &Pool,
     request: &ChatRequest,
-    event_tx: Option<mpsc::Sender<sse::Event>>,
+    mut event_tx: Option<mpsc::Sender<sse::Event>>,
     candidates: &[ModelIdName],
     persist: Option<Arc<ChatPersistState>>,
     redis: Option<&RedisCache>,
 ) -> Result<(String, Vec<AssistantStep>), AppError> {
-    let candidates = &candidates[..candidates.len().min(2)];
-    let parallel_models: Vec<ModelIdName> = candidates.iter().take(2).cloned().collect();
+    if candidates.is_empty() {
+        return Err(AppError::ExternalService(
+            "Assistant: no OpenRouter model candidates".into(),
+        ));
+    }
+
     let is_streaming = event_tx.is_some();
-    let run_parallel = ASSISTANT_PARALLEL_DUAL_MODEL && is_streaming && parallel_models.len() == 2;
+    let run_parallel = ASSISTANT_PARALLEL_DUAL_MODEL && is_streaming && candidates.len() >= 2;
+    let parallel_pair: Vec<ModelIdName> = candidates.iter().take(2).cloned().collect();
 
     if let Some(ref tx) = event_tx {
-        sse_stream_debug_models_plan(tx, candidates, run_parallel, &parallel_models).await;
+        sse_stream_debug_models_plan(tx, candidates, run_parallel, &parallel_pair).await;
         if run_parallel {
-            emit_parallel_branches(tx, &persist, &parallel_models).await?;
+            emit_parallel_branches(tx, &persist, &parallel_pair).await?;
         }
     }
 
     if run_parallel {
-        let et = event_tx.expect("run_parallel implies streaming sender");
-        let post_debug_tx = et.clone();
-        let tx1 = et.clone();
-        let tx2 = et;
+        // Give each parallel branch its own interleaved fallback chain so the two branches
+        // do not race for the same spare model. Each branch runs the full agent loop and
+        // switches models internally if its current model fails.
+        let tx = event_tx
+            .as_ref()
+            .expect("run_parallel implies streaming sender")
+            .clone();
+        let post_debug_tx = tx.clone();
+        let final_error_tx = tx.clone();
+        let even: Vec<ModelIdName> = candidates.iter().step_by(2).cloned().collect();
+        let odd: Vec<ModelIdName> = candidates.iter().skip(1).step_by(2).cloned().collect();
         let pool1 = pool.clone();
         let pool2 = pool.clone();
         let req1 = request.clone();
         let req2 = request.clone();
-        let (m1_id, m1_name) = parallel_models[0].clone();
-        let (m2_id, m2_name) = parallel_models[1].clone();
-        let p1 = persist.clone();
-        let p2 = persist.clone();
-        let (mut r1, mut r2) = tokio::join!(
+
+        let (r1, r2) = tokio::join!(
             run_agent_loop_inner_health_checked(
                 &pool1,
                 &req1,
-                &m1_id,
-                &m1_name,
-                Some(tx1),
-                p1,
-                redis
+                &even,
+                Some(tx.clone()),
+                persist.clone(),
+                redis,
             ),
             run_agent_loop_inner_health_checked(
                 &pool2,
                 &req2,
-                &m2_id,
-                &m2_name,
-                Some(tx2),
-                p2,
-                redis
-            ),
-        );
-        sse_stream_debug_parallel_branch_finished(&post_debug_tx, &m1_id, &m1_name, &r1).await;
-        sse_stream_debug_parallel_branch_finished(&post_debug_tx, &m2_id, &m2_name, &r2).await;
-
-        // Spare candidates (index 2..) are shared between both branches: each round tries one retry for
-        // branch 1 if still failing, then one for branch 2, so one branch cannot exhaust the list alone
-        // while the other never gets a try (unless only one branch still fails).
-        let mut next_idx = 2;
-        while next_idx < candidates.len() && (r1.is_err() || r2.is_err()) {
-            if r1.is_err() {
-                let (nid, nname) = candidates[next_idx].clone();
-                next_idx += 1;
-                let res = run_agent_loop_inner_health_checked(
-                    &pool1,
-                    &req1,
-                    &nid,
-                    &nname,
-                    Some(post_debug_tx.clone()),
-                    persist.clone(),
-                    redis,
-                )
-                .await;
-                if let Err(ref e) = res {
-                    sse_stream_debug_model_attempt_failed(&post_debug_tx, &nid, &nname, e).await;
-                    log::warn!(
-                        "Assistant: parallel branch 1 model {} failed; trying next candidate if any: {}",
-                        nid,
-                        e
-                    );
-                }
-                sse_stream_debug_parallel_branch_finished(&post_debug_tx, &nid, &nname, &res).await;
-                r1 = res;
-            }
-            if r2.is_err() && next_idx < candidates.len() {
-                let (nid, nname) = candidates[next_idx].clone();
-                next_idx += 1;
-                let res = run_agent_loop_inner_health_checked(
-                    &pool2,
-                    &req2,
-                    &nid,
-                    &nname,
-                    Some(post_debug_tx.clone()),
-                    persist.clone(),
-                    redis,
-                )
-                .await;
-                if let Err(ref e) = res {
-                    sse_stream_debug_model_attempt_failed(&post_debug_tx, &nid, &nname, e).await;
-                    log::warn!(
-                        "Assistant: parallel branch 2 model {} failed; trying next candidate if any: {}",
-                        nid,
-                        e
-                    );
-                }
-                sse_stream_debug_parallel_branch_finished(&post_debug_tx, &nid, &nname, &res).await;
-                r2 = res;
-            }
-        }
-
-        drop(post_debug_tx);
-        // Return first successful reply for API compatibility.
-        if let Ok((reply, _)) = r1 {
-            Ok((reply, vec![]))
-        } else if let Ok((reply, _)) = r2 {
-            Ok((reply, vec![]))
-        } else {
-            Err(r2
-                .err()
-                .unwrap_or_else(|| r1.expect_err("both parallel branches failed")))
-        }
-    } else {
-        let mut event_tx = event_tx;
-        let mut last_err: Option<AppError> = None;
-
-        for (model_id, model_name) in candidates {
-            let tx = event_tx.clone();
-            match run_agent_loop_inner_health_checked(
-                pool,
-                request,
-                model_id,
-                model_name,
-                tx,
+                &odd,
+                Some(tx.clone()),
                 persist.clone(),
                 redis,
-            )
-            .await
-            {
-                Ok(result) => {
-                    // Inner consumed a clone of the sender; drop any remaining handle so the SSE stream ends.
-                    drop(event_tx.take());
-                    return Ok(result);
+            ),
+        );
+
+        sse_stream_debug_parallel_branch_finished(&post_debug_tx, &even[0].0, &even[0].1, &r1)
+            .await;
+        sse_stream_debug_parallel_branch_finished(&post_debug_tx, &odd[0].0, &odd[0].1, &r2).await;
+        drop(post_debug_tx);
+
+        match (r1, r2) {
+            (Ok((reply, _)), _) | (_, Ok((reply, _))) => Ok((reply, vec![])),
+            (Err(e1), Err(_)) => {
+                let payload = sse_error_payload(&e1);
+                if let Err(send_err) =
+                    emit_sse_user_visible(&persist, &final_error_tx, payload).await
+                {
+                    drop(final_error_tx);
+                    return Err(send_err);
                 }
-                Err(e) => {
-                    if let Some(ref tx) = event_tx {
-                        sse_stream_debug_model_attempt_failed(tx, model_id, model_name, &e).await;
-                    }
-                    log::warn!(
-                        "Assistant: model {} failed; trying next candidate if any: {}",
-                        model_id,
-                        e
-                    );
-                    last_err = Some(e);
-                }
+                drop(final_error_tx);
+                Err(e1)
             }
         }
+    } else {
+        let result = run_agent_loop_inner_health_checked(
+            pool,
+            request,
+            candidates,
+            event_tx.clone(),
+            persist.clone(),
+            redis,
+        )
+        .await;
 
-        if let Some(e) = last_err.take() {
+        if let Err(ref e) = result {
             if let Some(tx) = event_tx.take() {
-                let payload = sse_error_payload(&e);
+                let payload = sse_error_payload(e);
                 if let Err(send_err) = emit_sse_user_visible(&persist, &tx, payload).await {
                     drop(tx);
                     return Err(send_err);
                 }
                 drop(tx);
             }
-            return Err(e);
         }
-
-        Err(AppError::ExternalService(
-            "Assistant: no OpenRouter model candidates".into(),
-        ))
+        result
     }
 }
 
@@ -1466,7 +1430,9 @@ pub async fn probe_openrouter_model_full_chat(
         }],
         locale: None,
     };
-    let fut = run_agent_loop_inner(pool, &request, model_id, model_name, None, None, redis);
+    let candidate = (model_id.to_string(), model_name.to_string());
+    let candidates = [candidate];
+    let fut = run_agent_loop_inner(pool, &request, &candidates, None, None, redis);
     let outcome = tokio::time::timeout(ASSISTANT_MODEL_HEALTH_TIMEOUT, fut).await;
     match outcome {
         Err(_) => Err(AppError::ExternalService(format!(
@@ -1494,51 +1460,35 @@ pub async fn probe_openrouter_model_full_chat(
 async fn run_agent_loop_inner_health_checked(
     pool: &Pool,
     request: &ChatRequest,
-    model: &str,
-    model_name: &str,
+    candidates: &[ModelIdName],
     event_tx: Option<mpsc::Sender<sse::Event>>,
     persist: Option<Arc<ChatPersistState>>,
     redis: Option<&RedisCache>,
 ) -> Result<(String, Vec<AssistantStep>), AppError> {
-    let fut = run_agent_loop_inner(pool, request, model, model_name, event_tx, persist, redis);
+    let fut = run_agent_loop_inner(pool, request, candidates, event_tx, persist, redis);
     let outcome = tokio::time::timeout(ASSISTANT_MODEL_HEALTH_TIMEOUT, fut).await;
-    let result = match outcome {
+    match outcome {
         Err(_) => Err(AppError::ExternalService(format!(
-            "Assistant: model {} did not return a final reply within {}s",
-            model,
+            "Assistant: did not return a final reply within {}s",
             ASSISTANT_MODEL_HEALTH_TIMEOUT.as_secs()
         ))),
         Ok(Err(e)) => Err(e),
         Ok(Ok((reply, steps))) => {
             if reply.trim().is_empty() {
-                Err(AppError::ExternalService(format!(
-                    "Assistant: model {} returned empty reply (trimmed)",
-                    model
-                )))
+                Err(AppError::ExternalService(
+                    "Assistant: returned empty reply (trimmed)".into(),
+                ))
             } else {
                 Ok((reply, steps))
             }
         }
-    };
-    if result.is_err() {
-        if let Some(r) = redis {
-            if let Err(e) = evict_openrouter_assistant_model_from_cache(r, model).await {
-                log::warn!(
-                    "Assistant: failed to evict failing model `{}` from Redis cache: {}",
-                    model,
-                    e
-                );
-            }
-        }
     }
-    result
 }
 
 pub(crate) async fn run_agent_loop_inner(
     pool: &Pool,
     request: &ChatRequest,
-    model: &str,
-    model_name: &str,
+    candidates: &[ModelIdName],
     event_tx: Option<mpsc::Sender<sse::Event>>,
     persist: Option<Arc<ChatPersistState>>,
     redis: Option<&RedisCache>,
@@ -1567,6 +1517,15 @@ pub(crate) async fn run_agent_loop_inner(
     });
     messages.extend(map_chat_messages(&client_round));
 
+    if candidates.is_empty() {
+        return Err(AppError::ExternalService(
+            "Assistant: no OpenRouter model candidates provided".into(),
+        ));
+    }
+    let mut current_model_idx: usize = 0;
+    let mut model = candidates[0].0.clone();
+    let mut model_name = candidates[0].1.clone();
+
     let tools = vec![jbovlaste_tool_schema()];
     let mut steps = Vec::new();
     let mut aggressive_context_retry = false;
@@ -1578,19 +1537,20 @@ pub(crate) async fn run_agent_loop_inner(
     const MAX_QUERY_REPETITIONS: u32 = 2;
 
     let agent_max_iter = agent_max_iterations();
+    let iteration_timeout = assistant_iteration_timeout();
 
     // Agent loop: call LLM until it returns a final reply (no tool_calls).
     for iteration in 1..=agent_max_iter {
         let label = format!("chat/completions iteration {}", iteration);
         let response = loop {
             let request_body = ChatCompletionRequest {
-                model: model.to_string(),
+                model: model.clone(),
                 messages: messages.clone(),
                 tools: Some(tools.clone()),
                 tool_choice: Some(json!("auto")),
                 parallel_tool_calls: Some(true),
             };
-            match openrouter_chat_with_retry(&label, {
+            let api_fut = openrouter_chat_with_retry(&label, {
                 let client = client.clone();
                 let base_url = base_url.clone();
                 let api_key = api_key.clone();
@@ -1614,36 +1574,69 @@ pub(crate) async fn run_agent_loop_inner(
                         parse_chat_response(ok, &label).await
                     }
                 }
-            })
-            .await
-            {
-                Ok(r) => break r,
-                Err(e) => {
-                    if iteration == 1
-                        && !aggressive_context_retry
-                        && error_indicates_context_limit(&e)
-                    {
-                        aggressive_context_retry = true;
-                        log::warn!(
-                            "Assistant: context limit error on first iteration; retrying with aggressive history compression"
-                        );
-                        client_round = context_compress::compress_chat_history_aggressive(
-                            &request.messages,
-                            &context_budget,
-                        );
-                        messages = vec![ChatCompletionMessageRequest {
-                            role: "system".to_string(),
-                            content: system_content.clone(),
-                            tool_call_id: None,
-                            name: None,
-                            tool_calls: None,
-                        }];
-                        messages.extend(map_chat_messages(&client_round));
-                        continue;
-                    }
-                    return Err(e);
+            });
+            let err: AppError = match tokio::time::timeout(iteration_timeout, api_fut).await {
+                Ok(Ok(r)) => break r,
+                Ok(Err(e)) => e,
+                Err(_) => AppError::ExternalServiceRetryable {
+                    message: format!(
+                        "Assistant: LLM call timed out after {}s for model {}",
+                        iteration_timeout.as_secs(),
+                        model
+                    ),
+                    raw_response: String::new(),
+                },
+            };
+
+            if iteration == 1 && !aggressive_context_retry && error_indicates_context_limit(&err) {
+                aggressive_context_retry = true;
+                log::warn!(
+                    "Assistant: context limit error on first iteration; retrying with aggressive history compression"
+                );
+                client_round = context_compress::compress_chat_history_aggressive(
+                    &request.messages,
+                    &context_budget,
+                );
+                messages = vec![ChatCompletionMessageRequest {
+                    role: "system".to_string(),
+                    content: system_content.clone(),
+                    tool_call_id: None,
+                    name: None,
+                    tool_calls: None,
+                }];
+                messages.extend(map_chat_messages(&client_round));
+                continue;
+            }
+
+            // Evict the failing model from cache and, if there is another candidate,
+            // continue the same iteration with the next model. This keeps the
+            // conversation state (messages, steps) intact when a model fails.
+            if let Some(r) = redis {
+                if let Err(e) = evict_openrouter_assistant_model_from_cache(r, &model).await {
+                    log::warn!(
+                        "Assistant: failed to evict failing model `{}` from Redis cache: {}",
+                        model,
+                        e
+                    );
                 }
             }
+            if let Some(ref tx) = event_tx {
+                sse_stream_debug_model_attempt_failed(tx, &model, &model_name, &err).await;
+            }
+            if current_model_idx + 1 < candidates.len() {
+                current_model_idx += 1;
+                model = candidates[current_model_idx].0.clone();
+                model_name = candidates[current_model_idx].1.clone();
+                log::warn!(
+                    "Assistant: switching to fallback model {} ({}) for iteration {} after error: {}",
+                    model,
+                    model_name,
+                    iteration,
+                    err
+                );
+                continue;
+            }
+            return Err(err);
         };
 
         let choice = response.choices.into_iter().next().ok_or_else(|| {
