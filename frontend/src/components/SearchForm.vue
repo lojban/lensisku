@@ -1,28 +1,16 @@
 <template>
   <div class="search-form max-w-3xl mx-auto w-full">
     <div class="relative flex w-full min-w-0">
-      <div class="shrink-0">
-        <ToolbarSelectDropdown
-          id="search-mode"
-          aria-label="Search mode"
-          trigger-class="h-10 rounded-l-full rounded-r-none bg-gray-50"
-        >
-          <template #label>
-            <component :is="selectedMode.icon" class="h-4 w-4 shrink-0" aria-hidden="true" />
-            <span class="hidden sm:inline">{{ selectedMode.label }}</span>
-          </template>
-          <ToolbarSelectDropdownItem
-            v-for="m in modes"
-            :key="m.value"
-            @click="handleModeUpdate(m.value)"
-          >
-            <div class="inline-flex items-center gap-2">
-              <component :is="m.icon" class="h-4 w-4 shrink-0" aria-hidden="true" />
-              <span>{{ m.label }}</span>
-            </div>
-          </ToolbarSelectDropdownItem>
-        </ToolbarSelectDropdown>
-      </div>
+      <button
+        type="button"
+        class="ui-btn--empty !h-10 min-h-[2.5rem] rounded-l-full rounded-r-none shrink-0"
+        :aria-label="t('flashcardStudy.wavesButton')"
+        :aria-pressed="isWavesMode"
+        :class="{ active: isWavesMode }"
+        @click="toggleMode"
+      >
+        {{ t('flashcardStudy.wavesButton') }}
+      </button>
       <SearchInput
         ref="searchInput"
         class="flex-1"
@@ -42,7 +30,6 @@
 import { computed, ref, watch, onBeforeUnmount } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { BookOpen, MessageSquare } from 'lucide-vue-next'
-import { ToolbarSelectDropdown, ToolbarSelectDropdownItem } from '@packages/ui'
 import SearchInput from '@/components/SearchInput.vue'
 import { normalizeSearchQuery } from '@/utils/searchQueryUtils'
 
@@ -68,9 +55,7 @@ let searchTimeout: number | null = null
 
 const DEBOUNCE_DELAY = 450
 
-const selectedMode = computed(
-  () => modes.value.find((m) => m.value === modeValue.value) ?? modes.value[0]
-)
+const isWavesMode = computed(() => modeValue.value === 'comments')
 
 const getPlaceholder = computed(() => {
   switch (modeValue.value) {
@@ -127,8 +112,8 @@ function handleClear() {
   searchInput.value?.focus()
 }
 
-function handleModeUpdate(value: string) {
-  modeValue.value = value
+function toggleMode() {
+  modeValue.value = modeValue.value === 'dictionary' ? 'comments' : 'dictionary'
   clearSearchTimeout()
   emitSearch()
 }
