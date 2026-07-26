@@ -9,10 +9,10 @@
       <div class="flex flex-col gap-3 sm:gap-4">
         <div class="flex flex-col sm:flex-row gap-2 sm:gap-4 items-stretch sm:items-center">
           <Input
-            :value="newRoleName"
+            :model-value="newRoleName"
             :placeholder="t('roleManagement.roleNamePlaceholder')"
             class="input-field w-full sm:flex-1"
-            @input="$emit('update:newRoleName', inputValue($event))"
+            @update:model-value="$emit('update:newRoleName', $event)"
           />
           <Button
             variant="create"
@@ -78,7 +78,11 @@
             class="flex flex-col sm:flex-row justify-center items-stretch sm:items-center gap-2 sm:gap-4 mb-3 sm:mb-4"
           >
             <Select
-              :value="selectedPermissionMap[role.name]"
+              :model-value="
+                selectedPermissionMap[role.name]
+                  ? JSON.stringify(selectedPermissionMap[role.name])
+                  : ''
+              "
               class="input-field w-full sm:flex-1 h-6 py-0"
               :options="[
                 { value: '', label: t('roleManagement.selectPermission'), disabled: true },
@@ -89,11 +93,12 @@
                     label: `${perm.name} - ${perm.description}`,
                   })),
               ]"
-              @change="
-                $emit('update:selectedPermission', {
-                  roleName: role.name,
-                  permission: JSON.parse(selectValue($event)),
-                })
+              @update:model-value="
+                (value) =>
+                  $emit('update:selectedPermission', {
+                    roleName: role.name,
+                    permission: value ? JSON.parse(String(value)) : null,
+                  })
               "
             />
             <Button
@@ -134,7 +139,7 @@
 </template>
 
 <script setup lang="ts">
-import { Button, Checkbox, Input } from '@packages/ui'
+import { Button, Checkbox, Input, Select } from '@packages/ui'
 import { Trash2 } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 import type { PropType } from 'vue'
@@ -143,14 +148,6 @@ const { t } = useI18n()
 
 type PermissionRow = { name: string; description: string }
 type RoleRow = { name: string; permissions: string[] }
-
-function inputValue(e: Event): string {
-  return (e.target as HTMLInputElement).value
-}
-
-function selectValue(e: Event): string {
-  return (e.target as HTMLSelectElement).value
-}
 
 defineProps({
   roles: { type: Array as PropType<RoleRow[]>, required: true },

@@ -70,7 +70,6 @@ function onKeyup(e: KeyboardEvent) {
 function onClear() {
   query.value = ''
   emit('clear')
-  emit('search', { query: '', mode: mode.value })
 }
 
 const inputRef = ref<InstanceType<typeof Input> | null>(null)

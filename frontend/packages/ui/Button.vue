@@ -34,6 +34,7 @@ import { RouterLink } from 'vue-router'
  */
 function resolveUiBtnClass(variant: string): string {
   const v = variant.trim()
+  if (v === 'plain') return ''
   if (!v) return 'ui-btn--neutral'
   if (v.startsWith('ui-btn--')) return v
   if (v === 'topbar') return 'navbar-item'
@@ -90,10 +91,9 @@ const isTopbar = computed(() => ['topbar', 'login', 'signup'].includes(props.var
 
 const buttonClasses = computed(() => {
   const base = resolveUiBtnClass(props.variant)
-  const navColor = props.variant === 'topbar' ? 'text-nav-link' : ''
   const size = isTopbar.value ? '' : (SIZE_CLASSES[props.size] ?? '')
   const extra = Array.isArray(props.class) ? props.class.join(' ') : props.class
-  return [base, navColor, size, extra].filter(Boolean).join(' ')
+  return [base, size, extra].filter(Boolean).join(' ')
 })
 
 const spinnerSizeClass = computed(() => (props.size === 'lg' ? 'h-6 w-6' : 'h-4 w-4'))

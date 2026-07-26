@@ -88,6 +88,7 @@ function clearSearchTimeout() {
     window.clearTimeout(searchTimeout)
     searchTimeout = null
   }
+  isSearching.value = false
 }
 
 function emitSearch() {
@@ -99,19 +100,18 @@ function handleQueryUpdate(value: string) {
   clearSearchTimeout()
 
   if (!value.trim()) {
-    isSearching.value = false
     emitSearch()
     return
   }
 
-  isSearching.value = true
   const currentQuery = value
 
   searchTimeout = window.setTimeout(() => {
     if (query.value === currentQuery) {
+      if (query.value.trim()) {
+        isSearching.value = true
+      }
       emitSearch()
-    } else {
-      isSearching.value = false
     }
     searchTimeout = null
   }, DEBOUNCE_DELAY)
@@ -124,10 +124,6 @@ function handleSearch() {
 }
 
 function handleClear() {
-  clearSearchTimeout()
-  query.value = ''
-  isSearching.value = false
-  emitSearch()
   searchInput.value?.focus()
 }
 

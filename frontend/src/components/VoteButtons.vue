@@ -2,7 +2,7 @@
   <div class="flex items-center space-x-1">
     <!-- Upvote button -->
     <Button
-      variant="neutral"
+      variant="plain"
       :disabled="!hasVotePermission || isLoading || userVote === 1"
       :class="[
         'p-0 rounded-md transition-colors text-gray-600',
@@ -24,7 +24,7 @@
     <span class="text-sm"> {{ score }} </span>
     <!-- Downvote button -->
     <Button
-      variant="neutral"
+      variant="plain"
       :disabled="!hasVotePermission || isLoading || userVote === -1"
       :class="[
         'p-0 rounded-md transition-colors text-gray-600',
