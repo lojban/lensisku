@@ -264,7 +264,7 @@
   },
   "testDataWarning": "For tests only (data are regularly flushed). Report issues on",
   "discord": "Discord",
-  "unconfirmedWarning": "Your email address has not been confirmed. Please check your email and click the confirmation link to activate your account.",
+  "unconfirmedWarning": "To participate and activate your account open an emal message from us and click the confirmation link. Or ask moderators in the Lojban community chat to activate your account manually.",
   "unconfirmedWarningLink": "Resend confirmation email",
   "unconfirmedWarningMessageSent": "Confirmation email sent! Please check your inbox.",
   "toggleMenu": "Toggle menu",

@@ -261,7 +261,7 @@
   },
   "testDataWarning": "仅供测试（数据会定期清空）。问题反馈：",
   "discord": "Discord",
-  "unconfirmedWarning": "您的邮箱尚未验证。请查收邮件并点击确认链接以激活账号。",
+  "unconfirmedWarning": "要参与并激活您的账户，请打开我们发送的邮件并点击确认链接。或者，在 Lojban 社区聊天中请管理员手动激活您的账户。",
   "unconfirmedWarningLink": "重发确认邮件",
   "unconfirmedWarningMessageSent": "确认邮件已发送，请查收收件箱。",
   "toggleMenu": "切换菜单",
