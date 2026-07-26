@@ -3,10 +3,12 @@
     <div class="relative flex w-full min-w-0">
       <button
         type="button"
-        class="ui-btn--empty !h-10 min-h-[2.5rem] rounded-l-full rounded-r-none shrink-0"
+        class="dropdown-trigger dropdown-trigger--search-bar-leading shrink-0"
         :aria-label="t('flashcardStudy.wavesButton')"
         :aria-pressed="isWavesMode"
-        :class="{ active: isWavesMode }"
+        :class="{
+          'ring-1 ring-blue-500 border-blue-500 z-50': isWavesMode,
+        }"
         @click="toggleMode"
       >
         {{ t('flashcardStudy.wavesButton') }}
@@ -116,6 +118,7 @@ function toggleMode() {
   modeValue.value = modeValue.value === 'dictionary' ? 'comments' : 'dictionary'
   clearSearchTimeout()
   emitSearch()
+  searchInput.value?.focus()
 }
 
 watch(
