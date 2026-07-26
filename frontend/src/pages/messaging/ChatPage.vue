@@ -122,7 +122,7 @@ import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ArrowLeft, Video, Info, MessageCircle } from 'lucide-vue-next'
 import { useAuth } from '@/composables/useAuth'
-import { getThread, getMessages } from '@/services/messaging/messagingApi'
+import { getThread, getMessages, markThreadRead } from '@/services/messaging/messagingApi'
 import { webSocketService } from '@/services/messaging/WebSocketService'
 import { usePresence } from '@/services/messaging/PresenceService'
 import { useTyping } from '@/services/messaging/TypingService'
@@ -143,7 +143,7 @@ const messages = ref<Message[]>([])
 const isLoading = ref(true)
 const showThreadInfo = ref(false)
 const messagesContainer = ref<HTMLElement>()
-const currentUserId = computed(() => auth.state.username as unknown)
+const currentUserId = computed(() => auth.state.userId)
 
 // Computed properties
 const threadId = computed(() => parseInt(route.params.threadId as string))
@@ -167,7 +167,8 @@ const loadMessages = async () => {
   try {
     isLoading.value = true
     const response = await getMessages(threadId.value)
-    messages.value = response.messages
+    // Server returns newest first; display oldest first for chat UI.
+    messages.value = [...response.messages].reverse()
   } catch (error) {
     console.error('Failed to load messages:', error)
   } finally {
@@ -275,13 +276,18 @@ const handleParticipantRemove = (userId: number) => {
 }
 
 // WebSocket event handlers
-const handleNewMessage = (message: Message) => {
+const handleNewMessage = async (message: Message) => {
   if (message.thread_id === threadId.value) {
     messages.value.push(message)
     scrollToBottom()
 
-    // Mark message as read
-    webSocketService.markMessageRead(message.message_id)
+    if (message.sender_id !== currentUserId.value) {
+      try {
+        await markThreadRead(threadId.value)
+      } catch (error) {
+        console.error('Failed to mark thread read:', error)
+      }
+    }
   }
 }
 
@@ -292,10 +298,22 @@ const handleThreadUpdate = () => {
 // Watch for route changes
 watch(
   () => route.params.threadId,
-  (newThreadId) => {
+  async (newThreadId, oldThreadId) => {
     if (newThreadId) {
-      loadThread()
-      loadMessages()
+      const newId = parseInt(newThreadId as string)
+      await loadThread()
+      await loadMessages()
+
+      if (oldThreadId) {
+        webSocketService.leaveThread(parseInt(oldThreadId as string))
+      }
+      webSocketService.joinThread(newId)
+
+      try {
+        await markThreadRead(newId)
+      } catch (error) {
+        console.error('Failed to mark thread read:', error)
+      }
     }
   }
 )
@@ -311,13 +329,20 @@ onMounted(async () => {
   await loadMessages()
   await scrollToBottom()
 
+  try {
+    await markThreadRead(threadId.value)
+  } catch (error) {
+    console.error('Failed to mark thread read:', error)
+  }
+
   // Set up WebSocket listeners
   webSocketService.on('message:new', handleNewMessage)
   webSocketService.on('thread:updated', handleThreadUpdate)
 
-  // Connect to WebSocket for this thread
+  // Connect to WebSocket and join this thread
   try {
-    await webSocketService.connect(threadId.value)
+    await webSocketService.connect(auth.state.accessToken)
+    webSocketService.joinThread(threadId.value)
   } catch (error) {
     console.warn('Failed to connect WebSocket:', error)
   }
@@ -327,6 +352,8 @@ onUnmounted(() => {
   // Clean up WebSocket listeners
   webSocketService.off('message:new', handleNewMessage)
   webSocketService.off('thread:updated', handleThreadUpdate)
+
+  webSocketService.leaveThread(threadId.value)
 })
 </script>
 

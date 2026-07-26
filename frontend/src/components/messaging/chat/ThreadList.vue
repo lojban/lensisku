@@ -120,6 +120,7 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import { MessageCircle, Users, User, MoreVertical } from 'lucide-vue-next'
 import { useAuth } from '@/composables/useAuth'
 import { usePresence } from '@/services/messaging/PresenceService'
+import { markThreadRead } from '@/services/messaging/messagingApi'
 import type { Thread } from '@/types/messaging'
 
 interface Props {
@@ -147,9 +148,7 @@ const getThreadDisplayName = (thread: Thread): string => {
   }
 
   if (thread.thread_type === 'direct' && thread.participants) {
-    const otherParticipant = thread.participants.find(
-      (p) => p.user_id !== (auth.state.username as unknown)
-    )
+    const otherParticipant = thread.participants.find((p) => p.user_id !== auth.state.userId)
     return otherParticipant?.username || 'Unknown User'
   }
 
@@ -174,9 +173,7 @@ const getThreadInitials = (thread: Thread): string => {
 
 const getOtherParticipantId = (thread: Thread): number => {
   if (thread.thread_type === 'direct' && thread.participants) {
-    const otherParticipant = thread.participants.find(
-      (p) => p.user_id !== (auth.state.username as unknown)
-    )
+    const otherParticipant = thread.participants.find((p) => p.user_id !== auth.state.userId)
     return otherParticipant?.user_id || 0
   }
   return 0
@@ -211,8 +208,13 @@ const toggleThreadMenu = (thread: Thread) => {
   }
 }
 
-const markAsRead = (_thread: Thread) => {
-  // Implementation would call API to mark all messages as read
+const markAsRead = async (thread: Thread) => {
+  try {
+    await markThreadRead(thread.thread_id)
+    thread.unread_count = 0
+  } catch (error) {
+    console.error('Failed to mark thread read:', error)
+  }
   activeMenu.value = null
 }
 

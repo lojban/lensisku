@@ -26,6 +26,7 @@ class WebSocketService {
   private maxReconnectAttempts = 5
   private reconnectDelay = 1000
   private currentThreadId?: number
+  private accessToken?: string
   private connectResolve: (() => void) | null = null
   private connectReject: ((err: Error) => void) | null = null
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null
@@ -94,7 +95,7 @@ class WebSocketService {
     return 'ws://localhost:20380'
   }
 
-  public connect(threadId?: number): Promise<void> {
+  public connect(accessToken?: string, threadId?: number): Promise<void> {
     return new Promise((resolve, reject) => {
       if (
         this.ws &&
@@ -108,14 +109,24 @@ class WebSocketService {
       this.connectionError.value = null
       this.connectResolve = resolve
       this.connectReject = reject
-      this.currentThreadId = threadId
+
+      if (accessToken) {
+        this.accessToken = accessToken
+      }
+      if (threadId !== undefined) {
+        this.currentThreadId = threadId
+      }
 
       const baseUrl = this.resolveBaseUrl()
-      const endpoint = threadId ? `/messaging/ws/${threadId}` : '/messaging/ws'
-      const url = `${baseUrl}${endpoint}`
+      const endpoint = '/messaging/ws'
+      const url = new URL(endpoint, baseUrl)
+      if (this.accessToken) {
+        url.searchParams.set('access_token', this.accessToken)
+      }
+      const urlString = url.toString()
 
       try {
-        this.ws = new WebSocket(url)
+        this.ws = new WebSocket(urlString)
       } catch (err) {
         this.isConnecting.value = false
         this.connectionError.value =
@@ -130,6 +141,10 @@ class WebSocketService {
         this.isConnecting.value = false
         this.connectionError.value = null
         this.reconnectAttempts = 0
+
+        if (this.currentThreadId) {
+          this.sendJoinThread(this.currentThreadId)
+        }
 
         const resolveFn = this.connectResolve
         this.connectResolve = null
@@ -169,6 +184,26 @@ class WebSocketService {
     })
   }
 
+  public joinThread(threadId: number) {
+    this.currentThreadId = threadId
+    this.sendJoinThread(threadId)
+  }
+
+  public leaveThread(threadId: number) {
+    if (this.currentThreadId === threadId) {
+      this.currentThreadId = undefined
+    }
+    this.sendLeaveThread(threadId)
+  }
+
+  private sendJoinThread(threadId: number) {
+    this.sendJson({ type: 'join_thread', thread_id: threadId })
+  }
+
+  private sendLeaveThread(threadId: number) {
+    this.sendJson({ type: 'leave_thread', thread_id: threadId })
+  }
+
   private handleMessage(data: unknown) {
     if (typeof data !== 'string') {
       return
@@ -186,6 +221,20 @@ class WebSocketService {
     }
 
     switch (parsed.type) {
+      case 'message_sent': {
+        const message = this.toMessageFromPayload(parsed.message)
+        this.emit('message:new', message)
+        break
+      }
+      case 'message_updated': {
+        const message = this.toMessageFromPayload(parsed.message)
+        this.emit('message:updated', message)
+        break
+      }
+      case 'thread_updated': {
+        this.emit('thread:updated', parsed.thread as Thread)
+        break
+      }
       case 'chat': {
         this.emit('message:new', this.toMessage(parsed))
         break
@@ -196,6 +245,10 @@ class WebSocketService {
       }
       case 'user_status': {
         this.emit('user:status', this.toUserStatus(parsed))
+        break
+      }
+      case 'new_notification': {
+        this.emit('notification:new', parsed.notification)
         break
       }
       case 'webrtc_signal':
@@ -240,6 +293,31 @@ class WebSocketService {
     }
   }
 
+  private toMessageFromPayload(data: unknown): Message {
+    const msg = (data ?? { type: 'unknown' }) as ServerMessage
+    const timestamp = this.getString(msg, 'created_at', new Date().toISOString())
+    const messageType = this.getString(msg, 'message_type', 'text')
+    return {
+      message_id: this.getNumber(msg, 'message_id'),
+      thread_id: this.getNumber(msg, 'thread_id'),
+      sender_id: this.getNumber(msg, 'sender_id'),
+      username: this.getString(msg, 'username'),
+      message_type: (messageType as Message['message_type']) || 'text',
+      encrypted_content: this.getString(msg, 'encrypted_content'),
+      content_nonce: this.getString(msg, 'content_nonce'),
+      sender_key_signature: msg.sender_key_signature as string | undefined,
+      reply_to_message_id: msg.reply_to_message_id as number | undefined,
+      created_at: timestamp,
+      updated_at: this.getString(msg, 'updated_at', timestamp),
+      is_deleted: this.getBoolean(msg, 'is_deleted'),
+      edit_count: this.getNumber(msg, 'edit_count'),
+      last_edited_at: msg.last_edited_at as string | undefined,
+      is_from_sender: this.getBoolean(msg, 'is_from_sender'),
+      is_read: false,
+      delivery_status: 'delivered',
+    }
+  }
+
   private toTypingIndicator(data: ServerMessage): TypingIndicator {
     return {
       user_id: this.getNumber(data, 'user_id', this.getNumber(data, 'sender_id')),
@@ -278,7 +356,7 @@ class WebSocketService {
       console.log(
         `Attempting to reconnect... (${this.reconnectAttempts}/${this.maxReconnectAttempts})`
       )
-      this.connect(this.currentThreadId).catch(() => {})
+      this.connect().catch(() => {})
     }, delay)
   }
 

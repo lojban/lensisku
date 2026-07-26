@@ -626,22 +626,33 @@ pub async fn webrtc_signal(
     super::webrtc_handler::send_signal(claims, request, service).await
 }
 
-// WebSocket handlers
-pub async fn websocket_handler(
-    req: actix_web::HttpRequest,
-    stream: actix_web::web::Payload,
+#[utoipa::path(
+    post,
+    path = "/messaging/threads/{thread_id}/read",
+    tag = "messaging",
+    summary = "Mark thread messages as read",
+    params(
+        ("thread_id" = i64, Path, description = "Thread ID")
+    ),
+    responses(
+        (status = 200, description = "Thread marked as read"),
+        (status = 401, description = "Unauthorized"),
+        (status = 404, description = "Thread not found"),
+        (status = 500, description = "Internal server error")
+    ),
+    security(
+        ("bearer_auth" = [])
+    )
+)]
+#[post("/threads/{thread_id}/read")]
+pub async fn mark_thread_read(
+    claims: Claims,
     path: web::Path<i64>,
     service: web::Data<MessagingService>,
-) -> Result<HttpResponse, actix_web::Error> {
-    super::websocket_handler::websocket_handler(req, stream, path, service).await
-}
-
-pub async fn websocket_index_handler(
-    req: actix_web::HttpRequest,
-    stream: actix_web::web::Payload,
-    service: web::Data<MessagingService>,
-) -> Result<HttpResponse, actix_web::Error> {
-    super::websocket_handler::websocket_index_handler(req, stream, service).await
+) -> Result<HttpResponse, AppError> {
+    let thread_id = path.into_inner();
+    service.mark_thread_read(claims.sub, thread_id).await?;
+    Ok(HttpResponse::Ok().finish())
 }
 
 // WebRTC signaling handlers

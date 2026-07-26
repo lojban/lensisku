@@ -61,8 +61,8 @@
 import { Button, FileInput, IconButtonGhost, Textarea } from '@packages/ui'
 import { ref, computed, nextTick, onMounted, onUnmounted, type ComponentPublicInstance } from 'vue'
 import { Paperclip, Send } from 'lucide-vue-next'
-import { useAuth } from '@/composables/useAuth'
 import { sendMessage } from '@/services/messaging/messagingApi'
+import { utf8ToBase64, generateNonce } from '@/utils/crypto'
 import type { Message, SendMessageRequest } from '@/types/messaging'
 
 interface Props {
@@ -81,8 +81,6 @@ const emit = defineEmits<{
   'typing-start': []
   'typing-stop': []
 }>()
-
-const _auth = useAuth()
 
 type TextareaInstance = ComponentPublicInstance & { focus: () => void; blur: () => void }
 
@@ -108,13 +106,11 @@ const handleSubmit = async () => {
   isSending.value = true
 
   try {
-    // This is a simplified implementation
-    // In a real app, you would encrypt the message content here
     const request: SendMessageRequest = {
       thread_id: props.threadId,
       message_type: 'text',
-      encrypted_content: btoa(content), // Simple base64 encoding as placeholder
-      content_nonce: btoa('placeholder_nonce'), // Would be generated in real implementation
+      encrypted_content: utf8ToBase64(content),
+      content_nonce: generateNonce(),
     }
 
     const response = await sendMessage(request)

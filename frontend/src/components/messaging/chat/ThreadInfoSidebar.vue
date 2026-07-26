@@ -178,7 +178,7 @@ const { isUserOnline: _isUserOnline } = usePresence()
 const showAddParticipant = ref(false)
 
 // Computed properties
-const currentUserId = computed(() => auth.state.username as unknown)
+const currentUserId = computed(() => auth.state.userId)
 const participants = computed(() => {
   return props.thread.participants || []
 })

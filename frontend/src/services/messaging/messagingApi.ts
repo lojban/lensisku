@@ -54,6 +54,10 @@ export const deleteThread = async (threadId: number): Promise<void> => {
   await api.delete(`/messaging/threads/${threadId}`)
 }
 
+export const markThreadRead = async (threadId: number): Promise<void> => {
+  await api.post(`/messaging/threads/${threadId}/read`)
+}
+
 // Messages API
 export const getMessages = async (
   threadId: number,

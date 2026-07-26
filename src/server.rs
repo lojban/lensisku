@@ -18,6 +18,7 @@ use crate::{
     versions::{self},
     waves, wiki,
 };
+use actix::Actor;
 use actix_cors::Cors;
 use actix_limitation::RateLimiter;
 use actix_web::{http::header, middleware::Logger, web, App, HttpServer};
@@ -71,8 +72,10 @@ pub async fn start_server(
 
     let redis_cache_data = web::Data::from(redis_cache);
 
-    // Initialize messaging service
-    let messaging_service = web::Data::new(messaging::MessagingService::new(pool.clone()));
+    // Initialize messaging service and WebSocket broadcast server
+    let chat_server = messaging::websocket::ChatServer::new().start();
+    let messaging_service =
+        web::Data::new(messaging::MessagingService::new(pool.clone(), Some(chat_server.clone())));
 
     let perm_cache = web::Data::from(PermissionCache::new(pool.clone()));
     perm_cache
@@ -143,6 +146,7 @@ pub async fn start_server(
             .app_data(kitten_tts_limiter.clone())
             .app_data(redis_cache_data.clone())
             .app_data(messaging_service.clone())
+            .app_data(web::Data::new(chat_server.clone()))
             .configure(auth::configure)
             .configure(users::configure)
             .configure(language::configure)

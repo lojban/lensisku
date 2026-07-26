@@ -172,9 +172,11 @@ interface UserSearchResult {
 const props = withDefaults(
   defineProps<{
     existingThreads?: Thread[]
+    isFullPage?: boolean
   }>(),
   {
     existingThreads: () => [],
+    isFullPage: false,
   }
 )
 
@@ -227,7 +229,7 @@ const handleSearch = async () => {
     try {
       const response = await listUsers({ search: query, per_page: 20 })
       const users = (response.data.users ?? []) as UserSearchResult[]
-      searchResults.value = users.filter((user) => user.username !== auth.state.username)
+      searchResults.value = users.filter((user) => user.user_id !== auth.state.userId)
     } catch (error) {
       errorMessage.value = 'Failed to search users. Please try again.'
       console.error('Failed to search users:', error)
@@ -277,6 +279,7 @@ const createThread = async () => {
         (t) => t.thread_type === 'direct' && t.participants?.some((p) => p.user_id === user.user_id)
       )
       if (existingThread) {
+        isCreating.value = false
         emit('open-thread', existingThread)
         return
       }

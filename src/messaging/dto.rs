@@ -250,22 +250,20 @@ pub enum WebSocketMessage {
         new_role: ParticipantRole,
         updated_by: i32,
     },
-    #[serde(rename = "typing_started")]
-    TypingStarted {
+    #[serde(rename = "typing")]
+    Typing {
         thread_id: i64,
         user_id: i32,
         username: String,
+        is_typing: bool,
     },
-    #[serde(rename = "typing_stopped")]
-    TypingStopped {
-        thread_id: i64,
+    #[serde(rename = "user_status")]
+    UserStatus {
         user_id: i32,
         username: String,
+        status: String,
+        thread_id: Option<i64>,
     },
-    #[serde(rename = "user_online")]
-    UserOnline { user_id: i32, username: String },
-    #[serde(rename = "user_offline")]
-    UserOffline { user_id: i32, username: String },
     #[serde(rename = "new_notification")]
     NewNotification { notification: NotificationResponse },
     #[serde(rename = "error")]

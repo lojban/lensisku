@@ -248,7 +248,7 @@ onMounted(async () => {
 
     // Connect to WebSocket
     try {
-      await webSocketService.connect()
+      await webSocketService.connect(auth.state.accessToken)
     } catch (error) {
       console.warn('Failed to connect WebSocket:', error)
     }
@@ -258,9 +258,14 @@ onMounted(async () => {
 // Watch for auth changes
 watch(
   () => auth.state.isLoggedIn,
-  (isLoggedIn) => {
+  async (isLoggedIn) => {
     if (isLoggedIn) {
-      fetchThreads()
+      await fetchThreads()
+      try {
+        await webSocketService.connect(auth.state.accessToken)
+      } catch (error) {
+        console.warn('Failed to connect WebSocket:', error)
+      }
     } else {
       threads.value = []
     }

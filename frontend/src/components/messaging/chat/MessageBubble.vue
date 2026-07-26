@@ -16,10 +16,7 @@
 
       <!-- Message content -->
       <div class="whitespace-pre-wrap break-words">
-        <div class="flex items-center gap-2">
-          <Lock class="h-4 w-4 opacity-50" />
-          <span>{{ getMessagePreview() }}</span>
-        </div>
+        <span>{{ getMessagePreview() }}</span>
       </div>
 
       <!-- Message metadata -->
@@ -56,7 +53,8 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { Reply, Lock, Check, CheckCheck, Clock } from 'lucide-vue-next'
+import { Reply, Check, CheckCheck, Clock } from 'lucide-vue-next'
+import { base64ToUtf8 } from '@/utils/crypto'
 import type { Message } from '@/types/messaging'
 
 interface Props {
@@ -85,11 +83,12 @@ const statusIconClasses = computed(() =>
 
 // Methods
 const getMessagePreview = (): string => {
-  // This is a placeholder - in real implementation, you'd decrypt the content
-  const _content = props.message.encrypted_content
-
   if (props.message.message_type === 'text') {
-    return '🔒 Encrypted message'
+    try {
+      return base64ToUtf8(props.message.encrypted_content)
+    } catch {
+      return '🔒 Encrypted message'
+    }
   } else if (props.message.message_type === 'image') {
     return '🖼️ Image'
   } else if (props.message.message_type === 'file') {

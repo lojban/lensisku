@@ -5,7 +5,7 @@ pub mod models;
 pub mod service;
 pub mod webrtc;
 pub mod webrtc_handler; // Functional WebRTC implementation
-pub mod websocket_handler; // Functional WebSocket implementation
+pub mod websocket; // Functional WebSocket implementation
 
 use actix_web::web;
 pub use service::*;
@@ -21,12 +21,14 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
             .service(controller::get_thread_messages)
             .service(controller::send_message)
             .service(controller::get_message)
+            // Read receipts
+            .service(controller::mark_thread_read)
             // WebSocket routes
             .route(
                 "/ws/{thread_id}",
-                web::get().to(controller::websocket_handler),
+                web::get().to(websocket::websocket_handler),
             )
-            .route("/ws", web::get().to(controller::websocket_index_handler))
+            .route("/ws", web::get().to(websocket::websocket_index_handler))
             // WebRTC signaling routes
             .route("/webrtc/signal", web::post().to(controller::webrtc_signal))
             .route(

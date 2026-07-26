@@ -1,10 +1,13 @@
 use crate::{AppError, AppResult};
+use actix::Addr;
 use base64::{engine::general_purpose, Engine as _};
 use chrono::Utc;
 use deadpool_postgres::Pool;
 
 use super::dto::*;
 use super::models::*;
+use super::websocket::{BroadcastToUsers, ChatServer};
+use super::dto::WebSocketMessage;
 
 // Helper function to build dynamic message query
 fn build_message_query(
@@ -55,11 +58,12 @@ fn build_message_query(
 
 pub struct MessagingService {
     pool: Pool,
+    chat_server: Option<Addr<ChatServer>>,
 }
 
 impl MessagingService {
-    pub fn new(pool: Pool) -> Self {
-        Self { pool }
+    pub fn new(pool: Pool, chat_server: Option<Addr<ChatServer>>) -> Self {
+        Self { pool, chat_server }
     }
 
     // Thread operations
@@ -91,9 +95,7 @@ impl MessagingService {
         let mut threads = Vec::new();
         for row in rows {
             let thread_id: i64 = row.get("thread_id");
-            let participants = self
-                .get_thread_participants(thread_id, Some(user_id))
-                .await?;
+            let participants = self.get_thread_participants(thread_id, None).await?;
 
             threads.push(ThreadResponse {
                 thread_id: row.get("thread_id"),
@@ -229,9 +231,7 @@ impl MessagingService {
             )
             .await?;
 
-        let participants = self
-            .get_thread_participants(thread_id, Some(user_id))
-            .await?;
+        let participants = self.get_thread_participants(thread_id, None).await?;
 
         Ok(ThreadResponse {
             thread_id: thread_row.get("thread_id"),
@@ -551,7 +551,31 @@ impl MessagingService {
         transaction.commit().await?;
 
         // Get the complete message with username
-        self.get_message(message_id, user_id).await
+        let message = self.get_message(message_id, user_id).await?;
+
+        // Broadcast to thread participants over WebSocket
+        if let Some(chat_server) = &self.chat_server {
+            if let Ok(user_ids) = self
+                .get_thread_participant_user_ids(request.thread_id)
+                .await
+            {
+                let mut broadcast_message = message.clone();
+                broadcast_message.is_from_sender = false;
+                let ws_message = WebSocketMessage::MessageSent {
+                    message: broadcast_message,
+                    thread_id: request.thread_id,
+                };
+                if let Ok(json) = serde_json::to_string(&ws_message) {
+                    chat_server.do_send(BroadcastToUsers {
+                        user_ids,
+                        message_json: json,
+                        exclude_user: Some(user_id),
+                    });
+                }
+            }
+        }
+
+        Ok(message)
     }
 
     pub async fn get_message(&self, message_id: i64, user_id: i32) -> AppResult<MessageResponse> {
@@ -656,6 +680,53 @@ impl MessagingService {
         }
 
         Ok(participants)
+    }
+
+    pub async fn get_thread_participant_user_ids(
+        &self,
+        thread_id: i64,
+    ) -> AppResult<Vec<i32>> {
+        let client = self.pool.get().await?;
+
+        let rows = client
+            .query(
+                "SELECT user_id FROM thread_participants
+                 WHERE thread_id = $1 AND is_active = TRUE",
+                &[&thread_id],
+            )
+            .await?;
+
+        Ok(rows.iter().map(|row| row.get("user_id")).collect())
+    }
+
+    pub async fn mark_thread_read(&self, user_id: i32, thread_id: i64) -> AppResult<()> {
+        let client = self.pool.get().await?;
+
+        let is_participant = client
+            .query_opt(
+                "SELECT 1 FROM thread_participants
+                 WHERE thread_id = $1 AND user_id = $2 AND is_active = TRUE",
+                &[&thread_id, &user_id],
+            )
+            .await?
+            .is_some();
+
+        if !is_participant {
+            return Err(AppError::NotFound(
+                "Thread not found or access denied".to_string(),
+            ));
+        }
+
+        client
+            .execute(
+                "UPDATE thread_participants
+                 SET last_read_at = CURRENT_TIMESTAMP, unread_count = 0
+                 WHERE thread_id = $1 AND user_id = $2",
+                &[&thread_id, &user_id],
+            )
+            .await?;
+
+        Ok(())
     }
 
     pub async fn is_user_blocked(&self, blocker_id: i32, blocked_id: i32) -> AppResult<bool> {

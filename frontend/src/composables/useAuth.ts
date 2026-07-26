@@ -16,6 +16,7 @@ const ASSISTANT_CHATS_STORAGE_KEY = 'lensisku-assistant-chats-v1'
 
 interface DecodedAccessToken {
   exp: number
+  sub: number
   username: string
   authorities?: string[]
   role?: string
@@ -25,6 +26,7 @@ interface DecodedAccessToken {
 export interface AuthState {
   isLoggedIn: boolean
   isLoading: boolean
+  userId: number
   username: string
   accessToken: string
   refreshToken: string
@@ -58,6 +60,7 @@ export function provideAuth(): AuthApi {
   const state = reactive<AuthState>({
     isLoggedIn: false,
     isLoading: true,
+    userId: 0,
     username: '',
     accessToken: '',
     refreshToken: '',
@@ -144,6 +147,7 @@ export function provideAuth(): AuthApi {
         refreshSubscribers = []
 
         const decoded = jwtDecode<DecodedAccessToken>(response.data.access_token)
+        state.userId = decoded.sub
         state.username = decoded.username
         state.authorities = decoded.authorities || []
         state.role = decoded.role || ''
@@ -182,6 +186,7 @@ export function provideAuth(): AuthApi {
     localStorage.removeItem('username')
 
     state.isLoggedIn = false
+    state.userId = 0
     state.username = ''
     state.accessToken = ''
     state.refreshToken = ''
@@ -262,6 +267,7 @@ export function provideAuth(): AuthApi {
 
     const decoded = parseToken(accessToken)
     if (decoded) {
+      state.userId = decoded.sub
       state.authorities = decoded.authorities || []
       state.role = decoded.role || ''
       state.email_confirmed = decoded.email_confirmed || false
@@ -375,6 +381,7 @@ export function provideAuth(): AuthApi {
         }
       } else {
         state.isLoggedIn = true
+        state.userId = decoded.sub
         state.username = decoded.username
         state.authorities = decoded.authorities || []
         state.role = decoded.role || ''

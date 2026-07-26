@@ -6,6 +6,8 @@ use serde::{Deserialize, Serialize};
 use std::{env, error::Error, str::FromStr};
 use utoipa::ToSchema;
 
+use crate::AppError;
+
 #[derive(Debug)]
 pub struct TokenPair {
     pub access_token: String,
@@ -87,6 +89,17 @@ pub struct Claims {
     pub sid: Option<uuid::Uuid>,
 }
 
+pub fn decode_token(token: &str) -> Result<Claims, AppError> {
+    let secret = env::var("JWT_SECRET")
+        .map_err(|e| AppError::Auth(format!("JWT_SECRET not set: {}", e)))?;
+    let key = DecodingKey::from_secret(secret.as_bytes());
+
+    let validation = Validation::new(Algorithm::HS256);
+    decode::<Claims>(token, &key, &validation)
+        .map(|token_data| token_data.claims)
+        .map_err(|_| AppError::Auth("Invalid token".to_string()))
+}
+
 impl FromRequest for Claims {
     type Error = ActixError;
     type Future = Ready<Result<Self, Self::Error>>;
@@ -99,20 +112,8 @@ impl FromRequest for Claims {
             .and_then(|h| h.strip_prefix("Bearer "));
 
         if let Some(token) = token {
-            let secret = match env::var("JWT_SECRET") {
-                Ok(s) => s,
-                Err(e) => {
-                    return ready(Err(actix_web::error::ErrorInternalServerError(format!(
-                        "JWT_SECRET not set: {}",
-                        e
-                    ))))
-                }
-            };
-            let key = DecodingKey::from_secret(secret.as_bytes());
-
-            let validation = Validation::new(Algorithm::HS256);
-            match decode::<Claims>(token, &key, &validation) {
-                Ok(token_data) => ready(Ok(token_data.claims)),
+            match decode_token(token) {
+                Ok(claims) => ready(Ok(claims)),
                 Err(_) => ready(Err(actix_web::error::ErrorUnauthorized("Invalid token"))),
             }
         } else {
