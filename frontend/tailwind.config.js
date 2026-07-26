@@ -994,9 +994,9 @@ export default {
         /** Inline `aqua-base` + fill (not `@apply btn-aqua-cornflower`): that primitive lives in an earlier
          * `addComponents` object; a second `addComponents(buttonUiThemeLayer)` pass cannot `@apply` it. */
         aquaRules[selectorFor('aqua', 'ui-btn--fab')] = {
-          '@apply aqua-base bg-cornflower-400 !h-12 !w-12 cursor-pointer rounded-full !text-lg !text-white':
+          '@apply aqua-base bg-pink-400 !h-12 !w-12 cursor-pointer rounded-full !text-lg !text-white':
             {},
-          '--aqua-hue': '219',
+          '--aqua-hue': '330',
         }
         flatRules[selectorFor('flat', 'ui-btn--fab')] = {
           '@apply btn-fab !h-12 !w-12 cursor-pointer rounded-full !text-lg': {},
@@ -1004,20 +1004,16 @@ export default {
         /** Flat FAB: no outer ring; soft cornflower-tinted float shadow (ui-btn--fab is borderless). */
         flatRules[selectorFor('flat', 'fab-elevation-shell')] = {
           '@apply ring-0': {},
-          boxShadow:
-            '0 12px 28px -10px rgba(61, 107, 196, 0.38), 0 8px 18px -10px rgba(100, 149, 237, 0.32)',
+          boxShadow: `0 12px 28px -10px color-mix(in srgb, ${theme('colors.pink.700')} 38%, transparent), 0 8px 18px -10px color-mix(in srgb, ${theme('colors.pink.400')} 32%, transparent)`,
           '&:hover': {
-            boxShadow:
-              '0 16px 36px -12px rgba(61, 107, 196, 0.42), 0 10px 22px -10px rgba(100, 149, 237, 0.38)',
+            boxShadow: `0 16px 36px -12px color-mix(in srgb, ${theme('colors.pink.700')} 42%, transparent), 0 10px 22px -10px color-mix(in srgb, ${theme('colors.pink.400')} 38%, transparent)`,
           },
         }
         /** Aqua FAB: elevation matches cornflower hue (replaces rose-tinted shell). */
         aquaRules[selectorFor('aqua', 'fab-elevation-shell')] = {
-          boxShadow:
-            '0 10px 26px -8px rgba(15, 23, 42, 0.16), 0 6px 14px -6px rgba(100, 149, 237, 0.32)',
+          boxShadow: `0 10px 26px -8px rgba(15, 23, 42, 0.16), 0 6px 14px -6px color-mix(in srgb, ${theme('colors.pink.400')} 32%, transparent)`,
           '&:hover': {
-            boxShadow:
-              '0 18px 36px -10px rgba(15, 23, 42, 0.2), 0 10px 22px -8px rgba(87, 137, 232, 0.38)',
+            boxShadow: `0 18px 36px -10px rgba(15, 23, 42, 0.2), 0 10px 22px -8px color-mix(in srgb, ${theme('colors.pink.500')} 38%, transparent)`,
           },
         }
         aquaRules[selectorFor('aqua', 'ui-btn--toggle.active')] = {

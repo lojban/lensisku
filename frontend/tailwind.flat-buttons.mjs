@@ -213,16 +213,16 @@ export function buildFlatButtonLayer(theme) {
     '.btn-fab': {
       '@apply btn-base-core cursor-pointer rounded-full border-transparent text-white shadow-none':
         {},
-      backgroundColor: theme('colors.cornflower.400'),
+      backgroundColor: theme('colors.pink.400'),
       transitionProperty: 'background-color, color, transform, border-color',
-      '--tw-ring-color': ring(theme('colors.cornflower.500')),
+      '--tw-ring-color': ring(theme('colors.pink.500')),
       '&:not(:disabled):hover': {
         '@apply border-transparent ring-0 shadow-none': {},
-        backgroundColor: theme('colors.cornflower.500'),
+        backgroundColor: theme('colors.pink.500'),
       },
       '&:not(:disabled):active': {
         '@apply border-transparent': {},
-        backgroundColor: theme('colors.cornflower.600'),
+        backgroundColor: theme('colors.pink.600'),
       },
       '&:focus-visible:not(:disabled)': {
         '@apply outline-none ring-2 ring-offset-2 ring-offset-white': {},
