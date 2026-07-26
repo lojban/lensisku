@@ -29,7 +29,7 @@
             <template #icon>
               <Checkbox
                 class="checkmark-aqua pointer-events-none shrink-0"
-                :model-value="filters.isSemantic"
+                :model-value="isSemantic"
                 tabindex="-1"
                 aria-hidden="true"
               />
@@ -49,7 +49,7 @@
             <template #icon>
               <Checkbox
                 class="checkmark-aqua pointer-events-none shrink-0"
-                :model-value="filters.searchInPhrases && !filters.word_type"
+                :model-value="searchInPhrases && !filters.word_type"
                 :disabled="!!filters.word_type"
                 tabindex="-1"
                 aria-hidden="true"
@@ -282,6 +282,7 @@ import {
   ToolbarSelectDropdownItem,
 } from '@packages/ui'
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
+import { useRoute } from 'vue-router'
 
 import { fetchDefinitionsTypes } from '@/api'
 
@@ -357,13 +358,44 @@ const emit = defineEmits(['update:modelValue', 'change', 'reset'])
 const selectedLangs = ref([])
 const expanded = ref(props.modelValue.isExpanded)
 const wordTypes = ref<WordTypeOption[]>([])
+const route = useRoute()
+
+function getInitialIsSemantic(): boolean {
+  const mode = route.query.mode
+  if (mode !== undefined) {
+    return mode === 'semantic'
+  }
+  if (typeof window !== 'undefined') {
+    const stored = localStorage.getItem('searchMode')
+    if (stored !== null) {
+      return stored === 'semantic'
+    }
+  }
+  return props.modelValue.isSemantic !== false
+}
+
+function getInitialSearchInPhrases(): boolean {
+  const urlVal = route.query.searchInPhrases
+  if (urlVal !== undefined) {
+    return urlVal !== 'false'
+  }
+  if (typeof window !== 'undefined') {
+    const stored = localStorage.getItem('searchInPhrases')
+    if (stored !== null) {
+      return stored === 'true'
+    }
+  }
+  return props.modelValue.searchInPhrases !== false
+}
+
+const isSemantic = ref<boolean>(getInitialIsSemantic())
+const searchInPhrases = ref<boolean>(getInitialSearchInPhrases())
+
 const filters = ref({
   selmaho: props.modelValue.selmaho,
   username: props.modelValue.username,
   word_type: null as WordTypeOption | null,
-  source_langid: props.modelValue.source_langid || 1, // Initialize from prop or default
-  isSemantic: props.modelValue.isSemantic !== false, // Default to true
-  searchInPhrases: props.modelValue.searchInPhrases !== false,
+  source_langid: props.modelValue.source_langid || 1,
 })
 
 const showWordType = computed(() => !filters.value.selmaho)
@@ -397,9 +429,7 @@ watch(
       selmaho: newVal.selmaho,
       username: newVal.username,
       word_type: null,
-      source_langid: newVal.source_langid || 1, // Sync source_langid
-      isSemantic: newVal.isSemantic !== false,
-      searchInPhrases: newVal.searchInPhrases !== false,
+      source_langid: newVal.source_langid || 1,
     }
 
     if (newVal.word_type && wordTypes.value.length > 0) {
@@ -416,6 +446,21 @@ watch(
   { deep: true, immediate: true }
 )
 
+watch(
+  () => ({
+    isSemantic: props.modelValue.isSemantic,
+    searchInPhrases: props.modelValue.searchInPhrases,
+  }),
+  (newVal) => {
+    if (newVal.isSemantic !== undefined) {
+      isSemantic.value = newVal.isSemantic !== false
+    }
+    if (newVal.searchInPhrases !== undefined && newVal.searchInPhrases !== null) {
+      searchInPhrases.value = newVal.searchInPhrases !== false
+    }
+  }
+)
+
 const fetchWordTypes = async () => {
   try {
     const response = await fetchDefinitionsTypes()
@@ -425,7 +470,23 @@ const fetchWordTypes = async () => {
   }
 }
 
-onMounted(fetchWordTypes)
+onMounted(() => {
+  fetchWordTypes()
+  syncTogglesWithModel()
+})
+
+function syncTogglesWithModel() {
+  const semanticChanged =
+    props.modelValue.isSemantic !== undefined && props.modelValue.isSemantic !== isSemantic.value
+  const searchInPhrasesChanged =
+    props.modelValue.searchInPhrases !== undefined &&
+    props.modelValue.searchInPhrases !== null &&
+    props.modelValue.searchInPhrases !== searchInPhrases.value
+
+  if (semanticChanged || searchInPhrasesChanged) {
+    emitUpdate()
+  }
+}
 
 onBeforeUnmount(() => {
   // Clean up any pending debounce timer
@@ -458,9 +519,9 @@ const hasAnyActiveFilters = computed(() => {
     filters.value.selmaho ||
     filters.value.username ||
     filters.value.word_type ||
-    filters.value.source_langid !== 1 || // Check if source_langid is not default
-    !filters.value.isSemantic || // isSemantic is true by default, so if it's false, it's modified
-    !filters.value.searchInPhrases || // modified if false
+    filters.value.source_langid !== 1 ||
+    !isSemantic.value ||
+    !searchInPhrases.value ||
     expanded.value
   )
 })
@@ -507,8 +568,8 @@ const emitUpdate = () => {
     selectedLanguages: selectedLangs.value.map((lang) => lang.id),
     word_type: filters.value.word_type?.type_id || null,
     source_langid: filters.value.source_langid || 1, // Include source_langid
-    isSemantic: filters.value.isSemantic,
-    searchInPhrases: filters.value.word_type ? null : filters.value.searchInPhrases,
+    isSemantic: isSemantic.value,
+    searchInPhrases: filters.value.word_type ? null : searchInPhrases.value,
   }
   emit('update:modelValue', updatedValue)
   emit('change', updatedValue)
@@ -525,18 +586,24 @@ const resetAllFilters = () => {
   const defaultLangs = getDefaultLanguages()
   selectedLangs.value = defaultLangs
 
+  isSemantic.value = true
+  searchInPhrases.value = true
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('searchMode', 'semantic')
+    localStorage.setItem('searchInPhrases', 'true')
+  }
+
   const resetValue = {
     selmaho: '',
     username: '',
     isExpanded: false,
     selectedLanguages: defaultLangs.map((lang) => lang.id),
     word_type: null,
-    source_langid: 1, // Reset source_langid to default
-    isSemantic: true, // Reset to default
+    source_langid: 1,
+    isSemantic: true,
     searchInPhrases: true,
   }
 
-  // Single emit for both reset and update
   emit('reset')
   emit('update:modelValue', resetValue)
 }
@@ -548,12 +615,18 @@ const toggleExpanded = () => {
 
 const toggleSearchInPhrases = () => {
   if (filters.value.word_type) return
-  filters.value.searchInPhrases = !filters.value.searchInPhrases
+  searchInPhrases.value = !searchInPhrases.value
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('searchInPhrases', String(searchInPhrases.value))
+  }
   emitUpdate()
 }
 
 const toggleSemanticSearch = () => {
-  filters.value.isSemantic = !filters.value.isSemantic
+  isSemantic.value = !isSemantic.value
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('searchMode', isSemantic.value ? 'semantic' : 'dictionary')
+  }
   emitUpdate()
 }
 

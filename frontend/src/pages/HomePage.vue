@@ -1190,7 +1190,14 @@ const fetchData = async () => {
 
 // Filter handling
 const handleFilterChange = () => {
-  // Update URL which will trigger the central fetchng of data through the route watcher
+  // Keep searchMode in sync with the isSemantic toggle before building the URL,
+  // so updateUrlWithFilters writes the correct mode in a single push.
+  if (searchMode.value === 'semantic' || searchMode.value === 'dictionary') {
+    const targetMode = filters.value.isSemantic ? 'semantic' : 'dictionary'
+    if (searchMode.value !== targetMode) {
+      searchMode.value = targetMode
+    }
+  }
   updateUrlWithFilters()
 }
 
