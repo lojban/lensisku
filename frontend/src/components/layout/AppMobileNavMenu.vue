@@ -54,9 +54,9 @@
     <div v-if="auth.state.isLoggedIn" class="my-1 border-t border-gray-200" />
     <Button
       v-if="auth.state.isLoggedIn"
-      variant="neutral"
+      variant="plain"
       type="button"
-      class="mobile-nav-row--emphasis"
+      class="nav-link text-nav-link mobile-nav-row w-full"
       @click="$emit('logout')"
     >
       <LogOut class="h-5 w-5" /> {{ t('nav.logout') }}

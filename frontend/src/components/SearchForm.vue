@@ -7,7 +7,7 @@
         :aria-label="t('flashcardStudy.wavesButton')"
         :aria-pressed="isWavesMode"
         :class="{
-          'ring-1 ring-blue-500 border-blue-500 z-50': isWavesMode,
+          'ring-1 ring-blue-500 border-blue-500 z-10': isWavesMode,
         }"
         @click="toggleMode"
       >

@@ -29,7 +29,7 @@
         <!-- Logo + Toggle Menu Button -->
         <div class="flex items-center">
           <button
-            class="z-15 cursor-pointer rounded-md p-3 text-gray-600 transition-colors duration-200 hover:bg-gray-100 sm:hidden"
+            class="z-20 cursor-pointer rounded-md p-3 text-gray-600 transition-colors duration-200 hover:bg-gray-100 sm:hidden"
             :aria-label="$t('toggleMenu')"
             @click.stop="isMenuOpen = !isMenuOpen"
           >
