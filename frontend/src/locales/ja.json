@@ -410,7 +410,7 @@
   "userList": {
     "users": "ユーザー",
     "roleManagement": "ロール管理",
-    "searchPlaceholder": "名前で検索…",
+    "searchPlaceholder": "名前で検索",
     "loadingUsers": "ユーザーを読み込み中…",
     "roleFilterLabel": "ロール：",
     "allRoles": "すべてのロール",

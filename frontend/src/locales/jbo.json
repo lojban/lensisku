@@ -410,7 +410,7 @@
   "userList": {
     "users": "pilno",
     "roleManagement": "pikta jitro",
-    "searchPlaceholder": "pentoi lo cmene...",
+    "searchPlaceholder": "pentoi lo cmene",
     "loadingUsers": "ca'o troci lo ka le tcila be lo pilno",
     "roleFilterLabel": "pikta:",
     "allRoles": "ro pikta",
@@ -1452,7 +1452,7 @@
       "roleLabel": "pikta:",
       "sortByLabel": "porsi lo ka:",
       "sortOrderLabel": "tadji:",
-      "allRoles": "ro pikta",
+      "allRoles": "pikta klesi",
       "usernameSort": "pilno cmene",
       "realNameSort": "jetnu cmene",
       "createdAtSort": "finti ca",

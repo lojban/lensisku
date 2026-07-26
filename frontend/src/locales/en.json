@@ -104,7 +104,7 @@
       "comments": "Discussion waves",
       "messages": "Mail archive",
       "groupByThread": "Group by thread",
-      "searchInPhrases": "Show phrases"
+      "searchInPhrases": "Phrases too"
     },
     "placeholder": {
       "dictionary": "Search words, definitions, notes, short stories...",
@@ -413,7 +413,7 @@
   "userList": {
     "users": "Users",
     "roleManagement": "Role management",
-    "searchPlaceholder": "Search by name...",
+    "searchPlaceholder": "Search by name",
     "loadingUsers": "Loading users...",
     "roleFilterLabel": "Role:",
     "allRoles": "All roles",

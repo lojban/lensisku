@@ -114,7 +114,7 @@ const handleSubmit = async () => {
       thread_id: props.threadId,
       message_type: 'text',
       encrypted_content: btoa(content), // Simple base64 encoding as placeholder
-      content_nonce: 'placeholder_nonce', // Would be generated in real implementation
+      content_nonce: btoa('placeholder_nonce'), // Would be generated in real implementation
     }
 
     const response = await sendMessage(request)
