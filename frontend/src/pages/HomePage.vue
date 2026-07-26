@@ -97,34 +97,38 @@
           v-else-if="searchMode === 'dictionary' || searchMode === 'semantic'"
           class="flex flex-col sm:flex-row items-end sm:items-center gap-3 sm:space-x-4 ml-auto"
         >
-          <ToolbarSelectDropdown
+          <Dropdown
             v-if="auth.state.isLoggedIn && decodedRole !== 'Unconfirmed'"
-            :aria-label="$t('home.addDefinition')"
-            trigger-class="ui-btn--create"
+            class="relative inline-block"
           >
-            <template #label>
-              <Plus class="h-4 w-4" />
-              <span>{{ $t('home.addDefinition') }}</span>
+            <template #trigger="{ open: menuOpen }">
+              <Button
+                variant="create"
+                type="button"
+                class="icon-btn-ui-layout"
+                :aria-expanded="menuOpen"
+                :aria-label="$t('home.addDefinition')"
+              >
+                <Plus class="h-4 w-4" />
+                <span>{{ $t('home.addDefinition') }}</span>
+                <ChevronDown
+                  class="h-4 w-4 opacity-70 transition-transform duration-200"
+                  :class="{ 'rotate-180': menuOpen }"
+                  :stroke-width="2"
+                />
+              </Button>
             </template>
-            <Button
-              variant="neutral"
-              type="button"
-              class="block w-full whitespace-nowrap px-3 py-2 text-left text-sm hover:bg-gray-50"
-              @click="router.push('/valsi/add')"
-            >
+            <ToolbarSelectDropdownItem @click="router.push('/valsi/add')">
               {{ $t('home.createDefinition') }}
-            </Button>
-            <Button
-              variant="neutral"
-              type="button"
-              class="block w-full whitespace-nowrap px-3 py-2 text-left text-sm hover:bg-gray-50"
+            </ToolbarSelectDropdownItem>
+            <ToolbarSelectDropdownItem
               :disabled="!hasSearchResults"
               :class="{ 'opacity-50 cursor-not-allowed': !hasSearchResults }"
               @click="hasSearchResults && (showAddAllModal = true)"
             >
               {{ $t('home.addAllToCollection') }}
-            </Button>
-          </ToolbarSelectDropdown>
+            </ToolbarSelectDropdownItem>
+          </Dropdown>
         </div>
 
         <div
@@ -439,7 +443,7 @@ import CommentItem from '@/components/CommentItem.vue'
 import SourceTypeBadge from '@/components/SourceTypeBadge.vue'
 import DictionaryEntries from '@/components/DictionaryEntries.vue'
 import LazyMathJax from '@/components/LazyMathJax.vue'
-import { Button, Dropdown, IconButton, ToolbarSelectDropdown } from '@packages/ui'
+import { Button, Dropdown, IconButton, ToolbarSelectDropdownItem } from '@packages/ui'
 import PaginationComponent from '@/components/PaginationComponent.vue'
 import RecentChangeItem from '@/components/RecentChangeItem.vue'
 import SearchForm from '@/components/SearchForm.vue'
