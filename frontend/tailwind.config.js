@@ -688,6 +688,10 @@ export default {
         '.dropdown-trigger--search-bar-leading': {
           '@apply w-auto max-w-none rounded-l-full rounded-r-none': {},
         },
+        /** Trailing segment of the home search bar (flush join with the query input). */
+        '.dropdown-trigger--search-bar-trailing': {
+          '@apply w-auto max-w-none rounded-l-none rounded-r-full': {},
+        },
         /** Trailing query column: below mode selector (z-10) at rest; stacks above on hover/focus/active of the field. */
         '.search-form-query-col': {
           '@apply relative z-0 flex-1 -ml-px min-w-0': {},

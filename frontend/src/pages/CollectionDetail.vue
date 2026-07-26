@@ -192,13 +192,12 @@
       :aria-label="t('collectionDetail.tabsAriaLabel')"
     >
       <Button
-        variant="neutral"
+        :variant="activeTab === 'items' ? 'neutral' : 'toolbar'"
         type="button"
         role="tab"
         :aria-selected="activeTab === 'items'"
         :tabindex="activeTab === 'items' ? 0 : -1"
-        class="ui-btn--group-item inline-flex items-center gap-2 transition-colors duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500"
-        :class="activeTab === 'items' ? 'ui-btn--neutral' : 'ui-btn--toolbar'"
+        class="ui-btn--group-item inline-flex items-center gap-2 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500"
         @click="setActiveTab('items')"
       >
         <List class="w-4 h-4 shrink-0" aria-hidden="true" />
@@ -211,13 +210,12 @@
         </span>
       </Button>
       <Button
-        variant="neutral"
+        :variant="activeTab === 'discussion' ? 'neutral' : 'toolbar'"
         type="button"
         role="tab"
         :aria-selected="activeTab === 'discussion'"
         :tabindex="activeTab === 'discussion' ? 0 : -1"
-        class="ui-btn--group-item inline-flex items-center gap-2 transition-colors duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500"
-        :class="activeTab === 'discussion' ? 'ui-btn--neutral' : 'ui-btn--toolbar'"
+        class="ui-btn--group-item inline-flex items-center gap-2 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500"
         @click="setActiveTab('discussion')"
       >
         <MessagesSquare class="w-4 h-4 shrink-0" aria-hidden="true" />
@@ -1504,11 +1502,10 @@ const currentPage = ref(parseInt(queryStr(route.query.page), 10) || 1)
 const itemsPerPage = 10
 
 type CollectionTab = 'items' | 'discussion'
-const activeTab = ref<CollectionTab>(
+const activeTab = computed<CollectionTab>(() =>
   queryStr(route.query.tab) === 'discussion' ? 'discussion' : 'items'
 )
 const setActiveTab = (tab: CollectionTab) => {
-  activeTab.value = tab
   router.replace({ query: { ...route.query, tab: tab === 'items' ? undefined : tab } })
 }
 

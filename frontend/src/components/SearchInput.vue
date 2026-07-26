@@ -40,12 +40,18 @@ const props = defineProps({
     type: String,
     default: '',
   },
+  /** Whether an addon is joined to the right of the input (removes right radius) */
+  joinedRight: {
+    type: Boolean,
+    default: false,
+  },
 })
 
 const emit = defineEmits(['update:modelValue', 'update:modeValue', 'clear', 'search'])
 
 const hasModes = computed(() => props.modeOptions.length > 0)
-const joinedLeft = computed(() => props.modeOptions.length > 0 || props.modeValue !== '')
+const joinedLeft = computed(() => props.modeOptions.length > 0)
+const joinedRight = computed(() => props.joinedRight)
 
 const selectOptions = computed(() =>
   props.modeOptions.map((m) => ({ value: m.value, label: m.label, icon: m.icon }))
@@ -106,6 +112,7 @@ defineExpose({ focus })
         input-class="input-field w-full min-w-0 sm:min-w-[200px] h-10 transition-colors"
         :class="{
           'rounded-l-none': joinedLeft,
+          'rounded-r-none': joinedRight,
           'pl-10': showSearchIcon,
           'pr-10': query.length > 0,
         }"

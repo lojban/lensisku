@@ -1,9 +1,20 @@
 <template>
   <div class="search-form max-w-3xl mx-auto w-full">
     <div class="relative flex w-full min-w-0">
+      <SearchInput
+        ref="searchInput"
+        class="flex-1"
+        :model-value="query"
+        :placeholder="getPlaceholder"
+        :is-loading="isSearching"
+        joined-right
+        @update:model-value="handleQueryUpdate"
+        @search="handleSearch"
+        @clear="handleClear"
+      />
       <button
         type="button"
-        class="dropdown-trigger dropdown-trigger--search-bar-leading shrink-0"
+        class="dropdown-trigger dropdown-trigger--search-bar-trailing w-auto max-w-none rounded-l-none rounded-r-full shrink-0"
         :aria-label="t('flashcardStudy.wavesButton')"
         :aria-pressed="isWavesMode"
         :class="{
@@ -13,17 +24,6 @@
       >
         {{ t('flashcardStudy.wavesButton') }}
       </button>
-      <SearchInput
-        ref="searchInput"
-        class="flex-1"
-        :model-value="query"
-        :mode-value="modeValue"
-        :placeholder="getPlaceholder"
-        :is-loading="isSearching"
-        @update:model-value="handleQueryUpdate"
-        @search="handleSearch"
-        @clear="handleClear"
-      />
     </div>
   </div>
 </template>
