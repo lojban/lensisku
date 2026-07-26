@@ -342,7 +342,7 @@
     "to": "te mrilu:",
     "attachments": "kansa datni:",
     "noMessages": "no da notci cu zvati ti voi karni",
-    "loadingThread": "ca'o jgari lo karni...",
+    "loadingThread": "ca'o troci lo ka cpacu le vreji be lei nu casnu",
     "threadTitle": "karni: {subject}"
   },
   "recentChanges": {
@@ -411,7 +411,7 @@
     "users": "pilno",
     "roleManagement": "pikta jitro",
     "searchPlaceholder": "pentoi lo cmene...",
-    "loadingUsers": "ca'o jgari lo pilno...",
+    "loadingUsers": "ca'o troci lo ka le tcila be lo pilno",
     "roleFilterLabel": "pikta:",
     "allRoles": "ro pikta",
     "sortByLabel": "porsi lo ka:",
@@ -987,7 +987,7 @@
     "searchPlaceholder": "pentoi lo cmene .a lo te tcila...",
     "noMatchingLanguages": "no bangu cu se facki",
     "clearSearch": "vimcu lo sisku",
-    "loading": "ca'o jgari lo bangu...",
+    "loading": "ca'o troci lo ka cpacu le liste",
     "tableHeader": {
       "tag": "tcila",
       "englishName": "glico cmene",
@@ -1144,7 +1144,7 @@
   },
   "bulkImportClients": {
     "title": "so'i valsi nu jmina cu'u lo finti",
-    "loadingGroups": "ca'o jgari lo finti gunma...",
+    "loadingGroups": "ca'o troci lo ka cpacu le vreji be le nu jmina",
     "errorTitle": "srera!",
     "loadGroupsError": "fliba lo nu jgari lo finti gunma.",
     "noGroups": "no so'i valsi nu jmina finti gunma cu se facki.",
@@ -1152,11 +1152,11 @@
     "definitionsCount": "({count} velckivei)",
     "collapse": "tolbi'o",
     "expand": "bi'o",
-    "loadingDefinitions": "ca'o jgari lo velckivei...",
+    "loadingDefinitions": "ca'o troc lo ka cpacu lo velckivei",
     "loadDefinitionsError": "srera lo nu jgari lo velckivei:",
     "noDefinitions": "no velckivei cu se facki pe ti voi finti.",
     "loadMore": "jgari lo drata",
-    "loadingMore": "ca'o jgari...",
+    "loadingMore": "ca'o troci lo ka cpacu lo drata",
     "loadMoreError": "srera lo nu jgari lo drata velckivei:"
   },
   "flashcardCollection": {
@@ -1205,17 +1205,17 @@
   "modal": {
     "close": "ganlo"
   },
-  "loading": "ca'o jgari...",
+  "loading": "ca'o troci lo ka cpacu",
   "components": {
     "searchInput": {
       "clearAria": "vimcu lo sisku"
     },
     "loadingSpinner": {
-      "loadingDefault": "ca'o jgari..."
+      "loadingDefault": "ca'o troci lo ka cpacu"
     },
     "commentForm": {
       "sendButton": "benji",
-      "posting": "ca'o benji...",
+      "posting": "ca'o troci lo ka mo'u benji",
       "subjectPlaceholder": "selcasnu",
       "placeholder": "ko ciska lo me'o \"/\" mu'i lo nu viska lo liste",
       "addSubject": "jmina lo selcasnu",
@@ -1282,7 +1282,7 @@
       "downvoteTitle": "to'e zanru votu"
     },
     "subscriptionControls": {
-      "gettingAlerts": "ca'o jgari lo notci",
+      "gettingAlerts": "ca'o troci lo ka cpacu lo notci",
       "notGettingAlerts": "na jgari lo notci",
       "loadError": "fliba lo nu jgari lo notci datni",
       "subscribeError": "fliba lo nu jgari",
@@ -1360,7 +1360,7 @@
       "viewThread": "viska lo karni"
     },
     "messageDetail": {
-      "loading": "ca'o jgari lo mrilu...",
+      "loading": "ca'o troci lo ka cpacu lo se mrilu",
       "title": "mrilu: {subject}",
       "fromLabel": "krasi",
       "toLabel": "te mrilu",
@@ -1422,7 +1422,7 @@
     },
     "tiktoknu": {
       "pageTitle": "tiktoknu",
-      "loading": "ca'o jgari...",
+      "loading": "ca'o troci lo ka cpacu",
       "likesCount": "nelci ({count})",
       "likesPanel": {
         "title": "lo nelci papri liste",
