@@ -847,6 +847,10 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  isLoading: {
+    type: Boolean,
+    default: false,
+  },
 })
 
 const emit = defineEmits([
@@ -868,7 +872,7 @@ const showValsiModal = ref(false)
 const isDeleting = ref(false)
 
 const showSimilarityBadge = computed(() => {
-  if (!props.showScore || props.definition.similarity == null) return false
+  if (props.isLoading || !props.showScore || props.definition.similarity == null) return false
   if (
     props.semanticSearch &&
     props.searchQuery &&

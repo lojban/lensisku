@@ -31,6 +31,7 @@
           <DefinitionCard
             :definition="def"
             :languages="languages"
+            :is-loading="props.isLoading"
             :show-score="props.showScores"
             :semantic-search="props.semanticSearch"
             :search-query="props.searchQuery"
