@@ -29,6 +29,7 @@
             <template #icon>
               <Checkbox
                 class="checkmark-aqua pointer-events-none shrink-0"
+                checkbox-class="pointer-events-none"
                 :model-value="isSemantic"
                 tabindex="-1"
                 aria-hidden="true"
@@ -49,6 +50,7 @@
             <template #icon>
               <Checkbox
                 class="checkmark-aqua pointer-events-none shrink-0"
+                checkbox-class="pointer-events-none"
                 :model-value="searchInPhrases && !filters.word_type"
                 :disabled="!!filters.word_type"
                 tabindex="-1"
