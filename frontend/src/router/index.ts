@@ -124,6 +124,18 @@ const baseRoutes: Array<RouteRecordRaw> = [
     component: () => import('../pages/PasswordReset.vue'),
   },
   {
+    path: '/wiki/add',
+    name: 'UpsertWiki',
+    component: () => import('../pages/UpsertWiki.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/wiki/:word(.*)/edit',
+    name: 'EditWiki',
+    component: () => import('../pages/UpsertWiki.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
     path: '/wiki/:title(.*)',
     name: 'WikiArticle',
     component: () => import('../pages/WikiArticle.vue'),

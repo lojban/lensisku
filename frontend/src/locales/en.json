@@ -145,7 +145,9 @@
     "viewOnMediawiki": "View on mw.lojban.org",
     "redirectNotice": "This page is a redirect.",
     "notFound": "Wiki article not found.",
-    "loadFailed": "Failed to load wiki article."
+    "loadFailed": "Failed to load wiki article.",
+    "edit": "Edit",
+    "history": "History"
   },
   "assistantChat": {
     "title": "Lojban Assistant",
@@ -1595,6 +1597,22 @@
     "saving": "Saving",
     "saveButton": "Save definition"
   },
+  "upsertWiki": {
+    "editTitle": "Edit wiki page",
+    "addTitle": "Add wiki page",
+    "wordLabel": "Page title",
+    "wordPlaceholder": "Enter page title",
+    "sourceLanguageLabel": "Source language",
+    "sourceLanguageNote": "The language of the page title.",
+    "selectLanguagePlaceholder": "Select a language",
+    "required": "*",
+    "languageLabel": "Content language",
+    "languagePlaceholder": "Select a language",
+    "definitionLabel": "Body",
+    "editorPlaceholder": "Type / to show menu",
+    "saving": "Saving",
+    "saveButton": "Save wiki page"
+  },
   "activityBookmarks": {
     "noBookmarks": "No bookmarked comments found."
   },
@@ -1619,6 +1637,7 @@
     "cmavo-compound": "cmavo compound",
     "bu-letteral": "bu-letteral",
     "zei-lujvo": "zei-lujvo",
+    "wiki": "wiki",
     "obsolete-cmevla": "obsolete cmevla",
     "obsolete-fuhivla": "obsolete fu'ivla",
     "obsolete-cmavo": "obsolete cmavo"

@@ -88,6 +88,10 @@ pub struct AddDefinitionRequest {
     pub image: Option<ImageData>,
     #[serde(default)]
     pub metadata: Option<serde_json::Value>,
+    /// When true, the entry is a native wiki page: it uses valsi type `wiki`,
+    /// skips Lojban morphology validation, and stores only the markdown body.
+    #[serde(default)]
+    pub is_wiki: Option<bool>,
 }
 
 #[derive(Debug, Serialize, ToSchema)]
@@ -113,6 +117,9 @@ pub struct UpdateDefinitionRequest {
     #[schema(format = "binary")]
     pub image: Option<ImageData>,
     pub remove_image: Option<bool>,
+    /// When true, marks the updated entry as a native wiki page.
+    #[serde(default)]
+    pub is_wiki: Option<bool>,
 }
 
 #[derive(Debug, Serialize, ToSchema)]

@@ -140,7 +140,9 @@
     "viewOnMediawiki": "Открыть на mw.lojban.org",
     "redirectNotice": "Эта страница является перенаправлением.",
     "notFound": "Вики-статья не найдена.",
-    "loadFailed": "Не удалось загрузить вики-статью."
+    "loadFailed": "Не удалось загрузить вики-статью.",
+    "edit": "Edit",
+    "history": "History"
   },
   "assistantChat": {
     "title": "Помощник по ложбану",
@@ -1546,7 +1548,8 @@
     "zei-lujvo": "zei-lujvo",
     "obsolete-cmevla": "устаревшее cmevla",
     "obsolete-fuhivla": "устаревшее fuhivla",
-    "obsolete-cmavo": "устаревшее cmavo"
+    "obsolete-cmavo": "устаревшее cmavo",
+    "wiki": "wiki"
   },
   "exportPairs": {
     "title": "Экспорт пар переводов",
@@ -1586,5 +1589,21 @@
     "questsDescription": "Выполняйте квесты и зарабатывайте очки.",
     "heartsLeft": "Осталось сердец",
     "totalXP": "Всего XP"
+  },
+  "upsertWiki": {
+    "editTitle": "Edit wiki page",
+    "addTitle": "Add wiki page",
+    "wordLabel": "Page title",
+    "wordPlaceholder": "Enter page title",
+    "sourceLanguageLabel": "Source language",
+    "sourceLanguageNote": "The language of the page title.",
+    "selectLanguagePlaceholder": "Select a language",
+    "required": "*",
+    "languageLabel": "Content language",
+    "languagePlaceholder": "Select a language",
+    "definitionLabel": "Body",
+    "editorPlaceholder": "Type / to show menu",
+    "saving": "Saving",
+    "saveButton": "Save wiki page"
   }
 }

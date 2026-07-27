@@ -142,7 +142,9 @@
     "viewOnMediawiki": "在 mw.lojban.org 上查看",
     "redirectNotice": "此页面是一个重定向。",
     "notFound": "未找到维基文章。",
-    "loadFailed": "加载维基文章失败。"
+    "loadFailed": "加载维基文章失败。",
+    "edit": "Edit",
+    "history": "History"
   },
   "assistantChat": {
     "title": "逻辑语助手",
@@ -1597,7 +1599,8 @@
     "zei-lujvo": "zei-lujvo",
     "obsolete-cmevla": "废弃 cmevla",
     "obsolete-fuhivla": "废弃 fu'ivla",
-    "obsolete-cmavo": "废弃 cmavo"
+    "obsolete-cmavo": "废弃 cmavo",
+    "wiki": "wiki"
   },
   "exportPairs": {
     "title": "导出翻译对",
@@ -1637,5 +1640,21 @@
     "questsDescription": "通过获得积分完成任务。",
     "heartsLeft": "剩余红心",
     "totalXP": "总经验"
+  },
+  "upsertWiki": {
+    "editTitle": "Edit wiki page",
+    "addTitle": "Add wiki page",
+    "wordLabel": "Page title",
+    "wordPlaceholder": "Enter page title",
+    "sourceLanguageLabel": "Source language",
+    "sourceLanguageNote": "The language of the page title.",
+    "selectLanguagePlaceholder": "Select a language",
+    "required": "*",
+    "languageLabel": "Content language",
+    "languagePlaceholder": "Select a language",
+    "definitionLabel": "Body",
+    "editorPlaceholder": "Type / to show menu",
+    "saving": "Saving",
+    "saveButton": "Save wiki page"
   }
 }

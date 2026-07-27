@@ -552,6 +552,38 @@ pub async fn get_definitions_by_entry(
 }
 
 #[utoipa::path(
+    get,
+    tag = "jbovlaste",
+    path = "/jbovlaste/valsi/{word}/wiki",
+    params(
+        ("word" = String, Path, description = "Valsi word"),
+    ),
+    responses(
+        (status = 200, description = "Native wiki definition", body = DefinitionDetail),
+        (status = 404, description = "Wiki page not found"),
+        (status = 500, description = "Internal server error")
+    ),
+    security(
+        ("bearer_auth" = [])
+    ),
+    summary = "Get native wiki page for valsi",
+    description = "Returns the native wiki definition for a valsi of type 'wiki' if it exists."
+)]
+#[get("/valsi/{word}/wiki")]
+pub async fn get_wiki_by_word(
+    pool: web::Data<Pool>,
+    word: web::Path<String>,
+    claims: Option<Claims>,
+) -> impl Responder {
+    let word = word.into_inner();
+    match service::get_wiki_by_word(&pool, &word, claims.map(|c| c.sub)).await {
+        Ok(Some(definition)) => HttpResponse::Ok().json(definition),
+        Ok(None) => HttpResponse::NotFound().finish(),
+        Err(e) => HttpResponse::InternalServerError().body(format!("Database error: {}", e)),
+    }
+}
+
+#[utoipa::path(
     post,
     tag = "jbovlaste",
     path = "/jbovlaste/valsi",

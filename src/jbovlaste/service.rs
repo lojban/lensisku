@@ -108,6 +108,8 @@ pub async fn semantic_search(
         if let Some(false) = params.search_in_phrases {
             conditions.push("AND v.typeid != 15".to_string());
         }
+        // Native wiki pages (typeid 16) have their own search channel.
+        conditions.push("AND v.typeid != 16".to_string());
     }
 
     let additional_conditions = conditions.join(" ");
@@ -459,6 +461,8 @@ pub async fn semantic_graph(
         if let Some(false) = params.search_in_phrases {
             conditions.push("AND v.typeid != 15".to_string());
         }
+        // Native wiki pages (typeid 16) have their own search channel.
+        conditions.push("AND v.typeid != 16".to_string());
     }
 
     let additional_conditions = conditions.join(" ");
@@ -622,6 +626,8 @@ pub async fn semantic_graph_preview(
         if let Some(false) = params.search_in_phrases {
             conditions.push("AND v.typeid != 15".to_string());
         }
+        // Native wiki pages (typeid 16) have their own search channel.
+        conditions.push("AND v.typeid != 16".to_string());
     }
 
     let additional_conditions = conditions.join(" ");
@@ -897,6 +903,8 @@ pub async fn search_definitions(
         if let Some(false) = params.search_in_phrases {
             conditions.push("AND d.cached_typeid != 15".to_string());
         }
+        // Native wiki pages (typeid 16) have their own search channel.
+        conditions.push("AND d.cached_typeid != 16".to_string());
     }
 
     let additional_conditions = conditions.join(" ");
@@ -1158,6 +1166,8 @@ pub async fn search_definitions(
         if let Some(false) = params.search_in_phrases {
             count_conditions.push("AND d.cached_typeid != 15".to_string());
         }
+        // Native wiki pages (typeid 16) have their own search channel.
+        count_conditions.push("AND d.cached_typeid != 16".to_string());
     }
 
     let count_additional = count_conditions.join(" ");
@@ -1281,6 +1291,8 @@ pub async fn fast_search_definitions(
         if let Some(false) = params.search_in_phrases {
             conditions.push("AND d.cached_typeid != 15".to_string());
         }
+        // Native wiki pages (typeid 16) have their own search channel.
+        conditions.push("AND d.cached_typeid != 16".to_string());
     }
 
     let additional_conditions = conditions.join(" ");
@@ -1723,6 +1735,334 @@ pub async fn get_entry_details(
     }
 }
 
+/// Fetch the native wiki definition for a valsi word (typeid = 16).
+pub async fn get_wiki_by_word(
+    pool: &Pool,
+    word: &str,
+    user_id: Option<i32>,
+) -> Result<Option<DefinitionDetail>, Box<dyn std::error::Error>> {
+    let mut client = pool.get().await?;
+    let transaction = client.transaction().await?;
+
+    let word = word.replace('_', " ");
+
+    let row = transaction.query_opt(
+        "
+        WITH image_check AS (
+            SELECT EXISTS (
+                SELECT 1 FROM definition_images di
+                JOIN definitions d ON di.definition_id = d.definitionid
+                JOIN valsi v ON d.valsiid = v.valsiid
+                WHERE v.word = $1 AND v.typeid = 16
+            ) as has_image
+        )
+        SELECT d.*, v.word as valsiword, v.valsiid as valsiid, v.source_langid, v.rafsi,
+                l.realname as langrealname, u.username,
+                vt.descriptor as type_name,
+                i.has_image,
+                (SELECT COUNT(*) FROM threads t
+                      LEFT JOIN comments c ON t.threadid = c.threadid
+                      WHERE t.valsiid = v.valsiid AND t.definitionid = d.definitionid) as comment_count,
+                CASE
+                    WHEN $2::int IS NOT NULL THEN can_edit_definition(d.definitionid, $2)
+                    ELSE false
+                END as can_edit,
+                COALESCE((SELECT SUM(value) FROM definitionvotes
+                      WHERE definitionid = d.definitionid), 0)::bigint AS score,
+                CASE WHEN $2::int IS NOT NULL THEN
+                    (SELECT value::int FROM definitionvotes
+                     WHERE userid = $2 AND definitionid = d.definitionid)
+                END as user_vote
+         FROM valsi v
+         JOIN definitions d ON d.valsiid = v.valsiid
+         JOIN valsitypes vt ON v.typeid = vt.typeid
+         JOIN languages l ON d.langid = l.langid
+         CROSS JOIN image_check i
+         JOIN users u ON d.userid = u.userid
+         WHERE v.word = $1 AND v.typeid = 16
+         ORDER BY d.definitionid
+         LIMIT 1",
+        &[&word, &user_id],
+    ).await?;
+
+    match row {
+        Some(row) => {
+            let source_langid: i32 = row.get("source_langid");
+            let definition_id: i32 = row.get("definitionid");
+
+            let (gloss_keywords, place_keywords) = if source_langid == 1 {
+                let gloss_keywords_rows = transaction
+                    .query(
+                        "SELECT n.word, n.meaning
+                         FROM keywordmapping k
+                         JOIN natlangwords n ON k.natlangwordid = n.wordid
+                         WHERE k.definitionid = $1 AND k.place = 0",
+                        &[&definition_id],
+                    )
+                    .await?;
+
+                let gloss_keywords: Vec<KeywordMapping> = gloss_keywords_rows
+                    .into_iter()
+                    .map(|row| KeywordMapping {
+                        word: row.get("word"),
+                        meaning: row.get("meaning"),
+                    })
+                    .collect();
+
+                let place_keywords_rows = transaction
+                    .query(
+                        "SELECT n.word, n.meaning
+                         FROM keywordmapping k
+                         JOIN natlangwords n ON k.natlangwordid = n.wordid
+                         WHERE k.definitionid = $1 AND k.place > 0
+                         ORDER BY k.place",
+                        &[&definition_id],
+                    )
+                    .await?;
+
+                let place_keywords: Vec<KeywordMapping> = place_keywords_rows
+                    .into_iter()
+                    .map(|row| KeywordMapping {
+                        word: row.get("word"),
+                        meaning: row.get("meaning"),
+                    })
+                    .collect();
+
+                (Some(gloss_keywords), Some(place_keywords))
+            } else {
+                (None, None)
+            };
+
+            transaction.commit().await?;
+
+            let definition = DefinitionDetail {
+                similarity: None,
+                embedding: None,
+                sound_url: None,
+                definitionid: row.get("definitionid"),
+                valsiword: row.get("valsiword"),
+                valsiid: row.get("valsiid"),
+                langid: row.get("langid"),
+                definition: row.get("definition"),
+                notes: row.get("notes"),
+                etymology: row.get("etymology"),
+                selmaho: row.get("selmaho"),
+                jargon: row.get("jargon"),
+                definitionnum: row.get("definitionnum"),
+                score: row_vote_score_f32(&row, "score"),
+                langrealname: row.get("langrealname"),
+                username: row.get("username"),
+                time: row.get("time"),
+                type_name: row.get("type_name"),
+                rafsi: row.try_get("rafsi").ok().flatten(),
+                comment_count: row.get("comment_count"),
+                user_vote: row.get("user_vote"),
+                gloss_keywords,
+                place_keywords,
+                owner_only: row.get("owner_only"),
+                can_edit: row.get("can_edit"),
+                created_at: row.get("created_at"),
+                has_image: row.get("has_image"),
+                metadata: None,
+                examples: None,
+                decomposition: row
+                    .try_get::<_, Option<String>>("cached_decomposition")
+                    .ok()
+                    .flatten()
+                    .and_then(|s| parse_cached_decomposition(Some(s))),
+            };
+
+            Ok(Some(definition))
+        }
+        None => {
+            transaction.commit().await?;
+            Ok(None)
+        }
+    }
+}
+
+/// Add or update a native wiki page. A wiki is stored as a valsi of type `wiki`
+/// (typeid = 16) with a single definition containing the markdown body.
+async fn upsert_wiki_in_transaction(
+    transaction: &Transaction<'_>,
+    claims: &Claims,
+    request: &AddDefinitionRequest,
+    redis_cache: &RedisCache,
+) -> Result<(String, i32), Box<dyn std::error::Error>> {
+    let sanitized_definition = sanitize_html(&request.definition);
+    let word = sanitize_html(&request.word);
+    let source_langid = request.source_langid.unwrap_or(1);
+
+    let options = MathJaxValidationOptions { use_tectonic: true };
+    if source_langid == 1 || source_langid == 58 {
+        validate_mathjax(&sanitized_definition, &options)
+            .await
+            .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)?;
+    }
+
+    // Get or create a valsi of type `wiki`.
+    let valsi_id = match transaction
+        .query_opt(
+            "SELECT valsiid, typeid FROM valsi WHERE word = $1 AND source_langid = $2",
+            &[&word, &source_langid],
+        )
+        .await?
+    {
+        Some(row) => {
+            let existing_typeid: i16 = row.get("typeid");
+            if existing_typeid != 16 {
+                return Err(format!(
+                    "A non-wiki valsi with word '{}' already exists for source language {}",
+                    word, source_langid
+                )
+                .into());
+            }
+            row.get::<_, i32>("valsiid")
+        }
+        None => transaction
+            .query_one(
+                "INSERT INTO valsi (word, typeid, userid, time, source_langid)
+                 VALUES ($1, $2, $3, $4, $5)
+                 RETURNING valsiid",
+                &[
+                    &word,
+                    &(16i16),
+                    &claims.sub,
+                    &(Utc::now().timestamp() as i32),
+                    &source_langid,
+                ],
+            )
+            .await?
+            .get::<_, i32>("valsiid"),
+    };
+
+    // Enforce one definition per wiki valsi: update if it already exists.
+    let existing_definition = transaction
+        .query_opt(
+            "SELECT definitionid FROM definitions WHERE valsiid = $1 ORDER BY definitionid LIMIT 1",
+            &[&valsi_id],
+        )
+        .await?;
+
+    let definition_id = if let Some(row) = existing_definition {
+        let definition_id: i32 = row.get("definitionid");
+        transaction
+            .execute(
+                "UPDATE definitions
+                 SET definition = $1, langid = $2, notes = NULL, etymology = NULL,
+                     selmaho = NULL, jargon = NULL, time = $3, owner_only = $4,
+                     embedding = NULL
+                 WHERE definitionid = $5",
+                &[
+                    &sanitized_definition,
+                    &request.lang_id,
+                    &(Utc::now().timestamp() as i32),
+                    &request.owner_only.unwrap_or(false),
+                    &definition_id,
+                ],
+            )
+            .await?;
+        definition_id
+    } else {
+        let definitionnum = 1i32;
+        let definition_id = transaction
+            .query_one("SELECT nextval('definitions_definitionid_seq')", &[])
+            .await?
+            .get::<_, i64>(0) as i32;
+        transaction
+            .execute(
+                "INSERT INTO definitions
+                 (definitionid, langid, valsiid, definitionnum, definition, notes, etymology,
+                  selmaho, jargon, userid, time, owner_only, metadata)
+                 VALUES ($1, $2, $3, $4, $5, NULL, NULL, NULL, NULL, $6, $7, $8, $9)",
+                &[
+                    &definition_id,
+                    &request.lang_id,
+                    &valsi_id,
+                    &definitionnum,
+                    &sanitized_definition,
+                    &claims.sub,
+                    &(Utc::now().timestamp() as i32),
+                    &request.owner_only.unwrap_or(false),
+                    &request
+                        .metadata
+                        .clone()
+                        .unwrap_or_else(|| serde_json::json!({})),
+                ],
+            )
+            .await?;
+        definition_id
+    };
+
+    // Snapshot version (no keyword fields for wiki).
+    transaction
+        .execute(
+            "INSERT INTO definition_versions (
+                definition_id, langid, valsiid, definition, notes, etymology, selmaho, jargon,
+                gloss_keywords, place_keywords, user_id, message
+            )
+            SELECT
+                d.definitionid, d.langid, d.valsiid, d.definition, d.notes, d.etymology, d.selmaho, d.jargon,
+                '[]'::jsonb, '[]'::jsonb, $2, 'Updated version'
+            FROM definitions d
+            WHERE d.definitionid = $1",
+            &[&definition_id, &claims.sub],
+        )
+        .await?;
+
+    // Upsert the creator's vote.
+    let vote_size: f32 = transaction
+        .query_one("SELECT votesize FROM users WHERE userid = $1", &[&claims.sub])
+        .await?
+        .get(0);
+    transaction
+        .execute(
+            "INSERT INTO definitionvotes (valsiid, langid, definitionid, value, userid, time)
+             VALUES ($1, $2, $3, $4, $5, $6)
+             ON CONFLICT (valsiid, langid, userid, definitionid)
+             DO UPDATE SET
+                value = EXCLUDED.value,
+                time = EXCLUDED.time",
+            &[
+                &valsi_id,
+                &request.lang_id,
+                &definition_id,
+                &vote_size,
+                &claims.sub,
+                &(Utc::now().timestamp() as i32),
+            ],
+        )
+        .await?;
+
+    let valsi_word: String = transaction
+        .query_one("SELECT word FROM valsi WHERE valsiid = $1", &[&valsi_id])
+        .await?
+        .get("word");
+
+    let url = format!("{}/valsi/{}", env::var("FRONTEND_URL")?, valsi_word);
+    transaction
+        .execute(
+            "SELECT notify_valsi_subscribers($1, 'edit', $2, $3, $4, $5)",
+            &[
+                &valsi_id,
+                &format!("Wiki page updated for {}", valsi_word),
+                &url,
+                &claims.sub,
+                &definition_id,
+            ],
+        )
+        .await?;
+
+    if let Err(e) = redis_cache.invalidate_definition_search_caches().await {
+        log::error!("Failed to invalidate definition search caches after wiki upsert: {}", e);
+    }
+    if let Err(e) = redis_cache.invalidate_recent_changes().await {
+        log::error!("Failed to invalidate recent changes cache after wiki upsert: {}", e);
+    }
+
+    Ok(("wiki".to_string(), definition_id))
+}
+
 pub async fn add_definition(
     pool: &Pool,
     claims: &Claims,
@@ -1757,6 +2097,11 @@ async fn add_definition_in_transaction(
     redis_cache: &RedisCache,
     send_notifications: bool,
 ) -> Result<(String, i32), Box<dyn std::error::Error>> {
+    // Native wiki pages use their own path to enforce one wiki per valsi.
+    if request.is_wiki == Some(true) {
+        return upsert_wiki_in_transaction(transaction, claims, request, redis_cache).await;
+    }
+
     let sanitized_definition = sanitize_html(&request.definition);
     let sanitized_notes = request.notes.as_ref().map(|n| sanitize_html(n));
     let sanitized_etymology = request.etymology.as_ref().map(|e| sanitize_html(e));
@@ -2448,7 +2793,7 @@ pub async fn update_definition(
     // Get current definition details including owner status and author
     let current_def = transaction
         .query_one(
-            "SELECT d.userid, d.owner_only, u.username, v.source_langid, d.valsiid
+            "SELECT d.userid, d.owner_only, u.username, v.source_langid, v.typeid, d.valsiid
               FROM definitions d
               JOIN users u ON d.userid = u.userid
               JOIN valsi v ON d.valsiid = v.valsiid
@@ -2459,14 +2804,22 @@ pub async fn update_definition(
 
     let source_langid: Option<i32> = current_def.get("source_langid");
     let valsi_id: i32 = current_def.get("valsiid");
+    let valsi_typeid: i16 = current_def.get("typeid");
 
-    validate_and_update_rafsi(
-        &transaction,
-        valsi_id,
-        request.rafsi.clone(),
-        source_langid.unwrap_or(1),
-    )
-    .await?;
+    // Wiki edits must target a valsi of type `wiki`.
+    if request.is_wiki == Some(true) && valsi_typeid != 16 {
+        return Err("This definition is not a native wiki page".into());
+    }
+
+    if request.is_wiki != Some(true) {
+        validate_and_update_rafsi(
+            &transaction,
+            valsi_id,
+            request.rafsi.clone(),
+            source_langid.unwrap_or(1),
+        )
+        .await?;
+    }
 
     let options = MathJaxValidationOptions { use_tectonic: true };
 
@@ -2516,6 +2869,16 @@ pub async fn update_definition(
     );
 
     // Update main definition
+    let (notes, etymology, selmaho, jargon) = if request.is_wiki == Some(true) {
+        (None, None, None, None)
+    } else {
+        (
+            sanitized_notes.clone(),
+            sanitized_etymology.clone(),
+            sanitized_selmaho.clone(),
+            sanitized_jargon.clone(),
+        )
+    };
     transaction
         .execute(
             "UPDATE definitions
@@ -2525,12 +2888,12 @@ pub async fn update_definition(
              WHERE definitionid = $8",
             &[
                 &sanitized_definition,
-                &sanitized_notes,
-                &sanitized_jargon,
+                &notes,
+                &jargon,
                 &(Utc::now().timestamp() as i32),
-                &sanitized_selmaho,
+                &selmaho,
                 &owner_only,
-                &sanitized_etymology,
+                &etymology,
                 &definition_id,
             ],
         )
@@ -2565,124 +2928,128 @@ pub async fn update_definition(
     }
 
     // Clear existing keywords
-    transaction
-        .execute(
-            "DELETE FROM keywordmapping WHERE definitionid = $1",
-            &[&definition_id],
-        )
-        .await?;
-
-    // Add gloss keywords
-    if let Some(gloss_keywords) = &request.gloss_keywords {
-        for keyword in gloss_keywords {
-            let sanitized_word = sanitize_html(&keyword.word);
-            let sanitized_meaning = keyword
-                .meaning
-                .as_ref()
-                .map(|m| sanitize_html(m))
-                .filter(|s| !s.trim().is_empty());
-            // First ensure the natlangword exists
-            transaction
-                .execute(
-                    "INSERT INTO natlangwords (langid, word, meaning, meaningNum, userId, time)
-                 SELECT $1, $2, $3,
-                        COALESCE((
-                            SELECT MAX(meaningNum) + 1
-                            FROM natlangwords
-                            WHERE langid = $1 AND word = $2
-                        ), 1),
-                        $4, $5
-                 WHERE NOT EXISTS (
-                     SELECT 1 FROM natlangwords
-                     WHERE langid = $1
-                     AND word = $2
-                     AND COALESCE(meaning, '') = COALESCE($3, '')
-                 )",
-                    &[
-                        &request.lang_id,
-                        &sanitized_word,
-                        &sanitized_meaning,
-                        &user_id,
-                        &(Utc::now().timestamp() as i32),
-                    ],
-                )
-                .await?;
-
-            // Then create keywordmapping
-            transaction
-                .execute(
-                    "INSERT INTO keywordmapping (definitionid, place, natlangwordid)
-                 SELECT $1, 0, wordid
-                 FROM natlangwords
-                 WHERE langid = $2 AND word = $3
-                 AND COALESCE(meaning, '') = COALESCE($4, '')
-                 LIMIT 1",
-                    &[
-                        &definition_id,
-                        &request.lang_id,
-                        &sanitized_word,
-                        &sanitized_meaning,
-                    ],
-                )
-                .await?;
-        }
+    if request.is_wiki != Some(true) {
+        transaction
+            .execute(
+                "DELETE FROM keywordmapping WHERE definitionid = $1",
+                &[&definition_id],
+            )
+            .await?;
     }
 
-    // Add place keywords
-    if let Some(place_keywords) = &request.place_keywords {
-        for (i, keyword) in place_keywords.iter().enumerate() {
-            let sanitized_word = sanitize_html(&keyword.word);
-            let sanitized_meaning = keyword
-                .meaning
-                .as_ref()
-                .map(|m| sanitize_html(m))
-                .filter(|s| !s.trim().is_empty());
-            // First ensure the natlangword exists
-            transaction
-                .execute(
-                    "INSERT INTO natlangwords (langid, word, meaning, meaningNum, userId, time)
-                 SELECT $1, $2, $3,
-                        COALESCE((
-                            SELECT MAX(meaningNum) + 1
-                            FROM natlangwords
-                            WHERE langid = $1 AND word = $2
-                        ), 1),
-                        $4, $5
-                 WHERE NOT EXISTS (
-                     SELECT 1 FROM natlangwords
-                     WHERE langid = $1
-                     AND word = $2
-                     AND COALESCE(meaning, '') = COALESCE($3, '')
-                 )",
-                    &[
-                        &request.lang_id,
-                        &sanitized_word,
-                        &sanitized_meaning,
-                        &user_id,
-                        &(Utc::now().timestamp() as i32),
-                    ],
-                )
-                .await?;
+    // Add gloss keywords
+    if request.is_wiki != Some(true) {
+        if let Some(gloss_keywords) = &request.gloss_keywords {
+            for keyword in gloss_keywords {
+                let sanitized_word = sanitize_html(&keyword.word);
+                let sanitized_meaning = keyword
+                    .meaning
+                    .as_ref()
+                    .map(|m| sanitize_html(m))
+                    .filter(|s| !s.trim().is_empty());
+                // First ensure the natlangword exists
+                transaction
+                    .execute(
+                        "INSERT INTO natlangwords (langid, word, meaning, meaningNum, userId, time)
+                     SELECT $1, $2, $3,
+                            COALESCE((
+                                SELECT MAX(meaningNum) + 1
+                                FROM natlangwords
+                                WHERE langid = $1 AND word = $2
+                            ), 1),
+                            $4, $5
+                     WHERE NOT EXISTS (
+                         SELECT 1 FROM natlangwords
+                         WHERE langid = $1
+                         AND word = $2
+                         AND COALESCE(meaning, '') = COALESCE($3, '')
+                     )",
+                        &[
+                            &request.lang_id,
+                            &sanitized_word,
+                            &sanitized_meaning,
+                            &user_id,
+                            &(Utc::now().timestamp() as i32),
+                        ],
+                    )
+                    .await?;
 
-            // Then create keywordmapping
-            let place: i32 = (i + 1) as i32;
-            transaction
-                .execute(
-                    "INSERT INTO keywordmapping (definitionid, place, natlangwordid)
-                 SELECT $1, $2, wordid
-                 FROM natlangwords
-                 WHERE langid = $3 AND word = $4
-                 AND COALESCE(meaning, '') = COALESCE($5, '')
-                 LIMIT 1",
-                    &[
-                        &definition_id,
-                        &place,
-                        &request.lang_id,
-                        &sanitized_word,
-                        &sanitized_meaning,
-                    ],
-                )
-                .await?;
+                // Then create keywordmapping
+                transaction
+                    .execute(
+                        "INSERT INTO keywordmapping (definitionid, place, natlangwordid)
+                     SELECT $1, 0, wordid
+                     FROM natlangwords
+                     WHERE langid = $2 AND word = $3
+                     AND COALESCE(meaning, '') = COALESCE($4, '')
+                     LIMIT 1",
+                        &[
+                            &definition_id,
+                            &request.lang_id,
+                            &sanitized_word,
+                            &sanitized_meaning,
+                        ],
+                    )
+                    .await?;
+            }
+        }
+
+        // Add place keywords
+        if let Some(place_keywords) = &request.place_keywords {
+            for (i, keyword) in place_keywords.iter().enumerate() {
+                let sanitized_word = sanitize_html(&keyword.word);
+                let sanitized_meaning = keyword
+                    .meaning
+                    .as_ref()
+                    .map(|m| sanitize_html(m))
+                    .filter(|s| !s.trim().is_empty());
+                // First ensure the natlangword exists
+                transaction
+                    .execute(
+                        "INSERT INTO natlangwords (langid, word, meaning, meaningNum, userId, time)
+                     SELECT $1, $2, $3,
+                            COALESCE((
+                                SELECT MAX(meaningNum) + 1
+                                FROM natlangwords
+                                WHERE langid = $1 AND word = $2
+                            ), 1),
+                            $4, $5
+                     WHERE NOT EXISTS (
+                         SELECT 1 FROM natlangwords
+                         WHERE langid = $1
+                         AND word = $2
+                         AND COALESCE(meaning, '') = COALESCE($3, '')
+                     )",
+                        &[
+                            &request.lang_id,
+                            &sanitized_word,
+                            &sanitized_meaning,
+                            &user_id,
+                            &(Utc::now().timestamp() as i32),
+                        ],
+                    )
+                    .await?;
+
+                // Then create keywordmapping
+                let place: i32 = (i + 1) as i32;
+                transaction
+                    .execute(
+                        "INSERT INTO keywordmapping (definitionid, place, natlangwordid)
+                     SELECT $1, $2, wordid
+                     FROM natlangwords
+                     WHERE langid = $3 AND word = $4
+                     AND COALESCE(meaning, '') = COALESCE($5, '')
+                     LIMIT 1",
+                        &[
+                            &definition_id,
+                            &place,
+                            &request.lang_id,
+                            &sanitized_word,
+                            &sanitized_meaning,
+                        ],
+                    )
+                    .await?;
+            }
         }
     }
 
@@ -4215,6 +4582,7 @@ pub async fn bulk_import_definitions(
                 "import_time": params.import_time,
             })),
             rafsi: None,
+            is_wiki: None,
         };
 
         // Pass the parser map to add_definition

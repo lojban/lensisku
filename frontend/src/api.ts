@@ -578,6 +578,8 @@ export const list_wave_threads = (params?: Record<string, unknown>, signal?: Abo
 
 export const getWikiArticle = (title: string, signal?: AbortSignal) =>
   api.get(`/wiki/${encodeURIComponent(title)}`, { signal })
+export const getNativeWikiArticle = (word: string, signal?: AbortSignal) =>
+  api.get(`/jbovlaste/valsi/${encodeURIComponent(word)}/wiki`, { signal })
 
 export const getRoles = () => api.get('/auth/roles')
 export const getPermissions = () => api.get('/auth/permissions')

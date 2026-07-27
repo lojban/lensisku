@@ -142,7 +142,9 @@
     "viewOnMediawiki": "viska fi la mw.lojban.org",
     "redirectNotice": "ti vi papri cu galfybi'o",
     "notFound": "na facki lo papri",
-    "loadFailed": "na cumki fa lo nu cpacu lo papri"
+    "loadFailed": "na cumki fa lo nu cpacu lo papri",
+    "edit": "Edit",
+    "history": "History"
   },
   "assistantChat": {
     "title": "lojbo sidju",
@@ -1619,7 +1621,8 @@
     "zei-lujvo": "luvrzei",
     "obsolete-cmevla": "gendra be ba'o ku cmevla",
     "obsolete-fuhivla": "gendra be ba'o ku fu'ivla",
-    "obsolete-cmavo": "gendra be ba'o ku cmavo"
+    "obsolete-cmavo": "gendra be ba'o ku cmavo",
+    "wiki": "wiki"
   },
   "exportPairs": {
     "title": "cupra lo xe fanva selyli'e",
@@ -1659,5 +1662,21 @@
     "questsDescription": "ko mulno lo troci mu'i lo nu jbera",
     "heartsLeft": "nelci poi cliva",
     "totalXP": "ro jbera be la'ei XP"
+  },
+  "upsertWiki": {
+    "editTitle": "Edit wiki page",
+    "addTitle": "Add wiki page",
+    "wordLabel": "Page title",
+    "wordPlaceholder": "Enter page title",
+    "sourceLanguageLabel": "Source language",
+    "sourceLanguageNote": "The language of the page title.",
+    "selectLanguagePlaceholder": "Select a language",
+    "required": "*",
+    "languageLabel": "Content language",
+    "languagePlaceholder": "Select a language",
+    "definitionLabel": "Body",
+    "editorPlaceholder": "Type / to show menu",
+    "saving": "Saving",
+    "saveButton": "Save wiki page"
   }
 }

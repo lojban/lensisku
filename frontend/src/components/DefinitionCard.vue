@@ -893,6 +893,12 @@ const isValsiTruncated = computed(() => valsiWord.value.length > MAX_VALSI_DISPL
 const valsiDefinitionLink = computed(() => {
   if (!props.definition.definitionid) return '#'
 
+  const isWiki = props.definition.type_name === 'wiki'
+  const word = valsiWord.value.replace(/ /g, '_')
+  if (isWiki) {
+    return { path: `/wiki/${encodeURIComponent(word)}` }
+  }
+
   const query: { highlight_definition_id: number; langid?: number } = {
     highlight_definition_id: props.definition.definitionid,
   }
@@ -902,7 +908,7 @@ const valsiDefinitionLink = computed(() => {
   }
 
   return {
-    path: `/valsi/${encodeURIComponent(valsiWord.value.replace(/ /g, '_'))}`,
+    path: `/valsi/${encodeURIComponent(word)}`,
     query,
   }
 })

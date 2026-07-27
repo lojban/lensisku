@@ -21,6 +21,7 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
             .service(controller::get_sitemap)
             .service(controller::get_valsi_sound)
             .service(controller::get_definitions_by_entry)
+            .service(controller::get_wiki_by_word)
             .service(controller::get_entry_details)
             .service(controller::search_definitions)
             .service(controller::semantic_search)

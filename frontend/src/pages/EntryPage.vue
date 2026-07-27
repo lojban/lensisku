@@ -253,6 +253,13 @@ const fetchDefinitionsDetails = async () => {
     ])
 
     valsi.value = valsiRes.data.valsi
+
+    // Native wiki pages have their own dedicated view.
+    if (valsi.value?.type_name === 'wiki') {
+      router.push(`/wiki/${valsi.value.word.replace(/ /g, '_')}`)
+      return
+    }
+
     definitions.value = defsRes.data
   } catch (e) {
     if (e.response?.status === 404) {
