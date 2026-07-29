@@ -452,3 +452,33 @@ export function buildAquaButtonGroupLayer() {
     },
   }
 }
+
+/**
+ * Footer modal `.toggle-switch` / `.toggle-switch-thumb` under aqua theme
+ * (`html[data-button-theme="aqua"]`). Keys are bare class names for `selectorFor`.
+ */
+export function buildAquaToggleSwitchThemeRules() {
+  return {
+    'toggle-switch': {
+      '--aqua-hue': '215',
+      boxShadow: aquaToggleOffShadow,
+      '&[aria-pressed="true"]': {
+        '@apply bg-sky-400': {},
+        '--aqua-hue': '199',
+        boxShadow:
+          '0 0.25em 0.4em rgba(0, 0, 0, 0.28),' +
+          '0 0.08em 0.12em hsla(var(--aqua-hue), 100%, 36.7%, 0.45),' +
+          'inset 0 0.2em 0.4em hsla(calc(var(--aqua-hue) + 4), 100%, 9.6%, 0.55),' +
+          'inset 0 0.3em 0.4em 0.1em hsla(var(--aqua-hue), 100%, 36.7%, 0.55)',
+      },
+      '&[aria-pressed="false"]': {
+        '@apply bg-gray-300': {},
+        boxShadow: aquaToggleOffShadow,
+      },
+    },
+    'toggle-switch-thumb': {
+      boxShadow:
+        '0 0.12em 0.25em rgba(0, 0, 0, 0.35), 0 0 0.05em rgba(0, 0, 0, 0.2), inset 0 0.1em 0.15em rgba(255, 255, 255, 0.85)',
+    },
+  }
+}

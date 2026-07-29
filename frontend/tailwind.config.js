@@ -1,9 +1,10 @@
-import { buildFlatButtonLayer } from './tailwind.flat-buttons.mjs'
+import { buildFlatButtonLayer, buildFlatToggleSwitchThemeRules } from './tailwind.flat-buttons.mjs'
 import {
   aquaToggleOffShadow,
   buildAquaBaseLayer,
   buildAquaButtonGroupLayer,
   buildAquaButtonPrimitives,
+  buildAquaToggleSwitchThemeRules,
   buildAquaUiBtnGroupItemGeometry,
 } from './tailwind.aqua-buttons.mjs'
 
@@ -138,13 +139,25 @@ export default {
               '0 18px 36px -10px rgba(15, 23, 42, 0.22), 0 10px 22px -8px rgba(225, 29, 72, 0.32)',
           },
         },
-        /** Footer modal: iOS-style toggle track + thumb (pair thumb with translate-x-0 / translate-x-5). */
+        /**
+         * Footer modal: iOS-style toggle track + thumb (pair thumb with translate-x-0 / translate-x-5).
+         * Use `Button variant="plain"` so aqua/flat `ui-btn--*` padding/chrome do not fight the track.
+         * Theme gloss / emboss lives in `buttonUiThemeLayer` (aqua vs flat).
+         */
         '.toggle-switch': {
-          '@apply relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2':
+          '@apply relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent bg-gray-200 p-0 transition-[background-color,box-shadow] duration-200 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-nav-link focus-visible:ring-offset-2':
             {},
+          '&[aria-pressed="true"]': {
+            '@apply bg-nav-link': {},
+          },
+          /** `Button.vue` wraps the slot; keep the thumb free to translate inside the track. */
+          '& > span': {
+            '@apply !m-0 flex !h-full !w-full !items-center !justify-start !gap-0 !p-0 !whitespace-normal':
+              {},
+          },
         },
         '.toggle-switch-thumb': {
-          '@apply pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transition duration-200 ease-in-out will-change-transform':
+          '@apply pointer-events-none relative z-[1] inline-block h-5 w-5 shrink-0 rounded-full bg-white shadow transition duration-200 ease-in-out will-change-transform':
             {},
         },
         /**
@@ -1033,6 +1046,12 @@ export default {
         }
         flatRules[selectorFor('flat', 'ui-btn--toggle:not(.active)')] = {
           '@apply btn-empty': {},
+        }
+        for (const [cls, rule] of Object.entries(buildAquaToggleSwitchThemeRules())) {
+          aquaRules[selectorFor('aqua', cls)] = rule
+        }
+        for (const [cls, rule] of Object.entries(buildFlatToggleSwitchThemeRules())) {
+          flatRules[selectorFor('flat', cls)] = rule
         }
         /** Beats semantic ui-btn--* primitives so inner segments stay joined in forced groups (all breakpoints). */
         aquaRules[selectorFor('aqua', 'btn-group-forced .ui-btn--group-item')] =

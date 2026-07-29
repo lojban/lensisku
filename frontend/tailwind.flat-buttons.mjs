@@ -368,3 +368,32 @@ export function buildFlatButtonLayer(theme) {
     ...custom,
   }
 }
+
+/** Flat emboss for footer `.toggle-switch` off state (mirrors `.btn-empty` chrome). */
+const flatToggleSwitchOffShadow =
+  'inset 0 1px 0 rgba(255, 255, 255, 0.9), inset 0 -1px 0 rgba(148, 163, 184, 0.18), 0 1px 2px rgba(15, 23, 42, 0.08)'
+
+/**
+ * Footer modal `.toggle-switch` / `.toggle-switch-thumb` under flat theme
+ * (`html[data-button-theme="flat"]` / default). Keys are bare class names for `selectorFor`.
+ */
+export function buildFlatToggleSwitchThemeRules() {
+  return {
+    'toggle-switch': {
+      boxShadow: flatToggleSwitchOffShadow,
+      '&[aria-pressed="true"]': {
+        '@apply bg-nav-link': {},
+        boxShadow:
+          'inset 0 1px 2px rgba(15, 23, 42, 0.22), inset 0 -1px 0 rgba(255, 255, 255, 0.12), 0 1px 2px rgba(15, 23, 42, 0.1)',
+      },
+      '&[aria-pressed="false"]': {
+        '@apply bg-gray-200': {},
+        boxShadow: flatToggleSwitchOffShadow,
+      },
+    },
+    'toggle-switch-thumb': {
+      boxShadow:
+        '0 1px 2px rgba(15, 23, 42, 0.18), 0 0 0 1px rgba(148, 163, 184, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.95)',
+    },
+  }
+}

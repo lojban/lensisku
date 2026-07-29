@@ -1,41 +1,45 @@
 <template>
   <!-- Popup for chat controls -->
   <ModalComponent :show="showPopup" :title="t('footer.chatSettings')" @close="showPopup = false">
-    <SocialLinks class="mb-4" />
-    <!-- Toggle for marquee -->
-    <div class="flex items-center justify-between mb-4">
-      <span class="text-gray-700">{{ t('footer.marqueeToggle') }}</span>
-      <Button
-        variant="neutral"
-        type="button"
-        class="toggle-switch"
-        :class="marqueeEnabled ? 'bg-nav-link' : 'bg-gray-200'"
-        :aria-pressed="marqueeEnabled"
-        @click="toggleMarquee"
-      >
-        <span
-          aria-hidden="true"
-          class="toggle-switch-thumb"
-          :class="marqueeEnabled ? 'translate-x-5' : 'translate-x-0'"
-        />
-      </Button>
-    </div>
-    <!-- Last 10 messages -->
-    <div class="space-y-2">
-      <h4 class="text-gray-700 font-medium mb-2">{{ t('footer.recentMessages') }}</h4>
-
-      <div v-if="messageStack.length > 0" class="max-h-[60vh] overflow-y-auto pr-2">
-        <div
-          v-for="(msg, index) in messageStack.slice()"
-          :key="index"
-          class="p-2 bg-gray-50 rounded break-words whitespace-normal"
+    <div class="flex flex-col gap-4">
+      <SocialLinks />
+      <!-- Toggle for marquee -->
+      <div class="flex items-center justify-between gap-4">
+        <span class="text-sm text-gray-700 leading-snug">{{ t('footer.marqueeToggle') }}</span>
+        <Button
+          variant="plain"
+          type="button"
+          class="toggle-switch"
+          :aria-pressed="marqueeEnabled"
+          :aria-label="t('footer.marqueeToggle')"
+          @click="toggleMarquee"
         >
-          <span class="font-medium text-blue-600">{{ msg.w }}:</span>
-          <span class="text-gray-700 ml-1">{{ msg.d }}</span>
-        </div>
+          <span
+            aria-hidden="true"
+            class="toggle-switch-thumb"
+            :class="marqueeEnabled ? 'translate-x-5' : 'translate-x-0'"
+          />
+        </Button>
       </div>
+      <!-- Last 10 messages -->
+      <div class="flex flex-col gap-2">
+        <h4 class="text-sm font-medium text-gray-700">{{ t('footer.recentMessages') }}</h4>
 
-      <div v-else class="text-gray-500">{{ t('footer.noRecentMessages') }}</div>
+        <div v-if="messageStack.length > 0" class="max-h-[60vh] overflow-y-auto pr-2">
+          <div class="flex flex-col gap-2">
+            <div
+              v-for="(msg, index) in messageStack.slice()"
+              :key="index"
+              class="rounded-md bg-gray-50 px-3 py-2 break-words whitespace-normal"
+            >
+              <span class="font-medium text-blue-600">{{ msg.w }}:</span>
+              <span class="ml-1 text-gray-700">{{ msg.d }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div v-else class="text-sm text-gray-500">{{ t('footer.noRecentMessages') }}</div>
+      </div>
     </div>
   </ModalComponent>
   <footer
@@ -67,13 +71,13 @@
             />
           </div>
 
-          <div
+          <!-- <div
             class="absolute inset-y-0 left-0 w-10 bg-gradient-to-r from-white to-transparent pointer-events-none"
           />
 
           <div
             class="absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-white to-transparent pointer-events-none"
-          />
+          /> -->
 
           <div class="whitespace-nowrap" :class="{ hidden: marqueeEnabled }">
             <span
