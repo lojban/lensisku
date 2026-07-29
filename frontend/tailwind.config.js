@@ -847,7 +847,7 @@ export default {
             {},
         },
         '.card-streak-day-label': {
-          '@apply line-clamp-2 w-full px-0.5 text-[10px] font-medium leading-tight text-gray-500 break-words sm:text-xs':
+          '@apply line-clamp-2 w-full text-[10px] font-medium leading-tight text-gray-500 break-words sm:text-xs':
             {},
         },
         '.card-streak-day-points': {
