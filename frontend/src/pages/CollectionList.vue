@@ -50,33 +50,28 @@
             >
               <template #icon> <ArrowBigRight class="h-4 w-4" /> </template>
             </IconButton>
-            <Dropdown :trigger-label="t('collectionList.addActions')">
-              <Button
-                variant="neutral"
-                type="button"
-                class="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-orange-600 hover:bg-orange-50"
+            <ToolbarSelectDropdown>
+              <template #label>{{ t('collectionList.addActions') }}</template>
+              <ToolbarSelectDropdownItem
+                class="text-orange-600 hover:bg-orange-50"
                 @click="setViewMode('my')"
               >
                 <BookOpen class="h-4 w-4 shrink-0" /> {{ t('collectionList.myCollectionsLabel') }}
-              </Button>
-              <Button
-                variant="neutral"
-                type="button"
-                class="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-cyan-600 hover:bg-cyan-50"
+              </ToolbarSelectDropdownItem>
+              <ToolbarSelectDropdownItem
+                class="text-cyan-600 hover:bg-cyan-50"
                 :disabled="isImporting"
                 @click="triggerImport"
               >
                 <Import class="h-4 w-4 shrink-0" /> {{ t('collectionList.importCollection') }}
-              </Button>
-              <Button
-                variant="neutral"
-                type="button"
-                class="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-emerald-600 hover:bg-emerald-50"
+              </ToolbarSelectDropdownItem>
+              <ToolbarSelectDropdownItem
+                class="text-emerald-600 hover:bg-emerald-50"
                 @click="showCreateModal = true"
               >
                 <CirclePlus class="h-4 w-4 shrink-0" /> {{ t('collectionList.createCollection') }}
-              </Button>
-            </Dropdown>
+              </ToolbarSelectDropdownItem>
+            </ToolbarSelectDropdown>
           </div>
         </div>
       </template>
@@ -268,12 +263,13 @@ import {
   Button,
   Checkbox,
   CollectionCard,
-  Dropdown,
   EmptyStatePanel,
   FileInput,
   IconButton,
   Input,
   Textarea,
+  ToolbarSelectDropdown,
+  ToolbarSelectDropdownItem,
 } from '@packages/ui'
 import PageHeader from '@/components/layout/PageHeader.vue'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'

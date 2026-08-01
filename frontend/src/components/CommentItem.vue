@@ -142,14 +142,13 @@
         </RouterLink>
       </div>
     </div>
-    <Button
+    <button
       v-if="!flatStyle && processedComment.parent_id"
-      variant="neutral"
       class="text-gray-500 italic hover:text-blue-600 flex items-center text-xs mb-2"
       @click.stop="showParentInThread = !showParentInThread"
     >
       <ArrowUp class="h-3 w-3" /> <span>{{ t('components.commentItem.showParent') }}</span>
-    </Button>
+    </button>
     <div class="min-w-48 overflow-x-auto">
       <div
         class="prose prose-sm max-w-none text-gray-700 mb-3 [&_img]:max-h-48 [&_img]:object-contain"
@@ -713,7 +712,11 @@ const formatDate = (timestamp: number) => {
 @keyframes highlight {
   0%,
   95% {
-    @apply outline outline-orange-600 outline-2 bg-orange-50 border-orange-600;
+    outline-style: solid;
+    outline-width: 2px;
+    outline-color: #ea580c;
+    background-color: #fff7ed;
+    border-color: #ea580c;
   }
 
   100% {

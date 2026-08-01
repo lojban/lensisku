@@ -299,7 +299,7 @@
     <div
       class="fixed md:absolute bottom-4 right-4 md:right-6 lg:-right-4 lg:-mr-4 z-50 flex flex-col items-end gap-3"
     >
-      <Dropdown>
+      <ToolbarSelectDropdown>
         <template #trigger="{ open }">
           <span class="fab-elevation-shell">
             <FabButton :aria-label="$t('fab.actionsTitle')">
@@ -335,7 +335,7 @@
             {{ $t('fab.addDefinition') }}
           </span>
         </ToolbarSelectDropdownItem>
-      </Dropdown>
+      </ToolbarSelectDropdown>
     </div>
   </div>
   <FooterComponent v-if="!route.meta.fullHeight" />
@@ -374,7 +374,7 @@ import Error from '@/components/Error.vue'
 import ToastFloat from '@/components/ToastFloat.vue'
 import PWAInstallPrompt from '@/components/messaging/shared/PWAInstallPrompt.vue'
 import { resendConfirmation } from '@/api'
-import { Button, Dropdown, FabButton, ToolbarSelectDropdownItem } from '@packages/ui'
+import { Button, FabButton, ToolbarSelectDropdown, ToolbarSelectDropdownItem } from '@packages/ui'
 
 import BackgroundComponent from './components/BackgroundComponent.vue'
 import FooterComponent from './components/FooterComponent.vue'

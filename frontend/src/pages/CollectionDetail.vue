@@ -22,70 +22,57 @@
       </template>
       <template #title> {{ collection.name }} </template>
       <template #meta-actions>
-        <Dropdown v-if="auth.state.isLoggedIn" :trigger-label="t('collectionDetail.actions')">
-          <Button
+        <ToolbarSelectDropdown v-if="auth.state.isLoggedIn">
+          <template #label>{{ t('collectionDetail.actions') }}</template>
+          <ToolbarSelectDropdownItem
             v-if="isOwner"
-            variant="neutral"
-            type="button"
-            class="w-full pl-4 pr-0 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+            class="text-gray-700 hover:bg-gray-100"
             @click="openEditCollectionModal"
           >
             {{ t('collectionDetail.editCollectionInfo') }}
-          </Button>
-          <Button
-            variant="neutral"
-            type="button"
-            class="w-full px-4 py-2 text-left text-sm text-indigo-600 hover:bg-indigo-50 flex items-center gap-2"
+          </ToolbarSelectDropdownItem>
+          <ToolbarSelectDropdownItem
+            class="text-indigo-600 hover:bg-indigo-50"
             @click="handleCloneCollection"
           >
             {{ t('collectionDetail.cloneCollection') }}
-          </Button>
-          <Button
+          </ToolbarSelectDropdownItem>
+          <ToolbarSelectDropdownItem
             v-if="collection.is_public || isOwner"
-            variant="neutral"
-            type="button"
-            class="w-full px-4 py-2 text-left text-sm text-purple-600 hover:bg-purple-50 flex items-center gap-2"
+            class="text-purple-600 hover:bg-purple-50"
             @click="showExportModal = true"
           >
             {{ t('collectionDetail.exportCollection') }}
-          </Button>
-          <Button
+          </ToolbarSelectDropdownItem>
+          <ToolbarSelectDropdownItem
             v-if="isOwner"
-            variant="neutral"
-            type="button"
-            class="w-full px-4 py-2 text-left text-sm text-green-600 hover:bg-green-50 flex items-center gap-2"
+            class="text-green-600 hover:bg-green-50"
             @click="openMergeModal"
           >
             {{ t('collectionDetail.mergeCollections') }}
-          </Button>
-          <Button
+          </ToolbarSelectDropdownItem>
+          <ToolbarSelectDropdownItem
             v-if="isOwner"
-            variant="neutral"
-            type="button"
-            class="w-full px-4 py-2 text-left text-sm text-cyan-600 hover:bg-cyan-50 flex items-center gap-2"
+            class="text-cyan-600 hover:bg-cyan-50"
             @click="triggerJsonImport"
           >
             {{ t('collectionDetail.importFullButton') }}
-          </Button>
-          <Button
+          </ToolbarSelectDropdownItem>
+          <ToolbarSelectDropdownItem
             v-if="isOwner"
-            variant="neutral"
-            type="button"
-            class="w-full px-4 py-2 text-left text-sm text-teal-600 hover:bg-teal-50 flex items-center gap-2"
+            class="text-teal-600 hover:bg-teal-50"
             @click="showMediaBulkZipModal = true"
           >
             {{ t('collectionCustomTextBulk.mediaBulkZipButton') }}
-          </Button>
-          <Button
+          </ToolbarSelectDropdownItem>
+          <ToolbarSelectDropdownItem
             v-if="isOwner"
-            variant="neutral"
-            type="button"
-            class="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+            class="text-red-600 hover:bg-red-50"
             @click="handleDelete"
           >
             {{ t('collectionDetail.deleteCollection') }}
-          </Button>
-        </Dropdown>
+          </ToolbarSelectDropdownItem>
+        </ToolbarSelectDropdown>
       </template>
       <template #toolbar>
         <FileInput
@@ -1439,11 +1426,12 @@ import {
   Button,
   Checkbox,
   CollectionCoverLightbox,
-  Dropdown,
   FileInput,
   Input,
   Select,
   Textarea,
+  ToolbarSelectDropdown,
+  ToolbarSelectDropdownItem,
 } from '@packages/ui'
 import { useAuth } from '@/composables/useAuth'
 import { useError } from '@/composables/useError'

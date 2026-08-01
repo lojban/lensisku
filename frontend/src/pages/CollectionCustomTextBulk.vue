@@ -15,31 +15,26 @@
         </div>
 
         <div v-if="!isLoading && isOwner" class="flex shrink-0 justify-end">
-          <Dropdown :trigger-label="t('collectionCustomTextBulk.exportMenuLabel')">
-            <Button
-              variant="neutral"
-              type="button"
-              class="w-full px-4 py-2 text-left text-sm text-cyan-600 hover:bg-cyan-50 flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
+          <ToolbarSelectDropdown>
+            <template #label>{{ t('collectionCustomTextBulk.exportMenuLabel') }}</template>
+            <ToolbarSelectDropdownItem
+              class="text-cyan-600 hover:bg-cyan-50 disabled:opacity-40 disabled:cursor-not-allowed"
               :disabled="isSaving || isImporting"
               @click="exportListAsCsv"
             >
               <FileUp class="h-4 w-4 shrink-0" aria-hidden="true" />
               {{ t('collectionCustomTextBulk.exportCsv') }}
-            </Button>
-            <Button
-              variant="neutral"
-              type="button"
-              class="w-full px-4 py-2 text-left text-sm text-emerald-600 hover:bg-emerald-50 flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
+            </ToolbarSelectDropdownItem>
+            <ToolbarSelectDropdownItem
+              class="text-emerald-600 hover:bg-emerald-50 disabled:opacity-40 disabled:cursor-not-allowed"
               :disabled="isSaving || isImporting"
               @click="exportListAsTsv"
             >
               <FileUp class="h-4 w-4 shrink-0" aria-hidden="true" />
               {{ t('collectionCustomTextBulk.exportTsv') }}
-            </Button>
-            <Button
-              variant="neutral"
-              type="button"
-              class="w-full px-4 py-2 text-left text-sm text-blue-600 hover:bg-blue-50 flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
+            </ToolbarSelectDropdownItem>
+            <ToolbarSelectDropdownItem
+              class="text-blue-600 hover:bg-blue-50 disabled:opacity-40 disabled:cursor-not-allowed"
               :disabled="isSaving || isImporting"
               @click="showImportModal = true"
             >
@@ -49,18 +44,16 @@
                   ? t('collectionCustomTextBulk.importing')
                   : t('collectionCustomTextBulk.importButton')
               }}
-            </Button>
-            <Button
-              variant="neutral"
-              type="button"
-              class="w-full px-4 py-2 text-left text-sm text-purple-600 hover:bg-purple-50 flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
+            </ToolbarSelectDropdownItem>
+            <ToolbarSelectDropdownItem
+              class="text-purple-600 hover:bg-purple-50 disabled:opacity-40 disabled:cursor-not-allowed"
               :disabled="isSaving || isImporting || mediaBulkBusy"
               @click="showMediaBulkModal = true"
             >
               <Package class="h-4 w-4 shrink-0" aria-hidden="true" />
               {{ t('collectionCustomTextBulk.mediaBulkZipButton') }}
-            </Button>
-          </Dropdown>
+            </ToolbarSelectDropdownItem>
+          </ToolbarSelectDropdown>
         </div>
       </div>
       <!-- Actions: back, import, revert, save -->
@@ -554,7 +547,13 @@ import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import ModalComponent from '@/components/ModalComponent.vue'
 import SearchInput from '@/components/SearchInput.vue'
 import SuccessToastImportReloadHint from '@/components/SuccessToastImportReloadHint.vue'
-import { Button, Checkbox, Dropdown, Select } from '@packages/ui'
+import {
+  Button,
+  Checkbox,
+  Select,
+  ToolbarSelectDropdown,
+  ToolbarSelectDropdownItem,
+} from '@packages/ui'
 import { useAuth } from '@/composables/useAuth'
 import { useError } from '@/composables/useError'
 import { useSuccessToast } from '@/composables/useSuccessToast'

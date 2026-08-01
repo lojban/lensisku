@@ -1,28 +1,30 @@
 <template>
   <Dropdown>
     <template #trigger="{ open }">
-      <button
-        :id="id"
-        type="button"
-        :aria-label="ariaLabel"
-        class="input-field inline-flex w-auto max-w-full min-w-0 items-center justify-between gap-1.5 px-3 text-left text-sm"
-        :class="[variant === 'role' ? 'max-w-[min(100vw-4rem,14rem)]' : '', triggerClass]"
-      >
-        <span
-          :class="
-            truncateLabel
-              ? 'min-w-0 truncate whitespace-nowrap inline-flex items-center gap-2'
-              : 'whitespace-nowrap inline-flex items-center gap-2'
-          "
+      <slot name="trigger" :open="open">
+        <button
+          :id="id"
+          type="button"
+          :aria-label="ariaLabel"
+          class="input-field inline-flex w-auto max-w-full min-w-0 items-center justify-between gap-1.5 px-3 text-left text-sm"
+          :class="[variant === 'role' ? 'max-w-[min(100vw-4rem,14rem)]' : '', triggerClass]"
         >
-          <slot name="label" />
-        </span>
-        <ChevronDown
-          class="h-4 w-4 shrink-0 opacity-60 transition-transform duration-200"
-          :class="{ 'rotate-180': open }"
-          :stroke-width="2"
-        />
-      </button>
+          <span
+            :class="
+              truncateLabel
+                ? 'min-w-0 truncate whitespace-nowrap inline-flex items-center gap-2'
+                : 'whitespace-nowrap inline-flex items-center gap-2'
+            "
+          >
+            <slot name="label" />
+          </span>
+          <ChevronDown
+            class="h-4 w-4 shrink-0 opacity-60 transition-transform duration-200"
+            :class="{ 'rotate-180': open }"
+            :stroke-width="2"
+          />
+        </button>
+      </slot>
     </template>
     <slot />
   </Dropdown>

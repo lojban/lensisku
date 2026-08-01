@@ -97,26 +97,13 @@
           v-else-if="searchMode === 'dictionary' || searchMode === 'semantic'"
           class="flex flex-col sm:flex-row items-end sm:items-center gap-3 sm:space-x-4 ml-auto"
         >
-          <Dropdown
+          <ToolbarSelectDropdown
             v-if="auth.state.isLoggedIn && decodedRole !== 'Unconfirmed'"
-            class="relative inline-block"
+            :aria-label="$t('home.addDefinition')"
           >
-            <template #trigger="{ open: menuOpen }">
-              <Button
-                variant="create"
-                type="button"
-                class="icon-btn-ui-layout"
-                :aria-expanded="menuOpen"
-                :aria-label="$t('home.addDefinition')"
-              >
-                <Plus class="h-4 w-4" />
-                <span>{{ $t('home.addDefinition') }}</span>
-                <ChevronDown
-                  class="h-4 w-4 opacity-70 transition-transform duration-200"
-                  :class="{ 'rotate-180': menuOpen }"
-                  :stroke-width="2"
-                />
-              </Button>
+            <template #label>
+              <Plus class="h-4 w-4" />
+              <span>{{ $t('home.addDefinition') }}</span>
             </template>
             <ToolbarSelectDropdownItem @click="router.push('/valsi/add')">
               {{ $t('home.createDefinition') }}
@@ -128,7 +115,7 @@
             >
               {{ $t('home.addAllToCollection') }}
             </ToolbarSelectDropdownItem>
-          </Dropdown>
+          </ToolbarSelectDropdown>
         </div>
 
         <div
@@ -151,102 +138,66 @@
           :aria-label="$t('home.searchResultsTitle.comments')"
           class="flex flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto ml-auto justify-end sm:justify-start"
         >
-          <Dropdown class="relative block w-auto min-w-0 shrink">
-            <template #trigger="{ open: waveMenuOpen }">
-              <Button
-                variant="empty"
-                type="button"
-                class="inline-flex h-8 min-w-0 w-auto max-w-[min(100vw-4rem,18rem)] items-center justify-between gap-1.5 px-3 text-sm"
-              >
-                <span class="truncate whitespace-nowrap">{{ waveSourceTriggerLabel }}</span>
-                <ChevronDown
-                  class="h-4 w-4 shrink-0 opacity-60 transition-transform duration-200"
-                  :class="{ 'rotate-180': waveMenuOpen }"
-                  :stroke-width="2"
-                />
-              </Button>
-            </template>
-            <Button
-              variant="neutral"
-              type="button"
-              class="block w-full whitespace-nowrap px-3 py-2 text-left text-sm hover:bg-gray-50"
+          <ToolbarSelectDropdown
+            trigger-class="w-full max-w-[min(100vw-4rem,18rem)]"
+            truncate-label
+          >
+            <template #label>{{ waveSourceTriggerLabel }}</template>
+            <ToolbarSelectDropdownItem
+              :class="{ 'bg-gray-100': waveSource === 'all' }"
               @click="setWaveSource('all')"
             >
               {{ $t('home.waveSourceAll') }}
-            </Button>
-            <Button
-              variant="neutral"
-              type="button"
-              class="block w-full whitespace-nowrap px-3 py-2 text-left text-sm hover:bg-gray-50"
+            </ToolbarSelectDropdownItem>
+            <ToolbarSelectDropdownItem
+              :class="{ 'bg-gray-100': waveSource === 'jbotcan' }"
               @click="setWaveSource('jbotcan')"
             >
               {{ $t('home.waveSourceJbotcan') }}
-            </Button>
-            <Button
-              variant="neutral"
-              type="button"
-              class="block w-full whitespace-nowrap px-3 py-2 text-left text-sm hover:bg-gray-50"
+            </ToolbarSelectDropdownItem>
+            <ToolbarSelectDropdownItem
+              :class="{ 'bg-gray-100': waveSource === 'comments' }"
               @click="setWaveSource('comments')"
             >
               {{ $t('home.waveSourceComments') }}
-            </Button>
-            <Button
-              variant="neutral"
-              type="button"
-              class="block w-full whitespace-nowrap px-3 py-2 text-left text-sm hover:bg-gray-50"
+            </ToolbarSelectDropdownItem>
+            <ToolbarSelectDropdownItem
+              :class="{ 'bg-gray-100': waveSource === 'mail' }"
               @click="setWaveSource('mail')"
             >
               {{ $t('home.waveSourceMail') }}
-            </Button>
-            <Button
-              variant="neutral"
-              type="button"
-              class="block w-full whitespace-nowrap px-3 py-2 text-left text-sm hover:bg-gray-50"
+            </ToolbarSelectDropdownItem>
+            <ToolbarSelectDropdownItem
+              :class="{ 'bg-gray-100': waveSource === 'wiki' }"
               @click="setWaveSource('wiki')"
             >
               {{ $t('home.waveSourceWiki') }}
-            </Button>
-          </Dropdown>
-          <Dropdown class="relative block w-auto min-w-0 shrink">
-            <template #trigger="{ open: sortMenuOpen }">
-              <Button
-                variant="empty"
-                type="button"
-                class="inline-flex h-8 min-w-0 w-auto max-w-[min(100vw-4rem,18rem)] items-center justify-between gap-1.5 px-3 text-sm"
-              >
-                <span class="truncate whitespace-nowrap">{{ sortByTriggerLabel }}</span>
-                <ChevronDown
-                  class="h-4 w-4 shrink-0 opacity-60 transition-transform duration-200"
-                  :class="{ 'rotate-180': sortMenuOpen }"
-                  :stroke-width="2"
-                />
-              </Button>
-            </template>
-            <Button
-              variant="neutral"
-              type="button"
-              class="block w-full whitespace-nowrap px-3 py-2 text-left text-sm hover:bg-gray-50"
+            </ToolbarSelectDropdownItem>
+          </ToolbarSelectDropdown>
+          <ToolbarSelectDropdown
+            trigger-class="w-full max-w-[min(100vw-4rem,18rem)]"
+            truncate-label
+          >
+            <template #label>{{ sortByTriggerLabel }}</template>
+            <ToolbarSelectDropdownItem
+              :class="{ 'bg-gray-100': sortBy === 'time' }"
               @click="setSortByField('time')"
             >
               {{ $t('sort.time') }}
-            </Button>
-            <Button
-              variant="neutral"
-              type="button"
-              class="block w-full whitespace-nowrap px-3 py-2 text-left text-sm hover:bg-gray-50"
+            </ToolbarSelectDropdownItem>
+            <ToolbarSelectDropdownItem
+              :class="{ 'bg-gray-100': sortBy === 'reactions' }"
               @click="setSortByField('reactions')"
             >
               {{ $t('sort.reactions') }}
-            </Button>
-            <Button
-              variant="neutral"
-              type="button"
-              class="block w-full whitespace-nowrap px-3 py-2 text-left text-sm hover:bg-gray-50"
+            </ToolbarSelectDropdownItem>
+            <ToolbarSelectDropdownItem
+              :class="{ 'bg-gray-100': sortBy === 'replies' }"
               @click="setSortByField('replies')"
             >
               {{ $t('sort.replies') }}
-            </Button>
-          </Dropdown>
+            </ToolbarSelectDropdownItem>
+          </ToolbarSelectDropdown>
           <Button
             variant="empty"
             type="button"
@@ -443,7 +394,7 @@ import CommentItem from '@/components/CommentItem.vue'
 import SourceTypeBadge from '@/components/SourceTypeBadge.vue'
 import DictionaryEntries from '@/components/DictionaryEntries.vue'
 import LazyMathJax from '@/components/LazyMathJax.vue'
-import { Button, Dropdown, IconButton, ToolbarSelectDropdownItem } from '@packages/ui'
+import { Button, IconButton, ToolbarSelectDropdown, ToolbarSelectDropdownItem } from '@packages/ui'
 import PaginationComponent from '@/components/PaginationComponent.vue'
 import RecentChangeItem from '@/components/RecentChangeItem.vue'
 import SearchForm from '@/components/SearchForm.vue'
