@@ -837,6 +837,9 @@ pub async fn search_definitions(
     let offset = (params.page - 1) * params.per_page;
     let like_pattern = format!("%{}%", params.search_term);
     let word_boundary_pattern = format!(r"\y{}\y", params.search_term);
+    let lojban_search_term = params.search_term.replace('h', "'");
+    let lojban_like_pattern = format!("%{}%", lojban_search_term);
+    let lojban_word_boundary_pattern = format!(r"\y{}\y", lojban_search_term);
 
     // Convert Option<Vec<i32>> to Option<&[i32]> for Postgres
     let languages_slice: Option<&[i32]> = params.languages.as_deref();
@@ -861,6 +864,9 @@ pub async fn search_definitions(
         &languages_slice,
         &params.per_page,
         &offset,
+        &lojban_search_term,
+        &lojban_like_pattern,
+        &lojban_word_boundary_pattern,
     ];
 
     // Build dynamic conditions
@@ -938,12 +944,16 @@ pub async fn search_definitions(
                 (di.definition_id IS NOT NULL) as has_image,
                 CASE
                     WHEN d.cached_valsiword = $1 THEN 13
+                    WHEN d.cached_valsiword = $7 THEN 13
                     WHEN d.cached_glosswords IS NOT NULL AND d.cached_glosswords != '' 
                          AND LOWER($1) = ANY(string_to_array(d.cached_glosswords, ' ')) THEN 12
                     WHEN d.cached_valsiword ILIKE $1 THEN 11
+                    WHEN d.cached_valsiword ILIKE $7 THEN 11
                     WHEN d.cached_valsiword ~* $3 THEN 10
+                    WHEN d.cached_valsiword ~* $9 THEN 10
                     WHEN d.cached_rafsi IS NOT NULL AND $1 = ANY(string_to_array(d.cached_rafsi, ' ')) THEN 9
                     WHEN d.cached_valsiword ILIKE $2 THEN 8
+                    WHEN d.cached_valsiword ILIKE $8 THEN 8
                     WHEN d.definition ~ $3 THEN 6
                     WHEN d.notes ~ $3 THEN 4
                     WHEN d.selmaho ~ $3 THEN 3
@@ -961,7 +971,7 @@ pub async fn search_definitions(
                 WHERE (t.valsiid = d.valsiid OR t.definitionid = d.definitionid)
             ) cc ON true
             LEFT JOIN definition_images_flag di ON di.definition_id = d.definitionid
-            WHERE (d.cached_search_text ILIKE $2)
+            WHERE (d.cached_search_text ILIKE $2 OR d.cached_valsiword ILIKE $8)
                   AND (d.langid = ANY($4) OR $4 IS NULL)
                   {additional_conditions}
         ),
@@ -1002,12 +1012,16 @@ pub async fn search_definitions(
                 (di.definition_id IS NOT NULL) as has_image,
                 CASE
                     WHEN d.cached_valsiword = $1 THEN 13
+                    WHEN d.cached_valsiword = $7 THEN 13
                     WHEN d.cached_glosswords IS NOT NULL AND d.cached_glosswords != ''
                          AND LOWER($1) = ANY(string_to_array(d.cached_glosswords, ' ')) THEN 12
                     WHEN d.cached_valsiword ILIKE $1 THEN 11
+                    WHEN d.cached_valsiword ILIKE $7 THEN 11
                     WHEN d.cached_valsiword ~* $3 THEN 10
+                    WHEN d.cached_valsiword ~* $9 THEN 10
                     WHEN d.cached_rafsi IS NOT NULL AND $1 = ANY(string_to_array(d.cached_rafsi, ' ')) THEN 9
                     WHEN d.cached_valsiword ILIKE $2 THEN 8
+                    WHEN d.cached_valsiword ILIKE $8 THEN 8
                     WHEN d.definition ~ $3 THEN 6
                     WHEN d.notes ~ $3 THEN 4
                     WHEN d.selmaho ~ $3 THEN 3
@@ -1019,7 +1033,7 @@ pub async fn search_definitions(
             FROM definitions d
             LEFT JOIN vote_scores dv ON dv.definitionid = d.definitionid
             LEFT JOIN definition_images_flag di ON di.definition_id = d.definitionid
-            WHERE (d.cached_search_text ILIKE $2)
+            WHERE (d.cached_search_text ILIKE $2 OR d.cached_valsiword ILIKE $8)
                   AND (d.langid = ANY($4) OR $4 IS NULL)
                   {additional_conditions}
         ),
@@ -1130,12 +1144,15 @@ pub async fn search_definitions(
         &like_pattern,          // $2
         &word_boundary_pattern, // $3
         &languages_slice,       // $4
+        &lojban_search_term,    // $5
+        &lojban_like_pattern,   // $6
+        &lojban_word_boundary_pattern, // $7
     ];
     // No per_page, no offset.
 
     // Rebuild conditions string for count query (indices will change because we removed 2 params)
     let mut count_conditions = vec![];
-    let mut current_param_num = 5;
+    let mut current_param_num = count_params.len() + 1;
 
     // Re-add params for conditions
     if let Some(selmaho) = &params.selmaho {
@@ -1178,12 +1195,16 @@ pub async fn search_definitions(
         SELECT d.definitionid,
             CASE
                 WHEN d.cached_valsiword = $1 THEN 13
+                WHEN d.cached_valsiword = $5 THEN 13
                 WHEN d.cached_glosswords IS NOT NULL AND d.cached_glosswords != '' 
                      AND LOWER($1) = ANY(string_to_array(d.cached_glosswords, ' ')) THEN 12
                 WHEN d.cached_valsiword ILIKE $1 THEN 11
+                WHEN d.cached_valsiword ILIKE $5 THEN 11
                 WHEN d.cached_valsiword ~* $3 THEN 10
+                WHEN d.cached_valsiword ~* $7 THEN 10
                 WHEN d.cached_rafsi IS NOT NULL AND $1 = ANY(string_to_array(d.cached_rafsi, ' ')) THEN 9
                 WHEN d.cached_valsiword ILIKE $2 THEN 8
+                WHEN d.cached_valsiword ILIKE $6 THEN 8
                 WHEN d.definition ~ $3 THEN 6
                 WHEN d.notes ~ $3 THEN 4
                 WHEN d.selmaho ~ $3 THEN 3
@@ -1193,7 +1214,7 @@ pub async fn search_definitions(
                 ELSE 0
             END as rank
         FROM definitions d
-        WHERE (d.cached_search_text ILIKE $2)
+        WHERE (d.cached_search_text ILIKE $2 OR d.cached_valsiword ILIKE $6)
               AND (d.langid = ANY($4) OR $4 IS NULL)
               {}
     )
@@ -1233,6 +1254,9 @@ pub async fn fast_search_definitions(
     let offset = (params.page - 1) * params.per_page;
     let like_pattern = format!("%{}%", params.search_term);
     let word_boundary_pattern = format!(r"\y{}\y", params.search_term);
+    let lojban_search_term = params.search_term.replace('h', "'");
+    let lojban_like_pattern = format!("%{}%", lojban_search_term);
+    let lojban_word_boundary_pattern = format!(r"\y{}\y", lojban_search_term);
 
     // Convert Option<Vec<i32>> to Option<&[i32]> for Postgres
     let languages_slice: Option<&[i32]> = params.languages.as_deref();
@@ -1250,8 +1274,8 @@ pub async fn fast_search_definitions(
         _ => "ASC",
     };
 
-    // Start with base parameters (will be $1-$5)
-    // Order: $1=search_term, $2=like_pattern, $3=word_boundary_pattern, $4=languages_slice, $5=source_langid_value
+    // Start with base parameters (will be $1-$8)
+    // Order: $1=search_term, $2=like_pattern, $3=word_boundary_pattern, $4=languages_slice, $5=source_langid_value, $6=lojban_search_term, $7=lojban_like_pattern, $8=lojban_word_boundary_pattern
     let source_langid_value = params.source_langid.unwrap_or(1);
     let mut query_params: Vec<&(dyn tokio_postgres::types::ToSql + Sync)> = vec![
         &params.search_term,
@@ -1259,9 +1283,12 @@ pub async fn fast_search_definitions(
         &word_boundary_pattern,
         &languages_slice,
         &source_langid_value,
+        &lojban_search_term,
+        &lojban_like_pattern,
+        &lojban_word_boundary_pattern,
     ];
 
-    // Build dynamic conditions (these will be $5, $6, $7, etc.)
+    // Build dynamic conditions (these will be $9, $10, $11, etc.)
     let mut conditions = vec![];
 
     // Add selmaho condition if present
@@ -1318,17 +1345,21 @@ pub async fn fast_search_definitions(
             0::bigint AS score,
             CASE
                 WHEN d.cached_valsiword = $1::text THEN 13
+                WHEN d.cached_valsiword = $6::text THEN 13
                 WHEN d.cached_glosswords IS NOT NULL AND d.cached_glosswords != '' 
                      AND LOWER($1::text) = ANY(string_to_array(d.cached_glosswords, ' ')) THEN 12
                 WHEN d.cached_valsiword ILIKE $1::text THEN 11
+                WHEN d.cached_valsiword ILIKE $6::text THEN 11
                 WHEN d.cached_valsiword ~* $3::text THEN 10
+                WHEN d.cached_valsiword ~* $8::text THEN 10
                 WHEN d.cached_rafsi IS NOT NULL AND $1::text = ANY(string_to_array(d.cached_rafsi, ' ')) THEN 9
                 WHEN d.cached_valsiword ILIKE $2::text THEN 8
+                WHEN d.cached_valsiword ILIKE $7::text THEN 8
                 WHEN d.cached_search_text ILIKE $2::text THEN 7
                 ELSE 0
             END as rank
         FROM definitions d
-        WHERE d.cached_search_text ILIKE $2::text
+        WHERE (d.cached_search_text ILIKE $2::text OR d.cached_valsiword ILIKE $7::text)
         AND (d.langid = ANY($4::int4[]) OR $4::int4[] IS NULL)
         AND d.cached_source_langid = $5::int4
         {additional_conditions}
@@ -1395,14 +1426,14 @@ pub async fn fast_search_definitions(
     }
 
     // Count query - simplified using cached_search_text, no JOINs
-    // Parameters: $1=like_pattern, $2=languages_slice, $3=source_langid_value
-    let base_conditions = r#"d.cached_search_text ILIKE $1::text
+    // Parameters: $1=like_pattern, $2=languages_slice, $3=source_langid_value, $4=lojban_like_pattern
+    let base_conditions = r#"(d.cached_search_text ILIKE $1::text OR d.cached_valsiword ILIKE $4::text)
                   AND (d.langid = ANY($2) OR $2 IS NULL)
                   AND d.cached_source_langid = $3"#;
 
     // Build dynamic conditions with correct parameter numbering
     let mut conditions = vec![];
-    let mut current_param_num = 4; // Start from 4 since we use 1-3 in base
+    let mut current_param_num = 5; // Start from 5 since we use 1-4 in base
 
     if params.selmaho.is_some() {
         conditions.push(format!("AND d.selmaho = ${}", current_param_num));
@@ -1431,9 +1462,10 @@ pub async fn fast_search_definitions(
 
     // Create params for count query - no search_term needed, only like_pattern
     let mut count_params: Vec<&(dyn tokio_postgres::types::ToSql + Sync)> = vec![
-        &like_pattern,        // $1
-        &languages_slice,     // $2
-        &source_langid_value, // $3
+        &like_pattern,           // $1
+        &languages_slice,        // $2
+        &source_langid_value,    // $3
+        &lojban_like_pattern,    // $4
     ];
 
     // Add conditional parameters in the correct order, matching additional_conditions logic
