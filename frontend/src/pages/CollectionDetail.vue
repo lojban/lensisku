@@ -354,8 +354,10 @@
             <div class="relative group w-28 h-28">
               <div
                 v-show="isEditCollectionImageLoading"
-                class="collection-edit-logo-placeholder animate-pulse"
-              />
+                class="collection-edit-logo-placeholder"
+              >
+                <Loader class="h-8 w-8 animate-spin text-blue-600" />
+              </div>
               <CollectionCoverLightbox
                 v-if="editCollectionImageUrl"
                 v-show="!isEditCollectionImageLoading"
