@@ -50,7 +50,7 @@
             >
               <template #icon> <ArrowBigRight class="h-4 w-4" /> </template>
             </IconButton>
-            <ToolbarSelectDropdown>
+            <ToolbarSelectDropdown trigger-icon="ellipsis">
               <template #label>{{ t('collectionList.addActions') }}</template>
               <ToolbarSelectDropdownItem
                 class="text-orange-600 hover:bg-orange-50"

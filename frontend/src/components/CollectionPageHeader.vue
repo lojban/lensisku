@@ -52,9 +52,6 @@
           />
         </div>
       </CollectionCoverLightbox>
-      <div v-else class="collection-header-logo-placeholder self-stretch" aria-hidden="true">
-        <BookOpen class="h-5 w-5 sm:h-7 sm:w-7 md:h-9 md:w-9" />
-      </div>
     </template>
     <template #eyebrow> <slot name="hint" /> </template>
     <template #title> <slot name="title" /> </template>
@@ -87,7 +84,6 @@
 </template>
 
 <script setup lang="ts">
-import { BookOpen } from 'lucide-vue-next'
 import LazyMathJax from '@/components/LazyMathJax.vue'
 import PageHeader from '@/components/layout/PageHeader.vue'
 import { CollectionCoverLightbox } from '@packages/ui'

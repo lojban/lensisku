@@ -15,7 +15,7 @@
         </div>
 
         <div v-if="!isLoading && isOwner" class="flex shrink-0 justify-end">
-          <ToolbarSelectDropdown>
+          <ToolbarSelectDropdown trigger-icon="ellipsis">
             <template #label>{{ t('collectionCustomTextBulk.exportMenuLabel') }}</template>
             <ToolbarSelectDropdownItem
               class="text-cyan-600 hover:bg-cyan-50 disabled:opacity-40 disabled:cursor-not-allowed"

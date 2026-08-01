@@ -100,6 +100,7 @@
           <ToolbarSelectDropdown
             v-if="auth.state.isLoggedIn && decodedRole !== 'Unconfirmed'"
             :aria-label="$t('home.addDefinition')"
+            trigger-icon="ellipsis"
           >
             <template #label>
               <Plus class="h-4 w-4" />
@@ -549,6 +550,7 @@ const decodedToken = computed((): JwtUserPayload | null => {
 
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', handleKeyDown)
+  window.removeEventListener('lensisku:clear-search', handleLogoClear)
 })
 
 const decodedRole = computed(() => decodedToken.value?.role || '')
@@ -1247,6 +1249,11 @@ const performSearch = ({ query, mode }: { query: string; mode: string }) => {
   router.push({ query: updateParams })
 }
 
+const handleLogoClear = () => {
+  searchFormRef.value?.focusInput()
+  performSearch({ query: '', mode: searchMode.value })
+}
+
 // Navigation handlers
 const handleNewFreeComment = () => {
   router.push('/comments/new-thread')
@@ -1376,6 +1383,7 @@ const handleKeyDown = (event: KeyboardEvent) => {
 
 onMounted(async () => {
   window.addEventListener('keydown', handleKeyDown)
+  window.addEventListener('lensisku:clear-search', handleLogoClear)
   try {
     const languagesResponse = await getLanguages()
     languages.value = languagesResponse.data

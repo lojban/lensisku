@@ -500,6 +500,8 @@ const handleLogoClick = async () => {
   if (!isHomePage.value) {
     await router.push(homePath.value)
     await nextTick()
+  } else if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('lensisku:clear-search'))
   }
 
   const mainContent = document.querySelector('.main-content') as HTMLElement | null
@@ -735,7 +737,7 @@ onMounted(() => {
 })
 </script>
 
-<style>
+<style lang="postcss">
 body {
   min-height: 100vh;
 }

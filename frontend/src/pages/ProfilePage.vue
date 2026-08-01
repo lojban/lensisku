@@ -258,15 +258,15 @@
               <FileInput type="file" class="hidden" accept="image/*" @change="handleFileChange" />
               <Camera class="h-5 w-5" />
             </label>
-            <Button
+            <button
               v-if="hasImage"
-              variant="neutral"
+              type="button"
               class="p-2 bg-white border border-gray-300 rounded-full text-red-600 hover:bg-red-50 transition-all shadow-md"
               :title="t('profile.removePhoto')"
               @click.stop="handleImageRemove"
             >
               <Trash2 class="h-5 w-5" />
-            </Button>
+            </button>
           </div>
         </div>
         <!-- Spacer to prevent overlap with buttons -->

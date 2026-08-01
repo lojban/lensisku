@@ -19,10 +19,12 @@
             <slot name="label" />
           </span>
           <ChevronDown
+            v-if="triggerIcon === 'chevron'"
             class="h-4 w-4 shrink-0 opacity-60 transition-transform duration-200"
             :class="{ 'rotate-180': open }"
             :stroke-width="2"
           />
+          <EllipsisVertical v-else class="h-4 w-4 shrink-0 opacity-60" :stroke-width="2" />
         </button>
       </slot>
     </template>
@@ -31,7 +33,7 @@
 </template>
 
 <script setup lang="ts">
-import { ChevronDown } from 'lucide-vue-next'
+import { ChevronDown, EllipsisVertical } from 'lucide-vue-next'
 import Dropdown from './Dropdown.vue'
 
 defineOptions({ inheritAttrs: false })
@@ -44,6 +46,8 @@ withDefaults(
     truncateLabel?: boolean
     /** `role` caps trigger width on small viewports. */
     variant?: 'default' | 'role'
+    /** Trailing icon for the trigger: `chevron` for selects, `ellipsis` for action menus. */
+    triggerIcon?: 'chevron' | 'ellipsis'
     /** Extra classes to override the trigger button styling. */
     triggerClass?: string
   }>(),
@@ -51,6 +55,7 @@ withDefaults(
     id: undefined,
     ariaLabel: undefined,
     variant: 'default',
+    triggerIcon: 'chevron',
     truncateLabel: false,
     triggerClass: '',
   }

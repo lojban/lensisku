@@ -22,7 +22,7 @@
       </template>
       <template #title> {{ collection.name }} </template>
       <template #meta-actions>
-        <ToolbarSelectDropdown v-if="auth.state.isLoggedIn">
+        <ToolbarSelectDropdown v-if="auth.state.isLoggedIn" trigger-icon="ellipsis">
           <template #label>{{ t('collectionDetail.actions') }}</template>
           <ToolbarSelectDropdownItem
             v-if="isOwner"
@@ -427,16 +427,15 @@
                   />
                   <Camera class="h-5 w-5" />
                 </label>
-                <Button
+                <button
                   v-if="collection?.has_cover_image"
-                  variant="neutral"
                   type="button"
                   class="p-2 bg-white border border-gray-300 rounded-full text-red-600 hover:bg-red-50 transition-all shadow-md pointer-events-auto"
                   :title="t('collectionDetail.collectionCoverRemoveTitle')"
                   @click.stop="handleCollectionCoverRemove"
                 >
                   <Trash2 class="h-5 w-5" />
-                </Button>
+                </button>
               </div>
             </div>
 
