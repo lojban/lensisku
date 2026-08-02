@@ -615,6 +615,28 @@ pub async fn get_trending(
 
 #[utoipa::path(
     get,
+    path = "/comments/top",
+    tag = "comments",
+    responses(
+        (status = 200, description = "Cached top 3 most engaged comments", body = Vec<Comment>),
+        (status = 500, description = "Internal server error")
+    ),
+    summary = "Get top comments",
+    description = "Returns the cached top 3 most engaged comments. The cache is refreshed by a background cron job."
+)]
+#[get("/top")]
+pub async fn get_top(redis_cache: web::Data<RedisCache>) -> impl Responder {
+    match service::get_cached_top_comments(&redis_cache).await {
+        Ok(comments) => HttpResponse::Ok().json(comments),
+        Err(e) => HttpResponse::InternalServerError().json(json!({
+            "error": "Failed to get top comments",
+            "details": e.to_string()
+        })),
+    }
+}
+
+#[utoipa::path(
+    get,
     path = "/comments/stats/{comment_id}",
     tag = "comments",
     params(

@@ -16,6 +16,7 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
             .service(controller::get_user_comments)
             .service(controller::get_opinions)
             .service(controller::get_trending)
+            .service(controller::get_top)
             .service(controller::get_comment_stats)
             .service(controller::get_most_bookmarked)
             .service(controller::list_comments)

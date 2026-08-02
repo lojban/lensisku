@@ -2,9 +2,11 @@ use crate::utils::remove_html_tags;
 use std::{
     collections::{HashMap, HashSet},
     env,
+    time::Duration,
 };
 
 use crate::comments::models::Comment;
+use crate::middleware::cache::RedisCache;
 use chrono::Utc;
 use deadpool_postgres::Pool;
 use tokio_postgres::Row;
@@ -1105,6 +1107,159 @@ pub async fn get_trending_comments(
 
     transaction.commit().await?;
     Ok(mapped_comments)
+}
+
+/// Computes the top `limit` most engaged comments from the last `start_days` days.
+/// If fewer than `min_count` comments are found, the time window is doubled (up to
+/// a ceiling) until at least `min_count` are available.
+async fn compute_top_comments(
+    pool: &Pool,
+    start_days: i32,
+    min_count: i32,
+    limit: i32,
+    current_user_id: Option<i32>,
+) -> Result<Vec<Comment>, Box<dyn std::error::Error>> {
+    let start_days = start_days.clamp(1, 3650);
+    let min_count = min_count.clamp(1, 100);
+    let limit = limit.clamp(1, 100);
+
+    let mut hours = start_days * 24;
+                let max_hours = 24 * 365 * 100; // ~100 years, effectively all time
+                let mut mapped_comments = Vec::new();
+
+                while hours <= max_hours {
+                    let mut client = pool.get().await?;
+                    let transaction = client.transaction().await?;
+
+                    let comments = transaction
+                        .query(
+                            "WITH ranked_comments AS (
+                                SELECT
+                                    c.commentid,
+                                    c.threadid,
+                                    c.parentid,
+                                    c.userid,
+                                    c.commentnum,
+                                    c.time,
+                                    c.subject,
+                                    c.username,
+                                    c.realname,
+                                    c.total_reactions,
+                                    c.total_replies,
+                                    c.valsiid,
+                                    c.definitionid,
+                                    c.definition_link_id,
+                                    c.collection_id,
+                                    c.content::text as content,
+                                    pc.content::text as parent_content,
+                                    t.valsiid,
+                                    t.definitionid,
+                                    COALESCE(cc.total_reactions, 0)::bigint as comment_reactions,
+                                    COALESCE(cc.total_replies, 0)::bigint as comment_replies,
+                                    COALESCE(cc.total_bookmarks, 0)::bigint as comment_bookmarks,
+                                    COALESCE(cb.user_id IS NOT NULL, false) as is_bookmarked,
+                                    COALESCE(cc.total_reactions, 0) + COALESCE(cc.total_replies, 0) + COALESCE(cc.total_bookmarks, 0) as engagement_score
+                                FROM convenientcomments c
+                                LEFT JOIN threads t ON c.threadid = t.threadid
+                                LEFT JOIN comments pc ON c.parentid = pc.commentid
+                                LEFT JOIN comment_activity_counters cc ON c.commentid = cc.comment_id
+                                LEFT JOIN comment_bookmarks cb ON c.commentid = cb.comment_id AND cb.user_id = $1
+                                WHERE c.time > extract(epoch from (now() - make_interval(hours => $2)))::int
+                                AND (cc.total_reactions > 0 OR cc.total_replies > 0 OR cc.total_bookmarks > 0)
+                            )
+                            SELECT *
+                            FROM ranked_comments
+                            ORDER BY engagement_score DESC
+                            LIMIT $3",
+                            &[&current_user_id, &hours, &i64::from(limit)],
+                        )
+                        .await?;
+
+                    let comment_ids: Vec<i32> =
+                        comments.iter().map(|row| row.get("commentid")).collect();
+                    let reactions_map =
+                        fetch_reactions(&transaction, &comment_ids, current_user_id).await?;
+
+                    mapped_comments = comments
+                        .iter()
+                        .map(|row| {
+                            let comment_id = row.get::<_, i32>("commentid");
+
+                            Comment {
+                                parent_content: row
+                                    .get::<_, Option<String>>("parent_content")
+                                    .and_then(|s| serde_json::from_str(&s).ok()),
+                                comment_id,
+                                thread_id: row.get("threadid"),
+                                parent_id: row.get("parentid"),
+                                user_id: row.get("userid"),
+                                comment_num: row.get("commentnum"),
+                                time: row.get("time"),
+                                subject: row
+                                    .get::<_, Option<String>>("subject")
+                                    .unwrap_or_default(),
+                                content: serde_json::from_str(&row.get::<_, String>("content"))
+                                    .unwrap_or_default(),
+                                username: row.get("username"),
+                                realname: row.get("realname"),
+                                total_reactions: row
+                                    .get::<_, Option<i64>>("total_reactions")
+                                    .unwrap_or(0),
+                                total_replies: row
+                                    .get::<_, Option<i64>>("total_replies")
+                                    .unwrap_or(0),
+                                is_bookmarked: row.get("is_bookmarked"),
+                                reactions: reactions_map
+                                    .get(&comment_id)
+                                    .cloned()
+                                    .unwrap_or_default(),
+                                valsi_id: row.get("valsiid"),
+                                definition_id: row.get("definitionid"),
+                                definition_link_id: row.get("definition_link_id"),
+                                collection_id: row.get("collection_id"),
+                                collection_name: None,
+                                valsi_word: None,
+                                definition: None,
+                                first_comment_subject: None,
+                                first_comment_content: None,
+                                last_comment_username: None,
+                            }
+                        })
+                        .collect();
+
+                    transaction.commit().await?;
+
+                    if mapped_comments.len() >= min_count as usize || hours >= max_hours {
+                        break;
+                    }
+                    hours = (hours * 2).min(max_hours);
+                }
+
+                Ok(mapped_comments)
+}
+
+const TOP_COMMENTS_CACHE_KEY: &str = "comments:top:latest";
+const TOP_COMMENTS_CACHE_TTL: Duration = Duration::from_secs(600);
+
+/// Refreshes the cached top 3 most engaged comments. Called by the background cron.
+pub async fn update_top_comments_cache(
+    pool: &Pool,
+    redis_cache: &RedisCache,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let comments = compute_top_comments(pool, 7, 3, 3, None).await?;
+    redis_cache
+        .set(TOP_COMMENTS_CACHE_KEY, &comments, Some(TOP_COMMENTS_CACHE_TTL))
+        .await
+}
+
+/// Returns the cached top 3 comments. The cron keeps this fresh.
+pub async fn get_cached_top_comments(
+    redis_cache: &RedisCache,
+) -> Result<Vec<Comment>, Box<dyn std::error::Error>> {
+    Ok(redis_cache
+        .get::<Vec<Comment>>(TOP_COMMENTS_CACHE_KEY)
+        .await?
+        .unwrap_or_default())
 }
 
 pub async fn get_comment_stats(

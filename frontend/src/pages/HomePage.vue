@@ -389,7 +389,7 @@ import {
   searchDefinitions,
   fastSearchDefinitions,
   getLanguages,
-  getTrendingComments,
+  getTopComments,
   getRecentChanges,
   searchWaves,
   list_wave_threads,
@@ -969,10 +969,7 @@ const fetchTrendingAndChanges = async () => {
   }
 
   try {
-    const trendingResponse = await getTrendingComments({
-      limit: 10,
-      timespan: 'month',
-    })
+    const trendingResponse = await getTopComments()
     trendingComments.value = trendingResponse.data
 
     // Always fetch recent changes to keep them fresh

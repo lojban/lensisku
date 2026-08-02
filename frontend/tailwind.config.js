@@ -488,6 +488,12 @@ export default {
         '.activity-quote-snippet': {
           '@apply text-sm text-gray-600 border-l-2 border-gray-300 pl-2 [&_img]:max-h-48 [&_img]:object-contain':
             {},
+          '& .mathjax-content': {
+            '@apply line-clamp-4': {},
+            '& > p': {
+              '@apply inline': {},
+            },
+          },
         },
         /** Small “streak / correct” pill (flashcard / study UI). */
         '.badge-streak-success': {

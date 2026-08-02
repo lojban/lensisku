@@ -571,6 +571,8 @@ export const removeCollectionImage = (collectionId: number | string) => {
 export const getTrendingComments = (params?: Record<string, unknown>) =>
   api.get('/comments/trending', { params })
 
+export const getTopComments = () => api.get('/comments/top')
+
 export const searchWaves = (params?: Record<string, unknown>, signal?: AbortSignal) =>
   api.get('/waves/search', { params, signal })
 export const list_wave_threads = (params?: Record<string, unknown>, signal?: AbortSignal) =>

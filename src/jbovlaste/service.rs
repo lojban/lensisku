@@ -126,7 +126,7 @@ pub async fn semantic_search(
         vector_search AS (
             SELECT 
                 d.definitionid,
-                d.embedding <=> $1::vector as similarity,
+                CASE WHEN d.embedding IS NOT NULL THEN d.embedding <=> $1::vector END as similarity,
                 COALESCE(dv.score, 0)::bigint AS score,
                 CASE 
                     WHEN v.word = $3 THEN 0 
@@ -142,14 +142,14 @@ pub async fn semantic_search(
             WHERE d.langid != 1 
               AND (d.langid = ANY($2) OR $2 IS NULL) 
               AND d.definition != ''
-              AND d.embedding IS NOT NULL
+              AND (d.embedding IS NOT NULL OR v.word = $3 OR v.word ILIKE $3)
             {additional_conditions}
-            ORDER BY exact_match_rank ASC, d.embedding <=> $1::vector ASC
+            ORDER BY exact_match_rank ASC, similarity ASC
             LIMIT 1000
         )
         SELECT COUNT(*)
         FROM vector_search
-        WHERE score > 0 -- AND similarity < SIMILARITY_THRESHOLD"#,
+        WHERE score > 0 OR exact_match_rank = 0 -- AND similarity < SIMILARITY_THRESHOLD"#,
         );
         transaction
             .query_one(&count_query, &query_params)
@@ -195,7 +195,7 @@ pub async fn semantic_search(
                 COALESCE(dv.score, 0)::bigint AS score,
                 COALESCE(cc.comment_count, 0) as comment_count,
                 (di.definition_id IS NOT NULL) as has_image,
-                d.embedding <=> $1::vector as similarity,
+                CASE WHEN d.embedding IS NOT NULL THEN d.embedding <=> $1::vector END as similarity,
                 CASE 
                     WHEN v.word = $3 THEN 0 
                     WHEN v.word ILIKE $3 THEN 1
@@ -217,15 +217,16 @@ pub async fn semantic_search(
             WHERE d.langid != 1 
               AND (d.langid = ANY($2) OR $2 IS NULL) 
               AND d.definition != ''
-              AND d.embedding IS NOT NULL
+              AND (d.embedding IS NOT NULL OR v.word = $3 OR v.word ILIKE $3)
             {additional_conditions}
-            ORDER BY exact_match_rank ASC, d.embedding <=> $1::vector ASC
+            ORDER BY exact_match_rank ASC, similarity ASC
             LIMIT 1000
         ),
         ranked_results AS (
             SELECT DISTINCT ON (definitionid) *
             FROM vector_search
-            WHERE score > 0 -- AND similarity < {similarity_threshold}
+            WHERE score > 0 OR exact_match_rank = 0 -- AND similarity < {similarity_threshold}
+            ORDER BY definitionid
         )
         SELECT r.*
         FROM ranked_results r

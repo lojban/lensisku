@@ -40,7 +40,7 @@ impl postgres_types::FromSql<'_> for CommentContent {
     postgres_types::accepts!(JSONB);
 }
 
-#[derive(Debug, Serialize, ToSchema)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct Comment {
     pub valsi_id: Option<i32>,
     pub definition_id: Option<i32>,

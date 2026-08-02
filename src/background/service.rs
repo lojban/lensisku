@@ -1,5 +1,6 @@
 use super::valsi_tts;
 use crate::{
+    comments::service as comments_service,
     db,
     error::{AppError, AppResult},
     export::service::export_all_dictionaries,
@@ -388,4 +389,25 @@ pub async fn spawn_background_tasks(
             }
         });
     }
+
+    // Refresh the home-page top-comments cache immediately and then every 5 minutes.
+    if let Err(e) = comments_service::update_top_comments_cache(&pool, &redis).await {
+        error!("Failed initial top comments cache refresh: {}", e);
+    }
+    let top_comments_pool = pool.clone();
+    let top_comments_redis = redis.clone();
+    tokio::spawn(async move {
+        let mut interval = time::interval(Duration::from_secs(5 * 60));
+        loop {
+            interval.tick().await;
+            if let Err(e) = comments_service::update_top_comments_cache(
+                &top_comments_pool,
+                &top_comments_redis,
+            )
+            .await
+            {
+                error!("Failed to refresh top comments cache: {}", e);
+            }
+        }
+    });
 }
