@@ -110,11 +110,11 @@
       "semantic": "pentoi lo smuni .a lo sidbo...",
       "comments": "pentoi lu'e lo nu casnu...",
       "messages": "ko sisku lo se mrilu...",
-      "default": "sisku..."
+      "default": "sisku li'o"
     }
   },
   "home": {
-    "trendingComments": "casnu karni poi misno",
+    "trendingComments": "cinri nu zukte",
     "recentChanges": "cnino nu galfi",
     "searchResultsTitle": {
       "dictionary": "pentoi le vlapoi",
@@ -127,14 +127,14 @@
     "metaDescription": "ko sisku fi la'e la jbovlaste .e lo sorcu .i ko penmi lo velckivei .e lo casnu .e lo mupli.",
     "searchMetaDescription": "ko viska lo se facki be la'ei \"{query}\" ne'i lo lojbo vlaste.",
     "addDefinition": "cnino velckivei",
-    "newFreeThread": "cfari lo karni",
+    "newFreeThread": "cnino nu casnu",
     "noCommentsFound": "no pinka cu sarxe lo do sisku",
     "waveSourceLabel": "casnu",
-    "waveSourceAll": "ro klesi",
-    "waveSourceJbotcan": "jbotcan",
-    "waveSourceComments": "lo pinka",
-    "waveSourceMail": "mu'e mrilu",
-    "waveSourceWiki": "vlaste papri"
+    "waveSourceAll": "rolmei",
+    "waveSourceJbotcan": "la .jbotcan.",
+    "waveSourceComments": "pinka",
+    "waveSourceMail": "se mrilu",
+    "waveSourceWiki": "uitki"
   },
   "wiki": {
     "back": "xrukla",
