@@ -4,16 +4,14 @@
       <div
         v-for="thread in threads"
         :key="
-          thread.source === 'comment' ? thread.thread_id : 'mail-' + (thread.cleaned_subject || '')
+          thread.source === 'comment'
+            ? thread.thread_id
+            : thread.source === 'wiki'
+              ? 'wiki-' + (thread.summary?.page_id || '')
+              : 'mail-' + (thread.cleaned_subject || '')
         "
         class="surface-activity-row"
-        @click="
-          thread.source === 'comment'
-            ? router.push(
-                `/comments?thread_id=${thread.thread_id}&scroll_to=${thread.comment_id}&valsi_id=${thread.valsi_id || ''}&definition_id=${thread.definition_id || ''}`
-              )
-            : goToMailThread(thread.cleaned_subject || thread.subject)
-        "
+        @click="goToThread(thread)"
       >
         <!-- Comment thread -->
         <template v-if="thread.source === 'comment'">
@@ -75,7 +73,7 @@
           </div>
         </template>
         <!-- Mail thread -->
-        <template v-else>
+        <template v-else-if="thread.source === 'mail'">
           <div class="flex flex-wrap gap-2 items-center mb-2">
             <h3 class="font-medium text-gray-800">
               <LazyMathJax
@@ -103,6 +101,29 @@
             <MessageSquareMore class="w-4 h-4" /> <span>{{ t('activityThreads.noContent') }}</span>
           </div>
         </template>
+        <!-- Wiki thread -->
+        <template v-else-if="thread.source === 'wiki'">
+          <div class="flex flex-wrap gap-2 items-center mb-2">
+            <SourceTypeBadge type="wiki" />
+            <h3 class="font-medium text-gray-800">
+              {{ thread.summary?.title || '-' }}
+            </h3>
+          </div>
+
+          <div class="flex items-center text-xs text-gray-400 italic pb-2 border-b">
+            <span>{{ formatDateForThread(thread.last_activity_time) }}</span>
+            <span>&nbsp;·&nbsp;</span>
+            <span>{{ formatTime(thread.last_activity_time) }}</span>
+          </div>
+
+          <div v-if="thread.summary?.content_preview" class="activity-quote-snippet">
+            <LazyMathJax :content="thread.summary.content_preview" :enable-markdown="true" />
+          </div>
+
+          <div v-else class="flex items-center gap-2 text-gray-400 pt-1 text-sm">
+            <MessageSquareMore class="w-4 h-4" /> <span>{{ t('activityThreads.noContent') }}</span>
+          </div>
+        </template>
       </div>
     </div>
 
@@ -123,9 +144,18 @@ import SourceTypeBadge from '@/components/SourceTypeBadge.vue'
 
 type ContentPart = { type: string; data?: string }
 
-/** Row from activity / waves API (comment thread vs mail thread). */
+type WikiSummary = {
+  page_id: number
+  namespace: number
+  title: string
+  last_edited: string
+  content_preview: string
+  article_url: string
+}
+
+/** Row from activity / waves API (comment thread vs mail thread vs wiki). */
 type ActivityThreadRow = {
-  source: 'comment' | 'mail' | string
+  source: 'comment' | 'mail' | 'wiki'
   import_source?: string | null
   thread_id?: number
   comment_id?: number
@@ -144,6 +174,7 @@ type ActivityThreadRow = {
   from_address?: string
   message_count?: number
   content_preview?: string
+  summary?: WikiSummary
 }
 
 const router = useRouter()
@@ -153,6 +184,18 @@ const { t } = useI18n()
 function goToMailThread(subject: string) {
   const locale = route.path.split('/')[1] || 'en'
   router.push({ name: `ThreadView-${locale}`, params: { subject: subject || '' } })
+}
+
+function goToThread(thread: ActivityThreadRow) {
+  if (thread.source === 'comment') {
+    router.push(
+      `/comments?thread_id=${thread.thread_id}&scroll_to=${thread.comment_id}&valsi_id=${thread.valsi_id || ''}&definition_id=${thread.definition_id || ''}`
+    )
+  } else if (thread.source === 'wiki' && thread.summary?.article_url) {
+    router.push(thread.summary.article_url)
+  } else {
+    goToMailThread(thread.cleaned_subject || thread.subject)
+  }
 }
 
 defineProps({
