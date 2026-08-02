@@ -230,6 +230,13 @@
         </div>
 
         <div class="relative z-0" :class="{ 'pointer-events-none select-none': isLoading }">
+          <PhraseSplit
+            v-if="searchMode === 'dictionary' || searchMode === 'semantic'"
+            :phrase="searchQuery"
+            :selected-languages="filters.selectedLanguages"
+            :source-lang-id="filters.source_langid"
+            :languages="languages"
+          />
           <DictionaryEntries
             v-if="searchMode === 'dictionary' || searchMode === 'semantic'"
             :definitions="definitions"
@@ -394,6 +401,7 @@ import CombinedFilters from '@/components/CombinedFilters.vue'
 import CommentItem from '@/components/CommentItem.vue'
 import SourceTypeBadge from '@/components/SourceTypeBadge.vue'
 import DictionaryEntries from '@/components/DictionaryEntries.vue'
+import PhraseSplit from '@/components/PhraseSplit.vue'
 import LazyMathJax from '@/components/LazyMathJax.vue'
 import { Button, IconButton, ToolbarSelectDropdown, ToolbarSelectDropdownItem } from '@packages/ui'
 import PaginationComponent from '@/components/PaginationComponent.vue'

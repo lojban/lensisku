@@ -1369,6 +1369,12 @@
       "noEntries": "No corpus entries found.",
       "decomposition": "Decomposition"
     },
+    "phraseSplit": {
+      "label": "Phrase",
+      "splitPhrase": "Split into words",
+      "loading": "Loading…",
+      "noDefinitions": "No definitions found"
+    },
     "messageActions": {
       "viewThread": "View thread"
     },

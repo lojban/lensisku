@@ -145,7 +145,14 @@ const { t, locale } = useI18n()
 const MAX_VALSI_DISPLAY_LENGTH = 30
 const showValsiModal = ref(false)
 
-type LanguageRow = { langid: number; realname: string; lojbanname?: string; lojban_name?: string }
+type LanguageRow = {
+  id?: number
+  langid?: number
+  real_name?: string
+  realname?: string
+  lojbanname?: string
+  lojban_name?: string
+}
 
 const props = defineProps({
   definition: {
@@ -215,12 +222,12 @@ const selmahoLinkQuery = computed(() => ({
 }))
 
 const getLanguageName = (langId: number) => {
-  const lang = props.languages.find((l) => l.langid === langId)
+  const lang = props.languages.find((l) => (l.langid ?? l.id) === langId)
   if (!lang) return ''
   if (locale.value === 'jbo') {
-    return lang.lojbanname || lang.lojban_name || lang.realname
+    return lang.lojbanname || lang.lojban_name || lang.realname || lang.real_name || ''
   }
-  return lang.realname
+  return lang.realname || lang.real_name || ''
 }
 
 const formatDate = (dateString: string) => {

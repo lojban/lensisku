@@ -63,6 +63,12 @@
               </template>
             </div>
           </AlertComponent>
+          <PhraseSplit
+            :phrase="searchQuery"
+            :selected-languages="filters.selectedLanguages"
+            :source-lang-id="filters.source_langid"
+            :languages="languages"
+          />
           <!-- Definition Cards -->
           <DefinitionCardSimple
             v-for="def in definitions"
@@ -103,6 +109,7 @@ import { nextTick } from 'vue'
 import { fastSearchDefinitions, getLanguages } from '@/api'
 import CombinedFilters from '@/components/CombinedFilters.vue'
 import DefinitionCardSimple from '@/components/DefinitionCardSimple.vue'
+import PhraseSplit from '@/components/PhraseSplit.vue'
 import AlertComponent from '@/components/AlertComponent.vue'
 import PaginationComponent from '@/components/PaginationComponent.vue'
 import SearchForm from '@/components/SearchForm.vue'
