@@ -109,7 +109,7 @@ pub fn generate_search_cache_key(query: &SearchDefinitionsQuery, use_fast_search
         "search"
     };
     format!(
-        "{}:{}:{}:{}:{}:{}:{}:{}:{}:{}:{}:{}",
+        "{}:{}:{}:{}:{}:{}:{}:{}:{}:{}:{}:{}:{}",
         prefix,
         query.page.unwrap_or(1),
         query.per_page.unwrap_or(20),
@@ -121,14 +121,15 @@ pub fn generate_search_cache_key(query: &SearchDefinitionsQuery, use_fast_search
         query.selmaho.as_deref().unwrap_or(""),
         query.word_type.unwrap_or(0),
         query.username.as_deref().unwrap_or(""),
-        query.source_langid.unwrap_or(1)
+        query.source_langid.unwrap_or(1),
+        query.search_in_phrases.map(i32::from).unwrap_or(-1)
     )
 }
 
 pub fn generate_semantic_search_cache_key(query: &SearchDefinitionsQuery) -> String {
     // Key includes search term and all filter/pagination options relevant to semantic search
     format!(
-        "semantic_search:{}:{}:{}:{}:{}:{}:{}:{}",
+        "semantic_search:{}:{}:{}:{}:{}:{}:{}:{}:{}",
         query.search.as_deref().unwrap_or(""),
         query.page.unwrap_or(1),
         query.per_page.unwrap_or(20),
@@ -136,8 +137,9 @@ pub fn generate_semantic_search_cache_key(query: &SearchDefinitionsQuery) -> Str
         query.selmaho.as_deref().unwrap_or(""),
         query.username.as_deref().unwrap_or(""),
         query.word_type.unwrap_or(0),
-        query.source_langid.unwrap_or(1) // Note: sort_by and sort_order are fixed to 'similarity asc' for semantic search
-                                         // Note: include_comments is fixed to false for semantic search
+        query.source_langid.unwrap_or(1),
+        query.search_in_phrases.map(i32::from).unwrap_or(-1) // Note: sort_by and sort_order are fixed to 'similarity asc' for semantic search
+                                                              // Note: include_comments is fixed to false for semantic search
     )
 }
 
