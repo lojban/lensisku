@@ -801,7 +801,6 @@ struct ValidatedReference {
     type_name: String,
     langrealname: String,
     selmaho: Option<String>,
-    rafsi: Option<String>,
     field: String,
     exampleid: Option<i32>,
     exact_text: String,
@@ -946,7 +945,6 @@ async fn resolve_references(
             type_name: def.type_name,
             langrealname: def.langrealname,
             selmaho: def.selmaho,
-            rafsi: def.rafsi,
             field,
             exampleid: r.exampleid,
             exact_text: needle.to_string(),
@@ -979,17 +977,25 @@ fn build_printable_markdown(validated: &[ValidatedReference]) -> String {
     let mut out = String::new();
     for (did, refs) in groups {
         let first = refs[0];
-        out.push_str(&format!("## {} ({})\n\n", first.valsiword, first.type_name));
-        out.push_str(&format!("- **definitionid:** {}\n", did));
+        let valsi_path = first.valsiword.replace(' ', "_");
+        let valsi_url = format!(
+            "/valsi/{}?highlight_definition_id={}",
+            urlencoding::encode(&valsi_path),
+            did
+        );
+        out.push_str(&format!(
+            "## [{} ({})]({})\n\n",
+            first.valsiword, first.type_name, valsi_url
+        ));
         out.push_str(&format!("- **language:** {}\n", first.langrealname));
         if let Some(s) = first.selmaho.as_ref() {
             out.push_str(&format!("- **selmaho:** {}\n", s));
         }
-        if let Some(r) = first.rafsi.as_ref() {
-            out.push_str(&format!("- **rafsi:** {}\n", r));
-        }
         out.push('\n');
         for r in refs {
+            if r.field.as_str() == "rafsi" {
+                continue;
+            }
             let label = match r.field.as_str() {
                 "definition" => "Definition".to_string(),
                 "notes" => "Notes".to_string(),

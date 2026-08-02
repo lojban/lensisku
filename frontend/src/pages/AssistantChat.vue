@@ -229,116 +229,135 @@
                       </span>
                       <span>{{ msg.content }}</span>
                     </div>
-                    <Button
-                      v-if="canEditMessages"
-                      variant="assistant-bubble-action"
-                      type="button"
-                      :aria-label="$t('assistantChat.editMessage')"
-                      :title="$t('assistantChat.editMessage')"
-                      @click="startEditMessage(index)"
+                    <div
+                      v-if="messageToolbarVisible(msg)"
+                      class="flex shrink-0 flex-col items-center gap-1 py-1"
                     >
-                      <Pencil class="h-4 w-4" aria-hidden="true" />
-                    </Button>
+                      <Button
+                        v-if="canEditMessages && msg.role === 'user'"
+                        variant="assistant-bubble-action"
+                        type="button"
+                        :aria-label="$t('assistantChat.editMessage')"
+                        :title="$t('assistantChat.editMessage')"
+                        @click="startEditMessage(index)"
+                      >
+                        <Pencil class="h-4 w-4" aria-hidden="true" />
+                      </Button>
+                      <ClipboardButton
+                        v-if="copyContentForMessage(msg)"
+                        variant="ghost"
+                        :content="copyContentForMessage(msg)"
+                        :title="$t('assistantChat.copyMessage')"
+                      />
+                    </div>
                   </div>
                 </div>
                 <!-- Assistant: one bubble per reply (multi-model) or single top-level bubble -->
                 <div
                   v-else-if="msg.role === 'assistant'"
-                  class="flex w-full flex-col items-start gap-1"
+                  class="flex w-full flex-row items-start gap-1.5"
                 >
-                  <div
-                    v-for="(reply, replyIdx) in assistantReplies(msg)"
-                    :key="replyIdx"
-                    class="assistant-bubble-assistant assistant-markdown"
-                  >
-                    <span class="mb-1 block text-[11px] font-semibold text-gray-500">
-                      {{
-                        reply.modelName ||
-                        (reply.model ? formatModelLabel(reply.model) : '') ||
-                        $t('assistantChat.assistantLabel')
-                      }}
-                    </span>
-                    <!-- Thought process: steps with optional folded tool output -->
+                  <div class="flex min-w-0 flex-1 flex-col items-start gap-1">
                     <div
-                      v-if="reply.steps && reply.steps.length > 0"
-                      class="thought-process mb-2 space-y-2"
+                      v-for="(reply, replyIdx) in assistantReplies(msg)"
+                      :key="replyIdx"
+                      class="assistant-bubble-assistant assistant-markdown"
                     >
-                      <AssistantThoughtStep
-                        v-for="(step, stepIdx) in reply.steps"
-                        :key="stepIdx"
-                        :step="step"
+                      <span class="mb-1 block text-[11px] font-semibold text-gray-500">
+                        {{
+                          reply.modelName ||
+                          (reply.model ? formatModelLabel(reply.model) : '') ||
+                          $t('assistantChat.assistantLabel')
+                        }}
+                      </span>
+                      <!-- Thought process: steps with optional folded tool output -->
+                      <div
+                        v-if="reply.steps && reply.steps.length > 0"
+                        class="thought-process mb-2 space-y-2"
+                      >
+                        <AssistantThoughtStep
+                          v-for="(step, stepIdx) in reply.steps"
+                          :key="stepIdx"
+                          :step="step"
+                          :lang-id="locale"
+                          :show-raw-output="isStepOutputVisible(stepKey(index, replyIdx, stepIdx))"
+                          @toggle-raw="toggleStepOutput(stepKey(index, replyIdx, stepIdx))"
+                        />
+                      </div>
+                      <!-- Thinking dots while streaming and no reply yet for this model -->
+                      <div
+                        v-if="
+                          isStreamingThisSession && index === messages.length - 1 && !reply.content
+                        "
+                        class="thinking-dots mb-1 flex min-h-[1.25rem] items-center gap-1"
+                        role="status"
+                        :aria-label="$t('assistantChat.thinking')"
+                      >
+                        <span class="thinking-dot" /> <span class="thinking-dot" />
+                        <span class="thinking-dot" />
+                      </div>
+                      <LazyMathJax
+                        v-if="reply.content"
+                        :content="reply.content"
+                        :enable-markdown="true"
+                        :enable-curly-links="false"
                         :lang-id="locale"
-                        :show-raw-output="isStepOutputVisible(stepKey(index, replyIdx, stepIdx))"
-                        @toggle-raw="toggleStepOutput(stepKey(index, replyIdx, stepIdx))"
                       />
                     </div>
-                    <!-- Thinking dots while streaming and no reply yet for this model -->
+                    <!-- Single top-level bubble when `replies` is empty -->
                     <div
-                      v-if="
-                        isStreamingThisSession && index === messages.length - 1 && !reply.content
-                      "
-                      class="thinking-dots mb-1 flex min-h-[1.25rem] items-center gap-1"
-                      role="status"
-                      :aria-label="$t('assistantChat.thinking')"
+                      v-if="assistantReplies(msg).length === 0"
+                      class="assistant-bubble-assistant assistant-markdown"
                     >
-                      <span class="thinking-dot" /> <span class="thinking-dot" />
-                      <span class="thinking-dot" />
-                    </div>
-                    <LazyMathJax
-                      v-if="reply.content"
-                      :content="reply.content"
-                      :enable-markdown="true"
-                      :enable-curly-links="false"
-                      :lang-id="locale"
-                    />
-                  </div>
-                  <!-- Single top-level bubble when `replies` is empty -->
-                  <div
-                    v-if="assistantReplies(msg).length === 0"
-                    class="assistant-bubble-assistant assistant-markdown"
-                  >
-                    <span class="mb-1 block text-[11px] font-semibold text-gray-500">
-                      {{ $t('assistantChat.assistantLabel') }}
-                    </span>
-                    <div
-                      v-if="msg.steps && msg.steps.length > 0"
-                      class="thought-process mb-2 space-y-2"
-                    >
-                      <AssistantThoughtStep
-                        v-for="(step, stepIdx) in msg.steps"
-                        :key="stepIdx"
-                        :step="step"
-                        :lang-id="locale"
-                        :show-raw-output="isStepOutputVisible(stepKey('single', index, stepIdx))"
-                        @toggle-raw="toggleStepOutput(stepKey('single', index, stepIdx))"
-                      />
-                    </div>
+                      <span class="mb-1 block text-[11px] font-semibold text-gray-500">
+                        {{ $t('assistantChat.assistantLabel') }}
+                      </span>
+                      <div
+                        v-if="msg.steps && msg.steps.length > 0"
+                        class="thought-process mb-2 space-y-2"
+                      >
+                        <AssistantThoughtStep
+                          v-for="(step, stepIdx) in msg.steps"
+                          :key="stepIdx"
+                          :step="step"
+                          :lang-id="locale"
+                          :show-raw-output="isStepOutputVisible(stepKey('single', index, stepIdx))"
+                          @toggle-raw="toggleStepOutput(stepKey('single', index, stepIdx))"
+                        />
+                      </div>
 
-                    <div
-                      v-if="isStreamingThisSession && index === messages.length - 1 && !msg.content"
-                      class="thinking-dots mb-1 flex min-h-[1.25rem] items-center gap-1"
-                      role="status"
-                      :aria-label="$t('assistantChat.thinking')"
-                    >
-                      <span class="thinking-dot" /> <span class="thinking-dot" />
-                      <span class="thinking-dot" />
+                      <div
+                        v-if="
+                          isStreamingThisSession && index === messages.length - 1 && !msg.content
+                        "
+                        class="thinking-dots mb-1 flex min-h-[1.25rem] items-center gap-1"
+                        role="status"
+                        :aria-label="$t('assistantChat.thinking')"
+                      >
+                        <span class="thinking-dot" /> <span class="thinking-dot" />
+                        <span class="thinking-dot" />
+                      </div>
+                      <LazyMathJax
+                        v-if="msg.content"
+                        :content="msg.content"
+                        :enable-markdown="true"
+                        :enable-curly-links="false"
+                        :lang-id="locale"
+                      />
                     </div>
-                    <LazyMathJax
-                      v-if="msg.content"
-                      :content="msg.content"
-                      :enable-markdown="true"
-                      :enable-curly-links="false"
-                      :lang-id="locale"
+                  </div>
+                  <div
+                    v-if="messageToolbarVisible(msg)"
+                    class="flex shrink-0 flex-col items-center gap-1 py-1"
+                  >
+                    <ClipboardButton
+                      v-if="copyContentForMessage(msg)"
+                      variant="ghost"
+                      :content="copyContentForMessage(msg)"
+                      :title="$t('assistantChat.copyMessage')"
                     />
                   </div>
                 </div>
-
-                <ClipboardButton
-                  v-if="plainTextForEdit(msg)"
-                  variant="ghost"
-                  :content="plainTextForEdit(msg)"
-                  :title="$t('assistantChat.copyMessage')"
-                />
               </div>
               <!-- Thinking indicator when no assistant message yet (e.g. before stream starts) -->
 
@@ -692,6 +711,48 @@ function plainTextForEdit(msg) {
   if (!msg) return ''
   if (msg.role === 'user') return msg.content ?? ''
   return assistantPlainText(msg)
+}
+
+function messageToolbarVisible(msg) {
+  if (!msg) return false
+  const canEdit = canEditMessages.value && msg.role === 'user'
+  return Boolean(canEdit || copyContentForMessage(msg))
+}
+
+function copyContentForMessage(msg) {
+  if (!msg) return ''
+  if (msg.role === 'user') return msg.content ?? ''
+  return assistantMarkdownText(msg)
+}
+
+function assistantMarkdownText(msg) {
+  if (!msg || msg.role !== 'assistant') return ''
+  const replies = assistantReplies(msg)
+  if (replies.length === 0) return msg.content || ''
+  const blocks: string[] = []
+  for (const reply of replies) {
+    const pieces: string[] = []
+    const heading = reply.modelName || (reply.model ? formatModelLabel(reply.model) : null)
+    if (heading) pieces.push(`**${heading}**`)
+    if (reply.content) pieces.push(reply.content)
+    if (reply.steps && reply.steps.length > 0) {
+      for (const step of reply.steps) {
+        if (step.assistant_reasoning && String(step.assistant_reasoning).trim()) {
+          pieces.push(`> ${step.assistant_reasoning}`)
+        }
+        const action = step.action ?? ''
+        const result = step.result ?? ''
+        if (action || result) {
+          pieces.push(action && result ? `**${action}** — ${result}` : `${action}${result}`)
+        }
+        if (step.tool_output != null && step.tool_output !== '') {
+          pieces.push('```json\n' + step.tool_output + '\n```')
+        }
+      }
+    }
+    blocks.push(pieces.join('\n\n'))
+  }
+  return blocks.join('\n\n---\n\n')
 }
 
 /** `ref` on a node inside `v-for` may be an array — unwrap to a single `HTMLElement`. */
