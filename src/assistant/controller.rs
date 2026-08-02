@@ -130,9 +130,14 @@ pub async fn get_chat(
     path: web::Path<Uuid>,
 ) -> Result<HttpResponse, AppError> {
     let chat_id = path.into_inner();
-    let row = chat_store::get_chat(pool.get_ref(), claims.sub, chat_id)
-        .await?
-        .ok_or_else(|| AppError::NotFound("assistant chat not found".into()))?;
+    let row = chat_store::recover_stale_chat(
+        pool.get_ref(),
+        claims.sub,
+        chat_id,
+        chrono::Duration::seconds(120),
+    )
+    .await?
+    .ok_or_else(|| AppError::NotFound("assistant chat not found".into()))?;
     Ok(HttpResponse::Ok().json(row))
 }
 

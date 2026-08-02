@@ -356,6 +356,29 @@ pub fn apply_sse_event_to_messages(
                 o.insert("content".into(), json!(formatted));
                 o.remove("apiTrace");
                 o.insert("streamFinished".into(), json!(true));
+                if let Some(replies) = o.get_mut("replies").and_then(|v| v.as_array_mut()) {
+                    for r in replies.iter_mut() {
+                        if let Some(reply_obj) = r.as_object_mut() {
+                            let finished = reply_obj
+                                .get("streamFinished")
+                                .and_then(|v| v.as_bool())
+                                .unwrap_or(true);
+                            if finished {
+                                continue;
+                            }
+                            let needs_content = reply_obj
+                                .get("content")
+                                .and_then(|c| c.as_str())
+                                .map(|c| c.trim().is_empty())
+                                .unwrap_or(true);
+                            if needs_content {
+                                reply_obj.insert("content".into(), json!(formatted));
+                            }
+                            reply_obj.remove("apiTrace");
+                            reply_obj.insert("streamFinished".into(), json!(true));
+                        }
+                    }
+                }
             }
         }
         _ => {}

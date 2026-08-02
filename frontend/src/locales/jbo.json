@@ -1340,10 +1340,10 @@
     },
     "imageUploadButton": {
       "invalidType": "ko cuxna lo pixra datni",
-      "tooLarge": "pixra datni poi mleca li 5 megbaitni",
-      "processError": "fliba lo nu zukte lo pixra .i ko troci ranji.",
-      "readError": "fliba lo nu tcidu lo pixra datni .i ko troci ranji.",
-      "uploadError": "fliba lo nu punji lo pixra .i ko troci ranji."
+      "tooLarge": "le pixra vreji cu ei megdo lo ka baitni li me'i 5",
+      "processError": "fliba lo ka jukpa le pixra .i ko za'u re'u troci",
+      "readError": "fliba lo ka tcidu le pixra vreji .i ko za'u re'u troci",
+      "uploadError": "fliba lo ka punji le pixra .i ko za'u re'u troci"
     },
     "pagination": {
       "showing": "viska li",
@@ -1357,6 +1357,12 @@
     "dictionaryEntries": {
       "noEntries": "no sorcu valsi cu se facki.",
       "decomposition": "valsi porpitygau"
+    },
+    "phraseSplit": {
+      "label": "jufra",
+      "splitPhrase": "katna loi valsi",
+      "loading": "ca'o troci lo ka cpacu",
+      "noDefinitions": "no velckivei cu se penmi"
     },
     "messageActions": {
       "viewThread": "viska lo karni"

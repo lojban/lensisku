@@ -1345,6 +1345,12 @@
       "noEntries": "未找到语料词条。",
       "decomposition": "分解"
     },
+    "phraseSplit": {
+      "label": "短语",
+      "splitPhrase": "拆分为单词",
+      "loading": "加载中…",
+      "noDefinitions": "未找到定义"
+    },
     "messageActions": {
       "viewThread": "查看串"
     },

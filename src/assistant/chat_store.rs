@@ -2,9 +2,10 @@
 
 use deadpool_postgres::Pool;
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
+use serde_json::{json, Value};
 use uuid::Uuid;
 
+use crate::assistant::sse_ui_sync::apply_sse_event_to_messages;
 use crate::error::AppError;
 
 pub const MAX_CHATS_PER_USER: i64 = 100;
@@ -250,6 +251,134 @@ pub async fn delete_chat(pool: &Pool, user_id: i32, chat_id: Uuid) -> Result<(),
         return Err(AppError::NotFound("assistant chat not found".into()));
     }
     Ok(())
+}
+
+/// If the chat's most recent assistant message is still streaming and the chat has not been
+/// updated for longer than `max_age`, mark that message as finished with an error so clients can
+/// recover instead of polling forever.
+pub async fn recover_stale_chat(
+    pool: &Pool,
+    user_id: i32,
+    chat_id: Uuid,
+    max_age: chrono::Duration,
+) -> Result<Option<AssistantChatRow>, AppError> {
+    let client = pool
+        .get()
+        .await
+        .map_err(|e| AppError::Database(format!("assistant_chats recover pool: {}", e)))?;
+    let row = client
+        .query_opt(
+            "SELECT id, user_id, title, messages, primary_model_id, scroll_top, updated_at, created_at \
+             FROM assistant_chats WHERE id = $1 AND user_id = $2",
+            &[&chat_id, &user_id],
+        )
+        .await
+        .map_err(|e| AppError::Database(format!("assistant_chats recover get: {}", e)))?;
+    let Some(row) = row else {
+        return Ok(None);
+    };
+
+    let updated_at: chrono::DateTime<chrono::Utc> = row.get(6);
+    if chrono::Utc::now() - updated_at < max_age {
+        return Ok(Some(AssistantChatRow {
+            id: row.get(0),
+            user_id: row.get(1),
+            title: row.get(2),
+            messages: row.get(3),
+            primary_model_id: row.get(4),
+            scroll_top: row.get(5),
+            updated_at,
+            created_at: row.get(7),
+        }));
+    }
+
+    let mut messages: Value = row.get(3);
+    let Some(arr) = messages.as_array() else {
+        return Ok(Some(AssistantChatRow {
+            id: row.get(0),
+            user_id: row.get(1),
+            title: row.get(2),
+            messages,
+            primary_model_id: row.get(4),
+            scroll_top: row.get(5),
+            updated_at,
+            created_at: row.get(7),
+        }));
+    };
+
+    let Some(assistant_index) = arr
+        .iter()
+        .rposition(|m| m.get("role").and_then(|r| r.as_str()) == Some("assistant"))
+    else {
+        return Ok(Some(AssistantChatRow {
+            id: row.get(0),
+            user_id: row.get(1),
+            title: row.get(2),
+            messages,
+            primary_model_id: row.get(4),
+            scroll_top: row.get(5),
+            updated_at,
+            created_at: row.get(7),
+        }));
+    };
+
+    let msg = &arr[assistant_index];
+    let is_incomplete = if let Some(replies) = msg.get("replies").and_then(|v| v.as_array()) {
+        replies.iter().any(|r| {
+            !r.get("streamFinished")
+                .and_then(|v| v.as_bool())
+                .unwrap_or(true)
+        })
+    } else {
+        !msg.get("streamFinished")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(true)
+    };
+
+    if !is_incomplete {
+        return Ok(Some(AssistantChatRow {
+            id: row.get(0),
+            user_id: row.get(1),
+            title: row.get(2),
+            messages,
+            primary_model_id: row.get(4),
+            scroll_top: row.get(5),
+            updated_at,
+            created_at: row.get(7),
+        }));
+    }
+
+    let event = json!({
+        "type": "error",
+        "error": "The assistant session timed out or a model connection failed. Please try again."
+    });
+    apply_sse_event_to_messages(&mut messages, assistant_index, &event)?;
+
+    client
+        .execute(
+            "UPDATE assistant_chats SET messages = $1::jsonb WHERE id = $2 AND user_id = $3",
+            &[&messages, &chat_id, &user_id],
+        )
+        .await
+        .map_err(|e| AppError::Database(format!("assistant_chats recover update: {}", e)))?;
+
+    log::warn!(
+        "Recovered stale assistant chat {} for user {} (last assistant was incomplete since {})",
+        chat_id,
+        user_id,
+        updated_at
+    );
+
+    Ok(Some(AssistantChatRow {
+        id: row.get(0),
+        user_id: row.get(1),
+        title: row.get(2),
+        messages,
+        primary_model_id: row.get(4),
+        scroll_top: row.get(5),
+        updated_at: row.get(6),
+        created_at: row.get(7),
+    }))
 }
 
 #[derive(Debug, Serialize)]

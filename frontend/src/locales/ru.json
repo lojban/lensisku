@@ -1294,6 +1294,12 @@
       "noEntries": "Записи корпуса не найдены.",
       "decomposition": "Разложение"
     },
+    "phraseSplit": {
+      "label": "Фраза",
+      "splitPhrase": "Разделить на слова",
+      "loading": "Загрузка…",
+      "noDefinitions": "Определения не найдены"
+    },
     "messageActions": {
       "viewThread": "Просмотреть тему"
     },

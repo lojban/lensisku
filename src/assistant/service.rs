@@ -2049,7 +2049,21 @@ async fn run_agent_loop_with_candidates(
         drop(post_debug_tx);
 
         match (r1, r2) {
-            (Ok((reply, _)), _) | (_, Ok((reply, _))) => Ok((reply, vec![])),
+            (Ok((reply, _)), Ok(_)) => {
+                drop(final_error_tx);
+                Ok((reply, vec![]))
+            }
+            (Ok((reply, _)), Err(e)) | (Err(e), Ok((reply, _))) => {
+                let payload = sse_error_payload(&e);
+                if let Err(send_err) =
+                    emit_sse_user_visible(&persist, &final_error_tx, payload).await
+                {
+                    drop(final_error_tx);
+                    return Err(send_err);
+                }
+                drop(final_error_tx);
+                Ok((reply, vec![]))
+            }
             (Err(e1), Err(_)) => {
                 let payload = sse_error_payload(&e1);
                 if let Err(send_err) =

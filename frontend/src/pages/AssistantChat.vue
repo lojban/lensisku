@@ -536,21 +536,42 @@ const messagePaneVisibleClass = computed(() => {
 
 const canEditMessages = computed(() => loaded.value && !isStreamingThisSession.value)
 
-const filteredSessions = computed(() => {
-  const q = chatSearchQuery.value.trim().toLowerCase()
-  const list = [...sessions.value].sort((a, b) => b.updatedAt - a.updatedAt)
-  if (!q) return list
-  return list.filter((s) => {
-    if (s.title.toLowerCase().includes(q)) return true
-    const blob = (s.messages || [])
+const sessionTimeFormatter = computed(() => {
+  try {
+    return new Intl.DateTimeFormat(locale.value || undefined, {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    })
+  } catch {
+    return null
+  }
+})
+
+const sessionsWithSearch = computed(() => {
+  return sessions.value.map((s) => {
+    const textBlob = (s.messages || [])
       .map((m) => {
         if (m.role === 'user') return m.content || ''
         return assistantPlainText(m)
       })
       .join(' ')
-      .toLowerCase()
-    return blob.includes(q)
+    return {
+      ...s,
+      _searchBlob: `${(s.title || '').toLowerCase()} ${textBlob.toLowerCase()}`,
+    }
   })
+})
+
+const sortedSessions = computed(() => {
+  return [...sessionsWithSearch.value].sort((a, b) => b.updatedAt - a.updatedAt)
+})
+
+const filteredSessions = computed(() => {
+  const q = chatSearchQuery.value.trim().toLowerCase()
+  if (!q) return sortedSessions.value
+  return sortedSessions.value.filter((s) => s._searchBlob.includes(q))
 })
 
 function createId() {
@@ -558,6 +579,18 @@ function createId() {
     return crypto.randomUUID()
   }
   return `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`
+}
+
+/** Keep only the newest entry per session id to avoid duplicates. */
+function dedupeById(list) {
+  const seen = new Map()
+  for (const s of list) {
+    const existing = seen.get(s.id)
+    if (!existing || s.updatedAt >= existing.updatedAt) {
+      seen.set(s.id, s)
+    }
+  }
+  return Array.from(seen.values())
 }
 
 /**
@@ -598,15 +631,17 @@ function startRemoteStreamRecovery(chatId) {
       const row = await r.json()
       const msgs = Array.isArray(row.messages) ? row.messages : []
       messages.value = msgs
-      const idx = sessions.value.findIndex((s) => s.id === chatId)
-      if (idx >= 0) {
-        const cur = sessions.value[idx]
-        sessions.value.splice(idx, 1, {
-          ...cur,
-          messages: JSON.parse(JSON.stringify(msgs)),
-          primaryModelId: row.primaryModelId ?? cur.primaryModelId ?? null,
-        })
-      }
+      sessions.value = dedupeById(
+        sessions.value.map((s) =>
+          s.id === chatId
+            ? {
+                ...s,
+                messages: JSON.parse(JSON.stringify(msgs)),
+                primaryModelId: row.primaryModelId ?? s.primaryModelId ?? null,
+              }
+            : s
+        )
+      )
       const last = msgs[msgs.length - 1]
       if (!last || isAssistantStreamComplete(last)) {
         stopRemoteStreamRecovery()
@@ -717,13 +752,10 @@ function deriveTitle(msgs) {
 }
 
 function formatSessionTime(ts) {
+  const formatter = sessionTimeFormatter.value
+  if (!formatter) return ''
   try {
-    return new Intl.DateTimeFormat(locale.value || undefined, {
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    }).format(new Date(ts))
+    return formatter.format(new Date(ts))
   } catch {
     return ''
   }
@@ -756,8 +788,7 @@ async function fetchSessionIfNeeded(id) {
   if (!r.ok) return
   const row = await r.json()
   const mapped = mapServerChat(row)
-  const idx = sessions.value.findIndex((x) => x.id === id)
-  if (idx >= 0) sessions.value.splice(idx, 1, mapped)
+  sessions.value = dedupeById(sessions.value.map((x) => (x.id === id ? mapped : x)))
 }
 
 async function loadFromServer() {
@@ -794,7 +825,7 @@ async function loadFromServer() {
   if (!fullRes.ok) throw new Error(await fullRes.text())
   const full = await fullRes.json()
   const firstSession = mapServerChat(full)
-  sessions.value = sessionsPartial.map((s) => (s.id === firstId ? firstSession : s))
+  sessions.value = dedupeById(sessionsPartial.map((s) => (s.id === firstId ? firstSession : s)))
   activeSessionId.value = firstId
   messages.value = JSON.parse(JSON.stringify(firstSession.messages))
 }
@@ -807,7 +838,7 @@ function loadFromStorage() {
       return
     }
     const data = JSON.parse(raw)
-    sessions.value = Array.isArray(data.sessions) ? data.sessions : []
+    sessions.value = dedupeById(Array.isArray(data.sessions) ? data.sessions : [])
     activeSessionId.value = data.activeId || sessions.value[0]?.id
     if (!sessions.value.length) {
       createInitialSession()
@@ -849,26 +880,21 @@ function readScrollTopForPersist() {
 /** Merges live `messages` into the active session row and sidebar order. */
 function mergeActiveSessionIntoState(options: { preserveUpdatedAt?: boolean } = {}) {
   if (!loaded.value || !activeSessionId.value) return null
-  const idx = sessions.value.findIndex((s) => s.id === activeSessionId.value)
-  if (idx < 0) return null
+  const active = sessions.value.find((s) => s.id === activeSessionId.value)
+  if (!active) return null
   const preserveUpdatedAt = options.preserveUpdatedAt === true
-  const prevUpdatedAt = sessions.value[idx].updatedAt
-  let updatedAt = prevUpdatedAt
-  if (!preserveUpdatedAt && pendingBumpUpdatedAt.value) {
-    updatedAt = Date.now()
-  }
+  const updatedAt = !preserveUpdatedAt && pendingBumpUpdatedAt.value ? Date.now() : active.updatedAt
   pendingBumpUpdatedAt.value = false
   const session = {
-    ...sessions.value[idx],
+    ...active,
     messages: JSON.parse(JSON.stringify(messages.value)),
     updatedAt,
     title: deriveTitle(messages.value),
     scrollTop: readScrollTopForPersist(),
   }
-  const others = sessions.value.filter((s) => s.id !== activeSessionId.value)
-  const merged = [session, ...others]
+  const merged = sessions.value.map((s) => (s.id === activeSessionId.value ? session : s))
   merged.sort((a, b) => b.updatedAt - a.updatedAt)
-  sessions.value = merged.slice(0, MAX_SESSIONS)
+  sessions.value = dedupeById(merged.slice(0, MAX_SESSIONS))
   return session
 }
 
@@ -928,12 +954,12 @@ const debouncedPersist = useDebounceFn(() => {
 }, 400)
 const debouncedScrollPersist = useDebounceFn(() => {
   if (!loaded.value || !activeSessionId.value || !scrollContainer.value) return
-  const idx = sessions.value.findIndex((s) => s.id === activeSessionId.value)
-  if (idx < 0) return
   const st = scrollContainer.value.scrollTop
-  const cur = sessions.value[idx]
-  if (cur.scrollTop === st) return
-  sessions.value.splice(idx, 1, { ...cur, scrollTop: st })
+  const active = sessions.value.find((s) => s.id === activeSessionId.value)
+  if (!active || active.scrollTop === st) return
+  sessions.value = sessions.value.map((s) =>
+    s.id === activeSessionId.value ? { ...s, scrollTop: st } : s
+  )
   debouncedPersist()
 }, 200)
 
@@ -1342,11 +1368,9 @@ function buildPayloadMessages(msgList, session) {
 
 function ensureSessionPrimaryModel(sessionId, modelId) {
   if (!modelId) return
-  const idx = sessions.value.findIndex((s) => s.id === sessionId)
-  if (idx < 0) return
-  const s = sessions.value[idx]
-  if (s.primaryModelId) return
-  sessions.value.splice(idx, 1, { ...s, primaryModelId: modelId })
+  sessions.value = sessions.value.map((s) =>
+    s.id === sessionId && !s.primaryModelId ? { ...s, primaryModelId: modelId } : s
+  )
 }
 
 async function deleteSession(id, e) {
@@ -1771,6 +1795,28 @@ const retryLast = async () => {
   await runAssistantStream(sessionId, false)
 }
 
+/** Ensure the trailing assistant bubble is marked complete when a stream ends without a terminal SSE event. */
+function ensureLastAssistantFinished() {
+  const last = messages.value[messages.value.length - 1]
+  if (!last || last.role !== 'assistant' || isAssistantStreamComplete(last)) return
+
+  if (last.replies?.length) {
+    for (const r of last.replies) {
+      if (r.streamFinished === false) {
+        r.streamFinished = true
+        if (!r.content?.trim()) {
+          r.content = `_${t('assistantChat.error')}_`
+        }
+      }
+    }
+  } else {
+    last.streamFinished = true
+    if (!last.content?.trim()) {
+      last.content = `_${t('assistantChat.error')}_`
+    }
+  }
+}
+
 /** Stream assistant reply; `appendAssistant` true when the last message is user (append empty assistant first). */
 async function runAssistantStream(sessionId, appendAssistant) {
   stopRemoteStreamRecovery()
@@ -1793,6 +1839,8 @@ async function runAssistantStream(sessionId, appendAssistant) {
   } finally {
     streamingSessionId.value = null
     streamAbortController.value = null
+    ensureLastAssistantFinished()
+    if (loaded.value) debouncedPersist()
   }
 }
 </script>
