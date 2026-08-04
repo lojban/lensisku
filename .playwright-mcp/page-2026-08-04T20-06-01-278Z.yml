@@ -1,0 +1,131 @@
+- generic [ref=f2e2]:
+  - banner [ref=f2e4]:
+    - generic [ref=f2e6]:
+      - link "Lens Lens" [ref=f2e8] [cursor=pointer]:
+        - /url: /en
+        - img "Lens" [ref=f2e10]
+        - generic [ref=f2e19]: Lens
+      - navigation [ref=f2e20]:
+        - link "Courses" [ref=f2e21] [cursor=pointer]:
+          - /url: /collections
+        - link "Recent" [ref=f2e25] [cursor=pointer]:
+          - /url: /recent
+        - button [ref=f2e30] [cursor=pointer]
+      - generic [ref=f2e33]:
+        - link "My activity" [ref=f2e34] [cursor=pointer]:
+          - /url: /reactions
+        - link "gleki" [ref=f2e39] [cursor=pointer]:
+          - /url: /profile
+        - button "Logout" [ref=f2e44] [cursor=pointer]
+  - main [ref=f2e49]:
+    - generic [ref=f2e52]:
+      - complementary "Search chats" [ref=f2e53]:
+        - button [ref=f2e55] [cursor=pointer]
+        - searchbox "Search by title or message…" [ref=f2e60]
+        - list [ref=f2e61]:
+          - 'listitem "Current chat: New chat" [ref=f2e392] [cursor=pointer]':
+            - generic [ref=f2e394]:
+              - generic [ref=f2e397]:
+                - paragraph [ref=f2e398]: New chat
+                - paragraph [ref=f2e399]: Aug 4, 11:05 PM
+              - button "Delete chat" [ref=f2e400]
+          - listitem "how to say \"my friend\"?" [ref=f2e404] [cursor=pointer]:
+            - generic [ref=f2e89]:
+              - generic [ref=f2e92]:
+                - paragraph [ref=f2e93]: how to say "my friend"?
+                - paragraph [ref=f2e94]: Aug 4, 11:02 PM
+              - button "Delete chat" [ref=f2e95]
+          - listitem "How to say \"in the name of\"" [ref=f2e99] [cursor=pointer]:
+            - generic [ref=f2e101]:
+              - generic [ref=f2e104]:
+                - paragraph [ref=f2e105]: How to say "in the name of"
+                - paragraph [ref=f2e106]: Aug 4, 09:19 PM
+              - button "Delete chat" [ref=f2e107]
+          - listitem "How to say big yellow fox jumps over the lazy dog" [ref=f2e111] [cursor=pointer]:
+            - generic [ref=f2e113]:
+              - generic [ref=f2e116]:
+                - paragraph [ref=f2e117]: How to say big yellow fox jumps over the lazy dog
+                - paragraph [ref=f2e118]: Jul 26, 12:12 PM
+              - button "Delete chat" [ref=f2e119]
+          - listitem "How to say big thanks" [ref=f2e123] [cursor=pointer]:
+            - generic [ref=f2e125]:
+              - generic [ref=f2e128]:
+                - paragraph [ref=f2e129]: How to say big thanks
+                - paragraph [ref=f2e130]: Jul 26, 04:51 AM
+              - button "Delete chat" [ref=f2e131]
+          - listitem "cnino casnu" [ref=f2e135] [cursor=pointer]:
+            - generic [ref=f2e137]:
+              - generic [ref=f2e140]:
+                - paragraph [ref=f2e141]: cnino casnu
+                - paragraph [ref=f2e142]: Jul 26, 04:51 AM
+              - button "Delete chat" [ref=f2e143]
+          - listitem "How to say big thanks" [ref=f2e147] [cursor=pointer]:
+            - generic [ref=f2e149]:
+              - generic [ref=f2e152]:
+                - paragraph [ref=f2e153]: How to say big thanks
+                - paragraph [ref=f2e154]: Jul 26, 12:10 AM
+              - button "Delete chat" [ref=f2e155]
+          - listitem "How to say миловидная" [ref=f2e159] [cursor=pointer]:
+            - generic [ref=f2e161]:
+              - generic [ref=f2e164]:
+                - paragraph [ref=f2e165]: How to say миловидная
+                - paragraph [ref=f2e166]: Jul 25, 01:15 PM
+              - button "Delete chat" [ref=f2e167]
+          - listitem "How to say \"in the name of\"" [ref=f2e171] [cursor=pointer]:
+            - generic [ref=f2e173]:
+              - generic [ref=f2e176]:
+                - paragraph [ref=f2e177]: How to say "in the name of"
+                - paragraph [ref=f2e178]: Jul 25, 01:12 PM
+              - button "Delete chat" [ref=f2e179]
+          - listitem "i za'e da'i ka te misno - decipher word by word what it c…" [ref=f2e183] [cursor=pointer]:
+            - generic [ref=f2e185]:
+              - generic [ref=f2e188]:
+                - paragraph [ref=f2e189]: i za'e da'i ka te misno - decipher word by word what it c…
+                - paragraph [ref=f2e190]: Jul 25, 01:12 PM
+              - button "Delete chat" [ref=f2e191]
+          - listitem "how to say \"all people are equal\"?" [ref=f2e195] [cursor=pointer]:
+            - generic [ref=f2e197]:
+              - generic [ref=f2e200]:
+                - paragraph [ref=f2e201]: how to say "all people are equal"?
+                - paragraph [ref=f2e202]: Apr 26, 02:17 PM
+              - button "Delete chat" [ref=f2e203]
+          - listitem "How to say big thanks" [ref=f2e207] [cursor=pointer]:
+            - generic [ref=f2e209]:
+              - generic [ref=f2e212]:
+                - paragraph [ref=f2e213]: How to say big thanks
+                - paragraph [ref=f2e214]: Apr 1, 11:10 PM
+              - button "Delete chat" [ref=f2e215]
+          - listitem "how to say big thanks?" [ref=f2e219] [cursor=pointer]:
+            - generic [ref=f2e221]:
+              - generic [ref=f2e224]:
+                - paragraph [ref=f2e225]: how to say big thanks?
+                - paragraph [ref=f2e226]: Apr 1, 09:06 AM
+              - button "Delete chat" [ref=f2e227]
+          - listitem "How to say to lend something with the expectation to be r…" [ref=f2e231] [cursor=pointer]:
+            - generic [ref=f2e233]:
+              - generic [ref=f2e236]:
+                - paragraph [ref=f2e237]: How to say to lend something with the expectation to be r…
+                - paragraph [ref=f2e238]: Mar 27, 10:41 PM
+              - button "Delete chat" [ref=f2e239]
+          - listitem "how to say \"where do i go\"?" [ref=f2e243] [cursor=pointer]:
+            - generic [ref=f2e245]:
+              - generic [ref=f2e248]:
+                - paragraph [ref=f2e249]: how to say "where do i go"?
+                - paragraph [ref=f2e250]: Mar 27, 08:22 PM
+              - button "Delete chat" [ref=f2e251]
+          - listitem "how to say polyphony?" [ref=f2e255] [cursor=pointer]:
+            - generic [ref=f2e257]:
+              - generic [ref=f2e260]:
+                - paragraph [ref=f2e261]: how to say polyphony?
+                - paragraph [ref=f2e262]: Mar 25, 06:26 PM
+              - button "Delete chat" [ref=f2e263]
+      - generic [ref=f2e63]:
+        - generic [ref=f2e66]:
+          - heading "Lojban Assistant" [level=1] [ref=f2e67]
+          - button "New chat" [ref=f2e68] [cursor=pointer]
+        - generic [ref=f2e71]: Send a message to get started.
+        - generic [ref=f2e78]:
+          - generic [ref=f2e79]:
+            - textbox "Describe a concept or ask for a Lojban translation..." [active] [ref=f2e80]
+            - button "Send message" [disabled] [ref=f2e81]
+          - generic [ref=f2e85]: The assistant can search the dictionary by meaning.

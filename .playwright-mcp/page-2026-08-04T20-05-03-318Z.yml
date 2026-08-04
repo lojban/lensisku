@@ -1,0 +1,35 @@
+- generic [ref=f2e2]:
+  - banner [ref=f2e4]:
+    - generic [ref=f2e6]:
+      - link "Lens Lens" [ref=f2e8] [cursor=pointer]:
+        - /url: /en
+        - img "Lens" [ref=f2e10]
+        - generic [ref=f2e19]: Lens
+      - navigation [ref=f2e20]:
+        - link "Courses" [ref=f2e21] [cursor=pointer]:
+          - /url: /collections
+        - link "Recent" [ref=f2e25] [cursor=pointer]:
+          - /url: /recent
+        - button [ref=f2e30] [cursor=pointer]
+      - generic [ref=f2e33]:
+        - link "My activity" [ref=f2e34] [cursor=pointer]:
+          - /url: /reactions
+        - link "gleki" [ref=f2e39] [cursor=pointer]:
+          - /url: /profile
+        - button "Logout" [ref=f2e44] [cursor=pointer]
+  - main [ref=f2e49]:
+    - generic [ref=f2e52]:
+      - complementary "Search chats" [ref=f2e53]:
+        - button [ref=f2e55] [cursor=pointer]
+        - searchbox "Search by title or message…" [ref=f2e60]
+        - list [ref=f2e61]:
+          - paragraph [ref=f2e62]: No chats match your search.
+      - generic [ref=f2e63]:
+        - generic [ref=f2e66]:
+          - heading "Lojban Assistant" [level=1] [ref=f2e67]
+          - button "New chat" [ref=f2e68] [cursor=pointer]
+        - generic [ref=f2e78]:
+          - generic [ref=f2e79]:
+            - textbox "Describe a concept or ask for a Lojban translation..." [ref=f2e80]
+            - button "Send message" [disabled] [ref=f2e81]
+          - generic [ref=f2e85]: The assistant can search the dictionary by meaning.

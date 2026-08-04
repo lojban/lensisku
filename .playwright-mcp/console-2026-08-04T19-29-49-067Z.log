@@ -1,0 +1,4 @@
+[ 1750407ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ https://lensisku-dev.lojban.org/api/assistant/chats/483e4b36-126d-4975-9c8a-2a514d40c5c4:0
+[ 1750408ms] [WARNING] assistant chat PUT failed {"error":"Resource not found: assistant chat not found","message":"Resource not found: assistant chat not found"} @ http://localhost:5173/src/pages/AssistantChat.vue?t=1785871706487:457
+[ 1750852ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ https://lensisku-dev.lojban.org/api/assistant/chats/5b33789b-c19f-47e2-9213-084d5d290518:0
+[ 1750853ms] [WARNING] assistant chat PUT failed {"error":"Resource not found: assistant chat not found","message":"Resource not found: assistant chat not found"} @ http://localhost:5173/src/pages/AssistantChat.vue?t=1785871706487:457

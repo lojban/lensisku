@@ -1,0 +1,6 @@
+[     401ms] [WARNING] [VUE_ROUTER_R0025] The `next()` callback in navigation guards is deprecated.
+├▶ fix: Return the value instead: `next()` becomes `return`, `next(false)` becomes `return false`, `next("/path")` becomes `return "/path"`.
+╰▶ see: https://router.vuejs.org/guide/advanced/navigation-guards.html#Optional-third-argument-next @ http://localhost:5173/node_modules/.vite/deps/vue-router-DXOVGj4L.js?v=17e9b7eb:39
+[  117142ms] [INFO] Slow network is detected. See https://www.chromestatus.com/feature/5636954674692096 for more details. Fallback font will be used while loading: https://cdn.jsdelivr.net/npm/mathjax@3/es5/output/chtml/fonts/woff-v2/MathJax_Zero.woff @ http://localhost:5173/en/assistant:0
+[  117147ms] [INFO] Slow network is detected. See https://www.chromestatus.com/feature/5636954674692096 for more details. Fallback font will be used while loading: https://cdn.jsdelivr.net/npm/mathjax@3/es5/output/chtml/fonts/woff-v2/MathJax_Math-Italic.woff @ http://localhost:5173/en/assistant:0
+[  117148ms] [INFO] Slow network is detected. See https://www.chromestatus.com/feature/5636954674692096 for more details. Fallback font will be used while loading: https://cdn.jsdelivr.net/npm/mathjax@3/es5/output/chtml/fonts/woff-v2/MathJax_Main-Regular.woff @ http://localhost:5173/en/assistant:0

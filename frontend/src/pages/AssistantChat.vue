@@ -358,7 +358,7 @@
                   </div>
                   <div
                     v-if="messageToolbarVisible(msg)"
-                    class="flex shrink-0 flex-col items-center gap-1 py-1"
+                    class="flex shrink-0 flex-col items-center justify-end gap-1 self-stretch py-1"
                   >
                     <ClipboardButton
                       v-if="copyContentForMessage(msg)"
