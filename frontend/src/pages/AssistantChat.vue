@@ -1808,12 +1808,14 @@ async function performRequest(
             if (r) {
               r.content = event.reply ?? ''
               r.streamFinished = true
+              if (event.cards) r.cards = event.cards
               if (!r.apiTrace) r.apiTrace = []
               r.apiTrace.push({ role: 'assistant', content: event.reply ?? '' })
             }
           } else {
             msg.content = event.reply ?? ''
             msg.streamFinished = true
+            if (event.cards) msg.cards = event.cards
             if (!msg.apiTrace) msg.apiTrace = []
             msg.apiTrace.push({ role: 'assistant', content: event.reply ?? '' })
           }
