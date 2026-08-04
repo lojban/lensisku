@@ -258,52 +258,62 @@
                   class="flex w-full flex-row items-start gap-1.5"
                 >
                   <div class="flex min-w-0 flex-1 flex-col items-start gap-1">
-                    <div
-                      v-for="(reply, replyIdx) in assistantReplies(msg)"
-                      :key="replyIdx"
-                      class="assistant-bubble-assistant assistant-markdown"
-                    >
-                      <span class="mb-1 block text-[11px] font-semibold text-gray-500">
-                        {{
-                          reply.modelName ||
-                          (reply.model ? formatModelLabel(reply.model) : '') ||
-                          $t('assistantChat.assistantLabel')
-                        }}
-                      </span>
-                      <!-- Thought process: steps with optional folded tool output -->
-                      <div
-                        v-if="reply.steps && reply.steps.length > 0"
-                        class="thought-process mb-2 space-y-2"
-                      >
-                        <AssistantThoughtStep
-                          v-for="(step, stepIdx) in reply.steps"
-                          :key="stepIdx"
-                          :step="step"
+                    <template v-for="(reply, replyIdx) in assistantReplies(msg)" :key="replyIdx">
+                      <template v-if="reply.cards && reply.cards.length > 0">
+                        <AssistantDefinitionCard
+                          v-for="(card, cardIdx) in reply.cards"
+                          :key="cardIdx"
+                          :card="card"
+                          class="max-w-[80%] min-w-0"
+                        />
+                      </template>
+                      <div v-else class="assistant-bubble-assistant assistant-markdown">
+                        <span class="mb-1 block text-[11px] font-semibold text-gray-500">
+                          {{
+                            reply.modelName ||
+                            (reply.model ? formatModelLabel(reply.model) : '') ||
+                            $t('assistantChat.assistantLabel')
+                          }}
+                        </span>
+                        <!-- Thought process: steps with optional folded tool output -->
+                        <div
+                          v-if="reply.steps && reply.steps.length > 0"
+                          class="thought-process mb-2 space-y-2"
+                        >
+                          <AssistantThoughtStep
+                            v-for="(step, stepIdx) in reply.steps"
+                            :key="stepIdx"
+                            :step="step"
+                            :lang-id="locale"
+                            :show-raw-output="
+                              isStepOutputVisible(stepKey(index, replyIdx, stepIdx))
+                            "
+                            @toggle-raw="toggleStepOutput(stepKey(index, replyIdx, stepIdx))"
+                          />
+                        </div>
+                        <!-- Thinking dots while streaming and no reply yet for this model -->
+                        <div
+                          v-if="
+                            isStreamingThisSession &&
+                            index === messages.length - 1 &&
+                            !reply.content
+                          "
+                          class="thinking-dots mb-1 flex min-h-[1.25rem] items-center gap-1"
+                          role="status"
+                          :aria-label="$t('assistantChat.thinking')"
+                        >
+                          <span class="thinking-dot" /> <span class="thinking-dot" />
+                          <span class="thinking-dot" />
+                        </div>
+                        <LazyMathJax
+                          v-if="reply.content"
+                          :content="reply.content"
+                          :enable-markdown="true"
+                          :enable-curly-links="false"
                           :lang-id="locale"
-                          :show-raw-output="isStepOutputVisible(stepKey(index, replyIdx, stepIdx))"
-                          @toggle-raw="toggleStepOutput(stepKey(index, replyIdx, stepIdx))"
                         />
                       </div>
-                      <!-- Thinking dots while streaming and no reply yet for this model -->
-                      <div
-                        v-if="
-                          isStreamingThisSession && index === messages.length - 1 && !reply.content
-                        "
-                        class="thinking-dots mb-1 flex min-h-[1.25rem] items-center gap-1"
-                        role="status"
-                        :aria-label="$t('assistantChat.thinking')"
-                      >
-                        <span class="thinking-dot" /> <span class="thinking-dot" />
-                        <span class="thinking-dot" />
-                      </div>
-                      <LazyMathJax
-                        v-if="reply.content"
-                        :content="reply.content"
-                        :enable-markdown="true"
-                        :enable-curly-links="false"
-                        :lang-id="locale"
-                      />
-                    </div>
+                    </template>
                     <!-- Single top-level bubble when `replies` is empty -->
                     <div
                       v-if="assistantReplies(msg).length === 0"
@@ -471,6 +481,7 @@ import {
   Pencil,
 } from 'lucide-vue-next'
 
+import AssistantDefinitionCard from '@/components/AssistantDefinitionCard.vue'
 import AssistantThoughtStep from '@/components/AssistantThoughtStep.vue'
 import ClipboardButton from '@/components/ClipboardButton.vue'
 import LazyMathJax from '@/components/LazyMathJax.vue'
@@ -1168,8 +1179,16 @@ onKeyStroke('Escape', (e) => {
 function assistantReplies(msg) {
   if (!msg || msg.role !== 'assistant') return []
   if (msg.replies && msg.replies.length > 0) return msg.replies
-  if (msg.content || (msg.steps && msg.steps.length > 0)) {
-    return [{ model: null, modelName: null, steps: msg.steps || [], content: msg.content || '' }]
+  if (msg.content || msg.cards?.length || (msg.steps && msg.steps.length > 0)) {
+    return [
+      {
+        model: null,
+        modelName: null,
+        steps: msg.steps || [],
+        content: msg.content || '',
+        cards: msg.cards || [],
+      },
+    ]
   }
   return []
 }

@@ -316,14 +316,12 @@ pub fn apply_sse_event_to_messages(
             });
             if let Some(mid) = model_id_s {
                 let r = get_or_create_reply(msg, mid, model_name)?;
-                r.as_object_mut()
-                    .unwrap()
-                    .insert("content".into(), json!(reply_text));
-                let trace = r
-                    .as_object_mut()
-                    .unwrap()
-                    .entry("apiTrace".to_string())
-                    .or_insert_with(|| json!([]));
+                let ro = r.as_object_mut().unwrap();
+                ro.insert("content".into(), json!(reply_text));
+                if let Some(cards) = event.get("cards") {
+                    ro.insert("cards".into(), cards.clone());
+                }
+                let trace = ro.entry("apiTrace".to_string()).or_insert_with(|| json!([]));
                 if let Some(a) = trace.as_array_mut() {
                     a.push(done_seg);
                 }
@@ -332,6 +330,9 @@ pub fn apply_sse_event_to_messages(
                 let o = msg.as_object_mut().unwrap();
                 o.insert("content".into(), json!(reply_text));
                 o.insert("streamFinished".into(), json!(true));
+                if let Some(cards) = event.get("cards") {
+                    o.insert("cards".into(), cards.clone());
+                }
                 let trace = o.entry("apiTrace".to_string()).or_insert_with(|| json!([]));
                 if let Some(a) = trace.as_array_mut() {
                     a.push(done_seg);

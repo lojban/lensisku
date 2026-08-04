@@ -799,6 +799,7 @@ struct ValidatedReference {
     definitionid: i32,
     valsiword: String,
     type_name: String,
+    langid: i32,
     langrealname: String,
     selmaho: Option<String>,
     field: String,
@@ -943,6 +944,7 @@ async fn resolve_references(
             definitionid: r.definitionid,
             valsiword: def.valsiword,
             type_name: def.type_name,
+            langid: def.langid,
             langrealname: def.langrealname,
             selmaho: def.selmaho,
             field,
@@ -1012,6 +1014,37 @@ fn build_printable_markdown(validated: &[ValidatedReference]) -> String {
         out.push_str("---\n\n");
     }
     out
+}
+
+/// Builds a structured card payload for the frontend to render as definition cards.
+fn build_card_payload(validated: &[ValidatedReference]) -> serde_json::Value {
+    let mut groups: Vec<serde_json::Map<String, serde_json::Value>> = Vec::new();
+    let mut group_index: HashMap<i32, usize> = HashMap::new();
+    for r in validated {
+        let idx = *group_index.entry(r.definitionid).or_insert_with(|| {
+            let mut header = serde_json::Map::new();
+            header.insert("definitionid".into(), r.definitionid.into());
+            header.insert("valsiword".into(), r.valsiword.clone().into());
+            header.insert("type_name".into(), r.type_name.clone().into());
+            header.insert("langid".into(), r.langid.into());
+            header.insert("langrealname".into(), r.langrealname.clone().into());
+            header.insert(
+                "selmaho".into(),
+                r.selmaho.clone().map(serde_json::Value::String).unwrap_or(serde_json::Value::Null),
+            );
+            header.insert("fields".into(), serde_json::Value::Array(Vec::new()));
+            groups.push(header);
+            groups.len() - 1
+        });
+        let mut field_obj = serde_json::Map::new();
+        field_obj.insert("field".into(), r.field.clone().into());
+        field_obj.insert("exampleid".into(), serde_json::json!(r.exampleid));
+        field_obj.insert("exact_text".into(), r.exact_text.clone().into());
+        if let Some(fields) = groups[idx].get_mut("fields").and_then(|v| v.as_array_mut()) {
+            fields.push(serde_json::Value::Object(field_obj));
+        }
+    }
+    serde_json::Value::Array(groups.into_iter().map(serde_json::Value::Object).collect())
 }
 
 static LLM_CORNER_BRACKET_SEGMENTS: Lazy<Regex> =
@@ -2752,6 +2785,7 @@ pub(crate) async fn run_agent_loop_inner(
                         match resolve_references(pool, &refs).await? {
                             ResolveOutcome::Valid(validated) => {
                                 let markdown = build_printable_markdown(&validated);
+                                let cards = build_card_payload(&validated);
                                 let result_summary = format!("Resolved {} reference(s)", validated.len());
                                 let tool_content_for_llm = "References validated; printable answer generated.".to_string();
                                 let step = AssistantStep {
@@ -2780,7 +2814,8 @@ pub(crate) async fn run_agent_loop_inner(
                                         "type": "done",
                                         "model": model.clone(),
                                         "model_name": model_name.clone(),
-                                        "reply": markdown
+                                        "reply": markdown,
+                                        "cards": cards
                                     });
                                     emit_sse_user_visible(&persist, tx, done_payload).await?;
                                 }
