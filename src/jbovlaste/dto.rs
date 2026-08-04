@@ -206,6 +206,9 @@ pub struct RecentChangesQuery {
     pub types: Option<String>,
     /// Cursor for keyset pagination (when present, overrides page and no time window is used).
     pub after: Option<String>,
+    /// When true, excludes new valsi (entry) changes. Intended for the home page.
+    #[serde(default)]
+    pub home: Option<bool>,
 }
 
 #[derive(Debug, Deserialize, ToSchema)]

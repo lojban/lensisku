@@ -3975,6 +3975,7 @@ pub async fn get_recent_changes(
     limit: Option<i64>,
     types: Option<String>,
     after: Option<String>,
+    home: bool,
     redis_cache: &RedisCache,
     user_id: Option<i32>,
 ) -> Result<RecentChangesResponse, Box<dyn std::error::Error>> {
@@ -3982,12 +3983,12 @@ pub async fn get_recent_changes(
 
     let cache_key = match user_id {
         None => format!(
-            "recent_changes:limit:{:?}:after:{:?}:types:{:?}",
-            limit, after, types
+            "recent_changes:limit:{:?}:after:{:?}:types:{:?}:home:{}",
+            limit, after, types, home
         ),
         Some(uid) => format!(
-            "recent_changes:limit:{:?}:after:{:?}:types:{:?}:user:{}",
-            limit, after, types, uid
+            "recent_changes:limit:{:?}:after:{:?}:types:{:?}:home:{}:user:{}",
+            limit, after, types, home, uid
         ),
     };
 
@@ -4002,11 +4003,17 @@ pub async fn get_recent_changes(
                 let mut client = pool.get().await?;
                 let transaction = client.transaction().await?;
 
-                let requested_types: Vec<&str> = if let Some(t) = &types_cloned {
+                let mut requested_types: Vec<&str> = if let Some(t) = &types_cloned {
                     t.split(',').collect()
+                } else if home {
+                    vec!["comment", "definition"]
                 } else {
                     vec!["comment", "definition", "valsi", "message"]
                 };
+
+                if home {
+                    requested_types.retain(|t| *t != "valsi");
+                }
 
                 let limit_val = limit.unwrap_or(20).clamp(1, 100);
                 let cursor_condition = after_cloned.as_ref().and_then(|a| {
@@ -4045,6 +4052,7 @@ pub async fn get_recent_changes(
                 l.lojbanname AS language_lojban_name,
                 NULL::integer as version_id,
                 NULL::integer as prev_version_id,
+                NULL::smallint AS valsi_typeid,
                 v.word AS valsi_word,
                 c.commentnum,
                 c.parentid,
@@ -4099,6 +4107,7 @@ pub async fn get_recent_changes(
                  WHERE prev_dv.definition_id = dv.definition_id 
                    AND prev_dv.created_at < dv.created_at 
                  ORDER BY prev_dv.created_at DESC LIMIT 1) as prev_version_id,
+                v.typeid AS valsi_typeid,
                 NULL::text AS valsi_word,
                 NULL::integer AS commentnum,
                 NULL::integer AS parentid,
@@ -4145,6 +4154,7 @@ pub async fn get_recent_changes(
                 NULL::text AS language_lojban_name,
                 NULL::integer as version_id,
                 NULL::integer as prev_version_id,
+                v.typeid AS valsi_typeid,
                 NULL::text AS valsi_word,
                 NULL::integer AS commentnum,
                 NULL::integer AS parentid,
@@ -4191,6 +4201,7 @@ pub async fn get_recent_changes(
                 NULL::text AS language_lojban_name,
                 NULL::integer as version_id,
                 NULL::integer as prev_version_id,
+                NULL::smallint AS valsi_typeid,
                 NULL::text AS valsi_word,
                 NULL::integer AS commentnum,
                 NULL::integer AS parentid,
@@ -4228,6 +4239,24 @@ pub async fn get_recent_changes(
                 let mut changes = Vec::new();
                 let mut last_cursor: Option<(i32, i32, i64)> = None;
 
+                const WIKI_PREVIEW_MAX: usize = 200;
+                let trim_wiki_diff = |diff: &mut VersionDiff| {
+                    diff.old_content.definition =
+                        diff.old_content.definition.chars().take(WIKI_PREVIEW_MAX).collect();
+                    diff.new_content.definition =
+                        diff.new_content.definition.chars().take(WIKI_PREVIEW_MAX).collect();
+                    for change in &mut diff.changes {
+                        if change.field == "definition" {
+                            if let Some(v) = change.old_value.as_mut() {
+                                *v = v.chars().take(WIKI_PREVIEW_MAX).collect();
+                            }
+                            if let Some(v) = change.new_value.as_mut() {
+                                *v = v.chars().take(WIKI_PREVIEW_MAX).collect();
+                            }
+                        }
+                    }
+                };
+
                 // Process each change and add diffs for definitions
                 for row in base_changes {
                     let change_type: String = row.get("change_type");
@@ -4235,6 +4264,10 @@ pub async fn get_recent_changes(
                     let type_sort_order: i32 = row.get("type_sort_order");
                     let cursor_id: i64 = row.get::<_, i64>("cursor_id");
                     last_cursor = Some((time, type_sort_order, cursor_id));
+                    let is_wiki = row
+                        .get::<_, Option<i16>>("valsi_typeid")
+                        .map(|t| t == 16)
+                        .unwrap_or(false);
 
                     let mut change = RecentChange {
                         change_type: change_type.clone(),
@@ -4303,7 +4336,10 @@ pub async fn get_recent_changes(
                                     }],
                                 })
                             } {
-                                Ok(diff) => {
+                                Ok(mut diff) => {
+                                    if is_wiki {
+                                        trim_wiki_diff(&mut diff);
+                                    }
                                     change.diff = Some(diff);
                                 }
                                 Err(e) => {

@@ -1158,7 +1158,10 @@ async fn compute_top_comments(
                                     COALESCE(cc.total_replies, 0)::bigint as comment_replies,
                                     COALESCE(cc.total_bookmarks, 0)::bigint as comment_bookmarks,
                                     COALESCE(cb.user_id IS NOT NULL, false) as is_bookmarked,
-                                    COALESCE(cc.total_reactions, 0) + COALESCE(cc.total_replies, 0) + COALESCE(cc.total_bookmarks, 0) as engagement_score
+                                    (COALESCE(cc.total_reactions, 0) + COALESCE(cc.total_replies, 0) + COALESCE(cc.total_bookmarks, 0))::double precision as engagement_score,
+                                    GREATEST((EXTRACT(EPOCH FROM now()) - c.time) / 3600.0, 0.0) as hours_ago,
+                                    (COALESCE(cc.total_reactions, 0) + COALESCE(cc.total_replies, 0) + COALESCE(cc.total_bookmarks, 0))::double precision
+                                        / POWER(GREATEST((EXTRACT(EPOCH FROM now()) - c.time) / 3600.0, 0.0) + 2.0, 1.5) as trending_score
                                 FROM convenientcomments c
                                 LEFT JOIN threads t ON c.threadid = t.threadid
                                 LEFT JOIN comments pc ON c.parentid = pc.commentid
@@ -1169,7 +1172,7 @@ async fn compute_top_comments(
                             )
                             SELECT *
                             FROM ranked_comments
-                            ORDER BY engagement_score DESC
+                            ORDER BY trending_score DESC
                             LIMIT $3",
                             &[&current_user_id, &hours, &i64::from(limit)],
                         )

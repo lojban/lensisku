@@ -935,7 +935,8 @@ pub async fn update_vote(
     params(
         ("limit" = Option<i64>, Query, description = "Page size (default 20)"),
         ("types" = Option<String>, Query, description = "Comma-separated types: comment,definition,valsi,message"),
-        ("after" = Option<String>, Query, description = "Opaque cursor for next page")
+        ("after" = Option<String>, Query, description = "Opaque cursor for next page"),
+        ("home" = Option<bool>, Query, description = "When true, exclude new valsi (entry) changes. Used by the home page.")
     ),
     responses(
         (status = 200, description = "Recent changes retrieved successfully", body = RecentChangesResponse),
@@ -955,9 +956,10 @@ pub async fn get_recent_changes(
     let limit = query.limit;
     let types = query.types.clone();
     let after = query.after.clone();
+    let home = query.home.unwrap_or(false);
     let user_id = claims.map(|c| c.sub);
 
-    match service::get_recent_changes(&pool, limit, types, after, &redis_cache, user_id).await {
+    match service::get_recent_changes(&pool, limit, types, after, home, &redis_cache, user_id).await {
         Ok(response) => HttpResponse::Ok().json(response),
         Err(e) => {
             let detail = error_chain(&*e);
