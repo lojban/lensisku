@@ -6,10 +6,12 @@
       v-model="inputValue"
       type="text"
       class="block w-full input-field disabled:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-75 h-10"
-      :disabled="isAnalyzing || isSubmitting || prefilledWord || isEditMode"
-      :readonly="prefilledWord || isEditMode"
+      :disabled="isAnalyzing || isSubmitting || isEditMode"
+      :readonly="isEditMode"
+      :clear="prefilledWord"
       @input="handleInput"
       @paste="handlePaste"
+      @clear="handleClear"
     />
     <Textarea
       v-else
@@ -18,8 +20,8 @@
       rows="5"
       maxlength="4000"
       class="textarea-field"
-      :disabled="isAnalyzing || isSubmitting || prefilledWord || isEditMode"
-      :readonly="prefilledWord || isEditMode"
+      :disabled="isAnalyzing || isSubmitting || isEditMode"
+      :readonly="isEditMode"
       @input="handleInput"
       @paste="handlePaste"
     />
@@ -45,7 +47,7 @@ const props = defineProps({
   isEditMode: Boolean,
 })
 
-const emit = defineEmits(['update:modelValue', 'input', 'clear-analysis'])
+const emit = defineEmits(['update:modelValue', 'input', 'clear-analysis', 'clear'])
 
 const inputValue = ref(props.modelValue)
 const useTextarea = ref(false)
@@ -74,6 +76,13 @@ const handlePaste = async (event) => {
   inputValue.value = newValue
   checkLength(newValue)
   emit('update:modelValue', newValue)
+  emit('clear-analysis')
+}
+
+const handleClear = () => {
+  inputValue.value = ''
+  emit('update:modelValue', '')
+  emit('clear')
   emit('clear-analysis')
 }
 

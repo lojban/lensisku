@@ -27,6 +27,7 @@
             :prefilled-word="prefilledWord"
             :is-edit-mode="isEditMode"
             @clear-analysis="clearAnalysis"
+            @clear="handleWordClear"
           />
         </div>
         <!-- Only show Analyze button when adding new word -->
@@ -765,12 +766,16 @@ onMounted(async () => {
 })
 
 const clearAnalysis = () => {
-  if (!prefilledWord.value) {
-    wordType.value = ''
-    recommended.value = ''
-    problems.value = {}
-    clearError()
-  }
+  wordType.value = ''
+  recommended.value = ''
+  problems.value = {}
+  clearError()
+}
+
+const handleWordClear = () => {
+  prefilledWord.value = false
+  word.value = ''
+  clearAnalysis()
 }
 
 const useRecommended = () => {

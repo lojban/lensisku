@@ -80,6 +80,7 @@ function clearSearchTimeout() {
 
 function emitSearch() {
   emit('search', { query: normalizeSearchQuery(query.value), mode: modeValue.value })
+  isSearching.value = false
 }
 
 function handleQueryUpdate(value: string) {
@@ -95,9 +96,6 @@ function handleQueryUpdate(value: string) {
 
   searchTimeout = window.setTimeout(() => {
     if (query.value === currentQuery) {
-      if (query.value.trim()) {
-        isSearching.value = true
-      }
       emitSearch()
     }
     searchTimeout = null
@@ -106,7 +104,6 @@ function handleQueryUpdate(value: string) {
 
 function handleSearch() {
   clearSearchTimeout()
-  isSearching.value = true
   emitSearch()
 }
 

@@ -1,23 +1,37 @@
 <template>
-  <input
-    :id="resolvedId"
-    ref="nativeInput"
-    :value="displayValue"
-    :type="type"
-    :placeholder="placeholder"
-    :disabled="disabled"
-    :readonly="readonly"
-    :autocomplete="autocomplete"
-    :name="name"
-    :class="hostClass"
-    v-bind="$attrs"
-    @input="onInput"
-    @change="onChange"
-  />
+  <div class="relative w-full">
+    <input
+      :id="resolvedId"
+      ref="nativeInput"
+      :value="displayValue"
+      :type="type"
+      :placeholder="placeholder"
+      :disabled="disabled"
+      :readonly="readonly"
+      :autocomplete="autocomplete"
+      :name="name"
+      :class="hostClass"
+      v-bind="$attrs"
+      @input="onInput"
+      @change="onChange"
+    />
+    <IconButtonGhost
+      v-if="showClear"
+      compact
+      aria-label="Clear"
+      class="absolute right-2 top-1/2 -translate-y-1/2"
+      @click="onClear"
+    >
+      <X class="h-4 w-4" aria-hidden="true" />
+    </IconButtonGhost>
+  </div>
 </template>
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { X } from 'lucide-vue-next'
+
+import IconButtonGhost from './IconButtonGhost.vue'
 
 type Modifiers = {
   lazy?: boolean
@@ -37,9 +51,10 @@ const props = defineProps({
   size: { type: String, default: 'md', validator: (v: string) => ['md', 'lg'].includes(v) },
   inputClass: { type: [String, Array, Object], default: '' },
   modelModifiers: { type: Object as () => Modifiers, default: () => ({}) },
+  clear: { type: Boolean, default: false },
 })
 
-const emit = defineEmits<{ 'update:modelValue': [value: string | number] }>()
+const emit = defineEmits<{ 'update:modelValue': [value: string | number]; clear: [] }>()
 
 defineOptions({ name: 'UiInput', inheritAttrs: false })
 
@@ -49,8 +64,12 @@ const resolvedId = computed(() => props.id ?? generatedId)
 
 const hostClass = computed(() => {
   const extra = Array.isArray(props.inputClass) ? props.inputClass.join(' ') : props.inputClass
-  return ['w-full', extra].filter(Boolean).join(' ')
+  return ['w-full', showClear.value ? 'pr-10' : '', extra].filter(Boolean).join(' ')
 })
+
+const showClear = computed(
+  () => props.clear && displayValue.value.length > 0 && !props.disabled && !props.readonly
+)
 
 const displayValue = computed(() => {
   if (props.modelValue == null) return ''
@@ -73,6 +92,12 @@ function onInput(e: Event) {
 function onChange(e: Event) {
   const target = e.target as HTMLInputElement | null
   emit('update:modelValue', normalizeValue(target?.value ?? ''))
+}
+
+function onClear() {
+  emit('update:modelValue', '')
+  emit('clear')
+  nativeInput.value?.focus()
 }
 
 function focus() {
