@@ -9,16 +9,14 @@
   </div>
   <!-- Export Form -->
   <div class="p-6 bg-white rounded-lg shadow-sm space-y-6">
-    <!-- Language selection (one row, input group) -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2">
-      <label class="block text-sm font-medium text-gray-700 sm:block">{{
-        t('dictionaryExport.languageFrom')
-      }}</label>
-      <label class="block text-sm font-medium text-gray-700 sm:block">{{
-        t('dictionaryExport.languageTo')
-      }}</label>
-      <div class="input-group sm:col-span-2">
+    <!-- Language selection (responsive two-column grid with brand spacing) -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div class="space-y-1">
+        <label class="block text-sm font-medium text-gray-700" for="source-language-select">{{
+          t('dictionaryExport.languageFrom')
+        }}</label>
         <Select
+          id="source-language-select"
           v-model="selectedSourceLanguage"
           class="input-field w-full"
           :aria-label="t('dictionaryExport.languageFrom')"
@@ -27,7 +25,13 @@
             ...languages.map((lang) => ({ value: lang.tag, label: lang.real_name })),
           ]"
         />
+      </div>
+      <div class="space-y-1">
+        <label class="block text-sm font-medium text-gray-700" for="target-language-select">{{
+          t('dictionaryExport.languageTo')
+        }}</label>
         <Select
+          id="target-language-select"
           v-model="selectedLanguage"
           class="input-field w-full"
           :aria-label="t('dictionaryExport.languageTo')"
