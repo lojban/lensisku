@@ -536,7 +536,7 @@ pub async fn export_dictionary(
     }
 
     // If not in cache, or batch refresh bypassed cache read, generate
-    generate_export(
+    let result = generate_export(
         pool,
         lang,
         format,
@@ -545,7 +545,47 @@ pub async fn export_dictionary(
         source_langid,
         source_language_tag,
     )
-    .await
+    .await?;
+
+    // Cache the result of on-demand dictionary exports so the next identical
+    // request does not pay the xelatex generation cost again.
+    if use_dictionary_cache && collection_id.is_none() {
+        let format_str = format.to_string();
+        match pool.get().await {
+            Ok(c) => {
+                if let Err(e) = c
+                    .execute(
+                        "INSERT INTO cached_dictionary_exports
+                         (language_tag, source_language_tag, format, positive_scores_only, content, content_type, filename)
+                         VALUES ($1, $2, $3, $4, $5, $6, $7)
+                         ON CONFLICT (language_tag, source_language_tag, format, positive_scores_only)
+                         DO UPDATE SET
+                            content = EXCLUDED.content,
+                            content_type = EXCLUDED.content_type,
+                            filename = EXCLUDED.filename,
+                            created_at = CURRENT_TIMESTAMP",
+                        &[
+                            &lang,
+                            &source_language_tag,
+                            &format_str,
+                            &positive_scores_only,
+                            &result.0.as_slice(),
+                            &result.1,
+                            &result.2,
+                        ],
+                    )
+                    .await
+                {
+                    error!("Failed to cache on-demand {} export for {}: {}", format, lang, e);
+                }
+            }
+            Err(e) => {
+                error!("Failed to get DB pool to cache on-demand {} export for {}: {}", format, lang, e);
+            }
+        }
+    }
+
+    Ok(result)
 }
 
 fn zip_tsv_content(
