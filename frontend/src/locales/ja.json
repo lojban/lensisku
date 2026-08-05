@@ -106,7 +106,7 @@
       "searchInPhrases": "フレーズを含める"
     },
     "placeholder": {
-      "dictionary": "語・定義・注・短編などで検索…",
+      "dictionary": "語・定義・注などで検索…",
       "semantic": "意味や概念で検索…",
       "comments": "コメントを検索…",
       "messages": "メッセージを検索…",
