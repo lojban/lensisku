@@ -556,7 +556,11 @@ pub async fn validator(
     }
 }
 
-pub async fn signup(pool: &Pool, user_data: &SignupRequest) -> AppResult<AuthResponse> {
+pub async fn signup(
+    pool: &Pool,
+    user_data: &SignupRequest,
+    frontend_url: &str,
+) -> AppResult<AuthResponse> {
     let mut client = pool
         .get()
         .await
@@ -634,13 +638,7 @@ pub async fn signup(pool: &Pool, user_data: &SignupRequest) -> AppResult<AuthRes
     transaction.commit().await?;
 
     let email = user.email.clone();
-    let confirmation_url = format!(
-        "{}/confirm-email?token={}",
-        env::var("FRONTEND_URL")
-            .map_err(|e| EmailError::ConfigError(format!("FRONTEND_URL not set: {}", e)))?
-            .as_str(),
-        token
-    );
+    let confirmation_url = format!("{}/confirm-email?token={}", frontend_url, token);
 
     task::spawn(async move {
         if let Err(e) = send_confirmation_email(&email, &confirmation_url).await {
@@ -684,6 +682,7 @@ pub async fn resend_confirmation(
     pool: &Pool,
     email_limiter: web::Data<EmailConfirmationLimiter>,
     req: &ResendConfirmationRequest,
+    frontend_url: &str,
 ) -> AppResult<ResendConfirmationResponse> {
     if !email_limiter.check_rate_limit(&req.email).await? {
         return Ok(ResendConfirmationResponse {
@@ -729,11 +728,7 @@ pub async fn resend_confirmation(
 
             transaction.commit().await?;
 
-            let confirmation_url = format!(
-                "{}/confirm-email?token={}",
-                env::var("FRONTEND_URL").expect("FRONTEND_URL must be set"),
-                token
-            );
+            let confirmation_url = format!("{}/confirm-email?token={}", frontend_url, token);
 
             // Send email asynchronously
             let email = req.email.clone();
@@ -961,6 +956,7 @@ pub async fn request_password_reset(
     pool: &Pool,
     password_reset_limiter: web::Data<PasswordResetLimiter>,
     req: &PasswordResetRequest,
+    frontend_url: &str,
 ) -> AppResult<PasswordResetResponse> {
     if !password_reset_limiter.check_rate_limit(&req.email).await? {
         info!("Rate limit exceeded for email: {}", req.email);
@@ -1046,9 +1042,7 @@ pub async fn request_password_reset(
 
     let reset_url = format!(
         "{}/reset-password?token={}&session_id={}",
-        env::var("FRONTEND_URL").expect("FRONTEND_URL must be set"),
-        token,
-        session_id
+        frontend_url, token, session_id
     );
 
     transaction.commit().await?;

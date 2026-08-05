@@ -1,7 +1,7 @@
 use crate::auth::permissions::PermissionCache;
 use crate::sessions;
 use crate::AppError;
-use actix_web::{delete, get, http::Error, post, put, web, HttpResponse, Responder};
+use actix_web::{delete, get, http::Error, post, put, web, HttpRequest, HttpResponse, Responder};
 use actix_web_grants::protect;
 use deadpool_postgres::Pool;
 use serde_json::json;
@@ -16,6 +16,29 @@ use crate::{
 };
 
 use super::dto::*;
+
+/// Derive the frontend origin from the request so email links stay on the
+/// same host (e.g. lensisku-dev.lojban.org instead of the production domain).
+/// Respects X-Forwarded-* headers when the backend sits behind a reverse proxy.
+fn frontend_url_from_request(req: &HttpRequest) -> String {
+    let (scheme, host) = {
+        let ci = req.connection_info();
+        (ci.scheme().to_string(), ci.host().to_string())
+    };
+    let scheme = req
+        .headers()
+        .get("X-Forwarded-Proto")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or(&scheme)
+        .to_string();
+    let host = req
+        .headers()
+        .get("X-Forwarded-Host")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or(&host)
+        .to_string();
+    format!("{}://{}", scheme, host)
+}
 
 #[utoipa::path(
     post,
@@ -289,8 +312,13 @@ pub async fn assign_role(
     description = "Register a new user account with the system. Requires unique username and email. Upon successful registration, returns authentication tokens that can be used to access protected endpoints. The password must meet the system's security requirements."
 )]
 #[post("/signup")]
-pub async fn signup(pool: web::Data<Pool>, user_data: web::Json<SignupRequest>) -> impl Responder {
-    match service::signup(&pool, &user_data).await {
+pub async fn signup(
+    pool: web::Data<Pool>,
+    user_data: web::Json<SignupRequest>,
+    req: HttpRequest,
+) -> impl Responder {
+    let frontend_url = frontend_url_from_request(&req);
+    match service::signup(&pool, &user_data, &frontend_url).await {
         Ok(response) => HttpResponse::Ok().json(json!({
             "message": "Account created successfully. Please check your email to confirm your address.",
             "token": response.token
@@ -502,9 +530,11 @@ pub async fn update_profile(
 pub async fn request_password_reset(
     pool: web::Data<Pool>,
     password_limiter: web::Data<PasswordResetLimiter>,
-    req: web::Json<PasswordResetRequest>,
+    body: web::Json<PasswordResetRequest>,
+    req: HttpRequest,
 ) -> impl Responder {
-    match service::request_password_reset(&pool, password_limiter, &req).await {
+    let frontend_url = frontend_url_from_request(&req);
+    match service::request_password_reset(&pool, password_limiter, &body, &frontend_url).await {
         Ok(response) => {
             if response.success {
                 HttpResponse::Ok().json(response)
@@ -601,9 +631,11 @@ pub async fn set_following(
 pub async fn resend_confirmation(
     pool: web::Data<Pool>,
     email_limiter: web::Data<EmailConfirmationLimiter>,
-    req: web::Json<ResendConfirmationRequest>,
+    body: web::Json<ResendConfirmationRequest>,
+    req: HttpRequest,
 ) -> impl Responder {
-    match service::resend_confirmation(&pool, email_limiter, &req).await {
+    let frontend_url = frontend_url_from_request(&req);
+    match service::resend_confirmation(&pool, email_limiter, &body, &frontend_url).await {
         Ok(response) => {
             if response.success {
                 HttpResponse::Ok().json(response)
