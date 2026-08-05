@@ -453,6 +453,7 @@ import { useError } from '@/composables/useError'
 import { useSuccessToast } from '@/composables/useSuccessToast'
 import { useSeoHead } from '@/composables/useSeoHead'
 import { queryStr } from '@/utils/routeQuery'
+import { normalizeSearchQuery } from '@/utils/searchQueryUtils'
 
 const props = defineProps({
   id: {
@@ -711,7 +712,29 @@ onMounted(async () => {
       prefilledWord.value = true
       await doAnalyzeWord() // Analyze prefilled word
     } else {
-      sourceLangId.value = 1 // Default for completely new entry
+      const lastSearchRaw =
+        typeof window !== 'undefined' ? localStorage.getItem('searchQuery') : null
+      const lastSearch = normalizeSearchQuery(lastSearchRaw || '') as string
+      if (lastSearch.trim()) {
+        try {
+          const response = await analyzeWord(lastSearch.trim())
+          if (response.data?.success) {
+            word.value = response.data.text
+            wordType.value = response.data.word_type
+            recommended.value =
+              response.data.recommended && response.data.recommended !== word.value
+                ? response.data.recommended
+                : ''
+            problems.value = response.data.problems || {}
+            prefilledWord.value = true
+          }
+        } catch {
+          // Ignore invalid or unanalyzable last search
+        }
+      }
+      if (!prefilledWord.value) {
+        sourceLangId.value = 1 // Default for completely new entry
+      }
     }
     isAuthor.value = true
   }

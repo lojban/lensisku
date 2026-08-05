@@ -260,12 +260,36 @@
                   <div class="flex min-w-0 flex-1 flex-col items-start gap-1">
                     <template v-for="(reply, replyIdx) in assistantReplies(msg)" :key="replyIdx">
                       <template v-if="reply.cards && reply.cards.length > 0">
-                        <AssistantDefinitionCard
-                          v-for="(card, cardIdx) in reply.cards"
-                          :key="cardIdx"
-                          :card="card"
-                          class="max-w-[80%] min-w-0"
-                        />
+                        <div class="flex max-w-[80%] min-w-0 flex-col items-start gap-2">
+                          <span class="block text-[11px] font-semibold text-gray-500">
+                            {{
+                              reply.modelName ||
+                              (reply.model ? formatModelLabel(reply.model) : '') ||
+                              $t('assistantChat.assistantLabel')
+                            }}
+                          </span>
+                          <div
+                            v-if="reply.steps && reply.steps.length > 0"
+                            class="thought-process mb-2 space-y-2 w-full"
+                          >
+                            <AssistantThoughtStep
+                              v-for="(step, stepIdx) in reply.steps"
+                              :key="stepIdx"
+                              :step="step"
+                              :lang-id="locale"
+                              :show-raw-output="
+                                isStepOutputVisible(stepKey(index, replyIdx, stepIdx))
+                              "
+                              @toggle-raw="toggleStepOutput(stepKey(index, replyIdx, stepIdx))"
+                            />
+                          </div>
+                          <AssistantDefinitionCard
+                            v-for="(card, cardIdx) in reply.cards"
+                            :key="cardIdx"
+                            :card="card"
+                            class="w-full min-w-0"
+                          />
+                        </div>
                       </template>
                       <div v-else class="assistant-bubble-assistant assistant-markdown">
                         <span class="mb-1 block text-[11px] font-semibold text-gray-500">
