@@ -450,7 +450,7 @@ pub async fn export_with_access_check(
             return Err("Access denied".into());
         }
     }
-    let (source_langid, _) =
+    let (source_langid, source_language_tag) =
         resolve_source_language(&mut transaction, options.source_lang.as_deref()).await?;
 
     transaction.commit().await?;
@@ -461,6 +461,7 @@ pub async fn export_with_access_check(
         options,
         options.collection_id,
         source_langid,
+        &source_language_tag,
         true,
     )
     .await
@@ -469,6 +470,7 @@ pub async fn export_with_access_check(
 /// `use_dictionary_cache`: when true, serve a recent row from `cached_dictionary_exports` (up to 4 days)
 /// instead of regenerating. Background refresh must pass `false` so exports actually rebuild after the
 /// daily skip window, instead of re-reading stale cache rows.
+#[allow(clippy::too_many_arguments)]
 pub async fn export_dictionary(
     pool: &Pool,
     lang: &str,
@@ -476,12 +478,9 @@ pub async fn export_dictionary(
     options: &ExportOptions,
     collection_id: Option<i32>,
     source_langid: i32,
+    source_language_tag: &str,
     use_dictionary_cache: bool,
 ) -> Result<(Vec<u8>, String, String), Box<dyn std::error::Error + Send + Sync>> {
-    let source_language_tag = options
-        .source_lang
-        .as_deref()
-        .unwrap_or(DEFAULT_SOURCE_LANGUAGE_TAG);
     let positive_scores_only = options.positive_scores_only.unwrap_or(true);
 
     // For collection exports, bypass cache
@@ -2055,6 +2054,7 @@ pub async fn export_all_dictionaries(pool: &Pool) -> Result<(), Box<dyn Error + 
                 &canonical_options,
                 None,
                 DEFAULT_SOURCE_LANGID,
+                DEFAULT_SOURCE_LANGUAGE_TAG,
                 false,
             )
             .await

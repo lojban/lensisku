@@ -57,7 +57,11 @@ pub async fn download_cached_export(
     query: web::Query<ExportOptions>,
 ) -> impl Responder {
     let (language_tag, format) = path.into_inner();
-    let source_language_tag = query.source_lang.as_deref().unwrap_or("jbo");
+    let source_language_tag = query
+        .source_lang
+        .as_deref()
+        .filter(|s| !s.is_empty())
+        .unwrap_or("jbo");
     let positive_scores_only = query.positive_scores_only.unwrap_or(true);
 
     match service::get_cached_export(
