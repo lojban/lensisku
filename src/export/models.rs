@@ -169,8 +169,10 @@ pub struct NaturalEntry {
 #[derive(Serialize, Deserialize, ToSchema)]
 pub struct CachedExport {
     pub language_tag: String,
+    pub source_language_tag: String,
     pub language_realname: String,
     pub format: String,
+    pub positive_scores_only: bool,
     pub filename: String,
     #[schema(value_type = String, format = DateTime)]
     pub created_at: DateTime<Utc>,

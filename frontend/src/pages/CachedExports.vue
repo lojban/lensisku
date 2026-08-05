@@ -26,6 +26,7 @@ const filteredExports = computed(() => {
   return exports.value.filter((item) => {
     return (
       (item.language_tag && item.language_tag.toLowerCase().includes(q)) ||
+      (item.source_language_tag && item.source_language_tag.toLowerCase().includes(q)) ||
       (item.language_realname && item.language_realname.toLowerCase().includes(q)) ||
       (item.format && item.format.toLowerCase().includes(q))
     )
@@ -46,8 +47,14 @@ const formatDate = (dateString) => {
 const downloadHref = (exportItem) => {
   const base = getApiBaseUrl()
   const tag = encodeURIComponent(exportItem.language_tag)
+  const sourceTag = encodeURIComponent(exportItem.source_language_tag || 'jbo')
   const format = encodeURIComponent(exportItem.format)
-  return `${base}/export/cached/${tag}/${format}`
+  const positiveOnly = exportItem.positive_scores_only !== false ? 'true' : 'false'
+  const params = new URLSearchParams({
+    source_lang: sourceTag,
+    positive_scores_only: positiveOnly,
+  }).toString()
+  return `${base}/export/cached/${tag}/${format}?${params}`
 }
 
 onMounted(async () => {
@@ -113,12 +120,19 @@ onMounted(async () => {
       <div class="divide-y divide-gray-200">
         <div
           v-for="exportItem in filteredExports"
-          :key="`${exportItem.language_tag}-${exportItem.format}`"
+          :key="`${exportItem.source_language_tag}-${exportItem.language_tag}-${exportItem.format}-${exportItem.positive_scores_only}`"
           class="p-4 hover:bg-gray-50 flex items-center justify-between"
         >
           <div>
             <div class="font-medium text-gray-900">
-              {{ exportItem.language_realname }} - {{ exportItem.format.toUpperCase() }}
+              {{ exportItem.source_language_tag || 'jbo' }} → {{ exportItem.language_realname }} —
+              {{ exportItem.format.toUpperCase() }}
+              <span
+                v-if="exportItem.positive_scores_only === false"
+                class="ml-2 text-xs text-gray-500"
+              >
+                (all scores)
+              </span>
             </div>
 
             <div class="text-sm text-gray-500">{{ formatDate(exportItem.created_at) }}</div>

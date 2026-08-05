@@ -409,22 +409,26 @@ pub async fn verify_collection_access(
     Ok(is_public || user_id == Some(owner_id))
 }
 
-/// Resolve a language tag to its langid. Defaults to Lojban (langid = 1) when tag is None or blank.
-pub async fn resolve_source_langid(
+const DEFAULT_SOURCE_LANGID: i32 = 1;
+const DEFAULT_SOURCE_LANGUAGE_TAG: &str = "jbo";
+
+/// Resolve a language tag to its `(langid, tag)` pair.
+/// Defaults to Lojban (`langid = 1`, tag `jbo`) when tag is None or blank.
+pub async fn resolve_source_language(
     transaction: &mut Transaction<'_>,
     source_lang: Option<&str>,
-) -> Result<i32, Box<dyn std::error::Error + Send + Sync>> {
+) -> Result<(i32, String), Box<dyn std::error::Error + Send + Sync>> {
     match source_lang {
         Some(tag) if !tag.is_empty() => {
             let row = transaction
-                .query_opt("SELECT langid FROM languages WHERE tag = $1", &[&tag])
+                .query_opt("SELECT langid, tag FROM languages WHERE tag = $1", &[&tag])
                 .await?;
             match row {
-                Some(r) => Ok(r.get(0)),
+                Some(r) => Ok((r.get(0), r.get(1))),
                 None => Err(format!("Unknown source language tag: {}", tag).into()),
             }
         }
-        _ => Ok(1), // Default: Lojban
+        _ => Ok((DEFAULT_SOURCE_LANGID, DEFAULT_SOURCE_LANGUAGE_TAG.to_string())),
     }
 }
 
@@ -446,8 +450,8 @@ pub async fn export_with_access_check(
             return Err("Access denied".into());
         }
     }
-    let source_langid =
-        resolve_source_langid(&mut transaction, options.source_lang.as_deref()).await?;
+    let (source_langid, _) =
+        resolve_source_language(&mut transaction, options.source_lang.as_deref()).await?;
 
     transaction.commit().await?;
     export_dictionary(
@@ -474,23 +478,48 @@ pub async fn export_dictionary(
     source_langid: i32,
     use_dictionary_cache: bool,
 ) -> Result<(Vec<u8>, String, String), Box<dyn std::error::Error + Send + Sync>> {
+    let source_language_tag = options
+        .source_lang
+        .as_deref()
+        .unwrap_or(DEFAULT_SOURCE_LANGUAGE_TAG);
+    let positive_scores_only = options.positive_scores_only.unwrap_or(true);
+
     // For collection exports, bypass cache
     if collection_id.is_some() {
-        return generate_export(pool, lang, format, options, collection_id, source_langid).await;
+        return generate_export(
+            pool,
+            lang,
+            format,
+            options,
+            collection_id,
+            source_langid,
+            source_language_tag,
+        )
+        .await;
     }
 
     if use_dictionary_cache {
         let mut client = pool.get().await?;
         let transaction = client.transaction().await?;
 
-        // Try to get from cache first using transaction
+        // Try to get from cache first using transaction. The cache key must include
+        // every option that affects output: target language, source language, format,
+        // and the positive_scores_only flag.
         if let Some(row) = transaction
             .query_opt(
                 "SELECT content, content_type, filename
                  FROM cached_dictionary_exports
-                 WHERE language_tag = $1 AND format = $2
-                 AND created_at > NOW() - INTERVAL '4 days'",
-                &[&lang, &format.to_string()],
+                 WHERE language_tag = $1
+                   AND source_language_tag = $2
+                   AND format = $3
+                   AND positive_scores_only = $4
+                   AND created_at > NOW() - INTERVAL '4 days'",
+                &[
+                    &lang,
+                    &source_language_tag,
+                    &format.to_string(),
+                    &positive_scores_only,
+                ],
             )
             .await?
         {
@@ -508,7 +537,16 @@ pub async fn export_dictionary(
     }
 
     // If not in cache, or batch refresh bypassed cache read, generate
-    generate_export(pool, lang, format, options, collection_id, source_langid).await
+    generate_export(
+        pool,
+        lang,
+        format,
+        options,
+        collection_id,
+        source_langid,
+        source_language_tag,
+    )
+    .await
 }
 
 fn zip_tsv_content(
@@ -528,6 +566,18 @@ fn zip_tsv_content(
     Ok(zip_buffer)
 }
 
+fn build_export_filename(
+    collection_id: Option<i32>,
+    source_language_tag: &str,
+    lang: &str,
+    extension: &str,
+) -> String {
+    match collection_id {
+        Some(id) => format!("collection-{}-{}.{}", id, lang, extension),
+        None => format!("dictionary-{}-{}.{}", source_language_tag, lang, extension),
+    }
+}
+
 async fn generate_export(
     pool: &Pool,
     lang: &str,
@@ -535,11 +585,14 @@ async fn generate_export(
     options: &ExportOptions,
     collection_id: Option<i32>,
     source_langid: i32,
+    source_language_tag: &str,
 ) -> Result<(Vec<u8>, String, String), Box<dyn std::error::Error + Send + Sync>> {
-    let filename = match collection_id {
-        Some(id) => format!("collection-{}-{}.{}", id, lang, format.file_extension()),
-        None => format!("dictionary-{}.{}", lang, format.file_extension()),
-    };
+    let filename = build_export_filename(
+        collection_id,
+        source_language_tag,
+        lang,
+        format.file_extension(),
+    );
     let content_type = format.content_type().to_string();
 
     let mut client = pool.get().await?;
@@ -548,13 +601,15 @@ async fn generate_export(
     let content = match format {
         ExportFormat::Pdf => {
             let latex =
-                generate_latex(&mut transaction, lang, collection_id, source_langid).await?;
+                generate_latex(&mut transaction, lang, options, collection_id, source_langid)
+                    .await?;
             transaction.commit().await?;
             generate_pdf(&latex).await?
         }
         ExportFormat::LaTeX => {
             let latex =
-                generate_latex(&mut transaction, lang, collection_id, source_langid).await?;
+                generate_latex(&mut transaction, lang, options, collection_id, source_langid)
+                    .await?;
             transaction.commit().await?;
             latex.into_bytes()
         }
@@ -593,10 +648,12 @@ async fn generate_export(
             .await?;
             transaction.commit().await?;
             // Determine the TSV filename (without .zip extension)
-            let tsv_filename = match collection_id {
-                Some(id) => format!("collection-{}-{}.tsv", id, lang),
-                None => format!("dictionary-{}.tsv", lang),
-            };
+            let tsv_filename = build_export_filename(
+                collection_id,
+                source_language_tag,
+                lang,
+                "tsv",
+            );
             zip_tsv_content(&tsv, &tsv_filename)?
         }
     };
@@ -802,38 +859,32 @@ async fn generate_xml(
     writer.write(XmlEvent::end_element())?;
     writer.write(XmlEvent::end_element())?;
 
-    let score_condition = if options.positive_scores_only.unwrap_or(false) {
-        "AND (SELECT COALESCE(SUM(value), 0)::bigint FROM definitionvotes WHERE definitionid = vbg.definitionid) > 0"
-    } else {
-        ""
-    };
+    let positive_scores_only = options.positive_scores_only.unwrap_or(true);
 
     let collection_join = collection_id
-        .map(|_| "JOIN collection_items ci ON ci.definition_id = vbg.definitionid")
+        .map(|_| "JOIN collection_items ci ON ci.definition_id = bd.definitionid")
         .unwrap_or("");
     let collection_condition = collection_id
         .map(|id| format!("AND ci.collection_id = {}", id))
         .unwrap_or_default();
 
     let query = format!(
-        "SELECT v.word, vbg.definitionid, c.rafsi, c.selmaho, c.definition,
-                c.notes, d.jargon, t.descriptor,
-                (SELECT COALESCE(SUM(value), 0)::bigint FROM definitionvotes WHERE definitionid = vbg.definitionid) AS score
-         FROM valsibestguesses vbg
-         JOIN valsi v ON v.valsiid = vbg.valsiid
-         JOIN convenientdefinitions c ON c.definitionid = vbg.definitionid
-         JOIN definitions d ON d.definitionid = vbg.definitionid
+        "SELECT v.word, bd.definitionid, c.rafsi, c.selmaho, c.definition,
+                c.notes, d.jargon, t.descriptor, bd.score
+         FROM export_best_definitions($1, $3) bd
+         JOIN valsi v ON v.valsiid = bd.valsiid
+         JOIN convenientdefinitions c ON c.definitionid = bd.definitionid
+         JOIN definitions d ON d.definitionid = bd.definitionid
          JOIN valsitypes t ON t.typeid = v.typeid
          {}
-         WHERE vbg.langid = $1 {} {}
-         AND v.source_langid = $2
+         WHERE v.source_langid = $2 {}
          ORDER BY lower(v.word)",
-        collection_join, score_condition, collection_condition
+        collection_join, collection_condition
     );
 
     let langid = lang_info.get::<_, i32>("langid");
     let rows = transaction
-        .query(&query, &[&langid, &source_langid])
+        .query(&query, &[&langid, &source_langid, &positive_scores_only])
         .await?;
 
     // Collect all definition IDs
@@ -982,6 +1033,7 @@ impl CollectionExportItem {
 async fn generate_latex(
     transaction: &mut Transaction<'_>,
     lang: &str,
+    options: &ExportOptions,
     collection_id: Option<i32>,
     source_langid: i32,
 ) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
@@ -1064,7 +1116,7 @@ async fn generate_latex(
         generate_collection_latex(transaction, lang, cid, source_langid).await?
     } else {
         // Generate standard dictionary chapters
-        generate_chapters(transaction, lang, &escaped_lang, None, source_langid).await?
+        generate_chapters(transaction, lang, &escaped_lang, None, options, source_langid).await?
     };
 
     Ok(format!(
@@ -1080,6 +1132,7 @@ async fn generate_chapters(
     lang: &str,
     escaped_lang: &str,
     collection_id: Option<i32>,
+    options: &ExportOptions,
     source_langid: i32,
 ) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
     let lang_id: i32 = transaction
@@ -1094,6 +1147,7 @@ async fn generate_chapters(
             lang,
             "lo smuni be bau la .lojban.",
             collection_id,
+            options,
             source_langid,
         )
         .await
@@ -1104,6 +1158,7 @@ async fn generate_chapters(
             lang,
             escaped_lang,
             collection_id,
+            options,
             source_langid,
         )
         .await
@@ -1116,10 +1171,13 @@ async fn generate_lojban_chapter(
     lang: &str,
     title: &str,
     collection_id: Option<i32>,
+    options: &ExportOptions,
     source_langid: i32,
 ) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
-    let entries =
-        generate_lojban_entries(transaction, lang_id, lang, collection_id, source_langid).await?;
+    let entries = generate_lojban_entries(
+        transaction, lang_id, lang, collection_id, options, source_langid,
+    )
+    .await?;
     Ok(format!("\\chapter{{{}}}{}", title, entries))
 }
 
@@ -1227,6 +1285,7 @@ async fn generate_lojban_and_natural_chapters(
     lang: &str,
     escaped_lang: &str,
     collection_id: Option<i32>,
+    options: &ExportOptions,
     source_langid: i32,
 ) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
     let (vlaste_from_jbo, vlaste_to_jbo) = if collection_id.is_some() {
@@ -1247,17 +1306,19 @@ async fn generate_lojban_and_natural_chapters(
         lang,
         &vlaste_from_jbo,
         collection_id,
+        options,
         source_langid,
     )
     .await?;
 
     // Check if there are any natural language entries before generating that chapter
     let has_natural_entries =
-        check_natural_entries(transaction, lang_id, collection_id, source_langid).await?;
+        check_natural_entries(transaction, lang_id, collection_id, options, source_langid).await?;
 
     if has_natural_entries {
         let natural_chapter =
-            generate_natural_chapter(transaction, lang_id, collection_id, source_langid).await?;
+            generate_natural_chapter(transaction, lang_id, collection_id, options, source_langid)
+                .await?;
         Ok(format!(
             "{}\n\\chapter{{{}}}{}",
             lojban_chapter, vlaste_to_jbo, natural_chapter
@@ -1271,10 +1332,13 @@ async fn check_natural_entries(
     transaction: &mut Transaction<'_>,
     lang_id: i32,
     collection_id: Option<i32>,
+    options: &ExportOptions,
     source_langid: i32,
 ) -> Result<bool, Box<dyn std::error::Error + Send + Sync>> {
+    let positive_scores_only = options.positive_scores_only.unwrap_or(true);
+
     let collection_join = collection_id
-        .map(|_| "JOIN collection_items ci ON ci.definition_id = vbg.definitionid")
+        .map(|_| "JOIN collection_items ci ON ci.definition_id = bd.definitionid")
         .unwrap_or("");
     let collection_condition = collection_id
         .map(|id| format!("AND ci.collection_id = {}", id))
@@ -1283,19 +1347,31 @@ async fn check_natural_entries(
     let query = format!(
         "SELECT EXISTS (
             SELECT 1
-            FROM valsibestguesses vbg
-            JOIN valsi v ON v.valsiid = vbg.valsiid
-            JOIN natlangwordbestguesses nlwbg ON nlwbg.definitionid = vbg.definitionid
-            JOIN natlangwords nlw ON nlw.wordid = nlwbg.natlangwordid
+            FROM export_best_definitions($1, $3) bd
+            JOIN valsi v ON v.valsiid = bd.valsiid
+            JOIN natlangwordbestplaces nlwbp ON nlwbp.definitionid = bd.definitionid
+            JOIN natlangwords nlw ON nlw.wordid = nlwbp.wordid
             {}
-            WHERE vbg.langid = $1 {}
-            AND v.source_langid = $2
+            WHERE v.source_langid = $2 {}
+              AND (nlwbp.score > 0 OR $3 = false)
+              AND EXISTS (
+                  SELECT 1
+                  FROM keywordmapping km
+                  WHERE km.natlangwordid = nlw.wordid AND km.definitionid = nlwbp.definitionid
+              )
         )",
         collection_join, collection_condition
     );
 
     let row = transaction
-        .query_one(&query, &[&lang_id, &source_langid])
+        .query_one(
+            &query,
+            &[
+                &lang_id,
+                &source_langid,
+                &positive_scores_only,
+            ],
+        )
         .await?;
     Ok(row.get(0))
 }
@@ -1305,11 +1381,14 @@ async fn generate_lojban_entries(
     lang_id: i32,
     lang: &str,
     collection_id: Option<i32>,
+    options: &ExportOptions,
     source_langid: i32,
 ) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
     let mut entries = String::new();
+    let positive_scores_only = options.positive_scores_only.unwrap_or(true);
+
     let collection_join = collection_id
-        .map(|_| "JOIN collection_items ci ON ci.definition_id = vbg.definitionid")
+        .map(|_| "JOIN collection_items ci ON ci.definition_id = bd.definitionid")
         .unwrap_or("");
     let collection_note_select = collection_id
         .map(|_| ", ci.notes as collection_note")
@@ -1318,23 +1397,21 @@ async fn generate_lojban_entries(
         .map(|id| format!("AND ci.collection_id = {}", id))
         .unwrap_or_default();
 
-    let where_clause = format!("WHERE vbg.langid = $1{}", collection_condition);
-
     let query = format!(
         "SELECT v.word, c.rafsi, c.selmaho, c.definition,
                 c.notes, t.descriptor{}
-         FROM valsibestguesses vbg
-         JOIN valsi v ON v.valsiid = vbg.valsiid
-         JOIN convenientdefinitions c ON c.definitionid = vbg.definitionid
+         FROM export_best_definitions($1, $3) bd
+         JOIN valsi v ON v.valsiid = bd.valsiid
+         JOIN convenientdefinitions c ON c.definitionid = bd.definitionid
          JOIN valsitypes t ON t.typeid = v.typeid
          {}
-         {}
-         AND v.source_langid = $2
+         WHERE v.source_langid = $2 {}
          ORDER BY lower(v.word)",
-        collection_note_select, collection_join, where_clause
+        collection_note_select, collection_join, collection_condition
     );
 
-    let params: Vec<&(dyn postgres_types::ToSql + Sync)> = vec![&lang_id, &source_langid];
+    let params: Vec<&(dyn postgres_types::ToSql + Sync)> =
+        vec![&lang_id, &source_langid, &positive_scores_only];
 
     let rows = transaction.query(&query, &params[..]).await?;
 
@@ -1358,10 +1435,13 @@ async fn generate_natural_chapter(
     transaction: &mut Transaction<'_>,
     lang_id: i32,
     collection_id: Option<i32>,
+    options: &ExportOptions,
     source_langid: i32,
 ) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
+    let positive_scores_only = options.positive_scores_only.unwrap_or(true);
+
     let collection_join = collection_id
-        .map(|_| "JOIN collection_items ci ON ci.definition_id = vbg.definitionid")
+        .map(|_| "JOIN collection_items ci ON ci.definition_id = bd.definitionid")
         .unwrap_or("");
     let collection_note_select = collection_id
         .map(|_| ", ci.notes as collection_note")
@@ -1371,25 +1451,32 @@ async fn generate_natural_chapter(
         .unwrap_or_default();
 
     let query = format!(
-        "SELECT nlw.word, nlw.meaning, v.word as valsi, nlwbg.place{}
-         FROM valsibestguesses vbg
-         JOIN valsi v ON v.valsiid = vbg.valsiid
-         JOIN natlangwordbestguesses nlwbg ON nlwbg.definitionid = vbg.definitionid
-         JOIN natlangwords nlw ON nlw.wordid = nlwbg.natlangwordid
+        "SELECT nlw.word, nlw.meaning, v.word as valsi, nlwbp.place{}
+         FROM export_best_definitions($1, $3) bd
+         JOIN valsi v ON v.valsiid = bd.valsiid
+         JOIN natlangwordbestplaces nlwbp ON nlwbp.definitionid = bd.definitionid
+         JOIN natlangwords nlw ON nlw.wordid = nlwbp.wordid
          {}
-         WHERE vbg.langid = $1 {}
-         AND v.source_langid = $2
-         AND EXISTS (
-          SELECT 1
-          FROM keywordmapping km
-          WHERE km.natlangwordid = nlw.wordid and km.definitionid=nlwbg.definitionid
-         )
+         WHERE v.source_langid = $2 {}
+           AND (nlwbp.score > 0 OR $3 = false)
+           AND EXISTS (
+             SELECT 1
+             FROM keywordmapping km
+             WHERE km.natlangwordid = nlw.wordid AND km.definitionid = nlwbp.definitionid
+           )
          ORDER BY nlw.word",
         collection_note_select, collection_join, collection_condition
     );
 
     let rows = transaction
-        .query(&query, &[&lang_id, &source_langid])
+        .query(
+            &query,
+            &[
+                &lang_id,
+                &source_langid,
+                &positive_scores_only,
+            ],
+        )
         .await?;
     let mut entries = String::new();
 
@@ -1501,14 +1588,10 @@ async fn generate_tsv(
         return Ok(tsv);
     }
 
-    let score_condition = if options.positive_scores_only.unwrap_or(false) {
-        "AND (SELECT COALESCE(SUM(value), 0)::bigint FROM definitionvotes WHERE definitionid = vbg.definitionid) > 0"
-    } else {
-        ""
-    };
+    let positive_scores_only = options.positive_scores_only.unwrap_or(true);
 
     let collection_join = collection_id
-        .map(|_| "JOIN collection_items ci ON ci.definition_id = vbg.definitionid")
+        .map(|_| "JOIN collection_items ci ON ci.definition_id = bd.definitionid")
         .unwrap_or("");
     let collection_note_select = collection_id
         .map(|_| ", ci.notes as collection_note")
@@ -1518,19 +1601,17 @@ async fn generate_tsv(
         .unwrap_or_default();
 
     let query = format!(
-        "SELECT v.word, vbg.definitionid, c.rafsi, c.selmaho, c.definition,
-                c.notes, d.jargon, t.descriptor{},
-                (SELECT COALESCE(SUM(value), 0)::bigint FROM definitionvotes WHERE definitionid = vbg.definitionid) AS score
-         FROM valsibestguesses vbg
-         JOIN valsi v ON v.valsiid = vbg.valsiid
-         JOIN convenientdefinitions c ON c.definitionid = vbg.definitionid
-         JOIN definitions d ON d.definitionid = vbg.definitionid
+        "SELECT v.word, bd.definitionid, c.rafsi, c.selmaho, c.definition,
+                c.notes, d.jargon, t.descriptor{}, bd.score
+         FROM export_best_definitions($1, $3) bd
+         JOIN valsi v ON v.valsiid = bd.valsiid
+         JOIN convenientdefinitions c ON c.definitionid = bd.definitionid
+         JOIN definitions d ON d.definitionid = bd.definitionid
          JOIN valsitypes t ON t.typeid = v.typeid
          {}
-         WHERE vbg.langid = $1 {} {}
-         AND v.source_langid = $2
+         WHERE v.source_langid = $2 {}
          ORDER BY lower(v.word)",
-        collection_note_select, collection_join, score_condition, collection_condition
+        collection_note_select, collection_join, collection_condition
     );
 
     let langid = transaction
@@ -1539,7 +1620,7 @@ async fn generate_tsv(
         .get::<_, i32>("langid");
 
     let rows = transaction
-        .query(&query, &[&langid, &source_langid])
+        .query(&query, &[&langid, &source_langid, &positive_scores_only])
         .await?;
 
     // Collect all definition IDs
@@ -1743,14 +1824,10 @@ async fn generate_json(
         return Ok(serde_json::to_string_pretty(&entries)?);
     }
 
-    let score_condition = if options.positive_scores_only.unwrap_or(false) {
-        "AND (SELECT COALESCE(SUM(value), 0)::bigint FROM definitionvotes WHERE definitionid = vbg.definitionid) > 0"
-    } else {
-        ""
-    };
+    let positive_scores_only = options.positive_scores_only.unwrap_or(true);
 
     let collection_join = collection_id
-        .map(|_| "JOIN collection_items ci ON ci.definition_id = vbg.definitionid")
+        .map(|_| "JOIN collection_items ci ON ci.definition_id = bd.definitionid")
         .unwrap_or("");
     let collection_note_select = collection_id
         .map(|_| ", ci.notes as collection_note")
@@ -1760,20 +1837,18 @@ async fn generate_json(
         .unwrap_or_default();
 
     let query = format!(
-        "SELECT v.word, vbg.definitionid, c.rafsi, c.selmaho, c.definition,
-                c.notes, d.etymology, d.jargon, t.descriptor{}, u.username, u.realname,
-                (SELECT COALESCE(SUM(value), 0)::bigint FROM definitionvotes WHERE definitionid = vbg.definitionid) AS score
-         FROM valsibestguesses vbg
-         JOIN valsi v ON v.valsiid = vbg.valsiid
-         JOIN convenientdefinitions c ON c.definitionid = vbg.definitionid
-         JOIN definitions d ON d.definitionid = vbg.definitionid
+        "SELECT v.word, bd.definitionid, c.rafsi, c.selmaho, c.definition,
+                c.notes, d.etymology, d.jargon, t.descriptor{}, u.username, u.realname, bd.score
+         FROM export_best_definitions($1, $3) bd
+         JOIN valsi v ON v.valsiid = bd.valsiid
+         JOIN convenientdefinitions c ON c.definitionid = bd.definitionid
+         JOIN definitions d ON d.definitionid = bd.definitionid
          JOIN valsitypes t ON t.typeid = v.typeid
          LEFT JOIN users u ON u.userid = d.userid
          {}
-         WHERE vbg.langid = $1 {} {}
-         AND v.source_langid = $2
+         WHERE v.source_langid = $2 {}
          ORDER BY lower(v.word)",
-        collection_note_select, collection_join, score_condition, collection_condition
+        collection_note_select, collection_join, collection_condition
     );
 
     let langid = transaction
@@ -1782,7 +1857,7 @@ async fn generate_json(
         .get::<_, i32>("langid");
 
     let rows = transaction
-        .query(&query, &[&langid, &source_langid])
+        .query(&query, &[&langid, &source_langid, &positive_scores_only])
         .await?;
 
     // Collect all definition IDs
@@ -1829,11 +1904,15 @@ pub async fn list_cached_exports(
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
 
+    // Only list exports that are still within the cache TTL.
     let rows = transaction
         .query(
-            "SELECT cde.language_tag, l.realname AS language_realname, cde.format, cde.filename, cde.created_at
+            "SELECT cde.language_tag, cde.source_language_tag,
+                l.realname AS language_realname, cde.format,
+                cde.positive_scores_only, cde.filename, cde.created_at
          FROM cached_dictionary_exports cde
          JOIN languages l ON cde.language_tag = l.tag
+         WHERE cde.created_at > NOW() - INTERVAL '4 days'
          ORDER BY l.realname",
             &[],
         )
@@ -1843,8 +1922,10 @@ pub async fn list_cached_exports(
         .into_iter()
         .map(|row| CachedExport {
             language_tag: row.get("language_tag"),
+            source_language_tag: row.get("source_language_tag"),
             language_realname: row.get("language_realname"),
             format: row.get("format"),
+            positive_scores_only: row.get("positive_scores_only"),
             filename: row.get("filename"),
             created_at: row.get("created_at"),
         })
@@ -1857,7 +1938,9 @@ pub async fn list_cached_exports(
 pub async fn get_cached_export(
     pool: &Pool,
     language_tag: &str,
+    source_language_tag: &str,
     format: &str,
+    positive_scores_only: bool,
 ) -> Result<(Vec<u8>, String, String), Box<dyn Error + Send + Sync>> {
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
@@ -1866,8 +1949,17 @@ pub async fn get_cached_export(
         .query_opt(
             "SELECT content, content_type, filename
          FROM cached_dictionary_exports
-         WHERE language_tag = $1 AND format = $2",
-            &[&language_tag, &format],
+         WHERE language_tag = $1
+           AND source_language_tag = $2
+           AND format = $3
+           AND positive_scores_only = $4
+           AND created_at > NOW() - INTERVAL '4 days'",
+            &[
+                &language_tag,
+                &source_language_tag,
+                &format,
+                &positive_scores_only,
+            ],
         )
         .await?;
 
@@ -1894,10 +1986,14 @@ pub async fn export_all_dictionaries(pool: &Pool) -> Result<(), Box<dyn Error + 
         .map(|row| row.get::<_, String>("tag"))
         .collect::<Vec<_>>();
 
-    // Check existing cached exports (do not hold a transaction across long-running generates)
+    // Check existing cached exports (do not hold a transaction across long-running generates).
+    // The background job only pre-warms the canonical Lojban-source, positive-scores-only
+    // variant; other variants are generated on demand via the interactive endpoint.
     let cached_exports_rows = client
         .query(
-            "SELECT language_tag, format, MAX(created_at) as last_export FROM cached_dictionary_exports GROUP BY language_tag, format",
+            "SELECT language_tag, source_language_tag, format, positive_scores_only, MAX(created_at) as last_export
+             FROM cached_dictionary_exports
+             GROUP BY language_tag, source_language_tag, format, positive_scores_only",
             &[],
         )
         .await?;
@@ -1905,10 +2001,19 @@ pub async fn export_all_dictionaries(pool: &Pool) -> Result<(), Box<dyn Error + 
     let mut cached_exports = std::collections::HashMap::new();
     for row in cached_exports_rows {
         let lang_tag: String = row.get("language_tag");
+        let source_tag: String = row.get("source_language_tag");
         let format: String = row.get("format");
+        let positive_only: bool = row.get("positive_scores_only");
         let last_export: DateTime<Utc> = row.get("last_export");
-        cached_exports.insert((lang_tag, format), last_export);
+        cached_exports.insert((lang_tag, source_tag, format, positive_only), last_export);
     }
+
+    let canonical_options = ExportOptions {
+        format: None,
+        positive_scores_only: Some(true),
+        collection_id: None,
+        source_lang: Some(DEFAULT_SOURCE_LANGUAGE_TAG.to_string()),
+    };
 
     for lang in languages {
         for format in &[
@@ -1919,8 +2024,13 @@ pub async fn export_all_dictionaries(pool: &Pool) -> Result<(), Box<dyn Error + 
             ExportFormat::Tsv,
         ] {
             let format_str = format.to_string();
-            if let Some(last_export_time) = cached_exports.get(&(lang.clone(), format_str.clone()))
-            {
+            let cache_key = (
+                lang.clone(),
+                DEFAULT_SOURCE_LANGUAGE_TAG.to_string(),
+                format_str.clone(),
+                true,
+            );
+            if let Some(last_export_time) = cached_exports.get(&cache_key) {
                 let duration_since_last =
                     chrono::Utc::now().signed_duration_since(*last_export_time);
                 if duration_since_last < chrono::Duration::days(1) {
@@ -1938,16 +2048,25 @@ pub async fn export_all_dictionaries(pool: &Pool) -> Result<(), Box<dyn Error + 
             );
 
             // Must bypass DB cache read or we would keep re-storing stale blobs (< 4 days old).
-            match export_dictionary(pool, &lang, *format, &Default::default(), None, 1, false).await
+            match export_dictionary(
+                pool,
+                &lang,
+                *format,
+                &canonical_options,
+                None,
+                DEFAULT_SOURCE_LANGID,
+                false,
+            )
+            .await
             {
                 Ok((content, content_type, filename)) => {
                     let c = pool.get().await?;
                     if let Err(e) = c
                         .execute(
                             "INSERT INTO cached_dictionary_exports
-                             (language_tag, format, content, content_type, filename)
-                             VALUES ($1, $2, $3, $4, $5)
-                             ON CONFLICT (language_tag, format)
+                             (language_tag, source_language_tag, format, positive_scores_only, content, content_type, filename)
+                             VALUES ($1, $2, $3, $4, $5, $6, $7)
+                             ON CONFLICT (language_tag, source_language_tag, format, positive_scores_only)
                              DO UPDATE SET
                                 content = EXCLUDED.content,
                                 content_type = EXCLUDED.content_type,
@@ -1955,7 +2074,9 @@ pub async fn export_all_dictionaries(pool: &Pool) -> Result<(), Box<dyn Error + 
                                 created_at = CURRENT_TIMESTAMP",
                             &[
                                 &lang,
+                                &DEFAULT_SOURCE_LANGUAGE_TAG,
                                 &format.to_string(),
+                                &true,
                                 &content,
                                 &content_type,
                                 &filename,
@@ -1972,4 +2093,34 @@ pub async fn export_all_dictionaries(pool: &Pool) -> Result<(), Box<dyn Error + 
     }
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn export_filename_includes_source_language_tag() {
+        assert_eq!(
+            build_export_filename(None, "jbo", "hi", "json"),
+            "dictionary-jbo-hi.json"
+        );
+    }
+
+    #[test]
+    fn export_filename_for_collection_uses_target_language_only() {
+        assert_eq!(
+            build_export_filename(Some(42), "jbo", "hi", "zip"),
+            "collection-42-hi.zip"
+        );
+    }
+
+    #[test]
+    fn export_filename_defaults_to_lojban_source_tag() {
+        // This is the canonical cache key the background builder pre-warms.
+        assert_eq!(
+            build_export_filename(None, DEFAULT_SOURCE_LANGUAGE_TAG, "hi", "json"),
+            "dictionary-jbo-hi.json"
+        );
+    }
 }

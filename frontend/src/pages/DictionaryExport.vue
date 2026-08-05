@@ -260,9 +260,10 @@ const handleExport = async () => {
 
     // Get filename from Content-Disposition header or generate default
     const contentDisposition = response.headers?.['content-disposition']
+    const sourceTag = selectedSourceLanguage.value || 'jbo'
     const filename = contentDisposition
       ? contentDisposition.split('filename=')[1].replace(/"/g, '')
-      : `dictionary-${selectedLanguage.value}.${selectedFormat.value}`
+      : `dictionary-${sourceTag}-${selectedLanguage.value}.${selectedFormat.value}`
 
     // Create download from blob
     const url = window.URL.createObjectURL(response.data)

@@ -36,7 +36,9 @@ pub async fn list_cached_exports(pool: web::Data<Pool>) -> impl Responder {
     tag = "export",
     params(
         ("language_tag" = String, Path, description = "Language tag"),
-        ("format" = String, Path, description = "Export format (pdf, latex, xml, json)")
+        ("format" = String, Path, description = "Export format (pdf, latex, xml, json, tsv)"),
+        ("source_lang" = Option<String>, Query, description = "Source language tag (defaults to Lojban / jbo)"),
+        ("positive_scores_only" = Option<bool>, Query, description = "Only include positive-scored entries (defaults to true)")
     ),
     responses(
         (status = 200, description = "Cached export file"),
@@ -52,10 +54,21 @@ pub async fn list_cached_exports(pool: web::Data<Pool>) -> impl Responder {
 pub async fn download_cached_export(
     pool: web::Data<Pool>,
     path: web::Path<(String, String)>,
+    query: web::Query<ExportOptions>,
 ) -> impl Responder {
     let (language_tag, format) = path.into_inner();
+    let source_language_tag = query.source_lang.as_deref().unwrap_or("jbo");
+    let positive_scores_only = query.positive_scores_only.unwrap_or(true);
 
-    match service::get_cached_export(&pool, &language_tag, &format).await {
+    match service::get_cached_export(
+        &pool,
+        &language_tag,
+        source_language_tag,
+        &format,
+        positive_scores_only,
+    )
+    .await
+    {
         Ok((content, content_type, filename)) => HttpResponse::Ok()
             .insert_header((header::CACHE_CONTROL, "no-store"))
             .content_type(content_type)
