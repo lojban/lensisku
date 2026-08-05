@@ -3638,14 +3638,6 @@ pub async fn update_vote(
             .await?;
     }
 
-    // Update best guesses by recalculating scores
-    transaction
-        .execute(
-            "SELECT reset_valsibestdefinition($1, $2)",
-            &[&valsi_id, &lang_id],
-        )
-        .await?;
-
     // Get the new total vote value (`value` is REAL; cast aggregate to bigint for stable typing).
     let score = {
         let raw: i64 = transaction
