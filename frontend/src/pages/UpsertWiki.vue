@@ -64,7 +64,7 @@
         <label class="block text-sm font-medium text-blue-700 mb-2">
           {{ t('upsertWiki.definitionLabel') }}
         </label>
-        <div ref="editor" class="milkdown-editor" />
+        <div ref="editor" class="milkdown-editor border border-gray-300" />
       </div>
 
       <!-- Submit Button -->
@@ -237,9 +237,5 @@ async function submitWiki() {
 <style scoped>
 .container {
   max-width: 800px;
-}
-
-.milkdown-editor {
-  @apply border border-gray-300;
 }
 </style>
