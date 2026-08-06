@@ -207,8 +207,9 @@ const formatFieldName = (field) => {
     .join(' ')
 }
 
-// Fields whose values are plain keyword/gloss lists — render as text only (no markdown/linkification)
-const isPlainTextField = (field) => field === 'gloss_keywords' || field === 'place_keywords'
+// Fields whose values are plain text — render as text only (no markdown/linkification)
+const isPlainTextField = (field) =>
+  field === 'gloss_keywords' || field === 'place_keywords' || field === 'rafsi'
 </script>
 
 <style scoped>
