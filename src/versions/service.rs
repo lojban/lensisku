@@ -18,7 +18,7 @@ pub async fn get_definition_history(
     let versions = transaction
         .query(
             "SELECT v.*, u.username,
-             v.definition, v.notes, v.selmaho, v.jargon,
+             v.definition, v.notes, v.selmaho, v.jargon, v.rafsi,
              v.gloss_keywords::text as gloss_json,
              v.place_keywords::text as place_json
              FROM definition_versions v
@@ -50,6 +50,7 @@ pub async fn get_definition_history(
                 notes: row.get("notes"),
                 selmaho: row.get("selmaho"),
                 jargon: row.get("jargon"),
+                rafsi: row.get("rafsi"),
                 gloss_keywords,
                 place_keywords,
             };
@@ -105,7 +106,7 @@ pub async fn get_version_with_transaction(
     let row = transaction
         .query_one(
             "SELECT v.*, u.username,
-             v.definition, v.notes, v.selmaho, v.jargon,
+             v.definition, v.notes, v.selmaho, v.jargon, v.rafsi,
              v.gloss_keywords::text as gloss_json,
              v.place_keywords::text as place_json
              FROM definition_versions v
@@ -134,6 +135,7 @@ pub async fn get_version_with_transaction(
         notes: row.get("notes"),
         selmaho: row.get("selmaho"),
         jargon: row.get("jargon"),
+        rafsi: row.get("rafsi"),
         gloss_keywords,
         place_keywords,
     };
@@ -174,9 +176,9 @@ pub async fn create_version(
     let row = transaction
         .query_one(
             "INSERT INTO definition_versions 
-             (definition_id, langid, valsiid, definition, notes, selmaho, jargon, 
+             (definition_id, langid, valsiid, definition, notes, selmaho, jargon, rafsi,
               gloss_keywords, place_keywords, user_id, message)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
              RETURNING version_id, created_at",
             &[
                 &definition_id,
@@ -186,6 +188,7 @@ pub async fn create_version(
                 &content.notes,
                 &content.selmaho,
                 &content.jargon,
+                &content.rafsi,
                 &gloss_json,
                 &place_json,
                 &user_id,
@@ -257,13 +260,14 @@ pub async fn revert_to_version(
     transaction
         .execute(
             "UPDATE definitions 
-             SET definition = $1, notes = $2, selmaho = $3, jargon = $4
-             WHERE definitionid = $5",
+             SET definition = $1, notes = $2, selmaho = $3, jargon = $4, rafsi = $5
+             WHERE definitionid = $6",
             &[
                 &old_version.content.definition,
                 &old_version.content.notes,
                 &old_version.content.selmaho,
                 &old_version.content.jargon,
+                &old_version.content.rafsi,
                 &old_version.definition_id,
             ],
         )
@@ -370,6 +374,13 @@ pub async fn get_diff(
         "jargon",
         &old_version.content.jargon,
         &new_version.content.jargon,
+        &mut changes,
+    );
+
+    compare_option_field(
+        "rafsi",
+        &old_version.content.rafsi,
+        &new_version.content.rafsi,
         &mut changes,
     );
 

@@ -25,12 +25,6 @@
         >
           {{ getWordTypeLabel(valsi.type_name) }}
         </span>
-        <span
-          v-if="valsi.rafsi"
-          class="inline-flex max-w-full min-w-0 items-center rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium leading-snug text-gray-700 sm:px-3 sm:text-sm"
-        >
-          {{ t('entryPage.rafsiLabel') }} {{ valsi.rafsi }}
-        </span>
         <div
           v-if="valsi.decomposition"
           class="flex min-w-0 max-w-full flex-wrap items-center gap-x-1.5 gap-y-0.5 text-sm text-gray-700"

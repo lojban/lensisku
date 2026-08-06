@@ -628,6 +628,35 @@ async fn fetch_rafsi_data(
     Ok(result)
 }
 
+async fn fetch_experimental_rafsi_data(
+    transaction: &Transaction<'_>,
+    type_id: i16,
+) -> Result<HashMap<String, Vec<String>>, Box<dyn std::error::Error>> {
+    // Experimental gismu/cmavo rafsi are stored per-definition, so aggregate
+    // all rafsi strings for each valsi word.
+    let rows = transaction
+        .query(
+            "SELECT v.word, string_agg(d.rafsi, ' ' ORDER BY d.definitionid) as rafsi
+             FROM valsi v
+             JOIN definitions d ON d.valsiid = v.valsiid
+             WHERE v.typeid = $1 AND d.rafsi IS NOT NULL
+             GROUP BY v.word",
+            &[&type_id],
+        )
+        .await?;
+
+    let mut result = HashMap::new();
+    for row in rows {
+        let word: String = row.get("word");
+        let rafsi: String = row.get("rafsi");
+        result.insert(
+            word,
+            rafsi.split_whitespace().map(|s| s.to_string()).collect(),
+        );
+    }
+    Ok(result)
+}
+
 async fn fetch_cmavo_rafsi(
     transaction: &Transaction<'_>,
 ) -> Result<HashMap<String, Vec<String>>, Box<dyn std::error::Error>> {
@@ -637,7 +666,7 @@ async fn fetch_cmavo_rafsi(
 async fn fetch_experimental_cmavo_rafsi(
     transaction: &Transaction<'_>,
 ) -> Result<HashMap<String, Vec<String>>, Box<dyn std::error::Error>> {
-    fetch_rafsi_data(transaction, 8).await // 8 = experimental cmavo type ID
+    fetch_experimental_rafsi_data(transaction, 8).await // 8 = experimental cmavo type ID
 }
 
 async fn fetch_gismu_rafsi(
@@ -649,7 +678,7 @@ async fn fetch_gismu_rafsi(
 async fn fetch_experimental_gismu_rafsi(
     transaction: &Transaction<'_>,
 ) -> Result<HashMap<String, Vec<String>>, Box<dyn std::error::Error>> {
-    fetch_rafsi_data(transaction, 7).await // 7 = experimental gismu type ID
+    fetch_experimental_rafsi_data(transaction, 7).await // 7 = experimental gismu type ID
 }
 
 async fn fetch_gismu_data(

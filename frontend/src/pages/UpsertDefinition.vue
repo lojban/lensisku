@@ -134,8 +134,8 @@
         />
       </div>
     </div>
-    <!-- Rafsi Input (Lojban only) -->
-    <div v-if="Number(sourceLangId) === 1 && showLojbanWordFields">
+    <!-- Rafsi Input (gismu/cmavo only) -->
+    <div v-if="Number(sourceLangId) === 1 && showRafsiField">
       <label for="rafsi" class="block text-sm font-medium text-blue-700">
         {{ t('upsertDefinition.rafsiLabel') }}
         <span class="text-gray-500 font-normal">{{ t('upsertDefinition.optional') }}</span>
@@ -151,7 +151,7 @@
       <p class="mt-1 text-xs text-gray-500">{{ t('upsertDefinition.rafsiNote') }}</p>
     </div>
     <!-- Selmaho Input (cmavo / experimental cmavo only) -->
-    <div v-if="showSelmahoField && showLojbanWordFields">
+    <div v-if="showSelmahoField">
       <label for="selmaho" class="block text-sm font-medium text-blue-700">
         {{ t('upsertDefinition.selmahoLabel') }}
         <span class="text-gray-500 font-normal">{{ t('upsertDefinition.optional') }}</span>
@@ -276,7 +276,7 @@
       />
     </div>
     <!-- Gloss Keywords -->
-    <div v-if="showLojbanWordFields">
+    <div v-if="showKeywordFields">
       <label class="block text-sm font-medium text-blue-700 mb-2">
         {{ t('upsertDefinition.glossKeywordsLabel') }}
         <span class="text-gray-500 font-normal">{{ t('upsertDefinition.optional') }}</span>
@@ -314,7 +314,7 @@
       </div>
     </div>
     <!-- Place Keywords -->
-    <div v-if="showLojbanWordFields">
+    <div v-if="showKeywordFields">
       <label class="block text-sm font-medium text-blue-700 mb-2">
         {{ t('upsertDefinition.placeKeywordsLabel') }}
         <span class="text-gray-500 font-normal">{{ t('upsertDefinition.optional') }}</span>
@@ -633,9 +633,16 @@ const showSelmahoField = computed(() => {
   return t === 'cmavo' || t === 'experimental cmavo'
 })
 
-// Hide Lojban word-specific fields for phrases
-const showLojbanWordFields = computed(() => {
-  return wordType.value !== 'phrase'
+// Only gismu/cmavo (official or experimental) may have a rafsi.
+const showRafsiField = computed(() => {
+  const t = wordType.value || ''
+  return t === 'gismu' || t === 'experimental gismu' || t === 'cmavo' || t === 'experimental cmavo'
+})
+
+// Keywords are not available for phrases or cmavo compounds.
+const showKeywordFields = computed(() => {
+  const t = wordType.value || ''
+  return t !== 'phrase' && t !== 'cmavo compound'
 })
 
 // Methods for keywords
@@ -847,7 +854,13 @@ const submitValsi = async () => {
     const requestData: Record<string, unknown> = {
       word: word.value,
       definition: definition.value,
-      rafsi: rafsi.value || null,
+      // Only gismu/cmavo may have a rafsi. On edit, an empty string signals clearing;
+      // on add, null means leave the entry-level rafsi unchanged.
+      rafsi: showRafsiField.value
+        ? isEditMode.value
+          ? rafsi.value || ''
+          : rafsi.value || null
+        : null,
       ...(showSelmahoField.value && { selmaho: selmaho.value?.trim() || null }),
       notes: notes.value || null,
       etymology: etymology.value || null,
@@ -860,11 +873,11 @@ const submitValsi = async () => {
       ...(!isEditMode.value && { source_langid: parseInt(String(sourceLangId.value), 10) || 1 }),
     }
 
-    // Include keywords if they're not empty
-    if (filteredGlossKeywords.length > 0) {
+    // Include keywords if they're not empty and this word type supports them.
+    if (showKeywordFields.value && filteredGlossKeywords.length > 0) {
       requestData.gloss_keywords = filteredGlossKeywords
     }
-    if (filteredPlaceKeywords.length > 0) {
+    if (showKeywordFields.value && filteredPlaceKeywords.length > 0) {
       requestData.place_keywords = filteredPlaceKeywords
     }
 

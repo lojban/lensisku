@@ -212,7 +212,7 @@
                   {{ t(`wordTypes.${definition.type_name.replace(/'/g, 'h').replace(/ /g, '-')}`) }}
                 </span>
                 <RouterLink
-                  v-if="definition.selmaho"
+                  v-if="!isPhrase && definition.selmaho"
                   :to="{ path: '/', query: selmahoLinkQuery }"
                   class="badge-definition-tag"
                   :title="
@@ -225,7 +225,7 @@
                   {{ t('components.definitionCard.selmaoLabel') }} {{ displayedSelmaho }}
                 </RouterLink>
                 <span
-                  v-if="definition.rafsi"
+                  v-if="!isPhrase && definition.rafsi"
                   class="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-700 rounded-full"
                 >
                   {{ definition.rafsi }}
@@ -321,7 +321,7 @@
         </div>
         <!-- Gloss Keywords (glosswords) -->
         <div
-          v-if="definition.gloss_keywords && definition.gloss_keywords.length > 0"
+          v-if="!isPhrase && definition.gloss_keywords && definition.gloss_keywords.length > 0"
           class="mt-3 pt-2 border-t"
         >
           <div class="flex flex-wrap gap-1">
@@ -946,12 +946,16 @@ const itemSoundUrl = computed(() => {
   return `/api/collections/${props.collectionId}/items/${props.itemId}/sound`
 })
 
+const isPhrase = computed(() => {
+  return props.definition.type_name === 'phrase'
+})
+
 /** Second row: audio, word type, selma'o, rafsi — copy sits on the right of this row when shown. */
 const showWordMetaRow = computed(() => {
   const hasAudio = Boolean((props.definition.sound_url || itemSoundUrl.value) && props.showAudio)
   const hasType = Boolean(props.definition.type_name && props.showWordType)
-  const hasSelmaho = Boolean(props.definition.selmaho)
-  const hasRafsi = Boolean(props.definition.rafsi)
+  const hasSelmaho = !isPhrase.value && Boolean(props.definition.selmaho)
+  const hasRafsi = !isPhrase.value && Boolean(props.definition.rafsi)
   return hasAudio || hasType || hasSelmaho || hasRafsi
 })
 

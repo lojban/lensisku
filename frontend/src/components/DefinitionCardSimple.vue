@@ -79,7 +79,7 @@
           </div>
           <!-- Gloss Keywords -->
           <div
-            v-if="definition.gloss_keywords && definition.gloss_keywords.length > 0"
+            v-if="!isPhrase && definition.gloss_keywords && definition.gloss_keywords.length > 0"
             class="mt-3 pt-2 border-t"
           >
             <div class="flex flex-wrap gap-1">
@@ -215,6 +215,10 @@ const showExpandedFrontContent = computed(
 const displayedSelmaho = computed(() => {
   const s = props.definition.selmaho || ''
   return s.length > MAX_VALSI_DISPLAY_LENGTH ? s.slice(0, MAX_VALSI_DISPLAY_LENGTH) + '…' : s
+})
+
+const isPhrase = computed(() => {
+  return props.definition.type_name === 'phrase'
 })
 
 const selmahoLinkQuery = computed(() => ({

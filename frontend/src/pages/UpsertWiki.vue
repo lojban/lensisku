@@ -122,6 +122,8 @@ onMounted(async () => {
     },
   })
 
+  await crepe.create()
+
   const updateDefinition = () => {
     if (crepe) {
       let markdown = crepe.getMarkdown()

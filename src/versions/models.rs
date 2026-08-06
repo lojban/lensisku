@@ -20,6 +20,7 @@ pub struct VersionContent {
     pub notes: Option<String>,
     pub selmaho: Option<String>,
     pub jargon: Option<String>,
+    pub rafsi: Option<String>,
     pub gloss_keywords: Option<Vec<crate::jbovlaste::KeywordMapping>>,
     pub place_keywords: Option<Vec<crate::jbovlaste::KeywordMapping>>,
 }

@@ -132,8 +132,9 @@ pub async fn semantic_search(
                 COALESCE(dv.score, 0)::bigint AS score,
                 CASE 
                     WHEN v.word = $3 OR v.word = $4 THEN 0 
-                    WHEN v.word ILIKE $3 OR v.word ILIKE $4 THEN 1
-                    ELSE 2 
+                    WHEN d.cached_rafsi IS NOT NULL AND ($3 = ANY(string_to_array(d.cached_rafsi, ' ')) OR $4 = ANY(string_to_array(d.cached_rafsi, ' '))) THEN 1
+                    WHEN v.word ILIKE $3 OR v.word ILIKE $4 THEN 2
+                    ELSE 3 
                 END as exact_match_rank
             FROM definitions d
             JOIN valsi v ON d.valsiid = v.valsiid
@@ -144,14 +145,15 @@ pub async fn semantic_search(
             WHERE d.langid != 1 
               AND (d.langid = ANY($2) OR $2 IS NULL) 
               AND d.definition != ''
-              AND (d.embedding IS NOT NULL OR v.word = $3 OR v.word = $4 OR v.word ILIKE $3 OR v.word ILIKE $4)
+              AND (d.embedding IS NOT NULL OR v.word = $3 OR v.word = $4 OR v.word ILIKE $3 OR v.word ILIKE $4
+                   OR (d.cached_rafsi IS NOT NULL AND ($3 = ANY(string_to_array(d.cached_rafsi, ' ')) OR $4 = ANY(string_to_array(d.cached_rafsi, ' ')))))
             {additional_conditions}
             ORDER BY exact_match_rank ASC, similarity ASC
             LIMIT 1000
         )
         SELECT COUNT(*)
         FROM vector_search
-        WHERE score > 0 OR exact_match_rank = 0 -- AND similarity < SIMILARITY_THRESHOLD"#,
+        WHERE score > 0 OR exact_match_rank <= 1 -- AND similarity < SIMILARITY_THRESHOLD"#,
         );
         transaction
             .query_one(&count_query, &query_params)
@@ -200,8 +202,9 @@ pub async fn semantic_search(
                 CASE WHEN d.embedding IS NOT NULL THEN d.embedding <=> $1::vector END as similarity,
                 CASE 
                     WHEN v.word = $3 OR v.word = $4 THEN 0 
-                    WHEN v.word ILIKE $3 OR v.word ILIKE $4 THEN 1
-                    ELSE 2 
+                    WHEN d.cached_rafsi IS NOT NULL AND ($3 = ANY(string_to_array(d.cached_rafsi, ' ')) OR $4 = ANY(string_to_array(d.cached_rafsi, ' '))) THEN 1
+                    WHEN v.word ILIKE $3 OR v.word ILIKE $4 THEN 2
+                    ELSE 3 
                 END as exact_match_rank
             FROM definitions d
             JOIN valsi v ON d.valsiid = v.valsiid
@@ -219,7 +222,8 @@ pub async fn semantic_search(
             WHERE d.langid != 1 
               AND (d.langid = ANY($2) OR $2 IS NULL) 
               AND d.definition != ''
-              AND (d.embedding IS NOT NULL OR v.word = $3 OR v.word = $4 OR v.word ILIKE $3 OR v.word ILIKE $4)
+              AND (d.embedding IS NOT NULL OR v.word = $3 OR v.word = $4 OR v.word ILIKE $3 OR v.word ILIKE $4
+                   OR (d.cached_rafsi IS NOT NULL AND ($3 = ANY(string_to_array(d.cached_rafsi, ' ')) OR $4 = ANY(string_to_array(d.cached_rafsi, ' ')))))
             {additional_conditions}
             ORDER BY exact_match_rank ASC, similarity ASC
             LIMIT 1000
@@ -227,7 +231,7 @@ pub async fn semantic_search(
         ranked_results AS (
             SELECT DISTINCT ON (definitionid) *
             FROM vector_search
-            WHERE score > 0 OR exact_match_rank = 0 -- AND similarity < {similarity_threshold}
+            WHERE score > 0 OR exact_match_rank <= 1 -- AND similarity < {similarity_threshold}
             ORDER BY definitionid
         )
         SELECT r.*
@@ -954,7 +958,7 @@ pub async fn search_definitions(
                     WHEN d.cached_valsiword ILIKE $7 THEN 11
                     WHEN d.cached_valsiword ~* $3 THEN 10
                     WHEN d.cached_valsiword ~* $9 THEN 10
-                    WHEN d.cached_rafsi IS NOT NULL AND $1 = ANY(string_to_array(d.cached_rafsi, ' ')) THEN 9
+                    WHEN d.cached_rafsi IS NOT NULL AND $1 = ANY(string_to_array(d.cached_rafsi, ' ')) THEN 12
                     WHEN d.cached_valsiword ILIKE $2 THEN 8
                     WHEN d.cached_valsiword ILIKE $8 THEN 8
                     WHEN d.definition ~ $3 THEN 6
@@ -1022,7 +1026,7 @@ pub async fn search_definitions(
                     WHEN d.cached_valsiword ILIKE $7 THEN 11
                     WHEN d.cached_valsiword ~* $3 THEN 10
                     WHEN d.cached_valsiword ~* $9 THEN 10
-                    WHEN d.cached_rafsi IS NOT NULL AND $1 = ANY(string_to_array(d.cached_rafsi, ' ')) THEN 9
+                    WHEN d.cached_rafsi IS NOT NULL AND $1 = ANY(string_to_array(d.cached_rafsi, ' ')) THEN 12
                     WHEN d.cached_valsiword ILIKE $2 THEN 8
                     WHEN d.cached_valsiword ILIKE $8 THEN 8
                     WHEN d.definition ~ $3 THEN 6
@@ -1205,7 +1209,7 @@ pub async fn search_definitions(
                 WHEN d.cached_valsiword ILIKE $5 THEN 11
                 WHEN d.cached_valsiword ~* $3 THEN 10
                 WHEN d.cached_valsiword ~* $7 THEN 10
-                WHEN d.cached_rafsi IS NOT NULL AND $1 = ANY(string_to_array(d.cached_rafsi, ' ')) THEN 9
+                WHEN d.cached_rafsi IS NOT NULL AND $1 = ANY(string_to_array(d.cached_rafsi, ' ')) THEN 12
                 WHEN d.cached_valsiword ILIKE $2 THEN 8
                 WHEN d.cached_valsiword ILIKE $6 THEN 8
                 WHEN d.definition ~ $3 THEN 6
@@ -1355,7 +1359,7 @@ pub async fn fast_search_definitions(
                 WHEN d.cached_valsiword ILIKE $6::text THEN 11
                 WHEN d.cached_valsiword ~* $3::text THEN 10
                 WHEN d.cached_valsiword ~* $8::text THEN 10
-                WHEN d.cached_rafsi IS NOT NULL AND $1::text = ANY(string_to_array(d.cached_rafsi, ' ')) THEN 9
+                WHEN d.cached_rafsi IS NOT NULL AND $1::text = ANY(string_to_array(d.cached_rafsi, ' ')) THEN 12
                 WHEN d.cached_valsiword ILIKE $2::text THEN 8
                 WHEN d.cached_valsiword ILIKE $7::text THEN 8
                 WHEN d.cached_search_text ILIKE $2::text THEN 7
@@ -1562,9 +1566,22 @@ async fn get_source_words(
         exact_word_map.insert(word.clone(), word);
     }
 
-    // Then try to find rafsi matches
+    // Then try to find rafsi matches, both from valsi (official/other types)
+    // and from definitions (experimental gismu/cmavo).
     let rows = transaction.query(
-        "SELECT word, rafsi FROM valsi WHERE rafsi LIKE ANY(ARRAY(SELECT '%' || rafsi || '%' FROM unnest($1::text[])))",
+        "
+        SELECT word, rafsi FROM (
+            SELECT v.word, v.rafsi as rafsi
+            FROM valsi v
+            WHERE v.rafsi IS NOT NULL
+            UNION ALL
+            SELECT v.word, d.rafsi as rafsi
+            FROM valsi v
+            JOIN definitions d ON d.valsiid = v.valsiid
+            WHERE d.rafsi IS NOT NULL
+        ) rafsi_source
+        WHERE rafsi LIKE ANY(ARRAY(SELECT '%' || p || '%' FROM unnest($1::text[]) AS p))
+        ",
         &[&rafsi_parts]
     ).await?;
 
@@ -1791,7 +1808,7 @@ pub async fn get_wiki_by_word(
                 WHERE v.word = $1 AND v.typeid = 16
             ) as has_image
         )
-        SELECT d.*, v.word as valsiword, v.valsiid as valsiid, v.source_langid, v.rafsi,
+        SELECT d.*, v.word as valsiword, v.valsiid as valsiid, v.source_langid, v.typeid as valsi_typeid,
                 l.realname as langrealname, u.username,
                 vt.descriptor as type_name,
                 i.has_image,
@@ -1889,7 +1906,7 @@ pub async fn get_wiki_by_word(
                 username: row.get("username"),
                 time: row.get("time"),
                 type_name: row.get("type_name"),
-                rafsi: row.try_get("rafsi").ok().flatten(),
+                rafsi: row.try_get::<_, Option<String>>("cached_rafsi").ok().flatten(),
                 comment_count: row.get("comment_count"),
                 user_vote: row.get("user_vote"),
                 gloss_keywords,
@@ -2033,11 +2050,11 @@ async fn upsert_wiki_in_transaction(
     transaction
         .execute(
             "INSERT INTO definition_versions (
-                definition_id, langid, valsiid, definition, notes, etymology, selmaho, jargon,
+                definition_id, langid, valsiid, definition, notes, etymology, selmaho, jargon, rafsi,
                 gloss_keywords, place_keywords, user_id, message
             )
             SELECT
-                d.definitionid, d.langid, d.valsiid, d.definition, d.notes, d.etymology, d.selmaho, d.jargon,
+                d.definitionid, d.langid, d.valsiid, d.definition, d.notes, d.etymology, d.selmaho, d.jargon, d.rafsi,
                 '[]'::jsonb, '[]'::jsonb, $2, 'Updated version'
             FROM definitions d
             WHERE d.definitionid = $1",
@@ -2227,8 +2244,6 @@ async fn add_definition_in_transaction(
             .get::<_, i32>("valsiid"),
     };
 
-    validate_and_update_rafsi(transaction, valsi_id, request.rafsi.clone(), source_langid).await?;
-
     // Get next definition number
     let definitionnum = transaction
         .query_one(
@@ -2274,6 +2289,17 @@ async fn add_definition_in_transaction(
         )
         .await?;
 
+    // Store rafsi on the definition for experimental gismu/cmavo, otherwise on valsi.
+    validate_and_update_rafsi(
+        transaction,
+        valsi_id,
+        Some(definition_id),
+        request.rafsi.clone(),
+        source_langid,
+        type_id as i16,
+    )
+    .await?;
+
     if let Some(image) = &request.image {
         // Decode base64 image data
         let image_data = BASE64
@@ -2290,9 +2316,10 @@ async fn add_definition_in_transaction(
             .await?;
     }
 
-    // Add gloss keywords
-    if let Some(gloss_keywords) = &request.gloss_keywords {
-        for keyword in gloss_keywords {
+    // Add gloss keywords (phrases do not have keywords)
+    if type_id != 15 {
+        if let Some(gloss_keywords) = &request.gloss_keywords {
+            for keyword in gloss_keywords {
             let sanitized_word = sanitize_html(&keyword.word);
             let sanitized_meaning = keyword
                 .meaning
@@ -2343,12 +2370,14 @@ async fn add_definition_in_transaction(
                     ],
                 )
                 .await?;
+            }
         }
     }
 
-    // Add place keywords
-    if let Some(place_keywords) = &request.place_keywords {
-        for (i, keyword) in place_keywords.iter().enumerate() {
+    // Add place keywords (phrases do not have keywords)
+    if type_id != 15 {
+        if let Some(place_keywords) = &request.place_keywords {
+            for (i, keyword) in place_keywords.iter().enumerate() {
             let sanitized_word = sanitize_html(&keyword.word);
             let sanitized_meaning = keyword
                 .meaning
@@ -2401,17 +2430,18 @@ async fn add_definition_in_transaction(
                     ],
                 )
                 .await?;
+            }
         }
     }
 
     transaction
         .execute(
             "INSERT INTO definition_versions (
-                definition_id, langid, valsiid, definition, notes, etymology, selmaho, jargon,
+                definition_id, langid, valsiid, definition, notes, etymology, selmaho, jargon, rafsi,
                 gloss_keywords, place_keywords, user_id, message
             )
             SELECT
-                d.definitionid, d.langid, d.valsiid, d.definition, d.notes, d.etymology, d.selmaho, d.jargon,
+                d.definitionid, d.langid, d.valsiid, d.definition, d.notes, d.etymology, d.selmaho, d.jargon, d.rafsi,
                 COALESCE(
                     (SELECT jsonb_agg(to_jsonb(kw))
                      FROM (
@@ -2613,7 +2643,7 @@ pub async fn get_definition(
                 WHERE definition_id = $1
             ) as has_image
         )
-        SELECT d.*, v.word as valsiword, v.valsiid as valsiid, v.source_langid, v.rafsi,
+        SELECT d.*, v.word as valsiword, v.valsiid as valsiid, v.source_langid, v.typeid as valsi_typeid,
                 l.realname as langrealname, u.username,
                 vt.descriptor as type_name,
                 i.has_image,
@@ -2642,8 +2672,10 @@ pub async fn get_definition(
     ).await?;
 
     let source_langid: i32 = row.get("source_langid");
+    let valsi_typeid: i16 = row.get("valsi_typeid");
 
-    let (gloss_keywords, place_keywords) = if source_langid == 1 {
+    // Phrases do not have gloss/place keywords.
+    let (gloss_keywords, place_keywords) = if source_langid == 1 && valsi_typeid != 15 {
         let gloss_keywords_rows = transaction
             .query(
                 "SELECT n.word, n.meaning
@@ -2735,7 +2767,7 @@ pub async fn get_definition(
         username: row.get("username"),
         time: row.get("time"),
         type_name: row.get("type_name"),
-        rafsi: row.try_get("rafsi").ok().flatten(),
+        rafsi: row.try_get::<_, Option<String>>("cached_rafsi").ok().flatten(),
         comment_count: row.get("comment_count"),
         user_vote: row.get("user_vote"),
         gloss_keywords,
@@ -2793,11 +2825,11 @@ pub async fn update_definition(
     if existing_versions == 0 {
         transaction.execute(
             r#"INSERT INTO definition_versions (
-                created_at, definition_id, langid, valsiid, definition, notes, etymology, selmaho, jargon,
+                created_at, definition_id, langid, valsiid, definition, notes, etymology, selmaho, jargon, rafsi,
                 gloss_keywords, place_keywords, user_id, message
             )
             SELECT
-                COALESCE(to_timestamp(d.time) AT TIME ZONE 'UTC', d.created_at), d.definitionid, d.langid, d.valsiid, d.definition, d.notes, d.etymology, d.selmaho, d.jargon,
+                COALESCE(to_timestamp(d.time) AT TIME ZONE 'UTC', d.created_at), d.definitionid, d.langid, d.valsiid, d.definition, d.notes, d.etymology, d.selmaho, d.jargon, d.rafsi,
                 COALESCE(
                     (SELECT jsonb_agg(to_jsonb(kw))
                      FROM (
@@ -2850,8 +2882,10 @@ pub async fn update_definition(
         validate_and_update_rafsi(
             &transaction,
             valsi_id,
+            Some(definition_id),
             request.rafsi.clone(),
             source_langid.unwrap_or(1),
+            valsi_typeid,
         )
         .await?;
     }
@@ -2962,8 +2996,8 @@ pub async fn update_definition(
             .await?;
     }
 
-    // Clear existing keywords
-    if request.is_wiki != Some(true) {
+    // Clear existing keywords (phrases do not have keywords)
+    if request.is_wiki != Some(true) && valsi_typeid != 15 {
         transaction
             .execute(
                 "DELETE FROM keywordmapping WHERE definitionid = $1",
@@ -2972,8 +3006,8 @@ pub async fn update_definition(
             .await?;
     }
 
-    // Add gloss keywords
-    if request.is_wiki != Some(true) {
+    // Add gloss keywords (phrases do not have keywords)
+    if request.is_wiki != Some(true) && valsi_typeid != 15 {
         if let Some(gloss_keywords) = &request.gloss_keywords {
             for keyword in gloss_keywords {
                 let sanitized_word = sanitize_html(&keyword.word);
@@ -3092,11 +3126,11 @@ pub async fn update_definition(
     transaction
         .execute(
             "INSERT INTO definition_versions (
-                definition_id, langid, valsiid, definition, notes, etymology, selmaho, jargon,
+                definition_id, langid, valsiid, definition, notes, etymology, selmaho, jargon, rafsi,
                 gloss_keywords, place_keywords, user_id, message
             )
             SELECT
-                d.definitionid, d.langid, d.valsiid, d.definition, d.notes, d.etymology, d.selmaho, d.jargon,
+                d.definitionid, d.langid, d.valsiid, d.definition, d.notes, d.etymology, d.selmaho, d.jargon, d.rafsi,
                 (
                     SELECT COALESCE(json_agg(json_build_object(
                         'word', n.word,
@@ -3758,13 +3792,13 @@ pub async fn get_definitions_by_entry(
             user_vote: None,     // Will be updated later
             gloss_keywords: None,
             place_keywords: None,
+            rafsi: row.try_get::<_, Option<String>>("cached_rafsi").ok().flatten(),
             owner_only: row.get("owner_only"),
             can_edit: row.get("can_edit"),
             created_at: row.get("created_at"),
             has_image: row.get("has_image"),
             sound_url: None,
             metadata: None,
-            rafsi: None,
             examples: None,
             decomposition: None,
         })
@@ -4316,6 +4350,7 @@ pub async fn get_recent_changes(
                                         notes: None,
                                         selmaho: None,
                                         jargon: None,
+                                        rafsi: None,
                                         gloss_keywords: None,
                                         place_keywords: None,
                                     },
@@ -5243,54 +5278,136 @@ pub async fn list_definitions_by_client_id(
 async fn validate_and_update_rafsi(
     transaction: &Transaction<'_>,
     valsi_id: i32,
+    definition_id: Option<i32>,
     rafsi_opt: Option<String>,
     source_langid: i32,
+    type_id: i16,
 ) -> Result<(), Box<dyn std::error::Error>> {
+    // Phrases cannot have a rafsi, regardless of source language.
+    if type_id == 15 {
+        if let Some(rafsi_str) = &rafsi_opt {
+            if !rafsi_str.trim().is_empty() {
+                return Err("Phrases cannot have a rafsi".into());
+            }
+        }
+        if let Some(def_id) = definition_id {
+            transaction
+                .execute(
+                    "UPDATE definitions SET rafsi = NULL WHERE definitionid = $1",
+                    &[&def_id],
+                )
+                .await?;
+        }
+        return Ok(());
+    }
+
+    // Only process rafsi for Lojban (source language id 1).
+    if source_langid != 1 {
+        return Ok(());
+    }
+
+    // Rafsi are only meaningful for gismu, cmavo and their experimental variants.
+    let allowed_rafsi_types: [i16; 4] = [1, 2, 7, 8];
+    if !allowed_rafsi_types.contains(&type_id) {
+        if let Some(rafsi_str) = &rafsi_opt {
+            if !rafsi_str.trim().is_empty() {
+                return Err("Rafsi are only allowed for gismu and cmavo".into());
+            }
+        }
+        return Ok(());
+    }
+
     if let Some(rafsi_str) = rafsi_opt {
-        // Only process for Lojban
-        if source_langid == 1 {
-            let rafsi_str = rafsi_str.trim();
-            if rafsi_str.is_empty() {
-                // Clear rafsi
+        let rafsi_str = rafsi_str.trim();
+        if rafsi_str.is_empty() {
+            // Clear rafsi from the correct location
+            if type_id == 7 || type_id == 8 {
+                if let Some(def_id) = definition_id {
+                    transaction
+                        .execute(
+                            "UPDATE definitions SET rafsi = NULL WHERE definitionid = $1",
+                            &[&def_id],
+                        )
+                        .await?;
+                }
+            } else {
                 transaction
                     .execute(
                         "UPDATE valsi SET rafsi = NULL WHERE valsiid = $1",
                         &[&valsi_id],
                     )
                     .await?;
-            } else {
-                let rafsi_list: Vec<&str> = rafsi_str.split_whitespace().collect();
+            }
+        } else {
+            let rafsi_list: Vec<&str> = rafsi_str.split_whitespace().collect();
 
-                // Check conflicts
-                // Types: 1=gismu, 2=cmavo, 4=lujvo, 5=fu'ivla
-                let protected_types: Vec<i16> = vec![1, 2, 4, 5];
+            // Check conflicts against official rafsi (valsi table) and other
+            // experimental definitions (definitions table).
+            let official_types: Vec<i16> = vec![1, 2, 4, 5];
+            let experimental_types: Vec<i16> = vec![7, 8];
 
-                let conflict_query = "
-                    SELECT v.word, vt.descriptor
+            let conflict_query = "
+                SELECT word, descriptor FROM (
+                    SELECT v.word, vt.descriptor, v.rafsi
                     FROM valsi v
                     JOIN valsitypes vt ON v.typeid = vt.typeid
                     WHERE v.valsiid != $1
-                    AND v.source_langid = 1
-                    AND v.typeid = ANY($2)
-                    AND EXISTS (
-                        SELECT 1
-                        FROM unnest(string_to_array(v.rafsi, ' ')) existing_rafsi
-                        WHERE existing_rafsi = ANY($3)
-                    )
-                    LIMIT 1
-                ";
+                      AND v.source_langid = 1
+                      AND v.typeid = ANY($2)
+                      AND v.rafsi IS NOT NULL
+                    UNION ALL
+                    SELECT v.word, vt.descriptor, d.rafsi
+                    FROM valsi v
+                    JOIN valsitypes vt ON v.typeid = vt.typeid
+                    JOIN definitions d ON d.valsiid = v.valsiid
+                    WHERE v.source_langid = 1
+                      AND v.typeid = ANY($3)
+                      AND d.rafsi IS NOT NULL
+                      AND d.definitionid IS DISTINCT FROM $4
+                ) rafsi_sources
+                WHERE EXISTS (
+                    SELECT 1
+                    FROM unnest(string_to_array(rafsi, ' ')) existing_rafsi
+                    WHERE existing_rafsi = ANY($5)
+                )
+                LIMIT 1
+            ";
 
-                let rows = transaction
-                    .query(conflict_query, &[&valsi_id, &protected_types, &rafsi_list])
-                    .await?;
+            let rows = transaction
+                .query(
+                    conflict_query,
+                    &[
+                        &valsi_id,
+                        &official_types,
+                        &experimental_types,
+                        &definition_id,
+                        &rafsi_list,
+                    ],
+                )
+                .await?;
 
-                if let Some(row) = rows.first() {
-                    let word: String = row.get("word");
-                    let type_name: String = row.get("descriptor");
-                    return Err(format!("RAFSI_CONFLICT|{}|{}", word, type_name).into());
+            if let Some(row) = rows.first() {
+                let word: String = row.get("word");
+                let type_name: String = row.get("descriptor");
+                return Err(format!("RAFSI_CONFLICT|{}|{}", word, type_name).into());
+            }
+
+            // Store rafsi on the definition for experimental gismu/cmavo,
+            // otherwise on the valsi (entry) as before.
+            if type_id == 7 || type_id == 8 {
+                if let Some(def_id) = definition_id {
+                    transaction
+                        .execute(
+                            "UPDATE definitions SET rafsi = $1 WHERE definitionid = $2",
+                            &[&rafsi_str, &def_id],
+                        )
+                        .await?;
+                } else {
+                    return Err(
+                        "Definition ID is required to store rafsi for experimental types".into(),
+                    );
                 }
-
-                // Update valsi
+            } else {
                 transaction
                     .execute(
                         "UPDATE valsi SET rafsi = $1 WHERE valsiid = $2",
