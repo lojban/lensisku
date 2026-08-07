@@ -165,9 +165,8 @@
           <Button
             v-for="reaction in reactions"
             :key="reaction.reaction"
-            variant="reaction-active"
-            class="gap-1.5 transition-all duration-300"
-            :class="reaction.reacted ? 'ui-btn--reaction-active' : 'ui-btn--reaction'"
+            :variant="reaction.reacted ? 'reaction-active' : 'reaction'"
+            class="gap-1.5 transition-all duration-300 !overflow-visible"
             @click.stop="handleReactionClick(reaction.reaction)"
           >
             <span
@@ -241,10 +240,12 @@
       </div>
       <Button
         v-if="auth.state.isLoggedIn"
-        variant="neutral"
+        variant="plain"
         :disabled="isProcessing"
-        class="gap-1.5 ui-btn--empty"
-        :class="[processedComment.is_bookmarked ? 'active' : '']"
+        class="inline-flex items-center gap-1.5 text-sm cursor-pointer"
+        :class="[
+          processedComment.is_bookmarked ? 'text-blue-600' : 'text-gray-500 hover:text-blue-600',
+        ]"
         @click.stop="handleBookmarkClick"
       >
         <BookmarkCheck
@@ -265,8 +266,8 @@
           auth.state.username === processedComment.username &&
           (processedComment.total_replies ?? 0) === 0
         "
-        variant="empty"
-        class="inline-flex items-center gap-2 text-red-600 hover:text-red-800"
+        variant="plain"
+        class="inline-flex items-center gap-2 text-red-600 hover:text-red-800 cursor-pointer"
         :disabled="isProcessing"
         @click="handleDeleteClick"
       >
@@ -365,8 +366,10 @@ type ProcessedComment = CommentItemApiComment & {
   subject?: string
 }
 
+const isBookmarked = ref(props.comment?.is_bookmarked ?? false)
 const processedComment = computed((): ProcessedComment => ({
   ...props.comment,
+  is_bookmarked: isBookmarked.value,
   plain_content: props.comment.content.filter((part) => part.type === 'text'),
   subject: props.comment.content.find((part) => part.type === 'header')?.data,
 }))
@@ -647,9 +650,9 @@ const handleBookmarkClick = async (e) => {
 
   isProcessing.value = true
   try {
-    const next = !processedComment.value.is_bookmarked
+    const next = !isBookmarked.value
     await toggleBookmark(processedComment.value.comment_id, next)
-    ;(props.comment as { is_bookmarked?: boolean }).is_bookmarked = next
+    isBookmarked.value = next
 
     isBookmarkAnimating.value = true
     setTimeout(() => {
