@@ -3,10 +3,11 @@
   <CommentItem
     v-if="change.change_type === 'comment'"
     :comment="mappedComment"
-    :reply-enabled="false"
+    :reply-enabled="true"
     :show-context="true"
     :valsi-id="change.valsi_id || 0"
     :definition-id="change.definition_id || 0"
+    @reply="handleReply"
   />
   <!-- Other change types: existing layout -->
   <div
@@ -127,7 +128,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { MessageCircle } from 'lucide-vue-next'
-import { RouterLink } from 'vue-router'
+import { RouterLink, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { getTypeClass } from '@/utils/wordTypeUtils'
 import { useDateFormat } from '@/composables/useDateFormat'
@@ -137,6 +138,7 @@ import LazyMathJax from '@/components/LazyMathJax.vue'
 
 const { t, locale } = useI18n()
 const { formatTime } = useDateFormat()
+const router = useRouter()
 
 const props = defineProps({
   change: {
@@ -181,7 +183,7 @@ const mappedComment = computed(() => {
     valsi_word: c.valsi_word ?? null,
     total_replies: 0,
     total_reactions: (c.reactions ?? []).reduce((sum, r) => sum + (r.count ?? 0), 0),
-    definition: null,
+    definition: c.definition ?? null,
     parent_content: null,
   }
 })
@@ -193,6 +195,14 @@ const getChangeLink = (change) => {
     return `/message/${change.comment_id}`
   }
   return `/valsi/${change.word.replace(/ /g, '_')}?highlight_definition_id=${change.definition_id}`
+}
+
+const handleReply = (commentId: number) => {
+  const c = props.change
+  if (c.change_type !== 'comment') return
+  router.push(
+    `/comments?thread_id=${c.thread_id}&scroll_to=${commentId}&valsi_id=${c.valsi_id || 0}&definition_id=${c.definition_id || 0}&reply_to=${commentId}`
+  )
 }
 
 const getChangeTypeLabel = (changeType) => t(`recentChanges.changeTypes.${changeType}`)

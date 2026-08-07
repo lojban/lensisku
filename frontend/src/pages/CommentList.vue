@@ -514,6 +514,13 @@ const performFetchComments = async (isInitialLoad = false, scrollTo?: number) =>
         scrollToComment(effectiveScroll)
       }, 50)
     }
+
+    if (isInitialLoad && route.query.reply_to) {
+      const replyTo = Number(queryStr(route.query.reply_to)) || 0
+      if (replyTo > 0) {
+        handleReply(replyTo)
+      }
+    }
   } catch (error) {
     console.error('Error fetching comments:', error)
   } finally {

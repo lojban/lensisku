@@ -71,6 +71,17 @@
               <span class="text-sm">{{ t('activityThreads.noContent') }}</span>
             </div>
           </div>
+
+          <div v-if="auth.state.isLoggedIn" class="flex justify-end mt-2">
+            <Button
+              variant="reply"
+              class="inline-flex items-center gap-2"
+              @click.stop="replyToThread(thread)"
+            >
+              <Reply class="w-4 h-4" />
+              <span>{{ t('components.commentItem.reply') }}</span>
+            </Button>
+          </div>
         </template>
         <!-- Mail thread -->
         <template v-else-if="thread.source === 'mail'">
@@ -134,13 +145,15 @@
 </template>
 
 <script setup lang="ts">
-import { MessageSquareMore, Image } from 'lucide-vue-next'
+import { Button } from '@packages/ui'
+import { MessageSquareMore, Image, Reply } from 'lucide-vue-next'
 import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import type { PropType } from 'vue'
 
 import LazyMathJax from '@/components/LazyMathJax.vue'
 import SourceTypeBadge from '@/components/SourceTypeBadge.vue'
+import { useAuth } from '@/composables/useAuth'
 
 type ContentPart = { type: string; data?: string }
 
@@ -180,6 +193,7 @@ type ActivityThreadRow = {
 const router = useRouter()
 const route = useRoute()
 const { t } = useI18n()
+const auth = useAuth()
 
 function goToMailThread(subject: string) {
   const locale = route.path.split('/')[1] || 'en'
@@ -196,6 +210,13 @@ function goToThread(thread: ActivityThreadRow) {
   } else {
     goToMailThread(thread.cleaned_subject || thread.subject)
   }
+}
+
+function replyToThread(thread: ActivityThreadRow) {
+  if (thread.source !== 'comment') return
+  router.push(
+    `/comments?thread_id=${thread.thread_id}&scroll_to=${thread.comment_id}&valsi_id=${thread.valsi_id || ''}&definition_id=${thread.definition_id || ''}&reply_to=${thread.comment_id}`
+  )
 }
 
 defineProps({
