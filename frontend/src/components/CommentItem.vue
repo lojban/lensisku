@@ -240,12 +240,10 @@
       </div>
       <Button
         v-if="auth.state.isLoggedIn"
-        variant="plain"
+        variant="neutral"
         :disabled="isProcessing"
-        class="inline-flex items-center gap-1.5 text-sm cursor-pointer"
-        :class="[
-          processedComment.is_bookmarked ? 'text-blue-600' : 'text-gray-500 hover:text-blue-600',
-        ]"
+        class="gap-1.5 ui-btn--empty"
+        :class="[processedComment.is_bookmarked ? 'active' : '']"
         @click.stop="handleBookmarkClick"
       >
         <BookmarkCheck
@@ -266,8 +264,8 @@
           auth.state.username === processedComment.username &&
           (processedComment.total_replies ?? 0) === 0
         "
-        variant="plain"
-        class="inline-flex items-center gap-2 text-red-600 hover:text-red-800 cursor-pointer"
+        variant="empty"
+        class="inline-flex items-center gap-2 text-red-600 hover:text-red-800"
         :disabled="isProcessing"
         @click="handleDeleteClick"
       >

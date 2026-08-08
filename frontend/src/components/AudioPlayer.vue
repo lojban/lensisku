@@ -1,16 +1,16 @@
 <template>
   <div class="inline-flex items-center gap-2">
     <Button variant="read" :disabled="isLoading" @click="togglePlay">
-      <PauseCircle v-if="isPlaying" class="w-4 h-4" />
+      <Pause v-if="isPlaying" class="w-4 h-4" />
       <Loader v-else-if="isLoading" class="w-4 h-4 animate-spin" />
-      <PlayCircle v-else class="w-4 h-4" />
+      <Play v-else class="w-4 h-4" />
     </Button>
   </div>
 </template>
 
 <script setup lang="ts">
 import { Button } from '@packages/ui'
-import { PlayCircle, PauseCircle, Loader } from 'lucide-vue-next'
+import { Play, Pause, Loader } from 'lucide-vue-next'
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { useI18n } from 'vue-i18n'
 
