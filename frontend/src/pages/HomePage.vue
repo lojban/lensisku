@@ -417,6 +417,7 @@ import { useI18n } from 'vue-i18n'
 import { SearchQueue } from '@/utils/searchQueue'
 import { queryStr } from '@/utils/routeQuery'
 import { normalizeSearchQuery } from '@/utils/searchQueryUtils'
+import { pickLojbanLetteralSeparator } from '@/utils/lojbanLetteralSeparator'
 
 interface JwtUserPayload {
   exp?: number
@@ -639,7 +640,7 @@ const error = ref(null)
 const searchFormRef = ref(null)
 const searchResultsRef = ref(null)
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const { formatDate } = useDateFormat()
 
 // Truncate search query for page title (max 50 characters)
@@ -653,7 +654,15 @@ const truncatedSearchQuery = computed(() => {
 // Page title that reflects the search query
 const pageTitle = computed(() => {
   if (truncatedSearchQuery.value) {
-    return t('home.searchTitle', { query: truncatedSearchQuery.value })
+    const query = truncatedSearchQuery.value
+    // Lojban: wrap query in letterals that do not collide with query letters
+    if (locale.value === 'jbo') {
+      return t('home.searchTitle', {
+        query,
+        separator: pickLojbanLetteralSeparator(query),
+      })
+    }
+    return t('home.searchTitle', { query })
   }
   return t('home.defaultTitle')
 })

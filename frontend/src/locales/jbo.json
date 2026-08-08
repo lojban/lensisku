@@ -122,7 +122,7 @@
       "comments": "pinka",
       "messages": "se mrilu"
     },
-    "searchTitle": "pentoi {query}",
+    "searchTitle": "pentoi zoi {separator}{query}{separator}",
     "defaultTitle": "jicmu",
     "metaDescription": "ko sisku fi la'e la jbovlaste .e lo sorcu .i ko penmi lo velckivei .e lo casnu .e lo mupli.",
     "searchMetaDescription": "ko viska lo se facki be la'ei \"{query}\" ne'i lo lojbo vlaste.",
