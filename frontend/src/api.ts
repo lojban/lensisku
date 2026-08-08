@@ -177,6 +177,8 @@ export const analyzeWord = (word: string, sourceLangId = 1) =>
   api.post('/language/analyze_word', { word, source_langid: sourceLangId })
 export const addValsi = (valsiData: Record<string, unknown>) =>
   api.post('/jbovlaste/valsi', valsiData)
+export const checkRafsiOverlap = (params: { rafsi: string; word?: string; valsi_id?: number }) =>
+  api.get('/jbovlaste/rafsi_overlap', { params })
 export const searchDefinitions = (params: Record<string, unknown>, signal?: AbortSignal) => {
   const endpoint = params.semantic ? '/jbovlaste/semantic-search' : '/jbovlaste/definitions'
   const finalParams = { ...params }

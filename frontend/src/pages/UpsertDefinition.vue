@@ -149,6 +149,14 @@
         :disabled="isSubmitting"
       />
       <p class="mt-1 text-xs text-gray-500">{{ t('upsertDefinition.rafsiNote') }}</p>
+      <AlertComponent
+        v-if="rafsiOverlapWarning"
+        type="warning"
+        class="mt-2"
+        :label="t('upsertDefinition.rafsiOverlapLabel')"
+      >
+        <p>{{ rafsiOverlapWarning }}</p>
+      </AlertComponent>
     </div>
     <!-- Selmaho Input (cmavo / experimental cmavo only) -->
     <div v-if="showSelmahoField">
@@ -441,6 +449,7 @@ import {
   validateMathJax,
   getDefinition,
   linkDefinitions,
+  checkRafsiOverlap,
 } from '@/api'
 import { Button, Checkbox, Input, Select, Textarea } from '@packages/ui'
 import AlertComponent from '@/components/AlertComponent.vue'
@@ -471,14 +480,18 @@ const { showError, clearError } = useError()
 const { showSuccess } = useSuccessToast()
 const { t } = useI18n()
 
-/** Format API error for display; e.g. RAFSI_CONFLICT|word|type -> translated message; LaTeX field errors -> localized */
+/** Format API warning/error codes; e.g. RAFSI_OVERLAP|word|type -> translated message; LaTeX field errors -> localized */
+function formatRafsiOverlapMessage(code: string): string {
+  const parts = code.split('|')
+  const overlapWord = parts[1] ?? ''
+  const overlapType = parts[2] ?? ''
+  return t('upsertDefinition.rafsiOverlapWarning', { word: overlapWord, type: overlapType })
+}
+
 function formatDefinitionError(apiError: unknown): string {
   if (typeof apiError !== 'string') return String(apiError ?? '')
-  if (apiError.startsWith('RAFSI_CONFLICT|')) {
-    const parts = apiError.split('|')
-    const word = parts[1] ?? ''
-    const type = parts[2] ?? ''
-    return t('upsertDefinition.rafsiConflict', { word, type })
+  if (apiError.startsWith('RAFSI_OVERLAP|') || apiError.startsWith('RAFSI_CONFLICT|')) {
+    return formatRafsiOverlapMessage(apiError)
   }
   const latexPrefix = 'Invalid LaTeX/MathJax in '
   if (apiError.startsWith(latexPrefix)) {
@@ -508,6 +521,7 @@ const langId = ref('')
 const sourceLangId = ref(1)
 const definition = ref('')
 const rafsi = ref('')
+const rafsiOverlapWarning = ref('')
 const selmaho = ref('')
 const notes = ref('')
 const etymology = ref('')
@@ -890,6 +904,11 @@ const submitValsi = async () => {
 
     if (response.data.success) {
       const existingWord = response.data.existing_word || false
+      const warningCode = typeof response.data.warning === 'string' ? response.data.warning : ''
+      if (warningCode.startsWith('RAFSI_OVERLAP|') || warningCode.startsWith('RAFSI_CONFLICT|')) {
+        rafsiOverlapWarning.value = formatRafsiOverlapMessage(warningCode)
+      }
+
       if (isEditMode.value) {
         showSuccess(t('upsertDefinition.updateSuccess'))
       } else if (existingWord) {
@@ -911,12 +930,13 @@ const submitValsi = async () => {
         }
       }
 
-      // Brief delay before redirect so the success toast is visible
+      // Longer delay when a rafsi overlap warning is shown so it can be read.
+      const redirectDelayMs = rafsiOverlapWarning.value ? 3500 : 1500
       setTimeout(() => {
         router.push(
           `/valsi/${word.value.replace(/ /g, '_')}?highlight_definition_id=${newDefinitionId}`
         )
-      }, 1500)
+      }, redirectDelayMs)
     } else {
       showError(formatDefinitionError(response.data.error) || t('upsertDefinition.saveError'))
       definitionError.value = ''
@@ -937,6 +957,44 @@ watch(definition, () => {
   validationTimeout.value = setTimeout(() => {
     performValidateMathJax()
   }, 500)
+})
+
+let rafsiOverlapTimeout: ReturnType<typeof setTimeout> | null = null
+async function refreshRafsiOverlapWarning() {
+  const rafsiValue = rafsi.value.trim()
+  if (!showRafsiField.value || !rafsiValue || Number(sourceLangId.value) !== 1) {
+    rafsiOverlapWarning.value = ''
+    return
+  }
+
+  try {
+    const valsiIdNum = Number(wordId.value)
+    const response = await checkRafsiOverlap({
+      rafsi: rafsiValue,
+      word: word.value.trim() || undefined,
+      ...(Number.isFinite(valsiIdNum) && valsiIdNum > 0 ? { valsi_id: valsiIdNum } : {}),
+    })
+    const overlap = response.data?.overlap
+    if (overlap?.word) {
+      rafsiOverlapWarning.value = t('upsertDefinition.rafsiOverlapWarning', {
+        word: overlap.word,
+        type: overlap.word_type || '',
+      })
+    } else {
+      rafsiOverlapWarning.value = ''
+    }
+  } catch (e) {
+    console.error('Failed to check rafsi overlap:', e)
+  }
+}
+
+watch([rafsi, word, wordId, showRafsiField, sourceLangId], () => {
+  if (rafsiOverlapTimeout) {
+    clearTimeout(rafsiOverlapTimeout)
+  }
+  rafsiOverlapTimeout = setTimeout(() => {
+    void refreshRafsiOverlapWarning()
+  }, 400)
 })
 
 const analyzeAndScroll = async () => {

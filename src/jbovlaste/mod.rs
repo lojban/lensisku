@@ -27,6 +27,7 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
             .service(controller::semantic_search)
             .service(controller::semantic_graph)
             .service(controller::get_definition)
+            .service(controller::check_rafsi_overlap)
             .service(controller::list_definitions)
             .service(controller::list_non_lojban_definitions)
             .service(controller::get_definition_image)

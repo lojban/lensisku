@@ -16,9 +16,10 @@ use crate::jbovlaste::{
     service, AddDefinitionRequest, AddValsiResponse, BulkImportParams, BulkVoteRequest,
     BulkVoteResponse, DefinitionDetail, DefinitionListResponse, DefinitionTranslation,
     ExportPairsQuery, GetImageDefinitionQuery, ImageUploadRequest, LinkDefinitionsRequest,
-    RecentChangesQuery, RecentChangesResponse, SearchDefinitionsParams, SemanticGraphParams,
-    SemanticGraphResponse, UpdateDefinitionRequest, UpdateDefinitionResponse,
-    ValsiDefinitionsQuery, ValsiDetail, ValsiTypeListResponse, VoteRequest, VoteResponse,
+    RafsiOverlapHit, RafsiOverlapQuery, RafsiOverlapResponse, RecentChangesQuery,
+    RecentChangesResponse, SearchDefinitionsParams, SemanticGraphParams, SemanticGraphResponse,
+    UpdateDefinitionRequest, UpdateDefinitionResponse, ValsiDefinitionsQuery, ValsiDetail,
+    ValsiTypeListResponse, VoteRequest, VoteResponse,
 };
 use crate::language::{validate_mathjax_fields, MathJaxValidationOptions};
 use crate::middleware::cache::{
@@ -634,6 +635,7 @@ pub async fn add_definition(
             word_type: String::new(),
             definition_id: 0,
             error: Some(format!("Invalid LaTeX/MathJax in {}: {}", field_name, e)),
+            warning: None,
         });
     }
     if let Some(image) = &request.image {
@@ -643,6 +645,7 @@ pub async fn add_definition(
                 word_type: String::new(),
                 definition_id: 0,
                 error: Some(e),
+                warning: None,
             });
         }
     }
@@ -657,17 +660,19 @@ pub async fn add_definition(
     )
     .await
     {
-        Ok((word_type, definition_id)) => HttpResponse::Ok().json(AddValsiResponse {
+        Ok((word_type, definition_id, warning)) => HttpResponse::Ok().json(AddValsiResponse {
             success: true,
             word_type,
             definition_id,
             error: None,
+            warning,
         }),
         Err(e) => HttpResponse::InternalServerError().json(AddValsiResponse {
             success: false,
             word_type: String::new(),
             definition_id: 0,
             error: Some(e.to_string()),
+            warning: None,
         }),
     }
 }
@@ -700,6 +705,44 @@ pub async fn get_definition(
     match service::get_definition(&pool, definition_id, claims.map(|c| c.sub)).await {
         Ok(Some(definition)) => HttpResponse::Ok().json(definition),
         Ok(None) => HttpResponse::NotFound().finish(),
+        Err(e) => HttpResponse::InternalServerError().body(format!("Database error: {}", e)),
+    }
+}
+
+#[utoipa::path(
+    get,
+    tag = "jbovlaste",
+    path = "/jbovlaste/rafsi_overlap",
+    summary = "Check rafsi overlap with another valsi",
+    description = "Returns a soft warning hit when another valsi already uses one of the given rafsi. \
+                  Same-valsi reuse (including other definitions of the same word) is not reported.",
+    params(
+        ("rafsi" = String, Query, description = "Space-separated rafsi to check"),
+        ("word" = Option<String>, Query, description = "Current entry word; same-valsi overlaps ignored"),
+        ("valsi_id" = Option<i32>, Query, description = "Current valsi id when known")
+    ),
+    responses(
+        (status = 200, description = "Overlap check result", body = RafsiOverlapResponse),
+        (status = 500, description = "Internal server error")
+    )
+)]
+#[get("/rafsi_overlap")]
+pub async fn check_rafsi_overlap(
+    pool: web::Data<Pool>,
+    query: web::Query<RafsiOverlapQuery>,
+) -> impl Responder {
+    match service::check_rafsi_overlap(
+        &pool,
+        &query.rafsi,
+        query.word.as_deref(),
+        query.valsi_id,
+    )
+    .await
+    {
+        Ok(Some((word, word_type))) => HttpResponse::Ok().json(RafsiOverlapResponse {
+            overlap: Some(RafsiOverlapHit { word, word_type }),
+        }),
+        Ok(None) => HttpResponse::Ok().json(RafsiOverlapResponse { overlap: None }),
         Err(e) => HttpResponse::InternalServerError().body(format!("Database error: {}", e)),
     }
 }
@@ -801,6 +844,7 @@ pub async fn update_definition(
         return HttpResponse::BadRequest().json(UpdateDefinitionResponse {
             success: false,
             error: Some(format!("Invalid LaTeX/MathJax in {}: {}", field_name, e)),
+            warning: None,
         });
     }
 
@@ -809,18 +853,21 @@ pub async fn update_definition(
             return HttpResponse::BadRequest().json(UpdateDefinitionResponse {
                 success: false,
                 error: Some(e),
+                warning: None,
             });
         }
     }
 
     match service::update_definition(&pool, definition_id, claims.sub, &req, &redis_cache).await {
-        Ok(_) => HttpResponse::Ok().json(UpdateDefinitionResponse {
+        Ok(warning) => HttpResponse::Ok().json(UpdateDefinitionResponse {
             success: true,
             error: None,
+            warning,
         }),
         Err(e) => HttpResponse::InternalServerError().json(UpdateDefinitionResponse {
             success: false,
             error: Some(format!("Failed to update definition: {}", e)),
+            warning: None,
         }),
     }
 }

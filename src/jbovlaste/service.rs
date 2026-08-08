@@ -1940,7 +1940,7 @@ async fn upsert_wiki_in_transaction(
     claims: &Claims,
     request: &AddDefinitionRequest,
     redis_cache: &RedisCache,
-) -> Result<(String, i32), Box<dyn std::error::Error>> {
+) -> Result<(String, i32, Option<String>), Box<dyn std::error::Error>> {
     let sanitized_definition = sanitize_html(&request.definition);
     let word = sanitize_html(&request.word);
     let source_langid = request.source_langid.unwrap_or(1);
@@ -2112,7 +2112,7 @@ async fn upsert_wiki_in_transaction(
         log::error!("Failed to invalidate recent changes cache after wiki upsert: {}", e);
     }
 
-    Ok(("wiki".to_string(), definition_id))
+    Ok(("wiki".to_string(), definition_id, None))
 }
 
 pub async fn add_definition(
@@ -2122,7 +2122,7 @@ pub async fn add_definition(
     request: &AddDefinitionRequest,
     redis_cache: &RedisCache,
     send_notifications: bool,
-) -> Result<(String, i32), Box<dyn std::error::Error>> {
+) -> Result<(String, i32, Option<String>), Box<dyn std::error::Error>> {
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
 
@@ -2148,7 +2148,7 @@ async fn add_definition_in_transaction(
     request: &AddDefinitionRequest,
     redis_cache: &RedisCache,
     send_notifications: bool,
-) -> Result<(String, i32), Box<dyn std::error::Error>> {
+) -> Result<(String, i32, Option<String>), Box<dyn std::error::Error>> {
     // Native wiki pages use their own path to enforce one wiki per valsi.
     if request.is_wiki == Some(true) {
         return upsert_wiki_in_transaction(transaction, claims, request, redis_cache).await;
@@ -2290,7 +2290,7 @@ async fn add_definition_in_transaction(
         .await?;
 
     // Store rafsi on the definition for experimental gismu/cmavo, otherwise on valsi.
-    validate_and_update_rafsi(
+    let rafsi_warning = validate_and_update_rafsi(
         transaction,
         valsi_id,
         Some(definition_id),
@@ -2623,7 +2623,7 @@ async fn add_definition_in_transaction(
         log::error!("Failed to invalidate recent changes cache after add: {}", e);
     }
 
-    Ok((word_type, definition_id))
+    Ok((word_type, definition_id, rafsi_warning))
 }
 
 pub async fn get_definition(
@@ -2794,7 +2794,7 @@ pub async fn update_definition(
     user_id: i32,
     request: &UpdateDefinitionRequest,
     redis_cache: &RedisCache,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<Option<String>, Box<dyn std::error::Error>> {
     let sanitized_definition = sanitize_html(&request.definition);
     let sanitized_notes = request.notes.as_ref().map(|n| sanitize_html(n));
     let sanitized_etymology = request.etymology.as_ref().map(|e| sanitize_html(e));
@@ -2878,7 +2878,7 @@ pub async fn update_definition(
         return Err("This definition is not a native wiki page".into());
     }
 
-    if request.is_wiki != Some(true) {
+    let rafsi_warning = if request.is_wiki != Some(true) {
         validate_and_update_rafsi(
             &transaction,
             valsi_id,
@@ -2887,8 +2887,10 @@ pub async fn update_definition(
             source_langid.unwrap_or(1),
             valsi_typeid,
         )
-        .await?;
-    }
+        .await?
+    } else {
+        None
+    };
 
     let options = MathJaxValidationOptions { use_tectonic: true };
 
@@ -3226,7 +3228,7 @@ pub async fn update_definition(
     }
     transaction.commit().await?;
 
-    Ok(())
+    Ok(rafsi_warning)
 }
 
 pub async fn list_definitions(
@@ -5275,6 +5277,70 @@ pub async fn list_definitions_by_client_id(
     })
 }
 
+/// Find another valsi that already uses any of the given rafsi tokens.
+/// Same-valsi overlaps (including other definitions of this word) are ignored.
+pub async fn find_rafsi_overlap_for_other_valsi(
+    transaction: &Transaction<'_>,
+    exclude_valsi_id: Option<i32>,
+    rafsi_str: &str,
+) -> Result<Option<(String, String)>, Box<dyn std::error::Error>> {
+    let rafsi_str = rafsi_str.trim();
+    if rafsi_str.is_empty() {
+        return Ok(None);
+    }
+
+    let rafsi_list: Vec<&str> = rafsi_str.split_whitespace().collect();
+    let official_types: Vec<i16> = vec![1, 2, 4, 5];
+    let experimental_types: Vec<i16> = vec![7, 8];
+    // When no current valsi is known yet, exclude nothing (0 never matches a real id).
+    let exclude_id = exclude_valsi_id.unwrap_or(0);
+
+    let overlap_query = "
+        SELECT word, descriptor FROM (
+            SELECT v.word, vt.descriptor, v.rafsi
+            FROM valsi v
+            JOIN valsitypes vt ON v.typeid = vt.typeid
+            WHERE v.valsiid != $1
+              AND v.source_langid = 1
+              AND v.typeid = ANY($2)
+              AND v.rafsi IS NOT NULL
+            UNION ALL
+            SELECT v.word, vt.descriptor, d.rafsi
+            FROM valsi v
+            JOIN valsitypes vt ON v.typeid = vt.typeid
+            JOIN definitions d ON d.valsiid = v.valsiid
+            WHERE v.valsiid != $1
+              AND v.source_langid = 1
+              AND v.typeid = ANY($3)
+              AND d.rafsi IS NOT NULL
+        ) rafsi_sources
+        WHERE EXISTS (
+            SELECT 1
+            FROM unnest(string_to_array(rafsi, ' ')) existing_rafsi
+            WHERE existing_rafsi = ANY($4)
+        )
+        LIMIT 1
+    ";
+
+    let rows = transaction
+        .query(
+            overlap_query,
+            &[&exclude_id, &official_types, &experimental_types, &rafsi_list],
+        )
+        .await?;
+
+    if let Some(row) = rows.first() {
+        let word: String = row.get("word");
+        let type_name: String = row.get("descriptor");
+        return Ok(Some((word, type_name)));
+    }
+    Ok(None)
+}
+
+fn format_rafsi_overlap_warning(word: &str, type_name: &str) -> String {
+    format!("RAFSI_OVERLAP|{}|{}", word, type_name)
+}
+
 async fn validate_and_update_rafsi(
     transaction: &Transaction<'_>,
     valsi_id: i32,
@@ -5282,7 +5348,7 @@ async fn validate_and_update_rafsi(
     rafsi_opt: Option<String>,
     source_langid: i32,
     type_id: i16,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<Option<String>, Box<dyn std::error::Error>> {
     // Phrases cannot have a rafsi, regardless of source language.
     if type_id == 15 {
         if let Some(rafsi_str) = &rafsi_opt {
@@ -5298,12 +5364,12 @@ async fn validate_and_update_rafsi(
                 )
                 .await?;
         }
-        return Ok(());
+        return Ok(None);
     }
 
     // Only process rafsi for Lojban (source language id 1).
     if source_langid != 1 {
-        return Ok(());
+        return Ok(None);
     }
 
     // Rafsi are only meaningful for gismu, cmavo and their experimental variants.
@@ -5314,7 +5380,7 @@ async fn validate_and_update_rafsi(
                 return Err("Rafsi are only allowed for gismu and cmavo".into());
             }
         }
-        return Ok(());
+        return Ok(None);
     }
 
     if let Some(rafsi_str) = rafsi_opt {
@@ -5338,86 +5404,72 @@ async fn validate_and_update_rafsi(
                     )
                     .await?;
             }
-        } else {
-            let rafsi_list: Vec<&str> = rafsi_str.split_whitespace().collect();
+            return Ok(None);
+        }
 
-            // Check conflicts against official rafsi (valsi table) and other
-            // experimental definitions (definitions table).
-            let official_types: Vec<i16> = vec![1, 2, 4, 5];
-            let experimental_types: Vec<i16> = vec![7, 8];
+        // Soft warning only when another valsi already uses one of these rafsi.
+        let warning = find_rafsi_overlap_for_other_valsi(
+            transaction,
+            Some(valsi_id),
+            rafsi_str,
+        )
+        .await?.map(|(word, type_name)| format_rafsi_overlap_warning(&word, &type_name));
 
-            let conflict_query = "
-                SELECT word, descriptor FROM (
-                    SELECT v.word, vt.descriptor, v.rafsi
-                    FROM valsi v
-                    JOIN valsitypes vt ON v.typeid = vt.typeid
-                    WHERE v.valsiid != $1
-                      AND v.source_langid = 1
-                      AND v.typeid = ANY($2)
-                      AND v.rafsi IS NOT NULL
-                    UNION ALL
-                    SELECT v.word, vt.descriptor, d.rafsi
-                    FROM valsi v
-                    JOIN valsitypes vt ON v.typeid = vt.typeid
-                    JOIN definitions d ON d.valsiid = v.valsiid
-                    WHERE v.source_langid = 1
-                      AND v.typeid = ANY($3)
-                      AND d.rafsi IS NOT NULL
-                      AND d.definitionid IS DISTINCT FROM $4
-                ) rafsi_sources
-                WHERE EXISTS (
-                    SELECT 1
-                    FROM unnest(string_to_array(rafsi, ' ')) existing_rafsi
-                    WHERE existing_rafsi = ANY($5)
-                )
-                LIMIT 1
-            ";
-
-            let rows = transaction
-                .query(
-                    conflict_query,
-                    &[
-                        &valsi_id,
-                        &official_types,
-                        &experimental_types,
-                        &definition_id,
-                        &rafsi_list,
-                    ],
-                )
-                .await?;
-
-            if let Some(row) = rows.first() {
-                let word: String = row.get("word");
-                let type_name: String = row.get("descriptor");
-                return Err(format!("RAFSI_CONFLICT|{}|{}", word, type_name).into());
-            }
-
-            // Store rafsi on the definition for experimental gismu/cmavo,
-            // otherwise on the valsi (entry) as before.
-            if type_id == 7 || type_id == 8 {
-                if let Some(def_id) = definition_id {
-                    transaction
-                        .execute(
-                            "UPDATE definitions SET rafsi = $1 WHERE definitionid = $2",
-                            &[&rafsi_str, &def_id],
-                        )
-                        .await?;
-                } else {
-                    return Err(
-                        "Definition ID is required to store rafsi for experimental types".into(),
-                    );
-                }
-            } else {
+        // Store rafsi on the definition for experimental gismu/cmavo,
+        // otherwise on the valsi (entry) as before.
+        if type_id == 7 || type_id == 8 {
+            if let Some(def_id) = definition_id {
                 transaction
                     .execute(
-                        "UPDATE valsi SET rafsi = $1 WHERE valsiid = $2",
-                        &[&rafsi_str, &valsi_id],
+                        "UPDATE definitions SET rafsi = $1 WHERE definitionid = $2",
+                        &[&rafsi_str, &def_id],
                     )
                     .await?;
+            } else {
+                return Err(
+                    "Definition ID is required to store rafsi for experimental types".into(),
+                );
             }
+        } else {
+            transaction
+                .execute(
+                    "UPDATE valsi SET rafsi = $1 WHERE valsiid = $2",
+                    &[&rafsi_str, &valsi_id],
+                )
+                .await?;
         }
+
+        return Ok(warning);
     }
-    Ok(())
+    Ok(None)
+}
+
+pub async fn check_rafsi_overlap(
+    pool: &Pool,
+    rafsi: &str,
+    word: Option<&str>,
+    valsi_id: Option<i32>,
+) -> Result<Option<(String, String)>, Box<dyn std::error::Error>> {
+    let mut client = pool.get().await?;
+    let transaction = client.transaction().await?;
+
+    let exclude_valsi_id = if let Some(id) = valsi_id {
+        Some(id)
+    } else if let Some(w) = word.map(str::trim).filter(|s| !s.is_empty()) {
+        transaction
+            .query_opt(
+                "SELECT valsiid FROM valsi WHERE word = $1 AND source_langid = 1 LIMIT 1",
+                &[&w],
+            )
+            .await?
+            .map(|row| row.get::<_, i32>("valsiid"))
+    } else {
+        None
+    };
+
+    let result = find_rafsi_overlap_for_other_valsi(&transaction, exclude_valsi_id, rafsi).await?;
+    transaction.commit().await?;
+    Ok(result)
 }
 
 pub async fn link_definitions(

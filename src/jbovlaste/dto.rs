@@ -100,6 +100,9 @@ pub struct AddValsiResponse {
     pub word_type: String,
     pub definition_id: i32,
     pub error: Option<String>,
+    /// Soft warning (e.g. rafsi also used by another valsi). Does not block save.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub warning: Option<String>,
 }
 
 #[derive(Debug, Deserialize, ToSchema)]
@@ -126,6 +129,30 @@ pub struct UpdateDefinitionRequest {
 pub struct UpdateDefinitionResponse {
     pub success: bool,
     pub error: Option<String>,
+    /// Soft warning (e.g. rafsi also used by another valsi). Does not block save.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub warning: Option<String>,
+}
+
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct RafsiOverlapQuery {
+    /// Space-separated rafsi to check.
+    pub rafsi: String,
+    /// Current entry word; overlaps on this same valsi are ignored.
+    pub word: Option<String>,
+    /// Current valsi id when known (edit / existing word).
+    pub valsi_id: Option<i32>,
+}
+
+#[derive(Debug, Serialize, ToSchema)]
+pub struct RafsiOverlapHit {
+    pub word: String,
+    pub word_type: String,
+}
+
+#[derive(Debug, Serialize, ToSchema)]
+pub struct RafsiOverlapResponse {
+    pub overlap: Option<RafsiOverlapHit>,
 }
 
 #[derive(Debug, Deserialize, ToSchema)]
