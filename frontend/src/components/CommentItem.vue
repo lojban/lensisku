@@ -211,7 +211,7 @@
                   <Button
                     v-for="emoji in emojiList"
                     :key="emoji.symbol"
-                    variant="neutral"
+                    variant="plain"
                     class="group p-1 hover:bg-gray-100 rounded transition-colors"
                     :class="{ 'bg-blue-100': isReactionSelected(emoji.symbol) }"
                     @click="addReaction(emoji.symbol)"
