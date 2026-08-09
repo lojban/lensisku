@@ -281,69 +281,132 @@ pub async fn get_user_definitions(
         None => return Err("User not found".into()),
     };
 
+    // Paginate contribution rows first, then attach card fields the same way search does:
+    // pre-aggregate score / has_image for the page IDs and LEFT JOIN (no per-row subqueries).
     let query = r#"
-        WITH all_definitions AS (
-            -- Get definitions from versions
-            SELECT DISTINCT ON (v.definition_id, v.version_id)
+        WITH contribution_rows AS (
+            SELECT
                 v.version_id,
-                val.word,
-                v.definition as content,
+                v.definition AS content,
                 v.created_at,
-                v.definition_id as definitionid
+                v.definition_id AS definitionid
             FROM definition_versions v
-            JOIN definitions d ON v.definition_id = d.definitionid
-            JOIN valsi val ON d.valsiid = val.valsiid
             WHERE v.user_id = $1
+              AND EXISTS (
+                  SELECT 1 FROM definitions d WHERE d.definitionid = v.definition_id
+              )
 
             UNION ALL
 
-            -- Get definitions not in versions
-            SELECT 
-                0 as version_id,
-                v.word,
-                d.definition as content,
+            SELECT
+                0 AS version_id,
+                d.definition AS content,
                 d.created_at,
-                d.definitionid as definitionid
+                d.definitionid AS definitionid
             FROM definitions d
-            JOIN valsi v ON d.valsiid = v.valsiid
-            LEFT JOIN definition_versions dv ON d.definitionid = dv.definition_id
-            WHERE d.userid = $1 AND dv.definition_id IS NULL
+            WHERE d.userid = $1
+              AND NOT EXISTS (
+                  SELECT 1
+                  FROM definition_versions dv
+                  WHERE dv.definition_id = d.definitionid
+              )
+        ),
+        paged AS (
+            SELECT *
+            FROM contribution_rows
+            ORDER BY created_at DESC
+            LIMIT $2 OFFSET $3
+        ),
+        vote_scores AS (
+            SELECT definitionid, COALESCE(SUM(value), 0)::bigint AS score
+            FROM definitionvotes
+            WHERE definitionid IN (SELECT definitionid FROM paged)
+            GROUP BY definitionid
+        ),
+        definition_images_flag AS (
+            SELECT DISTINCT definition_id
+            FROM definition_images
+            WHERE definition_id IN (SELECT definitionid FROM paged)
         )
-        SELECT * FROM all_definitions
-        ORDER BY created_at DESC
-        LIMIT $2 OFFSET $3
+        SELECT
+            p.version_id,
+            p.content,
+            p.created_at,
+            p.definitionid,
+            d.definition,
+            d.notes,
+            d.langid,
+            d.valsiid,
+            d.selmaho,
+            d.owner_only,
+            val.word,
+            val.word AS valsiword,
+            vt.descriptor AS type_name,
+            u.username,
+            COALESCE(dv.score, 0)::bigint AS score,
+            (di.definition_id IS NOT NULL) AS has_image
+        FROM paged p
+        JOIN definitions d ON p.definitionid = d.definitionid
+        JOIN valsi val ON d.valsiid = val.valsiid
+        JOIN valsitypes vt ON val.typeid = vt.typeid
+        JOIN users u ON d.userid = u.userid
+        LEFT JOIN vote_scores dv ON dv.definitionid = d.definitionid
+        LEFT JOIN definition_images_flag di ON di.definition_id = d.definitionid
+        ORDER BY p.created_at DESC
     "#;
 
     let rows = transaction
         .query(query, &[&user_id, &per_page, &offset])
         .await?;
 
+    // Count must match list grain (one row per version contribution + unversioned defs).
     let count_query = r#"
-        WITH all_definitions AS (
-            -- Count versioned definitions
-            SELECT DISTINCT definition_id
-            FROM definition_versions
-            WHERE user_id = $1
-
-            UNION
-
-            -- Count non-versioned definitions
-            SELECT d.definitionid
-            FROM definitions d
-            LEFT JOIN definition_versions dv ON d.definitionid = dv.definition_id
-            WHERE d.userid = $1 AND dv.definition_id IS NULL
-        )
-        SELECT COUNT(*) FROM all_definitions
+        SELECT
+            (
+                SELECT COUNT(*)::bigint
+                FROM definition_versions v
+                WHERE v.user_id = $1
+                  AND EXISTS (
+                      SELECT 1 FROM definitions d WHERE d.definitionid = v.definition_id
+                  )
+            )
+            +
+            (
+                SELECT COUNT(*)::bigint
+                FROM definitions d
+                WHERE d.userid = $1
+                  AND NOT EXISTS (
+                      SELECT 1
+                      FROM definition_versions dv
+                      WHERE dv.definition_id = d.definitionid
+                  )
+            )
     "#;
 
     let items = rows
         .iter()
-        .map(|row| Definition {
-            definitionid: row.get("definitionid"),
-            word: row.get("word"),
-            version_id: row.get("version_id"),
-            created_at: row.get("created_at"),
-            content: row.get("content"),
+        .map(|row| {
+            let word: String = row.get("word");
+            let content: String = row.get("content");
+            let definition: String = row.get("definition");
+            Definition {
+                definitionid: row.get("definitionid"),
+                word: word.clone(),
+                valsiword: word,
+                valsiid: row.get("valsiid"),
+                langid: row.get("langid"),
+                version_id: row.get("version_id"),
+                created_at: row.get("created_at"),
+                content,
+                definition,
+                notes: row.get("notes"),
+                type_name: row.get("type_name"),
+                username: row.get("username"),
+                score: row_vote_score_i32(row, "score"),
+                selmaho: row.get("selmaho"),
+                owner_only: row.get("owner_only"),
+                has_image: row.get("has_image"),
+            }
         })
         .collect();
 

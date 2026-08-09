@@ -62,11 +62,24 @@ pub struct ContributionsQuery {
 #[derive(Debug, Serialize, ToSchema)]
 pub struct Definition {
     pub word: String,
+    pub valsiword: String,
+    pub valsiid: i32,
+    pub langid: i32,
     pub version_id: i32,
     #[schema(value_type = String, format = DateTime)]
     pub created_at: DateTime<Utc>,
+    /// Historical contribution text (version body when applicable).
     pub content: String,
+    /// Current definition text for card display.
+    pub definition: String,
+    pub notes: Option<String>,
     pub definitionid: i32,
+    pub type_name: String,
+    pub username: String,
+    pub score: i32,
+    pub selmaho: Option<String>,
+    pub owner_only: bool,
+    pub has_image: bool,
 }
 #[derive(Debug, Serialize, ToSchema)]
 pub struct ContributionsResponse<T> {

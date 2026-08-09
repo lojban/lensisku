@@ -240,9 +240,9 @@
       </div>
       <Button
         v-if="auth.state.isLoggedIn"
-        variant="neutral"
+        variant="empty"
         :disabled="isProcessing"
-        class="gap-1.5 ui-btn--empty"
+        class="gap-1.5"
         :class="[processedComment.is_bookmarked ? 'active' : '']"
         @click.stop="handleBookmarkClick"
       >

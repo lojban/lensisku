@@ -48,7 +48,7 @@
 <script setup lang="ts">
 import { Button } from '@packages/ui'
 import { ThumbsUp, ThumbsDown } from 'lucide-vue-next'
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 
@@ -80,6 +80,20 @@ const score = ref(props.initialScore)
 const userVote = ref(props.initialUserVote)
 const isLoading = ref(false)
 const hasVotePermission = computed(() => (auth.state.authorities || []).includes('vote_definition'))
+
+watch(
+  () => props.initialScore,
+  (value) => {
+    if (!isLoading.value) score.value = value
+  }
+)
+
+watch(
+  () => props.initialUserVote,
+  (value) => {
+    if (!isLoading.value) userVote.value = value
+  }
+)
 
 const handleVote = async (downvote = false) => {
   if (!auth.state.isLoggedIn) {
