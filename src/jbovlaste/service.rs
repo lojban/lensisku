@@ -133,8 +133,10 @@ pub async fn semantic_search(
                 CASE 
                     WHEN v.word = $3 OR v.word = $4 THEN 0 
                     WHEN d.cached_rafsi IS NOT NULL AND ($3 = ANY(string_to_array(d.cached_rafsi, ' ')) OR $4 = ANY(string_to_array(d.cached_rafsi, ' '))) THEN 1
-                    WHEN v.word ILIKE $3 OR v.word ILIKE $4 THEN 2
-                    ELSE 3 
+                    WHEN d.cached_glosswords IS NOT NULL AND d.cached_glosswords != ''
+                         AND LOWER($3) = ANY(string_to_array(d.cached_glosswords, ' ')) THEN 2
+                    WHEN v.word ILIKE $3 OR v.word ILIKE $4 THEN 3
+                    ELSE 4 
                 END as exact_match_rank
             FROM definitions d
             JOIN valsi v ON d.valsiid = v.valsiid
@@ -146,14 +148,16 @@ pub async fn semantic_search(
               AND (d.langid = ANY($2) OR $2 IS NULL) 
               AND d.definition != ''
               AND (d.embedding IS NOT NULL OR v.word = $3 OR v.word = $4 OR v.word ILIKE $3 OR v.word ILIKE $4
-                   OR (d.cached_rafsi IS NOT NULL AND ($3 = ANY(string_to_array(d.cached_rafsi, ' ')) OR $4 = ANY(string_to_array(d.cached_rafsi, ' ')))))
+                   OR (d.cached_rafsi IS NOT NULL AND ($3 = ANY(string_to_array(d.cached_rafsi, ' ')) OR $4 = ANY(string_to_array(d.cached_rafsi, ' '))))
+                   OR (d.cached_glosswords IS NOT NULL AND d.cached_glosswords != ''
+                       AND LOWER($3) = ANY(string_to_array(d.cached_glosswords, ' '))))
             {additional_conditions}
             ORDER BY exact_match_rank ASC, similarity ASC
             LIMIT 1000
         )
         SELECT COUNT(*)
         FROM vector_search
-        WHERE score > 0 OR exact_match_rank <= 1 -- AND similarity < SIMILARITY_THRESHOLD"#,
+        WHERE score > 0 OR exact_match_rank <= 2 -- AND similarity < SIMILARITY_THRESHOLD"#,
         );
         transaction
             .query_one(&count_query, &query_params)
@@ -203,8 +207,10 @@ pub async fn semantic_search(
                 CASE 
                     WHEN v.word = $3 OR v.word = $4 THEN 0 
                     WHEN d.cached_rafsi IS NOT NULL AND ($3 = ANY(string_to_array(d.cached_rafsi, ' ')) OR $4 = ANY(string_to_array(d.cached_rafsi, ' '))) THEN 1
-                    WHEN v.word ILIKE $3 OR v.word ILIKE $4 THEN 2
-                    ELSE 3 
+                    WHEN d.cached_glosswords IS NOT NULL AND d.cached_glosswords != ''
+                         AND LOWER($3) = ANY(string_to_array(d.cached_glosswords, ' ')) THEN 2
+                    WHEN v.word ILIKE $3 OR v.word ILIKE $4 THEN 3
+                    ELSE 4 
                 END as exact_match_rank
             FROM definitions d
             JOIN valsi v ON d.valsiid = v.valsiid
@@ -223,7 +229,9 @@ pub async fn semantic_search(
               AND (d.langid = ANY($2) OR $2 IS NULL) 
               AND d.definition != ''
               AND (d.embedding IS NOT NULL OR v.word = $3 OR v.word = $4 OR v.word ILIKE $3 OR v.word ILIKE $4
-                   OR (d.cached_rafsi IS NOT NULL AND ($3 = ANY(string_to_array(d.cached_rafsi, ' ')) OR $4 = ANY(string_to_array(d.cached_rafsi, ' ')))))
+                   OR (d.cached_rafsi IS NOT NULL AND ($3 = ANY(string_to_array(d.cached_rafsi, ' ')) OR $4 = ANY(string_to_array(d.cached_rafsi, ' '))))
+                   OR (d.cached_glosswords IS NOT NULL AND d.cached_glosswords != ''
+                       AND LOWER($3) = ANY(string_to_array(d.cached_glosswords, ' '))))
             {additional_conditions}
             ORDER BY exact_match_rank ASC, similarity ASC
             LIMIT 1000
@@ -231,7 +239,7 @@ pub async fn semantic_search(
         ranked_results AS (
             SELECT DISTINCT ON (definitionid) *
             FROM vector_search
-            WHERE score > 0 OR exact_match_rank <= 1 -- AND similarity < {similarity_threshold}
+            WHERE score > 0 OR exact_match_rank <= 2 -- AND similarity < {similarity_threshold}
             ORDER BY definitionid
         )
         SELECT r.*
