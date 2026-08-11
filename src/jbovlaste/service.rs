@@ -134,7 +134,7 @@ pub async fn semantic_search(
                     WHEN v.word = $3 OR v.word = $4 THEN 0 
                     WHEN d.cached_rafsi IS NOT NULL AND ($3 = ANY(string_to_array(d.cached_rafsi, ' ')) OR $4 = ANY(string_to_array(d.cached_rafsi, ' '))) THEN 1
                     WHEN d.cached_glosswords IS NOT NULL AND d.cached_glosswords != ''
-                         AND LOWER($3) = ANY(string_to_array(d.cached_glosswords, ' ')) THEN 2
+                         AND LOWER($3) = ANY(string_to_array(d.cached_glosswords, '|')) THEN 2
                     WHEN v.word ILIKE $3 OR v.word ILIKE $4 THEN 3
                     ELSE 4 
                 END as exact_match_rank
@@ -150,7 +150,7 @@ pub async fn semantic_search(
               AND (d.embedding IS NOT NULL OR v.word = $3 OR v.word = $4 OR v.word ILIKE $3 OR v.word ILIKE $4
                    OR (d.cached_rafsi IS NOT NULL AND ($3 = ANY(string_to_array(d.cached_rafsi, ' ')) OR $4 = ANY(string_to_array(d.cached_rafsi, ' '))))
                    OR (d.cached_glosswords IS NOT NULL AND d.cached_glosswords != ''
-                       AND LOWER($3) = ANY(string_to_array(d.cached_glosswords, ' '))))
+                       AND LOWER($3) = ANY(string_to_array(d.cached_glosswords, '|'))))
             {additional_conditions}
             ORDER BY exact_match_rank ASC, similarity ASC
             LIMIT 1000
@@ -208,7 +208,7 @@ pub async fn semantic_search(
                     WHEN v.word = $3 OR v.word = $4 THEN 0 
                     WHEN d.cached_rafsi IS NOT NULL AND ($3 = ANY(string_to_array(d.cached_rafsi, ' ')) OR $4 = ANY(string_to_array(d.cached_rafsi, ' '))) THEN 1
                     WHEN d.cached_glosswords IS NOT NULL AND d.cached_glosswords != ''
-                         AND LOWER($3) = ANY(string_to_array(d.cached_glosswords, ' ')) THEN 2
+                         AND LOWER($3) = ANY(string_to_array(d.cached_glosswords, '|')) THEN 2
                     WHEN v.word ILIKE $3 OR v.word ILIKE $4 THEN 3
                     ELSE 4 
                 END as exact_match_rank
@@ -231,7 +231,7 @@ pub async fn semantic_search(
               AND (d.embedding IS NOT NULL OR v.word = $3 OR v.word = $4 OR v.word ILIKE $3 OR v.word ILIKE $4
                    OR (d.cached_rafsi IS NOT NULL AND ($3 = ANY(string_to_array(d.cached_rafsi, ' ')) OR $4 = ANY(string_to_array(d.cached_rafsi, ' '))))
                    OR (d.cached_glosswords IS NOT NULL AND d.cached_glosswords != ''
-                       AND LOWER($3) = ANY(string_to_array(d.cached_glosswords, ' '))))
+                       AND LOWER($3) = ANY(string_to_array(d.cached_glosswords, '|'))))
             {additional_conditions}
             ORDER BY exact_match_rank ASC, similarity ASC
             LIMIT 1000
@@ -961,7 +961,7 @@ pub async fn search_definitions(
                     WHEN d.cached_valsiword = $1 THEN 13
                     WHEN d.cached_valsiword = $7 THEN 13
                     WHEN d.cached_glosswords IS NOT NULL AND d.cached_glosswords != '' 
-                         AND LOWER($1) = ANY(string_to_array(d.cached_glosswords, ' ')) THEN 12
+                         AND LOWER($1) = ANY(string_to_array(d.cached_glosswords, '|')) THEN 12
                     WHEN d.cached_valsiword ILIKE $1 THEN 11
                     WHEN d.cached_valsiword ILIKE $7 THEN 11
                     WHEN d.cached_valsiword ~* $3 THEN 10
@@ -1029,7 +1029,7 @@ pub async fn search_definitions(
                     WHEN d.cached_valsiword = $1 THEN 13
                     WHEN d.cached_valsiword = $7 THEN 13
                     WHEN d.cached_glosswords IS NOT NULL AND d.cached_glosswords != ''
-                         AND LOWER($1) = ANY(string_to_array(d.cached_glosswords, ' ')) THEN 12
+                         AND LOWER($1) = ANY(string_to_array(d.cached_glosswords, '|')) THEN 12
                     WHEN d.cached_valsiword ILIKE $1 THEN 11
                     WHEN d.cached_valsiword ILIKE $7 THEN 11
                     WHEN d.cached_valsiword ~* $3 THEN 10
@@ -1212,7 +1212,7 @@ pub async fn search_definitions(
                 WHEN d.cached_valsiword = $1 THEN 13
                 WHEN d.cached_valsiword = $5 THEN 13
                 WHEN d.cached_glosswords IS NOT NULL AND d.cached_glosswords != '' 
-                     AND LOWER($1) = ANY(string_to_array(d.cached_glosswords, ' ')) THEN 12
+                     AND LOWER($1) = ANY(string_to_array(d.cached_glosswords, '|')) THEN 12
                 WHEN d.cached_valsiword ILIKE $1 THEN 11
                 WHEN d.cached_valsiword ILIKE $5 THEN 11
                 WHEN d.cached_valsiword ~* $3 THEN 10
@@ -1362,7 +1362,7 @@ pub async fn fast_search_definitions(
                 WHEN d.cached_valsiword = $1::text THEN 13
                 WHEN d.cached_valsiword = $6::text THEN 13
                 WHEN d.cached_glosswords IS NOT NULL AND d.cached_glosswords != '' 
-                     AND LOWER($1::text) = ANY(string_to_array(d.cached_glosswords, ' ')) THEN 12
+                     AND LOWER($1::text) = ANY(string_to_array(d.cached_glosswords, '|')) THEN 12
                 WHEN d.cached_valsiword ILIKE $1::text THEN 11
                 WHEN d.cached_valsiword ILIKE $6::text THEN 11
                 WHEN d.cached_valsiword ~* $3::text THEN 10
