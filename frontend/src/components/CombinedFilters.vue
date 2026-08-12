@@ -78,16 +78,22 @@
             type="button"
             variant="toolbar"
             class="ui-btn--group-item"
+            :class="{ 'filters-expand-attention': shouldPulseExpandChevron }"
             :title="expanded ? t('filters.collapse') : t('filters.expand')"
             @click="toggleExpanded"
           >
             <template #icon>
-              <ChevronDown
-                class="h-5 w-5 shrink-0 transition-transform duration-200"
-                :class="{ 'rotate-180': expanded }"
-                :stroke-width="2"
-                aria-hidden="true"
-              />
+              <span
+                class="inline-flex shrink-0"
+                :class="{ 'filters-expand-chevron-pulse': shouldPulseExpandChevron }"
+              >
+                <ChevronDown
+                  class="h-5 w-5 shrink-0 transition-transform duration-200"
+                  :class="{ 'rotate-180': expanded }"
+                  :stroke-width="2"
+                  aria-hidden="true"
+                />
+              </span>
             </template>
           </Button>
         </div>
@@ -359,6 +365,7 @@ const emit = defineEmits(['update:modelValue', 'change', 'reset'])
 
 const selectedLangs = ref([])
 const expanded = ref(props.modelValue.isExpanded)
+const lastAutoExpandedSelmaho = ref('')
 const wordTypes = ref<WordTypeOption[]>([])
 const route = useRoute()
 
@@ -475,6 +482,7 @@ const fetchWordTypes = async () => {
 onMounted(() => {
   fetchWordTypes()
   syncTogglesWithModel()
+  maybeAutoExpandForSelmaho(props.modelValue.selmaho ?? '', '')
 })
 
 function syncTogglesWithModel() {
@@ -515,13 +523,21 @@ function clearDebounceTimer() {
   }
 }
 
-const hasAnyActiveFilters = computed(() => {
+const hasFilledAdvancedFilters = computed(() => {
   return Boolean(
-    selectedLangs.value.length > 0 ||
     filters.value.selmaho ||
     filters.value.username ||
     filters.value.word_type ||
-    filters.value.source_langid !== 1 ||
+    filters.value.source_langid !== 1
+  )
+})
+
+const shouldPulseExpandChevron = computed(() => !expanded.value && hasFilledAdvancedFilters.value)
+
+const hasAnyActiveFilters = computed(() => {
+  return Boolean(
+    selectedLangs.value.length > 0 ||
+    hasFilledAdvancedFilters.value ||
     !isSemantic.value ||
     !searchInPhrases.value ||
     expanded.value
@@ -576,6 +592,26 @@ const emitUpdate = () => {
   emit('update:modelValue', updatedValue)
   emit('change', updatedValue)
 }
+
+function maybeAutoExpandForSelmaho(newSelmaho: string, prevSelmaho: string) {
+  if (newSelmaho && newSelmaho !== prevSelmaho && newSelmaho !== lastAutoExpandedSelmaho.value) {
+    lastAutoExpandedSelmaho.value = newSelmaho
+    if (!expanded.value) {
+      expanded.value = true
+      emitUpdate()
+    }
+  }
+  if (!newSelmaho) {
+    lastAutoExpandedSelmaho.value = ''
+  }
+}
+
+watch(
+  () => props.modelValue.selmaho,
+  (newSelmaho, oldSelmaho) => {
+    maybeAutoExpandForSelmaho(newSelmaho ?? '', oldSelmaho ?? '')
+  }
+)
 
 const clearFilter = (filterName) => {
   // Clear any pending timeouts first to prevent them from firing after clearing
@@ -702,6 +738,48 @@ watch(
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+.filters-expand-attention {
+  border-width: 2px;
+  animation: filtersExpandBorderPulse 1.4s ease-in-out infinite;
+}
+
+.filters-expand-chevron-pulse {
+  color: rgb(8 145 178);
+  animation: filtersExpandChevronPulse 1.2s ease-in-out infinite;
+}
+
+.filters-expand-chevron-pulse svg {
+  color: inherit;
+}
+
+@keyframes filtersExpandBorderPulse {
+  0%,
+  100% {
+    border-color: rgb(156 163 175);
+    background-color: transparent;
+    box-shadow: none;
+  }
+
+  50% {
+    border-color: rgb(6 182 212);
+    background-color: rgb(207 250 254 / 0.7);
+    box-shadow: 0 0 0 3px rgb(6 182 212 / 0.35);
+  }
+}
+
+@keyframes filtersExpandChevronPulse {
+  0%,
+  100% {
+    opacity: 0.45;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.28);
   }
 }
 </style>

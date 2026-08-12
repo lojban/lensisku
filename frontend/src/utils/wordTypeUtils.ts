@@ -15,5 +15,5 @@ const classMap: Record<string, string> = {
 
 /** Tailwind classes for word type badges */
 export const getTypeClass = (type: string): string => {
-  return classMap[type] || 'bg-gray-100 text-gray-800'
+  return `select-none ${classMap[type] || 'select-none bg-gray-100 text-gray-800'}`
 }
