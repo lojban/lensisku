@@ -261,23 +261,21 @@ const graphError = ref<string | null>(null)
 const graphMode = ref<'preview' | 'anchor'>('preview')
 const anchorNodeId = ref<string | null>(null)
 
-/** Reference zoom captured right after each anchor-mode layout/fit; used to detect zoom-in/out. */
-let anchorBaselineZoom = 1
-/** Last `min_similarity` actually sent to the server for anchor mode. */
-let anchorActiveMinSim: number | null = null
-/** In-flight anchor request id (drop stale responses). */
-let anchorFetchSeq = 0
-let anchorRenderInProgress = false
+/** Zoom level right after each layout/fit — used to tell zoom-in vs zoom-out. */
+let graphBaselineZoom = 1
+/** Last focus valsi sent for a zoom neighborhood refetch (skip duplicates). */
+let activeFocusWord: string | null = null
+/** In-flight graph request id (drop stale responses). */
+let graphFetchSeq = 0
+let graphRenderInProgress = false
 /** Blocks zoom-triggered refetches while we programmatically run layout/fit. */
 let suppressZoomRefetch = false
 let zoomRefetchTimer: ReturnType<typeof setTimeout> | null = null
 let cyZoomPanHandler: (() => void) | null = null
 
-/** Zoom-level → `min_similarity` delta. Zoom in → tighter (higher similarity); zoom out → looser. */
-const ZOOM_MIN_SIM_K = 0.22
-/** Refetch once zoom ratio crosses ~10% (|log2| >= 0.14). Keeps wheel-tick refetches meaningful. */
+/** Refetch once zoom ratio crosses ~10% (|log2| >= 0.14) vs the fitted baseline. */
 const ZOOM_RATIO_LOG_GATE = 0.14
-const ZOOM_REFETCH_DEBOUNCE_MS = 260
+const ZOOM_REFETCH_DEBOUNCE_MS = 280
 
 type PreviewDefinition = {
   valsiword?: string
@@ -310,20 +308,21 @@ const previewEntryHref = computed(() => {
 
 function buildGraphParams(opts?: {
   preview?: boolean
-  minSimilarityOverride?: number
+  focus?: string
 }): Record<string, unknown> {
   const f = combinedFiltersModel.value
   const preview = opts?.preview === true
   const g = graphBuildParams.value
-  const effectiveMinSim =
-    opts?.minSimilarityOverride != null ? opts.minSimilarityOverride : g.minPairwiseSim
+  const focus = opts?.focus?.trim() || ''
   const params: Record<string, unknown> = {
     min_vote: g.minVote,
     limit: Math.max(1, Math.min(GRAPH_METRICS_MAX, g.graphLimit)),
     k_neighbors: g.kNeighbors,
-    min_similarity: effectiveMinSim,
+    min_similarity: g.minPairwiseSim,
   }
-  if (preview) {
+  if (focus) {
+    params.focus = focus
+  } else if (preview) {
     params.preview = true
   } else {
     params.search = normalizeSearchQuery(searchQuery.value).trim()
@@ -340,7 +339,7 @@ function buildGraphParams(opts?: {
   if (f.searchInPhrases === false) {
     params.search_in_phrases = false
   }
-  if (!preview && f.isSemantic === false) {
+  if (!preview && !focus && f.isSemantic === false) {
     params.semantic = false
   }
   return params
@@ -349,6 +348,7 @@ function buildGraphParams(opts?: {
 function detachCyZoomHandlers() {
   if (cy && cyZoomPanHandler) {
     cy.off('zoom.sgvp', cyZoomPanHandler)
+    cy.off('pan.sgvp', cyZoomPanHandler)
     cyZoomPanHandler = null
   }
 }
@@ -360,33 +360,29 @@ function clearZoomRefetch() {
   }
   detachCyZoomHandlers()
   anchorNodeId.value = null
-  anchorActiveMinSim = null
-  anchorBaselineZoom = 1
+  activeFocusWord = null
+  graphBaselineZoom = 1
 }
 
-/** Pick the anchor node. Exact case-insensitive `word` match wins; otherwise trust the backend's
- *  ordering (first node = best match — the server surfaces the searched valsi first by design). */
-function pickAnchorNodeId(
-  nodes: SemanticGraphApiPayload['nodes'],
-  searchTrim: string
-): string | null {
-  if (nodes.length === 0) return null
-  const q = searchTrim.trim().toLowerCase()
-  if (q) {
-    for (const n of nodes) {
-      const w = (n.word || '').trim().toLowerCase()
-      if (w && w === q) return n.id
-    }
-    for (const n of nodes) {
-      const w = (n.word || '').trim().toLowerCase()
-      if (w && (w.startsWith(`${q} `) || w.startsWith(`${q}-`))) return n.id
-    }
-  }
-  return nodes[0].id
+/** Valsi (word) on the node closest to the current viewport center. */
+function wordAtViewportCenter(core: Core): string | null {
+  const ext = core.extent()
+  const cx = (ext.x1 + ext.x2) / 2
+  const cy_ = (ext.y1 + ext.y2) / 2
+  let best: { word: string; d2: number } | null = null
+  core.nodes().forEach((n) => {
+    const p = n.position()
+    const dx = p.x - cx
+    const dy = p.y - cy_
+    const d2 = dx * dx + dy * dy
+    const word = String(n.data('word') ?? '').trim()
+    if (!word) return
+    if (!best || d2 < best.d2) best = { word, d2 }
+  })
+  return best?.word ?? null
 }
 
 function applyZoomStabilizedNodeSizes(core: Core) {
-  if (graphMode.value !== 'anchor') return
   const z = Math.max(0.12, Math.min(core.zoom(), 6))
   const inv = 1 / z
   const base = 28 * inv
@@ -409,47 +405,71 @@ function applyZoomStabilizedNodeSizes(core: Core) {
     .update()
 }
 
-/** Map current zoom ratio (vs. baseline) to an effective `min_similarity`. */
-function minSimForZoom(base: number, ratio: number): number {
-  if (!isFinite(ratio) || ratio <= 0) return base
-  const delta = ZOOM_MIN_SIM_K * Math.log2(ratio)
-  const effective = base + delta
-  return Math.max(0, Math.min(0.99, effective))
-}
-
-async function refetchAnchorForZoom() {
-  if (!cy || graphMode.value !== 'anchor' || anchorRenderInProgress || suppressZoomRefetch) return
-  const q = normalizeSearchQuery(searchQuery.value).trim()
-  if (!q) return
-  const ratio = cy.zoom() / (anchorBaselineZoom || 1)
+/** After zoom/pan settles: neighborhood of the center word, or restore the base graph when zoomed out. */
+async function refetchForViewport() {
+  if (!cy || graphRenderInProgress || suppressZoomRefetch) return
+  const ratio = cy.zoom() / (graphBaselineZoom || 1)
   if (!isFinite(ratio) || ratio <= 0) return
-  if (Math.abs(Math.log2(ratio)) < ZOOM_RATIO_LOG_GATE) return
 
-  const nextSim = minSimForZoom(graphBuildParams.value.minPairwiseSim, ratio)
-  const seq = ++anchorFetchSeq
-  anchorRenderInProgress = true
-  anchorActiveMinSim = nextSim
+  const logRatio = Math.log2(ratio)
+  // Zoomed back out toward the fitted overview → drop focus and restore base graph.
+  if (logRatio <= -ZOOM_RATIO_LOG_GATE) {
+    if (activeFocusWord == null) return
+    activeFocusWord = null
+    const seq = ++graphFetchSeq
+    graphRenderInProgress = true
+    graphLoading.value = true
+    try {
+      if (graphMode.value === 'preview' || !normalizeSearchQuery(searchQuery.value).trim()) {
+        graphMode.value = 'preview'
+        const res = await fetchSemanticGraph(buildGraphParams({ preview: true }))
+        if (seq !== graphFetchSeq || !cy) return
+        await renderGraph(res.data, 'preview')
+      } else {
+        const q = normalizeSearchQuery(searchQuery.value).trim()
+        const res = await fetchSemanticGraph(buildGraphParams({ preview: false }))
+        if (seq !== graphFetchSeq || !cy) return
+        await renderGraph(res.data, 'anchor', q)
+      }
+    } catch {
+      /* keep previous graph */
+    } finally {
+      if (seq === graphFetchSeq) graphLoading.value = false
+      graphRenderInProgress = false
+    }
+    return
+  }
+
+  const focus = wordAtViewportCenter(cy)
+  if (!focus) return
+
+  // Stay on the overview until the user zooms in; once in a focus neighborhood, allow
+  // pan/zoom to retarget a different center word.
+  if (activeFocusWord == null && logRatio < ZOOM_RATIO_LOG_GATE) return
+  if (activeFocusWord != null && activeFocusWord.toLowerCase() === focus.toLowerCase()) return
+
+  const seq = ++graphFetchSeq
+  graphRenderInProgress = true
+  activeFocusWord = focus
   graphLoading.value = true
   try {
-    const res = await fetchSemanticGraph(
-      buildGraphParams({ preview: false, minSimilarityOverride: nextSim })
-    )
-    if (seq !== anchorFetchSeq || !cy) return
-    await renderGraph(res.data, 'anchor', q)
+    const res = await fetchSemanticGraph(buildGraphParams({ focus }))
+    if (seq !== graphFetchSeq || !cy) return
+    await renderGraph(res.data, 'anchor', focus)
   } catch {
-    /* silently ignore — keep previous rendering on zoom-triggered failures */
+    activeFocusWord = null
   } finally {
-    if (seq === anchorFetchSeq) graphLoading.value = false
-    anchorRenderInProgress = false
+    if (seq === graphFetchSeq) graphLoading.value = false
+    graphRenderInProgress = false
   }
 }
 
-function scheduleAnchorZoomRefetch() {
-  if (graphMode.value !== 'anchor' || !cy || suppressZoomRefetch) return
+function scheduleViewportRefetch() {
+  if (!cy || suppressZoomRefetch) return
   if (zoomRefetchTimer != null) clearTimeout(zoomRefetchTimer)
   zoomRefetchTimer = setTimeout(() => {
     zoomRefetchTimer = null
-    void refetchAnchorForZoom()
+    void refetchForViewport()
   }, ZOOM_REFETCH_DEBOUNCE_MS)
 }
 
@@ -463,7 +483,7 @@ async function loadPreviewGraph() {
   try {
     clearZoomRefetch()
     graphMode.value = 'preview'
-    anchorFetchSeq++
+    graphFetchSeq++
     const res = await fetchSemanticGraph(buildGraphParams({ preview: true }))
     await renderGraph(res.data, 'preview')
   } catch (e: unknown) {
@@ -493,13 +513,10 @@ async function buildGraph() {
   try {
     clearZoomRefetch()
     graphMode.value = 'anchor'
-    anchorActiveMinSim = graphBuildParams.value.minPairwiseSim
-    const seq = ++anchorFetchSeq
-    anchorRenderInProgress = true
-    const res = await fetchSemanticGraph(
-      buildGraphParams({ preview: false, minSimilarityOverride: anchorActiveMinSim })
-    )
-    if (seq !== anchorFetchSeq) return
+    const seq = ++graphFetchSeq
+    graphRenderInProgress = true
+    const res = await fetchSemanticGraph(buildGraphParams({ preview: false }))
+    if (seq !== graphFetchSeq) return
     await renderGraph(res.data, 'anchor', q)
   } catch (e: unknown) {
     const err = e as { response?: { data?: { error?: string }; status?: number } }
@@ -510,7 +527,7 @@ async function buildGraph() {
     graphError.value = typeof msg === 'string' ? msg : t('semanticGraph.errorLoad')
   } finally {
     graphLoading.value = false
-    anchorRenderInProgress = false
+    graphRenderInProgress = false
   }
 }
 
@@ -655,6 +672,26 @@ function ensureNodePaletteColors(core: Core) {
   })
 }
 
+/** Exact case-insensitive `word` match wins; otherwise trust backend ordering (first = best). */
+function pickAnchorNodeId(
+  nodes: SemanticGraphApiPayload['nodes'],
+  searchTrim: string
+): string | null {
+  if (nodes.length === 0) return null
+  const q = searchTrim.trim().toLowerCase()
+  if (q) {
+    for (const n of nodes) {
+      const w = (n.word || '').trim().toLowerCase()
+      if (w && w === q) return n.id
+    }
+    for (const n of nodes) {
+      const w = (n.word || '').trim().toLowerCase()
+      if (w && (w.startsWith(`${q} `) || w.startsWith(`${q}-`))) return n.id
+    }
+  }
+  return nodes[0].id
+}
+
 function elementsFromApi(data: SemanticGraphApiPayload, anchorId: string | null) {
   const nodes = data.nodes.map((n) => {
     const valsiKey = (n.word || n.label || n.id || '').trim()
@@ -752,28 +789,20 @@ async function renderGraph(
     }
     cy.fit(undefined, 32)
 
-    if (mode === 'anchor') {
-      anchorBaselineZoom = cy.zoom() || 1
+    graphBaselineZoom = cy.zoom() || 1
+    applyZoomStabilizedNodeSizes(cy)
+    cyZoomPanHandler = () => {
+      if (!cy) return
       applyZoomStabilizedNodeSizes(cy)
-      cyZoomPanHandler = () => {
-        if (!cy) return
-        applyZoomStabilizedNodeSizes(cy)
-        scheduleAnchorZoomRefetch()
-      }
-      cy.on('zoom.sgvp', cyZoomPanHandler)
-    } else {
-      cy.style()
-        .selector('node')
-        .style({ width: 26, height: 26, 'font-size': 10 })
-        .selector('node[isAnchor = "yes"]')
-        .style({ width: 26, height: 26, 'font-size': 10 })
-        .update()
+      scheduleViewportRefetch()
     }
+    cy.on('zoom.sgvp', cyZoomPanHandler)
+    cy.on('pan.sgvp', cyZoomPanHandler)
   } finally {
     // Give the animated layout/fit time to settle before accepting zoom-driven refetches.
     setTimeout(() => {
       suppressZoomRefetch = false
-      if (cy && mode === 'anchor') anchorBaselineZoom = cy.zoom() || 1
+      if (cy) graphBaselineZoom = cy.zoom() || 1
     }, 650)
   }
 }

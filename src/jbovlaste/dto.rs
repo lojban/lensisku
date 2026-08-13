@@ -315,6 +315,10 @@ pub struct SemanticGraphQuery {
     pub k_neighbors: Option<i64>,
     /// Drop edges with pairwise cosine similarity below this (0..=1).
     pub min_similarity: Option<f32>,
+    /// When set (e.g. the valsi under the current viewport center after zoom), the graph is the
+    /// top-`limit` neighborhood of that word's stored embedding — not the stratified preview and
+    /// not the `search` text embedding.
+    pub focus: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]

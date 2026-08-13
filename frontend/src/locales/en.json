@@ -23,7 +23,7 @@
   },
   "semanticGraph": {
     "title": "Semantic graph",
-    "description": "Explore words whose definitions are close in embedding space. An overview loads automatically: a sample of high‑vote entries spread across word types, linked by pairwise similarity. Type a word or phrase. Pan and zoom; tap a node for a short definition preview.",
+    "description": "Explore words whose definitions are close in embedding space. An overview loads automatically: a sample of high‑vote entries spread across word types, linked by pairwise similarity. Type a word or phrase to anchor the graph. Zoom into a region — when you stop, the graph refills around the word under the viewport center (up to Max nodes). Zoom back out to restore the overview. Tap a node for a short definition preview.",
     "overview": "Overview graph",
     "reset": "Reset",
     "anchorPlaceholder": "Type a word or phrase…",

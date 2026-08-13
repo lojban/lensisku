@@ -150,9 +150,10 @@ pub fn generate_semantic_graph_cache_key(query: &SemanticGraphQuery) -> String {
         _ => "1",
     };
     format!(
-        "semantic_graph:v2:{}:{}:{}:{}:{}:{}:{}:{}:{}:{}:{}:{}",
+        "semantic_graph:v3:{}:{}:{}:{}:{}:{}:{}:{}:{}:{}:{}:{}:{}",
         semantic_key,
         query.search.as_deref().unwrap_or(""),
+        query.focus.as_deref().unwrap_or(""),
         query.languages.as_deref().unwrap_or(""),
         query.selmaho.as_deref().unwrap_or(""),
         query.username.as_deref().unwrap_or(""),
@@ -172,7 +173,8 @@ pub fn generate_semantic_graph_cache_key(query: &SemanticGraphQuery) -> String {
 /// Cache key for stratified preview graph (no anchor embedding).
 pub fn generate_semantic_graph_preview_cache_key(query: &SemanticGraphQuery) -> String {
     format!(
-        "semantic_graph:preview:v1:{}:{}:{}:{}:{}:{}:{}:{}:{}:{}",
+        "semantic_graph:preview:v2:{}:{}:{}:{}:{}:{}:{}:{}:{}:{}:{}",
+        query.focus.as_deref().unwrap_or(""),
         query.languages.as_deref().unwrap_or(""),
         query.selmaho.as_deref().unwrap_or(""),
         query.username.as_deref().unwrap_or(""),

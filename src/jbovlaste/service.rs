@@ -343,12 +343,27 @@ pub async fn semantic_graph_anchor_embedding_english_valsi(
     pool: &Pool,
     search_term: &str,
 ) -> Result<Option<Vec<f32>>, Box<dyn std::error::Error>> {
-    let key = normalize_semantic_graph_valsi_lookup_key(search_term);
+    semantic_graph_valsi_embedding(pool, search_term, Some(&[SEMANTIC_GRAPH_ANCHOR_ENGLISH_LANGID]))
+        .await
+}
+
+/// Stored embedding for a valsi matching `word`. Prefers `prefer_langids` (when set), then English,
+/// then highest-vote definition with an embedding. Used for zoom `focus` neighborhood sampling.
+pub async fn semantic_graph_valsi_embedding(
+    pool: &Pool,
+    word: &str,
+    prefer_langids: Option<&[i32]>,
+) -> Result<Option<Vec<f32>>, Box<dyn std::error::Error>> {
+    let key = normalize_semantic_graph_valsi_lookup_key(word);
     if key.is_empty() {
         return Ok(None);
     }
     let client = pool.get().await?;
-    let lang_id = SEMANTIC_GRAPH_ANCHOR_ENGLISH_LANGID;
+    let prefer: Option<&[i32]> = match prefer_langids {
+        Some([]) => None,
+        other => other,
+    };
+    let english_lang = SEMANTIC_GRAPH_ANCHOR_ENGLISH_LANGID;
     let row = client
         .query_opt(
             r#"
@@ -361,16 +376,22 @@ pub async fn semantic_graph_anchor_embedding_english_valsi(
             FROM definitions d
             JOIN valsi v ON d.valsiid = v.valsiid
             LEFT JOIN vote_scores dv ON dv.definitionid = d.definitionid
-            WHERE d.langid = $2
+            WHERE d.langid != 1
               AND d.embedding IS NOT NULL
               AND d.definition != ''
               AND (v.word = $1 OR lower(v.word) = lower($1))
             ORDER BY
               CASE WHEN v.word = $1 THEN 0 ELSE 1 END,
-              COALESCE(dv.score, 0) DESC
+              CASE
+                WHEN $2::int4[] IS NOT NULL AND d.langid = ANY($2) THEN 0
+                WHEN d.langid = $3 THEN 1
+                ELSE 2
+              END,
+              COALESCE(dv.score, 0) DESC,
+              d.definitionid ASC
             LIMIT 1
             "#,
-            &[&key, &lang_id],
+            &[&key, &prefer, &english_lang],
         )
         .await?;
     let Some(row) = row else {

@@ -141,7 +141,7 @@ pub async fn semantic_search(
         ("bearer_auth" = [])
     ),
     summary = "Semantic similarity graph",
-    description = "With `preview=true`, returns a stratified sample (top definitions per word type by vote) and k-NN edges without a query embedding. Otherwise returns up to N definitions closest to the query embedding (with filters), plus k-NN edges. Does not expose raw vectors."
+    description = "With `preview=true` and no `focus`, returns a stratified sample (top definitions per word type by vote) and k-NN edges without a query embedding. With `focus` set to a valsi, returns up to N definitions closest to that word's stored embedding (viewport zoom neighborhood). Otherwise returns up to N definitions closest to the query embedding (with filters), plus k-NN edges. Does not expose raw vectors."
 )]
 #[get("/semantic-graph")]
 pub async fn semantic_graph(
@@ -159,17 +159,24 @@ pub async fn semantic_graph(
     });
 
     let is_preview = query.preview == Some(true);
+    let focus_word = query
+        .focus
+        .as_deref()
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(str::to_string);
 
-    if !is_preview && crate::utils::embeddings::embeddings_disabled() {
+    // Focus neighborhood and search-anchored graphs need embeddings; stratified preview does not.
+    if (focus_word.is_some() || !is_preview) && crate::utils::embeddings::embeddings_disabled() {
         return HttpResponse::ServiceUnavailable().json(json!({
             "error": "Semantic graph is disabled (DISABLE_EMBEDDINGS is set)."
         }));
     }
 
     let processed_text = query.search.as_deref().unwrap_or("").trim().to_string();
-    if !is_preview && processed_text.is_empty() {
+    if focus_word.is_none() && !is_preview && processed_text.is_empty() {
         return HttpResponse::BadRequest().json(json!({
-            "error": "Query parameter `search` is required unless `preview=true`."
+            "error": "Query parameter `search` is required unless `preview=true` or `focus` is set."
         }));
     }
 
@@ -183,7 +190,7 @@ pub async fn semantic_graph(
 
     let params = SemanticGraphParams {
         search_term: processed_text.clone(),
-        languages,
+        languages: languages.clone(),
         selmaho: query.selmaho.clone(),
         username: query.username.clone(),
         word_type: query.word_type,
@@ -194,6 +201,49 @@ pub async fn semantic_graph(
         k_neighbors,
         min_similarity,
     };
+
+    // Zoom LOD: neighborhood of the valsi currently under the viewport center.
+    if let Some(focus) = focus_word {
+        let prefer = languages.as_deref();
+        let embedding = match service::semantic_graph_valsi_embedding(pool.get_ref(), &focus, prefer)
+            .await
+        {
+            Ok(Some(emb)) => emb,
+            Ok(None) => {
+                return HttpResponse::BadRequest().json(json!({
+                    "error": format!(
+                        "No definition embedding found for focus valsi `{focus}`. Pick another node near the viewport center."
+                    )
+                }));
+            }
+            Err(e) => {
+                return HttpResponse::InternalServerError().json(json!({
+                    "error": format!("Failed to resolve focus embedding: {}", e)
+                }));
+            }
+        };
+
+        let mut params_focus = params;
+        // Rank the focused valsi first in the result set (exact-match boost in SQL).
+        params_focus.search_term = focus;
+
+        let cache_key = generate_semantic_graph_cache_key(&query);
+        let pool_fetch = pool.clone();
+        let embedding_fetch = embedding.clone();
+        return match redis_cache
+            .get_or_set(
+                &cache_key,
+                || async move {
+                    service::semantic_graph(&pool_fetch, params_focus, embedding_fetch).await
+                },
+                None,
+            )
+            .await
+        {
+            Ok(response) => HttpResponse::Ok().json(response),
+            Err(e) => HttpResponse::InternalServerError().body(format!("Error: {}", e)),
+        };
+    }
 
     if is_preview {
         let cache_key = generate_semantic_graph_preview_cache_key(&query);
