@@ -41,7 +41,7 @@
           <Button
             v-for="collection in collections"
             :key="collection.collection_id"
-            variant="neutral"
+            variant="plain"
             :disabled="isAddingTo === collection.collection_id"
             class="w-full px-3 py-2 text-left text-sm rounded-md flex items-center justify-between group transition-colors"
             :class="{
