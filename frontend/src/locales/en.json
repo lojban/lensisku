@@ -1448,7 +1448,9 @@
       "filterByAuthor": "Filter by author",
       "placeholderSelmaho": "Enter selmaho...",
       "placeholderUsername": "Enter username...",
-      "clearFilter": "Clear filter"
+      "clearFilter": "Clear filter",
+      "searchingUsers": "Searching users…",
+      "noUsersFound": "No users found"
     },
     "activityComments": {
       "noComments": "No comments yet"

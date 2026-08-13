@@ -1425,7 +1425,9 @@
       "filterByAuthor": "julne fi lo ka finti",
       "placeholderSelmaho": "ko ciska lo selma'o...",
       "placeholderUsername": "ko ciska lo pilno cmene...",
-      "clearFilter": "vimcu lo julne"
+      "clearFilter": "co'u julne",
+      "searchingUsers": "ca'o pentoi lo pilno...",
+      "noUsersFound": "no pilno cu se penmi"
     },
     "activityComments": {
       "noComments": "no casnu karni cu zasti"

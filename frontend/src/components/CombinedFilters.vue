@@ -151,36 +151,114 @@
           </ToolbarSelectDropdown>
         </div>
       </div>
-      <!-- Unified input fields with clear buttons -->
-      <div v-for="field in ['selmaho', 'username']" :key="field" class="flex min-w-0 flex-col">
-        <label class="filters-field-label">
-          {{
-            field === 'selmaho'
-              ? t('components.combinedFilters.filterBySelmao')
-              : t('components.combinedFilters.filterByAuthor')
-          }}
-        </label>
+      <!-- Selma'o filter -->
+      <div class="flex min-w-0 flex-col">
+        <label class="filters-field-label" for="cf-selmaho">{{
+          t('components.combinedFilters.filterBySelmao')
+        }}</label>
         <div class="relative">
           <Input
-            v-model="filters[field]"
+            id="cf-selmaho"
+            v-model="filters.selmaho"
             type="text"
-            :placeholder="
-              t(
-                `components.combinedFilters.placeholder${field.charAt(0).toUpperCase() + field.slice(1)}`
-              )
-            "
+            :placeholder="t('components.combinedFilters.placeholderSelmaho')"
             class="input-field w-full h-8"
             @input="debouncedFilterChange"
           />
           <IconButtonGhost
-            v-if="filters[field]"
+            v-if="filters.selmaho"
             class="absolute right-2 top-1/2 -translate-y-1/2"
             :aria-label="t('components.combinedFilters.clearFilter')"
-            @click="clearFilter(field)"
+            @click="clearFilter('selmaho')"
           >
             <X class="h-5 w-5" />
           </IconButtonGhost>
         </div>
+      </div>
+
+      <!-- Author / username filter with user hints -->
+      <div class="flex min-w-0 flex-col">
+        <label class="filters-field-label" for="cf-username">{{
+          t('components.combinedFilters.filterByAuthor')
+        }}</label>
+        <div ref="usernameFieldRef" class="relative">
+          <Input
+            id="cf-username"
+            v-model="filters.username"
+            type="text"
+            autocomplete="off"
+            role="combobox"
+            :aria-expanded="showUsernameHints"
+            aria-autocomplete="list"
+            aria-controls="cf-username-hints"
+            :placeholder="t('components.combinedFilters.placeholderUsername')"
+            class="input-field w-full h-8"
+            @input="onUsernameInput"
+            @focus="onUsernameFocus"
+            @keydown="onUsernameKeydown"
+          />
+          <IconButtonGhost
+            v-if="filters.username"
+            class="absolute right-2 top-1/2 -translate-y-1/2"
+            :aria-label="t('components.combinedFilters.clearFilter')"
+            @click="clearUsernameFilter"
+          >
+            <X class="h-5 w-5" />
+          </IconButtonGhost>
+        </div>
+        <Teleport to="body">
+          <div
+            v-if="showUsernameHints"
+            id="cf-username-hints"
+            ref="usernameHintsRef"
+            role="listbox"
+            class="dropdown-menu-panel !w-auto min-w-[12rem] max-h-60 py-1"
+            :style="usernameHintsStyle"
+          >
+            <p
+              v-if="isSearchingUsers"
+              class="px-3 py-2 text-sm text-gray-500"
+              role="status"
+            >
+              {{ t('components.combinedFilters.searchingUsers') }}
+            </p>
+            <template v-else-if="usernameHints.length > 0">
+              <Button
+                v-for="(user, index) in usernameHints"
+                :id="`cf-username-hint-${index}`"
+                :key="user.user_id"
+                variant="neutral"
+                type="button"
+                role="option"
+                class="assistant-session-row flex w-full items-center gap-3 rounded-none px-3 py-2"
+                :class="
+                  index === usernameHintIndex
+                    ? 'assistant-session-row--active'
+                    : 'assistant-session-row--idle'
+                "
+                :aria-selected="index === usernameHintIndex"
+                @mousedown.prevent="selectUsernameHint(user)"
+              >
+                <div class="avatar-placeholder-sm !h-7 !w-7 shrink-0 text-xs">
+                  {{ user.username[0]?.toUpperCase() }}
+                </div>
+                <div class="min-w-0 flex-1 text-left">
+                  <p class="truncate text-sm font-medium text-gray-900">{{ user.username }}</p>
+                  <p v-if="user.realname" class="truncate text-xs text-gray-500">
+                    {{ user.realname }}
+                  </p>
+                </div>
+              </Button>
+            </template>
+            <p
+              v-else-if="filters.username.trim()"
+              class="px-3 py-2 text-sm text-gray-500"
+              role="status"
+            >
+              {{ t('components.combinedFilters.noUsersFound') }}
+            </p>
+          </div>
+        </Teleport>
       </div>
 
       <div class="flex min-w-0 flex-col" :class="{ 'col-span-2': !showWordType }">
@@ -289,10 +367,10 @@ import {
   ToolbarSelectDropdown,
   ToolbarSelectDropdownItem,
 } from '@packages/ui'
-import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute } from 'vue-router'
 
-import { fetchDefinitionsTypes } from '@/api'
+import { fetchDefinitionsTypes, listUsers } from '@/api'
 
 import { defaultFilterLanguageTags } from '@/config/locales'
 import { useI18n } from 'vue-i18n'
@@ -324,6 +402,12 @@ type LanguageOption = {
 type WordTypeOption = {
   type_id: number | null
   descriptor: string
+}
+
+type UserHint = {
+  user_id: number
+  username: string
+  realname?: string | null
 }
 
 const props = defineProps({
@@ -369,6 +453,18 @@ const lastAutoExpandedSelmaho = ref('')
 const wordTypes = ref<WordTypeOption[]>([])
 const route = useRoute()
 
+const usernameFieldRef = ref<HTMLElement | null>(null)
+const usernameHintsRef = ref<HTMLElement | null>(null)
+const usernameHints = ref<UserHint[]>([])
+const usernameHintsOpen = ref(false)
+const usernameHintIndex = ref(-1)
+const isSearchingUsers = ref(false)
+const usernameHintsStyle = ref<Record<string, string>>({})
+
+const USERNAME_HINTS_GAP_PX = 4
+const USERNAME_SEARCH_DELAY_MS = 250
+let usernameSearchTimer: ReturnType<typeof setTimeout> | null = null
+
 function getInitialIsSemantic(): boolean {
   const mode = route.query.mode
   if (mode !== undefined) {
@@ -406,6 +502,10 @@ const filters = ref({
   word_type: null as WordTypeOption | null,
   source_langid: props.modelValue.source_langid || 1,
 })
+
+const showUsernameHints = computed(
+  () => usernameHintsOpen.value && Boolean(filters.value.username?.trim())
+)
 
 const showWordType = computed(() => !filters.value.selmaho)
 
@@ -483,6 +583,7 @@ onMounted(() => {
   fetchWordTypes()
   syncTogglesWithModel()
   maybeAutoExpandForSelmaho(props.modelValue.selmaho ?? '', '')
+  document.addEventListener('mousedown', handleUsernameHintsOutsideClick)
 })
 
 function syncTogglesWithModel() {
@@ -501,6 +602,10 @@ function syncTogglesWithModel() {
 onBeforeUnmount(() => {
   // Clean up any pending debounce timer
   clearDebounceTimer()
+  clearUsernameSearchTimer()
+  document.removeEventListener('mousedown', handleUsernameHintsOutsideClick)
+  window.removeEventListener('resize', updateUsernameHintsPosition)
+  window.removeEventListener('scroll', updateUsernameHintsPosition, true)
 })
 
 const getDefaultLanguages = () => {
@@ -520,6 +625,162 @@ function clearDebounceTimer() {
   if (debounceTimer) {
     clearTimeout(debounceTimer)
     debounceTimer = null
+  }
+}
+
+function clearUsernameSearchTimer() {
+  if (usernameSearchTimer) {
+    clearTimeout(usernameSearchTimer)
+    usernameSearchTimer = null
+  }
+}
+
+function updateUsernameHintsPosition() {
+  const field = usernameFieldRef.value
+  if (!field) return
+
+  const rect = field.getBoundingClientRect()
+  usernameHintsStyle.value = {
+    top: `${rect.bottom + USERNAME_HINTS_GAP_PX}px`,
+    left: `${rect.left}px`,
+    width: `${rect.width}px`,
+  }
+}
+
+async function openUsernameHints() {
+  const wasOpen = usernameHintsOpen.value
+  usernameHintsOpen.value = true
+  await nextTick()
+  updateUsernameHintsPosition()
+  if (!wasOpen) {
+    window.addEventListener('resize', updateUsernameHintsPosition)
+    window.addEventListener('scroll', updateUsernameHintsPosition, true)
+  }
+}
+
+function closeUsernameHints() {
+  usernameHintsOpen.value = false
+  usernameHintIndex.value = -1
+  window.removeEventListener('resize', updateUsernameHintsPosition)
+  window.removeEventListener('scroll', updateUsernameHintsPosition, true)
+}
+
+function handleUsernameHintsOutsideClick(event: MouseEvent) {
+  if (!usernameHintsOpen.value) return
+  const target = event.target
+  if (!(target instanceof Node)) return
+  if (usernameFieldRef.value?.contains(target) || usernameHintsRef.value?.contains(target)) {
+    return
+  }
+  closeUsernameHints()
+}
+
+async function searchUsernameHints(query: string) {
+  const trimmed = query.trim()
+  if (!trimmed) {
+    usernameHints.value = []
+    isSearchingUsers.value = false
+    closeUsernameHints()
+    return
+  }
+
+  isSearchingUsers.value = true
+  await openUsernameHints()
+  try {
+    const response = await listUsers({ search: trimmed, per_page: 12 })
+    const users = (response.data.users ?? []) as UserHint[]
+    usernameHints.value = users
+    usernameHintIndex.value = users.length > 0 ? 0 : -1
+    await nextTick()
+    updateUsernameHintsPosition()
+  } catch (error) {
+    console.error('Failed to search users for author filter:', error)
+    usernameHints.value = []
+    usernameHintIndex.value = -1
+  } finally {
+    isSearchingUsers.value = false
+  }
+}
+
+function scheduleUsernameSearch() {
+  clearUsernameSearchTimer()
+  const query = filters.value.username ?? ''
+  if (!query.trim()) {
+    usernameHints.value = []
+    isSearchingUsers.value = false
+    closeUsernameHints()
+    return
+  }
+  isSearchingUsers.value = true
+  void openUsernameHints()
+  usernameSearchTimer = setTimeout(() => {
+    usernameSearchTimer = null
+    void searchUsernameHints(query)
+  }, USERNAME_SEARCH_DELAY_MS)
+}
+
+function onUsernameInput() {
+  debouncedFilterChange()
+  scheduleUsernameSearch()
+}
+
+function onUsernameFocus() {
+  if (filters.value.username?.trim()) {
+    scheduleUsernameSearch()
+  }
+}
+
+function selectUsernameHint(user: UserHint) {
+  clearUsernameSearchTimer()
+  clearDebounceTimer()
+  filters.value.username = user.username
+  closeUsernameHints()
+  usernameHints.value = []
+  emitUpdate()
+}
+
+function clearUsernameFilter() {
+  clearUsernameSearchTimer()
+  usernameHints.value = []
+  closeUsernameHints()
+  clearFilter('username')
+}
+
+function onUsernameKeydown(event: KeyboardEvent) {
+  if (!showUsernameHints.value) {
+    if (event.key === 'ArrowDown' && filters.value.username?.trim()) {
+      scheduleUsernameSearch()
+    }
+    return
+  }
+
+  if (event.key === 'Escape') {
+    event.preventDefault()
+    closeUsernameHints()
+    return
+  }
+
+  if (event.key === 'ArrowDown') {
+    event.preventDefault()
+    if (usernameHints.value.length === 0) return
+    usernameHintIndex.value = (usernameHintIndex.value + 1) % usernameHints.value.length
+    return
+  }
+
+  if (event.key === 'ArrowUp') {
+    event.preventDefault()
+    if (usernameHints.value.length === 0) return
+    usernameHintIndex.value =
+      (usernameHintIndex.value - 1 + usernameHints.value.length) % usernameHints.value.length
+    return
+  }
+
+  if (event.key === 'Enter' && usernameHintIndex.value >= 0) {
+    const user = usernameHints.value[usernameHintIndex.value]
+    if (user) {
+      event.preventDefault()
+      selectUsernameHint(user)
+    }
   }
 }
 
@@ -616,11 +877,20 @@ watch(
 const clearFilter = (filterName) => {
   // Clear any pending timeouts first to prevent them from firing after clearing
   clearDebounceTimer()
+  if (filterName === 'username') {
+    clearUsernameSearchTimer()
+    usernameHints.value = []
+    closeUsernameHints()
+  }
   filters.value[filterName] = ''
   emitUpdate()
 }
 
 const resetAllFilters = () => {
+  clearUsernameSearchTimer()
+  usernameHints.value = []
+  closeUsernameHints()
+
   const defaultLangs = getDefaultLanguages()
   selectedLangs.value = defaultLangs
 
@@ -648,6 +918,9 @@ const resetAllFilters = () => {
 
 const toggleExpanded = () => {
   expanded.value = !expanded.value
+  if (!expanded.value) {
+    closeUsernameHints()
+  }
   emitUpdate()
 }
 

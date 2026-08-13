@@ -1373,7 +1373,9 @@
       "filterByAuthor": "Фильтр по автору",
       "placeholderSelmaho": "Введите selmaho...",
       "placeholderUsername": "Введите имя пользователя...",
-      "clearFilter": "Очистить фильтр"
+      "clearFilter": "Очистить фильтр",
+      "searchingUsers": "Поиск пользователей…",
+      "noUsersFound": "Пользователи не найдены"
     },
     "activityComments": {
       "noComments": "Комментариев пока нет"
