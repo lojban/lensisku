@@ -387,6 +387,17 @@ export default {
         '.assistant-fold-details-warning': {
           '@apply rounded border border-amber-100 bg-amber-50/60 px-2 py-1 text-xs': {},
         },
+        /** Generic foldable tip panel (e.g. lujvo component definitions on add-entry). */
+        '.fold-panel': {
+          '@apply rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-blue-800': {},
+        },
+        '.fold-panel-summary': {
+          '@apply cursor-pointer list-none select-none text-sm font-medium text-blue-800 hover:underline [&::-webkit-details-marker]:hidden':
+            {},
+        },
+        '.fold-panel-body': {
+          '@apply mt-3 space-y-4 text-gray-800': {},
+        },
         /** Message / thread list row (discussions, mail). Pair with `--clickable` when the row navigates on click. */
         '.message-thread-card': {
           '@apply bg-white border border-blue-200 rounded-lg transition-colors shadow-sm': {},

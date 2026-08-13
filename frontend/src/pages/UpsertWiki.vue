@@ -1,5 +1,5 @@
 <template>
-  <div class="container mx-auto p-4">
+  <div class="wiki-upsert mx-auto py-2 sm:py-4">
     <h2 class="text-xl sm:text-2xl font-bold text-gray-800 select-none mb-4">
       {{ isEditMode ? t('upsertWiki.editTitle') : t('upsertWiki.addTitle') }}
     </h2>
@@ -59,12 +59,15 @@
         />
       </div>
 
-      <!-- Definition Editor -->
+      <!-- Definition Editor: full-bleed on mobile (cancels App.vue px-3) -->
       <div>
         <label class="block text-sm font-medium text-blue-700 mb-2">
           {{ t('upsertWiki.definitionLabel') }}
         </label>
-        <div ref="editor" class="milkdown-editor border border-gray-300" />
+        <div
+          ref="editor"
+          class="milkdown-editor -mx-3 border-y border-gray-300 sm:mx-0 sm:border"
+        />
       </div>
 
       <!-- Submit Button -->
@@ -235,7 +238,24 @@ async function submitWiki() {
 </script>
 
 <style scoped>
-.container {
+.wiki-upsert {
   max-width: 800px;
+}
+
+.milkdown-editor {
+  min-height: 240px;
+}
+
+/* Crepe defaults to 60px 120px padding (room for the left block handle). */
+.milkdown-editor :deep(.milkdown .ProseMirror) {
+  @apply py-3 px-3 sm:py-4 sm:pl-14 sm:pr-4;
+}
+
+/* Block handle (drag/+/menu) is hover-based and wastes width on small screens. */
+@media (max-width: 640px) {
+  .milkdown-editor :deep(.milkdown-block-handle),
+  .milkdown-editor :deep(milkdown-block-handle) {
+    display: none !important;
+  }
 }
 </style>

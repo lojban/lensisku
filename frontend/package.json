@@ -21,9 +21,9 @@
     "prepare": "cd .. && husky frontend/.husky"
   },
   "dependencies": {
-    "@milkdown/core": "^7.21.3",
-    "@milkdown/crepe": "^7.21.3",
-    "@milkdown/utils": "^7.21.3",
+    "@milkdown/core": "^7.22.1",
+    "@milkdown/crepe": "^7.22.1",
+    "@milkdown/utils": "^7.22.1",
     "@paypal/paypal-js": "^10.0.3",
     "@tailwindcss/typography": "^0.5.20",
     "@tanstack/vue-virtual": "^3.13.34",

@@ -32,6 +32,9 @@ pub struct AnalyzeWordResponse {
     pub recommended: Option<String>,
     pub problems: Option<HashMap<String, Vec<String>>>,
     pub error: Option<String>,
+    /// Source words (selrafsi) when `word_type` is `"lujvo"`.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub decomposition: Option<Vec<String>>,
 }
 
 #[derive(Debug, Deserialize, ToSchema)]

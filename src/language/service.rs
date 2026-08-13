@@ -302,6 +302,7 @@ pub async fn analyze_word(
                 recommended,
                 problems,
                 error: None,
+                decomposition: None,
             };
 
             Ok(response)
@@ -313,6 +314,7 @@ pub async fn analyze_word(
             recommended: None,
             problems: None,
             error: Some(format!("Failed to parse word: {:?}", e)),
+            decomposition: None,
         }),
     }
 }
@@ -806,7 +808,31 @@ pub async fn analyze_word_in_pool(
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
     // Dereference the Arc before passing the reference
-    let response = analyze_word(&parsers, word, source_langid, &transaction).await?;
+    let mut response = analyze_word(&parsers, word, source_langid, &transaction).await?;
+
+    // For lujvo, attach selrafsi (source words) so the add-definition UI can
+    // show component definition cards without a second search round-trip.
+    if response.success && response.word_type == "lujvo" {
+        match crate::jbovlaste::service::get_source_words(
+            &response.text,
+            &transaction,
+            Some(&parsers),
+        )
+        .await
+        {
+            Ok(words) if !words.is_empty() => {
+                response.decomposition = Some(words);
+            }
+            Ok(_) => {}
+            Err(e) => {
+                warn!(
+                    "Failed to decompose lujvo '{}' for analyze_word: {}",
+                    response.text, e
+                );
+            }
+        }
+    }
+
     transaction.commit().await?;
     Ok(response)
 }

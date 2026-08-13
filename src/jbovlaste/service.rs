@@ -1524,7 +1524,8 @@ pub async fn fast_search_definitions(
     })
 }
 
-async fn get_source_words(
+/// Resolve a lujvo into its source words (selrafsi) via jvokaha/camxes + rafsi DB lookup.
+pub async fn get_source_words(
     word: &str,
     transaction: &tokio_postgres::Transaction<'_>,
     parsers: Option<&Arc<HashMap<i32, Peg>>>,

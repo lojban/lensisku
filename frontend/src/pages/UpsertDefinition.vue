@@ -83,6 +83,12 @@
           </AlertComponent>
         </div>
       </div>
+      <LujvoComponentDefinitions
+        v-if="wordType === 'lujvo' && lujvoDecomposition.length"
+        :decomposition="lujvoDecomposition"
+        :lang-id="langId"
+        :languages="languages"
+      />
     </div>
     <!-- Combined Language Selectors -->
     <div class="flex flex-col sm:flex-row gap-4">
@@ -457,6 +463,7 @@ import AnimatedDots from '@/components/AnimatedDots.vue'
 import DynamicInput from '@/components/DynamicInput.vue'
 import ImageUpload from '@/components/ImageUpload.vue'
 import LazyMathJax from '@/components/LazyMathJax.vue'
+import LujvoComponentDefinitions from '@/components/LujvoComponentDefinitions.vue'
 import ModalComponent from '@/components/ModalComponent.vue'
 import { useAuth } from '@/composables/useAuth'
 import { useError } from '@/composables/useError'
@@ -527,6 +534,7 @@ const notes = ref('')
 const etymology = ref('')
 const jargon = ref('')
 const wordType = ref('')
+const lujvoDecomposition = ref<string[]>([])
 const glossKeywords = ref([{ word: '', meaning: '' }])
 const placeKeywords = ref([{ word: '', meaning: '' }])
 const ownerOnly = ref(false)
@@ -748,6 +756,10 @@ onMounted(async () => {
                 ? response.data.recommended
                 : ''
             problems.value = response.data.problems || {}
+            lujvoDecomposition.value =
+              response.data.word_type === 'lujvo' && Array.isArray(response.data.decomposition)
+                ? response.data.decomposition
+                : []
             prefilledWord.value = true
           }
         } catch {
@@ -790,6 +802,7 @@ const clearAnalysis = () => {
   wordType.value = ''
   recommended.value = ''
   problems.value = {}
+  lujvoDecomposition.value = []
   clearError()
 }
 
@@ -822,11 +835,17 @@ const doAnalyzeWord = async () => {
           ? response.data.recommended
           : ''
       problems.value = response.data.problems || {}
+      lujvoDecomposition.value =
+        response.data.word_type === 'lujvo' && Array.isArray(response.data.decomposition)
+          ? response.data.decomposition
+          : []
     } else {
       wordType.value = ''
+      lujvoDecomposition.value = []
       showError(t('upsertDefinition.analyzeError'))
     }
   } catch {
+    lujvoDecomposition.value = []
     showError(t('upsertDefinition.analyzeErrorGeneric'))
   } finally {
     isAnalyzing.value = false
