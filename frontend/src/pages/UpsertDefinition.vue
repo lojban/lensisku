@@ -31,7 +31,7 @@
           />
         </div>
         <!-- Only show Analyze button when adding new word -->
-        <div class="flex items-center justify-end">
+        <div class="flex items-center justify-center sm:justify-end">
           <Button
             v-if="!isEditMode"
             variant="warning-orange"

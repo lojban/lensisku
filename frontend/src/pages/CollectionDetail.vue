@@ -954,7 +954,7 @@
               />
             </div>
 
-            <div class="flex items-center justify-end">
+            <div class="flex items-center justify-center sm:justify-end">
               <Button
                 variant="warning-orange"
                 type="button"
