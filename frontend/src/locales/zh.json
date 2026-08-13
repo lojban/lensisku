@@ -136,7 +136,7 @@
     "waveSourceMail": "邮件",
     "waveSourceWiki": "维基文章",
     "similarDefinitions": "相似释义",
-    "clearSimilarMode": "清除"
+    "similarDefinitionsHint": "显示与所选释义最接近的条目。"
   },
   "wiki": {
     "back": "返回",

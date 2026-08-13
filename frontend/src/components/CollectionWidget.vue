@@ -37,13 +37,13 @@
           />
         </div>
         <!-- Collections -->
-        <div v-else class="max-h-64 overflow-y-auto space-y-1">
+        <div v-else class="max-h-64 overflow-y-auto overflow-x-hidden space-y-1">
           <Button
             v-for="collection in collections"
             :key="collection.collection_id"
             variant="plain"
             :disabled="isAddingTo === collection.collection_id"
-            class="w-full px-3 py-2 text-left text-sm rounded-md flex items-center justify-between group transition-colors"
+            class="w-full min-w-0 px-3 py-2 text-left text-sm rounded-md flex items-center justify-between gap-2 group transition-colors [&>span]:!whitespace-normal [&>span]:min-w-0 [&>span]:w-full [&>span]:justify-between"
             :class="{
               'bg-indigo-100 hover:bg-indigo-200':
                 selectedCollectionId === collection.collection_id,
@@ -59,10 +59,10 @@
             </div>
             <span
               v-if="isAddingTo === collection.collection_id"
-              class="text-indigo-600 animate-spin text-sm"
+              class="shrink-0 text-indigo-600 animate-spin text-sm"
               >↻</span
             >
-            <span v-else class="text-gray-400 invisible group-hover:visible">{{
+            <span v-else class="shrink-0 text-gray-400 invisible group-hover:visible">{{
               selectedCollectionId === collection.collection_id
                 ? t('collectionWidget.selected')
                 : t('collectionWidget.select')

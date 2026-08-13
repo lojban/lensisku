@@ -139,7 +139,7 @@
     "waveSourceMail": "Mail messages",
     "waveSourceWiki": "Wiki articles",
     "similarDefinitions": "Similar definitions",
-    "clearSimilarMode": "Clear"
+    "similarDefinitionsHint": "Showing definitions closest to the one you selected."
   },
   "wiki": {
     "back": "Back",

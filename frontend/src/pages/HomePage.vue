@@ -19,6 +19,7 @@
     v-if="searchMode === 'dictionary' || searchMode === 'semantic'"
     v-model="filters"
     :languages="languages"
+    :force-show-reset="!!similarDefinitionId"
     class="w-full transition-opacity duration-300"
     :class="{ 'opacity-0 pointer-events-none h-0 overflow-hidden': isInitialLoading }"
     @change="handleFilterChange"
@@ -230,27 +231,24 @@
         </div>
 
         <div class="relative z-0" :class="{ 'pointer-events-none select-none': isLoading }">
-          <div
-            v-if="similarDefinitionId"
-            class="mb-3 flex flex-wrap items-center gap-2"
-          >
-            <span class="badge badge-muted inline-flex items-center gap-1.5">
-              <EqualApproximately class="h-3.5 w-3.5 shrink-0" />
-              {{ $t('home.similarDefinitions') }}
-            </span>
-            <Button
-              variant="empty"
-              type="button"
-              class="inline-flex h-7 items-center gap-1 px-2 text-xs"
-              :title="$t('home.clearSimilarMode')"
-              @click="clearSimilarMode"
-            >
-              <X class="h-3.5 w-3.5 shrink-0" />
-              <span>{{ $t('home.clearSimilarMode') }}</span>
-            </Button>
+          <div v-if="similarDefinitionId" class="mb-4">
+            <AlertComponent type="tip" :label="$t('home.similarDefinitions')">
+              <div class="flex items-center justify-between gap-2">
+                <span class="text-sm">{{ $t('home.similarDefinitionsHint') }}</span>
+                <button
+                  type="button"
+                  class="inline-flex shrink-0 items-center gap-1 text-sm text-nav-link hover:underline"
+                  :title="$t('filters.resetAllFilters')"
+                  @click="handleFiltersReset"
+                >
+                  <X class="h-3.5 w-3.5 shrink-0" />
+                  <span>{{ $t('filters.resetAllFilters') }}</span>
+                </button>
+              </div>
+            </AlertComponent>
           </div>
           <PhraseSplit
-            v-if="(searchMode === 'dictionary' || searchMode === 'semantic') && !similarDefinitionId"
+            v-else-if="searchMode === 'dictionary' || searchMode === 'semantic'"
             :phrase="searchQuery"
             :selected-languages="filters.selectedLanguages"
             :source-lang-id="filters.source_langid"
@@ -400,7 +398,7 @@
 
 <script setup lang="ts">
 import { jwtDecode } from 'jwt-decode'
-import { MessageSquare, ChevronDown, ChevronUp, AudioWaveform, Plus, EqualApproximately, X } from 'lucide-vue-next'
+import { MessageSquare, ChevronDown, ChevronUp, AudioWaveform, Plus, X } from 'lucide-vue-next'
 import { ref, onMounted, watch, computed, onBeforeUnmount, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 
@@ -416,6 +414,7 @@ import {
   getBulkVotes,
 } from '@/api'
 import AddAllToCollectionWidget from '@/components/AddAllToCollectionWidget.vue'
+import AlertComponent from '@/components/AlertComponent.vue'
 import CombinedFilters from '@/components/CombinedFilters.vue'
 import CommentItem from '@/components/CommentItem.vue'
 import SourceTypeBadge from '@/components/SourceTypeBadge.vue'
@@ -1312,23 +1311,6 @@ const handleLogoClear = () => {
   searchFormRef.value?.focusInput()
   similarDefinitionId.value = null
   performSearch({ query: '', mode: searchMode.value })
-}
-
-const clearSimilarMode = () => {
-  similarDefinitionId.value = null
-  searchQuery.value = ''
-  if (typeof window !== 'undefined') {
-    localStorage.setItem('searchQuery', '')
-  }
-  router.push({
-    query: {
-      ...route.query,
-      q: undefined,
-      page: undefined,
-      definition_id: undefined,
-      mode: searchMode.value,
-    },
-  })
 }
 
 // Navigation handlers

@@ -136,7 +136,7 @@
     "waveSourceMail": "メール",
     "waveSourceWiki": "Wiki記事",
     "similarDefinitions": "類似の定義",
-    "clearSimilarMode": "クリア"
+    "similarDefinitionsHint": "選択した定義に最も近い定義を表示しています。"
   },
   "wiki": {
     "back": "戻る",

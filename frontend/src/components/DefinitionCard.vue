@@ -121,7 +121,7 @@
                   <span class="sr-only">{{ t('components.definitionCard.editButton') }}</span>
                 </Button>
                 <Button
-                  v-if="definition.definitionid"
+                  v-if="canFindSimilar"
                   variant="empty"
                   class="inline-flex items-center gap-2"
                   :title="t('components.definitionCard.findSimilarTitle')"
@@ -1095,7 +1095,16 @@ const handleDeleteClick = () => {
   showDeleteConfirm.value = true
 }
 
+/** Find-similar uses stored embeddings; Lojban-language definitions (langid 1) are not embedded. */
+const canFindSimilar = computed(() => {
+  const id = props.definition.definitionid
+  if (!id) return false
+  const langId = props.definition.langid ?? props.definition.lang_id
+  return langId != null && langId !== 1
+})
+
 const findSimilar = () => {
+  if (!canFindSimilar.value) return
   const definitionId = props.definition.definitionid
   if (!definitionId) return
   const currentLocale = (locale.value as string) || 'en'

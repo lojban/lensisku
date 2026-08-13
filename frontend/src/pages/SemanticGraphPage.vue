@@ -261,21 +261,28 @@ const graphError = ref<string | null>(null)
 const graphMode = ref<'preview' | 'anchor'>('preview')
 const anchorNodeId = ref<string | null>(null)
 
-/** Zoom level right after each layout/fit — used to tell zoom-in vs zoom-out. */
-let graphBaselineZoom = 1
-/** Last focus valsi sent for a zoom neighborhood refetch (skip duplicates). */
+/**
+ * Zoom level when the current LOD mode was entered (overview fit, or focus-neighborhood fit).
+ * Compared only within the same mode — never across overview↔focus swaps.
+ */
+let modeEntryZoom = 1
+/** Last focus valsi fetched for a zoom neighborhood (skip duplicate requests). */
 let activeFocusWord: string | null = null
 /** In-flight graph request id (drop stale responses). */
 let graphFetchSeq = 0
 let graphRenderInProgress = false
-/** Blocks zoom-triggered refetches while we programmatically run layout/fit. */
+/** Blocks zoom-triggered refetches while layout/fit runs; queues one follow-up. */
 let suppressZoomRefetch = false
+let pendingViewportRefetch = false
 let zoomRefetchTimer: ReturnType<typeof setTimeout> | null = null
+let suppressClearTimer: ReturnType<typeof setTimeout> | null = null
 let cyZoomPanHandler: (() => void) | null = null
 
-/** Refetch once zoom ratio crosses ~10% (|log2| >= 0.14) vs the fitted baseline. */
-const ZOOM_RATIO_LOG_GATE = 0.14
-const ZOOM_REFETCH_DEBOUNCE_MS = 280
+/** Zoom-in past this factor of mode-entry zoom → leave overview for a focus neighborhood. */
+const ZOOM_IN_FACTOR = 1.08
+/** Zoom-out below this factor of mode-entry zoom → leave focus and restore overview. */
+const ZOOM_OUT_FACTOR = 0.78
+const ZOOM_REFETCH_DEBOUNCE_MS = 200
 
 type PreviewDefinition = {
   valsiword?: string
@@ -347,8 +354,8 @@ function buildGraphParams(opts?: {
 
 function detachCyZoomHandlers() {
   if (cy && cyZoomPanHandler) {
-    cy.off('zoom.sgvp', cyZoomPanHandler)
-    cy.off('pan.sgvp', cyZoomPanHandler)
+    cy.off('zoom', cyZoomPanHandler)
+    cy.off('pan', cyZoomPanHandler)
     cyZoomPanHandler = null
   }
 }
@@ -358,10 +365,44 @@ function clearZoomRefetch() {
     clearTimeout(zoomRefetchTimer)
     zoomRefetchTimer = null
   }
+  if (suppressClearTimer != null) {
+    clearTimeout(suppressClearTimer)
+    suppressClearTimer = null
+  }
   detachCyZoomHandlers()
   anchorNodeId.value = null
   activeFocusWord = null
-  graphBaselineZoom = 1
+  modeEntryZoom = 1
+  pendingViewportRefetch = false
+  suppressZoomRefetch = false
+}
+
+function attachViewportHandlers(core: Core) {
+  detachCyZoomHandlers()
+  cyZoomPanHandler = () => {
+    if (!cy) return
+    applyZoomStabilizedNodeSizes(cy)
+    scheduleViewportRefetch()
+  }
+  core.on('zoom', cyZoomPanHandler)
+  core.on('pan', cyZoomPanHandler)
+}
+
+function beginZoomSuppress() {
+  suppressZoomRefetch = true
+  if (suppressClearTimer != null) {
+    clearTimeout(suppressClearTimer)
+    suppressClearTimer = null
+  }
+}
+
+function endZoomSuppress() {
+  suppressZoomRefetch = false
+  if (cy) modeEntryZoom = cy.zoom() || 1
+  if (pendingViewportRefetch) {
+    pendingViewportRefetch = false
+    scheduleViewportRefetch()
+  }
 }
 
 /** Valsi (word) on the node closest to the current viewport center. */
@@ -405,34 +446,66 @@ function applyZoomStabilizedNodeSizes(core: Core) {
     .update()
 }
 
-/** After zoom/pan settles: neighborhood of the center word, or restore the base graph when zoomed out. */
-async function refetchForViewport() {
-  if (!cy || graphRenderInProgress || suppressZoomRefetch) return
-  const ratio = cy.zoom() / (graphBaselineZoom || 1)
-  if (!isFinite(ratio) || ratio <= 0) return
+async function restoreBaseGraph(seq: number) {
+  if (graphMode.value === 'preview' || !normalizeSearchQuery(searchQuery.value).trim()) {
+    graphMode.value = 'preview'
+    const res = await fetchSemanticGraph(buildGraphParams({ preview: true }))
+    if (seq !== graphFetchSeq || !cy) return
+    await renderGraph(res.data, 'preview')
+  } else {
+    const q = normalizeSearchQuery(searchQuery.value).trim()
+    const res = await fetchSemanticGraph(buildGraphParams({ preview: false }))
+    if (seq !== graphFetchSeq || !cy) return
+    await renderGraph(res.data, 'anchor', q)
+  }
+}
 
-  const logRatio = Math.log2(ratio)
-  // Zoomed back out toward the fitted overview → drop focus and restore base graph.
-  if (logRatio <= -ZOOM_RATIO_LOG_GATE) {
-    if (activeFocusWord == null) return
-    activeFocusWord = null
+/** After zoom/pan settles: neighborhood of the center word, or restore overview when zoomed out. */
+async function refetchForViewport() {
+  if (!cy || graphRenderInProgress) return
+  if (suppressZoomRefetch) {
+    pendingViewportRefetch = true
+    return
+  }
+
+  const z = cy.zoom() || 1
+  const entry = modeEntryZoom || 1
+  const focus = wordAtViewportCenter(cy)
+
+  // --- Focus mode: zoom out → overview; pan/zoom to a new center → new neighborhood ---
+  if (activeFocusWord != null) {
+    if (z <= entry * ZOOM_OUT_FACTOR) {
+      activeFocusWord = null
+      const seq = ++graphFetchSeq
+      graphRenderInProgress = true
+      graphLoading.value = true
+      try {
+        await restoreBaseGraph(seq)
+      } catch {
+        /* keep previous graph */
+      } finally {
+        if (seq === graphFetchSeq) graphLoading.value = false
+        graphRenderInProgress = false
+      }
+      return
+    }
+
+    if (!focus) return
+    if (activeFocusWord.toLowerCase() === focus.toLowerCase()) return
+
     const seq = ++graphFetchSeq
     graphRenderInProgress = true
+    activeFocusWord = focus
     graphLoading.value = true
     try {
-      if (graphMode.value === 'preview' || !normalizeSearchQuery(searchQuery.value).trim()) {
-        graphMode.value = 'preview'
-        const res = await fetchSemanticGraph(buildGraphParams({ preview: true }))
-        if (seq !== graphFetchSeq || !cy) return
-        await renderGraph(res.data, 'preview')
-      } else {
-        const q = normalizeSearchQuery(searchQuery.value).trim()
-        const res = await fetchSemanticGraph(buildGraphParams({ preview: false }))
-        if (seq !== graphFetchSeq || !cy) return
-        await renderGraph(res.data, 'anchor', q)
-      }
-    } catch {
-      /* keep previous graph */
+      const res = await fetchSemanticGraph(buildGraphParams({ focus }))
+      if (seq !== graphFetchSeq || !cy) return
+      await renderGraph(res.data, 'anchor', focus)
+    } catch (e: unknown) {
+      activeFocusWord = null
+      const err = e as { response?: { data?: { error?: string } } }
+      const msg = err.response?.data?.error
+      if (typeof msg === 'string' && msg.trim()) graphError.value = msg
     } finally {
       if (seq === graphFetchSeq) graphLoading.value = false
       graphRenderInProgress = false
@@ -440,13 +513,9 @@ async function refetchForViewport() {
     return
   }
 
-  const focus = wordAtViewportCenter(cy)
+  // --- Overview mode: zoom in past threshold → focus neighborhood of center word ---
+  if (z < entry * ZOOM_IN_FACTOR) return
   if (!focus) return
-
-  // Stay on the overview until the user zooms in; once in a focus neighborhood, allow
-  // pan/zoom to retarget a different center word.
-  if (activeFocusWord == null && logRatio < ZOOM_RATIO_LOG_GATE) return
-  if (activeFocusWord != null && activeFocusWord.toLowerCase() === focus.toLowerCase()) return
 
   const seq = ++graphFetchSeq
   graphRenderInProgress = true
@@ -456,8 +525,11 @@ async function refetchForViewport() {
     const res = await fetchSemanticGraph(buildGraphParams({ focus }))
     if (seq !== graphFetchSeq || !cy) return
     await renderGraph(res.data, 'anchor', focus)
-  } catch {
+  } catch (e: unknown) {
     activeFocusWord = null
+    const err = e as { response?: { data?: { error?: string } } }
+    const msg = err.response?.data?.error
+    if (typeof msg === 'string' && msg.trim()) graphError.value = msg
   } finally {
     if (seq === graphFetchSeq) graphLoading.value = false
     graphRenderInProgress = false
@@ -465,7 +537,11 @@ async function refetchForViewport() {
 }
 
 function scheduleViewportRefetch() {
-  if (!cy || suppressZoomRefetch) return
+  if (!cy) return
+  if (suppressZoomRefetch) {
+    pendingViewportRefetch = true
+    return
+  }
   if (zoomRefetchTimer != null) clearTimeout(zoomRefetchTimer)
   zoomRefetchTimer = setTimeout(() => {
     zoomRefetchTimer = null
@@ -739,29 +815,51 @@ async function renderGraph(
   anchorNodeId.value = anchorId
   const els = elementsFromApi(apiData, anchorId)
   if (els.length === 0) {
+    // Keep interaction alive even on empty responses.
+    attachViewportHandlers(cy)
+    endZoomSuppress()
     return
   }
   cy.add(els)
   ensureNodePaletteColors(cy)
 
-  suppressZoomRefetch = true
+  beginZoomSuppress()
+
+  let finished = false
+  const finishLayout = () => {
+    if (finished || !cy) return
+    finished = true
+    cy.fit(undefined, 32)
+    modeEntryZoom = cy.zoom() || 1
+    applyZoomStabilizedNodeSizes(cy)
+    attachViewportHandlers(cy)
+    // Layout animation / fit can still emit zoom briefly — clear suppress after a short settle.
+    if (suppressClearTimer != null) clearTimeout(suppressClearTimer)
+    suppressClearTimer = setTimeout(() => {
+      suppressClearTimer = null
+      endZoomSuppress()
+    }, 120)
+  }
+
+  // fcose/layoutstop can fail to fire in edge cases — never leave suppress stuck on.
+  if (suppressClearTimer != null) clearTimeout(suppressClearTimer)
+  suppressClearTimer = setTimeout(() => {
+    finishLayout()
+  }, 2000)
+
   try {
     if (mode === 'anchor' && anchorId) {
-      // Similarity-weighted spring layout with the anchor pinned at the origin.
-      // More-similar neighbors pull tighter, repulsion keeps labels from stacking.
       const layoutOpts = {
         name: 'fcose',
         quality: 'proof',
         randomize: true,
         animate: true,
-        animationDuration: 500,
-        fit: true,
+        animationDuration: 450,
+        fit: false,
         padding: 32,
         nodeRepulsion: () => 18000,
         idealEdgeLength: (edge: { data: (k: string) => unknown }) => {
           const s = Number(edge.data('similarity')) || 0
-          // similarity in [0..1]: closer neighbors get shorter springs (~70),
-          // weakest similarity pushes to ~320. Anchor-touching edges get a small extra pull.
           const isAnchorEdge = edge.data('isAnchorEdge') === 'yes'
           const base = 70 + 250 * (1 - Math.max(0, Math.min(1, s)))
           return isAnchorEdge ? base * 0.78 : base
@@ -775,35 +873,24 @@ async function renderGraph(
         tile: false,
         fixedNodeConstraint: [{ nodeId: anchorId, position: { x: 0, y: 0 } }],
       } as unknown as LayoutOptions
-      cy.layout(layoutOpts).run()
+      const layout = cy.layout(layoutOpts)
+      layout.one('layoutstop', finishLayout)
+      layout.run()
     } else {
-      cy.layout({
+      const layout = cy.layout({
         name: 'fcose',
         quality: 'default',
         randomize: true,
         animate: true,
-        animationDuration: 400,
-        fit: true,
+        animationDuration: 350,
+        fit: false,
         padding: 16,
-      } as LayoutOptions).run()
+      } as LayoutOptions)
+      layout.one('layoutstop', finishLayout)
+      layout.run()
     }
-    cy.fit(undefined, 32)
-
-    graphBaselineZoom = cy.zoom() || 1
-    applyZoomStabilizedNodeSizes(cy)
-    cyZoomPanHandler = () => {
-      if (!cy) return
-      applyZoomStabilizedNodeSizes(cy)
-      scheduleViewportRefetch()
-    }
-    cy.on('zoom.sgvp', cyZoomPanHandler)
-    cy.on('pan.sgvp', cyZoomPanHandler)
-  } finally {
-    // Give the animated layout/fit time to settle before accepting zoom-driven refetches.
-    setTimeout(() => {
-      suppressZoomRefetch = false
-      if (cy) graphBaselineZoom = cy.zoom() || 1
-    }, 650)
+  } catch {
+    finishLayout()
   }
 }
 
@@ -816,7 +903,11 @@ async function initCy() {
 
   cy = cytoscape({
     container,
-    wheelSensitivity: 0.35,
+    wheelSensitivity: 0.45,
+    minZoom: 0.05,
+    maxZoom: 10,
+    userZoomingEnabled: true,
+    userPanningEnabled: true,
     style: [
       {
         selector: 'node',

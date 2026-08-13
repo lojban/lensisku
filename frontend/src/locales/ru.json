@@ -134,7 +134,7 @@
     "waveSourceMail": "Почта",
     "waveSourceWiki": "Вики-статьи",
     "similarDefinitions": "Похожие определения",
-    "clearSimilarMode": "Сбросить"
+    "similarDefinitionsHint": "Показаны определения, ближайшие к выбранному."
   },
   "wiki": {
     "back": "Назад",

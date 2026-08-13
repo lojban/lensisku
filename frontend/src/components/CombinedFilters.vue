@@ -438,6 +438,11 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  /** Force the Reset control visible (e.g. find-similar mode with no other filters). */
+  forceShowReset: {
+    type: Boolean,
+    default: false,
+  },
   /** Upper bound for “max nodes” on the semantic graph page (server `SEMANTIC_GRAPH_MAX_LIMIT`). */
   semanticGraphMaxNodes: {
     type: Number,
@@ -797,11 +802,12 @@ const shouldPulseExpandChevron = computed(() => !expanded.value && hasFilledAdva
 
 const hasAnyActiveFilters = computed(() => {
   return Boolean(
-    selectedLangs.value.length > 0 ||
-    hasFilledAdvancedFilters.value ||
-    !isSemantic.value ||
-    !searchInPhrases.value ||
-    expanded.value
+    props.forceShowReset ||
+      selectedLangs.value.length > 0 ||
+      hasFilledAdvancedFilters.value ||
+      !isSemantic.value ||
+      !searchInPhrases.value ||
+      expanded.value
   )
 })
 
