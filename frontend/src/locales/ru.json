@@ -132,7 +132,9 @@
     "waveSourceJbotcan": "jbotcan",
     "waveSourceComments": "Комментарии",
     "waveSourceMail": "Почта",
-    "waveSourceWiki": "Вики-статьи"
+    "waveSourceWiki": "Вики-статьи",
+    "similarDefinitions": "Похожие определения",
+    "clearSimilarMode": "Сбросить"
   },
   "wiki": {
     "back": "Назад",
@@ -1231,6 +1233,7 @@
     "definitionCard": {
       "editItemTitle": "Редактировать элемент",
       "copyTitle": "Скопировать слово и определение в буфер обмена",
+      "findSimilarTitle": "Найти похожие определения",
       "moveUpTitle": "Переместить вверх",
       "moveDownTitle": "Переместить вниз",
       "removeItemTitle": "Удалить элемент",

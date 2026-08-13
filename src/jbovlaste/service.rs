@@ -114,6 +114,16 @@ pub async fn semantic_search(
         conditions.push("AND v.typeid != 16".to_string());
     }
 
+    let exclude_definition_id_value;
+    if let Some(exclude_id) = params.exclude_definition_id {
+        exclude_definition_id_value = exclude_id;
+        conditions.push(format!(
+            "AND d.definitionid <> ${}",
+            query_params.len() + 1
+        ));
+        query_params.push(&exclude_definition_id_value);
+    }
+
     let additional_conditions = conditions.join(" ");
 
     let total: i64 = if params.include_total_count {
@@ -336,6 +346,30 @@ pub const SEMANTIC_GRAPH_ANCHOR_ENGLISH_LANGID: i32 = 2;
 
 fn normalize_semantic_graph_valsi_lookup_key(search_term: &str) -> String {
     search_term.trim().replace(' ', "_")
+}
+
+/// Stored embedding for a specific definition (find-similar / neighbor search).
+pub async fn embedding_for_definition(
+    pool: &Pool,
+    definition_id: i32,
+) -> Result<Option<Vec<f32>>, Box<dyn std::error::Error>> {
+    let client = pool.get().await?;
+    let row = client
+        .query_opt(
+            r#"
+            SELECT embedding
+            FROM definitions
+            WHERE definitionid = $1
+              AND embedding IS NOT NULL
+            "#,
+            &[&definition_id],
+        )
+        .await?;
+    let Some(row) = row else {
+        return Ok(None);
+    };
+    let emb: pgvector::Vector = row.get(0);
+    Ok(Some(emb.into()))
 }
 
 /// Stored embedding for the English definition of a valsi matching `search_term` (exact match preferred, then case-insensitive).

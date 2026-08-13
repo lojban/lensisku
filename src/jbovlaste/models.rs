@@ -22,6 +22,8 @@ pub struct SearchDefinitionsParams {
     pub search_in_phrases: Option<bool>,
     /// When false, semantic search skips the extra COUNT query and sets `total` to the number of rows returned.
     pub include_total_count: bool,
+    /// Exclude this definition from semantic neighbors (find-similar mode).
+    pub exclude_definition_id: Option<i32>,
 }
 
 /// Parameters for building the semantic similarity graph (embedding neighborhood + k-NN edges).

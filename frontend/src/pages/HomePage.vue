@@ -230,8 +230,27 @@
         </div>
 
         <div class="relative z-0" :class="{ 'pointer-events-none select-none': isLoading }">
+          <div
+            v-if="similarDefinitionId"
+            class="mb-3 flex flex-wrap items-center gap-2"
+          >
+            <span class="badge badge-muted inline-flex items-center gap-1.5">
+              <EqualApproximately class="h-3.5 w-3.5 shrink-0" />
+              {{ $t('home.similarDefinitions') }}
+            </span>
+            <Button
+              variant="empty"
+              type="button"
+              class="inline-flex h-7 items-center gap-1 px-2 text-xs"
+              :title="$t('home.clearSimilarMode')"
+              @click="clearSimilarMode"
+            >
+              <X class="h-3.5 w-3.5 shrink-0" />
+              <span>{{ $t('home.clearSimilarMode') }}</span>
+            </Button>
+          </div>
           <PhraseSplit
-            v-if="searchMode === 'dictionary' || searchMode === 'semantic'"
+            v-if="(searchMode === 'dictionary' || searchMode === 'semantic') && !similarDefinitionId"
             :phrase="searchQuery"
             :selected-languages="filters.selectedLanguages"
             :source-lang-id="filters.source_langid"
@@ -381,7 +400,7 @@
 
 <script setup lang="ts">
 import { jwtDecode } from 'jwt-decode'
-import { MessageSquare, ChevronDown, ChevronUp, AudioWaveform, Plus } from 'lucide-vue-next'
+import { MessageSquare, ChevronDown, ChevronUp, AudioWaveform, Plus, EqualApproximately, X } from 'lucide-vue-next'
 import { ref, onMounted, watch, computed, onBeforeUnmount, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 
@@ -599,6 +618,8 @@ const sortOrder = ref('desc')
 // Get search query from localStorage or use default
 const getInitialSearchQuery = () => {
   if (typeof window === 'undefined') return
+  // Find-similar mode: ignore stored text query
+  if (route.query.definition_id) return ''
   const storedQuery = localStorage.getItem('searchQuery')
   return normalizeSearchQuery(storedQuery || props.urlSearchQuery || '')
 }
@@ -618,6 +639,7 @@ const searchQuery = ref(getInitialSearchQuery())
 // Get search mode from localStorage or use default
 const getInitialSearchMode = () => {
   if (typeof window === 'undefined') return
+  if (route.query.definition_id) return 'semantic'
   const storedMode = localStorage.getItem('searchMode')
   const mode = storedMode || props.urlSearchMode
   const normalized = mode === 'messages' ? 'comments' : mode
@@ -626,6 +648,16 @@ const getInitialSearchMode = () => {
 }
 
 const searchMode = ref(getInitialSearchMode())
+
+const getInitialSimilarDefinitionId = (): number | null => {
+  const raw = route.query.definition_id
+  if (raw === undefined || raw === null || raw === '') return null
+  const id = parseInt(queryStr(raw), 10)
+  return Number.isFinite(id) && id > 0 ? id : null
+}
+
+/** When set, semantic search uses this definition's stored embedding (find-similar mode). */
+const similarDefinitionId = ref<number | null>(getInitialSimilarDefinitionId())
 
 /** Filter discussion waves: all site + mail, jbotcan imports, site comments only, or mail only. */
 const WAVE_SOURCES = ['all', 'jbotcan', 'comments', 'mail', 'wiki'] as const
@@ -684,6 +716,7 @@ const showTrendingHome = computed(() => {
   const q = (searchQuery.value || '').trim()
   const noFilters = !filters.value.selmaho && !filters.value.username && !filters.value.word_type
   if (searchMode.value === 'comments') return false
+  if (similarDefinitionId.value) return false
   return !q && noFilters
 })
 
@@ -727,10 +760,12 @@ const fetchDefinitions = async (page, search = '') => {
   decomposition.value = []
 
   try {
+    const similarId = similarDefinitionId.value
     const params: {
       page: number
       per_page: number
-      search: string
+      search?: string
+      definition_id?: number
       include_comments: boolean
       username: string | undefined
       group_by_thread: boolean
@@ -742,7 +777,8 @@ const fetchDefinitions = async (page, search = '') => {
     } = {
       page,
       per_page: 10,
-      search: search,
+      search: similarId ? undefined : search,
+      definition_id: similarId || undefined,
       include_comments: true,
       username: filters.value.username || undefined,
       ...(filters.value.selectedLanguages.length > 0 && {
@@ -768,7 +804,7 @@ const fetchDefinitions = async (page, search = '') => {
     }
 
     let response
-    const isSemantic = searchMode.value === 'semantic'
+    const isSemantic = searchMode.value === 'semantic' || !!similarId
 
     if (auth.state.isLoggedIn || isSemantic) {
       response = await searchDefinitions(
@@ -782,6 +818,7 @@ const fetchDefinitions = async (page, search = '') => {
       // Use fast search for non-logged in users (regular dictionary)
       const fastParams = { ...params }
       delete fastParams.include_comments
+      delete fastParams.definition_id
 
       response = await fastSearchDefinitions(fastParams, signal)
     }
@@ -860,7 +897,8 @@ const loadAllDefinitionIdsForCurrentSearch = async (
 
   const baseParams: Record<string, unknown> = {
     per_page: ADD_ALL_PER_PAGE,
-    search: (searchQuery.value || '').trim(),
+    search: similarDefinitionId.value ? undefined : (searchQuery.value || '').trim(),
+    definition_id: similarDefinitionId.value || undefined,
     include_comments: false,
     username: filters.value.username || undefined,
   }
@@ -879,7 +917,7 @@ const loadAllDefinitionIdsForCurrentSearch = async (
     baseParams.search_in_phrases = filters.value.searchInPhrases
   }
 
-  const isSemantic = searchMode.value === 'semantic'
+  const isSemantic = searchMode.value === 'semantic' || !!similarDefinitionId.value
   const collected: number[] = []
   const seen = new Set<number>()
   let page = 1
@@ -1126,6 +1164,7 @@ const fetchData = async () => {
 
   if (
     !searchQuery.value.trim() &&
+    !similarDefinitionId.value &&
     !filters.value.selmaho &&
     !filters.value.username &&
     !filters.value.word_type
@@ -1181,6 +1220,7 @@ const handleFiltersReset = async () => {
   }
   currentPage.value = 1
   searchQuery.value = ''
+  similarDefinitionId.value = null
   // if (searchFormRef.value) {
   //   searchFormRef.value.query = ''
   // }
@@ -1193,6 +1233,7 @@ const updateUrlWithFilters = () => {
       ...route.query,
       q: searchQuery.value || undefined,
       mode: searchMode.value,
+      definition_id: similarDefinitionId.value ? String(similarDefinitionId.value) : undefined,
       langs:
         filters.value.selectedLanguages.length > 0
           ? filters.value.selectedLanguages.join(',')
@@ -1214,11 +1255,15 @@ const performSearch = ({ query, mode }: { query: string; mode: string }) => {
   // Use semantic mode if we're in dictionary mode and semantic search is enabled
   const effectiveMode = mode === 'dictionary' && filters.value.isSemantic ? 'semantic' : mode
 
+  // Text search exits find-similar mode
+  similarDefinitionId.value = null
+
   // Reset to first page whenever search query or mode changes
   const updateParams = {
     ...route.query,
     q: query || undefined, // Use undefined if query is empty
     mode: effectiveMode,
+    definition_id: undefined,
     group_by_thread: groupByThread.value ? 'true' : undefined,
     page: undefined, // Always reset to page 1 for a new search
     langs:
@@ -1265,7 +1310,25 @@ const performSearch = ({ query, mode }: { query: string; mode: string }) => {
 
 const handleLogoClear = () => {
   searchFormRef.value?.focusInput()
+  similarDefinitionId.value = null
   performSearch({ query: '', mode: searchMode.value })
+}
+
+const clearSimilarMode = () => {
+  similarDefinitionId.value = null
+  searchQuery.value = ''
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('searchQuery', '')
+  }
+  router.push({
+    query: {
+      ...route.query,
+      q: undefined,
+      page: undefined,
+      definition_id: undefined,
+      mode: searchMode.value,
+    },
+  })
 }
 
 // Navigation handlers
@@ -1329,6 +1392,18 @@ const syncFromRoute = () => {
     if (mode === 'muplis') mode = 'semantic'
     searchMode.value = mode
     if (typeof window !== 'undefined') localStorage.setItem('searchMode', mode)
+  }
+
+  if (query.definition_id !== undefined && query.definition_id !== '') {
+    const id = parseInt(queryStr(query.definition_id), 10)
+    similarDefinitionId.value = Number.isFinite(id) && id > 0 ? id : null
+    if (similarDefinitionId.value) {
+      searchMode.value = 'semantic'
+      filters.value.isSemantic = true
+      searchQuery.value = ''
+    }
+  } else {
+    similarDefinitionId.value = null
   }
   // groupByThread is now handled by its watcher and getInitialGroupByThread
   // if (query.group_by_thread !== undefined) {
@@ -1414,8 +1489,13 @@ onMounted(async () => {
     const queryToPush = { ...route.query } // Start with current URL query
     let pushNeeded = false
 
-    // Sync 'q' from localStorage/default to URL if different
-    if (searchQuery.value && route.query.q !== searchQuery.value) {
+    // Sync 'q' from localStorage/default to URL if different (skip in find-similar mode)
+    if (similarDefinitionId.value) {
+      queryToPush.q = undefined
+      if (route.query.q !== undefined) {
+        pushNeeded = true
+      }
+    } else if (searchQuery.value && route.query.q !== searchQuery.value) {
       queryToPush.q = searchQuery.value
       pushNeeded = true
     } else if (!searchQuery.value && route.query.q === undefined) {
@@ -1524,7 +1604,8 @@ watch(
       newQuery.word_type !== oldQuery?.word_type ||
       newQuery.source_langid !== oldQuery?.source_langid ||
       newQuery.searchInPhrases !== oldQuery?.searchInPhrases ||
-      newQuery.wave_source !== oldQuery?.wave_source
+      newQuery.wave_source !== oldQuery?.wave_source ||
+      newQuery.definition_id !== oldQuery?.definition_id
 
     const groupByThreadChanged = newQuery.group_by_thread !== oldQuery?.group_by_thread
     if (groupByThreadChanged) {

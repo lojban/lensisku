@@ -9,6 +9,8 @@ pub struct SearchDefinitionsQuery {
     pub page: Option<i64>,
     pub per_page: Option<i64>,
     pub search: Option<String>,
+    /// When set, semantic search uses this definition's stored embedding instead of embedding `search`.
+    pub definition_id: Option<i32>,
     pub sort_by: Option<String>,
     pub sort_order: Option<String>,
     pub include_comments: Option<bool>,

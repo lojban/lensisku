@@ -129,8 +129,9 @@ pub fn generate_search_cache_key(query: &SearchDefinitionsQuery, use_fast_search
 pub fn generate_semantic_search_cache_key(query: &SearchDefinitionsQuery) -> String {
     // Key includes search term and all filter/pagination options relevant to semantic search
     format!(
-        "semantic_search:{}:{}:{}:{}:{}:{}:{}:{}:{}",
+        "semantic_search:{}:{}:{}:{}:{}:{}:{}:{}:{}:{}",
         query.search.as_deref().unwrap_or(""),
+        query.definition_id.unwrap_or(0),
         query.page.unwrap_or(1),
         query.per_page.unwrap_or(20),
         query.languages.as_deref().unwrap_or(""),

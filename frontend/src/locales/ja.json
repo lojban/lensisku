@@ -134,7 +134,9 @@
     "waveSourceJbotcan": "jbotcan",
     "waveSourceComments": "コメント",
     "waveSourceMail": "メール",
-    "waveSourceWiki": "Wiki記事"
+    "waveSourceWiki": "Wiki記事",
+    "similarDefinitions": "類似の定義",
+    "clearSimilarMode": "クリア"
   },
   "wiki": {
     "back": "戻る",
@@ -1277,6 +1279,7 @@
     "definitionCard": {
       "editItemTitle": "項目を編集",
       "copyTitle": "語と定義をクリップボードにコピー",
+      "findSimilarTitle": "類似の定義を探す",
       "moveUpTitle": "上へ",
       "moveDownTitle": "下へ",
       "removeItemTitle": "項目を削除",

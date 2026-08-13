@@ -73,17 +73,43 @@ pub async fn semantic_search(
         }));
     }
 
+    let processed_text = query.search.as_deref().unwrap_or("").trim().to_string();
+    let definition_id = query.definition_id;
+
+    if definition_id.is_none() && processed_text.is_empty() {
+        return HttpResponse::BadRequest().json(json!({
+            "error": "Provide either search text or definition_id for semantic search."
+        }));
+    }
+
     let cache_key = crate::middleware::cache::generate_semantic_search_cache_key(&query);
 
-    let processed_text = query.search.as_deref().unwrap_or("").trim().to_string();
-
-    // Generate embedding in-process via fastembed (AllMiniLML6V2, mean pooling, L2-normalised)
-    let embedding = match crate::utils::embeddings::get_embedding(&processed_text).await {
-        Ok(emb) => emb,
-        Err(e) => {
-            return HttpResponse::InternalServerError().json(json!({
-                "error": format!("Failed to generate embedding: {}", e)
-            }));
+    // Prefer stored embedding when definition_id is set; otherwise embed the search text.
+    let (embedding, search_term, exclude_definition_id) = if let Some(def_id) = definition_id {
+        match service::embedding_for_definition(&pool, def_id).await {
+            Ok(Some(emb)) => (emb, String::new(), Some(def_id)),
+            Ok(None) => {
+                return HttpResponse::NotFound().json(json!({
+                    "error": format!(
+                        "Definition {} not found or has no embedding yet.",
+                        def_id
+                    )
+                }));
+            }
+            Err(e) => {
+                return HttpResponse::InternalServerError().json(json!({
+                    "error": format!("Failed to load definition embedding: {}", e)
+                }));
+            }
+        }
+    } else {
+        match crate::utils::embeddings::get_embedding(&processed_text).await {
+            Ok(emb) => (emb, processed_text, None),
+            Err(e) => {
+                return HttpResponse::InternalServerError().json(json!({
+                    "error": format!("Failed to generate embedding: {}", e)
+                }));
+            }
         }
     };
 
@@ -94,7 +120,7 @@ pub async fn semantic_search(
                 let params = SearchDefinitionsParams {
                     page,
                     per_page,
-                    search_term: processed_text.clone(),
+                    search_term: search_term.clone(),
                     include_comments: false,
                     sort_by: "similarity".to_string(),
                     sort_order: "asc".to_string(),
@@ -105,6 +131,7 @@ pub async fn semantic_search(
                     source_langid: query.source_langid,
                     search_in_phrases: query.search_in_phrases,
                     include_total_count: true,
+                    exclude_definition_id,
                 };
 
                 service::semantic_search(&pool, params, embedding, Some(&parsers)).await
@@ -445,6 +472,7 @@ pub async fn search_definitions(
                     source_langid: query.source_langid,
                     search_in_phrases: query.search_in_phrases,
                     include_total_count: true,
+                    exclude_definition_id: None,
                 };
 
                 if use_fast_search {

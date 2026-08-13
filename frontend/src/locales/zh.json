@@ -134,7 +134,9 @@
     "waveSourceJbotcan": "jbotcan",
     "waveSourceComments": "评论",
     "waveSourceMail": "邮件",
-    "waveSourceWiki": "维基文章"
+    "waveSourceWiki": "维基文章",
+    "similarDefinitions": "相似释义",
+    "clearSimilarMode": "清除"
   },
   "wiki": {
     "back": "返回",
@@ -1282,6 +1284,7 @@
     "definitionCard": {
       "editItemTitle": "编辑条目",
       "copyTitle": "复制词与释义到剪贴板",
+      "findSimilarTitle": "查找相似释义",
       "moveUpTitle": "上移",
       "moveDownTitle": "下移",
       "removeItemTitle": "移除条目",

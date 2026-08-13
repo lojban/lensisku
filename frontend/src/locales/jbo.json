@@ -134,7 +134,9 @@
     "waveSourceJbotcan": "la .jbotcan.",
     "waveSourceComments": "pinka",
     "waveSourceMail": "se mrilu",
-    "waveSourceWiki": "uitki"
+    "waveSourceWiki": "uitki",
+    "similarDefinitions": "se smuni lo jibni",
+    "clearSimilarMode": "co'u julne"
   },
   "wiki": {
     "back": "xrukla",
@@ -1295,6 +1297,7 @@
     "definitionCard": {
       "editItemTitle": "galfi lo da",
       "copyTitle": "fukpi lo valsi .e lo velckivei",
+      "findSimilarTitle": "pentoi lo se smuni be lo jibni",
       "moveUpTitle": "mo'i ga'u muvdu",
       "moveDownTitle": "mo'i ni'a muvdu",
       "removeItemTitle": "vimcu lo da",

@@ -1332,6 +1332,7 @@ async fn run_jbovlaste_semantic_search_core(
         source_langid: filters.source_langid,
         search_in_phrases: None,
         include_total_count: false,
+        exclude_definition_id: None,
     };
 
     let run_db = || async {

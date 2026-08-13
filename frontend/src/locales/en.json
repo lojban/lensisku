@@ -137,7 +137,9 @@
     "waveSourceJbotcan": "jbotcan",
     "waveSourceComments": "Comments",
     "waveSourceMail": "Mail messages",
-    "waveSourceWiki": "Wiki articles"
+    "waveSourceWiki": "Wiki articles",
+    "similarDefinitions": "Similar definitions",
+    "clearSimilarMode": "Clear"
   },
   "wiki": {
     "back": "Back",
@@ -1306,6 +1308,7 @@
     "definitionCard": {
       "editItemTitle": "Edit item",
       "copyTitle": "Copy word and definition to clipboard",
+      "findSimilarTitle": "Find similar definitions",
       "moveUpTitle": "Move up",
       "moveDownTitle": "Move down",
       "removeItemTitle": "Remove item",

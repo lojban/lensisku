@@ -120,6 +120,16 @@
                   <Pencil class="h-4 w-4 shrink-0" />
                   <span class="sr-only">{{ t('components.definitionCard.editButton') }}</span>
                 </Button>
+                <Button
+                  v-if="definition.definitionid"
+                  variant="empty"
+                  class="inline-flex items-center gap-2"
+                  :title="t('components.definitionCard.findSimilarTitle')"
+                  @click.stop="findSimilar"
+                >
+                  <EqualApproximately class="h-4 w-4 shrink-0" />
+                  <span class="sr-only">{{ t('components.definitionCard.findSimilarTitle') }}</span>
+                </Button>
                 <ClipboardButton
                   v-if="!showWordMetaRow"
                   :content="
@@ -653,7 +663,7 @@ import {
   Loader2,
 } from 'lucide-vue-next'
 import { computed, ref, watch, type PropType } from 'vue'
-import { RouterLink, useRouter } from 'vue-router'
+import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { getTypeClass } from '@/utils/wordTypeUtils' // Import shared utility
 
@@ -728,6 +738,7 @@ import AudioPlayer from './AudioPlayer.vue'
 import LazyMathJax from './LazyMathJax.vue'
 const { t, locale } = useI18n()
 const auth = useAuth()
+const route = useRoute()
 const router = useRouter()
 const { showError } = useError()
 const { formatDateTime } = useDateFormat()
@@ -1082,6 +1093,22 @@ const formatDate = (timestamp: string | number) => {
 
 const handleDeleteClick = () => {
   showDeleteConfirm.value = true
+}
+
+const findSimilar = () => {
+  const definitionId = props.definition.definitionid
+  if (!definitionId) return
+  const currentLocale = (locale.value as string) || 'en'
+  router.push({
+    path: `/${currentLocale}`,
+    query: {
+      ...route.query,
+      q: undefined,
+      page: undefined,
+      mode: 'semantic',
+      definition_id: String(definitionId),
+    },
+  })
 }
 
 const confirmDelete = async () => {
