@@ -234,22 +234,24 @@
 
         <div class="relative z-0" :class="{ 'pointer-events-none select-none': isLoading }">
           <template v-if="similarDefinitionId">
+            <div v-if="isLoadingSimilarAnchor" class="mb-4 flex justify-center py-6">
+              <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600" />
+            </div>
+            <DefinitionCard
+              v-else-if="similarAnchorDefinition"
+              :definition="similarAnchorDefinition"
+              :languages="languages"
+              :show-vote-buttons="auth.state.isLoggedIn"
+              :disable-toolbar="true"
+              :disable-owner-only-lock="true"
+              :hide-find-similar="true"
+              :collections="collections"
+              class="mb-4"
+              @collection-updated="collections = $event"
+            />
             <div class="relative mb-4">
-              <AlertComponent type="tip" class="!pr-10">
-                <div v-if="isLoadingSimilarAnchor" class="flex justify-center py-6">
-                  <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600" />
-                </div>
-                <DefinitionCard
-                  v-else-if="similarAnchorDefinition"
-                  :definition="similarAnchorDefinition"
-                  :languages="languages"
-                  :show-vote-buttons="auth.state.isLoggedIn"
-                  :disable-toolbar="true"
-                  :disable-owner-only-lock="true"
-                  :disable-border="true"
-                  :collections="collections"
-                  @collection-updated="collections = $event"
-                />
+              <AlertComponent type="tip" class="!pr-10" :label="$t('home.similarSearchLabel')">
+                {{ $t('home.similarSearchHint') }}
               </AlertComponent>
               <button
                 type="button"

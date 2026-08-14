@@ -135,7 +135,9 @@
     "waveSourceJbotcan": "jbotcan",
     "waveSourceComments": "评论",
     "waveSourceMail": "邮件",
-    "waveSourceWiki": "维基文章"
+    "waveSourceWiki": "维基文章",
+    "similarSearchLabel": "相似搜索",
+    "similarSearchHint": "显示与上方卡片最接近的释义。"
   },
   "wiki": {
     "back": "返回",

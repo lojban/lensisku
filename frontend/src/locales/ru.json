@@ -133,7 +133,9 @@
     "waveSourceJbotcan": "jbotcan",
     "waveSourceComments": "Комментарии",
     "waveSourceMail": "Почта",
-    "waveSourceWiki": "Вики-статьи"
+    "waveSourceWiki": "Вики-статьи",
+    "similarSearchLabel": "Поиск похожих",
+    "similarSearchHint": "Показаны определения, ближайшие к карточке выше."
   },
   "wiki": {
     "back": "Назад",

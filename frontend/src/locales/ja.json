@@ -135,7 +135,9 @@
     "waveSourceJbotcan": "jbotcan",
     "waveSourceComments": "コメント",
     "waveSourceMail": "メール",
-    "waveSourceWiki": "Wiki記事"
+    "waveSourceWiki": "Wiki記事",
+    "similarSearchLabel": "類似検索",
+    "similarSearchHint": "上のカードに最も近い定義を表示しています。"
   },
   "wiki": {
     "back": "戻る",

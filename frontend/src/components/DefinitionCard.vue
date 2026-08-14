@@ -786,6 +786,10 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  hideFindSimilar: {
+    type: Boolean,
+    default: false,
+  },
   disableBorder: {
     type: Boolean,
     default: false,
@@ -1120,6 +1124,7 @@ const isLojbanDefinitionLanguage = computed(() => {
 })
 
 const canFindSimilar = computed(() => {
+  if (props.hideFindSimilar) return false
   if (!props.definition.definitionid) return false
   return !isLojbanDefinitionLanguage.value
 })

@@ -138,7 +138,9 @@
     "waveSourceJbotcan": "jbotcan",
     "waveSourceComments": "Comments",
     "waveSourceMail": "Mail messages",
-    "waveSourceWiki": "Wiki articles"
+    "waveSourceWiki": "Wiki articles",
+    "similarSearchLabel": "Similar search",
+    "similarSearchHint": "Showing definitions closest to the card above."
   },
   "wiki": {
     "back": "Back",
