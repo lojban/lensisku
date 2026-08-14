@@ -707,6 +707,7 @@ interface DefinitionRecord {
   created_at?: string
   etymology?: string
   has_sound?: boolean
+  langrealname?: string
   sound_url?: string
 }
 
@@ -720,7 +721,9 @@ interface LinkSearchDefinition {
 
 interface LanguageOption {
   id: number
+  tag?: string
   real_name: string
+  english_name?: string
   lojban_name?: string
 }
 
@@ -1095,12 +1098,30 @@ const handleDeleteClick = () => {
   showDeleteConfirm.value = true
 }
 
-/** Find-similar uses stored embeddings; Lojban-language definitions (langid 1) are not embedded. */
+const LOJBAN_LANGID = 1
+
+/** True when this card is a Lojban-language definition (no stored embeddings). */
+const isLojbanDefinitionLanguage = computed(() => {
+  const langId = Number(props.definition.langid ?? props.definition.lang_id)
+  if (Number.isFinite(langId) && langId === LOJBAN_LANGID) return true
+  const lang = props.languages.find(
+    (l) => l.id === langId || Number(l.id) === langId
+  )
+  if ((lang?.tag || '').toLowerCase() === 'jbo') return true
+  const names = [
+    props.definition.langrealname,
+    lang?.real_name,
+    lang?.english_name,
+    lang?.lojban_name,
+  ]
+    .filter(Boolean)
+    .map((s) => String(s).toLowerCase().replace(/\./g, ''))
+  return names.some((n) => n === 'lojban' || n === 'jbo')
+})
+
 const canFindSimilar = computed(() => {
-  const id = props.definition.definitionid
-  if (!id) return false
-  const langId = props.definition.langid ?? props.definition.lang_id
-  return langId != null && langId !== 1
+  if (!props.definition.definitionid) return false
+  return !isLojbanDefinitionLanguage.value
 })
 
 const findSimilar = () => {

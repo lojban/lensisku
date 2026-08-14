@@ -61,7 +61,6 @@ pub async fn semantic_search(
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
 
-    let similarity_threshold = semantic_similarity_threshold();
     let offset = (params.page - 1) * params.per_page;
 
     // Convert Option<Vec<i32>> to Option<&[i32]> for Postgres
@@ -126,6 +125,37 @@ pub async fn semantic_search(
 
     let additional_conditions = conditions.join(" ");
 
+    // Find-similar (`definition_id`): use the stored embedding only, rank by cosine distance.
+    // Text semantic search also applies lexical exact-match boosts; those must not apply here.
+    let neighbor_search = params.exclude_definition_id.is_some();
+    let embedding_match_sql = if neighbor_search {
+        "AND d.embedding IS NOT NULL".to_string()
+    } else {
+        r#"AND (d.embedding IS NOT NULL OR v.word = $3 OR v.word = $4 OR v.word ILIKE $3 OR v.word ILIKE $4
+                   OR (d.cached_rafsi IS NOT NULL AND ($3 = ANY(string_to_array(d.cached_rafsi, ' ')) OR $4 = ANY(string_to_array(d.cached_rafsi, ' '))))
+                   OR (d.cached_glosswords IS NOT NULL AND d.cached_glosswords != ''
+                       AND LOWER($3) = ANY(string_to_array(d.cached_glosswords, '|'))))"#
+            .to_string()
+    };
+    let vector_order_sql = if neighbor_search {
+        "ORDER BY similarity ASC NULLS LAST"
+    } else {
+        "ORDER BY exact_match_rank ASC, similarity ASC"
+    };
+    let rank_filter_sql = if neighbor_search {
+        "WHERE score > 0".to_string()
+    } else {
+        format!(
+            "WHERE score > 0 OR exact_match_rank <= 2 -- AND similarity < {}",
+            semantic_similarity_threshold()
+        )
+    };
+    let outer_order_sql = if neighbor_search {
+        "ORDER BY r.similarity ASC NULLS LAST"
+    } else {
+        "ORDER BY r.exact_match_rank ASC, r.similarity ASC"
+    };
+
     let total: i64 = if params.include_total_count {
         // Full match count for HTTP pagination (extra query).
         let count_query = format!(
@@ -157,17 +187,14 @@ pub async fn semantic_search(
             WHERE d.langid != 1 
               AND (d.langid = ANY($2) OR $2 IS NULL) 
               AND d.definition != ''
-              AND (d.embedding IS NOT NULL OR v.word = $3 OR v.word = $4 OR v.word ILIKE $3 OR v.word ILIKE $4
-                   OR (d.cached_rafsi IS NOT NULL AND ($3 = ANY(string_to_array(d.cached_rafsi, ' ')) OR $4 = ANY(string_to_array(d.cached_rafsi, ' '))))
-                   OR (d.cached_glosswords IS NOT NULL AND d.cached_glosswords != ''
-                       AND LOWER($3) = ANY(string_to_array(d.cached_glosswords, '|'))))
+              {embedding_match_sql}
             {additional_conditions}
-            ORDER BY exact_match_rank ASC, similarity ASC
+            {vector_order_sql}
             LIMIT 1000
         )
         SELECT COUNT(*)
         FROM vector_search
-        WHERE score > 0 OR exact_match_rank <= 2 -- AND similarity < SIMILARITY_THRESHOLD"#,
+        {rank_filter_sql}"#,
         );
         transaction
             .query_one(&count_query, &query_params)
@@ -238,23 +265,20 @@ pub async fn semantic_search(
             WHERE d.langid != 1 
               AND (d.langid = ANY($2) OR $2 IS NULL) 
               AND d.definition != ''
-              AND (d.embedding IS NOT NULL OR v.word = $3 OR v.word = $4 OR v.word ILIKE $3 OR v.word ILIKE $4
-                   OR (d.cached_rafsi IS NOT NULL AND ($3 = ANY(string_to_array(d.cached_rafsi, ' ')) OR $4 = ANY(string_to_array(d.cached_rafsi, ' '))))
-                   OR (d.cached_glosswords IS NOT NULL AND d.cached_glosswords != ''
-                       AND LOWER($3) = ANY(string_to_array(d.cached_glosswords, '|'))))
+              {embedding_match_sql}
             {additional_conditions}
-            ORDER BY exact_match_rank ASC, similarity ASC
+            {vector_order_sql}
             LIMIT 1000
         ),
         ranked_results AS (
             SELECT DISTINCT ON (definitionid) *
             FROM vector_search
-            WHERE score > 0 OR exact_match_rank <= 2 -- AND similarity < {similarity_threshold}
+            {rank_filter_sql}
             ORDER BY definitionid
         )
         SELECT r.*
         FROM ranked_results r
-        ORDER BY r.exact_match_rank ASC, r.similarity ASC
+        {outer_order_sql}
         {limit_offset_sql}"#
     );
 
@@ -320,8 +344,12 @@ pub async fn semantic_search(
         });
     }
 
-    // Decomposition is fetched after the main query results
-    let decomposition = get_source_words(&params.search_term, &transaction, parsers).await?;
+    // Decomposition is fetched after the main query results (not used for find-similar).
+    let decomposition = if neighbor_search {
+        Vec::new()
+    } else {
+        get_source_words(&params.search_term, &transaction, parsers).await?
+    };
 
     transaction.commit().await?;
 
@@ -361,6 +389,7 @@ pub async fn embedding_for_definition(
             FROM definitions
             WHERE definitionid = $1
               AND embedding IS NOT NULL
+              AND langid != 1
             "#,
             &[&definition_id],
         )
