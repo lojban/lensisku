@@ -119,6 +119,7 @@
     "searchResultsTitle": {
       "dictionary": "词典与语料",
       "semantic": "语义搜索",
+      "similar": "相似结果",
       "comments": "讨论波",
       "messages": "邮件存档"
     },
@@ -134,9 +135,7 @@
     "waveSourceJbotcan": "jbotcan",
     "waveSourceComments": "评论",
     "waveSourceMail": "邮件",
-    "waveSourceWiki": "维基文章",
-    "similarDefinitions": "相似释义",
-    "similarDefinitionsHint": "显示与所选释义最接近的条目。"
+    "waveSourceWiki": "维基文章"
   },
   "wiki": {
     "back": "返回",

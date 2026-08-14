@@ -119,6 +119,7 @@
     "searchResultsTitle": {
       "dictionary": "pentoi le vlapoi",
       "semantic": "pentoi lu'e le se smuni",
+      "similar": "simsa se facki",
       "comments": "pinka",
       "messages": "se mrilu"
     },
@@ -134,9 +135,7 @@
     "waveSourceJbotcan": "la .jbotcan.",
     "waveSourceComments": "pinka",
     "waveSourceMail": "se mrilu",
-    "waveSourceWiki": "uitki",
-    "similarDefinitions": "simsa velcki",
-    "similarDefinitionsHint": "tcidu lo vreji be lo velcki poi simsa fi lo ka se smuni"
+    "waveSourceWiki": "uitki"
   },
   "wiki": {
     "back": "xrukla",

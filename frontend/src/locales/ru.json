@@ -117,6 +117,7 @@
     "searchResultsTitle": {
       "dictionary": "Словарь и корпус",
       "semantic": "Семантический поиск",
+      "similar": "Похожие результаты",
       "comments": "Обсуждения",
       "messages": "Архив почты"
     },
@@ -132,9 +133,7 @@
     "waveSourceJbotcan": "jbotcan",
     "waveSourceComments": "Комментарии",
     "waveSourceMail": "Почта",
-    "waveSourceWiki": "Вики-статьи",
-    "similarDefinitions": "Похожие определения",
-    "similarDefinitionsHint": "Показаны определения, ближайшие к выбранному."
+    "waveSourceWiki": "Вики-статьи"
   },
   "wiki": {
     "back": "Назад",

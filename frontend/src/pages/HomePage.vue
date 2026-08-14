@@ -78,11 +78,13 @@
       >
         <h2 class="text-xl sm:text-2xl font-bold text-gray-800 select-none">
           {{
-            searchMode === 'dictionary'
-              ? $t('home.searchResultsTitle.dictionary')
-              : searchMode === 'semantic'
-                ? $t('home.searchResultsTitle.semantic')
-                : $t('home.searchResultsTitle.comments')
+            similarDefinitionId
+              ? $t('home.searchResultsTitle.similar')
+              : searchMode === 'dictionary'
+                ? $t('home.searchResultsTitle.dictionary')
+                : searchMode === 'semantic'
+                  ? $t('home.searchResultsTitle.semantic')
+                  : $t('home.searchResultsTitle.comments')
           }}
         </h2>
 
@@ -231,21 +233,35 @@
         </div>
 
         <div class="relative z-0" :class="{ 'pointer-events-none select-none': isLoading }">
-          <div v-if="similarDefinitionId" class="mb-4">
-            <AlertComponent type="tip" :label="$t('home.similarDefinitions')">
-              <div class="flex items-center justify-between gap-2">
-                <span class="text-sm">{{ $t('home.similarDefinitionsHint') }}</span>
-                <button
-                  type="button"
-                  class="inline-flex shrink-0 items-center gap-1 text-sm text-nav-link hover:underline"
-                  :title="$t('filters.resetAllFilters')"
-                  @click="handleFiltersReset"
-                >
-                  <X class="h-3.5 w-3.5 shrink-0" />
-                </button>
-              </div>
-            </AlertComponent>
-          </div>
+          <template v-if="similarDefinitionId">
+            <div class="relative mb-4">
+              <AlertComponent type="tip" class="!pr-10">
+                <div v-if="isLoadingSimilarAnchor" class="flex justify-center py-6">
+                  <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600" />
+                </div>
+                <DefinitionCard
+                  v-else-if="similarAnchorDefinition"
+                  :definition="similarAnchorDefinition"
+                  :languages="languages"
+                  :show-vote-buttons="auth.state.isLoggedIn"
+                  :disable-toolbar="true"
+                  :disable-owner-only-lock="true"
+                  :disable-border="true"
+                  :collections="collections"
+                  @collection-updated="collections = $event"
+                />
+              </AlertComponent>
+              <button
+                type="button"
+                class="absolute top-2.5 right-2.5 z-10 inline-flex items-center justify-center rounded p-1 text-zinc-600 hover:bg-zinc-200/80 hover:text-zinc-900"
+                :title="$t('filters.resetAllFilters')"
+                :aria-label="$t('filters.resetAllFilters')"
+                @click="handleFiltersReset"
+              >
+                <X class="h-4 w-4 shrink-0" />
+              </button>
+            </div>
+          </template>
           <PhraseSplit
             v-else-if="searchMode === 'dictionary' || searchMode === 'semantic'"
             :phrase="searchQuery"
@@ -411,12 +427,14 @@ import {
   list_wave_threads,
   getCollections,
   getBulkVotes,
+  getDefinition,
 } from '@/api'
 import AddAllToCollectionWidget from '@/components/AddAllToCollectionWidget.vue'
 import AlertComponent from '@/components/AlertComponent.vue'
 import CombinedFilters from '@/components/CombinedFilters.vue'
 import CommentItem from '@/components/CommentItem.vue'
 import SourceTypeBadge from '@/components/SourceTypeBadge.vue'
+import DefinitionCard from '@/components/DefinitionCard.vue'
 import DictionaryEntries from '@/components/DictionaryEntries.vue'
 import PhraseSplit from '@/components/PhraseSplit.vue'
 import LazyMathJax from '@/components/LazyMathJax.vue'
@@ -656,6 +674,48 @@ const getInitialSimilarDefinitionId = (): number | null => {
 
 /** When set, semantic search uses this definition's stored embedding (find-similar mode). */
 const similarDefinitionId = ref<number | null>(getInitialSimilarDefinitionId())
+const similarAnchorDefinition = ref<Record<string, unknown> | null>(null)
+const isLoadingSimilarAnchor = ref(false)
+
+const fetchSimilarAnchorDefinition = async (definitionId: number | null) => {
+  if (!definitionId) {
+    similarAnchorDefinition.value = null
+    isLoadingSimilarAnchor.value = false
+    return
+  }
+
+  isLoadingSimilarAnchor.value = true
+  try {
+    const response = await getDefinition(definitionId)
+    let anchor = response.data as Record<string, unknown>
+
+    if (auth.state.isLoggedIn && anchor?.definitionid) {
+      try {
+        const votesResponse = await getBulkVotes({
+          definition_ids: [anchor.definitionid as number],
+        })
+        const votesMap = votesResponse.data.votes as Record<number, number | null>
+        anchor = {
+          ...anchor,
+          user_vote: votesMap[anchor.definitionid as number] || null,
+        }
+      } catch (e) {
+        console.error('Error fetching anchor definition votes:', e)
+      }
+    }
+
+    similarAnchorDefinition.value = anchor
+  } catch (e) {
+    console.error('Error fetching similar anchor definition:', e)
+    similarAnchorDefinition.value = null
+  } finally {
+    isLoadingSimilarAnchor.value = false
+  }
+}
+
+watch(similarDefinitionId, (id) => {
+  fetchSimilarAnchorDefinition(id)
+}, { immediate: true })
 
 /** Filter discussion waves: all site + mail, jbotcan imports, site comments only, or mail only. */
 const WAVE_SOURCES = ['all', 'jbotcan', 'comments', 'mail', 'wiki'] as const
@@ -683,6 +743,9 @@ const truncatedSearchQuery = computed(() => {
 
 // Page title that reflects the search query
 const pageTitle = computed(() => {
+  if (similarDefinitionId.value) {
+    return t('home.searchResultsTitle.similar')
+  }
   if (truncatedSearchQuery.value) {
     const query = truncatedSearchQuery.value
     // Lojban: wrap query in letterals that do not collide with query letters
@@ -1219,6 +1282,7 @@ const handleFiltersReset = async () => {
   currentPage.value = 1
   searchQuery.value = ''
   similarDefinitionId.value = null
+  similarAnchorDefinition.value = null
   // if (searchFormRef.value) {
   //   searchFormRef.value.query = ''
   // }

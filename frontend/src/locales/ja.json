@@ -119,6 +119,7 @@
     "searchResultsTitle": {
       "dictionary": "辞書・コーパス",
       "semantic": "意味検索",
+      "similar": "類似結果",
       "comments": "議論ウェーブ",
       "messages": "メールアーカイブ"
     },
@@ -134,9 +135,7 @@
     "waveSourceJbotcan": "jbotcan",
     "waveSourceComments": "コメント",
     "waveSourceMail": "メール",
-    "waveSourceWiki": "Wiki記事",
-    "similarDefinitions": "類似の定義",
-    "similarDefinitionsHint": "選択した定義に最も近い定義を表示しています。"
+    "waveSourceWiki": "Wiki記事"
   },
   "wiki": {
     "back": "戻る",

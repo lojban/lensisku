@@ -120,6 +120,7 @@
     "searchResultsTitle": {
       "dictionary": "Dictionary and corpus",
       "semantic": "Semantic search",
+      "similar": "Similar results",
       "comments": "Discussion waves",
       "messages": "Mail archive"
     },
@@ -137,9 +138,7 @@
     "waveSourceJbotcan": "jbotcan",
     "waveSourceComments": "Comments",
     "waveSourceMail": "Mail messages",
-    "waveSourceWiki": "Wiki articles",
-    "similarDefinitions": "Similar definitions",
-    "similarDefinitionsHint": "Showing definitions closest to the one you selected."
+    "waveSourceWiki": "Wiki articles"
   },
   "wiki": {
     "back": "Back",
