@@ -233,39 +233,8 @@
         </div>
 
         <div class="relative z-0" :class="{ 'pointer-events-none select-none': isLoading }">
-          <template v-if="similarDefinitionId">
-            <div v-if="isLoadingSimilarAnchor" class="mb-4 flex justify-center py-6">
-              <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600" />
-            </div>
-            <DefinitionCard
-              v-else-if="similarAnchorDefinition"
-              :definition="similarAnchorDefinition"
-              :languages="languages"
-              :show-vote-buttons="auth.state.isLoggedIn"
-              :disable-toolbar="true"
-              :disable-owner-only-lock="true"
-              :hide-find-similar="true"
-              :collections="collections"
-              class="mb-4"
-              @collection-updated="collections = $event"
-            />
-            <div class="relative mb-4">
-              <AlertComponent type="tip" class="!pr-10" :label="$t('home.similarSearchLabel')">
-                {{ $t('home.similarSearchHint') }}
-              </AlertComponent>
-              <button
-                type="button"
-                class="absolute top-2.5 right-2.5 z-10 inline-flex items-center justify-center rounded p-1 text-zinc-600 hover:bg-zinc-200/80 hover:text-zinc-900"
-                :title="$t('filters.resetAllFilters')"
-                :aria-label="$t('filters.resetAllFilters')"
-                @click="handleFiltersReset"
-              >
-                <X class="h-4 w-4 shrink-0" />
-              </button>
-            </div>
-          </template>
           <PhraseSplit
-            v-else-if="searchMode === 'dictionary' || searchMode === 'semantic'"
+            v-if="(searchMode === 'dictionary' || searchMode === 'semantic') && !similarDefinitionId"
             :phrase="searchQuery"
             :selected-languages="filters.selectedLanguages"
             :source-lang-id="filters.source_langid"
@@ -284,7 +253,43 @@
             :collections="collections"
             :decomposition="decomposition || []"
             @collection-updated="collections = $event"
-          />
+          >
+            <template v-if="similarDefinitionId" #before>
+              <div v-if="isLoadingSimilarAnchor" class="flex justify-center py-6">
+                <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600" />
+              </div>
+              <DefinitionCard
+                v-else-if="similarAnchorDefinition"
+                :definition="similarAnchorDefinition"
+                :languages="languages"
+                :show-vote-buttons="auth.state.isLoggedIn"
+                :disable-toolbar="true"
+                :disable-owner-only-lock="true"
+                :hide-find-similar="true"
+                :collections="collections"
+                @collection-updated="collections = $event"
+              />
+              <div class="relative">
+                <div class="surface-definition-compact pr-10">
+                  <div class="text-xs font-medium text-gray-500">
+                    {{ $t('home.similarSearchLabel') }}
+                  </div>
+                  <p class="mt-2 text-sm text-gray-700">
+                    {{ $t('home.similarSearchHint') }}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  class="absolute top-4 right-4 z-10 inline-flex items-center justify-center rounded p-1 text-gray-500 hover:bg-gray-100 hover:text-gray-800"
+                  :title="$t('filters.resetAllFilters')"
+                  :aria-label="$t('filters.resetAllFilters')"
+                  @click="handleFiltersReset"
+                >
+                  <X class="h-4 w-4 shrink-0" />
+                </button>
+              </div>
+            </template>
+          </DictionaryEntries>
           <div v-else-if="searchMode === 'comments'" class="space-y-4">
             <div v-if="waveItems.length > 0">
               <div
@@ -432,7 +437,6 @@ import {
   getDefinition,
 } from '@/api'
 import AddAllToCollectionWidget from '@/components/AddAllToCollectionWidget.vue'
-import AlertComponent from '@/components/AlertComponent.vue'
 import CombinedFilters from '@/components/CombinedFilters.vue'
 import CommentItem from '@/components/CommentItem.vue'
 import SourceTypeBadge from '@/components/SourceTypeBadge.vue'

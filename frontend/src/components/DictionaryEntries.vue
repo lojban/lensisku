@@ -2,6 +2,7 @@
   <div class="dictionary-entries space-y-4">
     <!-- Keep previous entries visible while loading; HomePage shows overlay spinner -->
     <div v-if="!error" class="grid gap-4 mb-6">
+      <slot name="before" />
       <!-- Decomposition display -->
       <AlertComponent
         v-if="decomposition?.length"
