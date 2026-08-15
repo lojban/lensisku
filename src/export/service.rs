@@ -2164,3 +2164,111 @@ mod tests {
         );
     }
 }
+
+
+
+#[cfg(test)]
+mod positive_scores_integration {
+    use super::*;
+    use deadpool_postgres::{Config, Runtime};
+    use std::collections::HashMap;
+    use std::env;
+
+    fn test_pool() -> Pool {
+        dotenvy::dotenv().ok();
+        let mut cfg = Config::new();
+        cfg.host = Some(env::var("DB_HOST").unwrap_or_else(|_| "localhost".into()));
+        cfg.port = Some(
+            env::var("DB_PORT")
+                .ok()
+                .and_then(|p| p.parse().ok())
+                .unwrap_or(5432),
+        );
+        cfg.user = Some(env::var("DB_USER").expect("DB_USER"));
+        cfg.password = Some(env::var("DB_PASSWORD").expect("DB_PASSWORD"));
+        cfg.dbname = Some(env::var("DB_NAME").expect("DB_NAME"));
+        cfg.create_pool(Some(Runtime::Tokio1), tokio_postgres::NoTls)
+            .unwrap()
+    }
+
+    fn parse_entries(bytes: &[u8]) -> Vec<serde_json::Value> {
+        serde_json::from_slice(bytes).unwrap()
+    }
+
+    #[tokio::test]
+    #[ignore = "requires local Postgres with dictionary data"]
+    async fn false_exports_nonpositive_definitions_even_when_word_has_positive() {
+        let pool = test_pool();
+        {
+            let c = pool.get().await.unwrap();
+            c.execute(
+                "DELETE FROM cached_dictionary_exports
+                 WHERE language_tag = 'de' AND source_language_tag = 'jbo' AND format = 'json'",
+                &[],
+            )
+            .await
+            .unwrap();
+        }
+
+        let true_opts = ExportOptions {
+            format: Some("json".into()),
+            positive_scores_only: Some(true),
+            source_lang: Some("jbo".into()),
+            collection_id: None,
+        };
+        let false_opts = ExportOptions {
+            format: Some("json".into()),
+            positive_scores_only: Some(false),
+            source_lang: Some("jbo".into()),
+            collection_id: None,
+        };
+
+        let (true_bytes, _, _) = export_dictionary(
+            &pool, "de", ExportFormat::Json, &true_opts, None, 1, "jbo", true,
+        )
+        .await
+        .expect("true export");
+        let true_entries = parse_entries(&true_bytes);
+        assert!(
+            true_entries
+                .iter()
+                .all(|e| e["score"].as_f64().unwrap_or(0.0) > 0.0),
+            "positive-only export must not include nonpositive scores"
+        );
+
+        let (false_bytes, _, _) = export_dictionary(
+            &pool, "de", ExportFormat::Json, &false_opts, None, 1, "jbo", true,
+        )
+        .await
+        .expect("false export");
+        let false_entries = parse_entries(&false_bytes);
+        let false_nonpos = false_entries
+            .iter()
+            .filter(|e| e["score"].as_f64().unwrap_or(1.0) <= 0.0)
+            .count();
+        assert!(
+            false_nonpos > 0,
+            "positive_scores_only=false must include nonpositive definitions"
+        );
+        assert!(
+            false_entries.len() > true_entries.len(),
+            "unfiltered export should be larger than positive-only"
+        );
+
+        // Root-cause regression: a word with both positive and nonpositive definitions
+        // must contribute the nonpositive row(s) when the filter is disabled.
+        let mut by_word: HashMap<String, Vec<f64>> = HashMap::new();
+        for e in &false_entries {
+            let word = e["word"].as_str().unwrap_or("").to_string();
+            let score = e["score"].as_f64().unwrap_or(0.0);
+            by_word.entry(word).or_default().push(score);
+        }
+        let has_mixed_word = by_word.values().any(|scores| {
+            scores.iter().any(|s| *s > 0.0) && scores.iter().any(|s| *s <= 0.0)
+        });
+        assert!(
+            has_mixed_word,
+            "expected at least one word to export both positive and nonpositive definitions when filter is off"
+        );
+    }
+}

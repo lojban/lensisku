@@ -93,7 +93,7 @@ pub async fn download_cached_export(
     params(
         ("lang" = String, Path, description = "Language tag"),
         ("format" = Option<String>, Query, description = "Export format (pdf, latex, xml, json)"),
-        ("positive_scores_only" = Option<bool>, Query, description = "Include only entries with positive scores"),
+        ("positive_scores_only" = Option<bool>, Query, description = "When true (default), export one best positive-scored definition per word. When false, export every definition including zero/negative scores."),
         ("collection_id" = Option<i32>, Query, description = "Export only definitions from specific collection"),
         ("source_lang" = Option<String>, Query, description = "Language tag of the source/word language (defaults to Lojban)")
     ),
@@ -130,6 +130,7 @@ pub async fn export_dictionary(
         .await
     {
         Ok((content, content_type, filename)) => HttpResponse::Ok()
+            .insert_header((header::CACHE_CONTROL, "no-store"))
             .content_type(content_type)
             .append_header((
                 "Content-Disposition",

@@ -1,5 +1,9 @@
 <template>
-  <label :for="resolvedId" :class="['inline-flex items-center gap-2 cursor-pointer', hostClass]">
+  <!--
+    Do not set `for` on this label: the control is already a descendant.
+    `for` + nested input can double-toggle in some browsers.
+  -->
+  <label :class="['inline-flex items-center gap-2 cursor-pointer', hostClass]">
     <input
       :id="resolvedId"
       ref="nativeCheckbox"

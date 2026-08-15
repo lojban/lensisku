@@ -95,10 +95,9 @@
       }}</label>
       <div class="bg-gray-50 rounded-lg p-4 space-y-4">
         <div class="flex items-center space-x-2">
-          <Checkbox id="positiveScoresOnly" v-model="positiveScoresOnly" class="checkbox-toggle" />
-          <label for="positiveScoresOnly" class="block text-sm text-gray-700">
-            {{ t('dictionaryExport.positiveScoresOnly') }}
-          </label>
+          <Checkbox id="positiveScoresOnly" v-model="positiveScoresOnly" class="checkbox-toggle">
+            <span class="text-sm text-gray-700">{{ t('dictionaryExport.positiveScoresOnly') }}</span>
+          </Checkbox>
         </div>
       </div>
     </div>
