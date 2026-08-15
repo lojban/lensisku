@@ -3,7 +3,7 @@
     <!-- Header -->
     <div class="flex justify-between items-center mb-6">
       <h2 class="text-2xl font-bold text-gray-800">{{ t('versionHistory.title') }}</h2>
-      <RouterLink :to="`/valsi/${valsiId}`" class="ui-btn--history">
+      <RouterLink :to="backLink" class="ui-btn--history">
         <ArrowLeft class="h-5 w-5" />
       </RouterLink>
     </div>
@@ -29,26 +29,34 @@
             <p v-if="version.commit_message" class="text-sm text-gray-600 mt-1 italic">
               {{ t('versionHistory.commitMessage', { message: version.commit_message }) }}
             </p>
+            <span
+              v-if="isRenameVersion(version)"
+              class="inline-flex mt-1 text-xs font-medium px-2 py-0.5 rounded bg-amber-100 text-amber-800"
+            >
+              {{ t('versionHistory.renameEvent') }}
+            </span>
           </div>
           <span class="text-sm text-gray-500"> {{ formatDate(version.created_at) }} </span>
         </div>
         <!-- Version Details -->
         <div class="space-y-2 text-sm text-gray-600">
           <div>
-            <span class="font-medium">{{ t('versionHistory.definitionLabel') }}</span>
+            <span class="font-medium">{{
+              isWikiMode ? t('versionHistory.bodyLabel') : t('versionHistory.definitionLabel')
+            }}</span>
             <div class="mt-1 bg-gray-50 p-2 rounded">
-              <LazyMathJax :content="version.content.definition" />
+              <LazyMathJax :content="previewContent(version.content.definition)" />
             </div>
           </div>
 
-          <div v-if="version.content.notes">
+          <div v-if="!isWikiMode && version.content.notes">
             <span class="font-medium">{{ t('versionHistory.notesLabel') }}</span>
             <div class="mt-1 bg-gray-50 p-2 rounded">
               <LazyMathJax :content="version.content.notes" />
             </div>
           </div>
           <!-- Keywords -->
-          <div v-if="version.content.gloss_keywords?.length" class="mt-2">
+          <div v-if="!isWikiMode && version.content.gloss_keywords?.length" class="mt-2">
             <span class="font-medium">{{ t('versionHistory.glossKeywordsLabel') }}</span>
             <div class="flex flex-wrap gap-2 mt-1">
               <span
@@ -64,7 +72,7 @@
             </div>
           </div>
 
-          <div v-if="version.content.place_keywords?.length" class="mt-2">
+          <div v-if="!isWikiMode && version.content.place_keywords?.length" class="mt-2">
             <span class="font-medium">{{ t('versionHistory.placeKeywordsLabel') }}</span>
             <div class="flex flex-wrap gap-2 mt-1">
               <span
@@ -105,7 +113,7 @@
             {{ t('versionHistory.cancelSelection') }}
           </Button>
           <Button
-            v-if="auth.state.isLoggedIn"
+            v-if="auth.state.isLoggedIn && !isRenameVersion(version)"
             variant="revert"
             @click="performRevertToVersion(version.version_id)"
           >
@@ -197,6 +205,20 @@ const selectedVersion = ref(null)
 const showDiffModal = ref(false)
 const versionDiff = ref(null)
 const valsiId = ref(route.query.valsi_id)
+const isWikiMode = computed(() => route.query.wiki === '1' || route.query.wiki === 'true')
+const wikiTitle = computed(() => {
+  const title = route.query.title
+  return typeof title === 'string' ? decodeURIComponent(title).replace(/_/g, ' ') : ''
+})
+const backLink = computed(() => {
+  if (isWikiMode.value && wikiTitle.value) {
+    return `/wiki/${encodeURIComponent(wikiTitle.value.replace(/ /g, '_'))}`
+  }
+  if (valsiId.value) {
+    return `/valsi/${valsiId.value}`
+  }
+  return '/'
+})
 
 const props = defineProps({
   id: {
@@ -204,6 +226,16 @@ const props = defineProps({
     default: '0',
   },
 })
+
+function isRenameVersion(version: { commit_message?: string }) {
+  return Boolean(version.commit_message?.startsWith('Renamed:'))
+}
+
+function previewContent(text: string) {
+  if (!isWikiMode.value || !text) return text
+  if (text.length <= 400) return text
+  return `${text.slice(0, 400)}…`
+}
 
 // Fetch version history
 const fetchVersionHistory = async (page = 1) => {

@@ -7,6 +7,9 @@ use super::dto::{WikiArticleDetail, WikiSearchHit, WikiThreadSummary};
 use super::markdown::rewrite_wiki_links_for_lensisku;
 
 const PREVIEW_LEN: usize = 400;
+/// Exclude soft-redirect stub pages from waves search/list.
+const NATIVE_WIKI_NOT_REDIRECT: &str =
+    "COALESCE(d.metadata->>'is_redirect', 'false') <> 'true'";
 
 fn truncate_preview(text: &str) -> Option<String> {
     let trimmed = text.trim();
@@ -139,7 +142,8 @@ pub async fn search_wiki(
                 "SELECT COUNT(*)::BIGINT AS c
                  FROM definitions d
                  JOIN valsi v ON d.valsiid = v.valsiid
-                 WHERE v.typeid = 16",
+                 WHERE v.typeid = 16
+                   AND COALESCE(d.metadata->>'is_redirect', 'false') <> 'true'",
                 &[],
             )
             .await
@@ -151,6 +155,7 @@ pub async fn search_wiki(
              FROM definitions d
              JOIN valsi v ON d.valsiid = v.valsiid
              WHERE v.typeid = 16
+               AND {NATIVE_WIKI_NOT_REDIRECT}
              ORDER BY d.created_at {order_dir} NULLS LAST
              LIMIT $1 OFFSET $2"
         );
@@ -166,6 +171,7 @@ pub async fn search_wiki(
                  FROM definitions d
                  JOIN valsi v ON d.valsiid = v.valsiid
                  WHERE v.typeid = 16
+                   AND COALESCE(d.metadata->>'is_redirect', 'false') <> 'true'
                    AND (v.word ILIKE $1 ESCAPE '\\' OR d.definition ILIKE $1 ESCAPE '\\')",
                 &[&pattern],
             )
@@ -179,6 +185,7 @@ pub async fn search_wiki(
                  FROM definitions d
                  JOIN valsi v ON d.valsiid = v.valsiid
                  WHERE v.typeid = 16
+                   AND {NATIVE_WIKI_NOT_REDIRECT}
                    AND (v.word ILIKE $1 ESCAPE '\\' OR d.definition ILIKE $1 ESCAPE '\\')
                  ORDER BY d.created_at {order_dir} NULLS LAST
                  LIMIT $2 OFFSET $3"
@@ -192,6 +199,7 @@ pub async fn search_wiki(
                  FROM definitions d
                  JOIN valsi v ON d.valsiid = v.valsiid
                  WHERE v.typeid = 16
+                   AND {NATIVE_WIKI_NOT_REDIRECT}
                    AND (v.word ILIKE $1 ESCAPE '\\' OR d.definition ILIKE $1 ESCAPE '\\')
                  ORDER BY (CASE
                      WHEN lower(v.word) = lower($2) THEN 3
@@ -301,7 +309,8 @@ pub async fn list_wiki_threads(
             "SELECT COUNT(*)::BIGINT AS c
              FROM definitions d
              JOIN valsi v ON d.valsiid = v.valsiid
-             WHERE v.typeid = 16",
+             WHERE v.typeid = 16
+               AND COALESCE(d.metadata->>'is_redirect', 'false') <> 'true'",
             &[],
         )
         .await
@@ -313,6 +322,7 @@ pub async fn list_wiki_threads(
          FROM definitions d
          JOIN valsi v ON d.valsiid = v.valsiid
          WHERE v.typeid = 16
+           AND {NATIVE_WIKI_NOT_REDIRECT}
          ORDER BY d.created_at {order_dir} NULLS LAST
          LIMIT $1 OFFSET $2"
     );

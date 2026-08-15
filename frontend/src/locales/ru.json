@@ -145,7 +145,9 @@
     "notFound": "Вики-статья не найдена.",
     "loadFailed": "Не удалось загрузить вики-статью.",
     "edit": "Edit",
-    "history": "History"
+    "history": "History",
+    "redirectTo": "This page redirects to “{title}”.",
+    "discussions": "Discussions"
   },
   "assistantChat": {
     "title": "Помощник по ложбану",
@@ -744,7 +746,9 @@
     "noContent": "Нет содержимого",
     "loadError": "Не удалось загрузить историю версий",
     "compareError": "Не удалось сравнить версии",
-    "revertError": "Не удалось вернуться к версии"
+    "revertError": "Не удалось вернуться к версии",
+    "bodyLabel": "Body:",
+    "renameEvent": "Title rename"
   },
   "upsertDefinition": {
     "editTitle": "Редактировать определение",
@@ -1214,7 +1218,8 @@
       "delete": "Удалить",
       "inDefinition": "В определении",
       "inValsi": "В записи",
-      "untitledEntry": "Запись без названия"
+      "untitledEntry": "Запись без названия",
+      "createWiki": "Create wiki"
     },
     "activityVotes": {
       "noVotes": "Голосов пока нет",
@@ -1618,6 +1623,19 @@
     "definitionLabel": "Body",
     "editorPlaceholder": "Type / to show menu",
     "saving": "Saving",
-    "saveButton": "Save wiki page"
+    "saveButton": "Save wiki page",
+    "commitMessageLabel": "Edit summary",
+    "commitMessagePlaceholder": "Describe your changes (optional)",
+    "insertWikiLink": "Insert wiki link",
+    "wikiLinkPrompt": "Wiki page title to link to:",
+    "renameHint": "Changing the title will leave a redirect at the old name.",
+    "renameConfirm": "Rename “{oldTitle}” to “{newTitle}\"? A redirect will be left at the old title.",
+    "renameError": "Failed to rename wiki page.",
+    "saveError": "Failed to save wiki page.",
+    "loadError": "Failed to load wiki page.",
+    "conflictError": "This page was modified by someone else. Reload and try again.",
+    "fromCommentBanner": "Creating a wiki page from comment #{id}.",
+    "fromCommentLink": "View comment",
+    "fromCommentCommit": "Created from comment #{id}"
   }
 }

@@ -147,7 +147,9 @@
     "notFound": "na facki lo papri",
     "loadFailed": "na cumki fa lo nu cpacu lo papri",
     "edit": "Edit",
-    "history": "History"
+    "history": "History",
+    "redirectTo": "This page redirects to “{title}”.",
+    "discussions": "Discussions"
   },
   "assistantChat": {
     "title": "lojbo sidju",
@@ -804,7 +806,9 @@
     "noContent": "no da zvati",
     "loadError": "fliba lo nu jgari lo galfi porsi",
     "compareError": "fliba lo nu mintu lo galfi",
-    "revertError": "fliba lo nu xruti fi lo galfi"
+    "revertError": "fliba lo nu xruti fi lo galfi",
+    "bodyLabel": "Body:",
+    "renameEvent": "Title rename"
   },
   "upsertDefinition": {
     "editTitle": "galfi lo velckivei",
@@ -1278,7 +1282,8 @@
       "delete": "vimcu",
       "inDefinition": "ne'i lo velckivei",
       "inValsi": "ne'i lo valsi",
-      "untitledEntry": "no se cmene valsi"
+      "untitledEntry": "no se cmene valsi",
+      "createWiki": "Create wiki"
     },
     "activityVotes": {
       "noVotes": "no votu datni cu zasti",
@@ -1691,6 +1696,19 @@
     "definitionLabel": "Body",
     "editorPlaceholder": "Type / to show menu",
     "saving": "Saving",
-    "saveButton": "Save wiki page"
+    "saveButton": "Save wiki page",
+    "commitMessageLabel": "Edit summary",
+    "commitMessagePlaceholder": "Describe your changes (optional)",
+    "insertWikiLink": "Insert wiki link",
+    "wikiLinkPrompt": "Wiki page title to link to:",
+    "renameHint": "Changing the title will leave a redirect at the old name.",
+    "renameConfirm": "Rename “{oldTitle}” to “{newTitle}\"? A redirect will be left at the old title.",
+    "renameError": "Failed to rename wiki page.",
+    "saveError": "Failed to save wiki page.",
+    "loadError": "Failed to load wiki page.",
+    "conflictError": "This page was modified by someone else. Reload and try again.",
+    "fromCommentBanner": "Creating a wiki page from comment #{id}.",
+    "fromCommentLink": "View comment",
+    "fromCommentCommit": "Created from comment #{id}"
   }
 }

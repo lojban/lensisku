@@ -147,10 +147,12 @@
     "lastEdited": "Last edited",
     "viewOnMediawiki": "View on mw.lojban.org",
     "redirectNotice": "This page is a redirect.",
+    "redirectTo": "This page redirects to “{title}”.",
     "notFound": "Wiki article not found.",
     "loadFailed": "Failed to load wiki article.",
     "edit": "Edit",
-    "history": "History"
+    "history": "History",
+    "discussions": "Discussions"
   },
   "assistantChat": {
     "title": "Lojban Assistant",
@@ -804,6 +806,7 @@
     "versionBy": "Version #{versionId} by {username}",
     "commitMessage": "\"{message}\"",
     "definitionLabel": "Definition:",
+    "bodyLabel": "Body:",
     "notesLabel": "Notes:",
     "glossKeywordsLabel": "Gloss keywords:",
     "placeKeywordsLabel": "Place keywords:",
@@ -818,7 +821,8 @@
     "noContent": "No content",
     "loadError": "Failed to load version history",
     "compareError": "Failed to compare versions",
-    "revertError": "Failed to revert to version"
+    "revertError": "Failed to revert to version",
+    "renameEvent": "Title rename"
   },
   "upsertDefinition": {
     "editTitle": "Edit definition",
@@ -1287,6 +1291,7 @@
       "parentComment": "Parent comment",
       "saved": "Saved",
       "delete": "Delete",
+      "createWiki": "Create wiki",
       "inDefinition": "In definition",
       "inValsi": "In entry",
       "untitledEntry": "Untitled entry"
@@ -1625,7 +1630,20 @@
     "definitionLabel": "Body",
     "editorPlaceholder": "Type / to show menu",
     "saving": "Saving",
-    "saveButton": "Save wiki page"
+    "saveButton": "Save wiki page",
+    "commitMessageLabel": "Edit summary",
+    "commitMessagePlaceholder": "Describe your changes (optional)",
+    "insertWikiLink": "Insert wiki link",
+    "wikiLinkPrompt": "Wiki page title to link to:",
+    "renameHint": "Changing the title will leave a redirect at the old name.",
+    "renameConfirm": "Rename “{oldTitle}” to “{newTitle}\"? A redirect will be left at the old title.",
+    "renameError": "Failed to rename wiki page.",
+    "saveError": "Failed to save wiki page.",
+    "loadError": "Failed to load wiki page.",
+    "conflictError": "This page was modified by someone else. Reload and try again.",
+    "fromCommentBanner": "Creating a wiki page from comment #{id}.",
+    "fromCommentLink": "View comment",
+    "fromCommentCommit": "Created from comment #{id}"
   },
   "activityBookmarks": {
     "noBookmarks": "No bookmarked comments found."

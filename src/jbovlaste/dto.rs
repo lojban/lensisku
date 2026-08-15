@@ -94,6 +94,12 @@ pub struct AddDefinitionRequest {
     /// skips Lojban morphology validation, and stores only the markdown body.
     #[serde(default)]
     pub is_wiki: Option<bool>,
+    /// Optional version commit message (wiki and definitions).
+    #[serde(default)]
+    pub commit_message: Option<String>,
+    /// Optimistic concurrency: reject if `definitions.time` differs.
+    #[serde(default)]
+    pub expected_time: Option<i32>,
 }
 
 #[derive(Debug, Serialize, ToSchema)]
@@ -125,6 +131,38 @@ pub struct UpdateDefinitionRequest {
     /// When true, marks the updated entry as a native wiki page.
     #[serde(default)]
     pub is_wiki: Option<bool>,
+    /// Optional version commit message (wiki and definitions).
+    #[serde(default)]
+    pub commit_message: Option<String>,
+    /// Optimistic concurrency: reject if `definitions.time` differs.
+    #[serde(default)]
+    pub expected_time: Option<i32>,
+}
+
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct RenameWikiRequest {
+    pub new_word: String,
+}
+
+#[derive(Debug, Serialize, ToSchema)]
+pub struct RenameWikiResponse {
+    pub success: bool,
+    pub old_word: String,
+    pub new_word: String,
+    pub definition_id: i32,
+    pub redirect_stub_definition_id: Option<i32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub error: Option<String>,
+}
+
+#[derive(Debug, Serialize, ToSchema)]
+pub struct WikiByDefinitionResponse {
+    pub word: String,
+    pub definition_id: i32,
+    pub valsiid: i32,
+    pub is_redirect: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub redirect_to: Option<String>,
 }
 
 #[derive(Debug, Serialize, ToSchema)]

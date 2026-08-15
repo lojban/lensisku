@@ -147,7 +147,9 @@
     "notFound": "Wiki記事が見つかりません。",
     "loadFailed": "Wiki記事の読み込みに失敗しました。",
     "edit": "Edit",
-    "history": "History"
+    "history": "History",
+    "redirectTo": "This page redirects to “{title}”.",
+    "discussions": "Discussions"
   },
   "assistantChat": {
     "title": "ロジバンアシスタント",
@@ -789,7 +791,9 @@
     "noContent": "内容なし",
     "loadError": "バージョン履歴を読み込めませんでした",
     "compareError": "バージョンを比較できませんでした",
-    "revertError": "この版に戻せませんでした"
+    "revertError": "この版に戻せませんでした",
+    "bodyLabel": "Body:",
+    "renameEvent": "Title rename"
   },
   "upsertDefinition": {
     "editTitle": "定義を編集",
@@ -1260,7 +1264,8 @@
       "delete": "削除",
       "inDefinition": "定義内",
       "inValsi": "エントリ内",
-      "untitledEntry": "無題のエントリ"
+      "untitledEntry": "無題のエントリ",
+      "createWiki": "Create wiki"
     },
     "activityVotes": {
       "noVotes": "まだ投票はありません",
@@ -1664,6 +1669,19 @@
     "definitionLabel": "Body",
     "editorPlaceholder": "Type / to show menu",
     "saving": "Saving",
-    "saveButton": "Save wiki page"
+    "saveButton": "Save wiki page",
+    "commitMessageLabel": "Edit summary",
+    "commitMessagePlaceholder": "Describe your changes (optional)",
+    "insertWikiLink": "Insert wiki link",
+    "wikiLinkPrompt": "Wiki page title to link to:",
+    "renameHint": "Changing the title will leave a redirect at the old name.",
+    "renameConfirm": "Rename “{oldTitle}” to “{newTitle}\"? A redirect will be left at the old title.",
+    "renameError": "Failed to rename wiki page.",
+    "saveError": "Failed to save wiki page.",
+    "loadError": "Failed to load wiki page.",
+    "conflictError": "This page was modified by someone else. Reload and try again.",
+    "fromCommentBanner": "Creating a wiki page from comment #{id}.",
+    "fromCommentLink": "View comment",
+    "fromCommentCommit": "Created from comment #{id}"
   }
 }

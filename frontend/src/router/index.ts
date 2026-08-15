@@ -130,6 +130,14 @@ const baseRoutes: Array<RouteRecordRaw> = [
     meta: { requiresAuth: true, contentTopPaddingMainOnly: true },
   },
   {
+    path: '/wiki/id/:definitionId',
+    name: 'WikiById',
+    component: () => import('../pages/WikiArticle.vue'),
+    props: (route) => ({
+      definitionId: route.params.definitionId,
+    }),
+  },
+  {
     path: '/wiki/:word(.*)/edit',
     name: 'EditWiki',
     component: () => import('../pages/UpsertWiki.vue'),

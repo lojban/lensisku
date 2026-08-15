@@ -17,9 +17,10 @@ use crate::jbovlaste::{
     BulkVoteResponse, DefinitionDetail, DefinitionListResponse, DefinitionTranslation,
     ExportPairsQuery, GetImageDefinitionQuery, ImageUploadRequest, LinkDefinitionsRequest,
     RafsiOverlapHit, RafsiOverlapQuery, RafsiOverlapResponse, RecentChangesQuery,
-    RecentChangesResponse, SearchDefinitionsParams, SemanticGraphParams, SemanticGraphResponse,
-    UpdateDefinitionRequest, UpdateDefinitionResponse, ValsiDefinitionsQuery, ValsiDetail,
-    ValsiTypeListResponse, VoteRequest, VoteResponse,
+    RecentChangesResponse, RenameWikiRequest, RenameWikiResponse, SearchDefinitionsParams,
+    SemanticGraphParams, SemanticGraphResponse, UpdateDefinitionRequest, UpdateDefinitionResponse,
+    ValsiDefinitionsQuery, ValsiDetail, ValsiTypeListResponse, VoteRequest, VoteResponse,
+    WikiByDefinitionResponse,
 };
 use crate::language::{validate_mathjax_fields, MathJaxValidationOptions};
 use crate::middleware::cache::{
@@ -663,6 +664,100 @@ pub async fn get_wiki_by_word(
 }
 
 #[utoipa::path(
+    get,
+    path = "/jbovlaste/valsi/wiki/by-definition/{id}",
+    tag = "jbovlaste",
+    params(
+        ("id" = i32, Path, description = "Definition ID of the wiki page")
+    ),
+    responses(
+        (status = 200, description = "Current wiki title for definition id", body = WikiByDefinitionResponse),
+        (status = 404, description = "Wiki page not found"),
+        (status = 500, description = "Internal server error")
+    ),
+    summary = "Resolve native wiki page by definition id",
+    description = "Stable bookmark lookup: returns the current title (and redirect flags) for a wiki definition id."
+)]
+#[get("/valsi/wiki/by-definition/{id}")]
+pub async fn get_wiki_by_definition_id(
+    pool: web::Data<Pool>,
+    id: web::Path<i32>,
+) -> impl Responder {
+    match service::get_wiki_by_definition_id(&pool, id.into_inner()).await {
+        Ok(Some(page)) => HttpResponse::Ok().json(page),
+        Ok(None) => HttpResponse::NotFound().finish(),
+        Err(e) => HttpResponse::InternalServerError().body(format!("Database error: {}", e)),
+    }
+}
+
+#[utoipa::path(
+    post,
+    path = "/jbovlaste/valsi/{id}/wiki/rename",
+    tag = "jbovlaste",
+    params(
+        ("id" = i32, Path, description = "Definition ID of the wiki page to rename")
+    ),
+    request_body = RenameWikiRequest,
+    responses(
+        (status = 200, description = "Wiki page renamed", body = RenameWikiResponse),
+        (status = 400, description = "Invalid request or title collision"),
+        (status = 403, description = "Insufficient permissions"),
+        (status = 404, description = "Wiki page not found"),
+        (status = 500, description = "Internal server error")
+    ),
+    security(
+        ("bearer_auth" = [])
+    ),
+    summary = "Rename native wiki page",
+    description = "Renames a typeid-16 wiki valsi and leaves a soft-redirect stub at the old title."
+)]
+#[post("/valsi/{id}/wiki/rename")]
+#[protect(any("edit_definition"))]
+pub async fn rename_wiki_page(
+    pool: web::Data<Pool>,
+    claims: Claims,
+    redis_cache: web::Data<RedisCache>,
+    id: web::Path<i32>,
+    request: web::Json<RenameWikiRequest>,
+) -> impl Responder {
+    let definition_id = id.into_inner();
+    match service::rename_wiki_page(&pool, &claims, definition_id, &request, &redis_cache).await {
+        Ok(response) => HttpResponse::Ok().json(response),
+        Err(e) => {
+            let msg = e.to_string();
+            if msg.contains("not found") {
+                HttpResponse::NotFound().json(RenameWikiResponse {
+                    success: false,
+                    old_word: String::new(),
+                    new_word: request.new_word.clone(),
+                    definition_id,
+                    redirect_stub_definition_id: None,
+                    error: Some(msg),
+                })
+            } else if msg.contains("permission") {
+                HttpResponse::Forbidden().json(RenameWikiResponse {
+                    success: false,
+                    old_word: String::new(),
+                    new_word: request.new_word.clone(),
+                    definition_id,
+                    redirect_stub_definition_id: None,
+                    error: Some(msg),
+                })
+            } else {
+                HttpResponse::BadRequest().json(RenameWikiResponse {
+                    success: false,
+                    old_word: String::new(),
+                    new_word: request.new_word.clone(),
+                    definition_id,
+                    redirect_stub_definition_id: None,
+                    error: Some(msg),
+                })
+            }
+        }
+    }
+}
+
+#[utoipa::path(
     post,
     tag = "jbovlaste",
     path = "/jbovlaste/valsi",
@@ -745,13 +840,26 @@ pub async fn add_definition(
             error: None,
             warning,
         }),
-        Err(e) => HttpResponse::InternalServerError().json(AddValsiResponse {
-            success: false,
-            word_type: String::new(),
-            definition_id: 0,
-            error: Some(e.to_string()),
-            warning: None,
-        }),
+        Err(e) => {
+            let msg = e.to_string();
+            if msg.contains("Conflict:") {
+                HttpResponse::Conflict().json(AddValsiResponse {
+                    success: false,
+                    word_type: String::new(),
+                    definition_id: 0,
+                    error: Some(msg),
+                    warning: None,
+                })
+            } else {
+                HttpResponse::InternalServerError().json(AddValsiResponse {
+                    success: false,
+                    word_type: String::new(),
+                    definition_id: 0,
+                    error: Some(msg),
+                    warning: None,
+                })
+            }
+        }
     }
 }
 
@@ -942,11 +1050,22 @@ pub async fn update_definition(
             error: None,
             warning,
         }),
-        Err(e) => HttpResponse::InternalServerError().json(UpdateDefinitionResponse {
-            success: false,
-            error: Some(format!("Failed to update definition: {}", e)),
-            warning: None,
-        }),
+        Err(e) => {
+            let msg = e.to_string();
+            if msg.contains("Conflict:") {
+                HttpResponse::Conflict().json(UpdateDefinitionResponse {
+                    success: false,
+                    error: Some(msg),
+                    warning: None,
+                })
+            } else {
+                HttpResponse::InternalServerError().json(UpdateDefinitionResponse {
+                    success: false,
+                    error: Some(format!("Failed to update definition: {}", msg)),
+                    warning: None,
+                })
+            }
+        }
     }
 }
 

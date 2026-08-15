@@ -147,7 +147,9 @@
     "notFound": "未找到维基文章。",
     "loadFailed": "加载维基文章失败。",
     "edit": "Edit",
-    "history": "History"
+    "history": "History",
+    "redirectTo": "This page redirects to “{title}”.",
+    "discussions": "Discussions"
   },
   "assistantChat": {
     "title": "逻辑语助手",
@@ -794,7 +796,9 @@
     "noContent": "无内容",
     "loadError": "无法加载版本历史",
     "compareError": "无法比较版本",
-    "revertError": "无法回退版本"
+    "revertError": "无法回退版本",
+    "bodyLabel": "Body:",
+    "renameEvent": "Title rename"
   },
   "upsertDefinition": {
     "editTitle": "编辑释义",
@@ -1265,7 +1269,8 @@
       "delete": "删除",
       "inDefinition": "在释义中",
       "inValsi": "在词条中",
-      "untitledEntry": "无标题词条"
+      "untitledEntry": "无标题词条",
+      "createWiki": "Create wiki"
     },
     "activityVotes": {
       "noVotes": "暂无投票",
@@ -1669,6 +1674,19 @@
     "definitionLabel": "Body",
     "editorPlaceholder": "Type / to show menu",
     "saving": "Saving",
-    "saveButton": "Save wiki page"
+    "saveButton": "Save wiki page",
+    "commitMessageLabel": "Edit summary",
+    "commitMessagePlaceholder": "Describe your changes (optional)",
+    "insertWikiLink": "Insert wiki link",
+    "wikiLinkPrompt": "Wiki page title to link to:",
+    "renameHint": "Changing the title will leave a redirect at the old name.",
+    "renameConfirm": "Rename “{oldTitle}” to “{newTitle}\"? A redirect will be left at the old title.",
+    "renameError": "Failed to rename wiki page.",
+    "saveError": "Failed to save wiki page.",
+    "loadError": "Failed to load wiki page.",
+    "conflictError": "This page was modified by someone else. Reload and try again.",
+    "fromCommentBanner": "Creating a wiki page from comment #{id}.",
+    "fromCommentLink": "View comment",
+    "fromCommentCommit": "Created from comment #{id}"
   }
 }

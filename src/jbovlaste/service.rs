@@ -15,9 +15,10 @@ use super::dto::ClientIdGroup;
 use super::{
     AddDefinitionRequest, BulkImportParams, DefinitionListResponse, DefinitionResponse, Example,
     GetImageDefinitionQuery, ImageData, KeywordMapping, ListDefinitionsQuery,
-    NonLojbanDefinitionsQuery, RecentChange, RecentChangesResponse, SearchDefinitionsParams,
-    SemanticGraphEdge, SemanticGraphNode, SemanticGraphResponse, UpdateDefinitionRequest,
-    ValsiDetail, ValsiType,
+    NonLojbanDefinitionsQuery, RecentChange, RecentChangesResponse, RenameWikiRequest,
+    RenameWikiResponse, SearchDefinitionsParams, SemanticGraphEdge, SemanticGraphNode,
+    SemanticGraphResponse, UpdateDefinitionRequest, ValsiDetail, ValsiType,
+    WikiByDefinitionResponse,
 };
 use crate::jbovlaste::models::{
     row_vote_score_f32, row_vote_score_i32, DefinitionDetail, SemanticGraphParams,
@@ -2008,7 +2009,7 @@ pub async fn get_wiki_by_word(
                 can_edit: row.get("can_edit"),
                 created_at: row.get("created_at"),
                 has_image: row.get("has_image"),
-                metadata: None,
+                metadata: row.get("metadata"),
                 examples: None,
                 decomposition: row
                     .try_get::<_, Option<String>>("cached_decomposition")
@@ -2084,10 +2085,25 @@ async fn upsert_wiki_in_transaction(
     // Enforce one definition per wiki valsi: update if it already exists.
     let existing_definition = transaction
         .query_opt(
-            "SELECT definitionid FROM definitions WHERE valsiid = $1 ORDER BY definitionid LIMIT 1",
+            "SELECT definitionid, time FROM definitions WHERE valsiid = $1 ORDER BY definitionid LIMIT 1",
             &[&valsi_id],
         )
         .await?;
+
+    let is_update = existing_definition.is_some();
+
+    // Optimistic concurrency for existing wiki pages (before mutating).
+    if let Some(ref row) = existing_definition {
+        if let Some(expected_time) = request.expected_time {
+            let current_time: i32 = row.get("time");
+            if current_time != expected_time {
+                return Err(
+                    "Conflict: wiki page was modified by someone else. Reload and try again."
+                        .into(),
+                );
+            }
+        }
+    }
 
     let definition_id = if let Some(row) = existing_definition {
         let definition_id: i32 = row.get("definitionid");
@@ -2139,6 +2155,20 @@ async fn upsert_wiki_in_transaction(
         definition_id
     };
 
+    let version_message = request
+        .commit_message
+        .as_ref()
+        .map(|m| m.trim())
+        .filter(|m| !m.is_empty())
+        .map(|m| m.to_string())
+        .unwrap_or_else(|| {
+            if is_update {
+                "Updated".to_string()
+            } else {
+                "Created".to_string()
+            }
+        });
+
     // Snapshot version (no keyword fields for wiki).
     transaction
         .execute(
@@ -2148,10 +2178,10 @@ async fn upsert_wiki_in_transaction(
             )
             SELECT
                 d.definitionid, d.langid, d.valsiid, d.definition, d.notes, d.etymology, d.selmaho, d.jargon, d.rafsi,
-                '[]'::jsonb, '[]'::jsonb, $2, 'Updated version'
+                '[]'::jsonb, '[]'::jsonb, $2, $3
             FROM definitions d
             WHERE d.definitionid = $1",
-            &[&definition_id, &claims.sub],
+            &[&definition_id, &claims.sub, &version_message],
         )
         .await?;
 
@@ -2184,7 +2214,11 @@ async fn upsert_wiki_in_transaction(
         .await?
         .get("word");
 
-    let url = format!("{}/valsi/{}", env::var("FRONTEND_URL")?, valsi_word);
+    let url = format!(
+        "{}/wiki/{}",
+        env::var("FRONTEND_URL")?,
+        valsi_word.replace(' ', "_")
+    );
     transaction
         .execute(
             "SELECT notify_valsi_subscribers($1, 'edit', $2, $3, $4, $5)",
@@ -2206,6 +2240,308 @@ async fn upsert_wiki_in_transaction(
     }
 
     Ok(("wiki".to_string(), definition_id, None))
+}
+
+/// Resolve a native wiki page by definition id (stable bookmark).
+pub async fn get_wiki_by_definition_id(
+    pool: &Pool,
+    definition_id: i32,
+) -> Result<Option<WikiByDefinitionResponse>, Box<dyn std::error::Error>> {
+    let client = pool.get().await?;
+    let row = client
+        .query_opt(
+            "SELECT d.definitionid, d.metadata, v.word, v.valsiid
+             FROM definitions d
+             JOIN valsi v ON d.valsiid = v.valsiid
+             WHERE d.definitionid = $1 AND v.typeid = 16",
+            &[&definition_id],
+        )
+        .await?;
+
+    Ok(row.map(|row| {
+        let metadata: Option<serde_json::Value> = row.get("metadata");
+        let (is_redirect, redirect_to) = wiki_redirect_from_metadata(metadata.as_ref());
+        WikiByDefinitionResponse {
+            word: row.get("word"),
+            definition_id: row.get("definitionid"),
+            valsiid: row.get("valsiid"),
+            is_redirect,
+            redirect_to,
+        }
+    }))
+}
+
+fn wiki_redirect_from_metadata(
+    metadata: Option<&serde_json::Value>,
+) -> (bool, Option<String>) {
+    let Some(meta) = metadata else {
+        return (false, None);
+    };
+    let is_redirect = meta
+        .get("is_redirect")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false);
+    let redirect_to = meta
+        .get("redirect_to")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string())
+        .filter(|s| !s.is_empty());
+    (is_redirect, redirect_to)
+}
+
+/// Rename a native wiki page and leave a soft-redirect stub at the old title.
+pub async fn rename_wiki_page(
+    pool: &Pool,
+    claims: &Claims,
+    definition_id: i32,
+    request: &RenameWikiRequest,
+    redis_cache: &RedisCache,
+) -> Result<RenameWikiResponse, Box<dyn std::error::Error>> {
+    let new_word = sanitize_html(request.new_word.trim());
+    if new_word.is_empty() {
+        return Err("New title cannot be empty".into());
+    }
+
+    let mut client = pool.get().await?;
+    let transaction = client.transaction().await?;
+
+    let current = transaction
+        .query_opt(
+            "SELECT d.definitionid, d.definition, d.langid, d.owner_only, d.metadata, d.userid,
+                    v.valsiid, v.word, v.source_langid, v.typeid,
+                    can_edit_definition(d.definitionid, $2) AS can_edit
+             FROM definitions d
+             JOIN valsi v ON d.valsiid = v.valsiid
+             WHERE d.definitionid = $1",
+            &[&definition_id, &claims.sub],
+        )
+        .await?
+        .ok_or("Wiki page not found")?;
+
+    let typeid: i16 = current.get("typeid");
+    if typeid != 16 {
+        return Err("This definition is not a native wiki page".into());
+    }
+
+    let can_edit: bool = current.get("can_edit");
+    if !can_edit {
+        return Err("You don't have permission to rename this wiki page".into());
+    }
+
+    let old_word: String = current.get("word");
+    if old_word == new_word {
+        transaction.commit().await?;
+        return Ok(RenameWikiResponse {
+            success: true,
+            old_word,
+            new_word,
+            definition_id,
+            redirect_stub_definition_id: None,
+            error: None,
+        });
+    }
+
+    let valsi_id: i32 = current.get("valsiid");
+    let source_langid: i32 = current.get("source_langid");
+    let langid: i32 = current.get("langid");
+    let owner_only: bool = current.get("owner_only");
+    let mut metadata: serde_json::Value = current
+        .try_get::<_, Option<serde_json::Value>>("metadata")
+        .ok()
+        .flatten()
+        .unwrap_or_else(|| serde_json::json!({}));
+
+    // Target title must not already exist for this source language.
+    if let Some(existing) = transaction
+        .query_opt(
+            "SELECT valsiid, typeid FROM valsi WHERE word = $1 AND source_langid = $2",
+            &[&new_word, &source_langid],
+        )
+        .await?
+    {
+        let existing_typeid: i16 = existing.get("typeid");
+        return Err(format!(
+            "A {} entry with title '{}' already exists for this source language",
+            if existing_typeid == 16 {
+                "wiki"
+            } else {
+                "non-wiki"
+            },
+            new_word
+        )
+        .into());
+    }
+
+    let rename_message = format!("Renamed: \"{}\" → \"{}\"", old_word, new_word);
+
+    // Snapshot current body before rename.
+    transaction
+        .execute(
+            "INSERT INTO definition_versions (
+                definition_id, langid, valsiid, definition, notes, etymology, selmaho, jargon, rafsi,
+                gloss_keywords, place_keywords, user_id, message
+            )
+            SELECT
+                d.definitionid, d.langid, d.valsiid, d.definition, d.notes, d.etymology, d.selmaho, d.jargon, d.rafsi,
+                '[]'::jsonb, '[]'::jsonb, $2, $3
+            FROM definitions d
+            WHERE d.definitionid = $1",
+            &[&definition_id, &claims.sub, &rename_message],
+        )
+        .await?;
+
+    // Rename the live page.
+    transaction
+        .execute(
+            "UPDATE valsi SET word = $1 WHERE valsiid = $2 AND typeid = 16",
+            &[&new_word, &valsi_id],
+        )
+        .await?;
+
+    // Track former titles on the live page.
+    let former = metadata
+        .get("former_titles")
+        .cloned()
+        .unwrap_or_else(|| serde_json::json!([]));
+    let mut former_titles: Vec<String> = former
+        .as_array()
+        .cloned()
+        .unwrap_or_default()
+        .into_iter()
+        .filter_map(|v| v.as_str().map(|s| s.to_string()))
+        .collect();
+    if !former_titles.iter().any(|t| t == &old_word) {
+        former_titles.push(old_word.clone());
+    }
+    if let Some(obj) = metadata.as_object_mut() {
+        obj.insert(
+            "former_titles".to_string(),
+            serde_json::Value::Array(
+                former_titles
+                    .into_iter()
+                    .map(serde_json::Value::String)
+                    .collect(),
+            ),
+        );
+    }
+    transaction
+        .execute(
+            "UPDATE definitions SET metadata = $1, time = $2 WHERE definitionid = $3",
+            &[
+                &metadata,
+                &(Utc::now().timestamp() as i32),
+                &definition_id,
+            ],
+        )
+        .await?;
+
+    // Soft-redirect stub at the old title.
+    let stub_valsi_id: i32 = transaction
+        .query_one(
+            "INSERT INTO valsi (word, typeid, userid, time, source_langid)
+             VALUES ($1, $2, $3, $4, $5)
+             RETURNING valsiid",
+            &[
+                &old_word,
+                &(16i16),
+                &claims.sub,
+                &(Utc::now().timestamp() as i32),
+                &source_langid,
+            ],
+        )
+        .await?
+        .get(0);
+
+    let stub_definition_id = transaction
+        .query_one("SELECT nextval('definitions_definitionid_seq')", &[])
+        .await?
+        .get::<_, i64>(0) as i32;
+
+    let stub_body = format!("#REDIRECT [[{}]]", new_word);
+    let stub_metadata = serde_json::json!({
+        "is_redirect": true,
+        "redirect_to": new_word,
+        "redirect_created_from_definition_id": definition_id
+    });
+
+    transaction
+        .execute(
+            "INSERT INTO definitions
+             (definitionid, langid, valsiid, definitionnum, definition, notes, etymology,
+              selmaho, jargon, userid, time, owner_only, metadata)
+             VALUES ($1, $2, $3, 1, $4, NULL, NULL, NULL, NULL, $5, $6, $7, $8)",
+            &[
+                &stub_definition_id,
+                &langid,
+                &stub_valsi_id,
+                &stub_body,
+                &claims.sub,
+                &(Utc::now().timestamp() as i32),
+                &owner_only,
+                &stub_metadata,
+            ],
+        )
+        .await?;
+
+    transaction
+        .execute(
+            "INSERT INTO definition_versions (
+                definition_id, langid, valsiid, definition, notes, etymology, selmaho, jargon, rafsi,
+                gloss_keywords, place_keywords, user_id, message
+            )
+            VALUES ($1, $2, $3, $4, NULL, NULL, NULL, NULL, NULL, '[]'::jsonb, '[]'::jsonb, $5, $6)",
+            &[
+                &stub_definition_id,
+                &langid,
+                &stub_valsi_id,
+                &stub_body,
+                &claims.sub,
+                &format!("Redirect stub for rename to \"{}\"", new_word),
+            ],
+        )
+        .await?;
+
+    let url = format!(
+        "{}/wiki/{}",
+        env::var("FRONTEND_URL").unwrap_or_default(),
+        new_word.replace(' ', "_")
+    );
+    let _ = transaction
+        .execute(
+            "SELECT notify_valsi_subscribers($1, 'edit', $2, $3, $4, $5)",
+            &[
+                &valsi_id,
+                &rename_message,
+                &url,
+                &claims.sub,
+                &definition_id,
+            ],
+        )
+        .await;
+
+    if let Err(e) = redis_cache.invalidate_definition_search_caches().await {
+        log::error!(
+            "Failed to invalidate definition search caches after wiki rename: {}",
+            e
+        );
+    }
+    if let Err(e) = redis_cache.invalidate_recent_changes().await {
+        log::error!(
+            "Failed to invalidate recent changes cache after wiki rename: {}",
+            e
+        );
+    }
+
+    transaction.commit().await?;
+
+    Ok(RenameWikiResponse {
+        success: true,
+        old_word,
+        new_word,
+        definition_id,
+        redirect_stub_definition_id: Some(stub_definition_id),
+        error: None,
+    })
 }
 
 pub async fn add_definition(
@@ -2953,7 +3289,7 @@ pub async fn update_definition(
     // Get current definition details including owner status and author
     let current_def = transaction
         .query_one(
-            "SELECT d.userid, d.owner_only, u.username, v.source_langid, v.typeid, d.valsiid
+            "SELECT d.userid, d.owner_only, d.time, u.username, v.source_langid, v.typeid, d.valsiid
               FROM definitions d
               JOIN users u ON d.userid = u.userid
               JOIN valsi v ON d.valsiid = v.valsiid
@@ -2969,6 +3305,16 @@ pub async fn update_definition(
     // Wiki edits must target a valsi of type `wiki`.
     if request.is_wiki == Some(true) && valsi_typeid != 16 {
         return Err("This definition is not a native wiki page".into());
+    }
+
+    // Optimistic concurrency
+    if let Some(expected_time) = request.expected_time {
+        let current_time: i32 = current_def.get("time");
+        if current_time != expected_time {
+            return Err(
+                "Conflict: page was modified by someone else. Reload and try again.".into(),
+            );
+        }
     }
 
     let rafsi_warning = if request.is_wiki != Some(true) {
@@ -3218,6 +3564,14 @@ pub async fn update_definition(
     }
 
     // Create version with new state
+    let version_message = request
+        .commit_message
+        .as_ref()
+        .map(|m| m.trim())
+        .filter(|m| !m.is_empty())
+        .map(|m| m.to_string())
+        .unwrap_or_else(|| "Updated".to_string());
+
     transaction
         .execute(
             "INSERT INTO definition_versions (
@@ -3245,10 +3599,10 @@ pub async fn update_definition(
                     JOIN natlangwords n ON k.natlangwordid = n.wordid
                     WHERE k.definitionid = $1 AND k.place > 0
                 )::jsonb,
-                $2, 'Updated version'
+                $2, $3
             FROM definitions d
             WHERE d.definitionid = $1",
-            &[&definition_id, &user_id],
+            &[&definition_id, &user_id, &version_message],
         )
         .await?;
 
@@ -4776,6 +5130,8 @@ pub async fn bulk_import_definitions(
             })),
             rafsi: None,
             is_wiki: None,
+            commit_message: None,
+            expected_time: None,
         };
 
         // Pass the parser map to add_definition

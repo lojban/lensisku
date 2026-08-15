@@ -4,8 +4,20 @@
       {{ isEditMode ? t('upsertWiki.editTitle') : t('upsertWiki.addTitle') }}
     </h2>
 
+    <div
+      v-if="fromCommentId"
+      class="mb-4 p-3 bg-blue-50 border border-blue-100 rounded text-sm text-blue-800"
+    >
+      {{ t('upsertWiki.fromCommentBanner', { id: fromCommentId }) }}
+      <RouterLink
+        :to="`/comments?comment_id=${fromCommentId}&scroll_to=${fromCommentId}`"
+        class="ml-1 underline hover:text-blue-950"
+      >
+        {{ t('upsertWiki.fromCommentLink') }}
+      </RouterLink>
+    </div>
+
     <form class="space-y-4" @submit.prevent="submitWiki">
-      <!-- Word Input -->
       <div>
         <label for="word" class="block text-sm font-medium text-blue-700">
           {{ t('upsertWiki.wordLabel') }}
@@ -16,12 +28,14 @@
           type="text"
           required
           class="input-field w-full h-10"
-          :disabled="isSubmitting || isEditMode"
+          :disabled="isSubmitting"
           :placeholder="t('upsertWiki.wordPlaceholder')"
         />
+        <p v-if="isEditMode && titleChanged" class="mt-1 text-xs text-amber-700">
+          {{ t('upsertWiki.renameHint') }}
+        </p>
       </div>
 
-      <!-- Languages: stacked on mobile, one row on md+ when both shown -->
       <div
         class="grid grid-cols-1 gap-4"
         :class="{ 'md:grid-cols-2': !isEditMode }"
@@ -63,18 +77,36 @@
         </div>
       </div>
 
-      <!-- Definition Editor: full-bleed within page padding on mobile -->
+      <div>
+        <label for="commit-message" class="block text-sm font-medium text-blue-700">
+          {{ t('upsertWiki.commitMessageLabel') }}
+        </label>
+        <Input
+          id="commit-message"
+          v-model="commitMessage"
+          type="text"
+          class="input-field w-full h-10"
+          :disabled="isSubmitting"
+          :placeholder="t('upsertWiki.commitMessagePlaceholder')"
+        />
+      </div>
+
       <div>
         <label class="block text-sm font-medium text-blue-700 mb-2">
           {{ t('upsertWiki.definitionLabel') }}
         </label>
-        <div
-          ref="editor"
-          class="milkdown-editor -mx-3 border-y border-gray-300 sm:-mx-4 sm:border"
+        <WikiEditor
+          v-if="editorReady"
+          :key="editorKey"
+          ref="wikiEditor"
+          v-model="definition"
+          :disabled="isSubmitting"
+          :placeholder="t('upsertWiki.editorPlaceholder')"
         />
       </div>
 
-      <!-- Submit Button -->
+      <p v-if="formError" class="text-sm text-red-600">{{ formError }}</p>
+
       <div class="flex justify-end">
         <Button variant="create" type="submit" :disabled="isSubmitting || !isValid">
           <template v-if="isSubmitting">{{ t('upsertWiki.saving') }}<AnimatedDots /></template>
@@ -87,16 +119,15 @@
 
 <script setup lang="ts">
 import { Button, Input, Select } from '@packages/ui'
-import { Crepe } from '@milkdown/crepe'
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 
-import { getLanguages, addValsi, updateValsi, getNativeWikiArticle } from '@/api'
+import { getLanguages, addValsi, updateValsi, getNativeWikiArticle, renameWiki } from '@/api'
 import AnimatedDots from '@/components/AnimatedDots.vue'
-import '@milkdown/crepe/theme/common/style.css'
-import '@milkdown/crepe/theme/frame.css'
+import WikiEditor from '@/components/WikiEditor.vue'
 import { useSeoHead } from '@/composables/useSeoHead'
+import { loadWikiFromCommentPrefill } from '@/utils/wikiFromComment'
 
 const route = useRoute()
 const router = useRouter()
@@ -104,52 +135,16 @@ const { t } = useI18n()
 
 const langId = ref('')
 const word = ref('')
+const originalWord = ref('')
 const sourceLangId = ref(1)
 const definition = ref('')
-const editor = ref<HTMLElement | null>(null)
-let crepe: Crepe | null = null
-
-onMounted(async () => {
-  await loadLanguages()
-
-  const wordParam = route.params.word as string | undefined
-  if (wordParam) {
-    isEditMode.value = true
-    word.value = decodeURIComponent(wordParam).replace(/_/g, ' ')
-    await loadWikiData(word.value)
-  }
-
-  crepe = new Crepe({
-    root: editor.value,
-    defaultValue: definition.value,
-    featureConfigs: {
-      [Crepe.Feature.Placeholder]: {
-        text: t('upsertWiki.editorPlaceholder') || 'Type / to show menu',
-      },
-    },
-  })
-
-  await crepe.create()
-
-  const updateDefinition = () => {
-    if (crepe) {
-      let markdown = crepe.getMarkdown()
-      // Convert autolinks <https://...> to [https://...](https://...)
-      markdown = markdown.replace(/<(https?:\/\/[^\s>]+)>/g, '[$1]($1)')
-      definition.value = markdown
-    }
-  }
-
-  crepe.on((listener) => {
-    listener.markdownUpdated(updateDefinition)
-  })
-})
-
-onUnmounted(() => {
-  if (crepe) {
-    crepe.destroy()
-  }
-})
+const commitMessage = ref('')
+const expectedTime = ref<number | null>(null)
+const wikiEditor = ref<{ getMarkdown: () => string } | null>(null)
+const editorReady = ref(false)
+const editorKey = ref(0)
+const formError = ref('')
+const fromCommentId = ref<number | null>(null)
 
 const languages = ref<{ id: number; real_name: string }[]>([])
 const isEditMode = ref(false)
@@ -162,8 +157,12 @@ const pageTitle = computed(() =>
 )
 useSeoHead({ title: pageTitle, robots: 'noindex, nofollow' })
 
+const titleChanged = computed(
+  () => isEditMode.value && word.value.trim() !== originalWord.value.trim()
+)
+
 const isValid = computed(() => {
-  return langId.value && definition.value.trim()
+  return langId.value && word.value.trim() && definition.value.trim()
 })
 
 async function loadLanguages() {
@@ -186,25 +185,50 @@ async function loadWikiData(wikiWord: string) {
       sourceLangId.value = def.source_langid || 1
       definition.value = def.definition
       editDefinitionId.value = def.definitionid
+      originalWord.value = def.valsiword
+      word.value = def.valsiword
+      expectedTime.value = typeof def.time === 'number' ? def.time : null
+      editorKey.value += 1
     }
   } catch (error) {
     console.error('Failed to load wiki data:', error)
+    formError.value = t('upsertWiki.loadError')
   }
 }
 
 async function submitWiki() {
-  if (crepe) {
-    let markdown = crepe.getMarkdown()
-    markdown = markdown.replace(/<(https?:\/\/[^\s>]+)>/g, '[$1]($1)')
-    definition.value = markdown
+  formError.value = ''
+  if (wikiEditor.value) {
+    definition.value = wikiEditor.value.getMarkdown()
   }
   if (!isValid.value) return
+
+  if (titleChanged.value) {
+    const confirmed = window.confirm(
+      t('upsertWiki.renameConfirm', { oldTitle: originalWord.value, newTitle: word.value.trim() })
+    )
+    if (!confirmed) return
+  }
 
   isSubmitting.value = true
 
   try {
+    if (isEditMode.value && editDefinitionId.value !== null && titleChanged.value) {
+      const renameResp = await renameWiki(editDefinitionId.value, {
+        new_word: word.value.trim(),
+      })
+      if (!renameResp.data.success) {
+        formError.value = renameResp.data.error || t('upsertWiki.renameError')
+        return
+      }
+      originalWord.value = renameResp.data.new_word
+      word.value = renameResp.data.new_word
+      // Rename bumps definitions.time; skip stale concurrency check for the follow-up save.
+      expectedTime.value = null
+    }
+
     const requestData = {
-      word: word.value,
+      word: word.value.trim(),
       definition: definition.value,
       notes: null,
       etymology: null,
@@ -219,6 +243,14 @@ async function submitWiki() {
       owner_only: false,
       image: null,
       is_wiki: true,
+      commit_message: commitMessage.value.trim() || undefined,
+      expected_time: expectedTime.value ?? undefined,
+      ...(!isEditMode.value &&
+        fromCommentId.value && {
+          metadata: {
+            source_comment_id: fromCommentId.value,
+          },
+        }),
     }
 
     let response
@@ -229,37 +261,52 @@ async function submitWiki() {
     }
 
     if (response.data.success || response.status === 200) {
-      router.push(`/wiki/${word.value.replace(/ /g, '_')}`)
+      router.push(`/wiki/${word.value.trim().replace(/ /g, '_')}`)
     } else {
-      console.error('Error saving wiki page:', response.data.error)
+      formError.value = response.data.error || t('upsertWiki.saveError')
     }
-  } catch (error) {
-    console.error('Error saving wiki page:', error)
+  } catch (error: unknown) {
+    const status = (error as { response?: { status?: number; data?: { error?: string } } })
+      ?.response?.status
+    const apiError = (error as { response?: { data?: { error?: string } } })?.response?.data
+      ?.error
+    if (status === 409) {
+      formError.value = apiError || t('upsertWiki.conflictError')
+    } else {
+      formError.value = apiError || t('upsertWiki.saveError')
+      console.error('Error saving wiki page:', error)
+    }
   } finally {
     isSubmitting.value = false
   }
 }
-</script>
 
-<style scoped>
-.milkdown-editor {
-  @apply min-h-60 flex flex-col;
-}
+onMounted(async () => {
+  await loadLanguages()
 
-/* Crepe nests .milkdown > .ProseMirror; both must stretch to the host min-height. */
-.milkdown-editor :deep(.milkdown) {
-  @apply flex min-h-full flex-1 flex-col;
-}
-
-.milkdown-editor :deep(.milkdown .ProseMirror) {
-  @apply min-h-full flex-1 py-3 px-3 sm:py-4 sm:pl-14 sm:pr-4;
-}
-
-/* Block handle (drag/+/menu) is hover-based and wastes width on small screens. */
-@media (max-width: 640px) {
-  .milkdown-editor :deep(.milkdown-block-handle),
-  .milkdown-editor :deep(milkdown-block-handle) {
-    display: none !important;
+  const wordParam = route.params.word as string | undefined
+  if (wordParam) {
+    isEditMode.value = true
+    word.value = decodeURIComponent(wordParam).replace(/_/g, ' ')
+    originalWord.value = word.value
+    await loadWikiData(word.value)
+  } else {
+    const fromCommentQuery = route.query.from_comment
+    if (fromCommentQuery) {
+      const prefill = loadWikiFromCommentPrefill(String(fromCommentQuery))
+      if (prefill) {
+        fromCommentId.value = prefill.commentId
+        if (prefill.word) word.value = prefill.word
+        definition.value = prefill.definition || ''
+        commitMessage.value =
+          prefill.commitMessage || t('upsertWiki.fromCommentCommit', { id: prefill.commentId })
+        editorKey.value += 1
+      } else {
+        fromCommentId.value = Number(fromCommentQuery) || null
+      }
+    }
   }
-}
-</style>
+
+  editorReady.value = true
+})
+</script>

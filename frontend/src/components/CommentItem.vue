@@ -273,6 +273,16 @@
         <span class="sr-only">{{ t('components.commentItem.delete') }}</span>
       </Button>
       <Button
+        v-if="auth.state.isLoggedIn"
+        variant="empty"
+        class="inline-flex items-center gap-2"
+        @click.stop="handleCreateWikiClick"
+      >
+        <BookOpen class="h-4 w-4" />
+        <span class="hidden sm:inline">{{ t('components.commentItem.createWiki') }}</span>
+        <span class="sr-only sm:hidden">{{ t('components.commentItem.createWiki') }}</span>
+      </Button>
+      <Button
         v-if="auth.state.isLoggedIn && replyEnabled"
         variant="reply"
         class="inline-flex items-center gap-2"
@@ -298,7 +308,7 @@
 
 <script setup lang="ts">
 import { Button, Input } from '@packages/ui'
-import { Bookmark, BookmarkCheck, Reply, User, Trash2, ArrowUp } from 'lucide-vue-next'
+import { Bookmark, BookmarkCheck, Reply, User, Trash2, ArrowUp, BookOpen } from 'lucide-vue-next'
 import { ref, onMounted, onUnmounted, computed } from 'vue'
 import type { PropType } from 'vue'
 import { useRouter } from 'vue-router'
@@ -315,6 +325,7 @@ import { useDateFormat } from '@/composables/useDateFormat'
 import { useError } from '@/composables/useError'
 import { useSuccessToast } from '@/composables/useSuccessToast'
 import type { CommentItemApiComment } from '@/types/comment'
+import { commentToWikiPrefill, storeWikiFromCommentPrefill } from '@/utils/wikiFromComment'
 
 const { t, locale } = useI18n()
 const { formatDateTime } = useDateFormat()
@@ -579,6 +590,19 @@ const handleReplyClick = () => {
   setTimeout(() => {
     emit('focus-textarea')
   }, 50)
+}
+
+const handleCreateWikiClick = () => {
+  if (!auth.state.isLoggedIn) return
+  const prefill = commentToWikiPrefill(
+    processedComment.value.comment_id,
+    props.comment.content || []
+  )
+  storeWikiFromCommentPrefill(prefill)
+  router.push({
+    path: '/wiki/add',
+    query: { from_comment: String(prefill.commentId) },
+  })
 }
 
 onUnmounted(() => {
