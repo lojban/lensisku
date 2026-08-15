@@ -127,13 +127,13 @@ const baseRoutes: Array<RouteRecordRaw> = [
     path: '/wiki/add',
     name: 'UpsertWiki',
     component: () => import('../pages/UpsertWiki.vue'),
-    meta: { requiresAuth: true },
+    meta: { requiresAuth: true, contentTopPaddingMainOnly: true },
   },
   {
     path: '/wiki/:word(.*)/edit',
     name: 'EditWiki',
     component: () => import('../pages/UpsertWiki.vue'),
-    meta: { requiresAuth: true },
+    meta: { requiresAuth: true, contentTopPaddingMainOnly: true },
   },
   {
     path: '/wiki/:title(.*)',

@@ -90,10 +90,10 @@
         :languages="languages"
       />
     </div>
-    <!-- Combined Language Selectors -->
-    <div class="flex flex-col sm:flex-row gap-4">
+    <!-- Combined Language Selectors: stacked on mobile, one row on md+ -->
+    <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
       <!-- Optional Entry Language Selection (Only for new entries) -->
-      <div class="flex-1">
+      <div>
         <label for="source-language" class="block text-sm font-medium text-blue-700"
           >{{ t('upsertDefinition.sourceLanguageLabel') }}
           <span class="text-red-500">{{ t('upsertDefinition.required') }}</span></label
@@ -118,7 +118,7 @@
         </p>
       </div>
       <!-- Language Selection -->
-      <div class="flex-1">
+      <div>
         <label for="language" class="block text-sm font-medium text-blue-700"
           >{{ t('upsertDefinition.languageLabel') }}
           <span class="text-red-500">{{ t('upsertDefinition.required') }}</span></label

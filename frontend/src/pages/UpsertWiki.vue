@@ -1,5 +1,5 @@
 <template>
-  <div class="wiki-upsert mx-auto py-2 sm:py-4">
+  <div class="wiki-upsert w-full max-w-3xl mx-auto px-3 py-3 sm:px-4 sm:py-4">
     <h2 class="text-xl sm:text-2xl font-bold text-gray-800 select-none mb-4">
       {{ isEditMode ? t('upsertWiki.editTitle') : t('upsertWiki.addTitle') }}
     </h2>
@@ -15,58 +15,62 @@
           v-model="word"
           type="text"
           required
-          class="input-field w-full h-10 mb-4"
+          class="input-field w-full h-10"
           :disabled="isSubmitting || isEditMode"
           :placeholder="t('upsertWiki.wordPlaceholder')"
         />
       </div>
 
-      <!-- Source Language (Only for new entries) -->
-      <div v-if="!isEditMode">
-        <label for="source-language" class="block text-sm font-medium text-blue-700">
-          {{ t('upsertWiki.sourceLanguageLabel') }}
-          <span class="text-red-500">{{ t('upsertWiki.required') }}</span>
-        </label>
-        <Select
-          id="source-language"
-          v-model="sourceLangId"
-          required
-          class="input-field w-full h-10"
-          :disabled="isLoading || isSubmitting"
-          :options="[
-            { value: '', label: t('upsertWiki.selectLanguagePlaceholder') },
-            ...languages.map((lang) => ({ value: lang.id, label: lang.real_name })),
-          ]"
-        />
-        <p class="mt-1 text-xs text-gray-500">{{ t('upsertWiki.sourceLanguageNote') }}</p>
+      <!-- Languages: stacked on mobile, one row on md+ when both shown -->
+      <div
+        class="grid grid-cols-1 gap-4"
+        :class="{ 'md:grid-cols-2': !isEditMode }"
+      >
+        <div v-if="!isEditMode">
+          <label for="source-language" class="block text-sm font-medium text-blue-700">
+            {{ t('upsertWiki.sourceLanguageLabel') }}
+            <span class="text-red-500">{{ t('upsertWiki.required') }}</span>
+          </label>
+          <Select
+            id="source-language"
+            v-model="sourceLangId"
+            required
+            class="input-field w-full h-10"
+            :disabled="isLoading || isSubmitting"
+            :options="[
+              { value: '', label: t('upsertWiki.selectLanguagePlaceholder') },
+              ...languages.map((lang) => ({ value: lang.id, label: lang.real_name })),
+            ]"
+          />
+          <p class="mt-1 text-xs text-gray-500">{{ t('upsertWiki.sourceLanguageNote') }}</p>
+        </div>
+
+        <div>
+          <label for="language" class="block text-sm font-medium text-blue-700">
+            {{ t('upsertWiki.languageLabel') }}
+          </label>
+          <Select
+            id="language"
+            v-model="langId"
+            required
+            class="input-field w-full h-10"
+            :disabled="isLoading || isSubmitting"
+            :options="[
+              { value: '', label: t('upsertWiki.languagePlaceholder') },
+              ...languages.map((lang) => ({ value: lang.id, label: lang.real_name })),
+            ]"
+          />
+        </div>
       </div>
 
-      <!-- Content Language -->
-      <div>
-        <label for="language" class="block text-sm font-medium text-blue-700">
-          {{ t('upsertWiki.languageLabel') }}
-        </label>
-        <Select
-          id="language"
-          v-model="langId"
-          required
-          class="input-field w-full h-10"
-          :disabled="isLoading || isSubmitting"
-          :options="[
-            { value: '', label: t('upsertWiki.languagePlaceholder') },
-            ...languages.map((lang) => ({ value: lang.id, label: lang.real_name })),
-          ]"
-        />
-      </div>
-
-      <!-- Definition Editor: full-bleed on mobile (cancels App.vue px-3) -->
+      <!-- Definition Editor: full-bleed within page padding on mobile -->
       <div>
         <label class="block text-sm font-medium text-blue-700 mb-2">
           {{ t('upsertWiki.definitionLabel') }}
         </label>
         <div
           ref="editor"
-          class="milkdown-editor -mx-3 border-y border-gray-300 sm:mx-0 sm:border"
+          class="milkdown-editor -mx-3 border-y border-gray-300 sm:-mx-4 sm:border"
         />
       </div>
 
@@ -238,17 +242,17 @@ async function submitWiki() {
 </script>
 
 <style scoped>
-.wiki-upsert {
-  max-width: 800px;
-}
-
 .milkdown-editor {
-  min-height: 240px;
+  @apply min-h-60 flex flex-col;
 }
 
-/* Crepe defaults to 60px 120px padding (room for the left block handle). */
+/* Crepe nests .milkdown > .ProseMirror; both must stretch to the host min-height. */
+.milkdown-editor :deep(.milkdown) {
+  @apply flex min-h-full flex-1 flex-col;
+}
+
 .milkdown-editor :deep(.milkdown .ProseMirror) {
-  @apply py-3 px-3 sm:py-4 sm:pl-14 sm:pr-4;
+  @apply min-h-full flex-1 py-3 px-3 sm:py-4 sm:pl-14 sm:pr-4;
 }
 
 /* Block handle (drag/+/menu) is hover-based and wastes width on small screens. */
