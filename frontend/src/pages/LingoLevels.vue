@@ -190,7 +190,11 @@
             <Button variant="cancel" type="button" @click="closeModal">
               {{ t('flashcardLevels.cancelButton') }}
             </Button>
-            <Button variant="create" type="submit" :disabled="isSubmitting">
+            <Button
+              :variant="showEditModal ? 'edit' : 'create'"
+              type="submit"
+              :disabled="isSubmitting"
+            >
               {{
                 isSubmitting
                   ? t('flashcardLevels.savingButton')

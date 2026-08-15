@@ -27,7 +27,7 @@
             <div v-if="article.is_native" class="flex items-center gap-2">
               <Button
                 v-if="article.can_edit"
-                variant="empty"
+                variant="edit"
                 class="inline-flex items-center gap-2 text-sm"
                 @click="router.push(`/wiki/${encodedTitle}/edit`)"
               >

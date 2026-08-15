@@ -140,6 +140,25 @@ export default {
           },
         },
         /**
+         * FAB overflow menu icons — hues mirror semantic btn roles (nav / accent / reply / create).
+         * Use with Lucide size props; keep stroke-width on the SVG.
+         */
+        '.fab-menu-icon': {
+          '@apply h-6 w-6 shrink-0': {},
+        },
+        '.fab-menu-icon--assistant': {
+          '@apply text-nav-link': {},
+        },
+        '.fab-menu-icon--graph': {
+          '@apply text-cornflower-600': {},
+        },
+        '.fab-menu-icon--discussion': {
+          '@apply text-sky-600': {},
+        },
+        '.fab-menu-icon--definition': {
+          '@apply text-emerald-600': {},
+        },
+        /**
          * Footer modal: iOS-style toggle track + thumb (pair thumb with translate-x-0 / translate-x-5).
          * Use `Button variant="plain"` so aqua/flat `ui-btn--*` padding/chrome do not fight the track.
          * Theme gloss / emboss lives in `buttonUiThemeLayer` (aqua vs flat).
@@ -996,7 +1015,8 @@ export default {
           'ui-btn--reaction': { aqua: 'btn-aqua-cyan', flat: 'btn-reaction' },
           'ui-btn--reaction-active': { aqua: 'btn-aqua-blue', flat: 'btn-reaction-active' },
           'ui-btn--reply': { aqua: 'btn-aqua-sky', flat: 'btn-reply' },
-          'ui-btn--revert': { aqua: 'btn-aqua-yellow', flat: 'btn-revert' },
+          /** Undo / restore — amber caution (yellow reserved for edit). */
+          'ui-btn--revert': { aqua: 'btn-aqua-amber', flat: 'btn-warning' },
           'ui-btn--sort-amber': { aqua: 'btn-aqua-amber', flat: 'btn-warning' },
           'ui-btn--sort-blue': { aqua: 'btn-aqua-blue', flat: 'btn-insert' },
           'ui-btn--sort-emerald': { aqua: 'btn-aqua-emerald', flat: 'btn-create' },
@@ -1004,12 +1024,17 @@ export default {
           'ui-btn--study-correct': { aqua: 'btn-aqua-teal', flat: 'btn-success' },
           'ui-btn--study-wrong': { aqua: 'btn-aqua-rose', flat: 'btn-error' },
           'ui-btn--success': { aqua: 'btn-aqua-emerald', flat: 'btn-success' },
-          'ui-btn--update': { aqua: 'btn-aqua-teal', flat: 'btn-update' },
+          /** Edit / apply — yellow (flat `btn-update`, aqua `btn-aqua-yellow`). */
+          'ui-btn--update': { aqua: 'btn-aqua-yellow', flat: 'btn-update' },
           /** Role: save edits / apply changes — synonym of `update`. */
-          'ui-btn--edit': { aqua: 'btn-aqua-teal', flat: 'btn-update' },
+          'ui-btn--edit': { aqua: 'btn-aqua-yellow', flat: 'btn-update' },
           'ui-btn--warning': { aqua: 'btn-aqua-orange', flat: 'btn-warning' },
           'ui-btn--warning-orange': { aqua: 'btn-aqua-orange', flat: 'btn-warning' },
-          /** Flat: `btn-revert` (yellow) vs `btn-warning` (amber) so orange/yellow variants stay distinct. */
+          /**
+           * Decorative yellow only (same hue as edit). Never place beside `ui-btn--edit` in the
+           * same toolbar / `.btn-group` — at most one yellow control. Flat `btn-revert` is the
+           * yellow primitive (name is historical).
+           */
           'ui-btn--warning-yellow': { aqua: 'btn-aqua-yellow', flat: 'btn-revert' },
         }
         addThemeMap(buttonThemeClassMap)

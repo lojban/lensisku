@@ -115,7 +115,7 @@
               </Button>
               <RouterLink
                 :to="`/collections/${props.collectionId}/custom-text-bulk`"
-                class="ui-btn--amber ui-btn--group-item inline-flex items-center gap-2"
+                class="ui-btn--edit ui-btn--group-item inline-flex items-center gap-2"
               >
                 <Table2 class="w-4 h-4 shrink-0" aria-hidden="true" />
                 {{ t('collectionDetail.bulkEditCustomText') }}

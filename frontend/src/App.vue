@@ -313,25 +313,25 @@
         </template>
         <ToolbarSelectDropdownItem @click="handleAssistantChat">
           <span class="flex items-center gap-3">
-            <Bot class="h-6 w-6 shrink-0 text-indigo-600" stroke-width="2" />
+            <Bot class="fab-menu-icon fab-menu-icon--assistant" stroke-width="2" />
             {{ $t('nav.assistant') }}
           </span>
         </ToolbarSelectDropdownItem>
         <ToolbarSelectDropdownItem @click="handleSemanticGraph">
           <span class="flex items-center gap-3">
-            <Share2 class="h-6 w-6 shrink-0 text-cornflower-500" stroke-width="2" />
+            <Share2 class="fab-menu-icon fab-menu-icon--graph" stroke-width="2" />
             {{ $t('nav.semanticGraph') }}
           </span>
         </ToolbarSelectDropdownItem>
         <ToolbarSelectDropdownItem @click="handleNewFreeThread">
           <span class="flex items-center gap-3">
-            <AudioWaveform class="h-6 w-6 shrink-0 text-purple-600" stroke-width="2" />
+            <AudioWaveform class="fab-menu-icon fab-menu-icon--discussion" stroke-width="2" />
             {{ $t('fab.newDiscussion') }}
           </span>
         </ToolbarSelectDropdownItem>
         <ToolbarSelectDropdownItem @click="handleNewDefinition">
           <span class="flex items-center gap-3">
-            <FilePlus class="h-6 w-6 shrink-0 text-emerald-600" stroke-width="2" />
+            <FilePlus class="fab-menu-icon fab-menu-icon--definition" stroke-width="2" />
             {{ $t('fab.addDefinition') }}
           </span>
         </ToolbarSelectDropdownItem>

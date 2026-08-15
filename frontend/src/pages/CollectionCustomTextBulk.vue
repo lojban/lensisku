@@ -84,7 +84,7 @@
             {{ t('collectionCustomTextBulk.revert') }}
           </Button>
           <Button
-            variant="auth-signup"
+            variant="edit"
             type="button"
             class="ui-btn--group-item inline-flex items-center gap-2"
             :disabled="isSaving || !isDirty"

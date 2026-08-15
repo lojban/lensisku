@@ -120,7 +120,7 @@ const STUDY_BUTTON_VARIANT_WHEEL = [
   'palette-red',
   'warning-orange',
   'amber',
-  'warning-yellow',
+  // Yellow reserved for `edit` / `update` (brandbook: at most one yellow per toolbar/group).
   'palette-lime',
   'palette-teal',
   'palette-emerald',

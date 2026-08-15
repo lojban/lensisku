@@ -98,10 +98,12 @@ export function buildFlatButtonLayer(theme) {
 
   const tinted = {
     '.btn-get': tint('cyan.700', 'cyan'),
-    '.btn-update': tint('teal.700', 'teal'),
+    /** Edit / apply — brand yellow (see brandbook §6.3); at most one yellow control per toolbar/group. */
+    '.btn-update': tint('yellow.700', 'yellow'),
     '.btn-delete, .btn-error': tint('red.700', 'red'),
     '.btn-create, .btn-success': tint('green.700', 'green'),
     '.btn-warning': tint('amber.700', 'amber'),
+    /** Decorative yellow primitive (historical name); prefer `btn-update` for edit semantics. */
     '.btn-revert': tint('yellow.700', 'yellow'),
     '.btn-history': tint('purple.700', 'purple'),
     '.btn-link': tint('blue.700', 'blue'),

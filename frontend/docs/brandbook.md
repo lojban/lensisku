@@ -51,7 +51,7 @@ This document is the **human-readable contract** for product, design, QA, and en
 
 - **Navigation / links**: `text-nav-link` (`#007bff`) and **active** state via `.nav-link-active` (see `NavLink`, `navbar-item`). Mobile rows use `.mobile-nav-row` (hover/focus only—link color comes from NavLink).
 - **Semantic blues** in surfaces: borders and hovers (`border-blue-*`, `hover:border-blue-*`) for **interactive lists** (`.surface-list-row`, `.message-thread-card`, …).
-- **Status**: green success, red danger, amber/yellow warning—prefer existing **badge** and **btn** semantics over new hex values.
+- **Status**: green success, red danger, amber warning—prefer existing **badge** and **btn** semantics over new hex values. **Yellow** is reserved for **edit / apply** (`ui-btn--edit`).
 - **Selma'o / tags**: `.badge-definition-tag` (purple chip)—use for grammatical tags, not general emphasis.
 
 ---
@@ -92,7 +92,7 @@ Application code and **`Button.vue`** / **`IconButton.vue`** should use **semant
 | Action role                   | Canonical class                                      | Typical use                                                                                    |
 | ----------------------------- | ---------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
 | **Read / open / navigate**    | `ui-btn--read`                                       | Links, “open”, export/download, neutral forward. _Legacy:_ `ui-btn--get`.                      |
-| **Edit / apply**              | `ui-btn--edit`                                       | Save profile, merge, apply recommendation. _Legacy:_ `ui-btn--update`.                         |
+| **Edit / apply**              | `ui-btn--edit`                                       | Save / apply / bulk-edit — **yellow** (`btn-update` / `btn-aqua-yellow`). _Legacy:_ `ui-btn--update`. |
 | **Create / add**              | `ui-btn--create`                                     | Submit new entity, add row. Often paired with **`ui-btn--primary`** (same mapping).            |
 | **Delete / remove**           | `ui-btn--delete`                                     | Destructive removal. _Synonym:_ `ui-btn--remove` (same mapping).                               |
 | **Dismiss / cancel**          | `ui-btn--cancel`                                     | Close modal, secondary “no”. _Synonym:_ `ui-btn--dismiss`.                                     |
@@ -111,9 +111,9 @@ Application code and **`Button.vue`** / **`IconButton.vue`** should use **semant
 | **Reaction**                  | `ui-btn--reaction`, `reaction-active`                | Toggle reactions.                                                                              |
 | **Auth**                      | `ui-btn--auth-login`, `auth-signup`                  | Login vs signup emphasis.                                                                      |
 | **Status**                    | `ui-btn--success`, `error`, `warning`, `danger-rose` | Result / alert / destructive rose.                                                             |
-| **Revert**                    | `ui-btn--revert`                                     | Undo to old revision (yellow).                                                                 |
+| **Revert**                    | `ui-btn--revert`                                     | Undo to old revision — **amber** (yellow reserved for edit).                                   |
 | **Study grading**             | `study-correct`, `study-wrong`                       | Flashcard / Lingo result.                                                                      |
-| **Warning shades**            | `warning`, `warning-orange`, `warning-yellow`        | Caution; yellow uses flat **`btn-revert`** vs amber **`btn-warning`**.                         |
+| **Warning shades**            | `warning`, `warning-orange`, `warning-yellow`        | Caution; orange/amber vs decorative **yellow** (`warning-yellow` / `palette-yellow`).          |
 | **Sort / palette**            | `sort-*`, `palette-*`                                | Rotating colors in lists (see map).                                                            |
 | **Segmented group**           | `ui-btn--group-item`                                 | Inner segment (with `.btn-group` / `.btn-group-forced`).                                       |
 | **Special**                   | `ui-btn--fab`, `toggle`                              | FAB and toggle have extra rules in the same Tailwind layer.                                    |
@@ -121,9 +121,10 @@ Application code and **`Button.vue`** / **`IconButton.vue`** should use **semant
 **Rules**
 
 1. Prefer **`<Button variant="…">`** or **`<IconButton button-classes="…">`** over raw `class="btn-aqua-emerald"` in new code—keeps theme switching coherent.
-2. **Account / profile toolbars**: pair **read** (`ui-btn--read`, e.g. change password) with **edit** (`ui-btn--edit`). Do not use **`ui-btn--warning-*`** for routine account actions—they read as caution chrome; **`warning-yellow`** in flat theme maps to **`btn-revert`** (yellow) to stay distinct from amber **`btn-warning`**.
-3. **Flat theme**: major empty-state CTAs may still use **`ui-btn--*`**; do not mix random `bg-blue-600` full-width buttons unless using an existing pattern (e.g. `.btn-panel-primary` for specific panels).
-4. **Icon-only**: must have **`aria-label`** (or visible text). `IconButton` derives `aria-label` from `ariaLabel` or `label`.
+2. **Account / profile toolbars**: pair **read** (`ui-btn--read`, e.g. change password) with **edit** (`ui-btn--edit`). Do not use **`ui-btn--warning-*`** for routine account actions—they read as caution chrome.
+3. **Yellow = edit (at most one per cluster)**: `ui-btn--edit` / `ui-btn--update` use yellow. Decorative yellow (`ui-btn--warning-yellow`, `ui-btn--palette-yellow`) shares that hue. In any **toolbar**, **`.btn-group`**, or **`.btn-group-forced`**, show **at most one** yellow control—never two edits, or edit beside `warning-yellow` / `palette-yellow`. Prefer amber/orange for secondary caution actions in the same row.
+4. **Flat theme**: major empty-state CTAs may still use **`ui-btn--*`**; do not mix random `bg-blue-600` full-width buttons unless using an existing pattern (e.g. `.btn-panel-primary` for specific panels).
+5. **Icon-only**: must have **`aria-label`** (or visible text). `IconButton` derives `aria-label` from `ariaLabel` or `label`.
 
 ### 6.4 When Aqua vs Flat “wins”
 
