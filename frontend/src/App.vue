@@ -241,7 +241,7 @@
       class="max-w-4xl mx-auto relative flex flex-col"
       :class="[
         route.meta.contentTopPaddingMainOnly || route.meta.authFullBleed ? 'pt-0' : 'pt-3',
-        route.meta.fullHeight ? 'main-child-full-height w-full' : 'min-h-[calc(100vh-12rem)]',
+        route.meta.fullHeight ? 'main-child-full-height w-full' : 'main-child-min-height',
         route.meta.authFullBleed ? 'main-child--auth-fullbleed' : '',
         route.path.startsWith('/lingo') ? 'lg:pl-64' : '',
       ]"
@@ -738,8 +738,15 @@ onMounted(() => {
 </script>
 
 <style lang="postcss">
+/*
+ * Prefer 100svh over 100vh / 100dvh for layout chrome:
+ * - vh often matches the large viewport (toolbar hidden) → content jumps when chrome toggles
+ * - dvh resizes as the toolbar shows/hides → layout shift while scrolling
+ * - svh is the small viewport (toolbar visible) → stable height when chrome collapses
+ */
 body {
   min-height: 100vh;
+  min-height: 100svh;
 }
 
 body::before {
@@ -761,6 +768,7 @@ footer {
 
 .main-content {
   height: calc(100vh - 57px - 24px);
+  height: calc(100svh - 57px - 24px);
 }
 
 .main-content > * {
@@ -776,17 +784,20 @@ footer {
 @media (min-width: 640px) {
   .main-content {
     height: calc(100vh - 49px - 24px);
+    height: calc(100svh - 49px - 24px);
   }
 }
 
 /* No global header: only reserve fixed footer strip (h-6 in FooterComponent). */
 .main-content.main-content--no-topbar:not(.main-content--no-scroll) {
   height: calc(100vh - 24px);
+  height: calc(100svh - 24px);
 }
 
 @media (min-width: 640px) {
   .main-content.main-content--no-topbar:not(.main-content--no-scroll) {
     height: calc(100vh - 24px);
+    height: calc(100svh - 24px);
   }
 }
 
@@ -961,6 +972,11 @@ html:has(.main-content.main-content--no-scroll),
 body:has(.main-content.main-content--no-scroll) {
   overflow: hidden;
   height: 100%;
+}
+
+.main-child-min-height {
+  min-height: calc(100vh - 12rem);
+  min-height: calc(100svh - 12rem);
 }
 
 .main-child-full-height {
