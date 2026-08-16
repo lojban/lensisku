@@ -298,30 +298,38 @@
       <div
         v-for="(keyword, index) in glossKeywords"
         :key="'gloss' + index"
-        class="flex flex-col sm:flex-row gap-2 sm:space-x-2 mb-2 items-center"
+        class="flex flex-col sm:flex-row sm:flex-wrap gap-2 mb-2 items-stretch sm:items-center"
       >
         <Input
           v-model="keyword.word"
           type="text"
           :placeholder="t('upsertDefinition.keywordPlaceholder')"
-          class="flex-1 input-field w-full"
+          class="flex-1 input-field w-full min-w-0"
         />
         <Input
           v-model="keyword.meaning"
           type="text"
           :placeholder="t('upsertDefinition.meaningPlaceholder')"
-          class="flex-1 input-field w-full"
+          class="flex-1 input-field w-full min-w-0"
         />
-        <div class="flex flex-wrap space-x-2">
+        <div
+          class="btn-group-forced flex flex-nowrap w-full sm:w-auto shrink-0"
+          role="group"
+        >
           <Button
             variant="delete"
             type="button"
-            class="sm:w-auto"
+            class="ui-btn--group-item"
             @click="removeGlossKeyword(index)"
           >
             <CircleMinus class="h-4 w-4" /> {{ t('upsertDefinition.removeButton') }}
           </Button>
-          <Button variant="neutral" type="button" @click="addGlossKeyword">
+          <Button
+            variant="neutral"
+            type="button"
+            class="ui-btn--group-item"
+            @click="addGlossKeyword"
+          >
             <CirclePlus class="h-4 w-4" /> {{ t('upsertDefinition.addGlossButton') }}
           </Button>
         </div>
@@ -336,30 +344,38 @@
       <div
         v-for="(keyword, index) in placeKeywords"
         :key="'place' + index"
-        class="flex flex-col sm:flex-row gap-2 sm:space-x-2 mb-2 items-center"
+        class="flex flex-col sm:flex-row sm:flex-wrap gap-2 mb-2 items-stretch sm:items-center"
       >
         <Input
           v-model="keyword.word"
           type="text"
           :placeholder="t('upsertDefinition.keywordPlaceholder')"
-          class="flex-1 input-field w-full"
+          class="flex-1 input-field w-full min-w-0"
         />
         <Input
           v-model="keyword.meaning"
           type="text"
           :placeholder="t('upsertDefinition.meaningPlaceholder')"
-          class="flex-1 input-field w-full"
+          class="flex-1 input-field w-full min-w-0"
         />
-        <div class="flex flex-wrap space-x-2">
+        <div
+          class="btn-group-forced flex flex-nowrap w-full sm:w-auto shrink-0"
+          role="group"
+        >
           <Button
             variant="delete"
             type="button"
-            class="sm:w-auto"
+            class="ui-btn--group-item"
             @click="removePlaceKeyword(index)"
           >
             <CircleMinus class="h-4 w-4" /> {{ t('upsertDefinition.removeButton') }}
           </Button>
-          <Button variant="neutral" type="button" class="w-auto" @click="addPlaceKeyword">
+          <Button
+            variant="neutral"
+            type="button"
+            class="ui-btn--group-item"
+            @click="addPlaceKeyword"
+          >
             <CirclePlus class="h-4 w-4" /> {{ t('upsertDefinition.addPlaceButton') }}
           </Button>
         </div>
