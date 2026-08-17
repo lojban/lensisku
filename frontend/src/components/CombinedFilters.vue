@@ -3,20 +3,48 @@
     <!-- Language row: top by default; on semantic graph page (`languagesInExpandedPanel`) it lives inside the expanded panel. -->
 
     <div class="filters-bar-row" :class="{ 'sm:!justify-end': languagesInExpandedPanel }">
-      <MultiSelectDropdown
+      <div
         v-if="!languagesInExpandedPanel"
-        v-model="selectedLangs"
-        :options="languages"
-        :max-selected-labels="3"
-        :option-value="(lang: LanguageOption) => lang.id"
-        :option-label="(lang: LanguageOption) => lang.real_name"
-        :search-field-keys="languageFilterSearchFieldKeys"
-        :placeholder="t('filters.selectLanguages')"
-        :search-placeholder="t('filters.searchLanguages')"
-        :select-all-label="t('filters.selectAll')"
-        :empty-filter-label="t('filters.noMatches')"
-        class="w-full sm:w-80"
-      />
+        class="filters-primary-selects"
+        :class="{ '!grid-cols-1 sm:!w-80 sm:!flex-none': !showCollectionFilter }"
+      >
+        <MultiSelectDropdown
+          v-model="selectedLangs"
+          :options="languages"
+          :suggested-options="languageSuggestions"
+          :suggested-label="t('filters.recentSuggestions')"
+          :max-selected-labels="3"
+          :option-value="(lang: LanguageOption) => lang.id"
+          :option-label="(lang: LanguageOption) => lang.real_name"
+          :search-field-keys="languageFilterSearchFieldKeys"
+          :placeholder="t('filters.selectLanguages')"
+          :search-placeholder="t('filters.searchLanguages')"
+          :select-all-label="t('filters.selectAll')"
+          :empty-filter-label="t('filters.noMatches')"
+          full-bleed-mobile-panel
+          class="w-full min-w-0"
+        />
+        <MultiSelectDropdown
+          v-if="showCollectionFilter"
+          v-model="selectedCollections"
+          :options="collectionOptions"
+          :suggested-options="collectionSuggestions"
+          :suggested-label="t('filters.recentSuggestions')"
+          :max-selected-labels="3"
+          :show-select-all="false"
+          :option-value="(col: CollectionOption) => col.collection_id"
+          :option-label="(col: CollectionOption) => col.name"
+          :search-field-keys="collectionFilterSearchFieldKeys"
+          :placeholder="t('filters.selectCollections')"
+          :search-placeholder="t('filters.searchCollections')"
+          :empty-filter-label="t('filters.noCollectionMatches')"
+          full-bleed-mobile-panel
+          class="w-full min-w-0"
+          @open="onCollectionDropdownOpen"
+          @search="onCollectionDropdownSearch"
+          @update:model-value="emitUpdate"
+        />
+      </div>
       <div class="flex items-center gap-2 self-end md:self-center">
         <div class="btn-group-forced flex items-center flex-row" role="group">
           <Button
@@ -38,28 +66,6 @@
             <span class="text-xs select-none whitespace-nowrap">{{
               t('searchForm.modes.semantic')
             }}</span>
-          </Button>
-          <Button
-            type="button"
-            variant="toolbar"
-            class="ui-btn--group-item"
-            :disabled="!!filters.word_type"
-            :title="t('searchForm.modes.searchInPhrases')"
-            @click="toggleSearchInPhrases"
-          >
-            <template #icon>
-              <Checkbox
-                class="checkmark-aqua pointer-events-none shrink-0"
-                checkbox-class="pointer-events-none"
-                :model-value="searchInPhrases && !filters.word_type"
-                :disabled="!!filters.word_type"
-                tabindex="-1"
-                aria-hidden="true"
-              />
-            </template>
-            <span class="text-xs select-none whitespace-nowrap">
-              {{ t('searchForm.modes.searchInPhrases') }}
-            </span>
           </Button>
         </div>
 
@@ -105,12 +111,37 @@
       class="mt-3 grid grid-cols-2 gap-x-3 gap-y-4 bg-white rounded-lg shadow-sm p-4"
       :class="{ 'animate-expandSection': expanded }"
     >
+      <div class="col-span-2 flex min-w-0 flex-col">
+        <Button
+          type="button"
+          variant="toolbar"
+          class="w-full justify-start"
+          :disabled="!!filters.word_type"
+          :title="t('searchForm.modes.searchInPhrases')"
+          @click="toggleSearchInPhrases"
+        >
+          <template #icon>
+            <Checkbox
+              class="checkmark-aqua pointer-events-none shrink-0"
+              checkbox-class="pointer-events-none"
+              :model-value="searchInPhrases && !filters.word_type"
+              :disabled="!!filters.word_type"
+              tabindex="-1"
+              aria-hidden="true"
+            />
+          </template>
+          <span class="text-sm select-none">{{ t('searchForm.modes.searchInPhrases') }}</span>
+        </Button>
+      </div>
+
       <div v-if="languagesInExpandedPanel" class="col-span-2 flex min-w-0 flex-col">
         <label class="filters-field-label">{{ t('filters.selectLanguages') }}</label>
         <div class="relative w-full min-w-0 [&>div]:block [&>div]:w-full">
           <MultiSelectDropdown
             v-model="selectedLangs"
             :options="languages"
+            :suggested-options="languageSuggestions"
+            :suggested-label="t('filters.recentSuggestions')"
             :max-selected-labels="3"
             :option-value="(lang: LanguageOption) => lang.id"
             :option-label="(lang: LanguageOption) => lang.real_name"
@@ -119,7 +150,8 @@
             :search-placeholder="t('filters.searchLanguages')"
             :select-all-label="t('filters.selectAll')"
             :empty-filter-label="t('filters.noMatches')"
-            class="w-full max-w-full sm:w-80"
+            full-bleed-mobile-panel
+            class="w-full max-w-full"
           />
         </div>
       </div>
@@ -177,7 +209,7 @@
       </div>
 
       <!-- Include authors (optional multi-select) -->
-      <div class="flex min-w-0 flex-col">
+      <div class="col-span-2 sm:col-span-1 flex min-w-0 flex-col">
         <label class="filters-field-label">{{ t('components.combinedFilters.filterByAuthors') }}</label>
         <div class="relative w-full min-w-0 [&>div]:block [&>div]:w-full">
           <MultiSelectDropdown
@@ -200,7 +232,7 @@
       </div>
 
       <!-- Exclude authors (optional multi-select) -->
-      <div class="flex min-w-0 flex-col">
+      <div class="col-span-2 sm:col-span-1 flex min-w-0 flex-col">
         <label class="filters-field-label">{{
           t('components.combinedFilters.filterByExcludeAuthors')
         }}</label>
@@ -333,7 +365,9 @@ import {
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute } from 'vue-router'
 
-import { fetchDefinitionsTypes, listUsers } from '@/api'
+import { fetchDefinitionsTypes, getCollections, getPublicCollections, listUsers } from '@/api'
+import { useAuth } from '@/composables/useAuth'
+import { useRecentSelections } from '@/composables/useRecentSelections'
 
 import { defaultFilterLanguageTags } from '@/config/locales'
 import { useI18n } from 'vue-i18n'
@@ -355,6 +389,8 @@ const graphBuildParams = defineModel<SemanticGraphBuildParams | undefined>('grap
 const languageFilterSearchFieldKeys: string[] = ['tag', 'english_name', 'lojban_name', 'real_name']
 /** Fields used for author multiselect search. */
 const userFilterSearchFieldKeys: string[] = ['username', 'realname']
+/** Fields used for collection multiselect search. */
+const collectionFilterSearchFieldKeys: string[] = ['name', 'description']
 
 type LanguageOption = {
   id: number
@@ -375,6 +411,12 @@ type UserHint = {
   realname?: string | null
 }
 
+type CollectionOption = {
+  collection_id: number
+  name: string
+  description?: string | null
+}
+
 const props = defineProps({
   modelValue: {
     type: Object,
@@ -384,6 +426,7 @@ const props = defineProps({
       excludeUsernames: [],
       isExpanded: false,
       selectedLanguages: [],
+      selectedCollections: [],
       word_type: null,
       source_langid: 1, // Default to Lojban
       isSemantic: true,
@@ -414,22 +457,55 @@ const props = defineProps({
     type: Number,
     default: 120,
   },
+  /** When false, hide the collection filter (collection detail, semantic graph). */
+  showCollectionFilter: {
+    type: Boolean,
+    default: true,
+  },
 })
 
 const emit = defineEmits(['update:modelValue', 'change', 'reset'])
 
-const selectedLangs = ref([])
+const auth = useAuth()
+const selectedLangs = ref<LanguageOption[]>([])
 const selectedUsers = ref<UserHint[]>([])
 const excludedUsers = ref<UserHint[]>([])
 const userOptions = ref<UserHint[]>([])
+const selectedCollections = ref<CollectionOption[]>([])
+const collectionOptions = ref<CollectionOption[]>([])
 const expanded = ref(props.modelValue.isExpanded)
 const lastAutoExpandedSelmaho = ref('')
 const wordTypes = ref<WordTypeOption[]>([])
 const route = useRoute()
 
+const { recent: recentLanguages, record: recordRecentLanguage } = useRecentSelections<LanguageOption>(
+  'recentLanguageSelections',
+  (lang) => lang.id
+)
+const { recent: recentCollections, record: recordRecentCollection } =
+  useRecentSelections<CollectionOption>('recentCollectionSelections', (col) => col.collection_id)
+
+const languageSuggestions = computed(() => {
+  const byId = new Map(props.languages.map((l) => [l.id, l]))
+  return recentLanguages.value
+    .map((item) => byId.get(item.id) ?? item)
+    .filter((item) => item?.real_name)
+    .slice(0, 3)
+})
+
+const collectionSuggestions = computed(() => {
+  const byId = new Map(collectionOptions.value.map((c) => [c.collection_id, c]))
+  return recentCollections.value
+    .map((item) => byId.get(item.collection_id) ?? item)
+    .filter((item) => item?.name)
+    .slice(0, 3)
+})
+
 const USER_SEARCH_DELAY_MS = 250
 const USER_LIST_PAGE_SIZE = 50
+const COLLECTION_LIST_PAGE_SIZE = 50
 let userSearchTimer: ReturnType<typeof setTimeout> | null = null
+let collectionSearchTimer: ReturnType<typeof setTimeout> | null = null
 
 function getInitialIsSemantic(): boolean {
   const mode = route.query.mode
@@ -522,6 +598,43 @@ function mergeUserOptions(users: UserHint[]) {
   userOptions.value = [...byName.values()]
 }
 
+function parseCollectionIdList(value: unknown): number[] {
+  if (Array.isArray(value)) {
+    return value.map((v) => Number(v)).filter((n) => Number.isFinite(n) && n > 0)
+  }
+  if (typeof value === 'string' && value.trim()) {
+    return value
+      .split(',')
+      .map((s) => Number(s.trim()))
+      .filter((n) => Number.isFinite(n) && n > 0)
+  }
+  return []
+}
+
+function collectionsFromIds(ids: number[], known: CollectionOption[]): CollectionOption[] {
+  const byId = new Map(known.map((c) => [c.collection_id, c]))
+  return ids.map((id) => byId.get(id) ?? { collection_id: id, name: `#${id}` })
+}
+
+function mergeCollectionOptions(cols: CollectionOption[]) {
+  const byId = new Map<number, CollectionOption>()
+  for (const c of collectionOptions.value) byId.set(c.collection_id, c)
+  for (const c of cols) byId.set(c.collection_id, c)
+  for (const c of selectedCollections.value) {
+    if (!byId.has(c.collection_id)) byId.set(c.collection_id, c)
+  }
+  for (const c of recentCollections.value) {
+    if (!byId.has(c.collection_id)) byId.set(c.collection_id, c)
+  }
+  collectionOptions.value = [...byId.values()]
+  if (selectedCollections.value.length) {
+    selectedCollections.value = collectionsFromIds(
+      selectedCollections.value.map((c) => c.collection_id),
+      collectionOptions.value
+    )
+  }
+}
+
 watch(
   () => props.modelValue,
   (newVal) => {
@@ -552,6 +665,14 @@ watch(
       excludedUsers.value = usersFromNames(excludeNames, userOptions.value)
     }
     mergeUserOptions([])
+
+    const collectionIds = parseCollectionIdList(newVal.selectedCollections)
+    if (
+      selectedCollections.value.map((c) => c.collection_id).join(',') !== collectionIds.join(',')
+    ) {
+      selectedCollections.value = collectionsFromIds(collectionIds, collectionOptions.value)
+    }
+    mergeCollectionOptions([])
   },
   { deep: true, immediate: true }
 )
@@ -584,7 +705,19 @@ onMounted(() => {
   fetchWordTypes()
   syncTogglesWithModel()
   maybeAutoExpandForSelmaho(props.modelValue.selmaho ?? '', '')
+  if (props.showCollectionFilter) {
+    void fetchCollectionsForFilter('')
+  }
 })
+
+watch(
+  () => auth.state.isLoggedIn,
+  (loggedIn) => {
+    if (loggedIn && props.showCollectionFilter) {
+      void fetchCollectionsForFilter('')
+    }
+  }
+)
 
 function syncTogglesWithModel() {
   const semanticChanged =
@@ -603,6 +736,7 @@ onBeforeUnmount(() => {
   // Clean up any pending debounce timer
   clearDebounceTimer()
   clearUserSearchTimer()
+  clearCollectionSearchTimer()
 })
 
 const getDefaultLanguages = () => {
@@ -658,13 +792,57 @@ function onUserDropdownSearch(query: string) {
   }, USER_SEARCH_DELAY_MS)
 }
 
+function clearCollectionSearchTimer() {
+  if (collectionSearchTimer) {
+    clearTimeout(collectionSearchTimer)
+    collectionSearchTimer = null
+  }
+}
+
+async function fetchCollectionsForFilter(search = '') {
+  const q = search.trim()
+  const chunks: CollectionOption[][] = []
+  if (auth.state.isLoggedIn) {
+    try {
+      const response = await getCollections(q ? { search: q } : {})
+      chunks.push((response.data.collections ?? []) as CollectionOption[])
+    } catch (error) {
+      console.error('Failed to list user collections for filter:', error)
+    }
+  }
+  try {
+    const response = await getPublicCollections({
+      search: q || undefined,
+      per_page: COLLECTION_LIST_PAGE_SIZE,
+      page: 1,
+    })
+    chunks.push((response.data.collections ?? []) as CollectionOption[])
+  } catch (error) {
+    console.error('Failed to list public collections for filter:', error)
+  }
+  mergeCollectionOptions(chunks.flat())
+}
+
+function onCollectionDropdownOpen() {
+  void fetchCollectionsForFilter('')
+}
+
+function onCollectionDropdownSearch(query: string) {
+  clearCollectionSearchTimer()
+  collectionSearchTimer = setTimeout(() => {
+    collectionSearchTimer = null
+    void fetchCollectionsForFilter(query)
+  }, USER_SEARCH_DELAY_MS)
+}
+
 const hasFilledAdvancedFilters = computed(() => {
   return Boolean(
     filters.value.selmaho ||
       selectedUsers.value.length > 0 ||
       excludedUsers.value.length > 0 ||
       filters.value.word_type ||
-      filters.value.source_langid !== 1
+      filters.value.source_langid !== 1 ||
+      !searchInPhrases.value
   )
 })
 
@@ -674,6 +852,7 @@ const hasAnyActiveFilters = computed(() => {
   return Boolean(
     props.forceShowReset ||
       selectedLangs.value.length > 0 ||
+      selectedCollections.value.length > 0 ||
       hasFilledAdvancedFilters.value ||
       !isSemantic.value ||
       !searchInPhrases.value ||
@@ -718,6 +897,7 @@ const emitUpdate = () => {
     excludeUsernames: excludedUsers.value.map((u) => u.username),
     isExpanded: expanded.value,
     selectedLanguages: selectedLangs.value.map((lang) => lang.id),
+    selectedCollections: selectedCollections.value.map((col) => col.collection_id),
     word_type: filters.value.word_type?.type_id || null,
     source_langid: filters.value.source_langid || 1, // Include source_langid
     isSemantic: isSemantic.value,
@@ -756,8 +936,10 @@ const clearFilter = (filterName) => {
 
 const resetAllFilters = () => {
   clearUserSearchTimer()
+  clearCollectionSearchTimer()
   selectedUsers.value = []
   excludedUsers.value = []
+  selectedCollections.value = []
 
   const defaultLangs = getDefaultLanguages()
   selectedLangs.value = defaultLangs
@@ -775,6 +957,7 @@ const resetAllFilters = () => {
     excludeUsernames: [],
     isExpanded: false,
     selectedLanguages: defaultLangs.map((lang) => lang.id),
+    selectedCollections: [],
     word_type: null,
     source_langid: 1,
     isSemantic: true,
@@ -812,7 +995,27 @@ watch(
   (newLangs, oldLangs) => {
     // Only emit if the actual values changed, not just reference
     if (JSON.stringify(newLangs) !== JSON.stringify(oldLangs)) {
+      if (oldLangs?.length) {
+        const prevIds = new Set(oldLangs.map((l) => l.id))
+        for (const lang of newLangs) {
+          if (!prevIds.has(lang.id)) recordRecentLanguage(lang)
+        }
+      }
       emitUpdate()
+    }
+  },
+  { deep: true }
+)
+
+watch(
+  selectedCollections,
+  (newCols, oldCols) => {
+    if (JSON.stringify(newCols) === JSON.stringify(oldCols)) return
+    if (oldCols) {
+      const prevIds = new Set(oldCols.map((c) => c.collection_id))
+      for (const col of newCols) {
+        if (!prevIds.has(col.collection_id)) recordRecentCollection(col)
+      }
     }
   },
   { deep: true }

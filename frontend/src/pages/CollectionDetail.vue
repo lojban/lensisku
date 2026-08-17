@@ -93,6 +93,7 @@
             <CombinedFilters
               v-model="itemFilters"
               :languages="languages"
+              :show-collection-filter="false"
               class="w-full"
               @change="handleItemFiltersChange"
               @reset="handleItemFiltersReset"
@@ -2339,6 +2340,7 @@ interface ItemFiltersValue {
   source_langid: number
   isSemantic: boolean
   searchInPhrases: boolean
+  selectedCollections?: number[]
 }
 
 const itemFilters = ref<ItemFiltersValue>({

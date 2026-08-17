@@ -51,6 +51,17 @@
                   </template>
                 </h2>
               </div>
+              <div
+                v-else-if="unboundTitle"
+                class="w-auto min-w-0 max-w-[14rem] sm:max-w-[18rem] md:max-w-[22rem]"
+              >
+                <h2 class="link-heading-primary">
+                  <RouterLink v-if="sourceCollectionLink" :to="sourceCollectionLink">
+                    {{ unboundTitle }}
+                  </RouterLink>
+                  <span v-else>{{ unboundTitle }}</span>
+                </h2>
+              </div>
               <span
                 v-if="definition.decomposition?.length"
                 class="px-2 py-1 text-xs font-medium bg-amber-50 text-amber-800 rounded-full inline-flex items-center gap-0.5 flex-wrap"
@@ -274,6 +285,20 @@
               </span>
               <span v-if="definition.created_at && definition.username">·</span>
               <span v-if="definition.created_at"> {{ formatDate(definition.created_at) }} </span>
+              <span v-if="sourceCollectionLink">·</span>
+              <RouterLink
+                v-if="sourceCollectionLink"
+                :to="sourceCollectionLink"
+                class="text-blue-600 hover:text-blue-800 hover:underline"
+              >
+                {{
+                  definition.collection_name
+                    ? t('components.definitionCard.fromCollection', {
+                        name: definition.collection_name,
+                      })
+                    : t('components.definitionCard.viewCollection')
+                }}
+              </RouterLink>
             </div>
           </div>
         </div>
@@ -709,6 +734,8 @@ interface DefinitionRecord {
   has_sound?: boolean
   langrealname?: string
   sound_url?: string
+  collection_id?: number
+  collection_name?: string
 }
 
 interface LinkSearchDefinition {
@@ -902,6 +929,22 @@ const showSimilarityBadge = computed(() => {
 })
 
 const valsiWord = computed(() => props.definition.valsiword ?? props.definition.word ?? '')
+const unboundTitle = computed(() => {
+  if (props.definition.definitionid) return ''
+  return (
+    props.definition.valsiword ||
+    props.definition.word ||
+    props.definition.free_content_front ||
+    ''
+  ).trim()
+})
+const sourceCollectionLink = computed(() => {
+  const id = props.definition.collection_id ?? props.collectionId
+  if (!id) return null
+  if (props.definition.collection_name) return `/collections/${id}`
+  if (!props.definition.definitionid) return `/collections/${id}`
+  return null
+})
 const displayedValsi = computed(() =>
   valsiWord.value.length > MAX_VALSI_DISPLAY_LENGTH
     ? valsiWord.value.slice(0, MAX_VALSI_DISPLAY_LENGTH) + '…'
@@ -934,9 +977,11 @@ const displayedFreeContent = computed(() => {
   const raw = props.definition.free_content_front || props.definition.word || ''
   return raw
 })
-const showExpandedFrontContent = computed(
-  () => !props.definition.definitionid && displayedFreeContent.value.trim().length > 0
-)
+const showExpandedFrontContent = computed(() => {
+  if (props.definition.definitionid) return false
+  if (unboundTitle.value) return false
+  return displayedFreeContent.value.trim().length > 0
+})
 const displayedSelmaho = computed(() => {
   const s = props.definition.selmaho || ''
   return s.length > MAX_VALSI_DISPLAY_LENGTH ? s.slice(0, MAX_VALSI_DISPLAY_LENGTH) + '…' : s

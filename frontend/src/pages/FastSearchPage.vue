@@ -27,7 +27,8 @@
       filters.selmaho ||
       filters.usernames?.length ||
       filters.excludeUsernames?.length ||
-      filters.word_type
+      filters.word_type ||
+      filters.selectedCollections?.length
     "
     class="min-h-[400px]"
   >
@@ -75,6 +76,24 @@
             :source-lang-id="filters.source_langid"
             :languages="languages"
           />
+          <template v-if="filters.selectedCollections?.length">
+            <DefinitionCard
+              v-for="def in collectionMatches"
+              :key="`ci-${def.collection_id}-${def.item_id}`"
+              :definition="def"
+              :languages="languages"
+              :disable-toolbar="true"
+              :disable-owner-only-lock="true"
+              :show-vote-buttons="false"
+              :collection-id="def.collection_id"
+              :item-id="def.item_id"
+            />
+            <div class="surface-definition-compact text-sm text-gray-700">
+              <p class="font-medium text-gray-800">
+                {{ $t('home.globalDictionaryBelow') }}
+              </p>
+            </div>
+          </template>
           <!-- Definition Cards -->
           <DefinitionCardSimple
             v-for="def in definitions"
@@ -85,7 +104,10 @@
           />
         </div>
 
-        <div v-if="!isLoading && definitions.length === 0" class="text-center py-8 text-gray-600">
+        <div
+          v-if="!isLoading && definitions.length === 0 && collectionMatches.length === 0"
+          class="text-center py-8 text-gray-600"
+        >
           {{ $t('components.dictionaryEntries.noEntries') }}
         </div>
 
@@ -100,7 +122,8 @@
       filters.selmaho ||
       filters.usernames?.length ||
       filters.excludeUsernames?.length ||
-      filters.word_type
+      filters.word_type ||
+      filters.selectedCollections?.length
     "
   >
     <PaginationComponent
@@ -120,8 +143,9 @@ import { ref, onMounted, watch, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { nextTick } from 'vue'
 
-import { fastSearchDefinitions, getLanguages } from '@/api'
+import { fastSearchDefinitions, getCollection, getLanguages, listCollectionItems } from '@/api'
 import CombinedFilters from '@/components/CombinedFilters.vue'
+import DefinitionCard from '@/components/DefinitionCard.vue'
 import DefinitionCardSimple from '@/components/DefinitionCardSimple.vue'
 import PhraseSplit from '@/components/PhraseSplit.vue'
 import AlertComponent from '@/components/AlertComponent.vue'
@@ -134,6 +158,11 @@ import { useSeoHead } from '@/composables/useSeoHead'
 import { SearchQueue } from '@/utils/searchQueue'
 import { queryStr } from '@/utils/routeQuery'
 import { normalizeSearchQuery } from '@/utils/searchQueryUtils'
+import {
+  mapCollectionItemToDefinition,
+  type CollectionDefinitionCard,
+  type CollectionSearchItem,
+} from '@/utils/mapCollectionItemToDefinition'
 
 const router = useRouter()
 const route = useRoute()
@@ -146,6 +175,8 @@ type FastSearchDefinitionRow = {
 
 // State
 const definitions = ref<FastSearchDefinitionRow[]>([])
+const collectionMatches = ref<CollectionDefinitionCard[]>([])
+const COLLECTION_MATCH_PER_PAGE = 20
 const decomposition = ref<string[]>([])
 const total = ref(0)
 const currentPage = ref(parseInt(queryStr(route.query.page), 10) || 1)
@@ -176,12 +207,80 @@ const filters = ref({
   word_type: null as number | null,
   isExpanded: false,
   selectedLanguages: [] as number[],
+  selectedCollections: [] as number[],
   source_langid: 1,
   searchInPhrases: route.query.searchInPhrases !== 'false',
 })
 
 // Search queue to prevent race conditions
 const definitionsSearchQueue = new SearchQueue()
+
+async function loadCollectionMatches(
+  search: string,
+  signal?: AbortSignal
+): Promise<CollectionDefinitionCard[]> {
+  const ids = (filters.value.selectedCollections || []).filter(
+    (n) => Number.isFinite(n) && n > 0
+  )
+  if (!ids.length) return []
+
+  const itemParams: Record<string, unknown> = {
+    page: 1,
+    per_page: COLLECTION_MATCH_PER_PAGE,
+    search: search.trim() || undefined,
+  }
+  if (filters.value.selectedLanguages.length > 0) {
+    itemParams.languages = filters.value.selectedLanguages.join(',')
+  }
+  if (!filters.value.selmaho) {
+    itemParams.word_type = filters.value.word_type || undefined
+  } else {
+    itemParams.selmaho = filters.value.selmaho
+  }
+  if (filters.value.source_langid && filters.value.source_langid !== 1) {
+    itemParams.source_langid = filters.value.source_langid
+  }
+  if (filters.value.searchInPhrases !== undefined && filters.value.searchInPhrases !== null) {
+    itemParams.search_in_phrases = filters.value.searchInPhrases
+  }
+
+  const byId = new Map<number, { collection_id: number; name: string }>()
+  const pages = await Promise.all(
+    ids.map(async (id) => {
+      try {
+        let col = byId.get(id)
+        if (!col) {
+          try {
+            const meta = await getCollection(id)
+            col = {
+              collection_id: id,
+              name: (meta.data?.name as string) || `#${id}`,
+            }
+            byId.set(id, col)
+          } catch {
+            col = { collection_id: id, name: `#${id}` }
+          }
+        }
+        const response = await listCollectionItems(id, itemParams, signal)
+        return ((response.data.items ?? []) as CollectionSearchItem[]).map((item) =>
+          mapCollectionItemToDefinition(item, col)
+        )
+      } catch (e: unknown) {
+        const err = e as { name?: string; code?: string; message?: string }
+        if (
+          err?.name === 'AbortError' ||
+          err?.code === 'ERR_CANCELED' ||
+          err?.message?.includes('canceled')
+        ) {
+          return [] as CollectionDefinitionCard[]
+        }
+        console.error('Error fetching collection matches:', e)
+        return [] as CollectionDefinitionCard[]
+      }
+    })
+  )
+  return pages.flat()
+}
 
 // Fetch definitions using fast search
 const fetchDefinitions = async (page: number, search = '') => {
@@ -233,13 +332,16 @@ const fetchDefinitions = async (page: number, search = '') => {
       params.search_in_phrases = filters.value.searchInPhrases
     }
 
+    const collectionMatchesPromise = loadCollectionMatches(search, signal)
     const response = await fastSearchDefinitions(params, signal)
+    const collectionHits = await collectionMatchesPromise
 
     // Only process if this is still the latest request
     if (!definitionsSearchQueue.shouldProcess(requestId)) {
       return
     }
 
+    collectionMatches.value = collectionHits
     definitions.value = response.data.definitions
     total.value = response.data.total
     currentPage.value = page
@@ -270,8 +372,10 @@ const fetchData = async () => {
     !filters.value.selmaho &&
     !filters.value.usernames?.length &&
     !filters.value.excludeUsernames?.length &&
-    !filters.value.word_type
+    !filters.value.word_type &&
+    !filters.value.selectedCollections?.length
   ) {
+    collectionMatches.value = []
     isLoading.value = false
     return
   }
@@ -292,6 +396,7 @@ const handleFiltersReset = async () => {
     excludeUsernames: [],
     isExpanded: false,
     selectedLanguages: [],
+    selectedCollections: [],
     word_type: null,
     source_langid: 1,
     searchInPhrases: true,
@@ -309,6 +414,10 @@ const updateUrlWithFilters = () => {
       langs:
         filters.value.selectedLanguages.length > 0
           ? filters.value.selectedLanguages.join(',')
+          : undefined,
+      collections:
+        filters.value.selectedCollections?.length > 0
+          ? filters.value.selectedCollections.join(',')
           : undefined,
       selmaho: filters.value.selmaho || undefined,
       username: filters.value.usernames?.length
@@ -334,6 +443,10 @@ const performSearch = ({ query, mode }: { query: string; mode: string }) => {
     langs:
       filters.value.selectedLanguages && filters.value.selectedLanguages.length > 0
         ? filters.value.selectedLanguages.join(',')
+        : undefined,
+    collections:
+      filters.value.selectedCollections?.length > 0
+        ? filters.value.selectedCollections.join(',')
         : undefined,
     selmaho: filters.value.selmaho || undefined,
     username: filters.value.usernames?.length ? filters.value.usernames.join(',') : undefined,
@@ -399,6 +512,15 @@ const syncFromRoute = () => {
   // Sync filters from URL
   if (query.langs !== undefined) {
     filters.value.selectedLanguages = queryStr(query.langs).split(',').map(Number)
+  }
+
+  if (query.collections !== undefined) {
+    filters.value.selectedCollections = queryStr(query.collections)
+      .split(',')
+      .map(Number)
+      .filter((n) => Number.isFinite(n) && n > 0)
+  } else {
+    filters.value.selectedCollections = []
   }
 
   if (query.selmaho !== undefined) {
@@ -524,6 +646,7 @@ watch(
       newQuery.q !== oldQuery?.q ||
       newQuery.page !== oldQuery?.page ||
       newQuery.langs !== oldQuery?.langs ||
+      newQuery.collections !== oldQuery?.collections ||
       newQuery.selmaho !== oldQuery?.selmaho ||
       newQuery.username !== oldQuery?.username ||
       newQuery.exclude_usernames !== oldQuery?.exclude_usernames ||

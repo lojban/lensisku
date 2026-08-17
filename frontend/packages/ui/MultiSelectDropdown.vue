@@ -15,76 +15,108 @@
         aria-hidden="true"
       />
     </button>
-    <div
-      v-show="open"
-      class="dropdown-floating-panel"
-      role="presentation"
-      :style="panelViewportStyle"
-    >
-      <!-- Search: see `searchFieldKeys` prop, else values-only deep match -->
-      <div class="border-b border-gray-100 px-2 pb-2">
-        <div class="relative">
-          <Search
-            class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400"
-            aria-hidden="true"
-          />
-          <input
-            v-model="searchQuery"
-            type="search"
-            :placeholder="searchPlaceholder"
-            class="input-field w-full !h-9 pl-9 pr-3 text-sm"
-            autocomplete="off"
-            @keydown.escape.stop="open = false"
-          />
-        </div>
-      </div>
-      <!-- Select all (applies to the filtered list) -->
-      <div v-if="showSelectAll" class="border-b border-gray-100 px-2 py-1.5">
-        <label
-          class="flex cursor-pointer items-center gap-2 rounded-md px-1 py-1 text-sm text-gray-700 hover:bg-gray-50"
-          :class="{ 'pointer-events-none opacity-50': !filteredOptions.length }"
-        >
-          <input
-            ref="selectAllInputRef"
-            type="checkbox"
-            class="checkmark-aqua shrink-0"
-            :checked="allFilteredSelected"
-            :disabled="!filteredOptions.length"
-            @change="toggleSelectAll"
-          />
-          <span class="select-none">{{ selectAllLabel }}</span>
-        </label>
-      </div>
-
-      <ul
-        class="min-h-0 flex-1 overflow-y-auto overscroll-contain px-1 py-0.5"
-        role="listbox"
-        aria-multiselectable="true"
+    <Teleport to="body" :disabled="!useViewportPanel">
+      <div
+        v-show="open"
+        ref="panelRef"
+        class="dropdown-floating-panel"
+        :class="{ 'dropdown-floating-panel--viewport': useViewportPanel }"
+        role="presentation"
+        :style="panelViewportStyle"
       >
-        <li
-          v-for="(opt, idx) in filteredOptions"
-          :key="optionKey(opt, idx)"
-          role="option"
-          :aria-selected="isSelected(opt)"
-        >
+        <!-- Search: see `searchFieldKeys` prop, else values-only deep match -->
+        <div class="border-b border-gray-100 px-2 pb-2">
+          <div class="relative">
+            <Search
+              class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400"
+              aria-hidden="true"
+            />
+            <input
+              v-model="searchQuery"
+              type="search"
+              :placeholder="searchPlaceholder"
+              class="input-field w-full !h-9 pl-9 pr-3 text-sm"
+              autocomplete="off"
+              @keydown.escape.stop="open = false"
+            />
+          </div>
+        </div>
+        <!-- Select all (applies to the filtered list) -->
+        <div v-if="showSelectAll" class="border-b border-gray-100 px-2 py-1.5">
           <label
-            class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-2 text-sm text-gray-700 hover:bg-gray-50"
+            class="flex cursor-pointer items-center gap-2 rounded-md px-1 py-1 text-sm text-gray-700 hover:bg-gray-50"
+            :class="{ 'pointer-events-none opacity-50': !filteredOptions.length }"
           >
             <input
+              ref="selectAllInputRef"
               type="checkbox"
               class="checkmark-aqua shrink-0"
-              :checked="isSelected(opt)"
-              @change="toggleOption(opt)"
+              :checked="allFilteredSelected"
+              :disabled="!filteredOptions.length"
+              @change="toggleSelectAll"
             />
-            <span class="min-w-0 flex-1">{{ optionLabel(opt) }}</span>
+            <span class="select-none">{{ selectAllLabel }}</span>
           </label>
-        </li>
+        </div>
 
-        <li v-if="!filteredOptions.length" class="px-3 py-4 text-center text-sm text-gray-500">
-          {{ emptyFilterLabel }}
-        </li>
-      </ul>
-    </div>
+        <ul
+          class="min-h-0 flex-1 overflow-y-auto overscroll-contain px-1 py-0.5"
+          role="listbox"
+          aria-multiselectable="true"
+        >
+          <template v-if="visibleSuggested.length">
+            <li class="px-2 pt-1.5 pb-0.5 text-[11px] font-semibold uppercase tracking-wide text-gray-400">
+              {{ suggestedLabel }}
+            </li>
+            <li
+              v-for="(opt, idx) in visibleSuggested"
+              :key="`sug-${optionKey(opt, idx)}`"
+              role="option"
+              :aria-selected="isSelected(opt)"
+            >
+              <label
+                class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-2 text-sm text-gray-700 hover:bg-gray-50"
+              >
+                <input
+                  type="checkbox"
+                  class="checkmark-aqua shrink-0"
+                  :checked="isSelected(opt)"
+                  @change="toggleOption(opt)"
+                />
+                <span class="min-w-0 flex-1">{{ optionLabel(opt) }}</span>
+              </label>
+            </li>
+            <li class="my-1 border-t border-gray-100" aria-hidden="true" />
+          </template>
+
+          <li
+            v-for="(opt, idx) in filteredOptions"
+            :key="optionKey(opt, idx)"
+            role="option"
+            :aria-selected="isSelected(opt)"
+          >
+            <label
+              class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-2 text-sm text-gray-700 hover:bg-gray-50"
+            >
+              <input
+                type="checkbox"
+                class="checkmark-aqua shrink-0"
+                :checked="isSelected(opt)"
+                @change="toggleOption(opt)"
+              />
+              <span class="min-w-0 flex-1">{{ optionLabel(opt) }}</span>
+            </label>
+          </li>
+
+          <li
+            v-if="!filteredOptions.length && !visibleSuggested.length"
+            class="px-3 py-4 text-center text-sm text-gray-500"
+          >
+            {{ emptyFilterLabel }}
+          </li>
+        </ul>
+      </div>
+    </Teleport>
   </div>
 </template>
 
@@ -94,6 +126,8 @@ import { ref, computed, watch, watchEffect, nextTick, onMounted, onUnmounted, us
 import type { PropType } from 'vue'
 
 defineOptions({ inheritAttrs: false })
+
+const SM_BREAKPOINT_PX = 640
 
 const props = defineProps({
   /** Selected option objects (same references / identity as in `options` after value compare) */
@@ -148,6 +182,22 @@ const props = defineProps({
     type: Array as PropType<string[]>,
     default: undefined,
   },
+  /**
+   * Copies of recently selected items shown first in the list (still appear in `options` as well).
+   */
+  suggestedOptions: {
+    type: Array as PropType<unknown[]>,
+    default: () => [],
+  },
+  suggestedLabel: {
+    type: String,
+    default: 'Recent',
+  },
+  /** On viewports below `sm`, pin the panel to the viewport width instead of the trigger column. */
+  fullBleedMobilePanel: {
+    type: Boolean,
+    default: false,
+  },
 })
 
 const emit = defineEmits<{
@@ -179,8 +229,16 @@ const PANEL_MIN_REM = 20
 const open = ref(false)
 const searchQuery = ref('')
 const rootRef = ref<HTMLElement | null>(null)
+const panelRef = ref<HTMLElement | null>(null)
 const selectAllInputRef = ref<HTMLInputElement | null>(null)
 const panelViewportStyle = ref<Record<string, string>>({})
+const isNarrow = ref(false)
+
+const useViewportPanel = computed(() => props.fullBleedMobilePanel && isNarrow.value)
+
+function updateNarrow() {
+  isNarrow.value = typeof window !== 'undefined' && window.innerWidth < SM_BREAKPOINT_PX
+}
 
 function getRootRemPx(): number {
   if (typeof document === 'undefined') return 16
@@ -205,10 +263,14 @@ function updatePanelViewportStyle() {
   )
   const maxPx = Math.min(availableBelow, PANEL_MAX_REM * rem)
   const minPx = Math.min(PANEL_MIN_REM * rem, maxPx)
-  panelViewportStyle.value = {
+  const style: Record<string, string> = {
     maxHeight: `${maxPx}px`,
     minHeight: `${minPx}px`,
   }
+  if (useViewportPanel.value) {
+    style.top = `${rect.bottom + PANEL_GAP_PX}px`
+  }
+  panelViewportStyle.value = style
 }
 
 function valuesEqual(a: unknown, b: unknown): boolean {
@@ -313,6 +375,18 @@ const filteredOptions = computed(() => {
   return props.options.filter((o) => itemMatchesQuery(o, searchQuery.value))
 })
 
+const visibleSuggested = computed(() => {
+  const seen = new Set<unknown>()
+  const out: unknown[] = []
+  for (const opt of props.suggestedOptions) {
+    const v = getValue(opt)
+    if (seen.has(v)) continue
+    seen.add(v)
+    if (itemMatchesQuery(opt, searchQuery.value)) out.push(opt)
+  }
+  return out
+})
+
 const allFilteredSelected = computed(() => {
   const list = filteredOptions.value
   if (!list.length) return false
@@ -387,9 +461,10 @@ const summaryText = computed(() => {
 
 function handleClickOutside(event: MouseEvent) {
   const el = event.target
-  if (rootRef.value && el instanceof Node && !rootRef.value.contains(el)) {
-    open.value = false
-  }
+  if (!(el instanceof Node)) return
+  if (rootRef.value && rootRef.value.contains(el)) return
+  if (panelRef.value && panelRef.value.contains(el)) return
+  open.value = false
 }
 
 function handleEscapeGlobal(event: KeyboardEvent) {
@@ -417,13 +492,21 @@ watch(searchQuery, (q) => {
   }
 })
 
+watch(useViewportPanel, () => {
+  if (open.value) {
+    updatePanelViewportStyle()
+  }
+})
+
 function onViewportChange() {
+  updateNarrow()
   if (open.value) {
     updatePanelViewportStyle()
   }
 }
 
 onMounted(() => {
+  updateNarrow()
   document.addEventListener('mousedown', handleClickOutside)
   document.addEventListener('keydown', handleEscapeGlobal)
   window.addEventListener('resize', onViewportChange)

@@ -72,6 +72,7 @@
         :languages="languages"
         languages-in-expanded-panel
         hide-semantic-graph-metrics
+        :show-collection-filter="false"
         :semantic-graph-max-nodes="GRAPH_METRICS_MAX"
         class="w-full"
       />

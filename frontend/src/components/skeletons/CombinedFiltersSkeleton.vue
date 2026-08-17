@@ -4,8 +4,11 @@
     <div
       class="flex flex-col sm:flex-row items-center sm:justify-between gap-4 p-4 bg-gray-100 rounded-lg shadow-sm"
     >
-      <!-- MultiSelect Skeleton -->
-      <div class="h-10 w-full sm:w-80 bg-gray-200 rounded-full" />
+      <!-- Language + collection selectors -->
+      <div class="grid grid-cols-2 gap-2 w-full">
+        <div class="h-10 w-full bg-gray-200 rounded-full" />
+        <div class="h-10 w-full bg-gray-200 rounded-full" />
+      </div>
       <!-- Buttons Skeleton -->
       <div class="flex items-center gap-2 self-end md:self-center">
         <div class="h-8 w-24 bg-gray-200 rounded-md" />

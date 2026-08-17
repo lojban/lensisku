@@ -494,6 +494,14 @@ export default {
           '@apply absolute left-0 right-0 z-50 mt-1 flex min-h-0 flex-col rounded-lg border border-gray-200 bg-white py-2 shadow-lg':
             {},
         },
+        /** Language / collection dropdown: full viewport width on mobile (teleported). */
+        '.dropdown-floating-panel--viewport': {
+          '@apply fixed left-0 right-0 z-[60] mt-0 w-auto': {},
+        },
+        /** Language + collection selectors sharing the CombinedFilters top row. */
+        '.filters-primary-selects': {
+          '@apply grid grid-cols-2 gap-2 w-full min-w-0 flex-1': {},
+        },
         /** Default trigger for `Dropdown.vue` (ellipsis). */
         '.dropdown-ellipsis-trigger': {
           '@apply w-full sm:w-auto h-9 px-3 hover:bg-gray-100 rounded-full inline-flex items-center justify-between sm:justify-center gap-2 shrink-0':

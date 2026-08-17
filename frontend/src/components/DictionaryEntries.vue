@@ -3,6 +3,33 @@
     <!-- Keep previous entries visible while loading; HomePage shows overlay spinner -->
     <div v-if="!error" class="grid gap-4 mb-6">
       <slot name="before" />
+      <template v-if="collectionMatches.length || showGlobalDictionaryBanner">
+        <div v-for="def in collectionMatches" :key="collectionCardKey(def)">
+          <DefinitionCard
+            :definition="def"
+            :languages="languages"
+            :is-loading="props.isLoading"
+            :show-score="props.showScores"
+            :semantic-search="props.semanticSearch"
+            :search-query="props.searchQuery"
+            :show-vote-buttons="props.showVoteButtons"
+            :disable-toolbar="true"
+            :disable-owner-only-lock="true"
+            :collections="collections"
+            :collection-id="def.collection_id"
+            :item-id="def.item_id"
+            @collection-updated="$emit('collection-updated', $event)"
+          />
+        </div>
+        <div
+          v-if="showGlobalDictionaryBanner"
+          class="surface-definition-compact text-sm text-gray-700"
+        >
+          <p class="font-medium text-gray-800">
+            {{ t('home.globalDictionaryBelow') }}
+          </p>
+        </div>
+      </template>
       <!-- Decomposition display -->
       <AlertComponent
         v-if="decomposition?.length"
@@ -46,7 +73,10 @@
       </template>
     </div>
 
-    <div v-if="!isLoading && definitions.length === 0" class="text-center py-8 text-gray-600">
+    <div
+      v-if="!isLoading && definitions.length === 0 && collectionMatches.length === 0"
+      class="text-center py-8 text-gray-600"
+    >
       {{ t('components.dictionaryEntries.noEntries') }}
     </div>
   </div>
@@ -69,7 +99,12 @@ type DictionaryLanguageOption = {
   real_name: string
   english_name?: string
 }
-type DefinitionEntry = Record<string, unknown> & { definitionid?: number; langid?: number }
+type DefinitionEntry = Record<string, unknown> & {
+  definitionid?: number
+  langid?: number
+  collection_id?: number
+  item_id?: number
+}
 
 const props = defineProps({
   definitions: {
@@ -113,16 +148,41 @@ const props = defineProps({
     type: Array as PropType<string[]>,
     default: () => [],
   },
+  collectionMatches: {
+    type: Array as PropType<DefinitionEntry[]>,
+    default: () => [],
+  },
+  showGlobalDictionaryBanner: {
+    type: Boolean,
+    default: false,
+  },
 })
 
 const BATCH_SIZE = 10 // Process definitions in batches of 10
 const visibleBatches = ref(new Set([0])) // Track which batches are visible
 
+function collectionCardKey(def: DefinitionEntry): string {
+  if (def.collection_id != null && def.item_id != null) {
+    return `ci-${def.collection_id}-${def.item_id}`
+  }
+  return `d-${def.definitionid ?? 'x'}`
+}
+
+const dictionaryDefinitions = computed(() => {
+  const seen = new Set(
+    props.collectionMatches
+      .map((d) => d.definitionid)
+      .filter((id): id is number => typeof id === 'number' && id > 0)
+  )
+  if (!seen.size) return props.definitions
+  return props.definitions.filter((d) => !d.definitionid || !seen.has(d.definitionid))
+})
+
 // Split definitions into batches
 const definitionBatches = computed(() => {
   const batches = []
-  for (let i = 0; i < props.definitions.length; i += BATCH_SIZE) {
-    batches.push(props.definitions.slice(i, i + BATCH_SIZE))
+  for (let i = 0; i < dictionaryDefinitions.value.length; i += BATCH_SIZE) {
+    batches.push(dictionaryDefinitions.value.slice(i, i + BATCH_SIZE))
   }
   return batches
 })
