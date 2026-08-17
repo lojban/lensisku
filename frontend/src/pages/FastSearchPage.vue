@@ -22,7 +22,13 @@
   />
 
   <div
-    v-if="searchQuery || filters.selmaho || filters.username || filters.word_type"
+    v-if="
+      searchQuery ||
+      filters.selmaho ||
+      filters.usernames?.length ||
+      filters.excludeUsernames?.length ||
+      filters.word_type
+    "
     class="min-h-[400px]"
   >
     <div class="space-y-4">
@@ -88,7 +94,15 @@
     </div>
   </div>
   <!-- PaginationComponent -->
-  <div v-if="searchQuery || filters.selmaho || filters.username || filters.word_type">
+  <div
+    v-if="
+      searchQuery ||
+      filters.selmaho ||
+      filters.usernames?.length ||
+      filters.excludeUsernames?.length ||
+      filters.word_type
+    "
+  >
     <PaginationComponent
       :current-page="currentPage"
       :total-pages="totalPages"
@@ -157,7 +171,8 @@ useSeoHead({ title: pageTitle, pathWithoutLocale: '/fast-search' })
 const languages = ref([])
 const filters = ref({
   selmaho: '',
-  username: '',
+  usernames: [] as string[],
+  excludeUsernames: [] as string[],
   word_type: null as number | null,
   isExpanded: false,
   selectedLanguages: [] as number[],
@@ -181,6 +196,7 @@ const fetchDefinitions = async (page: number, search = '') => {
       per_page: number
       search: string
       username: string | undefined
+      exclude_usernames?: string
       languages?: string
       word_type?: number
       source_langid?: number
@@ -190,7 +206,12 @@ const fetchDefinitions = async (page: number, search = '') => {
       page,
       per_page: 10,
       search: search,
-      username: filters.value.username || undefined,
+      username: filters.value.usernames?.length
+        ? filters.value.usernames.join(',')
+        : undefined,
+      exclude_usernames: filters.value.excludeUsernames?.length
+        ? filters.value.excludeUsernames.join(',')
+        : undefined,
       ...(filters.value.selectedLanguages.length > 0 && {
         languages: filters.value.selectedLanguages.join(','),
       }),
@@ -247,7 +268,8 @@ const fetchData = async () => {
   if (
     !searchQuery.value.trim() &&
     !filters.value.selmaho &&
-    !filters.value.username &&
+    !filters.value.usernames?.length &&
+    !filters.value.excludeUsernames?.length &&
     !filters.value.word_type
   ) {
     isLoading.value = false
@@ -266,7 +288,8 @@ const handleFilterChange = () => {
 const handleFiltersReset = async () => {
   filters.value = {
     selmaho: '',
-    username: '',
+    usernames: [],
+    excludeUsernames: [],
     isExpanded: false,
     selectedLanguages: [],
     word_type: null,
@@ -288,7 +311,12 @@ const updateUrlWithFilters = () => {
           ? filters.value.selectedLanguages.join(',')
           : undefined,
       selmaho: filters.value.selmaho || undefined,
-      username: filters.value.username || undefined,
+      username: filters.value.usernames?.length
+        ? filters.value.usernames.join(',')
+        : undefined,
+      exclude_usernames: filters.value.excludeUsernames?.length
+        ? filters.value.excludeUsernames.join(',')
+        : undefined,
       word_type: filters.value.word_type || undefined,
       source_langid: filters.value.source_langid !== 1 ? filters.value.source_langid : undefined,
       searchInPhrases: filters.value.searchInPhrases === false ? 'false' : undefined,
@@ -308,7 +336,10 @@ const performSearch = ({ query, mode }: { query: string; mode: string }) => {
         ? filters.value.selectedLanguages.join(',')
         : undefined,
     selmaho: filters.value.selmaho || undefined,
-    username: filters.value.username || undefined,
+    username: filters.value.usernames?.length ? filters.value.usernames.join(',') : undefined,
+    exclude_usernames: filters.value.excludeUsernames?.length
+      ? filters.value.excludeUsernames.join(',')
+      : undefined,
     word_type: filters.value.word_type || undefined,
     searchInPhrases: filters.value.searchInPhrases === false ? 'false' : undefined,
   }
@@ -375,7 +406,21 @@ const syncFromRoute = () => {
   }
 
   if (query.username !== undefined) {
-    filters.value.username = queryStr(query.username)
+    filters.value.usernames = queryStr(query.username)
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean)
+  } else {
+    filters.value.usernames = []
+  }
+
+  if (query.exclude_usernames !== undefined) {
+    filters.value.excludeUsernames = queryStr(query.exclude_usernames)
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean)
+  } else {
+    filters.value.excludeUsernames = []
   }
 
   if (query.word_type !== undefined) {
@@ -481,6 +526,7 @@ watch(
       newQuery.langs !== oldQuery?.langs ||
       newQuery.selmaho !== oldQuery?.selmaho ||
       newQuery.username !== oldQuery?.username ||
+      newQuery.exclude_usernames !== oldQuery?.exclude_usernames ||
       newQuery.word_type !== oldQuery?.word_type ||
       newQuery.source_langid !== oldQuery?.source_langid ||
       newQuery.searchInPhrases !== oldQuery?.searchInPhrases

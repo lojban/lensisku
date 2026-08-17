@@ -104,8 +104,10 @@ pub struct ListCollectionItemsQuery {
     pub selmaho: Option<String>,
     /// Filter by valsi typeid (word type) on the linked definition.
     pub word_type: Option<i16>,
-    /// Filter by definition author username.
+    /// Comma-separated definition author usernames. When set, only those authors' definitions are included.
     pub username: Option<String>,
+    /// Comma-separated usernames whose definitions should be excluded.
+    pub exclude_usernames: Option<String>,
     /// Filter by valsi source language id (defaults to 1 = Lojban when unset).
     pub source_langid: Option<i32>,
     /// Mirrors dictionary search: when explicitly false, exclude phrase-typed valsi (typeid 15).
@@ -124,7 +126,8 @@ pub struct ListCollectionItemsFilters {
     pub languages: Option<Vec<i32>>,
     pub selmaho: Option<String>,
     pub word_type: Option<i16>,
-    pub username: Option<String>,
+    pub usernames: Option<Vec<String>>,
+    pub exclude_usernames: Option<Vec<String>>,
     pub source_langid: Option<i32>,
     pub search_in_phrases: Option<bool>,
     /// Pre-computed query embedding when semantic mode is active. The service treats it as the

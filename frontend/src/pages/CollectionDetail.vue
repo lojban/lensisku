@@ -2331,7 +2331,8 @@ const waveTotalPages = computed(() => Math.max(1, Math.ceil(waveTotal.value / 10
 
 interface ItemFiltersValue {
   selmaho: string
-  username: string
+  usernames: string[]
+  excludeUsernames: string[]
   word_type: number | null
   isExpanded: boolean
   selectedLanguages: number[]
@@ -2342,7 +2343,8 @@ interface ItemFiltersValue {
 
 const itemFilters = ref<ItemFiltersValue>({
   selmaho: '',
-  username: '',
+  usernames: [],
+  excludeUsernames: [],
   word_type: null,
   isExpanded: false,
   selectedLanguages: [],
@@ -2566,7 +2568,12 @@ const fetchItems = async () => {
       search: trimmedQuery || undefined,
       item_id: editItemId.value,
       exclude_with_flashcards: isAddFlashcardMode.value || undefined,
-      username: itemFilters.value.username || undefined,
+      username: itemFilters.value.usernames?.length
+        ? itemFilters.value.usernames.join(',')
+        : undefined,
+      exclude_usernames: itemFilters.value.excludeUsernames?.length
+        ? itemFilters.value.excludeUsernames.join(',')
+        : undefined,
       semantic: searchMode.value === 'semantic' || undefined,
     }
 

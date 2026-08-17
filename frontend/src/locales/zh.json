@@ -1431,8 +1431,13 @@
     "combinedFilters": {
       "filterBySelmao": "按 selma'o 筛选",
       "filterByAuthor": "按作者筛选",
+      "filterByAuthors": "包含作者",
+      "filterByExcludeAuthors": "排除作者",
       "placeholderSelmaho": "输入 selmaho…",
       "placeholderUsername": "输入用户名…",
+      "placeholderUsernames": "选择作者…",
+      "placeholderExcludeUsernames": "排除作者…",
+      "searchUsers": "搜索用户…",
       "clearFilter": "清除筛选",
       "searchingUsers": "正在搜索用户…",
       "noUsersFound": "未找到用户"

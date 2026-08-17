@@ -25,6 +25,56 @@ use crate::jbovlaste::models::{
 };
 use vlazba::jvokaha::jvokaha;
 
+fn push_author_filters<'a>(
+    conditions: &mut Vec<String>,
+    query_params: &mut Vec<&'a (dyn tokio_postgres::types::ToSql + Sync)>,
+    usernames: &'a Option<Vec<String>>,
+    exclude_usernames: &'a Option<Vec<String>>,
+    column: &str,
+) {
+    if let Some(names) = usernames.as_ref().filter(|v| !v.is_empty()) {
+        conditions.push(format!("AND {column} = ANY(${})", query_params.len() + 1));
+        query_params.push(names);
+    }
+    if let Some(names) = exclude_usernames.as_ref().filter(|v| !v.is_empty()) {
+        conditions.push(format!(
+            "AND NOT ({column} = ANY(${}))",
+            query_params.len() + 1
+        ));
+        query_params.push(names);
+    }
+}
+
+fn push_author_params<'a>(
+    query_params: &mut Vec<&'a (dyn tokio_postgres::types::ToSql + Sync)>,
+    usernames: &'a Option<Vec<String>>,
+    exclude_usernames: &'a Option<Vec<String>>,
+) {
+    if let Some(names) = usernames.as_ref().filter(|v| !v.is_empty()) {
+        query_params.push(names);
+    }
+    if let Some(names) = exclude_usernames.as_ref().filter(|v| !v.is_empty()) {
+        query_params.push(names);
+    }
+}
+
+fn push_author_sql_numbered(
+    conditions: &mut Vec<String>,
+    param_num: &mut usize,
+    usernames: &Option<Vec<String>>,
+    exclude_usernames: &Option<Vec<String>>,
+    column: &str,
+) {
+    if usernames.as_ref().is_some_and(|v| !v.is_empty()) {
+        conditions.push(format!("AND {column} = ANY(${param_num})"));
+        *param_num += 1;
+    }
+    if exclude_usernames.as_ref().is_some_and(|v| !v.is_empty()) {
+        conditions.push(format!("AND NOT ({column} = ANY(${param_num}))"));
+        *param_num += 1;
+    }
+}
+
 use crate::auth::Claims;
 use crate::comments::dto::ReactionResponse;
 use crate::language::{
@@ -88,11 +138,13 @@ pub async fn semantic_search(
         query_params.push(selmaho);
     }
 
-    // Add username condition if present
-    if let Some(username) = &params.username {
-        conditions.push(format!("AND u.username = ${}", query_params.len() + 1));
-        query_params.push(username);
-    }
+    push_author_filters(
+        &mut conditions,
+        &mut query_params,
+        &params.usernames,
+        &params.exclude_usernames,
+        "u.username",
+    );
 
     let word_type_value;
     if let Some(word_type) = params.word_type {
@@ -540,10 +592,13 @@ pub async fn semantic_graph(
         query_params.push(selmaho);
     }
 
-    if let Some(username) = &params.username {
-        conditions.push(format!("AND u.username = ${}", query_params.len() + 1));
-        query_params.push(username);
-    }
+    push_author_filters(
+        &mut conditions,
+        &mut query_params,
+        &params.usernames,
+        &params.exclude_usernames,
+        "u.username",
+    );
 
     let word_type_value;
     if let Some(word_type) = params.word_type {
@@ -705,10 +760,13 @@ pub async fn semantic_graph_preview(
         query_params.push(selmaho);
     }
 
-    if let Some(username) = &params.username {
-        conditions.push(format!("AND u.username = ${}", query_params.len() + 1));
-        query_params.push(username);
-    }
+    push_author_filters(
+        &mut conditions,
+        &mut query_params,
+        &params.usernames,
+        &params.exclude_usernames,
+        "u.username",
+    );
 
     let word_type_value;
     if let Some(word_type) = params.word_type {
@@ -979,14 +1037,13 @@ pub async fn search_definitions(
     }
 
     // Add username condition if present
-    if let Some(username) = &params.username {
-        // Use cached_username to avoid joining users table
-        conditions.push(format!(
-            "AND d.cached_username = ${}",
-            query_params.len() + 1
-        ));
-        query_params.push(username);
-    }
+    push_author_filters(
+        &mut conditions,
+        &mut query_params,
+        &params.usernames,
+        &params.exclude_usernames,
+        "d.cached_username",
+    );
 
     let word_type_value;
     if let Some(word_type) = params.word_type {
@@ -1258,13 +1315,15 @@ pub async fn search_definitions(
     if let Some(selmaho) = &params.selmaho {
         count_conditions.push(format!("AND d.selmaho = ${}", current_param_num));
         count_params.push(selmaho);
-        current_param_num += 1;
     }
-    if let Some(username) = &params.username {
-        count_conditions.push(format!("AND d.cached_username = ${}", current_param_num));
-        count_params.push(username);
-        current_param_num += 1;
-    }
+    push_author_filters(
+        &mut count_conditions,
+        &mut count_params,
+        &params.usernames,
+        &params.exclude_usernames,
+        "d.cached_username",
+    );
+    current_param_num = count_params.len() + 1;
     let word_type_value; // needs new binding
     if let Some(word_type) = params.word_type {
         word_type_value = word_type;
@@ -1398,13 +1457,13 @@ pub async fn fast_search_definitions(
     }
 
     // Add username condition if present (using cached field)
-    if let Some(username) = &params.username {
-        conditions.push(format!(
-            "AND d.cached_username = ${}",
-            query_params.len() + 1
-        ));
-        query_params.push(username);
-    }
+    push_author_filters(
+        &mut conditions,
+        &mut query_params,
+        &params.usernames,
+        &params.exclude_usernames,
+        "d.cached_username",
+    );
 
     // Add word_type condition if present (using cached field)
     let word_type_value;
@@ -1541,10 +1600,13 @@ pub async fn fast_search_definitions(
     }
 
     // Add username condition if present (using cached field)
-    if params.username.is_some() {
-        conditions.push(format!("AND d.cached_username = ${}", current_param_num));
-        current_param_num += 1;
-    }
+    push_author_sql_numbered(
+        &mut conditions,
+        &mut current_param_num,
+        &params.usernames,
+        &params.exclude_usernames,
+        "d.cached_username",
+    );
 
     // word_type condition needs to increment param_num too (using cached field)
     if params.word_type.is_some() {
@@ -1572,9 +1634,11 @@ pub async fn fast_search_definitions(
     if let Some(selmaho) = &params.selmaho {
         count_params.push(selmaho);
     }
-    if let Some(username) = &params.username {
-        count_params.push(username);
-    }
+    push_author_params(
+        &mut count_params,
+        &params.usernames,
+        &params.exclude_usernames,
+    );
     let word_type_value; // Temporary storage needed outside the if block
     if let Some(word_type) = params.word_type {
         word_type_value = word_type;
@@ -3912,9 +3976,18 @@ pub async fn list_non_lojban_definitions(
     }
 
     // Add username filter if provided
-    if let Some(username) = &query.username {
-        conditions.push(format!("u.username = ${}", query_params.len() + 1));
-        query_params.push(username);
+    let usernames = super::dto::parse_username_list(&query.username);
+    let exclude_usernames = super::dto::parse_username_list(&query.exclude_usernames);
+    if let Some(names) = usernames.as_ref().filter(|v| !v.is_empty()) {
+        conditions.push(format!("u.username = ANY(${})", query_params.len() + 1));
+        query_params.push(names);
+    }
+    if let Some(names) = exclude_usernames.as_ref().filter(|v| !v.is_empty()) {
+        conditions.push(format!(
+            "NOT (u.username = ANY(${}))",
+            query_params.len() + 1
+        ));
+        query_params.push(names);
     }
 
     // Add definition language filter if provided

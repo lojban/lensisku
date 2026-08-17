@@ -17,10 +17,30 @@ pub struct SearchDefinitionsQuery {
     pub languages: Option<String>,
     pub selmaho: Option<String>,
     pub word_type: Option<i16>,
+    /// Comma-separated definition author usernames. When set, only those authors' definitions are returned.
     pub username: Option<String>,
+    /// Comma-separated usernames whose definitions should be excluded.
+    pub exclude_usernames: Option<String>,
     pub source_langid: Option<i32>,
     pub fast: Option<bool>,
     pub search_in_phrases: Option<bool>,
+}
+
+/// Parse a comma-separated username query param into a non-empty list.
+pub fn parse_username_list(value: &Option<String>) -> Option<Vec<String>> {
+    let names: Vec<String> = value
+        .as_deref()
+        .unwrap_or("")
+        .split(',')
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(str::to_string)
+        .collect();
+    if names.is_empty() {
+        None
+    } else {
+        Some(names)
+    }
 }
 
 #[derive(Debug, Deserialize, ToSchema)]
@@ -30,8 +50,11 @@ pub struct NonLojbanDefinitionsQuery {
     pub search: Option<String>,
     pub sort_by: Option<String>,
     pub sort_order: Option<String>,
-    pub languages: Option<String>,  // Filter by definition language
-    pub username: Option<String>,   // Filter by definition author username
+    pub languages: Option<String>, // Filter by definition language
+    /// Comma-separated definition author usernames. When set, only those authors' definitions are returned.
+    pub username: Option<String>,
+    /// Comma-separated usernames whose definitions should be excluded.
+    pub exclude_usernames: Option<String>,
     pub source_langid: Option<i32>, // Filter by the source language of the valsi
 }
 
@@ -344,7 +367,10 @@ pub struct SemanticGraphQuery {
     pub languages: Option<String>,
     pub selmaho: Option<String>,
     pub word_type: Option<i16>,
+    /// Comma-separated definition author usernames. When set, only those authors' definitions are returned.
     pub username: Option<String>,
+    /// Comma-separated usernames whose definitions should be excluded.
+    pub exclude_usernames: Option<String>,
     pub source_langid: Option<i32>,
     pub search_in_phrases: Option<bool>,
     /// Minimum aggregate vote score (sum of votes per definition). Default 1 (matches classic semantic search `score > 0`).

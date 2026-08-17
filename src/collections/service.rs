@@ -3359,12 +3359,20 @@ pub async fn list_collection_items(
         param_count += 1;
     }
 
-    if let Some(username) = filters.username.as_ref().filter(|s| !s.is_empty()) {
+    if let Some(names) = filters.usernames.as_ref().filter(|v| !v.is_empty()) {
         extra_clauses.push(format!(
-            " AND (u.username = ${idx} OR ci.definition_id IS NULL)",
+            " AND (u.username = ANY(${idx}) OR ci.definition_id IS NULL)",
             idx = param_count
         ));
-        params.push(Box::new(username.clone()));
+        params.push(Box::new(names.clone()));
+        param_count += 1;
+    }
+    if let Some(names) = filters.exclude_usernames.as_ref().filter(|v| !v.is_empty()) {
+        extra_clauses.push(format!(
+            " AND (ci.definition_id IS NULL OR NOT (u.username = ANY(${idx})))",
+            idx = param_count
+        ));
+        params.push(Box::new(names.clone()));
         param_count += 1;
     }
 
@@ -3578,12 +3586,20 @@ pub async fn list_collection_items(
         count_param_idx += 1;
     }
 
-    if let Some(username) = filters.username.as_ref().filter(|s| !s.is_empty()) {
+    if let Some(names) = filters.usernames.as_ref().filter(|v| !v.is_empty()) {
         count_query.push_str(&format!(
-            " AND (u.username = ${idx} OR ci.definition_id IS NULL)",
+            " AND (u.username = ANY(${idx}) OR ci.definition_id IS NULL)",
             idx = count_param_idx
         ));
-        count_params.push(Box::new(username.clone()));
+        count_params.push(Box::new(names.clone()));
+        count_param_idx += 1;
+    }
+    if let Some(names) = filters.exclude_usernames.as_ref().filter(|v| !v.is_empty()) {
+        count_query.push_str(&format!(
+            " AND (ci.definition_id IS NULL OR NOT (u.username = ANY(${idx})))",
+            idx = count_param_idx
+        ));
+        count_params.push(Box::new(names.clone()));
         count_param_idx += 1;
     }
 

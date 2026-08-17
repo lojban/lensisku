@@ -39,7 +39,7 @@
         </div>
       </div>
       <!-- Select all (applies to the filtered list) -->
-      <div class="border-b border-gray-100 px-2 py-1.5">
+      <div v-if="showSelectAll" class="border-b border-gray-100 px-2 py-1.5">
         <label
           class="flex cursor-pointer items-center gap-2 rounded-md px-1 py-1 text-sm text-gray-700 hover:bg-gray-50"
           :class="{ 'pointer-events-none opacity-50': !filteredOptions.length }"
@@ -130,6 +130,11 @@ const props = defineProps({
     type: String,
     default: 'No matches',
   },
+  /** When false, the “Select all” row is hidden (useful for async option lists). */
+  showSelectAll: {
+    type: Boolean,
+    default: true,
+  },
   /** Max primary labels before summarizing with “+N” */
   maxSelectedLabels: {
     type: Number,
@@ -147,6 +152,8 @@ const props = defineProps({
 
 const emit = defineEmits<{
   'update:modelValue': [value: unknown[]]
+  search: [query: string]
+  open: []
 }>()
 
 const attrs = useAttrs()
@@ -397,10 +404,17 @@ watch(open, async (isOpen) => {
     panelViewportStyle.value = {}
     return
   }
+  emit('open')
   await nextTick()
   requestAnimationFrame(() => {
     updatePanelViewportStyle()
   })
+})
+
+watch(searchQuery, (q) => {
+  if (open.value) {
+    emit('search', q)
+  }
 })
 
 function onViewportChange() {

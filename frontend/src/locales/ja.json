@@ -1426,8 +1426,13 @@
     "combinedFilters": {
       "filterBySelmao": "selma'o で絞り込む",
       "filterByAuthor": "投稿者で絞り込む",
+      "filterByAuthors": "投稿者を含める",
+      "filterByExcludeAuthors": "投稿者を除外",
       "placeholderSelmaho": "selmaho を入力…",
       "placeholderUsername": "ユーザー名を入力…",
+      "placeholderUsernames": "投稿者を選択…",
+      "placeholderExcludeUsernames": "除外する投稿者…",
+      "searchUsers": "ユーザーを検索…",
       "clearFilter": "フィルターをクリア",
       "searchingUsers": "ユーザーを検索中…",
       "noUsersFound": "ユーザーが見つかりません"

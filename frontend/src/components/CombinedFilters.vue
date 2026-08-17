@@ -176,89 +176,52 @@
         </div>
       </div>
 
-      <!-- Author / username filter with user hints -->
+      <!-- Include authors (optional multi-select) -->
       <div class="flex min-w-0 flex-col">
-        <label class="filters-field-label" for="cf-username">{{
-          t('components.combinedFilters.filterByAuthor')
-        }}</label>
-        <div ref="usernameFieldRef" class="relative">
-          <Input
-            id="cf-username"
-            v-model="filters.username"
-            type="text"
-            autocomplete="off"
-            role="combobox"
-            :aria-expanded="showUsernameHints"
-            aria-autocomplete="list"
-            aria-controls="cf-username-hints"
-            :placeholder="t('components.combinedFilters.placeholderUsername')"
-            class="input-field w-full h-8"
-            @input="onUsernameInput"
-            @focus="onUsernameFocus"
-            @keydown="onUsernameKeydown"
+        <label class="filters-field-label">{{ t('components.combinedFilters.filterByAuthors') }}</label>
+        <div class="relative w-full min-w-0 [&>div]:block [&>div]:w-full">
+          <MultiSelectDropdown
+            v-model="selectedUsers"
+            :options="userOptions"
+            :max-selected-labels="3"
+            :show-select-all="false"
+            :option-value="(user: UserHint) => user.username"
+            :option-label="(user: UserHint) => user.username"
+            :search-field-keys="userFilterSearchFieldKeys"
+            :placeholder="t('components.combinedFilters.placeholderUsernames')"
+            :search-placeholder="t('components.combinedFilters.searchUsers')"
+            :empty-filter-label="t('components.combinedFilters.noUsersFound')"
+            class="w-full max-w-full"
+            @open="onUserDropdownOpen"
+            @search="onUserDropdownSearch"
+            @update:model-value="emitUpdate"
           />
-          <IconButtonGhost
-            v-if="filters.username"
-            class="absolute right-2 top-1/2 -translate-y-1/2"
-            :aria-label="t('components.combinedFilters.clearFilter')"
-            @click="clearUsernameFilter"
-          >
-            <X class="h-5 w-5" />
-          </IconButtonGhost>
         </div>
-        <Teleport to="body">
-          <div
-            v-if="showUsernameHints"
-            id="cf-username-hints"
-            ref="usernameHintsRef"
-            role="listbox"
-            class="dropdown-menu-panel !w-auto min-w-[12rem] max-h-60 py-1"
-            :style="usernameHintsStyle"
-          >
-            <p
-              v-if="isSearchingUsers"
-              class="px-3 py-2 text-sm text-gray-500"
-              role="status"
-            >
-              {{ t('components.combinedFilters.searchingUsers') }}
-            </p>
-            <template v-else-if="usernameHints.length > 0">
-              <Button
-                v-for="(user, index) in usernameHints"
-                :id="`cf-username-hint-${index}`"
-                :key="user.user_id"
-                variant="neutral"
-                type="button"
-                role="option"
-                class="assistant-session-row flex w-full items-center gap-3 rounded-none px-3 py-2"
-                :class="
-                  index === usernameHintIndex
-                    ? 'assistant-session-row--active'
-                    : 'assistant-session-row--idle'
-                "
-                :aria-selected="index === usernameHintIndex"
-                @mousedown.prevent="selectUsernameHint(user)"
-              >
-                <div class="avatar-placeholder-sm !h-7 !w-7 shrink-0 text-xs">
-                  {{ user.username[0]?.toUpperCase() }}
-                </div>
-                <div class="min-w-0 flex-1 text-left">
-                  <p class="truncate text-sm font-medium text-gray-900">{{ user.username }}</p>
-                  <p v-if="user.realname" class="truncate text-xs text-gray-500">
-                    {{ user.realname }}
-                  </p>
-                </div>
-              </Button>
-            </template>
-            <p
-              v-else-if="filters.username.trim()"
-              class="px-3 py-2 text-sm text-gray-500"
-              role="status"
-            >
-              {{ t('components.combinedFilters.noUsersFound') }}
-            </p>
-          </div>
-        </Teleport>
+      </div>
+
+      <!-- Exclude authors (optional multi-select) -->
+      <div class="flex min-w-0 flex-col">
+        <label class="filters-field-label">{{
+          t('components.combinedFilters.filterByExcludeAuthors')
+        }}</label>
+        <div class="relative w-full min-w-0 [&>div]:block [&>div]:w-full">
+          <MultiSelectDropdown
+            v-model="excludedUsers"
+            :options="userOptions"
+            :max-selected-labels="3"
+            :show-select-all="false"
+            :option-value="(user: UserHint) => user.username"
+            :option-label="(user: UserHint) => user.username"
+            :search-field-keys="userFilterSearchFieldKeys"
+            :placeholder="t('components.combinedFilters.placeholderExcludeUsernames')"
+            :search-placeholder="t('components.combinedFilters.searchUsers')"
+            :empty-filter-label="t('components.combinedFilters.noUsersFound')"
+            class="w-full max-w-full"
+            @open="onUserDropdownOpen"
+            @search="onUserDropdownSearch"
+            @update:model-value="emitUpdate"
+          />
+        </div>
       </div>
 
       <div class="flex min-w-0 flex-col" :class="{ 'col-span-2': !showWordType }">
@@ -367,7 +330,7 @@ import {
   ToolbarSelectDropdown,
   ToolbarSelectDropdownItem,
 } from '@packages/ui'
-import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute } from 'vue-router'
 
 import { fetchDefinitionsTypes, listUsers } from '@/api'
@@ -390,6 +353,8 @@ const graphBuildParams = defineModel<SemanticGraphBuildParams | undefined>('grap
 
 /** Fields used for language multiselect search (values only; case-insensitive substring). */
 const languageFilterSearchFieldKeys: string[] = ['tag', 'english_name', 'lojban_name', 'real_name']
+/** Fields used for author multiselect search. */
+const userFilterSearchFieldKeys: string[] = ['username', 'realname']
 
 type LanguageOption = {
   id: number
@@ -415,7 +380,8 @@ const props = defineProps({
     type: Object,
     default: () => ({
       selmaho: '',
-      username: '',
+      usernames: [],
+      excludeUsernames: [],
       isExpanded: false,
       selectedLanguages: [],
       word_type: null,
@@ -453,22 +419,17 @@ const props = defineProps({
 const emit = defineEmits(['update:modelValue', 'change', 'reset'])
 
 const selectedLangs = ref([])
+const selectedUsers = ref<UserHint[]>([])
+const excludedUsers = ref<UserHint[]>([])
+const userOptions = ref<UserHint[]>([])
 const expanded = ref(props.modelValue.isExpanded)
 const lastAutoExpandedSelmaho = ref('')
 const wordTypes = ref<WordTypeOption[]>([])
 const route = useRoute()
 
-const usernameFieldRef = ref<HTMLElement | null>(null)
-const usernameHintsRef = ref<HTMLElement | null>(null)
-const usernameHints = ref<UserHint[]>([])
-const usernameHintsOpen = ref(false)
-const usernameHintIndex = ref(-1)
-const isSearchingUsers = ref(false)
-const usernameHintsStyle = ref<Record<string, string>>({})
-
-const USERNAME_HINTS_GAP_PX = 4
-const USERNAME_SEARCH_DELAY_MS = 250
-let usernameSearchTimer: ReturnType<typeof setTimeout> | null = null
+const USER_SEARCH_DELAY_MS = 250
+const USER_LIST_PAGE_SIZE = 50
+let userSearchTimer: ReturnType<typeof setTimeout> | null = null
 
 function getInitialIsSemantic(): boolean {
   const mode = route.query.mode
@@ -503,14 +464,9 @@ const searchInPhrases = ref<boolean>(getInitialSearchInPhrases())
 
 const filters = ref({
   selmaho: props.modelValue.selmaho,
-  username: props.modelValue.username,
   word_type: null as WordTypeOption | null,
   source_langid: props.modelValue.source_langid || 1,
 })
-
-const showUsernameHints = computed(
-  () => usernameHintsOpen.value && Boolean(filters.value.username?.trim())
-)
 
 const showWordType = computed(() => !filters.value.selmaho)
 
@@ -535,13 +491,43 @@ const getLanguagesFromIds = (ids) => {
   return props.languages.filter((lang) => ids.includes(lang.id))
 }
 
+function parseUsernameList(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return value.map((v) => String(v).trim()).filter(Boolean)
+  }
+  if (typeof value === 'string' && value.trim()) {
+    return value
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean)
+  }
+  return []
+}
+
+function usersFromNames(names: string[], known: UserHint[]): UserHint[] {
+  const byName = new Map(known.map((u) => [u.username, u]))
+  return names.map((username) => byName.get(username) ?? { user_id: 0, username })
+}
+
+function mergeUserOptions(users: UserHint[]) {
+  const byName = new Map<string, UserHint>()
+  for (const u of userOptions.value) byName.set(u.username, u)
+  for (const u of users) byName.set(u.username, u)
+  for (const u of selectedUsers.value) {
+    if (!byName.has(u.username)) byName.set(u.username, u)
+  }
+  for (const u of excludedUsers.value) {
+    if (!byName.has(u.username)) byName.set(u.username, u)
+  }
+  userOptions.value = [...byName.values()]
+}
+
 watch(
   () => props.modelValue,
   (newVal) => {
     expanded.value = newVal.isExpanded
     filters.value = {
       selmaho: newVal.selmaho,
-      username: newVal.username,
       word_type: null,
       source_langid: newVal.source_langid || 1,
     }
@@ -556,6 +542,16 @@ watch(
     if (newVal.selectedLanguages?.length > 0) {
       selectedLangs.value = getLanguagesFromIds(newVal.selectedLanguages)
     }
+
+    const includeNames = parseUsernameList(newVal.usernames ?? newVal.username)
+    const excludeNames = parseUsernameList(newVal.excludeUsernames)
+    if (selectedUsers.value.map((u) => u.username).join(',') !== includeNames.join(',')) {
+      selectedUsers.value = usersFromNames(includeNames, userOptions.value)
+    }
+    if (excludedUsers.value.map((u) => u.username).join(',') !== excludeNames.join(',')) {
+      excludedUsers.value = usersFromNames(excludeNames, userOptions.value)
+    }
+    mergeUserOptions([])
   },
   { deep: true, immediate: true }
 )
@@ -588,7 +584,6 @@ onMounted(() => {
   fetchWordTypes()
   syncTogglesWithModel()
   maybeAutoExpandForSelmaho(props.modelValue.selmaho ?? '', '')
-  document.addEventListener('mousedown', handleUsernameHintsOutsideClick)
 })
 
 function syncTogglesWithModel() {
@@ -607,10 +602,7 @@ function syncTogglesWithModel() {
 onBeforeUnmount(() => {
   // Clean up any pending debounce timer
   clearDebounceTimer()
-  clearUsernameSearchTimer()
-  document.removeEventListener('mousedown', handleUsernameHintsOutsideClick)
-  window.removeEventListener('resize', updateUsernameHintsPosition)
-  window.removeEventListener('scroll', updateUsernameHintsPosition, true)
+  clearUserSearchTimer()
 })
 
 const getDefaultLanguages = () => {
@@ -633,168 +625,46 @@ function clearDebounceTimer() {
   }
 }
 
-function clearUsernameSearchTimer() {
-  if (usernameSearchTimer) {
-    clearTimeout(usernameSearchTimer)
-    usernameSearchTimer = null
+function clearUserSearchTimer() {
+  if (userSearchTimer) {
+    clearTimeout(userSearchTimer)
+    userSearchTimer = null
   }
 }
 
-function updateUsernameHintsPosition() {
-  const field = usernameFieldRef.value
-  if (!field) return
-
-  const rect = field.getBoundingClientRect()
-  usernameHintsStyle.value = {
-    top: `${rect.bottom + USERNAME_HINTS_GAP_PX}px`,
-    left: `${rect.left}px`,
-    width: `${rect.width}px`,
-  }
-}
-
-async function openUsernameHints() {
-  const wasOpen = usernameHintsOpen.value
-  usernameHintsOpen.value = true
-  await nextTick()
-  updateUsernameHintsPosition()
-  if (!wasOpen) {
-    window.addEventListener('resize', updateUsernameHintsPosition)
-    window.addEventListener('scroll', updateUsernameHintsPosition, true)
-  }
-}
-
-function closeUsernameHints() {
-  usernameHintsOpen.value = false
-  usernameHintIndex.value = -1
-  window.removeEventListener('resize', updateUsernameHintsPosition)
-  window.removeEventListener('scroll', updateUsernameHintsPosition, true)
-}
-
-function handleUsernameHintsOutsideClick(event: MouseEvent) {
-  if (!usernameHintsOpen.value) return
-  const target = event.target
-  if (!(target instanceof Node)) return
-  if (usernameFieldRef.value?.contains(target) || usernameHintsRef.value?.contains(target)) {
-    return
-  }
-  closeUsernameHints()
-}
-
-async function searchUsernameHints(query: string) {
-  const trimmed = query.trim()
-  if (!trimmed) {
-    usernameHints.value = []
-    isSearchingUsers.value = false
-    closeUsernameHints()
-    return
-  }
-
-  isSearchingUsers.value = true
-  await openUsernameHints()
+async function fetchUsers(search = '') {
   try {
-    const response = await listUsers({ search: trimmed, per_page: 12 })
-    const users = (response.data.users ?? []) as UserHint[]
-    usernameHints.value = users
-    usernameHintIndex.value = users.length > 0 ? 0 : -1
-    await nextTick()
-    updateUsernameHintsPosition()
+    const response = await listUsers({
+      search: search.trim() || undefined,
+      per_page: USER_LIST_PAGE_SIZE,
+      sort_by: 'username',
+      sort_order: 'asc',
+    })
+    mergeUserOptions((response.data.users ?? []) as UserHint[])
   } catch (error) {
     console.error('Failed to search users for author filter:', error)
-    usernameHints.value = []
-    usernameHintIndex.value = -1
-  } finally {
-    isSearchingUsers.value = false
   }
 }
 
-function scheduleUsernameSearch() {
-  clearUsernameSearchTimer()
-  const query = filters.value.username ?? ''
-  if (!query.trim()) {
-    usernameHints.value = []
-    isSearchingUsers.value = false
-    closeUsernameHints()
-    return
-  }
-  isSearchingUsers.value = true
-  void openUsernameHints()
-  usernameSearchTimer = setTimeout(() => {
-    usernameSearchTimer = null
-    void searchUsernameHints(query)
-  }, USERNAME_SEARCH_DELAY_MS)
+function onUserDropdownOpen() {
+  void fetchUsers('')
 }
 
-function onUsernameInput() {
-  debouncedFilterChange()
-  scheduleUsernameSearch()
-}
-
-function onUsernameFocus() {
-  if (filters.value.username?.trim()) {
-    scheduleUsernameSearch()
-  }
-}
-
-function selectUsernameHint(user: UserHint) {
-  clearUsernameSearchTimer()
-  clearDebounceTimer()
-  filters.value.username = user.username
-  closeUsernameHints()
-  usernameHints.value = []
-  emitUpdate()
-}
-
-function clearUsernameFilter() {
-  clearUsernameSearchTimer()
-  usernameHints.value = []
-  closeUsernameHints()
-  clearFilter('username')
-}
-
-function onUsernameKeydown(event: KeyboardEvent) {
-  if (!showUsernameHints.value) {
-    if (event.key === 'ArrowDown' && filters.value.username?.trim()) {
-      scheduleUsernameSearch()
-    }
-    return
-  }
-
-  if (event.key === 'Escape') {
-    event.preventDefault()
-    closeUsernameHints()
-    return
-  }
-
-  if (event.key === 'ArrowDown') {
-    event.preventDefault()
-    if (usernameHints.value.length === 0) return
-    usernameHintIndex.value = (usernameHintIndex.value + 1) % usernameHints.value.length
-    return
-  }
-
-  if (event.key === 'ArrowUp') {
-    event.preventDefault()
-    if (usernameHints.value.length === 0) return
-    usernameHintIndex.value =
-      (usernameHintIndex.value - 1 + usernameHints.value.length) % usernameHints.value.length
-    return
-  }
-
-  if (event.key === 'Enter' && usernameHintIndex.value >= 0) {
-    const user = usernameHints.value[usernameHintIndex.value]
-    if (user) {
-      event.preventDefault()
-      selectUsernameHint(user)
-    }
-  }
+function onUserDropdownSearch(query: string) {
+  clearUserSearchTimer()
+  userSearchTimer = setTimeout(() => {
+    userSearchTimer = null
+    void fetchUsers(query)
+  }, USER_SEARCH_DELAY_MS)
 }
 
 const hasFilledAdvancedFilters = computed(() => {
   return Boolean(
     filters.value.selmaho ||
-    filters.value.username ||
-    filters.value.word_type ||
-    filters.value.source_langid !== 1
+      selectedUsers.value.length > 0 ||
+      excludedUsers.value.length > 0 ||
+      filters.value.word_type ||
+      filters.value.source_langid !== 1
   )
 })
 
@@ -818,17 +688,13 @@ const debouncedFilterChange = () => {
   // Capture current filter values to check in timeout
   const currentFilters = {
     selmaho: filters.value.selmaho,
-    username: filters.value.username,
   }
 
   // Debounce the filter change - only trigger after user stops typing
   // This prevents excessive API calls while user is actively typing
   debounceTimer = setTimeout(() => {
     // Only emit if filters haven't changed (to prevent race conditions)
-    if (
-      filters.value.selmaho === currentFilters.selmaho &&
-      filters.value.username === currentFilters.username
-    ) {
+    if (filters.value.selmaho === currentFilters.selmaho) {
       emitUpdate()
     }
     debounceTimer = null
@@ -848,7 +714,8 @@ function selectSourceLang(id: number) {
 const emitUpdate = () => {
   const updatedValue = {
     selmaho: filters.value.selmaho,
-    username: filters.value.username,
+    usernames: selectedUsers.value.map((u) => u.username),
+    excludeUsernames: excludedUsers.value.map((u) => u.username),
     isExpanded: expanded.value,
     selectedLanguages: selectedLangs.value.map((lang) => lang.id),
     word_type: filters.value.word_type?.type_id || null,
@@ -883,19 +750,14 @@ watch(
 const clearFilter = (filterName) => {
   // Clear any pending timeouts first to prevent them from firing after clearing
   clearDebounceTimer()
-  if (filterName === 'username') {
-    clearUsernameSearchTimer()
-    usernameHints.value = []
-    closeUsernameHints()
-  }
   filters.value[filterName] = ''
   emitUpdate()
 }
 
 const resetAllFilters = () => {
-  clearUsernameSearchTimer()
-  usernameHints.value = []
-  closeUsernameHints()
+  clearUserSearchTimer()
+  selectedUsers.value = []
+  excludedUsers.value = []
 
   const defaultLangs = getDefaultLanguages()
   selectedLangs.value = defaultLangs
@@ -909,7 +771,8 @@ const resetAllFilters = () => {
 
   const resetValue = {
     selmaho: '',
-    username: '',
+    usernames: [],
+    excludeUsernames: [],
     isExpanded: false,
     selectedLanguages: defaultLangs.map((lang) => lang.id),
     word_type: null,
@@ -924,9 +787,6 @@ const resetAllFilters = () => {
 
 const toggleExpanded = () => {
   expanded.value = !expanded.value
-  if (!expanded.value) {
-    closeUsernameHints()
-  }
   emitUpdate()
 }
 

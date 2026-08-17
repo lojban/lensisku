@@ -781,7 +781,11 @@ useSeoHead({ title: pageTitle, description: pageDescription, pathWithoutLocale: 
 /** When true, show trending + recent changes; when false, show search / waves results. */
 const showTrendingHome = computed(() => {
   const q = (searchQuery.value || '').trim()
-  const noFilters = !filters.value.selmaho && !filters.value.username && !filters.value.word_type
+  const noFilters =
+    !filters.value.selmaho &&
+    !filters.value.usernames?.length &&
+    !filters.value.excludeUsernames?.length &&
+    !filters.value.word_type
   if (searchMode.value === 'comments') return false
   if (similarDefinitionId.value) return false
   return !q && noFilters
@@ -802,7 +806,15 @@ const waveSourceTriggerLabel = computed(() => {
 const languages = ref([])
 const filters = ref({
   selmaho: '',
-  username: '',
+  usernames: route.query.username
+    ? queryStr(route.query.username).split(',').map((s) => s.trim()).filter(Boolean)
+    : ([] as string[]),
+  excludeUsernames: route.query.exclude_usernames
+    ? queryStr(route.query.exclude_usernames)
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean)
+    : ([] as string[]),
   word_type: route.query.word_type ? Number(queryStr(route.query.word_type)) : null,
   isExpanded: route.query.isExpanded === 'true',
   selectedLanguages: route.query.langs ? queryStr(route.query.langs).split(',').map(Number) : [],
@@ -835,6 +847,7 @@ const fetchDefinitions = async (page, search = '') => {
       definition_id?: number
       include_comments: boolean
       username: string | undefined
+      exclude_usernames?: string
       group_by_thread: boolean
       languages?: string
       word_type?: number
@@ -847,7 +860,12 @@ const fetchDefinitions = async (page, search = '') => {
       search: similarId ? undefined : search,
       definition_id: similarId || undefined,
       include_comments: true,
-      username: filters.value.username || undefined,
+      username: filters.value.usernames?.length
+        ? filters.value.usernames.join(',')
+        : undefined,
+      exclude_usernames: filters.value.excludeUsernames?.length
+        ? filters.value.excludeUsernames.join(',')
+        : undefined,
       ...(filters.value.selectedLanguages.length > 0 && {
         languages: filters.value.selectedLanguages.join(','),
       }),
@@ -967,7 +985,10 @@ const loadAllDefinitionIdsForCurrentSearch = async (
     search: similarDefinitionId.value ? undefined : (searchQuery.value || '').trim(),
     definition_id: similarDefinitionId.value || undefined,
     include_comments: false,
-    username: filters.value.username || undefined,
+    username: filters.value.usernames?.length ? filters.value.usernames.join(',') : undefined,
+    exclude_usernames: filters.value.excludeUsernames?.length
+      ? filters.value.excludeUsernames.join(',')
+      : undefined,
   }
   if (filters.value.selectedLanguages.length > 0) {
     baseParams.languages = filters.value.selectedLanguages.join(',')
@@ -1233,7 +1254,8 @@ const fetchData = async () => {
     !searchQuery.value.trim() &&
     !similarDefinitionId.value &&
     !filters.value.selmaho &&
-    !filters.value.username &&
+    !filters.value.usernames?.length &&
+    !filters.value.excludeUsernames?.length &&
     !filters.value.word_type
   ) {
     // Fetch trending/changes but ensure main loading is false
@@ -1277,7 +1299,8 @@ const handleFilterChange = () => {
 const handleFiltersReset = async () => {
   filters.value = {
     selmaho: '',
-    username: '',
+    usernames: [],
+    excludeUsernames: [],
     isExpanded: false,
     selectedLanguages: [],
     word_type: null,
@@ -1307,7 +1330,12 @@ const updateUrlWithFilters = () => {
           ? filters.value.selectedLanguages.join(',')
           : undefined,
       selmaho: filters.value.selmaho || undefined,
-      username: filters.value.username || undefined,
+      username: filters.value.usernames?.length
+        ? filters.value.usernames.join(',')
+        : undefined,
+      exclude_usernames: filters.value.excludeUsernames?.length
+        ? filters.value.excludeUsernames.join(',')
+        : undefined,
       word_type: filters.value.word_type || undefined,
       source_langid: filters.value.source_langid !== 1 ? filters.value.source_langid : undefined,
       group_by_thread: groupByThread.value ? 'true' : undefined,
@@ -1339,7 +1367,10 @@ const performSearch = ({ query, mode }: { query: string; mode: string }) => {
         ? filters.value.selectedLanguages.join(',')
         : undefined,
     selmaho: filters.value.selmaho || undefined,
-    username: filters.value.username || undefined,
+    username: filters.value.usernames?.length ? filters.value.usernames.join(',') : undefined,
+    exclude_usernames: filters.value.excludeUsernames?.length
+      ? filters.value.excludeUsernames.join(',')
+      : undefined,
     word_type: filters.value.word_type || undefined,
     searchInPhrases: filters.value.searchInPhrases === false ? 'false' : undefined,
     wave_source: waveSource.value !== 'all' ? waveSource.value : undefined,
@@ -1476,7 +1507,21 @@ const syncFromRoute = () => {
   }
 
   if (query.username !== undefined) {
-    filters.value.username = queryStr(query.username)
+    filters.value.usernames = queryStr(query.username)
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean)
+  } else {
+    filters.value.usernames = []
+  }
+
+  if (query.exclude_usernames !== undefined) {
+    filters.value.excludeUsernames = queryStr(query.exclude_usernames)
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean)
+  } else {
+    filters.value.excludeUsernames = []
   }
 
   if (query.word_type !== undefined) {
@@ -1652,6 +1697,7 @@ watch(
       newQuery.langs !== oldQuery?.langs ||
       newQuery.selmaho !== oldQuery?.selmaho ||
       newQuery.username !== oldQuery?.username ||
+      newQuery.exclude_usernames !== oldQuery?.exclude_usernames ||
       newQuery.word_type !== oldQuery?.word_type ||
       newQuery.source_langid !== oldQuery?.source_langid ||
       newQuery.searchInPhrases !== oldQuery?.searchInPhrases ||

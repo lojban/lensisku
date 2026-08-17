@@ -109,7 +109,7 @@ pub fn generate_search_cache_key(query: &SearchDefinitionsQuery, use_fast_search
         "search"
     };
     format!(
-        "{}:{}:{}:{}:{}:{}:{}:{}:{}:{}:{}:{}:{}",
+        "{}:{}:{}:{}:{}:{}:{}:{}:{}:{}:{}:{}:{}:{}",
         prefix,
         query.page.unwrap_or(1),
         query.per_page.unwrap_or(20),
@@ -121,6 +121,7 @@ pub fn generate_search_cache_key(query: &SearchDefinitionsQuery, use_fast_search
         query.selmaho.as_deref().unwrap_or(""),
         query.word_type.unwrap_or(0),
         query.username.as_deref().unwrap_or(""),
+        query.exclude_usernames.as_deref().unwrap_or(""),
         query.source_langid.unwrap_or(1),
         query.search_in_phrases.map(i32::from).unwrap_or(-1)
     )
@@ -129,7 +130,7 @@ pub fn generate_search_cache_key(query: &SearchDefinitionsQuery, use_fast_search
 pub fn generate_semantic_search_cache_key(query: &SearchDefinitionsQuery) -> String {
     // Key includes search term and all filter/pagination options relevant to semantic search
     format!(
-        "semantic_search:{}:{}:{}:{}:{}:{}:{}:{}:{}:{}",
+        "semantic_search:{}:{}:{}:{}:{}:{}:{}:{}:{}:{}:{}",
         query.search.as_deref().unwrap_or(""),
         query.definition_id.unwrap_or(0),
         query.page.unwrap_or(1),
@@ -137,6 +138,7 @@ pub fn generate_semantic_search_cache_key(query: &SearchDefinitionsQuery) -> Str
         query.languages.as_deref().unwrap_or(""),
         query.selmaho.as_deref().unwrap_or(""),
         query.username.as_deref().unwrap_or(""),
+        query.exclude_usernames.as_deref().unwrap_or(""),
         query.word_type.unwrap_or(0),
         query.source_langid.unwrap_or(1),
         query.search_in_phrases.map(i32::from).unwrap_or(-1) // Note: sort_by and sort_order are fixed to 'similarity asc' for semantic search
@@ -151,13 +153,14 @@ pub fn generate_semantic_graph_cache_key(query: &SemanticGraphQuery) -> String {
         _ => "1",
     };
     format!(
-        "semantic_graph:v3:{}:{}:{}:{}:{}:{}:{}:{}:{}:{}:{}:{}:{}",
+        "semantic_graph:v3:{}:{}:{}:{}:{}:{}:{}:{}:{}:{}:{}:{}:{}:{}",
         semantic_key,
         query.search.as_deref().unwrap_or(""),
         query.focus.as_deref().unwrap_or(""),
         query.languages.as_deref().unwrap_or(""),
         query.selmaho.as_deref().unwrap_or(""),
         query.username.as_deref().unwrap_or(""),
+        query.exclude_usernames.as_deref().unwrap_or(""),
         query.word_type.unwrap_or(0),
         query.source_langid.unwrap_or(1),
         query.search_in_phrases.map(i32::from).unwrap_or(-1),
@@ -174,11 +177,12 @@ pub fn generate_semantic_graph_cache_key(query: &SemanticGraphQuery) -> String {
 /// Cache key for stratified preview graph (no anchor embedding).
 pub fn generate_semantic_graph_preview_cache_key(query: &SemanticGraphQuery) -> String {
     format!(
-        "semantic_graph:preview:v2:{}:{}:{}:{}:{}:{}:{}:{}:{}:{}:{}",
+        "semantic_graph:preview:v2:{}:{}:{}:{}:{}:{}:{}:{}:{}:{}:{}:{}",
         query.focus.as_deref().unwrap_or(""),
         query.languages.as_deref().unwrap_or(""),
         query.selmaho.as_deref().unwrap_or(""),
         query.username.as_deref().unwrap_or(""),
+        query.exclude_usernames.as_deref().unwrap_or(""),
         query.word_type.unwrap_or(0),
         query.source_langid.unwrap_or(1),
         query.search_in_phrases.map(i32::from).unwrap_or(-1),

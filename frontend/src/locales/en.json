@@ -1455,8 +1455,13 @@
     "combinedFilters": {
       "filterBySelmao": "Filter by selma'o",
       "filterByAuthor": "Filter by author",
+      "filterByAuthors": "Include authors",
+      "filterByExcludeAuthors": "Exclude authors",
       "placeholderSelmaho": "Enter selmaho...",
       "placeholderUsername": "Enter username...",
+      "placeholderUsernames": "Select authors…",
+      "placeholderExcludeUsernames": "Exclude authors…",
+      "searchUsers": "Search users…",
       "clearFilter": "Clear filter",
       "searchingUsers": "Searching users…",
       "noUsersFound": "No users found"

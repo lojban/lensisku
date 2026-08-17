@@ -234,7 +234,8 @@ const languages = ref<
 
 const combinedFiltersModel = ref({
   selmaho: '',
-  username: '',
+  usernames: [] as string[],
+  excludeUsernames: [] as string[],
   isExpanded: false,
   selectedLanguages: [] as number[],
   word_type: null as number | null,
@@ -338,7 +339,8 @@ function buildGraphParams(opts?: {
     params.languages = f.selectedLanguages.join(',')
   }
   if (f.selmaho) params.selmaho = f.selmaho
-  if (f.username) params.username = f.username
+  if (f.usernames?.length) params.username = f.usernames.join(',')
+  if (f.excludeUsernames?.length) params.exclude_usernames = f.excludeUsernames.join(',')
   if (f.word_type) params.word_type = f.word_type
   if (f.source_langid && f.source_langid !== 1) {
     params.source_langid = f.source_langid

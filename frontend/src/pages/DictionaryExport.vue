@@ -101,16 +101,23 @@
         </div>
       </div>
     </div>
-    <!-- Action Buttons -->
-    <div class="flex items-center justify-end space-x-4 pt-4">
-      <div v-if="isLoading" class="flex items-center text-gray-500">
-        <Loader2 class="animate-spin -ml-1 mr-3 h-5 w-5 text-blue-500" />
+    <!-- Action Buttons: reserved status slot so generating text does not shift the button (CLS) -->
+    <div
+      class="flex flex-col-reverse items-stretch gap-3 pt-4 sm:flex-row sm:items-center sm:justify-end"
+    >
+      <p
+        class="flex min-h-6 items-center justify-center gap-3 text-sm text-gray-500 sm:justify-end"
+        :class="isLoading ? 'visible' : 'invisible'"
+        aria-live="polite"
+        :aria-busy="isLoading"
+      >
+        <Loader2 class="h-5 w-5 shrink-0 animate-spin text-blue-500" aria-hidden="true" />
         {{ t('dictionaryExport.generating') }}
-      </div>
+      </p>
       <Button
         variant="read"
         :disabled="!canExport || isLoading"
-        class="inline-flex items-center"
+        class="inline-flex w-full items-center justify-center sm:w-auto"
         @click="handleExport"
       >
         {{ t('dictionaryExport.exportButton') }}

@@ -1380,8 +1380,13 @@
     "combinedFilters": {
       "filterBySelmao": "Фильтр по selma'o",
       "filterByAuthor": "Фильтр по автору",
+      "filterByAuthors": "Включить авторов",
+      "filterByExcludeAuthors": "Исключить авторов",
       "placeholderSelmaho": "Введите selmaho...",
       "placeholderUsername": "Введите имя пользователя...",
+      "placeholderUsernames": "Выберите авторов…",
+      "placeholderExcludeUsernames": "Исключить авторов…",
+      "searchUsers": "Поиск пользователей…",
       "clearFilter": "Очистить фильтр",
       "searchingUsers": "Поиск пользователей…",
       "noUsersFound": "Пользователи не найдены"

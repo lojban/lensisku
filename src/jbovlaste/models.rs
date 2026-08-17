@@ -16,7 +16,10 @@ pub struct SearchDefinitionsParams {
     pub sort_order: String,
     pub languages: Option<Vec<i32>>,
     pub selmaho: Option<String>,
-    pub username: Option<String>,
+    /// When set, only definitions by these authors are returned.
+    pub usernames: Option<Vec<String>>,
+    /// When set, definitions by these authors are omitted.
+    pub exclude_usernames: Option<Vec<String>>,
     pub word_type: Option<i16>,
     pub source_langid: Option<i32>,
     pub search_in_phrases: Option<bool>,
@@ -32,7 +35,10 @@ pub struct SemanticGraphParams {
     pub search_term: String,
     pub languages: Option<Vec<i32>>,
     pub selmaho: Option<String>,
-    pub username: Option<String>,
+    /// When set, only definitions by these authors are returned.
+    pub usernames: Option<Vec<String>>,
+    /// When set, definitions by these authors are omitted.
+    pub exclude_usernames: Option<Vec<String>>,
     pub word_type: Option<i16>,
     pub source_langid: Option<i32>,
     pub search_in_phrases: Option<bool>,

@@ -1432,8 +1432,13 @@
     "combinedFilters": {
       "filterBySelmao": "julne fi lo ka selma'o",
       "filterByAuthor": "julne fi lo ka finti",
+      "filterByAuthors": "pilno le su'o finti",
+      "filterByExcludeAuthors": "na pilno le su'o finti",
       "placeholderSelmaho": "ko ciska lo selma'o",
       "placeholderUsername": "ko ciska lo pilno cmene",
+      "placeholderUsernames": "ko cuxna le'i a'u dai finti",
+      "placeholderExcludeUsernames": "ko cuxna le'i a'u nai dai finti",
+      "searchUsers": "pentoi lo pilno",
       "clearFilter": "co'u julne",
       "searchingUsers": "ca'o pentoi lo pilno",
       "noUsersFound": "no pilno cu se penmi"
