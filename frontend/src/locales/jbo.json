@@ -56,8 +56,9 @@
     "searchCollections": "sisku fi le'i jai pau gunma",
     "noCollectionMatches": "no gunma cu se penmi",
     "recentSuggestions": "puzi",
-    "selectAll": "cuxna ro",
-    "searchLanguages": "sisku lo bangu",
+    "selectAll": "cuxna ro da",
+    "deselectAll": "cuxna no da",
+    "searchLanguages": "pentoi lo bangu",
     "noMatches": "no da se jimpe",
     "filterBy": {
       "wordType": "julne fi lo ka valsi klesi",

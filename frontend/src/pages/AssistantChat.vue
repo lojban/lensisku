@@ -44,20 +44,15 @@
       </div>
       <!-- Row 2: search -->
       <div class="border-b border-gray-200/60 bg-white/40 px-2 py-2">
-        <div class="relative">
-          <Search
-            class="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400"
-            aria-hidden="true"
-          />
-          <Input
-            v-model="chatSearchQuery"
-            type="search"
-            autocomplete="off"
-            class="assistant-input-search"
-            :placeholder="$t('assistantChat.searchChatsPlaceholder')"
-            @blur="onAssistantFormControlBlur"
-          />
-        </div>
+        <Input
+          v-model="chatSearchQuery"
+          type="search"
+          search-icon
+          autocomplete="off"
+          class="assistant-input-search"
+          :placeholder="$t('assistantChat.searchChatsPlaceholder')"
+          @blur="onAssistantFormControlBlur"
+        />
       </div>
 
       <div class="flex-1 overflow-y-auto overflow-x-hidden min-h-0 p-2 space-y-1" role="list">
@@ -498,7 +493,6 @@ import {
   Plus,
   PanelLeft,
   X,
-  Search,
   MessageSquare,
   ArrowUp,
   Square,

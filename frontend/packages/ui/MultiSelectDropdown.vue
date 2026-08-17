@@ -26,20 +26,15 @@
       >
         <!-- Search: see `searchFieldKeys` prop, else values-only deep match -->
         <div class="border-b border-gray-100 px-2 pb-2">
-          <div class="relative">
-            <Search
-              class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400"
-              aria-hidden="true"
-            />
-            <input
-              v-model="searchQuery"
-              type="search"
-              :placeholder="searchPlaceholder"
-              class="input-field w-full !h-9 pl-9 pr-3 text-sm"
-              autocomplete="off"
-              @keydown.escape.stop="open = false"
-            />
-          </div>
+          <Input
+            v-model="searchQuery"
+            type="search"
+            search-icon
+            :placeholder="searchPlaceholder"
+            input-class="input-field w-full !h-9 pr-3 text-sm"
+            autocomplete="off"
+            @keydown.escape.stop="open = false"
+          />
         </div>
         <!-- Select all (applies to the filtered list) -->
         <div v-if="showSelectAll" class="border-b border-gray-100 px-2 py-1.5">
@@ -55,7 +50,7 @@
               :disabled="!filteredOptions.length"
               @change="toggleSelectAll"
             />
-            <span class="select-none">{{ selectAllLabel }}</span>
+            <span class="select-none">{{ selectAllRowLabel }}</span>
           </label>
         </div>
 
@@ -121,9 +116,11 @@
 </template>
 
 <script setup lang="ts">
-import { ChevronDown, Search } from 'lucide-vue-next'
+import { ChevronDown } from 'lucide-vue-next'
 import { ref, computed, watch, watchEffect, nextTick, onMounted, onUnmounted, useAttrs } from 'vue'
 import type { PropType } from 'vue'
+
+import Input from './Input.vue'
 
 defineOptions({ inheritAttrs: false })
 
@@ -159,6 +156,10 @@ const props = defineProps({
   selectAllLabel: {
     type: String,
     default: 'Select all',
+  },
+  deselectAllLabel: {
+    type: String,
+    default: 'Deselect all',
   },
   emptyFilterLabel: {
     type: String,
@@ -392,6 +393,10 @@ const allFilteredSelected = computed(() => {
   if (!list.length) return false
   return list.every((o) => isSelected(o))
 })
+
+const selectAllRowLabel = computed(() =>
+  allFilteredSelected.value ? props.deselectAllLabel : props.selectAllLabel
+)
 
 watchEffect(() => {
   const el = selectAllInputRef.value

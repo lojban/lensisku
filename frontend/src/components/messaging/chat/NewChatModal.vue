@@ -51,19 +51,15 @@
         <!-- Participants Search -->
         <div class="mb-4">
           <label for="participants" class="filters-field-label">Participants</label>
-          <div class="relative">
-            <Search
-              class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400"
-            />
-            <Input
-              id="participants"
-              v-model="searchQuery"
-              type="text"
-              placeholder="Search users..."
-              class="input-field w-full pl-9"
-              @input="handleSearch"
-            />
-          </div>
+          <Input
+            id="participants"
+            v-model="searchQuery"
+            type="text"
+            search-icon
+            placeholder="Search users..."
+            class="input-field w-full"
+            @input="handleSearch"
+          />
         </div>
 
         <!-- Selected Participants -->
@@ -157,7 +153,7 @@
 <script setup lang="ts">
 import { Button, Checkbox, IconButtonGhost, Input, Radio } from '@packages/ui'
 import { ref, computed, watch } from 'vue'
-import { Search, X } from 'lucide-vue-next'
+import { X } from 'lucide-vue-next'
 import { useAuth } from '@/composables/useAuth'
 import { createThread as createThreadApi } from '@/services/messaging/messagingApi'
 import { listUsers } from '@/api'

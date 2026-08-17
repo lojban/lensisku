@@ -15,15 +15,15 @@
       </Button>
     </div>
 
-    <div class="relative mb-4">
+    <div class="mb-4">
       <Input
         type="text"
+        search-icon
         :value="searchQuery"
         :placeholder="t('components.tiktoknu.likesPanel.searchPlaceholder')"
-        class="w-full bg-gray-100 text-gray-900 px-4 py-2 pl-10 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+        class="w-full bg-gray-100 text-gray-900 py-2 pr-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
         @input="$emit('update:searchQuery', ($event.target as HTMLInputElement).value)"
       />
-      <Search class="w-5 h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
     </div>
 
     <div class="flex-1 overflow-y-auto min-h-0">
@@ -77,7 +77,7 @@
 
 <script setup lang="ts">
 import { Button, Input } from '@packages/ui'
-import { Download, Search, X } from 'lucide-vue-next'
+import { Download, X } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 
 import type { WikiArticle } from '../../types/wiki'

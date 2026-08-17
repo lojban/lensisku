@@ -4,7 +4,7 @@ const RECENT_MAX = 3
 
 /**
  * Last-N selected items persisted in localStorage, most recent first.
- * Used as “suggestion copies” at the top of language and collection dropdowns.
+ * Used as “suggestion copies” at the top of language, collection, and author dropdowns.
  */
 export function useRecentSelections<T>(storageKey: string, getId: (item: T) => string | number) {
   const recent = ref(load()) as Ref<T[]>

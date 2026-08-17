@@ -15,15 +15,13 @@
 
       <!-- Search and Filter -->
       <div class="toolbar-row mt-4">
-        <div class="toolbar-search-slot relative">
-          <Search
-            class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400"
-          />
+        <div class="toolbar-search-slot">
           <Input
             v-model="searchQuery"
             type="text"
+            search-icon
             placeholder="Search conversations..."
-            class="input-field pl-9"
+            class="input-field"
             @input="handleSearch"
           />
         </div>
@@ -105,7 +103,7 @@
 import { Button, Input, Select } from '@packages/ui'
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { MessageCircle, Plus, Search } from 'lucide-vue-next'
+import { MessageCircle, Plus } from 'lucide-vue-next'
 import { useAuth } from '@/composables/useAuth'
 import { getThreads, deleteThread } from '@/services/messaging/messagingApi'
 import { webSocketService } from '@/services/messaging/WebSocketService'

@@ -14,18 +14,14 @@
       <div class="modal-scroll-body px-4 pt-2 pb-6">
         <!-- Search -->
         <div class="mb-4">
-          <div class="relative">
-            <Search
-              class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400"
-            />
-            <Input
-              v-model="searchQuery"
-              type="text"
-              placeholder="Search users..."
-              class="input-field w-full pl-9"
-              @input="handleSearch"
-            />
-          </div>
+          <Input
+            v-model="searchQuery"
+            type="text"
+            search-icon
+            placeholder="Search users..."
+            class="input-field w-full"
+            @input="handleSearch"
+          />
         </div>
 
         <!-- Selected Participants -->
@@ -111,7 +107,7 @@
 <script setup lang="ts">
 import { Button, Checkbox, IconButtonGhost, Input } from '@packages/ui'
 import { ref } from 'vue'
-import { Search, X } from 'lucide-vue-next'
+import { X } from 'lucide-vue-next'
 import { useAuth } from '@/composables/useAuth'
 import { addParticipant } from '@/services/messaging/messagingApi'
 import { listUsers } from '@/api'

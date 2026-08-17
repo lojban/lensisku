@@ -6,14 +6,14 @@
     >
       <!-- Language + collection selectors -->
       <div class="grid grid-cols-2 gap-2 w-full">
-        <div class="h-10 w-full bg-gray-200 rounded-full" />
-        <div class="h-10 w-full bg-gray-200 rounded-full" />
+        <div class="h-6 w-full bg-gray-200 rounded-full" />
+        <div class="h-6 w-full bg-gray-200 rounded-full" />
       </div>
       <!-- Buttons Skeleton -->
       <div class="flex items-center gap-2 self-end md:self-center">
-        <div class="h-8 w-24 bg-gray-200 rounded-md" />
+        <div class="h-6 w-24 bg-gray-200 rounded-full" />
 
-        <div class="h-8 w-8 bg-gray-200 rounded-md" />
+        <div class="h-6 w-8 bg-gray-200 rounded-full" />
       </div>
     </div>
     <!-- Expanded Section Skeleton (Optional, could be added if needed) -->

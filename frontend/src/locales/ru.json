@@ -57,6 +57,7 @@
     "noCollectionMatches": "Коллекции не найдены",
     "recentSuggestions": "Недавние",
     "selectAll": "Выбрать все",
+    "deselectAll": "Снять все",
     "searchLanguages": "Поиск языков...",
     "noMatches": "Нет совпадений",
     "filterBy": {

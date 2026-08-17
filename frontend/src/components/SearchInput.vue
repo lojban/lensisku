@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Loader2, Search, X } from 'lucide-vue-next'
+import { Loader2, X } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 import { computed, ref, useAttrs, type PropType } from 'vue'
 import { IconButtonGhost, Input, Select } from '@packages/ui'
@@ -99,26 +99,21 @@ defineExpose({ focus })
       />
     </div>
     <div class="relative flex-1 min-w-0">
-      <Search
-        v-if="showSearchIcon"
-        class="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none"
-        aria-hidden="true"
-      />
       <Input
         ref="inputRef"
         v-model="query"
         type="text"
         :placeholder="placeholder"
+        :search-icon="showSearchIcon"
         input-class="input-field w-full min-w-0 sm:min-w-[200px] h-10 transition-colors"
         :class="{
           'rounded-l-none': joinedLeft,
           'rounded-r-none': joinedRight,
-          'pl-10': showSearchIcon,
           'pr-10': query.length > 0,
         }"
         @keyup.enter="onKeyup"
       />
-      <div class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
+      <div class="absolute right-3 top-1/2 z-10 -translate-y-1/2 flex items-center gap-1">
         <Loader2
           v-if="isLoading"
           class="h-4 w-4 text-blue-500 animate-spin shrink-0"

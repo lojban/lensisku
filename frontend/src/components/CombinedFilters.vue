@@ -20,6 +20,7 @@
           :placeholder="t('filters.selectLanguages')"
           :search-placeholder="t('filters.searchLanguages')"
           :select-all-label="t('filters.selectAll')"
+          :deselect-all-label="t('filters.deselectAll')"
           :empty-filter-label="t('filters.noMatches')"
           full-bleed-mobile-panel
           class="w-full min-w-0"
@@ -31,12 +32,13 @@
           :suggested-options="collectionSuggestions"
           :suggested-label="t('filters.recentSuggestions')"
           :max-selected-labels="3"
-          :show-select-all="false"
           :option-value="(col: CollectionOption) => col.collection_id"
           :option-label="(col: CollectionOption) => col.name"
           :search-field-keys="collectionFilterSearchFieldKeys"
           :placeholder="t('filters.selectCollections')"
           :search-placeholder="t('filters.searchCollections')"
+          :select-all-label="t('filters.selectAll')"
+          :deselect-all-label="t('filters.deselectAll')"
           :empty-filter-label="t('filters.noCollectionMatches')"
           full-bleed-mobile-panel
           class="w-full min-w-0"
@@ -149,6 +151,7 @@
             :placeholder="t('filters.selectLanguages')"
             :search-placeholder="t('filters.searchLanguages')"
             :select-all-label="t('filters.selectAll')"
+            :deselect-all-label="t('filters.deselectAll')"
             :empty-filter-label="t('filters.noMatches')"
             full-bleed-mobile-panel
             class="w-full max-w-full"
@@ -215,6 +218,8 @@
           <MultiSelectDropdown
             v-model="selectedUsers"
             :options="userOptions"
+            :suggested-options="includeAuthorSuggestions"
+            :suggested-label="t('filters.recentSuggestions')"
             :max-selected-labels="3"
             :show-select-all="false"
             :option-value="(user: UserHint) => user.username"
@@ -240,6 +245,8 @@
           <MultiSelectDropdown
             v-model="excludedUsers"
             :options="userOptions"
+            :suggested-options="excludeAuthorSuggestions"
+            :suggested-label="t('filters.recentSuggestions')"
             :max-selected-labels="3"
             :show-select-all="false"
             :option-value="(user: UserHint) => user.username"
@@ -484,6 +491,10 @@ const { recent: recentLanguages, record: recordRecentLanguage } = useRecentSelec
 )
 const { recent: recentCollections, record: recordRecentCollection } =
   useRecentSelections<CollectionOption>('recentCollectionSelections', (col) => col.collection_id)
+const { recent: recentIncludeAuthors, record: recordRecentIncludeAuthor } =
+  useRecentSelections<UserHint>('recentIncludeAuthorSelections', (u) => u.username)
+const { recent: recentExcludeAuthors, record: recordRecentExcludeAuthor } =
+  useRecentSelections<UserHint>('recentExcludeAuthorSelections', (u) => u.username)
 
 const languageSuggestions = computed(() => {
   const byId = new Map(props.languages.map((l) => [l.id, l]))
@@ -498,6 +509,22 @@ const collectionSuggestions = computed(() => {
   return recentCollections.value
     .map((item) => byId.get(item.collection_id) ?? item)
     .filter((item) => item?.name)
+    .slice(0, 3)
+})
+
+const includeAuthorSuggestions = computed(() => {
+  const byName = new Map(userOptions.value.map((u) => [u.username, u]))
+  return recentIncludeAuthors.value
+    .map((item) => byName.get(item.username) ?? item)
+    .filter((item) => item?.username)
+    .slice(0, 3)
+})
+
+const excludeAuthorSuggestions = computed(() => {
+  const byName = new Map(userOptions.value.map((u) => [u.username, u]))
+  return recentExcludeAuthors.value
+    .map((item) => byName.get(item.username) ?? item)
+    .filter((item) => item?.username)
     .slice(0, 3)
 })
 
@@ -593,6 +620,12 @@ function mergeUserOptions(users: UserHint[]) {
     if (!byName.has(u.username)) byName.set(u.username, u)
   }
   for (const u of excludedUsers.value) {
+    if (!byName.has(u.username)) byName.set(u.username, u)
+  }
+  for (const u of recentIncludeAuthors.value) {
+    if (!byName.has(u.username)) byName.set(u.username, u)
+  }
+  for (const u of recentExcludeAuthors.value) {
     if (!byName.has(u.username)) byName.set(u.username, u)
   }
   userOptions.value = [...byName.values()]
@@ -1016,6 +1049,30 @@ watch(
       for (const col of newCols) {
         if (!prevIds.has(col.collection_id)) recordRecentCollection(col)
       }
+    }
+  },
+  { deep: true }
+)
+
+watch(
+  selectedUsers,
+  (next, prev) => {
+    if (!prev) return
+    const prevNames = new Set(prev.map((u) => u.username))
+    for (const user of next) {
+      if (!prevNames.has(user.username)) recordRecentIncludeAuthor(user)
+    }
+  },
+  { deep: true }
+)
+
+watch(
+  excludedUsers,
+  (next, prev) => {
+    if (!prev) return
+    const prevNames = new Set(prev.map((u) => u.username))
+    for (const user of next) {
+      if (!prevNames.has(user.username)) recordRecentExcludeAuthor(user)
     }
   },
   { deep: true }

@@ -57,6 +57,7 @@
     "noCollectionMatches": "No collections found",
     "recentSuggestions": "Recent",
     "selectAll": "Select all",
+    "deselectAll": "Deselect all",
     "searchLanguages": "Search languages...",
     "noMatches": "No matches",
     "filterBy": {

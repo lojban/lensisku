@@ -57,6 +57,7 @@
     "noCollectionMatches": "コレクションが見つかりません",
     "recentSuggestions": "最近",
     "selectAll": "すべて選択",
+    "deselectAll": "すべて解除",
     "searchLanguages": "言語を検索...",
     "noMatches": "該当なし",
     "filterBy": {

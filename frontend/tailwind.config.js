@@ -329,7 +329,7 @@ export default {
         },
         /** Assistant chat: sidebar chat search field. */
         '.assistant-input-search': {
-          '@apply w-full rounded-lg border border-gray-200 bg-white py-2 pl-9 pr-3 text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400/30':
+          '@apply w-full rounded-lg border border-gray-200 bg-white py-2 pr-3 text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400/30':
             {},
         },
         /** Assistant chat: “New chat” dashed control in sidebar. */
@@ -679,9 +679,14 @@ export default {
         'select.input-field': {
           '@apply py-0': {},
         },
+        /** Leading-icon slot inside `Input` (`searchIcon`); pair with `pl-10` on the field. */
+        '.input-field-leading-icon': {
+          '@apply pointer-events-none absolute inset-y-0 left-0 z-10 flex w-10 items-center justify-center text-gray-400':
+            {},
+        },
         /** Decorative icon inside `relative` input wrapper (user, mail, key). */
         '.input-field-trailing-icon': {
-          '@apply pointer-events-none absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 shrink-0 text-gray-400':
+          '@apply pointer-events-none absolute right-3 top-1/2 z-10 h-5 w-5 -translate-y-1/2 shrink-0 text-gray-400':
             {},
         },
         /** Password visibility toggle in auth forms; pair with `input-field` + `pr-10`. */
@@ -702,9 +707,9 @@ export default {
           '@apply flex-1 cursor-pointer rounded-lg border border-gray-300 bg-white px-3 py-2.5 font-medium text-gray-700 transition-colors duration-200 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2':
             {},
         },
-        /** Closed trigger for toolbar dropdowns (search mode, language multiselect): matches input-field visual language at h-10. */
+        /** Closed trigger for toolbar dropdowns (search mode, language multiselect). */
         '.dropdown-trigger': {
-          '@apply w-full h-10 min-h-[2.5rem] shrink-0 flex items-center justify-between gap-2 px-3 text-left text-sm font-normal text-gray-700 bg-white border border-gray-300 rounded-full transition-all focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 focus:z-50 shadow-inner shadow-slate-200':
+          '@apply w-full h-6 min-h-[1.5rem] shrink-0 flex items-center justify-between gap-2 px-3 text-left text-sm font-normal text-gray-700 bg-white border border-gray-300 rounded-full transition-all focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 focus:z-50 shadow-inner shadow-slate-200':
             {},
           '&:hover:not(:disabled)': {
             '@apply border-blue-400': {},
@@ -745,10 +750,15 @@ export default {
         '.dropdown-trigger--search-bar-leading': {
           '@apply w-auto max-w-none rounded-l-full rounded-r-none': {},
         },
-        /** Trailing segment of the home search bar (flush join with the query input). */
+        /** Trailing segment of the home search bar (flush join with the h-10 query input). */
         '.dropdown-trigger--search-bar-trailing': {
           '@apply w-auto max-w-none rounded-l-none rounded-r-full': {},
         },
+        '.dropdown-trigger.dropdown-trigger--search-bar-leading, .dropdown-trigger.dropdown-trigger--search-bar-trailing':
+          {
+            height: '2.5rem',
+            minHeight: '2.5rem',
+          },
         /** Trailing query column: below mode selector (z-10) at rest; stacks above on hover/focus/active of the field. */
         '.search-form-query-col': {
           '@apply relative z-0 flex-1 -ml-px min-w-0': {},

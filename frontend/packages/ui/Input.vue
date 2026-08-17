@@ -15,6 +15,9 @@
       @input="onInput"
       @change="onChange"
     />
+    <span v-if="searchIcon" class="input-field-leading-icon" aria-hidden="true">
+      <Search class="h-4 w-4" />
+    </span>
     <IconButtonGhost
       v-if="showClear"
       compact
@@ -29,7 +32,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { X } from 'lucide-vue-next'
+import { Search, X } from 'lucide-vue-next'
 
 import IconButtonGhost from './IconButtonGhost.vue'
 
@@ -52,6 +55,8 @@ const props = defineProps({
   inputClass: { type: [String, Array, Object], default: '' },
   modelModifiers: { type: Object as () => Modifiers, default: () => ({}) },
   clear: { type: Boolean, default: false },
+  /** Decorative search icon inset on the left; adds matching `pl-10`. */
+  searchIcon: { type: Boolean, default: false },
 })
 
 const emit = defineEmits<{ 'update:modelValue': [value: string | number]; clear: [] }>()
@@ -64,7 +69,14 @@ const resolvedId = computed(() => props.id ?? generatedId)
 
 const hostClass = computed(() => {
   const extra = Array.isArray(props.inputClass) ? props.inputClass.join(' ') : props.inputClass
-  return ['w-full', showClear.value ? 'pr-10' : '', extra].filter(Boolean).join(' ')
+  return [
+    'w-full',
+    props.searchIcon ? 'pl-10' : '',
+    showClear.value ? 'pr-10' : '',
+    extra,
+  ]
+    .filter(Boolean)
+    .join(' ')
 })
 
 const showClear = computed(
