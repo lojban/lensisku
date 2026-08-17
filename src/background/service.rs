@@ -400,11 +400,9 @@ pub async fn spawn_background_tasks(
         let mut interval = time::interval(Duration::from_secs(5 * 60));
         loop {
             interval.tick().await;
-            if let Err(e) = comments_service::update_top_comments_cache(
-                &top_comments_pool,
-                &top_comments_redis,
-            )
-            .await
+            if let Err(e) =
+                comments_service::update_top_comments_cache(&top_comments_pool, &top_comments_redis)
+                    .await
             {
                 error!("Failed to refresh top comments cache: {}", e);
             }

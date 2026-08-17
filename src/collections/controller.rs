@@ -1096,6 +1096,103 @@ pub async fn bulk_update_custom_text_items(
 
 #[utoipa::path(
     get,
+    path = "/collections/items/search",
+    tag = "collections",
+    params(
+        ("collection_ids" = String, Query, description = "Comma-separated collection IDs to search in"),
+        ("page" = Option<i64>, Query, description = "Page number (starts from 1)"),
+        ("per_page" = Option<i64>, Query, description = "Items per page (max 100)"),
+        ("search" = Option<String>, Query, description = "Search term for filtering items")
+    ),
+    responses(
+        (status = 200, description = "Matching items from the selected collections", body = SearchItemsResponse),
+        (status = 400, description = "collection_ids missing or invalid"),
+        (status = 500, description = "Internal server error")
+    ),
+    security(("bearer_auth" = [])),
+    summary = "Search items in multiple collections",
+    description = "Searches collection items across a set of collection IDs in a single request. \
+                  Only public collections and collections owned by the caller are included; \
+                  inaccessible IDs are skipped. Custom-text items (no definition_id) are included."
+)]
+#[get("/items/search")]
+pub async fn search_items_in_collections(
+    pool: web::Data<Pool>,
+    claims: Option<Claims>,
+    query: web::Query<SearchCollectionsItemsQuery>,
+) -> impl Responder {
+    let collection_ids = parse_positive_id_list(&query.collection_ids, 50);
+    if collection_ids.is_empty() {
+        return HttpResponse::BadRequest().json(json!({
+            "error": "collection_ids is required"
+        }));
+    }
+
+    let page = query.page.unwrap_or(1);
+    let per_page = query.per_page.unwrap_or(50);
+
+    let languages = query.languages.as_ref().and_then(|langs| {
+        let parsed: Result<Vec<i32>, _> = langs
+            .split(',')
+            .filter(|s| !s.is_empty())
+            .map(str::parse::<i32>)
+            .collect();
+        parsed.ok().filter(|v| !v.is_empty())
+    });
+
+    let semantic_embedding =
+        if query.semantic == Some(true) && !crate::utils::embeddings::embeddings_disabled() {
+            let processed = query.search.as_deref().unwrap_or("").trim().to_string();
+            if processed.is_empty() {
+                None
+            } else {
+                match crate::utils::embeddings::get_embedding(&processed).await {
+                    Ok(emb) => Some(pgvector::Vector::from(emb)),
+                    Err(e) => {
+                        return HttpResponse::InternalServerError().json(json!({
+                            "error": format!("Failed to generate embedding: {}", e)
+                        }));
+                    }
+                }
+            }
+        } else {
+            None
+        };
+
+    let filters = ListCollectionItemsFilters {
+        languages,
+        selmaho: query.selmaho.clone(),
+        word_type: query.word_type,
+        usernames: crate::jbovlaste::dto::parse_username_list(&query.username),
+        exclude_usernames: crate::jbovlaste::dto::parse_username_list(&query.exclude_usernames),
+        source_langid: query.source_langid,
+        search_in_phrases: query.search_in_phrases,
+        semantic_embedding,
+    };
+
+    match service::search_items_in_collections(
+        &pool,
+        claims.map(|c| c.sub),
+        collection_ids,
+        page,
+        per_page,
+        query.search.clone(),
+        filters,
+    )
+    .await
+    {
+        Ok(response) => HttpResponse::Ok().json(response),
+        Err(e) => match e {
+            AppError::BadRequest(msg) => HttpResponse::BadRequest().json(json!({ "error": msg })),
+            _ => HttpResponse::InternalServerError().json(json!({
+                "error": format!("Failed to search collections: {}", e)
+            })),
+        },
+    }
+}
+
+#[utoipa::path(
+    get,
     path = "/collections/{id}/items",
     tag = "collections",
     params(

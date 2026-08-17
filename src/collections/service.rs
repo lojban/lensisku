@@ -2362,6 +2362,8 @@ pub async fn upsert_item(
             },
             canonical_form,
             flashcard: None,
+            collection_id: None,
+            collection_name: None,
         }
     } else {
         // Free content item
@@ -2398,6 +2400,8 @@ pub async fn upsert_item(
             },
             canonical_form,
             flashcard: None,
+            collection_id: None,
+            collection_name: None,
         }
     };
 
@@ -3504,6 +3508,8 @@ pub async fn list_collection_items(
                         created_at: row.get("flashcard_created_at"),
                         canonical_form: row.get("canonical_form"),
                     }),
+                collection_id: Some(collection_id),
+                collection_name: None,
             }
         })
         .collect();
@@ -3659,6 +3665,330 @@ pub async fn list_collection_items(
     })
 }
 
+const MAX_MULTI_COLLECTION_IDS: usize = 50;
+const MAX_MULTI_COLLECTION_PER_PAGE: i64 = 100;
+
+/// Search items across a set of collections in one query. Only public collections and those
+/// owned by `user_id` are included; unknown or inaccessible ids are skipped.
+///
+/// Plan: materialize the (tiny) accessible-collection set first so Postgres nested-loops into
+/// `collection_items` via `idx_collection_items_collection` instead of GIN-scanning the whole
+/// dictionary. Text/author/type filters use the same denormalized `definitions.cached_*`
+/// columns as jbovlaste fast search, so valsi/users joins are unnecessary. Media EXISTS
+/// runs only for the paginated rows.
+pub async fn search_items_in_collections(
+    pool: &Pool,
+    user_id: Option<i32>,
+    collection_ids: Vec<i32>,
+    page: i64,
+    per_page: i64,
+    search: Option<String>,
+    filters: ListCollectionItemsFilters,
+) -> AppResult<SearchItemsResponse> {
+    if collection_ids.is_empty() {
+        return Err(AppError::BadRequest(
+            "collection_ids is required".to_string(),
+        ));
+    }
+    let collection_ids: Vec<i32> = collection_ids
+        .into_iter()
+        .filter(|id| *id > 0)
+        .take(MAX_MULTI_COLLECTION_IDS)
+        .collect();
+    if collection_ids.is_empty() {
+        return Err(AppError::BadRequest(
+            "collection_ids is required".to_string(),
+        ));
+    }
+
+    let page = page.max(1);
+    let per_page = per_page.clamp(1, MAX_MULTI_COLLECTION_PER_PAGE);
+    let offset = (page - 1) * per_page;
+
+    let client = pool
+        .get()
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+    let search_pattern = search
+        .as_ref()
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
+        .map(|s| format!("%{}%", s));
+
+    const ACCESSIBLE_CTE: &str = "WITH accessible AS MATERIALIZED (
+            SELECT c.collection_id, c.name, c.updated_at
+            FROM collections c
+            WHERE c.collection_id = ANY($1::int[])
+              AND (c.is_public = true OR ($2::int IS NOT NULL AND c.user_id = $2))
+         )";
+    const FROM_WHERE_HEAD: &str = "
+            FROM accessible c
+            JOIN collection_items ci ON ci.collection_id = c.collection_id
+            LEFT JOIN definitions d ON d.definitionid = ci.definition_id
+            WHERE TRUE";
+
+    let mut from_where = String::from(FROM_WHERE_HEAD);
+    let mut count_params: Vec<Box<dyn tokio_postgres::types::ToSql + Sync>> =
+        vec![Box::new(collection_ids.clone()), Box::new(user_id)];
+    let mut count_param_idx = 3;
+    append_multi_collection_search_clauses(
+        &mut from_where,
+        &mut count_params,
+        &mut count_param_idx,
+        &search_pattern,
+        &filters,
+    );
+
+    let count_query = format!(
+        "{cte}
+         SELECT COUNT(*)::bigint
+         {from_where}",
+        cte = ACCESSIBLE_CTE,
+        from_where = from_where,
+    );
+    let total: i64 = client
+        .query_one(
+            &count_query,
+            &count_params.iter().map(|p| &**p as _).collect::<Vec<_>>(),
+        )
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?
+        .try_get(0)
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+    let mut list_params: Vec<Box<dyn tokio_postgres::types::ToSql + Sync>> =
+        vec![Box::new(collection_ids), Box::new(user_id)];
+    let mut list_param_idx = 3;
+    append_multi_collection_search_clauses(
+        &mut String::new(),
+        &mut list_params,
+        &mut list_param_idx,
+        &search_pattern,
+        &filters,
+    );
+
+    let order_by = if let Some(ref embedding) = filters.semantic_embedding {
+        if search_pattern.is_some() {
+            let idx = list_param_idx;
+            list_params.push(Box::new(embedding.clone()));
+            list_param_idx += 1;
+            format!(
+                "(CASE WHEN d.embedding IS NULL THEN 1 ELSE 0 END) ASC, \
+                 d.embedding <=> ${idx}::vector ASC NULLS LAST, \
+                 c.updated_at DESC, ci.position ASC, ci.added_at DESC",
+                idx = idx
+            )
+        } else {
+            "c.updated_at DESC, ci.position ASC, ci.added_at DESC".to_string()
+        }
+    } else {
+        "c.updated_at DESC, ci.position ASC, ci.added_at DESC".to_string()
+    };
+
+    let query = format!(
+        "{cte},
+         page AS MATERIALIZED (
+            SELECT
+                ci.item_id, ci.definition_id, ci.notes as ci_notes, ci.added_at, ci.auto_progress,
+                ci.free_content_front, ci.free_content_back,
+                ci.canonical_form,
+                ci.langid, ci.owner_user_id, ci.license, ci.script, ci.is_original,
+                d.langid as lang_id,
+                coalesce(d.cached_username, '') as username,
+                d.definition, d.notes as notes, d.valsiid, d.cached_valsiword as word, ci.position,
+                c.collection_id, c.name as collection_name
+            {from_where}
+            ORDER BY {order_by}
+            LIMIT ${lim} OFFSET ${off}
+         )
+         SELECT
+            page.item_id, page.definition_id, page.ci_notes, page.added_at, page.auto_progress,
+            page.free_content_front, page.free_content_back,
+            page.canonical_form,
+            page.langid, page.owner_user_id, page.license, page.script, page.is_original,
+            page.lang_id, page.username, page.definition, page.notes, page.valsiid, page.word,
+            page.position, page.collection_id, page.collection_name,
+            EXISTS(SELECT 1 FROM collection_item_images cii
+                   WHERE cii.item_id = page.item_id AND cii.side = 'front') as has_front_image,
+            EXISTS(SELECT 1 FROM collection_item_images cii
+                   WHERE cii.item_id = page.item_id AND cii.side = 'back') as has_back_image,
+            EXISTS(SELECT 1 FROM collection_item_sounds cis
+                   WHERE cis.item_id = page.item_id) as has_sound
+         FROM page",
+        cte = ACCESSIBLE_CTE,
+        from_where = from_where,
+        order_by = order_by,
+        lim = list_param_idx,
+        off = list_param_idx + 1,
+    );
+    list_params.push(Box::new(per_page));
+    list_params.push(Box::new(offset));
+
+    let rows = client
+        .query(
+            &query,
+            &list_params.iter().map(|p| &**p as _).collect::<Vec<_>>(),
+        )
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+    let mut items: Vec<CollectionItemResponse> = rows
+        .iter()
+        .map(|row| {
+            let has_sound: bool = row.get("has_sound");
+            let item_id: i32 = row.get("item_id");
+            let cid: i32 = row.get("collection_id");
+            let sound_url = if has_sound {
+                Some(format!("/api/collections/{}/items/{}/sound", cid, item_id))
+            } else {
+                None
+            };
+            CollectionItemResponse {
+                lang_id: row.get("lang_id"),
+                item_id,
+                definition_id: row.get("definition_id"),
+                valsi_id: row.get("valsiid"),
+                word: row.get("word"),
+                username: row.get("username"),
+                definition: row.get("definition"),
+                notes: row.get("notes"),
+                ci_notes: row.get("ci_notes"),
+                position: row.get("position"),
+                auto_progress: row.get("auto_progress"),
+                added_at: row.get("added_at"),
+                free_content_front: row.get("free_content_front"),
+                free_content_back: row.get("free_content_back"),
+                has_front_image: exists_front_image(row),
+                language_id: row.get("langid"),
+                owner_user_id: row.get("owner_user_id"),
+                license: row.get("license"),
+                script: row.get("script"),
+                is_original: row.get("is_original"),
+                has_back_image: exists_back_image(row),
+                has_sound,
+                sound_url,
+                canonical_form: row.get("canonical_form"),
+                flashcard: None,
+                collection_id: Some(cid),
+                collection_name: Some(row.get("collection_name")),
+            }
+        })
+        .collect();
+
+    let words_to_check: Vec<String> = rows
+        .iter()
+        .filter(|r| !r.get::<_, bool>("has_sound"))
+        .filter_map(|r| {
+            let w: Option<String> = r.get("word");
+            let f: Option<String> = r.get("free_content_front");
+            w.or(f).filter(|s| !s.trim().is_empty())
+        })
+        .collect::<HashSet<_>>()
+        .into_iter()
+        .collect();
+    let sound_urls_map = if words_to_check.is_empty() {
+        std::collections::HashMap::new()
+    } else {
+        get_valsi_sound_urls_from_db(pool, &words_to_check)
+            .await
+            .map_err(|e| AppError::Database(e.to_string()))?
+    };
+    for (item, row) in items.iter_mut().zip(rows.iter()) {
+        if !item.has_sound {
+            let key: Option<String> = row
+                .get::<_, Option<String>>("word")
+                .or(row.get("free_content_front"));
+            item.sound_url = key.and_then(|k| sound_urls_map.get(&k).cloned().flatten());
+        }
+    }
+
+    Ok(SearchItemsResponse { items, total })
+}
+
+fn append_multi_collection_search_clauses(
+    sql: &mut String,
+    params: &mut Vec<Box<dyn tokio_postgres::types::ToSql + Sync>>,
+    param_count: &mut usize,
+    search_pattern: &Option<String>,
+    filters: &ListCollectionItemsFilters,
+) {
+    if let Some(pattern) = search_pattern {
+        // `cached_search_text` already concatenates word/rafsi/definition/notes/selmaho/glosswords
+        // (GIN-indexed for dictionary search). Collection custom-text rows have no definition, so
+        // they still match on item notes / free_content.
+        sql.push_str(&format!(
+            " AND (
+                d.cached_search_text ILIKE ${idx}
+                OR d.cached_valsiword ILIKE ${idx}
+                OR ci.notes ILIKE ${idx}
+                OR ci.free_content_front ILIKE ${idx}
+                OR ci.free_content_back ILIKE ${idx}
+            )",
+            idx = *param_count
+        ));
+        params.push(Box::new(pattern.clone()));
+        *param_count += 1;
+    }
+
+    if let Some(selmaho) = filters.selmaho.as_ref().filter(|s| !s.is_empty()) {
+        sql.push_str(&format!(
+            " AND (d.selmaho = ${idx} OR ci.definition_id IS NULL)",
+            idx = *param_count
+        ));
+        params.push(Box::new(selmaho.clone()));
+        *param_count += 1;
+    }
+
+    if let Some(names) = filters.usernames.as_ref().filter(|v| !v.is_empty()) {
+        sql.push_str(&format!(
+            " AND (d.cached_username = ANY(${idx}) OR ci.definition_id IS NULL)",
+            idx = *param_count
+        ));
+        params.push(Box::new(names.clone()));
+        *param_count += 1;
+    }
+    if let Some(names) = filters.exclude_usernames.as_ref().filter(|v| !v.is_empty()) {
+        sql.push_str(&format!(
+            " AND (ci.definition_id IS NULL OR NOT (d.cached_username = ANY(${idx})))",
+            idx = *param_count
+        ));
+        params.push(Box::new(names.clone()));
+        *param_count += 1;
+    }
+
+    if let Some(word_type) = filters.word_type {
+        sql.push_str(&format!(
+            " AND (d.cached_typeid = ${idx} OR ci.definition_id IS NULL)",
+            idx = *param_count
+        ));
+        params.push(Box::new(word_type));
+        *param_count += 1;
+    }
+
+    if let Some(source_langid) = filters.source_langid.filter(|&v| v != 1) {
+        sql.push_str(&format!(
+            " AND (d.cached_source_langid = ${idx} OR ci.definition_id IS NULL)",
+            idx = *param_count
+        ));
+        params.push(Box::new(source_langid));
+        *param_count += 1;
+    }
+
+    if let Some(langs) = filters.languages.as_ref().filter(|l| !l.is_empty()) {
+        sql.push_str(&format!(
+            " AND (d.langid = ANY(${idx}::int[]) OR ci.definition_id IS NULL)",
+            idx = *param_count
+        ));
+        params.push(Box::new(langs.clone()));
+        *param_count += 1;
+    }
+
+    if filters.word_type.is_none() && filters.search_in_phrases == Some(false) {
+        sql.push_str(" AND (d.cached_typeid IS DISTINCT FROM 15 OR ci.definition_id IS NULL)");
+    }
+}
+
 pub async fn update_item_notes(
     pool: &Pool,
     redis: &RedisCache,
@@ -3787,6 +4117,8 @@ pub async fn update_item_notes(
         },
         canonical_form: item.get("canonical_form"),
         flashcard: None,
+        collection_id: Some(collection_id),
+        collection_name: None,
     })
 }
 
@@ -4107,6 +4439,8 @@ pub async fn search_items(
                 sound_url,
                 canonical_form: row.get("canonical_form"),
                 flashcard: None,
+                collection_id: Some(cid),
+                collection_name: None,
             }
         })
         .collect();

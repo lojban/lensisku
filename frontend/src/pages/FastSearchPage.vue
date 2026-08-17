@@ -143,7 +143,7 @@ import { ref, onMounted, watch, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { nextTick } from 'vue'
 
-import { fastSearchDefinitions, getCollection, getLanguages, listCollectionItems } from '@/api'
+import { fastSearchDefinitions, getLanguages, searchItemsInCollections } from '@/api'
 import CombinedFilters from '@/components/CombinedFilters.vue'
 import DefinitionCard from '@/components/DefinitionCard.vue'
 import DefinitionCardSimple from '@/components/DefinitionCardSimple.vue'
@@ -176,7 +176,7 @@ type FastSearchDefinitionRow = {
 // State
 const definitions = ref<FastSearchDefinitionRow[]>([])
 const collectionMatches = ref<CollectionDefinitionCard[]>([])
-const COLLECTION_MATCH_PER_PAGE = 20
+const COLLECTION_MATCH_PER_PAGE = 50
 const decomposition = ref<string[]>([])
 const total = ref(0)
 const currentPage = ref(parseInt(queryStr(route.query.page), 10) || 1)
@@ -225,6 +225,7 @@ async function loadCollectionMatches(
   if (!ids.length) return []
 
   const itemParams: Record<string, unknown> = {
+    collection_ids: ids.join(','),
     page: 1,
     per_page: COLLECTION_MATCH_PER_PAGE,
     search: search.trim() || undefined,
@@ -243,43 +244,31 @@ async function loadCollectionMatches(
   if (filters.value.searchInPhrases !== undefined && filters.value.searchInPhrases !== null) {
     itemParams.search_in_phrases = filters.value.searchInPhrases
   }
+  if (filters.value.usernames?.length) {
+    itemParams.username = filters.value.usernames.join(',')
+  }
+  if (filters.value.excludeUsernames?.length) {
+    itemParams.exclude_usernames = filters.value.excludeUsernames.join(',')
+  }
+  itemParams.semantic = true
 
-  const byId = new Map<number, { collection_id: number; name: string }>()
-  const pages = await Promise.all(
-    ids.map(async (id) => {
-      try {
-        let col = byId.get(id)
-        if (!col) {
-          try {
-            const meta = await getCollection(id)
-            col = {
-              collection_id: id,
-              name: (meta.data?.name as string) || `#${id}`,
-            }
-            byId.set(id, col)
-          } catch {
-            col = { collection_id: id, name: `#${id}` }
-          }
-        }
-        const response = await listCollectionItems(id, itemParams, signal)
-        return ((response.data.items ?? []) as CollectionSearchItem[]).map((item) =>
-          mapCollectionItemToDefinition(item, col)
-        )
-      } catch (e: unknown) {
-        const err = e as { name?: string; code?: string; message?: string }
-        if (
-          err?.name === 'AbortError' ||
-          err?.code === 'ERR_CANCELED' ||
-          err?.message?.includes('canceled')
-        ) {
-          return [] as CollectionDefinitionCard[]
-        }
-        console.error('Error fetching collection matches:', e)
-        return [] as CollectionDefinitionCard[]
-      }
-    })
-  )
-  return pages.flat()
+  try {
+    const response = await searchItemsInCollections(itemParams, signal)
+    return ((response.data.items ?? []) as CollectionSearchItem[])
+      .map((item) => mapCollectionItemToDefinition(item))
+      .filter((d): d is CollectionDefinitionCard => d != null)
+  } catch (e: unknown) {
+    const err = e as { name?: string; code?: string; message?: string }
+    if (
+      err?.name === 'AbortError' ||
+      err?.code === 'ERR_CANCELED' ||
+      err?.message?.includes('canceled')
+    ) {
+      return []
+    }
+    console.error('Error fetching collection matches:', e)
+    return []
+  }
 }
 
 // Fetch definitions using fast search

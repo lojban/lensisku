@@ -435,10 +435,9 @@ import {
   searchWaves,
   list_wave_threads,
   getCollections,
-  getCollection,
   getBulkVotes,
   getDefinition,
-  listCollectionItems,
+  searchItemsInCollections,
 } from '@/api'
 import AddAllToCollectionWidget from '@/components/AddAllToCollectionWidget.vue'
 import CombinedFilters from '@/components/CombinedFilters.vue'
@@ -581,7 +580,7 @@ defineEmits(['search', 'view-message', 'view-thread'])
 const { getInitialLanguages, saveLanguages } = useLanguageSelection()
 const collections = ref([])
 const collectionMatches = ref<CollectionDefinitionCard[]>([])
-const COLLECTION_MATCH_PER_PAGE = 20
+const COLLECTION_MATCH_PER_PAGE = 50
 
 const fetchCollections = async () => {
   try {
@@ -857,10 +856,8 @@ async function loadCollectionMatches(
   )
   if (!ids.length) return []
 
-  const known = (collections.value || []) as Array<{ collection_id: number; name: string }>
-  const byId = new Map(known.map((c) => [c.collection_id, c]))
-
   const itemParams: Record<string, unknown> = {
+    collection_ids: ids.join(','),
     page: 1,
     per_page: COLLECTION_MATCH_PER_PAGE,
     search: search.trim() || undefined,
@@ -889,41 +886,23 @@ async function loadCollectionMatches(
     itemParams.semantic = true
   }
 
-  const pages = await Promise.all(
-    ids.map(async (id: number) => {
-      try {
-        let col = byId.get(id)
-        if (!col) {
-          try {
-            const meta = await getCollection(id)
-            col = {
-              collection_id: id,
-              name: (meta.data?.name as string) || `#${id}`,
-            }
-            byId.set(id, col)
-          } catch {
-            col = { collection_id: id, name: `#${id}` }
-          }
-        }
-        const response = await listCollectionItems(id, itemParams, signal)
-        return ((response.data.items ?? []) as CollectionSearchItem[]).map((item) =>
-          mapCollectionItemToDefinition(item, col)
-        )
-      } catch (e: unknown) {
-        const err = e as { name?: string; code?: string; message?: string }
-        if (
-          err?.name === 'AbortError' ||
-          err?.code === 'ERR_CANCELED' ||
-          err?.message?.includes('canceled')
-        ) {
-          return [] as CollectionDefinitionCard[]
-        }
-        console.error('Error fetching collection matches:', e)
-        return [] as CollectionDefinitionCard[]
-      }
-    })
-  )
-  return pages.flat()
+  try {
+    const response = await searchItemsInCollections(itemParams, signal)
+    return ((response.data.items ?? []) as CollectionSearchItem[])
+      .map((item) => mapCollectionItemToDefinition(item))
+      .filter((d): d is CollectionDefinitionCard => d != null)
+  } catch (e: unknown) {
+    const err = e as { name?: string; code?: string; message?: string }
+    if (
+      err?.name === 'AbortError' ||
+      err?.code === 'ERR_CANCELED' ||
+      err?.message?.includes('canceled')
+    ) {
+      return []
+    }
+    console.error('Error fetching collection matches:', e)
+    return []
+  }
 }
 
 // Fetch corpus entries

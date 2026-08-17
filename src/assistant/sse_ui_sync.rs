@@ -321,7 +321,9 @@ pub fn apply_sse_event_to_messages(
                 if let Some(cards) = event.get("cards") {
                     ro.insert("cards".into(), cards.clone());
                 }
-                let trace = ro.entry("apiTrace".to_string()).or_insert_with(|| json!([]));
+                let trace = ro
+                    .entry("apiTrace".to_string())
+                    .or_insert_with(|| json!([]));
                 if let Some(a) = trace.as_array_mut() {
                     a.push(done_seg);
                 }

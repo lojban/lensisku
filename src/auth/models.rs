@@ -90,8 +90,8 @@ pub struct Claims {
 }
 
 pub fn decode_token(token: &str) -> Result<Claims, AppError> {
-    let secret = env::var("JWT_SECRET")
-        .map_err(|e| AppError::Auth(format!("JWT_SECRET not set: {}", e)))?;
+    let secret =
+        env::var("JWT_SECRET").map_err(|e| AppError::Auth(format!("JWT_SECRET not set: {}", e)))?;
     let key = DecodingKey::from_secret(secret.as_bytes());
 
     let validation = Validation::new(Algorithm::HS256);

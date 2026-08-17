@@ -4,10 +4,10 @@ use base64::{engine::general_purpose, Engine as _};
 use chrono::Utc;
 use deadpool_postgres::Pool;
 
+use super::dto::WebSocketMessage;
 use super::dto::*;
 use super::models::*;
 use super::websocket::{BroadcastToUsers, ChatServer};
-use super::dto::WebSocketMessage;
 
 // Helper function to build dynamic message query
 fn build_message_query(
@@ -682,10 +682,7 @@ impl MessagingService {
         Ok(participants)
     }
 
-    pub async fn get_thread_participant_user_ids(
-        &self,
-        thread_id: i64,
-    ) -> AppResult<Vec<i32>> {
+    pub async fn get_thread_participant_user_ids(&self, thread_id: i64) -> AppResult<Vec<i32>> {
         let client = self.pool.get().await?;
 
         let rows = client

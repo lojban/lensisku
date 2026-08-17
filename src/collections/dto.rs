@@ -118,6 +118,44 @@ pub struct ListCollectionItemsQuery {
     pub semantic: Option<bool>,
 }
 
+/// Query for `GET /collections/items/search` — one request across a set of collections.
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct SearchCollectionsItemsQuery {
+    /// Comma-separated collection ids. Private collections the caller cannot read are skipped.
+    pub collection_ids: String,
+    pub page: Option<i64>,
+    pub per_page: Option<i64>,
+    pub search: Option<String>,
+    /// Comma-separated definition language ids (matches `definitions.langid`).
+    pub languages: Option<String>,
+    pub selmaho: Option<String>,
+    pub word_type: Option<i16>,
+    pub username: Option<String>,
+    pub exclude_usernames: Option<String>,
+    pub source_langid: Option<i32>,
+    pub search_in_phrases: Option<bool>,
+    /// When true, rank definition-backed items by semantic similarity to `search`.
+    pub semantic: Option<bool>,
+}
+
+/// Parse comma-separated positive ints, de-duplicated, order preserved. Caps at `max`.
+pub fn parse_positive_id_list(value: &str, max: usize) -> Vec<i32> {
+    let mut seen = std::collections::HashSet::new();
+    let mut ids = Vec::new();
+    for part in value.split(',') {
+        let Ok(id) = part.trim().parse::<i32>() else {
+            continue;
+        };
+        if id > 0 && seen.insert(id) {
+            ids.push(id);
+            if ids.len() >= max {
+                break;
+            }
+        }
+    }
+    ids
+}
+
 /// Resolved filter inputs for `service::list_collection_items`. Built by the controller from
 /// `ListCollectionItemsQuery` (parsing `languages`, materialising the semantic embedding, etc.)
 /// so the service stays SQL-only.
@@ -229,6 +267,12 @@ pub struct CollectionItemResponse {
     pub added_at: DateTime<Utc>,
     pub canonical_form: Option<String>,
     pub flashcard: Option<FlashcardResponse>,
+    /// Set when the row was returned from a multi-collection search.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub collection_id: Option<i32>,
+    /// Display name of `collection_id` when present.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub collection_name: Option<String>,
 }
 
 #[derive(Debug, Deserialize, ToSchema)]
@@ -449,4 +493,20 @@ pub struct MediaBulkImportResponse {
     pub attached: u32,
     pub created_items: u32,
     pub warnings: Vec<String>,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::parse_positive_id_list;
+
+    #[test]
+    fn parse_positive_id_list_dedupes_skips_invalid_and_caps() {
+        assert_eq!(
+            parse_positive_id_list("1, 2, 2, -1, abc, 3", 50),
+            vec![1, 2, 3]
+        );
+        assert_eq!(parse_positive_id_list("1,2,3,4", 2), vec![1, 2]);
+        assert!(parse_positive_id_list("", 50).is_empty());
+        assert!(parse_positive_id_list("0, -3", 50).is_empty());
+    }
 }

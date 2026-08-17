@@ -18,7 +18,9 @@ use once_cell::sync::Lazy;
 use regex::Regex;
 
 use crate::error::AppError;
-use crate::jbovlaste::models::{DefinitionDetail, DefinitionResponse, Example, SearchDefinitionsParams};
+use crate::jbovlaste::models::{
+    DefinitionDetail, DefinitionResponse, Example, SearchDefinitionsParams,
+};
 use crate::jbovlaste::service::{get_definition, semantic_search};
 use crate::middleware::cache::{generate_assistant_semantic_cache_key, RedisCache};
 use crate::utils::embeddings::get_batch_embeddings;
@@ -159,7 +161,10 @@ impl AgentState {
             aggressive_context_retry: false,
             client_round,
             context_budget,
-            tools: vec![jbovlaste_tool_schema(), jbovlaste_resolve_results_tool_schema()],
+            tools: vec![
+                jbovlaste_tool_schema(),
+                jbovlaste_resolve_results_tool_schema(),
+            ],
             system_content,
             candidates: candidates.to_vec(),
             client,
@@ -883,33 +888,32 @@ async fn resolve_references(
                 None => false,
             },
             "example" => match def.examples.as_ref() {
-                Some(examples) => match examples.iter().find(|e| Some(e.exampleid) == r.exampleid) {
-                    Some(ex) => ex.content.contains(needle),
-                    None => {
-                        errors.push(ReferenceError {
-                            index,
-                            definitionid: r.definitionid,
-                            field: r.field.clone(),
-                            exact_text: r.exact_text.clone().unwrap_or_default(),
-                            reason: format!(
-                                "exampleid {} not found for definitionid {}",
-                                r.exampleid.unwrap_or(-1),
-                                r.definitionid
-                            ),
-                        });
-                        continue;
+                Some(examples) => {
+                    match examples.iter().find(|e| Some(e.exampleid) == r.exampleid) {
+                        Some(ex) => ex.content.contains(needle),
+                        None => {
+                            errors.push(ReferenceError {
+                                index,
+                                definitionid: r.definitionid,
+                                field: r.field.clone(),
+                                exact_text: r.exact_text.clone().unwrap_or_default(),
+                                reason: format!(
+                                    "exampleid {} not found for definitionid {}",
+                                    r.exampleid.unwrap_or(-1),
+                                    r.definitionid
+                                ),
+                            });
+                            continue;
+                        }
                     }
-                },
+                }
                 None => {
                     errors.push(ReferenceError {
                         index,
                         definitionid: r.definitionid,
                         field: r.field.clone(),
                         exact_text: r.exact_text.clone().unwrap_or_default(),
-                        reason: format!(
-                            "definitionid {} has no examples",
-                            r.definitionid
-                        ),
+                        reason: format!("definitionid {} has no examples", r.definitionid),
                     });
                     continue;
                 }
@@ -1030,7 +1034,10 @@ fn build_card_payload(validated: &[ValidatedReference]) -> serde_json::Value {
             header.insert("langrealname".into(), r.langrealname.clone().into());
             header.insert(
                 "selmaho".into(),
-                r.selmaho.clone().map(serde_json::Value::String).unwrap_or(serde_json::Value::Null),
+                r.selmaho
+                    .clone()
+                    .map(serde_json::Value::String)
+                    .unwrap_or(serde_json::Value::Null),
             );
             header.insert("fields".into(), serde_json::Value::Array(Vec::new()));
             groups.push(header);
@@ -1188,9 +1195,7 @@ impl ResolveArgs {
             return Ok((Vec::new(), Some(t.to_string())));
         }
         if self.references.is_empty() {
-            return Err(
-                "`references` must not be empty unless `message` is provided.".to_string(),
-            );
+            return Err("`references` must not be empty unless `message` is provided.".to_string());
         }
         for (i, r) in self.references.iter().enumerate() {
             let f = r.field.trim().to_lowercase();
@@ -2449,7 +2454,9 @@ pub(crate) async fn run_agent_loop_inner(
 
             for call in calls.iter() {
                 let tool_name = call.function.name.as_deref().unwrap_or("unknown");
-                if tool_name != "jbovlaste_semantic_search" && tool_name != "jbovlaste_resolve_results" {
+                if tool_name != "jbovlaste_semantic_search"
+                    && tool_name != "jbovlaste_resolve_results"
+                {
                     log::error!(
                         "Assistant: unexpected tool call '{}' — not in schema",
                         tool_name
@@ -2466,7 +2473,11 @@ pub(crate) async fn run_agent_loop_inner(
                     let global_step_index = base_step_index + pending_search_ordinal;
                     pending_search_ordinal += 1;
                     let ar = content_str.trim();
-                    let assistant_reasoning = if ar.is_empty() { None } else { Some(ar.to_string()) };
+                    let assistant_reasoning = if ar.is_empty() {
+                        None
+                    } else {
+                        Some(ar.to_string())
+                    };
                     let args_json: &str = match call.function.arguments.as_deref() {
                         None | Some("") => "{}",
                         Some(s) => s,
@@ -2482,7 +2493,10 @@ pub(crate) async fn run_agent_loop_inner(
                             prepared.push(PreparedToolSlot::Immediate {
                                 tool_call_id: call.id.clone(),
                                 name: call.function.name.clone(),
-                                content: format!("Tool error: jbovlaste_resolve_results: invalid JSON: {}", e),
+                                content: format!(
+                                    "Tool error: jbovlaste_resolve_results: invalid JSON: {}",
+                                    e
+                                ),
                             });
                             continue;
                         }
@@ -2755,7 +2769,8 @@ pub(crate) async fn run_agent_loop_inner(
                                     "tool_content_plain": result,
                                 });
                                 if let Some(ref ar) = assistant_reasoning {
-                                    payload["assistant_reasoning"] = serde_json::Value::String(ar.clone());
+                                    payload["assistant_reasoning"] =
+                                        serde_json::Value::String(ar.clone());
                                 }
                                 emit_sse_user_visible(&persist, tx, payload).await?;
                                 let done_payload = json!({
@@ -2788,8 +2803,10 @@ pub(crate) async fn run_agent_loop_inner(
                             ResolveOutcome::Valid(validated) => {
                                 let markdown = build_printable_markdown(&validated);
                                 let cards = build_card_payload(&validated);
-                                let result_summary = format!("Resolved {} reference(s)", validated.len());
-                                let tool_content_for_llm = "References validated; printable answer generated.".to_string();
+                                let result_summary =
+                                    format!("Resolved {} reference(s)", validated.len());
+                                let tool_content_for_llm =
+                                    "References validated; printable answer generated.".to_string();
                                 let step = AssistantStep {
                                     action: action_desc,
                                     result: result_summary,
@@ -2809,7 +2826,8 @@ pub(crate) async fn run_agent_loop_inner(
                                         "tool_content_plain": tool_content_for_llm,
                                     });
                                     if let Some(ref ar) = step.assistant_reasoning {
-                                        payload["assistant_reasoning"] = serde_json::Value::String(ar.clone());
+                                        payload["assistant_reasoning"] =
+                                            serde_json::Value::String(ar.clone());
                                     }
                                     emit_sse_user_visible(&persist, tx, payload).await?;
                                     let done_payload = json!({
@@ -2831,7 +2849,10 @@ pub(crate) async fn run_agent_loop_inner(
                                         e.index, e.definitionid, e.field, e.exact_text, e.reason
                                     ));
                                 }
-                                let result_summary = format!("Invalid: {} reference(s) failed validation", errors.len());
+                                let result_summary = format!(
+                                    "Invalid: {} reference(s) failed validation",
+                                    errors.len()
+                                );
                                 let step = AssistantStep {
                                     action: action_desc,
                                     result: result_summary,
@@ -2851,7 +2872,8 @@ pub(crate) async fn run_agent_loop_inner(
                                         "tool_content_plain": err_lines.clone(),
                                     });
                                     if let Some(ref ar) = step.assistant_reasoning {
-                                        payload["assistant_reasoning"] = serde_json::Value::String(ar.clone());
+                                        payload["assistant_reasoning"] =
+                                            serde_json::Value::String(ar.clone());
                                     }
                                     emit_sse_user_visible(&persist, tx, payload).await?;
                                 }

@@ -8,8 +8,7 @@ use super::markdown::rewrite_wiki_links_for_lensisku;
 
 const PREVIEW_LEN: usize = 400;
 /// Exclude soft-redirect stub pages from waves search/list.
-const NATIVE_WIKI_NOT_REDIRECT: &str =
-    "COALESCE(d.metadata->>'is_redirect', 'false') <> 'true'";
+const NATIVE_WIKI_NOT_REDIRECT: &str = "COALESCE(d.metadata->>'is_redirect', 'false') <> 'true'";
 
 fn truncate_preview(text: &str) -> Option<String> {
     let trimmed = text.trim();
@@ -245,12 +244,14 @@ pub async fn search_wiki(
         hits.sort_by(|a, b| {
             let score_a = relevance(search_term, a);
             let score_b = relevance(search_term, b);
-            score_b.cmp(&score_a).then_with(|| match (b.last_edited, a.last_edited) {
-                (Some(tb), Some(ta)) => tb.cmp(&ta),
-                (Some(_), None) => Ordering::Greater,
-                (None, Some(_)) => Ordering::Less,
-                (None, None) => Ordering::Equal,
-            })
+            score_b
+                .cmp(&score_a)
+                .then_with(|| match (b.last_edited, a.last_edited) {
+                    (Some(tb), Some(ta)) => tb.cmp(&ta),
+                    (Some(_), None) => Ordering::Greater,
+                    (None, Some(_)) => Ordering::Less,
+                    (None, None) => Ordering::Equal,
+                })
         });
     }
 
@@ -331,7 +332,8 @@ pub async fn list_wiki_threads(
         .await
         .map_err(box_err)?;
 
-    let mut items: Vec<WikiThreadSummary> = Vec::with_capacity(mirror_rows.len() + native_rows.len());
+    let mut items: Vec<WikiThreadSummary> =
+        Vec::with_capacity(mirror_rows.len() + native_rows.len());
     items.extend(mirror_rows.into_iter().map(|r| {
         let page_id: i32 = r.get("page_id");
         let namespace: i32 = r.get("namespace");

@@ -235,8 +235,12 @@ pub async fn semantic_graph(
     // Zoom LOD: neighborhood of the valsi currently under the viewport center.
     if let Some(focus) = focus_word {
         let prefer = languages.as_deref();
-        let embedding = match service::semantic_graph_valsi_embedding(pool.get_ref(), &focus, prefer)
-            .await
+        let embedding = match service::semantic_graph_valsi_embedding(
+            pool.get_ref(),
+            &focus,
+            prefer,
+        )
+        .await
         {
             Ok(Some(emb)) => emb,
             Ok(None) => {
@@ -921,13 +925,8 @@ pub async fn check_rafsi_overlap(
     pool: web::Data<Pool>,
     query: web::Query<RafsiOverlapQuery>,
 ) -> impl Responder {
-    match service::check_rafsi_overlap(
-        &pool,
-        &query.rafsi,
-        query.word.as_deref(),
-        query.valsi_id,
-    )
-    .await
+    match service::check_rafsi_overlap(&pool, &query.rafsi, query.word.as_deref(), query.valsi_id)
+        .await
     {
         Ok(Some((word, word_type))) => HttpResponse::Ok().json(RafsiOverlapResponse {
             overlap: Some(RafsiOverlapHit { word, word_type }),
@@ -1207,7 +1206,8 @@ pub async fn get_recent_changes(
     let home = query.home.unwrap_or(false);
     let user_id = claims.map(|c| c.sub);
 
-    match service::get_recent_changes(&pool, limit, types, after, home, &redis_cache, user_id).await {
+    match service::get_recent_changes(&pool, limit, types, after, home, &redis_cache, user_id).await
+    {
         Ok(response) => HttpResponse::Ok().json(response),
         Err(e) => {
             let detail = error_chain(&*e);

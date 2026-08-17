@@ -15,6 +15,8 @@ export type CollectionSearchItem = {
   sound_url?: string | null
   canonical_form?: string | null
   username?: string | null
+  collection_id?: number | null
+  collection_name?: string | null
 }
 
 export type CollectionRef = {
@@ -46,8 +48,11 @@ export type CollectionDefinitionCard = {
 
 export function mapCollectionItemToDefinition(
   item: CollectionSearchItem,
-  collection: CollectionRef
-): CollectionDefinitionCard {
+  collection?: CollectionRef
+): CollectionDefinitionCard | null {
+  const collection_id = item.collection_id ?? collection?.collection_id
+  if (!collection_id) return null
+  const collection_name = item.collection_name || collection?.name || `#${collection_id}`
   const front = item.word ?? item.free_content_front ?? ''
   return {
     definitionid: item.definition_id || undefined,
@@ -66,8 +71,8 @@ export function mapCollectionItemToDefinition(
     sound_url: item.sound_url,
     canonical_form: item.canonical_form,
     username: item.username,
-    collection_id: collection.collection_id,
-    collection_name: collection.name,
+    collection_id,
+    collection_name,
   }
 }
 

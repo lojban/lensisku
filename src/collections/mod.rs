@@ -12,6 +12,7 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
             .service(controller::list_public_collections)
             .service(controller::export_collection_full)
             // More specific item routes first so they are not shadowed by /{id} or /{id}/items
+            .service(controller::search_items_in_collections)
             .service(controller::get_item_image)
             .service(controller::get_item_sound)
             .service(controller::get_collection_flashcards)

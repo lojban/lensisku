@@ -329,6 +329,12 @@ export const listCollectionItems = (
   signal?: AbortSignal
 ) => api.get(`/collections/${collectionId}/items`, { params, signal })
 
+/** Search items across many collections in one request (`collection_ids=1,2,3`). */
+export const searchItemsInCollections = (
+  params: Record<string, unknown>,
+  signal?: AbortSignal
+) => api.get('/collections/items/search', { params, signal })
+
 export const listCustomTextBulkItems = (collectionId: number | string) =>
   api.get(`/collections/${collectionId}/items/custom-text-bulk`)
 

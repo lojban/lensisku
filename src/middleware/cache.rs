@@ -142,7 +142,7 @@ pub fn generate_semantic_search_cache_key(query: &SearchDefinitionsQuery) -> Str
         query.word_type.unwrap_or(0),
         query.source_langid.unwrap_or(1),
         query.search_in_phrases.map(i32::from).unwrap_or(-1) // Note: sort_by and sort_order are fixed to 'similarity asc' for semantic search
-                                                              // Note: include_comments is fixed to false for semantic search
+                                                             // Note: include_comments is fixed to false for semantic search
     )
 }
 

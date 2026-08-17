@@ -74,8 +74,10 @@ pub async fn start_server(
 
     // Initialize messaging service and WebSocket broadcast server
     let chat_server = messaging::websocket::ChatServer::new().start();
-    let messaging_service =
-        web::Data::new(messaging::MessagingService::new(pool.clone(), Some(chat_server.clone())));
+    let messaging_service = web::Data::new(messaging::MessagingService::new(
+        pool.clone(),
+        Some(chat_server.clone()),
+    ));
 
     let perm_cache = web::Data::from(PermissionCache::new(pool.clone()));
     perm_cache

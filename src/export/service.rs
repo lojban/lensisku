@@ -428,7 +428,10 @@ pub async fn resolve_source_language(
                 None => Err(format!("Unknown source language tag: {}", tag).into()),
             }
         }
-        _ => Ok((DEFAULT_SOURCE_LANGID, DEFAULT_SOURCE_LANGUAGE_TAG.to_string())),
+        _ => Ok((
+            DEFAULT_SOURCE_LANGID,
+            DEFAULT_SOURCE_LANGUAGE_TAG.to_string(),
+        )),
     }
 }
 
@@ -639,16 +642,26 @@ async fn generate_export(
 
     let content = match format {
         ExportFormat::Pdf => {
-            let latex =
-                generate_latex(&mut transaction, lang, options, collection_id, source_langid)
-                    .await?;
+            let latex = generate_latex(
+                &mut transaction,
+                lang,
+                options,
+                collection_id,
+                source_langid,
+            )
+            .await?;
             transaction.commit().await?;
             generate_pdf(&latex).await?
         }
         ExportFormat::LaTeX => {
-            let latex =
-                generate_latex(&mut transaction, lang, options, collection_id, source_langid)
-                    .await?;
+            let latex = generate_latex(
+                &mut transaction,
+                lang,
+                options,
+                collection_id,
+                source_langid,
+            )
+            .await?;
             transaction.commit().await?;
             latex.into_bytes()
         }
@@ -687,12 +700,8 @@ async fn generate_export(
             .await?;
             transaction.commit().await?;
             // Determine the TSV filename (without .zip extension)
-            let tsv_filename = build_export_filename(
-                collection_id,
-                source_language_tag,
-                lang,
-                "tsv",
-            );
+            let tsv_filename =
+                build_export_filename(collection_id, source_language_tag, lang, "tsv");
             zip_tsv_content(&tsv, &tsv_filename)?
         }
     };
@@ -1155,7 +1164,15 @@ async fn generate_latex(
         generate_collection_latex(transaction, lang, cid, source_langid).await?
     } else {
         // Generate standard dictionary chapters
-        generate_chapters(transaction, lang, &escaped_lang, None, options, source_langid).await?
+        generate_chapters(
+            transaction,
+            lang,
+            &escaped_lang,
+            None,
+            options,
+            source_langid,
+        )
+        .await?
     };
 
     Ok(format!(
@@ -1214,7 +1231,12 @@ async fn generate_lojban_chapter(
     source_langid: i32,
 ) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
     let entries = generate_lojban_entries(
-        transaction, lang_id, lang, collection_id, options, source_langid,
+        transaction,
+        lang_id,
+        lang,
+        collection_id,
+        options,
+        source_langid,
     )
     .await?;
     Ok(format!("\\chapter{{{}}}{}", title, entries))
@@ -1403,14 +1425,7 @@ async fn check_natural_entries(
     );
 
     let row = transaction
-        .query_one(
-            &query,
-            &[
-                &lang_id,
-                &source_langid,
-                &positive_scores_only,
-            ],
-        )
+        .query_one(&query, &[&lang_id, &source_langid, &positive_scores_only])
         .await?;
     Ok(row.get(0))
 }
@@ -1508,14 +1523,7 @@ async fn generate_natural_chapter(
     );
 
     let rows = transaction
-        .query(
-            &query,
-            &[
-                &lang_id,
-                &source_langid,
-                &positive_scores_only,
-            ],
-        )
+        .query(&query, &[&lang_id, &source_langid, &positive_scores_only])
         .await?;
     let mut entries = String::new();
 
@@ -2165,8 +2173,6 @@ mod tests {
     }
 }
 
-
-
 #[cfg(test)]
 mod positive_scores_integration {
     use super::*;
@@ -2224,7 +2230,14 @@ mod positive_scores_integration {
         };
 
         let (true_bytes, _, _) = export_dictionary(
-            &pool, "de", ExportFormat::Json, &true_opts, None, 1, "jbo", true,
+            &pool,
+            "de",
+            ExportFormat::Json,
+            &true_opts,
+            None,
+            1,
+            "jbo",
+            true,
         )
         .await
         .expect("true export");
@@ -2237,7 +2250,14 @@ mod positive_scores_integration {
         );
 
         let (false_bytes, _, _) = export_dictionary(
-            &pool, "de", ExportFormat::Json, &false_opts, None, 1, "jbo", true,
+            &pool,
+            "de",
+            ExportFormat::Json,
+            &false_opts,
+            None,
+            1,
+            "jbo",
+            true,
         )
         .await
         .expect("false export");
@@ -2263,9 +2283,9 @@ mod positive_scores_integration {
             let score = e["score"].as_f64().unwrap_or(0.0);
             by_word.entry(word).or_default().push(score);
         }
-        let has_mixed_word = by_word.values().any(|scores| {
-            scores.iter().any(|s| *s > 0.0) && scores.iter().any(|s| *s <= 0.0)
-        });
+        let has_mixed_word = by_word
+            .values()
+            .any(|scores| scores.iter().any(|s| *s > 0.0) && scores.iter().any(|s| *s <= 0.0));
         assert!(
             has_mixed_word,
             "expected at least one word to export both positive and nonpositive definitions when filter is off"

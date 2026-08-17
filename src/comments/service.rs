@@ -1124,14 +1124,14 @@ async fn compute_top_comments(
     let limit = limit.clamp(1, 100);
 
     let mut hours = start_days * 24;
-                let max_hours = 24 * 365 * 100; // ~100 years, effectively all time
-                let mut mapped_comments = Vec::new();
+    let max_hours = 24 * 365 * 100; // ~100 years, effectively all time
+    let mut mapped_comments = Vec::new();
 
-                while hours <= max_hours {
-                    let mut client = pool.get().await?;
-                    let transaction = client.transaction().await?;
+    while hours <= max_hours {
+        let mut client = pool.get().await?;
+        let transaction = client.transaction().await?;
 
-                    let comments = transaction
+        let comments = transaction
                         .query(
                             "WITH ranked_comments AS (
                                 SELECT
@@ -1178,67 +1178,56 @@ async fn compute_top_comments(
                         )
                         .await?;
 
-                    let comment_ids: Vec<i32> =
-                        comments.iter().map(|row| row.get("commentid")).collect();
-                    let reactions_map =
-                        fetch_reactions(&transaction, &comment_ids, current_user_id).await?;
+        let comment_ids: Vec<i32> = comments.iter().map(|row| row.get("commentid")).collect();
+        let reactions_map = fetch_reactions(&transaction, &comment_ids, current_user_id).await?;
 
-                    mapped_comments = comments
-                        .iter()
-                        .map(|row| {
-                            let comment_id = row.get::<_, i32>("commentid");
+        mapped_comments = comments
+            .iter()
+            .map(|row| {
+                let comment_id = row.get::<_, i32>("commentid");
 
-                            Comment {
-                                parent_content: row
-                                    .get::<_, Option<String>>("parent_content")
-                                    .and_then(|s| serde_json::from_str(&s).ok()),
-                                comment_id,
-                                thread_id: row.get("threadid"),
-                                parent_id: row.get("parentid"),
-                                user_id: row.get("userid"),
-                                comment_num: row.get("commentnum"),
-                                time: row.get("time"),
-                                subject: row
-                                    .get::<_, Option<String>>("subject")
-                                    .unwrap_or_default(),
-                                content: serde_json::from_str(&row.get::<_, String>("content"))
-                                    .unwrap_or_default(),
-                                username: row.get("username"),
-                                realname: row.get("realname"),
-                                total_reactions: row
-                                    .get::<_, Option<i64>>("total_reactions")
-                                    .unwrap_or(0),
-                                total_replies: row
-                                    .get::<_, Option<i64>>("total_replies")
-                                    .unwrap_or(0),
-                                is_bookmarked: row.get("is_bookmarked"),
-                                reactions: reactions_map
-                                    .get(&comment_id)
-                                    .cloned()
-                                    .unwrap_or_default(),
-                                valsi_id: row.get("valsiid"),
-                                definition_id: row.get("definitionid"),
-                                definition_link_id: row.get("definition_link_id"),
-                                collection_id: row.get("collection_id"),
-                                collection_name: None,
-                                valsi_word: None,
-                                definition: None,
-                                first_comment_subject: None,
-                                first_comment_content: None,
-                                last_comment_username: None,
-                            }
-                        })
-                        .collect();
-
-                    transaction.commit().await?;
-
-                    if mapped_comments.len() >= min_count as usize || hours >= max_hours {
-                        break;
-                    }
-                    hours = (hours * 2).min(max_hours);
+                Comment {
+                    parent_content: row
+                        .get::<_, Option<String>>("parent_content")
+                        .and_then(|s| serde_json::from_str(&s).ok()),
+                    comment_id,
+                    thread_id: row.get("threadid"),
+                    parent_id: row.get("parentid"),
+                    user_id: row.get("userid"),
+                    comment_num: row.get("commentnum"),
+                    time: row.get("time"),
+                    subject: row.get::<_, Option<String>>("subject").unwrap_or_default(),
+                    content: serde_json::from_str(&row.get::<_, String>("content"))
+                        .unwrap_or_default(),
+                    username: row.get("username"),
+                    realname: row.get("realname"),
+                    total_reactions: row.get::<_, Option<i64>>("total_reactions").unwrap_or(0),
+                    total_replies: row.get::<_, Option<i64>>("total_replies").unwrap_or(0),
+                    is_bookmarked: row.get("is_bookmarked"),
+                    reactions: reactions_map.get(&comment_id).cloned().unwrap_or_default(),
+                    valsi_id: row.get("valsiid"),
+                    definition_id: row.get("definitionid"),
+                    definition_link_id: row.get("definition_link_id"),
+                    collection_id: row.get("collection_id"),
+                    collection_name: None,
+                    valsi_word: None,
+                    definition: None,
+                    first_comment_subject: None,
+                    first_comment_content: None,
+                    last_comment_username: None,
                 }
+            })
+            .collect();
 
-                Ok(mapped_comments)
+        transaction.commit().await?;
+
+        if mapped_comments.len() >= min_count as usize || hours >= max_hours {
+            break;
+        }
+        hours = (hours * 2).min(max_hours);
+    }
+
+    Ok(mapped_comments)
 }
 
 const TOP_COMMENTS_CACHE_KEY: &str = "comments:top:latest";
@@ -1251,7 +1240,11 @@ pub async fn update_top_comments_cache(
 ) -> Result<(), Box<dyn std::error::Error>> {
     let comments = compute_top_comments(pool, 7, 3, 3, None).await?;
     redis_cache
-        .set(TOP_COMMENTS_CACHE_KEY, &comments, Some(TOP_COMMENTS_CACHE_TTL))
+        .set(
+            TOP_COMMENTS_CACHE_KEY,
+            &comments,
+            Some(TOP_COMMENTS_CACHE_TTL),
+        )
         .await
 }
 
