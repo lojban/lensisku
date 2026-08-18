@@ -110,6 +110,45 @@ pub async fn list_public_collections(
 
 #[utoipa::path(
     get,
+    path = "/collections/users-and-collections",
+    tag = "collections",
+    params(
+        ("search" = Option<String>, Query, description = "Substring match on collection name/description/owner or username"),
+        ("per_kind" = Option<i64>, Query, description = "Max collections and max users to return (default 20, max 40)")
+    ),
+    responses(
+        (status = 200, description = "Collections then users for the combined filter picker", body = CollectionUserPickerResponse),
+        (status = 500, description = "Internal server error")
+    ),
+    security(("bearer_auth" = [])),
+    summary = "List collections and users for search filters",
+    description = "Returns a mixed list of accessible collections (public, plus the caller's private \
+                  collections when authenticated) and users. Used by the combined Collections & users \
+                  filter. Collections are listed first, then users."
+)]
+#[get("/users-and-collections")]
+pub async fn list_users_and_collections(
+    pool: web::Data<Pool>,
+    claims: Option<Claims>,
+    query: web::Query<CollectionUserPickerQuery>,
+) -> impl Responder {
+    match service::list_users_and_collections(
+        &pool,
+        claims.map(|c| c.sub),
+        query.search.clone(),
+        query.per_kind.unwrap_or(20),
+    )
+    .await
+    {
+        Ok(response) => HttpResponse::Ok().json(response),
+        Err(e) => HttpResponse::InternalServerError().json(json!({
+            "error": format!("Failed to list collections and users: {}", e)
+        })),
+    }
+}
+
+#[utoipa::path(
+    get,
     path = "/collections/{id}/flashcards",
     tag = "collections",
     params(

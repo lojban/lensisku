@@ -274,6 +274,84 @@ pub async fn list_public_collections(
     Ok(response)
 }
 
+const MAX_PICKER_PER_KIND: i64 = 40;
+
+/// Combined picker for the search filter: accessible collections, then users.
+pub async fn list_users_and_collections(
+    pool: &Pool,
+    user_id: Option<i32>,
+    search: Option<String>,
+    per_kind: i64,
+) -> AppResult<CollectionUserPickerResponse> {
+    let per_kind = per_kind.clamp(1, MAX_PICKER_PER_KIND);
+    let search_pattern = search
+        .as_ref()
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
+        .map(|s| format!("%{}%", s));
+
+    let client = pool
+        .get()
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+    let collection_rows = client
+        .query(
+            "SELECT c.collection_id, c.name, u.username AS owner_username
+             FROM collections c
+             JOIN users u ON u.userid = c.user_id
+             WHERE (c.is_public = true OR ($1::int IS NOT NULL AND c.user_id = $1))
+               AND (
+                    $2::text IS NULL
+                    OR c.name ILIKE $2
+                    OR COALESCE(c.description, '') ILIKE $2
+                    OR u.username ILIKE $2
+               )
+             ORDER BY
+               CASE WHEN $1::int IS NOT NULL AND c.user_id = $1 THEN 0 ELSE 1 END,
+               c.updated_at DESC
+             LIMIT $3",
+            &[&user_id, &search_pattern, &per_kind],
+        )
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+    let user_rows = client
+        .query(
+            "SELECT u.userid, u.username, u.realname
+             FROM users u
+             WHERE u.password IS DISTINCT FROM 'DISABLED'
+               AND (
+                    $1::text IS NULL
+                    OR u.username ILIKE $1
+                    OR COALESCE(u.realname, '') ILIKE $1
+               )
+             ORDER BY u.username ASC
+             LIMIT $2",
+            &[&search_pattern, &per_kind],
+        )
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+    let mut items = Vec::with_capacity(collection_rows.len() + user_rows.len());
+    for row in collection_rows {
+        items.push(CollectionUserPickerItem::Collection {
+            collection_id: row.get("collection_id"),
+            name: row.get("name"),
+            owner_username: row.get("owner_username"),
+        });
+    }
+    for row in user_rows {
+        items.push(CollectionUserPickerItem::User {
+            user_id: row.get("userid"),
+            username: row.get("username"),
+            realname: row.get("realname"),
+        });
+    }
+
+    Ok(CollectionUserPickerResponse { items })
+}
+
 fn pagination_bounds(page: Option<i64>, per_page: Option<i64>) -> Option<(i64, i64, i64)> {
     if page.is_none() && per_page.is_none() {
         return None;

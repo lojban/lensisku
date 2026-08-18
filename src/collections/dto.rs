@@ -118,6 +118,36 @@ pub struct ListCollectionItemsQuery {
     pub semantic: Option<bool>,
 }
 
+/// Query for `GET /collections/users-and-collections`.
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct CollectionUserPickerQuery {
+    pub search: Option<String>,
+    /// Max rows per kind (collections and users). Clamped server-side (default 20, max 40).
+    pub per_kind: Option<i64>,
+}
+
+#[derive(Debug, Serialize, ToSchema)]
+#[serde(tag = "kind")]
+pub enum CollectionUserPickerItem {
+    #[serde(rename = "collection")]
+    Collection {
+        collection_id: i32,
+        name: String,
+        owner_username: String,
+    },
+    #[serde(rename = "user")]
+    User {
+        user_id: i32,
+        username: String,
+        realname: Option<String>,
+    },
+}
+
+#[derive(Debug, Serialize, ToSchema)]
+pub struct CollectionUserPickerResponse {
+    pub items: Vec<CollectionUserPickerItem>,
+}
+
 /// Query for `GET /collections/items/search` — one request across a set of collections.
 #[derive(Debug, Deserialize, ToSchema)]
 pub struct SearchCollectionsItemsQuery {

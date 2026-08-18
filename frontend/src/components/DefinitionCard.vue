@@ -285,20 +285,6 @@
               </span>
               <span v-if="definition.created_at && definition.username">·</span>
               <span v-if="definition.created_at"> {{ formatDate(definition.created_at) }} </span>
-              <span v-if="sourceCollectionLink">·</span>
-              <RouterLink
-                v-if="sourceCollectionLink"
-                :to="sourceCollectionLink"
-                class="text-blue-600 hover:text-blue-800 hover:underline"
-              >
-                {{
-                  definition.collection_name
-                    ? t('components.definitionCard.fromCollection', {
-                        name: definition.collection_name,
-                      })
-                    : t('components.definitionCard.viewCollection')
-                }}
-              </RouterLink>
             </div>
           </div>
         </div>
@@ -576,6 +562,16 @@
         </div>
       </div>
     </div>
+    <RouterLink
+      v-if="sourceCollectionLink"
+      :to="sourceCollectionLink"
+      class="definition-card-collection-footer"
+    >
+      {{ t('components.definitionCard.collectionLinkLabel') }}
+      <span class="definition-card-collection-footer-name">{{
+        definition.collection_name || t('components.definitionCard.viewCollection')
+      }}</span>
+    </RouterLink>
   </div>
   <ModalComponent
     :show="showValsiModal"

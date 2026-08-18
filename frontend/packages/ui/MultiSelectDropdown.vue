@@ -24,6 +24,9 @@
         role="presentation"
         :style="panelViewportStyle"
       >
+        <div v-if="preface" class="dropdown-option-preface">
+          {{ preface }}
+        </div>
         <!-- Search: see `searchFieldKeys` prop, else values-only deep match -->
         <div class="border-b border-gray-100 px-2 pb-2">
           <Input
@@ -78,7 +81,9 @@
                   :checked="isSelected(opt)"
                   @change="toggleOption(opt)"
                 />
-                <span class="min-w-0 flex-1">{{ optionLabel(opt) }}</span>
+                <slot name="option" :option="opt">
+                  <span class="min-w-0 flex-1 truncate">{{ optionLabel(opt) }}</span>
+                </slot>
               </label>
             </li>
             <li class="my-1 border-t border-gray-100" aria-hidden="true" />
@@ -99,7 +104,9 @@
                 :checked="isSelected(opt)"
                 @change="toggleOption(opt)"
               />
-              <span class="min-w-0 flex-1">{{ optionLabel(opt) }}</span>
+              <slot name="option" :option="opt">
+                <span class="min-w-0 flex-1 truncate">{{ optionLabel(opt) }}</span>
+              </slot>
             </label>
           </li>
 
@@ -198,6 +205,11 @@ const props = defineProps({
   fullBleedMobilePanel: {
     type: Boolean,
     default: false,
+  },
+  /** Short hint shown at the top of the open panel. */
+  preface: {
+    type: String,
+    default: '',
   },
 })
 

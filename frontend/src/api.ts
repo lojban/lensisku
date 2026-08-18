@@ -282,6 +282,12 @@ export const getCollections = (params?: Record<string, unknown>) =>
 export const getPublicCollections = (params?: Record<string, unknown>) =>
   api.get('/collections/public', { params })
 
+/** Mixed collection + user rows for the combined search filter picker. */
+export const searchCollectionsAndUsers = (
+  params?: Record<string, unknown>,
+  signal?: AbortSignal
+) => api.get('/collections/users-and-collections', { params, signal })
+
 export const getCollection = (id: number | string) => api.get(`/collections/${id}`)
 
 export const createCollection = (data: Record<string, unknown>) => api.post('/collections', data)

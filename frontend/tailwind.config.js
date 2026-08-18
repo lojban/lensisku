@@ -498,6 +498,25 @@ export default {
         '.dropdown-floating-panel--viewport': {
           '@apply fixed left-0 right-0 z-[60] mt-0 w-auto': {},
         },
+        '.dropdown-option-preface': {
+          '@apply px-3 pb-2 text-sm text-gray-600': {},
+        },
+        '.dropdown-option-rich': {
+          '@apply min-w-0 flex-1 truncate text-sm text-gray-700': {},
+        },
+        '.dropdown-option-rich b': {
+          '@apply font-semibold text-gray-900': {},
+        },
+        '.dropdown-option-rich i': {
+          '@apply ml-1 font-normal italic text-gray-500': {},
+        },
+        '.definition-card-collection-footer': {
+          '@apply mt-0 block w-full rounded-b-lg border-t border-gray-200 px-4 py-2.5 text-sm text-gray-700 no-underline hover:bg-gray-50':
+            {},
+        },
+        '.definition-card-collection-footer-name': {
+          '@apply underline underline-offset-2': {},
+        },
         /** Language + collection selectors sharing the CombinedFilters top row. */
         '.filters-primary-selects': {
           '@apply grid grid-cols-2 gap-2 w-full min-w-0 flex-1': {},

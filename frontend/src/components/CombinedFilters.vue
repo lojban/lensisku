@@ -27,25 +27,38 @@
         />
         <MultiSelectDropdown
           v-if="showCollectionFilter"
-          v-model="selectedCollections"
-          :options="collectionOptions"
-          :suggested-options="collectionSuggestions"
+          v-model="selectedCollectionUsers"
+          :options="collectionUserOptions"
+          :suggested-options="collectionUserSuggestions"
           :suggested-label="t('filters.recentSuggestions')"
           :max-selected-labels="3"
-          :option-value="(col: CollectionOption) => col.collection_id"
-          :option-label="(col: CollectionOption) => col.name"
-          :search-field-keys="collectionFilterSearchFieldKeys"
-          :placeholder="t('filters.selectCollections')"
-          :search-placeholder="t('filters.searchCollections')"
-          :select-all-label="t('filters.selectAll')"
-          :deselect-all-label="t('filters.deselectAll')"
-          :empty-filter-label="t('filters.noCollectionMatches')"
+          :show-select-all="false"
+          :option-value="collectionUserOptionValue"
+          :option-label="collectionUserOptionLabel"
+          :search-field-keys="collectionUserSearchFieldKeys"
+          :placeholder="t('filters.selectCollectionsAndUsers')"
+          :search-placeholder="t('filters.searchCollectionsAndUsers')"
+          :empty-filter-label="t('filters.noCollectionUserMatches')"
+          :preface="t('filters.collectionsAndUsersPreface')"
           full-bleed-mobile-panel
           class="w-full min-w-0"
-          @open="onCollectionDropdownOpen"
-          @search="onCollectionDropdownSearch"
+          @open="onCollectionUserDropdownOpen"
+          @search="onCollectionUserDropdownSearch"
           @update:model-value="emitUpdate"
-        />
+        >
+          <template #option="{ option }">
+            <span v-if="isCollectionPickerOption(option)" class="dropdown-option-rich">
+              <b>{{ option.name }}</b>
+              <i v-if="option.owner_username">{{
+                t('filters.collectionByUser', { username: option.owner_username })
+              }}</i>
+            </span>
+            <span v-else-if="isUserPickerOption(option)" class="dropdown-option-rich">
+              {{ t('filters.userOptionPrefix') }}
+              <b>{{ option.username }}</b>
+            </span>
+          </template>
+        </MultiSelectDropdown>
       </div>
       <div class="flex items-center gap-2 self-end md:self-center">
         <div class="btn-group-forced flex items-center flex-row" role="group">
@@ -211,8 +224,8 @@
         </div>
       </div>
 
-      <!-- Include authors (optional multi-select) -->
-      <div class="col-span-2 sm:col-span-1 flex min-w-0 flex-col">
+      <!-- Include authors: only when the merged collections+users picker is hidden. -->
+      <div v-if="!showCollectionFilter" class="col-span-2 sm:col-span-1 flex min-w-0 flex-col">
         <label class="filters-field-label">{{ t('components.combinedFilters.filterByAuthors') }}</label>
         <div class="relative w-full min-w-0 [&>div]:block [&>div]:w-full">
           <MultiSelectDropdown
@@ -237,7 +250,10 @@
       </div>
 
       <!-- Exclude authors (optional multi-select) -->
-      <div class="col-span-2 sm:col-span-1 flex min-w-0 flex-col">
+      <div
+        class="flex min-w-0 flex-col"
+        :class="showCollectionFilter ? 'col-span-2' : 'col-span-2 sm:col-span-1'"
+      >
         <label class="filters-field-label">{{
           t('components.combinedFilters.filterByExcludeAuthors')
         }}</label>
@@ -372,7 +388,7 @@ import {
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute } from 'vue-router'
 
-import { fetchDefinitionsTypes, getCollections, getPublicCollections, listUsers } from '@/api'
+import { fetchDefinitionsTypes, listUsers, searchCollectionsAndUsers } from '@/api'
 import { useAuth } from '@/composables/useAuth'
 import { useRecentSelections } from '@/composables/useRecentSelections'
 
@@ -396,8 +412,8 @@ const graphBuildParams = defineModel<SemanticGraphBuildParams | undefined>('grap
 const languageFilterSearchFieldKeys: string[] = ['tag', 'english_name', 'lojban_name', 'real_name']
 /** Fields used for author multiselect search. */
 const userFilterSearchFieldKeys: string[] = ['username', 'realname']
-/** Fields used for collection multiselect search. */
-const collectionFilterSearchFieldKeys: string[] = ['name', 'description']
+/** Fields used for the merged collections + users picker. */
+const collectionUserSearchFieldKeys: string[] = ['name', 'owner_username', 'username', 'realname']
 
 type LanguageOption = {
   id: number
@@ -422,6 +438,35 @@ type CollectionOption = {
   collection_id: number
   name: string
   description?: string | null
+  owner_username?: string
+}
+
+type CollectionPickerOption = CollectionOption & { kind: 'collection' }
+type UserPickerOption = UserHint & { kind: 'user' }
+type CollectionUserOption = CollectionPickerOption | UserPickerOption
+
+function isCollectionPickerOption(option: unknown): option is CollectionPickerOption {
+  return (
+    typeof option === 'object' &&
+    option !== null &&
+    (option as CollectionUserOption).kind === 'collection'
+  )
+}
+
+function isUserPickerOption(option: unknown): option is UserPickerOption {
+  return (
+    typeof option === 'object' &&
+    option !== null &&
+    (option as CollectionUserOption).kind === 'user'
+  )
+}
+
+function collectionUserOptionValue(item: CollectionUserOption): string {
+  return item.kind === 'collection' ? `c:${item.collection_id}` : `u:${item.username}`
+}
+
+function collectionUserOptionLabel(item: CollectionUserOption): string {
+  return item.kind === 'collection' ? item.name : item.username
 }
 
 const props = defineProps({
@@ -495,6 +540,11 @@ const { recent: recentIncludeAuthors, record: recordRecentIncludeAuthor } =
   useRecentSelections<UserHint>('recentIncludeAuthorSelections', (u) => u.username)
 const { recent: recentExcludeAuthors, record: recordRecentExcludeAuthor } =
   useRecentSelections<UserHint>('recentExcludeAuthorSelections', (u) => u.username)
+const { recent: recentCollectionUsers, record: recordRecentCollectionUser } =
+  useRecentSelections<CollectionUserOption>(
+    'recentCollectionUserSelections',
+    (item) => collectionUserOptionValue(item)
+  )
 
 const languageSuggestions = computed(() => {
   const byId = new Map(props.languages.map((l) => [l.id, l]))
@@ -504,11 +554,53 @@ const languageSuggestions = computed(() => {
     .slice(0, 3)
 })
 
-const collectionSuggestions = computed(() => {
-  const byId = new Map(collectionOptions.value.map((c) => [c.collection_id, c]))
-  return recentCollections.value
-    .map((item) => byId.get(item.collection_id) ?? item)
-    .filter((item) => item?.name)
+const collectionUserOptions = computed<CollectionUserOption[]>(() => [
+  ...collectionOptions.value.map((c) => ({ kind: 'collection' as const, ...c })),
+  ...userOptions.value.map((u) => ({ kind: 'user' as const, ...u })),
+])
+
+const selectedCollectionUsers = computed<CollectionUserOption[]>({
+  get() {
+    return [
+      ...selectedCollections.value.map((c) => ({ kind: 'collection' as const, ...c })),
+      ...selectedUsers.value.map((u) => ({ kind: 'user' as const, ...u })),
+    ]
+  },
+  set(items) {
+    const collections: CollectionOption[] = []
+    const users: UserHint[] = []
+    for (const item of items) {
+      if (item.kind === 'collection') {
+        collections.push({
+          collection_id: item.collection_id,
+          name: item.name,
+          description: item.description,
+          owner_username: item.owner_username,
+        })
+      } else {
+        users.push({
+          user_id: item.user_id,
+          username: item.username,
+          realname: item.realname,
+        })
+      }
+    }
+    selectedCollections.value = collections
+    selectedUsers.value = users
+  },
+})
+
+const collectionUserSuggestions = computed(() => {
+  const mixed = recentCollectionUsers.value.length
+    ? recentCollectionUsers.value
+    : [
+        ...recentCollections.value.map((c) => ({ kind: 'collection' as const, ...c })),
+        ...recentIncludeAuthors.value.map((u) => ({ kind: 'user' as const, ...u })),
+      ]
+  const byKey = new Map(collectionUserOptions.value.map((o) => [collectionUserOptionValue(o), o]))
+  return mixed
+    .map((item) => byKey.get(collectionUserOptionValue(item)) ?? item)
+    .filter((item) => collectionUserOptionLabel(item))
     .slice(0, 3)
 })
 
@@ -530,7 +622,6 @@ const excludeAuthorSuggestions = computed(() => {
 
 const USER_SEARCH_DELAY_MS = 250
 const USER_LIST_PAGE_SIZE = 50
-const COLLECTION_LIST_PAGE_SIZE = 50
 let userSearchTimer: ReturnType<typeof setTimeout> | null = null
 let collectionSearchTimer: ReturnType<typeof setTimeout> | null = null
 
@@ -739,7 +830,7 @@ onMounted(() => {
   syncTogglesWithModel()
   maybeAutoExpandForSelmaho(props.modelValue.selmaho ?? '', '')
   if (props.showCollectionFilter) {
-    void fetchCollectionsForFilter('')
+    void fetchCollectionUsers('')
   }
 })
 
@@ -747,7 +838,7 @@ watch(
   () => auth.state.isLoggedIn,
   (loggedIn) => {
     if (loggedIn && props.showCollectionFilter) {
-      void fetchCollectionsForFilter('')
+      void fetchCollectionUsers('')
     }
   }
 )
@@ -814,14 +905,18 @@ async function fetchUsers(search = '') {
 }
 
 function onUserDropdownOpen() {
-  void fetchUsers('')
+  if (props.showCollectionFilter) {
+    void fetchCollectionUsers('')
+  } else {
+    void fetchUsers('')
+  }
 }
 
 function onUserDropdownSearch(query: string) {
   clearUserSearchTimer()
   userSearchTimer = setTimeout(() => {
     userSearchTimer = null
-    void fetchUsers(query)
+    void (props.showCollectionFilter ? fetchCollectionUsers(query) : fetchUsers(query))
   }, USER_SEARCH_DELAY_MS)
 }
 
@@ -832,46 +927,53 @@ function clearCollectionSearchTimer() {
   }
 }
 
-async function fetchCollectionsForFilter(search = '') {
-  const q = search.trim()
-  const chunks: CollectionOption[][] = []
-  if (auth.state.isLoggedIn) {
-    try {
-      const response = await getCollections(q ? { search: q } : {})
-      chunks.push((response.data.collections ?? []) as CollectionOption[])
-    } catch (error) {
-      console.error('Failed to list user collections for filter:', error)
-    }
-  }
+async function fetchCollectionUsers(search = '') {
   try {
-    const response = await getPublicCollections({
-      search: q || undefined,
-      per_page: COLLECTION_LIST_PAGE_SIZE,
-      page: 1,
+    const response = await searchCollectionsAndUsers({
+      search: search.trim() || undefined,
+      per_kind: 20,
     })
-    chunks.push((response.data.collections ?? []) as CollectionOption[])
+    const items = (response.data.items ?? []) as CollectionUserOption[]
+    const cols: CollectionOption[] = []
+    const users: UserHint[] = []
+    for (const item of items) {
+      if (item.kind === 'collection') {
+        cols.push({
+          collection_id: item.collection_id,
+          name: item.name,
+          owner_username: item.owner_username,
+        })
+      } else if (item.kind === 'user') {
+        users.push({
+          user_id: item.user_id,
+          username: item.username,
+          realname: item.realname,
+        })
+      }
+    }
+    mergeCollectionOptions(cols)
+    mergeUserOptions(users)
   } catch (error) {
-    console.error('Failed to list public collections for filter:', error)
+    console.error('Failed to list collections and users for filter:', error)
   }
-  mergeCollectionOptions(chunks.flat())
 }
 
-function onCollectionDropdownOpen() {
-  void fetchCollectionsForFilter('')
+function onCollectionUserDropdownOpen() {
+  void fetchCollectionUsers('')
 }
 
-function onCollectionDropdownSearch(query: string) {
+function onCollectionUserDropdownSearch(query: string) {
   clearCollectionSearchTimer()
   collectionSearchTimer = setTimeout(() => {
     collectionSearchTimer = null
-    void fetchCollectionsForFilter(query)
+    void fetchCollectionUsers(query)
   }, USER_SEARCH_DELAY_MS)
 }
 
 const hasFilledAdvancedFilters = computed(() => {
   return Boolean(
     filters.value.selmaho ||
-      selectedUsers.value.length > 0 ||
+      (selectedUsers.value.length > 0 && !props.showCollectionFilter) ||
       excludedUsers.value.length > 0 ||
       filters.value.word_type ||
       filters.value.source_langid !== 1 ||
@@ -886,6 +988,7 @@ const hasAnyActiveFilters = computed(() => {
     props.forceShowReset ||
       selectedLangs.value.length > 0 ||
       selectedCollections.value.length > 0 ||
+      selectedUsers.value.length > 0 ||
       hasFilledAdvancedFilters.value ||
       !isSemantic.value ||
       !searchInPhrases.value ||
@@ -1047,7 +1150,10 @@ watch(
     if (oldCols) {
       const prevIds = new Set(oldCols.map((c) => c.collection_id))
       for (const col of newCols) {
-        if (!prevIds.has(col.collection_id)) recordRecentCollection(col)
+        if (!prevIds.has(col.collection_id)) {
+          recordRecentCollection(col)
+          recordRecentCollectionUser({ kind: 'collection', ...col })
+        }
       }
     }
   },
@@ -1060,7 +1166,10 @@ watch(
     if (!prev) return
     const prevNames = new Set(prev.map((u) => u.username))
     for (const user of next) {
-      if (!prevNames.has(user.username)) recordRecentIncludeAuthor(user)
+      if (!prevNames.has(user.username)) {
+        recordRecentIncludeAuthor(user)
+        recordRecentCollectionUser({ kind: 'user', ...user })
+      }
     }
   },
   { deep: true }
