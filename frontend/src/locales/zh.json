@@ -140,6 +140,7 @@
     "searchMetaDescription": "在逻辑语词典中搜索「{query}」的结果。",
     "globalDictionaryBelow": "以下释义来自全局词典。",
     "addDefinition": "释义",
+    "exportResults": "导出结果",
     "newFreeThread": "发起自由波",
     "noCommentsFound": "没有符合搜索条件的评论",
     "waveSourceLabel": "波浪",
@@ -728,6 +729,14 @@
     "sourceLangLabel": "源语言（词形）",
     "selectSourceLanguage": "选择源语言",
     "sourceLangDefault": "逻辑语（默认）"
+  },
+  "searchExport": {
+    "title": "导出搜索结果",
+    "description": "按当前搜索与筛选导出词典释义和合集条目，支持 PDF、LaTeX、XML、JSON 或 TSV。",
+    "emptyFilterHint": "请输入搜索词，或选择筛选条件（合集、词类、作者、selma'o、源语言，或关闭在短语中搜索）。",
+    "exportButton": "导出结果",
+    "generating": "正在生成导出…",
+    "failed": "导出失败"
   },
   "collectionWidget": {
     "itemsCount": "{count} 条",

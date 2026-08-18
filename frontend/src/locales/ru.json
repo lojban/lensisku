@@ -137,7 +137,8 @@
     "metaDescription": "Поиск по словарю и корпусу ложбана. Определения, примеры и обсуждения.",
     "searchMetaDescription": "Результаты поиска «{query}» в словаре ложбана.",
     "globalDictionaryBelow": "Определения ниже взяты из общего словаря.",
-    "addDefinition": "Определение",
+    "addDefinition": "Определения",
+    "exportResults": "Экспорт результатов",
     "newFreeThread": "Начать новую волну",
     "noCommentsFound": "Комментарии, соответствующие вашему поиску, не найдены",
     "waveSourceLabel": "Волны",
@@ -678,6 +679,14 @@
     "sourceLangLabel": "Источник слов (язык)",
     "selectSourceLanguage": "Выберите язык-источник",
     "sourceLangDefault": "Ложбан (по умолчанию)"
+  },
+  "searchExport": {
+    "title": "Экспорт результатов поиска",
+    "description": "Экспортируйте те же совпадения словаря и коллекций, что и в поиске, в PDF, LaTeX, XML, JSON или TSV.",
+    "emptyFilterHint": "Введите запрос или выберите фильтр (коллекция, тип слова, автор, selma'o, исходный язык или отключите поиск в фразах).",
+    "exportButton": "Экспортировать результаты",
+    "generating": "Генерация экспорта...",
+    "failed": "Не удалось экспортировать"
   },
   "collectionWidget": {
     "itemsCount": "{count} элементов",

@@ -140,9 +140,10 @@
     "metaDescription": "Search the Lojban dictionary and corpus. Find definitions, examples, and discussions.",
     "searchMetaDescription": "Search results for \"{query}\" in the Lojban dictionary.",
     "globalDictionaryBelow": "Definitions below come from the global dictionary.",
-    "addDefinition": "Definition",
+    "addDefinition": "Definitions",
     "createDefinition": "Create definition",
     "addAllToCollection": "Add all to collection",
+    "exportResults": "Export results",
     "newFreeThread": "Start free wave",
     "noCommentsFound": "No comments found matching your search",
     "waveSourceLabel": "Waves",
@@ -741,6 +742,14 @@
     "sourceLangLabel": "Source language (words)",
     "selectSourceLanguage": "Select source language",
     "sourceLangDefault": "Lojban (default)"
+  },
+  "searchExport": {
+    "title": "Export search results",
+    "description": "Export the same dictionary and collection matches as search, as PDF, LaTeX, XML, JSON, or TSV.",
+    "emptyFilterHint": "Enter a search or pick a filter (collection, word type, author, selmaho, source language, or turn off search-in-phrases).",
+    "exportButton": "Export results",
+    "generating": "Generating export...",
+    "failed": "Export failed"
   },
   "addAllToCollection": {
     "modalTitle": "Add all definitions to collection",

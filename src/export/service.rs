@@ -18,9 +18,11 @@ use super::models::CachedExport;
 use super::models::CollectionExportItem;
 use super::models::DictionaryEntry;
 use super::models::NaturalEntry;
+use super::models::SearchExportJson;
+use super::models::SearchExportQuery;
 use super::models::User;
 use super::models::ValsiRow;
-use super::models::{ExportFormat, ExportOptions};
+use super::models::{ExportFormat, ExportOptions, SEARCH_EXPORT_ROW_CAP};
 use crate::jbovlaste::KeywordMapping;
 use std::collections::HashMap;
 
@@ -595,14 +597,25 @@ fn zip_tsv_content(
     tsv_content: &str,
     filename: &str,
 ) -> Result<Vec<u8>, Box<dyn std::error::Error + Send + Sync>> {
+    zip_tsv_files(&[(filename, tsv_content)])
+}
+
+fn zip_tsv_files(
+    files: &[(&str, &str)],
+) -> Result<Vec<u8>, Box<dyn std::error::Error + Send + Sync>> {
     let mut zip_buffer = Vec::new();
     {
         let mut zip = ZipWriter::new(Cursor::new(&mut zip_buffer));
         let options =
             SimpleFileOptions::default().compression_method(zip::CompressionMethod::Deflated);
 
-        zip.start_file(filename, options)?;
-        zip.write_all(tsv_content.as_bytes())?;
+        for (filename, tsv_content) in files {
+            if tsv_content.is_empty() {
+                continue;
+            }
+            zip.start_file(*filename, options)?;
+            zip.write_all(tsv_content.as_bytes())?;
+        }
         zip.finish()?;
     }
     Ok(zip_buffer)
@@ -1315,12 +1328,15 @@ fn format_free_content_entry(row: &tokio_postgres::Row, lang: &str) -> String {
     let front: String = row.get("free_content_front");
     let back: String = row.get("free_content_back");
     let note: Option<String> = row.get("collection_note");
+    format_free_content_parts(&front, &back, note.as_deref(), lang)
+}
 
+fn format_free_content_parts(front: &str, back: &str, note: Option<&str>, lang: &str) -> String {
     format!(
         "\n\n{{\\sffamily\\bfseries {}}} \\enspace {} {}",
-        escape_all(&front),
-        format_definition(&back, lang),
-        format_collection_note(&note.unwrap_or_default())
+        escape_all(front),
+        format_definition(back, lang),
+        format_collection_note(note.unwrap_or_default())
     )
 }
 
@@ -2143,6 +2159,573 @@ pub async fn export_all_dictionaries(pool: &Pool) -> Result<(), Box<dyn Error + 
     Ok(())
 }
 
+fn parse_i32_csv(value: &Option<String>) -> Option<Vec<i32>> {
+    let ids: Vec<i32> = value
+        .as_deref()
+        .unwrap_or("")
+        .split(',')
+        .filter_map(|s| s.trim().parse::<i32>().ok())
+        .filter(|n| *n > 0)
+        .collect();
+    if ids.is_empty() {
+        None
+    } else {
+        Some(ids)
+    }
+}
+
+fn dictionary_entry_from_detail(d: crate::jbovlaste::DefinitionDetail) -> DictionaryEntry {
+    DictionaryEntry {
+        word: d.valsiword,
+        word_type: d.type_name,
+        rafsi: d.rafsi,
+        selmaho: d.selmaho,
+        definition: d.definition,
+        definition_id: Some(d.definitionid),
+        notes: d.notes,
+        etymology: d.etymology,
+        jargon: d.jargon,
+        collection_note: None,
+        score: d.score,
+        gloss_keywords: d.gloss_keywords,
+        place_keywords: d.place_keywords,
+        user: Some(User {
+            username: d.username,
+            realname: None,
+        }),
+    }
+}
+
+fn valsi_row_from_dictionary_entry(entry: &DictionaryEntry) -> ValsiRow {
+    ValsiRow {
+        word: entry.word.clone(),
+        rafsi: entry.rafsi.clone(),
+        selmaho: entry.selmaho.clone(),
+        definition: entry.definition.clone(),
+        notes: entry.notes.clone(),
+        collection_note: entry.collection_note.clone(),
+        descriptor: entry.word_type.clone(),
+    }
+}
+
+fn format_collection_export_item(item: &CollectionExportItem, lang: &str) -> String {
+    if item.definition_id.is_some() && item.word.as_ref().is_some_and(|w| !w.is_empty()) {
+        let row = ValsiRow {
+            word: item.word.clone().unwrap_or_default(),
+            rafsi: item.rafsi.clone(),
+            selmaho: item.selmaho.clone(),
+            definition: item.definition.clone().unwrap_or_default(),
+            notes: item.definition_notes.clone(),
+            collection_note: item.collection_note.clone(),
+            descriptor: item.word_type.clone().unwrap_or_default(),
+        };
+        format_lojban_entry(&row, lang)
+    } else {
+        format_free_content_parts(
+            item.free_content_front.as_deref().unwrap_or(""),
+            item.free_content_back.as_deref().unwrap_or(""),
+            item.collection_note.as_deref(),
+            lang,
+        )
+    }
+}
+
+fn generate_search_export_latex(
+    collection_items: &[CollectionExportItem],
+    definitions: &[DictionaryEntry],
+    lang: &str,
+) -> String {
+    let escaped_lang = escape_all(lang);
+    let title = generate_title(&escaped_lang, Some(0));
+    let mut body = String::new();
+    if !collection_items.is_empty() {
+        body.push_str("\\chapter{lo liste}");
+        for item in collection_items {
+            body.push_str(&format_collection_export_item(item, lang));
+        }
+    }
+    if !definitions.is_empty() {
+        body.push_str("\\chapter{lo vlaste}");
+        for entry in definitions {
+            body.push_str(&format_lojban_entry(
+                &valsi_row_from_dictionary_entry(entry),
+                lang,
+            ));
+        }
+    }
+    format!(
+        "{}\n{}\n{}",
+        latex_header(&title, lang),
+        body,
+        latex_footer()
+    )
+}
+
+fn write_keyword_xml(
+    writer: &mut EventWriter<Cursor<Vec<u8>>>,
+    tag: &str,
+    keywords: &[crate::jbovlaste::KeywordMapping],
+) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    if keywords.is_empty() {
+        return Ok(());
+    }
+    writer.write(XmlEvent::start_element(tag))?;
+    for keyword in keywords {
+        writer.write(XmlEvent::start_element("keyword"))?;
+        writer.write(XmlEvent::start_element("word"))?;
+        writer.write(XmlEvent::Characters(&keyword.word))?;
+        writer.write(XmlEvent::end_element())?;
+        if let Some(meaning) = &keyword.meaning {
+            writer.write(XmlEvent::start_element("meaning"))?;
+            writer.write(XmlEvent::Characters(meaning))?;
+            writer.write(XmlEvent::end_element())?;
+        }
+        writer.write(XmlEvent::end_element())?;
+    }
+    writer.write(XmlEvent::end_element())?;
+    Ok(())
+}
+
+fn write_optional_xml(
+    writer: &mut EventWriter<Cursor<Vec<u8>>>,
+    tag: &str,
+    value: Option<&str>,
+) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    if let Some(v) = value.filter(|s| !s.is_empty()) {
+        writer.write(XmlEvent::start_element(tag))?;
+        writer.write(XmlEvent::Characters(v))?;
+        writer.write(XmlEvent::end_element())?;
+    }
+    Ok(())
+}
+
+fn generate_search_export_xml(
+    collection_items: &[CollectionExportItem],
+    definitions: &[DictionaryEntry],
+) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
+    let mut writer = EventWriter::new(Cursor::new(Vec::new()));
+    writer.write(XmlEvent::StartDocument {
+        version: xml::common::XmlVersion::Version10,
+        encoding: Some("UTF-8"),
+        standalone: None,
+    })?;
+    writer.write(XmlEvent::start_element("export"))?;
+
+    writer.write(XmlEvent::start_element("collection_items"))?;
+    for item in collection_items {
+        writer.write(XmlEvent::start_element("item"))?;
+        writer.write(XmlEvent::start_element("item_id"))?;
+        writer.write(XmlEvent::Characters(&item.item_id.to_string()))?;
+        writer.write(XmlEvent::end_element())?;
+        writer.write(XmlEvent::start_element("position"))?;
+        writer.write(XmlEvent::Characters(&item.position.to_string()))?;
+        writer.write(XmlEvent::end_element())?;
+        write_optional_xml(&mut writer, "word", item.word.as_deref())?;
+        write_optional_xml(&mut writer, "word_type", item.word_type.as_deref())?;
+        write_optional_xml(&mut writer, "rafsi", item.rafsi.as_deref())?;
+        write_optional_xml(&mut writer, "selmaho", item.selmaho.as_deref())?;
+        write_optional_xml(&mut writer, "definition", item.definition.as_deref())?;
+        write_optional_xml(
+            &mut writer,
+            "definition_notes",
+            item.definition_notes.as_deref(),
+        )?;
+        write_optional_xml(&mut writer, "jargon", item.jargon.as_deref())?;
+        write_optional_xml(
+            &mut writer,
+            "free_content_front",
+            item.free_content_front.as_deref(),
+        )?;
+        write_optional_xml(
+            &mut writer,
+            "free_content_back",
+            item.free_content_back.as_deref(),
+        )?;
+        write_optional_xml(
+            &mut writer,
+            "collection_note",
+            item.collection_note.as_deref(),
+        )?;
+        writer.write(XmlEvent::end_element())?;
+    }
+    writer.write(XmlEvent::end_element())?;
+
+    writer.write(XmlEvent::start_element("definitions"))?;
+    for entry in definitions {
+        writer.write(XmlEvent::start_element("entry"))?;
+        writer.write(XmlEvent::start_element("word"))?;
+        writer.write(XmlEvent::Characters(&entry.word))?;
+        writer.write(XmlEvent::end_element())?;
+        writer.write(XmlEvent::start_element("type"))?;
+        writer.write(XmlEvent::Characters(&entry.word_type))?;
+        writer.write(XmlEvent::end_element())?;
+        write_optional_xml(&mut writer, "rafsi", entry.rafsi.as_deref())?;
+        write_optional_xml(&mut writer, "selmaho", entry.selmaho.as_deref())?;
+        writer.write(XmlEvent::start_element("definition"))?;
+        writer.write(XmlEvent::Characters(&entry.definition))?;
+        writer.write(XmlEvent::end_element())?;
+        write_optional_xml(&mut writer, "notes", entry.notes.as_deref())?;
+        write_optional_xml(&mut writer, "etymology", entry.etymology.as_deref())?;
+        write_optional_xml(&mut writer, "jargon", entry.jargon.as_deref())?;
+        writer.write(XmlEvent::start_element("score"))?;
+        writer.write(XmlEvent::Characters(&entry.score.to_string()))?;
+        writer.write(XmlEvent::end_element())?;
+        if let Some(keywords) = &entry.gloss_keywords {
+            write_keyword_xml(&mut writer, "gloss_keywords", keywords)?;
+        }
+        if let Some(keywords) = &entry.place_keywords {
+            write_keyword_xml(&mut writer, "place_keywords", keywords)?;
+        }
+        writer.write(XmlEvent::end_element())?;
+    }
+    writer.write(XmlEvent::end_element())?;
+    writer.write(XmlEvent::end_element())?;
+
+    let result = writer.into_inner().into_inner();
+    String::from_utf8(result).map_err(|e| e.into())
+}
+
+fn generate_definitions_tsv(entries: &[DictionaryEntry]) -> String {
+    let max_gloss_count = entries
+        .iter()
+        .filter_map(|e| e.gloss_keywords.as_ref().map(|v| v.len()))
+        .max()
+        .unwrap_or(0);
+    let max_place_count = entries
+        .iter()
+        .filter_map(|e| e.place_keywords.as_ref().map(|v| v.len()))
+        .max()
+        .unwrap_or(0);
+
+    let mut tsv = String::from(
+        "word\ttype\trafsi\tselmaho\tdefinition\tnotes\tjargon\tcollection_note\tscore",
+    );
+    for i in 1..=max_gloss_count {
+        tsv.push_str(&format!("\tglossword_{}\tglossword_{}_meaning", i, i));
+    }
+    for i in 1..=max_place_count {
+        tsv.push_str(&format!("\tplacekeyword_{}\tplacekeyword_{}_meaning", i, i));
+    }
+    tsv.push('\n');
+
+    for entry in entries {
+        tsv.push_str(&format!(
+            "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+            replace_newlines(&entry.word),
+            replace_newlines(&entry.word_type),
+            replace_newlines(entry.rafsi.as_deref().unwrap_or("")),
+            replace_newlines(entry.selmaho.as_deref().unwrap_or("")),
+            replace_newlines(&entry.definition),
+            replace_newlines(entry.notes.as_deref().unwrap_or("")),
+            replace_newlines(entry.jargon.as_deref().unwrap_or("")),
+            replace_newlines(entry.collection_note.as_deref().unwrap_or("")),
+            entry.score
+        ));
+        let gloss = entry.gloss_keywords.as_deref().unwrap_or(&[]);
+        for i in 0..max_gloss_count {
+            if let Some(keyword) = gloss.get(i) {
+                tsv.push_str(&format!(
+                    "\t{}\t{}",
+                    replace_newlines(&keyword.word),
+                    replace_newlines(keyword.meaning.as_deref().unwrap_or(""))
+                ));
+            } else {
+                tsv.push_str("\t\t");
+            }
+        }
+        let places = entry.place_keywords.as_deref().unwrap_or(&[]);
+        for i in 0..max_place_count {
+            if let Some(keyword) = places.get(i) {
+                tsv.push_str(&format!(
+                    "\t{}\t{}",
+                    replace_newlines(&keyword.word),
+                    replace_newlines(keyword.meaning.as_deref().unwrap_or(""))
+                ));
+            } else {
+                tsv.push_str("\t\t");
+            }
+        }
+        tsv.push('\n');
+    }
+    tsv
+}
+
+fn generate_collection_items_tsv(items: &[CollectionExportItem]) -> String {
+    let mut tsv = String::from(
+        "item_id\tposition\tdefinition_id\tword\tword_type\trafsi\tselmaho\tdefinition\tdefinition_notes\tjargon\tfree_content_front\tfree_content_back\tcollection_note\n",
+    );
+    for item in items {
+        tsv.push_str(&format!(
+            "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n",
+            item.item_id,
+            item.position,
+            item.definition_id
+                .map(|id| id.to_string())
+                .unwrap_or_default(),
+            replace_newlines(item.word.as_deref().unwrap_or("")),
+            replace_newlines(item.word_type.as_deref().unwrap_or("")),
+            replace_newlines(item.rafsi.as_deref().unwrap_or("")),
+            replace_newlines(item.selmaho.as_deref().unwrap_or("")),
+            replace_newlines(item.definition.as_deref().unwrap_or("")),
+            replace_newlines(item.definition_notes.as_deref().unwrap_or("")),
+            replace_newlines(item.jargon.as_deref().unwrap_or("")),
+            replace_newlines(item.free_content_front.as_deref().unwrap_or("")),
+            replace_newlines(item.free_content_back.as_deref().unwrap_or("")),
+            replace_newlines(item.collection_note.as_deref().unwrap_or(""))
+        ));
+    }
+    tsv
+}
+
+async fn resolve_preamble_language_tag(
+    pool: &Pool,
+    language_ids: &Option<Vec<i32>>,
+) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
+    let Some(id) = language_ids.as_ref().and_then(|ids| ids.first().copied()) else {
+        return Ok("en".to_string());
+    };
+    let client = pool.get().await?;
+    match client
+        .query_opt("SELECT tag FROM languages WHERE langid = $1", &[&id])
+        .await?
+    {
+        Some(row) => Ok(row.get::<_, String>(0)),
+        None => Ok("en".to_string()),
+    }
+}
+
+pub async fn export_search_results(
+    pool: &Pool,
+    query: &SearchExportQuery,
+) -> Result<(Vec<u8>, String, String), Box<dyn std::error::Error + Send + Sync>> {
+    if !super::models::has_search_export_constraint(query) {
+        return Err(
+            "Add a search query or at least one filter (collection, word type, author, selmaho, source language, or search-in-phrases off).".into(),
+        );
+    }
+
+    let format = ExportFormat::from_query(query.format.as_deref()).map_err(|e| e.to_string())?;
+    let search_term = query.search.as_deref().unwrap_or("").trim().to_string();
+    let languages = parse_i32_csv(&query.languages);
+    let usernames = crate::jbovlaste::dto::parse_username_list(&query.username);
+    let exclude_usernames = crate::jbovlaste::dto::parse_username_list(&query.exclude_usernames);
+    let selmaho = query
+        .selmaho
+        .as_deref()
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(str::to_string);
+    let collection_ids = query
+        .collection_ids
+        .as_deref()
+        .map(|s| crate::collections::dto::parse_positive_id_list(s, 50))
+        .unwrap_or_default();
+
+    let use_semantic = query.semantic.unwrap_or(false) && !search_term.is_empty();
+    if use_semantic {
+        if crate::utils::embeddings::embeddings_disabled() {
+            return Err("Semantic search is disabled. Use text search instead.".into());
+        }
+        let embedding = crate::utils::embeddings::get_embedding(&search_term).await?;
+        let semantic_embedding = Some(pgvector::Vector::from(embedding.clone()));
+
+        let params = crate::jbovlaste::SearchDefinitionsParams {
+            page: 1,
+            per_page: SEARCH_EXPORT_ROW_CAP,
+            search_term: search_term.clone(),
+            include_comments: false,
+            sort_by: "word".to_string(),
+            sort_order: "asc".to_string(),
+            languages: languages.clone(),
+            selmaho: selmaho.clone(),
+            usernames: usernames.clone(),
+            exclude_usernames: exclude_usernames.clone(),
+            word_type: query.word_type,
+            source_langid: query.source_langid,
+            search_in_phrases: query.search_in_phrases,
+            include_total_count: true,
+            exclude_definition_id: None,
+        };
+
+        let collection_fut = async {
+            if collection_ids.is_empty() {
+                return Ok((Vec::new(), 0_i64));
+            }
+            let filters = crate::collections::dto::ListCollectionItemsFilters {
+                languages: languages.clone(),
+                selmaho: selmaho.clone(),
+                word_type: query.word_type,
+                usernames: usernames.clone(),
+                exclude_usernames: exclude_usernames.clone(),
+                source_langid: query.source_langid,
+                search_in_phrases: query.search_in_phrases,
+                semantic_embedding: semantic_embedding.clone(),
+            };
+            crate::collections::service::search_items_in_collections_for_export(
+                pool,
+                collection_ids.clone(),
+                Some(search_term.clone()),
+                filters,
+                SEARCH_EXPORT_ROW_CAP,
+            )
+            .await
+            .map_err(|e| -> Box<dyn std::error::Error + Send + Sync> { e.to_string().into() })
+        };
+
+        let (collection_result, defs_result) = tokio::join!(
+            collection_fut,
+            crate::jbovlaste::service::semantic_search(pool, params, embedding, None)
+        );
+        let (collection_items, collection_total) = collection_result?;
+        let defs = defs_result.map_err(|e| e.to_string())?;
+        return finalize_search_export(
+            pool,
+            format,
+            collection_items,
+            collection_total,
+            defs.definitions
+                .into_iter()
+                .map(dictionary_entry_from_detail)
+                .collect(),
+            defs.total,
+            &languages,
+        )
+        .await;
+    }
+
+    let params = crate::jbovlaste::SearchDefinitionsParams {
+        page: 1,
+        per_page: SEARCH_EXPORT_ROW_CAP,
+        search_term: search_term.clone(),
+        include_comments: false,
+        sort_by: "word".to_string(),
+        sort_order: "asc".to_string(),
+        languages: languages.clone(),
+        selmaho: selmaho.clone(),
+        usernames: usernames.clone(),
+        exclude_usernames: exclude_usernames.clone(),
+        word_type: query.word_type,
+        source_langid: query.source_langid,
+        search_in_phrases: query.search_in_phrases,
+        include_total_count: true,
+        exclude_definition_id: None,
+    };
+
+    let collection_fut = async {
+        if collection_ids.is_empty() {
+            return Ok((Vec::new(), 0_i64));
+        }
+        let filters = crate::collections::dto::ListCollectionItemsFilters {
+            languages: languages.clone(),
+            selmaho: selmaho.clone(),
+            word_type: query.word_type,
+            usernames: usernames.clone(),
+            exclude_usernames: exclude_usernames.clone(),
+            source_langid: query.source_langid,
+            search_in_phrases: query.search_in_phrases,
+            semantic_embedding: None,
+        };
+        crate::collections::service::search_items_in_collections_for_export(
+            pool,
+            collection_ids,
+            if search_term.is_empty() {
+                None
+            } else {
+                Some(search_term.clone())
+            },
+            filters,
+            SEARCH_EXPORT_ROW_CAP,
+        )
+        .await
+        .map_err(|e| -> Box<dyn std::error::Error + Send + Sync> { e.to_string().into() })
+    };
+
+    let (collection_result, defs_result) = tokio::join!(
+        collection_fut,
+        crate::jbovlaste::service::search_definitions(pool, params, None)
+    );
+    let (collection_items, collection_total) = collection_result?;
+    let defs = defs_result.map_err(|e| e.to_string())?;
+    finalize_search_export(
+        pool,
+        format,
+        collection_items,
+        collection_total,
+        defs.definitions
+            .into_iter()
+            .map(dictionary_entry_from_detail)
+            .collect(),
+        defs.total,
+        &languages,
+    )
+    .await
+}
+
+async fn finalize_search_export(
+    pool: &Pool,
+    format: ExportFormat,
+    collection_items: Vec<CollectionExportItem>,
+    collection_total: i64,
+    definitions: Vec<DictionaryEntry>,
+    definition_total: i64,
+    languages: &Option<Vec<i32>>,
+) -> Result<(Vec<u8>, String, String), Box<dyn std::error::Error + Send + Sync>> {
+    let combined = collection_total.saturating_add(definition_total);
+    if combined > SEARCH_EXPORT_ROW_CAP {
+        return Err(format!(
+            "Too many matching rows ({}). Narrow the search (limit is {}).",
+            combined, SEARCH_EXPORT_ROW_CAP
+        )
+        .into());
+    }
+    if collection_items.is_empty() && definitions.is_empty() {
+        return Err("No matching definitions or collection items to export.".into());
+    }
+
+    let lang = resolve_preamble_language_tag(pool, languages).await?;
+    let filename = format!("search-export.{}", format.file_extension());
+    let content_type = format.content_type().to_string();
+
+    let content = match format {
+        ExportFormat::Pdf => {
+            let latex = generate_search_export_latex(&collection_items, &definitions, &lang);
+            generate_pdf(&latex).await?
+        }
+        ExportFormat::LaTeX => {
+            generate_search_export_latex(&collection_items, &definitions, &lang).into_bytes()
+        }
+        ExportFormat::Xml => {
+            generate_search_export_xml(&collection_items, &definitions)?.into_bytes()
+        }
+        ExportFormat::Json => serde_json::to_vec_pretty(&SearchExportJson {
+            collection_items,
+            definitions,
+        })?,
+        ExportFormat::Tsv => {
+            let mut files: Vec<(String, String)> = Vec::new();
+            if !collection_items.is_empty() {
+                files.push((
+                    "collection-items.tsv".to_string(),
+                    generate_collection_items_tsv(&collection_items),
+                ));
+            }
+            if !definitions.is_empty() {
+                files.push((
+                    "definitions.tsv".to_string(),
+                    generate_definitions_tsv(&definitions),
+                ));
+            }
+            let refs: Vec<(&str, &str)> = files
+                .iter()
+                .map(|(n, c)| (n.as_str(), c.as_str()))
+                .collect();
+            zip_tsv_files(&refs)?
+        }
+    };
+
+    Ok((content, content_type, filename))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -2169,6 +2752,49 @@ mod tests {
         assert_eq!(
             build_export_filename(None, DEFAULT_SOURCE_LANGUAGE_TAG, "hi", "json"),
             "dictionary-jbo-hi.json"
+        );
+    }
+
+    #[test]
+    fn search_export_constraint_requires_query_or_filter() {
+        use super::super::models::{has_search_export_constraint, SearchExportQuery};
+        assert!(!has_search_export_constraint(&SearchExportQuery::default()));
+        assert!(has_search_export_constraint(&SearchExportQuery {
+            search: Some("broda".into()),
+            ..Default::default()
+        }));
+        assert!(has_search_export_constraint(&SearchExportQuery {
+            word_type: Some(1),
+            ..Default::default()
+        }));
+        assert!(has_search_export_constraint(&SearchExportQuery {
+            collection_ids: Some("12,15".into()),
+            ..Default::default()
+        }));
+        assert!(!has_search_export_constraint(&SearchExportQuery {
+            languages: Some("2".into()),
+            ..Default::default()
+        }));
+        assert!(has_search_export_constraint(&SearchExportQuery {
+            search_in_phrases: Some(false),
+            ..Default::default()
+        }));
+    }
+
+    #[test]
+    fn export_format_from_query_accepts_aliases() {
+        assert_eq!(
+            ExportFormat::from_query(Some("tex")).unwrap(),
+            ExportFormat::LaTeX
+        );
+        assert!(ExportFormat::from_query(Some("docx")).is_err());
+        assert_eq!(
+            format!("search-export.{}", ExportFormat::Json.file_extension()),
+            "search-export.json"
+        );
+        assert_eq!(
+            format!("search-export.{}", ExportFormat::Tsv.file_extension()),
+            "search-export.zip"
         );
     }
 }

@@ -140,6 +140,7 @@
     "searchMetaDescription": "ロジバン辞書での「{query}」の検索結果。",
     "globalDictionaryBelow": "以下の定義は共通辞書からのものです。",
     "addDefinition": "定義",
+    "exportResults": "結果をエクスポート",
     "newFreeThread": "フリーウェーブを始める",
     "noCommentsFound": "条件に一致するコメントはありません",
     "waveSourceLabel": "波",
@@ -723,6 +724,14 @@
     "sourceLangLabel": "原語（語形）",
     "selectSourceLanguage": "原語を選択",
     "sourceLangDefault": "ロジバン（既定）"
+  },
+  "searchExport": {
+    "title": "検索結果のエクスポート",
+    "description": "検索と同じ辞書・コレクションの一致結果を PDF、LaTeX、XML、JSON、TSV で書き出します。",
+    "emptyFilterHint": "検索語を入力するか、フィルター（コレクション、語種、作者、selma'o、原語、またはフレーズ検索オフ）を選んでください。",
+    "exportButton": "結果をエクスポート",
+    "generating": "エクスポート生成中…",
+    "failed": "エクスポートに失敗しました"
   },
   "collectionWidget": {
     "itemsCount": "{count} 件",

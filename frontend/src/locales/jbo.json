@@ -139,7 +139,8 @@
     "metaDescription": "ko sisku fi la'e la jbovlaste .e lo sorcu .i ko penmi lo velckivei .e lo casnu .e lo mupli",
     "searchMetaDescription": "ko viska lo se penmi be la'ei \"{query}\" ne'i lo lojbo vlaste",
     "globalDictionaryBelow": "di'e velckivei gi'e cnano",
-    "addDefinition": "cnino velckivei",
+    "addDefinition": "velckivei",
+    "exportResults": "cupra lo se sisku",
     "newFreeThread": "cnino nu casnu",
     "noCommentsFound": "no pinka cu sarxe lo do sisku",
     "waveSourceLabel": "casnu",
@@ -738,6 +739,14 @@
     "sourceLangLabel": "ckaji lo ka fanva fo ce'u",
     "selectSourceLanguage": "cuxna tu'a le ckaji be lo ka fanva fo ce'u",
     "sourceLangDefault": "jai se cuxna gi'o nai lojbo"
+  },
+  "searchExport": {
+    "title": "cupra lo se sisku",
+    "description": "ko cupra lo velckivei .e lo liste jmina poi sisku cu facki ke'a fi lo PDF .a la'o gy.LaTeX.gy .a lo XML .a lo JSON .a lo TSV",
+    "emptyFilterHint": "ko ciska lo se sisku .a cuxna lo stika (liste .a valsi klesi .a finti .a selma'o .a fanva bangu .a na sisku ne'i lo jufra)",
+    "exportButton": "cupra lo se sisku",
+    "generating": "ca'o cupra",
+    "failed": "fliba lo nu cupra"
   },
   "collectionWidget": {
     "itemsCount": "{count} lo se liste",

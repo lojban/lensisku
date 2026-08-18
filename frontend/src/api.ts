@@ -283,10 +283,8 @@ export const getPublicCollections = (params?: Record<string, unknown>) =>
   api.get('/collections/public', { params })
 
 /** Mixed collection + user rows for the combined search filter picker. */
-export const searchCollectionsAndUsers = (
-  params?: Record<string, unknown>,
-  signal?: AbortSignal
-) => api.get('/collections/users-and-collections', { params, signal })
+export const searchCollectionsAndUsers = (params?: Record<string, unknown>, signal?: AbortSignal) =>
+  api.get('/collections/users-and-collections', { params, signal })
 
 export const getCollection = (id: number | string) => api.get(`/collections/${id}`)
 
@@ -336,10 +334,8 @@ export const listCollectionItems = (
 ) => api.get(`/collections/${collectionId}/items`, { params, signal })
 
 /** Search items across many collections in one request (`collection_ids=1,2,3`). */
-export const searchItemsInCollections = (
-  params: Record<string, unknown>,
-  signal?: AbortSignal
-) => api.get('/collections/items/search', { params, signal })
+export const searchItemsInCollections = (params: Record<string, unknown>, signal?: AbortSignal) =>
+  api.get('/collections/items/search', { params, signal })
 
 export const listCustomTextBulkItems = (collectionId: number | string) =>
   api.get(`/collections/${collectionId}/items/custom-text-bulk`)
@@ -373,6 +369,13 @@ export const mergeCollection = (data: Record<string, unknown>) =>
 
 export const exportDictionary = (language: string, params: string) =>
   api.get(`/export/dictionary/${language}?${params}`, {
+    responseType: 'blob',
+    timeout: 300000,
+  })
+
+export const exportSearchResults = (params: Record<string, unknown>) =>
+  api.get('/export/search', {
+    params,
     responseType: 'blob',
     timeout: 300000,
   })

@@ -13,7 +13,8 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
             .service(
                 web::scope("")
                     .wrap(HttpAuthentication::bearer(crate::auth::validator))
-                    .service(controller::export_dictionary),
+                    .service(controller::export_dictionary)
+                    .service(controller::export_search),
             ),
     );
 }

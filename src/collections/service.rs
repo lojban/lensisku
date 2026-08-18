@@ -3981,6 +3981,178 @@ pub async fn search_items_in_collections(
     Ok(SearchItemsResponse { items, total })
 }
 
+/// Search public collection items for a filtered export: extra type/rafsi/selmaho joins,
+/// no media blobs, and a higher row cap than the interactive search endpoint.
+pub async fn search_items_in_collections_for_export(
+    pool: &Pool,
+    collection_ids: Vec<i32>,
+    search: Option<String>,
+    filters: ListCollectionItemsFilters,
+    max_rows: i64,
+) -> AppResult<(Vec<CollectionExportItem>, i64)> {
+    if collection_ids.is_empty() {
+        return Err(AppError::BadRequest(
+            "collection_ids is required".to_string(),
+        ));
+    }
+    let collection_ids: Vec<i32> = collection_ids
+        .into_iter()
+        .filter(|id| *id > 0)
+        .take(MAX_MULTI_COLLECTION_IDS)
+        .collect();
+    if collection_ids.is_empty() {
+        return Err(AppError::BadRequest(
+            "collection_ids is required".to_string(),
+        ));
+    }
+
+    let max_rows = max_rows.clamp(1, crate::export::models::SEARCH_EXPORT_ROW_CAP);
+
+    let client = pool
+        .get()
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+    let search_pattern = search
+        .as_ref()
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
+        .map(|s| format!("%{}%", s));
+
+    const ACCESSIBLE_CTE: &str = "WITH accessible AS MATERIALIZED (
+            SELECT c.collection_id, c.name, c.updated_at
+            FROM collections c
+            WHERE c.collection_id = ANY($1::int[])
+              AND c.is_public = true
+         )";
+    const FROM_WHERE_HEAD: &str = "
+            FROM accessible c
+            JOIN collection_items ci ON ci.collection_id = c.collection_id
+            LEFT JOIN definitions d ON d.definitionid = ci.definition_id
+            LEFT JOIN valsitypes t ON t.typeid = d.cached_typeid
+            LEFT JOIN convenientdefinitions conv ON conv.definitionid = d.definitionid
+            WHERE TRUE";
+
+    let mut from_where = String::from(FROM_WHERE_HEAD);
+    let mut count_params: Vec<Box<dyn tokio_postgres::types::ToSql + Sync>> =
+        vec![Box::new(collection_ids.clone())];
+    let mut count_param_idx = 2;
+    append_multi_collection_search_clauses(
+        &mut from_where,
+        &mut count_params,
+        &mut count_param_idx,
+        &search_pattern,
+        &filters,
+    );
+
+    let count_query = format!(
+        "{cte}
+         SELECT COUNT(*)::bigint
+         {from_where}",
+        cte = ACCESSIBLE_CTE,
+        from_where = from_where,
+    );
+    let total: i64 = client
+        .query_one(
+            &count_query,
+            &count_params.iter().map(|p| &**p as _).collect::<Vec<_>>(),
+        )
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?
+        .try_get(0)
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+    if total == 0 || total > max_rows {
+        return Ok((Vec::new(), total));
+    }
+
+    let mut list_params: Vec<Box<dyn tokio_postgres::types::ToSql + Sync>> =
+        vec![Box::new(collection_ids)];
+    let mut list_param_idx = 2;
+    append_multi_collection_search_clauses(
+        &mut String::new(),
+        &mut list_params,
+        &mut list_param_idx,
+        &search_pattern,
+        &filters,
+    );
+
+    let order_by = if let Some(ref embedding) = filters.semantic_embedding {
+        if search_pattern.is_some() {
+            let idx = list_param_idx;
+            list_params.push(Box::new(embedding.clone()));
+            list_param_idx += 1;
+            format!(
+                "(CASE WHEN d.embedding IS NULL THEN 1 ELSE 0 END) ASC, \
+                 d.embedding <=> ${idx}::vector ASC NULLS LAST, \
+                 c.updated_at DESC, ci.position ASC, ci.added_at DESC",
+                idx = idx
+            )
+        } else {
+            "c.updated_at DESC, ci.position ASC, ci.added_at DESC".to_string()
+        }
+    } else {
+        "c.updated_at DESC, ci.position ASC, ci.added_at DESC".to_string()
+    };
+
+    let query = format!(
+        "{cte}
+         SELECT
+            ci.item_id, ci.definition_id, ci.notes as collection_note, ci.position,
+            ci.free_content_front, ci.free_content_back,
+            ci.langid as language_id, ci.owner_user_id, ci.license,
+            COALESCE(d.cached_valsiword, ci.free_content_front) as word,
+            d.definition, d.notes as definition_notes, d.jargon,
+            t.descriptor as word_type,
+            conv.rafsi, conv.selmaho
+         {from_where}
+         ORDER BY {order_by}
+         LIMIT ${lim}",
+        cte = ACCESSIBLE_CTE,
+        from_where = from_where,
+        order_by = order_by,
+        lim = list_param_idx,
+    );
+    list_params.push(Box::new(max_rows));
+
+    let rows = client
+        .query(
+            &query,
+            &list_params.iter().map(|p| &**p as _).collect::<Vec<_>>(),
+        )
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+    let items = rows
+        .into_iter()
+        .map(|row| CollectionExportItem {
+            item_id: row.get("item_id"),
+            position: row.get("position"),
+            collection_note: row.get("collection_note"),
+            definition_id: row.get("definition_id"),
+            language_id: row.get("language_id"),
+            owner_user_id: row.get("owner_user_id"),
+            license: row.get("license"),
+            word: row.get("word"),
+            word_type: row.get("word_type"),
+            rafsi: row.get("rafsi"),
+            selmaho: row.get("selmaho"),
+            definition: row.get("definition"),
+            definition_notes: row.get("definition_notes"),
+            jargon: row.get("jargon"),
+            free_content_front: row.get("free_content_front"),
+            free_content_back: row.get("free_content_back"),
+            front_image_url: None,
+            back_image_url: None,
+            direction: None,
+            level_index: None,
+            position_in_level: None,
+        })
+        .collect();
+
+    Ok((items, total))
+}
+
 fn append_multi_collection_search_clauses(
     sql: &mut String,
     params: &mut Vec<Box<dyn tokio_postgres::types::ToSql + Sync>>,

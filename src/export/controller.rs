@@ -6,7 +6,7 @@ use deadpool_postgres::Pool;
 
 use crate::{
     auth::Claims,
-    export::models::{ExportFormat, ExportOptions},
+    export::models::{ExportFormat, ExportOptions, SearchExportQuery},
 };
 
 #[utoipa::path(
@@ -142,5 +142,67 @@ pub async fn export_dictionary(
             "Invalid language tag" => HttpResponse::BadRequest().body(e.to_string()),
             _ => HttpResponse::InternalServerError().body(e.to_string()),
         },
+    }
+}
+
+#[utoipa::path(
+    get,
+    path = "/export/search",
+    tag = "export",
+    params(
+        ("format" = Option<String>, Query, description = "Export format (pdf, latex, xml, json, tsv)"),
+        ("search" = Option<String>, Query, description = "Search term"),
+        ("languages" = Option<String>, Query, description = "Comma-separated definition language ids"),
+        ("selmaho" = Option<String>, Query, description = "Filter by selma'o"),
+        ("word_type" = Option<i16>, Query, description = "Filter by valsi type id"),
+        ("username" = Option<String>, Query, description = "Comma-separated author usernames to include"),
+        ("exclude_usernames" = Option<String>, Query, description = "Comma-separated author usernames to exclude"),
+        ("source_langid" = Option<i32>, Query, description = "Source language id of the valsi (default Lojban)"),
+        ("search_in_phrases" = Option<bool>, Query, description = "When false, exclude phrase (type 15) entries"),
+        ("semantic" = Option<bool>, Query, description = "Use semantic ranking when search text is present"),
+        ("collection_ids" = Option<String>, Query, description = "Comma-separated public collection ids to include")
+    ),
+    responses(
+        (status = 200, description = "Filtered search exported successfully"),
+        (status = 400, description = "Invalid parameters, empty result, or too many rows"),
+        (status = 500, description = "Internal server error")
+    ),
+    security(
+        ("bearer_auth" = [])
+    ),
+    summary = "Export dictionary and collection search results"
+)]
+#[get("/search")]
+pub async fn export_search(
+    pool: web::Data<Pool>,
+    query: web::Query<SearchExportQuery>,
+) -> impl Responder {
+    match ExportFormat::from_query(query.format.as_deref()) {
+        Ok(_) => {}
+        Err(msg) => return HttpResponse::BadRequest().body(msg),
+    }
+
+    match service::export_search_results(&pool, &query).await {
+        Ok((content, content_type, filename)) => HttpResponse::Ok()
+            .insert_header((header::CACHE_CONTROL, "no-store"))
+            .content_type(content_type)
+            .append_header((
+                header::CONTENT_DISPOSITION,
+                format!("attachment; filename=\"{}\"", filename),
+            ))
+            .body(content),
+        Err(e) => {
+            let msg = e.to_string();
+            if msg.starts_with("Add a search")
+                || msg.starts_with("Too many matching")
+                || msg.starts_with("No matching")
+                || msg.starts_with("Invalid format")
+                || msg.starts_with("Semantic search is disabled")
+            {
+                HttpResponse::BadRequest().body(msg)
+            } else {
+                HttpResponse::InternalServerError().body(msg)
+            }
+        }
     }
 }

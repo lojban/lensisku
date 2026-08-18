@@ -83,6 +83,7 @@
           :show-comment-button="false"
           :show-word-type="false"
           :show-audio="false"
+          :show-vote-buttons="true"
           :definition-id="def.definitionid"
           :show-definition-number="true"
           :collections="collections"

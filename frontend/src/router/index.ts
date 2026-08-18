@@ -219,6 +219,12 @@ const baseRoutes: Array<RouteRecordRaw> = [
     meta: { requiresAuth: true },
   },
   {
+    path: '/export/search',
+    name: 'SearchExport',
+    component: () => import('../pages/SearchExport.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
     path: '/definitions/export-pairs',
     name: 'ExportPairs',
     component: () => import('../pages/ExportPairs.vue'),

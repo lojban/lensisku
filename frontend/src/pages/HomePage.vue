@@ -119,6 +119,9 @@
             >
               {{ $t('home.addAllToCollection') }}
             </ToolbarSelectDropdownItem>
+            <ToolbarSelectDropdownItem @click="goToSearchExport">
+              {{ $t('home.exportResults') }}
+            </ToolbarSelectDropdownItem>
           </ToolbarSelectDropdown>
         </div>
 
@@ -234,7 +237,9 @@
 
         <div class="relative z-0" :class="{ 'pointer-events-none select-none': isLoading }">
           <PhraseSplit
-            v-if="(searchMode === 'dictionary' || searchMode === 'semantic') && !similarDefinitionId"
+            v-if="
+              (searchMode === 'dictionary' || searchMode === 'semantic') && !similarDefinitionId
+            "
             :phrase="searchQuery"
             :selected-languages="filters.selectedLanguages"
             :source-lang-id="filters.source_langid"
@@ -249,7 +254,7 @@
             :show-scores="auth.state.isLoggedIn"
             :semantic-search="searchMode === 'semantic' && !!(searchQuery || '').trim()"
             :search-query="searchQuery"
-            :show-vote-buttons="auth.state.isLoggedIn"
+            :show-vote-buttons="false"
             :collections="collections"
             :collection-matches="collectionMatches"
             :show-global-dictionary-banner="filters.selectedCollections?.length > 0"
@@ -264,7 +269,7 @@
                 v-else-if="similarAnchorDefinition"
                 :definition="similarAnchorDefinition"
                 :languages="languages"
-                :show-vote-buttons="auth.state.isLoggedIn"
+                :show-vote-buttons="false"
                 :disable-toolbar="true"
                 :disable-owner-only-lock="true"
                 :hide-find-similar="true"
@@ -435,7 +440,6 @@ import {
   searchWaves,
   list_wave_threads,
   getCollections,
-  getBulkVotes,
   getDefinition,
   searchItemsInCollections,
 } from '@/api'
@@ -709,24 +713,7 @@ const fetchSimilarAnchorDefinition = async (definitionId: number | null) => {
   isLoadingSimilarAnchor.value = true
   try {
     const response = await getDefinition(definitionId)
-    let anchor = response.data as Record<string, unknown>
-
-    if (auth.state.isLoggedIn && anchor?.definitionid) {
-      try {
-        const votesResponse = await getBulkVotes({
-          definition_ids: [anchor.definitionid as number],
-        })
-        const votesMap = votesResponse.data.votes as Record<number, number | null>
-        anchor = {
-          ...anchor,
-          user_vote: votesMap[anchor.definitionid as number] || null,
-        }
-      } catch (e) {
-        console.error('Error fetching anchor definition votes:', e)
-      }
-    }
-
-    similarAnchorDefinition.value = anchor
+    similarAnchorDefinition.value = response.data as Record<string, unknown>
   } catch (e) {
     console.error('Error fetching similar anchor definition:', e)
     similarAnchorDefinition.value = null
@@ -735,9 +722,13 @@ const fetchSimilarAnchorDefinition = async (definitionId: number | null) => {
   }
 }
 
-watch(similarDefinitionId, (id) => {
-  fetchSimilarAnchorDefinition(id)
-}, { immediate: true })
+watch(
+  similarDefinitionId,
+  (id) => {
+    fetchSimilarAnchorDefinition(id)
+  },
+  { immediate: true }
+)
 
 /** Filter discussion waves: all site + mail, jbotcan imports, site comments only, or mail only. */
 const WAVE_SOURCES = ['all', 'jbotcan', 'comments', 'mail', 'wiki'] as const
@@ -919,9 +910,7 @@ const fetchDefinitions = async (page, search = '') => {
       search: similarId ? undefined : trimmedSearch || undefined,
       definition_id: similarId || undefined,
       include_comments: true,
-      username: filters.value.usernames?.length
-        ? filters.value.usernames.join(',')
-        : undefined,
+      username: filters.value.usernames?.length ? filters.value.usernames.join(',') : undefined,
       exclude_usernames: filters.value.excludeUsernames?.length
         ? filters.value.excludeUsernames.join(',')
         : undefined,
@@ -984,28 +973,6 @@ const fetchDefinitions = async (page, search = '') => {
     currentPage.value = page
     totalPages.value = Math.ceil(response.data.total / 10)
     decomposition.value = response.data.decomposition || []
-
-    // Get bulk votes for current user only if we have definitions
-    if (auth.state.isLoggedIn && definitions.value.length > 0) {
-      try {
-        const definitionIds = definitions.value.map((d) => d.definitionid)
-        // Only fetch votes if we have IDs to check
-        if (definitionIds.length > 0) {
-          const votesResponse = await getBulkVotes({ definition_ids: definitionIds })
-          const votesMap = votesResponse.data.votes
-
-          // Check again before updating votes (in case another request completed)
-          if (definitionsSearchQueue.shouldProcess(requestId)) {
-            definitions.value = definitions.value.map((def) => ({
-              ...def,
-              user_vote: votesMap[def.definitionid] || null,
-            }))
-          }
-        }
-      } catch (e) {
-        console.error('Error fetching votes:', e)
-      }
-    }
   } catch (e) {
     // Ignore abort errors
     if (e.name === 'AbortError' || e.code === 'ERR_CANCELED' || e.message?.includes('canceled')) {
@@ -1048,8 +1015,7 @@ const loadAllDefinitionIdsForCurrentSearch = async (
 
   const trimmedSearch = similarDefinitionId.value ? '' : (searchQuery.value || '').trim()
   const useSemantic =
-    !!similarDefinitionId.value ||
-    (searchMode.value === 'semantic' && trimmedSearch.length > 0)
+    !!similarDefinitionId.value || (searchMode.value === 'semantic' && trimmedSearch.length > 0)
 
   const baseParams: Record<string, unknown> = {
     per_page: ADD_ALL_PER_PAGE,
@@ -1456,6 +1422,23 @@ const handleLogoClear = () => {
   searchFormRef.value?.focusInput()
   similarDefinitionId.value = null
   performSearch({ query: '', mode: searchMode.value })
+}
+
+const goToSearchExport = () => {
+  const mode =
+    searchMode.value === 'dictionary' || searchMode.value === 'semantic'
+      ? searchMode.value
+      : filters.value.isSemantic
+        ? 'semantic'
+        : 'dictionary'
+  router.push({
+    path: '/export/search',
+    query: compactQuery({
+      q: searchQuery.value || undefined,
+      mode,
+      ...combinedFiltersToQuery(filters.value),
+    }),
+  })
 }
 
 // Navigation handlers

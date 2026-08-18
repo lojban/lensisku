@@ -45,6 +45,17 @@ impl ExportFormat {
             ExportFormat::Tsv => "zip",
         }
     }
+
+    pub fn from_query(value: Option<&str>) -> Result<Self, &'static str> {
+        match value.unwrap_or("pdf") {
+            "pdf" => Ok(Self::Pdf),
+            "latex" | "tex" => Ok(Self::LaTeX),
+            "xml" => Ok(Self::Xml),
+            "json" => Ok(Self::Json),
+            "tsv" => Ok(Self::Tsv),
+            _ => Err("Invalid format. Supported formats: pdf, latex, xml, json, tsv"),
+        }
+    }
 }
 
 #[derive(Debug, Default, Deserialize)]
@@ -54,6 +65,64 @@ pub struct ExportOptions {
     pub collection_id: Option<i32>,
     /// Language tag for the source/word language (defaults to Lojban if omitted)
     pub source_lang: Option<String>,
+}
+
+/// Query for `GET /export/search` — same filters as dictionary / collection search.
+#[derive(Debug, Default, Deserialize)]
+pub struct SearchExportQuery {
+    pub format: Option<String>,
+    pub search: Option<String>,
+    pub languages: Option<String>,
+    pub selmaho: Option<String>,
+    pub word_type: Option<i16>,
+    pub username: Option<String>,
+    pub exclude_usernames: Option<String>,
+    pub source_langid: Option<i32>,
+    pub search_in_phrases: Option<bool>,
+    pub semantic: Option<bool>,
+    pub collection_ids: Option<String>,
+}
+
+/// Combined JSON body for a filtered search export.
+#[derive(Serialize)]
+pub struct SearchExportJson {
+    pub collection_items: Vec<CollectionExportItem>,
+    pub definitions: Vec<DictionaryEntry>,
+}
+
+/// Max collection + dictionary rows in one search export.
+pub const SEARCH_EXPORT_ROW_CAP: i64 = 15_000;
+
+/// True when the query is constrained enough to export (not a full-corpus dump).
+/// Language-only filters do not count; use `/export/dictionary/{lang}` for that.
+pub fn has_search_export_constraint(query: &SearchExportQuery) -> bool {
+    if !query.search.as_deref().unwrap_or("").trim().is_empty() {
+        return true;
+    }
+    if !query.selmaho.as_deref().unwrap_or("").trim().is_empty() {
+        return true;
+    }
+    if crate::jbovlaste::dto::parse_username_list(&query.username).is_some() {
+        return true;
+    }
+    if crate::jbovlaste::dto::parse_username_list(&query.exclude_usernames).is_some() {
+        return true;
+    }
+    if query.word_type.is_some() {
+        return true;
+    }
+    if query
+        .collection_ids
+        .as_deref()
+        .map(|s| crate::collections::dto::parse_positive_id_list(s, 50))
+        .is_some_and(|ids| !ids.is_empty())
+    {
+        return true;
+    }
+    if query.source_langid.is_some_and(|id| id != 1) {
+        return true;
+    }
+    query.search_in_phrases == Some(false)
 }
 
 #[derive(Serialize)]
