@@ -128,6 +128,19 @@ export function combinedFiltersFromQuery(query: LocationQuery): CombinedFiltersU
   }
 }
 
+/** Filters that should list dictionary results even when the search box is empty. */
+export function hasActiveSearchFilters(filters: CombinedFiltersUrlState): boolean {
+  return Boolean(
+    filters.selmaho?.trim() ||
+      filters.usernames?.length ||
+      filters.excludeUsernames?.length ||
+      filters.word_type ||
+      filters.selectedCollections?.length ||
+      (filters.source_langid && filters.source_langid !== 1) ||
+      filters.searchInPhrases === false
+  )
+}
+
 export function pickHomeQuery(query: LocationQuery): Record<string, string> {
   const out: Record<string, string> = {}
   for (const key of HOME_PRESERVED_QUERY_KEYS) {

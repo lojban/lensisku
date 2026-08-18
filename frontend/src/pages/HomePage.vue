@@ -247,7 +247,7 @@
             :error="error"
             :languages="languages"
             :show-scores="auth.state.isLoggedIn"
-            :semantic-search="searchMode === 'semantic'"
+            :semantic-search="searchMode === 'semantic' && !!(searchQuery || '').trim()"
             :search-query="searchQuery"
             :show-vote-buttons="auth.state.isLoggedIn"
             :collections="collections"
@@ -463,6 +463,7 @@ import {
   combinedFiltersFromQuery,
   combinedFiltersToQuery,
   compactQuery,
+  hasActiveSearchFilters,
   queryStr,
 } from '@/utils/routeQuery'
 import { normalizeSearchQuery } from '@/utils/searchQueryUtils'
@@ -795,16 +796,10 @@ useSeoHead({ title: pageTitle, description: pageDescription, pathWithoutLocale: 
 
 /** When true, show trending + recent changes; when false, show search / waves results. */
 const showTrendingHome = computed(() => {
-  const q = (searchQuery.value || '').trim()
-  const noFilters =
-    !filters.value.selmaho &&
-    !filters.value.usernames?.length &&
-    !filters.value.excludeUsernames?.length &&
-    !filters.value.word_type &&
-    !filters.value.selectedCollections?.length
   if (searchMode.value === 'comments') return false
   if (similarDefinitionId.value) return false
-  return !q && noFilters
+  const q = (searchQuery.value || '').trim()
+  return !q && !hasActiveSearchFilters(filters.value)
 })
 
 const waveSourceTriggerLabel = computed(() => {
@@ -868,7 +863,7 @@ async function loadCollectionMatches(
   if (filters.value.excludeUsernames?.length) {
     itemParams.exclude_usernames = filters.value.excludeUsernames.join(',')
   }
-  if (searchMode.value === 'semantic') {
+  if (searchMode.value === 'semantic' && search.trim()) {
     itemParams.semantic = true
   }
 
@@ -901,6 +896,9 @@ const fetchDefinitions = async (page, search = '') => {
 
   try {
     const similarId = similarDefinitionId.value
+    const trimmedSearch = similarId ? '' : String(search ?? '').trim()
+    // Semantic search needs text (or a definition_id). Empty box + filters → lexical browse.
+    const useSemantic = !!similarId || (searchMode.value === 'semantic' && trimmedSearch.length > 0)
     const params: {
       page: number
       per_page: number
@@ -918,7 +916,7 @@ const fetchDefinitions = async (page, search = '') => {
     } = {
       page,
       per_page: 10,
-      search: similarId ? undefined : search,
+      search: similarId ? undefined : trimmedSearch || undefined,
       definition_id: similarId || undefined,
       include_comments: true,
       username: filters.value.usernames?.length
@@ -951,16 +949,15 @@ const fetchDefinitions = async (page, search = '') => {
 
     const collectionMatchesPromise = similarId
       ? Promise.resolve([] as CollectionDefinitionCard[])
-      : loadCollectionMatches(search, signal)
+      : loadCollectionMatches(trimmedSearch, signal)
 
     let response
-    const isSemantic = searchMode.value === 'semantic' || !!similarId
 
-    if (auth.state.isLoggedIn || isSemantic) {
+    if (auth.state.isLoggedIn || useSemantic) {
       response = await searchDefinitions(
         {
           ...params,
-          semantic: isSemantic,
+          semantic: useSemantic,
         },
         signal
       )
@@ -1049,9 +1046,14 @@ const loadAllDefinitionIdsForCurrentSearch = async (
     return []
   }
 
+  const trimmedSearch = similarDefinitionId.value ? '' : (searchQuery.value || '').trim()
+  const useSemantic =
+    !!similarDefinitionId.value ||
+    (searchMode.value === 'semantic' && trimmedSearch.length > 0)
+
   const baseParams: Record<string, unknown> = {
     per_page: ADD_ALL_PER_PAGE,
-    search: similarDefinitionId.value ? undefined : (searchQuery.value || '').trim(),
+    search: similarDefinitionId.value ? undefined : trimmedSearch || undefined,
     definition_id: similarDefinitionId.value || undefined,
     include_comments: false,
     username: filters.value.usernames?.length ? filters.value.usernames.join(',') : undefined,
@@ -1074,7 +1076,6 @@ const loadAllDefinitionIdsForCurrentSearch = async (
     baseParams.search_in_phrases = filters.value.searchInPhrases
   }
 
-  const isSemantic = searchMode.value === 'semantic' || !!similarDefinitionId.value
   const collected: number[] = []
   const seen = new Set<number>()
   let page = 1
@@ -1084,8 +1085,8 @@ const loadAllDefinitionIdsForCurrentSearch = async (
   while (pagesFetched < ADD_ALL_PAGE_GUARD) {
     const params: Record<string, unknown> = { ...baseParams, page }
     let response
-    if (auth.state.isLoggedIn || isSemantic) {
-      response = await searchDefinitions({ ...params, semantic: isSemantic })
+    if (auth.state.isLoggedIn || useSemantic) {
+      response = await searchDefinitions({ ...params, semantic: useSemantic })
     } else {
       const fastParams = { ...params } as Record<string, unknown>
       delete fastParams.include_comments
@@ -1322,11 +1323,7 @@ const fetchData = async () => {
   if (
     !searchQuery.value.trim() &&
     !similarDefinitionId.value &&
-    !filters.value.selmaho &&
-    !filters.value.usernames?.length &&
-    !filters.value.excludeUsernames?.length &&
-    !filters.value.word_type &&
-    !filters.value.selectedCollections?.length
+    !hasActiveSearchFilters(filters.value)
   ) {
     // Fetch trending/changes but ensure main loading is false
     await fetchTrendingAndChanges()

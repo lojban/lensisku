@@ -22,14 +22,7 @@
   />
 
   <div
-    v-if="
-      searchQuery ||
-      filters.selmaho ||
-      filters.usernames?.length ||
-      filters.excludeUsernames?.length ||
-      filters.word_type ||
-      filters.selectedCollections?.length
-    "
+    v-if="searchQuery || hasActiveSearchFilters(filters)"
     class="min-h-[400px]"
   >
     <div class="space-y-4">
@@ -117,14 +110,7 @@
   </div>
   <!-- PaginationComponent -->
   <div
-    v-if="
-      searchQuery ||
-      filters.selmaho ||
-      filters.usernames?.length ||
-      filters.excludeUsernames?.length ||
-      filters.word_type ||
-      filters.selectedCollections?.length
-    "
+    v-if="searchQuery || hasActiveSearchFilters(filters)"
   >
     <PaginationComponent
       :current-page="currentPage"
@@ -160,6 +146,7 @@ import {
   combinedFiltersFromQuery,
   combinedFiltersToQuery,
   compactQuery,
+  hasActiveSearchFilters,
   queryStr,
 } from '@/utils/routeQuery'
 import { normalizeSearchQuery } from '@/utils/searchQueryUtils'
@@ -245,7 +232,7 @@ async function loadCollectionMatches(
   if (filters.value.excludeUsernames?.length) {
     itemParams.exclude_usernames = filters.value.excludeUsernames.join(',')
   }
-  itemParams.semantic = true
+  itemParams.semantic = Boolean(search.trim())
 
   try {
     const response = await searchItemsInCollections(itemParams, signal)
@@ -288,7 +275,7 @@ const fetchDefinitions = async (page: number, search = '') => {
     } = {
       page,
       per_page: 10,
-      search: search,
+      search: String(search ?? '').trim() || undefined,
       username: filters.value.usernames?.length
         ? filters.value.usernames.join(',')
         : undefined,
@@ -351,14 +338,7 @@ const fetchDefinitions = async (page: number, search = '') => {
 }
 
 const fetchData = async () => {
-  if (
-    !searchQuery.value.trim() &&
-    !filters.value.selmaho &&
-    !filters.value.usernames?.length &&
-    !filters.value.excludeUsernames?.length &&
-    !filters.value.word_type &&
-    !filters.value.selectedCollections?.length
-  ) {
+  if (!searchQuery.value.trim() && !hasActiveSearchFilters(filters.value)) {
     collectionMatches.value = []
     isLoading.value = false
     return
