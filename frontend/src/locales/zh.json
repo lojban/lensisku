@@ -58,6 +58,7 @@
     "noCollectionMatches": "未找到合集",
     "noCollectionUserMatches": "未找到作者或公开合集",
     "collectionsAndUsersPreface": "可按你偏好的作者筛选，或按他们的公开合集筛选。",
+    "languagesPreface": "选择要搜索的语言。其他语言的定义将被隐藏。",
     "collectionByUser": "（{username}）",
     "userOptionPrefix": "作者",
     "recentSuggestions": "最近",

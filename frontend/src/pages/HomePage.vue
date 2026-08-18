@@ -459,7 +459,12 @@ import { useSeoHead } from '@/composables/useSeoHead'
 import { useDateFormat } from '@/composables/useDateFormat'
 import { useI18n } from 'vue-i18n'
 import { SearchQueue } from '@/utils/searchQueue'
-import { queryStr } from '@/utils/routeQuery'
+import {
+  combinedFiltersFromQuery,
+  combinedFiltersToQuery,
+  compactQuery,
+  queryStr,
+} from '@/utils/routeQuery'
 import { normalizeSearchQuery } from '@/utils/searchQueryUtils'
 import {
   mapCollectionItemToDefinition,
@@ -815,32 +820,13 @@ const waveSourceTriggerLabel = computed(() => {
 
 // Filter state
 const languages = ref([])
+const urlFilters = combinedFiltersFromQuery(route.query)
 const filters = ref({
-  selmaho: '',
-  usernames: route.query.username
-    ? queryStr(route.query.username).split(',').map((s) => s.trim()).filter(Boolean)
-    : ([] as string[]),
-  excludeUsernames: route.query.exclude_usernames
-    ? queryStr(route.query.exclude_usernames)
-        .split(',')
-        .map((s) => s.trim())
-        .filter(Boolean)
-    : ([] as string[]),
-  word_type: route.query.word_type ? Number(queryStr(route.query.word_type)) : null,
-  isExpanded: route.query.isExpanded === 'true',
-  selectedLanguages: route.query.langs ? queryStr(route.query.langs).split(',').map(Number) : [],
-  selectedCollections: route.query.collections
-    ? queryStr(route.query.collections)
-        .split(',')
-        .map(Number)
-        .filter((n) => Number.isFinite(n) && n > 0)
-    : ([] as number[]),
-  source_langid: route.query.source_langid ? Number(queryStr(route.query.source_langid)) : 1,
+  ...urlFilters,
   isSemantic:
     searchMode.value === 'semantic' || searchMode.value === 'dictionary'
       ? searchMode.value !== 'dictionary'
       : true,
-  searchInPhrases: route.query.searchInPhrases !== 'false',
 })
 
 // Search queues to prevent race conditions
@@ -1266,11 +1252,11 @@ const setWaveSource = (value: WaveSource) => {
   }
   currentPage.value = 1
   router.push({
-    query: {
+    query: compactQuery({
       ...route.query,
       wave_source: value === 'all' ? undefined : value,
       page: undefined,
-    },
+    }),
   })
 }
 
@@ -1405,32 +1391,15 @@ const handleFiltersReset = async () => {
 
 const updateUrlWithFilters = () => {
   router.push({
-    query: {
+    query: compactQuery({
       ...route.query,
       q: searchQuery.value || undefined,
       mode: searchMode.value,
       definition_id: similarDefinitionId.value ? String(similarDefinitionId.value) : undefined,
-      langs:
-        filters.value.selectedLanguages.length > 0
-          ? filters.value.selectedLanguages.join(',')
-          : undefined,
-      collections:
-        filters.value.selectedCollections?.length > 0
-          ? filters.value.selectedCollections.join(',')
-          : undefined,
-      selmaho: filters.value.selmaho || undefined,
-      username: filters.value.usernames?.length
-        ? filters.value.usernames.join(',')
-        : undefined,
-      exclude_usernames: filters.value.excludeUsernames?.length
-        ? filters.value.excludeUsernames.join(',')
-        : undefined,
-      word_type: filters.value.word_type || undefined,
-      source_langid: filters.value.source_langid !== 1 ? filters.value.source_langid : undefined,
+      ...combinedFiltersToQuery(filters.value),
       group_by_thread: groupByThread.value ? 'true' : undefined,
-      searchInPhrases: filters.value.searchInPhrases === false ? 'false' : undefined,
       wave_source: waveSource.value !== 'all' ? waveSource.value : undefined,
-    },
+    }),
   })
 }
 
@@ -1444,30 +1413,16 @@ const performSearch = ({ query, mode }: { query: string; mode: string }) => {
   similarDefinitionId.value = null
 
   // Reset to first page whenever search query or mode changes
-  const updateParams = {
+  const updateParams = compactQuery({
     ...route.query,
     q: query || undefined, // Use undefined if query is empty
     mode: effectiveMode,
     definition_id: undefined,
     group_by_thread: groupByThread.value ? 'true' : undefined,
     page: undefined, // Always reset to page 1 for a new search
-    langs:
-      filters.value.selectedLanguages && filters.value.selectedLanguages.length > 0
-        ? filters.value.selectedLanguages.join(',')
-        : undefined,
-    collections:
-      filters.value.selectedCollections?.length > 0
-        ? filters.value.selectedCollections.join(',')
-        : undefined,
-    selmaho: filters.value.selmaho || undefined,
-    username: filters.value.usernames?.length ? filters.value.usernames.join(',') : undefined,
-    exclude_usernames: filters.value.excludeUsernames?.length
-      ? filters.value.excludeUsernames.join(',')
-      : undefined,
-    word_type: filters.value.word_type || undefined,
-    searchInPhrases: filters.value.searchInPhrases === false ? 'false' : undefined,
+    ...combinedFiltersToQuery(filters.value),
     wave_source: waveSource.value !== 'all' ? waveSource.value : undefined,
-  }
+  })
 
   // Handle case where we might be on a localized Home-lang route
   const isHomeRoute =
@@ -1591,61 +1546,22 @@ const syncFromRoute = () => {
   }
 
   // Sync filters from URL
+  const fromQuery = combinedFiltersFromQuery(query)
   if (query.langs !== undefined) {
-    filters.value.selectedLanguages = queryStr(query.langs).split(',').map(Number)
+    filters.value.selectedLanguages = fromQuery.selectedLanguages
   }
-
-  if (query.collections !== undefined) {
-    filters.value.selectedCollections = queryStr(query.collections)
-      .split(',')
-      .map(Number)
-      .filter((n) => Number.isFinite(n) && n > 0)
-  } else {
-    filters.value.selectedCollections = []
-  }
-
-  if (query.selmaho !== undefined) {
-    filters.value.selmaho = queryStr(query.selmaho)
-  }
-
-  if (query.username !== undefined) {
-    filters.value.usernames = queryStr(query.username)
-      .split(',')
-      .map((s) => s.trim())
-      .filter(Boolean)
-  } else {
-    filters.value.usernames = []
-  }
-
-  if (query.exclude_usernames !== undefined) {
-    filters.value.excludeUsernames = queryStr(query.exclude_usernames)
-      .split(',')
-      .map((s) => s.trim())
-      .filter(Boolean)
-  } else {
-    filters.value.excludeUsernames = []
-  }
-
-  if (query.word_type !== undefined) {
-    const wt = queryStr(query.word_type)
-    filters.value.word_type = wt ? Number(wt) : null
-  }
-
-  if (query.source_langid !== undefined) {
-    filters.value.source_langid = parseInt(queryStr(query.source_langid), 10) || 1 // Default to 1 if invalid
-  } else {
-    filters.value.source_langid = 1 // Default if not present
-  }
+  filters.value.selectedCollections = fromQuery.selectedCollections
+  filters.value.selmaho = fromQuery.selmaho
+  filters.value.usernames = fromQuery.usernames
+  filters.value.excludeUsernames = fromQuery.excludeUsernames
+  filters.value.word_type = fromQuery.word_type
+  filters.value.source_langid = fromQuery.source_langid
+  filters.value.searchInPhrases = fromQuery.searchInPhrases
+  filters.value.isExpanded = fromQuery.isExpanded
 
   // Sync isSemantic from searchMode which was synced from route mode above
   if (searchMode.value === 'semantic' || searchMode.value === 'dictionary') {
     filters.value.isSemantic = searchMode.value === 'semantic'
-  }
-
-  if (query.searchInPhrases !== undefined) {
-    filters.value.searchInPhrases = query.searchInPhrases !== 'false'
-  } else {
-    filters.value.searchInPhrases = true
   }
 
   if (query.wave_source !== undefined) {
@@ -1810,6 +1726,10 @@ watch(
     const groupByThreadChanged = newQuery.group_by_thread !== oldQuery?.group_by_thread
     if (groupByThreadChanged) {
       groupByThread.value = newQuery.group_by_thread === 'true'
+    }
+
+    if (newQuery.isExpanded !== oldQuery?.isExpanded) {
+      filters.value.isExpanded = queryStr(newQuery.isExpanded) === 'true'
     }
 
     // Update currentPage based on the new query *before* fetching

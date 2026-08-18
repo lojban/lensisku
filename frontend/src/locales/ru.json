@@ -58,6 +58,7 @@
     "noCollectionMatches": "Коллекции не найдены",
     "noCollectionUserMatches": "Авторы и публичные коллекции не найдены",
     "collectionsAndUsersPreface": "Можно отфильтровать по авторам, которые вам нравятся, или по их публичным коллекциям.",
+    "languagesPreface": "Выберите языки поиска. Определения на других языках будут скрыты.",
     "collectionByUser": "(автор: {username})",
     "userOptionPrefix": "Автор",
     "recentSuggestions": "Недавние",

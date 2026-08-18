@@ -22,6 +22,7 @@
           :select-all-label="t('filters.selectAll')"
           :deselect-all-label="t('filters.deselectAll')"
           :empty-filter-label="t('filters.noMatches')"
+          :preface="t('filters.languagesPreface')"
           full-bleed-mobile-panel
           class="w-full min-w-0"
         />
@@ -32,19 +33,19 @@
           :suggested-options="collectionUserSuggestions"
           :suggested-label="t('filters.recentSuggestions')"
           :max-selected-labels="3"
-          :show-select-all="false"
           :option-value="collectionUserOptionValue"
           :option-label="collectionUserOptionLabel"
           :search-field-keys="collectionUserSearchFieldKeys"
           :placeholder="t('filters.selectCollectionsAndUsers')"
           :search-placeholder="t('filters.searchCollectionsAndUsers')"
+          :select-all-label="t('filters.selectAll')"
+          :deselect-all-label="t('filters.deselectAll')"
           :empty-filter-label="t('filters.noCollectionUserMatches')"
           :preface="t('filters.collectionsAndUsersPreface')"
           full-bleed-mobile-panel
           class="w-full min-w-0"
           @open="onCollectionUserDropdownOpen"
           @search="onCollectionUserDropdownSearch"
-          @update:model-value="emitUpdate"
         >
           <template #option="{ option }">
             <span v-if="isCollectionPickerOption(option)" class="dropdown-option-rich">
@@ -166,6 +167,7 @@
             :select-all-label="t('filters.selectAll')"
             :deselect-all-label="t('filters.deselectAll')"
             :empty-filter-label="t('filters.noMatches')"
+            :preface="t('filters.languagesPreface')"
             full-bleed-mobile-panel
             class="w-full max-w-full"
           />
@@ -234,17 +236,17 @@
             :suggested-options="includeAuthorSuggestions"
             :suggested-label="t('filters.recentSuggestions')"
             :max-selected-labels="3"
-            :show-select-all="false"
             :option-value="(user: UserHint) => user.username"
             :option-label="(user: UserHint) => user.username"
             :search-field-keys="userFilterSearchFieldKeys"
             :placeholder="t('components.combinedFilters.placeholderUsernames')"
             :search-placeholder="t('components.combinedFilters.searchUsers')"
+            :select-all-label="t('filters.selectAll')"
+            :deselect-all-label="t('filters.deselectAll')"
             :empty-filter-label="t('components.combinedFilters.noUsersFound')"
             class="w-full max-w-full"
             @open="onUserDropdownOpen"
             @search="onUserDropdownSearch"
-            @update:model-value="emitUpdate"
           />
         </div>
       </div>
@@ -264,17 +266,17 @@
             :suggested-options="excludeAuthorSuggestions"
             :suggested-label="t('filters.recentSuggestions')"
             :max-selected-labels="3"
-            :show-select-all="false"
             :option-value="(user: UserHint) => user.username"
             :option-label="(user: UserHint) => user.username"
             :search-field-keys="userFilterSearchFieldKeys"
             :placeholder="t('components.combinedFilters.placeholderExcludeUsernames')"
             :search-placeholder="t('components.combinedFilters.searchUsers')"
+            :select-all-label="t('filters.selectAll')"
+            :deselect-all-label="t('filters.deselectAll')"
             :empty-filter-label="t('components.combinedFilters.noUsersFound')"
             class="w-full max-w-full"
             @open="onUserDropdownOpen"
             @search="onUserDropdownSearch"
-            @update:model-value="emitUpdate"
           />
         </div>
       </div>
@@ -1155,6 +1157,7 @@ watch(
           recordRecentCollectionUser({ kind: 'collection', ...col })
         }
       }
+      emitUpdate()
     }
   },
   { deep: true }
@@ -1171,6 +1174,7 @@ watch(
         recordRecentCollectionUser({ kind: 'user', ...user })
       }
     }
+    emitUpdate()
   },
   { deep: true }
 )
@@ -1183,6 +1187,7 @@ watch(
     for (const user of next) {
       if (!prevNames.has(user.username)) recordRecentExcludeAuthor(user)
     }
+    emitUpdate()
   },
   { deep: true }
 )

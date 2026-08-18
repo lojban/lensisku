@@ -197,6 +197,11 @@ import ModalComponent from '@/components/ModalComponent.vue'
 import { fetchSemanticGraph, getDefinition, getLanguages } from '@/api'
 import { useSeoHead } from '@/composables/useSeoHead'
 import { normalizeSearchQuery } from '@/utils/searchQueryUtils'
+import {
+  combinedFiltersFromQuery,
+  combinedFiltersToQuery,
+  compactQuery,
+} from '@/utils/routeQuery'
 import type { SupportedLocale } from '@/router'
 
 const { t, locale } = useI18n()
@@ -233,16 +238,10 @@ const languages = ref<
   Array<{ id: number; real_name: string; english_name: string; tag: string; lojban_name?: string }>
 >([])
 
+const urlFilters = combinedFiltersFromQuery(route.query)
 const combinedFiltersModel = ref({
-  selmaho: '',
-  usernames: [] as string[],
-  excludeUsernames: [] as string[],
-  isExpanded: false,
-  selectedLanguages: [] as number[],
-  word_type: null as number | null,
-  source_langid: 1,
-  isSemantic: true,
-  searchInPhrases: true,
+  ...urlFilters,
+  isSemantic: querySearchToString(route.query.mode) !== 'dictionary',
 })
 
 const graphBuildParams = ref<SemanticGraphBuildParams>({
@@ -650,6 +649,24 @@ function syncSearchQueryToRoute() {
   else delete nextQuery.search
   void router.replace({ path: route.path, query: nextQuery })
 }
+
+watch(
+  combinedFiltersModel,
+  () => {
+    const next = compactQuery({
+      ...route.query,
+      ...combinedFiltersToQuery({
+        ...combinedFiltersModel.value,
+        selectedCollections: combinedFiltersModel.value.selectedCollections ?? [],
+      }),
+      mode: combinedFiltersModel.value.isSemantic === false ? 'dictionary' : 'semantic',
+    })
+    const current = compactQuery({ ...route.query })
+    if (JSON.stringify(next) === JSON.stringify(current)) return
+    void router.replace({ path: route.path, query: next })
+  },
+  { deep: true }
+)
 
 watch(searchQuery, () => {
   scheduleSearchBuild()

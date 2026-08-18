@@ -1441,7 +1441,12 @@ import { useSeoHead } from '@/composables/useSeoHead'
 import { useSuccessToast } from '@/composables/useSuccessToast'
 import { useI18n } from 'vue-i18n'
 import { SearchQueue } from '@/utils/searchQueue'
-import { queryStr } from '@/utils/routeQuery'
+import {
+  combinedFiltersFromQuery,
+  combinedFiltersToQuery,
+  compactQuery,
+  queryStr,
+} from '@/utils/routeQuery'
 import { normalizeSearchQuery } from '@/utils/searchQueryUtils'
 import type { CommentItemApiComment } from '@/types/comment'
 import {
@@ -2343,16 +2348,11 @@ interface ItemFiltersValue {
   selectedCollections?: number[]
 }
 
+const urlItemFilters = combinedFiltersFromQuery(route.query)
 const itemFilters = ref<ItemFiltersValue>({
-  selmaho: '',
-  usernames: [],
-  excludeUsernames: [],
-  word_type: null,
-  isExpanded: false,
-  selectedLanguages: [],
-  source_langid: 1,
+  ...urlItemFilters,
+  selectedCollections: [],
   isSemantic: true,
-  searchInPhrases: true,
 })
 
 /**
@@ -2428,16 +2428,22 @@ const fetchWaves = async (page: number) => {
 }
 
 const handleItemFiltersChange = () => {
-  if (currentPage.value !== 1) {
-    router.push({ query: { ...route.query, page: 1 } })
-  }
-  fetchItems()
+  router.push({
+    query: compactQuery({
+      ...route.query,
+      page: undefined,
+      ...combinedFiltersToQuery({
+        ...itemFilters.value,
+        selectedCollections: [],
+      }),
+    }),
+  })
 }
 
 const handleItemFiltersReset = () => {
-  // CombinedFilters re-emits update:modelValue with defaults right after the reset event; the
-  // resulting watcher on `itemFilters` will trigger `handleItemFiltersChange` via the change emit.
-  // Nothing else to do here.
+  void nextTick(() => {
+    handleItemFiltersChange()
+  })
 }
 
 const addItemNotes = ref('')
@@ -2709,6 +2715,38 @@ watch(
       syncFromRoute()
       fetchItems()
     }
+  }
+)
+
+watch(
+  () => [
+    route.query.langs,
+    route.query.selmaho,
+    route.query.username,
+    route.query.exclude_usernames,
+    route.query.word_type,
+    route.query.source_langid,
+    route.query.searchInPhrases,
+  ],
+  () => {
+    const fromQuery = combinedFiltersFromQuery(route.query)
+    if (route.query.langs !== undefined) {
+      itemFilters.value.selectedLanguages = fromQuery.selectedLanguages
+    }
+    itemFilters.value.selmaho = fromQuery.selmaho
+    itemFilters.value.usernames = fromQuery.usernames
+    itemFilters.value.excludeUsernames = fromQuery.excludeUsernames
+    itemFilters.value.word_type = fromQuery.word_type
+    itemFilters.value.source_langid = fromQuery.source_langid
+    itemFilters.value.searchInPhrases = fromQuery.searchInPhrases
+    fetchItems()
+  }
+)
+
+watch(
+  () => route.query.isExpanded,
+  (value) => {
+    itemFilters.value.isExpanded = queryStr(value) === 'true'
   }
 )
 

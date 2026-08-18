@@ -58,6 +58,7 @@
     "noCollectionMatches": "コレクションが見つかりません",
     "noCollectionUserMatches": "投稿者または公開コレクションが見つかりません",
     "collectionsAndUsersPreface": "好みの投稿者、またはその公開コレクションで絞り込めます。",
+    "languagesPreface": "検索する言語を選びます。他の言語の定義は表示されません。",
     "collectionByUser": "（{username}）",
     "userOptionPrefix": "投稿者",
     "recentSuggestions": "最近",

@@ -156,7 +156,12 @@ import SearchFormSkeleton from '@/components/skeletons/SearchFormSkeleton.vue'
 import { useLanguageSelection } from '@/composables/useLanguageSelection'
 import { useSeoHead } from '@/composables/useSeoHead'
 import { SearchQueue } from '@/utils/searchQueue'
-import { queryStr } from '@/utils/routeQuery'
+import {
+  combinedFiltersFromQuery,
+  combinedFiltersToQuery,
+  compactQuery,
+  queryStr,
+} from '@/utils/routeQuery'
 import { normalizeSearchQuery } from '@/utils/searchQueryUtils'
 import {
   mapCollectionItemToDefinition,
@@ -200,17 +205,7 @@ useSeoHead({ title: pageTitle, pathWithoutLocale: '/fast-search' })
 
 // Filter state
 const languages = ref([])
-const filters = ref({
-  selmaho: '',
-  usernames: [] as string[],
-  excludeUsernames: [] as string[],
-  word_type: null as number | null,
-  isExpanded: false,
-  selectedLanguages: [] as number[],
-  selectedCollections: [] as number[],
-  source_langid: 1,
-  searchInPhrases: route.query.searchInPhrases !== 'false',
-})
+const filters = ref(combinedFiltersFromQuery(route.query))
 
 // Search queue to prevent race conditions
 const definitionsSearchQueue = new SearchQueue()
@@ -380,14 +375,8 @@ const handleFilterChange = () => {
 
 const handleFiltersReset = async () => {
   filters.value = {
-    selmaho: '',
-    usernames: [],
-    excludeUsernames: [],
-    isExpanded: false,
+    ...combinedFiltersFromQuery({}),
     selectedLanguages: [],
-    selectedCollections: [],
-    word_type: null,
-    source_langid: 1,
     searchInPhrases: true,
   }
   currentPage.value = 1
@@ -397,54 +386,23 @@ const handleFiltersReset = async () => {
 
 const updateUrlWithFilters = () => {
   router.push({
-    query: {
+    query: compactQuery({
       ...route.query,
       q: searchQuery.value || undefined,
-      langs:
-        filters.value.selectedLanguages.length > 0
-          ? filters.value.selectedLanguages.join(',')
-          : undefined,
-      collections:
-        filters.value.selectedCollections?.length > 0
-          ? filters.value.selectedCollections.join(',')
-          : undefined,
-      selmaho: filters.value.selmaho || undefined,
-      username: filters.value.usernames?.length
-        ? filters.value.usernames.join(',')
-        : undefined,
-      exclude_usernames: filters.value.excludeUsernames?.length
-        ? filters.value.excludeUsernames.join(',')
-        : undefined,
-      word_type: filters.value.word_type || undefined,
-      source_langid: filters.value.source_langid !== 1 ? filters.value.source_langid : undefined,
-      searchInPhrases: filters.value.searchInPhrases === false ? 'false' : undefined,
-    },
+      ...combinedFiltersToQuery(filters.value),
+    }),
   })
 }
 
 // Search handling
 const performSearch = ({ query, mode }: { query: string; mode: string }) => {
-  const updateParams = {
+  const updateParams = compactQuery({
     ...route.query,
     q: query || undefined,
     mode: mode !== 'dictionary' ? mode : undefined, // Keep mode if it's not dictionary
     page: undefined, // Always reset to page 1 for a new search
-    langs:
-      filters.value.selectedLanguages && filters.value.selectedLanguages.length > 0
-        ? filters.value.selectedLanguages.join(',')
-        : undefined,
-    collections:
-      filters.value.selectedCollections?.length > 0
-        ? filters.value.selectedCollections.join(',')
-        : undefined,
-    selmaho: filters.value.selmaho || undefined,
-    username: filters.value.usernames?.length ? filters.value.usernames.join(',') : undefined,
-    exclude_usernames: filters.value.excludeUsernames?.length
-      ? filters.value.excludeUsernames.join(',')
-      : undefined,
-    word_type: filters.value.word_type || undefined,
-    searchInPhrases: filters.value.searchInPhrases === false ? 'false' : undefined,
-  }
+    ...combinedFiltersToQuery(filters.value),
+  })
 
   if (mode !== 'dictionary') {
     // If we're on FastSearch and mode is semantic, waves, mail, etc., redirect to Home
@@ -499,57 +457,18 @@ const syncFromRoute = () => {
   }
 
   // Sync filters from URL
+  const fromQuery = combinedFiltersFromQuery(query)
   if (query.langs !== undefined) {
-    filters.value.selectedLanguages = queryStr(query.langs).split(',').map(Number)
+    filters.value.selectedLanguages = fromQuery.selectedLanguages
   }
-
-  if (query.collections !== undefined) {
-    filters.value.selectedCollections = queryStr(query.collections)
-      .split(',')
-      .map(Number)
-      .filter((n) => Number.isFinite(n) && n > 0)
-  } else {
-    filters.value.selectedCollections = []
-  }
-
-  if (query.selmaho !== undefined) {
-    filters.value.selmaho = queryStr(query.selmaho)
-  }
-
-  if (query.username !== undefined) {
-    filters.value.usernames = queryStr(query.username)
-      .split(',')
-      .map((s) => s.trim())
-      .filter(Boolean)
-  } else {
-    filters.value.usernames = []
-  }
-
-  if (query.exclude_usernames !== undefined) {
-    filters.value.excludeUsernames = queryStr(query.exclude_usernames)
-      .split(',')
-      .map((s) => s.trim())
-      .filter(Boolean)
-  } else {
-    filters.value.excludeUsernames = []
-  }
-
-  if (query.word_type !== undefined) {
-    const wt = queryStr(query.word_type)
-    filters.value.word_type = wt ? Number(wt) : null
-  }
-
-  if (query.source_langid !== undefined) {
-    filters.value.source_langid = parseInt(queryStr(query.source_langid), 10) || 1
-  } else {
-    filters.value.source_langid = 1
-  }
-
-  if (query.searchInPhrases !== undefined) {
-    filters.value.searchInPhrases = query.searchInPhrases !== 'false'
-  } else {
-    filters.value.searchInPhrases = true
-  }
+  filters.value.selectedCollections = fromQuery.selectedCollections
+  filters.value.selmaho = fromQuery.selmaho
+  filters.value.usernames = fromQuery.usernames
+  filters.value.excludeUsernames = fromQuery.excludeUsernames
+  filters.value.word_type = fromQuery.word_type
+  filters.value.source_langid = fromQuery.source_langid
+  filters.value.searchInPhrases = fromQuery.searchInPhrases
+  filters.value.isExpanded = fromQuery.isExpanded
 }
 
 const handleKeyDown = (event: KeyboardEvent) => {
@@ -644,6 +563,10 @@ watch(
       newQuery.searchInPhrases !== oldQuery?.searchInPhrases
 
     currentPage.value = parseInt(queryStr(newQuery.page), 10) || 1
+
+    if (newQuery.isExpanded !== oldQuery?.isExpanded) {
+      filters.value.isExpanded = queryStr(newQuery.isExpanded) === 'true'
+    }
 
     if (relevantParamsChanged) {
       syncFromRoute()

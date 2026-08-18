@@ -382,7 +382,12 @@ import AppFixedBanners from './components/layout/AppFixedBanners.vue'
 import AppMobileNavMenu from './components/layout/AppMobileNavMenu.vue'
 import NavLink from './components/NavLink.vue'
 import { normalizeSearchQuery } from '@/utils/searchQueryUtils'
-import { queryStr } from '@/utils/routeQuery'
+import {
+  compactQuery,
+  mergeQueryForHomeNavigation,
+  queryStr,
+  saveLastHomeQuery,
+} from '@/utils/routeQuery'
 import { provideAuth } from './composables/useAuth'
 import { provideError } from './composables/useError'
 import {
@@ -417,10 +422,19 @@ const isHomePage = computed(
   () => route.name === 'Home' || (typeof route.name === 'string' && route.name.startsWith('Home-'))
 )
 
+const isFastSearchPage = computed(
+  () =>
+    route.name === 'FastSearch' ||
+    (typeof route.name === 'string' && route.name.startsWith('FastSearch-'))
+)
+
 const homePath = computed(() => {
   const localeMatch = route.path.match(localeCaptureGroupRegex)
   return `/${localeMatch ? localeMatch[1] : ($locale.value as string) || 'en'}`
 })
+
+/** Consecutive logo clicks while staying on Home; first keeps filters, second clears only `q`. */
+let consecutiveHomeLogoClicks = 0
 
 function metaProps(p: unknown): Record<string, unknown> {
   return p !== null && typeof p === 'object' && !Array.isArray(p)
@@ -498,10 +512,18 @@ const handleLogoClick = async () => {
   triggerPyro()
 
   if (!isHomePage.value) {
-    await router.push(homePath.value)
+    consecutiveHomeLogoClicks = 1
+    await router.push({
+      path: homePath.value,
+      query: mergeQueryForHomeNavigation(route.query),
+    })
     await nextTick()
-  } else if (typeof window !== 'undefined') {
-    window.dispatchEvent(new CustomEvent('lensisku:clear-search'))
+  } else {
+    consecutiveHomeLogoClicks += 1
+    if (consecutiveHomeLogoClicks >= 2 && typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('lensisku:clear-search'))
+      consecutiveHomeLogoClicks = 0
+    }
   }
 
   const mainContent = document.querySelector('.main-content') as HTMLElement | null
@@ -516,10 +538,11 @@ const performSearch = ({ query, mode }: { query: string; mode: string }) => {
 
 const updateRouteParams = () => {
   router.push({
-    query: {
+    query: compactQuery({
+      ...route.query,
       q: searchQuery.value || undefined,
       mode: searchMode.value,
-    },
+    }),
   })
 }
 
@@ -617,6 +640,22 @@ const handleClickOutside = (event) => {
     isMoreNavOpen.value = false
   }
 }
+
+watch(
+  () => route.query,
+  () => {
+    if (isHomePage.value || isFastSearchPage.value) {
+      saveLastHomeQuery(route.query)
+    }
+  },
+  { deep: true, immediate: true }
+)
+
+watch(isHomePage, (onHome, wasOnHome) => {
+  if (wasOnHome && !onHome) {
+    consecutiveHomeLogoClicks = 0
+  }
+})
 
 watch(() => route.query, syncFromRoute, { deep: true })
 
