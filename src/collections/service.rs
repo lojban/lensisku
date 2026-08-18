@@ -276,10 +276,9 @@ pub async fn list_public_collections(
 
 const MAX_PICKER_PER_KIND: i64 = 40;
 
-/// Combined picker for the search filter: accessible collections, then users.
+/// Combined picker for Home/Fast Search: public collections, then authors (users).
 pub async fn list_users_and_collections(
     pool: &Pool,
-    user_id: Option<i32>,
     search: Option<String>,
     per_kind: i64,
 ) -> AppResult<CollectionUserPickerResponse> {
@@ -300,18 +299,16 @@ pub async fn list_users_and_collections(
             "SELECT c.collection_id, c.name, u.username AS owner_username
              FROM collections c
              JOIN users u ON u.userid = c.user_id
-             WHERE (c.is_public = true OR ($1::int IS NOT NULL AND c.user_id = $1))
+             WHERE c.is_public = true
                AND (
-                    $2::text IS NULL
-                    OR c.name ILIKE $2
-                    OR COALESCE(c.description, '') ILIKE $2
-                    OR u.username ILIKE $2
+                    $1::text IS NULL
+                    OR c.name ILIKE $1
+                    OR COALESCE(c.description, '') ILIKE $1
+                    OR u.username ILIKE $1
                )
-             ORDER BY
-               CASE WHEN $1::int IS NOT NULL AND c.user_id = $1 THEN 0 ELSE 1 END,
-               c.updated_at DESC
-             LIMIT $3",
-            &[&user_id, &search_pattern, &per_kind],
+             ORDER BY c.updated_at DESC
+             LIMIT $2",
+            &[&search_pattern, &per_kind],
         )
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
@@ -3746,17 +3743,17 @@ pub async fn list_collection_items(
 const MAX_MULTI_COLLECTION_IDS: usize = 50;
 const MAX_MULTI_COLLECTION_PER_PAGE: i64 = 100;
 
-/// Search items across a set of collections in one query. Only public collections and those
-/// owned by `user_id` are included; unknown or inaccessible ids are skipped.
+/// Search items across a set of **public** collections in one query. Private collection ids
+/// are skipped. Per-collection listing (`list_collection_items`) still allows owners to search
+/// their own private collections.
 ///
-/// Plan: materialize the (tiny) accessible-collection set first so Postgres nested-loops into
+/// Plan: materialize the (tiny) public-collection set first so Postgres nested-loops into
 /// `collection_items` via `idx_collection_items_collection` instead of GIN-scanning the whole
 /// dictionary. Text/author/type filters use the same denormalized `definitions.cached_*`
 /// columns as jbovlaste fast search, so valsi/users joins are unnecessary. Media EXISTS
 /// runs only for the paginated rows.
 pub async fn search_items_in_collections(
     pool: &Pool,
-    user_id: Option<i32>,
     collection_ids: Vec<i32>,
     page: i64,
     per_page: i64,
@@ -3798,7 +3795,7 @@ pub async fn search_items_in_collections(
             SELECT c.collection_id, c.name, c.updated_at
             FROM collections c
             WHERE c.collection_id = ANY($1::int[])
-              AND (c.is_public = true OR ($2::int IS NOT NULL AND c.user_id = $2))
+              AND c.is_public = true
          )";
     const FROM_WHERE_HEAD: &str = "
             FROM accessible c
@@ -3808,8 +3805,8 @@ pub async fn search_items_in_collections(
 
     let mut from_where = String::from(FROM_WHERE_HEAD);
     let mut count_params: Vec<Box<dyn tokio_postgres::types::ToSql + Sync>> =
-        vec![Box::new(collection_ids.clone()), Box::new(user_id)];
-    let mut count_param_idx = 3;
+        vec![Box::new(collection_ids.clone())];
+    let mut count_param_idx = 2;
     append_multi_collection_search_clauses(
         &mut from_where,
         &mut count_params,
@@ -3836,8 +3833,8 @@ pub async fn search_items_in_collections(
         .map_err(|e| AppError::Database(e.to_string()))?;
 
     let mut list_params: Vec<Box<dyn tokio_postgres::types::ToSql + Sync>> =
-        vec![Box::new(collection_ids), Box::new(user_id)];
-    let mut list_param_idx = 3;
+        vec![Box::new(collection_ids)];
+    let mut list_param_idx = 2;
     append_multi_collection_search_clauses(
         &mut String::new(),
         &mut list_params,

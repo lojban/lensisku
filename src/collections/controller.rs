@@ -117,24 +117,21 @@ pub async fn list_public_collections(
         ("per_kind" = Option<i64>, Query, description = "Max collections and max users to return (default 20, max 40)")
     ),
     responses(
-        (status = 200, description = "Collections then users for the combined filter picker", body = CollectionUserPickerResponse),
+        (status = 200, description = "Public collections then authors for the combined filter picker", body = CollectionUserPickerResponse),
         (status = 500, description = "Internal server error")
     ),
-    security(("bearer_auth" = [])),
-    summary = "List collections and users for search filters",
-    description = "Returns a mixed list of accessible collections (public, plus the caller's private \
-                  collections when authenticated) and users. Used by the combined Collections & users \
-                  filter. Collections are listed first, then users."
+    summary = "List public collections and authors for search filters",
+    description = "Returns public collections (never private ones) followed by users/authors. \
+                  Used by the Home and Fast Search Authors, collections filter. \
+                  Per-collection item search on a collection you own is a separate endpoint."
 )]
 #[get("/users-and-collections")]
 pub async fn list_users_and_collections(
     pool: web::Data<Pool>,
-    claims: Option<Claims>,
     query: web::Query<CollectionUserPickerQuery>,
 ) -> impl Responder {
     match service::list_users_and_collections(
         &pool,
-        claims.map(|c| c.sub),
         query.search.clone(),
         query.per_kind.unwrap_or(20),
     )
@@ -1148,16 +1145,15 @@ pub async fn bulk_update_custom_text_items(
         (status = 400, description = "collection_ids missing or invalid"),
         (status = 500, description = "Internal server error")
     ),
-    security(("bearer_auth" = [])),
-    summary = "Search items in multiple collections",
+    summary = "Search items in multiple public collections",
     description = "Searches collection items across a set of collection IDs in a single request. \
-                  Only public collections and collections owned by the caller are included; \
-                  inaccessible IDs are skipped. Custom-text items (no definition_id) are included."
+                  Only public collections are included; private IDs are skipped. \
+                  Custom-text items (no definition_id) are included. \
+                  Searching inside a single collection you own (including private) uses GET /collections/{id}/items."
 )]
 #[get("/items/search")]
 pub async fn search_items_in_collections(
     pool: web::Data<Pool>,
-    claims: Option<Claims>,
     query: web::Query<SearchCollectionsItemsQuery>,
 ) -> impl Responder {
     let collection_ids = parse_positive_id_list(&query.collection_ids, 50);
@@ -1211,7 +1207,6 @@ pub async fn search_items_in_collections(
 
     match service::search_items_in_collections(
         &pool,
-        claims.map(|c| c.sub),
         collection_ids,
         page,
         per_page,
