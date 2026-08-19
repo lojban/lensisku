@@ -2815,9 +2815,9 @@ async fn add_definition_in_transaction(
         // Insert image
         transaction
             .execute(
-                "INSERT INTO definition_images (definition_id, image_data, mime_type)
-                 VALUES ($1, $2, $3)",
-                &[&definition_id, &image_data, &image.mime_type],
+                "INSERT INTO definition_images (definition_id, image_data, mime_type, created_by)
+                 VALUES ($1, $2, $3, $4)",
+                &[&definition_id, &image_data, &image.mime_type, &claims.sub],
             )
             .await?;
     }
