@@ -1017,6 +1017,22 @@
     "totalLabel": "{count} da ca bangu",
     "showingCount": "viska li {count} pe li {total} bangu",
     "searchPlaceholder": "pentoi lo cmene .a lo te tcila",
+    "filters": {
+      "all": "ro da",
+      "forLojbanLabel": "sa va'u la .lojban",
+      "urlLabel": "kibyjudri",
+      "forLojban": {
+        "yes": "ja'a",
+        "no": "na"
+      },
+      "url": {
+        "hasUrl": "le kibyjudri cu zasti",
+        "noUrl": "le kibyjudri na zasti"
+      }
+    },
+    "no": "na",
+    "viewInDictionary": "tcidu lo xe fanva",
+    "selectLanguagePrompt": "ciska le cmene be lo bangu",
     "noMatchingLanguages": "no bangu cu se penmi",
     "clearSearch": "vimcu lo sisku",
     "loading": "ca'o troci lo ka cpacu le liste",

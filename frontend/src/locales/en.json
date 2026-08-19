@@ -970,6 +970,22 @@
     "totalLabel": "Total: {count} languages",
     "showingCount": "Showing {count} of {total} languages",
     "searchPlaceholder": "Search by name or code...",
+    "filters": {
+      "all": "All",
+      "forLojbanLabel": "For Lojban",
+      "urlLabel": "Website",
+      "forLojban": {
+        "yes": "Yes",
+        "no": "No"
+      },
+      "url": {
+        "hasUrl": "Has URL",
+        "noUrl": "No URL"
+      }
+    },
+    "no": "No",
+    "viewInDictionary": "View in dictionary",
+    "selectLanguagePrompt": "Select a language to view its properties",
     "noMatchingLanguages": "No languages match your search",
     "clearSearch": "Clear search",
     "loading": "Loading languages...",

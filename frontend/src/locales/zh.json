@@ -946,6 +946,22 @@
     "totalLabel": "共 {count} 种语言",
     "showingCount": "显示 {count} / {total} 种语言",
     "searchPlaceholder": "按名称或代码搜索…",
+    "filters": {
+      "all": "全部",
+      "forLojbanLabel": "用于逻辑语",
+      "urlLabel": "网址",
+      "forLojban": {
+        "yes": "是",
+        "no": "否"
+      },
+      "url": {
+        "hasUrl": "有网址",
+        "noUrl": "无网址"
+      }
+    },
+    "no": "否",
+    "viewInDictionary": "在词典中查看",
+    "selectLanguagePrompt": "选择一种语言以查看其属性",
     "noMatchingLanguages": "没有匹配的语言",
     "clearSearch": "清除搜索",
     "loading": "正在加载语言…",

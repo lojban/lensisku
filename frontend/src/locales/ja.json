@@ -941,6 +941,22 @@
     "totalLabel": "計 {count} 言語",
     "showingCount": "{total} 言語中 {count} 件を表示",
     "searchPlaceholder": "名前またはコードで検索…",
+    "filters": {
+      "all": "すべて",
+      "forLojbanLabel": "ロジバン向け",
+      "urlLabel": "ウェブサイト",
+      "forLojban": {
+        "yes": "はい",
+        "no": "いいえ"
+      },
+      "url": {
+        "hasUrl": "URLあり",
+        "noUrl": "URLなし"
+      }
+    },
+    "no": "いいえ",
+    "viewInDictionary": "辞書で表示",
+    "selectLanguagePrompt": "言語を選択して、その属性を表示します",
     "noMatchingLanguages": "条件に一致する言語はありません",
     "clearSearch": "検索をクリア",
     "loading": "言語を読み込み中…",

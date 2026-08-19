@@ -213,6 +213,11 @@ const baseRoutes: Array<RouteRecordRaw> = [
     component: () => import('../pages/LanguageList.vue'),
   },
   {
+    path: '/language/:id',
+    name: 'LanguageProfile',
+    component: () => import('../pages/LanguageProfilePage.vue'),
+  },
+  {
     path: '/export',
     name: 'DictionaryExport',
     component: () => import('../pages/DictionaryExport.vue'),
