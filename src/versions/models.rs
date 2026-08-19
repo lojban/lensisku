@@ -23,6 +23,9 @@ pub struct VersionContent {
     pub rafsi: Option<String>,
     pub gloss_keywords: Option<Vec<crate::jbovlaste::KeywordMapping>>,
     pub place_keywords: Option<Vec<crate::jbovlaste::KeywordMapping>>,
+    /// Whether this version had an image attached to the definition.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub has_image: Option<bool>,
 }
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
@@ -38,6 +41,9 @@ pub struct Change {
     pub old_value: Option<String>,
     pub new_value: Option<String>,
     pub change_type: ChangeType,
+    /// For image-type changes: URL to fetch the image (old or new). Present only when `field == "image"`.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub image_url: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]

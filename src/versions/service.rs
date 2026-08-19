@@ -1,3 +1,5 @@
+use std::env;
+
 use super::{
     models::{Change, ChangeType, Version, VersionContent, VersionDiff},
     VersionHistoryResponse,
@@ -20,7 +22,9 @@ pub async fn get_definition_history(
             "SELECT v.*, u.username,
              v.definition, v.notes, v.selmaho, v.jargon, v.rafsi,
              v.gloss_keywords::text as gloss_json,
-             v.place_keywords::text as place_json
+             v.place_keywords::text as place_json,
+             EXISTS(SELECT 1 FROM definition_images di WHERE di.definition_id = v.definition_id
+                    AND di.created_at <= v.created_at) as had_image
              FROM definition_versions v
              JOIN users u ON v.user_id = u.userid
              WHERE v.definition_id = $1
@@ -53,6 +57,7 @@ pub async fn get_definition_history(
                 rafsi: row.get("rafsi"),
                 gloss_keywords,
                 place_keywords,
+                has_image: row.try_get("had_image").ok(),
             };
 
             Version {
@@ -108,7 +113,9 @@ pub async fn get_version_with_transaction(
             "SELECT v.*, u.username,
              v.definition, v.notes, v.selmaho, v.jargon, v.rafsi,
              v.gloss_keywords::text as gloss_json,
-             v.place_keywords::text as place_json
+             v.place_keywords::text as place_json,
+             EXISTS(SELECT 1 FROM definition_images di WHERE di.definition_id = v.definition_id
+                    AND di.created_at <= v.created_at) as had_image
              FROM definition_versions v
              JOIN users u ON v.user_id = u.userid
              WHERE v.version_id = $1",
@@ -138,6 +145,7 @@ pub async fn get_version_with_transaction(
         rafsi: row.get("rafsi"),
         gloss_keywords,
         place_keywords,
+        has_image: row.try_get("had_image").ok(),
     };
 
     Ok(Version {
@@ -212,6 +220,7 @@ pub async fn create_version(
         commit_message: commit_message.to_string(),
     })
 }
+
 
 pub async fn revert_to_version(
     pool: &Pool,
@@ -399,6 +408,14 @@ pub async fn get_diff(
         &mut changes,
     );
 
+    // Compare image presence
+    compare_image(
+        new_version.definition_id,
+        old_version.content.has_image,
+        new_version.content.has_image,
+        &mut changes,
+    );
+
     Ok(VersionDiff {
         old_content: old_version.content,
         new_content: new_version.content,
@@ -413,6 +430,7 @@ fn compare_field(field: &str, old_value: &str, new_value: &str, changes: &mut Ve
             old_value: Some(old_value.to_string()),
             new_value: Some(new_value.to_string()),
             change_type: ChangeType::Modified,
+            image_url: None,
         });
     }
 }
@@ -429,18 +447,21 @@ fn compare_option_field(
             old_value: None,
             new_value: Some(new.clone()),
             change_type: ChangeType::Added,
+            image_url: None,
         }),
         (Some(old), None) => changes.push(Change {
             field: field.to_string(),
             old_value: Some(old.clone()),
             new_value: None,
             change_type: ChangeType::Removed,
+            image_url: None,
         }),
         (Some(old), Some(new)) if old != new => changes.push(Change {
             field: field.to_string(),
             old_value: Some(old.clone()),
             new_value: Some(new.clone()),
             change_type: ChangeType::Modified,
+            image_url: None,
         }),
         _ => {}
     }
@@ -473,18 +494,56 @@ fn compare_keywords(
             old_value: None,
             new_value: Some(format_keywords_display(new)),
             change_type: ChangeType::Added,
+            image_url: None,
         }),
         (Some(old), None) => changes.push(Change {
             field: field.to_string(),
             old_value: Some(format_keywords_display(old)),
             new_value: None,
             change_type: ChangeType::Removed,
+            image_url: None,
         }),
         (Some(old), Some(new)) if old != new => changes.push(Change {
             field: field.to_string(),
             old_value: Some(format_keywords_display(old)),
             new_value: Some(format_keywords_display(new)),
             change_type: ChangeType::Modified,
+            image_url: None,
+        }),
+        _ => {}
+    }
+}
+
+fn compare_image(
+    definition_id: i32,
+    old_has_image: Option<bool>,
+    new_has_image: Option<bool>,
+    changes: &mut Vec<Change>,
+) {
+    let old = old_has_image.unwrap_or(false);
+    let new = new_has_image.unwrap_or(false);
+    if old == new {
+        return;
+    }
+    let base = env::var("FRONTEND_URL").unwrap_or_default();
+    let image_api_url = format!(
+        "{}/api/jbovlaste/definition_image/{}/image",
+        base, definition_id
+    );
+    match (old, new) {
+        (false, true) => changes.push(Change {
+            field: "image".to_string(),
+            old_value: None,
+            new_value: Some("image added".to_string()),
+            change_type: ChangeType::Added,
+            image_url: Some(image_api_url),
+        }),
+        (true, false) => changes.push(Change {
+            field: "image".to_string(),
+            old_value: Some("image removed".to_string()),
+            new_value: None,
+            change_type: ChangeType::Removed,
+            image_url: None,
         }),
         _ => {}
     }

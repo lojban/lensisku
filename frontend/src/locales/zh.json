@@ -1450,7 +1450,9 @@
         "notes": "备注",
         "gloss_keywords": "关键词",
         "place_keywords": "位关键词"
-      }
+      },
+      "imageAdded": "图片已添加",
+      "imageRemoved": "图片已删除"
     },
     "combinedFilters": {
       "filterBySelmao": "按 selma'o 筛选",

@@ -1445,7 +1445,9 @@
         "notes": "注",
         "gloss_keywords": "グロスキーワード",
         "place_keywords": "項キーワード"
-      }
+      },
+      "imageAdded": "画像が追加されました",
+      "imageRemoved": "画像が削除されました"
     },
     "combinedFilters": {
       "filterBySelmao": "selma'o で絞り込む",

@@ -63,7 +63,27 @@
               <div class="text-xs font-medium text-gray-500">
                 {{ formatFieldName(diffChange.field) }}:
               </div>
-              <template v-if="isPlainTextField(diffChange.field)">
+              <!-- Image diff: show the image safely -->
+              <template v-if="diffChange.field === 'image'">
+                <div
+                  v-if="diffChange.change_type === 'added' && diffChange.image_url"
+                  class="bg-green-50 p-2 rounded text-sm"
+                >
+                  <img
+                    :src="diffChange.image_url"
+                    :alt="t('components.recentChangeItem.imageAdded')"
+                    class="max-h-40 max-w-full object-contain rounded"
+                    loading="lazy"
+                  />
+                </div>
+                <div
+                  v-else-if="diffChange.change_type === 'removed'"
+                  class="bg-red-50 text-red-700 p-2 rounded text-sm"
+                >
+                  {{ t('components.recentChangeItem.imageRemoved') }}
+                </div>
+              </template>
+              <template v-else-if="isPlainTextField(diffChange.field)">
                 <template v-if="diffChange.change_type === 'modified'">
                   <div class="bg-red-50 p-2 rounded text-sm mb-1 whitespace-pre-wrap">
                     {{ diffChange.old_value || '' }}

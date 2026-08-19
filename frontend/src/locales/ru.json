@@ -1399,7 +1399,9 @@
         "notes": "Заметки",
         "gloss_keywords": "Ключевые слова (глоссы)",
         "place_keywords": "Ключевые слова (места)"
-      }
+      },
+      "imageAdded": "Изображение добавлено",
+      "imageRemoved": "Изображение удалено"
     },
     "combinedFilters": {
       "filterBySelmao": "Фильтр по selma'o",

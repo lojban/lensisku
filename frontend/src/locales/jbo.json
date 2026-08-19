@@ -1451,7 +1451,9 @@
         "notes": "notci",
         "gloss_keywords": "fanva valsi",
         "place_keywords": "fancu valsi"
-      }
+      },
+      "imageAdded": "le pixra mo'u se jmina",
+      "imageRemoved": "le pixra mo'u se vimcu"
     },
     "combinedFilters": {
       "filterBySelmao": "julne fi lo ka selma'o",

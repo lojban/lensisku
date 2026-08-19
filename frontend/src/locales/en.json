@@ -1474,7 +1474,9 @@
         "notes": "Notes",
         "gloss_keywords": "Gloss keywords",
         "place_keywords": "Place keywords"
-      }
+      },
+      "imageAdded": "Image added",
+      "imageRemoved": "Image removed"
     },
     "combinedFilters": {
       "filterBySelmao": "Filter by selma'o",

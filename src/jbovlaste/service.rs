@@ -4894,6 +4894,7 @@ pub async fn get_recent_changes(
                                         rafsi: None,
                                         gloss_keywords: None,
                                         place_keywords: None,
+                                        has_image: Some(false),
                                     },
                                     new_content: current.content,
                                     changes: vec![Change {
@@ -4901,6 +4902,7 @@ pub async fn get_recent_changes(
                                         old_value: Some(String::new()),
                                         new_value: Some(current_definition),
                                         change_type: ChangeType::Added,
+                                        image_url: None,
                                     }],
                                 })
                             } {
