@@ -4884,6 +4884,28 @@ pub async fn get_recent_changes(
                             } else {
                                 let current = get_version_with_transaction(&transaction, version_id).await?;
                                 let current_definition = current.content.definition.clone();
+                                let current_has_image = current.content.has_image.unwrap_or(false);
+
+                                let mut first_changes = vec![Change {
+                                    field: "definition".to_string(),
+                                    old_value: Some(String::new()),
+                                    new_value: Some(current_definition),
+                                    change_type: ChangeType::Added,
+                                    image_url: None,
+                                }];
+                                if current_has_image {
+                                    let def_id = current.definition_id;
+                                    first_changes.push(Change {
+                                        field: "image".to_string(),
+                                        old_value: None,
+                                        new_value: Some("image added".to_string()),
+                                        change_type: ChangeType::Added,
+                                        image_url: Some(format!(
+                                            "/api/jbovlaste/definition_image/{}/image",
+                                            def_id
+                                        )),
+                                    });
+                                }
 
                                 Ok(VersionDiff {
                                     old_content: VersionContent {
@@ -4897,13 +4919,7 @@ pub async fn get_recent_changes(
                                         has_image: Some(false),
                                     },
                                     new_content: current.content,
-                                    changes: vec![Change {
-                                        field: "definition".to_string(),
-                                        old_value: Some(String::new()),
-                                        new_value: Some(current_definition),
-                                        change_type: ChangeType::Added,
-                                        image_url: None,
-                                    }],
+                                    changes: first_changes,
                                 })
                             } {
                                 Ok(mut diff) => {

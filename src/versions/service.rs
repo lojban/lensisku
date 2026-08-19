@@ -1,5 +1,3 @@
-use std::env;
-
 use super::{
     models::{Change, ChangeType, Version, VersionContent, VersionDiff},
     VersionHistoryResponse,
@@ -525,11 +523,7 @@ fn compare_image(
     if old == new {
         return;
     }
-    let base = env::var("FRONTEND_URL").unwrap_or_default();
-    let image_api_url = format!(
-        "{}/api/jbovlaste/definition_image/{}/image",
-        base, definition_id
-    );
+    let image_api_url = format!("/api/jbovlaste/definition_image/{}/image", definition_id);
     match (old, new) {
         (false, true) => changes.push(Change {
             field: "image".to_string(),
