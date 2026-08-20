@@ -12,14 +12,10 @@
   </div>
 
   <div v-if="isWinterSeason && showPyro" class="pyro" />
-  <AppFixedBanners
-    :show-test-data-warning="showTestDataWarning"
-    :show-unconfirmed-warning="showUnconfirmedWarning"
-    :discord-chat-url="discordChatUrl"
-    :is-resending-confirmation="isResendingConfirmation"
-    :resend-confirmation-success="resendConfirmationSuccess"
-    @resend-confirmation="handleResendConfirmation"
-  />
+  <div
+    class="app-layout-column"
+    :class="{ 'app-layout-column--no-footer': route.meta.fullHeight }"
+  >
   <!-- Mobile-optimized header (omit on routes with meta.hideTopBar, e.g. full-bleed experiences) -->
 
   <header v-if="!route.meta.hideTopBar" class="app-header-bar">
@@ -203,6 +199,14 @@
       <AppMobileNavMenu :show="isMenuOpen" @close="isMenuOpen = false" @logout="handleLogout" />
     </div>
   </header>
+  <AppFixedBanners
+    :show-test-data-warning="showTestDataWarning"
+    :show-unconfirmed-warning="showUnconfirmedWarning"
+    :discord-chat-url="discordChatUrl"
+    :is-resending-confirmation="isResendingConfirmation"
+    :resend-confirmation-success="resendConfirmationSuccess"
+    @resend-confirmation="handleResendConfirmation"
+  />
   <!-- Global Error Display -->
   <div class="flex justify-center">
     <div v-if="error?.message" class="w-full max-w-lg px-4">
@@ -291,6 +295,7 @@
       </footer>
     </div>
   </main>
+  </div>
   <!-- Floating action menu (FAB trigger + standard dropdown panel) -->
   <div
     v-if="auth.state.isLoggedIn && route.name !== 'flashcard-study' && !route.meta.fullHeight"
@@ -806,8 +811,8 @@ footer {
 }
 
 .main-content {
-  height: calc(100vh - 57px - 24px);
-  height: calc(100svh - 57px - 24px);
+  flex: 1 1 0;
+  min-height: 0;
 }
 
 .main-content > * {
@@ -818,26 +823,6 @@ footer {
 /* Login / signup: global BackgroundComponent + body::before stay visible; no zinc column over the art */
 .main-content > #main-child.main-child--auth-fullbleed {
   @apply bg-transparent md:bg-transparent md:border-0;
-}
-
-@media (min-width: 640px) {
-  .main-content {
-    height: calc(100vh - 49px - 24px);
-    height: calc(100svh - 49px - 24px);
-  }
-}
-
-/* No global header: only reserve fixed footer strip (h-6 in FooterComponent). */
-.main-content.main-content--no-topbar:not(.main-content--no-scroll) {
-  height: calc(100vh - 24px);
-  height: calc(100svh - 24px);
-}
-
-@media (min-width: 640px) {
-  .main-content.main-content--no-topbar:not(.main-content--no-scroll) {
-    height: calc(100vh - 24px);
-    height: calc(100svh - 24px);
-  }
 }
 
 /* Aqua Scrollbar Styles */
@@ -973,31 +958,7 @@ footer {
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
-  /* legacy */
-  height: calc(100vh - 57px);
-  /* prefer svh when supported (mobile toolbars / dynamic UI) */
-  height: calc(100svh - 57px);
   padding-bottom: env(safe-area-inset-bottom, 0px);
-}
-
-@media (min-width: 640px) {
-  .main-content.main-content--no-scroll {
-    height: calc(100vh - 49px);
-    height: calc(100svh - 49px);
-  }
-}
-
-/* Full-height child + no app header: fill viewport (global footer already hidden via meta.fullHeight). */
-.main-content.main-content--no-scroll.main-content--no-topbar {
-  height: 100vh;
-  height: 100svh;
-}
-
-@media (min-width: 640px) {
-  .main-content.main-content--no-scroll.main-content--no-topbar {
-    height: 100vh;
-    height: 100svh;
-  }
 }
 
 .main-content.main-content--no-scroll > #main-child {

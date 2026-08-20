@@ -16,8 +16,8 @@ const props = defineProps({
 
 const bannerClasses = computed(() => {
   if (props.variant === 'warning') {
-    return 'page-banner-fixed page-banner--warning'
+    return 'page-banner-row page-banner--warning'
   }
-  return 'page-banner-fixed page-banner--error'
+  return 'page-banner-row page-banner--error'
 })
 </script>

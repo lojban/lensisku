@@ -118,7 +118,21 @@ export default {
         },
         /** Sticky app chrome (logo, nav, auth). */
         '.app-header-bar': {
-          '@apply sticky top-0 z-40 border-b border-gray-200 bg-white': {},
+          '@apply sticky top-0 z-40 shrink-0 border-b border-gray-200 bg-white': {},
+        },
+        /** Header + in-flow banners + main; leaves room for the fixed footer strip. */
+        '.app-layout-column': {
+          '@apply flex min-h-0 flex-col': {},
+          height: 'calc(100vh - 24px)',
+          '@supports (height: 100svh)': {
+            height: 'calc(100svh - 24px)',
+          },
+        },
+        '.app-layout-column--no-footer': {
+          height: '100vh',
+          '@supports (height: 100svh)': {
+            height: '100svh',
+          },
         },
         /** Canonical vertical rhythm for normal page routes (applied directly in App.vue). */
         '.page-sections': {
@@ -198,10 +212,9 @@ export default {
           '@apply icon-btn-ghost flex min-h-[44px] min-w-[44px] items-center justify-center rounded-md p-2.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600':
             {},
         },
-        /** Fixed strip under app header (`PageBanner`, test-data warnings). */
-        '.page-banner-fixed': {
-          '@apply fixed left-0 right-0 top-14 z-10 mx-auto border text-center select-none md:top-12':
-            {},
+        /** In-flow strip under app header (`PageBanner`, email / test-data warnings). */
+        '.page-banner-row': {
+          '@apply relative z-10 mx-auto w-full shrink-0 border text-center select-none': {},
         },
         '.page-banner--warning': {
           '@apply w-full px-4 py-2 text-sm opacity-90 bg-yellow-100 border-yellow-300': {},
