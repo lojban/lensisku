@@ -1101,7 +1101,6 @@
     "continueWithGoogle": "Continue with Google",
     "cancelled": "Sign-in was cancelled.",
     "notConfigured": "This sign-in method is not available.",
-    "collision": "An account with this email already exists. Sign in with your password instead.",
     "failed": "Social sign-in failed. Please try again.",
     "completing": "Signing you in…"
   },

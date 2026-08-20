@@ -830,12 +830,6 @@ fn oauth_error_response(err: AppError) -> HttpResponse {
             "error": "not_configured",
             "error_description": msgs.join(", ")
         })),
-        AppError::BadRequest(msg) if msg == "account_collision" => {
-            HttpResponse::Conflict().json(json!({
-                "error": "account_collision",
-                "error_description": "An account with this email already exists"
-            }))
-        }
         AppError::BadRequest(msg) | AppError::Validation(msg) => {
             HttpResponse::BadRequest().json(json!({
                 "error": "invalid_request",
@@ -914,7 +908,6 @@ pub async fn oauth_authorize(
     responses(
         (status = 200, description = "Signed in with OAuth", body = OAuthCompleteResponse),
         (status = 400, description = "Invalid code or state"),
-        (status = 409, description = "Email belongs to an existing account and cannot be linked"),
         (status = 503, description = "Provider is not configured")
     ),
     summary = "Complete OAuth sign-in",

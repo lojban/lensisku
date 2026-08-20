@@ -59,14 +59,8 @@ onMounted(async () => {
     const target = candidate && !isAuthRedirect(candidate) ? candidate : '/'
     await router.replace(target)
   } catch (err: unknown) {
-    const data = (err as { response?: { status?: number; data?: { error?: string } } }).response
-    if (data?.status === 409 || data?.data?.error === 'account_collision') {
-      error.value = t('oauth.collision')
-    } else if (data?.status === 503) {
-      error.value = t('oauth.notConfigured')
-    } else {
-      error.value = t('oauth.failed')
-    }
+    const status = (err as { response?: { status?: number } }).response?.status
+    error.value = status === 503 ? t('oauth.notConfigured') : t('oauth.failed')
   }
 })
 </script>

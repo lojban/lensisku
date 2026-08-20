@@ -1077,7 +1077,6 @@
     "continueWithGoogle": "使用 Google 继续",
     "cancelled": "已取消登录。",
     "notConfigured": "此登录方式不可用。",
-    "collision": "该邮箱已有账号。请使用密码登录。",
     "failed": "社交登录失败，请重试。",
     "completing": "正在登录…"
   },

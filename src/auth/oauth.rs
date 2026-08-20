@@ -586,11 +586,8 @@ pub async fn complete_oauth(
             .await
             .map_err(|e| AppError::Database(e.to_string()))?;
         user
-    } else if profile.email_verified {
-        let email = profile
-            .email
-            .as_ref()
-            .ok_or_else(|| AppError::Auth("Verified email missing".to_string()))?;
+    } else if let Some(email) = profile.email.as_ref() {
+        // Same email as an existing account (password or any OAuth): link and log in.
         let existing_email = transaction
             .query_opt(
                 &format!(
@@ -601,33 +598,8 @@ pub async fn complete_oauth(
             .await
             .map_err(|e| AppError::Database(e.to_string()))?;
         if let Some(row) = existing_email {
-            let mut user = User::from(row);
-            reject_if_blocked(&user)?;
-            transaction
-                .execute(
-                    "INSERT INTO oauth_accounts (user_id, provider, provider_id) VALUES ($1, $2, $3)",
-                    &[&user.userid, &provider.as_str(), &profile.provider_id],
-                )
-                .await
-                .map_err(|e| AppError::Database(e.to_string()))?;
-            if !user.email_confirmed
-                || user.role.to_lowercase() == UserRole::Unconfirmed.to_string()
-            {
-                let new_role = if user.role.to_lowercase() == UserRole::Unconfirmed.to_string() {
-                    UserRole::User.to_string()
-                } else {
-                    user.role.clone()
-                };
-                transaction
-                    .execute(
-                        "UPDATE users SET email_confirmed = true, role = $2 WHERE userid = $1",
-                        &[&user.userid, &new_role],
-                    )
-                    .await
-                    .map_err(|e| AppError::Database(e.to_string()))?;
-                user.email_confirmed = true;
-                user.role = new_role;
-            }
+            let user =
+                link_oauth_to_user(&transaction, User::from(row), provider, &profile).await?;
             transaction
                 .commit()
                 .await
@@ -642,19 +614,6 @@ pub async fn complete_oauth(
             user
         }
     } else {
-        if let Some(email) = profile.email.as_ref() {
-            let taken = transaction
-                .query_opt(
-                    "SELECT userid FROM users WHERE LOWER(email) = LOWER($1) LIMIT 1",
-                    &[email],
-                )
-                .await
-                .map_err(|e| AppError::Database(e.to_string()))?
-                .is_some();
-            if taken {
-                return Err(AppError::BadRequest("account_collision".to_string()));
-            }
-        }
         let user = insert_oauth_user(&transaction, provider, &profile).await?;
         transaction
             .commit()
@@ -666,6 +625,42 @@ pub async fn complete_oauth(
     let mut result = issue_tokens(pool, &user, ip_address, user_agent).await?;
     result.return_to = return_to;
     Ok(result)
+}
+
+async fn link_oauth_to_user(
+    transaction: &deadpool_postgres::Transaction<'_>,
+    mut user: User,
+    provider: OAuthProvider,
+    profile: &OAuthProfile,
+) -> AppResult<User> {
+    reject_if_blocked(&user)?;
+    transaction
+        .execute(
+            "INSERT INTO oauth_accounts (user_id, provider, provider_id) VALUES ($1, $2, $3)
+             ON CONFLICT (provider, provider_id) DO NOTHING",
+            &[&user.userid, &provider.as_str(), &profile.provider_id],
+        )
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+    if profile.email_verified
+        && (!user.email_confirmed || user.role.to_lowercase() == UserRole::Unconfirmed.to_string())
+    {
+        let new_role = if user.role.to_lowercase() == UserRole::Unconfirmed.to_string() {
+            UserRole::User.to_string()
+        } else {
+            user.role.clone()
+        };
+        transaction
+            .execute(
+                "UPDATE users SET email_confirmed = true, role = $2 WHERE userid = $1",
+                &[&user.userid, &new_role],
+            )
+            .await
+            .map_err(|e| AppError::Database(e.to_string()))?;
+        user.email_confirmed = true;
+        user.role = new_role;
+    }
+    Ok(user)
 }
 
 async fn insert_oauth_user(
