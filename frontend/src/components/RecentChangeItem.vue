@@ -52,12 +52,12 @@
             {{ t('recentChanges.in', { language: changeLanguage }) }}
           </span>
           <div
-            v-if="change.change_type === 'definition' && change.diff"
+            v-if="change.change_type === 'definition' && visibleDiffChanges.length"
             class="mt-3 space-y-3 border-l-4 border-blue-200 pl-4"
           >
+            <template v-for="diffChange in visibleDiffChanges" :key="diffChange.field">
             <div
-              v-for="diffChange in change.diff.changes"
-              :key="diffChange.field"
+              v-if="diffFieldHasVisibleContent(diffChange)"
               class="space-y-1"
             >
               <div class="text-xs font-medium text-gray-500">
@@ -85,15 +85,21 @@
               </template>
               <template v-else-if="isPlainTextField(diffChange.field)">
                 <template v-if="diffChange.change_type === 'modified'">
-                  <div class="bg-red-50 p-2 rounded text-sm mb-1 whitespace-pre-wrap">
-                    {{ diffChange.old_value || '' }}
+                  <div
+                    v-if="hasDiffContent(diffChange.old_value)"
+                    class="bg-red-50 p-2 rounded text-sm mb-1 whitespace-pre-wrap"
+                  >
+                    {{ diffChange.old_value }}
                   </div>
 
-                  <div class="bg-green-50 p-2 rounded text-sm whitespace-pre-wrap">
-                    {{ diffChange.new_value || '' }}
+                  <div
+                    v-if="hasDiffContent(diffChange.new_value)"
+                    class="bg-green-50 p-2 rounded text-sm whitespace-pre-wrap"
+                  >
+                    {{ diffChange.new_value }}
                   </div>
                 </template>
-                <template v-else>
+                <template v-else-if="hasDiffContent(diffChange.new_value || diffChange.old_value)">
                   <div
                     :class="{
                       'bg-green-50 text-green-800': diffChange.change_type === 'added',
@@ -101,21 +107,27 @@
                     }"
                     class="p-2 rounded text-sm whitespace-pre-wrap"
                   >
-                    {{ diffChange.new_value || diffChange.old_value || '' }}
+                    {{ diffChange.new_value || diffChange.old_value }}
                   </div>
                 </template>
               </template>
               <template v-else>
                 <template v-if="diffChange.change_type === 'modified'">
-                  <div class="bg-red-50 p-2 rounded text-sm mb-1">
+                  <div
+                    v-if="hasDiffContent(diffChange.old_value)"
+                    class="bg-red-50 p-2 rounded text-sm mb-1"
+                  >
                     <LazyMathJax :content="diffChange.old_value" :enable-markdown="true" />
                   </div>
 
-                  <div class="bg-green-50 p-2 rounded text-sm">
+                  <div
+                    v-if="hasDiffContent(diffChange.new_value)"
+                    class="bg-green-50 p-2 rounded text-sm"
+                  >
                     <LazyMathJax :content="diffChange.new_value" :enable-markdown="true" />
                   </div>
                 </template>
-                <template v-else>
+                <template v-else-if="hasDiffContent(diffChange.new_value || diffChange.old_value)">
                   <div
                     :class="{
                       'bg-green-50 text-green-800': diffChange.change_type === 'added',
@@ -131,6 +143,7 @@
                 </template>
               </template>
             </div>
+            </template>
           </div>
 
           <div
@@ -236,6 +249,29 @@ const formatFieldName = (field) => {
     )
     .join(' ')
 }
+
+const hasDiffContent = (value) => {
+  if (value == null) return false
+  if (typeof value === 'string') return value.trim() !== ''
+  if (Array.isArray(value)) return value.length > 0
+  return true
+}
+
+const diffFieldHasVisibleContent = (diffChange) => {
+  if (!diffChange) return false
+  if (diffChange.field === 'image') {
+    return diffChange.change_type === 'added'
+      ? Boolean(diffChange.image_url)
+      : diffChange.change_type === 'removed'
+  }
+  return hasDiffContent(diffChange.old_value) || hasDiffContent(diffChange.new_value)
+}
+
+const visibleDiffChanges = computed(() => {
+  const changes = props.change?.diff?.changes
+  if (!Array.isArray(changes)) return []
+  return changes.filter(diffFieldHasVisibleContent)
+})
 
 // Fields whose values are plain text — render as text only (no markdown/linkification)
 const isPlainTextField = (field) =>
