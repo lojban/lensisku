@@ -58,15 +58,27 @@ function csvOrUndefined(values: Array<string | number> | undefined): string | un
   return values.join(',')
 }
 
+function queryCsv(v: string | string[] | null | undefined): string {
+  if (v == null) return ''
+  if (Array.isArray(v)) {
+    return v
+      .flatMap((part) => String(part).split(','))
+      .map((s) => s.trim())
+      .filter(Boolean)
+      .join(',')
+  }
+  return String(v)
+}
+
 /** Drop empty/undefined keys so vue-router actually removes them from the URL. */
 export function compactQuery(query: Record<string, unknown>): Record<string, string> {
   const out: Record<string, string> = {}
   for (const [key, value] of Object.entries(query)) {
     if (value === undefined || value === null || value === '') continue
     if (Array.isArray(value)) {
-      const first = value.find((v) => v != null && v !== '')
-      if (first == null || first === '') continue
-      out[key] = String(first)
+      const joined = queryCsv(value as string[])
+      if (!joined) continue
+      out[key] = joined
       continue
     }
     const s = String(value)
@@ -99,10 +111,10 @@ export function combinedFiltersToQuery(
 }
 
 export function combinedFiltersFromQuery(query: LocationQuery): CombinedFiltersUrlState {
-  const langs = queryStr(query.langs)
-  const collections = queryStr(query.collections)
-  const username = queryStr(query.username)
-  const exclude = queryStr(query.exclude_usernames)
+  const langs = queryCsv(query.langs)
+  const collections = queryCsv(query.collections)
+  const username = queryCsv(query.username)
+  const exclude = queryCsv(query.exclude_usernames)
   const wordType = queryStr(query.word_type)
   const source = queryStr(query.source_langid)
   return {
@@ -141,10 +153,12 @@ export function hasActiveSearchFilters(filters: CombinedFiltersUrlState): boolea
   )
 }
 
-export function pickHomeQuery(query: LocationQuery): Record<string, string> {
+export function pickHomeQuery(
+  query: LocationQuery | Record<string, unknown>
+): Record<string, string> {
   const out: Record<string, string> = {}
   for (const key of HOME_PRESERVED_QUERY_KEYS) {
-    const s = queryStr(query[key])
+    const s = queryCsv(query[key] as string | string[] | null | undefined)
     if (!s) continue
     if (key === 'mode' && !HOME_SEARCH_MODES.has(s)) continue
     out[key] = s
@@ -157,20 +171,28 @@ function parseStoredQueryRecord(raw: string | null): Record<string, string> {
   try {
     const parsed = JSON.parse(raw) as unknown
     if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return {}
-    const out: Record<string, string> = {}
-    for (const [key, value] of Object.entries(parsed as Record<string, unknown>)) {
-      if (typeof value === 'string' && value) out[key] = value
-    }
-    return out
+    return pickHomeQuery(parsed as Record<string, unknown>)
   } catch {
     return {}
   }
 }
 
-export function saveLastHomeQuery(query: LocationQuery): void {
+function readJsonArray(key: string): unknown[] | null {
+  if (typeof window === 'undefined') return null
+  try {
+    const raw = localStorage.getItem(key)
+    if (!raw) return null
+    const parsed = JSON.parse(raw) as unknown
+    return Array.isArray(parsed) ? parsed : null
+  } catch {
+    return null
+  }
+}
+
+function writeLastHomeQuery(record: Record<string, string>): void {
   if (typeof window === 'undefined') return
   try {
-    const payload = JSON.stringify(pickHomeQuery(query))
+    const payload = JSON.stringify(record)
     localStorage.setItem(LAST_HOME_QUERY_KEY, payload)
     sessionStorage.setItem(LAST_HOME_QUERY_KEY, payload)
   } catch {
@@ -189,21 +211,38 @@ export function loadLastHomeQuery(): Record<string, string> {
   }
 }
 
-/** Fill keys still missing after the last-home snapshot, from older per-field localStorage. */
-function backfillHomeQueryFromLegacyStorage(query: Record<string, string>): Record<string, string> {
+/** Older per-field keys, used only when the unified snapshot is missing that param. */
+function backfillLegacyHomeQuery(query: Record<string, string>): Record<string, string> {
   if (typeof window === 'undefined') return query
   const out = { ...query }
-  try {
-    if (!out.langs) {
-      const stored = localStorage.getItem('selectedLanguages')
-      const ids = stored ? (JSON.parse(stored) as unknown) : null
-      if (Array.isArray(ids) && ids.length) {
-        const langs = ids.filter((n) => Number.isFinite(Number(n))).join(',')
-        if (langs) out.langs = langs
-      }
-    }
-  } catch {
-    /* ignore */
+  const csvFromIds = (key: string, min = 0): string => {
+    const ids = readJsonArray(key)
+    if (!ids?.length) return ''
+    return ids
+      .map(Number)
+      .filter((n) => Number.isFinite(n) && n >= min)
+      .join(',')
+  }
+  const csvFromNames = (key: string): string => {
+    const names = readJsonArray(key)
+    if (!names?.length) return ''
+    return names.map(String).filter(Boolean).join(',')
+  }
+  if (!out.langs) {
+    const langs = csvFromIds('selectedLanguages')
+    if (langs) out.langs = langs
+  }
+  if (!out.collections) {
+    const collections = csvFromIds('selectedCollections', 1)
+    if (collections) out.collections = collections
+  }
+  if (!out.username) {
+    const username = csvFromNames('selectedUsernames')
+    if (username) out.username = username
+  }
+  if (!out.exclude_usernames) {
+    const exclude = csvFromNames('excludeUsernames')
+    if (exclude) out.exclude_usernames = exclude
   }
   if (!out.mode) {
     const storedMode = localStorage.getItem('searchMode')
@@ -217,27 +256,44 @@ function backfillHomeQueryFromLegacyStorage(query: Record<string, string>): Reco
     const storedQuery = localStorage.getItem('searchQuery')
     if (storedQuery) out.q = storedQuery
   }
-  if (!out.searchInPhrases) {
-    const stored = localStorage.getItem('searchInPhrases')
-    if (stored === 'false') out.searchInPhrases = 'false'
+  if (!out.searchInPhrases && localStorage.getItem('searchInPhrases') === 'false') {
+    out.searchInPhrases = 'false'
   }
   if (!out.wave_source) {
     const stored = localStorage.getItem('waveSource')
     if (stored) out.wave_source = stored
   }
-  if (!out.group_by_thread) {
-    const stored = localStorage.getItem('mailSearch_groupByThread')
-    if (stored === 'true') out.group_by_thread = 'true'
+  if (!out.group_by_thread && localStorage.getItem('mailSearch_groupByThread') === 'true') {
+    out.group_by_thread = 'true'
   }
   return out
 }
 
-/** Stored home filters, overlaid with any keys already in the URL (URL wins). */
-export function mergeQueryForHomeNavigation(current: LocationQuery): Record<string, string> {
-  return {
-    ...backfillHomeQueryFromLegacyStorage(loadLastHomeQuery()),
-    ...pickHomeQuery(current),
-  }
+/**
+ * One restore rule for every home param (`langs`, `collections`, `username`, …):
+ * stored snapshot first, current URL keys overlay (URL wins).
+ */
+export function resolveHomeQuery(current: LocationQuery): Record<string, string> {
+  return { ...backfillLegacyHomeQuery(loadLastHomeQuery()), ...pickHomeQuery(current) }
+}
+
+export const mergeQueryForHomeNavigation = resolveHomeQuery
+
+/** Persist a complete home URL. Bare `/` (no preserved keys) does not wipe storage. */
+export function saveLastHomeQuery(
+  query: LocationQuery | Record<string, unknown>
+): Record<string, string> {
+  const picked = pickHomeQuery(query)
+  if (Object.keys(picked).length === 0) return picked
+  writeLastHomeQuery(picked)
+  return picked
+}
+
+/** Compact, persist, and return the query to `router.push`. */
+export function commitHomeQuery(query: Record<string, unknown>): Record<string, string> {
+  const compacted = compactQuery(query)
+  saveLastHomeQuery(compacted)
+  return compacted
 }
 
 /** Copy filter fields from the URL only when those keys are present. */

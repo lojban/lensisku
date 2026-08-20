@@ -467,9 +467,10 @@ import {
   applyCombinedFiltersFromQuery,
   combinedFiltersFromQuery,
   combinedFiltersToQuery,
+  commitHomeQuery,
   compactQuery,
   hasActiveSearchFilters,
-  mergeQueryForHomeNavigation,
+  resolveHomeQuery,
   queryStr,
 } from '@/utils/routeQuery'
 import { normalizeSearchQuery } from '@/utils/searchQueryUtils'
@@ -659,7 +660,7 @@ const currentPage = ref(parseInt(queryStr(route.query.page), 10) || 1)
 const totalPages = ref(1)
 const sortOrder = ref('desc')
 
-const hydratedHomeQuery = mergeQueryForHomeNavigation(route.query)
+const hydratedHomeQuery = resolveHomeQuery(route.query)
 
 // URL wins; otherwise last-home / localStorage snapshot
 const getInitialSearchQuery = () => {
@@ -1361,7 +1362,7 @@ const handleFiltersReset = async () => {
 
 const updateUrlWithFilters = () => {
   router.push({
-    query: compactQuery({
+    query: commitHomeQuery({
       ...route.query,
       q: searchQuery.value || undefined,
       mode: searchMode.value,
@@ -1383,7 +1384,7 @@ const performSearch = ({ query, mode }: { query: string; mode: string }) => {
   similarDefinitionId.value = null
 
   // Reset to first page whenever search query or mode changes
-  const updateParams = compactQuery({
+  const updateParams = commitHomeQuery({
     ...route.query,
     q: query || undefined, // Use undefined if query is empty
     mode: effectiveMode,
@@ -1569,9 +1570,9 @@ onMounted(async () => {
     filters.value.selectedLanguages = initialLangs
     languages.value = languagesResponse.data
 
-    const queryToPush = compactQuery({
+    const queryToPush = commitHomeQuery({
       ...route.query,
-      ...mergeQueryForHomeNavigation(route.query),
+      ...resolveHomeQuery(route.query),
       q: similarDefinitionId.value ? undefined : searchQuery.value || undefined,
       mode: searchMode.value,
       definition_id: similarDefinitionId.value ? String(similarDefinitionId.value) : undefined,

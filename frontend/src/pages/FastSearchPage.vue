@@ -146,9 +146,10 @@ import {
   applyCombinedFiltersFromQuery,
   combinedFiltersFromQuery,
   combinedFiltersToQuery,
+  commitHomeQuery,
   compactQuery,
   hasActiveSearchFilters,
-  mergeQueryForHomeNavigation,
+  resolveHomeQuery,
   queryStr,
 } from '@/utils/routeQuery'
 import { normalizeSearchQuery } from '@/utils/searchQueryUtils'
@@ -161,7 +162,7 @@ import {
 const router = useRouter()
 const route = useRoute()
 const { getInitialLanguages, saveLanguages } = useLanguageSelection()
-const hydratedHomeQuery = mergeQueryForHomeNavigation(route.query)
+const hydratedHomeQuery = resolveHomeQuery(route.query)
 
 type FastSearchDefinitionRow = {
   definitionid: number
@@ -372,7 +373,7 @@ const handleFiltersReset = async () => {
 
 const updateUrlWithFilters = () => {
   router.push({
-    query: compactQuery({
+    query: commitHomeQuery({
       ...route.query,
       q: searchQuery.value || undefined,
       ...combinedFiltersToQuery(filters.value),
@@ -382,7 +383,7 @@ const updateUrlWithFilters = () => {
 
 // Search handling
 const performSearch = ({ query, mode }: { query: string; mode: string }) => {
-  const updateParams = compactQuery({
+  const updateParams = commitHomeQuery({
     ...route.query,
     q: query || undefined,
     mode: mode !== 'dictionary' ? mode : undefined, // Keep mode if it's not dictionary
@@ -464,9 +465,9 @@ onMounted(async () => {
     filters.value.selectedLanguages = initialLangs
     languages.value = languagesResponse.data
 
-    const queryToPush = compactQuery({
+    const queryToPush = commitHomeQuery({
       ...route.query,
-      ...mergeQueryForHomeNavigation(route.query),
+      ...resolveHomeQuery(route.query),
       q: searchQuery.value || undefined,
       ...combinedFiltersToQuery(filters.value),
     })

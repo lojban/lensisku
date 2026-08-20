@@ -1,6 +1,7 @@
 import type { RouteLocationNormalizedLoaded } from 'vue-router'
 
 import { defaultFilterLanguageTags } from '../config/locales'
+import { resolveHomeQuery } from '../utils/routeQuery'
 
 export interface LanguageOption {
   id: number
@@ -34,15 +35,18 @@ export const useLanguageSelection = () => {
     route: RouteLocationNormalizedLoaded,
     availableLanguages: LanguageOption[]
   ): number[] => {
-    const langsQuery = route.query.langs
-    if (typeof langsQuery === 'string' && langsQuery) {
-      const routeLanguages = langsQuery.split(',').map(Number)
+    const langs = resolveHomeQuery(route.query).langs
+    if (langs) {
+      const routeLanguages = langs
+        .split(',')
+        .map(Number)
+        .filter((n) => Number.isFinite(n))
       saveLanguages(routeLanguages)
       return routeLanguages
     }
 
     const storedLanguages = getStoredLanguages()
-    if (storedLanguages) {
+    if (storedLanguages?.length) {
       return storedLanguages
     }
 

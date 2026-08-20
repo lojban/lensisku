@@ -391,7 +391,6 @@ import {
   compactQuery,
   mergeQueryForHomeNavigation,
   queryStr,
-  saveLastHomeQuery,
 } from '@/utils/routeQuery'
 import { provideAuth } from './composables/useAuth'
 import { provideError } from './composables/useError'
@@ -645,16 +644,6 @@ const handleClickOutside = (event) => {
     isMoreNavOpen.value = false
   }
 }
-
-watch(
-  () => route.query,
-  () => {
-    if (isHomePage.value || isFastSearchPage.value) {
-      saveLastHomeQuery(route.query)
-    }
-  },
-  { deep: true, immediate: true }
-)
 
 watch(isHomePage, (onHome, wasOnHome) => {
   if (wasOnHome && !onHome) {
