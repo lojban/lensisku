@@ -114,24 +114,28 @@ pub async fn list_public_collections(
     tag = "collections",
     params(
         ("search" = Option<String>, Query, description = "Substring match on collection name/description/owner or username"),
-        ("per_kind" = Option<i64>, Query, description = "Max collections and max users to return (default 20, max 40)")
+        ("per_kind" = Option<i64>, Query, description = "Max collections and max users when searching (default 20, max 40). Ignored for the empty popular default (always top 10 each).")
     ),
     responses(
         (status = 200, description = "Public collections then authors for the combined filter picker", body = CollectionUserPickerResponse),
         (status = 500, description = "Internal server error")
     ),
     summary = "List public collections and authors for search filters",
-    description = "Returns public collections (never private ones) followed by users/authors. \
+    description = "With no search, returns top popular public collections (flashcard activity) \
+                  and authors who most recently added definitions (Redis-cached). \
+                  With a search string, returns matching public collections then users/authors. \
                   Used by the Home and Fast Search Authors, collections filter. \
                   Per-collection item search on a collection you own is a separate endpoint."
 )]
 #[get("/users-and-collections")]
 pub async fn list_users_and_collections(
     pool: web::Data<Pool>,
+    redis_cache: web::Data<RedisCache>,
     query: web::Query<CollectionUserPickerQuery>,
 ) -> impl Responder {
     match service::list_users_and_collections(
         &pool,
+        &redis_cache,
         query.search.clone(),
         query.per_kind.unwrap_or(20),
     )

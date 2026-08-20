@@ -122,11 +122,12 @@ pub struct ListCollectionItemsQuery {
 #[derive(Debug, Deserialize, ToSchema)]
 pub struct CollectionUserPickerQuery {
     pub search: Option<String>,
-    /// Max rows per kind (collections and users). Clamped server-side (default 20, max 40).
+    /// Max rows per kind when searching (collections and users). Clamped server-side (default 20, max 40).
+    /// Empty search always returns the cached top 10 popular collections and top 10 recent authors.
     pub per_kind: Option<i64>,
 }
 
-#[derive(Debug, Serialize, ToSchema)]
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 #[serde(tag = "kind")]
 pub enum CollectionUserPickerItem {
     #[serde(rename = "collection")]
@@ -143,7 +144,7 @@ pub enum CollectionUserPickerItem {
     },
 }
 
-#[derive(Debug, Serialize, ToSchema)]
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct CollectionUserPickerResponse {
     pub items: Vec<CollectionUserPickerItem>,
 }

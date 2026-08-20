@@ -624,6 +624,10 @@ const excludeAuthorSuggestions = computed(() => {
 
 const USER_SEARCH_DELAY_MS = 250
 const USER_LIST_PAGE_SIZE = 50
+/** Empty picker open: top popular collections + recent authors (backend caches this). */
+const PICKER_POPULAR_PER_KIND = 10
+/** Typed search: how many of each kind to fetch. */
+const PICKER_SEARCH_PER_KIND = 20
 let userSearchTimer: ReturnType<typeof setTimeout> | null = null
 let collectionSearchTimer: ReturnType<typeof setTimeout> | null = null
 
@@ -931,9 +935,10 @@ function clearCollectionSearchTimer() {
 
 async function fetchCollectionUsers(search = '') {
   try {
+    const trimmed = search.trim()
     const response = await searchCollectionsAndUsers({
-      search: search.trim() || undefined,
-      per_kind: 20,
+      search: trimmed || undefined,
+      per_kind: trimmed ? PICKER_SEARCH_PER_KIND : PICKER_POPULAR_PER_KIND,
     })
     const items = (response.data.items ?? []) as CollectionUserOption[]
     const cols: CollectionOption[] = []
@@ -952,6 +957,11 @@ async function fetchCollectionUsers(search = '') {
           realname: item.realname,
         })
       }
+    }
+    // Empty search: show the popular/recent top lists, not leftover search hits.
+    if (!trimmed) {
+      collectionOptions.value = []
+      userOptions.value = []
     }
     mergeCollectionOptions(cols)
     mergeUserOptions(users)

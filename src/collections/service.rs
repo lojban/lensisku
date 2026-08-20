@@ -5,8 +5,9 @@ use crate::utils::remove_html_tags;
 use crate::{
     auth_utils::verify_collection_ownership, export::models::CollectionExportItem,
     flashcards::models::FlashcardDirection, middleware::cache::RedisCache,
-    middleware::image::ImageProcessor, users::dto::ProfileImageRequest, utils::validate_item_audio,
-    utils::validate_item_image, utils::MAX_ITEM_IMAGE_BYTES, AppError, AppResult,
+    middleware::cache::FILTER_PICKER_POPULAR_CACHE_KEY, middleware::image::ImageProcessor,
+    users::dto::ProfileImageRequest, utils::validate_item_audio, utils::validate_item_image,
+    utils::MAX_ITEM_IMAGE_BYTES, AppError, AppResult,
 };
 use base64::{engine::general_purpose::STANDARD as BASE64, Engine};
 use sha2::{Digest, Sha256};
@@ -275,10 +276,17 @@ pub async fn list_public_collections(
 }
 
 const MAX_PICKER_PER_KIND: i64 = 40;
+const POPULAR_PICKER_PER_KIND: i64 = 10;
+const FILTER_PICKER_POPULAR_CACHE_TTL: std::time::Duration =
+    std::time::Duration::from_secs(3600);
 
 /// Combined picker for Home/Fast Search: public collections, then authors (users).
+///
+/// Empty search returns the top popular public collections (flashcard activity, last 7 days)
+/// and the top users by most recent definition submission. That default snapshot is Redis-cached.
 pub async fn list_users_and_collections(
     pool: &Pool,
+    redis: &RedisCache,
     search: Option<String>,
     per_kind: i64,
 ) -> AppResult<CollectionUserPickerResponse> {
@@ -289,6 +297,88 @@ pub async fn list_users_and_collections(
         .filter(|s| !s.is_empty())
         .map(|s| format!("%{}%", s));
 
+    if search_pattern.is_none() {
+        return list_popular_users_and_collections(pool, redis).await;
+    }
+
+    query_users_and_collections(pool, search_pattern.as_deref(), per_kind).await
+}
+
+async fn list_popular_users_and_collections(
+    pool: &Pool,
+    redis: &RedisCache,
+) -> AppResult<CollectionUserPickerResponse> {
+    if let Ok(Some(cached)) = redis
+        .get::<CollectionUserPickerResponse>(FILTER_PICKER_POPULAR_CACHE_KEY)
+        .await
+    {
+        return Ok(cached);
+    }
+
+    let response = query_popular_users_and_collections(pool, POPULAR_PICKER_PER_KIND).await?;
+    if let Err(e) = redis
+        .set(
+            FILTER_PICKER_POPULAR_CACHE_KEY,
+            &response,
+            Some(FILTER_PICKER_POPULAR_CACHE_TTL),
+        )
+        .await
+    {
+        log::warn!("Failed to cache filter picker popular list: {e}");
+    }
+    Ok(response)
+}
+
+async fn query_popular_users_and_collections(
+    pool: &Pool,
+    per_kind: i64,
+) -> AppResult<CollectionUserPickerResponse> {
+    let client = pool
+        .get()
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+    // Popular = most distinct flashcard reviewers in the last 7 days (same as public list default).
+    let collection_rows = client
+        .query(
+            "SELECT c.collection_id, c.name, u.username AS owner_username
+             FROM collections c
+             JOIN users u ON u.userid = c.user_id
+             LEFT JOIN flashcards f ON f.collection_id = c.collection_id
+             LEFT JOIN user_flashcard_progress ufp ON ufp.flashcard_id = f.id
+                 AND ufp.last_reviewed_at >= NOW() - INTERVAL '7 days'
+             WHERE c.is_public = true
+             GROUP BY c.collection_id, u.userid, u.username
+             ORDER BY COUNT(DISTINCT ufp.user_id) DESC, c.updated_at DESC
+             LIMIT $1",
+            &[&per_kind],
+        )
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+    // Authors who most recently added (or updated) a definition.
+    let user_rows = client
+        .query(
+            "SELECT u.userid, u.username, u.realname
+             FROM users u
+             INNER JOIN definitions d ON d.userid = u.userid
+             WHERE u.password IS DISTINCT FROM 'DISABLED'
+             GROUP BY u.userid, u.username, u.realname
+             ORDER BY MAX(d.time) DESC NULLS LAST
+             LIMIT $1",
+            &[&per_kind],
+        )
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+    Ok(picker_response_from_rows(collection_rows, user_rows))
+}
+
+async fn query_users_and_collections(
+    pool: &Pool,
+    search_pattern: Option<&str>,
+    per_kind: i64,
+) -> AppResult<CollectionUserPickerResponse> {
     let client = pool
         .get()
         .await
@@ -330,6 +420,13 @@ pub async fn list_users_and_collections(
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
 
+    Ok(picker_response_from_rows(collection_rows, user_rows))
+}
+
+fn picker_response_from_rows(
+    collection_rows: Vec<tokio_postgres::Row>,
+    user_rows: Vec<tokio_postgres::Row>,
+) -> CollectionUserPickerResponse {
     let mut items = Vec::with_capacity(collection_rows.len() + user_rows.len());
     for row in collection_rows {
         items.push(CollectionUserPickerItem::Collection {
@@ -345,8 +442,7 @@ pub async fn list_users_and_collections(
             realname: row.get("realname"),
         });
     }
-
-    Ok(CollectionUserPickerResponse { items })
+    CollectionUserPickerResponse { items }
 }
 
 fn pagination_bounds(page: Option<i64>, per_page: Option<i64>) -> Option<(i64, i64, i64)> {
@@ -594,6 +690,14 @@ pub async fn refresh_collection_sort_cache(pool: &Pool, redis: &RedisCache) -> A
 pub async fn invalidate_public_collections_cache(redis: &RedisCache) {
     if let Err(e) = redis.invalidate("collections_public:*").await {
         log::warn!("Failed to invalidate public collections cache: {e}");
+    }
+    invalidate_filter_picker_popular_cache(redis).await;
+}
+
+/// Drop the cached default collections+authors picker (popular collections / recent authors).
+pub async fn invalidate_filter_picker_popular_cache(redis: &RedisCache) {
+    if let Err(e) = redis.invalidate_filter_picker_popular().await {
+        log::warn!("Failed to invalidate filter picker popular cache: {e}");
     }
 }
 

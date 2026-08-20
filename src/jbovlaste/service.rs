@@ -3128,6 +3128,12 @@ async fn add_definition_in_transaction(
     if let Err(e) = redis_cache.invalidate_recent_changes().await {
         log::error!("Failed to invalidate recent changes cache after add: {}", e);
     }
+    if let Err(e) = redis_cache.invalidate_filter_picker_popular().await {
+        log::warn!(
+            "Failed to invalidate filter picker popular cache after add: {}",
+            e
+        );
+    }
 
     Ok((word_type, definition_id, rafsi_warning))
 }
@@ -3750,6 +3756,12 @@ pub async fn update_definition(
     if let Err(e) = redis_cache.invalidate_recent_changes().await {
         log::error!(
             "Failed to invalidate recent changes cache after update: {}",
+            e
+        );
+    }
+    if let Err(e) = redis_cache.invalidate_filter_picker_popular().await {
+        log::warn!(
+            "Failed to invalidate filter picker popular cache after update: {}",
             e
         );
     }

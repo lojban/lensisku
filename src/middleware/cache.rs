@@ -4,6 +4,9 @@ use std::time::Duration;
 
 use crate::jbovlaste::{SearchDefinitionsQuery, SemanticGraphQuery};
 
+/// Cached default for Home/Fast Search collections+authors filter (top popular / recent authors).
+pub const FILTER_PICKER_POPULAR_CACHE_KEY: &str = "filter_picker:popular_v1";
+
 pub struct RedisCache {
     pub client: Client,
     default_ttl: Duration,
@@ -97,6 +100,13 @@ impl RedisCache {
     /// comments, threads, or votes change so the Recent Changes page is fresh.
     pub async fn invalidate_recent_changes(&self) -> Result<(), RedisError> {
         self.invalidate("recent_changes:*").await
+    }
+
+    /// Invalidates the default collections+authors filter picker (popular collections /
+    /// authors by last definition). Call when definitions are added/updated or public
+    /// collections change in ways that affect that ranking.
+    pub async fn invalidate_filter_picker_popular(&self) -> Result<(), RedisError> {
+        self.invalidate(FILTER_PICKER_POPULAR_CACHE_KEY).await
     }
 }
 
