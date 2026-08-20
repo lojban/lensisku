@@ -40,7 +40,7 @@ Account behaviour (all providers):
 
 1. Existing `oauth_accounts` row for `(provider, provider_id)` → log in.
 2. Else the IdP email already exists on a user (password signup or any other provider) → link `oauth_accounts` and log in (same as social signup when that email is already registered).
-3. Else create a user (`oauth_signup`, confirmed so they can use the site). Username comes from GitHub `login` or the Google email local-part, with `-2`, `-3`, … on username collision.
+3. Else create a user (`oauth_signup`, `editor` role, email confirmed — same outcome as confirming a password signup). Username comes from GitHub `login` or the Google email local-part, with `-2`, `-3`, … on username collision. Linking an existing **unconfirmed** account via social login also promotes it to `editor`.
 
 
 

@@ -642,11 +642,9 @@ async fn link_oauth_to_user(
         )
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
-    if profile.email_verified
-        && (!user.email_confirmed || user.role.to_lowercase() == UserRole::Unconfirmed.to_string())
-    {
+    if !user.email_confirmed || user.role.to_lowercase() == UserRole::Unconfirmed.to_string() {
         let new_role = if user.role.to_lowercase() == UserRole::Unconfirmed.to_string() {
-            UserRole::User.to_string()
+            UserRole::Editor.to_string()
         } else {
             user.role.clone()
         };
@@ -683,7 +681,7 @@ async fn insert_oauth_user(
     let password_hash = hash_password(&Uuid::new_v4().to_string())
         .map_err(|e| AppError::Auth(format!("Password hashing failed: {e}")))?;
     let created_at = Utc::now();
-    let role = UserRole::User.to_string();
+    let role = UserRole::Editor.to_string();
     let votesize = 1.0_f32;
     let oauth_signup = true;
 
