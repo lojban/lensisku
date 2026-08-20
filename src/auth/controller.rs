@@ -805,58 +805,145 @@ pub async fn complete_password_change(
     }
 }
 
-#[utoipa::path(
-    post,
-    path = "/auth/google_oauth_signup",
-    tag = "auth",
-    request_body = GoogleOAuthSignupRequest,
-    responses(
-        (status = 200, description = "User successfully created or logged in with Google OAuth", body = AuthResponse),
-        (status = 500, description = "Internal server error")
-    ),
-    summary = "Sign up or log in with Google OAuth2",
-    description = "Handles user signup or login via Google OAuth2.  It expects a code and state parameters from the frontend."
-)]
-#[post("/google_oauth_signup")]
-pub async fn google_oauth_signup(
-    pool: web::Data<Pool>,
-    req: web::Json<GoogleOAuthSignupRequest>,
-    request: actix_web::HttpRequest,
-) -> impl Responder {
-    // Verify CSRF token from state parameter
-    if req.state.is_empty() {
-        return HttpResponse::BadRequest().json(json!({
-            "error": "invalid_request",
-            "error_description": "Missing state parameter"
-        }));
-    }
+fn client_meta(req: &actix_web::HttpRequest) -> (String, String) {
+    let ip_address = req
+        .connection_info()
+        .realip_remote_addr()
+        .unwrap_or("unknown")
+        .to_string();
+    let user_agent = req
+        .headers()
+        .get("User-Agent")
+        .map_or("unknown".to_string(), |h| {
+            h.to_str().unwrap_or("unknown").to_string()
+        });
+    (ip_address, user_agent)
+}
 
-    // Get session cookie
-    let session_cookie = match request.cookie("session") {
-        Some(cookie) => cookie,
-        None => {
-            return HttpResponse::BadRequest().json(json!({
-                "error": "invalid_request",
-                "error_description": "Session cookie not found"
+fn oauth_error_response(err: AppError) -> HttpResponse {
+    match err {
+        AppError::NotFound(msg) => HttpResponse::NotFound().json(json!({
+            "error": "not_found",
+            "error_description": msg
+        })),
+        AppError::Config(msgs) => HttpResponse::ServiceUnavailable().json(json!({
+            "error": "not_configured",
+            "error_description": msgs.join(", ")
+        })),
+        AppError::BadRequest(msg) if msg == "account_collision" => {
+            HttpResponse::Conflict().json(json!({
+                "error": "account_collision",
+                "error_description": "An account with this email already exists"
             }))
         }
-    };
-
-    // Verify state matches expected CSRF token from session
-    if req.state != session_cookie.value() {
-        return HttpResponse::BadRequest().json(json!({
-            "error": "invalid_request",
-            "error_description": "Invalid state parameter"
-        }));
+        AppError::BadRequest(msg) | AppError::Validation(msg) => {
+            HttpResponse::BadRequest().json(json!({
+                "error": "invalid_request",
+                "error_description": msg
+            }))
+        }
+        AppError::Unauthorized(msg) | AppError::Auth(msg) => {
+            HttpResponse::Unauthorized().json(json!({
+                "error": "oauth_failed",
+                "error_description": msg
+            }))
+        }
+        other => HttpResponse::InternalServerError().json(json!({
+            "error": "server_error",
+            "error_description": other.to_string()
+        })),
     }
+}
 
-    match service::google_oauth_signup(&pool, &req.code, &req.state).await {
-        Ok(response) => HttpResponse::Ok().json(json!({
-            "message": "Google OAuth signup/login successful",
-            "token": response.token
-        })),
-        Err(e) => HttpResponse::InternalServerError().json(json!({
-            "error": format!("Google OAuth signup/login failed: {}", e)
-        })),
+#[utoipa::path(
+    get,
+    path = "/auth/oauth/providers",
+    tag = "auth",
+    responses(
+        (status = 200, description = "Configured social login providers", body = OAuthProvidersResponse)
+    ),
+    summary = "List configured OAuth providers",
+    description = "Returns provider ids (github, google, …) that have complete server environment configuration. The frontend should only render buttons for these providers."
+)]
+#[get("/oauth/providers")]
+pub async fn list_oauth_providers() -> impl Responder {
+    let providers: Vec<String> = crate::auth::oauth::configured_providers()
+        .into_iter()
+        .map(str::to_string)
+        .collect();
+    HttpResponse::Ok().json(OAuthProvidersResponse { providers })
+}
+
+#[utoipa::path(
+    get,
+    path = "/auth/oauth/{provider}/authorize",
+    tag = "auth",
+    params(
+        ("provider" = String, Path, description = "OAuth provider id (github or google)"),
+        ("return_to" = Option<String>, Query, description = "Optional in-app path to return to after login")
+    ),
+    responses(
+        (status = 200, description = "Authorization URL for the identity provider", body = OAuthAuthorizeResponse),
+        (status = 404, description = "Unknown provider"),
+        (status = 503, description = "Provider is not configured")
+    ),
+    summary = "Start OAuth authorization",
+    description = "Builds the identity-provider authorization URL with an HMAC-signed state (nonce, expiry, provider, optional return_to). Redirect the browser to authorize_url."
+)]
+#[get("/oauth/{provider}/authorize")]
+pub async fn oauth_authorize(
+    path: web::Path<String>,
+    query: web::Query<OAuthAuthorizeQuery>,
+) -> impl Responder {
+    match crate::auth::oauth::authorize_url(&path, query.return_to.as_deref()) {
+        Ok(result) => HttpResponse::Ok().json(OAuthAuthorizeResponse {
+            authorize_url: result.authorize_url,
+        }),
+        Err(e) => oauth_error_response(e),
+    }
+}
+
+#[utoipa::path(
+    post,
+    path = "/auth/oauth/{provider}",
+    tag = "auth",
+    params(
+        ("provider" = String, Path, description = "OAuth provider id (github or google)")
+    ),
+    request_body = OAuthCompleteRequest,
+    responses(
+        (status = 200, description = "Signed in with OAuth", body = OAuthCompleteResponse),
+        (status = 400, description = "Invalid code or state"),
+        (status = 409, description = "Email belongs to an existing account and cannot be linked"),
+        (status = 503, description = "Provider is not configured")
+    ),
+    summary = "Complete OAuth sign-in",
+    description = "Exchanges the authorization code, links or creates the local account, and returns the same access/refresh token pair as password login."
+)]
+#[post("/oauth/{provider}")]
+pub async fn oauth_complete(
+    pool: web::Data<Pool>,
+    path: web::Path<String>,
+    body: web::Json<OAuthCompleteRequest>,
+    request: actix_web::HttpRequest,
+) -> impl Responder {
+    let (ip_address, user_agent) = client_meta(&request);
+    match crate::auth::oauth::complete_oauth(
+        &pool,
+        &path,
+        &body.code,
+        &body.state,
+        ip_address,
+        user_agent,
+    )
+    .await
+    {
+        Ok(result) => HttpResponse::Ok().json(OAuthCompleteResponse {
+            access_token: result.access_token,
+            refresh_token: result.refresh_token,
+            username: result.username,
+            return_to: result.return_to,
+        }),
+        Err(e) => oauth_error_response(e),
     }
 }

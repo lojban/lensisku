@@ -538,6 +538,12 @@ export const routes: Array<RouteRecordRaw> = [
       return `/${preferredLocale}`
     },
   },
+  {
+    path: '/oauth/:provider',
+    name: 'OAuthCallback',
+    component: () => import('../pages/OAuthCallbackPage.vue'),
+    meta: { authFullBleed: true, hideTopBar: true, hideFooter: true },
+  },
   ...localeRoutes, // Locale-specific routes, including localized NotFound (e.g., /en/:pathMatch(.*)*)
   {
     // This is the VERY LAST route.

@@ -83,6 +83,8 @@
           {{ t('loginPage.signUpLink') }}
         </RouterLink>
       </p>
+
+      <SocialLoginButtons />
     </AuthFormCard>
   </div>
 </template>
@@ -97,9 +99,10 @@ import { useI18n } from 'vue-i18n'
 
 import { login } from '@/api'
 import { useAuth } from '@/composables/useAuth'
+import { isAuthRedirect } from '@/composables/useSocialLogin'
 import { useError } from '@/composables/useError'
 import { useSeoHead } from '@/composables/useSeoHead'
-import { localePrefixRegex } from '@/config/locales'
+import SocialLoginButtons from '@/components/SocialLoginButtons.vue'
 
 const username = ref('')
 const password = ref('')
@@ -119,21 +122,6 @@ onBeforeMount(async () => {
     await router.push('/')
   }
 })
-
-function isAuthRedirect(path: string): boolean {
-  try {
-    const pathname = new URL(path, window.location.origin).pathname
-    const normalized = pathname.replace(localePrefixRegex, '') || '/'
-    return (
-      normalized === '/login' ||
-      normalized === '/signup' ||
-      normalized.startsWith('/login/') ||
-      normalized.startsWith('/signup/')
-    )
-  } catch {
-    return false
-  }
-}
 
 const performLogin = async () => {
   clearError()

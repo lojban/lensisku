@@ -305,6 +305,8 @@ To develop the application locally:
 
    Then access the frontend at http://localhost:5173/
 
+   GitHub and Google login are optional. See [docs/social-login.md](docs/social-login.md) for OAuth App / Google Cloud setup and `GITHUB_*` / `GOOGLE_*` environment variables.
+
 ### API Documentation
 
 API documentation is available at `http://localhost:8080/swagger-ui/` when the application is running.

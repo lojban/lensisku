@@ -491,6 +491,16 @@ export default {
           '@apply w-full flex justify-center items-center gap-2 py-3 rounded-full text-lg font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed':
             {},
         },
+        /** Social login buttons under email/password auth forms. */
+        '.auth-social-stack': {
+          '@apply mt-6 flex w-full flex-col gap-3': {},
+        },
+        '.auth-social-divider': {
+          '@apply flex w-full items-center gap-3 text-sm text-gray-500': {},
+        },
+        '.auth-social-divider-line': {
+          '@apply h-px flex-1 bg-gray-200': {},
+        },
         /** Centered empty / zero-state block (lists, collections). */
         '.empty-state-panel': {
           '@apply flex flex-col items-center justify-center text-center py-12 bg-gray-50 rounded-lg border border-blue-100':

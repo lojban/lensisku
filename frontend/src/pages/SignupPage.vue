@@ -91,6 +91,8 @@
           {{ t('signupPage.loginLink') }}
         </RouterLink>
       </p>
+
+      <SocialLoginButtons />
     </AuthFormCard>
   </div>
 </template>
@@ -107,6 +109,7 @@ import { signup } from '@/api'
 import { useAuth } from '@/composables/useAuth'
 import { useError } from '@/composables/useError'
 import { useSeoHead } from '@/composables/useSeoHead'
+import SocialLoginButtons from '@/components/SocialLoginButtons.vue'
 
 const username = ref('')
 const email = ref('')

@@ -4,6 +4,7 @@ mod email_confirmation;
 pub mod error;
 pub mod extractor;
 pub mod models;
+pub mod oauth;
 pub mod permissions;
 pub mod service;
 
@@ -26,7 +27,9 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
             .service(controller::request_password_reset)
             .service(controller::confirm_email)
             .service(controller::resend_confirmation)
-            .service(controller::google_oauth_signup)
+            .service(controller::list_oauth_providers)
+            .service(controller::oauth_authorize)
+            .service(controller::oauth_complete)
             // Protected routes (require auth)
             .service(
                 web::scope("")

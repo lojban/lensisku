@@ -173,8 +173,31 @@ pub struct InitiatePasswordChangeResponse {
     pub verification_id: String,
 }
 
+#[derive(Debug, Serialize, ToSchema)]
+pub struct OAuthProvidersResponse {
+    pub providers: Vec<String>,
+}
+
 #[derive(Debug, Deserialize, ToSchema)]
-pub struct GoogleOAuthSignupRequest {
+pub struct OAuthAuthorizeQuery {
+    pub return_to: Option<String>,
+}
+
+#[derive(Debug, Serialize, ToSchema)]
+pub struct OAuthAuthorizeResponse {
+    pub authorize_url: String,
+}
+
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct OAuthCompleteRequest {
     pub code: String,
     pub state: String,
+}
+
+#[derive(Debug, Serialize, ToSchema)]
+pub struct OAuthCompleteResponse {
+    pub access_token: String,
+    pub refresh_token: String,
+    pub username: String,
+    pub return_to: Option<String>,
 }

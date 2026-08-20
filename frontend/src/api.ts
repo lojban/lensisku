@@ -57,10 +57,12 @@ api.interceptors.response.use(
     }
 
     if (err.response?.status === 401 && !originalRequest._retry) {
+      const requestUrl = originalRequest.url ?? ''
       const isAuthEndpoint =
-        originalRequest.url === '/auth/login' ||
-        originalRequest.url === '/auth/logout' ||
-        originalRequest.url === '/auth/refresh'
+        requestUrl === '/auth/login' ||
+        requestUrl === '/auth/logout' ||
+        requestUrl === '/auth/refresh' ||
+        requestUrl.startsWith('/auth/oauth/')
 
       if (isAuthEndpoint) {
         if (originalRequest.url === '/auth/refresh' && authInstance) {
@@ -156,6 +158,21 @@ export const getThread = (params?: Record<string, unknown>) => api.get('/mail/th
 
 export const login = (credentials: Record<string, unknown>) => api.post('/auth/login', credentials)
 export const signup = (userData: Record<string, unknown>) => api.post('/auth/signup', userData)
+
+export const listOAuthProviders = () => api.get<{ providers: string[] }>('/auth/oauth/providers')
+
+export const startOAuthAuthorize = (provider: string, returnTo?: string) =>
+  api.get<{ authorize_url: string }>(`/auth/oauth/${encodeURIComponent(provider)}/authorize`, {
+    params: returnTo ? { return_to: returnTo } : undefined,
+  })
+
+export const completeOAuth = (provider: string, body: { code: string; state: string }) =>
+  api.post<{
+    access_token: string
+    refresh_token: string
+    username: string
+    return_to?: string | null
+  }>(`/auth/oauth/${encodeURIComponent(provider)}`, body)
 export const performBackendLogout = () => {
   const config = {
     headers: { Authorization: `Bearer ${localStorage.getItem('accessToken')}` },

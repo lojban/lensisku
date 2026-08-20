@@ -1066,6 +1066,16 @@
     "signupError": "登録中にエラーが発生しました",
     "userExists": "ユーザー名またはメールアドレスは既に使われています。"
   },
+  "oauth": {
+    "or": "または",
+    "continueWithGithub": "GitHub で続ける",
+    "continueWithGoogle": "Google で続ける",
+    "cancelled": "ログインがキャンセルされました。",
+    "notConfigured": "このログイン方法は利用できません。",
+    "collision": "このメールアドレスのアカウントは既にあります。パスワードでログインしてください。",
+    "failed": "ソーシャルログインに失敗しました。もう一度お試しください。",
+    "completing": "ログインしています…"
+  },
   "bulkImport": {
     "title": "定義の一括インポート",
     "viewPastImportsLink": "過去のインポートを見る",

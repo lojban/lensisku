@@ -46,6 +46,8 @@
       </Button>
     </form>
 
+    <SocialLoginButtons class="w-full max-w-[400px]" :return-to="returnTo" />
+
     <p class="mt-6 text-center text-sm text-slate-500">
       {{ t('signupPage.haveAccountPrompt') }}
       <RouterLink to="/lingo/login" class="font-medium text-green-600 hover:underline">
@@ -65,6 +67,7 @@ import { signup } from '@/api'
 import { useAuth } from '@/composables/useAuth'
 import { useSeoHead } from '@/composables/useSeoHead'
 import { queryStr } from '@/utils/routeQuery'
+import SocialLoginButtons from '@/components/SocialLoginButtons.vue'
 
 const username = ref('')
 const email = ref('')
