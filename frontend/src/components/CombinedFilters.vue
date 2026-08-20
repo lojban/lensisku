@@ -1221,15 +1221,6 @@ watch(
     if (newLanguages.length > 0) {
       if (props.modelValue.selectedLanguages?.length > 0) {
         selectedLangs.value = getLanguagesFromIds(props.modelValue.selectedLanguages)
-      } else {
-        // Set default languages but don't emit update to prevent double fetching
-        selectedLangs.value = getDefaultLanguages()
-        // Update the modelValue without emitting change event
-        const updatedValue = {
-          ...props.modelValue,
-          selectedLanguages: selectedLangs.value.map((lang) => lang.id),
-        }
-        emit('update:modelValue', updatedValue)
       }
     }
   },

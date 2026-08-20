@@ -464,10 +464,12 @@ import { useDateFormat } from '@/composables/useDateFormat'
 import { useI18n } from 'vue-i18n'
 import { SearchQueue } from '@/utils/searchQueue'
 import {
+  applyCombinedFiltersFromQuery,
   combinedFiltersFromQuery,
   combinedFiltersToQuery,
   compactQuery,
   hasActiveSearchFilters,
+  mergeQueryForHomeNavigation,
   queryStr,
 } from '@/utils/routeQuery'
 import { normalizeSearchQuery } from '@/utils/searchQueryUtils'
@@ -657,13 +659,16 @@ const currentPage = ref(parseInt(queryStr(route.query.page), 10) || 1)
 const totalPages = ref(1)
 const sortOrder = ref('desc')
 
-// Get search query from localStorage or use default
+const hydratedHomeQuery = mergeQueryForHomeNavigation(route.query)
+
+// URL wins; otherwise last-home / localStorage snapshot
 const getInitialSearchQuery = () => {
   if (typeof window === 'undefined') return
-  // Find-similar mode: ignore stored text query
   if (route.query.definition_id) return ''
-  const storedQuery = localStorage.getItem('searchQuery')
-  return normalizeSearchQuery(storedQuery || props.urlSearchQuery || '')
+  if (route.query.q !== undefined) {
+    return normalizeSearchQuery(queryStr(route.query.q))
+  }
+  return normalizeSearchQuery(hydratedHomeQuery.q || props.urlSearchQuery || '')
 }
 
 const getInitialGroupByThread = () => {
@@ -682,8 +687,10 @@ const searchQuery = ref(getInitialSearchQuery())
 const getInitialSearchMode = () => {
   if (typeof window === 'undefined') return
   if (route.query.definition_id) return 'semantic'
-  const storedMode = localStorage.getItem('searchMode')
-  const mode = storedMode || props.urlSearchMode
+  const mode =
+    (route.query.mode !== undefined ? queryStr(route.query.mode) : '') ||
+    hydratedHomeQuery.mode ||
+    props.urlSearchMode
   const normalized = mode === 'messages' ? 'comments' : mode
   if (normalized === 'muplis') return 'semantic'
   return normalized
@@ -806,7 +813,7 @@ const waveSourceTriggerLabel = computed(() => {
 
 // Filter state
 const languages = ref([])
-const urlFilters = combinedFiltersFromQuery(route.query)
+const urlFilters = combinedFiltersFromQuery(hydratedHomeQuery)
 const filters = ref({
   ...urlFilters,
   isSemantic:
@@ -1525,19 +1532,8 @@ const syncFromRoute = () => {
     currentPage.value = parseInt(queryStr(query.page), 10) || 1
   }
 
-  // Sync filters from URL
-  const fromQuery = combinedFiltersFromQuery(query)
-  if (query.langs !== undefined) {
-    filters.value.selectedLanguages = fromQuery.selectedLanguages
-  }
-  filters.value.selectedCollections = fromQuery.selectedCollections
-  filters.value.selmaho = fromQuery.selmaho
-  filters.value.usernames = fromQuery.usernames
-  filters.value.excludeUsernames = fromQuery.excludeUsernames
-  filters.value.word_type = fromQuery.word_type
-  filters.value.source_langid = fromQuery.source_langid
-  filters.value.searchInPhrases = fromQuery.searchInPhrases
-  filters.value.isExpanded = fromQuery.isExpanded
+  // URL keys override stored filters; omitted keys keep the hydrated localStorage state
+  Object.assign(filters.value, applyCombinedFiltersFromQuery(filters.value, query))
 
   // Sync isSemantic from searchMode which was synced from route mode above
   if (searchMode.value === 'semantic' || searchMode.value === 'dictionary') {
@@ -1569,64 +1565,29 @@ onMounted(async () => {
   window.addEventListener('lensisku:clear-search', handleLogoClear)
   try {
     const languagesResponse = await getLanguages()
+    const initialLangs = getInitialLanguages(route, languagesResponse.data)
+    filters.value.selectedLanguages = initialLangs
     languages.value = languagesResponse.data
 
-    // Set initial languages from route or defaults
-    const initialLangs = getInitialLanguages(route, languages.value)
-    filters.value.selectedLanguages = initialLangs
-    // groupByThread is already initialized with getInitialGroupByThread
-
-    // Initial data like languages is loaded, hide skeletons
-    // isInitialLoading.value = false; // Moved down
-
-    // Construct the target query parameters based on current state (from localStorage/defaults)
-    const queryToPush = { ...route.query } // Start with current URL query
-    let pushNeeded = false
-
-    // Sync 'q' from localStorage/default to URL if different (skip in find-similar mode)
+    const queryToPush = compactQuery({
+      ...route.query,
+      ...mergeQueryForHomeNavigation(route.query),
+      q: similarDefinitionId.value ? undefined : searchQuery.value || undefined,
+      mode: searchMode.value,
+      definition_id: similarDefinitionId.value ? String(similarDefinitionId.value) : undefined,
+      ...combinedFiltersToQuery(filters.value),
+      group_by_thread: groupByThread.value ? 'true' : undefined,
+      wave_source: waveSource.value !== 'all' ? waveSource.value : undefined,
+    })
     if (similarDefinitionId.value) {
-      queryToPush.q = undefined
-      if (route.query.q !== undefined) {
-        pushNeeded = true
-      }
-    } else if (searchQuery.value && route.query.q !== searchQuery.value) {
-      queryToPush.q = searchQuery.value
-      pushNeeded = true
-    } else if (!searchQuery.value && route.query.q === undefined) {
-      // Only if URL.q is also undefined
-      queryToPush.q = undefined
+      delete queryToPush.q
     }
 
-    // Sync 'mode' from localStorage/default to URL if different
-    if (searchMode.value && route.query.mode !== searchMode.value) {
-      queryToPush.mode = searchMode.value
-      pushNeeded = true
-    }
-    // Sync 'group_by_thread' from localStorage/default to URL if different
-    const targetGroupByThread = groupByThread.value ? 'true' : undefined
-    if (route.query.group_by_thread !== targetGroupByThread) {
-      queryToPush.group_by_thread = targetGroupByThread
-      pushNeeded = true
-    }
-
-    // Sync 'langs' from localStorage/default to URL if different
-    const targetLangs =
-      filters.value.selectedLanguages.length > 0
-        ? filters.value.selectedLanguages.join(',')
-        : undefined
-    if (route.query.langs !== targetLangs) {
-      queryToPush.langs = targetLangs
-      pushNeeded = true
-    }
-
-    // Clean undefined values from queryToPush before pushing
-    Object.keys(queryToPush).forEach(
-      (key) => queryToPush[key] === undefined && delete queryToPush[key]
-    )
+    const currentCompact = compactQuery({ ...route.query })
+    const pushNeeded = JSON.stringify(currentCompact) !== JSON.stringify(queryToPush)
 
     if (pushNeeded) {
       router.push({ query: queryToPush })
-      // The route watcher will handle fetching data with the new URL.
     }
     isInitialLoading.value = false // Skeletons can be hidden now.
 

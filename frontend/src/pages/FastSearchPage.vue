@@ -143,10 +143,12 @@ import { useLanguageSelection } from '@/composables/useLanguageSelection'
 import { useSeoHead } from '@/composables/useSeoHead'
 import { SearchQueue } from '@/utils/searchQueue'
 import {
+  applyCombinedFiltersFromQuery,
   combinedFiltersFromQuery,
   combinedFiltersToQuery,
   compactQuery,
   hasActiveSearchFilters,
+  mergeQueryForHomeNavigation,
   queryStr,
 } from '@/utils/routeQuery'
 import { normalizeSearchQuery } from '@/utils/searchQueryUtils'
@@ -159,6 +161,7 @@ import {
 const router = useRouter()
 const route = useRoute()
 const { getInitialLanguages, saveLanguages } = useLanguageSelection()
+const hydratedHomeQuery = mergeQueryForHomeNavigation(route.query)
 
 type FastSearchDefinitionRow = {
   definitionid: number
@@ -178,7 +181,10 @@ const initialized = ref(false)
 // Get search query from localStorage or use default
 const getInitialSearchQuery = (): string => {
   if (typeof window === 'undefined') return ''
-  return normalizeSearchQuery(queryStr(route.query.q)) as string
+  if (route.query.q !== undefined) {
+    return normalizeSearchQuery(queryStr(route.query.q)) as string
+  }
+  return normalizeSearchQuery(hydratedHomeQuery.q || '') as string
 }
 
 const searchQuery = ref(getInitialSearchQuery())
@@ -192,7 +198,7 @@ useSeoHead({ title: pageTitle, pathWithoutLocale: '/fast-search' })
 
 // Filter state
 const languages = ref([])
-const filters = ref(combinedFiltersFromQuery(route.query))
+const filters = ref(combinedFiltersFromQuery(hydratedHomeQuery))
 
 // Search queue to prevent race conditions
 const definitionsSearchQueue = new SearchQueue()
@@ -436,19 +442,7 @@ const syncFromRoute = () => {
     currentPage.value = parseInt(queryStr(query.page), 10) || 1
   }
 
-  // Sync filters from URL
-  const fromQuery = combinedFiltersFromQuery(query)
-  if (query.langs !== undefined) {
-    filters.value.selectedLanguages = fromQuery.selectedLanguages
-  }
-  filters.value.selectedCollections = fromQuery.selectedCollections
-  filters.value.selmaho = fromQuery.selmaho
-  filters.value.usernames = fromQuery.usernames
-  filters.value.excludeUsernames = fromQuery.excludeUsernames
-  filters.value.word_type = fromQuery.word_type
-  filters.value.source_langid = fromQuery.source_langid
-  filters.value.searchInPhrases = fromQuery.searchInPhrases
-  filters.value.isExpanded = fromQuery.isExpanded
+  Object.assign(filters.value, applyCombinedFiltersFromQuery(filters.value, query))
 }
 
 const handleKeyDown = (event: KeyboardEvent) => {
@@ -466,35 +460,18 @@ onMounted(async () => {
   window.addEventListener('keydown', handleKeyDown)
   try {
     const languagesResponse = await getLanguages()
+    const initialLangs = getInitialLanguages(route, languagesResponse.data)
+    filters.value.selectedLanguages = initialLangs
     languages.value = languagesResponse.data
 
-    const initialLangs = getInitialLanguages(route, languages.value)
-    filters.value.selectedLanguages = initialLangs
-
-    const queryToPush = { ...route.query }
-    let pushNeeded = false
-
-    if (searchQuery.value && queryStr(route.query.q) !== searchQuery.value) {
-      queryToPush.q = searchQuery.value
-      pushNeeded = true
-    } else if (!searchQuery.value && route.query.q === undefined) {
-      queryToPush.q = undefined
-    }
-
-    const targetLangs =
-      filters.value.selectedLanguages.length > 0
-        ? filters.value.selectedLanguages.join(',')
-        : undefined
-    if (route.query.langs !== targetLangs) {
-      queryToPush.langs = targetLangs
-      pushNeeded = true
-    }
-
-    Object.keys(queryToPush).forEach(
-      (key) => queryToPush[key] === undefined && delete queryToPush[key]
-    )
-
-    if (pushNeeded) {
+    const queryToPush = compactQuery({
+      ...route.query,
+      ...mergeQueryForHomeNavigation(route.query),
+      q: searchQuery.value || undefined,
+      ...combinedFiltersToQuery(filters.value),
+    })
+    const currentCompact = compactQuery({ ...route.query })
+    if (JSON.stringify(currentCompact) !== JSON.stringify(queryToPush)) {
       router.push({ query: queryToPush })
     }
     isInitialLoading.value = false

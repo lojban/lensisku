@@ -152,20 +152,9 @@ export function pickHomeQuery(query: LocationQuery): Record<string, string> {
   return out
 }
 
-export function saveLastHomeQuery(query: LocationQuery): void {
-  if (typeof window === 'undefined') return
+function parseStoredQueryRecord(raw: string | null): Record<string, string> {
+  if (!raw) return {}
   try {
-    sessionStorage.setItem(LAST_HOME_QUERY_KEY, JSON.stringify(pickHomeQuery(query)))
-  } catch {
-    /* ignore quota / private mode */
-  }
-}
-
-export function loadLastHomeQuery(): Record<string, string> {
-  if (typeof window === 'undefined') return {}
-  try {
-    const raw = sessionStorage.getItem(LAST_HOME_QUERY_KEY)
-    if (!raw) return {}
     const parsed = JSON.parse(raw) as unknown
     if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return {}
     const out: Record<string, string> = {}
@@ -178,7 +167,94 @@ export function loadLastHomeQuery(): Record<string, string> {
   }
 }
 
-/** Last home/fast-search query, overlaid with any filter keys already on the current page. */
+export function saveLastHomeQuery(query: LocationQuery): void {
+  if (typeof window === 'undefined') return
+  try {
+    const payload = JSON.stringify(pickHomeQuery(query))
+    localStorage.setItem(LAST_HOME_QUERY_KEY, payload)
+    sessionStorage.setItem(LAST_HOME_QUERY_KEY, payload)
+  } catch {
+    /* ignore quota / private mode */
+  }
+}
+
+export function loadLastHomeQuery(): Record<string, string> {
+  if (typeof window === 'undefined') return {}
+  try {
+    const fromLocal = parseStoredQueryRecord(localStorage.getItem(LAST_HOME_QUERY_KEY))
+    if (Object.keys(fromLocal).length) return fromLocal
+    return parseStoredQueryRecord(sessionStorage.getItem(LAST_HOME_QUERY_KEY))
+  } catch {
+    return {}
+  }
+}
+
+/** Fill keys still missing after the last-home snapshot, from older per-field localStorage. */
+function backfillHomeQueryFromLegacyStorage(query: Record<string, string>): Record<string, string> {
+  if (typeof window === 'undefined') return query
+  const out = { ...query }
+  try {
+    if (!out.langs) {
+      const stored = localStorage.getItem('selectedLanguages')
+      const ids = stored ? (JSON.parse(stored) as unknown) : null
+      if (Array.isArray(ids) && ids.length) {
+        const langs = ids.filter((n) => Number.isFinite(Number(n))).join(',')
+        if (langs) out.langs = langs
+      }
+    }
+  } catch {
+    /* ignore */
+  }
+  if (!out.mode) {
+    const storedMode = localStorage.getItem('searchMode')
+    if (storedMode) {
+      const normalized =
+        storedMode === 'messages' ? 'comments' : storedMode === 'muplis' ? 'semantic' : storedMode
+      if (HOME_SEARCH_MODES.has(normalized)) out.mode = normalized
+    }
+  }
+  if (!out.q) {
+    const storedQuery = localStorage.getItem('searchQuery')
+    if (storedQuery) out.q = storedQuery
+  }
+  if (!out.searchInPhrases) {
+    const stored = localStorage.getItem('searchInPhrases')
+    if (stored === 'false') out.searchInPhrases = 'false'
+  }
+  if (!out.wave_source) {
+    const stored = localStorage.getItem('waveSource')
+    if (stored) out.wave_source = stored
+  }
+  if (!out.group_by_thread) {
+    const stored = localStorage.getItem('mailSearch_groupByThread')
+    if (stored === 'true') out.group_by_thread = 'true'
+  }
+  return out
+}
+
+/** Stored home filters, overlaid with any keys already in the URL (URL wins). */
 export function mergeQueryForHomeNavigation(current: LocationQuery): Record<string, string> {
-  return { ...loadLastHomeQuery(), ...pickHomeQuery(current) }
+  return {
+    ...backfillHomeQueryFromLegacyStorage(loadLastHomeQuery()),
+    ...pickHomeQuery(current),
+  }
+}
+
+/** Copy filter fields from the URL only when those keys are present. */
+export function applyCombinedFiltersFromQuery(
+  current: CombinedFiltersUrlState,
+  query: LocationQuery
+): CombinedFiltersUrlState {
+  const fromQuery = combinedFiltersFromQuery(query)
+  const next = { ...current }
+  if (query.langs !== undefined) next.selectedLanguages = fromQuery.selectedLanguages
+  if (query.collections !== undefined) next.selectedCollections = fromQuery.selectedCollections
+  if (query.username !== undefined) next.usernames = fromQuery.usernames
+  if (query.exclude_usernames !== undefined) next.excludeUsernames = fromQuery.excludeUsernames
+  if (query.selmaho !== undefined) next.selmaho = fromQuery.selmaho
+  if (query.word_type !== undefined) next.word_type = fromQuery.word_type
+  if (query.source_langid !== undefined) next.source_langid = fromQuery.source_langid
+  if (query.searchInPhrases !== undefined) next.searchInPhrases = fromQuery.searchInPhrases
+  if (query.isExpanded !== undefined) next.isExpanded = fromQuery.isExpanded
+  return next
 }
