@@ -10,8 +10,13 @@
     <SkeletonActivityItem v-for="n in 5" :key="n" />
   </div>
   <div v-else class="space-y-4">
+    <ActivityComments
+      v-if="activeTab === 'comments'"
+      :comments="comments"
+      :format-date="formatDate"
+    />
     <ActivityBookmarks
-      v-if="activeTab === 'bookmarked'"
+      v-else-if="activeTab === 'bookmarked'"
       :comments="bookmarks"
       :format-date="formatDate"
       :no-items-message="t('reactionsPage.noBookmarks')"
@@ -42,13 +47,14 @@
 </template>
 
 <script setup lang="ts">
-import { Vote, BookmarkCheck, User } from '@lucide/vue'
+import { Vote, BookmarkCheck, User, MessageSquare } from '@lucide/vue'
 import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter, useRoute } from 'vue-router'
 
-import { getBookmarks, getMyReactions, getUserVotes } from '@/api'
+import { getBookmarks, getMyReactions, getUserComments, getUserVotes } from '@/api'
 import ActivityBookmarks from '@/components/activity/ActivityBookmarks.vue'
+import ActivityComments from '@/components/activity/ActivityComments.vue'
 import ActivityReactions from '@/components/activity/ActivityReactions.vue'
 import ActivityVotes from '@/components/activity/ActivityVotes.vue'
 import ReactionIcon from '@/components/icons/ReactionIcon.vue'
@@ -61,7 +67,7 @@ import { useError } from '@/composables/useError'
 import { useSeoHead } from '@/composables/useSeoHead'
 import { queryStr } from '@/utils/routeQuery'
 
-const ME_TABS = ['profile', 'votes', 'reactions', 'bookmarked']
+const ME_TABS = ['profile', 'comments', 'votes', 'reactions', 'bookmarked']
 
 const router = useRouter()
 const route = useRoute()
@@ -73,6 +79,7 @@ const activeTab = ref('profile')
 const votes = ref([])
 const isLoading = ref(false)
 const bookmarks = ref([])
+const comments = ref([])
 const reactions = ref([])
 const currentPage = ref(1)
 const perPage = ref(10)
@@ -107,6 +114,22 @@ const fetchData = async (tabKey) => {
   try {
     let response
     switch (tabKey) {
+      case 'comments': {
+        const username = auth.state.username
+        if (!username) {
+          showError(t('reactionsPage.warnNoUsernameComments'))
+          break
+        }
+        response = await getUserComments(username, {
+          page: currentPage.value,
+          per_page: perPage.value,
+        })
+        comments.value = (response.data.items || []).map((comment) => ({
+          ...comment,
+          username,
+        }))
+        break
+      }
       case 'bookmarked':
         response = await getBookmarks({ page: currentPage.value, per_page: perPage.value })
         bookmarks.value = response.data.items || response.data.comments || []
@@ -155,6 +178,7 @@ const handleTabClick = async (tabKey) => {
 
 const tabs = computed(() => [
   { key: 'profile', label: t('mePage.profile'), icon: User },
+  { key: 'comments', label: t('reactionsPage.comments'), icon: MessageSquare },
   { key: 'reactions', label: t('reactionsPage.reactions'), icon: ReactionIcon },
   { key: 'bookmarked', label: t('reactionsPage.bookmarks'), icon: BookmarkCheck },
   { key: 'votes', label: t('reactionsPage.votes'), icon: Vote },

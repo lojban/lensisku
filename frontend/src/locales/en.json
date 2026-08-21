@@ -318,7 +318,8 @@
     "semanticGraph": "Semantic graph"
   },
   "mobileNav": {
-    "recentChanges": "Recent changes"
+    "recentChanges": "Recent changes",
+    "myActivityAndProfile": "My activity and profile"
   },
   "fab": {
     "addDefinition": "Add definition",

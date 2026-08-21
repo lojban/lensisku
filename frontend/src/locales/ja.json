@@ -315,7 +315,8 @@
     "semanticGraph": "意味グラフ"
   },
   "mobileNav": {
-    "recentChanges": "最近の更新"
+    "recentChanges": "最近の更新",
+    "myActivityAndProfile": "アクティビティとプロフィール"
   },
   "fab": {
     "addDefinition": "定義を追加",

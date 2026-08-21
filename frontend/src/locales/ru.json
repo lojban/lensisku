@@ -282,7 +282,8 @@
     "semanticGraph": "Семантический граф"
   },
   "mobileNav": {
-    "recentChanges": "Последнее"
+    "recentChanges": "Последнее",
+    "myActivityAndProfile": "Моя активность и профиль"
   },
   "fab": {
     "addDefinition": "Добавить определение",

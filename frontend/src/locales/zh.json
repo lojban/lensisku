@@ -315,7 +315,8 @@
     "semanticGraph": "语义图"
   },
   "mobileNav": {
-    "recentChanges": "最近更新"
+    "recentChanges": "最近更新",
+    "myActivityAndProfile": "我的动态与资料"
   },
   "fab": {
     "addDefinition": "添加释义",
