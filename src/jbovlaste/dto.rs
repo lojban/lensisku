@@ -24,6 +24,12 @@ pub struct SearchDefinitionsQuery {
     pub source_langid: Option<i32>,
     pub fast: Option<bool>,
     pub search_in_phrases: Option<bool>,
+    /// Comma-separated public collection ids. With `include_global_group`, these hits
+    /// appear in `filtered_collection_items` (not AND’d with `username`).
+    pub collection_ids: Option<String>,
+    /// When true, `username` / `collection_ids` form a priority filtered group, and
+    /// `definitions` is the unscoped global group (excluding ids already in the filtered group).
+    pub include_global_group: Option<bool>,
 }
 
 /// Parse a comma-separated username query param into a non-empty list.
@@ -75,14 +81,69 @@ pub struct ListDefinitionsQuery {
     pub user_id: Option<i32>,
     pub source_langid: Option<i32>,
 }
-#[derive(Debug, Serialize, ToSchema)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct DefinitionListResponse {
+    /// Global (or sole) dictionary page. When `include_global_group` was set, this group
+    /// is not filtered by include-authors / collections and omits ids already in the
+    /// filtered groups below.
     pub definitions: Vec<DefinitionDetail>,
     pub total: i64,
     pub page: i64,
     pub per_page: i64,
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub decomposition: Vec<String>,
+    /// Hits from `collection_ids` (authors∪collections OR — not AND’d with `username`).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub filtered_collection_items: Vec<FilteredCollectionHit>,
+    /// Hits from include-authors when `include_global_group` is on.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub filtered_definitions: Vec<DefinitionDetail>,
+}
+
+/// Compact collection-item row for the priority filtered group on dictionary search.
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct FilteredCollectionHit {
+    pub item_id: i32,
+    pub definition_id: Option<i32>,
+    pub word: Option<String>,
+    pub definition: Option<String>,
+    pub notes: Option<String>,
+    pub lang_id: Option<i32>,
+    pub username: Option<String>,
+    pub valsi_id: Option<i32>,
+    pub free_content_front: Option<String>,
+    pub free_content_back: Option<String>,
+    pub has_front_image: bool,
+    pub has_back_image: bool,
+    pub has_sound: bool,
+    pub sound_url: Option<String>,
+    pub canonical_form: Option<String>,
+    pub collection_id: Option<i32>,
+    pub collection_name: Option<String>,
+}
+
+impl From<&crate::collections::dto::CollectionItemResponse> for FilteredCollectionHit {
+    fn from(item: &crate::collections::dto::CollectionItemResponse) -> Self {
+        Self {
+            item_id: item.item_id,
+            definition_id: item.definition_id,
+            word: item.word.clone(),
+            definition: item.definition.clone(),
+            notes: item.notes.clone().or_else(|| item.ci_notes.clone()),
+            lang_id: item.lang_id.or(item.language_id),
+            username: item.username.clone(),
+            valsi_id: item.valsi_id,
+            free_content_front: item.free_content_front.clone(),
+            free_content_back: item.free_content_back.clone(),
+            has_front_image: item.has_front_image,
+            has_back_image: item.has_back_image,
+            has_sound: item.has_sound,
+            sound_url: item.sound_url.clone(),
+            canonical_form: item.canonical_form.clone(),
+            collection_id: item.collection_id,
+            collection_name: item.collection_name.clone(),
+        }
+    }
 }
 #[derive(Debug, Deserialize, ToSchema)]
 pub struct ValsiDefinitionsQuery {

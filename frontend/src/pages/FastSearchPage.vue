@@ -69,10 +69,16 @@
             :source-lang-id="filters.source_langid"
             :languages="languages"
           />
-          <template v-if="filters.selectedCollections?.length">
+          <template
+            v-if="filters.selectedCollections?.length || filters.usernames?.length"
+          >
             <DefinitionCard
               v-for="def in collectionMatches"
-              :key="`ci-${def.collection_id}-${def.item_id}`"
+              :key="
+                def.collection_id != null && def.item_id != null
+                  ? `ci-${def.collection_id}-${def.item_id}`
+                  : `d-${def.definitionid}`
+              "
               :definition="def"
               :languages="languages"
               :disable-toolbar="true"
@@ -81,18 +87,15 @@
               :collection-id="def.collection_id"
               :item-id="def.item_id"
             />
-            <div
-              v-if="filters.usernames?.length"
-              class="surface-definition-compact text-sm text-gray-700"
-            >
+            <div class="surface-definition-compact text-sm text-gray-700">
               <p class="font-medium text-gray-800">
                 {{ $t('home.globalDictionaryBelow') }}
               </p>
             </div>
           </template>
-          <!-- Definition Cards -->
+          <!-- Global dictionary (always after filtered authors∪collections hits) -->
           <DefinitionCardSimple
-            v-for="def in definitions"
+            v-for="def in dictionaryDefinitions"
             :key="def.definitionid"
             :definition="def"
             :languages="languages"
@@ -101,7 +104,7 @@
         </div>
 
         <div
-          v-if="!isLoading && definitions.length === 0 && collectionMatches.length === 0"
+          v-if="!isLoading && dictionaryDefinitions.length === 0 && collectionMatches.length === 0"
           class="text-center py-8 text-gray-600"
         >
           {{ $t('components.dictionaryEntries.noEntries') }}
@@ -132,7 +135,7 @@ import { ref, onMounted, watch, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { nextTick } from 'vue'
 
-import { fastSearchDefinitions, getLanguages, searchItemsInCollections } from '@/api'
+import { fastSearchDefinitions, getLanguages } from '@/api'
 import CombinedFilters from '@/components/CombinedFilters.vue'
 import DefinitionCard from '@/components/DefinitionCard.vue'
 import DefinitionCardSimple from '@/components/DefinitionCardSimple.vue'
@@ -175,12 +178,22 @@ type FastSearchDefinitionRow = {
 // State
 const definitions = ref<FastSearchDefinitionRow[]>([])
 const collectionMatches = ref<CollectionDefinitionCard[]>([])
-const COLLECTION_MATCH_PER_PAGE = 50
 const decomposition = ref<string[]>([])
 const total = ref(0)
 const currentPage = ref(parseInt(queryStr(route.query.page), 10) || 1)
 const totalPages = ref(1)
 const initialized = ref(false)
+
+/** Global rows with priority (authors∪collections) definition ids removed. */
+const dictionaryDefinitions = computed(() => {
+  const seen = new Set(
+    collectionMatches.value
+      .map((d) => d.definitionid)
+      .filter((id): id is number => typeof id === 'number' && id > 0)
+  )
+  if (!seen.size) return definitions.value
+  return definitions.value.filter((d) => !d.definitionid || !seen.has(d.definitionid))
+})
 
 // Get search query from localStorage or use default
 const getInitialSearchQuery = (): string => {
@@ -207,60 +220,6 @@ const filters = ref(combinedFiltersFromQuery(hydratedHomeQuery))
 // Search queue to prevent race conditions
 const definitionsSearchQueue = new SearchQueue()
 
-async function loadCollectionMatches(
-  search: string,
-  signal?: AbortSignal
-): Promise<CollectionDefinitionCard[]> {
-  const ids = (filters.value.selectedCollections || []).filter(
-    (n) => Number.isFinite(n) && n > 0
-  )
-  if (!ids.length) return []
-
-  const itemParams: Record<string, unknown> = {
-    collection_ids: ids.join(','),
-    page: 1,
-    per_page: COLLECTION_MATCH_PER_PAGE,
-    search: search.trim() || undefined,
-  }
-  if (filters.value.selectedLanguages.length > 0) {
-    itemParams.languages = filters.value.selectedLanguages.join(',')
-  }
-  if (!filters.value.selmaho) {
-    itemParams.word_type = filters.value.word_type || undefined
-  } else {
-    itemParams.selmaho = filters.value.selmaho
-  }
-  if (filters.value.source_langid && filters.value.source_langid !== 1) {
-    itemParams.source_langid = filters.value.source_langid
-  }
-  if (filters.value.searchInPhrases !== undefined && filters.value.searchInPhrases !== null) {
-    itemParams.search_in_phrases = filters.value.searchInPhrases
-  }
-  // Authors∪collections is OR: do not AND include-authors onto collection hits.
-  if (filters.value.excludeUsernames?.length) {
-    itemParams.exclude_usernames = filters.value.excludeUsernames.join(',')
-  }
-  itemParams.semantic = Boolean(search.trim())
-
-  try {
-    const response = await searchItemsInCollections(itemParams, signal)
-    return ((response.data.items ?? []) as CollectionSearchItem[])
-      .map((item) => mapCollectionItemToDefinition(item))
-      .filter((d): d is CollectionDefinitionCard => d != null)
-  } catch (e: unknown) {
-    const err = e as { name?: string; code?: string; message?: string }
-    if (
-      err?.name === 'AbortError' ||
-      err?.code === 'ERR_CANCELED' ||
-      err?.message?.includes('canceled')
-    ) {
-      return []
-    }
-    console.error('Error fetching collection matches:', e)
-    return []
-  }
-}
-
 // Fetch definitions using fast search
 const fetchDefinitions = async (page: number, search = '') => {
   isLoading.value = true
@@ -269,18 +228,13 @@ const fetchDefinitions = async (page: number, search = '') => {
   const { requestId, signal } = definitionsSearchQueue.createRequest()
 
   try {
-    const params: {
-      page: number
-      per_page: number
-      search: string
-      username: string | undefined
-      exclude_usernames?: string
-      languages?: string
-      word_type?: number
-      source_langid?: number
-      selmaho?: string
-      search_in_phrases?: boolean
-    } = {
+    const collectionIds = (filters.value.selectedCollections || []).filter(
+      (n) => Number.isFinite(n) && n > 0
+    )
+    const hasAuthors = !!filters.value.usernames?.length
+    const usePriorityThenGlobal = collectionIds.length > 0 || hasAuthors
+
+    const params: Record<string, unknown> = {
       page,
       per_page: 10,
       search: String(search ?? '').trim() || undefined,
@@ -311,24 +265,27 @@ const fetchDefinitions = async (page: number, search = '') => {
       params.search_in_phrases = filters.value.searchInPhrases
     }
 
-    const collectionMatchesPromise = loadCollectionMatches(search, signal)
-    const selectedCollectionIds = (filters.value.selectedCollections || []).filter(
-      (n) => Number.isFinite(n) && n > 0
-    )
-    const skipGlobalDictionaryFallback =
-      selectedCollectionIds.length > 0 && !filters.value.usernames?.length
+    if (usePriorityThenGlobal) {
+      params.include_global_group = true
+      if (collectionIds.length) {
+        params.collection_ids = collectionIds.join(',')
+      }
+    }
 
-    const response = skipGlobalDictionaryFallback
-      ? { data: { definitions: [], total: 0, decomposition: [] } }
-      : await fastSearchDefinitions(params, signal)
-    const collectionHits = await collectionMatchesPromise
+    const response = await fastSearchDefinitions(params, signal)
 
     // Only process if this is still the latest request
     if (!definitionsSearchQueue.shouldProcess(requestId)) {
       return
     }
 
-    collectionMatches.value = collectionHits
+    const collectionHits = (
+      (response.data.filtered_collection_items ?? []) as CollectionSearchItem[]
+    )
+      .map((item) => mapCollectionItemToDefinition(item))
+      .filter((d): d is CollectionDefinitionCard => d != null)
+    const authorHits = (response.data.filtered_definitions ?? []) as CollectionDefinitionCard[]
+    collectionMatches.value = [...collectionHits, ...authorHits]
     definitions.value = response.data.definitions
     total.value = response.data.total
     currentPage.value = page

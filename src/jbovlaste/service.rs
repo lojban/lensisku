@@ -413,11 +413,7 @@ pub async fn semantic_search(
         definitions.len() as i64
     };
 
-    Ok(DefinitionResponse {
-        definitions,
-        decomposition,
-        total,
-    })
+    Ok(DefinitionResponse::plain(definitions, decomposition, total))
 }
 
 /// Max definitions in one semantic graph response ([`SemanticGraphParams::limit`] is clamped to this).
@@ -1397,11 +1393,7 @@ pub async fn search_definitions(
 
     transaction.commit().await?;
 
-    Ok(DefinitionResponse {
-        definitions,
-        decomposition,
-        total,
-    })
+    Ok(DefinitionResponse::plain(definitions, decomposition, total))
 }
 
 /// Fast search for non-logged-in users - NO JOINs at all!
@@ -1671,11 +1663,146 @@ pub async fn fast_search_definitions(
 
     transaction.commit().await?;
 
+    Ok(DefinitionResponse::plain(definitions, decomposition, total))
+}
+
+/// Cap for the priority filtered group (authors∪collections) on one search response.
+pub const FILTERED_GROUP_PER_PAGE: i64 = 50;
+
+pub enum DictionarySearchMode {
+    Keyword,
+    Fast,
+    Semantic { embedding: Vec<f32> },
+}
+
+/// Authors∪collections as a priority filtered group, plus an unscoped global dictionary
+/// page that omits definition ids already present in the filtered group.
+pub async fn search_with_filtered_and_global_groups(
+    pool: &Pool,
+    params: SearchDefinitionsParams,
+    collection_ids: Vec<i32>,
+    mode: DictionarySearchMode,
+    parsers: Option<&Arc<HashMap<i32, Peg>>>,
+) -> Result<DefinitionResponse, Box<dyn std::error::Error>> {
+    let author_usernames = params.usernames.clone();
+    let exclude_usernames = params.exclude_usernames.clone();
+    let has_authors = author_usernames.as_ref().is_some_and(|u| !u.is_empty());
+    let has_collections = !collection_ids.is_empty();
+
+    let semantic_embedding = match &mode {
+        DictionarySearchMode::Semantic { embedding }
+            if !params.search_term.trim().is_empty()
+                && !crate::utils::embeddings::embeddings_disabled() =>
+        {
+            Some(pgvector::Vector::from(embedding.clone()))
+        }
+        _ => None,
+    };
+
+    let collection_fut = async {
+        if !has_collections {
+            return Ok((Vec::new(), 0_i64));
+        }
+        let filters = crate::collections::dto::ListCollectionItemsFilters {
+            languages: params.languages.clone(),
+            selmaho: params.selmaho.clone(),
+            word_type: params.word_type,
+            // OR with authors: do not AND include-authors onto collection hits.
+            usernames: None,
+            exclude_usernames: exclude_usernames.clone(),
+            source_langid: params.source_langid,
+            search_in_phrases: params.search_in_phrases,
+            semantic_embedding: semantic_embedding.clone(),
+        };
+        let search = if params.search_term.trim().is_empty() {
+            None
+        } else {
+            Some(params.search_term.clone())
+        };
+        crate::collections::service::search_items_in_collections(
+            pool,
+            collection_ids.clone(),
+            1,
+            FILTERED_GROUP_PER_PAGE,
+            search,
+            filters,
+        )
+        .await
+        .map(|r| (r.items, r.total))
+        .map_err(|e| -> Box<dyn std::error::Error> { e.to_string().into() })
+    };
+
+    let author_fut = async {
+        if !has_authors {
+            return Ok(DefinitionResponse::plain(Vec::new(), Vec::new(), 0));
+        }
+        let mut author_params = params.clone();
+        author_params.page = 1;
+        author_params.per_page = FILTERED_GROUP_PER_PAGE;
+        author_params.usernames = author_usernames.clone();
+        run_dictionary_search(pool, author_params, &mode, parsers).await
+    };
+
+    let global_fut = async {
+        let mut global_params = params.clone();
+        // Unscoped global: drop include-authors; keep exclude-authors and other filters.
+        global_params.usernames = None;
+        run_dictionary_search(pool, global_params, &mode, parsers).await
+    };
+
+    let (collection_result, author_result, global_result) =
+        tokio::join!(collection_fut, author_fut, global_fut);
+    let (collection_items, _collection_total) = collection_result?;
+    let author_response = author_result?;
+    let mut global_response = global_result?;
+
+    let filtered_collection_items: Vec<crate::jbovlaste::dto::FilteredCollectionHit> =
+        collection_items.iter().map(Into::into).collect();
+    let filtered_definitions = author_response.definitions;
+
+    let mut seen: std::collections::HashSet<i32> = filtered_collection_items
+        .iter()
+        .filter_map(|i| i.definition_id)
+        .filter(|id| *id > 0)
+        .collect();
+    for def in &filtered_definitions {
+        seen.insert(def.definitionid);
+    }
+    if !seen.is_empty() {
+        global_response
+            .definitions
+            .retain(|d| !seen.contains(&d.definitionid));
+    }
+
+    // Prefer decomposition from global; fall back to author search.
+    let decomposition = if !global_response.decomposition.is_empty() {
+        global_response.decomposition
+    } else {
+        author_response.decomposition
+    };
+
     Ok(DefinitionResponse {
-        definitions,
+        definitions: global_response.definitions,
         decomposition,
-        total,
+        total: global_response.total,
+        filtered_collection_items,
+        filtered_definitions,
     })
+}
+
+async fn run_dictionary_search(
+    pool: &Pool,
+    params: SearchDefinitionsParams,
+    mode: &DictionarySearchMode,
+    parsers: Option<&Arc<HashMap<i32, Peg>>>,
+) -> Result<DefinitionResponse, Box<dyn std::error::Error>> {
+    match mode {
+        DictionarySearchMode::Keyword => search_definitions(pool, params, parsers).await,
+        DictionarySearchMode::Fast => fast_search_definitions(pool, params, parsers).await,
+        DictionarySearchMode::Semantic { embedding } => {
+            semantic_search(pool, params, embedding.clone(), parsers).await
+        }
+    }
 }
 
 /// Resolve a lujvo into its source words (selrafsi) via jvokaha/camxes + rafsi DB lookup.
@@ -3965,6 +4092,8 @@ pub async fn list_definitions(
         total,
         page,
         per_page,
+        filtered_collection_items: Vec::new(),
+        filtered_definitions: Vec::new(),
     })
 }
 
@@ -4141,6 +4270,8 @@ pub async fn list_non_lojban_definitions(
         total,
         page,
         per_page,
+        filtered_collection_items: Vec::new(),
+        filtered_definitions: Vec::new(),
     })
 }
 
@@ -5845,6 +5976,8 @@ pub async fn list_definitions_by_client_id(
         page,
         per_page,
         decomposition: Vec::new(),
+        filtered_collection_items: Vec::new(),
+        filtered_definitions: Vec::new(),
     })
 }
 

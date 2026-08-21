@@ -31,6 +31,49 @@ use camxes_rs::camxes::peg::grammar::Peg;
 use std::collections::HashMap;
 use std::sync::Arc;
 
+use crate::jbovlaste::models::DefinitionResponse;
+use crate::jbovlaste::service::DictionarySearchMode;
+
+fn definition_list_from_response(
+    response: DefinitionResponse,
+    page: i64,
+    per_page: i64,
+) -> DefinitionListResponse {
+    DefinitionListResponse {
+        definitions: response.definitions,
+        total: response.total,
+        page,
+        per_page,
+        decomposition: response.decomposition,
+        filtered_collection_items: response.filtered_collection_items,
+        filtered_definitions: response.filtered_definitions,
+    }
+}
+
+fn parse_search_languages(languages: &Option<String>) -> Option<Vec<i32>> {
+    languages.as_ref().and_then(|langs| {
+        let parsed: Result<Vec<i32>, _> = langs
+            .split(',')
+            .filter(|s| !s.is_empty())
+            .map(str::parse::<i32>)
+            .collect();
+        parsed.ok()
+    })
+}
+
+fn wants_filtered_and_global_groups(query: &SearchDefinitionsQuery) -> bool {
+    if query.include_global_group != Some(true) {
+        return false;
+    }
+    let has_authors = super::dto::parse_username_list(&query.username).is_some();
+    let has_collections = query
+        .collection_ids
+        .as_deref()
+        .map(|s| crate::collections::dto::parse_positive_id_list(s, 50))
+        .is_some_and(|ids| !ids.is_empty());
+    has_authors || has_collections
+}
+
 #[utoipa::path(
     get,
     tag = "jbovlaste",
@@ -46,7 +89,9 @@ use std::sync::Arc;
         ("bearer_auth" = [])
     ),
     summary = "Semantic search definitions",
-    description = "Search for definitions using semantic similarity. Returns paginated results sorted by cosine distance."
+    description = "Search for definitions using semantic similarity. Returns paginated results sorted by cosine distance. \
+                  With `include_global_group=true` and authors/collections filters, returns a filtered priority group \
+                  plus an unscoped global `definitions` group (deduped)."
 )]
 #[get("/semantic-search")]
 pub async fn semantic_search(
@@ -58,15 +103,7 @@ pub async fn semantic_search(
     let page = query.page.unwrap_or(1);
     let per_page = query.per_page.unwrap_or(20);
 
-    // Parse languages
-    let languages = query.languages.as_ref().and_then(|langs| {
-        let parsed: Result<Vec<i32>, _> = langs
-            .split(',')
-            .filter(|s| !s.is_empty())
-            .map(str::parse::<i32>)
-            .collect();
-        parsed.ok()
-    });
+    let languages = parse_search_languages(&query.languages);
 
     if crate::utils::embeddings::embeddings_disabled() {
         return HttpResponse::ServiceUnavailable().json(json!({
@@ -84,6 +121,7 @@ pub async fn semantic_search(
     }
 
     let cache_key = crate::middleware::cache::generate_semantic_search_cache_key(&query);
+    let use_groups = wants_filtered_and_global_groups(&query);
 
     // Prefer stored embedding when definition_id is set; otherwise embed the search text.
     let (embedding, search_term, exclude_definition_id) = if let Some(def_id) = definition_id {
@@ -114,41 +152,55 @@ pub async fn semantic_search(
         }
     };
 
-    match redis_cache
-        .get_or_set(
-            &cache_key,
-            || async {
-                let params = SearchDefinitionsParams {
-                    page,
-                    per_page,
-                    search_term: search_term.clone(),
-                    include_comments: false,
-                    sort_by: "similarity".to_string(),
-                    sort_order: "asc".to_string(),
-                    languages: languages.clone(),
-                    selmaho: query.selmaho.clone(),
-                    usernames: super::dto::parse_username_list(&query.username),
-                    exclude_usernames: super::dto::parse_username_list(&query.exclude_usernames),
-                    word_type: query.word_type,
-                    source_langid: query.source_langid,
-                    search_in_phrases: query.search_in_phrases,
-                    include_total_count: true,
-                    exclude_definition_id,
-                };
+    let params = SearchDefinitionsParams {
+        page,
+        per_page,
+        search_term: search_term.clone(),
+        include_comments: false,
+        sort_by: "similarity".to_string(),
+        sort_order: "asc".to_string(),
+        languages: languages.clone(),
+        selmaho: query.selmaho.clone(),
+        usernames: super::dto::parse_username_list(&query.username),
+        exclude_usernames: super::dto::parse_username_list(&query.exclude_usernames),
+        word_type: query.word_type,
+        source_langid: query.source_langid,
+        search_in_phrases: query.search_in_phrases,
+        include_total_count: true,
+        exclude_definition_id,
+    };
 
-                service::semantic_search(&pool, params, embedding, Some(&parsers)).await
+    let result = if use_groups {
+        // Skip redis cache: filtered groups include live collection rows.
+        let collection_ids = query
+            .collection_ids
+            .as_deref()
+            .map(|s| crate::collections::dto::parse_positive_id_list(s, 50))
+            .unwrap_or_default();
+        service::search_with_filtered_and_global_groups(
+            &pool,
+            params,
+            collection_ids,
+            DictionarySearchMode::Semantic {
+                embedding: embedding.clone(),
             },
-            None, // Use default TTL
+            Some(&parsers),
         )
         .await
-    {
-        Ok(response) => HttpResponse::Ok().json(DefinitionListResponse {
-            definitions: response.definitions,
-            total: response.total,
-            page,
-            per_page,
-            decomposition: response.decomposition,
-        }),
+    } else {
+        redis_cache
+            .get_or_set(
+                &cache_key,
+                || async {
+                    service::semantic_search(&pool, params, embedding, Some(&parsers)).await
+                },
+                None,
+            )
+            .await
+    };
+
+    match result {
+        Ok(response) => HttpResponse::Ok().json(definition_list_from_response(response, page, per_page)),
         Err(e) => HttpResponse::InternalServerError().body(format!("Error: {}", e)),
     }
 }
@@ -426,7 +478,9 @@ pub async fn list_non_lojban_definitions(
     ),
     summary = "Search definitions",
     description = "Search for definitions across the dictionary with filtering and sorting options. \
-                  Returns paginated results including definition details, scores, and optional comment counts."
+                  Returns paginated results including definition details, scores, and optional comment counts. \
+                  With `include_global_group=true` and authors/collections filters, returns a filtered priority group \
+                  plus an unscoped global `definitions` group (deduped)."
 )]
 #[get("/definitions")]
 pub async fn search_definitions(
@@ -443,64 +497,77 @@ pub async fn search_definitions(
 
     // Use fast search if explicitly requested via 'fast' parameter, or for non-logged-in users
     let use_fast_search = query.fast.unwrap_or(false) || claims.is_none();
+    let use_groups = wants_filtered_and_global_groups(&query);
 
-    let cache_key = generate_search_cache_key(&query, use_fast_search);
+    let (sort_by, sort_order) = match (query.sort_by.as_deref(), query.sort_order.as_deref()) {
+        (Some(sort), Some(order)) => (sort.to_string(), order.to_string()),
+        (Some(sort), None) => (sort.to_string(), "asc".to_string()),
+        _ => ("word".to_string(), "asc".to_string()),
+    };
 
-    match redis_cache
-        .get_or_set(
-            &cache_key,
-            || async {
-                let (sort_by, sort_order) =
-                    match (query.sort_by.as_deref(), query.sort_order.as_deref()) {
-                        (Some(sort), Some(order)) => (sort.to_string(), order.to_string()),
-                        (Some(sort), None) => (sort.to_string(), "asc".to_string()),
-                        _ => ("word".to_string(), "asc".to_string()),
-                    };
+    let languages = parse_search_languages(&query.languages);
 
-                let languages = query.languages.as_ref().and_then(|langs| {
-                    let parsed: Result<Vec<i32>, _> = langs
-                        .split(',')
-                        .filter(|s| !s.is_empty())
-                        .map(str::parse::<i32>)
-                        .collect();
-                    parsed.ok()
-                });
+    let params = SearchDefinitionsParams {
+        page,
+        per_page,
+        search_term: search_term.to_string(),
+        include_comments,
+        sort_by,
+        sort_order,
+        languages,
+        selmaho: query.selmaho.clone(),
+        usernames: super::dto::parse_username_list(&query.username),
+        exclude_usernames: super::dto::parse_username_list(&query.exclude_usernames),
+        word_type: query.word_type,
+        source_langid: query.source_langid,
+        search_in_phrases: query.search_in_phrases,
+        include_total_count: true,
+        exclude_definition_id: None,
+    };
 
-                let params = SearchDefinitionsParams {
-                    page,
-                    per_page,
-                    search_term: search_term.to_string(),
-                    include_comments,
-                    sort_by,
-                    sort_order,
-                    languages,
-                    selmaho: query.selmaho.clone(),
-                    usernames: super::dto::parse_username_list(&query.username),
-                    exclude_usernames: super::dto::parse_username_list(&query.exclude_usernames),
-                    word_type: query.word_type,
-                    source_langid: query.source_langid,
-                    search_in_phrases: query.search_in_phrases,
-                    include_total_count: true,
-                    exclude_definition_id: None,
-                };
+    let mode = if use_fast_search {
+        DictionarySearchMode::Fast
+    } else {
+        DictionarySearchMode::Keyword
+    };
 
-                if use_fast_search {
-                    service::fast_search_definitions(&pool, params, Some(&parsers)).await
-                } else {
-                    service::search_definitions(&pool, params, Some(&parsers)).await
-                }
-            },
-            None,
+    let result = if use_groups {
+        let collection_ids = query
+            .collection_ids
+            .as_deref()
+            .map(|s| crate::collections::dto::parse_positive_id_list(s, 50))
+            .unwrap_or_default();
+        service::search_with_filtered_and_global_groups(
+            &pool,
+            params,
+            collection_ids,
+            mode,
+            Some(&parsers),
         )
         .await
-    {
-        Ok(response) => HttpResponse::Ok().json(DefinitionListResponse {
-            definitions: response.definitions,
-            decomposition: response.decomposition,
-            total: response.total,
-            page,
-            per_page,
-        }),
+    } else {
+        let cache_key = generate_search_cache_key(&query, use_fast_search);
+        redis_cache
+            .get_or_set(
+                &cache_key,
+                || async {
+                    match mode {
+                        DictionarySearchMode::Fast => {
+                            service::fast_search_definitions(&pool, params, Some(&parsers)).await
+                        }
+                        DictionarySearchMode::Keyword => {
+                            service::search_definitions(&pool, params, Some(&parsers)).await
+                        }
+                        DictionarySearchMode::Semantic { .. } => unreachable!(),
+                    }
+                },
+                None,
+            )
+            .await
+    };
+
+    match result {
+        Ok(response) => HttpResponse::Ok().json(definition_list_from_response(response, page, per_page)),
         Err(e) => HttpResponse::InternalServerError().body(format!("Error: {}", e)),
     }
 }

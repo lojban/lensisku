@@ -153,6 +153,7 @@ const props = defineProps({
     type: Array as PropType<DefinitionEntry[]>,
     default: () => [],
   },
+  /** When true, show the “global dictionary below” divider after priority hits. */
   showGlobalDictionaryBanner: {
     type: Boolean,
     default: false,
@@ -169,6 +170,7 @@ function collectionCardKey(def: DefinitionEntry): string {
   return `d-${def.definitionid ?? 'x'}`
 }
 
+/** Drop global rows already shown in the priority (authors∪collections) section. */
 const dictionaryDefinitions = computed(() => {
   const seen = new Set(
     props.collectionMatches

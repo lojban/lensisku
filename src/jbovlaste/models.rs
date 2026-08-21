@@ -126,6 +126,22 @@ pub struct DefinitionResponse {
     pub definitions: Vec<DefinitionDetail>,
     pub decomposition: Vec<String>,
     pub total: i64,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub filtered_collection_items: Vec<crate::jbovlaste::dto::FilteredCollectionHit>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub filtered_definitions: Vec<DefinitionDetail>,
+}
+
+impl DefinitionResponse {
+    pub fn plain(definitions: Vec<DefinitionDetail>, decomposition: Vec<String>, total: i64) -> Self {
+        Self {
+            definitions,
+            decomposition,
+            total,
+            filtered_collection_items: Vec::new(),
+            filtered_definitions: Vec::new(),
+        }
+    }
 }
 
 /// Vote aggregates should be selected as `::bigint` (`definitionvotes.value` is REAL, so `SUM` is float8 otherwise).

@@ -258,7 +258,8 @@
             :collections="collections"
             :collection-matches="collectionMatches"
             :show-global-dictionary-banner="
-              filters.selectedCollections?.length > 0 && filters.usernames?.length > 0
+              !similarDefinitionId &&
+              (filters.selectedCollections?.length > 0 || filters.usernames?.length > 0)
             "
             :decomposition="decomposition || []"
             @collection-updated="setCollections($event)"
@@ -595,7 +596,6 @@ defineEmits(['search', 'view-message', 'view-thread'])
 const { getInitialLanguages, saveLanguages } = useLanguageSelection()
 const { collections, preload: preloadCollections, setCollections } = useCollectionsCache()
 const collectionMatches = ref<CollectionDefinitionCard[]>([])
-const COLLECTION_MATCH_PER_PAGE = 50
 
 const router = useRouter()
 const route = useRoute()
@@ -820,63 +820,6 @@ const filters = ref({
 const definitionsSearchQueue = new SearchQueue()
 const wavesSearchQueue = new SearchQueue()
 
-async function loadCollectionMatches(
-  search: string,
-  signal?: AbortSignal
-): Promise<CollectionDefinitionCard[]> {
-  const ids = (filters.value.selectedCollections || []).filter(
-    (n: number) => Number.isFinite(n) && n > 0
-  )
-  if (!ids.length) return []
-
-  const itemParams: Record<string, unknown> = {
-    collection_ids: ids.join(','),
-    page: 1,
-    per_page: COLLECTION_MATCH_PER_PAGE,
-    search: search.trim() || undefined,
-  }
-  if (filters.value.selectedLanguages.length > 0) {
-    itemParams.languages = filters.value.selectedLanguages.join(',')
-  }
-  if (!filters.value.selmaho) {
-    itemParams.word_type = filters.value.word_type || undefined
-  } else {
-    itemParams.selmaho = filters.value.selmaho
-  }
-  if (filters.value.source_langid && filters.value.source_langid !== 1) {
-    itemParams.source_langid = filters.value.source_langid
-  }
-  if (filters.value.searchInPhrases !== undefined && filters.value.searchInPhrases !== null) {
-    itemParams.search_in_phrases = filters.value.searchInPhrases
-  }
-  // Authors∪collections is OR: do not AND include-authors onto collection hits.
-  // Exclude-authors still applies.
-  if (filters.value.excludeUsernames?.length) {
-    itemParams.exclude_usernames = filters.value.excludeUsernames.join(',')
-  }
-  if (searchMode.value === 'semantic' && search.trim()) {
-    itemParams.semantic = true
-  }
-
-  try {
-    const response = await searchItemsInCollections(itemParams, signal)
-    return ((response.data.items ?? []) as CollectionSearchItem[])
-      .map((item) => mapCollectionItemToDefinition(item))
-      .filter((d): d is CollectionDefinitionCard => d != null)
-  } catch (e: unknown) {
-    const err = e as { name?: string; code?: string; message?: string }
-    if (
-      err?.name === 'AbortError' ||
-      err?.code === 'ERR_CANCELED' ||
-      err?.message?.includes('canceled')
-    ) {
-      return []
-    }
-    console.error('Error fetching collection matches:', e)
-    return []
-  }
-}
-
 // Fetch corpus entries
 const fetchDefinitions = async (page, search = '') => {
   isLoading.value = true
@@ -890,21 +833,15 @@ const fetchDefinitions = async (page, search = '') => {
     const trimmedSearch = similarId ? '' : String(search ?? '').trim()
     // Semantic search needs text (or a definition_id). Empty box + filters → lexical browse.
     const useSemantic = !!similarId || (searchMode.value === 'semantic' && trimmedSearch.length > 0)
-    const params: {
-      page: number
-      per_page: number
-      search?: string
-      definition_id?: number
-      include_comments: boolean
-      username: string | undefined
-      exclude_usernames?: string
-      group_by_thread: boolean
-      languages?: string
-      word_type?: number
-      source_langid?: number
-      selmaho?: string
-      search_in_phrases?: boolean
-    } = {
+    const collectionIds = !similarId
+      ? (filters.value.selectedCollections || []).filter(
+          (n: number) => Number.isFinite(n) && n > 0
+        )
+      : []
+    const hasAuthors = !similarId && !!filters.value.usernames?.length
+    const usePriorityThenGlobal = collectionIds.length > 0 || hasAuthors
+
+    const params: Record<string, unknown> = {
       page,
       per_page: 10,
       search: similarId ? undefined : trimmedSearch || undefined,
@@ -914,68 +851,53 @@ const fetchDefinitions = async (page, search = '') => {
       exclude_usernames: filters.value.excludeUsernames?.length
         ? filters.value.excludeUsernames.join(',')
         : undefined,
-      ...(filters.value.selectedLanguages.length > 0 && {
-        languages: filters.value.selectedLanguages.join(','),
-      }),
       group_by_thread: groupByThread.value,
+      semantic: useSemantic,
     }
 
+    if (filters.value.selectedLanguages.length > 0) {
+      params.languages = filters.value.selectedLanguages.join(',')
+    }
     if (!filters.value.selmaho) {
       params.word_type = filters.value.word_type || undefined
+    } else {
+      params.selmaho = filters.value.selmaho
     }
-
     if (filters.value.source_langid && filters.value.source_langid !== 1) {
       params.source_langid = filters.value.source_langid
     }
-
-    if (filters.value.selmaho) {
-      params.selmaho = filters.value.selmaho
-    }
-
     if (filters.value.searchInPhrases !== undefined && filters.value.searchInPhrases !== null) {
       params.search_in_phrases = filters.value.searchInPhrases
     }
+    if (usePriorityThenGlobal) {
+      params.include_global_group = true
+      if (collectionIds.length) {
+        params.collection_ids = collectionIds.join(',')
+      }
+    }
 
-    const collectionMatchesPromise = similarId
-      ? Promise.resolve([] as CollectionDefinitionCard[])
-      : loadCollectionMatches(trimmedSearch, signal)
-
-    const selectedCollectionIds = (filters.value.selectedCollections || []).filter(
-      (n: number) => Number.isFinite(n) && n > 0
-    )
-    // Collections without authors: show collection hits only (no unscoped dictionary fallback).
-    // Authors∪collections: collection hits + author-scoped dictionary below the banner.
-    const skipGlobalDictionaryFallback =
-      !similarId && selectedCollectionIds.length > 0 && !filters.value.usernames?.length
-
-    let response: { data: { definitions: unknown[]; total: number; decomposition?: string[] } }
-    if (skipGlobalDictionaryFallback) {
-      response = { data: { definitions: [], total: 0, decomposition: [] } }
-    } else if (auth.state.isLoggedIn || useSemantic) {
-      response = await searchDefinitions(
-        {
-          ...params,
-          semantic: useSemantic,
-        },
-        signal
-      )
+    let response
+    if (auth.state.isLoggedIn || useSemantic) {
+      response = await searchDefinitions(params, signal)
     } else {
-      // Use fast search for non-logged in users (regular dictionary)
       const fastParams = { ...params }
       delete fastParams.include_comments
       delete fastParams.definition_id
-
       response = await fastSearchDefinitions(fastParams, signal)
     }
-
-    const collectionHits = await collectionMatchesPromise
 
     // Only process if this is still the latest request
     if (!definitionsSearchQueue.shouldProcess(requestId)) {
       return
     }
 
-    collectionMatches.value = collectionHits
+    const collectionHits = (
+      (response.data.filtered_collection_items ?? []) as CollectionSearchItem[]
+    )
+      .map((item) => mapCollectionItemToDefinition(item))
+      .filter((d): d is CollectionDefinitionCard => d != null)
+    const authorHits = (response.data.filtered_definitions ?? []) as CollectionDefinitionCard[]
+    collectionMatches.value = [...collectionHits, ...authorHits]
 
     definitions.value = response.data.definitions
     total.value = response.data.total
@@ -1006,8 +928,8 @@ const fetchDefinitions = async (page, search = '') => {
  * (not just the page currently rendered), for the "Add all to collection" action.
  *
  * Authors∪collections is a union: definition ids from selected collections plus
- * definition ids by selected authors. The unscoped global dictionary fallback (shown
- * when collections are on with no authors) is never included.
+ * definition ids by selected authors. The unscoped global dictionary shown below
+ * the banner in the UI is not included.
  */
 const ADD_ALL_PER_PAGE = 500
 /** Matches server `MAX_MULTI_COLLECTION_PER_PAGE` on `GET /collections/items/search`. */
