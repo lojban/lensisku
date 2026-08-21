@@ -53,7 +53,7 @@
 
 <script setup lang="ts">
 import { Button } from '@packages/ui'
-import { CheckCircle, XCircle } from 'lucide-vue-next'
+import { CheckCircle, XCircle } from '@lucide/vue'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 

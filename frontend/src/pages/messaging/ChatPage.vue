@@ -120,7 +120,7 @@
 import { IconButtonGhost } from '@packages/ui'
 import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ArrowLeft, Video, Info, MessageCircle } from 'lucide-vue-next'
+import { ArrowLeft, Video, Info, MessageCircle } from '@lucide/vue'
 import { useAuth } from '@/composables/useAuth'
 import { getThread, getMessages, markThreadRead } from '@/services/messaging/messagingApi'
 import { webSocketService } from '@/services/messaging/WebSocketService'

@@ -25,7 +25,7 @@
 
 <script setup lang="ts">
 import { Button } from '@packages/ui'
-import { Check, BookOpen } from 'lucide-vue-next'
+import { Check, BookOpen } from '@lucide/vue'
 
 defineProps({
   collection: { type: Object, required: true },

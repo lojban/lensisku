@@ -377,7 +377,7 @@
 </template>
 
 <script setup lang="ts">
-import { ChevronDown, X } from 'lucide-vue-next'
+import { ChevronDown, X } from '@lucide/vue'
 import {
   Button,
   Checkbox,

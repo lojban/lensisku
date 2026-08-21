@@ -153,7 +153,7 @@
 <script setup lang="ts">
 import { Button, Checkbox, IconButtonGhost, Input, Radio } from '@packages/ui'
 import { ref, computed, watch } from 'vue'
-import { X } from 'lucide-vue-next'
+import { X } from '@lucide/vue'
 import { useAuth } from '@/composables/useAuth'
 import { createThread as createThreadApi } from '@/services/messaging/messagingApi'
 import { listUsers } from '@/api'

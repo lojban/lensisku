@@ -296,7 +296,7 @@
   },
   "nav": {
     "addEntry": "エントリを追加",
-    "courses": "コース",
+    "courses": "コレクションとコース",
     "recent": "最近",
     "more": "その他",
     "users": "ユーザー",
@@ -727,7 +727,7 @@
   },
   "searchExport": {
     "title": "検索結果のエクスポート",
-    "description": "検索と同じ辞書・コレクションの一致結果を PDF、LaTeX、XML、JSON、TSV で書き出します。",
+    "description": "検索一致を PDF、LaTeX、XML、JSON、TSV で書き出します。作者とコレクションは和集合です（選択コレクションの一致＋選択作者の定義）。コレクションのみで絞り込んだ場合、スコープなしのグローバル辞書結果は含めません。",
     "emptyFilterHint": "検索語を入力するか、フィルター（コレクション、語種、作者、selma'o、原語、またはフレーズ検索オフ）を選んでください。",
     "exportButton": "結果をエクスポート",
     "generating": "エクスポート生成中…",

@@ -525,7 +525,7 @@
 </template>
 
 <script setup lang="ts">
-import { ArrowLeft, FileDown, FileUp, List, Loader2, Package, Undo2 } from 'lucide-vue-next'
+import { ArrowLeft, FileDown, FileUp, List, Loader2, Package, Undo2 } from '@lucide/vue'
 import { computed, nextTick, onMounted, ref, watch, watchEffect } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'

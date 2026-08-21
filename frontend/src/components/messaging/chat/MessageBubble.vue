@@ -53,7 +53,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { Reply, Check, CheckCheck, Clock } from 'lucide-vue-next'
+import { Reply, Check, CheckCheck, Clock } from '@lucide/vue'
 import { base64ToUtf8 } from '@/utils/crypto'
 import type { Message } from '@/types/messaging'
 

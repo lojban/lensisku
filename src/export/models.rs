@@ -68,6 +68,9 @@ pub struct ExportOptions {
 }
 
 /// Query for `GET /export/search` — same filters as dictionary / collection search.
+/// Authors∪collections is a union: collection matches plus author-scoped dictionary.
+/// When `collection_ids` is set without include-authors, the unscoped global dictionary
+/// fallback is omitted.
 #[derive(Debug, Default, Deserialize)]
 pub struct SearchExportQuery {
     pub format: Option<String>,

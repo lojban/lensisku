@@ -95,7 +95,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { BookOpen, GraduationCap, List, GalleryHorizontalEnd, CalendarClock } from 'lucide-vue-next'
+import { BookOpen, GraduationCap, List, GalleryHorizontalEnd, CalendarClock } from '@lucide/vue'
 import Card from './Card.vue'
 import Button from './Button.vue'
 

@@ -103,7 +103,7 @@
 import { Button, Input, Select } from '@packages/ui'
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { MessageCircle, Plus } from 'lucide-vue-next'
+import { MessageCircle, Plus } from '@lucide/vue'
 import { useAuth } from '@/composables/useAuth'
 import { getThreads, deleteThread } from '@/services/messaging/messagingApi'
 import { webSocketService } from '@/services/messaging/WebSocketService'

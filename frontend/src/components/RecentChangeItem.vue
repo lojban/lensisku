@@ -160,7 +160,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { MessageCircle } from 'lucide-vue-next'
+import { MessageCircle } from '@lucide/vue'
 import { RouterLink, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { getTypeClass } from '@/utils/wordTypeUtils'

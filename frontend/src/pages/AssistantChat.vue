@@ -497,7 +497,7 @@ import {
   ArrowUp,
   Square,
   Pencil,
-} from 'lucide-vue-next'
+} from '@lucide/vue'
 
 import AssistantDefinitionCard from '@/components/AssistantDefinitionCard.vue'
 import AssistantThoughtStep from '@/components/AssistantThoughtStep.vue'

@@ -399,7 +399,7 @@
 
 <script setup lang="ts">
 import { Button, Textarea } from '@packages/ui'
-import { XCircle, Check, Smile, CheckCircle2, EqualApproximately } from 'lucide-vue-next'
+import { XCircle, Check, Smile, CheckCircle2, EqualApproximately } from '@lucide/vue'
 import { ref, onMounted, computed, watch, nextTick, onBeforeUnmount } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'

@@ -90,7 +90,7 @@
 </template>
 
 <script setup lang="ts">
-import { User, Eye, EyeOff, KeyRound } from 'lucide-vue-next'
+import { User, Eye, EyeOff, KeyRound } from '@lucide/vue'
 
 import { AuthFormCard, Button, IconButtonGhost, Input } from '@packages/ui'
 import { ref, onBeforeMount } from 'vue'

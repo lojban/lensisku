@@ -177,7 +177,7 @@
 
 <script setup lang="ts">
 import { Button } from '@packages/ui'
-import { ArrowLeft } from 'lucide-vue-next'
+import { ArrowLeft } from '@lucide/vue'
 import { ref, onMounted, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'

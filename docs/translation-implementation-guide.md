@@ -413,7 +413,7 @@ import { translateDefinition } from '@/api'
 import Modal from './Modal.vue'
 import Button from './Button.vue'
 import AlertComponent from './AlertComponent.vue'
-import { Languages } from 'lucide-vue-next'
+import { Languages } from '@lucide/vue'
 
 interface Props {
   show: boolean

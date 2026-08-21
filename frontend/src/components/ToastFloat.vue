@@ -48,7 +48,7 @@
 import { Button } from '@packages/ui'
 import { ref, watch, onUnmounted, computed, type Component } from 'vue'
 import type { PropType } from 'vue'
-import { CheckCircle2, CircleAlert, X } from 'lucide-vue-next'
+import { CheckCircle2, CircleAlert, X } from '@lucide/vue'
 
 const props = defineProps({
   show: {

@@ -50,7 +50,7 @@
 import { Button, Input } from '@packages/ui'
 import { Crepe } from '@milkdown/crepe'
 import { editorViewCtx } from '@milkdown/core'
-import { Loader } from 'lucide-vue-next'
+import { Loader } from '@lucide/vue'
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { insert } from '@milkdown/utils'
 import '@milkdown/crepe/theme/common/style.css'

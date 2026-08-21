@@ -296,7 +296,7 @@
   },
   "nav": {
     "addEntry": "jmina lo valsi",
-    "courses": "tadni",
+    "courses": "liste .i ctuca",
     "recent": "cnino",
     "more": "drata",
     "users": "le'i pilno",
@@ -742,7 +742,7 @@
   },
   "searchExport": {
     "title": "cupra lo se sisku",
-    "description": "ko cupra lo velckivei .e lo liste jmina poi sisku cu facki ke'a fi lo PDF .a la'o gy.LaTeX.gy .a lo XML .a lo JSON .a lo TSV",
+    "description": "ko cupra lo se sisku fi lo PDF .a la'o gy.LaTeX.gy .a lo XML .a lo JSON .a lo TSV .i lo se pilno cu jmina lo liste .e lo velcki be lo se cuxna cusku (jo'u) .i lo cnano vlaste na se cupra ca'o lo liste filternunji'a sepi'o no cusku",
     "emptyFilterHint": "ko ciska lo se sisku .a cuxna lo stika (liste .a valsi klesi .a finti .a selma'o .a fanva bangu .a na sisku ne'i lo jufra)",
     "exportButton": "cupra lo se sisku",
     "generating": "ca'o cupra",

@@ -296,7 +296,7 @@
   },
   "nav": {
     "addEntry": "添加词条",
-    "courses": "课程",
+    "courses": "合集与课程",
     "recent": "最近",
     "more": "更多",
     "users": "用户",
@@ -732,7 +732,7 @@
   },
   "searchExport": {
     "title": "导出搜索结果",
-    "description": "按当前搜索与筛选导出词典释义和合集条目，支持 PDF、LaTeX、XML、JSON 或 TSV。",
+    "description": "按当前搜索与筛选导出结果，支持 PDF、LaTeX、XML、JSON 或 TSV。作者与合集为并集：所选合集匹配项加上所选作者的释义。仅按合集筛选时不含未限定的全局词典结果。",
     "emptyFilterHint": "请输入搜索词，或选择筛选条件（合集、词类、作者、selma'o、源语言，或关闭在短语中搜索）。",
     "exportButton": "导出结果",
     "generating": "正在生成导出…",

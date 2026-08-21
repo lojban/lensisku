@@ -153,7 +153,7 @@
 <script setup lang="ts">
 import { Button, IconButtonGhost } from '@packages/ui'
 import { ref, computed } from 'vue'
-import { X, Shield, UserMinus } from 'lucide-vue-next'
+import { X, Shield, UserMinus } from '@lucide/vue'
 import { useAuth } from '@/composables/useAuth'
 import { usePresence } from '@/services/messaging/PresenceService'
 import AddParticipantModal from './AddParticipantModal.vue'

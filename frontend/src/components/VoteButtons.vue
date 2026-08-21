@@ -47,7 +47,7 @@
 
 <script setup lang="ts">
 import { Button } from '@packages/ui'
-import { ThumbsUp, ThumbsDown } from 'lucide-vue-next'
+import { ThumbsUp, ThumbsDown } from '@lucide/vue'
 import { ref, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'

@@ -31,7 +31,7 @@
 <script setup lang="ts">
 import { computed, ref, watch, onBeforeUnmount } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { BookOpen, MessageSquare } from 'lucide-vue-next'
+import { BookOpen, MessageSquare } from '@lucide/vue'
 import SearchInput from '@/components/SearchInput.vue'
 import { normalizeSearchQuery } from '@/utils/searchQueryUtils'
 

@@ -79,7 +79,7 @@
 
 <script setup lang="ts">
 import { Button } from '@packages/ui'
-import { Heart, Share2 } from 'lucide-vue-next'
+import { Heart, Share2 } from '@lucide/vue'
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 

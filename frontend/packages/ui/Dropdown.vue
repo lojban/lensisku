@@ -24,7 +24,7 @@
 
 <script setup lang="ts">
 import { ref, watch, nextTick, onMounted, onUnmounted } from 'vue'
-import { EllipsisVertical } from 'lucide-vue-next'
+import { EllipsisVertical } from '@lucide/vue'
 
 defineOptions({ name: 'UiDropdown', inheritAttrs: false })
 

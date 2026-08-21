@@ -22,7 +22,7 @@
 
 <script setup lang="ts">
 import { Button } from '@packages/ui'
-import { BellOff, BellRing } from 'lucide-vue-next'
+import { BellOff, BellRing } from '@lucide/vue'
 import { ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 

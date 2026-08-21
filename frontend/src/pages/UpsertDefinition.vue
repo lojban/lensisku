@@ -458,7 +458,7 @@
 </template>
 
 <script setup lang="ts">
-import { ArrowRight, Search, CirclePlus, CircleMinus, Eye } from 'lucide-vue-next'
+import { ArrowRight, Search, CirclePlus, CircleMinus, Eye } from '@lucide/vue'
 import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'

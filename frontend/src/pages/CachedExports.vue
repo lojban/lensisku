@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Button } from '@packages/ui'
-import { File } from 'lucide-vue-next'
+import { File } from '@lucide/vue'
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 

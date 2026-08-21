@@ -10,19 +10,20 @@
       :languages="languages"
       :show-vote-buttons="auth.state.isLoggedIn"
       :collections="collections"
-      @collection-updated="collections = $event"
+      @collection-updated="setCollections($event)"
     />
   </div>
 </template>
 
 <script setup lang="ts">
-import { Book } from 'lucide-vue-next'
+import { Book } from '@lucide/vue'
 import { computed, ref, watch, onMounted, type PropType } from 'vue'
 import { useI18n } from 'vue-i18n'
 
-import { getBulkVotes, getCollections, getLanguages } from '@/api'
+import { getBulkVotes, getLanguages } from '@/api'
 import DictionaryEntries from '@/components/DictionaryEntries.vue'
 import { useAuth } from '@/composables/useAuth'
+import { useCollectionsCache } from '@/composables/useCollectionsCache'
 
 const { t } = useI18n()
 const auth = useAuth()
@@ -53,7 +54,7 @@ const props = defineProps({
 })
 
 const languages = ref<Array<{ id: number; real_name: string; english_name?: string }>>([])
-const collections = ref([])
+const { collections, preload: preloadCollections, setCollections } = useCollectionsCache()
 const userVotes = ref<Record<string, number | null>>({})
 
 const emptyMessage = computed(() => props.noItemsMessage || t('activity.noDefinitions'))
@@ -109,13 +110,10 @@ watch(
 
 onMounted(async () => {
   try {
-    const [languagesResponse, collectionsResponse] = await Promise.all([
-      getLanguages(),
-      auth.state.isLoggedIn ? getCollections().catch(() => null) : Promise.resolve(null),
-    ])
+    const languagesResponse = await getLanguages()
     languages.value = languagesResponse.data
-    if (collectionsResponse?.data?.collections) {
-      collections.value = collectionsResponse.data.collections
+    if (auth.state.isLoggedIn) {
+      void preloadCollections()
     }
   } catch (error) {
     console.error('Error fetching languages:', error)

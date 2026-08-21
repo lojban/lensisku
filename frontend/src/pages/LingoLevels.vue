@@ -436,7 +436,7 @@
 </template>
 
 <script setup lang="ts">
-import { ArrowLeft, BookOpen, Settings, PlusCircle, Dumbbell } from 'lucide-vue-next'
+import { ArrowLeft, BookOpen, Settings, PlusCircle, Dumbbell } from '@lucide/vue'
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'

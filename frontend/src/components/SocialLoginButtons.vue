@@ -27,7 +27,7 @@
 
 <script setup lang="ts">
 import { Button } from '@packages/ui'
-import { Chrome, Github, type LucideIcon } from 'lucide-vue-next'
+import { Chrome, Github, type LucideIcon } from '@lucide/vue'
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 

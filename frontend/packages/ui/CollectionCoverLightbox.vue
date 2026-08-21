@@ -39,7 +39,7 @@
 </template>
 
 <script setup lang="ts">
-import { X } from 'lucide-vue-next'
+import { X } from '@lucide/vue'
 import { ref, watch, onMounted, onUnmounted, useAttrs, computed } from 'vue'
 
 defineOptions({ inheritAttrs: false })

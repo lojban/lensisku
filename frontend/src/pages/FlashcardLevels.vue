@@ -533,7 +533,7 @@ import {
   Dumbbell,
   Sprout,
   Target,
-} from 'lucide-vue-next'
+} from '@lucide/vue'
 import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'

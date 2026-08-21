@@ -140,21 +140,25 @@
 import { ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
-import { api, bulkAddDefinitionsToCollection, getCollections } from '@/api'
+import { api, bulkAddDefinitionsToCollection } from '@/api'
 import AlertComponent from '@/components/AlertComponent.vue'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import ModalComponent from '@/components/ModalComponent.vue'
 import { Button, Checkbox, IconButton, Input, Textarea } from '@packages/ui'
+import {
+  useCollectionsCache,
+  type CachedCollection,
+} from '@/composables/useCollectionsCache'
 import { useSuccessToast } from '@/composables/useSuccessToast'
 
 const { t } = useI18n()
 const { showSuccess } = useSuccessToast()
-
-interface CollectionRow {
-  collection_id: number
-  name: string
-  item_count: number
-}
+const {
+  collections,
+  hasLoaded,
+  refresh,
+  setCollections,
+} = useCollectionsCache()
 
 /**
  * Caller provides a loader that returns every definition ID matching the current
@@ -166,7 +170,7 @@ type LoadAllProgress = (current: number, expectedTotal: number) => void
 const props = defineProps<{
   /** When true, parent wants the modal open. Two-way via `update:modelValue`. */
   modelValue: boolean
-  externalCollections?: CollectionRow[]
+  externalCollections?: CachedCollection[]
   /**
    * Caller-supplied loader that walks **every page** of the current search and
    * returns all matching definition ids. We pass a progress callback so the modal
@@ -177,11 +181,10 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'update:modelValue', v: boolean): void
-  (e: 'collection-updated', collections: CollectionRow[]): void
+  (e: 'collection-updated', collections: CachedCollection[]): void
   (e: 'added', info: { added: number; skipped: number; invalid: number }): void
 }>()
 
-const collections = ref<CollectionRow[]>([])
 const isLoading = ref(false)
 const isSubmitting = ref(false)
 const isCreating = ref(false)
@@ -208,34 +211,36 @@ function resetTransientState() {
   newCollection.value = { name: '', description: '', is_public: true }
 }
 
+const refreshAndEmit = async () => {
+  const list = await refresh()
+  emit('collection-updated', list)
+  return list
+}
+
 watch(
   () => props.modelValue,
-  async (open) => {
+  (open) => {
     showModal.value = open
     if (open) {
       if (props.externalCollections && props.externalCollections.length > 0) {
-        collections.value = [...props.externalCollections]
-      } else {
-        isLoading.value = true
-        await fetchCollections()
-        isLoading.value = false
+        if (!hasLoaded.value || collections.value.length === 0) {
+          setCollections(props.externalCollections)
+        }
       }
+      const needsSpinner = !hasLoaded.value && collections.value.length === 0
+      if (needsSpinner) {
+        isLoading.value = true
+      }
+      // Always revalidate in the background so the list updates in place if it changed.
+      void refreshAndEmit().finally(() => {
+        isLoading.value = false
+      })
     } else {
       resetTransientState()
     }
   },
   { immediate: true }
 )
-
-const fetchCollections = async () => {
-  try {
-    const res = await getCollections()
-    collections.value = res.data.collections
-    emit('collection-updated', collections.value)
-  } catch (e) {
-    console.error('Error fetching collections:', e)
-  }
-}
 
 const closeModal = () => {
   emit('update:modelValue', false)
@@ -264,7 +269,7 @@ const createCollectionAndSelect = async () => {
     const collectionId = res.data.collection_id as number
     newCollection.value = { name: '', description: '', is_public: true }
     showCreateForm.value = false
-    await fetchCollections()
+    await refreshAndEmit()
     selectCollection(collectionId)
   } catch (e) {
     console.error('Error creating collection:', e)
@@ -317,7 +322,7 @@ const confirmAddAll = async () => {
       })
     )
     emit('added', { added: totalAdded, skipped: totalSkipped, invalid: totalInvalid })
-    await fetchCollections()
+    await refreshAndEmit()
     emit('update:modelValue', false)
   } catch (e) {
     console.error('Error adding all to collection:', e)

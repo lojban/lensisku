@@ -146,7 +146,7 @@
 
 <script setup lang="ts">
 import { Button } from '@packages/ui'
-import { MessageSquareMore, Image, Reply } from 'lucide-vue-next'
+import { MessageSquareMore, Image, Reply } from '@lucide/vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import type { PropType } from 'vue'

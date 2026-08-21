@@ -117,7 +117,7 @@
 <script setup lang="ts">
 import { Button, IconButtonGhost } from '@packages/ui'
 import { ref, onMounted, onUnmounted } from 'vue'
-import { MessageCircle, Users, User, MoreVertical } from 'lucide-vue-next'
+import { MessageCircle, Users, User, MoreVertical } from '@lucide/vue'
 import { useAuth } from '@/composables/useAuth'
 import { usePresence } from '@/services/messaging/PresenceService'
 import { markThreadRead } from '@/services/messaging/messagingApi'

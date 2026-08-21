@@ -37,7 +37,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { Target, Sparkles } from 'lucide-vue-next'
+import { Target, Sparkles } from '@lucide/vue'
 import { useI18n } from 'vue-i18n'
 import LingoLayout from '@/components/LingoLayout.vue'
 import { LINGO_QUESTS } from '@/config/lingoConstants'

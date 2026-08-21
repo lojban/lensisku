@@ -261,7 +261,7 @@
             :disable-toolbar="true"
             :notes="item.ci_notes"
             :show-notes-edit="isOwner"
-            @collection-updated="userCollections = $event"
+            @collection-updated="setUserCollections($event)"
             @move-up="moveItem(item, 'up')"
             @move-down="moveItem(item, 'down')"
             @remove="confirmRemoveItem(item)"
@@ -1375,7 +1375,7 @@ import {
   Trash2,
   MessagesSquare,
   MessageSquare,
-} from 'lucide-vue-next'
+} from '@lucide/vue'
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 
@@ -1395,7 +1395,6 @@ import {
   mergeCollection,
   cloneCollection,
   importCollectionFull,
-  getCollections as getUserCollections,
   getLanguages,
   updateItemPosition,
   exportCollectionFull,
@@ -1436,6 +1435,7 @@ import {
   ToolbarSelectDropdownItem,
 } from '@packages/ui'
 import { useAuth } from '@/composables/useAuth'
+import { useCollectionsCache } from '@/composables/useCollectionsCache'
 import { useError } from '@/composables/useError'
 import { useSeoHead } from '@/composables/useSeoHead'
 import { useSuccessToast } from '@/composables/useSuccessToast'
@@ -2456,7 +2456,12 @@ const paginatedItems = ref<{
 const isCloning = ref(false)
 const isReordering = ref(false)
 const languages = ref([])
-const userCollections = ref([])
+const {
+  collections: userCollections,
+  preload: preloadUserCollections,
+  setCollections: setUserCollections,
+  clear: clearUserCollections,
+} = useCollectionsCache()
 
 const editItemId = computed((): number | null => {
   const s = queryStr(route.query.editItem)
@@ -2492,15 +2497,10 @@ const handleCloneCollection = async () => {
   }
 }
 
-// Fetch user's collections
+// Fetch user's collections (shared cache; CollectionWidget opens instantly)
 const fetchUserCollections = async () => {
   if (!auth.state.isLoggedIn) return
-  try {
-    const response = await getUserCollections()
-    userCollections.value = response.data.collections
-  } catch (error) {
-    console.error('Error fetching user collections:', error)
-  }
+  await preloadUserCollections()
 }
 
 const onMediaBulkZipSuccess = async () => {
@@ -3168,7 +3168,7 @@ watch(
     if (loggedIn) {
       fetchUserCollections()
     } else {
-      userCollections.value = []
+      clearUserCollections()
     }
   }
 )

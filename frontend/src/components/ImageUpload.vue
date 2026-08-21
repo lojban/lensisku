@@ -59,7 +59,7 @@
 
 <script setup lang="ts">
 import { Button, FileInput } from '@packages/ui'
-import { ImagePlus } from 'lucide-vue-next'
+import { ImagePlus } from '@lucide/vue'
 import { useDropZone } from '@vueuse/core'
 import { ref, watch, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'

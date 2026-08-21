@@ -76,7 +76,7 @@ import {
   GraduationCap,
   Bot,
   Share2,
-} from 'lucide-vue-next'
+} from '@lucide/vue'
 import { useI18n } from 'vue-i18n'
 import NavLink from '@/components/NavLink.vue'
 import { useAuth } from '@/composables/useAuth'

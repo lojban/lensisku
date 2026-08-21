@@ -142,7 +142,7 @@
 import { Button } from '@packages/ui'
 import { ref, computed } from 'vue'
 import { RouterLink } from 'vue-router'
-import { Check, Crown, Star, Settings } from 'lucide-vue-next'
+import { Check, Crown, Star, Settings } from '@lucide/vue'
 
 const props = defineProps({
   index: { type: Number, required: true },

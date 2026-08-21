@@ -25,7 +25,7 @@
 </template>
 
 <script setup lang="ts">
-import { GraduationCap } from 'lucide-vue-next'
+import { GraduationCap } from '@lucide/vue'
 import { useI18n } from 'vue-i18n'
 import LingoSidebarItem from './LingoSidebarItem.vue'
 

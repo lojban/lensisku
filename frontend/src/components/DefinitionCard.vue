@@ -682,7 +682,7 @@ import {
   Link as LinkIcon,
   Search,
   Loader2,
-} from 'lucide-vue-next'
+} from '@lucide/vue'
 import { computed, ref, watch, type PropType } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'

@@ -234,7 +234,7 @@
 </template>
 
 <script setup lang="ts">
-import { Check, Mic, RotateCcw, Square, Sparkles, Upload, Volume2 } from 'lucide-vue-next'
+import { Check, Mic, RotateCcw, Square, Sparkles, Upload, Volume2 } from '@lucide/vue'
 import { useDropZone } from '@vueuse/core'
 import { ref, watch, onMounted, onUnmounted, computed } from 'vue'
 import { useI18n } from 'vue-i18n'

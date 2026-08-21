@@ -19,7 +19,7 @@
 </template>
 
 <script setup lang="ts">
-import { Vote } from 'lucide-vue-next'
+import { Vote } from '@lucide/vue'
 import { ref, onMounted } from 'vue'
 
 import { getLanguages } from '@/api'

@@ -38,7 +38,7 @@
 
 <script setup lang="ts">
 import { FileInput } from '@packages/ui'
-import { Upload } from 'lucide-vue-next'
+import { Upload } from '@lucide/vue'
 import { useDropZone } from '@vueuse/core'
 import { ref } from 'vue'
 

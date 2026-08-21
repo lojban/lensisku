@@ -2522,12 +2522,58 @@ pub async fn export_search_results(
         .unwrap_or_default();
 
     let use_semantic = query.semantic.unwrap_or(false) && !search_term.is_empty();
+    // Authors∪collections: collection matches ∪ author-scoped dictionary.
+    // Skip unscoped dictionary when collections are set without include-authors.
+    let has_collections = !collection_ids.is_empty();
+    let has_authors = usernames.is_some();
+    let skip_dictionary_fallback = has_collections && !has_authors;
+
     if use_semantic {
         if crate::utils::embeddings::embeddings_disabled() {
             return Err("Semantic search is disabled. Use text search instead.".into());
         }
         let embedding = crate::utils::embeddings::get_embedding(&search_term).await?;
         let semantic_embedding = Some(pgvector::Vector::from(embedding.clone()));
+
+        let collection_fut = async {
+            if collection_ids.is_empty() {
+                return Ok((Vec::new(), 0_i64));
+            }
+            let filters = crate::collections::dto::ListCollectionItemsFilters {
+                languages: languages.clone(),
+                selmaho: selmaho.clone(),
+                word_type: query.word_type,
+                // OR with authors: do not AND include-authors onto collection hits.
+                usernames: None,
+                exclude_usernames: exclude_usernames.clone(),
+                source_langid: query.source_langid,
+                search_in_phrases: query.search_in_phrases,
+                semantic_embedding: semantic_embedding.clone(),
+            };
+            crate::collections::service::search_items_in_collections_for_export(
+                pool,
+                collection_ids.clone(),
+                Some(search_term.clone()),
+                filters,
+                SEARCH_EXPORT_ROW_CAP,
+            )
+            .await
+            .map_err(|e| -> Box<dyn std::error::Error + Send + Sync> { e.to_string().into() })
+        };
+
+        if skip_dictionary_fallback {
+            let (collection_items, collection_total) = collection_fut.await?;
+            return finalize_search_export(
+                pool,
+                format,
+                collection_items,
+                collection_total,
+                Vec::new(),
+                0,
+                &languages,
+            )
+            .await;
+        }
 
         let params = crate::jbovlaste::SearchDefinitionsParams {
             page: 1,
@@ -2545,31 +2591,6 @@ pub async fn export_search_results(
             search_in_phrases: query.search_in_phrases,
             include_total_count: true,
             exclude_definition_id: None,
-        };
-
-        let collection_fut = async {
-            if collection_ids.is_empty() {
-                return Ok((Vec::new(), 0_i64));
-            }
-            let filters = crate::collections::dto::ListCollectionItemsFilters {
-                languages: languages.clone(),
-                selmaho: selmaho.clone(),
-                word_type: query.word_type,
-                usernames: usernames.clone(),
-                exclude_usernames: exclude_usernames.clone(),
-                source_langid: query.source_langid,
-                search_in_phrases: query.search_in_phrases,
-                semantic_embedding: semantic_embedding.clone(),
-            };
-            crate::collections::service::search_items_in_collections_for_export(
-                pool,
-                collection_ids.clone(),
-                Some(search_term.clone()),
-                filters,
-                SEARCH_EXPORT_ROW_CAP,
-            )
-            .await
-            .map_err(|e| -> Box<dyn std::error::Error + Send + Sync> { e.to_string().into() })
         };
 
         let (collection_result, defs_result) = tokio::join!(
@@ -2593,24 +2614,6 @@ pub async fn export_search_results(
         .await;
     }
 
-    let params = crate::jbovlaste::SearchDefinitionsParams {
-        page: 1,
-        per_page: SEARCH_EXPORT_ROW_CAP,
-        search_term: search_term.clone(),
-        include_comments: false,
-        sort_by: "word".to_string(),
-        sort_order: "asc".to_string(),
-        languages: languages.clone(),
-        selmaho: selmaho.clone(),
-        usernames: usernames.clone(),
-        exclude_usernames: exclude_usernames.clone(),
-        word_type: query.word_type,
-        source_langid: query.source_langid,
-        search_in_phrases: query.search_in_phrases,
-        include_total_count: true,
-        exclude_definition_id: None,
-    };
-
     let collection_fut = async {
         if collection_ids.is_empty() {
             return Ok((Vec::new(), 0_i64));
@@ -2619,7 +2622,8 @@ pub async fn export_search_results(
             languages: languages.clone(),
             selmaho: selmaho.clone(),
             word_type: query.word_type,
-            usernames: usernames.clone(),
+            // OR with authors: do not AND include-authors onto collection hits.
+            usernames: None,
             exclude_usernames: exclude_usernames.clone(),
             source_langid: query.source_langid,
             search_in_phrases: query.search_in_phrases,
@@ -2638,6 +2642,38 @@ pub async fn export_search_results(
         )
         .await
         .map_err(|e| -> Box<dyn std::error::Error + Send + Sync> { e.to_string().into() })
+    };
+
+    if skip_dictionary_fallback {
+        let (collection_items, collection_total) = collection_fut.await?;
+        return finalize_search_export(
+            pool,
+            format,
+            collection_items,
+            collection_total,
+            Vec::new(),
+            0,
+            &languages,
+        )
+        .await;
+    }
+
+    let params = crate::jbovlaste::SearchDefinitionsParams {
+        page: 1,
+        per_page: SEARCH_EXPORT_ROW_CAP,
+        search_term: search_term.clone(),
+        include_comments: false,
+        sort_by: "word".to_string(),
+        sort_order: "asc".to_string(),
+        languages: languages.clone(),
+        selmaho: selmaho.clone(),
+        usernames: usernames.clone(),
+        exclude_usernames: exclude_usernames.clone(),
+        word_type: query.word_type,
+        source_langid: query.source_langid,
+        search_in_phrases: query.search_in_phrases,
+        include_total_count: true,
+        exclude_definition_id: None,
     };
 
     let (collection_result, defs_result) = tokio::join!(

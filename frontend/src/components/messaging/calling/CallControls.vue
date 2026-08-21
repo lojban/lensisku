@@ -128,7 +128,7 @@ import {
   Speaker,
   Maximize,
   Flag,
-} from 'lucide-vue-next'
+} from '@lucide/vue'
 
 interface Props {
   isAudioEnabled: boolean

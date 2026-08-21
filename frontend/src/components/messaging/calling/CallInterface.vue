@@ -105,7 +105,7 @@
 <script setup lang="ts">
 import { IconButtonGhost } from '@packages/ui'
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
-import { ArrowLeft, User, Phone } from 'lucide-vue-next'
+import { ArrowLeft, User, Phone } from '@lucide/vue'
 import { useWebRTC } from '@/services/messaging/WebRTCService'
 import CallControls from './CallControls.vue'
 

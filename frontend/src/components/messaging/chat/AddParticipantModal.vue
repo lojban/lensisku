@@ -107,7 +107,7 @@
 <script setup lang="ts">
 import { Button, Checkbox, IconButtonGhost, Input } from '@packages/ui'
 import { ref } from 'vue'
-import { X } from 'lucide-vue-next'
+import { X } from '@lucide/vue'
 import { useAuth } from '@/composables/useAuth'
 import { addParticipant } from '@/services/messaging/messagingApi'
 import { listUsers } from '@/api'

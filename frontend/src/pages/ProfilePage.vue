@@ -330,7 +330,7 @@ import {
   Camera,
   Trash2,
   LogOut,
-} from 'lucide-vue-next'
+} from '@lucide/vue'
 import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter, RouterLink, useRoute } from 'vue-router'

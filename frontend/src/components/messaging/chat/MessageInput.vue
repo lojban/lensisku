@@ -60,7 +60,7 @@
 <script setup lang="ts">
 import { Button, FileInput, IconButtonGhost, Textarea } from '@packages/ui'
 import { ref, computed, nextTick, onMounted, onUnmounted, type ComponentPublicInstance } from 'vue'
-import { Paperclip, Send } from 'lucide-vue-next'
+import { Paperclip, Send } from '@lucide/vue'
 import { sendMessage } from '@/services/messaging/messagingApi'
 import { utf8ToBase64, generateNonce } from '@/utils/crypto'
 import type { Message, SendMessageRequest } from '@/types/messaging'

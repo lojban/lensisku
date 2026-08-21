@@ -20,7 +20,7 @@
 
 <script setup lang="ts">
 import { Button } from '@packages/ui'
-import { BookOpen } from 'lucide-vue-next'
+import { BookOpen } from '@lucide/vue'
 
 defineProps({
   title: { type: String, default: '' },

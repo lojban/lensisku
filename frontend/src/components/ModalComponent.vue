@@ -30,7 +30,7 @@
 import { Button } from '@packages/ui'
 import { useI18n } from 'vue-i18n'
 const { t } = useI18n()
-import { X } from 'lucide-vue-next'
+import { X } from '@lucide/vue'
 
 const emit = defineEmits(['close'])
 defineProps({

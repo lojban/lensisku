@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { User } from 'lucide-vue-next'
+import { User } from '@lucide/vue'
 import { useI18n } from 'vue-i18n'
 
 import { Button } from '@packages/ui'

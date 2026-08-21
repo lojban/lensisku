@@ -30,7 +30,7 @@
 <script setup lang="ts">
 import { Button } from '@packages/ui'
 import { useRouter } from 'vue-router'
-import { ArrowLeft } from 'lucide-vue-next'
+import { ArrowLeft } from '@lucide/vue'
 import NewChatModal from '@/components/messaging/chat/NewChatModal.vue'
 import type { Thread } from '@/types/messaging'
 

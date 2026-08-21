@@ -227,7 +227,7 @@ import {
   MessageSquare,
   Loader2,
   Link as LinkIcon,
-} from 'lucide-vue-next'
+} from '@lucide/vue'
 import { ref, computed, onMounted, nextTick, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'

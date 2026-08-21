@@ -21,7 +21,7 @@
 </template>
 
 <script setup lang="ts">
-import { Trophy } from 'lucide-vue-next'
+import { Trophy } from '@lucide/vue'
 import { useI18n } from 'vue-i18n'
 import LingoLayout from '@/components/LingoLayout.vue'
 import { useSeoHead } from '@/composables/useSeoHead'

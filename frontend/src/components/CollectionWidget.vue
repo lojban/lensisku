@@ -7,7 +7,7 @@
       :title="t('collectionWidget.addToCollection')"
       @click="openModal"
     >
-      <CopyPlus class="w-4 h-4" />
+      <StarPlus class="w-4 h-4" />
     </Button>
     <ModalComponent :show="showModal" :title="t('collectionWidget.modalTitle')" @close="closeModal">
       <!-- Header -->
@@ -159,18 +159,29 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted, onUnmounted } from 'vue'
+import { ref, watch, onMounted, onUnmounted, type PropType } from 'vue'
 import { useI18n } from 'vue-i18n'
 
-import { getCollections, addCollectionItem, api } from '@/api'
+import { addCollectionItem, api } from '@/api'
 import { Button, Checkbox, IconButton, Input, Textarea } from '@packages/ui'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import ModalComponent from '@/components/ModalComponent.vue'
+import {
+  useCollectionsCache,
+  type CachedCollection,
+} from '@/composables/useCollectionsCache'
 import { useSuccessToast } from '@/composables/useSuccessToast'
-import { CopyPlus } from 'lucide-vue-next'
+import { StarPlus } from '@lucide/vue'
 
 const { t } = useI18n()
 const { showSuccess } = useSuccessToast()
+const {
+  collections,
+  hasLoaded,
+  preload,
+  refresh,
+  setCollections,
+} = useCollectionsCache()
 
 const props = defineProps({
   definitionId: {
@@ -181,20 +192,20 @@ const props = defineProps({
     type: String,
     required: true,
   },
+  /** Optional seed from a parent; shared cache is the source of truth once loaded. */
   externalCollections: {
-    type: Array,
+    type: Array as PropType<CachedCollection[]>,
     default: () => [],
   },
 })
 
-const collections = ref([])
 const isLoading = ref(false)
 const showModal = ref(false)
 const showCreateForm = ref(false)
 const showNotesInput = ref(false)
 const isCreating = ref(false)
-const isAddingTo = ref(null)
-const selectedCollectionId = ref(null)
+const isAddingTo = ref<number | null>(null)
+const selectedCollectionId = ref<number | null>(null)
 const notes = ref('')
 
 const newCollection = ref({
@@ -203,25 +214,34 @@ const newCollection = ref({
   is_public: true,
 })
 
-const emit = defineEmits(['collection-updated'])
+const emit = defineEmits<{
+  (e: 'collection-updated', collections: CachedCollection[]): void
+}>()
 
-const fetchCollections = async () => {
-  try {
-    const collectionsResponse = await getCollections()
-    collections.value = collectionsResponse.data.collections
-    emit('collection-updated', collections.value)
-  } catch (error) {
-    console.error('Error fetching collections:', error)
+const seedFromExternal = (list: CachedCollection[] | undefined) => {
+  if (!list || list.length === 0) return
+  if (!hasLoaded.value || collections.value.length === 0) {
+    setCollections(list)
   }
 }
 
-const openModal = async () => {
+const refreshAndEmit = async () => {
+  const list = await refresh()
+  emit('collection-updated', list)
+  return list
+}
+
+const openModal = () => {
   showModal.value = true
-  if (collections.value.length === 0) {
+  // Instant open from cache; spinner only when we have nothing to show yet.
+  const needsSpinner = !hasLoaded.value && collections.value.length === 0
+  if (needsSpinner) {
     isLoading.value = true
   }
-  await fetchCollections()
-  isLoading.value = false
+  // Always revalidate in the background so list updates in place if it changed.
+  void refreshAndEmit().finally(() => {
+    isLoading.value = false
+  })
 }
 
 const closeModal = () => {
@@ -237,7 +257,6 @@ const createAndAddToCollection = async () => {
   isCreating.value = true
 
   try {
-    // Send the correctly formatted request data
     const response = await api.post('/collections', {
       name: newCollection.value.name,
       description: newCollection.value.description || undefined,
@@ -251,14 +270,10 @@ const createAndAddToCollection = async () => {
       notes: notes.value,
     })
 
-    // Reset form
     newCollection.value = { name: '', description: '', is_public: true }
     showCreateForm.value = false
 
-    // Refresh collections list
-    const collectionsResponse = await getCollections()
-    collections.value = collectionsResponse.data.collections
-    emit('collection-updated', collections.value)
+    await refreshAndEmit()
   } catch (error) {
     console.error('Error creating collection:', error)
   } finally {
@@ -266,13 +281,11 @@ const createAndAddToCollection = async () => {
   }
 }
 
-// Handle adding to collection
-const addToCollection = async (collectionId) => {
+const addToCollection = (collectionId: number) => {
   selectedCollectionId.value = collectionId
   showNotesInput.value = true
 }
 
-// Confirm adding with notes
 const confirmAddWithNotes = async () => {
   if (!selectedCollectionId.value) return
 
@@ -285,26 +298,19 @@ const confirmAddWithNotes = async () => {
       auto_progress: true,
     })
 
-    // Update the collection count locally
     const updatedCollection = collections.value.find(
       (c) => c.collection_id === selectedCollectionId.value
     )
     if (updatedCollection) {
       updatedCollection.item_count++
-      // Emit the updated collections array
-      const collectionsResponse = await getCollections()
-      collections.value = collectionsResponse.data.collections
-      emit('collection-updated', collections.value)
     }
+
+    await refreshAndEmit()
 
     showSuccess(t('collectionWidget.addedSuccess'))
 
-    // Reset state
     showNotesInput.value = false
     notes.value = ''
-
-    // Refresh collections to update counts
-    await fetchCollections()
   } catch (error) {
     console.error('Error adding to collection:', error)
   } finally {
@@ -313,38 +319,31 @@ const confirmAddWithNotes = async () => {
   }
 }
 
-// Cancel adding with notes
 const cancelAddWithNotes = () => {
   showNotesInput.value = false
   notes.value = ''
   selectedCollectionId.value = null
 }
 
-// Close dropdown when clicking outside
-const handleClickOutside = (event) => {
-  if (!event.target.closest('.collection-widget')) {
+const handleClickOutside = (event: MouseEvent) => {
+  const target = event.target as HTMLElement | null
+  if (!target?.closest('.collection-widget')) {
     showCreateForm.value = false
     showNotesInput.value = false
   }
 }
 
-// Lifecycle hooks
 watch(
   () => props.externalCollections,
   (newCollections) => {
-    if (newCollections && newCollections.length > 0) {
-      collections.value = newCollections
-    }
+    seedFromExternal(newCollections as CachedCollection[])
   },
-  { deep: true }
+  { deep: true, immediate: true }
 )
 
 onMounted(() => {
-  const newCollections = props.externalCollections
-  if (newCollections && newCollections.length > 0) {
-    collections.value = newCollections
-  }
-
+  seedFromExternal(props.externalCollections as CachedCollection[])
+  void preload()
   document.addEventListener('click', handleClickOutside)
 })
 

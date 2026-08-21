@@ -308,7 +308,7 @@
 
 <script setup lang="ts">
 import { Button, Input } from '@packages/ui'
-import { Bookmark, BookmarkCheck, Reply, User, Trash2, ArrowUp, BookOpen } from 'lucide-vue-next'
+import { Bookmark, BookmarkCheck, Reply, User, Trash2, ArrowUp, BookOpen } from '@lucide/vue'
 import { ref, onMounted, onUnmounted, computed } from 'vue'
 import type { PropType } from 'vue'
 import { useRouter } from 'vue-router'

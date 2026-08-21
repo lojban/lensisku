@@ -157,7 +157,7 @@
 </template>
 
 <script setup lang="ts">
-import { AudioWaveform, BookOpen, Trash2, MessageCircle } from 'lucide-vue-next'
+import { AudioWaveform, BookOpen, Trash2, MessageCircle } from '@lucide/vue'
 import { ref, onMounted, watch, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
@@ -166,7 +166,6 @@ import { getTypeClass } from '@/utils/wordTypeUtils' // Import shared utility
 import {
   getValsiDefinitions,
   getValsiDetails,
-  getCollections,
   getLanguages,
   getDefinitionTranslations,
   unlinkDefinitions,
@@ -177,6 +176,7 @@ import PageHeader from '@/components/layout/PageHeader.vue'
 import { Button, IconButton } from '@packages/ui'
 import SubscriptionControls from '@/components/SubscriptionControls.vue'
 import { useAuth } from '@/composables/useAuth'
+import { useCollectionsCache } from '@/composables/useCollectionsCache'
 import { useError } from '@/composables/useError'
 import { useSeoHead } from '@/composables/useSeoHead'
 import { paramStr } from '@/utils/routeQuery'
@@ -204,15 +204,7 @@ const { t } = useI18n()
 
 const languages = ref([])
 
-const collections = ref([])
-const fetchCollections = async () => {
-  try {
-    const response = await getCollections()
-    collections.value = response.data.collections
-  } catch (error) {
-    console.error('Error fetching collections:', error)
-  }
-}
+const { collections, preload: preloadCollections } = useCollectionsCache()
 
 const valsi = ref(null)
 const definitions = ref([])
@@ -323,7 +315,11 @@ const getWordTypeLabel = (typeName) => {
 }
 
 onMounted(async () => {
-  await Promise.all([fetchDefinitionsDetails(), fetchCollections()])
+  // Collections are shared/preloaded app-wide; don't block the entry on them.
+  if (auth.state.isLoggedIn) {
+    void preloadCollections()
+  }
+  await fetchDefinitionsDetails()
   if (highlightedDefinitionId.value) {
     scrollToDefinition()
   }

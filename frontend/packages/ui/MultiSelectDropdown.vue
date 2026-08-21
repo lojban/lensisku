@@ -123,7 +123,7 @@
 </template>
 
 <script setup lang="ts">
-import { ChevronDown } from 'lucide-vue-next'
+import { ChevronDown } from '@lucide/vue'
 import { ref, computed, watch, watchEffect, nextTick, onMounted, onUnmounted, useAttrs } from 'vue'
 import type { PropType } from 'vue'
 

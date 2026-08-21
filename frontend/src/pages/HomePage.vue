@@ -257,9 +257,11 @@
             :show-vote-buttons="false"
             :collections="collections"
             :collection-matches="collectionMatches"
-            :show-global-dictionary-banner="filters.selectedCollections?.length > 0"
+            :show-global-dictionary-banner="
+              filters.selectedCollections?.length > 0 && filters.usernames?.length > 0
+            "
             :decomposition="decomposition || []"
-            @collection-updated="collections = $event"
+            @collection-updated="setCollections($event)"
           >
             <template v-if="similarDefinitionId" #before>
               <div v-if="isLoadingSimilarAnchor" class="flex justify-center py-6">
@@ -274,7 +276,7 @@
                 :disable-owner-only-lock="true"
                 :hide-find-similar="true"
                 :collections="collections"
-                @collection-updated="collections = $event"
+                @collection-updated="setCollections($event)"
               />
               <div class="relative">
                 <div class="surface-definition-compact pr-10">
@@ -409,7 +411,7 @@
     v-model="showAddAllModal"
     :external-collections="collections"
     :load-all-definition-ids="loadAllDefinitionIdsForCurrentSearch"
-    @collection-updated="collections = $event"
+    @collection-updated="setCollections($event)"
   />
   <!-- PaginationComponent -->
   <div v-if="!showTrendingHome">
@@ -427,7 +429,7 @@
 
 <script setup lang="ts">
 import { jwtDecode } from 'jwt-decode'
-import { MessageSquare, ChevronDown, ChevronUp, AudioWaveform, Plus, X } from 'lucide-vue-next'
+import { MessageSquare, ChevronDown, ChevronUp, AudioWaveform, Plus, X } from '@lucide/vue'
 import { ref, onMounted, watch, computed, onBeforeUnmount, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 
@@ -439,7 +441,6 @@ import {
   getRecentChanges,
   searchWaves,
   list_wave_threads,
-  getCollections,
   getDefinition,
   searchItemsInCollections,
 } from '@/api'
@@ -458,6 +459,7 @@ import SearchForm from '@/components/SearchForm.vue'
 import CombinedFiltersSkeleton from '@/components/skeletons/CombinedFiltersSkeleton.vue'
 import SearchFormSkeleton from '@/components/skeletons/SearchFormSkeleton.vue'
 import { useAuth } from '@/composables/useAuth'
+import { useCollectionsCache } from '@/composables/useCollectionsCache'
 import { useLanguageSelection } from '@/composables/useLanguageSelection'
 import { useSeoHead } from '@/composables/useSeoHead'
 import { useDateFormat } from '@/composables/useDateFormat'
@@ -591,18 +593,9 @@ function normalizeWaveThreadItems(items: unknown[]) {
 defineEmits(['search', 'view-message', 'view-thread'])
 
 const { getInitialLanguages, saveLanguages } = useLanguageSelection()
-const collections = ref([])
+const { collections, preload: preloadCollections, setCollections } = useCollectionsCache()
 const collectionMatches = ref<CollectionDefinitionCard[]>([])
 const COLLECTION_MATCH_PER_PAGE = 50
-
-const fetchCollections = async () => {
-  try {
-    const response = await getCollections()
-    collections.value = response.data.collections
-  } catch (error) {
-    console.error('Error fetching collections:', error)
-  }
-}
 
 const router = useRouter()
 const route = useRoute()
@@ -856,9 +849,8 @@ async function loadCollectionMatches(
   if (filters.value.searchInPhrases !== undefined && filters.value.searchInPhrases !== null) {
     itemParams.search_in_phrases = filters.value.searchInPhrases
   }
-  if (filters.value.usernames?.length) {
-    itemParams.username = filters.value.usernames.join(',')
-  }
+  // Authors∪collections is OR: do not AND include-authors onto collection hits.
+  // Exclude-authors still applies.
   if (filters.value.excludeUsernames?.length) {
     itemParams.exclude_usernames = filters.value.excludeUsernames.join(',')
   }
@@ -948,9 +940,18 @@ const fetchDefinitions = async (page, search = '') => {
       ? Promise.resolve([] as CollectionDefinitionCard[])
       : loadCollectionMatches(trimmedSearch, signal)
 
-    let response
+    const selectedCollectionIds = (filters.value.selectedCollections || []).filter(
+      (n: number) => Number.isFinite(n) && n > 0
+    )
+    // Collections without authors: show collection hits only (no unscoped dictionary fallback).
+    // Authors∪collections: collection hits + author-scoped dictionary below the banner.
+    const skipGlobalDictionaryFallback =
+      !similarId && selectedCollectionIds.length > 0 && !filters.value.usernames?.length
 
-    if (auth.state.isLoggedIn || useSemantic) {
+    let response: { data: { definitions: unknown[]; total: number; decomposition?: string[] } }
+    if (skipGlobalDictionaryFallback) {
+      response = { data: { definitions: [], total: 0, decomposition: [] } }
+    } else if (auth.state.isLoggedIn || useSemantic) {
       response = await searchDefinitions(
         {
           ...params,
@@ -1004,56 +1005,116 @@ const fetchDefinitions = async (page, search = '') => {
  * Fetch every definition id matching the current search filters across **all** pages
  * (not just the page currently rendered), for the "Add all to collection" action.
  *
- * We deliberately re-issue the same dictionary search endpoint with `per_page=500`,
- * incrementing `page` until either the reported `total` is exhausted, the server
- * returns an empty page, or a high page guard trips (to avoid accidental infinite loops).
- * The server applies the same access/privacy rules it uses for the normal search.
+ * Authors∪collections is a union: definition ids from selected collections plus
+ * definition ids by selected authors. The unscoped global dictionary fallback (shown
+ * when collections are on with no authors) is never included.
  */
 const ADD_ALL_PER_PAGE = 500
+/** Matches server `MAX_MULTI_COLLECTION_PER_PAGE` on `GET /collections/items/search`. */
+const ADD_ALL_COLLECTION_PER_PAGE = 100
 const ADD_ALL_PAGE_GUARD = 10000
 
 type LoadAllProgress = (current: number, expectedTotal: number) => void
 
-const loadAllDefinitionIdsForCurrentSearch = async (
-  onProgress?: LoadAllProgress
-): Promise<number[]> => {
-  if (searchMode.value !== 'dictionary' && searchMode.value !== 'semantic') {
-    return []
-  }
-
-  const trimmedSearch = similarDefinitionId.value ? '' : (searchQuery.value || '').trim()
-  const useSemantic =
-    !!similarDefinitionId.value || (searchMode.value === 'semantic' && trimmedSearch.length > 0)
-
-  const baseParams: Record<string, unknown> = {
-    per_page: ADD_ALL_PER_PAGE,
-    search: similarDefinitionId.value ? undefined : trimmedSearch || undefined,
-    definition_id: similarDefinitionId.value || undefined,
-    include_comments: false,
-    username: filters.value.usernames?.length ? filters.value.usernames.join(',') : undefined,
+const buildSharedSearchFilterParams = (opts?: {
+  includeAuthors?: boolean
+}): Record<string, unknown> => {
+  const includeAuthors = opts?.includeAuthors !== false
+  const params: Record<string, unknown> = {
+    username:
+      includeAuthors && filters.value.usernames?.length
+        ? filters.value.usernames.join(',')
+        : undefined,
     exclude_usernames: filters.value.excludeUsernames?.length
       ? filters.value.excludeUsernames.join(',')
       : undefined,
   }
   if (filters.value.selectedLanguages.length > 0) {
-    baseParams.languages = filters.value.selectedLanguages.join(',')
+    params.languages = filters.value.selectedLanguages.join(',')
   }
   if (!filters.value.selmaho) {
-    baseParams.word_type = filters.value.word_type || undefined
+    params.word_type = filters.value.word_type || undefined
   } else {
-    baseParams.selmaho = filters.value.selmaho
+    params.selmaho = filters.value.selmaho
   }
   if (filters.value.source_langid && filters.value.source_langid !== 1) {
-    baseParams.source_langid = filters.value.source_langid
+    params.source_langid = filters.value.source_langid
   }
   if (filters.value.searchInPhrases !== undefined && filters.value.searchInPhrases !== null) {
-    baseParams.search_in_phrases = filters.value.searchInPhrases
+    params.search_in_phrases = filters.value.searchInPhrases
+  }
+  return params
+}
+
+const loadAllDefinitionIdsFromCollections = async (
+  collectionIds: number[],
+  trimmedSearch: string,
+  useSemantic: boolean,
+  onProgress?: LoadAllProgress,
+  progressBase = 0,
+  progressExpectedBase = 0
+): Promise<{ ids: number[]; reportedTotal: number }> => {
+  const baseParams: Record<string, unknown> = {
+    // OR with authors: do not restrict collection hits to include-authors.
+    ...buildSharedSearchFilterParams({ includeAuthors: false }),
+    collection_ids: collectionIds.join(','),
+    per_page: ADD_ALL_COLLECTION_PER_PAGE,
+    search: trimmedSearch || undefined,
+  }
+  if (useSemantic && trimmedSearch) {
+    baseParams.semantic = true
   }
 
   const collected: number[] = []
   const seen = new Set<number>()
   let page = 1
-  let expectedTotal = 0
+  let reportedTotal = 0
+  let pagesFetched = 0
+
+  while (pagesFetched < ADD_ALL_PAGE_GUARD) {
+    const response = await searchItemsInCollections({ ...baseParams, page })
+    pagesFetched += 1
+
+    const items = (response.data?.items || []) as Array<{ definition_id?: number | null }>
+    reportedTotal = Number(response.data?.total ?? 0)
+
+    for (const item of items) {
+      const id = item.definition_id
+      if (typeof id === 'number' && id > 0 && !seen.has(id)) {
+        seen.add(id)
+        collected.push(id)
+      }
+    }
+
+    onProgress?.(progressBase + collected.length, progressExpectedBase + reportedTotal)
+
+    const lastPage = Math.max(1, Math.ceil(reportedTotal / ADD_ALL_COLLECTION_PER_PAGE))
+    if (items.length === 0 || page >= lastPage) break
+    page += 1
+  }
+
+  return { ids: collected, reportedTotal }
+}
+
+const loadAllDefinitionIdsFromDictionary = async (
+  trimmedSearch: string,
+  useSemantic: boolean,
+  onProgress?: LoadAllProgress,
+  progressBase = 0,
+  progressExpectedBase = 0
+): Promise<{ ids: number[]; reportedTotal: number }> => {
+  const baseParams: Record<string, unknown> = {
+    ...buildSharedSearchFilterParams({ includeAuthors: true }),
+    per_page: ADD_ALL_PER_PAGE,
+    search: similarDefinitionId.value ? undefined : trimmedSearch || undefined,
+    definition_id: similarDefinitionId.value || undefined,
+    include_comments: false,
+  }
+
+  const collected: number[] = []
+  const seen = new Set<number>()
+  let page = 1
+  let reportedTotal = 0
   let pagesFetched = 0
 
   while (pagesFetched < ADD_ALL_PAGE_GUARD) {
@@ -1069,10 +1130,7 @@ const loadAllDefinitionIdsForCurrentSearch = async (
     pagesFetched += 1
 
     const defs = (response.data?.definitions || []) as Array<{ definitionid: number }>
-    const reportedTotal = Number(response.data?.total ?? 0)
-    if (page === 1) {
-      expectedTotal = reportedTotal
-    }
+    reportedTotal = Number(response.data?.total ?? 0)
 
     for (const d of defs) {
       if (typeof d.definitionid === 'number' && !seen.has(d.definitionid)) {
@@ -1081,12 +1139,74 @@ const loadAllDefinitionIdsForCurrentSearch = async (
       }
     }
 
-    onProgress?.(collected.length, expectedTotal)
+    onProgress?.(progressBase + collected.length, progressExpectedBase + reportedTotal)
 
-    // Stop when server reports we're on/past the last page, or when it returned nothing.
     const lastPage = Math.max(1, Math.ceil(reportedTotal / ADD_ALL_PER_PAGE))
     if (defs.length === 0 || page >= lastPage) break
     page += 1
+  }
+
+  return { ids: collected, reportedTotal }
+}
+
+const loadAllDefinitionIdsForCurrentSearch = async (
+  onProgress?: LoadAllProgress
+): Promise<number[]> => {
+  if (searchMode.value !== 'dictionary' && searchMode.value !== 'semantic') {
+    return []
+  }
+
+  const trimmedSearch = similarDefinitionId.value ? '' : (searchQuery.value || '').trim()
+  const useSemantic =
+    !!similarDefinitionId.value || (searchMode.value === 'semantic' && trimmedSearch.length > 0)
+
+  const collectionIds = (filters.value.selectedCollections || []).filter(
+    (n: number) => Number.isFinite(n) && n > 0
+  )
+  const hasCollections = collectionIds.length > 0 && !similarDefinitionId.value
+  const hasAuthors = !!filters.value.usernames?.length
+  // Dictionary when: authors selected (author half of the union), or no collections
+  // (normal search / other filters). Skip unscoped global fallback for collections-only.
+  const needDictionary = hasAuthors || !hasCollections
+
+  const collected: number[] = []
+  const seen = new Set<number>()
+  let expectedTotal = 0
+
+  const mergeIds = (ids: number[]) => {
+    for (const id of ids) {
+      if (!seen.has(id)) {
+        seen.add(id)
+        collected.push(id)
+      }
+    }
+  }
+
+  if (hasCollections) {
+    const fromCollections = await loadAllDefinitionIdsFromCollections(
+      collectionIds,
+      trimmedSearch,
+      useSemantic,
+      onProgress,
+      0,
+      0
+    )
+    mergeIds(fromCollections.ids)
+    expectedTotal += fromCollections.reportedTotal
+    onProgress?.(collected.length, expectedTotal)
+  }
+
+  if (needDictionary) {
+    const fromDictionary = await loadAllDefinitionIdsFromDictionary(
+      trimmedSearch,
+      useSemantic,
+      onProgress,
+      collected.length,
+      expectedTotal
+    )
+    mergeIds(fromDictionary.ids)
+    expectedTotal += fromDictionary.reportedTotal
+    onProgress?.(collected.length, expectedTotal)
   }
 
   return collected
@@ -1709,7 +1829,7 @@ watch(
     if (wasLoadingAuth && !isLoadingAuth) {
       // Auth state is now determined
       if (auth.state.isLoggedIn) {
-        await fetchCollections()
+        void preloadCollections()
         /**
          * The route watcher runs with `{ immediate: true }` before `checkAuthStatus` finishes, so
          * `auth.state.isLoggedIn` is still false and `fetchDefinitions` uses `fastSearchDefinitions`

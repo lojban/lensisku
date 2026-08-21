@@ -150,7 +150,7 @@
 </template>
 
 <script setup lang="ts">
-import { Loader2, Key, Mail } from 'lucide-vue-next'
+import { Loader2, Key, Mail } from '@lucide/vue'
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'

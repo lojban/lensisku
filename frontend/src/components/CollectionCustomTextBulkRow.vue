@@ -127,7 +127,7 @@
 
 <script setup lang="ts">
 import { Button, Checkbox, Textarea } from '@packages/ui'
-import { Loader2, Trash2 } from 'lucide-vue-next'
+import { Loader2, Trash2 } from '@lucide/vue'
 import { computed, nextTick, onMounted, onUpdated, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 

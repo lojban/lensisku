@@ -54,7 +54,8 @@
         <!-- Desktop Navigation - Hidden on mobile -->
         <nav class="hidden sm:ml-4 sm:flex items-center space-x-0 md:space-x-1 lg:space-x-2">
           <NavLink to="/collections" class="navbar-item">
-            <GraduationCap class="h-5 w-5" /> {{ $t('nav.courses') }}
+            <Star class="h-5 w-5" /> {{ $t('nav.courses') }}
+      
           </NavLink>
           <NavLink to="/recent" class="navbar-item">
             <Clock4 class="h-5 w-5" /> {{ $t('nav.recent') }}
@@ -363,11 +364,11 @@ import {
   AudioWaveform,
   BookmarkCheck,
   Clock4,
-  GraduationCap,
+  Star,
   Bot,
   Share2,
-} from 'lucide-vue-next'
-import { Menu } from 'lucide-vue-next' // Explicitly import Menu if it was missed by auto-sort
+} from '@lucide/vue'
+import { Menu } from '@lucide/vue' // Explicitly import Menu if it was missed by auto-sort
 import { ref, onMounted, watch, computed, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 
@@ -393,6 +394,7 @@ import {
   queryStr,
 } from '@/utils/routeQuery'
 import { provideAuth } from './composables/useAuth'
+import { useCollectionsCache } from './composables/useCollectionsCache'
 import { provideError } from './composables/useError'
 import {
   DEFAULT_SUCCESS_TOAST_DURATION_MS,
@@ -448,6 +450,7 @@ function metaProps(p: unknown): Record<string, unknown> {
 const searchQuery = ref('')
 const searchMode = ref('messages')
 const auth = provideAuth()
+const { preload: preloadCollections, clear: clearCollectionsCache } = useCollectionsCache()
 const { buttonTheme, initButtonTheme, setButtonTheme: setButtonThemePreference } = useButtonTheme()
 const { error, clearError } = provideError()
 const { successToast, clearSuccess } = provideSuccessToast()
@@ -652,6 +655,20 @@ watch(isHomePage, (onHome, wasOnHome) => {
 })
 
 watch(() => route.query, syncFromRoute, { deep: true })
+
+// Preload the user's collection list so CollectionWidget opens instantly.
+watch(
+  () => [auth.state.isLoading, auth.state.isLoggedIn] as const,
+  ([isLoadingAuth, isLoggedIn]) => {
+    if (isLoadingAuth) return
+    if (isLoggedIn) {
+      void preloadCollections()
+    } else {
+      clearCollectionsCache()
+    }
+  },
+  { immediate: true }
+)
 
 // Watch route changes to update $locale
 watch(

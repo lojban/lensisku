@@ -29,7 +29,7 @@
 
 <script setup lang="ts">
 import type { PropType } from 'vue'
-import { MessageSquare } from 'lucide-vue-next'
+import { MessageSquare } from '@lucide/vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 

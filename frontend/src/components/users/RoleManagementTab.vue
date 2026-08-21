@@ -140,7 +140,7 @@
 
 <script setup lang="ts">
 import { Button, Checkbox, Input, Select } from '@packages/ui'
-import { Trash2 } from 'lucide-vue-next'
+import { Trash2 } from '@lucide/vue'
 import { useI18n } from 'vue-i18n'
 import type { PropType } from 'vue'
 

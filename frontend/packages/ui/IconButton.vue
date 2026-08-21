@@ -20,7 +20,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { Plus } from 'lucide-vue-next'
+import { Plus } from '@lucide/vue'
 import Button from './Button.vue'
 
 /** Split `ui-btn--foo` from optional utilities (`w-full`, `mb-4`, …). */

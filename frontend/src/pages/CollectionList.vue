@@ -246,7 +246,7 @@ import {
   Calendar,
   Trophy,
   ArrowDown,
-} from 'lucide-vue-next'
+} from '@lucide/vue'
 import { ref, computed, onBeforeUnmount, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'

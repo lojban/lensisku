@@ -224,7 +224,7 @@ import { Button, FileInput, Input, Select } from '@packages/ui'
 import { useDropZone } from '@vueuse/core'
 import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { ImagePlus } from 'lucide-vue-next'
+import { ImagePlus } from '@lucide/vue'
 
 import {
   cancelBulkImport,

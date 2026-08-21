@@ -97,7 +97,7 @@ import { io } from 'socket.io-client'
 import { ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter, useRoute } from 'vue-router'
-import { ChevronDown } from 'lucide-vue-next'
+import { ChevronDown } from '@lucide/vue'
 
 import { localeNativeName } from '@/config/locales'
 import ModalComponent from './ModalComponent.vue'

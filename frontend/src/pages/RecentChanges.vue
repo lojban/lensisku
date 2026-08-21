@@ -48,7 +48,7 @@
 </template>
 
 <script setup lang="ts">
-import { History, Waves, MessageSquare, Book } from 'lucide-vue-next'
+import { History, Waves, MessageSquare, Book } from '@lucide/vue'
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'

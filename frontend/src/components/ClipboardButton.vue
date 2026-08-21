@@ -15,7 +15,7 @@
 <script setup lang="ts">
 import { Button } from '@packages/ui'
 import { ref, computed, onUnmounted } from 'vue'
-import { ClipboardCopy, Check } from 'lucide-vue-next'
+import { ClipboardCopy, Check } from '@lucide/vue'
 import { useI18n } from 'vue-i18n'
 
 import { useError } from '@/composables/useError'

@@ -85,7 +85,7 @@
 <script setup lang="ts">
 import { Button } from '@packages/ui'
 import { ref, onMounted } from 'vue'
-import { Play, Pause } from 'lucide-vue-next'
+import { Play, Pause } from '@lucide/vue'
 import { useI18n } from 'vue-i18n'
 import { useSeoHead } from '@/composables/useSeoHead'
 

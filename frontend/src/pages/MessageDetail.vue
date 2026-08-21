@@ -149,7 +149,7 @@
 
 <script setup lang="ts">
 import { Button } from '@packages/ui'
-import { Download } from 'lucide-vue-next'
+import { Download } from '@lucide/vue'
 import { marked } from 'marked'
 import { ref, watch, computed } from 'vue'
 

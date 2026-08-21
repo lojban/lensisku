@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Loader2, X } from 'lucide-vue-next'
+import { Loader2, X } from '@lucide/vue'
 import { useI18n } from 'vue-i18n'
 import { computed, ref, useAttrs, type PropType } from 'vue'
 import { IconButtonGhost, Input, Select } from '@packages/ui'

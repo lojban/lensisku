@@ -358,7 +358,7 @@ import {
   LayoutPanelTop,
   PlusCircle,
   Import,
-} from 'lucide-vue-next'
+} from '@lucide/vue'
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 

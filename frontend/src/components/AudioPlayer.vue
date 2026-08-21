@@ -10,7 +10,7 @@
 
 <script setup lang="ts">
 import { Button } from '@packages/ui'
-import { Play, Pause, Loader } from 'lucide-vue-next'
+import { Play, Pause, Loader } from '@lucide/vue'
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { useI18n } from 'vue-i18n'
 

@@ -299,7 +299,7 @@
   },
   "nav": {
     "addEntry": "Add entry",
-    "courses": "Courses",
+    "courses": "Collections&Courses",
     "recent": "Recent",
     "more": "More",
     "users": "Users",
@@ -745,7 +745,7 @@
   },
   "searchExport": {
     "title": "Export search results",
-    "description": "Export the same dictionary and collection matches as search, as PDF, LaTeX, XML, JSON, or TSV.",
+    "description": "Export search matches as PDF, LaTeX, XML, JSON, or TSV. Authors and collections are a union: hits from selected collections plus definitions by selected authors. Unscoped global dictionary results are omitted when collections are filtered without authors.",
     "emptyFilterHint": "Enter a search or pick a filter (collection, word type, author, selmaho, source language, or turn off search-in-phrases).",
     "exportButton": "Export results",
     "generating": "Generating export...",
@@ -753,7 +753,7 @@
   },
   "addAllToCollection": {
     "modalTitle": "Add all definitions to collection",
-    "warningMessage": "All definitions from all pages of the current search results will be copied to the collection you pick.",
+    "warningMessage": "All definitions from all pages of the current search results will be copied to the collection you pick. Authors and collections are a union (selected authors ∪ selected collections); unscoped global dictionary results are not added.",
     "createAndSelect": "Create & select",
     "confirmButton": "Copy all definitions",
     "collectingIds": "Collecting definitions across all pages…",

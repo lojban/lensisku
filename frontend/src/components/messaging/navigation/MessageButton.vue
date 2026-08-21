@@ -29,7 +29,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { MessageSquare } from 'lucide-vue-next'
+import { MessageSquare } from '@lucide/vue'
 import { Button } from '@packages/ui'
 import { useAuth } from '@/composables/useAuth'
 import { createThread } from '@/services/messaging/messagingApi'

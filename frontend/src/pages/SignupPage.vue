@@ -98,7 +98,7 @@
 </template>
 
 <script setup lang="ts">
-import { User, Mail, Eye, EyeOff, Plus } from 'lucide-vue-next'
+import { User, Mail, Eye, EyeOff, Plus } from '@lucide/vue'
 
 import { AuthFormCard, Button, IconButtonGhost, Input } from '@packages/ui'
 import { ref } from 'vue'

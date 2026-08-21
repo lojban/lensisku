@@ -77,7 +77,7 @@
 
 <script setup lang="ts">
 import { Button, Input } from '@packages/ui'
-import { Download, X } from 'lucide-vue-next'
+import { Download, X } from '@lucide/vue'
 import { useI18n } from 'vue-i18n'
 
 import type { WikiArticle } from '../../types/wiki'

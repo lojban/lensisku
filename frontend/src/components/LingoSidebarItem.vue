@@ -21,7 +21,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
-import { BookOpen, Trophy, Target, ShoppingBag, Dumbbell } from 'lucide-vue-next'
+import { BookOpen, Trophy, Target, ShoppingBag, Dumbbell } from '@lucide/vue'
 
 const props = defineProps({
   label: { type: String, required: true },

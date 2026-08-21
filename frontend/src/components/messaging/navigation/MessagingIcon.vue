@@ -72,7 +72,7 @@
 import { Button } from '@packages/ui'
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { MessageCircle, User } from 'lucide-vue-next'
+import { MessageCircle, User } from '@lucide/vue'
 import NavLink from '@/components/NavLink.vue'
 import { useAuth } from '@/composables/useAuth'
 import { getThreads } from '@/services/messaging/messagingApi'

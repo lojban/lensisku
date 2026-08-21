@@ -160,7 +160,7 @@ pub async fn export_dictionary(
         ("source_langid" = Option<i32>, Query, description = "Source language id of the valsi (default Lojban)"),
         ("search_in_phrases" = Option<bool>, Query, description = "When false, exclude phrase (type 15) entries"),
         ("semantic" = Option<bool>, Query, description = "Use semantic ranking when search text is present"),
-        ("collection_ids" = Option<String>, Query, description = "Comma-separated public collection ids to include")
+        ("collection_ids" = Option<String>, Query, description = "Comma-separated public collection ids; unioned with include-authors. Without authors, only collection matches are exported (no unscoped dictionary fallback)")
     ),
     responses(
         (status = 200, description = "Filtered search exported successfully"),
@@ -170,7 +170,7 @@ pub async fn export_dictionary(
     security(
         ("bearer_auth" = [])
     ),
-    summary = "Export dictionary and collection search results"
+    summary = "Export dictionary and/or collection search results"
 )]
 #[get("/search")]
 pub async fn export_search(

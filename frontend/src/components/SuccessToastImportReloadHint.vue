@@ -17,7 +17,7 @@
 
 <script setup lang="ts">
 import { Button } from '@packages/ui'
-import { RefreshCw } from 'lucide-vue-next'
+import { RefreshCw } from '@lucide/vue'
 import { useI18n } from 'vue-i18n'
 
 const { t } = useI18n()

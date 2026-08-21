@@ -42,7 +42,7 @@
 <script setup lang="ts">
 import { Button, IconButtonGhost } from '@packages/ui'
 import { ref, onMounted } from 'vue'
-import { Download, X } from 'lucide-vue-next'
+import { Download, X } from '@lucide/vue'
 import { useNotifications } from '@/services/messaging/NotificationService'
 
 const { canInstallPWA, showInstallPrompt } = useNotifications()

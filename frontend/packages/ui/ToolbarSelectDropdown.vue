@@ -33,7 +33,7 @@
 </template>
 
 <script setup lang="ts">
-import { ChevronDown, EllipsisVertical } from 'lucide-vue-next'
+import { ChevronDown, EllipsisVertical } from '@lucide/vue'
 import Dropdown from './Dropdown.vue'
 
 defineOptions({ inheritAttrs: false })

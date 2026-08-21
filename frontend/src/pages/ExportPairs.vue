@@ -62,7 +62,7 @@
 import { Button, Select } from '@packages/ui'
 import { ref, onMounted, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Download, Loader2 } from 'lucide-vue-next'
+import { Download, Loader2 } from '@lucide/vue'
 import { getLanguages, exportLinkedPairs } from '@/api'
 import { useSeoHead } from '@/composables/useSeoHead'
 import { useError } from '@/composables/useError'

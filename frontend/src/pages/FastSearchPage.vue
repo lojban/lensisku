@@ -81,7 +81,10 @@
               :collection-id="def.collection_id"
               :item-id="def.item_id"
             />
-            <div class="surface-definition-compact text-sm text-gray-700">
+            <div
+              v-if="filters.usernames?.length"
+              class="surface-definition-compact text-sm text-gray-700"
+            >
               <p class="font-medium text-gray-800">
                 {{ $t('home.globalDictionaryBelow') }}
               </p>
@@ -233,9 +236,7 @@ async function loadCollectionMatches(
   if (filters.value.searchInPhrases !== undefined && filters.value.searchInPhrases !== null) {
     itemParams.search_in_phrases = filters.value.searchInPhrases
   }
-  if (filters.value.usernames?.length) {
-    itemParams.username = filters.value.usernames.join(',')
-  }
+  // Authors∪collections is OR: do not AND include-authors onto collection hits.
   if (filters.value.excludeUsernames?.length) {
     itemParams.exclude_usernames = filters.value.excludeUsernames.join(',')
   }
@@ -311,7 +312,15 @@ const fetchDefinitions = async (page: number, search = '') => {
     }
 
     const collectionMatchesPromise = loadCollectionMatches(search, signal)
-    const response = await fastSearchDefinitions(params, signal)
+    const selectedCollectionIds = (filters.value.selectedCollections || []).filter(
+      (n) => Number.isFinite(n) && n > 0
+    )
+    const skipGlobalDictionaryFallback =
+      selectedCollectionIds.length > 0 && !filters.value.usernames?.length
+
+    const response = skipGlobalDictionaryFallback
+      ? { data: { definitions: [], total: 0, decomposition: [] } }
+      : await fastSearchDefinitions(params, signal)
     const collectionHits = await collectionMatchesPromise
 
     // Only process if this is still the latest request

@@ -206,7 +206,7 @@
 
 <script setup lang="ts">
 import { Button, Checkbox } from '@packages/ui'
-import { ArrowLeft, Home, MessageSquare, AudioWaveform, Loader2, Quote } from 'lucide-vue-next'
+import { ArrowLeft, Home, MessageSquare, AudioWaveform, Loader2, Quote } from '@lucide/vue'
 import { ref, computed, onMounted, watchEffect, nextTick, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'

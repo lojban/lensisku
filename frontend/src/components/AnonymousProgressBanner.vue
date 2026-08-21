@@ -36,7 +36,7 @@ import { Button } from '@packages/ui'
 import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { X } from 'lucide-vue-next'
+import { X } from '@lucide/vue'
 import { useAuth } from '@/composables/useAuth'
 import { getAllProgressForMerge } from '@/composables/useAnonymousProgress'
 
