@@ -170,6 +170,9 @@
         <div class="flex items-center space-x-1 sm:space-x-2">
           <template v-if="!auth.state.isLoading">
             <template v-if="auth.state.isLoggedIn">
+              <NavLink to="/library" class="navbar-item sm:hidden" :aria-label="$t('nav.library')">
+                <Star class="h-5 w-5" />
+              </NavLink>
               <NavLink to="/mi" class="navbar-item">
                 <BookmarkCheck class="h-5 w-5" />
                 <span class="hidden sm:inline">{{ auth.state.username }}</span>
