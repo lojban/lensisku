@@ -146,7 +146,7 @@
           class="flex flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto ml-auto justify-end sm:justify-start"
         >
           <ToolbarSelectDropdown
-            trigger-class="w-full max-w-[min(100vw-4rem,18rem)]"
+            trigger-class="!w-full max-w-[min(100vw-4rem,18rem)]"
             truncate-label
           >
             <template #label>{{ waveSourceTriggerLabel }}</template>
@@ -182,7 +182,7 @@
             </ToolbarSelectDropdownItem>
           </ToolbarSelectDropdown>
           <ToolbarSelectDropdown
-            trigger-class="w-full max-w-[min(100vw-4rem,18rem)]"
+            trigger-class="!w-full max-w-[min(100vw-4rem,18rem)]"
             truncate-label
           >
             <template #label>{{ sortByTriggerLabel }}</template>

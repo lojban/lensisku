@@ -6,7 +6,7 @@
           :id="id"
           type="button"
           :aria-label="ariaLabel"
-          class="input-field inline-flex w-auto max-w-full min-w-0 items-center justify-between gap-1.5 px-3 text-left text-sm"
+          class="dropdown-trigger w-auto max-w-full min-w-0"
           :class="[variant === 'role' ? 'max-w-[min(100vw-4rem,14rem)]' : '', triggerClass]"
         >
           <span

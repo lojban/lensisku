@@ -124,10 +124,11 @@
 
     <div
       v-show="expanded"
-      class="mt-3 grid grid-cols-2 gap-x-3 gap-y-4 bg-white rounded-lg shadow-sm p-4"
+      class="mt-3 grid grid-cols-1 gap-x-3 gap-y-4 bg-white rounded-lg shadow-sm p-4 sm:grid-cols-2"
       :class="{ 'animate-expandSection': expanded }"
     >
-      <div class="col-span-2 flex min-w-0 flex-col">
+      <div class="flex min-w-0 flex-col">
+        <label class="filters-field-label" aria-hidden="true">&nbsp;</label>
         <Button
           type="button"
           variant="toolbar"
@@ -150,7 +151,7 @@
         </Button>
       </div>
 
-      <div v-if="languagesInExpandedPanel" class="col-span-2 flex min-w-0 flex-col">
+      <div v-if="languagesInExpandedPanel" class="flex min-w-0 flex-col">
         <label class="filters-field-label">{{ t('filters.selectLanguages') }}</label>
         <div class="relative w-full min-w-0 [&>div]:block [&>div]:w-full">
           <MultiSelectDropdown
@@ -180,7 +181,7 @@
           <ToolbarSelectDropdown
             id="cf-word-type"
             :aria-label="t('filters.filterBy.wordType')"
-            trigger-class="w-full cursor-pointer"
+            trigger-class="!w-full cursor-pointer"
             truncate-label
           >
             <template #label>
@@ -212,7 +213,7 @@
             v-model="filters.selmaho"
             type="text"
             :placeholder="t('components.combinedFilters.placeholderSelmaho')"
-            class="input-field w-full h-8"
+            class="input-field w-full !h-6 !py-0"
             @input="debouncedFilterChange"
           />
           <IconButtonGhost
@@ -227,7 +228,7 @@
       </div>
 
       <!-- Include authors: only when the merged collections+users picker is hidden. -->
-      <div v-if="!showCollectionFilter" class="col-span-2 sm:col-span-1 flex min-w-0 flex-col">
+      <div v-if="!showCollectionFilter" class="flex min-w-0 flex-col">
         <label class="filters-field-label">{{ t('components.combinedFilters.filterByAuthors') }}</label>
         <div class="relative w-full min-w-0 [&>div]:block [&>div]:w-full">
           <MultiSelectDropdown
@@ -252,10 +253,7 @@
       </div>
 
       <!-- Exclude authors (optional multi-select) -->
-      <div
-        class="flex min-w-0 flex-col"
-        :class="showCollectionFilter ? 'col-span-2' : 'col-span-2 sm:col-span-1'"
-      >
+      <div class="flex min-w-0 flex-col">
         <label class="filters-field-label">{{
           t('components.combinedFilters.filterByExcludeAuthors')
         }}</label>
@@ -281,13 +279,13 @@
         </div>
       </div>
 
-      <div class="flex min-w-0 flex-col" :class="{ 'col-span-2': !showWordType }">
+      <div class="flex min-w-0 flex-col">
         <label class="filters-field-label">{{ t('filters.filterBy.sourceLanguage') }}</label>
         <div class="relative w-full [&>div]:block [&>div]:w-full">
           <ToolbarSelectDropdown
             id="cf-source-language"
             :aria-label="t('filters.filterBy.sourceLanguage')"
-            trigger-class="w-full cursor-pointer"
+            trigger-class="!w-full cursor-pointer"
             truncate-label
           >
             <template #label>
