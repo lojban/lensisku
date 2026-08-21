@@ -4,7 +4,18 @@
     class="fixed sm:hidden top-14 left-0 right-0 bg-white shadow-md py-2 space-y-1 z-50"
   >
     <NavLink to="/collections" class="mobile-nav-row" @click="$emit('close')">
-      <GraduationCap class="h-5 w-5" /> {{ t('nav.courses') }}
+      <GraduationCap class="h-5 w-5" /> {{ t('nav.learn') }}
+    </NavLink>
+    <NavLink
+      v-if="auth.state.isLoggedIn"
+      to="/library"
+      class="mobile-nav-row"
+      @click="$emit('close')"
+    >
+      <Star class="h-5 w-5" /> {{ t('nav.library') }}
+    </NavLink>
+    <NavLink v-if="auth.state.isLoggedIn" to="/mi" class="mobile-nav-row" @click="$emit('close')">
+      <BookmarkCheck class="h-5 w-5" /> {{ auth.state.username }}
     </NavLink>
     <NavLink to="/recent" class="mobile-nav-row" @click="$emit('close')">
       <Clock4 class="h-5 w-5" /> {{ t('mobileNav.recentChanges') }}
@@ -74,6 +85,8 @@ import {
   LogOut,
   Clock4,
   GraduationCap,
+  Star,
+  BookmarkCheck,
   Bot,
   Share2,
 } from '@lucide/vue'

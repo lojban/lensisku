@@ -1,29 +1,38 @@
 <template>
   <div class="flex flex-col gap-4">
-    <StudyStreak />
-
     <PageHeader title-as="h2" title-tone="secondary" margin="none" class="mt-0">
       <template #title>
-        <span class="select-none">{{ t('collectionList.catalogCourses') }}</span>
+        <span class="select-none">{{ t('nav.library') }}</span>
       </template>
       <template #description>
-        <div class="flex max-w-2xl flex-col gap-2 text-sm text-slate-600">
-          <p class="m-0">{{ t('collectionList.learnDescription') }}</p>
-          <p class="m-0">{{ t('collectionList.collectionDescriptionCourse') }}</p>
-        </div>
+        <p class="m-0 max-w-2xl text-sm text-slate-600">
+          {{ t('collectionList.libraryDescription') }}
+        </p>
       </template>
       <template #trailing>
-        <RouterLink
-          v-if="auth.state.isLoggedIn"
-          to="/library"
-          class="ui-btn--neutral inline-flex items-center gap-2"
-        >
-          <BookOpen class="h-4 w-4 shrink-0" />
-          <span>{{ t('nav.library') }}</span>
-        </RouterLink>
-        <RouterLink v-else to="/login" class="font-medium text-blue-600 underline hover:text-blue-800">
-          {{ t('collectionList.loginTo') }}
-        </RouterLink>
+        <FileInput
+          ref="importFileInput"
+          type="file"
+          accept=".json"
+          class="hidden"
+          @change="handleImportFile"
+        />
+        <ToolbarSelectDropdown trigger-icon="ellipsis">
+          <template #label>{{ t('collectionList.addActions') }}</template>
+          <ToolbarSelectDropdownItem
+            class="text-cyan-600 hover:bg-cyan-50"
+            :disabled="isImporting"
+            @click="triggerImport"
+          >
+            <Import class="h-4 w-4 shrink-0" /> {{ t('collectionList.importCollection') }}
+          </ToolbarSelectDropdownItem>
+          <ToolbarSelectDropdownItem
+            class="text-emerald-600 hover:bg-emerald-50"
+            @click="showCreateModal = true"
+          >
+            <CirclePlus class="h-4 w-4 shrink-0" /> {{ t('collectionList.createCollection') }}
+          </ToolbarSelectDropdownItem>
+        </ToolbarSelectDropdown>
       </template>
     </PageHeader>
 
@@ -31,39 +40,16 @@
       <Input
         v-model="searchQuery"
         type="text"
-        class="input-field w-full min-w-0 sm:max-w-md sm:mx-auto"
-        :placeholder="
-          segment === 'courses'
-            ? t('collectionList.searchPlaceholder')
-            : t('collectionList.searchPlaceholderCollections')
-        "
+        class="input-field w-full min-w-0 sm:max-w-md"
+        :placeholder="t('collectionList.searchPlaceholderCollections')"
       />
 
-      <div class="flex w-full justify-center">
-        <div class="btn-group-forced flex flex-nowrap" role="tablist">
-          <Button
-            v-for="seg in segments"
-            :key="seg.value"
-            variant="empty"
-            type="button"
-            role="tab"
-            class="ui-btn--group-item"
-            :class="segment === seg.value ? 'ui-btn--sort-sky' : 'ui-btn--empty'"
-            :aria-selected="segment === seg.value"
-            @click="setSegment(seg.value)"
-          >
-            {{ seg.label }}
-          </Button>
-        </div>
-      </div>
-
       <div class="flex flex-row items-center gap-2 sm:block">
-        <span id="collection-list-sort-legend" class="sr-only">{{ t('sort.sortByLabel') }}</span>
+        <span id="library-list-sort-legend" class="sr-only">{{ t('sort.sortByLabel') }}</span>
         <div
           class="btn-group-forced flex flex-nowrap justify-center min-w-0 overflow-visible py-2"
           role="group"
-          aria-labelledby="collection-list-sort-legend"
-          aria-describedby="collection-list-sort-current"
+          aria-labelledby="library-list-sort-legend"
         >
           <Button
             v-for="opt in sortOptions"
@@ -73,28 +59,17 @@
             class="ui-btn--group-item relative flex h-6 shrink-0 items-center justify-center gap-1.5 px-2 sm:px-4 !cursor-pointer"
             :class="[sortBy === opt.value ? opt.aquaClass : 'ui-btn--empty']"
             :title="opt.label"
-            :aria-label="opt.label"
             :aria-pressed="sortBy === opt.value"
             @click="sortBy = opt.value"
           >
             <component
               :is="opt.icon"
-              class="h-4 w-4 shrink-0 transition-[opacity,filter] duration-200"
-              :class="
-                sortBy === opt.value
-                  ? 'opacity-100 drop-shadow-[0_0_1px_rgba(30,64,175,0.9)]'
-                  : 'opacity-55'
-              "
+              class="h-4 w-4 shrink-0"
+              :class="sortBy === opt.value ? 'opacity-100' : 'opacity-55'"
               aria-hidden="true"
             /><span class="hidden sm:inline">{{ opt.label }}</span>
           </Button>
         </div>
-        <span
-          id="collection-list-sort-current"
-          class="min-w-0 shrink-0 text-sm text-gray-700 sm:hidden"
-          aria-live="polite"
-          >{{ selectedSortLabel }}</span
-        >
       </div>
     </div>
     <LoadingSpinner v-if="isLoading" />
@@ -110,7 +85,6 @@
               : null
           "
           :study-loading="studyLoadingId === collection.collection_id"
-          :show-study="segment === 'courses'"
           :format-date="formatDate"
           :study-button-label="t('collectionList.studyButton')"
           :collection-button-label="t('collectionList.collectionButton')"
@@ -134,56 +108,104 @@
         @next="nextPage"
       />
     </div>
-    <EmptyStatePanel v-if="!isLoading && collections.length === 0" />
+    <EmptyStatePanel v-if="!isLoading && collections.length === 0">
+      <p class="text-sm text-slate-600">{{ t('collectionList.libraryEmptyHint') }}</p>
+      <Button variant="create" class="mt-4" @click="showCreateModal = true">
+        <CirclePlus class="h-4 w-4" /> <span>{{ t('collectionList.createFirstCollection') }}</span>
+      </Button>
+    </EmptyStatePanel>
+  </div>
+  <div
+    v-if="showCreateModal"
+    class="z-[1000] fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4"
+  >
+    <div class="bg-white rounded-lg max-w-md w-full p-6">
+      <h3 class="text-lg font-semibold mb-4">{{ t('collectionList.createModalTitle') }}</h3>
+      <form @submit.prevent="performCreateCollection">
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">{{
+              t('collectionList.nameLabel')
+            }}</label>
+            <Input v-model="newCollection.name" type="text" required class="w-full input-field" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">{{
+              t('collectionList.descriptionLabel')
+            }}</label>
+            <Textarea v-model="newCollection.description" rows="3" class="textarea-field" />
+          </div>
+          <div class="flex items-center gap-2">
+            <Checkbox id="is_public" v-model="newCollection.is_public" class="checkbox-toggle" />
+            <label for="is_public" class="text-sm text-gray-700">
+              {{ t('collectionList.makePublicLabel') }}
+            </label>
+          </div>
+        </div>
+        <div class="mt-6 flex justify-end gap-3">
+          <Button variant="cancel" type="button" @click="showCreateModal = false">
+            {{ t('collectionList.cancelButton') }}
+          </Button>
+          <Button variant="create" type="submit" :disabled="isSubmitting">
+            {{
+              isSubmitting ? t('collectionList.creatingButton') : t('collectionList.createButton')
+            }}
+          </Button>
+        </div>
+      </form>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { BookOpen, CalendarDays, Calendar, Trophy, ArrowDown } from '@lucide/vue'
+import { CirclePlus, Import, CalendarDays, Calendar, Trophy, ArrowDown } from '@lucide/vue'
 import { ref, computed, onBeforeUnmount, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 
-import { getPublicCollections, getLevels, getCollectionImage } from '@/api'
-import { Button, CollectionCard, EmptyStatePanel, Input } from '@packages/ui'
+import {
+  getCollections,
+  createCollection,
+  importCollectionFull,
+  getLevels,
+  getCollectionImage,
+} from '@/api'
+import {
+  Button,
+  Checkbox,
+  CollectionCard,
+  EmptyStatePanel,
+  FileInput,
+  Input,
+  Textarea,
+  ToolbarSelectDropdown,
+  ToolbarSelectDropdownItem,
+} from '@packages/ui'
 import PageHeader from '@/components/layout/PageHeader.vue'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import PaginationComponent from '@/components/PaginationComponent.vue'
-import StudyStreak from '@/components/StudyStreak.vue'
-import { useAuth } from '@/composables/useAuth'
 import { useSeoHead } from '@/composables/useSeoHead'
 
-const SEGMENT_STORAGE_KEY = 'collections-catalog-segment'
-
-const auth = useAuth()
 const router = useRouter()
 const { t, locale } = useI18n()
 
-const initialSegment = () => {
-  const stored =
-    typeof localStorage !== 'undefined' ? localStorage.getItem(SEGMENT_STORAGE_KEY) : null
-  return stored === 'collections' ? 'collections' : 'courses'
-}
-
-const segment = ref(initialSegment())
 const collections = ref([])
 const isLoading = ref(true)
 const hasLoadedOnce = ref(false)
 let loadRequestId = 0
-const sortBy = ref('active_week')
+const sortBy = ref('newest')
 const searchQuery = ref('')
 const currentPage = ref(1)
 const perPage = ref(12)
 const totalCollections = ref(0)
+const showCreateModal = ref(false)
+const isSubmitting = ref(false)
+const importFileInput = ref(null)
+const isImporting = ref(false)
 const studyLoadingId = ref(null)
 let searchDebounceTimer = null
 
 const totalPages = computed(() => Math.max(1, Math.ceil(totalCollections.value / perPage.value)))
-
-const segments = computed(() => [
-  { value: 'courses', label: t('collectionList.catalogCourses') },
-  { value: 'collections', label: t('collectionList.catalogCollections') },
-])
 
 const sortOptions = computed(() => [
   {
@@ -212,27 +234,24 @@ const sortOptions = computed(() => [
   },
 ])
 
-const selectedSortLabel = computed(
-  () => sortOptions.value.find((o) => o.value === sortBy.value)?.label ?? ''
-)
+const newCollection = ref({
+  name: '',
+  description: '',
+  is_public: false,
+})
 
-const pageTitle = computed(() => t('collectionList.catalogCourses'))
-useSeoHead({ title: pageTitle, pathWithoutLocale: '/collections' })
-
-function setSegment(next) {
-  segment.value = next === 'collections' ? 'collections' : 'courses'
-}
+const pageTitle = computed(() => t('nav.library'))
+useSeoHead({ title: pageTitle, pathWithoutLocale: '/library' })
 
 const fetchCollections = async () => {
   const requestId = ++loadRequestId
   if (!hasLoadedOnce.value) isLoading.value = true
 
   try {
-    const response = await getPublicCollections({
+    const response = await getCollections({
       sort: sortBy.value,
       page: currentPage.value,
       per_page: perPage.value,
-      has_flashcards_only: segment.value === 'courses' ? true : undefined,
       search: searchQuery.value.trim() || undefined,
     })
 
@@ -269,6 +288,22 @@ const nextPage = () => {
   fetchCollections()
 }
 
+const performCreateCollection = async () => {
+  if (isSubmitting.value) return
+  isSubmitting.value = true
+  try {
+    const response = await createCollection(newCollection.value)
+    collections.value.unshift(response.data)
+    showCreateModal.value = false
+    newCollection.value = { name: '', description: '', is_public: false }
+    router.push(`/collections/${response.data.collection_id}`)
+  } catch (error) {
+    console.error('Error creating collection:', error)
+  } finally {
+    isSubmitting.value = false
+  }
+}
+
 const formatDate = (date) => {
   return new Date(date).toLocaleDateString(locale.value, {
     year: 'numeric',
@@ -296,15 +331,48 @@ const startStudy = async (collection) => {
   }
 }
 
-watch(
-  segment,
-  (val) => {
-    if (typeof localStorage !== 'undefined') localStorage.setItem(SEGMENT_STORAGE_KEY, val)
-  },
-  { immediate: true }
-)
+const triggerImport = () => {
+  importFileInput.value?.click()
+}
 
-watch([segment, sortBy], () => {
+const handleImportFile = async (event) => {
+  const file = event.target.files?.[0]
+  if (!file) return
+
+  isImporting.value = true
+  try {
+    const fileContent = await file.text()
+    const jsonData = JSON.parse(fileContent)
+
+    if (!jsonData.collection || !Array.isArray(jsonData.items)) {
+      alert(t('collectionList.importFullFormatError'))
+      return
+    }
+
+    const payload = {
+      collection: {
+        name: jsonData.collection.name,
+        description: jsonData.collection.description ?? null,
+        is_public: jsonData.collection.is_public ?? true,
+      },
+      items: jsonData.items,
+      levels: Array.isArray(jsonData.levels) ? jsonData.levels : [],
+    }
+
+    const response = await importCollectionFull(payload)
+    const { collection: imported } = response.data
+    collections.value.unshift(imported)
+    router.push(`/collections/${imported.collection_id}`)
+  } catch (error) {
+    console.error('Import failed:', error)
+    alert(error.response?.data?.error || t('collectionList.importError'))
+  } finally {
+    isImporting.value = false
+    event.target.value = ''
+  }
+}
+
+watch(sortBy, () => {
   currentPage.value = 1
   fetchCollections()
 })

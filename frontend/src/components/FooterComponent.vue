@@ -1,7 +1,7 @@
 <template>
   <!-- Popup for chat controls -->
   <ModalComponent :show="showPopup" :title="t('footer.chatSettings')" @close="showPopup = false">
-    <div class="flex flex-col gap-4">
+    <div class="flex min-h-0 flex-col gap-4">
       <SocialLinks />
       <!-- Toggle for marquee -->
       <div class="flex items-center justify-between gap-4">
@@ -21,20 +21,18 @@
           />
         </Button>
       </div>
-      <!-- Last 10 messages -->
-      <div class="flex flex-col gap-2">
+      <!-- Last 10 messages; list scrolls with the modal body (no nested overflow). -->
+      <div class="flex min-h-0 flex-col gap-2">
         <h4 class="text-sm font-medium text-gray-700">{{ t('footer.recentMessages') }}</h4>
 
-        <div v-if="messageStack.length > 0" class="max-h-[60vh] overflow-y-auto pr-2">
-          <div class="flex flex-col gap-2">
-            <div
-              v-for="(msg, index) in messageStack.slice()"
-              :key="index"
-              class="rounded-md bg-gray-50 px-3 py-2 break-words whitespace-normal"
-            >
-              <span class="font-medium text-blue-600">{{ msg.w }}:</span>
-              <span class="ml-1 text-gray-700">{{ msg.d }}</span>
-            </div>
+        <div v-if="messageStack.length > 0" class="flex flex-col gap-2">
+          <div
+            v-for="(msg, index) in messageStack.slice()"
+            :key="index"
+            class="rounded-md bg-gray-50 px-3 py-2 break-words whitespace-normal"
+          >
+            <span class="font-medium text-blue-600">{{ msg.w }}:</span>
+            <span class="ml-1 text-gray-700">{{ msg.d }}</span>
           </div>
         </div>
 

@@ -929,7 +929,7 @@ export default {
           '@apply flex items-center gap-1': {},
         },
         '.card-meta-link': {
-          '@apply font-medium text-blue-600 hover:text-blue-800 hover:underline': {},
+          '@apply !font-normal text-blue-600 hover:text-blue-800 hover:underline': {},
         },
         '.card-meta-date': {
           '@apply text-gray-400': {},

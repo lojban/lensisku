@@ -34,7 +34,10 @@
     </template>
     <template #footer>
       <div class="card-footer-block">
-        <div v-if="collection.has_flashcards" class="card-study-area card-study-area-compact">
+        <div
+          v-if="showStudy && collection.has_flashcards"
+          class="card-study-area card-study-area-compact"
+        >
           <Button
             :variant="studyButtonVariant"
             :loading="studyLoading"
@@ -170,6 +173,8 @@ const props = defineProps({
   itemsCountLabel: { type: String, default: '0 items' },
   /** Resolved cover URL when `has_cover_image`; omit for placeholder icon. */
   coverImageUrl: { type: String, default: null },
+  /** Study CTA; hide on the public collections catalog segment. */
+  showStudy: { type: Boolean, default: true },
 })
 
 const collectionHeaderTo = computed(() =>

@@ -2475,7 +2475,7 @@ const validateAccess = (collection) => {
     !collection.is_public &&
     (!auth.state.isLoggedIn || collection.owner.username !== auth.state.username)
   ) {
-    router.push('/collections')
+    router.push('/library')
     return false
   }
   return true
@@ -2783,7 +2783,7 @@ const performDeleteCollection = async () => {
   isDeletingCollection.value = true
   try {
     await deleteCollection(props.collectionId)
-    router.push('/collections')
+    router.push('/library')
   } catch (error) {
     console.error('Error deleting collection:', error)
     showError(error.response?.data?.error || 'Failed to delete collection')
@@ -3069,7 +3069,7 @@ const performMerge = async () => {
 
     // If creating new collection, redirect to it
     if (createNewCollection.value) {
-      router.push('/collections')
+      router.push('/library')
     } else {
       // Otherwise refresh the current collection
       await fetchCollection()

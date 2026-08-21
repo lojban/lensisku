@@ -80,7 +80,25 @@ const baseRoutes: Array<RouteRecordRaw> = [
   {
     path: '/profile',
     name: 'Profile',
-    component: () => import('../pages/ProfilePage.vue'),
+    redirect: (to) => ({
+      path: to.path.replace(/\/profile\/?$/, '/mi'),
+      query: { ...to.query, tab: (to.query.tab as string) || 'profile' },
+    }),
+  },
+  {
+    path: '/mi',
+    name: 'Me',
+    component: () => import('../pages/MePage.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/me',
+    name: 'MeAlias',
+    redirect: (to) => ({
+      path: to.path.replace(/\/me\/?$/, '/mi'),
+      query: to.query,
+      hash: to.hash,
+    }),
   },
   {
     path: '/valsi/add',
@@ -240,10 +258,35 @@ const baseRoutes: Array<RouteRecordRaw> = [
     component: () => import('../pages/CachedExports.vue'),
   },
   {
+    path: '/learn',
+    name: 'LearnAlias',
+    redirect: (to) => ({
+      path: to.path.replace(/\/learn\/?$/, '/collections'),
+      query: to.query,
+      hash: to.hash,
+    }),
+  },
+  {
     path: '/collections',
     name: 'CollectionList',
     component: () => import('../pages/CollectionList.vue'),
     meta: { alwaysShowScrollbar: true },
+    beforeEnter: (to) => {
+      if (to.query.view !== 'my') return true
+      const query = { ...to.query }
+      delete query.view
+      return {
+        path: to.path.replace(/\/collections\/?$/, '/library'),
+        query,
+        replace: true,
+      }
+    },
+  },
+  {
+    path: '/library',
+    name: 'Library',
+    component: () => import('../pages/LibraryPage.vue'),
+    meta: { alwaysShowScrollbar: true, requiresAuth: true },
   },
   {
     path: '/collections/:id',
@@ -256,8 +299,21 @@ const baseRoutes: Array<RouteRecordRaw> = [
   {
     path: '/reactions',
     name: 'Reactions',
-    component: () => import('../pages/ReactionsPage.vue'),
-    meta: { requiresAuth: true },
+    redirect: (to) => {
+      const raw = String(to.query.tab || '')
+      const tab =
+        raw === 'votes'
+          ? 'votes'
+          : raw === 'reactions'
+            ? 'reactions'
+            : raw === 'bookmarked' || raw === 'bookmarks'
+              ? 'bookmarked'
+              : 'profile'
+      return {
+        path: to.path.replace(/\/reactions\/?$/, '/mi'),
+        query: { ...to.query, tab },
+      }
+    },
   },
   {
     path: '/user/:username/activity',

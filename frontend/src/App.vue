@@ -54,8 +54,10 @@
         <!-- Desktop Navigation - Hidden on mobile -->
         <nav class="hidden sm:ml-4 sm:flex items-center space-x-0 md:space-x-1 lg:space-x-2">
           <NavLink to="/collections" class="navbar-item">
-            <Star class="h-5 w-5" /> {{ $t('nav.courses') }}
-      
+            <GraduationCap class="h-5 w-5" /> {{ $t('nav.learn') }}
+          </NavLink>
+          <NavLink v-if="auth.state.isLoggedIn" to="/library" class="navbar-item">
+            <Star class="h-5 w-5" /> {{ $t('nav.library') }}
           </NavLink>
           <NavLink to="/recent" class="navbar-item">
             <Clock4 class="h-5 w-5" /> {{ $t('nav.recent') }}
@@ -165,18 +167,11 @@
           </div>
         </nav>
         <!-- Auth Buttons - Optimized for mobile -->
-        <div class="flex items-center space-x-2">
-          <!-- Only show auth buttons when loading is complete -->
+        <div class="flex items-center space-x-1 sm:space-x-2">
           <template v-if="!auth.state.isLoading">
             <template v-if="auth.state.isLoggedIn">
-              <!-- Messaging Icon -->
-              <!-- <MessagingIcon /> -->
-              <NavLink v-if="auth.state.isLoggedIn" to="/reactions" class="navbar-item">
+              <NavLink to="/mi" class="navbar-item">
                 <BookmarkCheck class="h-5 w-5" />
-                <span class="hidden sm:inline">{{ $t('nav.myActivity') }}</span>
-              </NavLink>
-              <NavLink to="/profile" class="navbar-item">
-                <User class="h-5 w-5" />
                 <span class="hidden sm:inline">{{ auth.state.username }}</span>
               </NavLink>
               <Button variant="topbar" class="hidden sm:flex" @click="handleLogout">
@@ -356,15 +351,15 @@ import {
   LogIn,
   LogOut,
   UserPlus,
-  User,
   ChevronDown,
   X,
   Plus,
   FilePlus,
   AudioWaveform,
-  BookmarkCheck,
   Clock4,
+  GraduationCap,
   Star,
+  BookmarkCheck,
   Bot,
   Share2,
 } from '@lucide/vue'

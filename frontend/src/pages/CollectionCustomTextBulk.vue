@@ -1204,7 +1204,7 @@ async function load(silent = false) {
     const isPublic = collection.value?.is_public
     const ownerName = collection.value?.owner?.username
     if (!isPublic && (!auth.state.isLoggedIn || ownerName !== auth.state.username)) {
-      router.push('/collections')
+      router.push('/library')
       return
     }
 

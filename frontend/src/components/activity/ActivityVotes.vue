@@ -10,7 +10,7 @@
       :key="`${vote.definition_id}-${vote.voted_at}`"
       :definition="voteToDefinition(vote)"
       :languages="languages"
-      :disable-toolbar="true"
+      :disable-toolbar="false"
       :disable-discussion-button="false"
       :show-word-type="true"
       :show-audio="true"

@@ -4,8 +4,14 @@
   <!-- Profile Content -->
   <div v-else>
     <!-- Header -->
-    <div class="flex flex-col lg:flex-row justify-between items-center gap-4 mb-6">
-      <h2 class="text-2xl font-bold text-gray-800 text-center sm:text-left flex-1 min-w-[200px]">
+    <div
+      class="flex flex-col lg:flex-row justify-between items-center gap-4 mb-6"
+      :class="{ 'lg:justify-end': embedded }"
+    >
+      <h2
+        v-if="!embedded"
+        class="text-2xl font-bold text-gray-800 text-center sm:text-left flex-1 min-w-[200px]"
+      >
         {{
           isOwnProfile
             ? t('profile.yourProfile')
@@ -55,29 +61,8 @@
         <!-- Aqua button group -->
         <div class="btn-group md:gap-y-2">
           <RouterLink
-            v-if="isOwnProfile"
-            to="/change-password"
-            class="ui-btn--read ui-btn--group-item"
-          >
-            <KeyRound class="h-4 w-4" /> {{ t('profile.changePassword') }}
-          </RouterLink>
-          <Button
-            v-if="isOwnProfile && !isEditing"
-            variant="edit"
-            class="ui-btn--group-item"
-            @click="toggleEdit"
-          >
-            <Pencil class="h-4 w-4" /> {{ t('profile.editProfile') }}
-          </Button>
-        </div>
-
-        <div class="btn-group md:gap-y-2">
-          <RouterLink
-            :to="
-              isOwnProfile
-                ? '/reactions?tab=definitions'
-                : `/user/${profileData.username}/activity?tab=definitions`
-            "
+            v-if="!isOwnProfile"
+            :to="`/user/${profileData.username}/activity?tab=definitions`"
             class="ui-btn--accent-purple ui-btn--group-item"
           >
             <Activity class="h-4 w-4" /> {{ t('profile.viewActivity') }}
@@ -114,7 +99,16 @@
       </div>
     </div>
     <!-- View Mode -->
-    <div v-if="!isEditing" class="bg-white p-4 rounded-lg border space-y-4">
+    <div v-if="!isEditing" class="relative bg-white p-4 rounded-lg border space-y-4">
+      <Button
+        v-if="isOwnProfile"
+        variant="plain"
+        type="button"
+        class="card-meta-link absolute top-4 right-4 inline-flex items-center gap-1"
+        @click="toggleEdit"
+      >
+        <Pencil class="h-4 w-4" /> {{ t('profile.editProfile') }}
+      </Button>
       <div class="">
         <!-- Profile Image -->
         <div class="mb-6 flex flex-col items-center">
@@ -190,6 +184,15 @@
             <div>
               <span class="text-sm font-medium text-gray-500">{{ t('profile.memberSince') }}</span>
               <p class="mt-1 text-gray-900">{{ memberSince }}</p>
+            </div>
+
+            <div v-if="isOwnProfile">
+              <span class="text-sm font-medium text-gray-500">{{ t('profile.password') }}</span>
+              <p class="mt-1">
+                <RouterLink to="/change-password" class="card-meta-link inline-flex items-center gap-1">
+                  <KeyRound class="h-4 w-4" /> {{ t('profile.changePassword') }}
+                </RouterLink>
+              </p>
             </div>
           </div>
         </div>
@@ -372,6 +375,11 @@ function routeParamString(v: string | string[] | undefined): string | undefined 
   if (v == null) return undefined
   return Array.isArray(v) ? v[0] : v
 }
+
+defineProps({
+  embedded: { type: Boolean, default: false },
+  username: { type: String, default: undefined },
+})
 
 const route = useRoute()
 const router = useRouter()
