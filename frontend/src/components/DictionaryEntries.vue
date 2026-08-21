@@ -88,6 +88,7 @@ import { useI18n } from 'vue-i18n'
 
 import AlertComponent from '@/components/AlertComponent.vue'
 import DefinitionCard from './DefinitionCard.vue'
+import type { CachedCollection } from '@/composables/useCollectionsCache'
 import type { PropType } from 'vue'
 
 const { t } = useI18n()
@@ -141,7 +142,7 @@ const props = defineProps({
     default: '',
   },
   collections: {
-    type: Array as PropType<unknown[]>,
+    type: Array as PropType<CachedCollection[]>,
     default: () => [],
   },
   decomposition: {

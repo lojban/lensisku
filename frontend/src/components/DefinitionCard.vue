@@ -757,6 +757,7 @@ import DeleteConfirmation from '@/components/DeleteConfirmation.vue'
 import ModalComponent from '@/components/ModalComponent.vue'
 import VoteButtons from '@/components/VoteButtons.vue'
 import { useAuth } from '@/composables/useAuth'
+import { type CachedCollection } from '@/composables/useCollectionsCache'
 import { useDateFormat } from '@/composables/useDateFormat'
 import { useError } from '@/composables/useError'
 import { isSemanticPreciseMatch } from '@/utils/searchQueryUtils'
@@ -771,7 +772,7 @@ const { formatDateTime } = useDateFormat()
 
 const props = defineProps({
   collections: {
-    type: Array as PropType<unknown[]>,
+    type: Array as PropType<CachedCollection[]>,
     default: () => [],
   },
   showDefinitionNumber: {
@@ -907,7 +908,7 @@ const emit = defineEmits([
 
 const MAX_VALSI_DISPLAY_LENGTH = 30
 
-const collections = ref(props.collections)
+const collections = ref<CachedCollection[]>(props.collections)
 const showDeleteConfirm = ref(false)
 const showValsiModal = ref(false)
 const isDeleting = ref(false)
@@ -1087,7 +1088,7 @@ watch(
   { immediate: true }
 )
 
-const updateCollections = (updatedCollections: unknown[]) => {
+const updateCollections = (updatedCollections: CachedCollection[]) => {
   collections.value = updatedCollections
   emit('collection-updated', updatedCollections)
 }

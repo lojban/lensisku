@@ -423,12 +423,6 @@ const isHomePage = computed(
   () => route.name === 'Home' || (typeof route.name === 'string' && route.name.startsWith('Home-'))
 )
 
-const isFastSearchPage = computed(
-  () =>
-    route.name === 'FastSearch' ||
-    (typeof route.name === 'string' && route.name.startsWith('FastSearch-'))
-)
-
 const homePath = computed(() => {
   const localeMatch = route.path.match(localeCaptureGroupRegex)
   return `/${localeMatch ? localeMatch[1] : ($locale.value as string) || 'en'}`
