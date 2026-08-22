@@ -96,15 +96,17 @@ export function buildFlatButtonLayer(theme) {
     ...flatStandardHue(theme, hue),
   })
 
+  const editYellow = tint('yellow.700', 'yellow')
+
   const tinted = {
     '.btn-get': tint('cyan.700', 'cyan'),
-    /** Edit / apply — brand yellow (see brandbook §6.3); at most one yellow control per toolbar/group. */
-    '.btn-update': tint('yellow.700', 'yellow'),
+    /** Edit / apply — brand yellow (see brandbook §6.3); yellow is reserved for edit/update only. */
+    '.btn-update, .btn-edit': editYellow,
     '.btn-delete, .btn-error': tint('red.700', 'red'),
     '.btn-create, .btn-success': tint('green.700', 'green'),
     '.btn-warning': tint('amber.700', 'amber'),
-    /** Decorative yellow primitive (historical name); prefer `btn-update` for edit semantics. */
-    '.btn-revert': tint('yellow.700', 'yellow'),
+    /** Undo / caution — amber (yellow reserved for `btn-update` / `btn-edit`). */
+    '.btn-revert': tint('amber.700', 'amber'),
     '.btn-history': tint('purple.700', 'purple'),
     '.btn-link': tint('blue.700', 'blue'),
     '.btn-cancel, .btn-previous, .btn-next': tint('gray.700', 'gray'),
@@ -129,7 +131,8 @@ export function buildFlatButtonLayer(theme) {
     '.btn-palette-slate': tint('slate.700', 'slate'),
     '.btn-palette-teal': tint('teal.700', 'teal'),
     '.btn-palette-violet': tint('violet.700', 'violet'),
-    '.btn-palette-yellow': tint('yellow.700', 'yellow'),
+    /** Flat theme: lime stand-in — true yellow is reserved for edit/update. */
+    '.btn-palette-yellow': tint('lime.700', 'lime'),
     '.btn-palette-zinc': tint('zinc.700', 'zinc'),
   }
 

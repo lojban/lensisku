@@ -14,6 +14,7 @@ use crate::middleware::cache::RedisCache;
 
 use super::chat_store::{self, AssistantChatPutBody, ChatCreateResult, ImportBody, ImportResponse};
 use super::dto::ChatRequest;
+use super::dto::WikiTitleFromCommentRequest;
 use super::persist::ChatPersistState;
 use super::stored_messages::{
     build_chat_messages_from_stored, strip_trailing_empty_assistant_stub,
@@ -252,6 +253,23 @@ pub async fn chat_stream_by_id(
     Ok(sse::Sse::from_infallible_receiver(rx))
 }
 
+/// Suggest a short wiki page title from a comment and its thread/entry context.
+#[post("/wiki-title-from-comment")]
+pub async fn wiki_title_from_comment(
+    pool: web::Data<deadpool_postgres::Pool>,
+    redis_cache: web::Data<RedisCache>,
+    _claims: Claims,
+    body: web::Json<WikiTitleFromCommentRequest>,
+) -> Result<HttpResponse, AppError> {
+    let response = super::wiki_title::suggest_wiki_title_from_comment(
+        pool.get_ref(),
+        Some(redis_cache.get_ref()),
+        body.comment_id,
+    )
+    .await?;
+    Ok(HttpResponse::Ok().json(response))
+}
+
 pub fn configure(cfg: &mut web::ServiceConfig) {
     cfg.service(
         web::scope("assistant").service(chat_stream_public).service(
@@ -263,7 +281,8 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
                 .service(get_chat)
                 .service(put_chat)
                 .service(delete_chat)
-                .service(chat_stream_by_id),
+                .service(chat_stream_by_id)
+                .service(wiki_title_from_comment),
         ),
     );
 }

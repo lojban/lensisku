@@ -1,130 +1,139 @@
 <template>
-  <div class="wiki-upsert w-full max-w-3xl mx-auto px-3 py-3 sm:px-4 sm:py-4">
-    <h2 class="text-xl sm:text-2xl font-bold text-gray-800 select-none mb-4">
-      {{ isEditMode ? t('upsertWiki.editTitle') : t('upsertWiki.addTitle') }}
-    </h2>
+  <UpsertPageLayout
+    narrow
+    :title="isEditMode ? t('upsertWiki.editTitle') : t('upsertWiki.addTitle')"
+  >
+    <template #trailing>
+      <UpsertToolbarButton
+        type="submit"
+        form="upsert-wiki-form"
+        :variant="isEditMode ? 'edit' : 'create'"
+        :disabled="isSubmitting || !isValid"
+      >
+        <template v-if="isSubmitting">{{ t('upsertWiki.saving') }}<AnimatedDots /></template>
+        <template v-else>{{ t('upsertWiki.saveButton') }}</template>
+      </UpsertToolbarButton>
+    </template>
 
     <div
       v-if="fromCommentId"
       class="mb-4 p-3 bg-blue-50 border border-blue-100 rounded text-sm text-blue-800"
     >
-      {{ t('upsertWiki.fromCommentBanner', { id: fromCommentId }) }}
-      <RouterLink
-        :to="`/comments?comment_id=${fromCommentId}&scroll_to=${fromCommentId}`"
-        class="ml-1 underline hover:text-blue-950"
-      >
-        {{ t('upsertWiki.fromCommentLink') }}
-      </RouterLink>
-    </div>
-
-    <form class="space-y-4" @submit.prevent="submitWiki">
-      <div>
-        <label for="word" class="block text-sm font-medium text-blue-700">
-          {{ t('upsertWiki.wordLabel') }}
-        </label>
-        <Input
-          id="word"
-          v-model="word"
-          type="text"
-          required
-          class="input-field w-full h-10"
-          :disabled="isSubmitting"
-          :placeholder="t('upsertWiki.wordPlaceholder')"
-        />
-        <p v-if="isEditMode && titleChanged" class="mt-1 text-xs text-amber-700">
-          {{ t('upsertWiki.renameHint') }}
-        </p>
+        {{ t('upsertWiki.fromCommentBanner', { id: fromCommentId }) }}
+        <RouterLink
+          :to="`/comments?comment_id=${fromCommentId}&scroll_to=${fromCommentId}`"
+          class="ml-1 underline hover:text-blue-950"
+        >
+          {{ t('upsertWiki.fromCommentLink') }}
+        </RouterLink>
       </div>
 
-      <div
-        class="grid grid-cols-1 gap-4"
-        :class="{ 'md:grid-cols-2': !isEditMode }"
-      >
-        <div v-if="!isEditMode">
-          <label for="source-language" class="block text-sm font-medium text-blue-700">
-            {{ t('upsertWiki.sourceLanguageLabel') }}
-            <span class="text-red-500">{{ t('upsertWiki.required') }}</span>
+      <form id="upsert-wiki-form" class="space-y-4" @submit.prevent="submitWiki">
+        <div>
+          <label for="word" class="block text-sm font-medium text-blue-700">
+            {{ t('upsertWiki.wordLabel') }}
           </label>
-          <Select
-            id="source-language"
-            v-model="sourceLangId"
+          <Input
+            id="word"
+            v-model="word"
+            type="text"
             required
             class="input-field w-full h-10"
-            :disabled="isLoading || isSubmitting"
-            :options="[
-              { value: '', label: t('upsertWiki.selectLanguagePlaceholder') },
-              ...languages.map((lang) => ({ value: lang.id, label: lang.real_name })),
-            ]"
+            :disabled="isSubmitting || isGeneratingTitle"
+            :placeholder="t('upsertWiki.wordPlaceholder')"
           />
-          <p class="mt-1 text-xs text-gray-500">{{ t('upsertWiki.sourceLanguageNote') }}</p>
+          <p v-if="isGeneratingTitle" class="mt-1 text-xs text-gray-500">
+            {{ t('upsertWiki.generatingTitle') }}
+          </p>
+          <p v-if="isEditMode && titleChanged" class="mt-1 text-xs text-amber-700">
+            {{ t('upsertWiki.renameHint') }}
+          </p>
+        </div>
+
+        <div
+          class="grid grid-cols-1 gap-4"
+          :class="{ 'md:grid-cols-2': !isEditMode }"
+        >
+          <div v-if="!isEditMode">
+            <label for="source-language" class="block text-sm font-medium text-blue-700">
+              {{ t('upsertWiki.sourceLanguageLabel') }}
+              <span class="text-red-500">{{ t('upsertWiki.required') }}</span>
+            </label>
+            <Select
+              id="source-language"
+              v-model="sourceLangId"
+              required
+              class="input-field w-full h-10"
+              :disabled="isLoading || isSubmitting"
+              :options="[
+                { value: '', label: t('upsertWiki.selectLanguagePlaceholder') },
+                ...languages.map((lang) => ({ value: lang.id, label: lang.real_name })),
+              ]"
+            />
+            <p class="mt-1 text-xs text-gray-500">{{ t('upsertWiki.sourceLanguageNote') }}</p>
+          </div>
+
+          <div>
+            <label for="language" class="block text-sm font-medium text-blue-700">
+              {{ t('upsertWiki.languageLabel') }}
+            </label>
+            <Select
+              id="language"
+              v-model="langId"
+              required
+              class="input-field w-full h-10"
+              :disabled="isLoading || isSubmitting"
+              :options="[
+                { value: '', label: t('upsertWiki.languagePlaceholder') },
+                ...languages.map((lang) => ({ value: lang.id, label: lang.real_name })),
+              ]"
+            />
+          </div>
         </div>
 
         <div>
-          <label for="language" class="block text-sm font-medium text-blue-700">
-            {{ t('upsertWiki.languageLabel') }}
+          <label for="commit-message" class="block text-sm font-medium text-blue-700">
+            {{ t('upsertWiki.commitMessageLabel') }}
           </label>
-          <Select
-            id="language"
-            v-model="langId"
-            required
+          <Input
+            id="commit-message"
+            v-model="commitMessage"
+            type="text"
             class="input-field w-full h-10"
-            :disabled="isLoading || isSubmitting"
-            :options="[
-              { value: '', label: t('upsertWiki.languagePlaceholder') },
-              ...languages.map((lang) => ({ value: lang.id, label: lang.real_name })),
-            ]"
+            :disabled="isSubmitting"
+            :placeholder="t('upsertWiki.commitMessagePlaceholder')"
           />
         </div>
-      </div>
 
-      <div>
-        <label for="commit-message" class="block text-sm font-medium text-blue-700">
-          {{ t('upsertWiki.commitMessageLabel') }}
-        </label>
-        <Input
-          id="commit-message"
-          v-model="commitMessage"
-          type="text"
-          class="input-field w-full h-10"
-          :disabled="isSubmitting"
-          :placeholder="t('upsertWiki.commitMessagePlaceholder')"
-        />
-      </div>
+        <div>
+          <label class="block text-sm font-medium text-blue-700 mb-2">
+            {{ t('upsertWiki.definitionLabel') }}
+          </label>
+          <WikiEditor
+            v-if="editorReady"
+            :key="editorKey"
+            ref="wikiEditor"
+            v-model="definition"
+            :disabled="isSubmitting"
+            :placeholder="t('upsertWiki.editorPlaceholder')"
+          />
+        </div>
 
-      <div>
-        <label class="block text-sm font-medium text-blue-700 mb-2">
-          {{ t('upsertWiki.definitionLabel') }}
-        </label>
-        <WikiEditor
-          v-if="editorReady"
-          :key="editorKey"
-          ref="wikiEditor"
-          v-model="definition"
-          :disabled="isSubmitting"
-          :placeholder="t('upsertWiki.editorPlaceholder')"
-        />
-      </div>
-
-      <p v-if="formError" class="text-sm text-red-600">{{ formError }}</p>
-
-      <div class="flex justify-end">
-        <Button variant="create" type="submit" :disabled="isSubmitting || !isValid">
-          <template v-if="isSubmitting">{{ t('upsertWiki.saving') }}<AnimatedDots /></template>
-          <template v-else>{{ t('upsertWiki.saveButton') }}</template>
-        </Button>
-      </div>
-    </form>
-  </div>
+        <p v-if="formError" class="text-sm text-red-600">{{ formError }}</p>
+      </form>
+  </UpsertPageLayout>
 </template>
 
 <script setup lang="ts">
-import { Button, Input, Select } from '@packages/ui'
+import { Input, Select } from '@packages/ui'
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 
-import { getLanguages, addValsi, updateValsi, getNativeWikiArticle, renameWiki } from '@/api'
+import { getLanguages, addValsi, updateValsi, getNativeWikiArticle, renameWiki, suggestWikiTitleFromComment } from '@/api'
 import AnimatedDots from '@/components/AnimatedDots.vue'
+import UpsertPageLayout from '@/components/layout/UpsertPageLayout.vue'
+import UpsertToolbarButton from '@/components/layout/UpsertToolbarButton.vue'
 import WikiEditor from '@/components/WikiEditor.vue'
 import { useSeoHead } from '@/composables/useSeoHead'
 import { loadWikiFromCommentPrefill } from '@/utils/wikiFromComment'
@@ -145,6 +154,7 @@ const editorReady = ref(false)
 const editorKey = ref(0)
 const formError = ref('')
 const fromCommentId = ref<number | null>(null)
+const isGeneratingTitle = ref(false)
 
 const languages = ref<{ id: number; real_name: string }[]>([])
 const isEditMode = ref(false)
@@ -281,6 +291,42 @@ async function submitWiki() {
   }
 }
 
+async function applyWikiTitleFromComment(commentId: number, fallbackTitle = '') {
+  if (fallbackTitle) {
+    word.value = fallbackTitle
+  }
+  isGeneratingTitle.value = true
+  try {
+    const response = await suggestWikiTitleFromComment(commentId)
+    if (response.data?.title?.trim()) {
+      word.value = response.data.title.trim()
+    }
+  } catch (error) {
+    console.warn('Failed to suggest wiki title from comment:', error)
+  } finally {
+    isGeneratingTitle.value = false
+  }
+}
+
+async function loadFromCommentPrefill(fromCommentQuery: string) {
+  const prefill = loadWikiFromCommentPrefill(String(fromCommentQuery))
+  if (prefill) {
+    fromCommentId.value = prefill.commentId
+    definition.value = prefill.definition || ''
+    commitMessage.value =
+      prefill.commitMessage || t('upsertWiki.fromCommentCommit', { id: prefill.commentId })
+    editorKey.value += 1
+    await applyWikiTitleFromComment(prefill.commentId, prefill.word)
+    return
+  }
+
+  const commentId = Number(fromCommentQuery) || null
+  fromCommentId.value = commentId
+  if (commentId) {
+    await applyWikiTitleFromComment(commentId)
+  }
+}
+
 onMounted(async () => {
   await loadLanguages()
 
@@ -293,17 +339,7 @@ onMounted(async () => {
   } else {
     const fromCommentQuery = route.query.from_comment
     if (fromCommentQuery) {
-      const prefill = loadWikiFromCommentPrefill(String(fromCommentQuery))
-      if (prefill) {
-        fromCommentId.value = prefill.commentId
-        if (prefill.word) word.value = prefill.word
-        definition.value = prefill.definition || ''
-        commitMessage.value =
-          prefill.commitMessage || t('upsertWiki.fromCommentCommit', { id: prefill.commentId })
-        editorKey.value += 1
-      } else {
-        fromCommentId.value = Number(fromCommentQuery) || null
-      }
+      await loadFromCommentPrefill(String(fromCommentQuery))
     }
   }
 

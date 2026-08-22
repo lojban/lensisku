@@ -8,6 +8,14 @@ export type { SupportedLocale } from '../config/locales'
 // Eager load HomePage so "/" and locale roots are always preloaded (no lazy chunk).
 import HomePage from '../pages/HomePage.vue'
 
+/** Shared route meta for definition/wiki upsert pages (fixed header, inner scroll). */
+const upsertPageMeta = {
+  requiresAuth: true,
+  fullHeight: true,
+  hideFooter: true,
+  contentTopPaddingMainOnly: true,
+} as const
+
 // Create base routes without locale prefix
 // The NotFound route MUST be the last one in this array.
 const baseRoutes: Array<RouteRecordRaw> = [
@@ -104,19 +112,19 @@ const baseRoutes: Array<RouteRecordRaw> = [
     path: '/valsi/add',
     name: 'AddDefinition',
     component: () => import('../pages/UpsertDefinition.vue'),
-    meta: { requiresAuth: true },
+    meta: upsertPageMeta,
   },
   {
     path: '/definition/markdown',
     name: 'UpsertDefinitionMarkdownNew',
     component: () => import('../pages/UpsertDefinitionMarkdown.vue'),
-    meta: { requiresAuth: true },
+    meta: upsertPageMeta,
   },
   {
     path: '/definition/markdown/:id',
     name: 'UpsertDefinitionMarkdownEdit',
     component: () => import('../pages/UpsertDefinitionMarkdown.vue'),
-    meta: { requiresAuth: true },
+    meta: upsertPageMeta,
   },
   {
     path: '/valsi/:id',
@@ -127,7 +135,7 @@ const baseRoutes: Array<RouteRecordRaw> = [
     path: '/definition/:id/edit',
     name: 'EditDefinition',
     component: () => import('../pages/UpsertDefinition.vue'),
-    meta: { requiresAuth: true },
+    meta: upsertPageMeta,
     props: (route) => ({ id: route.params.id }),
   },
   {
@@ -145,7 +153,7 @@ const baseRoutes: Array<RouteRecordRaw> = [
     path: '/wiki/add',
     name: 'UpsertWiki',
     component: () => import('../pages/UpsertWiki.vue'),
-    meta: { requiresAuth: true, contentTopPaddingMainOnly: true },
+    meta: upsertPageMeta,
   },
   {
     path: '/wiki/id/:definitionId',
@@ -159,7 +167,7 @@ const baseRoutes: Array<RouteRecordRaw> = [
     path: '/wiki/:word(.*)/edit',
     name: 'EditWiki',
     component: () => import('../pages/UpsertWiki.vue'),
-    meta: { requiresAuth: true, contentTopPaddingMainOnly: true },
+    meta: upsertPageMeta,
   },
   {
     path: '/wiki/:title(.*)',

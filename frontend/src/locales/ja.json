@@ -1743,6 +1743,7 @@
     "conflictError": "This page was modified by someone else. Reload and try again.",
     "fromCommentBanner": "Creating a wiki page from comment #{id}.",
     "fromCommentLink": "View comment",
-    "fromCommentCommit": "Created from comment #{id}"
+    "fromCommentCommit": "Created from comment #{id}",
+    "generatingTitle": "コメントから短いタイトルを提案しています…"
   }
 }

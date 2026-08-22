@@ -1,118 +1,94 @@
 <template>
-  <div class="container mx-auto px-3 sm:px-6 py-6 max-w-4xl">
-    <div class="mb-6 flex items-center gap-3">
+  <div class="wiki-article">
+    <div class="wiki-article-toolbar">
       <Button variant="back" type="button" @click="router.back()">
         <ArrowLeft class="h-5 w-5" />
       </Button>
       <SourceTypeBadge type="wiki" />
+      <div v-if="article?.is_native" class="wiki-article-actions ml-auto">
+        <Button
+          v-if="article.can_edit && !article.is_redirect"
+          variant="edit"
+          class="inline-flex items-center"
+          @click="router.push(`/wiki/${encodedTitle}/edit`)"
+        >
+          <Pencil class="h-4 w-4" />
+          <span class="hidden md:inline">{{ t('wiki.edit') }}</span>
+          <span class="sr-only md:hidden">{{ t('wiki.edit') }}</span>
+        </Button>
+        <Button
+          v-if="article.definition_id"
+          variant="empty"
+          class="inline-flex items-center"
+          @click="
+            router.push(
+              `/definition/${article.definition_id}/history?wiki=1&title=${encodedTitle}`
+            )
+          "
+        >
+          <History class="h-4 w-4" />
+          <span class="hidden md:inline">{{ t('wiki.history') }}</span>
+          <span class="sr-only md:hidden">{{ t('wiki.history') }}</span>
+        </Button>
+        <Button
+          v-if="article.definition_id && article.valsiid"
+          variant="empty"
+          class="inline-flex items-center"
+          @click="
+            router.push(
+              `/comments?valsi_id=${article.valsiid}&definition_id=${article.definition_id}`
+            )
+          "
+        >
+          <MessageSquare class="h-4 w-4" />
+          <span class="hidden md:inline">{{ t('wiki.discussions') }}</span>
+          <span class="sr-only md:hidden">{{ t('wiki.discussions') }}</span>
+        </Button>
+      </div>
     </div>
 
-    <div v-if="loading" class="bg-white border border-blue-200 rounded-lg p-6 flex justify-center">
+    <div v-if="loading" class="wiki-article-card flex justify-center py-6">
       <Loader2 class="h-8 w-8 animate-spin text-gray-400" />
     </div>
 
-    <div v-else-if="error" class="p-4 bg-red-50 border border-red-100 text-red-700 rounded">
+    <div v-else-if="error" class="rounded border border-red-100 bg-red-50 p-3 text-red-700">
       {{ error }}
     </div>
 
-    <div v-else-if="article">
-      <div class="p-4 bg-white rounded-lg shadow-sm border border-gray-100">
-        <div class="space-y-6">
-          <div
-            class="flex flex-wrap items-center justify-between gap-3 mb-4 pb-4 border-b border-gray-100"
-          >
-            <h1 class="text-2xl font-bold text-gray-800">
-              {{ article.title }}
-            </h1>
-            <div v-if="article.is_native" class="flex items-center gap-2 flex-wrap">
-              <Button
-                v-if="article.can_edit && !article.is_redirect"
-                variant="edit"
-                class="inline-flex items-center gap-2 text-sm"
-                @click="router.push(`/wiki/${encodedTitle}/edit`)"
-              >
-                <Pencil class="h-4 w-4" />
-                {{ t('wiki.edit') }}
-              </Button>
-              <Button
-                v-if="article.definition_id"
-                variant="empty"
-                class="inline-flex items-center gap-2 text-sm"
-                @click="
-                  router.push(
-                    `/definition/${article.definition_id}/history?wiki=1&title=${encodedTitle}`
-                  )
-                "
-              >
-                <History class="h-4 w-4" />
-                {{ t('wiki.history') }}
-              </Button>
-              <Button
-                v-if="article.definition_id && article.valsiid"
-                variant="empty"
-                class="inline-flex items-center gap-2 text-sm"
-                @click="
-                  router.push(
-                    `/comments?valsi_id=${article.valsiid}&definition_id=${article.definition_id}`
-                  )
-                "
-              >
-                <MessageSquare class="h-4 w-4" />
-                {{ t('wiki.discussions') }}
-              </Button>
-            </div>
-          </div>
+    <div v-else-if="article" class="wiki-article-card">
+      <header class="wiki-article-header">
+        <h1 class="wiki-article-title">
+          {{ article.title }}
+        </h1>
+        <p v-if="article.last_edited" class="wiki-article-meta">
+          {{ t('wiki.lastEdited') }}
+          {{ new Date(article.last_edited).toLocaleString() }}
+        </p>
+        <a
+          v-if="!article.is_native && article.source_url"
+          :href="article.source_url"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="wiki-article-meta mt-0.5 block break-words hover:text-blue-600 hover:underline"
+        >
+          {{ t('wiki.viewOnMediawiki') }}
+        </a>
+      </header>
 
-          <div class="flex flex-col md:flex-row gap-4 md:gap-6">
-            <div class="space-y-4 md:space-y-6 md:flex-1 min-w-[280px]">
-              <div v-if="article.last_edited" class="space-y-1">
-                <div class="text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  {{ t('wiki.lastEdited') }}
-                </div>
-                <div class="text-gray-700">
-                  {{ new Date(article.last_edited).toLocaleString() }}
-                </div>
-              </div>
-            </div>
-
-            <div v-if="!article.is_native" class="space-y-4 md:space-y-6 md:flex-1 min-w-[280px]">
-              <div class="space-y-1">
-                <div class="text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  {{ t('wiki.viewOnMediawiki') }}
-                </div>
-                <a
-                  :href="article.source_url"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="text-gray-700 text-sm break-words hover:text-blue-600 hover:underline"
-                >
-                  {{ article.source_url }}
-                </a>
-              </div>
-            </div>
-          </div>
-        </div>
+      <div
+        v-if="article.is_redirect"
+        class="mb-2 rounded border border-yellow-100 bg-yellow-50 p-2 text-sm text-yellow-800"
+      >
+        <template v-if="article.redirect_to">
+          {{ t('wiki.redirectTo', { title: article.redirect_to }) }}
+        </template>
+        <template v-else>
+          {{ t('wiki.redirectNotice') }}
+        </template>
       </div>
 
-      <div class="mt-6 p-4 bg-white rounded-lg shadow-sm border border-gray-100 space-y-6">
-        <div
-          v-if="article.is_redirect"
-          class="p-3 bg-yellow-50 border border-yellow-100 rounded text-sm text-yellow-800"
-        >
-          <template v-if="article.redirect_to">
-            {{ t('wiki.redirectTo', { title: article.redirect_to }) }}
-          </template>
-          <template v-else>
-            {{ t('wiki.redirectNotice') }}
-          </template>
-        </div>
-
-        <div
-          class="prose max-w-none text-gray-700 message-content wiki-body"
-          @click="onBodyClick"
-        >
-          <LazyMathJax :content="renderedMarkdown" :enable-markdown="true" />
-        </div>
+      <div class="wiki-article-body" @click="onBodyClick">
+        <LazyMathJax :content="renderedMarkdown" :enable-markdown="true" />
       </div>
     </div>
   </div>

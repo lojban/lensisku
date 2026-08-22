@@ -270,8 +270,24 @@
           ></div>
         </div>
         <router-view v-else v-slot="{ Component, route: childRoute }">
+          <div v-if="route.meta.fullHeight" class="full-height-route-host">
+            <component
+              :is="Component"
+              v-bind="metaProps(childRoute.meta.props)"
+              v-on="
+                isHomePage
+                  ? {
+                      search: performSearch,
+                      'view-message': viewMessage,
+                      'view-thread': viewThread,
+                    }
+                  : {}
+              "
+            />
+          </div>
           <component
             :is="Component"
+            v-else
             v-bind="metaProps(childRoute.meta.props)"
             v-on="
               isHomePage
@@ -957,6 +973,7 @@ footer {
   flex-direction: column;
   box-sizing: border-box;
   padding-bottom: env(safe-area-inset-bottom, 0px);
+  scrollbar-gutter: auto;
 }
 
 .main-content.main-content--no-scroll > #main-child {
@@ -991,6 +1008,15 @@ body:has(.main-content.main-content--no-scroll) {
   overflow: hidden;
   display: flex;
   flex-direction: column;
+}
+
+/** Host for fullHeight routes: `<router-view>` is the flex item, not the page root. */
+.full-height-route-host {
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .sihesle {

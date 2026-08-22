@@ -9,7 +9,7 @@ use actix_web_lab::sse;
 use deadpool_postgres::Pool;
 use futures::future::join_all;
 use parking_lot::RwLock;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use serde_json::json;
 use tokio::sync::{mpsc, Semaphore};
 use tokio::time::sleep;
@@ -31,7 +31,16 @@ use crate::utils::openrouter_models::{
 use std::borrow::Cow;
 
 use super::context_compress;
-use super::dto::{AssistantStep, ChatMessage, ChatRequest, ToolCallDto};
+use super::dto::{AssistantStep, ChatMessage, ChatRequest};
+use super::models::{
+    PreparedToolSlot, ReferenceError, RequestAnalysis, ResolveArgs, ResolveOutcome,
+    ResolveReference, ResolvedSemanticFilters, SearchBatch, SemanticSearchCore, ToolArgs,
+    ValidatedReference, SEMANTIC_SEARCH_MAX_LIMIT,
+};
+use super::openrouter::{
+    map_chat_messages, ChatCompletionMessageRequest, ChatCompletionRequest, OpenRouterClient,
+    Tool, ToolCall, ToolCallFunction, ToolFunction, text_completion_with_model,
+};
 use super::persist::ChatPersistState;
 
 /// When `true`, streaming runs two OpenRouter models in parallel when two candidates exist.
@@ -111,9 +120,7 @@ struct AgentState {
     tools: Vec<Tool>,
     system_content: String,
     candidates: Vec<ModelIdName>,
-    client: reqwest::Client,
-    api_key: String,
-    base_url: String,
+    openrouter: OpenRouterClient,
     iteration_timeout: Duration,
     max_iterations: u32,
 }
@@ -124,12 +131,7 @@ impl AgentState {
         request: &ChatRequest,
         candidates: &[ModelIdName],
     ) -> Result<Self, AppError> {
-        let api_key = env::var("OPENROUTER_API_KEY").map_err(|_| {
-            AppError::ExternalService("OPENROUTER_API_KEY is not set in the environment".into())
-        })?;
-        let base_url = env::var("OPENROUTER_API_BASE")
-            .unwrap_or_else(|_| "https://openrouter.ai/api/v1".to_string());
-        let client = reqwest::Client::new();
+        let openrouter = OpenRouterClient::from_env()?;
         let system_content = system_prompt_with_dictionary(pool, request.locale.as_deref()).await;
         let context_budget =
             context_compress::ContextBudget::from_env_and_system_prompt(system_content.len());
@@ -167,261 +169,10 @@ impl AgentState {
             ],
             system_content,
             candidates: candidates.to_vec(),
-            client,
-            api_key,
-            base_url,
+            openrouter,
             iteration_timeout: assistant_iteration_timeout(),
             max_iterations: agent_max_iterations(),
         })
-    }
-}
-
-#[derive(Debug, Clone, Serialize)]
-struct ToolFunction {
-    name: String,
-    description: String,
-    parameters: serde_json::Value,
-}
-
-#[derive(Debug, Clone, Serialize)]
-struct Tool {
-    r#type: String,
-    function: ToolFunction,
-}
-
-#[derive(Debug, Clone, Serialize)]
-struct ChatCompletionMessageRequest {
-    role: String,
-    content: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    tool_call_id: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    name: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    tool_calls: Option<Vec<ToolCall>>,
-}
-
-#[derive(Debug, Clone, Serialize)]
-struct ChatCompletionRequest {
-    model: String,
-    messages: Vec<ChatCompletionMessageRequest>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    tools: Option<Vec<Tool>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    tool_choice: Option<serde_json::Value>,
-    /// OpenAI-compatible: when true, the model may return several tool calls in one turn.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    parallel_tool_calls: Option<bool>,
-}
-
-#[derive(Debug, Deserialize)]
-struct ChatCompletionResponse {
-    choices: Vec<ChatCompletionChoice>,
-}
-
-#[derive(Debug, Deserialize)]
-struct ChatCompletionChoice {
-    message: ChatCompletionMessageResponse,
-}
-
-/// OpenRouter/OpenAI-style error payload (e.g. 200 OK with {"error":{"message":"...","code":500}}).
-#[derive(Debug, Deserialize)]
-struct OpenRouterErrorPayload {
-    #[serde(default)]
-    error: OpenRouterErrorDetail,
-}
-
-#[derive(Debug, Deserialize, Default)]
-struct OpenRouterErrorDetail {
-    #[serde(default)]
-    message: String,
-    #[serde(default)]
-    code: Option<u16>,
-}
-
-/// Ensure OpenRouter response is success; on HTTP error return body for debugging.
-/// 5xx are returned as ExternalServiceRetryable so callers can retry.
-async fn ensure_openrouter_status(
-    res: reqwest::Response,
-    label: &str,
-) -> Result<reqwest::Response, AppError> {
-    let status = res.status();
-    if status.is_success() {
-        return Ok(res);
-    }
-    let body = res
-        .text()
-        .await
-        .unwrap_or_else(|_| String::from("(failed to read body)"));
-    let message = format!(
-        "{} returned {} {}",
-        label,
-        status,
-        status.canonical_reason().unwrap_or("")
-    );
-    if status.is_server_error() {
-        Err(AppError::ExternalServiceRetryable {
-            message,
-            raw_response: body,
-        })
-    } else {
-        Err(AppError::ExternalServiceWithRaw {
-            message,
-            raw_response: body,
-        })
-    }
-}
-
-/// Deserialize OpenRouter response from response body; on error include raw body for debugging.
-/// When the body is an error payload (e.g. 200 OK with {"error":{"message":"Internal Server Error","code":500}}),
-/// returns ExternalServiceRetryable so callers can retry.
-async fn parse_chat_response(
-    res: reqwest::Response,
-    label: &str,
-) -> Result<ChatCompletionResponse, AppError> {
-    let status = res.status();
-    let body = res.text().await.map_err(|e| {
-        AppError::ExternalService(format!("Failed to read {} response body: {}", label, e))
-    })?;
-    let body_trimmed = body.trim();
-    match serde_json::from_str::<ChatCompletionResponse>(body_trimmed) {
-        Ok(parsed) => Ok(parsed),
-        Err(e) => {
-            // Check if body is an OpenRouter/OpenAI-style error (e.g. 200 with {"error":{...}}).
-            let retryable = if let Ok(err_payload) =
-                serde_json::from_str::<OpenRouterErrorPayload>(body_trimmed)
-            {
-                let code = err_payload.error.code;
-                let msg = if err_payload.error.message.is_empty() {
-                    format!("Invalid {} response: {}", label, e)
-                } else {
-                    format!("{}: {}", label, err_payload.error.message)
-                };
-                let is_server_error = code.map(|c| c >= 500).unwrap_or(true);
-                if is_server_error {
-                    log::warn!(
-                        "OpenRouter {} returned error body (code {:?}), will retry: {}",
-                        label,
-                        code,
-                        msg
-                    );
-                    Some((msg, body.clone()))
-                } else {
-                    None
-                }
-            } else {
-                // Unrecognized shape; treat parse failure as retryable (transient malformed response).
-                Some((format!("Invalid {} response: {}", label, e), body.clone()))
-            };
-            if let Some((message, raw_response)) = retryable {
-                log::debug!(
-                    "OpenRouter {} response (status {}): {}",
-                    label,
-                    status,
-                    raw_response
-                );
-                return Err(AppError::ExternalServiceRetryable {
-                    message,
-                    raw_response,
-                });
-            }
-            log::debug!(
-                "OpenRouter {} response (status {}): {}",
-                label,
-                status,
-                body
-            );
-            log::warn!(
-                "OpenRouter {} parse error: {} (see debug log for raw body)",
-                label,
-                e
-            );
-            Err(AppError::ExternalServiceWithRaw {
-                message: format!("Invalid {} response: {}", label, e),
-                raw_response: body,
-            })
-        }
-    }
-}
-
-const OPENROUTER_MAX_ATTEMPTS: u32 = 3;
-const OPENROUTER_INITIAL_BACKOFF_MS: u64 = 500;
-
-/// Runs an OpenRouter chat/completions request with retries on transient errors (5xx or error body).
-async fn openrouter_chat_with_retry<F, Fut>(
-    label: &str,
-    mut run: F,
-) -> Result<ChatCompletionResponse, AppError>
-where
-    F: FnMut() -> Fut,
-    Fut: std::future::Future<Output = Result<ChatCompletionResponse, AppError>>,
-{
-    let mut last_err = None;
-    for attempt in 1..=OPENROUTER_MAX_ATTEMPTS {
-        match run().await {
-            Ok(r) => return Ok(r),
-            Err(e) => {
-                if let AppError::ExternalServiceRetryable { .. } = &e {
-                    last_err = Some(e);
-                    if attempt < OPENROUTER_MAX_ATTEMPTS {
-                        let delay = Duration::from_millis(
-                            OPENROUTER_INITIAL_BACKOFF_MS * 2_u64.pow(attempt - 1),
-                        );
-                        log::info!(
-                            "OpenRouter {} retry {}/{} after {:?}",
-                            label,
-                            attempt,
-                            OPENROUTER_MAX_ATTEMPTS,
-                            delay
-                        );
-                        sleep(delay).await;
-                    }
-                } else {
-                    return Err(e);
-                }
-            }
-        }
-    }
-    Err(last_err.unwrap())
-}
-
-#[derive(Debug, Deserialize, Clone)]
-struct ChatCompletionMessageResponse {
-    /// OpenRouter/OpenAI may send null for role or content (e.g. when message has tool_calls).
-    #[serde(default)]
-    role: Option<String>,
-    #[serde(default)]
-    content: Option<String>,
-    #[serde(default)]
-    tool_calls: Option<Vec<ToolCall>>,
-}
-
-#[derive(Debug, Deserialize, Clone, Serialize)]
-struct ToolCallFunction {
-    /// Some providers send null for name or arguments.
-    #[serde(default)]
-    name: Option<String>,
-    #[serde(default)]
-    arguments: Option<String>,
-}
-
-#[derive(Debug, Deserialize, Clone, Serialize)]
-struct ToolCall {
-    #[serde(default)]
-    id: Option<String>,
-    #[serde(default)]
-    r#type: Option<String>,
-    function: ToolCallFunction,
-}
-
-fn tool_call_dto_to_internal(c: &ToolCallDto) -> ToolCall {
-    ToolCall {
-        id: c.id.clone(),
-        r#type: c.r#type.clone(),
-        function: ToolCallFunction {
-            name: c.function.name.clone(),
-            arguments: c.function.arguments.clone(),
-        },
     }
 }
 
@@ -564,12 +315,6 @@ async fn resolve_optional_source_language_tag(
     Ok(Some(id))
 }
 
-#[derive(Clone)]
-struct ResolvedSemanticFilters {
-    languages_langids: Option<Vec<i32>>,
-    source_langid: Option<i32>,
-}
-
 async fn resolve_semantic_search_language_filters(
     pool: &Pool,
     languages: Option<&[String]>,
@@ -631,33 +376,6 @@ async fn system_prompt_with_dictionary(_pool: &Pool, locale: Option<&str>) -> St
         }
     }
     prompt
-}
-
-fn map_chat_messages(messages: &[ChatMessage]) -> Vec<ChatCompletionMessageRequest> {
-    messages
-        .iter()
-        .map(|m| {
-            let role = match m.role.as_str() {
-                "user" | "assistant" | "system" | "tool" => m.role.clone(),
-                other => {
-                    log::warn!("Unknown chat role `{}`, mapping to `user`", other);
-                    "user".to_string()
-                }
-            };
-            let tool_calls = m.tool_calls.as_ref().map(|tc| {
-                tc.iter()
-                    .map(tool_call_dto_to_internal)
-                    .collect::<Vec<ToolCall>>()
-            });
-            ChatCompletionMessageRequest {
-                role,
-                content: m.content.clone(),
-                tool_call_id: m.tool_call_id.clone(),
-                name: m.name.clone(),
-                tool_calls,
-            }
-        })
-        .collect()
 }
 
 fn jbovlaste_tool_schema() -> Tool {
@@ -797,33 +515,6 @@ fn jbovlaste_resolve_results_tool_schema() -> Tool {
             }),
         },
     }
-}
-
-#[derive(Debug, Clone)]
-struct ValidatedReference {
-    definitionid: i32,
-    valsiword: String,
-    type_name: String,
-    langid: i32,
-    langrealname: String,
-    selmaho: Option<String>,
-    field: String,
-    exampleid: Option<i32>,
-    exact_text: String,
-}
-
-#[derive(Debug, Clone)]
-struct ReferenceError {
-    index: usize,
-    definitionid: i32,
-    field: String,
-    exact_text: String,
-    reason: String,
-}
-
-enum ResolveOutcome {
-    Valid(Vec<ValidatedReference>),
-    Invalid(Vec<ReferenceError>),
 }
 
 /// Validates that every reference points to a real definition (and, for examples, a real example)
@@ -1100,206 +791,6 @@ fn parse_tool_calls_from_content(content: &str) -> Option<Vec<ToolCall>> {
             })
             .collect(),
     )
-}
-
-/// Maximum results per semantic search for the assistant tool.
-const SEMANTIC_SEARCH_MAX_LIMIT: u32 = 15;
-
-/// Max parallel jbovlaste lookups bundled in **one** `jbovlaste_semantic_search` call (`queries` array).
-const SEMANTIC_SEARCH_MAX_QUERIES_PER_CALL: usize = 24;
-
-#[derive(Debug, Clone)]
-struct SemanticSearchCore {
-    query: String,
-    limit: Option<u32>,
-}
-
-#[derive(Debug, Deserialize, Clone)]
-struct ToolArgs {
-    /// Primary API: batch all lookups here (one tool round-trip).
-    #[serde(default)]
-    queries: Vec<String>,
-    /// Legacy single-query shape; accepted only if `queries` is empty (older clients / history).
-    #[serde(default)]
-    query: Option<String>,
-    #[serde(default)]
-    limit: Option<u32>,
-    /// jbovlaste `languages.tag` values (e.g. en, ru, jbo), not numeric langids.
-    #[serde(default)]
-    languages: Option<Vec<String>>,
-    #[serde(default)]
-    source_language: Option<String>,
-}
-
-impl ToolArgs {
-    fn normalized_queries(&self) -> Result<Vec<String>, String> {
-        let mut v: Vec<String> = self
-            .queries
-            .iter()
-            .map(|s| s.trim())
-            .filter(|s| !s.is_empty())
-            .map(String::from)
-            .collect();
-        if v.is_empty() {
-            if let Some(ref q) = self.query {
-                let t = q.trim();
-                if !t.is_empty() {
-                    v.push(t.to_string());
-                }
-            }
-        }
-        if v.is_empty() {
-            return Err(
-                "`queries` must be a non-empty array of search strings (non-empty after trimming)."
-                    .to_string(),
-            );
-        }
-        if v.len() > SEMANTIC_SEARCH_MAX_QUERIES_PER_CALL {
-            return Err(format!(
-                "At most {} queries per jbovlaste_semantic_search call.",
-                SEMANTIC_SEARCH_MAX_QUERIES_PER_CALL
-            ));
-        }
-        Ok(v)
-    }
-}
-
-#[derive(Debug, Deserialize, Clone)]
-struct ResolveReference {
-    definitionid: i32,
-    field: String,
-    #[serde(default)]
-    exampleid: Option<i32>,
-    #[serde(default)]
-    exact_text: Option<String>,
-}
-
-#[derive(Debug, Deserialize, Clone)]
-struct ResolveArgs {
-    #[serde(default)]
-    references: Vec<ResolveReference>,
-    #[serde(default)]
-    message: Option<String>,
-}
-
-impl ResolveArgs {
-    fn normalized(&self) -> Result<(Vec<ResolveReference>, Option<String>), String> {
-        if let Some(msg) = self.message.as_ref() {
-            let t = msg.trim();
-            if t.is_empty() {
-                return Err("`message` must not be empty if provided.".to_string());
-            }
-            if !self.references.is_empty() {
-                return Err("Provide either `references` or `message`, not both.".to_string());
-            }
-            return Ok((Vec::new(), Some(t.to_string())));
-        }
-        if self.references.is_empty() {
-            return Err("`references` must not be empty unless `message` is provided.".to_string());
-        }
-        for (i, r) in self.references.iter().enumerate() {
-            let f = r.field.trim().to_lowercase();
-            let valid = matches!(
-                f.as_str(),
-                "definition" | "notes" | "etymology" | "rafsi" | "example" | "decomposition"
-            );
-            if !valid {
-                return Err(format!(
-                    "references[{}].field `{}` is not one of: definition, notes, etymology, rafsi, example, decomposition",
-                    i, r.field
-                ));
-            }
-            if f == "example" && r.exampleid.is_none() {
-                return Err(format!(
-                    "references[{}].exampleid is required when field is `example`",
-                    i
-                ));
-            }
-            let exact = r.exact_text.as_deref().unwrap_or("").trim();
-            if exact.is_empty() {
-                return Err(format!(
-                    "references[{}].exact_text is required and must not be empty",
-                    i
-                ));
-            }
-        }
-        Ok((self.references.clone(), None))
-    }
-}
-
-#[derive(Debug, Clone)]
-struct SearchBatch {
-    queries: Vec<String>,
-    limit: Option<u32>,
-    languages: Option<Vec<String>>,
-    source_language: Option<String>,
-}
-
-/// Extract a jbovlaste language tag from a locale string (e.g. "en-US" → "en").
-fn language_tag_from_locale(locale: &str) -> Option<String> {
-    let tag = locale.split(['-', '_']).next()?;
-    let tag = tag.trim().to_lowercase();
-    if tag.len() >= 2 {
-        Some(tag)
-    } else {
-        None
-    }
-}
-
-impl SearchBatch {
-    fn from_tool_args(args: &ToolArgs, queries: Vec<String>, default_locale: Option<&str>) -> Self {
-        let languages = args.languages.clone().or_else(|| {
-            default_locale
-                .and_then(language_tag_from_locale)
-                .map(|tag| {
-                    log::info!(
-                        "Assistant: LLM omitted `languages`; defaulting to [\"{}\"] from locale",
-                        tag
-                    );
-                    vec![tag]
-                })
-        });
-        Self {
-            queries,
-            limit: args.limit,
-            languages,
-            source_language: args.source_language.clone(),
-        }
-    }
-
-    fn call_core(&self, query: &str) -> SemanticSearchCore {
-        SemanticSearchCore {
-            query: query.to_string(),
-            limit: self.limit,
-        }
-    }
-}
-
-/// One assistant turn may include several tool calls; each jbovlaste search slot runs a **batch** of queries in parallel.
-#[derive(Debug)]
-enum PreparedToolSlot {
-    Immediate {
-        tool_call_id: Option<String>,
-        name: Option<String>,
-        content: String,
-    },
-    Search {
-        tool_call_id: Option<String>,
-        name: Option<String>,
-        batch: SearchBatch,
-        assistant_reasoning: Option<String>,
-        global_step_index: usize,
-        action_desc: String,
-    },
-    Resolve {
-        tool_call_id: Option<String>,
-        name: Option<String>,
-        refs: Vec<ResolveReference>,
-        message: Option<String>,
-        assistant_reasoning: Option<String>,
-        global_step_index: usize,
-        action_desc: String,
-    },
 }
 
 async fn run_jbovlaste_semantic_search_core(
@@ -1796,42 +1287,13 @@ fn assistant_request_analysis_enabled() -> bool {
         .unwrap_or(false)
 }
 
-#[derive(Debug, Deserialize)]
-struct RequestAnalysis {
-    intent: String,
-    #[serde(default)]
-    on_topic: bool,
-    #[serde(default = "default_true")]
-    needs_search: bool,
-    #[serde(default)]
-    search_queries: Vec<String>,
-    ambiguity_note: Option<String>,
-}
-
-fn default_true() -> bool {
-    true
-}
-
-impl Default for RequestAnalysis {
-    fn default() -> Self {
-        Self {
-            intent: String::new(),
-            on_topic: true,
-            needs_search: true,
-            search_queries: Vec::new(),
-            ambiguity_note: None,
-        }
-    }
-}
-
 /// Ask a low-temperature classifier to scrutinize the user's request before the
 /// main assistant loop. On parse/call failure it returns a permissive default so
 /// the chat is not blocked.
 async fn analyze_request(
     request: &ChatRequest,
+    openrouter: &OpenRouterClient,
     candidate: &ModelIdName,
-    api_key: &str,
-    base_url: &str,
 ) -> RequestAnalysis {
     let Some(last_user) = request.messages.iter().rev().find(|m| m.role == "user") else {
         return RequestAnalysis::default();
@@ -1848,86 +1310,27 @@ Rules: \
 - search_queries = 1-6 short gloss-style strings in the user's language (use the user's exact words when possible). \
 - ambiguity_note = brief clarification if the request is ambiguous; otherwise empty string.";
 
-    let body = ChatCompletionRequest {
-        model: candidate.0.clone(),
-        messages: vec![
-            ChatCompletionMessageRequest {
-                role: "system".to_string(),
-                content: classifier_prompt.to_string(),
-                tool_call_id: None,
-                name: None,
-                tool_calls: None,
-            },
-            ChatCompletionMessageRequest {
-                role: "user".to_string(),
-                content: last_user.content.clone(),
-                tool_call_id: None,
-                name: None,
-                tool_calls: None,
-            },
-        ],
-        tools: None,
-        tool_choice: None,
-        parallel_tool_calls: None,
+    let raw = match text_completion_with_model(
+        openrouter,
+        &candidate.0,
+        classifier_prompt,
+        &last_user.content,
+        "request analysis",
+        20,
+    )
+    .await
+    {
+        Ok(Some(raw)) => raw,
+        _ => return RequestAnalysis::default(),
     };
 
-    let client = reqwest::Client::new();
-    let label = "request analysis";
-    let api_fut = openrouter_chat_with_retry(label, {
-        let client = client.clone();
-        let base_url = base_url.to_string();
-        let api_key = api_key.to_string();
-        let body = body.clone();
-        let label = label.to_string();
-        move || {
-            let client = client.clone();
-            let base_url = base_url.clone();
-            let api_key = api_key.clone();
-            let body = body.clone();
-            let label = label.clone();
-            async move {
-                let res = client
-                    .post(format!("{}/chat/completions", base_url))
-                    .header("Authorization", format!("Bearer {}", api_key))
-                    .header("Content-Type", "application/json")
-                    .json(&body)
-                    .send()
-                    .await?;
-                let ok = ensure_openrouter_status(res, &label).await?;
-                parse_chat_response(ok, &label).await
-            }
-        }
-    });
-
-    let timeout = Duration::from_secs(20);
-    match tokio::time::timeout(timeout, api_fut).await {
-        Ok(Ok(resp)) => {
-            let raw = resp
-                .choices
-                .into_iter()
-                .next()
-                .and_then(|c| c.message.content)
-                .unwrap_or_default();
-            match serde_json::from_str::<RequestAnalysis>(&raw) {
-                Ok(a) => a,
-                Err(e) => {
-                    log::warn!(
-                        "Assistant: failed to parse request analysis JSON: {} (raw: {})",
-                        e,
-                        raw
-                    );
-                    RequestAnalysis::default()
-                }
-            }
-        }
-        Ok(Err(e)) => {
-            log::warn!("Assistant: request analysis call failed: {}", e);
-            RequestAnalysis::default()
-        }
-        Err(_) => {
+    match serde_json::from_str::<RequestAnalysis>(&raw) {
+        Ok(a) => a,
+        Err(e) => {
             log::warn!(
-                "Assistant: request analysis timed out after {}s",
-                timeout.as_secs()
+                "Assistant: failed to parse request analysis JSON: {} (raw: {})",
+                e,
+                raw
             );
             RequestAnalysis::default()
         }
@@ -1949,14 +1352,10 @@ pub async fn run_agent_loop(
     redis: Option<&RedisCache>,
     persist: Option<Arc<ChatPersistState>>,
 ) -> Result<(String, Vec<AssistantStep>), AppError> {
-    let api_key = env::var("OPENROUTER_API_KEY").map_err(|_| {
-        AppError::ExternalService("OPENROUTER_API_KEY is not set in the environment".into())
-    })?;
-    let base_url = env::var("OPENROUTER_API_BASE")
-        .unwrap_or_else(|_| "https://openrouter.ai/api/v1".to_string());
+    let openrouter = OpenRouterClient::from_env()?;
 
     let (mut candidates, mut from_redis_only) =
-        match load_or_fetch_openrouter_candidates(redis, &base_url, &api_key).await {
+        match load_or_fetch_openrouter_candidates(redis, openrouter.base_url(), openrouter.api_key()).await {
             Ok(v) => v,
             Err(e) => {
                 emit_sse_error(&event_tx, &persist, &e).await;
@@ -1967,7 +1366,7 @@ pub async fn run_agent_loop(
     // Optional pre-loop request analysis: refuse off-topic questions early and
     // avoid wasting model iterations on out-of-scope requests.
     if assistant_request_analysis_enabled() && !candidates.is_empty() {
-        let analysis = analyze_request(request, &candidates[0], &api_key, &base_url).await;
+        let analysis = analyze_request(request, &openrouter, &candidates[0]).await;
         log::debug!(
             "Assistant: request analysis intent='{}' on_topic={} needs_search={} search_queries={:?}",
             analysis.intent,
@@ -2014,7 +1413,12 @@ pub async fn run_agent_loop(
                     "OpenRouter: Redis-cached assistant models failed ({}); loading full catalog once",
                     e
                 );
-                candidates = match fetch_latest_openrouter_models(&base_url, &api_key).await {
+                candidates = match fetch_latest_openrouter_models(
+                    openrouter.base_url(),
+                    openrouter.api_key(),
+                )
+                .await
+                {
                     Ok(v) => v,
                     Err(e2) => {
                         emit_sse_error(&event_tx, &persist, &e2).await;
@@ -2242,8 +1646,6 @@ pub(crate) async fn run_agent_loop_inner(
     let mut state = AgentState::new(pool, request, candidates).await?;
 
     // Destructure mutable references to the state fields we will update in the loop.
-    // api_key/base_url/client/system_content/tools are cloned once to owned values
-    // so they can be moved into async closures.
     let AgentState {
         ref mut messages,
         ref mut steps,
@@ -2257,16 +1659,12 @@ pub(crate) async fn run_agent_loop_inner(
         ref context_budget,
         ref tools,
         ref candidates,
-        ref client,
-        ref api_key,
-        ref base_url,
+        ref openrouter,
         ref iteration_timeout,
         ref max_iterations,
     } = state;
 
-    let api_key = api_key.clone();
-    let base_url = base_url.clone();
-    let client = client.clone();
+    let openrouter = openrouter.clone();
     let system_content = system_content.clone();
     let tools = tools.clone();
 
@@ -2288,31 +1686,7 @@ pub(crate) async fn run_agent_loop_inner(
                 tool_choice: Some(json!("auto")),
                 parallel_tool_calls: Some(true),
             };
-            let api_fut = openrouter_chat_with_retry(&label, {
-                let client = client.clone();
-                let base_url = base_url.clone();
-                let api_key = api_key.clone();
-                let request_body = request_body.clone();
-                let label = label.clone();
-                move || {
-                    let client = client.clone();
-                    let base_url = base_url.clone();
-                    let api_key = api_key.clone();
-                    let request_body = request_body.clone();
-                    let label = label.clone();
-                    async move {
-                        let res = client
-                            .post(format!("{}/chat/completions", base_url))
-                            .header("Authorization", format!("Bearer {}", api_key))
-                            .header("Content-Type", "application/json")
-                            .json(&request_body)
-                            .send()
-                            .await?;
-                        let ok = ensure_openrouter_status(res, &label).await?;
-                        parse_chat_response(ok, &label).await
-                    }
-                }
-            });
+            let api_fut = openrouter.chat_completion_with_retry(&request_body, &label);
             let err: AppError = match tokio::time::timeout(*iteration_timeout, api_fut).await {
                 Ok(Ok(r)) => break r,
                 Ok(Err(e)) => e,
@@ -3057,37 +2431,5 @@ mod chat_message_map_tests {
         assert!(!super::error_indicates_context_limit(
             &AppError::BadRequest("nope".into())
         ));
-    }
-}
-
-#[cfg(test)]
-mod request_analysis_tests {
-    use super::RequestAnalysis;
-
-    #[test]
-    fn parses_request_analysis_json() {
-        let raw = r#"{"intent": "lookup fox", "on_topic": true, "needs_search": true, "search_queries": ["fox", "animal"], "ambiguity_note": ""}"#;
-        let a: RequestAnalysis = serde_json::from_str(raw).unwrap();
-        assert_eq!(a.intent, "lookup fox");
-        assert!(a.on_topic);
-        assert!(a.needs_search);
-        assert_eq!(a.search_queries, vec!["fox", "animal"]);
-        assert_eq!(a.ambiguity_note.as_deref(), Some(""));
-    }
-
-    #[test]
-    fn default_request_analysis_is_permissive() {
-        let a = RequestAnalysis::default();
-        assert!(a.on_topic);
-        assert!(a.needs_search);
-        assert!(a.search_queries.is_empty());
-    }
-
-    #[test]
-    fn request_analysis_parses_off_topic() {
-        let raw = r#"{"intent": "weather", "on_topic": false, "needs_search": false}"#;
-        let a: RequestAnalysis = serde_json::from_str(raw).unwrap();
-        assert!(!a.on_topic);
-        assert!(!a.needs_search);
     }
 }

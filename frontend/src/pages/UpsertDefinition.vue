@@ -1,51 +1,68 @@
 <template>
-  <h2 class="text-xl sm:text-2xl font-bold text-gray-800 select-none">
-    {{
+  <UpsertPageLayout
+    ref="layoutRef"
+    :title="
       isEditMode
         ? t('upsertDefinition.editTitle')
         : prefilledWord
           ? t('upsertDefinition.addTitle')
           : t('upsertDefinition.addEntryTitle')
-    }}
-  </h2>
+    "
+  >
+    <template #trailing>
+      <UpsertToolbarButton
+        v-if="isValid && !isSubmitting"
+        type="submit"
+        form="upsert-definition-form"
+        :variant="isEditMode ? 'edit' : 'create'"
+      >
+        {{
+          isEditMode
+            ? t('upsertDefinition.updateButton')
+            : prefilledWord
+              ? t('upsertDefinition.addButton')
+              : t('upsertDefinition.addEntryButton')
+        }}
+      </UpsertToolbarButton>
+      <UpsertToolbarButton
+        v-else-if="!isValid && !isSubmitting"
+        variant="warning-orange"
+        :disabled="isAnalyzing || word === ''"
+        :loading="isAnalyzing"
+        @click="analyzeAndScroll"
+      >
+        <template #icon> <Search class="h-4 w-4 shrink-0" aria-hidden="true" /> </template>
+        {{ t('upsertDefinition.analyzeWordButton') }}
+      </UpsertToolbarButton>
+      <UpsertToolbarButton
+        v-else-if="isSubmitting"
+        type="button"
+        :variant="isEditMode ? 'edit' : 'create'"
+        disabled
+      >
+        {{ isEditMode ? t('upsertDefinition.updating') : t('upsertDefinition.adding')
+        }}<AnimatedDots />
+      </UpsertToolbarButton>
+    </template>
 
-  <form class="space-y-4 sm:space-y-6" @submit.prevent="submitValsi">
+    <form id="upsert-definition-form" class="space-y-4 sm:space-y-6" @submit.prevent="submitValsi">
     <!-- Word Input and Analysis -->
     <div>
       <label for="word" class="block text-sm font-medium text-blue-700"
         >{{ t('upsertDefinition.wordLabel') }}
         <span class="text-red-500">{{ t('upsertDefinition.required') }}</span></label
       >
-      <div class="flex flex-col sm:flex-row gap-2 sm:space-x-2">
-        <div class="flex-1 w-full">
-          <!-- Added wrapper div with flex-1 -->
-          <DynamicInput
-            id="word"
-            v-model="word"
-            :is-analyzing="isAnalyzing"
-            :is-submitting="isSubmitting"
-            :prefilled-word="prefilledWord"
-            :is-edit-mode="isEditMode"
-            @clear-analysis="clearAnalysis"
-            @clear="handleWordClear"
-          />
-        </div>
-        <!-- Only show Analyze button when adding new word -->
-        <div class="flex items-center justify-center sm:justify-end">
-          <Button
-            v-if="!isEditMode"
-            variant="warning-orange"
-            size="lg"
-            class="w-auto"
-            :disabled="isAnalyzing || isSubmitting || word === ''"
-            :loading="isAnalyzing"
-            @click="doAnalyzeWord"
-          >
-            <template #icon> <Search class="h-6 w-6 shrink-0" aria-hidden="true" /> </template>
-            {{ t('upsertDefinition.analyzeButton') }}
-          </Button>
-        </div>
-      </div>
+      <DynamicInput
+        id="word"
+        v-model="word"
+        :is-analyzing="isAnalyzing"
+        :is-submitting="isSubmitting"
+        :prefilled-word="prefilledWord"
+        :is-edit-mode="isEditMode"
+        @blur="handleWordBlur"
+        @clear-analysis="clearAnalysis"
+        @clear="handleWordClear"
+      />
     </div>
     <!-- Word Type Display -->
     <div v-if="!isEditMode && wordType" class="space-y-4">
@@ -205,7 +222,7 @@
         id="definition"
         v-model="definition"
         :required="!imageData"
-        rows="4"
+        rows="8"
         :class="{
           'textarea-field': true,
           'border-red-300 focus:ring-red-500 focus:border-red-500': definitionError,
@@ -256,7 +273,7 @@
       <Textarea
         id="notes"
         v-model="notes"
-        rows="3"
+        rows="6"
         class="textarea-field"
         :disabled="isSubmitting"
       />
@@ -394,67 +411,27 @@
         {{ t('upsertDefinition.ownerOnlyNote') }}
       </p>
     </div>
-    <!-- Submit / Analyze Button -->
-    <div class="flex justify-center w-full">
-      <!-- Show Submit button if form is valid and not submitting -->
-      <Button
-        v-if="isValid && !isSubmitting"
-        type="submit"
-        size="lg"
-        class="max-w-fit ui-btn--create h-10 text-base"
-      >
-        {{
-          isEditMode
-            ? t('upsertDefinition.updateButton')
-            : prefilledWord
-              ? t('upsertDefinition.addButton')
-              : t('upsertDefinition.addEntryButton')
-        }}
-      </Button>
-      <!-- Show Analyze button if form is invalid and not submitting -->
-      <Button
-        v-else-if="!isValid && !isSubmitting"
-        variant="warning-orange"
-        size="lg"
-        class="max-w-fit"
-        :disabled="isAnalyzing || word === ''"
-        :loading="isAnalyzing"
-        @click="analyzeAndScroll"
-      >
-        <template #icon> <Search class="h-6 w-6 shrink-0" aria-hidden="true" /> </template>
-        {{ t('upsertDefinition.analyzeWordButton') }}
-      </Button>
-      <!-- Show disabled state during submission -->
-      <Button
-        v-else-if="isSubmitting"
-        type="button"
-        size="lg"
-        class="max-w-fit ui-btn--create h-10 text-base"
-        disabled
-      >
-        {{ isEditMode ? t('upsertDefinition.updating') : t('upsertDefinition.adding')
-        }}<AnimatedDots />
-      </Button>
-    </div>
-  </form>
-  <ModalComponent :show="previewKind !== null" :title="previewModalTitle" @close="closePreview">
-    <div
-      v-if="previewKind === 'definition'"
-      class="text-sm prose prose-sm max-w-none text-gray-700 overflow-y-auto"
-    >
-      <LazyMathJax v-if="definition.trim()" :content="definition" />
-      <p v-else class="text-gray-500 text-sm">{{ t('upsertDefinition.previewEmpty') }}</p>
-    </div>
+      </form>
+  </UpsertPageLayout>
 
-    <div
-      v-else-if="previewKind === 'notes'"
-      class="w-full text-sm text-gray-600 bg-gray-100 p-2 rounded-md overflow-y-auto"
-    >
-      <h4 class="italic text-gray-600">{{ t('upsertDefinition.notesLabel') }}</h4>
-      <LazyMathJax v-if="notes.trim()" :content="notes" :enable-markdown="true" />
-      <p v-else class="text-gray-500 text-sm">{{ t('upsertDefinition.previewEmpty') }}</p>
-    </div>
-  </ModalComponent>
+  <ModalComponent :show="previewKind !== null" :title="previewModalTitle" @close="closePreview">
+      <div
+        v-if="previewKind === 'definition'"
+        class="text-sm prose prose-sm max-w-none text-gray-700 overflow-y-auto"
+      >
+        <LazyMathJax v-if="definition.trim()" :content="definition" />
+        <p v-else class="text-gray-500 text-sm">{{ t('upsertDefinition.previewEmpty') }}</p>
+      </div>
+
+      <div
+        v-else-if="previewKind === 'notes'"
+        class="w-full text-sm text-gray-600 bg-gray-100 p-2 rounded-md overflow-y-auto"
+      >
+        <h4 class="italic text-gray-600">{{ t('upsertDefinition.notesLabel') }}</h4>
+        <LazyMathJax v-if="notes.trim()" :content="notes" :enable-markdown="true" />
+        <p v-else class="text-gray-500 text-sm">{{ t('upsertDefinition.previewEmpty') }}</p>
+      </div>
+    </ModalComponent>
 </template>
 
 <script setup lang="ts">
@@ -480,6 +457,8 @@ import DynamicInput from '@/components/DynamicInput.vue'
 import ImageUpload from '@/components/ImageUpload.vue'
 import LazyMathJax from '@/components/LazyMathJax.vue'
 import LujvoComponentDefinitions from '@/components/LujvoComponentDefinitions.vue'
+import UpsertPageLayout from '@/components/layout/UpsertPageLayout.vue'
+import UpsertToolbarButton from '@/components/layout/UpsertToolbarButton.vue'
 import ModalComponent from '@/components/ModalComponent.vue'
 import { useAuth } from '@/composables/useAuth'
 import { useError } from '@/composables/useError'
@@ -568,8 +547,10 @@ const prefilledWord = ref(false)
 const isEditMode = ref(false)
 const isAuthor = ref(false)
 const editDefinitionId = ref(null)
+const lastAnalyzedWord = ref('')
 /** Matches DefinitionCard: definition = MathJax only; notes = markdown + MathJax */
 const previewKind = ref<null | 'definition' | 'notes'>(null)
+const layoutRef = ref<InstanceType<typeof UpsertPageLayout> | null>(null)
 
 const previewModalTitle = computed(() => {
   if (previewKind.value === 'definition') return t('upsertDefinition.previewDefinitionTitle')
@@ -819,6 +800,7 @@ const clearAnalysis = () => {
   recommended.value = ''
   problems.value = {}
   lujvoDecomposition.value = []
+  lastAnalyzedWord.value = ''
   clearError()
 }
 
@@ -838,6 +820,7 @@ const useRecommended = () => {
 const doAnalyzeWord = async () => {
   if (!word.value) return
   word.value = word.value.trim()
+  if (!word.value) return
   isAnalyzing.value = true
 
   try {
@@ -846,6 +829,7 @@ const doAnalyzeWord = async () => {
       clearError()
       wordType.value = response.data.word_type
       word.value = response.data.text
+      lastAnalyzedWord.value = word.value
       recommended.value =
         response.data.recommended && response.data.recommended !== word.value
           ? response.data.recommended
@@ -1034,9 +1018,13 @@ watch([rafsi, word, wordId, showRafsiField, sourceLangId], () => {
 
 const analyzeAndScroll = async () => {
   await doAnalyzeWord()
-  const mainContent = document.querySelector('.main-content')
-  if (mainContent) {
-    mainContent.scrollTo({ top: 0, behavior: 'smooth' })
-  }
+  layoutRef.value?.scrollToTop()
+}
+
+const handleWordBlur = () => {
+  if (isEditMode.value || isAnalyzing.value || isSubmitting.value) return
+  const trimmed = word.value.trim()
+  if (!trimmed || trimmed === lastAnalyzedWord.value) return
+  void doAnalyzeWord()
 }
 </script>

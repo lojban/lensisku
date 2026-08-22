@@ -1704,7 +1704,8 @@
     "conflictError": "This page was modified by someone else. Reload and try again.",
     "fromCommentBanner": "Creating a wiki page from comment #{id}.",
     "fromCommentLink": "View comment",
-    "fromCommentCommit": "Created from comment #{id}"
+    "fromCommentCommit": "Created from comment #{id}",
+    "generatingTitle": "Suggesting a short title from the comment…"
   },
   "activityBookmarks": {
     "noBookmarks": "No bookmarked comments found."

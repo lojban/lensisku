@@ -11,6 +11,7 @@
       :clear="prefilledWord"
       @input="handleInput"
       @paste="handlePaste"
+      @blur="emit('blur')"
       @clear="handleClear"
     />
     <Textarea
@@ -24,6 +25,7 @@
       :readonly="isEditMode"
       @input="handleInput"
       @paste="handlePaste"
+      @blur="emit('blur')"
     />
   </div>
 </template>
@@ -47,7 +49,7 @@ const props = defineProps({
   isEditMode: Boolean,
 })
 
-const emit = defineEmits(['update:modelValue', 'input', 'clear-analysis', 'clear'])
+const emit = defineEmits(['update:modelValue', 'input', 'blur', 'clear-analysis', 'clear'])
 
 const inputValue = ref(props.modelValue)
 const useTextarea = ref(false)

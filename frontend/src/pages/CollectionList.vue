@@ -18,7 +18,7 @@
           to="/library"
           class="ui-btn--neutral inline-flex items-center gap-2"
         >
-          <BookOpen class="h-4 w-4 shrink-0" />
+          <Star class="h-4 w-4 shrink-0" />
           <span>{{ t('nav.library') }}</span>
         </RouterLink>
         <RouterLink v-else to="/login" class="font-medium text-blue-600 underline hover:text-blue-800">
@@ -139,7 +139,7 @@
 </template>
 
 <script setup lang="ts">
-import { BookOpen, CalendarDays, Calendar, Trophy, ArrowDown } from '@lucide/vue'
+import { Star, CalendarDays, Calendar, Trophy, ArrowDown } from '@lucide/vue'
 import { ref, computed, onBeforeUnmount, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'

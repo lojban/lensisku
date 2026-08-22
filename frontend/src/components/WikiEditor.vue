@@ -100,7 +100,7 @@ defineExpose({
 
 <style scoped>
 .milkdown-editor {
-  @apply min-h-60 flex flex-col;
+  @apply min-h-80 flex flex-col;
 }
 
 .milkdown-editor :deep(.milkdown) {

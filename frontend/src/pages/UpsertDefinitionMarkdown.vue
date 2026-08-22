@@ -1,14 +1,27 @@
 <template>
-  <div class="container mx-auto p-4">
-    <h2 class="text-xl sm:text-2xl font-bold text-gray-800 select-none mb-4">
-      {{
-        isEditMode
-          ? t('upsertDefinitionMarkdown.editTitle')
-          : t('upsertDefinitionMarkdown.addTitle')
-      }}
-    </h2>
+  <UpsertPageLayout
+    narrow
+    :title="
+      isEditMode
+        ? t('upsertDefinitionMarkdown.editTitle')
+        : t('upsertDefinitionMarkdown.addTitle')
+    "
+  >
+    <template #trailing>
+      <UpsertToolbarButton
+        type="submit"
+        form="upsert-definition-markdown-form"
+        :variant="isEditMode ? 'edit' : 'create'"
+        :disabled="isSubmitting || !isValid"
+      >
+        <template v-if="isSubmitting"
+          >{{ t('upsertDefinitionMarkdown.saving') }}<AnimatedDots
+        /></template>
+        <template v-else>{{ t('upsertDefinitionMarkdown.saveButton') }}</template>
+      </UpsertToolbarButton>
+    </template>
 
-    <form class="space-y-4" @submit.prevent="submitValsi">
+    <form id="upsert-definition-markdown-form" class="space-y-4" @submit.prevent="submitValsi">
       <!-- Word Input -->
       <div>
         <label for="word" class="block text-sm font-medium text-blue-700">
@@ -67,21 +80,12 @@
         </label>
         <div ref="editor" class="milkdown-editor" />
       </div>
-      <!-- Submit Button -->
-      <div class="flex justify-end">
-        <Button variant="create" type="submit" :disabled="isSubmitting || !isValid">
-          <template v-if="isSubmitting"
-            >{{ t('upsertDefinitionMarkdown.saving') }}<AnimatedDots
-          /></template>
-          <template v-else>{{ t('upsertDefinitionMarkdown.saveButton') }}</template>
-        </Button>
-      </div>
     </form>
-  </div>
+  </UpsertPageLayout>
 </template>
 
 <script setup lang="ts">
-import { Button, Input, Select } from '@packages/ui'
+import { Input, Select } from '@packages/ui'
 import { Crepe } from '@milkdown/crepe'
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -89,6 +93,8 @@ import { useI18n } from 'vue-i18n'
 
 import { getLanguages, addValsi, updateValsi, getDefinition } from '@/api'
 import AnimatedDots from '@/components/AnimatedDots.vue'
+import UpsertPageLayout from '@/components/layout/UpsertPageLayout.vue'
+import UpsertToolbarButton from '@/components/layout/UpsertToolbarButton.vue'
 import '@milkdown/crepe/theme/common/style.css'
 import '@milkdown/crepe/theme/frame.css'
 import { useSeoHead } from '@/composables/useSeoHead'
@@ -274,26 +280,10 @@ async function submitValsi() {
     isSubmitting.value = false
   }
 }
-
-onMounted(async () => {
-  await loadLanguages()
-
-  const definitionId = route.params.id
-  if (definitionId) {
-    isEditMode.value = true
-    editDefinitionId.value = definitionId
-    await loadDefinitionData(definitionId)
-  }
-})
 </script>
 
 <style scoped>
-.container {
-  max-width: 800px;
-}
-
 .milkdown-editor {
-  @apply border border-gray-300;
-  /* min-height: 300px; */
+  @apply min-h-80 border border-gray-300;
 }
 </style>

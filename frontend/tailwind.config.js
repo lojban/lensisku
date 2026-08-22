@@ -977,6 +977,57 @@ export default {
         '.card-study-area': {
           '@apply flex items-center justify-center min-h-[5.5rem] py-6 sm:py-8 flex-shrink-0': {},
         },
+        /** Native / imported wiki article: dense reading layout (especially on mobile). */
+        '.wiki-article': {
+          '@apply flex flex-col gap-2 pb-2 sm:gap-3': {},
+        },
+        '.wiki-article-toolbar': {
+          '@apply flex min-w-0 items-center gap-2': {},
+        },
+        '.wiki-article-card': {
+          '@apply rounded-lg border border-gray-100 bg-white px-3 py-2.5 shadow-sm sm:px-4 sm:py-3':
+            {},
+        },
+        '.wiki-article-header': {
+          '@apply mb-2 border-b border-gray-100 pb-2': {},
+        },
+        '.wiki-article-title': {
+          '@apply min-w-0 text-lg font-bold leading-tight text-gray-800 sm:text-xl': {},
+        },
+        '.wiki-article-actions': {
+          '@apply flex shrink-0 flex-nowrap items-center gap-1.5': {},
+        },
+        '.wiki-article-meta': {
+          '@apply mt-0.5 text-xs text-gray-500': {},
+        },
+        '.wiki-article-body': {
+          '@apply max-w-none break-words text-sm leading-snug text-gray-700 sm:text-base': {},
+          '& p': {
+            marginTop: '0.375rem',
+            marginBottom: '0.375rem',
+          },
+          '& p:first-child': {
+            marginTop: '0',
+          },
+          '& p:last-child': {
+            marginBottom: '0',
+          },
+          '& h1, & h2, & h3, & h4': {
+            '@apply mb-1 mt-2.5 font-semibold': {},
+            '&:first-child': {
+              marginTop: '0',
+            },
+          },
+          '& ul, & ol': {
+            '@apply my-1.5 pl-5': {},
+          },
+          '& li': {
+            '@apply my-0.5': {},
+          },
+          '& a': {
+            '@apply font-medium text-blue-600 underline hover:text-blue-800': {},
+          },
+        },
         // --- Tab strips (aqua vs flat styled in `buttonUiThemeLayer`) ---
         /**
          * Page tab row (`TabbedPageHeader` / `NotebookTab`). Aqua: Cheetah GTK notebook strip + tabs;
@@ -1084,18 +1135,14 @@ export default {
           'ui-btn--study-correct': { aqua: 'btn-aqua-teal', flat: 'btn-success' },
           'ui-btn--study-wrong': { aqua: 'btn-aqua-rose', flat: 'btn-error' },
           'ui-btn--success': { aqua: 'btn-aqua-emerald', flat: 'btn-success' },
-          /** Edit / apply — yellow (flat `btn-update`, aqua `btn-aqua-yellow`). */
+          /** Edit / apply — yellow (flat `btn-update` / `btn-edit`, aqua `btn-aqua-yellow`). */
           'ui-btn--update': { aqua: 'btn-aqua-yellow', flat: 'btn-update' },
           /** Role: save edits / apply changes — synonym of `update`. */
-          'ui-btn--edit': { aqua: 'btn-aqua-yellow', flat: 'btn-update' },
+          'ui-btn--edit': { aqua: 'btn-aqua-yellow', flat: 'btn-edit' },
           'ui-btn--warning': { aqua: 'btn-aqua-orange', flat: 'btn-warning' },
           'ui-btn--warning-orange': { aqua: 'btn-aqua-orange', flat: 'btn-warning' },
-          /**
-           * Decorative yellow only (same hue as edit). Never place beside `ui-btn--edit` in the
-           * same toolbar / `.btn-group` — at most one yellow control. Flat `btn-revert` is the
-           * yellow primitive (name is historical).
-           */
-          'ui-btn--warning-yellow': { aqua: 'btn-aqua-yellow', flat: 'btn-revert' },
+          /** Caution highlight — amber in flat theme (yellow reserved for edit/update). */
+          'ui-btn--warning-yellow': { aqua: 'btn-aqua-yellow', flat: 'btn-warning' },
         }
         addThemeMap(buttonThemeClassMap)
         /** Selected/saved state for neutral buttons (e.g. bookmark): push from slate to light blue. */

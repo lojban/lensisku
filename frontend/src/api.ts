@@ -422,6 +422,11 @@ export const getAssistantChatStreamPostUrl = (chatId: string) =>
 /** Anonymous stream: POST full `messages` JSON (no DB chat id). */
 export const getAssistantPublicStreamPostUrl = () => `${getApiBaseUrl()}/assistant/chat/stream`
 
+export const suggestWikiTitleFromComment = (commentId: number | string) =>
+  api.post<{ title: string }>('/assistant/wiki-title-from-comment', {
+    comment_id: Number(commentId),
+  })
+
 export const getAuthHeaders = (): Record<string, string> => {
   const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null
   return token ? { Authorization: `Bearer ${token}` } : {}

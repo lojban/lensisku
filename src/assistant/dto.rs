@@ -37,6 +37,16 @@ pub struct ChatRequest {
 }
 
 /// One step of the assistant's thought process (e.g. a tool call and its result).
+#[derive(Debug, Deserialize)]
+pub struct WikiTitleFromCommentRequest {
+    pub comment_id: i32,
+}
+
+#[derive(Debug, Serialize)]
+pub struct WikiTitleFromCommentResponse {
+    pub title: String,
+}
+
 #[derive(Debug, Clone, Serialize)]
 pub struct AssistantStep {
     /// Human-readable description of the action (e.g. "Semantic search: \"word combinations\"").
