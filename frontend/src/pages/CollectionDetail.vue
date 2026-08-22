@@ -107,20 +107,45 @@
               role="group"
               aria-label="Collection editing"
             >
-              <Button
-                variant="create"
+              <ToolbarSelectDropdown
+                :aria-label="t('collectionDetail.addItem')"
+                trigger-icon="ellipsis"
                 class="ui-btn--group-item md:flex-none"
-                @click="openAddModal"
               >
-                <PlusCircle class="w-4 h-4" /> {{ t('collectionDetail.addItem') }}
+                <template #label>
+                  <PlusCircle class="h-4 w-4 shrink-0" aria-hidden="true" />
+                  <span>{{ t('collectionDetail.addItem') }}</span>
+                </template>
+                <ToolbarSelectDropdownItem @click="openAddModal">
+                  {{ t('collectionDetail.addItemButton') }}
+                </ToolbarSelectDropdownItem>
+                <ToolbarSelectDropdownItem
+                  @click="router.push(`/collections/${props.collectionId}/custom-text-bulk`)"
+                >
+                  {{ t('collectionDetail.bulkEditCustomText') }}
+                </ToolbarSelectDropdownItem>
+                <ToolbarSelectDropdownItem
+                  v-if="canExportFilteredItems"
+                  @click="goToCollectionExport"
+                >
+                  {{ t('collectionDetail.exportFilteredItems') }}
+                </ToolbarSelectDropdownItem>
+              </ToolbarSelectDropdown>
+            </div>
+
+            <div
+              v-else-if="canExportFilteredItems"
+              class="btn-group-forced flex flex-wrap items-center justify-center md:gap-y-2"
+              role="group"
+              aria-label="Collection export"
+            >
+              <Button
+                variant="read"
+                class="ui-btn--group-item md:flex-none"
+                @click="goToCollectionExport"
+              >
+                {{ t('collectionDetail.exportFilteredItems') }}
               </Button>
-              <RouterLink
-                :to="`/collections/${props.collectionId}/custom-text-bulk`"
-                class="ui-btn--edit ui-btn--group-item inline-flex items-center gap-2"
-              >
-                <Table2 class="w-4 h-4 shrink-0" aria-hidden="true" />
-                {{ t('collectionDetail.bulkEditCustomText') }}
-              </RouterLink>
             </div>
 
             <div
@@ -1362,7 +1387,6 @@ import {
   GalleryVerticalIcon,
   LayoutPanelTop,
   List,
-  Table2,
   BookOpen,
   Edit3,
   HelpCircle,
@@ -3030,6 +3054,31 @@ const openMergeModal = () => {
 const openAddModal = () => {
   resetForm()
   showAddModal.value = true
+}
+
+const canExportFilteredItems = computed(
+  () => collection.value && (collection.value.is_public || isOwner.value)
+)
+
+const goToCollectionExport = () => {
+  const mode =
+    searchMode.value === 'dictionary' || searchMode.value === 'semantic'
+      ? searchMode.value
+      : itemFilters.value.isSemantic
+        ? 'semantic'
+        : 'dictionary'
+  router.push({
+    path: '/export/search',
+    query: compactQuery({
+      q: itemSearchQuery.value || undefined,
+      mode,
+      collection_only: '1',
+      ...combinedFiltersToQuery({
+        ...itemFilters.value,
+        selectedCollections: [numericCollectionId.value],
+      }),
+    }),
+  })
 }
 
 const confirmDeleteItem = () => {

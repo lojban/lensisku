@@ -1,9 +1,5 @@
 <script setup lang="ts">
-import { useAttrs } from 'vue'
-
 import { Button } from '@packages/ui'
-
-defineOptions({ inheritAttrs: false })
 
 withDefaults(
   defineProps<{
@@ -18,13 +14,10 @@ withDefaults(
     type: 'button',
   }
 )
-
-const attrs = useAttrs()
 </script>
 
 <template>
   <Button
-    v-bind="attrs"
     :variant="variant"
     :type="type"
     :form="form"

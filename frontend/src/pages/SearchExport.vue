@@ -144,6 +144,7 @@ function updateUrlWithFilters() {
     query: compactQuery({
       q: searchQuery.value || undefined,
       mode: filters.value.isSemantic ? 'semantic' : 'dictionary',
+      collection_only: queryStr(route.query.collection_only) === '1' ? '1' : undefined,
       ...combinedFiltersToQuery(filters.value),
     }),
   })
@@ -196,6 +197,9 @@ function buildExportParams(): Record<string, string | number | boolean> {
   }
   if (filters.value.selectedCollections?.length) {
     params.collection_ids = filters.value.selectedCollections.join(',')
+  }
+  if (queryStr(route.query.collection_only) === '1') {
+    params.collection_only = true
   }
   if (filters.value.isSemantic && search) {
     params.semantic = true

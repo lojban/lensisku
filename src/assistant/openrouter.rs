@@ -394,5 +394,10 @@ where
             }
         }
     }
-    Err(last_err.expect("OpenRouter retry loop exhausted without success"))
+    match last_err {
+        Some(e) => Err(e),
+        None => Err(AppError::Internal(format!(
+            "OpenRouter {label} retry loop exhausted without success"
+        ))),
+    }
 }

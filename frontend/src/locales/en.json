@@ -597,6 +597,7 @@
     "deleteCollection": "Delete collection",
     "searchItemsPlaceholder": "Search items...",
     "addItem": "Add item",
+    "exportFilteredItems": "Export items",
     "importJsonButton": "Import as JSON",
     "importFullButton": "Import from file",
     "importJsonSuccess": "Imported {imported} items, skipped {skipped} items.",
@@ -748,7 +749,7 @@
   },
   "searchExport": {
     "title": "Export search results",
-    "description": "Export search matches as PDF, LaTeX, XML, JSON, or TSV. Authors and collections are a union: hits from selected collections plus definitions by selected authors. Unscoped global dictionary results are omitted when collections are filtered without authors.",
+    "description": "Export search matches as PDF, LaTeX, XML, JSON, or TSV. Authors and collections are a union on the home search page; collection-only exports include filtered collection items only (no global dictionary fallback).",
     "emptyFilterHint": "Enter a search or pick a filter (collection, word type, author, selmaho, source language, or turn off search-in-phrases).",
     "exportButton": "Export results",
     "generating": "Generating export...",

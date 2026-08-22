@@ -12,7 +12,6 @@ mod wiki_title;
 
 use actix_web::web;
 
-pub use models::*;
 pub use service::*;
 
 pub fn configure(cfg: &mut web::ServiceConfig) {

@@ -70,7 +70,8 @@ pub struct ExportOptions {
 /// Query for `GET /export/search` — same filters as dictionary / collection search.
 /// Authors∪collections is a union: collection matches plus author-scoped dictionary.
 /// When `collection_ids` is set without include-authors, the unscoped global dictionary
-/// fallback is omitted.
+/// fallback is omitted. When `collection_only` is true, only collection items matching
+/// the filters are exported (authors filter collection items; no dictionary union).
 #[derive(Debug, Default, Deserialize)]
 pub struct SearchExportQuery {
     pub format: Option<String>,
@@ -84,6 +85,7 @@ pub struct SearchExportQuery {
     pub search_in_phrases: Option<bool>,
     pub semantic: Option<bool>,
     pub collection_ids: Option<String>,
+    pub collection_only: Option<bool>,
 }
 
 /// Combined JSON body for a filtered search export.

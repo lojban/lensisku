@@ -579,6 +579,7 @@
     "deleteCollection": "コレクションを削除",
     "searchItemsPlaceholder": "項目を検索…",
     "addItem": "項目を追加",
+    "exportFilteredItems": "項目をエクスポート",
     "importJsonButton": "JSON でインポート",
     "importFullButton": "ファイルからインポート",
     "importJsonSuccess": "{imported} 件をインポート、{skipped} 件をスキップしました。",

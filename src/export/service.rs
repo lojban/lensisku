@@ -2522,11 +2522,18 @@ pub async fn export_search_results(
         .unwrap_or_default();
 
     let use_semantic = query.semantic.unwrap_or(false) && !search_term.is_empty();
+    let collection_only = query.collection_only.unwrap_or(false);
     // Authors∪collections: collection matches ∪ author-scoped dictionary.
-    // Skip unscoped dictionary when collections are set without include-authors.
+    // Skip dictionary for collection-only export, or when collections are set without authors.
     let has_collections = !collection_ids.is_empty();
     let has_authors = usernames.is_some();
-    let skip_dictionary_fallback = has_collections && !has_authors;
+    let skip_dictionary_fallback =
+        collection_only || (has_collections && !has_authors);
+    let collection_item_usernames = if collection_only {
+        usernames.clone()
+    } else {
+        None
+    };
 
     if use_semantic {
         if crate::utils::embeddings::embeddings_disabled() {
@@ -2543,8 +2550,7 @@ pub async fn export_search_results(
                 languages: languages.clone(),
                 selmaho: selmaho.clone(),
                 word_type: query.word_type,
-                // OR with authors: do not AND include-authors onto collection hits.
-                usernames: None,
+                usernames: collection_item_usernames.clone(),
                 exclude_usernames: exclude_usernames.clone(),
                 source_langid: query.source_langid,
                 search_in_phrases: query.search_in_phrases,
@@ -2622,8 +2628,7 @@ pub async fn export_search_results(
             languages: languages.clone(),
             selmaho: selmaho.clone(),
             word_type: query.word_type,
-            // OR with authors: do not AND include-authors onto collection hits.
-            usernames: None,
+            usernames: collection_item_usernames.clone(),
             exclude_usernames: exclude_usernames.clone(),
             source_langid: query.source_langid,
             search_in_phrases: query.search_in_phrases,

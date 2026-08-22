@@ -545,6 +545,7 @@
     "deleteCollection": "Удалить коллекцию",
     "searchItemsPlaceholder": "Искать элементы...",
     "addItem": "Добавить элемент",
+    "exportFilteredItems": "Экспортировать элементы",
     "importJsonButton": "Импортировать как JSON",
     "importJsonSuccess": "Импортировано {imported} элементов, пропущено {skipped} элементов.",
     "importJsonError": "Не удалось импортировать JSON файл.",

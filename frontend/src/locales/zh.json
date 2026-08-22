@@ -584,6 +584,7 @@
     "deleteCollection": "删除合集",
     "searchItemsPlaceholder": "搜索条目…",
     "addItem": "添加条目",
+    "exportFilteredItems": "导出条目",
     "importJsonButton": "以 JSON 导入",
     "importFullButton": "从文件导入",
     "importJsonSuccess": "已导入 {imported} 条，跳过 {skipped} 条。",
