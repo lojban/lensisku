@@ -14,7 +14,9 @@
   <div v-if="isWinterSeason && showPyro" class="pyro" />
   <div
     class="app-layout-column"
-    :class="{ 'app-layout-column--no-footer': route.meta.fullHeight }"
+    :class="{
+      'app-layout-column--no-footer': route.meta.fullHeight || route.meta.hidePageFooter,
+    }"
   >
   <!-- Mobile-optimized header (omit on routes with meta.hideTopBar, e.g. full-bleed experiences) -->
 
@@ -313,7 +315,7 @@
   </div>
   <!-- Floating action menu (FAB trigger + standard dropdown panel) -->
   <div
-    v-if="auth.state.isLoggedIn && route.name !== 'flashcard-study' && !route.meta.fullHeight"
+    v-if="auth.state.isLoggedIn && !route.meta.hideFab && !route.meta.fullHeight"
     class="max-w-4xl mx-auto relative"
   >
     <div
@@ -358,7 +360,7 @@
       </ToolbarSelectDropdown>
     </div>
   </div>
-  <FooterComponent v-if="!route.meta.fullHeight" />
+  <FooterComponent v-if="!route.meta.hidePageFooter && !route.meta.fullHeight" />
 </template>
 
 <script setup lang="ts">

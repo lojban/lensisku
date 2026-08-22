@@ -282,6 +282,14 @@ export default {
         '.icon-btn-ui-layout': {
           '@apply inline-flex items-center gap-2 w-auto md:flex-none': {},
         },
+        /**
+         * Icon above label. Aqua pills are `h-6` + `overflow:hidden`, which otherwise clips stacked
+         * content and lets the grid shrink the control below the label’s min-content width.
+         */
+        '.icon-btn-ui-layout--stacked': {
+          '@apply !h-auto min-h-max min-w-min !rounded-md !py-1.5 !leading-snug !whitespace-normal [&>span]:flex-col [&>span]:items-center [&>span]:justify-center [&>span]:text-center [&>span]:leading-snug [&>span]:gap-0.5 [&>span]:whitespace-normal':
+            {},
+        },
         /** Destructive icon control (e.g. delete in assistant chat list). */
         '.icon-btn-ghost-danger': {
           '@apply shrink-0 rounded p-1 text-gray-400 transition-colors hover:text-red-600 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-300 md:opacity-100':
@@ -595,6 +603,13 @@ export default {
             {},
         },
         /** Lingo compact study: same interaction, green accent + smaller type. */
+        /** Icon-only play/pause control: tall enough for aqua gloss without clipping the glyph. */
+        '.audio-player-btn': {
+          '@apply !h-8 !min-h-8 !w-8 !min-w-8 !px-0 cursor-pointer shrink-0': {},
+          '& svg': {
+            '@apply relative z-[3] h-4 w-4 shrink-0': {},
+          },
+        },
         '.study-quiz-option-lingo-text': {
           '@apply cursor-pointer rounded-xl border-2 border-slate-200 bg-white p-2.5 text-left text-xs font-medium text-gray-800 transition-colors duration-200 hover:border-green-400 hover:bg-green-50/50 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-60 sm:text-sm':
             {},

@@ -69,6 +69,7 @@ const baseRoutes: Array<RouteRecordRaw> = [
     meta: {
       hideTopBar: true,
       hideFooter: true,
+      hidePageFooter: true,
       fullHeight: true,
       contentTopPaddingMainOnly: true,
     },
@@ -350,6 +351,7 @@ const baseRoutes: Array<RouteRecordRaw> = [
     meta: {
       hideTopBar: true,
       hideFooter: true,
+      hidePageFooter: true,
       fullHeight: true,
       contentTopPaddingMainOnly: true,
     },
@@ -361,7 +363,7 @@ const baseRoutes: Array<RouteRecordRaw> = [
     path: '/collections/:collectionId/flashcards/study',
     name: 'FlashcardStudy',
     component: () => import('../pages/FlashcardStudyView.vue'),
-    meta: { hideFooter: true },
+    meta: { hideFooter: true, hideFab: true, hidePageFooter: true },
   },
   {
     path: '/collections/:collectionId/lingo/study',

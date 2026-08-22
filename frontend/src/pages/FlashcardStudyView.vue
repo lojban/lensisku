@@ -164,7 +164,6 @@
                       : undefined
                   "
                   :suppress-play-errors="true"
-                  class="h-6 w-6"
                 />
               </div>
 
@@ -318,7 +317,6 @@
                           : undefined
                       "
                       :suppress-play-errors="true"
-                      class="h-6 w-6 inline-block"
                     />
                   </div>
 
@@ -1227,7 +1225,7 @@ onMounted(async () => {
   position: fixed;
   left: 0;
   right: 0;
-  bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));
+  bottom: env(safe-area-inset-bottom, 0px);
   z-index: 10;
   padding: 0 2rem 0;
   box-sizing: border-box;

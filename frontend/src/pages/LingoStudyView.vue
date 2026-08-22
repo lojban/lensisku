@@ -111,7 +111,6 @@
                           : undefined
                       "
                       :suppress-play-errors="true"
-                      class="h-5 w-5 shrink-0"
                     />
                   </div>
 
@@ -277,7 +276,6 @@
                               : undefined
                           "
                           :suppress-play-errors="true"
-                          class="h-5 w-5 inline-block"
                         />
                       </div>
 

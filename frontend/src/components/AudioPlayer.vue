@@ -1,9 +1,9 @@
 <template>
   <div class="inline-flex items-center gap-2">
-    <Button variant="read" :disabled="isLoading" @click="togglePlay">
-      <Pause v-if="isPlaying" class="w-4 h-4" />
-      <Loader v-else-if="isLoading" class="w-4 h-4 animate-spin" />
-      <Play v-else class="w-4 h-4" />
+    <Button variant="read" class="audio-player-btn" :disabled="isLoading" @click="togglePlay">
+      <Pause v-if="isPlaying" />
+      <Loader v-else-if="isLoading" class="animate-spin" />
+      <Play v-else />
     </Button>
   </div>
 </template>

@@ -68,9 +68,7 @@ const parsed = computed(() => parseButtonClasses(props.buttonClasses))
 const resolvedVariant = computed(() => parsed.value.variant)
 
 const contentLayoutClass = computed(() =>
-  props.contentLayout === 'stacked'
-    ? '!h-auto !min-h-0 !rounded-md [&>span]:flex-col [&>span]:items-center [&>span]:justify-center [&>span]:text-center'
-    : ''
+  props.contentLayout === 'stacked' ? 'icon-btn-ui-layout--stacked' : ''
 )
 
 const rootClass = computed(() =>

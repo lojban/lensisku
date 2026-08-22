@@ -4,6 +4,12 @@ declare module 'vue-router' {
   interface RouteMeta {
     /** Hide the global app header (logo + nav). Layout heights in `App.vue` adjust automatically. */
     hideTopBar?: boolean
+    /** Hide the global floating action menu (FAB). */
+    hideFab?: boolean
+    /** Hide the public-domain notice in main content. */
+    hideFooter?: boolean
+    /** Hide the sticky page footer (live chat / marquee). */
+    hidePageFooter?: boolean
   }
 }
 
