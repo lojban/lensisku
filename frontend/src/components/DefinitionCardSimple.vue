@@ -31,6 +31,17 @@
                 </RouterLink>
               </h2>
             </div>
+            <div class="flex items-center gap-2 flex-wrap ml-auto">
+              <ClipboardButton
+                :content="
+                  (
+                    definition.definition +
+                    (definition.notes ? ' Notes: ' + definition.notes : '')
+                  ).trim()
+                "
+                :title="t('components.definitionCard.copyTitle')"
+              />
+            </div>
           </div>
 
           <div
@@ -137,6 +148,7 @@ import { RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { getTypeClass } from '@/utils/wordTypeUtils'
 import LazyMathJax from './LazyMathJax.vue'
+import ClipboardButton from '@/components/ClipboardButton.vue'
 import ModalComponent from '@/components/ModalComponent.vue'
 import type { PropType } from 'vue'
 
