@@ -29,40 +29,62 @@
             class="text-gray-700 hover:bg-gray-100"
             @click="openEditCollectionModal"
           >
+            <Edit3 class="h-4 w-4 shrink-0" aria-hidden="true" />
             {{ t('collectionDetail.editCollectionInfo') }}
+          </ToolbarSelectDropdownItem>
+          <ToolbarSelectDropdownItem
+            v-if="isOwner"
+            class="text-gray-700 hover:bg-gray-100"
+            @click="openAddModal"
+          >
+            <PlusCircle class="h-4 w-4 shrink-0" aria-hidden="true" />
+            {{ t('collectionDetail.addItemButton') }}
+          </ToolbarSelectDropdownItem>
+          <ToolbarSelectDropdownItem
+            v-if="isOwner"
+            class="text-gray-700 hover:bg-gray-100"
+            @click="router.push(`/collections/${props.collectionId}/custom-text-bulk`)"
+          >
+            <FileText class="h-4 w-4 shrink-0" aria-hidden="true" />
+            {{ t('collectionDetail.bulkEditCustomText') }}
+          </ToolbarSelectDropdownItem>
+          <ToolbarSelectDropdownItem
+            v-if="canExportFilteredItems"
+            class="text-blue-600 hover:bg-blue-50"
+            @click="goToCollectionExport"
+          >
+            <FileExportIcon class="h-4 w-4 shrink-0" aria-hidden="true" />
+            {{ t('collectionDetail.exportFilteredItems') }}
+          </ToolbarSelectDropdownItem>
+          <ToolbarSelectDropdownItem
+            v-if="isOwner"
+            class="text-blue-600 hover:bg-blue-50"
+            @click="triggerJsonImport"
+          >
+            <FileImportIcon class="h-4 w-4 shrink-0" aria-hidden="true" />
+            {{ t('collectionDetail.importFullButton') }}
           </ToolbarSelectDropdownItem>
           <ToolbarSelectDropdownItem
             class="text-indigo-600 hover:bg-indigo-50"
             @click="handleCloneCollection"
           >
+            <Copy class="h-4 w-4 shrink-0" aria-hidden="true" />
             {{ t('collectionDetail.cloneCollection') }}
-          </ToolbarSelectDropdownItem>
-          <ToolbarSelectDropdownItem
-            v-if="collection.is_public || isOwner"
-            class="text-purple-600 hover:bg-purple-50"
-            @click="showExportModal = true"
-          >
-            {{ t('collectionDetail.exportCollection') }}
           </ToolbarSelectDropdownItem>
           <ToolbarSelectDropdownItem
             v-if="isOwner"
             class="text-green-600 hover:bg-green-50"
             @click="openMergeModal"
           >
+            <GitMerge class="h-4 w-4 shrink-0" aria-hidden="true" />
             {{ t('collectionDetail.mergeCollections') }}
-          </ToolbarSelectDropdownItem>
-          <ToolbarSelectDropdownItem
-            v-if="isOwner"
-            class="text-cyan-600 hover:bg-cyan-50"
-            @click="triggerJsonImport"
-          >
-            {{ t('collectionDetail.importFullButton') }}
           </ToolbarSelectDropdownItem>
           <ToolbarSelectDropdownItem
             v-if="isOwner"
             class="text-teal-600 hover:bg-teal-50"
             @click="showMediaBulkZipModal = true"
           >
+            <Images class="h-4 w-4 shrink-0" aria-hidden="true" />
             {{ t('collectionCustomTextBulk.mediaBulkZipButton') }}
           </ToolbarSelectDropdownItem>
           <ToolbarSelectDropdownItem
@@ -70,6 +92,7 @@
             class="text-red-600 hover:bg-red-50"
             @click="handleDelete"
           >
+            <Trash2 class="h-4 w-4 shrink-0" aria-hidden="true" />
             {{ t('collectionDetail.deleteCollection') }}
           </ToolbarSelectDropdownItem>
         </ToolbarSelectDropdown>
@@ -83,76 +106,48 @@
           @change="handleJsonFileSelect"
         />
         <div class="space-y-4">
-          <div class="w-full space-y-3">
-            <SearchForm
-              :initial-query="itemSearchQuery"
-              :initial-mode="searchMode"
-              class="w-full"
-              @search="handleItemSearch"
-            />
-            <CombinedFilters
-              v-model="itemFilters"
-              :languages="languages"
-              :show-collection-filter="false"
-              class="w-full"
-              @change="handleItemFiltersChange"
-              @reset="handleItemFiltersReset"
-            />
-          </div>
-
           <div class="flex w-full flex-wrap items-center justify-center gap-x-2 gap-y-2">
             <div
-              v-if="isOwner"
               class="btn-group-forced flex flex-wrap items-center justify-center md:gap-y-2"
               role="group"
-              aria-label="Collection editing"
-            >
-              <ToolbarSelectDropdown
-                :aria-label="t('collectionDetail.addItem')"
-                trigger-icon="ellipsis"
-                class="ui-btn--group-item md:flex-none"
-              >
-                <template #label>
-                  <PlusCircle class="h-4 w-4 shrink-0" aria-hidden="true" />
-                  <span>{{ t('collectionDetail.addItem') }}</span>
-                </template>
-                <ToolbarSelectDropdownItem @click="openAddModal">
-                  {{ t('collectionDetail.addItemButton') }}
-                </ToolbarSelectDropdownItem>
-                <ToolbarSelectDropdownItem
-                  @click="router.push(`/collections/${props.collectionId}/custom-text-bulk`)"
-                >
-                  {{ t('collectionDetail.bulkEditCustomText') }}
-                </ToolbarSelectDropdownItem>
-                <ToolbarSelectDropdownItem
-                  v-if="canExportFilteredItems"
-                  @click="goToCollectionExport"
-                >
-                  {{ t('collectionDetail.exportFilteredItems') }}
-                </ToolbarSelectDropdownItem>
-              </ToolbarSelectDropdown>
-            </div>
-
-            <div
-              v-else-if="canExportFilteredItems"
-              class="btn-group-forced flex flex-wrap items-center justify-center md:gap-y-2"
-              role="group"
-              aria-label="Collection export"
+              :aria-label="t('collectionDetail.tabsAriaLabel')"
             >
               <Button
-                variant="read"
-                class="ui-btn--group-item md:flex-none"
-                @click="goToCollectionExport"
+                :variant="activeTab === 'items' ? 'neutral' : 'toolbar'"
+                type="button"
+                role="tab"
+                :aria-selected="activeTab === 'items'"
+                :tabindex="activeTab === 'items' ? 0 : -1"
+                class="ui-btn--group-item inline-flex items-center gap-2 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500"
+                @click="setActiveTab('items')"
               >
-                {{ t('collectionDetail.exportFilteredItems') }}
+                <List class="w-4 h-4 shrink-0" aria-hidden="true" />
+                <span>{{ t('collectionDetail.itemsTab') }}</span>
+                <span
+                  v-if="collection.item_count > 0"
+                  class="inline-flex items-center justify-center rounded-full bg-gray-200/80 text-gray-700 text-xs font-semibold min-w-5 h-5 px-1.5"
+                >
+                  {{ collection.item_count }}
+                </span>
               </Button>
-            </div>
-
-            <div
-              class="btn-group-forced flex flex-wrap items-center justify-center md:gap-y-2"
-              role="group"
-              aria-label="Study"
-            >
+              <Button
+                :variant="activeTab === 'discussion' ? 'neutral' : 'toolbar'"
+                type="button"
+                role="tab"
+                :aria-selected="activeTab === 'discussion'"
+                :tabindex="activeTab === 'discussion' ? 0 : -1"
+                class="ui-btn--group-item inline-flex items-center gap-2 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500"
+                @click="setActiveTab('discussion')"
+              >
+                <MessagesSquare class="w-4 h-4 shrink-0" aria-hidden="true" />
+                <span>{{ t('collectionDetail.discussionTab') }}</span>
+                <span
+                  v-if="collection.comment_count > 0"
+                  class="inline-flex items-center justify-center rounded-full bg-blue-100 text-blue-800 text-xs font-semibold min-w-5 h-5 px-1.5"
+                >
+                  {{ collection.comment_count }}
+                </span>
+              </Button>
               <RouterLink
                 :to="`/collections/${props.collectionId}/flashcards`"
                 class="ui-btn--danger-rose ui-btn--group-item md:flex-none"
@@ -177,6 +172,23 @@
               </RouterLink>
             </div>
           </div>
+
+          <div class="w-full space-y-3">
+            <SearchForm
+              :initial-query="itemSearchQuery"
+              :initial-mode="searchMode"
+              class="w-full"
+              @search="handleItemSearch"
+            />
+            <CombinedFilters
+              v-model="itemFilters"
+              :languages="languages"
+              :show-collection-filter="false"
+              class="w-full"
+              @change="handleItemFiltersChange"
+              @reset="handleItemFiltersReset"
+            />
+          </div>
         </div>
       </template>
     </CollectionPageHeader>
@@ -198,51 +210,8 @@
         <span>{{ t('collectionDetail.onlyItemsWithoutFlashcards') }}</span>
       </label>
     </div>
-    <!-- Items / Discussion tabs -->
-    <div
-      class="btn-group-forced flex flex-wrap items-center justify-center gap-y-2 my-4"
-      role="tablist"
-      :aria-label="t('collectionDetail.tabsAriaLabel')"
-    >
-      <Button
-        :variant="activeTab === 'items' ? 'neutral' : 'toolbar'"
-        type="button"
-        role="tab"
-        :aria-selected="activeTab === 'items'"
-        :tabindex="activeTab === 'items' ? 0 : -1"
-        class="ui-btn--group-item inline-flex items-center gap-2 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500"
-        @click="setActiveTab('items')"
-      >
-        <List class="w-4 h-4 shrink-0" aria-hidden="true" />
-        <span>{{ t('collectionDetail.itemsTab') }}</span>
-        <span
-          v-if="collection.item_count > 0"
-          class="inline-flex items-center justify-center rounded-full bg-gray-200/80 text-gray-700 text-xs font-semibold min-w-5 h-5 px-1.5"
-        >
-          {{ collection.item_count }}
-        </span>
-      </Button>
-      <Button
-        :variant="activeTab === 'discussion' ? 'neutral' : 'toolbar'"
-        type="button"
-        role="tab"
-        :aria-selected="activeTab === 'discussion'"
-        :tabindex="activeTab === 'discussion' ? 0 : -1"
-        class="ui-btn--group-item inline-flex items-center gap-2 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500"
-        @click="setActiveTab('discussion')"
-      >
-        <MessagesSquare class="w-4 h-4 shrink-0" aria-hidden="true" />
-        <span>{{ t('collectionDetail.discussionTab') }}</span>
-        <span
-          v-if="collection.comment_count > 0"
-          class="inline-flex items-center justify-center rounded-full bg-blue-100 text-blue-800 text-xs font-semibold min-w-5 h-5 px-1.5"
-        >
-          {{ collection.comment_count }}
-        </span>
-      </Button>
-    </div>
 
-    <div v-show="activeTab === 'items'" class="space-y-4" role="tabpanel">
+    <div v-show="activeTab === 'items'" class="mt-4 space-y-4" role="tabpanel">
       <!-- Loading state for items -->
       <LoadingSpinner v-if="isLoadingItems" class="py-8" />
       <!-- Items grid -->
@@ -319,7 +288,7 @@
       />
     </div>
 
-    <div v-show="activeTab === 'discussion'" class="pt-2" role="tabpanel">
+    <div v-show="activeTab === 'discussion'" class="mt-4 pt-2" role="tabpanel">
       <div v-if="searchMode === 'comments' && itemSearchQuery.trim()" class="space-y-4">
         <LoadingSpinner v-if="isLoadingWaves" class="py-8" />
         <template v-else>
@@ -509,29 +478,6 @@
           </Button>
         </div>
       </form>
-    </ModalComponent>
-    <!-- Export Collection Modal (full: items + levels + flashcard directions) -->
-    <ModalComponent
-      :show="showExportModal"
-      :title="t('collectionDetail.exportCollectionTitle')"
-      @close="showExportModal = false"
-    >
-      <div class="space-y-4">
-        <p class="text-sm text-gray-600">{{ t('collectionDetail.exportFullDescription') }}</p>
-
-        <div v-if="exportProgress" class="text-sm text-blue-600 mt-2">{{ exportProgress }}</div>
-
-        <div v-if="exportError" class="text-sm text-red-600 mt-2">{{ exportError }}</div>
-      </div>
-
-      <div class="mt-6 flex justify-end space-x-3">
-        <Button variant="cancel" type="button" @click="showExportModal = false">
-          {{ t('collectionDetail.cancel') }}
-        </Button>
-        <Button variant="read" :disabled="isExporting" @click="handleExport">
-          {{ isExporting ? t('collectionDetail.exporting') : t('collectionDetail.exportButton') }}
-        </Button>
-      </div>
     </ModalComponent>
     <CollectionMediaBulkZipModal
       v-model="showMediaBulkZipModal"
@@ -1390,8 +1336,12 @@ import {
   BookOpen,
   Edit3,
   HelpCircle,
-  PlusCircle,
   FilePlus,
+  FileText,
+  PlusCircle,
+  Copy,
+  GitMerge,
+  Images,
   Search as SearchIcon,
   Loader,
   ArrowRight,
@@ -1421,7 +1371,6 @@ import {
   importCollectionFull,
   getLanguages,
   updateItemPosition,
-  exportCollectionFull,
   searchWaves,
   getItemImage,
   deleteFlashcard,
@@ -1457,6 +1406,8 @@ import {
   Textarea,
   ToolbarSelectDropdown,
   ToolbarSelectDropdownItem,
+  FileExportIcon,
+  FileImportIcon,
 } from '@packages/ui'
 import { useAuth } from '@/composables/useAuth'
 import { useCollectionsCache } from '@/composables/useCollectionsCache'
@@ -1550,11 +1501,7 @@ const editingItem = ref(null)
 
 const numericCollectionId = computed(() => Number(props.collectionId))
 
-const showExportModal = ref(false)
 const showMediaBulkZipModal = ref(false)
-const isExporting = ref(false)
-const exportError = ref('')
-const exportProgress = ref('')
 const showValidation = ref(false)
 const addItemModalError = ref('')
 
@@ -1927,43 +1874,6 @@ const addCustomContent = async () => {
     showError(msg)
   } finally {
     isUpdatingItem.value = false
-  }
-}
-
-const handleExport = async () => {
-  if (isExporting.value) return
-
-  isExporting.value = true
-  exportError.value = ''
-  exportProgress.value = 'Preparing export...'
-
-  try {
-    exportProgress.value = 'Requesting export...'
-    const response = await exportCollectionFull(props.collectionId)
-    exportProgress.value = 'Processing response...'
-
-    const data = response.data
-    const filename = `${(collection.value?.name || 'collection').replace(/[^a-zA-Z0-9-_]/g, '_')}-export.json`
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
-    const url = window.URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = filename
-    document.body.appendChild(a)
-    a.click()
-    window.URL.revokeObjectURL(url)
-    a.remove()
-
-    exportProgress.value = 'Export complete!'
-    setTimeout(() => {
-      showExportModal.value = false
-    }, 1000)
-  } catch (err) {
-    exportProgress.value = ''
-    exportError.value = err.response?.data?.error || err.message || 'Export failed'
-  } finally {
-    isExporting.value = false
-    showExportModal.value = false
   }
 }
 
@@ -2730,6 +2640,22 @@ const nextPage = () => {
 const syncFromRoute = () => {
   currentPage.value = parseInt(queryStr(route.query.page), 10) || 1
 }
+
+watch(
+  activeTab,
+  (tab) => {
+    if (tab === 'discussion') {
+      searchMode.value = 'comments'
+      waveCurrentPage.value = 1
+      if (itemSearchQuery.value.trim()) {
+        fetchWaves(1)
+      }
+    } else if (searchMode.value === 'comments') {
+      searchMode.value = itemFilters.value.isSemantic ? 'semantic' : 'dictionary'
+    }
+  },
+  { immediate: true }
+)
 
 watch(
   () => route.query.page,

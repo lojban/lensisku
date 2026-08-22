@@ -1599,44 +1599,6 @@ pub async fn import_collection_from_json(
 }
 
 #[utoipa::path(
-    get,
-    path = "/collections/{id}/export",
-    tag = "collections",
-    params(
-        ("id" = i32, Path, description = "Collection ID")
-    ),
-    responses(
-        (status = 200, description = "Full collection export (items, levels, flashcard directions)", body = CollectionFullExport),
-        (status = 403, description = "Access denied"),
-        (status = 404, description = "Collection not found"),
-        (status = 500, description = "Internal server error")
-    ),
-    security(("bearer_auth" = [])),
-    summary = "Export collection full",
-    description = "Exports the collection as JSON including collection metadata, all items (with optional flashcard direction), and all flashcard levels with their params and item assignments. Same access as get collection (public or owner)."
-)]
-#[get("/{id}/export")]
-pub async fn export_collection_full(
-    pool: web::Data<Pool>,
-    claims: Option<Claims>,
-    id: web::Path<i32>,
-) -> impl Responder {
-    match service::export_collection_full(&pool, id.into_inner(), claims.map(|c| c.sub)).await {
-        Ok(export) => HttpResponse::Ok().json(export),
-        Err(e) => {
-            let msg = e.to_string();
-            if msg.contains("Access denied") || msg.contains("Unauthorized") {
-                HttpResponse::Forbidden().finish()
-            } else {
-                HttpResponse::InternalServerError().json(json!({
-                    "error": format!("Failed to export collection: {}", e)
-                }))
-            }
-        }
-    }
-}
-
-#[utoipa::path(
     post,
     path = "/collections/import/full",
     tag = "collections",

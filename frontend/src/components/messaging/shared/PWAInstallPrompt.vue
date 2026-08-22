@@ -7,7 +7,7 @@
     <div class="flex items-start gap-3 p-4">
       <div class="shrink-0">
         <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-          <Download class="h-6 w-6 text-blue-600" />
+          <DownloadIcon class="h-6 w-6 text-blue-600" />
         </div>
       </div>
 
@@ -42,7 +42,8 @@
 <script setup lang="ts">
 import { Button, IconButtonGhost } from '@packages/ui'
 import { ref, onMounted } from 'vue'
-import { Download, X } from '@lucide/vue'
+import { DownloadIcon } from '@packages/ui'
+import { X } from '@lucide/vue'
 import { useNotifications } from '@/services/messaging/NotificationService'
 
 const { canInstallPWA, showInstallPrompt } = useNotifications()

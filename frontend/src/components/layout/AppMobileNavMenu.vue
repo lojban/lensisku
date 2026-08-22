@@ -44,7 +44,7 @@
       class="mobile-nav-row"
       @click="$emit('close')"
     >
-      <Download class="h-5 w-5" /> {{ t('nav.cachedExports') }}
+      <DownloadIcon class="h-5 w-5" /> {{ t('nav.cachedExports') }}
     </NavLink>
     <NavLink
       v-if="auth.state.isLoggedIn"
@@ -52,7 +52,7 @@
       class="mobile-nav-row"
       @click="$emit('close')"
     >
-      <Upload class="h-5 w-5" /> {{ t('nav.export') }}
+      <ExportIcon class="h-5 w-5" /> {{ t('nav.export') }}
     </NavLink>
     <NavLink
       v-if="auth.state.isLoggedIn && auth.state.authorities?.includes('bulk_import')"
@@ -60,7 +60,7 @@
       class="mobile-nav-row"
       @click="$emit('close')"
     >
-      <Download class="h-5 w-5" /> {{ t('nav.bulkImport') }}
+      <DownloadIcon class="h-5 w-5" /> {{ t('nav.bulkImport') }}
     </NavLink>
     <div v-if="auth.state.isLoggedIn" class="my-1 border-t border-gray-200" />
     <Button
@@ -76,12 +76,10 @@
 </template>
 
 <script setup lang="ts">
-import { Button } from '@packages/ui'
+import { Button, DownloadIcon, ExportIcon } from '@packages/ui'
 import {
   Users,
   Globe,
-  Download,
-  Upload,
   LogOut,
   Clock4,
   GraduationCap,

@@ -25,7 +25,7 @@
         @change="onNativeFileChange"
         @click.stop
       />
-      <Upload class="h-10 w-10 text-gray-300" :stroke-width="1" aria-hidden="true" />
+      <UploadIcon class="h-10 w-10 text-gray-300" :stroke-width="1" aria-hidden="true" />
       <div class="flex flex-wrap items-center justify-center gap-x-1 text-sm text-gray-600">
         <span class="font-medium text-blue-600">{{ chooseFileText }}</span>
         <span>{{ orDragDropText }}</span>
@@ -38,7 +38,7 @@
 
 <script setup lang="ts">
 import { FileInput } from '@packages/ui'
-import { Upload } from '@lucide/vue'
+import { UploadIcon } from '@packages/ui'
 import { useDropZone } from '@vueuse/core'
 import { ref } from 'vue'
 

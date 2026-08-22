@@ -74,7 +74,7 @@
               :disabled="isImporting"
               @click="handleImport"
             >
-              <template #icon> <Import class="w-4 h-4 shrink-0" aria-hidden="true" /> </template>
+              <template #icon> <ImportIcon class="w-4 h-4 shrink-0" aria-hidden="true" /> </template>
             </IconButton>
           </div>
           <template v-if="!auth.state.isLoggedIn">
@@ -357,7 +357,6 @@ import {
   List,
   LayoutPanelTop,
   PlusCircle,
-  Import,
 } from '@lucide/vue'
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
@@ -375,7 +374,7 @@ import CollectionPageHeader from '@/components/CollectionPageHeader.vue'
 import LazyMathJax from '@/components/LazyMathJax.vue'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import PaginationComponent from '@/components/PaginationComponent.vue'
-import { Checkbox, IconButton, Select } from '@packages/ui'
+import { Checkbox, IconButton, Select, ImportIcon } from '@packages/ui'
 import { useAuth } from '@/composables/useAuth'
 import { useSeoHead } from '@/composables/useSeoHead'
 import { useI18n } from 'vue-i18n'

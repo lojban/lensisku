@@ -48,7 +48,7 @@
           ]"
           @click="inputMode = 'upload'"
         >
-          <Upload class="h-4 w-4 shrink-0" /> {{ t('soundUpload.uploadTab') }}
+          <UploadIcon class="h-4 w-4 shrink-0" /> {{ t('soundUpload.uploadTab') }}
         </Button>
         <Button
           variant="neutral"
@@ -92,7 +92,7 @@
         }"
       >
         <div class="space-y-1 text-center">
-          <Upload class="mx-auto h-12 w-12 text-gray-300" :stroke-width="1" />
+          <UploadIcon class="mx-auto h-12 w-12 text-gray-300" :stroke-width="1" />
           <div class="flex flex-wrap justify-center gap-x-1 text-sm text-gray-600">
             <label
               class="relative cursor-pointer rounded-md font-medium text-blue-600 hover:text-blue-500"
@@ -234,7 +234,8 @@
 </template>
 
 <script setup lang="ts">
-import { Check, Mic, RotateCcw, Square, Sparkles, Upload, Volume2 } from '@lucide/vue'
+import { UploadIcon } from '@packages/ui'
+import { Check, Mic, RotateCcw, Square, Sparkles, Volume2 } from '@lucide/vue'
 import { useDropZone } from '@vueuse/core'
 import { ref, watch, onMounted, onUnmounted, computed } from 'vue'
 import { useI18n } from 'vue-i18n'

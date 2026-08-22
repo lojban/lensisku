@@ -2497,7 +2497,12 @@ async fn resolve_preamble_language_tag(
 pub async fn export_search_results(
     pool: &Pool,
     query: &SearchExportQuery,
+    user_id: Option<i32>,
 ) -> Result<(Vec<u8>, String, String), Box<dyn std::error::Error + Send + Sync>> {
+    if query.full_collection.unwrap_or(false) {
+        return export_full_collection_json(pool, query, user_id).await;
+    }
+
     if !super::models::has_search_export_constraint(query) {
         return Err(
             "Add a search query or at least one filter (collection, word type, author, selmaho, source language, or search-in-phrases off).".into(),
@@ -2767,6 +2772,61 @@ async fn finalize_search_export(
     Ok((content, content_type, filename))
 }
 
+fn collection_export_filename(name: &str) -> String {
+    let sanitized: String = name
+        .chars()
+        .map(|c| {
+            if c.is_ascii_alphanumeric() || c == '-' || c == '_' {
+                c
+            } else {
+                '_'
+            }
+        })
+        .collect();
+    let base = if sanitized.is_empty() {
+        "collection".to_string()
+    } else {
+        sanitized
+    };
+    format!("{base}-export.json")
+}
+
+async fn export_full_collection_json(
+    pool: &Pool,
+    query: &SearchExportQuery,
+    user_id: Option<i32>,
+) -> Result<(Vec<u8>, String, String), Box<dyn std::error::Error + Send + Sync>> {
+    let format = ExportFormat::from_query(query.format.as_deref()).map_err(|e| e.to_string())?;
+    if format != ExportFormat::Json {
+        return Err("Full collection export supports JSON format only.".into());
+    }
+
+    let collection_ids = query
+        .collection_ids
+        .as_deref()
+        .map(|s| crate::collections::dto::parse_positive_id_list(s, 50))
+        .unwrap_or_default();
+    if collection_ids.len() != 1 {
+        return Err("Full collection export requires exactly one collection id.".into());
+    }
+
+    let export = crate::collections::service::export_collection_full(
+        pool,
+        collection_ids[0],
+        user_id,
+    )
+    .await
+    .map_err(|e| e.to_string())?;
+
+    let filename = collection_export_filename(&export.collection.name);
+    let content = serde_json::to_vec_pretty(&export)?;
+    Ok((
+        content,
+        ExportFormat::Json.content_type().to_string(),
+        filename,
+    ))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -2818,6 +2878,16 @@ mod tests {
         }));
         assert!(has_search_export_constraint(&SearchExportQuery {
             search_in_phrases: Some(false),
+            ..Default::default()
+        }));
+        assert!(has_search_export_constraint(&SearchExportQuery {
+            full_collection: Some(true),
+            collection_ids: Some("42".into()),
+            ..Default::default()
+        }));
+        assert!(!has_search_export_constraint(&SearchExportQuery {
+            full_collection: Some(true),
+            collection_ids: Some("1,2".into()),
             ..Default::default()
         }));
     }

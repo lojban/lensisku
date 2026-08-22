@@ -11,7 +11,7 @@
         :title="t('components.tiktoknu.likesPanel.exportButtonTitle')"
         @click="$emit('export')"
       >
-        <Download class="w-4 h-4" /> {{ t('components.tiktoknu.likesPanel.exportButton') }}
+        <ExportIcon class="w-4 h-4" /> {{ t('components.tiktoknu.likesPanel.exportButton') }}
       </Button>
     </div>
 
@@ -77,7 +77,8 @@
 
 <script setup lang="ts">
 import { Button, Input } from '@packages/ui'
-import { Download, X } from '@lucide/vue'
+import { ExportIcon } from '@packages/ui'
+import { X } from '@lucide/vue'
 import { useI18n } from 'vue-i18n'
 
 import type { WikiArticle } from '../../types/wiki'

@@ -127,7 +127,7 @@
               :title="t('components.messageDetail.downloadAttachmentTitle')"
               @click="downloadAttachment(part)"
             >
-              <Download class="h-5 w-5" />
+              <DownloadIcon class="h-5 w-5" />
             </Button>
           </div>
         </div>
@@ -148,8 +148,7 @@
 </template>
 
 <script setup lang="ts">
-import { Button } from '@packages/ui'
-import { Download } from '@lucide/vue'
+import { Button, DownloadIcon } from '@packages/ui'
 import { marked } from 'marked'
 import { ref, watch, computed } from 'vue'
 

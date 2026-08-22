@@ -86,6 +86,9 @@ pub struct SearchExportQuery {
     pub semantic: Option<bool>,
     pub collection_ids: Option<String>,
     pub collection_only: Option<bool>,
+    /// When true with a single `collection_ids` value and `format=json`, export the full
+    /// collection backup (`CollectionFullExport`: metadata, all items with images, levels).
+    pub full_collection: Option<bool>,
 }
 
 /// Combined JSON body for a filtered search export.
@@ -115,6 +118,13 @@ pub fn has_search_export_constraint(query: &SearchExportQuery) -> bool {
     }
     if query.word_type.is_some() {
         return true;
+    }
+    if query.full_collection.unwrap_or(false) {
+        return query
+            .collection_ids
+            .as_deref()
+            .map(|s| crate::collections::dto::parse_positive_id_list(s, 50))
+            .is_some_and(|ids| ids.len() == 1);
     }
     if query
         .collection_ids

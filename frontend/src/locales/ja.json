@@ -1540,7 +1540,7 @@
     "learnDescription": "コミュニティの公開コースとコレクション。",
     "catalogCourses": "コース",
     "catalogCollections": "コレクション",
-    "libraryDescription": "定義につけた名前付きラベル（コレクション）。フラッシュカードを足すとコースとして学べます。",
+    "libraryDescription": "コレクションに定義を追加して、自分だけのテーマ別辞書を作れます。どのコレクションも、学習レベル付きのフラッシュカードコースとして学べます。",
     "libraryEmptyHint": "コレクションを作り、検索から定義を追加してください。",
     "loginTo": "ログイン",
     "createButton": "コレクションを作成",

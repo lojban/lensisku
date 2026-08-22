@@ -1545,7 +1545,7 @@
     "learnDescription": "社区的公开课程与合集。",
     "catalogCourses": "课程",
     "catalogCollections": "合集",
-    "libraryDescription": "你的合集是给释义起的命名标签。加上闪卡即可当课程学习。",
+    "libraryDescription": "将释义添加到你的合集中，打造属于自己的主题词典。任何合集都可以作为带学习等级的闪卡课程来学习。",
     "libraryEmptyHint": "先创建合集，再从搜索添加释义。",
     "loginTo": "登录",
     "createButton": "创建合集",

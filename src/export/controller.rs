@@ -161,7 +161,8 @@ pub async fn export_dictionary(
         ("search_in_phrases" = Option<bool>, Query, description = "When false, exclude phrase (type 15) entries"),
         ("semantic" = Option<bool>, Query, description = "Use semantic ranking when search text is present"),
         ("collection_ids" = Option<String>, Query, description = "Comma-separated public collection ids; unioned with include-authors unless collection_only is set. Without authors, only collection matches are exported (no unscoped dictionary fallback)"),
-        ("collection_only" = Option<bool>, Query, description = "When true with collection_ids, export only filtered collection items (authors filter items; no dictionary union)")
+        ("collection_only" = Option<bool>, Query, description = "When true with collection_ids, export only filtered collection items (authors filter items; no dictionary union)"),
+        ("full_collection" = Option<bool>, Query, description = "When true with format=json and exactly one collection_id, export full collection backup (metadata, all items with images, levels). Same access as get collection.")
     ),
     responses(
         (status = 200, description = "Filtered search exported successfully"),
@@ -177,13 +178,14 @@ pub async fn export_dictionary(
 pub async fn export_search(
     pool: web::Data<Pool>,
     query: web::Query<SearchExportQuery>,
+    claims: Option<Claims>,
 ) -> impl Responder {
     match ExportFormat::from_query(query.format.as_deref()) {
         Ok(_) => {}
         Err(msg) => return HttpResponse::BadRequest().body(msg),
     }
 
-    match service::export_search_results(&pool, &query).await {
+    match service::export_search_results(&pool, &query, claims.map(|c| c.sub)).await {
         Ok((content, content_type, filename)) => HttpResponse::Ok()
             .insert_header((header::CACHE_CONTROL, "no-store"))
             .content_type(content_type)

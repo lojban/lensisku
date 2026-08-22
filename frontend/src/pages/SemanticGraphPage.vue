@@ -44,7 +44,7 @@
             :title="t('semanticGraph.export')"
             @click="exportGraphFile"
           >
-            <template #icon> <Upload :size="14" aria-hidden="true" /> </template>
+            <template #icon> <ExportIcon :size="14" aria-hidden="true" /> </template>
             {{ t('semanticGraph.export') }}
           </Button>
           <Button
@@ -54,7 +54,7 @@
             :title="t('semanticGraph.import')"
             @click="triggerImport"
           >
-            <template #icon> <Download :size="14" aria-hidden="true" /> </template>
+            <template #icon> <ImportIcon :size="14" aria-hidden="true" /> </template>
             {{ t('semanticGraph.import') }}
           </Button>
           <FileInput
@@ -184,8 +184,8 @@
 </template>
 
 <script setup lang="ts">
-import { Button, FileInput, Input } from '@packages/ui'
-import { Download, RotateCcw, Upload } from '@lucide/vue'
+import { Button, FileInput, Input, ExportIcon, ImportIcon } from '@packages/ui'
+import { RotateCcw } from '@lucide/vue'
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'

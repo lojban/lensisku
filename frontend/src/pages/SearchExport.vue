@@ -103,6 +103,7 @@ import {
   compactQuery,
   hasActiveSearchFilters,
   queryStr,
+  type CombinedFiltersUrlState,
 } from '@/utils/routeQuery'
 import { normalizeSearchQuery } from '@/utils/searchQueryUtils'
 
@@ -119,7 +120,7 @@ const filters = ref({
   ...urlFilters,
   isSemantic: queryStr(route.query.mode) !== 'dictionary',
 })
-const selectedFormat = ref('pdf')
+const selectedFormat = ref(queryStr(route.query.format) || 'pdf')
 const isLoading = ref(false)
 
 const exportFormats = [
@@ -135,6 +136,29 @@ useSeoHead({
   pathWithoutLocale: '/export/search',
 })
 
+function hasItemFiltersExceptCollection(filterState: CombinedFiltersUrlState): boolean {
+  return Boolean(
+    filterState.selmaho?.trim() ||
+      filterState.usernames?.length ||
+      filterState.excludeUsernames?.length ||
+      filterState.word_type ||
+      filterState.selectedLanguages?.length ||
+      (filterState.source_langid && filterState.source_langid !== 1) ||
+      filterState.searchInPhrases === false
+  )
+}
+
+const isCollectionOnlyExport = computed(() => queryStr(route.query.collection_only) === '1')
+
+const useCollectionImportJson = computed(
+  () =>
+    selectedFormat.value === 'json' &&
+    isCollectionOnlyExport.value &&
+    filters.value.selectedCollections.length === 1 &&
+    !searchQuery.value.trim() &&
+    !hasItemFiltersExceptCollection(filters.value)
+)
+
 const canExport = computed(() => {
   return Boolean(searchQuery.value.trim() || hasActiveSearchFilters(filters.value))
 })
@@ -144,7 +168,8 @@ function updateUrlWithFilters() {
     query: compactQuery({
       q: searchQuery.value || undefined,
       mode: filters.value.isSemantic ? 'semantic' : 'dictionary',
-      collection_only: queryStr(route.query.collection_only) === '1' ? '1' : undefined,
+      collection_only: isCollectionOnlyExport.value ? '1' : undefined,
+      format: selectedFormat.value,
       ...combinedFiltersToQuery(filters.value),
     }),
   })
@@ -174,6 +199,14 @@ function buildExportParams(): Record<string, string | number | boolean> {
   const params: Record<string, string | number | boolean> = {
     format: selectedFormat.value,
   }
+
+  if (useCollectionImportJson.value) {
+    params.full_collection = true
+    params.collection_only = true
+    params.collection_ids = filters.value.selectedCollections[0]
+    return params
+  }
+
   const search = searchQuery.value.trim()
   if (search) params.search = search
   if (filters.value.selectedLanguages.length > 0) {
@@ -198,7 +231,7 @@ function buildExportParams(): Record<string, string | number | boolean> {
   if (filters.value.selectedCollections?.length) {
     params.collection_ids = filters.value.selectedCollections.join(',')
   }
-  if (queryStr(route.query.collection_only) === '1') {
+  if (isCollectionOnlyExport.value) {
     params.collection_only = true
   }
   if (filters.value.isSemantic && search) {
@@ -282,6 +315,10 @@ watch(
     if (mode === 'semantic' || mode === 'dictionary') {
       filters.value.isSemantic = mode === 'semantic'
     }
+    const format = queryStr(query.format)
+    if (format) {
+      selectedFormat.value = format
+    }
   }
 )
 
@@ -289,7 +326,7 @@ onMounted(async () => {
   try {
     const response = await getLanguages()
     languages.value = response.data
-    if (!queryStr(route.query.langs)) {
+    if (!queryStr(route.query.langs) && !isCollectionOnlyExport.value) {
       filters.value.selectedLanguages = getInitialLanguages(route, languages.value)
     }
   } catch {

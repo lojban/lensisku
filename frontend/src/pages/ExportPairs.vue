@@ -47,7 +47,7 @@
           class="w-full sm:w-auto flex items-center justify-center gap-2"
           :disabled="isExporting || !isValid"
         >
-          <Download v-if="!isExporting" class="h-5 w-5" />
+          <ExportIcon v-if="!isExporting" class="h-5 w-5" />
           <Loader2 v-else class="h-5 w-5 animate-spin" />
           <span>{{
             isExporting ? t('exportPairs.exporting') : t('exportPairs.exportButton')
@@ -62,7 +62,8 @@
 import { Button, Select } from '@packages/ui'
 import { ref, onMounted, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Download, Loader2 } from '@lucide/vue'
+import { ExportIcon } from '@packages/ui'
+import { Loader2 } from '@lucide/vue'
 import { getLanguages, exportLinkedPairs } from '@/api'
 import { useSeoHead } from '@/composables/useSeoHead'
 import { useError } from '@/composables/useError'

@@ -21,3 +21,11 @@ export { default as Select } from './Select.vue'
 export { default as Textarea } from './Textarea.vue'
 export { default as ToolbarSelectDropdown } from './ToolbarSelectDropdown.vue'
 export { default as ToolbarSelectDropdownItem } from './ToolbarSelectDropdownItem.vue'
+export {
+  ExportIcon,
+  UploadIcon,
+  FileExportIcon,
+  DownloadIcon,
+  FileImportIcon,
+  ImportIcon,
+} from './transferIcons'

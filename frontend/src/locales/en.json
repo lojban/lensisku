@@ -1569,7 +1569,7 @@
     "learnDescription": "Public courses and collections from the community.",
     "catalogCourses": "Courses",
     "catalogCollections": "Collections",
-    "libraryDescription": "Your collections—named labels on definitions. Add flashcards to study a list as a course.",
+    "libraryDescription": "Add definitions to your collections to build your own themed dictionaries. You can study any collection as a flashcard course with study levels.",
     "libraryEmptyHint": "Create a collection, then add definitions from search.",
     "loginTo": "Login",
     "createButton": "Create collection",

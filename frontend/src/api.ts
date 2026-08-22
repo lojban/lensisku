@@ -397,9 +397,6 @@ export const exportSearchResults = (params: Record<string, unknown>) =>
     timeout: 300000,
   })
 
-export const exportCollectionFull = (collectionId: number | string) =>
-  api.get(`/collections/${collectionId}/export`, { timeout: 300000 })
-
 export const importCollectionFull = (data: unknown) => api.post('/collections/import/full', data)
 
 export const listCachedExports = () => api.get('/export/cached')

@@ -120,6 +120,7 @@
               {{ $t('home.addAllToCollection') }}
             </ToolbarSelectDropdownItem>
             <ToolbarSelectDropdownItem @click="goToSearchExport">
+              <ExportIcon class="h-4 w-4 shrink-0" aria-hidden="true" />
               {{ $t('home.exportResults') }}
             </ToolbarSelectDropdownItem>
           </ToolbarSelectDropdown>
@@ -453,7 +454,7 @@ import DefinitionCard from '@/components/DefinitionCard.vue'
 import DictionaryEntries from '@/components/DictionaryEntries.vue'
 import PhraseSplit from '@/components/PhraseSplit.vue'
 import LazyMathJax from '@/components/LazyMathJax.vue'
-import { Button, IconButton, ToolbarSelectDropdown, ToolbarSelectDropdownItem } from '@packages/ui'
+import { Button, IconButton, ToolbarSelectDropdown, ToolbarSelectDropdownItem, ExportIcon } from '@packages/ui'
 import PaginationComponent from '@/components/PaginationComponent.vue'
 import RecentChangeItem from '@/components/RecentChangeItem.vue'
 import SearchForm from '@/components/SearchForm.vue'

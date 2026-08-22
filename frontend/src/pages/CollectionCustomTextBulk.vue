@@ -22,7 +22,7 @@
               :disabled="isSaving || isImporting"
               @click="exportListAsCsv"
             >
-              <FileUp class="h-4 w-4 shrink-0" aria-hidden="true" />
+              <FileExportIcon class="h-4 w-4 shrink-0" aria-hidden="true" />
               {{ t('collectionCustomTextBulk.exportCsv') }}
             </ToolbarSelectDropdownItem>
             <ToolbarSelectDropdownItem
@@ -30,7 +30,7 @@
               :disabled="isSaving || isImporting"
               @click="exportListAsTsv"
             >
-              <FileUp class="h-4 w-4 shrink-0" aria-hidden="true" />
+              <FileExportIcon class="h-4 w-4 shrink-0" aria-hidden="true" />
               {{ t('collectionCustomTextBulk.exportTsv') }}
             </ToolbarSelectDropdownItem>
             <ToolbarSelectDropdownItem
@@ -38,7 +38,7 @@
               :disabled="isSaving || isImporting"
               @click="showImportModal = true"
             >
-              <FileDown class="h-4 w-4 shrink-0" aria-hidden="true" />
+              <FileImportIcon class="h-4 w-4 shrink-0" aria-hidden="true" />
               {{
                 isImporting
                   ? t('collectionCustomTextBulk.importing')
@@ -525,7 +525,7 @@
 </template>
 
 <script setup lang="ts">
-import { ArrowLeft, FileDown, FileUp, List, Loader2, Package, Undo2 } from '@lucide/vue'
+import { ArrowLeft, List, Loader2, Package, Undo2 } from '@lucide/vue'
 import { computed, nextTick, onMounted, ref, watch, watchEffect } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
@@ -553,6 +553,8 @@ import {
   Select,
   ToolbarSelectDropdown,
   ToolbarSelectDropdownItem,
+  FileExportIcon,
+  FileImportIcon,
 } from '@packages/ui'
 import { useAuth } from '@/composables/useAuth'
 import { useError } from '@/composables/useError'

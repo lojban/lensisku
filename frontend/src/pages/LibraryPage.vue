@@ -24,7 +24,7 @@
             :disabled="isImporting"
             @click="triggerImport"
           >
-            <Import class="h-4 w-4 shrink-0" /> {{ t('collectionList.importCollection') }}
+            <ImportIcon class="h-4 w-4 shrink-0" /> {{ t('collectionList.importCollection') }}
           </ToolbarSelectDropdownItem>
           <ToolbarSelectDropdownItem
             class="text-emerald-600 hover:bg-emerald-50"
@@ -158,7 +158,7 @@
 </template>
 
 <script setup lang="ts">
-import { CirclePlus, Import, CalendarDays, Calendar, Trophy, ArrowDown } from '@lucide/vue'
+import { CirclePlus, CalendarDays, Calendar, Trophy, ArrowDown } from '@lucide/vue'
 import { ref, computed, onBeforeUnmount, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
@@ -180,6 +180,7 @@ import {
   Textarea,
   ToolbarSelectDropdown,
   ToolbarSelectDropdownItem,
+  ImportIcon,
 } from '@packages/ui'
 import PageHeader from '@/components/layout/PageHeader.vue'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'

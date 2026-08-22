@@ -117,7 +117,7 @@
                 class="navbar-item justify-start py-2"
                 @click="closeNavMenus"
               >
-                <Download class="h-4 w-4" /> {{ $t('nav.cachedExports') }}
+                <DownloadIcon class="h-4 w-4" /> {{ $t('nav.cachedExports') }}
               </NavLink>
               <NavLink
                 v-if="auth.state.isLoggedIn"
@@ -125,7 +125,7 @@
                 class="navbar-item justify-start py-2"
                 @click="closeNavMenus"
               >
-                <Upload class="h-4 w-4" /> {{ $t('nav.export') }}
+                <ExportIcon class="h-4 w-4" /> {{ $t('nav.export') }}
               </NavLink>
               <NavLink
                 v-if="auth.state.isLoggedIn && auth.state.authorities?.includes('bulk_import')"
@@ -133,7 +133,7 @@
                 class="navbar-item justify-start py-2"
                 @click="closeNavMenus"
               >
-                <Download class="h-4 w-4" /> {{ $t('nav.bulkImport') }}
+                <DownloadIcon class="h-4 w-4" /> {{ $t('nav.bulkImport') }}
               </NavLink>
               <div
                 class="border-t border-gray-100 mt-1 pt-1 px-2 py-2"
@@ -365,8 +365,6 @@
 import {
   Users,
   Globe,
-  Download,
-  Upload,
   LogIn,
   LogOut,
   UserPlus,
@@ -394,7 +392,7 @@ import Error from '@/components/Error.vue'
 import ToastFloat from '@/components/ToastFloat.vue'
 import PWAInstallPrompt from '@/components/messaging/shared/PWAInstallPrompt.vue'
 import { resendConfirmation } from '@/api'
-import { Button, FabButton, ToolbarSelectDropdown, ToolbarSelectDropdownItem } from '@packages/ui'
+import { Button, FabButton, ToolbarSelectDropdown, ToolbarSelectDropdownItem, DownloadIcon, ExportIcon } from '@packages/ui'
 
 import BackgroundComponent from './components/BackgroundComponent.vue'
 import FooterComponent from './components/FooterComponent.vue'

@@ -54,6 +54,22 @@ This document is the **human-readable contract** for product, design, QA, and en
 - **Status**: green success, red danger, amber warning—prefer existing **badge** and **btn** semantics over new hex values. **Yellow** is reserved for **edit / apply** (`ui-btn--edit`).
 - **Selma'o / tags**: `.badge-definition-tag` (purple chip)—use for grammatical tags, not general emphasis.
 
+### 5b. Transfer-direction icons (upload / export · download / import)
+
+| Action | Direction | Approved Lucide glyphs | Import from |
+| ------ | --------- | ---------------------- | ----------- |
+| **Upload** (send file to server) | Arrow **up** | `Upload` | `UploadIcon` from `@packages/ui` |
+| **Export** (generate / send data out) | Arrow **up** | `Upload`, `FileUp` | `ExportIcon`, `FileExportIcon` from `@packages/ui` |
+| **Download** (save locally) | Arrow **down** | `Download` | `DownloadIcon` from `@packages/ui` |
+| **Import** (pick file / bring data in) | Arrow **down** | `Import`, `FileDown` | `ImportIcon`, `FileImportIcon` from `@packages/ui` |
+
+**Rules**
+
+1. **Upload and export** always use arrow-**up** icons; **download and import** always use arrow-**down** icons—do not swap them even if other products do.
+2. File-oriented menus: **`FileExportIcon`** / **`FileImportIcon`**; generic upload: **`UploadIcon`**; generic export nav: **`ExportIcon`**; cached downloads / attachments: **`DownloadIcon`**; file import buttons: **`ImportIcon`**.
+3. Voting, reorder, and unrelated arrows (`ArrowUp`, `ArrowDown`, …) are **out of scope**.
+4. ESLint blocks direct `@lucide/vue` use of the five transfer glyphs; **`packages/ui/transferIcons.ts`** is the only re-export site.
+
 ---
 
 ## 6. Button system (two families)
