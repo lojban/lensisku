@@ -34,6 +34,11 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
             .service(controller::get_definition_image)
             .service(controller::get_recent_changes)
             .service(controller::list_valsi_types)
+            // Public routes must be registered before the authenticated `scope("")`.
+            // An empty-prefix scope matches every leftover path and otherwise 404s these GETs.
+            .service(controller::get_translations_handler)
+            .service(controller::get_definition_link_handler)
+            .service(controller::export_pairs_handler)
             .service(
                 web::scope("")
                     .wrap(GrantsMiddleware::with_extractor(extract_authorities))
@@ -55,8 +60,5 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
                     .service(controller::link_definitions_handler)
                     .service(controller::unlink_definitions_handler),
             )
-            .service(controller::get_translations_handler)
-            .service(controller::get_definition_link_handler)
-            .service(controller::export_pairs_handler),
     );
 }

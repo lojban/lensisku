@@ -90,7 +90,7 @@
           </div>
           <!-- Gloss Keywords -->
           <div
-            v-if="!isPhrase && definition.gloss_keywords && definition.gloss_keywords.length > 0"
+            v-if="definition.gloss_keywords && definition.gloss_keywords.length > 0"
             class="mt-3 pt-2 border-t"
           >
             <div class="flex flex-wrap gap-1">

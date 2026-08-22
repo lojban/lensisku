@@ -307,7 +307,7 @@
       />
     </div>
     <!-- Gloss Keywords -->
-    <div v-if="showKeywordFields">
+    <div>
       <label class="block text-sm font-medium text-blue-700 mb-2">
         {{ t('upsertDefinition.glossKeywordsLabel') }}
         <span class="text-gray-500 font-normal">{{ t('upsertDefinition.optional') }}</span>
@@ -353,7 +353,7 @@
       </div>
     </div>
     <!-- Place Keywords -->
-    <div v-if="showKeywordFields">
+    <div v-if="showPlaceKeywordFields">
       <label class="block text-sm font-medium text-blue-700 mb-2">
         {{ t('upsertDefinition.placeKeywordsLabel') }}
         <span class="text-gray-500 font-normal">{{ t('upsertDefinition.optional') }}</span>
@@ -603,10 +603,10 @@ const loadDefinitionData = async (definitionId: string | number) => {
 
       // Load keywords from the response
       glossKeywords.value =
-        def.gloss_keywords.length > 0 ? def.gloss_keywords : [{ word: '', meaning: '' }]
+        def.gloss_keywords?.length > 0 ? def.gloss_keywords : [{ word: '', meaning: '' }]
 
       placeKeywords.value =
-        def.place_keywords.length > 0 ? def.place_keywords : [{ word: '', meaning: '' }]
+        def.place_keywords?.length > 0 ? def.place_keywords : [{ word: '', meaning: '' }]
 
       prefilledWord.value = true
     }
@@ -658,10 +658,10 @@ const showRafsiField = computed(() => {
   return t === 'gismu' || t === 'experimental gismu' || t === 'cmavo' || t === 'experimental cmavo'
 })
 
-// Keywords are not available for phrases or cmavo compounds.
-const showKeywordFields = computed(() => {
+// Place keywords are not available for phrases or cmavo compounds.
+const showPlaceKeywordFields = computed(() => {
   const t = wordType.value || ''
-  return t !== 'phrase' && t !== 'cmavo compound'
+  return t !== 'phrase'
 })
 
 // Methods for keywords
@@ -907,10 +907,10 @@ const submitValsi = async () => {
     }
 
     // Include keywords if they're not empty and this word type supports them.
-    if (showKeywordFields.value && filteredGlossKeywords.length > 0) {
+    if (filteredGlossKeywords.length > 0) {
       requestData.gloss_keywords = filteredGlossKeywords
     }
-    if (showKeywordFields.value && filteredPlaceKeywords.length > 0) {
+    if (showPlaceKeywordFields.value && filteredPlaceKeywords.length > 0) {
       requestData.place_keywords = filteredPlaceKeywords
     }
 

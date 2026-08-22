@@ -2952,10 +2952,9 @@ async fn add_definition_in_transaction(
             .await?;
     }
 
-    // Add gloss keywords (phrases do not have keywords)
-    if type_id != 15 {
-        if let Some(gloss_keywords) = &request.gloss_keywords {
-            for keyword in gloss_keywords {
+    // Add gloss keywords (including phrases)
+    if let Some(gloss_keywords) = &request.gloss_keywords {
+        for keyword in gloss_keywords {
                 let sanitized_word = sanitize_html(&keyword.word);
                 let sanitized_meaning = keyword
                     .meaning
@@ -3006,11 +3005,10 @@ async fn add_definition_in_transaction(
                         ],
                     )
                     .await?;
-            }
         }
     }
 
-    // Add place keywords (phrases do not have keywords)
+    // Add place keywords (phrases do not have place structure)
     if type_id != 15 {
         if let Some(place_keywords) = &request.place_keywords {
             for (i, keyword) in place_keywords.iter().enumerate() {
@@ -3316,8 +3314,8 @@ pub async fn get_definition(
     let source_langid: i32 = row.get("source_langid");
     let valsi_typeid: i16 = row.get("valsi_typeid");
 
-    // Phrases do not have gloss/place keywords.
-    let (gloss_keywords, place_keywords) = if source_langid == 1 && valsi_typeid != 15 {
+    // Lojban valsi (including phrases) can have glosswords; place keywords skip phrases.
+    let (gloss_keywords, place_keywords) = if source_langid == 1 {
         let gloss_keywords_rows = transaction
             .query(
                 "SELECT n.word, n.meaning
@@ -3336,24 +3334,28 @@ pub async fn get_definition(
             })
             .collect();
 
-        let place_keywords_rows = transaction
-            .query(
-                "SELECT n.word, n.meaning
+        let place_keywords = if valsi_typeid == 15 {
+            Vec::new()
+        } else {
+            let place_keywords_rows = transaction
+                .query(
+                    "SELECT n.word, n.meaning
                  FROM keywordmapping k
          JOIN natlangwords n ON k.natlangwordid = n.wordid
          WHERE k.definitionid = $1 AND k.place > 0
          ORDER BY k.place",
-                &[&definition_id],
-            )
-            .await?;
+                    &[&definition_id],
+                )
+                .await?;
 
-        let place_keywords: Vec<KeywordMapping> = place_keywords_rows
-            .into_iter()
-            .map(|row| KeywordMapping {
-                word: row.get("word"),
-                meaning: row.get("meaning"),
-            })
-            .collect();
+            place_keywords_rows
+                .into_iter()
+                .map(|row| KeywordMapping {
+                    word: row.get("word"),
+                    meaning: row.get("meaning"),
+                })
+                .collect()
+        };
 
         (Some(gloss_keywords), Some(place_keywords))
     } else {
@@ -3679,18 +3681,27 @@ pub async fn update_definition(
             .await?;
     }
 
-    // Clear existing keywords (phrases do not have keywords)
-    if request.is_wiki != Some(true) && valsi_typeid != 15 {
-        transaction
-            .execute(
-                "DELETE FROM keywordmapping WHERE definitionid = $1",
-                &[&definition_id],
-            )
-            .await?;
+    // Clear existing keywords (place keywords are omitted for phrases)
+    if request.is_wiki != Some(true) {
+        if valsi_typeid == 15 {
+            transaction
+                .execute(
+                    "DELETE FROM keywordmapping WHERE definitionid = $1 AND place = 0",
+                    &[&definition_id],
+                )
+                .await?;
+        } else {
+            transaction
+                .execute(
+                    "DELETE FROM keywordmapping WHERE definitionid = $1",
+                    &[&definition_id],
+                )
+                .await?;
+        }
     }
 
-    // Add gloss keywords (phrases do not have keywords)
-    if request.is_wiki != Some(true) && valsi_typeid != 15 {
+    // Add gloss keywords (including phrases)
+    if request.is_wiki != Some(true) {
         if let Some(gloss_keywords) = &request.gloss_keywords {
             for keyword in gloss_keywords {
                 let sanitized_word = sanitize_html(&keyword.word);
@@ -3746,7 +3757,8 @@ pub async fn update_definition(
             }
         }
 
-        // Add place keywords
+        // Add place keywords (phrases do not have place structure)
+        if valsi_typeid != 15 {
         if let Some(place_keywords) = &request.place_keywords {
             for (i, keyword) in place_keywords.iter().enumerate() {
                 let sanitized_word = sanitize_html(&keyword.word);
@@ -3802,6 +3814,7 @@ pub async fn update_definition(
                     )
                     .await?;
             }
+        }
         }
     }
 
@@ -6289,7 +6302,7 @@ pub async fn get_definition_translations(
 
     let rows = client
         .query(
-            "SELECT d.definitionid, v.word as valsiword, d.definition, l.langid, l.realname as lang_name, dl.id as link_id
+            "SELECT d.definitionid, v.word as valsiword, COALESCE(d.definition, '') as definition, l.langid, l.realname as lang_name, dl.id as link_id
              FROM definition_links dl
              JOIN definitions d ON dl.translation_id = d.definitionid
              JOIN valsi v ON d.valsiid = v.valsiid
