@@ -834,6 +834,7 @@
     "notesLabel": "Notes:",
     "glossKeywordsLabel": "Gloss keywords:",
     "placeKeywordsLabel": "Place keywords:",
+    "languageLabel": "Language:",
     "compareWith": "Compare with #{versionId}",
     "compareThis": "Compare this",
     "cancelSelection": "Cancel selection",
@@ -1504,7 +1505,8 @@
         "definition": "Definition",
         "notes": "Notes",
         "gloss_keywords": "Gloss keywords",
-        "place_keywords": "Place keywords"
+        "place_keywords": "Place keywords",
+        "language": "Language"
       },
       "imageAdded": "Image added",
       "imageRemoved": "Image removed"

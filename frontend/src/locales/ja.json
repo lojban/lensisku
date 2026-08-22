@@ -804,6 +804,7 @@
     "notesLabel": "注：",
     "glossKeywordsLabel": "グロスキーワード：",
     "placeKeywordsLabel": "項キーワード：",
+    "languageLabel": "言語：",
     "compareWith": "バージョン #{versionId} と比較",
     "compareThis": "これを比較",
     "cancelSelection": "選択を解除",
@@ -1475,7 +1476,8 @@
         "definition": "定義",
         "notes": "注",
         "gloss_keywords": "グロスキーワード",
-        "place_keywords": "項キーワード"
+        "place_keywords": "項キーワード",
+        "language": "言語"
       },
       "imageAdded": "画像が追加されました",
       "imageRemoved": "画像が削除されました"

@@ -241,13 +241,11 @@ const handleReply = (commentId: number) => {
 const getChangeTypeLabel = (changeType) => t(`recentChanges.changeTypes.${changeType}`)
 
 const formatFieldName = (field) => {
-  return field
+  const fallback = field
     .split('_')
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .map((word) =>
-      t(`components.recentChangeItem.fields.${word}`, word.charAt(0).toUpperCase() + word.slice(1))
-    )
     .join(' ')
+  return t(`components.recentChangeItem.fields.${field}`, fallback)
 }
 
 const hasDiffContent = (value) => {
@@ -275,7 +273,10 @@ const visibleDiffChanges = computed(() => {
 
 // Fields whose values are plain text — render as text only (no markdown/linkification)
 const isPlainTextField = (field) =>
-  field === 'gloss_keywords' || field === 'place_keywords' || field === 'rafsi'
+  field === 'gloss_keywords' ||
+  field === 'place_keywords' ||
+  field === 'rafsi' ||
+  field === 'language'
 </script>
 
 <style scoped>

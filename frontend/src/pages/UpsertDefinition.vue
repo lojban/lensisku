@@ -608,7 +608,7 @@ const loadDefinitionData = async (definitionId: string | number) => {
     if (def) {
       word.value = def.valsiword
       wordId.value = def.valsiid
-      langId.value = def.langid
+      langId.value = String(def.langid)
       definition.value = def.definition
       rafsi.value = def.rafsi || ''
       selmaho.value = def.selmaho || ''
@@ -726,7 +726,7 @@ const loadLanguages = async () => {
     languages.value = response.data
 
     const lastLang = getLastLanguage()
-    if (lastLang) {
+    if (lastLang && !isEditMode.value) {
       langId.value = lastLang
     }
   } catch (e) {

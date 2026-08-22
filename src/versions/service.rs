@@ -5,6 +5,97 @@ use super::{
 use crate::{auth::permissions::PermissionCache, jbovlaste::KeywordMapping};
 use deadpool_postgres::Pool;
 
+const VERSION_SELECT_SQL: &str = "SELECT v.*, u.username,
+             v.definition, v.notes, v.selmaho, v.jargon, v.rafsi,
+             v.gloss_keywords::text as gloss_json,
+             v.place_keywords::text as place_json,
+             EXISTS(SELECT 1 FROM definition_images di WHERE di.definition_id = v.definition_id
+                    AND di.created_at <= v.created_at) as had_image,
+             l.realname AS language_name,
+             l.englishname AS language_english_name,
+             l.lojbanname AS language_lojban_name
+             FROM definition_versions v
+             JOIN users u ON v.user_id = u.userid
+             LEFT JOIN languages l ON v.langid = l.langid";
+
+fn parse_keywords(row: &tokio_postgres::Row, column: &str) -> Option<Vec<KeywordMapping>> {
+    row.try_get::<_, String>(column)
+        .ok()
+        .and_then(|json| serde_json::from_str(&json).ok())
+}
+
+fn version_from_row(row: &tokio_postgres::Row) -> Version {
+    Version {
+        version_id: row.get("version_id"),
+        definition_id: row.get("definition_id"),
+        user_id: row.get("user_id"),
+        username: row.get("username"),
+        created_at: row.get("created_at"),
+        content: VersionContent {
+            definition: row.get("definition"),
+            notes: row.get("notes"),
+            selmaho: row.get("selmaho"),
+            jargon: row.get("jargon"),
+            rafsi: row.get("rafsi"),
+            gloss_keywords: parse_keywords(row, "gloss_json"),
+            place_keywords: parse_keywords(row, "place_json"),
+            has_image: row.try_get("had_image").ok(),
+            langid: row.try_get("langid").ok(),
+            language_name: row.try_get("language_name").ok().flatten(),
+            language_english_name: row.try_get("language_english_name").ok().flatten(),
+            language_lojban_name: row.try_get("language_lojban_name").ok().flatten(),
+        },
+        commit_message: row.get("message"),
+    }
+}
+
+/// Next `definitionnum` for a valsi in the given target language (unique per langid+valsiid).
+pub async fn next_definitionnum_for_language(
+    transaction: &tokio_postgres::Transaction<'_>,
+    valsi_id: i32,
+    lang_id: i32,
+) -> Result<i32, Box<dyn std::error::Error>> {
+    Ok(transaction
+        .query_one(
+            "SELECT COALESCE(MAX(definitionnum), 0) + 1
+             FROM definitions
+             WHERE valsiid = $1 AND langid = $2",
+            &[&valsi_id, &lang_id],
+        )
+        .await?
+        .get(0))
+}
+
+/// Move votes onto the definition's new target language, collapsing duplicates per user.
+pub async fn retarget_definition_votes(
+    transaction: &tokio_postgres::Transaction<'_>,
+    definition_id: i32,
+    new_lang_id: i32,
+) -> Result<(), Box<dyn std::error::Error>> {
+    transaction
+        .execute(
+            "DELETE FROM definitionvotes a
+             WHERE a.definitionid = $1
+               AND a.langid <> $2
+               AND EXISTS (
+                 SELECT 1 FROM definitionvotes b
+                 WHERE b.definitionid = a.definitionid
+                   AND b.userid = a.userid
+                   AND b.langid = $2
+               )",
+            &[&definition_id, &new_lang_id],
+        )
+        .await?;
+    transaction
+        .execute(
+            "UPDATE definitionvotes SET langid = $1
+             WHERE definitionid = $2 AND langid <> $1",
+            &[&new_lang_id, &definition_id],
+        )
+        .await?;
+    Ok(())
+}
+
 pub async fn get_definition_history(
     pool: &Pool,
     definition_id: i32,
@@ -17,57 +108,17 @@ pub async fn get_definition_history(
 
     let versions = transaction
         .query(
-            "SELECT v.*, u.username,
-             v.definition, v.notes, v.selmaho, v.jargon, v.rafsi,
-             v.gloss_keywords::text as gloss_json,
-             v.place_keywords::text as place_json,
-             EXISTS(SELECT 1 FROM definition_images di WHERE di.definition_id = v.definition_id
-                    AND di.created_at <= v.created_at) as had_image
-             FROM definition_versions v
-             JOIN users u ON v.user_id = u.userid
+            &format!(
+                "{VERSION_SELECT_SQL}
              WHERE v.definition_id = $1
              ORDER BY v.created_at DESC
-             LIMIT $2 OFFSET $3",
+             LIMIT $2 OFFSET $3"
+            ),
             &[&definition_id, &per_page, &offset],
         )
         .await?
         .iter()
-        .map(|row| {
-            let gloss_keywords: Option<Vec<KeywordMapping>> =
-                if let Ok(json) = row.try_get::<_, String>("gloss_json") {
-                    serde_json::from_str(&json).ok()
-                } else {
-                    None
-                };
-
-            let place_keywords: Option<Vec<KeywordMapping>> =
-                if let Ok(json) = row.try_get::<_, String>("place_json") {
-                    serde_json::from_str(&json).ok()
-                } else {
-                    None
-                };
-
-            let content = VersionContent {
-                definition: row.get("definition"),
-                notes: row.get("notes"),
-                selmaho: row.get("selmaho"),
-                jargon: row.get("jargon"),
-                rafsi: row.get("rafsi"),
-                gloss_keywords,
-                place_keywords,
-                has_image: row.try_get("had_image").ok(),
-            };
-
-            Version {
-                version_id: row.get("version_id"),
-                definition_id: row.get("definition_id"),
-                user_id: row.get("user_id"),
-                username: row.get("username"),
-                created_at: row.get("created_at"),
-                content,
-                commit_message: row.get("message"),
-            }
-        })
+        .map(version_from_row)
         .collect();
 
     let total: i64 = transaction
@@ -108,53 +159,12 @@ pub async fn get_version_with_transaction(
 ) -> Result<Version, Box<dyn std::error::Error>> {
     let row = transaction
         .query_one(
-            "SELECT v.*, u.username,
-             v.definition, v.notes, v.selmaho, v.jargon, v.rafsi,
-             v.gloss_keywords::text as gloss_json,
-             v.place_keywords::text as place_json,
-             EXISTS(SELECT 1 FROM definition_images di WHERE di.definition_id = v.definition_id
-                    AND di.created_at <= v.created_at) as had_image
-             FROM definition_versions v
-             JOIN users u ON v.user_id = u.userid
-             WHERE v.version_id = $1",
+            &format!("{VERSION_SELECT_SQL} WHERE v.version_id = $1"),
             &[&version_id],
         )
         .await?;
 
-    let gloss_keywords: Option<Vec<KeywordMapping>> =
-        if let Ok(json) = row.try_get::<_, String>("gloss_json") {
-            serde_json::from_str(&json).ok()
-        } else {
-            None
-        };
-
-    let place_keywords: Option<Vec<KeywordMapping>> =
-        if let Ok(json) = row.try_get::<_, String>("place_json") {
-            serde_json::from_str(&json).ok()
-        } else {
-            None
-        };
-
-    let content = VersionContent {
-        definition: row.get("definition"),
-        notes: row.get("notes"),
-        selmaho: row.get("selmaho"),
-        jargon: row.get("jargon"),
-        rafsi: row.get("rafsi"),
-        gloss_keywords,
-        place_keywords,
-        has_image: row.try_get("had_image").ok(),
-    };
-
-    Ok(Version {
-        version_id: row.get("version_id"),
-        definition_id: row.get("definition_id"),
-        user_id: row.get("user_id"),
-        username: row.get("username"),
-        created_at: row.get("created_at"),
-        content,
-        commit_message: row.get("message"),
-    })
+    Ok(version_from_row(&row))
 }
 
 pub async fn create_version(
@@ -173,7 +183,7 @@ pub async fn create_version(
         .await?;
 
     let valsi_id: i32 = def_info.get("valsiid");
-    let lang_id: i32 = def_info.get("langid");
+    let lang_id: i32 = content.langid.unwrap_or_else(|| def_info.get("langid"));
 
     // Convert keywords to JSONB
     let gloss_json = serde_json::to_value(&content.gloss_keywords).map(postgres_types::Json)?;
@@ -262,22 +272,46 @@ pub async fn revert_to_version(
     )
     .await?;
 
-    // Update the definition with the old content
+    let current_def = transaction
+        .query_one(
+            "SELECT valsiid, langid, definitionnum FROM definitions WHERE definitionid = $1",
+            &[&old_version.definition_id],
+        )
+        .await?;
+    let valsi_id: i32 = current_def.get("valsiid");
+    let current_langid: i32 = current_def.get("langid");
+    let current_definitionnum: i32 = current_def.get("definitionnum");
+    let restored_langid = old_version.content.langid.unwrap_or(current_langid);
+    let definitionnum = if restored_langid == current_langid {
+        current_definitionnum
+    } else {
+        next_definitionnum_for_language(&transaction, valsi_id, restored_langid).await?
+    };
+
+    // Update the definition with the old content, including target language.
     transaction
         .execute(
             "UPDATE definitions 
-             SET definition = $1, notes = $2, selmaho = $3, jargon = $4, rafsi = $5
-             WHERE definitionid = $6",
+             SET definition = $1, notes = $2, selmaho = $3, jargon = $4, rafsi = $5,
+                 langid = $6, definitionnum = $7
+             WHERE definitionid = $8",
             &[
                 &old_version.content.definition,
                 &old_version.content.notes,
                 &old_version.content.selmaho,
                 &old_version.content.jargon,
                 &old_version.content.rafsi,
+                &restored_langid,
+                &definitionnum,
                 &old_version.definition_id,
             ],
         )
         .await?;
+
+    if restored_langid != current_langid {
+        retarget_definition_votes(&transaction, old_version.definition_id, restored_langid)
+            .await?;
+    }
 
     // Update keywords if they exist
     if let Some(gloss_keywords) = &old_version.content.gloss_keywords {
@@ -390,6 +424,8 @@ pub async fn get_diff(
         &mut changes,
     );
 
+    compare_language(&old_version.content, &new_version.content, &mut changes);
+
     // Compare keywords
     compare_keywords(
         "gloss_keywords",
@@ -430,6 +466,21 @@ fn compare_field(field: &str, old_value: &str, new_value: &str, changes: &mut Ve
             image_url: None,
         });
     }
+}
+
+fn compare_language(old: &VersionContent, new: &VersionContent, changes: &mut Vec<Change>) {
+    if old.langid.is_none() && new.langid.is_none() {
+        return;
+    }
+    if old.langid == new.langid {
+        return;
+    }
+    compare_option_field(
+        "language",
+        &old.language_label(),
+        &new.language_label(),
+        changes,
+    );
 }
 
 fn compare_option_field(

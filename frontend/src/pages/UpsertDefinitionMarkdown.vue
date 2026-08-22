@@ -213,7 +213,7 @@ async function loadDefinitionData(definitionId) {
     const response = await getDefinition(definitionId)
     const def = response.data
     if (def) {
-      langId.value = def.langid
+      langId.value = String(def.langid)
       definition.value = def.definition
       word.value = def.valsiword
       sourceLangId.value = def.source_langid || 1 // Load source lang if editing

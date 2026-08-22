@@ -817,11 +817,12 @@
     "commitMessage": "\"{message}\"",
     "definitionLabel": "velckivei:",
     "notesLabel": "notci:",
-    "glossKeywordsLabel": "fanva valsi:",
-    "placeKeywordsLabel": "fancu valsi:",
-    "compareWith": "mintu fi #{versionId}",
-    "compareThis": "mintu ti",
-    "cancelSelection": "canpa lo nu cuxna",
+    "glossKeywordsLabel": "fanva valsi",
+    "placeKeywordsLabel": "fancu valsi",
+    "languageLabel": "bangu",
+    "compareWith": "karbi fi la'e li #{versionId}",
+    "compareThis": "karbi ti",
+    "cancelSelection": "co'u cuxna",
     "revertToThis": "xruti fi ti",
     "revertConfirm": "xu do birti lo nu xruti fi ti? .i lo nu zukte ti na ku ka'e di'a zasti",
     "comparisonTitle": "galfi mintu",
@@ -1481,7 +1482,8 @@
         "definition": "velckivei",
         "notes": "notci",
         "gloss_keywords": "fanva valsi",
-        "place_keywords": "fancu valsi"
+        "place_keywords": "valsi tcita lu'a lo te bridi",
+        "language": "bangu"
       },
       "imageAdded": "le pixra mo'u se jmina",
       "imageRemoved": "le pixra mo'u se vimcu"

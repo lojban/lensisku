@@ -759,6 +759,7 @@
     "notesLabel": "Заметки:",
     "glossKeywordsLabel": "Ключевые слова (глоссы):",
     "placeKeywordsLabel": "Ключевые слова (места):",
+    "languageLabel": "Язык:",
     "compareWith": "Сравнить с #{versionId}",
     "compareThis": "Сравнить эту",
     "cancelSelection": "Отменить выбор",
@@ -1429,7 +1430,8 @@
         "definition": "Определение",
         "notes": "Заметки",
         "gloss_keywords": "Ключевые слова (глоссы)",
-        "place_keywords": "Ключевые слова (места)"
+        "place_keywords": "Ключевые слова (места)",
+        "language": "Язык"
       },
       "imageAdded": "Изображение добавлено",
       "imageRemoved": "Изображение удалено"

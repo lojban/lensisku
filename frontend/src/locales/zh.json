@@ -809,6 +809,7 @@
     "notesLabel": "备注：",
     "glossKeywordsLabel": "关键词：",
     "placeKeywordsLabel": "位关键词：",
+    "languageLabel": "语言：",
     "compareWith": "与 #{versionId} 比较",
     "compareThis": "比较此项",
     "cancelSelection": "取消选择",
@@ -1480,7 +1481,8 @@
         "definition": "释义",
         "notes": "备注",
         "gloss_keywords": "关键词",
-        "place_keywords": "位关键词"
+        "place_keywords": "位关键词",
+        "language": "语言"
       },
       "imageAdded": "图片已添加",
       "imageRemoved": "图片已删除"

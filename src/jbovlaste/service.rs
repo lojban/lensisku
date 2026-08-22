@@ -82,7 +82,10 @@ use crate::language::{
 };
 use crate::middleware::cache::RedisCache;
 use crate::subscriptions::models::SubscriptionTrigger;
-use crate::versions::service::{get_diff, get_version_with_transaction};
+use crate::versions::service::{
+    get_diff, get_version_with_transaction, next_definitionnum_for_language,
+    retarget_definition_votes,
+};
 use crate::versions::{Change, ChangeType, VersionContent, VersionDiff};
 use base64::engine::general_purpose::STANDARD as BASE64;
 use base64::Engine;
@@ -3502,7 +3505,8 @@ pub async fn update_definition(
     // Get current definition details including owner status and author
     let current_def = transaction
         .query_one(
-            "SELECT d.userid, d.owner_only, d.time, u.username, v.source_langid, v.typeid, d.valsiid
+            "SELECT d.userid, d.owner_only, d.time, u.username, v.source_langid, v.typeid,
+                    d.valsiid, d.langid, d.definitionnum
               FROM definitions d
               JOIN users u ON d.userid = u.userid
               JOIN valsi v ON d.valsiid = v.valsiid
@@ -3514,11 +3518,30 @@ pub async fn update_definition(
     let source_langid: Option<i32> = current_def.get("source_langid");
     let valsi_id: i32 = current_def.get("valsiid");
     let valsi_typeid: i16 = current_def.get("typeid");
+    let current_langid: i32 = current_def.get("langid");
+    let current_definitionnum: i32 = current_def.get("definitionnum");
 
     // Wiki edits must target a valsi of type `wiki`.
     if request.is_wiki == Some(true) && valsi_typeid != 16 {
         return Err("This definition is not a native wiki page".into());
     }
+
+    let lang_exists = transaction
+        .query_opt(
+            "SELECT 1 FROM languages WHERE langid = $1",
+            &[&request.lang_id],
+        )
+        .await?
+        .is_some();
+    if !lang_exists {
+        return Err("Invalid target language".into());
+    }
+
+    let definitionnum = if request.lang_id == current_langid {
+        current_definitionnum
+    } else {
+        next_definitionnum_for_language(&transaction, valsi_id, request.lang_id).await?
+    };
 
     // Optimistic concurrency
     if let Some(expected_time) = request.expected_time {
@@ -3607,8 +3630,8 @@ pub async fn update_definition(
             "UPDATE definitions
              SET definition = $1, notes = $2, jargon = $3, time = $4,
                  selmaho = $5, owner_only = $6, etymology = $7,
-                 embedding = NULL
-             WHERE definitionid = $8",
+                 embedding = NULL, langid = $8, definitionnum = $9
+             WHERE definitionid = $10",
             &[
                 &sanitized_definition,
                 &notes,
@@ -3617,10 +3640,16 @@ pub async fn update_definition(
                 &selmaho,
                 &owner_only,
                 &etymology,
+                &request.lang_id,
+                &definitionnum,
                 &definition_id,
             ],
         )
         .await?;
+
+    if request.lang_id != current_langid {
+        retarget_definition_votes(&transaction, definition_id, request.lang_id).await?;
+    }
 
     if request.remove_image.unwrap_or(false) || request.image.is_some() {
         transaction
@@ -3818,15 +3847,6 @@ pub async fn update_definition(
             &[&definition_id, &user_id, &version_message],
         )
         .await?;
-
-    // Get valsi ID for voting
-    let valsi_id = transaction
-        .query_one(
-            "SELECT valsiid FROM definitions WHERE definitionid = $1",
-            &[&definition_id],
-        )
-        .await?
-        .get::<_, i32>(0);
 
     // Get user's vote size
     let vote_size: f32 = transaction
@@ -4801,7 +4821,7 @@ pub async fn get_recent_changes(
                 v.word,
                 to_jsonb(dv.message) as content,
                 d.valsiid,
-                d.langid,
+                dv.langid,
                 0 AS natlangwordid,
                 0 AS commentid,
                 0 AS threadid,
@@ -4827,7 +4847,7 @@ pub async fn get_recent_changes(
             JOIN definitions d ON dv.definition_id = d.definitionid
             JOIN valsi v ON d.valsiid = v.valsiid
             JOIN users u ON dv.user_id = u.userid
-            LEFT JOIN languages l ON d.langid = l.langid
+            LEFT JOIN languages l ON dv.langid = l.langid
             WHERE u.username != 'officialdata' AND v.source_langid = 1 {}
             {})",
                         where_extra, order_limit
@@ -5053,13 +5073,8 @@ pub async fn get_recent_changes(
                                 Ok(VersionDiff {
                                     old_content: VersionContent {
                                         definition: String::new(),
-                                        notes: None,
-                                        selmaho: None,
-                                        jargon: None,
-                                        rafsi: None,
-                                        gloss_keywords: None,
-                                        place_keywords: None,
                                         has_image: Some(false),
+                                        ..Default::default()
                                     },
                                     new_content: current.content,
                                     changes: first_changes,

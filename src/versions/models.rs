@@ -14,7 +14,7 @@ pub struct Version {
     pub commit_message: String,
 }
 
-#[derive(Debug, Serialize, Deserialize, ToSchema, Clone)]
+#[derive(Debug, Serialize, Deserialize, ToSchema, Clone, Default)]
 pub struct VersionContent {
     pub definition: String,
     pub notes: Option<String>,
@@ -26,6 +26,25 @@ pub struct VersionContent {
     /// Whether this version had an image attached to the definition.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub has_image: Option<bool>,
+    /// Target language of the definition (`definitions.langid`) at this version.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub langid: Option<i32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub language_name: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub language_english_name: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub language_lojban_name: Option<String>,
+}
+
+impl VersionContent {
+    /// Display label for diffs and history: native name, then English, then id.
+    pub fn language_label(&self) -> Option<String> {
+        self.language_name
+            .clone()
+            .or_else(|| self.language_english_name.clone())
+            .or_else(|| self.langid.map(|id| id.to_string()))
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]

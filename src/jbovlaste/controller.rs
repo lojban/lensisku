@@ -1128,6 +1128,18 @@ pub async fn update_definition(
                     error: Some(msg),
                     warning: None,
                 })
+            } else if msg.contains("don't have permission") {
+                HttpResponse::Forbidden().json(UpdateDefinitionResponse {
+                    success: false,
+                    error: Some(msg),
+                    warning: None,
+                })
+            } else if msg.contains("Invalid target language") {
+                HttpResponse::BadRequest().json(UpdateDefinitionResponse {
+                    success: false,
+                    error: Some(msg),
+                    warning: None,
+                })
             } else {
                 HttpResponse::InternalServerError().json(UpdateDefinitionResponse {
                     success: false,

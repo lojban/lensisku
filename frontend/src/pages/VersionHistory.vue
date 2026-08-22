@@ -40,6 +40,10 @@
         </div>
         <!-- Version Details -->
         <div class="space-y-2 text-sm text-gray-600">
+          <div v-if="versionLanguage(version)">
+            <span class="font-medium">{{ t('versionHistory.languageLabel') }}</span>
+            {{ versionLanguage(version) }}
+          </div>
           <div>
             <span class="font-medium">{{
               isWikiMode ? t('versionHistory.bodyLabel') : t('versionHistory.definitionLabel')
@@ -153,7 +157,8 @@
               <div class="text-sm text-gray-500">{{ t('versionHistory.oldVersion') }}</div>
 
               <div v-if="change.old_value" class="bg-red-50 p-2 rounded text-red-700">
-                <LazyMathJax :content="change.old_value" />
+                <template v-if="isPlainTextField(change.field)">{{ change.old_value }}</template>
+                <LazyMathJax v-else :content="change.old_value" />
               </div>
 
               <div v-else class="text-gray-400 italic">{{ t('versionHistory.noContent') }}</div>
@@ -163,7 +168,8 @@
               <div class="text-sm text-gray-500">{{ t('versionHistory.newVersion') }}</div>
 
               <div v-if="change.new_value" class="bg-green-50 p-2 rounded text-green-700">
-                <LazyMathJax :content="change.new_value" />
+                <template v-if="isPlainTextField(change.field)">{{ change.new_value }}</template>
+                <LazyMathJax v-else :content="change.new_value" />
               </div>
 
               <div v-else class="text-gray-400 italic">{{ t('versionHistory.noContent') }}</div>
@@ -229,6 +235,30 @@ const props = defineProps({
 
 function isRenameVersion(version: { commit_message?: string }) {
   return Boolean(version.commit_message?.startsWith('Renamed:'))
+}
+
+function versionLanguage(version: {
+  content?: {
+    language_lojban_name?: string
+    language_english_name?: string
+    language_name?: string
+  }
+}) {
+  const c = version.content
+  if (!c) return ''
+  if (locale.value === 'jbo') {
+    return c.language_lojban_name || c.language_name || ''
+  }
+  return c.language_english_name || c.language_name || ''
+}
+
+function isPlainTextField(field: string) {
+  return (
+    field === 'gloss_keywords' ||
+    field === 'place_keywords' ||
+    field === 'rafsi' ||
+    field === 'language'
+  )
 }
 
 function previewContent(text: string) {
@@ -300,10 +330,11 @@ const formatDate = (date) => {
 }
 
 const formatFieldName = (field) => {
-  return field
+  const fallback = field
     .split('_')
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(' ')
+  return t(`components.recentChangeItem.fields.${field}`, fallback)
 }
 
 const changePage = (page) => {
