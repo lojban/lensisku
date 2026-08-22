@@ -148,6 +148,12 @@
                   {{ collection.comment_count }}
                 </span>
               </Button>
+            </div>
+            <div
+              class="btn-group-forced flex flex-wrap items-center justify-center md:gap-y-2"
+              role="group"
+              :aria-label="t('collectionDetail.viewsAriaLabel')"
+            >
               <RouterLink
                 :to="`/collections/${props.collectionId}/flashcards`"
                 class="ui-btn--danger-rose ui-btn--group-item md:flex-none"
