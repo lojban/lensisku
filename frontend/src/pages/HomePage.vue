@@ -1413,6 +1413,7 @@ const updateUrlWithFilters = () => {
       ...combinedFiltersToQuery(filters.value),
       group_by_thread: groupByThread.value ? 'true' : undefined,
       wave_source: waveSource.value !== 'all' ? waveSource.value : undefined,
+      page: undefined,
     }),
   })
 }

@@ -1081,8 +1081,19 @@ const clearFilter = (filterName) => {
 }
 
 const resetAllFilters = () => {
+  clearDebounceTimer()
   clearUserSearchTimer()
   clearCollectionSearchTimer()
+
+  // Clear local advanced filters first so array watchers cannot emitUpdate()
+  // with a stale word_type / selmaho / source language.
+  filters.value = {
+    selmaho: '',
+    word_type: null,
+    source_langid: 1,
+  }
+  expanded.value = false
+
   selectedUsers.value = []
   excludedUsers.value = []
   selectedCollections.value = []
@@ -1112,6 +1123,7 @@ const resetAllFilters = () => {
 
   emit('reset')
   emit('update:modelValue', resetValue)
+  emit('change', resetValue)
 }
 
 const toggleExpanded = () => {

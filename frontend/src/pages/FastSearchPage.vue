@@ -343,6 +343,7 @@ const updateUrlWithFilters = () => {
       ...route.query,
       q: searchQuery.value || undefined,
       ...combinedFiltersToQuery(filters.value),
+      page: undefined,
     }),
   })
 }
