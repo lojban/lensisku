@@ -17,6 +17,7 @@
     <NavLink v-if="auth.state.isLoggedIn" to="/mi" class="mobile-nav-row" @click="$emit('close')">
       <BookmarkCheck class="h-5 w-5" /> {{ t('mobileNav.myActivityAndProfile') }}
     </NavLink>
+    <div class="my-1 border-t border-gray-200" />
     <NavLink to="/recent" class="mobile-nav-row" @click="$emit('close')">
       <Clock4 class="h-5 w-5" /> {{ t('mobileNav.recentChanges') }}
     </NavLink>
