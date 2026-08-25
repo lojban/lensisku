@@ -980,7 +980,11 @@
     "warnNoUsernameDefinitions": "na kakne lo nu jgari lo velckivei: lo pilno cmene na zasti"
   },
   "mePage": {
-    "profile": "jaspu"
+    "profile": "jaspu mi",
+    "comments": "casnu karni fi mi",
+    "reactions": "se cinmo mi",
+    "bookmarks": "se tcita fi mi",
+    "votes": "si'e va'e se zanru mi"
   },
   "userContributions": {
     "comments": "casnu karni",

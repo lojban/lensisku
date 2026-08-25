@@ -1180,7 +1180,11 @@
     "warnNoUsernameDefinitions": "Cannot fetch definitions: username not available."
   },
   "mePage": {
-    "profile": "Profile"
+    "profile": "My profile",
+    "comments": "My comments",
+    "reactions": "My reactions",
+    "bookmarks": "My bookmarks",
+    "votes": "My votes"
   },
   "userContributions": {
     "comments": "Comments",

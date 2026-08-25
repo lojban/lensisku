@@ -178,10 +178,10 @@ const handleTabClick = async (tabKey) => {
 
 const tabs = computed(() => [
   { key: 'profile', label: t('mePage.profile'), icon: User },
-  { key: 'comments', label: t('reactionsPage.comments'), icon: MessageSquare },
-  { key: 'reactions', label: t('reactionsPage.reactions'), icon: ReactionIcon },
-  { key: 'bookmarked', label: t('reactionsPage.bookmarks'), icon: BookmarkCheck },
-  { key: 'votes', label: t('reactionsPage.votes'), icon: Vote },
+  { key: 'comments', label: t('mePage.comments'), icon: MessageSquare },
+  { key: 'reactions', label: t('mePage.reactions'), icon: ReactionIcon },
+  { key: 'bookmarked', label: t('mePage.bookmarks'), icon: BookmarkCheck },
+  { key: 'votes', label: t('mePage.votes'), icon: Vote },
 ])
 
 const pageTitle = ref(t('mePage.profile'))

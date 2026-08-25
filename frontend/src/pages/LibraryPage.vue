@@ -50,6 +50,7 @@
           class="btn-group-forced flex flex-nowrap justify-center min-w-0 overflow-visible py-2"
           role="group"
           aria-labelledby="library-list-sort-legend"
+          aria-describedby="library-list-sort-current"
         >
           <Button
             v-for="opt in sortOptions"
@@ -59,17 +60,28 @@
             class="ui-btn--group-item relative flex h-6 shrink-0 items-center justify-center gap-1.5 px-2 sm:px-4 !cursor-pointer"
             :class="[sortBy === opt.value ? opt.aquaClass : 'ui-btn--empty']"
             :title="opt.label"
+            :aria-label="opt.label"
             :aria-pressed="sortBy === opt.value"
             @click="sortBy = opt.value"
           >
             <component
               :is="opt.icon"
-              class="h-4 w-4 shrink-0"
-              :class="sortBy === opt.value ? 'opacity-100' : 'opacity-55'"
+              class="h-4 w-4 shrink-0 transition-[opacity,filter] duration-200"
+              :class="
+                sortBy === opt.value
+                  ? 'opacity-100 drop-shadow-[0_0_1px_rgba(30,64,175,0.9)]'
+                  : 'opacity-55'
+              "
               aria-hidden="true"
             /><span class="hidden sm:inline">{{ opt.label }}</span>
           </Button>
         </div>
+        <span
+          id="library-list-sort-current"
+          class="min-w-0 shrink-0 text-sm text-gray-700 sm:hidden"
+          aria-live="polite"
+          >{{ selectedSortLabel }}</span
+        >
       </div>
     </div>
     <LoadingSpinner v-if="isLoading" />
@@ -234,6 +246,10 @@ const sortOptions = computed(() => [
     aquaClass: 'ui-btn--sort-emerald',
   },
 ])
+
+const selectedSortLabel = computed(
+  () => sortOptions.value.find((o) => o.value === sortBy.value)?.label ?? ''
+)
 
 const newCollection = ref({
   name: '',

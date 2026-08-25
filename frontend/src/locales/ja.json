@@ -1151,7 +1151,11 @@
     "warnNoUsernameDefinitions": "定義を取得できません：ユーザー名がありません。"
   },
   "mePage": {
-    "profile": "プロフィール"
+    "profile": "自分のプロフィール",
+    "comments": "自分のコメント",
+    "reactions": "自分のリアクション",
+    "bookmarks": "自分のブックマーク",
+    "votes": "自分の投票"
   },
   "userContributions": {
     "comments": "コメント",

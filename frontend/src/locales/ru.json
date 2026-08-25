@@ -1106,7 +1106,11 @@
     "warnNoUsernameDefinitions": "Невозможно получить определения: имя пользователя недоступно."
   },
   "mePage": {
-    "profile": "Профиль"
+    "profile": "Мой профиль",
+    "comments": "Мои комментарии",
+    "reactions": "Мои реакции",
+    "bookmarks": "Мои закладки",
+    "votes": "Мои голоса"
   },
   "userContributions": {
     "comments": "Комментарии",

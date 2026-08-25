@@ -1156,7 +1156,11 @@
     "warnNoUsernameDefinitions": "无法获取释义：用户名不可用。"
   },
   "mePage": {
-    "profile": "资料"
+    "profile": "我的资料",
+    "comments": "我的评论",
+    "reactions": "我的反应",
+    "bookmarks": "我的书签",
+    "votes": "我的投票"
   },
   "userContributions": {
     "comments": "评论",
