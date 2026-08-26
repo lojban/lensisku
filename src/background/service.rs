@@ -315,6 +315,9 @@ pub async fn spawn_background_tasks(
             if let Err(e) = crate::wiki::importer::run_incremental_sync(&pool_wiki).await {
                 error!("Hourly wiki sync failed: {e}");
             }
+            if let Err(e) = crate::wiki::importer::import_revision_histories(&pool_wiki).await {
+                error!("Wiki revision history import failed: {e}");
+            }
         }
     });
 

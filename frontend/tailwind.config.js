@@ -333,6 +333,7 @@ export default {
           alignItems: 'stretch',
           gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)',
           columnGap: '0px',
+          rowGap: '0.5rem',
         },
         '.mobile-nav-grid__full': {
           '@apply col-span-2': {},
@@ -620,11 +621,17 @@ export default {
             {},
         },
         /** Lingo compact study: same interaction, green accent + smaller type. */
-        /** Icon-only play/pause control: tall enough for aqua gloss without clipping the glyph. */
+        /**
+         * Icon-only play/pause: standard `h-6` pill (matches `.btn-base`).
+         * Aqua gloss (`::before` z-2 + span overflow) would hide the triangle — keep the glyph above it.
+         */
         '.audio-player-btn': {
-          '@apply !h-8 !min-h-8 !w-8 !min-w-8 !px-0 cursor-pointer shrink-0': {},
+          '@apply !h-6 !min-h-6 !w-6 !min-w-6 !px-0 cursor-pointer shrink-0': {},
+          '& span:not(.sr-only)': {
+            '@apply relative z-[3] overflow-visible max-w-none': {},
+          },
           '& svg': {
-            '@apply relative z-[3] h-4 w-4 shrink-0': {},
+            '@apply relative z-[3] h-4 w-4 shrink-0 overflow-visible': {},
           },
         },
         '.study-quiz-option-lingo-text': {

@@ -4,9 +4,8 @@
 //! - `markdown`: GitHub-flavored Markdown intended for in-browser rendering.
 //! - `plain`:    formatting-stripped text used for `ILIKE` search and previews.
 //!
-//! Templates and parser functions are intentionally rendered as italicised
-//! `{{name|args}}` text rather than expanded — full template expansion would
-//! require running MediaWiki itself.
+//! Templates that the AST does not expand are rewritten after parse: `{{jvs|word}}`
+//! becomes a dictionary link, and other leftover `{{templates}}` are dropped.
 
 use parse_wiki_text_2::{
     Configuration, DefinitionListItem, DefinitionListItemType, ListItem, Node, Parameter,
@@ -16,20 +15,129 @@ use parse_wiki_text_2::{
 /// Convert MediaWiki source to (markdown, plain_text).
 pub fn wikitext_to_markdown(input: &str) -> (String, String) {
     let cfg = Configuration::default();
-    let output = match cfg.parse(input) {
-        Ok(o) => o,
+    let (md, plain) = match cfg.parse(input) {
+        Ok(o) => {
+            let mut md = String::new();
+            let mut plain = String::new();
+            render_nodes(&o.nodes, &mut md, &mut plain, 0);
+            (md, plain)
+        }
         Err(_) => {
-            // Parse failure: degrade gracefully — emit raw text.
-            return (input.to_string(), input.to_string());
+            // Parse failure: degrade gracefully — emit raw text, then still
+            // rewrite leftover `{{templates}}` so they are not shown as source.
+            (input.to_string(), input.to_string())
         }
     };
-    let mut md = String::new();
-    let mut plain = String::new();
-    render_nodes(&output.nodes, &mut md, &mut plain, 0);
-    // Collapse 3+ newlines and trailing whitespace.
-    let md = collapse_blank_lines(md.trim_end());
-    let plain = collapse_whitespace(plain.trim());
+    let md = collapse_blank_lines(rewrite_leftover_templates(&md, true).trim_end());
+    let plain = collapse_whitespace(rewrite_leftover_templates(&plain, false).trim());
     (md, plain)
+}
+
+/// Lensisku dictionary link for a jbovlaste / jvs word.
+fn jvs_valsi_link(word: &str) -> String {
+    let word = word.trim();
+    if word.is_empty() {
+        return String::new();
+    }
+    format!(
+        "[{}](/valsi/{})",
+        word.replace(']', "\\]"),
+        urlencoding::encode(&word.replace(' ', "_"))
+    )
+}
+
+/// Rewrite `{{jvs|...}}` (and drop other leftover templates) that the AST missed.
+/// `as_markdown` true → jvs becomes a `/valsi/` link; false → just the word.
+fn rewrite_leftover_templates(input: &str, as_markdown: bool) -> String {
+    let mut out = String::with_capacity(input.len());
+    let mut i = 0;
+    let chars: Vec<char> = input.chars().collect();
+    while i < chars.len() {
+        if chars[i] == '{' && i + 2 < chars.len() && chars[i + 1] == '{' && chars[i + 2] == '{' {
+            // `{{{param}}}` — keep the first brace and continue, so we don't
+            // treat parser-function parameters as templates.
+            out.push('{');
+            i += 1;
+            continue;
+        }
+        if chars[i] == '{' && i + 1 < chars.len() && chars[i + 1] == '{' {
+            if let Some((consumed, inner)) = extract_balanced_template(&chars[i..]) {
+                out.push_str(&render_leftover_template(&inner, as_markdown));
+                i += consumed;
+                continue;
+            }
+        }
+        out.push(chars[i]);
+        i += 1;
+    }
+    out
+}
+
+/// `chars` starts at `{{`. Returns (chars consumed, inner without braces).
+fn extract_balanced_template(chars: &[char]) -> Option<(usize, String)> {
+    if chars.len() < 4 || chars[0] != '{' || chars[1] != '{' {
+        return None;
+    }
+    let mut depth = 0i32;
+    let mut i = 0;
+    while i < chars.len() {
+        if i + 1 < chars.len() && chars[i] == '{' && chars[i + 1] == '{' {
+            depth += 1;
+            i += 2;
+            continue;
+        }
+        if i + 1 < chars.len() && chars[i] == '}' && chars[i + 1] == '}' {
+            depth -= 1;
+            i += 2;
+            if depth == 0 {
+                let inner: String = chars[2..i - 2].iter().collect();
+                return Some((i, inner));
+            }
+            continue;
+        }
+        i += 1;
+    }
+    None
+}
+
+fn render_leftover_template(inner: &str, as_markdown: bool) -> String {
+    let inner = inner.trim();
+    if inner.is_empty() {
+        return String::new();
+    }
+    let (name_raw, rest) = match inner.split_once('|') {
+        Some((n, r)) => (n, Some(r)),
+        None => (inner, None),
+    };
+    let name = normalize_template_name(name_raw);
+    let first_arg = rest
+        .and_then(|r| r.split('|').next())
+        .map(strip_numbered_arg)
+        .unwrap_or("");
+    if name == "jvs" {
+        if as_markdown {
+            return jvs_valsi_link(first_arg);
+        }
+        return first_arg.to_string();
+    }
+    // Unknown leftover templates are dropped (no raw `{{...}}` in the article).
+    String::new()
+}
+
+fn strip_numbered_arg(arg: &str) -> &str {
+    let arg = arg.trim();
+    arg.strip_prefix("1=")
+        .or_else(|| arg.strip_prefix("1 ="))
+        .unwrap_or(arg)
+        .trim()
+}
+
+fn normalize_template_name(name: &str) -> String {
+    name.trim()
+        .trim_start_matches("Template:")
+        .trim_start_matches("template:")
+        .trim()
+        .to_lowercase()
 }
 
 /// Build a relative MediaWiki page target for a `[[Target]]` link target.
@@ -284,7 +392,7 @@ fn render_template(
     let mut name = String::new();
     let mut sink = String::new();
     render_nodes(name_nodes, &mut name, &mut sink, 0);
-    let name = name.trim();
+    let name = normalize_template_name(&name);
     if name.is_empty() {
         return;
     }
@@ -315,7 +423,7 @@ fn render_template(
         // ── Lojban word templates ────────────────────────────────────────────
         // Render as bold (the word itself)
         "vla" | "jbo" | "c" | "vlapoi" | "cmevla" | "selmaho" | "selma'o" => {
-            let text = args.first().map(|s| s.as_str()).unwrap_or(name);
+            let text = args.first().map(|s| s.as_str()).unwrap_or(&name);
             md.push_str(&format!("**{}**", text));
             plain.push_str(text);
         }
@@ -323,7 +431,7 @@ fn render_template(
         // Cmavo / grammar word classes — bold
         "cmavo" | "grammar" | "nunjikca" | "jikca" | "gln" | "cc" | "ir" | "mv" | "vj" | "ep"
         | "lg" | "leng" => {
-            let text = args.first().map(|s| s.as_str()).unwrap_or(name);
+            let text = args.first().map(|s| s.as_str()).unwrap_or(&name);
             md.push_str(&format!("**{}**", text));
             plain.push_str(text);
         }
@@ -348,7 +456,7 @@ fn render_template(
 
         // Variables / placeholders — italic
         "ma" | "lerfu" | "mu" | "mo" | "l" => {
-            let text = args.first().map(|s| s.as_str()).unwrap_or(name);
+            let text = args.first().map(|s| s.as_str()).unwrap_or(&name);
             md.push_str(&format!("_{}_", text));
             plain.push_str(text);
         }
@@ -363,13 +471,9 @@ fn render_template(
 
         // Jbovlaste link
         "jvs" => {
-            let word = args.first().map(|s| s.as_str()).unwrap_or("");
+            let word = args.first().map(|s| strip_numbered_arg(s)).unwrap_or("");
             if !word.is_empty() {
-                md.push_str(&format!(
-                    "[{}](https://jbovlaste.lojban.org/dict/{})",
-                    word,
-                    urlencoding::encode(word)
-                ));
+                md.push_str(&jvs_valsi_link(word));
                 plain.push_str(word);
             }
         }
@@ -954,10 +1058,26 @@ mod tests {
     fn jbovlaste_link_template() {
         let (md, plain) = wikitext_to_markdown("See {{jvs|broda}} for details.");
         assert!(
-            md.contains("[broda](https://jbovlaste.lojban.org/dict/broda)"),
+            md.contains("[broda](/valsi/broda)"),
             "md={md}"
         );
+        assert!(!md.contains("{{"), "raw template leaked: {md}");
         assert!(plain.contains("broda"), "plain={plain}");
+    }
+
+    #[test]
+    fn jvs_template_with_apostrophe_in_list_is_rewritten() {
+        let (md, _) = wikitext_to_markdown("* {{jvs|se du'o}}\n* {{jvs|te du'o}}");
+        assert!(md.contains("[se du'o](/valsi/se_du%27o)") || md.contains("se du'o"), "md={md}");
+        assert!(!md.contains("{{jvs"), "raw jvs leaked: {md}");
+        assert!(!md.contains("{{"), "raw template leaked: {md}");
+    }
+
+    #[test]
+    fn jvs_template_prefix_and_unparsed_source_filtered() {
+        let (md, _) = wikitext_to_markdown("{{Template:jvs|cusku}} and leftover {{jvs|zanru}}");
+        assert!(!md.contains("{{"), "raw template leaked: {md}");
+        assert!(md.contains("cusku") || md.contains("zanru"), "md={md}");
     }
 
     #[test]

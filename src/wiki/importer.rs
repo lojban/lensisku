@@ -1,8 +1,9 @@
 //! Pulls articles from `mw.lojban.org` via the MediaWiki API and stores them in
 //! `wiki_articles`. Run from `src/background/service.rs` on startup and hourly.
 //!
-//! Only the latest revision is mirrored. Namespaces 0 (Main) and 2 (User) are
-//! included per product decision. Templates are NOT expanded.
+//! Latest revision is mirrored into `wiki_articles`. Each incremental upsert
+//! also writes new MediaWiki revisions into `definition_versions`. A batch
+//! `import_revision_histories` pass backfills remaining history.
 
 use std::time::Duration;
 
@@ -51,6 +52,8 @@ struct RevisionsEnvelope {
     error: Option<MwApiError>,
     #[serde(default)]
     query: Option<RevisionsQuery>,
+    #[serde(rename = "continue", default)]
+    cont: Option<serde_json::Value>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -59,7 +62,7 @@ struct RevisionsQuery {
     pages: serde_json::Value,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 struct PageWithRev {
     pageid: i64,
     #[serde(default)]
@@ -71,23 +74,27 @@ struct PageWithRev {
     revisions: Vec<RevEntry>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 struct RevEntry {
     #[serde(default)]
     revid: Option<i64>,
     #[serde(default)]
     timestamp: Option<String>,
     #[serde(default)]
+    user: Option<String>,
+    #[serde(default)]
+    comment: Option<String>,
+    #[serde(default)]
     slots: Option<RevSlots>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 struct RevSlots {
     #[serde(default)]
     main: Option<RevSlotMain>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 struct RevSlotMain {
     #[serde(rename = "*", default)]
     star: Option<String>,
@@ -237,7 +244,7 @@ pub async fn sync_on_startup(pool: &Pool) -> Result<(), WikiSyncError> {
     drop(client);
     if count == 0 {
         info!("wiki_articles empty -> running full wiki sync");
-        run_full_sync(pool).await
+        run_full_sync(pool).await?;
     } else {
         if rerender_enabled_on_startup() {
             info!("wiki_articles has {count} rows -> re-rendering + incremental sync on startup");
@@ -245,8 +252,9 @@ pub async fn sync_on_startup(pool: &Pool) -> Result<(), WikiSyncError> {
         } else {
             info!("wiki_articles has {count} rows -> skipping startup re-render (set WIKI_RERENDER_ON_STARTUP=1 to enable)");
         }
-        run_incremental_sync(pool).await
+        run_incremental_sync(pool).await?;
     }
+    import_revision_histories(pool).await
 }
 
 /// Full crawl across all configured namespaces. Inserts/updates every page.
@@ -316,12 +324,29 @@ pub async fn run_incremental_sync(pool: &Pool) -> Result<(), WikiSyncError> {
         to_delete.len()
     );
     let mut fetch_errors = 0usize;
+    let history_user = match officialdata_user_id(pool).await {
+        Ok(id) => Some(id),
+        Err(e) => {
+            warn!("wiki: cannot sync definition_versions ({e})");
+            None
+        }
+    };
     for chunk in to_fetch.chunks(50) {
         match fetch_revisions(&http, chunk).await {
             Ok(pages) => {
                 for p in pages {
                     if let Err(e) = upsert_page(pool, &p).await {
                         warn!("wiki: upsert {} failed: {e}", p.title);
+                        continue;
+                    }
+                    if let Some(uid) = history_user {
+                        if let Err(e) = sync_page_history_after_upsert(pool, &http, &p, uid).await
+                        {
+                            warn!(
+                                "wiki: definition_versions sync for {} failed: {e}",
+                                p.title
+                            );
+                        }
                     }
                 }
             }
@@ -413,7 +438,7 @@ async fn fetch_revisions(
         ("format", "json".into()),
         ("formatversion", "2".into()),
         ("prop", "revisions".into()),
-        ("rvprop", "ids|timestamp|content".into()),
+            ("rvprop", "ids|timestamp|user|comment|content".into()),
         ("rvslots", "main".into()),
         ("pageids", ids),
     ];
@@ -573,6 +598,483 @@ async fn upsert_page(pool: &Pool, p: &PageWithRev) -> Result<(), WikiSyncError> 
         .await
         .map_err(|e| WikiSyncError::Db(e.to_string()))?;
     Ok(())
+}
+
+/// Pull missing MediaWiki revisions for a page we just mirrored into `definition_versions`.
+async fn sync_page_history_after_upsert(
+    pool: &Pool,
+    http: &reqwest::Client,
+    p: &PageWithRev,
+    fallback_user_id: i32,
+) -> Result<(), WikiSyncError> {
+    let latest_revid = p.revisions.first().and_then(|r| r.revid).unwrap_or(0);
+    if latest_revid <= 0 {
+        return Ok(());
+    }
+    let imported_until = page_history_imported_until(pool, p.pageid as i32).await?;
+    import_one_page_history(
+        pool,
+        http,
+        p.pageid as i32,
+        &p.title,
+        latest_revid,
+        imported_until,
+        fallback_user_id,
+        p.revisions.first().cloned(),
+    )
+    .await
+}
+
+async fn page_history_imported_until(pool: &Pool, page_id: i32) -> Result<i64, WikiSyncError> {
+    let client = pool
+        .get()
+        .await
+        .map_err(|e| WikiSyncError::Db(e.to_string()))?;
+    let row = client
+        .query_opt(
+            "SELECT COALESCE(history_imported_until, 0) AS imported
+             FROM wiki_articles WHERE page_id = $1",
+            &[&page_id],
+        )
+        .await
+        .map_err(|e| WikiSyncError::Db(e.to_string()))?;
+    Ok(row.map(|r| r.get("imported")).unwrap_or(0))
+}
+
+/// Import every MediaWiki revision of mirrored pages into `definition_versions`.
+///
+/// Pages whose titles collide with a dictionary valsi keep a synthetic wiki
+/// word `mw:{page_id}` so history still has a definition_id. Progress is stored
+/// in `wiki_articles.history_imported_until`.
+pub async fn import_revision_histories(pool: &Pool) -> Result<(), WikiSyncError> {
+    if sync_disabled() {
+        return Ok(());
+    }
+    let importer_user_id = officialdata_user_id(pool).await?;
+    let http = http_client()?;
+    let client = pool
+        .get()
+        .await
+        .map_err(|e| WikiSyncError::Db(e.to_string()))?;
+    let rows = client
+        .query(
+            "SELECT page_id, title, revision_id, COALESCE(history_imported_until, 0) AS imported
+             FROM wiki_articles
+             WHERE revision_id IS NOT NULL
+               AND COALESCE(history_imported_until, 0) IS DISTINCT FROM revision_id
+             ORDER BY last_edited DESC NULLS LAST",
+            &[],
+        )
+        .await
+        .map_err(|e| WikiSyncError::Db(e.to_string()))?;
+    drop(client);
+    let pending = rows.len();
+    if pending == 0 {
+        info!("wiki: revision history already caught up");
+        return Ok(());
+    }
+    info!("wiki: importing MediaWiki history for {pending} pages");
+    let mut done = 0usize;
+    for row in rows {
+        let page_id: i32 = row.get("page_id");
+        let title: String = row.get("title");
+        let latest_revid: i64 = row.get("revision_id");
+        let imported_until: i64 = row.get("imported");
+        match import_one_page_history(
+            pool,
+            &http,
+            page_id,
+            &title,
+            latest_revid,
+            imported_until,
+            importer_user_id,
+            None,
+        )
+        .await
+        {
+            Ok(()) => {
+                done += 1;
+                if done.is_multiple_of(25) {
+                    info!("wiki: history import {done}/{pending}");
+                }
+            }
+            Err(e) => warn!("wiki: history import for {title} (page {page_id}) failed: {e}"),
+        }
+    }
+    info!("wiki: history import finished ({done}/{pending} pages)");
+    Ok(())
+}
+
+async fn officialdata_user_id(pool: &Pool) -> Result<i32, WikiSyncError> {
+    let client = pool
+        .get()
+        .await
+        .map_err(|e| WikiSyncError::Db(e.to_string()))?;
+    let row = client
+        .query_opt(
+            "SELECT userid FROM users WHERE username = 'officialdata' LIMIT 1",
+            &[],
+        )
+        .await
+        .map_err(|e| WikiSyncError::Db(e.to_string()))?;
+    row.map(|r| r.get("userid")).ok_or_else(|| {
+        WikiSyncError::Db("users.username='officialdata' is required to import wiki history".into())
+    })
+}
+
+#[allow(clippy::too_many_arguments)]
+async fn import_one_page_history(
+    pool: &Pool,
+    http: &reqwest::Client,
+    page_id: i32,
+    title: &str,
+    _latest_revid: i64,
+    imported_until: i64,
+    fallback_user_id: i32,
+    known_latest: Option<RevEntry>,
+) -> Result<(), WikiSyncError> {
+    let mut revisions = fetch_page_revision_history(http, page_id as i64, imported_until).await?;
+    if let Some(rev) = known_latest {
+        let extra_id = rev.revid.unwrap_or(0);
+        if extra_id > imported_until && !revisions.iter().any(|r| r.revid == Some(extra_id)) {
+            revisions.push(rev);
+        }
+    }
+    if revisions.is_empty() {
+        // Do not advance the watermark: the new edit may not be in the RC/history
+        // API yet, and we must retry on the next sync.
+        return Ok(());
+    }
+    let (definition_id, valsi_id, lang_id) =
+        ensure_mw_wiki_definition(pool, page_id, title, fallback_user_id).await?;
+    let mut newest: Option<&RevEntry> = None;
+    let mut imported_max = imported_until;
+    for rev in &revisions {
+        let Some(revid) = rev.revid else {
+            continue;
+        };
+        if revid <= imported_until {
+            continue;
+        }
+        let user_id = resolve_mw_user_id(pool, rev.user.as_deref(), fallback_user_id).await?;
+        let wikitext = rev
+            .slots
+            .as_ref()
+            .and_then(|s| s.main.as_ref())
+            .and_then(|m| m.content.clone().or_else(|| m.star.clone()))
+            .unwrap_or_default();
+        let (md, _plain) = wikitext_to_markdown(&wikitext);
+        let created_at: DateTime<Utc> = rev
+            .timestamp
+            .as_deref()
+            .and_then(|s| DateTime::parse_from_rfc3339(s).ok())
+            .map(|d| d.with_timezone(&Utc))
+            .unwrap_or_else(Utc::now);
+        let comment = rev
+            .comment
+            .as_deref()
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+            .map(|s| s.to_string())
+            .unwrap_or_else(|| format!("mw.lojban.org r{revid}"));
+        insert_mw_version(
+            pool,
+            definition_id,
+            lang_id,
+            valsi_id,
+            &md,
+            user_id,
+            created_at,
+            &comment,
+            revid,
+        )
+        .await?;
+        imported_max = imported_max.max(revid);
+        newest = Some(rev);
+    }
+    if let Some(rev) = newest {
+        let wikitext = rev
+            .slots
+            .as_ref()
+            .and_then(|s| s.main.as_ref())
+            .and_then(|m| m.content.clone().or_else(|| m.star.clone()))
+            .unwrap_or_default();
+        let (md, plain) = wikitext_to_markdown(&wikitext);
+        let last_edited: Option<DateTime<Utc>> = rev.timestamp.as_deref().and_then(|s| {
+            DateTime::parse_from_rfc3339(s)
+                .ok()
+                .map(|d| d.with_timezone(&Utc))
+        });
+        let unix = last_edited.map(|d| d.timestamp() as i32).unwrap_or(0);
+        let client = pool
+            .get()
+            .await
+            .map_err(|e| WikiSyncError::Db(e.to_string()))?;
+        client
+            .execute(
+                "UPDATE definitions
+                 SET definition = $1, time = $2, embedding = NULL
+                 WHERE definitionid = $3",
+                &[&md, &unix, &definition_id],
+            )
+            .await
+            .map_err(|e| WikiSyncError::Db(e.to_string()))?;
+        client
+            .execute(
+                "UPDATE wiki_articles
+                 SET markdown = $1, plain_text = $2, wikitext = $3,
+                     last_edited = COALESCE($4, last_edited)
+                 WHERE page_id = $5",
+                &[&md, &plain, &wikitext, &last_edited, &page_id],
+            )
+            .await
+            .map_err(|e| WikiSyncError::Db(e.to_string()))?;
+    }
+    // Only advance to revids we actually wrote. Never jump to the mirrored
+    // latest revid if that revision was missing from the history API.
+    if imported_max > imported_until {
+        mark_history_imported(pool, page_id, imported_max).await?;
+    }
+    Ok(())
+}
+
+async fn mark_history_imported(
+    pool: &Pool,
+    page_id: i32,
+    until: i64,
+) -> Result<(), WikiSyncError> {
+    let client = pool
+        .get()
+        .await
+        .map_err(|e| WikiSyncError::Db(e.to_string()))?;
+    client
+        .execute(
+            "UPDATE wiki_articles SET history_imported_until = $1 WHERE page_id = $2",
+            &[&until, &page_id],
+        )
+        .await
+        .map_err(|e| WikiSyncError::Db(e.to_string()))?;
+    Ok(())
+}
+
+async fn resolve_mw_user_id(
+    pool: &Pool,
+    mw_user: Option<&str>,
+    fallback: i32,
+) -> Result<i32, WikiSyncError> {
+    let Some(name) = mw_user.map(str::trim).filter(|s| !s.is_empty()) else {
+        return Ok(fallback);
+    };
+    let client = pool
+        .get()
+        .await
+        .map_err(|e| WikiSyncError::Db(e.to_string()))?;
+    let row = client
+        .query_opt(
+            "SELECT userid FROM users WHERE lower(username) = lower($1) LIMIT 1",
+            &[&name],
+        )
+        .await
+        .map_err(|e| WikiSyncError::Db(e.to_string()))?;
+    Ok(row.map(|r| r.get("userid")).unwrap_or(fallback))
+}
+
+async fn ensure_mw_wiki_definition(
+    pool: &Pool,
+    page_id: i32,
+    title: &str,
+    user_id: i32,
+) -> Result<(i32, i32, i32), WikiSyncError> {
+    let client = pool
+        .get()
+        .await
+        .map_err(|e| WikiSyncError::Db(e.to_string()))?;
+    let page_id_str = page_id.to_string();
+    if let Some(row) = client
+        .query_opt(
+            "SELECT d.definitionid, d.valsiid, d.langid
+             FROM definitions d
+             JOIN valsi v ON v.valsiid = d.valsiid
+             WHERE v.typeid = 16
+               AND d.metadata->>'mw_page_id' = $1
+             LIMIT 1",
+            &[&page_id_str],
+        )
+        .await
+        .map_err(|e| WikiSyncError::Db(e.to_string()))?
+    {
+        return Ok((row.get(0), row.get(1), row.get(2)));
+    }
+
+    let lang_id: i32 = 1;
+    let source_langid: i32 = 1;
+    let typeid: i16 = 16;
+    let now = Utc::now().timestamp() as i32;
+    let metadata = serde_json::json!({
+        "source": "mw.lojban.org",
+        "mw_page_id": page_id,
+        "mw_title": title,
+    });
+    // Always a synthetic word so imported history never shadows a dictionary
+    // entry or a user-created native wiki page at the same title.
+    let word = format!("mw:{page_id}");
+
+    let valsi_id: i32 = client
+        .query_one(
+            "INSERT INTO valsi (word, typeid, userid, time, source_langid)
+             VALUES ($1, $2, $3, $4, $5)
+             ON CONFLICT (word, source_langid) DO UPDATE SET word = valsi.word
+             RETURNING valsiid",
+            &[&word, &typeid, &user_id, &now, &source_langid],
+        )
+        .await
+        .map_err(|e| WikiSyncError::Db(e.to_string()))?
+        .get(0);
+
+    let definition_id: i32 = if let Some(row) = client
+        .query_opt(
+            "SELECT definitionid FROM definitions WHERE valsiid = $1 ORDER BY definitionid LIMIT 1",
+            &[&valsi_id],
+        )
+        .await
+        .map_err(|e| WikiSyncError::Db(e.to_string()))?
+    {
+        let id: i32 = row.get(0);
+        client
+            .execute(
+                "UPDATE definitions SET metadata = COALESCE(metadata, '{}'::jsonb) || $2::jsonb
+                 WHERE definitionid = $1",
+                &[&id, &metadata],
+            )
+            .await
+            .map_err(|e| WikiSyncError::Db(e.to_string()))?;
+        id
+    } else {
+        let id = client
+            .query_one("SELECT nextval('definitions_definitionid_seq')", &[])
+            .await
+            .map_err(|e| WikiSyncError::Db(e.to_string()))?
+            .get::<_, i64>(0) as i32;
+        client
+            .execute(
+                "INSERT INTO definitions
+                    (definitionid, langid, valsiid, definitionnum, definition, userid, time, metadata)
+                 VALUES ($1, $2, $3, 1, '', $4, $5, $6)",
+                &[&id, &lang_id, &valsi_id, &user_id, &now, &metadata],
+            )
+            .await
+            .map_err(|e| WikiSyncError::Db(e.to_string()))?;
+        id
+    };
+    Ok((definition_id, valsi_id, lang_id))
+}
+
+#[allow(clippy::too_many_arguments)]
+async fn insert_mw_version(
+    pool: &Pool,
+    definition_id: i32,
+    lang_id: i32,
+    valsi_id: i32,
+    markdown: &str,
+    user_id: i32,
+    created_at: DateTime<Utc>,
+    message: &str,
+    mw_revid: i64,
+) -> Result<(), WikiSyncError> {
+    let client = pool
+        .get()
+        .await
+        .map_err(|e| WikiSyncError::Db(e.to_string()))?;
+    client
+        .execute(
+            "INSERT INTO definition_versions (
+                created_at, definition_id, langid, valsiid, definition,
+                notes, etymology, selmaho, jargon, rafsi,
+                gloss_keywords, place_keywords, user_id, message, mw_revid
+             )
+             VALUES ($1, $2, $3, $4, $5, NULL, NULL, NULL, NULL, NULL,
+                     '[]'::jsonb, '[]'::jsonb, $6, $7, $8)
+             ON CONFLICT (mw_revid) WHERE mw_revid IS NOT NULL DO NOTHING",
+            &[
+                &created_at,
+                &definition_id,
+                &lang_id,
+                &valsi_id,
+                &markdown,
+                &user_id,
+                &message,
+                &mw_revid,
+            ],
+        )
+        .await
+        .map_err(|e| WikiSyncError::Db(e.to_string()))?;
+    Ok(())
+}
+
+async fn fetch_page_revision_history(
+    http: &reqwest::Client,
+    page_id: i64,
+    imported_until: i64,
+) -> Result<Vec<RevEntry>, WikiSyncError> {
+    let mut out: Vec<RevEntry> = Vec::new();
+    let mut rvcontinue: Option<String> = None;
+    loop {
+        let mut params: Vec<(&str, String)> = vec![
+            ("action", "query".into()),
+            ("format", "json".into()),
+            ("formatversion", "2".into()),
+            ("prop", "revisions".into()),
+            ("rvprop", "ids|timestamp|user|comment|content".into()),
+            ("rvslots", "main".into()),
+            ("rvlimit", "50".into()),
+            ("pageids", page_id.to_string()),
+        ];
+        if imported_until > 0 {
+            params.push(("rvdir", "newer".into()));
+            params.push(("rvstartid", imported_until.to_string()));
+        } else {
+            params.push(("rvdir", "older".into()));
+        }
+        if let Some(c) = &rvcontinue {
+            params.push(("rvcontinue", c.clone()));
+        }
+        let resp: RevisionsEnvelope = http
+            .get(API_URL)
+            .query(&params)
+            .send()
+            .await?
+            .error_for_status()?
+            .json()
+            .await?;
+        mw_api_err(resp.error)?;
+        let pages_value = resp
+            .query
+            .as_ref()
+            .map(|q| q.pages.clone())
+            .unwrap_or(serde_json::Value::Null);
+        let page_obj = if let Some(arr) = pages_value.as_array() {
+            arr.first().cloned()
+        } else if let Some(obj) = pages_value.as_object() {
+            obj.values().next().cloned()
+        } else {
+            None
+        };
+        if let Some(p) = page_obj {
+            if let Ok(parsed) = serde_json::from_value::<PageWithRev>(p) {
+                out.extend(parsed.revisions);
+            }
+        }
+        match resp
+            .cont
+            .as_ref()
+            .and_then(|v| v.get("rvcontinue"))
+            .and_then(|v| v.as_str())
+        {
+            Some(s) => rvcontinue = Some(s.to_string()),
+            None => break,
+        }
+    }
+    Ok(out)
 }
 
 /// Lower bound for incremental RC queries.

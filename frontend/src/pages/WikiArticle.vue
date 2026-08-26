@@ -5,9 +5,12 @@
         <ArrowLeft class="h-5 w-5" />
       </Button>
       <SourceTypeBadge type="wiki" />
-      <div v-if="article?.is_native" class="wiki-article-actions ml-auto">
+      <div
+        v-if="article?.is_native || article?.definition_id"
+        class="wiki-article-actions ml-auto"
+      >
         <Button
-          v-if="article.can_edit && !article.is_redirect"
+          v-if="article.is_native && article.can_edit && !article.is_redirect"
           variant="edit"
           class="inline-flex items-center"
           @click="router.push(`/wiki/${encodedTitle}/edit`)"

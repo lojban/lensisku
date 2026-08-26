@@ -394,10 +394,14 @@ pub async fn get_article_by_title(
     let normalized = title.replace('_', " ");
     let row = client
         .query_opt(
-            "SELECT page_id, namespace, title, markdown, last_edited, is_redirect
-             FROM wiki_articles
-             WHERE title = $1 OR title = $2
-             ORDER BY (CASE WHEN title = $1 THEN 0 ELSE 1 END)
+            "SELECT w.page_id, w.namespace, w.title, w.markdown, w.last_edited, w.is_redirect,
+                    d.definitionid AS definition_id, d.valsiid
+             FROM wiki_articles w
+             LEFT JOIN definitions d
+               ON d.metadata->>'mw_page_id' = w.page_id::text
+             LEFT JOIN valsi v ON v.valsiid = d.valsiid AND v.typeid = 16
+             WHERE w.title = $1 OR w.title = $2
+             ORDER BY (CASE WHEN w.title = $1 THEN 0 ELSE 1 END)
              LIMIT 1",
             &[&title, &normalized],
         )
@@ -419,6 +423,8 @@ pub async fn get_article_by_title(
             last_edited: r.try_get("last_edited").ok().flatten(),
             is_redirect: r.try_get("is_redirect").unwrap_or(false),
             source_url,
+            definition_id: r.try_get("definition_id").ok().flatten(),
+            valsiid: r.try_get("valsiid").ok().flatten(),
         }
     }))
 }

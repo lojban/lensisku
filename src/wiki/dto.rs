@@ -37,4 +37,9 @@ pub struct WikiArticleDetail {
     pub is_redirect: bool,
     /// Direct link back to mw.lojban.org for "view source".
     pub source_url: String,
+    /// Native wiki / imported history definition, when one exists.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub definition_id: Option<i32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub valsiid: Option<i32>,
 }

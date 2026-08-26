@@ -1,7 +1,7 @@
 <template>
   <div
     v-show="show"
-    class="fixed sm:hidden top-14 left-0 right-0 bg-white shadow-md py-2 space-y-1 z-50"
+    class="fixed sm:hidden top-14 left-0 right-0 bg-white shadow-md py-2 space-y-2 z-50"
   >
     <div class="mobile-nav-grid">
       <NavLink
@@ -33,7 +33,7 @@
         <LogOut class="h-5 w-5" /> {{ t('nav.logout') }}
       </Button>
     </div>
-    <div class="my-1 border-t border-gray-200" />
+    <div class="my-2 border-t border-gray-200" />
     <div class="mobile-nav-grid">
       <NavLink to="/recent" class="mobile-nav-row mobile-nav-grid__full" @click="$emit('close')">
         <Clock4 class="h-5 w-5" /> {{ t('mobileNav.recentChanges') }}
