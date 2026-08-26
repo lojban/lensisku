@@ -643,9 +643,9 @@ async fn page_history_imported_until(pool: &Pool, page_id: i32) -> Result<i64, W
 
 /// Import every MediaWiki revision of mirrored pages into `definition_versions`.
 ///
-/// Pages whose titles collide with a dictionary valsi keep a synthetic wiki
-/// word `mw:{page_id}` so history still has a definition_id. Progress is stored
-/// in `wiki_articles.history_imported_until`.
+/// Imported pages use the real MediaWiki title. If that title is already a
+/// dictionary valsi (or another wiki page) at `source_langid = 1`, a different
+/// `source_langid` is used so the visible word can still be the real title.
 pub async fn import_revision_histories(pool: &Pool) -> Result<(), WikiSyncError> {
     if sync_disabled() {
         return Ok(());
@@ -879,6 +879,32 @@ async fn resolve_mw_user_id(
     Ok(row.map(|r| r.get("userid")).unwrap_or(fallback))
 }
 
+async fn free_source_langid_for_wiki_word(
+    client: &deadpool_postgres::Object,
+    word: &str,
+) -> Result<i32, WikiSyncError> {
+    let row = client
+        .query_opt(
+            "SELECT l.langid
+             FROM languages l
+             WHERE NOT EXISTS (
+                 SELECT 1 FROM valsi v
+                 WHERE v.word = $1
+                   AND v.source_langid = l.langid
+             )
+             ORDER BY CASE WHEN l.langid = 1 THEN 0 ELSE 1 END, l.langid
+             LIMIT 1",
+            &[&word],
+        )
+        .await
+        .map_err(|e| WikiSyncError::Db(e.to_string()))?;
+    row.map(|r| r.get("langid")).ok_or_else(|| {
+        WikiSyncError::Db(format!(
+            "no free source_langid for wiki title '{word}'"
+        ))
+    })
+}
+
 async fn ensure_mw_wiki_definition(
     pool: &Pool,
     page_id: i32,
@@ -903,11 +929,13 @@ async fn ensure_mw_wiki_definition(
         .await
         .map_err(|e| WikiSyncError::Db(e.to_string()))?
     {
-        return Ok((row.get(0), row.get(1), row.get(2)));
+        let definition_id: i32 = row.get(0);
+        let valsi_id: i32 = row.get(1);
+        let lang_id: i32 = row.get(2);
+        return Ok((definition_id, valsi_id, lang_id));
     }
 
     let lang_id: i32 = 1;
-    let source_langid: i32 = 1;
     let typeid: i16 = 16;
     let now = Utc::now().timestamp() as i32;
     let metadata = serde_json::json!({
@@ -915,17 +943,14 @@ async fn ensure_mw_wiki_definition(
         "mw_page_id": page_id,
         "mw_title": title,
     });
-    // Always a synthetic word so imported history never shadows a dictionary
-    // entry or a user-created native wiki page at the same title.
-    let word = format!("mw:{page_id}");
+    let source_langid = free_source_langid_for_wiki_word(&client, title).await?;
 
     let valsi_id: i32 = client
         .query_one(
             "INSERT INTO valsi (word, typeid, userid, time, source_langid)
              VALUES ($1, $2, $3, $4, $5)
-             ON CONFLICT (word, source_langid) DO UPDATE SET word = valsi.word
              RETURNING valsiid",
-            &[&word, &typeid, &user_id, &now, &source_langid],
+            &[&title, &typeid, &user_id, &now, &source_langid],
         )
         .await
         .map_err(|e| WikiSyncError::Db(e.to_string()))?

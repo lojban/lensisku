@@ -2127,7 +2127,7 @@ pub async fn get_wiki_by_word(
          CROSS JOIN image_check i
          JOIN users u ON d.userid = u.userid
          WHERE v.word = $1 AND v.typeid = 16
-         ORDER BY d.definitionid
+         ORDER BY (COALESCE(d.metadata->>'source', '') = 'mw.lojban.org') ASC, d.definitionid
          LIMIT 1",
         &[&word, &user_id],
     ).await?;
