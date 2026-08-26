@@ -127,6 +127,8 @@
   "home": {
     "trendingComments": "話題のコメント",
     "recentChanges": "最近の更新",
+    "latestActivity": "最新のコメント・Wiki・メール",
+    "latestDefinitions": "最新の定義",
     "searchResultsTitle": {
       "dictionary": "辞書・コーパス",
       "semantic": "意味検索",
@@ -384,6 +386,7 @@
       "definition": "定義",
       "comment": "コメント",
       "message": "メッセージ",
+      "wiki": "ウィキ",
       "etymology": "語源"
     }
   },

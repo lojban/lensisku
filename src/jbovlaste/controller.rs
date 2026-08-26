@@ -1256,11 +1256,11 @@ pub async fn update_vote(
     tag = "jbovlaste",
     summary = "Get recent changes to the dictionary",
     description = "Retrieves a list of recent changes to the dictionary, including modifications to definitions, \
-                  comments, and valsi entries. Uses cursor-based pagination (no time window). \
+                  comments, valsi entries, and mirrored mw.lojban.org wiki articles. Uses cursor-based pagination (no time window). \
                   Excludes automated changes made by the system account.",
     params(
         ("limit" = Option<i64>, Query, description = "Page size (default 20)"),
-        ("types" = Option<String>, Query, description = "Comma-separated types: comment,definition,valsi,message"),
+        ("types" = Option<String>, Query, description = "Comma-separated types: comment,definition,valsi,message,wiki"),
         ("after" = Option<String>, Query, description = "Opaque cursor for next page"),
         ("home" = Option<bool>, Query, description = "When true, exclude new valsi (entry) changes. Used by the home page.")
     ),

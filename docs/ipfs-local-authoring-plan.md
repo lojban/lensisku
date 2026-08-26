@@ -9,6 +9,7 @@ Users author in the browser (**IndexedDB**). They **exchange collections peer-to
 | **IPFS + OrbitDB (Helia)** | P2P log + content-addressed blocks | `/orbitdb/zdpu…` | **Maximum browser P2P:** live replica sync (WebRTC / circuit-relay) |
 | **iroh** | P2P blobs (BLAKE3) | blob ticket / `/p2p/…` | Overlay + Lensisku pin; **browsers are relay-only** (WASM) |
 | **AT Protocol** | Federation (HTTPS to a PDS) | `at://did/…/rkey` | Optional identity/backup; **not** peer-to-peer |
+| **Yggdrasil** | Encrypted IPv6 **mesh underlay** | `200::/7` node address (from pubkey) | **Not a collection store.** Optional native-path transport (NAT traversal as “plain IPv6”). Browsers cannot join the public mesh without a daemon or experimental WASM + **WSS peers**. |
 
 Backends are not interchangeable on the wire. Import copies into IndexedDB; the user can republish to another backend. One **owner** writes; everyone else **replicates and stays synced** (follow), or **forks** into their own collection. No merge of two writers.
 
@@ -31,7 +32,7 @@ The Rust process: Helia-facing pin if we run rust-ipfs/kubo **or** we treat Heli
 
 ## Federation, distributed storage, and P2P (what we actually want)
 
-Three different ideas get sold as “decentralized.” Only one of them lets two Lensisku users **swap a collection and keep it in sync** while our servers are off.
+Three *storage* ideas get sold as “decentralized.” Only **OrbitDB/Helia** lets two Lensisku **browser** users **swap a collection and keep it in sync** while our servers are off. **Yggdrasil** is a different layer (IPv6 reachability), not a store.
 
 ### Federation (ATProto, ActivityPub, email)
 
@@ -42,6 +43,16 @@ Many **servers** speak one protocol. Your data lives on **your home server** (PD
 - **Not P2P:** Alice’s tab never talks to Bob’s tab. Both talk to servers.
 - **Resists Lensisku down:** yes for **reads of already-crawled** data if we cached it, and yes for ATProto if Bob fetches Alice’s PDS directly. **No** for “two browsers sync with each other.”
 - **Use for:** stable `at://` identity, backup, people who already have Bluesky; **not** as the P2P exchange path.
+
+### Overlay IPv6 mesh (Yggdrasil)
+
+Every node is a **router**. You get a cryptographic IPv6 address and encrypted multi-hop paths. There is **no collection object**, no Bitswap, no `at://`. It answers “can this host reach that host despite NAT / no public IPv6?” not “follow this dictionary.”
+
+- **Up when:** both ends run a Ygg **daemon** (or yggstack) and share a connected graph (LAN multicast, static peers, or the **public testnet** via volunteer peers).
+- **Down when:** no peering (isolated node), or browser-only with no WASM/WSS path.
+- **Not a product backend:** Alice’s tab still does not speak Ygg. Native Alice↔Bob IPv6 is P2P at L3; the SPA is unchanged.
+- **Resists Lensisku down:** **yes** for two daemons on the public mesh. **No** extra help for two tabs.
+- **Use for:** optional native underlay, optional `200::` bind of our API; **not** as the share id or live-sync fabric. Details: **Yggdrasil** section below.
 
 ### Distributed file system / content-addressed store (IPFS, iroh-blobs)
 
@@ -68,14 +79,14 @@ That is the product behavior we want for “users exchange collections and sync 
 
 ### What “maximum P2P” means here
 
-| Situation | Max-P2P (OrbitDB/Helia) | iroh in the browser | ATProto |
-|---|---|---|---|
-| Alice and Bob both online, Lensisku **down** | Sync if WebRTC works or **some** circuit-relay exists | Sync only if **some iroh relay** exists (ours is down → n0) | Sync via Alice’s **PDS**, not via Bob’s tab |
-| Alice and Bob both online, **all** our servers down, n0 down, no PDS | WebRTC **direct** still works | **Fails** (WASM cannot hole-punch) | **Fails** |
-| Alice offline, Bob online, our pin up | Bob reads from pin / IPFS | Bob reads from our blob pin | Bob reads PDS / our AppView cache |
-| Nobody online, only hashes on a DHT | Possible if Kubo/public IPFS still has blocks | Possible if some iroh provider remains | PDS disk still has records |
+| Situation | Max-P2P (OrbitDB/Helia) | iroh in the browser | ATProto | Yggdrasil |
+|---|---|---|---|---|
+| Alice and Bob both online, Lensisku **down** | Sync if WebRTC works or **some** circuit-relay exists | Sync only if **some iroh relay** exists (ours is down → n0) | Sync via Alice’s **PDS**, not via Bob’s tab | Native daemons: yes if both still peered (public peers ≠ us). Tabs: no |
+| Alice and Bob both online, **all** our servers down, n0 down, no PDS | WebRTC **direct** still works | **Fails** (WASM cannot hole-punch) | **Fails** | Native: yes via volunteer/public peers or LAN. Tabs: no |
+| Alice offline, Bob online, our pin up | Bob reads from pin / IPFS | Bob reads from our blob pin | Bob reads PDS / our AppView cache | Irrelevant unless the pin process is also a Ygg node Bob can route to |
+| Nobody online, only hashes on a DHT | Possible if Kubo/public IPFS still has blocks | Possible if some iroh provider remains | PDS disk still has records | Ygg has **no content DHT**; addresses are nodes, not files |
 
-**Implication:** to maximize P2P exchange + ongoing replica sync in **this** (browser) app, **IPFS + OrbitDB via Helia is the primary overlay**. iroh is a strong second overlay (especially native/server pin, tickets) but **cannot** match Helia WebRTC when every relay is dead. ATProto is **federation**, kept as an optional store, not as the peer-sync fabric.
+**Implication:** to maximize P2P exchange + ongoing replica sync in **this** (browser) app, **IPFS + OrbitDB via Helia is the primary overlay**. iroh is a strong second overlay (especially native/server pin, tickets) but **cannot** match Helia WebRTC when every relay is dead. ATProto is **federation**, kept as an optional store, not as the peer-sync fabric. **Yggdrasil is an underlay**, not a fourth publish backend: it does not hash collections, keep a live log, or give two *tabs* a share id. Native Helia/iroh/HTTP could *ride* Ygg IPv6 if both ends run a daemon; that is a power-user path, not the SPA default.
 
 ### Pros and cons
 
@@ -93,6 +104,11 @@ That is the product behavior we want for “users exchange collections and sync 
 
 - Pros: stable `at://`; account portability; PDS holds data while the author is offline (better than “tab closed, blob gone”); `did` identity; optional firehose discovery.
 - Cons: **not P2P**; PDS outage blocks publish and often fetch; firehose is public; ~100 KB records; OAuth; PLC/`bsky.social` coupling; **does not** satisfy “sync collections between themselves” except as “both fetch the same PDS.”
+
+**Yggdrasil (IPv6 overlay mesh)**
+
+- Pros: true end-to-end encrypted IPv6 between daemons; **stable address** derived from the node key (roams with the node); NATed machines become *reachable* once they have **any** peering (outbound to a public peer is enough to join — no inbound port-forward required for *using* the network); LAN multicast auto-peering; public testnet exists so **users do not need us** to join; any IPv6 app can run on top (HTTP, SSH, even Kubo/Helia on native); self-heals when a link dies; no central operator of the routing plane.
+- Cons: **not** IPFS/OrbitDB/iroh — no CIDs, no replica log, no “follow this collection”; **alpha** research routing (wire format can still change); **not anonymous** (direct Internet peers see your IP); joining the global net **bridges** your node to everyone (do not treat it as a private VPN); home nodes with many distant peers can **carry other people’s transit**; needs a **TUN** (or yggstack SOCKS) — privilege/`CAP_NET_ADMIN` for the official daemon; **no native browser stack** in yggdrasil-go (experimental WASM/VTun exists; most public `wss://` peers **reject CORS** as of 2026); still need an application protocol on top; firewall required because you are globally reachable on `200::/7`.
 
 **Lensisku PostgreSQL (classic server)**
 
@@ -120,6 +136,7 @@ Peer clicks Fork --> new local collection they own --> they publish their own ad
 │   Catalog, PostgreSQL sync, iroh pin, iroh-relay /relay         │
 │   libp2p circuit-relay + WebRTC signaling for Helia (same host) │
 │   ATProto AppView (optional backup index)                       │
+│   Optional: Ygg daemon (200:: API) or WSS peer — not required   │
 └──────┬────────────────────┬─────────────────────┬───────────────┘
        │ pin / relay        │ signaling / relay     │ index at://
 ┌──────┴────────┐  ┌────────┴──────────┐  ┌────────┴─────────────┐
@@ -252,6 +269,50 @@ Lexicon authority: DNS `_lexicon` TXT on a domain we control; publish `com.atpro
 
 ---
 
+## Yggdrasil (optional underlay — not a publish backend)
+
+[Yggdrasil](https://yggdrasilnetwork.org/) is a **userspace IPv6 router**: spanning-tree + greedy routing, traffic **E2E encrypted**, each node a `200::/7` address from its public key. Peerings are TCP / TLS / QUIC / **WebSocket** (`ws://`, `wss://` since 0.5.7) over the ordinary Internet or a LAN. It is closer to **cjdns / a mesh VPN** than to IPFS. Overlay-by-convenience: the *product* we want (collection follow/fork) still lives in OrbitDB, iroh, or ATProto.
+
+### Do we have to run our own servers?
+
+| Goal | Run Lensisku-owned Ygg nodes? |
+|---|---|
+| **Users join the public mesh** (native app, desktop, Android) | **No.** Install [yggdrasil-go](https://github.com/yggdrasil-network/yggdrasil-go), add **2–3 nearby** [public peers](https://publicpeers.neilalexander.dev/) (`Peers:` in `yggdrasil.conf`). Volunteer operators already listen. Default config does **not** accept inbound peerings; you are a leaf unless you set `Listen`. |
+| **Private club / never touch the public testnet** | **Yes, our (or the users’) nodes only.** Static `Peers` + `AllowedPublicKeys`. **Do not** also peer with a public peer — that **bridges** the private mesh onto the global net. |
+| **Always-on Lensisku over Ygg IPv6** (catalog, pin, HTTP API at a `200::` address) | **Optional one node** on the existing VPS: yggdrasil-go (or yggstack) beside Actix, firewall the TUN, publish the Ygg AAAA / `.pk.ygg` for people already on the mesh. This is **federation over a mesh**, not tab-to-tab sync. We still need the Internet-facing origin for everyone else. |
+| **Browser tabs join Ygg without a local daemon** | **Yes, if we want this at all:** a **WSS listener we control** (CORS + path on the Lensisku origin, e.g. `/ygg-ws`), because experimental in-page WASM ([asciimoth/ygg](https://github.com/asciimoth/ygg) demo) cannot use most public WebSocket peers. That is another long-lived WebSocket on the API process, same class of ops as iroh `/relay` and libp2p `/p2p-ws`. **Not recommended as a product path** — Helia WebRTC already covers “two browsers, no extra OS install.” |
+| **SOCKS into Ygg from the SPA** | Users run **[yggstack](https://github.com/yggdrasil-network/yggstack)** locally (no TUN). The website cannot open a system SOCKS proxy. Useless as a default. |
+
+**Bottom line:** for the **IndexedDB + Helia** plan we do **not** need Yggdrasil servers. Public peers are enough for *native* users who opt in. We would only run our own Ygg process if we want (a) a stable `200::` API/pin for mesh users, (b) a private mesh, or (c) a CORS-friendly WSS peer for experimental WASM — (c) duplicates work we already plan for circuit-relay.
+
+### How it sits next to Helia / iroh
+
+```
+Yggdrasil          = IPv6 reachability (who can talk to whom)
+libp2p / iroh      = overlay sessions + (for IPFS) blocks
+OrbitDB            = mutable single-writer log
+ATProto / Postgres = servers
+```
+
+Two people with Ygg daemons can TCP to each other’s node addresses **without STUN**, which is the NAT story Ygg is good at. Two **Lensisku tabs** still cannot, unless WASM+WSS or a local helper. Helia-in-browser remains the max-P2P path when Lensisku is down.
+
+| Situation | Yggdrasil (native daemons) | OrbitDB/Helia in the tab |
+|---|---|---|
+| Alice & Bob online, Lensisku down | Works if both are peered into the **same** mesh (public or private) | WebRTC / any circuit-relay |
+| Only browsers, no daemon | **Fails** (unless experimental WASM + WSS peer) | Designed for this |
+| Share id for a collection | Ygg address is a **machine**, not a DB | `/orbitdb/zdpu…` |
+| Alice offline | Her node is gone unless something else hosts the app/data | Bitswap from pin / other replica |
+
+### If we ever ship a native helper
+
+1. Document: install Ygg, 2–3 close public peers, firewall TUN (`ip6tables`/`ufw` examples from the [FAQ](https://yggdrasil-network.github.io/faq.html)).
+2. Optional: Lensisku `Listen` + `AllowedPublicKeys` **off** unless we intend to be a public peer (transit + abuse).
+3. Do **not** add `yggdrasil` to `publishedTo`. At most: “this host is also on Ygg” in ops docs, or a native client that dials our `200::` pin as another provider for the **same** OrbitDB/iroh payload.
+4. Stay off the product critical path until yggdrasil-go is out of **alpha** if we would depend on wire compatibility.
+
+---
+
+
 ## Pain points and risks
 
 1. **WASM packaging.** No official browser npm package. `@number0/iroh` is Node NAPI only. Ship a wasm-bindgen wrapper (`default-features = false`). Nuxt bundle size, wasm-pack CI, possible COOP/COEP. Examples: n0 `browser-echo`, `browser-chat`.
@@ -282,6 +343,9 @@ Lexicon authority: DNS `_lexicon` TXT on a domain we control; publish `com.atpro
 26. **Circuit-relay / TURN** still centralizes Helia when WebRTC fails — run on our origin; admit it is a server.
 27. **OrbitDB without a pin:** last peer offline → address does not resolve until someone with blocks returns.
 28. **Public IPFS** may cache published blocks; same content warning as any overlay.
+29. **Yggdrasil is alpha** (protocol can change); public mesh is a **testnet**; not anonymity; firewall the TUN; distant public peers = you may **transit** others’ traffic.
+30. **Ygg in the browser** needs our WSS + CORS; that is another relay-shaped service. Do not treat WASM demos as production Helia replacement.
+31. **Private Ygg + one public peer = accidental global bridge.** Document this if we ever ship a “Lensisku mesh” config.
 
 ---
 
@@ -987,7 +1051,11 @@ Long-lived OrbitDB replica or CID pin so addresses survive empty swarms; iroh pi
 
 ### Phase 8 — Errors / docs
 
-Explain federation vs P2P vs DFS in the UI in one sentence each; per-backend “live / needs relay / needs PDS.”
+Explain federation vs P2P vs DFS vs “mesh IPv6 (Ygg)” in the UI in one sentence each; per-backend “live / needs relay / needs PDS.” Ygg: not a publish checkbox.
+
+### Phase 9 — Yggdrasil (optional, after Helia works)
+
+Only if native users ask for mesh IPv6: sidecar daemon + docs (public peers, firewall). Do not block Phases 1–8 on this. No WASM Ygg in the Nuxt bundle unless a later decision reverses open item 15.
 
 ---
 
@@ -995,7 +1063,7 @@ Explain federation vs P2P vs DFS in the UI in one sentence each; per-backend “
 
 - OrbitDB, iroh, and ATProto secrets/tokens in IndexedDB; export/backup
 - Owner-only writes; followers are read-only replicas
-- Warn: OrbitDB/IPFS cache, iroh relays, ATProto firehose
+- Warn: OrbitDB/IPFS cache, iroh relays, ATProto firehose; Ygg is not private and is globally reachable once peered
 - Circuit-relay and iroh `/relay` on the main origin: connection limits
 
 ---
@@ -1016,5 +1084,7 @@ Explain federation vs P2P vs DFS in the UI in one sentence each; per-backend “
 12. Link Lensisku account ↔ DID before ATProto listing?
 13. Rust libp2p circuit-relay in-process vs proxy to a helper on the same host
 14. STUN-only vs TURN on Lensisku origin for Helia WebRTC
+15. Yggdrasil: skip (recommended) vs optional native underlay vs WSS peer on origin for WASM (high cost, low SPA benefit)
+16. If we bind Actix on Ygg IPv6: same process TUN vs sidecar yggdrasil-go / yggstack; never list ourselves as a **public** peer unless we accept transit
 
-**Next step:** Phase 1, then **Helia/OrbitDB two-browser sync** (including Lensisku-down test). iroh relay and ATProto are extra stores.
+**Next step:** Phase 1, then **Helia/OrbitDB two-browser sync** (including Lensisku-down test). iroh relay and ATProto are extra stores. Yggdrasil is **not** on the MVP path.

@@ -30,43 +30,32 @@
     <div v-if="isLoadingTrending" class="flex justify-center py-8">
       <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
     </div>
-    <!-- Trending Comments -->
-    <div v-if="trendingComments.length > 0" class="space-y-4">
-      <h2 class="text-xl sm:text-2xl font-bold text-gray-800 select-none">
-        {{ $t('home.trendingComments') }}
+    <!-- Latest comments, wiki, and mail (trending comments hidden for now) -->
+    <div v-if="homeActivity.length > 0" class="space-y-2">
+      <h2 class="text-lg sm:text-xl font-bold text-gray-800 select-none">
+        {{ $t('home.latestActivity') }}
       </h2>
 
-      <div
-        v-for="comment in trendingComments"
-        :key="comment.comment_id"
-        class="cursor-pointer"
-        @click="
-          router.push(
-            `/comments?thread_id=${comment.thread_id}&comment_id=${comment.parent_id}&scroll_to=${comment.comment_id}&valsi_id=${comment.valsi_id}&definition_id=${comment.definition_id || 0}`
-          )
-        "
-      >
-        <CommentItem :comment="comment" :reply-enabled="true" @reply="handleReply" />
+      <div class="home-feed-list">
+        <RecentChangeItem
+          v-for="change in homeActivity"
+          :key="homeChangeKey(change)"
+          :change="change"
+        />
       </div>
     </div>
-    <!-- Recent Changes -->
-    <div v-if="recentChanges.length > 0" class="space-y-4 mt-8">
-      <div
-        class="flex flex-col md:flex-row justify-between items-start sm:items-center gap-3 sm:space-x-2 w-full sm:w-auto ml-auto"
-      >
-        <h2 class="text-xl sm:text-2xl font-bold text-gray-800 select-none">
-          {{ $t('home.recentChanges') }}
-        </h2>
-      </div>
+    <!-- Latest definitions -->
+    <div v-if="homeDefinitions.length > 0" class="space-y-2 mt-6">
+      <h2 class="text-lg sm:text-xl font-bold text-gray-800 select-none">
+        {{ $t('home.latestDefinitions') }}
+      </h2>
 
-      <div v-for="(group, index) in groupedChanges" :key="index" class="mb-8">
-        <h3 class="text-base font-semibold text-gray-700 mb-4 pt-4 border-t">
-          {{ formatDate(group.date) }}
-        </h3>
-
-        <div class="space-y-3">
-          <RecentChangeItem v-for="change in group.changes" :key="change.time" :change="change" />
-        </div>
+      <div class="home-feed-list">
+        <RecentChangeItem
+          v-for="change in homeDefinitions"
+          :key="homeChangeKey(change)"
+          :change="change"
+        />
       </div>
     </div>
   </div>
@@ -439,7 +428,6 @@ import {
   searchDefinitions,
   fastSearchDefinitions,
   getLanguages,
-  getTopComments,
   getRecentChanges,
   searchWaves,
   list_wave_threads,
@@ -464,7 +452,6 @@ import { useAuth } from '@/composables/useAuth'
 import { useCollectionsCache } from '@/composables/useCollectionsCache'
 import { useLanguageSelection } from '@/composables/useLanguageSelection'
 import { useSeoHead } from '@/composables/useSeoHead'
-import { useDateFormat } from '@/composables/useDateFormat'
 import { useI18n } from 'vue-i18n'
 import { SearchQueue } from '@/utils/searchQueue'
 import {
@@ -737,7 +724,6 @@ const WAVE_SOURCES = ['all', 'jbotcan', 'comments', 'mail', 'wiki'] as const
 type WaveSource = (typeof WAVE_SOURCES)[number]
 
 const waveSource = ref<WaveSource>('all')
-const trendingComments = ref([])
 const isLoading = ref(true) // Loading state for search results
 const isInitialLoading = ref(true) // Loading state for initial component setup (languages etc.)
 const isLoadingTrending = ref(false)
@@ -746,7 +732,6 @@ const searchFormRef = ref(null)
 const searchResultsRef = ref(null)
 
 const { t, locale } = useI18n()
-const { formatDate } = useDateFormat()
 
 // Truncate search query for page title (max 50 characters)
 const truncatedSearchQuery = computed(() => {
@@ -787,7 +772,7 @@ const pageDescription = computed(() => {
 
 useSeoHead({ title: pageTitle, description: pageDescription, pathWithoutLocale: '' })
 
-/** When true, show trending + recent changes; when false, show search / waves results. */
+/** When true, show the home activity/definitions feeds; when false, show search / waves results. */
 const showTrendingHome = computed(() => {
   if (searchMode.value === 'comments') return false
   if (similarDefinitionId.value) return false
@@ -1135,101 +1120,87 @@ const loadAllDefinitionIdsForCurrentSearch = async (
   return collected
 }
 
-type RecentChangeRow = { time: number; [key: string]: unknown }
-const recentChanges = ref<RecentChangeRow[]>([])
-const isLoadingChanges = ref(false)
+type RecentChangeRow = { time: number; change_type?: string; [key: string]: unknown }
+const HOME_FEED_LIMIT = 10
+const homeActivity = ref<RecentChangeRow[]>([])
+const homeDefinitions = ref<RecentChangeRow[]>([])
 
-// Cache key for recent changes
-const RECENT_CHANGES_CACHE_KEY = 'recent_changes_cache'
-const RECENT_CHANGES_CACHE_TTL = 5 * 60 * 1000 // 5 minutes in milliseconds
+const HOME_FEEDS_CACHE_KEY = 'home_feeds_cache'
+const HOME_FEEDS_CACHE_TTL = 5 * 60 * 1000
 
-// Helper functions for caching
-const getCachedRecentChanges = () => {
+type HomeFeedsCache = { activity: RecentChangeRow[]; definitions: RecentChangeRow[] }
+
+const getCachedHomeFeeds = (): HomeFeedsCache | null => {
   if (typeof window === 'undefined') return null
   try {
-    const cached = localStorage.getItem(RECENT_CHANGES_CACHE_KEY)
+    const cached = localStorage.getItem(HOME_FEEDS_CACHE_KEY)
     if (!cached) return null
 
     const { data, timestamp } = JSON.parse(cached)
-    const now = Date.now()
-
-    // Check if cache is still valid (within TTL)
-    if (now - timestamp < RECENT_CHANGES_CACHE_TTL) {
-      return data
+    if (Date.now() - timestamp >= HOME_FEEDS_CACHE_TTL) {
+      localStorage.removeItem(HOME_FEEDS_CACHE_KEY)
+      return null
     }
-
-    // Cache expired, remove it
-    localStorage.removeItem(RECENT_CHANGES_CACHE_KEY)
-    return null
+    if (!data || !Array.isArray(data.activity) || !Array.isArray(data.definitions)) return null
+    return data
   } catch (e) {
-    console.error('Error reading cached recent changes:', e)
+    console.error('Error reading cached home feeds:', e)
     return null
   }
 }
 
-const setCachedRecentChanges = (data: RecentChangeRow[]) => {
+const setCachedHomeFeeds = (data: HomeFeedsCache) => {
   if (typeof window === 'undefined') return
   try {
-    const cacheData = {
-      data,
-      timestamp: Date.now(),
-    }
-    localStorage.setItem(RECENT_CHANGES_CACHE_KEY, JSON.stringify(cacheData))
+    localStorage.setItem(
+      HOME_FEEDS_CACHE_KEY,
+      JSON.stringify({ data, timestamp: Date.now() })
+    )
   } catch (e) {
-    console.error('Error caching recent changes:', e)
+    console.error('Error caching home feeds:', e)
   }
 }
 
 const fetchTrendingAndChanges = async () => {
   isLoadingTrending.value = true
 
-  // Try to load cached recent changes immediately for instant display
-  const cachedChanges = getCachedRecentChanges()
-  if (cachedChanges) {
-    recentChanges.value = cachedChanges.slice(0, 10)
-    isLoadingChanges.value = false
+  const cached = getCachedHomeFeeds()
+  if (cached) {
+    homeActivity.value = cached.activity.slice(0, HOME_FEED_LIMIT)
+    homeDefinitions.value = cached.definitions.slice(0, HOME_FEED_LIMIT)
   }
 
   try {
-    const trendingResponse = await getTopComments()
-    trendingComments.value = trendingResponse.data
-
-    // Always fetch recent changes to keep them fresh
-    const recentResponse = await getRecentChanges({ limit: 10, home: true })
-    const changes = recentResponse.data.changes
-    recentChanges.value = changes
-
-    // Cache the fresh data
-    setCachedRecentChanges(changes)
+    const [activityResponse, definitionsResponse] = await Promise.all([
+      getRecentChanges({ limit: HOME_FEED_LIMIT, types: 'comment,wiki,message' }),
+      getRecentChanges({ limit: HOME_FEED_LIMIT, types: 'definition' }),
+    ])
+    const activity = activityResponse.data.changes || []
+    const definitions = definitionsResponse.data.changes || []
+    homeActivity.value = activity
+    homeDefinitions.value = definitions
+    setCachedHomeFeeds({ activity, definitions })
   } catch (e) {
-    console.error('Error fetching data:', e)
-    // If we have cached data and fetch fails, keep using cached data
-    if (!cachedChanges) {
-      recentChanges.value = []
+    console.error('Error fetching home feeds:', e)
+    if (!cached) {
+      homeActivity.value = []
+      homeDefinitions.value = []
     }
   } finally {
     isLoadingTrending.value = false
-    isLoadingChanges.value = false
   }
 }
 
-const dateKey = (d: Date) =>
-  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-
-const groupedChanges = computed(() => {
-  const groups = recentChanges.value.reduce<
-    Record<string, { date: Date; changes: RecentChangeRow[] }>
-  >((acc, change) => {
-    const d = new Date(change.time * 1000)
-    const key = dateKey(d)
-    if (!acc[key]) {
-      acc[key] = { date: d, changes: [] }
-    }
-    acc[key].changes.push(change)
-    return acc
-  }, {})
-  return Object.values(groups).sort((a, b) => b.date.getTime() - a.date.getTime())
-})
+function homeChangeKey(change: RecentChangeRow) {
+  return [
+    change.change_type,
+    change.time,
+    change.word,
+    change.comment_id,
+    change.definition_id,
+    change.cursor_id,
+  ].join('-')
+}
 
 // Generic data fetching for other modes
 const sortBy = ref(searchMode.value === 'messages' ? 'rank' : 'time')

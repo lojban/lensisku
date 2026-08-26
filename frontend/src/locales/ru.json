@@ -125,6 +125,8 @@
   "home": {
     "trendingComments": "Популярные комментарии",
     "recentChanges": "Последнее",
+    "latestActivity": "Последние комментарии, вики и почта",
+    "latestDefinitions": "Последние определения",
     "searchResultsTitle": {
       "dictionary": "Словарь и корпус",
       "semantic": "Семантический поиск",
@@ -350,6 +352,7 @@
       "definition": "Определение",
       "comment": "Комментарий",
       "message": "Сообщение",
+      "wiki": "Вики",
       "etymology": "Этимология"
     }
   },

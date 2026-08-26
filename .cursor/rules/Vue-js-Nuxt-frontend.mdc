@@ -18,6 +18,6 @@ alwaysApply: true
 
 ## Transfer-direction icons
 
-- **Upload / export** → arrow-**up** — `UploadIcon`, `ExportIcon`, or `FileExportIcon` from `@packages/ui`.
-- **Download / import** → arrow-**down** — `DownloadIcon`, `ImportIcon`, or `FileImportIcon` from `@packages/ui`.
+- **Import / upload** → arrow-**up** — `ImportIcon`, `FileImportIcon`, or `UploadIcon` from `@packages/ui`.
+- **Export / download** → arrow-**down** — `ExportIcon`, `FileExportIcon`, or `DownloadIcon` from `@packages/ui`.
 - Do not import `Upload`, `Download`, `FileUp`, `FileDown`, or `Import` directly from `@lucide/vue` (ESLint enforced). See `frontend/docs/brandbook.md` §5b.

@@ -49,26 +49,26 @@ This document is the **human-readable contract** for product, design, QA, and en
 
 ## 5. Color system (high level)
 
-- **Navigation / links**: `text-nav-link` (`#007bff`) and **active** state via `.nav-link-active` (see `NavLink`, `navbar-item`). Mobile rows use `.mobile-nav-row` (hover/focus only—link color comes from NavLink).
+- **Navigation / links**: `text-nav-link` (`#007bff`) and **active** state via `.nav-link-active` (see `NavLink`, `navbar-item`). Mobile drawer uses `.mobile-nav-grid` (two columns) and `.mobile-nav-row` (hover/focus only—link color comes from NavLink). When logged in, **Logout** sits on the same row as **My activity and profile**.
 - **Semantic blues** in surfaces: borders and hovers (`border-blue-*`, `hover:border-blue-*`) for **interactive lists** (`.surface-list-row`, `.message-thread-card`, …).
 - **Status**: green success, red danger, amber warning—prefer existing **badge** and **btn** semantics over new hex values. **Yellow** is reserved for **edit / apply** (`ui-btn--edit`).
 - **Selma'o / tags**: `.badge-definition-tag` (purple chip)—use for grammatical tags, not general emphasis.
 
-### 5b. Transfer-direction icons (upload / export · download / import)
+### 5b. Transfer-direction icons (import / upload · export / download)
 
 | Action | Direction | Approved Lucide glyphs | Import from |
 | ------ | --------- | ---------------------- | ----------- |
+| **Import** (pick file / bring data in) | Arrow **up** | `Upload`, `FileUp` | `ImportIcon`, `FileImportIcon` from `@packages/ui` |
 | **Upload** (send file to server) | Arrow **up** | `Upload` | `UploadIcon` from `@packages/ui` |
-| **Export** (generate / send data out) | Arrow **up** | `Upload`, `FileUp` | `ExportIcon`, `FileExportIcon` from `@packages/ui` |
+| **Export** (generate / send data out) | Arrow **down** | `Download`, `FileDown` | `ExportIcon`, `FileExportIcon` from `@packages/ui` |
 | **Download** (save locally) | Arrow **down** | `Download` | `DownloadIcon` from `@packages/ui` |
-| **Import** (pick file / bring data in) | Arrow **down** | `Import`, `FileDown` | `ImportIcon`, `FileImportIcon` from `@packages/ui` |
 
 **Rules**
 
-1. **Upload and export** always use arrow-**up** icons; **download and import** always use arrow-**down** icons—do not swap them even if other products do.
+1. **Import and upload** always use arrow-**up** icons; **export and download** always use arrow-**down** icons—do not swap them even if other products do.
 2. File-oriented menus: **`FileExportIcon`** / **`FileImportIcon`**; generic upload: **`UploadIcon`**; generic export nav: **`ExportIcon`**; cached downloads / attachments: **`DownloadIcon`**; file import buttons: **`ImportIcon`**.
 3. Voting, reorder, and unrelated arrows (`ArrowUp`, `ArrowDown`, …) are **out of scope**.
-4. ESLint blocks direct `@lucide/vue` use of the five transfer glyphs; **`packages/ui/transferIcons.ts`** is the only re-export site.
+4. ESLint blocks direct `@lucide/vue` use of `Upload`, `Download`, `FileUp`, `FileDown`, and `Import`; **`packages/ui/transferIcons.ts`** is the only re-export site. Do not use Lucide’s `Import` glyph (it is a down arrow).
 
 ---
 

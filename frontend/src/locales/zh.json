@@ -127,6 +127,8 @@
   "home": {
     "trendingComments": "热门评论",
     "recentChanges": "最近更新",
+    "latestActivity": "最新评论、维基与邮件",
+    "latestDefinitions": "最新释义",
     "searchResultsTitle": {
       "dictionary": "词典与语料",
       "semantic": "语义搜索",
@@ -384,6 +386,7 @@
       "definition": "释义",
       "comment": "评论",
       "message": "邮件",
+      "wiki": "维基",
       "etymology": "词源"
     }
   },

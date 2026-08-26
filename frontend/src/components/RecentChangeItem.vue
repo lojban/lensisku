@@ -26,7 +26,7 @@
         <span class="text-xs text-gray-500 italic">
           {{ t('recentChanges.by') }}
           <RouterLink
-            v-if="change.change_type !== 'message'"
+            v-if="change.change_type !== 'message' && change.change_type !== 'wiki'"
             :to="`/user/${change.username}`"
             class="text-blue-600 hover:underline"
           >
@@ -147,7 +147,9 @@
           </div>
 
           <div
-            v-else-if="change.change_type === 'message' && change.content"
+            v-else-if="
+              (change.change_type === 'message' || change.change_type === 'wiki') && change.content
+            "
             class="prose prose-sm max-w-none text-gray-700 mb-3"
           >
             <LazyMathJax :content="change.content" :enable-markdown="true" />
@@ -226,6 +228,8 @@ const getChangeLink = (change) => {
     return `/comments?thread_id=${change.thread_id}&scroll_to=${change.comment_id}&valsi_id=${change.valsi_id}&definition_id=${change.definition_id}`
   } else if (change.change_type === 'message') {
     return `/message/${change.comment_id}`
+  } else if (change.change_type === 'wiki') {
+    return `/wiki/${encodeURIComponent(String(change.word || '').replace(/ /g, '_'))}`
   }
   return `/valsi/${change.word.replace(/ /g, '_')}?highlight_definition_id=${change.definition_id}`
 }

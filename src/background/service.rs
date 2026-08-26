@@ -301,19 +301,19 @@ pub async fn spawn_background_tasks(
     });
 
     // Mirror mw.lojban.org articles into wiki_articles. Full sync if table is
-    // empty, otherwise incremental; refresh daily. Skipped when DISABLE_WIKI_SYNC=1.
+    // empty, otherwise incremental; refresh hourly. Skipped when DISABLE_WIKI_SYNC=1.
     let pool_wiki = pool.clone();
     tokio::spawn(async move {
         if let Err(e) = crate::wiki::importer::sync_on_startup(&pool_wiki).await {
             error!("Initial wiki sync failed: {e}");
         }
-        let mut interval = time::interval(Duration::from_secs(24 * 60 * 60));
-        // Consume the immediate tick so the next run is one day out.
+        let mut interval = time::interval(Duration::from_secs(60 * 60));
+        // Consume the immediate tick so the next run is one hour out.
         interval.tick().await;
         loop {
             interval.tick().await;
             if let Err(e) = crate::wiki::importer::run_incremental_sync(&pool_wiki).await {
-                error!("Daily wiki sync failed: {e}");
+                error!("Hourly wiki sync failed: {e}");
             }
         }
     });

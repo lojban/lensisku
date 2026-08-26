@@ -4749,9 +4749,9 @@ pub async fn get_recent_changes(
                 let mut requested_types: Vec<&str> = if let Some(t) = &types_cloned {
                     t.split(',').collect()
                 } else if home {
-                    vec!["comment", "definition"]
+                    vec!["comment", "definition", "wiki"]
                 } else {
-                    vec!["comment", "definition", "valsi", "message"]
+                    vec!["comment", "definition", "valsi", "message", "wiki"]
                 };
 
                 if home {
@@ -4956,6 +4956,52 @@ pub async fn get_recent_changes(
                 FROM message_spam_votes msv
                 WHERE msv.message_id = m.id
             ) {}
+            {})",
+                        where_extra, order_limit
+                    ));
+                }
+
+                // Mirrored mw.lojban.org articles (wiki_articles.last_edited).
+                if requested_types.contains(&"wiki") {
+                    let (where_extra, order_limit) = match cursor_condition {
+                        Some((ct, cs, ci)) => (
+                            format!(
+                                " AND (EXTRACT(EPOCH FROM wa.last_edited)::integer, -4, wa.id) < ({}, {}, {})",
+                                ct, -cs, ci
+                            ),
+                            format!("ORDER BY wa.last_edited DESC, type_sort_order ASC, wa.id DESC LIMIT {}", limit_val),
+                        ),
+                        None => (
+                            String::new(),
+                            format!("ORDER BY wa.last_edited DESC, type_sort_order ASC, wa.id DESC LIMIT {}", limit_val),
+                        ),
+                    };
+                    queries.push(format!(
+                        "(SELECT
+                'wiki' AS change_type,
+                wa.title AS word,
+                to_jsonb(LEFT(wa.plain_text, 200)) as content,
+                0 AS valsiid,
+                0 AS langid,
+                0 AS natlangwordid,
+                0 AS commentid,
+                0 AS threadid,
+                0 AS definitionid,
+                'mw.lojban.org' AS username,
+                EXTRACT(EPOCH FROM wa.last_edited)::integer AS time,
+                NULL AS language_name,
+                NULL::text AS language_english_name,
+                NULL::text AS language_lojban_name,
+                NULL::integer as version_id,
+                NULL::integer as prev_version_id,
+                NULL::smallint AS valsi_typeid,
+                NULL::text AS valsi_word,
+                NULL::integer AS commentnum,
+                NULL::integer AS parentid,
+                4 AS type_sort_order,
+                wa.id::bigint AS cursor_id
+            FROM wiki_articles wa
+            WHERE NOT wa.is_redirect AND wa.last_edited IS NOT NULL {}
             {})",
                         where_extra, order_limit
                     ));

@@ -128,6 +128,8 @@
   "home": {
     "trendingComments": "Trending comments",
     "recentChanges": "Recent changes",
+    "latestActivity": "Latest comments, wiki, and mail",
+    "latestDefinitions": "Latest definitions",
     "searchResultsTitle": {
       "dictionary": "Dictionary and corpus",
       "semantic": "Semantic search",
@@ -387,6 +389,7 @@
       "definition": "Definition",
       "comment": "Comment",
       "message": "Message",
+      "wiki": "Wiki",
       "etymology": "Etymology"
     }
   },

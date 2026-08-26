@@ -79,13 +79,16 @@
         @click="handleExport"
       >
         {{ t('searchExport.exportButton') }}
+        <template #icon>
+          <ExportIcon class="h-5 w-5" aria-hidden="true" />
+        </template>
       </Button>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { Button } from '@packages/ui'
+import { Button, ExportIcon } from '@packages/ui'
 import { Loader2 } from '@lucide/vue'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'

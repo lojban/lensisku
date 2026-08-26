@@ -11,6 +11,7 @@ const classMap: Record<string, string> = {
   comment: 'bg-green-100 text-green-800',
   valsi: 'bg-yellow-100 text-yellow-800',
   message: 'bg-indigo-100 text-indigo-800',
+  wiki: 'bg-teal-100 text-teal-800',
 }
 
 /** Tailwind classes for word type badges */

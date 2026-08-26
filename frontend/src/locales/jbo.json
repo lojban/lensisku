@@ -127,6 +127,8 @@
   "home": {
     "trendingComments": "cinri nu zukte",
     "recentChanges": "cnino nu galfi",
+    "latestActivity": "romoi pinka .e uitki .e se mrilu",
+    "latestDefinitions": "romoi velckivei",
     "searchResultsTitle": {
       "dictionary": "pentoi lo vlapoi",
       "semantic": "pentoi lu'e le se smuni",
@@ -384,6 +386,7 @@
       "definition": "velckivei",
       "comment": "casnu",
       "message": "mrilu datni",
+      "wiki": "uitki",
       "etymology": "krasi"
     }
   },

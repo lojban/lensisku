@@ -1,12 +1,12 @@
 //! Pulls articles from `mw.lojban.org` via the MediaWiki API and stores them in
-//! `wiki_articles`. Run from `src/background/service.rs` on startup and daily.
+//! `wiki_articles`. Run from `src/background/service.rs` on startup and hourly.
 //!
 //! Only the latest revision is mirrored. Namespaces 0 (Main) and 2 (User) are
 //! included per product decision. Templates are NOT expanded.
 
 use std::time::Duration;
 
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, TimeDelta, Utc};
 use deadpool_postgres::Pool;
 use log::{info, warn};
 use serde::Deserialize;
@@ -20,6 +20,8 @@ const NAMESPACES: &[i32] = &[0, 2];
 /// Returned from `?action=query&list=allpages`.
 #[derive(Debug, Deserialize)]
 struct AllPagesEnvelope {
+    #[serde(default)]
+    error: Option<MwApiError>,
     #[serde(default)]
     query: Option<AllPagesQuery>,
     #[serde(rename = "continue", default)]
@@ -45,6 +47,8 @@ struct PageRef {
 /// Returned from `?action=query&prop=revisions&rvslots=main`.
 #[derive(Debug, Deserialize)]
 struct RevisionsEnvelope {
+    #[serde(default)]
+    error: Option<MwApiError>,
     #[serde(default)]
     query: Option<RevisionsQuery>,
 }
@@ -92,7 +96,15 @@ struct RevSlotMain {
 }
 
 #[derive(Debug, Deserialize)]
+struct MwApiError {
+    code: Option<String>,
+    info: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
 struct RecentChangesEnvelope {
+    #[serde(default)]
+    error: Option<MwApiError>,
     #[serde(default)]
     query: Option<RecentChangesQuery>,
     #[serde(rename = "continue", default)]
@@ -117,6 +129,8 @@ struct RecentChange {
     #[serde(default, rename = "type")]
     rc_type: Option<String>,
     #[serde(default)]
+    logtype: Option<String>,
+    #[serde(default)]
     #[allow(dead_code)]
     timestamp: Option<String>,
 }
@@ -125,8 +139,26 @@ struct RecentChange {
 pub enum WikiSyncError {
     #[error("http error: {0}")]
     Http(#[from] reqwest::Error),
+    #[error("mediawiki api error: {0}")]
+    Api(String),
     #[error("db error: {0}")]
     Db(String),
+}
+
+fn mw_api_err(err: Option<MwApiError>) -> Result<(), WikiSyncError> {
+    let Some(e) = err else {
+        return Ok(());
+    };
+    Err(WikiSyncError::Api(format!(
+        "{}: {}",
+        e.code.as_deref().unwrap_or("unknown"),
+        e.info.as_deref().unwrap_or("no info")
+    )))
+}
+
+/// MediaWiki timestamp params reject 9-digit fractional seconds from `DateTime::to_rfc3339()`.
+fn mediawiki_timestamp(dt: DateTime<Utc>) -> String {
+    dt.format("%Y%m%d%H%M%S").to_string()
 }
 
 fn http_client() -> Result<reqwest::Client, WikiSyncError> {
@@ -254,7 +286,7 @@ pub async fn run_incremental_sync(pool: &Pool) -> Result<(), WikiSyncError> {
         return Ok(());
     }
     let http = http_client()?;
-    let since = last_sync_at(pool).await?;
+    let since = content_watermark(pool).await?;
     let now = Utc::now();
     let changes = list_recent_changes(&http, since).await?;
     if changes.is_empty() {
@@ -269,19 +301,21 @@ pub async fn run_incremental_sync(pool: &Pool) -> Result<(), WikiSyncError> {
         if !NAMESPACES.contains(&ns) {
             continue;
         }
-        match (ch.rc_type.as_deref(), ch.pageid) {
-            (Some("delete"), Some(pid)) => to_delete.push(pid),
-            (_, Some(pid)) if pid > 0 => to_fetch.push(pid),
+        match (ch.rc_type.as_deref(), ch.logtype.as_deref(), ch.pageid) {
+            (Some("log"), Some("delete"), Some(pid)) if pid > 0 => to_delete.push(pid),
+            (Some("log"), _, _) => {}
+            (_, _, Some(pid)) if pid > 0 => to_fetch.push(pid),
             _ => {}
         }
     }
     to_fetch.sort_unstable();
     to_fetch.dedup();
     info!(
-        "wiki: incremental sync — {} pages to fetch, {} deletes",
+        "wiki: incremental sync — {} pages to fetch, {} deletes (since {since:?})",
         to_fetch.len(),
         to_delete.len()
     );
+    let mut fetch_errors = 0usize;
     for chunk in to_fetch.chunks(50) {
         match fetch_revisions(&http, chunk).await {
             Ok(pages) => {
@@ -291,7 +325,10 @@ pub async fn run_incremental_sync(pool: &Pool) -> Result<(), WikiSyncError> {
                     }
                 }
             }
-            Err(e) => warn!("wiki: fetch_revisions failed: {e}"),
+            Err(e) => {
+                fetch_errors += 1;
+                warn!("wiki: fetch_revisions failed: {e}");
+            }
         }
     }
     if !to_delete.is_empty() {
@@ -306,6 +343,11 @@ pub async fn run_incremental_sync(pool: &Pool) -> Result<(), WikiSyncError> {
             )
             .await
             .map_err(|e| WikiSyncError::Db(e.to_string()))?;
+    }
+    if fetch_errors > 0 {
+        return Err(WikiSyncError::Api(format!(
+            "{fetch_errors} revision chunk(s) failed; not advancing wiki sync watermark"
+        )));
     }
     mark_incremental_sync_done(pool, now).await?;
     Ok(())
@@ -337,6 +379,7 @@ async fn list_all_pages(
             .error_for_status()?
             .json()
             .await?;
+        mw_api_err(resp.error)?;
         if let Some(q) = resp.query {
             out.extend(q.allpages);
         }
@@ -382,6 +425,7 @@ async fn fetch_revisions(
         .error_for_status()?
         .json()
         .await?;
+    mw_api_err(resp.error)?;
     let pages_value = resp
         .query
         .map(|q| q.pages)
@@ -415,7 +459,7 @@ async fn list_recent_changes(
         .join("|");
     let mut out: Vec<RecentChange> = Vec::new();
     let mut rccontinue: Option<String> = None;
-    let rcend = since.map(|d| d.to_rfc3339());
+    let rcend = since;
     loop {
         let mut params: Vec<(&str, String)> = vec![
             ("action", "query".into()),
@@ -423,13 +467,13 @@ async fn list_recent_changes(
             ("formatversion", "2".into()),
             ("list", "recentchanges".into()),
             ("rcnamespace", nsfilter.clone()),
-            ("rcprop", "ids|title|timestamp".into()),
-            ("rctype", "edit|new|delete|move".into()),
+            ("rcprop", "ids|title|timestamp|loginfo".into()),
+            ("rctype", "edit|new|log".into()),
             ("rclimit", "max".into()),
             ("rcdir", "older".into()),
         ];
         if let Some(end) = &rcend {
-            params.push(("rcend", end.clone()));
+            params.push(("rcend", mediawiki_timestamp(*end)));
         }
         if let Some(c) = &rccontinue {
             params.push(("rccontinue", c.clone()));
@@ -442,6 +486,7 @@ async fn list_recent_changes(
             .error_for_status()?
             .json()
             .await?;
+        mw_api_err(resp.error)?;
         if let Some(q) = resp.query {
             out.extend(q.recentchanges);
         }
@@ -530,24 +575,23 @@ async fn upsert_page(pool: &Pool, p: &PageWithRev) -> Result<(), WikiSyncError> 
     Ok(())
 }
 
-async fn last_sync_at(pool: &Pool) -> Result<Option<DateTime<Utc>>, WikiSyncError> {
+/// Lower bound for incremental RC queries.
+///
+/// Use the newest mirrored `last_edited`, not `wiki_sync_state`. That table was
+/// advanced even when MediaWiki returned an API error body (HTTP 200, empty
+/// `query`), which skipped real edits forever.
+async fn content_watermark(pool: &Pool) -> Result<Option<DateTime<Utc>>, WikiSyncError> {
     let client = pool
         .get()
         .await
         .map_err(|e| WikiSyncError::Db(e.to_string()))?;
-    let row_opt = client
-        .query_opt(
-            "SELECT GREATEST(
-                COALESCE(last_incremental_sync, '-infinity'::timestamptz),
-                COALESCE(last_full_sync, '-infinity'::timestamptz)
-             ) AS ts FROM wiki_sync_state WHERE id = 1",
-            &[],
-        )
+    let row = client
+        .query_one("SELECT MAX(last_edited) AS ts FROM wiki_articles", &[])
         .await
         .map_err(|e| WikiSyncError::Db(e.to_string()))?;
-    let ts: Option<DateTime<Utc>> = row_opt.and_then(|r| r.try_get("ts").ok());
-    // GREATEST of two -infinity becomes -infinity; treat that as None.
-    Ok(ts.filter(|d| d.timestamp() > 0))
+    let ts: Option<DateTime<Utc>> = row.get("ts");
+    let ts = ts.filter(|d| d.timestamp() > 0);
+    Ok(ts.map(|d| d - TimeDelta::hours(2)))
 }
 
 async fn mark_full_sync_done(pool: &Pool) -> Result<(), WikiSyncError> {
@@ -632,5 +676,30 @@ mod tests {
                 .as_deref(),
             Some("hello")
         );
+    }
+
+    #[test]
+    fn mediawiki_timestamp_has_no_fractional_seconds() {
+        let dt = DateTime::parse_from_rfc3339("2026-08-23T01:15:52.123456789Z")
+            .unwrap()
+            .with_timezone(&Utc);
+        assert_eq!(mediawiki_timestamp(dt), "20260823011552");
+        assert!(
+            dt.to_rfc3339().contains('.'),
+            "chrono RFC3339 keeps nanos, which MediaWiki rejects"
+        );
+    }
+
+    #[test]
+    fn parse_recentchanges_api_error() {
+        let json = r#"{
+            "error": {
+                "code": "badtimestamp",
+                "info": "Invalid value for timestamp parameter \"rcend\"."
+            }
+        }"#;
+        let env: RecentChangesEnvelope = serde_json::from_str(json).unwrap();
+        let err = mw_api_err(env.error).unwrap_err().to_string();
+        assert!(err.contains("badtimestamp"));
     }
 }

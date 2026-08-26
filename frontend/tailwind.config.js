@@ -327,9 +327,19 @@ export default {
           '@apply text-[10px] text-gray-700 font-mono bg-blue-50/30 px-1.5 py-0.5 rounded border border-blue-100/30 inline-block mx-auto sm:text-xs':
             {},
         },
+        /** App mobile drawer: two-column item grid (profile + logout share a row). */
+        '.mobile-nav-grid': {
+          display: 'grid',
+          alignItems: 'stretch',
+          gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)',
+          columnGap: '0px',
+        },
+        '.mobile-nav-grid__full': {
+          '@apply col-span-2': {},
+        },
         /** App mobile drawer row: layout + hover only — link color comes from `NavLink` (`text-nav-link` / `nav-link-active`). */
         '.mobile-nav-row': {
-          '@apply flex cursor-pointer items-center gap-2 rounded-md px-4 py-2 text-base transition-colors duration-200 hover:bg-gray-100 hover:text-blue-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 focus-visible:ring-offset-white':
+          '@apply flex min-w-0 cursor-pointer items-center gap-1.5 rounded-md py-2 pl-2 pr-1 text-base leading-snug transition-colors duration-200 hover:bg-gray-100 hover:text-blue-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 focus-visible:ring-offset-white [&>svg]:shrink-0':
             {},
         },
         /** Logout / primary action row in mobile nav. */
@@ -571,6 +581,13 @@ export default {
         '.surface-activity-row': {
           '@apply space-y-2 bg-white p-4 rounded-lg border border-gray-200 hover:border-blue-200 transition-colors cursor-pointer':
             {},
+        },
+        /** Tight stacked RecentChangeItem / CommentItem rows (home landing feeds). */
+        '.home-feed-list': {
+          '@apply flex flex-col gap-1': {},
+          '& .comment-item': {
+            '@apply my-0': {},
+          },
         },
         /** Indented quote / snippet in activity lists. */
         '.activity-quote-snippet': {

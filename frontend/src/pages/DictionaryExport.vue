@@ -121,13 +121,16 @@
         @click="handleExport"
       >
         {{ t('dictionaryExport.exportButton') }}
+        <template #icon>
+          <ExportIcon class="h-5 w-5" aria-hidden="true" />
+        </template>
       </Button>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { Button, Checkbox, Select } from '@packages/ui'
+import { Button, Checkbox, ExportIcon, Select } from '@packages/ui'
 import { Loader2 } from '@lucide/vue'
 import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'

@@ -21,7 +21,7 @@
         }"
       >
         <div class="space-y-1 text-center">
-          <ImagePlus class="mx-auto h-12 w-12 text-gray-300" :stroke-width="1" />
+          <ImportIcon class="mx-auto h-12 w-12 text-gray-300" :stroke-width="1" />
           <div class="flex justify-center text-sm text-gray-600">
             <label for="file-upload" class="file-input-label">
               <span>{{ t('bulkImport.uploadFile') }}</span>
@@ -102,6 +102,9 @@
       >
         <span v-if="isLoading"> {{ t('bulkImport.processing') }} </span>
         <span v-else> {{ t('bulkImport.importButton') }} </span>
+        <template v-if="!isLoading" #icon>
+          <ImportIcon class="h-5 w-5" aria-hidden="true" />
+        </template>
       </Button>
       <Button
         v-if="importProcessId"
@@ -220,11 +223,10 @@
 </template>
 
 <script setup lang="ts">
-import { Button, FileInput, Input, Select } from '@packages/ui'
+import { Button, FileInput, ImportIcon, Input, Select } from '@packages/ui'
 import { useDropZone } from '@vueuse/core'
 import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { ImagePlus } from '@lucide/vue'
 
 import {
   cancelBulkImport,

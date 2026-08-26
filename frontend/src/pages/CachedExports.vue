@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Button } from '@packages/ui'
+import { Button, DownloadIcon } from '@packages/ui'
 import { File } from '@lucide/vue'
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -138,6 +138,7 @@ onMounted(async () => {
             <div class="text-sm text-gray-500">{{ formatDate(exportItem.created_at) }}</div>
           </div>
           <a :href="downloadHref(exportItem)" :download="exportItem.filename" class="ui-btn--read">
+            <DownloadIcon class="h-4 w-4" aria-hidden="true" />
             {{ t('cachedExports.download') }}
           </a>
         </div>
