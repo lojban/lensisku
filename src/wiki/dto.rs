@@ -37,6 +37,12 @@ pub struct WikiArticleDetail {
     pub is_redirect: bool,
     /// Direct link back to mw.lojban.org for "view source".
     pub source_url: String,
+    /// Latest editor username (`name@mw.lojban.org` for imports).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub username: Option<String>,
+    /// mw.lojban.org user page when `username` is an imported wiki account.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub author_url: Option<String>,
     /// Native wiki / imported history definition, when one exists.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub definition_id: Option<i32>,

@@ -25,14 +25,11 @@
         <span class="text-xs text-gray-500 italic"> {{ formatTime(change.time) }} </span>
         <span class="text-xs text-gray-500 italic">
           {{ t('recentChanges.by') }}
-          <RouterLink
-            v-if="change.change_type !== 'message' && change.change_type !== 'wiki'"
-            :to="`/user/${change.username}`"
-            class="text-blue-600 hover:underline"
-          >
-            {{ change.username }}
-          </RouterLink>
-          <div v-else class="inline">{{ change.username }}</div>
+          <AuthorLink
+            :username="change.username"
+            :author-url="change.author_url"
+            :link-local="change.change_type !== 'message' && change.change_type !== 'wiki'"
+          />
         </span>
         <div class="text-sm">
           <RouterLink
@@ -170,6 +167,7 @@ import { useDateFormat } from '@/composables/useDateFormat'
 
 import CommentItem from '@/components/CommentItem.vue'
 import LazyMathJax from '@/components/LazyMathJax.vue'
+import AuthorLink from '@/components/AuthorLink.vue'
 
 const { t, locale } = useI18n()
 const { formatTime } = useDateFormat()

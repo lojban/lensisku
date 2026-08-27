@@ -4861,7 +4861,7 @@ pub async fn get_recent_changes(
             JOIN valsi v ON d.valsiid = v.valsiid
             JOIN users u ON dv.user_id = u.userid
             LEFT JOIN languages l ON dv.langid = l.langid
-            WHERE u.username != 'officialdata' AND v.source_langid = 1 {}
+            WHERE u.username != 'officialdata' AND v.source_langid = 1 AND dv.mw_revid IS NULL {}
             {})",
                         where_extra, order_limit
                     ));
@@ -4987,7 +4987,7 @@ pub async fn get_recent_changes(
                 0 AS commentid,
                 0 AS threadid,
                 0 AS definitionid,
-                'mw.lojban.org' AS username,
+                COALESCE(NULLIF(u.username, 'officialdata'), 'mw.lojban.org') AS username,
                 EXTRACT(EPOCH FROM wa.last_edited)::integer AS time,
                 NULL AS language_name,
                 NULL::text AS language_english_name,
@@ -5001,6 +5001,8 @@ pub async fn get_recent_changes(
                 4 AS type_sort_order,
                 wa.id::bigint AS cursor_id
             FROM wiki_articles wa
+            LEFT JOIN definition_versions dv ON dv.mw_revid = wa.revision_id
+            LEFT JOIN users u ON u.userid = dv.user_id
             WHERE NOT wa.is_redirect AND wa.last_edited IS NOT NULL {}
             {})",
                         where_extra, order_limit
@@ -5058,6 +5060,7 @@ pub async fn get_recent_changes(
                         .map(|t| t == 16)
                         .unwrap_or(false);
 
+                    let username: String = row.get("username");
                     let mut change = RecentChange {
                         change_type: change_type.clone(),
                         word: row.get("word"),
@@ -5080,7 +5083,8 @@ pub async fn get_recent_changes(
                         definition_id: row
                             .get::<_, Option<i32>>("definitionid")
                             .filter(|&id| id != 0),
-                        username: row.get("username"),
+                        author_url: crate::wiki::author_url_for_username(&username),
+                        username,
                         time: row.get("time"),
                         language_name: row.get("language_name"),
                         language_english_name: row.get("language_english_name"),

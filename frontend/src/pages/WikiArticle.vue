@@ -65,6 +65,14 @@
         </h1>
         <p v-if="article.last_edited" class="wiki-article-meta">
           {{ t('wiki.lastEdited') }}
+          <template v-if="article.username">
+            <AuthorLink
+              :username="article.username"
+              :author-url="article.author_url"
+              :link-local="false"
+            />
+            ·
+          </template>
           {{ new Date(article.last_edited).toLocaleString() }}
         </p>
         <a
@@ -106,6 +114,7 @@ import { ArrowLeft, Loader2, Pencil, History, MessageSquare } from '@lucide/vue'
 import { getWikiArticle, getNativeWikiArticle, getWikiByDefinitionId } from '@/api'
 import LazyMathJax from '@/components/LazyMathJax.vue'
 import SourceTypeBadge from '@/components/SourceTypeBadge.vue'
+import AuthorLink from '@/components/AuthorLink.vue'
 
 interface WikiArticleDetail {
   page_id: number
@@ -120,6 +129,8 @@ interface WikiArticleDetail {
   definition_id?: number | null
   valsiid?: number | null
   can_edit?: boolean
+  username?: string | null
+  author_url?: string | null
 }
 
 const props = defineProps<{

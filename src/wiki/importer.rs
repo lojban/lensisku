@@ -862,21 +862,35 @@ async fn resolve_mw_user_id(
     mw_user: Option<&str>,
     fallback: i32,
 ) -> Result<i32, WikiSyncError> {
-    let Some(name) = mw_user.map(str::trim).filter(|s| !s.is_empty()) else {
+    let Some(local) = mw_user.and_then(super::mw_import_username) else {
         return Ok(fallback);
     };
     let client = pool
         .get()
         .await
         .map_err(|e| WikiSyncError::Db(e.to_string()))?;
-    let row = client
+    if let Some(row) = client
         .query_opt(
-            "SELECT userid FROM users WHERE lower(username) = lower($1) LIMIT 1",
-            &[&name],
+            "SELECT userid FROM users WHERE username = $1 LIMIT 1",
+            &[&local],
+        )
+        .await
+        .map_err(|e| WikiSyncError::Db(e.to_string()))?
+    {
+        return Ok(row.get("userid"));
+    }
+    let row = client
+        .query_one(
+            "INSERT INTO users (
+                username, email, password, created_at, role, email_confirmed, votesize
+             ) VALUES ($1, $1, 'DISABLED', NOW(), 'blocked', false, 0)
+             ON CONFLICT (username) DO UPDATE SET username = users.username
+             RETURNING userid",
+            &[&local],
         )
         .await
         .map_err(|e| WikiSyncError::Db(e.to_string()))?;
-    Ok(row.map(|r| r.get("userid")).unwrap_or(fallback))
+    Ok(row.get("userid"))
 }
 
 async fn free_source_langid_for_wiki_word(

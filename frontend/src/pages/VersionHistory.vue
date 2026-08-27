@@ -20,12 +20,17 @@
       >
         <div class="flex justify-between items-start mb-2">
           <div class="space-x-2">
-            <span class="font-medium text-gray-800">{{
-              t('versionHistory.versionBy', {
-                versionId: version.version_id,
-                username: version.username,
-              })
-            }}</span>
+            <span class="font-medium text-gray-800">
+              <i18n-t keypath="versionHistory.versionBy" tag="span">
+                <template #versionId>{{ version.version_id }}</template>
+                <template #username>
+                  <AuthorLink
+                    :username="version.username"
+                    :author-url="version.author_url"
+                  />
+                </template>
+              </i18n-t>
+            </span>
             <p v-if="version.commit_message" class="text-sm text-gray-600 mt-1 italic">
               {{ t('versionHistory.commitMessage', { message: version.commit_message }) }}
             </p>
@@ -189,6 +194,7 @@ import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
 
 import { getVersionHistory, getVersionDiff, revertToVersion } from '@/api'
+import AuthorLink from '@/components/AuthorLink.vue'
 import LazyMathJax from '@/components/LazyMathJax.vue'
 import ModalComponent from '@/components/ModalComponent.vue'
 import PaginationComponent from '@/components/PaginationComponent.vue'

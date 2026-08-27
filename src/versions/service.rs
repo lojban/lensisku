@@ -25,11 +25,14 @@ fn parse_keywords(row: &tokio_postgres::Row, column: &str) -> Option<Vec<Keyword
 }
 
 fn version_from_row(row: &tokio_postgres::Row) -> Version {
+    let username: String = row.get("username");
+    let author_url = crate::wiki::author_url_for_username(&username);
     Version {
         version_id: row.get("version_id"),
         definition_id: row.get("definition_id"),
         user_id: row.get("user_id"),
-        username: row.get("username"),
+        username,
+        author_url,
         created_at: row.get("created_at"),
         content: VersionContent {
             definition: row.get("definition"),
@@ -217,12 +220,14 @@ pub async fn create_version(
         .query_one("SELECT username FROM users WHERE userid = $1", &[&user_id])
         .await?
         .get("username");
+    let author_url = crate::wiki::author_url_for_username(&username);
 
     Ok(Version {
         version_id: row.get("version_id"),
         definition_id,
         user_id,
         username,
+        author_url,
         created_at: row.get("created_at"),
         content: content.clone(),
         commit_message: commit_message.to_string(),

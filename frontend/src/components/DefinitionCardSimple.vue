@@ -111,12 +111,7 @@
             <span v-if="definition.definitionid && definition.username">·</span>
             <span v-if="definition.username">
               {{ t('components.definitionCard.by') }}
-              <RouterLink
-                :to="`/user/${definition.username}`"
-                class="text-blue-600 hover:text-blue-800 hover:underline"
-              >
-                {{ definition.username }}
-              </RouterLink>
+              <AuthorLink :username="definition.username" :author-url="definition.author_url" />
             </span>
             <span v-if="definition.created_at && definition.username">·</span>
             <span v-if="definition.created_at"> {{ formatDate(definition.created_at) }} </span>
@@ -148,6 +143,7 @@ import { RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { getTypeClass } from '@/utils/wordTypeUtils'
 import LazyMathJax from './LazyMathJax.vue'
+import AuthorLink from '@/components/AuthorLink.vue'
 import ClipboardButton from '@/components/ClipboardButton.vue'
 import ModalComponent from '@/components/ModalComponent.vue'
 import type { PropType } from 'vue'

@@ -261,12 +261,7 @@
               <span v-if="definition.definitionid && definition.username">·</span>
               <span v-if="definition.username">
                 {{ t('components.definitionCard.by') }}
-                <RouterLink
-                  :to="`/user/${definition.username}`"
-                  class="text-blue-600 hover:text-blue-800 hover:underline"
-                >
-                  {{ definition.username }}
-                </RouterLink>
+                <AuthorLink :username="definition.username" :author-url="definition.author_url" />
               </span>
               <span v-if="definition.created_at && definition.username">·</span>
               <span v-if="definition.created_at"> {{ formatDate(definition.created_at) }} </span>
@@ -710,6 +705,7 @@ interface DefinitionRecord {
   canonical_form?: string
   can_edit?: boolean
   username?: string
+  author_url?: string | null
   created_at?: string
   etymology?: string
   has_sound?: boolean
@@ -737,6 +733,7 @@ interface LanguageOption {
 
 import { deleteDefinition, searchDefinitions, linkDefinitions } from '@/api'
 import ClipboardButton from '@/components/ClipboardButton.vue'
+import AuthorLink from '@/components/AuthorLink.vue'
 import CollectionWidget from '@/components/CollectionWidget.vue'
 import DeleteConfirmation from '@/components/DeleteConfirmation.vue'
 import ModalComponent from '@/components/ModalComponent.vue'

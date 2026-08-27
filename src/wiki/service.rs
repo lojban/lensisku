@@ -395,11 +395,13 @@ pub async fn get_article_by_title(
     let row = client
         .query_opt(
             "SELECT w.page_id, w.namespace, w.title, w.markdown, w.last_edited, w.is_redirect,
-                    d.definitionid AS definition_id, d.valsiid
+                    d.definitionid AS definition_id, d.valsiid, u.username AS editor_username
              FROM wiki_articles w
              LEFT JOIN definitions d
                ON d.metadata->>'mw_page_id' = w.page_id::text
              LEFT JOIN valsi v ON v.valsiid = d.valsiid AND v.typeid = 16
+             LEFT JOIN definition_versions dv ON dv.mw_revid = w.revision_id
+             LEFT JOIN users u ON u.userid = dv.user_id
              WHERE w.title = $1 OR w.title = $2
              ORDER BY (CASE WHEN w.title = $1 THEN 0 ELSE 1 END)
              LIMIT 1",
@@ -415,6 +417,11 @@ pub async fn get_article_by_title(
             urlencoding::encode(&target)
         );
         let markdown: String = r.get("markdown");
+        let editor: Option<String> = r.try_get("editor_username").ok().flatten();
+        let editor = editor.filter(|n| n != "officialdata");
+        let author_url = editor
+            .as_deref()
+            .and_then(crate::wiki::author_url_for_username);
         WikiArticleDetail {
             page_id: r.get("page_id"),
             namespace: r.get("namespace"),
@@ -423,6 +430,8 @@ pub async fn get_article_by_title(
             last_edited: r.try_get("last_edited").ok().flatten(),
             is_redirect: r.try_get("is_redirect").unwrap_or(false),
             source_url,
+            username: editor,
+            author_url,
             definition_id: r.try_get("definition_id").ok().flatten(),
             valsiid: r.try_get("valsiid").ok().flatten(),
         }

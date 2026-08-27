@@ -8,6 +8,9 @@ pub struct Version {
     pub definition_id: i32,
     pub user_id: i32,
     pub username: String,
+    /// When set, this is a mw.lojban.org account — not a lensisku profile.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub author_url: Option<String>,
     #[schema(value_type = String, format = DateTime)]
     pub created_at: DateTime<Utc>,
     pub content: VersionContent,

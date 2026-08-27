@@ -213,6 +213,9 @@ pub struct RecentChange {
     pub thread_id: Option<i32>,
     pub definition_id: Option<i32>,
     pub username: String,
+    /// When set, this is a mw.lojban.org account — not a lensisku profile.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub author_url: Option<String>,
     pub time: i32,
     pub language_name: Option<String>,
     pub language_english_name: Option<String>,
