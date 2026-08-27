@@ -25,6 +25,7 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
                     .wrap(HttpAuthentication::bearer(crate::auth::validator))
                     .service(controller::create_collection)
                     .service(controller::list_collections)
+                    .service(controller::collections_membership)
                     .service(controller::update_collection)
                     .service(controller::post_collection_image)
                     .service(controller::delete_collection_image)

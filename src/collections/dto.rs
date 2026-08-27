@@ -24,6 +24,23 @@ pub struct ListCollectionsQuery {
     pub has_levels_only: Option<bool>,
 }
 
+/// Body for `POST /collections/membership`: which of the caller's collections already contain
+/// this definition (by `definition_id`) or this collection item (full content match).
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct CollectionMembershipRequest {
+    /// Dictionary definition: membership is `collection_items.definition_id`.
+    pub definition_id: Option<i32>,
+    /// Collection item from search/results: membership is valsi + definition text +
+    /// source language + target language (not `definition_id` alone).
+    pub item_id: Option<i32>,
+}
+
+#[derive(Debug, Serialize, ToSchema)]
+pub struct CollectionMembershipResponse {
+    /// Caller's collections that already include a matching item, most recently updated first.
+    pub collection_ids: Vec<i32>,
+}
+
 #[derive(Debug, Deserialize, ToSchema)]
 pub struct CreateCollectionRequest {
     pub name: String,
@@ -203,6 +220,11 @@ pub struct ListCollectionItemsFilters {
     /// signal that semantic ranking should be applied; the controller is responsible for deciding
     /// whether to compute it.
     pub semantic_embedding: Option<pgvector::Vector>,
+    /// When set, only return items whose valsi + definition text + source language + target
+    /// language match this collection item (used to expand a deduped search hit).
+    pub match_item_id: Option<i32>,
+    /// Collapse identical valsi+definition+languages to one row *before* LIMIT (filtered search).
+    pub dedupe_by_content: bool,
 }
 
 /// Lojban text → Ogg Opus via Kitten TTS (authenticated, rate-limited).
@@ -304,6 +326,14 @@ pub struct CollectionItemResponse {
     /// Display name of `collection_id` when present.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub collection_name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub source_langid: Option<i32>,
+    #[schema(value_type = Option<String>, format = DateTime)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub collection_created_at: Option<DateTime<Utc>>,
+    /// How many collection items share this valsi+definition+languages (deduped search hits).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub match_count: Option<i32>,
 }
 
 #[derive(Debug, Deserialize, ToSchema)]

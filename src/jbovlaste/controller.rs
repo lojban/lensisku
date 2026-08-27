@@ -185,6 +185,7 @@ pub async fn semantic_search(
                 embedding: embedding.clone(),
             },
             Some(&parsers),
+            query.expand_collection_item,
         )
         .await
     } else {
@@ -543,6 +544,7 @@ pub async fn search_definitions(
             collection_ids,
             mode,
             Some(&parsers),
+            query.expand_collection_item,
         )
         .await
     } else {

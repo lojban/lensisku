@@ -17,6 +17,9 @@ export type CollectionSearchItem = {
   username?: string | null
   collection_id?: number | null
   collection_name?: string | null
+  source_langid?: number | null
+  collection_created_at?: string | null
+  match_count?: number | null
 }
 
 export type CollectionRef = {
@@ -44,6 +47,9 @@ export type CollectionDefinitionCard = {
   username?: string | null
   collection_id: number
   collection_name: string
+  source_langid?: number | null
+  collection_created_at?: string | null
+  match_count?: number
 }
 
 export function mapCollectionItemToDefinition(
@@ -73,6 +79,9 @@ export function mapCollectionItemToDefinition(
     username: item.username,
     collection_id,
     collection_name,
+    source_langid: item.source_langid,
+    collection_created_at: item.collection_created_at,
+    match_count: item.match_count ?? undefined,
   }
 }
 

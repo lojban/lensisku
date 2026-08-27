@@ -139,6 +139,8 @@
     "metaDescription": "Поиск по словарю и корпусу ложбана. Определения, примеры и обсуждения.",
     "searchMetaDescription": "Результаты поиска «{query}» в словаре ложбана.",
     "globalDictionaryBelow": "Определения ниже взяты из общего словаря.",
+    "collectionItemMatches": "Совпадения в выбранных коллекциях",
+    "backToSearchResults": "Назад к результатам поиска",
     "addDefinition": "Определения",
     "exportResults": "Экспорт результатов",
     "newFreeThread": "Начать новую волну",
@@ -713,7 +715,8 @@
     "notesLabel": "Добавить заметки (необязательно)",
     "notesPlaceholder": "Добавьте заметки об этом определении...",
     "addToCollectionButton": "Добавить в коллекцию",
-    "addedSuccess": "Успешно добавлено в коллекцию!"
+    "addedSuccess": "Успешно добавлено в коллекцию!",
+    "alreadyIncluded": "Уже включено"
   },
   "pagination": {
     "previous": "Назад",

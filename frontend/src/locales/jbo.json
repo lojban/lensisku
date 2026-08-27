@@ -141,6 +141,8 @@
     "metaDescription": "ko sisku fi la'e la jbovlaste .e lo sorcu .i ko penmi lo velckivei .e lo casnu .e lo mupli",
     "searchMetaDescription": "ko viska lo se penmi be la'ei \"{query}\" ne'i lo lojbo vlaste",
     "globalDictionaryBelow": "di'e velckivei gi'e cnano",
+    "collectionItemMatches": "lu'a le se liste ku poi simsa",
+    "backToSearchResults": "di'a zgana lo se penmi",
     "addDefinition": "velckivei",
     "exportResults": "cupra lo se sisku",
     "newFreeThread": "cnino nu casnu",
@@ -772,8 +774,9 @@
     "createAndAdd": "finti .i jmina",
     "notesLabel": "jmina lo notci (na sarcu)",
     "notesPlaceholder": "ko ciska lo notci fi lo velckivei be ti",
-    "addToCollectionButton": "jmina lo liste",
-    "addedSuccess": "snada lo nu jmina lo liste!"
+    "addToCollectionButton": "jmina fi lo liste",
+    "addedSuccess": "snada lo ka jmina fi lo liste",
+    "alreadyIncluded": "ba'o mo'u se jmina"
   },
   "pagination": {
     "previous": "prula'i",

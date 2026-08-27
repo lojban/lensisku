@@ -141,6 +141,8 @@
     "metaDescription": "ロジバンの辞書とコーパスを検索。定義、例、議論を見つけられます。",
     "searchMetaDescription": "ロジバン辞書での「{query}」の検索結果。",
     "globalDictionaryBelow": "以下の定義は共通辞書からのものです。",
+    "collectionItemMatches": "選択したコレクション内の一致項目",
+    "backToSearchResults": "検索結果に戻る",
     "addDefinition": "定義",
     "exportResults": "結果をエクスポート",
     "newFreeThread": "フリーウェーブを始める",
@@ -758,7 +760,8 @@
     "notesLabel": "メモ（任意）",
     "notesPlaceholder": "この定義に関するメモ…",
     "addToCollectionButton": "コレクションに追加",
-    "addedSuccess": "コレクションに追加しました。"
+    "addedSuccess": "コレクションに追加しました。",
+    "alreadyIncluded": "追加済み"
   },
   "pagination": {
     "previous": "前へ",

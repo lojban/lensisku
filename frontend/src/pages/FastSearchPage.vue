@@ -72,6 +72,15 @@
           <template
             v-if="filters.selectedCollections?.length || filters.usernames?.length"
           >
+            <div
+              v-if="expandCollectionItemId"
+              class="surface-definition-compact text-sm text-gray-700 flex flex-wrap items-center justify-between gap-2"
+            >
+              <p class="font-medium text-gray-800">{{ $t('home.collectionItemMatches') }}</p>
+              <Button variant="cancel" type="button" @click="clearCollectionItemExpand">
+                {{ $t('home.backToSearchResults') }}
+              </Button>
+            </div>
             <DefinitionCard
               v-for="def in collectionMatches"
               :key="
@@ -84,8 +93,12 @@
               :disable-toolbar="true"
               :disable-owner-only-lock="true"
               :show-vote-buttons="false"
+              :collections="collections"
               :collection-id="def.collection_id"
               :item-id="def.item_id"
+              :expand-on-click="!expandCollectionItemId && !!def.item_id"
+              @collection-updated="setCollections($event)"
+              @card-activate="expandCollectionItem(def)"
             />
             <div class="surface-definition-compact text-sm text-gray-700">
               <p class="font-medium text-gray-800">
@@ -135,6 +148,7 @@ import { ref, onMounted, watch, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { nextTick } from 'vue'
 
+import { Button } from '@packages/ui'
 import { fastSearchDefinitions, getLanguages } from '@/api'
 import CombinedFilters from '@/components/CombinedFilters.vue'
 import DefinitionCard from '@/components/DefinitionCard.vue'
@@ -145,6 +159,7 @@ import PaginationComponent from '@/components/PaginationComponent.vue'
 import SearchForm from '@/components/SearchForm.vue'
 import CombinedFiltersSkeleton from '@/components/skeletons/CombinedFiltersSkeleton.vue'
 import SearchFormSkeleton from '@/components/skeletons/SearchFormSkeleton.vue'
+import { useCollectionsCache } from '@/composables/useCollectionsCache'
 import { useLanguageSelection } from '@/composables/useLanguageSelection'
 import { useSeoHead } from '@/composables/useSeoHead'
 import { SearchQueue } from '@/utils/searchQueue'
@@ -167,6 +182,28 @@ import {
 
 const router = useRouter()
 const route = useRoute()
+const { collections, setCollections } = useCollectionsCache()
+const expandCollectionItemId = computed(() => {
+  const n = parseInt(queryStr(route.query.expand_ci), 10)
+  return Number.isFinite(n) && n > 0 ? n : null
+})
+const expandCollectionItem = (def: { item_id?: number }) => {
+  if (!def.item_id) return
+  router.push({
+    query: commitHomeQuery({
+      ...route.query,
+      expand_ci: String(def.item_id),
+    }),
+  })
+}
+const clearCollectionItemExpand = () => {
+  router.push({
+    query: commitHomeQuery({
+      ...route.query,
+      expand_ci: undefined,
+    }),
+  })
+}
 const { getInitialLanguages, saveLanguages } = useLanguageSelection()
 const hydratedHomeQuery = resolveHomeQuery(route.query)
 
@@ -271,6 +308,9 @@ const fetchDefinitions = async (page: number, search = '') => {
         params.collection_ids = collectionIds.join(',')
       }
     }
+    if (expandCollectionItemId.value) {
+      params.expand_collection_item = expandCollectionItemId.value
+    }
 
     const response = await fastSearchDefinitions(params, signal)
 
@@ -285,7 +325,9 @@ const fetchDefinitions = async (page: number, search = '') => {
       .map((item) => mapCollectionItemToDefinition(item))
       .filter((d): d is CollectionDefinitionCard => d != null)
     const authorHits = (response.data.filtered_definitions ?? []) as CollectionDefinitionCard[]
-    collectionMatches.value = [...collectionHits, ...authorHits]
+    collectionMatches.value = expandCollectionItemId.value
+      ? collectionHits
+      : [...collectionHits, ...authorHits]
     definitions.value = response.data.definitions
     total.value = response.data.total
     currentPage.value = page
@@ -344,6 +386,7 @@ const updateUrlWithFilters = () => {
       q: searchQuery.value || undefined,
       ...combinedFiltersToQuery(filters.value),
       page: undefined,
+      expand_ci: undefined,
     }),
   })
 }
@@ -355,6 +398,7 @@ const performSearch = ({ query, mode }: { query: string; mode: string }) => {
     q: query || undefined,
     mode: mode !== 'dictionary' ? mode : undefined, // Keep mode if it's not dictionary
     page: undefined, // Always reset to page 1 for a new search
+    expand_ci: undefined,
     ...combinedFiltersToQuery(filters.value),
   })
 
@@ -485,7 +529,8 @@ watch(
       newQuery.exclude_usernames !== oldQuery?.exclude_usernames ||
       newQuery.word_type !== oldQuery?.word_type ||
       newQuery.source_langid !== oldQuery?.source_langid ||
-      newQuery.searchInPhrases !== oldQuery?.searchInPhrases
+      newQuery.searchInPhrases !== oldQuery?.searchInPhrases ||
+      newQuery.expand_ci !== oldQuery?.expand_ci
 
     currentPage.value = parseInt(queryStr(newQuery.page), 10) || 1
 

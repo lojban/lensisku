@@ -142,6 +142,8 @@
     "metaDescription": "Search the Lojban dictionary and corpus. Find definitions, examples, and discussions.",
     "searchMetaDescription": "Search results for \"{query}\" in the Lojban dictionary.",
     "globalDictionaryBelow": "Definitions below come from the global dictionary.",
+    "collectionItemMatches": "Matching items from selected collections",
+    "backToSearchResults": "Back to search results",
     "addDefinition": "Definitions",
     "createDefinition": "Create definition",
     "addAllToCollection": "Add all to collection",
@@ -787,7 +789,8 @@
     "notesLabel": "Add notes (optional)",
     "notesPlaceholder": "Add any notes about this definition...",
     "addToCollectionButton": "Add to collection",
-    "addedSuccess": "Added to collection successfully!"
+    "addedSuccess": "Added to collection successfully!",
+    "alreadyIncluded": "Already included"
   },
   "pagination": {
     "previous": "Previous",

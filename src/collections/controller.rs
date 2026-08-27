@@ -82,6 +82,37 @@ pub async fn list_collections(
 }
 
 #[utoipa::path(
+    post,
+    path = "/collections/membership",
+    tag = "collections",
+    request_body = CollectionMembershipRequest,
+    responses(
+        (status = 200, description = "Collection ids that already contain a matching item", body = CollectionMembershipResponse),
+        (status = 400, description = "Missing definition_id and item_id"),
+        (status = 500, description = "Internal server error")
+    ),
+    security(("bearer_auth" = [])),
+    summary = "Which of my collections already include this definition or item",
+    description = "For a dictionary definition, matches `collection_items.definition_id`. \
+                  For a collection item (`item_id`), matches valsi + definition text + source \
+                  language + target language so a forked copy counts as already included."
+)]
+#[post("/membership")]
+pub async fn collections_membership(
+    pool: web::Data<Pool>,
+    claims: Claims,
+    req: web::Json<CollectionMembershipRequest>,
+) -> impl Responder {
+    match service::collections_containing_item(&pool, claims.sub, &req).await {
+        Ok(response) => HttpResponse::Ok().json(response),
+        Err(AppError::BadRequest(msg)) => HttpResponse::BadRequest().json(json!({ "error": msg })),
+        Err(e) => HttpResponse::InternalServerError().json(json!({
+            "error": format!("Failed to check collection membership: {}", e)
+        })),
+    }
+}
+
+#[utoipa::path(
     get,
     path = "/collections/public",
     tag = "collections",
@@ -1207,6 +1238,8 @@ pub async fn search_items_in_collections(
         source_langid: query.source_langid,
         search_in_phrases: query.search_in_phrases,
         semantic_embedding,
+        match_item_id: None,
+        dedupe_by_content: false,
     };
 
     match service::search_items_in_collections(
@@ -1216,6 +1249,7 @@ pub async fn search_items_in_collections(
         per_page,
         query.search.clone(),
         filters,
+        true,
     )
     .await
     {
@@ -1300,6 +1334,8 @@ pub async fn list_collection_items(
         source_langid: query.source_langid,
         search_in_phrases: query.search_in_phrases,
         semantic_embedding,
+        match_item_id: None,
+        dedupe_by_content: false,
     };
 
     match service::list_collection_items(

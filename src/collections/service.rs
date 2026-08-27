@@ -198,6 +198,256 @@ pub async fn list_collections(
     .await
 }
 
+/// Valsi + definition text + source language + target language for content matching.
+struct ItemContentIdentity {
+    valsi: Option<String>,
+    definition: Option<String>,
+    source_langid: Option<i32>,
+    langid: Option<i32>,
+}
+
+impl ItemContentIdentity {
+    fn is_empty(&self) -> bool {
+        self.valsi.as_deref().unwrap_or("").is_empty()
+            && self.definition.as_deref().unwrap_or("").is_empty()
+    }
+}
+
+async fn load_item_content_identity(
+    client: &impl GenericClient,
+    item_id: i32,
+) -> AppResult<Option<ItemContentIdentity>> {
+    let src = client
+        .query_opt(
+            "SELECT
+                COALESCE(d.cached_valsiword, ci.free_content_front) AS valsi,
+                COALESCE(d.definition, ci.free_content_back) AS definition,
+                d.cached_source_langid AS source_langid,
+                COALESCE(d.langid, ci.langid) AS langid
+             FROM collection_items ci
+             LEFT JOIN definitions d ON d.definitionid = ci.definition_id
+             WHERE ci.item_id = $1",
+            &[&item_id],
+        )
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+    Ok(src.map(|row| ItemContentIdentity {
+        valsi: row.get("valsi"),
+        definition: row.get("definition"),
+        source_langid: row.get("source_langid"),
+        langid: row.get("langid"),
+    }))
+}
+
+/// Predicate that matches dictionary-backed items on denormalized definition columns and
+/// custom-text items on `free_content_*` (avoids wrapping both sides in COALESCE, which
+/// blocks index use on `definitions`).
+fn append_content_identity_match(
+    sql: &mut String,
+    params: &mut Vec<Box<dyn ToSql + Sync>>,
+    param_count: &mut usize,
+    ident: &ItemContentIdentity,
+) {
+    let valsi_idx = *param_count;
+    let def_idx = *param_count + 1;
+    let src_idx = *param_count + 2;
+    let lang_idx = *param_count + 3;
+    sql.push_str(&format!(
+        " AND (
+            (
+                ci.definition_id IS NOT NULL
+                AND d.cached_valsiword IS NOT DISTINCT FROM ${valsi_idx}
+                AND d.definition IS NOT DISTINCT FROM ${def_idx}
+                AND d.langid IS NOT DISTINCT FROM ${lang_idx}
+                AND d.cached_source_langid IS NOT DISTINCT FROM ${src_idx}
+            )
+            OR (
+                ci.definition_id IS NULL
+                AND ci.free_content_front IS NOT DISTINCT FROM ${valsi_idx}
+                AND ci.free_content_back IS NOT DISTINCT FROM ${def_idx}
+                AND ci.langid IS NOT DISTINCT FROM ${lang_idx}
+                AND ${src_idx}::int4 IS NULL
+            )
+         )"
+    ));
+    params.push(Box::new(ident.valsi.clone()));
+    params.push(Box::new(ident.definition.clone()));
+    params.push(Box::new(ident.source_langid));
+    params.push(Box::new(ident.langid));
+    *param_count += 4;
+}
+
+/// Collections owned by `user_id` that already contain this definition or a full-content
+/// match of this collection item (valsi, definition text, source language, target language).
+pub async fn collections_containing_item(
+    pool: &Pool,
+    user_id: i32,
+    req: &CollectionMembershipRequest,
+) -> AppResult<CollectionMembershipResponse> {
+    let client = pool
+        .get()
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+    if let Some(item_id) = req.item_id {
+        if item_id <= 0 {
+            return Err(AppError::BadRequest("item_id must be positive".to_string()));
+        }
+        let src = client
+            .query_opt(
+                "SELECT
+                    COALESCE(d.cached_valsiword, ci.free_content_front) AS valsi,
+                    COALESCE(d.definition, ci.free_content_back) AS definition,
+                    d.cached_source_langid AS source_langid,
+                    COALESCE(d.langid, ci.langid) AS langid
+                 FROM collection_items ci
+                 JOIN collections owner_c ON owner_c.collection_id = ci.collection_id
+                 LEFT JOIN definitions d ON d.definitionid = ci.definition_id
+                 WHERE ci.item_id = $1
+                   AND (owner_c.is_public = true OR owner_c.user_id = $2)",
+                &[&item_id, &user_id],
+            )
+            .await
+            .map_err(|e| AppError::Database(e.to_string()))?;
+        let Some(row) = src else {
+            return Ok(CollectionMembershipResponse {
+                collection_ids: vec![],
+            });
+        };
+        let ident = ItemContentIdentity {
+            valsi: row.get("valsi"),
+            definition: row.get("definition"),
+            source_langid: row.get("source_langid"),
+            langid: row.get("langid"),
+        };
+        if ident.is_empty() {
+            return Ok(CollectionMembershipResponse {
+                collection_ids: vec![],
+            });
+        }
+
+        // Scan the caller's items once (nested-loop from their collections) instead of a
+        // correlated EXISTS per collection that joins `valsi` and wraps columns in COALESCE.
+        let mut sql = String::from(
+            "SELECT c.collection_id
+             FROM collections c
+             INNER JOIN collection_items ci ON ci.collection_id = c.collection_id
+             LEFT JOIN definitions d ON d.definitionid = ci.definition_id
+             WHERE c.user_id = $1",
+        );
+        let mut params: Vec<Box<dyn ToSql + Sync>> = vec![Box::new(user_id)];
+        let mut param_count = 2;
+        append_content_identity_match(&mut sql, &mut params, &mut param_count, &ident);
+        sql.push_str(" GROUP BY c.collection_id, c.updated_at ORDER BY c.updated_at DESC");
+        let param_refs: Vec<&(dyn ToSql + Sync)> =
+            params.iter().map(|p| &**p as &(dyn ToSql + Sync)).collect();
+        let rows = client
+            .query(&sql, &param_refs)
+            .await
+            .map_err(|e| AppError::Database(e.to_string()))?;
+
+        return Ok(CollectionMembershipResponse {
+            collection_ids: rows.iter().map(|row| row.get("collection_id")).collect(),
+        });
+    }
+
+    let Some(definition_id) = req.definition_id else {
+        return Err(AppError::BadRequest(
+            "definition_id or item_id is required".to_string(),
+        ));
+    };
+    if definition_id <= 0 {
+        return Err(AppError::BadRequest(
+            "definition_id must be positive".to_string(),
+        ));
+    }
+
+    // UNIQUE (collection_id, definition_id) makes this an index lookup per owned collection.
+    let rows = client
+        .query(
+            "SELECT c.collection_id
+             FROM collections c
+             WHERE c.user_id = $1
+               AND EXISTS (
+                 SELECT 1 FROM collection_items ci
+                 WHERE ci.collection_id = c.collection_id
+                   AND ci.definition_id = $2
+               )
+             ORDER BY c.updated_at DESC",
+            &[&user_id, &definition_id],
+        )
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+    Ok(CollectionMembershipResponse {
+        collection_ids: rows.iter().map(|row| row.get("collection_id")).collect(),
+    })
+}
+
+/// Identity used to treat collection items as the same content.
+pub(crate) fn collection_item_content_key(
+    item: &CollectionItemResponse,
+) -> (String, String, i32, i32) {
+    let valsi = item
+        .word
+        .as_deref()
+        .or(item.free_content_front.as_deref())
+        .unwrap_or("")
+        .to_string();
+    let definition = item
+        .definition
+        .as_deref()
+        .or(item.free_content_back.as_deref())
+        .unwrap_or("")
+        .to_string();
+    let source = item.source_langid.unwrap_or(-1);
+    let lang = item.lang_id.or(item.language_id).unwrap_or(-1);
+    (valsi, definition, source, lang)
+}
+
+/// Keep one representative per valsi+definition+source+target language.
+/// Prefers items from `filter_collection_ids`, then the oldest matching collection
+/// item (`added_at`). Filter order is a tie-breaker only.
+/// Filtered search now dedupes in SQL (`dedupe_by_content`); kept for tests/parity.
+#[allow(dead_code)]
+pub(crate) fn dedupe_collection_items_by_content(
+    items: Vec<CollectionItemResponse>,
+    filter_collection_ids: &[i32],
+) -> Vec<CollectionItemResponse> {
+    use std::collections::HashMap;
+    let mut groups: HashMap<(String, String, i32, i32), Vec<CollectionItemResponse>> =
+        HashMap::new();
+    let mut order: Vec<(String, String, i32, i32)> = Vec::new();
+    for item in items {
+        let key = collection_item_content_key(&item);
+        if !groups.contains_key(&key) {
+            order.push(key.clone());
+        }
+        groups.entry(key).or_default().push(item);
+    }
+    order
+        .into_iter()
+        .filter_map(|key| {
+            let mut group = groups.remove(&key)?;
+            group.sort_by_key(|item| {
+                let filter_pos = item
+                    .collection_id
+                    .and_then(|id| filter_collection_ids.iter().position(|&fid| fid == id))
+                    .unwrap_or(usize::MAX);
+                let outside_filter = if filter_pos == usize::MAX { 1 } else { 0 };
+                // Oldest matching item first; filter order is only a tie-breaker.
+                (outside_filter, item.added_at, filter_pos, item.item_id)
+            });
+            let count = i32::try_from(group.len()).unwrap_or(i32::MAX);
+            let mut chosen = group.remove(0);
+            if count > 1 {
+                chosen.match_count = Some(count);
+            }
+            Some(chosen)
+        })
+        .collect()
+}
+
 pub async fn list_public_collections(
     pool: &Pool,
     redis: &RedisCache,
@@ -2543,6 +2793,9 @@ pub async fn upsert_item(
             flashcard: None,
             collection_id: None,
             collection_name: None,
+            source_langid: None,
+            collection_created_at: None,
+            match_count: None,
         }
     } else {
         // Free content item
@@ -2581,6 +2834,9 @@ pub async fn upsert_item(
             flashcard: None,
             collection_id: None,
             collection_name: None,
+            source_langid: None,
+            collection_created_at: None,
+            match_count: None,
         }
     };
 
@@ -3689,6 +3945,9 @@ pub async fn list_collection_items(
                     }),
                 collection_id: Some(collection_id),
                 collection_name: None,
+            source_langid: None,
+            collection_created_at: None,
+            match_count: None,
             }
         })
         .collect();
@@ -3845,7 +4104,7 @@ pub async fn list_collection_items(
 }
 
 const MAX_MULTI_COLLECTION_IDS: usize = 50;
-const MAX_MULTI_COLLECTION_PER_PAGE: i64 = 100;
+pub(crate) const MAX_MULTI_COLLECTION_PER_PAGE: i64 = 200;
 
 /// Search items across a set of **public** collections in one query. Private collection ids
 /// are skipped. Per-collection listing (`list_collection_items`) still allows owners to search
@@ -3863,6 +4122,7 @@ pub async fn search_items_in_collections(
     per_page: i64,
     search: Option<String>,
     filters: ListCollectionItemsFilters,
+    include_total: bool,
 ) -> AppResult<SearchItemsResponse> {
     if collection_ids.is_empty() {
         return Err(AppError::BadRequest(
@@ -3888,6 +4148,20 @@ pub async fn search_items_in_collections(
         .get()
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
+
+    let content_match = if let Some(match_item_id) = filters.match_item_id.filter(|id| *id > 0) {
+        match load_item_content_identity(&client, match_item_id).await? {
+            Some(ident) if !ident.is_empty() => Some(ident),
+            _ => {
+                return Ok(SearchItemsResponse {
+                    items: vec![],
+                    total: 0,
+                });
+            }
+        }
+    } else {
+        None
+    };
 
     let search_pattern = search
         .as_ref()
@@ -3917,24 +4191,29 @@ pub async fn search_items_in_collections(
         &mut count_param_idx,
         &search_pattern,
         &filters,
+        content_match.as_ref(),
     );
 
-    let count_query = format!(
-        "{cte}
-         SELECT COUNT(*)::bigint
-         {from_where}",
-        cte = ACCESSIBLE_CTE,
-        from_where = from_where,
-    );
-    let total: i64 = client
-        .query_one(
-            &count_query,
-            &count_params.iter().map(|p| &**p as _).collect::<Vec<_>>(),
-        )
-        .await
-        .map_err(|e| AppError::Database(e.to_string()))?
-        .try_get(0)
-        .map_err(|e| AppError::Database(e.to_string()))?;
+    let total = if include_total {
+        let count_query = format!(
+            "{cte}
+             SELECT COUNT(*)::bigint
+             {from_where}",
+            cte = ACCESSIBLE_CTE,
+            from_where = from_where,
+        );
+        client
+            .query_one(
+                &count_query,
+                &count_params.iter().map(|p| &**p as _).collect::<Vec<_>>(),
+            )
+            .await
+            .map_err(|e| AppError::Database(e.to_string()))?
+            .try_get(0)
+            .map_err(|e| AppError::Database(e.to_string()))?
+    } else {
+        0
+    };
 
     let mut list_params: Vec<Box<dyn tokio_postgres::types::ToSql + Sync>> =
         vec![Box::new(collection_ids)];
@@ -3945,13 +4224,109 @@ pub async fn search_items_in_collections(
         &mut list_param_idx,
         &search_pattern,
         &filters,
+        content_match.as_ref(),
     );
 
-    let order_by = if let Some(ref embedding) = filters.semantic_embedding {
-        if search_pattern.is_some() {
+    let sim_param_idx = match (
+        filters.semantic_embedding.as_ref(),
+        search_pattern.as_ref(),
+    ) {
+        (Some(embedding), Some(_)) => {
             let idx = list_param_idx;
             list_params.push(Box::new(embedding.clone()));
             list_param_idx += 1;
+            Some(idx)
+        }
+        _ => None,
+    };
+
+    let select_item_cols = "
+                ci.item_id, ci.definition_id, ci.notes as ci_notes, ci.added_at, ci.auto_progress,
+                ci.free_content_front, ci.free_content_back,
+                ci.canonical_form,
+                ci.langid, ci.owner_user_id, ci.license, ci.script, ci.is_original,
+                d.langid as lang_id,
+                coalesce(d.cached_username, '') as username,
+                d.definition, d.notes as notes, d.valsiid, d.cached_valsiword as word, ci.position,
+                c.collection_id, c.name as collection_name,
+                d.cached_source_langid as source_langid";
+
+    let media_select = "
+            EXISTS(SELECT 1 FROM collection_item_images cii
+                   WHERE cii.item_id = page.item_id AND cii.side = 'front') as has_front_image,
+            EXISTS(SELECT 1 FROM collection_item_images cii
+                   WHERE cii.item_id = page.item_id AND cii.side = 'back') as has_back_image,
+            EXISTS(SELECT 1 FROM collection_item_sounds cis
+                   WHERE cis.item_id = page.item_id) as has_sound";
+
+    let query = if filters.dedupe_by_content {
+        let sim_select = if let Some(idx) = sim_param_idx {
+            format!(", d.embedding <=> ${idx}::vector AS _sim")
+        } else {
+            ", NULL::float8 AS _sim".to_string()
+        };
+        let page_order = if sim_param_idx.is_some() {
+            "(CASE WHEN _sim IS NULL THEN 1 ELSE 0 END) ASC, \
+             _sim ASC NULLS LAST, \
+             collection_updated_at DESC, position ASC, added_at DESC"
+        } else {
+            "collection_updated_at DESC, position ASC, added_at DESC"
+        };
+        format!(
+            "{cte},
+             candidates AS MATERIALIZED (
+                SELECT
+                    {select_item_cols},
+                    c.updated_at AS collection_updated_at,
+                    COALESCE(d.cached_valsiword, ci.free_content_front, '') AS _valsi,
+                    COALESCE(d.definition, ci.free_content_back, '') AS _def,
+                    COALESCE(d.cached_source_langid, -1) AS _src,
+                    COALESCE(d.langid, ci.langid, -1) AS _tgt
+                    {sim_select}
+                {from_where}
+             ),
+             uniq AS MATERIALIZED (
+                SELECT * FROM (
+                    SELECT
+                        candidates.*,
+                        COUNT(*) OVER (PARTITION BY _valsi, _def, _src, _tgt)::int AS match_count,
+                        ROW_NUMBER() OVER (
+                            PARTITION BY _valsi, _def, _src, _tgt
+                            ORDER BY added_at ASC,
+                                     array_position($1::int[], collection_id) ASC NULLS LAST,
+                                     item_id ASC
+                        ) AS _rn
+                    FROM candidates
+                ) ranked
+                WHERE _rn = 1
+             ),
+             page AS MATERIALIZED (
+                SELECT * FROM uniq
+                ORDER BY {page_order}
+                LIMIT ${lim} OFFSET ${off}
+             )
+             SELECT
+                page.item_id, page.definition_id, page.ci_notes, page.added_at, page.auto_progress,
+                page.free_content_front, page.free_content_back,
+                page.canonical_form,
+                page.langid, page.owner_user_id, page.license, page.script, page.is_original,
+                page.lang_id, page.username, page.definition, page.notes, page.valsiid, page.word,
+                page.position, page.collection_id, page.collection_name,
+                page.source_langid,
+                page.match_count,
+                {media_select}
+             FROM page",
+            cte = ACCESSIBLE_CTE,
+            select_item_cols = select_item_cols,
+            sim_select = sim_select,
+            from_where = from_where,
+            page_order = page_order,
+            media_select = media_select,
+            lim = list_param_idx,
+            off = list_param_idx + 1,
+        )
+    } else {
+        let order_by = if let Some(idx) = sim_param_idx {
             format!(
                 "(CASE WHEN d.embedding IS NULL THEN 1 ELSE 0 END) ASC, \
                  d.embedding <=> ${idx}::vector ASC NULLS LAST, \
@@ -3960,47 +4335,35 @@ pub async fn search_items_in_collections(
             )
         } else {
             "c.updated_at DESC, ci.position ASC, ci.added_at DESC".to_string()
-        }
-    } else {
-        "c.updated_at DESC, ci.position ASC, ci.added_at DESC".to_string()
+        };
+        format!(
+            "{cte},
+             page AS MATERIALIZED (
+                SELECT
+                    {select_item_cols}
+                {from_where}
+                ORDER BY {order_by}
+                LIMIT ${lim} OFFSET ${off}
+             )
+             SELECT
+                page.item_id, page.definition_id, page.ci_notes, page.added_at, page.auto_progress,
+                page.free_content_front, page.free_content_back,
+                page.canonical_form,
+                page.langid, page.owner_user_id, page.license, page.script, page.is_original,
+                page.lang_id, page.username, page.definition, page.notes, page.valsiid, page.word,
+                page.position, page.collection_id, page.collection_name,
+                page.source_langid,
+                {media_select}
+             FROM page",
+            cte = ACCESSIBLE_CTE,
+            select_item_cols = select_item_cols,
+            from_where = from_where,
+            order_by = order_by,
+            media_select = media_select,
+            lim = list_param_idx,
+            off = list_param_idx + 1,
+        )
     };
-
-    let query = format!(
-        "{cte},
-         page AS MATERIALIZED (
-            SELECT
-                ci.item_id, ci.definition_id, ci.notes as ci_notes, ci.added_at, ci.auto_progress,
-                ci.free_content_front, ci.free_content_back,
-                ci.canonical_form,
-                ci.langid, ci.owner_user_id, ci.license, ci.script, ci.is_original,
-                d.langid as lang_id,
-                coalesce(d.cached_username, '') as username,
-                d.definition, d.notes as notes, d.valsiid, d.cached_valsiword as word, ci.position,
-                c.collection_id, c.name as collection_name
-            {from_where}
-            ORDER BY {order_by}
-            LIMIT ${lim} OFFSET ${off}
-         )
-         SELECT
-            page.item_id, page.definition_id, page.ci_notes, page.added_at, page.auto_progress,
-            page.free_content_front, page.free_content_back,
-            page.canonical_form,
-            page.langid, page.owner_user_id, page.license, page.script, page.is_original,
-            page.lang_id, page.username, page.definition, page.notes, page.valsiid, page.word,
-            page.position, page.collection_id, page.collection_name,
-            EXISTS(SELECT 1 FROM collection_item_images cii
-                   WHERE cii.item_id = page.item_id AND cii.side = 'front') as has_front_image,
-            EXISTS(SELECT 1 FROM collection_item_images cii
-                   WHERE cii.item_id = page.item_id AND cii.side = 'back') as has_back_image,
-            EXISTS(SELECT 1 FROM collection_item_sounds cis
-                   WHERE cis.item_id = page.item_id) as has_sound
-         FROM page",
-        cte = ACCESSIBLE_CTE,
-        from_where = from_where,
-        order_by = order_by,
-        lim = list_param_idx,
-        off = list_param_idx + 1,
-    );
     list_params.push(Box::new(per_page));
     list_params.push(Box::new(offset));
 
@@ -4051,6 +4414,12 @@ pub async fn search_items_in_collections(
                 flashcard: None,
                 collection_id: Some(cid),
                 collection_name: Some(row.get("collection_name")),
+                source_langid: row.try_get("source_langid").ok().flatten(),
+                collection_created_at: None,
+                match_count: row
+                    .try_get::<_, i32>("match_count")
+                    .ok()
+                    .filter(|c| *c > 1),
             }
         })
         .collect();
@@ -4147,6 +4516,7 @@ pub async fn search_items_in_collections_for_export(
         &mut count_param_idx,
         &search_pattern,
         &filters,
+        None,
     );
 
     let count_query = format!(
@@ -4179,6 +4549,7 @@ pub async fn search_items_in_collections_for_export(
         &mut list_param_idx,
         &search_pattern,
         &filters,
+        None,
     );
 
     let order_by = if let Some(ref embedding) = filters.semantic_embedding {
@@ -4263,6 +4634,7 @@ fn append_multi_collection_search_clauses(
     param_count: &mut usize,
     search_pattern: &Option<String>,
     filters: &ListCollectionItemsFilters,
+    content_match: Option<&ItemContentIdentity>,
 ) {
     if let Some(pattern) = search_pattern {
         // `cached_search_text` already concatenates word/rafsi/definition/notes/selmaho/glosswords
@@ -4337,6 +4709,10 @@ fn append_multi_collection_search_clauses(
 
     if filters.word_type.is_none() && filters.search_in_phrases == Some(false) {
         sql.push_str(" AND (d.cached_typeid IS DISTINCT FROM 15 OR ci.definition_id IS NULL)");
+    }
+
+    if let Some(ident) = content_match {
+        append_content_identity_match(sql, params, param_count, ident);
     }
 }
 
@@ -4470,6 +4846,9 @@ pub async fn update_item_notes(
         flashcard: None,
         collection_id: Some(collection_id),
         collection_name: None,
+        source_langid: None,
+        collection_created_at: None,
+        match_count: None,
     })
 }
 
@@ -4792,6 +5171,9 @@ pub async fn search_items(
                 flashcard: None,
                 collection_id: Some(cid),
                 collection_name: None,
+            source_langid: None,
+            collection_created_at: None,
+            match_count: None,
             }
         })
         .collect();

@@ -2559,8 +2559,10 @@ pub async fn export_search_results(
                 exclude_usernames: exclude_usernames.clone(),
                 source_langid: query.source_langid,
                 search_in_phrases: query.search_in_phrases,
-                semantic_embedding: semantic_embedding.clone(),
-            };
+            semantic_embedding: semantic_embedding.clone(),
+            match_item_id: None,
+            dedupe_by_content: false,
+        };
             crate::collections::service::search_items_in_collections_for_export(
                 pool,
                 collection_ids.clone(),
@@ -2638,6 +2640,8 @@ pub async fn export_search_results(
             source_langid: query.source_langid,
             search_in_phrases: query.search_in_phrases,
             semantic_embedding: None,
+            match_item_id: None,
+            dedupe_by_content: false,
         };
         crate::collections::service::search_items_in_collections_for_export(
             pool,

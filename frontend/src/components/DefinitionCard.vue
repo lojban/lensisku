@@ -5,8 +5,10 @@
       !disableBorder
         ? 'bg-white border rounded-lg hover:border-blue-300 transition-colors shadow hover:shadow-none'
         : '',
+      expandOnClick ? 'cursor-pointer' : '',
     ]"
     :data-definition-id="definitionId"
+    @click="onCardActivate"
   >
     <span v-if="showSimilarityBadge" class="badge-definition-similarity">
       {{
@@ -151,9 +153,14 @@
                   :title="t('components.definitionCard.copyTitle')"
                 />
                 <CollectionWidget
-                  v-if="auth.state.isLoggedIn && definition.definitionid"
+                  v-if="showCollectionWidget"
                   :definition-id="definition.definitionid"
+                  :item-id="collectionItemId"
+                  :is-collection-item="isCollectionItemCard"
                   :word="definition.valsiword ?? definition.word"
+                  :definition-text="collectionDefinitionText"
+                  :source-lang-id="definition.source_langid"
+                  :target-lang-id="definition.langid ?? definition.lang_id"
                   :external-collections="collections"
                   @collection-updated="updateCollections"
                 />
@@ -542,10 +549,20 @@
         </div>
       </div>
     </div>
+    <button
+      v-if="expandOnClick && collectionFooterLabel"
+      type="button"
+      class="definition-card-collection-footer text-left"
+      @click.stop="onCardActivate($event, true)"
+    >
+      {{ t('components.definitionCard.collectionLinkLabel') }}
+      <span class="definition-card-collection-footer-name">{{ collectionFooterLabel }}</span>
+    </button>
     <RouterLink
-      v-if="sourceCollectionLink"
+      v-else-if="sourceCollectionLink"
       :to="sourceCollectionLink"
       class="definition-card-collection-footer"
+      @click.stop
     >
       {{ t('components.definitionCard.collectionLinkLabel') }}
       <span class="definition-card-collection-footer-name">{{
@@ -713,6 +730,8 @@ interface DefinitionRecord {
   sound_url?: string
   collection_id?: number
   collection_name?: string
+  source_langid?: number
+  match_count?: number
 }
 
 interface LinkSearchDefinition {
@@ -867,6 +886,11 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  /** When true, clicking the card expands all matching collection items. */
+  expandOnClick: {
+    type: Boolean,
+    default: false,
+  },
   showExternalDeleteButton: {
     type: Boolean,
     default: false,
@@ -886,6 +910,7 @@ const emit = defineEmits([
   'refresh-definitions',
   'edit-item',
   'delete-item',
+  'card-activate',
 ])
 
 const MAX_VALSI_DISPLAY_LENGTH = 30
@@ -924,6 +949,38 @@ const sourceCollectionLink = computed(() => {
   if (!props.definition.definitionid) return `/collections/${id}`
   return null
 })
+const collectionItemId = computed(() => props.definition.item_id ?? props.itemId ?? null)
+const isCollectionItemCard = computed(
+  () =>
+    collectionItemId.value != null &&
+    (props.definition.collection_id != null || props.collectionId != null)
+)
+const collectionDefinitionText = computed(
+  () =>
+    props.definition.definition ||
+    props.definition.free_content_back ||
+    ''
+)
+const showCollectionWidget = computed(
+  () =>
+    auth.state.isLoggedIn &&
+    !!(props.definition.definitionid || isCollectionItemCard.value)
+)
+const collectionFooterLabel = computed(
+  () =>
+    props.definition.collection_name ||
+    (sourceCollectionLink.value
+      ? t('components.definitionCard.viewCollection')
+      : '')
+)
+const onCardActivate = (event?: MouseEvent, fromFooter = false) => {
+  if (!props.expandOnClick) return
+  if (!fromFooter) {
+    const target = event?.target as HTMLElement | undefined
+    if (target?.closest('a, button, input, textarea, select')) return
+  }
+  emit('card-activate')
+}
 const displayedValsi = computed(() =>
   valsiWord.value.length > MAX_VALSI_DISPLAY_LENGTH
     ? valsiWord.value.slice(0, MAX_VALSI_DISPLAY_LENGTH) + '…'

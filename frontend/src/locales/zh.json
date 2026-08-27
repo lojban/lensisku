@@ -141,6 +141,8 @@
     "metaDescription": "检索逻辑语词典与语料库。查找释义、例句与讨论。",
     "searchMetaDescription": "在逻辑语词典中搜索「{query}」的结果。",
     "globalDictionaryBelow": "以下释义来自全局词典。",
+    "collectionItemMatches": "所选合集中的匹配条目",
+    "backToSearchResults": "返回搜索结果",
     "addDefinition": "释义",
     "exportResults": "导出结果",
     "newFreeThread": "发起自由波",
@@ -763,7 +765,8 @@
     "notesLabel": "备注（可选）",
     "notesPlaceholder": "添加关于此释义的备注…",
     "addToCollectionButton": "加入合集",
-    "addedSuccess": "已成功加入合集！"
+    "addedSuccess": "已成功加入合集！",
+    "alreadyIncluded": "已收录"
   },
   "pagination": {
     "previous": "上一页",

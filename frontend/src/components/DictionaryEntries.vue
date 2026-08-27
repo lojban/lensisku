@@ -3,6 +3,7 @@
     <!-- Keep previous entries visible while loading; HomePage shows overlay spinner -->
     <div v-if="!error" class="grid gap-4 mb-6">
       <slot name="before" />
+      <slot name="collection-matches-before" />
       <template v-if="collectionMatches.length || showGlobalDictionaryBanner">
         <div v-for="def in collectionMatches" :key="collectionCardKey(def)">
           <DefinitionCard
@@ -18,7 +19,9 @@
             :collections="collections"
             :collection-id="def.collection_id"
             :item-id="def.item_id"
+            :expand-on-click="expandCollectionItems && !!def.item_id"
             @collection-updated="$emit('collection-updated', $event)"
+            @card-activate="$emit('expand-collection-item', def)"
           />
         </div>
         <div
@@ -92,7 +95,7 @@ import type { CachedCollection } from '@/composables/useCollectionsCache'
 import type { PropType } from 'vue'
 
 const { t } = useI18n()
-defineEmits(['collection-updated'])
+defineEmits(['collection-updated', 'expand-collection-item'])
 
 /** Matches `DefinitionCard` / API language rows for filters. */
 type DictionaryLanguageOption = {
@@ -155,6 +158,11 @@ const props = defineProps({
   },
   /** When true, show the “global dictionary below” divider after priority hits. */
   showGlobalDictionaryBanner: {
+    type: Boolean,
+    default: false,
+  },
+  /** When true, collection-item cards expand to every matching collection item on click. */
+  expandCollectionItems: {
     type: Boolean,
     default: false,
   },

@@ -5,7 +5,7 @@
       variant="empty"
       class="flex items-center gap-2 hover:text-yellow-600"
       :title="t('collectionWidget.addToCollection')"
-      @click="openModal"
+      @click.stop="openModal"
     >
       <StarPlus class="w-4 h-4" />
     </Button>
@@ -39,7 +39,7 @@
         <!-- Collections -->
         <div v-else class="max-h-64 overflow-y-auto overflow-x-hidden space-y-1">
           <Button
-            v-for="collection in collections"
+            v-for="collection in sortedCollections"
             :key="collection.collection_id"
             variant="plain"
             :disabled="isAddingTo === collection.collection_id"
@@ -53,6 +53,12 @@
           >
             <div class="min-w-0 flex-1 flex flex-wrap items-baseline gap-x-2 gap-y-0.5 text-left">
               <span class="text-sm text-gray-700 break-words">{{ collection.name }}</span>
+              <span
+                v-if="containingIds.has(collection.collection_id)"
+                class="badge badge-muted shrink-0"
+              >
+                {{ t('collectionWidget.alreadyIncluded') }}
+              </span>
               <span class="shrink-0 italic text-xs text-gray-500 whitespace-nowrap">
                 {{ t('collectionWidget.itemsCount', { count: collection.item_count }) }}</span
               >
@@ -159,10 +165,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted, onUnmounted, type PropType } from 'vue'
+import { ref, watch, computed, onMounted, onUnmounted, type PropType } from 'vue'
 import { useI18n } from 'vue-i18n'
 
-import { addCollectionItem, api } from '@/api'
+import { addCollectionItem, api, getCollectionMembership } from '@/api'
 import { Button, Checkbox, IconButton, Input, Textarea } from '@packages/ui'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import ModalComponent from '@/components/ModalComponent.vue'
@@ -186,11 +192,32 @@ const {
 const props = defineProps({
   definitionId: {
     type: Number,
-    required: true,
+    default: null,
+  },
+  itemId: {
+    type: Number,
+    default: null,
   },
   word: {
     type: String,
     required: true,
+  },
+  definitionText: {
+    type: String,
+    default: '',
+  },
+  sourceLangId: {
+    type: Number,
+    default: null,
+  },
+  targetLangId: {
+    type: Number,
+    default: null,
+  },
+  /** When true, membership is valsi+definition+languages (collection-item search hits). */
+  isCollectionItem: {
+    type: Boolean,
+    default: false,
   },
   /** Optional seed from a parent; shared cache is the source of truth once loaded. */
   externalCollections: {
@@ -218,6 +245,55 @@ const emit = defineEmits<{
   (e: 'collection-updated', collections: CachedCollection[]): void
 }>()
 
+const containingIds = ref<Set<number>>(new Set())
+
+const sortedCollections = computed(() => {
+  const ids = containingIds.value
+  return [...collections.value].sort((a, b) => {
+    const aIn = ids.has(a.collection_id) ? 0 : 1
+    const bIn = ids.has(b.collection_id) ? 0 : 1
+    return aIn - bIn
+  })
+})
+
+const addItemPayload = (extra?: Record<string, unknown>) => {
+  const notesValue = notes.value
+  // Collection-item cards without a dictionary id are forked as custom text.
+  if (props.isCollectionItem && !props.definitionId) {
+    return {
+      free_content_front: props.word,
+      free_content_back: props.definitionText || '',
+      language_id: props.targetLangId || undefined,
+      notes: notesValue,
+      ...extra,
+    }
+  }
+  return {
+    definition_id: props.definitionId,
+    notes: notesValue,
+    ...extra,
+  }
+}
+
+const refreshMembership = async () => {
+  const body: { definition_id?: number; item_id?: number } = {}
+  if (props.isCollectionItem && props.itemId) {
+    body.item_id = props.itemId
+  } else if (props.definitionId) {
+    body.definition_id = props.definitionId
+  } else {
+    containingIds.value = new Set()
+    return
+  }
+  try {
+    const response = await getCollectionMembership(body)
+    const ids = (response.data?.collection_ids || []) as number[]
+    containingIds.value = new Set(ids)
+  } catch (error) {
+    console.error('Error checking collection membership:', error)
+  }
+}
+
 const seedFromExternal = (list: CachedCollection[] | undefined) => {
   if (!list || list.length === 0) return
   if (!hasLoaded.value || collections.value.length === 0) {
@@ -239,7 +315,7 @@ const openModal = () => {
     isLoading.value = true
   }
   // Always revalidate in the background so list updates in place if it changed.
-  void refreshAndEmit().finally(() => {
+  void Promise.all([refreshAndEmit(), refreshMembership()]).finally(() => {
     isLoading.value = false
   })
 }
@@ -265,15 +341,13 @@ const createAndAddToCollection = async () => {
 
     const collectionId = response.data.collection_id
 
-    await addCollectionItem(collectionId, {
-      definition_id: props.definitionId,
-      notes: notes.value,
-    })
+    await addCollectionItem(collectionId, addItemPayload())
 
     newCollection.value = { name: '', description: '', is_public: true }
     showCreateForm.value = false
 
     await refreshAndEmit()
+    await refreshMembership()
   } catch (error) {
     console.error('Error creating collection:', error)
   } finally {
@@ -292,11 +366,7 @@ const confirmAddWithNotes = async () => {
   isAddingTo.value = selectedCollectionId.value
 
   try {
-    await addCollectionItem(selectedCollectionId.value, {
-      definition_id: props.definitionId,
-      notes: notes.value,
-      auto_progress: true,
-    })
+    await addCollectionItem(selectedCollectionId.value, addItemPayload({ auto_progress: true }))
 
     const updatedCollection = collections.value.find(
       (c) => c.collection_id === selectedCollectionId.value
@@ -306,6 +376,7 @@ const confirmAddWithNotes = async () => {
     }
 
     await refreshAndEmit()
+    await refreshMembership()
 
     showSuccess(t('collectionWidget.addedSuccess'))
 

@@ -1686,6 +1686,7 @@ pub async fn search_with_filtered_and_global_groups(
     collection_ids: Vec<i32>,
     mode: DictionarySearchMode,
     parsers: Option<&Arc<HashMap<i32, Peg>>>,
+    expand_collection_item: Option<i32>,
 ) -> Result<DefinitionResponse, Box<dyn std::error::Error>> {
     let author_usernames = params.usernames.clone();
     let exclude_usernames = params.exclude_usernames.clone();
@@ -1706,6 +1707,7 @@ pub async fn search_with_filtered_and_global_groups(
         if !has_collections {
             return Ok((Vec::new(), 0_i64));
         }
+        let expanding = expand_collection_item.is_some();
         let filters = crate::collections::dto::ListCollectionItemsFilters {
             languages: params.languages.clone(),
             selmaho: params.selmaho.clone(),
@@ -1716,19 +1718,27 @@ pub async fn search_with_filtered_and_global_groups(
             source_langid: params.source_langid,
             search_in_phrases: params.search_in_phrases,
             semantic_embedding: semantic_embedding.clone(),
+            match_item_id: expand_collection_item,
+            dedupe_by_content: !expanding,
         };
         let search = if params.search_term.trim().is_empty() {
             None
         } else {
             Some(params.search_term.clone())
         };
+        let fetch_per_page = if expanding {
+            crate::collections::service::MAX_MULTI_COLLECTION_PER_PAGE
+        } else {
+            FILTERED_GROUP_PER_PAGE
+        };
         crate::collections::service::search_items_in_collections(
             pool,
             collection_ids.clone(),
             1,
-            FILTERED_GROUP_PER_PAGE,
+            fetch_per_page,
             search,
             filters,
+            false,
         )
         .await
         .map(|r| (r.items, r.total))

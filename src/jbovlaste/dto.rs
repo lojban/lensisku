@@ -30,6 +30,9 @@ pub struct SearchDefinitionsQuery {
     /// When true, `username` / `collection_ids` form a priority filtered group, and
     /// `definitions` is the unscoped global group (excluding ids already in the filtered group).
     pub include_global_group: Option<bool>,
+    /// Expand a content-deduped collection hit: return every matching collection item
+    /// (same valsi + definition + source language + target language) instead of one card.
+    pub expand_collection_item: Option<i32>,
 }
 
 /// Parse a comma-separated username query param into a non-empty list.
@@ -120,6 +123,11 @@ pub struct FilteredCollectionHit {
     pub canonical_form: Option<String>,
     pub collection_id: Option<i32>,
     pub collection_name: Option<String>,
+    pub source_langid: Option<i32>,
+    #[schema(value_type = Option<String>, format = DateTime)]
+    pub collection_created_at: Option<DateTime<Utc>>,
+    /// Present when this row stands in for several identical collection items.
+    pub match_count: Option<i32>,
 }
 
 impl From<&crate::collections::dto::CollectionItemResponse> for FilteredCollectionHit {
@@ -142,6 +150,9 @@ impl From<&crate::collections::dto::CollectionItemResponse> for FilteredCollecti
             canonical_form: item.canonical_form.clone(),
             collection_id: item.collection_id,
             collection_name: item.collection_name.clone(),
+            source_langid: item.source_langid,
+            collection_created_at: item.collection_created_at,
+            match_count: item.match_count,
         }
     }
 }

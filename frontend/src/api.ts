@@ -296,6 +296,12 @@ export const unsubscribeFromValsi = (valsiId: number | string, triggerType: stri
 export const getCollections = (params?: Record<string, unknown>) =>
   api.get('/collections', { params })
 
+/** Which of the current user's collections already include this definition or collection item. */
+export const getCollectionMembership = (data: {
+  definition_id?: number
+  item_id?: number
+}) => api.post('/collections/membership', data)
+
 export const getPublicCollections = (params?: Record<string, unknown>) =>
   api.get('/collections/public', { params })
 

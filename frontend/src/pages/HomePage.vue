@@ -247,13 +247,23 @@
             :show-vote-buttons="false"
             :collections="collections"
             :collection-matches="collectionMatches"
+            :expand-collection-items="!expandCollectionItemId"
             :show-global-dictionary-banner="
               !similarDefinitionId &&
               (filters.selectedCollections?.length > 0 || filters.usernames?.length > 0)
             "
             :decomposition="decomposition || []"
             @collection-updated="setCollections($event)"
+            @expand-collection-item="expandCollectionItem"
           >
+            <template v-if="expandCollectionItemId" #collection-matches-before>
+              <div class="surface-definition-compact text-sm text-gray-700 flex flex-wrap items-center justify-between gap-2">
+                <p class="font-medium text-gray-800">{{ $t('home.collectionItemMatches') }}</p>
+                <Button variant="cancel" type="button" @click="clearCollectionItemExpand">
+                  {{ $t('home.backToSearchResults') }}
+                </Button>
+              </div>
+            </template>
             <template v-if="similarDefinitionId" #before>
               <div v-if="isLoadingSimilarAnchor" class="flex justify-center py-6">
                 <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600" />
@@ -587,6 +597,27 @@ const collectionMatches = ref<CollectionDefinitionCard[]>([])
 
 const router = useRouter()
 const route = useRoute()
+const expandCollectionItemId = computed(() => {
+  const n = parseInt(queryStr(route.query.expand_ci), 10)
+  return Number.isFinite(n) && n > 0 ? n : null
+})
+const expandCollectionItem = (def: { item_id?: number }) => {
+  if (!def.item_id) return
+  router.push({
+    query: commitHomeQuery({
+      ...route.query,
+      expand_ci: String(def.item_id),
+    }),
+  })
+}
+const clearCollectionItemExpand = () => {
+  router.push({
+    query: commitHomeQuery({
+      ...route.query,
+      expand_ci: undefined,
+    }),
+  })
+}
 const auth = useAuth()
 const decodedToken = computed((): JwtUserPayload | null => {
   if (typeof window === 'undefined') return null
@@ -861,6 +892,9 @@ const fetchDefinitions = async (page, search = '') => {
         params.collection_ids = collectionIds.join(',')
       }
     }
+    if (expandCollectionItemId.value) {
+      params.expand_collection_item = expandCollectionItemId.value
+    }
 
     let response
     if (auth.state.isLoggedIn || useSemantic) {
@@ -883,7 +917,9 @@ const fetchDefinitions = async (page, search = '') => {
       .map((item) => mapCollectionItemToDefinition(item))
       .filter((d): d is CollectionDefinitionCard => d != null)
     const authorHits = (response.data.filtered_definitions ?? []) as CollectionDefinitionCard[]
-    collectionMatches.value = [...collectionHits, ...authorHits]
+    collectionMatches.value = expandCollectionItemId.value
+      ? collectionHits
+      : [...collectionHits, ...authorHits]
 
     definitions.value = response.data.definitions
     total.value = response.data.total
@@ -1385,6 +1421,7 @@ const updateUrlWithFilters = () => {
       group_by_thread: groupByThread.value ? 'true' : undefined,
       wave_source: waveSource.value !== 'all' ? waveSource.value : undefined,
       page: undefined,
+      expand_ci: undefined,
     }),
   })
 }
@@ -1406,6 +1443,7 @@ const performSearch = ({ query, mode }: { query: string; mode: string }) => {
     definition_id: undefined,
     group_by_thread: groupByThread.value ? 'true' : undefined,
     page: undefined, // Always reset to page 1 for a new search
+    expand_ci: undefined,
     ...combinedFiltersToQuery(filters.value),
     wave_source: waveSource.value !== 'all' ? waveSource.value : undefined,
   })
@@ -1678,7 +1716,8 @@ watch(
       newQuery.source_langid !== oldQuery?.source_langid ||
       newQuery.searchInPhrases !== oldQuery?.searchInPhrases ||
       newQuery.wave_source !== oldQuery?.wave_source ||
-      newQuery.definition_id !== oldQuery?.definition_id
+      newQuery.definition_id !== oldQuery?.definition_id ||
+      newQuery.expand_ci !== oldQuery?.expand_ci
 
     const groupByThreadChanged = newQuery.group_by_thread !== oldQuery?.group_by_thread
     if (groupByThreadChanged) {
