@@ -302,6 +302,11 @@ export const getCollectionMembership = (data: {
   item_id?: number
 }) => api.post('/collections/membership', data)
 
+/** Parallel membership checks for search-result cards (same order as `items`). */
+export const getCollectionMembershipBatch = (data: {
+  items: Array<{ definition_id?: number; item_id?: number }>
+}) => api.post('/collections/membership/batch', data)
+
 export const getPublicCollections = (params?: Record<string, unknown>) =>
   api.get('/collections/public', { params })
 

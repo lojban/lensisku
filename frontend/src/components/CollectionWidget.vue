@@ -15,7 +15,11 @@
         <h3 class="text-xl font-bold">{{ t('collectionWidget.modalTitle') }}</h3>
       </template>
       <!-- Loading State -->
-      <LoadingSpinner v-if="isLoading" variant="inline" class="py-4" />
+      <LoadingSpinner
+        v-if="showModal && (isLoading || !membershipReady)"
+        variant="inline"
+        class="py-4"
+      />
       <!-- Collections List -->
 
       <div v-else>
@@ -168,10 +172,15 @@
 import { ref, watch, computed, onMounted, onUnmounted, type PropType } from 'vue'
 import { useI18n } from 'vue-i18n'
 
-import { addCollectionItem, api, getCollectionMembership } from '@/api'
+import { addCollectionItem, api } from '@/api'
 import { Button, Checkbox, IconButton, Input, Textarea } from '@packages/ui'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import ModalComponent from '@/components/ModalComponent.vue'
+import {
+  membershipCacheKey,
+  useCollectionMembershipCache,
+  type MembershipQuery,
+} from '@/composables/useCollectionMembershipCache'
 import {
   useCollectionsCache,
   type CachedCollection,
@@ -188,6 +197,12 @@ const {
   refresh,
   setCollections,
 } = useCollectionsCache()
+const {
+  membershipByKey,
+  preload: preloadMembership,
+  refresh: refreshMembershipCache,
+  markIncluded,
+} = useCollectionMembershipCache()
 
 const props = defineProps({
   definitionId: {
@@ -245,7 +260,29 @@ const emit = defineEmits<{
   (e: 'collection-updated', collections: CachedCollection[]): void
 }>()
 
-const containingIds = ref<Set<number>>(new Set())
+const membershipQuery = computed((): MembershipQuery => {
+  if (props.isCollectionItem && props.itemId) {
+    return { item_id: props.itemId }
+  }
+  if (props.definitionId) {
+    return { definition_id: props.definitionId }
+  }
+  return {}
+})
+
+const membershipKey = computed(() => membershipCacheKey(membershipQuery.value))
+
+const membershipReady = computed(() => {
+  const key = membershipKey.value
+  if (!key) return true
+  return Object.prototype.hasOwnProperty.call(membershipByKey.value, key)
+})
+
+const containingIds = computed(() => {
+  const key = membershipKey.value
+  if (!key) return new Set<number>()
+  return new Set(membershipByKey.value[key] ?? [])
+})
 
 const sortedCollections = computed(() => {
   const ids = containingIds.value
@@ -275,24 +312,7 @@ const addItemPayload = (extra?: Record<string, unknown>) => {
   }
 }
 
-const refreshMembership = async () => {
-  const body: { definition_id?: number; item_id?: number } = {}
-  if (props.isCollectionItem && props.itemId) {
-    body.item_id = props.itemId
-  } else if (props.definitionId) {
-    body.definition_id = props.definitionId
-  } else {
-    containingIds.value = new Set()
-    return
-  }
-  try {
-    const response = await getCollectionMembership(body)
-    const ids = (response.data?.collection_ids || []) as number[]
-    containingIds.value = new Set(ids)
-  } catch (error) {
-    console.error('Error checking collection membership:', error)
-  }
-}
+const refreshMembership = () => refreshMembershipCache(membershipQuery.value)
 
 const seedFromExternal = (list: CachedCollection[] | undefined) => {
   if (!list || list.length === 0) return
@@ -309,13 +329,19 @@ const refreshAndEmit = async () => {
 
 const openModal = () => {
   showModal.value = true
-  // Instant open from cache; spinner only when we have nothing to show yet.
-  const needsSpinner = !hasLoaded.value && collections.value.length === 0
+  // Instant open from cache; spinner until the collection list *and* membership
+  // labels are known so “already included” does not pop in after first paint.
+  const needsSpinner =
+    (!hasLoaded.value && collections.value.length === 0) || !membershipReady.value
   if (needsSpinner) {
     isLoading.value = true
   }
-  // Always revalidate in the background so list updates in place if it changed.
-  void Promise.all([refreshAndEmit(), refreshMembership()]).finally(() => {
+  void Promise.all([
+    refreshAndEmit(),
+    membershipReady.value
+      ? Promise.resolve()
+      : preloadMembership(membershipQuery.value),
+  ]).finally(() => {
     isLoading.value = false
   })
 }
@@ -343,11 +369,13 @@ const createAndAddToCollection = async () => {
 
     await addCollectionItem(collectionId, addItemPayload())
 
+    markIncluded(membershipQuery.value, collectionId)
+
     newCollection.value = { name: '', description: '', is_public: true }
     showCreateForm.value = false
 
     await refreshAndEmit()
-    await refreshMembership()
+    void refreshMembership()
   } catch (error) {
     console.error('Error creating collection:', error)
   } finally {
@@ -375,8 +403,10 @@ const confirmAddWithNotes = async () => {
       updatedCollection.item_count++
     }
 
+    markIncluded(membershipQuery.value, selectedCollectionId.value)
+
     await refreshAndEmit()
-    await refreshMembership()
+    void refreshMembership()
 
     showSuccess(t('collectionWidget.addedSuccess'))
 
@@ -412,9 +442,18 @@ watch(
   { deep: true, immediate: true }
 )
 
+watch(
+  membershipQuery,
+  (query) => {
+    void preloadMembership(query)
+  },
+  { immediate: true }
+)
+
 onMounted(() => {
   seedFromExternal(props.externalCollections as CachedCollection[])
   void preload()
+  void preloadMembership(membershipQuery.value)
   document.addEventListener('click', handleClickOutside)
 })
 

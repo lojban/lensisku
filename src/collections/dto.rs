@@ -41,6 +41,28 @@ pub struct CollectionMembershipResponse {
     pub collection_ids: Vec<i32>,
 }
 
+/// Body for `POST /collections/membership/batch`. Results are returned in the same order as `items`.
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct CollectionMembershipBatchRequest {
+    pub items: Vec<CollectionMembershipRequest>,
+}
+
+#[derive(Debug, Serialize, ToSchema)]
+pub struct CollectionMembershipBatchResponse {
+    /// Parallel to `items` in the request.
+    pub results: Vec<CollectionMembershipResponse>,
+}
+
+/// One search-hit row's membership in the caller's collections (optional on dictionary search).
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct SearchHitMembership {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub definition_id: Option<i32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub item_id: Option<i32>,
+    pub collection_ids: Vec<i32>,
+}
+
 #[derive(Debug, Deserialize, ToSchema)]
 pub struct CreateCollectionRequest {
     pub name: String,

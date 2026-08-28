@@ -159,6 +159,11 @@ import PaginationComponent from '@/components/PaginationComponent.vue'
 import SearchForm from '@/components/SearchForm.vue'
 import CombinedFiltersSkeleton from '@/components/skeletons/CombinedFiltersSkeleton.vue'
 import SearchFormSkeleton from '@/components/skeletons/SearchFormSkeleton.vue'
+import { useAuth } from '@/composables/useAuth'
+import {
+  membershipQueryFromCard,
+  useCollectionMembershipCache,
+} from '@/composables/useCollectionMembershipCache'
 import { useCollectionsCache } from '@/composables/useCollectionsCache'
 import { useLanguageSelection } from '@/composables/useLanguageSelection'
 import { useSeoHead } from '@/composables/useSeoHead'
@@ -183,6 +188,8 @@ import {
 const router = useRouter()
 const route = useRoute()
 const { collections, setCollections } = useCollectionsCache()
+const auth = useAuth()
+const { preload: preloadMembership } = useCollectionMembershipCache()
 const expandCollectionItemId = computed(() => {
   const n = parseInt(queryStr(route.query.expand_ci), 10)
   return Number.isFinite(n) && n > 0 ? n : null
@@ -231,6 +238,17 @@ const dictionaryDefinitions = computed(() => {
   if (!seen.size) return definitions.value
   return definitions.value.filter((d) => !d.definitionid || !seen.has(d.definitionid))
 })
+
+watch(
+  collectionMatches,
+  (rows) => {
+    if (!auth.state.isLoggedIn) return
+    for (const def of rows) {
+      void preloadMembership(membershipQueryFromCard(def))
+    }
+  },
+  { immediate: true }
+)
 
 // Get search query from localStorage or use default
 const getInitialSearchQuery = (): string => {

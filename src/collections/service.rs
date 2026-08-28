@@ -384,6 +384,132 @@ pub async fn collections_containing_item(
     })
 }
 
+const MAX_MEMBERSHIP_BATCH: usize = 100;
+
+/// Batch variant of [`collections_containing_item`]. Results are parallel to `req.items`.
+pub async fn collections_containing_items_batch(
+    pool: &Pool,
+    user_id: i32,
+    req: &CollectionMembershipBatchRequest,
+) -> AppResult<CollectionMembershipBatchResponse> {
+    let items: Vec<&CollectionMembershipRequest> = req.items.iter().take(MAX_MEMBERSHIP_BATCH).collect();
+    if items.is_empty() {
+        return Ok(CollectionMembershipBatchResponse { results: vec![] });
+    }
+
+    let client = pool
+        .get()
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+    let mut definition_ids: Vec<i32> = Vec::new();
+    let mut item_ids: Vec<i32> = Vec::new();
+    for item in &items {
+        if let Some(item_id) = item.item_id.filter(|id| *id > 0) {
+            item_ids.push(item_id);
+        } else if let Some(definition_id) = item.definition_id.filter(|id| *id > 0) {
+            definition_ids.push(definition_id);
+        }
+    }
+    definition_ids.sort_unstable();
+    definition_ids.dedup();
+    item_ids.sort_unstable();
+    item_ids.dedup();
+
+    let mut by_definition: HashMap<i32, Vec<i32>> = HashMap::new();
+    if !definition_ids.is_empty() {
+        let rows = client
+            .query(
+                "SELECT ci.definition_id, c.collection_id
+                 FROM collections c
+                 INNER JOIN collection_items ci ON ci.collection_id = c.collection_id
+                 WHERE c.user_id = $1
+                   AND ci.definition_id = ANY($2)
+                 ORDER BY ci.definition_id, c.updated_at DESC",
+                &[&user_id, &definition_ids],
+            )
+            .await
+            .map_err(|e| AppError::Database(e.to_string()))?;
+        for row in rows {
+            let definition_id: i32 = row.get("definition_id");
+            let collection_id: i32 = row.get("collection_id");
+            let entry = by_definition.entry(definition_id).or_default();
+            if !entry.contains(&collection_id) {
+                entry.push(collection_id);
+            }
+        }
+    }
+
+    let mut by_item: HashMap<i32, Vec<i32>> = HashMap::new();
+    if !item_ids.is_empty() {
+        let rows = client
+            .query(
+                "WITH src AS (
+                    SELECT
+                        ci.item_id,
+                        COALESCE(d.cached_valsiword, ci.free_content_front) AS valsi,
+                        COALESCE(d.definition, ci.free_content_back) AS definition,
+                        d.cached_source_langid AS source_langid,
+                        COALESCE(d.langid, ci.langid) AS langid
+                    FROM collection_items ci
+                    JOIN collections owner_c ON owner_c.collection_id = ci.collection_id
+                    LEFT JOIN definitions d ON d.definitionid = ci.definition_id
+                    WHERE ci.item_id = ANY($2)
+                      AND (owner_c.is_public = true OR owner_c.user_id = $1)
+                 )
+                 SELECT src.item_id, c.collection_id
+                 FROM src
+                 JOIN collections c ON c.user_id = $1
+                 JOIN collection_items ci ON ci.collection_id = c.collection_id
+                 LEFT JOIN definitions d ON d.definitionid = ci.definition_id
+                 WHERE (
+                    (
+                        ci.definition_id IS NOT NULL
+                        AND d.cached_valsiword IS NOT DISTINCT FROM src.valsi
+                        AND d.definition IS NOT DISTINCT FROM src.definition
+                        AND d.langid IS NOT DISTINCT FROM src.langid
+                        AND d.cached_source_langid IS NOT DISTINCT FROM src.source_langid
+                    )
+                    OR (
+                        ci.definition_id IS NULL
+                        AND ci.free_content_front IS NOT DISTINCT FROM src.valsi
+                        AND ci.free_content_back IS NOT DISTINCT FROM src.definition
+                        AND ci.langid IS NOT DISTINCT FROM src.langid
+                        AND src.source_langid IS NULL
+                    )
+                 )
+                 ORDER BY src.item_id, c.updated_at DESC",
+                &[&user_id, &item_ids],
+            )
+            .await
+            .map_err(|e| AppError::Database(e.to_string()))?;
+        for row in rows {
+            let item_id: i32 = row.get("item_id");
+            let collection_id: i32 = row.get("collection_id");
+            let entry = by_item.entry(item_id).or_default();
+            if !entry.contains(&collection_id) {
+                entry.push(collection_id);
+            }
+        }
+    }
+
+    let results = items
+        .iter()
+        .map(|item| {
+            let collection_ids = if let Some(item_id) = item.item_id.filter(|id| *id > 0) {
+                by_item.get(&item_id).cloned().unwrap_or_default()
+            } else if let Some(definition_id) = item.definition_id.filter(|id| *id > 0) {
+                by_definition.get(&definition_id).cloned().unwrap_or_default()
+            } else {
+                vec![]
+            };
+            CollectionMembershipResponse { collection_ids }
+        })
+        .collect();
+
+    Ok(CollectionMembershipBatchResponse { results })
+}
+
 /// Identity used to treat collection items as the same content.
 pub(crate) fn collection_item_content_key(
     item: &CollectionItemResponse,

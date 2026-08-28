@@ -91,10 +91,17 @@ import { useI18n } from 'vue-i18n'
 
 import AlertComponent from '@/components/AlertComponent.vue'
 import DefinitionCard from './DefinitionCard.vue'
+import { useAuth } from '@/composables/useAuth'
+import {
+  membershipQueryFromCard,
+  useCollectionMembershipCache,
+} from '@/composables/useCollectionMembershipCache'
 import type { CachedCollection } from '@/composables/useCollectionsCache'
 import type { PropType } from 'vue'
 
 const { t } = useI18n()
+const auth = useAuth()
+const { preload: preloadMembership } = useCollectionMembershipCache()
 defineEmits(['collection-updated', 'expand-collection-item'])
 
 /** Matches `DefinitionCard` / API language rows for filters. */
@@ -236,5 +243,20 @@ watch(
     visibleBatches.value = new Set([0])
   },
   { deep: true }
+)
+
+watch(
+  () =>
+    [auth.state.isLoggedIn, props.collectionMatches, props.definitions] as const,
+  () => {
+    if (!auth.state.isLoggedIn) return
+    for (const def of props.collectionMatches) {
+      void preloadMembership(membershipQueryFromCard(def))
+    }
+    for (const def of props.definitions) {
+      void preloadMembership(membershipQueryFromCard(def))
+    }
+  },
+  { immediate: true, deep: true }
 )
 </script>

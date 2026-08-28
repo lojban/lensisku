@@ -113,6 +113,35 @@ pub async fn collections_membership(
 }
 
 #[utoipa::path(
+    post,
+    path = "/collections/membership/batch",
+    tag = "collections",
+    request_body = CollectionMembershipBatchRequest,
+    responses(
+        (status = 200, description = "Membership lists parallel to the request items", body = CollectionMembershipBatchResponse),
+        (status = 500, description = "Internal server error")
+    ),
+    security(("bearer_auth" = [])),
+    summary = "Batch: which of my collections already include these definitions or items",
+    description = "Same matching rules as POST /collections/membership, for many search-result \
+                  cards in one request. Results are in the same order as `items` (capped server-side)."
+)]
+#[post("/membership/batch")]
+pub async fn collections_membership_batch(
+    pool: web::Data<Pool>,
+    claims: Claims,
+    req: web::Json<CollectionMembershipBatchRequest>,
+) -> impl Responder {
+    match service::collections_containing_items_batch(&pool, claims.sub, &req).await {
+        Ok(response) => HttpResponse::Ok().json(response),
+        Err(AppError::BadRequest(msg)) => HttpResponse::BadRequest().json(json!({ "error": msg })),
+        Err(e) => HttpResponse::InternalServerError().json(json!({
+            "error": format!("Failed to check collection membership: {}", e)
+        })),
+    }
+}
+
+#[utoipa::path(
     get,
     path = "/collections/public",
     tag = "collections",

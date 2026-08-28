@@ -15,9 +15,3 @@ alwaysApply: true
 - **Prefer standard, built-in approaches** from Vue, Nuxt, and the existing stack before adding new libraries or custom patterns.
 - **Avoid “spaghetti” classes**: do not pile many arbitrary utility overrides on one widget when the same look should be a named pattern from the config, a small wrapper component, or a Tailwind layer reused elsewhere.
 - **Minimize ad-hoc class overrides** in individual components when the same override repeats; extract to `tailwind.config.js`, a small wrapper component, or a shared class pattern so behavior stays consistent and maintainable.
-
-## Transfer-direction icons
-
-- **Import / upload** → arrow-**up** — `ImportIcon`, `FileImportIcon`, or `UploadIcon` from `@packages/ui`.
-- **Export / download** → arrow-**down** — `ExportIcon`, `FileExportIcon`, or `DownloadIcon` from `@packages/ui`.
-- Do not import `Upload`, `Download`, `FileUp`, `FileDown`, or `Import` directly from `@lucide/vue` (ESLint enforced). See `frontend/docs/brandbook.md` §5b.

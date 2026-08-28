@@ -1800,6 +1800,7 @@ pub async fn search_with_filtered_and_global_groups(
         total: global_response.total,
         filtered_collection_items,
         filtered_definitions,
+        collection_membership: Vec::new(),
     })
 }
 

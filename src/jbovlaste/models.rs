@@ -130,6 +130,8 @@ pub struct DefinitionResponse {
     pub filtered_collection_items: Vec<crate::jbovlaste::dto::FilteredCollectionHit>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub filtered_definitions: Vec<DefinitionDetail>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub collection_membership: Vec<crate::collections::dto::SearchHitMembership>,
 }
 
 impl DefinitionResponse {
@@ -140,6 +142,7 @@ impl DefinitionResponse {
             total,
             filtered_collection_items: Vec::new(),
             filtered_definitions: Vec::new(),
+            collection_membership: Vec::new(),
         }
     }
 }
