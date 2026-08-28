@@ -46,12 +46,17 @@
             v-for="collection in sortedCollections"
             :key="collection.collection_id"
             variant="plain"
-            :disabled="isAddingTo === collection.collection_id"
+            :disabled="
+              isAddingTo === collection.collection_id || containingIds.has(collection.collection_id)
+            "
             class="w-full min-w-0 px-3 py-2 text-left text-sm rounded-md flex items-center justify-between gap-2 group transition-colors [&>span]:!whitespace-normal [&>span]:min-w-0 [&>span]:w-full [&>span]:justify-between"
             :class="{
               'bg-indigo-100 hover:bg-indigo-200':
                 selectedCollectionId === collection.collection_id,
-              'hover:bg-gray-100': selectedCollectionId !== collection.collection_id,
+              'hover:bg-gray-100':
+                selectedCollectionId !== collection.collection_id &&
+                !containingIds.has(collection.collection_id),
+              'opacity-60 cursor-not-allowed': containingIds.has(collection.collection_id),
             }"
             @click="addToCollection(collection.collection_id)"
           >
@@ -72,11 +77,11 @@
               class="shrink-0 text-indigo-600 animate-spin text-sm"
               >↻</span
             >
-            <span v-else class="shrink-0 text-gray-400 invisible group-hover:visible">{{
-              selectedCollectionId === collection.collection_id
-                ? t('collectionWidget.selected')
-                : t('collectionWidget.select')
-            }}</span>
+            <span
+              v-else-if="!containingIds.has(collection.collection_id)"
+              class="shrink-0 text-gray-400 invisible group-hover:visible min-w-[3rem] text-right"
+              >{{ t('collectionWidget.select') }}</span
+            >
           </Button>
         </div>
       </div>
@@ -181,22 +186,13 @@ import {
   useCollectionMembershipCache,
   type MembershipQuery,
 } from '@/composables/useCollectionMembershipCache'
-import {
-  useCollectionsCache,
-  type CachedCollection,
-} from '@/composables/useCollectionsCache'
+import { useCollectionsCache, type CachedCollection } from '@/composables/useCollectionsCache'
 import { useSuccessToast } from '@/composables/useSuccessToast'
 import { StarPlus } from '@lucide/vue'
 
 const { t } = useI18n()
 const { showSuccess } = useSuccessToast()
-const {
-  collections,
-  hasLoaded,
-  preload,
-  refresh,
-  setCollections,
-} = useCollectionsCache()
+const { collections, hasLoaded, preload, refresh, setCollections } = useCollectionsCache()
 const {
   membershipByKey,
   preload: preloadMembership,
@@ -338,9 +334,7 @@ const openModal = () => {
   }
   void Promise.all([
     refreshAndEmit(),
-    membershipReady.value
-      ? Promise.resolve()
-      : preloadMembership(membershipQuery.value),
+    membershipReady.value ? Promise.resolve() : preloadMembership(membershipQuery.value),
   ]).finally(() => {
     isLoading.value = false
   })
