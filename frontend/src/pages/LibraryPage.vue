@@ -17,7 +17,7 @@
           class="hidden"
           @change="handleImportFile"
         />
-        <ToolbarSelectDropdown trigger-icon="ellipsis">
+        <ToolbarSelectDropdown trigger-icon="ellipsis" trigger-class="dropdown-action-trigger">
           <template #label>{{ t('collectionList.addActions') }}</template>
           <ToolbarSelectDropdownItem
             class="text-cyan-600 hover:bg-cyan-50"

@@ -153,6 +153,7 @@ Application code and **`Button.vue`** / **`IconButton.vue`** should use **semant
 
 - Text fields: **`.input-field`**, **`.textarea-field`** (inner shadow, blue focus ring).
 - Tall toolbar triggers (filters): **`.dropdown-trigger`** (height aligned with `h-10` inputs).
+- Action / overflow menus (ellipsis): **`.dropdown-action-trigger`** — Aqua uses glossy button chrome; Flat uses the select pill **without** inner shadow.
 - Password fields: **`.input-field-password-toggle`** for the eye toggle; pair with **`pr-10`** on the input.
 - File picking: **`.file-input-label`** pattern for accessible focus rings.
 - **Do not** recreate `rounded-full border border-gray-300 shadow-inner` ad hoc—use the classes above.

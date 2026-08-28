@@ -22,7 +22,11 @@
       </template>
       <template #title> {{ collection.name }} </template>
       <template #meta-actions>
-        <ToolbarSelectDropdown v-if="auth.state.isLoggedIn" trigger-icon="ellipsis">
+        <ToolbarSelectDropdown
+          v-if="auth.state.isLoggedIn"
+          trigger-icon="ellipsis"
+          trigger-class="dropdown-action-trigger"
+        >
           <template #label>{{ t('collectionDetail.actions') }}</template>
           <ToolbarSelectDropdownItem
             v-if="isOwner"

@@ -93,6 +93,7 @@
             v-if="auth.state.isLoggedIn && decodedRole !== 'Unconfirmed'"
             :aria-label="$t('home.addDefinition')"
             trigger-icon="ellipsis"
+            trigger-class="dropdown-action-trigger"
           >
             <template #label>
               <Plus class="h-4 w-4" />

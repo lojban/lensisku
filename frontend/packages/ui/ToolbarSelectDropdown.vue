@@ -6,8 +6,14 @@
           :id="id"
           type="button"
           :aria-label="ariaLabel"
-          class="dropdown-trigger w-auto max-w-full min-w-0"
-          :class="[variant === 'role' ? 'max-w-[min(100vw-4rem,14rem)]' : '', triggerClass]"
+          aria-haspopup="menu"
+          :aria-expanded="open"
+          class="w-auto max-w-full min-w-0"
+          :class="[
+            triggerIcon === 'ellipsis' ? 'dropdown-action-trigger' : 'dropdown-trigger',
+            variant === 'role' ? 'max-w-[min(100vw-4rem,14rem)]' : '',
+            triggerClass,
+          ]"
         >
           <span
             :class="

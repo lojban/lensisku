@@ -563,11 +563,6 @@ export default {
         '.filters-primary-selects': {
           '@apply grid grid-cols-2 gap-2 w-full min-w-0 flex-1': {},
         },
-        /** Default trigger for `Dropdown.vue` (ellipsis). */
-        '.dropdown-ellipsis-trigger': {
-          '@apply w-full sm:w-auto h-9 px-3 hover:bg-gray-100 rounded-full inline-flex items-center justify-between sm:justify-center gap-2 shrink-0':
-            {},
-        },
         /** Top strip on CombinedFilters (language row). */
         '.filters-bar-row': {
           '@apply flex flex-col sm:flex-row items-center sm:justify-between gap-4 md:p-4 md:bg-white md:rounded-lg md:shadow-sm':
@@ -795,6 +790,24 @@ export default {
           '&:hover:not(:disabled)': {
             '@apply border-blue-400': {},
           },
+        },
+        /**
+         * Action-menu trigger (ellipsis overflow). Theme chrome is in `buttonUiThemeLayer`:
+         * Aqua = glossy button; Flat = select pill without inset shadow.
+         */
+        '.dropdown-action-trigger': {
+          '@apply w-auto max-w-full min-w-0 h-6 min-h-[1.5rem] shrink-0 inline-flex items-center gap-2 px-3 text-left cursor-pointer select-none whitespace-nowrap transition-all disabled:opacity-40 disabled:cursor-not-allowed':
+            {},
+          '& > span': {
+            '@apply relative z-[3] min-w-0': {},
+          },
+          '& svg': {
+            '@apply relative z-[3] shrink-0': {},
+          },
+        },
+        /** Default trigger for `Dropdown.vue` (ellipsis action menu). */
+        '.dropdown-ellipsis-trigger': {
+          '@apply dropdown-action-trigger': {},
         },
         /** Compact toolbar panel used by list filters and controls. */
         '.toolbar-panel': {
@@ -1277,6 +1290,36 @@ export default {
           '&:hover': {
             filter: 'brightness(1.04)',
             borderColor: '#848484',
+          },
+        }
+        /**
+         * Action-menu trigger: Aqua matches toolbar glossy buttons (`btn-aqua-simple` chrome inlined
+         * because this layer cannot `@apply` primitives from the earlier `addComponents` pass).
+         * Flat matches `.dropdown-trigger` geometry without the inset field shadow.
+         */
+        aquaRules[selectorFor('aqua', 'dropdown-action-trigger')] = {
+          '@apply aqua-base justify-center cursor-pointer': {},
+          boxShadow:
+            '0 0.35em 0.45em rgba(2, 10, 26, 0.28),' +
+            '0 0.08em 0.18em hsla(var(--aqua-hue, 215), 85%, 46%, 0.42),' +
+            'inset 0 0.22em 0.45em hsla(calc(var(--aqua-hue, 215) - 8), 75%, 22%, 0.65),' +
+            'inset 0 0.4em 0.55em 0.2em hsla(var(--aqua-hue, 215), 95%, 68%, 0.28)',
+          '&[aria-expanded="true"]': {
+            '@apply brightness-105 saturate-150': {},
+          },
+        }
+        flatRules[selectorFor('flat', 'dropdown-action-trigger')] = {
+          '@apply justify-between text-sm font-normal text-gray-700 bg-white border border-gray-300 rounded-full focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 focus:z-50':
+            {},
+          boxShadow: 'none',
+          '&:hover:not(:disabled)': {
+            '@apply border-blue-400': {},
+          },
+          '&:focus-visible': {
+            '@apply ring-1 ring-blue-500 border-blue-500': {},
+          },
+          '&[aria-expanded="true"]': {
+            '@apply border-blue-500 ring-1 ring-blue-500 z-50': {},
           },
         }
         aquaRules[selectorFor('aqua', 'ui-tab.ui-tab--active')] = {

@@ -2,7 +2,7 @@
   <div ref="rootRef" :class="rootClass">
     <div aria-haspopup="true" :aria-expanded="open" @click="open = !open">
       <slot name="trigger" :open="open">
-        <button type="button" class="dropdown-ellipsis-trigger">
+        <button type="button" class="dropdown-action-trigger" aria-haspopup="menu" :aria-expanded="open">
           <span v-if="triggerLabel" class="text-sm text-gray-600">{{ triggerLabel }}</span>
           <EllipsisVertical class="w-4 h-4" />
         </button>
