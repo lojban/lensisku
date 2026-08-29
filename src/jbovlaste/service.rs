@@ -2773,7 +2773,7 @@ pub async fn add_definition(
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
 
-    let definition = add_definition_in_transaction(
+    let definition = match add_definition_in_transaction(
         &transaction,
         claims,
         parsers,
@@ -2781,11 +2781,20 @@ pub async fn add_definition(
         redis_cache,
         send_notifications,
     )
-    .await;
+    .await
+    {
+        Ok(result) => result,
+        Err(e) => {
+            // Roll back explicitly so we return the original failure, not a
+            // follow-on "current transaction is aborted" commit error.
+            let _ = transaction.rollback().await;
+            return Err(e);
+        }
+    };
 
     transaction.commit().await?;
 
-    definition
+    Ok(definition)
 }
 
 async fn add_definition_in_transaction(
@@ -2874,7 +2883,7 @@ async fn add_definition_in_transaction(
         .await?
     {
         Some(row) => row.get::<_, i32>("valsiid"),
-        None => transaction
+        None => match transaction
             .query_one(
                 "INSERT INTO valsi (word, typeId, userId, time, source_langid)
                      VALUES ($1, $2, $3, $4, $5)
@@ -2887,8 +2896,25 @@ async fn add_definition_in_transaction(
                     &source_langid,
                 ],
             )
-            .await?
-            .get::<_, i32>("valsiid"),
+            .await
+        {
+            Ok(row) => row.get::<_, i32>("valsiid"),
+            Err(e) => {
+                if e.as_db_error()
+                    .and_then(|d| d.constraint())
+                    .is_some_and(|c| {
+                        c == "valsi_word_source_langid_key" || c == "valsi_unique_word_nospaces"
+                    })
+                {
+                    return Err(format!(
+                        "Conflict: a valsi entry for '{}' (or the same letters without spaces) already exists",
+                        word
+                    )
+                    .into());
+                }
+                return Err(Box::new(e));
+            }
+        },
     };
 
     // Get next definition number

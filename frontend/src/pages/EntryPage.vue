@@ -23,7 +23,7 @@
           class="inline-flex shrink-0 items-center rounded-full px-2.5 py-1 text-xs font-medium sm:px-3 sm:text-sm"
           :class="getTypeClass(valsi.type_name)"
         >
-          {{ getWordTypeLabel(valsi.type_name) }}
+          {{ getWordTypeLabel(valsi.type_name, t) }}
         </span>
         <div
           v-if="valsi.decomposition"
@@ -161,7 +161,7 @@ import { AudioWaveform, BookOpen, Trash2, MessageCircle } from '@lucide/vue'
 import { ref, onMounted, watch, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
-import { getTypeClass } from '@/utils/wordTypeUtils' // Import shared utility
+import { getTypeClass, getWordTypeLabel } from '@/utils/wordTypeUtils'
 
 import {
   getValsiDefinitions,
@@ -215,7 +215,7 @@ const entryTitle = computed(() => valsi.value?.word || t('entryPage.entry'))
 const entryDescription = computed(() => {
   const v = valsi.value
   if (!v) return ''
-  const typeLabel = getWordTypeLabel(v.type_name)
+  const typeLabel = getWordTypeLabel(v.type_name, t)
   return t('entryPage.metaDescription', { word: v.word, type: typeLabel })
 })
 const entryCanonical = computed(() => route.fullPath)
@@ -300,18 +300,6 @@ const scrollToDefinition = () => {
       }
     }, 100)
   }
-}
-
-const getWordTypeLabel = (typeName) => {
-  if (!typeName) return ''
-  const key = `wordTypes.${typeName.replace(/'/g, 'h').replace(/ /g, '-')}`
-  const translated = t(key)
-  // If translation returns the key itself, it means the translation doesn't exist
-  // In that case, return the type name as fallback (except for experimental cmavo which is ok)
-  if (translated === key && typeName !== 'experimental cmavo') {
-    return typeName
-  }
-  return translated
 }
 
 onMounted(async () => {

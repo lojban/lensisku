@@ -67,7 +67,7 @@
     <!-- Word Type Display -->
     <div v-if="!isEditMode && wordType" class="space-y-4">
       <AlertComponent type="info" :label="t('upsertDefinition.detectedTypeLabel')">
-        <p class="font-semibold">{{ wordType }}</p>
+        <p class="font-semibold">{{ getWordTypeLabel(wordType, t) }}</p>
       </AlertComponent>
       <AlertComponent
         v-if="recommended"
@@ -466,6 +466,7 @@ import { useSuccessToast } from '@/composables/useSuccessToast'
 import { useSeoHead } from '@/composables/useSeoHead'
 import { queryStr } from '@/utils/routeQuery'
 import { normalizeSearchQuery } from '@/utils/searchQueryUtils'
+import { getWordTypeLabel } from '@/utils/wordTypeUtils'
 
 const props = defineProps({
   id: {

@@ -896,23 +896,6 @@ mod tests {
     }
 
     #[test]
-
-    #[test]
-    fn diagnose_vopi_word() {
-        let w = "vopi'irenosu'idau";
-        match std::panic::catch_unwind(|| word_type(w)) {
-            Ok(t) => println!("word_type={t:?} texts={:?}", word_texts(w)),
-            Err(_) => {
-                // parse_word panics on failure; try manual
-                use std::path::Path;
-                let grammar = std::fs::read_to_string(Path::new(env!("CARGO_MANIFEST_DIR")).join("src/grammar/lojban.peg")).unwrap();
-                let parser = Peg::new("text", &grammar).unwrap();
-                let ParseResult(_,_,_,result) = parser.parse(w);
-                println!("parse_result={result:?}");
-            }
-        }
-    }
-
     fn bu_letteral_detection() {
         assert_eq!(word_type("nu bu"), "bu-letteral");
         assert_eq!(word_type("mlatu bu"), "bu-letteral");

@@ -918,7 +918,8 @@ pub async fn add_definition(
             warning,
         }),
         Err(e) => {
-            let msg = e.to_string();
+            let msg = error_chain(&*e);
+            log::error!("Failed to add definition: {}", msg);
             if msg.contains("Conflict:") {
                 HttpResponse::Conflict().json(AddValsiResponse {
                     success: false,

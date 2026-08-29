@@ -18,3 +18,19 @@ const classMap: Record<string, string> = {
 export const getTypeClass = (type: string): string => {
   return `select-none ${classMap[type] || 'select-none bg-gray-100 text-gray-800'}`
 }
+
+/** i18n key for a backend word-type descriptor (e.g. "fu'ivla" → "wordTypes.fuhivla") */
+export const wordTypeLocaleKey = (typeName: string): string =>
+  `wordTypes.${typeName.replace(/'/g, 'h').replace(/ /g, '-')}`
+
+/** Localized label for a word type; falls back to the raw descriptor if untranslated */
+export const getWordTypeLabel = (
+  typeName: string | null | undefined,
+  t: (key: string) => string
+): string => {
+  if (!typeName) return ''
+  const key = wordTypeLocaleKey(typeName)
+  const translated = t(key)
+  if (translated === key) return typeName
+  return translated
+}
