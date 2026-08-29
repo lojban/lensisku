@@ -810,6 +810,7 @@
     "commitMessage": "「{message}」",
     "definitionLabel": "定義：",
     "notesLabel": "注：",
+    "etymologyLabel": "語源：",
     "glossKeywordsLabel": "グロスキーワード：",
     "placeKeywordsLabel": "項キーワード：",
     "languageLabel": "言語：",
@@ -1487,9 +1488,14 @@
       "fields": {
         "definition": "定義",
         "notes": "注",
+        "etymology": "語源",
         "gloss_keywords": "グロスキーワード",
         "place_keywords": "項キーワード",
-        "language": "言語"
+        "language": "言語",
+        "selmaho": "selma'o",
+        "jargon": "専門語",
+        "rafsi": "rafsi",
+        "image": "画像"
       },
       "imageAdded": "画像が追加されました",
       "imageRemoved": "画像が削除されました"

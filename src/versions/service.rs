@@ -6,7 +6,7 @@ use crate::{auth::permissions::PermissionCache, jbovlaste::KeywordMapping};
 use deadpool_postgres::Pool;
 
 const VERSION_SELECT_SQL: &str = "SELECT v.*, u.username,
-             v.definition, v.notes, v.selmaho, v.jargon, v.rafsi,
+             v.definition, v.notes, v.etymology, v.selmaho, v.jargon, v.rafsi,
              v.gloss_keywords::text as gloss_json,
              v.place_keywords::text as place_json,
              EXISTS(SELECT 1 FROM definition_images di WHERE di.definition_id = v.definition_id
@@ -37,6 +37,7 @@ fn version_from_row(row: &tokio_postgres::Row) -> Version {
         content: VersionContent {
             definition: row.get("definition"),
             notes: row.get("notes"),
+            etymology: row.get("etymology"),
             selmaho: row.get("selmaho"),
             jargon: row.get("jargon"),
             rafsi: row.get("rafsi"),
@@ -195,9 +196,9 @@ pub async fn create_version(
     let row = transaction
         .query_one(
             "INSERT INTO definition_versions 
-             (definition_id, langid, valsiid, definition, notes, selmaho, jargon, rafsi,
+             (definition_id, langid, valsiid, definition, notes, etymology, selmaho, jargon, rafsi,
               gloss_keywords, place_keywords, user_id, message)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
              RETURNING version_id, created_at",
             &[
                 &definition_id,
@@ -205,6 +206,7 @@ pub async fn create_version(
                 &valsi_id,
                 &content.definition,
                 &content.notes,
+                &content.etymology,
                 &content.selmaho,
                 &content.jargon,
                 &content.rafsi,
@@ -297,12 +299,13 @@ pub async fn revert_to_version(
     transaction
         .execute(
             "UPDATE definitions 
-             SET definition = $1, notes = $2, selmaho = $3, jargon = $4, rafsi = $5,
-                 langid = $6, definitionnum = $7
-             WHERE definitionid = $8",
+             SET definition = $1, notes = $2, etymology = $3, selmaho = $4, jargon = $5, rafsi = $6,
+                 langid = $7, definitionnum = $8
+             WHERE definitionid = $9",
             &[
                 &old_version.content.definition,
                 &old_version.content.notes,
+                &old_version.content.etymology,
                 &old_version.content.selmaho,
                 &old_version.content.jargon,
                 &old_version.content.rafsi,
@@ -391,67 +394,10 @@ pub async fn get_diff(
     let old_version = get_version_with_transaction(transaction, from_version).await?;
     let new_version = get_version_with_transaction(transaction, to_version).await?;
 
-    let mut changes = Vec::new();
-
-    // Compare basic fields
-    compare_field(
-        "definition",
-        &old_version.content.definition,
-        &new_version.content.definition,
-        &mut changes,
-    );
-
-    compare_option_field(
-        "notes",
-        &old_version.content.notes,
-        &new_version.content.notes,
-        &mut changes,
-    );
-
-    compare_option_field(
-        "selmaho",
-        &old_version.content.selmaho,
-        &new_version.content.selmaho,
-        &mut changes,
-    );
-
-    compare_option_field(
-        "jargon",
-        &old_version.content.jargon,
-        &new_version.content.jargon,
-        &mut changes,
-    );
-
-    compare_option_field(
-        "rafsi",
-        &old_version.content.rafsi,
-        &new_version.content.rafsi,
-        &mut changes,
-    );
-
-    compare_language(&old_version.content, &new_version.content, &mut changes);
-
-    // Compare keywords
-    compare_keywords(
-        "gloss_keywords",
-        &old_version.content.gloss_keywords,
-        &new_version.content.gloss_keywords,
-        &mut changes,
-    );
-
-    compare_keywords(
-        "place_keywords",
-        &old_version.content.place_keywords,
-        &new_version.content.place_keywords,
-        &mut changes,
-    );
-
-    // Compare image presence
-    compare_image(
+    let changes = compute_content_changes(
         new_version.definition_id,
-        old_version.content.has_image,
-        new_version.content.has_image,
-        &mut changes,
+        &old_version.content,
+        &new_version.content,
     );
 
     Ok(VersionDiff {
@@ -461,16 +407,102 @@ pub async fn get_diff(
     })
 }
 
+/// Diff two version payloads (also used for first-version “added” recent-change diffs).
+pub fn compute_content_changes(
+    definition_id: i32,
+    old_content: &VersionContent,
+    new_content: &VersionContent,
+) -> Vec<Change> {
+    let mut changes = Vec::new();
+
+    compare_field(
+        "definition",
+        &old_content.definition,
+        &new_content.definition,
+        &mut changes,
+    );
+
+    compare_option_field(
+        "notes",
+        &old_content.notes,
+        &new_content.notes,
+        &mut changes,
+    );
+
+    compare_option_field(
+        "etymology",
+        &old_content.etymology,
+        &new_content.etymology,
+        &mut changes,
+    );
+
+    compare_option_field(
+        "selmaho",
+        &old_content.selmaho,
+        &new_content.selmaho,
+        &mut changes,
+    );
+
+    compare_option_field(
+        "jargon",
+        &old_content.jargon,
+        &new_content.jargon,
+        &mut changes,
+    );
+
+    compare_option_field(
+        "rafsi",
+        &old_content.rafsi,
+        &new_content.rafsi,
+        &mut changes,
+    );
+
+    compare_language(old_content, new_content, &mut changes);
+
+    compare_keywords(
+        "gloss_keywords",
+        &old_content.gloss_keywords,
+        &new_content.gloss_keywords,
+        &mut changes,
+    );
+
+    compare_keywords(
+        "place_keywords",
+        &old_content.place_keywords,
+        &new_content.place_keywords,
+        &mut changes,
+    );
+
+    compare_image(
+        definition_id,
+        old_content.has_image,
+        new_content.has_image,
+        &mut changes,
+    );
+
+    changes
+}
+
 fn compare_field(field: &str, old_value: &str, new_value: &str, changes: &mut Vec<Change>) {
-    if old_value != new_value {
-        changes.push(Change {
-            field: field.to_string(),
-            old_value: Some(old_value.to_string()),
-            new_value: Some(new_value.to_string()),
-            change_type: ChangeType::Modified,
-            image_url: None,
-        });
+    if old_value == new_value {
+        return;
     }
+    let (old_value, new_value, change_type) = match (old_value.is_empty(), new_value.is_empty()) {
+        (true, false) => (None, Some(new_value.to_string()), ChangeType::Added),
+        (false, true) => (Some(old_value.to_string()), None, ChangeType::Removed),
+        _ => (
+            Some(old_value.to_string()),
+            Some(new_value.to_string()),
+            ChangeType::Modified,
+        ),
+    };
+    changes.push(Change {
+        field: field.to_string(),
+        old_value,
+        new_value,
+        change_type,
+        image_url: None,
+    });
 }
 
 fn compare_language(old: &VersionContent, new: &VersionContent, changes: &mut Vec<Change>) {

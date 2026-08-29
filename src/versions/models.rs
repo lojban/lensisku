@@ -21,6 +21,7 @@ pub struct Version {
 pub struct VersionContent {
     pub definition: String,
     pub notes: Option<String>,
+    pub etymology: Option<String>,
     pub selmaho: Option<String>,
     pub jargon: Option<String>,
     pub rafsi: Option<String>,

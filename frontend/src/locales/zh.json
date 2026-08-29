@@ -815,6 +815,7 @@
     "commitMessage": "「{message}」",
     "definitionLabel": "释义：",
     "notesLabel": "备注：",
+    "etymologyLabel": "词源：",
     "glossKeywordsLabel": "关键词：",
     "placeKeywordsLabel": "位关键词：",
     "languageLabel": "语言：",
@@ -1492,9 +1493,14 @@
       "fields": {
         "definition": "释义",
         "notes": "备注",
+        "etymology": "词源",
         "gloss_keywords": "关键词",
         "place_keywords": "位关键词",
-        "language": "语言"
+        "language": "语言",
+        "selmaho": "selma'o",
+        "jargon": "术语",
+        "rafsi": "rafsi",
+        "image": "图片"
       },
       "imageAdded": "图片已添加",
       "imageRemoved": "图片已删除"

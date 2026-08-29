@@ -840,6 +840,7 @@
     "definitionLabel": "Definition:",
     "bodyLabel": "Body:",
     "notesLabel": "Notes:",
+    "etymologyLabel": "Etymology:",
     "glossKeywordsLabel": "Gloss keywords:",
     "placeKeywordsLabel": "Place keywords:",
     "languageLabel": "Language:",
@@ -1516,9 +1517,14 @@
       "fields": {
         "definition": "Definition",
         "notes": "Notes",
+        "etymology": "Etymology",
         "gloss_keywords": "Gloss keywords",
         "place_keywords": "Place keywords",
-        "language": "Language"
+        "language": "Language",
+        "selmaho": "selma'o",
+        "jargon": "Jargon",
+        "rafsi": "Rafsi",
+        "image": "Image"
       },
       "imageAdded": "Image added",
       "imageRemoved": "Image removed"

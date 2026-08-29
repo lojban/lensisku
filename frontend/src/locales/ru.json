@@ -765,6 +765,7 @@
     "commitMessage": "\"{message}\"",
     "definitionLabel": "Определение:",
     "notesLabel": "Заметки:",
+    "etymologyLabel": "Этимология:",
     "glossKeywordsLabel": "Ключевые слова (глоссы):",
     "placeKeywordsLabel": "Ключевые слова (места):",
     "languageLabel": "Язык:",
@@ -1441,9 +1442,14 @@
       "fields": {
         "definition": "Определение",
         "notes": "Заметки",
+        "etymology": "Этимология",
         "gloss_keywords": "Ключевые слова (глоссы)",
         "place_keywords": "Ключевые слова (места)",
-        "language": "Язык"
+        "language": "Язык",
+        "selmaho": "Селмахо",
+        "jargon": "Жаргон",
+        "rafsi": "Рафси",
+        "image": "Изображение"
       },
       "imageAdded": "Изображение добавлено",
       "imageRemoved": "Изображение удалено"

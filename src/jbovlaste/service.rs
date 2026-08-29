@@ -84,9 +84,9 @@ use crate::middleware::cache::RedisCache;
 use crate::subscriptions::models::SubscriptionTrigger;
 use crate::versions::service::{
     get_diff, get_version_with_transaction, next_definitionnum_for_language,
-    retarget_definition_votes,
+    retarget_definition_votes, compute_content_changes,
 };
-use crate::versions::{Change, ChangeType, VersionContent, VersionDiff};
+use crate::versions::{VersionContent, VersionDiff};
 use base64::engine::general_purpose::STANDARD as BASE64;
 use base64::Engine;
 use camxes_rs::camxes::peg::parsing::ParseResult;
@@ -5120,38 +5120,20 @@ pub async fn get_recent_changes(
                                 get_diff(&transaction, prev_id, version_id).await
                             } else {
                                 let current = get_version_with_transaction(&transaction, version_id).await?;
-                                let current_definition = current.content.definition.clone();
-                                let current_has_image = current.content.has_image.unwrap_or(false);
-
-                                let mut first_changes = vec![Change {
-                                    field: "definition".to_string(),
-                                    old_value: Some(String::new()),
-                                    new_value: Some(current_definition),
-                                    change_type: ChangeType::Added,
-                                    image_url: None,
-                                }];
-                                if current_has_image {
-                                    let def_id = current.definition_id;
-                                    first_changes.push(Change {
-                                        field: "image".to_string(),
-                                        old_value: None,
-                                        new_value: Some("image added".to_string()),
-                                        change_type: ChangeType::Added,
-                                        image_url: Some(format!(
-                                            "/api/jbovlaste/definition_image/{}/image",
-                                            def_id
-                                        )),
-                                    });
-                                }
-
+                                let empty_old = VersionContent {
+                                    definition: String::new(),
+                                    has_image: Some(false),
+                                    ..Default::default()
+                                };
+                                let changes = compute_content_changes(
+                                    current.definition_id,
+                                    &empty_old,
+                                    &current.content,
+                                );
                                 Ok(VersionDiff {
-                                    old_content: VersionContent {
-                                        definition: String::new(),
-                                        has_image: Some(false),
-                                        ..Default::default()
-                                    },
+                                    old_content: empty_old,
                                     new_content: current.content,
-                                    changes: first_changes,
+                                    changes,
                                 })
                             } {
                                 Ok(mut diff) => {

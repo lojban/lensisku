@@ -64,6 +64,13 @@
               <LazyMathJax :content="version.content.notes" />
             </div>
           </div>
+
+          <div v-if="!isWikiMode && version.content.etymology">
+            <span class="font-medium">{{ t('versionHistory.etymologyLabel') }}</span>
+            <div class="mt-1 bg-gray-50 p-2 rounded">
+              <LazyMathJax :content="version.content.etymology" />
+            </div>
+          </div>
           <!-- Keywords -->
           <div v-if="!isWikiMode && version.content.gloss_keywords?.length" class="mt-2">
             <span class="font-medium">{{ t('versionHistory.glossKeywordsLabel') }}</span>
