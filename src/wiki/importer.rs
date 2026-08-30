@@ -879,14 +879,15 @@ async fn resolve_mw_user_id(
     {
         return Ok(row.get("userid"));
     }
+    // username is varchar, email is text — Postgres cannot type a shared `$1`.
     let row = client
         .query_one(
             "INSERT INTO users (
                 username, email, password, created_at, role, email_confirmed, votesize
-             ) VALUES ($1, $1, 'DISABLED', NOW(), 'blocked', false, 0)
+             ) VALUES ($1, $2, 'DISABLED', NOW(), 'blocked', false, 0)
              ON CONFLICT (username) DO UPDATE SET username = users.username
              RETURNING userid",
-            &[&local],
+            &[&local, &local],
         )
         .await
         .map_err(|e| WikiSyncError::Db(e.to_string()))?;
