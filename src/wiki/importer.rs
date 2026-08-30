@@ -5,6 +5,7 @@
 //! also writes new MediaWiki revisions into `definition_versions`. A batch
 //! `import_revision_histories` pass backfills remaining history.
 
+use std::collections::HashSet;
 use std::time::Duration;
 
 use chrono::{DateTime, TimeDelta, Utc};
@@ -102,7 +103,7 @@ struct RevSlotMain {
     content: Option<String>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 struct MwApiError {
     code: Option<String>,
     info: Option<String>,
@@ -620,7 +621,6 @@ async fn sync_page_history_after_upsert(
         latest_revid,
         imported_until,
         fallback_user_id,
-        p.revisions.first().cloned(),
     )
     .await
 }
@@ -688,7 +688,6 @@ pub async fn import_revision_histories(pool: &Pool) -> Result<(), WikiSyncError>
             latest_revid,
             imported_until,
             importer_user_id,
-            None,
         )
         .await
         {
@@ -722,120 +721,278 @@ async fn officialdata_user_id(pool: &Pool) -> Result<i32, WikiSyncError> {
     })
 }
 
-#[allow(clippy::too_many_arguments)]
+/// MediaWiki revids are wiki-wide and not ordered by that page's edit time, so
+/// `history_imported_until` is an `rvstartid` cursor (last enumerated revision),
+/// not `max(revid)`. Skip only the inclusive start id.
+fn skip_inclusive_history_cursor(revid: i64, start_after: i64) -> bool {
+    start_after > 0 && revid == start_after
+}
+
+fn newer_revision(current: Option<RevEntry>, candidate: RevEntry) -> Option<RevEntry> {
+    match current {
+        None => Some(candidate),
+        Some(cur) => match (&cur.timestamp, &candidate.timestamp) {
+            (Some(a), Some(b)) if b > a => Some(candidate),
+            (None, Some(_)) => Some(candidate),
+            _ => Some(cur),
+        },
+    }
+}
+
+fn is_bad_rvstartid(err: &WikiSyncError) -> bool {
+    match err {
+        WikiSyncError::Api(msg) => {
+            msg.contains("badid_startid") || msg.contains("rvnosuchrevid")
+        }
+        _ => false,
+    }
+}
+
+fn rev_wikitext(rev: &RevEntry) -> String {
+    rev.slots
+        .as_ref()
+        .and_then(|s| s.main.as_ref())
+        .and_then(|m| m.content.clone().or_else(|| m.star.clone()))
+        .unwrap_or_default()
+}
+
 async fn import_one_page_history(
     pool: &Pool,
     http: &reqwest::Client,
     page_id: i32,
     title: &str,
-    _latest_revid: i64,
+    latest_revid: i64,
     imported_until: i64,
     fallback_user_id: i32,
-    known_latest: Option<RevEntry>,
 ) -> Result<(), WikiSyncError> {
-    let mut revisions = fetch_page_revision_history(http, page_id as i64, imported_until).await?;
-    if let Some(rev) = known_latest {
-        let extra_id = rev.revid.unwrap_or(0);
-        if extra_id > imported_until && !revisions.iter().any(|r| r.revid == Some(extra_id)) {
-            revisions.push(rev);
-        }
-    }
-    if revisions.is_empty() {
-        // Do not advance the watermark: the new edit may not be in the RC/history
-        // API yet, and we must retry on the next sync.
-        return Ok(());
-    }
     let (definition_id, valsi_id, lang_id) =
         ensure_mw_wiki_definition(pool, page_id, title, fallback_user_id).await?;
-    let mut newest: Option<&RevEntry> = None;
-    let mut imported_max = imported_until;
-    for rev in &revisions {
-        let Some(revid) = rev.revid else {
-            continue;
-        };
-        if revid <= imported_until {
-            continue;
-        }
-        let user_id = resolve_mw_user_id(pool, rev.user.as_deref(), fallback_user_id).await?;
-        let wikitext = rev
-            .slots
-            .as_ref()
-            .and_then(|s| s.main.as_ref())
-            .and_then(|m| m.content.clone().or_else(|| m.star.clone()))
-            .unwrap_or_default();
-        let (md, _plain) = wikitext_to_markdown(&wikitext);
-        let created_at: DateTime<Utc> = rev
-            .timestamp
-            .as_deref()
-            .and_then(|s| DateTime::parse_from_rfc3339(s).ok())
-            .map(|d| d.with_timezone(&Utc))
-            .unwrap_or_else(Utc::now);
-        let comment = rev
-            .comment
-            .as_deref()
-            .map(str::trim)
-            .filter(|s| !s.is_empty())
-            .map(|s| s.to_string())
-            .unwrap_or_else(|| format!("mw.lojban.org r{revid}"));
-        insert_mw_version(
-            pool,
-            definition_id,
-            lang_id,
-            valsi_id,
-            &md,
-            user_id,
-            created_at,
-            &comment,
-            revid,
+
+    let mut start_after = imported_until;
+    let mut rvcontinue: Option<String> = None;
+    let mut newest: Option<RevEntry> = None;
+
+    loop {
+        let batch = match fetch_revision_batch(
+            http,
+            page_id as i64,
+            start_after,
+            rvcontinue.as_deref(),
+            true,
         )
-        .await?;
-        imported_max = imported_max.max(revid);
-        newest = Some(rev);
-    }
-    if let Some(rev) = newest {
-        let wikitext = rev
-            .slots
-            .as_ref()
-            .and_then(|s| s.main.as_ref())
-            .and_then(|m| m.content.clone().or_else(|| m.star.clone()))
-            .unwrap_or_default();
-        let (md, plain) = wikitext_to_markdown(&wikitext);
-        let last_edited: Option<DateTime<Utc>> = rev.timestamp.as_deref().and_then(|s| {
-            DateTime::parse_from_rfc3339(s)
-                .ok()
-                .map(|d| d.with_timezone(&Utc))
-        });
-        let unix = last_edited.map(|d| d.timestamp() as i32).unwrap_or(0);
-        let client = pool
-            .get()
-            .await
-            .map_err(|e| WikiSyncError::Db(e.to_string()))?;
-        client
-            .execute(
-                "UPDATE definitions
-                 SET definition = $1, time = $2, embedding = NULL
-                 WHERE definitionid = $3",
-                &[&md, &unix, &definition_id],
+        .await
+        {
+            Err(e) if start_after > 0 && is_bad_rvstartid(&e) => {
+                warn!(
+                    "wiki: rvstartid {start_after} rejected for {title} (page {page_id}); \
+                     restarting history from oldest"
+                );
+                start_after = 0;
+                fetch_revision_batch(http, page_id as i64, 0, None, true).await?
+            }
+            other => other?,
+        };
+
+        let mut last_enumerated: Option<i64> = None;
+        for rev in &batch.revisions {
+            let Some(revid) = rev.revid else {
+                continue;
+            };
+            last_enumerated = Some(revid);
+            if skip_inclusive_history_cursor(revid, start_after) {
+                continue;
+            }
+            store_mw_revision(
+                pool,
+                definition_id,
+                lang_id,
+                valsi_id,
+                rev,
+                fallback_user_id,
             )
-            .await
-            .map_err(|e| WikiSyncError::Db(e.to_string()))?;
-        client
-            .execute(
-                "UPDATE wiki_articles
-                 SET markdown = $1, plain_text = $2, wikitext = $3,
-                     last_edited = COALESCE($4, last_edited)
-                 WHERE page_id = $5",
-                &[&md, &plain, &wikitext, &last_edited, &page_id],
-            )
-            .await
-            .map_err(|e| WikiSyncError::Db(e.to_string()))?;
+            .await?;
+            newest = Some(rev.clone());
+        }
+        // Persist the last enumerated revid (timestamp order), never max(revid).
+        if let Some(cursor) = last_enumerated {
+            mark_history_imported(pool, page_id, cursor).await?;
+        }
+
+        match batch.rvcontinue {
+            Some(c) => rvcontinue = Some(c),
+            None => break,
+        }
     }
-    // Only advance to revids we actually wrote. Never jump to the mirrored
-    // latest revid if that revision was missing from the history API.
-    if imported_max > imported_until {
-        mark_history_imported(pool, page_id, imported_max).await?;
+
+    let api_ids = fetch_page_revision_ids(http, page_id as i64).await?;
+    let have = load_imported_mw_revids(pool, definition_id).await?;
+    let missing: Vec<i64> = api_ids
+        .iter()
+        .copied()
+        .filter(|id| !have.contains(id))
+        .collect();
+    if !missing.is_empty() {
+        warn!(
+            "wiki: {title} (page {page_id}) missing {} revision(s); fetching by revid",
+            missing.len()
+        );
+        for chunk in missing.chunks(50) {
+            let revs = fetch_revisions_by_ids(http, chunk).await?;
+            for rev in revs {
+                store_mw_revision(
+                    pool,
+                    definition_id,
+                    lang_id,
+                    valsi_id,
+                    &rev,
+                    fallback_user_id,
+                )
+                .await?;
+                newest = newer_revision(newest, rev);
+            }
+        }
+    }
+
+    if let Some(rev) = &newest {
+        apply_newest_revision(pool, page_id, definition_id, rev).await?;
+    }
+
+    let have = load_imported_mw_revids(pool, definition_id).await?;
+    let current_latest = page_current_revision_id(pool, page_id)
+        .await?
+        .unwrap_or(latest_revid);
+    let all_ids_stored = !api_ids.is_empty() && api_ids.iter().all(|id| have.contains(id));
+    if all_ids_stored && current_latest > 0 && have.contains(&current_latest) {
+        mark_history_imported(pool, page_id, current_latest).await?;
     }
     Ok(())
+}
+
+async fn store_mw_revision(
+    pool: &Pool,
+    definition_id: i32,
+    lang_id: i32,
+    valsi_id: i32,
+    rev: &RevEntry,
+    fallback_user_id: i32,
+) -> Result<(), WikiSyncError> {
+    let Some(revid) = rev.revid else {
+        return Ok(());
+    };
+    let user_id = match resolve_mw_user_id(pool, rev.user.as_deref(), fallback_user_id).await {
+        Ok(id) => id,
+        Err(e) => {
+            warn!(
+                "wiki: author {:?} on r{revid} failed ({e}); using officialdata",
+                rev.user
+            );
+            fallback_user_id
+        }
+    };
+    let wikitext = rev_wikitext(rev);
+    let (md, _plain) = wikitext_to_markdown(&wikitext);
+    let created_at: DateTime<Utc> = rev
+        .timestamp
+        .as_deref()
+        .and_then(|s| DateTime::parse_from_rfc3339(s).ok())
+        .map(|d| d.with_timezone(&Utc))
+        .unwrap_or_else(Utc::now);
+    let comment = rev
+        .comment
+        .as_deref()
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(|s| s.to_string())
+        .unwrap_or_else(|| format!("mw.lojban.org r{revid}"));
+    insert_mw_version(
+        pool,
+        definition_id,
+        lang_id,
+        valsi_id,
+        &md,
+        user_id,
+        created_at,
+        &comment,
+        revid,
+    )
+    .await
+}
+
+async fn apply_newest_revision(
+    pool: &Pool,
+    page_id: i32,
+    definition_id: i32,
+    rev: &RevEntry,
+) -> Result<(), WikiSyncError> {
+    let wikitext = rev_wikitext(rev);
+    let (md, plain) = wikitext_to_markdown(&wikitext);
+    let last_edited: Option<DateTime<Utc>> = rev.timestamp.as_deref().and_then(|s| {
+        DateTime::parse_from_rfc3339(s)
+            .ok()
+            .map(|d| d.with_timezone(&Utc))
+    });
+    let unix = last_edited.map(|d| d.timestamp() as i32).unwrap_or(0);
+    let client = pool
+        .get()
+        .await
+        .map_err(|e| WikiSyncError::Db(e.to_string()))?;
+    client
+        .execute(
+            "UPDATE definitions
+             SET definition = $1, time = $2, embedding = NULL
+             WHERE definitionid = $3",
+            &[&md, &unix, &definition_id],
+        )
+        .await
+        .map_err(|e| WikiSyncError::Db(e.to_string()))?;
+    client
+        .execute(
+            "UPDATE wiki_articles
+             SET markdown = $1, plain_text = $2, wikitext = $3,
+                 last_edited = COALESCE($4, last_edited)
+             WHERE page_id = $5",
+            &[&md, &plain, &wikitext, &last_edited, &page_id],
+        )
+        .await
+        .map_err(|e| WikiSyncError::Db(e.to_string()))?;
+    Ok(())
+}
+
+async fn load_imported_mw_revids(
+    pool: &Pool,
+    definition_id: i32,
+) -> Result<HashSet<i64>, WikiSyncError> {
+    let client = pool
+        .get()
+        .await
+        .map_err(|e| WikiSyncError::Db(e.to_string()))?;
+    let rows = client
+        .query(
+            "SELECT mw_revid FROM definition_versions
+             WHERE definition_id = $1 AND mw_revid IS NOT NULL",
+            &[&definition_id],
+        )
+        .await
+        .map_err(|e| WikiSyncError::Db(e.to_string()))?;
+    Ok(rows.iter().filter_map(|r| r.get::<_, Option<i64>>(0)).collect())
+}
+
+async fn page_current_revision_id(
+    pool: &Pool,
+    page_id: i32,
+) -> Result<Option<i64>, WikiSyncError> {
+    let client = pool
+        .get()
+        .await
+        .map_err(|e| WikiSyncError::Db(e.to_string()))?;
+    let row = client
+        .query_opt(
+            "SELECT revision_id FROM wiki_articles WHERE page_id = $1",
+            &[&page_id],
+        )
+        .await
+        .map_err(|e| WikiSyncError::Db(e.to_string()))?;
+    Ok(row.and_then(|r| r.get("revision_id")))
 }
 
 async fn mark_history_imported(
@@ -1051,70 +1208,135 @@ async fn insert_mw_version(
     Ok(())
 }
 
-async fn fetch_page_revision_history(
+async fn fetch_page_revision_ids(
     http: &reqwest::Client,
     page_id: i64,
-    imported_until: i64,
-) -> Result<Vec<RevEntry>, WikiSyncError> {
-    let mut out: Vec<RevEntry> = Vec::new();
+) -> Result<Vec<i64>, WikiSyncError> {
+    let mut out: Vec<i64> = Vec::new();
     let mut rvcontinue: Option<String> = None;
     loop {
-        let mut params: Vec<(&str, String)> = vec![
-            ("action", "query".into()),
-            ("format", "json".into()),
-            ("formatversion", "2".into()),
-            ("prop", "revisions".into()),
-            ("rvprop", "ids|timestamp|user|comment|content".into()),
-            ("rvslots", "main".into()),
-            ("rvlimit", "50".into()),
-            ("pageids", page_id.to_string()),
-        ];
-        if imported_until > 0 {
-            params.push(("rvdir", "newer".into()));
-            params.push(("rvstartid", imported_until.to_string()));
-        } else {
-            params.push(("rvdir", "older".into()));
-        }
-        if let Some(c) = &rvcontinue {
-            params.push(("rvcontinue", c.clone()));
-        }
-        let resp: RevisionsEnvelope = http
-            .get(API_URL)
-            .query(&params)
-            .send()
-            .await?
-            .error_for_status()?
-            .json()
-            .await?;
-        mw_api_err(resp.error)?;
-        let pages_value = resp
-            .query
-            .as_ref()
-            .map(|q| q.pages.clone())
-            .unwrap_or(serde_json::Value::Null);
-        let page_obj = if let Some(arr) = pages_value.as_array() {
-            arr.first().cloned()
-        } else if let Some(obj) = pages_value.as_object() {
-            obj.values().next().cloned()
-        } else {
-            None
-        };
-        if let Some(p) = page_obj {
-            if let Ok(parsed) = serde_json::from_value::<PageWithRev>(p) {
-                out.extend(parsed.revisions);
+        let batch = fetch_revision_batch(http, page_id, 0, rvcontinue.as_deref(), false).await?;
+        for rev in batch.revisions {
+            if let Some(id) = rev.revid {
+                out.push(id);
             }
         }
-        match resp
-            .cont
-            .as_ref()
-            .and_then(|v| v.get("rvcontinue"))
-            .and_then(|v| v.as_str())
-        {
-            Some(s) => rvcontinue = Some(s.to_string()),
+        match batch.rvcontinue {
+            Some(c) => rvcontinue = Some(c),
             None => break,
         }
     }
     Ok(out)
+}
+
+struct RevisionBatch {
+    revisions: Vec<RevEntry>,
+    rvcontinue: Option<String>,
+}
+
+async fn fetch_revision_batch(
+    http: &reqwest::Client,
+    page_id: i64,
+    start_after: i64,
+    rvcontinue: Option<&str>,
+    with_content: bool,
+) -> Result<RevisionBatch, WikiSyncError> {
+    let rvprop = if with_content {
+        "ids|timestamp|user|comment|content"
+    } else {
+        "ids"
+    };
+    let mut params: Vec<(&str, String)> = vec![
+        ("action", "query".into()),
+        ("format", "json".into()),
+        ("formatversion", "2".into()),
+        ("prop", "revisions".into()),
+        ("rvprop", rvprop.into()),
+        ("rvslots", "main".into()),
+        ("rvlimit", "max".into()),
+        ("rvdir", "newer".into()),
+        ("pageids", page_id.to_string()),
+    ];
+    if start_after > 0 {
+        params.push(("rvstartid", start_after.to_string()));
+    }
+    if let Some(c) = rvcontinue {
+        params.push(("rvcontinue", c.to_string()));
+    }
+    let resp = query_revisions(http, &params).await?;
+    let rvcontinue = resp
+        .cont
+        .as_ref()
+        .and_then(|v| v.get("rvcontinue"))
+        .and_then(|v| v.as_str())
+        .map(str::to_string);
+    Ok(RevisionBatch {
+        revisions: revisions_from_envelope(&resp),
+        rvcontinue,
+    })
+}
+
+async fn fetch_revisions_by_ids(
+    http: &reqwest::Client,
+    revids: &[i64],
+) -> Result<Vec<RevEntry>, WikiSyncError> {
+    if revids.is_empty() {
+        return Ok(vec![]);
+    }
+    let ids = revids
+        .iter()
+        .map(|i| i.to_string())
+        .collect::<Vec<_>>()
+        .join("|");
+    let params: Vec<(&str, String)> = vec![
+        ("action", "query".into()),
+        ("format", "json".into()),
+        ("formatversion", "2".into()),
+        ("prop", "revisions".into()),
+        ("rvprop", "ids|timestamp|user|comment|content".into()),
+        ("rvslots", "main".into()),
+        ("revids", ids),
+    ];
+    let resp = query_revisions(http, &params).await?;
+    Ok(revisions_from_envelope(&resp))
+}
+
+async fn query_revisions(
+    http: &reqwest::Client,
+    params: &[(&str, String)],
+) -> Result<RevisionsEnvelope, WikiSyncError> {
+    let resp: RevisionsEnvelope = http
+        .get(API_URL)
+        .query(params)
+        .send()
+        .await?
+        .error_for_status()?
+        .json()
+        .await?;
+    mw_api_err(resp.error.clone())?;
+    Ok(resp)
+}
+
+fn revisions_from_envelope(resp: &RevisionsEnvelope) -> Vec<RevEntry> {
+    let pages_value = resp
+        .query
+        .as_ref()
+        .map(|q| q.pages.clone())
+        .unwrap_or(serde_json::Value::Null);
+    let mut out = Vec::new();
+    let pages = if let Some(arr) = pages_value.as_array() {
+        arr.clone()
+    } else if let Some(obj) = pages_value.as_object() {
+        obj.values().cloned().collect()
+    } else {
+        Vec::new()
+    };
+    for p in pages {
+        if let Ok(parsed) = serde_json::from_value::<PageWithRev>(p) {
+            out.extend(parsed.revisions);
+        }
+    }
+    out
 }
 
 /// Lower bound for incremental RC queries.
@@ -1230,6 +1452,36 @@ mod tests {
             dt.to_rfc3339().contains('.'),
             "chrono RFC3339 keeps nanos, which MediaWiki rejects"
         );
+    }
+
+    #[test]
+    fn history_cursor_skips_only_start_id_not_smaller_revids() {
+        // fi'i (page 349): later edit 70983 has a smaller revid than 74291.
+        assert!(skip_inclusive_history_cursor(74291, 74291));
+        assert!(!skip_inclusive_history_cursor(70983, 74291));
+        assert!(!skip_inclusive_history_cursor(74291, 0));
+    }
+
+    #[test]
+    fn parse_nonmonotonic_revids_oldest_first() {
+        let json = r#"{
+            "query": { "pages": [{
+                "pageid": 349, "ns": 0, "title": "fi'i",
+                "revisions": [
+                    {"revid": 63786, "timestamp": "2013-11-04T16:42:02Z"},
+                    {"revid": 74291, "timestamp": "2013-11-22T19:18:16Z"},
+                    {"revid": 70983, "timestamp": "2013-11-28T07:48:02Z"}
+                ]
+            }]}
+        }"#;
+        let env: RevisionsEnvelope = serde_json::from_str(json).unwrap();
+        let revs = revisions_from_envelope(&env);
+        assert_eq!(
+            revs.iter().filter_map(|r| r.revid).collect::<Vec<_>>(),
+            vec![63786, 74291, 70983]
+        );
+        let newest = revs.into_iter().fold(None, newer_revision);
+        assert_eq!(newest.and_then(|r| r.revid), Some(70983));
     }
 
     #[test]
