@@ -1,7 +1,10 @@
 services:
   db:
     container_name: lenpostgres
+    # Postgres 18 images store PGDATA under /var/lib/postgresql/<major>/docker.
+    # Mount the volume at /var/lib/postgresql, not /var/lib/postgresql/data.
     image: pgvector/pgvector:pg18-trixie
+    command: postgres -c shared_preload_libraries=vector
     environment:
       - POSTGRES_USER=${DB_USER}
       - POSTGRES_PASSWORD=${DB_PASSWORD}

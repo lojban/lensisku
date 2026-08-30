@@ -6,6 +6,7 @@ This repository contains a web application for managing the Lojban dictionary/co
 
 - Docker
 - Docker Compose
+- **PostgreSQL 18** with [pgvector](https://github.com/pgvector/pgvector) (Compose uses `pgvector/pgvector:pg18-trixie`)
 
 ## Getting Started
 
@@ -37,7 +38,7 @@ Or run in detached mode:
 docker compose up -d --build
 ```
 
-This will start the application along with all required services (database, infinity, etc.), and it will be accessible at `http://localhost:8051`.
+This will start the application along with all required services (PostgreSQL 18 + pgvector, etc.), and it will be accessible at `http://localhost:8051`.
 
 **Required environment variables** (set in your `.env` file):
 - `JWT_SECRET` - Secret key for JWT tokens
@@ -92,7 +93,8 @@ docker run -d \
 ```
 
 **Note:** When using direct Docker commands, you'll need to ensure:
-- A PostgreSQL database is available and accessible
+- A **PostgreSQL 18** database with the pgvector extension is available and accessible
+- The volume (if any) is mounted at `/var/lib/postgresql`, not `/var/lib/postgresql/data` — Postgres 18 images use versioned data directories
 - The `DATABASE_URL` environment variable points to your database
 - The maildir volume is properly mounted
 - All required environment variables are set
@@ -275,6 +277,8 @@ To develop the application locally:
    ```
    docker compose -f ./docker-compose.dev.yml up -d
    ```
+
+   That starts **PostgreSQL 18 + pgvector** (`pgvector/pgvector:pg18-trixie`). The data volume is mounted at `/var/lib/postgresql` (required by Postgres 18 images). An existing volume from Postgres 16/17 will not start; dump/restore into a fresh volume.
 
    Before running database migrations (which `make back` will do for you), you need to import the base `lojban_lens` database dump so that migrations can run on top of it.
 

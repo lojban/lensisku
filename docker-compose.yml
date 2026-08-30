@@ -10,13 +10,14 @@ services:
       - JWT_SECRET=${JWT_SECRET}
     depends_on:
       - db
-      - infinity
     volumes:
       - ./${MAILDIR_PATH}:/usr/src/app/maildir:ro
     networks:
       - lojban-network
 
   db:
+    # Postgres 18 images store PGDATA under /var/lib/postgresql/<major>/docker.
+    # Mount the volume at /var/lib/postgresql, not /var/lib/postgresql/data.
     image: pgvector/pgvector:pg18-trixie
     command: postgres -c shared_preload_libraries=vector
     environment:
