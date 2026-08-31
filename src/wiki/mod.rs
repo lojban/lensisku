@@ -17,6 +17,9 @@ use actix_web::web;
 /// Local username suffix for imported mw.lojban.org editors (`name@mw.lojban.org`).
 pub const MW_USERNAME_SUFFIX: &str = "@mw.lojban.org";
 
+/// `definitions.metadata.source` for mirrored MediaWiki articles.
+pub const MW_WIKI_SOURCE: &str = "mw.lojban.org";
+
 /// `users.username` is `varchar(64)`.
 const USERNAME_MAX_LEN: usize = 64;
 

@@ -183,11 +183,23 @@ function metadataRedirect(def: {
   }
 }
 
+function isMwImportedWiki(def: {
+  metadata?: { source?: string; mw_page_id?: unknown; imported?: boolean } | null
+}): boolean {
+  const meta = def.metadata
+  if (!meta || typeof meta !== 'object') return false
+  return (
+    meta.source === 'mw.lojban.org' ||
+    meta.imported === true ||
+    meta.mw_page_id != null
+  )
+}
+
 async function loadNativeByTitle(title: string): Promise<boolean> {
   try {
     const nativeResp = await getNativeWikiArticle(title)
     const def = nativeResp.data
-    if (!def) return false
+    if (!def || isMwImportedWiki(def)) return false
 
     const { is_redirect, redirect_to } = metadataRedirect(def)
     article.value = {

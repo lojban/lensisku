@@ -2309,6 +2309,17 @@ async fn upsert_wiki_in_transaction(
 
     // Optimistic concurrency for existing wiki pages (before mutating).
     if let Some(ref row) = existing_definition {
+        let definition_id: i32 = row.get("definitionid");
+        let can_edit: bool = transaction
+            .query_one(
+                "SELECT can_edit_definition($1, $2)",
+                &[&definition_id, &claims.sub],
+            )
+            .await?
+            .get(0);
+        if !can_edit {
+            return Err("You don't have permission to edit this wiki page".into());
+        }
         if let Some(expected_time) = request.expected_time {
             let current_time: i32 = row.get("time");
             if current_time != expected_time {
@@ -2545,6 +2556,12 @@ pub async fn rename_wiki_page(
         return Err("This definition is not a native wiki page".into());
     }
 
+    let mut metadata: serde_json::Value = current
+        .try_get::<_, Option<serde_json::Value>>("metadata")
+        .ok()
+        .flatten()
+        .unwrap_or_else(|| serde_json::json!({}));
+
     let can_edit: bool = current.get("can_edit");
     if !can_edit {
         return Err("You don't have permission to rename this wiki page".into());
@@ -2567,11 +2584,6 @@ pub async fn rename_wiki_page(
     let source_langid: i32 = current.get("source_langid");
     let langid: i32 = current.get("langid");
     let owner_only: bool = current.get("owner_only");
-    let mut metadata: serde_json::Value = current
-        .try_get::<_, Option<serde_json::Value>>("metadata")
-        .ok()
-        .flatten()
-        .unwrap_or_else(|| serde_json::json!({}));
 
     // Target title must not already exist for this source language.
     if let Some(existing) = transaction

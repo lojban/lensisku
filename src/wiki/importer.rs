@@ -1104,6 +1104,22 @@ async fn ensure_mw_wiki_definition(
         let definition_id: i32 = row.get(0);
         let valsi_id: i32 = row.get(1);
         let lang_id: i32 = row.get(2);
+        let metadata = serde_json::json!({
+            "source": crate::wiki::MW_WIKI_SOURCE,
+            "imported": true,
+            "mw_page_id": page_id,
+            "mw_title": title,
+        });
+        client
+            .execute(
+                "UPDATE definitions
+                 SET metadata = COALESCE(metadata, '{}'::jsonb) || $2::jsonb,
+                     owner_only = true
+                 WHERE definitionid = $1",
+                &[&definition_id, &metadata],
+            )
+            .await
+            .map_err(|e| WikiSyncError::Db(e.to_string()))?;
         return Ok((definition_id, valsi_id, lang_id));
     }
 
@@ -1111,7 +1127,8 @@ async fn ensure_mw_wiki_definition(
     let typeid: i16 = 16;
     let now = Utc::now().timestamp() as i32;
     let metadata = serde_json::json!({
-        "source": "mw.lojban.org",
+        "source": crate::wiki::MW_WIKI_SOURCE,
+        "imported": true,
         "mw_page_id": page_id,
         "mw_title": title,
     });
@@ -1139,7 +1156,9 @@ async fn ensure_mw_wiki_definition(
         let id: i32 = row.get(0);
         client
             .execute(
-                "UPDATE definitions SET metadata = COALESCE(metadata, '{}'::jsonb) || $2::jsonb
+                "UPDATE definitions
+                 SET metadata = COALESCE(metadata, '{}'::jsonb) || $2::jsonb,
+                     owner_only = true
                  WHERE definitionid = $1",
                 &[&id, &metadata],
             )
@@ -1155,8 +1174,9 @@ async fn ensure_mw_wiki_definition(
         client
             .execute(
                 "INSERT INTO definitions
-                    (definitionid, langid, valsiid, definitionnum, definition, userid, time, metadata)
-                 VALUES ($1, $2, $3, 1, '', $4, $5, $6)",
+                    (definitionid, langid, valsiid, definitionnum, definition, userid, time,
+                     owner_only, metadata)
+                 VALUES ($1, $2, $3, 1, '', $4, $5, true, $6)",
                 &[&id, &lang_id, &valsi_id, &user_id, &now, &metadata],
             )
             .await
