@@ -153,6 +153,7 @@
     "waveSourceLabel": "Waves",
     "waveSourceAll": "All types",
     "waveSourceJbotcan": "jbotcan",
+    "waveSourceFreeforums": "freeforums",
     "waveSourceComments": "Comments",
     "waveSourceMail": "Mail messages",
     "waveSourceWiki": "Wiki articles",

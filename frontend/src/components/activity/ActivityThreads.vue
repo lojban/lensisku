@@ -21,6 +21,10 @@
               type="jbotcan"
               label="jbotcan"
             />
+            <SourceTypeBadge
+              v-else-if="thread.import_source === 'freeforums'"
+              type="freeforums"
+            />
             <h3 class="font-medium text-gray-800">
               <template
                 v-if="

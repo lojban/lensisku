@@ -1790,8 +1790,11 @@ pub(crate) async fn search_comments(
     if let Some(wave_source) = &search_params.wave_source {
         match wave_source.as_str() {
             "jbotcan" => conditions.push("c.import_source = 'jbotcan'".to_string()),
-            "comments" => conditions
-                .push("(c.import_source IS NULL OR c.import_source <> 'jbotcan')".to_string()),
+            "freeforums" => conditions.push("c.import_source = 'freeforums'".to_string()),
+            "comments" => conditions.push(
+                "(c.import_source IS NULL OR c.import_source NOT IN ('jbotcan', 'freeforums'))"
+                    .to_string(),
+            ),
             _ => {}
         }
     }
@@ -2134,8 +2137,11 @@ pub(crate) async fn list_threads(
         Some("jbotcan") => {
             " AND (SELECT c.import_source FROM comments c WHERE c.threadid = t.threadid ORDER BY c.time ASC, c.commentid ASC LIMIT 1) = 'jbotcan'"
         }
+        Some("freeforums") => {
+            " AND (SELECT c.import_source FROM comments c WHERE c.threadid = t.threadid ORDER BY c.time ASC, c.commentid ASC LIMIT 1) = 'freeforums'"
+        }
         Some("comments") => {
-            " AND COALESCE((SELECT c.import_source FROM comments c WHERE c.threadid = t.threadid ORDER BY c.time ASC, c.commentid ASC LIMIT 1), '') <> 'jbotcan'"
+            " AND COALESCE((SELECT c.import_source FROM comments c WHERE c.threadid = t.threadid ORDER BY c.time ASC, c.commentid ASC LIMIT 1), '') NOT IN ('jbotcan', 'freeforums')"
         }
         _ => "",
     };

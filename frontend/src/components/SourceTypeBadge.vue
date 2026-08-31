@@ -11,17 +11,18 @@
 </template>
 
 <script setup lang="ts">
-import { BookOpen, BookMarked, Mail, Image, Globe } from '@lucide/vue'
+import { BookOpen, BookMarked, Mail, Image, Globe, MessagesSquare } from '@lucide/vue'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 const props = defineProps({
-  /** One of: 'definition', 'valsi', 'mail', 'jbotcan' */
+  /** One of: 'definition', 'valsi', 'mail', 'jbotcan', 'freeforums', 'wiki' */
   type: {
     type: String,
     required: true,
     validator: (v: unknown) =>
-      typeof v === 'string' && ['definition', 'valsi', 'mail', 'jbotcan', 'wiki'].includes(v),
+      typeof v === 'string' &&
+      ['definition', 'valsi', 'mail', 'jbotcan', 'freeforums', 'wiki'].includes(v),
   },
   /** Override translated label; if not set, uses default for type */
   label: {
@@ -53,6 +54,11 @@ const typeConfig = {
     bg: 'bg-amber-50',
     text: 'text-amber-700',
   },
+  freeforums: {
+    icon: MessagesSquare,
+    bg: 'bg-orange-50',
+    text: 'text-orange-700',
+  },
   wiki: {
     icon: Globe,
     bg: 'bg-teal-50',
@@ -65,9 +71,12 @@ const defaultLabels = {
   valsi: () => t('components.commentItem.inValsi'),
   mail: () => t('home.waveSourceMail'),
   jbotcan: () => 'jbotcan',
+  freeforums: () => t('home.waveSourceFreeforums'),
   wiki: () => t('home.waveSourceWiki'),
 }
 
-const config = computed(() => typeConfig[props.type])
-const label = computed(() => (props.label ? props.label : defaultLabels[props.type]()))
+const config = computed(() => typeConfig[props.type as keyof typeof typeConfig])
+const label = computed(() =>
+  props.label ? props.label : defaultLabels[props.type as keyof typeof defaultLabels]()
+)
 </script>

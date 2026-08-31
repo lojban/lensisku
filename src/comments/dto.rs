@@ -183,7 +183,7 @@ pub struct SearchCommentsParams {
     pub definition_link_id: Option<i32>,
     pub target_user_id: Option<i32>,
     pub collection_id: Option<i32>,
-    /// `jbotcan` | `comments` (site, non-jbotcan) — filters `comments.import_source`.
+    /// `jbotcan` | `freeforums` | `comments` (site, non-import) — filters `comments.import_source`.
     pub wave_source: Option<String>,
 }
 

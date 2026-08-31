@@ -193,6 +193,7 @@ pub async fn search_waves(
 
     let wave_source = match source {
         "jbotcan" => Some("jbotcan".to_string()),
+        "freeforums" => Some("freeforums".to_string()),
         "comments" => Some("comments".to_string()),
         _ => None,
     };
@@ -227,7 +228,8 @@ pub async fn search_waves(
     };
 
     // Decide which sources to query for this request.
-    let want_comments = matches!(source, "all" | "jbotcan" | "comments") || collection_scoped;
+    let want_comments =
+        matches!(source, "all" | "jbotcan" | "freeforums" | "comments") || collection_scoped;
     let want_mail = matches!(source, "all" | "mail") && !collection_scoped;
     let want_wiki = matches!(source, "all" | "wiki") && !collection_scoped;
 
@@ -340,11 +342,12 @@ pub async fn list_wave_threads(
 
     let wave_source = match source {
         "jbotcan" => Some("jbotcan"),
+        "freeforums" => Some("freeforums"),
         "comments" => Some("comments"),
         _ => None,
     };
 
-    let want_comments = matches!(source, "all" | "jbotcan" | "comments");
+    let want_comments = matches!(source, "all" | "jbotcan" | "freeforums" | "comments");
     let want_mail = matches!(source, "all" | "mail");
     let want_wiki = matches!(source, "all" | "wiki");
 

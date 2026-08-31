@@ -154,6 +154,12 @@
               {{ $t('home.waveSourceJbotcan') }}
             </ToolbarSelectDropdownItem>
             <ToolbarSelectDropdownItem
+              :class="{ 'bg-gray-100': waveSource === 'freeforums' }"
+              @click="setWaveSource('freeforums')"
+            >
+              {{ $t('home.waveSourceFreeforums') }}
+            </ToolbarSelectDropdownItem>
+            <ToolbarSelectDropdownItem
               :class="{ 'bg-gray-100': waveSource === 'comments' }"
               @click="setWaveSource('comments')"
             >
@@ -326,10 +332,20 @@
                 "
               >
                 <div
-                  v-if="item.source === 'comment' && item.import_source === 'jbotcan'"
+                  v-if="
+                    item.source === 'comment' &&
+                    (item.import_source === 'jbotcan' || item.import_source === 'freeforums')
+                  "
                   class="mb-1"
                 >
-                  <SourceTypeBadge type="jbotcan" label="jbotcan" />
+                  <SourceTypeBadge
+                    :type="item.import_source === 'freeforums' ? 'freeforums' : 'jbotcan'"
+                    :label="
+                      item.import_source === 'freeforums'
+                        ? $t('home.waveSourceFreeforums')
+                        : 'jbotcan'
+                    "
+                  />
                 </div>
                 <CommentItem
                   v-if="item.source === 'comment'"
@@ -751,8 +767,8 @@ watch(
   { immediate: true }
 )
 
-/** Filter discussion waves: all site + mail, jbotcan imports, site comments only, or mail only. */
-const WAVE_SOURCES = ['all', 'jbotcan', 'comments', 'mail', 'wiki'] as const
+/** Filter discussion waves: all, jbotcan, freeforums, site comments, mail, or wiki. */
+const WAVE_SOURCES = ['all', 'jbotcan', 'freeforums', 'comments', 'mail', 'wiki'] as const
 type WaveSource = (typeof WAVE_SOURCES)[number]
 
 const waveSource = ref<WaveSource>('all')
@@ -816,6 +832,7 @@ const waveSourceTriggerLabel = computed(() => {
   const m: Record<WaveSource, string> = {
     all: t('home.waveSourceAll'),
     jbotcan: t('home.waveSourceJbotcan'),
+    freeforums: t('home.waveSourceFreeforums'),
     comments: t('home.waveSourceComments'),
     mail: t('home.waveSourceMail'),
     wiki: t('home.waveSourceWiki'),

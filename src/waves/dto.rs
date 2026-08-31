@@ -33,7 +33,7 @@ pub struct WavesSearchQuery {
     pub sort_by: Option<String>,
     #[schema(default = "desc")]
     pub sort_order: Option<String>,
-    /// `all` | `jbotcan` | `comments` | `mail` | `wiki`
+    /// `all` | `jbotcan` | `freeforums` | `comments` | `mail` | `wiki`
     pub source: Option<String>,
     /// Restrict comment hits to threads attached to this collection. When set, the mail and wiki
     /// halves of the unified search are suppressed because they are not collection-scoped.
@@ -107,7 +107,7 @@ pub struct WavesThreadsQuery {
     pub sort_by: Option<String>,
     #[schema(default = "desc")]
     pub sort_order: Option<String>,
-    /// `all` | `jbotcan` | `comments` | `mail` | `wiki`
+    /// `all` | `jbotcan` | `freeforums` | `comments` | `mail` | `wiki`
     pub source: Option<String>,
 }
 

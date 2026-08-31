@@ -30,3 +30,7 @@ data
 /pnpm-lock.yaml
 /test
 .fastembed_cache
+# FreeForums scrape output
+scripts/freeforums_import/freeforums_dump/
+scripts/freeforums_import/.venv/
+__pycache__
