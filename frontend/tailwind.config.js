@@ -661,6 +661,24 @@ export default {
           '@apply mt-3 mb-6 bg-white border rounded-lg p-3 hover:border-blue-300 transition-colors relative':
             {},
         },
+        /** Comment row header: avatar | username+date | #id (middle truncates). */
+        '.comment-header': {
+          '@apply grid grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-2 min-w-0 w-full':
+            {},
+        },
+        '.comment-header-main': {
+          '@apply min-w-0 w-full overflow-hidden': {},
+        },
+        '.comment-header-username': {
+          '@apply block w-full max-w-full min-w-0 overflow-hidden text-ellipsis whitespace-nowrap text-sm font-medium text-gray-700 hover:text-blue-600 hover:underline':
+            {},
+        },
+        '.comment-header-meta': {
+          '@apply text-xs text-gray-500': {},
+        },
+        '.comment-header-id': {
+          '@apply shrink-0 text-sm text-gray-500 hover:text-blue-600 hover:underline': {},
+        },
         /** Flashcard collection summary row. */
         '.surface-flashcard-summary': {
           '@apply bg-white p-4 rounded-lg border hover:border-blue-300 shadow hover:shadow-none transition-all duration-200 max-w-full overflow-hidden':

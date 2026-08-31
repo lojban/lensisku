@@ -1,6 +1,6 @@
 <template>
   <div
-    class="comment-item bg-white border rounded-lg p-3 my-2 hover:border-blue-300 transition-colors min-w-48"
+    class="comment-item bg-white border rounded-lg p-3 my-2 hover:border-blue-300 transition-colors min-w-0 max-w-full overflow-hidden"
     :data-comment-id="processedComment.comment_id"
   >
     <div
@@ -24,57 +24,49 @@
       </RouterLink>
     </div>
     <!-- Comment Header -->
-    <div class="flex flex-col mb-2">
-      <div class="flex items-start justify-between">
-        <!-- Left side: Profile image and basic info -->
-        <div class="flex items-start space-x-2">
-          <RouterLink :to="`/user/${processedComment.username}`" class="flex-shrink-0">
-            <!-- Skeleton while loading -->
-            <div
-              v-show="isProfileImageLoading"
-              class="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gray-200 animate-pulse border-2 border-white shadow-sm"
-            ></div>
-            <!-- Actual image when loaded -->
-            <img
-              v-if="hasProfileImage"
-              v-show="!isProfileImageLoading"
-              :src="getProfileImageUrl(processedComment.username)"
-              :alt="`${processedComment.username}'s profile picture`"
-              class="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover border-2 border-white shadow-sm"
-              @load="handleImageLoad"
-              @error="handleImageError"
-            />
-            <!-- Placeholder when no image -->
-            <div
-              v-if="!hasProfileImage"
-              v-show="!isProfileImageLoading"
-              class="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-400"
-            >
-              <User class="h-4 w-4 sm:h-6 sm:w-6" />
-            </div>
-          </RouterLink>
-          <div class="flex-1 min-w-0">
-            <div class="flex flex-wrap items-baseline gap-1.5">
-              <RouterLink
-                :to="`/user/${processedComment.username}`"
-                class="text-sm font-medium text-gray-700 hover:text-blue-600 hover:underline truncate"
-              >
-                {{ processedComment.username }}
-              </RouterLink>
-            </div>
-
-            <div class="text-xs text-gray-500">{{ formatDate(processedComment.time) }}</div>
-          </div>
-        </div>
-
-        <div class="flex flex-row items-center gap-3">
-          <RouterLink
-            :to="`/comments/?comment_id=${processedComment.parent_id}&scroll_to=${processedComment.comment_id}&valsi_id=${props.valsiId || 0}&definition_id=${props.definitionId || 0}`"
-            class="text-sm text-gray-500 hover:text-blue-600 hover:underline break-all"
+    <div class="flex flex-col mb-2 min-w-0">
+      <div class="comment-header">
+        <RouterLink :to="`/user/${processedComment.username}`" class="shrink-0">
+          <!-- Skeleton while loading -->
+          <div
+            v-show="isProfileImageLoading"
+            class="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gray-200 animate-pulse border-2 border-white shadow-sm"
+          ></div>
+          <!-- Actual image when loaded -->
+          <img
+            v-if="hasProfileImage"
+            v-show="!isProfileImageLoading"
+            :src="getProfileImageUrl(processedComment.username)"
+            :alt="`${processedComment.username}'s profile picture`"
+            class="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover border-2 border-white shadow-sm"
+            @load="handleImageLoad"
+            @error="handleImageError"
+          />
+          <!-- Placeholder when no image -->
+          <div
+            v-if="!hasProfileImage"
+            v-show="!isProfileImageLoading"
+            class="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-400"
           >
-            #{{ processedComment.comment_num }}
+            <User class="h-4 w-4 sm:h-6 sm:w-6" />
+          </div>
+        </RouterLink>
+        <div class="comment-header-main">
+          <RouterLink
+            :to="`/user/${processedComment.username}`"
+            class="comment-header-username"
+            :title="processedComment.username"
+          >
+            {{ processedComment.username }}
           </RouterLink>
+          <div class="comment-header-meta">{{ formatDate(processedComment.time) }}</div>
         </div>
+        <RouterLink
+          :to="`/comments/?comment_id=${processedComment.parent_id}&scroll_to=${processedComment.comment_id}&valsi_id=${props.valsiId || 0}&definition_id=${props.definitionId || 0}`"
+          class="comment-header-id"
+        >
+          #{{ processedComment.comment_num }}
+        </RouterLink>
       </div>
 
       <div class="mt-2">
