@@ -3717,15 +3717,13 @@ pub async fn update_definition(
             .decode(&image.data)
             .map_err(|e| format!("Invalid base64 image data: {}", e))?;
 
-        // Insert or update the new image
+        // Unique-on-definition_id was dropped in V71 (multiple images). Rows for this
+        // definition were already deleted above; insert a replacement with required columns.
         transaction
             .execute(
-                "INSERT INTO definition_images (definition_id, image_data, mime_type)
-                     VALUES ($1, $2, $3)
-                     ON CONFLICT (definition_id)
-                     DO UPDATE SET image_data = EXCLUDED.image_data,
-                                  mime_type = EXCLUDED.mime_type",
-                &[&definition_id, &image_data, &image.mime_type],
+                "INSERT INTO definition_images (definition_id, image_data, mime_type, created_by)
+                     VALUES ($1, $2, $3, $4)",
+                &[&definition_id, &image_data, &image.mime_type, &user_id],
             )
             .await?;
     }
