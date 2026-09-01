@@ -142,7 +142,7 @@ const loadExistingImage = async () => {
 
     const url = props.itemId
       ? `/api/collections/${props.collectionId}/items/${props.itemId}/image/${props.side}`
-      : `/api/jbovlaste/definition/${props.definitionId}/image`
+      : `/api/jbovlaste/definition_image/${props.definitionId}/image`
 
     const response = await fetch(url)
     if (!response.ok) {
