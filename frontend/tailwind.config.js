@@ -120,15 +120,12 @@ export default {
         '.app-header-bar': {
           '@apply sticky top-0 z-40 shrink-0 border-b border-gray-200 bg-white': {},
         },
-        /** Header + in-flow banners + main; leaves room for the fixed footer strip. */
+        /**
+         * Header + in-flow banners + main. Full viewport — no reserved strip for the
+         * removed fixed live-chat footer (was `calc(100svh - 24px)` / `h-6`).
+         */
         '.app-layout-column': {
           '@apply flex min-h-0 flex-col': {},
-          height: 'calc(100vh - 24px)',
-          '@supports (height: 100svh)': {
-            height: 'calc(100svh - 24px)',
-          },
-        },
-        '.app-layout-column--no-footer': {
           height: '100vh',
           '@supports (height: 100svh)': {
             height: '100svh',
@@ -989,6 +986,54 @@ export default {
         },
         '.card-footer-inner': {
           '@apply flex flex-wrap items-center justify-between gap-2': {},
+        },
+        /** Unread count pip on nav icons (News / Recent). */
+        '.nav-unread-badge': {
+          '@apply absolute -top-1 -right-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-xs font-medium text-white':
+            {},
+        },
+        '.nav-unread-badge--wide': {
+          '@apply h-6 min-w-6': {},
+        },
+        /** Recent Changes: fixed live-chat panel (bottom third of the page). */
+        '.live-chat-dock': {
+          '@apply flex min-h-0 flex-col border-t border-gray-200 bg-white': {},
+          height: '33.333%',
+          maxHeight: '33.333%',
+        },
+        '.live-chat-dock__social': {
+          '@apply flex shrink-0 items-center gap-2 border-b border-gray-100 px-3 py-1.5': {},
+        },
+        '.live-chat-dock__social-scroll': {
+          '@apply flex min-w-0 flex-1 items-center gap-2 overflow-x-auto': {},
+        },
+        '.live-chat-dock__label': {
+          '@apply shrink-0 text-xs font-medium italic text-blue-500': {},
+        },
+        '.live-chat-dock__messages': {
+          '@apply min-h-0 flex-1 space-y-1 overflow-y-auto px-3 py-2': {},
+        },
+        '.live-chat-dock__empty': {
+          '@apply text-sm text-gray-500': {},
+        },
+        '.live-chat-dock__row': {
+          '@apply break-words text-sm leading-snug': {},
+        },
+        '.live-chat-dock__author': {
+          '@apply font-medium text-blue-600': {},
+        },
+        '.live-chat-dock__text': {
+          '@apply ml-1 text-gray-700': {},
+        },
+        '.recent-changes-page': {
+          '@apply flex h-full min-h-0 flex-1 flex-col': {},
+        },
+        '.recent-changes-main': {
+          '@apply min-h-0 flex-1 overflow-y-auto px-3': {},
+          // Remaining ~2/3 above the dock
+        },
+        '.navbar-item-badge-wrap': {
+          '@apply relative inline-flex items-center': {},
         },
         '.badge': {
           '@apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium': {},

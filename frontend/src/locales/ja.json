@@ -307,6 +307,7 @@
     "library": "自分のコレクション",
     "me": "マイページ",
     "recent": "最近",
+    "news": "ニュース",
     "more": "その他",
     "users": "ユーザー",
     "languages": "言語",
@@ -375,6 +376,7 @@
     "threadTitle": "スレッド：{subject}"
   },
   "recentChanges": {
+    "news": "ニュース",
     "recentChanges": "最近の更新",
     "discussionWaves": "議論ウェーブ",
     "allComments": "すべてのコメント",

@@ -310,6 +310,7 @@
     "library": "My collections",
     "me": "Me",
     "recent": "Recent",
+    "news": "News",
     "more": "More",
     "users": "Users",
     "languages": "Languages",
@@ -378,6 +379,7 @@
     "threadTitle": "Thread: {subject}"
   },
   "recentChanges": {
+    "news": "News",
     "recentChanges": "Recent changes",
     "discussionWaves": "Discussion waves",
     "allComments": "All comments",

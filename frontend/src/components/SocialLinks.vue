@@ -1,11 +1,12 @@
 <template>
-  <div class="flex items-center space-x-3">
+  <div class="flex items-center space-x-3 overflow-x-auto">
     <a
       v-for="link in links"
       :key="link.name"
       :href="link.link"
       target="_blank"
       rel="noopener noreferrer"
+      class="shrink-0"
       :class="buttons ? 'text-gray-400 hover:text-blue-400 transition-colors' : 'ui-btn--neutral'"
     >
       <img

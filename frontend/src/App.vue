@@ -14,9 +14,6 @@
   <div v-if="isWinterSeason && showPyro" class="pyro" />
   <div
     class="app-layout-column"
-    :class="{
-      'app-layout-column--no-footer': route.meta.fullHeight || route.meta.hidePageFooter,
-    }"
   >
   <!-- Mobile-optimized header (omit on routes with meta.hideTopBar, e.g. full-bleed experiences) -->
 
@@ -61,8 +58,18 @@
           <NavLink v-if="auth.state.isLoggedIn" to="/library" class="navbar-item">
             <Star class="h-5 w-5" /> {{ $t('nav.library') }}
           </NavLink>
-          <NavLink to="/recent" class="navbar-item">
-            <Clock4 class="h-5 w-5" /> {{ $t('nav.recent') }}
+          <NavLink to="/recent" class="navbar-item relative">
+            <span class="navbar-item-badge-wrap">
+              <Clock4 class="h-5 w-5" />
+              <span
+                v-if="newsBadgeLabel"
+                class="nav-unread-badge"
+                :class="{ 'nav-unread-badge--wide': newsBadgeCount != null && newsBadgeCount > 99 }"
+              >
+                {{ newsBadgeLabel }}
+              </span>
+            </span>
+            {{ $t('nav.recent') }}
           </NavLink>
           <div ref="moreNavRef" class="relative group">
             <Button
@@ -170,6 +177,22 @@
         </nav>
         <!-- Auth Buttons - Optimized for mobile -->
         <div class="flex items-center space-x-1 sm:space-x-2">
+          <NavLink
+            :to="{ path: '/recent', query: { tab: 'news' } }"
+            class="navbar-item relative sm:hidden"
+            :aria-label="$t('nav.news')"
+          >
+            <span class="navbar-item-badge-wrap">
+              <Newspaper class="h-5 w-5" />
+              <span
+                v-if="newsBadgeLabel"
+                class="nav-unread-badge"
+                :class="{ 'nav-unread-badge--wide': newsBadgeCount != null && newsBadgeCount > 99 }"
+              >
+                {{ newsBadgeLabel }}
+              </span>
+            </span>
+          </NavLink>
           <template v-if="!auth.state.isLoading">
             <template v-if="auth.state.isLoggedIn">
               <NavLink to="/library" class="navbar-item sm:hidden" :aria-label="$t('nav.library')">
@@ -303,13 +326,6 @@
           />
         </router-view>
       </div>
-
-      <footer
-        v-if="!route.meta.hideFooter"
-        class="mt-6 max-w-full break-words px-3 py-3 text-center text-xs text-gray-500 leading-relaxed"
-      >
-        {{ $t('footer.publicDomainNotice') }}
-      </footer>
     </div>
   </main>
   </div>
@@ -360,7 +376,6 @@
       </ToolbarSelectDropdown>
     </div>
   </div>
-  <FooterComponent v-if="!route.meta.hidePageFooter && !route.meta.fullHeight" />
 </template>
 
 <script setup lang="ts">
@@ -381,6 +396,7 @@ import {
   BookmarkCheck,
   Bot,
   Share2,
+  Newspaper,
 } from '@lucide/vue'
 import { Menu } from '@lucide/vue' // Explicitly import Menu if it was missed by auto-sort
 import { ref, onMounted, watch, computed, nextTick } from 'vue'
@@ -397,7 +413,6 @@ import { resendConfirmation } from '@/api'
 import { Button, FabButton, ToolbarSelectDropdown, ToolbarSelectDropdownItem, DownloadIcon, ExportIcon, ImportIcon } from '@packages/ui'
 
 import BackgroundComponent from './components/BackgroundComponent.vue'
-import FooterComponent from './components/FooterComponent.vue'
 import AppFixedBanners from './components/layout/AppFixedBanners.vue'
 import AppMobileNavMenu from './components/layout/AppMobileNavMenu.vue'
 import NavLink from './components/NavLink.vue'
@@ -416,6 +431,7 @@ import {
 } from './composables/useSuccessToast'
 import { useNotifications } from '@/services/messaging/NotificationService'
 import { useButtonTheme } from './composables/useButtonTheme'
+import { useNewsUnread } from './composables/useNewsUnread'
 import { localeCaptureGroupRegex } from './config/locales'
 
 import logoSvgRaw from '../public/assets/icons/favicon.svg?raw'
@@ -460,6 +476,7 @@ const searchMode = ref('messages')
 const auth = provideAuth()
 const { preload: preloadCollections, clear: clearCollectionsCache } = useCollectionsCache()
 const { buttonTheme, initButtonTheme, setButtonTheme: setButtonThemePreference } = useButtonTheme()
+const { badgeCount: newsBadgeCount, badgeLabel: newsBadgeLabel } = useNewsUnread()
 const { error, clearError } = provideError()
 const { successToast, clearSuccess } = provideSuccessToast()
 const isMenuOpen = ref(false)

@@ -214,6 +214,7 @@ const baseRoutes: Array<RouteRecordRaw> = [
     path: '/recent',
     name: 'RecentChanges',
     component: () => import('../pages/RecentChanges.vue'),
+    meta: { fullHeight: true, hideFooter: true, hidePageFooter: true, hideFab: true },
   },
   {
     path: '/definition/:id/history',

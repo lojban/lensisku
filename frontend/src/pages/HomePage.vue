@@ -477,6 +477,7 @@ import CombinedFiltersSkeleton from '@/components/skeletons/CombinedFiltersSkele
 import SearchFormSkeleton from '@/components/skeletons/SearchFormSkeleton.vue'
 import { useAuth } from '@/composables/useAuth'
 import { useCollectionsCache } from '@/composables/useCollectionsCache'
+import { useNewsUnread } from '@/composables/useNewsUnread'
 import { useLanguageSelection } from '@/composables/useLanguageSelection'
 import { useSeoHead } from '@/composables/useSeoHead'
 import { useI18n } from 'vue-i18n'
@@ -636,6 +637,7 @@ const clearCollectionItemExpand = () => {
   })
 }
 const auth = useAuth()
+const { fetchUnreadCount: fetchNewsUnreadCount } = useNewsUnread()
 const decodedToken = computed((): JwtUserPayload | null => {
   if (typeof window === 'undefined') return null
   const token = localStorage.getItem('accessToken')
@@ -1228,6 +1230,7 @@ const fetchTrendingAndChanges = async () => {
     const [activityResponse, definitionsResponse] = await Promise.all([
       getRecentChanges({ limit: HOME_FEED_LIMIT, types: 'comment,wiki,message' }),
       getRecentChanges({ limit: HOME_FEED_LIMIT, types: 'definition' }),
+      fetchNewsUnreadCount(),
     ])
     const activity = activityResponse.data.changes || []
     const definitions = definitionsResponse.data.changes || []
@@ -1635,6 +1638,7 @@ const handleKeyDown = (event: KeyboardEvent) => {
 onMounted(async () => {
   window.addEventListener('keydown', handleKeyDown)
   window.addEventListener('lensisku:clear-search', handleLogoClear)
+  void fetchNewsUnreadCount()
   try {
     const languagesResponse = await getLanguages()
     const initialLangs = getInitialLanguages(route, languagesResponse.data)

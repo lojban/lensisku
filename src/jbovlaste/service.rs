@@ -4908,7 +4908,7 @@ pub async fn get_recent_changes(
             JOIN valsi v ON d.valsiid = v.valsiid
             JOIN users u ON dv.user_id = u.userid
             LEFT JOIN languages l ON dv.langid = l.langid
-            WHERE u.username != 'officialdata' AND v.source_langid = 1 AND dv.mw_revid IS NULL {}
+            WHERE u.username != 'officialdata' AND v.source_langid = 1 AND dv.mw_revid IS NULL AND v.typeid != 16 {}
             {})",
                         where_extra, order_limit
                     ));
@@ -5054,6 +5054,57 @@ pub async fn get_recent_changes(
             {})",
                         where_extra, order_limit
                     ));
+
+                    // Native (internal) wiki pages: valsi typeid 16 definition versions.
+                    let (native_where_extra, native_order_limit) = match cursor_condition {
+                        Some((ct, cs, ci)) => (
+                            format!(
+                                " AND (EXTRACT(EPOCH FROM dv.created_at)::integer, -4, dv.version_id) < ({}, {}, {})",
+                                ct, -cs, ci
+                            ),
+                            format!("ORDER BY dv.created_at DESC, type_sort_order ASC, dv.version_id DESC LIMIT {}", limit_val),
+                        ),
+                        None => (
+                            String::new(),
+                            format!("ORDER BY dv.created_at DESC, type_sort_order ASC, dv.version_id DESC LIMIT {}", limit_val),
+                        ),
+                    };
+                    queries.push(format!(
+                        "(SELECT
+                'wiki' AS change_type,
+                v.word,
+                to_jsonb(dv.message) as content,
+                d.valsiid,
+                dv.langid,
+                0 AS natlangwordid,
+                0 AS commentid,
+                0 AS threadid,
+                d.definitionid,
+                u.username,
+                EXTRACT(EPOCH FROM dv.created_at)::integer as time,
+                NULL AS language_name,
+                NULL::text AS language_english_name,
+                NULL::text AS language_lojban_name,
+                dv.version_id,
+                (SELECT prev_dv.version_id
+                 FROM definition_versions prev_dv
+                 WHERE prev_dv.definition_id = dv.definition_id
+                   AND prev_dv.created_at < dv.created_at
+                 ORDER BY prev_dv.created_at DESC LIMIT 1) as prev_version_id,
+                v.typeid AS valsi_typeid,
+                NULL::text AS valsi_word,
+                NULL::integer AS commentnum,
+                NULL::integer AS parentid,
+                4 AS type_sort_order,
+                dv.version_id::bigint AS cursor_id
+            FROM definition_versions dv
+            JOIN definitions d ON dv.definition_id = d.definitionid
+            JOIN valsi v ON d.valsiid = v.valsiid
+            JOIN users u ON dv.user_id = u.userid
+            WHERE v.typeid = 16 AND u.username != 'officialdata' {}
+            {})",
+                        native_where_extra, native_order_limit
+                    ));
                 }
 
                 if queries.is_empty() {
@@ -5146,8 +5197,8 @@ pub async fn get_recent_changes(
                         is_bookmarked: None,
                     };
 
-                    // Add diff for definition changes
-                    if change_type == "definition" {
+                    // Add diff for definition / native-wiki versioned changes
+                    if change_type == "definition" || (change_type == "wiki" && is_wiki) {
                         if let (Some(version_id), prev_version_id) = (
                             row.get::<_, Option<i32>>("version_id"),
                             row.get::<_, Option<i32>>("prev_version_id"),
@@ -5173,7 +5224,7 @@ pub async fn get_recent_changes(
                                 })
                             } {
                                 Ok(mut diff) => {
-                                    if is_wiki {
+                                    if is_wiki || change_type == "wiki" {
                                         trim_wiki_diff(&mut diff);
                                     }
                                     change.diff = Some(diff);

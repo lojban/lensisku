@@ -1,54 +1,70 @@
 <template>
-  <TabbedPageHeader
-    :tabs="tabs"
-    :active-tab="activeTab"
-    :page-title="pageTitle"
-    @tab-click="handleTabClick"
-  />
-  <!-- Loading State with Skeleton -->
-  <div v-if="isLoading" class="space-y-4"><SkeletonActivityItem v-for="n in 5" :key="n" /></div>
-  <!-- Content -->
-  <div v-if="!error" class="space-y-4">
-    <ActivityChanges
-      v-if="activeTab === 'changes'"
-      :grouped-changes="groupedChanges"
-      :format-date="formatDate"
-    />
-    <ActivityThreads
-      v-if="activeTab === 'threads'"
-      :threads="threads"
-      :format-date-for-thread="formatDateForThread"
-      :format-time="formatTime"
-    />
-    <ActivityComments
-      v-if="activeTab === 'all_comments'"
-      :comments="allComments"
-      :format-date="formatDateForThread"
-    />
-    <ActivityDefinitions
-      v-if="activeTab === 'all_definitions'"
-      :definitions="allDefinitions"
-      :format-date="formatDateForThread"
-    />
-    <PaginationComponent
-      v-if="
-        (activeTab === 'changes' && (currentPage > 1 || nextCursor)) ||
-        (['threads', 'all_comments', 'all_definitions'].includes(activeTab) && totalPages > 1)
-      "
-      :current-page="currentPage"
-      :total-pages="
-        activeTab === 'changes' ? (nextCursor ? currentPage + 1 : currentPage) : totalPages
-      "
-      :total="activeTab === 'changes' ? 0 : totalItems"
-      :per-page="perPage"
-      @prev="changePage(currentPage - 1)"
-      @next="changePage(currentPage + 1)"
-    />
+  <div class="recent-changes-page">
+    <div class="recent-changes-main">
+      <TabbedPageHeader
+        :tabs="tabs"
+        :active-tab="activeTab"
+        :page-title="pageTitle"
+        @tab-click="handleTabClick"
+      />
+      <!-- Loading State with Skeleton -->
+      <div v-if="isLoading" class="space-y-4">
+        <SkeletonActivityItem v-for="n in 5" :key="n" />
+      </div>
+      <!-- Content -->
+      <div v-if="!error" class="space-y-4 pb-4">
+        <ActivityChanges
+          v-if="activeTab === 'news'"
+          :grouped-changes="groupedNews"
+          :format-date="formatDate"
+        />
+        <ActivityChanges
+          v-if="activeTab === 'changes'"
+          :grouped-changes="groupedChanges"
+          :format-date="formatDate"
+        />
+        <ActivityThreads
+          v-if="activeTab === 'threads'"
+          :threads="threads"
+          :format-date-for-thread="formatDateForThread"
+          :format-time="formatTime"
+        />
+        <ActivityComments
+          v-if="activeTab === 'all_comments'"
+          :comments="allComments"
+          :format-date="formatDateForThread"
+        />
+        <ActivityDefinitions
+          v-if="activeTab === 'all_definitions'"
+          :definitions="allDefinitions"
+          :format-date="formatDateForThread"
+        />
+        <PaginationComponent
+          v-if="
+            (['news', 'changes'].includes(activeTab) && (currentPage > 1 || nextCursor)) ||
+            (['threads', 'all_comments', 'all_definitions'].includes(activeTab) && totalPages > 1)
+          "
+          :current-page="currentPage"
+          :total-pages="
+            ['news', 'changes'].includes(activeTab)
+              ? nextCursor
+                ? currentPage + 1
+                : currentPage
+              : totalPages
+          "
+          :total="['news', 'changes'].includes(activeTab) ? 0 : totalItems"
+          :per-page="perPage"
+          @prev="changePage(currentPage - 1)"
+          @next="changePage(currentPage + 1)"
+        />
+      </div>
+    </div>
+    <LiveChatDock />
   </div>
 </template>
 
 <script setup lang="ts">
-import { History, Waves, MessageSquare, Book } from '@lucide/vue'
+import { Book, History, MessageSquare, Newspaper, Waves } from '@lucide/vue'
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
@@ -58,18 +74,22 @@ import ActivityChanges from '@/components/activity/ActivityChanges.vue'
 import ActivityComments from '@/components/activity/ActivityComments.vue'
 import ActivityDefinitions from '@/components/activity/ActivityDefinitions.vue'
 import ActivityThreads from '@/components/activity/ActivityThreads.vue'
+import LiveChatDock from '@/components/LiveChatDock.vue'
 import { useDateFormat } from '@/composables/useDateFormat'
 import PaginationComponent from '@/components/PaginationComponent.vue'
 import SkeletonActivityItem from '@/components/activity/SkeletonActivityItem.vue'
 import TabbedPageHeader from '@/components/TabbedPageHeader.vue'
 import { useError } from '@/composables/useError'
+import { useNewsUnread } from '@/composables/useNewsUnread'
 import { useSeoHead } from '@/composables/useSeoHead'
 import { queryStr } from '@/utils/routeQuery'
 
 const { t } = useI18n()
 const { formatDate, formatTime } = useDateFormat()
+const { markNewsOpened } = useNewsUnread()
 
 const tabs = computed(() => [
+  { key: 'news', label: t('recentChanges.news'), icon: Newspaper },
   { key: 'changes', label: t('recentChanges.recentChanges'), icon: History },
   { key: 'threads', label: t('recentChanges.discussionWaves'), icon: Waves },
   { key: 'all_comments', label: t('recentChanges.allComments'), icon: MessageSquare },
@@ -81,9 +101,13 @@ const STORAGE_KEY_TAB = 'recentChanges_activeTab'
 /** Main app scroll is on `.main-content`, not the window (see App.vue). */
 function scrollMainContentToTop() {
   if (typeof document === 'undefined') return
-  const el = document.querySelector('.main-content')
+  const el = document.querySelector('.recent-changes-main')
   if (el) el.scrollTo({ top: 0, left: 0, behavior: 'instant' })
-  else window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
+  else {
+    const main = document.querySelector('.main-content')
+    if (main) main.scrollTo({ top: 0, left: 0, behavior: 'instant' })
+    else window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
+  }
 }
 
 const route = useRoute()
@@ -95,6 +119,7 @@ const allComments = ref([])
 const allDefinitions = ref([])
 type ChangeRow = { time: number; [key: string]: unknown }
 const changes = ref<ChangeRow[]>([])
+const newsChanges = ref<ChangeRow[]>([])
 
 // Pagination state (shared for simplicity, adjust if needed per tab)
 const currentPage = ref(1)
@@ -102,29 +127,35 @@ const perPage = ref(20)
 const totalItems = ref(0) // Generic total for the active tab
 const totalPages = ref(1)
 
-// Cursor-based pagination for 'changes' tab: cursors[i] = cursor to request page i+1 (cursors[0] = undefined for page 1)
+// Cursor-based pagination for news/changes tabs
 const cursors = ref([])
-const nextCursor = ref(null) // next_cursor from last response (for changes tab)
+const nextCursor = ref(null)
 
 // Loading and error state
 const isLoading = ref(true)
 const { error, showError, clearError } = useError()
 
+const isCursorTab = (tabKey: string) => tabKey === 'news' || tabKey === 'changes'
+
 // Active tab state
 const getInitialTab = () => {
-  if (typeof window === 'undefined') return 'changes'
+  if (typeof window === 'undefined') return 'news'
   const storedTab = localStorage.getItem(STORAGE_KEY_TAB)
   const queryTab = queryStr(route.query.tab)
-  const validTabs = tabs.value.map((t) => t.key)
+  const validTabs = tabs.value.map((tab) => tab.key)
   if (queryTab && validTabs.includes(queryTab)) return queryTab
   if (storedTab && validTabs.includes(storedTab)) return storedTab
-  return 'changes'
+  return 'news'
 }
 const activeTab = ref(getInitialTab())
 
+const markNewsIfNeeded = (tabKey: string) => {
+  if (tabKey === 'news') markNewsOpened()
+}
+
 // Pagination: update URL; route watcher will sync currentPage and fetch
 const changePage = (newPage: number) => {
-  if (activeTab.value === 'changes') {
+  if (isCursorTab(activeTab.value)) {
     const canGo =
       newPage >= 1 &&
       (newPage <= currentPage.value || nextCursor.value || cursors.value[newPage - 1])
@@ -147,6 +178,29 @@ const fetchData = async (tabKey: string) => {
   try {
     let response
     switch (tabKey) {
+      case 'news': {
+        newsChanges.value = []
+        let pageToFetch = currentPage.value
+        if (currentPage.value > 1 && !cursors.value[currentPage.value - 1]) {
+          currentPage.value = 1
+          pageToFetch = 1
+          router.replace({ query: { ...route.query, page: 1 } })
+        }
+        const after = pageToFetch > 1 ? cursors.value[pageToFetch - 1] : undefined
+        response = await getRecentChanges(
+          { limit: perPage.value, types: 'wiki', ...(after && { after }) },
+          abortController.signal
+        )
+        newsChanges.value = response.data.changes
+        nextCursor.value = response.data.next_cursor ?? null
+        if (response.data.next_cursor) {
+          const c = [...cursors.value]
+          c[pageToFetch] = response.data.next_cursor
+          cursors.value = c
+        }
+        totalItems.value = 0
+        break
+      }
       case 'changes': {
         changes.value = []
         let pageToFetch = currentPage.value
@@ -250,6 +304,9 @@ const fetchData = async (tabKey: string) => {
       showError(msg)
       // Reset relevant data on error
       switch (tabKey) {
+        case 'news':
+          newsChanges.value = []
+          break
         case 'changes':
           changes.value = []
           break
@@ -281,15 +338,17 @@ watch(activeTab, (newTab: string) => {
   if (typeof window !== 'undefined') {
     localStorage.setItem(STORAGE_KEY_TAB, newTab)
   }
+  markNewsIfNeeded(newTab)
 })
 
 const handleTabClick = async (tabKey: string) => {
   if (tabKey === activeTab.value || isLoading.value) return
 
+  markNewsIfNeeded(tabKey)
   isLoading.value = true
   clearError()
   currentPage.value = 1
-  if (tabKey === 'changes') {
+  if (isCursorTab(tabKey)) {
     cursors.value = []
     nextCursor.value = null
   }
@@ -313,6 +372,7 @@ let abortController = null
 
 onMounted(async () => {
   const initialTab = getInitialTab()
+  markNewsIfNeeded(initialTab)
   currentPage.value = parseInt(queryStr(route.query.page), 10) || 1
   await fetchData(initialTab)
   activeTab.value = initialTab // Set activeTab after initial fetch
@@ -329,27 +389,27 @@ onUnmounted(() => {
 const dateKey = (d: Date) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 
-const groupedChanges = computed(() => {
-  const groups = changes.value.reduce<Record<string, { date: Date; changes: ChangeRow[] }>>(
-    (acc, change) => {
-      const d = new Date(change.time * 1000)
-      const key = dateKey(d)
-      if (!acc[key]) {
-        acc[key] = { date: d, changes: [] }
-      }
-      acc[key].changes.push(change)
-      return acc
-    },
-    {}
-  )
+const groupByDate = (rows: ChangeRow[]) => {
+  const groups = rows.reduce<Record<string, { date: Date; changes: ChangeRow[] }>>((acc, change) => {
+    const d = new Date(change.time * 1000)
+    const key = dateKey(d)
+    if (!acc[key]) {
+      acc[key] = { date: d, changes: [] }
+    }
+    acc[key].changes.push(change)
+    return acc
+  }, {})
   return Object.values(groups).sort((a, b) => b.date.getTime() - a.date.getTime())
-})
+}
+
+const groupedChanges = computed(() => groupByDate(changes.value))
+const groupedNews = computed(() => groupByDate(newsChanges.value))
 
 const formatDateForThread = (timestamp: number) => formatDate(timestamp)
 
 // Reactive page title
 const pageTitle = computed(() => {
-  const currentTab = tabs.value.find((t) => t.key === activeTab.value)
+  const currentTab = tabs.value.find((tab) => tab.key === activeTab.value)
   return currentTab ? currentTab.label : t('recentChanges.activityTitle')
 })
 useSeoHead({ title: pageTitle, pathWithoutLocale: '/recent' })
@@ -365,14 +425,15 @@ watch(
 
     const tabStr = queryStr(newQuery.tab)
     const newTab =
-      tabStr && tabs.value.map((t) => t.key).includes(tabStr) ? tabStr : getInitialTab()
+      tabStr && tabs.value.map((tab) => tab.key).includes(tabStr) ? tabStr : getInitialTab()
     const newPage = parseInt(queryStr(newQuery.page), 10) || 1
 
     let needsFetch = false
     if (newTab !== activeTab.value) {
       activeTab.value = newTab
+      markNewsIfNeeded(newTab)
       needsFetch = true
-      if (newTab === 'changes') {
+      if (isCursorTab(newTab)) {
         cursors.value = []
         nextCursor.value = null
       }

@@ -49,7 +49,10 @@
             {{ t('recentChanges.in', { language: changeLanguage }) }}
           </span>
           <div
-            v-if="change.change_type === 'definition' && visibleDiffChanges.length"
+            v-if="
+              (change.change_type === 'definition' || change.change_type === 'wiki') &&
+              visibleDiffChanges.length
+            "
             class="mt-3 space-y-3 border-l-4 border-blue-200 pl-4"
           >
             <template v-for="diffChange in visibleDiffChanges" :key="diffChange.field">
@@ -149,7 +152,10 @@
             "
             class="prose prose-sm max-w-none text-gray-700 mb-3"
           >
-            <LazyMathJax :content="change.content" :enable-markdown="true" />
+            <LazyMathJax
+              :content="typeof change.content === 'string' ? change.content : String(change.content ?? '')"
+              :enable-markdown="true"
+            />
           </div>
         </div>
       </div>

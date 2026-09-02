@@ -274,6 +274,7 @@
     "library": "Мои коллекции",
     "me": "Я",
     "recent": "Недавнее",
+    "news": "Новости",
     "more": "Ещё",
     "users": "Пользователи",
     "languages": "Языки",
@@ -341,6 +342,7 @@
     "threadTitle": "Тема: {subject}"
   },
   "recentChanges": {
+    "news": "Новости",
     "recentChanges": "Последнее",
     "discussionWaves": "Обсуждения",
     "allComments": "Все комментарии",

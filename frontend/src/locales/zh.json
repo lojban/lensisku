@@ -307,6 +307,7 @@
     "library": "我的合集",
     "me": "我",
     "recent": "最近",
+    "news": "新闻",
     "more": "更多",
     "users": "用户",
     "languages": "语言",
@@ -375,6 +376,7 @@
     "threadTitle": "串：{subject}"
   },
   "recentChanges": {
+    "news": "新闻",
     "recentChanges": "最近更新",
     "discussionWaves": "讨论波",
     "allComments": "全部评论",

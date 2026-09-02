@@ -307,6 +307,7 @@
     "library": "liste fi'e mi",
     "me": "mi",
     "recent": "cnino",
+    "news": "nuzba",
     "more": "drata",
     "users": "le'i pilno",
     "languages": "le'i bangu",
@@ -375,6 +376,7 @@
     "threadTitle": "karni: {subject}"
   },
   "recentChanges": {
+    "news": "nuzba",
     "recentChanges": "cnino vrici",
     "discussionWaves": "cnino nu casnu",
     "allComments": "cnino pinka",
