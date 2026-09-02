@@ -100,18 +100,21 @@
                 <RouterLink
                   v-if="
                     !disableDiscussionButton &&
-                    definition.comment_count &&
-                    definition.comment_count > 0
+                    definition.definitionid &&
+                    definition.valsiid
                   "
-                  :to="`/valsi/${definition.valsiword ?? definition.word}`"
+                  :to="definitionDiscussionLink"
                   class="ui-btn--empty inline-flex items-center gap-2"
+                  :title="t('components.definitionCard.discussDefinitionButton')"
                 >
                   <MessageSquarePlus
-                    v-if="definition.comment_count === 0"
+                    v-if="!definition.comment_count"
                     class="h-4 w-4 shrink-0"
                   />
                   <MessageSquareMore v-else class="h-4 w-4 shrink-0" />
-                  <span class="text-xs font-medium"> {{ definition.comment_count }} </span>
+                  <span v-if="definition.comment_count" class="text-xs font-medium">
+                    {{ definition.comment_count }}
+                  </span>
                 </RouterLink>
                 <VoteButtons
                   v-if="props.showVoteButtons && definition.definitionid"
@@ -496,7 +499,7 @@
           <!-- Comment -->
           <RouterLink
             v-if="auth.state.isLoggedIn && props.showCommentButton"
-            :to="`/comments?valsi_id=${definition.valsiid}&definition_id=${definition.definitionid}`"
+            :to="definitionDiscussionLink"
             class="ui-btn--create ui-btn--group-item inline-flex items-center justify-center gap-2"
           >
             <MessageSquare class="h-4 w-4 shrink-0" />
@@ -534,7 +537,7 @@
           <!-- Discussions -->
           <RouterLink
             v-if="disableDiscussionButton && !disableDiscussionToolbarButton"
-            :to="`/comments?valsi_id=${definition.valsiid}&definition_id=${definition.definitionid}`"
+            :to="definitionDiscussionLink"
             class="ui-btn--read ui-btn--group-item inline-flex items-center justify-center gap-2"
           >
             <AudioWaveform class="h-4 w-4 shrink-0" />
@@ -987,6 +990,13 @@ const displayedValsi = computed(() =>
     : valsiWord.value
 )
 const isValsiTruncated = computed(() => valsiWord.value.length > MAX_VALSI_DISPLAY_LENGTH)
+const definitionDiscussionLink = computed(() => {
+  const definitionId = props.definition.definitionid
+  const valsiId = props.definition.valsiid
+  if (!definitionId || !valsiId) return '/comments'
+  return `/comments?valsi_id=${valsiId}&definition_id=${definitionId}`
+})
+
 const valsiDefinitionLink = computed(() => {
   if (!props.definition.definitionid) return '#'
 

@@ -316,7 +316,7 @@ pub async fn semantic_search(
                 SELECT COUNT(c.commentid) as comment_count
                 FROM threads t
                 LEFT JOIN comments c ON c.threadid = t.threadid
-                WHERE (t.valsiid = v.valsiid OR t.definitionid = d.definitionid)
+                WHERE t.valsiid = v.valsiid AND t.definitionid = d.definitionid
             ) cc ON true
             LEFT JOIN definition_images_flag di ON di.definition_id = d.definitionid
             WHERE d.langid != 1 
@@ -1129,7 +1129,7 @@ pub async fn search_definitions(
                 SELECT COUNT(c.commentid) as comment_count
                 FROM threads t
                 LEFT JOIN comments c ON c.threadid = t.threadid
-                WHERE (t.valsiid = d.valsiid OR t.definitionid = d.definitionid)
+                WHERE t.valsiid = d.valsiid AND t.definitionid = d.definitionid
             ) cc ON true
             LEFT JOIN definition_images_flag di ON di.definition_id = d.definitionid
             WHERE (d.cached_search_text ILIKE $2 OR d.cached_valsiword ILIKE $8)
