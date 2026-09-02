@@ -19,12 +19,13 @@
       </h2>
     </div>
 
-    <div v-if="valsiDetails && definitionDetails" class="mb-4">
+    <div v-if="valsiDetails && definitionDetails" class="mb-4 discussion-definition-scroll">
       <DefinitionCard
         :definition="definitionDetails"
         :languages="languages"
         :disable-discussion-button="true"
         :disable-discussion-toolbar-button="true"
+        :disable-toolbar="true"
         :show-definition-number="true"
       />
     </div>
@@ -46,17 +47,6 @@
         }}</span>
       </label>
       <Button
-        v-if="auth.state.isLoggedIn && comments.length > 0"
-        variant="neutral"
-        type="button"
-        class="inline-flex items-center gap-2 ui-btn--neutral"
-        :aria-label="t('commentList.newWave')"
-        @click="handleNewTopLevelComment"
-      >
-        <AudioWaveform class="h-4 w-4 shrink-0 text-purple-600" />
-        <span>{{ t('commentList.newWave') }}</span>
-      </Button>
-      <Button
         v-if="commentId > 0 && !!currentComment?.parent_id"
         variant="accent-purple"
         class="inline-flex items-center ui-btn--accent-purple"
@@ -76,14 +66,15 @@
       </Button>
     </div>
   </div>
-  <!-- New top-level comment form -->
-  <div v-if="showTopLevelForm">
+  <!-- Top-level comment composer (always visible for signed-in users on contextual threads) -->
+  <div v-if="showTopLevelComposer" class="mb-4">
     <CommentForm
+      :key="composerKey"
       :is-submitting="isSubmitting"
       :initial-values="newComment"
       class="border border-blue-200 rounded-lg shadow-sm"
       @submit="submitComment"
-      @cancel="cancelComment"
+      @cancel="resetComposerState"
     />
   </div>
   <!-- Comments list -->
@@ -113,7 +104,7 @@
                 :initial-values="newComment"
                 :is-reply="true"
                 @submit="submitComment"
-                @cancel="cancelComment"
+                @cancel="cancelReply"
               />
             </div>
           </div>
@@ -143,7 +134,7 @@
                 :initial-values="newComment"
                 :is-reply="true"
                 @submit="submitComment"
-                @cancel="cancelComment"
+                @cancel="cancelReply"
               />
             </div>
           </div>
@@ -167,22 +158,10 @@
     <!-- Empty state -->
     <div
       v-if="!isLoading && comments.length === 0"
-      class="flex flex-col justify-center text-center py-12 bg-blue-50 rounded-lg border border-blue-100 p-4"
+      class="flex flex-col justify-center text-center py-8 bg-blue-50 rounded-lg border border-blue-100 p-4"
     >
       <MessageSquare class="mx-auto h-12 w-12 text-blue-400" />
-      <p class="my-4 text-gray-600">{{ t('commentList.noComments') }}</p>
-      <Button
-        v-if="auth.state.isLoggedIn"
-        v-show="!showTopLevelForm"
-        variant="neutral"
-        type="button"
-        class="inline-flex items-center gap-2 h-12 text-base !px-5 mx-auto"
-        :aria-label="t('commentList.newDiscussionWave')"
-        @click="handleNewTopLevelComment"
-      >
-        <AudioWaveform class="h-6 w-6 shrink-0 text-purple-600" />
-        <span>{{ t('commentList.newDiscussionWave') }}</span>
-      </Button>
+      <p class="mt-4 text-gray-600">{{ t('commentList.noComments') }}</p>
     </div>
     <!-- Floating quote button -->
     <div
@@ -206,7 +185,7 @@
 
 <script setup lang="ts">
 import { Button, Checkbox } from '@packages/ui'
-import { ArrowLeft, Home, MessageSquare, AudioWaveform, Loader2, Quote } from '@lucide/vue'
+import { ArrowLeft, Home, MessageSquare, Loader2, Quote } from '@lucide/vue'
 import { ref, computed, onMounted, watchEffect, nextTick, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
@@ -264,10 +243,6 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
-  showComposerWhenEmpty: {
-    type: Boolean,
-    default: false,
-  },
   initialSubject: {
     type: String,
     default: '',
@@ -287,8 +262,8 @@ const levelMap = new Map()
 const lastBuildQuery = ref('')
 const comments = ref([])
 const isLoading = ref(true)
-const showTopLevelForm = ref(false)
 const replyToId = ref(null)
+const composerKey = ref(0)
 const isSubmitting = ref(false)
 const newComment = ref({
   subject: '',
@@ -387,22 +362,20 @@ const getReplyMargin = (level: number) => {
   return Math.min(Math.max(level - 1, 0) * 2, 8)
 }
 
-const handleNewTopLevelComment = () => {
-  if (
-    props.valsiId === 0 &&
-    props.definitionId === 0 &&
-    props.collectionId === 0 &&
-    props.natlangWordId === 0
-  ) {
-    router.push('/comments/new-thread')
-  } else {
-    showTopLevelForm.value = true
-    replyToId.value = null
-    if (props.initialSubject && !newComment.value.subject) {
-      newComment.value.subject = props.initialSubject
-    }
-  }
-}
+const hasDiscussionContext = computed(
+  () =>
+    !!(
+      props.valsiId ||
+      props.definitionId ||
+      props.collectionId ||
+      props.natlangWordId ||
+      props.definitionLinkId
+    )
+)
+
+const showTopLevelComposer = computed(
+  () => auth.state.isLoggedIn && hasDiscussionContext.value
+)
 
 const handleTextSelection = (commentId: number, event: MouseEvent) => {
   const selection = window.getSelection()
@@ -453,7 +426,6 @@ const handleQuote = () => {
 const handleReply = (commentId: number) => {
   replyToId.value = commentId
   newComment.value = { subject: '', content: '' }
-  showTopLevelForm.value = false
   nextTick(() => {
     const formComponent = document.querySelector('.milkdown-editor')
     if (formComponent) {
@@ -578,7 +550,7 @@ const submitComment = async (formData: { subject: string; content: string }) => 
     if (response.status === 200) {
       const newCommentId = response.data.comment_id
       await performFetchComments(false)
-      cancelComment()
+      resetComposerState()
       router.replace({
         query: {
           ...route.query,
@@ -601,10 +573,15 @@ const submitComment = async (formData: { subject: string; content: string }) => 
   }
 }
 
-const cancelComment = () => {
-  showTopLevelForm.value = false
+const resetComposerState = () => {
   replyToId.value = null
   newComment.value = { subject: '', content: '' }
+  quotePosition.value.visible = false
+  composerKey.value += 1
+}
+
+const cancelReply = () => {
+  replyToId.value = null
   quotePosition.value.visible = false
 }
 
@@ -692,9 +669,6 @@ onMounted(async () => {
   await fetchDefinitionsAndDetails()
   // Pass true for initial load
   await performFetchComments(true)
-  if (props.showComposerWhenEmpty && auth.state.isLoggedIn && comments.value.length === 0) {
-    showTopLevelForm.value = true
-  }
 })
 
 // Watch for route changes to refresh comments

@@ -64,6 +64,8 @@
     "recentSuggestions": "最近",
     "selectAll": "全选",
     "deselectAll": "取消全选",
+    "selectAllAuthors": "全选作者",
+    "deselectAllAuthors": "取消全选作者",
     "searchLanguages": "搜索语言...",
     "noMatches": "无匹配项",
     "filterBy": {

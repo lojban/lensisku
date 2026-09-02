@@ -518,7 +518,6 @@
         :collection-id="currentCard.flashcard.collection_id"
         :definition-link-id="currentCard.flashcard.id"
         :initial-subject="currentFlashcardTag"
-        :show-composer-when-empty="true"
         :embedded="true"
       />
     </div>

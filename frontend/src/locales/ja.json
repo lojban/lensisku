@@ -64,6 +64,8 @@
     "recentSuggestions": "最近",
     "selectAll": "すべて選択",
     "deselectAll": "すべて解除",
+    "selectAllAuthors": "すべての投稿者を選択",
+    "deselectAllAuthors": "すべての投稿者の選択を解除",
     "searchLanguages": "言語を検索...",
     "noMatches": "該当なし",
     "filterBy": {

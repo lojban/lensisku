@@ -38,8 +38,9 @@
           :search-field-keys="collectionUserSearchFieldKeys"
           :placeholder="t('filters.selectCollectionsAndUsers')"
           :search-placeholder="t('filters.searchCollectionsAndUsers')"
-          :select-all-label="t('filters.selectAll')"
-          :deselect-all-label="t('filters.deselectAll')"
+          :select-all-label="t('filters.selectAllAuthors')"
+          :deselect-all-label="t('filters.deselectAllAuthors')"
+          :select-all-predicate="isUserPickerOption"
           :empty-filter-label="t('filters.noCollectionUserMatches')"
           :preface="t('filters.collectionsAndUsersPreface')"
           full-bleed-mobile-panel
@@ -388,7 +389,7 @@ import {
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute } from 'vue-router'
 
-import { fetchDefinitionsTypes, listUsers, searchCollectionsAndUsers } from '@/api'
+import { fetchDefinitionsTypes, getCollection, listUsers, searchCollectionsAndUsers } from '@/api'
 import { useAuth } from '@/composables/useAuth'
 import { useRecentSelections } from '@/composables/useRecentSelections'
 
@@ -591,6 +592,7 @@ const selectedCollectionUsers = computed<CollectionUserOption[]>({
 })
 
 const collectionUserSuggestions = computed(() => {
+  const publicCollectionIds = new Set(collectionOptions.value.map((c) => c.collection_id))
   const mixed = recentCollectionUsers.value.length
     ? recentCollectionUsers.value
     : [
@@ -599,6 +601,11 @@ const collectionUserSuggestions = computed(() => {
       ]
   const byKey = new Map(collectionUserOptions.value.map((o) => [collectionUserOptionValue(o), o]))
   return mixed
+    .filter((item) => {
+      if (item.kind === 'user') return true
+      // Recent collection chips: only public collections returned by the picker API.
+      return publicCollectionIds.has(item.collection_id)
+    })
     .map((item) => byKey.get(collectionUserOptionValue(item)) ?? item)
     .filter((item) => collectionUserOptionLabel(item))
     .slice(0, 3)
@@ -751,15 +758,48 @@ function mergeCollectionOptions(cols: CollectionOption[]) {
   for (const c of selectedCollections.value) {
     if (!byId.has(c.collection_id)) byId.set(c.collection_id, c)
   }
-  for (const c of recentCollections.value) {
-    if (!byId.has(c.collection_id)) byId.set(c.collection_id, c)
-  }
   collectionOptions.value = [...byId.values()]
   if (selectedCollections.value.length) {
     selectedCollections.value = collectionsFromIds(
       selectedCollections.value.map((c) => c.collection_id),
       collectionOptions.value
     )
+  }
+}
+
+/** Drop selected collections that are not public (picker + search only allow public). */
+async function pruneNonPublicSelectedCollections() {
+  if (!selectedCollections.value.length) return
+
+  const publicIds = new Set(collectionOptions.value.map((c) => c.collection_id))
+  const needsLookup = selectedCollections.value.filter((c) => !publicIds.has(c.collection_id))
+  if (!needsLookup.length) return
+
+  const kept = selectedCollections.value.filter((c) => publicIds.has(c.collection_id))
+  for (const col of needsLookup) {
+    try {
+      const response = await getCollection(col.collection_id)
+      const data = response.data as {
+        is_public?: boolean
+        name?: string
+        owner?: { username?: string }
+      }
+      if (data?.is_public) {
+        kept.push({
+          collection_id: col.collection_id,
+          name: data.name ?? col.name,
+          owner_username: data.owner?.username ?? col.owner_username,
+        })
+      }
+    } catch {
+      // Private, missing, or no access — omit from filter.
+    }
+  }
+
+  if (kept.length !== selectedCollections.value.length) {
+    selectedCollections.value = kept
+    mergeCollectionOptions(kept)
+    emitUpdate()
   }
 }
 
@@ -963,6 +1003,7 @@ async function fetchCollectionUsers(search = '') {
     }
     mergeCollectionOptions(cols)
     mergeUserOptions(users)
+    await pruneNonPublicSelectedCollections()
   } catch (error) {
     console.error('Failed to list collections and users for filter:', error)
   }

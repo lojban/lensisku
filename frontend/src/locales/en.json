@@ -64,6 +64,8 @@
     "recentSuggestions": "Recent",
     "selectAll": "Select all",
     "deselectAll": "Deselect all",
+    "selectAllAuthors": "Select all authors",
+    "deselectAllAuthors": "Deselect all authors",
     "searchLanguages": "Search languages...",
     "noMatches": "No matches",
     "filterBy": {

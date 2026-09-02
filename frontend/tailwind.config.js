@@ -573,6 +573,10 @@ export default {
           '@apply w-full bg-white border rounded-lg hover:border-blue-300 transition-colors shadow hover:shadow-none p-4':
             {},
         },
+        /** Definition preview on discussion pages: cap height, scroll long content. */
+        '.discussion-definition-scroll': {
+          '@apply max-h-80 overflow-y-auto overscroll-y-contain rounded-lg': {},
+        },
         /** Activity “thread” row with blue hover border. */
         '.surface-activity-row': {
           '@apply space-y-2 bg-white p-4 rounded-lg border border-gray-200 hover:border-blue-200 transition-colors cursor-pointer':

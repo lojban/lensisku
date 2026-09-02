@@ -39,18 +39,18 @@
             @keydown.escape.stop="open = false"
           />
         </div>
-        <!-- Select all (applies to the filtered list) -->
-        <div v-if="showSelectAll" class="border-b border-gray-100 px-2 py-1.5">
+        <!-- Select all (applies to the filtered list, optionally scoped via selectAllPredicate) -->
+        <div v-if="showSelectAllRow" class="border-b border-gray-100 px-2 py-1.5">
           <label
             class="flex cursor-pointer items-center gap-2 rounded-md px-1 py-1 text-sm text-gray-700 hover:bg-gray-50"
-            :class="{ 'pointer-events-none opacity-50': !filteredOptions.length }"
+            :class="{ 'pointer-events-none opacity-50': !selectAllEligibleOptions.length }"
           >
             <input
               ref="selectAllInputRef"
               type="checkbox"
               class="checkmark-aqua shrink-0"
               :checked="allFilteredSelected"
-              :disabled="!filteredOptions.length"
+              :disabled="!selectAllEligibleOptions.length"
               @change="toggleSelectAll"
             />
             <span class="select-none">{{ selectAllRowLabel }}</span>
@@ -176,6 +176,14 @@ const props = defineProps({
   showSelectAll: {
     type: Boolean,
     default: true,
+  },
+  /**
+   * When set, “Select all” only toggles filtered options that pass this predicate
+   * (e.g. authors only in a mixed collections + users picker).
+   */
+  selectAllPredicate: {
+    type: Function as PropType<(item: unknown) => boolean>,
+    default: undefined,
   },
   /** Max primary labels before summarizing with “+N” */
   maxSelectedLabels: {
@@ -388,6 +396,18 @@ const filteredOptions = computed(() => {
   return props.options.filter((o) => itemMatchesQuery(o, searchQuery.value))
 })
 
+function isSelectAllEligible(item: unknown): boolean {
+  return props.selectAllPredicate ? props.selectAllPredicate(item) : true
+}
+
+const selectAllEligibleOptions = computed(() =>
+  filteredOptions.value.filter((o) => isSelectAllEligible(o))
+)
+
+const showSelectAllRow = computed(
+  () => props.showSelectAll && selectAllEligibleOptions.value.length > 0
+)
+
 const visibleSuggested = computed(() => {
   const seen = new Set<unknown>()
   const out: unknown[] = []
@@ -401,7 +421,7 @@ const visibleSuggested = computed(() => {
 })
 
 const allFilteredSelected = computed(() => {
-  const list = filteredOptions.value
+  const list = selectAllEligibleOptions.value
   if (!list.length) return false
   return list.every((o) => isSelected(o))
 })
@@ -413,7 +433,7 @@ const selectAllRowLabel = computed(() =>
 watchEffect(() => {
   const el = selectAllInputRef.value
   if (!el) return
-  const list = filteredOptions.value
+  const list = selectAllEligibleOptions.value
   if (!list.length) {
     el.indeterminate = false
     return
@@ -443,7 +463,7 @@ function toggleOption(item: unknown) {
 }
 
 function toggleSelectAll() {
-  const list = filteredOptions.value
+  const list = selectAllEligibleOptions.value
   if (!list.length) return
   if (allFilteredSelected.value) {
     const remove = new Set(list.map((o) => getValue(o)))

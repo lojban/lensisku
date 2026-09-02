@@ -64,6 +64,8 @@
     "recentSuggestions": "Недавние",
     "selectAll": "Выбрать все",
     "deselectAll": "Снять все",
+    "selectAllAuthors": "Выбрать всех авторов",
+    "deselectAllAuthors": "Снять всех авторов",
     "searchLanguages": "Поиск языков...",
     "noMatches": "Нет совпадений",
     "filterBy": {

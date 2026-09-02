@@ -64,6 +64,8 @@
     "recentSuggestions": "puzi",
     "selectAll": "cuxna ro da",
     "deselectAll": "cuxna no da",
+    "selectAllAuthors": "cuxna ro finti",
+    "deselectAllAuthors": "cuxna no finti",
     "searchLanguages": "pentoi lo bangu",
     "noMatches": "no da se jimpe",
     "filterBy": {
