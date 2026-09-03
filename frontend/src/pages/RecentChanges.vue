@@ -1,19 +1,21 @@
 <template>
-  <div class="recent-changes-page">
-    <div class="recent-changes-main">
-      <div class="shrink-0">
-        <TabbedPageHeader
-          :tabs="tabs"
-          :active-tab="activeTab"
-          :page-title="pageTitle"
-          @tab-click="handleTabClick"
-        />
-      </div>
-      <!-- Only the news/activity items scroll -->
-      <div v-if="isLoading" class="recent-changes-list">
+  <div class="feed-page">
+    <div class="feed-page__header feed-page__header--tabs">
+      <TabbedPageHeader
+        :tabs="tabs"
+        :active-tab="activeTab"
+        :page-title="pageTitle"
+        :show-title="false"
+        @tab-click="handleTabClick"
+      />
+    </div>
+
+    <div class="feed-page__body">
+      <h2 class="page-section-title my-2 block md:hidden">{{ pageTitle }}</h2>
+      <div v-if="isLoading">
         <SkeletonActivityItem v-for="n in 5" :key="n" />
       </div>
-      <div v-else-if="!error" class="recent-changes-list">
+      <template v-else-if="!error">
         <ActivityChanges
           v-if="activeTab === 'news'"
           :grouped-changes="groupedNews"
@@ -40,34 +42,24 @@
           :definitions="allDefinitions"
           :format-date="formatDateForThread"
         />
-      </div>
-      <!-- Pagination stays outside the scrolling list -->
-      <div
-        v-if="
-          !isLoading &&
-          !error &&
-          ((['news', 'changes'].includes(activeTab) && (currentPage > 1 || nextCursor)) ||
-            (['threads', 'all_comments', 'all_definitions'].includes(activeTab) && totalPages > 1))
-        "
-        class="recent-changes-pagination"
-      >
-        <PaginationComponent
-          :current-page="currentPage"
-          :total-pages="
-            ['news', 'changes'].includes(activeTab)
-              ? nextCursor
-                ? currentPage + 1
-                : currentPage
-              : totalPages
-          "
-          :total="['news', 'changes'].includes(activeTab) ? 0 : totalItems"
-          :per-page="perPage"
-          @prev="changePage(currentPage - 1)"
-          @next="changePage(currentPage + 1)"
-        />
+      </template>
+    </div>
+
+    <div v-if="showPagination || activeTab === 'news'" class="feed-page__footer">
+      <div class="feed-page__footer-inner">
+        <div v-if="showPagination" class="feed-page__pagination">
+          <PaginationComponent
+            :current-page="currentPage"
+            :total-pages="paginationTotalPages"
+            :total="isCursorTab(activeTab) ? 0 : totalItems"
+            :per-page="perPage"
+            @prev="changePage(currentPage - 1)"
+            @next="changePage(currentPage + 1)"
+          />
+        </div>
+        <LiveChatDock v-if="activeTab === 'news'" />
       </div>
     </div>
-    <LiveChatDock v-if="activeTab === 'news'" />
   </div>
 </template>
 
@@ -106,16 +98,12 @@ const tabs = computed(() => [
 
 const STORAGE_KEY_TAB = 'recentChanges_activeTab'
 
-/** Scroll the feed list (date groups), not the tab strip or live-chat dock. */
+/** Scroll the middle feed body only. */
 function scrollMainContentToTop() {
   if (typeof document === 'undefined') return
-  const el = document.querySelector('.recent-changes-list')
+  const el = document.querySelector('.feed-page__body')
   if (el) el.scrollTo({ top: 0, left: 0, behavior: 'instant' })
-  else {
-    const main = document.querySelector('.recent-changes-main')
-    if (main) main.scrollTo({ top: 0, left: 0, behavior: 'instant' })
-    else window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
-  }
+  else window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
 }
 
 const route = useRoute()
@@ -156,6 +144,21 @@ const getInitialTab = () => {
   return 'news'
 }
 const activeTab = ref(getInitialTab())
+
+const showPagination = computed(() => {
+  if (isLoading.value || error.value) return false
+  if (isCursorTab(activeTab.value)) {
+    return currentPage.value > 1 || !!nextCursor.value
+  }
+  return totalPages.value > 1
+})
+
+const paginationTotalPages = computed(() => {
+  if (isCursorTab(activeTab.value)) {
+    return nextCursor.value ? currentPage.value + 1 : currentPage.value
+  }
+  return totalPages.value
+})
 
 const markNewsIfNeeded = (tabKey: string) => {
   if (tabKey === 'news') markNewsOpened()

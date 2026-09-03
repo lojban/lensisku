@@ -12,7 +12,7 @@
       </NotebookTab>
     </nav>
 
-    <h2 class="my-2 block text-2xl font-bold text-gray-800 md:hidden">{{ pageTitle }}</h2>
+    <h2 v-if="showTitle" class="page-section-title my-2 block md:hidden">{{ pageTitle }}</h2>
   </div>
 </template>
 
@@ -32,6 +32,11 @@ defineProps({
   pageTitle: {
     type: String,
     required: true,
+  },
+  /** When false, caller renders the title in scrollable content (e.g. feed body). */
+  showTitle: {
+    type: Boolean,
+    default: true,
   },
 })
 

@@ -1,447 +1,456 @@
 <template>
-  <!-- Search and Filter Section -->
-  <!-- Skeletons -->
-  <SearchFormSkeleton v-if="isInitialLoading" />
-  <CombinedFiltersSkeleton
-    v-if="isInitialLoading && (searchMode === 'dictionary' || searchMode === 'semantic')"
-  />
-  <!-- Search Form -->
-  <SearchForm
-    v-if="!isInitialLoading"
-    ref="searchFormRef"
-    :initial-query="searchQuery"
-    :initial-mode="searchMode"
-    :initial-group-by-thread="groupByThread"
-    class="w-full"
-    @search="performSearch"
-  />
-  <CombinedFilters
-    v-if="searchMode === 'dictionary' || searchMode === 'semantic'"
-    v-model="filters"
-    :languages="languages"
-    :force-show-reset="!!similarDefinitionId"
-    class="w-full transition-opacity duration-300"
-    :class="{ 'opacity-0 pointer-events-none h-0 overflow-hidden': isInitialLoading }"
-    @change="handleFilterChange"
-    @reset="handleFiltersReset"
-  />
-
-  <div v-if="showTrendingHome" class="min-h-[400px]">
-    <div v-if="isLoadingTrending" class="flex justify-center py-8">
-      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
-    </div>
-    <!-- Latest comments, wiki, and mail (trending comments hidden for now) -->
-    <div v-if="homeActivity.length > 0" class="space-y-2">
-      <h2 class="text-lg sm:text-xl font-bold text-gray-800 select-none">
-        {{ $t('home.latestActivity') }}
-      </h2>
-
-      <div class="home-feed-list">
-        <RecentChangeItem
-          v-for="change in homeActivity"
-          :key="homeChangeKey(change)"
-          :change="change"
+  <div class="feed-page">
+    <div class="feed-page__body">
+      <div class="space-y-4 pb-3">
+        <!-- Skeletons -->
+        <SearchFormSkeleton v-if="isInitialLoading" />
+        <CombinedFiltersSkeleton
+          v-if="isInitialLoading && (searchMode === 'dictionary' || searchMode === 'semantic')"
+        />
+        <!-- Search Form -->
+        <SearchForm
+          v-if="!isInitialLoading"
+          ref="searchFormRef"
+          :initial-query="searchQuery"
+          :initial-mode="searchMode"
+          :initial-group-by-thread="groupByThread"
+          class="w-full"
+          @search="performSearch"
+        />
+        <CombinedFilters
+          v-if="searchMode === 'dictionary' || searchMode === 'semantic'"
+          v-model="filters"
+          :languages="languages"
+          :force-show-reset="!!similarDefinitionId"
+          class="w-full transition-opacity duration-300"
+          :class="{ 'opacity-0 pointer-events-none h-0 overflow-hidden': isInitialLoading }"
+          @change="handleFilterChange"
+          @reset="handleFiltersReset"
         />
       </div>
-    </div>
-    <!-- Latest definitions -->
-    <div v-if="homeDefinitions.length > 0" class="space-y-2 mt-6">
-      <h2 class="text-lg sm:text-xl font-bold text-gray-800 select-none">
-        {{ $t('home.latestDefinitions') }}
-      </h2>
 
-      <div class="home-feed-list">
-        <RecentChangeItem
-          v-for="change in homeDefinitions"
-          :key="homeChangeKey(change)"
-          :change="change"
-        />
-      </div>
-    </div>
-  </div>
-
-  <div v-else ref="searchResultsRef" class="min-h-[400px]">
-    <div class="space-y-4">
-      <div
-        class="flex flex-wrap justify-between items-center gap-3 sm:space-x-4 w-full sm:w-auto ml-auto"
-      >
-        <h2 class="text-xl sm:text-2xl font-bold text-gray-800 select-none">
-          {{
-            similarDefinitionId
-              ? $t('home.searchResultsTitle.similar')
-              : searchMode === 'dictionary'
-                ? $t('home.searchResultsTitle.dictionary')
-                : searchMode === 'semantic'
-                  ? $t('home.searchResultsTitle.semantic')
-                  : $t('home.searchResultsTitle.comments')
-          }}
-        </h2>
-
-        <div
-          v-if="auth.state.isLoading"
-          class="flex flex-col sm:flex-row items-end sm:items-center gap-3 sm:space-x-4 ml-auto"
-        >
-          <!-- Skeleton loader shown while auth state loads -->
-          <div class="w-[120px] h-6 bg-gray-100 animate-pulse rounded-full" />
+      <div v-if="showTrendingHome" class="min-h-[400px]">
+        <div v-if="isLoadingTrending" class="flex justify-center py-8">
+          <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
         </div>
+        <!-- Latest comments, wiki, and mail (trending comments hidden for now) -->
+        <div v-if="homeActivity.length > 0" class="space-y-2">
+          <h2 class="text-lg sm:text-xl font-bold text-gray-800 select-none">
+            {{ $t('home.latestActivity') }}
+          </h2>
 
-        <div
-          v-else-if="searchMode === 'dictionary' || searchMode === 'semantic'"
-          class="flex flex-col sm:flex-row items-end sm:items-center gap-3 sm:space-x-4 ml-auto"
-        >
-          <ToolbarSelectDropdown
-            v-if="auth.state.isLoggedIn && decodedRole !== 'Unconfirmed'"
-            :aria-label="$t('home.addDefinition')"
-            trigger-icon="ellipsis"
-            trigger-class="dropdown-action-trigger"
-          >
-            <template #label>
-              <Plus class="h-4 w-4" />
-              <span>{{ $t('home.addDefinition') }}</span>
-            </template>
-            <ToolbarSelectDropdownItem @click="router.push('/valsi/add')">
-              {{ $t('home.createDefinition') }}
-            </ToolbarSelectDropdownItem>
-            <ToolbarSelectDropdownItem
-              :disabled="!hasSearchResults"
-              :class="{ 'opacity-50 cursor-not-allowed': !hasSearchResults }"
-              @click="hasSearchResults && (showAddAllModal = true)"
-            >
-              {{ $t('home.addAllToCollection') }}
-            </ToolbarSelectDropdownItem>
-            <ToolbarSelectDropdownItem @click="goToSearchExport">
-              <ExportIcon class="h-4 w-4 shrink-0" aria-hidden="true" />
-              {{ $t('home.exportResults') }}
-            </ToolbarSelectDropdownItem>
-          </ToolbarSelectDropdown>
-        </div>
-
-        <div
-          v-else-if="searchMode === 'comments'"
-          class="flex flex-col sm:flex-row items-end sm:items-center gap-3 sm:space-x-4 ml-auto"
-        >
-          <IconButton
-            v-if="auth.state.isLoggedIn"
-            :label="$t('home.newFreeThread')"
-            button-classes="ui-btn--neutral"
-            @click="handleNewFreeComment"
-          >
-            <template #icon> <AudioWaveform class="h-4 w-4 text-purple-600" /> </template>
-          </IconButton>
-        </div>
-
-        <div
-          v-if="searchMode === 'comments'"
-          role="group"
-          :aria-label="$t('home.searchResultsTitle.comments')"
-          class="flex flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto ml-auto justify-end sm:justify-start"
-        >
-          <ToolbarSelectDropdown
-            trigger-class="!w-full max-w-[min(100vw-4rem,18rem)]"
-            truncate-label
-          >
-            <template #label>{{ waveSourceTriggerLabel }}</template>
-            <ToolbarSelectDropdownItem
-              :class="{ 'bg-gray-100': waveSource === 'all' }"
-              @click="setWaveSource('all')"
-            >
-              {{ $t('home.waveSourceAll') }}
-            </ToolbarSelectDropdownItem>
-            <ToolbarSelectDropdownItem
-              :class="{ 'bg-gray-100': waveSource === 'jbotcan' }"
-              @click="setWaveSource('jbotcan')"
-            >
-              {{ $t('home.waveSourceJbotcan') }}
-            </ToolbarSelectDropdownItem>
-            <ToolbarSelectDropdownItem
-              :class="{ 'bg-gray-100': waveSource === 'freeforums' }"
-              @click="setWaveSource('freeforums')"
-            >
-              {{ $t('home.waveSourceFreeforums') }}
-            </ToolbarSelectDropdownItem>
-            <ToolbarSelectDropdownItem
-              :class="{ 'bg-gray-100': waveSource === 'comments' }"
-              @click="setWaveSource('comments')"
-            >
-              {{ $t('home.waveSourceComments') }}
-            </ToolbarSelectDropdownItem>
-            <ToolbarSelectDropdownItem
-              :class="{ 'bg-gray-100': waveSource === 'mail' }"
-              @click="setWaveSource('mail')"
-            >
-              {{ $t('home.waveSourceMail') }}
-            </ToolbarSelectDropdownItem>
-            <ToolbarSelectDropdownItem
-              :class="{ 'bg-gray-100': waveSource === 'wiki' }"
-              @click="setWaveSource('wiki')"
-            >
-              {{ $t('home.waveSourceWiki') }}
-            </ToolbarSelectDropdownItem>
-          </ToolbarSelectDropdown>
-          <ToolbarSelectDropdown
-            trigger-class="!w-full max-w-[min(100vw-4rem,18rem)]"
-            truncate-label
-          >
-            <template #label>{{ sortByTriggerLabel }}</template>
-            <ToolbarSelectDropdownItem
-              :class="{ 'bg-gray-100': sortBy === 'time' }"
-              @click="setSortByField('time')"
-            >
-              {{ $t('sort.time') }}
-            </ToolbarSelectDropdownItem>
-            <ToolbarSelectDropdownItem
-              :class="{ 'bg-gray-100': sortBy === 'reactions' }"
-              @click="setSortByField('reactions')"
-            >
-              {{ $t('sort.reactions') }}
-            </ToolbarSelectDropdownItem>
-            <ToolbarSelectDropdownItem
-              :class="{ 'bg-gray-100': sortBy === 'replies' }"
-              @click="setSortByField('replies')"
-            >
-              {{ $t('sort.replies') }}
-            </ToolbarSelectDropdownItem>
-          </ToolbarSelectDropdown>
-          <Button
-            variant="empty"
-            type="button"
-            class="inline-flex h-8 min-w-0 w-auto items-center gap-1.5 whitespace-nowrap px-3 text-sm"
-            :title="sortOrder === 'asc' ? $t('sort.ascending') : $t('sort.descending')"
-            @click="toggleSortOrder"
-          >
-            <ChevronUp
-              v-if="sortOrder === 'asc'"
-              class="h-4 w-4 shrink-0 opacity-60"
-              :stroke-width="2"
+          <div class="home-feed-list">
+            <RecentChangeItem
+              v-for="change in homeActivity"
+              :key="homeChangeKey(change)"
+              :change="change"
             />
-            <ChevronDown v-else class="h-4 w-4 shrink-0 opacity-60" :stroke-width="2" />
-            <span class="whitespace-nowrap">{{
-              sortOrder === 'asc' ? $t('sort.asc') : $t('sort.desc')
-            }}</span>
-          </Button>
+          </div>
+        </div>
+        <!-- Latest definitions -->
+        <div v-if="homeDefinitions.length > 0" class="space-y-2 mt-6">
+          <h2 class="text-lg sm:text-xl font-bold text-gray-800 select-none">
+            {{ $t('home.latestDefinitions') }}
+          </h2>
+
+          <div class="home-feed-list">
+            <RecentChangeItem
+              v-for="change in homeDefinitions"
+              :key="homeChangeKey(change)"
+              :change="change"
+            />
+          </div>
         </div>
       </div>
 
-      <div class="relative" :class="{ 'min-h-[200px]': isLoading }">
-        <div
-          v-if="isLoading"
-          class="absolute inset-0 z-10 flex justify-center pt-8 sm:pt-12 bg-white/70 backdrop-blur-[1px]"
-          aria-busy="true"
-          aria-live="polite"
-        >
-          <div class="animate-spin rounded-full h-8 w-8 shrink-0 border-b-2 border-blue-600" />
-        </div>
-
-        <div class="relative z-0" :class="{ 'pointer-events-none select-none': isLoading }">
-          <PhraseSplit
-            v-if="
-              (searchMode === 'dictionary' || searchMode === 'semantic') && !similarDefinitionId
-            "
-            :phrase="searchQuery"
-            :selected-languages="filters.selectedLanguages"
-            :source-lang-id="filters.source_langid"
-            :languages="languages"
-          />
-          <DictionaryEntries
-            v-if="searchMode === 'dictionary' || searchMode === 'semantic'"
-            :definitions="definitions"
-            :is-loading="isLoading"
-            :error="error"
-            :languages="languages"
-            :show-scores="auth.state.isLoggedIn"
-            :semantic-search="searchMode === 'semantic' && !!(searchQuery || '').trim()"
-            :search-query="searchQuery"
-            :show-vote-buttons="false"
-            :collections="collections"
-            :collection-matches="collectionMatches"
-            :expand-collection-items="!expandCollectionItemId"
-            :show-global-dictionary-banner="
-              !similarDefinitionId &&
-              (filters.selectedCollections?.length > 0 || filters.usernames?.length > 0)
-            "
-            :decomposition="decomposition || []"
-            @collection-updated="setCollections($event)"
-            @expand-collection-item="expandCollectionItem"
+      <div v-else ref="searchResultsRef" class="min-h-[400px]">
+        <div class="space-y-4">
+          <div
+            class="flex flex-wrap justify-between items-center gap-3 sm:space-x-4 w-full sm:w-auto ml-auto"
           >
-            <template v-if="expandCollectionItemId" #collection-matches-before>
-              <div class="surface-definition-compact text-sm text-gray-700 flex flex-wrap items-center justify-between gap-2">
-                <p class="font-medium text-gray-800">{{ $t('home.collectionItemMatches') }}</p>
-                <Button variant="cancel" type="button" @click="clearCollectionItemExpand">
-                  {{ $t('home.backToSearchResults') }}
-                </Button>
-              </div>
-            </template>
-            <template v-if="similarDefinitionId" #before>
-              <div v-if="isLoadingSimilarAnchor" class="flex justify-center py-6">
-                <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600" />
-              </div>
-              <DefinitionCard
-                v-else-if="similarAnchorDefinition"
-                :definition="similarAnchorDefinition"
-                :languages="languages"
-                :show-vote-buttons="false"
-                :disable-toolbar="true"
-                :disable-owner-only-lock="true"
-                :hide-find-similar="true"
-                :collections="collections"
-                @collection-updated="setCollections($event)"
-              />
-              <div class="relative">
-                <div class="surface-definition-compact pr-10">
-                  <div class="text-xs font-medium text-gray-500">
-                    {{ $t('home.similarSearchLabel') }}
-                  </div>
-                  <p class="mt-2 text-sm text-gray-700">
-                    {{ $t('home.similarSearchHint') }}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  class="absolute top-4 right-4 z-10 inline-flex items-center justify-center rounded p-1 text-gray-500 hover:bg-gray-100 hover:text-gray-800"
-                  :title="$t('filters.resetAllFilters')"
-                  :aria-label="$t('filters.resetAllFilters')"
-                  @click="handleFiltersReset"
-                >
-                  <X class="h-4 w-4 shrink-0" />
-                </button>
-              </div>
-            </template>
-          </DictionaryEntries>
-          <div v-else-if="searchMode === 'comments'" class="space-y-4">
-            <div v-if="waveItems.length > 0">
-              <div
-                v-for="item in waveItems"
-                :key="
-                  item.source === 'comment'
-                    ? item.comment.comment_id
-                    : item.source === 'wiki'
-                      ? 'wiki-' + item.article.page_id
-                      : 'mail-' + item.message.id
-                "
-                class="cursor-pointer"
-                @click="
-                  item.source === 'comment'
-                    ? router.push(
-                        `/comments?thread_id=${item.comment.thread_id}&comment_id=${item.comment.parent_id}&scroll_to=${item.comment.comment_id}&valsi_id=${item.comment.valsi_id}&definition_id=${item.comment.definition_id || 0}`
-                      )
-                    : item.source === 'wiki'
-                      ? router.push(`/wiki/${encodeURIComponent(item.article.title)}`)
-                      : handleViewThreadSummary(
-                          item.message.cleaned_subject || item.message.subject || ''
-                        )
-                "
-              >
-                <div
-                  v-if="
-                    item.source === 'comment' &&
-                    (item.import_source === 'jbotcan' || item.import_source === 'freeforums')
-                  "
-                  class="mb-1"
-                >
-                  <SourceTypeBadge
-                    :type="item.import_source === 'freeforums' ? 'freeforums' : 'jbotcan'"
-                    :label="
-                      item.import_source === 'freeforums'
-                        ? $t('home.waveSourceFreeforums')
-                        : 'jbotcan'
-                    "
-                  />
-                </div>
-                <CommentItem
-                  v-if="item.source === 'comment'"
-                  :comment="item.comment"
-                  :reply-enabled="true"
-                  :show-context="true"
-                  @reply="handleReply"
-                />
-                <div
-                  v-else-if="item.source === 'wiki'"
-                  class="comment-item bg-white border rounded-lg p-3 my-2 hover:border-blue-300 transition-colors min-w-48"
-                >
-                  <div
-                    class="mb-2 text-sm text-gray-600 whitespace-nowrap overflow-hidden flex items-center"
-                  >
-                    <SourceTypeBadge type="wiki" />
-                    <span
-                      class="text-blue-700 font-medium ml-1.5 truncate inline-block max-w-[calc(100%-120px)]"
-                    >
-                      {{ item.article.title }}
-                    </span>
-                  </div>
-                  <div v-if="item.article.last_edited" class="text-xs text-gray-500 mb-2">
-                    {{ new Date(item.article.last_edited).toLocaleString() }}
-                  </div>
-                  <div
-                    v-if="item.article.content_preview"
-                    class="text-sm text-gray-700 border-t border-gray-100 pt-2 mt-2"
-                  >
-                    {{ item.article.content_preview }}
-                  </div>
-                </div>
-                <div
-                  v-else
-                  class="comment-item bg-white border rounded-lg p-3 my-2 hover:border-blue-300 transition-colors min-w-48"
-                >
-                  <div
-                    class="mb-2 text-sm text-gray-600 whitespace-nowrap overflow-hidden flex items-center"
-                  >
-                    <SourceTypeBadge type="mail" />
-                    <span
-                      class="text-blue-700 font-medium ml-1.5 truncate inline-block max-w-[calc(100%-120px)]"
-                    >
-                      {{ item.message.subject || item.message.cleaned_subject || '-' }}
-                    </span>
-                  </div>
+            <h2 class="text-xl sm:text-2xl font-bold text-gray-800 select-none">
+              {{
+                similarDefinitionId
+                  ? $t('home.searchResultsTitle.similar')
+                  : searchMode === 'dictionary'
+                    ? $t('home.searchResultsTitle.dictionary')
+                    : searchMode === 'semantic'
+                      ? $t('home.searchResultsTitle.semantic')
+                      : $t('home.searchResultsTitle.comments')
+              }}
+            </h2>
 
-                  <div class="text-xs text-gray-500 mb-2">
-                    {{ item.message.from_address }} · {{ item.message.date || '' }}
-                  </div>
-
-                  <div
-                    v-if="item.message.parts_json && textParts(item.message.parts_json).length"
-                    class="text-sm text-gray-700 border-t border-gray-100 pt-2 mt-2 prose prose-sm max-w-none [&_img]:max-h-48 [&_img]:object-contain"
-                  >
-                    <LazyMathJax
-                      v-for="(part, pidx) in textParts(item.message.parts_json)"
-                      :key="pidx"
-                      :content="part.content || ''"
-                      :enable-markdown="part.mime_type === 'text/plain'"
-                    />
-                  </div>
-                </div>
-              </div>
+            <div
+              v-if="auth.state.isLoading"
+              class="flex flex-col sm:flex-row items-end sm:items-center gap-3 sm:space-x-4 ml-auto"
+            >
+              <!-- Skeleton loader shown while auth state loads -->
+              <div class="w-[120px] h-6 bg-gray-100 animate-pulse rounded-full" />
             </div>
 
             <div
-              v-else-if="!isLoading"
-              class="text-center py-12 bg-blue-50 rounded-lg border border-blue-100"
+              v-else-if="searchMode === 'dictionary' || searchMode === 'semantic'"
+              class="flex flex-col sm:flex-row items-end sm:items-center gap-3 sm:space-x-4 ml-auto"
             >
-              <MessageSquare class="mx-auto h-12 w-12 text-blue-400" />
-              <p class="mt-4 text-gray-600">{{ $t('home.noCommentsFound') }}</p>
+              <ToolbarSelectDropdown
+                v-if="auth.state.isLoggedIn && decodedRole !== 'Unconfirmed'"
+                :aria-label="$t('home.addDefinition')"
+                trigger-icon="ellipsis"
+                trigger-class="dropdown-action-trigger"
+              >
+                <template #label>
+                  <Plus class="h-4 w-4" />
+                  <span>{{ $t('home.addDefinition') }}</span>
+                </template>
+                <ToolbarSelectDropdownItem @click="router.push('/valsi/add')">
+                  {{ $t('home.createDefinition') }}
+                </ToolbarSelectDropdownItem>
+                <ToolbarSelectDropdownItem
+                  :disabled="!hasSearchResults"
+                  :class="{ 'opacity-50 cursor-not-allowed': !hasSearchResults }"
+                  @click="hasSearchResults && (showAddAllModal = true)"
+                >
+                  {{ $t('home.addAllToCollection') }}
+                </ToolbarSelectDropdownItem>
+                <ToolbarSelectDropdownItem @click="goToSearchExport">
+                  <ExportIcon class="h-4 w-4 shrink-0" aria-hidden="true" />
+                  {{ $t('home.exportResults') }}
+                </ToolbarSelectDropdownItem>
+              </ToolbarSelectDropdown>
+            </div>
+
+            <div
+              v-else-if="searchMode === 'comments'"
+              class="flex flex-col sm:flex-row items-end sm:items-center gap-3 sm:space-x-4 ml-auto"
+            >
+              <IconButton
+                v-if="auth.state.isLoggedIn"
+                :label="$t('home.newFreeThread')"
+                button-classes="ui-btn--neutral"
+                @click="handleNewFreeComment"
+              >
+                <template #icon> <AudioWaveform class="h-4 w-4 text-purple-600" /> </template>
+              </IconButton>
+            </div>
+
+            <div
+              v-if="searchMode === 'comments'"
+              role="group"
+              :aria-label="$t('home.searchResultsTitle.comments')"
+              class="flex flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto ml-auto justify-end sm:justify-start"
+            >
+              <ToolbarSelectDropdown
+                trigger-class="!w-full max-w-[min(100vw-4rem,18rem)]"
+                truncate-label
+              >
+                <template #label>{{ waveSourceTriggerLabel }}</template>
+                <ToolbarSelectDropdownItem
+                  :class="{ 'bg-gray-100': waveSource === 'all' }"
+                  @click="setWaveSource('all')"
+                >
+                  {{ $t('home.waveSourceAll') }}
+                </ToolbarSelectDropdownItem>
+                <ToolbarSelectDropdownItem
+                  :class="{ 'bg-gray-100': waveSource === 'jbotcan' }"
+                  @click="setWaveSource('jbotcan')"
+                >
+                  {{ $t('home.waveSourceJbotcan') }}
+                </ToolbarSelectDropdownItem>
+                <ToolbarSelectDropdownItem
+                  :class="{ 'bg-gray-100': waveSource === 'freeforums' }"
+                  @click="setWaveSource('freeforums')"
+                >
+                  {{ $t('home.waveSourceFreeforums') }}
+                </ToolbarSelectDropdownItem>
+                <ToolbarSelectDropdownItem
+                  :class="{ 'bg-gray-100': waveSource === 'comments' }"
+                  @click="setWaveSource('comments')"
+                >
+                  {{ $t('home.waveSourceComments') }}
+                </ToolbarSelectDropdownItem>
+                <ToolbarSelectDropdownItem
+                  :class="{ 'bg-gray-100': waveSource === 'mail' }"
+                  @click="setWaveSource('mail')"
+                >
+                  {{ $t('home.waveSourceMail') }}
+                </ToolbarSelectDropdownItem>
+                <ToolbarSelectDropdownItem
+                  :class="{ 'bg-gray-100': waveSource === 'wiki' }"
+                  @click="setWaveSource('wiki')"
+                >
+                  {{ $t('home.waveSourceWiki') }}
+                </ToolbarSelectDropdownItem>
+              </ToolbarSelectDropdown>
+              <ToolbarSelectDropdown
+                trigger-class="!w-full max-w-[min(100vw-4rem,18rem)]"
+                truncate-label
+              >
+                <template #label>{{ sortByTriggerLabel }}</template>
+                <ToolbarSelectDropdownItem
+                  :class="{ 'bg-gray-100': sortBy === 'time' }"
+                  @click="setSortByField('time')"
+                >
+                  {{ $t('sort.time') }}
+                </ToolbarSelectDropdownItem>
+                <ToolbarSelectDropdownItem
+                  :class="{ 'bg-gray-100': sortBy === 'reactions' }"
+                  @click="setSortByField('reactions')"
+                >
+                  {{ $t('sort.reactions') }}
+                </ToolbarSelectDropdownItem>
+                <ToolbarSelectDropdownItem
+                  :class="{ 'bg-gray-100': sortBy === 'replies' }"
+                  @click="setSortByField('replies')"
+                >
+                  {{ $t('sort.replies') }}
+                </ToolbarSelectDropdownItem>
+              </ToolbarSelectDropdown>
+              <Button
+                variant="empty"
+                type="button"
+                class="inline-flex h-8 min-w-0 w-auto items-center gap-1.5 whitespace-nowrap px-3 text-sm"
+                :title="sortOrder === 'asc' ? $t('sort.ascending') : $t('sort.descending')"
+                @click="toggleSortOrder"
+              >
+                <ChevronUp
+                  v-if="sortOrder === 'asc'"
+                  class="h-4 w-4 shrink-0 opacity-60"
+                  :stroke-width="2"
+                />
+                <ChevronDown v-else class="h-4 w-4 shrink-0 opacity-60" :stroke-width="2" />
+                <span class="whitespace-nowrap">{{
+                  sortOrder === 'asc' ? $t('sort.asc') : $t('sort.desc')
+                }}</span>
+              </Button>
+            </div>
+          </div>
+
+          <div class="relative" :class="{ 'min-h-[200px]': isLoading }">
+            <div
+              v-if="isLoading"
+              class="absolute inset-0 z-10 flex justify-center pt-8 sm:pt-12 bg-white/70 backdrop-blur-[1px]"
+              aria-busy="true"
+              aria-live="polite"
+            >
+              <div class="animate-spin rounded-full h-8 w-8 shrink-0 border-b-2 border-blue-600" />
+            </div>
+
+            <div class="relative z-0" :class="{ 'pointer-events-none select-none': isLoading }">
+              <PhraseSplit
+                v-if="
+                  (searchMode === 'dictionary' || searchMode === 'semantic') && !similarDefinitionId
+                "
+                :phrase="searchQuery"
+                :selected-languages="filters.selectedLanguages"
+                :source-lang-id="filters.source_langid"
+                :languages="languages"
+              />
+              <DictionaryEntries
+                v-if="searchMode === 'dictionary' || searchMode === 'semantic'"
+                :definitions="definitions"
+                :is-loading="isLoading"
+                :error="error"
+                :languages="languages"
+                :show-scores="auth.state.isLoggedIn"
+                :semantic-search="searchMode === 'semantic' && !!(searchQuery || '').trim()"
+                :search-query="searchQuery"
+                :show-vote-buttons="false"
+                :collections="collections"
+                :collection-matches="collectionMatches"
+                :expand-collection-items="!expandCollectionItemId"
+                :show-global-dictionary-banner="
+                  !similarDefinitionId &&
+                  (filters.selectedCollections?.length > 0 || filters.usernames?.length > 0)
+                "
+                :decomposition="decomposition || []"
+                @collection-updated="setCollections($event)"
+                @expand-collection-item="expandCollectionItem"
+              >
+                <template v-if="expandCollectionItemId" #collection-matches-before>
+                  <div class="surface-definition-compact text-sm text-gray-700 flex flex-wrap items-center justify-between gap-2">
+                    <p class="font-medium text-gray-800">{{ $t('home.collectionItemMatches') }}</p>
+                    <Button variant="cancel" type="button" @click="clearCollectionItemExpand">
+                      {{ $t('home.backToSearchResults') }}
+                    </Button>
+                  </div>
+                </template>
+                <template v-if="similarDefinitionId" #before>
+                  <div v-if="isLoadingSimilarAnchor" class="flex justify-center py-6">
+                    <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600" />
+                  </div>
+                  <DefinitionCard
+                    v-else-if="similarAnchorDefinition"
+                    :definition="similarAnchorDefinition"
+                    :languages="languages"
+                    :show-vote-buttons="false"
+                    :disable-toolbar="true"
+                    :disable-owner-only-lock="true"
+                    :hide-find-similar="true"
+                    :collections="collections"
+                    @collection-updated="setCollections($event)"
+                  />
+                  <div class="relative">
+                    <div class="surface-definition-compact pr-10">
+                      <div class="text-xs font-medium text-gray-500">
+                        {{ $t('home.similarSearchLabel') }}
+                      </div>
+                      <p class="mt-2 text-sm text-gray-700">
+                        {{ $t('home.similarSearchHint') }}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      class="absolute top-4 right-4 z-10 inline-flex items-center justify-center rounded p-1 text-gray-500 hover:bg-gray-100 hover:text-gray-800"
+                      :title="$t('filters.resetAllFilters')"
+                      :aria-label="$t('filters.resetAllFilters')"
+                      @click="handleFiltersReset"
+                    >
+                      <X class="h-4 w-4 shrink-0" />
+                    </button>
+                  </div>
+                </template>
+              </DictionaryEntries>
+              <div v-else-if="searchMode === 'comments'" class="space-y-4">
+                <div v-if="waveItems.length > 0">
+                  <div
+                    v-for="item in waveItems"
+                    :key="
+                      item.source === 'comment'
+                        ? item.comment.comment_id
+                        : item.source === 'wiki'
+                          ? 'wiki-' + item.article.page_id
+                          : 'mail-' + item.message.id
+                    "
+                    class="cursor-pointer"
+                    @click="
+                      item.source === 'comment'
+                        ? router.push(
+                            `/comments?thread_id=${item.comment.thread_id}&comment_id=${item.comment.parent_id}&scroll_to=${item.comment.comment_id}&valsi_id=${item.comment.valsi_id}&definition_id=${item.comment.definition_id || 0}`
+                          )
+                        : item.source === 'wiki'
+                          ? router.push(`/wiki/${encodeURIComponent(item.article.title)}`)
+                          : handleViewThreadSummary(
+                              item.message.cleaned_subject || item.message.subject || ''
+                            )
+                    "
+                  >
+                    <div
+                      v-if="
+                        item.source === 'comment' &&
+                        (item.import_source === 'jbotcan' || item.import_source === 'freeforums')
+                      "
+                      class="mb-1"
+                    >
+                      <SourceTypeBadge
+                        :type="item.import_source === 'freeforums' ? 'freeforums' : 'jbotcan'"
+                        :label="
+                          item.import_source === 'freeforums'
+                            ? $t('home.waveSourceFreeforums')
+                            : 'jbotcan'
+                        "
+                      />
+                    </div>
+                    <CommentItem
+                      v-if="item.source === 'comment'"
+                      :comment="item.comment"
+                      :reply-enabled="true"
+                      :show-context="true"
+                      @reply="handleReply"
+                    />
+                    <div
+                      v-else-if="item.source === 'wiki'"
+                      class="comment-item bg-white border rounded-lg p-3 my-2 hover:border-blue-300 transition-colors min-w-48"
+                    >
+                      <div
+                        class="mb-2 text-sm text-gray-600 whitespace-nowrap overflow-hidden flex items-center"
+                      >
+                        <SourceTypeBadge type="wiki" />
+                        <span
+                          class="text-blue-700 font-medium ml-1.5 truncate inline-block max-w-[calc(100%-120px)]"
+                        >
+                          {{ item.article.title }}
+                        </span>
+                      </div>
+                      <div v-if="item.article.last_edited" class="text-xs text-gray-500 mb-2">
+                        {{ new Date(item.article.last_edited).toLocaleString() }}
+                      </div>
+                      <div
+                        v-if="item.article.content_preview"
+                        class="text-sm text-gray-700 border-t border-gray-100 pt-2 mt-2"
+                      >
+                        {{ item.article.content_preview }}
+                      </div>
+                    </div>
+                    <div
+                      v-else
+                      class="comment-item bg-white border rounded-lg p-3 my-2 hover:border-blue-300 transition-colors min-w-48"
+                    >
+                      <div
+                        class="mb-2 text-sm text-gray-600 whitespace-nowrap overflow-hidden flex items-center"
+                      >
+                        <SourceTypeBadge type="mail" />
+                        <span
+                          class="text-blue-700 font-medium ml-1.5 truncate inline-block max-w-[calc(100%-120px)]"
+                        >
+                          {{ item.message.subject || item.message.cleaned_subject || '-' }}
+                        </span>
+                      </div>
+
+                      <div class="text-xs text-gray-500 mb-2">
+                        {{ item.message.from_address }} · {{ item.message.date || '' }}
+                      </div>
+
+                      <div
+                        v-if="item.message.parts_json && textParts(item.message.parts_json).length"
+                        class="text-sm text-gray-700 border-t border-gray-100 pt-2 mt-2 prose prose-sm max-w-none [&_img]:max-h-48 [&_img]:object-contain"
+                      >
+                        <LazyMathJax
+                          v-for="(part, pidx) in textParts(item.message.parts_json)"
+                          :key="pidx"
+                          :content="part.content || ''"
+                          :enable-markdown="part.mime_type === 'text/plain'"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div
+                  v-else-if="!isLoading"
+                  class="text-center py-12 bg-blue-50 rounded-lg border border-blue-100"
+                >
+                  <MessageSquare class="mx-auto h-12 w-12 text-blue-400" />
+                  <p class="mt-4 text-gray-600">{{ $t('home.noCommentsFound') }}</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </div>
     </div>
-  </div>
-  <!-- Add-all-to-collection modal (triggered from dictionary action menu) -->
-  <AddAllToCollectionWidget
-    v-model="showAddAllModal"
-    :external-collections="collections"
-    :load-all-definition-ids="loadAllDefinitionIdsForCurrentSearch"
-    @collection-updated="setCollections($event)"
-  />
-  <!-- PaginationComponent -->
-  <div v-if="!showTrendingHome">
-    <PaginationComponent
-      :current-page="currentPage"
-      :total-pages="totalPages"
-      :total="total"
-      :per-page="10"
-      class="w-full"
-      @prev="prevPage"
-      @next="nextPage"
+
+    <!-- Add-all-to-collection modal (triggered from dictionary action menu) -->
+    <AddAllToCollectionWidget
+      v-model="showAddAllModal"
+      :external-collections="collections"
+      :load-all-definition-ids="loadAllDefinitionIdsForCurrentSearch"
+      @collection-updated="setCollections($event)"
     />
+
+    <div v-if="!showTrendingHome" class="feed-page__footer">
+      <div class="feed-page__footer-inner">
+        <div class="feed-page__pagination">
+          <PaginationComponent
+            :current-page="currentPage"
+            :total-pages="totalPages"
+            :total="total"
+            :per-page="10"
+            @prev="prevPage"
+            @next="nextPage"
+          />
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -1758,10 +1767,12 @@ watch(
       syncFromRoute() // Sync other state variables
       await fetchData() // Fetch data using the potentially updated currentPage
 
-      // When page changed, scroll search results to top
-      if (newQuery.page !== oldQuery?.page && searchResultsRef.value) {
+      // When page changed, scroll the feed body to top
+      if (newQuery.page !== oldQuery?.page) {
         await nextTick()
-        searchResultsRef.value.scrollIntoView({ block: 'start', behavior: 'instant' })
+        const body = document.querySelector('.feed-page__body')
+        if (body) body.scrollTo({ top: 0, behavior: 'instant' })
+        else searchResultsRef.value?.scrollIntoView({ block: 'start', behavior: 'instant' })
       }
 
       // Attempt to focus after data fetch if it's the home route and not initial load

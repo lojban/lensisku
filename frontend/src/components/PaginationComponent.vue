@@ -1,20 +1,13 @@
 <template>
-  <div
-    class="flex flex-wrap gap-2 justify-center sm:justify-between items-center px-4 py-3 bg-white border rounded-lg"
-  >
-    <div class="flex items-center justify-center sm:justify-start flex-1">
-      <p
-        v-if="paginationStart && paginationEnd && total"
-        class="text-sm text-gray-700 whitespace-nowrap"
-      >
-        {{ t('pagination.showing') }} <span class="font-medium">{{ paginationStart }}</span>
-        {{ t('pagination.to') }} <span class="font-medium">{{ paginationEnd }}</span>
-        {{ t('pagination.of') }} <span class="font-medium">{{ total }}</span>
-        {{ t('pagination.items') }}
-      </p>
-    </div>
+  <div class="pagination-bar" :class="{ 'pagination-bar--end': !showSummary }">
+    <p v-if="showSummary" class="pagination-bar__summary">
+      {{ t('pagination.showing') }} <span class="font-medium">{{ paginationStart }}</span>
+      {{ t('pagination.to') }} <span class="font-medium">{{ paginationEnd }}</span>
+      {{ t('pagination.of') }} <span class="font-medium">{{ total }}</span>
+      {{ t('pagination.items') }}
+    </p>
 
-    <div class="flex items-center space-x-2 flex-1 justify-center sm:justify-end">
+    <div class="pagination-bar__controls">
       <Button
         variant="neutral"
         :disabled="currentPage === 1"
@@ -83,4 +76,8 @@ const paginationStart = computed(() => {
 const paginationEnd = computed(() => {
   return Math.min(props.currentPage * props.perPage, props.total)
 })
+
+const showSummary = computed(
+  () => !!(paginationStart.value && paginationEnd.value && props.total)
+)
 </script>

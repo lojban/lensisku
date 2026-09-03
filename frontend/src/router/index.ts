@@ -13,6 +13,7 @@ const upsertPageMeta = {
   requiresAuth: true,
   fullHeight: true,
   hideFooter: true,
+  hideFab: true,
   contentTopPaddingMainOnly: true,
 } as const
 
@@ -23,7 +24,7 @@ const baseRoutes: Array<RouteRecordRaw> = [
     path: '',
     name: 'Home',
     component: HomePage,
-    meta: { alwaysShowScrollbar: true },
+    meta: { fullHeight: true },
     props: (route) => ({
       urlSearchQuery: route.query.q,
       urlSearchMode: route.query.mode || 'dictionary',
@@ -70,6 +71,7 @@ const baseRoutes: Array<RouteRecordRaw> = [
       hideTopBar: true,
       hideFooter: true,
       hidePageFooter: true,
+      hideFab: true,
       fullHeight: true,
       contentTopPaddingMainOnly: true,
     },
@@ -214,7 +216,11 @@ const baseRoutes: Array<RouteRecordRaw> = [
     path: '/recent',
     name: 'RecentChanges',
     component: () => import('../pages/RecentChanges.vue'),
-    meta: { fullHeight: true, hideFooter: true, hidePageFooter: true, hideFab: true },
+    meta: {
+      fullHeight: true,
+      hideFooter: true,
+      hidePageFooter: true,
+    },
   },
   {
     path: '/definition/:id/history',
@@ -353,6 +359,7 @@ const baseRoutes: Array<RouteRecordRaw> = [
       hideTopBar: true,
       hideFooter: true,
       hidePageFooter: true,
+      hideFab: true,
       fullHeight: true,
       contentTopPaddingMainOnly: true,
     },
@@ -370,7 +377,7 @@ const baseRoutes: Array<RouteRecordRaw> = [
     path: '/collections/:collectionId/lingo/study',
     name: 'LingoStudy',
     component: () => import('../pages/LingoStudyView.vue'),
-    meta: { hideFooter: true, fullHeight: true },
+    meta: { hideFooter: true, hideFab: true, fullHeight: true },
   },
   {
     path: '/collections/:collectionId/levels',
@@ -382,7 +389,7 @@ const baseRoutes: Array<RouteRecordRaw> = [
     path: '/collections/:collectionId/custom-text-bulk',
     name: 'CollectionCustomTextBulk',
     component: () => import('../pages/CollectionCustomTextBulk.vue'),
-    meta: { hideFooter: true, fullHeight: true },
+    meta: { hideFooter: true, hideFab: true, fullHeight: true },
     props: (route) => ({
       collectionId: route.params.collectionId,
     }),
@@ -475,6 +482,7 @@ const baseRoutes: Array<RouteRecordRaw> = [
     component: () => import('../pages/AssistantChat.vue'),
     meta: {
       hideFooter: true,
+      hideFab: true,
       fullHeight: true,
       contentTopPaddingMainOnly: true,
     },
@@ -494,6 +502,7 @@ const baseRoutes: Array<RouteRecordRaw> = [
       requiresAuth: true,
       fullHeight: true,
       hideFooter: true,
+      hideFab: true,
       contentTopPaddingMainOnly: true,
     },
     props: (route) => ({

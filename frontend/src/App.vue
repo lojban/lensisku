@@ -335,7 +335,7 @@
   </div>
   <!-- Floating action menu (FAB trigger + standard dropdown panel) -->
   <div
-    v-if="auth.state.isLoggedIn && !route.meta.hideFab && !route.meta.fullHeight"
+    v-if="auth.state.isLoggedIn && !route.meta.hideFab"
     class="max-w-4xl mx-auto relative"
   >
     <div

@@ -995,14 +995,66 @@ export default {
         '.nav-unread-badge--wide': {
           '@apply h-6 min-w-6': {},
         },
-        /** Recent Changes: fixed live-chat panel (bottom third of the page). */
+        /**
+         * Three-block feed shell (header | scroll body | footer).
+         * Use with route meta.fullHeight so the page fills main and only the body scrolls.
+         */
+        '.feed-page': {
+          '--feed-chat-block': '33.333svh',
+          '@apply relative flex h-full min-h-0 w-full flex-1 flex-col': {},
+        },
+        '.feed-page__header': {
+          '@apply z-20 w-full shrink-0 bg-transparent px-3': {},
+        },
+        '.feed-page__header--tabs': {
+          '@apply pb-1': {},
+        },
+        /** Only this block scrolls — scrollbar sits between pinned header and footer. */
+        '.feed-page__body': {
+          '@apply min-h-0 w-full flex-1 overflow-y-auto overscroll-y-contain px-3 pt-3': {},
+        },
+        '.feed-page__footer': {
+          '@apply z-30 w-full shrink-0 border-t border-gray-200 bg-white md:bg-zinc-50': {},
+        },
+        '.feed-page__footer-inner': {
+          '@apply flex w-full flex-col': {},
+        },
+        /** Extra right inset so the FAB does not cover Previous/Next. */
+        '.feed-page__pagination': {
+          '@apply w-full shrink-0 pt-1 pb-1 pl-3 pr-20 sm:pt-2 sm:pb-2 sm:pl-3': {},
+        },
+        /**
+         * One line when both clusters fit; wraps to centered rows on narrow viewports.
+         * Children stay max-content so neither stretches to a full-width row.
+         */
+        /**
+         * Full-width: summary left + controls right when both fit (sm+).
+         * On wrap (narrow), each row is centered.
+         */
+        '.pagination-bar': {
+          '@apply flex w-full flex-wrap items-center justify-center gap-x-4 gap-y-2 border-0 bg-transparent p-0 sm:justify-between':
+            {},
+        },
+        '.pagination-bar--end': {
+          '@apply !justify-end': {},
+        },
+        '.pagination-bar__summary': {
+          '@apply max-w-full shrink-0 text-sm text-gray-700 whitespace-nowrap': {},
+          width: 'max-content',
+        },
+        '.pagination-bar__controls': {
+          '@apply flex max-w-full shrink-0 items-center justify-center gap-2': {},
+          width: 'max-content',
+        },
+        /** Live chat: fixed viewport slice inside the footer; messages scroll inside. */
         '.live-chat-dock': {
-          '@apply flex w-full min-h-0 shrink-0 flex-col border-t border-gray-200 bg-white': {},
-          height: '33.333%',
-          maxHeight: '33.333%',
+          '@apply grid w-full shrink-0 overflow-hidden border-t border-gray-200 bg-white': {},
+          height: 'var(--feed-chat-block)',
+          maxHeight: 'var(--feed-chat-block)',
+          gridTemplateRows: 'auto minmax(0, 1fr)',
         },
         '.live-chat-dock__social': {
-          '@apply flex w-full shrink-0 items-center gap-2 border-b border-gray-100 px-3 py-1.5': {},
+          '@apply flex w-full min-h-0 items-center gap-2 border-b border-gray-100 px-3 py-1.5': {},
         },
         '.live-chat-dock__social-scroll': {
           '@apply flex min-w-0 flex-1 items-center gap-2 overflow-x-auto': {},
@@ -1011,7 +1063,7 @@ export default {
           '@apply shrink-0 text-xs font-medium italic text-blue-500': {},
         },
         '.live-chat-dock__messages': {
-          '@apply min-h-0 w-full flex-1 space-y-1 overflow-y-auto px-3 py-2': {},
+          '@apply min-h-0 w-full space-y-1 overflow-y-auto overscroll-y-contain px-3 py-2': {},
         },
         '.live-chat-dock__empty': {
           '@apply text-sm text-gray-500': {},
@@ -1024,19 +1076,6 @@ export default {
         },
         '.live-chat-dock__text': {
           '@apply ml-1 text-gray-700': {},
-        },
-        '.recent-changes-page': {
-          '@apply flex h-full min-h-0 w-full flex-1 flex-col': {},
-        },
-        /** Upper ~2/3 above the live-chat dock: tabs stay fixed; list scrolls. */
-        '.recent-changes-main': {
-          '@apply flex min-h-0 w-full flex-1 flex-col px-3': {},
-        },
-        '.recent-changes-list': {
-          '@apply min-h-0 flex-1 overflow-y-auto': {},
-        },
-        '.recent-changes-pagination': {
-          '@apply shrink-0 pt-2 pb-3': {},
         },
         '.navbar-item-badge-wrap': {
           '@apply relative inline-flex items-center': {},
