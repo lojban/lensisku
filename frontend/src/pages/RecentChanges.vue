@@ -1,18 +1,19 @@
 <template>
   <div class="recent-changes-page">
     <div class="recent-changes-main">
-      <TabbedPageHeader
-        :tabs="tabs"
-        :active-tab="activeTab"
-        :page-title="pageTitle"
-        @tab-click="handleTabClick"
-      />
-      <!-- Loading State with Skeleton -->
-      <div v-if="isLoading" class="space-y-4">
+      <div class="shrink-0">
+        <TabbedPageHeader
+          :tabs="tabs"
+          :active-tab="activeTab"
+          :page-title="pageTitle"
+          @tab-click="handleTabClick"
+        />
+      </div>
+      <!-- Only the news/activity items scroll -->
+      <div v-if="isLoading" class="recent-changes-list">
         <SkeletonActivityItem v-for="n in 5" :key="n" />
       </div>
-      <!-- Content -->
-      <div v-if="!error" class="space-y-4 pb-4">
+      <div v-else-if="!error" class="recent-changes-list">
         <ActivityChanges
           v-if="activeTab === 'news'"
           :grouped-changes="groupedNews"
@@ -39,11 +40,18 @@
           :definitions="allDefinitions"
           :format-date="formatDateForThread"
         />
+      </div>
+      <!-- Pagination stays outside the scrolling list -->
+      <div
+        v-if="
+          !isLoading &&
+          !error &&
+          ((['news', 'changes'].includes(activeTab) && (currentPage > 1 || nextCursor)) ||
+            (['threads', 'all_comments', 'all_definitions'].includes(activeTab) && totalPages > 1))
+        "
+        class="recent-changes-pagination"
+      >
         <PaginationComponent
-          v-if="
-            (['news', 'changes'].includes(activeTab) && (currentPage > 1 || nextCursor)) ||
-            (['threads', 'all_comments', 'all_definitions'].includes(activeTab) && totalPages > 1)
-          "
           :current-page="currentPage"
           :total-pages="
             ['news', 'changes'].includes(activeTab)
@@ -59,7 +67,7 @@
         />
       </div>
     </div>
-    <LiveChatDock />
+    <LiveChatDock v-if="activeTab === 'news'" />
   </div>
 </template>
 
@@ -98,13 +106,13 @@ const tabs = computed(() => [
 
 const STORAGE_KEY_TAB = 'recentChanges_activeTab'
 
-/** Main app scroll is on `.main-content`, not the window (see App.vue). */
+/** Scroll the feed list (date groups), not the tab strip or live-chat dock. */
 function scrollMainContentToTop() {
   if (typeof document === 'undefined') return
-  const el = document.querySelector('.recent-changes-main')
+  const el = document.querySelector('.recent-changes-list')
   if (el) el.scrollTo({ top: 0, left: 0, behavior: 'instant' })
   else {
-    const main = document.querySelector('.main-content')
+    const main = document.querySelector('.recent-changes-main')
     if (main) main.scrollTo({ top: 0, left: 0, behavior: 'instant' })
     else window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
   }

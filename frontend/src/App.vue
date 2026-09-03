@@ -277,7 +277,11 @@
       <div
         class="flex-1"
         :class="[
-          route.meta.contentTopPaddingMainOnly || route.meta.authFullBleed ? 'px-0' : 'px-3',
+          route.meta.contentTopPaddingMainOnly ||
+          route.meta.authFullBleed ||
+          route.meta.fullHeight
+            ? 'px-0'
+            : 'px-3',
           { 'main-child-inner-full-height': route.meta.fullHeight },
           !route.meta.authFullBleed &&
           !route.meta.fullHeight &&
@@ -1031,6 +1035,7 @@ body:has(.main-content.main-content--no-scroll) {
 .full-height-route-host {
   flex: 1 1 0;
   min-height: 0;
+  width: 100%;
   display: flex;
   flex-direction: column;
   overflow: hidden;

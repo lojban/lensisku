@@ -997,12 +997,12 @@ export default {
         },
         /** Recent Changes: fixed live-chat panel (bottom third of the page). */
         '.live-chat-dock': {
-          '@apply flex min-h-0 flex-col border-t border-gray-200 bg-white': {},
+          '@apply flex w-full min-h-0 shrink-0 flex-col border-t border-gray-200 bg-white': {},
           height: '33.333%',
           maxHeight: '33.333%',
         },
         '.live-chat-dock__social': {
-          '@apply flex shrink-0 items-center gap-2 border-b border-gray-100 px-3 py-1.5': {},
+          '@apply flex w-full shrink-0 items-center gap-2 border-b border-gray-100 px-3 py-1.5': {},
         },
         '.live-chat-dock__social-scroll': {
           '@apply flex min-w-0 flex-1 items-center gap-2 overflow-x-auto': {},
@@ -1011,7 +1011,7 @@ export default {
           '@apply shrink-0 text-xs font-medium italic text-blue-500': {},
         },
         '.live-chat-dock__messages': {
-          '@apply min-h-0 flex-1 space-y-1 overflow-y-auto px-3 py-2': {},
+          '@apply min-h-0 w-full flex-1 space-y-1 overflow-y-auto px-3 py-2': {},
         },
         '.live-chat-dock__empty': {
           '@apply text-sm text-gray-500': {},
@@ -1026,11 +1026,17 @@ export default {
           '@apply ml-1 text-gray-700': {},
         },
         '.recent-changes-page': {
-          '@apply flex h-full min-h-0 flex-1 flex-col': {},
+          '@apply flex h-full min-h-0 w-full flex-1 flex-col': {},
         },
+        /** Upper ~2/3 above the live-chat dock: tabs stay fixed; list scrolls. */
         '.recent-changes-main': {
-          '@apply min-h-0 flex-1 overflow-y-auto px-3': {},
-          // Remaining ~2/3 above the dock
+          '@apply flex min-h-0 w-full flex-1 flex-col px-3': {},
+        },
+        '.recent-changes-list': {
+          '@apply min-h-0 flex-1 overflow-y-auto': {},
+        },
+        '.recent-changes-pagination': {
+          '@apply shrink-0 pt-2 pb-3': {},
         },
         '.navbar-item-badge-wrap': {
           '@apply relative inline-flex items-center': {},

@@ -1,5 +1,5 @@
 <template>
-  <aside class="live-chat-dock" :aria-label="t('footer.liveChat')">
+  <aside v-if="stackReady" class="live-chat-dock" :aria-label="t('footer.liveChat')">
     <div class="live-chat-dock__social">
       <SocialLinks class="live-chat-dock__social-scroll" :buttons="true" />
       <span class="live-chat-dock__label">{{ t('footer.liveChat') }}</span>
@@ -34,6 +34,7 @@ const { t } = useI18n()
 const messageStack = ref<ChatMessage[]>([])
 const listEl = ref<HTMLElement | null>(null)
 const socketConnected = ref(false)
+const stackReady = ref(false)
 
 let socket: ReturnType<typeof io> | null = null
 
@@ -66,6 +67,7 @@ onMounted(() => {
 
   socket.on('connect_error', () => {
     console.error('1chat connection error')
+    stackReady.value = true
   })
 
   socket.on('sentFrom', (data: { data?: { chunk?: string; channelId?: string; author?: string } }) => {
@@ -83,14 +85,20 @@ onMounted(() => {
   socket.on(
     'history',
     (data: Array<{ chunk?: string; channelId?: string; author?: string }>) => {
-      if (!socketConnected.value || !Array.isArray(data)) return
-      pushMessages(
-        data.slice(-20).map((m) => ({
-          d: m.chunk ?? '',
-          s: m.channelId,
-          w: m.author ?? '',
-        }))
-      )
+      if (!Array.isArray(data)) {
+        stackReady.value = true
+        return
+      }
+      if (socketConnected.value) {
+        pushMessages(
+          data.slice(-20).map((m) => ({
+            d: m.chunk ?? '',
+            s: m.channelId,
+            w: m.author ?? '',
+          }))
+        )
+      }
+      stackReady.value = true
     }
   )
 })

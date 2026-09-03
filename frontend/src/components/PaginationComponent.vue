@@ -1,6 +1,6 @@
 <template>
   <div
-    class="mt-6 flex flex-wrap gap-2 justify-center sm:justify-between items-center px-4 py-3 bg-white border rounded-lg"
+    class="flex flex-wrap gap-2 justify-center sm:justify-between items-center px-4 py-3 bg-white border rounded-lg"
   >
     <div class="flex items-center justify-center sm:justify-start flex-1">
       <p
