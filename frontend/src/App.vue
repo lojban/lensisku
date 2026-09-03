@@ -183,7 +183,7 @@
             :aria-label="$t('nav.news')"
           >
             <span class="navbar-item-badge-wrap">
-              <Newspaper class="h-5 w-5" />
+              <Bell class="h-5 w-5" />
               <span
                 v-if="newsBadgeLabel"
                 class="nav-unread-badge"
@@ -396,7 +396,7 @@ import {
   BookmarkCheck,
   Bot,
   Share2,
-  Newspaper,
+  Bell,
 } from '@lucide/vue'
 import { Menu } from '@lucide/vue' // Explicitly import Menu if it was missed by auto-sort
 import { ref, onMounted, watch, computed, nextTick } from 'vue'

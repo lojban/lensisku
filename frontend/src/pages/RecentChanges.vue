@@ -64,7 +64,7 @@
 </template>
 
 <script setup lang="ts">
-import { Book, History, MessageSquare, Newspaper, Waves } from '@lucide/vue'
+import { Bell, Book, History, MessageSquare, Waves } from '@lucide/vue'
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
@@ -89,7 +89,7 @@ const { formatDate, formatTime } = useDateFormat()
 const { markNewsOpened } = useNewsUnread()
 
 const tabs = computed(() => [
-  { key: 'news', label: t('recentChanges.news'), icon: Newspaper },
+  { key: 'news', label: t('recentChanges.news'), icon: Bell },
   { key: 'changes', label: t('recentChanges.recentChanges'), icon: History },
   { key: 'threads', label: t('recentChanges.discussionWaves'), icon: Waves },
   { key: 'all_comments', label: t('recentChanges.allComments'), icon: MessageSquare },
