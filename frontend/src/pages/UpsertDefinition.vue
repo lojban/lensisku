@@ -101,7 +101,7 @@
         </div>
       </div>
       <LujvoComponentDefinitions
-        v-if="wordType === 'lujvo' && lujvoDecomposition.length"
+        v-if="isLujvoLike && lujvoDecomposition.length"
         :decomposition="lujvoDecomposition"
         :lang-id="langId"
         :languages="languages"
@@ -531,6 +531,9 @@ const etymology = ref('')
 const jargon = ref('')
 const wordType = ref('')
 const lujvoDecomposition = ref<string[]>([])
+const isLujvoLike = computed(
+  () => wordType.value === 'lujvo' || wordType.value === 'non-canonical lujvo'
+)
 const glossKeywords = ref([{ word: '', meaning: '' }])
 const placeKeywords = ref([{ word: '', meaning: '' }])
 const ownerOnly = ref(false)
@@ -755,7 +758,9 @@ onMounted(async () => {
                 : ''
             problems.value = response.data.problems || {}
             lujvoDecomposition.value =
-              response.data.word_type === 'lujvo' && Array.isArray(response.data.decomposition)
+              (response.data.word_type === 'lujvo' ||
+                response.data.word_type === 'non-canonical lujvo') &&
+              Array.isArray(response.data.decomposition)
                 ? response.data.decomposition
                 : []
             prefilledWord.value = true
@@ -837,7 +842,9 @@ const doAnalyzeWord = async () => {
           : ''
       problems.value = response.data.problems || {}
       lujvoDecomposition.value =
-        response.data.word_type === 'lujvo' && Array.isArray(response.data.decomposition)
+        (response.data.word_type === 'lujvo' ||
+          response.data.word_type === 'non-canonical lujvo') &&
+        Array.isArray(response.data.decomposition)
           ? response.data.decomposition
           : []
     } else {

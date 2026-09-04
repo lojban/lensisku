@@ -8,7 +8,8 @@ use actix_web_httpauth::middleware::HttpAuthentication;
 
 pub use models::MathJaxValidationOptions;
 pub use service::{
-    analyze_word, lujvo_segments_from_nodes, validate_mathjax, validate_mathjax_fields,
+    analyze_word, classify_lujvo_spelling, is_decomposable_lujvo_type, load_owned_rafsi_maps,
+    lujvo_segments_from_nodes, validate_mathjax, validate_mathjax_fields,
 };
 
 pub fn configure(cfg: &mut web::ServiceConfig) {

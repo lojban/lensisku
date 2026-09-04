@@ -47,7 +47,9 @@
           <div
             v-if="
               definition.definitionid &&
-              ((definition.type_name && showWordType) || definition.selmaho)
+              ((definition.type_name && showWordType) ||
+                definition.selmaho ||
+                definition.canonical_word)
             "
             class="flex flex-wrap items-center gap-2"
           >
@@ -57,6 +59,20 @@
               :class="getTypeClass(definition.type_name)"
             >
               {{ t(`wordTypes.${definition.type_name.replace(/'/g, 'h').replace(/ /g, '-')}`) }}
+            </span>
+            <span
+              v-if="definition.canonical_word"
+              class="px-2 py-1 text-xs font-medium bg-slate-50 text-slate-800 rounded-full inline-flex items-center gap-1"
+            >
+              <span class="text-slate-600">{{
+                t('components.definitionCard.canonicalFormLabel')
+              }}</span>
+              <RouterLink
+                :to="{ path: `/valsi/${definition.canonical_word.replace(/ /g, '_')}` }"
+                class="text-nav-link hover:underline"
+              >
+                {{ definition.canonical_word }}
+              </RouterLink>
             </span>
             <RouterLink
               v-if="definition.selmaho"

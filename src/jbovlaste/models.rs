@@ -70,6 +70,10 @@ pub struct ValsiDetail {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[schema(nullable)]
     pub decomposition: Option<Vec<String>>,
+    /// Score-optimal spelling when this is a non-canonical lujvo.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[schema(nullable)]
+    pub canonical_word: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
@@ -107,9 +111,12 @@ pub struct DefinitionDetail {
     pub metadata: Option<serde_json::Value>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub examples: Option<Vec<Example>>,
-    /// Cached lujvo decomposition (source words). Only set for type "lujvo".
+    /// Cached lujvo decomposition (source words). Set for lujvo / non-canonical lujvo.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub decomposition: Option<Vec<String>>,
+    /// Score-optimal spelling when `type_name` is non-canonical lujvo.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub canonical_word: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, ToSchema, Clone)]
@@ -194,6 +201,15 @@ impl From<tokio_postgres::Row> for DefinitionDetail {
             metadata: row.get("metadata"),
             examples: None,
             decomposition: None,
+            canonical_word: row
+                .try_get::<_, Option<String>>("cached_canonical_word")
+                .ok()
+                .flatten()
+                .or_else(|| {
+                    row.try_get::<_, Option<String>>("canonical_word")
+                        .ok()
+                        .flatten()
+                }),
         }
     }
 }

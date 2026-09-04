@@ -26,6 +26,23 @@
           {{ getWordTypeLabel(valsi.type_name, t) }}
         </span>
         <div
+          v-if="valsi.canonical_word"
+          class="flex min-w-0 max-w-full flex-wrap items-center gap-x-1.5 gap-y-0.5 text-sm text-gray-700"
+        >
+          <span class="shrink-0 font-medium text-gray-800">{{
+            t('entryPage.canonicalFormLabel')
+          }}</span>
+          <RouterLink
+            :to="{
+              path: `/valsi/${valsi.canonical_word.replace(/ /g, '_')}`,
+              query: { langid: valsi.source_langid },
+            }"
+            class="cursor-pointer text-nav-link transition-colors duration-200 hover:text-blue-800 hover:underline"
+          >
+            {{ valsi.canonical_word }}
+          </RouterLink>
+        </div>
+        <div
           v-if="valsi.decomposition"
           class="flex min-w-0 max-w-full flex-wrap items-center gap-x-1.5 gap-y-0.5 text-sm text-gray-700"
         >

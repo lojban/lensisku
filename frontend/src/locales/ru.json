@@ -1147,7 +1147,8 @@
     "translationsLabel": "Переводы",
     "unlinkTranslation": "Отвязать перевод",
     "confirmUnlink": "Вы уверены, что хотите отвязать этот перевод?",
-    "unlinkError": "Не удалось отвязать перевод"
+    "unlinkError": "Не удалось отвязать перевод",
+    "canonicalFormLabel": "Canonical form:"
   },
   "cachedExports": {
     "title": "Кэшированные экспорты словаря",
@@ -1357,7 +1358,8 @@
       "link": "Связать",
       "customPhraseTitle": "Своя фраза",
       "customPhraseFrontLabel": "Лицевая сторона",
-      "customPhraseBackLabel": "Оборот"
+      "customPhraseBackLabel": "Оборот",
+      "canonicalFormLabel": "Canonical:"
     },
     "imageUploadButton": {
       "invalidType": "Пожалуйста, выберите файл изображения",
@@ -1643,6 +1645,7 @@
     "cmevla": "cmevla",
     "phrase": "фраза",
     "lujvo": "lujvo",
+    "non-canonical-lujvo": "non-canonical lujvo",
     "fuhivla": "fu'ivla",
     "experimental-cmavo": "экспериментальное cmavo",
     "experimental-gismu": "экспериментальное gismu",

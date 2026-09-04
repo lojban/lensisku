@@ -1192,7 +1192,8 @@
     "translationsLabel": "訳",
     "unlinkTranslation": "訳のリンクを解除",
     "confirmUnlink": "この訳のリンクを解除しますか？",
-    "unlinkError": "リンクを解除できませんでした"
+    "unlinkError": "リンクを解除できませんでした",
+    "canonicalFormLabel": "Canonical form:"
   },
   "cachedExports": {
     "title": "キャッシュ済み辞書エクスポート",
@@ -1403,7 +1404,8 @@
       "link": "リンク",
       "metadataLabel": "メタデータ：",
       "metadataKey": "キー",
-      "metadataValue": "値"
+      "metadataValue": "値",
+      "canonicalFormLabel": "Canonical:"
     },
     "imageUploadButton": {
       "invalidType": "画像ファイルを選択してください",
@@ -1689,6 +1691,7 @@
     "phrase": "フレーズ",
     "cmavo": "cmavo",
     "lujvo": "lujvo",
+    "non-canonical-lujvo": "non-canonical lujvo",
     "fuhivla": "fu'ivla",
     "experimental-cmavo": "実験的 cmavo",
     "experimental-gismu": "実験的 gismu",

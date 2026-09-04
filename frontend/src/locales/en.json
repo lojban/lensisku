@@ -1221,7 +1221,8 @@
     "translationsLabel": "Translations",
     "unlinkTranslation": "Unlink translation",
     "confirmUnlink": "Are you sure you want to unlink this translation?",
-    "unlinkError": "Failed to unlink translation"
+    "unlinkError": "Failed to unlink translation",
+    "canonicalFormLabel": "Canonical form:"
   },
   "cachedExports": {
     "title": "Cached dictionary exports",
@@ -1432,7 +1433,8 @@
       "link": "Link",
       "metadataLabel": "Metadata:",
       "metadataKey": "Key",
-      "metadataValue": "Value"
+      "metadataValue": "Value",
+      "canonicalFormLabel": "Canonical:"
     },
     "imageUploadButton": {
       "invalidType": "Please select an image file",
@@ -1748,6 +1750,7 @@
     "phrase": "phrase",
     "cmavo": "cmavo",
     "lujvo": "lujvo",
+    "non-canonical-lujvo": "non-canonical lujvo",
     "fuhivla": "fu'ivla",
     "experimental-cmavo": "experimental cmavo",
     "experimental-gismu": "experimental gismu",

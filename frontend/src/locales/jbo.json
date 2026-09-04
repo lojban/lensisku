@@ -1021,7 +1021,8 @@
     "translationsLabel": "xe fanva",
     "unlinkTranslation": "vimcu lo xe fanva selyli'e",
     "confirmUnlink": "xu do birti lo nu vimcu lo xe fanva selyli'e?",
-    "unlinkError": "fliba lo nu vimcu lo xe fanva selyli'e"
+    "unlinkError": "fliba lo ka jai gau fanva be naku",
+    "canonicalFormLabel": "denmi tarmi"
   },
   "cachedExports": {
     "title": "ba'o se cupra vlaste",
@@ -1421,7 +1422,8 @@
       "link": "selyli'e",
       "metadataLabel": "datni tcila:",
       "metadataKey": "tcila",
-      "metadataValue": "zmiku"
+      "metadataValue": "gradu",
+      "canonicalFormLabel": "denmi"
     },
     "imageUploadButton": {
       "invalidType": "ko cuxna lo pixra datni",
@@ -1716,6 +1718,7 @@
     "phrase": "jufra",
     "cmavo": "cmavo",
     "lujvo": "lujvo",
+    "non-canonical-lujvo": "denmi lujvo",
     "fuhivla": "fu'ivla",
     "experimental-cmavo": "na'e se ca'irselzau cmavo",
     "experimental-gismu": "na'e se ca'irselzau gismu",

@@ -330,6 +330,9 @@ pub async fn spawn_background_tasks(
     // Generate missing valsi sounds (Lojban, Kitten TTS Nano 0.8 / Bruno) every 5 minutes
     valsi_tts::spawn_valsi_sound_generation(pool.clone());
 
+    // Classify unchecked classical lujvo (score-optimal vs non-canonical) every 5 minutes
+    super::lujvo_canonical::spawn_lujvo_canonical_classification(pool.clone());
+
     // Cache dictionary exports. Skipped when DISABLE_DICTIONARY_EXPORT=1/true/yes
     // because it runs xelatex at startup and can freeze low-resource dev containers.
     if std::env::var("DISABLE_DICTIONARY_EXPORT")

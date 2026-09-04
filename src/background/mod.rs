@@ -1,3 +1,4 @@
+mod lujvo_canonical;
 mod service;
 mod valsi_tts;
 

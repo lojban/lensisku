@@ -65,6 +65,20 @@
                 </h2>
               </div>
               <span
+                v-if="definition.canonical_word"
+                class="px-2 py-1 text-xs font-medium bg-slate-50 text-slate-800 rounded-full inline-flex items-center gap-1"
+              >
+                <span class="text-slate-600">{{
+                  t('components.definitionCard.canonicalFormLabel')
+                }}</span>
+                <RouterLink
+                  :to="{ path: `/valsi/${definition.canonical_word.replace(/ /g, '_')}` }"
+                  class="text-nav-link hover:underline"
+                >
+                  {{ definition.canonical_word }}
+                </RouterLink>
+              </span>
+              <span
                 v-if="definition.decomposition?.length"
                 class="px-2 py-1 text-xs font-medium bg-amber-50 text-amber-800 rounded-full inline-flex items-center gap-0.5 flex-wrap"
               >
@@ -702,6 +716,7 @@ interface DefinitionRecord {
   user_vote?: number
   notes?: string
   decomposition?: string[]
+  canonical_word?: string
   rafsi?: string
   selmaho?: string
   comment_count?: number

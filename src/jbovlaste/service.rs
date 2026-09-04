@@ -78,7 +78,8 @@ fn push_author_sql_numbered(
 use crate::auth::Claims;
 use crate::comments::dto::ReactionResponse;
 use crate::language::{
-    analyze_word, lujvo_segments_from_nodes, validate_mathjax, MathJaxValidationOptions,
+    analyze_word, classify_lujvo_spelling, is_decomposable_lujvo_type, load_owned_rafsi_maps,
+    lujvo_segments_from_nodes, validate_mathjax, MathJaxValidationOptions,
 };
 use crate::middleware::cache::RedisCache;
 use crate::subscriptions::models::SubscriptionTrigger;
@@ -291,6 +292,7 @@ pub async fn semantic_search(
                 v.word as valsiword,
                 d.cached_rafsi as rafsi,
                 d.cached_decomposition as cached_decomposition,
+                d.cached_canonical_word as cached_canonical_word,
                 u.username,
                 l.realname as langrealname,
                 vt.descriptor as type_name,
@@ -398,6 +400,7 @@ pub async fn semantic_search(
                     .ok()
                     .flatten(),
             ),
+            canonical_word: row_canonical_word(&row, &row.get::<_, String>("type_name"), &word),
         });
     }
 
@@ -926,6 +929,31 @@ fn parse_cached_decomposition(s: Option<String>) -> Option<Vec<String>> {
     serde_json::from_str::<Vec<String>>(&s).ok()
 }
 
+/// Expose canonical spelling only for non-canonical lujvo (UI link target).
+fn display_canonical_word(
+    type_name: &str,
+    canonical_word: Option<String>,
+    word: &str,
+) -> Option<String> {
+    if !type_name.eq_ignore_ascii_case("non-canonical lujvo") {
+        return None;
+    }
+    canonical_word.filter(|c| c != word && !c.is_empty())
+}
+
+fn row_canonical_word(row: &tokio_postgres::Row, type_name: &str, word: &str) -> Option<String> {
+    let raw = row
+        .try_get::<_, Option<String>>("cached_canonical_word")
+        .ok()
+        .flatten()
+        .or_else(|| {
+            row.try_get::<_, Option<String>>("canonical_word")
+                .ok()
+                .flatten()
+        });
+    display_canonical_word(type_name, raw, word)
+}
+
 // Helper function to fetch keywords (extracted and adapted from search_definitions)
 async fn fetch_keywords(
     transaction: &Transaction<'_>,
@@ -1100,6 +1128,7 @@ pub async fn search_definitions(
                 d.cached_type_name as type_name,
                 d.cached_rafsi as rafsi,
                 d.cached_decomposition as cached_decomposition,
+                d.cached_canonical_word as cached_canonical_word,
                 COALESCE(dv.score, 0)::bigint AS score,
                 COALESCE(cc.comment_count, 0) as comment_count,
                 (di.definition_id IS NOT NULL) as has_image,
@@ -1169,6 +1198,7 @@ pub async fn search_definitions(
                 d.cached_type_name as type_name,
                 d.cached_rafsi as rafsi,
                 d.cached_decomposition as cached_decomposition,
+                d.cached_canonical_word as cached_canonical_word,
                 COALESCE(dv.score, 0)::bigint AS score,
                 (di.definition_id IS NOT NULL) as has_image,
                 CASE
@@ -1270,6 +1300,7 @@ pub async fn search_definitions(
                     .ok()
                     .flatten(),
             ),
+            canonical_word: row_canonical_word(&row, &row.get::<_, String>("type_name"), &word),
             examples: None,
         });
     }
@@ -1501,6 +1532,7 @@ pub async fn fast_search_definitions(
             d.cached_langrealname as langrealname,
             d.cached_type_name as type_name,
             d.cached_rafsi as rafsi,
+            d.cached_canonical_word as cached_canonical_word,
             0::bigint AS score,
             CASE
                 WHEN d.cached_valsiword = $1::text THEN 13
@@ -1580,6 +1612,7 @@ pub async fn fast_search_definitions(
             metadata: None,
             rafsi: row.try_get::<_, Option<String>>("rafsi").ok().flatten(),
             decomposition: None, // Not returned in fast search for performance
+            canonical_word: row_canonical_word(&row, &row.get::<_, String>("type_name"), &word),
             examples: None,
         });
     }
@@ -2031,7 +2064,7 @@ pub async fn get_entry_details(
     let result = transaction
         .query_opt(
             "SELECT v.valsiid, v.word, vt.descriptor as type_name, v.rafsi, v.source_langid,
-             v.cached_decomposition,
+             v.cached_decomposition, v.canonical_word,
              (SELECT COUNT(c.commentid)
               FROM threads t
               LEFT JOIN comments c ON t.threadid = c.threadid
@@ -2061,9 +2094,16 @@ pub async fn get_entry_details(
                     .ok()
                     .flatten()
                     .and_then(|s| parse_cached_decomposition(Some(s))),
+                canonical_word: display_canonical_word(
+                    &row.get::<_, String>("type_name"),
+                    row.try_get::<_, Option<String>>("canonical_word")
+                        .ok()
+                        .flatten(),
+                    &row.get::<_, String>("word"),
+                ),
             };
 
-            if detail.type_name.to_lowercase() == "lujvo" && detail.decomposition.is_none() {
+            if is_decomposable_lujvo_type(&detail.type_name) && detail.decomposition.is_none() {
                 match get_source_words(&detail.word, &transaction, parsers).await {
                     Ok(words) => {
                         detail.decomposition = Some(words.clone());
@@ -2231,6 +2271,11 @@ pub async fn get_wiki_by_word(
                     .ok()
                     .flatten()
                     .and_then(|s| parse_cached_decomposition(Some(s))),
+                canonical_word: row_canonical_word(
+                    &row,
+                    &row.get::<_, String>("type_name"),
+                    &row.get::<_, String>("valsiword"),
+                ),
             };
 
             Ok(Some(definition))
@@ -2871,19 +2916,39 @@ async fn add_definition_in_transaction(
         _ => word_type.as_str(),
     };
 
-    let type_id = match resolved_word_type {
-        "gismu" => 1,
-        "cmavo" => 2,
-        "cmevla" => 3,
-        "lujvo" => 4,
-        "fu'ivla" => 5,
-        "cmavo-compound" => 6,
-        "experimental gismu" => 7,
-        "experimental cmavo" => 8,
-        "bu-letteral" => 9,
-        "zei-lujvo" => 10,
-        "phrase" => 15,
-        _ => 0,
+    // For classical lujvo, refine typeid via score-optimal reconstruct (may be
+    // non-canonical). Skip if analyze already returned the refined type.
+    let maps = if matches!(
+        resolved_word_type,
+        "lujvo" | "non-canonical lujvo"
+    ) {
+        load_owned_rafsi_maps(transaction).await.ok()
+    } else {
+        None
+    };
+    let lujvo_class = maps
+        .as_ref()
+        .and_then(|m| classify_lujvo_spelling(&word, &m.options()));
+
+    let (type_id, canonical_word): (i16, Option<String>) = if let Some(ref c) = lujvo_class {
+        (c.type_id, Some(c.canonical_word.clone()))
+    } else {
+        let type_id = match resolved_word_type {
+            "gismu" => 1,
+            "cmavo" => 2,
+            "cmevla" => 3,
+            "lujvo" => 4,
+            "fu'ivla" => 5,
+            "cmavo-compound" => 6,
+            "experimental gismu" => 7,
+            "experimental cmavo" => 8,
+            "bu-letteral" => 9,
+            "zei-lujvo" => 10,
+            "non-canonical lujvo" => 17,
+            "phrase" => 15,
+            _ => 0,
+        };
+        (type_id, None)
     };
 
     // Get or create valsi, considering source_langid
@@ -2897,15 +2962,16 @@ async fn add_definition_in_transaction(
         Some(row) => row.get::<_, i32>("valsiid"),
         None => match transaction
             .query_one(
-                "INSERT INTO valsi (word, typeId, userId, time, source_langid)
-                     VALUES ($1, $2, $3, $4, $5)
+                "INSERT INTO valsi (word, typeId, userId, time, source_langid, canonical_word)
+                     VALUES ($1, $2, $3, $4, $5, $6)
                      RETURNING valsiid",
                 &[
                     &word,
-                    &(type_id as i16),
+                    &type_id,
                     &claims.sub,
                     &(Utc::now().timestamp() as i32),
                     &source_langid,
+                    &canonical_word,
                 ],
             )
             .await
@@ -2981,7 +3047,7 @@ async fn add_definition_in_transaction(
         Some(definition_id),
         request.rafsi.clone(),
         source_langid,
-        type_id as i16,
+        type_id,
     )
     .await?;
 
@@ -3479,6 +3545,11 @@ pub async fn get_definition(
             .ok()
             .flatten()
             .and_then(|s| parse_cached_decomposition(Some(s))),
+        canonical_word: row_canonical_word(
+            &row,
+            &row.get::<_, String>("type_name"),
+            &row.get::<_, String>("valsiword"),
+        ),
     };
 
     Ok(Some(definition))
@@ -4142,6 +4213,7 @@ pub async fn list_definitions(
             rafsi: None,
             examples: None,
             decomposition: None,
+            canonical_word: None,
         })
         .collect();
 
@@ -4321,6 +4393,7 @@ pub async fn list_non_lojban_definitions(
             rafsi: None,
             examples: None,
             decomposition: None,
+            canonical_word: None,
         })
         .collect();
 
@@ -4565,6 +4638,7 @@ pub async fn get_definitions_by_entry(
             metadata: None,
             examples: None,
             decomposition: None,
+            canonical_word: None,
         })
         .collect();
 
@@ -6114,6 +6188,7 @@ pub async fn list_definitions_by_client_id(
             rafsi: None,
             examples: None,
             decomposition: None,
+            canonical_word: None,
         });
     }
 

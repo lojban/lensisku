@@ -14,6 +14,89 @@ use vlazba::reconstruct_lujvo;
 
 use super::models::{MathJaxValidationError, MathJaxValidationOptions};
 
+/// Official / score-optimal classical lujvo.
+pub const LUJVO_TYPE_ID: i16 = 4;
+/// Score-suboptimal spelling (extra hyphens or worse rafsi); links via `canonical_word`.
+pub const NON_CANONICAL_LUJVO_TYPE_ID: i16 = 17;
+pub const LUJVO_TYPE_NAME: &str = "lujvo";
+pub const NON_CANONICAL_LUJVO_TYPE_NAME: &str = "non-canonical lujvo";
+
+/// Result of comparing a lujvo spelling to `reconstruct_lujvo`.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct LujvoClassification {
+    pub type_id: i16,
+    pub type_name: &'static str,
+    /// Score-optimal form; equal to `word` when type is canonical lujvo.
+    pub canonical_word: String,
+}
+
+/// Owned rafsi maps so callers can build [`RafsiOptions`] without lifetime issues.
+#[derive(Debug, Default, Clone)]
+pub struct OwnedRafsiMaps {
+    pub cmavo: HashMap<String, Vec<String>>,
+    pub cmavo_exp: HashMap<String, Vec<String>>,
+    pub gismu: HashMap<String, Vec<String>>,
+    pub gismu_exp: HashMap<String, Vec<String>>,
+}
+
+impl OwnedRafsiMaps {
+    pub fn options(&self) -> RafsiOptions<'_> {
+        // Empty maps must be `None` so vlazba falls back to its built-in rafsi lists.
+        RafsiOptions {
+            exp_rafsi: true,
+            custom_cmavo: (!self.cmavo.is_empty()).then_some(&self.cmavo),
+            custom_cmavo_exp: (!self.cmavo_exp.is_empty()).then_some(&self.cmavo_exp),
+            custom_gismu: (!self.gismu.is_empty()).then_some(&self.gismu),
+            custom_gismu_exp: (!self.gismu_exp.is_empty()).then_some(&self.gismu_exp),
+        }
+    }
+}
+
+pub async fn load_owned_rafsi_maps(
+    transaction: &Transaction<'_>,
+) -> Result<OwnedRafsiMaps, Box<dyn std::error::Error>> {
+    Ok(OwnedRafsiMaps {
+        cmavo: fetch_cmavo_rafsi(transaction).await.unwrap_or_default(),
+        cmavo_exp: fetch_experimental_cmavo_rafsi(transaction)
+            .await
+            .unwrap_or_default(),
+        gismu: fetch_gismu_rafsi(transaction).await.unwrap_or_default(),
+        gismu_exp: fetch_experimental_gismu_rafsi(transaction)
+            .await
+            .unwrap_or_default(),
+    })
+}
+
+/// Compare `word` to score-optimal `reconstruct_lujvo`. Returns `None` if the
+/// string is not a classical lujvo (jvokaha / reconstruct fails).
+pub fn classify_lujvo_spelling(
+    word: &str,
+    options: &RafsiOptions<'_>,
+) -> Option<LujvoClassification> {
+    jvokaha(word).ok()?;
+    let recommended = reconstruct_lujvo(word, true, options).ok()?;
+    if recommended == word {
+        Some(LujvoClassification {
+            type_id: LUJVO_TYPE_ID,
+            type_name: LUJVO_TYPE_NAME,
+            canonical_word: word.to_string(),
+        })
+    } else {
+        Some(LujvoClassification {
+            type_id: NON_CANONICAL_LUJVO_TYPE_ID,
+            type_name: NON_CANONICAL_LUJVO_TYPE_NAME,
+            canonical_word: recommended,
+        })
+    }
+}
+
+pub fn is_decomposable_lujvo_type(type_name: &str) -> bool {
+    matches!(
+        type_name.to_lowercase().as_str(),
+        "lujvo" | "non-canonical lujvo"
+    )
+}
+
 pub async fn get_languages(pool: &Pool) -> Result<Vec<Language>, Box<dyn std::error::Error>> {
     let client = pool.get().await?;
 
@@ -226,9 +309,9 @@ pub async fn analyze_word(
             }
 
             let texts = extract_token_text(&parsed_tokens);
-            let word_type = analyze_word_type(&parsed_tokens);
+            let peg_word_type = analyze_word_type(&parsed_tokens);
 
-            let reconstructed = match word_type.as_str() {
+            let reconstructed = match peg_word_type.as_str() {
                 "cmavo-compound" => {
                     let mut result = String::new();
                     for (i, text) in texts.iter().enumerate() {
@@ -246,30 +329,18 @@ pub async fn analyze_word(
                 _ => texts.first().cloned().unwrap_or_default(),
             };
 
-            let (recommended, problems) = if word_type.as_str() == "lujvo" {
-                let recommended = match jvokaha(word) {
-                    Ok(_) => {
-                        let cmavo = fetch_cmavo_rafsi(transaction).await.ok();
-                        let cmavo_exp = fetch_experimental_cmavo_rafsi(transaction).await.ok();
-                        let gismu = fetch_gismu_rafsi(transaction).await.ok();
-                        let gismu_exp = fetch_experimental_gismu_rafsi(transaction).await.ok();
-                        reconstruct_lujvo(
-                            word,
-                            true,
-                            &RafsiOptions {
-                                exp_rafsi: true,
-                                custom_cmavo: cmavo.as_ref(),
-                                custom_cmavo_exp: cmavo_exp.as_ref(),
-                                custom_gismu: gismu.as_ref(),
-                                custom_gismu_exp: gismu_exp.as_ref(),
-                            },
-                        )
-                        .ok()
-                    }
-                    Err(_) => None,
-                };
-                (recommended.or(lujvo_decomposition_camxes), None)
-            } else if ["gismu", "experimental gismu"].contains(&word_type.as_str()) {
+            let (word_type, recommended, problems) = if peg_word_type.as_str() == "lujvo" {
+                let maps = load_owned_rafsi_maps(transaction).await.unwrap_or_default();
+                let classification = classify_lujvo_spelling(word, &maps.options());
+                let recommended = classification
+                    .as_ref()
+                    .map(|c| c.canonical_word.clone())
+                    .or(lujvo_decomposition_camxes);
+                let resolved_type = classification
+                    .map(|c| c.type_name.to_string())
+                    .unwrap_or_else(|| "lujvo".to_string());
+                (resolved_type, recommended, None)
+            } else if ["gismu", "experimental gismu"].contains(&peg_word_type.as_str()) {
                 // 1 = gismu type ID
                 let gismu_regular = fetch_gismu_data(transaction, 1)
                     .await
@@ -290,9 +361,9 @@ pub async fn analyze_word(
                 // Process experimental gismu matches
                 problems_map.insert("experimental".to_string(), matcher_exp.gimka(word));
 
-                (None, Some(problems_map))
+                (peg_word_type, None, Some(problems_map))
             } else {
-                (None, None)
+                (peg_word_type, None, None)
             };
 
             let response = AnalyzeWordResponse {
@@ -812,7 +883,7 @@ pub async fn analyze_word_in_pool(
 
     // For lujvo, attach selrafsi (source words) so the add-definition UI can
     // show component definition cards without a second search round-trip.
-    if response.success && response.word_type == "lujvo" {
+    if response.success && is_decomposable_lujvo_type(&response.word_type) {
         match crate::jbovlaste::service::get_source_words(
             &response.text,
             &transaction,
@@ -868,6 +939,52 @@ mod tests {
             jvokaha("klamyseltru").expect("klamyseltru"),
             vec!["klam", "y", "sel", "tru"]
         );
+    }
+
+    #[test]
+    fn jvokaha_accepts_optional_extra_y() {
+        assert_eq!(
+            jvokaha("rivyzu'e").expect("rivyzu'e via canonical rivzu'e"),
+            vec!["riv", "zu'e"]
+        );
+        assert_eq!(jvokaha("rivzu'e").expect("rivzu'e"), vec!["riv", "zu'e"]);
+    }
+
+    #[test]
+    fn classify_lujvo_spelling_hyphen_extra_y() {
+        let maps = OwnedRafsiMaps::default();
+        let class = classify_lujvo_spelling("rivyzu'e", &maps.options())
+            .expect("rivyzu'e should classify");
+        assert_eq!(class.type_id, NON_CANONICAL_LUJVO_TYPE_ID);
+        assert_eq!(class.type_name, NON_CANONICAL_LUJVO_TYPE_NAME);
+        assert_eq!(class.canonical_word, "rivzu'e");
+
+        let class = classify_lujvo_spelling("rivzu'e", &maps.options())
+            .expect("rivzu'e should classify");
+        assert_eq!(class.type_id, LUJVO_TYPE_ID);
+        assert_eq!(class.canonical_word, "rivzu'e");
+    }
+
+    #[test]
+    fn classify_lujvo_spelling_score_suboptimal_rafsi() {
+        // Long rafsi form of barda+mlatu; score-optimal is bramlatu.
+        let maps = OwnedRafsiMaps::default();
+        let class = classify_lujvo_spelling("bardymlatu", &maps.options())
+            .expect("bardymlatu should classify");
+        assert_eq!(class.type_id, NON_CANONICAL_LUJVO_TYPE_ID);
+        assert_eq!(class.canonical_word, "bramlatu");
+
+        let class = classify_lujvo_spelling("bramlatu", &maps.options())
+            .expect("bramlatu should classify");
+        assert_eq!(class.type_id, LUJVO_TYPE_ID);
+        assert_eq!(class.canonical_word, "bramlatu");
+    }
+
+    #[test]
+    fn is_decomposable_lujvo_type_covers_both() {
+        assert!(is_decomposable_lujvo_type("lujvo"));
+        assert!(is_decomposable_lujvo_type("non-canonical lujvo"));
+        assert!(!is_decomposable_lujvo_type("gismu"));
     }
 
     fn parse_word(word: &str) -> Vec<LojbanToken> {
