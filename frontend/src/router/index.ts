@@ -24,7 +24,7 @@ const baseRoutes: Array<RouteRecordRaw> = [
     path: '',
     name: 'Home',
     component: HomePage,
-    meta: { fullHeight: true },
+    meta: { fullHeight: true, contentTopPaddingMainOnly: true },
     props: (route) => ({
       urlSearchQuery: route.query.q,
       urlSearchMode: route.query.mode || 'dictionary',

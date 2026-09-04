@@ -1,7 +1,7 @@
 <template>
   <div class="feed-page">
     <div class="feed-page__body">
-      <div class="space-y-4 pb-3">
+      <div class="mt-3 space-y-4 pb-3">
         <!-- Skeletons -->
         <SearchFormSkeleton v-if="isInitialLoading" />
         <CombinedFiltersSkeleton
