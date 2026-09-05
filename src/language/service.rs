@@ -7,10 +7,11 @@ use camxes_rs::camxes::peg::{grammar::Peg, parsing::ParseResult};
 use deadpool_postgres::{Pool, Transaction};
 use log::warn;
 use regex::Regex;
+use vlazba::analyze_lujvo_spelling;
 use vlazba::gismu_utils::GismuMatcher;
-use vlazba::jvokaha::jvokaha;
 use vlazba::jvozba::tools::RafsiOptions;
-use vlazba::reconstruct_lujvo;
+#[cfg(test)]
+use vlazba::jvokaha::jvokaha;
 
 use super::models::{MathJaxValidationError, MathJaxValidationOptions};
 
@@ -21,7 +22,7 @@ pub const NON_CANONICAL_LUJVO_TYPE_ID: i16 = 17;
 pub const LUJVO_TYPE_NAME: &str = "lujvo";
 pub const NON_CANONICAL_LUJVO_TYPE_NAME: &str = "non-canonical lujvo";
 
-/// Result of comparing a lujvo spelling to `reconstruct_lujvo`.
+/// Dictionary-facing classification (vlazba morphology + lensisku type ids).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct LujvoClassification {
     pub type_id: i16,
@@ -67,25 +68,23 @@ pub async fn load_owned_rafsi_maps(
     })
 }
 
-/// Compare `word` to score-optimal `reconstruct_lujvo`. Returns `None` if the
-/// string is not a classical lujvo (jvokaha / reconstruct fails).
+/// Map vlazba score-optimal analysis onto jbovlaste type ids (4 vs 17).
 pub fn classify_lujvo_spelling(
     word: &str,
     options: &RafsiOptions<'_>,
 ) -> Option<LujvoClassification> {
-    jvokaha(word).ok()?;
-    let recommended = reconstruct_lujvo(word, true, options).ok()?;
-    if recommended == word {
+    let analysis = analyze_lujvo_spelling(word, options)?;
+    if analysis.is_score_optimal {
         Some(LujvoClassification {
             type_id: LUJVO_TYPE_ID,
             type_name: LUJVO_TYPE_NAME,
-            canonical_word: word.to_string(),
+            canonical_word: analysis.canonical,
         })
     } else {
         Some(LujvoClassification {
             type_id: NON_CANONICAL_LUJVO_TYPE_ID,
             type_name: NON_CANONICAL_LUJVO_TYPE_NAME,
-            canonical_word: recommended,
+            canonical_word: analysis.canonical,
         })
     }
 }
@@ -978,6 +977,20 @@ mod tests {
             .expect("bramlatu should classify");
         assert_eq!(class.type_id, LUJVO_TYPE_ID);
         assert_eq!(class.canonical_word, "bramlatu");
+    }
+
+    #[test]
+    fn classify_falls_back_to_builtins_when_custom_maps_incomplete() {
+        // Non-empty custom gismu map that lacks rivbi/zukte — without fallback,
+        // reconstruct fails and classify returned None (production stuck rivyzu'e
+        // as typeid 4 after stamping canonical_word = word).
+        let mut maps = OwnedRafsiMaps::default();
+        maps.gismu
+            .insert("broda".into(), vec!["rod".into(), "brod".into()]);
+        let class = classify_lujvo_spelling("rivyzu'e", &maps.options())
+            .expect("should classify via builtin fallback");
+        assert_eq!(class.type_id, NON_CANONICAL_LUJVO_TYPE_ID);
+        assert_eq!(class.canonical_word, "rivzu'e");
     }
 
     #[test]
