@@ -681,8 +681,9 @@ async fn fetch_rafsi_data(
     transaction: &Transaction<'_>,
     type_id: i16,
 ) -> Result<HashMap<String, Vec<String>>, Box<dyn std::error::Error>> {
-    // Include every valsi of this type. Gismu with NULL rafsi still need a map
-    // key so vlazba's 4-letter form (e.g. datn ← datni) resolves via contains_key.
+    // Include every valsi of this type (null rafsi → empty list) so reverse
+    // lookup / 4-letter resolution can see the word key. Official 4-letter
+    // forms are stored by migration; experimental may still be empty here.
     let rows = transaction
         .query(
             "SELECT word, rafsi FROM valsi WHERE typeid = $1",

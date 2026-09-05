@@ -6283,6 +6283,66 @@ fn format_rafsi_overlap_warning(word: &str, type_name: &str) -> String {
     format!("RAFSI_OVERLAP|{}|{}", word, type_name)
 }
 
+/// Implicit 4-letter rafsi for a 5-letter vowel-final gismu (CLL / vlazba),
+/// excluding the broda-series stem `brod`.
+fn implicit_four_letter_gismu_rafsi(word: &str) -> Option<String> {
+    let chars: Vec<char> = word.chars().collect();
+    if chars.len() != 5 {
+        return None;
+    }
+    let last = chars[4];
+    if !"aeiou".contains(last) {
+        return None;
+    }
+    let four: String = chars[..4].iter().collect();
+    if four == "brod" {
+        return None;
+    }
+    Some(four)
+}
+
+/// Append the implicit 4-letter form when missing. Official gismu always get it;
+/// experimental only when no official gismu already lists that token.
+async fn maybe_append_four_letter_gismu_rafsi(
+    transaction: &Transaction<'_>,
+    type_id: i16,
+    word: &str,
+    rafsi_str: &str,
+) -> Result<String, Box<dyn std::error::Error>> {
+    let Some(four) = implicit_four_letter_gismu_rafsi(word) else {
+        return Ok(rafsi_str.to_string());
+    };
+    if rafsi_str.split_whitespace().any(|p| p == four) {
+        return Ok(rafsi_str.to_string());
+    }
+    if type_id == 7 {
+        let clashes_official = transaction
+            .query_opt(
+                "SELECT 1 FROM valsi v
+                 WHERE v.typeid = 1
+                   AND v.source_langid = 1
+                   AND v.rafsi IS NOT NULL
+                   AND $1 = ANY (
+                       string_to_array(
+                           trim(both FROM regexp_replace(v.rafsi, '\\s+', ' ', 'g')),
+                           ' '
+                       )
+                   )",
+                &[&four],
+            )
+            .await?
+            .is_some();
+        if clashes_official {
+            return Ok(rafsi_str.to_string());
+        }
+    }
+    if rafsi_str.is_empty() {
+        Ok(four)
+    } else {
+        Ok(format!("{rafsi_str} {four}"))
+    }
+}
+
 async fn validate_and_update_rafsi(
     transaction: &Transaction<'_>,
     valsi_id: i32,
@@ -6326,7 +6386,7 @@ async fn validate_and_update_rafsi(
     }
 
     if let Some(rafsi_str) = rafsi_opt {
-        let rafsi_str = rafsi_str.trim();
+        let mut rafsi_str = rafsi_str.trim().to_string();
         if rafsi_str.is_empty() {
             // Clear rafsi from the correct location
             if type_id == 7 || type_id == 8 {
@@ -6349,8 +6409,30 @@ async fn validate_and_update_rafsi(
             return Ok(None);
         }
 
+        // Official / experimental gismu: ensure the implicit 4-letter form is
+        // present when allowed (always for official; for experimental only if
+        // no official gismu already claims that token).
+        if type_id == 1 || type_id == 7 {
+            if let Ok(Some(word)) = transaction
+                .query_opt(
+                    "SELECT word FROM valsi WHERE valsiid = $1",
+                    &[&valsi_id],
+                )
+                .await
+                .map(|r| r.map(|row| row.get::<_, String>("word")))
+            {
+                rafsi_str = maybe_append_four_letter_gismu_rafsi(
+                    transaction,
+                    type_id,
+                    &word,
+                    &rafsi_str,
+                )
+                .await?;
+            }
+        }
+
         // Soft warning only when another valsi already uses one of these rafsi.
-        let warning = find_rafsi_overlap_for_other_valsi(transaction, Some(valsi_id), rafsi_str)
+        let warning = find_rafsi_overlap_for_other_valsi(transaction, Some(valsi_id), &rafsi_str)
             .await?
             .map(|(word, type_name)| format_rafsi_overlap_warning(&word, &type_name));
 
