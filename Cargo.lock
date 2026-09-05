@@ -7931,9 +7931,9 @@ checksum = "0b928f33d975fc6ad9f86c8f283853ad26bdd5b10b7f1542aa2fa15e2289105a"
 
 [[package]]
 name = "vlazba"
-version = "0.8.3"
+version = "0.8.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "411cb86762f6b5a5c7a1e2a385b4f1bcb48425efa08005a03b131c5084fdb93f"
+checksum = "be88a32eb24cededc6d0400cecec5d27f6c8111d45f7812c7c6a9be1ae5f079e"
 dependencies = [
  "anyhow",
  "clap",

@@ -681,9 +681,11 @@ async fn fetch_rafsi_data(
     transaction: &Transaction<'_>,
     type_id: i16,
 ) -> Result<HashMap<String, Vec<String>>, Box<dyn std::error::Error>> {
+    // Include every valsi of this type. Gismu with NULL rafsi still need a map
+    // key so vlazba's 4-letter form (e.g. datn ← datni) resolves via contains_key.
     let rows = transaction
         .query(
-            "SELECT word, rafsi FROM valsi WHERE typeid = $1 AND rafsi IS NOT NULL",
+            "SELECT word, rafsi FROM valsi WHERE typeid = $1",
             &[&type_id],
         )
         .await?;
@@ -691,10 +693,14 @@ async fn fetch_rafsi_data(
     let mut result = HashMap::new();
     for row in rows {
         let word: String = row.get("word");
-        let rafsi: String = row.get("rafsi");
+        let rafsi: Option<String> = row.get("rafsi");
         result.insert(
             word,
-            rafsi.split_whitespace().map(|s| s.to_string()).collect(),
+            rafsi
+                .unwrap_or_default()
+                .split_whitespace()
+                .map(|s| s.to_string())
+                .collect(),
         );
     }
     Ok(result)
