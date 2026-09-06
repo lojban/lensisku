@@ -69,6 +69,10 @@ pub async fn load_owned_rafsi_maps(
 }
 
 /// Map vlazba score-optimal analysis onto jbovlaste type ids (4 vs 17).
+///
+/// Uses `vlazba` 0.9+ `best_only` reconstruct (via `analyze_lujvo_spelling`),
+/// which finds the score-optimal form without materializing the full rafsi
+/// Cartesian product.
 pub fn classify_lujvo_spelling(
     word: &str,
     options: &RafsiOptions<'_>,

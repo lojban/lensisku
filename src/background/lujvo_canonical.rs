@@ -1,16 +1,16 @@
 //! Background drain: classify unchecked classical lujvo (`typeid = 4`,
 //! `canonical_word IS NULL`) into canonical vs non-canonical via reconstruct_lujvo.
 //!
-//! Kept deliberately gentle: `reconstruct_lujvo` / jvozba is CPU+RAM heavy, and
-//! flipping `typeid` fires `sync_definition_cache_fields` (per-definition rewrite).
-//! Classify outside a DB transaction; write in small batches; load rafsi maps once
-//! per tick.
+//! Kept deliberately gentle: flipping `typeid` fires `sync_definition_cache_fields`
+//! (per-definition rewrite). Classify outside a DB transaction on a blocking
+//! pool; write in small batches; load rafsi maps once per tick. vlazba 0.9+
+//! uses best_only reconstruct so we no longer expand the full rafsi product.
 
 use crate::language::{classify_lujvo_spelling, load_owned_rafsi_maps, LujvoClassification};
 use deadpool_postgres::Pool;
 use log::{debug, error, info};
 use std::time::Duration;
-use tokio::time;
+use tokio::{task, time};
 
 /// Rows to classify and write per tick (also the SELECT limit).
 const BATCH_SIZE: i64 = 50;
@@ -27,6 +27,7 @@ pub fn spawn_lujvo_canonical_classification(pool: Pool) {
         }
 
         let mut interval = time::interval(Duration::from_secs(INTERVAL_SECS));
+        interval.set_missed_tick_behavior(time::MissedTickBehavior::Skip);
         // Don't slam the DB the instant the server starts (migrations / warm-up).
         interval.tick().await;
         loop {
@@ -71,16 +72,20 @@ pub async fn classify_unchecked_lujvo_batch(
         (pending, maps)
     };
 
-    // 2) CPU-heavy classify with no DB connection held.
-    let options = maps.options();
-    let mut plans: Vec<(i32, LujvoClassification)> = Vec::with_capacity(pending.len());
-    let mut self_checked: Vec<i32> = Vec::new();
-    for (valsiid, word) in pending {
-        match classify_lujvo_spelling(&word, &options) {
-            Some(class) => plans.push((valsiid, class)),
-            None => self_checked.push(valsiid),
+    // 2) CPU-heavy classify off the async executor, still strictly one batch at a time.
+    let (plans, self_checked) = task::spawn_blocking(move || {
+        let options = maps.options();
+        let mut plans: Vec<(i32, LujvoClassification)> = Vec::with_capacity(pending.len());
+        let mut self_checked: Vec<i32> = Vec::new();
+        for (valsiid, word) in pending {
+            match classify_lujvo_spelling(&word, &options) {
+                Some(class) => plans.push((valsiid, class)),
+                None => self_checked.push(valsiid),
+            }
         }
-    }
+        (plans, self_checked)
+    })
+    .await?;
 
     // 3) Short writes (typeid changes still fire definition-cache sync — keep batches small).
     let mut client = pool.get().await?;
