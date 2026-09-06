@@ -2,22 +2,24 @@ use redis::{AsyncCommands, Client};
 use std::env;
 use std::time::Duration;
 
-/// Per-user rate limit for expensive Kitten TTS synthesis (`POST /collections/kitten-tts`).
-/// Keys: `kitten_tts:user:{sub}`. Configure via `KITTEN_TTS_RATE_LIMIT_MAX` and
-/// `KITTEN_TTS_RATE_LIMIT_WINDOW_SECS`.
-pub struct KittenTtsLimiter {
+/// Per-user rate limit for expensive Kokoro Martin TTS (`POST /collections/kokoro-tts`).
+/// Keys: `kokoro_tts:user:{sub}`. Configure via `KOKORO_TTS_RATE_LIMIT_MAX` /
+/// `KOKORO_TTS_RATE_LIMIT_WINDOW_SECS` (falls back to legacy `KITTEN_TTS_*`).
+pub struct KokoroTtsLimiter {
     client: Client,
     window_secs: u64,
     max_requests: u32,
 }
 
-impl KittenTtsLimiter {
+impl KokoroTtsLimiter {
     pub fn new(redis_url: &str) -> Result<Self, redis::RedisError> {
-        let max_requests = env::var("KITTEN_TTS_RATE_LIMIT_MAX")
+        let max_requests = env::var("KOKORO_TTS_RATE_LIMIT_MAX")
+            .or_else(|_| env::var("KITTEN_TTS_RATE_LIMIT_MAX"))
             .ok()
             .and_then(|s| s.parse().ok())
             .unwrap_or(15);
-        let window_secs = env::var("KITTEN_TTS_RATE_LIMIT_WINDOW_SECS")
+        let window_secs = env::var("KOKORO_TTS_RATE_LIMIT_WINDOW_SECS")
+            .or_else(|_| env::var("KITTEN_TTS_RATE_LIMIT_WINDOW_SECS"))
             .ok()
             .and_then(|s| s.parse().ok())
             .unwrap_or(30 * 60);
@@ -35,7 +37,7 @@ impl KittenTtsLimiter {
     /// Returns `true` if the request is allowed (counter incremented), `false` if over limit.
     pub async fn check_and_record(&self, user_sub: i32) -> Result<bool, redis::RedisError> {
         let mut conn = self.client.get_multiplexed_async_connection().await?;
-        let key = format!("kitten_tts:user:{user_sub}");
+        let key = format!("kokoro_tts:user:{user_sub}");
         let count: Option<u32> = conn.get(&key).await?;
         match count {
             Some(c) if c >= self.max_requests => Ok(false),

@@ -248,7 +248,7 @@
     "micPermissionDenied": "Microphone access was denied. Allow access in your browser to record.",
     "micError": "Could not access the microphone. Check permissions and try again.",
     "generateTab": "Generate",
-    "generateHint": "Synthesize Lojban text with Kitten TTS (server-side, rate limited).",
+    "generateHint": "Synthesize Lojban text with Kokoro Martin TTS (server-side, rate limited).",
     "generateTextLabel": "Lojban text to speak",
     "voiceLabel": "Voice",
     "generateButton": "Generate audio",

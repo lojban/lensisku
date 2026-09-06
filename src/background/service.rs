@@ -327,7 +327,7 @@ pub async fn spawn_background_tasks(
         run_email_notifications(email_pool).await;
     });
 
-    // Generate missing valsi sounds (Lojban, Kitten TTS Nano 0.8 / Bruno) every 5 minutes
+    // Generate missing valsi sounds (Lojban → IPA → Kokoro Martin TTS) every 5 minutes
     valsi_tts::spawn_valsi_sound_generation(pool.clone());
 
     // Classify unchecked classical lujvo (score-optimal vs non-canonical) every 5 minutes

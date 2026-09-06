@@ -245,7 +245,7 @@
     "micPermissionDenied": "麦克风权限被拒绝。请在浏览器中允许访问后再录。",
     "micError": "无法访问麦克风，请检查权限后重试。",
     "generateTab": "生成",
-    "generateHint": "使用 Kitten TTS 合成 Lojban 文本（服务器端，有频率限制）。",
+    "generateHint": "使用 Kokoro Martin TTS 合成 Lojban 文本（服务器端，有频率限制）。",
     "generateTextLabel": "要朗读的 Lojban 文本",
     "voiceLabel": "声音",
     "generateButton": "生成音频",

@@ -1,14 +1,14 @@
-//! Single shared [`crate::utils::kitten_tts::KittenTts`] instance (lazy init) for HTTP synthesis.
+//! Single shared [`crate::utils::kokoro_tts::KokoroTts`] instance (lazy init) for HTTP synthesis.
 
 use std::sync::{Mutex, OnceLock};
 
-use crate::utils::kitten_tts::KittenTts;
+use crate::utils::kokoro_tts::KokoroTts;
 use crate::utils::lojban_ipa::lojban_to_ipa;
 
-static ENGINE: OnceLock<Result<Mutex<KittenTts>, String>> = OnceLock::new();
+static ENGINE: OnceLock<Result<Mutex<KokoroTts>, String>> = OnceLock::new();
 
-fn engine() -> Result<&'static Mutex<KittenTts>, String> {
-    let init = ENGINE.get_or_init(|| KittenTts::load_blocking().map(Mutex::new));
+fn engine() -> Result<&'static Mutex<KokoroTts>, String> {
+    let init = ENGINE.get_or_init(|| KokoroTts::load_blocking().map(Mutex::new));
     init.as_ref().map_err(|e| e.clone())
 }
 

@@ -664,9 +664,9 @@ export const getItemSoundBlob = (collectionId: number | string, itemId: number |
   })
 }
 
-/** Authenticated. Synthesizes Lojban text to Ogg Opus (rate-limited server-side). */
-export const generateKittenTts = (data: { text: string; voice: string; speed?: number }) =>
-  api.post('/collections/kitten-tts', data, {
+/** Authenticated. Synthesizes Lojban text to Ogg Opus via Kokoro Martin (rate-limited server-side). */
+export const generateKokoroTts = (data: { text: string; voice: string; speed?: number }) =>
+  api.post('/collections/kokoro-tts', data, {
     responseType: 'blob',
     timeout: 120000,
   })

@@ -245,7 +245,7 @@
     "micPermissionDenied": "マイクへのアクセスが拒否されました。ブラウザで許可してください。",
     "micError": "マイクにアクセスできません。権限を確認して再試行してください。",
     "generateTab": "生成",
-    "generateHint": "Kitten TTS でロジバン文を合成します（サーバー側、利用回数制限あり）。",
+    "generateHint": "Kokoro Martin TTS でロジバン文を合成します（サーバー側、利用回数制限あり）。",
     "generateTextLabel": "読み上げるロジバン文",
     "voiceLabel": "声",
     "generateButton": "音声を生成",

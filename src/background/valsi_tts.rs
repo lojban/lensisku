@@ -90,7 +90,7 @@ async fn run_valsi_sound_batch(pool: &Pool) -> Result<(usize, bool), String> {
     // is released until the next interval. `ensure_model_files_cached` inside `load_blocking` only
     // downloads HF artifacts once per process.
     let synthesized: Vec<(i32, Vec<u8>, String)> = tokio::task::spawn_blocking(move || {
-        let mut engine = crate::utils::kitten_tts::KittenTts::load_blocking()?;
+        let mut engine = crate::utils::kokoro_tts::KokoroTts::load_blocking()?;
         let mut out = Vec::new();
         for (valsi_id, word) in rows {
             if word.split_whitespace().count() > 5 {

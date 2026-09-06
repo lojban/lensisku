@@ -28,7 +28,7 @@
     </div>
     <!-- No sound: choose Upload or Record -->
     <div v-if="!modelValue && !loadedSound" class="mt-2 space-y-3">
-      <!-- Tabs: Upload | Record | Generate (voices: keep in sync with src/utils/kitten_tts.rs voice_aliases) -->
+      <!-- Tabs: Upload | Record | Generate (voices: keep in sync with src/utils/kokoro_tts.rs) -->
 
       <div
         class="flex flex-wrap rounded-lg border border-gray-200 p-1 bg-gray-50 gap-1"
@@ -182,7 +182,7 @@
           </div>
         </template>
       </div>
-      <!-- Generate panel (Kitten TTS) -->
+      <!-- Generate panel (Kokoro Martin TTS) -->
       <div
         v-show="inputMode === 'generate'"
         class="border border-gray-200 rounded-lg p-4 bg-gray-50/50 space-y-3"
@@ -209,7 +209,7 @@
             v-model="selectedVoice"
             class="input-field w-full text-sm"
             :disabled="isGenerating"
-            :options="KITTEN_VOICES.map((v) => ({ value: v, label: v }))"
+            :options="KOKORO_VOICES.map((v) => ({ value: v, label: v }))"
           />
         </div>
 
@@ -222,7 +222,7 @@
             class="w-full sm:w-auto"
             :loading="isGenerating"
             :disabled="isGenerating || !generateText.trim()"
-            @click="runKittenGenerate"
+            @click="runKokoroGenerate"
           >
             <template #icon> <Sparkles v-if="!isGenerating" class="h-5 w-5 shrink-0" /> </template>
             {{ isGenerating ? t('soundUpload.generating') : t('soundUpload.generateButton') }}
@@ -244,7 +244,7 @@ const { t } = useI18n()
 
 import { useError } from '../composables/useError'
 import { Button, FileInput, Select, Textarea } from '@packages/ui'
-import { generateKittenTts, getItemSoundBlob } from '@/api'
+import { generateKokoroTts, getItemSoundBlob } from '@/api'
 import { getApiErrorMessage } from '@/utils/apiError'
 
 const { showError, clearError } = useError()
@@ -280,8 +280,8 @@ const props = defineProps({
   },
 })
 
-/** Display names accepted by the server (`src/utils/kitten_tts.rs` voice_aliases). */
-const KITTEN_VOICES = ['Bella', 'Jasper', 'Luna', 'Bruno', 'Rosie', 'Hugo', 'Kiki', 'Leo']
+/** Display names accepted by the server (`src/utils/kokoro_tts.rs`). */
+const KOKORO_VOICES = ['Martin']
 
 const emit = defineEmits(['update:modelValue', 'sound-loaded', 'remove-sound'])
 
@@ -294,7 +294,7 @@ const fileName = ref('')
 // Record-from-mic state
 const inputMode = ref('upload')
 const generateText = ref('')
-const selectedVoice = ref('Bruno')
+const selectedVoice = ref('Martin')
 const isGenerating = ref(false)
 const generateError = ref('')
 const isRecording = ref(false)
@@ -404,13 +404,13 @@ async function extractAxiosErrorMessage(err) {
   )
 }
 
-async function runKittenGenerate() {
+async function runKokoroGenerate() {
   generateError.value = ''
   const text = generateText.value.trim()
   if (!text) return
   isGenerating.value = true
   try {
-    const response = await generateKittenTts({
+    const response = await generateKokoroTts({
       text,
       voice: selectedVoice.value,
       speed: 1.0,

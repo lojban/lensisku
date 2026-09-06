@@ -1,7 +1,7 @@
 pub mod canonical;
 pub mod embeddings;
-pub mod kitten_tts;
-pub mod kitten_tts_singleton;
+pub mod kokoro_tts;
+pub mod kokoro_tts_singleton;
 pub mod lojban_ipa;
 pub mod openrouter_models;
 

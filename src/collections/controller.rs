@@ -13,14 +13,14 @@ use serde_json::json;
 use super::{dto::*, service};
 use crate::auth::Claims;
 use crate::middleware::cache::RedisCache;
-use crate::middleware::limiter::KittenTtsLimiter;
+use crate::middleware::limiter::KokoroTtsLimiter;
 use crate::users::dto::{ProfileImageRequest, ProfileImageResponse};
 use crate::utils::MAX_ITEM_IMAGE_BYTES;
 use crate::AppError;
 
-const KITTEN_TTS_MAX_TEXT_CHARS: usize = 2000;
-const KITTEN_TTS_SPEED_MIN: f32 = 0.5;
-const KITTEN_TTS_SPEED_MAX: f32 = 2.0;
+const KOKORO_TTS_MAX_TEXT_CHARS: usize = 2000;
+const KOKORO_TTS_SPEED_MIN: f32 = 0.5;
+const KOKORO_TTS_SPEED_MAX: f32 = 2.0;
 
 #[utoipa::path(
     post,
@@ -900,9 +900,9 @@ pub async fn merge_collections(
 
 #[utoipa::path(
     post,
-    path = "/collections/kitten-tts",
+    path = "/collections/kokoro-tts",
     tag = "collections",
-    request_body = KittenTtsGenerateRequest,
+    request_body = KokoroTtsGenerateRequest,
     responses(
         (status = 200, description = "Ogg Opus audio", content_type = "audio/ogg"),
         (status = 400, description = "Invalid text or voice"),
@@ -910,14 +910,14 @@ pub async fn merge_collections(
         (status = 500, description = "Synthesis failed")
     ),
     security(("bearer_auth" = [])),
-    summary = "Synthesize Lojban text to audio (Kitten TTS)",
-    description = "Authenticated users only. Converts Lojban text to IPA and returns Ogg Opus audio. Rate limited per user."
+    summary = "Synthesize Lojban text to audio (Kokoro Martin TTS)",
+    description = "Authenticated users only. Converts Lojban text to IPA and returns Ogg Opus audio via Kokoro-82M German Martin. Rate limited per user."
 )]
-#[post("/kitten-tts")]
-pub async fn post_kitten_tts(
+#[post("/kokoro-tts")]
+pub async fn post_kokoro_tts(
     claims: Claims,
-    kitten_tts_limiter: web::Data<KittenTtsLimiter>,
-    req: web::Json<KittenTtsGenerateRequest>,
+    kokoro_tts_limiter: web::Data<KokoroTtsLimiter>,
+    req: web::Json<KokoroTtsGenerateRequest>,
 ) -> impl Responder {
     let text = req.text.trim().to_string();
     if text.is_empty() {
@@ -925,9 +925,9 @@ pub async fn post_kitten_tts(
             "error": "text must not be empty"
         }));
     }
-    if text.chars().count() > KITTEN_TTS_MAX_TEXT_CHARS {
+    if text.chars().count() > KOKORO_TTS_MAX_TEXT_CHARS {
         return HttpResponse::BadRequest().json(json!({
-            "error": format!("text exceeds {} characters", KITTEN_TTS_MAX_TEXT_CHARS)
+            "error": format!("text exceeds {} characters", KOKORO_TTS_MAX_TEXT_CHARS)
         }));
     }
 
@@ -941,20 +941,20 @@ pub async fn post_kitten_tts(
     let speed = req
         .speed
         .unwrap_or(1.0)
-        .clamp(KITTEN_TTS_SPEED_MIN, KITTEN_TTS_SPEED_MAX);
+        .clamp(KOKORO_TTS_SPEED_MIN, KOKORO_TTS_SPEED_MAX);
 
-    match kitten_tts_limiter.check_and_record(claims.sub).await {
+    match kokoro_tts_limiter.check_and_record(claims.sub).await {
         Ok(true) => {}
         Ok(false) => {
             return HttpResponse::TooManyRequests()
                 .insert_header((
                     "Retry-After",
-                    kitten_tts_limiter.retry_after_secs().to_string(),
+                    kokoro_tts_limiter.retry_after_secs().to_string(),
                 ))
                 .json(json!({ "error": "Rate limit exceeded" }));
         }
         Err(e) => {
-            log::error!("Kitten TTS rate limit Redis error: {}", e);
+            log::error!("Kokoro TTS rate limit Redis error: {}", e);
             return HttpResponse::InternalServerError().json(json!({
                 "error": "Rate limit check failed"
             }));
@@ -964,7 +964,7 @@ pub async fn post_kitten_tts(
     let text_for_block = text.clone();
     let voice_for_block = voice.clone();
     match tokio::task::spawn_blocking(move || {
-        crate::utils::kitten_tts_singleton::synthesize_lojban_to_ogg_opus(
+        crate::utils::kokoro_tts_singleton::synthesize_lojban_to_ogg_opus(
             &text_for_block,
             &voice_for_block,
             speed,
@@ -974,7 +974,7 @@ pub async fn post_kitten_tts(
     {
         Ok(Ok(bytes)) => HttpResponse::Ok().content_type("audio/ogg").body(bytes),
         Ok(Err(msg)) => {
-            log::warn!("Kitten TTS synthesis failed: {}", msg);
+            log::warn!("Kokoro TTS synthesis failed: {}", msg);
             if msg.contains("unknown voice") {
                 HttpResponse::BadRequest().json(json!({ "error": msg }))
             } else {
@@ -984,7 +984,7 @@ pub async fn post_kitten_tts(
             }
         }
         Err(e) => {
-            log::error!("Kitten TTS spawn_blocking join: {}", e);
+            log::error!("Kokoro TTS spawn_blocking join: {}", e);
             HttpResponse::InternalServerError().json(json!({
                 "error": "Synthesis task failed"
             }))

@@ -1,4 +1,4 @@
-//! Lojban text → IPA, matching `lojban_speak.py` / `lojban2ipa` for Kitten TTS phoneme input.
+//! Lojban text → IPA for TTS phoneme input (Kokoro / Kitten-compatible pipeline).
 
 #![allow(clippy::expect_used)] // compile-time-fixed patterns
 
@@ -154,7 +154,7 @@ fn char_is_vowel(ch: char) -> bool {
     )
 }
 
-/// Lojban text → IPA string, matching `lojban2ipa` in the Python Kitten TTS script.
+/// Lojban text → IPA string, matching `lojban2ipa` in the upstream Lojban speak script.
 pub fn lojban_to_ipa(text: &str) -> String {
     let krul = krulermorna(text.trim());
     let words: Vec<&str> = krul.split(' ').filter(|w| !w.is_empty()).collect();

@@ -8,10 +8,13 @@ services:
     environment:
       - DATABASE_URL=postgres://lojban:password@db/lojban_lens
       - JWT_SECRET=${JWT_SECRET}
+      # Persist HF ONNX/voice downloads across restarts (not baked into the image).
+      - KOKORO_TTS_CACHE_DIR=/var/cache/lensisku/kokoro-martin
     depends_on:
       - db
     volumes:
       - ./${MAILDIR_PATH}:/usr/src/app/maildir:ro
+      - kokoro_tts_cache:/var/cache/lensisku/kokoro-martin
     networks:
       - lojban-network
 
@@ -37,3 +40,4 @@ networks:
 
 volumes:
   postgres_data:
+  kokoro_tts_cache:

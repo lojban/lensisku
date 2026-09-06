@@ -11,7 +11,7 @@ use crate::{
     middleware::{
         self,
         cache::RedisCache,
-        limiter::{KittenTtsLimiter, LoginLimiter, PasswordResetLimiter},
+        limiter::{KokoroTtsLimiter, LoginLimiter, PasswordResetLimiter},
         panic_handler::CatchPanicWithMessage,
     },
     sessions, subscriptions, users,
@@ -63,9 +63,9 @@ pub async fn start_server(
         AppError::ExternalService(format!("Failed to initialize login rate limiter: {}", e))
     })?);
 
-    let kitten_tts_limiter = web::Data::new(KittenTtsLimiter::new(&redis_url).map_err(|e| {
+    let kokoro_tts_limiter = web::Data::new(KokoroTtsLimiter::new(&redis_url).map_err(|e| {
         AppError::ExternalService(format!(
-            "Failed to initialize Kitten TTS rate limiter: {}",
+            "Failed to initialize Kokoro TTS rate limiter: {}",
             e
         ))
     })?);
@@ -145,7 +145,7 @@ pub async fn start_server(
             .app_data(password_reset_limiter.clone())
             .app_data(email_confirmation_limiter.clone())
             .app_data(login_limiter.clone())
-            .app_data(kitten_tts_limiter.clone())
+            .app_data(kokoro_tts_limiter.clone())
             .app_data(redis_cache_data.clone())
             .app_data(messaging_service.clone())
             .app_data(web::Data::new(chat_server.clone()))

@@ -100,6 +100,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     python3 \
     python3-psycopg2 \
     libopus0 \
+    ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy Nginx configuration
