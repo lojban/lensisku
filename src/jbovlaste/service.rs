@@ -1996,6 +1996,7 @@ pub async fn get_source_words(
 }
 
 /// Returns sound (bytes, mime_type) for a valsi if stored in valsi_sounds. Public read, no auth.
+/// Skip markers (`application/x-lensisku-tts-skip` / empty payload) are treated as missing.
 pub async fn get_valsi_sound(
     pool: &Pool,
     valsi_id: i32,
@@ -2003,7 +2004,10 @@ pub async fn get_valsi_sound(
     let client = pool.get().await?;
     let row = client
         .query_opt(
-            "SELECT sound_data, mime_type FROM valsi_sounds WHERE valsi_id = $1",
+            "SELECT sound_data, mime_type FROM valsi_sounds
+             WHERE valsi_id = $1
+               AND octet_length(sound_data) > 0
+               AND mime_type LIKE 'audio/%'",
             &[&valsi_id],
         )
         .await?;
@@ -2029,7 +2033,9 @@ pub async fn get_valsi_sound_urls_from_db(
         .query(
             "SELECT DISTINCT v.word FROM valsi v
              JOIN valsi_sounds vs ON vs.valsi_id = v.valsiid
-             WHERE LOWER(v.word) = ANY($1)",
+             WHERE LOWER(v.word) = ANY($1)
+               AND octet_length(vs.sound_data) > 0
+               AND vs.mime_type LIKE 'audio/%'",
             &[&unique_lower],
         )
         .await?;

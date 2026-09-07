@@ -2,10 +2,14 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 
 use deadpool_postgres::Pool;
-use log::{error, info};
+use log::{error, info, warn};
 use tokio::time::{sleep, Duration};
 
 const BATCH_LIMIT: i64 = 20;
+
+/// Placeholder mime for valsi that cannot be synthesized (empty/out-of-vocab IPA).
+/// Keeps `valsi_sounds` claimed so the job does not retry forever; not served as audio.
+const TTS_SKIP_MIME: &str = "application/x-lensisku-tts-skip";
 
 pub fn spawn_valsi_sound_generation(pool: Pool) {
     let running = Arc::new(AtomicBool::new(false));
@@ -64,6 +68,7 @@ async fn run_valsi_sound_batch(pool: &Pool) -> Result<(usize, bool), String> {
                  LEFT JOIN valsi_sounds vs ON vs.valsi_id = v.valsiid
                  WHERE v.source_langid = 1
                    AND vs.valsi_id IS NULL
+                   AND length(trim(both from v.word)) > 0
                    AND coalesce(
                        array_length(
                            regexp_split_to_array(trim(both from v.word), '[[:space:]]+'),
@@ -89,15 +94,25 @@ async fn run_valsi_sound_batch(pool: &Pool) -> Result<(usize, bool), String> {
     // One blocking task: load ONNX into RAM, synthesize every row, then drop the session so memory
     // is released until the next interval. `ensure_model_files_cached` inside `load_blocking` only
     // downloads HF artifacts once per process.
-    let synthesized: Vec<(i32, Vec<u8>, String)> = tokio::task::spawn_blocking(move || {
+    // Per-word failures are skipped (not `?`) so one empty-IPA valsi cannot stall the whole queue.
+    let outcomes: Vec<(i32, Vec<u8>, String, bool)> = tokio::task::spawn_blocking(move || {
         let mut engine = crate::utils::kokoro_tts::KokoroTts::load_blocking()?;
         let mut out = Vec::new();
         for (valsi_id, word) in rows {
             if word.split_whitespace().count() > 5 {
                 continue;
             }
-            let ogg = engine.lojban_word_to_ogg_opus(&word)?;
-            out.push((valsi_id, ogg, word));
+            match engine.lojban_word_to_ogg_opus(&word) {
+                Ok(ogg) => out.push((valsi_id, ogg, word, true)),
+                Err(e) => {
+                    warn!(
+                        "valsi TTS: skip valsi_id {} ({:?}): {}",
+                        valsi_id, word, e
+                    );
+                    // Claim the row with an empty skip marker so ORDER BY valsiid cannot wedge.
+                    out.push((valsi_id, Vec::new(), word, false));
+                }
+            }
         }
         Ok::<_, String>(out)
     })
@@ -105,23 +120,35 @@ async fn run_valsi_sound_batch(pool: &Pool) -> Result<(usize, bool), String> {
     .map_err(|e| format!("join: {e}"))??;
 
     let mut done = 0usize;
-    for (valsi_id, ogg, word) in synthesized {
+    for (valsi_id, ogg, word, ok) in outcomes {
         let client = pool.get().await.map_err(|e| format!("db pool: {e}"))?;
+        let mime = if ok {
+            "audio/ogg".to_string()
+        } else {
+            TTS_SKIP_MIME.to_string()
+        };
         let insert = client
             .execute(
                 "INSERT INTO valsi_sounds (valsi_id, sound_data, mime_type)
-                 VALUES ($1, $2, 'audio/ogg')",
-                &[&valsi_id, &ogg],
+                 VALUES ($1, $2, $3)
+                 ON CONFLICT (valsi_id) DO NOTHING",
+                &[&valsi_id, &ogg, &mime],
             )
             .await;
 
         match insert {
-            Ok(_) => {
+            Ok(_) if ok => {
                 info!(
                     "valsi TTS: inserted sound for valsi_id {} ({})",
                     valsi_id, word
                 );
                 done += 1;
+            }
+            Ok(_) => {
+                info!(
+                    "valsi TTS: marked unspeakable valsi_id {} ({:?})",
+                    valsi_id, word
+                );
             }
             Err(e) => {
                 error!(
