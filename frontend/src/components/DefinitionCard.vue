@@ -66,15 +66,20 @@
               </div>
               <span
                 v-if="definition.canonical_word"
-                class="px-2 py-1 text-xs font-medium bg-slate-50 text-slate-800 rounded-full inline-flex items-center gap-1"
+                class="px-2 py-1 text-xs font-medium bg-slate-50 text-slate-800 rounded-full inline-flex items-center gap-1 min-w-0 max-w-full"
               >
-                <span class="text-slate-600">{{
+                <span class="text-slate-600 shrink-0">{{
                   t('components.definitionCard.canonicalFormLabel')
                 }}</span>
-                <RouterLink
-                  :to="{ path: `/valsi/${definition.canonical_word.replace(/ /g, '_')}` }"
-                  class="text-nav-link hover:underline"
+                <span
+                  v-if="isCanonicalTruncated"
+                  class="text-nav-link hover:underline cursor-pointer min-w-0 truncate"
+                  :title="t('components.definitionCard.clickToSeeFullWord')"
+                  @click="showCanonicalModal = true"
                 >
+                  {{ displayedCanonical }}
+                </span>
+                <RouterLink v-else :to="canonicalWordLink" class="text-nav-link hover:underline">
                   {{ definition.canonical_word }}
                 </RouterLink>
               </span>
@@ -112,19 +117,12 @@
                 class="flex items-center gap-2 flex-wrap"
               >
                 <RouterLink
-                  v-if="
-                    !disableDiscussionButton &&
-                    definition.definitionid &&
-                    definition.valsiid
-                  "
+                  v-if="!disableDiscussionButton && definition.definitionid && definition.valsiid"
                   :to="definitionDiscussionLink"
                   class="ui-btn--empty inline-flex items-center gap-2"
                   :title="t('components.definitionCard.discussDefinitionButton')"
                 >
-                  <MessageSquarePlus
-                    v-if="!definition.comment_count"
-                    class="h-4 w-4 shrink-0"
-                  />
+                  <MessageSquarePlus v-if="!definition.comment_count" class="h-4 w-4 shrink-0" />
                   <MessageSquareMore v-else class="h-4 w-4 shrink-0" />
                   <span v-if="definition.comment_count" class="text-xs font-medium">
                     {{ definition.comment_count }}
@@ -236,10 +234,7 @@
               </div>
             </div>
             <!-- Audio, word type, selma'o, rafsi — second row under title -->
-            <div
-              v-if="showWordMetaRow"
-              class="flex w-full flex-wrap items-center gap-2"
-            >
+            <div v-if="showWordMetaRow" class="flex w-full flex-wrap items-center gap-2">
               <AudioPlayer
                 v-if="(definition.sound_url || itemSoundUrl) && props.showAudio"
                 :url="String(definition.sound_url || itemSoundUrl || '')"
@@ -601,6 +596,20 @@
       {{ definition.valsiword ?? definition.word }}
     </RouterLink>
   </ModalComponent>
+  <ModalComponent
+    :show="showCanonicalModal"
+    :title="t('components.definitionCard.fullWordModalTitle')"
+    @close="showCanonicalModal = false"
+  >
+    <p class="text-sm text-gray-600 mb-3">{{ t('components.definitionCard.fullWordModalHint') }}</p>
+    <RouterLink
+      :to="canonicalWordLink"
+      class="text-blue-700 hover:text-blue-800 hover:underline break-words font-medium"
+      @click="showCanonicalModal = false"
+    >
+      {{ definition.canonical_word }}
+    </RouterLink>
+  </ModalComponent>
   <!-- Link Existing Definition Modal -->
   <ModalComponent
     :show="showLinkModal"
@@ -936,6 +945,7 @@ const MAX_VALSI_DISPLAY_LENGTH = 30
 const collections = ref<CachedCollection[]>(props.collections)
 const showDeleteConfirm = ref(false)
 const showValsiModal = ref(false)
+const showCanonicalModal = ref(false)
 const isDeleting = ref(false)
 
 const showSimilarityBadge = computed(() => {
@@ -974,22 +984,15 @@ const isCollectionItemCard = computed(
     (props.definition.collection_id != null || props.collectionId != null)
 )
 const collectionDefinitionText = computed(
-  () =>
-    props.definition.definition ||
-    props.definition.free_content_back ||
-    ''
+  () => props.definition.definition || props.definition.free_content_back || ''
 )
 const showCollectionWidget = computed(
-  () =>
-    auth.state.isLoggedIn &&
-    !!(props.definition.definitionid || isCollectionItemCard.value)
+  () => auth.state.isLoggedIn && !!(props.definition.definitionid || isCollectionItemCard.value)
 )
 const collectionFooterLabel = computed(
   () =>
     props.definition.collection_name ||
-    (sourceCollectionLink.value
-      ? t('components.definitionCard.viewCollection')
-      : '')
+    (sourceCollectionLink.value ? t('components.definitionCard.viewCollection') : '')
 )
 const onCardActivate = (event?: MouseEvent, fromFooter = false) => {
   if (!props.expandOnClick) return
@@ -1005,6 +1008,16 @@ const displayedValsi = computed(() =>
     : valsiWord.value
 )
 const isValsiTruncated = computed(() => valsiWord.value.length > MAX_VALSI_DISPLAY_LENGTH)
+const canonicalWord = computed(() => props.definition.canonical_word ?? '')
+const displayedCanonical = computed(() =>
+  canonicalWord.value.length > MAX_VALSI_DISPLAY_LENGTH
+    ? canonicalWord.value.slice(0, MAX_VALSI_DISPLAY_LENGTH) + '…'
+    : canonicalWord.value
+)
+const isCanonicalTruncated = computed(() => canonicalWord.value.length > MAX_VALSI_DISPLAY_LENGTH)
+const canonicalWordLink = computed(() => ({
+  path: `/valsi/${encodeURIComponent(canonicalWord.value.replace(/ /g, '_'))}`,
+}))
 const definitionDiscussionLink = computed(() => {
   const definitionId = props.definition.definitionid
   const valsiId = props.definition.valsiid
@@ -1214,9 +1227,7 @@ const LOJBAN_LANGID = 1
 const isLojbanDefinitionLanguage = computed(() => {
   const langId = Number(props.definition.langid ?? props.definition.lang_id)
   if (Number.isFinite(langId) && langId === LOJBAN_LANGID) return true
-  const lang = props.languages.find(
-    (l) => l.id === langId || Number(l.id) === langId
-  )
+  const lang = props.languages.find((l) => l.id === langId || Number(l.id) === langId)
   if ((lang?.tag || '').toLowerCase() === 'jbo') return true
   const names = [
     props.definition.langrealname,

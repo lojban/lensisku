@@ -35,8 +35,7 @@
               <ClipboardButton
                 :content="
                   (
-                    definition.definition +
-                    (definition.notes ? ' Notes: ' + definition.notes : '')
+                    definition.definition + (definition.notes ? ' Notes: ' + definition.notes : '')
                   ).trim()
                 "
                 :title="t('components.definitionCard.copyTitle')"
@@ -62,15 +61,20 @@
             </span>
             <span
               v-if="definition.canonical_word"
-              class="px-2 py-1 text-xs font-medium bg-slate-50 text-slate-800 rounded-full inline-flex items-center gap-1"
+              class="px-2 py-1 text-xs font-medium bg-slate-50 text-slate-800 rounded-full inline-flex items-center gap-1 min-w-0 max-w-full"
             >
-              <span class="text-slate-600">{{
+              <span class="text-slate-600 shrink-0">{{
                 t('components.definitionCard.canonicalFormLabel')
               }}</span>
-              <RouterLink
-                :to="{ path: `/valsi/${definition.canonical_word.replace(/ /g, '_')}` }"
-                class="text-nav-link hover:underline"
+              <span
+                v-if="isCanonicalTruncated"
+                class="text-nav-link hover:underline cursor-pointer min-w-0 truncate"
+                :title="t('components.definitionCard.clickToSeeFullWord')"
+                @click="showCanonicalModal = true"
               >
+                {{ displayedCanonical }}
+              </span>
+              <RouterLink v-else :to="canonicalWordLink" class="text-nav-link hover:underline">
                 {{ definition.canonical_word }}
               </RouterLink>
             </span>
@@ -150,6 +154,20 @@
       {{ definition.valsiword ?? definition.word }}
     </RouterLink>
   </ModalComponent>
+  <ModalComponent
+    :show="showCanonicalModal"
+    :title="t('components.definitionCard.fullWordModalTitle')"
+    @close="showCanonicalModal = false"
+  >
+    <p class="text-sm text-gray-600 mb-3">{{ t('components.definitionCard.fullWordModalHint') }}</p>
+    <RouterLink
+      :to="canonicalWordLink"
+      class="text-blue-700 hover:text-blue-800 hover:underline break-words font-medium"
+      @click="showCanonicalModal = false"
+    >
+      {{ definition.canonical_word }}
+    </RouterLink>
+  </ModalComponent>
 </template>
 
 <script setup lang="ts">
@@ -168,6 +186,7 @@ const { t, locale } = useI18n()
 
 const MAX_VALSI_DISPLAY_LENGTH = 30
 const showValsiModal = ref(false)
+const showCanonicalModal = ref(false)
 
 type LanguageRow = {
   id?: number
@@ -224,6 +243,16 @@ const displayedValsi = computed(() =>
     : valsiWord.value
 )
 const isValsiTruncated = computed(() => valsiWord.value.length > MAX_VALSI_DISPLAY_LENGTH)
+const canonicalWord = computed(() => props.definition.canonical_word ?? '')
+const displayedCanonical = computed(() =>
+  canonicalWord.value.length > MAX_VALSI_DISPLAY_LENGTH
+    ? canonicalWord.value.slice(0, MAX_VALSI_DISPLAY_LENGTH) + '…'
+    : canonicalWord.value
+)
+const isCanonicalTruncated = computed(() => canonicalWord.value.length > MAX_VALSI_DISPLAY_LENGTH)
+const canonicalWordLink = computed(() => ({
+  path: `/valsi/${encodeURIComponent(canonicalWord.value.replace(/ /g, '_'))}`,
+}))
 const valsiDefinitionLink = computed(() =>
   props.definition.definitionid
     ? `/valsi/${encodeURIComponent(valsiWord.value.replace(/ /g, '_'))}?highlight_definition_id=${props.definition.definitionid}`
@@ -239,10 +268,6 @@ const showExpandedFrontContent = computed(
 const displayedSelmaho = computed(() => {
   const s = props.definition.selmaho || ''
   return s.length > MAX_VALSI_DISPLAY_LENGTH ? s.slice(0, MAX_VALSI_DISPLAY_LENGTH) + '…' : s
-})
-
-const isPhrase = computed(() => {
-  return props.definition.type_name === 'phrase'
 })
 
 const selmahoLinkQuery = computed(() => ({
