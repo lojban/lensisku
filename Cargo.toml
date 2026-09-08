@@ -107,7 +107,6 @@ lettre = { version = "0.11.22", features = ["smtp-transport", "tokio1-native-tls
 rand = "0.10"
 uuid = { version = "1.24", features = ["v4", "serde"] }
 tectonic = { version = "0.16.9", features = ["external-harfbuzz"] }
-regex = "1.13"
 ammonia = "4.1.4"
 utoipauto = "0.2.0"
 tempfile = "3.27"
@@ -145,6 +144,7 @@ ndarray-npy = "0.10"
 ogg-opus = "0.1.2"
 parse-wiki-text-2 = "0.2"
 urlencoding = "2.1"
+fancy-regex = "0.19.1"
 [dev-dependencies]
 criterion = "0.8"
 

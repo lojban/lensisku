@@ -15,7 +15,7 @@ use tokio::sync::{mpsc, Semaphore};
 use tokio::time::sleep;
 
 use once_cell::sync::Lazy;
-use regex::Regex;
+use fancy_regex::Regex;
 
 use crate::error::AppError;
 use crate::jbovlaste::models::{

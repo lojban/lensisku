@@ -1,7 +1,7 @@
 use actix_web::{delete, get, post, web, HttpResponse, Responder};
 use actix_web_grants::protect;
 use deadpool_postgres::Pool;
-use regex::Regex;
+use fancy_regex::Regex;
 use serde_json::json;
 
 use crate::middleware::cache::RedisCache;
@@ -27,7 +27,7 @@ use crate::{
 
 fn extract_flashcard_tag_id(subject: &str) -> Option<i32> {
     let re = Regex::new(r"#\[(\d+)\]").ok()?;
-    let captures = re.captures(subject)?;
+    let captures = re.captures(subject).ok()??;
     captures
         .get(1)
         .and_then(|m| m.as_str().parse::<i32>().ok())

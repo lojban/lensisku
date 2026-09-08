@@ -16,7 +16,7 @@ use tokio_postgres::Client;
 use walkdir::WalkDir;
 
 use log::{error, info, warn};
-use regex::Regex;
+use fancy_regex::Regex;
 use std::sync::LazyLock;
 use tokio::time::{sleep, Duration};
 
@@ -100,11 +100,11 @@ pub async fn search_messages(
         "NULL::jsonb as parts_json"
     };
 
-    let query_string;
-    let count_query_string;
+    
+    
 
-    if group_by_thread {
-        query_string = format!(
+    let (query_string, count_query_string) = if group_by_thread {
+        (format!(
             "WITH thread_representatives AS (
                 SELECT DISTINCT ON (m.cleaned_subject)
                        m.id, m.message_id, m.date, m.cleaned_subject, m.from_address, m.to_address, m.parts_json, m.sent_at,
@@ -134,17 +134,16 @@ pub async fn search_messages(
             outer_sort_column_name,
             sort_order,
             sort_order
-        );
-        count_query_string = format!(
+        ), format!(
             "SELECT COUNT(*) FROM (
                 SELECT DISTINCT ON (m.cleaned_subject) 1
                 FROM messages m
                 WHERE {}
             ) AS distinct_threads",
             main_where_conditions_sql
-        );
+        ))
     } else {
-        query_string = format!(
+        (format!(
             "SELECT m.id, m.message_id, m.date, m.subject, m.cleaned_subject, m.from_address, m.to_address, {}, m.sent_at,
              (SELECT COUNT(*) FROM message_spam_votes msv WHERE msv.message_id = m.id) as spam_vote_count,
              (CASE
@@ -163,12 +162,11 @@ pub async fn search_messages(
             outer_sort_column_name, // Here m. prefix might be needed if not aliasing in CTE
             sort_order,
             sort_order
-        );
-        count_query_string = format!(
+        ), format!(
             "SELECT COUNT(*) FROM messages m WHERE {}",
             main_where_conditions_sql
-        );
-    }
+        ))
+    };
 
     let messages = transaction
         .query(&query_string, &[&exact_query, &per_page, &offset])
@@ -841,7 +839,7 @@ fn parse_content_type(header: &str) -> (String, String) {
 
 fn parse_email_date(date_str: &str) -> Result<DateTime<FixedOffset>, Box<dyn std::error::Error>> {
     // Try removing the leading day abbreviation if present
-    if let Some(mat) = DAY_OF_WEEK_REGEX.find(date_str) {
+    if let Ok(Some(mat)) = DAY_OF_WEEK_REGEX.find(date_str) {
         let remaining_str = &date_str[mat.end()..];
         // Attempt parsing the remaining string (without day name)
         // Try with timezone name first (%Z)
@@ -918,7 +916,10 @@ fn parse_email_date(date_str: &str) -> Result<DateTime<FixedOffset>, Box<dyn std
 }
 
 fn parse_header_date(header_value: &str) -> Option<DateTime<FixedOffset>> {
-    let parts: Vec<&str> = HEADER_SPLIT_REGEX.split(header_value).collect();
+    let parts: Vec<&str> = HEADER_SPLIT_REGEX
+        .split(header_value)
+        .map(|p| p.expect("header split"))
+        .collect();
 
     parts
         .iter()
@@ -972,7 +973,7 @@ fn fix_timezone_abbreviation(date_str: &str) -> Result<String, Box<dyn std::erro
 
     // Handle GMT followed by offset (e.g. GMT+2 or GMT+0200) case-insensitively
     let gmt_re = Regex::new(r"(?i)GMT([+-]?)(\d{1,4})$")?;
-    if let Some(caps) = gmt_re.captures(date_str) {
+    if let Ok(Some(caps)) = gmt_re.captures(date_str) {
         let sign = caps.get(1).map(|m| m.as_str()).unwrap_or("+");
         let digits = caps.get(2).map(|m| m.as_str()).unwrap_or("");
         let offset = if digits.len() <= 2 {
@@ -1082,9 +1083,9 @@ pub async fn vote_spam(
         )
         .await?;
 
-    let user_voted_after_operation: bool;
+    
 
-    if existing_vote.is_some() {
+    let user_voted_after_operation: bool = if existing_vote.is_some() {
         // User has voted, so unvote (delete the record)
         transaction
             .execute(
@@ -1092,7 +1093,7 @@ pub async fn vote_spam(
                 &[&message_id, &user_id],
             )
             .await?;
-        user_voted_after_operation = false;
+        false
     } else {
         // User has not voted, so vote (insert the record)
         transaction
@@ -1101,8 +1102,8 @@ pub async fn vote_spam(
                 &[&message_id, &user_id],
             )
             .await?;
-        user_voted_after_operation = true;
-    }
+        true
+    };
 
     // Get the new total spam vote count for the message.
     let spam_vote_count_row = transaction

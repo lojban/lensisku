@@ -1,5 +1,5 @@
 use chrono::{DateTime, Utc};
-use regex::Regex;
+use fancy_regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use unicode_segmentation::UnicodeSegmentation;
@@ -74,13 +74,16 @@ pub struct Comment {
 }
 
 impl Comment {
-    pub fn extract_hashtags(content: &str) -> Result<HashSet<String>, regex::Error> {
+    pub fn extract_hashtags(content: &str) -> Result<HashSet<String>, fancy_regex::Error> {
         let re = Regex::new(r"#(\w+)")?;
-        Ok(re
-            .captures_iter(content)
-            .filter_map(|cap| cap.get(1))
-            .map(|m| m.as_str().to_lowercase())
-            .collect())
+        let mut tags = HashSet::new();
+        for cap in re.captures_iter(content) {
+            let cap = cap?;
+            if let Some(m) = cap.get(1) {
+                tags.insert(m.as_str().to_lowercase());
+            }
+        }
+        Ok(tags)
     }
 }
 

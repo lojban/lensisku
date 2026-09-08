@@ -6,7 +6,7 @@ use camxes_rs::camxes::peg::parsing::ParseNode;
 use camxes_rs::camxes::peg::{grammar::Peg, parsing::ParseResult};
 use deadpool_postgres::{Pool, Transaction};
 use log::warn;
-use regex::Regex;
+use fancy_regex::Regex;
 use vlazba::analyze_lujvo_spelling;
 use vlazba::gismu_utils::GismuMatcher;
 use vlazba::jvozba::tools::RafsiOptions;

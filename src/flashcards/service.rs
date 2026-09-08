@@ -2401,7 +2401,7 @@ async fn auto_progress_related_cards(
     card_side: &str,
 ) -> Result<(), Box<dyn std::error::Error>> {
     // Escape special regex characters in the word
-    let escaped_word = regex::escape(word);
+    let escaped_word = fancy_regex::escape(word);
     let pattern = format!("(?:^|[^a-zA-Z']){}(?:[^a-zA-Z']|$)", escaped_word);
 
     let related_cards = transaction

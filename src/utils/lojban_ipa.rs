@@ -2,8 +2,8 @@
 
 #![allow(clippy::expect_used)] // compile-time-fixed patterns
 
+use fancy_regex::Regex;
 use once_cell::sync::Lazy;
-use regex::Regex;
 
 fn krulermorna(text: &str) -> String {
     static DOT: Lazy<Regex> = Lazy::new(|| Regex::new(r"\.").expect("regex"));
@@ -52,7 +52,11 @@ static NUCLEUS_PATTERN: Lazy<Regex> =
 
 /// Index *before* which to insert primary stress (ˈ), Lojban penultimate syllable.
 fn stress_insert_index(word: &str) -> Option<usize> {
-    let indices: Vec<usize> = NUCLEUS_PATTERN.find_iter(word).map(|m| m.start()).collect();
+    let indices: Vec<usize> = NUCLEUS_PATTERN
+        .find_iter(word)
+        .filter_map(|m| m.ok())
+        .map(|m| m.start())
+        .collect();
     if indices.len() <= 1 {
         return None;
     }
@@ -60,10 +64,10 @@ fn stress_insert_index(word: &str) -> Option<usize> {
 }
 
 /// Sorted by pattern key length descending (matches Python `sorted(ipa_vits.items(), ...)`).
+/// Uses `fancy-regex` so Python-style look-around (e.g. coda `r`) compiles.
 static IPA_RULES: Lazy<Vec<(Regex, &'static str)>> = Lazy::new(|| {
     let mut raw: Vec<(&str, &str)> = vec![
-        // (same as Python ipa_vits order by length)
-        // Longer `r` before short `r`
+        // Longer `r` (coda) before short onset `r`
         (r"r(?![ˈaeiouyḁąęǫ])", "ʁʁ"),
         ("ɩa", "jaː"),
         ("ɩe", "jɛː"),
@@ -112,9 +116,9 @@ static IPA_RULES: Lazy<Vec<(Regex, &'static str)>> = Lazy::new(|| {
     ];
     raw.sort_by_key(|b| std::cmp::Reverse(b.0.len()));
     raw.into_iter()
-        .filter_map(|(pat, rep)| {
-            let r = Regex::new(&format!("^{pat}")).ok()?;
-            Some((r, rep))
+        .map(|(pat, rep)| {
+            let r = Regex::new(&format!("^{pat}")).expect("IPA rule must compile");
+            (r, rep)
         })
         .collect()
 });
@@ -127,10 +131,10 @@ fn ipa_transform_word(modified_word: &str) -> String {
         let tail = &modified_word[byte_i..];
         let mut matched = false;
         for (re, val) in IPA_RULES.iter() {
-            if let Some(m) = re.find(tail) {
+            if let Ok(Some(m)) = re.find(tail) {
                 if m.start() == 0 {
                     rebuilt.push_str(val);
-                    byte_i += m.len();
+                    byte_i += m.as_str().len();
                     matched = true;
                     break;
                 }
@@ -183,7 +187,7 @@ pub fn lojban_to_ipa(text: &str) -> String {
 
         if let Some(si) = stress_insert_index(word) {
             modified_word = format!("{}ˈ{}", &word[..si], &word[si..]);
-            let n_nuclei = NUCLEUS_PATTERN.find_iter(word).count();
+            let n_nuclei = NUCLEUS_PATTERN.find_iter(word).filter_map(|m| m.ok()).count();
             if n_nuclei >= 2 {
                 postfix.push(' ');
             }
@@ -226,5 +230,20 @@ mod tests {
     fn uses_open_back_a() {
         let ipa = lojban_to_ipa("a");
         assert!(ipa.contains('ɑ'));
+    }
+
+    #[test]
+    fn tertirna_uses_coda_uvular_r() {
+        // Both r's are before consonants (t, n) → coda ʁʁ via look-ahead rule.
+        let ipa = lojban_to_ipa("tertirna");
+        assert!(
+            ipa.contains('ʁ'),
+            "expected uvular coda r, got {ipa:?}"
+        );
+        assert!(
+            !ipa.contains('ɹ'),
+            "onset ɹ should not appear for tertirna, got {ipa:?}"
+        );
+        assert_eq!(ipa, "tɛːʁʁtˈiːʁʁnɑː.");
     }
 }
