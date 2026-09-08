@@ -34,3 +34,4 @@ data
 scripts/freeforums_import/freeforums_dump/
 scripts/freeforums_import/.venv/
 __pycache__
+tmp/

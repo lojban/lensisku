@@ -62,8 +62,9 @@ fn stress_insert_index(word: &str) -> Option<usize> {
 /// Sorted by pattern key length descending (matches Python `sorted(ipa_vits.items(), ...)`).
 static IPA_RULES: Lazy<Vec<(Regex, &'static str)>> = Lazy::new(|| {
     let mut raw: Vec<(&str, &str)> = vec![
-        // Longer `r` before short `r` (same as Python ipa_vits order by length)
-        (r"r(?![ˈaeiouyḁąęǫ])", "ɹɹ"),
+        // (same as Python ipa_vits order by length)
+        // Longer `r` before short `r`
+        (r"r(?![ˈaeiouyḁąęǫ])", "ʁʁ"),
         ("ɩa", "jaː"),
         ("ɩe", "jɛː"),
         ("ɩi", "jiː"),
