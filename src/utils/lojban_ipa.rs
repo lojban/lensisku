@@ -67,8 +67,8 @@ fn stress_insert_index(word: &str) -> Option<usize> {
 /// Uses `fancy-regex` so Python-style look-around (e.g. coda `r`) compiles.
 static IPA_RULES: Lazy<Vec<(Regex, &'static str)>> = Lazy::new(|| {
     let mut raw: Vec<(&str, &str)> = vec![
-        // Longer `r` (coda) before short onset `r`
-        (r"r(?![ˈaeiouyḁąęǫ])", "ʁʁ"),
+        // Longer trill roll (coda) before short onset `r`
+        (r"r(?![ˈaeiouyḁąęǫ])", "rrr"),
         ("ɩa", "jaː"),
         ("ɩe", "jɛː"),
         ("ɩi", "jiː"),
@@ -233,17 +233,9 @@ mod tests {
     }
 
     #[test]
-    fn tertirna_uses_coda_uvular_r() {
-        // Both r's are before consonants (t, n) → coda ʁʁ via look-ahead rule.
+    fn tertirna_uses_coda_trill_rrr() {
+        // Both r's are before consonants (t, n) → coda `rrr` via look-ahead rule.
         let ipa = lojban_to_ipa("tertirna");
-        assert!(
-            ipa.contains('ʁ'),
-            "expected uvular coda r, got {ipa:?}"
-        );
-        assert!(
-            !ipa.contains('ɹ'),
-            "onset ɹ should not appear for tertirna, got {ipa:?}"
-        );
-        assert_eq!(ipa, "tɛːʁʁtˈiːʁʁnɑː.");
+        assert_eq!(ipa, "tɛːrrrtˈiːrrrnɑː.");
     }
 }
