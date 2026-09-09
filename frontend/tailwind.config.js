@@ -155,7 +155,7 @@ export default {
          * Use with Lucide size props; keep stroke-width on the SVG.
          */
         '.fab-menu-icon': {
-          '@apply h-6 w-6 shrink-0': {},
+          '@apply h-4 w-4 shrink-0': {},
         },
         '.fab-menu-icon--assistant': {
           '@apply text-nav-link': {},
@@ -1011,7 +1011,7 @@ export default {
         },
         /** Only this block scrolls — scrollbar sits between pinned header and footer. */
         '.feed-page__body': {
-          '@apply min-h-0 w-full flex-1 overflow-y-auto overscroll-y-contain px-3 pt-3': {},
+          '@apply min-h-0 w-full flex-1 overflow-y-auto overscroll-y-contain px-3 pt-3 pb-3': {},
         },
         '.feed-page__footer': {
           '@apply z-30 w-full shrink-0 border-t border-gray-200 bg-white md:bg-zinc-50': {},
