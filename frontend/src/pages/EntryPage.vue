@@ -89,6 +89,14 @@
         <span class="text-sm font-normal text-gray-500">({{ definitions.length }})</span>
       </h3>
 
+      <div v-if="auth.state.isLoggedIn" class="flex flex-wrap gap-3">
+        <IconButton
+          :label="t('entryPage.addDefinition')"
+          button-classes="ui-btn--create"
+          @click="router.push(`/valsi/add?word=${encodeURIComponent(valsi.word)}`)"
+        />
+      </div>
+
       <div class="space-y-4">
         <DefinitionCard
           v-for="def in definitions"
@@ -161,14 +169,6 @@
           </div>
         </div>
       </div>
-    </div>
-    <!-- Action Buttons -->
-    <div v-if="auth.state.isLoggedIn" class="flex flex-wrap gap-3 pt-4 border-t">
-      <IconButton
-        :label="t('entryPage.addDefinition')"
-        button-classes="ui-btn--create"
-        @click="router.push(`/valsi/add?word=${encodeURIComponent(valsi.word)}`)"
-      />
     </div>
   </article>
 </template>

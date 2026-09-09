@@ -97,7 +97,7 @@ const titleShellClass = computed(() =>
 
 const titleClass = computed(() => {
   const base =
-    'my-0 inline-flex min-w-0 max-w-full items-center break-words font-bold text-gray-800'
+    'my-0 min-w-0 max-w-full break-words font-bold text-gray-800 [overflow-wrap:anywhere]'
   const tone = props.titleTone === 'secondary' ? 'text-xl sm:text-2xl' : 'text-2xl sm:text-3xl'
   return `${base} ${tone}`
 })
