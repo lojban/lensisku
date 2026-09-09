@@ -286,7 +286,7 @@
           !route.meta.authFullBleed &&
           !route.meta.fullHeight &&
           !route.meta.contentTopPaddingMainOnly
-            ? 'flex flex-col gap-4'
+            ? 'flex flex-col gap-4 page-fab-clearance'
             : '',
         ]"
       >

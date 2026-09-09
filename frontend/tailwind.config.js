@@ -136,6 +136,13 @@ export default {
           '@apply flex flex-col gap-4 sm:gap-5': {},
         },
         /**
+         * Bottom inset on scrolling page columns so the fixed FAB (h-12 + bottom-4)
+         * does not cover the last content. Skip on full-height / auth-fullbleed layouts.
+         */
+        '.page-fab-clearance': {
+          '@apply pb-24': {},
+        },
+        /**
          * FAB outer shell: `aqua-base` sets `overflow:hidden` (gloss), which clips the button’s own
          * outer `box-shadow` in browsers — elevation lives on this wrapper instead (ui-ux-pro-max).
          */
