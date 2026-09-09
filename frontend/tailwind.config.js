@@ -1000,7 +1000,7 @@ export default {
          * Use with route meta.fullHeight so the page fills main and only the body scrolls.
          */
         '.feed-page': {
-          '--feed-chat-block': '33.333svh',
+          '--feed-chat-block': '18svh',
           '@apply relative flex h-full min-h-0 w-full flex-1 flex-col': {},
         },
         '.feed-page__header': {
