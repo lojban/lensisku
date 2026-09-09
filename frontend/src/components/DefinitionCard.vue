@@ -65,25 +65,6 @@
                 </h2>
               </div>
               <span
-                v-if="definition.canonical_word"
-                class="px-2 py-1 text-xs font-medium bg-slate-50 text-slate-800 rounded-full inline-flex items-center gap-1 min-w-0 max-w-full"
-              >
-                <span class="text-slate-600 shrink-0">{{
-                  t('components.definitionCard.canonicalFormLabel')
-                }}</span>
-                <span
-                  v-if="isCanonicalTruncated"
-                  class="text-nav-link hover:underline cursor-pointer min-w-0 truncate"
-                  :title="t('components.definitionCard.clickToSeeFullWord')"
-                  @click="showCanonicalModal = true"
-                >
-                  {{ displayedCanonical }}
-                </span>
-                <RouterLink v-else :to="canonicalWordLink" class="text-nav-link hover:underline">
-                  {{ definition.canonical_word }}
-                </RouterLink>
-              </span>
-              <span
                 v-if="definition.decomposition?.length"
                 class="px-2 py-1 text-xs font-medium bg-amber-50 text-amber-800 rounded-full inline-flex items-center gap-0.5 flex-wrap"
               >
@@ -233,7 +214,7 @@
                 </Button>
               </div>
             </div>
-            <!-- Audio, word type, selma'o, rafsi — second row under title -->
+            <!-- Audio, word type, lowest-score, selma'o, rafsi — second row under title -->
             <div v-if="showWordMetaRow" class="flex w-full flex-wrap items-center gap-2">
               <AudioPlayer
                 v-if="(definition.sound_url || itemSoundUrl) && props.showAudio"
@@ -248,6 +229,25 @@
                 :class="getTypeClass(definition.type_name)"
               >
                 {{ tm('wordTypes')[definition.type_name] }}
+              </span>
+              <span
+                v-if="definition.canonical_word"
+                class="px-2 py-1 text-xs font-medium bg-slate-50 text-slate-800 rounded-full inline-flex items-center gap-1 min-w-0 max-w-full"
+              >
+                <span class="text-slate-600 shrink-0">{{
+                  t('components.definitionCard.canonicalFormLabel')
+                }}</span>
+                <span
+                  v-if="isCanonicalTruncated"
+                  class="text-nav-link hover:underline cursor-pointer min-w-0 truncate"
+                  :title="t('components.definitionCard.clickToSeeFullWord')"
+                  @click="showCanonicalModal = true"
+                >
+                  {{ displayedCanonical }}
+                </span>
+                <RouterLink v-else :to="canonicalWordLink" class="text-nav-link hover:underline">
+                  {{ definition.canonical_word }}
+                </RouterLink>
               </span>
               <RouterLink
                 v-if="!isPhrase && definition.selmaho"
@@ -1088,13 +1088,14 @@ const isPhrase = computed(() => {
   return props.definition.type_name === 'phrase'
 })
 
-/** Second row: audio, word type, selma'o, rafsi. */
+/** Second row: audio, word type, lowest-score (canonical), selma'o, rafsi. */
 const showWordMetaRow = computed(() => {
   const hasAudio = Boolean((props.definition.sound_url || itemSoundUrl.value) && props.showAudio)
   const hasType = Boolean(props.definition.type_name && props.showWordType)
+  const hasCanonical = Boolean(props.definition.canonical_word)
   const hasSelmaho = !isPhrase.value && Boolean(props.definition.selmaho)
   const hasRafsi = !isPhrase.value && Boolean(props.definition.rafsi)
-  return hasAudio || hasType || hasSelmaho || hasRafsi
+  return hasAudio || hasType || hasCanonical || hasSelmaho || hasRafsi
 })
 
 /** True when sound should be loaded via api (getItemSoundBlob) so Bearer is sent; false for external URLs. */
