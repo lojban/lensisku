@@ -413,7 +413,7 @@ async function runKokoroGenerate() {
     const response = await generateKokoroTts({
       text,
       voice: selectedVoice.value,
-      speed: 1.0,
+      speed: 0.8,
     })
     const blob = response.data
     if (!(blob instanceof Blob)) {

@@ -940,7 +940,7 @@ pub async fn post_kokoro_tts(
 
     let speed = req
         .speed
-        .unwrap_or(1.0)
+        .unwrap_or(0.8)
         .clamp(KOKORO_TTS_SPEED_MIN, KOKORO_TTS_SPEED_MAX);
 
     match kokoro_tts_limiter.check_and_record(claims.sub).await {

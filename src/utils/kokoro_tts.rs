@@ -214,10 +214,10 @@ impl KokoroTts {
         }
     }
 
-    /// Synthesize Lojban `word` to Ogg Opus bytes (RFC 7845), Martin voice, speed 1.0.
+    /// Synthesize Lojban `word` to Ogg Opus bytes (RFC 7845), Martin voice, speed 0.8.
     pub fn lojban_word_to_ogg_opus(&mut self, word: &str) -> Result<Vec<u8>, String> {
         let ipa = lojban_to_ipa(word);
-        self.ipa_to_ogg_opus(&ipa, "Martin", 1.0)
+        self.ipa_to_ogg_opus(&ipa, "Martin", 0.8)
     }
 
     pub fn ipa_to_ogg_opus(

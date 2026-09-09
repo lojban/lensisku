@@ -256,7 +256,7 @@ pub struct KokoroTtsGenerateRequest {
     pub text: String,
     /// Voice name (currently only `Martin`).
     pub voice: String,
-    /// Speech speed; clamped server-side (default 1.0).
+    /// Speech speed; clamped server-side (default 0.8).
     pub speed: Option<f32>,
 }
 
