@@ -24,7 +24,25 @@ use super::models::User;
 use super::models::ValsiRow;
 use super::models::{ExportFormat, ExportOptions, SEARCH_EXPORT_ROW_CAP};
 use crate::jbovlaste::KeywordMapping;
+use crate::language::{LUJVO_TYPE_NAME, NON_CANONICAL_LUJVO_TYPE_NAME};
 use std::collections::HashMap;
+
+/// Dictionary exports keep the classical label `lujvo` for score-suboptimal spellings.
+fn export_word_type_label(descriptor: &str) -> &str {
+    if descriptor.eq_ignore_ascii_case(NON_CANONICAL_LUJVO_TYPE_NAME) {
+        LUJVO_TYPE_NAME
+    } else {
+        descriptor
+    }
+}
+
+fn export_word_type_owned(descriptor: String) -> String {
+    export_word_type_label(&descriptor).to_string()
+}
+
+fn export_word_type_opt(descriptor: Option<String>) -> Option<String> {
+    descriptor.map(export_word_type_owned)
+}
 
 pub async fn generate_pdf(
     latex_content: &str,
@@ -970,7 +988,9 @@ async fn generate_xml(
         writer.write(XmlEvent::end_element())?;
 
         writer.write(XmlEvent::start_element("type"))?;
-        writer.write(XmlEvent::Characters(&row.get::<_, String>("descriptor")))?;
+        writer.write(XmlEvent::Characters(export_word_type_label(
+            &row.get::<_, String>("descriptor"),
+        )))?;
         writer.write(XmlEvent::end_element())?;
 
         if let Some(rafsi) = row.get::<_, Option<String>>("rafsi") {
@@ -1071,7 +1091,7 @@ impl CollectionExportItem {
             collection_note: row.get("collection_note"),
             definition_id: row.get("definition_id"),
             word: row.get("word"),
-            word_type: row.get("word_type"),
+            word_type: export_word_type_opt(row.get("word_type")),
             rafsi: row.get("rafsi"),
             selmaho: row.get("selmaho"),
             language_id: row.get("language_id"),
@@ -1319,7 +1339,7 @@ impl ValsiRow {
             definition: row.try_get("definition")?,
             notes: row.try_get("definition_notes")?, // Use definition_notes alias
             collection_note: row.try_get("collection_note")?,
-            descriptor: row.try_get("word_type")?, // Use word_type alias
+            descriptor: export_word_type_owned(row.try_get("word_type")?), // Use word_type alias
         })
     }
 }
@@ -1493,7 +1513,7 @@ async fn generate_lojban_entries(
             definition: row.get("definition"),
             notes: row.get("notes"),
             collection_note: row.get("collection_note"),
-            descriptor: row.get("descriptor"),
+            descriptor: export_word_type_owned(row.get("descriptor")),
         };
         entries.push_str(&format_lojban_entry(&valsi_row, lang));
     }
@@ -1718,7 +1738,7 @@ async fn generate_tsv(
     for row in rows.iter() {
         let definition_id: i32 = row.get("definitionid");
         let word: String = row.get("word");
-        let descriptor: String = row.get("descriptor");
+        let descriptor = export_word_type_owned(row.get("descriptor"));
         let rafsi: Option<String> = row.get("rafsi");
         let selmaho: Option<String> = row.get("selmaho");
         let definition: String = row.get("definition");
@@ -1798,7 +1818,7 @@ fn generate_collection_tsv(
         let position: i32 = row.get("position");
         let definition_id: Option<i32> = row.get("definition_id");
         let word: Option<String> = row.get("word");
-        let word_type: Option<String> = row.get("word_type");
+        let word_type = export_word_type_opt(row.get("word_type"));
         let rafsi: Option<String> = row.get("rafsi");
         let selmaho: Option<String> = row.get("selmaho");
         let definition: Option<String> = row.get("definition");
@@ -1939,7 +1959,7 @@ async fn generate_json(
             DictionaryEntry {
                 definition_id: Some(definition_id),
                 word: row.get("word"),
-                word_type: row.get("descriptor"),
+                word_type: export_word_type_owned(row.get("descriptor")),
                 rafsi: row.get("rafsi"),
                 selmaho: row.get("selmaho"),
                 definition: row.get("definition"),
@@ -2177,7 +2197,7 @@ fn parse_i32_csv(value: &Option<String>) -> Option<Vec<i32>> {
 fn dictionary_entry_from_detail(d: crate::jbovlaste::DefinitionDetail) -> DictionaryEntry {
     DictionaryEntry {
         word: d.valsiword,
-        word_type: d.type_name,
+        word_type: export_word_type_owned(d.type_name),
         rafsi: d.rafsi,
         selmaho: d.selmaho,
         definition: d.definition,

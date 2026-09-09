@@ -198,7 +198,7 @@
               }"
               @click="selectWordType(type)"
             >
-              {{ type.descriptor }}
+              {{ wordTypeOptionLabel(type) }}
             </ToolbarSelectDropdownItem>
           </ToolbarSelectDropdown>
         </div>
@@ -684,13 +684,20 @@ const sourceLanguageLabel = computed(() => {
 })
 
 const selectedWordTypeLabel = computed(() => {
-  return filters.value.word_type?.descriptor ?? t('filters.allWordTypes')
+  const selected = filters.value.word_type
+  if (!selected) return t('filters.allWordTypes')
+  return wordTypeOptionLabel(selected)
 })
 
 const wordTypeOptions = computed<WordTypeOption[]>(() => [
   { type_id: null, descriptor: t('filters.allWordTypes') },
   ...wordTypes.value,
 ])
+
+function wordTypeOptionLabel(type: WordTypeOption): string {
+  if (type.type_id === null) return type.descriptor
+  return t(`filters.wordTypes.${type.descriptor.replace(/'/g, 'h').replace(/ /g, '-')}`)
+}
 
 const getLanguagesFromIds = (ids) => {
   return props.languages.filter((lang) => ids.includes(lang.id))

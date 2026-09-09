@@ -77,6 +77,24 @@
     "defaultSourceLanguage": "既定（ロジバン）",
     "resetAllFilters": "リセット",
     "selectWordType": "語種を選択",
+    "wordTypes": {
+      "gismu": "gismu",
+      "cmevla": "cmevla",
+      "phrase": "フレーズ",
+      "cmavo": "cmavo",
+      "lujvo": "lujvo",
+      "non-canonical-lujvo": "最低スコア以外の lujvo",
+      "fuhivla": "fu'ivla",
+      "experimental-cmavo": "実験的 cmavo",
+      "experimental-gismu": "実験的 gismu",
+      "cmavo-compound": "cmavo 複合",
+      "bu-letteral": "bu 字句",
+      "zei-lujvo": "zei-lujvo",
+      "obsolete-cmevla": "廃止 cmevla",
+      "obsolete-fuhivla": "廃止 fu'ivla",
+      "obsolete-cmavo": "廃止 cmavo",
+      "wiki": "wiki"
+    },
     "expand": "フィルターを展開",
     "collapse": "フィルターを折りたたむ"
   },
@@ -1193,7 +1211,7 @@
     "unlinkTranslation": "訳のリンクを解除",
     "confirmUnlink": "この訳のリンクを解除しますか？",
     "unlinkError": "リンクを解除できませんでした",
-    "canonicalFormLabel": "Canonical form:"
+    "canonicalFormLabel": "lowest-score:"
   },
   "cachedExports": {
     "title": "キャッシュ済み辞書エクスポート",
@@ -1405,7 +1423,7 @@
       "metadataLabel": "メタデータ：",
       "metadataKey": "キー",
       "metadataValue": "値",
-      "canonicalFormLabel": "Canonical:"
+      "canonicalFormLabel": "lowest-score:"
     },
     "imageUploadButton": {
       "invalidType": "画像ファイルを選択してください",
@@ -1691,7 +1709,7 @@
     "phrase": "フレーズ",
     "cmavo": "cmavo",
     "lujvo": "lujvo",
-    "non-canonical-lujvo": "non-canonical lujvo",
+    "non-canonical-lujvo": "lujvo",
     "fuhivla": "fu'ivla",
     "experimental-cmavo": "実験的 cmavo",
     "experimental-gismu": "実験的 gismu",

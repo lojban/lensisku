@@ -10,6 +10,7 @@ pub use models::MathJaxValidationOptions;
 pub use service::{
     analyze_word, classify_lujvo_spelling, is_decomposable_lujvo_type, load_owned_rafsi_maps,
     lujvo_segments_from_nodes, validate_mathjax, validate_mathjax_fields, LujvoClassification,
+    LUJVO_TYPE_NAME, NON_CANONICAL_LUJVO_TYPE_NAME,
 };
 
 pub fn configure(cfg: &mut web::ServiceConfig) {

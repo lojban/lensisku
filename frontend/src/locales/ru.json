@@ -76,7 +76,25 @@
     },
     "defaultSourceLanguage": "По умолчанию (Ложбан)",
     "resetAllFilters": "Сбросить",
-    "selectWordType": "Выберите тип слова"
+    "selectWordType": "Выберите тип слова",
+    "wordTypes": {
+      "gismu": "gismu",
+      "cmavo": "cmavo",
+      "cmevla": "cmevla",
+      "phrase": "фраза",
+      "lujvo": "lujvo",
+      "non-canonical-lujvo": "lujvo не с наименьшим баллом",
+      "fuhivla": "fu'ivla",
+      "experimental-cmavo": "экспериментальное cmavo",
+      "experimental-gismu": "экспериментальное gismu",
+      "cmavo-compound": "составное cmavo",
+      "bu-letteral": "bu-символ",
+      "zei-lujvo": "zei-lujvo",
+      "obsolete-cmevla": "устаревшее cmevla",
+      "obsolete-fuhivla": "устаревшее fuhivla",
+      "obsolete-cmavo": "устаревшее cmavo",
+      "wiki": "wiki"
+    }
   },
   "fileDropzone": {
     "chooseFile": "Выбрать файл",
@@ -1148,7 +1166,7 @@
     "unlinkTranslation": "Отвязать перевод",
     "confirmUnlink": "Вы уверены, что хотите отвязать этот перевод?",
     "unlinkError": "Не удалось отвязать перевод",
-    "canonicalFormLabel": "Canonical form:"
+    "canonicalFormLabel": "lowest-score:"
   },
   "cachedExports": {
     "title": "Кэшированные экспорты словаря",
@@ -1359,7 +1377,7 @@
       "customPhraseTitle": "Своя фраза",
       "customPhraseFrontLabel": "Лицевая сторона",
       "customPhraseBackLabel": "Оборот",
-      "canonicalFormLabel": "Canonical:"
+      "canonicalFormLabel": "lowest-score:"
     },
     "imageUploadButton": {
       "invalidType": "Пожалуйста, выберите файл изображения",
@@ -1645,7 +1663,7 @@
     "cmevla": "cmevla",
     "phrase": "фраза",
     "lujvo": "lujvo",
-    "non-canonical-lujvo": "non-canonical lujvo",
+    "non-canonical-lujvo": "lujvo",
     "fuhivla": "fu'ivla",
     "experimental-cmavo": "экспериментальное cmavo",
     "experimental-gismu": "экспериментальное gismu",

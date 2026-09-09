@@ -77,6 +77,24 @@
     "defaultSourceLanguage": "默认（逻辑语）",
     "resetAllFilters": "重置",
     "selectWordType": "选择词类",
+    "wordTypes": {
+      "gismu": "gismu",
+      "cmevla": "cmevla",
+      "phrase": "短语",
+      "cmavo": "cmavo",
+      "lujvo": "lujvo",
+      "non-canonical-lujvo": "非最低分 lujvo",
+      "fuhivla": "fu'ivla",
+      "experimental-cmavo": "实验 cmavo",
+      "experimental-gismu": "实验 gismu",
+      "cmavo-compound": "cmavo 复合",
+      "bu-letteral": "bu 字母",
+      "zei-lujvo": "zei-lujvo",
+      "obsolete-cmevla": "废弃 cmevla",
+      "obsolete-fuhivla": "废弃 fu'ivla",
+      "obsolete-cmavo": "废弃 cmavo",
+      "wiki": "wiki"
+    },
     "expand": "展开筛选",
     "collapse": "收起筛选"
   },
@@ -1198,7 +1216,7 @@
     "unlinkTranslation": "取消翻译链接",
     "confirmUnlink": "确定要取消此翻译链接吗？",
     "unlinkError": "取消链接失败",
-    "canonicalFormLabel": "Canonical form:"
+    "canonicalFormLabel": "lowest-score:"
   },
   "cachedExports": {
     "title": "缓存词典导出",
@@ -1410,7 +1428,7 @@
       "metadataLabel": "元数据：",
       "metadataKey": "键",
       "metadataValue": "值",
-      "canonicalFormLabel": "Canonical:"
+      "canonicalFormLabel": "lowest-score:"
     },
     "imageUploadButton": {
       "invalidType": "请选择图片文件",
@@ -1696,7 +1714,7 @@
     "phrase": "短语",
     "cmavo": "cmavo",
     "lujvo": "lujvo",
-    "non-canonical-lujvo": "non-canonical lujvo",
+    "non-canonical-lujvo": "lujvo",
     "fuhivla": "fu'ivla",
     "experimental-cmavo": "实验 cmavo",
     "experimental-gismu": "实验 gismu",

@@ -77,6 +77,24 @@
     "defaultSourceLanguage": "ralju be me'e zo .lojban",
     "resetAllFilters": "co'u julne",
     "selectWordType": "cuxna lo valsi klesi",
+    "wordTypes": {
+      "gismu": "gismu",
+      "cmevla": "cmevla",
+      "phrase": "vlapoi",
+      "cmavo": "cmavo",
+      "lujvo": "lujvo",
+      "non-canonical-lujvo": "lujvo gi'e porsi fi lo'i xauzma rafsi be lu'a lo ve nei",
+      "fuhivla": "fu'ivla",
+      "experimental-cmavo": "na'e se ca'irselzau cmavo",
+      "experimental-gismu": "na'e se ca'irselzau gismu",
+      "cmavo-compound": "porsi fi lo'i cmavo",
+      "bu-letteral": "lervla",
+      "zei-lujvo": "luvrzei",
+      "obsolete-cmevla": "gendra be ba'o ku cmevla",
+      "obsolete-fuhivla": "gendra be ba'o ku fu'ivla",
+      "obsolete-cmavo": "gendra be ba'o ku cmavo",
+      "wiki": "wiki"
+    },
     "expand": "fanmo fa'a lo julne",
     "collapse": "mipri lo julne"
   },
@@ -1022,7 +1040,7 @@
     "unlinkTranslation": "vimcu lo xe fanva selyli'e",
     "confirmUnlink": "xu do birti lo nu vimcu lo xe fanva selyli'e?",
     "unlinkError": "fliba lo ka jai gau fanva be naku",
-    "canonicalFormLabel": "denmi tarmi"
+    "canonicalFormLabel": "xagmau skoru"
   },
   "cachedExports": {
     "title": "ba'o se cupra vlaste",
@@ -1423,7 +1441,7 @@
       "metadataLabel": "datni tcila:",
       "metadataKey": "tcila",
       "metadataValue": "gradu",
-      "canonicalFormLabel": "denmi"
+      "canonicalFormLabel": "xagmau skoru"
     },
     "imageUploadButton": {
       "invalidType": "ko cuxna lo pixra datni",
@@ -1718,7 +1736,7 @@
     "phrase": "jufra",
     "cmavo": "cmavo",
     "lujvo": "lujvo",
-    "non-canonical-lujvo": "denmi lujvo",
+    "non-canonical-lujvo": "lujvo",
     "fuhivla": "fu'ivla",
     "experimental-cmavo": "na'e se ca'irselzau cmavo",
     "experimental-gismu": "na'e se ca'irselzau gismu",

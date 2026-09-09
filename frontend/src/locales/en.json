@@ -78,6 +78,24 @@
     "resetAllFilters": "Reset",
     "selectWordType": "Select word type",
     "allWordTypes": "All words",
+    "wordTypes": {
+      "gismu": "gismu",
+      "cmevla": "cmevla",
+      "phrase": "phrase",
+      "cmavo": "cmavo",
+      "lujvo": "lujvo",
+      "non-canonical-lujvo": "non-lowest-score lujvo",
+      "fuhivla": "fu'ivla",
+      "experimental-cmavo": "experimental cmavo",
+      "experimental-gismu": "experimental gismu",
+      "cmavo-compound": "cmavo compound",
+      "bu-letteral": "bu-letteral",
+      "zei-lujvo": "zei-lujvo",
+      "wiki": "wiki",
+      "obsolete-cmevla": "obsolete cmevla",
+      "obsolete-fuhivla": "obsolete fu'ivla",
+      "obsolete-cmavo": "obsolete cmavo"
+    },
     "expand": "Expand filters",
     "collapse": "Collapse filters"
   },
@@ -1222,7 +1240,7 @@
     "unlinkTranslation": "Unlink translation",
     "confirmUnlink": "Are you sure you want to unlink this translation?",
     "unlinkError": "Failed to unlink translation",
-    "canonicalFormLabel": "Canonical form:"
+    "canonicalFormLabel": "lowest-score:"
   },
   "cachedExports": {
     "title": "Cached dictionary exports",
@@ -1434,7 +1452,7 @@
       "metadataLabel": "Metadata:",
       "metadataKey": "Key",
       "metadataValue": "Value",
-      "canonicalFormLabel": "Canonical:"
+      "canonicalFormLabel": "lowest-score:"
     },
     "imageUploadButton": {
       "invalidType": "Please select an image file",
@@ -1750,7 +1768,7 @@
     "phrase": "phrase",
     "cmavo": "cmavo",
     "lujvo": "lujvo",
-    "non-canonical-lujvo": "non-canonical lujvo",
+    "non-canonical-lujvo": "lujvo",
     "fuhivla": "fu'ivla",
     "experimental-cmavo": "experimental cmavo",
     "experimental-gismu": "experimental gismu",
