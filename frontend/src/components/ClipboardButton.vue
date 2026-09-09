@@ -35,6 +35,11 @@ const props = defineProps({
     default: 'button',
     validator: (value: string) => ['button', 'ghost', 'unstyled'].indexOf(value) !== -1,
   },
+  /** When false, only the icon flips to Check (no success toast). */
+  announceSuccess: {
+    type: Boolean,
+    default: true,
+  },
 })
 
 const emit = defineEmits(['copied', 'error'])
@@ -60,7 +65,9 @@ const copyToClipboard = async () => {
   try {
     await navigator.clipboard.writeText(props.content)
     copied.value = true
-    showSuccess(t('components.error.copiedToClipboard'))
+    if (props.announceSuccess) {
+      showSuccess(t('components.error.copiedToClipboard'))
+    }
     emit('copied')
     if (copiedTimer.value) clearTimeout(copiedTimer.value)
     copiedTimer.value = setTimeout(() => {

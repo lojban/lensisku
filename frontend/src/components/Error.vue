@@ -5,6 +5,7 @@
     type="error"
     :duration="0"
     :close-label="t('modal.close')"
+    :copy-label="t('assistantChat.copyMessage')"
     @close="$emit('close')"
   />
 </template>

@@ -198,7 +198,9 @@ fn breakable_escape_segment(term: &str, escape_carets: bool, full_escape: bool) 
     for c in term.chars() {
         out.push_str(&escape_segment(&c.to_string(), escape_carets, full_escape));
         if !c.is_whitespace() {
-            out.push_str("\\allowbreak");
+            // Terminate the control sequence: bare `\allowbreak` + letter is
+            // parsed as `\allowbreakb` etc. and fails with undefined control sequence.
+            out.push_str("\\allowbreak{}");
         }
     }
     out
@@ -569,7 +571,9 @@ fn latex_preamble_cjk_fonts(lang: &str) -> String {
             .to_string(),
         _ => r#"
 \usepackage{xeCJK}
-\setCJKmainfont[Mapping=tex-text]{Noto Sans CJK SC}"#
+\setCJKmainfont[Mapping=tex-text]{Noto Sans CJK SC}
+\setCJKsansfont[Mapping=tex-text]{Noto Sans CJK SC}
+\setCJKmonofont[Mapping=tex-text]{Noto Sans CJK SC}"#
             .to_string(),
     }
 }
@@ -3131,7 +3135,9 @@ mod tests {
     fn curly_links_render_as_italic_without_braces() {
         let out = format_export_text("See also {klama}", false, true);
         assert!(
-            out.contains("\\textit{k\\allowbreakl\\allowbreaka\\allowbreakm\\allowbreaka\\allowbreak}"),
+            out.contains(
+                "\\textit{k\\allowbreak{}l\\allowbreak{}a\\allowbreak{}m\\allowbreak{}a\\allowbreak{}}",
+            ),
             "expected italic curly link, got: {out}"
         );
         assert!(!out.contains("\\{klama\\}"), "braces should be removed: {out}");
@@ -3146,7 +3152,9 @@ mod tests {
             "numeric braces stay literal under full escape: {out}"
         );
         assert!(
-            out.contains("\\textit{b\\allowbreakr\\allowbreako\\allowbreakd\\allowbreaka\\allowbreak}"),
+            out.contains(
+                "\\textit{b\\allowbreak{}r\\allowbreak{}o\\allowbreak{}d\\allowbreak{}a\\allowbreak{}}",
+            ),
             "broda link present: {out}"
         );
     }
@@ -3162,9 +3170,16 @@ mod tests {
     fn long_headwords_get_allowbreak() {
         let word = "verylongvalsiword";
         let out = breakable_escape_all(word);
-        assert!(out.contains("\\allowbreak"), "expected allowbreak in {out}");
+        assert!(
+            out.contains("\\allowbreak{}"),
+            "expected terminated allowbreak in {out}"
+        );
+        assert!(
+            !out.contains("\\allowbreakl") && !out.contains("\\allowbreakv"),
+            "bare allowbreak must not glue to next letter: {out}"
+        );
         assert_eq!(
-            out.matches("\\allowbreak").count(),
+            out.matches("\\allowbreak{}").count(),
             word.chars().count(),
             "one break opportunity per character"
         );

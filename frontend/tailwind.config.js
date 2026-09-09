@@ -226,49 +226,10 @@ export default {
         '.page-banner--error': {
           '@apply w-fit px-2 py-0 text-xs opacity-80 bg-red-100 border-red-200': {},
         },
-        /** Centered toast / lightweight alert surface (`ToastFloat.vue`); matches card elevation + success/error borders. */
-        '.toast-float-shell': {
-          '@apply pointer-events-none fixed inset-0 z-[65] flex items-center justify-center p-4':
-            {},
-        },
-        '.toast-float-panel': {
-          '@apply pointer-events-auto w-full max-w-[min(90vw,28rem)] overflow-hidden rounded-2xl border border-gray-200 bg-white text-gray-800':
-            {},
-          boxShadow: '0 0.75px 3px rgba(0, 0, 0, 0.04), 0 6px 16px rgba(0, 0, 0, 0.06)',
-        },
-        '.toast-float-panel--success': {
-          '@apply border-green-300': {},
-        },
-        '.toast-float-panel--error': {
-          '@apply border-red-300': {},
-        },
-        '.toast-float-body': {
-          '@apply flex items-center gap-3 p-4 sm:p-5': {},
-        },
-        '.toast-float-icon': {
-          '@apply shrink-0 self-center': {},
-        },
-        '.toast-float-icon--success': {
-          '@apply text-green-600': {},
-        },
-        '.toast-float-icon--error': {
-          '@apply text-red-600': {},
-        },
-        '.toast-float-message': {
-          '@apply min-w-0 flex-1 text-sm font-medium leading-snug text-gray-800 sm:text-base': {},
-        },
-        /** Dismiss control: same affordance family as modal chrome (neutral hover, visible focus). */
-        '.toast-float-close': {
-          '@apply -m-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 focus-visible:ring-offset-white':
-            {},
-        },
         /** `ModalComponent` default slot: scroll area. Padding inset keeps button box-shadows and focus rings inside the scrollport (they paint outside the border box and would otherwise clip). */
         '.modal-scroll-body': {
           '@apply min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 pt-2 pb-6 sm:px-3 sm:pb-7':
             {},
-        },
-        '.toast-float-extra': {
-          '@apply border-t border-gray-100 pt-3': {},
         },
         // --- Icon buttons ---
         /** Circular icon-only control (field clears, trailing actions); matches toast-close affordance at smaller hit target. */
