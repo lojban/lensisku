@@ -100,9 +100,9 @@ static IPA_RULES: Lazy<Vec<(Regex, &'static str)>> = Lazy::new(|| {
         ("z", "z"),
         ("f", "f"),
         ("v", "v"),
-        ("x", "hhh"),
+        ("x", "x"),
         ("'", "h"),
-        ("r", "ɹ"),
+        ("r", "rr"),
         ("n", "n"),
         ("m", "m"),
         ("l", "l"),
@@ -237,5 +237,11 @@ mod tests {
         // Both r's are before consonants (t, n) → coda `rrr` via look-ahead rule.
         let ipa = lojban_to_ipa("tertirna");
         assert_eq!(ipa, "tɛːrrrtˈiːrrrnɑː.");
+    }
+
+    #[test]
+    fn x_maps_to_latin_x() {
+        let ipa = lojban_to_ipa("xekce");
+        assert_eq!(ipa, "xˈɛːkʃɛː.");
     }
 }
