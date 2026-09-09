@@ -188,6 +188,192 @@ fn escape_tex(term: &str, escape_carets: bool) -> String {
     result
 }
 
+/// Escape so long headwords/tokens can wrap inside twocolumn layout.
+fn breakable_escape_all(term: &str) -> String {
+    breakable_escape_segment(term, false, true)
+}
+
+fn breakable_escape_segment(term: &str, escape_carets: bool, full_escape: bool) -> String {
+    let mut out = String::with_capacity(term.len().saturating_mul(2));
+    for c in term.chars() {
+        out.push_str(&escape_segment(&c.to_string(), escape_carets, full_escape));
+        if !c.is_whitespace() {
+            out.push_str("\\allowbreak");
+        }
+    }
+    out
+}
+
+fn escape_segment(term: &str, escape_carets: bool, full_escape: bool) -> String {
+    if full_escape {
+        escape_all(term)
+    } else {
+        escape_tex(term, escape_carets)
+    }
+}
+
+/// Insert break opportunities into long non-space runs so body text wraps.
+/// Math placeholders must stay intact so they can be restored later.
+fn escape_segment_with_breaks(term: &str, escape_carets: bool, full_escape: bool) -> String {
+    let mut out = String::with_capacity(term.len().saturating_mul(2));
+    let mut rest = term;
+    while let Some(start) = rest.find(MATH_PLACEHOLDER_PREFIX) {
+        let after_prefix = &rest[start + MATH_PLACEHOLDER_PREFIX.len()..];
+        if let Some(end_rel) = after_prefix.find(MATH_PLACEHOLDER_SUFFIX) {
+            let placeholder_end = start + MATH_PLACEHOLDER_PREFIX.len() + end_rel + MATH_PLACEHOLDER_SUFFIX.len();
+            // Only treat as placeholder if the middle is digits.
+            let middle = &after_prefix[..end_rel];
+            if !middle.is_empty() && middle.chars().all(|c| c.is_ascii_digit()) {
+                out.push_str(&escape_runs_with_breaks(
+                    &rest[..start],
+                    escape_carets,
+                    full_escape,
+                ));
+                out.push_str(&rest[start..placeholder_end]);
+                rest = &rest[placeholder_end..];
+                continue;
+            }
+        }
+        // Not a real placeholder — escape through the prefix char-by-char path.
+        out.push_str(&escape_runs_with_breaks(
+            &rest[..start + MATH_PLACEHOLDER_PREFIX.len()],
+            escape_carets,
+            full_escape,
+        ));
+        rest = &rest[start + MATH_PLACEHOLDER_PREFIX.len()..];
+    }
+    out.push_str(&escape_runs_with_breaks(rest, escape_carets, full_escape));
+    out
+}
+
+fn escape_runs_with_breaks(term: &str, escape_carets: bool, full_escape: bool) -> String {
+    const LONG_TOKEN_CHARS: usize = 12;
+    let mut out = String::with_capacity(term.len().saturating_mul(2));
+    let mut run = String::new();
+
+    let flush_run = |run: &mut String, out: &mut String| {
+        if run.is_empty() {
+            return;
+        }
+        if run.chars().count() >= LONG_TOKEN_CHARS {
+            out.push_str(&breakable_escape_segment(run, escape_carets, full_escape));
+        } else {
+            out.push_str(&escape_segment(run, escape_carets, full_escape));
+        }
+        run.clear();
+    };
+
+    for c in term.chars() {
+        if c.is_whitespace() {
+            flush_run(&mut run, &mut out);
+            out.push(c);
+        } else {
+            run.push(c);
+        }
+    }
+    flush_run(&mut run, &mut out);
+    out
+}
+
+const MATH_PLACEHOLDER_PREFIX: &str = "MJXPH";
+const MATH_PLACEHOLDER_SUFFIX: &str = "MJXEND";
+
+fn math_placeholder(index: usize) -> String {
+    format!("{MATH_PLACEHOLDER_PREFIX}{index}{MATH_PLACEHOLDER_SUFFIX}")
+}
+
+/// Protect `$...$` / `$$...$$` so curly-link parsing does not touch math braces.
+fn protect_tex_math(text: &str) -> (String, Vec<String>) {
+    let mut parts = Vec::new();
+    let mut out = String::with_capacity(text.len());
+    let bytes = text.as_bytes();
+    let mut i = 0;
+    while i < text.len() {
+        if text[i..].starts_with("$$") {
+            if let Some(rel) = text[i + 2..].find("$$") {
+                let end = i + 2 + rel + 2;
+                parts.push(text[i..end].to_string());
+                out.push_str(&math_placeholder(parts.len() - 1));
+                i = end;
+                continue;
+            }
+        }
+        if bytes[i] == b'$' && text.get(i + 1..).is_none_or(|s| !s.starts_with('$')) {
+            if let Some(rel) = text[i + 1..].find('$') {
+                let end = i + 1 + rel + 1;
+                parts.push(text[i..end].to_string());
+                out.push_str(&math_placeholder(parts.len() - 1));
+                i = end;
+                continue;
+            }
+        }
+        let ch = text[i..].chars().next().unwrap_or('\0');
+        out.push(ch);
+        i += ch.len_utf8();
+    }
+    (out, parts)
+}
+
+fn restore_tex_math(text: &str, parts: &[String]) -> String {
+    if parts.is_empty() {
+        return text.to_string();
+    }
+    let mut out = text.to_string();
+    for (i, part) in parts.iter().enumerate() {
+        out = out.replace(&math_placeholder(i), part);
+    }
+    out
+}
+
+fn is_numeric_curly_inner(inner: &str) -> bool {
+    !inner.is_empty() && inner.chars().all(|c| c.is_ascii_digit())
+}
+
+/// Format dictionary text for LaTeX: `{klama}` → italic `klama`, with escaping and wraps.
+fn format_export_text(text: &str, escape_carets: bool, full_escape: bool) -> String {
+    let (protected, math_parts) = protect_tex_math(text);
+    let mut out = String::with_capacity(protected.len().saturating_mul(2));
+    let mut rest = protected.as_str();
+
+    while let Some(start) = rest.find('{') {
+        out.push_str(&escape_segment_with_breaks(
+            &rest[..start],
+            escape_carets,
+            full_escape,
+        ));
+        let after_open = &rest[start + 1..];
+        if let Some(end) = after_open.find('}') {
+            let inner = &after_open[..end];
+            let after = &after_open[end + 1..];
+            if is_numeric_curly_inner(inner) {
+                // Keep subscript-like `{1}` out of link conversion (matches UI).
+                out.push_str(&escape_segment(
+                    &format!("{{{inner}}}"),
+                    escape_carets,
+                    full_escape,
+                ));
+            } else {
+                let trimmed = inner.trim();
+                if trimmed.is_empty() {
+                    out.push_str(&escape_segment("{}", escape_carets, full_escape));
+                } else {
+                    out.push_str(&format!(
+                        "\\textit{{{}}}",
+                        breakable_escape_segment(trimmed, escape_carets, true)
+                    ));
+                }
+            }
+            rest = after;
+        } else {
+            out.push_str(&escape_segment_with_breaks(rest, escape_carets, full_escape));
+            rest = "";
+            break;
+        }
+    }
+    out.push_str(&escape_segment_with_breaks(rest, escape_carets, full_escape));
+    restore_tex_math(&out, &math_parts)
+}
+
 fn generate_title(escaped_lang: &str, collection_id: Option<i32>) -> String {
     if collection_id.is_some() {
         "lo vlaste".to_string()
@@ -203,10 +389,11 @@ fn generate_title(escaped_lang: &str, collection_id: Option<i32>) -> String {
 
 fn format_lojban_heading(word: &str, valsi_type: &str) -> String {
     let escaped_word = escape_all(word);
+    let breakable_word = breakable_escape_all(word);
     let heading = if valsi_type.starts_with("experimental") || valsi_type.starts_with("obsolete") {
-        format_lojban_experimental_heading(&escaped_word)
+        format_lojban_experimental_heading(&breakable_word)
     } else {
-        format_normal_heading(&escaped_word)
+        format_normal_heading(&breakable_word)
     };
     format!("{}{}", heading, markboth(&escaped_word))
 }
@@ -259,17 +446,20 @@ fn format_selmaho(selmaho: &Option<String>) -> String {
 
 fn format_definition(definition: &str, lang: &str) -> String {
     let carets_are_literal = lang == GUASPI;
-    format!(" {}", escape_tex(definition, carets_are_literal))
+    format!(
+        " {}",
+        format_export_text(definition, carets_are_literal, false)
+    )
 }
 
 fn format_notes(notes: &Option<String>) -> String {
     match notes {
         Some(n) if !n.is_empty() => {
-            if sniff_tex(n) {
-                format!(" \\textemdash{{}} {}", escape_tex(n, false))
-            } else {
-                format!(" \\textemdash{{}} {}", escape_all(n))
-            }
+            let full_escape = !sniff_tex(n);
+            format!(
+                " \\textemdash{{}} {}",
+                format_export_text(n, false, full_escape)
+            )
         }
         _ => String::new(),
     }
@@ -281,7 +471,7 @@ fn sniff_tex(text: &str) -> bool {
 
 fn format_natural_heading(word: &str) -> String {
     let escaped_word = escape_all(word);
-    let heading = format_normal_heading(&escaped_word);
+    let heading = format_normal_heading(&breakable_escape_all(word));
     format!("{}{}", heading, markboth(&escaped_word))
 }
 
@@ -293,7 +483,7 @@ fn format_meaning(meaning: &Option<String>) -> String {
 }
 
 fn format_valsi(valsi: &str) -> String {
-    format!(" {}", escape_all(valsi))
+    format!(" {}", breakable_escape_all(valsi))
 }
 
 fn format_place(place: i32) -> String {
@@ -392,7 +582,11 @@ fn latex_preamble_outro() -> String {
 \fancyhead[RE,RO]{\leftmark}  % right side, odd and even pages
 \fancyfoot[LE,RO]{\thepage}   % left side even, right side odd
 
-\setlength{\parindent}{1 em}"#
+\setlength{\parindent}{1 em}
+
+% Allow long valsi / unbroken tokens to wrap instead of overflowing columns.
+\sloppy
+\setlength{\emergencystretch}{3em}"#
         .to_string()
 }
 
@@ -1354,7 +1548,7 @@ fn format_free_content_entry(row: &tokio_postgres::Row, lang: &str) -> String {
 fn format_free_content_parts(front: &str, back: &str, note: Option<&str>, lang: &str) -> String {
     format!(
         "\n\n{{\\sffamily\\bfseries {}}} \\enspace {} {}",
-        escape_all(front),
+        breakable_escape_all(front),
         format_definition(back, lang),
         format_collection_note(note.unwrap_or_default())
     )
@@ -1366,11 +1560,11 @@ fn replace_newlines(s: &str) -> String {
 
 fn format_collection_note(note: &str) -> String {
     if !note.is_empty() {
-        if sniff_tex(note) {
-            format!(" \\textbf{{Collection note:}} {}", escape_tex(note, false))
-        } else {
-            format!(" \\textbf{{Collection note:}} {}", escape_all(note))
-        }
+        let full_escape = !sniff_tex(note);
+        format!(
+            " \\textbf{{Collection note:}} {}",
+            format_export_text(note, false, full_escape)
+        )
     } else {
         String::new()
     }
@@ -2931,6 +3125,57 @@ mod tests {
             format!("search-export.{}", ExportFormat::Tsv.file_extension()),
             "search-export.zip"
         );
+    }
+
+    #[test]
+    fn curly_links_render_as_italic_without_braces() {
+        let out = format_export_text("See also {klama}", false, true);
+        assert!(
+            out.contains("\\textit{k\\allowbreakl\\allowbreaka\\allowbreakm\\allowbreaka\\allowbreak}"),
+            "expected italic curly link, got: {out}"
+        );
+        assert!(!out.contains("\\{klama\\}"), "braces should be removed: {out}");
+        assert!(out.starts_with("See also "), "prefix preserved: {out}");
+    }
+
+    #[test]
+    fn curly_links_skip_numeric_inners_like_ui() {
+        let out = format_export_text("index {1} and {broda}", false, true);
+        assert!(
+            out.contains("\\{1\\}"),
+            "numeric braces stay literal under full escape: {out}"
+        );
+        assert!(
+            out.contains("\\textit{b\\allowbreakr\\allowbreako\\allowbreakd\\allowbreaka\\allowbreak}"),
+            "broda link present: {out}"
+        );
+    }
+
+    #[test]
+    fn curly_links_do_not_touch_math_braces() {
+        let out = format_export_text("See also {klama} and $x_{1}$", false, false);
+        assert!(out.contains("$x_{1}$"), "math preserved: {out}");
+        assert!(out.contains("\\textit{"), "link still italic: {out}");
+    }
+
+    #[test]
+    fn long_headwords_get_allowbreak() {
+        let word = "verylongvalsiword";
+        let out = breakable_escape_all(word);
+        assert!(out.contains("\\allowbreak"), "expected allowbreak in {out}");
+        assert_eq!(
+            out.matches("\\allowbreak").count(),
+            word.chars().count(),
+            "one break opportunity per character"
+        );
+    }
+
+    #[test]
+    fn notes_format_uses_italic_curly_links() {
+        let notes = Some("See also {klama}.".to_string());
+        let out = format_notes(&notes);
+        assert!(out.contains("\\textit{"), "notes should italicize links: {out}");
+        assert!(!out.contains("\\{klama\\}"), "no literal braces: {out}");
     }
 }
 
