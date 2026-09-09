@@ -67,7 +67,7 @@
     <!-- Word Type Display -->
     <div v-if="!isEditMode && wordType" class="space-y-4">
       <AlertComponent type="info" :label="t('upsertDefinition.detectedTypeLabel')">
-        <p class="font-semibold">{{ getWordTypeLabel(wordType, t) }}</p>
+        <p class="font-semibold">{{ tm('wordTypes')[wordType] }}</p>
       </AlertComponent>
       <AlertComponent
         v-if="recommended"
@@ -466,7 +466,6 @@ import { useSuccessToast } from '@/composables/useSuccessToast'
 import { useSeoHead } from '@/composables/useSeoHead'
 import { queryStr } from '@/utils/routeQuery'
 import { normalizeSearchQuery } from '@/utils/searchQueryUtils'
-import { getWordTypeLabel } from '@/utils/wordTypeUtils'
 
 const props = defineProps({
   id: {
@@ -481,7 +480,7 @@ const router = useRouter()
 const auth = useAuth()
 const { showError, clearError } = useError()
 const { showSuccess } = useSuccessToast()
-const { t } = useI18n()
+const { t, tm } = useI18n()
 
 /** Format API warning/error codes; e.g. RAFSI_OVERLAP|word|type -> translated message; LaTeX field errors -> localized */
 function formatRafsiOverlapMessage(code: string): string {

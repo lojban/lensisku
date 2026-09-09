@@ -396,7 +396,7 @@ import { useRecentSelections } from '@/composables/useRecentSelections'
 import { defaultFilterLanguageTags } from '@/config/locales'
 import { useI18n } from 'vue-i18n'
 import type { PropType } from 'vue'
-const { t } = useI18n()
+const { t, tm } = useI18n()
 
 export type SemanticGraphBuildParams = {
   minVote: number
@@ -696,7 +696,7 @@ const wordTypeOptions = computed<WordTypeOption[]>(() => [
 
 function wordTypeOptionLabel(type: WordTypeOption): string {
   if (type.type_id === null) return type.descriptor
-  return t(`filters.wordTypes.${type.descriptor.replace(/'/g, 'h').replace(/ /g, '-')}`)
+  return tm('filters.wordTypes')[type.descriptor]
 }
 
 const getLanguagesFromIds = (ids) => {

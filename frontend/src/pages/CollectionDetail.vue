@@ -958,7 +958,7 @@
         <!-- Word Type Display -->
         <div v-if="newDefinitionWordType" class="space-y-4">
           <AlertComponent type="info" :label="t('upsertDefinition.detectedTypeLabel')">
-            <p class="font-semibold">{{ getWordTypeLabel(newDefinitionWordType, t) }}</p>
+            <p class="font-semibold">{{ tm('wordTypes')[newDefinitionWordType] }}</p>
           </AlertComponent>
           <AlertComponent
             v-if="newDefinitionRecommended"
@@ -1433,7 +1433,6 @@ import {
   queryStr,
 } from '@/utils/routeQuery'
 import { normalizeSearchQuery } from '@/utils/searchQueryUtils'
-import { getWordTypeLabel } from '@/utils/wordTypeUtils'
 import type { CommentItemApiComment } from '@/types/comment'
 import {
   getApiErrorMessage,
@@ -1463,7 +1462,7 @@ interface CollectionDetailListItem {
   auto_progress?: boolean
 }
 
-const { t } = useI18n()
+const { t, tm } = useI18n()
 const { showSuccess } = useSuccessToast()
 
 const props = defineProps({

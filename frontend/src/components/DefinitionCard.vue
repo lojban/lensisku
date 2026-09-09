@@ -247,7 +247,7 @@
                 class="px-2 py-1 text-xs font-medium rounded-full"
                 :class="getTypeClass(definition.type_name)"
               >
-                {{ t(`wordTypes.${definition.type_name.replace(/'/g, 'h').replace(/ /g, '-')}`) }}
+                {{ tm('wordTypes')[definition.type_name] }}
               </span>
               <RouterLink
                 v-if="!isPhrase && definition.selmaho"
@@ -791,7 +791,7 @@ import { useError } from '@/composables/useError'
 import { isSemanticPreciseMatch } from '@/utils/searchQueryUtils'
 import AudioPlayer from './AudioPlayer.vue'
 import LazyMathJax from './LazyMathJax.vue'
-const { t, locale } = useI18n()
+const { t, tm, locale } = useI18n()
 const auth = useAuth()
 const route = useRoute()
 const router = useRouter()

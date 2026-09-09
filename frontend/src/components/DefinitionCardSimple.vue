@@ -57,7 +57,7 @@
               class="px-2 py-1 text-xs font-medium rounded-full"
               :class="getTypeClass(definition.type_name)"
             >
-              {{ t(`wordTypes.${definition.type_name.replace(/'/g, 'h').replace(/ /g, '-')}`) }}
+              {{ tm('wordTypes')[definition.type_name] }}
             </span>
             <span
               v-if="definition.canonical_word"
@@ -182,7 +182,7 @@ import ClipboardButton from '@/components/ClipboardButton.vue'
 import ModalComponent from '@/components/ModalComponent.vue'
 import type { PropType } from 'vue'
 
-const { t, locale } = useI18n()
+const { t, tm, locale } = useI18n()
 
 const MAX_VALSI_DISPLAY_LENGTH = 30
 const showValsiModal = ref(false)

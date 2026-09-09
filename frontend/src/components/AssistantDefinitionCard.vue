@@ -14,7 +14,7 @@
               class="px-2 py-1 text-xs font-medium rounded-full"
               :class="getTypeClass(card.type_name)"
             >
-              {{ t(`wordTypes.${card.type_name.replace(/'/g, 'h').replace(/ /g, '-')}`) }}
+              {{ tm('wordTypes')[card.type_name] }}
             </span>
             <RouterLink
               v-if="card.selmaho"
@@ -50,7 +50,7 @@ import { useI18n } from 'vue-i18n'
 import { getTypeClass } from '@/utils/wordTypeUtils'
 import LazyMathJax from './LazyMathJax.vue'
 
-const { t } = useI18n()
+const { t, tm } = useI18n()
 
 const props = defineProps({
   card: {
