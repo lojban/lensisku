@@ -100,7 +100,12 @@ const baseRoutes: Array<RouteRecordRaw> = [
     path: '/mi',
     name: 'Me',
     component: () => import('../pages/MePage.vue'),
-    meta: { requiresAuth: true },
+    meta: {
+      requiresAuth: true,
+      fullHeight: true,
+      hideFooter: true,
+      hidePageFooter: true,
+    },
   },
   {
     path: '/me',

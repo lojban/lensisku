@@ -693,6 +693,7 @@
                 </div>
                 <LazyMathJax
                   :content="selectedDefinition.definition || selectedDefinition.free_content_back"
+                  :enable-markdown="true"
                 />
               </div>
             </div>
@@ -722,7 +723,10 @@
                     })
                   }}
                 </div>
-                <LazyMathJax :content="def.definition || def.free_content_back" />
+                <LazyMathJax
+                  :content="def.definition || def.free_content_back"
+                  :enable-markdown="true"
+                />
               </div>
             </div>
           </div>

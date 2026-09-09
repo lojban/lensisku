@@ -1,54 +1,68 @@
 <template>
-  <TabbedPageHeader
-    :tabs="tabs"
-    :active-tab="activeTab"
-    :page-title="pageTitle"
-    @tab-click="handleTabClick"
-  />
-  <ProfilePage v-if="activeTab === 'profile'" embedded />
-  <div v-else-if="isLoading" class="space-y-4">
-    <SkeletonActivityItem v-for="n in 5" :key="n" />
-  </div>
-  <div v-else class="space-y-4">
-    <ActivityComments
-      v-if="activeTab === 'comments'"
-      :comments="comments"
-      :format-date="formatDate"
-    />
-    <ActivityBookmarks
-      v-else-if="activeTab === 'bookmarked'"
-      :comments="bookmarks"
-      :format-date="formatDate"
-      :no-items-message="t('reactionsPage.noBookmarks')"
-    />
-    <ActivityReactions
-      v-else-if="activeTab === 'reactions'"
-      :comments="reactions"
-      :format-date="formatDate"
-      :no-items-message="t('reactionsPage.noReactions')"
-    />
-    <ActivityVotes
-      v-else-if="activeTab === 'votes'"
-      :votes="votes"
-      :format-date="formatDate"
-      :no-items-message="t('reactionsPage.noVotes')"
-    />
-    <div v-if="activeTab !== 'profile' && total > perPage">
-      <PaginationComponent
-        :current-page="currentPage"
-        :total-pages="totalPages"
-        :total="total"
-        :per-page="perPage"
-        @prev="() => changePage(currentPage - 1)"
-        @next="() => changePage(currentPage + 1)"
+  <div class="feed-page">
+    <div class="feed-page__header feed-page__header--tabs">
+      <TabbedPageHeader
+        :tabs="tabs"
+        :active-tab="activeTab"
+        :page-title="pageTitle"
+        :show-title="false"
+        @tab-click="handleTabClick"
       />
+    </div>
+
+    <div class="feed-page__body">
+      <h2 class="page-section-title my-2 block md:hidden">{{ pageTitle }}</h2>
+      <ProfilePage v-if="activeTab === 'profile'" embedded />
+      <div v-else-if="isLoading" class="space-y-4">
+        <SkeletonActivityItem v-for="n in 5" :key="n" />
+      </div>
+      <div v-else class="space-y-4">
+        <ActivityComments
+          v-if="activeTab === 'comments'"
+          :comments="comments"
+          :format-date="formatDate"
+        />
+        <ActivityBookmarks
+          v-else-if="activeTab === 'bookmarked'"
+          :comments="bookmarks"
+          :format-date="formatDate"
+          :no-items-message="t('reactionsPage.noBookmarks')"
+        />
+        <ActivityReactions
+          v-else-if="activeTab === 'reactions'"
+          :comments="reactions"
+          :format-date="formatDate"
+          :no-items-message="t('reactionsPage.noReactions')"
+        />
+        <ActivityVotes
+          v-else-if="activeTab === 'votes'"
+          :votes="votes"
+          :format-date="formatDate"
+          :no-items-message="t('reactionsPage.noVotes')"
+        />
+      </div>
+    </div>
+
+    <div v-if="showPagination" class="feed-page__footer">
+      <div class="feed-page__footer-inner">
+        <div class="feed-page__pagination">
+          <PaginationComponent
+            :current-page="currentPage"
+            :total-pages="totalPages"
+            :total="total"
+            :per-page="perPage"
+            @prev="() => changePage(currentPage - 1)"
+            @next="() => changePage(currentPage + 1)"
+          />
+        </div>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { Vote, BookmarkCheck, User, MessageSquare } from '@lucide/vue'
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter, useRoute } from 'vue-router'
 
@@ -86,6 +100,9 @@ const perPage = ref(10)
 const total = ref(0)
 
 const totalPages = computed(() => Math.ceil(total.value / perPage.value))
+const showPagination = computed(
+  () => activeTab.value !== 'profile' && !isLoading.value && totalPages.value > 1
+)
 
 const formatDate = (timestamp) => {
   return new Date(timestamp).toLocaleString(locale.value, {
@@ -101,6 +118,11 @@ function normalizeTab(tabQ: string | undefined) {
   if (tabQ === 'bookmarks') return 'bookmarked'
   if (tabQ && ME_TABS.includes(tabQ)) return tabQ
   return 'profile'
+}
+
+function scrollFeedBodyToTop() {
+  const el = document.querySelector('.feed-page__body')
+  if (el) el.scrollTop = 0
 }
 
 const fetchData = async (tabKey) => {
@@ -160,10 +182,12 @@ const fetchData = async (tabKey) => {
   }
 }
 
-const changePage = (newPage) => {
+const changePage = async (newPage) => {
   if (newPage >= 1 && newPage <= totalPages.value) {
     currentPage.value = newPage
-    fetchData(activeTab.value)
+    await fetchData(activeTab.value)
+    await nextTick()
+    scrollFeedBodyToTop()
   }
 }
 
@@ -174,6 +198,8 @@ const handleTabClick = async (tabKey) => {
     query: { ...route.query, tab: tabKey },
   })
   await fetchData(tabKey)
+  await nextTick()
+  scrollFeedBodyToTop()
 }
 
 const tabs = computed(() => [

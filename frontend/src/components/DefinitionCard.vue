@@ -328,6 +328,7 @@
           :content="
             definition.definition || definition.free_content_back || definition.content || ''
           "
+          :enable-markdown="true"
         />
       </div>
       <!-- Additional Info -->

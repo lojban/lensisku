@@ -54,21 +54,24 @@
               isWikiMode ? t('versionHistory.bodyLabel') : t('versionHistory.definitionLabel')
             }}</span>
             <div class="mt-1 bg-gray-50 p-2 rounded">
-              <LazyMathJax :content="previewContent(version.content.definition)" />
+              <LazyMathJax
+                :content="previewContent(version.content.definition)"
+                :enable-markdown="true"
+              />
             </div>
           </div>
 
           <div v-if="!isWikiMode && version.content.notes">
             <span class="font-medium">{{ t('versionHistory.notesLabel') }}</span>
             <div class="mt-1 bg-gray-50 p-2 rounded">
-              <LazyMathJax :content="version.content.notes" />
+              <LazyMathJax :content="version.content.notes" :enable-markdown="true" />
             </div>
           </div>
 
           <div v-if="!isWikiMode && version.content.etymology">
             <span class="font-medium">{{ t('versionHistory.etymologyLabel') }}</span>
             <div class="mt-1 bg-gray-50 p-2 rounded">
-              <LazyMathJax :content="version.content.etymology" />
+              <LazyMathJax :content="version.content.etymology" :enable-markdown="true" />
             </div>
           </div>
           <!-- Keywords -->
@@ -170,7 +173,7 @@
 
               <div v-if="change.old_value" class="bg-red-50 p-2 rounded text-red-700">
                 <template v-if="isPlainTextField(change.field)">{{ change.old_value }}</template>
-                <LazyMathJax v-else :content="change.old_value" />
+                <LazyMathJax v-else :content="change.old_value" :enable-markdown="true" />
               </div>
 
               <div v-else class="text-gray-400 italic">{{ t('versionHistory.noContent') }}</div>
@@ -181,7 +184,7 @@
 
               <div v-if="change.new_value" class="bg-green-50 p-2 rounded text-green-700">
                 <template v-if="isPlainTextField(change.field)">{{ change.new_value }}</template>
-                <LazyMathJax v-else :content="change.new_value" />
+                <LazyMathJax v-else :content="change.new_value" :enable-markdown="true" />
               </div>
 
               <div v-else class="text-gray-400 italic">{{ t('versionHistory.noContent') }}</div>
