@@ -189,6 +189,7 @@ const baseRoutes: Array<RouteRecordRaw> = [
     path: '/comments',
     name: 'CommentList',
     component: () => import('../pages/CommentList.vue'),
+    meta: { hideFab: true },
     props: (route) => ({
       valsiId: parseInt(route.query.valsi_id as string) || 0,
       natlangWordId: parseInt(route.query.natlang_word_id as string) || 0,
@@ -203,6 +204,7 @@ const baseRoutes: Array<RouteRecordRaw> = [
     path: '/comments/thread',
     name: 'comments-thread',
     component: () => import('../pages/CommentList.vue'),
+    meta: { hideFab: true },
     props: (route) => ({
       valsiId: parseInt(route.query.valsi_id as string) || 0,
       natlangWordId: parseInt(route.query.natlang_word_id as string) || 0,
