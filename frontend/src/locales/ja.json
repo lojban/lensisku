@@ -360,6 +360,9 @@
   "commentList": {
     "discussingEntry": "エントリについて議論",
     "discussingDefinition": "定義について議論",
+    "definitionPanel": "定義",
+    "openDefinition": "定義を表示",
+    "closeDefinition": "定義を閉じる",
     "threaded": "スレッド表示",
     "newWave": "新しいウェーブ",
     "parent": "親",

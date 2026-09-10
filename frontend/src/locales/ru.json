@@ -327,6 +327,9 @@
   "commentList": {
     "discussingEntry": "Обсуждение записи",
     "discussingDefinition": "Обсуждение определения",
+    "definitionPanel": "Определение",
+    "openDefinition": "Показать определение",
+    "closeDefinition": "Закрыть определение",
     "threaded": "В виде дерева",
     "newWave": "Начать новую волну",
     "parent": "Родительский",

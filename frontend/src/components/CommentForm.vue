@@ -1,5 +1,10 @@
 <template>
-  <div class="surface-comment-form comment-item">
+  <div
+    :class="[
+      'surface-comment-form comment-item',
+      disableBorder ? 'surface-comment-form--borderless' : null,
+    ]"
+  >
     <div class="border-b border-gray-100 last:border-0">
       <form @submit.prevent="handleSubmit">
         <div v-if="showSubjectField || !isReply" class="mb-2">
@@ -163,6 +168,11 @@ const props = defineProps({
     default: false,
   },
   isReply: {
+    type: Boolean,
+    default: false,
+  },
+  /** Drop outer border/shadow (e.g. when nested in a sidebar chrome). */
+  disableBorder: {
     type: Boolean,
     default: false,
   },

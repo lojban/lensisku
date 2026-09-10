@@ -28,20 +28,15 @@
       :aria-label="$t('assistantChat.searchChats')"
     >
       <!-- Row 1: close (mobile) + new chat -->
-      <div class="flex items-center gap-2 border-b border-gray-200/60 bg-white/40 px-2 py-2">
-        <Button
-          v-if="!isDesktop"
-          variant="assistant-icon-soft"
-          type="button"
-          :aria-label="$t('assistantChat.closeChatHistory')"
-          @click="sidebarOpen = false"
-        >
-          <X class="h-5 w-5" />
-        </Button>
+      <AppSidebarHeader
+        :show-close="!isDesktop"
+        :close-label="$t('assistantChat.closeChatHistory')"
+        @close="sidebarOpen = false"
+      >
         <Button variant="assistant-new-chat" type="button" @click="startNewChat">
           <Plus class="h-4 w-4 shrink-0" /> {{ $t('assistantChat.newChat') }}
         </Button>
-      </div>
+      </AppSidebarHeader>
       <!-- Row 2: search -->
       <div class="border-b border-gray-200/60 bg-white/40 px-2 py-2">
         <Input
@@ -492,13 +487,13 @@ import {
   Trash2,
   Plus,
   PanelLeft,
-  X,
   MessageSquare,
   ArrowUp,
   Square,
   Pencil,
 } from '@lucide/vue'
 
+import AppSidebarHeader from '@/components/AppSidebarHeader.vue'
 import AssistantDefinitionCard from '@/components/AssistantDefinitionCard.vue'
 import AssistantThoughtStep from '@/components/AssistantThoughtStep.vue'
 import ClipboardButton from '@/components/ClipboardButton.vue'

@@ -539,33 +539,89 @@ export default {
             {},
         },
         /**
-         * Scrollport inside the definition dock / embedded preview.
-         * Height comes from --discussion-definition-block on `.feed-page` (22svh);
-         * embedded fallback stays compact (12rem).
-         * Padding lives on `.feed-page__definition`; keep this flush so the dock frame shows.
+         * Scrollport for definition preview (sidebar body or embedded stack).
          */
         '.discussion-definition-scroll': {
           '@apply min-h-0 w-full flex-1 overflow-y-auto overscroll-y-contain': {},
-          maxHeight: 'var(--discussion-definition-block, 12rem)',
         },
-        /** Placeholder matching DefinitionCard outer box while definition fetch is in flight. */
-        '.discussion-definition-skeleton': {
-          '@apply flex h-full min-h-0 w-full flex-col gap-2 animate-pulse': {},
+        /**
+         * Shared off-canvas / in-flow sidebar chrome (AssistantChat + CommentList).
+         * Use with `AppSidebarHeader.vue`.
+         */
+        '.app-sidebar-header': {
+          '@apply flex shrink-0 items-center gap-2 border-b border-gray-200/60 bg-white/50 px-2 py-2':
+            {},
         },
-        '.discussion-definition-skeleton__title': {
-          '@apply h-5 w-2/5 max-w-[12rem] shrink-0 rounded bg-gray-200': {},
+        '.app-sidebar-header__body': {
+          '@apply flex min-w-0 flex-1 items-center gap-2': {},
         },
-        '.discussion-definition-skeleton__card': {
-          '@apply flex min-h-0 flex-1 flex-col gap-3 bg-transparent p-4': {},
+        '.app-sidebar-header__title': {
+          '@apply min-w-0 flex-1 truncate text-sm font-semibold leading-snug text-gray-800': {},
         },
-        '.discussion-definition-skeleton__meta': {
-          '@apply flex flex-wrap items-center gap-2': {},
+        /**
+         * Discussion page: sidebar (definition) + main (comments).
+         * CSS-first responsive drawer (lg+ in-flow; below lg off-canvas).
+         * Do not gate the open control with a different breakpoint than the aside.
+         */
+        '.discussion-page': {
+          '@apply relative flex h-full min-h-0 w-full min-w-0 flex-1 overflow-hidden': {},
         },
-        '.discussion-definition-skeleton__chip': {
-          '@apply h-4 rounded bg-gray-200': {},
+        '.discussion-sidebar-backdrop': {
+          '@apply fixed inset-0 z-40 bg-black/40 backdrop-blur-[1px] transition-opacity lg:hidden':
+            {},
         },
-        '.discussion-definition-skeleton__line': {
-          '@apply h-4 rounded bg-gray-200': {},
+        '.discussion-sidebar': {
+          '@apply z-50 flex min-h-0 w-[min(20rem,88vw)] flex-shrink-0 flex-col border-r border-gray-200 bg-gradient-to-b from-slate-50 to-gray-50/90 fixed bottom-0 left-0 top-14 -translate-x-full pointer-events-none shadow-2xl transition-transform duration-200 ease-out sm:top-12 lg:relative lg:inset-auto lg:h-full lg:w-72 lg:max-w-none lg:translate-x-0 lg:pointer-events-auto lg:shadow-none':
+            {},
+        },
+        '.discussion-sidebar--open': {
+          '@apply translate-x-0 pointer-events-auto': {},
+        },
+        '.discussion-sidebar__body': {
+          '@apply min-h-0 flex-1 overflow-y-auto overscroll-y-contain': {},
+        },
+        /** Desktop: top-level comment composer pinned under the definition. */
+        '.discussion-sidebar__composer': {
+          '@apply shrink-0 border-t border-gray-200/60 bg-white/70 p-2': {},
+        },
+        /** Mobile-only open control — same lg breakpoint as sidebar in-flow. */
+        '.discussion-sidebar-toggle': {
+          '@apply assistant-icon-btn-header lg:hidden': {},
+        },
+        '.discussion-main': {
+          '@apply flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden': {},
+        },
+        '.discussion-main__header': {
+          '@apply flex shrink-0 items-center gap-2 border-b border-gray-200/60 bg-white px-3 py-1.5':
+            {},
+        },
+        '.discussion-main__title': {
+          '@apply flex min-w-0 flex-1 items-baseline gap-x-1.5 overflow-hidden text-sm font-semibold leading-snug text-gray-800':
+            {},
+        },
+        '.discussion-main__title-label': {
+          '@apply shrink-0 italic font-normal text-gray-500': {},
+        },
+        /** Word / entry name — ellipsis when the flex row is tight (same idea as DefinitionCard). */
+        '.discussion-main__title-word': {
+          '@apply min-w-0 truncate font-semibold text-gray-800': {},
+        },
+        '.discussion-main__title-word--link': {
+          '@apply text-blue-700 hover:text-blue-800 hover:underline': {},
+        },
+        '.discussion-main__header-actions': {
+          '@apply flex shrink-0 flex-nowrap items-center justify-end gap-2': {},
+        },
+        /** Compact threaded control — avoid full-width button primitives on a toolbar label. */
+        '.discussion-threaded-toggle': {
+          '@apply inline-flex h-6 shrink-0 cursor-pointer items-center gap-1.5 rounded-full border border-gray-200 bg-white px-2.5 text-sm text-gray-700 select-none hover:bg-gray-50':
+            {},
+        },
+        '.discussion-threaded-toggle--on': {
+          '@apply border-slate-300 bg-slate-100 text-slate-800': {},
+        },
+        '.discussion-threaded-toggle--disabled': {
+          '@apply cursor-not-allowed opacity-40': {},
         },
         /** Activity “thread” row with blue hover border. */
         '.surface-activity-row': {
@@ -654,6 +710,9 @@ export default {
         '.surface-comment-form': {
           '@apply mt-3 mb-6 bg-white border rounded-lg p-3 hover:border-blue-300 transition-colors relative':
             {},
+        },
+        '.surface-comment-form--borderless': {
+          '@apply !mt-0 !mb-0 border-0 shadow-none hover:border-transparent': {},
         },
         /** Comment row header: avatar | username+date | #id (middle truncates). */
         '.comment-header': {
@@ -994,10 +1053,6 @@ export default {
          */
         '.feed-page': {
           '--feed-chat-block': '18svh',
-          /** Top definition dock on comment threads — compact, under ~¼ viewport. */
-          '--discussion-definition-block': '24svh',
-          /** Shrunk dock while the comments list is scrolled. */
-          '--discussion-definition-block-collapsed': '20svh',
           '@apply relative flex h-full min-h-0 w-full flex-1 flex-col': {},
         },
         '.feed-page__header': {
@@ -1005,23 +1060,6 @@ export default {
         },
         '.feed-page__header--tabs': {
           '@apply pb-1': {},
-        },
-        /**
-         * Definition dock above the comments body (CommentList).
-         * Fixed height so skeleton and loaded card share the same box — no CLS.
-         * No inner pad: DefinitionCard uses disableBorder (borderless, keeps its own p-4).
-         * Collapses when the comments body is scrolled away from the top.
-         */
-        '.feed-page__definition': {
-          '@apply z-20 flex w-full shrink-0 flex-col overflow-hidden border-b-2 border-gray-300 bg-zinc-50 shadow-[0_4px_12px_-4px_rgba(0,0,0,0.12)]':
-            {},
-          height: 'var(--discussion-definition-block)',
-          maxHeight: 'var(--discussion-definition-block)',
-          transition: 'height 220ms ease, max-height 220ms ease',
-        },
-        '.feed-page__definition--collapsed': {
-          height: 'var(--discussion-definition-block-collapsed)',
-          maxHeight: 'var(--discussion-definition-block-collapsed)',
         },
         /** Only this block scrolls — scrollbar sits between pinned header and footer. */
         '.feed-page__body': {

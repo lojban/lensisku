@@ -363,6 +363,9 @@
   "commentList": {
     "discussingEntry": "Discussing entry",
     "discussingDefinition": "Discussing definition",
+    "definitionPanel": "Definition",
+    "openDefinition": "Show definition",
+    "closeDefinition": "Close definition",
     "threaded": "Threaded",
     "newWave": "New wave",
     "parent": "Parent",
