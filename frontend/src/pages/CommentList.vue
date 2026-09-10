@@ -1,184 +1,241 @@
 <template>
-  <!-- Header with word being discussed -->
-  <div>
-    <div v-if="valsiDetails" class="mb-4">
-      <h2 v-if="!definitionId" class="text-2xl font-bold space-x-2 select-none">
-        <span class="text-gray-500 italic">{{ t('commentList.discussingEntry') }}</span>
-        <RouterLink
-          v-if="valsiDetails.valsiid"
-          :to="`/valsi/${valsiDetails.word.replace(/ /g, '_')}`"
-          class="text-blue-700 hover:text-blue-800 hover:underline"
+  <div :class="embedded ? undefined : 'feed-page'">
+    <!--
+      Standalone: capped top strip (own scrollbar, < half viewport).
+      Embedded: inline above the thread (modal / collection tab).
+    -->
+    <div
+      v-if="showDefinitionPanel"
+      :class="[
+        embedded ? 'mb-4' : 'feed-page__definition',
+        !embedded && definitionDockCollapsed ? 'feed-page__definition--collapsed' : null,
+      ]"
+    >
+      <div class="discussion-definition-scroll">
+        <div
+          v-if="isDefinitionLoading"
+          class="discussion-definition-skeleton"
+          aria-hidden="true"
         >
-          {{ valsiDetails.word }}
-        </RouterLink>
-        <span v-else class="text-blue-700"> {{ valsiDetails.word }} </span>
-      </h2>
+          <div class="discussion-definition-skeleton__title ml-4 mt-0" />
+          <div class="discussion-definition-skeleton__card">
+            <div class="discussion-definition-skeleton__meta">
+              <div class="discussion-definition-skeleton__chip w-16" />
+              <div class="discussion-definition-skeleton__chip w-24" />
+              <div class="discussion-definition-skeleton__chip w-28" />
+            </div>
+            <div class="discussion-definition-skeleton__line w-full" />
+            <div class="discussion-definition-skeleton__line w-5/6" />
+            <div class="discussion-definition-skeleton__line w-3/4" />
+            <div class="discussion-definition-skeleton__line w-2/3" />
+          </div>
+        </div>
+        <template v-else>
+          <div
+            v-if="valsiDetails && (embedded || !definitionDockCollapsed)"
+            class="mb-1.5 px-4 pt-1"
+          >
+            <h2 v-if="!definitionId" class="text-lg font-bold space-x-2 select-none leading-snug">
+              <span class="text-gray-500 italic">{{ t('commentList.discussingEntry') }}</span>
+              <RouterLink
+                v-if="valsiDetails.valsiid"
+                :to="`/valsi/${valsiDetails.word.replace(/ /g, '_')}`"
+                class="text-blue-700 hover:text-blue-800 hover:underline"
+              >
+                {{ valsiDetails.word }}
+              </RouterLink>
+              <span v-else class="text-blue-700"> {{ valsiDetails.word }} </span>
+            </h2>
 
-      <h2 v-else class="text-2xl font-bold space-x-2 select-none">
-        <span class="text-gray-500 italic">{{ t('commentList.discussingDefinition') }}</span>
-      </h2>
+            <h2 v-else class="text-lg font-bold space-x-2 select-none leading-snug">
+              <span class="text-gray-500 italic">{{ t('commentList.discussingDefinition') }}</span>
+            </h2>
+          </div>
+
+          <DefinitionCard
+            v-if="valsiDetails && definitionDetails"
+            :definition="definitionDetails"
+            :languages="languages"
+            :disable-discussion-button="true"
+            :disable-discussion-toolbar-button="true"
+            :disable-toolbar="true"
+            :disable-border="true"
+            :show-definition-number="true"
+          />
+        </template>
+      </div>
     </div>
 
-    <div v-if="valsiDetails && definitionDetails" class="mb-4 discussion-definition-scroll">
-      <DefinitionCard
-        :definition="definitionDetails"
-        :languages="languages"
-        :disable-discussion-button="true"
-        :disable-discussion-toolbar-button="true"
-        :disable-toolbar="true"
-        :show-definition-number="true"
-      />
-    </div>
-    <!-- Action buttons -->
-    <div class="flex flex-wrap gap-2 w-full lg:w-auto justify-center">
-      <label
-        class="inline-flex items-center"
-        :disabled="flatStyleEnforced"
-        :class="[!flatStyle && !flatStyleEnforced ? ' ui-btn--neutral-slate' : 'ui-btn--neutral']"
-      >
-        <Checkbox
-          class="checkmark-aqua"
-          :checked="!flatStyle && !flatStyleEnforced"
+    <!-- Lower part: own scrollbar when standalone -->
+    <div
+      :class="embedded ? undefined : 'feed-page__body'"
+      @scroll.passive="onCommentsBodyScroll"
+    >
+      <!-- Action buttons -->
+      <div class="flex flex-wrap gap-2 w-full lg:w-auto justify-center mb-4">
+        <label
+          class="inline-flex items-center"
           :disabled="flatStyleEnforced"
-          @change="toggleFlatStyle"
+          :class="[!flatStyle && !flatStyleEnforced ? ' ui-btn--neutral-slate' : 'ui-btn--neutral']"
+        >
+          <Checkbox
+            class="checkmark-aqua"
+            :checked="!flatStyle && !flatStyleEnforced"
+            :disabled="flatStyleEnforced"
+            @change="toggleFlatStyle"
+          />
+          <span class="text-sm select-none" :class="{ 'text-gray-400': flatStyleEnforced }">{{
+            t('commentList.threaded')
+          }}</span>
+        </label>
+        <Button
+          v-if="commentId > 0 && !!currentComment?.parent_id"
+          variant="accent-purple"
+          class="inline-flex items-center ui-btn--accent-purple"
+          @click="goToParent"
+        >
+          <ArrowLeft class="h-5 w-5" /> {{ t('commentList.parent') }}
+        </Button>
+        <Button
+          v-if="commentId > 0"
+          variant="neutral-slate"
+          type="button"
+          class="inline-flex items-center ui-btn--neutral-slate"
+          :aria-label="t('commentList.waveRoot')"
+          @click="goToRoot"
+        >
+          <Home class="h-5 w-5" /> {{ t('commentList.waveRoot') }}
+        </Button>
+      </div>
+
+      <!-- Top-level comment composer -->
+      <div v-if="showTopLevelComposer" class="mb-4">
+        <CommentForm
+          :key="composerKey"
+          :is-submitting="isSubmitting"
+          :initial-values="newComment"
+          class="border border-blue-200 rounded-lg shadow-sm"
+          @submit="submitComment"
+          @cancel="resetComposerState"
         />
-        <span class="text-sm select-none" :class="{ 'text-gray-400': flatStyleEnforced }">{{
-          t('commentList.threaded')
-        }}</span>
-      </label>
-      <Button
-        v-if="commentId > 0 && !!currentComment?.parent_id"
-        variant="accent-purple"
-        class="inline-flex items-center ui-btn--accent-purple"
-        @click="goToParent"
-      >
-        <ArrowLeft class="h-5 w-5" /> {{ t('commentList.parent') }}
-      </Button>
-      <Button
-        v-if="commentId > 0"
-        variant="neutral-slate"
-        type="button"
-        class="inline-flex items-center ui-btn--neutral-slate"
-        :aria-label="t('commentList.waveRoot')"
-        @click="goToRoot"
-      >
-        <Home class="h-5 w-5" /> {{ t('commentList.waveRoot') }}
-      </Button>
-    </div>
-  </div>
-  <!-- Top-level comment composer (always visible for signed-in users on contextual threads) -->
-  <div v-if="showTopLevelComposer" class="mb-4">
-    <CommentForm
-      :key="composerKey"
-      :is-submitting="isSubmitting"
-      :initial-values="newComment"
-      class="border border-blue-200 rounded-lg shadow-sm"
-      @submit="submitComment"
-      @cancel="resetComposerState"
-    />
-  </div>
-  <!-- Comments list -->
-  <div class="space-y-4">
-    <template v-if="!isLoading">
-      <!-- Process all comments -->
-      <template v-if="commentId > 0">
-        <!-- Single comment thread view -->
-        <div v-for="comment in targetCommentThread" :key="comment.comment_id" class="relative">
-          <div
-            :style="{ marginLeft: `${flatStyle ? 0 : getReplyMargin(comment.level)}rem` }"
-            @mouseup="handleTextSelection(comment.comment_id, $event)"
-          >
-            <CommentItem
-              :comment="comment"
-              :valsi-id="valsiId"
-              :natlang-word-id="natlangWordId"
-              :definition-id="definitionId"
-              :reply-enabled="true"
-              :flat-style="flatStyle"
-              @reply="handleReply"
-            />
-            <!-- Inline reply form -->
-            <div v-if="replyToId === comment.comment_id" class="ml-4">
-              <CommentForm
-                :is-submitting="isSubmitting"
-                :initial-values="newComment"
-                :is-reply="true"
-                @submit="submitComment"
-                @cancel="cancelReply"
-              />
+      </div>
+
+      <!-- Comments list -->
+      <div class="space-y-4">
+        <template v-if="!isLoading">
+          <template v-if="commentId > 0">
+            <div v-for="comment in targetCommentThread" :key="comment.comment_id" class="relative">
+              <div
+                :style="{ marginLeft: `${flatStyle ? 0 : getReplyMargin(comment.level)}rem` }"
+                @mouseup="handleTextSelection(comment.comment_id, $event)"
+              >
+                <CommentItem
+                  :comment="comment"
+                  :valsi-id="valsiId"
+                  :natlang-word-id="natlangWordId"
+                  :definition-id="definitionId"
+                  :reply-enabled="true"
+                  :flat-style="flatStyle"
+                  @reply="handleReply"
+                />
+                <div v-if="replyToId === comment.comment_id" class="ml-4">
+                  <CommentForm
+                    :is-submitting="isSubmitting"
+                    :initial-values="newComment"
+                    :is-reply="true"
+                    @submit="submitComment"
+                    @cancel="cancelReply"
+                  />
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
-      </template>
-      <template v-else>
-        <!-- All comments in order -->
-        <div v-for="comment in processedComments" :key="comment.comment_id" class="relative">
-          <div
-            :style="{ marginLeft: `${getReplyMargin(comment.level)}rem` }"
-            @mouseup="handleTextSelection(comment.comment_id, $event)"
-          >
-            <CommentItem
-              :comment="comment"
-              :level="comment.level"
-              :valsi-id="valsiId"
-              :natlang-word-id="natlangWordId"
-              :definition-id="definitionId"
-              :reply-enabled="true"
-              :flat-style="flatStyle"
-              @reply="handleReply"
-            />
-            <!-- Inline reply form -->
-            <div v-if="replyToId === comment.comment_id" class="ml-4">
-              <CommentForm
-                :is-submitting="isSubmitting"
-                :initial-values="newComment"
-                :is-reply="true"
-                @submit="submitComment"
-                @cancel="cancelReply"
-              />
+          </template>
+          <template v-else>
+            <div v-for="comment in processedComments" :key="comment.comment_id" class="relative">
+              <div
+                :style="{ marginLeft: `${getReplyMargin(comment.level)}rem` }"
+                @mouseup="handleTextSelection(comment.comment_id, $event)"
+              >
+                <CommentItem
+                  :comment="comment"
+                  :level="comment.level"
+                  :valsi-id="valsiId"
+                  :natlang-word-id="natlangWordId"
+                  :definition-id="definitionId"
+                  :reply-enabled="true"
+                  :flat-style="flatStyle"
+                  @reply="handleReply"
+                />
+                <div v-if="replyToId === comment.comment_id" class="ml-4">
+                  <CommentForm
+                    :is-submitting="isSubmitting"
+                    :initial-values="newComment"
+                    :is-reply="true"
+                    @submit="submitComment"
+                    @cancel="cancelReply"
+                  />
+                </div>
+              </div>
             </div>
-          </div>
+          </template>
+        </template>
+
+        <div v-if="embedded && !isLoading && totalPages > 1" class="mt-6">
+          <PaginationComponent
+            :current-page="currentPage"
+            :total-pages="totalPages"
+            :total="total"
+            :per-page="perPage"
+            @prev="changePage(currentPage - 1)"
+            @next="changePage(currentPage + 1)"
+          />
         </div>
-      </template>
-    </template>
-    <div v-if="!isLoading && totalPages > 1" class="mt-6">
-      <PaginationComponent
-        :current-page="currentPage"
-        :total-pages="totalPages"
-        :total="total"
-        :per-page="perPage"
-        @prev="changePage(currentPage - 1)"
-        @next="changePage(currentPage + 1)"
-      />
+
+        <div v-if="isLoading" class="flex justify-center py-8">
+          <Loader2 class="animate-spin h-8 w-8 text-blue-600" />
+        </div>
+
+        <div
+          v-if="!isLoading && comments.length === 0"
+          class="flex flex-col justify-center text-center py-8 bg-blue-50 rounded-lg border border-blue-100 p-4"
+        >
+          <MessageSquare class="mx-auto h-12 w-12 text-blue-400" />
+          <p class="mt-4 text-gray-600">{{ t('commentList.noComments') }}</p>
+        </div>
+
+        <div
+          v-if="quotePosition.visible"
+          class="fixed z-50 bg-white border border-gray-300 rounded-md shadow-sm p-1"
+          :style="{
+            left: `${quotePosition.x}px`,
+            top: `${quotePosition.y}px`,
+          }"
+        >
+          <Button
+            variant="neutral"
+            class="text-sm px-2 py-1 hover:bg-gray-100 rounded-md flex items-center"
+            @click="handleQuote"
+          >
+            <Quote class="w-4 h-4 mr-1" /> {{ t('commentList.quoteSelectedText') }}
+          </Button>
+        </div>
+      </div>
     </div>
-    <!-- Loading state -->
-    <div v-if="isLoading" class="flex justify-center py-8">
-      <Loader2 class="animate-spin h-8 w-8 text-blue-600" />
-    </div>
-    <!-- Empty state -->
-    <div
-      v-if="!isLoading && comments.length === 0"
-      class="flex flex-col justify-center text-center py-8 bg-blue-50 rounded-lg border border-blue-100 p-4"
-    >
-      <MessageSquare class="mx-auto h-12 w-12 text-blue-400" />
-      <p class="mt-4 text-gray-600">{{ t('commentList.noComments') }}</p>
-    </div>
-    <!-- Floating quote button -->
-    <div
-      v-if="quotePosition.visible"
-      class="fixed z-50 bg-white border border-gray-300 rounded-md shadow-sm p-1"
-      :style="{
-        left: `${quotePosition.x}px`,
-        top: `${quotePosition.y}px`,
-      }"
-    >
-      <Button
-        variant="neutral"
-        class="text-sm px-2 py-1 hover:bg-gray-100 rounded-md flex items-center"
-        @click="handleQuote"
-      >
-        <Quote class="w-4 h-4 mr-1" /> {{ t('commentList.quoteSelectedText') }}
-      </Button>
+
+    <!-- Pinned pagination footer (standalone, mirrors RecentChanges) -->
+    <div v-if="!embedded && !isLoading && totalPages > 1" class="feed-page__footer">
+      <div class="feed-page__footer-inner">
+        <div class="feed-page__pagination">
+          <PaginationComponent
+            :current-page="currentPage"
+            :total-pages="totalPages"
+            :total="total"
+            :per-page="perPage"
+            @prev="changePage(currentPage - 1)"
+            @next="changePage(currentPage + 1)"
+          />
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -377,6 +434,31 @@ const showTopLevelComposer = computed(
   () => auth.state.isLoggedIn && hasDiscussionContext.value
 )
 
+/** Scroll the comments body only (same pattern as RecentChanges). */
+function scrollCommentsBodyToTop() {
+  if (typeof document === 'undefined') return
+  if (props.embedded) return
+  const el = document.querySelector('.feed-page__body')
+  if (el) el.scrollTo({ top: 0, left: 0, behavior: 'smooth' })
+  else window.scrollTo({ top: 0, left: 0, behavior: 'smooth' })
+  definitionDockCollapsed.value = false
+}
+
+/** Collapse definition dock while comments are scrolled; restore at top. */
+const definitionDockCollapsed = ref(false)
+const DEFINITION_COLLAPSE_AT = 32
+const DEFINITION_EXPAND_AT = 8
+
+function onCommentsBodyScroll(event: Event) {
+  if (props.embedded || !showDefinitionPanel.value) return
+  const top = (event.target as HTMLElement).scrollTop
+  if (!definitionDockCollapsed.value && top > DEFINITION_COLLAPSE_AT) {
+    definitionDockCollapsed.value = true
+  } else if (definitionDockCollapsed.value && top <= DEFINITION_EXPAND_AT) {
+    definitionDockCollapsed.value = false
+  }
+}
+
 const handleTextSelection = (commentId: number, event: MouseEvent) => {
   const selection = window.getSelection()
   if (selection.toString().trim() && selection.rangeCount > 0) {
@@ -530,8 +612,7 @@ const changePage = (page: number) => {
   currentPage.value = page
   // Subsequent page changes should include page parameter
   performFetchComments(false)
-  const mainContent = document.querySelector('.main-content') as HTMLElement | null
-  mainContent?.scrollTo({ top: 0, behavior: 'smooth' })
+  scrollCommentsBodyToTop()
 }
 
 const submitComment = async (formData: { subject: string; content: string }) => {
@@ -609,6 +690,18 @@ const goToRoot = () => {
 const languages = ref([])
 const valsiDetails = ref(null)
 const definitionDetails = ref(null)
+/** True while entry/definition fetch is in flight (starts true when route expects them). */
+const isDefinitionLoading = ref(!!(props.valsiId || props.definitionId))
+
+/** Route expects a definition dock (reserve space immediately to avoid CLS). */
+const expectsDefinitionPanel = computed(() => !!(props.valsiId || props.definitionId))
+
+/** Show dock when loading expected context, or once details have arrived. */
+const showDefinitionPanel = computed(
+  () =>
+    expectsDefinitionPanel.value ||
+    !!(valsiDetails.value || definitionDetails.value)
+)
 
 watch(flatStyle, () => {
   processedComments.value = processComments(comments.value, flatStyle.value)
@@ -647,18 +740,23 @@ if (!props.embedded) {
 }
 
 const fetchDefinitionsAndDetails = async () => {
-  if (props.valsiId) {
-    try {
-      const result = await getEntriesAndDefinitionDetails(props.valsiId, props.definitionId)
-      valsiDetails.value = result.valsi.valsi
+  if (!props.valsiId) {
+    isDefinitionLoading.value = false
+    return
+  }
+  isDefinitionLoading.value = true
+  try {
+    const result = await getEntriesAndDefinitionDetails(props.valsiId, props.definitionId)
+    valsiDetails.value = result.valsi.valsi
 
-      definitionDetails.value = result.definition
+    definitionDetails.value = result.definition
 
-      const langsResponse = await getLanguages()
-      languages.value = langsResponse.data
-    } catch (error) {
-      console.error('Error fetching details:', error)
-    }
+    const langsResponse = await getLanguages()
+    languages.value = langsResponse.data
+  } catch (error) {
+    console.error('Error fetching details:', error)
+  } finally {
+    isDefinitionLoading.value = false
   }
 }
 

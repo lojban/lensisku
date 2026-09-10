@@ -268,7 +268,11 @@
       id="main-child"
       class="max-w-4xl mx-auto relative flex flex-col"
       :class="[
-        route.meta.contentTopPaddingMainOnly || route.meta.authFullBleed ? 'pt-0' : 'pt-3',
+        route.meta.contentTopPaddingMainOnly ||
+        route.meta.authFullBleed ||
+        route.meta.fullHeight
+          ? 'pt-0'
+          : 'pt-3',
         route.meta.fullHeight ? 'main-child-full-height w-full' : 'main-child-min-height',
         route.meta.authFullBleed ? 'main-child--auth-fullbleed' : '',
         route.path.startsWith('/lingo') ? 'lg:pl-64' : '',

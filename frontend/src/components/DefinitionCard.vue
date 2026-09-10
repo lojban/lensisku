@@ -18,7 +18,7 @@
       }}
     </span>
     <!-- Header Section -->
-    <div :class="[disableBorder ? '' : showSimilarityBadge ? 'px-4 pb-4 pt-6' : 'p-4']">
+    <div :class="[showSimilarityBadge ? 'px-4 pb-4 pt-6' : 'p-4']">
       <div class="flex flex-col sm:flex-row justify-between items-start gap-4">
         <!-- Word and Type Info -->
         <div class="flex-1 w-full min-w-0 space-y-3">

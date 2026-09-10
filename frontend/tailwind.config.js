@@ -538,9 +538,34 @@ export default {
           '@apply w-full bg-white border rounded-lg hover:border-blue-300 transition-colors shadow hover:shadow-none p-4':
             {},
         },
-        /** Definition preview on discussion pages: cap height, scroll long content. */
+        /**
+         * Scrollport inside the definition dock / embedded preview.
+         * Height comes from --discussion-definition-block on `.feed-page` (22svh);
+         * embedded fallback stays compact (12rem).
+         * Padding lives on `.feed-page__definition`; keep this flush so the dock frame shows.
+         */
         '.discussion-definition-scroll': {
-          '@apply max-h-80 overflow-y-auto overscroll-y-contain rounded-lg': {},
+          '@apply min-h-0 w-full flex-1 overflow-y-auto overscroll-y-contain': {},
+          maxHeight: 'var(--discussion-definition-block, 12rem)',
+        },
+        /** Placeholder matching DefinitionCard outer box while definition fetch is in flight. */
+        '.discussion-definition-skeleton': {
+          '@apply flex h-full min-h-0 w-full flex-col gap-2 animate-pulse': {},
+        },
+        '.discussion-definition-skeleton__title': {
+          '@apply h-5 w-2/5 max-w-[12rem] shrink-0 rounded bg-gray-200': {},
+        },
+        '.discussion-definition-skeleton__card': {
+          '@apply flex min-h-0 flex-1 flex-col gap-3 bg-transparent p-4': {},
+        },
+        '.discussion-definition-skeleton__meta': {
+          '@apply flex flex-wrap items-center gap-2': {},
+        },
+        '.discussion-definition-skeleton__chip': {
+          '@apply h-4 rounded bg-gray-200': {},
+        },
+        '.discussion-definition-skeleton__line': {
+          '@apply h-4 rounded bg-gray-200': {},
         },
         /** Activity “thread” row with blue hover border. */
         '.surface-activity-row': {
@@ -969,6 +994,10 @@ export default {
          */
         '.feed-page': {
           '--feed-chat-block': '18svh',
+          /** Top definition dock on comment threads — compact, under ~¼ viewport. */
+          '--discussion-definition-block': '24svh',
+          /** Shrunk dock while the comments list is scrolled. */
+          '--discussion-definition-block-collapsed': '20svh',
           '@apply relative flex h-full min-h-0 w-full flex-1 flex-col': {},
         },
         '.feed-page__header': {
@@ -976,6 +1005,23 @@ export default {
         },
         '.feed-page__header--tabs': {
           '@apply pb-1': {},
+        },
+        /**
+         * Definition dock above the comments body (CommentList).
+         * Fixed height so skeleton and loaded card share the same box — no CLS.
+         * No inner pad: DefinitionCard uses disableBorder (borderless, keeps its own p-4).
+         * Collapses when the comments body is scrolled away from the top.
+         */
+        '.feed-page__definition': {
+          '@apply z-20 flex w-full shrink-0 flex-col overflow-hidden border-b-2 border-gray-300 bg-zinc-50 shadow-[0_4px_12px_-4px_rgba(0,0,0,0.12)]':
+            {},
+          height: 'var(--discussion-definition-block)',
+          maxHeight: 'var(--discussion-definition-block)',
+          transition: 'height 220ms ease, max-height 220ms ease',
+        },
+        '.feed-page__definition--collapsed': {
+          height: 'var(--discussion-definition-block-collapsed)',
+          maxHeight: 'var(--discussion-definition-block-collapsed)',
         },
         /** Only this block scrolls — scrollbar sits between pinned header and footer. */
         '.feed-page__body': {
