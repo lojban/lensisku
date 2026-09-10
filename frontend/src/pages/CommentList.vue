@@ -109,6 +109,10 @@
       <header
         v-if="!embedded && useDefinitionSidebar"
         class="discussion-main__header"
+        :class="{
+          'discussion-main__header--tap-open': !isDesktop && !definitionSidebarOpen,
+        }"
+        @click="onDiscussionHeaderClick"
       >
         <Button
           variant="assistant-icon-header"
@@ -132,6 +136,7 @@
               :to="`/valsi/${valsiDetails.word.replace(/ /g, '_')}`"
               class="discussion-main__title-word discussion-main__title-word--link"
               :title="valsiDetails.word"
+              @click="onTitleWordClick"
             >
               {{ valsiDetails.word }}
             </RouterLink>
@@ -155,7 +160,7 @@
           </template>
         </h2>
 
-        <div class="discussion-main__header-actions">
+        <div class="discussion-main__header-actions" @click.stop>
           <label
             :class="[
               'discussion-threaded-toggle',
@@ -585,6 +590,23 @@ function scrollCommentsBodyToTop() {
 
 const isDesktop = useMediaQuery('(min-width: 1024px)')
 const definitionSidebarOpen = ref(false)
+
+function openDefinitionSidebar() {
+  if (isDesktop.value || definitionSidebarOpen.value) return
+  definitionSidebarOpen.value = true
+}
+
+/** Mobile: tap header (outside actions) to open the definition drawer. */
+function onDiscussionHeaderClick() {
+  openDefinitionSidebar()
+}
+
+/** Mobile: title word opens the drawer instead of navigating away. */
+function onTitleWordClick(event: MouseEvent) {
+  if (isDesktop.value) return
+  event.preventDefault()
+  openDefinitionSidebar()
+}
 
 onKeyStroke('Escape', (e) => {
   if (props.embedded || isDesktop.value || !definitionSidebarOpen.value) return

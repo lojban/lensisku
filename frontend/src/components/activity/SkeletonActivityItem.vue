@@ -1,29 +1,21 @@
 <template>
-  <div class="bg-white p-4 rounded-lg border border-gray-200 animate-pulse">
+  <div class="skeleton-activity-row skeleton-pulse" aria-hidden="true">
     <div class="flex items-start space-x-3">
-      <!-- Skeleton for avatar -->
-      <div class="w-10 h-10 rounded-full bg-gray-200 flex-shrink-0"></div>
+      <div class="h-10 w-10 flex-shrink-0 rounded-full bg-gray-200" />
 
       <div class="flex-1 space-y-3">
-        <!-- Skeleton for username and date -->
-        <div class="flex justify-between items-center">
-          <div class="h-4 bg-gray-200 rounded w-1/4"></div>
-
-          <div class="h-3 bg-gray-200 rounded w-1/6"></div>
+        <div class="flex items-center justify-between">
+          <div class="skeleton-bone h-4 w-1/4" />
+          <div class="skeleton-bone--soft h-3 w-1/6" />
         </div>
-        <!-- Skeleton for content -->
         <div class="space-y-2">
-          <div class="h-4 bg-gray-200 rounded w-full"></div>
-
-          <div class="h-4 bg-gray-200 rounded w-5/6"></div>
-
-          <div class="h-4 bg-gray-200 rounded w-3/4"></div>
+          <div class="skeleton-bone h-4 w-full" />
+          <div class="skeleton-bone h-4 w-5/6" />
+          <div class="skeleton-bone--soft h-4 w-3/4" />
         </div>
-        <!-- Skeleton for actions -->
         <div class="flex justify-end space-x-2 pt-2">
-          <div class="h-6 bg-gray-200 rounded-full w-16"></div>
-
-          <div class="h-6 bg-gray-200 rounded-full w-16"></div>
+          <div class="skeleton-bone h-6 w-16 rounded-full" />
+          <div class="skeleton-bone h-6 w-16 rounded-full" />
         </div>
       </div>
     </div>
@@ -31,5 +23,5 @@
 </template>
 
 <script setup lang="ts">
-// No script logic needed for a simple skeleton
+// Shared fallback activity skeleton (Me / contributions pages).
 </script>

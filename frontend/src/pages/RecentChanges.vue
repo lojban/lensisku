@@ -12,9 +12,8 @@
 
     <div class="feed-page__body">
       <h2 class="page-section-title my-2 block md:hidden">{{ pageTitle }}</h2>
-      <div v-if="isLoading">
-        <SkeletonActivityItem v-for="n in 5" :key="n" />
-      </div>
+      <!-- Skeletons use the same wrappers/gaps as loaded Activity* lists to limit CLS. -->
+      <ActivityFeedSkeleton v-if="isLoading" :variant="activeTab" />
       <template v-else-if="!error">
         <ActivityChanges
           v-if="activeTab === 'news'"
@@ -77,7 +76,7 @@ import ActivityThreads from '@/components/activity/ActivityThreads.vue'
 import LiveChatDock from '@/components/LiveChatDock.vue'
 import { useDateFormat } from '@/composables/useDateFormat'
 import PaginationComponent from '@/components/PaginationComponent.vue'
-import SkeletonActivityItem from '@/components/activity/SkeletonActivityItem.vue'
+import ActivityFeedSkeleton from '@/components/activity/ActivityFeedSkeleton.vue'
 import TabbedPageHeader from '@/components/TabbedPageHeader.vue'
 import { useError } from '@/composables/useError'
 import { useNewsUnread } from '@/composables/useNewsUnread'
@@ -355,8 +354,9 @@ watch(activeTab, (newTab: string) => {
 const handleTabClick = async (tabKey: string) => {
   if (tabKey === activeTab.value || isLoading.value) return
 
+  // Switch tab UI immediately so skeletons match the destination (less CLS).
   markNewsIfNeeded(tabKey)
-  isLoading.value = true
+  activeTab.value = tabKey
   clearError()
   currentPage.value = 1
   if (isCursorTab(tabKey)) {
@@ -365,15 +365,12 @@ const handleTabClick = async (tabKey: string) => {
   }
   try {
     await fetchData(tabKey)
-    activeTab.value = tabKey
     router.replace({
       query: { ...route.query, tab: tabKey, page: undefined },
     })
   } catch (e) {
     const data = e.response?.data
     showError(data?.detail ?? data?.error ?? 'Failed to load data')
-  } finally {
-    isLoading.value = false
   }
   await scrollListViewportToTop()
 }

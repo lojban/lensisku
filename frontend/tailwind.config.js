@@ -595,16 +595,19 @@ export default {
           '@apply flex shrink-0 items-center gap-2 border-b border-gray-200/60 bg-white px-3 py-1.5':
             {},
         },
+        '.discussion-main__header--tap-open': {
+          '@apply cursor-pointer': {},
+        },
+        /** One line; ellipsis on the whole title (label + word), not per child. */
         '.discussion-main__title': {
-          '@apply flex min-w-0 flex-1 items-baseline gap-x-1.5 overflow-hidden text-sm font-semibold leading-snug text-gray-800':
+          '@apply min-w-0 flex-1 select-none truncate text-sm font-semibold leading-snug text-gray-800':
             {},
         },
         '.discussion-main__title-label': {
-          '@apply shrink-0 italic font-normal text-gray-500': {},
+          '@apply mr-1.5 italic font-normal text-gray-500': {},
         },
-        /** Word / entry name — ellipsis when the flex row is tight (same idea as DefinitionCard). */
         '.discussion-main__title-word': {
-          '@apply min-w-0 truncate font-semibold text-gray-800': {},
+          '@apply font-semibold text-gray-800': {},
         },
         '.discussion-main__title-word--link': {
           '@apply text-blue-700 hover:text-blue-800 hover:underline': {},
@@ -1189,6 +1192,34 @@ export default {
         },
         '.card-streak-skeleton-line--points': {
           '@apply max-w-[2.25rem]': {},
+        },
+        /**
+         * Feed / card loading placeholders (Recent Changes tabs, etc.).
+         * Prefer these over one-off gray bars so bone radius/color stay consistent.
+         */
+        '.skeleton-pulse': {
+          '@apply animate-pulse': {},
+          '@media (prefers-reduced-motion: reduce)': {
+            animation: 'none',
+          },
+        },
+        '.skeleton-bone': {
+          '@apply rounded bg-gray-200': {},
+        },
+        '.skeleton-bone--soft': {
+          '@apply rounded bg-gray-100': {},
+        },
+        /** Matches DefinitionCard chrome (border + shadow + padding shell). */
+        '.skeleton-definition-card': {
+          '@apply w-full overflow-hidden bg-white border rounded-lg shadow': {},
+        },
+        /** Matches CommentItem / RecentChangeItem chrome (`p-3 my-2` + border). */
+        '.skeleton-comment-item': {
+          '@apply bg-white border rounded-lg p-3 my-2 min-w-0 max-w-full overflow-hidden': {},
+        },
+        /** Matches `.surface-activity-row` without hover/cursor (loading state). */
+        '.skeleton-activity-row': {
+          '@apply space-y-2 bg-white p-4 rounded-lg border border-gray-200': {},
         },
         '.card-study-area': {
           '@apply flex items-center justify-center min-h-[5.5rem] py-6 sm:py-8 flex-shrink-0': {},
