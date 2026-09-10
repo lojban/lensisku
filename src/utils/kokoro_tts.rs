@@ -327,6 +327,9 @@ mod tests {
         assert_eq!(KOKORO_VOCAB.get(&'ː'), Some(&158));
         assert_eq!(KOKORO_VOCAB.get(&'ˈ'), Some(&156));
         assert_eq!(KOKORO_VOCAB.get(&' '), Some(&16));
+        // IPA eng/script-g only — Latin `g` is absent and would be dropped in tokenize.
+        assert_eq!(KOKORO_VOCAB.get(&'ɡ'), Some(&92));
+        assert!(KOKORO_VOCAB.get(&'g').is_none());
     }
 
     #[test]

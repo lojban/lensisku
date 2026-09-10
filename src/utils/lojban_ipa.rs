@@ -46,13 +46,19 @@ static TERMINATOR_WORDS: Lazy<std::collections::HashSet<String>> = Lazy::new(|| 
         .collect()
 });
 
-/// Syllable nuclei after krulermorna: diphthong letters, glide + vowel, or a simple vowel.
+/// Syllable nuclei after krulermorna: diphthong letters, glide + vowel, or a simple vowel
+/// (including unstressed `y` / schwa).
 static NUCLEUS_PATTERN: Lazy<Regex> =
     Lazy::new(|| Regex::new(r"ą|ę|ǫ|ḁ|ɩ[aeiouy]|[aeiouy]").expect("nucleus_pattern"));
 
-/// Index *before* which to insert primary stress (ˈ), Lojban penultimate syllable.
+/// Stressable nuclei only: `y` is never stressed and is not counted when finding the
+/// penultimate syllable. Diphthongs (`au`→`ḁ`, etc.) remain a single nucleus.
+static STRESSABLE_NUCLEUS_PATTERN: Lazy<Regex> =
+    Lazy::new(|| Regex::new(r"ą|ę|ǫ|ḁ|ɩ[aeiou]|[aeiou]").expect("stressable_nucleus_pattern"));
+
+/// Index *before* which to insert primary stress (ˈ), Lojban penultimate stressable syllable.
 fn stress_insert_index(word: &str) -> Option<usize> {
-    let indices: Vec<usize> = NUCLEUS_PATTERN
+    let indices: Vec<usize> = STRESSABLE_NUCLEUS_PATTERN
         .find_iter(word)
         .filter_map(|m| m.ok())
         .map(|m| m.start())
@@ -81,7 +87,6 @@ static IPA_RULES: Lazy<Vec<(Regex, &'static str)>> = Lazy::new(|| {
         ("wo", "wɔː"),
         ("wu", "wuː"),
         ("wy", "wəː"),
-        ("ng", "n.g"),
         ("a", "ɑː"),
         ("e", "ɛː"),
         ("i", "iː"),
@@ -100,14 +105,15 @@ static IPA_RULES: Lazy<Vec<(Regex, &'static str)>> = Lazy::new(|| {
         ("z", "z"),
         ("f", "f"),
         ("v", "v"),
-        ("x", "x"),
+        ("x", "xx"),
         ("'", "h"),
-        ("r", "rr"),
+        ("r", "ɹ"),
         ("n", "n"),
         ("m", "m"),
         ("l", "l"),
         ("b", "b"),
         ("d", "d"),
+        // Kokoro vocab has IPA `ɡ` (U+0261), not Latin `g` — Latin `g` is dropped in tokenize.
         ("g", "ɡ"),
         ("k", "k"),
         ("p", "p"),
@@ -240,8 +246,34 @@ mod tests {
     }
 
     #[test]
-    fn x_maps_to_latin_x() {
+    fn x_maps_to_double_latin_x() {
         let ipa = lojban_to_ipa("xekce");
-        assert_eq!(ipa, "xˈɛːkʃɛː.");
+        assert_eq!(ipa, "xxˈɛːkʃɛː.");
+    }
+
+    #[test]
+    fn dotybau_stresses_penultimate_skipping_y() {
+        // krulermorna: au → ḁ (one nucleus). y is not stressable, so penult is `o`.
+        let ipa = lojban_to_ipa("dotybau");
+        assert_eq!(ipa, "dˈoːtəːbaʊ.");
+        assert!(
+            !ipa.contains("tˈə") && !ipa.contains("ˈə"),
+            "y-syllable must not take stress, got {ipa:?}"
+        );
+    }
+
+    #[test]
+    fn ng_is_contiguous_n_plus_ipa_g() {
+        // No special `ng`→`n.g` rule: `.` is a pause token in Kokoro. Latin `g` is not in
+        // vocab, so `g` must map to IPA `ɡ` or the cluster collapses to bare `n`.
+        let ipa = lojban_to_ipa("zungi");
+        assert!(
+            ipa.contains("nɡ"),
+            "expected contiguous n+ɡ cluster, got {ipa:?}"
+        );
+        assert!(
+            !ipa.contains("n.ɡ") && !ipa.contains("n.g"),
+            "ng must not insert a pause, got {ipa:?}"
+        );
     }
 }
