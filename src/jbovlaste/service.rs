@@ -107,6 +107,34 @@ fn semantic_similarity_threshold() -> f64 {
         .unwrap_or(0.4)
 }
 
+/// Canonical spellings of valsi that exactly match the query (non-canonical → canonical).
+/// Empty when the query is already canonical or has no linked `canonical_word`.
+async fn lookup_canonical_aliases_for_search(
+    transaction: &Transaction<'_>,
+    search_term: &str,
+    lojban_search_term: &str,
+) -> Result<Vec<String>, Box<dyn std::error::Error>> {
+    if search_term.trim().is_empty() {
+        return Ok(Vec::new());
+    }
+    let rows = transaction
+        .query(
+            r#"
+            SELECT DISTINCT canonical_word
+            FROM valsi
+            WHERE source_langid = 1
+              AND canonical_word IS NOT NULL
+              AND canonical_word <> ''
+              AND (word = $1 OR word = $2)
+              AND canonical_word IS DISTINCT FROM $1
+              AND canonical_word IS DISTINCT FROM $2
+            "#,
+            &[&search_term, &lojban_search_term],
+        )
+        .await?;
+    Ok(rows.into_iter().map(|r| r.get(0)).collect())
+}
+
 pub async fn semantic_search(
     pool: &Pool,
     params: SearchDefinitionsParams,
@@ -128,13 +156,18 @@ pub async fn semantic_search(
     let vector = pgvector::Vector::from(query_embedding);
     // Lojban h/apostrophe equivalence: also search for the valsi form with '
     let lojban_search_term = params.search_term.replace('h', "'");
+    let canonical_aliases =
+        lookup_canonical_aliases_for_search(&transaction, &params.search_term, &lojban_search_term)
+            .await?;
     // Start with parameters needed for both queries (main and count)
-    // $1 = vector, $2 = languages_slice, $3 = search_term, $4 = lojban_search_term
+    // $1 = vector, $2 = languages_slice, $3 = search_term, $4 = lojban_search_term,
+    // $5 = canonical_aliases (non-canonical query → its canonical word(s))
     let mut query_params: Vec<&(dyn tokio_postgres::types::ToSql + Sync)> = vec![
         &vector,
         &languages_slice,
         &params.search_term,
         &lojban_search_term,
+        &canonical_aliases,
     ];
 
     // Build dynamic conditions and add parameters
@@ -190,6 +223,8 @@ pub async fn semantic_search(
         "AND d.embedding IS NOT NULL".to_string()
     } else {
         r#"AND (d.embedding IS NOT NULL OR v.word = $3 OR v.word = $4 OR v.word ILIKE $3 OR v.word ILIKE $4
+                   OR d.cached_canonical_word = $3 OR d.cached_canonical_word = $4
+                   OR v.word = ANY($5)
                    OR (d.cached_rafsi IS NOT NULL AND ($3 = ANY(string_to_array(d.cached_rafsi, ' ')) OR $4 = ANY(string_to_array(d.cached_rafsi, ' '))))
                    OR (d.cached_glosswords IS NOT NULL AND d.cached_glosswords != ''
                        AND LOWER($3) = ANY(string_to_array(d.cached_glosswords, '|'))))"#
@@ -229,7 +264,9 @@ pub async fn semantic_search(
                 CASE WHEN d.embedding IS NOT NULL THEN d.embedding <=> $1::vector END as similarity,
                 COALESCE(dv.score, 0)::bigint AS score,
                 CASE 
-                    WHEN v.word = $3 OR v.word = $4 THEN 0 
+                    WHEN v.word = $3 OR v.word = $4
+                         OR d.cached_canonical_word = $3 OR d.cached_canonical_word = $4
+                         OR v.word = ANY($5) THEN 0 
                     WHEN d.cached_rafsi IS NOT NULL AND ($3 = ANY(string_to_array(d.cached_rafsi, ' ')) OR $4 = ANY(string_to_array(d.cached_rafsi, ' '))) THEN 1
                     WHEN d.cached_glosswords IS NOT NULL AND d.cached_glosswords != ''
                          AND LOWER($3) = ANY(string_to_array(d.cached_glosswords, '|')) THEN 2
@@ -301,7 +338,9 @@ pub async fn semantic_search(
                 (di.definition_id IS NOT NULL) as has_image,
                 CASE WHEN d.embedding IS NOT NULL THEN d.embedding <=> $1::vector END as similarity,
                 CASE 
-                    WHEN v.word = $3 OR v.word = $4 THEN 0 
+                    WHEN v.word = $3 OR v.word = $4
+                         OR d.cached_canonical_word = $3 OR d.cached_canonical_word = $4
+                         OR v.word = ANY($5) THEN 0 
                     WHEN d.cached_rafsi IS NOT NULL AND ($3 = ANY(string_to_array(d.cached_rafsi, ' ')) OR $4 = ANY(string_to_array(d.cached_rafsi, ' '))) THEN 1
                     WHEN d.cached_glosswords IS NOT NULL AND d.cached_glosswords != ''
                          AND LOWER($3) = ANY(string_to_array(d.cached_glosswords, '|')) THEN 2
@@ -589,8 +628,17 @@ pub async fn semantic_graph(
     };
 
     let vector = pgvector::Vector::from(query_embedding);
-    let mut query_params: Vec<&(dyn tokio_postgres::types::ToSql + Sync)> =
-        vec![&vector, &languages_slice, &params.search_term];
+    let lojban_search_term = params.search_term.replace('h', "'");
+    let canonical_aliases =
+        lookup_canonical_aliases_for_search(&transaction, &params.search_term, &lojban_search_term)
+            .await?;
+    // $1 = vector, $2 = languages, $3 = search_term, $4 = canonical_aliases
+    let mut query_params: Vec<&(dyn tokio_postgres::types::ToSql + Sync)> = vec![
+        &vector,
+        &languages_slice,
+        &params.search_term,
+        &canonical_aliases,
+    ];
 
     let mut conditions = vec![];
 
@@ -654,7 +702,7 @@ pub async fn semantic_graph(
                 d.embedding <=> $1::vector as similarity,
                 d.embedding,
                 CASE
-                    WHEN v.word = $3 THEN 0
+                    WHEN v.word = $3 OR d.cached_canonical_word = $3 OR v.word = ANY($4) THEN 0
                     WHEN v.word ILIKE $3 THEN 1
                     ELSE 2
                 END as exact_match_rank
@@ -1030,6 +1078,9 @@ pub async fn search_definitions(
     let lojban_search_term = params.search_term.replace('h', "'");
     let lojban_like_pattern = format!("%{}%", lojban_search_term);
     let lojban_word_boundary_pattern = format!(r"\y{}\y", lojban_search_term);
+    let canonical_aliases =
+        lookup_canonical_aliases_for_search(&transaction, &params.search_term, &lojban_search_term)
+            .await?;
 
     // Convert Option<Vec<i32>> to Option<&[i32]> for Postgres
     let languages_slice: Option<&[i32]> = params.languages.as_deref();
@@ -1047,6 +1098,8 @@ pub async fn search_definitions(
         _ => "ASC",
     };
 
+    // $1 search, $2 like, $3 boundary, $4 langs, $5 per_page, $6 offset,
+    // $7 lojban search, $8 lojban like, $9 lojban boundary, $10 canonical aliases
     let mut query_params: Vec<&(dyn tokio_postgres::types::ToSql + Sync)> = vec![
         &params.search_term,
         &like_pattern,
@@ -1057,6 +1110,7 @@ pub async fn search_definitions(
         &lojban_search_term,
         &lojban_like_pattern,
         &lojban_word_boundary_pattern,
+        &canonical_aliases,
     ];
 
     // Build dynamic conditions
@@ -1135,6 +1189,9 @@ pub async fn search_definitions(
                 CASE
                     WHEN d.cached_valsiword = $1 THEN 13
                     WHEN d.cached_valsiword = $7 THEN 13
+                    WHEN d.cached_canonical_word = $1 THEN 13
+                    WHEN d.cached_canonical_word = $7 THEN 13
+                    WHEN d.cached_valsiword = ANY($10) THEN 13
                     WHEN d.cached_glosswords IS NOT NULL AND d.cached_glosswords != '' 
                          AND LOWER($1) = ANY(string_to_array(d.cached_glosswords, '|')) THEN 12
                     WHEN d.cached_valsiword ILIKE $1 THEN 11
@@ -1161,7 +1218,9 @@ pub async fn search_definitions(
                 WHERE t.valsiid = d.valsiid AND t.definitionid = d.definitionid
             ) cc ON true
             LEFT JOIN definition_images_flag di ON di.definition_id = d.definitionid
-            WHERE (d.cached_search_text ILIKE $2 OR d.cached_valsiword ILIKE $8)
+            WHERE (d.cached_search_text ILIKE $2 OR d.cached_valsiword ILIKE $8
+                   OR d.cached_canonical_word = $1 OR d.cached_canonical_word = $7
+                   OR d.cached_valsiword = ANY($10))
                   AND (d.langid = ANY($4) OR $4 IS NULL)
                   {additional_conditions}
         ),
@@ -1204,6 +1263,9 @@ pub async fn search_definitions(
                 CASE
                     WHEN d.cached_valsiword = $1 THEN 13
                     WHEN d.cached_valsiword = $7 THEN 13
+                    WHEN d.cached_canonical_word = $1 THEN 13
+                    WHEN d.cached_canonical_word = $7 THEN 13
+                    WHEN d.cached_valsiword = ANY($10) THEN 13
                     WHEN d.cached_glosswords IS NOT NULL AND d.cached_glosswords != ''
                          AND LOWER($1) = ANY(string_to_array(d.cached_glosswords, '|')) THEN 12
                     WHEN d.cached_valsiword ILIKE $1 THEN 11
@@ -1224,7 +1286,9 @@ pub async fn search_definitions(
             FROM definitions d
             LEFT JOIN vote_scores dv ON dv.definitionid = d.definitionid
             LEFT JOIN definition_images_flag di ON di.definition_id = d.definitionid
-            WHERE (d.cached_search_text ILIKE $2 OR d.cached_valsiword ILIKE $8)
+            WHERE (d.cached_search_text ILIKE $2 OR d.cached_valsiword ILIKE $8
+                   OR d.cached_canonical_word = $1 OR d.cached_canonical_word = $7
+                   OR d.cached_valsiword = ANY($10))
                   AND (d.langid = ANY($4) OR $4 IS NULL)
                   {additional_conditions}
         ),
@@ -1339,6 +1403,7 @@ pub async fn search_definitions(
         &lojban_search_term,           // $5
         &lojban_like_pattern,          // $6
         &lojban_word_boundary_pattern, // $7
+        &canonical_aliases,            // $8
     ];
     // No per_page, no offset.
 
@@ -1390,6 +1455,9 @@ pub async fn search_definitions(
             CASE
                 WHEN d.cached_valsiword = $1 THEN 13
                 WHEN d.cached_valsiword = $5 THEN 13
+                WHEN d.cached_canonical_word = $1 THEN 13
+                WHEN d.cached_canonical_word = $5 THEN 13
+                WHEN d.cached_valsiword = ANY($8) THEN 13
                 WHEN d.cached_glosswords IS NOT NULL AND d.cached_glosswords != '' 
                      AND LOWER($1) = ANY(string_to_array(d.cached_glosswords, '|')) THEN 12
                 WHEN d.cached_valsiword ILIKE $1 THEN 11
@@ -1408,7 +1476,9 @@ pub async fn search_definitions(
                 ELSE 0
             END as rank
         FROM definitions d
-        WHERE (d.cached_search_text ILIKE $2 OR d.cached_valsiword ILIKE $6)
+        WHERE (d.cached_search_text ILIKE $2 OR d.cached_valsiword ILIKE $6
+               OR d.cached_canonical_word = $1 OR d.cached_canonical_word = $5
+               OR d.cached_valsiword = ANY($8))
               AND (d.langid = ANY($4) OR $4 IS NULL)
               {}
     )
@@ -1447,6 +1517,9 @@ pub async fn fast_search_definitions(
     let lojban_search_term = params.search_term.replace('h', "'");
     let lojban_like_pattern = format!("%{}%", lojban_search_term);
     let lojban_word_boundary_pattern = format!(r"\y{}\y", lojban_search_term);
+    let canonical_aliases =
+        lookup_canonical_aliases_for_search(&transaction, &params.search_term, &lojban_search_term)
+            .await?;
 
     // Convert Option<Vec<i32>> to Option<&[i32]> for Postgres
     let languages_slice: Option<&[i32]> = params.languages.as_deref();
@@ -1464,8 +1537,9 @@ pub async fn fast_search_definitions(
         _ => "ASC",
     };
 
-    // Start with base parameters (will be $1-$8)
-    // Order: $1=search_term, $2=like_pattern, $3=word_boundary_pattern, $4=languages_slice, $5=source_langid_value, $6=lojban_search_term, $7=lojban_like_pattern, $8=lojban_word_boundary_pattern
+    // $1=search_term, $2=like_pattern, $3=word_boundary_pattern, $4=languages_slice,
+    // $5=source_langid_value, $6=lojban_search_term, $7=lojban_like_pattern,
+    // $8=lojban_word_boundary_pattern, $9=canonical_aliases
     let source_langid_value = params.source_langid.unwrap_or(1);
     let mut query_params: Vec<&(dyn tokio_postgres::types::ToSql + Sync)> = vec![
         &params.search_term,
@@ -1476,9 +1550,10 @@ pub async fn fast_search_definitions(
         &lojban_search_term,
         &lojban_like_pattern,
         &lojban_word_boundary_pattern,
+        &canonical_aliases,
     ];
 
-    // Build dynamic conditions (these will be $9, $10, $11, etc.)
+    // Build dynamic conditions (these will be $10, $11, etc.)
     let mut conditions = vec![];
 
     // Add selmaho condition if present
@@ -1537,6 +1612,9 @@ pub async fn fast_search_definitions(
             CASE
                 WHEN d.cached_valsiword = $1::text THEN 13
                 WHEN d.cached_valsiword = $6::text THEN 13
+                WHEN d.cached_canonical_word = $1::text THEN 13
+                WHEN d.cached_canonical_word = $6::text THEN 13
+                WHEN d.cached_valsiword = ANY($9::text[]) THEN 13
                 WHEN d.cached_glosswords IS NOT NULL AND d.cached_glosswords != '' 
                      AND LOWER($1::text) = ANY(string_to_array(d.cached_glosswords, '|')) THEN 12
                 WHEN d.cached_valsiword ILIKE $1::text THEN 11
@@ -1550,7 +1628,9 @@ pub async fn fast_search_definitions(
                 ELSE 0
             END as rank
         FROM definitions d
-        WHERE (d.cached_search_text ILIKE $2::text OR d.cached_valsiword ILIKE $7::text)
+        WHERE (d.cached_search_text ILIKE $2::text OR d.cached_valsiword ILIKE $7::text
+               OR d.cached_canonical_word = $1::text OR d.cached_canonical_word = $6::text
+               OR d.cached_valsiword = ANY($9::text[]))
         AND (d.langid = ANY($4::int4[]) OR $4::int4[] IS NULL)
         AND d.cached_source_langid = $5::int4
         {additional_conditions}
@@ -1617,15 +1697,17 @@ pub async fn fast_search_definitions(
         });
     }
 
-    // Count query - simplified using cached_search_text, no JOINs
-    // Parameters: $1=like_pattern, $2=languages_slice, $3=source_langid_value, $4=lojban_like_pattern
-    let base_conditions = r#"(d.cached_search_text ILIKE $1::text OR d.cached_valsiword ILIKE $4::text)
+    // Count query - include exact canonical / reverse-canonical matches too
+    // $1=like, $2=langs, $3=source_langid, $4=lojban_like, $5=search, $6=lojban_search, $7=canonical_aliases
+    let base_conditions = r#"(d.cached_search_text ILIKE $1::text OR d.cached_valsiword ILIKE $4::text
+                  OR d.cached_canonical_word = $5::text OR d.cached_canonical_word = $6::text
+                  OR d.cached_valsiword = ANY($7::text[]))
                   AND (d.langid = ANY($2) OR $2 IS NULL)
                   AND d.cached_source_langid = $3"#;
 
     // Build dynamic conditions with correct parameter numbering
     let mut conditions = vec![];
-    let mut current_param_num = 5; // Start from 5 since we use 1-4 in base
+    let mut current_param_num = 8; // Start from 8 since we use 1-7 in base
 
     if params.selmaho.is_some() {
         conditions.push(format!("AND d.selmaho = ${}", current_param_num));
@@ -1655,12 +1737,14 @@ pub async fn fast_search_definitions(
     WHERE {base_conditions} {additional_conditions}"#
     );
 
-    // Create params for count query - no search_term needed, only like_pattern
     let mut count_params: Vec<&(dyn tokio_postgres::types::ToSql + Sync)> = vec![
-        &like_pattern,        // $1
-        &languages_slice,     // $2
-        &source_langid_value, // $3
-        &lojban_like_pattern, // $4
+        &like_pattern,          // $1
+        &languages_slice,       // $2
+        &source_langid_value,   // $3
+        &lojban_like_pattern,   // $4
+        &params.search_term,    // $5
+        &lojban_search_term,    // $6
+        &canonical_aliases,     // $7
     ];
 
     // Add conditional parameters in the correct order, matching additional_conditions logic
