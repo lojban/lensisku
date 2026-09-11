@@ -107,8 +107,22 @@ fn semantic_similarity_threshold() -> f64 {
         .unwrap_or(0.4)
 }
 
-/// Canonical spellings of valsi that exactly match the query (non-canonical → canonical).
-/// Empty when the query is already canonical or has no linked `canonical_word`.
+/// Cheap gate before morphology: single Lojban-letter token, not an English phrase.
+fn looks_like_possible_lujvo_query(search_term: &str) -> bool {
+    let t = search_term.trim();
+    if t.len() < 4 || t.contains(char::is_whitespace) {
+        return false;
+    }
+    t.chars()
+        .all(|c| matches!(c, 'a'..='z' | 'A'..='Z' | '\'' | '.' | ','))
+}
+
+/// Canonical spellings linked to the query for exact-match search boosts.
+///
+/// 1. Existing headword → its stamped `canonical_word` (if any).
+/// 2. Missing headword that still parses as a classical lujvo → reconstructed
+///    score-optimal form, so search hits that entry and variants via
+///    `cached_canonical_word` (same as searching an existing lujvo).
 async fn lookup_canonical_aliases_for_search(
     transaction: &Transaction<'_>,
     search_term: &str,
@@ -117,22 +131,46 @@ async fn lookup_canonical_aliases_for_search(
     if search_term.trim().is_empty() {
         return Ok(Vec::new());
     }
+
+    // One lookup: any matching headword row (with or without canonical_word).
     let rows = transaction
         .query(
             r#"
             SELECT DISTINCT canonical_word
             FROM valsi
             WHERE source_langid = 1
-              AND canonical_word IS NOT NULL
-              AND canonical_word <> ''
               AND (word = $1 OR word = $2)
-              AND canonical_word IS DISTINCT FROM $1
-              AND canonical_word IS DISTINCT FROM $2
             "#,
             &[&search_term, &lojban_search_term],
         )
         .await?;
-    Ok(rows.into_iter().map(|r| r.get(0)).collect())
+
+    if !rows.is_empty() {
+        // Known headword: never reconstruct; only use a stamped link to another spelling.
+        return Ok(rows
+            .into_iter()
+            .filter_map(|r| r.get::<_, Option<String>>(0))
+            .filter(|c| !c.is_empty() && c != search_term && c != lojban_search_term)
+            .collect());
+    }
+
+    if !looks_like_possible_lujvo_query(search_term) {
+        return Ok(Vec::new());
+    }
+
+    let maps = load_owned_rafsi_maps(transaction).await.unwrap_or_default();
+    let options = maps.options();
+    let classification = classify_lujvo_spelling(search_term, &options).or_else(|| {
+        (search_term != lojban_search_term)
+            .then(|| classify_lujvo_spelling(lojban_search_term, &options))
+            .flatten()
+    });
+
+    Ok(classification
+        .map(|c| c.canonical_word)
+        .filter(|c| c != search_term && c != lojban_search_term)
+        .into_iter()
+        .collect())
 }
 
 pub async fn semantic_search(
@@ -224,6 +262,7 @@ pub async fn semantic_search(
     } else {
         r#"AND (d.embedding IS NOT NULL OR v.word = $3 OR v.word = $4 OR v.word ILIKE $3 OR v.word ILIKE $4
                    OR d.cached_canonical_word = $3 OR d.cached_canonical_word = $4
+                   OR d.cached_canonical_word = ANY($5)
                    OR v.word = ANY($5)
                    OR (d.cached_rafsi IS NOT NULL AND ($3 = ANY(string_to_array(d.cached_rafsi, ' ')) OR $4 = ANY(string_to_array(d.cached_rafsi, ' '))))
                    OR (d.cached_glosswords IS NOT NULL AND d.cached_glosswords != ''
@@ -266,6 +305,7 @@ pub async fn semantic_search(
                 CASE 
                     WHEN v.word = $3 OR v.word = $4
                          OR d.cached_canonical_word = $3 OR d.cached_canonical_word = $4
+                         OR d.cached_canonical_word = ANY($5)
                          OR v.word = ANY($5) THEN 0 
                     WHEN d.cached_rafsi IS NOT NULL AND ($3 = ANY(string_to_array(d.cached_rafsi, ' ')) OR $4 = ANY(string_to_array(d.cached_rafsi, ' '))) THEN 1
                     WHEN d.cached_glosswords IS NOT NULL AND d.cached_glosswords != ''
@@ -340,6 +380,7 @@ pub async fn semantic_search(
                 CASE 
                     WHEN v.word = $3 OR v.word = $4
                          OR d.cached_canonical_word = $3 OR d.cached_canonical_word = $4
+                         OR d.cached_canonical_word = ANY($5)
                          OR v.word = ANY($5) THEN 0 
                     WHEN d.cached_rafsi IS NOT NULL AND ($3 = ANY(string_to_array(d.cached_rafsi, ' ')) OR $4 = ANY(string_to_array(d.cached_rafsi, ' '))) THEN 1
                     WHEN d.cached_glosswords IS NOT NULL AND d.cached_glosswords != ''
@@ -702,7 +743,9 @@ pub async fn semantic_graph(
                 d.embedding <=> $1::vector as similarity,
                 d.embedding,
                 CASE
-                    WHEN v.word = $3 OR d.cached_canonical_word = $3 OR v.word = ANY($4) THEN 0
+                    WHEN v.word = $3 OR d.cached_canonical_word = $3
+                         OR d.cached_canonical_word = ANY($4)
+                         OR v.word = ANY($4) THEN 0
                     WHEN v.word ILIKE $3 THEN 1
                     ELSE 2
                 END as exact_match_rank
@@ -1192,6 +1235,7 @@ pub async fn search_definitions(
                     WHEN d.cached_canonical_word = $1 THEN 13
                     WHEN d.cached_canonical_word = $7 THEN 13
                     WHEN d.cached_valsiword = ANY($10) THEN 13
+                    WHEN d.cached_canonical_word = ANY($10) THEN 13
                     WHEN d.cached_glosswords IS NOT NULL AND d.cached_glosswords != '' 
                          AND LOWER($1) = ANY(string_to_array(d.cached_glosswords, '|')) THEN 12
                     WHEN d.cached_valsiword ILIKE $1 THEN 11
@@ -1220,7 +1264,8 @@ pub async fn search_definitions(
             LEFT JOIN definition_images_flag di ON di.definition_id = d.definitionid
             WHERE (d.cached_search_text ILIKE $2 OR d.cached_valsiword ILIKE $8
                    OR d.cached_canonical_word = $1 OR d.cached_canonical_word = $7
-                   OR d.cached_valsiword = ANY($10))
+                   OR d.cached_valsiword = ANY($10)
+                   OR d.cached_canonical_word = ANY($10))
                   AND (d.langid = ANY($4) OR $4 IS NULL)
                   {additional_conditions}
         ),
@@ -1266,6 +1311,7 @@ pub async fn search_definitions(
                     WHEN d.cached_canonical_word = $1 THEN 13
                     WHEN d.cached_canonical_word = $7 THEN 13
                     WHEN d.cached_valsiword = ANY($10) THEN 13
+                    WHEN d.cached_canonical_word = ANY($10) THEN 13
                     WHEN d.cached_glosswords IS NOT NULL AND d.cached_glosswords != ''
                          AND LOWER($1) = ANY(string_to_array(d.cached_glosswords, '|')) THEN 12
                     WHEN d.cached_valsiword ILIKE $1 THEN 11
@@ -1288,7 +1334,8 @@ pub async fn search_definitions(
             LEFT JOIN definition_images_flag di ON di.definition_id = d.definitionid
             WHERE (d.cached_search_text ILIKE $2 OR d.cached_valsiword ILIKE $8
                    OR d.cached_canonical_word = $1 OR d.cached_canonical_word = $7
-                   OR d.cached_valsiword = ANY($10))
+                   OR d.cached_valsiword = ANY($10)
+                   OR d.cached_canonical_word = ANY($10))
                   AND (d.langid = ANY($4) OR $4 IS NULL)
                   {additional_conditions}
         ),
@@ -1458,6 +1505,7 @@ pub async fn search_definitions(
                 WHEN d.cached_canonical_word = $1 THEN 13
                 WHEN d.cached_canonical_word = $5 THEN 13
                 WHEN d.cached_valsiword = ANY($8) THEN 13
+                WHEN d.cached_canonical_word = ANY($8) THEN 13
                 WHEN d.cached_glosswords IS NOT NULL AND d.cached_glosswords != '' 
                      AND LOWER($1) = ANY(string_to_array(d.cached_glosswords, '|')) THEN 12
                 WHEN d.cached_valsiword ILIKE $1 THEN 11
@@ -1478,7 +1526,8 @@ pub async fn search_definitions(
         FROM definitions d
         WHERE (d.cached_search_text ILIKE $2 OR d.cached_valsiword ILIKE $6
                OR d.cached_canonical_word = $1 OR d.cached_canonical_word = $5
-               OR d.cached_valsiword = ANY($8))
+               OR d.cached_valsiword = ANY($8)
+               OR d.cached_canonical_word = ANY($8))
               AND (d.langid = ANY($4) OR $4 IS NULL)
               {}
     )
@@ -1615,6 +1664,7 @@ pub async fn fast_search_definitions(
                 WHEN d.cached_canonical_word = $1::text THEN 13
                 WHEN d.cached_canonical_word = $6::text THEN 13
                 WHEN d.cached_valsiword = ANY($9::text[]) THEN 13
+                WHEN d.cached_canonical_word = ANY($9::text[]) THEN 13
                 WHEN d.cached_glosswords IS NOT NULL AND d.cached_glosswords != '' 
                      AND LOWER($1::text) = ANY(string_to_array(d.cached_glosswords, '|')) THEN 12
                 WHEN d.cached_valsiword ILIKE $1::text THEN 11
@@ -1630,7 +1680,8 @@ pub async fn fast_search_definitions(
         FROM definitions d
         WHERE (d.cached_search_text ILIKE $2::text OR d.cached_valsiword ILIKE $7::text
                OR d.cached_canonical_word = $1::text OR d.cached_canonical_word = $6::text
-               OR d.cached_valsiword = ANY($9::text[]))
+               OR d.cached_valsiword = ANY($9::text[])
+               OR d.cached_canonical_word = ANY($9::text[]))
         AND (d.langid = ANY($4::int4[]) OR $4::int4[] IS NULL)
         AND d.cached_source_langid = $5::int4
         {additional_conditions}
@@ -1701,7 +1752,8 @@ pub async fn fast_search_definitions(
     // $1=like, $2=langs, $3=source_langid, $4=lojban_like, $5=search, $6=lojban_search, $7=canonical_aliases
     let base_conditions = r#"(d.cached_search_text ILIKE $1::text OR d.cached_valsiword ILIKE $4::text
                   OR d.cached_canonical_word = $5::text OR d.cached_canonical_word = $6::text
-                  OR d.cached_valsiword = ANY($7::text[]))
+                  OR d.cached_valsiword = ANY($7::text[])
+                  OR d.cached_canonical_word = ANY($7::text[]))
                   AND (d.langid = ANY($2) OR $2 IS NULL)
                   AND d.cached_source_langid = $3"#;
 
@@ -6797,3 +6849,18 @@ pub async fn get_definition_link(
         None => Ok(None),
     }
 }
+
+#[cfg(test)]
+mod search_canonical_alias_tests {
+    use super::looks_like_possible_lujvo_query;
+
+    #[test]
+    fn looks_like_possible_lujvo_rejects_phrases() {
+        assert!(looks_like_possible_lujvo_query("valykra"));
+        assert!(looks_like_possible_lujvo_query("bardymlatu"));
+        assert!(!looks_like_possible_lujvo_query("big cat"));
+        assert!(!looks_like_possible_lujvo_query("cat"));
+        assert!(!looks_like_possible_lujvo_query(""));
+    }
+}
+
