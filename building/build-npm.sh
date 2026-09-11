@@ -22,9 +22,15 @@ fi
 
 SCRIPT_DIR="$(readlink -f "$(dirname "$0")")"
 SRC_DIR="$(readlink -f "$(dirname "$0")/..")"
+PNPM_VERSION="$(node -p "require('$SRC_DIR/frontend/package.json').packageManager.replace(/^pnpm@/, '')")"
 
 cd "$SCRIPT_DIR"
 
-podman build -t "build-npm" --build-arg USERNAME="$(id -un)" --build-arg UID="$(id -u)" --build-arg GID="$(id -g)" -f Dockerfile.npm .
+podman build -t "build-npm" \
+  --build-arg USERNAME="$(id -un)" \
+  --build-arg UID="$(id -u)" \
+  --build-arg GID="$(id -g)" \
+  --build-arg PNPM_VERSION="$PNPM_VERSION" \
+  -f Dockerfile.npm .
 
 podman run --userns=keep-id --rm -v $SRC_DIR:/src -v $LOCAL_DIR:/home/$(id -un)/.npm -w /src/frontend --entrypoint=/bin/bash -it build-npm ../building/build-npm-inside.sh

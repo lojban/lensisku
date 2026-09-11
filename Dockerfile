@@ -50,16 +50,14 @@ RUN --mount=type=cache,target=/usr/local/cargo/registry \
 # Build stage for Vue.js frontend
 FROM node:24-alpine as frontend-builder
 WORKDIR /usr/src/app
-# Copy package.json, lockfile, and pnpm 10 allowBuilds (esbuild, vue-demi postinstall)
+# Copy package.json, lockfile, and pnpm allowBuilds (esbuild, vue-demi postinstall)
 COPY frontend/package.json ./
 COPY frontend/pnpm-lock.yaml ./
 COPY frontend/pnpm-workspace.yaml ./
-# Install pnpm using standalone installer (avoids npm registry network issues)
-# Try corepack first, fallback to standalone installer if needed
-RUN apk add curl && \
-    (corepack enable && corepack prepare pnpm@latest --activate || \
-     curl -fsSL https://get.pnpm.io/install.sh | sh -)
-ENV PATH="/root/.local/share/pnpm:$PATH"
+# Use Corepack with the packageManager pin (avoids Alpine ENOEXEC from pnpm self-switch)
+ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
+RUN corepack enable && \
+    corepack prepare "$(node -p "require('./package.json').packageManager")" --activate
 # Install dependencies
 RUN pnpm install --frozen-lockfile
 # Copy the rest of the frontend code

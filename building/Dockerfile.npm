@@ -3,10 +3,16 @@ FROM node:24-alpine
 ARG USERNAME
 ARG UID
 ARG GID
+# Keep in sync with frontend/package.json "packageManager" (passed from build-npm.sh).
+ARG PNPM_VERSION=12.3.4
 
 RUN apk update && apk add bash
 
-RUN npm install -g pnpm
+# Use Corepack instead of `npm install -g pnpm`. A globally installed pnpm that
+# does not match packageManager tries to self-switch into ~/.local/share/pnpm/.tools,
+# which fails on Alpine with spawnSync ENOEXEC.
+ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
+RUN corepack enable && corepack prepare "pnpm@${PNPM_VERSION}" --activate
 
 RUN mkdir -p /home/$USERNAME/.npm
 

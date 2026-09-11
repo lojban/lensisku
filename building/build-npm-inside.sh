@@ -19,6 +19,11 @@ cd "$scriptdir/../frontend"
 # Clean out old dependency packages and the previous build
 rm -rf node_modules dist
 
+# Activate the packageManager pin via Corepack so pnpm does not attempt a broken
+# self-switch into ~/.local/share/pnpm/.tools (ENOEXEC on Alpine).
+corepack enable
+corepack prepare "$(node -p "require('./package.json').packageManager")" --activate
+
 pnpm install --frozen-lockfile
 
 pnpm run build
