@@ -22,7 +22,17 @@ fi
 
 SCRIPT_DIR="$(readlink -f "$(dirname "$0")")"
 SRC_DIR="$(readlink -f "$(dirname "$0")/..")"
-PNPM_VERSION="$(node -p "require('$SRC_DIR/frontend/package.json').packageManager.replace(/^pnpm@/, '')")"
+# This script is deliberately the bootstrap step for the frontend build: Node.js
+# only exists inside the image it builds, so do not require it on the host just
+# to read the Corepack pnpm pin.  package.json is formatted by Prettier, making
+# this anchored extraction both portable and unambiguous.
+PNPM_VERSION="$(sed -nE 's/^[[:space:]]*"packageManager"[[:space:]]*:[[:space:]]*"pnpm@([^"[:space:]]+)"[[:space:]]*,?[[:space:]]*$/\1/p' "$SRC_DIR/frontend/package.json")"
+
+if [[ -z $PNPM_VERSION ]]
+then
+  echo "Could not read a pnpm version from $SRC_DIR/frontend/package.json" >&2
+  exit 1
+fi
 
 cd "$SCRIPT_DIR"
 
