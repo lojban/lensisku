@@ -9,9 +9,9 @@ use fancy_regex::Regex;
 use vlazba::analyze_lujvo_spelling;
 #[cfg(test)]
 use vlazba::lujvo_segments_from_nodes;
+use vlazba::reconstruct_fuhivla_lujvo;
 use vlazba::gismu_utils::GismuMatcher;
 use vlazba::jvozba::tools::RafsiOptions;
-#[cfg(test)]
 use vlazba::jvokaha::jvokaha;
 
 use super::models::{MathJaxValidationError, MathJaxValidationOptions};
@@ -806,6 +806,22 @@ pub async fn analyze_word_in_pool(
         .await
         {
             Ok(words) if !words.is_empty() => {
+                if response.recommended.as_deref() == Some(word) && jvokaha(word).is_err() {
+                    if let Some(parser) = parsers.get(&1) {
+                        let maps = load_owned_rafsi_maps(&transaction).await.unwrap_or_default();
+                        if let Some(canonical) = reconstruct_fuhivla_lujvo(
+                            word,
+                            &words,
+                            parser,
+                            &maps.options(),
+                        ) {
+                            if canonical != word {
+                                response.word_type = NON_CANONICAL_LUJVO_TYPE_NAME.to_string();
+                            }
+                            response.recommended = Some(canonical);
+                        }
+                    }
+                }
                 response.decomposition = Some(words);
             }
             Ok(_) => {}
@@ -826,6 +842,58 @@ pub async fn analyze_word_in_pool(
 #[allow(clippy::expect_used)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn reconstructs_fuhivla_prefix_with_best_final_rafsi() {
+        use std::path::Path;
+        let grammar = std::fs::read_to_string(
+            Path::new(env!("CARGO_MANIFEST_DIR")).join("src/grammar/lojban.peg"),
+        )
+        .expect("grammar");
+        let parser = Peg::new("text", &grammar).expect("parser");
+        let source_words = vec!["tci'ile".into(), "finpe".into()];
+        let maps = OwnedRafsiMaps::default();
+        assert_eq!(
+            reconstruct_fuhivla_lujvo(
+                "tci'ilyfinpe",
+                &source_words,
+                &parser,
+                &maps.options(),
+            ),
+            Some("tci'ilyfi'e".into())
+        );
+        assert_eq!(
+            reconstruct_fuhivla_lujvo(
+                "tci'ilyfi'e",
+                &source_words,
+                &parser,
+                &maps.options(),
+            ),
+            Some("tci'ilyfi'e".into())
+        );
+    }
+
+    #[test]
+    fn reconstructs_multicomponent_fuhivla() {
+        use std::path::Path;
+        let grammar = std::fs::read_to_string(
+            Path::new(env!("CARGO_MANIFEST_DIR")).join("src/grammar/lojban.peg"),
+        ).expect("grammar");
+        let parser = Peg::new("text", &grammar).expect("parser");
+        let maps = OwnedRafsiMaps::default();
+        for (word, sources, expected) in [
+            ("klamytci'ilyfinpe", vec!["klama", "tci'ile", "finpe"], "klamytci'ilyfi'e"),
+            ("tci'ilyfinpyklama", vec!["tci'ile", "finpe", "klama"], "tci'ilyfipkla"),
+            ("tci'ilytci'ilyfinpe", vec!["tci'ile", "tci'ile", "finpe"], "tci'ilytci'ilyfi'e"),
+        ] {
+            let sources: Vec<String> = sources.into_iter().map(String::from).collect();
+            assert_eq!(
+                reconstruct_fuhivla_lujvo(word, &sources, &parser, &maps.options()),
+                Some(expected.into()),
+                "{word}"
+            );
+        }
+    }
 
     /// Regression: classical lujvo with a cvvr hyphen must decompose into
     /// individual rafsi (including the bare CVV rafsi `tei`) so that the
