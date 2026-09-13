@@ -135,12 +135,14 @@ import AnimatedDots from '@/components/AnimatedDots.vue'
 import UpsertPageLayout from '@/components/layout/UpsertPageLayout.vue'
 import UpsertToolbarButton from '@/components/layout/UpsertToolbarButton.vue'
 import WikiEditor from '@/components/WikiEditor.vue'
+import { useError } from '@/composables/useError'
 import { useSeoHead } from '@/composables/useSeoHead'
 import { loadWikiFromCommentPrefill } from '@/utils/wikiFromComment'
 
 const route = useRoute()
 const router = useRouter()
 const { t } = useI18n()
+const { showError, clearError } = useError()
 
 const langId = ref('')
 const word = ref('')
@@ -175,6 +177,14 @@ const isValid = computed(() => {
   return langId.value && word.value.trim() && definition.value.trim()
 })
 
+function reportSubmitError(message: string) {
+  if (isEditMode.value) {
+    showError(message)
+  } else {
+    formError.value = message
+  }
+}
+
 async function loadLanguages() {
   try {
     const response = await getLanguages()
@@ -208,6 +218,7 @@ async function loadWikiData(wikiWord: string) {
 
 async function submitWiki() {
   formError.value = ''
+  clearError()
   if (wikiEditor.value) {
     definition.value = wikiEditor.value.getMarkdown()
   }
@@ -228,7 +239,7 @@ async function submitWiki() {
         new_word: word.value.trim(),
       })
       if (!renameResp.data.success) {
-        formError.value = renameResp.data.error || t('upsertWiki.renameError')
+        reportSubmitError(renameResp.data.error || t('upsertWiki.renameError'))
         return
       }
       originalWord.value = renameResp.data.new_word
@@ -270,10 +281,10 @@ async function submitWiki() {
       response = await addValsi(requestData)
     }
 
-    if (response.data.success || response.status === 200) {
+    if (response.data.success) {
       router.push(`/wiki/${word.value.trim().replace(/ /g, '_')}`)
     } else {
-      formError.value = response.data.error || t('upsertWiki.saveError')
+      reportSubmitError(response.data.error || t('upsertWiki.saveError'))
     }
   } catch (error: unknown) {
     const status = (error as { response?: { status?: number; data?: { error?: string } } })
@@ -281,9 +292,9 @@ async function submitWiki() {
     const apiError = (error as { response?: { data?: { error?: string } } })?.response?.data
       ?.error
     if (status === 409) {
-      formError.value = apiError || t('upsertWiki.conflictError')
+      reportSubmitError(apiError || t('upsertWiki.conflictError'))
     } else {
-      formError.value = apiError || t('upsertWiki.saveError')
+      reportSubmitError(apiError || t('upsertWiki.saveError'))
       console.error('Error saving wiki page:', error)
     }
   } finally {
