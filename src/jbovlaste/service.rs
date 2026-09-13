@@ -24,6 +24,7 @@ use crate::jbovlaste::models::{
     row_vote_score_f32, row_vote_score_i32, DefinitionDetail, SemanticGraphParams,
 };
 use vlazba::jvokaha::jvokaha;
+use vlazba::lujvo_segments_from_nodes;
 
 fn push_author_filters<'a>(
     conditions: &mut Vec<String>,
@@ -79,7 +80,7 @@ use crate::auth::Claims;
 use crate::comments::dto::ReactionResponse;
 use crate::language::{
     analyze_word, classify_lujvo_spelling, is_decomposable_lujvo_type, load_owned_rafsi_maps,
-    lujvo_segments_from_nodes, validate_mathjax, MathJaxValidationOptions,
+    validate_mathjax, MathJaxValidationOptions,
 };
 use crate::middleware::cache::RedisCache;
 use crate::subscriptions::models::SubscriptionTrigger;

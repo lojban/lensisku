@@ -2,12 +2,13 @@ use std::{collections::HashMap, sync::Arc};
 
 use crate::language::dto::*;
 use crate::language::models::{Language, LojbanToken};
-use camxes_rs::camxes::peg::parsing::ParseNode;
 use camxes_rs::camxes::peg::{grammar::Peg, parsing::ParseResult};
 use deadpool_postgres::{Pool, Transaction};
 use log::warn;
 use fancy_regex::Regex;
 use vlazba::analyze_lujvo_spelling;
+#[cfg(test)]
+use vlazba::lujvo_segments_from_nodes;
 use vlazba::gismu_utils::GismuMatcher;
 use vlazba::jvozba::tools::RafsiOptions;
 #[cfg(test)]
@@ -173,106 +174,6 @@ fn fill_text(token: &mut LojbanToken, input: &str) {
     }
 }
 
-/// Collects lujvo rafsi segment strings from the camxes parse tree.
-/// Expands stressed_*_rafsi into
-/// "rafsi + 'y" / "rafsi + y" for readable decomposition.
-pub fn lujvo_segments_from_nodes(input: &str, nodes: &[ParseNode]) -> Option<Vec<String>> {
-    fn find_lujvo_core(nodes: &[ParseNode]) -> Option<&ParseNode> {
-        for node in nodes {
-            if let ParseNode::NonTerminal { name, children, .. } = node {
-                if name == "lujvo_core" {
-                    return Some(node);
-                }
-                if let Some(found) = find_lujvo_core(children) {
-                    return Some(found);
-                }
-            }
-        }
-        None
-    }
-
-    let lujvo_core = find_lujvo_core(nodes)?;
-    let ParseNode::NonTerminal { children, .. } = lujvo_core else {
-        return None;
-    };
-
-    let mut parts: Vec<(usize, String)> = Vec::new();
-
-    for node in children {
-        if let ParseNode::NonTerminal {
-            name,
-            span,
-            children: sub,
-        } = node
-        {
-            let (s, e) = (span.0, span.1);
-            if s >= e || e > input.len() {
-                continue;
-            }
-            let text = input[s..e].to_string();
-            if name == "stressed_fuhivla_rafsi" {
-                let mut rafsi_end = s;
-                let mut hy_start = e;
-                for n in sub {
-                    if let ParseNode::NonTerminal {
-                        name: nname,
-                        span: nspan,
-                        ..
-                    } = n
-                    {
-                        let (ns, ne) = (nspan.0, nspan.1);
-                        if nname == "fuhivla_trim" {
-                            rafsi_end = ne;
-                        }
-                        if nname == "onset" && ne <= e {
-                            rafsi_end = rafsi_end.max(ne);
-                        }
-                        if (nname == "h" || nname == "y") && ns < hy_start {
-                            hy_start = ns;
-                        }
-                    }
-                }
-                if rafsi_end > s {
-                    parts.push((s, input[s..rafsi_end].to_string()));
-                }
-                if hy_start < e {
-                    parts.push((hy_start, input[hy_start..e].to_string()));
-                }
-            } else if name == "stressed_hy_rafsi" || name == "stressed_y_rafsi" {
-                let mut rafsi_end = s;
-                let mut hy_start = e;
-                for n in sub {
-                    if let ParseNode::NonTerminal {
-                        name: nname,
-                        span: nspan,
-                        ..
-                    } = n
-                    {
-                        let (ns, ne) = (nspan.0, nspan.1);
-                        if nname != "h" && nname != "y" && ne > rafsi_end {
-                            rafsi_end = ne;
-                        }
-                        if (nname == "h" || nname == "y") && ns < hy_start {
-                            hy_start = ns;
-                        }
-                    }
-                }
-                if rafsi_end > s {
-                    parts.push((s, input[s..rafsi_end].to_string()));
-                }
-                if hy_start < e {
-                    parts.push((hy_start, input[hy_start..e].to_string()));
-                }
-            } else {
-                parts.push((s, text));
-            }
-        }
-    }
-
-    parts.sort_by_key(|(start, _)| *start);
-    Some(parts.into_iter().map(|(_, s)| s).collect())
-}
-
 pub async fn analyze_word(
     parsers: &Arc<HashMap<i32, Peg>>,
     word: &str,
@@ -301,9 +202,6 @@ pub async fn analyze_word(
 
     match result.as_ref() {
         Ok(tokens) => {
-            let lujvo_decomposition_camxes =
-                lujvo_segments_from_nodes(word, tokens).map(|s| s.join(" + "));
-
             let mut parsed_tokens: Vec<LojbanToken> =
                 tokens.iter().cloned().map(LojbanToken::from).collect();
 
@@ -335,10 +233,16 @@ pub async fn analyze_word(
             let (word_type, recommended, problems) = if peg_word_type.as_str() == "lujvo" {
                 let maps = load_owned_rafsi_maps(transaction).await.unwrap_or_default();
                 let classification = classify_lujvo_spelling(word, &maps.options());
-                let recommended = classification
-                    .as_ref()
-                    .map(|c| c.canonical_word.clone())
-                    .or(lujvo_decomposition_camxes);
+                // camxes segments describe the spelling; joining them with
+                // separators is never a valid word recommendation. Fu'ivla
+                // rafsi are outside vlazba's classical reconstruction, but
+                // camxes has already validated their lujvo spelling.
+                let recommended = Some(
+                    classification
+                        .as_ref()
+                        .map(|c| c.canonical_word.clone())
+                        .unwrap_or_else(|| word.to_string()),
+                );
                 let resolved_type = classification
                     .map(|c| c.type_name.to_string())
                     .unwrap_or_else(|| "lujvo".to_string());
@@ -932,6 +836,22 @@ mod tests {
     fn jvokaha_decomposes_teirmretci_including_tei() {
         let segments = jvokaha("teirmretci").expect("teirmretci should decompose");
         assert_eq!(segments, vec!["tei", "r", "mre", "tci"]);
+    }
+
+    #[test]
+    fn camxes_splits_unstressed_fuhivla_rafsi_for_dictionary_lookup() {
+        use std::path::Path;
+        let grammar = std::fs::read_to_string(
+            Path::new(env!("CARGO_MANIFEST_DIR")).join("src/grammar/lojban.peg"),
+        )
+        .expect("grammar");
+        let parser = Peg::new("text", &grammar).expect("parser");
+        let ParseResult(_, _, _, result) = parser.parse("tci'ilyfi'e");
+        let nodes = result.as_ref().clone().expect("lujvo parse");
+        assert_eq!(
+            lujvo_segments_from_nodes("tci'ilyfi'e", &nodes),
+            Some(vec!["tci'il".into(), "y".into(), "fi'e".into()])
+        );
     }
 
     #[test]
