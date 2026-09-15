@@ -1,5 +1,5 @@
-use serde::Deserialize;
 use deadpool_postgres::Pool;
+use serde::Deserialize;
 use tokio_postgres::Row;
 
 use crate::comments::models::CommentContent;
@@ -91,7 +91,11 @@ pub fn sanitize_wiki_title(raw: &str) -> String {
         .trim()
         .to_string();
     title = title.trim_start_matches('#').trim().to_string();
-    title = title.trim_matches('"').trim_matches('\'').trim().to_string();
+    title = title
+        .trim_matches('"')
+        .trim_matches('\'')
+        .trim()
+        .to_string();
     truncate_chars(&title, WIKI_TITLE_MAX_LEN)
 }
 
@@ -99,7 +103,10 @@ async fn load_comment_wiki_title_context(
     pool: &Pool,
     comment_id: i32,
 ) -> Result<CommentWikiTitleContext, AppError> {
-    let client = pool.get().await.map_err(|e| AppError::Database(e.to_string()))?;
+    let client = pool
+        .get()
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
     let target = client
         .query_opt(
             "SELECT c.commentid, c.commentnum, c.threadid, c.subject, c.content::text AS content,
@@ -130,10 +137,7 @@ async fn load_comment_wiki_title_context(
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
 
-    let prior_comments = prior_rows
-        .iter()
-        .map(prior_comment_from_row)
-        .collect();
+    let prior_comments = prior_rows.iter().map(prior_comment_from_row).collect();
 
     let valsi_id: Option<i32> = target.get("valsiid");
     let definition_id: Option<i32> = target.get("definitionid");
@@ -219,11 +223,7 @@ fn build_prompt(context: &CommentWikiTitleContext) -> String {
     if !context.prior_comments.is_empty() {
         prompt.push_str("Earlier comments in this thread:\n");
         for prior in &context.prior_comments {
-            let author = prior
-                .username
-                .as_deref()
-                .unwrap_or("unknown")
-                .to_string();
+            let author = prior.username.as_deref().unwrap_or("unknown").to_string();
             prompt.push_str(&format!("#{} by {}:\n", prior.comment_num, author));
             if !prior.subject.is_empty() {
                 prompt.push_str(&format!("Subject: {}\n", prior.subject));
@@ -244,10 +244,7 @@ fn build_prompt(context: &CommentWikiTitleContext) -> String {
         prompt.push_str(&format!("Subject: {}\n", context.subject));
     }
     if !context.body.is_empty() {
-        prompt.push_str(&truncate_chars(
-            &context.body,
-            TARGET_COMMENT_BODY_MAX,
-        ));
+        prompt.push_str(&truncate_chars(&context.body, TARGET_COMMENT_BODY_MAX));
         prompt.push('\n');
     }
 

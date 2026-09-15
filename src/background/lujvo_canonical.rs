@@ -122,9 +122,7 @@ pub async fn classify_unchecked_lujvo_batch(
     if updated == 0 {
         debug!("lujvo canonical classification: nothing pending");
     } else {
-        info!(
-            "lujvo canonical classification: updated {updated} (non-canonical {non_canonical})"
-        );
+        info!("lujvo canonical classification: updated {updated} (non-canonical {non_canonical})");
     }
     Ok((updated, non_canonical))
 }

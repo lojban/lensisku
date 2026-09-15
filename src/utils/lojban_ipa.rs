@@ -193,7 +193,10 @@ pub fn lojban_to_ipa(text: &str) -> String {
 
         if let Some(si) = stress_insert_index(word) {
             modified_word = format!("{}ˈ{}", &word[..si], &word[si..]);
-            let n_nuclei = NUCLEUS_PATTERN.find_iter(word).filter_map(|m| m.ok()).count();
+            let n_nuclei = NUCLEUS_PATTERN
+                .find_iter(word)
+                .filter_map(|m| m.ok())
+                .count();
             if n_nuclei >= 2 {
                 postfix.push(' ');
             }

@@ -392,7 +392,8 @@ pub async fn collections_containing_items_batch(
     user_id: i32,
     req: &CollectionMembershipBatchRequest,
 ) -> AppResult<CollectionMembershipBatchResponse> {
-    let items: Vec<&CollectionMembershipRequest> = req.items.iter().take(MAX_MEMBERSHIP_BATCH).collect();
+    let items: Vec<&CollectionMembershipRequest> =
+        req.items.iter().take(MAX_MEMBERSHIP_BATCH).collect();
     if items.is_empty() {
         return Ok(CollectionMembershipBatchResponse { results: vec![] });
     }
@@ -499,7 +500,10 @@ pub async fn collections_containing_items_batch(
             let collection_ids = if let Some(item_id) = item.item_id.filter(|id| *id > 0) {
                 by_item.get(&item_id).cloned().unwrap_or_default()
             } else if let Some(definition_id) = item.definition_id.filter(|id| *id > 0) {
-                by_definition.get(&definition_id).cloned().unwrap_or_default()
+                by_definition
+                    .get(&definition_id)
+                    .cloned()
+                    .unwrap_or_default()
             } else {
                 vec![]
             };
@@ -653,8 +657,7 @@ pub async fn list_public_collections(
 
 const MAX_PICKER_PER_KIND: i64 = 40;
 const POPULAR_PICKER_PER_KIND: i64 = 10;
-const FILTER_PICKER_POPULAR_CACHE_TTL: std::time::Duration =
-    std::time::Duration::from_secs(3600);
+const FILTER_PICKER_POPULAR_CACHE_TTL: std::time::Duration = std::time::Duration::from_secs(3600);
 
 /// Combined picker for Home/Fast Search: public collections, then authors (users).
 ///
@@ -4071,9 +4074,9 @@ pub async fn list_collection_items(
                     }),
                 collection_id: Some(collection_id),
                 collection_name: None,
-            source_langid: None,
-            collection_created_at: None,
-            match_count: None,
+                source_langid: None,
+                collection_created_at: None,
+                match_count: None,
             }
         })
         .collect();
@@ -4353,10 +4356,7 @@ pub async fn search_items_in_collections(
         content_match.as_ref(),
     );
 
-    let sim_param_idx = match (
-        filters.semantic_embedding.as_ref(),
-        search_pattern.as_ref(),
-    ) {
+    let sim_param_idx = match (filters.semantic_embedding.as_ref(), search_pattern.as_ref()) {
         (Some(embedding), Some(_)) => {
             let idx = list_param_idx;
             list_params.push(Box::new(embedding.clone()));
@@ -4542,10 +4542,7 @@ pub async fn search_items_in_collections(
                 collection_name: Some(row.get("collection_name")),
                 source_langid: row.try_get("source_langid").ok().flatten(),
                 collection_created_at: None,
-                match_count: row
-                    .try_get::<_, i32>("match_count")
-                    .ok()
-                    .filter(|c| *c > 1),
+                match_count: row.try_get::<_, i32>("match_count").ok().filter(|c| *c > 1),
             }
         })
         .collect();
@@ -5297,9 +5294,9 @@ pub async fn search_items(
                 flashcard: None,
                 collection_id: Some(cid),
                 collection_name: None,
-            source_langid: None,
-            collection_created_at: None,
-            match_count: None,
+                source_langid: None,
+                collection_created_at: None,
+                match_count: None,
             }
         })
         .collect();

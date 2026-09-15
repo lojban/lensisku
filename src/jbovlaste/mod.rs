@@ -59,6 +59,6 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
                     .service(controller::get_bulk_votes)
                     .service(controller::link_definitions_handler)
                     .service(controller::unlink_definitions_handler),
-            )
+            ),
     );
 }

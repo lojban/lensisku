@@ -38,7 +38,9 @@ pub fn mw_import_username(mw_user: &str) -> Option<String> {
 
 /// MediaWiki account name, if `username` is an imported mw.lojban.org identity.
 pub fn mw_account_name(username: &str) -> Option<&str> {
-    username.strip_suffix(MW_USERNAME_SUFFIX).filter(|s| !s.is_empty())
+    username
+        .strip_suffix(MW_USERNAME_SUFFIX)
+        .filter(|s| !s.is_empty())
 }
 
 /// mw.lojban.org user-page URL for an imported editor (not a lensisku profile).

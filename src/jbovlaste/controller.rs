@@ -201,7 +201,9 @@ pub async fn semantic_search(
     };
 
     match result {
-        Ok(response) => HttpResponse::Ok().json(definition_list_from_response(response, page, per_page)),
+        Ok(response) => {
+            HttpResponse::Ok().json(definition_list_from_response(response, page, per_page))
+        }
         Err(e) => HttpResponse::InternalServerError().body(format!("Error: {}", e)),
     }
 }
@@ -569,7 +571,9 @@ pub async fn search_definitions(
     };
 
     match result {
-        Ok(response) => HttpResponse::Ok().json(definition_list_from_response(response, page, per_page)),
+        Ok(response) => {
+            HttpResponse::Ok().json(definition_list_from_response(response, page, per_page))
+        }
         Err(e) => HttpResponse::InternalServerError().body(format!("Error: {}", e)),
     }
 }

@@ -317,8 +317,7 @@ pub async fn revert_to_version(
         .await?;
 
     if restored_langid != current_langid {
-        retarget_definition_votes(&transaction, old_version.definition_id, restored_langid)
-            .await?;
+        retarget_definition_votes(&transaction, old_version.definition_id, restored_langid).await?;
     }
 
     // Update keywords if they exist

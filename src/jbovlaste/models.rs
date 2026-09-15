@@ -142,7 +142,11 @@ pub struct DefinitionResponse {
 }
 
 impl DefinitionResponse {
-    pub fn plain(definitions: Vec<DefinitionDetail>, decomposition: Vec<String>, total: i64) -> Self {
+    pub fn plain(
+        definitions: Vec<DefinitionDetail>,
+        decomposition: Vec<String>,
+        total: i64,
+    ) -> Self {
         Self {
             definitions,
             decomposition,

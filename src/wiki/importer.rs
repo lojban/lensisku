@@ -17,7 +17,8 @@ use super::markdown::wikitext_to_markdown;
 
 const API_URL: &str = "https://mw.lojban.org/api.php";
 const USER_AGENT: &str = "lensisku-wiki-importer/0.1 (https://lojban.org)";
-const NAMESPACES: &[i32] = &[0, 2];
+// MediaWiki namespaces: main, Talk, and User.
+const NAMESPACES: &[i32] = &[0, 1, 2];
 
 /// Returned from `?action=query&list=allpages`.
 #[derive(Debug, Deserialize)]
@@ -341,12 +342,8 @@ pub async fn run_incremental_sync(pool: &Pool) -> Result<(), WikiSyncError> {
                         continue;
                     }
                     if let Some(uid) = history_user {
-                        if let Err(e) = sync_page_history_after_upsert(pool, &http, &p, uid).await
-                        {
-                            warn!(
-                                "wiki: definition_versions sync for {} failed: {e}",
-                                p.title
-                            );
+                        if let Err(e) = sync_page_history_after_upsert(pool, &http, &p, uid).await {
+                            warn!("wiki: definition_versions sync for {} failed: {e}", p.title);
                         }
                     }
                 }
@@ -439,7 +436,7 @@ async fn fetch_revisions(
         ("format", "json".into()),
         ("formatversion", "2".into()),
         ("prop", "revisions".into()),
-            ("rvprop", "ids|timestamp|user|comment|content".into()),
+        ("rvprop", "ids|timestamp|user|comment|content".into()),
         ("rvslots", "main".into()),
         ("pageids", ids),
     ];
@@ -741,9 +738,7 @@ fn newer_revision(current: Option<RevEntry>, candidate: RevEntry) -> Option<RevE
 
 fn is_bad_rvstartid(err: &WikiSyncError) -> bool {
     match err {
-        WikiSyncError::Api(msg) => {
-            msg.contains("badid_startid") || msg.contains("rvnosuchrevid")
-        }
+        WikiSyncError::Api(msg) => msg.contains("badid_startid") || msg.contains("rvnosuchrevid"),
         _ => false,
     }
 }
@@ -974,13 +969,13 @@ async fn load_imported_mw_revids(
         )
         .await
         .map_err(|e| WikiSyncError::Db(e.to_string()))?;
-    Ok(rows.iter().filter_map(|r| r.get::<_, Option<i64>>(0)).collect())
+    Ok(rows
+        .iter()
+        .filter_map(|r| r.get::<_, Option<i64>>(0))
+        .collect())
 }
 
-async fn page_current_revision_id(
-    pool: &Pool,
-    page_id: i32,
-) -> Result<Option<i64>, WikiSyncError> {
+async fn page_current_revision_id(pool: &Pool, page_id: i32) -> Result<Option<i64>, WikiSyncError> {
     let client = pool
         .get()
         .await
@@ -995,11 +990,7 @@ async fn page_current_revision_id(
     Ok(row.and_then(|r| r.get("revision_id")))
 }
 
-async fn mark_history_imported(
-    pool: &Pool,
-    page_id: i32,
-    until: i64,
-) -> Result<(), WikiSyncError> {
+async fn mark_history_imported(pool: &Pool, page_id: i32, until: i64) -> Result<(), WikiSyncError> {
     let client = pool
         .get()
         .await
@@ -1070,11 +1061,8 @@ async fn free_source_langid_for_wiki_word(
         )
         .await
         .map_err(|e| WikiSyncError::Db(e.to_string()))?;
-    row.map(|r| r.get("langid")).ok_or_else(|| {
-        WikiSyncError::Db(format!(
-            "no free source_langid for wiki title '{word}'"
-        ))
-    })
+    row.map(|r| r.get("langid"))
+        .ok_or_else(|| WikiSyncError::Db(format!("no free source_langid for wiki title '{word}'")))
 }
 
 async fn ensure_mw_wiki_definition(

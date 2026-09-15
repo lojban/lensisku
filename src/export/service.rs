@@ -222,7 +222,8 @@ fn escape_segment_with_breaks(term: &str, escape_carets: bool, full_escape: bool
     while let Some(start) = rest.find(MATH_PLACEHOLDER_PREFIX) {
         let after_prefix = &rest[start + MATH_PLACEHOLDER_PREFIX.len()..];
         if let Some(end_rel) = after_prefix.find(MATH_PLACEHOLDER_SUFFIX) {
-            let placeholder_end = start + MATH_PLACEHOLDER_PREFIX.len() + end_rel + MATH_PLACEHOLDER_SUFFIX.len();
+            let placeholder_end =
+                start + MATH_PLACEHOLDER_PREFIX.len() + end_rel + MATH_PLACEHOLDER_SUFFIX.len();
             // Only treat as placeholder if the middle is digits.
             let middle = &after_prefix[..end_rel];
             if !middle.is_empty() && middle.chars().all(|c| c.is_ascii_digit()) {
@@ -367,12 +368,20 @@ fn format_export_text(text: &str, escape_carets: bool, full_escape: bool) -> Str
             }
             rest = after;
         } else {
-            out.push_str(&escape_segment_with_breaks(rest, escape_carets, full_escape));
+            out.push_str(&escape_segment_with_breaks(
+                rest,
+                escape_carets,
+                full_escape,
+            ));
             rest = "";
             break;
         }
     }
-    out.push_str(&escape_segment_with_breaks(rest, escape_carets, full_escape));
+    out.push_str(&escape_segment_with_breaks(
+        rest,
+        escape_carets,
+        full_escape,
+    ));
     restore_tex_math(&out, &math_parts)
 }
 
@@ -2750,8 +2759,7 @@ pub async fn export_search_results(
     // Skip dictionary for collection-only export, or when collections are set without authors.
     let has_collections = !collection_ids.is_empty();
     let has_authors = usernames.is_some();
-    let skip_dictionary_fallback =
-        collection_only || (has_collections && !has_authors);
+    let skip_dictionary_fallback = collection_only || (has_collections && !has_authors);
     let collection_item_usernames = if collection_only {
         usernames.clone()
     } else {
@@ -2777,10 +2785,10 @@ pub async fn export_search_results(
                 exclude_usernames: exclude_usernames.clone(),
                 source_langid: query.source_langid,
                 search_in_phrases: query.search_in_phrases,
-            semantic_embedding: semantic_embedding.clone(),
-            match_item_id: None,
-            dedupe_by_content: false,
-        };
+                semantic_embedding: semantic_embedding.clone(),
+                match_item_id: None,
+                dedupe_by_content: false,
+            };
             crate::collections::service::search_items_in_collections_for_export(
                 pool,
                 collection_ids.clone(),
@@ -3032,13 +3040,10 @@ async fn export_full_collection_json(
         return Err("Full collection export requires exactly one collection id.".into());
     }
 
-    let export = crate::collections::service::export_collection_full(
-        pool,
-        collection_ids[0],
-        user_id,
-    )
-    .await
-    .map_err(|e| e.to_string())?;
+    let export =
+        crate::collections::service::export_collection_full(pool, collection_ids[0], user_id)
+            .await
+            .map_err(|e| e.to_string())?;
 
     let filename = collection_export_filename(&export.collection.name);
     let content = serde_json::to_vec_pretty(&export)?;
@@ -3140,7 +3145,10 @@ mod tests {
             ),
             "expected italic curly link, got: {out}"
         );
-        assert!(!out.contains("\\{klama\\}"), "braces should be removed: {out}");
+        assert!(
+            !out.contains("\\{klama\\}"),
+            "braces should be removed: {out}"
+        );
         assert!(out.starts_with("See also "), "prefix preserved: {out}");
     }
 
@@ -3189,7 +3197,10 @@ mod tests {
     fn notes_format_uses_italic_curly_links() {
         let notes = Some("See also {klama}.".to_string());
         let out = format_notes(&notes);
-        assert!(out.contains("\\textit{"), "notes should italicize links: {out}");
+        assert!(
+            out.contains("\\textit{"),
+            "notes should italicize links: {out}"
+        );
         assert!(!out.contains("\\{klama\\}"), "no literal braces: {out}");
     }
 }

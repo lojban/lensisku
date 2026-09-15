@@ -18,8 +18,7 @@ use ort::value::Tensor;
 
 use super::lojban_ipa::lojban_to_ipa;
 
-const HF_BASE: &str =
-    "https://huggingface.co/Godelaune/Kokoro-82M-ONNX-German-Martin/resolve/main";
+const HF_BASE: &str = "https://huggingface.co/Godelaune/Kokoro-82M-ONNX-German-Martin/resolve/main";
 const MODEL_FILENAME: &str = "kokoro-martin.onnx";
 const VOICES_FILENAME: &str = "voices-martin.npz";
 const VOICE_KEY: &str = "martin";
@@ -258,7 +257,9 @@ impl KokoroTts {
             return Ok(Vec::new());
         }
 
-        let style_idx = tokens.len().min(self.voice_styles.shape()[0].saturating_sub(1));
+        let style_idx = tokens
+            .len()
+            .min(self.voice_styles.shape()[0].saturating_sub(1));
         let style_row = self.voice_styles.slice(ndarray::s![style_idx, 0, ..]);
         let style_vec: Vec<f32> = style_row.iter().copied().collect();
         if style_vec.len() != 256 {
@@ -282,7 +283,8 @@ impl KokoroTts {
         inputs.insert(
             "style",
             SessionInputValue::from(
-                Tensor::<f32>::from_array((vec![1i64, 256], style_vec)).map_err(|e| e.to_string())?,
+                Tensor::<f32>::from_array((vec![1i64, 256], style_vec))
+                    .map_err(|e| e.to_string())?,
             ),
         );
         inputs.insert(

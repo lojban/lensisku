@@ -1743,6 +1743,8 @@
     "commitMessageLabel": "Edit summary",
     "commitMessagePlaceholder": "Describe your changes (optional)",
     "insertWikiLink": "Insert wiki link",
+    "rawSource": "Raw source",
+    "visualEditor": "Visual editor",
     "wikiLinkPrompt": "Wiki page title to link to:",
     "renameHint": "Changing the title will leave a redirect at the old name.",
     "renameConfirm": "Rename “{oldTitle}” to “{newTitle}\"? A redirect will be left at the old title.",

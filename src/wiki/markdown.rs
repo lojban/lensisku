@@ -28,7 +28,9 @@ pub fn wikitext_to_markdown(input: &str) -> (String, String) {
             (input.to_string(), input.to_string())
         }
     };
-    let md = collapse_blank_lines(rewrite_leftover_templates(&md, true).trim_end());
+    let md = collapse_blank_lines(
+        normalize_markdown_code_spans(&rewrite_leftover_templates(&md, true)).trim_end(),
+    );
     let plain = collapse_whitespace(rewrite_leftover_templates(&plain, false).trim());
     (md, plain)
 }
@@ -278,7 +280,15 @@ fn render_node(node: &Node<'_>, md: &mut String, plain: &mut String, depth: usiz
                 "code" | "tt" | "pre" => {
                     md.push('`');
                     let mut inner_plain = String::new();
-                    render_nodes(nodes, md, &mut inner_plain, depth);
+                    let mut code = String::new();
+                    render_nodes(nodes, &mut code, &mut inner_plain, depth);
+                    // MediaWiki commonly serializes escaped punctuation (for
+                    // example `x\_1`). Inside a Markdown code span those
+                    // escapes are already literal text, so retaining the
+                    // backslash makes it visible in the rendered article.
+                    // Remove only Markdown punctuation escapes; preserve
+                    // backslashes that are meaningful in code.
+                    md.push_str(&unescape_code_span(&code));
                     md.push('`');
                     plain.push_str(&inner_plain);
                 }
@@ -325,6 +335,36 @@ fn render_node(node: &Node<'_>, md: &mut String, plain: &mut String, depth: usiz
             }
         }
     }
+}
+
+fn unescape_code_span(code: &str) -> String {
+    code.replace("\\`", "`")
+        .replace("\\*", "*")
+        .replace("\\_", "_")
+        .replace("\\[", "[")
+        .replace("\\]", "]")
+}
+
+fn normalize_markdown_code_spans(markdown: &str) -> String {
+    let mut out = String::with_capacity(markdown.len());
+    let mut in_code = false;
+    let mut chars = markdown.chars().peekable();
+    while let Some(ch) = chars.next() {
+        if ch == '`' {
+            in_code = !in_code;
+            out.push(ch);
+        } else if in_code && ch == '\\' {
+            // Markdown punctuation escapes are unnecessary inside code spans.
+            // Keep other backslashes (for example in `\\n`) intact.
+            let next_is_punctuation = chars.peek().is_some_and(|next| "\\`*_[]".contains(*next));
+            if !next_is_punctuation {
+                out.push(ch);
+            }
+        } else {
+            out.push(ch);
+        }
+    }
+    out
 }
 
 fn render_list_items(
@@ -1055,12 +1095,16 @@ mod tests {
     }
 
     #[test]
+    fn escaped_underscore_in_inline_code_is_not_visible() {
+        let (md, plain) = wikitext_to_markdown("`x\\_1`");
+        assert_eq!(md.trim(), "`x_1`");
+        assert_eq!(plain.trim(), "`x\\_1`");
+    }
+
+    #[test]
     fn jbovlaste_link_template() {
         let (md, plain) = wikitext_to_markdown("See {{jvs|broda}} for details.");
-        assert!(
-            md.contains("[broda](/valsi/broda)"),
-            "md={md}"
-        );
+        assert!(md.contains("[broda](/valsi/broda)"), "md={md}");
         assert!(!md.contains("{{"), "raw template leaked: {md}");
         assert!(plain.contains("broda"), "plain={plain}");
     }
@@ -1068,7 +1112,10 @@ mod tests {
     #[test]
     fn jvs_template_with_apostrophe_in_list_is_rewritten() {
         let (md, _) = wikitext_to_markdown("* {{jvs|se du'o}}\n* {{jvs|te du'o}}");
-        assert!(md.contains("[se du'o](/valsi/se_du%27o)") || md.contains("se du'o"), "md={md}");
+        assert!(
+            md.contains("[se du'o](/valsi/se_du%27o)") || md.contains("se du'o"),
+            "md={md}"
+        );
         assert!(!md.contains("{{jvs"), "raw jvs leaked: {md}");
         assert!(!md.contains("{{"), "raw template leaked: {md}");
     }

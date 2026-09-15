@@ -4,15 +4,15 @@ use crate::language::dto::*;
 use crate::language::models::{Language, LojbanToken};
 use camxes_rs::camxes::peg::{grammar::Peg, parsing::ParseResult};
 use deadpool_postgres::{Pool, Transaction};
-use log::warn;
 use fancy_regex::Regex;
+use log::warn;
 use vlazba::analyze_lujvo_spelling;
+use vlazba::gismu_utils::GismuMatcher;
+use vlazba::jvokaha::jvokaha;
+use vlazba::jvozba::tools::RafsiOptions;
 #[cfg(test)]
 use vlazba::lujvo_segments_from_nodes;
 use vlazba::reconstruct_fuhivla_lujvo;
-use vlazba::gismu_utils::GismuMatcher;
-use vlazba::jvozba::tools::RafsiOptions;
-use vlazba::jvokaha::jvokaha;
 
 use super::models::{MathJaxValidationError, MathJaxValidationOptions};
 
@@ -808,13 +808,12 @@ pub async fn analyze_word_in_pool(
             Ok(words) if !words.is_empty() => {
                 if response.recommended.as_deref() == Some(word) && jvokaha(word).is_err() {
                     if let Some(parser) = parsers.get(&1) {
-                        let maps = load_owned_rafsi_maps(&transaction).await.unwrap_or_default();
-                        if let Some(canonical) = reconstruct_fuhivla_lujvo(
-                            word,
-                            &words,
-                            parser,
-                            &maps.options(),
-                        ) {
+                        let maps = load_owned_rafsi_maps(&transaction)
+                            .await
+                            .unwrap_or_default();
+                        if let Some(canonical) =
+                            reconstruct_fuhivla_lujvo(word, &words, parser, &maps.options())
+                        {
                             if canonical != word {
                                 response.word_type = NON_CANONICAL_LUJVO_TYPE_NAME.to_string();
                             }
@@ -854,21 +853,11 @@ mod tests {
         let source_words = vec!["tci'ile".into(), "finpe".into()];
         let maps = OwnedRafsiMaps::default();
         assert_eq!(
-            reconstruct_fuhivla_lujvo(
-                "tci'ilyfinpe",
-                &source_words,
-                &parser,
-                &maps.options(),
-            ),
+            reconstruct_fuhivla_lujvo("tci'ilyfinpe", &source_words, &parser, &maps.options(),),
             Some("tci'ilyfi'e".into())
         );
         assert_eq!(
-            reconstruct_fuhivla_lujvo(
-                "tci'ilyfi'e",
-                &source_words,
-                &parser,
-                &maps.options(),
-            ),
+            reconstruct_fuhivla_lujvo("tci'ilyfi'e", &source_words, &parser, &maps.options(),),
             Some("tci'ilyfi'e".into())
         );
     }
@@ -878,13 +867,26 @@ mod tests {
         use std::path::Path;
         let grammar = std::fs::read_to_string(
             Path::new(env!("CARGO_MANIFEST_DIR")).join("src/grammar/lojban.peg"),
-        ).expect("grammar");
+        )
+        .expect("grammar");
         let parser = Peg::new("text", &grammar).expect("parser");
         let maps = OwnedRafsiMaps::default();
         for (word, sources, expected) in [
-            ("klamytci'ilyfinpe", vec!["klama", "tci'ile", "finpe"], "klamytci'ilyfi'e"),
-            ("tci'ilyfinpyklama", vec!["tci'ile", "finpe", "klama"], "tci'ilyfipkla"),
-            ("tci'ilytci'ilyfinpe", vec!["tci'ile", "tci'ile", "finpe"], "tci'ilytci'ilyfi'e"),
+            (
+                "klamytci'ilyfinpe",
+                vec!["klama", "tci'ile", "finpe"],
+                "klamytci'ilyfi'e",
+            ),
+            (
+                "tci'ilyfinpyklama",
+                vec!["tci'ile", "finpe", "klama"],
+                "tci'ilyfipkla",
+            ),
+            (
+                "tci'ilytci'ilyfinpe",
+                vec!["tci'ile", "tci'ile", "finpe"],
+                "tci'ilytci'ilyfi'e",
+            ),
         ] {
             let sources: Vec<String> = sources.into_iter().map(String::from).collect();
             assert_eq!(
@@ -951,14 +953,14 @@ mod tests {
     #[test]
     fn classify_lujvo_spelling_hyphen_extra_y() {
         let maps = OwnedRafsiMaps::default();
-        let class = classify_lujvo_spelling("rivyzu'e", &maps.options())
-            .expect("rivyzu'e should classify");
+        let class =
+            classify_lujvo_spelling("rivyzu'e", &maps.options()).expect("rivyzu'e should classify");
         assert_eq!(class.type_id, NON_CANONICAL_LUJVO_TYPE_ID);
         assert_eq!(class.type_name, NON_CANONICAL_LUJVO_TYPE_NAME);
         assert_eq!(class.canonical_word, "rivzu'e");
 
-        let class = classify_lujvo_spelling("rivzu'e", &maps.options())
-            .expect("rivzu'e should classify");
+        let class =
+            classify_lujvo_spelling("rivzu'e", &maps.options()).expect("rivzu'e should classify");
         assert_eq!(class.type_id, LUJVO_TYPE_ID);
         assert_eq!(class.canonical_word, "rivzu'e");
     }
@@ -972,8 +974,8 @@ mod tests {
         assert_eq!(class.type_id, NON_CANONICAL_LUJVO_TYPE_ID);
         assert_eq!(class.canonical_word, "bramlatu");
 
-        let class = classify_lujvo_spelling("bramlatu", &maps.options())
-            .expect("bramlatu should classify");
+        let class =
+            classify_lujvo_spelling("bramlatu", &maps.options()).expect("bramlatu should classify");
         assert_eq!(class.type_id, LUJVO_TYPE_ID);
         assert_eq!(class.canonical_word, "bramlatu");
     }

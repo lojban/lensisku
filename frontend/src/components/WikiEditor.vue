@@ -10,8 +10,26 @@
       >
         {{ t('upsertWiki.insertWikiLink') }}
       </Button>
+      <Button
+        type="button"
+        variant="empty"
+        class="text-sm"
+        :disabled="disabled"
+        @click="rawMode = !rawMode"
+      >
+        {{ rawMode ? t('upsertWiki.visualEditor') : t('upsertWiki.rawSource') }}
+      </Button>
     </div>
+    <textarea
+      v-if="rawMode"
+      v-model="rawValue"
+      class="min-h-80 w-full rounded border border-gray-300 p-3 font-mono text-sm"
+      :disabled="disabled"
+      :placeholder="placeholder"
+      @input="syncFromRaw"
+    />
     <div
+      v-else
       ref="editorRoot"
       class="milkdown-editor -mx-3 border-y border-gray-300 sm:-mx-4 sm:border"
       :class="{ 'opacity-60 pointer-events-none': disabled }"
@@ -23,7 +41,7 @@
 import { Button } from '@packages/ui'
 import { Crepe } from '@milkdown/crepe'
 import { insert } from '@milkdown/utils'
-import { onMounted, onUnmounted, ref } from 'vue'
+import { onMounted, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import '@milkdown/crepe/theme/common/style.css'
 import '@milkdown/crepe/theme/frame.css'
@@ -46,6 +64,8 @@ const emit = defineEmits<{
 
 const { t } = useI18n()
 const editorRoot = ref<HTMLElement | null>(null)
+const rawMode = ref(false)
+const rawValue = ref(props.modelValue || '')
 let crepe: Crepe | null = null
 
 function normalizeMarkdown(markdown: string): string {
@@ -55,6 +75,10 @@ function normalizeMarkdown(markdown: string): string {
 function syncFromEditor() {
   if (!crepe) return
   emit('update:modelValue', normalizeMarkdown(crepe.getMarkdown()))
+}
+
+function syncFromRaw() {
+  emit('update:modelValue', normalizeMarkdown(rawValue.value))
 }
 
 function insertWikiLink() {
@@ -82,6 +106,13 @@ onMounted(async () => {
     listener.markdownUpdated(syncFromEditor)
   })
 })
+
+watch(
+  () => props.modelValue,
+  (value) => {
+    rawValue.value = value || ''
+  }
+)
 
 onUnmounted(() => {
   if (crepe) {

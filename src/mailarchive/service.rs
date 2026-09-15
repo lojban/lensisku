@@ -15,8 +15,8 @@ use std::{fs, path::PathBuf};
 use tokio_postgres::Client;
 use walkdir::WalkDir;
 
-use log::{error, info, warn};
 use fancy_regex::Regex;
+use log::{error, info, warn};
 use std::sync::LazyLock;
 use tokio::time::{sleep, Duration};
 
@@ -99,9 +99,6 @@ pub async fn search_messages(
     } else {
         "NULL::jsonb as parts_json"
     };
-
-    
-    
 
     let (query_string, count_query_string) = if group_by_thread {
         (format!(
@@ -1082,8 +1079,6 @@ pub async fn vote_spam(
             &[&message_id, &user_id],
         )
         .await?;
-
-    
 
     let user_voted_after_operation: bool = if existing_vote.is_some() {
         // User has voted, so unvote (delete the record)

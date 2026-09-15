@@ -105,10 +105,7 @@ async fn run_valsi_sound_batch(pool: &Pool) -> Result<(usize, bool), String> {
             match engine.lojban_word_to_ogg_opus(&word) {
                 Ok(ogg) => out.push((valsi_id, ogg, word, true)),
                 Err(e) => {
-                    warn!(
-                        "valsi TTS: skip valsi_id {} ({:?}): {}",
-                        valsi_id, word, e
-                    );
+                    warn!("valsi TTS: skip valsi_id {} ({:?}): {}", valsi_id, word, e);
                     // Claim the row with an empty skip marker so ORDER BY valsiid cannot wedge.
                     out.push((valsi_id, Vec::new(), word, false));
                 }

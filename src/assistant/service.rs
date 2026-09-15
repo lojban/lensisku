@@ -14,8 +14,8 @@ use serde_json::json;
 use tokio::sync::{mpsc, Semaphore};
 use tokio::time::sleep;
 
-use once_cell::sync::Lazy;
 use fancy_regex::Regex;
+use once_cell::sync::Lazy;
 
 use crate::error::AppError;
 use crate::jbovlaste::models::{
@@ -38,8 +38,8 @@ use super::models::{
     ValidatedReference, SEMANTIC_SEARCH_MAX_LIMIT,
 };
 use super::openrouter::{
-    map_chat_messages, ChatCompletionMessageRequest, ChatCompletionRequest, OpenRouterClient,
-    Tool, ToolCall, ToolCallFunction, ToolFunction, text_completion_with_model,
+    map_chat_messages, text_completion_with_model, ChatCompletionMessageRequest,
+    ChatCompletionRequest, OpenRouterClient, Tool, ToolCall, ToolCallFunction, ToolFunction,
 };
 use super::persist::ChatPersistState;
 
@@ -1354,14 +1354,19 @@ pub async fn run_agent_loop(
 ) -> Result<(String, Vec<AssistantStep>), AppError> {
     let openrouter = OpenRouterClient::from_env()?;
 
-    let (mut candidates, mut from_redis_only) =
-        match load_or_fetch_openrouter_candidates(redis, openrouter.base_url(), openrouter.api_key()).await {
-            Ok(v) => v,
-            Err(e) => {
-                emit_sse_error(&event_tx, &persist, &e).await;
-                return Err(e);
-            }
-        };
+    let (mut candidates, mut from_redis_only) = match load_or_fetch_openrouter_candidates(
+        redis,
+        openrouter.base_url(),
+        openrouter.api_key(),
+    )
+    .await
+    {
+        Ok(v) => v,
+        Err(e) => {
+            emit_sse_error(&event_tx, &persist, &e).await;
+            return Err(e);
+        }
+    };
 
     // Optional pre-loop request analysis: refuse off-topic questions early and
     // avoid wasting model iterations on out-of-scope requests.

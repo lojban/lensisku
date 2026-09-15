@@ -155,7 +155,9 @@ impl OpenRouterClient {
             .json(request)
             .send()
             .await
-            .map_err(|e| AppError::ExternalService(format!("OpenRouter {} request failed: {}", label, e)))?;
+            .map_err(|e| {
+                AppError::ExternalService(format!("OpenRouter {} request failed: {}", label, e))
+            })?;
         let ok = ensure_status(res, label).await?;
         parse_response(ok, label).await
     }
@@ -233,18 +235,20 @@ pub async fn text_completion_with_model(
     };
 
     let timeout = Duration::from_secs(timeout_secs);
-    let response = match tokio::time::timeout(timeout, client.chat_completion_with_retry(&request, label)).await
-    {
-        Ok(Ok(resp)) => resp,
-        Ok(Err(e)) => {
-            log::warn!("OpenRouter {label} call failed: {e}");
-            return Ok(None);
-        }
-        Err(_) => {
-            log::warn!("OpenRouter {label} timed out after {timeout_secs}s");
-            return Ok(None);
-        }
-    };
+    let response =
+        match tokio::time::timeout(timeout, client.chat_completion_with_retry(&request, label))
+            .await
+        {
+            Ok(Ok(resp)) => resp,
+            Ok(Err(e)) => {
+                log::warn!("OpenRouter {label} call failed: {e}");
+                return Ok(None);
+            }
+            Err(_) => {
+                log::warn!("OpenRouter {label} timed out after {timeout_secs}s");
+                return Ok(None);
+            }
+        };
 
     Ok(response.first_message_content())
 }
@@ -260,10 +264,11 @@ pub fn map_chat_messages(messages: &[ChatMessage]) -> Vec<ChatCompletionMessageR
                     "user".to_string()
                 }
             };
-            let tool_calls = m
-                .tool_calls
-                .as_ref()
-                .map(|tc| tc.iter().map(tool_call_dto_to_internal).collect::<Vec<ToolCall>>());
+            let tool_calls = m.tool_calls.as_ref().map(|tc| {
+                tc.iter()
+                    .map(tool_call_dto_to_internal)
+                    .collect::<Vec<ToolCall>>()
+            });
             ChatCompletionMessageRequest {
                 role,
                 content: m.content.clone(),
@@ -348,9 +353,7 @@ async fn parse_response(
                 Some((format!("Invalid {label} response: {e}"), body.clone()))
             };
             if let Some((message, raw_response)) = retryable {
-                log::debug!(
-                    "OpenRouter {label} response (status {status}): {raw_response}"
-                );
+                log::debug!("OpenRouter {label} response (status {status}): {raw_response}");
                 return Err(AppError::ExternalServiceRetryable {
                     message,
                     raw_response,
@@ -382,7 +385,8 @@ where
                 if let AppError::ExternalServiceRetryable { .. } = &e {
                     last_err = Some(e);
                     if attempt < MAX_ATTEMPTS {
-                        let delay = Duration::from_millis(INITIAL_BACKOFF_MS * 2_u64.pow(attempt - 1));
+                        let delay =
+                            Duration::from_millis(INITIAL_BACKOFF_MS * 2_u64.pow(attempt - 1));
                         log::info!(
                             "OpenRouter {label} retry {attempt}/{MAX_ATTEMPTS} after {delay:?}"
                         );
