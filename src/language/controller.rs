@@ -7,6 +7,74 @@ use std::sync::Arc;
 use super::{dto::*, models::Language, service};
 
 #[utoipa::path(
+    post,
+    path = "/language/validate_and_tts",
+    tag = "language",
+    operation_id = "validate_and_synthesize_lojban",
+    summary = "Validate Lojban text and synthesize valid text",
+    description = "Checks Lojban morphology and returns valid plus base64-encoded Ogg Opus audio for valid text. Uses the Martin voice at speed 0.8. Invalid Lojban returns HTTP 200 with valid=false and null audio. Text is limited to 2000 characters. All accepted requests share the per-user Kokoro TTS quota with /collections/kokoro-tts. Infrastructure failures return an error without a validity verdict.",
+    request_body = LojbanParseRequest,
+    responses(
+        (status = 200, description = "Validation result and audio when valid", body = LojbanTtsResponse),
+        (status = 400, description = "Malformed request or text exceeds 2000 characters"),
+        (status = 401, description = "Missing or invalid bearer token"),
+        (status = 429, description = "TTS rate limit exceeded; see Retry-After"),
+        (status = 500, description = "Rate limit check, validation task, or synthesis failed")
+    ),
+    security(("bearer_auth" = []))
+)]
+#[post("/validate_and_tts")]
+pub async fn validate_and_tts(
+    claims: crate::auth::Claims,
+    parsers: web::Data<Arc<HashMap<i32, Peg>>>,
+    limiter: web::Data<crate::middleware::limiter::KokoroTtsLimiter>,
+    request: web::Json<LojbanParseRequest>,
+) -> HttpResponse {
+    let text = request.text.trim().to_string();
+    if text.chars().count() > 2000 {
+        return HttpResponse::BadRequest()
+            .json(serde_json::json!({ "error": "text exceeds 2000 characters" }));
+    }
+    match limiter.check_and_record(claims.sub).await {
+        Ok(true) => {}
+        Ok(false) => {
+            return HttpResponse::TooManyRequests()
+                .insert_header(("Retry-After", limiter.retry_after_secs().to_string()))
+                .json(serde_json::json!({ "error": "Rate limit exceeded" }));
+        }
+        Err(e) => {
+            log::error!("Lojban TTS rate limit check failed: {e}");
+            return HttpResponse::InternalServerError()
+                .json(serde_json::json!({ "error": "Rate limit check failed" }));
+        }
+    }
+
+    let Some(parser) = parsers.get(&1).cloned() else {
+        return HttpResponse::InternalServerError()
+            .json(serde_json::json!({ "error": "Lojban parser not available" }));
+    };
+    match tokio::task::spawn_blocking(move || {
+        service::validate_and_synthesize_lojban(&parser, &text, |text| {
+            crate::utils::kokoro_tts_singleton::synthesize_lojban_to_ogg_opus(text, "Martin", 0.8)
+        })
+    })
+    .await
+    {
+        Ok(Ok(response)) => HttpResponse::Ok().json(response),
+        Ok(Err(e)) => {
+            log::error!("Lojban TTS synthesis failed: {e}");
+            HttpResponse::InternalServerError()
+                .json(serde_json::json!({ "error": "Speech synthesis failed" }))
+        }
+        Err(e) => {
+            log::error!("Lojban validation/TTS task failed: {e}");
+            HttpResponse::InternalServerError()
+                .json(serde_json::json!({ "error": "Validation and synthesis task failed" }))
+        }
+    }
+}
+
+#[utoipa::path(
     get,
     path = "/language/languages",
     tag = "language",
@@ -138,5 +206,22 @@ pub async fn validate_mathjax(request: web::Json<MathJaxValidationRequest>) -> i
         HttpResponse::Ok().json(response)
     } else {
         HttpResponse::BadRequest().json(response)
+    }
+}
+
+#[cfg(test)]
+mod validation_tts_tests {
+    #[actix_web::test]
+    async fn endpoint_requires_bearer_authentication() {
+        let app = actix_web::test::init_service(
+            actix_web::App::new().configure(crate::language::configure),
+        )
+        .await;
+        let request = actix_web::test::TestRequest::post()
+            .uri("/language/validate_and_tts")
+            .set_json(serde_json::json!({"text": "mi klama"}))
+            .to_request();
+        let response = actix_web::test::call_service(&app, request).await;
+        assert_eq!(response.status(), actix_web::http::StatusCode::UNAUTHORIZED);
     }
 }

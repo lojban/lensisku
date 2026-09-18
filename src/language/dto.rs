@@ -11,6 +11,15 @@ pub struct LojbanParseRequest {
 }
 
 #[derive(Debug, Serialize, ToSchema)]
+pub struct LojbanTtsResponse {
+    pub valid: bool,
+    /// Base64-encoded Ogg Opus audio, present only for valid text.
+    pub audio_base64: Option<String>,
+    pub mime_type: Option<String>,
+    pub error: Option<String>,
+}
+
+#[derive(Debug, Serialize, ToSchema)]
 pub struct LojbanParseResponse {
     pub success: bool,
     pub tokens: Vec<LojbanToken>,

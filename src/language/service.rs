@@ -167,6 +167,43 @@ pub fn parse_lojban(parsers: &Arc<HashMap<i32, Peg>>, input: &str) -> LojbanPars
     }
 }
 
+/// Validate Lojban morphology before invoking the supplied speech synthesizer.
+/// Run on a blocking worker: both parsing and ONNX inference are synchronous.
+pub fn validate_and_synthesize_lojban(
+    parser: &Peg,
+    text: &str,
+    synthesize: impl FnOnce(&str) -> Result<Vec<u8>, String>,
+) -> Result<LojbanTtsResponse, String> {
+    use base64::{engine::general_purpose::STANDARD, Engine as _};
+
+    let error = if text.trim().is_empty() {
+        Some("text must not be empty".to_string())
+    } else {
+        let ParseResult(_, consumed, _, result) = parser.parse(text);
+        match result.as_ref() {
+            Ok(_) if consumed == text.len() => None,
+            Ok(_) => Some(format!("Invalid Lojban morphology at position {consumed}")),
+            Err(error) => Some(format!("Invalid Lojban morphology: {error:?}")),
+        }
+    };
+    if error.is_some() {
+        return Ok(LojbanTtsResponse {
+            valid: false,
+            audio_base64: None,
+            mime_type: None,
+            error,
+        });
+    }
+
+    let audio = synthesize(text)?;
+    Ok(LojbanTtsResponse {
+        valid: true,
+        audio_base64: Some(STANDARD.encode(audio)),
+        mime_type: Some("audio/ogg".to_string()),
+        error: None,
+    })
+}
+
 fn fill_text(token: &mut LojbanToken, input: &str) {
     token.text = input[token.start..token.end].to_string();
     for child in &mut token.children {
@@ -1059,5 +1096,71 @@ mod tests {
         assert_eq!(word_texts("tei mlatu bu foi"), vec!["tei mlatu bu foi"]);
         assert_eq!(word_texts("mlatu zei mlatu bu"), vec!["mlatu zei mlatu bu"]);
         assert_eq!(word_texts("mlatu bu zdani"), vec!["mlatu bu", "zdani"]);
+    }
+}
+
+#[cfg(test)]
+mod validation_tts_tests {
+    use super::validate_and_synthesize_lojban;
+    use base64::{engine::general_purpose::STANDARD, Engine as _};
+
+    fn parser() -> super::Peg {
+        super::Peg::new("text", include_str!("../grammar/lojban.peg")).expect("morphology parser")
+    }
+
+    #[test]
+    fn morphology_does_not_require_sentence_grammar() {
+        let response =
+            validate_and_synthesize_lojban(&parser(), "mi cu cu klama", |_| Ok(b"audio".to_vec()))
+                .expect("valid morphology");
+        assert!(response.valid);
+        assert!(response.audio_base64.is_some());
+    }
+
+    #[test]
+    fn valid_text_returns_encoded_audio() {
+        let response = validate_and_synthesize_lojban(&parser(), "mi klama le zarci", |text| {
+            assert_eq!(text, "mi klama le zarci");
+            Ok(b"fake audio bytes".to_vec())
+        })
+        .expect("valid text");
+        assert!(response.valid);
+        assert_eq!(response.mime_type.as_deref(), Some("audio/ogg"));
+        assert_eq!(
+            STANDARD.decode(response.audio_base64.unwrap()).unwrap(),
+            b"fake audio bytes"
+        );
+        assert!(response.error.is_none());
+    }
+
+    #[test]
+    fn invalid_text_never_synthesizes() {
+        for text in [
+            "",
+            "   ",
+            "qqq",
+            "mi klama @@@",
+            "mi klama %%%END%%% garbage",
+        ] {
+            let response = validate_and_synthesize_lojban(&parser(), text, |_| {
+                panic!("invalid input must never reach TTS: {text}")
+            })
+            .expect("validation result");
+            assert!(!response.valid, "{text:?}");
+            assert!(response.audio_base64.is_none());
+            assert!(response.mime_type.is_none());
+            assert!(response.error.is_some());
+        }
+    }
+
+    #[test]
+    fn synthesis_failure_is_not_reported_as_invalid_lojban() {
+        let result =
+            validate_and_synthesize_lojban(
+                &parser(),
+                "mi klama",
+                |_| Err("TTS unavailable".into()),
+            );
+        assert_eq!(result.unwrap_err(), "TTS unavailable");
     }
 }

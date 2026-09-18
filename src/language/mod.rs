@@ -24,7 +24,8 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
                     .wrap(HttpAuthentication::bearer(crate::auth::validator))
                     .service(controller::analyze_word)
                     .service(controller::validate_mathjax)
-                    .service(controller::parse_lojban),
+                    .service(controller::parse_lojban)
+                    .service(controller::validate_and_tts),
             ),
     );
 }
