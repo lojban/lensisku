@@ -182,7 +182,7 @@
           </div>
         </template>
       </div>
-      <!-- Generate panel (Kokoro Martin TTS) -->
+      <!-- Generate panel (Kokoro TTS) -->
       <div
         v-show="inputMode === 'generate'"
         class="border border-gray-200 rounded-lg p-4 bg-gray-50/50 space-y-3"
@@ -281,7 +281,7 @@ const props = defineProps({
 })
 
 /** Display names accepted by the server (`src/utils/kokoro_tts.rs`). */
-const KOKORO_VOICES = ['Martin']
+const KOKORO_VOICES = ['Martin', 'Victoria', 'Eva', 'Bernd']
 
 const emit = defineEmits(['update:modelValue', 'sound-loaded', 'remove-sound'])
 

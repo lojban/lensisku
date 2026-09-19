@@ -910,8 +910,8 @@ pub async fn merge_collections(
         (status = 500, description = "Synthesis failed")
     ),
     security(("bearer_auth" = [])),
-    summary = "Synthesize Lojban text to audio (Kokoro Martin TTS)",
-    description = "Authenticated users only. Converts Lojban text to IPA and returns Ogg Opus audio via Kokoro-82M German Martin. Rate limited per user."
+    summary = "Synthesize Lojban text to audio (Kokoro German TTS)",
+    description = "Authenticated users only. Converts Lojban text to IPA and returns Ogg Opus audio via Kokoro German Martin, Victoria, Eva, or Bernd. Rate limited per user."
 )]
 #[post("/kokoro-tts")]
 pub async fn post_kokoro_tts(
@@ -932,10 +932,8 @@ pub async fn post_kokoro_tts(
     }
 
     let voice = req.voice.trim().to_string();
-    if voice.is_empty() {
-        return HttpResponse::BadRequest().json(json!({
-            "error": "voice must not be empty"
-        }));
+    if let Err(error) = crate::utils::kokoro_tts::KokoroVoice::parse(&voice) {
+        return HttpResponse::BadRequest().json(json!({ "error": error }));
     }
 
     let speed = req

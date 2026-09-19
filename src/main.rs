@@ -55,6 +55,13 @@ async fn main() -> AppResult<()> {
     db::run_migrations(&config.db_pools.import_pool).await?;
     info!("Database migrations ran successfully.");
 
+    // Download all voices before accepting requests; ONNX sessions stay lazy.
+    match tokio::task::spawn_blocking(utils::kokoro_tts::ensure_model_files_cached).await {
+        Ok(Ok(())) => info!("German TTS model and Martin/Victoria/Eva/Bernd voice packs are cached"),
+        Ok(Err(e)) => error!("TTS model preparation failed (will retry on use): {e}"),
+        Err(e) => error!("TTS model preparation task failed: {e}"),
+    }
+
     // Initialize parsers
     // Use ? directly as initialize_grammar_texts now returns AppResult
     // ELI5: We're creating a special container (Arc) for our grammar rules that can be safely shared

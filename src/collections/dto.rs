@@ -249,12 +249,12 @@ pub struct ListCollectionItemsFilters {
     pub dedupe_by_content: bool,
 }
 
-/// Lojban text → Ogg Opus via Kokoro Martin TTS (authenticated, rate-limited).
+/// Lojban text → Ogg Opus via Kokoro German TTS (authenticated, rate-limited).
 #[derive(Debug, Deserialize, ToSchema)]
 pub struct KokoroTtsGenerateRequest {
     /// Lojban text to convert to IPA and synthesize.
     pub text: String,
-    /// Voice name (currently only `Martin`).
+    /// Voice name (`Martin`, `Victoria`, `Eva`, or `Bernd`).
     pub voice: String,
     /// Speech speed; clamped server-side (default 0.8).
     pub speed: Option<f32>,

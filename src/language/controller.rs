@@ -12,11 +12,11 @@ use super::{dto::*, models::Language, service};
     tag = "language",
     operation_id = "validate_and_synthesize_lojban",
     summary = "Validate Lojban text and synthesize valid text",
-    description = "Checks Lojban morphology and returns valid plus base64-encoded Ogg Opus audio for valid text. Uses the Martin voice at speed 0.8. Invalid Lojban returns HTTP 200 with valid=false and null audio. Text is limited to 2000 characters. All accepted requests share the per-user Kokoro TTS quota with /collections/kokoro-tts. Infrastructure failures return an error without a validity verdict.",
-    request_body = LojbanParseRequest,
+    description = "Checks Lojban morphology and returns valid plus base64-encoded Ogg Opus audio for valid text. Uses Martin (default), Victoria, Eva, or Bernd at speed 0.8. Invalid Lojban returns HTTP 200 with valid=false and null audio. Text is limited to 2000 characters. All accepted requests share the per-user Kokoro TTS quota with /collections/kokoro-tts. Infrastructure failures return an error without a validity verdict.",
+    request_body = LojbanTtsRequest,
     responses(
         (status = 200, description = "Validation result and audio when valid", body = LojbanTtsResponse),
-        (status = 400, description = "Malformed request or text exceeds 2000 characters"),
+        (status = 400, description = "Malformed request, unsupported voice, or text exceeds 2000 characters"),
         (status = 401, description = "Missing or invalid bearer token"),
         (status = 429, description = "TTS rate limit exceeded; see Retry-After"),
         (status = 500, description = "Rate limit check, validation task, or synthesis failed")
@@ -28,8 +28,12 @@ pub async fn validate_and_tts(
     claims: crate::auth::Claims,
     parsers: web::Data<Arc<HashMap<i32, Peg>>>,
     limiter: web::Data<crate::middleware::limiter::KokoroTtsLimiter>,
-    request: web::Json<LojbanParseRequest>,
+    request: web::Json<LojbanTtsRequest>,
 ) -> HttpResponse {
+    let voice = request.voice.as_deref().unwrap_or("Martin").to_string();
+    if let Err(error) = crate::utils::kokoro_tts::KokoroVoice::parse(&voice) {
+        return HttpResponse::BadRequest().json(serde_json::json!({ "error": error }));
+    }
     let text = request.text.trim().to_string();
     if text.chars().count() > 2000 {
         return HttpResponse::BadRequest()
@@ -55,7 +59,7 @@ pub async fn validate_and_tts(
     };
     match tokio::task::spawn_blocking(move || {
         service::validate_and_synthesize_lojban(&parser, &text, |text| {
-            crate::utils::kokoro_tts_singleton::synthesize_lojban_to_ogg_opus(text, "Martin", 0.8)
+            crate::utils::kokoro_tts_singleton::synthesize_lojban_to_ogg_opus(text, &voice, 0.8)
         })
     })
     .await

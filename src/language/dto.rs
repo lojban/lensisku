@@ -10,6 +10,13 @@ pub struct LojbanParseRequest {
     pub text: String,
 }
 
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct LojbanTtsRequest {
+    pub text: String,
+    /// Martin (default), Victoria, Eva, or Bernd; case-insensitive.
+    pub voice: Option<String>,
+}
+
 #[derive(Debug, Serialize, ToSchema)]
 pub struct LojbanTtsResponse {
     pub valid: bool,

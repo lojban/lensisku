@@ -1,8 +1,13 @@
 <template>
-  <div ref="rootRef" :class="rootClass">
+  <div ref="rootRef" :class="rootClass" @keydown="handleKeydown">
     <div aria-haspopup="true" :aria-expanded="open" @click="open = !open">
       <slot name="trigger" :open="open">
-        <button type="button" class="dropdown-action-trigger" aria-haspopup="menu" :aria-expanded="open">
+        <button
+          type="button"
+          class="dropdown-action-trigger"
+          aria-haspopup="menu"
+          :aria-expanded="open"
+        >
           <span v-if="triggerLabel" class="text-sm text-gray-600">{{ triggerLabel }}</span>
           <EllipsisVertical class="w-4 h-4" />
         </button>
@@ -15,6 +20,7 @@
         class="dropdown-menu-panel"
         :style="panelStyle"
         @click="open = false"
+        @keydown="handleKeydown"
       >
         <div class="w-fit whitespace-nowrap"><slot /></div>
       </div>
@@ -50,6 +56,34 @@ const panelRef = ref<HTMLElement | null>(null)
 const panelStyle = ref<Record<string, string>>({})
 
 const rootClass = 'relative inline-block'
+
+async function handleKeydown(event: KeyboardEvent) {
+  const trigger = rootRef.value?.querySelector('button')
+  if (event.key === 'Escape' && open.value) {
+    event.preventDefault()
+    event.stopPropagation()
+    open.value = false
+    trigger?.focus()
+    return
+  }
+  if (!['ArrowDown', 'ArrowUp'].includes(event.key) || trigger?.disabled) return
+  event.preventDefault()
+  const wasOpen = open.value
+  open.value = true
+  await nextTick()
+  const items = Array.from(
+    panelRef.value?.querySelectorAll<HTMLButtonElement>('button:not(:disabled)') || []
+  )
+  if (!items.length) return
+  const current = items.findIndex((item) => item === document.activeElement)
+  const next =
+    !wasOpen || current < 0
+      ? event.key === 'ArrowDown'
+        ? 0
+        : items.length - 1
+      : (current + (event.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length
+  items[next]?.focus()
+}
 
 function updatePanelPosition() {
   const root = rootRef.value

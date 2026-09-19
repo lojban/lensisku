@@ -1,13 +1,14 @@
 //! Kokoro-82M German Martin ONNX (phoneme / IPA path) via Hugging Face download + local cache.
 //!
-//! Model: `Godelaune/Kokoro-82M-ONNX-German-Martin` (`kokoro-martin.onnx` + `voices-martin.npz`).
+//! Model: `Godelaune/Kokoro-82M-ONNX-German-Martin`; Martin NPZ and cstr GGUF voice styles.
+//! Victoria uses this shared German backbone, not the Victoria fine-tuned checkpoint.
 //! Inference follows `kokoro-onnx` (`is_phonemes=True`): IPA → Kokoro vocab tokens → style row by
 //! token length → pad tokens → Ogg Opus.
 #![allow(clippy::expect_used)] // fixed vocab / regex tables
 
 use std::collections::HashMap;
 use std::path::PathBuf;
-use std::sync::OnceLock;
+use std::sync::Mutex;
 
 use ndarray::Array3;
 use ndarray_npy::NpzReader;
@@ -22,6 +23,41 @@ const HF_BASE: &str = "https://huggingface.co/Godelaune/Kokoro-82M-ONNX-German-M
 const MODEL_FILENAME: &str = "kokoro-martin.onnx";
 const VOICES_FILENAME: &str = "voices-martin.npz";
 const VOICE_KEY: &str = "martin";
+// Unquantized style vectors, pinned to a verified revision of cstr/kokoro-voices-GGUF.
+const GGUF_BASE: &str = "https://huggingface.co/cstr/kokoro-voices-GGUF/resolve/1c98db113c69e3feef9644cf0aaec5c0bea02a8e";
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum KokoroVoice {
+    Martin,
+    Victoria,
+    Eva,
+    Bernd,
+}
+
+impl KokoroVoice {
+    const GGUF_VOICES: [Self; 3] = [Self::Victoria, Self::Eva, Self::Bernd];
+
+    pub fn parse(voice: &str) -> Result<Self, String> {
+        match voice.trim().to_ascii_lowercase().as_str() {
+            "martin" => Ok(Self::Martin),
+            "victoria" => Ok(Self::Victoria),
+            "eva" => Ok(Self::Eva),
+            "bernd" => Ok(Self::Bernd),
+            _ => Err(format!(
+                "unknown voice embedding: {voice} (available: Martin, Victoria, Eva, Bernd)"
+            )),
+        }
+    }
+
+    fn gguf_filename(self) -> Option<&'static str> {
+        match self {
+            Self::Martin => None,
+            Self::Victoria => Some("kokoro-voice-df_victoria.gguf"),
+            Self::Eva => Some("kokoro-voice-df_eva.gguf"),
+            Self::Bernd => Some("kokoro-voice-dm_bernd.gguf"),
+        }
+    }
+}
 /// Matches `kokoro_onnx.config.MAX_PHONEME_LENGTH`.
 const MAX_PHONEME_LENGTH: usize = 510;
 pub const SAMPLE_RATE_HZ: u32 = 24_000;
@@ -59,20 +95,54 @@ fn cache_dir() -> PathBuf {
     std::env::temp_dir().join("lensisku/kokoro-martin")
 }
 
-/// Ensures ONNX + voices exist under [`cache_dir`]. Safe to call every batch; download runs once
-/// per process (Hugging Face files are written only if missing).
+/// Cache the ONNX model and all voices at startup. Existing cache paths stay compatible.
 pub fn ensure_model_files_cached() -> Result<(), String> {
-    static READY: OnceLock<Result<(), String>> = OnceLock::new();
-    READY
-        .get_or_init(|| {
-            let dir = cache_dir();
-            let model_path = dir.join(MODEL_FILENAME);
-            let voices_path = dir.join(VOICES_FILENAME);
-            download_file_blocking(&format!("{HF_BASE}/{MODEL_FILENAME}"), &model_path)?;
-            download_file_blocking(&format!("{HF_BASE}/{VOICES_FILENAME}"), &voices_path)?;
-            Ok(())
-        })
-        .clone()
+    let mut errors = Vec::new();
+    if let Err(error) = ensure_martin_cached() {
+        errors.push(format!("Martin: {error}"));
+    }
+    for voice in KokoroVoice::GGUF_VOICES {
+        if let Err(error) = ensure_gguf_cached(voice) {
+            errors.push(format!("{voice:?}: {error}"));
+        }
+    }
+    if errors.is_empty() {
+        Ok(())
+    } else {
+        Err(errors.join("; "))
+    }
+}
+
+fn ensure_martin_cached() -> Result<(), String> {
+    static READY: Mutex<bool> = Mutex::new(false);
+    let mut ready = READY.lock().map_err(|e| e.to_string())?;
+    if !*ready {
+        let dir = cache_dir();
+        download_file_blocking(
+            &format!("{HF_BASE}/{MODEL_FILENAME}"),
+            &dir.join(MODEL_FILENAME),
+        )?;
+        download_file_blocking(
+            &format!("{HF_BASE}/{VOICES_FILENAME}"),
+            &dir.join(VOICES_FILENAME),
+        )?;
+        *ready = true;
+    }
+    Ok(())
+}
+
+fn ensure_gguf_cached(voice: KokoroVoice) -> Result<(), String> {
+    static READY: Mutex<Vec<KokoroVoice>> = Mutex::new(Vec::new());
+    let mut ready = READY.lock().map_err(|e| e.to_string())?;
+    if !ready.contains(&voice) {
+        let filename = voice.gguf_filename().ok_or("voice does not use GGUF")?;
+        download_file_blocking(
+            &format!("{GGUF_BASE}/{filename}"),
+            &cache_dir().join(filename),
+        )?;
+        ready.push(voice);
+    }
+    Ok(())
 }
 
 fn download_file_blocking(url: &str, dest: &std::path::Path) -> Result<(), String> {
@@ -167,13 +237,14 @@ pub struct KokoroTts {
     session: Session,
     /// Voice style table: `[510, 1, 256]`.
     voice_styles: Array3<f32>,
+    gguf_styles: HashMap<KokoroVoice, Array3<f32>>,
 }
 
 impl KokoroTts {
-    /// Load ONNX session and voice tensor from disk. Call [`ensure_model_files_cached`] first if
-    /// files may be missing; otherwise this reads from cache only.
+    /// Load the shared German ONNX model and Martin styles, downloading missing files.
+    /// GGUF styles are loaded on demand so their availability cannot disable Martin.
     pub fn load_blocking() -> Result<Self, String> {
-        ensure_model_files_cached()?;
+        ensure_martin_cached()?;
 
         let dir = cache_dir();
         let model_path = dir.join(MODEL_FILENAME);
@@ -199,18 +270,8 @@ impl KokoroTts {
         Ok(KokoroTts {
             session,
             voice_styles,
+            gguf_styles: HashMap::new(),
         })
-    }
-
-    fn resolve_voice(voice: &str) -> Result<(), String> {
-        let v = voice.trim().to_ascii_lowercase();
-        if v == "martin" {
-            Ok(())
-        } else {
-            Err(format!(
-                "unknown voice embedding: {voice} (only Martin is available)"
-            ))
-        }
     }
 
     /// Synthesize Lojban `word` to Ogg Opus bytes (RFC 7845), Martin voice, speed 0.8.
@@ -225,14 +286,22 @@ impl KokoroTts {
         voice_display: &str,
         speed: f32,
     ) -> Result<Vec<u8>, String> {
-        Self::resolve_voice(voice_display)?;
+        let voice = KokoroVoice::parse(voice_display)?;
+        if let Some(filename) = voice.gguf_filename() {
+            if let std::collections::hash_map::Entry::Vacant(entry) = self.gguf_styles.entry(voice)
+            {
+                ensure_gguf_cached(voice)?;
+                let bytes = std::fs::read(cache_dir().join(filename)).map_err(|e| e.to_string())?;
+                entry.insert(super::kokoro_voice_gguf::read_voice_pack(&bytes)?);
+            }
+        }
         if !(0.5..=2.0).contains(&speed) {
             return Err("speed should be between 0.5 and 2.0".to_string());
         }
 
         let mut chunks: Vec<f32> = Vec::new();
         for batch in split_phonemes(ipa) {
-            let audio = self.run_chunk(&batch, speed)?;
+            let audio = self.run_chunk(&batch, voice, speed)?;
             chunks.extend(audio);
         }
         if chunks.is_empty() {
@@ -241,7 +310,12 @@ impl KokoroTts {
         pcm_f32_to_ogg_opus(&chunks)
     }
 
-    fn run_chunk(&mut self, phonemes: &str, speed: f32) -> Result<Vec<f32>, String> {
+    fn run_chunk(
+        &mut self,
+        phonemes: &str,
+        voice: KokoroVoice,
+        speed: f32,
+    ) -> Result<Vec<f32>, String> {
         let mut phonemes = phonemes.to_string();
         if phonemes.chars().count() > MAX_PHONEME_LENGTH {
             phonemes = phonemes.chars().take(MAX_PHONEME_LENGTH).collect();
@@ -257,10 +331,15 @@ impl KokoroTts {
             return Ok(Vec::new());
         }
 
-        let style_idx = tokens
-            .len()
-            .min(self.voice_styles.shape()[0].saturating_sub(1));
-        let style_row = self.voice_styles.slice(ndarray::s![style_idx, 0, ..]);
+        let styles = match voice {
+            KokoroVoice::Martin => &self.voice_styles,
+            _ => self
+                .gguf_styles
+                .get(&voice)
+                .ok_or("GGUF voice styles not loaded")?,
+        };
+        let style_idx = tokens.len().min(styles.shape()[0].saturating_sub(1));
+        let style_row = styles.slice(ndarray::s![style_idx, 0, ..]);
         let style_vec: Vec<f32> = style_row.iter().copied().collect();
         if style_vec.len() != 256 {
             return Err(format!("style dim {}, expected 256", style_vec.len()));
@@ -321,6 +400,55 @@ fn pcm_f32_to_ogg_opus(samples: &[f32]) -> Result<Vec<u8>, String> {
 #[cfg(test)]
 mod tests {
     use super::{split_phonemes, tokenize_phonemes, KokoroTts, KOKORO_VOCAB};
+
+    #[test]
+    fn recognizes_all_voices() {
+        for (name, voice) in [
+            ("martin", super::KokoroVoice::Martin),
+            (" VICTORIA ", super::KokoroVoice::Victoria),
+            ("Eva", super::KokoroVoice::Eva),
+            ("BERND", super::KokoroVoice::Bernd),
+        ] {
+            assert_eq!(super::KokoroVoice::parse(name).unwrap(), voice);
+        }
+        assert!(super::KokoroVoice::parse("unknown").is_err());
+    }
+
+    #[test]
+    #[ignore = "requires cached Martin ONNX/NPZ and Victoria/Eva/Bernd GGUF files"]
+    fn synthesize_all_voices_from_cache() {
+        let dir = super::cache_dir();
+        for name in [super::MODEL_FILENAME, super::VOICES_FILENAME]
+            .into_iter()
+            .chain(
+                super::KokoroVoice::GGUF_VOICES
+                    .into_iter()
+                    .filter_map(|voice| voice.gguf_filename()),
+            )
+        {
+            assert!(dir.join(name).exists(), "missing cached {name}");
+        }
+        super::ensure_model_files_cached().expect("startup cache preparation");
+        let mut engine = KokoroTts::load_blocking().expect("load German ONNX model");
+        let mut outputs = Vec::new();
+        for voice in ["Martin", "Victoria", "Eva", "Bernd"] {
+            let audio = engine
+                .ipa_to_ogg_opus("ʃɔɪ ɹoː doː.", voice, 0.8)
+                .expect(voice);
+            assert!(audio.starts_with(b"OggS"));
+            let (pcm, _) =
+                ogg_opus::decode::<_, 24000>(std::io::Cursor::new(audio)).expect("decode");
+            assert!(
+                pcm.iter().any(|sample| sample.unsigned_abs() > 100),
+                "{voice} is silent"
+            );
+            for previous in &outputs {
+                assert_ne!(&pcm, previous, "{voice} reused another voice's audio");
+            }
+            outputs.push(pcm);
+        }
+        assert_eq!(engine.gguf_styles.len(), 3);
+    }
 
     #[test]
     fn vocab_has_core_ipa() {
