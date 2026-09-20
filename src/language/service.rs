@@ -880,6 +880,29 @@ mod tests {
     use super::*;
 
     #[test]
+    fn reconstructs_y_apostrophe_hyphen_before_vowel_initial_fuhivla() {
+        use std::path::Path;
+        let grammar = std::fs::read_to_string(
+            Path::new(env!("CARGO_MANIFEST_DIR")).join("src/grammar/lojban.peg"),
+        )
+        .expect("grammar");
+        let parser = Peg::new("text", &grammar).expect("parser");
+        let source_words = vec!["crino".into(), "alga".into()];
+        let maps = OwnedRafsiMaps::default();
+
+        assert_eq!(
+            reconstruct_fuhivla_lujvo("criny'alga", &source_words, &parser, &maps.options()),
+            Some("criny'alga".into())
+        );
+        assert_eq!(
+            classify_lujvo_spelling("criny'alga", &maps.options())
+                .expect("classification")
+                .canonical_word,
+            "criny'alga"
+        );
+    }
+
+    #[test]
     fn reconstructs_fuhivla_prefix_with_best_final_rafsi() {
         use std::path::Path;
         let grammar = std::fs::read_to_string(

@@ -7957,9 +7957,9 @@ checksum = "0b928f33d975fc6ad9f86c8f283853ad26bdd5b10b7f1542aa2fa15e2289105a"
 
 [[package]]
 name = "vlazba"
-version = "1.0.4"
+version = "1.0.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6f9e8642c98362fe52cbcf9cb9f0311005f8cea2bfc72de338627eefd03bc671"
+checksum = "58fb2395b8bba1f7f4a42e9a2e4436d5835c5de93ffb7f71c779a5a91b00f704"
 dependencies = [
  "anyhow",
  "camxes-rs",

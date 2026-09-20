@@ -23,8 +23,7 @@ use super::{
 use crate::jbovlaste::models::{
     row_vote_score_f32, row_vote_score_i32, DefinitionDetail, SemanticGraphParams,
 };
-use vlazba::jvokaha::jvokaha;
-use vlazba::lujvo_segments_from_nodes;
+use vlazba::{implicit_four_letter_gismu_rafsi, lujvo_rafsi};
 
 fn push_author_filters<'a>(
     conditions: &mut Vec<String>,
@@ -91,8 +90,6 @@ use crate::versions::service::{
 use crate::versions::{VersionContent, VersionDiff};
 use base64::engine::general_purpose::STANDARD as BASE64;
 use base64::Engine;
-use camxes_rs::camxes::peg::parsing::ParseResult;
-
 use chrono::{DateTime, Utc};
 
 pub fn sanitize_html(html: &str) -> String {
@@ -1989,40 +1986,21 @@ async fn run_dictionary_search(
     }
 }
 
-/// Resolve a lujvo into its source words (selrafsi) via jvokaha/camxes + rafsi DB lookup.
+/// Resolve a lujvo into its source words (selrafsi) via vlazba + rafsi DB lookup.
 pub async fn get_source_words(
     word: &str,
     transaction: &tokio_postgres::Transaction<'_>,
     parsers: Option<&Arc<HashMap<i32, Peg>>>,
 ) -> Result<Vec<String>, Box<dyn std::error::Error>> {
-    // Prefer jvokaha: it decomposes classical lujvo (incl. cvvr hyphens like
-    // "teir" -> "tei" + "r") directly into the rafsi list we feed the DB lookup.
-    // Fall back to camxes only for fu'ivla-rafsi lujvo (e.g. "cidjrspageti"),
-    // which jvokaha can't handle.
-    let mut parts = jvokaha(word).unwrap_or_default();
-
-    if parts.is_empty() {
-        if let Some(parsers) = parsers {
-            if let Some(parser) = parsers.get(&1) {
-                let ParseResult(_, _, _, result) = parser.parse(word);
-                if let Ok(tokens) = result.as_ref() {
-                    if let Some(segments) = lujvo_segments_from_nodes(word, tokens) {
-                        parts = segments;
-                    }
-                }
-            }
-        }
-    }
+    // vlazba handles both classical and fu'ivla-rafsi decomposition.
+    let parts = parsers
+        .and_then(|parsers| parsers.get(&1))
+        .and_then(|parser| lujvo_rafsi(word, parser))
+        .unwrap_or_default();
 
     if parts.is_empty() {
         debug!("Failed to decompose word '{}'", word);
     }
-
-    // Drop lujvo hyphens ("y", "r", "n", "'y") — they are syntactic glue,
-    // not source words. Without this the cmavo "y" (hesitation) would get
-    // matched as an exact word and surface as a clickable decomposition
-    // entry for lujvo like "klamyseltru".
-    parts.retain(|p| !matches!(p.as_str(), "y" | "r" | "n" | "'y"));
 
     let rafsi_parts: Vec<&str> = parts.iter().map(|s| s.as_str()).collect();
 
@@ -6423,24 +6401,6 @@ fn format_rafsi_overlap_warning(word: &str, type_name: &str) -> String {
     format!("RAFSI_OVERLAP|{}|{}", word, type_name)
 }
 
-/// Implicit 4-letter rafsi for a 5-letter vowel-final gismu (CLL / vlazba),
-/// excluding the broda-series stem `brod`.
-fn implicit_four_letter_gismu_rafsi(word: &str) -> Option<String> {
-    let chars: Vec<char> = word.chars().collect();
-    if chars.len() != 5 {
-        return None;
-    }
-    let last = chars[4];
-    if !"aeiou".contains(last) {
-        return None;
-    }
-    let four: String = chars[..4].iter().collect();
-    if four == "brod" {
-        return None;
-    }
-    Some(four)
-}
-
 /// Append the implicit 4-letter form when missing. Official gismu always get it;
 /// experimental only when no official gismu already lists that token.
 async fn maybe_append_four_letter_gismu_rafsi(
@@ -6843,7 +6803,7 @@ pub async fn get_definition_link(
 
 #[cfg(test)]
 mod search_canonical_alias_tests {
-    use super::looks_like_possible_lujvo_query;
+    use super::{looks_like_possible_lujvo_query, lujvo_rafsi, Peg};
 
     #[test]
     fn looks_like_possible_lujvo_rejects_phrases() {
@@ -6852,5 +6812,14 @@ mod search_canonical_alias_tests {
         assert!(!looks_like_possible_lujvo_query("big cat"));
         assert!(!looks_like_possible_lujvo_query("cat"));
         assert!(!looks_like_possible_lujvo_query(""));
+    }
+
+    #[test]
+    fn vlazba_omits_y_apostrophe_lujvo_hyphen() {
+        let parser =
+            Peg::new("text", include_str!("../grammar/lojban.peg")).expect("Lojban parser");
+        let parts = lujvo_rafsi("criny'alga", &parser).expect("lujvo rafsi");
+
+        assert_eq!(parts, ["crin", "alga"]);
     }
 }
