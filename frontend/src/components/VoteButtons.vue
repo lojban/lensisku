@@ -3,7 +3,7 @@
     <template #trigger="{ open }">
       <button
         type="button"
-        class="vote-trigger inline-flex h-8 items-center gap-1 rounded-lg px-1.5 text-gray-600 transition-colors hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
+        class="vote-trigger flex h-6 items-center gap-1 rounded-lg px-1.5 text-gray-600 transition-colors hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
         :class="{
           'vote-trigger--up': userVote === 1,
           'vote-trigger--down': userVote === -1,
@@ -16,12 +16,12 @@
         :aria-expanded="open"
         :aria-busy="isLoading"
       >
-        <span class="relative h-6 w-6 shrink-0" aria-hidden="true">
-          <ThumbsDown class="absolute -bottom-px right-0 h-4 w-4 fill-white" :stroke-width="1.6" />
-          <ThumbsUp
-            class="vote-thumb-front absolute left-0 -top-px h-[18px] w-[18px]"
+        <span class="relative h-[21px] w-5 shrink-0" aria-hidden="true">
+          <ThumbsDown
+            class="absolute -bottom-px right-0 h-3.5 w-3.5 fill-white"
             :stroke-width="1.6"
           />
+          <ThumbsUp class="vote-thumb-front absolute left-0 -top-px h-4 w-4" :stroke-width="1.6" />
         </span>
         <span class="min-w-[1ch] text-xs font-semibold tabular-nums" aria-live="polite">{{
           score
