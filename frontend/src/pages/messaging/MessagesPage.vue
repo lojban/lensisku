@@ -100,6 +100,9 @@
 </template>
 
 <script setup lang="ts">
+import { useSeoHead } from '@/composables/useSeoHead'
+
+useSeoHead({ title: 'Messages', robots: 'noindex, nofollow' })
 import { Button, Input, Select } from '@packages/ui'
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'

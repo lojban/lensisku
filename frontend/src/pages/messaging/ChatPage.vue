@@ -117,6 +117,9 @@
 </template>
 
 <script setup lang="ts">
+import { useSeoHead } from '@/composables/useSeoHead'
+
+useSeoHead({ title: 'Conversation', robots: 'noindex, nofollow' })
 import { IconButtonGhost } from '@packages/ui'
 import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'

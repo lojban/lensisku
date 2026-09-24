@@ -97,25 +97,27 @@ export function useSeoHead(config: SeoConfig) {
   })
 
   const linkTags = computed(() => {
-    const links: Array<{ rel: string; href?: string; hreflang?: string }> = []
+    const links: Array<{ rel: string; href?: string; hreflang?: string; key?: string }> = []
     const canonical = config.canonical ? toValue(config.canonical) : null
-    const pathWithoutLocale = config.pathWithoutLocale ? toValue(config.pathWithoutLocale) : null
+    const pathWithoutLocale =
+      config.pathWithoutLocale !== undefined ? toValue(config.pathWithoutLocale) : null
 
     // Canonical link
     if (canonical) {
       const href = canonical.startsWith('http')
         ? canonical
         : `${typeof window !== 'undefined' ? window.location.origin : ''}${canonical.startsWith('/') ? '' : '/'}${canonical}`
-      links.push({ rel: 'canonical', href })
+      links.push({ rel: 'canonical', href, key: 'canonical' })
     }
 
     // hreflang links for all supported locales
-    if (pathWithoutLocale) {
+    if (pathWithoutLocale !== null) {
       const origin = typeof window !== 'undefined' ? window.location.origin : ''
       for (const locale of supportedLocales) {
         links.push({
           rel: 'alternate',
           hreflang: locale,
+          key: `alternate-${locale}`,
           href: `${origin}/${locale}${pathWithoutLocale}`,
         })
       }
@@ -123,6 +125,7 @@ export function useSeoHead(config: SeoConfig) {
       links.push({
         rel: 'alternate',
         hreflang: 'x-default',
+        key: 'alternate-x-default',
         href: `${origin}/en${pathWithoutLocale}`,
       })
     }

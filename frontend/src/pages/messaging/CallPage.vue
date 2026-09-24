@@ -6,6 +6,9 @@
 </template>
 
 <script setup lang="ts">
+import { useSeoHead } from '@/composables/useSeoHead'
+
+useSeoHead({ title: 'Video call', robots: 'noindex, nofollow' })
 import { useRouter } from 'vue-router'
 import CallInterface from '@/components/messaging/calling/CallInterface.vue'
 

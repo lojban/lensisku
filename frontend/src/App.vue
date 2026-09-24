@@ -418,18 +418,22 @@ import Error from '@/components/Error.vue'
 import ToastFloat from '@/components/ToastFloat.vue'
 import PWAInstallPrompt from '@/components/messaging/shared/PWAInstallPrompt.vue'
 import { resendConfirmation } from '@/api'
-import { Button, FabButton, ToolbarSelectDropdown, ToolbarSelectDropdownItem, DownloadIcon, ExportIcon, ImportIcon } from '@packages/ui'
+import {
+  Button,
+  FabButton,
+  ToolbarSelectDropdown,
+  ToolbarSelectDropdownItem,
+  DownloadIcon,
+  ExportIcon,
+  ImportIcon,
+} from '@packages/ui'
 
 import BackgroundComponent from './components/BackgroundComponent.vue'
 import AppFixedBanners from './components/layout/AppFixedBanners.vue'
 import AppMobileNavMenu from './components/layout/AppMobileNavMenu.vue'
 import NavLink from './components/NavLink.vue'
 import { normalizeSearchQuery } from '@/utils/searchQueryUtils'
-import {
-  compactQuery,
-  mergeQueryForHomeNavigation,
-  queryStr,
-} from '@/utils/routeQuery'
+import { compactQuery, mergeQueryForHomeNavigation, queryStr } from '@/utils/routeQuery'
 import { provideAuth } from './composables/useAuth'
 import { useCollectionsCache } from './composables/useCollectionsCache'
 import { provideError } from './composables/useError'
@@ -440,7 +444,14 @@ import {
 import { useNotifications } from '@/services/messaging/NotificationService'
 import { useButtonTheme } from './composables/useButtonTheme'
 import { useNewsUnread } from './composables/useNewsUnread'
-import { localeCaptureGroupRegex } from './config/locales'
+import { localeCaptureGroupRegex, supportedLocales } from './config/locales'
+import {
+  noindexRoutes,
+  routeDescriptionKeys,
+  routeDescriptions,
+  routeTitleKeys,
+  routeTitles,
+} from './config/routeSeo'
 
 import logoSvgRaw from '../public/assets/icons/favicon.svg?raw'
 
@@ -448,19 +459,64 @@ const i18n = useI18n()
 const $t = i18n.t
 const $locale = i18n.locale
 
-// Default SEO: meta description so Google shows a proper snippet instead of footer text.
-// Pages can override by setting description in useSeoHead (same key 'description').
-useHead({
-  meta: [
-    {
-      name: 'description',
-      content: i18n.t('seo.defaultDescription'),
-      key: 'description',
-    },
-  ],
-})
 const router = useRouter()
 const route = useRoute()
+const seoRouteName = computed(() => String(route.name || '').replace(/-(en|jbo|ru|ja|zh)$/, ''))
+const seoNoindex = computed(() => noindexRoutes.has(seoRouteName.value))
+const seoTitle = computed(() => {
+  const name = seoRouteName.value
+  const key = seoNoindex.value ? routeTitleKeys[name] : `seo.publicTitles.${name}`
+  const title = key && i18n.te(key) ? i18n.t(key) : routeTitles[name]
+  return title ? `${title} | ${i18n.t('seo.baseTitle')}` : i18n.t('seo.baseTitle')
+})
+const seoDescription = computed(() => {
+  const name = seoRouteName.value
+  const key = seoNoindex.value ? routeDescriptionKeys[name] : `seo.publicDescriptions.${name}`
+  return key && i18n.te(key)
+    ? i18n.t(key)
+    : routeDescriptions[name] || i18n.t('seo.defaultDescription')
+})
+const seoUrl = computed(() => `https://lensisku.lojban.org${route.path}`)
+
+// Route defaults also cover pages without their own useSeoHead call. Page-level
+// metadata takes precedence when content is available (for example, a word definition).
+useHead({
+  title: seoTitle,
+  meta: computed(() => [
+    { property: 'og:title', content: seoTitle.value },
+    { property: 'og:site_name', content: i18n.t('seo.baseTitle') },
+    { property: 'og:type', content: 'website' },
+    { property: 'og:locale', content: i18n.locale.value.replace('-', '_') },
+    { name: 'twitter:card', content: 'summary' },
+    { name: 'twitter:title', content: seoTitle.value },
+    { name: 'description', content: seoDescription.value, key: 'description' },
+    { property: 'og:description', content: seoDescription.value },
+    { name: 'twitter:description', content: seoDescription.value },
+    ...(seoNoindex.value
+      ? [{ name: 'robots', content: 'noindex, nofollow', key: 'robots' }]
+      : [{ property: 'og:url', content: seoUrl.value }]),
+  ]),
+  link: computed(() => {
+    if (seoNoindex.value || !route.name) return []
+    const pathWithoutLocale = route.path.replace(/^\/(en|jbo|ru|ja|zh)(?=\/|$)/, '')
+    return [
+      { rel: 'canonical', href: seoUrl.value, key: 'canonical' },
+      ...supportedLocales.map((locale) => ({
+        rel: 'alternate',
+        hreflang: locale,
+        href: `https://lensisku.lojban.org/${locale}${pathWithoutLocale}`,
+        key: `alternate-${locale}`,
+      })),
+      {
+        rel: 'alternate',
+        hreflang: 'x-default',
+        href: `https://lensisku.lojban.org/en${pathWithoutLocale}`,
+        key: 'alternate-x-default',
+      },
+    ]
+  }),
+  htmlAttrs: computed(() => ({ lang: i18n.locale.value })),
+})
 
 const isHomePage = computed(
   () => route.name === 'Home' || (typeof route.name === 'string' && route.name.startsWith('Home-'))
@@ -484,7 +540,11 @@ const searchMode = ref('messages')
 const auth = provideAuth()
 const { preload: preloadCollections, clear: clearCollectionsCache } = useCollectionsCache()
 const { buttonTheme, initButtonTheme, setButtonTheme: setButtonThemePreference } = useButtonTheme()
-const { badgeCount: newsBadgeCount, badgeLabel: newsBadgeLabel, fetchUnreadCount: fetchNewsUnreadCount } = useNewsUnread()
+const {
+  badgeCount: newsBadgeCount,
+  badgeLabel: newsBadgeLabel,
+  fetchUnreadCount: fetchNewsUnreadCount,
+} = useNewsUnread()
 const { error, clearError } = provideError()
 const { successToast, clearSuccess } = provideSuccessToast()
 const isMenuOpen = ref(false)

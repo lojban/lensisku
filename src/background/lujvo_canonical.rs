@@ -131,15 +131,18 @@ pub async fn classify_unchecked_lujvo_batch(
 
 /// Backfill the SE relation separately from score-optimal spelling. Every
 /// candidate is stamped once, including lujvo with no trivial SE relation.
+const TRIVIAL_SE_BATCH_SIZE: i64 = 100;
+
 pub fn spawn_trivial_se_classification(pool: Pool) {
     tokio::spawn(async move {
-        let mut interval = time::interval(Duration::from_secs(INTERVAL_SECS));
-        interval.set_missed_tick_behavior(time::MissedTickBehavior::Skip);
-        interval.tick().await;
         loop {
-            interval.tick().await;
-            if let Err(e) = classify_trivial_se_batch(&pool).await {
-                error!("trivial SE classification batch failed: {}", e);
+            match classify_trivial_se_batch(&pool).await {
+                Ok(0) => time::sleep(Duration::from_secs(INTERVAL_SECS)).await,
+                Ok(_) => time::sleep(Duration::from_secs(1)).await,
+                Err(e) => {
+                    error!("trivial SE classification batch failed: {}", e);
+                    time::sleep(Duration::from_secs(INTERVAL_SECS)).await;
+                }
             }
         }
     });
@@ -155,7 +158,7 @@ pub async fn classify_trivial_se_batch(
             "SELECT valsiid, word FROM valsi
              WHERE source_langid = 1 AND typeid IN (1, 4, 7, 17) AND NOT trivial_se_checked
              ORDER BY valsiid LIMIT $1",
-            &[&BATCH_SIZE],
+            &[&TRIVIAL_SE_BATCH_SIZE],
         ).await?;
         if rows.is_empty() { tx.commit().await?; return Ok(0); }
         let pending: Vec<(i32, String)> = rows.iter().map(|r| (r.get(0), r.get(1))).collect();

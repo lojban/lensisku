@@ -28,6 +28,9 @@
 </template>
 
 <script setup lang="ts">
+import { useSeoHead } from '@/composables/useSeoHead'
+
+useSeoHead({ title: 'New conversation', robots: 'noindex, nofollow' })
 import { Button } from '@packages/ui'
 import { useRouter } from 'vue-router'
 import { ArrowLeft } from '@lucide/vue'

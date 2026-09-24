@@ -266,7 +266,7 @@ const error = ref(null)
 const searchFormRef = ref(null)
 
 const pageTitle = computed(() => searchQuery.value?.trim() || 'Fast Search')
-useSeoHead({ title: pageTitle, pathWithoutLocale: '/fast-search' })
+useSeoHead({ title: pageTitle, pathWithoutLocale: '/sutra_sisku' })
 
 // Filter state
 const languages = ref([])

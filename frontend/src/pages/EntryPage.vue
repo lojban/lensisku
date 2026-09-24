@@ -266,7 +266,7 @@ const entryDescription = computed(() => {
   const typeLabel = tm('wordTypes')[v.type_name]
   return t('entryPage.metaDescription', { word: v.word, type: typeLabel })
 })
-const entryCanonical = computed(() => route.fullPath)
+const entryCanonical = computed(() => route.path)
 
 useSeoHead({
   title: entryTitle,

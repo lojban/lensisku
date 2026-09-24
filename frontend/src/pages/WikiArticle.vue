@@ -115,6 +115,7 @@ import { getWikiArticle, getNativeWikiArticle, getWikiByDefinitionId } from '@/a
 import LazyMathJax from '@/components/LazyMathJax.vue'
 import SourceTypeBadge from '@/components/SourceTypeBadge.vue'
 import AuthorLink from '@/components/AuthorLink.vue'
+import { useSeoHead } from '@/composables/useSeoHead'
 
 interface WikiArticleDetail {
   page_id: number
@@ -144,6 +145,19 @@ const loading = ref(true)
 const error = ref<string | null>(null)
 const article = ref<WikiArticleDetail | null>(null)
 const followedOnce = ref(false)
+
+useSeoHead({
+  title: computed(() => article.value?.title || props.title?.replace(/_/g, ' ') || 'Wiki article'),
+  description: computed(() => {
+    const summary = article.value?.markdown
+      ?.replace(/<[^>]*>/g, ' ')
+      .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+      .replace(/[#*_`~]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+    return summary || 'Read a Lojban wiki article about the language and its vocabulary.'
+  }),
+})
 
 const encodedTitle = computed(() =>
   encodeURIComponent((article.value?.title || props.title || '').replace(/ /g, '_'))

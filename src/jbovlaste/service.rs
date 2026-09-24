@@ -23,7 +23,7 @@ use super::{
 use crate::jbovlaste::models::{
     row_vote_score_f32, row_vote_score_i32, DefinitionDetail, RelatedValsi, SemanticGraphParams,
 };
-use vlazba::{implicit_four_letter_gismu_rafsi, lujvo_rafsi, trivial_expansion_key};
+use vlazba::{implicit_four_letter_gismu_rafsi, lujvo_rafsi, trivial_expansion_key, trivial_se_base};
 
 fn push_author_filters<'a>(
     conditions: &mut Vec<String>,
@@ -2185,7 +2185,7 @@ pub async fn get_entry_details(
     let result = transaction
         .query_opt(
             "SELECT v.valsiid, v.word, vt.descriptor as type_name, v.rafsi, v.source_langid,
-             v.cached_decomposition, v.canonical_word, v.related_expansion_key,
+             v.cached_decomposition, v.canonical_word, v.related_expansion_key, v.trivial_se_checked,
              (SELECT COUNT(c.commentid)
               FROM threads t
               LEFT JOIN comments c ON t.threadid = c.threadid
@@ -2225,7 +2225,19 @@ pub async fn get_entry_details(
                 related_forms: Vec::new()
             };
 
-            let key = row.get::<_, Option<String>>("related_expansion_key");
+            let mut key = row.get::<_, Option<String>>("related_expansion_key");
+            let mut base_word = None;
+            if !row.get::<_, bool>("trivial_se_checked")
+                && matches!(detail.type_name.as_str(), "gismu" | "lujvo" | "non-canonical lujvo" | "experimental gismu") {
+                let maps = load_owned_rafsi_maps(&transaction).await?;
+                let options = maps.options();
+                key = trivial_expansion_key(&detail.word, &options, maps.se_words());
+                base_word = trivial_se_base(&detail.word, &options, maps.se_words());
+                transaction.execute(
+                    "UPDATE valsi SET related_expansion_key = $1, trivial_se_checked = TRUE WHERE valsiid = $2 AND word = $3",
+                    &[&key, &valsiid, &detail.word],
+                ).await?;
+            }
             let canonical_group = if matches!(detail.type_name.as_str(), "lujvo" | "non-canonical lujvo") {
                 Some(row.get::<_, Option<String>>("canonical_word")
                     .filter(|word| !word.is_empty())
@@ -2237,9 +2249,10 @@ pub async fn get_entry_details(
                    AND (($2::text IS NOT NULL AND
                          related_expansion_key = $2)
                         OR ($3::text IS NOT NULL AND
-                            (word = $3 OR canonical_word = $3)))
+                            (word = $3 OR canonical_word = $3))
+                        OR ($4::text IS NOT NULL AND word = $4))
                  ORDER BY word",
-                &[&detail.word, &key, &canonical_group],
+                &[&detail.word, &key, &canonical_group, &base_word],
             ).await?;
             detail.related_forms = related.into_iter().map(|r| RelatedValsi {
                 valsiid: r.get(0), word: r.get(1),
