@@ -1,4 +1,5 @@
 use crate::utils::remove_html_tags;
+use crate::search_helpers::{self, DictionarySearchPatterns};
 use camxes_rs::camxes::peg::grammar::Peg;
 use chrono::TimeZone;
 use serde_json::json;
@@ -106,13 +107,9 @@ fn semantic_similarity_threshold() -> f64 {
 }
 
 /// Cheap gate before morphology: single Lojban-letter token, not an English phrase.
+#[inline]
 fn looks_like_possible_lujvo_query(search_term: &str) -> bool {
-    let t = search_term.trim();
-    if t.len() < 4 || t.contains(char::is_whitespace) {
-        return false;
-    }
-    t.chars()
-        .all(|c| matches!(c, 'a'..='z' | 'A'..='Z' | '\'' | '.' | ','))
+    search_helpers::looks_like_possible_lujvo_query(search_term)
 }
 
 /// Resolve canonical spelling variants and the attested forms sharing the
@@ -262,9 +259,9 @@ pub async fn semantic_search(
                    OR d.cached_canonical_word = $3 OR d.cached_canonical_word = $4
                    OR d.cached_canonical_word = ANY($5)
                    OR v.word = ANY($5)
-                   OR (d.cached_rafsi IS NOT NULL AND ($3 = ANY(string_to_array(d.cached_rafsi, ' ')) OR $4 = ANY(string_to_array(d.cached_rafsi, ' '))))
+                   OR (d.cached_rafsi IS NOT NULL AND (position(' ' || $3 || ' ' in ' ' || d.cached_rafsi || ' ') > 0 OR position(' ' || $4 || ' ' in ' ' || d.cached_rafsi || ' ') > 0))
                    OR (d.cached_glosswords IS NOT NULL AND d.cached_glosswords != ''
-                       AND LOWER($3) = ANY(string_to_array(d.cached_glosswords, '|'))))"#
+                       AND position('|' || LOWER($3) || '|' in '|' || d.cached_glosswords || '|') > 0))"#
             .to_string()
     };
     let vector_order_sql = if neighbor_search {
@@ -305,9 +302,9 @@ pub async fn semantic_search(
                     WHEN d.cached_canonical_word = $3 OR d.cached_canonical_word = $4
                          OR d.cached_canonical_word = ANY($5)
                          OR v.word = ANY($5) THEN 1
-                    WHEN d.cached_rafsi IS NOT NULL AND ($3 = ANY(string_to_array(d.cached_rafsi, ' ')) OR $4 = ANY(string_to_array(d.cached_rafsi, ' '))) THEN 1
+                    WHEN d.cached_rafsi IS NOT NULL AND (position(' ' || $3 || ' ' in ' ' || d.cached_rafsi || ' ') > 0 OR position(' ' || $4 || ' ' in ' ' || d.cached_rafsi || ' ') > 0) THEN 1
                     WHEN d.cached_glosswords IS NOT NULL AND d.cached_glosswords != ''
-                         AND LOWER($3) = ANY(string_to_array(d.cached_glosswords, '|')) THEN 2
+                         AND position('|' || LOWER($3) || '|' in '|' || d.cached_glosswords || '|') > 0 THEN 2
                     WHEN v.word ILIKE $3 OR v.word ILIKE $4 THEN 3
                     ELSE 4 
                 END as exact_match_rank
@@ -380,9 +377,9 @@ pub async fn semantic_search(
                     WHEN d.cached_canonical_word = $3 OR d.cached_canonical_word = $4
                          OR d.cached_canonical_word = ANY($5)
                          OR v.word = ANY($5) THEN 1
-                    WHEN d.cached_rafsi IS NOT NULL AND ($3 = ANY(string_to_array(d.cached_rafsi, ' ')) OR $4 = ANY(string_to_array(d.cached_rafsi, ' '))) THEN 1
+                    WHEN d.cached_rafsi IS NOT NULL AND (position(' ' || $3 || ' ' in ' ' || d.cached_rafsi || ' ') > 0 OR position(' ' || $4 || ' ' in ' ' || d.cached_rafsi || ' ') > 0) THEN 1
                     WHEN d.cached_glosswords IS NOT NULL AND d.cached_glosswords != ''
-                         AND LOWER($3) = ANY(string_to_array(d.cached_glosswords, '|')) THEN 2
+                         AND position('|' || LOWER($3) || '|' in '|' || d.cached_glosswords || '|') > 0 THEN 2
                     WHEN v.word ILIKE $3 OR v.word ILIKE $4 THEN 3
                     ELSE 4 
                 END as exact_match_rank
@@ -1114,11 +1111,12 @@ pub async fn search_definitions(
     let transaction = client.transaction().await?;
 
     let offset = (params.page - 1) * params.per_page;
-    let like_pattern = format!("%{}%", params.search_term);
-    let word_boundary_pattern = format!(r"\y{}\y", params.search_term);
-    let lojban_search_term = params.search_term.replace('h', "'");
-    let lojban_like_pattern = format!("%{}%", lojban_search_term);
-    let lojban_word_boundary_pattern = format!(r"\y{}\y", lojban_search_term);
+    let patterns = DictionarySearchPatterns::from_search_term(&params.search_term);
+    let like_pattern = patterns.like_pattern.clone();
+    let word_boundary_pattern = patterns.word_boundary_pattern.clone();
+    let lojban_search_term = patterns.lojban_search_term.clone();
+    let lojban_like_pattern = patterns.lojban_like_pattern.clone();
+    let lojban_word_boundary_pattern = patterns.lojban_word_boundary_pattern.clone();
     let canonical_aliases =
         lookup_canonical_aliases_for_search(&transaction, &params.search_term, &lojban_search_term)
             .await?;
@@ -1204,16 +1202,7 @@ pub async fn search_definitions(
     let query_string = if params.include_comments {
         format!(
             r#"
-        WITH vote_scores AS (
-            SELECT definitionid, COALESCE(SUM(value), 0)::bigint AS score
-            FROM definitionvotes
-            GROUP BY definitionid
-        ),
-        definition_images_flag AS (
-            SELECT DISTINCT definition_id
-            FROM definition_images
-        ),
-        base_data AS (
+        WITH base_data AS (
             SELECT 
                 d.definitionid, d.valsiid, d.langid, d.definition, d.notes, d.etymology, d.created_at,
                 d.selmaho, d.jargon, d.definitionnum, d.time, d.owner_only,
@@ -1226,7 +1215,9 @@ pub async fn search_definitions(
                 d.cached_canonical_word as cached_canonical_word,
                 COALESCE(dv.score, 0)::bigint AS score,
                 COALESCE(cc.comment_count, 0) as comment_count,
-                (di.definition_id IS NOT NULL) as has_image,
+                EXISTS (
+                    SELECT 1 FROM definition_images di WHERE di.definition_id = d.definitionid
+                ) as has_image,
                 CASE
                     WHEN d.cached_valsiword = $1 THEN 13
                     WHEN d.cached_valsiword = $7 THEN 13
@@ -1234,13 +1225,13 @@ pub async fn search_definitions(
                     WHEN d.cached_canonical_word = $7 THEN 13
                     WHEN d.cached_valsiword = ANY($10) THEN 12
                     WHEN d.cached_canonical_word = ANY($10) THEN 12
-                    WHEN d.cached_glosswords IS NOT NULL AND d.cached_glosswords != '' 
-                         AND LOWER($1) = ANY(string_to_array(d.cached_glosswords, '|')) THEN 12
+                    WHEN d.cached_glosswords IS NOT NULL AND d.cached_glosswords != ''
+                         AND position('|' || LOWER($1) || '|' in '|' || d.cached_glosswords || '|') > 0 THEN 12
                     WHEN d.cached_valsiword ILIKE $1 THEN 11
                     WHEN d.cached_valsiword ILIKE $7 THEN 11
                     WHEN d.cached_valsiword ~* $3 THEN 10
                     WHEN d.cached_valsiword ~* $9 THEN 10
-                    WHEN d.cached_rafsi IS NOT NULL AND $1 = ANY(string_to_array(d.cached_rafsi, ' ')) THEN 12
+                    WHEN d.cached_rafsi IS NOT NULL AND position(' ' || $1 || ' ' in ' ' || d.cached_rafsi || ' ') > 0 THEN 12
                     WHEN d.cached_valsiword ILIKE $2 THEN 8
                     WHEN d.cached_valsiword ILIKE $8 THEN 8
                     WHEN d.definition ~ $3 THEN 6
@@ -1252,14 +1243,17 @@ pub async fn search_definitions(
                     ELSE 0
                 END as rank
             FROM definitions d
-            LEFT JOIN vote_scores dv ON dv.definitionid = d.definitionid
+            LEFT JOIN LATERAL (
+                SELECT COALESCE(SUM(value), 0)::bigint AS score
+                FROM definitionvotes
+                WHERE definitionid = d.definitionid
+            ) dv ON true
             LEFT JOIN LATERAL (
                 SELECT COUNT(c.commentid) as comment_count
                 FROM threads t
                 LEFT JOIN comments c ON c.threadid = t.threadid
                 WHERE t.valsiid = d.valsiid AND t.definitionid = d.definitionid
             ) cc ON true
-            LEFT JOIN definition_images_flag di ON di.definition_id = d.definitionid
             WHERE (d.cached_search_text ILIKE $2 OR d.cached_valsiword ILIKE $8
                    OR d.cached_canonical_word = $1 OR d.cached_canonical_word = $7
                    OR d.cached_valsiword = ANY($10)
@@ -1281,16 +1275,7 @@ pub async fn search_definitions(
     } else {
         format!(
             r#"
-        WITH vote_scores AS (
-            SELECT definitionid, COALESCE(SUM(value), 0)::bigint AS score
-            FROM definitionvotes
-            GROUP BY definitionid
-        ),
-        definition_images_flag AS (
-            SELECT DISTINCT definition_id
-            FROM definition_images
-        ),
-        base_data AS (
+        WITH base_data AS (
             SELECT 
                 d.definitionid, d.valsiid, d.langid, d.definition, d.notes, d.etymology, d.created_at,
                 d.selmaho, d.jargon, d.definitionnum, d.time, d.owner_only,
@@ -1302,7 +1287,9 @@ pub async fn search_definitions(
                 d.cached_decomposition as cached_decomposition,
                 d.cached_canonical_word as cached_canonical_word,
                 COALESCE(dv.score, 0)::bigint AS score,
-                (di.definition_id IS NOT NULL) as has_image,
+                EXISTS (
+                    SELECT 1 FROM definition_images di WHERE di.definition_id = d.definitionid
+                ) as has_image,
                 CASE
                     WHEN d.cached_valsiword = $1 THEN 13
                     WHEN d.cached_valsiword = $7 THEN 13
@@ -1311,12 +1298,12 @@ pub async fn search_definitions(
                     WHEN d.cached_valsiword = ANY($10) THEN 12
                     WHEN d.cached_canonical_word = ANY($10) THEN 12
                     WHEN d.cached_glosswords IS NOT NULL AND d.cached_glosswords != ''
-                         AND LOWER($1) = ANY(string_to_array(d.cached_glosswords, '|')) THEN 12
+                         AND position('|' || LOWER($1) || '|' in '|' || d.cached_glosswords || '|') > 0 THEN 12
                     WHEN d.cached_valsiword ILIKE $1 THEN 11
                     WHEN d.cached_valsiword ILIKE $7 THEN 11
                     WHEN d.cached_valsiword ~* $3 THEN 10
                     WHEN d.cached_valsiword ~* $9 THEN 10
-                    WHEN d.cached_rafsi IS NOT NULL AND $1 = ANY(string_to_array(d.cached_rafsi, ' ')) THEN 12
+                    WHEN d.cached_rafsi IS NOT NULL AND position(' ' || $1 || ' ' in ' ' || d.cached_rafsi || ' ') > 0 THEN 12
                     WHEN d.cached_valsiword ILIKE $2 THEN 8
                     WHEN d.cached_valsiword ILIKE $8 THEN 8
                     WHEN d.definition ~ $3 THEN 6
@@ -1328,8 +1315,11 @@ pub async fn search_definitions(
                     ELSE 0
                 END as rank
             FROM definitions d
-            LEFT JOIN vote_scores dv ON dv.definitionid = d.definitionid
-            LEFT JOIN definition_images_flag di ON di.definition_id = d.definitionid
+            LEFT JOIN LATERAL (
+                SELECT COALESCE(SUM(value), 0)::bigint AS score
+                FROM definitionvotes
+                WHERE definitionid = d.definitionid
+            ) dv ON true
             WHERE (d.cached_search_text ILIKE $2 OR d.cached_valsiword ILIKE $8
                    OR d.cached_canonical_word = $1 OR d.cached_canonical_word = $7
                    OR d.cached_valsiword = ANY($10)
@@ -1505,12 +1495,12 @@ pub async fn search_definitions(
                 WHEN d.cached_valsiword = ANY($8) THEN 12
                 WHEN d.cached_canonical_word = ANY($8) THEN 12
                 WHEN d.cached_glosswords IS NOT NULL AND d.cached_glosswords != '' 
-                     AND LOWER($1) = ANY(string_to_array(d.cached_glosswords, '|')) THEN 12
+                     AND position('|' || LOWER($1) || '|' in '|' || d.cached_glosswords || '|') > 0 THEN 12
                 WHEN d.cached_valsiword ILIKE $1 THEN 11
                 WHEN d.cached_valsiword ILIKE $5 THEN 11
                 WHEN d.cached_valsiword ~* $3 THEN 10
                 WHEN d.cached_valsiword ~* $7 THEN 10
-                WHEN d.cached_rafsi IS NOT NULL AND $1 = ANY(string_to_array(d.cached_rafsi, ' ')) THEN 12
+                WHEN d.cached_rafsi IS NOT NULL AND position(' ' || $1 || ' ' in ' ' || d.cached_rafsi || ' ') > 0 THEN 12
                 WHEN d.cached_valsiword ILIKE $2 THEN 8
                 WHEN d.cached_valsiword ILIKE $6 THEN 8
                 WHEN d.definition ~ $3 THEN 6
@@ -1559,11 +1549,12 @@ pub async fn fast_search_definitions(
     let transaction = client.transaction().await?;
 
     let offset = (params.page - 1) * params.per_page;
-    let like_pattern = format!("%{}%", params.search_term);
-    let word_boundary_pattern = format!(r"\y{}\y", params.search_term);
-    let lojban_search_term = params.search_term.replace('h', "'");
-    let lojban_like_pattern = format!("%{}%", lojban_search_term);
-    let lojban_word_boundary_pattern = format!(r"\y{}\y", lojban_search_term);
+    let patterns = DictionarySearchPatterns::from_search_term(&params.search_term);
+    let like_pattern = patterns.like_pattern.clone();
+    let word_boundary_pattern = patterns.word_boundary_pattern.clone();
+    let lojban_search_term = patterns.lojban_search_term.clone();
+    let lojban_like_pattern = patterns.lojban_like_pattern.clone();
+    let lojban_word_boundary_pattern = patterns.lojban_word_boundary_pattern.clone();
     let canonical_aliases =
         lookup_canonical_aliases_for_search(&transaction, &params.search_term, &lojban_search_term)
             .await?;
@@ -1663,13 +1654,13 @@ pub async fn fast_search_definitions(
                 WHEN d.cached_canonical_word = $6::text THEN 13
                 WHEN d.cached_valsiword = ANY($9::text[]) THEN 12
                 WHEN d.cached_canonical_word = ANY($9::text[]) THEN 12
-                WHEN d.cached_glosswords IS NOT NULL AND d.cached_glosswords != '' 
-                     AND LOWER($1::text) = ANY(string_to_array(d.cached_glosswords, '|')) THEN 12
+                WHEN d.cached_glosswords IS NOT NULL AND d.cached_glosswords != ''
+                     AND position('|' || LOWER($1::text) || '|' in '|' || d.cached_glosswords || '|') > 0 THEN 12
                 WHEN d.cached_valsiword ILIKE $1::text THEN 11
                 WHEN d.cached_valsiword ILIKE $6::text THEN 11
                 WHEN d.cached_valsiword ~* $3::text THEN 10
                 WHEN d.cached_valsiword ~* $8::text THEN 10
-                WHEN d.cached_rafsi IS NOT NULL AND $1::text = ANY(string_to_array(d.cached_rafsi, ' ')) THEN 12
+                WHEN d.cached_rafsi IS NOT NULL AND position(' ' || $1::text || ' ' in ' ' || d.cached_rafsi || ' ') > 0 THEN 12
                 WHEN d.cached_valsiword ILIKE $2::text THEN 8
                 WHEN d.cached_valsiword ILIKE $7::text THEN 8
                 WHEN d.cached_search_text ILIKE $2::text THEN 7
@@ -2137,11 +2128,18 @@ pub async fn get_valsi_sound_urls_from_db(
     if words.is_empty() {
         return Ok(HashMap::new());
     }
-    let unique_lower: Vec<String> = words
+    // Lowercase once per unique spelling; reuse for the membership check.
+    let mut unique_lower: Vec<String> = Vec::new();
+    let mut lower_seen: HashSet<String> = HashSet::new();
+    let word_lowers: Vec<(&String, String)> = words
         .iter()
-        .map(|w| w.to_lowercase())
-        .collect::<HashSet<_>>()
-        .into_iter()
+        .map(|w| {
+            let lower = w.to_lowercase();
+            if lower_seen.insert(lower.clone()) {
+                unique_lower.push(lower.clone());
+            }
+            (w, lower)
+        })
         .collect();
     let client = pool.get().await?;
     let rows = client
@@ -2158,11 +2156,11 @@ pub async fn get_valsi_sound_urls_from_db(
         .iter()
         .map(|r| r.get::<_, String>("word").to_lowercase())
         .collect();
-    let mut result = HashMap::new();
-    for word in words {
+    let mut result = HashMap::with_capacity(words.len());
+    for (word, lower) in word_lowers {
         result.insert(
             word.clone(),
-            if has_sound.contains(&word.to_lowercase()) {
+            if has_sound.contains(&lower) {
                 Some(format!("/api/jbovlaste/valsi/{}/sound", word))
             } else {
                 None

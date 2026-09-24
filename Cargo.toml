@@ -35,8 +35,9 @@ opt-level = 1
 # Profile for benchmark builds
 [profile.bench]
 inherits = "release"
-lto = true
-codegen-units = 1
+# Prefer faster bench builds over max LTO; search helpers are CPU-bound microbenches.
+lto = false
+codegen-units = 16
 
 # Faster release build for Docker/CI (less LTO and more codegen units)
 [profile.release-fast]
@@ -55,7 +56,7 @@ path = "test/test.rs"
 [dependencies]
 # Default features include `compress-zstd`, which pulls `zstd` 0.13 while `wasmtime-cache` uses 0.11.
 # Omit `compress-zstd` so we only compile one `zstd` (via Wasmtime). Brotli + gzip compression stay enabled.
-actix-web = { version = "4.14", default-features = false, features = [
+actix-web = { version = "4.15", default-features = false, features = [
 	"macros",
 	"compress-brotli",
 	"compress-gzip",
@@ -66,10 +67,10 @@ actix-web = { version = "4.14", default-features = false, features = [
 	"ws",
 	"rustls",
 ] }
-actix-multipart = "0.8.0"
+actix-multipart = "0.8.4"
 tokio-postgres = { version = "0.7.18", features = ["with-chrono-0_4", "with-serde_json-1", "with-uuid-1"] }
-deadpool = "0.12"
-deadpool-postgres = "0.14.1"
+deadpool = "0.13"
+deadpool-postgres = "0.14.2"
 postgres-types = { version = "0.2.14", features = ["derive"] }
 pgvector = { version = "0.4.2", features = ["postgres"] }
 chrono = { version = "0.4.45", features = ["serde"] }
@@ -78,15 +79,15 @@ refinery = { git = "https://github.com/rust-db/refinery.git", rev = "3fa178fc2da
 ] }
 dotenvy = "0.15.7"
 env_logger = "0.11.11"
-log = "0.4.33"
+log = "0.4.34"
 utoipa = { version = "5.5", features = ["actix_extras", "uuid", "chrono"] }
 # `vendored` ships Swagger UI in crates.io so release builds do not download a zip from GitHub
 # (utoipa-swagger-ui's curl fetch often yields a truncated archive: InvalidArchive EOCD).
 utoipa-swagger-ui = { version = "9.0.2", features = ["actix-web", "vendored"] }
 num_cpus = "1.17"
-futures = "0.3.33"
+futures = "0.3.34"
 tokio = { version = "1.53", features = ["full", "time", "sync"] }
-jsonwebtoken = { version = "11.0", features = ["rust_crypto"] }
+jsonwebtoken = { version = "11.1", features = ["rust_crypto"] }
 # Transitive (`jsonwebtoken` → `rsa`). 0.8.4 trips rustc future-incompat (private `vec!`, rust#120192); keep ≥0.8.6.
 num-bigint-dig = "0.9.1"
 bcrypt = "0.19"
@@ -96,24 +97,24 @@ oauth2 = "5.0"
 reqwest = { version = "0.12", features = ["json", "blocking"] }
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.151"
-thiserror = "2.0.19"
+thiserror = "2.0.21"
 mailparse = "0.16.1"
-base64 = "0.23.0"
+base64 = "0.23.1"
 walkdir = "2.5.0"
 md5 = "0.8"
 actix-cors = "0.7.1"
 encoding_rs = "0.8.35"
-lettre = { version = "0.11.22", features = ["smtp-transport", "tokio1-native-tls"] }
+lettre = { version = "0.11.23", features = ["smtp-transport", "tokio1-native-tls"] }
 rand = "0.10"
-uuid = { version = "1.24", features = ["v4", "serde"] }
+uuid = { version = "1.26", features = ["v4", "serde"] }
 tectonic = { version = "0.16.9", features = ["external-harfbuzz"] }
-ammonia = "4.1.4"
+ammonia = "4.2"
 utoipauto = "0.2.0"
 tempfile = "3.27"
-xml = "1.3.0"
+xml = "1.4"
 once_cell = "1.21.4"
 actix-limitation = "0.5.1"
-redis = { version = "1.4", features = ["tokio-comp"] }
+redis = { version = "1.7", features = ["tokio-comp"] }
 unicode-segmentation = "1.13"
 bytes = "1.12"
 actix-web-grants = "4.1.2"
@@ -122,7 +123,7 @@ actix-web-actors = "4.3"
 fsrs = "6.6"
 image = { version = "0.25.10", features = ["jpeg", "png"] }
 webp = "0.3.1"
-async-trait = "0.1.91"
+async-trait = "0.1.92"
 validator = { version = "0.20.0", features = ["derive"] }
 crc32fast = "1.5"
 sha2 = "0.11"
@@ -144,9 +145,14 @@ ndarray-npy = "0.10"
 ogg-opus = "0.1.2"
 parse-wiki-text-2 = "0.2"
 urlencoding = "2.1"
-fancy-regex = "0.19.1"
+fancy-regex = "0.19.2"
 [dev-dependencies]
 criterion = "0.8"
+
+
+[[bench]]
+name = "search"
+harness = false
 
 [lints.clippy]
 panic = "warn"

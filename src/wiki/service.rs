@@ -3,6 +3,8 @@
 
 use deadpool_postgres::Pool;
 
+use crate::search_helpers::{escape_like, wiki_relevance_score};
+
 use super::dto::{WikiArticleDetail, WikiSearchHit, WikiThreadSummary};
 use super::markdown::rewrite_wiki_links_for_lensisku;
 
@@ -27,14 +29,6 @@ fn truncate_preview(text: &str) -> Option<String> {
     }
     out.push('…');
     Some(out)
-}
-
-/// LIKE-escape: `%`, `_`, `\` become escaped under `ESCAPE '\'` semantics.
-fn escape_like(input: &str) -> String {
-    input
-        .replace('\\', "\\\\")
-        .replace('%', "\\%")
-        .replace('_', "\\_")
 }
 
 /// Search wiki articles and native wiki pages. Returns (hits, total).
@@ -230,29 +224,24 @@ pub async fn search_wiki(
             (None, None) => Ordering::Equal,
         });
     } else {
-        fn relevance(term: &str, hit: &WikiSearchHit) -> i32 {
-            let t = hit.title.to_lowercase();
-            let term = term.to_lowercase();
-            if t == term {
-                3
-            } else if t.contains(&term) {
-                2
-            } else {
-                1
-            }
-        }
-        hits.sort_by(|a, b| {
-            let score_a = relevance(search_term, a);
-            let score_b = relevance(search_term, b);
-            score_b
-                .cmp(&score_a)
-                .then_with(|| match (b.last_edited, a.last_edited) {
-                    (Some(tb), Some(ta)) => tb.cmp(&ta),
-                    (Some(_), None) => Ordering::Greater,
-                    (None, Some(_)) => Ordering::Less,
-                    (None, None) => Ordering::Equal,
-                })
+        let term_lower = search_term.to_lowercase();
+        let mut scored: Vec<(i32, WikiSearchHit)> = hits
+            .into_iter()
+            .map(|hit| {
+                let title_lower = hit.title.to_lowercase();
+                let score = wiki_relevance_score(&term_lower, &title_lower);
+                (score, hit)
+            })
+            .collect();
+        scored.sort_by(|a, b| {
+            b.0.cmp(&a.0).then_with(|| match (b.1.last_edited, a.1.last_edited) {
+                (Some(tb), Some(ta)) => tb.cmp(&ta),
+                (Some(_), None) => Ordering::Greater,
+                (None, Some(_)) => Ordering::Less,
+                (None, None) => Ordering::Equal,
+            })
         });
+        hits = scored.into_iter().map(|(_, hit)| hit).collect();
     }
 
     let total = mirror_total + native_total;

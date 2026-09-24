@@ -1,5 +1,6 @@
 #![allow(clippy::expect_used)]
 
+use crate::search_helpers::{escape_like, like_contains_pattern, mail_word_like_patterns};
 use crate::mailarchive::{
     dto::MailThreadSummary, Message, SearchQuery, SearchResponse, ThreadQuery, ThreadResponse,
 };
@@ -31,14 +32,6 @@ static DAY_OF_WEEK_REGEX: LazyLock<Regex> = LazyLock::new(|| {
 const BATCH_SIZE: usize = 1000;
 const BATCH_DELAY: Duration = Duration::from_millis(100);
 
-fn escape_like<S: AsRef<str>>(s: S) -> String {
-    s.as_ref()
-        .replace("\\", "\\\\")
-        .replace("%", "\\%")
-        .replace("_", "\\_")
-        .replace("'", "''")
-}
-
 pub async fn search_messages(
     pool: &Pool,
     query: SearchQuery,
@@ -50,22 +43,17 @@ pub async fn search_messages(
     let per_page = query.per_page.unwrap_or(10);
     let offset = (page - 1) * per_page;
     let group_by_thread = query.group_by_thread.unwrap_or(false);
-    // Split query into words and remove empty ones
-    let words: Vec<String> = query
-        .query
-        .split_whitespace()
-        .map(|w| w.to_string())
-        .collect();
+    let word_patterns = mail_word_like_patterns(&query.query);
+    let exact_query = like_contains_pattern(&escape_like(&query.query));
 
-    let exact_query = format!("%{}%", escape_like(&query.query));
-    let word_conditions_sql_parts: Vec<String> = words
+    // Parameterized per-word ILIKE: $4, $5, … (after $1 exact, $2 limit, $3 offset)
+    let word_param_offset = 4usize;
+    let word_conditions_sql_parts: Vec<String> = word_patterns
         .iter()
-        .map(|word| {
-            let escaped_word = escape_like(word);
-            format!(
-                "(m.subject ILIKE '%{}%' OR m.content ILIKE '%{}%')",
-                escaped_word, escaped_word
-            )
+        .enumerate()
+        .map(|(i, _)| {
+            let idx = word_param_offset + i;
+            format!("(m.subject ILIKE ${idx} OR m.content ILIKE ${idx})")
         })
         .collect();
 
@@ -100,12 +88,12 @@ pub async fn search_messages(
         "NULL::jsonb as parts_json"
     };
 
-    let (query_string, count_query_string) = if group_by_thread {
+    let (query_string, _old_count_query_string) = if group_by_thread {
         (format!(
             "WITH thread_representatives AS (
                 SELECT DISTINCT ON (m.cleaned_subject)
                        m.id, m.message_id, m.date, m.cleaned_subject, m.from_address, m.to_address, m.parts_json, m.sent_at,
-                       (SELECT COUNT(*) FROM message_spam_votes msv WHERE msv.message_id = m.id) as spam_vote_count,
+                       COALESCE(msv.spam_vote_count, 0) as spam_vote_count,
                        (CASE
                           WHEN m.subject ILIKE $1 THEN 3
                           WHEN m.content ILIKE $1 THEN 2
@@ -113,6 +101,11 @@ pub async fn search_messages(
                           ELSE 0
                         END) as rank
                 FROM messages m
+                LEFT JOIN LATERAL (
+                    SELECT COUNT(*)::bigint AS spam_vote_count
+                    FROM message_spam_votes
+                    WHERE message_id = m.id
+                ) msv ON true
                 WHERE {}
                 ORDER BY m.cleaned_subject,
                          (CASE WHEN m.subject ILIKE $1 THEN 3 WHEN m.content ILIKE $1 THEN 2 WHEN {} THEN 1 ELSE 0 END) DESC,
@@ -142,7 +135,7 @@ pub async fn search_messages(
     } else {
         (format!(
             "SELECT m.id, m.message_id, m.date, m.subject, m.cleaned_subject, m.from_address, m.to_address, {}, m.sent_at,
-             (SELECT COUNT(*) FROM message_spam_votes msv WHERE msv.message_id = m.id) as spam_vote_count,
+             COALESCE(msv.spam_vote_count, 0) as spam_vote_count,
              (CASE
                 WHEN m.subject ILIKE $1 THEN 3
                 WHEN m.content ILIKE $1 THEN 2
@@ -150,6 +143,11 @@ pub async fn search_messages(
                 ELSE 0
               END) as rank
              FROM messages m
+             LEFT JOIN LATERAL (
+                 SELECT COUNT(*)::bigint AS spam_vote_count
+                 FROM message_spam_votes
+                 WHERE message_id = m.id
+             ) msv ON true
              WHERE {}
              ORDER BY {} {}, m.date {}
              LIMIT $2 OFFSET $3",
@@ -165,18 +163,52 @@ pub async fn search_messages(
         ))
     };
 
+    let mut query_params: Vec<&(dyn tokio_postgres::types::ToSql + Sync)> =
+        vec![&exact_query, &per_page, &offset];
+    for pattern in &word_patterns {
+        query_params.push(pattern);
+    }
+
     let messages = transaction
-        .query(&query_string, &[&exact_query, &per_page, &offset])
+        .query(&query_string, &query_params)
         .await?
         .into_iter()
         .map(Message::from)
         .collect::<Vec<_>>();
 
-    let total: i64 = transaction
-        .query_one(
-            &count_query_string,
-            &[] as &[&(dyn tokio_postgres::types::ToSql + Sync)],
+    let mut count_params: Vec<&(dyn tokio_postgres::types::ToSql + Sync)> = Vec::new();
+    for pattern in &word_patterns {
+        count_params.push(pattern);
+    }
+    // Count query uses the same $4+ word params but without $1/$2/$3 — renumber.
+    // Rebuild count SQL to use $1..$N for word patterns only.
+    let count_word_parts: Vec<String> = word_patterns
+        .iter()
+        .enumerate()
+        .map(|(i, _)| {
+            let idx = i + 1;
+            format!("(m.subject ILIKE ${idx} OR m.content ILIKE ${idx})")
+        })
+        .collect();
+    let count_where = if count_word_parts.is_empty() {
+        "TRUE".to_string()
+    } else {
+        count_word_parts.join(" AND ")
+    };
+    let count_query_string = if group_by_thread {
+        format!(
+            "SELECT COUNT(*) FROM (
+                SELECT DISTINCT ON (m.cleaned_subject) 1
+                FROM messages m
+                WHERE {count_where}
+            ) AS distinct_threads"
         )
+    } else {
+        format!("SELECT COUNT(*) FROM messages m WHERE {count_where}")
+    };
+
+    let total: i64 = transaction
+        .query_one(&count_query_string, &count_params)
         .await?
         .get(0);
 
@@ -239,8 +271,13 @@ pub async fn show_thread(
     let query_string = if include_content {
         format!(
             "SELECT m.id, m.message_id, m.date, m.subject, m.from_address, m.to_address, m.parts_json,
-             (SELECT COUNT(*) FROM message_spam_votes msv WHERE msv.message_id = m.id) as spam_vote_count
+             COALESCE(msv.spam_vote_count, 0) as spam_vote_count
              FROM messages m
+             LEFT JOIN LATERAL (
+                 SELECT COUNT(*)::bigint AS spam_vote_count
+                 FROM message_spam_votes
+                 WHERE message_id = m.id
+             ) msv ON true
              WHERE m.cleaned_subject = $1
              ORDER BY {} {}, date {}
              LIMIT $2 OFFSET $3",
@@ -249,8 +286,13 @@ pub async fn show_thread(
     } else {
         format!(
             "SELECT m.id, m.message_id, m.date, m.subject, m.from_address, m.to_address, NULL::jsonb as parts_json,
-             (SELECT COUNT(*) FROM message_spam_votes msv WHERE msv.message_id = m.id) as spam_vote_count
+             COALESCE(msv.spam_vote_count, 0) as spam_vote_count
              FROM messages m
+             LEFT JOIN LATERAL (
+                 SELECT COUNT(*)::bigint AS spam_vote_count
+                 FROM message_spam_votes
+                 WHERE message_id = m.id
+             ) msv ON true
              WHERE m.cleaned_subject = $1
              ORDER BY {} {}, date {}
              LIMIT $2 OFFSET $3",

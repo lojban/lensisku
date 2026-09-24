@@ -32,6 +32,7 @@ mod server;
 pub mod sessions;
 mod subscriptions;
 mod users;
+mod search_helpers;
 mod utils;
 mod versions;
 mod waves;
