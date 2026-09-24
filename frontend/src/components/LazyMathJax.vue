@@ -418,6 +418,13 @@ onBeforeUnmount(() => {
   font-size: 0.95em;
 }
 
+.mathjax-content :deep(table caption) {
+  caption-side: top;
+  text-align: center;
+  font-weight: 600;
+  padding: 0.35rem 0.25rem;
+}
+
 .mathjax-content :deep(table th),
 .mathjax-content :deep(table td) {
   border: 1px solid rgb(229 231 235);
@@ -425,6 +432,11 @@ onBeforeUnmount(() => {
   vertical-align: top;
   text-align: left;
   min-width: 7.5rem;
+}
+
+.mathjax-content :deep(table th) {
+  font-weight: 600;
+  background-color: rgb(243 244 246);
 }
 
 :deep(.curly-quotes::before) {

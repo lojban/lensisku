@@ -2,6 +2,9 @@
 //!
 //! Two outputs are produced from a single AST walk:
 //! - `markdown`: GitHub-flavored Markdown intended for in-browser rendering.
+//!   MediaWiki tables are emitted as HTML (`<table>`) so captions, cell
+//!   attributes, colspan/rowspan, and uneven header rows survive — GFM pipe
+//!   tables cannot represent those.
 //! - `plain`:    formatting-stripped text used for `ILIKE` search and previews.
 //!
 //! Templates that the AST does not expand are rewritten after parse: `{{jvs|word}}`
@@ -9,7 +12,7 @@
 
 use parse_wiki_text_2::{
     Configuration, DefinitionListItem, DefinitionListItemType, ListItem, Node, Parameter,
-    TableCaption, TableCell, TableCellType, TableRow,
+    TableCaption, TableCellType, TableRow,
 };
 
 /// Convert MediaWiki source to (markdown, plain_text).
@@ -150,7 +153,10 @@ pub fn wiki_target_url(target: &str) -> String {
 
 /// Rewrite imported MediaWiki-relative page links for the Lensisku article route.
 pub fn rewrite_wiki_links_for_lensisku(markdown: &str) -> String {
-    markdown.replace("](/papri/", "](/wiki/")
+    markdown
+        .replace("](/papri/", "](/wiki/")
+        // HTML tables emit <a href="/papri/...">; rewrite those too.
+        .replace("href=\"/papri/", "href=\"/wiki/")
 }
 
 fn render_nodes(nodes: &[Node<'_>], md: &mut String, plain: &mut String, depth: usize) {
@@ -298,6 +304,13 @@ fn render_node(node: &Node<'_>, md: &mut String, plain: &mut String, depth: usiz
                     plain.push_str(&inner_plain);
                 }
                 "br" => md.push_str("  \n"),
+                "s" | "strike" | "del" => {
+                    md.push_str("~~");
+                    let mut inner_plain = String::new();
+                    render_nodes(nodes, md, &mut inner_plain, depth);
+                    md.push_str("~~");
+                    plain.push_str(&inner_plain);
+                }
                 "ref" => {
                     // Footnotes: ignore content, just drop a marker.
                     md.push_str("[^ref]");
@@ -309,14 +322,23 @@ fn render_node(node: &Node<'_>, md: &mut String, plain: &mut String, depth: usiz
                 }
             }
         }
-        Node::StartTag { name, .. } => {
-            if name.as_ref() == "br" {
-                md.push_str("  \n");
-            }
-        }
-        Node::EndTag { .. } | Node::Comment { .. } | Node::MagicWord { .. } => {}
-        Node::Table { captions, rows, .. } => {
-            render_table(captions, rows, md, plain, depth);
+        Node::StartTag { name, .. } => match name.as_ref() {
+            "br" => md.push_str("  \n"),
+            "s" | "strike" | "del" => md.push_str("~~"),
+            _ => {}
+        },
+        Node::EndTag { name, .. } => match name.as_ref() {
+            "s" | "strike" | "del" => md.push_str("~~"),
+            _ => {}
+        },
+        Node::Comment { .. } | Node::MagicWord { .. } => {},
+        Node::Table {
+            attributes,
+            captions,
+            rows,
+            ..
+        } => {
+            render_table(attributes, captions, rows, md, plain, depth);
         }
         Node::Template {
             name, parameters, ..
@@ -896,84 +918,545 @@ fn render_template(
 }
 
 fn render_table(
+    attributes: &[Node<'_>],
     captions: &[TableCaption<'_>],
     rows: &[TableRow<'_>],
     md: &mut String,
     plain: &mut String,
-    _depth: usize,
+    depth: usize,
 ) {
-    md.push('\n');
+    // Emit real HTML tables. GFM pipe tables cannot express captions, cell
+    // attributes (style/colspan/rowspan), or multi-row headers with uneven
+    // cell counts — which left complex JACU-style matrices as raw `|` text.
+    md.push_str("\n\n");
+    md.push_str("<table");
+    push_sanitized_attrs(md, &nodes_plain_text(attributes));
+    md.push_str(">\n");
+
     for cap in captions {
-        let mut buf = String::new();
-        let mut sink = String::new();
-        render_nodes(&cap.content, &mut buf, &mut sink, 0);
-        md.push_str(&format!("**{}**\n\n", buf.trim()));
-        plain.push_str(buf.trim());
+        md.push_str("<caption");
+        if let Some(attrs) = &cap.attributes {
+            push_sanitized_attrs(md, &nodes_plain_text(attrs));
+        }
+        md.push('>');
+        render_nodes_html(&cap.content, md, plain, depth);
+        md.push_str("</caption>\n");
         plain.push('\n');
     }
-    if rows.is_empty() {
-        return;
-    }
-    // Determine column count from widest row.
-    let cols = rows.iter().map(|r| r.cells.len()).max().unwrap_or(0);
-    if cols == 0 {
-        return;
-    }
-    let header_row = pick_header_row(rows);
-    if let Some(idx) = header_row {
-        write_table_row(&rows[idx].cells, md, plain);
-        md.push('|');
-        for _ in 0..cols {
-            md.push_str(" --- |");
+
+    for row in rows {
+        md.push_str("<tr");
+        push_sanitized_attrs(md, &nodes_plain_text(&row.attributes));
+        md.push_str(">\n");
+        for cell in &row.cells {
+            let tag = match cell.type_ {
+                TableCellType::Heading => "th",
+                TableCellType::Ordinary => "td",
+            };
+            md.push('<');
+            md.push_str(tag);
+            if let Some(attrs) = &cell.attributes {
+                push_sanitized_attrs(md, &nodes_plain_text(attrs));
+            }
+            md.push('>');
+            render_nodes_html(&cell.content, md, plain, depth);
+            md.push_str("</");
+            md.push_str(tag);
+            md.push_str(">\n");
+            plain.push(' ');
         }
-        md.push('\n');
-        for (i, row) in rows.iter().enumerate() {
-            if i == idx {
+        md.push_str("</tr>\n");
+        plain.push('\n');
+    }
+
+    md.push_str("</table>\n\n");
+}
+
+fn nodes_plain_text(nodes: &[Node<'_>]) -> String {
+    let mut out = String::new();
+    for node in nodes {
+        match node {
+            Node::Text { value, .. } => out.push_str(value),
+            Node::CharacterEntity { character, .. } => out.push(*character),
+            _ => {}
+        }
+    }
+    out
+}
+
+/// Append whitespace-prefixed sanitized HTML attributes, or nothing if empty/unsafe.
+fn push_sanitized_attrs(out: &mut String, raw: &str) {
+    let cleaned = sanitize_html_attribute_string(raw);
+    if cleaned.is_empty() {
+        return;
+    }
+    out.push(' ');
+    out.push_str(&cleaned);
+}
+
+fn sanitize_html_attribute_string(raw: &str) -> String {
+    let raw = raw.trim();
+    if raw.is_empty() {
+        return String::new();
+    }
+    // Reject obvious script / event-handler payloads early.
+    let lower = raw.to_ascii_lowercase();
+    if lower.contains("javascript:") || lower.contains("data:text/html") {
+        return String::new();
+    }
+    let mut out = String::new();
+    let bytes = raw.as_bytes();
+    let mut i = 0;
+    while i < bytes.len() {
+        while i < bytes.len() && bytes[i].is_ascii_whitespace() {
+            i += 1;
+        }
+        if i >= bytes.len() {
+            break;
+        }
+        let key_start = i;
+        while i < bytes.len()
+            && (bytes[i].is_ascii_alphanumeric()
+                || bytes[i] == b'-'
+                || bytes[i] == b'_'
+                || bytes[i] == b':')
+        {
+            i += 1;
+        }
+        if i == key_start {
+            i += 1;
+            continue;
+        }
+        let key = raw[key_start..i].to_ascii_lowercase();
+        while i < bytes.len() && bytes[i].is_ascii_whitespace() {
+            i += 1;
+        }
+        let mut value = String::new();
+        if i < bytes.len() && bytes[i] == b'=' {
+            i += 1;
+            while i < bytes.len() && bytes[i].is_ascii_whitespace() {
+                i += 1;
+            }
+            if i < bytes.len() && (bytes[i] == b'"' || bytes[i] == b'\'') {
+                let quote = bytes[i];
+                i += 1;
+                let vstart = i;
+                while i < bytes.len() && bytes[i] != quote {
+                    i += 1;
+                }
+                value.push_str(&raw[vstart..i]);
+                if i < bytes.len() {
+                    i += 1;
+                }
+            } else {
+                let vstart = i;
+                while i < bytes.len() && !bytes[i].is_ascii_whitespace() {
+                    i += 1;
+                }
+                value.push_str(&raw[vstart..i]);
+            }
+        }
+        if !is_allowed_table_attr(&key, &value) {
+            continue;
+        }
+        if !out.is_empty() {
+            out.push(' ');
+        }
+        out.push_str(&key);
+        out.push_str("=\"");
+        out.push_str(&html_escape_attr(&value));
+        out.push('"');
+    }
+    out
+}
+
+fn is_allowed_table_attr(key: &str, value: &str) -> bool {
+    match key {
+        "class" | "id" | "title" | "lang" | "dir" | "align" | "scope" | "headers"
+        | "rowspan" | "colspan" | "width" | "height" | "bgcolor" => {
+            !value.chars().any(|c| c == '<' || c == '>' || c == '"')
+                && !value.to_ascii_lowercase().contains("javascript:")
+        }
+        "style" => is_safe_css_style(value),
+        _ if key.starts_with("on") => false,
+        _ => false,
+    }
+}
+
+fn is_safe_css_style(style: &str) -> bool {
+    let lower = style.to_ascii_lowercase();
+    if lower.contains("expression")
+        || lower.contains("javascript:")
+        || lower.contains("behavior:")
+        || lower.contains("-moz-binding")
+        || lower.contains("url(")
+        || lower.contains('@')
+    {
+        return false;
+    }
+    for decl in style.split(';') {
+        let decl = decl.trim();
+        if decl.is_empty() {
+            continue;
+        }
+        let prop = decl
+            .split(':')
+            .next()
+            .unwrap_or("")
+            .trim()
+            .to_ascii_lowercase();
+        let allowed = matches!(
+            prop.as_str(),
+            "background"
+                | "background-color"
+                | "color"
+                | "text-align"
+                | "vertical-align"
+                | "width"
+                | "height"
+                | "min-width"
+                | "max-width"
+                | "padding"
+                | "padding-left"
+                | "padding-right"
+                | "padding-top"
+                | "padding-bottom"
+                | "border"
+                | "border-collapse"
+                | "border-color"
+                | "border-width"
+                | "border-style"
+                | "font-weight"
+                | "font-style"
+                | "font-size"
+                | "white-space"
+        );
+        if !allowed {
+            return false;
+        }
+    }
+    true
+}
+
+fn html_escape_text(s: &str) -> String {
+    let mut out = String::with_capacity(s.len());
+    for c in s.chars() {
+        match c {
+            '&' => out.push_str("&amp;"),
+            '<' => out.push_str("&lt;"),
+            '>' => out.push_str("&gt;"),
+            '"' => out.push_str("&quot;"),
+            _ => out.push(c),
+        }
+    }
+    out
+}
+
+fn html_escape_attr(s: &str) -> String {
+    html_escape_text(s).replace('\'', "&#39;")
+}
+
+/// Render wiki AST nodes as an HTML fragment (for table cells/captions).
+/// Bold/Italic markers are toggles in parse-wiki-text (MediaWiki quotes).
+fn render_nodes_html(nodes: &[Node<'_>], html: &mut String, plain: &mut String, depth: usize) {
+    let mut bold = false;
+    let mut italic = false;
+    for node in nodes {
+        match node {
+            Node::Text { value, .. } => {
+                html.push_str(&html_escape_text(value));
+                plain.push_str(value);
+            }
+            Node::CharacterEntity { character, .. } => {
+                html.push_str(&html_escape_text(&character.to_string()));
+                plain.push(*character);
+            }
+            Node::Bold { .. } => {
+                if bold {
+                    html.push_str("</strong>");
+                } else {
+                    html.push_str("<strong>");
+                }
+                bold = !bold;
+            }
+            Node::Italic { .. } => {
+                if italic {
+                    html.push_str("</em>");
+                } else {
+                    html.push_str("<em>");
+                }
+                italic = !italic;
+            }
+            Node::BoldItalic { .. } => {
+                if bold && italic {
+                    html.push_str("</strong></em>");
+                    bold = false;
+                    italic = false;
+                } else {
+                    if !italic {
+                        html.push_str("<em>");
+                        italic = true;
+                    }
+                    if !bold {
+                        html.push_str("<strong>");
+                        bold = true;
+                    }
+                }
+            }
+            Node::Link { target, text, .. } => {
+                let label = if text.is_empty() {
+                    target.to_string()
+                } else {
+                    let mut buf = String::new();
+                    let mut sink = String::new();
+                    render_nodes(text, &mut buf, &mut sink, depth);
+                    if buf.trim().is_empty() {
+                        target.to_string()
+                    } else {
+                        buf.replace("**", "").replace('*', "").replace("~~", "")
+                    }
+                };
+                html.push_str("<a href=\"");
+                html.push_str(&html_escape_attr(&wiki_target_url(target)));
+                html.push_str("\">");
+                html.push_str(&html_escape_text(label.trim()));
+                html.push_str("</a>");
+                plain.push_str(label.trim());
+            }
+            Node::ExternalLink { nodes, .. } => {
+                let mut buf = String::new();
+                let mut sink = String::new();
+                render_nodes(nodes, &mut buf, &mut sink, depth);
+                let trimmed = buf.trim();
+                let (url, label) = match trimmed.split_once(char::is_whitespace) {
+                    Some((u, l)) => (u.trim().to_string(), l.trim().to_string()),
+                    None => (trimmed.to_string(), String::new()),
+                };
+                if url.is_empty() {
+                    continue;
+                }
+                let display = if label.is_empty() {
+                    url.clone()
+                } else {
+                    label
+                };
+                html.push_str("<a href=\"");
+                html.push_str(&html_escape_attr(&url));
+                html.push_str("\">");
+                html.push_str(&html_escape_text(&display));
+                html.push_str("</a>");
+                plain.push_str(&display);
+            }
+            Node::Tag { name, nodes, .. } => {
+                let n = name.as_ref();
+                match n {
+                    "code" | "tt" => {
+                        html.push_str("<code>");
+                        let mut inner_plain = String::new();
+                        let mut code = String::new();
+                        render_nodes(nodes, &mut code, &mut inner_plain, depth);
+                        html.push_str(&html_escape_text(&unescape_code_span(&code)));
+                        html.push_str("</code>");
+                        plain.push_str(&inner_plain);
+                    }
+                    "s" | "strike" | "del" => {
+                        html.push_str("<s>");
+                        render_nodes_html(nodes, html, plain, depth);
+                        html.push_str("</s>");
+                    }
+                    "br" => html.push_str("<br>"),
+                    "nowiki" => {
+                        let mut sink = String::new();
+                        let mut raw = String::new();
+                        render_nodes(nodes, &mut raw, &mut sink, depth);
+                        html.push_str(&html_escape_text(&raw));
+                        plain.push_str(&sink);
+                    }
+                    _ => {
+                        render_nodes_html(nodes, html, plain, depth);
+                    }
+                }
+            }
+            Node::StartTag { name, .. } => match name.as_ref() {
+                "br" => html.push_str("<br>"),
+                "s" | "strike" | "del" => html.push_str("<s>"),
+                _ => {}
+            },
+            Node::EndTag { name, .. } => match name.as_ref() {
+                "s" | "strike" | "del" => html.push_str("</s>"),
+                _ => {}
+            },
+            Node::Template {
+                name, parameters, ..
+            } => {
+                let mut buf = String::new();
+                let mut sink = String::new();
+                render_template(name, parameters, &mut buf, &mut sink, depth);
+                html.push_str(&inline_markdown_fragment_to_html(&buf));
+                plain.push_str(&sink);
+            }
+            Node::ParagraphBreak { .. } => {
+                html.push(' ');
+                plain.push('\n');
+            }
+            Node::Comment { .. } | Node::MagicWord { .. } => {}
+            Node::Table {
+                attributes,
+                captions,
+                rows,
+                ..
+            } => {
+                render_table(attributes, captions, rows, html, plain, depth);
+            }
+            other => {
+                let mut buf = String::new();
+                let mut sink = String::new();
+                render_node(other, &mut buf, &mut sink, depth);
+                html.push_str(&inline_markdown_fragment_to_html(&buf));
+                plain.push_str(&sink);
+            }
+        }
+    }
+    if bold {
+        html.push_str("</strong>");
+    }
+    if italic {
+        html.push_str("</em>");
+    }
+}
+
+/// Convert a small markdown fragment (links, emphasis, code, strike) to HTML.
+fn inline_markdown_fragment_to_html(md: &str) -> String {
+    let mut out = String::with_capacity(md.len());
+    let chars: Vec<char> = md.chars().collect();
+    let mut i = 0;
+    while i < chars.len() {
+        if chars[i] == '[' {
+            if let Some((label, url, consumed)) = parse_md_link(&chars[i..]) {
+                out.push_str("<a href=\"");
+                out.push_str(&html_escape_attr(&url));
+                out.push_str("\">");
+                out.push_str(&html_escape_text(&label));
+                out.push_str("</a>");
+                i += consumed;
                 continue;
             }
-            write_table_row(&row.cells, md, plain);
         }
-    } else {
-        // No explicit header: synthesize a blank one for valid GFM.
-        md.push('|');
-        for _ in 0..cols {
-            md.push_str("   |");
+        if chars[i] == '`' {
+            if let Some(end) = chars[i + 1..].iter().position(|&c| c == '`') {
+                let inner: String = chars[i + 1..i + 1 + end].iter().collect();
+                out.push_str("<code>");
+                out.push_str(&html_escape_text(&inner));
+                out.push_str("</code>");
+                i += end + 2;
+                continue;
+            }
         }
-        md.push('\n');
-        md.push('|');
-        for _ in 0..cols {
-            md.push_str(" --- |");
+        if matches_run(&chars, i, "***") || matches_run(&chars, i, "___") {
+            let delim = if chars[i] == '*' { "***" } else { "___" };
+            if let Some(end) = find_closing_delim(&chars, i + 3, delim) {
+                let inner: String = chars[i + 3..end].iter().collect();
+                out.push_str("<em><strong>");
+                out.push_str(&inline_markdown_fragment_to_html(&inner));
+                out.push_str("</strong></em>");
+                i = end + 3;
+                continue;
+            }
         }
-        md.push('\n');
-        for row in rows {
-            write_table_row(&row.cells, md, plain);
+        if matches_run(&chars, i, "**") || matches_run(&chars, i, "__") {
+            let delim = if chars[i] == '*' { "**" } else { "__" };
+            if let Some(end) = find_closing_delim(&chars, i + 2, delim) {
+                let inner: String = chars[i + 2..end].iter().collect();
+                out.push_str("<strong>");
+                out.push_str(&inline_markdown_fragment_to_html(&inner));
+                out.push_str("</strong>");
+                i = end + 2;
+                continue;
+            }
         }
+        if matches_run(&chars, i, "~~") {
+            if let Some(end) = find_closing_delim(&chars, i + 2, "~~") {
+                let inner: String = chars[i + 2..end].iter().collect();
+                out.push_str("<s>");
+                out.push_str(&inline_markdown_fragment_to_html(&inner));
+                out.push_str("</s>");
+                i = end + 2;
+                continue;
+            }
+        }
+        if chars[i] == '*' || chars[i] == '_' {
+            let delim = chars[i].to_string();
+            if let Some(end) = find_closing_delim(&chars, i + 1, &delim) {
+                let inner: String = chars[i + 1..end].iter().collect();
+                if !inner.is_empty() {
+                    out.push_str("<em>");
+                    out.push_str(&inline_markdown_fragment_to_html(&inner));
+                    out.push_str("</em>");
+                    i = end + 1;
+                    continue;
+                }
+            }
+        }
+        out.push_str(&html_escape_text(&chars[i].to_string()));
+        i += 1;
     }
-    md.push('\n');
+    out
 }
 
-fn pick_header_row(rows: &[TableRow<'_>]) -> Option<usize> {
-    rows.iter().position(|r| {
-        r.cells
-            .iter()
-            .all(|c| matches!(c.type_, TableCellType::Heading))
-    })
+fn matches_run(chars: &[char], i: usize, lit: &str) -> bool {
+    let lit: Vec<char> = lit.chars().collect();
+    i + lit.len() <= chars.len() && chars[i..i + lit.len()] == lit[..]
 }
 
-fn write_table_row(cells: &[TableCell<'_>], md: &mut String, plain: &mut String) {
-    md.push('|');
-    for cell in cells {
-        let mut buf = String::new();
-        let mut sink = String::new();
-        render_nodes(&cell.content, &mut buf, &mut sink, 0);
-        let s = buf.trim().replace('\n', " ").replace('|', "\\|");
-        md.push_str(&format!(" {} |", s));
-        plain.push_str(s.as_str());
-        plain.push(' ');
+fn find_closing_delim(chars: &[char], start: usize, delim: &str) -> Option<usize> {
+    let d: Vec<char> = delim.chars().collect();
+    let mut i = start;
+    while i + d.len() <= chars.len() {
+        if chars[i..i + d.len()] == d[..] {
+            return Some(i);
+        }
+        i += 1;
     }
-    md.push('\n');
-    plain.push('\n');
+    None
 }
+
+fn parse_md_link(chars: &[char]) -> Option<(String, String, usize)> {
+    if chars.first() != Some(&'[') {
+        return None;
+    }
+    let mut i = 1;
+    let mut label = String::new();
+    while i < chars.len() {
+        if chars[i] == ']' {
+            break;
+        }
+        if chars[i] == '\\' && i + 1 < chars.len() {
+            label.push(chars[i + 1]);
+            i += 2;
+            continue;
+        }
+        label.push(chars[i]);
+        i += 1;
+    }
+    if i >= chars.len() || chars[i] != ']' {
+        return None;
+    }
+    i += 1;
+    if i >= chars.len() || chars[i] != '(' {
+        return None;
+    }
+    i += 1;
+    let mut url = String::new();
+    while i < chars.len() && chars[i] != ')' {
+        url.push(chars[i]);
+        i += 1;
+    }
+    if i >= chars.len() || chars[i] != ')' {
+        return None;
+    }
+    Some((label, url, i + 1))
+}
+
 
 fn collapse_blank_lines(s: &str) -> String {
     let mut out = String::with_capacity(s.len());
@@ -1189,4 +1672,128 @@ mod tests {
         assert!(md.to_lowercase().contains("redirect"), "md={md}");
         assert!(plain.to_lowercase().contains("redirect"));
     }
+
+    #[test]
+    fn mediawiki_simple_wikitable_emits_html() {
+        let wt = r#"{| class="wikitable"
+|+ Uses of JA*
+! connective type
+! example
+|-
+| logical ''sumti'' connective
+|style="background-color:#ddddff"| ''ko'a ja ko'e''
+|}
+"#;
+        let (md, plain) = wikitext_to_markdown(wt);
+        assert!(md.contains("<table class=\"wikitable\">"), "md={md}");
+        assert!(md.contains("<caption>"), "md={md}");
+        assert!(md.contains("Uses of JA*"), "md={md}");
+        assert!(md.contains("</caption>"), "md={md}");
+        assert!(md.contains("<th>"), "md={md}");
+        assert!(
+            md.contains("style=\"background-color:#ddddff\""),
+            "md={md}"
+        );
+        assert!(md.contains("<em>sumti</em>"), "md={md}");
+        assert!(md.contains("<em>ko'a ja ko'e</em>"), "md={md}");
+        assert!(!md.contains("| --- |"), "should not emit GFM pipes: {md}");
+        assert!(plain.contains("sumti"), "plain={plain}");
+        assert!(plain.contains("Uses of JA*"), "plain={plain}");
+    }
+
+    #[test]
+    fn mediawiki_colspan_rowspan_matrix_emits_html() {
+        let wt = r#"{| class="wikitable"
+|+ Afterthought connectives
+!rowspan="2"| argument type
+!colspan="2"| logical
+!colspan="2"| non-logical
+|-
+!CLL
+!"JACU"
+!CLL
+!"JACU"
+|-
+| ''sumti''
+| ''ko'a .a ko'e''
+|style="background-color:#ddddff"| ''ko'a ja ko'e''
+| ''ko'a joi ko'e''
+| ''ko'a joi ko'e''
+|-
+| relative clause
+|style="background-color:#dddddd"| <s>undefined</s>
+|style="background-color:#ddffdd"| ''poi broda ja poi brode''
+| ''poi broda zi'e poi brode''
+|style="background-color:#ddddff"| ''poi broda joi poi brode''
+|}
+"#;
+        let (md, _) = wikitext_to_markdown(wt);
+        assert!(md.contains("<table class=\"wikitable\">"), "md={md}");
+        assert!(md.contains("<caption>Afterthought connectives</caption>"), "md={md}");
+        assert!(md.contains("rowspan=\"2\""), "md={md}");
+        assert!(md.contains("colspan=\"2\""), "md={md}");
+        assert!(md.contains("<s>undefined</s>"), "md={md}");
+        assert!(
+            md.contains("style=\"background-color:#ddffdd\""),
+            "md={md}"
+        );
+        // Must not fall back to broken GFM with literal separators.
+        assert!(!md.contains("| --- |"), "md={md}");
+        assert!(!md.contains("| argument type |"), "md={md}");
+    }
+
+    #[test]
+    fn mediawiki_complexity_table_keeps_count_column() {
+        let wt = r#"{| class="wikitable"
+|+ Complexity
+! connective system
+! logical connective ''cmavo''
+! count
+|-
+| CLL
+| ''.a'', ''.e'', ''ja''
+| 27
+|-
+| "JACU"
+| ''ja'', ''je'', ''gi''
+| 9
+|}
+"#;
+        let (md, plain) = wikitext_to_markdown(wt);
+        assert!(md.contains("<caption>Complexity</caption>"), "md={md}");
+        assert!(md.contains("<th>count</th>") || md.contains(">count</th>"), "md={md}");
+        assert!(md.contains(">27</td>") || md.contains(">27<"), "md={md}");
+        assert!(md.contains(">9</td>") || md.contains(">9<"), "md={md}");
+        assert!(plain.contains("27"), "plain={plain}");
+        assert!(plain.contains("9"), "plain={plain}");
+    }
+
+    #[test]
+    fn strikethrough_start_end_tags_in_prose() {
+        let (md, _) = wikitext_to_markdown("before <s>undefined</s> after");
+        assert!(md.contains("~~undefined~~"), "md={md}");
+    }
+
+    #[test]
+    fn rewrite_wiki_links_rewrites_html_hrefs() {
+        let html = r#"See <a href="/papri/Lojban">Lojban</a>."#;
+        let rewritten = rewrite_wiki_links_for_lensisku(html);
+        assert!(
+            rewritten.contains("href=\"/wiki/Lojban\""),
+            "rewritten={rewritten}"
+        );
+    }
+
+    #[test]
+    fn unsafe_table_attrs_are_stripped() {
+        let wt = r#"{| class="wikitable" onclick="alert(1)"
+| style="background-color:#ddddff; expression(alert(1))"| x
+|}
+"#;
+        let (md, _) = wikitext_to_markdown(wt);
+        assert!(md.contains("<table"), "md={md}");
+        assert!(!md.to_ascii_lowercase().contains("onclick"), "md={md}");
+        assert!(!md.to_ascii_lowercase().contains("expression"), "md={md}");
+    }
+
 }
