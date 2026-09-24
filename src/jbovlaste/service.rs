@@ -21,9 +21,9 @@ use super::{
     WikiByDefinitionResponse,
 };
 use crate::jbovlaste::models::{
-    row_vote_score_f32, row_vote_score_i32, DefinitionDetail, SemanticGraphParams,
+    row_vote_score_f32, row_vote_score_i32, DefinitionDetail, RelatedValsi, SemanticGraphParams,
 };
-use vlazba::{implicit_four_letter_gismu_rafsi, lujvo_rafsi};
+use vlazba::{implicit_four_letter_gismu_rafsi, lujvo_rafsi, trivial_expansion_key};
 
 fn push_author_filters<'a>(
     conditions: &mut Vec<String>,
@@ -115,60 +115,60 @@ fn looks_like_possible_lujvo_query(search_term: &str) -> bool {
         .all(|c| matches!(c, 'a'..='z' | 'A'..='Z' | '\'' | '.' | ','))
 }
 
-/// Canonical spellings linked to the query for exact-match search boosts.
-///
-/// 1. Existing headword → its stamped `canonical_word` (if any).
-/// 2. Missing headword that still parses as a classical lujvo → reconstructed
-///    score-optimal form, so search hits that entry and variants via
-///    `cached_canonical_word` (same as searching an existing lujvo).
+/// Resolve canonical spelling variants and the attested forms sharing the
+/// same expanded brivla after an outer SE/KE conversion is removed.
 async fn lookup_canonical_aliases_for_search(
     transaction: &Transaction<'_>,
     search_term: &str,
     lojban_search_term: &str,
 ) -> Result<Vec<String>, Box<dyn std::error::Error>> {
-    if search_term.trim().is_empty() {
-        return Ok(Vec::new());
+    if search_term.trim().is_empty() { return Ok(Vec::new()); }
+    let query_words = vec![search_term.to_owned(), lojban_search_term.to_owned()];
+    let headwords = transaction.query(
+        "SELECT canonical_word, related_expansion_key
+         FROM valsi WHERE source_langid = 1 AND word = ANY($1)",
+        &[&query_words],
+    ).await?;
+    let mut aliases = Vec::new();
+    let mut keys = Vec::new();
+    for row in headwords {
+        if let Some(word) = row.get::<_, Option<String>>(0) { aliases.push(word); }
+        if let Some(key) = row.get::<_, Option<String>>(1) { keys.push(key); }
     }
-
-    // One lookup: any matching headword row (with or without canonical_word).
-    let rows = transaction
-        .query(
-            r#"
-            SELECT DISTINCT canonical_word
-            FROM valsi
-            WHERE source_langid = 1
-              AND (word = $1 OR word = $2)
-            "#,
-            &[&search_term, &lojban_search_term],
-        )
-        .await?;
-
-    if !rows.is_empty() {
-        // Known headword: never reconstruct; only use a stamped link to another spelling.
-        return Ok(rows
-            .into_iter()
-            .filter_map(|r| r.get::<_, Option<String>>(0))
-            .filter(|c| !c.is_empty() && c != search_term && c != lojban_search_term)
-            .collect());
+    if keys.is_empty() && looks_like_possible_lujvo_query(search_term) {
+        let maps = load_owned_rafsi_maps(transaction).await.unwrap_or_default();
+        for word in [search_term, lojban_search_term] {
+            if let Some(class) = classify_lujvo_spelling(word, &maps.options()) {
+                aliases.push(class.canonical_word);
+            }
+            if let Some(key) = trivial_expansion_key(word, &maps.options(), maps.se_words()) {
+                keys.push(key);
+            }
+        }
     }
-
-    if !looks_like_possible_lujvo_query(search_term) {
-        return Ok(Vec::new());
+    keys.sort();
+    keys.dedup();
+    let mut canonical_targets = query_words.clone();
+    canonical_targets.extend(aliases.iter().cloned());
+    canonical_targets.sort();
+    canonical_targets.dedup();
+    if !keys.is_empty() || !canonical_targets.is_empty() {
+        let rows = transaction.query(
+            "SELECT word, canonical_word FROM valsi
+             WHERE source_langid = 1 AND
+               (related_expansion_key = ANY($1)
+                OR word = ANY($2) OR canonical_word = ANY($2))",
+            &[&keys, &canonical_targets],
+        ).await?;
+        for row in rows {
+            aliases.push(row.get::<_, String>(0));
+            if let Some(word) = row.get::<_, Option<String>>(1) { aliases.push(word); }
+        }
     }
-
-    let maps = load_owned_rafsi_maps(transaction).await.unwrap_or_default();
-    let options = maps.options();
-    let classification = classify_lujvo_spelling(search_term, &options).or_else(|| {
-        (search_term != lojban_search_term)
-            .then(|| classify_lujvo_spelling(lojban_search_term, &options))
-            .flatten()
-    });
-
-    Ok(classification
-        .map(|c| c.canonical_word)
-        .filter(|c| c != search_term && c != lojban_search_term)
-        .into_iter()
-        .collect())
+    aliases.sort();
+    aliases.dedup();
+    aliases.retain(|s| !s.is_empty() && s != search_term && s != lojban_search_term);
+    Ok(aliases)
 }
 
 pub async fn semantic_search(
@@ -301,10 +301,10 @@ pub async fn semantic_search(
                 CASE WHEN d.embedding IS NOT NULL THEN d.embedding <=> $1::vector END as similarity,
                 COALESCE(dv.score, 0)::bigint AS score,
                 CASE 
-                    WHEN v.word = $3 OR v.word = $4
-                         OR d.cached_canonical_word = $3 OR d.cached_canonical_word = $4
+                    WHEN v.word = $3 OR v.word = $4 THEN 0
+                    WHEN d.cached_canonical_word = $3 OR d.cached_canonical_word = $4
                          OR d.cached_canonical_word = ANY($5)
-                         OR v.word = ANY($5) THEN 0 
+                         OR v.word = ANY($5) THEN 1
                     WHEN d.cached_rafsi IS NOT NULL AND ($3 = ANY(string_to_array(d.cached_rafsi, ' ')) OR $4 = ANY(string_to_array(d.cached_rafsi, ' '))) THEN 1
                     WHEN d.cached_glosswords IS NOT NULL AND d.cached_glosswords != ''
                          AND LOWER($3) = ANY(string_to_array(d.cached_glosswords, '|')) THEN 2
@@ -376,10 +376,10 @@ pub async fn semantic_search(
                 (di.definition_id IS NOT NULL) as has_image,
                 CASE WHEN d.embedding IS NOT NULL THEN d.embedding <=> $1::vector END as similarity,
                 CASE 
-                    WHEN v.word = $3 OR v.word = $4
-                         OR d.cached_canonical_word = $3 OR d.cached_canonical_word = $4
+                    WHEN v.word = $3 OR v.word = $4 THEN 0
+                    WHEN d.cached_canonical_word = $3 OR d.cached_canonical_word = $4
                          OR d.cached_canonical_word = ANY($5)
-                         OR v.word = ANY($5) THEN 0 
+                         OR v.word = ANY($5) THEN 1
                     WHEN d.cached_rafsi IS NOT NULL AND ($3 = ANY(string_to_array(d.cached_rafsi, ' ')) OR $4 = ANY(string_to_array(d.cached_rafsi, ' '))) THEN 1
                     WHEN d.cached_glosswords IS NOT NULL AND d.cached_glosswords != ''
                          AND LOWER($3) = ANY(string_to_array(d.cached_glosswords, '|')) THEN 2
@@ -1232,8 +1232,8 @@ pub async fn search_definitions(
                     WHEN d.cached_valsiword = $7 THEN 13
                     WHEN d.cached_canonical_word = $1 THEN 13
                     WHEN d.cached_canonical_word = $7 THEN 13
-                    WHEN d.cached_valsiword = ANY($10) THEN 13
-                    WHEN d.cached_canonical_word = ANY($10) THEN 13
+                    WHEN d.cached_valsiword = ANY($10) THEN 12
+                    WHEN d.cached_canonical_word = ANY($10) THEN 12
                     WHEN d.cached_glosswords IS NOT NULL AND d.cached_glosswords != '' 
                          AND LOWER($1) = ANY(string_to_array(d.cached_glosswords, '|')) THEN 12
                     WHEN d.cached_valsiword ILIKE $1 THEN 11
@@ -1308,8 +1308,8 @@ pub async fn search_definitions(
                     WHEN d.cached_valsiword = $7 THEN 13
                     WHEN d.cached_canonical_word = $1 THEN 13
                     WHEN d.cached_canonical_word = $7 THEN 13
-                    WHEN d.cached_valsiword = ANY($10) THEN 13
-                    WHEN d.cached_canonical_word = ANY($10) THEN 13
+                    WHEN d.cached_valsiword = ANY($10) THEN 12
+                    WHEN d.cached_canonical_word = ANY($10) THEN 12
                     WHEN d.cached_glosswords IS NOT NULL AND d.cached_glosswords != ''
                          AND LOWER($1) = ANY(string_to_array(d.cached_glosswords, '|')) THEN 12
                     WHEN d.cached_valsiword ILIKE $1 THEN 11
@@ -1502,8 +1502,8 @@ pub async fn search_definitions(
                 WHEN d.cached_valsiword = $5 THEN 13
                 WHEN d.cached_canonical_word = $1 THEN 13
                 WHEN d.cached_canonical_word = $5 THEN 13
-                WHEN d.cached_valsiword = ANY($8) THEN 13
-                WHEN d.cached_canonical_word = ANY($8) THEN 13
+                WHEN d.cached_valsiword = ANY($8) THEN 12
+                WHEN d.cached_canonical_word = ANY($8) THEN 12
                 WHEN d.cached_glosswords IS NOT NULL AND d.cached_glosswords != '' 
                      AND LOWER($1) = ANY(string_to_array(d.cached_glosswords, '|')) THEN 12
                 WHEN d.cached_valsiword ILIKE $1 THEN 11
@@ -1661,8 +1661,8 @@ pub async fn fast_search_definitions(
                 WHEN d.cached_valsiword = $6::text THEN 13
                 WHEN d.cached_canonical_word = $1::text THEN 13
                 WHEN d.cached_canonical_word = $6::text THEN 13
-                WHEN d.cached_valsiword = ANY($9::text[]) THEN 13
-                WHEN d.cached_canonical_word = ANY($9::text[]) THEN 13
+                WHEN d.cached_valsiword = ANY($9::text[]) THEN 12
+                WHEN d.cached_canonical_word = ANY($9::text[]) THEN 12
                 WHEN d.cached_glosswords IS NOT NULL AND d.cached_glosswords != '' 
                      AND LOWER($1::text) = ANY(string_to_array(d.cached_glosswords, '|')) THEN 12
                 WHEN d.cached_valsiword ILIKE $1::text THEN 11
@@ -2185,7 +2185,7 @@ pub async fn get_entry_details(
     let result = transaction
         .query_opt(
             "SELECT v.valsiid, v.word, vt.descriptor as type_name, v.rafsi, v.source_langid,
-             v.cached_decomposition, v.canonical_word,
+             v.cached_decomposition, v.canonical_word, v.related_expansion_key,
              (SELECT COUNT(c.commentid)
               FROM threads t
               LEFT JOIN comments c ON t.threadid = c.threadid
@@ -2222,7 +2222,28 @@ pub async fn get_entry_details(
                         .flatten(),
                     &row.get::<_, String>("word"),
                 ),
+                related_forms: Vec::new()
             };
+
+            let key = row.get::<_, Option<String>>("related_expansion_key");
+            let canonical_group = if matches!(detail.type_name.as_str(), "lujvo" | "non-canonical lujvo") {
+                Some(row.get::<_, Option<String>>("canonical_word")
+                    .filter(|word| !word.is_empty())
+                    .unwrap_or_else(|| detail.word.clone()))
+            } else { None };
+            let related = transaction.query(
+                "SELECT valsiid, word FROM valsi
+                 WHERE source_langid = 1 AND word <> $1
+                   AND (($2::text IS NOT NULL AND
+                         related_expansion_key = $2)
+                        OR ($3::text IS NOT NULL AND
+                            (word = $3 OR canonical_word = $3)))
+                 ORDER BY word",
+                &[&detail.word, &key, &canonical_group],
+            ).await?;
+            detail.related_forms = related.into_iter().map(|r| RelatedValsi {
+                valsiid: r.get(0), word: r.get(1),
+            }).collect();
 
             if is_decomposable_lujvo_type(&detail.type_name) && detail.decomposition.is_none() {
                 match get_source_words(&detail.word, &transaction, parsers).await {
@@ -3039,7 +3060,7 @@ async fn add_definition_in_transaction(
 
     // For classical lujvo, refine typeid via score-optimal reconstruct (may be
     // non-canonical). Skip if analyze already returned the refined type.
-    let maps = if matches!(resolved_word_type, "lujvo" | "non-canonical lujvo") {
+    let maps = if source_langid == 1 && matches!(resolved_word_type, "gismu" | "experimental gismu" | "lujvo" | "non-canonical lujvo") {
         load_owned_rafsi_maps(transaction).await.ok()
     } else {
         None
@@ -3069,6 +3090,10 @@ async fn add_definition_in_transaction(
         (type_id, None)
     };
 
+    let related_expansion = maps.as_ref()
+        .and_then(|m| trivial_expansion_key(&word, &m.options(), m.se_words()));
+    let trivial_checked = maps.is_some();
+
     // Get or create valsi, considering source_langid
     let valsi_id = match transaction
         .query_opt(
@@ -3080,8 +3105,9 @@ async fn add_definition_in_transaction(
         Some(row) => row.get::<_, i32>("valsiid"),
         None => match transaction
             .query_one(
-                "INSERT INTO valsi (word, typeId, userId, time, source_langid, canonical_word)
-                     VALUES ($1, $2, $3, $4, $5, $6)
+                "INSERT INTO valsi (word, typeId, userId, time, source_langid, canonical_word,
+                                        related_expansion_key, trivial_se_checked)
+                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
                      RETURNING valsiid",
                 &[
                     &word,
@@ -3090,6 +3116,8 @@ async fn add_definition_in_transaction(
                     &(Utc::now().timestamp() as i32),
                     &source_langid,
                     &canonical_word,
+                    &related_expansion,
+                    &trivial_checked,
                 ],
             )
             .await
@@ -4985,7 +5013,9 @@ pub async fn get_recent_changes(
                 let mut client = pool.get().await?;
                 let transaction = client.transaction().await?;
 
-                let mut requested_types: Vec<&str> = if let Some(t) = &types_cloned {
+                let mut requested_types: Vec<&str> = if types_cloned.as_deref() == Some("news") {
+                    vec!["wiki", "free_wave"]
+                } else if let Some(t) = &types_cloned {
                     t.split(',').collect()
                 } else if home {
                     vec!["comment", "definition", "wiki"]
@@ -5197,6 +5227,51 @@ pub async fn get_recent_changes(
             ) {}
             {})",
                         where_extra, order_limit
+                    ));
+                }
+
+                // The first comment of each context-free thread is a news item.
+                if requested_types.contains(&"free_wave") {
+                    let where_extra = match cursor_condition {
+                        Some((ct, cs, ci)) => format!(
+                            " AND (c.time, -5, c.commentid) < ({}, {}, {})", ct, -cs, ci
+                        ),
+                        None => String::new(),
+                    };
+                    queries.push(format!(
+                        "(SELECT
+                'comment' AS change_type,
+                c.subject AS word,
+                c.content AS content,
+                0 AS valsiid,
+                0 AS langid,
+                0 AS natlangwordid,
+                c.commentid,
+                c.threadid,
+                0 AS definitionid,
+                u.username,
+                c.time,
+                NULL::text AS language_name,
+                NULL::text AS language_english_name,
+                NULL::text AS language_lojban_name,
+                NULL::integer AS version_id,
+                NULL::integer AS prev_version_id,
+                NULL::smallint AS valsi_typeid,
+                NULL::text AS valsi_word,
+                c.commentnum,
+                c.parentid,
+                5 AS type_sort_order,
+                c.commentid::bigint AS cursor_id
+            FROM comments c
+            JOIN threads t ON c.threadid = t.threadid
+            JOIN users u ON c.userid = u.userid
+            WHERE t.valsiid IS NULL AND t.natlangwordid IS NULL
+              AND t.definitionid IS NULL AND t.definition_link_id IS NULL
+              AND t.target_user_id IS NULL AND t.collection_id IS NULL
+              AND c.commentnum = 1 AND c.import_source IS NULL
+              AND u.username != 'officialdata' {}
+            ORDER BY c.time DESC, type_sort_order ASC, c.commentid DESC LIMIT {})",
+                        where_extra, limit_val
                     ));
                 }
 

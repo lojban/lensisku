@@ -2071,6 +2071,25 @@ async fn get_or_create_thread_id(
         return Err("Ambiguous thread context: Multiple context IDs (e.g., valsi_id and target_user_id) provided. Only one type of context or none (for free-standing threads) is allowed.".into());
     }
 
+    // Every free wave starts a new thread; the all-NULL context is not reusable.
+    if valsi_id.is_none()
+        && natlang_word_id.is_none()
+        && definition_id.is_none()
+        && definition_link_id.is_none()
+        && target_user_id.is_none()
+        && collection_id.is_none()
+    {
+        return Ok(transaction
+            .query_one(
+                "INSERT INTO threads (valsiid, natlangwordid, definitionid, definition_link_id, target_user_id, collection_id)
+                 VALUES (NULL, NULL, NULL, NULL, NULL, NULL)
+                 RETURNING threadid",
+                &[],
+            )
+            .await?
+            .get("threadid"));
+    }
+
     let query_select = "
         SELECT threadid FROM threads
         WHERE (valsiid = $1 OR ($1 IS NULL AND valsiid IS NULL))

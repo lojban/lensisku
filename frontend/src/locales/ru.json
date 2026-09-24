@@ -1164,6 +1164,7 @@
     "discussEntry": "Обсудить запись",
     "loadError": "Не удалось загрузить детали записи",
     "rafsiLabel": "Rafsi:",
+    "relatedForms": "Связанные формы",
     "decompositionLabel": "Разложение:",
     "entry": "Запись",
     "metaDescription": "{word} — слово ложбана ({type}). Определения и примеры в словаре ложбана.",

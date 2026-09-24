@@ -7,6 +7,7 @@
 //! uses best_only reconstruct so we no longer expand the full rafsi product.
 
 use crate::language::{classify_lujvo_spelling, load_owned_rafsi_maps, LujvoClassification};
+use vlazba::trivial_expansion_key;
 use deadpool_postgres::Pool;
 use log::{debug, error, info};
 use std::time::Duration;
@@ -125,4 +126,60 @@ pub async fn classify_unchecked_lujvo_batch(
         info!("lujvo canonical classification: updated {updated} (non-canonical {non_canonical})");
     }
     Ok((updated, non_canonical))
+}
+
+
+/// Backfill the SE relation separately from score-optimal spelling. Every
+/// candidate is stamped once, including lujvo with no trivial SE relation.
+pub fn spawn_trivial_se_classification(pool: Pool) {
+    tokio::spawn(async move {
+        let mut interval = time::interval(Duration::from_secs(INTERVAL_SECS));
+        interval.set_missed_tick_behavior(time::MissedTickBehavior::Skip);
+        interval.tick().await;
+        loop {
+            interval.tick().await;
+            if let Err(e) = classify_trivial_se_batch(&pool).await {
+                error!("trivial SE classification batch failed: {}", e);
+            }
+        }
+    });
+}
+
+pub async fn classify_trivial_se_batch(
+    pool: &Pool,
+) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
+    let (pending, maps) = {
+        let mut client = pool.get().await?;
+        let tx = client.transaction().await?;
+        let rows = tx.query(
+            "SELECT valsiid, word FROM valsi
+             WHERE source_langid = 1 AND typeid IN (1, 4, 7, 17) AND NOT trivial_se_checked
+             ORDER BY valsiid LIMIT $1",
+            &[&BATCH_SIZE],
+        ).await?;
+        if rows.is_empty() { tx.commit().await?; return Ok(0); }
+        let pending: Vec<(i32, String)> = rows.iter().map(|r| (r.get(0), r.get(1))).collect();
+        let maps = load_owned_rafsi_maps(&tx).await.map_err(|e| e.to_string())?;
+        tx.commit().await?;
+        (pending, maps)
+    };
+    let plans = task::spawn_blocking(move || {
+        let options = maps.options();
+        pending.into_iter().map(|(id, word)| {
+            let key = trivial_expansion_key(&word, &options, maps.se_words());
+            (id, word, key)
+        }).collect::<Vec<_>>()
+    }).await?;
+    let mut client = pool.get().await?;
+    let tx = client.transaction().await?;
+    let mut updated = 0;
+    for (id, word, key) in plans {
+        updated += tx.execute(
+            "UPDATE valsi SET related_expansion_key = $1, trivial_se_checked = TRUE
+             WHERE valsiid = $2 AND word = $3 AND NOT trivial_se_checked",
+            &[&key, &id, &word],
+        ).await? as usize;
+    }
+    tx.commit().await?;
+    Ok(updated)
 }

@@ -198,7 +198,7 @@ const fetchData = async (tabKey: string) => {
         }
         const after = pageToFetch > 1 ? cursors.value[pageToFetch - 1] : undefined
         response = await getRecentChanges(
-          { limit: perPage.value, types: 'wiki', ...(after && { after }) },
+          { limit: perPage.value, types: 'news', ...(after && { after }) },
           abortController.signal
         )
         newsChanges.value = response.data.changes

@@ -1238,6 +1238,7 @@
     "discussEntry": "Discuss entry",
     "loadError": "Failed to load entry details",
     "rafsiLabel": "Rafsi:",
+    "relatedForms": "Related forms",
     "decompositionLabel": "Decomposition:",
     "entry": "Entry",
     "metaDescription": "{word} — Lojban word ({type}). Definitions and usage in the Lojban dictionary.",

@@ -21,7 +21,7 @@ function readLastOpenedAt(): number | null {
 }
 
 /**
- * Unread wiki news since the user last opened the News tab.
+ * Unread news (wiki changes and free waves) since the user last opened the News tab.
  * Badge stays hidden until localStorage has a last-opened stamp and a fetch completes with count > 0.
  */
 export function useNewsUnread() {
@@ -47,18 +47,22 @@ export function useNewsUnread() {
   async function fetchUnreadCount(signal?: AbortSignal) {
     const since = readLastOpenedAt()
     if (since == null) {
-      unreadCount.value = null
+      // Start tracking on the first visit so future news can alert the bell.
+      localStorage.setItem(NEWS_LAST_OPENED_KEY, String(Math.floor(Date.now() / 1000)))
+      unreadCount.value = 0
       return
     }
     if (isFetching.value) return
     isFetching.value = true
     try {
       const response = await getRecentChanges(
-        { limit: UNREAD_FETCH_LIMIT, types: 'wiki' },
+        { limit: UNREAD_FETCH_LIMIT, types: 'news' },
         signal
       )
       const changes = (response.data?.changes ?? []) as Array<{ time?: number }>
-      unreadCount.value = changes.filter((c) => typeof c.time === 'number' && c.time > since).length
+      // Opening News while this request is in flight advances the read marker.
+      const latestSince = readLastOpenedAt() ?? since
+      unreadCount.value = changes.filter((c) => typeof c.time === 'number' && c.time > latestSince).length
     } catch (e: unknown) {
       const name = e && typeof e === 'object' && 'name' in e ? (e as { name?: string }).name : ''
       if (name !== 'AbortError' && name !== 'CanceledError') {

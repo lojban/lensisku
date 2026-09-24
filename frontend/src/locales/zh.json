@@ -1214,6 +1214,7 @@
     "discussEntry": "讨论词条",
     "loadError": "无法加载词条详情",
     "rafsiLabel": "rafsi：",
+    "relatedForms": "相关词形",
     "decompositionLabel": "分解：",
     "entry": "词条",
     "metaDescription": "{word} — 逻辑语词（{type}）。词典释义与用法。",

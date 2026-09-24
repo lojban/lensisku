@@ -60,6 +60,12 @@ pub struct ValsiEntry {
 }
 
 #[derive(Debug, Serialize, ToSchema)]
+pub struct RelatedValsi {
+    pub valsiid: i32,
+    pub word: String,
+}
+
+#[derive(Debug, Serialize, ToSchema)]
 pub struct ValsiDetail {
     pub valsiid: i32,
     pub word: String,
@@ -74,6 +80,7 @@ pub struct ValsiDetail {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[schema(nullable)]
     pub canonical_word: Option<String>,
+    pub related_forms: Vec<RelatedValsi>,
 }
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]

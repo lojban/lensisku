@@ -1209,6 +1209,7 @@
     "discussEntry": "エントリについて議論",
     "loadError": "エントリの詳細を読み込めませんでした",
     "rafsiLabel": "rafsi：",
+    "relatedForms": "関連する形",
     "decompositionLabel": "分解：",
     "entry": "エントリ",
     "metaDescription": "{word} — ロジバンの語（{type}）。辞書での定義と用例。",

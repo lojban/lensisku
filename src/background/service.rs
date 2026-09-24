@@ -332,6 +332,7 @@ pub async fn spawn_background_tasks(
 
     // Classify unchecked classical lujvo (score-optimal vs non-canonical) every 5 minutes
     super::lujvo_canonical::spawn_lujvo_canonical_classification(pool.clone());
+    super::lujvo_canonical::spawn_trivial_se_classification(pool.clone());
 
     // Cache dictionary exports. Skipped when DISABLE_DICTIONARY_EXPORT=1/true/yes
     // because it runs xelatex at startup and can freeze low-resource dev containers.

@@ -407,7 +407,7 @@ import {
   Bell,
 } from '@lucide/vue'
 import { Menu } from '@lucide/vue' // Explicitly import Menu if it was missed by auto-sort
-import { ref, onMounted, watch, computed, nextTick } from 'vue'
+import { ref, onMounted, onUnmounted, watch, computed, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 
 import { useI18n } from 'vue-i18n'
@@ -484,7 +484,7 @@ const searchMode = ref('messages')
 const auth = provideAuth()
 const { preload: preloadCollections, clear: clearCollectionsCache } = useCollectionsCache()
 const { buttonTheme, initButtonTheme, setButtonTheme: setButtonThemePreference } = useButtonTheme()
-const { badgeCount: newsBadgeCount, badgeLabel: newsBadgeLabel } = useNewsUnread()
+const { badgeCount: newsBadgeCount, badgeLabel: newsBadgeLabel, fetchUnreadCount: fetchNewsUnreadCount } = useNewsUnread()
 const { error, clearError } = provideError()
 const { successToast, clearSuccess } = provideSuccessToast()
 const isMenuOpen = ref(false)
@@ -715,8 +715,22 @@ watch(
   { immediate: true }
 )
 
+// Keep the navigation badge fresh across routes and when the tab becomes visible.
+let newsRefreshInterval: ReturnType<typeof setInterval> | undefined
+const refreshNewsBadge = () => {
+  if (document.visibilityState === 'visible') void fetchNewsUnreadCount()
+}
+
+onUnmounted(() => {
+  if (newsRefreshInterval) clearInterval(newsRefreshInterval)
+  document.removeEventListener('visibilitychange', refreshNewsBadge)
+})
+
 // Also set initial $locale based on route on mount
 onMounted(() => {
+  refreshNewsBadge()
+  newsRefreshInterval = setInterval(refreshNewsBadge, 60_000)
+  document.addEventListener('visibilitychange', refreshNewsBadge)
   const path = router.currentRoute.value.path
   const localeMatch = path.match(localeCaptureGroupRegex)
   if (localeMatch) {

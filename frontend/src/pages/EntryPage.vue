@@ -123,6 +123,36 @@
         {{ t('entryPage.noDefinitions') }}
       </div>
     </div>
+    <!-- Definitions of attested forms sharing an expansion or canonical spelling -->
+    <section v-if="relatedForms.length" class="space-y-4 pt-4 border-t">
+      <h3 class="text-xl font-semibold text-gray-700">{{ t('entryPage.relatedForms') }}</h3>
+      <div v-for="group in relatedForms" :key="group.valsiid" class="space-y-3">
+        <h4 class="text-lg font-semibold">
+          <RouterLink
+            :to="`/valsi/${encodeURIComponent(group.word.replace(/ /g, '_'))}`"
+            class="text-nav-link hover:underline"
+          >
+            {{ group.word }}
+          </RouterLink>
+        </h4>
+        <DefinitionCard
+          v-for="def in group.definitions"
+          :key="def.definitionid"
+          :definition="def"
+          :languages="languages"
+          :disable-discussion-button="true"
+          :show-score="props.showScores"
+          :show-comment-button="false"
+          :show-word-type="false"
+          :show-audio="false"
+          :show-vote-buttons="true"
+          :definition-id="def.definitionid"
+          :show-definition-number="true"
+          :collections="collections"
+          @refresh-definitions="fetchDefinitionsDetails"
+        />
+      </div>
+    </section>
     <!-- Translations Section -->
     <div v-if="translations.length > 0" class="space-y-4 pt-4 border-t">
       <h3 class="text-xl font-semibold text-gray-700 flex items-center gap-2">
@@ -225,6 +255,7 @@ const { collections, preload: preloadCollections } = useCollectionsCache()
 
 const valsi = ref(null)
 const definitions = ref([])
+const relatedForms = ref([])
 const isLoading = ref(true)
 const { showError, clearError } = useError()
 
@@ -265,6 +296,16 @@ const fetchDefinitionsDetails = async () => {
     }
 
     definitions.value = defsRes.data
+    const related = valsiRes.data.valsi.related_forms || []
+    const relatedResults = await Promise.allSettled(
+      related.map(async (form) => ({
+        ...form,
+        definitions: (await getValsiDefinitions(form.valsiid)).data,
+      }))
+    )
+    relatedForms.value = relatedResults.flatMap((result) =>
+      result.status === 'fulfilled' && result.value.definitions.length ? [result.value] : []
+    )
   } catch (e) {
     if (e.response?.status === 404) {
       router.push({

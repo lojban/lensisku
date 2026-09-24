@@ -1,4 +1,4 @@
-use std::{collections::HashMap, sync::Arc};
+use std::{collections::{HashMap, HashSet}, sync::Arc};
 
 use crate::language::dto::*;
 use crate::language::models::{Language, LojbanToken};
@@ -39,9 +39,14 @@ pub struct OwnedRafsiMaps {
     pub cmavo_exp: HashMap<String, Vec<String>>,
     pub gismu: HashMap<String, Vec<String>>,
     pub gismu_exp: HashMap<String, Vec<String>>,
+    pub se_words: HashSet<String>,
 }
 
 impl OwnedRafsiMaps {
+    pub fn se_words(&self) -> Option<&HashSet<String>> {
+        (!self.se_words.is_empty()).then_some(&self.se_words)
+    }
+
     pub fn options(&self) -> RafsiOptions<'_> {
         // Empty maps must be `None` so vlazba falls back to its built-in rafsi lists.
         RafsiOptions {
@@ -66,6 +71,13 @@ pub async fn load_owned_rafsi_maps(
         gismu_exp: fetch_experimental_gismu_rafsi(transaction)
             .await
             .unwrap_or_default(),
+        se_words: transaction.query(
+            "SELECT DISTINCT v.word FROM valsi v
+             JOIN definitions d ON d.valsiid = v.valsiid
+             WHERE v.source_langid = 1 AND v.typeid IN (2, 8)
+               AND UPPER(d.selmaho) = 'SE'",
+            &[],
+        ).await.unwrap_or_default().into_iter().map(|r| r.get(0)).collect(),
     })
 }
 
