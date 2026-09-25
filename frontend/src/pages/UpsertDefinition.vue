@@ -869,7 +869,11 @@ const performValidateMathJax = async () => {
       definitionError.value = ''
     }
   } catch (err) {
-    definitionError.value = err.response?.data?.error || t('upsertDefinition.validateError')
+    const status = err.response?.status
+    definitionError.value =
+      status === 400
+        ? err.response?.data?.error || t('upsertDefinition.validateError')
+        : t('upsertDefinition.validationUnavailable')
   }
 }
 

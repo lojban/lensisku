@@ -986,6 +986,7 @@
     "analyzeError": "Failed to analyze text",
     "analyzeErrorGeneric": "Error analyzing text",
     "validateError": "Invalid LaTeX/MathJax syntax",
+    "validationUnavailable": "Could not validate the definition. Please try again.",
     "validateErrorInField": "Invalid LaTeX/MathJax in {field}: {details}",
     "saveError": "Failed to save definition",
     "saveErrorGeneric": "Error saving definition",

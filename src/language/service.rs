@@ -467,14 +467,13 @@ pub async fn validate_mathjax(
     }
     // Decode HTML entities so that e.g. &lt; becomes < for LaTeX (avoids "Misplaced alignment tab character &")
     let decoded = crate::utils::decode_html_entities(text);
-    // Check for balanced delimiters
-    check_balanced_delimiters(&decoded)?;
+    // Check delimiters and identify whether there is any math to compile.
+    let has_math = check_balanced_delimiters(&decoded)?;
 
     // Check common syntax patterns
     check_syntax_patterns(&decoded)?;
 
-    // validate with Tectonic
-    if options.use_tectonic {
+    if options.use_tectonic && has_math {
         validate_with_tectonic(&decoded).await?;
     }
 
@@ -495,9 +494,10 @@ pub async fn validate_mathjax_fields(
     Ok(())
 }
 
-fn check_balanced_delimiters(text: &str) -> Result<(), MathJaxValidationError> {
+fn check_balanced_delimiters(text: &str) -> Result<bool, MathJaxValidationError> {
     let mut stack = Vec::new();
     let mut in_math = false;
+    let mut has_math = false;
     let mut i = 0;
 
     let chars: Vec<char> = text.chars().collect();
@@ -515,6 +515,7 @@ fn check_balanced_delimiters(text: &str) -> Result<(), MathJaxValidationError> {
                 } else {
                     stack.push("$");
                     in_math = true;
+                    has_math = true;
                 }
                 i += 1;
             }
@@ -529,6 +530,7 @@ fn check_balanced_delimiters(text: &str) -> Result<(), MathJaxValidationError> {
                             }
                             stack.push("\\(");
                             in_math = true;
+                            has_math = true;
                             i += 2;
                         }
                         ')' => {
@@ -548,6 +550,7 @@ fn check_balanced_delimiters(text: &str) -> Result<(), MathJaxValidationError> {
                             }
                             stack.push("\\[");
                             in_math = true;
+                            has_math = true;
                             i += 2;
                         }
                         ']' => {
@@ -590,7 +593,7 @@ fn check_balanced_delimiters(text: &str) -> Result<(), MathJaxValidationError> {
         )));
     }
 
-    Ok(())
+    Ok(has_math)
 }
 
 fn check_syntax_patterns(text: &str) -> Result<(), MathJaxValidationError> {
@@ -890,6 +893,24 @@ pub async fn analyze_word_in_pool(
 #[allow(clippy::expect_used)]
 mod tests {
     use super::*;
+
+    #[tokio::test]
+    async fn plain_text_does_not_need_a_tex_bundle() {
+        let options = MathJaxValidationOptions { use_tectonic: true };
+        validate_mathjax("A & B are ordinary text.", &options)
+            .await
+            .expect("plain text must not be compiled as LaTeX");
+    }
+
+    #[test]
+    fn delimiter_check_reports_math_expressions() {
+        assert!(!check_balanced_delimiters("ordinary text").unwrap());
+        assert!(!check_balanced_delimiters(r"escaped \$ only").unwrap());
+        assert!(check_balanced_delimiters("$x$").unwrap());
+        assert!(check_balanced_delimiters(r"\(x\)").unwrap());
+        assert!(check_balanced_delimiters(r"\[x\]").unwrap());
+        assert!(check_balanced_delimiters("$unclosed").is_err());
+    }
 
     #[test]
     fn reconstructs_y_apostrophe_hyphen_before_vowel_initial_fuhivla() {
