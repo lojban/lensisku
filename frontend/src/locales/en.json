@@ -922,6 +922,7 @@
     "glossKeywordsLabel": "Gloss keywords:",
     "placeKeywordsLabel": "Place keywords:",
     "languageLabel": "Language:",
+    "wordLabel": "Word:",
     "compareWith": "Compare with #{versionId}",
     "compareThis": "Compare this",
     "cancelSelection": "Cancel selection",
