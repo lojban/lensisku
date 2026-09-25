@@ -250,6 +250,25 @@ pub struct RenameWikiResponse {
     pub error: Option<String>,
 }
 
+/// Reattach a dictionary definition to another valsi (get-or-create by word + source_langid).
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct RenameDefinitionRequest {
+    pub new_word: String,
+}
+
+#[derive(Debug, Serialize, ToSchema)]
+pub struct RenameDefinitionResponse {
+    pub success: bool,
+    pub old_word: String,
+    pub new_word: String,
+    pub definition_id: i32,
+    pub old_valsiid: i32,
+    pub new_valsiid: i32,
+    pub old_valsi_deleted: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub error: Option<String>,
+}
+
 #[derive(Debug, Serialize, ToSchema)]
 pub struct WikiByDefinitionResponse {
     pub word: String,

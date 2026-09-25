@@ -17,7 +17,7 @@ use crate::jbovlaste::{
     BulkVoteResponse, DefinitionDetail, DefinitionListResponse, DefinitionTranslation,
     ExportPairsQuery, GetImageDefinitionQuery, ImageUploadRequest, LinkDefinitionsRequest,
     RafsiOverlapHit, RafsiOverlapQuery, RafsiOverlapResponse, RecentChangesQuery,
-    RecentChangesResponse, RenameWikiRequest, RenameWikiResponse, SearchDefinitionsParams,
+    RecentChangesResponse, RenameDefinitionRequest, RenameDefinitionResponse, RenameWikiRequest, RenameWikiResponse, SearchDefinitionsParams,
     SemanticGraphParams, SemanticGraphResponse, UpdateDefinitionRequest, UpdateDefinitionResponse,
     ValsiDefinitionsQuery, ValsiDetail, ValsiTypeListResponse, VoteRequest, VoteResponse,
     WikiByDefinitionResponse,
@@ -837,6 +837,77 @@ pub async fn rename_wiki_page(
         }
     }
 }
+
+
+#[utoipa::path(
+    post,
+    path = "/jbovlaste/valsi/{id}/rename",
+    tag = "jbovlaste",
+    params(
+        ("id" = i32, Path, description = "Definition ID whose headword should be reattached")
+    ),
+    request_body = RenameDefinitionRequest,
+    responses(
+        (status = 200, description = "Definition reattached to another valsi", body = RenameDefinitionResponse),
+        (status = 400, description = "Invalid request"),
+        (status = 403, description = "Only the author may change the word"),
+        (status = 404, description = "Definition not found"),
+        (status = 500, description = "Internal server error")
+    ),
+    security(
+        ("bearer_auth" = [])
+    ),
+    summary = "Reattach definition to another valsi",
+    description = "Author-only: get-or-create a valsi for the new word and move this definition (and definition-scoped dependents) onto it. Does not UPDATE valsi.word. Wiki pages are rejected."
+)]
+#[post("/valsi/{id}/rename")]
+#[protect(any("edit_definition"))]
+pub async fn rename_definition_valsi(
+    pool: web::Data<Pool>,
+    claims: Claims,
+    parsers: web::Data<Arc<HashMap<i32, Peg>>>,
+    redis_cache: web::Data<RedisCache>,
+    id: web::Path<i32>,
+    request: web::Json<RenameDefinitionRequest>,
+) -> impl Responder {
+    let definition_id = id.into_inner();
+    match service::rename_definition_valsi(
+        &pool,
+        &claims,
+        parsers.get_ref().clone(),
+        definition_id,
+        &request,
+        &redis_cache,
+    )
+    .await
+    {
+        Ok(response) => HttpResponse::Ok().json(response),
+        Err(e) => {
+            let msg = e.to_string();
+            let body = RenameDefinitionResponse {
+                success: false,
+                old_word: String::new(),
+                new_word: request.new_word.clone(),
+                definition_id,
+                old_valsiid: 0,
+                new_valsiid: 0,
+                old_valsi_deleted: false,
+                error: Some(msg.clone()),
+            };
+            if msg.contains("not found") {
+                HttpResponse::NotFound().json(body)
+            } else if msg.contains("author")
+                || msg.to_lowercase().contains("wiki")
+                || msg.contains("permission")
+            {
+                HttpResponse::Forbidden().json(body)
+            } else {
+                HttpResponse::BadRequest().json(body)
+            }
+        }
+    }
+}
+
 
 #[utoipa::path(
     post,

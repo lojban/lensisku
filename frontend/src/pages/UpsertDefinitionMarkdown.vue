@@ -2,9 +2,7 @@
   <UpsertPageLayout
     narrow
     :title="
-      isEditMode
-        ? t('upsertDefinitionMarkdown.editTitle')
-        : t('upsertDefinitionMarkdown.addTitle')
+      isEditMode ? t('upsertDefinitionMarkdown.editTitle') : t('upsertDefinitionMarkdown.addTitle')
     "
   >
     <template #trailing>
@@ -33,7 +31,7 @@
           type="text"
           required
           class="input-field w-full h-10 mb-4"
-          :disabled="isSubmitting"
+          :disabled="isSubmitting || (isEditMode && !isAuthor)"
           :placeholder="t('upsertDefinitionMarkdown.wordPlaceholder')"
         />
       </div>
@@ -91,21 +89,25 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 
-import { getLanguages, addValsi, updateValsi, getDefinition } from '@/api'
+import { getLanguages, addValsi, updateValsi, getDefinition, renameDefinition } from '@/api'
 import AnimatedDots from '@/components/AnimatedDots.vue'
 import UpsertPageLayout from '@/components/layout/UpsertPageLayout.vue'
 import UpsertToolbarButton from '@/components/layout/UpsertToolbarButton.vue'
 import '@milkdown/crepe/theme/common/style.css'
 import '@milkdown/crepe/theme/frame.css'
+import { useAuth } from '@/composables/useAuth'
 import { useSeoHead } from '@/composables/useSeoHead'
 
 const route = useRoute()
 const router = useRouter()
 const { t } = useI18n()
+const auth = useAuth()
 
 // Form state
 const langId = ref('')
 const word = ref('')
+const originalWord = ref('')
+const isAuthor = ref(false)
 const definition = ref('')
 const sourceLangId = ref(1)
 const editor = ref(null)
@@ -222,6 +224,8 @@ async function loadDefinitionData(definitionId) {
       langId.value = String(def.langid)
       definition.value = def.definition
       word.value = def.valsiword
+      originalWord.value = def.valsiword
+      isAuthor.value = auth.state.username === def.username
       sourceLangId.value = def.source_langid || 1 // Load source lang if editing
     }
   } catch (error) {
@@ -259,6 +263,19 @@ async function submitValsi() {
 
     let response
     if (isEditMode.value) {
+      const trimmedWord = word.value.trim()
+      const wordChanged =
+        isAuthor.value && trimmedWord !== '' && trimmedWord !== originalWord.value.trim()
+      if (wordChanged) {
+        const renameResp = await renameDefinition(editDefinitionId.value, {
+          new_word: trimmedWord,
+        })
+        if (!renameResp.data?.success) {
+          throw new Error(renameResp.data?.error || 'Failed to change word')
+        }
+        originalWord.value = renameResp.data.new_word
+        word.value = renameResp.data.new_word
+      }
       response = await updateValsi(editDefinitionId.value, requestData)
     } else {
       response = await addValsi(requestData)

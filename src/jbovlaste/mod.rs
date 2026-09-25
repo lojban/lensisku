@@ -50,6 +50,7 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
                     .service(controller::delete_bulk_definitions)
                     .service(controller::update_definition)
                     .service(controller::rename_wiki_page)
+                    .service(controller::rename_definition_valsi)
                     .service(controller::delete_definition)
                     .service(controller::get_vote)
                     .service(controller::update_vote)

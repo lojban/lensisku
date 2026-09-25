@@ -17,7 +17,9 @@ use super::{
     AddDefinitionRequest, BulkImportParams, DefinitionListResponse, DefinitionResponse, Example,
     GetImageDefinitionQuery, ImageData, KeywordMapping, ListDefinitionsQuery,
     NonLojbanDefinitionsQuery, RecentChange, RecentChangesResponse, RenameWikiRequest,
-    RenameWikiResponse, SearchDefinitionsParams, SemanticGraphEdge, SemanticGraphNode,
+    RenameWikiResponse,
+    RenameDefinitionRequest,
+    RenameDefinitionResponse, SearchDefinitionsParams, SemanticGraphEdge, SemanticGraphNode,
     SemanticGraphResponse, UpdateDefinitionRequest, ValsiDetail, ValsiType,
     WikiByDefinitionResponse,
 };
@@ -2598,11 +2600,12 @@ async fn upsert_wiki_in_transaction(
         .execute(
             "INSERT INTO definition_versions (
                 definition_id, langid, valsiid, definition, notes, etymology, selmaho, jargon, rafsi,
-                gloss_keywords, place_keywords, user_id, message
+                gloss_keywords, place_keywords, user_id, message, word
             )
             SELECT
                 d.definitionid, d.langid, d.valsiid, d.definition, d.notes, d.etymology, d.selmaho, d.jargon, d.rafsi,
-                '[]'::jsonb, '[]'::jsonb, $2, $3
+                '[]'::jsonb, '[]'::jsonb, $2, $3,
+                (SELECT word FROM valsi WHERE valsiid = d.valsiid)
             FROM definitions d
             WHERE d.definitionid = $1",
             &[&definition_id, &claims.sub, &version_message],
@@ -2811,11 +2814,12 @@ pub async fn rename_wiki_page(
         .execute(
             "INSERT INTO definition_versions (
                 definition_id, langid, valsiid, definition, notes, etymology, selmaho, jargon, rafsi,
-                gloss_keywords, place_keywords, user_id, message
+                gloss_keywords, place_keywords, user_id, message, word
             )
             SELECT
                 d.definitionid, d.langid, d.valsiid, d.definition, d.notes, d.etymology, d.selmaho, d.jargon, d.rafsi,
-                '[]'::jsonb, '[]'::jsonb, $2, $3
+                '[]'::jsonb, '[]'::jsonb, $2, $3,
+                (SELECT word FROM valsi WHERE valsiid = d.valsiid)
             FROM definitions d
             WHERE d.definitionid = $1",
             &[&definition_id, &claims.sub, &rename_message],
@@ -2915,9 +2919,9 @@ pub async fn rename_wiki_page(
         .execute(
             "INSERT INTO definition_versions (
                 definition_id, langid, valsiid, definition, notes, etymology, selmaho, jargon, rafsi,
-                gloss_keywords, place_keywords, user_id, message
+                gloss_keywords, place_keywords, user_id, message, word
             )
-            VALUES ($1, $2, $3, $4, NULL, NULL, NULL, NULL, NULL, '[]'::jsonb, '[]'::jsonb, $5, $6)",
+            VALUES ($1, $2, $3, $4, NULL, NULL, NULL, NULL, NULL, '[]'::jsonb, '[]'::jsonb, $5, $6, $7)",
             &[
                 &stub_definition_id,
                 &langid,
@@ -2925,6 +2929,7 @@ pub async fn rename_wiki_page(
                 &stub_body,
                 &claims.sub,
                 &format!("Redirect stub for rename to \"{}\"", new_word),
+                &old_word,
             ],
         )
         .await?;
@@ -2971,6 +2976,295 @@ pub async fn rename_wiki_page(
         error: None,
     })
 }
+
+
+/// Build the history message for a definition headword reattach/rename.
+pub fn definition_reattach_message(old_word: &str, new_word: &str) -> String {
+    format!("Renamed: \"{}\" → \"{}\"", old_word, new_word)
+}
+
+/// Author-only gate for dictionary valsi reattach. Wiki (typeid 16) is always blocked.
+pub fn authorize_definition_reattach(
+    caller_id: i32,
+    author_id: i32,
+    typeid: i16,
+) -> Result<(), &'static str> {
+    if typeid == 16 {
+        return Err("Wiki pages must be renamed with the wiki rename endpoint");
+    }
+    if caller_id != author_id {
+        return Err("Only the definition author can change the word");
+    }
+    Ok(())
+}
+
+
+/// Reattach a dictionary definition to another valsi via get-or-create (word, source_langid).
+/// Does NOT UPDATE valsi.word for dictionary entries. Author-only; wiki blocked.
+pub async fn rename_definition_valsi(
+    pool: &Pool,
+    claims: &Claims,
+    parsers: Arc<HashMap<i32, Peg>>,
+    definition_id: i32,
+    request: &RenameDefinitionRequest,
+    redis_cache: &RedisCache,
+) -> Result<RenameDefinitionResponse, Box<dyn std::error::Error>> {
+    let mut client = pool.get().await?;
+    let transaction = client.transaction().await?;
+
+    let current = transaction
+        .query_opt(
+            "SELECT d.definitionid, d.userid, d.langid, d.definitionnum, d.owner_only,
+                    v.valsiid, v.word, v.source_langid, v.typeid
+             FROM definitions d
+             JOIN valsi v ON d.valsiid = v.valsiid
+             WHERE d.definitionid = $1",
+            &[&definition_id],
+        )
+        .await?
+        .ok_or("Definition not found")?;
+
+    let author_id: i32 = current.get("userid");
+    let typeid: i16 = current.get("typeid");
+    authorize_definition_reattach(claims.sub, author_id, typeid)
+        .map_err(|e| -> Box<dyn std::error::Error> { e.into() })?;
+
+    let old_valsi_id: i32 = current.get("valsiid");
+    let old_word: String = current.get("word");
+    let source_langid: i32 = current.get("source_langid");
+    let langid: i32 = current.get("langid");
+
+    // Same normalization as add_definition.
+    let new_word = match source_langid {
+        1 | 58 => {
+            let res = analyze_word(&parsers, &request.new_word, source_langid, &transaction).await?;
+            res.text
+        }
+        _ => sanitize_html(request.new_word.trim()),
+    };
+    if new_word.is_empty() {
+        return Err("New word cannot be empty".into());
+    }
+
+    if new_word == old_word {
+        transaction.commit().await?;
+        return Ok(RenameDefinitionResponse {
+            success: true,
+            old_word,
+            new_word,
+            definition_id,
+            old_valsiid: old_valsi_id,
+            new_valsiid: old_valsi_id,
+            old_valsi_deleted: false,
+            error: None,
+        });
+    }
+
+    // Get-or-create target valsi; preserve typeid/source_langid; leave rafsi empty on create.
+    let new_valsi_id = match transaction
+        .query_opt(
+            "SELECT valsiid FROM valsi WHERE word = $1 AND source_langid = $2",
+            &[&new_word, &source_langid],
+        )
+        .await?
+    {
+        Some(row) => row.get::<_, i32>("valsiid"),
+        None => {
+            let now = Utc::now().timestamp() as i32;
+            match transaction
+                .query_one(
+                    "INSERT INTO valsi (word, typeid, userid, time, source_langid)
+                     VALUES ($1, $2, $3, $4, $5)
+                     RETURNING valsiid",
+                    &[&new_word, &typeid, &claims.sub, &now, &source_langid],
+                )
+                .await
+            {
+                Ok(row) => row.get::<_, i32>("valsiid"),
+                Err(e) => {
+                    if e.as_db_error()
+                        .and_then(|d| d.constraint())
+                        .is_some_and(|c| {
+                            c == "valsi_word_source_langid_key" || c == "valsi_unique_word_nospaces"
+                        })
+                    {
+                        // Race: fetch the winner.
+                        transaction
+                            .query_one(
+                                "SELECT valsiid FROM valsi WHERE word = $1 AND source_langid = $2",
+                                &[&new_word, &source_langid],
+                            )
+                            .await?
+                            .get::<_, i32>("valsiid")
+                    } else {
+                        return Err(Box::new(e));
+                    }
+                }
+            }
+        }
+    };
+
+    let definitionnum = if new_valsi_id == old_valsi_id {
+        current.get::<_, i32>("definitionnum")
+    } else {
+        next_definitionnum_for_language(&transaction, new_valsi_id, langid).await?
+    };
+
+    transaction
+        .execute(
+            "UPDATE definitions
+             SET valsiid = $1, definitionnum = $2, time = $3
+             WHERE definitionid = $4",
+            &[
+                &new_valsi_id,
+                &definitionnum,
+                &(Utc::now().timestamp() as i32),
+                &definition_id,
+            ],
+        )
+        .await?;
+
+    // Definition-scoped dependents that store valsiid.
+    transaction
+        .execute(
+            "UPDATE definitionvotes SET valsiid = $1
+             WHERE definitionid = $2 AND valsiid = $3",
+            &[&new_valsi_id, &definition_id, &old_valsi_id],
+        )
+        .await?;
+    transaction
+        .execute(
+            "UPDATE example SET valsiid = $1
+             WHERE definitionid = $2 AND valsiid = $3",
+            &[&new_valsi_id, &definition_id, &old_valsi_id],
+        )
+        .await?;
+
+    // Explicit cache refresh (triggers also fire on definitions.valsiid UPDATE).
+    transaction
+        .execute(
+            "SELECT refresh_definition_cached_valsi($1)",
+            &[&definition_id],
+        )
+        .await?;
+
+    let rename_message = definition_reattach_message(&old_word, &new_word);
+
+    transaction
+        .execute(
+            "INSERT INTO definition_versions (
+                definition_id, langid, valsiid, definition, notes, etymology, selmaho, jargon, rafsi,
+                gloss_keywords, place_keywords, user_id, message, word
+            )
+            SELECT
+                d.definitionid, d.langid, d.valsiid, d.definition, d.notes, d.etymology, d.selmaho, d.jargon, d.rafsi,
+                COALESCE(
+                    (SELECT jsonb_agg(to_jsonb(kw))
+                     FROM (
+                         SELECT n.word, n.meaning
+                         FROM keywordmapping k
+                         JOIN natlangwords n ON k.natlangwordid = n.wordid
+                         WHERE k.definitionid = $1 AND k.place = 0
+                     ) kw
+                    ), '[]'::jsonb
+                ),
+                COALESCE(
+                    (SELECT jsonb_agg(to_jsonb(kw) ORDER BY kw.place)
+                     FROM (
+                         SELECT n.word, n.meaning, k.place
+                         FROM keywordmapping k
+                         JOIN natlangwords n ON k.natlangwordid = n.wordid
+                         WHERE k.definitionid = $1 AND k.place > 0
+                     ) kw
+                    ), '[]'::jsonb
+                ),
+                $2, $3, $4
+            FROM definitions d
+            WHERE d.definitionid = $1",
+            &[&definition_id, &claims.sub, &rename_message, &new_word],
+        )
+        .await?;
+
+    // Orphan cleanup: mirror delete_definition — only if no remaining defs and no discussion threads.
+    let remaining: i64 = transaction
+        .query_one(
+            "SELECT COUNT(*) FROM definitions WHERE valsiid = $1",
+            &[&old_valsi_id],
+        )
+        .await?
+        .get(0);
+
+    let has_discussions: bool = transaction
+        .query_one(
+            "SELECT EXISTS(
+                SELECT 1 FROM threads t
+                WHERE t.valsiid = $1
+                AND EXISTS(SELECT 1 FROM comments c WHERE c.threadid = t.threadid)
+            )",
+            &[&old_valsi_id],
+        )
+        .await?
+        .get(0);
+
+    let mut old_valsi_deleted = false;
+    if remaining == 0 && !has_discussions {
+        transaction
+            .execute(
+                "DELETE FROM valsi_subscriptions WHERE valsi_id = $1",
+                &[&old_valsi_id],
+            )
+            .await?;
+        let deleted = transaction
+            .execute("DELETE FROM valsi WHERE valsiid = $1", &[&old_valsi_id])
+            .await?;
+        old_valsi_deleted = deleted > 0;
+    }
+
+    let url = format!(
+        "{}/valsi/{}",
+        env::var("FRONTEND_URL").unwrap_or_default(),
+        new_word.replace(' ', "_")
+    );
+    let _ = transaction
+        .execute(
+            "SELECT notify_valsi_subscribers($1, 'edit', $2, $3, $4, $5)",
+            &[
+                &new_valsi_id,
+                &rename_message,
+                &url,
+                &claims.sub,
+                &definition_id,
+            ],
+        )
+        .await;
+
+    if let Err(e) = redis_cache.invalidate_definition_search_caches().await {
+        log::error!(
+            "Failed to invalidate definition search caches after definition rename: {}",
+            e
+        );
+    }
+    if let Err(e) = redis_cache.invalidate_recent_changes().await {
+        log::error!(
+            "Failed to invalidate recent changes cache after definition rename: {}",
+            e
+        );
+    }
+
+    transaction.commit().await?;
+
+    Ok(RenameDefinitionResponse {
+        success: true,
+        old_word,
+        new_word,
+        definition_id,
+        old_valsiid: old_valsi_id,
+        new_valsiid: new_valsi_id,
+        old_valsi_deleted,
+        error: None,
+    })
+}
+
 
 pub async fn add_definition(
     pool: &Pool,
@@ -3344,7 +3638,7 @@ async fn add_definition_in_transaction(
         .execute(
             "INSERT INTO definition_versions (
                 definition_id, langid, valsiid, definition, notes, etymology, selmaho, jargon, rafsi,
-                gloss_keywords, place_keywords, user_id, message
+                gloss_keywords, place_keywords, user_id, message, word
             )
             SELECT
                 d.definitionid, d.langid, d.valsiid, d.definition, d.notes, d.etymology, d.selmaho, d.jargon, d.rafsi,
@@ -3368,7 +3662,8 @@ async fn add_definition_in_transaction(
                      ) kw
                     ), '[]'::jsonb
                 ),
-                $2, 'Updated version'
+                $2, 'Updated version',
+                (SELECT word FROM valsi WHERE valsiid = d.valsiid)
             FROM definitions d
             WHERE d.definitionid = $1",
             &[&definition_id, &claims.sub],
@@ -3750,7 +4045,7 @@ pub async fn update_definition(
         transaction.execute(
             r#"INSERT INTO definition_versions (
                 created_at, definition_id, langid, valsiid, definition, notes, etymology, selmaho, jargon, rafsi,
-                gloss_keywords, place_keywords, user_id, message
+                gloss_keywords, place_keywords, user_id, message, word
             )
             SELECT
                 COALESCE(to_timestamp(d.time) AT TIME ZONE 'UTC', d.created_at), d.definitionid, d.langid, d.valsiid, d.definition, d.notes, d.etymology, d.selmaho, d.jargon, d.rafsi,
@@ -3774,7 +4069,8 @@ pub async fn update_definition(
                      ) kw
                     ), '[]'::jsonb
                 ),
-                d.userid, 'Initial version'
+                d.userid, 'Initial version',
+                (SELECT word FROM valsi WHERE valsiid = d.valsiid)
             FROM definitions d
             WHERE d.definitionid = $1"#,
             &[&definition_id],
@@ -4106,7 +4402,7 @@ pub async fn update_definition(
         .execute(
             "INSERT INTO definition_versions (
                 definition_id, langid, valsiid, definition, notes, etymology, selmaho, jargon, rafsi,
-                gloss_keywords, place_keywords, user_id, message
+                gloss_keywords, place_keywords, user_id, message, word
             )
             SELECT
                 d.definitionid, d.langid, d.valsiid, d.definition, d.notes, d.etymology, d.selmaho, d.jargon, d.rafsi,
@@ -4129,7 +4425,8 @@ pub async fn update_definition(
                     JOIN natlangwords n ON k.natlangwordid = n.wordid
                     WHERE k.definitionid = $1 AND k.place > 0
                 )::jsonb,
-                $2, $3
+                $2, $3,
+                (SELECT word FROM valsi WHERE valsiid = d.valsiid)
             FROM definitions d
             WHERE d.definitionid = $1",
             &[&definition_id, &user_id, &version_message],
@@ -6907,5 +7204,35 @@ mod search_canonical_alias_tests {
         let parts = lujvo_rafsi("criny'alga", &parser).expect("lujvo rafsi");
 
         assert_eq!(parts, ["crin", "alga"]);
+    }
+}
+
+#[cfg(test)]
+mod definition_reattach_tests {
+    use super::{authorize_definition_reattach, definition_reattach_message};
+
+    #[test]
+    fn message_includes_old_and_new_word() {
+        let msg = definition_reattach_message("broda", "brode");
+        assert!(msg.contains("broda"));
+        assert!(msg.contains("brode"));
+        assert!(msg.starts_with("Renamed:"));
+    }
+
+    #[test]
+    fn author_can_reattach_dictionary_valsi() {
+        assert!(authorize_definition_reattach(7, 7, 1).is_ok());
+    }
+
+    #[test]
+    fn non_author_rejected() {
+        let err = authorize_definition_reattach(2, 7, 1).unwrap_err();
+        assert!(err.contains("author"));
+    }
+
+    #[test]
+    fn wiki_typeid_always_blocked() {
+        let err = authorize_definition_reattach(7, 7, 16).unwrap_err();
+        assert!(err.to_lowercase().contains("wiki"));
     }
 }

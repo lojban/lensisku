@@ -25,6 +25,9 @@ pub struct VersionContent {
     pub selmaho: Option<String>,
     pub jargon: Option<String>,
     pub rafsi: Option<String>,
+    /// Headword (valsi.word) at this version.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub word: Option<String>,
     pub gloss_keywords: Option<Vec<crate::jbovlaste::KeywordMapping>>,
     pub place_keywords: Option<Vec<crate::jbovlaste::KeywordMapping>>,
     /// Whether this version had an image attached to the definition.

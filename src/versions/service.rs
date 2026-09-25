@@ -6,7 +6,7 @@ use crate::{auth::permissions::PermissionCache, jbovlaste::KeywordMapping};
 use deadpool_postgres::Pool;
 
 const VERSION_SELECT_SQL: &str = "SELECT v.*, u.username,
-             v.definition, v.notes, v.etymology, v.selmaho, v.jargon, v.rafsi,
+             v.definition, v.notes, v.etymology, v.selmaho, v.jargon, v.rafsi, v.word,
              v.gloss_keywords::text as gloss_json,
              v.place_keywords::text as place_json,
              EXISTS(SELECT 1 FROM definition_images di WHERE di.definition_id = v.definition_id
@@ -41,6 +41,7 @@ fn version_from_row(row: &tokio_postgres::Row) -> Version {
             selmaho: row.get("selmaho"),
             jargon: row.get("jargon"),
             rafsi: row.get("rafsi"),
+            word: row.try_get("word").ok().flatten(),
             gloss_keywords: parse_keywords(row, "gloss_json"),
             place_keywords: parse_keywords(row, "place_json"),
             has_image: row.try_get("had_image").ok(),
@@ -189,6 +190,15 @@ pub async fn create_version(
     let valsi_id: i32 = def_info.get("valsiid");
     let lang_id: i32 = content.langid.unwrap_or_else(|| def_info.get("langid"));
 
+    let word: String = if let Some(w) = content.word.as_ref().filter(|w| !w.is_empty()) {
+        w.clone()
+    } else {
+        transaction
+            .query_one("SELECT word FROM valsi WHERE valsiid = $1", &[&valsi_id])
+            .await?
+            .get("word")
+    };
+
     // Convert keywords to JSONB
     let gloss_json = serde_json::to_value(&content.gloss_keywords).map(postgres_types::Json)?;
     let place_json = serde_json::to_value(&content.place_keywords).map(postgres_types::Json)?;
@@ -197,8 +207,8 @@ pub async fn create_version(
         .query_one(
             "INSERT INTO definition_versions 
              (definition_id, langid, valsiid, definition, notes, etymology, selmaho, jargon, rafsi,
-              gloss_keywords, place_keywords, user_id, message)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+              gloss_keywords, place_keywords, user_id, message, word)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
              RETURNING version_id, created_at",
             &[
                 &definition_id,
@@ -214,6 +224,7 @@ pub async fn create_version(
                 &place_json,
                 &user_id,
                 &commit_message,
+                &word,
             ],
         )
         .await?;
@@ -453,6 +464,13 @@ pub fn compute_content_changes(
         "rafsi",
         &old_content.rafsi,
         &new_content.rafsi,
+        &mut changes,
+    );
+
+    compare_option_field(
+        "word",
+        &old_content.word,
+        &new_content.word,
         &mut changes,
     );
 

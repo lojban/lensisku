@@ -24,10 +24,7 @@
               <i18n-t keypath="versionHistory.versionBy" tag="span">
                 <template #versionId>{{ version.version_id }}</template>
                 <template #username>
-                  <AuthorLink
-                    :username="version.username"
-                    :author-url="version.author_url"
-                  />
+                  <AuthorLink :username="version.username" :author-url="version.author_url" />
                 </template>
               </i18n-t>
             </span>
@@ -48,6 +45,10 @@
           <div v-if="versionLanguage(version)">
             <span class="font-medium">{{ t('versionHistory.languageLabel') }}</span>
             {{ versionLanguage(version) }}
+          </div>
+          <div v-if="version.content.word">
+            <span class="font-medium">{{ t('versionHistory.wordLabel') }}</span>
+            {{ version.content.word }}
           </div>
           <div>
             <span class="font-medium">{{
@@ -273,6 +274,7 @@ function isPlainTextField(field: string) {
     field === 'gloss_keywords' ||
     field === 'place_keywords' ||
     field === 'rafsi' ||
+    field === 'word' ||
     field === 'language'
   )
 }

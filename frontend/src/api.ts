@@ -297,10 +297,8 @@ export const getCollections = (params?: Record<string, unknown>) =>
   api.get('/collections', { params })
 
 /** Which of the current user's collections already include this definition or collection item. */
-export const getCollectionMembership = (data: {
-  definition_id?: number
-  item_id?: number
-}) => api.post('/collections/membership', data)
+export const getCollectionMembership = (data: { definition_id?: number; item_id?: number }) =>
+  api.post('/collections/membership', data)
 
 /** Parallel membership checks for search-result cards (same order as `items`). */
 export const getCollectionMembershipBatch = (data: {
@@ -633,6 +631,10 @@ export const getWikiByDefinitionId = (definitionId: number | string, signal?: Ab
   api.get(`/jbovlaste/valsi/wiki/by-definition/${definitionId}`, { signal })
 export const renameWiki = (definitionId: number | string, data: { new_word: string }) =>
   api.post(`/jbovlaste/valsi/${definitionId}/wiki/rename`, data)
+
+/** Author-only: reattach a dictionary definition to another valsi (get-or-create by word). */
+export const renameDefinition = (definitionId: number | string, data: { new_word: string }) =>
+  api.post(`/jbovlaste/valsi/${definitionId}/rename`, data)
 
 export const getRoles = () => api.get('/auth/roles')
 export const getPermissions = () => api.get('/auth/permissions')

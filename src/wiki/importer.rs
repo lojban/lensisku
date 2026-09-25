@@ -1190,15 +1190,20 @@ async fn insert_mw_version(
         .get()
         .await
         .map_err(|e| WikiSyncError::Db(e.to_string()))?;
+    let word: String = client
+        .query_one("SELECT word FROM valsi WHERE valsiid = $1", &[&valsi_id])
+        .await
+        .map_err(|e| WikiSyncError::Db(e.to_string()))?
+        .get("word");
     client
         .execute(
             "INSERT INTO definition_versions (
                 created_at, definition_id, langid, valsiid, definition,
                 notes, etymology, selmaho, jargon, rafsi,
-                gloss_keywords, place_keywords, user_id, message, mw_revid
+                gloss_keywords, place_keywords, user_id, message, mw_revid, word
              )
              VALUES ($1, $2, $3, $4, $5, NULL, NULL, NULL, NULL, NULL,
-                     '[]'::jsonb, '[]'::jsonb, $6, $7, $8)
+                     '[]'::jsonb, '[]'::jsonb, $6, $7, $8, $9)
              ON CONFLICT (mw_revid) WHERE mw_revid IS NOT NULL DO NOTHING",
             &[
                 &created_at,
@@ -1209,6 +1214,7 @@ async fn insert_mw_version(
                 &user_id,
                 &message,
                 &mw_revid,
+                &word,
             ],
         )
         .await
