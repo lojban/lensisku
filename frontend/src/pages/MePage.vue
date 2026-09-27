@@ -61,7 +61,7 @@
 </template>
 
 <script setup lang="ts">
-import { Vote, BookmarkCheck, User, MessageSquare } from '@lucide/vue'
+import { BookmarkCheck, User, MessageSquare } from '@lucide/vue'
 import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter, useRoute } from 'vue-router'
@@ -72,6 +72,7 @@ import ActivityComments from '@/components/activity/ActivityComments.vue'
 import ActivityReactions from '@/components/activity/ActivityReactions.vue'
 import ActivityVotes from '@/components/activity/ActivityVotes.vue'
 import ReactionIcon from '@/components/icons/ReactionIcon.vue'
+import VoteIcon from '@/components/icons/VoteIcon.vue'
 import PaginationComponent from '@/components/PaginationComponent.vue'
 import SkeletonActivityItem from '@/components/activity/SkeletonActivityItem.vue'
 import TabbedPageHeader from '@/components/TabbedPageHeader.vue'
@@ -207,7 +208,7 @@ const tabs = computed(() => [
   { key: 'comments', label: t('mePage.comments'), icon: MessageSquare },
   { key: 'reactions', label: t('mePage.reactions'), icon: ReactionIcon },
   { key: 'bookmarked', label: t('mePage.bookmarks'), icon: BookmarkCheck },
-  { key: 'votes', label: t('mePage.votes'), icon: Vote },
+  { key: 'votes', label: t('mePage.votes'), icon: VoteIcon },
 ])
 
 const pageTitle = ref(t('mePage.profile'))
