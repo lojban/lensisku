@@ -1,4 +1,12 @@
 {
+  "collection_default_likes": "lo velckivei poi mi nelci",
+  "collection_default_dislikes": "lo velckivei poi mi na nelci",
+  "collection_default_improve": "lo velckivei poi bilga lo nu zmadu",
+  "collection_default_first_course": "lo pamoi ciste be lo ctuca cukta",
+  "collection_default_description": "lo se cuxna be lo se zvati cu se finti ba'o lo nu jarco lo ka ciste cu se pilno. do ka'e galfi le cmene, galfi lo se cusku, ja vimcu ri.",
+  "flashcard_level_1": "lo pamoi klesi",
+  "flashcard_level_2": "lo remoi klesi",
+  "flashcard_level_3": "lo cimoi klesi",
   "subject_definition_updated_word": "la jbovlaste zo'u lo velckivei be la'ei {} pu se galfi",
   "subject_definition_updated": "la jbovlaste zo'u lo velckivei pu se galfi",
   "subject_other_word": "la jbovlaste zo'u {} - {}",

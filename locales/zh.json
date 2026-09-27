@@ -1,4 +1,12 @@
 {
+  "collection_default_likes": "我喜欢的定义",
+  "collection_default_dislikes": "我不喜欢的定义",
+  "collection_default_improve": "需要改进的定义",
+  "collection_default_first_course": "我的第一个闪卡课程",
+  "collection_default_description": "这是自动创建的示例收藏集，用于介绍收藏集的用途。你可以重命名、编辑或删除它。",
+  "flashcard_level_1": "第1级",
+  "flashcard_level_2": "第2级",
+  "flashcard_level_3": "第3级",
   "subject_definition_updated_word": "逻辑语词典：定义已更新 - {}",
   "subject_definition_updated": "逻辑语词典：定义已更新",
   "subject_other_word": "逻辑语词典：{} - {}",

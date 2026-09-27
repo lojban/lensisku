@@ -1,4 +1,12 @@
 {
+  "collection_default_likes": "好きな定義",
+  "collection_default_dislikes": "好きではない定義",
+  "collection_default_improve": "改善が必要な定義",
+  "collection_default_first_course": "最初のフラッシュカードコース",
+  "collection_default_description": "コレクションの使い方を紹介するために自動作成されたサンプルです。名前や内容を変更したり、削除したりできます。",
+  "flashcard_level_1": "レベル1",
+  "flashcard_level_2": "レベル2",
+  "flashcard_level_3": "レベル3",
   "subject_definition_updated_word": "ロジバン語辞典：定義の更新 — {}",
   "subject_definition_updated": "ロジバン語辞典：定義の更新",
   "subject_other_word": "ロジバン語辞典：{} — {}",

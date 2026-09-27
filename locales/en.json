@@ -1,4 +1,12 @@
 {
+  "collection_default_likes": "Definitions I like",
+  "collection_default_dislikes": "Definitions I don't like",
+  "collection_default_improve": "Definitions that need improvement",
+  "collection_default_first_course": "My first flashcard course",
+  "collection_default_description": "A starter collection created automatically to show how collections work. You can rename, edit, or delete it.",
+  "flashcard_level_1": "Level 1",
+  "flashcard_level_2": "Level 2",
+  "flashcard_level_3": "Level 3",
   "subject_definition_updated_word": "Lojban Dictionary: Definition updated - {}",
   "subject_definition_updated": "Lojban Dictionary: Definition updated",
   "subject_other_word": "Lojban Dictionary: {} - {}",

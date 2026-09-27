@@ -706,6 +706,7 @@ async fn insert_oauth_user(
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
     let user_id: i32 = row.get("userid");
+    super::service::create_default_collections(transaction, user_id).await?;
     transaction
         .execute(
             "INSERT INTO oauth_accounts (user_id, provider, provider_id) VALUES ($1, $2, $3)",

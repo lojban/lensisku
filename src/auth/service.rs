@@ -49,6 +49,50 @@ pub fn sanitize_html(html: &str) -> String {
     remove_html_tags(html)
 }
 
+/// Create the starter collections and the first three levels of the starter course.
+pub(crate) async fn create_default_collections(
+    transaction: &tokio_postgres::Transaction<'_>,
+    user_id: i32,
+) -> AppResult<()> {
+    let locale: serde_json::Value = serde_json::from_str(include_str!("../../locales/en.json"))
+        .map_err(|e| AppError::Database(e.to_string()))?;
+    let description = locale["collection_default_description"]
+        .as_str()
+        .unwrap_or("A starter collection created automatically to show how collections work. You can rename, edit, or delete it.");
+    let names = [
+        "collection_default_likes",
+        "collection_default_dislikes",
+        "collection_default_improve",
+        "collection_default_first_course",
+    ];
+    let mut course_id = 0;
+    for (index, key) in names.iter().enumerate() {
+        let name = locale[key].as_str().unwrap_or(key);
+        let row = transaction.query_one(
+            "INSERT INTO collections (user_id, name, description, is_public) VALUES ($1, $2, $3, false) RETURNING collection_id",
+            &[&user_id, &name, &description],
+        ).await?;
+        if index == 3 {
+            course_id = row.get("collection_id");
+        }
+    }
+    for (position, key) in [
+        "flashcard_level_1",
+        "flashcard_level_2",
+        "flashcard_level_3",
+    ]
+    .iter()
+    .enumerate()
+    {
+        let name = locale[key].as_str().unwrap_or(key);
+        transaction.execute(
+            "INSERT INTO flashcard_levels (collection_id, name, description, min_cards, min_success_rate, position) VALUES ($1, $2, NULL, 5, 0.8, $3)",
+            &[&course_id, &name, &(position as i32)],
+        ).await?;
+    }
+    Ok(())
+}
+
 fn rot13(input: &str) -> String {
     input
         .chars()
@@ -621,6 +665,8 @@ pub async fn signup(
         email_confirmation_token: None,
         email_confirmation_sent_at: None,
     };
+
+    create_default_collections(&transaction, user.userid).await?;
 
     let token = Uuid::new_v4().to_string();
 
