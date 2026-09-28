@@ -28,6 +28,24 @@ use crate::jbovlaste::models::{
 };
 use vlazba::{implicit_four_letter_gismu_rafsi, lujvo_rafsi, trivial_expansion_key, trivial_se_base};
 
+pub const PLACE_SPAN_REQUIRED_ERROR: &str =
+    "Definition must contain at least one $...$ place span for this word type.";
+
+/// The old jbovlaste form required place markup for predicate word types.
+fn requires_place_span(type_id: i16) -> bool {
+    matches!(type_id, 1 | 4 | 5 | 7 | 10 | 17)
+}
+
+fn validate_required_place_span(
+    type_id: i16,
+    definition: &str,
+) -> Result<(), Box<dyn std::error::Error>> {
+    if requires_place_span(type_id) && !has_dollar_math_span(definition)? {
+        return Err(PLACE_SPAN_REQUIRED_ERROR.into());
+    }
+    Ok(())
+}
+
 fn push_author_filters<'a>(
     conditions: &mut Vec<String>,
     query_params: &mut Vec<&'a (dyn tokio_postgres::types::ToSql + Sync)>,
@@ -81,7 +99,8 @@ fn push_author_sql_numbered(
 use crate::auth::Claims;
 use crate::comments::dto::ReactionResponse;
 use crate::language::{
-    analyze_word, classify_lujvo_spelling, is_decomposable_lujvo_type, load_owned_rafsi_maps,
+    analyze_word, classify_lujvo_spelling, has_dollar_math_span, is_decomposable_lujvo_type,
+    load_owned_rafsi_maps,
     validate_mathjax, MathJaxValidationOptions,
 };
 use crate::middleware::cache::RedisCache;
@@ -3395,6 +3414,8 @@ async fn add_definition_in_transaction(
         (type_id, None)
     };
 
+    validate_required_place_span(type_id, &sanitized_definition)?;
+
     let related_expansion = maps.as_ref()
         .and_then(|m| trivial_expansion_key(&word, &m.options(), m.se_words()));
     let trivial_checked = maps.is_some();
@@ -4164,6 +4185,10 @@ pub async fn update_definition(
             author_username
         )
         .into());
+    }
+
+    if request.is_wiki != Some(true) {
+        validate_required_place_span(valsi_typeid, &sanitized_definition)?;
     }
 
     // Determine owner_only value
@@ -7209,7 +7234,10 @@ mod search_canonical_alias_tests {
 
 #[cfg(test)]
 mod definition_reattach_tests {
-    use super::{authorize_definition_reattach, definition_reattach_message};
+    use super::{
+        authorize_definition_reattach, definition_reattach_message, requires_place_span,
+        validate_required_place_span,
+    };
 
     #[test]
     fn message_includes_old_and_new_word() {
@@ -7228,6 +7256,19 @@ mod definition_reattach_tests {
     fn non_author_rejected() {
         let err = authorize_definition_reattach(2, 7, 1).unwrap_err();
         assert!(err.contains("author"));
+    }
+
+    #[test]
+    fn old_place_structure_rule_applies_to_predicate_types() {
+        for type_id in [1, 4, 5, 7, 10, 17] {
+            assert!(requires_place_span(type_id));
+            assert!(validate_required_place_span(type_id, "x1 is something").is_err());
+            assert!(validate_required_place_span(type_id, "$x_1$ is something").is_ok());
+        }
+        for type_id in [2, 3, 6, 8, 9, 15, 16] {
+            assert!(!requires_place_span(type_id));
+            assert!(validate_required_place_span(type_id, "plain definition").is_ok());
+        }
     }
 
     #[test]

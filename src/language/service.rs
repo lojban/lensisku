@@ -4,7 +4,6 @@ use crate::language::dto::*;
 use crate::language::models::{Language, LojbanToken};
 use camxes_rs::camxes::peg::{grammar::Peg, parsing::ParseResult};
 use deadpool_postgres::{Pool, Transaction};
-use fancy_regex::Regex;
 use log::warn;
 use vlazba::analyze_lujvo_spelling;
 use vlazba::gismu_utils::GismuMatcher;
@@ -467,17 +466,25 @@ pub async fn validate_mathjax(
     }
     // Decode HTML entities so that e.g. &lt; becomes < for LaTeX (avoids "Misplaced alignment tab character &")
     let decoded = crate::utils::decode_html_entities(text);
-    // Check delimiters and identify whether there is any math to compile.
-    let has_math = check_balanced_delimiters(&decoded)?;
-
-    // Check common syntax patterns
-    check_syntax_patterns(&decoded)?;
-
-    if options.use_tectonic && has_math {
-        validate_with_tectonic(&decoded).await?;
+    // Parse math spans once; prose is never input to the TeX compiler.
+    let math_spans = extract_math_spans(&decoded)?;
+    for span in math_spans {
+        check_syntax_patterns(span)?;
+        if options.use_tectonic {
+            validate_with_tex(span).await?;
+        }
     }
 
     Ok(())
+}
+
+/// Whether a definition contains a complete dollar-delimited math span.
+/// Escaped dollars and \( ... \) / \[ ... \] do not satisfy the old place-structure rule.
+pub fn has_dollar_math_span(text: &str) -> Result<bool, MathJaxValidationError> {
+    let decoded = crate::utils::decode_html_entities(text);
+    Ok(extract_math_spans(&decoded)?
+        .iter()
+        .any(|span| span.starts_with('$')))
 }
 
 /// Validate LaTeX/MathJax in multiple named fields. Returns `Ok(())` if all are valid,
@@ -494,106 +501,115 @@ pub async fn validate_mathjax_fields(
     Ok(())
 }
 
-fn check_balanced_delimiters(text: &str) -> Result<bool, MathJaxValidationError> {
-    let mut stack = Vec::new();
-    let mut in_math = false;
-    let mut has_math = false;
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum MathDelimiter {
+    Dollar,
+    DoubleDollar,
+    Parenthesis,
+    Bracket,
+}
+
+/// Return complete MathJax spans, including their delimiters, without surrounding prose.
+/// Also checks delimiter and brace balance before invoking the TeX compiler.
+fn extract_math_spans(text: &str) -> Result<Vec<&str>, MathJaxValidationError> {
+    let chars: Vec<(usize, char)> = text.char_indices().collect();
+    let mut spans = Vec::new();
+    let mut active: Option<(MathDelimiter, usize, usize)> = None; // kind, byte start, brace depth
     let mut i = 0;
 
-    let chars: Vec<char> = text.chars().collect();
     while i < chars.len() {
-        match chars[i] {
-            '$' => {
-                // Single dollar handling
-                if in_math {
-                    if stack.pop() != Some("$") {
-                        return Err(MathJaxValidationError::Balance(
-                            "Mismatched math delimiters".into(),
-                        ));
-                    }
-                    in_math = false;
-                } else {
-                    stack.push("$");
-                    in_math = true;
-                    has_math = true;
+        let (byte, ch) = chars[i];
+        let next = chars.get(i + 1).map(|(_, ch)| *ch);
+
+        if ch == '\\' {
+            match next {
+                Some('(' | '[') if active.is_none() => {
+                    let kind = if next == Some('(') {
+                        MathDelimiter::Parenthesis
+                    } else {
+                        MathDelimiter::Bracket
+                    };
+                    active = Some((kind, byte, 0));
+                    i += 2;
+                    continue;
                 }
-                i += 1;
-            }
-            '\\' => {
-                if i + 1 < chars.len() {
-                    match chars[i + 1] {
-                        '(' => {
-                            if in_math {
-                                return Err(MathJaxValidationError::Syntax(
-                                    "Nested math environments not allowed".into(),
-                                ));
-                            }
-                            stack.push("\\(");
-                            in_math = true;
-                            has_math = true;
-                            i += 2;
-                        }
-                        ')' => {
-                            if !in_math || stack.pop() != Some("\\(") {
-                                return Err(MathJaxValidationError::Balance(
-                                    "Mismatched \\( \\) delimiters".into(),
-                                ));
-                            }
-                            in_math = false;
-                            i += 2;
-                        }
-                        '[' => {
-                            if in_math {
-                                return Err(MathJaxValidationError::Syntax(
-                                    "Nested math environments not allowed".into(),
-                                ));
-                            }
-                            stack.push("\\[");
-                            in_math = true;
-                            has_math = true;
-                            i += 2;
-                        }
-                        ']' => {
-                            if !in_math || stack.pop() != Some("\\[") {
-                                return Err(MathJaxValidationError::Balance(
-                                    "Mismatched \\[ \\] delimiters".into(),
-                                ));
-                            }
-                            in_math = false;
-                            i += 2;
-                        }
-                        '{' => {
-                            if in_math {
-                                stack.push("{");
-                            }
-                            i += 2;
-                        }
-                        '}' => {
-                            if in_math && stack.pop() != Some("{") {
-                                return Err(MathJaxValidationError::Balance(
-                                    "Mismatched {} delimiters".into(),
-                                ));
-                            }
-                            i += 2;
-                        }
-                        _ => i += 2,
-                    }
-                } else {
-                    i += 1;
+                Some('(' | '[') => {
+                    return Err(MathJaxValidationError::Syntax(
+                        "Nested math environments not allowed".into(),
+                    ));
                 }
+                Some(')' | ']') => {
+                    let expected = if next == Some(')') {
+                        MathDelimiter::Parenthesis
+                    } else {
+                        MathDelimiter::Bracket
+                    };
+                    match active.take() {
+                        Some((kind, start, 0)) if kind == expected => {
+                            let end = chars[i + 1].0 + 1;
+                            spans.push(&text[start..end]);
+                            i += 2;
+                            continue;
+                        }
+                        _ => {
+                            return Err(MathJaxValidationError::Balance(
+                                "Mismatched math delimiters or braces".into(),
+                            ));
+                        }
+                    }
+                }
+                Some(_) => {
+                    // An escaped dollar or brace is literal; neither changes math state.
+                    i += 2;
+                    continue;
+                }
+                None => {}
             }
-            _ => i += 1,
         }
+
+        if ch == '$' {
+            let double = next == Some('$');
+            let delimiter = if double {
+                MathDelimiter::DoubleDollar
+            } else {
+                MathDelimiter::Dollar
+            };
+            match active.take() {
+                None => active = Some((delimiter, byte, 0)),
+                Some((kind, start, 0)) if kind == delimiter => {
+                    spans.push(&text[start..byte + if double { 2 } else { 1 }]);
+                }
+                _ => {
+                    return Err(MathJaxValidationError::Balance(
+                        "Mismatched math delimiters or braces".into(),
+                    ));
+                }
+            }
+            i += if double { 2 } else { 1 };
+            continue;
+        }
+
+        if let Some((_, _, depth)) = active.as_mut() {
+            match ch {
+                '{' => *depth += 1,
+                '}' if *depth > 0 => *depth -= 1,
+                '}' => {
+                    return Err(MathJaxValidationError::Balance(
+                        "Mismatched {} delimiters".into(),
+                    ));
+                }
+                _ => {}
+            }
+        }
+        i += 1;
     }
 
-    if !stack.is_empty() {
-        return Err(MathJaxValidationError::Balance(format!(
-            "Unclosed delimiters: {:?}",
-            stack
-        )));
+    if active.is_some() {
+        return Err(MathJaxValidationError::Balance(
+            "Unclosed math delimiters or braces".into(),
+        ));
     }
-
-    Ok(has_math)
+    Ok(spans)
 }
 
 fn check_syntax_patterns(text: &str) -> Result<(), MathJaxValidationError> {
@@ -619,22 +635,6 @@ fn check_syntax_patterns(text: &str) -> Result<(), MathJaxValidationError> {
     }
 
     Ok(())
-}
-
-fn mathjax_to_latex(expr: &str) -> Result<String, MathJaxValidationError> {
-    Regex::new(r"\$([^\$]+)\$")
-        .map_err(|e| MathJaxValidationError::Syntax(format!("Invalid regex pattern: {}", e)))?;
-
-    // Validate matching dollar signs
-    let dollar_count = expr.chars().filter(|&c| c == '$').count();
-    if dollar_count % 2 != 0 {
-        return Err(MathJaxValidationError::Syntax(
-            "Unmatched dollar signs in expression".to_string(),
-        ));
-    }
-
-    // Simply return the input since LaTeX already understands $...$ syntax
-    Ok(expr.to_string())
 }
 
 async fn fetch_rafsi_data(
@@ -770,6 +770,17 @@ fn extract_latex_error_from_log(log: &str) -> Option<String> {
     }
 }
 
+/// Preserve the TeX diagnostic when available and report compiler failures otherwise.
+fn handle_tectonic_failure(
+    log_content: &str,
+    engine_error: &str,
+) -> Result<(), MathJaxValidationError> {
+    if let Some(specific) = extract_latex_error_from_log(log_content) {
+        return Err(MathJaxValidationError::Tectonic(specific));
+    }
+    Err(MathJaxValidationError::Tectonic(engine_error.to_string()))
+}
+
 /// Run LaTeX via the tectonic driver with keep_logs(true) so we can read the
 /// .log on failure and surface the actual TeX error (e.g. "Misplaced alignment tab character &").
 fn compile_latex_and_capture_log(latex_document: String) -> Result<(), MathJaxValidationError> {
@@ -802,38 +813,79 @@ fn compile_latex_and_capture_log(latex_document: String) -> Result<(), MathJaxVa
         MathJaxValidationError::Tectonic(format!("Failed to create session: {}", e))
     })?;
 
-    if let Err(_e) = sess.run(&mut status) {
+    if let Err(e) = sess.run(&mut status) {
         let files = sess.into_file_data();
         let log_content = files
             .get("texput.log")
             .map(|f| String::from_utf8_lossy(&f.data).into_owned())
             .unwrap_or_default();
-        let specific = extract_latex_error_from_log(&log_content)
-            .unwrap_or_else(|| "see LaTeX log for details".to_string());
-        return Err(MathJaxValidationError::Tectonic(specific));
+        return handle_tectonic_failure(&log_content, &e.to_string());
     }
 
     Ok(())
 }
 
-async fn validate_with_tectonic(expr: &str) -> Result<(), MathJaxValidationError> {
-    let latex_content = mathjax_to_latex(expr)?;
-
-    let latex_document = format!(
+fn latex_document_for_math(span: &str) -> String {
+    format!(
         r#"\documentclass{{article}}
 \usepackage{{amsmath}}
 \usepackage{{amssymb}}
 \begin{{document}}
 {}
 \end{{document}}"#,
-        latex_content
-    );
+        span
+    )
+}
 
+async fn validate_with_tectonic(span: &str) -> Result<(), MathJaxValidationError> {
+    let latex_document = latex_document_for_math(span);
     let result = tokio::task::spawn_blocking(move || compile_latex_and_capture_log(latex_document))
         .await
         .map_err(|e| MathJaxValidationError::Tectonic(format!("Thread join error: {}", e)))?;
 
     result
+}
+
+/// Use the installed TeX Live files. Tectonic's default bundle can fetch from
+/// the network and leave a definition save waiting indefinitely on a cold cache.
+async fn validate_with_tex(span: &str) -> Result<(), MathJaxValidationError> {
+    use tokio::process::Command;
+
+    let dir = tempfile::tempdir()
+        .map_err(|e| MathJaxValidationError::Tectonic(format!("TeX temp directory: {e}")))?;
+    tokio::fs::write(dir.path().join("definition.tex"), latex_document_for_math(span))
+        .await
+        .map_err(|e| MathJaxValidationError::Tectonic(format!("TeX input: {e}")))?;
+
+    for engine in ["xelatex", "pdflatex"] {
+        let mut command = Command::new(engine);
+        command
+            .args([
+                "-halt-on-error",
+                "-interaction=nonstopmode",
+                "-no-shell-escape",
+                "definition.tex",
+            ])
+            .current_dir(dir.path())
+            .kill_on_drop(true);
+        match tokio::time::timeout(std::time::Duration::from_secs(15), command.output()).await {
+            Ok(Ok(output)) if output.status.success() => Ok(()),
+            Ok(Ok(output)) => {
+                let log = tokio::fs::read_to_string(dir.path().join("definition.log"))
+                    .await
+                    .unwrap_or_else(|_| String::from_utf8_lossy(&output.stdout).into_owned());
+                Err(MathJaxValidationError::Tectonic(
+                    extract_latex_error_from_log(&log)
+                        .unwrap_or_else(|| "LaTeX compilation failed".to_string()),
+                ))
+            }
+            Ok(Err(e)) if e.kind() == std::io::ErrorKind::NotFound => continue,
+            Ok(Err(e)) => Err(MathJaxValidationError::Tectonic(format!("TeX process: {e}"))),
+            Err(_) => Err(MathJaxValidationError::Tectonic("LaTeX validation timed out".into())),
+        }?;
+        return Ok(());
+    }
+    validate_with_tectonic(span).await
 }
 
 pub async fn analyze_word_in_pool(
@@ -903,13 +955,39 @@ mod tests {
     }
 
     #[test]
-    fn delimiter_check_reports_math_expressions() {
-        assert!(!check_balanced_delimiters("ordinary text").unwrap());
-        assert!(!check_balanced_delimiters(r"escaped \$ only").unwrap());
-        assert!(check_balanced_delimiters("$x$").unwrap());
-        assert!(check_balanced_delimiters(r"\(x\)").unwrap());
-        assert!(check_balanced_delimiters(r"\[x\]").unwrap());
-        assert!(check_balanced_delimiters("$unclosed").is_err());
+    fn extracts_only_math_spans_from_definition() {
+        let definition = "$x_1$ is the pantheon, the set of all gods of religion or people x2.";
+        assert_eq!(extract_math_spans(definition).unwrap(), vec!["$x_1$"]);
+        let document = latex_document_for_math(extract_math_spans(definition).unwrap()[0]);
+        assert!(document.contains("$x_1$"));
+        assert!(!document.contains("pantheon"));
+    }
+
+    #[test]
+    fn extracts_multiple_math_delimiter_styles() {
+        assert_eq!(
+            extract_math_spans(r"text $x_1$ and \(y\) and \[z\] and $$w$$").unwrap(),
+            vec!["$x_1$", r"\(y\)", r"\[z\]", "$$w$$"]
+        );
+        assert!(extract_math_spans(r"escaped \$ and $x_{1}$").is_ok());
+        assert!(extract_math_spans("$x_{1$").is_err());
+        assert!(extract_math_spans("$unclosed").is_err());
+    }
+
+    #[test]
+    fn dollar_span_requirement_uses_complete_unescaped_spans() {
+        assert!(has_dollar_math_span("$x_1$ is a relation").unwrap());
+        assert!(has_dollar_math_span("$$x_1$$ is a relation").unwrap());
+        assert!(!has_dollar_math_span("x1 is a relation").unwrap());
+        assert!(!has_dollar_math_span(r"\(x_1\) is a relation").unwrap());
+        assert!(!has_dollar_math_span(r"\$x_1\$ is a relation").unwrap());
+        assert!(has_dollar_math_span("$x_1 is a relation").is_err());
+    }
+
+    #[test]
+    fn tectonic_failure_requires_a_tex_diagnostic_to_reject_input() {
+        assert!(handle_tectonic_failure("", "bundle unavailable").is_err());
+        assert!(handle_tectonic_failure("! Undefined control sequence.\n", "compile failed").is_err());
     }
 
     #[test]

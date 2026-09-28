@@ -398,9 +398,18 @@ pub async fn spawn_background_tasks(
     }
 
     // Refresh the home-page top-comments cache immediately and then every 5 minutes.
-    if let Err(e) = comments_service::update_top_comments_cache(&pool, &redis).await {
-        error!("Failed initial top comments cache refresh: {}", e);
-    }
+    let initial_comments_pool = pool.clone();
+    let initial_comments_redis = redis.clone();
+    tokio::spawn(async move {
+        if let Err(e) = comments_service::update_top_comments_cache(
+            &initial_comments_pool,
+            &initial_comments_redis,
+        )
+        .await
+        {
+            error!("Failed initial top comments cache refresh: {}", e);
+        }
+    });
     let top_comments_pool = pool.clone();
     let top_comments_redis = redis.clone();
     tokio::spawn(async move {

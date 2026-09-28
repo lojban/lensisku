@@ -995,7 +995,15 @@ pub async fn add_definition(
         Err(e) => {
             let msg = error_chain(&*e);
             log::error!("Failed to add definition: {}", msg);
-            if msg.contains("Conflict:") {
+            if msg.contains(service::PLACE_SPAN_REQUIRED_ERROR) {
+                HttpResponse::BadRequest().json(AddValsiResponse {
+                    success: false,
+                    word_type: String::new(),
+                    definition_id: 0,
+                    error: Some(msg),
+                    warning: None,
+                })
+            } else if msg.contains("Conflict:") {
                 HttpResponse::Conflict().json(AddValsiResponse {
                     success: false,
                     word_type: String::new(),
@@ -1212,7 +1220,9 @@ pub async fn update_definition(
                     error: Some(msg),
                     warning: None,
                 })
-            } else if msg.contains("Invalid target language") {
+            } else if msg.contains("Invalid target language")
+                || msg.contains(service::PLACE_SPAN_REQUIRED_ERROR)
+            {
                 HttpResponse::BadRequest().json(UpdateDefinitionResponse {
                     success: false,
                     error: Some(msg),
