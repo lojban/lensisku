@@ -1,14 +1,22 @@
 <template>
   <!-- Comment-type: reuse CommentItem so reactions and save button are shown -->
-  <CommentItem
+  <div
     v-if="change.change_type === 'comment'"
-    :comment="mappedComment"
-    :reply-enabled="true"
-    :show-context="true"
-    :valsi-id="change.valsi_id || 0"
-    :definition-id="change.definition_id || 0"
-    @reply="handleReply"
-  />
+    class="cursor-pointer"
+    role="link"
+    tabindex="0"
+    @click="openComment($event)"
+    @keydown.enter.self="openComment()"
+  >
+    <CommentItem
+      :comment="mappedComment"
+      :reply-enabled="true"
+      :show-context="true"
+      :valsi-id="change.valsi_id || 0"
+      :definition-id="change.definition_id || 0"
+      @reply="handleReply"
+    />
+  </div>
   <!-- Other change types: existing layout -->
   <div
     v-else
@@ -56,93 +64,94 @@
             class="mt-3 space-y-3 border-l-4 border-blue-200 pl-4"
           >
             <template v-for="diffChange in visibleDiffChanges" :key="diffChange.field">
-            <div
-              v-if="diffFieldHasVisibleContent(diffChange)"
-              class="space-y-1"
-            >
-              <div class="text-xs font-medium text-gray-500">
-                {{ formatFieldName(diffChange.field) }}:
-              </div>
-              <!-- Image diff: show the image safely -->
-              <template v-if="diffChange.field === 'image'">
-                <div
-                  v-if="diffChange.change_type === 'added' && diffChange.image_url"
-                  class="bg-green-50 p-2 rounded text-sm"
-                >
-                  <img
-                    :src="diffChange.image_url"
-                    :alt="t('components.recentChangeItem.imageAdded')"
-                    class="max-h-40 max-w-full object-contain rounded"
-                    loading="lazy"
-                  />
+              <div v-if="diffFieldHasVisibleContent(diffChange)" class="space-y-1">
+                <div class="text-xs font-medium text-gray-500">
+                  {{ formatFieldName(diffChange.field) }}:
                 </div>
-                <div
-                  v-else-if="diffChange.change_type === 'removed'"
-                  class="bg-red-50 text-red-700 p-2 rounded text-sm"
-                >
-                  {{ t('components.recentChangeItem.imageRemoved') }}
-                </div>
-              </template>
-              <template v-else-if="isPlainTextField(diffChange.field)">
-                <template v-if="diffChange.change_type === 'modified'">
+                <!-- Image diff: show the image safely -->
+                <template v-if="diffChange.field === 'image'">
                   <div
-                    v-if="hasDiffContent(diffChange.old_value)"
-                    class="bg-red-50 p-2 rounded text-sm mb-1 whitespace-pre-wrap"
-                  >
-                    {{ diffChange.old_value }}
-                  </div>
-
-                  <div
-                    v-if="hasDiffContent(diffChange.new_value)"
-                    class="bg-green-50 p-2 rounded text-sm whitespace-pre-wrap"
-                  >
-                    {{ diffChange.new_value }}
-                  </div>
-                </template>
-                <template v-else-if="hasDiffContent(diffChange.new_value || diffChange.old_value)">
-                  <div
-                    :class="{
-                      'bg-green-50 text-green-800': diffChange.change_type === 'added',
-                      'bg-red-50 text-red-800': diffChange.change_type === 'removed',
-                    }"
-                    class="p-2 rounded text-sm whitespace-pre-wrap"
-                  >
-                    {{ diffChange.new_value || diffChange.old_value }}
-                  </div>
-                </template>
-              </template>
-              <template v-else>
-                <template v-if="diffChange.change_type === 'modified'">
-                  <div
-                    v-if="hasDiffContent(diffChange.old_value)"
-                    class="bg-red-50 p-2 rounded text-sm mb-1"
-                  >
-                    <LazyMathJax :content="diffChange.old_value" :enable-markdown="true" />
-                  </div>
-
-                  <div
-                    v-if="hasDiffContent(diffChange.new_value)"
+                    v-if="diffChange.change_type === 'added' && diffChange.image_url"
                     class="bg-green-50 p-2 rounded text-sm"
                   >
-                    <LazyMathJax :content="diffChange.new_value" :enable-markdown="true" />
-                  </div>
-                </template>
-                <template v-else-if="hasDiffContent(diffChange.new_value || diffChange.old_value)">
-                  <div
-                    :class="{
-                      'bg-green-50 text-green-800': diffChange.change_type === 'added',
-                      'bg-red-50 text-red-800': diffChange.change_type === 'removed',
-                    }"
-                    class="p-2 rounded text-sm"
-                  >
-                    <LazyMathJax
-                      :content="diffChange.new_value || diffChange.old_value"
-                      :enable-markdown="true"
+                    <img
+                      :src="diffChange.image_url"
+                      :alt="t('components.recentChangeItem.imageAdded')"
+                      class="max-h-40 max-w-full object-contain rounded"
+                      loading="lazy"
                     />
                   </div>
+                  <div
+                    v-else-if="diffChange.change_type === 'removed'"
+                    class="bg-red-50 text-red-700 p-2 rounded text-sm"
+                  >
+                    {{ t('components.recentChangeItem.imageRemoved') }}
+                  </div>
                 </template>
-              </template>
-            </div>
+                <template v-else-if="isPlainTextField(diffChange.field)">
+                  <template v-if="diffChange.change_type === 'modified'">
+                    <div
+                      v-if="hasDiffContent(diffChange.old_value)"
+                      class="bg-red-50 p-2 rounded text-sm mb-1 whitespace-pre-wrap"
+                    >
+                      {{ diffChange.old_value }}
+                    </div>
+
+                    <div
+                      v-if="hasDiffContent(diffChange.new_value)"
+                      class="bg-green-50 p-2 rounded text-sm whitespace-pre-wrap"
+                    >
+                      {{ diffChange.new_value }}
+                    </div>
+                  </template>
+                  <template
+                    v-else-if="hasDiffContent(diffChange.new_value || diffChange.old_value)"
+                  >
+                    <div
+                      :class="{
+                        'bg-green-50 text-green-800': diffChange.change_type === 'added',
+                        'bg-red-50 text-red-800': diffChange.change_type === 'removed',
+                      }"
+                      class="p-2 rounded text-sm whitespace-pre-wrap"
+                    >
+                      {{ diffChange.new_value || diffChange.old_value }}
+                    </div>
+                  </template>
+                </template>
+                <template v-else>
+                  <template v-if="diffChange.change_type === 'modified'">
+                    <div
+                      v-if="hasDiffContent(diffChange.old_value)"
+                      class="bg-red-50 p-2 rounded text-sm mb-1"
+                    >
+                      <LazyMathJax :content="diffChange.old_value" :enable-markdown="true" />
+                    </div>
+
+                    <div
+                      v-if="hasDiffContent(diffChange.new_value)"
+                      class="bg-green-50 p-2 rounded text-sm"
+                    >
+                      <LazyMathJax :content="diffChange.new_value" :enable-markdown="true" />
+                    </div>
+                  </template>
+                  <template
+                    v-else-if="hasDiffContent(diffChange.new_value || diffChange.old_value)"
+                  >
+                    <div
+                      :class="{
+                        'bg-green-50 text-green-800': diffChange.change_type === 'added',
+                        'bg-red-50 text-red-800': diffChange.change_type === 'removed',
+                      }"
+                      class="p-2 rounded text-sm"
+                    >
+                      <LazyMathJax
+                        :content="diffChange.new_value || diffChange.old_value"
+                        :enable-markdown="true"
+                      />
+                    </div>
+                  </template>
+                </template>
+              </div>
             </template>
           </div>
 
@@ -153,7 +162,9 @@
             class="prose prose-sm max-w-none text-gray-700 mb-3"
           >
             <LazyMathJax
-              :content="typeof change.content === 'string' ? change.content : String(change.content ?? '')"
+              :content="
+                typeof change.content === 'string' ? change.content : String(change.content ?? '')
+              "
               :enable-markdown="true"
             />
           </div>
@@ -236,6 +247,21 @@ const getChangeLink = (change) => {
     return `/wiki/${encodeURIComponent(String(change.word || '').replace(/ /g, '_'))}`
   }
   return `/valsi/${change.word.replace(/ /g, '_')}?highlight_definition_id=${change.definition_id}`
+}
+
+const openComment = (event?: MouseEvent) => {
+  if ((event?.target as Element | null)?.closest('a, button, input, textarea, select')) return
+  const c = props.change
+  router.push({
+    path: '/comments',
+    query: {
+      thread_id: c.thread_id,
+      comment_id: c.parent_id || undefined,
+      scroll_to: c.comment_id,
+      valsi_id: c.valsi_id || undefined,
+      definition_id: c.definition_id || undefined,
+    },
+  })
 }
 
 const handleReply = (commentId: number) => {

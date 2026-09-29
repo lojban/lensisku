@@ -8,18 +8,22 @@
       <div class="flex items-center space-x-3">
         <label class="text-sm text-gray-600 font-medium">{{ t('sort.sortByLabel') }}</label>
         <Select
-          v-model="sortOrder"
+          :model-value="sortOrder"
           class="input-field"
           :options="[
             { value: 'desc', label: t('threadView.newestFirst') },
             { value: 'asc', label: t('threadView.oldestFirst') },
           ]"
-          @change="fetchThread"
+          @update:model-value="setSortOrder"
         />
       </div>
       <!-- Content Toggle -->
       <div class="flex items-center space-x-3">
-        <Checkbox v-model="includeContent" class="checkbox-toggle" @change="fetchThread" />
+        <Checkbox
+          :model-value="includeContent"
+          class="checkbox-toggle"
+          @update:model-value="setIncludeContent"
+        />
         <label class="text-sm text-gray-600 font-medium whitespace-nowrap cursor-pointer">{{
           t('threadView.showContent')
         }}</label>
@@ -35,12 +39,20 @@
         <!-- Message Header -->
         <div class="flex justify-between items-start mb-3">
           <h3 class="link-message-title">
-            <LazyMathJax
-              :content="message.subject || ''"
-              :enable-markdown="true"
-              :search-term="props.searchTerm"
-              curly-link-class="underline text-pink-600 hover:text-pink-800"
-            />
+            <RouterLink
+              :to="{
+                name: `MessageDetail-${locale}`,
+                params: { id: message.id },
+                query: props.searchTerm ? { highlight: props.searchTerm } : {},
+              }"
+            >
+              <LazyMathJax
+                :content="message.subject || ''"
+                :enable-markdown="true"
+                :search-term="props.searchTerm"
+                curly-link-class="underline text-pink-600 hover:text-pink-800"
+              />
+            </RouterLink>
           </h3>
           <span class="text-sm text-gray-500 whitespace-nowrap ml-4">
             {{ formatDate(message.date) }}
@@ -145,13 +157,14 @@ const route = useRoute()
 const { t, locale } = useI18n()
 const messages = ref([])
 const cleanedSubject = ref('')
-const currentPage = ref(parseInt(queryStr(route.query.page), 10) || 1)
+const currentPage = ref(1)
 const totalPages = ref(1)
 const total = ref(0)
 const sortOrder = ref('desc')
 const isLoading = ref(true)
 const includeContent = ref(true)
 const threadSubject = computed(() => props.subject.replace(/^(Re:\s*)+/, ''))
+let requestId = 0
 
 // Initialize page title
 const pageTitle = computed(() => {
@@ -162,6 +175,7 @@ const pageTitle = computed(() => {
 useSeoHead({ title: pageTitle })
 
 const fetchThread = async () => {
+  const thisRequest = ++requestId
   isLoading.value = true
   try {
     const response = await getThread({
@@ -173,48 +187,61 @@ const fetchThread = async () => {
       sort_order: sortOrder.value,
       include_content: includeContent.value,
     })
+    if (thisRequest !== requestId) return
     messages.value = response.data.messages
     cleanedSubject.value = response.data.clean_subject
     total.value = response.data.total
     totalPages.value = Math.ceil(response.data.total / response.data.per_page)
   } catch (error) {
-    console.error('Error fetching thread:', error)
+    if (thisRequest === requestId) console.error('Error fetching thread:', error)
   } finally {
-    isLoading.value = false
+    if (thisRequest === requestId) isLoading.value = false
   }
 }
 
-const changePage = async (page) => {
-  currentPage.value = page
-  await router.push({
+const updateThreadQuery = (order: string, showContent: boolean) => {
+  router.push({
     query: {
       ...route.query,
-      page: page > 1 ? page : undefined,
+      page: undefined,
+      sort_order: order === 'asc' ? 'asc' : undefined,
+      include_content: showContent ? undefined : 'false',
     },
   })
-  await fetchThread()
 }
 
-// Watch for page changes in URL
+const setSortOrder = (order: string | number | null | unknown[]) => {
+  updateThreadQuery(String(order), includeContent.value)
+}
+
+const setIncludeContent = (showContent: boolean | unknown[]) => {
+  updateThreadQuery(sortOrder.value, showContent === true)
+}
+
+const changePage = (page: number) => {
+  router.push({ query: { ...route.query, page: page > 1 ? String(page) : undefined } })
+}
+
+const syncThreadFromRoute = () => {
+  const page = Number(queryStr(route.query.page))
+  currentPage.value = Number.isInteger(page) && page > 0 ? page : 1
+  sortOrder.value = queryStr(route.query.sort_order) === 'asc' ? 'asc' : 'desc'
+  includeContent.value = queryStr(route.query.include_content) !== 'false'
+  fetchThread()
+}
+
 watch(
-  () => route.query.page,
-  (newPage) => {
-    const page = parseInt(queryStr(newPage), 10) || 1
-    if (page !== currentPage.value) {
-      currentPage.value = page
-      fetchThread()
-    }
-  }
+  () => [
+    props.subject,
+    props.searchTerm,
+    route.query.page,
+    route.query.sort_order,
+    route.query.include_content,
+  ],
+  syncThreadFromRoute
 )
 
-// Watch for search term changes
-watch(
-  () => props.searchTerm,
-  () => {
-    currentPage.value = 1
-    fetchThread()
-  }
-)
+onMounted(syncThreadFromRoute)
 
 const highlightText = (text) => {
   if (!text) return ''
@@ -230,7 +257,8 @@ const highlightText = (text) => {
 
   // Then apply search term highlighting if needed
   if (props.searchTerm) {
-    const regex = new RegExp(`(${props.searchTerm})`, 'gi')
+    const escapedTerm = props.searchTerm.replace(/\W/g, '\\$&')
+    const regex = new RegExp(`(${escapedTerm})`, 'gi')
     return parsedContent.replace(regex, '<mark>$1</mark>')
   }
 
@@ -258,12 +286,6 @@ const formatEmailAddress = (email) => {
   }
   return email
 }
-
-onMounted(() => {
-  // Set initial page from URL
-  currentPage.value = parseInt(queryStr(route.query.page), 10) || 1
-  fetchThread()
-})
 </script>
 
 <style scoped>

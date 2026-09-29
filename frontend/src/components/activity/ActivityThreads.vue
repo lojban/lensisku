@@ -21,10 +21,7 @@
               type="jbotcan"
               label="jbotcan"
             />
-            <SourceTypeBadge
-              v-else-if="thread.import_source === 'freeforums'"
-              type="freeforums"
-            />
+            <SourceTypeBadge v-else-if="thread.import_source === 'freeforums'" type="freeforums" />
             <h3 class="font-medium text-gray-800">
               <template
                 v-if="
@@ -176,6 +173,7 @@ type ActivityThreadRow = {
   import_source?: string | null
   thread_id?: number
   comment_id?: number
+  last_comment_parent_id?: number | null
   valsi_id?: number | string
   definition_id?: number | string
   cleaned_subject?: string
@@ -206,9 +204,16 @@ function goToMailThread(subject: string) {
 
 function goToThread(thread: ActivityThreadRow) {
   if (thread.source === 'comment') {
-    router.push(
-      `/comments?thread_id=${thread.thread_id}&scroll_to=${thread.comment_id}&valsi_id=${thread.valsi_id || ''}&definition_id=${thread.definition_id || ''}`
-    )
+    router.push({
+      path: '/comments',
+      query: {
+        thread_id: thread.thread_id,
+        comment_id: thread.last_comment_parent_id || undefined,
+        scroll_to: thread.comment_id,
+        valsi_id: thread.valsi_id || undefined,
+        definition_id: thread.definition_id || undefined,
+      },
+    })
   } else if (thread.source === 'wiki' && thread.summary?.article_url) {
     router.push(thread.summary.article_url)
   } else {

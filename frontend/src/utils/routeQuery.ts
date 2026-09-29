@@ -41,6 +41,8 @@ export const HOME_PRESERVED_QUERY_KEYS = [
   'isExpanded',
   'group_by_thread',
   'wave_source',
+  'sort_by',
+  'sort_order',
   'definition_id',
 ] as const
 
@@ -144,12 +146,12 @@ export function combinedFiltersFromQuery(query: LocationQuery): CombinedFiltersU
 export function hasActiveSearchFilters(filters: CombinedFiltersUrlState): boolean {
   return Boolean(
     filters.selmaho?.trim() ||
-      filters.usernames?.length ||
-      filters.excludeUsernames?.length ||
-      filters.word_type ||
-      filters.selectedCollections?.length ||
-      (filters.source_langid && filters.source_langid !== 1) ||
-      filters.searchInPhrases === false
+    filters.usernames?.length ||
+    filters.excludeUsernames?.length ||
+    filters.word_type ||
+    filters.selectedCollections?.length ||
+    (filters.source_langid && filters.source_langid !== 1) ||
+    filters.searchInPhrases === false
   )
 }
 

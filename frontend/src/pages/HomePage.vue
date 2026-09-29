@@ -267,7 +267,9 @@
                 @expand-collection-item="expandCollectionItem"
               >
                 <template v-if="expandCollectionItemId" #collection-matches-before>
-                  <div class="surface-definition-compact text-sm text-gray-700 flex flex-wrap items-center justify-between gap-2">
+                  <div
+                    class="surface-definition-compact text-sm text-gray-700 flex flex-wrap items-center justify-between gap-2"
+                  >
                     <p class="font-medium text-gray-800">{{ $t('home.collectionItemMatches') }}</p>
                     <Button variant="cancel" type="button" @click="clearCollectionItemExpand">
                       {{ $t('home.backToSearchResults') }}
@@ -329,9 +331,7 @@
                           )
                         : item.source === 'wiki'
                           ? router.push(`/wiki/${encodeURIComponent(item.article.title)}`)
-                          : handleViewThreadSummary(
-                              item.message.cleaned_subject || item.message.subject || ''
-                            )
+                          : handleViewMailItem(item.message)
                     "
                   >
                     <div
@@ -478,7 +478,13 @@ import DefinitionCard from '@/components/DefinitionCard.vue'
 import DictionaryEntries from '@/components/DictionaryEntries.vue'
 import PhraseSplit from '@/components/PhraseSplit.vue'
 import LazyMathJax from '@/components/LazyMathJax.vue'
-import { Button, IconButton, ToolbarSelectDropdown, ToolbarSelectDropdownItem, ExportIcon } from '@packages/ui'
+import {
+  Button,
+  IconButton,
+  ToolbarSelectDropdown,
+  ToolbarSelectDropdownItem,
+  ExportIcon,
+} from '@packages/ui'
 import PaginationComponent from '@/components/PaginationComponent.vue'
 import RecentChangeItem from '@/components/RecentChangeItem.vue'
 import SearchForm from '@/components/SearchForm.vue'
@@ -698,7 +704,7 @@ const hasSearchResults = computed(
 )
 const currentPage = ref(parseInt(queryStr(route.query.page), 10) || 1)
 const totalPages = ref(1)
-const sortOrder = ref('desc')
+const sortOrder = ref(queryStr(route.query.sort_order) === 'asc' ? 'asc' : 'desc')
 
 const hydratedHomeQuery = resolveHomeQuery(route.query)
 
@@ -880,9 +886,7 @@ const fetchDefinitions = async (page, search = '') => {
     // Semantic search needs text (or a definition_id). Empty box + filters → lexical browse.
     const useSemantic = !!similarId || (searchMode.value === 'semantic' && trimmedSearch.length > 0)
     const collectionIds = !similarId
-      ? (filters.value.selectedCollections || []).filter(
-          (n: number) => Number.isFinite(n) && n > 0
-        )
+      ? (filters.value.selectedCollections || []).filter((n: number) => Number.isFinite(n) && n > 0)
       : []
     const hasAuthors = !similarId && !!filters.value.usernames?.length
     const usePriorityThenGlobal = collectionIds.length > 0 || hasAuthors
@@ -1217,10 +1221,7 @@ const getCachedHomeFeeds = (): HomeFeedsCache | null => {
 const setCachedHomeFeeds = (data: HomeFeedsCache) => {
   if (typeof window === 'undefined') return
   try {
-    localStorage.setItem(
-      HOME_FEEDS_CACHE_KEY,
-      JSON.stringify({ data, timestamp: Date.now() })
-    )
+    localStorage.setItem(HOME_FEEDS_CACHE_KEY, JSON.stringify({ data, timestamp: Date.now() }))
   } catch (e) {
     console.error('Error caching home feeds:', e)
   }
@@ -1269,7 +1270,11 @@ function homeChangeKey(change: RecentChangeRow) {
 }
 
 // Generic data fetching for other modes
-const sortBy = ref(searchMode.value === 'messages' ? 'rank' : 'time')
+const sortBy = ref(
+  ['time', 'reactions', 'replies'].includes(queryStr(route.query.sort_by))
+    ? queryStr(route.query.sort_by)
+    : 'time'
+)
 
 const sortByTriggerLabel = computed(() => {
   if (sortBy.value === 'reactions') return t('sort.reactions')
@@ -1280,18 +1285,14 @@ const sortByTriggerLabel = computed(() => {
 const toggleSortOrder = () => {
   sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc'
   if (searchMode.value === 'comments') {
-    fetchWaves(currentPage.value, searchQuery.value)
-  } else if (searchMode.value === 'messages') {
-    fetchData()
+    updateUrlWithFilters()
   }
 }
 
 const handleSortChange = () => {
   currentPage.value = 1
   if (searchMode.value === 'comments') {
-    fetchWaves(1, searchQuery.value)
-  } else {
-    fetchData()
+    updateUrlWithFilters()
   }
 }
 
@@ -1450,6 +1451,8 @@ const updateUrlWithFilters = () => {
       ...combinedFiltersToQuery(filters.value),
       group_by_thread: groupByThread.value ? 'true' : undefined,
       wave_source: waveSource.value !== 'all' ? waveSource.value : undefined,
+      sort_by: sortBy.value !== 'time' ? sortBy.value : undefined,
+      sort_order: sortOrder.value !== 'desc' ? sortOrder.value : undefined,
       page: undefined,
       expand_ci: undefined,
     }),
@@ -1476,6 +1479,9 @@ const performSearch = ({ query, mode }: { query: string; mode: string }) => {
     expand_ci: undefined,
     ...combinedFiltersToQuery(filters.value),
     wave_source: waveSource.value !== 'all' ? waveSource.value : undefined,
+    sort_by:
+      searchMode.value === effectiveMode && sortBy.value !== 'time' ? sortBy.value : undefined,
+    sort_order: sortOrder.value !== 'desc' ? sortOrder.value : undefined,
   })
 
   // Handle case where we might be on a localized Home-lang route
@@ -1573,7 +1579,28 @@ const nextPage = () => {
 const handleViewThreadSummary = (subject: string) => {
   const currentLocale = route.path.split('/')[1] || 'en'
   const routeName = `ThreadView-${currentLocale}`
-  router.push({ name: routeName, params: { subject } })
+  router.push({
+    name: routeName,
+    params: { subject },
+    query: searchQuery.value ? { highlight: searchQuery.value } : {},
+  })
+}
+
+const handleViewMailItem = (message: {
+  id: number | string
+  cleaned_subject?: string
+  subject?: string
+}) => {
+  if (typeof message.id === 'number') {
+    const currentLocale = route.path.split('/')[1] || 'en'
+    router.push({
+      name: `MessageDetail-${currentLocale}`,
+      params: { id: message.id },
+      query: searchQuery.value ? { highlight: searchQuery.value } : {},
+    })
+  } else {
+    handleViewThreadSummary(message.cleaned_subject || message.subject || '')
+  }
 }
 
 // URL sync
@@ -1615,6 +1642,10 @@ const syncFromRoute = () => {
   if (query.page !== undefined) {
     currentPage.value = parseInt(queryStr(query.page), 10) || 1
   }
+  sortBy.value = ['time', 'reactions', 'replies'].includes(queryStr(query.sort_by))
+    ? queryStr(query.sort_by)
+    : 'time'
+  sortOrder.value = queryStr(query.sort_order) === 'asc' ? 'asc' : 'desc'
 
   // URL keys override stored filters; omitted keys keep the hydrated localStorage state
   Object.assign(filters.value, applyCombinedFiltersFromQuery(filters.value, query))
@@ -1747,6 +1778,8 @@ watch(
       newQuery.source_langid !== oldQuery?.source_langid ||
       newQuery.searchInPhrases !== oldQuery?.searchInPhrases ||
       newQuery.wave_source !== oldQuery?.wave_source ||
+      newQuery.sort_by !== oldQuery?.sort_by ||
+      newQuery.sort_order !== oldQuery?.sort_order ||
       newQuery.definition_id !== oldQuery?.definition_id ||
       newQuery.expand_ci !== oldQuery?.expand_ci
 

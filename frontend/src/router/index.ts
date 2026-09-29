@@ -60,7 +60,7 @@ const baseRoutes: Array<RouteRecordRaw> = [
     component: () => import('../pages/ThreadView.vue'),
     props: (route) => ({
       subject: decodeURIComponent(route.params.subject as string),
-      searchTerm: route.query.highlight,
+      searchTerm: route.query.highlight?.toString() || '',
     }),
   },
   {

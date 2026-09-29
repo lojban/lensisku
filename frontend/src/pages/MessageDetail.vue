@@ -162,7 +162,7 @@ const { t } = useI18n()
 
 const props = defineProps({
   id: {
-    type: String,
+    type: [String, Number],
     required: true,
   },
   searchTerm: {
@@ -212,7 +212,8 @@ const highlightText = (text) => {
 
   // Then apply search term highlighting if needed
   if (props.searchTerm) {
-    const regex = new RegExp(`(${props.searchTerm})`, 'gi')
+    const escapedTerm = props.searchTerm.replace(/\W/g, '\\$&')
+    const regex = new RegExp(`(${escapedTerm})`, 'gi')
     return parsedContent.replace(regex, '<mark>$1</mark>')
   }
 

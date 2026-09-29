@@ -9,11 +9,10 @@
       v-for="comment in comments"
       :key="comment.comment_id"
       class="cursor-pointer"
-      @click="
-        router.push(
-          `/comments?thread_id=${comment.thread_id}&comment_id=${comment.parent_id}&scroll_to=${comment.comment_id}&valsi_id=${comment.valsi_id}&definition_id=${comment.definition_id || 0}`
-        )
-      "
+      role="link"
+      tabindex="0"
+      @click="openComment(comment, $event)"
+      @keydown.enter.self="openComment(comment)"
     >
       <CommentItem
         :key="comment.comment_id"
@@ -38,6 +37,19 @@ import type { CommentItemApiComment } from '@/types/comment'
 
 const router = useRouter()
 const { t } = useI18n()
+const openComment = (comment: CommentItemApiComment, event?: MouseEvent) => {
+  if ((event?.target as Element | null)?.closest('a, button, input, textarea, select')) return
+  router.push({
+    path: '/comments',
+    query: {
+      thread_id: comment.thread_id,
+      comment_id: comment.parent_id || undefined,
+      scroll_to: comment.comment_id,
+      valsi_id: comment.valsi_id || undefined,
+      definition_id: comment.definition_id || undefined,
+    },
+  })
+}
 defineProps({
   comments: {
     type: Array as PropType<CommentItemApiComment[]>,
