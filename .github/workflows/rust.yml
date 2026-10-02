@@ -26,6 +26,8 @@ jobs:
     
     - name: Install Rust
       uses: dtolnay/rust-toolchain@stable
+      with:
+        components: clippy
       # Automatically detects rust-toolchain.toml or rust-toolchain file if present
       # Otherwise uses the latest stable version
     
@@ -70,6 +72,12 @@ jobs:
     #   run: |
     #     cargo install cargo-deny
     #     cargo deny check
+
+    - name: Check all Rust targets
+      run: cargo check --all-targets
+
+    - name: Clippy
+      run: cargo clippy --all-targets
 
     - name: Build
       run: cargo build --verbose

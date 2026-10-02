@@ -212,5 +212,5 @@ mod tests {
 }
 
 #[cfg(test)]
-#[path = "../../tests/waves_runtime.rs"]
+#[path = "runtime_tests.rs"]
 mod runtime_tests;

@@ -21,10 +21,12 @@ async fn live_model_indexing_and_hybrid_hydration() -> Result<(), SearchError> {
     let base_pool = crate::config::create_app_config()?.db_pools.app_pool;
     let admin = base_pool.get().await?;
     let schema = format!("wave_test_{}", uuid::Uuid::new_v4().simple());
-    let fixture = include_str!("waves_fixture.sql").replace("__TEST_SCHEMA__", &schema);
+    let fixture = include_str!("../../tests/waves_fixture.sql").replace("__TEST_SCHEMA__", &schema);
     admin.batch_execute(&fixture).await?;
     admin
-        .batch_execute(include_str!("../migrations/V178__wave_hybrid_search.sql"))
+        .batch_execute(include_str!(
+            "../../migrations/V178__wave_hybrid_search.sql"
+        ))
         .await?;
     // Complete the minimal SQL fixture so real result hydration uses its normal joins.
     admin
@@ -44,7 +46,7 @@ async fn live_model_indexing_and_hybrid_hydration() -> Result<(), SearchError> {
         .await?;
     // Every pooled connection explicitly uses the isolated schema.
     let config = tokio_postgres::Config::new()
-        .host(&std::env::var("DB_HOST").unwrap_or_else(|_| "localhost".into()))
+        .host(std::env::var("DB_HOST").unwrap_or_else(|_| "localhost".into()))
         .port(
             std::env::var("DB_PORT")
                 .ok()
@@ -54,7 +56,7 @@ async fn live_model_indexing_and_hybrid_hydration() -> Result<(), SearchError> {
         .user(&std::env::var("DB_USER")?)
         .password(std::env::var("DB_PASSWORD")?)
         .dbname(&std::env::var("DB_NAME")?)
-        .options(&format!("-c search_path={schema},public"))
+        .options(format!("-c search_path={schema},public"))
         .clone();
     let manager = deadpool_postgres::Manager::new(config, tokio_postgres::NoTls);
     let pool = Pool::builder(manager).max_size(3).build()?;
