@@ -235,6 +235,7 @@ pub struct CollectionExportItem {
 
 #[derive(Debug)]
 pub struct ValsiRow {
+    pub definition_id: Option<i32>,
     pub word: String,
     pub rafsi: Option<String>,
     pub experimental_rafsi: Option<String>,

@@ -44,8 +44,130 @@ fn export_word_type_opt(descriptor: Option<String>) -> Option<String> {
     descriptor.map(export_word_type_owned)
 }
 
-pub async fn generate_pdf(
+struct PdfExportImage {
+    marker: String,
+    data: Vec<u8>,
+}
+
+/// Only load images for entries actually included in the rendered export.
+fn pdf_image_ids(latex: &str, command: &str) -> Vec<i32> {
+    let prefix = format!("\\{command}{{");
+    let mut ids: Vec<i32> = latex
+        .split(&prefix)
+        .skip(1)
+        .filter_map(|part| part.split_once('}')?.0.parse().ok())
+        .collect();
+    ids.sort_unstable();
+    ids.dedup();
+    ids
+}
+
+async fn load_pdf_images(
+    transaction: &Transaction<'_>,
+    latex: &str,
+) -> Result<Vec<PdfExportImage>, Box<dyn Error + Send + Sync>> {
+    let definition_ids = pdf_image_ids(latex, "definitionimages");
+    let item_ids = pdf_image_ids(latex, "collectionimages");
+    let mut images = Vec::new();
+    if !definition_ids.is_empty() {
+        let rows = transaction
+            .query(
+                "SELECT definition_id, image_data FROM definition_images
+                 WHERE definition_id = ANY($1)
+                 ORDER BY definition_id, display_order, id",
+                &[&definition_ids],
+            )
+            .await?;
+        for row in rows {
+            images.push(PdfExportImage {
+                marker: format!(
+                    "\\definitionimages{{{}}}",
+                    row.get::<_, i32>("definition_id")
+                ),
+                data: row.get("image_data"),
+            });
+        }
+    }
+    if !item_ids.is_empty() {
+        let rows = transaction
+            .query(
+                "SELECT cii.item_id, img.image_data
+                 FROM collection_item_images cii
+                 JOIN collection_images img ON img.collection_image_id = cii.collection_image_id
+                 WHERE cii.item_id = ANY($1)
+                 ORDER BY cii.item_id, cii.side DESC",
+                &[&item_ids],
+            )
+            .await?;
+        for row in rows {
+            images.push(PdfExportImage {
+                marker: format!("\\collectionimages{{{}}}", row.get::<_, i32>("item_id")),
+                data: row.get("image_data"),
+            });
+        }
+    }
+    Ok(images)
+}
+
+fn pdf_image_latex(filename: &str) -> String {
+    // A non-floating box reserves the image's full height in the current column.
+    // Bound both dimensions and retain aspect ratio, including for portrait images.
+    format!(
+        "\n\\par\\smallskip\\noindent\\begin{{minipage}}{{\\linewidth}}\n\\centering\n\\includegraphics[width=\\linewidth,height=0.35\\textheight,keepaspectratio]{{{filename}}}\n\\end{{minipage}}\\par\\smallskip\n"
+    )
+}
+
+fn materialize_pdf_images(
+    latex: &str,
+    images: &[PdfExportImage],
+    directory: &std::path::Path,
+) -> Result<String, Box<dyn Error + Send + Sync>> {
+    let mut replacements: HashMap<&str, String> = HashMap::new();
+    for (index, image) in images.iter().enumerate() {
+        let filename = format!("export-image-{index}.png");
+        // Uploaded images are normally WebP, which XeLaTeX cannot embed directly.
+        image::load_from_memory(&image.data)?
+            .save_with_format(directory.join(&filename), image::ImageFormat::Png)?;
+        replacements
+            .entry(&image.marker)
+            .or_default()
+            .push_str(&pdf_image_latex(&filename));
+    }
+    let mut output = latex.to_string();
+    // Walk each marker type once. Replacing individual IDs would rescan the whole
+    // dictionary thousands of times, even when most entries have no attachments.
+    for command in ["definitionimages", "collectionimages"] {
+        let prefix = format!("\\{command}{{");
+        let mut rest = output.as_str();
+        let mut replaced = String::with_capacity(output.len());
+        while let Some(start) = rest.find(&prefix) {
+            replaced.push_str(&rest[..start]);
+            rest = &rest[start..];
+            if let Some(end) = rest.find('}') {
+                let marker = &rest[..=end];
+                if rest[prefix.len()..end].parse::<i32>().is_ok() {
+                    // Empty markers disappear so unillustrated entries retain
+                    // normal paragraph flow in \exportentry.
+                    if let Some(graphics) = replacements.get(marker) {
+                        replaced.push_str(graphics);
+                    }
+                } else {
+                    replaced.push_str(marker);
+                }
+                rest = &rest[end + 1..];
+            } else {
+                break;
+            }
+        }
+        replaced.push_str(rest);
+        output = replaced;
+    }
+    Ok(output)
+}
+
+async fn generate_pdf(
     latex_content: &str,
+    images: &[PdfExportImage],
 ) -> Result<Vec<u8>, Box<dyn std::error::Error + Send + Sync>> {
     // Create a temporary directory for working files
     let dir = tempdir()?;
@@ -53,6 +175,7 @@ pub async fn generate_pdf(
 
     // Create temporary file for LaTeX content
     let file_path = dir_path.join("output.tex");
+    let latex_content = materialize_pdf_images(latex_content, images, dir_path)?;
     std::fs::write(&file_path, latex_content)?;
 
     debug!("Created temporary directory at: {:?}", dir_path);
@@ -167,24 +290,26 @@ fn escape_all(term: &str) -> String {
 }
 
 fn escape_tex(term: &str, escape_carets: bool) -> String {
-    let mut result = term.to_string();
-    result = result.replace('\\', "\\textbackslash{}");
-    result = result.replace('>', "\\textgreater{}");
-    result = result.replace('<', "\\textless{}");
-    result = result.replace('–', "\\textendash{}");
-    result = result.replace('—', "\\textemdash{}");
-    result = result.replace('~', "\\textasciitilde{}");
-
-    if escape_carets {
-        result = result.replace('^', "\\textasciicircum{}");
+    let mut result = String::with_capacity(term.len());
+    for c in term.chars() {
+        match c {
+            '\\' => result.push_str("\\textbackslash{}"),
+            '>' => result.push_str("\\textgreater{}"),
+            '<' => result.push_str("\\textless{}"),
+            '–' => result.push_str("\\textendash{}"),
+            '—' => result.push_str("\\textemdash{}"),
+            '~' => result.push_str("\\textasciitilde{}"),
+            '^' if escape_carets => result.push_str("\\textasciicircum{}"),
+            '/' => result.push_str("\\slash{}"),
+            // Valid math is protected before this runs. Remaining math syntax
+            // and braces are literal text, including malformed delimiters.
+            '#' | '%' | '&' | '$' | '_' | '{' | '}' => {
+                result.push('\\');
+                result.push(c);
+            }
+            _ => result.push(c),
+        }
     }
-
-    result = result.replace('/', "\\slash{}");
-
-    for c in ['#', '%', '&'] {
-        result = result.replace(c, &format!("\\{}", c));
-    }
-
     result
 }
 
@@ -536,6 +661,25 @@ fn latex_preamble_intro() -> String {
 \renewcommand\chaptername{ni'o ni'o}
 
 \usepackage{underscore}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+% PDF generation supplies local image files; text-only LaTeX exports omit them.
+\newcommand{\definitionimages}[1]{}
+\newcommand{\collectionimages}[1]{}
+% Keep illustrated entries together when they fit; long entries remain breakable.
+\newsavebox{\exportentrybox}
+\newcommand{\exportentry}[2]{%
+  \if\relax\detokenize{#1}\relax
+    #2%
+  \else
+    \sbox{\exportentrybox}{\begin{minipage}{\linewidth}#2#1\end{minipage}}%
+    \ifdim\dimexpr\ht\exportentrybox+\dp\exportentrybox\relax>\textheight
+      #2#1%
+    \else
+      \par\noindent\usebox{\exportentrybox}\par
+    \fi
+  \fi
+}
 
 \usepackage{fancyhdr} % important, lets us actually pull this stuff off.
 \pagestyle{fancy}     % turns on the magic provided by fancyhdr
@@ -888,8 +1032,9 @@ async fn generate_export(
                 source_langid,
             )
             .await?;
+            let images = load_pdf_images(&transaction, &latex).await?;
             transaction.commit().await?;
-            generate_pdf(&latex).await?
+            generate_pdf(&latex, &images).await?
         }
         ExportFormat::LaTeX => {
             let latex = generate_latex(
@@ -1332,58 +1477,6 @@ async fn generate_latex(
     collection_id: Option<i32>,
     source_langid: i32,
 ) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
-    if let Some(id) = collection_id {
-        // Handle collection export
-        let query = "
-            SELECT
-                ci.item_id, ci.definition_id, ci.notes as collection_note, ci.position,
-                ci.free_content_front, ci.free_content_back, 
-                ci.langid as language_id, ci.owner_user_id, ci.license,
-                v.word, d.definition, d.notes as definition_notes, t.descriptor as word_type,
-                c.rafsi, c.experimental_rafsi, c.selmaho,
-                (SELECT img.image_data FROM collection_item_images cii
-                    INNER JOIN collection_images img ON img.collection_image_id = cii.collection_image_id
-                    WHERE cii.item_id = ci.item_id AND cii.side = 'front') as front_image_data,
-                (SELECT img.mime_type FROM collection_item_images cii
-                    INNER JOIN collection_images img ON img.collection_image_id = cii.collection_image_id
-                    WHERE cii.item_id = ci.item_id AND cii.side = 'front') as front_image_mime,
-                (SELECT img.image_data FROM collection_item_images cii
-                    INNER JOIN collection_images img ON img.collection_image_id = cii.collection_image_id
-                    WHERE cii.item_id = ci.item_id AND cii.side = 'back') as back_image_data,
-                (SELECT img.mime_type FROM collection_item_images cii
-                    INNER JOIN collection_images img ON img.collection_image_id = cii.collection_image_id
-                    WHERE cii.item_id = ci.item_id AND cii.side = 'back') as back_image_mime
-            FROM collection_items ci
-            LEFT JOIN definitions d ON ci.definition_id = d.definitionid
-            LEFT JOIN valsi v ON d.valsiid = v.valsiid
-            LEFT JOIN valsitypes t ON v.typeid = t.typeid
-            LEFT JOIN convenientdefinitions c ON c.definitionid = d.definitionid
-            WHERE ci.collection_id = $1
-            ORDER BY ci.position";
-
-        let rows = transaction.query(query, &[&id]).await?;
-
-        let entries: Vec<CollectionExportItem> = rows
-            .into_iter()
-            .map(|row| {
-                let front_image_url =
-                    row.get::<_, Option<Vec<u8>>>("front_image_data")
-                        .and_then(|data| {
-                            row.get::<_, Option<String>>("front_image_mime")
-                                .map(|mime| format!("data:{};base64,{}", mime, BASE64.encode(data)))
-                        });
-                let back_image_url =
-                    row.get::<_, Option<Vec<u8>>>("back_image_data")
-                        .and_then(|data| {
-                            row.get::<_, Option<String>>("back_image_mime")
-                                .map(|mime| format!("data:{};base64,{}", mime, BASE64.encode(data)))
-                        });
-                CollectionExportItem::from_row(row, front_image_url, back_image_url)
-            })
-            .collect();
-        return Ok(serde_json::to_string_pretty(&entries)?);
-    }
-
     let lang_row = transaction
         .query_one(
             "SELECT tag, realname FROM languages WHERE tag = $1",
@@ -1514,20 +1607,41 @@ async fn generate_collection_latex(
     let rows = transaction.query(query, &[&collection_id]).await?;
 
     for row in rows {
-        if row.get::<_, Option<i32>>("definition_id").is_some() {
-            // Format as definition-based item
+        let mut images = format!("\\collectionimages{{{}}}", row.get::<_, i32>("item_id"));
+        let (text, word) = if let Some(id) = row.get::<_, Option<i32>>("definition_id") {
             let valsi_row = ValsiRow::from_collection_row(&row)?;
-            entries.push_str(&format_lojban_entry(&valsi_row, lang));
+            images.insert_str(0, &format!("\\definitionimages{{{id}}}"));
+            (
+                format_lojban_entry_text(&valsi_row, lang),
+                Some(valsi_row.word),
+            )
         } else {
-            // Format as free-content item
-            entries.push_str(&format_free_content_entry(&row, lang));
-        }
+            (format_free_content_entry(&row, lang), None)
+        };
+        entries.push_str(&format_image_entry(&text, &images, word.as_deref()));
     }
 
     Ok(entries)
 }
 
+fn format_image_entry(text: &str, images: &str, word: Option<&str>) -> String {
+    let marks = word.map(|w| markboth(&escape_all(w))).unwrap_or_default();
+    format!("\n\n\\exportentry{{{images}}}{{{text}}}{marks}")
+}
+
 fn format_lojban_entry(valsi_row: &ValsiRow, lang: &str) -> String {
+    let images = valsi_row
+        .definition_id
+        .map(|id| format!("\\definitionimages{{{id}}}"))
+        .unwrap_or_default();
+    format_image_entry(
+        &format_lojban_entry_text(valsi_row, lang),
+        &images,
+        Some(&valsi_row.word),
+    )
+}
+
+fn format_lojban_entry_text(valsi_row: &ValsiRow, lang: &str) -> String {
     let mut entry = format_lojban_heading(&valsi_row.word, &valsi_row.descriptor);
     entry.push_str(&format_rafsi(&valsi_row.rafsi));
     if let Some(proposals) = &valsi_row.experimental_rafsi {
@@ -1553,6 +1667,7 @@ impl ValsiRow {
         row: &tokio_postgres::Row,
     ) -> Result<Self, Box<dyn std::error::Error + Send + Sync>> {
         Ok(ValsiRow {
+            definition_id: row.try_get("definition_id")?,
             word: row.try_get("word")?,
             rafsi: row.try_get("rafsi")?,
             experimental_rafsi: row.try_get("experimental_rafsi").ok().flatten(),
@@ -1566,8 +1681,12 @@ impl ValsiRow {
 }
 
 fn format_free_content_entry(row: &tokio_postgres::Row, lang: &str) -> String {
-    let front: String = row.get("free_content_front");
-    let back: String = row.get("free_content_back");
+    let front = row
+        .get::<_, Option<String>>("free_content_front")
+        .unwrap_or_default();
+    let back = row
+        .get::<_, Option<String>>("free_content_back")
+        .unwrap_or_default();
     let note: Option<String> = row.get("collection_note");
     format_free_content_parts(&front, &back, note.as_deref(), lang)
 }
@@ -1709,7 +1828,7 @@ async fn generate_lojban_entries(
         .unwrap_or_default();
 
     let query = format!(
-        "SELECT v.word, c.rafsi, c.experimental_rafsi, c.selmaho, c.definition,
+        "SELECT bd.definitionid, v.word, c.rafsi, c.experimental_rafsi, c.selmaho, c.definition,
                 c.notes, t.descriptor{}
          FROM export_best_definitions($1, $3) bd
          JOIN valsi v ON v.valsiid = bd.valsiid
@@ -1728,6 +1847,7 @@ async fn generate_lojban_entries(
 
     for row in rows {
         let valsi_row = ValsiRow {
+            definition_id: Some(row.get("definitionid")),
             word: row.get("word"),
             rafsi: row.get("rafsi"),
             experimental_rafsi: row.try_get("experimental_rafsi").ok().flatten(),
@@ -2446,6 +2566,7 @@ fn dictionary_entry_from_detail(d: crate::jbovlaste::DefinitionDetail) -> Dictio
 
 fn valsi_row_from_dictionary_entry(entry: &DictionaryEntry) -> ValsiRow {
     ValsiRow {
+        definition_id: entry.definition_id,
         word: entry.word.clone(),
         rafsi: entry.rafsi.clone(),
         experimental_rafsi: entry.experimental_rafsi.clone(),
@@ -2458,8 +2579,10 @@ fn valsi_row_from_dictionary_entry(entry: &DictionaryEntry) -> ValsiRow {
 }
 
 fn format_collection_export_item(item: &CollectionExportItem, lang: &str) -> String {
-    if item.definition_id.is_some() && item.word.as_ref().is_some_and(|w| !w.is_empty()) {
+    let entry = if item.definition_id.is_some() && item.word.as_ref().is_some_and(|w| !w.is_empty())
+    {
         let row = ValsiRow {
+            definition_id: item.definition_id,
             word: item.word.clone().unwrap_or_default(),
             rafsi: item.rafsi.clone(),
             experimental_rafsi: item.experimental_rafsi.clone(),
@@ -2469,7 +2592,7 @@ fn format_collection_export_item(item: &CollectionExportItem, lang: &str) -> Str
             collection_note: item.collection_note.clone(),
             descriptor: item.word_type.clone().unwrap_or_default(),
         };
-        format_lojban_entry(&row, lang)
+        format_lojban_entry_text(&row, lang)
     } else {
         format_free_content_parts(
             item.free_content_front.as_deref().unwrap_or(""),
@@ -2477,7 +2600,12 @@ fn format_collection_export_item(item: &CollectionExportItem, lang: &str) -> Str
             item.collection_note.as_deref(),
             lang,
         )
+    };
+    let mut images = format!("\\collectionimages{{{}}}", item.item_id);
+    if let Some(id) = item.definition_id {
+        images.insert_str(0, &format!("\\definitionimages{{{id}}}"));
     }
+    format_image_entry(&entry, &images, item.word.as_deref())
 }
 
 fn generate_search_export_latex(
@@ -2988,7 +3116,11 @@ async fn finalize_search_export(
     let content = match format {
         ExportFormat::Pdf => {
             let latex = generate_search_export_latex(&collection_items, &definitions, &lang);
-            generate_pdf(&latex).await?
+            let mut client = pool.get().await?;
+            let transaction = client.transaction().await?;
+            let images = load_pdf_images(&transaction, &latex).await?;
+            transaction.commit().await?;
+            generate_pdf(&latex, &images).await?
         }
         ExportFormat::LaTeX => {
             generate_search_export_latex(&collection_items, &definitions, &lang).into_bytes()
@@ -3082,8 +3214,98 @@ mod tests {
     use super::*;
 
     #[test]
+    fn pdf_images_include_each_attachment_at_every_matching_entry() {
+        let directory = tempdir().unwrap();
+        let mut png = Cursor::new(Vec::new());
+        image::DynamicImage::new_rgb8(1200, 40)
+            .write_to(&mut png, image::ImageFormat::Png)
+            .unwrap();
+        let images = vec![
+            PdfExportImage {
+                marker: "\\definitionimages{7}".into(),
+                data: png.get_ref().clone(),
+            },
+            PdfExportImage {
+                marker: "\\definitionimages{7}".into(),
+                data: png.into_inner(),
+            },
+        ];
+        let latex =
+            "First\\definitionimages{7}\nSecond\\definitionimages{7}\nOther\\definitionimages{9}";
+        assert_eq!(pdf_image_ids(latex, "definitionimages"), vec![7, 9]);
+        let output = materialize_pdf_images(latex, &images, directory.path()).unwrap();
+        assert_eq!(output.matches("\\includegraphics[").count(), 4);
+        assert!(!output.contains("\\definitionimages{7}"));
+        assert!(!output.contains("\\definitionimages{9}"));
+        for filename in ["export-image-0.png", "export-image-1.png"] {
+            assert!(directory.path().join(filename).exists());
+        }
+    }
+
+    #[test]
+    fn pdf_images_decode_webp_uploads() {
+        let directory = tempdir().unwrap();
+        let mut webp = Cursor::new(Vec::new());
+        image::DynamicImage::new_rgb8(40, 1200)
+            .write_to(&mut webp, image::ImageFormat::WebP)
+            .unwrap();
+        materialize_pdf_images(
+            "\\collectionimages{3}",
+            &[PdfExportImage {
+                marker: "\\collectionimages{3}".into(),
+                data: webp.into_inner(),
+            }],
+            directory.path(),
+        )
+        .unwrap();
+        let image = image::open(directory.path().join("export-image-0.png")).unwrap();
+        assert_eq!((image.width(), image.height()), (40, 1200));
+    }
+
+    #[test]
+    fn pdf_images_remove_unillustrated_markers_in_large_dictionaries() {
+        let directory = tempdir().unwrap();
+        let mut latex = String::new();
+        for id in 1..=20_000 {
+            latex.push_str(&format!("Entry {id}\\definitionimages{{{id}}}\n"));
+        }
+        latex.push_str(
+            "\\definitionimages{invalid}\\collectionimages{3}\\definitionimages{unfinished",
+        );
+        let output = materialize_pdf_images(&latex, &[], directory.path()).unwrap();
+        assert!(output.starts_with("Entry 1\nEntry 2\n"));
+        assert!(output.contains("Entry 20000\n"));
+        assert!(!output.contains("\\collectionimages{3}"));
+        assert!(output.ends_with("\\definitionimages{invalid}\\definitionimages{unfinished"));
+    }
+
+    #[test]
+    fn dictionary_and_collection_entries_reference_their_own_images() {
+        let row = ValsiRow {
+            definition_id: Some(42),
+            word: "pixra".into(),
+            rafsi: None,
+            experimental_rafsi: None,
+            selmaho: None,
+            definition: "a picture".into(),
+            notes: None,
+            collection_note: None,
+            descriptor: "gismu".into(),
+        };
+        assert!(format_lojban_entry(&row, "en").contains("\\exportentry{\\definitionimages{42}}"));
+        let item: CollectionExportItem = serde_json::from_str(
+            r#"{"item_id":17,"position":0,"definition_id":42,"word":"pixra","definition":"a picture"}"#,
+        )
+        .unwrap();
+        let latex = generate_search_export_latex(&[item], &[], "en");
+        assert_eq!(pdf_image_ids(&latex, "definitionimages"), vec![42]);
+        assert_eq!(pdf_image_ids(&latex, "collectionimages"), vec![17]);
+    }
+
+    #[test]
     fn rafsi_export_keeps_proposals_labeled() {
         let row = ValsiRow {
+            definition_id: None,
             word: "ckeji".into(),
             rafsi: Some("kej".into()),
             experimental_rafsi: Some("kex".into()),
@@ -3212,6 +3434,33 @@ mod tests {
         let out = format_export_text("See also {klama} and $x_{1}$", false, false);
         assert!(out.contains("$x_{1}$"), "math preserved: {out}");
         assert!(out.contains("\\textit{"), "link still italic: {out}");
+    }
+
+    #[test]
+    fn literal_math_characters_do_not_break_pdf_exports() {
+        let out = format_export_text("via $x_2$ and \"x_3$, considers today", false, false);
+        assert!(out.contains("$x_2$"));
+        assert!(out.contains("\"x\\_3\\$, considers today"));
+        let out = format_export_text("cost $5 and bare x_1", false, false);
+        assert!(out.contains("\\$5"));
+        assert!(out.contains("x\\_1"));
+        let math = r"$F(A) = \operatorname{img}_f(A)$";
+        assert_eq!(format_export_text(math, false, false), math);
+    }
+
+    #[test]
+    fn nested_json_and_unmatched_braces_remain_valid_latex() {
+        let out = format_export_text(
+            "JSON: {\"outer\":{\"inner\":4}}. See {klama}.",
+            false,
+            false,
+        );
+        assert!(out.contains("\\}. See \\textit{"));
+        assert!(escape_tex("unclosed { and stray }", false).contains("unclosed \\{ and stray \\}"));
+        assert_eq!(
+            escape_tex("<\\>", false),
+            "\\textless{}\\textbackslash{}\\textgreater{}"
+        );
     }
 
     #[test]
