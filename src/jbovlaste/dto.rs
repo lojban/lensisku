@@ -302,6 +302,8 @@ pub struct RafsiOverlapQuery {
 pub struct RafsiOverlapHit {
     pub word: String,
     pub word_type: String,
+    /// Storage provenance: `valsi` (official) or `definition` (experimental).
+    pub rafsi_source: String,
 }
 
 #[derive(Debug, Serialize, ToSchema)]

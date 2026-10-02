@@ -154,6 +154,8 @@ pub struct DictionaryEntry {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub rafsi: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub experimental_rafsi: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub selmaho: Option<String>,
     pub definition: String,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -201,6 +203,8 @@ pub struct CollectionExportItem {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub rafsi: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub experimental_rafsi: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub selmaho: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub definition: Option<String>,
@@ -233,6 +237,7 @@ pub struct CollectionExportItem {
 pub struct ValsiRow {
     pub word: String,
     pub rafsi: Option<String>,
+    pub experimental_rafsi: Option<String>,
     pub selmaho: Option<String>,
     pub definition: String,
     pub notes: Option<String>,

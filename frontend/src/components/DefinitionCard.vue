@@ -263,10 +263,17 @@
                 {{ t('components.definitionCard.selmaoLabel') }} {{ displayedSelmaho }}
               </RouterLink>
               <span
-                v-if="!isPhrase && definition.rafsi"
+                v-if="!isPhrase && definition.official_rafsi"
                 class="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-700 rounded-full"
               >
-                {{ definition.rafsi }}
+                {{ definition.official_rafsi }}
+              </span>
+              <span
+                v-if="!isPhrase && definition.experimental_rafsi"
+                class="px-2 py-1 text-xs font-medium bg-amber-50 text-amber-800 rounded-full"
+              >
+                {{ t('components.definitionCard.experimentalRafsiLabel') }}
+                {{ definition.experimental_rafsi }}
               </span>
             </div>
             <!-- Metadata Row -->
@@ -727,6 +734,8 @@ interface DefinitionRecord {
   notes?: string
   decomposition?: string[]
   canonical_word?: string
+  official_rafsi?: string
+  experimental_rafsi?: string
   rafsi?: string
   selmaho?: string
   comment_count?: number
@@ -1094,7 +1103,9 @@ const showWordMetaRow = computed(() => {
   const hasType = Boolean(props.definition.type_name && props.showWordType)
   const hasCanonical = Boolean(props.definition.canonical_word)
   const hasSelmaho = !isPhrase.value && Boolean(props.definition.selmaho)
-  const hasRafsi = !isPhrase.value && Boolean(props.definition.rafsi)
+  const hasRafsi =
+    !isPhrase.value &&
+    Boolean(props.definition.official_rafsi || props.definition.experimental_rafsi)
   return hasAudio || hasType || hasCanonical || hasSelmaho || hasRafsi
 })
 

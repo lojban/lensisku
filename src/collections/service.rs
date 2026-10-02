@@ -2135,7 +2135,7 @@ pub async fn export_collection_full(
                 ci.free_content_front, ci.free_content_back,
                 ci.langid as language_id, ci.owner_user_id, ci.license,
                 v.word, d.definition, d.notes as definition_notes, d.jargon, t.descriptor as word_type,
-                c.rafsi, c.selmaho,
+                c.rafsi, c.experimental_rafsi, c.selmaho,
                 (SELECT img.image_data FROM collection_item_images cii
                     INNER JOIN collection_images img ON img.collection_image_id = cii.collection_image_id
                     WHERE cii.item_id = ci.item_id AND cii.side = 'front') as front_image_data,
@@ -2194,6 +2194,7 @@ pub async fn export_collection_full(
                 word: row.get("word"),
                 word_type: row.get("word_type"),
                 rafsi: row.get("rafsi"),
+                experimental_rafsi: row.try_get("experimental_rafsi").ok().flatten(),
                 selmaho: row.get("selmaho"),
                 definition: row.get("definition"),
                 definition_notes: row.get("definition_notes"),
@@ -4702,7 +4703,7 @@ pub async fn search_items_in_collections_for_export(
             COALESCE(d.cached_valsiword, ci.free_content_front) as word,
             d.definition, d.notes as definition_notes, d.jargon,
             t.descriptor as word_type,
-            conv.rafsi, conv.selmaho
+            conv.rafsi, conv.experimental_rafsi, conv.selmaho
          {from_where}
          ORDER BY {order_by}
          LIMIT ${lim}",
@@ -4734,6 +4735,7 @@ pub async fn search_items_in_collections_for_export(
             word: row.get("word"),
             word_type: row.get("word_type"),
             rafsi: row.get("rafsi"),
+            experimental_rafsi: row.try_get("experimental_rafsi").ok().flatten(),
             selmaho: row.get("selmaho"),
             definition: row.get("definition"),
             definition_notes: row.get("definition_notes"),

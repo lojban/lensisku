@@ -267,7 +267,7 @@ pub async fn revert_to_version(
         // Check if user is the original author of the definition
         let definition_author: i32 = transaction
             .query_one(
-                "SELECT user_id FROM definitions WHERE definitionid = $1",
+                "SELECT userid AS user_id FROM definitions WHERE definitionid = $1",
                 &[&old_version.definition_id],
             )
             .await?
@@ -292,7 +292,8 @@ pub async fn revert_to_version(
 
     let current_def = transaction
         .query_one(
-            "SELECT valsiid, langid, definitionnum FROM definitions WHERE definitionid = $1",
+            "SELECT d.valsiid, d.langid, d.definitionnum, d.rafsi AS proposal_rafsi, u.username = 'officialdata' AS official_rafsi_author
+             FROM definitions d JOIN users u ON u.userid = d.userid WHERE d.definitionid = $1",
             &[&old_version.definition_id],
         )
         .await?;
@@ -304,6 +305,24 @@ pub async fn revert_to_version(
         current_definitionnum
     } else {
         next_definitionnum_for_language(&transaction, valsi_id, restored_langid).await?
+    };
+
+    // Official snapshots restore the shared assignment; proposals restore only
+    // this definition. The definition's author, rather than the reverting editor,
+    // determines authority.
+    let is_official: bool = current_def.get("official_rafsi_author");
+    if is_official {
+        transaction
+            .execute(
+                "UPDATE valsi SET rafsi = $1 WHERE valsiid = $2",
+                &[&old_version.content.rafsi, &valsi_id],
+            )
+            .await?;
+    }
+    let proposal_rafsi = if is_official {
+        current_def.get::<_, Option<String>>("proposal_rafsi")
+    } else {
+        old_version.content.rafsi.clone()
     };
 
     // Update the definition with the old content, including target language.
@@ -319,7 +338,7 @@ pub async fn revert_to_version(
                 &old_version.content.etymology,
                 &old_version.content.selmaho,
                 &old_version.content.jargon,
-                &old_version.content.rafsi,
+                &proposal_rafsi,
                 &restored_langid,
                 &definitionnum,
                 &old_version.definition_id,

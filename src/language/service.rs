@@ -46,6 +46,59 @@ impl OwnedRafsiMaps {
         (!self.se_words.is_empty()).then_some(&self.se_words)
     }
 
+    /// vlazba returns a standard word's list before consulting experimental maps.
+    /// Filter collisions globally, then add usable proposals to that word's list.
+    fn prioritize_assignments(&mut self) {
+        fn owners(maps: &[&HashMap<String, Vec<String>>]) -> HashMap<String, String> {
+            let mut result: HashMap<String, String> = HashMap::new();
+            for map in maps {
+                for (word, tokens) in *map {
+                    for token in tokens {
+                        result
+                            .entry(token.clone())
+                            .and_modify(|owner| {
+                                if word < owner {
+                                    *owner = word.clone();
+                                }
+                            })
+                            .or_insert_with(|| word.clone());
+                    }
+                }
+            }
+            result
+        }
+        let official = owners(&[&self.gismu, &self.cmavo]);
+        let experimental = owners(&[&self.gismu_exp, &self.cmavo_exp]);
+        for map in [&mut self.gismu, &mut self.cmavo] {
+            for (word, tokens) in map.iter_mut() {
+                tokens.retain(|token| official.get(token) == Some(word));
+                tokens.sort();
+                tokens.dedup();
+            }
+        }
+        for map in [&mut self.gismu_exp, &mut self.cmavo_exp] {
+            for (word, tokens) in map.iter_mut() {
+                tokens.retain(|token| {
+                    !official.contains_key(token) && experimental.get(token) == Some(word)
+                });
+                tokens.sort();
+                tokens.dedup();
+            }
+        }
+        for (standard, proposals) in [
+            (&mut self.gismu, &self.gismu_exp),
+            (&mut self.cmavo, &self.cmavo_exp),
+        ] {
+            for (word, tokens) in proposals {
+                if let Some(list) = standard.get_mut(word) {
+                    list.extend(tokens.iter().cloned());
+                    list.sort();
+                    list.dedup();
+                }
+            }
+        }
+    }
+
     pub fn options(&self) -> RafsiOptions<'_> {
         // Empty maps must be `None` so vlazba falls back to its built-in rafsi lists.
         RafsiOptions {
@@ -61,23 +114,28 @@ impl OwnedRafsiMaps {
 pub async fn load_owned_rafsi_maps(
     transaction: &Transaction<'_>,
 ) -> Result<OwnedRafsiMaps, Box<dyn std::error::Error>> {
-    Ok(OwnedRafsiMaps {
-        cmavo: fetch_cmavo_rafsi(transaction).await.unwrap_or_default(),
-        cmavo_exp: fetch_experimental_cmavo_rafsi(transaction)
-            .await
-            .unwrap_or_default(),
-        gismu: fetch_gismu_rafsi(transaction).await.unwrap_or_default(),
-        gismu_exp: fetch_experimental_gismu_rafsi(transaction)
-            .await
-            .unwrap_or_default(),
-        se_words: transaction.query(
-            "SELECT DISTINCT v.word FROM valsi v
+    let cmavo = fetch_cmavo_rafsi(transaction).await?;
+    let cmavo_exp = fetch_experimental_cmavo_rafsi(transaction).await?;
+    let gismu = fetch_gismu_rafsi(transaction).await?;
+    let gismu_exp = fetch_experimental_gismu_rafsi(transaction).await?;
+    let mut maps = OwnedRafsiMaps {
+        cmavo, cmavo_exp, gismu, gismu_exp,
+        se_words: transaction
+            .query(
+                "SELECT DISTINCT v.word FROM valsi v
              JOIN definitions d ON d.valsiid = v.valsiid
              WHERE v.source_langid = 1 AND v.typeid IN (2, 8)
                AND UPPER(d.selmaho) = 'SE'",
-            &[],
-        ).await.unwrap_or_default().into_iter().map(|r| r.get(0)).collect(),
-    })
+                &[],
+            )
+            .await
+            .unwrap_or_default()
+            .into_iter()
+            .map(|r| r.get(0))
+            .collect(),
+    };
+    maps.prioritize_assignments();
+    Ok(maps)
 }
 
 /// Map vlazba score-optimal analysis onto jbovlaste type ids (4 vs 17).
@@ -646,7 +704,7 @@ async fn fetch_rafsi_data(
     // forms are stored by migration; experimental may still be empty here.
     let rows = transaction
         .query(
-            "SELECT word, rafsi FROM valsi WHERE typeid = $1",
+            "SELECT word, rafsi FROM valsi WHERE source_langid = 1 AND typeid = $1",
             &[&type_id],
         )
         .await?;
@@ -671,14 +729,14 @@ async fn fetch_experimental_rafsi_data(
     transaction: &Transaction<'_>,
     type_id: i16,
 ) -> Result<HashMap<String, Vec<String>>, Box<dyn std::error::Error>> {
-    // Experimental gismu/cmavo rafsi are stored per-definition, so aggregate
-    // all rafsi strings for each valsi word.
+    // Proposals belong to definitions, including definitions of standard words.
+    // Aggregate them separately from the official word-level assignments.
     let rows = transaction
         .query(
             "SELECT v.word, string_agg(d.rafsi, ' ' ORDER BY d.definitionid) as rafsi
              FROM valsi v
              JOIN definitions d ON d.valsiid = v.valsiid
-             WHERE v.typeid = $1 AND d.rafsi IS NOT NULL
+             WHERE v.source_langid = 1 AND v.typeid IN ($1::smallint, CASE WHEN $1::smallint = 7 THEN 1 ELSE 2 END) AND d.rafsi IS NOT NULL
              GROUP BY v.word",
             &[&type_id],
         )
@@ -1296,5 +1354,40 @@ mod validation_tts_tests {
                 |_| Err("TTS unavailable".into()),
             );
         assert_eq!(result.unwrap_err(), "TTS unavailable");
+    }
+}
+
+#[cfg(test)]
+mod rafsi_priority_tests {
+    use super::*;
+
+    #[test]
+    fn official_assignments_win_and_standard_words_keep_usable_proposals() {
+        let mut maps = OwnedRafsiMaps {
+            gismu: HashMap::from([("ckeji".into(), vec!["kej".into()])]),
+            cmavo: HashMap::from([("dau".into(), vec![])]),
+            gismu_exp: HashMap::from([("kenjo".into(), vec!["kej".into(), "kenj".into()])]),
+            cmavo_exp: HashMap::from([(
+                "dau".into(),
+                vec!["duv".into(), "duv".into(), "kej".into()],
+            )]),
+            ..Default::default()
+        };
+        maps.prioritize_assignments();
+        assert_eq!(maps.gismu_exp["kenjo"], vec!["kenj"]);
+        assert_eq!(maps.cmavo["dau"], vec!["duv"]);
+        assert_eq!(maps.cmavo_exp["dau"], vec!["duv"]);
+    }
+
+    #[test]
+    fn experimental_ties_use_lexical_word_order_across_word_types() {
+        let mut maps = OwnedRafsiMaps {
+            gismu_exp: HashMap::from([("kenjo".into(), vec!["xyz".into()])]),
+            cmavo_exp: HashMap::from([("dau".into(), vec!["xyz".into()])]),
+            ..Default::default()
+        };
+        maps.prioritize_assignments();
+        assert!(maps.gismu_exp["kenjo"].is_empty());
+        assert_eq!(maps.cmavo_exp["dau"], vec!["xyz"]);
     }
 }

@@ -1081,9 +1081,15 @@ pub async fn check_rafsi_overlap(
     match service::check_rafsi_overlap(&pool, &query.rafsi, query.word.as_deref(), query.valsi_id)
         .await
     {
-        Ok(Some((word, word_type))) => HttpResponse::Ok().json(RafsiOverlapResponse {
-            overlap: Some(RafsiOverlapHit { word, word_type }),
-        }),
+        Ok(Some((word, word_type, rafsi_source))) => {
+            HttpResponse::Ok().json(RafsiOverlapResponse {
+                overlap: Some(RafsiOverlapHit {
+                    word,
+                    word_type,
+                    rafsi_source,
+                }),
+            })
+        }
         Ok(None) => HttpResponse::Ok().json(RafsiOverlapResponse { overlap: None }),
         Err(e) => HttpResponse::InternalServerError().body(format!("Database error: {}", e)),
     }

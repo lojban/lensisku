@@ -101,6 +101,12 @@ pub struct DefinitionDetail {
     #[schema(value_type = String, format = DateTime)]
     pub created_at: DateTime<Utc>,
     pub type_name: String,
+    /// Inherited official assignments stored on the word.
+    #[serde(default)]
+    pub official_rafsi: Option<String>,
+    /// Proposals supplied by this definition.
+    #[serde(default)]
+    pub experimental_rafsi: Option<String>,
     pub rafsi: Option<String>,
     pub score: f32,
     pub comment_count: Option<i64>,
@@ -197,6 +203,8 @@ impl From<tokio_postgres::Row> for DefinitionDetail {
             username: row.get("username"),
             time: row.get("time"),
             type_name: row.get("type_name"),
+            official_rafsi: row.try_get("official_rafsi").ok().flatten(),
+            experimental_rafsi: row.try_get("experimental_rafsi").ok().flatten(),
             rafsi: row.try_get("rafsi").ok().flatten(), // Use try_get in case column is missing in some queries
             score: row_vote_score_f32(&row, "score"),
             user_vote: row.get("user_vote"),

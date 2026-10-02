@@ -388,6 +388,7 @@ pub async fn semantic_search(
                 d.selmaho, d.jargon, d.definitionnum, d.time, d.owner_only,
                 v.word as valsiword,
                 d.cached_rafsi as rafsi,
+                d.cached_official_rafsi as official_rafsi, d.rafsi as experimental_rafsi,
                 d.cached_decomposition as cached_decomposition,
                 d.cached_canonical_word as cached_canonical_word,
                 u.username,
@@ -493,6 +494,14 @@ pub async fn semantic_search(
             has_image: row.get("has_image"),
             sound_url: sound_urls.get(&word).cloned().flatten(),
             metadata: None,
+            official_rafsi: row
+                .try_get::<_, Option<String>>("official_rafsi")
+                .ok()
+                .flatten(),
+            experimental_rafsi: row
+                .try_get::<_, Option<String>>("experimental_rafsi")
+                .ok()
+                .flatten(),
             rafsi: row.try_get::<_, Option<String>>("rafsi").ok().flatten(),
             examples: None,
             decomposition: parse_cached_decomposition(
@@ -1236,6 +1245,7 @@ pub async fn search_definitions(
                 d.cached_langrealname as langrealname,
                 d.cached_type_name as type_name,
                 d.cached_rafsi as rafsi,
+                d.cached_official_rafsi as official_rafsi, d.rafsi as experimental_rafsi,
                 d.cached_decomposition as cached_decomposition,
                 d.cached_canonical_word as cached_canonical_word,
                 COALESCE(dv.score, 0)::bigint AS score,
@@ -1309,6 +1319,7 @@ pub async fn search_definitions(
                 d.cached_langrealname as langrealname,
                 d.cached_type_name as type_name,
                 d.cached_rafsi as rafsi,
+                d.cached_official_rafsi as official_rafsi, d.rafsi as experimental_rafsi,
                 d.cached_decomposition as cached_decomposition,
                 d.cached_canonical_word as cached_canonical_word,
                 COALESCE(dv.score, 0)::bigint AS score,
@@ -1418,6 +1429,14 @@ pub async fn search_definitions(
             sound_url: sound_urls.get(&word).cloned().flatten(), // Fixed type mismatch
             embedding: None,
             metadata: None,
+            official_rafsi: row
+                .try_get::<_, Option<String>>("official_rafsi")
+                .ok()
+                .flatten(),
+            experimental_rafsi: row
+                .try_get::<_, Option<String>>("experimental_rafsi")
+                .ok()
+                .flatten(),
             rafsi: row.try_get::<_, Option<String>>("rafsi").ok().flatten(),
             decomposition: parse_cached_decomposition(
                 row.try_get::<_, Option<String>>("cached_decomposition")
@@ -1670,6 +1689,7 @@ pub async fn fast_search_definitions(
             d.cached_langrealname as langrealname,
             d.cached_type_name as type_name,
             d.cached_rafsi as rafsi,
+                d.cached_official_rafsi as official_rafsi, d.rafsi as experimental_rafsi,
             d.cached_canonical_word as cached_canonical_word,
             0::bigint AS score,
             CASE
@@ -1755,6 +1775,14 @@ pub async fn fast_search_definitions(
             sound_url: sound_urls.get(&word).cloned().flatten(),
             embedding: None,
             metadata: None,
+            official_rafsi: row
+                .try_get::<_, Option<String>>("official_rafsi")
+                .ok()
+                .flatten(),
+            experimental_rafsi: row
+                .try_get::<_, Option<String>>("experimental_rafsi")
+                .ok()
+                .flatten(),
             rafsi: row.try_get::<_, Option<String>>("rafsi").ok().flatten(),
             decomposition: None, // Not returned in fast search for performance
             canonical_word: row_canonical_word(&row, &row.get::<_, String>("type_name"), &word),
@@ -2023,7 +2051,7 @@ pub async fn get_source_words(
     // First try to find exact word matches
     let exact_word_rows = transaction
         .query(
-            "SELECT word FROM valsi WHERE word = ANY($1::text[])",
+            "SELECT word FROM valsi WHERE source_langid = 1 AND word = ANY($1::text[]) ORDER BY word COLLATE \"C\"",
             &[&rafsi_parts],
         )
         .await?;
@@ -2034,39 +2062,30 @@ pub async fn get_source_words(
         exact_word_map.insert(word.clone(), word);
     }
 
-    // Then try to find rafsi matches, both from valsi (official/other types)
-    // and from definitions (experimental gismu/cmavo).
+    // Match whole tokens. Official word-level assignments win, then proposals;
+    // lexical order breaks equal-priority ties independently of query row order.
     let rows = transaction
         .query(
-            "
-        SELECT word, rafsi FROM (
-            SELECT v.word, v.rafsi as rafsi
-            FROM valsi v
-            WHERE v.rafsi IS NOT NULL
-            UNION ALL
-            SELECT v.word, d.rafsi as rafsi
-            FROM valsi v
-            JOIN definitions d ON d.valsiid = v.valsiid
-            WHERE d.rafsi IS NOT NULL
-        ) rafsi_source
-        WHERE rafsi LIKE ANY(ARRAY(SELECT '%' || p || '%' FROM unnest($1::text[]) AS p))
-        ",
+            "SELECT DISTINCT ON (token) token, word FROM (
+                SELECT v.word, token, 0 AS priority
+                FROM valsi v
+                CROSS JOIN LATERAL regexp_split_to_table(trim(v.rafsi), '\\s+') token
+                WHERE v.source_langid = 1 AND v.rafsi IS NOT NULL
+                UNION ALL
+                SELECT v.word, token, 1 AS priority
+                FROM valsi v JOIN definitions d ON d.valsiid = v.valsiid
+                CROSS JOIN LATERAL regexp_split_to_table(trim(d.rafsi), '\\s+') token
+                WHERE v.source_langid = 1 AND d.rafsi IS NOT NULL
+            ) assignments
+            WHERE token = ANY($1::text[])
+            ORDER BY token, priority, word COLLATE \"C\"",
             &[&rafsi_parts],
         )
         .await?;
-
-    debug!("{:#?}", rafsi_parts);
-    let mut rafsi_map: HashMap<String, Vec<String>> = HashMap::new();
-    for row in rows {
-        let word: String = row.get("word");
-        if let Some(db_rafsi) = row.get::<_, Option<String>>("rafsi") {
-            let db_parts: Vec<String> =
-                db_rafsi.split_whitespace().map(|s| s.to_string()).collect();
-            for rafsi in db_parts {
-                rafsi_map.entry(rafsi).or_default().push(word.clone());
-            }
-        }
-    }
+    let rafsi_map: HashMap<String, String> = rows
+        .into_iter()
+        .map(|row| (row.get("token"), row.get("word")))
+        .collect();
 
     // Fallback: long rafsi like "blan" may not be in valsi.rafsi; treat as rafsi + one vowel (gismu form)
     let unresolved: Vec<&str> = parts
@@ -2086,7 +2105,7 @@ pub async fn get_source_words(
             .collect();
         if let Ok(long_rows) = transaction
             .query(
-                "SELECT word FROM valsi WHERE word = ANY($1::text[])",
+                "SELECT word FROM valsi WHERE source_langid = 1 AND word = ANY($1::text[]) ORDER BY word COLLATE \"C\"",
                 &[&candidates],
             )
             .await
@@ -2114,7 +2133,7 @@ pub async fn get_source_words(
             // First try to find rafsi match
             rafsi_map
                 .get(rafsi)
-                .and_then(|words| words.first().cloned())
+                .cloned()
                 // If no rafsi match found, try exact word match
                 .or_else(|| exact_word_map.get(rafsi).cloned())
                 // Fallback: long rafsi (e.g. "blan") -> gismu that is rafsi + vowel (e.g. "blanu")
@@ -2245,7 +2264,7 @@ pub async fn get_entry_details(
                         .flatten(),
                     &row.get::<_, String>("word"),
                 ),
-                related_forms: Vec::new()
+                related_forms: Vec::new(),
             };
 
             let mut key = row.get::<_, Option<String>>("related_expansion_key");
@@ -2332,7 +2351,7 @@ pub async fn get_wiki_by_word(
                 WHERE v.word = $1 AND v.typeid = 16
             ) as has_image
         )
-        SELECT d.*, v.word as valsiword, v.valsiid as valsiid, v.source_langid, v.typeid as valsi_typeid,
+        SELECT d.*, v.rafsi as official_rafsi, d.rafsi as experimental_rafsi, v.word as valsiword, v.valsiid as valsiid, v.source_langid, v.typeid as valsi_typeid,
                 l.realname as langrealname, u.username,
                 vt.descriptor as type_name,
                 i.has_image,
@@ -2430,6 +2449,14 @@ pub async fn get_wiki_by_word(
                 username: row.get("username"),
                 time: row.get("time"),
                 type_name: row.get("type_name"),
+                official_rafsi: row
+                    .try_get::<_, Option<String>>("official_rafsi")
+                    .ok()
+                    .flatten(),
+                experimental_rafsi: row
+                    .try_get::<_, Option<String>>("experimental_rafsi")
+                    .ok()
+                    .flatten(),
                 rafsi: row
                     .try_get::<_, Option<String>>("cached_rafsi")
                     .ok()
@@ -2626,7 +2653,7 @@ async fn upsert_wiki_in_transaction(
                 gloss_keywords, place_keywords, user_id, message, word
             )
             SELECT
-                d.definitionid, d.langid, d.valsiid, d.definition, d.notes, d.etymology, d.selmaho, d.jargon, d.rafsi,
+                d.definitionid, d.langid, d.valsiid, d.definition, d.notes, d.etymology, d.selmaho, d.jargon, editable_definition_rafsi(d.definitionid),
                 '[]'::jsonb, '[]'::jsonb, $2, $3,
                 (SELECT word FROM valsi WHERE valsiid = d.valsiid)
             FROM definitions d
@@ -2840,7 +2867,7 @@ pub async fn rename_wiki_page(
                 gloss_keywords, place_keywords, user_id, message, word
             )
             SELECT
-                d.definitionid, d.langid, d.valsiid, d.definition, d.notes, d.etymology, d.selmaho, d.jargon, d.rafsi,
+                d.definitionid, d.langid, d.valsiid, d.definition, d.notes, d.etymology, d.selmaho, d.jargon, editable_definition_rafsi(d.definitionid),
                 '[]'::jsonb, '[]'::jsonb, $2, $3,
                 (SELECT word FROM valsi WHERE valsiid = d.valsiid)
             FROM definitions d
@@ -3180,7 +3207,7 @@ pub async fn rename_definition_valsi(
                 gloss_keywords, place_keywords, user_id, message, word
             )
             SELECT
-                d.definitionid, d.langid, d.valsiid, d.definition, d.notes, d.etymology, d.selmaho, d.jargon, d.rafsi,
+                d.definitionid, d.langid, d.valsiid, d.definition, d.notes, d.etymology, d.selmaho, d.jargon, editable_definition_rafsi(d.definitionid),
                 COALESCE(
                     (SELECT jsonb_agg(to_jsonb(kw))
                      FROM (
@@ -3516,7 +3543,7 @@ async fn add_definition_in_transaction(
         )
         .await?;
 
-    // Store rafsi on the definition for experimental gismu/cmavo, otherwise on valsi.
+    // Officialdata assignments are shared; community proposals belong to this definition.
     let rafsi_warning = validate_and_update_rafsi(
         transaction,
         valsi_id,
@@ -3666,7 +3693,7 @@ async fn add_definition_in_transaction(
                 gloss_keywords, place_keywords, user_id, message, word
             )
             SELECT
-                d.definitionid, d.langid, d.valsiid, d.definition, d.notes, d.etymology, d.selmaho, d.jargon, d.rafsi,
+                d.definitionid, d.langid, d.valsiid, d.definition, d.notes, d.etymology, d.selmaho, d.jargon, editable_definition_rafsi(d.definitionid),
                 COALESCE(
                     (SELECT jsonb_agg(to_jsonb(kw))
                      FROM (
@@ -3875,7 +3902,7 @@ pub async fn get_definition(
                 WHERE definition_id = $1
             ) as has_image
         )
-        SELECT d.*, v.word as valsiword, v.valsiid as valsiid, v.source_langid, v.typeid as valsi_typeid,
+        SELECT d.*, v.rafsi as official_rafsi, d.rafsi as experimental_rafsi, v.word as valsiword, v.valsiid as valsiid, v.source_langid, v.typeid as valsi_typeid,
                 l.realname as langrealname, u.username,
                 vt.descriptor as type_name,
                 i.has_image,
@@ -4003,6 +4030,14 @@ pub async fn get_definition(
         username: row.get("username"),
         time: row.get("time"),
         type_name: row.get("type_name"),
+        official_rafsi: row
+            .try_get::<_, Option<String>>("official_rafsi")
+            .ok()
+            .flatten(),
+        experimental_rafsi: row
+            .try_get::<_, Option<String>>("experimental_rafsi")
+            .ok()
+            .flatten(),
         rafsi: row
             .try_get::<_, Option<String>>("cached_rafsi")
             .ok()
@@ -4073,7 +4108,7 @@ pub async fn update_definition(
                 gloss_keywords, place_keywords, user_id, message, word
             )
             SELECT
-                COALESCE(to_timestamp(d.time) AT TIME ZONE 'UTC', d.created_at), d.definitionid, d.langid, d.valsiid, d.definition, d.notes, d.etymology, d.selmaho, d.jargon, d.rafsi,
+                COALESCE(to_timestamp(d.time) AT TIME ZONE 'UTC', d.created_at), d.definitionid, d.langid, d.valsiid, d.definition, d.notes, d.etymology, d.selmaho, d.jargon, editable_definition_rafsi(d.definitionid),
                 COALESCE(
                     (SELECT jsonb_agg(to_jsonb(kw))
                      FROM (
@@ -4438,7 +4473,7 @@ pub async fn update_definition(
                 gloss_keywords, place_keywords, user_id, message, word
             )
             SELECT
-                d.definitionid, d.langid, d.valsiid, d.definition, d.notes, d.etymology, d.selmaho, d.jargon, d.rafsi,
+                d.definitionid, d.langid, d.valsiid, d.definition, d.notes, d.etymology, d.selmaho, d.jargon, editable_definition_rafsi(d.definitionid),
                 (
                     SELECT COALESCE(json_agg(json_build_object(
                         'word', n.word,
@@ -4697,6 +4732,8 @@ pub async fn list_definitions(
             created_at: row.get("created_at"),
             has_image: row.get("has_image"),
             metadata: None,
+            official_rafsi: None,
+            experimental_rafsi: None,
             rafsi: None,
             examples: None,
             decomposition: None,
@@ -4877,6 +4914,8 @@ pub async fn list_non_lojban_definitions(
             created_at: row.get("created_at"),
             has_image: row.get("has_image"),
             metadata: None,
+            official_rafsi: None,
+            experimental_rafsi: None,
             rafsi: None,
             examples: None,
             decomposition: None,
@@ -5045,7 +5084,7 @@ pub async fn get_definitions_by_entry(
     // Build the base query that works for both ID and word lookups
     let base_query = "WITH definition_ranks AS (
             SELECT DISTINCT ON (d.definitionid)
-                   d.*,
+                   d.*, v.rafsi as official_rafsi, d.rafsi as experimental_rafsi,
                    v.word as valsiword,
                    v.valsiid,
                    vt.descriptor as type_name,
@@ -5113,6 +5152,14 @@ pub async fn get_definitions_by_entry(
             user_vote: None,     // Will be updated later
             gloss_keywords: None,
             place_keywords: None,
+            official_rafsi: row
+                .try_get::<_, Option<String>>("official_rafsi")
+                .ok()
+                .flatten(),
+            experimental_rafsi: row
+                .try_get::<_, Option<String>>("experimental_rafsi")
+                .ok()
+                .flatten(),
             rafsi: row
                 .try_get::<_, Option<String>>("cached_rafsi")
                 .ok()
@@ -6719,6 +6766,8 @@ pub async fn list_definitions_by_client_id(
             embedding: None,
             similarity: None,
             metadata: row.get("metadata"),
+            official_rafsi: None,
+            experimental_rafsi: None,
             rafsi: None,
             examples: None,
             decomposition: None,
@@ -6754,67 +6803,43 @@ pub async fn find_rafsi_overlap_for_other_valsi(
     transaction: &Transaction<'_>,
     exclude_valsi_id: Option<i32>,
     rafsi_str: &str,
-) -> Result<Option<(String, String)>, Box<dyn std::error::Error>> {
+) -> Result<Option<(String, String, String)>, Box<dyn std::error::Error>> {
     let rafsi_str = rafsi_str.trim();
     if rafsi_str.is_empty() {
         return Ok(None);
     }
 
     let rafsi_list: Vec<&str> = rafsi_str.split_whitespace().collect();
-    let official_types: Vec<i16> = vec![1, 2, 4, 5];
-    let experimental_types: Vec<i16> = vec![7, 8];
-    // When no current valsi is known yet, exclude nothing (0 never matches a real id).
     let exclude_id = exclude_valsi_id.unwrap_or(0);
-
-    let overlap_query = "
-        SELECT word, descriptor FROM (
-            SELECT v.word, vt.descriptor, v.rafsi
-            FROM valsi v
-            JOIN valsitypes vt ON v.typeid = vt.typeid
-            WHERE v.valsiid != $1
-              AND v.source_langid = 1
-              AND v.typeid = ANY($2)
-              AND v.rafsi IS NOT NULL
-            UNION ALL
-            SELECT v.word, vt.descriptor, d.rafsi
-            FROM valsi v
-            JOIN valsitypes vt ON v.typeid = vt.typeid
-            JOIN definitions d ON d.valsiid = v.valsiid
-            WHERE v.valsiid != $1
-              AND v.source_langid = 1
-              AND v.typeid = ANY($3)
-              AND d.rafsi IS NOT NULL
-        ) rafsi_sources
-        WHERE EXISTS (
-            SELECT 1
-            FROM unnest(string_to_array(rafsi, ' ')) existing_rafsi
-            WHERE existing_rafsi = ANY($4)
-        )
-        LIMIT 1
-    ";
-
     let rows = transaction
         .query(
-            overlap_query,
-            &[
-                &exclude_id,
-                &official_types,
-                &experimental_types,
-                &rafsi_list,
-            ],
+            "SELECT word, descriptor, CASE WHEN priority = 0 THEN 'valsi' ELSE 'definition' END AS rafsi_source
+         FROM (
+             SELECT v.word, vt.descriptor, v.rafsi, 0 AS priority
+             FROM valsi v JOIN valsitypes vt ON vt.typeid = v.typeid WHERE v.valsiid != $1 AND v.source_langid = 1
+             UNION ALL
+             SELECT v.word, vt.descriptor, d.rafsi, 1 AS priority
+             FROM valsi v JOIN definitions d ON d.valsiid = v.valsiid
+             JOIN valsitypes vt ON vt.typeid = v.typeid
+             WHERE v.valsiid != $1 AND v.source_langid = 1
+         ) assignments
+         WHERE EXISTS (SELECT 1 FROM regexp_split_to_table(trim(rafsi), '\\s+') token
+                       WHERE token = ANY($2::text[]))
+         ORDER BY priority, word COLLATE \"C\" LIMIT 1",
+            &[&exclude_id, &rafsi_list],
         )
         .await?;
 
     if let Some(row) = rows.first() {
         let word: String = row.get("word");
         let type_name: String = row.get("descriptor");
-        return Ok(Some((word, type_name)));
+        return Ok(Some((word, type_name, row.get("rafsi_source"))));
     }
     Ok(None)
 }
 
-fn format_rafsi_overlap_warning(word: &str, type_name: &str) -> String {
-    format!("RAFSI_OVERLAP|{}|{}", word, type_name)
+fn format_rafsi_overlap_warning(word: &str, type_name: &str, source: &str) -> String {
+    format!("RAFSI_OVERLAP|{}|{}|{}", word, type_name, source)
 }
 
 /// Append the implicit 4-letter form when missing. Official gismu always get it;
@@ -6901,77 +6926,79 @@ async fn validate_and_update_rafsi(
         return Ok(None);
     }
 
-    if let Some(rafsi_str) = rafsi_opt {
-        let mut rafsi_str = rafsi_str.trim().to_string();
-        if rafsi_str.is_empty() {
-            // Clear rafsi from the correct location
-            if type_id == 7 || type_id == 8 {
-                if let Some(def_id) = definition_id {
-                    transaction
-                        .execute(
-                            "UPDATE definitions SET rafsi = NULL WHERE definitionid = $1",
-                            &[&def_id],
-                        )
-                        .await?;
-                }
-            } else {
-                transaction
-                    .execute(
-                        "UPDATE valsi SET rafsi = NULL WHERE valsiid = $1",
-                        &[&valsi_id],
-                    )
-                    .await?;
-            }
-            return Ok(None);
-        }
+    let Some(rafsi_str) = rafsi_opt else {
+        return Ok(None);
+    };
+    let def_id = definition_id.ok_or("Definition ID is required to store rafsi")?;
+    let is_official: bool = transaction
+        .query_one(
+            "SELECT u.username = 'officialdata' FROM definitions d
+         JOIN users u ON u.userid = d.userid WHERE d.definitionid = $1 AND d.valsiid = $2",
+            &[&def_id, &valsi_id],
+        )
+        .await?
+        .get(0);
 
-        // Official / experimental gismu: ensure the implicit 4-letter form is
-        // present when allowed (always for official; for experimental only if
-        // no official gismu already claims that token).
-        if type_id == 1 || type_id == 7 {
-            if let Ok(Some(word)) = transaction
-                .query_opt("SELECT word FROM valsi WHERE valsiid = $1", &[&valsi_id])
-                .await
-                .map(|r| r.map(|row| row.get::<_, String>("word")))
-            {
-                rafsi_str =
-                    maybe_append_four_letter_gismu_rafsi(transaction, type_id, &word, &rafsi_str)
-                        .await?;
-            }
-        }
-
-        // Soft warning only when another valsi already uses one of these rafsi.
-        let warning = find_rafsi_overlap_for_other_valsi(transaction, Some(valsi_id), &rafsi_str)
-            .await?
-            .map(|(word, type_name)| format_rafsi_overlap_warning(&word, &type_name));
-
-        // Store rafsi on the definition for experimental gismu/cmavo,
-        // otherwise on the valsi (entry) as before.
-        if type_id == 7 || type_id == 8 {
-            if let Some(def_id) = definition_id {
-                transaction
-                    .execute(
-                        "UPDATE definitions SET rafsi = $1 WHERE definitionid = $2",
-                        &[&rafsi_str, &def_id],
-                    )
-                    .await?;
-            } else {
-                return Err(
-                    "Definition ID is required to store rafsi for experimental types".into(),
-                );
-            }
+    let mut tokens: Vec<&str> = rafsi_str.split_whitespace().collect();
+    tokens.sort_unstable();
+    tokens.dedup();
+    let mut rafsi_str = tokens.join(" ");
+    if rafsi_str.is_empty() {
+        if is_official {
+            transaction
+                .execute(
+                    "UPDATE valsi SET rafsi = NULL WHERE valsiid = $1",
+                    &[&valsi_id],
+                )
+                .await?;
         } else {
             transaction
                 .execute(
-                    "UPDATE valsi SET rafsi = $1 WHERE valsiid = $2",
-                    &[&rafsi_str, &valsi_id],
+                    "UPDATE definitions SET rafsi = NULL WHERE definitionid = $1",
+                    &[&def_id],
                 )
                 .await?;
         }
-
-        return Ok(warning);
+        return Ok(None);
     }
-    Ok(None)
+
+    // Official / experimental gismu: ensure the implicit 4-letter form is
+    // present when allowed (always for official; for experimental only if
+    // no official gismu already claims that token).
+    if (is_official && type_id == 1) || type_id == 7 {
+        if let Ok(Some(word)) = transaction
+            .query_opt("SELECT word FROM valsi WHERE valsiid = $1", &[&valsi_id])
+            .await
+            .map(|r| r.map(|row| row.get::<_, String>("word")))
+        {
+            rafsi_str =
+                maybe_append_four_letter_gismu_rafsi(transaction, type_id, &word, &rafsi_str)
+                    .await?;
+        }
+    }
+
+    // Soft warning only when another valsi already uses one of these rafsi.
+    let warning = find_rafsi_overlap_for_other_valsi(transaction, Some(valsi_id), &rafsi_str)
+        .await?
+        .map(|(word, type_name, source)| format_rafsi_overlap_warning(&word, &type_name, &source));
+
+    if is_official {
+        transaction
+            .execute(
+                "UPDATE valsi SET rafsi = $1 WHERE valsiid = $2",
+                &[&rafsi_str, &valsi_id],
+            )
+            .await?;
+    } else {
+        transaction
+            .execute(
+                "UPDATE definitions SET rafsi = $1 WHERE definitionid = $2",
+                &[&rafsi_str, &def_id],
+            )
+            .await?;
+    }
+
+    Ok(warning)
 }
 
 pub async fn check_rafsi_overlap(
@@ -6979,7 +7006,7 @@ pub async fn check_rafsi_overlap(
     rafsi: &str,
     word: Option<&str>,
     valsi_id: Option<i32>,
-) -> Result<Option<(String, String)>, Box<dyn std::error::Error>> {
+) -> Result<Option<(String, String, String)>, Box<dyn std::error::Error>> {
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
 
@@ -7295,5 +7322,213 @@ mod definition_reattach_tests {
     fn wiki_typeid_always_blocked() {
         let err = authorize_definition_reattach(7, 7, 16).unwrap_err();
         assert!(err.to_lowercase().contains("wiki"));
+    }
+}
+
+#[cfg(test)]
+mod rafsi_authority_tests {
+    use super::*;
+
+    // Run with scripts/test_rafsi_authority.sh against a fresh disposable database.
+    #[tokio::test]
+    #[ignore = "requires RAFSI_TEST_DATABASE_URL pointing to a fresh disposable database"]
+    async fn rafsi_authority_database_regressions() {
+        let url = std::env::var("RAFSI_TEST_DATABASE_URL").expect("disposable test database URL");
+        let config = url.parse::<tokio_postgres::Config>().unwrap();
+        let manager = deadpool_postgres::Manager::new(config, tokio_postgres::NoTls);
+        let pool = deadpool_postgres::Pool::builder(manager)
+            .max_size(1)
+            .build()
+            .unwrap();
+        let mut client = pool.get().await.unwrap();
+        let fixture = include_str!("../../tests/fixtures/rafsi_authority.sql");
+        let (schema, assertions) = fixture.split_once("-- APPLY RAFSI MIGRATION HERE").unwrap();
+        let setup = client.transaction().await.unwrap();
+        setup.batch_execute(schema).await.unwrap();
+        setup.batch_execute(include_str!("../../migrations/V176__rafsi_assignment_authority.sql")).await.unwrap();
+        setup.batch_execute(assertions).await.unwrap();
+        setup.commit().await.unwrap();
+        let tx = client.transaction().await.unwrap();
+        let parser = Peg::new("text", include_str!("../grammar/lojban.peg")).unwrap();
+        let parsers = Arc::new(HashMap::from([(1, parser)]));
+        for (lujvo, expected) in [
+            ("kejnoi", "ckeji"),
+            ("co'inoi", "cmoni"),
+            ("tu'onoi", "tunlo"),
+            ("davnoi", "da"),
+            ("zabnoi", "za'u"),
+            ("duvnoi", "dau"),
+        ] {
+            let words = get_source_words(lujvo, &tx, Some(&parsers)).await.unwrap();
+            assert_eq!(
+                words,
+                vec![expected.to_string(), "notci".to_string()],
+                "{lujvo}"
+            );
+        }
+        // A community definition of a standard word cannot change official rafsi.
+        let official: Option<String> = tx
+            .query_one("SELECT rafsi FROM valsi WHERE valsiid = 9", &[])
+            .await
+            .unwrap()
+            .get(0);
+        validate_and_update_rafsi(&tx, 9, Some(102), Some("duv duv".into()), 1, 2)
+            .await
+            .unwrap();
+        assert_eq!(
+            official,
+            tx.query_one("SELECT rafsi FROM valsi WHERE valsiid = 9", &[])
+                .await
+                .unwrap()
+                .get::<_, Option<String>>(0)
+        );
+        let maps = load_owned_rafsi_maps(&tx).await.unwrap();
+        assert!(maps.cmavo["dau"].contains(&"duv".to_string()));
+        assert!(!maps.gismu_exp["kenjo"].contains(&"kej".to_string()));
+        for (word, token) in [
+            ("dau", "duv"),
+            ("fei", "fel"),
+            ("gai", "gam"),
+            ("jau", "juz"),
+            ("vai", "vav"),
+            ("vo'a", "vob"),
+            ("ma", "maz"),
+            ("mo", "moz"),
+            ("xo", "xlo"),
+            ("za'u", "zab"),
+        ] {
+            assert!(
+                maps.cmavo[word].contains(&token.to_string()),
+                "{word} retains {token}"
+            );
+        }
+        // Long rafsi survive the baseline repair, including gismu with no short form.
+        assert!(maps.gismu["datni"].contains(&"datn".to_string()));
+        assert!(!maps.gismu["broda"].contains(&"brod".to_string()));
+        let options = maps.options();
+        let final_forms = vlazba::jvozba::tools::rafsi_candidates("datni", true, &options);
+        assert!(final_forms.contains(&"datni".to_string()));
+        assert!(final_forms.contains(&"datn".to_string()));
+        assert_eq!(
+            vlazba::search_selrafsi_from_rafsi2("kej", &options),
+            Some("ckeji".to_string())
+        );
+        assert!(
+            vlazba::jvozba::tools::rafsi_candidates("dau", false, &options)
+                .contains(&"duv".to_string())
+        );
+        validate_and_update_rafsi(&tx, 9, Some(102), Some(String::new()), 1, 2)
+            .await
+            .unwrap();
+        assert!(tx
+            .query_one(
+                "SELECT rafsi IS NULL FROM definitions WHERE definitionid = 102",
+                &[]
+            )
+            .await
+            .unwrap()
+            .get::<_, bool>(0));
+        // Official writes update only the shared list, including implicit forms.
+        validate_and_update_rafsi(&tx, 1, Some(1), Some("kej".into()), 1, 1)
+            .await
+            .unwrap();
+        assert!(tx
+            .query_one(
+                "SELECT 'ckej' = ANY(string_to_array(rafsi, ' ')) FROM valsi WHERE valsiid = 1",
+                &[]
+            )
+            .await
+            .unwrap()
+            .get::<_, bool>(0));
+        // Warnings report assignment authority, not the word's morphological type.
+        let (_, _, source) = find_rafsi_overlap_for_other_valsi(&tx, Some(2), "kej")
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(source, "valsi");
+        // Stored substrings must not count as whole-token assignments.
+        validate_and_update_rafsi(&tx, 9, Some(102), Some("duvv".into()), 1, 2)
+            .await
+            .unwrap();
+        assert_eq!(
+            get_source_words("duvnoi", &tx, Some(&parsers))
+                .await
+                .unwrap(),
+            vec!["notci"]
+        );
+        tx.rollback().await.unwrap();
+
+        // Exercise real history restoration for community and official authors.
+        let tx = client.transaction().await.unwrap();
+        let proposal = crate::versions::VersionContent {
+            definition: "Proposal".into(),
+            rafsi: Some("duv".into()),
+            ..Default::default()
+        };
+        let saved =
+            crate::versions::service::create_version(&tx, 102, 3, &proposal, "Test proposal")
+                .await
+                .unwrap();
+        validate_and_update_rafsi(&tx, 9, Some(102), Some("dux".into()), 1, 2)
+            .await
+            .unwrap();
+        let official = crate::versions::VersionContent {
+            definition: "Official".into(),
+            rafsi: Some("ckej kej".into()),
+            ..Default::default()
+        };
+        let saved_official =
+            crate::versions::service::create_version(&tx, 1, 1, &official, "Test official")
+                .await
+                .unwrap();
+        validate_and_update_rafsi(&tx, 1, Some(1), Some("kex".into()), 1, 1)
+            .await
+            .unwrap();
+        tx.commit().await.unwrap();
+        drop(client);
+        let permissions = crate::auth::permissions::PermissionCache::new(pool.clone());
+        crate::versions::service::revert_to_version(
+            &pool,
+            saved.version_id,
+            3,
+            "user",
+            &permissions,
+        )
+        .await
+        .unwrap();
+        crate::versions::service::revert_to_version(
+            &pool,
+            saved_official.version_id,
+            1,
+            "user",
+            &permissions,
+        )
+        .await
+        .unwrap();
+        let client = pool.get().await.unwrap();
+        assert_eq!(
+            client
+                .query_one(
+                    "SELECT rafsi FROM definitions WHERE definitionid = 102",
+                    &[]
+                )
+                .await
+                .unwrap()
+                .get::<_, String>(0),
+            "duv"
+        );
+        assert_eq!(
+            client
+                .query_one("SELECT rafsi FROM valsi WHERE valsiid = 1", &[])
+                .await
+                .unwrap()
+                .get::<_, String>(0),
+            "ckej kej"
+        );
+        assert!(client
+            .query_one("SELECT rafsi IS NULL FROM valsi WHERE valsiid = 9", &[])
+            .await
+            .unwrap()
+            .get::<_, bool>(0));
     }
 }

@@ -1023,7 +1023,7 @@ async fn generate_xml(
                 ci.free_content_front, ci.free_content_back, 
                 ci.langid as language_id, ci.owner_user_id, ci.license,
                 v.word, d.definition, d.notes as definition_notes, d.jargon, t.descriptor as word_type,
-                c.rafsi, c.selmaho,
+                c.rafsi, c.experimental_rafsi, c.selmaho,
                 (SELECT img.image_data FROM collection_item_images cii
                     INNER JOIN collection_images img ON img.collection_image_id = cii.collection_image_id
                     WHERE cii.item_id = ci.item_id AND cii.side = 'front') as front_image_data,
@@ -1075,7 +1075,7 @@ async fn generate_xml(
                 ci.free_content_front, ci.free_content_back, 
                 ci.langid as language_id, ci.owner_user_id, ci.license,
                 v.word, d.definition, d.notes as definition_notes, d.jargon, t.descriptor as word_type,
-                c.rafsi, c.selmaho,
+                c.rafsi, c.experimental_rafsi, c.selmaho,
                 (SELECT img.image_data FROM collection_item_images cii
                     INNER JOIN collection_images img ON img.collection_image_id = cii.collection_image_id
                     WHERE cii.item_id = ci.item_id AND cii.side = 'front') as front_image_data,
@@ -1155,7 +1155,7 @@ async fn generate_xml(
         .unwrap_or_default();
 
     let query = format!(
-        "SELECT v.word, bd.definitionid, c.rafsi, c.selmaho, c.definition,
+        "SELECT v.word, bd.definitionid, c.rafsi, c.experimental_rafsi, c.selmaho, c.definition,
                 c.notes, d.jargon, t.descriptor, bd.score
          FROM export_best_definitions($1, $3) bd
          JOIN valsi v ON v.valsiid = bd.valsiid
@@ -1202,6 +1202,12 @@ async fn generate_xml(
 
         if let Some(rafsi) = row.get::<_, Option<String>>("rafsi") {
             writer.write(XmlEvent::start_element("rafsi"))?;
+            writer.write(XmlEvent::Characters(&rafsi))?;
+            writer.write(XmlEvent::end_element())?;
+        }
+
+        if let Some(rafsi) = row.get::<_, Option<String>>("experimental_rafsi") {
+            writer.write(XmlEvent::start_element("experimental_rafsi"))?;
             writer.write(XmlEvent::Characters(&rafsi))?;
             writer.write(XmlEvent::end_element())?;
         }
@@ -1300,6 +1306,7 @@ impl CollectionExportItem {
             word: row.get("word"),
             word_type: export_word_type_opt(row.get("word_type")),
             rafsi: row.get("rafsi"),
+            experimental_rafsi: row.try_get("experimental_rafsi").ok().flatten(),
             selmaho: row.get("selmaho"),
             language_id: row.get("language_id"),
             owner_user_id: row.get("owner_user_id"),
@@ -1333,7 +1340,7 @@ async fn generate_latex(
                 ci.free_content_front, ci.free_content_back, 
                 ci.langid as language_id, ci.owner_user_id, ci.license,
                 v.word, d.definition, d.notes as definition_notes, t.descriptor as word_type,
-                c.rafsi, c.selmaho,
+                c.rafsi, c.experimental_rafsi, c.selmaho,
                 (SELECT img.image_data FROM collection_item_images cii
                     INNER JOIN collection_images img ON img.collection_image_id = cii.collection_image_id
                     WHERE cii.item_id = ci.item_id AND cii.side = 'front') as front_image_data,
@@ -1495,7 +1502,7 @@ async fn generate_collection_latex(
             ci.item_id, ci.definition_id, ci.notes as collection_note, ci.position,
             ci.free_content_front, ci.free_content_back,
             v.word, d.definition, d.notes as definition_notes, t.descriptor as word_type,
-            c.rafsi, c.selmaho
+            c.rafsi, c.experimental_rafsi, c.selmaho
         FROM collection_items ci
         LEFT JOIN definitions d ON ci.definition_id = d.definitionid
         LEFT JOIN valsi v ON d.valsiid = v.valsiid
@@ -1523,6 +1530,12 @@ async fn generate_collection_latex(
 fn format_lojban_entry(valsi_row: &ValsiRow, lang: &str) -> String {
     let mut entry = format_lojban_heading(&valsi_row.word, &valsi_row.descriptor);
     entry.push_str(&format_rafsi(&valsi_row.rafsi));
+    if let Some(proposals) = &valsi_row.experimental_rafsi {
+        entry.push_str(&format!(
+            "\\enspace {{\\small Experimental rafsi: {}}} ",
+            escape_all(proposals)
+        ));
+    }
     entry.push_str(&format_selmaho(&valsi_row.selmaho));
     entry.push_str(&format_definition(&valsi_row.definition, lang));
     entry.push_str(&format_notes(&valsi_row.notes));
@@ -1542,6 +1555,7 @@ impl ValsiRow {
         Ok(ValsiRow {
             word: row.try_get("word")?,
             rafsi: row.try_get("rafsi")?,
+            experimental_rafsi: row.try_get("experimental_rafsi").ok().flatten(),
             selmaho: row.try_get("selmaho")?,
             definition: row.try_get("definition")?,
             notes: row.try_get("definition_notes")?, // Use definition_notes alias
@@ -1695,7 +1709,7 @@ async fn generate_lojban_entries(
         .unwrap_or_default();
 
     let query = format!(
-        "SELECT v.word, c.rafsi, c.selmaho, c.definition,
+        "SELECT v.word, c.rafsi, c.experimental_rafsi, c.selmaho, c.definition,
                 c.notes, t.descriptor{}
          FROM export_best_definitions($1, $3) bd
          JOIN valsi v ON v.valsiid = bd.valsiid
@@ -1716,6 +1730,7 @@ async fn generate_lojban_entries(
         let valsi_row = ValsiRow {
             word: row.get("word"),
             rafsi: row.get("rafsi"),
+            experimental_rafsi: row.try_get("experimental_rafsi").ok().flatten(),
             selmaho: row.get("selmaho"),
             definition: row.get("definition"),
             notes: row.get("notes"),
@@ -1812,7 +1827,7 @@ async fn generate_tsv(
                 ci.free_content_front, ci.free_content_back, 
                 ci.langid as language_id, ci.owner_user_id, ci.license,
                 v.word, d.definition, d.notes as definition_notes, d.jargon, t.descriptor as word_type,
-                c.rafsi, c.selmaho,
+                c.rafsi, c.experimental_rafsi, c.selmaho,
                 (SELECT img.image_data FROM collection_item_images cii
                     INNER JOIN collection_images img ON img.collection_image_id = cii.collection_image_id
                     WHERE cii.item_id = ci.item_id AND cii.side = 'front') as front_image_data,
@@ -1864,7 +1879,7 @@ async fn generate_tsv(
                 ci.free_content_front, ci.free_content_back,
                 ci.langid as language_id, ci.owner_user_id, ci.license,
                 v.word, d.definition, d.notes as definition_notes, d.jargon, t.descriptor as word_type,
-                c.rafsi, c.selmaho
+                c.rafsi, c.experimental_rafsi, c.selmaho
             FROM collection_items ci
             LEFT JOIN definitions d ON ci.definition_id = d.definitionid
             LEFT JOIN valsi v ON d.valsiid = v.valsiid
@@ -1891,7 +1906,7 @@ async fn generate_tsv(
         .unwrap_or_default();
 
     let query = format!(
-        "SELECT v.word, bd.definitionid, c.rafsi, c.selmaho, c.definition,
+        "SELECT v.word, bd.definitionid, c.rafsi, c.experimental_rafsi, c.selmaho, c.definition,
                 c.notes, d.jargon, t.descriptor{}, bd.score
          FROM export_best_definitions($1, $3) bd
          JOIN valsi v ON v.valsiid = bd.valsiid
@@ -1928,7 +1943,7 @@ async fn generate_tsv(
 
     let mut tsv = String::new();
     // Write header
-    tsv.push_str("word\ttype\trafsi\tselmaho\tdefinition\tnotes\tjargon\tcollection_note\tscore");
+    tsv.push_str("word\ttype\trafsi\texperimental_rafsi\tselmaho\tdefinition\tnotes\tjargon\tcollection_note\tscore");
 
     // Add gloss word columns
     for i in 1..=max_gloss_count {
@@ -1947,6 +1962,7 @@ async fn generate_tsv(
         let word: String = row.get("word");
         let descriptor = export_word_type_owned(row.get("descriptor"));
         let rafsi: Option<String> = row.get("rafsi");
+        let experimental_rafsi: Option<String> = row.get("experimental_rafsi");
         let selmaho: Option<String> = row.get("selmaho");
         let definition: String = row.get("definition");
         let notes: Option<String> = row.get("notes");
@@ -1959,10 +1975,11 @@ async fn generate_tsv(
 
         // Start row with basic fields
         tsv.push_str(&format!(
-            "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+            "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
             replace_newlines(&word),
             replace_newlines(&descriptor),
             replace_newlines(&rafsi.unwrap_or_default()),
+            replace_newlines(&experimental_rafsi.unwrap_or_default()),
             replace_newlines(&selmaho.unwrap_or_default()),
             replace_newlines(&definition),
             replace_newlines(&notes.unwrap_or_default()),
@@ -2018,7 +2035,7 @@ fn generate_collection_tsv(
 ) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
     let mut tsv = String::new();
     // Write header for collection items
-    tsv.push_str("item_id\tposition\tdefinition_id\tword\tword_type\trafsi\tselmaho\tdefinition\tdefinition_notes\tjargon\tfree_content_front\tfree_content_back\tcollection_note\n");
+    tsv.push_str("item_id\tposition\tdefinition_id\tword\tword_type\trafsi\texperimental_rafsi\tselmaho\tdefinition\tdefinition_notes\tjargon\tfree_content_front\tfree_content_back\tcollection_note\n");
 
     for row in rows {
         let item_id: i32 = row.get("item_id");
@@ -2027,6 +2044,7 @@ fn generate_collection_tsv(
         let word: Option<String> = row.get("word");
         let word_type = export_word_type_opt(row.get("word_type"));
         let rafsi: Option<String> = row.get("rafsi");
+        let experimental_rafsi: Option<String> = row.get("experimental_rafsi");
         let selmaho: Option<String> = row.get("selmaho");
         let definition: Option<String> = row.get("definition");
         let definition_notes: Option<String> = row.get("definition_notes");
@@ -2036,13 +2054,14 @@ fn generate_collection_tsv(
         let collection_note: Option<String> = row.get("collection_note");
 
         tsv.push_str(&format!(
-            "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n",
+            "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n",
             item_id,
             position,
             definition_id.map(|id| id.to_string()).unwrap_or_default(),
             replace_newlines(&word.unwrap_or_default()),
             replace_newlines(&word_type.unwrap_or_default()),
             replace_newlines(&rafsi.unwrap_or_default()),
+            replace_newlines(&experimental_rafsi.unwrap_or_default()),
             replace_newlines(&selmaho.unwrap_or_default()),
             replace_newlines(&definition.unwrap_or_default()),
             replace_newlines(&definition_notes.unwrap_or_default()),
@@ -2070,7 +2089,7 @@ async fn generate_json(
                 ci.free_content_front, ci.free_content_back, 
                 ci.langid as language_id, ci.owner_user_id, ci.license,
                 v.word, d.definition, d.notes as definition_notes, d.jargon, t.descriptor as word_type,
-                c.rafsi, c.selmaho,
+                c.rafsi, c.experimental_rafsi, c.selmaho,
                 (SELECT img.image_data FROM collection_item_images cii
                     INNER JOIN collection_images img ON img.collection_image_id = cii.collection_image_id
                     WHERE cii.item_id = ci.item_id AND cii.side = 'front') as front_image_data,
@@ -2127,7 +2146,7 @@ async fn generate_json(
         .unwrap_or_default();
 
     let query = format!(
-        "SELECT v.word, bd.definitionid, c.rafsi, c.selmaho, c.definition,
+        "SELECT v.word, bd.definitionid, c.rafsi, c.experimental_rafsi, c.selmaho, c.definition,
                 c.notes, d.etymology, d.jargon, t.descriptor{}, u.username, u.realname, bd.score
          FROM export_best_definitions($1, $3) bd
          JOIN valsi v ON v.valsiid = bd.valsiid
@@ -2168,6 +2187,7 @@ async fn generate_json(
                 word: row.get("word"),
                 word_type: export_word_type_owned(row.get("descriptor")),
                 rafsi: row.get("rafsi"),
+                experimental_rafsi: row.try_get("experimental_rafsi").ok().flatten(),
                 selmaho: row.get("selmaho"),
                 definition: row.get("definition"),
                 notes: row.get("notes"),
@@ -2405,7 +2425,8 @@ fn dictionary_entry_from_detail(d: crate::jbovlaste::DefinitionDetail) -> Dictio
     DictionaryEntry {
         word: d.valsiword,
         word_type: export_word_type_owned(d.type_name),
-        rafsi: d.rafsi,
+        rafsi: d.official_rafsi,
+        experimental_rafsi: d.experimental_rafsi,
         selmaho: d.selmaho,
         definition: d.definition,
         definition_id: Some(d.definitionid),
@@ -2427,6 +2448,7 @@ fn valsi_row_from_dictionary_entry(entry: &DictionaryEntry) -> ValsiRow {
     ValsiRow {
         word: entry.word.clone(),
         rafsi: entry.rafsi.clone(),
+        experimental_rafsi: entry.experimental_rafsi.clone(),
         selmaho: entry.selmaho.clone(),
         definition: entry.definition.clone(),
         notes: entry.notes.clone(),
@@ -2440,6 +2462,7 @@ fn format_collection_export_item(item: &CollectionExportItem, lang: &str) -> Str
         let row = ValsiRow {
             word: item.word.clone().unwrap_or_default(),
             rafsi: item.rafsi.clone(),
+            experimental_rafsi: item.experimental_rafsi.clone(),
             selmaho: item.selmaho.clone(),
             definition: item.definition.clone().unwrap_or_default(),
             notes: item.definition_notes.clone(),
@@ -2625,7 +2648,7 @@ fn generate_definitions_tsv(entries: &[DictionaryEntry]) -> String {
         .unwrap_or(0);
 
     let mut tsv = String::from(
-        "word\ttype\trafsi\tselmaho\tdefinition\tnotes\tjargon\tcollection_note\tscore",
+        "word\ttype\trafsi\texperimental_rafsi\tselmaho\tdefinition\tnotes\tjargon\tcollection_note\tscore",
     );
     for i in 1..=max_gloss_count {
         tsv.push_str(&format!("\tglossword_{}\tglossword_{}_meaning", i, i));
@@ -2679,7 +2702,7 @@ fn generate_definitions_tsv(entries: &[DictionaryEntry]) -> String {
 
 fn generate_collection_items_tsv(items: &[CollectionExportItem]) -> String {
     let mut tsv = String::from(
-        "item_id\tposition\tdefinition_id\tword\tword_type\trafsi\tselmaho\tdefinition\tdefinition_notes\tjargon\tfree_content_front\tfree_content_back\tcollection_note\n",
+        "item_id\tposition\tdefinition_id\tword\tword_type\trafsi\texperimental_rafsi\tselmaho\tdefinition\tdefinition_notes\tjargon\tfree_content_front\tfree_content_back\tcollection_note\n",
     );
     for item in items {
         tsv.push_str(&format!(
@@ -3057,6 +3080,23 @@ async fn export_full_collection_json(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn rafsi_export_keeps_proposals_labeled() {
+        let row = ValsiRow {
+            word: "ckeji".into(),
+            rafsi: Some("kej".into()),
+            experimental_rafsi: Some("kex".into()),
+            selmaho: None,
+            definition: "ashamed".into(),
+            notes: None,
+            collection_note: None,
+            descriptor: "gismu".into(),
+        };
+        let text = format_lojban_entry(&row, "en");
+        assert!(text.contains("[kej]"));
+        assert!(text.contains("Experimental rafsi: kex"));
+    }
 
     #[test]
     fn export_filename_includes_source_language_tag() {

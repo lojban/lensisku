@@ -157,10 +157,19 @@
           />
         </div>
       </div>
-      <!-- Rafsi Input (gismu/cmavo only) -->
+      <!-- Official assignments are inherited; community definitions edit their proposals. -->
       <div v-if="Number(sourceLangId) === 1 && showRafsiField">
+        <p v-if="officialRafsi && !rafsiAuthorIsOfficial" class="mb-2 text-sm text-gray-600">
+          {{ t('upsertDefinition.officialRafsiLabel') }}: {{ officialRafsi }}
+        </p>
         <label for="rafsi" class="block text-sm font-medium text-blue-700">
-          {{ t('upsertDefinition.rafsiLabel') }}
+          {{
+            t(
+              rafsiAuthorIsOfficial
+                ? 'upsertDefinition.officialRafsiLabel'
+                : 'upsertDefinition.experimentalRafsiLabel'
+            )
+          }}
           <span class="text-gray-500 font-normal">{{ t('upsertDefinition.optional') }}</span>
         </label>
         <Input
@@ -482,7 +491,13 @@ function formatRafsiOverlapMessage(code: string): string {
   const parts = code.split('|')
   const overlapWord = parts[1] ?? ''
   const overlapType = parts[2] ?? ''
-  return t('upsertDefinition.rafsiOverlapWarning', { word: overlapWord, type: overlapType })
+  const message = t('upsertDefinition.rafsiOverlapWarning', {
+    word: overlapWord,
+    type: overlapType,
+  })
+  return parts[3]
+    ? `${message} ${t(parts[3] === 'valsi' ? 'upsertDefinition.officialRafsiPriority' : 'upsertDefinition.experimentalRafsiProposal')}`
+    : message
 }
 
 function formatDefinitionError(apiError: unknown): string {
@@ -518,6 +533,8 @@ const langId = ref('')
 const sourceLangId = ref(1)
 const definition = ref('')
 const rafsi = ref('')
+const officialRafsi = ref('')
+const rafsiAuthorIsOfficial = ref(auth.state.username === 'officialdata')
 const rafsiOverlapWarning = ref('')
 const selmaho = ref('')
 const notes = ref('')
@@ -591,7 +608,10 @@ const loadDefinitionData = async (definitionId: string | number) => {
       wordId.value = def.valsiid
       langId.value = String(def.langid)
       definition.value = def.definition
-      rafsi.value = def.rafsi || ''
+      officialRafsi.value = def.official_rafsi || ''
+      rafsiAuthorIsOfficial.value = def.username === 'officialdata'
+      rafsi.value =
+        (rafsiAuthorIsOfficial.value ? def.official_rafsi : def.experimental_rafsi) || ''
       selmaho.value = def.selmaho || ''
       notes.value = def.notes || ''
       etymology.value = def.etymology || ''
@@ -900,7 +920,7 @@ const submitValsi = async () => {
       word: word.value,
       definition: definition.value,
       // Only gismu/cmavo may have a rafsi. On edit, an empty string signals clearing;
-      // on add, null means leave the entry-level rafsi unchanged.
+      // on add, null means no new assignment.
       rafsi: showRafsiField.value
         ? isEditMode.value
           ? rafsi.value || ''
@@ -1020,10 +1040,9 @@ async function refreshRafsiOverlapWarning() {
     })
     const overlap = response.data?.overlap
     if (overlap?.word) {
-      rafsiOverlapWarning.value = t('upsertDefinition.rafsiOverlapWarning', {
-        word: overlap.word,
-        type: overlap.word_type || '',
-      })
+      rafsiOverlapWarning.value = formatRafsiOverlapMessage(
+        `RAFSI_OVERLAP|${overlap.word}|${overlap.word_type || ''}|${overlap.rafsi_source || ''}`
+      )
     } else {
       rafsiOverlapWarning.value = ''
     }
