@@ -104,15 +104,15 @@ fn wave_hit_sort_key(hit: &WaveSearchHit, sort_by: &str) -> i64 {
         ("time", WaveSearchHit::Comment { comment: c, .. }) => c.time as i64,
         ("reactions", WaveSearchHit::Mail { .. }) => 0,
         ("replies", WaveSearchHit::Mail { .. }) => 0,
-        ("time", WaveSearchHit::Mail { message: m }) => message_timestamp(m.date.as_ref()),
-        ("time", WaveSearchHit::Wiki { article }) => {
+        ("time", WaveSearchHit::Mail { message: m, .. }) => message_timestamp(m.date.as_ref()),
+        ("time", WaveSearchHit::Wiki { article, .. }) => {
             article.last_edited.map(|d| d.timestamp()).unwrap_or(0)
         }
         ("reactions" | "replies", WaveSearchHit::Wiki { .. }) => 0,
         _ => match hit {
             WaveSearchHit::Comment { comment: c, .. } => c.time as i64,
-            WaveSearchHit::Mail { message: m } => message_timestamp(m.date.as_ref()),
-            WaveSearchHit::Wiki { article } => {
+            WaveSearchHit::Mail { message: m, .. } => message_timestamp(m.date.as_ref()),
+            WaveSearchHit::Wiki { article, .. } => {
                 article.last_edited.map(|d| d.timestamp()).unwrap_or(0)
             }
         },
@@ -182,8 +182,15 @@ pub async fn search_waves(
     query: WavesSearchQuery,
     current_user_id: Option<i32>,
 ) -> Result<WavesSearchResponse, Box<dyn std::error::Error + Send + Sync>> {
-    let page = query.page.unwrap_or(1);
-    let per_page = query.per_page.unwrap_or(20);
+    if query
+        .search
+        .as_deref()
+        .is_some_and(|s| !s.trim().is_empty())
+    {
+        return super::relevance::search(pool, &query, current_user_id).await;
+    }
+    let page = query.page.unwrap_or(1).max(1);
+    let per_page = query.per_page.unwrap_or(20).clamp(1, 100);
     let search_term = query.search.as_deref().unwrap_or("").to_string();
     let sort_order = query.sort_order.as_deref().unwrap_or("desc");
     let sort_by = query.sort_by.as_deref().unwrap_or("time");
@@ -281,16 +288,23 @@ pub async fn search_waves(
             merged.push(WaveSearchHit::Comment {
                 comment: c,
                 import_source,
+                relevance: None,
             });
         }
     }
     if let Some(m) = mail_res {
         for msg in m.messages {
-            merged.push(WaveSearchHit::Mail { message: msg });
+            merged.push(WaveSearchHit::Mail {
+                message: msg,
+                relevance: None,
+            });
         }
     }
     for article in wiki_hits {
-        merged.push(WaveSearchHit::Wiki { article });
+        merged.push(WaveSearchHit::Wiki {
+            article,
+            relevance: None,
+        });
     }
 
     merged.sort_by(|a, b| {

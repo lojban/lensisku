@@ -187,6 +187,13 @@
               >
                 <template #label>{{ sortByTriggerLabel }}</template>
                 <ToolbarSelectDropdownItem
+                  v-if="searchQuery.trim()"
+                  :class="{ 'bg-gray-100': sortBy === 'relevance' }"
+                  @click="setSortByField('relevance')"
+                >
+                  {{ $t('sort.relevance') }}
+                </ToolbarSelectDropdownItem>
+                <ToolbarSelectDropdownItem
                   :class="{ 'bg-gray-100': sortBy === 'time' }"
                   @click="setSortByField('time')"
                 >
@@ -320,7 +327,7 @@
                       item.source === 'comment'
                         ? item.comment.comment_id
                         : item.source === 'wiki'
-                          ? 'wiki-' + item.article.page_id
+                          ? 'wiki-' + item.article.article_url
                           : 'mail-' + item.message.id
                     "
                     class="cursor-pointer"
@@ -350,6 +357,12 @@
                         "
                       />
                     </div>
+                    <p
+                      v-if="item.source === 'comment' && item.relevance?.excerpt"
+                      class="text-sm text-gray-700 mb-2 whitespace-pre-wrap"
+                    >
+                      {{ item.relevance.excerpt }}
+                    </p>
                     <CommentItem
                       v-if="item.source === 'comment'"
                       :comment="item.comment"
@@ -401,7 +414,15 @@
                       </div>
 
                       <div
-                        v-if="item.message.parts_json && textParts(item.message.parts_json).length"
+                        v-if="item.relevance?.excerpt"
+                        class="text-sm text-gray-700 border-t border-gray-100 pt-2 mt-2 whitespace-pre-wrap"
+                      >
+                        {{ item.relevance.excerpt }}
+                      </div>
+                      <div
+                        v-else-if="
+                          item.message.parts_json && textParts(item.message.parts_json).length
+                        "
                         class="text-sm text-gray-700 border-t border-gray-100 pt-2 mt-2 prose prose-sm max-w-none [&_img]:max-h-48 [&_img]:object-contain"
                       >
                         <LazyMathJax
@@ -1271,12 +1292,13 @@ function homeChangeKey(change: RecentChangeRow) {
 
 // Generic data fetching for other modes
 const sortBy = ref(
-  ['time', 'reactions', 'replies'].includes(queryStr(route.query.sort_by))
+  ['relevance', 'time', 'reactions', 'replies'].includes(queryStr(route.query.sort_by))
     ? queryStr(route.query.sort_by)
-    : 'time'
+    : 'relevance'
 )
 
 const sortByTriggerLabel = computed(() => {
+  if (sortBy.value === 'relevance' && searchQuery.value.trim()) return t('sort.relevance')
   if (sortBy.value === 'reactions') return t('sort.reactions')
   if (sortBy.value === 'replies') return t('sort.replies')
   return t('sort.time')
@@ -1296,7 +1318,7 @@ const handleSortChange = () => {
   }
 }
 
-const setSortByField = (value: 'time' | 'reactions' | 'replies') => {
+const setSortByField = (value: 'relevance' | 'time' | 'reactions' | 'replies') => {
   sortBy.value = value
   handleSortChange()
 }
@@ -1327,7 +1349,7 @@ const fetchWaves = async (page, search = '') => {
     const baseParams = {
       page,
       per_page: 10,
-      sort_by: sortBy.value,
+      sort_by: !q && sortBy.value === 'relevance' ? 'time' : sortBy.value,
       sort_order: sortOrder.value,
       source: waveSource.value,
     }
@@ -1451,7 +1473,7 @@ const updateUrlWithFilters = () => {
       ...combinedFiltersToQuery(filters.value),
       group_by_thread: groupByThread.value ? 'true' : undefined,
       wave_source: waveSource.value !== 'all' ? waveSource.value : undefined,
-      sort_by: sortBy.value !== 'time' ? sortBy.value : undefined,
+      sort_by: sortBy.value !== 'relevance' ? sortBy.value : undefined,
       sort_order: sortOrder.value !== 'desc' ? sortOrder.value : undefined,
       page: undefined,
       expand_ci: undefined,
@@ -1497,7 +1519,7 @@ const performSearch = ({ query, mode }: { query: string; mode: string }) => {
 
   if (searchMode.value !== effectiveMode) {
     // Reset sortBy to default for the new mode
-    sortBy.value = 'time'
+    sortBy.value = 'relevance'
   }
 
   // Update state before pushing to router to avoid duplicate fetches
@@ -1642,9 +1664,9 @@ const syncFromRoute = () => {
   if (query.page !== undefined) {
     currentPage.value = parseInt(queryStr(query.page), 10) || 1
   }
-  sortBy.value = ['time', 'reactions', 'replies'].includes(queryStr(query.sort_by))
+  sortBy.value = ['relevance', 'time', 'reactions', 'replies'].includes(queryStr(query.sort_by))
     ? queryStr(query.sort_by)
-    : 'time'
+    : 'relevance'
   sortOrder.value = queryStr(query.sort_order) === 'asc' ? 'asc' : 'desc'
 
   // URL keys override stored filters; omitted keys keep the hydrated localStorage state

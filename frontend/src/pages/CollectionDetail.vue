@@ -2346,7 +2346,7 @@ const fetchWaves = async (page: number) => {
       {
         page,
         per_page: 10,
-        sort_by: 'time',
+        sort_by: 'relevance',
         sort_order: 'desc',
         source: 'comments',
         collection_id: numericCollectionId.value,

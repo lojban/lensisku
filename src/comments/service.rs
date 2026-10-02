@@ -1697,11 +1697,50 @@ pub(crate) async fn search_comments(
     search_params: SearchCommentsParams,
     current_user_id: Option<i32>,
 ) -> Result<PaginatedCommentsResponse, Box<dyn std::error::Error>> {
+    search_comments_inner(pool, search_params, current_user_id, None).await
+}
+
+/// Hydrate globally ranked comment candidates without applying another text filter.
+pub(crate) async fn search_comment_hits(
+    pool: &Pool,
+    ids: &[i32],
+    current_user_id: Option<i32>,
+) -> Result<Vec<Comment>, Box<dyn std::error::Error>> {
+    let params = SearchCommentsParams {
+        page: 1,
+        per_page: ids.len() as i64,
+        search_term: String::new(),
+        sort_by: "time".into(),
+        sort_order: "desc".into(),
+        username: None,
+        valsi_id: None,
+        definition_id: None,
+        definition_link_id: None,
+        target_user_id: None,
+        collection_id: None,
+        wave_source: None,
+    };
+    Ok(
+        search_comments_inner(pool, params, current_user_id, Some(ids))
+            .await?
+            .comments,
+    )
+}
+
+async fn search_comments_inner(
+    pool: &Pool,
+    search_params: SearchCommentsParams,
+    current_user_id: Option<i32>,
+    ids: Option<&[i32]>,
+) -> Result<PaginatedCommentsResponse, Box<dyn std::error::Error>> {
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
 
     let offset = (search_params.page - 1) * search_params.per_page;
-    let search_pattern = format!("%{}%", search_params.search_term);
+    let search_pattern = format!(
+        "%{}%",
+        crate::search_helpers::escape_like(&search_params.search_term)
+    );
 
     // Build the base query with proper joins
     let base_query = "
@@ -1732,11 +1771,22 @@ pub(crate) async fn search_comments(
         LEFT JOIN definitions d ON t.definitionid = d.definitionid
         LEFT JOIN comment_activity_counters cc ON c.commentid = cc.comment_id
         LEFT JOIN comment_bookmarks cb ON c.commentid = cb.comment_id AND cb.user_id = $1
-        WHERE (c.subject ILIKE $2 OR c.plain_content ILIKE $2 OR u.username ILIKE $2)";
+        WHERE ";
+    let predicate = if ids.is_some() {
+        "c.commentid = ANY($2)"
+    } else {
+        "(c.subject ILIKE $2 OR c.plain_content ILIKE $2 OR u.username ILIKE $2)"
+    };
+    let base_query = format!("{base_query}{predicate}");
 
     let mut conditions = Vec::new();
-    let mut query_params: Vec<&(dyn tokio_postgres::types::ToSql + Sync)> =
-        vec![&current_user_id, &search_pattern];
+    let mut query_params: Vec<&(dyn tokio_postgres::types::ToSql + Sync)> = vec![&current_user_id];
+    let candidate_ids = ids.unwrap_or_default().to_vec();
+    if ids.is_some() {
+        query_params.push(&candidate_ids);
+    } else {
+        query_params.push(&search_pattern);
+    }
 
     let mut param_count = 3;
 

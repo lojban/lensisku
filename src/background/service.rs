@@ -211,6 +211,23 @@ pub async fn spawn_background_tasks(
         }
     });
 
+    // Drain bounded discussion batches on startup and after edits/imports. A short
+    // pause between batches lets interactive embedding requests use the shared model.
+    let discussion_pool = pool.clone();
+    tokio::spawn(async move {
+        loop {
+            let delay = match crate::waves::indexer::index_pending(&discussion_pool).await {
+                Ok(0) => Duration::from_secs(60),
+                Ok(_) => Duration::from_secs(2),
+                Err(e) => {
+                    error!("Failed to index discussion embeddings: {}", e);
+                    Duration::from_secs(60)
+                }
+            };
+            sleep(delay).await;
+        }
+    });
+
     // Check for new emails periodically
     let pool_clone = pool.clone();
     let maildir_path_clone = maildir_path.clone();

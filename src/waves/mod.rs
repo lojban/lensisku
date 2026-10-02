@@ -5,7 +5,10 @@
 
 pub mod controller;
 pub mod dto;
+pub(crate) mod indexer;
+mod relevance;
 mod service;
+mod text;
 
 use actix_web::web;
 

@@ -5,6 +5,16 @@ use crate::comments::models::Comment;
 use crate::mailarchive::Message;
 use crate::wiki::dto::{WikiSearchHit, WikiThreadSummary};
 
+#[derive(Debug, Serialize, ToSchema)]
+pub struct WaveRelevance {
+    /// Reciprocal rank fusion score, not a probability.
+    pub score: f64,
+    pub lexical_match: bool,
+    pub semantic_match: bool,
+    /// Plain text from the matching passage, suitable for safe text rendering.
+    pub excerpt: String,
+}
+
 /// Single search hit: either a comment or a mail message.
 #[derive(Debug, Serialize, ToSchema)]
 #[serde(tag = "source", rename_all = "snake_case")]
@@ -13,12 +23,18 @@ pub enum WaveSearchHit {
         comment: Comment,
         #[serde(skip_serializing_if = "Option::is_none")]
         import_source: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        relevance: Option<WaveRelevance>,
     },
     Mail {
         message: Message,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        relevance: Option<WaveRelevance>,
     },
     Wiki {
         article: WikiSearchHit,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        relevance: Option<WaveRelevance>,
     },
 }
 
@@ -29,7 +45,8 @@ pub struct WavesSearchQuery {
     pub page: Option<i64>,
     #[schema(default = 20)]
     pub per_page: Option<i64>,
-    #[schema(default = "time")]
+    /// Defaults to relevance for searches, time when browsing.
+    #[schema(default = "relevance")]
     pub sort_by: Option<String>,
     #[schema(default = "desc")]
     pub sort_order: Option<String>,

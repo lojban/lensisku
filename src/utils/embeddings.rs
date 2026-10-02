@@ -84,3 +84,91 @@ pub async fn get_batch_embeddings(texts: Vec<String>) -> AppResult<Vec<Vec<f32>>
     .await
     .map_err(|e| AppError::Internal(format!("spawn_blocking panicked: {e}")))?
 }
+
+/// Paragraph-aware passages with a hard WordPiece budget for the current model.
+/// Offsets refer to UTF-8 bytes, so splitting also preserves non-Latin text.
+/// Long paragraphs overlap by 32 tokens to retain context across boundaries.
+pub async fn discussion_passages(title: &str, body: &str) -> AppResult<Vec<String>> {
+    let title = title.to_owned();
+    let body = body.replace("\r\n", "\n");
+    tokio::task::spawn_blocking(move || {
+        let mut tokenizer = get_model()?.lock().tokenizer.clone();
+        tokenizer
+            .with_truncation(None)
+            .map_err(|e| AppError::Internal(e.to_string()))?;
+        tokenizer.with_padding(None);
+        let title_encoding = tokenizer
+            .encode(title.as_str(), false)
+            .map_err(|e| AppError::Internal(e.to_string()))?;
+        let title_end = title_encoding
+            .get_offsets()
+            .get(31)
+            .map(|(_, end)| *end)
+            .unwrap_or(title.len());
+        let heading = &title[..title_end];
+        // At most 32 heading + 220 passage + 2 special tokens = 254 tokens.
+        let mut passages = Vec::new();
+        for paragraph in body.split("\n\n").map(str::trim).filter(|s| !s.is_empty()) {
+            let encoding = tokenizer
+                .encode(paragraph, false)
+                .map_err(|e| AppError::Internal(e.to_string()))?;
+            let offsets = encoding.get_offsets();
+            let mut start = 0;
+            while start < offsets.len() {
+                let end = (start + 220).min(offsets.len());
+                let passage = &paragraph[offsets[start].0..offsets[end - 1].1];
+                passages.push(if heading.is_empty() {
+                    passage.to_owned()
+                } else {
+                    format!("{heading}\n{passage}")
+                });
+                if end == offsets.len() {
+                    break;
+                }
+                start = end - 32;
+            }
+        }
+        if passages.is_empty() {
+            // Also marks empty/quoted-only messages as processed; title remains useful.
+            passages.push(heading.to_owned());
+        }
+        Ok(passages)
+    })
+    .await
+    .map_err(|e| AppError::Internal(format!("Passage preparation failed: {e}")))?
+}
+
+#[cfg(test)]
+mod discussion_tests {
+    use super::*;
+
+    #[tokio::test]
+    #[ignore = "loads the embedding model/tokenizer"]
+    async fn passages_retain_tail_and_obey_wordpiece_budget() -> AppResult<()> {
+        let body = format!(
+            "{}\n\nFinal paragraph about quantifier scope.",
+            "na'e cmavo .i zo broda — 日本語 中文 العربية ".repeat(200)
+        );
+        let passages = discussion_passages(&"A very long title ".repeat(40), &body).await?;
+        assert!(passages.len() > 2);
+        assert!(passages
+            .last()
+            .is_some_and(|s| s.contains("Final paragraph")));
+        let mut tokenizer = get_model()?.lock().tokenizer.clone();
+        tokenizer
+            .with_truncation(None)
+            .map_err(|e| AppError::Internal(e.to_string()))?;
+        tokenizer.with_padding(None);
+        for passage in passages {
+            let encoded = tokenizer
+                .encode(passage, true)
+                .map_err(|e| AppError::Internal(e.to_string()))?;
+            assert!(
+                encoded.len() <= 256,
+                "Passage exceeded model token budget: {}",
+                encoded.len()
+            );
+        }
+        Ok(())
+    }
+}

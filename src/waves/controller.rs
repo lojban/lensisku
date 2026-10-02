@@ -15,16 +15,16 @@ use super::service;
         ("search" = Option<String>, Query, description = "Search term"),
         ("page" = Option<i64>, Query, description = "Page number"),
         ("per_page" = Option<i64>, Query, description = "Items per page"),
-        ("sort_by" = Option<String>, Query, description = "Sort field"),
+        ("sort_by" = Option<String>, Query, description = "relevance (default for searches), time, reactions, replies"),
         ("sort_order" = Option<String>, Query, description = "Sort order: asc, desc"),
         ("source" = Option<String>, Query, description = "Filter: all, jbotcan, freeforums, comments, mail, wiki")
     ),
     responses(
-        (status = 200, description = "Combined search results (comments + mail)", body = crate::waves::dto::WavesSearchResponse),
+        (status = 200, description = "Hybrid search results (comments, mail, wiki)", body = crate::waves::dto::WavesSearchResponse),
         (status = 500, description = "Internal server error")
     ),
-    summary = "Search waves (comments and mail)",
-    description = "Unified search across discussion comments, mail archive, and wiki (comment search is implemented in comments::service::search_comments; this route merges sources). Use query `source` to restrict to jbotcan, freeforums, site comments, mail, or wiki."
+    summary = "Search discussions and wiki by relevance",
+    description = "Hybrid lexical and semantic search across discussion comments, imported forums, mail archive, mirrored wiki, and native wiki. Matches both whole documents and paragraphs, fuses ranks and returns each document once. Falls back to lexical search when embeddings are unavailable. Use query `source` to restrict to jbotcan, freeforums, site comments, mail, or wiki."
 )]
 #[get("/search")]
 pub async fn search_waves(
