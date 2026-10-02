@@ -29,5 +29,10 @@ export CXXFLAGS="-std=c++17"
 cargo build --locked --bin lensisku --profile "$CARGO_BUILD_PROFILE"
 
 # Preserve the historical output path used by the hosting deployment scripts.
+# Stage beside the destination, then rename atomically so a running server can
+# keep its old executable open. Copying over that executable fails with ETXTBSY.
 mkdir -p target/release
-cp "$CARGO_TARGET_DIR/$CARGO_BUILD_PROFILE/lensisku" target/release/lensisku
+deployment_tmp="$(mktemp target/release/.lensisku.XXXXXX)"
+trap 'rm -f -- "$deployment_tmp"' EXIT
+cp --preserve=mode "$CARGO_TARGET_DIR/$CARGO_BUILD_PROFILE/lensisku" "$deployment_tmp"
+mv -f -- "$deployment_tmp" target/release/lensisku

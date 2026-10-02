@@ -5,7 +5,9 @@ Rust builds default to nightly-2026-09-29 and the release-fast Cargo profile.
 Override with RUST_TOOLCHAIN=1.98.1 CARGO_BUILD_PROFILE=release ./build-rust.sh
 for stable Rust and maximum runtime optimization.
 Compiled dependencies/incremental artifacts persist in ../target/container;
-the deployment executable is copied to ../target/release/lensisku.
+the deployment executable is atomically replaced at ../target/release/lensisku.
+The running server keeps its old executable; restart it after a successful build
+to load the new version. Building does not restart the service.
 Remove ../target/container explicitly for a clean Rust build.
 
 The hosting builder uses Debian Trixie to match the lensisku-containers runtime

@@ -129,8 +129,10 @@ installs native development libraries; TeX and fonts are installed in the runtim
 
 The hosting helper `building/build-rust.sh` uses the same defaults and accepts
 the `RUST_TOOLCHAIN` and `CARGO_BUILD_PROFILE` environment variables. It keeps
-compiled artifacts under `target/container/` and copies the finished executable
-to `target/release/lensisku` for existing deployment scripts. Clean
+compiled artifacts under `target/container/` and atomically replaces the finished
+executable at `target/release/lensisku` for existing deployment scripts. This
+works while the server is running; restart the service after a successful build
+to load the new executable. The build helper does not restart it. Clean
 `target/container/` explicitly when a fresh build is needed.
 
 The Fedora/Podman deployment managed by `lensisku-containers` and LBCS uses this
