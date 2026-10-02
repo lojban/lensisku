@@ -1,4 +1,9 @@
-FROM rust:latest
+# Match archive/lensisku-containers' Trixie runtime, including ICU 76.
+FROM rust:1.98.1-trixie
+
+ARG RUST_TOOLCHAIN=nightly-2026-09-29
+RUN rustup toolchain install "${RUST_TOOLCHAIN}" --profile minimal && \
+    rustup default "${RUST_TOOLCHAIN}"
 
 ARG USERNAME
 ARG UID
@@ -8,7 +13,10 @@ RUN mkdir -p /home/$USERNAME/.cargo
 
 RUN chown -R $UID:$GID /home/$USERNAME
 
-RUN apt-get update && apt-get install -y libgraphite2-dev libharfbuzz-dev
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    pkg-config libssl-dev libfontconfig1-dev libfreetype6-dev \
+    libicu-dev libpng-dev zlib1g-dev libgraphite2-dev libharfbuzz-dev \
+    && rm -rf /var/lib/apt/lists/*
     
 ENV HOME=/home/$USERNAME
 ENV CARGO_HOME=/home/$USERNAME/.cargo

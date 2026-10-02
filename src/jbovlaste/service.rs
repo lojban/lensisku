@@ -39,7 +39,11 @@ fn requires_place_span(type_id: i16) -> bool {
 fn validate_required_place_span(
     type_id: i16,
     definition: &str,
+    has_image: bool,
 ) -> Result<(), Box<dyn std::error::Error>> {
+    if has_image && definition.trim().is_empty() {
+        return Ok(());
+    }
     if requires_place_span(type_id) && !has_dollar_math_span(definition)? {
         return Err(PLACE_SPAN_REQUIRED_ERROR.into());
     }
@@ -3414,7 +3418,7 @@ async fn add_definition_in_transaction(
         (type_id, None)
     };
 
-    validate_required_place_span(type_id, &sanitized_definition)?;
+    validate_required_place_span(type_id, &sanitized_definition, request.image.is_some())?;
 
     let related_expansion = maps.as_ref()
         .and_then(|m| trivial_expansion_key(&word, &m.options(), m.se_words()));
@@ -4102,7 +4106,9 @@ pub async fn update_definition(
     let current_def = transaction
         .query_one(
             "SELECT d.userid, d.owner_only, d.time, u.username, v.source_langid, v.typeid,
-                    d.valsiid, d.langid, d.definitionnum
+                    d.valsiid, d.langid, d.definitionnum,
+                    EXISTS (SELECT 1 FROM definition_images di
+                            WHERE di.definition_id = d.definitionid) AS has_image
               FROM definitions d
               JOIN users u ON d.userid = u.userid
               JOIN valsi v ON d.valsiid = v.valsiid
@@ -4188,7 +4194,9 @@ pub async fn update_definition(
     }
 
     if request.is_wiki != Some(true) {
-        validate_required_place_span(valsi_typeid, &sanitized_definition)?;
+        let has_image = request.image.is_some()
+            || (current_def.get::<_, bool>("has_image") && !request.remove_image.unwrap_or(false));
+        validate_required_place_span(valsi_typeid, &sanitized_definition, has_image)?;
     }
 
     // Determine owner_only value
@@ -7262,12 +7270,24 @@ mod definition_reattach_tests {
     fn old_place_structure_rule_applies_to_predicate_types() {
         for type_id in [1, 4, 5, 7, 10, 17] {
             assert!(requires_place_span(type_id));
-            assert!(validate_required_place_span(type_id, "x1 is something").is_err());
-            assert!(validate_required_place_span(type_id, "$x_1$ is something").is_ok());
+            assert!(validate_required_place_span(type_id, "x1 is something", false).is_err());
+            assert!(validate_required_place_span(type_id, "$x_1$ is something", false).is_ok());
         }
         for type_id in [2, 3, 6, 8, 9, 15, 16] {
             assert!(!requires_place_span(type_id));
-            assert!(validate_required_place_span(type_id, "plain definition").is_ok());
+            assert!(validate_required_place_span(type_id, "plain definition", false).is_ok());
+        }
+    }
+
+    #[test]
+    fn image_only_definitions_do_not_require_place_spans() {
+        for type_id in [1, 4, 5, 7, 10, 17] {
+            for definition in ["", " \n\t"] {
+                assert!(validate_required_place_span(type_id, definition, true).is_ok());
+                assert!(validate_required_place_span(type_id, definition, false).is_err());
+            }
+            assert!(validate_required_place_span(type_id, "plain definition", true).is_err());
+            assert!(validate_required_place_span(type_id, "$x_1$ is something", true).is_ok());
         }
     }
 

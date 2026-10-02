@@ -221,7 +221,7 @@
         <Textarea
           id="definition"
           v-model="definition"
-          :required="!imageData"
+          :required="!hasDefinitionImage"
           rows="8"
           :class="{
             'textarea-field': true,
@@ -621,11 +621,15 @@ const languages = ref([])
 const validationTimeout = ref(null)
 
 // Computed
+const hasDefinitionImage = computed(
+  () => Boolean(imageData.value) || (hasImage.value && !removeImage.value)
+)
+
 const isValid = computed(
   () =>
     word.value &&
     langId.value &&
-    (definition.value || imageData.value) &&
+    (definition.value.trim() || hasDefinitionImage.value) &&
     wordType.value &&
     !definitionError.value
 )
@@ -636,7 +640,7 @@ const missingFields = computed((): Record<string, boolean> => {
   // Only show missing fields if wordType is set (analysis was done)
   if (wordType.value) {
     if (!langId.value) missing.langId = true
-    if (!definition.value && !imageData.value) missing.definition = true
+    if (!definition.value.trim() && !hasDefinitionImage.value) missing.definition = true
   }
   return missing
 })

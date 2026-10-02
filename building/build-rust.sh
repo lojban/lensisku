@@ -25,6 +25,6 @@ SRC_DIR="$(readlink -f "$(dirname "$0")/..")"
 
 cd "$SCRIPT_DIR"
 
-podman build -t "build-rust" --build-arg USERNAME="$(id -un)" --build-arg UID="$(id -u)" --build-arg GID="$(id -g)" -f Dockerfile.rust .
+podman build -t "build-rust" --build-arg USERNAME="$(id -un)" --build-arg UID="$(id -u)" --build-arg GID="$(id -g)" --build-arg RUST_TOOLCHAIN="${RUST_TOOLCHAIN:-nightly-2026-09-29}" -f Dockerfile.rust .
 
-podman run --userns=keep-id --rm -v $SRC_DIR:/src -v $LOCAL_DIR:/home/$(id -un)/.cargo -w /src -it build-rust building/build-rust-inside.sh
+podman run --userns=keep-id --rm -v "$SRC_DIR:/src" -v "$LOCAL_DIR:/home/$(id -un)/.cargo" -e CARGO_BUILD_PROFILE="${CARGO_BUILD_PROFILE:-release-fast}" -w /src -it build-rust building/build-rust-inside.sh

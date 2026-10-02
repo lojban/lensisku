@@ -99,6 +99,49 @@ docker run -d \
 - The maildir volume is properly mounted
 - All required environment variables are set
 
+#### Rust build speed in containers
+
+Both container build paths pin `nightly-2026-09-29` to pick up the recent rustc
+and LLVM 23 improvements described in [Nicholas Nethercote's September 2026
+compiler report](https://nnethercote.github.io/2026/09/30/how-to-speed-up-the-rust-compiler-in-september-2026.html).
+These are compiler changes, automatically used by that toolchain; Clippy and
+rustdoc improvements do not affect the application image because it runs neither.
+Nightly also enables the new borrow checker and trait solver, which can still
+regress some crates. The article's benchmark improvements are not a measured
+speedup for Lensisku.
+
+Container builds default to the existing `release-fast` profile: optimization
+level 3, 16 codegen units, incremental compilation, and no cross-crate fat LTO.
+This favors build speed and can trade some runtime performance for faster builds.
+The host's Rust toolchain and ordinary `cargo build --release` are unaffected.
+To use stable Rust and the fully optimized release profile instead:
+
+```bash
+docker build --build-arg RUST_TOOLCHAIN=1.98.1 \
+  --build-arg CARGO_BUILD_PROFILE=release -t lenisku:latest .
+```
+
+BuildKit keeps Cargo downloads and compiled artifacts across image builds.
+Target caches are separated by architecture, compiler, and profile, and locked
+while in use. Keep the same builder for warm builds; pruning its caches makes
+the next build cold. Only the `lensisku` binary is built. The backend builder
+installs native development libraries; TeX and fonts are installed in the runtime.
+
+The hosting helper `building/build-rust.sh` uses the same defaults and accepts
+the `RUST_TOOLCHAIN` and `CARGO_BUILD_PROFILE` environment variables. It keeps
+compiled artifacts under `target/container/` and copies the finished executable
+to `target/release/lensisku` for existing deployment scripts. Clean
+`target/container/` explicitly when a fresh build is needed.
+
+The Fedora/Podman deployment managed by `lensisku-containers` and LBCS uses this
+hosting helper, not the root multi-stage Dockerfile. Its production and dev
+containers mount their own `containers/web/src/` or `containers/web-dev/src/`
+checkout at `/src` and run `/src/target/release/lensisku`. Run the build helper
+in each deployed checkout after updating it; rebuilding the LBCS runtime image
+alone does not compile Rust. The hosting builder uses Debian Trixie to match
+these runtime images and their ICU 76 libraries. Its cache lives in the mounted
+checkout, so removing containers or rebuilding images does not delete it.
+
 ### Alternative if docker-compose is unavailable
 
 ```

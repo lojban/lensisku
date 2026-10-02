@@ -5,6 +5,7 @@ node_modules
 *.zip
 *.db
 *.txt
+!src/**/*.txt
 target
 .vite
 .env.example
