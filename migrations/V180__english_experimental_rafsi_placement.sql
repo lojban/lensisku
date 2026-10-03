@@ -1,3 +1,4 @@
+-- No assignment changes for mabla, zabna, gleki, kanpe or carna.
 -- Reviewed destinations for explicit experimental rafsi proposals.
 -- Automatic four-letter experimental gismu stems are not authorship proposals;
 -- they keep their existing official/experimental morphology distinction.
