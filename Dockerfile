@@ -22,11 +22,12 @@ ENV CXXFLAGS="-std=c++17"
 ARG CARGO_BUILD_PROFILE=release-fast
 ARG TARGETARCH
 
-# Copy only manifest and lockfile, then build with stub sources so this layer
+# Copy build inputs, then build with stub sources so this layer
 # caches compiled dependencies. When only app code changes, only the final
 # cargo build re-runs and recompiles the app (deps come from cache).
-COPY Cargo.toml Cargo.lock ./
+COPY Cargo.toml Cargo.lock build.rs ./
 COPY .cargo ./.cargo
+COPY migrations ./migrations
 RUN mkdir -p src test && \
     echo 'fn main() {}' > src/main.rs && \
     echo 'fn main() {}' > test/test.rs
@@ -41,7 +42,6 @@ RUN --mount=type=cache,target=/usr/local/cargo/registry \
 # Overwrite stubs with real source (only dirs needed for cargo build; excludes frontend, docs, scripts, etc.).
 COPY src ./src
 COPY test ./test
-COPY migrations ./migrations
 COPY locales ./locales
 # Ensure Cargo replaces the cached stub even when COPY preserves old mtimes.
 RUN --mount=type=cache,target=/usr/local/cargo/registry \

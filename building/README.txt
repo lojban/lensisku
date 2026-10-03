@@ -8,6 +8,8 @@ Compiled dependencies/incremental artifacts persist in ../target/container;
 the deployment executable is atomically replaced at ../target/release/lensisku.
 The running server keeps its old executable; restart it after a successful build
 to load the new version. Building does not restart the service.
+Migrations are embedded in the executable. The root build.rs tracks the migrations
+directory so adding, editing, removing, or renaming migrations rebuilds the app.
 Remove ../target/container explicitly for a clean Rust build.
 
 The hosting builder uses Debian Trixie to match the lensisku-containers runtime
