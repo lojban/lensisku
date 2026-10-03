@@ -1,8 +1,8 @@
 -- Leave mabla, zabna, gleki, kanpe and carna unchanged by this repair.
 -- Reviewed one-time repair: 174 archival copies and 117 formatting-only edits.
 -- Only reviewed records are embedded; no full dictionary baseline or db.rs input.
--- expected/desired are exact snapshots. Preflight rejects changed content or
--- ownership before writing anything; already repaired records are safe to rerun.
+-- expected/desired are exact snapshots. Preflight skips mismatched records with
+-- warnings; matching records are repaired and completed records are safe to rerun.
 -- V180 separately repairs experimental rafsi placement; V176 maintains official
 -- word-level assignments, including long gismu stems and jai/jax.
 CREATE TEMP TABLE officialdata_repair_plan(
@@ -380,23 +380,32 @@ $$;
 
 CREATE OR REPLACE FUNCTION pg_temp.validate_officialdata_repair()
 RETURNS VOID LANGUAGE plpgsql AS $$
-DECLARE invalid_id INTEGER;
+DECLARE invalid RECORD;
 BEGIN
- SELECT p.definitionid INTO invalid_id
- FROM officialdata_repair_plan p
- LEFT JOIN definitions d ON d.definitionid=p.definitionid
- LEFT JOIN users u ON u.userid=d.userid
- LEFT JOIN valsi v ON v.valsiid=d.valsiid
- WHERE d.definitionid IS NULL OR u.username IS DISTINCT FROM 'officialdata'
-    OR d.langid IS DISTINCT FROM 2 OR v.word IS DISTINCT FROM p.word
-    OR v.source_langid IS DISTINCT FROM 1
-    OR combined_rafsi(v.rafsi,NULL) IS DISTINCT FROM combined_rafsi(p.official_rafsi,NULL)
-    OR (pg_temp.repair_definition_state(p.definitionid) IS DISTINCT FROM p.expected
-        AND pg_temp.repair_definition_state(p.definitionid) IS DISTINCT FROM p.desired)
- ORDER BY p.definitionid LIMIT 1;
- IF FOUND THEN
-  RAISE EXCEPTION 'Officialdata repair snapshot no longer matches definition #% (content, identity or official rafsi changed); review the plan before applying', invalid_id;
- END IF;
+ FOR invalid IN
+  SELECT p.definitionid,p.word,
+    CASE WHEN d.definitionid IS NULL THEN 'definition missing'
+         WHEN u.username IS DISTINCT FROM 'officialdata' THEN 'different author'
+         WHEN d.langid IS DISTINCT FROM 2 THEN 'different definition language'
+         WHEN v.word IS DISTINCT FROM p.word OR v.source_langid IS DISTINCT FROM 1 THEN 'different word identity'
+         WHEN combined_rafsi(v.rafsi,NULL) IS DISTINCT FROM combined_rafsi(p.official_rafsi,NULL) THEN 'different official rafsi'
+         ELSE 'different content' END AS reason
+  FROM officialdata_repair_plan p
+  LEFT JOIN definitions d ON d.definitionid=p.definitionid
+  LEFT JOIN users u ON u.userid=d.userid
+  LEFT JOIN valsi v ON v.valsiid=d.valsiid
+  WHERE d.definitionid IS NULL OR u.username IS DISTINCT FROM 'officialdata'
+     OR d.langid IS DISTINCT FROM 2 OR v.word IS DISTINCT FROM p.word
+     OR v.source_langid IS DISTINCT FROM 1
+     OR combined_rafsi(v.rafsi,NULL) IS DISTINCT FROM combined_rafsi(p.official_rafsi,NULL)
+     OR (pg_temp.repair_definition_state(p.definitionid) IS DISTINCT FROM p.expected
+         AND pg_temp.repair_definition_state(p.definitionid) IS DISTINCT FROM p.desired)
+  ORDER BY p.definitionid
+ LOOP
+  RAISE WARNING 'Skipping officialdata repair definition #% (%) because of %; retained unchanged',
+                invalid.definitionid,invalid.word,invalid.reason;
+  DELETE FROM officialdata_repair_plan WHERE definitionid=invalid.definitionid;
+ END LOOP;
 END;
 $$;
 SELECT pg_temp.validate_officialdata_repair();

@@ -35,37 +35,6 @@ RETURNS VOID LANGUAGE SQL AS $$
         p_actor, p_message, v.word, d.owner_only, clock_timestamp()
  FROM definitions d JOIN valsi v ON v.valsiid=d.valsiid WHERE d.definitionid=p_id;
 $$;
-CREATE OR REPLACE FUNCTION pg_temp.archive_definition(p_source INTEGER, p_actor INTEGER, p_reason TEXT)
-RETURNS INTEGER LANGUAGE plpgsql AS $$
-DECLARE original definitions%ROWTYPE; copy_id INTEGER; original_author TEXT;
-BEGIN
- SELECT * INTO STRICT original FROM definitions WHERE definitionid=p_source;
- SELECT username INTO STRICT original_author FROM users WHERE userid=original.userid;
- SELECT definitionid INTO copy_id FROM definitions
- WHERE userid=p_actor AND langid=2 AND valsiid=original.valsiid
-   AND metadata->'nalcatni_stidi_archive'->>'source_definition_id'=p_source::text;
- IF FOUND THEN RETURN copy_id; END IF;
- INSERT INTO definitions
- (definitionid, langid, valsiid, definitionnum, definition, notes, etymology, selmaho,
-  jargon, userid, time, owner_only, metadata, rafsi)
- VALUES (nextval('definitions_definitionid_seq'),2,original.valsiid,
-         (SELECT COALESCE(max(definitionnum),0)+1 FROM definitions WHERE valsiid=original.valsiid AND langid=2),
-         original.definition,original.notes,original.etymology,original.selmaho,original.jargon,
-         p_actor,extract(epoch FROM now())::integer,false,
-         original.metadata || jsonb_build_object('nalcatni_stidi_archive',jsonb_build_object(
-           'source_definition_id',p_source,'source_author',original_author,
-           'source_language_id',original.langid,'source_time',original.time,'reason',p_reason)),
-         original.rafsi)
- RETURNING definitionid INTO copy_id;
- INSERT INTO keywordmapping(definitionid,natlangwordid,place)
- SELECT copy_id,natlangwordid,place FROM keywordmapping WHERE definitionid=p_source;
- INSERT INTO definition_images(definition_id,image_data,mime_type,description,display_order,created_by)
- SELECT copy_id,image_data,mime_type,description,display_order,created_by
- FROM definition_images WHERE definition_id=p_source;
- PERFORM pg_temp.record_repair_version(copy_id,p_actor,'Preserved source definition #'||p_source||': '||p_reason);
- RETURN copy_id;
-END;
-$$;
 CREATE TEMP TABLE rafsi_english_plan(word TEXT,token TEXT,target_definition_id INTEGER,
  archive_target BOOLEAN,allow_non_english BOOLEAN,expected_author TEXT,reason TEXT) ON COMMIT DROP;
 INSERT INTO rafsi_english_plan VALUES
@@ -165,23 +134,37 @@ DO $$
 DECLARE item RECORD; actor INTEGER; destination INTEGER; source RECORD; new_rafsi TEXT;
 BEGIN
  SELECT userid INTO STRICT actor FROM users WHERE username='nalcatni stidi';
- -- Validate the entire manifest before mutating assignments. IDs must identify
- -- the expected Lojban word; never turn a stale ID into an unrelated assignment.
- IF EXISTS(SELECT 1 FROM rafsi_english_plan p
-           WHERE p.target_definition_id IS NOT NULL
-             AND EXISTS(SELECT 1 FROM valsi v WHERE v.word=p.word AND v.source_langid=1)
-             AND NOT EXISTS(SELECT 1 FROM definitions d JOIN valsi v ON v.valsiid=d.valsiid JOIN users u ON u.userid=d.userid
-                            WHERE d.definitionid=p.target_definition_id AND v.word=p.word AND v.source_langid=1
-                              AND u.username=p.expected_author
-                              AND (p.archive_target OR u.username<>'officialdata')
-                              AND (p.archive_target OR p.allow_non_english OR d.langid=2))) THEN
-  RAISE EXCEPTION 'English rafsi placement manifest no longer matches definition identities';
- END IF;
+ -- A different database may not contain the audited IDs/owners. Skip the
+ -- entire word/token group if any destination is unavailable, so source rafsi
+ -- are never removed unless every reviewed destination exists. Archive targets
+ -- must already have been preserved by V179; do not archive unreviewed content.
+ FOR item IN
+  SELECT DISTINCT p.word,p.token FROM rafsi_english_plan p
+  WHERE p.target_definition_id IS NOT NULL
+    AND EXISTS(SELECT 1 FROM valsi v WHERE v.word=p.word AND v.source_langid=1)
+    AND (NOT EXISTS(
+      SELECT 1 FROM definitions d JOIN valsi v ON v.valsiid=d.valsiid JOIN users u ON u.userid=d.userid
+      WHERE d.definitionid=p.target_definition_id AND v.word=p.word AND v.source_langid=1
+        AND u.username=p.expected_author AND (p.archive_target OR u.username<>'officialdata')
+        AND (p.archive_target OR p.allow_non_english OR d.langid=2))
+      OR (p.archive_target AND NOT EXISTS(
+        SELECT 1 FROM definitions d JOIN valsi v ON v.valsiid=d.valsiid
+        WHERE d.userid=actor AND d.langid=2 AND v.word=p.word AND v.source_langid=1
+          AND d.metadata->'nalcatni_stidi_archive'->>'source_definition_id'=p.target_definition_id::text)))
+  ORDER BY p.word,p.token
+ LOOP
+  RAISE WARNING 'Skipping experimental rafsi -%- for %: reviewed destination or archive missing/mismatched; current assignments retained', item.token,item.word;
+  DELETE FROM rafsi_english_plan WHERE word=item.word AND token=item.token;
+ END LOOP;
  FOR item IN SELECT * FROM rafsi_english_plan ORDER BY word,token,target_definition_id LOOP
   IF NOT EXISTS(SELECT 1 FROM valsi WHERE word=item.word AND source_langid=1) THEN CONTINUE; END IF;
   IF item.target_definition_id IS NOT NULL THEN
    IF item.archive_target THEN
-    destination:=pg_temp.archive_definition(item.target_definition_id,actor,item.reason);
+    SELECT d.definitionid INTO STRICT destination
+    FROM definitions d JOIN valsi v ON v.valsiid=d.valsiid
+    WHERE d.userid=actor AND d.langid=2 AND v.word=item.word AND v.source_langid=1
+      AND d.metadata->'nalcatni_stidi_archive'->>'source_definition_id'=item.target_definition_id::text
+    ORDER BY d.definitionid LIMIT 1;
    ELSE destination:=item.target_definition_id; END IF;
    SELECT combined_rafsi(d.rafsi,item.token) INTO new_rafsi FROM definitions d WHERE d.definitionid=destination;
    IF (SELECT rafsi FROM definitions WHERE definitionid=destination) IS DISTINCT FROM new_rafsi THEN
