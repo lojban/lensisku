@@ -10,6 +10,7 @@ CREATE TABLE valsitypes (typeid smallint PRIMARY KEY, descriptor text NOT NULL);
 INSERT INTO valsitypes VALUES (5, 'lujvo'), (15, 'phrase'), (16, 'wiki');
 CREATE TABLE threads (threadid integer, valsiid integer, definitionid integer);
 CREATE TABLE comments (commentid integer, threadid integer);
+INSERT INTO threads VALUES (1, 1, 1);
 CREATE TABLE users (userid integer PRIMARY KEY, username text);
 INSERT INTO users VALUES (1, 'test editor');
 CREATE TABLE languages (langid integer PRIMARY KEY, realname text);

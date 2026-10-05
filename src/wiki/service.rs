@@ -384,7 +384,10 @@ pub async fn get_article_by_title(
     let row = client
         .query_opt(
             "SELECT w.page_id, w.namespace, w.title, w.markdown, w.last_edited, w.is_redirect,
-                    d.definitionid AS definition_id, d.valsiid, u.username AS editor_username
+                    d.definitionid AS definition_id, d.valsiid, u.username AS editor_username,
+                    (SELECT COUNT(c.commentid) FROM threads t
+                     JOIN comments c ON c.threadid = t.threadid
+                     WHERE t.valsiid = d.valsiid AND t.definitionid = d.definitionid) AS comment_count
              FROM wiki_articles w
              LEFT JOIN definitions d
                ON d.metadata->>'mw_page_id' = w.page_id::text
@@ -421,6 +424,7 @@ pub async fn get_article_by_title(
             source_url,
             username: editor,
             author_url,
+            comment_count: r.get("comment_count"),
             definition_id: r.try_get("definition_id").ok().flatten(),
             valsiid: r.try_get("valsiid").ok().flatten(),
         }

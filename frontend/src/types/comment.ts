@@ -9,6 +9,7 @@ export type CommentItemApiComment = {
   parent_id?: number | null
   thread_id?: number
   definition?: string | null
+  is_wiki?: boolean
   definition_id?: number | null
   valsi_id?: number | null
   valsi_word?: string | null

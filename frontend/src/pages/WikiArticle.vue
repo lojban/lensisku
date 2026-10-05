@@ -17,13 +17,6 @@
           <span class="sr-only md:hidden">{{ t('wiki.edit') }}</span>
         </Button>
         <Button
-          v-if="article.is_native && article.can_edit && !article.is_redirect"
-          variant="empty"
-          @click="router.push(`/wiki/${encodedTitle}/edit?redirect=1`)"
-        >
-          {{ t('upsertWiki.replaceWithRedirect') }}
-        </Button>
-        <Button
           v-if="article.definition_id"
           variant="empty"
           class="inline-flex items-center"
@@ -46,6 +39,12 @@
           "
         >
           <MessageSquare class="h-4 w-4" />
+          <span
+            v-if="article.comment_count && article.comment_count > 0"
+            class="bg-gray-100 px-1.5 rounded-md border"
+          >
+            {{ article.comment_count }}
+          </span>
           <span class="hidden md:inline">{{ t('wiki.discussions') }}</span>
           <span class="sr-only md:hidden">{{ t('wiki.discussions') }}</span>
         </Button>
@@ -151,6 +150,7 @@ interface WikiArticleDetail {
   definition_id?: number | null
   valsiid?: number | null
   can_edit?: boolean
+  comment_count?: number
   username?: string | null
   author_url?: string | null
 }
@@ -251,6 +251,7 @@ async function loadNativeByTitle(title: string): Promise<boolean> {
       definition_id: def.definitionid,
       valsiid: def.valsiid,
       can_edit: def.can_edit,
+      comment_count: def.comment_count,
     }
 
     if (is_redirect && redirect_to && !followedOnce.value && route.query.redirect !== 'no') {

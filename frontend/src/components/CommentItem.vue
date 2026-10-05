@@ -7,17 +7,17 @@
       v-if="showContext && (processedComment.definition || processedComment.valsi_id)"
       class="mb-2 text-sm text-gray-600 whitespace-nowrap overflow-hidden flex items-center"
     >
-      <SourceTypeBadge :type="processedComment.definition_id ? 'definition' : 'valsi'" />
+      <SourceTypeBadge :type="contextType" />
       <RouterLink
         v-if="processedComment.definition"
-        :to="`/valsi/${processedComment.valsi_word}?highlight_definition_id=${processedComment.definition_id}`"
+        :to="contextLink"
         class="hover:underline text-blue-700 font-medium ml-1.5 truncate inline-block max-w-[calc(100%-120px)]"
       >
         <LazyMathJax :content="processedComment.definition" class="inline" />
       </RouterLink>
       <RouterLink
         v-else-if="processedComment.valsi_id"
-        :to="`/valsi/${processedComment.valsi_word}`"
+        :to="contextLink"
         class="hover:underline text-blue-700 font-medium ml-1.5 truncate inline-block max-w-[calc(100%-120px)]"
       >
         {{ processedComment.valsi_word || t('components.commentItem.untitledEntry') }}
@@ -374,6 +374,21 @@ const processedComment = computed((): ProcessedComment => ({
   plain_content: props.comment.content.filter((part) => part.type === 'text'),
   subject: props.comment.content.find((part) => part.type === 'header')?.data,
 }))
+const contextType = computed(() =>
+  processedComment.value.is_wiki
+    ? 'wiki'
+    : processedComment.value.definition_id
+      ? 'definition'
+      : 'valsi'
+)
+const contextLink = computed(() => {
+  const comment = processedComment.value
+  const word = encodeURIComponent((comment.valsi_word || '').replace(/ /g, '_'))
+  if (comment.is_wiki) return `/wiki/${word}`
+  return comment.definition
+    ? `/valsi/${word}?highlight_definition_id=${comment.definition_id}`
+    : `/valsi/${word}`
+})
 const isBookmarkAnimating = ref(false)
 const showReactionPicker = ref(false)
 const showDeleteConfirm = ref(false)

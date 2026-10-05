@@ -241,6 +241,9 @@ pub struct KeywordMapping {
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct RecentChange {
+    /// Distinguishes wiki discussion context from dictionary definitions.
+    #[serde(default)]
+    pub is_wiki: bool,
     pub change_type: String, // valsi, definition, comment
     pub word: String,
     pub content: serde_json::Value,

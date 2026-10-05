@@ -221,6 +221,7 @@ const mappedComment = computed(() => {
     comment_id: c.comment_id,
     thread_id: c.thread_id,
     definition_id: c.definition_id ?? null,
+    is_wiki: c.is_wiki === true,
     valsi_id: c.valsi_id ?? null,
     username: c.username ?? null,
     time: c.time,

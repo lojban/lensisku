@@ -2356,7 +2356,7 @@ pub async fn get_wiki_by_word(
                 l.realname as langrealname, u.username,
                 vt.descriptor as type_name,
                 i.has_image,
-                (SELECT COUNT(*) FROM threads t
+                (SELECT COUNT(c.commentid) FROM threads t
                       LEFT JOIN comments c ON t.threadid = c.threadid
                       WHERE t.valsiid = v.valsiid AND t.definitionid = d.definitionid) as comment_count,
                 CASE
@@ -5450,11 +5450,11 @@ pub async fn get_recent_changes(
 
     let cache_key = match user_id {
         None => format!(
-            "recent_changes:limit:{:?}:after:{:?}:types:{:?}:home:{}",
+            "recent_changes:v2:limit:{:?}:after:{:?}:types:{:?}:home:{}",
             limit, after, types, home
         ),
         Some(uid) => format!(
-            "recent_changes:limit:{:?}:after:{:?}:types:{:?}:home:{}:user:{}",
+            "recent_changes:v2:limit:{:?}:after:{:?}:types:{:?}:home:{}:user:{}",
             limit, after, types, home, uid
         ),
     };
@@ -5521,7 +5521,7 @@ pub async fn get_recent_changes(
                 l.lojbanname AS language_lojban_name,
                 NULL::integer as version_id,
                 NULL::integer as prev_version_id,
-                NULL::smallint AS valsi_typeid,
+                v.typeid AS valsi_typeid,
                 v.word AS valsi_word,
                 c.commentnum,
                 c.parentid,
@@ -5631,7 +5631,7 @@ pub async fn get_recent_changes(
                 v.valsiid::bigint AS cursor_id
             FROM valsi v
             JOIN users u ON v.userid = u.userid
-            WHERE u.username != 'officialdata' AND v.source_langid = 1 {}
+            WHERE u.username != 'officialdata' AND v.source_langid = 1 AND v.typeid <> 16 {}
             {})",
                         where_extra, order_limit
                     ));
@@ -5884,6 +5884,7 @@ pub async fn get_recent_changes(
 
                     let username: String = row.get("username");
                     let mut change = RecentChange {
+                        is_wiki,
                         change_type: change_type.clone(),
                         word: row.get("word"),
                         content: row.get("content"),
@@ -7663,6 +7664,19 @@ mod wiki_redirect_tests {
             .unwrap();
         assert_eq!(wiki.type_name, "wiki");
         assert_eq!(wiki.definition, "wiki body");
+        assert_eq!(wiki.comment_count, Some(0));
+        {
+            let client = pool.get().await.unwrap();
+            client
+                .batch_execute("INSERT INTO comments VALUES (1, 1), (2, 1)")
+                .await
+                .unwrap();
+        }
+        let wiki = get_wiki_by_word(&pool, "vlasisku", None)
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(wiki.comment_count, Some(2));
 
         let mut client = pool.get().await.unwrap();
         let tx = client.transaction().await.unwrap();

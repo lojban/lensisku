@@ -43,6 +43,7 @@ pub struct WikiArticleDetail {
     /// mw.lojban.org user page when `username` is an imported wiki account.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub author_url: Option<String>,
+    pub comment_count: i64,
     /// Native wiki / imported history definition, when one exists.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub definition_id: Option<i32>,
