@@ -12,7 +12,7 @@ const PREVIEW_LEN: usize = 400;
 /// Exclude soft-redirect stub pages from waves search/list.
 const NATIVE_WIKI_NOT_REDIRECT: &str = "COALESCE(d.metadata->>'is_redirect', 'false') <> 'true'";
 
-fn truncate_preview(text: &str) -> Option<String> {
+pub(crate) fn truncate_preview(text: &str) -> Option<String> {
     let trimmed = text.trim();
     if trimmed.is_empty() {
         return None;
@@ -70,7 +70,7 @@ pub async fn search_wiki(
 
         let order_clause = format!("last_edited {order_dir} NULLS LAST");
         let sql = format!(
-            "SELECT page_id, namespace, title, plain_text, last_edited
+            "SELECT page_id, namespace, title, markdown, last_edited
              FROM wiki_articles
              WHERE NOT is_redirect
              ORDER BY {order_clause}
@@ -96,7 +96,7 @@ pub async fn search_wiki(
 
         let (sql, params) = if sort_by == "time" {
             let sql = format!(
-                "SELECT page_id, namespace, title, plain_text, last_edited
+                "SELECT page_id, namespace, title, markdown, last_edited
                  FROM wiki_articles
                  WHERE NOT is_redirect
                    AND (title ILIKE $1 ESCAPE '\\' OR plain_text ILIKE $1 ESCAPE '\\')
@@ -108,7 +108,7 @@ pub async fn search_wiki(
             (sql, params)
         } else {
             let sql = format!(
-                "SELECT page_id, namespace, title, plain_text, last_edited
+                "SELECT page_id, namespace, title, markdown, last_edited
                  FROM wiki_articles
                  WHERE NOT is_redirect
                    AND (title ILIKE $1 ESCAPE '\\' OR plain_text ILIKE $1 ESCAPE '\\')
@@ -282,7 +282,7 @@ pub async fn list_wiki_threads(
     let mirror_total: i64 = mirror_total_row.get("c");
 
     let mirror_sql = format!(
-        "SELECT page_id, namespace, title, plain_text, last_edited
+        "SELECT page_id, namespace, title, markdown, last_edited
          FROM wiki_articles
          WHERE NOT is_redirect
          ORDER BY last_edited {order_dir} NULLS LAST
@@ -327,7 +327,7 @@ pub async fn list_wiki_threads(
         let page_id: i32 = r.get("page_id");
         let namespace: i32 = r.get("namespace");
         let title: String = r.get("title");
-        let plain: String = r.get("plain_text");
+        let markdown: String = r.get("markdown");
         let last_edited: Option<chrono::DateTime<chrono::Utc>> =
             r.try_get("last_edited").ok().flatten();
         let article_url = format!("/wiki/{}", urlencoding::encode(&title));
@@ -336,7 +336,7 @@ pub async fn list_wiki_threads(
             namespace,
             title,
             last_edited,
-            content_preview: truncate_preview(&plain),
+            content_preview: truncate_preview(&rewrite_wiki_links_for_lensisku(&markdown)),
             article_url,
         }
     }));
@@ -433,7 +433,7 @@ pub async fn get_article_by_title(
 
 fn row_to_hit(r: tokio_postgres::Row) -> WikiSearchHit {
     let title: String = r.get("title");
-    let plain: String = r.get("plain_text");
+    let markdown: String = r.get("markdown");
     let last_edited: Option<chrono::DateTime<chrono::Utc>> =
         r.try_get("last_edited").ok().flatten();
     let article_url = format!("/wiki/{}", urlencoding::encode(&title));
@@ -442,7 +442,7 @@ fn row_to_hit(r: tokio_postgres::Row) -> WikiSearchHit {
         namespace: r.get("namespace"),
         title,
         last_edited,
-        content_preview: truncate_preview(&plain),
+        content_preview: truncate_preview(&rewrite_wiki_links_for_lensisku(&markdown)),
         article_url,
     }
 }

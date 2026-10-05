@@ -46,8 +46,10 @@ input while remaining available to literal/full-text searches.
 A whole-document vector is the normalized mean of all passage vectors. This
 includes the entire message instead of embedding only its truncated beginning.
 Separate passage vectors find narrow topics near the end of a long message.
-The API returns matching text in `relevance.excerpt`, rendered as plain text in
-the UI. `relevance.score` is a fusion score, not a probability.
+The API returns matching text in `relevance.excerpt`. Comment and mail excerpts
+use their full-page renderers. Wiki previews hydrate the page Markdown (including
+local wiki links) and use the same component as the full article, with bounded
+preview length and height. `relevance.score` is a fusion score, not a probability.
 
 Text edits clear both vector levels atomically. Inference runs outside database
 transactions; generation checks reject vectors computed before a concurrent

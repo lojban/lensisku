@@ -149,7 +149,7 @@
 
 <script setup lang="ts">
 import { Button, DownloadIcon } from '@packages/ui'
-import { marked } from 'marked'
+import { renderMailContent } from '@/utils/renderMailContent'
 import { ref, watch, computed } from 'vue'
 
 import { getMessageDetails, voteSpamMessage } from '@/api'
@@ -198,27 +198,7 @@ const replaceCidReferences = (content, mimeType) => {
   return content
 }
 
-const highlightText = (text) => {
-  if (!text) return ''
-  const trimmedText = text.replace(/[\n\r ]+$/, '')
-
-  // First parse with marked
-  const parsedContent = marked.parse(trimmedText, {
-    renderer: new marked.Renderer(),
-    gfm: true,
-    breaks: true,
-    async: false,
-  }) as string
-
-  // Then apply search term highlighting if needed
-  if (props.searchTerm) {
-    const escapedTerm = props.searchTerm.replace(/\W/g, '\\$&')
-    const regex = new RegExp(`(${escapedTerm})`, 'gi')
-    return parsedContent.replace(regex, '<mark>$1</mark>')
-  }
-
-  return parsedContent
-}
+const highlightText = (text: string) => renderMailContent(text, props.searchTerm)
 
 const formatDate = (dateStr) => {
   if (!dateStr) return ''

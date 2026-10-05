@@ -17,6 +17,16 @@ fn query(term: &str) -> WavesSearchQuery {
 #[tokio::test]
 #[ignore = "requires local PostgreSQL/pgvector, .env configuration, and the embedding model"]
 async fn live_model_indexing_and_hybrid_hydration() -> Result<(), SearchError> {
+    run_fixture(true).await
+}
+
+#[tokio::test]
+#[ignore = "requires local PostgreSQL/pgvector and .env configuration"]
+async fn wiki_previews_retain_page_markdown() -> Result<(), SearchError> {
+    run_fixture(false).await
+}
+
+async fn run_fixture(with_model: bool) -> Result<(), SearchError> {
     dotenvy::dotenv().ok();
     let base_pool = crate::config::create_app_config()?.db_pools.app_pool;
     let admin = base_pool.get().await?;
@@ -37,7 +47,9 @@ async fn live_model_indexing_and_hybrid_hydration() -> Result<(), SearchError> {
              ADD definition_link_id integer, ADD target_user_id integer;
          ALTER TABLE messages ADD message_id text, ADD date text, ADD cleaned_subject text,
              ADD to_address text, ADD parts_json jsonb;
-         ALTER TABLE wiki_articles ADD namespace integer DEFAULT 0;
+         ALTER TABLE wiki_articles ADD namespace integer DEFAULT 0,
+             ADD markdown text DEFAULT '**scope** [article](/wiki/Article)';
+         UPDATE definitions SET definition = '**Quantifier scope** in native wiki.' WHERE definitionid = 1;
          CREATE TABLE comment_bookmarks (comment_id integer, user_id integer);
          CREATE TABLE comment_reactions (comment_id integer, user_id integer, reaction text);
          CREATE TABLE message_spam_votes (message_id integer);
@@ -60,13 +72,31 @@ async fn live_model_indexing_and_hybrid_hydration() -> Result<(), SearchError> {
         .clone();
     let manager = deadpool_postgres::Manager::new(config, tokio_postgres::NoTls);
     let pool = Pool::builder(manager).max_size(3).build()?;
-    let result = exercise(&pool).await;
+    let result = if with_model {
+        exercise(&pool).await
+    } else {
+        check_wiki_previews(&pool).await
+    };
     pool.close();
     // Cleanup happens even if any exercise assertion returns an error.
     admin
         .batch_execute(&format!("DROP SCHEMA {schema} CASCADE"))
         .await?;
     result
+}
+
+async fn check_wiki_previews(pool: &Pool) -> Result<(), SearchError> {
+    let results = search_with_embedding(pool, &query("scope"), None, None).await?;
+    for expected in [
+        "**scope** [article](/wiki/Article)",
+        "**Quantifier scope** in native wiki.",
+    ] {
+        if !results.items.iter().any(|item| matches!(item,
+            WaveSearchHit::Wiki { article, .. } if article.content_preview.as_deref() == Some(expected))) {
+            return Err(format!("Wiki preview did not retain page Markdown: {expected}").into());
+        }
+    }
+    Ok(())
 }
 
 async fn exercise(pool: &Pool) -> Result<(), SearchError> {

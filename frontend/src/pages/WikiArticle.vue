@@ -117,9 +117,7 @@
         </template>
       </div>
 
-      <div class="wiki-article-body" @click="onBodyClick">
-        <LazyMathJax :content="renderedMarkdown" :enable-markdown="true" />
-      </div>
+      <WikiContent :content="article.markdown" />
     </div>
   </div>
 </template>
@@ -131,7 +129,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { ArrowLeft, Loader2, Pencil, History, MessageSquare } from '@lucide/vue'
 import { getWikiArticle, getNativeWikiArticle, getWikiByDefinitionId } from '@/api'
-import LazyMathJax from '@/components/LazyMathJax.vue'
+import WikiContent from '@/components/WikiContent.vue'
 import SourceTypeBadge from '@/components/SourceTypeBadge.vue'
 import AuthorLink from '@/components/AuthorLink.vue'
 import { useSeoHead } from '@/composables/useSeoHead'
@@ -188,27 +186,6 @@ useSeoHead({
 const encodedTitle = computed(() =>
   encodeURIComponent((article.value?.title || props.title || '').replace(/ /g, '_'))
 )
-
-function wikiLinkify(markdown: string): string {
-  // Convert bare [[Title]] to markdown links when not already linked.
-  return markdown.replace(/\[\[([^\]]+)\]\](?!\()/g, (_match, page: string) => {
-    const title = String(page).trim()
-    const slug = title.replace(/ /g, '_')
-    return `[${title}](/wiki/${encodeURIComponent(slug)})`
-  })
-}
-
-const renderedMarkdown = computed(() => wikiLinkify(article.value?.markdown || ''))
-
-function onBodyClick(event: MouseEvent) {
-  const target = event.target as HTMLElement | null
-  const anchor = target?.closest('a') as HTMLAnchorElement | null
-  if (!anchor) return
-  const href = anchor.getAttribute('href')
-  if (!href?.startsWith('/wiki/')) return
-  event.preventDefault()
-  router.push(href)
-}
 
 function metadataRedirect(def: {
   metadata?: { is_redirect?: boolean; redirect_to?: string } | null

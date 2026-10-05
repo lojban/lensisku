@@ -135,17 +135,44 @@ async fn search_with_embedding(
         .filter(|h| h.kind == "wiki")
         .map(|h| h.source_id)
         .collect();
-    let namespaces: HashMap<i32, i32> = if wiki_ids.is_empty() {
+    let mut wiki_previews: HashMap<i32, (i32, String)> = if wiki_ids.is_empty() {
         HashMap::new()
     } else {
         client
             .query(
-                "SELECT page_id, namespace FROM wiki_articles WHERE page_id = ANY($1)",
+                "SELECT page_id, namespace, markdown FROM wiki_articles WHERE page_id = ANY($1)",
                 &[&wiki_ids],
             )
             .await?
             .iter()
-            .map(|r| (r.get("page_id"), r.get("namespace")))
+            .map(|r| {
+                let markdown: String = r.get("markdown");
+                (
+                    r.get("page_id"),
+                    (
+                        r.get("namespace"),
+                        crate::wiki::markdown::rewrite_wiki_links_for_lensisku(&markdown),
+                    ),
+                )
+            })
+            .collect()
+    };
+    let native_wiki_ids: Vec<i32> = hits
+        .iter()
+        .filter(|h| h.kind == "native_wiki")
+        .map(|h| h.source_id)
+        .collect();
+    let mut native_wiki_previews: HashMap<i32, String> = if native_wiki_ids.is_empty() {
+        HashMap::new()
+    } else {
+        client
+            .query(
+                "SELECT definitionid, definition FROM definitions WHERE definitionid = ANY($1)",
+                &[&native_wiki_ids],
+            )
+            .await?
+            .iter()
+            .map(|r| (r.get("definitionid"), r.get("definition")))
             .collect()
     };
     let mut items = Vec::with_capacity(hits.len());
@@ -176,14 +203,25 @@ async fn search_with_embedding(
                 }
             }
             "wiki" | "native_wiki" => {
+                // Ranking excerpts can be plain text; previews need the page Markdown.
+                let (namespace, markdown) = if hit.kind == "wiki" {
+                    wiki_previews.remove(&hit.source_id).unwrap_or_default()
+                } else {
+                    (
+                        0,
+                        native_wiki_previews
+                            .remove(&hit.source_id)
+                            .unwrap_or_default(),
+                    )
+                };
                 items.push(WaveSearchHit::Wiki {
                     article: crate::wiki::dto::WikiSearchHit {
                         page_id: hit.source_id,
-                        namespace: *namespaces.get(&hit.source_id).unwrap_or(&0),
+                        namespace,
                         article_url: format!("/wiki/{}", urlencoding::encode(&hit.title)),
                         title: hit.title,
                         last_edited: hit.edited_at,
-                        content_preview: Some(hit.excerpt),
+                        content_preview: crate::wiki::service::truncate_preview(&markdown),
                     },
                     relevance,
                 });

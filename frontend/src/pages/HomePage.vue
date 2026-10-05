@@ -357,12 +357,12 @@
                         "
                       />
                     </div>
-                    <p
+                    <div
                       v-if="item.source === 'comment' && item.relevance?.excerpt"
-                      class="text-sm text-gray-700 mb-2 whitespace-pre-wrap"
+                      class="text-sm text-gray-700 mb-2 prose prose-sm max-w-none max-h-48 overflow-hidden"
                     >
-                      {{ item.relevance.excerpt }}
-                    </p>
+                      <LazyMathJax :content="item.relevance.excerpt" :enable-markdown="true" />
+                    </div>
                     <CommentItem
                       v-if="item.source === 'comment'"
                       :comment="item.comment"
@@ -387,12 +387,11 @@
                       <div v-if="item.article.last_edited" class="text-xs text-gray-500 mb-2">
                         {{ new Date(item.article.last_edited).toLocaleString() }}
                       </div>
-                      <div
+                      <WikiContent
                         v-if="item.article.content_preview"
-                        class="text-sm text-gray-700 border-t border-gray-100 pt-2 mt-2"
-                      >
-                        {{ item.article.content_preview }}
-                      </div>
+                        :content="item.article.content_preview"
+                        class="border-t border-gray-100 pt-2 mt-2 max-h-48 overflow-hidden"
+                      />
                     </div>
                     <div
                       v-else
@@ -415,9 +414,10 @@
 
                       <div
                         v-if="item.relevance?.excerpt"
-                        class="text-sm text-gray-700 border-t border-gray-100 pt-2 mt-2 whitespace-pre-wrap"
+                        class="text-sm text-gray-700 border-t border-gray-100 pt-2 mt-2 prose prose-sm max-w-none max-h-48 overflow-hidden"
                       >
-                        {{ item.relevance.excerpt }}
+                        <!-- eslint-disable-next-line vue/no-v-html -->
+                        <div v-html="renderMailContent(item.relevance.excerpt)" />
                       </div>
                       <div
                         v-else-if="
@@ -425,12 +425,13 @@
                         "
                         class="text-sm text-gray-700 border-t border-gray-100 pt-2 mt-2 prose prose-sm max-w-none [&_img]:max-h-48 [&_img]:object-contain"
                       >
-                        <LazyMathJax
+                        <!-- eslint-disable vue/no-v-html -->
+                        <div
                           v-for="(part, pidx) in textParts(item.message.parts_json)"
                           :key="pidx"
-                          :content="part.content || ''"
-                          :enable-markdown="part.mime_type === 'text/plain'"
+                          v-html="renderMailContent(part.content || '')"
                         />
+                        <!-- eslint-enable vue/no-v-html -->
                       </div>
                     </div>
                   </div>
@@ -499,6 +500,8 @@ import DefinitionCard from '@/components/DefinitionCard.vue'
 import DictionaryEntries from '@/components/DictionaryEntries.vue'
 import PhraseSplit from '@/components/PhraseSplit.vue'
 import LazyMathJax from '@/components/LazyMathJax.vue'
+import WikiContent from '@/components/WikiContent.vue'
+import { renderMailContent } from '@/utils/renderMailContent'
 import {
   Button,
   IconButton,
