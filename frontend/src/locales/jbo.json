@@ -239,7 +239,9 @@
     "edit": "galfi",
     "history": "citri",
     "redirectTo": "la'e dei sinxa la'e lu {title} li'u",
-    "discussions": "casnu"
+    "discussions": "casnu",
+    "redirectedFrom": "farna fi la .{title}.",
+    "editRedirect": "stika lo farna ckupau"
   },
   "assistantChat": {
     "title": "lojbo sidju",
@@ -1873,6 +1875,10 @@
     "fromCommentBanner": "ca'o zbasu lo wiki papri se pi'o lo casnu #{id}",
     "fromCommentLink": "viska lo casnu",
     "fromCommentCommit": "se zbasu se pi'o lo casnu #{id}",
-    "generatingTitle": "ca'o pensi lo tordu tcita be le cnino papri"
+    "generatingTitle": "ca'o pensi lo tordu tcita be le cnino papri",
+    "replaceWithRedirect": "basti lo se ciska lo farna",
+    "redirectHint": "lo nu rejgau cu basti lo se ciska lo farna be lo drata uitki ckupau",
+    "redirectTargetLabel": "lo se farna uitki ckupau",
+    "redirectTargetPlaceholder": "ko ciska lo uitki ckupau cmene"
   }
 }

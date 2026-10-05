@@ -239,7 +239,9 @@
     "edit": "編集",
     "history": "履歴",
     "redirectTo": "このページは「{title}」にリダイレクトします。",
-    "discussions": "議論"
+    "discussions": "議論",
+    "redirectedFrom": "{title} から転送されました。",
+    "editRedirect": "転送元のページを編集"
   },
   "assistantChat": {
     "title": "ロジバンアシスタント",
@@ -1846,6 +1848,10 @@
     "fromCommentBanner": "コメント #{id} からウィキページを作成しています。",
     "fromCommentLink": "コメントを表示",
     "fromCommentCommit": "コメント #{id} から作成",
-    "generatingTitle": "コメントから短いタイトルを提案しています…"
+    "generatingTitle": "コメントから短いタイトルを提案しています…",
+    "replaceWithRedirect": "内容を転送に置き換える",
+    "redirectHint": "保存すると、ページの内容が別のウィキページへのリンクに置き換わります。",
+    "redirectTargetLabel": "転送先のウィキページ",
+    "redirectTargetPlaceholder": "ウィキページのタイトルを入力"
   }
 }

@@ -4,15 +4,7 @@
     Mobile: off-canvas drawer with header toggle. Desktop: in-flow sidebar.
     Embedded / no definition: simple stacked layout.
   -->
-  <div
-    :class="
-      embedded
-        ? undefined
-        : useDefinitionSidebar
-          ? 'discussion-page'
-          : 'feed-page'
-    "
-  >
+  <div :class="embedded ? undefined : useDefinitionSidebar ? 'discussion-page' : 'feed-page'">
     <!-- Definition sidebar (standalone only) -->
     <template v-if="useDefinitionSidebar">
       <div
@@ -46,10 +38,7 @@
           />
         </div>
 
-        <div
-          v-if="showTopLevelComposer && isDesktop"
-          class="discussion-sidebar__composer"
-        >
+        <div v-if="showTopLevelComposer && isDesktop" class="discussion-sidebar__composer">
           <CommentForm
             :key="composerKey"
             :is-submitting="isSubmitting"
@@ -69,7 +58,7 @@
           <span class="text-gray-500 italic">{{ t('commentList.discussingEntry') }}</span>
           <RouterLink
             v-if="valsiDetails.valsiid"
-            :to="`/valsi/${valsiDetails.word.replace(/ /g, '_')}`"
+            :to="valsiPagePath"
             class="text-blue-700 hover:text-blue-800 hover:underline"
           >
             {{ valsiDetails.word }}
@@ -80,10 +69,7 @@
           <span class="text-gray-500 italic">{{ t('commentList.discussingDefinition') }}</span>
         </h2>
       </div>
-      <div
-        v-if="valsiDetails && definitionDetails"
-        class="discussion-definition-scroll max-h-60"
-      >
+      <div v-if="valsiDetails && definitionDetails" class="discussion-definition-scroll max-h-60">
         <DefinitionCard
           :definition="definitionDetails"
           :languages="languages"
@@ -128,12 +114,10 @@
 
         <h2 class="discussion-main__title">
           <template v-if="!definitionId">
-            <span class="discussion-main__title-label">{{
-              t('commentList.discussingEntry')
-            }}</span>
+            <span class="discussion-main__title-label">{{ t('commentList.discussingEntry') }}</span>
             <RouterLink
               v-if="valsiDetails?.valsiid"
-              :to="`/valsi/${valsiDetails.word.replace(/ /g, '_')}`"
+              :to="valsiPagePath"
               class="discussion-main__title-word discussion-main__title-word--link"
               :title="valsiDetails.word"
               @click="onTitleWordClick"
@@ -289,11 +273,7 @@
               </div>
             </template>
             <template v-else>
-              <div
-                v-for="comment in processedComments"
-                :key="comment.comment_id"
-                class="relative"
-              >
+              <div v-for="comment in processedComments" :key="comment.comment_id" class="relative">
                 <div
                   :style="{ marginLeft: `${getReplyMargin(comment.level)}rem` }"
                   @mouseup="handleTextSelection(comment.comment_id, $event)"
@@ -381,7 +361,6 @@
     </div>
   </div>
 </template>
-
 
 <script setup lang="ts">
 import { Button, Checkbox } from '@packages/ui'
@@ -575,9 +554,7 @@ const hasDiscussionContext = computed(
     )
 )
 
-const showTopLevelComposer = computed(
-  () => auth.state.isLoggedIn && hasDiscussionContext.value
-)
+const showTopLevelComposer = computed(() => auth.state.isLoggedIn && hasDiscussionContext.value)
 
 /** Scroll the comments body only (same pattern as RecentChanges). */
 function scrollCommentsBodyToTop() {
@@ -848,6 +825,12 @@ const goToRoot = () => {
 
 const languages = ref([])
 const valsiDetails = ref(null)
+const valsiPagePath = computed(() => {
+  const entry = valsiDetails.value
+  if (!entry) return ''
+  const namespace = entry.type_name === 'wiki' ? 'wiki' : 'valsi'
+  return `/${namespace}/${encodeURIComponent(entry.word.replace(/ /g, '_'))}`
+})
 const definitionDetails = ref(null)
 
 /** Route expects definition context (sidebar / embedded strip). */
@@ -855,20 +838,14 @@ const expectsDefinitionPanel = computed(() => !!(props.valsiId || props.definiti
 
 /** Show definition UI when route expects it, or once details have arrived. */
 const showDefinitionPanel = computed(
-  () =>
-    expectsDefinitionPanel.value ||
-    !!(valsiDetails.value || definitionDetails.value)
+  () => expectsDefinitionPanel.value || !!(valsiDetails.value || definitionDetails.value)
 )
 
 /** Standalone page with a definition sidebar (AssistantChat drawer pattern). */
-const useDefinitionSidebar = computed(
-  () => !props.embedded && showDefinitionPanel.value
-)
+const useDefinitionSidebar = computed(() => !props.embedded && showDefinitionPanel.value)
 
 /** Top-level composer sits in the sidebar on desktop when that panel is in-flow. */
-const composerInSidebar = computed(
-  () => useDefinitionSidebar.value && isDesktop.value
-)
+const composerInSidebar = computed(() => useDefinitionSidebar.value && isDesktop.value)
 
 /** Threaded in the body when there is no definition sidebar to host toolbar controls. */
 const showThreadedInBody = computed(() => !useDefinitionSidebar.value)

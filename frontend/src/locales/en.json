@@ -242,7 +242,9 @@
     "loadFailed": "Failed to load wiki article.",
     "edit": "Edit",
     "history": "History",
-    "discussions": "Discussions"
+    "discussions": "Discussions",
+    "redirectedFrom": "Redirected from {title}.",
+    "editRedirect": "Edit redirecting page"
   },
   "assistantChat": {
     "title": "Lojban Assistant",
@@ -1813,7 +1815,11 @@
     "fromCommentBanner": "Creating a wiki page from comment #{id}.",
     "fromCommentLink": "View comment",
     "fromCommentCommit": "Created from comment #{id}",
-    "generatingTitle": "Suggesting a short title from the comment…"
+    "generatingTitle": "Suggesting a short title from the comment…",
+    "replaceWithRedirect": "Replace content with a redirect",
+    "redirectHint": "Saving a redirect replaces the page content with a link to another wiki page.",
+    "redirectTargetLabel": "Target wiki page",
+    "redirectTargetPlaceholder": "Enter a wiki page title"
   },
   "activityBookmarks": {
     "noBookmarks": "No bookmarked comments found."

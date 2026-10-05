@@ -5,12 +5,9 @@
         <ArrowLeft class="h-5 w-5" />
       </Button>
       <SourceTypeBadge type="wiki" />
-      <div
-        v-if="article?.is_native || article?.definition_id"
-        class="wiki-article-actions ml-auto"
-      >
+      <div v-if="article?.is_native || article?.definition_id" class="wiki-article-actions ml-auto">
         <Button
-          v-if="article.is_native && article.can_edit && !article.is_redirect"
+          v-if="article.is_native && article.can_edit"
           variant="edit"
           class="inline-flex items-center"
           @click="router.push(`/wiki/${encodedTitle}/edit`)"
@@ -20,13 +17,18 @@
           <span class="sr-only md:hidden">{{ t('wiki.edit') }}</span>
         </Button>
         <Button
+          v-if="article.is_native && article.can_edit && !article.is_redirect"
+          variant="empty"
+          @click="router.push(`/wiki/${encodedTitle}/edit?redirect=1`)"
+        >
+          {{ t('upsertWiki.replaceWithRedirect') }}
+        </Button>
+        <Button
           v-if="article.definition_id"
           variant="empty"
           class="inline-flex items-center"
           @click="
-            router.push(
-              `/definition/${article.definition_id}/history?wiki=1&title=${encodedTitle}`
-            )
+            router.push(`/definition/${article.definition_id}/history?wiki=1&title=${encodedTitle}`)
           "
         >
           <History class="h-4 w-4" />
@@ -48,6 +50,19 @@
           <span class="sr-only md:hidden">{{ t('wiki.discussions') }}</span>
         </Button>
       </div>
+    </div>
+
+    <div
+      v-if="auth.state.isLoggedIn && redirectedFrom"
+      class="mb-3 rounded border border-blue-100 bg-blue-50 p-3 text-sm text-blue-800"
+    >
+      {{ t('wiki.redirectedFrom', { title: redirectedFrom }) }}
+      <RouterLink
+        :to="`/wiki/${encodeURIComponent(redirectedFrom.replace(/ /g, '_'))}/edit`"
+        class="ml-1 underline"
+      >
+        {{ t('wiki.editRedirect') }}
+      </RouterLink>
     </div>
 
     <div v-if="loading" class="wiki-article-card flex justify-center py-6">
@@ -91,7 +106,12 @@
         class="mb-2 rounded border border-yellow-100 bg-yellow-50 p-2 text-sm text-yellow-800"
       >
         <template v-if="article.redirect_to">
-          {{ t('wiki.redirectTo', { title: article.redirect_to }) }}
+          <RouterLink
+            :to="`/wiki/${encodeURIComponent(article.redirect_to.replace(/ /g, '_'))}`"
+            class="underline"
+          >
+            {{ t('wiki.redirectTo', { title: article.redirect_to }) }}
+          </RouterLink>
         </template>
         <template v-else>
           {{ t('wiki.redirectNotice') }}
@@ -108,7 +128,7 @@
 <script setup lang="ts">
 import { Button } from '@packages/ui'
 import { computed, onMounted, ref, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { ArrowLeft, Loader2, Pencil, History, MessageSquare } from '@lucide/vue'
 import { getWikiArticle, getNativeWikiArticle, getWikiByDefinitionId } from '@/api'
@@ -116,6 +136,7 @@ import LazyMathJax from '@/components/LazyMathJax.vue'
 import SourceTypeBadge from '@/components/SourceTypeBadge.vue'
 import AuthorLink from '@/components/AuthorLink.vue'
 import { useSeoHead } from '@/composables/useSeoHead'
+import { useAuth } from '@/composables/useAuth'
 
 interface WikiArticleDetail {
   page_id: number
@@ -139,6 +160,11 @@ const props = defineProps<{
   definitionId?: number | string
 }>()
 const router = useRouter()
+const route = useRoute()
+const auth = useAuth()
+const redirectedFrom = computed(() =>
+  typeof route.query.redirect_from === 'string' ? route.query.redirect_from : ''
+)
 const { t } = useI18n()
 
 const loading = ref(true)
@@ -202,11 +228,7 @@ function isMwImportedWiki(def: {
 }): boolean {
   const meta = def.metadata
   if (!meta || typeof meta !== 'object') return false
-  return (
-    meta.source === 'mw.lojban.org' ||
-    meta.imported === true ||
-    meta.mw_page_id != null
-  )
+  return meta.source === 'mw.lojban.org' || meta.imported === true || meta.mw_page_id != null
 }
 
 async function loadNativeByTitle(title: string): Promise<boolean> {
@@ -231,9 +253,12 @@ async function loadNativeByTitle(title: string): Promise<boolean> {
       can_edit: def.can_edit,
     }
 
-    if (is_redirect && redirect_to && !followedOnce.value) {
+    if (is_redirect && redirect_to && !followedOnce.value && route.query.redirect !== 'no') {
       followedOnce.value = true
-      await router.replace(`/wiki/${encodeURIComponent(redirect_to.replace(/ /g, '_'))}`)
+      await router.replace({
+        path: `/wiki/${encodeURIComponent(redirect_to.replace(/ /g, '_'))}`,
+        query: { redirect_from: def.valsiword },
+      })
       return true
     }
     return true
@@ -253,9 +278,17 @@ async function loadByDefinitionId(id: number) {
   try {
     const resp = await getWikiByDefinitionId(id)
     const page = resp.data
-    if (page.is_redirect && page.redirect_to && !followedOnce.value) {
+    if (
+      page.is_redirect &&
+      page.redirect_to &&
+      !followedOnce.value &&
+      route.query.redirect !== 'no'
+    ) {
       followedOnce.value = true
-      await router.replace(`/wiki/${encodeURIComponent(page.redirect_to.replace(/ /g, '_'))}`)
+      await router.replace({
+        path: `/wiki/${encodeURIComponent(page.redirect_to.replace(/ /g, '_'))}`,
+        query: { redirect_from: page.word },
+      })
       return
     }
     await router.replace(`/wiki/${encodeURIComponent(page.word.replace(/ /g, '_'))}`)
@@ -300,7 +333,7 @@ watch(
   () => props.title,
   (newTitle) => {
     if (newTitle) {
-      followedOnce.value = false
+      followedOnce.value = Boolean(route.query.redirect_from)
       load(newTitle)
     }
   }
@@ -310,7 +343,7 @@ watch(
   () => props.definitionId,
   (id) => {
     if (id != null && id !== '') {
-      followedOnce.value = false
+      followedOnce.value = Boolean(route.query.redirect_from)
       loadByDefinitionId(Number(id))
     }
   }

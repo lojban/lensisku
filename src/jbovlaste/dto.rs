@@ -189,6 +189,9 @@ pub struct AddDefinitionRequest {
     /// skips Lojban morphology validation, and stores only the markdown body.
     #[serde(default)]
     pub is_wiki: Option<bool>,
+    /// Wiki redirect target. An empty string clears the redirect; omission preserves it.
+    #[serde(default)]
+    pub redirect_to: Option<String>,
     /// Optional version commit message (wiki and definitions).
     #[serde(default)]
     pub commit_message: Option<String>,
@@ -226,6 +229,9 @@ pub struct UpdateDefinitionRequest {
     /// When true, marks the updated entry as a native wiki page.
     #[serde(default)]
     pub is_wiki: Option<bool>,
+    /// Wiki redirect target. An empty string clears the redirect; omission preserves it.
+    #[serde(default)]
+    pub redirect_to: Option<String>,
     /// Optional version commit message (wiki and definitions).
     #[serde(default)]
     pub commit_message: Option<String>,

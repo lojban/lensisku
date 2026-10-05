@@ -239,7 +239,9 @@
     "edit": "编辑",
     "history": "历史",
     "redirectTo": "此页面重定向至「{title}」。",
-    "discussions": "讨论"
+    "discussions": "讨论",
+    "redirectedFrom": "从 {title} 重定向。",
+    "editRedirect": "编辑重定向来源页面"
   },
   "assistantChat": {
     "title": "逻辑语助手",
@@ -1851,6 +1853,10 @@
     "fromCommentBanner": "正在从评论 #{id} 创建维基页面。",
     "fromCommentLink": "查看评论",
     "fromCommentCommit": "从评论 #{id} 创建",
-    "generatingTitle": "正在根据评论生成简短标题…"
+    "generatingTitle": "正在根据评论生成简短标题…",
+    "replaceWithRedirect": "将内容替换为重定向",
+    "redirectHint": "保存重定向会将页面内容替换为指向另一个维基页面的链接。",
+    "redirectTargetLabel": "目标维基页面",
+    "redirectTargetPlaceholder": "输入维基页面标题"
   }
 }

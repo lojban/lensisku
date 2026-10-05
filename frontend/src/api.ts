@@ -240,19 +240,24 @@ export const getValsiAndDefinitionDetails = async (
   valsiId: number | string,
   definitionId: number | string | null | undefined
 ) => {
-  const valsiRes = await getValsiDetails(valsiId)
-
-  if (!definitionId) {
+  const defRes = definitionId ? await getDefinition(definitionId) : null
+  if (defRes?.data.type_name === 'wiki') {
+    // Wiki discussions use definition details, without a dictionary lookup.
     return {
-      valsi: valsiRes.data,
-      definition: null,
+      valsi: {
+        valsi: {
+          valsiid: defRes.data.valsiid,
+          word: defRes.data.valsiword,
+          type_name: 'wiki',
+        },
+      },
+      definition: defRes.data,
     }
   }
-
-  const defRes = await getDefinition(definitionId)
+  const valsiRes = await getValsiDetails(valsiId)
   return {
     valsi: valsiRes.data,
-    definition: defRes.data,
+    definition: defRes?.data ?? null,
   }
 }
 

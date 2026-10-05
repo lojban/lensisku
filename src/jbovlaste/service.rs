@@ -148,7 +148,7 @@ async fn lookup_canonical_aliases_for_search(
     let query_words = vec![search_term.to_owned(), lojban_search_term.to_owned()];
     let headwords = transaction.query(
         "SELECT canonical_word, related_expansion_key
-         FROM valsi WHERE source_langid = 1 AND word = ANY($1)",
+         FROM valsi WHERE source_langid = 1 AND typeid <> 16 AND word = ANY($1)",
         &[&query_words],
     ).await?;
     let mut aliases = Vec::new();
@@ -177,7 +177,7 @@ async fn lookup_canonical_aliases_for_search(
     if !keys.is_empty() || !canonical_targets.is_empty() {
         let rows = transaction.query(
             "SELECT word, canonical_word FROM valsi
-             WHERE source_langid = 1 AND
+             WHERE source_langid = 1 AND typeid <> 16 AND
                (related_expansion_key = ANY($1)
                 OR word = ANY($2) OR canonical_word = ANY($2))",
             &[&keys, &canonical_targets],
@@ -611,6 +611,7 @@ pub async fn semantic_graph_valsi_embedding(
             WHERE d.langid != 1
               AND d.embedding IS NOT NULL
               AND d.definition != ''
+              AND v.typeid <> 16
               AND (v.word = $1 OR lower(v.word) = lower($1))
             ORDER BY
               CASE WHEN v.word = $1 THEN 0 ELSE 1 END,
@@ -2051,7 +2052,7 @@ pub async fn get_source_words(
     // First try to find exact word matches
     let exact_word_rows = transaction
         .query(
-            "SELECT word FROM valsi WHERE source_langid = 1 AND word = ANY($1::text[]) ORDER BY word COLLATE \"C\"",
+            "SELECT word FROM valsi WHERE source_langid = 1 AND typeid <> 16 AND word = ANY($1::text[]) ORDER BY word COLLATE \"C\"",
             &[&rafsi_parts],
         )
         .await?;
@@ -2105,7 +2106,7 @@ pub async fn get_source_words(
             .collect();
         if let Ok(long_rows) = transaction
             .query(
-                "SELECT word FROM valsi WHERE source_langid = 1 AND word = ANY($1::text[]) ORDER BY word COLLATE \"C\"",
+                "SELECT word FROM valsi WHERE source_langid = 1 AND typeid <> 16 AND word = ANY($1::text[]) ORDER BY word COLLATE \"C\"",
                 &[&candidates],
             )
             .await
@@ -2234,7 +2235,7 @@ pub async fn get_entry_details(
               WHERE t.valsiid = v.valsiid AND t.definitionid = 0) as comment_count
              FROM valsi v
              JOIN valsitypes vt ON v.typeid = vt.typeid
-             WHERE CASE
+             WHERE v.typeid <> 16 AND CASE
                 WHEN $1 ~ '^\\d+$' THEN v.valsiid = $1::int AND v.source_langid = 1
                 ELSE v.word = $2 AND v.source_langid = 1
             END",
@@ -2287,7 +2288,7 @@ pub async fn get_entry_details(
             } else { None };
             let related = transaction.query(
                 "SELECT valsiid, word FROM valsi
-                 WHERE source_langid = 1 AND word <> $1
+                 WHERE source_langid = 1 AND typeid <> 16 AND word <> $1
                    AND (($2::text IS NOT NULL AND
                          related_expansion_key = $2)
                         OR ($3::text IS NOT NULL AND
@@ -2492,6 +2493,47 @@ pub async fn get_wiki_by_word(
     }
 }
 
+/// An empty target restores a regular page; omitted targets preserve redirect metadata.
+fn wiki_redirect_content(
+    word: &str,
+    target: &str,
+) -> Result<(Option<String>, String), Box<dyn std::error::Error>> {
+    let target = target.replace('_', " ").trim().to_string();
+    if target.is_empty() {
+        return Ok((None, String::new()));
+    }
+    if target == word.replace('_', " ").trim() {
+        return Err("A wiki page cannot redirect to itself".into());
+    }
+    if target
+        .chars()
+        .any(|c| c.is_control() || matches!(c, '[' | ']' | '<' | '>' | '|'))
+    {
+        return Err("Invalid wiki redirect title".into());
+    }
+    Ok((Some(target.clone()), format!("Redirect to [[{}]].", target)))
+}
+
+async fn set_wiki_redirect(
+    transaction: &Transaction<'_>,
+    definition_id: i32,
+    target: Option<&str>,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let metadata = match target {
+        Some(target) => serde_json::json!({"is_redirect": true, "redirect_to": target}),
+        None => serde_json::json!({"is_redirect": false}),
+    };
+    transaction
+        .execute(
+            "UPDATE definitions SET metadata = (COALESCE(metadata, '{}'::jsonb)
+         - 'is_redirect' - 'redirect_to' - 'redirect_created_from_definition_id') || $2::jsonb
+         WHERE definitionid = $1",
+            &[&definition_id, &metadata],
+        )
+        .await?;
+    Ok(())
+}
+
 /// Add or update a native wiki page. A wiki is stored as a valsi of type `wiki`
 /// (typeid = 16) with a single definition containing the markdown body.
 async fn upsert_wiki_in_transaction(
@@ -2500,9 +2542,17 @@ async fn upsert_wiki_in_transaction(
     request: &AddDefinitionRequest,
     redis_cache: &RedisCache,
 ) -> Result<(String, i32, Option<String>), Box<dyn std::error::Error>> {
-    let sanitized_definition = sanitize_html(&request.definition);
+    let mut sanitized_definition = sanitize_html(&request.definition);
     let word = sanitize_html(&request.word);
     let source_langid = request.source_langid.unwrap_or(1);
+    let redirect = request
+        .redirect_to
+        .as_deref()
+        .map(|target| wiki_redirect_content(&word, target))
+        .transpose()?;
+    if let Some((Some(_), body)) = &redirect {
+        sanitized_definition = body.clone();
+    }
 
     let options = MathJaxValidationOptions { use_tectonic: true };
     if source_langid == 1 || source_langid == 58 {
@@ -2514,22 +2564,12 @@ async fn upsert_wiki_in_transaction(
     // Get or create a valsi of type `wiki`.
     let valsi_id = match transaction
         .query_opt(
-            "SELECT valsiid, typeid FROM valsi WHERE word = $1 AND source_langid = $2",
+            "SELECT valsiid, typeid FROM valsi WHERE word = $1 AND source_langid = $2 AND typeid = 16",
             &[&word, &source_langid],
         )
         .await?
     {
-        Some(row) => {
-            let existing_typeid: i16 = row.get("typeid");
-            if existing_typeid != 16 {
-                return Err(format!(
-                    "A non-wiki valsi with word '{}' already exists for source language {}",
-                    word, source_langid
-                )
-                .into());
-            }
-            row.get::<_, i32>("valsiid")
-        }
+        Some(row) => row.get::<_, i32>("valsiid"),
         None => transaction
             .query_one(
                 "INSERT INTO valsi (word, typeid, userid, time, source_langid)
@@ -2630,6 +2670,10 @@ async fn upsert_wiki_in_transaction(
             .await?;
         definition_id
     };
+
+    if let Some((target, _)) = &redirect {
+        set_wiki_redirect(transaction, definition_id, target.as_deref()).await?;
+    }
 
     let version_message = request
         .commit_message
@@ -2836,25 +2880,18 @@ pub async fn rename_wiki_page(
     let langid: i32 = current.get("langid");
     let owner_only: bool = current.get("owner_only");
 
-    // Target title must not already exist for this source language.
-    if let Some(existing) = transaction
+    // Only wiki titles conflict with a wiki rename.
+    if transaction
         .query_opt(
-            "SELECT valsiid, typeid FROM valsi WHERE word = $1 AND source_langid = $2",
+            "SELECT valsiid FROM valsi WHERE word = $1 AND source_langid = $2 AND typeid = 16",
             &[&new_word, &source_langid],
         )
         .await?
+        .is_some()
     {
-        let existing_typeid: i16 = existing.get("typeid");
         return Err(format!(
-            "A {} entry with title '{}' already exists for this source language",
-            if existing_typeid == 16 {
-                "wiki"
-            } else {
-                "non-wiki"
-            },
-            new_word
-        )
-        .into());
+            "A wiki entry with title '{}' already exists for this source language", new_word
+        ).into());
     }
 
     let rename_message = format!("Renamed: \"{}\" → \"{}\"", old_word, new_word);
@@ -3113,7 +3150,7 @@ pub async fn rename_definition_valsi(
     // Get-or-create target valsi; preserve typeid/source_langid; leave rafsi empty on create.
     let new_valsi_id = match transaction
         .query_opt(
-            "SELECT valsiid FROM valsi WHERE word = $1 AND source_langid = $2",
+            "SELECT valsiid FROM valsi WHERE word = $1 AND source_langid = $2 AND typeid <> 16",
             &[&new_word, &source_langid],
         )
         .await?
@@ -3135,13 +3172,13 @@ pub async fn rename_definition_valsi(
                     if e.as_db_error()
                         .and_then(|d| d.constraint())
                         .is_some_and(|c| {
-                            c == "valsi_word_source_langid_key" || c == "valsi_unique_word_nospaces"
+                            c == "idx_valsi_dictionary_unique_word_source_lang" || c == "valsi_unique_word_nospaces"
                         })
                     {
                         // Race: fetch the winner.
                         transaction
                             .query_one(
-                                "SELECT valsiid FROM valsi WHERE word = $1 AND source_langid = $2",
+                                "SELECT valsiid FROM valsi WHERE word = $1 AND source_langid = $2 AND typeid <> 16",
                                 &[&new_word, &source_langid],
                             )
                             .await?
@@ -3363,6 +3400,9 @@ async fn add_definition_in_transaction(
     if request.is_wiki == Some(true) {
         return upsert_wiki_in_transaction(transaction, claims, request, redis_cache).await;
     }
+    if request.redirect_to.is_some() {
+        return Err("Only wiki pages can be redirects".into());
+    }
 
     let sanitized_definition = sanitize_html(&request.definition);
     let sanitized_notes = request.notes.as_ref().map(|n| sanitize_html(n));
@@ -3400,7 +3440,7 @@ async fn add_definition_in_transaction(
             "SELECT 1 FROM valsi v
              JOIN definitions d ON d.valsiid = v.valsiid
              JOIN users u ON d.userid = u.userid
-             WHERE v.word = $1 AND v.source_langid = $2 AND u.username = 'officialdata'
+             WHERE v.word = $1 AND v.source_langid = $2 AND v.typeid <> 16 AND u.username = 'officialdata'
              LIMIT 1",
             &[&word, &source_langid],
         )
@@ -3454,7 +3494,7 @@ async fn add_definition_in_transaction(
     // Get or create valsi, considering source_langid
     let valsi_id = match transaction
         .query_opt(
-            "SELECT valsiid FROM valsi WHERE word = $1 AND source_langid = $2",
+            "SELECT valsiid FROM valsi WHERE word = $1 AND source_langid = $2 AND typeid <> 16",
             &[&word, &source_langid], // Use determined source_langid
         )
         .await?
@@ -3484,7 +3524,7 @@ async fn add_definition_in_transaction(
                 if e.as_db_error()
                     .and_then(|d| d.constraint())
                     .is_some_and(|c| {
-                        c == "valsi_word_source_langid_key" || c == "valsi_unique_word_nospaces"
+                        c == "idx_valsi_dictionary_unique_word_source_lang" || c == "valsi_unique_word_nospaces"
                     })
                 {
                     return Err(format!(
@@ -4074,7 +4114,7 @@ pub async fn update_definition(
     request: &UpdateDefinitionRequest,
     redis_cache: &RedisCache,
 ) -> Result<Option<String>, Box<dyn std::error::Error>> {
-    let sanitized_definition = sanitize_html(&request.definition);
+    let mut sanitized_definition = sanitize_html(&request.definition);
     let sanitized_notes = request.notes.as_ref().map(|n| sanitize_html(n));
     let sanitized_etymology = request.etymology.as_ref().map(|e| sanitize_html(e));
     let sanitized_selmaho = request.selmaho.as_ref().map(|s| sanitize_html(s));
@@ -4141,7 +4181,7 @@ pub async fn update_definition(
     let current_def = transaction
         .query_one(
             "SELECT d.userid, d.owner_only, d.time, u.username, v.source_langid, v.typeid,
-                    d.valsiid, d.langid, d.definitionnum,
+                    d.valsiid, d.langid, d.definitionnum, v.word,
                     EXISTS (SELECT 1 FROM definition_images di
                             WHERE di.definition_id = d.definitionid) AS has_image
               FROM definitions d
@@ -4161,6 +4201,21 @@ pub async fn update_definition(
     // Wiki edits must target a valsi of type `wiki`.
     if request.is_wiki == Some(true) && valsi_typeid != 16 {
         return Err("This definition is not a native wiki page".into());
+    }
+
+    if (valsi_typeid == 16) != (request.is_wiki == Some(true)) {
+        return Err("Dictionary and wiki edits must use their respective entry type".into());
+    }
+    if request.redirect_to.is_some() && valsi_typeid != 16 {
+        return Err("Only wiki pages can be redirects".into());
+    }
+    let redirect = request
+        .redirect_to
+        .as_deref()
+        .map(|target| wiki_redirect_content(&current_def.get::<_, String>("word"), target))
+        .transpose()?;
+    if let Some((Some(_), body)) = &redirect {
+        sanitized_definition = body.clone();
     }
 
     let lang_exists = transaction
@@ -4289,6 +4344,10 @@ pub async fn update_definition(
             ],
         )
         .await?;
+
+    if let Some((target, _)) = &redirect {
+        set_wiki_redirect(&transaction, definition_id, target.as_deref()).await?;
+    }
 
     if request.lang_id != current_langid {
         retarget_definition_votes(&transaction, definition_id, request.lang_id).await?;
@@ -4532,7 +4591,14 @@ pub async fn update_definition(
         .await?
         .get("word");
 
-    let url = format!("{}/valsi/{}", env::var("FRONTEND_URL")?, valsi_word,);
+    let url = if valsi_typeid == 16 {
+        format!(
+            "{}/wiki/{}", env::var("FRONTEND_URL")?,
+            urlencoding::encode(&valsi_word.replace(' ', "_"))
+        )
+    } else {
+        format!("{}/valsi/{}", env::var("FRONTEND_URL")?, valsi_word)
+    };
 
     transaction
         .execute(
@@ -4582,7 +4648,7 @@ pub async fn list_definitions(
     let per_page = query.per_page.unwrap_or(20);
     let offset = (page - 1) * per_page;
 
-    let mut conditions: Vec<String> = vec!["TRUE".to_string()];
+    let mut conditions: Vec<String> = vec!["v.typeid <> 16".to_string()];
     let mut params: Vec<&(dyn tokio_postgres::types::ToSql + Sync)> = Vec::new();
     let mut param_count = 2; // Start param count at 2 since $1 is current_user_id
 
@@ -4785,7 +4851,10 @@ pub async fn list_non_lojban_definitions(
     let offset = (page - 1) * per_page;
 
     let mut query_params: Vec<&(dyn tokio_postgres::types::ToSql + Sync)> = Vec::new();
-    let mut conditions = vec!["v.source_langid != 1".to_string()]; // Base condition: not Lojban
+    let mut conditions = vec![
+        "v.source_langid != 1".to_string(),
+        "v.typeid <> 16".to_string(),
+    ];
 
     // Add source_langid filter if provided
     if let Some(id) = &query.source_langid {
@@ -5106,7 +5175,7 @@ pub async fn get_definitions_by_entry(
             JOIN users u ON d.userid = u.userid
             JOIN valsi v ON d.valsiid = v.valsiid
             JOIN valsitypes vt ON v.typeid = vt.typeid
-            WHERE CASE
+            WHERE v.typeid <> 16 AND CASE
                 WHEN $1 ~ '^\\d+$' THEN v.valsiid = $1::int AND v.source_langid = 1
                 ELSE v.word = $2 AND v.source_langid = 1
             END
@@ -6040,6 +6109,7 @@ pub async fn get_all_valsi_words(
         .query(
             "SELECT v.word, v.time as lastmod
          FROM valsi v
+         WHERE v.typeid <> 16
          ORDER BY v.time DESC",
             &[],
         )
@@ -6196,6 +6266,7 @@ pub async fn bulk_import_definitions(
             })),
             rafsi: None,
             is_wiki: None,
+            redirect_to: None,
             commit_message: None,
             expected_time: None,
         };
@@ -7015,7 +7086,7 @@ pub async fn check_rafsi_overlap(
     } else if let Some(w) = word.map(str::trim).filter(|s| !s.is_empty()) {
         transaction
             .query_opt(
-                "SELECT valsiid FROM valsi WHERE word = $1 AND source_langid = 1 LIMIT 1",
+                "SELECT valsiid FROM valsi WHERE word = $1 AND source_langid = 1 AND typeid <> 16 LIMIT 1",
                 &[&w],
             )
             .await?
@@ -7530,5 +7601,125 @@ mod rafsi_authority_tests {
             .await
             .unwrap()
             .get::<_, bool>(0));
+    }
+}
+
+#[cfg(test)]
+mod wiki_redirect_tests {
+    use super::*;
+
+    // Run against a fresh disposable database with WIKI_TEST_DATABASE_URL.
+    #[tokio::test]
+    #[ignore = "requires WIKI_TEST_DATABASE_URL pointing to a fresh disposable database"]
+    async fn wiki_dictionary_namespace_database_regressions() {
+        let url = std::env::var("WIKI_TEST_DATABASE_URL").expect("disposable test database URL");
+        let manager = deadpool_postgres::Manager::new(url.parse().unwrap(), tokio_postgres::NoTls);
+        let pool = deadpool_postgres::Pool::builder(manager)
+            .max_size(2)
+            .build()
+            .unwrap();
+        let fixture = include_str!("../../tests/fixtures/wiki_dictionary_namespaces.sql");
+        let (schema, assertions) = fixture
+            .split_once("-- APPLY NAMESPACE MIGRATION HERE")
+            .unwrap();
+        {
+            let client = pool.get().await.unwrap();
+            client.batch_execute(schema).await.unwrap();
+            client
+                .batch_execute(include_str!(
+                    "../../migrations/V182__separate_wiki_dictionary_titles.sql"
+                ))
+                .await
+                .unwrap();
+            client.batch_execute(assertions).await.unwrap();
+        }
+        let dictionary = get_entry_details(&pool, "vlasisku", None).await.unwrap();
+        assert_eq!(dictionary.type_name, "phrase");
+        assert_eq!(
+            get_entry_details(&pool, &dictionary.valsiid.to_string(), None)
+                .await
+                .unwrap()
+                .valsiid,
+            dictionary.valsiid
+        );
+        // The first row is the wiki page; its numeric id must not resolve in the dictionary.
+        assert!(get_entry_details(&pool, "1", None)
+            .await
+            .unwrap_err()
+            .to_string()
+            .contains("Valsi not found"));
+        let definitions = get_definitions_by_entry(&pool, "vlasisku", None, None, None)
+            .await
+            .unwrap();
+        assert_eq!(definitions.len(), 1);
+        assert_eq!(definitions[0].definition, "dictionary body");
+        assert!(get_definitions_by_entry(&pool, "1", None, None, None)
+            .await
+            .unwrap()
+            .is_empty());
+        let wiki = get_wiki_by_word(&pool, "vlasisku", None)
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(wiki.type_name, "wiki");
+        assert_eq!(wiki.definition, "wiki body");
+
+        let mut client = pool.get().await.unwrap();
+        let tx = client.transaction().await.unwrap();
+        set_wiki_redirect(&tx, 1, Some("other page")).await.unwrap();
+        let metadata: serde_json::Value = tx
+            .query_one(
+                "SELECT metadata FROM definitions WHERE definitionid = 1",
+                &[],
+            )
+            .await
+            .unwrap()
+            .get(0);
+        assert_eq!(metadata["source_comment_id"], 42);
+        assert_eq!(metadata["former_titles"], serde_json::json!(["old"]));
+        assert_eq!(
+            wiki_redirect_from_metadata(Some(&metadata)),
+            (true, Some("other page".to_string()))
+        );
+        set_wiki_redirect(&tx, 1, None).await.unwrap();
+        let metadata: serde_json::Value = tx
+            .query_one(
+                "SELECT metadata FROM definitions WHERE definitionid = 1",
+                &[],
+            )
+            .await
+            .unwrap()
+            .get(0);
+        assert_eq!(metadata["source_comment_id"], 42);
+        assert_eq!(wiki_redirect_from_metadata(Some(&metadata)), (false, None));
+    }
+
+    #[test]
+    fn redirect_targets_are_normalized_and_replace_the_body() {
+        let (target, body) = wiki_redirect_content("vlasisku", " New_page ").unwrap();
+        assert_eq!(target.as_deref(), Some("New page"));
+        assert_eq!(body, "Redirect to [[New page]].");
+        assert_eq!(
+            wiki_redirect_content("vlasisku", " ").unwrap(),
+            (None, String::new())
+        );
+    }
+
+    #[test]
+    fn redirects_reject_self_and_markup_injection() {
+        for target in [
+            " vlasisku ",
+            "vlasisku",
+            "bad\ntitle",
+            "[[other]]",
+            "<script>",
+            "page|label",
+        ] {
+            assert!(
+                wiki_redirect_content("vlasisku", target).is_err(),
+                "{target}"
+            );
+        }
+        assert!(wiki_redirect_content("New page", "New_page").is_err());
     }
 }

@@ -1053,7 +1053,7 @@ async fn free_source_langid_for_wiki_word(
              WHERE NOT EXISTS (
                  SELECT 1 FROM valsi v
                  WHERE v.word = $1
-                   AND v.source_langid = l.langid
+                   AND v.source_langid = l.langid AND v.typeid = 16
              )
              ORDER BY CASE WHEN l.langid = 1 THEN 0 ELSE 1 END, l.langid
              LIMIT 1",
