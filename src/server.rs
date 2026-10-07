@@ -167,6 +167,9 @@ pub async fn start_server(
             .configure(sessions::controller::init_routes)
             .configure(messaging::configure)
             .configure(assistant::configure)
+            // These broad page routes must follow API routes such as /mail/message/{id}.
+            .service(mailarchive::seo::thread_page)
+            .service(mailarchive::seo::message_page)
     })
     .workers(num_workers)
     .bind("0.0.0.0:8080")

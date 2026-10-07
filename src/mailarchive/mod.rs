@@ -10,7 +10,6 @@ pub use models::Message;
 pub use service::{check_for_new_emails, import_maildir};
 
 pub fn configure(cfg: &mut web::ServiceConfig) {
-    cfg.service(seo::thread_page).service(seo::message_page);
     cfg.service(
         web::scope("mail")
             .service(controller::get_message)

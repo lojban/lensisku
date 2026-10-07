@@ -221,6 +221,27 @@ pub async fn message_page(pool: web::Data<Pool>, path: web::Path<(String, i32)>)
 #[cfg(test)]
 mod tests {
     use super::render_mail_page;
+    use super::{message_page, thread_page};
+    use actix_web::{http::StatusCode, test as actix_test, web, App, HttpResponse};
+
+    #[actix_web::test]
+    async fn mail_api_paths_are_not_captured_by_seo_routes() {
+        let app = actix_test::init_service(
+            App::new()
+                .service(web::scope("mail").route(
+                    "/message/{id}",
+                    web::get().to(|| async { HttpResponse::Ok().finish() }),
+                ))
+                .service(message_page)
+                .service(thread_page),
+        )
+        .await;
+        let request = actix_test::TestRequest::get()
+            .uri("/mail/message/1500108")
+            .to_request();
+        let response = actix_test::call_service(&app, request).await;
+        assert_eq!(response.status(), StatusCode::OK);
+    }
 
     #[test]
     fn replaces_default_tags_and_escapes_mail_subject() {
