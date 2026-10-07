@@ -357,12 +357,6 @@
                         "
                       />
                     </div>
-                    <div
-                      v-if="item.source === 'comment' && item.relevance?.excerpt"
-                      class="text-sm text-gray-700 mb-2 prose prose-sm max-w-none max-h-48 overflow-hidden"
-                    >
-                      <LazyMathJax :content="item.relevance.excerpt" :enable-markdown="true" />
-                    </div>
                     <CommentItem
                       v-if="item.source === 'comment'"
                       :comment="item.comment"
@@ -413,16 +407,7 @@
                       </div>
 
                       <div
-                        v-if="item.relevance?.excerpt"
-                        class="text-sm text-gray-700 border-t border-gray-100 pt-2 mt-2 prose prose-sm max-w-none max-h-48 overflow-hidden"
-                      >
-                        <!-- eslint-disable-next-line vue/no-v-html -->
-                        <div v-html="renderMailContent(item.relevance.excerpt)" />
-                      </div>
-                      <div
-                        v-else-if="
-                          item.message.parts_json && textParts(item.message.parts_json).length
-                        "
+                        v-if="item.message.parts_json && textParts(item.message.parts_json).length"
                         class="text-sm text-gray-700 border-t border-gray-100 pt-2 mt-2 prose prose-sm max-w-none [&_img]:max-h-48 [&_img]:object-contain"
                       >
                         <!-- eslint-disable vue/no-v-html -->
@@ -499,7 +484,6 @@ import SourceTypeBadge from '@/components/SourceTypeBadge.vue'
 import DefinitionCard from '@/components/DefinitionCard.vue'
 import DictionaryEntries from '@/components/DictionaryEntries.vue'
 import PhraseSplit from '@/components/PhraseSplit.vue'
-import LazyMathJax from '@/components/LazyMathJax.vue'
 import WikiContent from '@/components/WikiContent.vue'
 import { renderMailContent } from '@/utils/renderMailContent'
 import {
