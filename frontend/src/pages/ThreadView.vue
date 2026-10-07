@@ -138,6 +138,7 @@ import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import PaginationComponent from '@/components/PaginationComponent.vue'
 import LazyMathJax from '@/components/LazyMathJax.vue'
 import { useSeoHead } from '@/composables/useSeoHead'
+import { mailSeoPreview } from '@/utils/mailSeo'
 import { queryStr } from '@/utils/routeQuery'
 
 // Props
@@ -166,13 +167,19 @@ const includeContent = ref(true)
 const threadSubject = computed(() => props.subject.replace(/^(Re:\s*)+/, ''))
 let requestId = 0
 
-// Initialize page title
+// Use the URL subject immediately, then the normalized subject returned by the archive.
 const pageTitle = computed(() => {
-  if (!cleanedSubject.value) return t('threadView.loadingThread')
-  return t('threadView.threadTitle', { subject: cleanedSubject.value })
+  return cleanedSubject.value || threadSubject.value || t('seo.publicTitles.ThreadView')
+})
+const pageDescription = computed(() => {
+  const subject = pageTitle.value.slice(0, 80)
+  const preview = mailSeoPreview(messages.value[0]?.parts_json)
+  return preview
+    ? `${subject}: ${preview}`
+    : `${subject} — ${t('seo.publicDescriptions.ThreadView')}`
 })
 
-useSeoHead({ title: pageTitle })
+useSeoHead({ title: pageTitle, description: pageDescription, canonical: () => route.path })
 
 const fetchThread = async () => {
   const thisRequest = ++requestId
@@ -223,6 +230,8 @@ const changePage = (page: number) => {
 }
 
 const syncThreadFromRoute = () => {
+  cleanedSubject.value = ''
+  messages.value = []
   const page = Number(queryStr(route.query.page))
   currentPage.value = Number.isInteger(page) && page > 0 ? page : 1
   sortOrder.value = queryStr(route.query.sort_order) === 'asc' ? 'asc' : 'desc'

@@ -158,7 +158,10 @@ import MessageActions from '@/components/MessageActions.vue'
 import { useSeoHead } from '@/composables/useSeoHead'
 import LazyMathJax from '@/components/LazyMathJax.vue'
 import { useI18n } from 'vue-i18n'
+import { useRoute } from 'vue-router'
+import { mailSeoPreview } from '@/utils/mailSeo'
 const { t } = useI18n()
+const route = useRoute()
 
 const props = defineProps({
   id: {
@@ -173,10 +176,14 @@ const props = defineProps({
 
 const message = ref(null)
 const currentUserVotedSpam = ref(false)
+let requestId = 0
 
 const fetchMessage = async () => {
+  const thisRequest = ++requestId
+  message.value = null
   try {
     const response = await getMessageDetails(props.id)
+    if (thisRequest !== requestId) return
     message.value = response.data
     currentUserVotedSpam.value = response.data.current_user_voted_spam || false
   } catch (error) {
@@ -261,11 +268,17 @@ const messageActions = ref(null)
 watch(() => props.id, fetchMessage, { immediate: true })
 
 const pageTitle = computed(() => {
-  if (!message.value) return t('components.messageDetail.loading')
-  return t('components.messageDetail.title', { subject: message.value.subject })
+  return message.value?.subject?.trim() || t('seo.publicTitles.MessageDetail')
+})
+const pageDescription = computed(() => {
+  const subject = pageTitle.value.slice(0, 80)
+  const preview = mailSeoPreview(message.value?.parts_json)
+  return preview
+    ? `${subject}: ${preview}`
+    : `${subject} — ${t('seo.publicDescriptions.MessageDetail')}`
 })
 
-useSeoHead({ title: pageTitle })
+useSeoHead({ title: pageTitle, description: pageDescription, canonical: () => route.path })
 </script>
 
 <style scoped>

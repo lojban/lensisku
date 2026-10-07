@@ -404,7 +404,7 @@ pub async fn list_mail_threads(
     Ok((items, total))
 }
 
-fn remove_prefixes(subject: &str) -> String {
+pub(crate) fn remove_prefixes(subject: &str) -> String {
     let mut clean_subject = subject.to_string();
     let mut modified = true;
 
