@@ -36,153 +36,14 @@ pub async fn search_messages(
     pool: &Pool,
     query: SearchQuery,
 ) -> Result<SearchResponse, Box<dyn std::error::Error>> {
-    let mut client = pool.get().await?;
-    let transaction = client.transaction().await?;
-
+    let client = pool.get().await?;
     let page = query.page.unwrap_or(1);
     let per_page = query.per_page.unwrap_or(10);
     let offset = (page - 1) * per_page;
     let group_by_thread = query.group_by_thread.unwrap_or(false);
     let word_patterns = mail_word_like_patterns(&query.query);
     let exact_query = like_contains_pattern(&escape_like(&query.query));
-
-    // Parameterized per-word ILIKE: $4, $5, … (after $1 exact, $2 limit, $3 offset)
-    let word_param_offset = 4usize;
-    let word_conditions_sql_parts: Vec<String> = word_patterns
-        .iter()
-        .enumerate()
-        .map(|(i, _)| {
-            let idx = word_param_offset + i;
-            format!("(m.subject ILIKE ${idx} OR m.content ILIKE ${idx})")
-        })
-        .collect();
-
-    let main_where_conditions_sql = if word_conditions_sql_parts.is_empty() {
-        "TRUE".to_string()
-    } else {
-        word_conditions_sql_parts.join(" AND ")
-    };
-
-    let rank_word_conditions_sql = if word_conditions_sql_parts.is_empty() {
-        "FALSE".to_string() // Ensures this part of rank is 0 if no specific words
-    } else {
-        word_conditions_sql_parts.join(" AND ")
-    };
-
-    // Validate sort_by against allowed fields for the outer query
-    let outer_sort_column_name = match query.sort_by.as_deref() {
-        Some("date") => "date", // Refers to date/sent_at of the representative message
-        Some("subject") => "subject", // Refers to cleaned_subject of the representative message
-        Some("sent_at") => "sent_at", // Refers to sent_at of the representative message
-        _ => "rank",            // Default to rank of the representative message
-    };
-
-    let sort_order = match query.sort_order.as_deref() {
-        Some(s) if s.eq_ignore_ascii_case("asc") => "ASC",
-        _ => "DESC",
-    };
-    let include_content = query.include_content.unwrap_or(true);
-    let content_select = if include_content {
-        "parts_json"
-    } else {
-        "NULL::jsonb as parts_json"
-    };
-
-    let (query_string, _old_count_query_string) = if group_by_thread {
-        (format!(
-            "WITH thread_representatives AS (
-                SELECT DISTINCT ON (m.cleaned_subject)
-                       m.id, m.message_id, m.date, m.cleaned_subject, m.from_address, m.to_address, m.parts_json, m.sent_at,
-                       COALESCE(msv.spam_vote_count, 0) as spam_vote_count,
-                       (CASE
-                          WHEN m.subject ILIKE $1 THEN 3
-                          WHEN m.content ILIKE $1 THEN 2
-                          WHEN {} THEN 1
-                          ELSE 0
-                        END) as rank
-                FROM messages m
-                LEFT JOIN LATERAL (
-                    SELECT COUNT(*)::bigint AS spam_vote_count
-                    FROM message_spam_votes
-                    WHERE message_id = m.id
-                ) msv ON true
-                WHERE {}
-                ORDER BY m.cleaned_subject,
-                         (CASE WHEN m.subject ILIKE $1 THEN 3 WHEN m.content ILIKE $1 THEN 2 WHEN {} THEN 1 ELSE 0 END) DESC,
-                         m.sent_at DESC NULLS LAST, m.date DESC NULLS LAST
-            )
-            SELECT id, message_id, date, cleaned_subject as subject, from_address, to_address, 
-                   CASE WHEN {} THEN parts_json ELSE NULL::jsonb END as parts_json,
-                   spam_vote_count, rank, sent_at
-            FROM thread_representatives
-            ORDER BY {} {}, date {}
-            LIMIT $2 OFFSET $3",
-            rank_word_conditions_sql, // for rank in CTE
-            main_where_conditions_sql,  // for WHERE in CTE
-            rank_word_conditions_sql, // for ORDER BY in CTE (rank part)
-            if include_content { "TRUE" } else { "FALSE" }, // for parts_json selection
-            outer_sort_column_name,
-            sort_order,
-            sort_order
-        ), format!(
-            "SELECT COUNT(*) FROM (
-                SELECT DISTINCT ON (m.cleaned_subject) 1
-                FROM messages m
-                WHERE {}
-            ) AS distinct_threads",
-            main_where_conditions_sql
-        ))
-    } else {
-        (format!(
-            "SELECT m.id, m.message_id, m.date, m.subject, m.cleaned_subject, m.from_address, m.to_address, {}, m.sent_at,
-             COALESCE(msv.spam_vote_count, 0) as spam_vote_count,
-             (CASE
-                WHEN m.subject ILIKE $1 THEN 3
-                WHEN m.content ILIKE $1 THEN 2
-                WHEN {} THEN 1
-                ELSE 0
-              END) as rank
-             FROM messages m
-             LEFT JOIN LATERAL (
-                 SELECT COUNT(*)::bigint AS spam_vote_count
-                 FROM message_spam_votes
-                 WHERE message_id = m.id
-             ) msv ON true
-             WHERE {}
-             ORDER BY {} {}, m.date {}
-             LIMIT $2 OFFSET $3",
-            content_select,
-            rank_word_conditions_sql,
-            main_where_conditions_sql,
-            outer_sort_column_name, // Here m. prefix might be needed if not aliasing in CTE
-            sort_order,
-            sort_order
-        ), format!(
-            "SELECT COUNT(*) FROM messages m WHERE {}",
-            main_where_conditions_sql
-        ))
-    };
-
-    let mut query_params: Vec<&(dyn tokio_postgres::types::ToSql + Sync)> =
-        vec![&exact_query, &per_page, &offset];
-    for pattern in &word_patterns {
-        query_params.push(pattern);
-    }
-
-    let messages = transaction
-        .query(&query_string, &query_params)
-        .await?
-        .into_iter()
-        .map(Message::from)
-        .collect::<Vec<_>>();
-
-    let mut count_params: Vec<&(dyn tokio_postgres::types::ToSql + Sync)> = Vec::new();
-    for pattern in &word_patterns {
-        count_params.push(pattern);
-    }
-    // Count query uses the same $4+ word params but without $1/$2/$3 — renumber.
-    // Rebuild count SQL to use $1..$N for word patterns only.
-    let count_word_parts: Vec<String> = word_patterns
+    let word_conditions: Vec<String> = word_patterns
         .iter()
         .enumerate()
         .map(|(i, _)| {
@@ -190,30 +51,108 @@ pub async fn search_messages(
             format!("(m.subject ILIKE ${idx} OR m.content ILIKE ${idx})")
         })
         .collect();
-    let count_where = if count_word_parts.is_empty() {
+    let match_sql = if word_conditions.is_empty() {
         "TRUE".to_string()
     } else {
-        count_word_parts.join(" AND ")
+        word_conditions.join(" AND ")
     };
+    let exact_param = word_patterns.len() + 1;
+    let limit_param = exact_param + 1;
+    let offset_param = limit_param + 1;
+    // Every matched row satisfies the per-word filter, so its fallback rank is 1.
+    let fallback_rank = if word_conditions.is_empty() { 0 } else { 1 };
+    let rank_sql = format!(
+        "CASE WHEN m.subject ILIKE ${exact_param} THEN 3
+              WHEN m.content ILIKE ${exact_param} THEN 2
+              ELSE {fallback_rank} END"
+    );
+    let sort_order = match query.sort_order.as_deref() {
+        Some(s) if s.eq_ignore_ascii_case("asc") => "ASC",
+        _ => "DESC",
+    };
+    let parts_json = if query.include_content.unwrap_or(true) {
+        "m.parts_json"
+    } else {
+        "NULL::jsonb AS parts_json"
+    };
+    let sort_column = match query.sort_by.as_deref() {
+        Some("date") => "p.date",
+        Some("subject") => {
+            if group_by_thread { "p.cleaned_subject" } else { "p.subject" }
+        }
+        Some("sent_at") => "p.sent_at",
+        _ => "p.rank",
+    };
+    let query_string = if group_by_thread {
+        format!(
+            "WITH representatives AS (
+                SELECT DISTINCT ON (m.cleaned_subject)
+                       m.id, m.cleaned_subject, m.date, m.sent_at, {rank_sql} AS rank
+                FROM messages m
+                WHERE {match_sql}
+                ORDER BY m.cleaned_subject, rank DESC, m.sent_at DESC NULLS LAST,
+                         m.date DESC NULLS LAST, m.id DESC
+            ), page AS MATERIALIZED (
+                SELECT * FROM representatives p
+                ORDER BY {sort_column} {sort_order}, p.date {sort_order}, p.id {sort_order}
+                LIMIT ${limit_param} OFFSET ${offset_param}
+            )
+            SELECT m.id, m.message_id, m.date, p.cleaned_subject AS subject,
+                   m.from_address, m.to_address, {parts_json},
+                   (SELECT COUNT(*) FROM message_spam_votes WHERE message_id = m.id) AS spam_vote_count,
+                   p.rank, m.sent_at
+            FROM page p JOIN messages m ON m.id = p.id
+            ORDER BY {sort_column} {sort_order}, p.date {sort_order}, p.id {sort_order}"
+        )
+    } else {
+        let page_sort = match query.sort_by.as_deref() {
+            Some("date") => "m.date",
+            Some("subject") => "m.subject",
+            Some("sent_at") => "m.sent_at",
+            _ => "rank",
+        };
+        format!(
+            "SELECT m.id, m.message_id, m.date, m.subject, m.cleaned_subject,
+                   m.from_address, m.to_address, {parts_json}, m.sent_at,
+                   (SELECT COUNT(*) FROM message_spam_votes WHERE message_id = m.id) AS spam_vote_count,
+                   {rank_sql} AS rank
+            FROM messages m
+            WHERE {match_sql}
+            ORDER BY {page_sort} {sort_order}, m.date {sort_order}, m.id {sort_order}
+            LIMIT ${limit_param} OFFSET ${offset_param}"
+        )
+    };
+    let mut query_params: Vec<&(dyn tokio_postgres::types::ToSql + Sync)> = word_patterns
+        .iter()
+        .map(|pattern| pattern as &(dyn tokio_postgres::types::ToSql + Sync))
+        .collect();
+    let count_params = query_params.clone();
+    query_params.extend([
+        &exact_query as &(dyn tokio_postgres::types::ToSql + Sync),
+        &per_page,
+        &offset,
+    ]);
+    let messages = client
+        .query(&query_string, &query_params)
+        .await?
+        .into_iter()
+        .map(Message::from)
+        .collect::<Vec<_>>();
     let count_query_string = if group_by_thread {
         format!(
             "SELECT COUNT(*) FROM (
-                SELECT DISTINCT ON (m.cleaned_subject) 1
+                SELECT DISTINCT m.cleaned_subject
                 FROM messages m
-                WHERE {count_where}
-            ) AS distinct_threads"
+                WHERE {match_sql}
+            ) AS threads"
         )
     } else {
-        format!("SELECT COUNT(*) FROM messages m WHERE {count_where}")
+        format!("SELECT COUNT(*) FROM messages m WHERE {match_sql}")
     };
-
-    let total: i64 = transaction
+    let total: i64 = client
         .query_one(&count_query_string, &count_params)
         .await?
         .get(0);
-
-    transaction.commit().await?;
-
     Ok(SearchResponse {
         messages,
         total,
@@ -248,9 +187,7 @@ pub async fn show_thread(
     pool: &Pool,
     query: ThreadQuery,
 ) -> Result<ThreadResponse, Box<dyn std::error::Error>> {
-    let mut client = pool.get().await?;
-    let transaction = client.transaction().await?;
-
+    let client = pool.get().await?;
     let page = query.page.unwrap_or(1);
     let per_page = query.per_page.unwrap_or(10);
     let offset = (page - 1) * per_page;
@@ -260,62 +197,41 @@ pub async fn show_thread(
     };
     let include_content = query.include_content.unwrap_or(true);
 
-    let sort_column = match query.sort_by.as_deref() {
-        Some("subject") => "m.subject",
-        Some("sent_at") => "m.sent_at",
-        _ => "m.date", // Default to "m.date" (which implies m.sent_at or m.date from DB)
+    let order_by = match query.sort_by.as_deref() {
+        Some("subject") => format!("m.subject {sort_order}, m.date {sort_order}, m.id {sort_order}"),
+        Some("sent_at") => format!("m.sent_at {sort_order}, m.id {sort_order}"),
+        _ => format!("m.date {sort_order}, m.id {sort_order}"),
     };
     // Remove common prefixes and tags from the subject and escape special characters
     let clean_subject = remove_prefixes(&query.subject);
 
-    let query_string = if include_content {
-        format!(
-            "SELECT m.id, m.message_id, m.date, m.subject, m.from_address, m.to_address, m.parts_json,
-             COALESCE(msv.spam_vote_count, 0) as spam_vote_count
-             FROM messages m
-             LEFT JOIN LATERAL (
-                 SELECT COUNT(*)::bigint AS spam_vote_count
-                 FROM message_spam_votes
-                 WHERE message_id = m.id
-             ) msv ON true
-             WHERE m.cleaned_subject = $1
-             ORDER BY {} {}, date {}
-             LIMIT $2 OFFSET $3",
-            sort_column, sort_order, sort_order
-        )
+    let parts_json = if include_content {
+        "m.parts_json"
     } else {
-        format!(
-            "SELECT m.id, m.message_id, m.date, m.subject, m.from_address, m.to_address, NULL::jsonb as parts_json,
-             COALESCE(msv.spam_vote_count, 0) as spam_vote_count
-             FROM messages m
-             LEFT JOIN LATERAL (
-                 SELECT COUNT(*)::bigint AS spam_vote_count
-                 FROM message_spam_votes
-                 WHERE message_id = m.id
-             ) msv ON true
-             WHERE m.cleaned_subject = $1
-             ORDER BY {} {}, date {}
-             LIMIT $2 OFFSET $3",
-            sort_column, sort_order, sort_order
-        )
+        "NULL::jsonb AS parts_json"
     };
-    let messages = transaction
+    let query_string = format!(
+        "SELECT m.id, m.message_id, m.date, m.subject, m.from_address, m.to_address, {parts_json},
+                (SELECT COUNT(*) FROM message_spam_votes WHERE message_id = m.id) AS spam_vote_count
+         FROM messages m
+         WHERE m.cleaned_subject = $1
+         ORDER BY {order_by}
+         LIMIT $2 OFFSET $3"
+    );
+    let messages = client
         .query(&query_string, &[&clean_subject, &per_page, &offset])
         .await?
         .into_iter()
         .map(Message::from)
         .collect::<Vec<_>>();
 
-    let total: i64 = transaction
+    let total: i64 = client
         .query_one(
             "SELECT COUNT(*) FROM messages WHERE cleaned_subject = $1",
             &[&clean_subject],
         )
         .await?
         .get(0);
-
-    // Commit the transaction
-    transaction.commit().await?;
 
     Ok(ThreadResponse {
         messages,
@@ -334,8 +250,7 @@ pub async fn list_mail_threads(
     sort_order: &str,
     sort_by: &str,
 ) -> Result<(Vec<MailThreadSummary>, i64), Box<dyn std::error::Error>> {
-    let mut client = pool.get().await?;
-    let transaction = client.transaction().await?;
+    let client = pool.get().await?;
     let offset = (page - 1) * per_page;
     let order_dir = if sort_order.eq_ignore_ascii_case("asc") {
         "ASC"
@@ -344,49 +259,55 @@ pub async fn list_mail_threads(
     };
 
     let order_expr = match sort_by {
-        "replies" | "comments" => "c.cnt",
+        "replies" | "comments" => "p.cnt",
         // Mail threads have no reaction counts; fall back to last activity.
-        "reactions" => "l.sent_at",
-        _ => "l.sent_at",
+        "reactions" => "p.last_sent_at",
+        _ => "p.last_sent_at",
     };
-
-    let total: i64 = transaction
-        .query_one(
-            "SELECT COUNT(DISTINCT cleaned_subject) FROM messages WHERE cleaned_subject IS NOT NULL AND cleaned_subject != ''",
-            &[],
-        )
-        .await?
-        .get(0);
-
-    let rows = transaction
+    let rows = client
         .query(
             &format!(
                 r#"
-                WITH latest AS (
-                    SELECT DISTINCT ON (cleaned_subject)
-                        id, cleaned_subject, subject, from_address, sent_at,
-                        LEFT(content, 300) as content_preview
-                    FROM messages
-                    WHERE cleaned_subject IS NOT NULL AND cleaned_subject != ''
-                    ORDER BY cleaned_subject, sent_at DESC NULLS LAST
-                ),
-                counts AS (
-                    SELECT cleaned_subject, COUNT(*) as cnt
+                WITH counts AS (
+                    SELECT cleaned_subject, COUNT(*) AS cnt, MAX(sent_at) AS last_sent_at
                     FROM messages
                     WHERE cleaned_subject IS NOT NULL AND cleaned_subject != ''
                     GROUP BY cleaned_subject
+                ), page AS MATERIALIZED (
+                    SELECT p.cleaned_subject, p.cnt, p.last_sent_at,
+                           COUNT(*) OVER () AS total
+                    FROM counts p
+                    ORDER BY {order_expr} {order_dir} NULLS LAST, p.cleaned_subject
+                    LIMIT $1 OFFSET $2
                 )
-                SELECT l.cleaned_subject, l.subject, l.from_address, l.sent_at, c.cnt as message_count, l.content_preview
-                FROM latest l
-                JOIN counts c ON c.cleaned_subject = l.cleaned_subject
-                ORDER BY {} {} NULLS LAST
-                LIMIT $1 OFFSET $2
+                SELECT p.cleaned_subject, m.subject, m.from_address, m.sent_at,
+                       p.cnt AS message_count, LEFT(m.content, 300) AS content_preview, p.total
+                FROM page p
+                JOIN LATERAL (
+                    SELECT subject, from_address, sent_at, content
+                    FROM messages m
+                    WHERE m.cleaned_subject = p.cleaned_subject
+                    ORDER BY m.sent_at DESC, m.id DESC
+                    LIMIT 1
+                ) m ON true
+                ORDER BY {order_expr} {order_dir} NULLS LAST, p.cleaned_subject
                 "#,
-                order_expr, order_dir
             ),
             &[&per_page, &offset],
         )
         .await?;
+
+    let total = if let Some(row) = rows.first() {
+        row.get("total")
+    } else {
+        client
+            .query_one(
+                "SELECT COUNT(DISTINCT cleaned_subject) FROM messages WHERE cleaned_subject IS NOT NULL AND cleaned_subject != ''",
+                &[],
+            )
+            .await?
+            .get(0)
+    };
 
     let items: Vec<MailThreadSummary> = rows
         .iter()
@@ -400,7 +321,6 @@ pub async fn list_mail_threads(
         })
         .collect();
 
-    transaction.commit().await?;
     Ok((items, total))
 }
 
@@ -462,7 +382,7 @@ pub async fn import_maildir(
             })
             .collect();
 
-        let query = "SELECT file_path FROM messages WHERE file_path = ANY($1::text[])";
+        let query = "SELECT file_path FROM mail_imported_files WHERE file_path = ANY($1::text[])";
         let existing_paths: HashSet<String> = client
             .query(query, &[&relative_paths])
             .await?
@@ -488,14 +408,14 @@ pub async fn import_maildir(
 
             // Spawn a task for each new email
             let task = tokio::spawn(async move {
-                let client = match pool.get().await {
+                let mut client = match pool.get().await {
                     Ok(client) => client,
                     Err(e) => {
                         error!("Failed to get database connection: {}", e);
                         return;
                     }
                 };
-                if let Err(e) = process_email(&client, &file_path, &maildir_path).await {
+                if let Err(e) = process_email(&mut client, &file_path, &maildir_path).await {
                     warn!("Error processing email {}: {}", file_path.display(), e);
                 }
             });
@@ -518,7 +438,7 @@ pub async fn import_maildir(
 }
 
 async fn process_email(
-    client: &Client,
+    client: &mut Client,
     file_path: &Path,
     maildir_path: &str,
 ) -> Result<(), Box<dyn std::error::Error>> {
@@ -655,12 +575,82 @@ async fn process_email(
 
     let parts_json_value = serde_json::json!(parts);
 
-    client.execute(
-        "INSERT INTO messages (message_id, date, subject, from_address, to_address, file_path, parts_json, content)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-         ON CONFLICT (file_path) DO NOTHING",
-        &[&message_id, &parsed_date, &subject, &from_address, &to_address, &relative_path, &parts_json_value, &plain_text_content],
-    ).await?;
+    let transaction = client.transaction().await?;
+    let claimed = transaction
+        .query_opt(
+            "INSERT INTO mail_imported_files (file_path) VALUES ($1)
+             ON CONFLICT (file_path) DO NOTHING RETURNING file_path",
+            &[&relative_path],
+        )
+        .await?;
+    if claimed.is_none() {
+        transaction.commit().await?;
+        return Ok(());
+    }
+
+    // Serialize imports of the same email, including files processed by other workers.
+    let normalized_message_id = message_id.trim();
+    let fallback_date = if date.trim().is_empty() {
+        None
+    } else {
+        Some(parsed_date.as_str())
+    };
+    let identity = if normalized_message_id.is_empty() {
+        format!("fallback:{from_address}:{subject}:{}", fallback_date.unwrap_or(""))
+    } else {
+        format!("message-id:{normalized_message_id}")
+    };
+    transaction
+        .query_one(
+            "SELECT pg_advisory_xact_lock(hashtextextended($1, 0))",
+            &[&identity],
+        )
+        .await?;
+
+    let existing = if normalized_message_id.is_empty() {
+        transaction
+            .query_opt(
+                "SELECT id FROM messages
+                 WHERE nullif(btrim(message_id), '') IS NULL
+                   AND ($1::text IS NULL OR date = $1)
+                   AND subject = $2 AND from_address = $3
+                   AND content IS NOT DISTINCT FROM $4
+                   AND (coalesce(content, '') <> '' OR parts_json IS NOT DISTINCT FROM $5)
+                 ORDER BY id LIMIT 1",
+                &[&fallback_date, &subject, &from_address, &plain_text_content, &parts_json_value],
+            )
+            .await?
+    } else {
+        transaction
+            .query_opt(
+                "SELECT id FROM messages
+                 WHERE btrim(message_id) = $1
+                   AND content IS NOT DISTINCT FROM $2
+                   AND (coalesce(content, '') <> '' OR parts_json IS NOT DISTINCT FROM $3)
+                 ORDER BY id LIMIT 1",
+                &[&normalized_message_id, &plain_text_content, &parts_json_value],
+            )
+            .await?
+    };
+    let message_row = if let Some(row) = existing {
+        row
+    } else {
+        transaction
+            .query_one(
+                "INSERT INTO messages (message_id, date, subject, from_address, to_address, file_path, parts_json, content)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id",
+                &[&normalized_message_id, &parsed_date, &subject, &from_address, &to_address, &relative_path, &parts_json_value, &plain_text_content],
+            )
+            .await?
+    };
+    let canonical_id: i32 = message_row.get(0);
+    transaction
+        .execute(
+            "UPDATE mail_imported_files SET message_id = $2 WHERE file_path = $1",
+            &[&relative_path, &canonical_id],
+        )
+        .await?;
+    transaction.commit().await?;
 
     Ok(())
 }
@@ -1052,7 +1042,7 @@ pub async fn check_for_new_emails(
     pool: &deadpool_postgres::Pool,
     maildir_path: &str,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let client = pool.get().await?;
+    let mut client = pool.get().await?;
     let maildir: &Path = Path::new(maildir_path);
 
     // Collect all file paths first
@@ -1081,7 +1071,7 @@ pub async fn check_for_new_emails(
     for chunk in file_paths.chunks(BATCH_SIZE) {
         let relative_paths: Vec<&str> = chunk.iter().map(|(_, rel)| rel.as_str()).collect();
 
-        let query = "SELECT file_path FROM messages WHERE file_path = ANY($1::text[])";
+        let query = "SELECT file_path FROM mail_imported_files WHERE file_path = ANY($1::text[])";
 
         // Get existing paths for this batch
         let batch_existing: Vec<String> = client
@@ -1097,7 +1087,7 @@ pub async fn check_for_new_emails(
     // Process only new files
     for (full_path, relative_path) in file_paths {
         if !existing_paths.contains(&relative_path) {
-            if let Err(e) = process_email(&client, &full_path, maildir_path).await {
+            if let Err(e) = process_email(&mut client, &full_path, maildir_path).await {
                 error!("Error processing new email {}: {}", full_path.display(), e);
             }
         }
