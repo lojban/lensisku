@@ -10,7 +10,15 @@ export function renderMailContent(text: string, searchTerm = ''): string {
     async: false,
   }) as string
 
-  if (!searchTerm) return parsedContent
+  // Mail bodies can contain raw HTML. These fragments are rendered with v-html, so CSS and
+  // presentation attributes in a message would otherwise apply inside the app or affect layout.
+  const safeContent = parsedContent
+    .replace(/<style\b[^>]*>[\s\S]*?(?:<\/style\s*>|$)/gi, '')
+    .replace(/<link\b[^>]*>/gi, '')
+    .replace(/\s(?:style|class|id|width|height)\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, '')
+    .replace(/<\/?font\b[^>]*>/gi, '')
+
+  if (!searchTerm) return safeContent
   const escapedTerm = searchTerm.replace(/\W/g, '\\$&')
-  return parsedContent.replace(new RegExp(`(${escapedTerm})`, 'gi'), '<mark>$1</mark>')
+  return safeContent.replace(new RegExp(`(${escapedTerm})`, 'gi'), '<mark>$1</mark>')
 }
