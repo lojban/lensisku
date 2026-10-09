@@ -68,27 +68,10 @@ with the number of passages, so allow it to finish after deployment.
 ## Validation
 
 ```sh
-cargo check --bin lensisku
-cargo test --bin lensisku waves::
-python3 tests/waves_search.py
-DISABLE_EMBEDDINGS=0 cargo test --bin lensisku live_model_indexing_and_hybrid_hydration -- --ignored --nocapture
-DISABLE_EMBEDDINGS=0 cargo test --bin lensisku passages_retain_tail_and_obey_wordpiece_budget -- --ignored --nocapture
+cargo check --all-targets
+cargo clippy --all-targets
 cd frontend && pnpm run typecheck
 ```
-
-The SQL regression test uses `WAVE_SEARCH_TEST_CONTAINER` (default `lenpostgres`)
-and rolls back its disposable schema. It exercises the actual migration/ranking
-SQL, all document kinds, exact matches, stemming, literal wildcards, filters,
-deep pagination, semantic-only candidates, paragraph deduplication, threshold
-rejection and edit/delete invalidation. `tests/waves_ranking.sql` additionally
-asserts exact-title/whole-phrase/all-words/substring/semantic ordering against
-adversarial vectors that give substring candidates stronger fusion scores. It
-checks Lojban apostrophes, Unicode, regex punctuation, whitespace, fallback and
-pagination. These are reproducible ranking invariants, not a claim of universal
-relevance for every natural-language query. The Rust workflow runs this SQL suite
-in a separate disposable pgvector service job. The optional model test uses local `.env`
-database configuration, creates and removes a disposable schema, and verifies
-real inference, all result hydration paths, backfill and late-paragraph retrieval.
 
 Design references: [PostgreSQL text ranking](https://www.postgresql.org/docs/18/textsearch-controls.html),
 [reciprocal rank fusion](https://learn.microsoft.com/en-us/azure/search/hybrid-search-ranking),

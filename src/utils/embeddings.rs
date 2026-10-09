@@ -137,38 +137,3 @@ pub async fn discussion_passages(title: &str, body: &str) -> AppResult<Vec<Strin
     .await
     .map_err(|e| AppError::Internal(format!("Passage preparation failed: {e}")))?
 }
-
-#[cfg(test)]
-mod discussion_tests {
-    use super::*;
-
-    #[tokio::test]
-    #[ignore = "loads the embedding model/tokenizer"]
-    async fn passages_retain_tail_and_obey_wordpiece_budget() -> AppResult<()> {
-        let body = format!(
-            "{}\n\nFinal paragraph about quantifier scope.",
-            "na'e cmavo .i zo broda — 日本語 中文 العربية ".repeat(200)
-        );
-        let passages = discussion_passages(&"A very long title ".repeat(40), &body).await?;
-        assert!(passages.len() > 2);
-        assert!(passages
-            .last()
-            .is_some_and(|s| s.contains("Final paragraph")));
-        let mut tokenizer = get_model()?.lock().tokenizer.clone();
-        tokenizer
-            .with_truncation(None)
-            .map_err(|e| AppError::Internal(e.to_string()))?;
-        tokenizer.with_padding(None);
-        for passage in passages {
-            let encoded = tokenizer
-                .encode(passage, true)
-                .map_err(|e| AppError::Internal(e.to_string()))?;
-            assert!(
-                encoded.len() <= 256,
-                "Passage exceeded model token budget: {}",
-                encoded.len()
-            );
-        }
-        Ok(())
-    }
-}

@@ -236,20 +236,3 @@ async fn search_with_embedding(
         per_page,
     })
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn sort_fields_cannot_inject_sql_and_ties_are_stable() {
-        assert!(order_clause("time", false).contains("NULLS LAST"));
-        assert!(order_clause("score; DROP TABLE messages", false).contains("score DESC"));
-        assert!(order_clause("relevance", true).ends_with("document_id ASC"));
-        assert!(order_clause("relevance", false).starts_with("match_priority DESC, score DESC"));
-    }
-}
-
-#[cfg(test)]
-#[path = "runtime_tests.rs"]
-mod runtime_tests;

@@ -30,10 +30,10 @@ WITH scoped AS NOT MATERIALIZED (
 ), classified AS (
     SELECT d.document_id,
         CASE WHEN lower(d.title) = lower($1) THEN 6
-             WHEN d.title ~* q.phrase OR d.body ~* q.phrase THEN 5
+             WHEN d.title ~* q.phrase OR d.body ~* q.phrase OR d.author ~* q.phrase THEN 5
              WHEN cardinality(q.words) > 0 AND NOT EXISTS (
                  SELECT 1 FROM unnest(q.words) word
-                 WHERE NOT ((d.title || E'\n' || d.body) ~* word)) THEN 4
+                 WHERE NOT ((d.title || E'\n' || d.body || E'\n' || d.author) ~* word)) THEN 4
              WHEN d.title ILIKE q.pattern ESCAPE '\' OR d.body ILIKE q.pattern ESCAPE '\'
                   OR d.author ILIKE q.pattern ESCAPE '\' THEN 3
              WHEN d.search_simple @@ q.simple THEN 2
