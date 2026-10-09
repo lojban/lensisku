@@ -35,7 +35,7 @@
   <!-- Messages List -->
   <div v-else-if="!isLoading && messages.length > 0" class="space-y-4">
     <MessageThreadCard v-for="message in messages" :key="message.id">
-      <div class="p-4">
+      <div class="min-w-0 max-w-full p-4">
         <!-- Message Header -->
         <div class="flex justify-between items-start mb-3">
           <h3 class="link-message-title">
@@ -77,7 +77,7 @@
           <div
             v-for="part in message.parts_json.filter((p) => p.mime_type.startsWith('text/'))"
             :key="part.id"
-            class="text-gray-700 text-sm prose max-w-none"
+            class="min-w-0 max-w-full break-words [overflow-wrap:anywhere] text-gray-700 text-sm prose [&_pre]:whitespace-pre-wrap [&_pre]:break-words [&_pre]:[overflow-wrap:anywhere] [&_pre]:max-w-full [&_code]:whitespace-pre-wrap [&_code]:break-words [&_code]:[overflow-wrap:anywhere]"
             v-html="highlightText(part.content)"
           ></div>
           <!-- eslint-enable vue/no-v-html -->

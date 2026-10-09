@@ -366,7 +366,7 @@
                     />
                     <div
                       v-else-if="item.source === 'wiki'"
-                      class="comment-item bg-white border rounded-lg p-3 my-2 hover:border-blue-300 transition-colors min-w-48"
+                      class="comment-item bg-white border rounded-lg p-3 my-2 hover:border-blue-300 transition-colors min-w-0 max-w-full"
                     >
                       <div
                         class="mb-2 text-sm text-gray-600 whitespace-nowrap overflow-hidden flex items-center"
@@ -389,7 +389,7 @@
                     </div>
                     <div
                       v-else
-                      class="comment-item bg-white border rounded-lg p-3 my-2 hover:border-blue-300 transition-colors min-w-48"
+                      class="comment-item bg-white border rounded-lg p-3 my-2 hover:border-blue-300 transition-colors min-w-0 max-w-full"
                     >
                       <div
                         class="mb-2 text-sm text-gray-600 whitespace-nowrap overflow-hidden flex items-center"
@@ -408,7 +408,7 @@
 
                       <div
                         v-if="item.message.parts_json && textParts(item.message.parts_json).length"
-                        class="text-sm text-gray-700 border-t border-gray-100 pt-2 mt-2 prose prose-sm max-w-none [&_img]:max-h-48 [&_img]:object-contain"
+                        class="min-w-0 max-w-full break-words [overflow-wrap:anywhere] text-sm text-gray-700 border-t border-gray-100 pt-2 mt-2 prose prose-sm [&_pre]:whitespace-pre-wrap [&_pre]:break-words [&_pre]:[overflow-wrap:anywhere] [&_pre]:max-w-full [&_code]:whitespace-pre-wrap [&_code]:break-words [&_code]:[overflow-wrap:anywhere] [&_img]:max-h-48 [&_img]:object-contain"
                       >
                         <!-- eslint-disable vue/no-v-html -->
                         <div

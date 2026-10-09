@@ -294,6 +294,9 @@ mark {
   color: #374151;
   overflow-wrap: break-word;
   word-break: break-word;
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
 }
 
 .message-content :deep(p) {
@@ -316,6 +319,8 @@ mark {
   border-radius: 0.25em;
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.875em;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
 .message-content :deep(ul),
@@ -348,6 +353,9 @@ mark {
 
 .message-content :deep(pre) {
   white-space: pre-wrap;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
   font-family: 'JetBrains Mono', monospace;
   margin: 1.5rem 0;
   padding: 1rem;
