@@ -84,3 +84,29 @@ jobs:
 
     - name: Run tests
       run: cargo test --verbose
+
+  discussion-search-ranking:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg18-trixie
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: ranking-test
+          POSTGRES_DB: ranking
+        options: >-
+          --health-cmd "pg_isready -U postgres -d ranking"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+    - uses: actions/checkout@v4
+    - name: Enable search extensions
+      run: >-
+        docker exec "${{ job.services.postgres.id }}"
+        psql -v ON_ERROR_STOP=1 -U postgres -d ranking
+        -c "CREATE EXTENSION vector; CREATE EXTENSION pg_trgm;"
+    - name: Verify discussion relevance ordering
+      env:
+        WAVE_SEARCH_TEST_CONTAINER: ${{ job.services.postgres.id }}
+      run: python3 tests/waves_search.py

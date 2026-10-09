@@ -408,7 +408,7 @@
 
                       <div
                         v-if="item.message.parts_json && textParts(item.message.parts_json).length"
-                        class="min-w-0 max-w-full break-words [overflow-wrap:anywhere] text-sm text-gray-700 border-t border-gray-100 pt-2 mt-2 prose prose-sm [&_pre]:whitespace-pre-wrap [&_pre]:break-words [&_pre]:[overflow-wrap:anywhere] [&_pre]:max-w-full [&_code]:whitespace-pre-wrap [&_code]:break-words [&_code]:[overflow-wrap:anywhere] [&_img]:max-h-48 [&_img]:object-contain"
+                        class="mail-card-content border-t border-gray-100 pt-2 mt-2 text-sm text-gray-700"
                       >
                         <!-- eslint-disable vue/no-v-html -->
                         <div
@@ -1852,3 +1852,53 @@ watch(
   }
 )
 </script>
+
+<style scoped>
+.mail-card-content {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  font-family: inherit;
+}
+
+.mail-card-content :deep(p) {
+  margin: 0.75em 0;
+}
+
+.mail-card-content :deep(a) {
+  color: #2563eb;
+  text-decoration: underline;
+  overflow-wrap: anywhere;
+}
+
+.mail-card-content :deep(blockquote) {
+  margin: 0.75em 0;
+  border-left: 3px solid #d1d5db;
+  padding-left: 0.75rem;
+  color: #4b5563;
+}
+
+.mail-card-content :deep(ul),
+.mail-card-content :deep(ol) {
+  margin: 0.75em 0;
+  padding-left: 1.5rem;
+}
+
+.mail-card-content :deep(pre),
+.mail-card-content :deep(code) {
+  max-width: 100%;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.mail-card-content :deep(pre) {
+  overflow-x: auto;
+}
+
+.mail-card-content :deep(img) {
+  max-width: 100%;
+  max-height: 12rem;
+  object-fit: contain;
+}
+</style>

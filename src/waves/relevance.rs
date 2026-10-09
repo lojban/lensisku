@@ -29,7 +29,7 @@ fn order_clause(sort_by: &str, asc: bool) -> String {
         "time" => format!("edited_at {direction} NULLS LAST, score DESC, document_id ASC"),
         "reactions" => format!("reactions {direction}, score DESC, document_id ASC"),
         "replies" => format!("replies {direction}, score DESC, document_id ASC"),
-        _ => format!("(lower(title) = lower($1)) DESC, score {direction}, document_id ASC"),
+        _ => format!("match_priority {direction}, score {direction}, document_id ASC"),
     }
 }
 
@@ -246,6 +246,7 @@ mod tests {
         assert!(order_clause("time", false).contains("NULLS LAST"));
         assert!(order_clause("score; DROP TABLE messages", false).contains("score DESC"));
         assert!(order_clause("relevance", true).ends_with("document_id ASC"));
+        assert!(order_clause("relevance", false).starts_with("match_priority DESC, score DESC"));
     }
 }
 

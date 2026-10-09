@@ -7,23 +7,47 @@ WITH scoped AS NOT MATERIALIZED (
       AND ($3::integer IS NULL OR (d.kind = 'comment' AND EXISTS (
           SELECT 1 FROM comments c JOIN threads t ON t.threadid = c.threadid
           WHERE c.commentid = d.source_id AND t.collection_id = $3)))
+), tokens AS (
+    -- Escape every regex metacharacter. Apostrophes stay inside words so na does
+    -- not count as an exact whole-word match for the Lojban token na'e.
+    SELECT regexp_replace(token, '([\\.^$|?*+(){}\[\]])', '\\\1', 'g') AS escaped, position
+    FROM regexp_split_to_table(trim($1), '[[:space:]]+') WITH ORDINALITY AS t(token, position)
+    WHERE token <> '' ORDER BY position
 ), q AS (
     SELECT websearch_to_tsquery('simple', $1) AS simple,
            websearch_to_tsquery('english', $1) AS english,
-           '%' || replace(replace(replace($1, '\', '\\'), '%', '\%'), '_', '\_') || '%' AS pattern
-), lexical AS (
-    SELECT d.document_id,
-        row_number() OVER (ORDER BY
-            CASE WHEN lower(d.title) = lower($1) THEN 3
-                 WHEN d.title ILIKE q.pattern ESCAPE '\' THEN 2
-                 WHEN d.body ILIKE q.pattern ESCAPE '\' THEN 1 ELSE 0 END DESC,
-            greatest(ts_rank_cd(d.search_simple, q.simple, 32),
-                     ts_rank_cd(d.search_english, q.english, 32)) DESC,
-            d.document_id ASC) AS rank
-    FROM scoped d CROSS JOIN q
+           '%' || replace(replace(replace($1, '\', '\\'), '%', '\%'), '_', '\_') || '%' AS pattern,
+           (SELECT '(?<![[:alnum:]_])(?<![[:alnum:]_]'')' || string_agg(escaped, '[[:space:]]+' ORDER BY position) || '(?![[:alnum:]_])(?!''[[:alnum:]_])'
+            FROM tokens) AS phrase,
+           (SELECT array_agg('(?<![[:alnum:]_])(?<![[:alnum:]_]'')' || escaped || '(?![[:alnum:]_])(?!''[[:alnum:]_])' ORDER BY position) FROM tokens) AS words
+), lexical_candidates AS (
+    -- Use existing GIN/trigram indexes to retrieve candidates first; regexes
+    -- classify these matches, rather than scan the entire archive for each word.
+    SELECT d.* FROM scoped d CROSS JOIN q
     WHERE d.search_simple @@ q.simple OR d.search_english @@ q.english
        OR d.title ILIKE q.pattern ESCAPE '\' OR d.body ILIKE q.pattern ESCAPE '\'
        OR d.author ILIKE q.pattern ESCAPE '\'
+), classified AS (
+    SELECT d.document_id,
+        CASE WHEN lower(d.title) = lower($1) THEN 6
+             WHEN d.title ~* q.phrase OR d.body ~* q.phrase THEN 5
+             WHEN cardinality(q.words) > 0 AND NOT EXISTS (
+                 SELECT 1 FROM unnest(q.words) word
+                 WHERE NOT ((d.title || E'\n' || d.body) ~* word)) THEN 4
+             WHEN d.title ILIKE q.pattern ESCAPE '\' OR d.body ILIKE q.pattern ESCAPE '\'
+                  OR d.author ILIKE q.pattern ESCAPE '\' THEN 3
+             WHEN d.search_simple @@ q.simple THEN 2
+             ELSE 1 END AS match_priority,
+        CASE WHEN d.title ~* q.phrase THEN 2
+             WHEN d.title ILIKE q.pattern ESCAPE '\' THEN 1 ELSE 0 END AS title_priority,
+        greatest(ts_rank_cd(d.search_simple, q.simple, 32),
+                 ts_rank_cd(d.search_english, q.english, 32)) AS text_score
+    FROM lexical_candidates d CROSS JOIN q
+), lexical AS (
+    SELECT document_id, match_priority,
+        row_number() OVER (ORDER BY match_priority DESC, title_priority DESC,
+                                   text_score DESC, document_id ASC) AS rank
+    FROM classified
 ), document_nearest AS MATERIALIZED (
     SELECT d.document_id, d.embedding <=> $4::vector AS distance
     FROM wave_search_documents d
@@ -54,7 +78,8 @@ WITH scoped AS NOT MATERIALIZED (
 ), fused AS (
     SELECT document_id, sum(score)::double precision AS score FROM votes GROUP BY document_id
 ), matches AS (
-    SELECT d.*, f.score, l.document_id IS NOT NULL AS lexical_match,
+    SELECT d.*, f.score, coalesce(l.match_priority, 0) AS match_priority,
+        l.document_id IS NOT NULL AS lexical_match,
         (dr.document_id IS NOT NULL OR cr.document_id IS NOT NULL) AS semantic_match,
         b.content AS semantic_excerpt,
         coalesce(cc.total_reactions, 0) AS reactions, coalesce(cc.total_replies, 0) AS replies
@@ -69,7 +94,7 @@ WITH scoped AS NOT MATERIALIZED (
 SELECT (SELECT count(*) FROM matches) AS total,
        coalesce((SELECT jsonb_agg(to_jsonb(page)) FROM (
            SELECT document_id, kind, source_id, source, title, edited_at, score,
-                  lexical_match, semantic_match,
+                  lexical_match, semantic_match, match_priority,
                   CASE WHEN strpos(lower(body), lower($1)) > 0
                        THEN substring(body FROM greatest(strpos(lower(body), lower($1)) - 120, 1) FOR 500)
                        WHEN to_tsvector('simple', body) @@ q.simple

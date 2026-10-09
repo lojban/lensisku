@@ -1,7 +1,7 @@
 <template>
   <div
     :class="[
-      'w-full overflow-visible relative',
+      'w-full min-w-0 overflow-visible relative',
       !disableBorder
         ? 'bg-white border rounded-lg hover:border-blue-300 transition-colors shadow hover:shadow-none'
         : '',
@@ -309,7 +309,7 @@
       <!-- Definition Content -->
       <div v-if="(hasNotes || showNotesEdit) && definition.definitionid" class="mt-3 pt-2 border-t">
         <div v-if="hasNotes">
-          <div class="text-sm text-gray-600 bg-gray-50 rounded">
+          <div class="definition-card-content text-sm text-gray-600 bg-gray-50 rounded">
             <LazyMathJax v-if="notes" :content="notes" :enable-markdown="true" />
           </div>
         </div>
@@ -330,7 +330,7 @@
         {{ displayedFreeContent }}
       </div>
 
-      <div class="text-sm prose prose-sm max-w-none text-gray-700 mt-2">
+      <div class="definition-card-content text-sm text-gray-700 mt-2">
         <LazyMathJax
           :content="
             definition.definition || definition.free_content_back || definition.content || ''
@@ -1306,3 +1306,43 @@ const cancelDelete = () => {
   showDeleteConfirm.value = false
 }
 </script>
+
+<style scoped>
+.definition-card-content {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.definition-card-content :deep(p) {
+  margin: 0.5em 0;
+}
+
+.definition-card-content :deep(a) {
+  overflow-wrap: anywhere;
+}
+
+.definition-card-content :deep(pre),
+.definition-card-content :deep(code) {
+  max-width: 100%;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.definition-card-content :deep(pre) {
+  overflow-x: auto;
+}
+
+.definition-card-content :deep(blockquote) {
+  margin: 0.75em 0;
+  border-left: 3px solid #d1d5db;
+  padding-left: 0.75rem;
+  color: #4b5563;
+}
+
+.definition-card-content :deep(ul),
+.definition-card-content :deep(ol) {
+  padding-left: 1.5rem;
+}
+</style>

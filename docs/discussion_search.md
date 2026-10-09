@@ -16,15 +16,22 @@ use their existing search implementation.
 ## Ranking and passages
 
 - Literal substring matches escape `%`, `_` and backslashes. Exact titles rank
-  first. Titles receive greater full-text weight than bodies and author names.
+  first. Explicit precision tiers then rank whole-word phrases, all query words
+  in any order, literal substrings, unstemmed full-text matches, English stemmed
+  matches, and semantic-only matches. Tiers take precedence over fusion scores;
+  title matches and full-text proximity/coverage rank results within each tier.
+  Apostrophes remain inside Lojban words, so `na` is not a whole-word match for
+  `na'e`. Query punctuation is escaped before regex classification. Titles receive
+  greater full-text weight than bodies and author names.
 - PostgreSQL `simple` full-text search preserves Lojban/non-English words;
   `english` additionally retrieves English inflections. `websearch_to_tsquery`
   supports quoted phrases, OR and exclusions for the full-text branch; the
   substring branch searches the original literal query.
 - Reciprocal rank fusion combines lexical, whole-document and best-passage ranks
   with weights 2, 0.7 and 1 respectively, and rank constant 60. A document receives
-  at most one vote per branch, regardless of how many paragraphs match. Exact
-  titles remain first, and document IDs break ties deterministically.
+  at most one vote per branch, regardless of how many paragraphs match. Explicit
+  precision tiers take precedence over this score, and document IDs break ties
+  deterministically. Explicit time/reaction/reply sorting retains its own order.
 - Semantic candidates require cosine similarity of at least 0.4, configurable via
   `WAVE_SEARCH_MIN_SIMILARITY` (0–1). This is a starting threshold, not a calibrated
   probability; evaluate representative real queries before changing it.
@@ -73,7 +80,13 @@ The SQL regression test uses `WAVE_SEARCH_TEST_CONTAINER` (default `lenpostgres`
 and rolls back its disposable schema. It exercises the actual migration/ranking
 SQL, all document kinds, exact matches, stemming, literal wildcards, filters,
 deep pagination, semantic-only candidates, paragraph deduplication, threshold
-rejection and edit/delete invalidation. The optional model test uses local `.env`
+rejection and edit/delete invalidation. `tests/waves_ranking.sql` additionally
+asserts exact-title/whole-phrase/all-words/substring/semantic ordering against
+adversarial vectors that give substring candidates stronger fusion scores. It
+checks Lojban apostrophes, Unicode, regex punctuation, whitespace, fallback and
+pagination. These are reproducible ranking invariants, not a claim of universal
+relevance for every natural-language query. The Rust workflow runs this SQL suite
+in a separate disposable pgvector service job. The optional model test uses local `.env`
 database configuration, creates and removes a disposable schema, and verifies
 real inference, all result hydration paths, backfill and late-paragraph retrieval.
 
