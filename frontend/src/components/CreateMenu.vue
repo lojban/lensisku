@@ -33,7 +33,7 @@
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { Plus, Waves, BookOpen, FileText } from '@lucide/vue'
+import { Plus, Waves, BookPlus, FileText } from '@lucide/vue'
 import { FabButton, ToolbarSelectDropdown, ToolbarSelectDropdownItem } from '@packages/ui'
 import { useLocalePath } from '@/composables/useLocalePath'
 defineProps({ floating: { type: Boolean, default: false } })
@@ -49,7 +49,7 @@ const choices = computed(() => [
   },
   {
     path: '/valsi/add',
-    icon: BookOpen,
+    icon: BookPlus,
     iconClass: 'fab-menu-icon--definition',
     label: t('creation.newDefinition'),
   },

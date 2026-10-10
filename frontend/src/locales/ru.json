@@ -219,7 +219,7 @@
     "newFreeThread": "Начать новую волну",
     "noCommentsFound": "Комментарии, соответствующие вашему поиску, не найдены",
     "waveSourceLabel": "Волны",
-    "waveSourceAll": "Все типы",
+    "waveSourceAll": "Все источники",
     "waveSourceJbotcan": "jbotcan",
     "waveSourceFreeforums": "freeforums",
     "waveSourceComments": "Комментарии",
@@ -1807,7 +1807,8 @@
     "replaceWithRedirect": "Заменить содержимое перенаправлением",
     "redirectHint": "Сохранение перенаправления заменит содержимое страницы ссылкой на другую вики-страницу.",
     "redirectTargetLabel": "Целевая вики-страница",
-    "redirectTargetPlaceholder": "Введите название вики-страницы"
+    "redirectTargetPlaceholder": "Введите название вики-страницы",
+    "insertHeading": "Вставить заголовок"
   },
   "creation": {
     "create": "Создать",

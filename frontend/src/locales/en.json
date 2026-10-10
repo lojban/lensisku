@@ -224,7 +224,7 @@
     "newFreeThread": "Start free wave",
     "noCommentsFound": "No comments found matching your search",
     "waveSourceLabel": "Waves",
-    "waveSourceAll": "All types",
+    "waveSourceAll": "All sources",
     "waveSourceJbotcan": "jbotcan",
     "waveSourceFreeforums": "freeforums",
     "waveSourceComments": "Comments",
@@ -1820,7 +1820,8 @@
     "replaceWithRedirect": "Replace content with a redirect",
     "redirectHint": "Saving a redirect replaces the page content with a link to another wiki page.",
     "redirectTargetLabel": "Target wiki page",
-    "redirectTargetPlaceholder": "Enter a wiki page title"
+    "redirectTargetPlaceholder": "Enter a wiki page title",
+    "insertHeading": "Insert heading"
   },
   "activityBookmarks": {
     "noBookmarks": "No bookmarked comments found."

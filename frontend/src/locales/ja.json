@@ -221,7 +221,7 @@
     "newFreeThread": "フリーウェーブを始める",
     "noCommentsFound": "条件に一致するコメントはありません",
     "waveSourceLabel": "波",
-    "waveSourceAll": "すべての種類",
+    "waveSourceAll": "すべてのソース",
     "waveSourceJbotcan": "jbotcan",
     "waveSourceFreeforums": "freeforums",
     "waveSourceComments": "コメント",
@@ -1853,7 +1853,8 @@
     "replaceWithRedirect": "内容を転送に置き換える",
     "redirectHint": "保存すると、ページの内容が別のウィキページへのリンクに置き換わります。",
     "redirectTargetLabel": "転送先のウィキページ",
-    "redirectTargetPlaceholder": "ウィキページのタイトルを入力"
+    "redirectTargetPlaceholder": "ウィキページのタイトルを入力",
+    "insertHeading": "見出しを挿入"
   },
   "creation": {
     "create": "作成",

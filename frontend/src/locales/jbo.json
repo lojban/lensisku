@@ -221,7 +221,7 @@
     "newFreeThread": "cnino nu casnu",
     "noCommentsFound": "no pinka cu sarxe lo do sisku",
     "waveSourceLabel": "casnu",
-    "waveSourceAll": "rolmei",
+    "waveSourceAll": "ro krasi",
     "waveSourceJbotcan": "la .jbotcan",
     "waveSourceFreeforums": "la'o .url.freeforums.url.",
     "waveSourceComments": "pinka",
@@ -1880,7 +1880,8 @@
     "replaceWithRedirect": "basti lo se ciska lo farna",
     "redirectHint": "lo nu rejgau cu basti lo se ciska lo farna be lo drata uitki ckupau",
     "redirectTargetLabel": "lo se farna uitki ckupau",
-    "redirectTargetPlaceholder": "ko ciska lo uitki ckupau cmene"
+    "redirectTargetPlaceholder": "ko ciska lo uitki ckupau cmene",
+    "insertHeading": "jmina lo cmavo liste"
   },
   "creation": {
     "create": "finti",

@@ -78,6 +78,7 @@
                   <span>{{ $t('home.addDefinition') }}</span>
                 </template>
                 <ToolbarSelectDropdownItem @click="router.push(localePath('/valsi/add'))">
+                  <BookPlus class="h-4 w-4 shrink-0" aria-hidden="true" />
                   {{ $t('home.createDefinition') }}
                 </ToolbarSelectDropdownItem>
                 <ToolbarSelectDropdownItem
@@ -85,6 +86,7 @@
                   :class="{ 'opacity-50 cursor-not-allowed': !hasSearchResults }"
                   @click="hasSearchResults && (showAddAllModal = true)"
                 >
+                  <StarPlus class="h-4 w-4 shrink-0" aria-hidden="true" />
                   {{ $t('home.addAllToCollection') }}
                 </ToolbarSelectDropdownItem>
                 <ToolbarSelectDropdownItem @click="goToSearchExport">
@@ -438,7 +440,16 @@
 
 <script setup lang="ts">
 import { jwtDecode } from 'jwt-decode'
-import { MessageSquare, ChevronDown, ChevronUp, AudioWaveform, Plus, X } from '@lucide/vue'
+import {
+  MessageSquare,
+  ChevronDown,
+  ChevronUp,
+  AudioWaveform,
+  Plus,
+  X,
+  BookPlus,
+  StarPlus,
+} from '@lucide/vue'
 import { ref, onMounted, watch, computed, onBeforeUnmount, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 

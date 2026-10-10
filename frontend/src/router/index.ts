@@ -575,6 +575,21 @@ const localeRoutes = supportedLocales.flatMap((locale) =>
 
 export const setupRouterGuards = (router: Router, isClient: boolean) => {
   router.beforeEach(async (to: RouteLocationNormalized, from: RouteLocationNormalized) => {
+    const wikiTitle = typeof to.params.title === 'string' ? to.params.title : undefined
+    if (
+      typeof to.name === 'string' &&
+      to.name.startsWith('WikiArticle-') &&
+      wikiTitle?.includes(' ')
+    ) {
+      return {
+        name: to.name,
+        params: { ...to.params, title: wikiTitle.replace(/ /g, '_') },
+        query: to.query,
+        hash: to.hash,
+        replace: true,
+      }
+    }
+
     const baseToName = typeof to.name === 'string' ? to.name.split('-')[0] : undefined
 
     if (to.query.redirect_loop) {

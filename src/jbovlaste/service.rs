@@ -2514,6 +2514,12 @@ fn wiki_redirect_content(
     Ok((Some(target.clone()), format!("Redirect to [[{}]].", target)))
 }
 
+/// Store wiki titles in human-readable form; underscores are a URL spelling
+/// for spaces in wiki titles, not part of the page title itself.
+fn normalize_wiki_title(title: &str) -> String {
+    sanitize_html(&title.trim().replace('_', " "))
+}
+
 async fn set_wiki_redirect(
     transaction: &Transaction<'_>,
     definition_id: i32,
@@ -2543,7 +2549,7 @@ async fn upsert_wiki_in_transaction(
     redis_cache: &RedisCache,
 ) -> Result<(String, i32, Option<String>), Box<dyn std::error::Error>> {
     let mut sanitized_definition = sanitize_html(&request.definition);
-    let word = sanitize_html(&request.word);
+    let word = normalize_wiki_title(&request.word);
     let source_langid = request.source_langid.unwrap_or(1);
     let redirect = request
         .redirect_to
@@ -2825,7 +2831,7 @@ pub async fn rename_wiki_page(
     request: &RenameWikiRequest,
     redis_cache: &RedisCache,
 ) -> Result<RenameWikiResponse, Box<dyn std::error::Error>> {
-    let new_word = sanitize_html(request.new_word.trim());
+    let new_word = normalize_wiki_title(&request.new_word);
     if new_word.is_empty() {
         return Err("New title cannot be empty".into());
     }

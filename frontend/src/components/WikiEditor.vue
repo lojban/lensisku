@@ -15,6 +15,15 @@
         variant="empty"
         class="text-sm"
         :disabled="disabled"
+        @click="insertHeading"
+      >
+        {{ t('upsertWiki.insertHeading') }}
+      </Button>
+      <Button
+        type="button"
+        variant="empty"
+        class="text-sm"
+        :disabled="disabled"
         @click="rawMode = !rawMode"
       >
         {{ rawMode ? t('upsertWiki.visualEditor') : t('upsertWiki.rawSource') }}
@@ -88,6 +97,12 @@ function insertWikiLink() {
   const slug = page.replace(/ /g, '_')
   const snippet = ` [[${page}]](/wiki/${slug}) `
   crepe.editor.action(insert(snippet))
+  syncFromEditor()
+}
+
+function insertHeading() {
+  if (!crepe) return
+  crepe.editor.action(insert('\n## Heading\n\n'))
   syncFromEditor()
 }
 

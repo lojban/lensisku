@@ -221,7 +221,7 @@
     "newFreeThread": "发起自由波",
     "noCommentsFound": "没有符合搜索条件的评论",
     "waveSourceLabel": "波浪",
-    "waveSourceAll": "全部类型",
+    "waveSourceAll": "所有来源",
     "waveSourceJbotcan": "jbotcan",
     "waveSourceFreeforums": "freeforums",
     "waveSourceComments": "评论",
@@ -1858,7 +1858,8 @@
     "replaceWithRedirect": "将内容替换为重定向",
     "redirectHint": "保存重定向会将页面内容替换为指向另一个维基页面的链接。",
     "redirectTargetLabel": "目标维基页面",
-    "redirectTargetPlaceholder": "输入维基页面标题"
+    "redirectTargetPlaceholder": "输入维基页面标题",
+    "insertHeading": "插入标题"
   },
   "creation": {
     "create": "创建",

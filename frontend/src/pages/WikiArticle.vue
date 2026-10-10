@@ -117,7 +117,7 @@
         </template>
       </div>
 
-      <WikiContent :content="article.markdown" />
+      <WikiContent :content="article.markdown" @rendered="scrollToHash" />
     </div>
   </div>
 </template>
@@ -169,6 +169,12 @@ const loading = ref(true)
 const error = ref<string | null>(null)
 const article = ref<WikiArticleDetail | null>(null)
 const followedOnce = ref(false)
+
+function scrollToHash() {
+  if (!route.hash) return
+  const id = decodeURIComponent(route.hash.slice(1))
+  document.getElementById(id)?.scrollIntoView()
+}
 
 useSeoHead({
   title: computed(() => article.value?.title || props.title?.replace(/_/g, ' ') || 'Wiki article'),
@@ -303,7 +309,7 @@ onMounted(() => {
   if (props.definitionId != null && props.definitionId !== '') {
     loadByDefinitionId(Number(props.definitionId))
   } else if (props.title) {
-    load(props.title)
+    load(props.title.replace(/_/g, ' '))
   }
 })
 
@@ -312,7 +318,7 @@ watch(
   (newTitle) => {
     if (newTitle) {
       followedOnce.value = Boolean(route.query.redirect_from)
-      load(newTitle)
+      load(newTitle.replace(/_/g, ' '))
     }
   }
 )

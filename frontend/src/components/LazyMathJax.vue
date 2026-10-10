@@ -38,6 +38,7 @@ const props = defineProps({
     default: true,
   },
 })
+const emit = defineEmits<{ rendered: [] }>()
 
 const contentRef = ref(null)
 const contentKey = ref(0)
@@ -148,6 +149,39 @@ function restoreMathAfterMarkdown(html, parts) {
   })
 }
 
+/**
+ * Marked intentionally leaves raw HTML blocks alone. Imported MediaWiki tables
+ * often contain Markdown in their <td>/<th> text, so render those cell contents
+ * as inline Markdown while preserving the surrounding table HTML.
+ */
+async function renderMarkdownInHtmlTableCells(markdown, parser) {
+  const tablePattern = /<table\b[\s\S]*?<\/table\s*>/gi
+  let output = ''
+  let sourceIndex = 0
+  let tableMatch
+
+  while ((tableMatch = tablePattern.exec(markdown)) !== null) {
+    output += markdown.slice(sourceIndex, tableMatch.index)
+    const table = tableMatch[0]
+    const cellPattern = /<(td|th)\b([^>]*)>([\s\S]*?)<\/\1\s*>/gi
+    let renderedTable = ''
+    let cellIndex = 0
+    let cellMatch
+
+    while ((cellMatch = cellPattern.exec(table)) !== null) {
+      renderedTable += table.slice(cellIndex, cellMatch.index)
+      const cellContent = await parser.parseInline(cellMatch[3])
+      renderedTable += `<${cellMatch[1]}${cellMatch[2]}>${cellContent}</${cellMatch[1]}>`
+      cellIndex = cellMatch.index + cellMatch[0].length
+    }
+
+    output += renderedTable + table.slice(cellIndex)
+    sourceIndex = tableMatch.index + table.length
+  }
+
+  return output + markdown.slice(sourceIndex)
+}
+
 const renderContent = async () => {
   if (!contentRef.value || !props.content) return
 
@@ -217,6 +251,7 @@ const renderContent = async () => {
 
     const mdParser = new Marked()
     mdParser.use({ extensions, renderer: renderer as RendererObject })
+    finalContent = await renderMarkdownInHtmlTableCells(finalContent, mdParser)
     const parsed = mdParser.parse(finalContent)
     finalContent = typeof parsed === 'string' ? parsed : await parsed
     finalContent = restoreMathAfterMarkdown(finalContent, mathParts)
@@ -235,6 +270,7 @@ const renderContent = async () => {
   }
 
   contentRef.value.innerHTML = finalContent
+  emit('rendered')
 
   if (props.enableMarkdown) {
     contentRef.value.querySelectorAll('table').forEach((table) => {
