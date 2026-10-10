@@ -241,6 +241,12 @@ pub struct KeywordMapping {
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct RecentChange {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub event_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub source: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub source_name: Option<String>,
     /// Distinguishes wiki discussion context from dictionary definitions.
     #[serde(default)]
     pub is_wiki: bool,

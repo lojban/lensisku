@@ -31,6 +31,13 @@ const baseRoutes: Array<RouteRecordRaw> = [
     }),
   },
   {
+    path: '/activity',
+    name: 'Activity',
+    component: () => import('../pages/ActivityPage.vue'),
+    meta: { fullHeight: true, hideFooter: true, hidePageFooter: true },
+  },
+  { path: '/create', name: 'Create', component: () => import('../pages/CreatePage.vue') },
+  {
     path: '/sutra_sisku',
     name: 'FastSearch',
     component: () => import('../pages/FastSearchPage.vue'),
@@ -229,7 +236,7 @@ const baseRoutes: Array<RouteRecordRaw> = [
     path: '/comments/new-thread',
     name: 'NewThread',
     component: () => import('../pages/NewThreadPage.vue'),
-    meta: { requiresAuth: true },
+    meta: upsertPageMeta,
   },
   {
     path: '/recent',

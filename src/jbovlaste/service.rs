@@ -318,11 +318,11 @@ pub async fn semantic_search(
             GROUP BY definitionid
         ),
         vector_search AS (
-            SELECT 
+            SELECT
                 d.definitionid,
                 CASE WHEN d.embedding IS NOT NULL THEN d.embedding <=> $1::vector END as similarity,
                 COALESCE(dv.score, 0)::bigint AS score,
-                CASE 
+                CASE
                     WHEN v.word = $3 OR v.word = $4 THEN 0
                     WHEN d.cached_canonical_word = $3 OR d.cached_canonical_word = $4
                          OR d.cached_canonical_word = ANY($5)
@@ -331,7 +331,7 @@ pub async fn semantic_search(
                     WHEN d.cached_glosswords IS NOT NULL AND d.cached_glosswords != ''
                          AND position('|' || LOWER($3) || '|' in '|' || d.cached_glosswords || '|') > 0 THEN 2
                     WHEN v.word ILIKE $3 OR v.word ILIKE $4 THEN 3
-                    ELSE 4 
+                    ELSE 4
                 END as exact_match_rank
             FROM definitions d
             JOIN valsi v ON d.valsiid = v.valsiid
@@ -339,8 +339,8 @@ pub async fn semantic_search(
             JOIN users u ON d.userid = u.userid
             JOIN languages l ON d.langid = l.langid
             LEFT JOIN vote_scores dv ON dv.definitionid = d.definitionid
-            WHERE d.langid != 1 
-              AND (d.langid = ANY($2) OR $2 IS NULL) 
+            WHERE d.langid != 1
+              AND (d.langid = ANY($2) OR $2 IS NULL)
               AND d.definition != ''
               {embedding_match_sql}
             {additional_conditions}
@@ -383,7 +383,7 @@ pub async fn semantic_search(
             FROM definition_images
         ),
         vector_search AS (
-            SELECT 
+            SELECT
                 d.definitionid, d.valsiid, d.langid, d.definition, d.notes, d.etymology, d.created_at,
                 d.selmaho, d.jargon, d.definitionnum, d.time, d.owner_only,
                 v.word as valsiword,
@@ -398,7 +398,7 @@ pub async fn semantic_search(
                 COALESCE(cc.comment_count, 0) as comment_count,
                 (di.definition_id IS NOT NULL) as has_image,
                 CASE WHEN d.embedding IS NOT NULL THEN d.embedding <=> $1::vector END as similarity,
-                CASE 
+                CASE
                     WHEN v.word = $3 OR v.word = $4 THEN 0
                     WHEN d.cached_canonical_word = $3 OR d.cached_canonical_word = $4
                          OR d.cached_canonical_word = ANY($5)
@@ -407,7 +407,7 @@ pub async fn semantic_search(
                     WHEN d.cached_glosswords IS NOT NULL AND d.cached_glosswords != ''
                          AND position('|' || LOWER($3) || '|' in '|' || d.cached_glosswords || '|') > 0 THEN 2
                     WHEN v.word ILIKE $3 OR v.word ILIKE $4 THEN 3
-                    ELSE 4 
+                    ELSE 4
                 END as exact_match_rank
             FROM definitions d
             JOIN valsi v ON d.valsiid = v.valsiid
@@ -422,8 +422,8 @@ pub async fn semantic_search(
                 WHERE t.valsiid = v.valsiid AND t.definitionid = d.definitionid
             ) cc ON true
             LEFT JOIN definition_images_flag di ON di.definition_id = d.definitionid
-            WHERE d.langid != 1 
-              AND (d.langid = ANY($2) OR $2 IS NULL) 
+            WHERE d.langid != 1
+              AND (d.langid = ANY($2) OR $2 IS NULL)
               AND d.definition != ''
               {embedding_match_sql}
             {additional_conditions}
@@ -1238,7 +1238,7 @@ pub async fn search_definitions(
         format!(
             r#"
         WITH base_data AS (
-            SELECT 
+            SELECT
                 d.definitionid, d.valsiid, d.langid, d.definition, d.notes, d.etymology, d.created_at,
                 d.selmaho, d.jargon, d.definitionnum, d.time, d.owner_only,
                 d.cached_valsiword as valsiword,
@@ -1312,7 +1312,7 @@ pub async fn search_definitions(
         format!(
             r#"
         WITH base_data AS (
-            SELECT 
+            SELECT
                 d.definitionid, d.valsiid, d.langid, d.definition, d.notes, d.etymology, d.created_at,
                 d.selmaho, d.jargon, d.definitionnum, d.time, d.owner_only,
                 d.cached_valsiword as valsiword,
@@ -1539,7 +1539,7 @@ pub async fn search_definitions(
                 WHEN d.cached_canonical_word = $5 THEN 13
                 WHEN d.cached_valsiword = ANY($8) THEN 12
                 WHEN d.cached_canonical_word = ANY($8) THEN 12
-                WHEN d.cached_glosswords IS NOT NULL AND d.cached_glosswords != '' 
+                WHEN d.cached_glosswords IS NOT NULL AND d.cached_glosswords != ''
                      AND position('|' || LOWER($1) || '|' in '|' || d.cached_glosswords || '|') > 0 THEN 12
                 WHEN d.cached_valsiword ILIKE $1 THEN 11
                 WHEN d.cached_valsiword ILIKE $5 THEN 11
@@ -1683,7 +1683,7 @@ pub async fn fast_search_definitions(
     #[allow(clippy::format_in_format_args)]
     let query_string = format!(
         r#"
-        SELECT 
+        SELECT
             d.definitionid, d.valsiid, d.langid, d.definition, d.notes, d.selmaho, d.created_at,
             d.cached_valsiword as valsiword,
             d.cached_username as username,
@@ -5449,12 +5449,492 @@ fn decode_recent_changes_cursor(after: &str) -> Option<(i32, i32, i64)> {
     Some((c.t, c.s, c.i))
 }
 
+/// Feed cursors deliberately cannot be mistaken for legacy cursors.
+fn encode_feed_cursor(time: i32, sort: i32, id: i64) -> String {
+    format!("feed-v1:{}", encode_recent_changes_cursor(time, sort, id))
+}
+fn decode_feed_cursor(cursor: &str) -> Option<(i32, i32, i64)> {
+    decode_recent_changes_cursor(cursor.strip_prefix("feed-v1:")?)
+}
+pub(super) fn is_valid_feed_cursor(cursor: &str) -> bool {
+    decode_feed_cursor(cursor).is_some()
+}
+
+fn activity_feed_query(mut query: String, source: &str) -> String {
+    let (kind, source_expr, name_expr, marker) = if query.contains("FROM comments c") {
+        // Optional thread contexts must not eliminate free waves or imported comments.
+        query = query.replace("JOIN valsi v ON t.valsiid = v.valsiid", "LEFT JOIN valsi v ON t.valsiid = v.valsiid")
+            .replace("JOIN definitions d ON d.definitionid = t.definitionid", "LEFT JOIN definitions d ON d.definitionid = t.definitionid")
+            .replace("WHERE u.username != 'officialdata'", "WHERE u.username != 'officialdata' AND (t.collection_id IS NULL OR EXISTS (SELECT 1 FROM collections col WHERE col.collection_id = t.collection_id AND col.is_public))");
+        (
+            "comment",
+            "CASE WHEN c.import_source IS NULL THEN 'native' ELSE 'imported' END",
+            "COALESCE(c.import_source, 'lensisku')",
+            "WHERE u.username != 'officialdata'",
+        )
+    } else if query.contains("FROM messages m") {
+        ("message", "'imported'", "'mail'", "WHERE NOT EXISTS")
+    } else if query.contains("FROM wiki_articles wa") {
+        (
+            "mirrored_wiki",
+            "'imported'",
+            "'mw.lojban.org'",
+            "WHERE NOT wa.is_redirect",
+        )
+    } else if query.contains("WHERE v.typeid = 16") {
+        query = query.replace(
+            "WHERE v.typeid = 16",
+            "WHERE v.typeid = 16 AND dv.mw_revid IS NULL",
+        );
+        (
+            "native_wiki",
+            "'native'",
+            "'lensisku'",
+            "WHERE v.typeid = 16",
+        )
+    } else {
+        query = query.replace(" AND v.source_langid = 1", "");
+        (
+            "definition",
+            "'native'",
+            "'lensisku'",
+            "WHERE u.username != 'officialdata'",
+        )
+    };
+    let columns = format!("SELECT '{kind}'::text AS event_kind, ({source_expr})::text AS source, ({name_expr})::text AS source_name,");
+    query = query.replacen("SELECT", &columns, 1);
+    if source != "all" {
+        // source has been validated by the controller; never interpolate user input.
+        let wanted = if source == "native" {
+            "native"
+        } else {
+            "imported"
+        };
+        query = query.replace(
+            marker,
+            &format!(
+                "WHERE ({source_expr}) = '{wanted}' AND {}",
+                marker.strip_prefix("WHERE ").unwrap_or(marker)
+            ),
+        );
+    }
+    query
+}
+
+fn recent_change_queries(
+    types: Option<&str>,
+    home: bool,
+    feed: bool,
+    source: &str,
+    cursor_condition: Option<(i32, i32, i64)>,
+    limit_val: i64,
+) -> Vec<String> {
+    let mut requested_types: Vec<&str> = if types == Some("news") {
+        vec!["wiki", "free_wave"]
+    } else if let Some(t) = types {
+        t.split(',').collect()
+    } else if home {
+        vec!["comment", "definition", "wiki"]
+    } else {
+        vec!["comment", "definition", "valsi", "message", "wiki"]
+    };
+
+    if feed {
+        if requested_types.contains(&"free_wave") && !requested_types.contains(&"comment") {
+            requested_types.push("comment");
+        }
+        // The feed comment branch covers roots and replies exactly once.
+        requested_types.retain(|t| *t != "free_wave" && *t != "valsi");
+    }
+    if home {
+        requested_types.retain(|t| *t != "valsi");
+    }
+
+    let mut queries = Vec::new();
+
+    // Comment branch: cursor_id = c.commentid. Compare (time, -type_sort_order, cursor_id) for ORDER BY time DESC, type_sort ASC, cursor_id DESC.
+    if requested_types.contains(&"comment") {
+        let (where_extra, order_limit) = match cursor_condition {
+            Some((ct, cs, ci)) => (
+                format!(" AND (c.time, -2, c.commentid) < ({}, {}, {})", ct, -cs, ci),
+                format!(
+                    "ORDER BY c.time DESC, type_sort_order ASC, c.commentid DESC LIMIT {}",
+                    limit_val
+                ),
+            ),
+            None => (
+                String::new(),
+                format!(
+                    "ORDER BY c.time DESC, type_sort_order ASC, c.commentid DESC LIMIT {}",
+                    limit_val
+                ),
+            ),
+        };
+        queries.push(format!(
+            "(SELECT
+    'comment' AS change_type,
+    c.subject AS word,
+    c.content AS content,
+    t.valsiid,
+    d.langid,
+    t.natlangwordid,
+    c.commentid,
+    c.threadid as threadid,
+    t.definitionid,
+    u.username,
+    c.time,
+    l.realname AS language_name,
+    l.englishname AS language_english_name,
+    l.lojbanname AS language_lojban_name,
+    NULL::integer as version_id,
+    NULL::integer as prev_version_id,
+    v.typeid AS valsi_typeid,
+    v.word AS valsi_word,
+    c.commentnum,
+    c.parentid,
+    2 AS type_sort_order,
+    c.commentid::bigint AS cursor_id
+FROM comments c
+JOIN threads t ON c.threadid = t.threadid
+JOIN valsi v ON t.valsiid = v.valsiid
+JOIN users u ON c.userid = u.userid
+JOIN definitions d ON d.definitionid = t.definitionid
+LEFT JOIN languages l ON d.langid = l.langid
+WHERE u.username != 'officialdata' {}
+{})",
+            where_extra, order_limit
+        ));
+    }
+
+    // Definition branch: cursor_id = dv.version_id
+    if requested_types.contains(&"definition") {
+        let (where_extra, order_limit) = match cursor_condition {
+            Some((ct, cs, ci)) => (
+                format!(
+                    " AND (EXTRACT(EPOCH FROM dv.created_at)::integer, -0, dv.version_id) < ({}, {}, {})",
+                    ct, -cs, ci
+                ),
+                format!("ORDER BY dv.created_at DESC, type_sort_order ASC, dv.version_id DESC LIMIT {}", limit_val),
+            ),
+            None => (
+                String::new(),
+                format!("ORDER BY dv.created_at DESC, type_sort_order ASC, dv.version_id DESC LIMIT {}", limit_val),
+            ),
+        };
+        queries.push(format!(
+            "(SELECT
+    'definition' AS change_type,
+    v.word,
+    to_jsonb(dv.message) as content,
+    d.valsiid,
+    dv.langid,
+    0 AS natlangwordid,
+    0 AS commentid,
+    0 AS threadid,
+    d.definitionid,
+    u.username,
+    EXTRACT(EPOCH FROM dv.created_at)::integer as time,
+    l.realname AS language_name,
+    l.englishname AS language_english_name,
+    l.lojbanname AS language_lojban_name,
+    dv.version_id,
+    (SELECT prev_dv.version_id
+     FROM definition_versions prev_dv
+     WHERE prev_dv.definition_id = dv.definition_id
+       AND prev_dv.created_at < dv.created_at
+     ORDER BY prev_dv.created_at DESC LIMIT 1) as prev_version_id,
+    v.typeid AS valsi_typeid,
+    NULL::text AS valsi_word,
+    NULL::integer AS commentnum,
+    NULL::integer AS parentid,
+    0 AS type_sort_order,
+    dv.version_id::bigint AS cursor_id
+FROM definition_versions dv
+JOIN definitions d ON dv.definition_id = d.definitionid
+JOIN valsi v ON d.valsiid = v.valsiid
+JOIN users u ON dv.user_id = u.userid
+LEFT JOIN languages l ON dv.langid = l.langid
+WHERE u.username != 'officialdata' AND v.source_langid = 1 AND dv.mw_revid IS NULL AND v.typeid != 16 {}
+{})",
+            where_extra, order_limit
+        ));
+    }
+
+    // Valsi branch: cursor_id = v.valsiid
+    if requested_types.contains(&"valsi") {
+        let (where_extra, order_limit) = match cursor_condition {
+            Some((ct, cs, ci)) => (
+                format!(" AND (v.time, -1, v.valsiid) < ({}, {}, {})", ct, -cs, ci),
+                format!(
+                    "ORDER BY v.time DESC, type_sort_order ASC, v.valsiid DESC LIMIT {}",
+                    limit_val
+                ),
+            ),
+            None => (
+                String::new(),
+                format!(
+                    "ORDER BY v.time DESC, type_sort_order ASC, v.valsiid DESC LIMIT {}",
+                    limit_val
+                ),
+            ),
+        };
+        queries.push(format!(
+            "(SELECT
+    'valsi' AS change_type,
+    v.word,
+    '{{}}'::jsonb as content,
+    v.valsiid,
+    0 AS langid,
+    0 AS natlangwordid,
+    0 AS commentid,
+    0 AS threadid,
+    0 AS definitionid,
+    u.username,
+    v.time,
+    NULL AS language_name,
+    NULL::text AS language_english_name,
+    NULL::text AS language_lojban_name,
+    NULL::integer as version_id,
+    NULL::integer as prev_version_id,
+    v.typeid AS valsi_typeid,
+    NULL::text AS valsi_word,
+    NULL::integer AS commentnum,
+    NULL::integer AS parentid,
+    1 AS type_sort_order,
+    v.valsiid::bigint AS cursor_id
+FROM valsi v
+JOIN users u ON v.userid = u.userid
+WHERE u.username != 'officialdata' AND v.source_langid = 1 AND v.typeid <> 16 {}
+{})",
+            where_extra, order_limit
+        ));
+    }
+
+    // Message branch: cursor_id = m.id
+    if requested_types.contains(&"message") {
+        let (where_extra, order_limit) = match cursor_condition {
+            Some((ct, cs, ci)) => (
+                format!(
+                    " AND (EXTRACT(EPOCH FROM m.sent_at)::integer, -3, m.id) < ({}, {}, {})",
+                    ct, -cs, ci
+                ),
+                format!(
+                    "ORDER BY m.sent_at DESC, type_sort_order ASC, m.id DESC LIMIT {}",
+                    limit_val
+                ),
+            ),
+            None => (
+                String::new(),
+                format!(
+                    "ORDER BY m.sent_at DESC, type_sort_order ASC, m.id DESC LIMIT {}",
+                    limit_val
+                ),
+            ),
+        };
+        queries.push(format!(
+            "(SELECT
+    'message' AS change_type,
+    COALESCE(m.subject, '') AS word,
+    to_jsonb(COALESCE(m.content, '')) as content,
+    0 AS valsiid,
+    0 AS langid,
+    0 AS natlangwordid,
+    m.id AS commentid,
+    0 AS threadid,
+    0 AS definitionid,
+    COALESCE(m.from_address, '') AS username,
+    EXTRACT(EPOCH FROM m.sent_at)::integer AS time,
+    NULL AS language_name,
+    NULL::text AS language_english_name,
+    NULL::text AS language_lojban_name,
+    NULL::integer as version_id,
+    NULL::integer as prev_version_id,
+    NULL::smallint AS valsi_typeid,
+    NULL::text AS valsi_word,
+    NULL::integer AS commentnum,
+    NULL::integer AS parentid,
+    3 AS type_sort_order,
+    m.id::bigint AS cursor_id
+FROM messages m
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM message_spam_votes msv
+    WHERE msv.message_id = m.id
+) {}
+{})",
+            where_extra, order_limit
+        ));
+    }
+
+    // The first comment of each context-free thread is a news item.
+    if requested_types.contains(&"free_wave") {
+        let where_extra = match cursor_condition {
+            Some((ct, cs, ci)) => {
+                format!(" AND (c.time, -5, c.commentid) < ({}, {}, {})", ct, -cs, ci)
+            }
+            None => String::new(),
+        };
+        queries.push(format!(
+            "(SELECT
+    'comment' AS change_type,
+    c.subject AS word,
+    c.content AS content,
+    0 AS valsiid,
+    0 AS langid,
+    0 AS natlangwordid,
+    c.commentid,
+    c.threadid,
+    0 AS definitionid,
+    u.username,
+    c.time,
+    NULL::text AS language_name,
+    NULL::text AS language_english_name,
+    NULL::text AS language_lojban_name,
+    NULL::integer AS version_id,
+    NULL::integer AS prev_version_id,
+    NULL::smallint AS valsi_typeid,
+    NULL::text AS valsi_word,
+    c.commentnum,
+    c.parentid,
+    5 AS type_sort_order,
+    c.commentid::bigint AS cursor_id
+FROM comments c
+JOIN threads t ON c.threadid = t.threadid
+JOIN users u ON c.userid = u.userid
+WHERE t.valsiid IS NULL AND t.natlangwordid IS NULL
+  AND t.definitionid IS NULL AND t.definition_link_id IS NULL
+  AND t.target_user_id IS NULL AND t.collection_id IS NULL
+  AND c.commentnum = 1 AND c.import_source IS NULL
+  AND u.username != 'officialdata' {}
+ORDER BY c.time DESC, type_sort_order ASC, c.commentid DESC LIMIT {})",
+            where_extra, limit_val
+        ));
+    }
+
+    // Mirrored mw.lojban.org articles (wiki_articles.last_edited).
+    if requested_types.contains(&"wiki") {
+        let (where_extra, order_limit) = match cursor_condition {
+            Some((ct, cs, ci)) => (
+                format!(
+                    " AND (EXTRACT(EPOCH FROM wa.last_edited)::integer, -4, wa.id) < ({}, {}, {})",
+                    ct, -cs, ci
+                ),
+                format!(
+                    "ORDER BY wa.last_edited DESC, type_sort_order ASC, wa.id DESC LIMIT {}",
+                    limit_val
+                ),
+            ),
+            None => (
+                String::new(),
+                format!(
+                    "ORDER BY wa.last_edited DESC, type_sort_order ASC, wa.id DESC LIMIT {}",
+                    limit_val
+                ),
+            ),
+        };
+        queries.push(format!(
+            "(SELECT
+    'wiki' AS change_type,
+    wa.title AS word,
+    to_jsonb(LEFT(wa.plain_text, 200)) as content,
+    0 AS valsiid,
+    0 AS langid,
+    0 AS natlangwordid,
+    0 AS commentid,
+    0 AS threadid,
+    0 AS definitionid,
+    COALESCE(NULLIF(u.username, 'officialdata'), 'mw.lojban.org') AS username,
+    EXTRACT(EPOCH FROM wa.last_edited)::integer AS time,
+    NULL AS language_name,
+    NULL::text AS language_english_name,
+    NULL::text AS language_lojban_name,
+    NULL::integer as version_id,
+    NULL::integer as prev_version_id,
+    NULL::smallint AS valsi_typeid,
+    NULL::text AS valsi_word,
+    NULL::integer AS commentnum,
+    NULL::integer AS parentid,
+    4 AS type_sort_order,
+    wa.id::bigint AS cursor_id
+FROM wiki_articles wa
+LEFT JOIN definition_versions dv ON dv.mw_revid = wa.revision_id
+LEFT JOIN users u ON u.userid = dv.user_id
+WHERE NOT wa.is_redirect AND wa.last_edited IS NOT NULL {}
+{})",
+            where_extra, order_limit
+        ));
+
+        // Native (internal) wiki pages: valsi typeid 16 definition versions.
+        let native_sort = if feed { 6 } else { 4 };
+        let (native_where_extra, native_order_limit) = match cursor_condition {
+            Some((ct, cs, ci)) => (
+                format!(
+                    " AND (EXTRACT(EPOCH FROM dv.created_at)::integer, -{native_sort}, dv.version_id) < ({}, {}, {})",
+                    ct, -cs, ci
+                ),
+                format!("ORDER BY dv.created_at DESC, type_sort_order ASC, dv.version_id DESC LIMIT {}", limit_val),
+            ),
+            None => (
+                String::new(),
+                format!("ORDER BY dv.created_at DESC, type_sort_order ASC, dv.version_id DESC LIMIT {}", limit_val),
+            ),
+        };
+        queries.push(format!(
+            "(SELECT
+    'wiki' AS change_type,
+    v.word,
+    to_jsonb(dv.message) as content,
+    d.valsiid,
+    dv.langid,
+    0 AS natlangwordid,
+    0 AS commentid,
+    0 AS threadid,
+    d.definitionid,
+    u.username,
+    EXTRACT(EPOCH FROM dv.created_at)::integer as time,
+    NULL AS language_name,
+    NULL::text AS language_english_name,
+    NULL::text AS language_lojban_name,
+    dv.version_id,
+    (SELECT prev_dv.version_id
+     FROM definition_versions prev_dv
+     WHERE prev_dv.definition_id = dv.definition_id
+       AND prev_dv.created_at < dv.created_at
+     ORDER BY prev_dv.created_at DESC LIMIT 1) as prev_version_id,
+    v.typeid AS valsi_typeid,
+    NULL::text AS valsi_word,
+    NULL::integer AS commentnum,
+    NULL::integer AS parentid,
+    {native_sort} AS type_sort_order,
+    dv.version_id::bigint AS cursor_id
+FROM definition_versions dv
+JOIN definitions d ON dv.definition_id = d.definitionid
+JOIN valsi v ON d.valsiid = v.valsiid
+JOIN users u ON dv.user_id = u.userid
+WHERE v.typeid = 16 AND u.username != 'officialdata' {}
+{})",
+            native_where_extra, native_order_limit
+        ));
+    }
+
+    if feed {
+        queries = queries
+            .into_iter()
+            .map(|query| activity_feed_query(query, source))
+            .collect();
+    }
+
+    queries
+}
+
 pub async fn get_recent_changes(
     pool: &Pool,
     limit: Option<i64>,
     types: Option<String>,
     after: Option<String>,
     home: bool,
+    feed: bool,
+    source: String,
     redis_cache: &RedisCache,
     user_id: Option<i32>,
 ) -> Result<RecentChangesResponse, Box<dyn std::error::Error>> {
@@ -5462,16 +5942,16 @@ pub async fn get_recent_changes(
 
     let cache_key = match user_id {
         None => format!(
-            "recent_changes:v2:limit:{:?}:after:{:?}:types:{:?}:home:{}",
+            "recent_changes:v3:view:{feed}:source:{source}:limit:{:?}:after:{:?}:types:{:?}:home:{}",
             limit, after, types, home
         ),
         Some(uid) => format!(
-            "recent_changes:v2:limit:{:?}:after:{:?}:types:{:?}:home:{}:user:{}",
+            "recent_changes:v3:view:{feed}:source:{source}:limit:{:?}:after:{:?}:types:{:?}:home:{}:user:{}",
             limit, after, types, home, uid
         ),
     };
 
-    let cache_ttl = StdDuration::from_secs(300);
+    let cache_ttl = StdDuration::from_secs(if feed { 30 } else { 300 });
     let types_cloned = types.clone();
     let after_cloned = after.clone();
 
@@ -5482,366 +5962,11 @@ pub async fn get_recent_changes(
                 let mut client = pool.get().await?;
                 let transaction = client.transaction().await?;
 
-                let mut requested_types: Vec<&str> = if types_cloned.as_deref() == Some("news") {
-                    vec!["wiki", "free_wave"]
-                } else if let Some(t) = &types_cloned {
-                    t.split(',').collect()
-                } else if home {
-                    vec!["comment", "definition", "wiki"]
-                } else {
-                    vec!["comment", "definition", "valsi", "message", "wiki"]
-                };
-
-                if home {
-                    requested_types.retain(|t| *t != "valsi");
-                }
-
                 let limit_val = limit.unwrap_or(20).clamp(1, 100);
                 let cursor_condition = after_cloned.as_ref().and_then(|a| {
-                    decode_recent_changes_cursor(a)
+                    if feed { decode_feed_cursor(a) } else { decode_recent_changes_cursor(a) }
                 });
-
-                let mut queries = Vec::new();
-
-                // Comment branch: cursor_id = c.commentid. Compare (time, -type_sort_order, cursor_id) for ORDER BY time DESC, type_sort ASC, cursor_id DESC.
-                if requested_types.contains(&"comment") {
-                    let (where_extra, order_limit) = match cursor_condition {
-                        Some((ct, cs, ci)) => (
-                            format!(" AND (c.time, -2, c.commentid) < ({}, {}, {})", ct, -cs, ci),
-                            format!("ORDER BY c.time DESC, type_sort_order ASC, c.commentid DESC LIMIT {}", limit_val),
-                        ),
-                        None => (
-                            String::new(),
-                            format!("ORDER BY c.time DESC, type_sort_order ASC, c.commentid DESC LIMIT {}", limit_val),
-                        ),
-                    };
-                    queries.push(format!(
-                        "(SELECT
-                'comment' AS change_type,
-                c.subject AS word,
-                c.content AS content,
-                t.valsiid,
-                d.langid,
-                t.natlangwordid,
-                c.commentid,
-                c.threadid as threadid,
-                t.definitionid,
-                u.username,
-                c.time,
-                l.realname AS language_name,
-                l.englishname AS language_english_name,
-                l.lojbanname AS language_lojban_name,
-                NULL::integer as version_id,
-                NULL::integer as prev_version_id,
-                v.typeid AS valsi_typeid,
-                v.word AS valsi_word,
-                c.commentnum,
-                c.parentid,
-                2 AS type_sort_order,
-                c.commentid::bigint AS cursor_id
-            FROM comments c
-            JOIN threads t ON c.threadid = t.threadid
-            JOIN valsi v ON t.valsiid = v.valsiid
-            JOIN users u ON c.userid = u.userid
-            JOIN definitions d ON d.definitionid = t.definitionid
-            LEFT JOIN languages l ON d.langid = l.langid
-            WHERE u.username != 'officialdata' {}
-            {})",
-                        where_extra, order_limit
-                    ));
-                }
-
-                // Definition branch: cursor_id = dv.version_id
-                if requested_types.contains(&"definition") {
-                    let (where_extra, order_limit) = match cursor_condition {
-                        Some((ct, cs, ci)) => (
-                            format!(
-                                " AND (EXTRACT(EPOCH FROM dv.created_at)::integer, -0, dv.version_id) < ({}, {}, {})",
-                                ct, -cs, ci
-                            ),
-                            format!("ORDER BY dv.created_at DESC, type_sort_order ASC, dv.version_id DESC LIMIT {}", limit_val),
-                        ),
-                        None => (
-                            String::new(),
-                            format!("ORDER BY dv.created_at DESC, type_sort_order ASC, dv.version_id DESC LIMIT {}", limit_val),
-                        ),
-                    };
-                    queries.push(format!(
-                        "(SELECT
-                'definition' AS change_type,
-                v.word,
-                to_jsonb(dv.message) as content,
-                d.valsiid,
-                dv.langid,
-                0 AS natlangwordid,
-                0 AS commentid,
-                0 AS threadid,
-                d.definitionid,
-                u.username,
-                EXTRACT(EPOCH FROM dv.created_at)::integer as time,
-                l.realname AS language_name,
-                l.englishname AS language_english_name,
-                l.lojbanname AS language_lojban_name,
-                dv.version_id,
-                (SELECT prev_dv.version_id 
-                 FROM definition_versions prev_dv 
-                 WHERE prev_dv.definition_id = dv.definition_id 
-                   AND prev_dv.created_at < dv.created_at 
-                 ORDER BY prev_dv.created_at DESC LIMIT 1) as prev_version_id,
-                v.typeid AS valsi_typeid,
-                NULL::text AS valsi_word,
-                NULL::integer AS commentnum,
-                NULL::integer AS parentid,
-                0 AS type_sort_order,
-                dv.version_id::bigint AS cursor_id
-            FROM definition_versions dv
-            JOIN definitions d ON dv.definition_id = d.definitionid
-            JOIN valsi v ON d.valsiid = v.valsiid
-            JOIN users u ON dv.user_id = u.userid
-            LEFT JOIN languages l ON dv.langid = l.langid
-            WHERE u.username != 'officialdata' AND v.source_langid = 1 AND dv.mw_revid IS NULL AND v.typeid != 16 {}
-            {})",
-                        where_extra, order_limit
-                    ));
-                }
-
-                // Valsi branch: cursor_id = v.valsiid
-                if requested_types.contains(&"valsi") {
-                    let (where_extra, order_limit) = match cursor_condition {
-                        Some((ct, cs, ci)) => (
-                            format!(" AND (v.time, -1, v.valsiid) < ({}, {}, {})", ct, -cs, ci),
-                            format!("ORDER BY v.time DESC, type_sort_order ASC, v.valsiid DESC LIMIT {}", limit_val),
-                        ),
-                        None => (
-                            String::new(),
-                            format!("ORDER BY v.time DESC, type_sort_order ASC, v.valsiid DESC LIMIT {}", limit_val),
-                        ),
-                    };
-                    queries.push(format!(
-                        "(SELECT
-                'valsi' AS change_type,
-                v.word,
-                '{{}}'::jsonb as content,
-                v.valsiid,
-                0 AS langid,
-                0 AS natlangwordid,
-                0 AS commentid,
-                0 AS threadid,
-                0 AS definitionid,
-                u.username,
-                v.time,
-                NULL AS language_name,
-                NULL::text AS language_english_name,
-                NULL::text AS language_lojban_name,
-                NULL::integer as version_id,
-                NULL::integer as prev_version_id,
-                v.typeid AS valsi_typeid,
-                NULL::text AS valsi_word,
-                NULL::integer AS commentnum,
-                NULL::integer AS parentid,
-                1 AS type_sort_order,
-                v.valsiid::bigint AS cursor_id
-            FROM valsi v
-            JOIN users u ON v.userid = u.userid
-            WHERE u.username != 'officialdata' AND v.source_langid = 1 AND v.typeid <> 16 {}
-            {})",
-                        where_extra, order_limit
-                    ));
-                }
-
-                // Message branch: cursor_id = m.id
-                if requested_types.contains(&"message") {
-                    let (where_extra, order_limit) = match cursor_condition {
-                        Some((ct, cs, ci)) => (
-                            format!(
-                                " AND (EXTRACT(EPOCH FROM m.sent_at)::integer, -3, m.id) < ({}, {}, {})",
-                                ct, -cs, ci
-                            ),
-                            format!("ORDER BY m.sent_at DESC, type_sort_order ASC, m.id DESC LIMIT {}", limit_val),
-                        ),
-                        None => (
-                            String::new(),
-                            format!("ORDER BY m.sent_at DESC, type_sort_order ASC, m.id DESC LIMIT {}", limit_val),
-                        ),
-                    };
-                    queries.push(format!(
-                        "(SELECT
-                'message' AS change_type,
-                COALESCE(m.subject, '') AS word,
-                to_jsonb(COALESCE(m.content, '')) as content,
-                0 AS valsiid,
-                0 AS langid,
-                0 AS natlangwordid,
-                m.id AS commentid,
-                0 AS threadid,
-                0 AS definitionid,
-                COALESCE(m.from_address, '') AS username,
-                EXTRACT(EPOCH FROM m.sent_at)::integer AS time,
-                NULL AS language_name,
-                NULL::text AS language_english_name,
-                NULL::text AS language_lojban_name,
-                NULL::integer as version_id,
-                NULL::integer as prev_version_id,
-                NULL::smallint AS valsi_typeid,
-                NULL::text AS valsi_word,
-                NULL::integer AS commentnum,
-                NULL::integer AS parentid,
-                3 AS type_sort_order,
-                m.id::bigint AS cursor_id
-            FROM messages m
-            WHERE NOT EXISTS (
-                SELECT 1
-                FROM message_spam_votes msv
-                WHERE msv.message_id = m.id
-            ) {}
-            {})",
-                        where_extra, order_limit
-                    ));
-                }
-
-                // The first comment of each context-free thread is a news item.
-                if requested_types.contains(&"free_wave") {
-                    let where_extra = match cursor_condition {
-                        Some((ct, cs, ci)) => format!(
-                            " AND (c.time, -5, c.commentid) < ({}, {}, {})", ct, -cs, ci
-                        ),
-                        None => String::new(),
-                    };
-                    queries.push(format!(
-                        "(SELECT
-                'comment' AS change_type,
-                c.subject AS word,
-                c.content AS content,
-                0 AS valsiid,
-                0 AS langid,
-                0 AS natlangwordid,
-                c.commentid,
-                c.threadid,
-                0 AS definitionid,
-                u.username,
-                c.time,
-                NULL::text AS language_name,
-                NULL::text AS language_english_name,
-                NULL::text AS language_lojban_name,
-                NULL::integer AS version_id,
-                NULL::integer AS prev_version_id,
-                NULL::smallint AS valsi_typeid,
-                NULL::text AS valsi_word,
-                c.commentnum,
-                c.parentid,
-                5 AS type_sort_order,
-                c.commentid::bigint AS cursor_id
-            FROM comments c
-            JOIN threads t ON c.threadid = t.threadid
-            JOIN users u ON c.userid = u.userid
-            WHERE t.valsiid IS NULL AND t.natlangwordid IS NULL
-              AND t.definitionid IS NULL AND t.definition_link_id IS NULL
-              AND t.target_user_id IS NULL AND t.collection_id IS NULL
-              AND c.commentnum = 1 AND c.import_source IS NULL
-              AND u.username != 'officialdata' {}
-            ORDER BY c.time DESC, type_sort_order ASC, c.commentid DESC LIMIT {})",
-                        where_extra, limit_val
-                    ));
-                }
-
-                // Mirrored mw.lojban.org articles (wiki_articles.last_edited).
-                if requested_types.contains(&"wiki") {
-                    let (where_extra, order_limit) = match cursor_condition {
-                        Some((ct, cs, ci)) => (
-                            format!(
-                                " AND (EXTRACT(EPOCH FROM wa.last_edited)::integer, -4, wa.id) < ({}, {}, {})",
-                                ct, -cs, ci
-                            ),
-                            format!("ORDER BY wa.last_edited DESC, type_sort_order ASC, wa.id DESC LIMIT {}", limit_val),
-                        ),
-                        None => (
-                            String::new(),
-                            format!("ORDER BY wa.last_edited DESC, type_sort_order ASC, wa.id DESC LIMIT {}", limit_val),
-                        ),
-                    };
-                    queries.push(format!(
-                        "(SELECT
-                'wiki' AS change_type,
-                wa.title AS word,
-                to_jsonb(LEFT(wa.plain_text, 200)) as content,
-                0 AS valsiid,
-                0 AS langid,
-                0 AS natlangwordid,
-                0 AS commentid,
-                0 AS threadid,
-                0 AS definitionid,
-                COALESCE(NULLIF(u.username, 'officialdata'), 'mw.lojban.org') AS username,
-                EXTRACT(EPOCH FROM wa.last_edited)::integer AS time,
-                NULL AS language_name,
-                NULL::text AS language_english_name,
-                NULL::text AS language_lojban_name,
-                NULL::integer as version_id,
-                NULL::integer as prev_version_id,
-                NULL::smallint AS valsi_typeid,
-                NULL::text AS valsi_word,
-                NULL::integer AS commentnum,
-                NULL::integer AS parentid,
-                4 AS type_sort_order,
-                wa.id::bigint AS cursor_id
-            FROM wiki_articles wa
-            LEFT JOIN definition_versions dv ON dv.mw_revid = wa.revision_id
-            LEFT JOIN users u ON u.userid = dv.user_id
-            WHERE NOT wa.is_redirect AND wa.last_edited IS NOT NULL {}
-            {})",
-                        where_extra, order_limit
-                    ));
-
-                    // Native (internal) wiki pages: valsi typeid 16 definition versions.
-                    let (native_where_extra, native_order_limit) = match cursor_condition {
-                        Some((ct, cs, ci)) => (
-                            format!(
-                                " AND (EXTRACT(EPOCH FROM dv.created_at)::integer, -4, dv.version_id) < ({}, {}, {})",
-                                ct, -cs, ci
-                            ),
-                            format!("ORDER BY dv.created_at DESC, type_sort_order ASC, dv.version_id DESC LIMIT {}", limit_val),
-                        ),
-                        None => (
-                            String::new(),
-                            format!("ORDER BY dv.created_at DESC, type_sort_order ASC, dv.version_id DESC LIMIT {}", limit_val),
-                        ),
-                    };
-                    queries.push(format!(
-                        "(SELECT
-                'wiki' AS change_type,
-                v.word,
-                to_jsonb(dv.message) as content,
-                d.valsiid,
-                dv.langid,
-                0 AS natlangwordid,
-                0 AS commentid,
-                0 AS threadid,
-                d.definitionid,
-                u.username,
-                EXTRACT(EPOCH FROM dv.created_at)::integer as time,
-                NULL AS language_name,
-                NULL::text AS language_english_name,
-                NULL::text AS language_lojban_name,
-                dv.version_id,
-                (SELECT prev_dv.version_id
-                 FROM definition_versions prev_dv
-                 WHERE prev_dv.definition_id = dv.definition_id
-                   AND prev_dv.created_at < dv.created_at
-                 ORDER BY prev_dv.created_at DESC LIMIT 1) as prev_version_id,
-                v.typeid AS valsi_typeid,
-                NULL::text AS valsi_word,
-                NULL::integer AS commentnum,
-                NULL::integer AS parentid,
-                4 AS type_sort_order,
-                dv.version_id::bigint AS cursor_id
-            FROM definition_versions dv
-            JOIN definitions d ON dv.definition_id = d.definitionid
-            JOIN valsi v ON d.valsiid = v.valsiid
-            JOIN users u ON dv.user_id = u.userid
-            WHERE v.typeid = 16 AND u.username != 'officialdata' {}
-            {})",
-                        native_where_extra, native_order_limit
-                    ));
-                }
+                let queries = recent_change_queries(types_cloned.as_deref(), home, feed, &source, cursor_condition, limit_val);
 
                 if queries.is_empty() {
                     return Ok(RecentChangesResponse {
@@ -5896,6 +6021,9 @@ pub async fn get_recent_changes(
 
                     let username: String = row.get("username");
                     let mut change = RecentChange {
+                        event_id: feed.then(|| format!("{}:{}", row.get::<_, String>("event_kind"), cursor_id)),
+                        source: if feed { Some(row.get("source")) } else { None },
+                        source_name: if feed { Some(row.get("source_name")) } else { None },
                         is_wiki,
                         change_type: change_type.clone(),
                         word: row.get("word"),
@@ -6018,7 +6146,7 @@ pub async fn get_recent_changes(
 
                 let next_cursor = last_cursor
                     .filter(|_| changes.len() >= limit_val as usize)
-                    .map(|(t, s, i)| encode_recent_changes_cursor(t, s, i));
+                    .map(|(t, s, i)| if feed { encode_feed_cursor(t, s, i) } else { encode_recent_changes_cursor(t, s, i) });
 
                 Ok(RecentChangesResponse {
                     changes,
@@ -6060,8 +6188,8 @@ pub async fn get_bulk_user_votes(
 
     let votes = client
         .query(
-            "SELECT definitionid, value::int as vote 
-             FROM definitionvotes 
+            "SELECT definitionid, value::int as vote
+             FROM definitionvotes
              WHERE userid = $1 AND definitionid = ANY($2)",
             &[&user_id, &definition_ids],
         )
@@ -6607,7 +6735,7 @@ pub async fn delete_bulk_definitions(
     // Get all definitions with this client_id in metadata
     let definitions = transaction
         .query(
-            "SELECT definitionid FROM definitions 
+            "SELECT definitionid FROM definitions
             WHERE metadata->>'client_id' = $1", // Use ->> to extract as text
             &[&client_id],
         )
@@ -7129,9 +7257,9 @@ pub async fn link_definitions(
     // Check if both definitions exist AND are of type 'phrase' (typeid 15)
     let rows = transaction
         .query(
-            "SELECT d.definitionid, v.typeid 
-             FROM definitions d 
-             JOIN valsi v ON d.valsiid = v.valsiid 
+            "SELECT d.definitionid, v.typeid
+             FROM definitions d
+             JOIN valsi v ON d.valsiid = v.valsiid
              WHERE d.definitionid IN ($1, $2)",
             &[&definition_id, &translation_id],
         )
@@ -7294,7 +7422,7 @@ pub async fn get_definition_link(
     let client = pool.get().await?;
     let row = client
         .query_opt(
-            "SELECT 
+            "SELECT
                 l.id,
                 l.definition_id,
                 l.translation_id,
@@ -7747,5 +7875,115 @@ mod wiki_redirect_tests {
             );
         }
         assert!(wiki_redirect_content("New page", "New_page").is_err());
+    }
+}
+
+#[cfg(test)]
+mod activity_feed_tests {
+    use super::*;
+
+    #[test]
+    fn activity_feed_cursors_are_distinct_and_round_trip() {
+        let cursor = encode_feed_cursor(1000, 6, 10);
+        assert_eq!(decode_feed_cursor(&cursor), Some((1000, 6, 10)));
+        assert!(decode_recent_changes_cursor(&cursor).is_none());
+        assert!(decode_feed_cursor(&encode_recent_changes_cursor(1000, 4, 10)).is_none());
+        assert!(decode_feed_cursor("feed-v1:invalid").is_none());
+    }
+
+    #[tokio::test]
+    #[ignore = "requires LENSISKU_FEED_TEST_DATABASE_URL pointing to a disposable PostgreSQL database"]
+    async fn activity_feed_fixtures_paginate_and_filter() -> Result<(), Box<dyn std::error::Error>>
+    {
+        let database_url = std::env::var("LENSISKU_FEED_TEST_DATABASE_URL")?;
+        let (mut client, connection) =
+            tokio_postgres::connect(&database_url, tokio_postgres::NoTls).await?;
+        tokio::spawn(async move {
+            let _ = connection.await;
+        });
+        let transaction = client.transaction().await?;
+        transaction
+            .batch_execute(include_str!("../../tests/fixtures/activity_feed.sql"))
+            .await?;
+        for source in ["all", "native", "imported"] {
+            let mut cursor = None;
+            let mut events = Vec::new();
+            loop {
+                let queries = recent_change_queries(
+                    Some("comment,free_wave,definition,wiki,message"),
+                    false,
+                    true,
+                    source,
+                    cursor,
+                    2,
+                );
+                let sql = format!("SELECT * FROM ({}) feed ORDER BY time DESC, type_sort_order ASC, cursor_id DESC LIMIT 2", queries.join(" UNION ALL "));
+                let rows = transaction.query(&sql, &[]).await?;
+                if rows.is_empty() {
+                    break;
+                }
+                for row in &rows {
+                    events.push(format!(
+                        "{}:{}",
+                        row.get::<_, String>("event_kind"),
+                        row.get::<_, i64>("cursor_id")
+                    ));
+                    if source != "all" {
+                        assert_eq!(row.get::<_, String>("source"), source);
+                    }
+                }
+                let last = &rows[rows.len() - 1];
+                cursor = decode_feed_cursor(&encode_feed_cursor(
+                    last.get("time"),
+                    last.get("type_sort_order"),
+                    last.get("cursor_id"),
+                ));
+                assert!(events.len() < 20, "cursor must advance");
+            }
+            let mut expected = match source {
+                "native" => vec![
+                    "comment:1",
+                    "comment:2",
+                    "comment:3",
+                    "definition:11",
+                    "native_wiki:10",
+                    "native_wiki:12",
+                ],
+                "imported" => vec!["comment:4", "comment:5", "message:100", "mirrored_wiki:10"],
+                _ => vec![
+                    "comment:1",
+                    "comment:2",
+                    "comment:3",
+                    "comment:4",
+                    "comment:5",
+                    "definition:11",
+                    "native_wiki:10",
+                    "native_wiki:12",
+                    "message:100",
+                    "mirrored_wiki:10",
+                ],
+            };
+            events.sort();
+            expected.sort();
+            assert_eq!(events, expected, "source={source}");
+        }
+        // Type filters apply before LIMIT; native and mirrored wiki IDs can collide safely.
+        let queries = recent_change_queries(Some("wiki"), false, true, "all", None, 20);
+        let rows = transaction
+            .query(
+                &format!("SELECT * FROM ({}) feed", queries.join(" UNION ALL ")),
+                &[],
+            )
+            .await?;
+        assert_eq!(rows.len(), 3);
+        assert!(rows
+            .iter()
+            .all(|row| row.get::<_, String>("change_type") == "wiki"));
+        // Legacy comment inner joins and cursor encoding retain their existing meaning.
+        let queries = recent_change_queries(Some("comment"), false, false, "all", None, 20);
+        assert!(!queries[0].contains("event_kind"));
+        assert!(!queries[0].contains("LEFT JOIN valsi"));
+        transaction.rollback().await?;
+        Ok(())
     }
 }

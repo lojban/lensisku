@@ -35,9 +35,12 @@
     </div>
     <div class="my-2 border-t border-gray-200" />
     <div class="mobile-nav-grid">
-      <NavLink to="/recent" class="mobile-nav-row mobile-nav-grid__full" @click="$emit('close')">
-        <Clock4 class="h-5 w-5" /> {{ t('mobileNav.recentChanges') }}
+      <NavLink to="/create" class="mobile-nav-row" @click="$emit('close')">
+        <FilePlus class="h-5 w-5" /> {{ t('creation.create') }}
       </NavLink>
+      <NavLink to="/activity" class="mobile-nav-row" @click="$emit('close')"
+        ><Clock4 class="h-5 w-5" />{{ t('activityFeed.title') }}</NavLink
+      >
       <NavLink
         v-if="auth.state.isLoggedIn"
         to="/users"
@@ -69,17 +72,20 @@
       >
         <DownloadIcon class="h-5 w-5" /> {{ t('nav.cachedExports') }}
       </NavLink>
-    </div>
-    <div v-if="auth.state.isLoggedIn" class="mobile-nav-grid">
       <NavLink
+        v-if="auth.state.isLoggedIn"
         to="/export"
         class="mobile-nav-row"
-        :class="{ 'mobile-nav-grid__full': !canBulkImport }"
         @click="$emit('close')"
       >
         <ExportIcon class="h-5 w-5" /> {{ t('nav.export') }}
       </NavLink>
-      <NavLink v-if="canBulkImport" to="/bulk-import" class="mobile-nav-row" @click="$emit('close')">
+      <NavLink
+        v-if="auth.state.isLoggedIn && canBulkImport"
+        to="/bulk-import"
+        class="mobile-nav-row"
+        @click="$emit('close')"
+      >
         <ImportIcon class="h-5 w-5" /> {{ t('nav.bulkImport') }}
       </NavLink>
     </div>
@@ -98,6 +104,7 @@ import {
   BookmarkCheck,
   Bot,
   Share2,
+  FilePlus,
 } from '@lucide/vue'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'

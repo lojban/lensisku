@@ -1356,6 +1356,8 @@ pub async fn update_vote(
         ("limit" = Option<i64>, Query, description = "Page size (default 20)"),
         ("types" = Option<String>, Query, description = "Comma-separated types: comment,definition,valsi,message,wiki,free_wave; news selects wiki and free_wave"),
         ("after" = Option<String>, Query, description = "Opaque cursor for next page"),
+        ("view" = Option<String>, Query, description = "feed enables the unified community feed"),
+        ("source" = Option<String>, Query, description = "Feed sources: all, native, imported"),
         ("home" = Option<bool>, Query, description = "When true, exclude new valsi (entry) changes. Used by the home page.")
     ),
     responses(
@@ -1377,9 +1379,17 @@ pub async fn get_recent_changes(
     let types = query.types.clone();
     let after = query.after.clone();
     let home = query.home.unwrap_or(false);
+    let feed = query.view.as_deref() == Some("feed");
+    let source = query.source.as_deref().unwrap_or("all");
+    if feed && !matches!(source, "all" | "native" | "imported") {
+        return HttpResponse::BadRequest().json(json!({"error": "Invalid feed source"}));
+    }
+    if feed && after.as_deref().is_some_and(|cursor| !service::is_valid_feed_cursor(cursor)) {
+        return HttpResponse::BadRequest().json(json!({"error": "Invalid feed cursor"}));
+    }
     let user_id = claims.map(|c| c.sub);
 
-    match service::get_recent_changes(&pool, limit, types, after, home, &redis_cache, user_id).await
+    match service::get_recent_changes(&pool, limit, types, after, home, feed, source.to_owned(), &redis_cache, user_id).await
     {
         Ok(response) => HttpResponse::Ok().json(response),
         Err(e) => {

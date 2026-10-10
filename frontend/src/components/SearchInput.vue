@@ -9,6 +9,7 @@ const { t } = useI18n()
 const attrs = useAttrs()
 
 const props = defineProps({
+  ariaLabel: { type: String, default: '' },
   modelValue: {
     type: String,
     default: '',
@@ -104,6 +105,7 @@ defineExpose({ focus })
         v-model="query"
         type="text"
         :placeholder="placeholder"
+        :aria-label="ariaLabel || placeholder"
         :search-icon="showSearchIcon"
         input-class="input-field w-full min-w-0 sm:min-w-[200px] h-10 transition-colors"
         :class="{

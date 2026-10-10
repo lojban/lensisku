@@ -8,3 +8,14 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+.activity-unread-dot {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #2563eb;
+  border: 1px solid white;
+}

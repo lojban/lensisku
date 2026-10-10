@@ -1,4 +1,5 @@
 <template>
+  <UnsavedChangesDialog />
   <BackgroundComponent />
   <div v-if="isWinterSeason" class="snowflakes" aria-hidden="true">
     <div
@@ -12,300 +13,306 @@
   </div>
 
   <div v-if="isWinterSeason && showPyro" class="pyro" />
-  <div
-    class="app-layout-column"
-  >
-  <!-- Mobile-optimized header (omit on routes with meta.hideTopBar, e.g. full-bleed experiences) -->
+  <div class="app-layout-column">
+    <!-- Mobile-optimized header (omit on routes with meta.hideTopBar, e.g. full-bleed experiences) -->
 
-  <header v-if="!route.meta.hideTopBar" class="app-header-bar">
-    <div class="px-1 sm:px-2 max-w-4xl mx-auto">
-      <!-- Main header content -->
-      <div class="flex items-center justify-between h-14 sm:h-12">
-        <!-- Logo + Toggle Menu Button -->
-        <div class="flex items-center">
-          <button
-            class="z-20 cursor-pointer rounded-md p-3 text-gray-600 transition-colors duration-200 hover:bg-gray-100 sm:hidden"
-            :aria-label="$t('toggleMenu')"
-            @click.stop="isMenuOpen = !isMenuOpen"
-          >
-            <Menu v-if="!isMenuOpen" class="h-6 w-6" /> <X v-else class="h-6 w-6" />
-          </button>
-          <!-- Logo - Always visible -->
-          <a
-            :href="homePath"
-            class="input-field flex items-center gap-2 !h-10 !py-1 no-underline cursor-pointer select-none"
-            @click.prevent="handleLogoClick"
-          >
-            <div class="flex h-8 w-8 shrink-0 items-center justify-center -skew-x-12">
-              <!-- eslint-disable vue/no-v-html -->
-              <div
-                role="img"
-                :aria-label="$t('logoText')"
-                class="logo-svg-container"
-                :class="{ 'animate-rotate-3d': showPyro }"
-                v-html="logoSvgRaw"
-              ></div>
-              <!-- eslint-enable vue/no-v-html -->
-            </div>
-            <span class="select-none font-medium italic leading-none">{{ $t('logoText') }}</span>
-          </a>
-        </div>
-        <!-- Desktop Navigation - Hidden on mobile -->
-        <nav class="hidden sm:ml-4 sm:flex items-center space-x-0 md:space-x-1 lg:space-x-2">
-          <NavLink to="/collections" class="navbar-item">
-            <GraduationCap class="h-5 w-5" /> {{ $t('nav.learn') }}
-          </NavLink>
-          <NavLink v-if="auth.state.isLoggedIn" to="/library" class="navbar-item">
-            <Star class="h-5 w-5" /> {{ $t('nav.library') }}
-          </NavLink>
-          <NavLink to="/recent" class="navbar-item relative">
-            <span class="navbar-item-badge-wrap">
-              <Clock4 class="h-5 w-5" />
-              <span
-                v-if="newsBadgeLabel"
-                class="nav-unread-badge"
-                :class="{ 'nav-unread-badge--wide': newsBadgeCount != null && newsBadgeCount > 99 }"
-              >
-                {{ newsBadgeLabel }}
-              </span>
-            </span>
-            {{ $t('nav.recent') }}
-          </NavLink>
-          <div ref="moreNavRef" class="relative group">
-            <Button
-              variant="topbar"
-              type="button"
-              :aria-expanded="isMoreNavOpen"
-              aria-haspopup="true"
-              @click.stop="isMoreNavOpen = !isMoreNavOpen"
+    <header v-if="!route.meta.hideTopBar" class="app-header-bar">
+      <div class="px-1 sm:px-2 max-w-4xl mx-auto">
+        <!-- Main header content -->
+        <div class="flex items-center justify-between h-14 sm:h-12">
+          <!-- Logo + Toggle Menu Button -->
+          <div class="flex items-center">
+            <button
+              class="z-20 cursor-pointer rounded-md p-3 text-gray-600 transition-colors duration-200 hover:bg-gray-100 sm:hidden"
+              :aria-label="$t('toggleMenu')"
+              @click.stop="isMenuOpen = !isMenuOpen"
             >
-              <span class="hidden lg:inline"> {{ $t('nav.more') }} </span>
-              <ChevronDown class="h-5 w-5" :stroke-width="2.5" :absolute-stroke-width="true" />
-            </Button>
-            <div
-              class="nav-dropdown-panel"
-              :class="isMoreNavOpen ? 'flex' : 'hidden group-hover:flex'"
+              <Menu v-if="!isMenuOpen" class="h-6 w-6" /> <X v-else class="h-6 w-6" />
+            </button>
+            <!-- Logo - Always visible -->
+            <a
+              :href="homePath"
+              class="input-field flex items-center gap-2 !h-10 !py-1 no-underline cursor-pointer select-none"
+              @click.prevent="handleLogoClick"
             >
-              <NavLink
-                v-if="auth.state.isLoggedIn"
-                to="/users"
-                class="navbar-item justify-start py-2"
-                @click="closeNavMenus"
+              <div class="flex h-8 w-8 shrink-0 items-center justify-center -skew-x-12">
+                <!-- eslint-disable vue/no-v-html -->
+                <div
+                  role="img"
+                  :aria-label="$t('logoText')"
+                  class="logo-svg-container"
+                  :class="{ 'animate-rotate-3d': showPyro }"
+                  v-html="logoSvgRaw"
+                ></div>
+                <!-- eslint-enable vue/no-v-html -->
+              </div>
+              <span class="select-none font-medium italic leading-none">{{ $t('logoText') }}</span>
+            </a>
+          </div>
+          <!-- Desktop Navigation - Hidden on mobile -->
+          <nav class="hidden sm:ml-4 sm:flex items-center space-x-0 md:space-x-1 lg:space-x-2">
+            <NavLink to="/collections" class="navbar-item">
+              <GraduationCap class="h-5 w-5" /> {{ $t('nav.learn') }}
+            </NavLink>
+            <NavLink v-if="auth.state.isLoggedIn" to="/library" class="navbar-item">
+              <Star class="h-5 w-5" /> {{ $t('nav.library') }}
+            </NavLink>
+            <NavLink to="/activity" class="navbar-item relative">
+              <span class="navbar-item-badge-wrap"
+                ><Clock4 class="h-5 w-5" /><span v-if="hasNewActivity" class="activity-unread-dot"
+              /></span>
+              {{ $t('activityFeed.title') }}
+            </NavLink>
+            <div ref="moreNavRef" class="relative group">
+              <Button
+                variant="topbar"
+                type="button"
+                :aria-expanded="isMoreNavOpen"
+                aria-haspopup="true"
+                @click.stop="isMoreNavOpen = !isMoreNavOpen"
               >
-                <Users class="h-4 w-4" />
-                {{
-                  auth.state.authorities?.includes('manage_roles')
-                    ? $t('nav.iamUsers')
-                    : $t('nav.users')
-                }}
-              </NavLink>
-              <NavLink
-                to="/languages"
-                class="navbar-item justify-start py-2"
-                @click="closeNavMenus"
-              >
-                <Globe class="h-4 w-4" /> {{ $t('nav.languages') }}
-              </NavLink>
-              <NavLink
-                to="/assistant"
-                class="navbar-item justify-start py-2"
-                @click="closeNavMenus"
-              >
-                <Bot class="h-4 w-4" /> {{ $t('nav.assistant') }}
-              </NavLink>
-              <NavLink
-                to="/semantic-graph"
-                class="navbar-item justify-start py-2"
-                @click="closeNavMenus"
-              >
-                <Share2 class="h-4 w-4" /> {{ $t('nav.semanticGraph') }}
-              </NavLink>
-              <NavLink
-                v-if="!auth.state.isLoggedIn"
-                to="/export/cached"
-                class="navbar-item justify-start py-2"
-                @click="closeNavMenus"
-              >
-                <DownloadIcon class="h-4 w-4" /> {{ $t('nav.cachedExports') }}
-              </NavLink>
-              <NavLink
-                v-if="auth.state.isLoggedIn"
-                to="/export"
-                class="navbar-item justify-start py-2"
-                @click="closeNavMenus"
-              >
-                <ExportIcon class="h-4 w-4" /> {{ $t('nav.export') }}
-              </NavLink>
-              <NavLink
-                v-if="auth.state.isLoggedIn && auth.state.authorities?.includes('bulk_import')"
-                to="/bulk-import"
-                class="navbar-item justify-start py-2"
-                @click="closeNavMenus"
-              >
-                <ImportIcon class="h-4 w-4" /> {{ $t('nav.bulkImport') }}
-              </NavLink>
+                <span class="hidden lg:inline"> {{ $t('nav.more') }} </span>
+                <ChevronDown class="h-5 w-5" :stroke-width="2.5" :absolute-stroke-width="true" />
+              </Button>
               <div
-                class="border-t border-gray-100 mt-1 pt-1 px-2 py-2"
-                role="group"
-                :aria-label="$t('buttonTheme.label')"
+                class="nav-dropdown-panel"
+                :class="isMoreNavOpen ? 'flex' : 'hidden group-hover:flex'"
               >
-                <p class="text-xs text-gray-500 mb-1">{{ $t('buttonTheme.label') }}</p>
+                <NavLink
+                  to="/create"
+                  class="navbar-item justify-start py-2"
+                  @click="closeNavMenus"
+                >
+                  <FilePlus class="h-4 w-4" /> {{ $t('creation.create') }}
+                </NavLink>
+                <NavLink
+                  v-if="auth.state.isLoggedIn"
+                  to="/users"
+                  class="navbar-item justify-start py-2"
+                  @click="closeNavMenus"
+                >
+                  <Users class="h-4 w-4" />
+                  {{
+                    auth.state.authorities?.includes('manage_roles')
+                      ? $t('nav.iamUsers')
+                      : $t('nav.users')
+                  }}
+                </NavLink>
+                <NavLink
+                  to="/languages"
+                  class="navbar-item justify-start py-2"
+                  @click="closeNavMenus"
+                >
+                  <Globe class="h-4 w-4" /> {{ $t('nav.languages') }}
+                </NavLink>
+                <NavLink
+                  to="/assistant"
+                  class="navbar-item justify-start py-2"
+                  @click="closeNavMenus"
+                >
+                  <Bot class="h-4 w-4" /> {{ $t('nav.assistant') }}
+                </NavLink>
+                <NavLink
+                  to="/semantic-graph"
+                  class="navbar-item justify-start py-2"
+                  @click="closeNavMenus"
+                >
+                  <Share2 class="h-4 w-4" /> {{ $t('nav.semanticGraph') }}
+                </NavLink>
+                <NavLink
+                  v-if="!auth.state.isLoggedIn"
+                  to="/export/cached"
+                  class="navbar-item justify-start py-2"
+                  @click="closeNavMenus"
+                >
+                  <DownloadIcon class="h-4 w-4" /> {{ $t('nav.cachedExports') }}
+                </NavLink>
+                <NavLink
+                  v-if="auth.state.isLoggedIn"
+                  to="/export"
+                  class="navbar-item justify-start py-2"
+                  @click="closeNavMenus"
+                >
+                  <ExportIcon class="h-4 w-4" /> {{ $t('nav.export') }}
+                </NavLink>
+                <NavLink
+                  v-if="auth.state.isLoggedIn && auth.state.authorities?.includes('bulk_import')"
+                  to="/bulk-import"
+                  class="navbar-item justify-start py-2"
+                  @click="closeNavMenus"
+                >
+                  <ImportIcon class="h-4 w-4" /> {{ $t('nav.bulkImport') }}
+                </NavLink>
+                <div
+                  class="border-t border-gray-100 mt-1 pt-1 px-2 py-2"
+                  role="group"
+                  :aria-label="$t('buttonTheme.label')"
+                >
+                  <p class="text-xs text-gray-500 mb-1">{{ $t('buttonTheme.label') }}</p>
 
-                <div class="flex flex-col gap-0.5">
-                  <Button
-                    variant="topbar"
-                    type="button"
-                    class="justify-start py-2 text-sm w-full"
-                    :class="{ 'nav-link-active': buttonTheme === 'aqua' }"
-                    @click="setTheme('aqua')"
-                  >
-                    {{ $t('buttonTheme.aqua') }}
-                  </Button>
-                  <Button
-                    variant="topbar"
-                    type="button"
-                    class="justify-start py-2 text-sm w-full"
-                    :class="{ 'nav-link-active': buttonTheme === 'flat' }"
-                    @click="setTheme('flat')"
-                  >
-                    {{ $t('buttonTheme.flat') }}
-                  </Button>
+                  <div class="flex flex-col gap-0.5">
+                    <Button
+                      variant="topbar"
+                      type="button"
+                      class="justify-start py-2 text-sm w-full"
+                      :class="{ 'nav-link-active': buttonTheme === 'aqua' }"
+                      @click="setTheme('aqua')"
+                    >
+                      {{ $t('buttonTheme.aqua') }}
+                    </Button>
+                    <Button
+                      variant="topbar"
+                      type="button"
+                      class="justify-start py-2 text-sm w-full"
+                      :class="{ 'nav-link-active': buttonTheme === 'flat' }"
+                      @click="setTheme('flat')"
+                    >
+                      {{ $t('buttonTheme.flat') }}
+                    </Button>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        </nav>
-        <!-- Auth Buttons - Optimized for mobile -->
-        <div class="flex items-center space-x-1 sm:space-x-2">
-          <NavLink
-            :to="{ path: '/recent', query: { tab: 'news' } }"
-            class="navbar-item relative sm:hidden"
-            :aria-label="$t('nav.news')"
-          >
-            <span class="navbar-item-badge-wrap">
+          </nav>
+          <!-- Auth Buttons - Optimized for mobile -->
+          <div class="flex items-center space-x-1 sm:space-x-2">
+            <NavLink
+              :to="{ path: '/activity', query: { feed: 'news' } }"
+              class="navbar-item sm:hidden"
+              :aria-label="$t('recentChanges.news')"
+            >
               <Bell class="h-5 w-5" />
-              <span
-                v-if="newsBadgeLabel"
-                class="nav-unread-badge"
-                :class="{ 'nav-unread-badge--wide': newsBadgeCount != null && newsBadgeCount > 99 }"
-              >
-                {{ newsBadgeLabel }}
-              </span>
-            </span>
-          </NavLink>
-          <template v-if="!auth.state.isLoading">
-            <template v-if="auth.state.isLoggedIn">
-              <NavLink to="/library" class="navbar-item sm:hidden" :aria-label="$t('nav.library')">
-                <Star class="h-5 w-5" />
-              </NavLink>
-              <NavLink to="/mi" class="navbar-item">
-                <BookmarkCheck class="h-5 w-5" />
-                <span class="hidden sm:inline">{{ auth.state.username }}</span>
-              </NavLink>
-              <Button variant="topbar" class="hidden sm:flex" @click="handleLogout">
-                <LogOut class="h-5 w-5" />
-                <span class="hidden md:inline">{{ $t('nav.logout') }}</span>
-              </Button>
+            </NavLink>
+            <template v-if="!auth.state.isLoading">
+              <template v-if="auth.state.isLoggedIn">
+                <NavLink
+                  to="/library"
+                  class="navbar-item sm:hidden"
+                  :aria-label="$t('nav.library')"
+                >
+                  <Star class="h-5 w-5" />
+                </NavLink>
+                <NavLink to="/mi" class="navbar-item" :aria-label="auth.state.username">
+                  <BookmarkCheck class="h-5 w-5" />
+                  <span class="hidden sm:inline">{{ auth.state.username }}</span>
+                </NavLink>
+                <Button variant="topbar" class="hidden sm:flex" @click="handleLogout">
+                  <LogOut class="h-5 w-5" />
+                  <span class="hidden md:inline">{{ $t('nav.logout') }}</span>
+                </Button>
+              </template>
+              <template v-else>
+                <NavLink to="/signup" class="btn-signup" :aria-label="$t('nav.signUp')">
+                  <UserPlus class="h-5 w-5" />
+                  <span class="hidden sm:inline">{{ $t('nav.signUp') }}</span>
+                </NavLink>
+                <NavLink to="/login" class="btn-login" :aria-label="$t('nav.logIn')">
+                  <LogIn class="h-5 w-5" />
+                  <span class="hidden sm:inline">{{ $t('nav.logIn') }}</span>
+                </NavLink>
+              </template>
             </template>
-            <template v-else>
-              <NavLink to="/signup" class="btn-signup">
-                <UserPlus class="h-5 w-5" />
-                <span class="hidden sm:inline">{{ $t('nav.signUp') }}</span>
-              </NavLink>
-              <NavLink to="/login" class="btn-login">
-                <LogIn class="h-5 w-5" />
-                <span class="hidden sm:inline">{{ $t('nav.logIn') }}</span>
-              </NavLink>
-            </template>
-          </template>
+          </div>
         </div>
+        <AppMobileNavMenu :show="isMenuOpen" @close="isMenuOpen = false" @logout="handleLogout" />
       </div>
-      <AppMobileNavMenu :show="isMenuOpen" @close="isMenuOpen = false" @logout="handleLogout" />
+    </header>
+    <AppFixedBanners
+      :show-test-data-warning="showTestDataWarning"
+      :show-unconfirmed-warning="showUnconfirmedWarning"
+      :discord-chat-url="discordChatUrl"
+      :is-resending-confirmation="isResendingConfirmation"
+      :resend-confirmation-success="resendConfirmationSuccess"
+      @resend-confirmation="handleResendConfirmation"
+    />
+    <!-- Global Error Display -->
+    <div class="flex justify-center">
+      <div v-if="error?.message" class="w-full max-w-lg px-4">
+        <Error
+          v-if="error?.message"
+          :message="error.message"
+          :details="error.details != null ? String(error.details) : ''"
+          @close="clearError"
+        />
+      </div>
     </div>
-  </header>
-  <AppFixedBanners
-    :show-test-data-warning="showTestDataWarning"
-    :show-unconfirmed-warning="showUnconfirmedWarning"
-    :discord-chat-url="discordChatUrl"
-    :is-resending-confirmation="isResendingConfirmation"
-    :resend-confirmation-success="resendConfirmationSuccess"
-    @resend-confirmation="handleResendConfirmation"
-  />
-  <!-- Global Error Display -->
-  <div class="flex justify-center">
-    <div v-if="error?.message" class="w-full max-w-lg px-4">
-      <Error
-        v-if="error?.message"
-        :message="error.message"
-        :details="error.details != null ? String(error.details) : ''"
-        @close="clearError"
-      />
-    </div>
-  </div>
-  <ToastFloat
-    :show="!!successToast"
-    :message="successToast?.message ?? ''"
-    :duration="successToast?.duration ?? DEFAULT_SUCCESS_TOAST_DURATION_MS"
-    :extra-component="successToast?.extraComponent ?? null"
-    :extra-props="successToast?.extraProps ?? null"
-    :close-label="$t('modal.close')"
-    type="success"
-    @close="clearSuccess"
-  />
+    <ToastFloat
+      :show="!!successToast"
+      :message="successToast?.message ?? ''"
+      :duration="successToast?.duration ?? DEFAULT_SUCCESS_TOAST_DURATION_MS"
+      :extra-component="successToast?.extraComponent ?? null"
+      :extra-props="successToast?.extraProps ?? null"
+      :close-label="$t('modal.close')"
+      type="success"
+      @close="clearSuccess"
+    />
 
-  <!-- PWA Install Prompt -->
-  <PWAInstallPrompt />
-  <!-- Main content -->
-  <main
-    class="main-content"
-    :class="[
-      { 'scrollbar-always': route.meta.alwaysShowScrollbar },
-      route.meta.fullHeight ? 'main-content--no-scroll' : '',
-      route.meta.hideTopBar ? 'main-content--no-topbar' : '',
-    ]"
-  >
-    <div
-      id="main-child"
-      class="max-w-4xl mx-auto relative flex flex-col"
+    <!-- PWA Install Prompt -->
+    <PWAInstallPrompt />
+    <!-- Main content -->
+    <main
+      class="main-content"
       :class="[
-        route.meta.contentTopPaddingMainOnly ||
-        route.meta.authFullBleed ||
-        route.meta.fullHeight
-          ? 'pt-0'
-          : 'pt-3',
-        route.meta.fullHeight ? 'main-child-full-height w-full' : 'main-child-min-height',
-        route.meta.authFullBleed ? 'main-child--auth-fullbleed' : '',
-        route.path.startsWith('/lingo') ? 'lg:pl-64' : '',
+        { 'scrollbar-always': route.meta.alwaysShowScrollbar },
+        route.meta.fullHeight ? 'main-content--no-scroll' : '',
+        route.meta.hideTopBar ? 'main-content--no-topbar' : '',
       ]"
     >
       <div
-        class="flex-1"
+        id="main-child"
+        class="max-w-4xl mx-auto relative flex flex-col"
         :class="[
-          route.meta.contentTopPaddingMainOnly ||
-          route.meta.authFullBleed ||
-          route.meta.fullHeight
-            ? 'px-0'
-            : 'px-3',
-          { 'main-child-inner-full-height': route.meta.fullHeight },
-          !route.meta.authFullBleed &&
-          !route.meta.fullHeight &&
-          !route.meta.contentTopPaddingMainOnly
-            ? 'flex flex-col gap-4 page-fab-clearance'
-            : '',
+          route.meta.contentTopPaddingMainOnly || route.meta.authFullBleed || route.meta.fullHeight
+            ? 'pt-0'
+            : 'pt-3',
+          route.meta.fullHeight ? 'main-child-full-height w-full' : 'main-child-min-height',
+          route.meta.authFullBleed ? 'main-child--auth-fullbleed' : '',
+          route.path.startsWith('/lingo') ? 'lg:pl-64' : '',
         ]"
       >
         <div
-          v-if="auth.state.isLoading"
-          class="flex h-full w-full items-center justify-center min-h-[50vh]"
+          class="flex-1"
+          :class="[
+            route.meta.contentTopPaddingMainOnly ||
+            route.meta.authFullBleed ||
+            route.meta.fullHeight
+              ? 'px-0'
+              : 'px-3',
+            { 'main-child-inner-full-height': route.meta.fullHeight },
+            !route.meta.authFullBleed &&
+            !route.meta.fullHeight &&
+            !route.meta.contentTopPaddingMainOnly
+              ? 'flex flex-col gap-4 page-fab-clearance'
+              : '',
+          ]"
         >
           <div
-            class="h-8 w-8 animate-spin rounded-full border-4 border-gray-200 border-t-blue-600"
-          ></div>
-        </div>
-        <router-view v-else v-slot="{ Component, route: childRoute }">
-          <div v-if="route.meta.fullHeight" class="full-height-route-host">
+            v-if="auth.state.isLoading"
+            class="flex h-full w-full items-center justify-center min-h-[50vh]"
+          >
+            <div
+              class="h-8 w-8 animate-spin rounded-full border-4 border-gray-200 border-t-blue-600"
+            ></div>
+          </div>
+          <router-view v-else v-slot="{ Component, route: childRoute }">
+            <div v-if="route.meta.fullHeight" class="full-height-route-host">
+              <component
+                :is="Component"
+                v-bind="metaProps(childRoute.meta.props)"
+                v-on="
+                  isHomePage
+                    ? {
+                        search: performSearch,
+                        'view-message': viewMessage,
+                        'view-thread': viewThread,
+                      }
+                    : {}
+                "
+              />
+            </div>
             <component
               :is="Component"
+              v-else
               v-bind="metaProps(childRoute.meta.props)"
               v-on="
                 isHomePage
@@ -317,72 +324,13 @@
                   : {}
               "
             />
-          </div>
-          <component
-            :is="Component"
-            v-else
-            v-bind="metaProps(childRoute.meta.props)"
-            v-on="
-              isHomePage
-                ? {
-                    search: performSearch,
-                    'view-message': viewMessage,
-                    'view-thread': viewThread,
-                  }
-                : {}
-            "
-          />
-        </router-view>
+          </router-view>
+        </div>
       </div>
-    </div>
-  </main>
+    </main>
   </div>
-  <!-- Floating action menu (FAB trigger + standard dropdown panel) -->
-  <div
-    v-if="auth.state.isLoggedIn && !route.meta.hideFab"
-    class="max-w-4xl mx-auto relative"
-  >
-    <div
-      class="fixed md:absolute bottom-4 right-4 md:right-6 lg:-right-4 lg:-mr-4 z-50 flex flex-col items-end gap-3"
-    >
-      <ToolbarSelectDropdown>
-        <template #trigger="{ open }">
-          <span class="fab-elevation-shell">
-            <FabButton :aria-label="$t('fab.actionsTitle')">
-              <Plus
-                class="h-8 w-8 shrink-0 transition-transform duration-200"
-                stroke-width="2.75"
-                :class="{ 'rotate-45': open }"
-              />
-            </FabButton>
-          </span>
-        </template>
-        <ToolbarSelectDropdownItem @click="handleAssistantChat">
-          <span class="flex items-center gap-3">
-            <Bot class="fab-menu-icon fab-menu-icon--assistant" stroke-width="2" />
-            {{ $t('nav.assistant') }}
-          </span>
-        </ToolbarSelectDropdownItem>
-        <ToolbarSelectDropdownItem @click="handleSemanticGraph">
-          <span class="flex items-center gap-3">
-            <Share2 class="fab-menu-icon fab-menu-icon--graph" stroke-width="2" />
-            {{ $t('nav.semanticGraph') }}
-          </span>
-        </ToolbarSelectDropdownItem>
-        <ToolbarSelectDropdownItem @click="handleNewFreeThread">
-          <span class="flex items-center gap-3">
-            <AudioWaveform class="fab-menu-icon fab-menu-icon--discussion" stroke-width="2" />
-            {{ $t('fab.newDiscussion') }}
-          </span>
-        </ToolbarSelectDropdownItem>
-        <ToolbarSelectDropdownItem @click="handleNewDefinition">
-          <span class="flex items-center gap-3">
-            <FilePlus class="fab-menu-icon fab-menu-icon--definition" stroke-width="2" />
-            {{ $t('fab.addDefinition') }}
-          </span>
-        </ToolbarSelectDropdownItem>
-      </ToolbarSelectDropdown>
-    </div>
+  <div v-if="!route.meta.hideFab" class="fixed bottom-4 right-4 sm:right-6 z-50">
+    <CreateMenu floating />
   </div>
 </template>
 
@@ -395,9 +343,6 @@ import {
   UserPlus,
   ChevronDown,
   X,
-  Plus,
-  FilePlus,
-  AudioWaveform,
   Clock4,
   GraduationCap,
   Star,
@@ -405,9 +350,10 @@ import {
   Bot,
   Share2,
   Bell,
+  FilePlus,
 } from '@lucide/vue'
 import { Menu } from '@lucide/vue' // Explicitly import Menu if it was missed by auto-sort
-import { ref, onMounted, onUnmounted, watch, computed, nextTick } from 'vue'
+import { ref, onMounted, watch, computed, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 
 import { useI18n } from 'vue-i18n'
@@ -418,22 +364,14 @@ import Error from '@/components/Error.vue'
 import ToastFloat from '@/components/ToastFloat.vue'
 import PWAInstallPrompt from '@/components/messaging/shared/PWAInstallPrompt.vue'
 import { resendConfirmation } from '@/api'
-import {
-  Button,
-  FabButton,
-  ToolbarSelectDropdown,
-  ToolbarSelectDropdownItem,
-  DownloadIcon,
-  ExportIcon,
-  ImportIcon,
-} from '@packages/ui'
+import { Button, DownloadIcon, ExportIcon, ImportIcon } from '@packages/ui'
 
 import BackgroundComponent from './components/BackgroundComponent.vue'
 import AppFixedBanners from './components/layout/AppFixedBanners.vue'
 import AppMobileNavMenu from './components/layout/AppMobileNavMenu.vue'
 import NavLink from './components/NavLink.vue'
 import { normalizeSearchQuery } from '@/utils/searchQueryUtils'
-import { compactQuery, mergeQueryForHomeNavigation, queryStr } from '@/utils/routeQuery'
+import { compactQuery, queryStr } from '@/utils/routeQuery'
 import { provideAuth } from './composables/useAuth'
 import { useCollectionsCache } from './composables/useCollectionsCache'
 import { provideError } from './composables/useError'
@@ -443,7 +381,9 @@ import {
 } from './composables/useSuccessToast'
 import { useNotifications } from '@/services/messaging/NotificationService'
 import { useButtonTheme } from './composables/useButtonTheme'
-import { useNewsUnread } from './composables/useNewsUnread'
+import { useActivityUnread } from './composables/useActivityUnread'
+import CreateMenu from './components/CreateMenu.vue'
+import UnsavedChangesDialog from './components/UnsavedChangesDialog.vue'
 import { localeCaptureGroupRegex, supportedLocales } from './config/locales'
 import {
   noindexRoutes,
@@ -527,9 +467,6 @@ const homePath = computed(() => {
   return `/${localeMatch ? localeMatch[1] : ($locale.value as string) || 'en'}`
 })
 
-/** Consecutive logo clicks while staying on Home; first keeps filters, second clears only `q`. */
-let consecutiveHomeLogoClicks = 0
-
 function metaProps(p: unknown): Record<string, unknown> {
   return p !== null && typeof p === 'object' && !Array.isArray(p)
     ? (p as Record<string, unknown>)
@@ -540,11 +477,7 @@ const searchMode = ref('messages')
 const auth = provideAuth()
 const { preload: preloadCollections, clear: clearCollectionsCache } = useCollectionsCache()
 const { buttonTheme, initButtonTheme, setButtonTheme: setButtonThemePreference } = useButtonTheme()
-const {
-  badgeCount: newsBadgeCount,
-  badgeLabel: newsBadgeLabel,
-  fetchUnreadCount: fetchNewsUnreadCount,
-} = useNewsUnread()
+const { hasNewActivity, refresh: refreshActivityBadge } = useActivityUnread()
 const { error, clearError } = provideError()
 const { successToast, clearSuccess } = provideSuccessToast()
 const isMenuOpen = ref(false)
@@ -585,49 +518,10 @@ const generateSnowflakes = () =>
 
 const snowflakes = ref(generateSnowflakes())
 
-const handleNewDefinition = () => {
-  router.push('/valsi/add')
-}
-
-const handleAssistantChat = () => {
-  router.push('/assistant')
-}
-
-const handleSemanticGraph = () => {
-  router.push('/semantic-graph')
-}
-
-const handleNewFreeThread = () => {
-  router.push('/comments/new-thread')
-}
-
-const triggerPyro = () => {
-  showPyro.value = !showPyro.value
-  setTimeout(() => {
-    showPyro.value = false
-  }, 3000)
-}
-
 const handleLogoClick = async () => {
-  triggerPyro()
-
-  if (!isHomePage.value) {
-    consecutiveHomeLogoClicks = 1
-    await router.push({
-      path: homePath.value,
-      query: mergeQueryForHomeNavigation(route.query),
-    })
-    await nextTick()
-  } else {
-    consecutiveHomeLogoClicks += 1
-    if (consecutiveHomeLogoClicks >= 2 && typeof window !== 'undefined') {
-      window.dispatchEvent(new CustomEvent('lensisku:clear-search'))
-      consecutiveHomeLogoClicks = 0
-    }
-  }
-
-  const mainContent = document.querySelector('.main-content') as HTMLElement | null
-  mainContent?.scrollTo({ top: 0, behavior: 'smooth' })
+  await router.push({ path: homePath.value, query: {} })
+  await nextTick()
+  document.querySelector('.feed-page__body')?.scrollTo({ top: 0, behavior: 'instant' })
 }
 
 const performSearch = ({ query, mode }: { query: string; mode: string }) => {
@@ -741,12 +635,6 @@ const handleClickOutside = (event) => {
   }
 }
 
-watch(isHomePage, (onHome, wasOnHome) => {
-  if (wasOnHome && !onHome) {
-    consecutiveHomeLogoClicks = 0
-  }
-})
-
 watch(() => route.query, syncFromRoute, { deep: true })
 
 // Preload the user's collection list so CollectionWidget opens instantly.
@@ -775,22 +663,9 @@ watch(
   { immediate: true }
 )
 
-// Keep the navigation badge fresh across routes and when the tab becomes visible.
-let newsRefreshInterval: ReturnType<typeof setInterval> | undefined
-const refreshNewsBadge = () => {
-  if (document.visibilityState === 'visible') void fetchNewsUnreadCount()
-}
-
-onUnmounted(() => {
-  if (newsRefreshInterval) clearInterval(newsRefreshInterval)
-  document.removeEventListener('visibilitychange', refreshNewsBadge)
-})
-
 // Also set initial $locale based on route on mount
 onMounted(() => {
-  refreshNewsBadge()
-  newsRefreshInterval = setInterval(refreshNewsBadge, 60_000)
-  document.addEventListener('visibilitychange', refreshNewsBadge)
+  void refreshActivityBadge()
   const path = router.currentRoute.value.path
   const localeMatch = path.match(localeCaptureGroupRegex)
   if (localeMatch) {

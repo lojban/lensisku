@@ -56,11 +56,15 @@ async fn main() -> AppResult<()> {
     db::run_migrations(&config.db_pools.import_pool).await?;
     info!("Database migrations ran successfully.");
 
-    // Download all voices before accepting requests; ONNX sessions stay lazy.
-    match tokio::task::spawn_blocking(utils::kokoro_tts::ensure_model_files_cached).await {
-        Ok(Ok(())) => info!("German TTS model and Martin/Victoria/Eva/Bernd voice packs are cached"),
-        Ok(Err(e)) => error!("TTS model preparation failed (will retry on use): {e}"),
-        Err(e) => error!("TTS model preparation task failed: {e}"),
+    // Download speech assets before accepting requests unless TTS is disabled for this run.
+    if env::var("DISABLE_VALSI_TTS").ok().as_deref() == Some("1") {
+        info!("Valši TTS disabled; skipping speech model and voice downloads");
+    } else {
+        match tokio::task::spawn_blocking(utils::kokoro_tts::ensure_model_files_cached).await {
+            Ok(Ok(())) => info!("German TTS model and Martin/Victoria/Eva/Bernd voice packs are cached"),
+            Ok(Err(e)) => error!("TTS model preparation failed (will retry on use): {e}"),
+            Err(e) => error!("TTS model preparation task failed: {e}"),
+        }
     }
 
     // Initialize parsers

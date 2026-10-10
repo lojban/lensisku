@@ -1,17 +1,20 @@
 <template>
   <UpsertPageLayout
     narrow
-    :title="isEditMode ? t('upsertWiki.editTitle') : t('upsertWiki.addTitle')"
+    fill-content
+    :title="isEditMode ? t('upsertWiki.editTitle') : t('creation.newWiki')"
   >
     <template #trailing>
       <UpsertToolbarButton
         type="submit"
         form="upsert-wiki-form"
         :variant="isEditMode ? 'edit' : 'create'"
-        :disabled="isSubmitting || !isValid"
+        :disabled="isSubmitting || !isValid || !canCreate"
       >
         <template v-if="isSubmitting">{{ t('upsertWiki.saving') }}<AnimatedDots /></template>
-        <template v-else>{{ t('upsertWiki.saveButton') }}</template>
+        <template v-else>{{
+          isEditMode ? t('creation.saveChanges') : t('creation.createWiki')
+        }}</template>
       </UpsertToolbarButton>
     </template>
 
@@ -21,17 +24,24 @@
     >
       {{ t('upsertWiki.fromCommentBanner', { id: fromCommentId }) }}
       <RouterLink
-        :to="`/comments?comment_id=${fromCommentId}&scroll_to=${fromCommentId}`"
+        :to="localePath(`/comments?comment_id=${fromCommentId}&scroll_to=${fromCommentId}`)"
         class="ml-1 underline hover:text-blue-950"
       >
         {{ t('upsertWiki.fromCommentLink') }}
       </RouterLink>
     </div>
 
-    <form id="upsert-wiki-form" class="space-y-4" @submit.prevent="submitWiki">
+    <p v-if="!canCreate" class="text-sm text-amber-800 mb-4" role="status">
+      {{ t('creation.permissionRequired') }}
+    </p>
+    <form
+      id="upsert-wiki-form"
+      class="flex min-h-full flex-col space-y-4"
+      @submit.prevent="submitWiki"
+    >
       <div>
         <label for="word" class="block text-sm font-medium text-blue-700">
-          {{ t('upsertWiki.wordLabel') }}
+          {{ t('creation.title') }}
         </label>
         <Input
           id="word"
@@ -50,32 +60,10 @@
         </p>
       </div>
 
-      <div class="grid grid-cols-1 gap-4" :class="{ 'md:grid-cols-2': !isEditMode }">
-        <div v-if="!isEditMode">
-          <label for="source-language" class="block text-sm font-medium text-blue-700">
-            {{ t('upsertWiki.sourceLanguageLabel') }}
-            <span class="text-red-500">{{ t('upsertWiki.required') }}</span>
-          </label>
-          <Select
-            id="source-language"
-            v-model="sourceLangId"
-            searchable
-            :search-placeholder="t('filters.searchLanguages')"
-            :empty-filter-label="t('filters.noMatches')"
-            required
-            select-class="input-field w-full h-10"
-            :disabled="isLoading || isSubmitting"
-            :options="[
-              { value: '', label: t('upsertWiki.selectLanguagePlaceholder') },
-              ...languages.map((lang) => ({ value: lang.id, label: lang.real_name })),
-            ]"
-          />
-          <p class="mt-1 text-xs text-gray-500">{{ t('upsertWiki.sourceLanguageNote') }}</p>
-        </div>
-
+      <div class="grid grid-cols-1 gap-4">
         <div>
           <label for="language" class="block text-sm font-medium text-blue-700">
-            {{ t('upsertWiki.languageLabel') }}
+            {{ t('creation.pageLanguage') }}
           </label>
           <Select
             id="language"
@@ -94,43 +82,72 @@
         </div>
       </div>
 
-      <div>
-        <label for="commit-message" class="block text-sm font-medium text-blue-700">
-          {{ t('upsertWiki.commitMessageLabel') }}
-        </label>
-        <Input
-          id="commit-message"
-          v-model="commitMessage"
-          type="text"
-          class="input-field w-full h-10"
-          :disabled="isSubmitting"
-          :placeholder="t('upsertWiki.commitMessagePlaceholder')"
-        />
-      </div>
+      <details class="rounded-lg border border-gray-200 p-3" :open="isRedirect || undefined">
+        <summary class="cursor-pointer text-sm font-medium text-gray-700">
+          {{ t('creation.advanced') }}
+        </summary>
+        <div class="space-y-4 pt-4">
+          <div v-if="!isEditMode">
+            <label for="source-language" class="block text-sm font-medium text-blue-700">
+              {{ t('upsertWiki.sourceLanguageLabel') }}
+              <span class="text-red-500">{{ t('upsertWiki.required') }}</span>
+            </label>
+            <Select
+              id="source-language"
+              v-model="sourceLangId"
+              searchable
+              :search-placeholder="t('filters.searchLanguages')"
+              :empty-filter-label="t('filters.noMatches')"
+              required
+              select-class="input-field w-full h-10"
+              :disabled="isLoading || isSubmitting"
+              :options="[
+                { value: '', label: t('upsertWiki.selectLanguagePlaceholder') },
+                ...languages.map((lang) => ({ value: lang.id, label: lang.real_name })),
+              ]"
+            />
+            <p class="mt-1 text-xs text-gray-500">{{ t('upsertWiki.sourceLanguageNote') }}</p>
+          </div>
 
-      <div>
-        <label class="flex items-center gap-2 text-sm font-medium text-blue-700">
-          <input v-model="isRedirect" type="checkbox" :disabled="isSubmitting" />
-          {{ t('upsertWiki.replaceWithRedirect') }}
-        </label>
-        <p class="mt-1 text-xs text-gray-500">{{ t('upsertWiki.redirectHint') }}</p>
-        <div v-if="isRedirect" class="mt-2">
-          <label for="redirect-target" class="block text-sm font-medium text-blue-700">
-            {{ t('upsertWiki.redirectTargetLabel') }}
-          </label>
-          <Input
-            id="redirect-target"
-            v-model="redirectTarget"
-            type="text"
-            required
-            class="input-field w-full h-10"
-            :disabled="isSubmitting"
-            :placeholder="t('upsertWiki.redirectTargetPlaceholder')"
-          />
+          <div>
+            <label for="commit-message" class="block text-sm font-medium text-blue-700">
+              {{ t('upsertWiki.commitMessageLabel') }}
+            </label>
+            <Input
+              id="commit-message"
+              v-model="commitMessage"
+              type="text"
+              class="input-field w-full h-10"
+              :disabled="isSubmitting"
+              :placeholder="t('upsertWiki.commitMessagePlaceholder')"
+            />
+          </div>
+
+          <div>
+            <label class="flex items-center gap-2 text-sm font-medium text-blue-700">
+              <input v-model="isRedirect" type="checkbox" :disabled="isSubmitting" />
+              {{ t('upsertWiki.replaceWithRedirect') }}
+            </label>
+            <p class="mt-1 text-xs text-gray-500">{{ t('upsertWiki.redirectHint') }}</p>
+            <div v-if="isRedirect" class="mt-2">
+              <label for="redirect-target" class="block text-sm font-medium text-blue-700">
+                {{ t('upsertWiki.redirectTargetLabel') }}
+              </label>
+              <Input
+                id="redirect-target"
+                v-model="redirectTarget"
+                type="text"
+                required
+                class="input-field w-full h-10"
+                :disabled="isSubmitting"
+                :placeholder="t('upsertWiki.redirectTargetPlaceholder')"
+              />
+            </div>
+          </div>
         </div>
-      </div>
+      </details>
 
-      <div v-if="!isRedirect">
+      <div v-if="!isRedirect" class="flex min-h-0 flex-1 flex-col">
         <label class="block text-sm font-medium text-blue-700 mb-2">
           {{ t('upsertWiki.definitionLabel') }}
         </label>
@@ -150,6 +167,7 @@
 </template>
 
 <script setup lang="ts">
+import { invalidateActivityFeed } from '@/composables/useActivityFeed'
 import { Input, Select } from '@packages/ui'
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -169,10 +187,14 @@ import UpsertToolbarButton from '@/components/layout/UpsertToolbarButton.vue'
 import WikiEditor from '@/components/WikiEditor.vue'
 import { useError } from '@/composables/useError'
 import { useSeoHead } from '@/composables/useSeoHead'
+import { useLocalePath } from '@/composables/useLocalePath'
+import { useUnsavedChanges } from '@/composables/useUnsavedChanges'
+import { useCreationAccess } from '@/composables/useCreationAccess'
 import { loadWikiFromCommentPrefill } from '@/utils/wikiFromComment'
 
 const route = useRoute()
 const router = useRouter()
+const localePath = useLocalePath()
 const { t } = useI18n()
 const { showError, clearError } = useError()
 
@@ -198,8 +220,23 @@ const isSubmitting = ref(false)
 const isLoading = ref(true)
 const editDefinitionId = ref<number | null>(null)
 
+const canCreate = useCreationAccess('definition', isEditMode)
+const unsaved = useUnsavedChanges(
+  computed(() =>
+    JSON.stringify([
+      word.value,
+      langId.value,
+      sourceLangId.value,
+      definition.value,
+      isRedirect.value,
+      redirectTarget.value,
+      commitMessage.value,
+    ])
+  )
+)
+
 const pageTitle = computed(() =>
-  isEditMode.value ? t('upsertWiki.editTitle') : t('upsertWiki.addTitle')
+  isEditMode.value ? t('upsertWiki.editTitle') : t('creation.newWiki')
 )
 useSeoHead({ title: pageTitle, robots: 'noindex, nofollow' })
 
@@ -260,6 +297,7 @@ async function loadWikiData(wikiWord: string) {
 }
 
 async function submitWiki() {
+  if (isSubmitting.value || !canCreate.value) return
   formError.value = ''
   clearError()
   if (!isRedirect.value && wikiEditor.value) {
@@ -326,8 +364,10 @@ async function submitWiki() {
     }
 
     if (response.data.success) {
+      unsaved.reset()
+      invalidateActivityFeed()
       router.push({
-        path: `/wiki/${encodeURIComponent(word.value.trim().replace(/ /g, '_'))}`,
+        path: localePath(`/wiki/${encodeURIComponent(word.value.trim().replace(/ /g, '_'))}`),
         query: isRedirect.value ? { redirect: 'no' } : {},
       })
     } else {
@@ -402,5 +442,6 @@ onMounted(async () => {
 
   if (route.query.redirect === '1') isRedirect.value = true
   editorReady.value = true
+  unsaved.reset()
 })
 </script>

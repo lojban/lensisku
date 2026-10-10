@@ -28,7 +28,11 @@
           :class="getTypeClass(change.change_type)"
           class="inline-block px-2 py-1 text-xs font-medium rounded-full mb-2"
         >
-          {{ getChangeTypeLabel(change.change_type) }}
+          {{
+            change.change_type === 'wiki' && change.source === 'imported'
+              ? t('activityFeed.importedWiki')
+              : getChangeTypeLabel(change.change_type)
+          }}
         </span>
         <span class="text-xs text-gray-500 italic"> {{ formatTime(change.time) }} </span>
         <span class="text-xs text-gray-500 italic">
@@ -41,7 +45,7 @@
         </span>
         <div class="text-sm">
           <RouterLink
-            :to="getChangeLink(change)"
+            :to="localePath(getChangeLink(change))"
             class="font-medium text-blue-600 hover:text-blue-800 hover:underline flex items-center"
           >
             <template v-if="change.change_type === 'comment' && !change.word">
@@ -182,6 +186,7 @@ import { useI18n } from 'vue-i18n'
 import { getTypeClass } from '@/utils/wordTypeUtils'
 import { useDateFormat } from '@/composables/useDateFormat'
 
+import { useLocalePath } from '@/composables/useLocalePath'
 import CommentItem from '@/components/CommentItem.vue'
 import LazyMathJax from '@/components/LazyMathJax.vue'
 import AuthorLink from '@/components/AuthorLink.vue'
@@ -189,8 +194,10 @@ import AuthorLink from '@/components/AuthorLink.vue'
 const { t, locale } = useI18n()
 const { formatTime } = useDateFormat()
 const router = useRouter()
+const localePath = useLocalePath()
 
 const props = defineProps({
+  compact: { type: Boolean, default: false },
   change: {
     type: Object,
     required: true,
@@ -213,11 +220,23 @@ const mappedComment = computed(() => {
     ? c.content
     : [{ type: 'text', data: typeof c.content === 'string' ? c.content : '' }]
   // CommentItem derives subject from content parts with type 'header'; inject one if we have change.word
-  const content =
+  let content =
     c.word && !rawContent.some((p) => p.type === 'header')
       ? [{ type: 'header', data: c.word }, ...rawContent]
       : rawContent
+  if (props.compact) {
+    let remaining = 700
+    content = content
+      .filter((part) => part.type === 'text' || part.type === 'header')
+      .map((part) => {
+        const data = String(part.data || '').slice(0, remaining)
+        remaining = Math.max(0, remaining - data.length)
+        return { ...part, data }
+      })
+      .filter((part) => part.data)
+  }
   return {
+    import_source: c.source === 'imported' ? c.source_name : null,
     comment_id: c.comment_id,
     thread_id: c.thread_id,
     definition_id: c.definition_id ?? null,
@@ -245,6 +264,9 @@ const getChangeLink = (change) => {
   } else if (change.change_type === 'message') {
     return `/message/${change.comment_id}`
   } else if (change.change_type === 'wiki') {
+    if (change.is_wiki && change.definition_id) {
+      return `/wiki/id/${change.definition_id}`
+    }
     return `/wiki/${encodeURIComponent(String(change.word || '').replace(/ /g, '_'))}`
   }
   return `/valsi/${change.word.replace(/ /g, '_')}?highlight_definition_id=${change.definition_id}`
@@ -254,7 +276,7 @@ const openComment = (event?: MouseEvent) => {
   if ((event?.target as Element | null)?.closest('a, button, input, textarea, select')) return
   const c = props.change
   router.push({
-    path: '/comments',
+    path: localePath('/comments'),
     query: {
       thread_id: c.thread_id,
       comment_id: c.parent_id || undefined,
@@ -269,7 +291,9 @@ const handleReply = (commentId: number) => {
   const c = props.change
   if (c.change_type !== 'comment') return
   router.push(
-    `/comments?thread_id=${c.thread_id}&scroll_to=${commentId}&valsi_id=${c.valsi_id || 0}&definition_id=${c.definition_id || 0}&reply_to=${commentId}`
+    localePath(
+      `/comments?thread_id=${c.thread_id}&scroll_to=${commentId}&valsi_id=${c.valsi_id || 0}&definition_id=${c.definition_id || 0}&reply_to=${commentId}`
+    )
   )
 }
 

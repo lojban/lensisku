@@ -10,14 +10,14 @@
       <SourceTypeBadge :type="contextType" />
       <RouterLink
         v-if="processedComment.definition"
-        :to="contextLink"
+        :to="localePath(contextLink)"
         class="hover:underline text-blue-700 font-medium ml-1.5 truncate inline-block max-w-[calc(100%-120px)]"
       >
         <LazyMathJax :content="processedComment.definition" class="inline" />
       </RouterLink>
       <RouterLink
         v-else-if="processedComment.valsi_id"
-        :to="contextLink"
+        :to="localePath(contextLink)"
         class="hover:underline text-blue-700 font-medium ml-1.5 truncate inline-block max-w-[calc(100%-120px)]"
       >
         {{ processedComment.valsi_word || t('components.commentItem.untitledEntry') }}
@@ -26,7 +26,7 @@
     <!-- Comment Header -->
     <div class="flex flex-col mb-2 min-w-0">
       <div class="comment-header">
-        <RouterLink :to="`/user/${processedComment.username}`" class="shrink-0">
+        <RouterLink :to="localePath(`/user/${processedComment.username}`)" class="shrink-0">
           <!-- Skeleton while loading -->
           <div
             v-show="isProfileImageLoading"
@@ -53,7 +53,7 @@
         </RouterLink>
         <div class="comment-header-main">
           <RouterLink
-            :to="`/user/${processedComment.username}`"
+            :to="localePath(`/user/${processedComment.username}`)"
             class="comment-header-username"
             :title="processedComment.username"
           >
@@ -62,7 +62,11 @@
           <div class="comment-header-meta">{{ formatDate(processedComment.time) }}</div>
         </div>
         <RouterLink
-          :to="`/comments/?comment_id=${processedComment.parent_id}&scroll_to=${processedComment.comment_id}&valsi_id=${props.valsiId || 0}&definition_id=${props.definitionId || 0}`"
+          :to="
+            localePath(
+              `/comments?thread_id=${processedComment.thread_id}&comment_id=${processedComment.parent_id || processedComment.comment_id}&scroll_to=${processedComment.comment_id}&valsi_id=${props.valsiId || 0}&definition_id=${props.definitionId || 0}`
+            )
+          "
           class="comment-header-id"
         >
           #{{ processedComment.comment_num }}
@@ -85,7 +89,11 @@
     <div v-if="flatStyle && processedComment.parent_content" class="min-w-48 overflow-x-auto">
       <div class="mb-2 ml-6 pl-2 border rounded-md border-l-2 border-gray-300">
         <RouterLink
-          :to="`/comments/?thread_id=${processedComment.thread_id}&comment_id=${processedComment.parent_id}&scroll_to=${processedComment.parent_id}&valsi_id=${valsiId || 0}&definition_id=${definitionId || 0}`"
+          :to="
+            localePath(
+              `/comments/?thread_id=${processedComment.thread_id}&comment_id=${processedComment.parent_id}&scroll_to=${processedComment.parent_id}&valsi_id=${valsiId || 0}&definition_id=${definitionId || 0}`
+            )
+          "
           class="text-xs text-gray-500 hover:text-blue-500"
         >
           <div class="text-sm">
@@ -113,7 +121,11 @@
     >
       <div class="pl-2 border rounded-md border-l-2 border-gray-300">
         <RouterLink
-          :to="`/comments/?thread_id=${processedComment.thread_id}&comment_id=${processedComment.parent_id}&scroll_to=${processedComment.parent_id}&valsi_id=${valsiId || 0}&definition_id=${definitionId || 0}`"
+          :to="
+            localePath(
+              `/comments/?thread_id=${processedComment.thread_id}&comment_id=${processedComment.parent_id}&scroll_to=${processedComment.parent_id}&valsi_id=${valsiId || 0}&definition_id=${definitionId || 0}`
+            )
+          "
           class="text-xs text-gray-500 hover:text-blue-500"
         >
           <div class="text-sm">
@@ -317,6 +329,7 @@ import { useDateFormat } from '@/composables/useDateFormat'
 import { useError } from '@/composables/useError'
 import { useSuccessToast } from '@/composables/useSuccessToast'
 import type { CommentItemApiComment } from '@/types/comment'
+import { useLocalePath } from '@/composables/useLocalePath'
 import { commentToWikiPrefill, storeWikiFromCommentPrefill } from '@/utils/wikiFromComment'
 
 const { t, locale } = useI18n()
@@ -361,6 +374,7 @@ const props = defineProps({
 
 const auth = useAuth()
 const router = useRouter()
+const localePath = useLocalePath()
 const isProcessing = ref(false)
 type ProcessedComment = CommentItemApiComment & {
   plain_content: Array<{ type: string; data?: string }>
@@ -607,7 +621,7 @@ const handleCreateWikiClick = () => {
   )
   storeWikiFromCommentPrefill(prefill)
   router.push({
-    path: '/wiki/add',
+    path: localePath('/wiki/add'),
     query: { from_comment: String(prefill.commentId) },
   })
 }
@@ -634,7 +648,7 @@ const performDeleteComment = async () => {
         // Redirect to parent comment or thread
         if (processedComment.value.parent_id) {
           router.push({
-            path: '/comments',
+            path: localePath('/comments'),
             query: {
               comment_id: processedComment.value.parent_id,
               valsi_id: props.valsiId || 0,
@@ -643,7 +657,7 @@ const performDeleteComment = async () => {
           })
         } else {
           router.push({
-            path: '/comments',
+            path: localePath('/comments'),
             query: {
               thread_id: processedComment.value.thread_id,
               valsi_id: props.valsiId || 0,

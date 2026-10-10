@@ -10,7 +10,7 @@
         type="submit"
         form="upsert-definition-markdown-form"
         :variant="isEditMode ? 'edit' : 'create'"
-        :disabled="isSubmitting || !isValid"
+        :disabled="isSubmitting || !isValid || !canCreate"
       >
         <template v-if="isSubmitting"
           >{{ t('upsertDefinitionMarkdown.saving') }}<AnimatedDots
@@ -19,6 +19,9 @@
       </UpsertToolbarButton>
     </template>
 
+    <p v-if="!canCreate" role="status" class="text-sm text-amber-800 mb-4">
+      {{ t('creation.permissionRequired') }}
+    </p>
     <form id="upsert-definition-markdown-form" class="space-y-4" @submit.prevent="submitValsi">
       <!-- Word Input -->
       <div>
@@ -101,11 +104,16 @@ import UpsertPageLayout from '@/components/layout/UpsertPageLayout.vue'
 import UpsertToolbarButton from '@/components/layout/UpsertToolbarButton.vue'
 import '@milkdown/crepe/theme/common/style.css'
 import '@milkdown/crepe/theme/frame.css'
+import { useLocalePath } from '@/composables/useLocalePath'
+import { useCreationAccess } from '@/composables/useCreationAccess'
+import { useUnsavedChanges } from '@/composables/useUnsavedChanges'
+import { invalidateActivityFeed } from '@/composables/useActivityFeed'
 import { useAuth } from '@/composables/useAuth'
 import { useSeoHead } from '@/composables/useSeoHead'
 
 const route = useRoute()
 const router = useRouter()
+const localePath = useLocalePath()
 const { t } = useI18n()
 const auth = useAuth()
 
@@ -187,6 +195,7 @@ onMounted(async () => {
   crepe.on((listener) => {
     listener.markdownUpdated(updateDefinition)
   })
+  unsaved.reset()
 })
 
 onUnmounted(() => {
@@ -196,6 +205,10 @@ onUnmounted(() => {
 })
 const languages = ref([])
 const isEditMode = ref(false)
+const canCreate = useCreationAccess('definition', isEditMode)
+const unsaved = useUnsavedChanges(
+  computed(() => JSON.stringify([word.value, langId.value, definition.value, sourceLangId.value]))
+)
 const isSubmitting = ref(false)
 const isLoading = ref(true)
 const editDefinitionId = ref(null)
@@ -240,6 +253,7 @@ async function loadDefinitionData(definitionId) {
 }
 
 async function submitValsi() {
+  if (isSubmitting.value || !canCreate.value) return
   if (crepe) {
     let markdown = crepe.getMarkdown()
     // Convert autolinks <https://...> to [https://...](https://...)
@@ -288,10 +302,16 @@ async function submitValsi() {
     }
 
     if (response.data.success || response.status === 200) {
+      unsaved.reset()
+      invalidateActivityFeed()
       // Check for 200 status as well
       const definitionId = response.data.definition_id || editDefinitionId.value
       // Redirect to the entry page after successful save
-      router.push(`/valsi/${word.value.replace(/ /g, '_')}?highlight_definition_id=${definitionId}`)
+      router.push(
+        localePath(
+          `/valsi/${word.value.replace(/ /g, '_')}?highlight_definition_id=${definitionId}`
+        )
+      )
     } else {
       console.error('Error saving definition:', response.data.error)
       // Potentially show error to user using useError composable if needed

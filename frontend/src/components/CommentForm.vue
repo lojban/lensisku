@@ -5,9 +5,18 @@
       disableBorder ? 'surface-comment-form--borderless' : null,
     ]"
   >
+    <div v-if="optionalTitle && !showSubjectField" class="mb-2 flex items-center text-sm">
+      <button
+        type="button"
+        class="text-blue-700 hover:underline"
+        @click="revealTitle"
+      >
+        {{ t('creation.addTitle') }}
+      </button>
+    </div>
     <div class="border-b border-gray-100 last:border-0">
-      <form @submit.prevent="handleSubmit">
-        <div v-if="showSubjectField || !isReply" class="mb-2">
+      <form :id="formId" @submit.prevent="handleSubmit">
+        <div v-if="showSubjectField || (!isReply && !optionalTitle)" class="mb-2">
           <div class="flex justify-between items-center">
             <Input
               ref="subjectInputRef"
@@ -30,13 +39,13 @@
 
         <div ref="editor" class="milkdown-editor z-index-1" />
 
-        <div class="flex items-center justify-end mt-1">
+        <div v-if="!hideSubmit" class="flex items-center justify-end mt-1">
           <div class="flex items-center space-x-3">
             <!-- add subject control removed in favor of subject Input field -->
             <Button
               variant="insert"
               type="submit"
-              :disabled="isSubmitting || characterCount > 10280"
+              :disabled="isSubmitting || characterCount > 10280 || (requireBody && !hasBody)"
               class="inline-flex items-center ui-btn--insert text-sm"
             >
               <div class="flex items-center">
@@ -127,24 +136,7 @@ onMounted(async () => {
 
   const updateFormContent = () => {
     if (!crepe) return
-    let markdown = crepe.getMarkdown()
-
-    // Convert problematic autolinks <https://...> to [https://...](https://...)
-    // to prevent backend from stripping them as HTML tags.
-    markdown = markdown.replace(/<(https?:\/\/[^\s>]+)>/g, '[$1]($1)')
-
-    // Parse markdown into content parts array
-    const contentParts = markdown
-      .split(/(^>.*$)/gm)
-      .filter((line) => line.trim())
-      .map((line) => {
-        line = line.trim()
-        if (line.startsWith('# ')) {
-          return { type: 'header', data: line.substring(2).trim() }
-        }
-        return { type: 'text', data: line }
-      })
-    form.value.content = contentParts
+    markdown.value = crepe.getMarkdown()
   }
 
   // Update content ref on change
@@ -163,6 +155,11 @@ onUnmounted(() => {
 })
 
 const props = defineProps({
+  formId: { type: String, default: undefined },
+  hideSubmit: { type: Boolean, default: false },
+  optionalTitle: { type: Boolean, default: false },
+  requireBody: { type: Boolean, default: false },
+  submitLabel: { type: String, default: '' },
   isSubmitting: {
     type: Boolean,
     default: false,
@@ -185,20 +182,31 @@ const props = defineProps({
   },
 })
 
-const emit = defineEmits(['submit', 'cancel'])
+const emit = defineEmits(['submit', 'cancel', 'draft-change'])
 
 const textareaRef = ref(null)
 const subjectInputRef = ref(null)
-const showSubjectField = ref(!props.isReply)
+const showSubjectField = ref(
+  (!props.isReply && !props.optionalTitle) || !!props.initialValues.subject
+)
 const form = ref({
   subject: props.initialValues.subject,
   content: props.initialValues.content,
 })
 
-const characterCount = computed(() => form.value.content.length)
+const markdown = ref(
+  typeof props.initialValues.content === 'string' ? props.initialValues.content : ''
+)
+const hasBody = computed(() => markdown.value.trim().length > 0)
+const characterCount = computed(() => markdown.value.length)
+watch([markdown, () => form.value.subject], () =>
+  emit('draft-change', { subject: form.value.subject, markdown: markdown.value })
+)
 
 const submitButtonText = computed(() =>
-  props.isSubmitting ? t('components.commentForm.posting') : t('components.commentForm.sendButton')
+  props.isSubmitting
+    ? t('components.commentForm.posting')
+    : props.submitLabel || t('components.commentForm.sendButton')
 )
 
 const autoResize = async () => {
@@ -233,47 +241,39 @@ watch(
 watch(() => form.value.content, autoResize)
 
 const handleSubmit = () => {
-  // Final sync to ensure content is captured even if debounced update hasn't fired
-  if (crepe) {
-    let markdown = crepe.getMarkdown()
-    // Fix link anchor text
-    markdown = markdown.replace(/(https?:)(\\_){2}/g, '$1//')
-    markdown = markdown.replace(/(https?)__(?=[^\s\]])/g, '$1://')
-
-    // Convert problematic autolinks <https://...> to [https://...](https://...)
-    // to prevent backend from stripping them as HTML tags.
-    markdown = markdown.replace(/<(https?:\/\/[^\s>]+)>/g, '[$1]($1)')
-
-    form.value.content = markdown
-      .split(/(^>.*$)/gm)
-      .filter((line) => line.trim())
-      .map((line) => {
-        line = line.trim()
-        if (line.startsWith('# ')) return { type: 'header', data: line.substring(2).trim() }
-        return { type: 'text', data: line }
-      })
-  }
-
-  if (form.value.content.length > 0 || form.value.subject.length > 0) {
-    // Estimate payload size
-    const encoder = new TextEncoder()
-    const subjectSize = encoder.encode(form.value.subject || '').length
-    const contentString = JSON.stringify(form.value.content || [])
-    const contentSize = encoder.encode(contentString).length
-    const totalSize = subjectSize + contentSize
-
-    // Check against the limit
-    if (totalSize > MAX_PAYLOAD_SIZE) {
-      showError('components.commentForm.errorTooLarge')
-      return // Prevent submission
-    }
-
-    // Proceed with submission if size is okay
-    emit('submit', {
-      subject: form.value.subject.trim(),
-      content: form.value.content == '' ? [] : form.value.content,
+  if (props.isSubmitting) return
+  const draftMarkdown = crepe ? crepe.getMarkdown() : markdown.value
+  markdown.value = draftMarkdown
+  if (draftMarkdown.length > 10280 || (props.requireBody && !draftMarkdown.trim())) return
+  const normalized = draftMarkdown
+    .replace(/(https?:)(\\_){2}/g, '$1//')
+    .replace(/(https?)__(?=[^\s\]])/g, '$1://')
+    .replace(/<(https?:\/\/[^\s>]+)>/g, '[$1]($1)')
+  const content = normalized
+    .split(/(^>.*$)/gm)
+    .filter((line) => line.trim())
+    .map((line) => {
+      line = line.trim()
+      return line.startsWith('# ')
+        ? { type: 'header', data: line.substring(2).trim() }
+        : { type: 'text', data: line }
     })
+  if (!content.length && !form.value.subject.trim()) return
+  const encoder = new TextEncoder()
+  if (
+    encoder.encode(form.value.subject).length + encoder.encode(JSON.stringify(content)).length >
+    MAX_PAYLOAD_SIZE
+  ) {
+    showError('components.commentForm.errorTooLarge')
+    return
   }
+  emit('submit', { subject: form.value.subject.trim(), content })
+}
+
+async function revealTitle() {
+  showSubjectField.value = true
+  await nextTick()
+  focusSubject()
 }
 
 const focusSubject = () => {
@@ -281,6 +281,10 @@ const focusSubject = () => {
 }
 
 defineExpose({
+  getDraft: () => ({
+    subject: form.value.subject,
+    markdown: crepe ? crepe.getMarkdown() : markdown.value,
+  }),
   focusSubject,
 })
 </script>

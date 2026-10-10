@@ -29,41 +29,16 @@
         />
       </div>
 
-      <div v-if="showTrendingHome" class="min-h-[400px]">
-        <div v-if="isLoadingTrending" class="flex justify-center py-8">
-          <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
-        </div>
-        <!-- Latest comments, wiki, and mail (trending comments hidden for now) -->
-        <div v-if="homeActivity.length > 0" class="space-y-2">
-          <h2 class="text-lg sm:text-xl font-bold text-gray-800 select-none">
-            {{ $t('home.latestActivity') }}
-          </h2>
-
-          <div class="home-feed-list">
-            <RecentChangeItem
-              v-for="change in homeActivity"
-              :key="homeChangeKey(change)"
-              :change="change"
-            />
-          </div>
-        </div>
-        <!-- Latest definitions -->
-        <div v-if="homeDefinitions.length > 0" class="space-y-2 mt-6">
-          <h2 class="text-lg sm:text-xl font-bold text-gray-800 select-none">
-            {{ $t('home.latestDefinitions') }}
-          </h2>
-
-          <div class="home-feed-list">
-            <RecentChangeItem
-              v-for="change in homeDefinitions"
-              :key="homeChangeKey(change)"
-              :change="change"
-            />
-          </div>
-        </div>
-      </div>
+      <ActivityFeed v-if="showTrendingHome" />
 
       <div v-else ref="searchResultsRef" class="min-h-[400px]">
+        <button
+          type="button"
+          class="text-sm text-blue-700 mb-3 hover:underline"
+          @click="backToFeed"
+        >
+          {{ $t('activityFeed.backToFeed') }}
+        </button>
         <div class="space-y-4">
           <div
             class="flex flex-wrap justify-between items-center gap-3 sm:space-x-4 w-full sm:w-auto ml-auto"
@@ -102,7 +77,7 @@
                   <Plus class="h-4 w-4" />
                   <span>{{ $t('home.addDefinition') }}</span>
                 </template>
-                <ToolbarSelectDropdownItem @click="router.push('/valsi/add')">
+                <ToolbarSelectDropdownItem @click="router.push(localePath('/valsi/add'))">
                   {{ $t('home.createDefinition') }}
                 </ToolbarSelectDropdownItem>
                 <ToolbarSelectDropdownItem
@@ -471,7 +446,6 @@ import {
   searchDefinitions,
   fastSearchDefinitions,
   getLanguages,
-  getRecentChanges,
   searchWaves,
   list_wave_threads,
   getDefinition,
@@ -494,25 +468,23 @@ import {
   ExportIcon,
 } from '@packages/ui'
 import PaginationComponent from '@/components/PaginationComponent.vue'
-import RecentChangeItem from '@/components/RecentChangeItem.vue'
+import ActivityFeed from '@/components/activity/ActivityFeed.vue'
+import { useLocalePath } from '@/composables/useLocalePath'
 import SearchForm from '@/components/SearchForm.vue'
 import CombinedFiltersSkeleton from '@/components/skeletons/CombinedFiltersSkeleton.vue'
 import SearchFormSkeleton from '@/components/skeletons/SearchFormSkeleton.vue'
 import { useAuth } from '@/composables/useAuth'
 import { useCollectionsCache } from '@/composables/useCollectionsCache'
-import { useNewsUnread } from '@/composables/useNewsUnread'
 import { useLanguageSelection } from '@/composables/useLanguageSelection'
 import { useSeoHead } from '@/composables/useSeoHead'
 import { useI18n } from 'vue-i18n'
 import { SearchQueue } from '@/utils/searchQueue'
 import {
-  applyCombinedFiltersFromQuery,
   combinedFiltersFromQuery,
   combinedFiltersToQuery,
   commitHomeQuery,
   compactQuery,
   hasActiveSearchFilters,
-  resolveHomeQuery,
   queryStr,
 } from '@/utils/routeQuery'
 import { normalizeSearchQuery } from '@/utils/searchQueryUtils'
@@ -660,7 +632,10 @@ const clearCollectionItemExpand = () => {
   })
 }
 const auth = useAuth()
-const { fetchUnreadCount: fetchNewsUnreadCount } = useNewsUnread()
+const localePath = useLocalePath()
+const backToFeed = () => {
+  return router.push({ path: localePath(), query: {} })
+}
 const decodedToken = computed((): JwtUserPayload | null => {
   if (typeof window === 'undefined') return null
   const token = localStorage.getItem('accessToken')
@@ -714,11 +689,10 @@ const currentPage = ref(parseInt(queryStr(route.query.page), 10) || 1)
 const totalPages = ref(1)
 const sortOrder = ref(queryStr(route.query.sort_order) === 'asc' ? 'asc' : 'desc')
 
-const hydratedHomeQuery = resolveHomeQuery(route.query)
+const hydratedHomeQuery = compactQuery(route.query)
 
 // URL wins; otherwise last-home / localStorage snapshot
 const getInitialSearchQuery = () => {
-  if (typeof window === 'undefined') return
   if (route.query.definition_id) return ''
   if (route.query.q !== undefined) {
     return normalizeSearchQuery(queryStr(route.query.q))
@@ -740,7 +714,6 @@ const groupByThread = ref(getInitialGroupByThread())
 const searchQuery = ref(getInitialSearchQuery())
 // Get search mode from localStorage or use default
 const getInitialSearchMode = () => {
-  if (typeof window === 'undefined') return
   if (route.query.definition_id) return 'semantic'
   const mode =
     (route.query.mode !== undefined ? queryStr(route.query.mode) : '') ||
@@ -799,7 +772,6 @@ type WaveSource = (typeof WAVE_SOURCES)[number]
 const waveSource = ref<WaveSource>('all')
 const isLoading = ref(true) // Loading state for search results
 const isInitialLoading = ref(true) // Loading state for initial component setup (languages etc.)
-const isLoadingTrending = ref(false)
 const error = ref(null)
 const searchFormRef = ref(null)
 const searchResultsRef = ref(null)
@@ -847,7 +819,7 @@ useSeoHead({ title: pageTitle, description: pageDescription, pathWithoutLocale: 
 
 /** When true, show the home activity/definitions feeds; when false, show search / waves results. */
 const showTrendingHome = computed(() => {
-  if (searchMode.value === 'comments') return false
+  if (route.query.mode || queryStr(route.query.langs)) return false
   if (similarDefinitionId.value) return false
   const q = (searchQuery.value || '').trim()
   return !q && !hasActiveSearchFilters(filters.value)
@@ -1197,86 +1169,6 @@ const loadAllDefinitionIdsForCurrentSearch = async (
   return collected
 }
 
-type RecentChangeRow = { time: number; change_type?: string; [key: string]: unknown }
-const HOME_FEED_LIMIT = 10
-const homeActivity = ref<RecentChangeRow[]>([])
-const homeDefinitions = ref<RecentChangeRow[]>([])
-
-const HOME_FEEDS_CACHE_KEY = 'home_feeds_cache'
-const HOME_FEEDS_CACHE_TTL = 5 * 60 * 1000
-
-type HomeFeedsCache = { activity: RecentChangeRow[]; definitions: RecentChangeRow[] }
-
-const getCachedHomeFeeds = (): HomeFeedsCache | null => {
-  if (typeof window === 'undefined') return null
-  try {
-    const cached = localStorage.getItem(HOME_FEEDS_CACHE_KEY)
-    if (!cached) return null
-
-    const { data, timestamp } = JSON.parse(cached)
-    if (Date.now() - timestamp >= HOME_FEEDS_CACHE_TTL) {
-      localStorage.removeItem(HOME_FEEDS_CACHE_KEY)
-      return null
-    }
-    if (!data || !Array.isArray(data.activity) || !Array.isArray(data.definitions)) return null
-    return data
-  } catch (e) {
-    console.error('Error reading cached home feeds:', e)
-    return null
-  }
-}
-
-const setCachedHomeFeeds = (data: HomeFeedsCache) => {
-  if (typeof window === 'undefined') return
-  try {
-    localStorage.setItem(HOME_FEEDS_CACHE_KEY, JSON.stringify({ data, timestamp: Date.now() }))
-  } catch (e) {
-    console.error('Error caching home feeds:', e)
-  }
-}
-
-const fetchTrendingAndChanges = async () => {
-  isLoadingTrending.value = true
-
-  const cached = getCachedHomeFeeds()
-  if (cached) {
-    homeActivity.value = cached.activity.slice(0, HOME_FEED_LIMIT)
-    homeDefinitions.value = cached.definitions.slice(0, HOME_FEED_LIMIT)
-  }
-
-  try {
-    const [activityResponse, definitionsResponse] = await Promise.all([
-      getRecentChanges({ limit: HOME_FEED_LIMIT, types: 'comment,wiki,message' }),
-      getRecentChanges({ limit: HOME_FEED_LIMIT, types: 'definition' }),
-      fetchNewsUnreadCount(),
-    ])
-    const activity = activityResponse.data.changes || []
-    const definitions = definitionsResponse.data.changes || []
-    homeActivity.value = activity
-    homeDefinitions.value = definitions
-    setCachedHomeFeeds({ activity, definitions })
-  } catch (e) {
-    console.error('Error fetching home feeds:', e)
-    if (!cached) {
-      homeActivity.value = []
-      homeDefinitions.value = []
-    }
-  } finally {
-    isLoadingTrending.value = false
-  }
-}
-
-function homeChangeKey(change: RecentChangeRow) {
-  return [
-    change.change_type,
-    change.time,
-    change.word,
-    change.comment_id,
-    change.definition_id,
-    change.cursor_id,
-  ].join('-')
-}
-
 // Generic data fetching for other modes
 const sortBy = ref(
   ['relevance', 'time', 'reactions', 'replies'].includes(queryStr(route.query.sort_by))
@@ -1384,13 +1276,8 @@ const fetchData = async () => {
     return
   }
 
-  if (
-    !searchQuery.value.trim() &&
-    !similarDefinitionId.value &&
-    !hasActiveSearchFilters(filters.value)
-  ) {
-    // Fetch trending/changes but ensure main loading is false
-    await fetchTrendingAndChanges()
+  if (showTrendingHome.value) {
+    // The idle activity feed owns its requests.
     isLoading.value = false // Ensure main loading is stopped
     collectionMatches.value = []
     return
@@ -1407,7 +1294,6 @@ const fetchData = async () => {
     console.error('Error fetching data:', error)
     // Ensure loading states are reset on error
     isLoading.value = false
-    isLoadingTrending.value = false
   } finally {
     // isLoading is handled within specific fetch functions (fetchDefinitions, fetchComments)
     // or set directly in the try block for other modes.
@@ -1549,7 +1435,7 @@ const goToSearchExport = () => {
 
 // Navigation handlers
 const handleNewFreeComment = () => {
-  router.push('/comments/new-thread')
+  router.push(localePath('/comments/new-thread'))
 }
 
 const handleReply = (commentId: number) => {
@@ -1617,7 +1503,8 @@ const syncFromRoute = () => {
   // Get all params from URL
   const query = route.query
 
-  // Only update values if they exist in URL
+  searchQuery.value = normalizeSearchQuery(queryStr(query.q)) as string
+  searchMode.value = queryStr(query.mode) || 'dictionary'
   if (query.q !== undefined) {
     const normalized = normalizeSearchQuery(queryStr(query.q)) as string
     searchQuery.value = normalized
@@ -1657,7 +1544,7 @@ const syncFromRoute = () => {
   sortOrder.value = queryStr(query.sort_order) === 'asc' ? 'asc' : 'desc'
 
   // URL keys override stored filters; omitted keys keep the hydrated localStorage state
-  Object.assign(filters.value, applyCombinedFiltersFromQuery(filters.value, query))
+  Object.assign(filters.value, combinedFiltersFromQuery(query))
 
   // Sync isSemantic from searchMode which was synced from route mode above
   if (searchMode.value === 'semantic' || searchMode.value === 'dictionary') {
@@ -1687,33 +1574,12 @@ const handleKeyDown = (event: KeyboardEvent) => {
 onMounted(async () => {
   window.addEventListener('keydown', handleKeyDown)
   window.addEventListener('lensisku:clear-search', handleLogoClear)
-  void fetchNewsUnreadCount()
   try {
     const languagesResponse = await getLanguages()
     const initialLangs = getInitialLanguages(route, languagesResponse.data)
     filters.value.selectedLanguages = initialLangs
     languages.value = languagesResponse.data
 
-    const queryToPush = commitHomeQuery({
-      ...route.query,
-      ...resolveHomeQuery(route.query),
-      q: similarDefinitionId.value ? undefined : searchQuery.value || undefined,
-      mode: searchMode.value,
-      definition_id: similarDefinitionId.value ? String(similarDefinitionId.value) : undefined,
-      ...combinedFiltersToQuery(filters.value),
-      group_by_thread: groupByThread.value ? 'true' : undefined,
-      wave_source: waveSource.value !== 'all' ? waveSource.value : undefined,
-    })
-    if (similarDefinitionId.value) {
-      delete queryToPush.q
-    }
-
-    const currentCompact = compactQuery({ ...route.query })
-    const pushNeeded = JSON.stringify(currentCompact) !== JSON.stringify(queryToPush)
-
-    if (pushNeeded) {
-      router.push({ query: queryToPush })
-    }
     isInitialLoading.value = false // Skeletons can be hidden now.
 
     // Auth-dependent fetches (like collections) are handled by the auth state watcher.

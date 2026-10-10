@@ -1,72 +1,112 @@
 <template>
-  <div class="bg-white rounded-lg shadow-md p-6">
-    <h2 class="text-2xl font-bold mb-6 text-gray-800">{{ t('newThreadPage.title') }}</h2>
+  <UpsertPageLayout narrow :title="t('newThreadPage.title')">
+    <template #trailing>
+      <Button
+        variant="cancel"
+        :disabled="isSubmitting"
+        @click="router.push(localePath('/activity'))"
+      >
+        {{ t('creation.cancel') }}
+      </Button>
+      <UpsertToolbarButton
+        type="submit"
+        form="new-discussion-form"
+        :disabled="
+          !canCreate || isSubmitting || !draft.markdown.trim() || draft.markdown.length > 10280
+        "
+        :loading="isSubmitting"
+      >
+        {{ t('creation.postDiscussion') }}
+      </UpsertToolbarButton>
+    </template>
 
-    <p class="text-gray-600 text-sm mb-2">{{ t('newThreadPage.description') }}</p>
+    <p
+      class="mb-4 rounded-lg border border-blue-100 bg-blue-50 px-3 py-2.5 text-sm leading-relaxed text-blue-800"
+    >
+      {{ t('newThreadPage.description') }}
+    </p>
+    <p v-if="!canCreate" class="text-sm text-amber-800" role="status">
+      {{ t('creation.permissionRequired') }}
+    </p>
     <CommentForm
-      ref="commentFormRef"
-      :is-reply="false"
+      v-else
+      form-id="new-discussion-form"
+      hide-submit
+      class="discussion-page-editor mb-0"
+      :initial-values="initialValues"
+      optional-title
+      require-body
+      :submit-label="t('creation.postDiscussion')"
       :is-submitting="isSubmitting"
+      @draft-change="updateDraft"
       @submit="createNewThread"
-      @cancel="cancelCreation"
     />
-  </div>
+    <p v-if="error" role="alert" class="text-sm text-red-700 mt-3">{{ error }}</p>
+  </UpsertPageLayout>
 </template>
-
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { invalidateActivityFeed } from '@/composables/useActivityFeed'
+import { ref, computed, defineAsyncComponent } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-
 import { addComment } from '@/api'
-import CommentForm from '@/components/CommentForm.vue'
+import { Button } from '@packages/ui'
+import UpsertToolbarButton from '@/components/layout/UpsertToolbarButton.vue'
+import UpsertPageLayout from '@/components/layout/UpsertPageLayout.vue'
 import { useSeoHead } from '@/composables/useSeoHead'
-
+import { useLocalePath } from '@/composables/useLocalePath'
+import { useCreationAccess } from '@/composables/useCreationAccess'
+import { useUnsavedChanges } from '@/composables/useUnsavedChanges'
+import {
+  readDiscussionDraft,
+  saveDiscussionDraft,
+  clearDiscussionDraft,
+  type DiscussionDraft,
+} from '@/utils/discussionDraft'
+const CommentForm = defineAsyncComponent(() => import('@/components/CommentForm.vue'))
 const { t } = useI18n()
-
-useSeoHead({ title: computed(() => t('newThreadPage.pageTitle')) })
-
+useSeoHead({ title: () => t('creation.discussion') })
 const router = useRouter()
+const localePath = useLocalePath()
+const canCreate = useCreationAccess('discussion')
 const isSubmitting = ref(false)
-const commentFormRef = ref(null)
-
-onMounted(() => {
-  commentFormRef.value?.focusSubject()
-})
-
-const createNewThread = async (formData) => {
+const error = ref('')
+const draft = ref(readDiscussionDraft())
+const initialValues = { subject: draft.value.subject, content: draft.value.markdown }
+const guard = useUnsavedChanges(computed(() => JSON.stringify(draft.value)))
+guard.reset()
+function updateDraft(value: DiscussionDraft) {
+  draft.value = value
+  saveDiscussionDraft(value)
+}
+async function createNewThread(formData: { subject: string; content: unknown[] }) {
+  if (isSubmitting.value || !canCreate.value) return
+  isSubmitting.value = true
+  error.value = ''
   try {
-    isSubmitting.value = true
-    const response = await addComment({
-      subject: formData.subject,
-      content: formData.content,
+    const response = await addComment(formData)
+    if (!response.data?.thread_id) throw new Error(t('creation.postError'))
+    invalidateActivityFeed()
+    clearDiscussionDraft()
+    guard.reset()
+    await router.push({
+      path: localePath('/comments'),
+      query: { thread_id: response.data.thread_id, scroll_to: response.data.comment_id },
     })
-
-    if (response.data?.thread_id) {
-      router.push({
-        path: '/comments',
-        query: {
-          thread_id: response.data.thread_id,
-          scroll_to: response.data.comment_id,
-        },
-      })
-    }
-  } catch (error) {
-    console.error('Error creating new thread:', error)
+  } catch (err) {
+    error.value =
+      (err as { response?: { data?: { error?: string } } }).response?.data?.error ||
+      t('creation.postError')
   } finally {
     isSubmitting.value = false
   }
 }
-
-const cancelCreation = () => {
-  router.push('/comments')
-}
 </script>
 
 <style scoped>
-.shadow-md {
-  box-shadow:
-    0 4px 6px -1px rgba(0, 0, 0, 0.1),
-    0 2px 4px -1px rgba(0, 0, 0, 0.06);
+@media (max-width: 640px) {
+  .discussion-page-editor :deep(.milkdown-block-handle) {
+    display: none;
+  }
 }
 </style>

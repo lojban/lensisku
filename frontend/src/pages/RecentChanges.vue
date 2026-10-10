@@ -134,13 +134,11 @@ const isCursorTab = (tabKey: string) => tabKey === 'news' || tabKey === 'changes
 
 // Active tab state
 const getInitialTab = () => {
-  if (typeof window === 'undefined') return 'news'
-  const storedTab = localStorage.getItem(STORAGE_KEY_TAB)
+  if (typeof window === 'undefined') return queryStr(route.query.tab) || 'changes'
   const queryTab = queryStr(route.query.tab)
   const validTabs = tabs.value.map((tab) => tab.key)
   if (queryTab && validTabs.includes(queryTab)) return queryTab
-  if (storedTab && validTabs.includes(storedTab)) return storedTab
-  return 'news'
+  return 'changes'
 }
 const activeTab = ref(getInitialTab())
 
@@ -398,15 +396,18 @@ const dateKey = (d: Date) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 
 const groupByDate = (rows: ChangeRow[]) => {
-  const groups = rows.reduce<Record<string, { date: Date; changes: ChangeRow[] }>>((acc, change) => {
-    const d = new Date(change.time * 1000)
-    const key = dateKey(d)
-    if (!acc[key]) {
-      acc[key] = { date: d, changes: [] }
-    }
-    acc[key].changes.push(change)
-    return acc
-  }, {})
+  const groups = rows.reduce<Record<string, { date: Date; changes: ChangeRow[] }>>(
+    (acc, change) => {
+      const d = new Date(change.time * 1000)
+      const key = dateKey(d)
+      if (!acc[key]) {
+        acc[key] = { date: d, changes: [] }
+      }
+      acc[key].changes.push(change)
+      return acc
+    },
+    {}
+  )
   return Object.values(groups).sort((a, b) => b.date.getTime() - a.date.getTime())
 }
 

@@ -6,14 +6,16 @@ withDefaults(
     title: string
     /** Cap form width (markdown / wiki editors). */
     narrow?: boolean
+    /** Let a long-form editor fill the remaining scroll viewport. */
+    fillContent?: boolean
   }>(),
-  { narrow: false }
+  { narrow: false, fillContent: false }
 )
 
 const scrollEl = ref<HTMLElement | null>(null)
 
-function scrollToTop(behavior: ScrollBehavior = 'smooth') {
-  scrollEl.value?.scrollTo({ top: 0, behavior: 'smooth' })
+function scrollToTop(behavior: 'auto' | 'instant' | 'smooth' = 'smooth') {
+  scrollEl.value?.scrollTo({ top: 0, behavior })
 }
 
 defineExpose({ scrollToTop })
@@ -43,10 +45,22 @@ defineExpose({ scrollToTop })
       ref="scrollEl"
       class="min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain px-3 pb-4 pt-4 sm:px-4 sm:pb-6"
     >
-      <div v-if="narrow" class="mx-auto w-full max-w-3xl">
+      <div
+        v-if="narrow"
+        class="mx-auto w-full max-w-3xl"
+        :class="fillContent ? 'flex min-h-full flex-col' : ''"
+      >
         <slot />
       </div>
       <slot v-else />
     </div>
+    <footer
+      v-if="$slots.actions"
+      class="shrink-0 border-t border-gray-200 bg-white px-3 py-2 sm:px-4"
+    >
+      <div class="mx-auto flex w-full max-w-3xl items-center justify-end gap-2">
+        <slot name="actions" />
+      </div>
+    </footer>
   </div>
 </template>

@@ -55,8 +55,6 @@ const modeValue = ref(props.initialMode === 'semantic' ? 'dictionary' : props.in
 const isSearching = ref(false)
 let searchTimeout: number | null = null
 
-const DEBOUNCE_DELAY = 450
-
 const isWavesMode = computed(() => modeValue.value === 'comments')
 
 const getPlaceholder = computed(() => {
@@ -86,20 +84,14 @@ function emitSearch() {
 function handleQueryUpdate(value: string) {
   query.value = value
   clearSearchTimeout()
-
   if (!value.trim()) {
     emitSearch()
     return
   }
-
-  const currentQuery = value
-
   searchTimeout = window.setTimeout(() => {
-    if (query.value === currentQuery) {
-      emitSearch()
-    }
+    emitSearch()
     searchTimeout = null
-  }, DEBOUNCE_DELAY)
+  }, 450)
 }
 
 function handleSearch() {

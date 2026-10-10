@@ -391,6 +391,10 @@ pub struct RecentChangesResponse {
 
 #[derive(Debug, Deserialize, ToSchema)]
 pub struct RecentChangesQuery {
+    /// Opt-in unified activity feed. Legacy views remain unchanged.
+    pub view: Option<String>,
+    /// Feed sources: all (default), native, or imported.
+    pub source: Option<String>,
     pub limit: Option<i64>,
     pub types: Option<String>,
     /// Cursor for keyset pagination (when present, overrides page and no time window is used).

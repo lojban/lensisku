@@ -11,7 +11,7 @@
   </a>
   <RouterLink
     v-else-if="linkLocal && username"
-    :to="`/user/${encodeURIComponent(username)}`"
+    :to="localePath(`/user/${encodeURIComponent(username)}`)"
     class="text-blue-600 hover:underline"
     @click.stop
   >
@@ -22,6 +22,8 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useLocalePath } from '@/composables/useLocalePath'
+const localePath = useLocalePath()
 import { RouterLink } from 'vue-router'
 
 const MW_SUFFIX = '@mw.lojban.org'

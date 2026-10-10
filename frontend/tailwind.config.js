@@ -715,7 +715,7 @@ export default {
             {},
         },
         '.surface-comment-form--borderless': {
-          '@apply !mt-0 !mb-0 border-0 shadow-none hover:border-transparent': {},
+          '@apply !mt-0 !mb-0 !p-0 border-0 shadow-none hover:border-transparent': {},
         },
         /** Comment row header: avatar | username+date | #id (middle truncates). */
         '.comment-header': {

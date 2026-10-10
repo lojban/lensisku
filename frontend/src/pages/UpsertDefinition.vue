@@ -14,6 +14,7 @@
         v-if="isValid && !isSubmitting"
         type="submit"
         form="upsert-definition-form"
+        :disabled="!canCreate"
         :variant="isEditMode ? 'edit' : 'create'"
       >
         {{
@@ -45,6 +46,9 @@
       </UpsertToolbarButton>
     </template>
 
+    <p v-if="!canCreate" class="text-sm text-amber-800 mb-4" role="status">
+      {{ t('creation.permissionRequired') }}
+    </p>
     <form id="upsert-definition-form" class="space-y-4 sm:space-y-6" @submit.prevent="submitValsi">
       <!-- Word Input and Analysis -->
       <div>
@@ -446,7 +450,11 @@
 </template>
 
 <script setup lang="ts">
+import { invalidateActivityFeed } from '@/composables/useActivityFeed'
 import { ArrowRight, Search, CirclePlus, CircleMinus, Eye } from '@lucide/vue'
+import { useLocalePath } from '@/composables/useLocalePath'
+import { useCreationAccess } from '@/composables/useCreationAccess'
+import { useUnsavedChanges } from '@/composables/useUnsavedChanges'
 import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
@@ -489,6 +497,7 @@ const props = defineProps({
 
 const route = useRoute()
 const router = useRouter()
+const localePath = useLocalePath()
 const auth = useAuth()
 const { showError, clearError } = useError()
 const { showSuccess } = useSuccessToast()
@@ -568,6 +577,28 @@ const isSubmitting = ref(false)
 const isLoading = ref(true)
 const prefilledWord = ref(false)
 const isEditMode = ref(false)
+const canCreate = useCreationAccess('definition', isEditMode)
+const unsaved = useUnsavedChanges(
+  computed(() =>
+    JSON.stringify([
+      word.value,
+      langId.value,
+      sourceLangId.value,
+      definition.value,
+      rafsi.value,
+      selmaho.value,
+      notes.value,
+      etymology.value,
+      jargon.value,
+      wordType.value,
+      glossKeywords.value,
+      placeKeywords.value,
+      ownerOnly.value,
+      imageData.value,
+      removeImage.value,
+    ])
+  )
+)
 const isAuthor = ref(false)
 const originalWord = ref('')
 const editDefinitionId = ref(null)
@@ -852,6 +883,7 @@ onMounted(async () => {
       console.error('Error loading source definition for translation:', e)
     }
   }
+  unsaved.reset()
 })
 
 const clearAnalysis = () => {
@@ -936,7 +968,7 @@ const performValidateMathJax = async () => {
 
 // Modified submit handler
 const submitValsi = async () => {
-  if (!isValid.value) return
+  if (!isValid.value || isSubmitting.value || !canCreate.value) return
 
   try {
     await performValidateMathJax()
@@ -1000,6 +1032,8 @@ const submitValsi = async () => {
     }
 
     if (response.data.success) {
+      unsaved.reset()
+      invalidateActivityFeed()
       const existingWord = response.data.existing_word || false
       const warningCode = typeof response.data.warning === 'string' ? response.data.warning : ''
       if (warningCode.startsWith('RAFSI_OVERLAP|') || warningCode.startsWith('RAFSI_CONFLICT|')) {
@@ -1031,7 +1065,9 @@ const submitValsi = async () => {
       const redirectDelayMs = rafsiOverlapWarning.value ? 3500 : 1500
       setTimeout(() => {
         router.push(
-          `/valsi/${word.value.replace(/ /g, '_')}?highlight_definition_id=${newDefinitionId}`
+          localePath(
+            `/valsi/${word.value.replace(/ /g, '_')}?highlight_definition_id=${newDefinitionId}`
+          )
         )
       }, redirectDelayMs)
     } else {
