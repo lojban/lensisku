@@ -14,7 +14,10 @@
           <Select
             id="fromLang"
             v-model="fromLang"
-            class="input-field w-full"
+            searchable
+            :search-placeholder="t('filters.searchLanguages')"
+            :empty-filter-label="t('filters.noMatches')"
+            select-class="input-field w-full"
             required
             :options="[
               { value: '', label: t('exportPairs.selectLanguage'), disabled: true },
@@ -30,7 +33,10 @@
           <Select
             id="toLang"
             v-model="toLang"
-            class="input-field w-full"
+            searchable
+            :search-placeholder="t('filters.searchLanguages')"
+            :empty-filter-label="t('filters.noMatches')"
+            select-class="input-field w-full"
             required
             :options="[
               { value: '', label: t('exportPairs.selectLanguage'), disabled: true },

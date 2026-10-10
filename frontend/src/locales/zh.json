@@ -117,6 +117,7 @@
     "selectAllAuthors": "全选作者",
     "deselectAllAuthors": "取消全选作者",
     "searchLanguages": "搜索语言...",
+    "searchOptions": "搜索选项...",
     "noMatches": "无匹配项",
     "filterBy": {
       "wordType": "按词类筛选",

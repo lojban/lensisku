@@ -1,8 +1,13 @@
 <template>
   <div ref="rootRef" :class="rootClass" v-bind="wrapperAttrs">
     <button
+      :id="id"
       type="button"
-      class="dropdown-trigger"
+      class="dropdown-trigger disabled:cursor-not-allowed disabled:opacity-50"
+      :class="triggerClass"
+      :disabled="disabled"
+      :aria-label="ariaLabel"
+      :aria-required="ariaRequired || undefined"
       :aria-expanded="open"
       aria-haspopup="listbox"
       @click="toggleOpen"
@@ -60,10 +65,12 @@
         <ul
           class="min-h-0 flex-1 overflow-y-auto overscroll-contain px-1 py-0.5"
           role="listbox"
-          aria-multiselectable="true"
+          :aria-multiselectable="!singleSelect"
         >
           <template v-if="visibleSuggested.length">
-            <li class="px-2 pt-1.5 pb-0.5 text-[11px] font-semibold uppercase tracking-wide text-gray-400">
+            <li
+              class="px-2 pt-1.5 pb-0.5 text-[11px] font-semibold uppercase tracking-wide text-gray-400"
+            >
               {{ suggestedLabel }}
             </li>
             <li
@@ -76,10 +83,12 @@
                 class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-2 text-sm text-gray-700 hover:bg-gray-50"
               >
                 <input
-                  type="checkbox"
+                  :type="singleSelect ? 'radio' : 'checkbox'"
+                  :disabled="disabled"
                   class="checkmark-aqua shrink-0"
                   :checked="isSelected(opt)"
-                  @change="toggleOption(opt)"
+                  @click="singleSelect && toggleOption(opt)"
+                  @change="!singleSelect && toggleOption(opt)"
                 />
                 <slot name="option" :option="opt">
                   <span class="min-w-0 flex-1 truncate">{{ optionLabel(opt) }}</span>
@@ -99,10 +108,12 @@
               class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-2 text-sm text-gray-700 hover:bg-gray-50"
             >
               <input
-                type="checkbox"
+                :type="singleSelect ? 'radio' : 'checkbox'"
+                :disabled="disabled"
                 class="checkmark-aqua shrink-0"
                 :checked="isSelected(opt)"
-                @change="toggleOption(opt)"
+                @click="singleSelect && toggleOption(opt)"
+                @change="!singleSelect && toggleOption(opt)"
               />
               <slot name="option" :option="opt">
                 <span class="min-w-0 flex-1 truncate">{{ optionLabel(opt) }}</span>
@@ -134,6 +145,36 @@ defineOptions({ inheritAttrs: false })
 const SM_BREAKPOINT_PX = 640
 
 const props = defineProps({
+  ariaLabel: {
+    type: String,
+    default: undefined,
+  },
+  ariaRequired: {
+    type: Boolean,
+    default: false,
+  },
+  triggerClass: {
+    type: [String, Array, Object],
+    default: '',
+  },
+  /** Anchor a teleported panel to the trigger, avoiding clipping in tables and dialogs. */
+  teleportPanel: {
+    type: Boolean,
+    default: false,
+  },
+  id: {
+    type: String,
+    default: undefined,
+  },
+  disabled: {
+    type: Boolean,
+    default: false,
+  },
+  /** Replace the selection with one option and close the panel; modelValue remains an array. */
+  singleSelect: {
+    type: Boolean,
+    default: false,
+  },
   /** Selected option objects (same references / identity as in `options` after value compare) */
   modelValue: {
     type: Array as PropType<unknown[]>,
@@ -255,7 +296,9 @@ const selectAllInputRef = ref<HTMLInputElement | null>(null)
 const panelViewportStyle = ref<Record<string, string>>({})
 const isNarrow = ref(false)
 
-const useViewportPanel = computed(() => props.fullBleedMobilePanel && isNarrow.value)
+const useViewportPanel = computed(
+  () => props.teleportPanel || (props.fullBleedMobilePanel && isNarrow.value)
+)
 
 function updateNarrow() {
   isNarrow.value = typeof window !== 'undefined' && window.innerWidth < SM_BREAKPOINT_PX
@@ -282,14 +325,30 @@ function updatePanelViewportStyle() {
     0,
     window.innerHeight - rect.bottom - PANEL_GAP_PX - VIEWPORT_BOTTOM_PAD_PX
   )
-  const maxPx = Math.min(availableBelow, PANEL_MAX_REM * rem)
+  const availableAbove = Math.max(0, rect.top - PANEL_GAP_PX - VIEWPORT_BOTTOM_PAD_PX)
+  const openAbove =
+    useViewportPanel.value &&
+    availableBelow < PANEL_MIN_REM * rem &&
+    availableAbove > availableBelow
+  const maxPx = Math.min(openAbove ? availableAbove : availableBelow, PANEL_MAX_REM * rem)
   const minPx = Math.min(PANEL_MIN_REM * rem, maxPx)
   const style: Record<string, string> = {
     maxHeight: `${maxPx}px`,
     minHeight: `${minPx}px`,
   }
   if (useViewportPanel.value) {
-    style.top = `${rect.bottom + PANEL_GAP_PX}px`
+    if (openAbove) {
+      style.bottom = `${window.innerHeight - rect.top + PANEL_GAP_PX}px`
+    } else {
+      style.top = `${rect.bottom + PANEL_GAP_PX}px`
+    }
+    if (props.teleportPanel && !(props.fullBleedMobilePanel && isNarrow.value)) {
+      const width = Math.min(Math.max(rect.width, 192), window.innerWidth - 16)
+      style.left = `${Math.max(8, Math.min(rect.left, window.innerWidth - width - 8))}px`
+      style.right = 'auto'
+      style.zIndex = '80'
+      style.width = `${width}px`
+    }
   }
   panelViewportStyle.value = style
 }
@@ -405,7 +464,7 @@ const selectAllEligibleOptions = computed(() =>
 )
 
 const showSelectAllRow = computed(
-  () => props.showSelectAll && selectAllEligibleOptions.value.length > 0
+  () => !props.singleSelect && props.showSelectAll && selectAllEligibleOptions.value.length > 0
 )
 
 const visibleSuggested = computed(() => {
@@ -446,11 +505,20 @@ watchEffect(() => {
 })
 
 function toggleOpen() {
+  if (props.disabled) return
   open.value = !open.value
 }
 
 function toggleOption(item: unknown) {
+  if (props.disabled) return
   const v = getValue(item)
+  if (props.singleSelect) {
+    const option = props.options.find((o) => valuesEqual(getValue(o), v))
+    emit('update:modelValue', [option !== undefined ? option : item])
+    open.value = false
+    void nextTick(focus)
+    return
+  }
   const next = [...props.modelValue]
   const i = next.findIndex((x) => valuesEqual(getValue(x), v))
   if (i >= 0) {
@@ -463,6 +531,7 @@ function toggleOption(item: unknown) {
 }
 
 function toggleSelectAll() {
+  if (props.disabled || props.singleSelect) return
   const list = selectAllEligibleOptions.value
   if (!list.length) return
   if (allFilteredSelected.value) {
@@ -510,6 +579,13 @@ function handleEscapeGlobal(event: KeyboardEvent) {
   }
 }
 
+watch(
+  () => props.disabled,
+  (disabled) => {
+    if (disabled) open.value = false
+  }
+)
+
 watch(open, async (isOpen) => {
   if (!isOpen) {
     searchQuery.value = ''
@@ -556,4 +632,9 @@ onUnmounted(() => {
   window.removeEventListener('resize', onViewportChange)
   window.removeEventListener('scroll', onViewportChange, true)
 })
+function focus() {
+  rootRef.value?.querySelector('button')?.focus()
+}
+
+defineExpose({ focus })
 </script>

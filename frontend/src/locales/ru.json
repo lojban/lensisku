@@ -117,6 +117,7 @@
     "selectAllAuthors": "Выбрать всех авторов",
     "deselectAllAuthors": "Снять всех авторов",
     "searchLanguages": "Поиск языков...",
+    "searchOptions": "Поиск вариантов...",
     "noMatches": "Нет совпадений",
     "filterBy": {
       "wordType": "Фильтр по типу слова",

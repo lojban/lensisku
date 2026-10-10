@@ -117,6 +117,7 @@
     "selectAllAuthors": "Select all authors",
     "deselectAllAuthors": "Deselect all authors",
     "searchLanguages": "Search languages...",
+    "searchOptions": "Search options...",
     "noMatches": "No matches",
     "filterBy": {
       "wordType": "Filter by word type",

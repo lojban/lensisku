@@ -59,8 +59,11 @@
           <Select
             id="source-language"
             v-model="sourceLangId"
+            searchable
+            :search-placeholder="t('filters.searchLanguages')"
+            :empty-filter-label="t('filters.noMatches')"
             required
-            class="input-field w-full h-10"
+            select-class="input-field w-full h-10"
             :disabled="isLoading || isSubmitting"
             :options="[
               { value: '', label: t('upsertWiki.selectLanguagePlaceholder') },
@@ -77,8 +80,11 @@
           <Select
             id="language"
             v-model="langId"
+            searchable
+            :search-placeholder="t('filters.searchLanguages')"
+            :empty-filter-label="t('filters.noMatches')"
             required
-            class="input-field w-full h-10"
+            select-class="input-field w-full h-10"
             :disabled="isLoading || isSubmitting"
             :options="[
               { value: '', label: t('upsertWiki.languagePlaceholder') },

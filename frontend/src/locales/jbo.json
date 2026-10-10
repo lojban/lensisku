@@ -117,6 +117,7 @@
     "selectAllAuthors": "cuxna ro finti",
     "deselectAllAuthors": "cuxna no finti",
     "searchLanguages": "pentoi lo bangu",
+    "searchOptions": "pentoi lo se cuxna",
     "noMatches": "no da se jimpe",
     "filterBy": {
       "wordType": "julne fi lo ka valsi klesi",

@@ -23,13 +23,13 @@
         <!-- Language Selector -->
         <div v-if="isOwnProfile" class="relative group">
           <Select
-            :value="locale"
-            class="input-field appearance-none !h-6 !py-0 !pr-8 !text-xs"
+            searchable
+            :search-placeholder="t('filters.searchLanguages')"
+            :empty-filter-label="t('filters.noMatches')"
+            :model-value="locale"
+            select-class="input-field appearance-none !h-6 !py-0 !pr-3 min-w-[8rem] !text-xs"
             :options="availableLocales.map((loc) => ({ value: loc, label: localeNativeName(loc) }))"
             @change="switchLanguage"
-          />
-          <ChevronDown
-            class="h-4 w-4 text-gray-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none"
           />
         </div>
 
@@ -87,7 +87,11 @@
         <div v-if="canAssignRoles && !isOwnProfile" class="flex gap-2 items-center form-group">
           <Select
             v-model="selectedRole"
-            class="input-field h-6 py-0"
+            :placeholder="t('profile.assignRole')"
+            searchable
+            :search-placeholder="t('filters.searchOptions')"
+            :empty-filter-label="t('filters.noMatches')"
+            select-class="input-field h-6 py-0"
             :options="
               assignableRoles.map((role) => ({ value: role.name, label: translateRole(role.name) }))
             "
@@ -189,7 +193,10 @@
             <div v-if="isOwnProfile">
               <span class="text-sm font-medium text-gray-500">{{ t('profile.password') }}</span>
               <p class="mt-1">
-                <RouterLink to="/change-password" class="card-meta-link inline-flex items-center gap-1">
+                <RouterLink
+                  to="/change-password"
+                  class="card-meta-link inline-flex items-center gap-1"
+                >
                   <KeyRound class="h-4 w-4" /> {{ t('profile.changePassword') }}
                 </RouterLink>
               </p>
@@ -324,16 +331,7 @@
 
 <script setup lang="ts">
 import { jwtDecode } from 'jwt-decode'
-import {
-  KeyRound,
-  Activity,
-  Pencil,
-  User,
-  ChevronDown,
-  Camera,
-  Trash2,
-  LogOut,
-} from '@lucide/vue'
+import { KeyRound, Activity, Pencil, User, ChevronDown, Camera, Trash2, LogOut } from '@lucide/vue'
 import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter, RouterLink, useRoute } from 'vue-router'

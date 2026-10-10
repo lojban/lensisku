@@ -207,7 +207,10 @@
           }}</label>
           <Select
             v-model="selectedVoice"
-            class="input-field w-full text-sm"
+            searchable
+            :search-placeholder="t('filters.searchOptions')"
+            :empty-filter-label="t('filters.noMatches')"
+            select-class="input-field w-full text-sm"
             :disabled="isGenerating"
             :options="KOKORO_VOICES.map((v) => ({ value: v, label: v }))"
           />

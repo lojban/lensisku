@@ -117,6 +117,7 @@
     "selectAllAuthors": "すべての投稿者を選択",
     "deselectAllAuthors": "すべての投稿者の選択を解除",
     "searchLanguages": "言語を検索...",
+    "searchOptions": "選択肢を検索...",
     "noMatches": "該当なし",
     "filterBy": {
       "wordType": "語種で絞り込む",

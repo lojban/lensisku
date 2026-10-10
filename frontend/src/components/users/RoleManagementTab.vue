@@ -78,12 +78,15 @@
             class="flex flex-col sm:flex-row justify-center items-stretch sm:items-center gap-2 sm:gap-4 mb-3 sm:mb-4"
           >
             <Select
+              searchable
+              :search-placeholder="t('filters.searchOptions')"
+              :empty-filter-label="t('filters.noMatches')"
               :model-value="
                 selectedPermissionMap[role.name]
                   ? JSON.stringify(selectedPermissionMap[role.name])
                   : ''
               "
-              class="input-field w-full sm:flex-1 h-6 py-0"
+              select-class="input-field w-full sm:flex-1 h-6 py-0"
               :options="[
                 { value: '', label: t('roleManagement.selectPermission'), disabled: true },
                 ...availablePermissions

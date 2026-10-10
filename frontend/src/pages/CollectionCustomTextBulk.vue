@@ -216,7 +216,10 @@
                     </label>
                     <Select
                       v-model.number="col.languageId"
-                      class="input-field mb-2 w-full py-1 text-xs"
+                      searchable
+                      :search-placeholder="t('filters.searchLanguages')"
+                      :empty-filter-label="t('filters.noMatches')"
+                      select-class="input-field mb-2 w-full py-1 text-xs"
                       :options="[
                         { value: null, label: t('collectionCustomTextBulk.importLanguageUnset') },
                         ...languageOptions.map((lang) => ({

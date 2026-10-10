@@ -134,19 +134,24 @@
           </div>
 
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">{{
+            <label for="level-prerequisites" class="block text-sm font-medium text-gray-700 mb-1">{{
               t('flashcardLevels.prerequisitesLabel')
             }}</label>
-            <Select
-              v-model="levelForm.prerequisite_ids"
-              multiple
-              class="w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500"
-              :options="[
-                ...availablePrerequisites.map((level) => ({
-                  value: level.level_id,
-                  label: level.name,
-                })),
-              ]"
+            <MultiSelectDropdown
+              id="level-prerequisites"
+              v-model="selectedPrerequisites"
+              :options="availablePrerequisites"
+              :option-value="prerequisiteOptionValue"
+              :option-label="prerequisiteOptionLabel"
+              :search-field-keys="['name']"
+              :placeholder="t('flashcardLevels.prerequisitesLabel')"
+              :search-placeholder="t('filters.searchOptions')"
+              :select-all-label="t('filters.selectAll')"
+              :deselect-all-label="t('filters.deselectAll')"
+              :empty-filter-label="t('filters.noMatches')"
+              teleport-panel
+              class="w-full"
+              trigger-class="input-field h-10"
             />
           </div>
 
@@ -457,7 +462,7 @@ import {
   deleteLevel, // Import the new function
 } from '@/api'
 import DefinitionCard from '@/components/DefinitionCard.vue'
-import { Button, IconButton, Input, Select, Textarea } from '@packages/ui'
+import { Button, IconButton, Input, MultiSelectDropdown, Textarea } from '@packages/ui'
 import { useAuth } from '@/composables/useAuth'
 import { useAnonymousProgress, type LevelProgressData } from '@/composables/useAnonymousProgress'
 import { useSeoHead } from '@/composables/useSeoHead'
@@ -593,6 +598,21 @@ const availablePrerequisites = computed(() => {
     return levels.value
   }
   return levels.value.filter((level) => level.level_id !== currentLevel.value.level_id)
+})
+
+type PrerequisiteOption = { level_id: number; name: string }
+const prerequisiteOptionValue = (option: unknown) => (option as PrerequisiteOption).level_id
+const prerequisiteOptionLabel = (option: unknown) => (option as PrerequisiteOption).name
+const selectedPrerequisites = computed<unknown[]>({
+  get: () =>
+    availablePrerequisites.value.filter((level) =>
+      levelForm.value.prerequisite_ids.some((id) => String(id) === String(level.level_id))
+    ),
+  set: (selection) => {
+    levelForm.value.prerequisite_ids = selection.map(
+      (option) => (option as PrerequisiteOption).level_id
+    )
+  },
 })
 
 // Methods

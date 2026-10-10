@@ -357,10 +357,7 @@
         <div class="space-y-4">
           <div v-if="isOwner" class="flex flex-col items-center mb-2">
             <div class="relative group w-28 h-28">
-              <div
-                v-show="isEditCollectionImageLoading"
-                class="collection-edit-logo-placeholder"
-              >
+              <div v-show="isEditCollectionImageLoading" class="collection-edit-logo-placeholder">
                 <Loader class="h-8 w-8 animate-spin text-blue-600" />
               </div>
               <CollectionCoverLightbox
@@ -1012,8 +1009,11 @@
           <Select
             id="new-language"
             v-model="newDefinitionData.langId"
+            searchable
+            :search-placeholder="t('filters.searchLanguages')"
+            :empty-filter-label="t('filters.noMatches')"
             required
-            class="input-field w-full h-10"
+            select-class="input-field w-full h-10"
             :disabled="isLoading || isSubmittingNewDefinition"
             :options="[
               { value: '', label: t('upsertDefinition.selectLanguagePlaceholder') },
@@ -1272,7 +1272,10 @@
           }}</label>
           <Select
             v-model="selectedCollectionToMerge"
-            class="input-field w-full"
+            searchable
+            :search-placeholder="t('filters.searchOptions')"
+            :empty-filter-label="t('filters.noMatches')"
+            select-class="input-field w-full"
             required
             :options="[
               { value: '', label: t('collectionDetail.selectCollectionPlaceholder') },

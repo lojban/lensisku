@@ -48,13 +48,13 @@
         <SocialLinks class="mr-2" :buttons="true" />
         <div class="relative group mr-4 hidden md:flex">
           <Select
-            :value="locale"
-            class="input-field appearance-none !h-5 !py-0 !pr-8 !text-xs"
+            searchable
+            :search-placeholder="t('filters.searchLanguages')"
+            :empty-filter-label="t('filters.noMatches')"
+            :model-value="locale"
+            select-class="input-field appearance-none !h-5 !py-0 !pr-3 min-w-[8rem] !text-xs"
             :options="availableLocales.map((loc) => ({ value: loc, label: localeNativeName(loc) }))"
             @change="switchLanguage"
-          />
-          <ChevronDown
-            class="z-[80] h-4 w-4 text-gray-600 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none"
           />
         </div>
 
@@ -95,7 +95,6 @@ import { io } from 'socket.io-client'
 import { ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter, useRoute } from 'vue-router'
-import { ChevronDown } from '@lucide/vue'
 
 import { localeNativeName } from '@/config/locales'
 import ModalComponent from './ModalComponent.vue'

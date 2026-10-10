@@ -18,7 +18,10 @@
         <Select
           id="source-language-select"
           v-model="selectedSourceLanguage"
-          class="input-field w-full"
+          searchable
+          :search-placeholder="t('filters.searchLanguages')"
+          :empty-filter-label="t('filters.noMatches')"
+          select-class="input-field w-full"
           :aria-label="t('dictionaryExport.languageFrom')"
           :options="[
             { value: '', label: t('dictionaryExport.sourceLangDefault') },
@@ -33,7 +36,10 @@
         <Select
           id="target-language-select"
           v-model="selectedLanguage"
-          class="input-field w-full"
+          searchable
+          :search-placeholder="t('filters.searchLanguages')"
+          :empty-filter-label="t('filters.noMatches')"
+          select-class="input-field w-full"
           :aria-label="t('dictionaryExport.languageTo')"
           :options="[
             { value: '', label: t('dictionaryExport.selectLanguage') },
@@ -96,7 +102,9 @@
       <div class="bg-gray-50 rounded-lg p-4 space-y-4">
         <div class="flex items-center space-x-2">
           <Checkbox id="positiveScoresOnly" v-model="positiveScoresOnly" class="checkbox-toggle">
-            <span class="text-sm text-gray-700">{{ t('dictionaryExport.positiveScoresOnly') }}</span>
+            <span class="text-sm text-gray-700">{{
+              t('dictionaryExport.positiveScoresOnly')
+            }}</span>
           </Checkbox>
         </div>
       </div>

@@ -115,14 +115,19 @@
             >{{ t('upsertDefinition.sourceLanguageLabel') }}
             <span class="text-red-500">{{ t('upsertDefinition.required') }}</span></label
           >
-          <Select
+          <MultiSelectDropdown
             id="source-language"
-            v-model="sourceLangId"
-            required
-            class="input-field w-full h-10"
+            v-model="selectedSourceLanguage"
+            single-select
+            class="w-full [&_.dropdown-trigger]:h-10"
             :disabled="isLoading || isSubmitting || isEditMode || prefilledWord"
-            :readonly="prefilledWord || isEditMode"
-            :options="languages.map((lang) => ({ value: lang.id, label: lang.real_name }))"
+            :options="languages"
+            :option-value="languageOptionValue"
+            :option-label="languageOptionLabel"
+            :search-field-keys="languageSearchFieldKeys"
+            :placeholder="t('upsertDefinition.selectLanguagePlaceholder')"
+            :search-placeholder="t('filters.searchLanguages')"
+            :empty-filter-label="t('filters.noMatches')"
           />
           <p class="mt-1 text-xs text-gray-500">
             {{
@@ -140,20 +145,23 @@
             >{{ t('upsertDefinition.languageLabel') }}
             <span class="text-red-500">{{ t('upsertDefinition.required') }}</span></label
           >
-          <Select
+          <MultiSelectDropdown
             id="language"
-            v-model="langId"
-            required
-            class="input-field w-full h-10"
+            v-model="selectedDefinitionLanguage"
+            single-select
+            class="w-full [&_.dropdown-trigger]:h-10"
             :class="{
-              'border-red-500 focus:ring-red-500 focus:border-red-500':
+              '[&_.dropdown-trigger]:border-red-500 [&_.dropdown-trigger]:focus:ring-red-500 [&_.dropdown-trigger]:focus:border-red-500':
                 shouldHighlightMissing && missingFields.langId,
             }"
             :disabled="isLoading || isSubmitting"
-            :options="[
-              { value: '', label: t('upsertDefinition.selectLanguagePlaceholder') },
-              ...languages.map((lang) => ({ value: lang.id, label: lang.real_name })),
-            ]"
+            :options="languages"
+            :option-value="languageOptionValue"
+            :option-label="languageOptionLabel"
+            :search-field-keys="languageSearchFieldKeys"
+            :placeholder="t('upsertDefinition.selectLanguagePlaceholder')"
+            :search-placeholder="t('filters.searchLanguages')"
+            :empty-filter-label="t('filters.noMatches')"
           />
         </div>
       </div>
@@ -454,7 +462,7 @@ import {
   linkDefinitions,
   checkRafsiOverlap,
 } from '@/api'
-import { Button, Checkbox, Input, Select, Textarea } from '@packages/ui'
+import { Button, Checkbox, Input, MultiSelectDropdown, Textarea } from '@packages/ui'
 import AlertComponent from '@/components/AlertComponent.vue'
 import AnimatedDots from '@/components/AnimatedDots.vue'
 import DynamicInput from '@/components/DynamicInput.vue'
@@ -637,7 +645,32 @@ const loadDefinitionData = async (definitionId: string | number) => {
 }
 
 // Data
-const languages = ref([])
+type LanguageOption = {
+  id: number
+  real_name: string
+  english_name?: string
+  tag?: string
+  lojban_name?: string
+}
+
+const languages = ref<LanguageOption[]>([])
+const languageSearchFieldKeys = ['tag', 'english_name', 'lojban_name', 'real_name']
+const languageOptionValue = (option: unknown) => (option as LanguageOption).id
+const languageOptionLabel = (option: unknown) => (option as LanguageOption).real_name
+
+// Adapt the dropdown's option arrays to the scalar IDs used by the form and API.
+const selectedSourceLanguage = computed<unknown[]>({
+  get: () => languages.value.filter((language) => language.id === Number(sourceLangId.value)),
+  set: (selection) => {
+    if (selection.length) sourceLangId.value = (selection[0] as LanguageOption).id
+  },
+})
+const selectedDefinitionLanguage = computed<unknown[]>({
+  get: () => languages.value.filter((language) => String(language.id) === langId.value),
+  set: (selection) => {
+    if (selection.length) langId.value = String((selection[0] as LanguageOption).id)
+  },
+})
 const validationTimeout = ref(null)
 
 // Computed

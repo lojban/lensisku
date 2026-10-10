@@ -83,7 +83,10 @@
       <Select
         id="language"
         v-model="selectedLanguage"
-        class="input-field w-full h-8"
+        searchable
+        :search-placeholder="t('filters.searchLanguages')"
+        :empty-filter-label="t('filters.noMatches')"
+        select-class="input-field w-full h-8"
         :disabled="isLoading"
         :options="[
           { value: '', label: t('bulkImport.selectLanguagePlaceholder') },
