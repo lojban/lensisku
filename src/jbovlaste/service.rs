@@ -3293,8 +3293,20 @@ pub async fn rename_definition_valsi(
         .await?
         .get(0);
 
+    // Historical versions keep a foreign-key reference to their original valsi.
+    // Preserve an otherwise orphaned valsi while any version still references it.
+    let has_historical_versions: bool = transaction
+        .query_one(
+            "SELECT EXISTS(
+                SELECT 1 FROM definition_versions WHERE valsiid = $1
+            )",
+            &[&old_valsi_id],
+        )
+        .await?
+        .get(0);
+
     let mut old_valsi_deleted = false;
-    if remaining == 0 && !has_discussions {
+    if remaining == 0 && !has_discussions && !has_historical_versions {
         transaction
             .execute(
                 "DELETE FROM valsi_subscriptions WHERE valsi_id = $1",
