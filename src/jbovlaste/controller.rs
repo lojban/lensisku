@@ -17,10 +17,10 @@ use crate::jbovlaste::{
     BulkVoteResponse, DefinitionDetail, DefinitionListResponse, DefinitionTranslation,
     ExportPairsQuery, GetImageDefinitionQuery, ImageUploadRequest, LinkDefinitionsRequest,
     RafsiOverlapHit, RafsiOverlapQuery, RafsiOverlapResponse, RecentChangesQuery,
-    RecentChangesResponse, RenameDefinitionRequest, RenameDefinitionResponse, RenameWikiRequest, RenameWikiResponse, SearchDefinitionsParams,
-    SemanticGraphParams, SemanticGraphResponse, UpdateDefinitionRequest, UpdateDefinitionResponse,
-    ValsiDefinitionsQuery, ValsiDetail, ValsiTypeListResponse, VoteRequest, VoteResponse,
-    WikiByDefinitionResponse,
+    RecentChangesResponse, RenameDefinitionRequest, RenameDefinitionResponse, RenameWikiRequest,
+    RenameWikiResponse, SearchDefinitionsParams, SemanticGraphParams, SemanticGraphResponse,
+    UpdateDefinitionRequest, UpdateDefinitionResponse, ValsiDefinitionsQuery, ValsiDetail,
+    ValsiTypeListResponse, VoteRequest, VoteResponse, WikiByDefinitionResponse,
 };
 use crate::language::{validate_mathjax_fields, MathJaxValidationOptions};
 use crate::middleware::cache::{
@@ -838,7 +838,6 @@ pub async fn rename_wiki_page(
     }
 }
 
-
 #[utoipa::path(
     post,
     path = "/jbovlaste/valsi/{id}/rename",
@@ -907,7 +906,6 @@ pub async fn rename_definition_valsi(
         }
     }
 }
-
 
 #[utoipa::path(
     post,
@@ -1387,12 +1385,27 @@ pub async fn get_recent_changes(
     if feed && !matches!(source, "all" | "native" | "imported") {
         return HttpResponse::BadRequest().json(json!({"error": "Invalid feed source"}));
     }
-    if feed && after.as_deref().is_some_and(|cursor| !service::is_valid_feed_cursor(cursor)) {
+    if feed
+        && after
+            .as_deref()
+            .is_some_and(|cursor| !service::is_valid_feed_cursor(cursor))
+    {
         return HttpResponse::BadRequest().json(json!({"error": "Invalid feed cursor"}));
     }
     let user_id = claims.map(|c| c.sub);
 
-    match service::get_recent_changes(&pool, limit, types, after, home, feed, source.to_owned(), &redis_cache, user_id).await
+    match service::get_recent_changes(
+        &pool,
+        limit,
+        types,
+        after,
+        home,
+        feed,
+        source.to_owned(),
+        &redis_cache,
+        user_id,
+    )
+    .await
     {
         Ok(response) => HttpResponse::Ok().json(response),
         Err(e) => {
@@ -2008,10 +2021,11 @@ pub async fn link_definitions_handler(
 #[protect("edit_definition")]
 pub async fn unlink_definitions_handler(
     pool: web::Data<Pool>,
+    claims: Claims,
     path: web::Path<(i32, i32)>,
 ) -> impl Responder {
     let (definition_id, translation_id) = path.into_inner();
-    match service::unlink_definitions(&pool, definition_id, translation_id).await {
+    match service::unlink_definitions(&pool, definition_id, translation_id, claims.sub).await {
         Ok(_) => HttpResponse::Ok().json(json!({ "success": true })),
         Err(e) => HttpResponse::InternalServerError().json(json!({
             "success": false,

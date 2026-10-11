@@ -258,13 +258,14 @@ pub async fn chat_stream_by_id(
 pub async fn wiki_title_from_comment(
     pool: web::Data<deadpool_postgres::Pool>,
     redis_cache: web::Data<RedisCache>,
-    _claims: Claims,
+    claims: Claims,
     body: web::Json<WikiTitleFromCommentRequest>,
 ) -> Result<HttpResponse, AppError> {
     let response = super::wiki_title::suggest_wiki_title_from_comment(
         pool.get_ref(),
         Some(redis_cache.get_ref()),
         body.comment_id,
+        claims.sub,
     )
     .await?;
     Ok(HttpResponse::Ok().json(response))

@@ -4,6 +4,8 @@ pub mod models;
 mod service;
 
 pub use service::list_flashcards_public;
+#[cfg(test)]
+pub(crate) use service::{add_cards_to_level, list_flashcards};
 
 use actix_web::web;
 

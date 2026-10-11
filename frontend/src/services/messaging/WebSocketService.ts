@@ -110,9 +110,12 @@ class WebSocketService {
       this.connectResolve = resolve
       this.connectReject = reject
 
-      if (accessToken) {
-        this.accessToken = accessToken
-      }
+      // Refresh rotates the session; reconnect with the current bearer token.
+      this.accessToken =
+        accessToken ??
+        (typeof localStorage !== 'undefined'
+          ? (localStorage.getItem('accessToken') ?? undefined)
+          : this.accessToken)
       if (threadId !== undefined) {
         this.currentThreadId = threadId
       }

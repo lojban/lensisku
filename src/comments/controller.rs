@@ -625,8 +625,8 @@ pub async fn get_trending(
     description = "Returns the cached top 3 most engaged comments. The cache is refreshed by a background cron job."
 )]
 #[get("/top")]
-pub async fn get_top(redis_cache: web::Data<RedisCache>) -> impl Responder {
-    match service::get_cached_top_comments(&redis_cache).await {
+pub async fn get_top(pool: web::Data<Pool>, redis_cache: web::Data<RedisCache>) -> impl Responder {
+    match service::get_cached_top_comments(&pool, &redis_cache).await {
         Ok(comments) => HttpResponse::Ok().json(comments),
         Err(e) => HttpResponse::InternalServerError().json(json!({
             "error": "Failed to get top comments",
@@ -653,9 +653,16 @@ pub async fn get_top(redis_cache: web::Data<RedisCache>) -> impl Responder {
 #[get("/stats/{comment_id}")]
 pub async fn get_comment_stats(
     pool: web::Data<Pool>,
+    claims: Option<Claims>,
     comment_id: web::Path<i32>,
 ) -> impl Responder {
-    match service::get_comment_stats(&pool, comment_id.into_inner()).await {
+    match service::get_comment_stats(
+        &pool,
+        comment_id.into_inner(),
+        claims.map(|claims| claims.sub),
+    )
+    .await
+    {
         Ok(stats) => HttpResponse::Ok().json(stats),
         Err(e) => match e.to_string() {
             s if s.contains("not found") => HttpResponse::NotFound().finish(),

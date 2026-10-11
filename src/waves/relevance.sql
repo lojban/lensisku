@@ -3,7 +3,7 @@
 -- are bounded nearest-neighbour lists, not an assertion that every document matches.
 WITH scoped AS NOT MATERIALIZED (
     SELECT d.* FROM wave_search_documents d
-    WHERE /*CANONICAL*/ AND ($2 = 'all' OR d.source = $2)
+    WHERE (d.kind <> 'comment' OR can_read_comment(d.source_id, $8::integer)) AND /*CANONICAL*/ AND ($2 = 'all' OR d.source = $2)
       AND ($3::integer IS NULL OR (d.kind = 'comment' AND EXISTS (
           SELECT 1 FROM comments c JOIN threads t ON t.threadid = c.threadid
           WHERE c.commentid = d.source_id AND t.collection_id = $3)))

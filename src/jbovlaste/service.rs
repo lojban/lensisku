@@ -1,5 +1,5 @@
-use crate::utils::remove_html_tags;
 use crate::search_helpers::{self, DictionarySearchPatterns};
+use crate::utils::remove_html_tags;
 use ammonia::Builder as AmmoniaBuilder;
 use camxes_rs::camxes::peg::grammar::Peg;
 use chrono::TimeZone;
@@ -18,17 +18,17 @@ use super::dto::ClientIdGroup;
 use super::{
     AddDefinitionRequest, BulkImportParams, DefinitionListResponse, DefinitionResponse, Example,
     GetImageDefinitionQuery, ImageData, KeywordMapping, ListDefinitionsQuery,
-    NonLojbanDefinitionsQuery, RecentChange, RecentChangesResponse, RenameWikiRequest,
-    RenameWikiResponse,
-    RenameDefinitionRequest,
-    RenameDefinitionResponse, SearchDefinitionsParams, SemanticGraphEdge, SemanticGraphNode,
-    SemanticGraphResponse, UpdateDefinitionRequest, ValsiDetail, ValsiType,
-    WikiByDefinitionResponse,
+    NonLojbanDefinitionsQuery, RecentChange, RecentChangesResponse, RenameDefinitionRequest,
+    RenameDefinitionResponse, RenameWikiRequest, RenameWikiResponse, SearchDefinitionsParams,
+    SemanticGraphEdge, SemanticGraphNode, SemanticGraphResponse, UpdateDefinitionRequest,
+    ValsiDetail, ValsiType, WikiByDefinitionResponse,
 };
 use crate::jbovlaste::models::{
     row_vote_score_f32, row_vote_score_i32, DefinitionDetail, RelatedValsi, SemanticGraphParams,
 };
-use vlazba::{implicit_four_letter_gismu_rafsi, lujvo_rafsi, trivial_expansion_key, trivial_se_base};
+use vlazba::{
+    implicit_four_letter_gismu_rafsi, lujvo_rafsi, trivial_expansion_key, trivial_se_base,
+};
 
 pub const PLACE_SPAN_REQUIRED_ERROR: &str =
     "Definition must contain at least one $...$ place span for this word type.";
@@ -40,8 +40,8 @@ fn sanitize_wiki_markdown(markdown: &str) -> String {
     static SANITIZER: Lazy<AmmoniaBuilder<'static>> = Lazy::new(|| {
         let mut builder = AmmoniaBuilder::default();
         builder.tags(HashSet::from([
-            "a", "br", "em", "s", "span", "strong", "sub", "sup", "table", "tbody", "td",
-            "th", "tr",
+            "a", "br", "em", "s", "span", "strong", "sub", "sup", "table", "tbody", "td", "th",
+            "tr",
         ]));
         builder.tag_attributes(HashMap::from([
             ("a", HashSet::from(["href"])),
@@ -156,8 +156,7 @@ use crate::auth::Claims;
 use crate::comments::dto::ReactionResponse;
 use crate::language::{
     analyze_word, classify_lujvo_spelling, has_dollar_math_span, is_decomposable_lujvo_type,
-    load_owned_rafsi_maps,
-    validate_mathjax, MathJaxValidationOptions,
+    load_owned_rafsi_maps, validate_mathjax, MathJaxValidationOptions,
 };
 use crate::middleware::cache::RedisCache;
 use crate::subscriptions::models::SubscriptionTrigger;
@@ -196,18 +195,26 @@ async fn lookup_canonical_aliases_for_search(
     search_term: &str,
     lojban_search_term: &str,
 ) -> Result<Vec<String>, Box<dyn std::error::Error>> {
-    if search_term.trim().is_empty() { return Ok(Vec::new()); }
+    if search_term.trim().is_empty() {
+        return Ok(Vec::new());
+    }
     let query_words = vec![search_term.to_owned(), lojban_search_term.to_owned()];
-    let headwords = transaction.query(
-        "SELECT canonical_word, related_expansion_key
+    let headwords = transaction
+        .query(
+            "SELECT canonical_word, related_expansion_key
          FROM valsi WHERE source_langid = 1 AND typeid <> 16 AND word = ANY($1)",
-        &[&query_words],
-    ).await?;
+            &[&query_words],
+        )
+        .await?;
     let mut aliases = Vec::new();
     let mut keys = Vec::new();
     for row in headwords {
-        if let Some(word) = row.get::<_, Option<String>>(0) { aliases.push(word); }
-        if let Some(key) = row.get::<_, Option<String>>(1) { keys.push(key); }
+        if let Some(word) = row.get::<_, Option<String>>(0) {
+            aliases.push(word);
+        }
+        if let Some(key) = row.get::<_, Option<String>>(1) {
+            keys.push(key);
+        }
     }
     if keys.is_empty() && looks_like_possible_lujvo_query(search_term) {
         let maps = load_owned_rafsi_maps(transaction).await.unwrap_or_default();
@@ -227,16 +234,20 @@ async fn lookup_canonical_aliases_for_search(
     canonical_targets.sort();
     canonical_targets.dedup();
     if !keys.is_empty() || !canonical_targets.is_empty() {
-        let rows = transaction.query(
-            "SELECT word, canonical_word FROM valsi
+        let rows = transaction
+            .query(
+                "SELECT word, canonical_word FROM valsi
              WHERE source_langid = 1 AND typeid <> 16 AND
                (related_expansion_key = ANY($1)
                 OR word = ANY($2) OR canonical_word = ANY($2))",
-            &[&keys, &canonical_targets],
-        ).await?;
+                &[&keys, &canonical_targets],
+            )
+            .await?;
         for row in rows {
             aliases.push(row.get::<_, String>(0));
-            if let Some(word) = row.get::<_, Option<String>>(1) { aliases.push(word); }
+            if let Some(word) = row.get::<_, Option<String>>(1) {
+                aliases.push(word);
+            }
         }
     }
     aliases.sort();
@@ -250,6 +261,18 @@ pub async fn semantic_search(
     params: SearchDefinitionsParams,
     query_embedding: Vec<f32>,
     parsers: Option<&Arc<HashMap<i32, Peg>>>,
+) -> Result<DefinitionResponse, Box<dyn std::error::Error>> {
+    semantic_search_with_official_filter(pool, params, query_embedding, parsers, false).await
+}
+
+/// Restrict the candidate pool before ranking/pagination, rather than filtering top hits.
+/// Official vocabulary is represented by Lojban valsi types 1 (gismu) and 2 (cmavo).
+pub async fn semantic_search_with_official_filter(
+    pool: &Pool,
+    params: SearchDefinitionsParams,
+    query_embedding: Vec<f32>,
+    parsers: Option<&Arc<HashMap<i32, Peg>>>,
+    official_only: bool,
 ) -> Result<DefinitionResponse, Box<dyn std::error::Error>> {
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
@@ -282,6 +305,10 @@ pub async fn semantic_search(
 
     // Build dynamic conditions and add parameters
     let mut conditions = vec![];
+    if official_only {
+        conditions.push("AND v.source_langid = 1 AND v.typeid IN (1, 2)".to_string());
+    }
+
 
     // Add selmaho condition if present
     if let Some(selmaho) = &params.selmaho {
@@ -2323,7 +2350,11 @@ pub async fn get_entry_details(
             let mut key = row.get::<_, Option<String>>("related_expansion_key");
             let mut base_word = None;
             if !row.get::<_, bool>("trivial_se_checked")
-                && matches!(detail.type_name.as_str(), "gismu" | "lujvo" | "non-canonical lujvo" | "experimental gismu") {
+                && matches!(
+                    detail.type_name.as_str(),
+                    "gismu" | "lujvo" | "non-canonical lujvo" | "experimental gismu"
+                )
+            {
                 let maps = load_owned_rafsi_maps(&transaction).await?;
                 let options = maps.options();
                 key = trivial_expansion_key(&detail.word, &options, maps.se_words());
@@ -2333,13 +2364,19 @@ pub async fn get_entry_details(
                     &[&key, &valsiid, &detail.word],
                 ).await?;
             }
-            let canonical_group = if matches!(detail.type_name.as_str(), "lujvo" | "non-canonical lujvo") {
-                Some(row.get::<_, Option<String>>("canonical_word")
-                    .filter(|word| !word.is_empty())
-                    .unwrap_or_else(|| detail.word.clone()))
-            } else { None };
-            let related = transaction.query(
-                "SELECT valsiid, word FROM valsi
+            let canonical_group =
+                if matches!(detail.type_name.as_str(), "lujvo" | "non-canonical lujvo") {
+                    Some(
+                        row.get::<_, Option<String>>("canonical_word")
+                            .filter(|word| !word.is_empty())
+                            .unwrap_or_else(|| detail.word.clone()),
+                    )
+                } else {
+                    None
+                };
+            let related = transaction
+                .query(
+                    "SELECT valsiid, word FROM valsi
                  WHERE source_langid = 1 AND typeid <> 16 AND word <> $1
                    AND (($2::text IS NOT NULL AND
                          related_expansion_key = $2)
@@ -2347,11 +2384,16 @@ pub async fn get_entry_details(
                             (word = $3 OR canonical_word = $3))
                         OR ($4::text IS NOT NULL AND word = $4))
                  ORDER BY word",
-                &[&detail.word, &key, &canonical_group, &base_word],
-            ).await?;
-            detail.related_forms = related.into_iter().map(|r| RelatedValsi {
-                valsiid: r.get(0), word: r.get(1),
-            }).collect();
+                    &[&detail.word, &key, &canonical_group, &base_word],
+                )
+                .await?;
+            detail.related_forms = related
+                .into_iter()
+                .map(|r| RelatedValsi {
+                    valsiid: r.get(0),
+                    word: r.get(1),
+                })
+                .collect();
 
             if is_decomposable_lujvo_type(&detail.type_name) && detail.decomposition.is_none() {
                 match get_source_words(&detail.word, &transaction, parsers).await {
@@ -2641,7 +2683,7 @@ async fn upsert_wiki_in_transaction(
     // Enforce one definition per wiki valsi: update if it already exists.
     let existing_definition = transaction
         .query_opt(
-            "SELECT definitionid, time FROM definitions WHERE valsiid = $1 ORDER BY definitionid LIMIT 1",
+            "SELECT definitionid, time, userid, owner_only FROM definitions WHERE valsiid = $1 ORDER BY definitionid LIMIT 1 FOR UPDATE",
             &[&valsi_id],
         )
         .await?;
@@ -2650,6 +2692,13 @@ async fn upsert_wiki_in_transaction(
 
     // Optimistic concurrency for existing wiki pages (before mutating).
     if let Some(ref row) = existing_definition {
+        if !claims
+            .authorities
+            .iter()
+            .any(|permission| permission == "edit_definition")
+        {
+            return Err("You don't have permission to edit this wiki page".into());
+        }
         let definition_id: i32 = row.get("definitionid");
         let can_edit: bool = transaction
             .query_one(
@@ -2690,7 +2739,11 @@ async fn upsert_wiki_in_transaction(
                     &sanitized_definition,
                     &request.lang_id,
                     &(Utc::now().timestamp() as i32),
-                    &request.owner_only.unwrap_or(false),
+                    &if row.get::<_, i32>("userid") == claims.sub {
+                        request.owner_only.unwrap_or(row.get("owner_only"))
+                    } else {
+                        row.get::<_, bool>("owner_only")
+                    },
                     &definition_id,
                     &metadata,
                 ],
@@ -2947,8 +3000,10 @@ pub async fn rename_wiki_page(
         .is_some()
     {
         return Err(format!(
-            "A wiki entry with title '{}' already exists for this source language", new_word
-        ).into());
+            "A wiki entry with title '{}' already exists for this source language",
+            new_word
+        )
+        .into());
     }
 
     let rename_message = format!("Renamed: \"{}\" → \"{}\"", old_word, new_word);
@@ -3121,7 +3176,6 @@ pub async fn rename_wiki_page(
     })
 }
 
-
 /// Build the history message for a definition headword reattach/rename.
 pub fn definition_reattach_message(old_word: &str, new_word: &str) -> String {
     format!("Renamed: \"{}\" → \"{}\"", old_word, new_word)
@@ -3141,7 +3195,6 @@ pub fn authorize_definition_reattach(
     }
     Ok(())
 }
-
 
 /// Reattach a dictionary definition to another valsi via get-or-create (word, source_langid).
 /// Does NOT UPDATE valsi.word for dictionary entries. Author-only; wiki blocked.
@@ -3181,7 +3234,8 @@ pub async fn rename_definition_valsi(
     // Same normalization as add_definition.
     let new_word = match source_langid {
         1 | 58 => {
-            let res = analyze_word(&parsers, &request.new_word, source_langid, &transaction).await?;
+            let res =
+                analyze_word(&parsers, &request.new_word, source_langid, &transaction).await?;
             res.text
         }
         _ => sanitize_html(request.new_word.trim()),
@@ -3229,7 +3283,8 @@ pub async fn rename_definition_valsi(
                     if e.as_db_error()
                         .and_then(|d| d.constraint())
                         .is_some_and(|c| {
-                            c == "idx_valsi_dictionary_unique_word_source_lang" || c == "valsi_unique_word_nospaces"
+                            c == "idx_valsi_dictionary_unique_word_source_lang"
+                                || c == "valsi_unique_word_nospaces"
                         })
                     {
                         // Race: fetch the winner.
@@ -3421,7 +3476,6 @@ pub async fn rename_definition_valsi(
     })
 }
 
-
 pub async fn add_definition(
     pool: &Pool,
     claims: &Claims,
@@ -3524,7 +3578,11 @@ async fn add_definition_in_transaction(
 
     // For classical lujvo, refine typeid via score-optimal reconstruct (may be
     // non-canonical). Skip if analyze already returned the refined type.
-    let maps = if source_langid == 1 && matches!(resolved_word_type, "gismu" | "experimental gismu" | "lujvo" | "non-canonical lujvo") {
+    let maps = if source_langid == 1
+        && matches!(
+            resolved_word_type,
+            "gismu" | "experimental gismu" | "lujvo" | "non-canonical lujvo"
+        ) {
         load_owned_rafsi_maps(transaction).await.ok()
     } else {
         None
@@ -3556,7 +3614,8 @@ async fn add_definition_in_transaction(
 
     validate_required_place_span(type_id, &sanitized_definition, request.image.is_some())?;
 
-    let related_expansion = maps.as_ref()
+    let related_expansion = maps
+        .as_ref()
         .and_then(|m| trivial_expansion_key(&word, &m.options(), m.se_words()));
     let trivial_checked = maps.is_some();
 
@@ -3593,7 +3652,8 @@ async fn add_definition_in_transaction(
                 if e.as_db_error()
                     .and_then(|d| d.constraint())
                     .is_some_and(|c| {
-                        c == "idx_valsi_dictionary_unique_word_source_lang" || c == "valsi_unique_word_nospaces"
+                        c == "idx_valsi_dictionary_unique_word_source_lang"
+                            || c == "valsi_unique_word_nospaces"
                     })
                 {
                     return Err(format!(
@@ -4335,9 +4395,7 @@ pub async fn update_definition(
     let options = MathJaxValidationOptions { use_tectonic: true };
 
     // Only validate MathJax if source lang is Lojban (1) or not set
-    if request.is_wiki != Some(true)
-        && (source_langid.is_none() || source_langid == Some(1))
-    {
+    if request.is_wiki != Some(true) && (source_langid.is_none() || source_langid == Some(1)) {
         validate_mathjax(&combined_text, &options)
             .await
             .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)?;
@@ -4668,7 +4726,8 @@ pub async fn update_definition(
 
     let url = if valsi_typeid == 16 {
         format!(
-            "{}/wiki/{}", env::var("FRONTEND_URL")?,
+            "{}/wiki/{}",
+            env::var("FRONTEND_URL")?,
             urlencoding::encode(&valsi_word.replace(' ', "_"))
         )
     } else {
@@ -6027,9 +6086,20 @@ pub async fn get_recent_changes(
 
                 let limit_val = limit.unwrap_or(20).clamp(1, 100);
                 let cursor_condition = after_cloned.as_ref().and_then(|a| {
-                    if feed { decode_feed_cursor(a) } else { decode_recent_changes_cursor(a) }
+                    if feed {
+                        decode_feed_cursor(a)
+                    } else {
+                        decode_recent_changes_cursor(a)
+                    }
                 });
-                let queries = recent_change_queries(types_cloned.as_deref(), home, feed, &source, cursor_condition, limit_val);
+                let queries = recent_change_queries(
+                    types_cloned.as_deref(),
+                    home,
+                    feed,
+                    &source,
+                    cursor_condition,
+                    limit_val,
+                );
 
                 if queries.is_empty() {
                     return Ok(RecentChangesResponse {
@@ -6054,10 +6124,18 @@ pub async fn get_recent_changes(
 
                 const WIKI_PREVIEW_MAX: usize = 200;
                 let trim_wiki_diff = |diff: &mut VersionDiff| {
-                    diff.old_content.definition =
-                        diff.old_content.definition.chars().take(WIKI_PREVIEW_MAX).collect();
-                    diff.new_content.definition =
-                        diff.new_content.definition.chars().take(WIKI_PREVIEW_MAX).collect();
+                    diff.old_content.definition = diff
+                        .old_content
+                        .definition
+                        .chars()
+                        .take(WIKI_PREVIEW_MAX)
+                        .collect();
+                    diff.new_content.definition = diff
+                        .new_content
+                        .definition
+                        .chars()
+                        .take(WIKI_PREVIEW_MAX)
+                        .collect();
                     for change in &mut diff.changes {
                         if change.field == "definition" {
                             if let Some(v) = change.old_value.as_mut() {
@@ -6084,9 +6162,15 @@ pub async fn get_recent_changes(
 
                     let username: String = row.get("username");
                     let mut change = RecentChange {
-                        event_id: feed.then(|| format!("{}:{}", row.get::<_, String>("event_kind"), cursor_id)),
+                        event_id: feed.then(|| {
+                            format!("{}:{}", row.get::<_, String>("event_kind"), cursor_id)
+                        }),
                         source: if feed { Some(row.get("source")) } else { None },
-                        source_name: if feed { Some(row.get("source_name")) } else { None },
+                        source_name: if feed {
+                            Some(row.get("source_name"))
+                        } else {
+                            None
+                        },
                         is_wiki,
                         change_type: change_type.clone(),
                         word: row.get("word"),
@@ -6094,12 +6178,8 @@ pub async fn get_recent_changes(
                         // Feed comments can have no dictionary context. The feed query
                         // deliberately LEFT JOINs valsi/definitions so those comments
                         // remain visible, making both columns nullable.
-                        valsi_id: row
-                            .get::<_, Option<i32>>("valsiid")
-                            .filter(|&id| id != 0),
-                        lang_id: row
-                            .get::<_, Option<i32>>("langid")
-                            .filter(|&id| id != 0),
+                        valsi_id: row.get::<_, Option<i32>>("valsiid").filter(|&id| id != 0),
+                        lang_id: row.get::<_, Option<i32>>("langid").filter(|&id| id != 0),
                         natlang_word_id: row
                             .get::<_, Option<i32>>("natlangwordid")
                             .filter(|&id| id != 0),
@@ -6117,9 +6197,7 @@ pub async fn get_recent_changes(
                         diff: None,
                         comment_num: row.get::<_, Option<i32>>("commentnum"),
                         valsi_word: row.get("valsi_word"),
-                        parent_id: row
-                            .get::<_, Option<i32>>("parentid")
-                            .filter(|&id| id != 0),
+                        parent_id: row.get::<_, Option<i32>>("parentid").filter(|&id| id != 0),
                         reactions: None,
                         is_bookmarked: None,
                     };
@@ -6133,7 +6211,8 @@ pub async fn get_recent_changes(
                             match if let Some(prev_id) = prev_version_id {
                                 get_diff(&transaction, prev_id, version_id).await
                             } else {
-                                let current = get_version_with_transaction(&transaction, version_id).await?;
+                                let current =
+                                    get_version_with_transaction(&transaction, version_id).await?;
                                 let empty_old = VersionContent {
                                     definition: String::new(),
                                     has_image: Some(false),
@@ -6157,7 +6236,11 @@ pub async fn get_recent_changes(
                                     change.diff = Some(diff);
                                 }
                                 Err(e) => {
-                                    log::error!("Failed to get diff for version {}: {}", version_id, e);
+                                    log::error!(
+                                        "Failed to get diff for version {}: {}",
+                                        version_id,
+                                        e
+                                    );
                                 }
                             }
                         }
@@ -6192,23 +6275,25 @@ pub async fn get_recent_changes(
                     for change in &mut changes {
                         if change.change_type == "comment" {
                             if let Some(cid) = change.comment_id {
-                                change.reactions = Some(
-                                    reactions_map.get(&cid).cloned().unwrap_or_default(),
-                                );
-                                change.is_bookmarked =
-                                    bookmarks.as_ref().map(|b| b.contains(&cid));
+                                change.reactions =
+                                    Some(reactions_map.get(&cid).cloned().unwrap_or_default());
+                                change.is_bookmarked = bookmarks.as_ref().map(|b| b.contains(&cid));
                             }
                         }
                     }
                 }
 
-
-
                 transaction.commit().await?;
 
                 let next_cursor = last_cursor
                     .filter(|_| changes.len() >= limit_val as usize)
-                    .map(|(t, s, i)| if feed { encode_feed_cursor(t, s, i) } else { encode_recent_changes_cursor(t, s, i) });
+                    .map(|(t, s, i)| {
+                        if feed {
+                            encode_feed_cursor(t, s, i)
+                        } else {
+                            encode_recent_changes_cursor(t, s, i)
+                        }
+                    });
 
                 Ok(RecentChangesResponse {
                     changes,
@@ -7316,6 +7401,8 @@ pub async fn link_definitions(
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
 
+    verify_translation_edit_access(&transaction, definition_id, translation_id, user_id).await?;
+
     // Check if both definitions exist AND are of type 'phrase' (typeid 15)
     let rows = transaction
         .query(
@@ -7372,9 +7459,12 @@ pub async fn unlink_definitions(
     pool: &Pool,
     definition_id: i32,
     translation_id: i32,
+    user_id: i32,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
+
+    verify_translation_edit_access(&transaction, definition_id, translation_id, user_id).await?;
 
     transaction
         .execute(
@@ -7619,7 +7709,12 @@ mod rafsi_authority_tests {
         let (schema, assertions) = fixture.split_once("-- APPLY RAFSI MIGRATION HERE").unwrap();
         let setup = client.transaction().await.unwrap();
         setup.batch_execute(schema).await.unwrap();
-        setup.batch_execute(include_str!("../../migrations/V176__rafsi_assignment_authority.sql")).await.unwrap();
+        setup
+            .batch_execute(include_str!(
+                "../../migrations/V176__rafsi_assignment_authority.sql"
+            ))
+            .await
+            .unwrap();
         setup.batch_execute(assertions).await.unwrap();
         setup.commit().await.unwrap();
         let tx = client.transaction().await.unwrap();
@@ -8048,4 +8143,32 @@ mod activity_feed_tests {
         transaction.rollback().await?;
         Ok(())
     }
+}
+
+async fn verify_translation_edit_access(
+    tx: &deadpool_postgres::Transaction<'_>,
+    definition_id: i32,
+    translation_id: i32,
+    user_id: i32,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let rows = tx
+        .query(
+            "SELECT definitionid FROM definitions WHERE definitionid IN ($1, $2) FOR UPDATE",
+            &[&definition_id, &translation_id],
+        )
+        .await?;
+    if rows.len() != 2 {
+        return Err("One or both definitions do not exist".into());
+    }
+    let allowed: bool = tx
+        .query_one(
+            "SELECT can_edit_definition($1, $3) AND can_edit_definition($2, $3)",
+            &[&definition_id, &translation_id, &user_id],
+        )
+        .await?
+        .get(0);
+    if !allowed {
+        return Err("You don't have permission to edit these definitions".into());
+    }
+    Ok(())
 }

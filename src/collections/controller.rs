@@ -274,6 +274,11 @@ pub async fn get_collection_image(
             };
             HttpResponse::Ok()
                 .content_type(mime_type)
+                .insert_header(("X-Content-Type-Options", "nosniff"))
+                .insert_header((
+                    "Content-Security-Policy",
+                    "sandbox; default-src 'none'; style-src 'unsafe-inline'",
+                ))
                 .insert_header(cd)
                 .body(image_data)
         }
@@ -1470,6 +1475,11 @@ pub async fn get_item_image(
             };
             HttpResponse::Ok()
                 .content_type(mime_type)
+                .insert_header(("X-Content-Type-Options", "nosniff"))
+                .insert_header((
+                    "Content-Security-Policy",
+                    "sandbox; default-src 'none'; style-src 'unsafe-inline'",
+                ))
                 .insert_header(cd)
                 .body(image_data)
         }
@@ -1521,6 +1531,11 @@ pub async fn get_item_sound(
             };
             HttpResponse::Ok()
                 .content_type(mime_type)
+                .insert_header(("X-Content-Type-Options", "nosniff"))
+                .insert_header((
+                    "Content-Security-Policy",
+                    "sandbox; default-src 'none'; style-src 'unsafe-inline'",
+                ))
                 .insert_header(cd)
                 .body(sound_data)
         }

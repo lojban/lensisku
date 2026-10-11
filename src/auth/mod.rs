@@ -13,7 +13,7 @@ use actix_web_grants::GrantsMiddleware;
 use actix_web_httpauth::middleware::HttpAuthentication;
 pub use dto::*;
 use extractor::extract_authorities;
-pub use models::{decode_token, Claims, User};
+pub use models::{Claims, User};
 pub use service::*;
 pub fn configure(cfg: &mut web::ServiceConfig) {
     cfg.service(

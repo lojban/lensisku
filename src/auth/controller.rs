@@ -1,5 +1,4 @@
 use crate::auth::permissions::PermissionCache;
-use crate::sessions;
 use crate::AppError;
 use actix_web::{delete, get, http::Error, post, put, web, HttpRequest, HttpResponse, Responder};
 use actix_web_grants::protect;
@@ -17,27 +16,20 @@ use crate::{
 
 use super::dto::*;
 
-/// Derive the frontend origin from the request so email links stay on the
-/// same host (e.g. lensisku-dev.lojban.org instead of the production domain).
-/// Respects X-Forwarded-* headers when the backend sits behind a reverse proxy.
-fn frontend_url_from_request(req: &HttpRequest) -> String {
-    let (scheme, host) = {
-        let ci = req.connection_info();
-        (ci.scheme().to_string(), ci.host().to_string())
-    };
-    let scheme = req
-        .headers()
-        .get("X-Forwarded-Proto")
-        .and_then(|v| v.to_str().ok())
-        .unwrap_or(&scheme)
-        .to_string();
-    let host = req
-        .headers()
-        .get("X-Forwarded-Host")
-        .and_then(|v| v.to_str().ok())
-        .unwrap_or(&host)
-        .to_string();
-    format!("{}://{}", scheme, host)
+/// Email credentials must only be sent to the configured frontend origin.
+fn frontend_url_from_request(_req: &HttpRequest) -> Result<String, AppError> {
+    let configured = std::env::var("FRONTEND_URL")
+        .map_err(|_| AppError::Internal("FRONTEND_URL must be configured".into()))?;
+    let url = reqwest::Url::parse(&configured)
+        .map_err(|_| AppError::Internal("Invalid FRONTEND_URL".into()))?;
+    if !matches!(url.scheme(), "https" | "http")
+        || url.host_str().is_none()
+        || !url.username().is_empty()
+        || url.password().is_some()
+    {
+        return Err(AppError::Internal("Invalid FRONTEND_URL".into()));
+    }
+    Ok(url.origin().ascii_serialization())
 }
 
 #[utoipa::path(
@@ -317,7 +309,13 @@ pub async fn signup(
     user_data: web::Json<SignupRequest>,
     req: HttpRequest,
 ) -> impl Responder {
-    let frontend_url = frontend_url_from_request(&req);
+    let frontend_url = match frontend_url_from_request(&req) {
+        Ok(url) => url,
+        Err(_) => {
+            return HttpResponse::InternalServerError()
+                .json(json!({"error": "Email link origin is not configured"}))
+        }
+    };
     match service::signup(&pool, &user_data, &frontend_url).await {
         Ok(response) => HttpResponse::Ok().json(json!({
             "message": "Account created successfully. Please check your email to confirm your address.",
@@ -400,12 +398,18 @@ pub async fn login(
     login_limiter: web::Data<LoginLimiter>,
     user_data: web::Json<LoginRequest>,
     req: actix_web::HttpRequest,
-) -> Result<HttpResponse, Error> {
-    let ip_address = req
-        .connection_info()
-        .realip_remote_addr()
-        .unwrap_or("unknown")
-        .to_string();
+) -> Result<HttpResponse, actix_web::Error> {
+    // Only the local reverse proxy can supply a client address. Its nginx config
+    // overwrites X-Real-IP; externally connected callers use their TCP peer.
+    let peer = req.peer_addr().map(|addr| addr.ip());
+    let ip_address = peer
+        .filter(|ip| ip.is_loopback())
+        .and_then(|_| req.headers().get("X-Real-IP"))
+        .and_then(|value| value.to_str().ok())
+        .and_then(|value| value.parse::<std::net::IpAddr>().ok())
+        .or(peer)
+        .map(|ip| ip.to_string())
+        .unwrap_or_else(|| "unknown".into());
     let user_agent = req
         .headers()
         .get("User-Agent")
@@ -413,39 +417,49 @@ pub async fn login(
             h.to_str().unwrap_or("unknown").to_string()
         });
 
-    if !login_limiter
-        .check_and_record_attempt(&ip_address)
+    let client = pool
+        .get()
         .await
-        .unwrap_or(false)
-    {
-        return Ok(HttpResponse::TooManyRequests()
-            .json("Too many login attempts from this IP. Please try again later."));
-    }
-
-    if login_limiter
-        .is_identifier_over_failure_limit(&user_data.username_or_email)
-        .await
-        .unwrap_or(false)
-    {
-        return Ok(HttpResponse::TooManyRequests()
-            .json("Too many failed attempts for this account. Please try again later."));
-    }
-
-    match service::login(&pool, &user_data, ip_address, user_agent).await {
-        Ok(token_pair) => Ok(HttpResponse::Ok().json(json!({
-            "access_token": token_pair.access_token,
-            "refresh_token": token_pair.refresh_token
-        }))),
+        .map_err(actix_web::error::ErrorInternalServerError)?;
+    let account = client.query_opt(
+        "SELECT userid FROM users WHERE username = $1 OR LOWER(email) = LOWER($1) ORDER BY userid LIMIT 1",
+        &[&user_data.username_or_email],
+    ).await.map_err(actix_web::error::ErrorInternalServerError)?;
+    let account_key = if let Some(row) = account {
+        format!("user:{}", row.get::<_, i32>(0))
+    } else {
+        use sha2::{Digest, Sha256};
+        format!(
+            "unknown:{}",
+            Sha256::digest(user_data.username_or_email.to_lowercase().as_bytes())
+                .iter()
+                .map(|byte| format!("{byte:02x}"))
+                .collect::<String>()
+        )
+    };
+    drop(client);
+    let retry_after = match login_limiter.reserve_login(&ip_address, &account_key).await {
+        Ok(seconds) => seconds,
         Err(_) => {
-            if login_limiter
-                .record_failed_login(&user_data.username_or_email)
-                .await
-                .is_err()
-            {
-                log::warn!("Failed to record login failure for rate limiting");
-            }
-            Ok(HttpResponse::Unauthorized().json("Invalid credentials"))
+            return Ok(HttpResponse::ServiceUnavailable().json("Login temporarily unavailable"))
         }
+    };
+    if retry_after > 0 {
+        return Ok(HttpResponse::TooManyRequests()
+            .insert_header(("Retry-After", retry_after.to_string()))
+            .json("Too many login attempts. Please try again later."));
+    }
+    match service::login(&pool, &user_data, ip_address, user_agent).await {
+        Ok(token_pair) => {
+            if let Err(error) = login_limiter.clear_success(&account_key).await {
+                log::warn!("Failed to clear successful login quota: {}", error);
+            }
+            Ok(HttpResponse::Ok().json(json!({
+                "access_token": token_pair.access_token,
+                "refresh_token": token_pair.refresh_token,
+            })))
+        }
+        Err(_) => Ok(HttpResponse::Unauthorized().json("Invalid credentials")),
     }
 }
 
@@ -494,7 +508,7 @@ pub async fn update_profile(
     claims: Claims,
     profile: web::Json<UpdateProfileRequest>,
 ) -> impl Responder {
-    match service::update_profile(&pool, claims.sub, &profile).await {
+    match service::update_profile(&pool, claims.sub, claims.sid, &profile).await {
         Ok(new_token) => {
             if let Some(token) = new_token {
                 // Username was changed, return new token
@@ -533,7 +547,13 @@ pub async fn request_password_reset(
     body: web::Json<PasswordResetRequest>,
     req: HttpRequest,
 ) -> impl Responder {
-    let frontend_url = frontend_url_from_request(&req);
+    let frontend_url = match frontend_url_from_request(&req) {
+        Ok(url) => url,
+        Err(_) => {
+            return HttpResponse::InternalServerError()
+                .json(json!({"error": "Email link origin is not configured"}))
+        }
+    };
     match service::request_password_reset(&pool, password_limiter, &body, &frontend_url).await {
         Ok(response) => {
             if response.success {
@@ -634,7 +654,13 @@ pub async fn resend_confirmation(
     body: web::Json<ResendConfirmationRequest>,
     req: HttpRequest,
 ) -> impl Responder {
-    let frontend_url = frontend_url_from_request(&req);
+    let frontend_url = match frontend_url_from_request(&req) {
+        Ok(url) => url,
+        Err(_) => {
+            return HttpResponse::InternalServerError()
+                .json(json!({"error": "Email link origin is not configured"}))
+        }
+    };
     match service::resend_confirmation(&pool, email_limiter, &body, &frontend_url).await {
         Ok(response) => {
             if response.success {
@@ -748,23 +774,16 @@ pub async fn get_roles(pool: web::Data<Pool>, claims: Claims) -> impl Responder 
 )]
 #[post("/logout")]
 pub async fn logout(pool: web::Data<Pool>, claims: Claims) -> Result<HttpResponse, Error> {
-    match sessions::service::end_session(&pool, claims.sub).await {
-        Ok(Some(_session)) => Ok(HttpResponse::Ok().json(json!({"message": "Logout successful"}))),
-        Ok(None) => {
-            // This case means the user was found, but they had no active session to end.
-            // This can be treated as a successful logout from the user's perspective.
-            log::info!(
-                "User {} logged out, but no active session was found to end.",
-                claims.sub
-            );
-            Ok(HttpResponse::Ok()
-                .json(json!({"message": "Logout successful, no active session to end."})))
-        }
-        Err(e) => {
-            log::error!("Error ending session for user_id {}: {}", claims.sub, e);
-            Ok(HttpResponse::InternalServerError().json(json!({
-                "error": "Failed to end session"
-            })))
+    let result = async {
+        let sid = claims.sid.ok_or_else(|| AppError::Auth("Missing session".into()))?;
+        let client = pool.get().await?;
+        client.execute("UPDATE user_sessions SET ended_at = NOW() WHERE user_id = $1 AND session_uuid = $2 AND ended_at IS NULL", &[&claims.sub, &sid]).await?;
+        Ok::<_, AppError>(())
+    }.await;
+    match result {
+        Ok(()) => Ok(HttpResponse::Ok().json(json!({"message": "Logout successful"}))),
+        Err(_) => {
+            Ok(HttpResponse::InternalServerError().json(json!({"error": "Failed to end session"})))
         }
     }
 }
@@ -886,13 +905,27 @@ pub async fn list_oauth_providers() -> impl Responder {
 )]
 #[get("/oauth/{provider}/authorize")]
 pub async fn oauth_authorize(
+    pool: web::Data<Pool>,
     path: web::Path<String>,
     query: web::Query<OAuthAuthorizeQuery>,
 ) -> impl Responder {
-    match crate::auth::oauth::authorize_url(&path, query.return_to.as_deref()) {
-        Ok(result) => HttpResponse::Ok().json(OAuthAuthorizeResponse {
-            authorize_url: result.authorize_url,
-        }),
+    match crate::auth::oauth::authorize_url(&pool, &path, query.return_to.as_deref()).await {
+        Ok(result) => HttpResponse::Ok()
+            .cookie(
+                actix_web::cookie::Cookie::build(
+                    format!("oauth_state_{}", path.as_str()),
+                    result.state,
+                )
+                .http_only(true)
+                .secure(std::env::var("FRONTEND_URL").is_ok_and(|url| url.starts_with("https://")))
+                .same_site(actix_web::cookie::SameSite::Lax)
+                .path("/")
+                .max_age(actix_web::cookie::time::Duration::minutes(10))
+                .finish(),
+            )
+            .json(OAuthAuthorizeResponse {
+                authorize_url: result.authorize_url,
+            }),
         Err(e) => oauth_error_response(e),
     }
 }
@@ -920,6 +953,13 @@ pub async fn oauth_complete(
     body: web::Json<OAuthCompleteRequest>,
     request: actix_web::HttpRequest,
 ) -> impl Responder {
+    let cookie_name = format!("oauth_state_{}", path.as_str());
+    if request
+        .cookie(&cookie_name)
+        .is_none_or(|cookie| cookie.value() != body.state)
+    {
+        return oauth_error_response(AppError::Auth("OAuth browser state mismatch".into()));
+    }
     let (ip_address, user_agent) = client_meta(&request);
     match crate::auth::oauth::complete_oauth(
         &pool,

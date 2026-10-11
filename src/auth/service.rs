@@ -27,7 +27,6 @@ use crate::auth::{AuthResponse, RoleWithPermissions, SignupRequest};
 use crate::middleware::limiter::{EmailConfirmationLimiter, PasswordResetLimiter};
 use crate::notifications::service::EmailNotification;
 use crate::notifications::EmailService;
-use crate::sessions;
 use crate::{AppError, AppResult};
 
 use super::error::PasswordHashError;
@@ -104,15 +103,12 @@ fn rot13(input: &str) -> String {
         .collect()
 }
 
-/// Verify a password against a stored hash, supporting both MD5 and bcrypt
+/// Verify bcrypt passwords and bcrypt-wrapped legacy digests without changing passwords.
 pub fn verify_password(password: &str, stored_hash: &str) -> Result<bool, PasswordHashError> {
-    // Check if the stored hash is MD5 (32 hex characters) or bcrypt (starts with $)
-    if needs_rehash(stored_hash) {
-        // MD5 hash
+    if let Some(wrapped) = stored_hash.strip_prefix("legacy-bcrypt:") {
         let digest = format!("{:x}", md5::compute(rot13(password).as_bytes()));
-        Ok(digest == stored_hash)
+        Ok(verify(digest, wrapped)?)
     } else if stored_hash.starts_with('$') {
-        // bcrypt hash
         Ok(verify(password, stored_hash)?)
     } else {
         Err(PasswordHashError::InvalidHashFormat)
@@ -543,60 +539,24 @@ pub async fn assign_role(
     Ok(())
 }
 
-/// Helper function to check if a password needs to be upgraded from MD5 to bcrypt
+/// Successful legacy logins replace the envelope with direct bcrypt.
 pub fn needs_rehash(stored_hash: &str) -> bool {
-    // If it's an MD5 hash (32 hex characters) or doesn't start with bcrypt format
-    stored_hash.len() == 32 && stored_hash.chars().all(|c| c.is_ascii_hexdigit())
-}
-
-pub fn generate_token(user: &User) -> AppResult<String> {
-    let expiration = Utc::now()
-        .checked_add_signed(Duration::hours(24))
-        .ok_or_else(|| {
-            jsonwebtoken::errors::Error::from(jsonwebtoken::errors::ErrorKind::InvalidToken)
-        })?
-        .timestamp();
-
-    let claims = Claims {
-        sub: user.userid,
-        exp: expiration,
-        username: user.username.clone(),
-        email: user.email.clone(),
-        created_at: user.created_at.timestamp(),
-        role: user.role.clone(),
-        email_confirmed: user.email_confirmed,
-        authorities: Vec::new(), // Will be populated in create_token_pair
-        sid: None,               // Will be populated by specific token generation functions
-    };
-
-    let secret = env::var("JWT_SECRET").expect("JWT_SECRET must be set");
-    encode(
-        // Map JWT error
-        &Header::default(),
-        &claims,
-        &EncodingKey::from_secret(secret.as_bytes()),
-    )
-    .map_err(|e| AppError::Auth(format!("Token encoding error: {}", e)))
+    stored_hash.starts_with("legacy-bcrypt:")
 }
 
 pub async fn validator(
     req: ServiceRequest,
     credentials: BearerAuth,
 ) -> Result<ServiceRequest, (Error, ServiceRequest)> {
-    let token = credentials.token();
-    let secret = env::var("JWT_SECRET").expect("JWT_SECRET must be set");
-
-    let validation = Validation::new(Algorithm::HS256);
-    match decode::<Claims>(
-        token,
-        &DecodingKey::from_secret(secret.as_bytes()),
-        &validation,
-    ) {
-        Ok(token_data) => {
-            req.extensions_mut().insert(token_data.claims);
+    let Some(pool) = req.app_data::<web::Data<Pool>>().cloned() else {
+        return Err((ErrorUnauthorized("Authentication unavailable"), req));
+    };
+    match super::models::authenticate_token(&pool, credentials.token()).await {
+        Ok(claims) => {
+            req.extensions_mut().insert(claims);
             Ok(req)
         }
-        Err(_) => Err((ErrorUnauthorized("Invalid token"), req)),
+        Err(_) => Err((ErrorUnauthorized("Invalid or revoked token"), req)),
     }
 }
 
@@ -681,6 +641,13 @@ pub async fn signup(
         )
         .await?;
 
+    let session = transaction
+        .query_one(
+            "INSERT INTO user_sessions (user_id) VALUES ($1) RETURNING session_uuid",
+            &[&user.userid],
+        )
+        .await?;
+    let session_id: Uuid = session.get(0);
     transaction.commit().await?;
 
     let email = user.email.clone();
@@ -692,7 +659,7 @@ pub async fn signup(
         }
     });
 
-    let token: String = generate_token(&user)?; // generate_token now returns AppResult
+    let token: String = generate_access_token(&user, &[], Some(session_id))?;
     Ok(AuthResponse { token })
 }
 
@@ -817,7 +784,7 @@ pub async fn login(
             "SELECT userid, username, email, password, created_at, followers,
                     role, email_confirmed
              FROM users
-             WHERE username = $1 OR email = $1",
+             WHERE username = $1 OR LOWER(email) = LOWER($1) ORDER BY userid LIMIT 1 FOR UPDATE",
             &[&user_data.username_or_email],
         )
         .await?;
@@ -844,31 +811,12 @@ pub async fn login(
                     user_for_token.password = new_hash;
                 }
 
-                // Start user session before committing and creating token pair
-                let mut jwt_session_id: Option<Uuid> = None;
-                match sessions::service::start_session(pool, user.userid, ip_address, user_agent)
-                    .await
-                {
-                    Ok(session) => {
-                        log::info!(
-                            "User session started: id={}, user_id={}",
-                            session.id,
-                            session.user_id
-                        );
-                        jwt_session_id = Some(session.session_uuid);
-                    }
-                    Err(e) => {
-                        // Decide if login should fail if session logging fails.
-                        // For now, log error and continue.
-                        log::error!(
-                            "Failed to start user session for user_id {}: {}",
-                            user.userid,
-                            e
-                        );
-                        // Optionally, return an error:
-                        // return Err(AppError::Internal(format!("Failed to start session: {}", e)));
-                    }
-                }
+                let parsed_ip: Option<std::net::IpAddr> = ip_address.parse().ok();
+                let session = transaction.query_one(
+                    "INSERT INTO user_sessions (user_id, ip_address, user_agent) VALUES ($1, $2, $3) RETURNING session_uuid",
+                    &[&user.userid, &parsed_ip, &user_agent],
+                ).await?;
+                let jwt_session_id = Some(session.get::<_, Uuid>("session_uuid"));
 
                 transaction.commit().await?;
                 create_token_pair(pool, &user_for_token, jwt_session_id).await
@@ -903,6 +851,7 @@ pub async fn get_profile(pool: &Pool, user_id: i32) -> AppResult<ProfileResponse
 pub async fn update_profile(
     pool: &Pool,
     user_id: i32,
+    session_id: Option<Uuid>,
     profile: &UpdateProfileRequest,
 ) -> AppResult<Option<String>> {
     let mut client = pool
@@ -989,7 +938,7 @@ pub async fn update_profile(
             .await?;
 
         let user = User::from(user_row);
-        Some(generate_token(&user)?)
+        Some(generate_access_token(&user, &[], session_id)?)
     } else {
         None
     };
@@ -1154,7 +1103,7 @@ pub async fn restore_password(
             "SELECT email, token_expiry 
              FROM password_reset_requests 
              WHERE session_id = $1 AND token = $2
-             AND used = false",
+             AND used = false FOR UPDATE",
             &[&req.session_id, &req.token],
         )
         .await?;
@@ -1180,6 +1129,10 @@ pub async fn restore_password(
             &[&password_hash, &email],
         )
         .await?;
+
+    transaction.execute(
+        "UPDATE user_sessions SET ended_at = NOW() WHERE user_id IN (SELECT userid FROM users WHERE email = $1) AND ended_at IS NULL", &[&email],
+    ).await?;
 
     // Mark token as used
     transaction
@@ -1312,69 +1265,31 @@ pub async fn refresh_tokens(
 
     let claims = token_data.claims;
 
-    // Attempt to update session activity
-    if let Some(session_uuid) = claims.sid {
-        match sessions::service::get_session_id_from_uuid(pool, session_uuid).await {
-            Ok(Some(session_id_i64)) => {
-                match sessions::service::update_session_activity(
-                    pool,
-                    claims.sub,
-                    session_id_i64,
-                    ip_address,
-                    user_agent,
-                )
-                .await
-                {
-                    Ok(Some(session)) => {
-                        log::info!(
-                            "User session activity updated: session_id={}, user_id={}",
-                            session.id,
-                            session.user_id
-                        );
-                    }
-                    Ok(None) => {
-                        log::warn!("Attempted to update activity for session_uuid {} (user_id {}), but session was not found or already ended.", session_uuid, claims.sub);
-                    }
-                    Err(e) => {
-                        log::error!(
-                            "Failed to update session activity for session_id {}: {}",
-                            session_id_i64,
-                            e
-                        );
-                    }
-                }
-            }
-            Ok(None) => {
-                log::warn!(
-                    "No active session found for session_uuid {} during token refresh.",
-                    session_uuid
-                );
-            }
-            Err(e) => {
-                log::error!(
-                    "Failed to get session_id from session_uuid {} during token refresh: {}",
-                    session_uuid,
-                    e
-                );
-            }
-        }
-    } else {
-        log::warn!("No session ID (sid) found in refresh token claims for user_id {}. Cannot update session activity.", claims.sub);
-    }
-
-    // Get user details for generating new tokens
-    let client = pool.get().await?;
-    let row = client
-        .query_one(
-            // Ensure the query for User struct is correct and doesn't conflict with 'id as user_uuid' if that alias was specific to login
-            "SELECT userid, username, email, password, created_at, followers, role, email_confirmed FROM users WHERE userid = $1",
-            &[&claims.sub],
-        )
-        .await?;
+    super::models::validate_claims(pool, claims.clone()).await?;
+    let sid = claims
+        .sid
+        .ok_or_else(|| AppError::Auth("Missing session".into()))?;
+    let mut client = pool.get().await?;
+    let tx = client.transaction().await?;
+    let row = tx.query_opt(
+        "SELECT userid, username, email, password, created_at, followers, role, email_confirmed
+         FROM users WHERE userid = $1 AND NOT disabled AND LOWER(role::text) <> 'blocked' FOR UPDATE",
+        &[&claims.sub],
+    ).await?.ok_or_else(|| AppError::Auth("Account is unavailable".into()))?;
     let user = User::from(row);
-
-    // Generate new token pair, passing the original session_id from the refresh token
-    create_token_pair(pool, &user, claims.sid).await
+    let next_sid = Uuid::new_v4();
+    let parsed_ip: Option<std::net::IpAddr> = ip_address.parse().ok();
+    let changed = tx.execute(
+        "UPDATE user_sessions SET session_uuid = $3, last_active_at = NOW(), ip_address = $4, user_agent = $5
+         WHERE user_id = $1 AND session_uuid = $2 AND ended_at IS NULL",
+        &[&claims.sub, &sid, &next_sid, &parsed_ip, &user_agent],
+    ).await?;
+    if changed != 1 {
+        return Err(AppError::Auth("Session is no longer active".into()));
+    }
+    let pair = create_token_pair(pool, &user, Some(next_sid)).await?;
+    tx.commit().await?;
+    Ok(pair)
 }
 
 pub async fn set_following(
@@ -1538,7 +1453,7 @@ pub async fn complete_password_change(
              AND verification_id = $2 
              AND verification_code = $3
              AND completed_at IS NULL
-             AND expires_at > NOW()",
+             AND expires_at > NOW() FOR UPDATE",
             &[
                 &user_id,
                 &request.verification_id,
@@ -1570,6 +1485,13 @@ pub async fn complete_password_change(
         )
         .await?;
 
+    transaction
+        .execute(
+            "UPDATE user_sessions SET ended_at = NOW() WHERE user_id = $1 AND ended_at IS NULL",
+            &[&user_id],
+        )
+        .await?;
+
     // Mark verification as completed
     transaction
         .execute(
@@ -1586,4 +1508,21 @@ pub async fn complete_password_change(
         success: true,
         message: "Password changed successfully".to_string(),
     })
+}
+
+#[cfg(test)]
+mod security_password_tests {
+    #[test]
+    fn wrapped_legacy_passwords_keep_the_original_password() {
+        let password = "old password 日本語";
+        let digest = format!("{:x}", md5::compute(super::rot13(password).as_bytes()));
+        let envelope = format!("legacy-bcrypt:{}", bcrypt::hash(&digest, 4).unwrap());
+        assert!(super::verify_password(password, &envelope).unwrap());
+        assert!(!super::verify_password("wrong", &envelope).unwrap());
+        assert!(super::needs_rehash(&envelope));
+        let upgraded = bcrypt::hash(password, 4).unwrap();
+        assert!(super::verify_password(password, &upgraded).unwrap());
+        assert!(!super::needs_rehash(&upgraded));
+        assert!(super::verify_password(password, &digest).is_err());
+    }
 }

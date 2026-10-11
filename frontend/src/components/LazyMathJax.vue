@@ -4,6 +4,7 @@
 
 <script setup lang="ts">
 import { Marked } from 'marked'
+import { sanitizeHtml } from '@/utils/sanitizeHtml'
 import type { RendererObject } from 'marked'
 import { ref, onMounted, watch, nextTick, onBeforeUnmount } from 'vue'
 
@@ -290,7 +291,7 @@ const renderContent = async () => {
     finalContent = finalContent.replace(/\n/g, '<br>')
   }
 
-  contentRef.value.innerHTML = finalContent
+  contentRef.value.innerHTML = sanitizeHtml(finalContent)
   emit('rendered')
 
   if (props.enableMarkdown) {

@@ -28,6 +28,8 @@ mod middleware;
 mod notifications;
 mod openapi;
 mod payments;
+#[cfg(test)]
+mod security_regression_tests;
 mod server;
 pub mod sessions;
 mod subscriptions;

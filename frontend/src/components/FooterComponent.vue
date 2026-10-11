@@ -155,7 +155,7 @@ const updateChatMessage = (messages) => {
     messageStack.value = messageStack.value.slice(-10)
 
     const formattedMessages = messageStack.value.map((m) => `${m.w}: ${m.d}`).join('   •   ')
-    velsku.innerHTML = formattedMessages
+    velsku.textContent = formattedMessages
   }
 }
 

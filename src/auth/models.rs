@@ -1,6 +1,6 @@
 use actix_web::{dev::Payload, Error as ActixError, FromRequest, HttpRequest};
 use chrono::{DateTime, Utc};
-use futures::future::{ready, Ready};
+use futures::future::LocalBoxFuture;
 use jsonwebtoken::{decode, Algorithm, DecodingKey, Validation};
 use serde::{Deserialize, Serialize};
 use std::{env, error::Error, str::FromStr};
@@ -100,27 +100,73 @@ pub fn decode_token(token: &str) -> Result<Claims, AppError> {
         .map_err(|_| AppError::Auth("Invalid token".to_string()))
 }
 
+/// Validate the subject-bound session and load current account state on every request.
+pub async fn validate_claims(
+    pool: &deadpool_postgres::Pool,
+    mut claims: Claims,
+) -> Result<Claims, AppError> {
+    let sid = claims
+        .sid
+        .ok_or_else(|| AppError::Auth("Missing session".into()))?;
+    let client = pool.get().await?;
+    let row = client
+        .query_opt(
+            "SELECT u.username, u.email, u.role, u.email_confirmed FROM users u
+         JOIN user_sessions s ON s.user_id = u.userid
+         WHERE u.userid = $1 AND s.session_uuid = $2 AND s.ended_at IS NULL
+         AND NOT u.disabled AND LOWER(u.role::text) <> 'blocked'",
+            &[&claims.sub, &sid],
+        )
+        .await?
+        .ok_or_else(|| AppError::Auth("Session is no longer active".into()))?;
+    claims.username = row.get("username");
+    claims.email = row.get("email");
+    claims.role = row.get("role");
+    claims.email_confirmed = row.get("email_confirmed");
+    claims.authorities = client
+        .query(
+            "SELECT p.name FROM role_permissions rp JOIN permissions p ON rp.permission_id = p.id
+         WHERE LOWER(rp.role::text) = LOWER($1::text)",
+            &[&claims.role],
+        )
+        .await?
+        .iter()
+        .map(|r| r.get("name"))
+        .collect();
+    Ok(claims)
+}
+
+pub async fn authenticate_token(
+    pool: &deadpool_postgres::Pool,
+    token: &str,
+) -> Result<Claims, AppError> {
+    validate_claims(pool, decode_token(token)?).await
+}
+
 impl FromRequest for Claims {
     type Error = ActixError;
-    type Future = Ready<Result<Self, Self::Error>>;
+    type Future = LocalBoxFuture<'static, Result<Self, Self::Error>>;
 
     fn from_request(req: &HttpRequest, _: &mut Payload) -> Self::Future {
-        // Extract token from Authorization header
-        let auth_header = req.headers().get("Authorization");
-        let token = auth_header
+        let token = req
+            .headers()
+            .get("Authorization")
             .and_then(|h| h.to_str().ok())
-            .and_then(|h| h.strip_prefix("Bearer "));
-
-        if let Some(token) = token {
-            match decode_token(token) {
-                Ok(claims) => ready(Ok(claims)),
-                Err(_) => ready(Err(actix_web::error::ErrorUnauthorized("Invalid token"))),
-            }
-        } else {
-            ready(Err(actix_web::error::ErrorUnauthorized(
-                "No authorization token found",
-            )))
-        }
+            .and_then(|h| h.strip_prefix("Bearer "))
+            .map(str::to_owned);
+        let pool = req
+            .app_data::<actix_web::web::Data<deadpool_postgres::Pool>>()
+            .cloned();
+        Box::pin(async move {
+            let (Some(token), Some(pool)) = (token, pool) else {
+                return Err(actix_web::error::ErrorUnauthorized(
+                    "No authorization token found",
+                ));
+            };
+            authenticate_token(&pool, &token)
+                .await
+                .map_err(|_| actix_web::error::ErrorUnauthorized("Invalid or revoked token"))
+        })
     }
 }
 

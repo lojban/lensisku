@@ -1,4 +1,5 @@
 import { marked } from 'marked'
+import { sanitizeHtml } from './sanitizeHtml'
 
 /** Shared by mail detail pages, threads and discussion search previews. */
 export function renderMailContent(text: string, searchTerm = ''): string {
@@ -18,7 +19,7 @@ export function renderMailContent(text: string, searchTerm = ''): string {
     .replace(/\s(?:style|class|id|width|height)\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, '')
     .replace(/<\/?font\b[^>]*>/gi, '')
 
-  if (!searchTerm) return safeContent
+  if (!searchTerm) return sanitizeHtml(safeContent)
   const escapedTerm = searchTerm.replace(/\W/g, '\\$&')
-  return safeContent.replace(new RegExp(`(${escapedTerm})`, 'gi'), '<mark>$1</mark>')
+  return sanitizeHtml(safeContent.replace(new RegExp(`(${escapedTerm})`, 'gi'), '<mark>$1</mark>'))
 }

@@ -72,6 +72,7 @@
 </template>
 
 <script setup lang="ts">
+import { sanitizeHtml } from '@/utils/sanitizeHtml'
 import { computed } from 'vue'
 import type { PropType } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -137,9 +138,10 @@ const handleClick = (message: MailMessageRow) => {
 const highlightTextPlain = (text: string) => {
   if (!text) return ''
   const trimmedText = text.replace(/[\n\r ]+$/, '')
-  if (!props.searchTerm) return trimmedText.replace(/\n/g, '<br>')
-  const regex = new RegExp(`(${props.searchTerm})`, 'gi')
-  return trimmedText.replace(regex, '<mark>$1</mark>').replace(/\n/g, '<br>')
+  if (!props.searchTerm) return sanitizeHtml(trimmedText.replace(/\n/g, '<br>'))
+  const escapedTerm = props.searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const regex = new RegExp(`(${escapedTerm})`, 'gi')
+  return sanitizeHtml(trimmedText.replace(regex, '<mark>$1</mark>').replace(/\n/g, '<br>'))
 }
 const formatDate = (dateStr: string | undefined) => {
   if (!dateStr) return ''

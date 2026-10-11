@@ -13,12 +13,15 @@ pub struct ResolvedSemanticFilters {
 
 #[derive(Debug, Clone)]
 pub struct SemanticSearchCore {
+    pub official_only: bool,
     pub query: String,
     pub limit: Option<u32>,
 }
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct ToolArgs {
+    #[serde(default)]
+    pub official_only: bool,
     #[serde(default)]
     pub queries: Vec<String>,
     #[serde(default)]
@@ -127,6 +130,7 @@ impl ResolveArgs {
 
 #[derive(Debug, Clone)]
 pub struct SearchBatch {
+    pub official_only: bool,
     pub queries: Vec<String>,
     pub limit: Option<u32>,
     pub languages: Option<Vec<String>>,
@@ -160,6 +164,7 @@ impl SearchBatch {
                 })
         });
         Self {
+            official_only: args.official_only,
             queries,
             limit: args.limit,
             languages,
@@ -169,6 +174,7 @@ impl SearchBatch {
 
     pub fn call_core(&self, query: &str) -> SemanticSearchCore {
         SemanticSearchCore {
+            official_only: self.official_only,
             query: query.to_string(),
             limit: self.limit,
         }
@@ -258,7 +264,30 @@ impl Default for RequestAnalysis {
 
 #[cfg(test)]
 mod tests {
-    use super::RequestAnalysis;
+    use super::{RequestAnalysis, SearchBatch, ToolArgs};
+
+    #[test]
+    fn official_filter_survives_batched_component_lookups() {
+        let args: ToolArgs = serde_json::from_str(
+            r#"{"queries":["fox","run","because","lo"],"official_only":true}"#,
+        )
+        .unwrap();
+        let queries = args.normalized_queries().unwrap();
+        let batch = SearchBatch::from_tool_args(&args, queries, Some("en-US"));
+        assert_eq!(batch.languages, Some(vec!["en".to_string()]));
+        for query in &batch.queries {
+            let core = batch.call_core(query);
+            assert!(core.official_only);
+            assert_eq!(&core.query, query);
+        }
+    }
+
+    #[test]
+    fn existing_search_calls_remain_unrestricted() {
+        let args: ToolArgs = serde_json::from_str(r#"{"queries":["fox"]}"#).unwrap();
+        let batch = SearchBatch::from_tool_args(&args, args.normalized_queries().unwrap(), None);
+        assert!(!batch.call_core("fox").official_only);
+    }
 
     #[test]
     fn parses_request_analysis_json() {

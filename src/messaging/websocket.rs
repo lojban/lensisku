@@ -10,7 +10,9 @@ use actix_web_actors::ws;
 use serde_json::Value;
 
 use super::dto::WebSocketMessage;
-use crate::auth::decode_token;
+use crate::auth::models::authenticate_token;
+use actix::{ActorFutureExt, WrapFuture};
+use deadpool_postgres::Pool;
 
 static SESSION_ID: AtomicUsize = AtomicUsize::new(0);
 
@@ -73,6 +75,8 @@ pub struct WsSession {
     pub initial_thread_id: Option<i64>,
     pub lobby: Addr<ChatServer>,
     pub hb: Instant,
+    pool: Pool,
+    token: String,
 }
 
 impl WsSession {
@@ -81,6 +85,8 @@ impl WsSession {
         username: String,
         initial_thread_id: Option<i64>,
         lobby: Addr<ChatServer>,
+        pool: Pool,
+        token: String,
     ) -> Self {
         Self {
             id: SESSION_ID.fetch_add(1, Ordering::SeqCst),
@@ -89,6 +95,8 @@ impl WsSession {
             initial_thread_id,
             lobby,
             hb: Instant::now(),
+            pool,
+            token,
         }
     }
 
@@ -98,11 +106,41 @@ impl WsSession {
                 ctx.stop();
                 return;
             }
+            let pool = act.pool.clone();
+            let token = act.token.clone();
+            ctx.spawn(
+                async move { authenticate_token(&pool, &token).await }
+                    .into_actor(act)
+                    .map(|result, _, ctx| {
+                        if result.is_err() {
+                            ctx.stop();
+                        }
+                    }),
+            );
             ctx.ping(b"");
         });
     }
 
     fn handle_message(&mut self, message: Value, ctx: &mut ws::WebsocketContext<Self>) {
+        let pool = self.pool.clone();
+        let token = self.token.clone();
+        ctx.wait(
+            async move {
+                let claims = authenticate_token(&pool, &token).await?;
+                if let Some(thread_id) = message.get("thread_id").and_then(Value::as_i64) {
+                    verify_thread_membership(&pool, thread_id, claims.sub).await?;
+                }
+                Ok::<_, crate::AppError>(message)
+            }
+            .into_actor(self)
+            .map(|result, act, ctx| match result {
+                Ok(message) => act.process_message(message, ctx),
+                Err(_) => ctx.text(r#"{"type":"error","message":"Access denied"}"#),
+            }),
+        );
+    }
+
+    fn process_message(&mut self, message: Value, ctx: &mut ws::WebsocketContext<Self>) {
         let msg_type = message.get("type").and_then(Value::as_str);
         match msg_type {
             Some("join_thread") => {
@@ -202,7 +240,33 @@ impl Handler<WsMessage> for WsSession {
     type Result = ();
 
     fn handle(&mut self, msg: WsMessage, ctx: &mut Self::Context) {
-        ctx.text(msg.0);
+        let pool = self.pool.clone();
+        let token = self.token.clone();
+        ctx.wait(
+            async move {
+                let claims = authenticate_token(&pool, &token).await?;
+                let value: Value = serde_json::from_str(&msg.0)
+                    .map_err(|_| crate::AppError::Internal("Invalid websocket event".into()))?;
+                if let Some(thread_id) = value
+                    .get("thread_id")
+                    .or_else(|| {
+                        value
+                            .get("thread")
+                            .and_then(|thread| thread.get("thread_id"))
+                    })
+                    .and_then(Value::as_i64)
+                {
+                    verify_thread_membership(&pool, thread_id, claims.sub).await?;
+                }
+                Ok::<_, crate::AppError>(msg.0)
+            }
+            .into_actor(self)
+            .map(|result, _, ctx| {
+                if let Ok(message) = result {
+                    ctx.text(message);
+                }
+            }),
+        );
     }
 }
 
@@ -375,20 +439,32 @@ async fn start_session(
     chat_server: web::Data<Addr<ChatServer>>,
     initial_thread_id: Option<i64>,
 ) -> Result<HttpResponse, Error> {
-    let token = extract_token(&req);
-    let claims = match token {
-        Some(t) => match decode_token(&t) {
-            Ok(c) => c,
-            Err(_) => return Ok(HttpResponse::Unauthorized().finish()),
-        },
-        None => return Ok(HttpResponse::Unauthorized().finish()),
+    let Some(pool) = req.app_data::<web::Data<Pool>>().cloned() else {
+        return Ok(HttpResponse::ServiceUnavailable().finish());
     };
+    let Some(token) = extract_token(&req) else {
+        return Ok(HttpResponse::Unauthorized().finish());
+    };
+    let claims = match authenticate_token(&pool, &token).await {
+        Ok(claims) => claims,
+        Err(_) => return Ok(HttpResponse::Unauthorized().finish()),
+    };
+    if let Some(thread_id) = initial_thread_id {
+        if verify_thread_membership(&pool, thread_id, claims.sub)
+            .await
+            .is_err()
+        {
+            return Ok(HttpResponse::Forbidden().finish());
+        }
+    }
 
     let session = WsSession::new(
         claims.sub,
         claims.username,
         initial_thread_id,
         chat_server.get_ref().clone(),
+        pool.get_ref().clone(),
+        token,
     );
 
     ws::start(session, &req, stream)
@@ -404,4 +480,21 @@ fn extract_token(req: &HttpRequest) -> Option<String> {
                 .map(|cow| cow.to_string())
                 .unwrap_or_else(|_| s.to_string())
         })
+}
+
+async fn verify_thread_membership(
+    pool: &Pool,
+    thread_id: i64,
+    user_id: i32,
+) -> crate::AppResult<()> {
+    let client = pool.get().await?;
+    let allowed: bool = client.query_one(
+        "SELECT EXISTS(SELECT 1 FROM thread_participants tp JOIN message_threads mt USING(thread_id)
+         WHERE tp.thread_id = $1 AND tp.user_id = $2 AND tp.is_active AND mt.is_active)",
+        &[&thread_id, &user_id],
+    ).await?.get(0);
+    if !allowed {
+        return Err(crate::AppError::Unauthorized("Access denied".into()));
+    }
+    Ok(())
 }

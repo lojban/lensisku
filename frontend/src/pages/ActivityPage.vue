@@ -28,7 +28,7 @@
           >
             <template #label>{{ sortByLabel }}</template>
             <ToolbarSelectDropdownItem
-              v-for="sort in availableSorts"
+              v-for="sort in sortOptions"
               :key="sort"
               :class="{ 'bg-gray-100': sortBy === sort }"
               @click="setSortBy(sort)"
@@ -85,9 +85,6 @@ const { t } = useI18n()
 const waveSource = ref<WaveSource>(validWaveSource(queryStr(route.query.wave_source)))
 const sortBy = ref<SortBy>(validSortBy(queryStr(route.query.sort_by)))
 const sortOrder = ref(queryStr(route.query.sort_order) === 'asc' ? 'asc' : 'desc')
-const availableSorts = computed(() =>
-  sortOptions.filter((sort) => sort !== 'relevance' || queryStr(route.query.q).trim())
-)
 const waveSourceLabel = computed(() => t(`home.waveSource${sourceLabels[waveSource.value]}`))
 const sortByLabel = computed(() => t(`sort.${sortBy.value}`))
 useSeoHead({ title: () => t('activityFeed.title') })

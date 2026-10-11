@@ -164,7 +164,6 @@
               >
                 <template #label>{{ sortByTriggerLabel }}</template>
                 <ToolbarSelectDropdownItem
-                  v-if="searchQuery.trim()"
                   :class="{ 'bg-gray-100': sortBy === 'relevance' }"
                   @click="setSortByField('relevance')"
                 >
@@ -1192,7 +1191,7 @@ const sortBy = ref(
 )
 
 const sortByTriggerLabel = computed(() => {
-  if (sortBy.value === 'relevance' && searchQuery.value.trim()) return t('sort.relevance')
+  if (sortBy.value === 'relevance') return t('sort.relevance')
   if (sortBy.value === 'reactions') return t('sort.reactions')
   if (sortBy.value === 'replies') return t('sort.replies')
   return t('sort.time')

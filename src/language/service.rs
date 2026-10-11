@@ -1,4 +1,7 @@
-use std::{collections::{HashMap, HashSet}, sync::Arc};
+use std::{
+    collections::{HashMap, HashSet},
+    sync::Arc,
+};
 
 use crate::language::dto::*;
 use crate::language::models::{Language, LojbanToken};
@@ -119,7 +122,10 @@ pub async fn load_owned_rafsi_maps(
     let gismu = fetch_gismu_rafsi(transaction).await?;
     let gismu_exp = fetch_experimental_gismu_rafsi(transaction).await?;
     let mut maps = OwnedRafsiMaps {
-        cmavo, cmavo_exp, gismu, gismu_exp,
+        cmavo,
+        cmavo_exp,
+        gismu,
+        gismu_exp,
         se_words: transaction
             .query(
                 "SELECT DISTINCT v.word FROM valsi v
@@ -811,7 +817,7 @@ fn extract_latex_error_from_log(log: &str) -> Option<String> {
                 (rest.trim(), "")
             };
             let ctx_short = if ctx.len() > 60 {
-                format!("{}...", &ctx[..57])
+                format!("{}...", ctx.chars().take(57).collect::<String>())
             } else {
                 ctx.to_string()
             };
@@ -829,6 +835,7 @@ fn extract_latex_error_from_log(log: &str) -> Option<String> {
 }
 
 /// Preserve the TeX diagnostic when available and report compiler failures otherwise.
+#[cfg(test)]
 fn handle_tectonic_failure(
     log_content: &str,
     engine_error: &str,
@@ -837,50 +844,6 @@ fn handle_tectonic_failure(
         return Err(MathJaxValidationError::Tectonic(specific));
     }
     Err(MathJaxValidationError::Tectonic(engine_error.to_string()))
-}
-
-/// Run LaTeX via the tectonic driver with keep_logs(true) so we can read the
-/// .log on failure and surface the actual TeX error (e.g. "Misplaced alignment tab character &").
-fn compile_latex_and_capture_log(latex_document: String) -> Result<(), MathJaxValidationError> {
-    use tectonic::driver::{OutputFormat, ProcessingSessionBuilder};
-    use tectonic::status::NoopStatusBackend;
-
-    let mut status = NoopStatusBackend::default();
-    let config = tectonic::config::PersistentConfig::open(false)
-        .map_err(|e| MathJaxValidationError::Tectonic(format!("Failed to open config: {}", e)))?;
-    let bundle = config
-        .default_bundle(false)
-        .map_err(|e| MathJaxValidationError::Tectonic(format!("Failed to load bundle: {}", e)))?;
-    let format_cache_path = config.format_cache_path().map_err(|e| {
-        MathJaxValidationError::Tectonic(format!("Failed to get format cache path: {}", e))
-    })?;
-
-    let mut sb = ProcessingSessionBuilder::default();
-    sb.bundle(bundle)
-        .primary_input_buffer(latex_document.as_bytes())
-        .tex_input_name("texput.tex")
-        .format_name("latex")
-        .format_cache_path(format_cache_path)
-        .keep_logs(true)
-        .keep_intermediates(false)
-        .print_stdout(false)
-        .output_format(OutputFormat::Pdf)
-        .do_not_write_output_files();
-
-    let mut sess = sb.create(&mut status).map_err(|e| {
-        MathJaxValidationError::Tectonic(format!("Failed to create session: {}", e))
-    })?;
-
-    if let Err(e) = sess.run(&mut status) {
-        let files = sess.into_file_data();
-        let log_content = files
-            .get("texput.log")
-            .map(|f| String::from_utf8_lossy(&f.data).into_owned())
-            .unwrap_or_default();
-        return handle_tectonic_failure(&log_content, &e.to_string());
-    }
-
-    Ok(())
 }
 
 fn latex_document_for_math(span: &str) -> String {
@@ -895,28 +858,24 @@ fn latex_document_for_math(span: &str) -> String {
     )
 }
 
-async fn validate_with_tectonic(span: &str) -> Result<(), MathJaxValidationError> {
-    let latex_document = latex_document_for_math(span);
-    let result = tokio::task::spawn_blocking(move || compile_latex_and_capture_log(latex_document))
-        .await
-        .map_err(|e| MathJaxValidationError::Tectonic(format!("Thread join error: {}", e)))?;
-
-    result
-}
-
 /// Use the installed TeX Live files. Tectonic's default bundle can fetch from
 /// the network and leave a definition save waiting indefinitely on a cold cache.
 async fn validate_with_tex(span: &str) -> Result<(), MathJaxValidationError> {
-    use tokio::process::Command;
-
     let dir = tempfile::tempdir()
         .map_err(|e| MathJaxValidationError::Tectonic(format!("TeX temp directory: {e}")))?;
-    tokio::fs::write(dir.path().join("definition.tex"), latex_document_for_math(span))
-        .await
-        .map_err(|e| MathJaxValidationError::Tectonic(format!("TeX input: {e}")))?;
+    tokio::fs::write(
+        dir.path().join("definition.tex"),
+        latex_document_for_math(span),
+    )
+    .await
+    .map_err(|e| MathJaxValidationError::Tectonic(format!("TeX input: {e}")))?;
 
     for engine in ["xelatex", "pdflatex"] {
-        let mut command = Command::new(engine);
+        let engine_path = format!("/usr/bin/{engine}");
+        if !std::path::Path::new(&engine_path).exists() {
+            continue;
+        }
+        let mut command = crate::utils::tex_sandbox::command(&engine_path, dir.path());
         command
             .args([
                 "-halt-on-error",
@@ -938,12 +897,18 @@ async fn validate_with_tex(span: &str) -> Result<(), MathJaxValidationError> {
                 ))
             }
             Ok(Err(e)) if e.kind() == std::io::ErrorKind::NotFound => continue,
-            Ok(Err(e)) => Err(MathJaxValidationError::Tectonic(format!("TeX process: {e}"))),
-            Err(_) => Err(MathJaxValidationError::Tectonic("LaTeX validation timed out".into())),
+            Ok(Err(e)) => Err(MathJaxValidationError::Tectonic(format!(
+                "TeX process: {e}"
+            ))),
+            Err(_) => Err(MathJaxValidationError::Tectonic(
+                "LaTeX validation timed out".into(),
+            )),
         }?;
         return Ok(());
     }
-    validate_with_tectonic(span).await
+    Err(MathJaxValidationError::Tectonic(
+        "A sandboxed TeX Live compiler is required".into(),
+    ))
 }
 
 pub async fn analyze_word_in_pool(
@@ -1045,7 +1010,9 @@ mod tests {
     #[test]
     fn tectonic_failure_requires_a_tex_diagnostic_to_reject_input() {
         assert!(handle_tectonic_failure("", "bundle unavailable").is_err());
-        assert!(handle_tectonic_failure("! Undefined control sequence.\n", "compile failed").is_err());
+        assert!(
+            handle_tectonic_failure("! Undefined control sequence.\n", "compile failed").is_err()
+        );
     }
 
     #[test]

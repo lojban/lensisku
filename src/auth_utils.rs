@@ -11,7 +11,7 @@ pub async fn verify_collection_read_access(
 ) -> AppResult<()> {
     let row = transaction
         .query_one(
-            "SELECT user_id, is_public FROM collections WHERE collection_id = $1",
+            "SELECT user_id, is_public FROM collections WHERE collection_id = $1 FOR SHARE",
             &[&collection_id],
         )
         .await

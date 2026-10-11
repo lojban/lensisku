@@ -74,48 +74,41 @@ impl LoginLimiter {
         })
     }
 
-    /// Returns true if the IP is under the attempt limit and increments the counter.
-    pub async fn check_and_record_attempt(&self, ip: &str) -> Result<bool, redis::RedisError> {
+    /// Reserve IP/account attempts atomically, before password verification.
+    /// Redis time and a per-account next-attempt time prevent parallel guesses.
+    pub async fn reserve_login(&self, ip: &str, account: &str) -> Result<u64, redis::RedisError> {
         let mut conn = self.client.get_multiplexed_async_connection().await?;
-        let key = format!("login_attempts:{}", ip);
-        let count: Option<u32> = conn.get(&key).await?;
-        match count {
-            Some(count) if count >= self.max_attempts_per_ip => Ok(false),
-            Some(_) => {
-                let _: () = conn.incr(&key, 1).await?;
-                Ok(true)
-            }
-            None => {
-                let _: () = conn.set_ex(&key, 1, self.attempt_window_secs).await?;
-                Ok(true)
-            }
-        }
+        redis::Script::new(
+            r#"
+            local t = redis.call('TIME')
+            local now = tonumber(t[1]) * 1000 + math.floor(tonumber(t[2]) / 1000)
+            local ip_count = tonumber(redis.call('GET', KEYS[1]) or '0')
+            local count = tonumber(redis.call('HGET', KEYS[2], 'count') or '0')
+            local next_at = tonumber(redis.call('HGET', KEYS[2], 'next') or '0')
+            if ip_count >= tonumber(ARGV[1]) then return math.max(1, redis.call('TTL', KEYS[1])) end
+            if count >= tonumber(ARGV[3]) then return math.max(1, redis.call('TTL', KEYS[2])) end
+            if next_at > now then return math.max(1, math.ceil((next_at - now) / 1000)) end
+            local n = redis.call('INCR', KEYS[1])
+            if n == 1 then redis.call('EXPIRE', KEYS[1], ARGV[2]) end
+            count = count + 1
+            redis.call('HSET', KEYS[2], 'count', count, 'next', now + 1000 * 2^(count - 1))
+            if count == 1 then redis.call('EXPIRE', KEYS[2], ARGV[4]) end
+            return 0
+        "#,
+        )
+        .key(format!("login_attempts:{ip}"))
+        .key(format!("login_account:{account}"))
+        .arg(self.max_attempts_per_ip)
+        .arg(self.attempt_window_secs)
+        .arg(self.max_failures_per_identifier)
+        .arg(self.failure_window_secs)
+        .invoke_async(&mut conn)
+        .await
     }
 
-    /// Returns true if the identifier (username/email) is over the failure limit (should block).
-    pub async fn is_identifier_over_failure_limit(
-        &self,
-        identifier: &str,
-    ) -> Result<bool, redis::RedisError> {
+    pub async fn clear_success(&self, account: &str) -> Result<(), redis::RedisError> {
         let mut conn = self.client.get_multiplexed_async_connection().await?;
-        let key = format!("login_failures:{}", identifier);
-        let count: Option<u32> = conn.get(&key).await?;
-        Ok(count.is_some_and(|c| c >= self.max_failures_per_identifier))
-    }
-
-    /// Records a failed login for the given identifier.
-    pub async fn record_failed_login(&self, identifier: &str) -> Result<(), redis::RedisError> {
-        let mut conn = self.client.get_multiplexed_async_connection().await?;
-        let key = format!("login_failures:{}", identifier);
-        let count: Option<u32> = conn.get(&key).await?;
-        match count {
-            Some(_) => {
-                let _: () = conn.incr(&key, 1).await?;
-            }
-            None => {
-                let _: () = conn.set_ex(&key, 1, self.failure_window_secs).await?;
-            }
-        }
+        let _: () = conn.del(format!("login_account:{account}")).await?;
         Ok(())
     }
 }

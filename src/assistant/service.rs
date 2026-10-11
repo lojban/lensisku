@@ -21,7 +21,7 @@ use crate::error::AppError;
 use crate::jbovlaste::models::{
     DefinitionDetail, DefinitionResponse, Example, SearchDefinitionsParams,
 };
-use crate::jbovlaste::service::{get_definition, semantic_search};
+use crate::jbovlaste::service::{get_definition, semantic_search_with_official_filter};
 use crate::middleware::cache::{generate_assistant_semantic_cache_key, RedisCache};
 use crate::utils::embeddings::get_batch_embeddings;
 use crate::utils::openrouter_models::{
@@ -384,18 +384,18 @@ fn jbovlaste_tool_schema() -> Tool {
         function: ToolFunction {
             name: "jbovlaste_semantic_search".to_string(),
             description: "Semantic search over jbovlaste definition text (embeddings). \
-                          Your ONLY tool—call before stating facts about \
+                          Call before stating facts about \
                           Lojban words or meanings, unless the system message **core reference \
                           dictionary** already answers. \
                           **Always pass every lookup in one call** via the **`queries` array** \
                           (even a single word is `[\"lorxu\"]`). \
                           Call when: new valsi/topic, or prior results were insufficient—\
                           then use **different** strings (no duplicate searches). \
-                          Do NOT call when this thread already has search-backed answers. \
+                          Reuse existing definitions, but search every uncovered component and particle. For composition, split meaning before searching. Set official_only=true for official words only. \
                           **Query language rules (critical):** \
                           1) Search in the **user's language** (e.g. English keywords like \
                           `fox`, `big thanks`, `logical connective`, `past tense`). \
-                          2) Include a bare Lojban valsi ONLY if the user explicitly typed it. \
+                          2) Include a bare Lojban valsi if typed by the user or attested in the core reference/sample phrases; look up particles separately. \
                           3) NEVER guess Lojban words from memory—your pretrained Lojban is \
                           untrusted and produces garbage results. \
                           4) NEVER combine Lojban words in one query, and NEVER mix \
@@ -445,6 +445,11 @@ fn jbovlaste_tool_schema() -> Tool {
                             `[\"en\"]` English glosses; `[\"ru\"]` Russian; `[\"es\"]` Spanish; \
                             `[\"jbo\"]` definitions written in Lojban. Combine e.g. `[\"en\",\"ru\"]` \
                             for bilingual glosses. Omit to include all indexed languages."
+                    },
+                    "official_only": {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Set true when the user requests only official words. Restricts the search candidate pool to official Lojban gismu and cmavo, excluding experimental words, lujvo, loans, names, and phrases. Keep true for every component/particle lookup while that constraint applies."
                     },
                     "source_language": {
                         "type": "string",
@@ -504,7 +509,7 @@ fn jbovlaste_resolve_results_tool_schema() -> Tool {
                             "required": ["definitionid", "field", "exact_text"]
                         },
                         "minItems": 1,
-                        "description": "Ordered list of references that form the answer."
+                        "description": "Ordered list of references that form the answer. For translation or composition include a definition for every selected component and grammatical particle, including words taken from sample phrases."
                     },
                     "message": {
                         "type": "string",
@@ -833,14 +838,20 @@ async fn run_jbovlaste_semantic_search_core(
     };
 
     let run_db = || async {
-        semantic_search(pool, params.clone(), embedding.to_vec(), None)
-            .await
-            .map_err(|e| {
-                AppError::ExternalService(format!(
-                    "Semantic search failed for query \"{}\": {}",
-                    query, e
-                ))
-            })
+        semantic_search_with_official_filter(
+            pool,
+            params.clone(),
+            embedding.to_vec(),
+            None,
+            core.official_only,
+        )
+        .await
+        .map_err(|e| {
+            AppError::ExternalService(format!(
+                "Semantic search failed for query \"{}\": {}",
+                query, e
+            ))
+        })
     };
 
     if assistant_semantic_cache_disabled() || redis.is_none() {
@@ -850,12 +861,15 @@ async fn run_jbovlaste_semantic_search_core(
     }
 
     let redis = redis.expect("checked");
-    let cache_key = generate_assistant_semantic_cache_key(
+    let mut cache_key = generate_assistant_semantic_cache_key(
         &query,
         limit,
         filters.languages_langids.as_deref(),
         filters.source_langid,
     );
+    if core.official_only {
+        cache_key.push_str(":official-gismu-cmavo");
+    }
 
     match redis.get::<DefinitionResponse>(&cache_key).await {
         Ok(Some(cached)) => return Ok(cached),
@@ -1969,7 +1983,10 @@ pub(crate) async fn run_agent_loop_inner(
 
                 let mut repetition_block: Option<(String, u32)> = None;
                 for q in &queries {
-                    let prior = query_seen_count.get(q).copied().unwrap_or(0);
+                    let prior = query_seen_count
+                        .get(&format!("official={}:{}", args.official_only, q))
+                        .copied()
+                        .unwrap_or(0);
                     if prior >= MAX_QUERY_REPETITIONS {
                         repetition_block = Some((q.clone(), prior));
                         break;
@@ -1987,14 +2004,16 @@ pub(crate) async fn run_agent_loop_inner(
                         content: format!(
                             "You have already searched for \"{}\" {} time(s). \
                              The results are already in this conversation. \
-                             Stop searching and formulate your answer now.",
+                             Reuse these definitions. Search only other missing components or particles, then submit all required references.",
                             search_query_for_llm, prior
                         ),
                     });
                     continue;
                 }
                 for q in &queries {
-                    *query_seen_count.entry(q.clone()).or_insert(0) += 1;
+                    *query_seen_count
+                        .entry(format!("official={}:{}", args.official_only, q))
+                        .or_insert(0) += 1;
                 }
 
                 pending_search_ordinal += 1;

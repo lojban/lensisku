@@ -60,21 +60,6 @@ pub struct ImportBody {
     pub sessions: Vec<ImportSession>,
 }
 
-pub async fn count_user_chats(pool: &Pool, user_id: i32) -> Result<i64, AppError> {
-    let client = pool
-        .get()
-        .await
-        .map_err(|e| AppError::Database(format!("assistant_chats count pool: {}", e)))?;
-    let row = client
-        .query_one(
-            "SELECT COUNT(*)::bigint FROM assistant_chats WHERE user_id = $1",
-            &[&user_id],
-        )
-        .await
-        .map_err(|e| AppError::Database(format!("assistant_chats count: {}", e)))?;
-    Ok(row.get::<_, i64>(0))
-}
-
 pub async fn list_chats(pool: &Pool, user_id: i32) -> Result<Vec<AssistantChatListItem>, AppError> {
     let client = pool
         .get()
@@ -128,18 +113,13 @@ pub async fn get_chat(
 }
 
 pub async fn create_chat(pool: &Pool, user_id: i32) -> Result<ChatCreateResult, AppError> {
-    let n = count_user_chats(pool, user_id).await?;
-    if n >= MAX_CHATS_PER_USER {
-        return Err(AppError::BadRequest(format!(
-            "Maximum {} assistant chats per user",
-            MAX_CHATS_PER_USER
-        )));
-    }
-    let client = pool
+    let mut client = pool
         .get()
         .await
-        .map_err(|e| AppError::Database(format!("assistant_chats create pool: {}", e)))?;
-    let row = client
+        .map_err(|e| AppError::Database(e.to_string()))?;
+    let tx = client.transaction().await?;
+    reserve_chat_capacity(&tx, user_id, 1).await?;
+    let row = tx
         .query_one(
             "INSERT INTO assistant_chats (user_id, title, messages) VALUES ($1, $2, $3::jsonb) \
              RETURNING id, title, updated_at",
@@ -147,6 +127,7 @@ pub async fn create_chat(pool: &Pool, user_id: i32) -> Result<ChatCreateResult, 
         )
         .await
         .map_err(|e| AppError::Database(format!("assistant_chats create: {}", e)))?;
+    tx.commit().await?;
     Ok(ChatCreateResult {
         id: row.get(0),
         title: row.get(1),
@@ -397,10 +378,7 @@ pub async fn import_sessions(
     user_id: i32,
     body: &ImportBody,
 ) -> Result<ImportResponse, AppError> {
-    let mut sessions = body.sessions.clone();
-    if sessions.len() as i64 > MAX_CHATS_PER_USER {
-        sessions.truncate(MAX_CHATS_PER_USER as usize);
-    }
+    let sessions = &body.sessions;
     let mut client = pool
         .get()
         .await
@@ -409,8 +387,9 @@ pub async fn import_sessions(
         .transaction()
         .await
         .map_err(|e| AppError::Database(format!("assistant_chats import tx: {}", e)))?;
+    reserve_chat_capacity(&tx, user_id, sessions.len() as i64).await?;
     let mut out = Vec::new();
-    for s in &sessions {
+    for s in sessions {
         let row = tx
             .query_one(
                 "INSERT INTO assistant_chats (user_id, title, messages, primary_model_id, scroll_top) \
@@ -431,4 +410,27 @@ pub async fn import_sessions(
         .await
         .map_err(|e| AppError::Database(format!("assistant_chats import commit: {}", e)))?;
     Ok(ImportResponse { chats: out })
+}
+
+async fn reserve_chat_capacity(
+    tx: &deadpool_postgres::Transaction<'_>,
+    user_id: i32,
+    requested: i64,
+) -> Result<(), AppError> {
+    tx.query_one("SELECT pg_advisory_xact_lock(1279410499, $1)", &[&user_id])
+        .await?;
+    let count: i64 = tx
+        .query_one(
+            "SELECT COUNT(*) FROM assistant_chats WHERE user_id = $1",
+            &[&user_id],
+        )
+        .await?
+        .get(0);
+    if requested > MAX_CHATS_PER_USER.saturating_sub(count) {
+        return Err(AppError::BadRequest(format!(
+            "Maximum {} assistant chats per user",
+            MAX_CHATS_PER_USER
+        )));
+    }
+    Ok(())
 }

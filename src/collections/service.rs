@@ -25,6 +25,9 @@ async fn get_or_insert_collection_image_id(
     image_data: &[u8],
     mime_type: &str,
 ) -> AppResult<i32> {
+    let (image_data, mime_type) = normalize_collection_image(image_data, mime_type)?;
+    let image_data = image_data.as_slice();
+    let mime_type = mime_type.as_str();
     let mut hasher = Sha256::new();
     hasher.update(image_data);
     let hash: Vec<u8> = hasher.finalize().to_vec();
@@ -75,21 +78,110 @@ fn validate_collection_logo(req: &ProfileImageRequest) -> Result<Vec<u8>, String
 }
 
 fn validate_svg_logo(data: &[u8]) -> Result<(), String> {
-    let text = std::str::from_utf8(data).map_err(|_| "SVG must be valid UTF-8".to_string())?;
-    let lower = text.to_ascii_lowercase();
-    if !lower.contains("<svg") {
-        return Err("Invalid SVG: expected an <svg> document".to_string());
-    }
-    if lower.contains("<script") || lower.contains("javascript:") {
-        return Err("SVG must not contain scripts".to_string());
-    }
-    for needle in [" onload=", " onerror=", " onfocus=", "href=\"javascript:"] {
-        if lower.contains(needle) {
-            return Err("SVG must not contain executable handlers".to_string());
+    use xml::reader::{EventReader, XmlEvent};
+    let mut root_seen = false;
+    for event in EventReader::new(data) {
+        match event.map_err(|_| "Invalid SVG XML".to_string())? {
+            XmlEvent::StartElement {
+                name, attributes, ..
+            } => {
+                if !root_seen {
+                    if name.local_name != "svg"
+                        || name.namespace.as_deref() != Some("http://www.w3.org/2000/svg")
+                    {
+                        return Err("Expected an SVG root".into());
+                    }
+                    root_seen = true;
+                }
+                if name.namespace.as_deref() != Some("http://www.w3.org/2000/svg")
+                    || !matches!(
+                        name.local_name.as_str(),
+                        "svg"
+                            | "g"
+                            | "path"
+                            | "rect"
+                            | "circle"
+                            | "ellipse"
+                            | "line"
+                            | "polyline"
+                            | "polygon"
+                            | "text"
+                            | "tspan"
+                            | "title"
+                            | "desc"
+                            | "defs"
+                            | "linearGradient"
+                            | "radialGradient"
+                            | "stop"
+                            | "clipPath"
+                            | "mask"
+                            | "use"
+                            | "symbol"
+                    )
+                {
+                    return Err("SVG contains unsupported active content".into());
+                }
+                for attr in attributes {
+                    let key = attr.name.local_name.to_ascii_lowercase();
+                    let value = attr.value.trim().to_ascii_lowercase();
+                    if key.starts_with("on")
+                        || key == "base"
+                        || (key == "href" && !value.starts_with('#'))
+                        || value.contains("javascript:")
+                        || value.contains("data:")
+                        || value.contains("http:")
+                        || value.contains("https:")
+                        || value.contains("@import")
+                        || value.contains("\\")
+                        || (value.contains("url(") && !value.contains("url(#"))
+                    {
+                        return Err("SVG contains external or executable references".into());
+                    }
+                }
+            }
+            XmlEvent::ProcessingInstruction { .. } => {
+                return Err("SVG processing instructions are unsupported".into())
+            }
+            _ => {}
         }
+    }
+    if !root_seen {
+        return Err("Expected an SVG document".into());
     }
     Ok(())
 }
+
+fn normalize_collection_image(data: &[u8], mime: &str) -> AppResult<(Vec<u8>, String)> {
+    if data.len() > MAX_ITEM_IMAGE_BYTES {
+        return Err(AppError::BadRequest("Image is too large".into()));
+    }
+    if mime_base(mime).eq_ignore_ascii_case("image/svg+xml") {
+        validate_svg_logo(data).map_err(AppError::BadRequest)?;
+        return Ok((data.to_vec(), "image/svg+xml".into()));
+    }
+    validate_item_image_bytes(mime_base(mime), data).map_err(AppError::BadRequest)?;
+    let mut reader = image::ImageReader::new(Cursor::new(data))
+        .with_guessed_format()
+        .map_err(|_| AppError::BadRequest("Invalid image".into()))?;
+    let mut limits = image::Limits::default();
+    limits.max_image_width = Some(8192);
+    limits.max_image_height = Some(8192);
+    limits.max_alloc = Some(64 * 1024 * 1024);
+    reader.limits(limits);
+    let image = reader
+        .decode()
+        .map_err(|_| AppError::BadRequest("Invalid or oversized image".into()))?;
+    let mut output = Cursor::new(Vec::new());
+    image
+        .write_to(&mut output, image::ImageFormat::WebP)
+        .map_err(|_| AppError::BadRequest("Image encoding failed".into()))?;
+    let bytes = output.into_inner();
+    if bytes.len() > MAX_ITEM_IMAGE_BYTES {
+        return Err(AppError::BadRequest("Image is too large".into()));
+    }
+    Ok((bytes, "image/webp".into()))
+}
+
 use chrono::{DateTime, Utc};
 use deadpool_postgres::{GenericClient, Pool, Transaction};
 use std::collections::{HashMap, HashSet};
@@ -3553,6 +3645,13 @@ pub async fn clone_collection(
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
 
+    crate::auth_utils::verify_collection_read_access(
+        &transaction,
+        source_collection_id,
+        Some(user_id),
+    )
+    .await?;
+
     // Get source collection (including shared cover blob reference)
     let source = transaction
         .query_one(
@@ -4988,23 +5087,13 @@ pub async fn get_item_image(
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
 
-    // Check access rights
-    if let Some(uid) = user_id {
-        let owner_id: i32 = client
-            .query_one(
-                "SELECT c.user_id FROM collections c 
-                 JOIN collection_items ci ON c.collection_id = ci.collection_id 
-                 WHERE ci.item_id = $1",
-                &[&item_id],
-            )
-            .await
-            .map_err(|e| AppError::Database(e.to_string()))?
-            .try_get(0)
-            .map_err(|e| AppError::Database(e.to_string()))?;
-
-        if owner_id != uid {
-            return Err(AppError::Unauthorized("Access denied".to_string()));
-        }
+    let accessible: bool = client.query_one(
+        "SELECT EXISTS(SELECT 1 FROM collection_items ci JOIN collections c USING(collection_id)
+         WHERE ci.item_id = $1 AND (c.is_public OR c.user_id = $2))",
+        &[&item_id, &user_id],
+    ).await.map_err(|e| AppError::Database(e.to_string()))?.get(0);
+    if !accessible {
+        return Err(AppError::Unauthorized("Access denied".into()));
     }
 
     let result = client
@@ -5012,13 +5101,22 @@ pub async fn get_item_image(
             "SELECT img.image_data, img.mime_type
              FROM collection_item_images cii
              INNER JOIN collection_images img ON img.collection_image_id = cii.collection_image_id
-             WHERE cii.item_id = $1 AND cii.side = $2",
-            &[&item_id, &side],
+             JOIN collection_items ci ON ci.item_id = cii.item_id
+             JOIN collections c ON c.collection_id = ci.collection_id
+             WHERE cii.item_id = $1 AND cii.side = $2 AND (c.is_public OR c.user_id = $3)",
+            &[&item_id, &side, &user_id],
         )
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
 
-    Ok(result.map(|row| (row.get("image_data"), row.get("mime_type"))))
+    result
+        .map(|row| {
+            normalize_collection_image(
+                &row.get::<_, Vec<u8>>("image_data"),
+                &row.get::<_, String>("mime_type"),
+            )
+        })
+        .transpose()
 }
 
 pub async fn get_item_sound(
@@ -5031,31 +5129,22 @@ pub async fn get_item_sound(
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
 
-    // Check access rights
-    if let Some(uid) = user_id {
-        let owner_id: i32 = client
-            .query_one(
-                "SELECT c.user_id FROM collections c 
-                 JOIN collection_items ci ON c.collection_id = ci.collection_id 
-                 WHERE ci.item_id = $1",
-                &[&item_id],
-            )
-            .await
-            .map_err(|e| AppError::Database(e.to_string()))?
-            .try_get(0)
-            .map_err(|e| AppError::Database(e.to_string()))?;
-
-        if owner_id != uid {
-            return Err(AppError::Unauthorized("Access denied".to_string()));
-        }
+    let accessible: bool = client.query_one(
+        "SELECT EXISTS(SELECT 1 FROM collection_items ci JOIN collections c USING(collection_id)
+         WHERE ci.item_id = $1 AND (c.is_public OR c.user_id = $2))",
+        &[&item_id, &user_id],
+    ).await.map_err(|e| AppError::Database(e.to_string()))?.get(0);
+    if !accessible {
+        return Err(AppError::Unauthorized("Access denied".into()));
     }
 
     let result = client
         .query_opt(
-            "SELECT sound_data, mime_type 
-             FROM collection_item_sounds 
-             WHERE item_id = $1",
-            &[&item_id],
+            "SELECT cis.sound_data, cis.mime_type
+             FROM collection_item_sounds cis JOIN collection_items ci ON ci.item_id = cis.item_id
+             JOIN collections c ON c.collection_id = ci.collection_id
+             WHERE cis.item_id = $1 AND (c.is_public OR c.user_id = $2)",
+            &[&item_id, &user_id],
         )
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
@@ -5080,6 +5169,12 @@ pub async fn update_item_images(
         .map_err(|e| AppError::Database(e.to_string()))?;
 
     verify_collection_ownership(&transaction, collection_id, user_id).await?;
+    if transaction.query_opt(
+        "SELECT item_id FROM collection_items WHERE item_id = $1 AND collection_id = $2 FOR UPDATE",
+        &[&item_id, &collection_id],
+    ).await.map_err(|e| AppError::Database(e.to_string()))?.is_none() {
+        return Err(AppError::Unauthorized("Item does not belong to this collection".into()));
+    }
 
     // Update notes if provided
     if let Some(notes) = &req.notes {
@@ -5561,13 +5656,19 @@ pub async fn get_collection_image_bytes(
             "SELECT img.image_data, img.mime_type
              FROM collections c
              INNER JOIN collection_images img ON img.collection_image_id = c.cover_collection_image_id
-             WHERE c.collection_id = $1",
-            &[&collection_id],
+             WHERE c.collection_id = $1 AND (c.is_public OR c.user_id = $2)",
+            &[&collection_id, &user_id],
         )
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
 
-    Ok(img.map(|r| (r.get("image_data"), r.get("mime_type"))))
+    img.map(|row| {
+        normalize_collection_image(
+            &row.get::<_, Vec<u8>>("image_data"),
+            &row.get::<_, String>("mime_type"),
+        )
+    })
+    .transpose()
 }
 
 pub async fn upsert_collection_image(
@@ -6030,4 +6131,33 @@ pub async fn bulk_import_collection_item_media(
         created_items,
         warnings,
     })
+}
+
+#[cfg(test)]
+mod security_media_tests {
+    #[test]
+    fn reject_active_image_documents_and_preserve_rasters_and_vectors() {
+        assert!(
+            super::normalize_collection_image(b"<script>alert(1)</script>", "text/html").is_err()
+        );
+        assert!(
+            super::normalize_collection_image(b"<script>alert(1)</script>", "image/png").is_err()
+        );
+        for svg in [
+            r#"<svg xmlns="http://www.w3.org/2000/svg" onload = "alert(1)"/>"#,
+            r#"<svg xmlns="http://www.w3.org/2000/svg"><foreignObject/></svg>"#,
+            r#"<svg xmlns="http://www.w3.org/2000/svg"><use href="&#106;avascript:alert(1)"/></svg>"#,
+            r#"<svg xmlns="http://www.w3.org/2000/svg"><use href="//evil.example/image"/></svg>"#,
+        ] {
+            assert!(super::normalize_collection_image(svg.as_bytes(), "image/svg+xml").is_err());
+        }
+        let svg = br#"<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><path d="M0 0L10 10"/></svg>"#;
+        assert!(super::normalize_collection_image(svg, "image/svg+xml").is_ok());
+        let image = image::DynamicImage::new_rgb8(2, 2);
+        let mut data = std::io::Cursor::new(Vec::new());
+        image.write_to(&mut data, image::ImageFormat::Png).unwrap();
+        let (bytes, mime) = super::normalize_collection_image(data.get_ref(), "image/png").unwrap();
+        assert_eq!(mime, "image/webp");
+        assert!(image::load_from_memory(&bytes).is_ok());
+    }
 }

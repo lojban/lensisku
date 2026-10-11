@@ -8,7 +8,8 @@ use deadpool_postgres::Pool;
 use jsonwebtoken::{decode, encode, Algorithm, DecodingKey, EncodingKey, Header, Validation};
 use oauth2::{
     basic::BasicClient, AuthUrl, AuthorizationCode, ClientId, ClientSecret, CsrfToken,
-    EndpointNotSet, EndpointSet, RedirectUrl, Scope, TokenResponse, TokenUrl,
+    EndpointNotSet, EndpointSet, PkceCodeChallenge, PkceCodeVerifier, RedirectUrl, Scope,
+    TokenResponse, TokenUrl,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -120,6 +121,7 @@ struct OAuthProfile {
 
 pub struct OAuthAuthorizeResult {
     pub authorize_url: String,
+    pub state: String,
 }
 
 pub struct OAuthCompleteResult {
@@ -299,7 +301,8 @@ pub fn configured_providers() -> Vec<&'static str> {
         .collect()
 }
 
-pub fn authorize_url(
+pub async fn authorize_url(
+    pool: &Pool,
     provider_name: &str,
     return_to: Option<&str>,
 ) -> AppResult<OAuthAuthorizeResult> {
@@ -307,7 +310,28 @@ pub fn authorize_url(
     let config = load_config(provider)?;
     let client = build_oauth_client(provider, &config)?;
     let state = sign_state(provider, sanitize_return_to(return_to))?;
-    let mut request = client.authorize_url(|| CsrfToken::new(state));
+    let claims = verify_state(&state, provider)?;
+    let (challenge, verifier) = PkceCodeChallenge::new_random_sha256();
+    let db = pool.get().await?;
+    db.execute(
+        "DELETE FROM oauth_login_transactions WHERE expires_at < NOW()",
+        &[],
+    )
+    .await?;
+    db.execute(
+        "INSERT INTO oauth_login_transactions (nonce, provider, pkce_verifier, expires_at)
+         VALUES ($1, $2, $3, to_timestamp($4::double precision))",
+        &[
+            &claims.nonce,
+            &provider.as_str(),
+            &verifier.secret(),
+            &(claims.exp as f64),
+        ],
+    )
+    .await?;
+    let mut request = client
+        .authorize_url(|| CsrfToken::new(state.clone()))
+        .set_pkce_challenge(challenge);
     for scope in provider.scopes() {
         request = request.add_scope(Scope::new((*scope).to_string()));
     }
@@ -317,6 +341,7 @@ pub fn authorize_url(
     let (url, _) = request.url();
     Ok(OAuthAuthorizeResult {
         authorize_url: url.to_string(),
+        state,
     })
 }
 
@@ -511,15 +536,9 @@ async fn issue_tokens(
     ip_address: String,
     user_agent: String,
 ) -> AppResult<OAuthCompleteResult> {
-    let mut jwt_session_id = None;
-    match sessions::service::start_session(pool, user.userid, ip_address, user_agent).await {
-        Ok(session) => jwt_session_id = Some(session.session_uuid),
-        Err(e) => log::error!(
-            "Failed to start user session for oauth user_id {}: {}",
-            user.userid,
-            e
-        ),
-    }
+    let session =
+        sessions::service::start_session(pool, user.userid, ip_address, user_agent).await?;
+    let jwt_session_id = Some(session.session_uuid);
     let pair = create_token_pair(pool, user, jwt_session_id).await?;
     Ok(OAuthCompleteResult {
         access_token: pair.access_token,
@@ -545,12 +564,20 @@ pub async fn complete_oauth(
     let provider = parse_provider(provider_name)?;
     let config = load_config(provider)?;
     let claims = verify_state(state, provider)?;
+    let db = pool.get().await?;
+    let pending = db.query_opt(
+        "DELETE FROM oauth_login_transactions WHERE nonce = $1 AND provider = $2 AND expires_at > NOW() RETURNING pkce_verifier",
+        &[&claims.nonce, &provider.as_str()],
+    ).await?.ok_or_else(|| AppError::Auth("OAuth state expired or already used".into()))?;
+    let verifier: String = pending.get(0);
+    drop(db);
     let return_to = sanitize_return_to(claims.return_to.as_deref());
 
     let client = build_oauth_client(provider, &config)?;
     let http = oauth_http_client()?;
     let token_result = client
         .exchange_code(AuthorizationCode::new(code.to_string()))
+        .set_pkce_verifier(PkceCodeVerifier::new(verifier))
         .request_async(&http)
         .await
         .map_err(|e| AppError::Auth(format!("Failed to exchange code for token: {e}")))?;
@@ -586,7 +613,7 @@ pub async fn complete_oauth(
             .await
             .map_err(|e| AppError::Database(e.to_string()))?;
         user
-    } else if let Some(email) = profile.email.as_ref() {
+    } else if let Some(email) = profile.email.as_ref().filter(|_| profile.email_verified) {
         // Same email as an existing account (password or any OAuth): link and log in.
         let existing_email = transaction
             .query_opt(

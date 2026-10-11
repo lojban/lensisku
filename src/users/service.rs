@@ -169,7 +169,7 @@ pub async fn get_public_profile(
     // Get comment count
     let comment_count: i64 = transaction
         .query_one(
-            "SELECT COUNT(*) FROM comments WHERE userid = $1",
+            "SELECT COUNT(*) FROM comments WHERE userid = $1 AND can_read_comment_thread(threadid, NULL)",
             &[&user_id],
         )
         .await?
@@ -478,7 +478,7 @@ pub async fn get_user_comments(
              JOIN users u ON c.userid = u.userid
              LEFT JOIN comment_counters cc ON c.commentid = cc.comment_id
              LEFT JOIN comment_bookmarks cb ON c.commentid = cb.comment_id AND cb.user_id = $1
-             WHERE c.userid = $1
+             WHERE c.userid = $1 AND can_read_comment_thread(c.threadid, NULL)
              ORDER BY c.time DESC
              LIMIT $2 OFFSET $3",
             &[&user_id, &per_page, &offset],
@@ -487,7 +487,7 @@ pub async fn get_user_comments(
 
     let total: i64 = transaction
         .query_one(
-            "SELECT COUNT(*) FROM comments WHERE userid = $1",
+            "SELECT COUNT(*) FROM comments WHERE userid = $1 AND can_read_comment_thread(threadid, NULL)",
             &[&user_id],
         )
         .await?

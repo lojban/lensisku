@@ -65,9 +65,13 @@ fn pdf_image_ids(latex: &str, command: &str) -> Vec<i32> {
 async fn load_pdf_images(
     transaction: &Transaction<'_>,
     latex: &str,
+    allowed_item_ids: &[i32],
 ) -> Result<Vec<PdfExportImage>, Box<dyn Error + Send + Sync>> {
     let definition_ids = pdf_image_ids(latex, "definitionimages");
-    let item_ids = pdf_image_ids(latex, "collectionimages");
+    let item_ids: Vec<i32> = pdf_image_ids(latex, "collectionimages")
+        .into_iter()
+        .filter(|id| allowed_item_ids.contains(id))
+        .collect();
     let mut images = Vec::new();
     if !definition_ids.is_empty() {
         let rows = transaction
@@ -182,11 +186,10 @@ async fn generate_pdf(
     debug!("LaTeX file written to: {:?}", file_path);
 
     // Set HOME to temp dir to avoid permission issues
-    let mut command = Command::new("xelatex");
+    let mut command = crate::utils::tex_sandbox::command("/usr/bin/xelatex", dir_path);
     command
         .current_dir(dir_path)
         .env("HOME", dir_path)
-        // .arg("-no-shell-escape") // Arbitrary command execution is prevented by xelatex by default. See https://github.com/tectonic-typesetting/tectonic/issues/38
         .arg("-interaction=nonstopmode")
         .arg("-halt-on-error")
         .arg(
@@ -1032,7 +1035,20 @@ async fn generate_export(
                 source_langid,
             )
             .await?;
-            let images = load_pdf_images(&transaction, &latex).await?;
+            let allowed_item_ids: Vec<i32> = if let Some(collection_id) = collection_id {
+                transaction
+                    .query(
+                        "SELECT item_id FROM collection_items WHERE collection_id = $1",
+                        &[&collection_id],
+                    )
+                    .await?
+                    .iter()
+                    .map(|row| row.get(0))
+                    .collect()
+            } else {
+                Vec::new()
+            };
+            let images = load_pdf_images(&transaction, &latex, &allowed_item_ids).await?;
             transaction.commit().await?;
             generate_pdf(&latex, &images).await?
         }
@@ -3118,7 +3134,9 @@ async fn finalize_search_export(
             let latex = generate_search_export_latex(&collection_items, &definitions, &lang);
             let mut client = pool.get().await?;
             let transaction = client.transaction().await?;
-            let images = load_pdf_images(&transaction, &latex).await?;
+            let allowed_item_ids: Vec<i32> =
+                collection_items.iter().map(|item| item.item_id).collect();
+            let images = load_pdf_images(&transaction, &latex, &allowed_item_ids).await?;
             transaction.commit().await?;
             generate_pdf(&latex, &images).await?
         }

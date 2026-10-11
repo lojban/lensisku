@@ -67,6 +67,7 @@ pub async fn get_thread_comments(
     }
 
     let (comments, total) = if let Some(thread_id) = thread_id {
+        verify_thread_access(&transaction, thread_id, params.current_user_id).await?;
         // Get all comments in the thread in hierarchical order
         let all_comments = transaction
             .query(
@@ -241,6 +242,22 @@ pub async fn add_comment(params: NewCommentParams) -> Result<Comment, Box<dyn st
         .await?
     };
 
+    verify_thread_access(&transaction, thread_id, Some(params.user_id)).await?;
+    let stored = transaction.query_one("SELECT valsiid, natlangwordid, definitionid, definition_link_id, target_user_id, collection_id FROM threads WHERE threadid = $1", &[&thread_id]).await?;
+    for (column, requested) in [
+        ("valsiid", params.valsi_id),
+        ("natlangwordid", params.natlang_word_id),
+        ("definitionid", params.definition_id),
+        ("definition_link_id", params.definition_link_id),
+        ("target_user_id", params.target_user_id),
+        ("collection_id", params.collection_id),
+    ] {
+        if let Some(requested) = requested.filter(|id| *id > 0) {
+            if stored.get::<_, Option<i32>>(column) != Some(requested) {
+                return Err("Comment context does not match parent thread".into());
+            }
+        }
+    }
     let comment_num: i32 = transaction
         .query_one(
             "SELECT COALESCE(MAX(commentnum), 0) + 1 as next_num
@@ -553,7 +570,7 @@ async fn get_comment_by_id(
              FROM convenientcomments c
              LEFT JOIN comment_counters cc ON c.commentid = cc.comment_id
              LEFT JOIN comment_bookmarks cb ON c.commentid = cb.comment_id AND cb.user_id = $2
-             WHERE c.commentid = $1",
+             WHERE c.commentid = $1 AND can_read_comment_thread(c.threadid, $2)",
             &[&comment_id, &user_id],
         )
         .await?;
@@ -605,7 +622,7 @@ pub async fn get_bookmarked_comments(
     // Get total count
     let total: i64 = transaction
         .query_one(
-            "SELECT COUNT(*) FROM comment_bookmarks WHERE user_id = $1",
+            "SELECT COUNT(*) FROM comment_bookmarks WHERE user_id = $1 AND can_read_comment(comment_id, $1)",
             &[&user_id],
         )
         .await?
@@ -638,7 +655,7 @@ pub async fn get_bookmarked_comments(
              JOIN comment_bookmarks cb ON c.commentid = cb.comment_id
              JOIN threads t ON t.threadid = c.threadid
              LEFT JOIN convenientcomments pc ON c.parentid = pc.commentid
-             WHERE cb.user_id = $1::int4
+             WHERE cb.user_id = $1::int4 AND can_read_comment_thread(c.threadid, $1)
              ORDER BY cb.created_at DESC
              LIMIT $2 OFFSET $3",
             &[&user_id, &per_page, &offset],
@@ -702,6 +719,7 @@ pub async fn toggle_bookmark(
 ) -> Result<(), Box<dyn std::error::Error>> {
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
+    verify_comment_access(&transaction, comment_id, Some(user_id)).await?;
 
     let is_bookmarked = transaction
         .query_opt(
@@ -763,8 +781,8 @@ pub async fn get_user_comments(
     // Get total count
     let total: i64 = transaction
         .query_one(
-            "SELECT COUNT(*) FROM comments WHERE userid = $1",
-            &[&user_id],
+            "SELECT COUNT(*) FROM comments WHERE userid = $1 AND can_read_comment_thread(threadid, $2)",
+            &[&user_id, &current_user_id],
         )
         .await?
         .get(0);
@@ -794,7 +812,7 @@ pub async fn get_user_comments(
              FROM convenientcomments c
              LEFT JOIN comment_counters cc ON c.commentid = cc.comment_id
              LEFT JOIN comment_bookmarks cb ON c.commentid = cb.comment_id AND cb.user_id = $2
-             WHERE c.userid = $1
+             WHERE c.userid = $1 AND can_read_comment_thread(c.threadid, $2)
              ORDER BY c.time DESC
              LIMIT $3 OFFSET $4",
             &[&user_id, &current_user_id, &per_page, &offset],
@@ -862,6 +880,7 @@ pub async fn create_opinion(
 
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
+    verify_comment_access(&transaction, request.comment_id, Some(user_id)).await?;
 
     // Insert the opinion
     let opinion = transaction
@@ -905,7 +924,18 @@ pub async fn set_opinion_vote(
 ) -> Result<(), Box<dyn std::error::Error>> {
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
+    verify_comment_access(&transaction, request.comment_id, Some(user_id)).await?;
 
+    if transaction
+        .query_opt(
+            "SELECT id FROM comment_opinions WHERE id = $1 AND comment_id = $2",
+            &[&request.opinion_id, &request.comment_id],
+        )
+        .await?
+        .is_none()
+    {
+        return Err("Opinion does not belong to the comment".into());
+    }
     let has_voted = transaction
         .query_opt(
             "SELECT 1 FROM comment_opinion_votes
@@ -981,7 +1011,7 @@ pub async fn get_comment_opinions(
             LEFT JOIN comment_opinion_votes cov
                 ON co.id = cov.opinion_id
                 AND cov.user_id = $2
-            WHERE co.comment_id = $1
+            WHERE co.comment_id = $1 AND can_read_comment(co.comment_id, $2)
             ORDER BY co.votes DESC
             LIMIT 5",
             &[&comment_id, &user_id],
@@ -1054,7 +1084,7 @@ pub async fn get_trending_comments(
                 LEFT JOIN comments pc ON c.parentid = pc.commentid
                 LEFT JOIN comment_activity_counters cc ON c.commentid = cc.comment_id
                 LEFT JOIN comment_bookmarks cb ON c.commentid = cb.comment_id AND cb.user_id = $1
-                WHERE c.time > extract(epoch from (now() - make_interval(hours => $2)))::int
+                WHERE can_read_comment_thread(c.threadid, $1) AND c.time > extract(epoch from (now() - make_interval(hours => $2)))::int
                 AND (cc.total_reactions > 0 OR cc.total_replies > 0 OR cc.total_bookmarks > 0)
             )
             SELECT *
@@ -1167,7 +1197,7 @@ async fn compute_top_comments(
                                 LEFT JOIN comments pc ON c.parentid = pc.commentid
                                 LEFT JOIN comment_activity_counters cc ON c.commentid = cc.comment_id
                                 LEFT JOIN comment_bookmarks cb ON c.commentid = cb.comment_id AND cb.user_id = $1
-                                WHERE c.time > extract(epoch from (now() - make_interval(hours => $2)))::int
+                                WHERE can_read_comment_thread(c.threadid, $1) AND c.time > extract(epoch from (now() - make_interval(hours => $2)))::int
                                 AND (cc.total_reactions > 0 OR cc.total_replies > 0 OR cc.total_bookmarks > 0)
                             )
                             SELECT *
@@ -1230,7 +1260,7 @@ async fn compute_top_comments(
     Ok(mapped_comments)
 }
 
-const TOP_COMMENTS_CACHE_KEY: &str = "comments:top:latest";
+const TOP_COMMENTS_CACHE_KEY: &str = "comments:top:public:v2";
 const TOP_COMMENTS_CACHE_TTL: Duration = Duration::from_secs(600);
 
 /// Refreshes the cached top 3 most engaged comments. Called by the background cron.
@@ -1250,17 +1280,26 @@ pub async fn update_top_comments_cache(
 
 /// Returns the cached top 3 comments. The cron keeps this fresh.
 pub async fn get_cached_top_comments(
+    pool: &Pool,
     redis_cache: &RedisCache,
 ) -> Result<Vec<Comment>, Box<dyn std::error::Error>> {
-    Ok(redis_cache
+    let mut comments = redis_cache
         .get::<Vec<Comment>>(TOP_COMMENTS_CACHE_KEY)
         .await?
-        .unwrap_or_default())
+        .unwrap_or_default();
+    if !comments.is_empty() {
+        let ids: Vec<i32> = comments.iter().map(|comment| comment.comment_id).collect();
+        let client = pool.get().await?;
+        let readable: Vec<i32> = client.query("SELECT commentid FROM comments WHERE commentid = ANY($1) AND can_read_comment_thread(threadid, NULL)", &[&ids]).await?.iter().map(|row| row.get(0)).collect();
+        comments.retain(|comment| readable.contains(&comment.comment_id));
+    }
+    Ok(comments)
 }
 
 pub async fn get_comment_stats(
     pool: &Pool,
     comment_id: i32,
+    user_id: Option<i32>,
 ) -> Result<CommentStats, Box<dyn std::error::Error>> {
     let client = pool.get().await?;
 
@@ -1269,8 +1308,8 @@ pub async fn get_comment_stats(
             "SELECT total_bookmarks, total_replies,
                     total_opinions, total_reactions, last_activity_at
              FROM comment_activity_counters
-             WHERE comment_id = $1",
-            &[&comment_id],
+             WHERE comment_id = $1 AND can_read_comment(comment_id, $2)",
+            &[&comment_id, &user_id],
         )
         .await?;
 
@@ -1295,7 +1334,10 @@ pub async fn get_most_bookmarked_comments(
 
     // Get total count first
     let total: i64 = transaction
-        .query_one("SELECT COUNT(*) FROM comments", &[])
+        .query_one(
+            "SELECT COUNT(*) FROM comments WHERE can_read_comment_thread(threadid, $1)",
+            &[&current_user_id],
+        )
         .await?
         .get(0);
 
@@ -1323,6 +1365,7 @@ pub async fn get_most_bookmarked_comments(
              FROM convenientcomments c
              JOIN comment_activity_counters ac ON c.commentid = ac.comment_id
              LEFT JOIN comment_bookmarks cb ON c.commentid = cb.comment_id AND cb.user_id = $1
+             WHERE can_read_comment_thread(c.threadid, $1)
              ORDER BY ac.total_bookmarks DESC
              LIMIT $2 OFFSET $3",
             &[&current_user_id, &per_page, &offset],
@@ -1398,7 +1441,7 @@ pub async fn get_trending_hashtags(
             FROM post_hashtags ph
             JOIN hashtags h ON h.id = ph.hashtag_id
             JOIN comments c ON c.commentid = ph.post_id
-            WHERE to_timestamp(c.time) >= NOW() - ($1 || ' hours')::INTERVAL
+            WHERE can_read_comment_thread(c.threadid, NULL) AND to_timestamp(c.time) >= NOW() - ($1 || ' hours')::INTERVAL
             GROUP BY h.tag
             ORDER BY usage_count DESC
             LIMIT $2
@@ -1439,8 +1482,8 @@ pub async fn get_comments_by_hashtag(
             "SELECT COUNT(*) FROM comments c
              JOIN post_hashtags ph ON c.commentid = ph.post_id
              JOIN hashtags h ON ph.hashtag_id = h.id
-             WHERE h.tag = $1",
-            &[&tag],
+             WHERE h.tag = $1 AND can_read_comment_thread(c.threadid, $2)",
+            &[&tag, &user_id],
         )
         .await?
         .get(0);
@@ -1459,7 +1502,7 @@ pub async fn get_comments_by_hashtag(
             JOIN post_hashtags ph ON c.commentid = ph.post_id
             JOIN hashtags h ON ph.hashtag_id = h.id
             LEFT JOIN comment_bookmarks cb ON c.commentid = cb.comment_id AND cb.user_id = $2
-            WHERE h.tag = $1
+            WHERE h.tag = $1 AND can_read_comment_thread(c.threadid, $2)
             ORDER BY c.time DESC
             LIMIT $3 OFFSET $4
             "#,
@@ -1640,6 +1683,7 @@ pub async fn toggle_reaction(
 
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
+    verify_comment_access(&transaction, comment_id, Some(user_id)).await?;
 
     // Check if reaction exists
     let exists = transaction
@@ -1777,7 +1821,7 @@ async fn search_comments_inner(
     } else {
         "(c.subject ILIKE $2 OR c.plain_content ILIKE $2 OR u.username ILIKE $2)"
     };
-    let base_query = format!("{base_query}{predicate}");
+    let base_query = format!("{base_query}{predicate} AND can_read_comment_thread(c.threadid, $1)");
 
     let mut conditions = Vec::new();
     let mut query_params: Vec<&(dyn tokio_postgres::types::ToSql + Sync)> = vec![&current_user_id];
@@ -1955,7 +1999,7 @@ pub async fn get_my_reactions(
     // Get total count of distinct comments where user has reactions
     let total: i64 = transaction
         .query_one(
-            "SELECT COUNT(DISTINCT comment_id) FROM comment_reactions WHERE user_id = $1",
+            "SELECT COUNT(DISTINCT comment_id) FROM comment_reactions WHERE user_id = $1 AND can_read_comment(comment_id, $1)",
             &[&user_id],
         )
         .await?
@@ -1987,7 +2031,7 @@ pub async fn get_my_reactions(
              LEFT JOIN comment_counters cc ON c.commentid = cc.comment_id
              LEFT JOIN comment_bookmarks cb ON c.commentid = cb.comment_id AND cb.user_id = $1
              JOIN threads t ON t.threadid = c.threadid
-             WHERE c.commentid IN (
+             WHERE can_read_comment_thread(c.threadid, $1) AND c.commentid IN (
                  SELECT DISTINCT comment_id
                  FROM comment_reactions
                  WHERE user_id = $1
@@ -2221,7 +2265,7 @@ pub(crate) async fn list_threads(
             &format!(
                 "SELECT COUNT(t.threadid)
              FROM threads t
-             WHERE t.total_comments > 0
+             WHERE t.total_comments > 0 AND can_read_comment_thread(t.threadid, NULL)
              {source_filter}"
             ),
             &[],
@@ -2279,7 +2323,7 @@ pub(crate) async fn list_threads(
                 LEFT JOIN collections col ON t.collection_id = col.collection_id
                 LEFT JOIN comment_activity_counters cc ON cc.comment_id = t.last_comment_id
                 LEFT JOIN comments lc ON lc.commentid = t.last_comment_id
-                WHERE t.total_comments > 0
+                WHERE t.total_comments > 0 AND can_read_comment_thread(t.threadid, NULL)
                 {source_filter}
                 ORDER BY {} {}
                 LIMIT $1 OFFSET $2",
@@ -2384,7 +2428,10 @@ pub async fn list_comments(
 
     // Get total count
     let total: i64 = transaction
-        .query_one("SELECT COUNT(*) FROM comments", &[])
+        .query_one(
+            "SELECT COUNT(*) FROM comments WHERE can_read_comment_thread(threadid, $1)",
+            &[&current_user_id],
+        )
         .await?
         .get(0);
 
@@ -2417,6 +2464,7 @@ pub async fn list_comments(
         LEFT JOIN definitions d ON t.definitionid = d.definitionid
         LEFT JOIN comment_activity_counters cc ON c.commentid = cc.comment_id
         LEFT JOIN comment_bookmarks cb ON c.commentid = cb.comment_id AND cb.user_id = $1
+        WHERE can_read_comment_thread(c.threadid, $1)
         ORDER BY c.time {}
         LIMIT $2 OFFSET $3",
         sort_dir
@@ -2472,4 +2520,36 @@ pub async fn list_comments(
         page,
         per_page,
     })
+}
+
+async fn verify_thread_access(
+    client: &impl deadpool_postgres::GenericClient,
+    thread_id: i32,
+    user_id: Option<i32>,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let allowed: bool = client
+        .query_one(
+            "SELECT can_read_comment_thread($1, $2)",
+            &[&thread_id, &user_id],
+        )
+        .await?
+        .get(0);
+    if !allowed {
+        return Err("Access denied".into());
+    }
+    Ok(())
+}
+async fn verify_comment_access(
+    client: &impl deadpool_postgres::GenericClient,
+    comment_id: i32,
+    user_id: Option<i32>,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let allowed: bool = client
+        .query_one("SELECT can_read_comment($1, $2)", &[&comment_id, &user_id])
+        .await?
+        .get(0);
+    if !allowed {
+        return Err("Access denied".into());
+    }
+    Ok(())
 }

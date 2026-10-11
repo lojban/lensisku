@@ -803,6 +803,8 @@ pub async fn list_flashcards(
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
 
+    verify_collection_read_access(&transaction, query.collection_id, Some(user_id)).await?;
+
     let fsrs = FSRS::new(&[])?;
 
     // Get base flashcards including free content
@@ -2213,35 +2215,19 @@ fn calculate_similarity(s1: &str, s2: &str) -> f32 {
         return 0.0;
     }
 
-    let mut matrix = vec![vec![0; len2 + 1]; len1 + 1];
-
-    for (i, row) in matrix.iter_mut().enumerate() {
-        row[0] = i;
-    }
-
-    for (j, cell) in matrix[0].iter_mut().enumerate() {
-        *cell = j;
-    }
-
+    let mut previous: Vec<usize> = (0..=len2).collect();
+    let mut current = vec![0; len2 + 1];
     for i in 1..=len1 {
+        current[0] = i;
         for j in 1..=len2 {
-            let cost = if s1_chars[i - 1] == s2_chars[j - 1] {
-                0
-            } else {
-                1
-            };
-
-            matrix[i][j] = std::cmp::min(
-                std::cmp::min(
-                    matrix[i - 1][j] + 1, // deletion
-                    matrix[i][j - 1] + 1, // insertion
-                ),
-                matrix[i - 1][j - 1] + cost, // substitution
-            );
+            let cost = usize::from(s1_chars[i - 1] != s2_chars[j - 1]);
+            current[j] = (previous[j] + 1)
+                .min(current[j - 1] + 1)
+                .min(previous[j - 1] + cost);
         }
+        std::mem::swap(&mut current, &mut previous);
     }
-
-    let distance = matrix[len1][len2];
+    let distance = previous[len2];
     let max_len = std::cmp::max(len1, len2);
 
     if max_len == 0 {
@@ -2321,6 +2307,7 @@ pub async fn review_flashcard_serverside(
         }
     };
 
+    validate_fill_in_answers(&req.answer, &expected_raw)?;
     let provided = req.answer.trim().to_lowercase();
 
     // Calculate similarity, handling semicolon-separated answers for free content
@@ -2956,6 +2943,19 @@ pub async fn add_cards_to_level(
     let collection_id = get_collection_id(&transaction, level_id).await?;
     verify_collection_ownership(&transaction, collection_id, user_id).await?;
 
+    for flashcard_id in &req.flashcard_ids {
+        if transaction
+            .query_opt(
+                "SELECT id FROM flashcards WHERE id = $1 AND collection_id = $2 FOR SHARE",
+                &[flashcard_id, &collection_id],
+            )
+            .await?
+            .is_none()
+        {
+            return Err("Flashcard does not belong to the level's collection".into());
+        }
+    }
+
     // Get max position first
     let max_position = transaction
         .query_one(
@@ -3194,6 +3194,8 @@ async fn get_level_cards(
     level_id: i32,
     user_id: Option<i32>,
 ) -> Result<Vec<LevelCardResponse>, Box<dyn std::error::Error>> {
+    let collection_id = get_collection_id(transaction, level_id).await?;
+    verify_collection_read_access(transaction, collection_id, user_id).await?;
     let mut cards = Vec::new();
 
     let rows = transaction
@@ -3208,7 +3210,8 @@ async fn get_level_cards(
                 COUNT(frh.rating) as total_attempts,
                 MAX(frh.review_time) as last_reviewed_at
          FROM flashcard_level_items fli
-         JOIN flashcards f ON fli.flashcard_id = f.id
+         JOIN flashcard_levels fl ON fl.level_id = fli.level_id
+         JOIN flashcards f ON fli.flashcard_id = f.id AND f.collection_id = fl.collection_id
          JOIN collection_items ci ON f.item_id = ci.item_id
          LEFT JOIN definitions d ON ci.definition_id = d.definitionid
          LEFT JOIN valsi v ON d.valsiid = v.valsiid
@@ -3604,4 +3607,34 @@ pub async fn remove_card_from_level(
 
     transaction.commit().await?;
     Ok(())
+}
+
+fn validate_fill_in_answers(
+    answer: &str,
+    expected: &str,
+) -> Result<(), Box<dyn std::error::Error>> {
+    if answer.len() > 2048
+        || expected.len() > 8192
+        || expected.split(';').count() > 32
+        || expected.split(';').any(|answer| answer.len() > 2048)
+    {
+        return Err("Fill-in answers exceed the supported grading limit".into());
+    }
+    Ok(())
+}
+#[cfg(test)]
+mod security_grading_tests {
+    #[test]
+    fn grading_limits_both_sources_and_alternatives() {
+        assert!(super::validate_fill_in_answers(&"x".repeat(100_000), "a").is_err());
+        assert!(super::validate_fill_in_answers("a", &"x".repeat(100_000)).is_err());
+        assert!(super::validate_fill_in_answers("a", &"a;".repeat(33)).is_err());
+        assert!(super::validate_fill_in_answers("日本語", "日本語;にほんご").is_ok());
+        assert_eq!(
+            super::calculate_similarity("kitten", "sitting"),
+            1.0 - 3.0 / 7.0
+        );
+        assert_eq!(super::calculate_similarity(" 日本語 ", "日本語"), 1.0);
+        assert_eq!(super::calculate_similarity("", "a"), 0.0);
+    }
 }

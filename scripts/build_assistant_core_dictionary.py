@@ -26,6 +26,7 @@ Environment:
 
 Run from repo root:
   python3 scripts/build_assistant_core_dictionary.py
+  python3 scripts/build_assistant_core_dictionary.py --instructions-only  # preserve bundled reference
 """
 
 from __future__ import annotations
@@ -42,6 +43,7 @@ ARCHIVE = REPO / "archive" / "dict"
 SCRIPT_DIR = Path(__file__).resolve().parent
 # Editable LLM instructions (jbovlaste behavior); concatenated with reference data below.
 ASSISTANT_STATIC_INSTRUCTIONS_PATH = SCRIPT_DIR / "assistant_system_instructions_static.txt"
+ASSISTANT_VOCABULARY_SKILL_PATH = REPO / "src" / "assistant" / "skills" / "lojban-vocabulary" / "SKILL.md"
 OUT = REPO / "src" / "assistant" / "assistant_system_prompt.txt"
 
 GISMU_PATH = ARCHIVE / "gismu.tsv"
@@ -824,8 +826,31 @@ def load_phrase_pairs_from_tsv(path: Path) -> list[tuple[str, str]]:
     return rows
 
 
+def compose_prompt(reference: str) -> str:
+    static = ASSISTANT_STATIC_INSTRUCTIONS_PATH.read_text(encoding="utf-8").rstrip()
+    skill = ASSISTANT_VOCABULARY_SKILL_PATH.read_text(encoding="utf-8").rstrip()
+    return (
+        static
+        + "\n\n## Embedded skill: lojban-vocabulary\n\n"
+        + skill
+        + "\n\n## Core reference dictionary\n\n"
+        + reference
+    )
+
+
 def main() -> int:
-    for p in (GISMU_PATH, CMAVO_PATH, ASSISTANT_STATIC_INSTRUCTIONS_PATH):
+    # Refresh behavioral instructions in checkouts without the dictionary source TSVs.
+    # Preserve the checked-in reference bytes, including corpus sample phrases.
+    if sys.argv[1:] == ["--instructions-only"]:
+        marker = "## Core reference dictionary\n\n"
+        existing = OUT.read_text(encoding="utf-8")
+        if marker not in existing:
+            print(f"missing reference section: {OUT}", file=sys.stderr)
+            return 1
+        OUT.write_text(compose_prompt(existing.split(marker, 1)[1]), encoding="utf-8")
+        print(f"Updated instructions in {OUT} (reference preserved)")
+        return 0
+    for p in (GISMU_PATH, CMAVO_PATH, ASSISTANT_STATIC_INSTRUCTIONS_PATH, ASSISTANT_VOCABULARY_SKILL_PATH):
         if not p.is_file():
             print(f"missing: {p}", file=sys.stderr)
             return 1
@@ -870,8 +895,6 @@ def main() -> int:
     general_n = MUPLIS_PHRASE_TOTAL - len(math_phrases)
     general_phrases = select_muplis_diverse(general_pool, general_n)
 
-    static = ASSISTANT_STATIC_INSTRUCTIONS_PATH.read_text(encoding="utf-8").rstrip()
-
     ref_lines: list[str] = list(REFERENCE_INTRO_LINES)
     ref_lines.extend(
         [
@@ -905,12 +928,7 @@ def main() -> int:
     for en, lo in math_phrases:
         ref_lines.append(f"{en}{COL_SEP}{lo}")
 
-    body = (
-        static
-        + "\n\n## Core reference dictionary\n\n"
-        + "\n".join(ref_lines)
-        + "\n"
-    )
+    body = compose_prompt("\n".join(ref_lines) + "\n")
     nlines = len(body.splitlines())
 
     OUT.parent.mkdir(parents=True, exist_ok=True)

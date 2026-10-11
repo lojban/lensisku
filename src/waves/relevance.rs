@@ -93,6 +93,7 @@ async fn search_with_embedding(
                 &minimum_similarity,
                 &per_page,
                 &offset,
+                &current_user_id,
             ],
         )
         .await?;

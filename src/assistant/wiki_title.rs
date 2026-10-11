@@ -102,6 +102,7 @@ pub fn sanitize_wiki_title(raw: &str) -> String {
 async fn load_comment_wiki_title_context(
     pool: &Pool,
     comment_id: i32,
+    user_id: i32,
 ) -> Result<CommentWikiTitleContext, AppError> {
     let client = pool
         .get()
@@ -113,8 +114,8 @@ async fn load_comment_wiki_title_context(
                     t.valsiid, t.definitionid
              FROM convenientcomments c
              JOIN threads t ON t.threadid = c.threadid
-             WHERE c.commentid = $1",
-            &[&comment_id],
+             WHERE c.commentid = $1 AND can_read_comment_thread(c.threadid, $2)",
+            &[&comment_id, &user_id],
         )
         .await
         .map_err(|e| AppError::Database(e.to_string()))?
@@ -315,12 +316,13 @@ pub async fn suggest_wiki_title_from_comment(
     pool: &Pool,
     redis: Option<&RedisCache>,
     comment_id: i32,
+    user_id: i32,
 ) -> Result<WikiTitleFromCommentResponse, AppError> {
     if comment_id <= 0 {
         return Err(AppError::BadRequest("comment_id must be positive".into()));
     }
 
-    let context = load_comment_wiki_title_context(pool, comment_id).await?;
+    let context = load_comment_wiki_title_context(pool, comment_id, user_id).await?;
     let fallback = heuristic_title(&context.subject, &context.body);
 
     let title = match suggest_title_with_ai(&context, redis).await? {

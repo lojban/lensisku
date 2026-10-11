@@ -260,7 +260,11 @@ impl EmailService {
             ));
         }
         if let Some(def) = new_definition {
-            let trunc = if def.len() > 400 { &def[..400] } else { def };
+            let trunc = if def.len() > 400 {
+                utf8_prefix(def, 400)
+            } else {
+                def
+            };
             text_body.push_str(&format!("{}\n", t(lang, "text_new_def")));
             text_body.push_str(trunc);
             if def.len() > 400 {
@@ -280,7 +284,7 @@ impl EmailService {
                     text_body.push_str(&format!("  - {} ({}): ", c.field, label));
                     if let Some(v) = &c.new_value {
                         let t = if v.len() > 80 {
-                            format!("{}...", &v[..80])
+                            format!("{}...", utf8_prefix(v, 80))
                         } else {
                             v.clone()
                         };
@@ -288,7 +292,7 @@ impl EmailService {
                     } else if let Some(v) = &c.old_value {
                         text_body.push_str(&t(lang, "text_removed_val"));
                         let t = if v.len() > 60 {
-                            format!("{}...", &v[..60])
+                            format!("{}...", utf8_prefix(v, 60))
                         } else {
                             v.clone()
                         };
@@ -615,4 +619,26 @@ pub async fn send_notification_emails(pool: &deadpool_postgres::Pool) -> Result<
         .await?;
 
     Ok(())
+}
+
+fn utf8_prefix(value: &str, max_bytes: usize) -> &str {
+    let mut end = value.len().min(max_bytes);
+    while !value.is_char_boundary(end) {
+        end -= 1;
+    }
+    &value[..end]
+}
+
+#[cfg(test)]
+mod security_tests {
+    #[test]
+    fn notification_prefix_handles_multibyte_boundaries() {
+        for cap in 0..12 {
+            let text = "aé日本語🙂";
+            let prefix = super::utf8_prefix(text, cap);
+            assert!(prefix.len() <= cap);
+            assert!(text.starts_with(prefix));
+        }
+        assert_eq!(super::utf8_prefix("abcdef", 3), "abc");
+    }
 }
