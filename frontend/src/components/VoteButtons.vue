@@ -16,13 +16,7 @@
         :aria-expanded="open"
         :aria-busy="isLoading"
       >
-        <span class="relative h-[21px] w-5 shrink-0" aria-hidden="true">
-          <ThumbsDown
-            class="absolute -bottom-px right-0 h-3.5 w-3.5 fill-white"
-            :stroke-width="1.6"
-          />
-          <ThumbsUp class="vote-thumb-front absolute left-0 -top-px h-4 w-4" :stroke-width="1.6" />
-        </span>
+        <VoteIcon />
         <span class="min-w-[1ch] text-xs font-semibold tabular-nums" aria-live="polite">{{
           score
         }}</span>
@@ -60,6 +54,7 @@ import { useI18n } from 'vue-i18n'
 
 import { voteDefinition } from '@/api'
 import { useAuth } from '@/composables/useAuth'
+import VoteIcon from '@/components/icons/VoteIcon.vue'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -148,10 +143,6 @@ const handleVote = async (downvote = false) => {
 </script>
 
 <style scoped>
-.vote-thumb-front {
-  fill: #fff;
-}
-
 .vote-trigger--up {
   color: #15803d;
 }
