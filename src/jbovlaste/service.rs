@@ -6034,16 +6034,15 @@ pub async fn get_recent_changes(
                         change_type: change_type.clone(),
                         word: row.get("word"),
                         content: row.get("content"),
-                        valsi_id: if row.get::<_, i32>("valsiid") == 0 {
-                            None
-                        } else {
-                            Some(row.get("valsiid"))
-                        },
-                        lang_id: if row.get::<_, i32>("langid") == 0 {
-                            None
-                        } else {
-                            Some(row.get("langid"))
-                        },
+                        // Feed comments can have no dictionary context. The feed query
+                        // deliberately LEFT JOINs valsi/definitions so those comments
+                        // remain visible, making both columns nullable.
+                        valsi_id: row
+                            .get::<_, Option<i32>>("valsiid")
+                            .filter(|&id| id != 0),
+                        lang_id: row
+                            .get::<_, Option<i32>>("langid")
+                            .filter(|&id| id != 0),
                         natlang_word_id: row
                             .get::<_, Option<i32>>("natlangwordid")
                             .filter(|&id| id != 0),
