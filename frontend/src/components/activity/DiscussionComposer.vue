@@ -30,7 +30,7 @@
 </template>
 <script setup lang="ts">
 import { invalidateActivityFeed } from '@/composables/useActivityFeed'
-import { computed, defineAsyncComponent, ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { addComment } from '@/api'
@@ -43,7 +43,7 @@ import {
   clearDiscussionDraft,
   type DiscussionDraft,
 } from '@/utils/discussionDraft'
-const CommentForm = defineAsyncComponent(() => import('@/components/CommentForm.vue'))
+import CommentForm from '@/components/CommentForm.vue'
 const { t } = useI18n()
 const router = useRouter()
 const localePath = useLocalePath()
