@@ -736,6 +736,10 @@ const getInitialSearchMode = () => {
 }
 
 const searchMode = ref(getInitialSearchMode())
+// Child filter controls can emit while their initial URL/default state is
+// being hydrated. Do not turn that setup event into a search URL; a bare home
+// route should remain the activity feed.
+const isHydratingHomeFilters = ref(true)
 
 const getInitialSimilarDefinitionId = (): number | null => {
   const raw = route.query.definition_id
@@ -1313,6 +1317,8 @@ const fetchData = async () => {
 
 // Filter handling
 const handleFilterChange = () => {
+  if (isHydratingHomeFilters.value) return
+
   // Keep searchMode in sync with the isSemantic toggle before building the URL,
   // so updateUrlWithFilters writes the correct mode in a single push.
   if (searchMode.value === 'semantic' || searchMode.value === 'dictionary') {
@@ -1603,6 +1609,10 @@ onMounted(async () => {
   } finally {
     // Ensure skeleton is hidden if try block finishes early or has issues not caught by catch
     isInitialLoading.value = false
+    // Let the filter panel mount and absorb its initial props before treating
+    // emitted changes as user edits that should be written to the URL.
+    await nextTick()
+    isHydratingHomeFilters.value = false
 
     // Focus search input if on home page
     if (
@@ -1630,6 +1640,10 @@ watch(
 watch(
   () => filters.value.isSemantic,
   (newVal) => {
+    if (isHydratingHomeFilters.value) {
+      searchMode.value = newVal ? 'semantic' : 'dictionary'
+      return
+    }
     if (searchMode.value === 'semantic' || searchMode.value === 'dictionary') {
       const newMode = newVal ? 'semantic' : 'dictionary'
       if (searchMode.value !== newMode) {

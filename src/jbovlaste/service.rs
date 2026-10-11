@@ -49,7 +49,38 @@ fn sanitize_wiki_markdown(markdown: &str) -> String {
         ]));
         builder
     });
-    SANITIZER.clean(markdown).to_string()
+    let mut prefixes = Vec::new();
+    let mut protected = String::with_capacity(markdown.len());
+    for line in markdown.split_inclusive('\n') {
+        let content = line.strip_suffix('\n').unwrap_or(line);
+        let leading_spaces = content.len() - content.trim_start_matches(' ').len();
+        if leading_spaces <= 3 {
+            let quote_start = leading_spaces;
+            let quote_end = content[quote_start..]
+                .bytes()
+                .take_while(|byte| *byte == b'>')
+                .count()
+                + quote_start;
+            if quote_end > quote_start {
+                let marker = format!("WIKIMDQUOTE{}TOKEN", prefixes.len());
+                prefixes.push((marker.clone(), content[..quote_end].to_string()));
+                protected.push_str(&marker);
+                protected.push_str(&content[quote_end..]);
+            } else {
+                protected.push_str(content);
+            }
+        } else {
+            protected.push_str(content);
+        }
+        if line.ends_with('\n') {
+            protected.push('\n');
+        }
+    }
+    let mut sanitized = SANITIZER.clean(&protected).to_string();
+    for (marker, prefix) in prefixes {
+        sanitized = sanitized.replace(&marker, &prefix);
+    }
+    sanitized
 }
 
 /// The old jbovlaste form required place markup for predicate word types.
@@ -2581,13 +2612,6 @@ async fn upsert_wiki_in_transaction(
         sanitized_definition = body.clone();
     }
 
-    let options = MathJaxValidationOptions { use_tectonic: true };
-    if source_langid == 1 || source_langid == 58 {
-        validate_mathjax(&sanitized_definition, &options)
-            .await
-            .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)?;
-    }
-
     // Get or create a valsi of type `wiki`.
     let valsi_id = match transaction
         .query_opt(
@@ -2650,12 +2674,17 @@ async fn upsert_wiki_in_transaction(
 
     let definition_id = if let Some(row) = existing_definition {
         let definition_id: i32 = row.get("definitionid");
+        let metadata = request
+            .metadata
+            .clone()
+            .unwrap_or_else(|| serde_json::json!({}));
         transaction
             .execute(
                 "UPDATE definitions
                  SET definition = $1, langid = $2, notes = NULL, etymology = NULL,
                      selmaho = NULL, jargon = NULL, time = $3, owner_only = $4,
-                     embedding = NULL
+                     embedding = NULL,
+                     metadata = COALESCE(metadata, '{}'::jsonb) || $6::jsonb
                  WHERE definitionid = $5",
                 &[
                     &sanitized_definition,
@@ -2663,6 +2692,7 @@ async fn upsert_wiki_in_transaction(
                     &(Utc::now().timestamp() as i32),
                     &request.owner_only.unwrap_or(false),
                     &definition_id,
+                    &metadata,
                 ],
             )
             .await?;
@@ -4305,7 +4335,9 @@ pub async fn update_definition(
     let options = MathJaxValidationOptions { use_tectonic: true };
 
     // Only validate MathJax if source lang is Lojban (1) or not set
-    if source_langid.is_none() || source_langid == Some(1) {
+    if request.is_wiki != Some(true)
+        && (source_langid.is_none() || source_langid == Some(1))
+    {
         validate_mathjax(&combined_text, &options)
             .await
             .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)?;

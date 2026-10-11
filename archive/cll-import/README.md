@@ -5,7 +5,7 @@ Imports the complete 21-chapter Markdown corpus as a separate table of contents 
 Requires Python 3. To import into a remote instance through its API:
 
 ```sh
-python3 scripts/import_cll/import_cll.py \
+python3 archive/cll-import/import_cll.py \
   --api-url https://lensisku-dev.lojban.org/api --username gleki
 ```
 
@@ -14,13 +14,13 @@ The script prompts for the password without echoing it. Automation can supply `C
 For direct database imports, `psql` and a Lensisku database with current migrations are also required. For local Compose:
 
 ```sh
-DATABASE_URL='postgres://lojban:password@localhost:5432/lojban_lens' python3 scripts/import_cll/import_cll.py
+DATABASE_URL='postgres://lojban:password@localhost:5432/lojban_lens' python3 archive/cll-import/import_cll.py
 ```
 
 If `psql` is only available inside the local database container, pass the full command instead:
 
 ```sh
-python3 scripts/import_cll/import_cll.py \
+python3 archive/cll-import/import_cll.py \
   --psql-command 'docker exec -i lenpostgres psql -U lojban -d lojban_lens'
 ```
 

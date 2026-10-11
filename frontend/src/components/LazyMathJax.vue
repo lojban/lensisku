@@ -16,6 +16,11 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  /** Keep LaTeX-like text literal for Markdown surfaces such as native wiki pages. */
+  enableMath: {
+    type: Boolean,
+    default: true,
+  },
   langId: {
     type: String,
     default: '',
@@ -196,7 +201,9 @@ const renderContent = async () => {
       return '\n\n' + '<br>'.repeat(match.length - 2) + '\n\n'
     })
 
-    const { text: mdInput, parts: mathParts } = protectMathForMarkdown(finalContent)
+    const { text: mdInput, parts: mathParts } = props.enableMath
+      ? protectMathForMarkdown(finalContent)
+      : { text: finalContent, parts: [] }
     finalContent = mdInput
 
     const extensions = props.enableCurlyLinks
@@ -282,7 +289,10 @@ const renderContent = async () => {
     })
   }
 
-  if (finalContent.includes('$') || finalContent.includes('\\[') || finalContent.includes('\\(')) {
+  if (
+    props.enableMath &&
+    (finalContent.includes('$') || finalContent.includes('\\[') || finalContent.includes('\\('))
+  ) {
     queueForRendering(contentRef.value)
   }
 }

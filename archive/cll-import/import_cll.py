@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Import the CLL as navigable native wiki pages (TOC, chapters, and sections)."""
 from __future__ import annotations
-import argparse, base64, getpass, json, os, re, shlex, subprocess, sys
+import argparse, base64, getpass, hashlib, json, os, re, shlex, subprocess, sys
 from dataclasses import dataclass
 from pathlib import Path
 from urllib.error import HTTPError
@@ -51,6 +51,16 @@ def make_pages(source: Path) -> list[Page]:
 
     # Rewrite the original corpus links using exact source anchor ownership.
     def fix_links(body: str, owner_title: str) -> str:
+        # An anchor-only HTML line immediately followed by a Markdown
+        # blockquote makes CommonMark treat the quote marker as part of the
+        # same HTML block. Marked then emits a literal `&gt;` inside a <p>.
+        # Keep the anchors as HTML, but start the quote in a fresh Markdown
+        # block so examples render as semantic <blockquote> elements.
+        body = re.sub(
+            r'(?m)^((?:<span id="[^"]+"></span>)+)\n(?=>)',
+            r'\1\n\n',
+            body,
+        )
         # CLL examples are written as consecutive Markdown blockquote lines. A
         # normal Markdown soft break renders as a space, which collapses the
         # Lojban line, literal gloss, and translation into one run-on line.
@@ -131,6 +141,19 @@ def import_via_api(pages: list[Page], api_url: str, username: str | None) -> int
             # Do not print responses from authentication, which could contain secrets.
             challenge = error.headers.get('cf-mitigated') == 'challenge'
             detail = ' (Cloudflare challenge blocks API access)' if challenge else ''
+            if path != '/auth/login' and not challenge:
+                try:
+                    response_detail = error.read(2048).decode('utf-8', errors='replace')
+                    try:
+                        parsed_detail = json.loads(response_detail)
+                        response_detail = str(parsed_detail.get('error') or parsed_detail.get('message') or response_detail)
+                    except (ValueError, AttributeError):
+                        pass
+                    response_detail = re.sub(r'\s+', ' ', response_detail).strip()[:500]
+                    if response_detail:
+                        detail += f' ({response_detail})'
+                except OSError:
+                    pass
             raise RuntimeError(f'{method} {path}: HTTP {error.code}{detail}') from None
 
     # Check API reachability before asking for credentials or writing pages.
@@ -153,16 +176,29 @@ def import_via_api(pages: list[Page], api_url: str, username: str | None) -> int
     for index, page in enumerate(pages, 1):
         path = '/jbovlaste/valsi/' + quote(page.title, safe='') + '/wiki'
         existing = request('GET', path, missing_ok=True)
+        digest = hashlib.sha256(page.body.encode('utf-8')).hexdigest()
         if existing and (existing.get('metadata') or {}).get('source') != 'CLL':
             raise RuntimeError(f'{page.title}: existing page is not marked as a CLL import; refusing to overwrite')
-        if existing and existing.get('definition') == page.body:
+        existing_metadata = existing.get('metadata') or {} if existing else {}
+        source_anchors = set(IDS.findall(page.body))
+        stored_anchors = set(IDS.findall(existing.get('definition', ''))) if existing else set()
+        expected_quotes = sum(line.startswith('>') for line in page.body.splitlines())
+        stored_definition = existing.get('definition', '') if existing else ''
+        stored_quotes = sum(line.startswith('>') for line in stored_definition.splitlines())
+        quotes_preserved = stored_quotes >= expected_quotes
+        if existing and source_anchors.issubset(stored_anchors) and quotes_preserved and (
+            existing_metadata.get('cll_import_sha256') == digest
+            or existing.get('definition') == page.body
+        ):
             skipped += 1
             print(f'[{index}/{len(pages)}] Unchanged: {page.title}', flush=True)
             continue
         payload = {
             'word': page.title, 'definition': page.body, 'lang_id': 2,
             'source_langid': 1, 'is_wiki': True, 'owner_only': False,
-            'metadata': {'source': 'CLL', 'import': 'cll-markdown'},
+            'metadata': {
+                'source': 'CLL', 'import': 'cll-markdown', 'cll_import_sha256': digest,
+            },
             'commit_message': 'Imported CLL content',
         }
         if existing:
@@ -175,6 +211,10 @@ def import_via_api(pages: list[Page], api_url: str, username: str | None) -> int
             raise RuntimeError(f'{page.title}: saved page identity verification failed')
         if not set(IDS.findall(page.body)).issubset(set(IDS.findall(stored['definition']))):
             raise RuntimeError(f'{page.title}: API did not preserve the source anchors')
+        expected_quotes = sum(line.startswith('>') for line in page.body.splitlines())
+        stored_quotes = sum(line.startswith('>') for line in stored['definition'].splitlines())
+        if stored_quotes < expected_quotes:
+            raise RuntimeError(f'{page.title}: API did not preserve Markdown blockquote markers')
         saved += 1
         print(f'[{index}/{len(pages)}] Imported and verified: {page.title}', flush=True)
     print(f'Complete: {saved} imported, {skipped} unchanged, {len(pages)} total.', flush=True)
@@ -213,10 +253,11 @@ def main() -> int:
     ]
     for index, page in enumerate(pages, 1):
         content = b64(page.body)
+        digest = hashlib.sha256(page.body.encode('utf-8')).hexdigest()
         title = page.title.replace("'", "''")
         sql += [
             f"INSERT INTO valsi (word,typeid,userid,time,source_langid) VALUES ('{title}',16,{args.user_id},extract(epoch from now())::int,1) ON CONFLICT (word,source_langid) WHERE typeid=16 DO UPDATE SET word=EXCLUDED.word RETURNING valsiid \\gset v{index}_",
-            f"INSERT INTO definitions (langid,valsiid,definitionnum,definition,userid,time,metadata) VALUES (2,:v{index}_valsiid,1,convert_from(decode('{content}','base64'),'UTF8'),{args.user_id},extract(epoch from now())::int,'{{\"source\":\"CLL\",\"import\":\"cll-markdown\"}}'::jsonb) ON CONFLICT (langid,valsiid,definitionnum) DO UPDATE SET definition=EXCLUDED.definition,userid=EXCLUDED.userid,time=EXCLUDED.time,metadata=EXCLUDED.metadata RETURNING definitionid \\gset d{index}_",
+            f"INSERT INTO definitions (langid,valsiid,definitionnum,definition,userid,time,metadata) VALUES (2,:v{index}_valsiid,1,convert_from(decode('{content}','base64'),'UTF8'),{args.user_id},extract(epoch from now())::int,'{{\"source\":\"CLL\",\"import\":\"cll-markdown\",\"cll_import_sha256\":\"{digest}\"}}'::jsonb) ON CONFLICT (langid,valsiid,definitionnum) DO UPDATE SET definition=EXCLUDED.definition,userid=EXCLUDED.userid,time=EXCLUDED.time,metadata=EXCLUDED.metadata RETURNING definitionid \\gset d{index}_",
             f"INSERT INTO definition_versions (definition_id,langid,valsiid,definition,user_id,message,word) SELECT :d{index}_definitionid,2,:v{index}_valsiid,convert_from(decode('{content}','base64'),'UTF8'),{args.user_id},'Imported CLL content','{title}' WHERE NOT EXISTS (SELECT 1 FROM definition_versions WHERE definition_id=:d{index}_definitionid AND definition=convert_from(decode('{content}','base64'),'UTF8'));",
         ]
     sql.append('COMMIT;')

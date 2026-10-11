@@ -1,6 +1,12 @@
 <template>
   <div class="wiki-article-body" @click="onBodyClick">
-    <LazyMathJax :content="renderedMarkdown" :enable-markdown="true" @rendered="emit('rendered')" />
+    <LazyMathJax
+      :content="renderedMarkdown"
+      :enable-markdown="true"
+      :enable-math="false"
+      :enable-curly-links="false"
+      @rendered="emit('rendered')"
+    />
   </div>
 </template>
 
@@ -99,6 +105,27 @@ function onBodyClick(event: MouseEvent) {
 .wiki-article-body :deep(li) {
   display: list-item !important;
   margin: 0.25rem 0;
+}
+
+.wiki-article-body :deep(pre) {
+  display: block;
+  overflow-x: auto;
+  margin: 1rem 0;
+  padding: 0.85rem 1rem;
+  border-radius: 0.5rem;
+  background: rgb(241 245 249);
+  color: rgb(30 41 59);
+}
+
+.wiki-article-body :deep(pre code),
+.wiki-article-body :deep(:not(pre) > code) {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.wiki-article-body :deep(:not(pre) > code) {
+  border-radius: 0.25rem;
+  background: rgb(241 245 249);
+  padding: 0.1rem 0.25rem;
 }
 
 .wiki-article-body :deep(blockquote) {
