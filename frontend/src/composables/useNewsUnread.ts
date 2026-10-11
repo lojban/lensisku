@@ -8,7 +8,7 @@ export const NEWS_LAST_OPENED_KEY = 'news_last_opened_at'
 /** Max changes fetched when computing the unread badge. */
 const UNREAD_FETCH_LIMIT = 100
 
-/** Shared across App / Home / RecentChanges (module singleton). */
+/** Shared across App / Home / Activity (module singleton). */
 const unreadCount = ref<number | null>(null)
 const isFetching = ref(false)
 
@@ -55,14 +55,13 @@ export function useNewsUnread() {
     if (isFetching.value) return
     isFetching.value = true
     try {
-      const response = await getRecentChanges(
-        { limit: UNREAD_FETCH_LIMIT, types: 'news' },
-        signal
-      )
+      const response = await getRecentChanges({ limit: UNREAD_FETCH_LIMIT, types: 'news' }, signal)
       const changes = (response.data?.changes ?? []) as Array<{ time?: number }>
       // Opening News while this request is in flight advances the read marker.
       const latestSince = readLastOpenedAt() ?? since
-      unreadCount.value = changes.filter((c) => typeof c.time === 'number' && c.time > latestSince).length
+      unreadCount.value = changes.filter(
+        (c) => typeof c.time === 'number' && c.time > latestSince
+      ).length
     } catch (e: unknown) {
       const name = e && typeof e === 'object' && 'name' in e ? (e as { name?: string }).name : ''
       if (name !== 'AbortError' && name !== 'CanceledError') {

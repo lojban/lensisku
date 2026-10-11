@@ -556,7 +556,7 @@ const hasDiscussionContext = computed(
 
 const showTopLevelComposer = computed(() => auth.state.isLoggedIn && hasDiscussionContext.value)
 
-/** Scroll the comments body only (same pattern as RecentChanges). */
+/** Scroll the comments body only. */
 function scrollCommentsBodyToTop() {
   if (typeof document === 'undefined') return
   if (props.embedded) return

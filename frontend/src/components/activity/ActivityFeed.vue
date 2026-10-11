@@ -21,15 +21,16 @@
       >
         {{ t('activityFeed.newActivity') }}
       </button>
-      <div
-        v-if="loading && !rows.length"
-        class="space-y-3"
-        role="status"
-        :aria-label="t('activityFeed.loading')"
-      >
-        <div v-for="n in 3" :key="n" class="h-36 rounded-xl bg-gray-100 animate-pulse" />
-      </div>
       <div class="space-y-3">
+        <LiveChatCard v-if="filter === 'all'" />
+        <div
+          v-if="loading && !rows.length"
+          class="space-y-3"
+          role="status"
+          :aria-label="t('activityFeed.loading')"
+        >
+          <div v-for="n in 3" :key="n" class="h-36 rounded-xl bg-gray-100 animate-pulse" />
+        </div>
         <ActivityCard v-for="row in rows" :key="row.event_id" :row="row" />
       </div>
       <div
@@ -62,6 +63,7 @@ import { Button } from '@packages/ui'
 import { Bell, BookOpen, FileText, List, MessageSquare } from '@lucide/vue'
 import DiscussionComposer from './DiscussionComposer.vue'
 import ActivityCard from './ActivityCard.vue'
+import LiveChatCard from './LiveChatCard.vue'
 import NewsActivityFeed from './NewsActivityFeed.vue'
 import TabbedPageHeader from '@/components/TabbedPageHeader.vue'
 import { useActivityFeed } from '@/composables/useActivityFeed'

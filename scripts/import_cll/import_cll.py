@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
 """Import the CLL as navigable native wiki pages (TOC, chapters, and sections)."""
 from __future__ import annotations
-import argparse, base64, os, re, shlex, subprocess, sys
+import argparse, base64, getpass, json, os, re, shlex, subprocess, sys
 from dataclasses import dataclass
 from pathlib import Path
+from urllib.error import HTTPError
+from urllib.parse import quote, urlparse
+from urllib.request import Request, urlopen
 
 SECTION = re.compile(r'<span id="sec-(\d+)-(\d+)"></span>')
 IDS = re.compile(r'<span id="([^"]+)"></span>')
@@ -104,15 +107,99 @@ def make_pages(source: Path) -> list[Page]:
         pages.append(Page(title, f'{nav}\n\n{fix_links(body, title)}\n\n---\n\n{nav}'))
     return pages
 
+def import_via_api(pages: list[Page], api_url: str, username: str | None) -> int:
+    """Use native wiki upserts; read each saved page back before continuing."""
+    api_url = api_url.rstrip('/')
+    if urlparse(api_url).scheme != 'https' and urlparse(api_url).hostname not in ('localhost', '127.0.0.1'):
+        raise ValueError('remote API imports require HTTPS')
+    token = os.environ.get('CLL_ACCESS_TOKEN')
+
+    def request(method: str, path: str, payload: dict | None = None, missing_ok: bool = False):
+        headers = {'Accept': 'application/json', 'User-Agent': 'Lensisku-CLL-Importer/1.0'}
+        if token:
+            headers['Authorization'] = 'Bearer ' + token
+        data = None
+        if payload is not None:
+            headers['Content-Type'] = 'application/json'
+            data = json.dumps(payload).encode('utf-8')
+        try:
+            with urlopen(Request(api_url + path, data=data, headers=headers, method=method), timeout=120) as response:
+                return json.load(response)
+        except HTTPError as error:
+            if missing_ok and error.code == 404:
+                return None
+            # Do not print responses from authentication, which could contain secrets.
+            challenge = error.headers.get('cf-mitigated') == 'challenge'
+            detail = ' (Cloudflare challenge blocks API access)' if challenge else ''
+            raise RuntimeError(f'{method} {path}: HTTP {error.code}{detail}') from None
+
+    # Check API reachability before asking for credentials or writing pages.
+    languages = request('GET', '/language/languages')
+    if not any(item.get('id', item.get('langid')) == 2 for item in languages):
+        raise RuntimeError('API does not expose English language ID 2')
+    if not token:
+        if not username:
+            raise ValueError('pass --username or set CLL_USERNAME (or CLL_ACCESS_TOKEN)')
+        password = os.environ.get('CLL_PASSWORD')
+        if not password:
+            if not sys.stdin.isatty():
+                raise ValueError('a password prompt requires a terminal; set CLL_PASSWORD or CLL_ACCESS_TOKEN for automation')
+            password = getpass.getpass('Lensisku password: ')
+        auth = request('POST', '/auth/login', {'username_or_email': username, 'password': password})
+        token = auth['access_token']
+        del password, auth
+
+    saved = skipped = 0
+    for index, page in enumerate(pages, 1):
+        path = '/jbovlaste/valsi/' + quote(page.title, safe='') + '/wiki'
+        existing = request('GET', path, missing_ok=True)
+        if existing and (existing.get('metadata') or {}).get('source') != 'CLL':
+            raise RuntimeError(f'{page.title}: existing page is not marked as a CLL import; refusing to overwrite')
+        if existing and existing.get('definition') == page.body:
+            skipped += 1
+            print(f'[{index}/{len(pages)}] Unchanged: {page.title}', flush=True)
+            continue
+        payload = {
+            'word': page.title, 'definition': page.body, 'lang_id': 2,
+            'source_langid': 1, 'is_wiki': True, 'owner_only': False,
+            'metadata': {'source': 'CLL', 'import': 'cll-markdown'},
+            'commit_message': 'Imported CLL content',
+        }
+        if existing:
+            payload['expected_time'] = existing['time']
+        result = request('POST', '/jbovlaste/valsi', payload)
+        if not result.get('success'):
+            raise RuntimeError(f'{page.title}: API rejected import: {result.get("error", "unknown error")}')
+        stored = request('GET', path)
+        if stored.get('definitionid') != result['definition_id'] or stored.get('valsiword') != page.title:
+            raise RuntimeError(f'{page.title}: saved page identity verification failed')
+        if not set(IDS.findall(page.body)).issubset(set(IDS.findall(stored['definition']))):
+            raise RuntimeError(f'{page.title}: API did not preserve the source anchors')
+        saved += 1
+        print(f'[{index}/{len(pages)}] Imported and verified: {page.title}', flush=True)
+    print(f'Complete: {saved} imported, {skipped} unchanged, {len(pages)} total.', flush=True)
+    return 0
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--source', type=Path, default=Path('/home/user/lojban/korpora2/cll'))
     parser.add_argument('--dsn', default=os.environ.get('DATABASE_URL'))
     parser.add_argument('--psql-command', default=os.environ.get('CLL_PSQL_COMMAND'), help='full psql command, for example: docker exec -i lenpostgres psql -U lojban -d lojban_lens')
     parser.add_argument('--user-id', type=int, default=int(os.environ.get('CLL_IMPORT_USER_ID', '1')))
-    parser.add_argument('--dry-run', action='store_true', help='print SQL without connecting')
+    parser.add_argument('--dry-run', action='store_true', help='print SQL or the API import plan without connecting')
+    parser.add_argument('--api-url', help='API base URL, e.g. https://lensisku-dev.lojban.org/api')
+    parser.add_argument('--username', default=os.environ.get('CLL_USERNAME'))
     args = parser.parse_args()
     pages = make_pages(args.source)
+    if args.api_url:
+        if args.dry_run:
+            print(json.dumps({'api_url': args.api_url, 'pages': [page.title for page in pages]}, indent=2))
+            return 0
+        try:
+            return import_via_api(pages, args.api_url, args.username)
+        except (RuntimeError, ValueError, OSError) as error:
+            print(f'Import stopped: {error}. Re-running resumes by skipping unchanged pages.', file=sys.stderr)
+            return 1
     if not args.dry_run and not args.dsn and not args.psql_command:
         parser.error('set DATABASE_URL, pass --dsn, or provide --psql-command')
     sql = [

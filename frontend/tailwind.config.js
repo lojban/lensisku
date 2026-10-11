@@ -626,27 +626,11 @@ export default {
         '.discussion-threaded-toggle--disabled': {
           '@apply cursor-not-allowed opacity-40': {},
         },
-        /** Activity “thread” row with blue hover border. */
-        '.surface-activity-row': {
-          '@apply space-y-2 bg-white p-4 rounded-lg border border-gray-200 hover:border-blue-200 transition-colors cursor-pointer':
-            {},
-        },
         /** Tight stacked RecentChangeItem / CommentItem rows (home landing feeds). */
         '.home-feed-list': {
           '@apply flex flex-col gap-1': {},
           '& .comment-item': {
             '@apply my-0': {},
-          },
-        },
-        /** Indented quote / snippet in activity lists. */
-        '.activity-quote-snippet': {
-          '@apply text-sm text-gray-600 border-l-2 border-gray-300 pl-2 [&_img]:max-h-48 [&_img]:object-contain':
-            {},
-          '& .mathjax-content': {
-            '@apply line-clamp-4': {},
-            '& > p': {
-              '@apply inline': {},
-            },
           },
         },
         /** Small “streak / correct” pill (flashcard / study UI). */
@@ -719,8 +703,7 @@ export default {
         },
         /** Comment row header: avatar | username+date | #id (middle truncates). */
         '.comment-header': {
-          '@apply grid grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-2 min-w-0 w-full':
-            {},
+          '@apply grid grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-2 min-w-0 w-full': {},
         },
         '.comment-header-main': {
           '@apply min-w-0 w-full overflow-hidden': {},
@@ -1042,7 +1025,7 @@ export default {
         '.card-footer-inner': {
           '@apply flex flex-wrap items-center justify-between gap-2': {},
         },
-        /** Unread count pip on nav icons (News / Recent). */
+        /** Unread count pip on nav icons (News / Activity). */
         '.nav-unread-badge': {
           '@apply absolute -top-1 -right-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-xs font-medium text-white':
             {},
@@ -1055,7 +1038,6 @@ export default {
          * Use with route meta.fullHeight so the page fills main and only the body scrolls.
          */
         '.feed-page': {
-          '--feed-chat-block': '18svh',
           '@apply relative flex h-full min-h-0 w-full flex-1 flex-col': {},
         },
         '.feed-page__header': {
@@ -1101,35 +1083,30 @@ export default {
           '@apply flex max-w-full shrink-0 items-center justify-center gap-2': {},
           width: 'max-content',
         },
-        /** Live chat: fixed viewport slice inside the footer; messages scroll inside. */
-        '.live-chat-dock': {
-          '@apply grid w-full shrink-0 overflow-hidden border-t border-gray-200 bg-white': {},
-          height: 'var(--feed-chat-block)',
-          maxHeight: 'var(--feed-chat-block)',
-          gridTemplateRows: 'auto minmax(0, 1fr)',
+        /** Live chat card at the top of the All activity feed. */
+        '.live-chat-card': {
+          '@apply w-full min-w-0 overflow-hidden rounded-lg border border-gray-200 bg-white': {},
         },
-        '.live-chat-dock__social': {
-          '@apply flex w-full min-h-0 items-center gap-2 border-b border-gray-100 px-3 py-1.5': {},
+        '.live-chat-card__social': {
+          '@apply flex w-full min-h-0 flex-wrap items-center gap-2 border-b border-gray-100 px-3 py-2':
+            {},
         },
-        '.live-chat-dock__social-scroll': {
+        '.live-chat-card__social-scroll': {
           '@apply flex min-w-0 flex-1 items-center gap-2 overflow-x-auto': {},
         },
-        '.live-chat-dock__label': {
-          '@apply shrink-0 text-xs font-medium italic text-blue-500': {},
+        '.live-chat-card__label': {
+          '@apply shrink-0 text-sm font-medium text-blue-600': {},
         },
-        '.live-chat-dock__messages': {
-          '@apply min-h-0 w-full space-y-1 overflow-y-auto overscroll-y-contain px-3 py-2': {},
+        '.live-chat-card__messages': {
+          '@apply max-h-64 w-full space-y-1 overflow-y-auto overscroll-y-contain px-3 py-3': {},
         },
-        '.live-chat-dock__empty': {
-          '@apply text-sm text-gray-500': {},
-        },
-        '.live-chat-dock__row': {
+        '.live-chat-card__row': {
           '@apply break-words text-sm leading-snug': {},
         },
-        '.live-chat-dock__author': {
+        '.live-chat-card__author': {
           '@apply font-medium text-blue-600': {},
         },
-        '.live-chat-dock__text': {
+        '.live-chat-card__text': {
           '@apply ml-1 text-gray-700': {},
         },
         '.navbar-item-badge-wrap': {
@@ -1209,15 +1186,7 @@ export default {
         '.skeleton-bone--soft': {
           '@apply rounded bg-gray-100': {},
         },
-        /** Matches DefinitionCard chrome (border + shadow + padding shell). */
-        '.skeleton-definition-card': {
-          '@apply w-full overflow-hidden bg-white border rounded-lg shadow': {},
-        },
-        /** Matches CommentItem / RecentChangeItem chrome (`p-3 my-2` + border). */
-        '.skeleton-comment-item': {
-          '@apply bg-white border rounded-lg p-3 my-2 min-w-0 max-w-full overflow-hidden': {},
-        },
-        /** Matches `.surface-activity-row` without hover/cursor (loading state). */
+        /** Shared activity loading rows (Me / contributions pages). */
         '.skeleton-activity-row': {
           '@apply space-y-2 bg-white p-4 rounded-lg border border-gray-200': {},
         },

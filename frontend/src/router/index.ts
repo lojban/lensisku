@@ -239,16 +239,6 @@ const baseRoutes: Array<RouteRecordRaw> = [
     meta: upsertPageMeta,
   },
   {
-    path: '/recent',
-    name: 'RecentChanges',
-    component: () => import('../pages/RecentChanges.vue'),
-    meta: {
-      fullHeight: true,
-      hideFooter: true,
-      hidePageFooter: true,
-    },
-  },
-  {
     path: '/definition/:id/history',
     name: 'VersionHistory',
     component: () => import('../pages/VersionHistory.vue'),
