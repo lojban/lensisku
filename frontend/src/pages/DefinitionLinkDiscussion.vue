@@ -130,6 +130,7 @@
       <!-- New top-level comment form -->
       <div v-if="showTopLevelForm" class="p-6 bg-blue-50/30 border-b border-gray-100">
         <CommentForm
+          autofocus
           :is-submitting="isSubmitting"
           :initial-values="newComment"
           @submit="submitComment"
@@ -167,6 +168,7 @@
                 >
                   <div v-if="replyToId === comment.comment_id" class="mt-4 ml-4">
                     <CommentForm
+                      autofocus
                       :is-submitting="isSubmitting"
                       :initial-values="newComment"
                       is-reply

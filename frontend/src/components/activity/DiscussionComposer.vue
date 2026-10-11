@@ -15,6 +15,7 @@
       <CommentForm
         v-else
         :key="editorKey"
+        autofocus
         :initial-values="initialValues"
         optional-title
         require-body

@@ -113,6 +113,7 @@ onMounted(async () => {
   crepe.editor.action((ctx) => {
     const view = ctx.get(editorViewCtx)
     if (!view?.dom) return
+    if (props.autofocus) view.focus()
     const linkMarkType = view.state.schema.marks.link
     if (!linkMarkType) return
     const handler = (e) => {
@@ -156,6 +157,7 @@ onUnmounted(() => {
 
 const props = defineProps({
   formId: { type: String, default: undefined },
+  autofocus: { type: Boolean, default: false },
   hideSubmit: { type: Boolean, default: false },
   optionalTitle: { type: Boolean, default: false },
   requireBody: { type: Boolean, default: false },

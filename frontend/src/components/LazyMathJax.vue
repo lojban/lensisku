@@ -271,6 +271,11 @@ const renderContent = async () => {
     const parsed = mdParser.parse(finalContent)
     finalContent = typeof parsed === 'string' ? parsed : await parsed
     finalContent = restoreMathAfterMarkdown(finalContent, mathParts)
+    if (!props.preserveMultipleEmptyLines) {
+      // Empty Markdown paragraphs can otherwise render as visible blank blocks
+      // such as <p><br><br></p> when imported content contains stray breaks.
+      finalContent = finalContent.replace(/<p>(?:\s*<br\s*\/?>\s*)+<\/p>/gi, '')
+    }
   }
 
   // Apply highlighting if searchTerm is provided

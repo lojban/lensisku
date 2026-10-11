@@ -262,6 +262,7 @@
                   />
                   <div v-if="replyToId === comment.comment_id" class="ml-4">
                     <CommentForm
+                      autofocus
                       :is-submitting="isSubmitting"
                       :initial-values="newComment"
                       :is-reply="true"
@@ -290,6 +291,7 @@
                   />
                   <div v-if="replyToId === comment.comment_id" class="ml-4">
                     <CommentForm
+                      autofocus
                       :is-submitting="isSubmitting"
                       :initial-values="newComment"
                       :is-reply="true"

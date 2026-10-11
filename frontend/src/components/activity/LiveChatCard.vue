@@ -1,17 +1,28 @@
 <template>
-  <article v-if="messageStack.length" class="live-chat-card" :aria-label="t('footer.liveChat')">
-    <div class="live-chat-card__social">
-      <SocialLinks class="live-chat-card__social-scroll" :buttons="true" />
-      <span class="live-chat-card__label">{{ t('footer.liveChat') }}</span>
+  <article
+    v-if="messageStack.length"
+    class="bg-white border rounded-lg p-3 hover:border-blue-300 transition-colors min-w-48"
+    :aria-label="t('footer.liveChat')"
+  >
+    <div class="flex flex-wrap items-center justify-between gap-2">
+      <span
+        class="inline-block px-2 py-1 text-xs font-medium rounded-full bg-indigo-100 text-indigo-800"
+      >
+        {{ t('footer.liveChat') }}
+      </span>
+      <SocialLinks class="max-w-full" :buttons="true" />
     </div>
-    <div ref="listEl" class="live-chat-card__messages">
+    <div
+      ref="listEl"
+      class="mt-2 max-h-80 w-full space-y-1 overflow-y-auto overscroll-y-contain rounded bg-gray-50 p-2"
+    >
       <div
         v-for="(msg, index) in messageStack"
         :key="`${msg.w}-${index}-${msg.d.slice(0, 24)}`"
-        class="live-chat-card__row"
+        class="break-words text-sm leading-snug"
       >
-        <span class="live-chat-card__author">{{ msg.w }}:</span>
-        <span class="live-chat-card__text">{{ msg.d }}</span>
+        <span class="font-medium text-blue-600">{{ msg.w }}:</span>
+        <span class="ml-1 text-gray-700">{{ msg.d }}</span>
       </div>
     </div>
   </article>

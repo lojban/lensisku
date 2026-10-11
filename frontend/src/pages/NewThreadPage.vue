@@ -31,6 +31,7 @@
     <CommentForm
       v-else
       form-id="new-discussion-form"
+      autofocus
       hide-submit
       class="discussion-page-editor mb-0"
       :initial-values="initialValues"

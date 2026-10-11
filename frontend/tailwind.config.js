@@ -1083,32 +1083,6 @@ export default {
           '@apply flex max-w-full shrink-0 items-center justify-center gap-2': {},
           width: 'max-content',
         },
-        /** Live chat card at the top of the All activity feed. */
-        '.live-chat-card': {
-          '@apply w-full min-w-0 overflow-hidden rounded-lg border border-gray-200 bg-white': {},
-        },
-        '.live-chat-card__social': {
-          '@apply flex w-full min-h-0 flex-wrap items-center gap-2 border-b border-gray-100 px-3 py-2':
-            {},
-        },
-        '.live-chat-card__social-scroll': {
-          '@apply flex min-w-0 flex-1 items-center gap-2 overflow-x-auto': {},
-        },
-        '.live-chat-card__label': {
-          '@apply shrink-0 text-sm font-medium text-blue-600': {},
-        },
-        '.live-chat-card__messages': {
-          '@apply max-h-64 w-full space-y-1 overflow-y-auto overscroll-y-contain px-3 py-3': {},
-        },
-        '.live-chat-card__row': {
-          '@apply break-words text-sm leading-snug': {},
-        },
-        '.live-chat-card__author': {
-          '@apply font-medium text-blue-600': {},
-        },
-        '.live-chat-card__text': {
-          '@apply ml-1 text-gray-700': {},
-        },
         '.navbar-item-badge-wrap': {
           '@apply relative inline-flex items-center': {},
         },

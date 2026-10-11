@@ -4,9 +4,10 @@ from __future__ import annotations
 import argparse, base64, getpass, hashlib, json, os, re, shlex, subprocess, sys
 from dataclasses import dataclass
 from pathlib import Path
-from urllib.error import HTTPError
+from urllib.error import HTTPError, URLError
 from urllib.parse import quote, urlparse
 from urllib.request import Request, urlopen
+import time
 
 SECTION = re.compile(r'<span id="sec-(\d+)-(\d+)"></span>')
 IDS = re.compile(r'<span id="([^"]+)"></span>')
@@ -136,18 +137,31 @@ def import_via_api(pages: list[Page], api_url: str, username: str | None) -> int
         if payload is not None:
             headers['Content-Type'] = 'application/json'
             data = json.dumps(payload).encode('utf-8')
-        try:
-            with urlopen(Request(api_url + path, data=data, headers=headers, method=method), timeout=120) as response:
-                return json.load(response)
-        except HTTPError as error:
-            if missing_ok and error.code == 404:
+        http_error = None
+        for attempt in range(4):
+            try:
+                with urlopen(Request(api_url + path, data=data, headers=headers, method=method), timeout=120) as response:
+                    return json.load(response)
+            except HTTPError as error:
+                if error.code in (502, 503, 504, 520, 522, 524) and attempt < 3:
+                    time.sleep(2 ** attempt)
+                    continue
+                http_error = error
+                break
+            except (URLError, TimeoutError, OSError):
+                if attempt < 3:
+                    time.sleep(2 ** attempt)
+                    continue
+                raise
+        if http_error is not None:
+            if missing_ok and http_error.code == 404:
                 return None
             # Do not print responses from authentication, which could contain secrets.
-            challenge = error.headers.get('cf-mitigated') == 'challenge'
+            challenge = http_error.headers.get('cf-mitigated') == 'challenge'
             detail = ' (Cloudflare challenge blocks API access)' if challenge else ''
             if path != '/auth/login' and not challenge:
                 try:
-                    response_detail = error.read(2048).decode('utf-8', errors='replace')
+                    response_detail = http_error.read(2048).decode('utf-8', errors='replace')
                     try:
                         parsed_detail = json.loads(response_detail)
                         response_detail = str(parsed_detail.get('error') or parsed_detail.get('message') or response_detail)
@@ -158,7 +172,7 @@ def import_via_api(pages: list[Page], api_url: str, username: str | None) -> int
                         detail += f' ({response_detail})'
                 except OSError:
                     pass
-            raise RuntimeError(f'{method} {path}: HTTP {error.code}{detail}') from None
+            raise RuntimeError(f'{method} {path}: HTTP {http_error.code}{detail}') from None
 
     # Check API reachability before asking for credentials or writing pages.
     languages = request('GET', '/language/languages')
@@ -233,14 +247,17 @@ def main() -> int:
     parser.add_argument('--dry-run', action='store_true', help='print SQL or the API import plan without connecting')
     parser.add_argument('--api-url', help='API base URL, e.g. https://lensisku-dev.lojban.org/api')
     parser.add_argument('--username', default=os.environ.get('CLL_USERNAME'))
+    parser.add_argument('--start-index', type=int, default=1, help='1-based page index to begin at (use to resume from a known verified point)')
     args = parser.parse_args()
     pages = make_pages(args.source)
+    if not 1 <= args.start_index <= len(pages):
+        parser.error(f'--start-index must be between 1 and {len(pages)}')
     if args.api_url:
         if args.dry_run:
-            print(json.dumps({'api_url': args.api_url, 'pages': [page.title for page in pages]}, indent=2))
+            print(json.dumps({'api_url': args.api_url, 'pages': [page.title for page in pages[args.start_index - 1:]]}, indent=2))
             return 0
         try:
-            return import_via_api(pages, args.api_url, args.username)
+            return import_via_api(pages[args.start_index - 1:], args.api_url, args.username)
         except (RuntimeError, ValueError, OSError) as error:
             print(f'Import stopped: {error}. Re-running resumes by skipping unchanged pages.', file=sys.stderr)
             return 1
