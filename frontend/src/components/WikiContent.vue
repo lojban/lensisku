@@ -5,6 +5,7 @@
       :enable-markdown="true"
       :enable-math="false"
       :enable-curly-links="false"
+      :preserve-multiple-empty-lines="false"
       @rendered="emit('rendered')"
     />
   </div>

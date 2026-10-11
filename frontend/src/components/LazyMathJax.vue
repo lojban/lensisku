@@ -16,6 +16,11 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  /** Preserve extra blank lines as visible breaks when the content format needs them. */
+  preserveMultipleEmptyLines: {
+    type: Boolean,
+    default: true,
+  },
   /** Keep LaTeX-like text literal for Markdown surfaces such as native wiki pages. */
   enableMath: {
     type: Boolean,
@@ -195,11 +200,15 @@ const renderContent = async () => {
   if (props.enableMarkdown) {
     finalContent = normalizeLinkAnchors(finalContent)
 
-    // Preserve multiple empty lines by converting them to <br> tags.
-    // marked will collapse \n\n into paragraph separations and ignore extra \n's.
-    finalContent = finalContent.replace(/\n{3,}/g, (match) => {
-      return '\n\n' + '<br>'.repeat(match.length - 2) + '\n\n'
-    })
+    if (props.preserveMultipleEmptyLines) {
+      // Some Markdown surfaces use extra blank lines as intentional spacing.
+      // Wiki content follows standard Markdown whitespace behavior instead.
+      finalContent = finalContent.replace(/\n{3,}/g, (match) => {
+        return '\n\n' + '<br>'.repeat(match.length - 2) + '\n\n'
+      })
+    } else {
+      finalContent = finalContent.replace(/\n{3,}/g, '\n\n')
+    }
 
     const { text: mdInput, parts: mathParts } = props.enableMath
       ? protectMathForMarkdown(finalContent)

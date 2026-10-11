@@ -10,8 +10,6 @@ dist
 .vite-ssg-temp
 node_modules
 archive/*
-!archive/cll-import/
-!archive/cll-import/**
 .specstory/*
 .cursor/skills/*
 

@@ -51,6 +51,10 @@ def make_pages(source: Path) -> list[Page]:
 
     # Rewrite the original corpus links using exact source anchor ownership.
     def fix_links(body: str, owner_title: str) -> str:
+        # The renderer normally preserves runs of 3+ newlines as visible <br>s.
+        # CLL source uses blank lines as Markdown paragraph separators, so keep
+        # one separator and avoid importing visually empty paragraphs.
+        body = re.sub(r'\n{3,}', '\n\n', body)
         # An anchor-only HTML line immediately followed by a Markdown
         # blockquote makes CommonMark treat the quote marker as part of the
         # same HTML block. Marked then emits a literal `&gt;` inside a <p>.
