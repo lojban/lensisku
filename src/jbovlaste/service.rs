@@ -1,7 +1,9 @@
 use crate::utils::remove_html_tags;
 use crate::search_helpers::{self, DictionarySearchPatterns};
+use ammonia::Builder as AmmoniaBuilder;
 use camxes_rs::camxes::peg::grammar::Peg;
 use chrono::TimeZone;
+use once_cell::sync::Lazy;
 use serde_json::json;
 use std::collections::{BTreeMap, HashMap, HashSet};
 use std::env;
@@ -30,6 +32,25 @@ use vlazba::{implicit_four_letter_gismu_rafsi, lujvo_rafsi, trivial_expansion_ke
 
 pub const PLACE_SPAN_REQUIRED_ERROR: &str =
     "Definition must contain at least one $...$ place span for this word type.";
+
+/// Keep the small safe HTML subset used by wiki Markdown imports. The generic
+/// dictionary sanitizer removes every tag, which destroys wiki anchors, line
+/// breaks, and tables before the Markdown renderer sees them.
+fn sanitize_wiki_markdown(markdown: &str) -> String {
+    static SANITIZER: Lazy<AmmoniaBuilder<'static>> = Lazy::new(|| {
+        let mut builder = AmmoniaBuilder::default();
+        builder.tags(HashSet::from([
+            "a", "br", "em", "s", "span", "strong", "sub", "sup", "table", "tbody", "td",
+            "th", "tr",
+        ]));
+        builder.tag_attributes(HashMap::from([
+            ("a", HashSet::from(["href"])),
+            ("span", HashSet::from(["id"])),
+        ]));
+        builder
+    });
+    SANITIZER.clean(markdown).to_string()
+}
 
 /// The old jbovlaste form required place markup for predicate word types.
 fn requires_place_span(type_id: i16) -> bool {
@@ -2548,7 +2569,7 @@ async fn upsert_wiki_in_transaction(
     request: &AddDefinitionRequest,
     redis_cache: &RedisCache,
 ) -> Result<(String, i32, Option<String>), Box<dyn std::error::Error>> {
-    let mut sanitized_definition = sanitize_html(&request.definition);
+    let mut sanitized_definition = sanitize_wiki_markdown(&request.definition);
     let word = normalize_wiki_title(&request.word);
     let source_langid = request.source_langid.unwrap_or(1);
     let redirect = request
@@ -4132,7 +4153,11 @@ pub async fn update_definition(
     request: &UpdateDefinitionRequest,
     redis_cache: &RedisCache,
 ) -> Result<Option<String>, Box<dyn std::error::Error>> {
-    let mut sanitized_definition = sanitize_html(&request.definition);
+    let mut sanitized_definition = if request.is_wiki == Some(true) {
+        sanitize_wiki_markdown(&request.definition)
+    } else {
+        sanitize_html(&request.definition)
+    };
     let sanitized_notes = request.notes.as_ref().map(|n| sanitize_html(n));
     let sanitized_etymology = request.etymology.as_ref().map(|e| sanitize_html(e));
     let sanitized_selmaho = request.selmaho.as_ref().map(|s| sanitize_html(s));

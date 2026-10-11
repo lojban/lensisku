@@ -9,7 +9,7 @@ python3 scripts/import_cll/import_cll.py \
   --api-url https://lensisku-dev.lojban.org/api --username gleki
 ```
 
-The script prompts for the password without echoing it. Automation can supply `CLL_USERNAME` and `CLL_PASSWORD`, or `CLL_ACCESS_TOKEN`; credentials are never written to files. It uses authenticated native wiki upserts, includes CLL metadata and version messages, and reads saved pages back to verify their titles and anchors. Existing pages without CLL metadata are rejected to avoid overwriting unrelated content. Re-running skips unchanged pages and resumes after a failure. API mode uses the server's normal permissions, validation, and notifications. `--dry-run` with `--api-url` lists planned titles without connecting.
+The script prompts for the password without echoing it. Automation can supply `CLL_USERNAME` and `CLL_PASSWORD`, or `CLL_ACCESS_TOKEN`; credentials are never written to files. It uses authenticated native wiki upserts, includes CLL metadata and version messages, and reads saved pages back to verify their titles and anchors. Existing pages without CLL metadata are rejected to avoid overwriting unrelated content. Re-running skips unchanged pages and resumes after a failure. API mode uses the server's normal permissions, validation, and notifications. The server must include the native wiki safe-HTML sanitizer update so CLL anchors, line breaks, and tables survive saving; the importer verifies anchors after each page and stops at the first loss. `--dry-run` with `--api-url` lists planned titles without connecting.
 
 For direct database imports, `psql` and a Lensisku database with current migrations are also required. For local Compose:
 
