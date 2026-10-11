@@ -5,7 +5,6 @@ pub mod kokoro_tts_singleton;
 mod kokoro_voice_gguf;
 pub mod lojban_ipa;
 pub mod openrouter_models;
-pub mod tex_sandbox;
 
 use actix_web::{HttpResponse, ResponseError};
 use ammonia::Builder as AmmoniaBuilder;

@@ -834,7 +834,6 @@ fn extract_latex_error_from_log(log: &str) -> Option<String> {
     }
 }
 
-/// Preserve the TeX diagnostic when available and report compiler failures otherwise.
 #[cfg(test)]
 fn handle_tectonic_failure(
     log_content: &str,
@@ -858,9 +857,10 @@ fn latex_document_for_math(span: &str) -> String {
     )
 }
 
-/// Use the installed TeX Live files. Tectonic's default bundle can fetch from
-/// the network and leave a definition save waiting indefinitely on a cold cache.
+/// Validate with the system xelatex command supplied by TeX Live.
 async fn validate_with_tex(span: &str) -> Result<(), MathJaxValidationError> {
+    use tokio::process::Command;
+
     let dir = tempfile::tempdir()
         .map_err(|e| MathJaxValidationError::Tectonic(format!("TeX temp directory: {e}")))?;
     tokio::fs::write(
@@ -870,45 +870,39 @@ async fn validate_with_tex(span: &str) -> Result<(), MathJaxValidationError> {
     .await
     .map_err(|e| MathJaxValidationError::Tectonic(format!("TeX input: {e}")))?;
 
-    for engine in ["xelatex", "pdflatex"] {
-        let engine_path = format!("/usr/bin/{engine}");
-        if !std::path::Path::new(&engine_path).exists() {
-            continue;
+    let mut command = Command::new("xelatex");
+    command
+        .args([
+            "-halt-on-error",
+            "-interaction=nonstopmode",
+            "-no-shell-escape",
+            "definition.tex",
+        ])
+        .current_dir(dir.path())
+        .kill_on_drop(true);
+    match tokio::time::timeout(std::time::Duration::from_secs(15), command.output()).await {
+        Ok(Ok(output)) if output.status.success() => Ok(()),
+        Ok(Ok(output)) => {
+            let log = tokio::fs::read_to_string(dir.path().join("definition.log"))
+                .await
+                .unwrap_or_else(|_| String::from_utf8_lossy(&output.stdout).into_owned());
+            Err(MathJaxValidationError::Tectonic(
+                extract_latex_error_from_log(&log)
+                    .unwrap_or_else(|| "LaTeX compilation failed".to_string()),
+            ))
         }
-        let mut command = crate::utils::tex_sandbox::command(&engine_path, dir.path());
-        command
-            .args([
-                "-halt-on-error",
-                "-interaction=nonstopmode",
-                "-no-shell-escape",
-                "definition.tex",
-            ])
-            .current_dir(dir.path())
-            .kill_on_drop(true);
-        match tokio::time::timeout(std::time::Duration::from_secs(15), command.output()).await {
-            Ok(Ok(output)) if output.status.success() => Ok(()),
-            Ok(Ok(output)) => {
-                let log = tokio::fs::read_to_string(dir.path().join("definition.log"))
-                    .await
-                    .unwrap_or_else(|_| String::from_utf8_lossy(&output.stdout).into_owned());
-                Err(MathJaxValidationError::Tectonic(
-                    extract_latex_error_from_log(&log)
-                        .unwrap_or_else(|| "LaTeX compilation failed".to_string()),
-                ))
-            }
-            Ok(Err(e)) if e.kind() == std::io::ErrorKind::NotFound => continue,
-            Ok(Err(e)) => Err(MathJaxValidationError::Tectonic(format!(
-                "TeX process: {e}"
-            ))),
-            Err(_) => Err(MathJaxValidationError::Tectonic(
-                "LaTeX validation timed out".into(),
-            )),
-        }?;
-        return Ok(());
+        Ok(Err(e)) if e.kind() == std::io::ErrorKind::NotFound => {
+            Err(MathJaxValidationError::Tectonic(
+                "xelatex was not found in PATH; install TeX Live with XeTeX support".into(),
+            ))
+        }
+        Ok(Err(e)) => Err(MathJaxValidationError::Tectonic(format!(
+            "TeX process: {e}"
+        ))),
+        Err(_) => Err(MathJaxValidationError::Tectonic(
+            "LaTeX validation timed out".into(),
+        )),
     }
-    Err(MathJaxValidationError::Tectonic(
-        "A sandboxed TeX Live compiler is required".into(),
-    ))
 }
 
 pub async fn analyze_word_in_pool(
@@ -970,7 +964,7 @@ mod tests {
     use super::*;
 
     #[tokio::test]
-    async fn plain_text_does_not_need_a_tex_bundle() {
+    async fn plain_text_does_not_need_a_tex_compiler() {
         let options = MathJaxValidationOptions { use_tectonic: true };
         validate_mathjax("A & B are ordinary text.", &options)
             .await

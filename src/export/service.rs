@@ -186,12 +186,14 @@ async fn generate_pdf(
     debug!("LaTeX file written to: {:?}", file_path);
 
     // Set HOME to temp dir to avoid permission issues
-    let mut command = crate::utils::tex_sandbox::command("/usr/bin/xelatex", dir_path);
+    let mut command = Command::new("xelatex");
     command
         .current_dir(dir_path)
         .env("HOME", dir_path)
         .arg("-interaction=nonstopmode")
         .arg("-halt-on-error")
+        .arg("-no-shell-escape")
+        .kill_on_drop(true)
         .arg(
             file_path
                 .file_name()
