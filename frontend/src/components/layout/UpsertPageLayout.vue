@@ -48,7 +48,7 @@ defineExpose({ scrollToTop })
       <div
         v-if="narrow"
         class="mx-auto w-full max-w-3xl"
-        :class="fillContent ? 'flex min-h-full flex-col' : ''"
+        :class="fillContent ? 'flex h-full min-h-full flex-col' : ''"
       >
         <slot />
       </div>

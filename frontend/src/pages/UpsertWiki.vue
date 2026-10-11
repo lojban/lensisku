@@ -36,7 +36,7 @@
     </p>
     <form
       id="upsert-wiki-form"
-      class="flex min-h-full flex-col space-y-4"
+      class="flex min-h-0 flex-1 flex-col space-y-4"
       @submit.prevent="submitWiki"
     >
       <div>

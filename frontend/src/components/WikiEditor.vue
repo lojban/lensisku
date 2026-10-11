@@ -1,6 +1,6 @@
 <template>
   <div class="wiki-editor flex min-h-0 flex-1 flex-col space-y-2">
-    <div class="flex flex-wrap items-center gap-2">
+      <div class="flex shrink-0 flex-wrap items-center gap-2">
       <Button
         type="button"
         variant="empty"
@@ -32,7 +32,7 @@
     <textarea
       v-if="rawMode"
       v-model="rawValue"
-      class="min-h-80 w-full flex-1 rounded border border-gray-300 p-3 font-mono text-sm"
+      class="min-h-0 w-full flex-1 rounded border border-gray-300 p-3 font-mono text-sm"
       :disabled="disabled"
       :placeholder="placeholder"
       @input="syncFromRaw"
@@ -146,11 +146,11 @@ defineExpose({
 
 <style scoped>
 .milkdown-editor {
-  @apply min-h-80 flex flex-1 flex-col;
+  @apply min-h-0 flex flex-1 flex-col;
 }
 
 .milkdown-editor :deep(.milkdown) {
-  @apply flex min-h-full flex-1 flex-col;
+  @apply flex h-full min-h-0 flex-1 flex-col;
 }
 
 .milkdown-editor :deep(.milkdown .ProseMirror) {
