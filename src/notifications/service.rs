@@ -448,7 +448,11 @@ impl EmailService {
         (text_body, html_body)
     }
 
-    pub fn send_notification(&self, notification: EmailNotification) -> Result<(), EmailError> {
+    pub async fn send_notification(
+        &self,
+        notification: EmailNotification,
+        pool: &deadpool_postgres::Pool,
+    ) -> Result<(), EmailError> {
         let mailbox = lettre::message::Mailbox::new(
             Some("la lensisku".to_string()),
             self.from_address.parse::<lettre::address::Address>()?,
@@ -457,14 +461,20 @@ impl EmailService {
         let email = Message::builder()
             .from(mailbox)
             .to(notification.to_email.parse()?)
-            .subject(notification.subject)
+            .subject(notification.subject.clone())
             .multipart(MultiPart::alternative_plain_html(
-                notification.text_body,
-                notification.html_body,
+                notification.text_body.clone(),
+                notification.html_body.clone(),
             ))
             .map_err(|e| EmailError::Other(e.to_string()))?;
 
         self.mailer.send(&email).map_err(EmailError::SmtpError)?;
+        let client = pool.get().await?;
+        let params = serde_json::json!({"from_name": "la lensisku", "content_type": "multipart/alternative"});
+        client.execute(
+            "INSERT INTO sent_emails (to_address, from_address, subject, text_body, html_body, params) VALUES ($1, $2, $3, $4, $5, $6)",
+            &[&notification.to_email, &self.from_address, &notification.subject, &notification.text_body, &notification.html_body, &params],
+        ).await?;
         Ok(())
     }
 }
@@ -577,12 +587,18 @@ pub async fn send_notification_emails(pool: &deadpool_postgres::Pool) -> Result<
             )
         };
 
-        if let Err(e) = email_service.send_notification(EmailNotification {
-            to_email: email,
-            subject,
-            text_body,
-            html_body,
-        }) {
+        if let Err(e) = email_service
+            .send_notification(
+                EmailNotification {
+                    to_email: email,
+                    subject,
+                    text_body,
+                    html_body,
+                },
+                pool,
+            )
+            .await
+        {
             log::error!("Failed to send notification {}: {}", notification_id, e);
             continue;
         }

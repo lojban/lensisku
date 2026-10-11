@@ -652,9 +652,10 @@ pub async fn signup(
 
     let email = user.email.clone();
     let confirmation_url = format!("{}/confirm-email?token={}", frontend_url, token);
+    let email_pool = pool.clone();
 
     task::spawn(async move {
-        if let Err(e) = send_confirmation_email(&email, &confirmation_url).await {
+        if let Err(e) = send_confirmation_email(&email, &confirmation_url, &email_pool).await {
             error!("Failed to send confirmation email: {}", e); // Keep log
         }
     });
@@ -663,7 +664,11 @@ pub async fn signup(
     Ok(AuthResponse { token })
 }
 
-async fn send_confirmation_email(to_email: &str, confirmation_url: &str) -> Result<(), EmailError> {
+async fn send_confirmation_email(
+    to_email: &str,
+    confirmation_url: &str,
+    pool: &Pool,
+) -> Result<(), EmailError> {
     let email_service = EmailService::new().map_err(|e| EmailError::ConfigError(e.to_string()))?;
     let message_content = &[
         "Welcome to Lojban Dictionary!",
@@ -680,12 +685,16 @@ async fn send_confirmation_email(to_email: &str, confirmation_url: &str) -> Resu
     );
 
     email_service
-        .send_notification(EmailNotification {
-            to_email: to_email.to_string(),
-            subject: "Confirm your email address".to_string(),
-            text_body,
-            html_body,
-        })
+        .send_notification(
+            EmailNotification {
+                to_email: to_email.to_string(),
+                subject: "Confirm your email address".to_string(),
+                text_body,
+                html_body,
+            },
+            pool,
+        )
+        .await
         .map_err(|e| EmailError::SendError(e.to_string()))?;
 
     Ok(())
@@ -745,8 +754,9 @@ pub async fn resend_confirmation(
 
             // Send email asynchronously
             let email = req.email.clone();
+            let email_pool = pool.clone();
             task::spawn(async move {
-                if let Err(e) = send_confirmation_email(&email, &confirmation_url).await {
+                if let Err(e) = send_confirmation_email(&email, &confirmation_url, &email_pool).await {
                     error!("Failed to send confirmation email: {}", e); // Keep log
                 }
             });
@@ -1058,12 +1068,18 @@ pub async fn request_password_reset(
         "en",
     );
 
-    if let Err(e) = email_service.send_notification(EmailNotification {
-        to_email: req.email.clone(),
-        subject: "Password Reset Request".to_string(),
-        text_body,
-        html_body,
-    }) {
+    if let Err(e) = email_service
+        .send_notification(
+            EmailNotification {
+                to_email: req.email.clone(),
+                subject: "Password Reset Request".to_string(),
+                text_body,
+                html_body,
+            },
+            pool,
+        )
+        .await
+    {
         error!("Failed to send password reset email: {}", e);
         return Err(AppError::ExternalService(format!(
             "Failed to send email: {}",
@@ -1418,12 +1434,16 @@ pub async fn initiate_password_change(
     let (text_body, html_body) = email_service.build_email_content(message_content, None, "en");
 
     email_service
-        .send_notification(EmailNotification {
-            to_email: email,
-            subject: "Password Change Verification".to_string(),
-            text_body,
-            html_body,
-        })
+        .send_notification(
+            EmailNotification {
+                to_email: email,
+                subject: "Password Change Verification".to_string(),
+                text_body,
+                html_body,
+            },
+            pool,
+        )
+        .await
         .map_err(|e| AppError::ExternalService(e.to_string()))?;
 
     transaction.commit().await?;
