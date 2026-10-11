@@ -13,9 +13,17 @@ withDefaults(
 )
 
 const scrollEl = ref<HTMLElement | null>(null)
+const emit = defineEmits<{
+  scroll: [scrollTop: number, viewportHeight: number]
+}>()
 
 function scrollToTop(behavior: 'auto' | 'instant' | 'smooth' = 'smooth') {
   scrollEl.value?.scrollTo({ top: 0, behavior })
+}
+
+function handleScroll(event: Event) {
+  const element = event.currentTarget as HTMLElement
+  emit('scroll', element.scrollTop, element.clientHeight)
 }
 
 defineExpose({ scrollToTop })
@@ -44,11 +52,12 @@ defineExpose({ scrollToTop })
     <div
       ref="scrollEl"
       class="min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain px-3 pb-4 pt-4 sm:px-4 sm:pb-6"
+      @scroll="handleScroll"
     >
       <div
         v-if="narrow"
         class="mx-auto w-full max-w-3xl"
-        :class="fillContent ? 'flex h-full min-h-full flex-col' : ''"
+        :class="fillContent ? 'flex min-h-full flex-col' : ''"
       >
         <slot />
       </div>

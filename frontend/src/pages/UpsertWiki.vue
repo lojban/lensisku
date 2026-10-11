@@ -1,8 +1,9 @@
 <template>
   <UpsertPageLayout
+    ref="layoutRef"
     narrow
-    fill-content
     :title="isEditMode ? t('upsertWiki.editTitle') : t('creation.newWiki')"
+    @scroll="handleLayoutScroll"
   >
     <template #trailing>
       <UpsertToolbarButton
@@ -36,7 +37,7 @@
     </p>
     <form
       id="upsert-wiki-form"
-      class="flex min-h-0 flex-1 flex-col space-y-4"
+      class="flex flex-col space-y-4"
       @submit.prevent="submitWiki"
     >
       <div>
@@ -147,7 +148,7 @@
         </div>
       </details>
 
-      <div v-if="!isRedirect" class="flex min-h-0 flex-1 flex-col">
+      <div v-if="!isRedirect" class="flex flex-col">
         <label class="block text-sm font-medium text-blue-700 mb-2">
           {{ t('upsertWiki.definitionLabel') }}
         </label>
@@ -164,6 +165,13 @@
       <p v-if="formError" class="text-sm text-red-600">{{ formError }}</p>
     </form>
   </UpsertPageLayout>
+  <div v-if="isEditMode && showScrollToTop" class="fixed bottom-20 right-4 z-50 sm:right-6">
+    <span class="fab-elevation-shell">
+      <FabButton aria-label="Scroll to top" @click="layoutRef?.scrollToTop()">
+        <ChevronUp class="h-7 w-7 shrink-0" stroke-width="2.5" />
+      </FabButton>
+    </span>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -172,6 +180,8 @@ import { Input, Select } from '@packages/ui'
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
+import { ChevronUp } from '@lucide/vue'
+import { FabButton } from '@packages/ui'
 
 import {
   getLanguages,
@@ -197,6 +207,12 @@ const router = useRouter()
 const localePath = useLocalePath()
 const { t } = useI18n()
 const { showError, clearError } = useError()
+const layoutRef = ref<InstanceType<typeof UpsertPageLayout> | null>(null)
+const showScrollToTop = ref(false)
+
+function handleLayoutScroll(scrollTop: number, viewportHeight: number) {
+  showScrollToTop.value = scrollTop >= viewportHeight
+}
 
 const langId = ref('')
 const word = ref('')

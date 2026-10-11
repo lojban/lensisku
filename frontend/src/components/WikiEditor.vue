@@ -1,6 +1,6 @@
 <template>
-  <div class="wiki-editor flex min-h-0 flex-1 flex-col space-y-2">
-      <div class="flex shrink-0 flex-wrap items-center gap-2">
+  <div class="wiki-editor space-y-2">
+    <div class="flex shrink-0 flex-wrap items-center gap-2">
       <Button
         type="button"
         variant="empty"
@@ -15,15 +15,6 @@
         variant="empty"
         class="text-sm"
         :disabled="disabled"
-        @click="insertHeading"
-      >
-        {{ t('upsertWiki.insertHeading') }}
-      </Button>
-      <Button
-        type="button"
-        variant="empty"
-        class="text-sm"
-        :disabled="disabled"
         @click="rawMode = !rawMode"
       >
         {{ rawMode ? t('upsertWiki.visualEditor') : t('upsertWiki.rawSource') }}
@@ -32,7 +23,7 @@
     <textarea
       v-if="rawMode"
       v-model="rawValue"
-      class="min-h-0 w-full flex-1 rounded border border-gray-300 p-3 font-mono text-sm"
+      class="min-h-80 w-full rounded border border-gray-300 p-3 font-mono text-sm"
       :disabled="disabled"
       :placeholder="placeholder"
       @input="syncFromRaw"
@@ -40,7 +31,7 @@
     <div
       v-else
       ref="editorRoot"
-      class="milkdown-editor -mx-3 border-y border-gray-300 sm:-mx-4 sm:border"
+      class="milkdown-editor"
       :class="{ 'opacity-60 pointer-events-none': disabled }"
     />
   </div>
@@ -94,15 +85,9 @@ function insertWikiLink() {
   const title = window.prompt(t('upsertWiki.wikiLinkPrompt'))
   if (!title?.trim() || !crepe) return
   const page = title.trim()
-  const slug = page.replace(/ /g, '_')
-  const snippet = ` [[${page}]](/wiki/${slug}) `
+  const slug = encodeURIComponent(page.replace(/ /g, '_'))
+  const snippet = ` [${page}](/wiki/${slug}) `
   crepe.editor.action(insert(snippet))
-  syncFromEditor()
-}
-
-function insertHeading() {
-  if (!crepe) return
-  crepe.editor.action(insert('\n## Heading\n\n'))
   syncFromEditor()
 }
 
@@ -146,15 +131,11 @@ defineExpose({
 
 <style scoped>
 .milkdown-editor {
-  @apply min-h-0 flex flex-1 flex-col;
-}
-
-.milkdown-editor :deep(.milkdown) {
-  @apply flex h-full min-h-0 flex-1 flex-col;
+  @apply w-full;
 }
 
 .milkdown-editor :deep(.milkdown .ProseMirror) {
-  @apply min-h-full flex-1 py-3 px-3 sm:py-4 sm:pl-14 sm:pr-4;
+  @apply min-h-0 w-full py-3 px-3 sm:py-4 sm:pl-14 sm:pr-4;
 }
 
 @media (max-width: 640px) {
