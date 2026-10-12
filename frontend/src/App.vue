@@ -78,11 +78,7 @@
                 class="nav-dropdown-panel"
                 :class="isMoreNavOpen ? 'flex' : 'hidden group-hover:flex'"
               >
-                <NavLink
-                  to="/create"
-                  class="navbar-item justify-start py-2"
-                  @click="closeNavMenus"
-                >
+                <NavLink to="/create" class="navbar-item justify-start py-2" @click="closeNavMenus">
                   <FilePlus class="h-4 w-4" /> {{ $t('creation.create') }}
                 </NavLink>
                 <NavLink
@@ -326,6 +322,13 @@
             />
           </router-view>
         </div>
+
+        <footer
+          v-if="!route.meta.hideFooter"
+          class="mt-6 max-w-full break-words px-3 py-3 text-center text-xs text-gray-500 leading-relaxed"
+        >
+          {{ $t('footer.publicDomainNotice') }}
+        </footer>
       </div>
     </main>
   </div>
