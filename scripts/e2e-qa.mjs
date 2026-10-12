@@ -28,21 +28,23 @@ function askHidden(prompt) {
     if (stdin.isTTY) stdin.setRawMode(true)
     let value = ''
     const onData = (chunk) => {
-      const char = chunk.toString('utf8')
-      if (char === '\u0003') {
-        if (stdin.isTTY) stdin.setRawMode(wasRaw)
-        stdin.off('data', onData)
-        stdout.write('\n')
-        process.exit(130)
-      } else if (char === '\r' || char === '\n') {
-        if (stdin.isTTY) stdin.setRawMode(wasRaw)
-        stdin.off('data', onData)
-        stdout.write('\n')
-        resolve(value)
-      } else if (char === '\u007f' || char === '\b') {
-        value = value.slice(0, -1)
-      } else if (char >= ' ') {
-        value += char
+      for (const char of chunk.toString('utf8')) {
+        if (char === '\u0003') {
+          if (stdin.isTTY) stdin.setRawMode(wasRaw)
+          stdin.off('data', onData)
+          stdout.write('\n')
+          process.exit(130)
+        } else if (char === '\r' || char === '\n') {
+          if (stdin.isTTY) stdin.setRawMode(wasRaw)
+          stdin.off('data', onData)
+          stdout.write('\n')
+          resolve(value)
+          return
+        } else if (char === '\u007f' || char === '\b') {
+          value = value.slice(0, -1)
+        } else if (char >= ' ') {
+          value += char
+        }
       }
     }
     stdin.on('data', onData)
@@ -60,7 +62,7 @@ async function getCredentials() {
 }
 
 async function request(base, path, { token, method = 'GET', body } = {}) {
-  const response = await fetch(`${base}${path}`, {
+  const response = await fetch(`${base}/api${path}`, {
     method,
     headers: {
       ...(body === undefined ? {} : { 'Content-Type': 'application/json' }),
@@ -103,10 +105,13 @@ async function runTarget(base, credentials) {
     const definition = await request(base, '/jbovlaste/valsi', {
       method: 'POST', token,
       body: {
-        word: `e2e QA ${marker}`,
+        // A known Lojban word keeps the new entry in the source_langid=1
+        // dictionary that the detail endpoint reads; the unique gloss makes
+        // this a distinct definition while keeping deletion isolated.
+        word: 'coi',
         definition: definitionText,
         lang_id: 2,
-        source_langid: 2,
+        source_langid: 1,
       },
     })
     if (!definition.success || !definition.definition_id) {
