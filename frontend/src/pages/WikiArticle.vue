@@ -64,60 +64,61 @@
       </RouterLink>
     </div>
 
-    <div v-if="loading" class="wiki-article-card flex justify-center py-6">
-      <Loader2 class="h-8 w-8 animate-spin text-gray-400" />
-    </div>
-
-    <div v-else-if="error" class="rounded border border-red-100 bg-red-50 p-3 text-red-700">
-      {{ error }}
-    </div>
-
-    <div v-else-if="article" class="wiki-article-card">
-      <header class="wiki-article-header">
-        <h1 class="wiki-article-title">
-          {{ article.title }}
-        </h1>
-        <p v-if="article.last_edited" class="wiki-article-meta">
-          {{ t('wiki.lastEdited') }}
-          <template v-if="article.username">
-            <AuthorLink
-              :username="article.username"
-              :author-url="article.author_url"
-              :link-local="false"
-            />
-            ·
-          </template>
-          {{ new Date(article.last_edited).toLocaleString() }}
-        </p>
-        <a
-          v-if="!article.is_native && article.source_url"
-          :href="article.source_url"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="wiki-article-meta mt-0.5 block break-words hover:text-blue-600 hover:underline"
-        >
-          {{ t('wiki.viewOnMediawiki') }}
-        </a>
-      </header>
-
+    <div>
       <div
-        v-if="article.is_redirect"
-        class="mb-2 rounded border border-yellow-100 bg-yellow-50 p-2 text-sm text-yellow-800"
+        v-if="error && !loading"
+        class="rounded border border-red-100 bg-red-50 p-3 text-red-700"
       >
-        <template v-if="article.redirect_to">
-          <RouterLink
-            :to="`/wiki/${encodeURIComponent(article.redirect_to.replace(/ /g, '_'))}`"
-            class="underline"
-          >
-            {{ t('wiki.redirectTo', { title: article.redirect_to }) }}
-          </RouterLink>
-        </template>
-        <template v-else>
-          {{ t('wiki.redirectNotice') }}
-        </template>
+        {{ error }}
       </div>
 
-      <WikiContent :content="article.markdown" @rendered="scrollToHash" />
+      <div v-else-if="article" class="wiki-article-card">
+        <header class="wiki-article-header">
+          <h1 class="wiki-article-title">
+            {{ article.title }}
+          </h1>
+          <p v-if="article.last_edited" class="wiki-article-meta">
+            {{ t('wiki.lastEdited') }}
+            <template v-if="article.username">
+              <AuthorLink
+                :username="article.username"
+                :author-url="article.author_url"
+                :link-local="false"
+              />
+              ·
+            </template>
+            {{ new Date(article.last_edited).toLocaleString() }}
+          </p>
+          <a
+            v-if="!article.is_native && article.source_url"
+            :href="article.source_url"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="wiki-article-meta mt-0.5 block break-words hover:text-blue-600 hover:underline"
+          >
+            {{ t('wiki.viewOnMediawiki') }}
+          </a>
+        </header>
+
+        <div
+          v-if="article.is_redirect"
+          class="mb-2 rounded border border-yellow-100 bg-yellow-50 p-2 text-sm text-yellow-800"
+        >
+          <template v-if="article.redirect_to">
+            <RouterLink
+              :to="`/wiki/${encodeURIComponent(article.redirect_to.replace(/ /g, '_'))}`"
+              class="underline"
+            >
+              {{ t('wiki.redirectTo', { title: article.redirect_to }) }}
+            </RouterLink>
+          </template>
+          <template v-else>
+            {{ t('wiki.redirectNotice') }}
+          </template>
+        </div>
+
+        <WikiContent :content="article.markdown" @rendered="scrollToHash" />
+      </div>
     </div>
   </div>
 </template>
@@ -127,7 +128,7 @@ import { Button } from '@packages/ui'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { ArrowLeft, Loader2, Pencil, History, MessageSquare } from '@lucide/vue'
+import { ArrowLeft, Pencil, History, MessageSquare } from '@lucide/vue'
 import { getWikiArticle, getNativeWikiArticle, getWikiByDefinitionId } from '@/api'
 import WikiContent from '@/components/WikiContent.vue'
 import SourceTypeBadge from '@/components/SourceTypeBadge.vue'

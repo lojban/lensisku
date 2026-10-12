@@ -1,149 +1,147 @@
 <template>
-  <!-- Loading State -->
-  <div v-if="!message" class="bg-white border border-blue-200 rounded-lg p-6 flex justify-center">
-    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
-  </div>
-  <!-- Message Content -->
-  <div v-else>
-    <!-- Action Buttons -->
-    <MessageActions
-      ref="messageActions"
-      class="mb-6"
-      :message-id="message?.id"
-      :spam-vote-count="message?.spam_vote_count"
-      :cleaned-subject="message?.cleaned_subject"
-      :show-spam-button="true"
-      :current-user-voted-spam="currentUserVotedSpam"
-      @toggle-spam-vote="toggleSpamVote"
-    />
-    <!-- Message Header -->
-    <div class="p-4 bg-white rounded-lg shadow-sm border border-gray-100">
-      <div class="space-y-6">
-        <!-- Subject -->
-        <h2 class="text-2xl font-bold text-gray-800 mb-4 pb-4 border-b border-gray-100">
-          <LazyMathJax
-            :content="message.subject || ''"
-            :enable-markdown="true"
-            :search-term="props.searchTerm"
-            curly-link-class="underline text-pink-600 hover:text-pink-800"
-          />
-        </h2>
-        <!-- Message Meta -->
-        <div class="flex flex-col md:flex-row gap-4 md:gap-6">
-          <!-- Left Column -->
-          <div class="space-y-4 md:space-y-6 md:flex-1 min-w-[280px]">
-            <!-- From -->
-            <div class="space-y-1">
-              <div class="text-xs font-medium text-gray-500 uppercase tracking-wider">
-                {{ t('components.messageDetail.fromLabel') }}
-              </div>
+  <div>
+    <!-- Message Content -->
+    <div v-if="message">
+      <!-- Action Buttons -->
+      <MessageActions
+        ref="messageActions"
+        class="mb-6"
+        :message-id="message?.id"
+        :spam-vote-count="message?.spam_vote_count"
+        :cleaned-subject="message?.cleaned_subject"
+        :show-spam-button="true"
+        :current-user-voted-spam="currentUserVotedSpam"
+        @toggle-spam-vote="toggleSpamVote"
+      />
+      <!-- Message Header -->
+      <div class="p-4 bg-white rounded-lg shadow-sm border border-gray-100">
+        <div class="space-y-6">
+          <!-- Subject -->
+          <h2 class="text-2xl font-bold text-gray-800 mb-4 pb-4 border-b border-gray-100">
+            <LazyMathJax
+              :content="message.subject || ''"
+              :enable-markdown="true"
+              :search-term="props.searchTerm"
+              curly-link-class="underline text-pink-600 hover:text-pink-800"
+            />
+          </h2>
+          <!-- Message Meta -->
+          <div class="flex flex-col md:flex-row gap-4 md:gap-6">
+            <!-- Left Column -->
+            <div class="space-y-4 md:space-y-6 md:flex-1 min-w-[280px]">
+              <!-- From -->
+              <div class="space-y-1">
+                <div class="text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  {{ t('components.messageDetail.fromLabel') }}
+                </div>
 
-              <div class="text-gray-700 break-words">
-                {{ formatEmailAddress(message.from_address) }}
+                <div class="text-gray-700 break-words">
+                  {{ formatEmailAddress(message.from_address) }}
+                </div>
+              </div>
+              <!-- To -->
+              <div class="space-y-1">
+                <div class="text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  {{ t('components.messageDetail.toLabel') }}
+                </div>
+
+                <div class="text-gray-700 break-words">
+                  {{ formatEmailAddress(message.to_address) }}
+                </div>
               </div>
             </div>
-            <!-- To -->
-            <div class="space-y-1">
-              <div class="text-xs font-medium text-gray-500 uppercase tracking-wider">
-                {{ t('components.messageDetail.toLabel') }}
+            <!-- Right Column -->
+            <div class="space-y-4 md:space-y-6 md:flex-1 min-w-[280px]">
+              <!-- Date -->
+              <div class="space-y-1">
+                <div class="text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  {{ t('components.messageDetail.dateLabel') }}
+                </div>
+
+                <div class="text-gray-700">{{ formatDate(message.date) }}</div>
+              </div>
+              <!-- Message ID -->
+              <div v-if="message.message_id" class="space-y-1">
+                <div class="text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  {{ t('components.messageDetail.messageIdLabel') }}
+                </div>
+
+                <div class="text-gray-700 text-sm break-words">{{ message.message_id }}</div>
               </div>
 
-              <div class="text-gray-700 break-words">
-                {{ formatEmailAddress(message.to_address) }}
-              </div>
-            </div>
-          </div>
-          <!-- Right Column -->
-          <div class="space-y-4 md:space-y-6 md:flex-1 min-w-[280px]">
-            <!-- Date -->
-            <div class="space-y-1">
-              <div class="text-xs font-medium text-gray-500 uppercase tracking-wider">
-                {{ t('components.messageDetail.dateLabel') }}
-              </div>
+              <div v-if="message.message_id" class="space-y-1">
+                <div class="text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  {{ t('components.messageDetail.filenameLabel') }}
+                </div>
 
-              <div class="text-gray-700">{{ formatDate(message.date) }}</div>
-            </div>
-            <!-- Message ID -->
-            <div v-if="message.message_id" class="space-y-1">
-              <div class="text-xs font-medium text-gray-500 uppercase tracking-wider">
-                {{ t('components.messageDetail.messageIdLabel') }}
+                <div class="text-gray-700 text-sm break-words">{{ message.file_path }}</div>
               </div>
-
-              <div class="text-gray-700 text-sm break-words">{{ message.message_id }}</div>
-            </div>
-
-            <div v-if="message.message_id" class="space-y-1">
-              <div class="text-xs font-medium text-gray-500 uppercase tracking-wider">
-                {{ t('components.messageDetail.filenameLabel') }}
-              </div>
-
-              <div class="text-gray-700 text-sm break-words">{{ message.file_path }}</div>
             </div>
           </div>
         </div>
       </div>
-    </div>
-    <!-- Message Parts -->
-    <div class="mt-6 p-4 bg-white rounded-lg shadow-sm border border-gray-100 space-y-6">
-      <!-- Text Parts -->
-      <template v-for="part in message.parts_json.filter((p) => p.mime_type.startsWith('text/'))">
-        <!-- eslint-disable vue/no-v-html -->
-        <div
-          v-if="part.mime_type === 'text/plain' || part.mime_type === 'text/html'"
-          :key="part.id"
-          class="prose max-w-none text-gray-700 message-content"
-          v-html="highlightText(replaceCidReferences(part.content, part.mime_type))"
-        ></div>
-        <!-- eslint-enable vue/no-v-html -->
-      </template>
-      <!-- Attachments -->
-      <div
-        v-if="message.parts_json.filter((p) => !p.mime_type.startsWith('text/')).length"
-        class="pt-4 border-t border-gray-100"
-      >
-        <h3 class="text-lg font-semibold text-gray-800 mb-4">
-          {{ t('components.messageDetail.attachmentsTitle') }}
-        </h3>
-
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <!-- Message Parts -->
+      <div class="mt-6 p-4 bg-white rounded-lg shadow-sm border border-gray-100 space-y-6">
+        <!-- Text Parts -->
+        <template v-for="part in message.parts_json.filter((p) => p.mime_type.startsWith('text/'))">
+          <!-- eslint-disable vue/no-v-html -->
           <div
-            v-for="part in message.parts_json.filter((p) => !p.mime_type.startsWith('text/'))"
+            v-if="part.mime_type === 'text/plain' || part.mime_type === 'text/html'"
             :key="part.id"
-            class="p-3 bg-gray-50 rounded-lg border border-gray-200 hover:border-blue-200 transition-colors flex items-start gap-3"
-          >
-            <div class="flex-shrink-0">
-              <AttachmentIcon :mime-type="part.mime_type" class="w-6 h-6 text-gray-500" />
-            </div>
+            class="prose max-w-none text-gray-700 message-content"
+            v-html="highlightText(replaceCidReferences(part.content, part.mime_type))"
+          ></div>
+          <!-- eslint-enable vue/no-v-html -->
+        </template>
+        <!-- Attachments -->
+        <div
+          v-if="message.parts_json.filter((p) => !p.mime_type.startsWith('text/')).length"
+          class="pt-4 border-t border-gray-100"
+        >
+          <h3 class="text-lg font-semibold text-gray-800 mb-4">
+            {{ t('components.messageDetail.attachmentsTitle') }}
+          </h3>
 
-            <div class="flex-1 min-w-0">
-              <div class="text-sm font-medium text-gray-700 truncate">
-                {{ part.filename || part.content_type }}
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div
+              v-for="part in message.parts_json.filter((p) => !p.mime_type.startsWith('text/'))"
+              :key="part.id"
+              class="p-3 bg-gray-50 rounded-lg border border-gray-200 hover:border-blue-200 transition-colors flex items-start gap-3"
+            >
+              <div class="flex-shrink-0">
+                <AttachmentIcon :mime-type="part.mime_type" class="w-6 h-6 text-gray-500" />
               </div>
 
-              <div class="text-xs text-gray-500 mt-1">{{ part.mime_type }}</div>
+              <div class="flex-1 min-w-0">
+                <div class="text-sm font-medium text-gray-700 truncate">
+                  {{ part.filename || part.content_type }}
+                </div>
+
+                <div class="text-xs text-gray-500 mt-1">{{ part.mime_type }}</div>
+              </div>
+              <Button
+                variant="read"
+                :title="t('components.messageDetail.downloadAttachmentTitle')"
+                @click="downloadAttachment(part)"
+              >
+                <DownloadIcon class="h-5 w-5" />
+              </Button>
             </div>
-            <Button
-              variant="read"
-              :title="t('components.messageDetail.downloadAttachmentTitle')"
-              @click="downloadAttachment(part)"
-            >
-              <DownloadIcon class="h-5 w-5" />
-            </Button>
           </div>
         </div>
       </div>
+      <!-- Action Buttons -->
+      <MessageActions
+        ref="messageActions"
+        class="mt-6 pb-6"
+        :message-id="message?.id"
+        :spam-vote-count="message?.spam_vote_count"
+        :cleaned-subject="message?.cleaned_subject"
+        :show-spam-button="true"
+        :current-user-voted-spam="currentUserVotedSpam"
+        @toggle-spam-vote="toggleSpamVote"
+      />
     </div>
-    <!-- Action Buttons -->
-    <MessageActions
-      ref="messageActions"
-      class="mt-6 pb-6"
-      :message-id="message?.id"
-      :spam-vote-count="message?.spam_vote_count"
-      :cleaned-subject="message?.cleaned_subject"
-      :show-spam-button="true"
-      :current-user-voted-spam="currentUserVotedSpam"
-      @toggle-spam-vote="toggleSpamVote"
-    />
   </div>
 </template>
 
@@ -162,7 +160,6 @@ import { useRoute } from 'vue-router'
 import { mailSeoPreview } from '@/utils/mailSeo'
 const { t } = useI18n()
 const route = useRoute()
-
 const props = defineProps({
   id: {
     type: [String, Number],

@@ -1,5 +1,9 @@
 <template>
-  <section class="bg-white border rounded-xl p-3 sm:p-4">
+  <section
+    ref="rootEl"
+    class="bg-white border rounded-xl p-3 sm:p-4"
+    @focusout="onFocusOut"
+  >
     <button
       v-if="!expanded"
       type="button"
@@ -31,7 +35,7 @@
 </template>
 <script setup lang="ts">
 import { invalidateActivityFeed } from '@/composables/useActivityFeed'
-import { computed, ref } from 'vue'
+import { computed, nextTick, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { addComment } from '@/api'
@@ -50,6 +54,7 @@ const router = useRouter()
 const localePath = useLocalePath()
 const auth = useAuth()
 const emit = defineEmits<{ posted: [] }>()
+const rootEl = ref<HTMLElement | null>(null)
 const expanded = ref(false)
 const submitting = ref(false)
 const error = ref('')
@@ -66,6 +71,25 @@ function expand() {
   }
   initialValues.value = { subject: draft.value.subject, content: draft.value.markdown }
   expanded.value = true
+}
+function collapse() {
+  if (!expanded.value || submitting.value) return
+  initialValues.value = { subject: draft.value.subject, content: draft.value.markdown }
+  expanded.value = false
+}
+async function onFocusOut() {
+  if (!expanded.value || submitting.value) return
+  await nextTick()
+  const root = rootEl.value
+  const active = document.activeElement
+  if (!root || (active && root.contains(active))) return
+  // Crepe menus/tooltips can briefly steal focus outside the section.
+  window.setTimeout(() => {
+    if (!expanded.value || submitting.value) return
+    const still = document.activeElement
+    if (root.contains(still)) return
+    collapse()
+  }, 0)
 }
 function updateDraft(value: DiscussionDraft) {
   draft.value = value

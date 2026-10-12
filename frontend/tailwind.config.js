@@ -111,9 +111,25 @@ export default {
           },
         },
         // --- App shell & global chrome ---
-        /** Full-viewport loading veil: blur content behind spinner (used by LoadingSpinner page variant). */
+        /**
+         * Full-viewport loading veil (LoadingSpinner `page` variant).
+         * Light frost — `backdrop-blur-sm` (4px), not a heavy glass stack.
+         */
         '.page-loading-overlay': {
-          '@apply fixed inset-0 z-50 flex min-h-0 items-center justify-center bg-white/50 backdrop-blur-sm':
+          '@apply fixed inset-0 z-50 flex min-h-0 items-center justify-center bg-white/40 backdrop-blur-sm':
+            {},
+        },
+        /**
+         * Static snapshot of the previous route while the next page loads.
+         * Fixed below the sticky header; light `blur-sm` on the snapshot itself.
+         */
+        '.route-view-freeze': {
+          '@apply pointer-events-none fixed inset-x-0 bottom-0 top-14 z-30 overflow-auto bg-white blur-sm sm:top-12':
+            {},
+        },
+        /** App-level spinner while a route freeze is up (covers same region as freeze). */
+        '.route-freeze-spinner': {
+          '@apply fixed inset-x-0 bottom-0 top-14 z-40 flex items-center justify-center bg-white/35 sm:top-12':
             {},
         },
         /** Sticky app chrome (logo, nav, auth). */
@@ -1048,13 +1064,34 @@ export default {
         },
         /** Only this block scrolls — scrollbar sits between pinned header and footer. */
         '.feed-page__body': {
-          '@apply min-h-0 w-full flex-1 overflow-y-auto overscroll-y-contain px-3 pt-3 pb-3': {},
+          /* Keep block flow (not flex-col): flex shrink lets tall children overflow over later siblings.
+           * No bottom padding — docked public-domain notice sits flush with the scroll edge. */
+          '@apply min-h-0 w-full flex-1 overflow-y-auto overscroll-y-contain px-3 pt-3 pb-0': {},
         },
         '.feed-page__footer': {
           '@apply z-30 w-full shrink-0 border-t border-gray-200 bg-white md:bg-zinc-50': {},
         },
         '.feed-page__footer-inner': {
           '@apply flex w-full flex-col': {},
+        },
+        /**
+         * Legal fine print at the end of scroll content.
+         * Same striped wash as global `header` / `footer` in App.vue.
+         * Do not use `mt-auto` inside overflow flex columns — it parks the bar mid-scroll.
+         * `--dock` full-bleeds past host horizontal padding and sits flush on the bottom edge.
+         */
+        '.public-domain-notice': {
+          '@apply mt-6 w-full shrink-0 border-t border-gray-200/80 px-3 py-2.5': {},
+          background: 'repeating-linear-gradient(#f8f8f8, #f8f8f8 4px, #ffffff 4px, #ffffff 8px)',
+        },
+        '.public-domain-notice--dock': {
+          marginLeft: '-0.75rem',
+          marginRight: '-0.75rem',
+          marginBottom: 0,
+          width: 'calc(100% + 1.5rem)',
+        },
+        '.public-domain-notice__text': {
+          '@apply w-full text-center text-[10px] leading-snug text-gray-500': {},
         },
         /** Extra right inset so the FAB does not cover Previous/Next. */
         '.feed-page__pagination': {

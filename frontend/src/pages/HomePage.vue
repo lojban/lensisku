@@ -208,203 +208,192 @@
             </div>
           </div>
 
-          <div class="relative" :class="{ 'min-h-[200px]': isLoading }">
-            <div
-              v-if="isLoading"
-              class="absolute inset-0 z-10 flex justify-center pt-8 sm:pt-12 bg-white/70 backdrop-blur-[1px]"
-              aria-busy="true"
-              aria-live="polite"
+          <div :class="{ 'pointer-events-none select-none': isLoading }">
+            <PhraseSplit
+              v-if="
+                (searchMode === 'dictionary' || searchMode === 'semantic') && !similarDefinitionId
+              "
+              :phrase="searchQuery"
+              :selected-languages="filters.selectedLanguages"
+              :source-lang-id="filters.source_langid"
+              :languages="languages"
+            />
+            <DictionaryEntries
+              v-if="searchMode === 'dictionary' || searchMode === 'semantic'"
+              :definitions="definitions"
+              :is-loading="isLoading"
+              :error="error"
+              :languages="languages"
+              :show-scores="auth.state.isLoggedIn"
+              :semantic-search="searchMode === 'semantic' && !!(searchQuery || '').trim()"
+              :search-query="searchQuery"
+              :show-vote-buttons="false"
+              :collections="collections"
+              :collection-matches="collectionMatches"
+              :expand-collection-items="!expandCollectionItemId"
+              :show-global-dictionary-banner="
+                !similarDefinitionId &&
+                (filters.selectedCollections?.length > 0 || filters.usernames?.length > 0)
+              "
+              :decomposition="decomposition || []"
+              @collection-updated="setCollections($event)"
+              @expand-collection-item="expandCollectionItem"
             >
-              <div class="animate-spin rounded-full h-8 w-8 shrink-0 border-b-2 border-blue-600" />
-            </div>
-
-            <div class="relative z-0" :class="{ 'pointer-events-none select-none': isLoading }">
-              <PhraseSplit
-                v-if="
-                  (searchMode === 'dictionary' || searchMode === 'semantic') && !similarDefinitionId
-                "
-                :phrase="searchQuery"
-                :selected-languages="filters.selectedLanguages"
-                :source-lang-id="filters.source_langid"
-                :languages="languages"
-              />
-              <DictionaryEntries
-                v-if="searchMode === 'dictionary' || searchMode === 'semantic'"
-                :definitions="definitions"
-                :is-loading="isLoading"
-                :error="error"
-                :languages="languages"
-                :show-scores="auth.state.isLoggedIn"
-                :semantic-search="searchMode === 'semantic' && !!(searchQuery || '').trim()"
-                :search-query="searchQuery"
-                :show-vote-buttons="false"
-                :collections="collections"
-                :collection-matches="collectionMatches"
-                :expand-collection-items="!expandCollectionItemId"
-                :show-global-dictionary-banner="
-                  !similarDefinitionId &&
-                  (filters.selectedCollections?.length > 0 || filters.usernames?.length > 0)
-                "
-                :decomposition="decomposition || []"
-                @collection-updated="setCollections($event)"
-                @expand-collection-item="expandCollectionItem"
-              >
-                <template v-if="expandCollectionItemId" #collection-matches-before>
-                  <div
-                    class="surface-definition-compact text-sm text-gray-700 flex flex-wrap items-center justify-between gap-2"
-                  >
-                    <p class="font-medium text-gray-800">{{ $t('home.collectionItemMatches') }}</p>
-                    <Button variant="cancel" type="button" @click="clearCollectionItemExpand">
-                      {{ $t('home.backToSearchResults') }}
-                    </Button>
-                  </div>
-                </template>
-                <template v-if="similarDefinitionId" #before>
-                  <div v-if="isLoadingSimilarAnchor" class="flex justify-center py-6">
-                    <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600" />
-                  </div>
-                  <DefinitionCard
-                    v-else-if="similarAnchorDefinition"
-                    :definition="similarAnchorDefinition"
-                    :languages="languages"
-                    :show-vote-buttons="false"
-                    :disable-toolbar="true"
-                    :disable-owner-only-lock="true"
-                    :hide-find-similar="true"
-                    :collections="collections"
-                    @collection-updated="setCollections($event)"
-                  />
-                  <div class="relative">
-                    <div class="surface-definition-compact pr-10">
-                      <div class="text-xs font-medium text-gray-500">
-                        {{ $t('home.similarSearchLabel') }}
-                      </div>
-                      <p class="mt-2 text-sm text-gray-700">
-                        {{ $t('home.similarSearchHint') }}
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      class="absolute top-4 right-4 z-10 inline-flex items-center justify-center rounded p-1 text-gray-500 hover:bg-gray-100 hover:text-gray-800"
-                      :title="$t('filters.resetAllFilters')"
-                      :aria-label="$t('filters.resetAllFilters')"
-                      @click="handleFiltersReset"
-                    >
-                      <X class="h-4 w-4 shrink-0" />
-                    </button>
-                  </div>
-                </template>
-              </DictionaryEntries>
-              <div v-else-if="searchMode === 'comments'" class="space-y-4">
-                <div v-if="waveItems.length > 0">
-                  <div
-                    v-for="item in waveItems"
-                    :key="
-                      item.source === 'comment'
-                        ? item.comment.comment_id
-                        : item.source === 'wiki'
-                          ? 'wiki-' + item.article.article_url
-                          : 'mail-' + item.message.id
-                    "
-                    class="cursor-pointer"
-                    @click="
-                      item.source === 'comment'
-                        ? router.push(
-                            `/comments?thread_id=${item.comment.thread_id}&comment_id=${item.comment.parent_id}&scroll_to=${item.comment.comment_id}&valsi_id=${item.comment.valsi_id}&definition_id=${item.comment.definition_id || 0}`
-                          )
-                        : item.source === 'wiki'
-                          ? router.push(`/wiki/${encodeURIComponent(item.article.title)}`)
-                          : handleViewMailItem(item.message)
-                    "
-                  >
-                    <div
-                      v-if="
-                        item.source === 'comment' &&
-                        (item.import_source === 'jbotcan' || item.import_source === 'freeforums')
-                      "
-                      class="mb-1"
-                    >
-                      <SourceTypeBadge
-                        :type="item.import_source === 'freeforums' ? 'freeforums' : 'jbotcan'"
-                        :label="
-                          item.import_source === 'freeforums'
-                            ? $t('home.waveSourceFreeforums')
-                            : 'jbotcan'
-                        "
-                      />
-                    </div>
-                    <CommentItem
-                      v-if="item.source === 'comment'"
-                      :comment="item.comment"
-                      :reply-enabled="true"
-                      :show-context="true"
-                      @reply="handleReply"
-                    />
-                    <div
-                      v-else-if="item.source === 'wiki'"
-                      class="comment-item bg-white border rounded-lg p-3 my-2 hover:border-blue-300 transition-colors min-w-0 max-w-full"
-                    >
-                      <div
-                        class="mb-2 text-sm text-gray-600 whitespace-nowrap overflow-hidden flex items-center"
-                      >
-                        <SourceTypeBadge type="wiki" />
-                        <span
-                          class="text-blue-700 font-medium ml-1.5 truncate inline-block max-w-[calc(100%-120px)]"
-                        >
-                          {{ item.article.title }}
-                        </span>
-                      </div>
-                      <div v-if="item.article.last_edited" class="text-xs text-gray-500 mb-2">
-                        {{ new Date(item.article.last_edited).toLocaleString() }}
-                      </div>
-                      <WikiContent
-                        v-if="item.article.content_preview"
-                        :content="item.article.content_preview"
-                        class="border-t border-gray-100 pt-2 mt-2 max-h-48 overflow-hidden"
-                      />
-                    </div>
-                    <div
-                      v-else
-                      class="comment-item bg-white border rounded-lg p-3 my-2 hover:border-blue-300 transition-colors min-w-0 max-w-full"
-                    >
-                      <div
-                        class="mb-2 text-sm text-gray-600 whitespace-nowrap overflow-hidden flex items-center"
-                      >
-                        <SourceTypeBadge type="mail" />
-                        <span
-                          class="text-blue-700 font-medium ml-1.5 truncate inline-block max-w-[calc(100%-120px)]"
-                        >
-                          {{ item.message.subject || item.message.cleaned_subject || '-' }}
-                        </span>
-                      </div>
-
-                      <div class="text-xs text-gray-500 mb-2">
-                        {{ item.message.from_address }} · {{ item.message.date || '' }}
-                      </div>
-
-                      <div
-                        v-if="item.message.parts_json && textParts(item.message.parts_json).length"
-                        class="mail-card-content border-t border-gray-100 pt-2 mt-2 text-sm text-gray-700"
-                      >
-                        <!-- eslint-disable vue/no-v-html -->
-                        <div
-                          v-for="(part, pidx) in textParts(item.message.parts_json)"
-                          :key="pidx"
-                          v-html="renderMailContent(part.content || '')"
-                        />
-                        <!-- eslint-enable vue/no-v-html -->
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
+              <template v-if="expandCollectionItemId" #collection-matches-before>
                 <div
-                  v-else-if="!isLoading"
-                  class="text-center py-12 bg-blue-50 rounded-lg border border-blue-100"
+                  class="surface-definition-compact text-sm text-gray-700 flex flex-wrap items-center justify-between gap-2"
                 >
-                  <MessageSquare class="mx-auto h-12 w-12 text-blue-400" />
-                  <p class="mt-4 text-gray-600">{{ $t('home.noCommentsFound') }}</p>
+                  <p class="font-medium text-gray-800">{{ $t('home.collectionItemMatches') }}</p>
+                  <Button variant="cancel" type="button" @click="clearCollectionItemExpand">
+                    {{ $t('home.backToSearchResults') }}
+                  </Button>
                 </div>
+              </template>
+              <template v-if="similarDefinitionId" #before>
+                <div v-if="isLoadingSimilarAnchor" class="flex justify-center py-6">
+                  <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600" />
+                </div>
+                <DefinitionCard
+                  v-else-if="similarAnchorDefinition"
+                  :definition="similarAnchorDefinition"
+                  :languages="languages"
+                  :show-vote-buttons="false"
+                  :disable-toolbar="true"
+                  :disable-owner-only-lock="true"
+                  :hide-find-similar="true"
+                  :collections="collections"
+                  @collection-updated="setCollections($event)"
+                />
+                <div class="relative">
+                  <div class="surface-definition-compact pr-10">
+                    <div class="text-xs font-medium text-gray-500">
+                      {{ $t('home.similarSearchLabel') }}
+                    </div>
+                    <p class="mt-2 text-sm text-gray-700">
+                      {{ $t('home.similarSearchHint') }}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    class="absolute top-4 right-4 z-10 inline-flex items-center justify-center rounded p-1 text-gray-500 hover:bg-gray-100 hover:text-gray-800"
+                    :title="$t('filters.resetAllFilters')"
+                    :aria-label="$t('filters.resetAllFilters')"
+                    @click="handleFiltersReset"
+                  >
+                    <X class="h-4 w-4 shrink-0" />
+                  </button>
+                </div>
+              </template>
+            </DictionaryEntries>
+            <div v-else-if="searchMode === 'comments'" class="space-y-4">
+              <div v-if="waveItems.length > 0">
+                <div
+                  v-for="item in waveItems"
+                  :key="
+                    item.source === 'comment'
+                      ? item.comment.comment_id
+                      : item.source === 'wiki'
+                        ? 'wiki-' + item.article.article_url
+                        : 'mail-' + item.message.id
+                  "
+                  class="cursor-pointer"
+                  @click="
+                    item.source === 'comment'
+                      ? router.push(
+                          `/comments?thread_id=${item.comment.thread_id}&comment_id=${item.comment.parent_id}&scroll_to=${item.comment.comment_id}&valsi_id=${item.comment.valsi_id}&definition_id=${item.comment.definition_id || 0}`
+                        )
+                      : item.source === 'wiki'
+                        ? router.push(`/wiki/${encodeURIComponent(item.article.title)}`)
+                        : handleViewMailItem(item.message)
+                  "
+                >
+                  <div
+                    v-if="
+                      item.source === 'comment' &&
+                      (item.import_source === 'jbotcan' || item.import_source === 'freeforums')
+                    "
+                    class="mb-1"
+                  >
+                    <SourceTypeBadge
+                      :type="item.import_source === 'freeforums' ? 'freeforums' : 'jbotcan'"
+                      :label="
+                        item.import_source === 'freeforums'
+                          ? $t('home.waveSourceFreeforums')
+                          : 'jbotcan'
+                      "
+                    />
+                  </div>
+                  <CommentItem
+                    v-if="item.source === 'comment'"
+                    :comment="item.comment"
+                    :reply-enabled="true"
+                    :show-context="true"
+                    @reply="handleReply"
+                  />
+                  <div
+                    v-else-if="item.source === 'wiki'"
+                    class="comment-item bg-white border rounded-lg p-3 my-2 hover:border-blue-300 transition-colors min-w-0 max-w-full"
+                  >
+                    <div
+                      class="mb-2 text-sm text-gray-600 whitespace-nowrap overflow-hidden flex items-center"
+                    >
+                      <SourceTypeBadge type="wiki" />
+                      <span
+                        class="text-blue-700 font-medium ml-1.5 truncate inline-block max-w-[calc(100%-120px)]"
+                      >
+                        {{ item.article.title }}
+                      </span>
+                    </div>
+                    <div v-if="item.article.last_edited" class="text-xs text-gray-500 mb-2">
+                      {{ new Date(item.article.last_edited).toLocaleString() }}
+                    </div>
+                    <WikiContent
+                      v-if="item.article.content_preview"
+                      :content="item.article.content_preview"
+                      class="border-t border-gray-100 pt-2 mt-2 max-h-48 overflow-hidden"
+                    />
+                  </div>
+                  <div
+                    v-else
+                    class="comment-item bg-white border rounded-lg p-3 my-2 hover:border-blue-300 transition-colors min-w-0 max-w-full"
+                  >
+                    <div
+                      class="mb-2 text-sm text-gray-600 whitespace-nowrap overflow-hidden flex items-center"
+                    >
+                      <SourceTypeBadge type="mail" />
+                      <span
+                        class="text-blue-700 font-medium ml-1.5 truncate inline-block max-w-[calc(100%-120px)]"
+                      >
+                        {{ item.message.subject || item.message.cleaned_subject || '-' }}
+                      </span>
+                    </div>
+
+                    <div class="text-xs text-gray-500 mb-2">
+                      {{ item.message.from_address }} · {{ item.message.date || '' }}
+                    </div>
+
+                    <div
+                      v-if="item.message.parts_json && textParts(item.message.parts_json).length"
+                      class="mail-card-content border-t border-gray-100 pt-2 mt-2 text-sm text-gray-700"
+                    >
+                      <!-- eslint-disable vue/no-v-html -->
+                      <div
+                        v-for="(part, pidx) in textParts(item.message.parts_json)"
+                        :key="pidx"
+                        v-html="renderMailContent(part.content || '')"
+                      />
+                      <!-- eslint-enable vue/no-v-html -->
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div
+                v-else-if="!isLoading"
+                class="text-center py-12 bg-blue-50 rounded-lg border border-blue-100"
+              >
+                <MessageSquare class="mx-auto h-12 w-12 text-blue-400" />
+                <p class="mt-4 text-gray-600">{{ $t('home.noCommentsFound') }}</p>
               </div>
             </div>
           </div>

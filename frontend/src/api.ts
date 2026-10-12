@@ -21,11 +21,48 @@ export interface ApiAuthInstance {
   logout: () => void | Promise<void>
 }
 
-type RetryableRequestConfig = InternalAxiosRequestConfig & { _retry?: boolean }
+type RetryableRequestConfig = InternalAxiosRequestConfig & {
+  _retry?: boolean
+  /** Set while this config is counted in the in-flight API tally (route overlay). */
+  _routeOverlayTracked?: boolean
+}
 
 let isRefreshing = false
 const refreshSubscribers: Array<(token: string) => void> = []
 let authInstance: ApiAuthInstance | null = null
+
+/** In-flight `api` requests — used by the generic route-change overlay. */
+let apiPendingCount = 0
+const apiPendingListeners = new Set<() => void>()
+
+function notifyApiPending() {
+  apiPendingListeners.forEach((listener) => listener())
+}
+
+function trackApiStart(config: RetryableRequestConfig) {
+  if (config._routeOverlayTracked) return
+  config._routeOverlayTracked = true
+  apiPendingCount += 1
+  notifyApiPending()
+}
+
+function trackApiEnd(config?: RetryableRequestConfig) {
+  if (!config?._routeOverlayTracked) return
+  config._routeOverlayTracked = false
+  apiPendingCount = Math.max(0, apiPendingCount - 1)
+  notifyApiPending()
+}
+
+export function getApiPendingCount() {
+  return apiPendingCount
+}
+
+export function onApiPendingChange(listener: () => void) {
+  apiPendingListeners.add(listener)
+  return () => {
+    apiPendingListeners.delete(listener)
+  }
+}
 
 export const setAuthInstance = (auth: ApiAuthInstance | null) => {
   authInstance = auth
@@ -49,7 +86,10 @@ export const api: AxiosInstance = axios.create({
 })
 
 api.interceptors.response.use(
-  (response: AxiosResponse) => response,
+  (response: AxiosResponse) => {
+    trackApiEnd(response.config as RetryableRequestConfig)
+    return response
+  },
   async (error: unknown) => {
     const err = error as { config?: RetryableRequestConfig; response?: { status?: number } }
     const originalRequest = err.config
@@ -66,6 +106,7 @@ api.interceptors.response.use(
         requestUrl.startsWith('/auth/oauth/')
 
       if (isAuthEndpoint) {
+        trackApiEnd(originalRequest)
         if (originalRequest.url === '/auth/refresh' && authInstance) {
           authInstance.logout()
         }
@@ -79,6 +120,7 @@ api.interceptors.response.use(
               originalRequest.headers = new AxiosHeaders()
             }
             originalRequest.headers.Authorization = `Bearer ${token}`
+            trackApiEnd(originalRequest)
             resolve(api(originalRequest))
           })
         })
@@ -102,14 +144,17 @@ api.interceptors.response.use(
             originalRequest.headers = new AxiosHeaders()
           }
           originalRequest.headers.Authorization = `Bearer ${authInstance.state.accessToken}`
+          trackApiEnd(originalRequest)
           return api(originalRequest)
         } else {
+          trackApiEnd(originalRequest)
           authInstance.logout()
           return Promise.reject(error)
         }
       } catch (refreshErr) {
         isRefreshing = false
         refreshSubscribers.length = 0
+        trackApiEnd(originalRequest)
 
         if (authInstance) {
           authInstance.logout()
@@ -117,12 +162,14 @@ api.interceptors.response.use(
         return Promise.reject(refreshErr)
       }
     }
+    trackApiEnd(originalRequest)
     return Promise.reject(error)
   }
 )
 
 api.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
+    trackApiStart(config as RetryableRequestConfig)
     if (typeof window === 'undefined') return config
     const accessToken = localStorage.getItem('accessToken')
 

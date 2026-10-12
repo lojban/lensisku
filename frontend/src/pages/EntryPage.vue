@@ -1,206 +1,203 @@
 <template>
-  <!-- Loading State -->
-  <div v-if="isLoading" class="flex justify-center py-8">
-    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
-  </div>
-  <!-- Content: semantic article for SEO and accessibility -->
-  <article v-else-if="valsi" class="space-y-3" itemscope itemtype="https://schema.org/DefinedTerm">
-    <PageHeader title-as="h1" :title-attrs="{ itemprop: 'name' }">
-      <template #icon>
-        <BookOpen class="h-7 w-7 shrink-0 sm:h-8 sm:w-8" aria-hidden="true" />
-      </template>
-      <template #title>{{ valsi.word }}</template>
-      <template #title-after>
-        <AudioPlayer
-          v-if="definitions.length > 0 && definitions[0].sound_url"
-          :url="definitions[0].sound_url"
-          :valsi-id-or-word="paramStr(route.params.id)"
-          class="shrink-0"
-        />
-      </template>
-      <template #meta>
-        <span
-          class="inline-flex shrink-0 items-center rounded-full px-2.5 py-1 text-xs font-medium sm:px-3 sm:text-sm"
-          :class="getTypeClass(valsi.type_name)"
-        >
-          {{ tm('wordTypes')[valsi.type_name] }}
-        </span>
-        <div
-          v-if="valsi.canonical_word"
-          class="flex min-w-0 max-w-full flex-wrap items-center gap-x-1.5 gap-y-0.5 text-sm text-gray-700"
-        >
-          <span class="shrink-0 font-medium text-gray-800">{{
-            t('entryPage.canonicalFormLabel')
-          }}</span>
-          <RouterLink
-            :to="{
-              path: `/valsi/${valsi.canonical_word.replace(/ /g, '_')}`,
-              query: { langid: valsi.source_langid },
-            }"
-            class="cursor-pointer text-nav-link transition-colors duration-200 hover:text-blue-800 hover:underline"
+  <div>
+    <article v-if="valsi" class="space-y-3" itemscope itemtype="https://schema.org/DefinedTerm">
+      <PageHeader title-as="h1" :title-attrs="{ itemprop: 'name' }">
+        <template #icon>
+          <BookOpen class="h-7 w-7 shrink-0 sm:h-8 sm:w-8" aria-hidden="true" />
+        </template>
+        <template #title>{{ valsi.word }}</template>
+        <template #title-after>
+          <AudioPlayer
+            v-if="definitions.length > 0 && definitions[0].sound_url"
+            :url="definitions[0].sound_url"
+            :valsi-id-or-word="paramStr(route.params.id)"
+            class="shrink-0"
+          />
+        </template>
+        <template #meta>
+          <span
+            class="inline-flex shrink-0 items-center rounded-full px-2.5 py-1 text-xs font-medium sm:px-3 sm:text-sm"
+            :class="getTypeClass(valsi.type_name)"
           >
-            {{ valsi.canonical_word }}
-          </RouterLink>
-        </div>
-        <div
-          v-if="valsi.decomposition"
-          class="flex min-w-0 max-w-full flex-wrap items-center gap-x-1.5 gap-y-0.5 text-sm text-gray-700"
-        >
-          <span class="shrink-0 font-medium text-gray-800">{{
-            t('entryPage.decompositionLabel')
-          }}</span>
-          <span class="flex min-w-0 flex-wrap items-center gap-x-1">
-            <template v-for="(word, index) in valsi.decomposition" :key="word">
-              <RouterLink
-                :to="{
-                  path: `/valsi/${word.replace(/ /g, '_')}`,
-                  query: { langid: valsi.source_langid },
-                }"
-                class="cursor-pointer text-nav-link transition-colors duration-200 hover:text-blue-800 hover:underline"
-              >
-                {{ word }}
-              </RouterLink>
-              <span v-if="Number(index) < valsi.decomposition.length - 1" class="text-gray-500"
-                >+</span
-              >
-            </template>
+            {{ tm('wordTypes')[valsi.type_name] }}
           </span>
-        </div>
-      </template>
-    </PageHeader>
-    <!-- Discussion Section -->
-    <div class="flex flex-wrap gap-2 w-full lg:w-auto justify-center">
-      <RouterLink :to="`/comments?valsi_id=${valsi.valsiid}`" class="ui-btn--neutral-slate">
-        <AudioWaveform class="w-4 h-4" />
-        <span
-          v-if="(valsi.comment_count ?? 0) > 0"
-          class="text-xs font-medium bg-white/40 px-1.5 rounded-md border border-white/30"
-        >
-          {{ valsi.comment_count }}
-        </span>
-        <span>{{ t('entryPage.discussEntry') }}</span>
-      </RouterLink>
-      <SubscriptionControls :valsi-id="valsi.valsiid" :auth="auth" />
-    </div>
-    <!-- Definitions Section -->
-    <div class="space-y-4">
-      <h3 class="text-xl font-semibold text-gray-700 flex items-center gap-2">
-        <span>{{ t('entryPage.definitions') }}</span>
-        <span class="text-sm font-normal text-gray-500">({{ definitions.length }})</span>
-      </h3>
-
-      <div v-if="auth.state.isLoggedIn" class="flex flex-wrap gap-3">
-        <IconButton
-          :label="t('entryPage.addDefinition')"
-          button-classes="ui-btn--create"
-          @click="router.push(`/valsi/add?word=${encodeURIComponent(valsi.word)}`)"
-        />
-      </div>
-
-      <div class="space-y-4">
-        <DefinitionCard
-          v-for="def in definitions"
-          :key="def.definitionid"
-          :definition="def"
-          :languages="languages"
-          :disable-discussion-button="true"
-          :show-score="props.showScores"
-          :show-comment-button="false"
-          :show-word-type="false"
-          :show-audio="false"
-          :show-vote-buttons="true"
-          :definition-id="def.definitionid"
-          :show-definition-number="true"
-          :collections="collections"
-          @refresh-definitions="fetchDefinitionsDetails"
-        />
-      </div>
-      <!-- No Definitions State -->
-      <div
-        v-if="definitions.length === 0"
-        class="text-center py-8 bg-gray-50 rounded-lg text-gray-600"
-      >
-        {{ t('entryPage.noDefinitions') }}
-      </div>
-    </div>
-    <!-- Definitions of attested forms sharing an expansion or canonical spelling -->
-    <section v-if="relatedForms.length" class="space-y-4 pt-4 border-t">
-      <h3 class="text-xl font-semibold text-gray-700">{{ t('entryPage.relatedForms') }}</h3>
-      <div v-for="group in relatedForms" :key="group.valsiid" class="space-y-3">
-        <h4 class="text-lg font-semibold">
-          <RouterLink
-            :to="`/valsi/${encodeURIComponent(group.word.replace(/ /g, '_'))}`"
-            class="text-nav-link hover:underline"
+          <div
+            v-if="valsi.canonical_word"
+            class="flex min-w-0 max-w-full flex-wrap items-center gap-x-1.5 gap-y-0.5 text-sm text-gray-700"
           >
-            {{ group.word }}
-          </RouterLink>
-        </h4>
-        <DefinitionCard
-          v-for="def in group.definitions"
-          :key="def.definitionid"
-          :definition="def"
-          :languages="languages"
-          :disable-discussion-button="true"
-          :show-score="props.showScores"
-          :show-comment-button="false"
-          :show-word-type="false"
-          :show-audio="false"
-          :show-vote-buttons="true"
-          :definition-id="def.definitionid"
-          :show-definition-number="true"
-          :collections="collections"
-          @refresh-definitions="fetchDefinitionsDetails"
-        />
-      </div>
-    </section>
-    <!-- Translations Section -->
-    <div v-if="translations.length > 0" class="space-y-4 pt-4 border-t">
-      <h3 class="text-xl font-semibold text-gray-700 flex items-center gap-2">
-        <span>{{ t('entryPage.translationsLabel') }}</span>
-        <span class="text-sm font-normal text-gray-500">({{ translations.length }})</span>
-      </h3>
-
-      <div class="space-y-4">
-        <div
-          v-for="trans in translations"
-          :key="trans.definitionid"
-          class="p-3 bg-gray-50 rounded-lg border"
-        >
-          <div class="flex justify-between items-start">
-            <div>
-              <RouterLink
-                :to="`/valsi/${trans.valsiword}?highlight_definition_id=${trans.definitionid}`"
-                class="font-bold text-blue-600 hover:underline"
-              >
-                {{ trans.valsiword }}
-              </RouterLink>
-              <span class="text-gray-500 text-sm ml-2">({{ trans.lang_name }})</span>
-              <div class="mt-1 text-gray-800">{{ trans.definition }}</div>
-
-              <div class="mt-2 flex items-center space-x-3">
-                <RouterLink
-                  :to="`/definition_link/${trans.link_id}/discussion`"
-                  class="text-xs font-bold text-blue-500 hover:text-blue-700 flex items-center bg-blue-50 px-2 py-1 rounded transition-colors"
-                >
-                  <MessageCircle class="h-3 w-3 mr-1" />
-                  {{ t('definitionLinkDiscussion.discussion') }}
-                </RouterLink>
-              </div>
-            </div>
-            <Button
-              v-if="auth.state.isLoggedIn"
-              variant="neutral"
-              class="text-red-500 hover:text-red-700 p-1"
-              :title="t('entryPage.unlinkTranslation')"
-              @click="unlinkTranslation(trans)"
+            <span class="shrink-0 font-medium text-gray-800">{{
+              t('entryPage.canonicalFormLabel')
+            }}</span>
+            <RouterLink
+              :to="{
+                path: `/valsi/${valsi.canonical_word.replace(/ /g, '_')}`,
+                query: { langid: valsi.source_langid },
+              }"
+              class="cursor-pointer text-nav-link transition-colors duration-200 hover:text-blue-800 hover:underline"
             >
-              <Trash2 class="h-4 w-4" />
-            </Button>
+              {{ valsi.canonical_word }}
+            </RouterLink>
+          </div>
+          <div
+            v-if="valsi.decomposition"
+            class="flex min-w-0 max-w-full flex-wrap items-center gap-x-1.5 gap-y-0.5 text-sm text-gray-700"
+          >
+            <span class="shrink-0 font-medium text-gray-800">{{
+              t('entryPage.decompositionLabel')
+            }}</span>
+            <span class="flex min-w-0 flex-wrap items-center gap-x-1">
+              <template v-for="(word, index) in valsi.decomposition" :key="word">
+                <RouterLink
+                  :to="{
+                    path: `/valsi/${word.replace(/ /g, '_')}`,
+                    query: { langid: valsi.source_langid },
+                  }"
+                  class="cursor-pointer text-nav-link transition-colors duration-200 hover:text-blue-800 hover:underline"
+                >
+                  {{ word }}
+                </RouterLink>
+                <span v-if="Number(index) < valsi.decomposition.length - 1" class="text-gray-500"
+                  >+</span
+                >
+              </template>
+            </span>
+          </div>
+        </template>
+      </PageHeader>
+      <!-- Discussion Section -->
+      <div class="flex flex-wrap gap-2 w-full lg:w-auto justify-center">
+        <RouterLink :to="`/comments?valsi_id=${valsi.valsiid}`" class="ui-btn--neutral-slate">
+          <AudioWaveform class="w-4 h-4" />
+          <span
+            v-if="(valsi.comment_count ?? 0) > 0"
+            class="text-xs font-medium bg-white/40 px-1.5 rounded-md border border-white/30"
+          >
+            {{ valsi.comment_count }}
+          </span>
+          <span>{{ t('entryPage.discussEntry') }}</span>
+        </RouterLink>
+        <SubscriptionControls :valsi-id="valsi.valsiid" :auth="auth" />
+      </div>
+      <!-- Definitions Section -->
+      <div class="space-y-4">
+        <h3 class="text-xl font-semibold text-gray-700 flex items-center gap-2">
+          <span>{{ t('entryPage.definitions') }}</span>
+          <span class="text-sm font-normal text-gray-500">({{ definitions.length }})</span>
+        </h3>
+
+        <div v-if="auth.state.isLoggedIn" class="flex flex-wrap gap-3">
+          <IconButton
+            :label="t('entryPage.addDefinition')"
+            button-classes="ui-btn--create"
+            @click="router.push(`/valsi/add?word=${encodeURIComponent(valsi.word)}`)"
+          />
+        </div>
+
+        <div class="space-y-4">
+          <DefinitionCard
+            v-for="def in definitions"
+            :key="def.definitionid"
+            :definition="def"
+            :languages="languages"
+            :disable-discussion-button="true"
+            :show-score="props.showScores"
+            :show-comment-button="false"
+            :show-word-type="false"
+            :show-audio="false"
+            :show-vote-buttons="true"
+            :definition-id="def.definitionid"
+            :show-definition-number="true"
+            :collections="collections"
+            @refresh-definitions="fetchDefinitionsDetails"
+          />
+        </div>
+        <!-- No Definitions State -->
+        <div
+          v-if="definitions.length === 0"
+          class="text-center py-8 bg-gray-50 rounded-lg text-gray-600"
+        >
+          {{ t('entryPage.noDefinitions') }}
+        </div>
+      </div>
+      <!-- Definitions of attested forms sharing an expansion or canonical spelling -->
+      <section v-if="relatedForms.length" class="space-y-4 pt-4 border-t">
+        <h3 class="text-xl font-semibold text-gray-700">{{ t('entryPage.relatedForms') }}</h3>
+        <div v-for="group in relatedForms" :key="group.valsiid" class="space-y-3">
+          <h4 class="text-lg font-semibold">
+            <RouterLink
+              :to="`/valsi/${encodeURIComponent(group.word.replace(/ /g, '_'))}`"
+              class="text-nav-link hover:underline"
+            >
+              {{ group.word }}
+            </RouterLink>
+          </h4>
+          <DefinitionCard
+            v-for="def in group.definitions"
+            :key="def.definitionid"
+            :definition="def"
+            :languages="languages"
+            :disable-discussion-button="true"
+            :show-score="props.showScores"
+            :show-comment-button="false"
+            :show-word-type="false"
+            :show-audio="false"
+            :show-vote-buttons="true"
+            :definition-id="def.definitionid"
+            :show-definition-number="true"
+            :collections="collections"
+            @refresh-definitions="fetchDefinitionsDetails"
+          />
+        </div>
+      </section>
+      <!-- Translations Section -->
+      <div v-if="translations.length > 0" class="space-y-4 pt-4 border-t">
+        <h3 class="text-xl font-semibold text-gray-700 flex items-center gap-2">
+          <span>{{ t('entryPage.translationsLabel') }}</span>
+          <span class="text-sm font-normal text-gray-500">({{ translations.length }})</span>
+        </h3>
+
+        <div class="space-y-4">
+          <div
+            v-for="trans in translations"
+            :key="trans.definitionid"
+            class="p-3 bg-gray-50 rounded-lg border"
+          >
+            <div class="flex justify-between items-start">
+              <div>
+                <RouterLink
+                  :to="`/valsi/${trans.valsiword}?highlight_definition_id=${trans.definitionid}`"
+                  class="font-bold text-blue-600 hover:underline"
+                >
+                  {{ trans.valsiword }}
+                </RouterLink>
+                <span class="text-gray-500 text-sm ml-2">({{ trans.lang_name }})</span>
+                <div class="mt-1 text-gray-800">{{ trans.definition }}</div>
+
+                <div class="mt-2 flex items-center space-x-3">
+                  <RouterLink
+                    :to="`/definition_link/${trans.link_id}/discussion`"
+                    class="text-xs font-bold text-blue-500 hover:text-blue-700 flex items-center bg-blue-50 px-2 py-1 rounded transition-colors"
+                  >
+                    <MessageCircle class="h-3 w-3 mr-1" />
+                    {{ t('definitionLinkDiscussion.discussion') }}
+                  </RouterLink>
+                </div>
+              </div>
+              <Button
+                v-if="auth.state.isLoggedIn"
+                variant="neutral"
+                class="text-red-500 hover:text-red-700 p-1"
+                :title="t('entryPage.unlinkTranslation')"
+                @click="unlinkTranslation(trans)"
+              >
+                <Trash2 class="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  </article>
+    </article>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -248,7 +245,6 @@ const props = defineProps({
 const router = useRouter()
 const auth = useAuth()
 const { t, tm } = useI18n()
-
 const languages = ref([])
 
 const { collections, preload: preloadCollections } = useCollectionsCache()

@@ -8,11 +8,14 @@ export type { SupportedLocale } from '../config/locales'
 // Eager load HomePage so "/" and locale roots are always preloaded (no lazy chunk).
 import HomePage from '../pages/HomePage.vue'
 
-/** Shared route meta for definition/wiki upsert pages (fixed header, inner scroll). */
+/**
+ * Shared route meta for definition/wiki upsert pages (fixed header, inner scroll).
+ * `fullHeight` + no `hideFooter` → App Teleports the public-domain notice into
+ * `.public-domain-host` (UpsertPageLayout) / `.feed-page__body` (feed pages).
+ */
 const upsertPageMeta = {
   requiresAuth: true,
   fullHeight: true,
-  hideFooter: true,
   hideFab: true,
   contentTopPaddingMainOnly: true,
 } as const
@@ -24,7 +27,10 @@ const baseRoutes: Array<RouteRecordRaw> = [
     path: '',
     name: 'Home',
     component: HomePage,
-    meta: { fullHeight: true, contentTopPaddingMainOnly: true },
+    meta: {
+      fullHeight: true,
+      contentTopPaddingMainOnly: true,
+    },
     props: (route) => ({
       urlSearchQuery: route.query.q,
       urlSearchMode: route.query.mode || 'dictionary',
@@ -34,7 +40,7 @@ const baseRoutes: Array<RouteRecordRaw> = [
     path: '/activity',
     name: 'Activity',
     component: () => import('../pages/ActivityPage.vue'),
-    meta: { fullHeight: true, hideFooter: true, hidePageFooter: true },
+    meta: { fullHeight: true, hidePageFooter: true },
   },
   { path: '/create', name: 'Create', component: () => import('../pages/CreatePage.vue') },
   {
@@ -110,7 +116,6 @@ const baseRoutes: Array<RouteRecordRaw> = [
     meta: {
       requiresAuth: true,
       fullHeight: true,
-      hideFooter: true,
       hidePageFooter: true,
     },
   },
@@ -199,7 +204,6 @@ const baseRoutes: Array<RouteRecordRaw> = [
     meta: {
       hideFab: true,
       fullHeight: true,
-      hideFooter: true,
       hidePageFooter: true,
       contentTopPaddingMainOnly: true,
     },
@@ -220,7 +224,6 @@ const baseRoutes: Array<RouteRecordRaw> = [
     meta: {
       hideFab: true,
       fullHeight: true,
-      hideFooter: true,
       hidePageFooter: true,
       contentTopPaddingMainOnly: true,
     },

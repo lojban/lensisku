@@ -267,7 +267,8 @@
         ]"
       >
         <div
-          class="flex-1"
+          ref="routeStageRef"
+          class="relative flex-1"
           :class="[
             route.meta.contentTopPaddingMainOnly ||
             route.meta.authFullBleed ||
@@ -282,18 +283,31 @@
               : '',
           ]"
         >
+          <!-- Previous route frozen until API traffic after navigation goes quiet. -->
           <div
-            v-if="auth.state.isLoading"
-            class="flex h-full w-full items-center justify-center min-h-[50vh]"
+            v-if="routeOverlayHtml != null"
+            class="route-view-freeze"
+            aria-hidden="true"
+            v-html="routeOverlayHtml"
+          />
+          <LoadingSpinner
+            v-if="routeOverlayHtml != null"
+            variant="inline"
+            class="route-freeze-spinner"
+          />
+          <LoadingSpinner v-else-if="auth.state.isLoading" variant="page" />
+          <div
+            data-route-live
+            class="relative min-h-0 min-w-0"
+            :class="[
+              route.meta.fullHeight ? 'full-height-route-host h-full' : '',
+              routeOverlayHtml != null ? 'invisible pointer-events-none' : '',
+            ]"
           >
-            <div
-              class="h-8 w-8 animate-spin rounded-full border-4 border-gray-200 border-t-blue-600"
-            ></div>
-          </div>
-          <router-view v-else v-slot="{ Component, route: childRoute }">
-            <div v-if="route.meta.fullHeight" class="full-height-route-host">
+            <router-view v-if="!auth.state.isLoading" v-slot="{ Component, route: childRoute }">
               <component
                 :is="Component"
+                :key="childRoute.fullPath"
                 v-bind="metaProps(childRoute.meta.props)"
                 v-on="
                   isHomePage
@@ -305,30 +319,22 @@
                     : {}
                 "
               />
-            </div>
-            <component
-              :is="Component"
-              v-else
-              v-bind="metaProps(childRoute.meta.props)"
-              v-on="
-                isHomePage
-                  ? {
-                      search: performSearch,
-                      'view-message': viewMessage,
-                      'view-thread': viewThread,
-                    }
-                  : {}
-              "
-            />
-          </router-view>
+            </router-view>
+          </div>
         </div>
 
-        <footer
-          v-if="!route.meta.hideFooter"
-          class="mt-6 max-w-full break-words px-3 py-3 text-center text-xs text-gray-500 leading-relaxed"
+        <!--
+          `hideFooter` hides. Normal routes: inline after content.
+          `fullHeight`: Teleport into the page scroll column (see PUBLIC_DOMAIN_HOST).
+        -->
+        <PublicDomainNotice v-if="showPublicDomainNotice && !publicDomainDocked" />
+        <Teleport
+          v-if="showPublicDomainNotice && publicDomainDocked && publicDomainHostReady"
+          :key="route.fullPath"
+          :to="publicDomainHostSelector"
         >
-          {{ $t('footer.publicDomainNotice') }}
-        </footer>
+          <PublicDomainNotice dock />
+        </Teleport>
       </div>
     </main>
   </div>
@@ -356,7 +362,7 @@ import {
   FilePlus,
 } from '@lucide/vue'
 import { Menu } from '@lucide/vue' // Explicitly import Menu if it was missed by auto-sort
-import { ref, onMounted, watch, computed, nextTick } from 'vue'
+import { ref, onMounted, onBeforeUnmount, watch, computed, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 
 import { useI18n } from 'vue-i18n'
@@ -386,7 +392,15 @@ import { useNotifications } from '@/services/messaging/NotificationService'
 import { useButtonTheme } from './composables/useButtonTheme'
 import { useActivityUnread } from './composables/useActivityUnread'
 import CreateMenu from './components/CreateMenu.vue'
+import LoadingSpinner from './components/LoadingSpinner.vue'
+import PublicDomainNotice from './components/PublicDomainNotice.vue'
 import UnsavedChangesDialog from './components/UnsavedChangesDialog.vue'
+import {
+  beginRouteOverlay,
+  clearRouteOverlay,
+  scheduleRouteOverlaySettle,
+  useRouteOverlay,
+} from './composables/useRouteOverlay'
 import { localeCaptureGroupRegex, supportedLocales } from './config/locales'
 import {
   noindexRoutes,
@@ -404,6 +418,9 @@ const $locale = i18n.locale
 
 const router = useRouter()
 const route = useRoute()
+const routeStageRef = ref<HTMLElement | null>(null)
+const { freezeHtml: routeOverlayHtml } = useRouteOverlay()
+
 const seoRouteName = computed(() => String(route.name || '').replace(/-(en|jbo|ru|ja|zh)$/, ''))
 const seoNoindex = computed(() => noindexRoutes.has(seoRouteName.value))
 const seoTitle = computed(() => {
@@ -460,6 +477,37 @@ useHead({
   }),
   htmlAttrs: computed(() => ({ lang: i18n.locale.value })),
 })
+
+/**
+ * Public-domain notice — controlled only by route meta + this Teleport.
+ * fullHeight pages must expose `.feed-page__body` or `.public-domain-host` (or meta.publicDomainHost).
+ */
+const PUBLIC_DOMAIN_HOST_DEFAULT = '.feed-page__body, .public-domain-host'
+const showPublicDomainNotice = computed(() => !route.meta.hideFooter)
+const publicDomainDocked = computed(() => !!route.meta.fullHeight)
+const publicDomainHostSelector = computed(
+  () => route.meta.publicDomainHost || PUBLIC_DOMAIN_HOST_DEFAULT
+)
+/** False until the scroll host exists (lazy route chunks mount after App). */
+const publicDomainHostReady = ref(false)
+
+watch(
+  () =>
+    [route.fullPath, showPublicDomainNotice.value, publicDomainDocked.value, publicDomainHostSelector.value] as const,
+  async ([, show, docked, selector]) => {
+    publicDomainHostReady.value = false
+    if (!show || !docked) return
+    for (let i = 0; i < 90; i++) {
+      await nextTick()
+      if (document.querySelector(selector)) {
+        publicDomainHostReady.value = true
+        return
+      }
+      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()))
+    }
+  },
+  { flush: 'post', immediate: true }
+)
 
 const isHomePage = computed(
   () => route.name === 'Home' || (typeof route.name === 'string' && route.name.startsWith('Home-'))
@@ -626,6 +674,29 @@ watch(
     mainContent?.scrollTo({ top: 0, behavior: 'auto' })
   }
 )
+
+const removeRouteOverlayBefore = router.beforeEach((to, from) => {
+  if (to.fullPath === from.fullPath) return
+  if (!from.name && from.matched.length === 0) return
+  const live = routeStageRef.value?.querySelector('[data-route-live]') as HTMLElement | null
+  beginRouteOverlay(live)
+})
+const removeRouteOverlayAfter = router.afterEach(async () => {
+  if (routeOverlayHtml.value == null) return
+  // Let the new page mount and kick off its fetches before we start the quiet timer.
+  await nextTick()
+  await nextTick()
+  scheduleRouteOverlaySettle()
+})
+const removeRouteOverlayError = router.onError(() => {
+  clearRouteOverlay()
+})
+onBeforeUnmount(() => {
+  removeRouteOverlayBefore()
+  removeRouteOverlayAfter()
+  removeRouteOverlayError()
+  clearRouteOverlay()
+})
 
 // Handle click outside mobile menu to close it
 const handleClickOutside = (event) => {

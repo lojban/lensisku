@@ -49,9 +49,10 @@ defineExpose({ scrollToTop })
       </div>
     </header>
 
+    <!-- Scroll column; App Teleports the public-domain notice here when fullHeight. -->
     <div
       ref="scrollEl"
-      class="min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain px-3 pb-4 pt-4 sm:px-4 sm:pb-6"
+      class="public-domain-host flex min-h-0 flex-1 flex-col overflow-x-hidden overflow-y-auto overscroll-y-contain px-3 pb-0 pt-4 sm:px-4"
       @scroll="handleScroll"
     >
       <div

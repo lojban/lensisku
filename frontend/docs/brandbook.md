@@ -56,12 +56,12 @@ This document is the **human-readable contract** for product, design, QA, and en
 
 ### 5b. Transfer-direction icons (import / upload · export / download)
 
-| Action | Direction | Approved Lucide glyphs | Import from |
-| ------ | --------- | ---------------------- | ----------- |
-| **Import** (pick file / bring data in) | Arrow **up** | `Upload`, `FileUp` | `ImportIcon`, `FileImportIcon` from `@packages/ui` |
-| **Upload** (send file to server) | Arrow **up** | `Upload` | `UploadIcon` from `@packages/ui` |
-| **Export** (generate / send data out) | Arrow **down** | `Download`, `FileDown` | `ExportIcon`, `FileExportIcon` from `@packages/ui` |
-| **Download** (save locally) | Arrow **down** | `Download` | `DownloadIcon` from `@packages/ui` |
+| Action                                 | Direction      | Approved Lucide glyphs | Import from                                        |
+| -------------------------------------- | -------------- | ---------------------- | -------------------------------------------------- |
+| **Import** (pick file / bring data in) | Arrow **up**   | `Upload`, `FileUp`     | `ImportIcon`, `FileImportIcon` from `@packages/ui` |
+| **Upload** (send file to server)       | Arrow **up**   | `Upload`               | `UploadIcon` from `@packages/ui`                   |
+| **Export** (generate / send data out)  | Arrow **down** | `Download`, `FileDown` | `ExportIcon`, `FileExportIcon` from `@packages/ui` |
+| **Download** (save locally)            | Arrow **down** | `Download`             | `DownloadIcon` from `@packages/ui`                 |
 
 **Rules**
 
@@ -105,34 +105,34 @@ Application code and **`Button.vue`** / **`IconButton.vue`** should use **semant
 
 **Prefer canonical role names** in new code; **legacy synonyms** stay in the map so older templates keep working.
 
-| Action role                   | Canonical class                                      | Typical use                                                                                    |
-| ----------------------------- | ---------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| **Read / open / navigate**    | `ui-btn--read`                                       | Links, “open”, export/download, neutral forward. _Legacy:_ `ui-btn--get`.                      |
+| Action role                   | Canonical class                                      | Typical use                                                                                           |
+| ----------------------------- | ---------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| **Read / open / navigate**    | `ui-btn--read`                                       | Links, “open”, export/download, neutral forward. _Legacy:_ `ui-btn--get`.                             |
 | **Edit / apply**              | `ui-btn--edit`                                       | Save / apply / bulk-edit — **yellow** (`btn-update` / `btn-aqua-yellow`). _Legacy:_ `ui-btn--update`. |
-| **Create / add**              | `ui-btn--create`                                     | Submit new entity, add row. Often paired with **`ui-btn--primary`** (same mapping).            |
-| **Delete / remove**           | `ui-btn--delete`                                     | Destructive removal. _Synonym:_ `ui-btn--remove` (same mapping).                               |
-| **Dismiss / cancel**          | `ui-btn--cancel`                                     | Close modal, secondary “no”. _Synonym:_ `ui-btn--dismiss`.                                     |
-| **Toolbar / filter chrome**   | `ui-btn--toolbar`                                    | Compact toggles, reset filters (`Button variant="toolbar"`). _Legacy:_ `ui-btn--aqua-default`. |
-| **Neutral / low emphasis**    | `ui-btn--empty`                                      | Deselect, clipboard, embossed default.                                                         |
-| **Neutral (tinted)**          | `ui-btn--neutral`, `neutral-muted`, `neutral-slate`  | Secondary pills, back links, muted actions.                                                    |
-| **Pagination back / forward** | `ui-btn--back`, `ui-btn--forward`                    | Prev/next page. _Legacy:_ `previous`, `next`.                                                  |
-| **Continue**                  | `ui-btn--continue`                                   | Resume flow (maps like read/get).                                                              |
-| **Market / commerce**         | `ui-btn--market`                                     | Rose / market styling.                                                                         |
-| **History / versions**        | `ui-btn--history`                                    | Version list, purple history.                                                                  |
-| **Insert / inline add**       | `ui-btn--insert`                                     | Add to selection, blue insert.                                                                 |
-| **Link / outbound**           | `ui-btn--link`                                       | Blue link-style.                                                                               |
-| **Accent (activity)**         | `ui-btn--accent-purple`                              | “View activity” and similar.                                                                   |
-| **Generic action (pink)**     | `ui-btn--action`                                     | Promotional / emphasis CTA.                                                                    |
-| **Reply**                     | `ui-btn--reply`                                      | Thread reply.                                                                                  |
-| **Reaction**                  | `ui-btn--reaction`, `reaction-active`                | Toggle reactions.                                                                              |
-| **Auth**                      | `ui-btn--auth-login`, `auth-signup`                  | Login vs signup emphasis.                                                                      |
-| **Status**                    | `ui-btn--success`, `error`, `warning`, `danger-rose` | Result / alert / destructive rose.                                                             |
-| **Revert**                    | `ui-btn--revert`                                     | Undo to old revision — **amber** (yellow reserved for edit).                                   |
-| **Study grading**             | `study-correct`, `study-wrong`                       | Flashcard / Lingo result.                                                                      |
-| **Warning shades**            | `warning`, `warning-orange`, `warning-yellow`        | Caution; orange/amber vs decorative **yellow** (`warning-yellow` / `palette-yellow`).          |
-| **Sort / palette**            | `sort-*`, `palette-*`                                | Rotating colors in lists (see map).                                                            |
-| **Segmented group**           | `ui-btn--group-item`                                 | Inner segment (with `.btn-group` / `.btn-group-forced`).                                       |
-| **Special**                   | `ui-btn--fab`, `toggle`                              | FAB and toggle have extra rules in the same Tailwind layer.                                    |
+| **Create / add**              | `ui-btn--create`                                     | Submit new entity, add row. Often paired with **`ui-btn--primary`** (same mapping).                   |
+| **Delete / remove**           | `ui-btn--delete`                                     | Destructive removal. _Synonym:_ `ui-btn--remove` (same mapping).                                      |
+| **Dismiss / cancel**          | `ui-btn--cancel`                                     | Close modal, secondary “no”. _Synonym:_ `ui-btn--dismiss`.                                            |
+| **Toolbar / filter chrome**   | `ui-btn--toolbar`                                    | Compact toggles, reset filters (`Button variant="toolbar"`). _Legacy:_ `ui-btn--aqua-default`.        |
+| **Neutral / low emphasis**    | `ui-btn--empty`                                      | Deselect, clipboard, embossed default.                                                                |
+| **Neutral (tinted)**          | `ui-btn--neutral`, `neutral-muted`, `neutral-slate`  | Secondary pills, back links, muted actions.                                                           |
+| **Pagination back / forward** | `ui-btn--back`, `ui-btn--forward`                    | Prev/next page. _Legacy:_ `previous`, `next`.                                                         |
+| **Continue**                  | `ui-btn--continue`                                   | Resume flow (maps like read/get).                                                                     |
+| **Market / commerce**         | `ui-btn--market`                                     | Rose / market styling.                                                                                |
+| **History / versions**        | `ui-btn--history`                                    | Version list, purple history.                                                                         |
+| **Insert / inline add**       | `ui-btn--insert`                                     | Add to selection, blue insert.                                                                        |
+| **Link / outbound**           | `ui-btn--link`                                       | Blue link-style.                                                                                      |
+| **Accent (activity)**         | `ui-btn--accent-purple`                              | “View activity” and similar.                                                                          |
+| **Generic action (pink)**     | `ui-btn--action`                                     | Promotional / emphasis CTA.                                                                           |
+| **Reply**                     | `ui-btn--reply`                                      | Thread reply.                                                                                         |
+| **Reaction**                  | `ui-btn--reaction`, `reaction-active`                | Toggle reactions.                                                                                     |
+| **Auth**                      | `ui-btn--auth-login`, `auth-signup`                  | Login vs signup emphasis.                                                                             |
+| **Status**                    | `ui-btn--success`, `error`, `warning`, `danger-rose` | Result / alert / destructive rose.                                                                    |
+| **Revert**                    | `ui-btn--revert`                                     | Undo to old revision — **amber** (yellow reserved for edit).                                          |
+| **Study grading**             | `study-correct`, `study-wrong`                       | Flashcard / Lingo result.                                                                             |
+| **Warning shades**            | `warning`, `warning-orange`, `warning-yellow`        | Caution; orange/amber vs decorative **yellow** (`warning-yellow` / `palette-yellow`).                 |
+| **Sort / palette**            | `sort-*`, `palette-*`                                | Rotating colors in lists (see map).                                                                   |
+| **Segmented group**           | `ui-btn--group-item`                                 | Inner segment (with `.btn-group` / `.btn-group-forced`).                                              |
+| **Special**                   | `ui-btn--fab`, `toggle`                              | FAB and toggle have extra rules in the same Tailwind layer.                                           |
 
 **Rules**
 
@@ -170,14 +170,15 @@ Application code and **`Button.vue`** / **`IconButton.vue`** should use **semant
 
 ## 8. Layout & shells
 
-| Class                                                       | Use                                  |
-| ----------------------------------------------------------- | ------------------------------------ |
-| `.app-header-bar`                                           | Sticky top chrome (logo, nav, auth). |
-| `.page-loading-overlay`                                     | Full-screen loading veil.            |
-| `.auth-page-shell` / `.auth-form-card` / `.auth-glass-card` | Login, signup, password flows.       |
-| `.toolbar-panel` + `.toolbar-row`                           | Search + filter toolbars.            |
-| `.page-section-title`                                       | In-page H1-style tool titles.        |
-| `.empty-state-panel`                                        | Zero-state blocks.                   |
+| Class                                                       | Use                                                                    |
+| ----------------------------------------------------------- | ---------------------------------------------------------------------- |
+| `.app-header-bar`                                           | Sticky top chrome (logo, nav, auth).                                   |
+| `.page-loading-overlay`                                     | Full-screen loading veil (auth bootstrap).                             |
+| `.route-view-freeze` + `.route-freeze-spinner`              | Route-change overlay in App (previous view + spinner until API quiet). |
+| `.auth-page-shell` / `.auth-form-card` / `.auth-glass-card` | Login, signup, password flows.                                         |
+| `.toolbar-panel` + `.toolbar-row`                           | Search + filter toolbars.                                              |
+| `.page-section-title`                                       | In-page H1-style tool titles.                                          |
+| `.empty-state-panel`                                        | Zero-state blocks.                                                     |
 
 ---
 

@@ -30,99 +30,105 @@
       </div>
     </div>
   </div>
-  <!-- Loading State -->
-  <LoadingSpinner v-if="isLoading" class="py-12" />
-  <!-- Messages List -->
-  <div v-else-if="!isLoading && messages.length > 0" class="space-y-4">
-    <MessageThreadCard v-for="message in messages" :key="message.id">
-      <div class="min-w-0 max-w-full p-4">
-        <!-- Message Header -->
-        <div class="flex justify-between items-start mb-3">
-          <h3 class="link-message-title">
-            <RouterLink
-              :to="{
-                name: `MessageDetail-${locale}`,
-                params: { id: message.id },
-                query: props.searchTerm ? { highlight: props.searchTerm } : {},
-              }"
-            >
-              <LazyMathJax
-                :content="message.subject || ''"
-                :enable-markdown="true"
-                :search-term="props.searchTerm"
-                curly-link-class="underline text-pink-600 hover:text-pink-800"
-              />
-            </RouterLink>
-          </h3>
-          <span class="text-sm text-gray-500 whitespace-nowrap ml-4">
-            {{ formatDate(message.date) }}
-          </span>
-        </div>
-        <!-- Message Details -->
-        <div class="space-y-2">
-          <div class="flex items-center space-x-2 text-sm text-gray-600">
-            <span class="font-medium text-gray-700">{{ t('threadView.from') }}</span>
-            <span>{{ formatEmailAddress(message.from_address) }}</span>
+  <div>
+    <!-- Messages List -->
+    <div v-if="messages.length > 0" class="space-y-4">
+      <MessageThreadCard v-for="message in messages" :key="message.id">
+        <div class="min-w-0 max-w-full p-4">
+          <!-- Message Header -->
+          <div class="flex justify-between items-start mb-3">
+            <h3 class="link-message-title">
+              <RouterLink
+                :to="{
+                  name: `MessageDetail-${locale}`,
+                  params: { id: message.id },
+                  query: props.searchTerm ? { highlight: props.searchTerm } : {},
+                }"
+              >
+                <LazyMathJax
+                  :content="message.subject || ''"
+                  :enable-markdown="true"
+                  :search-term="props.searchTerm"
+                  curly-link-class="underline text-pink-600 hover:text-pink-800"
+                />
+              </RouterLink>
+            </h3>
+            <span class="text-sm text-gray-500 whitespace-nowrap ml-4">
+              {{ formatDate(message.date) }}
+            </span>
           </div>
-
-          <div v-if="message.to_address" class="flex items-center space-x-2 text-sm text-gray-600">
-            <span class="font-medium text-gray-700">{{ t('threadView.to') }}</span>
-            <span>{{ formatEmailAddress(message.to_address) }}</span>
-          </div>
-        </div>
-        <!-- Message Parts -->
-        <div v-if="includeContent && message.parts_json" class="mt-4 pt-4 border-t border-gray-100">
-          <!-- Text parts -->
-          <!-- eslint-disable vue/no-v-html -->
-          <div
-            v-for="part in message.parts_json.filter((p) => p.mime_type.startsWith('text/'))"
-            :key="part.id"
-            class="min-w-0 max-w-full break-words [overflow-wrap:anywhere] text-gray-700 text-sm prose [&_pre]:whitespace-pre-wrap [&_pre]:break-words [&_pre]:[overflow-wrap:anywhere] [&_pre]:max-w-full [&_code]:whitespace-pre-wrap [&_code]:break-words [&_code]:[overflow-wrap:anywhere]"
-            v-html="highlightText(part.content)"
-          ></div>
-          <!-- eslint-enable vue/no-v-html -->
-          <!-- Attachments -->
-          <div
-            v-if="message.parts_json.filter((p) => !p.mime_type.startsWith('text/')).length"
-            class="mt-4"
-          >
-            <div class="text-sm font-medium text-gray-600 mb-2">
-              {{ t('threadView.attachments') }}
+          <!-- Message Details -->
+          <div class="space-y-2">
+            <div class="flex items-center space-x-2 text-sm text-gray-600">
+              <span class="font-medium text-gray-700">{{ t('threadView.from') }}</span>
+              <span>{{ formatEmailAddress(message.from_address) }}</span>
             </div>
 
-            <div class="flex flex-wrap gap-2">
-              <div
-                v-for="part in message.parts_json.filter((p) => !p.mime_type.startsWith('text/'))"
-                :key="part.id"
-                class="attachment-chip"
-              >
-                <AttachmentIcon :mime-type="part.mime_type" class="w-4 h-4 flex-shrink-0" />
-                <span class="text-sm text-gray-700">{{ part.content_type }}</span>
+            <div
+              v-if="message.to_address"
+              class="flex items-center space-x-2 text-sm text-gray-600"
+            >
+              <span class="font-medium text-gray-700">{{ t('threadView.to') }}</span>
+              <span>{{ formatEmailAddress(message.to_address) }}</span>
+            </div>
+          </div>
+          <!-- Message Parts -->
+          <div
+            v-if="includeContent && message.parts_json"
+            class="mt-4 pt-4 border-t border-gray-100"
+          >
+            <!-- Text parts -->
+            <!-- eslint-disable vue/no-v-html -->
+            <div
+              v-for="part in message.parts_json.filter((p) => p.mime_type.startsWith('text/'))"
+              :key="part.id"
+              class="min-w-0 max-w-full break-words [overflow-wrap:anywhere] text-gray-700 text-sm prose [&_pre]:whitespace-pre-wrap [&_pre]:break-words [&_pre]:[overflow-wrap:anywhere] [&_pre]:max-w-full [&_code]:whitespace-pre-wrap [&_code]:break-words [&_code]:[overflow-wrap:anywhere]"
+              v-html="highlightText(part.content)"
+            ></div>
+            <!-- eslint-enable vue/no-v-html -->
+            <!-- Attachments -->
+            <div
+              v-if="message.parts_json.filter((p) => !p.mime_type.startsWith('text/')).length"
+              class="mt-4"
+            >
+              <div class="text-sm font-medium text-gray-600 mb-2">
+                {{ t('threadView.attachments') }}
+              </div>
+
+              <div class="flex flex-wrap gap-2">
+                <div
+                  v-for="part in message.parts_json.filter((p) => !p.mime_type.startsWith('text/'))"
+                  :key="part.id"
+                  class="attachment-chip"
+                >
+                  <AttachmentIcon :mime-type="part.mime_type" class="w-4 h-4 flex-shrink-0" />
+                  <span class="text-sm text-gray-700">{{ part.content_type }}</span>
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
-    </MessageThreadCard>
+      </MessageThreadCard>
+    </div>
+    <!-- Empty State -->
+    <div
+      v-else-if="!isLoading && messages.length === 0"
+      class="text-center p-8 bg-white border border-blue-200 rounded-lg"
+    >
+      <p class="text-gray-600">{{ t('threadView.noMessages') }}</p>
+    </div>
+    <!-- PaginationComponent -->
+    <PaginationComponent
+      v-if="!isLoading && messages.length > 0 && totalPages > 1"
+      :current-page="currentPage"
+      :total-pages="totalPages"
+      :total="total"
+      :per-page="10"
+      class="mt-4"
+      @prev="() => changePage(currentPage - 1)"
+      @next="() => changePage(currentPage + 1)"
+    />
   </div>
-  <!-- Empty State -->
-  <div
-    v-else-if="!isLoading && messages.length === 0"
-    class="text-center p-8 bg-white border border-blue-200 rounded-lg"
-  >
-    <p class="text-gray-600">{{ t('threadView.noMessages') }}</p>
-  </div>
-  <!-- PaginationComponent -->
-  <PaginationComponent
-    v-if="!isLoading && messages.length > 0 && totalPages > 1"
-    :current-page="currentPage"
-    :total-pages="totalPages"
-    :total="total"
-    :per-page="10"
-    class="mt-4"
-    @prev="() => changePage(currentPage - 1)"
-    @next="() => changePage(currentPage + 1)"
-  />
 </template>
 
 <script setup lang="ts">
@@ -134,7 +140,6 @@ import { useRoute, useRouter } from 'vue-router'
 import { Checkbox, MessageThreadCard, Select } from '@packages/ui'
 import { getThread } from '@/api'
 import AttachmentIcon from '@/components/icons/AttachmentIcon.vue'
-import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import PaginationComponent from '@/components/PaginationComponent.vue'
 import LazyMathJax from '@/components/LazyMathJax.vue'
 import { useSeoHead } from '@/composables/useSeoHead'
