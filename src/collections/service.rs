@@ -3992,19 +3992,25 @@ pub async fn list_collection_items(
 
     // Store search pattern if search is provided. Searching also matches custom-text items
     // (free_content_front/back) so they remain visible alongside dictionary-backed rows.
+    crate::jbovlaste::service::validate_valsi_regex(&transaction, search.as_deref().unwrap_or(""))
+        .await?;
+
     let search_pattern = search
         .as_ref()
         .map(|s| s.trim().to_string())
         .filter(|s| !s.is_empty())
-        .map(|s| format!("%{}%", s));
+        .map(|s| crate::search_helpers::CollectionSearchPattern::from_query(&s));
 
     // Build a helper that records a filter clause with the "OR ci.definition_id IS NULL" escape
     // hatch so custom-text-only rows are not dropped by dictionary-targeted filters.
     let mut extra_clauses: Vec<String> = Vec::new();
 
     if let Some(pattern) = &search_pattern {
-        extra_clauses.push(format!(
-            " AND (
+        extra_clauses.push(if pattern.is_regex {
+            format!(" AND v.word ~* ${}", param_count)
+        } else {
+            format!(
+                " AND (
                 ci.notes ILIKE ${idx} OR
                 v.word ILIKE ${idx} OR
                 d.definition ILIKE ${idx} OR
@@ -4012,9 +4018,10 @@ pub async fn list_collection_items(
                 ci.free_content_front ILIKE ${idx} OR
                 ci.free_content_back ILIKE ${idx}
             )",
-            idx = param_count
-        ));
-        params.push(Box::new(pattern.clone()));
+                idx = param_count
+            )
+        });
+        params.push(Box::new(pattern.pattern.clone()));
         param_count += 1;
     }
 
@@ -4235,8 +4242,11 @@ pub async fn list_collection_items(
     let mut count_param_idx = 5;
 
     if let Some(pattern) = &search_pattern {
-        count_query.push_str(&format!(
-            " AND (
+        count_query.push_str(&if pattern.is_regex {
+            format!(" AND v.word ~* ${}", count_param_idx)
+        } else {
+            format!(
+                " AND (
                 ci.notes ILIKE ${idx} OR
                 v.word ILIKE ${idx} OR
                 d.definition ILIKE ${idx} OR
@@ -4244,9 +4254,10 @@ pub async fn list_collection_items(
                 ci.free_content_front ILIKE ${idx} OR
                 ci.free_content_back ILIKE ${idx}
             )",
-            idx = count_param_idx
-        ));
-        count_params.push(Box::new(pattern.clone()));
+                idx = count_param_idx
+            )
+        });
+        count_params.push(Box::new(pattern.pattern.clone()));
         count_param_idx += 1;
     }
 
@@ -4392,11 +4403,14 @@ pub async fn search_items_in_collections(
         None
     };
 
+    crate::jbovlaste::service::validate_valsi_regex(&client, search.as_deref().unwrap_or(""))
+        .await?;
+
     let search_pattern = search
         .as_ref()
         .map(|s| s.trim().to_string())
         .filter(|s| !s.is_empty())
-        .map(|s| format!("%{}%", s));
+        .map(|s| crate::search_helpers::CollectionSearchPattern::from_query(&s));
 
     const ACCESSIBLE_CTE: &str = "WITH accessible AS MATERIALIZED (
             SELECT c.collection_id, c.name, c.updated_at
@@ -4709,11 +4723,14 @@ pub async fn search_items_in_collections_for_export(
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
 
+    crate::jbovlaste::service::validate_valsi_regex(&client, search.as_deref().unwrap_or(""))
+        .await?;
+
     let search_pattern = search
         .as_ref()
         .map(|s| s.trim().to_string())
         .filter(|s| !s.is_empty())
-        .map(|s| format!("%{}%", s));
+        .map(|s| crate::search_helpers::CollectionSearchPattern::from_query(&s));
 
     const ACCESSIBLE_CTE: &str = "WITH accessible AS MATERIALIZED (
             SELECT c.collection_id, c.name, c.updated_at
@@ -4856,7 +4873,7 @@ fn append_multi_collection_search_clauses(
     sql: &mut String,
     params: &mut Vec<Box<dyn tokio_postgres::types::ToSql + Sync>>,
     param_count: &mut usize,
-    search_pattern: &Option<String>,
+    search_pattern: &Option<crate::search_helpers::CollectionSearchPattern>,
     filters: &ListCollectionItemsFilters,
     content_match: Option<&ItemContentIdentity>,
 ) {
@@ -4864,17 +4881,21 @@ fn append_multi_collection_search_clauses(
         // `cached_search_text` already concatenates word/rafsi/definition/notes/selmaho/glosswords
         // (GIN-indexed for dictionary search). Collection custom-text rows have no definition, so
         // they still match on item notes / free_content.
-        sql.push_str(&format!(
-            " AND (
+        sql.push_str(&if pattern.is_regex {
+            format!(" AND d.cached_valsiword ~* ${}", *param_count)
+        } else {
+            format!(
+                " AND (
                 d.cached_search_text ILIKE ${idx}
                 OR d.cached_valsiword ILIKE ${idx}
                 OR ci.notes ILIKE ${idx}
                 OR ci.free_content_front ILIKE ${idx}
                 OR ci.free_content_back ILIKE ${idx}
             )",
-            idx = *param_count
-        ));
-        params.push(Box::new(pattern.clone()));
+                idx = *param_count
+            )
+        });
+        params.push(Box::new(pattern.pattern.clone()));
         *param_count += 1;
     }
 

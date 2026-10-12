@@ -95,6 +95,7 @@
     "errorLanguages": "言語一覧を読み込めませんでした。"
   },
   "filters": {
+    "regexSearchHint": "検索クエリを /m.*atu/ のようにスラッシュで囲むと、valsi のみを正規表現で検索できます。",
     "changePhoto": "写真を変更",
     "uploadPhoto": "写真をアップロード",
     "removePhoto": "写真を削除",

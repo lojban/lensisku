@@ -95,6 +95,7 @@
     "errorLanguages": "无法加载语言列表。"
   },
   "filters": {
+    "regexSearchHint": "将搜索查询用斜杠包围，例如 /m.*atu/，即可仅在 valsi 中启用正则表达式搜索。",
     "changePhoto": "更换头像",
     "uploadPhoto": "上传头像",
     "removePhoto": "移除头像",

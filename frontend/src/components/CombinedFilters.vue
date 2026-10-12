@@ -309,6 +309,7 @@
           </ToolbarSelectDropdown>
         </div>
       </div>
+      <p class="text-sm text-gray-500 sm:col-span-2">{{ t('filters.regexSearchHint') }}</p>
     </div>
 
     <div

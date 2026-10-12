@@ -1242,24 +1242,27 @@ pub async fn search_items_in_collections(
         parsed.ok().filter(|v| !v.is_empty())
     });
 
-    let semantic_embedding =
-        if query.semantic == Some(true) && !crate::utils::embeddings::embeddings_disabled() {
-            let processed = query.search.as_deref().unwrap_or("").trim().to_string();
-            if processed.is_empty() {
-                None
-            } else {
-                match crate::utils::embeddings::get_embedding(&processed).await {
-                    Ok(emb) => Some(pgvector::Vector::from(emb)),
-                    Err(e) => {
-                        return HttpResponse::InternalServerError().json(json!({
-                            "error": format!("Failed to generate embedding: {}", e)
-                        }));
-                    }
+    let semantic_embedding = if query.semantic == Some(true)
+        && crate::search_helpers::valsi_regex_pattern(query.search.as_deref().unwrap_or(""))
+            .is_none()
+        && !crate::utils::embeddings::embeddings_disabled()
+    {
+        let processed = query.search.as_deref().unwrap_or("").trim().to_string();
+        if processed.is_empty() {
+            None
+        } else {
+            match crate::utils::embeddings::get_embedding(&processed).await {
+                Ok(emb) => Some(pgvector::Vector::from(emb)),
+                Err(e) => {
+                    return HttpResponse::InternalServerError().json(json!({
+                        "error": format!("Failed to generate embedding: {}", e)
+                    }));
                 }
             }
-        } else {
-            None
-        };
+        }
+    } else {
+        None
+    };
 
     let filters = ListCollectionItemsFilters {
         languages,
@@ -1338,24 +1341,27 @@ pub async fn list_collection_items(
     // Compute the query embedding for semantic ranking when requested. We only embed if there is
     // a non-empty search term and embeddings are not disabled; otherwise we silently fall back to
     // text search (mirrors how /jbovlaste/definitions decays for non-logged-in users).
-    let semantic_embedding =
-        if query.semantic == Some(true) && !crate::utils::embeddings::embeddings_disabled() {
-            let processed = query.search.as_deref().unwrap_or("").trim().to_string();
-            if processed.is_empty() {
-                None
-            } else {
-                match crate::utils::embeddings::get_embedding(&processed).await {
-                    Ok(emb) => Some(pgvector::Vector::from(emb)),
-                    Err(e) => {
-                        return HttpResponse::InternalServerError().json(json!({
-                            "error": format!("Failed to generate embedding: {}", e)
-                        }));
-                    }
+    let semantic_embedding = if query.semantic == Some(true)
+        && crate::search_helpers::valsi_regex_pattern(query.search.as_deref().unwrap_or(""))
+            .is_none()
+        && !crate::utils::embeddings::embeddings_disabled()
+    {
+        let processed = query.search.as_deref().unwrap_or("").trim().to_string();
+        if processed.is_empty() {
+            None
+        } else {
+            match crate::utils::embeddings::get_embedding(&processed).await {
+                Ok(emb) => Some(pgvector::Vector::from(emb)),
+                Err(e) => {
+                    return HttpResponse::InternalServerError().json(json!({
+                        "error": format!("Failed to generate embedding: {}", e)
+                    }));
                 }
             }
-        } else {
-            None
-        };
+        }
+    } else {
+        None
+    };
 
     let filters = ListCollectionItemsFilters {
         languages,

@@ -95,6 +95,7 @@
     "errorLanguages": "Could not load languages."
   },
   "filters": {
+    "regexSearchHint": "Wrap your search query in slashes, like /m.*atu/, to enable regex search in valsi only.",
     "changePhoto": "Change photo",
     "uploadPhoto": "Upload photo",
     "removePhoto": "Remove photo",

@@ -1216,6 +1216,29 @@ async fn fetch_keywords(
     Ok((gloss_map, place_map))
 }
 
+/// Validate using the same regex engine as the search, even when there are no candidate rows.
+pub(crate) async fn validate_valsi_regex(
+    client: &impl deadpool_postgres::GenericClient,
+    query: &str,
+) -> crate::error::AppResult<()> {
+    if let Some(pattern) = search_helpers::valsi_regex_pattern(query) {
+        client
+            .query_one("SELECT '' ~* $1::text", &[&pattern])
+            .await
+            .map_err(|e| {
+                if e.code() == Some(&tokio_postgres::error::SqlState::INVALID_REGULAR_EXPRESSION) {
+                    crate::error::AppError::BadRequest(format!(
+                        "Invalid regular expression: {}",
+                        e.as_db_error().map_or("invalid pattern", |e| e.message())
+                    ))
+                } else {
+                    crate::error::AppError::Database(e.to_string())
+                }
+            })?;
+    }
+    Ok(())
+}
+
 pub async fn search_definitions(
     pool: &Pool,
     params: SearchDefinitionsParams,
@@ -1225,15 +1248,20 @@ pub async fn search_definitions(
     let transaction = client.transaction().await?;
 
     let offset = (params.page - 1) * params.per_page;
+    let regex_pattern = search_helpers::valsi_regex_pattern(&params.search_term);
+    validate_valsi_regex(&transaction, &params.search_term).await?;
     let patterns = DictionarySearchPatterns::from_search_term(&params.search_term);
     let like_pattern = patterns.like_pattern.clone();
     let word_boundary_pattern = patterns.word_boundary_pattern.clone();
     let lojban_search_term = patterns.lojban_search_term.clone();
     let lojban_like_pattern = patterns.lojban_like_pattern.clone();
     let lojban_word_boundary_pattern = patterns.lojban_word_boundary_pattern.clone();
-    let canonical_aliases =
+    let canonical_aliases = if regex_pattern.is_some() {
+        Vec::new()
+    } else {
         lookup_canonical_aliases_for_search(&transaction, &params.search_term, &lojban_search_term)
-            .await?;
+            .await?
+    };
 
     // Convert Option<Vec<i32>> to Option<&[i32]> for Postgres
     let languages_slice: Option<&[i32]> = params.languages.as_deref();
@@ -1252,7 +1280,7 @@ pub async fn search_definitions(
     };
 
     // $1 search, $2 like, $3 boundary, $4 langs, $5 per_page, $6 offset,
-    // $7 lojban search, $8 lojban like, $9 lojban boundary, $10 canonical aliases
+    // $7 lojban search, $8 lojban like, $9 lojban boundary, $10 canonical aliases, $11 regex
     let mut query_params: Vec<&(dyn tokio_postgres::types::ToSql + Sync)> = vec![
         &params.search_term,
         &like_pattern,
@@ -1264,6 +1292,7 @@ pub async fn search_definitions(
         &lojban_like_pattern,
         &lojban_word_boundary_pattern,
         &canonical_aliases,
+        &regex_pattern,
     ];
 
     // Build dynamic conditions
@@ -1334,6 +1363,7 @@ pub async fn search_definitions(
                     SELECT 1 FROM definition_images di WHERE di.definition_id = d.definitionid
                 ) as has_image,
                 CASE
+                    WHEN $11::text IS NOT NULL THEN CASE WHEN d.cached_valsiword ~* $11::text THEN 1 ELSE 0 END
                     WHEN d.cached_valsiword = $1 THEN 13
                     WHEN d.cached_valsiword = $7 THEN 13
                     WHEN d.cached_canonical_word = $1 THEN 13
@@ -1369,10 +1399,10 @@ pub async fn search_definitions(
                 LEFT JOIN comments c ON c.threadid = t.threadid
                 WHERE t.valsiid = d.valsiid AND t.definitionid = d.definitionid
             ) cc ON true
-            WHERE (d.cached_search_text ILIKE $2 OR d.cached_valsiword ILIKE $8
+            WHERE CASE WHEN $11::text IS NOT NULL THEN d.cached_valsiword ~* $11::text ELSE (d.cached_search_text ILIKE $2 OR d.cached_valsiword ILIKE $8
                    OR d.cached_canonical_word = $1 OR d.cached_canonical_word = $7
                    OR d.cached_valsiword = ANY($10)
-                   OR d.cached_canonical_word = ANY($10))
+                   OR d.cached_canonical_word = ANY($10)) END
                   AND (d.langid = ANY($4) OR $4 IS NULL)
                   {additional_conditions}
         ),
@@ -1407,6 +1437,7 @@ pub async fn search_definitions(
                     SELECT 1 FROM definition_images di WHERE di.definition_id = d.definitionid
                 ) as has_image,
                 CASE
+                    WHEN $11::text IS NOT NULL THEN CASE WHEN d.cached_valsiword ~* $11::text THEN 1 ELSE 0 END
                     WHEN d.cached_valsiword = $1 THEN 13
                     WHEN d.cached_valsiword = $7 THEN 13
                     WHEN d.cached_canonical_word = $1 THEN 13
@@ -1436,10 +1467,10 @@ pub async fn search_definitions(
                 FROM definitionvotes
                 WHERE definitionid = d.definitionid
             ) dv ON true
-            WHERE (d.cached_search_text ILIKE $2 OR d.cached_valsiword ILIKE $8
+            WHERE CASE WHEN $11::text IS NOT NULL THEN d.cached_valsiword ~* $11::text ELSE (d.cached_search_text ILIKE $2 OR d.cached_valsiword ILIKE $8
                    OR d.cached_canonical_word = $1 OR d.cached_canonical_word = $7
                    OR d.cached_valsiword = ANY($10)
-                   OR d.cached_canonical_word = ANY($10))
+                   OR d.cached_canonical_word = ANY($10)) END
                   AND (d.langid = ANY($4) OR $4 IS NULL)
                   {additional_conditions}
         ),
@@ -1563,6 +1594,7 @@ pub async fn search_definitions(
         &lojban_like_pattern,          // $6
         &lojban_word_boundary_pattern, // $7
         &canonical_aliases,            // $8
+        &regex_pattern,
     ];
     // No per_page, no offset.
 
@@ -1612,6 +1644,7 @@ pub async fn search_definitions(
     WITH ranked_results AS (
         SELECT d.definitionid,
             CASE
+                    WHEN $9::text IS NOT NULL THEN CASE WHEN d.cached_valsiword ~* $9::text THEN 1 ELSE 0 END
                 WHEN d.cached_valsiword = $1 THEN 13
                 WHEN d.cached_valsiword = $5 THEN 13
                 WHEN d.cached_canonical_word = $1 THEN 13
@@ -1636,10 +1669,10 @@ pub async fn search_definitions(
                 ELSE 0
             END as rank
         FROM definitions d
-        WHERE (d.cached_search_text ILIKE $2 OR d.cached_valsiword ILIKE $6
+        WHERE CASE WHEN $9::text IS NOT NULL THEN d.cached_valsiword ~* $9::text ELSE (d.cached_search_text ILIKE $2 OR d.cached_valsiword ILIKE $6
                OR d.cached_canonical_word = $1 OR d.cached_canonical_word = $5
                OR d.cached_valsiword = ANY($8)
-               OR d.cached_canonical_word = ANY($8))
+               OR d.cached_canonical_word = ANY($8)) END
               AND (d.langid = ANY($4) OR $4 IS NULL)
               {}
     )
@@ -1654,7 +1687,11 @@ pub async fn search_definitions(
         .await?
         .get(0);
 
-    let decomposition = get_source_words(&params.search_term, &transaction, parsers).await?;
+    let decomposition = if regex_pattern.is_some() {
+        Vec::new()
+    } else {
+        get_source_words(&params.search_term, &transaction, parsers).await?
+    };
 
     transaction.commit().await?;
 
@@ -1673,15 +1710,20 @@ pub async fn fast_search_definitions(
     let transaction = client.transaction().await?;
 
     let offset = (params.page - 1) * params.per_page;
+    let regex_pattern = search_helpers::valsi_regex_pattern(&params.search_term);
+    validate_valsi_regex(&transaction, &params.search_term).await?;
     let patterns = DictionarySearchPatterns::from_search_term(&params.search_term);
     let like_pattern = patterns.like_pattern.clone();
     let word_boundary_pattern = patterns.word_boundary_pattern.clone();
     let lojban_search_term = patterns.lojban_search_term.clone();
     let lojban_like_pattern = patterns.lojban_like_pattern.clone();
     let lojban_word_boundary_pattern = patterns.lojban_word_boundary_pattern.clone();
-    let canonical_aliases =
+    let canonical_aliases = if regex_pattern.is_some() {
+        Vec::new()
+    } else {
         lookup_canonical_aliases_for_search(&transaction, &params.search_term, &lojban_search_term)
-            .await?;
+            .await?
+    };
 
     // Convert Option<Vec<i32>> to Option<&[i32]> for Postgres
     let languages_slice: Option<&[i32]> = params.languages.as_deref();
@@ -1701,7 +1743,7 @@ pub async fn fast_search_definitions(
 
     // $1=search_term, $2=like_pattern, $3=word_boundary_pattern, $4=languages_slice,
     // $5=source_langid_value, $6=lojban_search_term, $7=lojban_like_pattern,
-    // $8=lojban_word_boundary_pattern, $9=canonical_aliases
+    // $8=lojban_word_boundary_pattern, $9=canonical_aliases, $10=regex
     let source_langid_value = params.source_langid.unwrap_or(1);
     let mut query_params: Vec<&(dyn tokio_postgres::types::ToSql + Sync)> = vec![
         &params.search_term,
@@ -1713,9 +1755,10 @@ pub async fn fast_search_definitions(
         &lojban_like_pattern,
         &lojban_word_boundary_pattern,
         &canonical_aliases,
+        &regex_pattern,
     ];
 
-    // Build dynamic conditions (these will be $10, $11, etc.)
+    // Build dynamic conditions (these start at $11 after the optional regex).
     let mut conditions = vec![];
 
     // Add selmaho condition if present
@@ -1773,6 +1816,7 @@ pub async fn fast_search_definitions(
             d.cached_canonical_word as cached_canonical_word,
             0::bigint AS score,
             CASE
+                    WHEN $10::text IS NOT NULL THEN CASE WHEN d.cached_valsiword ~* $10::text THEN 1 ELSE 0 END
                 WHEN d.cached_valsiword = $1::text THEN 13
                 WHEN d.cached_valsiword = $6::text THEN 13
                 WHEN d.cached_canonical_word = $1::text THEN 13
@@ -1792,10 +1836,10 @@ pub async fn fast_search_definitions(
                 ELSE 0
             END as rank
         FROM definitions d
-        WHERE (d.cached_search_text ILIKE $2::text OR d.cached_valsiword ILIKE $7::text
+        WHERE CASE WHEN $10::text IS NOT NULL THEN d.cached_valsiword ~* $10::text ELSE (d.cached_search_text ILIKE $2::text OR d.cached_valsiword ILIKE $7::text
                OR d.cached_canonical_word = $1::text OR d.cached_canonical_word = $6::text
                OR d.cached_valsiword = ANY($9::text[])
-               OR d.cached_canonical_word = ANY($9::text[]))
+               OR d.cached_canonical_word = ANY($9::text[])) END
         AND (d.langid = ANY($4::int4[]) OR $4::int4[] IS NULL)
         AND d.cached_source_langid = $5::int4
         {additional_conditions}
@@ -1871,17 +1915,17 @@ pub async fn fast_search_definitions(
     }
 
     // Count query - include exact canonical / reverse-canonical matches too
-    // $1=like, $2=langs, $3=source_langid, $4=lojban_like, $5=search, $6=lojban_search, $7=canonical_aliases
-    let base_conditions = r#"(d.cached_search_text ILIKE $1::text OR d.cached_valsiword ILIKE $4::text
+    // $1=like, $2=langs, $3=source_langid, $4=lojban_like, $5=search, $6=lojban_search, $7=canonical_aliases, $8=regex
+    let base_conditions = r#"CASE WHEN $8::text IS NOT NULL THEN d.cached_valsiword ~* $8::text ELSE (d.cached_search_text ILIKE $1::text OR d.cached_valsiword ILIKE $4::text
                   OR d.cached_canonical_word = $5::text OR d.cached_canonical_word = $6::text
                   OR d.cached_valsiword = ANY($7::text[])
-                  OR d.cached_canonical_word = ANY($7::text[]))
+                  OR d.cached_canonical_word = ANY($7::text[])) END
                   AND (d.langid = ANY($2) OR $2 IS NULL)
                   AND d.cached_source_langid = $3"#;
 
     // Build dynamic conditions with correct parameter numbering
     let mut conditions = vec![];
-    let mut current_param_num = 8; // Start from 8 since we use 1-7 in base
+    let mut current_param_num = 9; // Base parameters include the optional regex at $8
 
     if params.selmaho.is_some() {
         conditions.push(format!("AND d.selmaho = ${}", current_param_num));
@@ -1902,6 +1946,13 @@ pub async fn fast_search_definitions(
         conditions.push(format!("AND d.cached_typeid = ${}", current_param_num));
     }
 
+    if params.word_type.is_none() {
+        if let Some(false) = params.search_in_phrases {
+            conditions.push("AND d.cached_typeid != 15".to_string());
+        }
+        conditions.push("AND d.cached_typeid != 16".to_string());
+    }
+
     let additional_conditions = conditions.join(" ");
 
     let count_query = format!(
@@ -1919,6 +1970,7 @@ pub async fn fast_search_definitions(
         &params.search_term,  // $5
         &lojban_search_term,  // $6
         &canonical_aliases,   // $7
+        &regex_pattern,
     ];
 
     // Add conditional parameters in the correct order, matching additional_conditions logic
@@ -1943,7 +1995,8 @@ pub async fn fast_search_definitions(
 
     // Skip decomposition for maximum speed (only compute if search term looks like lujvo)
     // A simple heuristic: if it's longer than 5 chars and contains consonants, might be lujvo
-    let decomposition = if params.search_term.len() > 5
+    let decomposition = if regex_pattern.is_none()
+        && params.search_term.len() > 5
         && params.search_term.chars().any(|c| {
             c.is_alphabetic()
                 && !matches!(c, 'a' | 'e' | 'i' | 'o' | 'u' | 'A' | 'E' | 'I' | 'O' | 'U')
@@ -2033,7 +2086,7 @@ pub async fn search_with_filtered_and_global_groups(
         )
         .await
         .map(|r| (r.items, r.total))
-        .map_err(|e| -> Box<dyn std::error::Error> { e.to_string().into() })
+        .map_err(|e| -> Box<dyn std::error::Error> { Box::new(e) })
     };
 
     let author_fut = async {

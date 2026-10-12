@@ -2922,7 +2922,9 @@ pub async fn export_search_results(
         .map(|s| crate::collections::dto::parse_positive_id_list(s, 50))
         .unwrap_or_default();
 
-    let use_semantic = query.semantic.unwrap_or(false) && !search_term.is_empty();
+    let use_semantic = query.semantic.unwrap_or(false)
+        && !search_term.is_empty()
+        && crate::search_helpers::valsi_regex_pattern(&search_term).is_none();
     let collection_only = query.collection_only.unwrap_or(false);
     // Authors∪collections: collection matches ∪ author-scoped dictionary.
     // Skip dictionary for collection-only export, or when collections are set without authors.

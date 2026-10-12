@@ -574,7 +574,12 @@ pub async fn search_definitions(
         Ok(response) => {
             HttpResponse::Ok().json(definition_list_from_response(response, page, per_page))
         }
-        Err(e) => HttpResponse::InternalServerError().body(format!("Error: {}", e)),
+        Err(e) => match e.downcast_ref::<crate::error::AppError>() {
+            Some(crate::error::AppError::BadRequest(message)) => {
+                HttpResponse::BadRequest().json(json!({"error": message}))
+            }
+            _ => HttpResponse::InternalServerError().body(format!("Error: {}", e)),
+        },
     }
 }
 

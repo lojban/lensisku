@@ -1,3 +1,4 @@
+import { isValsiRegexQuery } from '@/utils/searchQueryUtils'
 import axios, {
   AxiosHeaders,
   type AxiosInstance,
@@ -197,7 +198,10 @@ export const addValsi = (valsiData: Record<string, unknown>) =>
 export const checkRafsiOverlap = (params: { rafsi: string; word?: string; valsi_id?: number }) =>
   api.get('/jbovlaste/rafsi_overlap', { params })
 export const searchDefinitions = (params: Record<string, unknown>, signal?: AbortSignal) => {
-  const endpoint = params.semantic ? '/jbovlaste/semantic-search' : '/jbovlaste/definitions'
+  const endpoint =
+    params.semantic && !isValsiRegexQuery(params.search)
+      ? '/jbovlaste/semantic-search'
+      : '/jbovlaste/definitions'
   const finalParams = { ...params }
   if (finalParams.source_langid === 1) {
     delete finalParams.source_langid

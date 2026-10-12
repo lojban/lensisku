@@ -16,6 +16,34 @@ pub fn escape_like(input: &str) -> String {
     out
 }
 
+/// Slash-delimited queries use PostgreSQL regex syntax, without orthographic rewriting.
+/// A lone slash is literal; `//` is the empty regex (matches every valsi).
+pub fn valsi_regex_pattern(query: &str) -> Option<&str> {
+    query.trim().strip_prefix('/')?.strip_suffix('/')
+}
+
+/// A collection search binds either a contains pattern or a raw valsi-only regex.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CollectionSearchPattern {
+    pub pattern: String,
+    pub is_regex: bool,
+}
+
+impl CollectionSearchPattern {
+    pub fn from_query(query: &str) -> Self {
+        match valsi_regex_pattern(query) {
+            Some(pattern) => Self {
+                pattern: pattern.to_owned(),
+                is_regex: true,
+            },
+            None => Self {
+                pattern: like_contains_pattern(query.trim()),
+                is_regex: false,
+            },
+        }
+    }
+}
+
 /// Lojban orthography: treat ASCII `h` as `'` in search terms.
 #[inline]
 pub fn lojbanize_search_term(search_term: &str) -> String {
@@ -122,6 +150,28 @@ pub fn mail_word_like_patterns(query: &str) -> Vec<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn slash_delimited_regex_preserves_syntax() {
+        assert_eq!(
+            valsi_regex_pattern(r" /^(coi|co\'o).*$/ "),
+            Some(r"^(coi|co\'o).*$")
+        );
+        assert_eq!(valsi_regex_pattern("/h/"), Some("h"));
+        assert_eq!(valsi_regex_pattern("//"), Some(""));
+        for literal in ["/", "/mlatu", "mlatu/", "coi/do", "mlatu"] {
+            assert_eq!(valsi_regex_pattern(literal), None);
+        }
+        assert_eq!(
+            CollectionSearchPattern::from_query("/coi.*/").pattern,
+            "coi.*"
+        );
+        assert!(CollectionSearchPattern::from_query("/coi.*/").is_regex);
+        assert_eq!(
+            CollectionSearchPattern::from_query(" coi ").pattern,
+            "%coi%"
+        );
+    }
 
     #[test]
     fn escape_like_escapes_wildcards() {

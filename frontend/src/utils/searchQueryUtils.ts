@@ -1,3 +1,10 @@
+/** Slash-delimited queries enable valsi-only regex search. */
+export function isValsiRegexQuery(query: unknown): boolean {
+  if (typeof query !== 'string') return false
+  const trimmed = query.trim()
+  return trimmed.length >= 2 && trimmed.startsWith('/') && trimmed.endsWith('/')
+}
+
 /**
  * Normalize search query text by replacing curly/smart apostrophes (e.g. from iPad)
  * with ASCII single quote (U+0027) so URLs and API params work consistently.

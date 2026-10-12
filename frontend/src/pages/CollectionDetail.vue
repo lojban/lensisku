@@ -2579,6 +2579,7 @@ const fetchItems = async () => {
     ) {
       return
     }
+    showError(e.response?.data?.error || 'Failed to search collection items')
     console.error('Error fetching items:', e)
   } finally {
     if (itemsSearchQueue.shouldProcess(requestId)) {
