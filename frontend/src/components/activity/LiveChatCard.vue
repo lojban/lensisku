@@ -14,7 +14,7 @@
     </div>
     <div
       ref="listEl"
-      class="mt-2 max-h-80 w-full space-y-1 overflow-y-auto overscroll-y-contain rounded bg-gray-50 p-2"
+      class="mt-2 max-h-[36rem] w-full space-y-1 overflow-y-auto overscroll-y-contain rounded bg-gray-50 p-2"
     >
       <div
         v-for="(msg, index) in messageStack"
@@ -22,7 +22,20 @@
         class="break-words text-sm leading-snug"
       >
         <span class="font-medium text-blue-600">{{ msg.w }}:</span>
-        <span class="ml-1 text-gray-700">{{ msg.d }}</span>
+        <span class="ml-1 text-gray-700">
+          <template v-for="(part, partIndex) in linkify(msg.d)" :key="partIndex">
+            <a
+              v-if="part.href"
+              :href="part.href"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="card-meta-link break-all"
+            >
+              {{ part.text }}
+            </a>
+            <template v-else>{{ part.text }}</template>
+          </template>
+        </span>
       </div>
     </div>
   </article>
@@ -36,6 +49,7 @@ import { useI18n } from 'vue-i18n'
 import SocialLinks from '@/components/SocialLinks.vue'
 
 type ChatMessage = { d: string; s?: string; w: string }
+type TextPart = { text: string; href?: string }
 
 const { t } = useI18n()
 
@@ -45,11 +59,46 @@ const socketConnected = ref(false)
 
 let socket: ReturnType<typeof io> | null = null
 
+const URL_RE = /https?:\/\/[^\s<>"']+|www\.[^\s<>"']+/gi
+const TRAILING_PUNCT_RE = /[.,;:!?)]}'"»]+$/
+
 const sanitize = (text: string) =>
   text
     .replace(/<[^>]*>?/gm, '')
     .replace(/\s+/g, ' ')
     .trim()
+
+/** Split plain text into safe text/link segments for http(s) and www. URLs. */
+const linkify = (text: string): TextPart[] => {
+  const parts: TextPart[] = []
+  let lastIndex = 0
+  const re = new RegExp(URL_RE.source, 'gi')
+  let match: RegExpExecArray | null
+  while ((match = re.exec(text)) !== null) {
+    let raw = match[0]
+    let trailing = ''
+    const punct = raw.match(TRAILING_PUNCT_RE)
+    if (punct) {
+      trailing = punct[0]
+      raw = raw.slice(0, -trailing.length)
+    }
+    if (match.index > lastIndex) {
+      parts.push({ text: text.slice(lastIndex, match.index) })
+    }
+    if (raw) {
+      const href = /^www\./i.test(raw) ? `https://${raw}` : raw
+      if (/^https?:\/\//i.test(href)) {
+        parts.push({ text: raw, href })
+      } else {
+        parts.push({ text: raw })
+      }
+    }
+    if (trailing) parts.push({ text: trailing })
+    lastIndex = match.index + match[0].length
+  }
+  if (lastIndex < text.length) parts.push({ text: text.slice(lastIndex) })
+  return parts.length ? parts : [{ text }]
+}
 
 const scrollToBottom = async () => {
   await nextTick()

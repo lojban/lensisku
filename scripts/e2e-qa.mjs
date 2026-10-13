@@ -16,6 +16,7 @@ const DEFAULT_TARGETS = [
   'https://lensisku.lojban.org',
   'http://localhost:8051',
 ]
+const REQUEST_TIMEOUT_MS = Number(process.env.LENSISKU_REQUEST_TIMEOUT_MS ?? 90_000)
 const targets = (process.env.LENSISKU_TARGETS ?? DEFAULT_TARGETS.join(','))
   .split(',')
   .map((target) => target.trim().replace(/\/$/, ''))
@@ -69,7 +70,7 @@ async function request(base, path, { token, method = 'GET', body } = {}) {
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
     ...(body === undefined ? {} : { body: JSON.stringify(body) }),
-    signal: AbortSignal.timeout(30_000),
+    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
   })
   const text = await response.text()
   let data
