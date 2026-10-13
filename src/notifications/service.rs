@@ -483,6 +483,9 @@ impl EmailService {
     }
 }
 
+/// `user_role` enum value for blocked users; they receive no notifications or notification emails.
+pub const BLOCKED_ROLE: &str = "blocked";
+
 pub async fn send_notification_emails(pool: &deadpool_postgres::Pool) -> Result<(), EmailError> {
     let client = pool.get().await?;
 
@@ -501,8 +504,9 @@ pub async fn send_notification_emails(pool: &deadpool_postgres::Pool) -> Result<
              WHERE n.email_sent IS NULL
              AND u.email IS NOT NULL
              AND u.email <> ''
+             AND u.role::text <> $1
              LIMIT 50",
-            &[],
+            &[&BLOCKED_ROLE],
         )
         .await?;
 
@@ -661,6 +665,11 @@ fn utf8_prefix(value: &str, max_bytes: usize) -> &str {
 
 #[cfg(test)]
 mod security_tests {
+    #[test]
+    fn blocked_role_matches_migration_value() {
+        assert_eq!(super::BLOCKED_ROLE, "blocked");
+    }
+
     #[test]
     fn notification_prefix_handles_multibyte_boundaries() {
         for cap in 0..12 {
