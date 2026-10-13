@@ -1,6 +1,6 @@
 <template>
   <div class="dictionary-entries space-y-4">
-    <!-- Keep previous entries visible while loading; HomePage shows overlay spinner -->
+    <!-- Keep previous entries visible while search refreshes; Home scopes a content spinner. -->
     <div v-if="!error" class="grid gap-4 mb-6">
       <slot name="before" />
       <slot name="collection-matches-before" />

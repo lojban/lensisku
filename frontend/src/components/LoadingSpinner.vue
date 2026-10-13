@@ -17,10 +17,11 @@ const props = withDefaults(
   defineProps<{
     /**
      * `page`: fixed full-viewport veil (auth bootstrap, etc.).
-     * Route transitions use App’s freeze + `route-freeze-spinner` instead.
+     * `content`: absolute veil over a `relative` parent (in-page filter/search refresh).
+     * Path changes use App’s freeze + `route-freeze-spinner` instead.
      * `inline`: centered block for modals and small regions (no veil).
      */
-    variant?: 'page' | 'inline'
+    variant?: 'page' | 'content' | 'inline'
   }>(),
   {
     variant: 'page',
@@ -31,6 +32,7 @@ const { t } = useI18n()
 
 const wrapperClass = computed(() => {
   if (props.variant === 'page') return 'page-loading-overlay'
+  if (props.variant === 'content') return 'content-loading-overlay'
   return 'flex flex-col items-center justify-center'
 })
 </script>

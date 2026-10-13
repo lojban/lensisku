@@ -2,8 +2,9 @@ import { ref, type Ref } from 'vue'
 import { onApiPendingChange, getApiPendingCount } from '@/api'
 
 /**
- * Generic route-change overlay: freeze the outgoing view, show a spinner,
+ * Path-change overlay only (not query/hash): freeze the outgoing view, show a spinner,
  * reveal the next view when in-flight API requests go quiet (no per-page hooks).
+ * In-page loads (filters, tabs) use a scoped spinner on the changing region instead.
  */
 
 const QUIET_MS = 120

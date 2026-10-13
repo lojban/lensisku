@@ -307,7 +307,7 @@
             <router-view v-if="!auth.state.isLoading" v-slot="{ Component, route: childRoute }">
               <component
                 :is="Component"
-                :key="childRoute.fullPath"
+                :key="childRoute.path"
                 v-bind="metaProps(childRoute.meta.props)"
                 v-on="
                   isHomePage
@@ -676,13 +676,15 @@ watch(
 )
 
 const removeRouteOverlayBefore = router.beforeEach((to, from) => {
-  if (to.fullPath === from.fullPath) return
+  // Query/hash-only updates (filters, feed tabs, expand) are in-page — no freeze.
+  if (to.path === from.path) return
   if (!from.name && from.matched.length === 0) return
   const live = routeStageRef.value?.querySelector('[data-route-live]') as HTMLElement | null
   beginRouteOverlay(live)
 })
-const removeRouteOverlayAfter = router.afterEach(async () => {
+const removeRouteOverlayAfter = router.afterEach(async (to, from) => {
   if (routeOverlayHtml.value == null) return
+  if (to.path === from.path) return
   // Let the new page mount and kick off its fetches before we start the quiet timer.
   await nextTick()
   await nextTick()

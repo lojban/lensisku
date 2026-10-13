@@ -120,6 +120,14 @@ export default {
             {},
         },
         /**
+         * In-region veil (LoadingSpinner `content` variant) — parent must be `relative`.
+         * For query/filter refreshes; path changes use App’s route freeze instead.
+         */
+        '.content-loading-overlay': {
+          '@apply absolute inset-0 z-10 flex min-h-[8rem] items-center justify-center bg-white/50':
+            {},
+        },
+        /**
          * Static snapshot of the previous route while the next page loads.
          * Fixed below the sticky header; light `blur-sm` on the snapshot itself.
          */

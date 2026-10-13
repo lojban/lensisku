@@ -208,7 +208,9 @@
             </div>
           </div>
 
-          <div :class="{ 'pointer-events-none select-none': isLoading }">
+          <div class="relative" :class="{ 'min-h-[12rem]': isLoading }">
+            <LoadingSpinner v-if="isLoading" variant="content" />
+            <div :class="{ 'pointer-events-none select-none': isLoading }">
             <PhraseSplit
               v-if="
                 (searchMode === 'dictionary' || searchMode === 'semantic') && !similarDefinitionId
@@ -396,6 +398,7 @@
                 <p class="mt-4 text-gray-600">{{ $t('home.noCommentsFound') }}</p>
               </div>
             </div>
+            </div>
           </div>
         </div>
       </div>
@@ -466,6 +469,7 @@ import {
   ToolbarSelectDropdownItem,
   ExportIcon,
 } from '@packages/ui'
+import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import PaginationComponent from '@/components/PaginationComponent.vue'
 import ActivityFeed from '@/components/activity/ActivityFeed.vue'
 import { useLocalePath } from '@/composables/useLocalePath'

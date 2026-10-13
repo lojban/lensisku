@@ -655,7 +655,9 @@ pub async fn signup(
     let email_pool = pool.clone();
 
     task::spawn(async move {
-        if let Err(e) = send_confirmation_email(&email, &confirmation_url, &email_pool).await {
+        if let Err(e) =
+            send_confirmation_email(&email, &confirmation_url, user.userid, &email_pool).await
+        {
             error!("Failed to send confirmation email: {}", e); // Keep log
         }
     });
@@ -667,6 +669,7 @@ pub async fn signup(
 async fn send_confirmation_email(
     to_email: &str,
     confirmation_url: &str,
+    initiated_by_user_id: i32,
     pool: &Pool,
 ) -> Result<(), EmailError> {
     let email_service = EmailService::new().map_err(|e| EmailError::ConfigError(e.to_string()))?;
@@ -691,6 +694,8 @@ async fn send_confirmation_email(
                 subject: "Confirm your email address".to_string(),
                 text_body,
                 html_body,
+                initiated_by_user_id: Some(initiated_by_user_id),
+                params: json!({}),
             },
             pool,
         )
@@ -756,7 +761,7 @@ pub async fn resend_confirmation(
             let email = req.email.clone();
             let email_pool = pool.clone();
             task::spawn(async move {
-                if let Err(e) = send_confirmation_email(&email, &confirmation_url, &email_pool).await {
+                if let Err(e) = send_confirmation_email(&email, &confirmation_url, user_id, &email_pool).await {
                     error!("Failed to send confirmation email: {}", e); // Keep log
                 }
             });
@@ -982,26 +987,24 @@ pub async fn request_password_reset(
         .map_err(|e| AppError::Database(e.to_string()))?;
 
     // Check if email exists
-    let email_exists: bool = transaction
-        .query_one(
-            "SELECT EXISTS(SELECT 1 FROM users WHERE email = $1)",
-            &[&req.email],
-        )
+    let user_id: i32 = match transaction
+        .query_opt("SELECT userid FROM users WHERE email = $1", &[&req.email])
         .await?
-        .get(0);
+    {
+        Some(row) => row.get("userid"),
+        None => {
+            return Ok(PasswordResetResponse {
+                success: true,
+                message: "If this email exists in our system, a password reset email will be sent"
+                    .to_string(),
+                session_id: Some(Uuid::new_v4().to_string()),
+            });
+        }
+    };
 
     let session_id = Uuid::new_v4().to_string();
 
     // Always return success to avoid revealing if email exists
-    if !email_exists {
-        return Ok(PasswordResetResponse {
-            success: true,
-            message: "If this email exists in our system, a password reset email will be sent"
-                .to_string(),
-            session_id: Some(session_id),
-        });
-    }
-
     let current_time = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .map_err(|e| AppError::Internal(format!("SystemTime error: {}", e)))?
@@ -1075,6 +1078,8 @@ pub async fn request_password_reset(
                 subject: "Password Reset Request".to_string(),
                 text_body,
                 html_body,
+                initiated_by_user_id: Some(user_id),
+                params: json!({}),
             },
             pool,
         )
@@ -1440,6 +1445,8 @@ pub async fn initiate_password_change(
                 subject: "Password Change Verification".to_string(),
                 text_body,
                 html_body,
+                initiated_by_user_id: Some(user_id),
+                params: json!({}),
             },
             pool,
         )

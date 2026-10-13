@@ -82,6 +82,8 @@ pub struct EmailNotification {
     pub subject: String,
     pub text_body: String,
     pub html_body: String,
+    pub initiated_by_user_id: Option<i32>,
+    pub params: serde_json::Value,
 }
 
 pub struct EmailService {
@@ -470,10 +472,12 @@ impl EmailService {
 
         self.mailer.send(&email).map_err(EmailError::SmtpError)?;
         let client = pool.get().await?;
-        let params = serde_json::json!({"from_name": "la lensisku", "content_type": "multipart/alternative"});
+        let mut params = notification.params;
+        params["from_name"] = serde_json::json!("la lensisku");
+        params["content_type"] = serde_json::json!("multipart/alternative");
         client.execute(
-            "INSERT INTO sent_emails (to_address, from_address, subject, text_body, html_body, params) VALUES ($1, $2, $3, $4, $5, $6)",
-            &[&notification.to_email, &self.from_address, &notification.subject, &notification.text_body, &notification.html_body, &params],
+            "INSERT INTO sent_emails (to_address, from_address, subject, text_body, html_body, initiated_by_user_id, params) VALUES ($1, $2, $3, $4, $5, $6, $7)",
+            &[&notification.to_email, &self.from_address, &notification.subject, &notification.text_body, &notification.html_body, &notification.initiated_by_user_id, &params],
         ).await?;
         Ok(())
     }
@@ -516,6 +520,7 @@ pub async fn send_notification_emails(pool: &deadpool_postgres::Pool) -> Result<
         let valsi_word: Option<String> = row.get("valsi_word");
         let link: Option<String> = row.get("link");
         let actor_username: Option<String> = row.get("actor_username");
+        let initiated_by_user_id: Option<i32> = row.get("actor_id");
         let definition_id: Option<i32> = row.get("definition_id");
         let language_tag: Option<String> = row.get("language_tag");
         let lang = language_tag.as_deref().unwrap_or("en");
@@ -534,11 +539,12 @@ pub async fn send_notification_emails(pool: &deadpool_postgres::Pool) -> Result<
             }
         };
 
+        let mut params = serde_json::json!({});
         let (text_body, html_body) = if notification_type == "edit" || notification_type == "add" {
             let word = valsi_word.as_deref().unwrap_or("a valsi");
             let url = link.as_deref().unwrap_or("");
             let (new_definition, changes) = if let Some(def_id) = definition_id {
-                let (version_pair, single_def) =
+                let (version_pair, single_def, latest_version_id) =
                     match crate::versions::service::get_definition_history(pool, def_id, 1, 2).await
                     {
                         Ok(history) if history.versions.len() >= 2 => (
@@ -547,12 +553,18 @@ pub async fn send_notification_emails(pool: &deadpool_postgres::Pool) -> Result<
                                 history.versions[0].version_id,
                             )),
                             None,
+                            Some(history.versions[0].version_id),
                         ),
-                        Ok(history) if history.versions.len() == 1 => {
-                            (None, Some(history.versions[0].content.definition.clone()))
-                        }
-                        _ => (None, None),
+                        Ok(history) if history.versions.len() == 1 => (
+                            None,
+                            Some(history.versions[0].content.definition.clone()),
+                            Some(history.versions[0].version_id),
+                        ),
+                        _ => (None, None, None),
                     };
+                if let Some(version_id) = latest_version_id {
+                    params["definition_version_id"] = serde_json::json!(version_id);
+                }
                 if let Some(single) = single_def {
                     (Some(single), None)
                 } else if let Some((from_id, to_id)) = version_pair {
@@ -594,6 +606,8 @@ pub async fn send_notification_emails(pool: &deadpool_postgres::Pool) -> Result<
                     subject,
                     text_body,
                     html_body,
+                    initiated_by_user_id,
+                    params,
                 },
                 pool,
             )

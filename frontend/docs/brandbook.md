@@ -174,7 +174,8 @@ Application code and **`Button.vue`** / **`IconButton.vue`** should use **semant
 | ----------------------------------------------------------- | ---------------------------------------------------------------------- |
 | `.app-header-bar`                                           | Sticky top chrome (logo, nav, auth).                                   |
 | `.page-loading-overlay`                                     | Full-screen loading veil (auth bootstrap).                             |
-| `.route-view-freeze` + `.route-freeze-spinner`              | Route-change overlay in App (previous view + spinner until API quiet). |
+| `.content-loading-overlay`                                  | In-region veil over a `relative` parent (filter/search refresh).       |
+| `.route-view-freeze` + `.route-freeze-spinner`              | Path-change overlay in App (not query/tabs).                           |
 | `.auth-page-shell` / `.auth-form-card` / `.auth-glass-card` | Login, signup, password flows.                                         |
 | `.toolbar-panel` + `.toolbar-row`                           | Search + filter toolbars.                                              |
 | `.page-section-title`                                       | In-page H1-style tool titles.                                          |
