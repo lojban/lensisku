@@ -326,12 +326,13 @@ pub async fn revert_to_version(
     };
 
     // Update the definition with the old content, including target language.
+    let reverted_at = new_version.created_at.timestamp() as i32;
     transaction
         .execute(
             "UPDATE definitions 
              SET definition = $1, notes = $2, etymology = $3, selmaho = $4, jargon = $5, rafsi = $6,
-                 langid = $7, definitionnum = $8
-             WHERE definitionid = $9",
+                 langid = $7, definitionnum = $8, time = $9
+             WHERE definitionid = $10",
             &[
                 &old_version.content.definition,
                 &old_version.content.notes,
@@ -341,6 +342,7 @@ pub async fn revert_to_version(
                 &proposal_rafsi,
                 &restored_langid,
                 &definitionnum,
+                &reverted_at,
                 &old_version.definition_id,
             ],
         )

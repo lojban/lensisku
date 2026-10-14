@@ -1,4 +1,4 @@
-use actix_web::http::header::{ContentDisposition, ContentType, DispositionType};
+use actix_web::http::header::{ContentDisposition, ContentType, DispositionType, CACHE_CONTROL};
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
 use actix_web_grants::protect;
 use chrono::Utc;
@@ -708,12 +708,18 @@ pub async fn get_definitions_by_entry(
     {
         Ok(definitions) => {
             if definitions.is_empty() {
-                HttpResponse::NotFound().body("Valsi not found")
+                HttpResponse::NotFound()
+                    .insert_header((CACHE_CONTROL, "private, no-store, max-age=0"))
+                    .body("Valsi not found")
             } else {
-                HttpResponse::Ok().json(definitions)
+                HttpResponse::Ok()
+                    .insert_header((CACHE_CONTROL, "private, no-store, max-age=0"))
+                    .json(definitions)
             }
         }
-        Err(e) => HttpResponse::InternalServerError().body(format!("Database error: {}", e)),
+        Err(e) => HttpResponse::InternalServerError()
+            .insert_header((CACHE_CONTROL, "private, no-store, max-age=0"))
+            .body(format!("Database error: {}", e)),
     }
 }
 
