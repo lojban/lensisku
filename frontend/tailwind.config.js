@@ -129,16 +129,14 @@ export default {
         },
         /**
          * Static snapshot of the previous route while the next page loads.
-         * Fixed below the sticky header; light `blur-sm` on the snapshot itself.
+         * Absolute inside the route stage (keeps `#main-child` max-w-4xl); light blur.
          */
         '.route-view-freeze': {
-          '@apply pointer-events-none fixed inset-x-0 bottom-0 top-14 z-30 overflow-auto bg-white blur-sm sm:top-12':
-            {},
+          '@apply pointer-events-none absolute inset-0 z-30 overflow-auto bg-white blur-sm': {},
         },
-        /** App-level spinner while a route freeze is up (covers same region as freeze). */
+        /** Spinner over the same stage region as `.route-view-freeze` (not full viewport). */
         '.route-freeze-spinner': {
-          '@apply fixed inset-x-0 bottom-0 top-14 z-40 flex items-center justify-center bg-white/35 sm:top-12':
-            {},
+          '@apply absolute inset-0 z-40 flex items-center justify-center bg-white/35': {},
         },
         /** Sticky app chrome (logo, nav, auth). */
         '.app-header-bar': {
