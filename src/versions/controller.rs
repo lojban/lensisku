@@ -3,6 +3,7 @@ use actix_web::{get, post, web, HttpResponse, Responder};
 use deadpool_postgres::Pool;
 
 use crate::auth::permissions::PermissionCache;
+use crate::middleware::cache::RedisCache;
 
 use super::{
     dto::{GetDiffQuery, GetVersionsQuery, VersionHistoryResponse},
@@ -111,6 +112,7 @@ pub async fn revert_to_version(
     version_id: web::Path<i32>,
     user: crate::auth::Claims,
     perm_cache: web::Data<PermissionCache>,
+    redis_cache: web::Data<RedisCache>,
 ) -> impl Responder {
     match service::revert_to_version(
         &pool,
@@ -121,7 +123,21 @@ pub async fn revert_to_version(
     )
     .await
     {
-        Ok(new_version) => HttpResponse::Ok().json(new_version),
+        Ok(new_version) => {
+            if let Err(e) = redis_cache.invalidate_definition_search_caches().await {
+                log::error!(
+                    "Failed to invalidate definition search caches after version revert: {}",
+                    e
+                );
+            }
+            if let Err(e) = redis_cache.invalidate_recent_changes().await {
+                log::error!(
+                    "Failed to invalidate recent changes cache after version revert: {}",
+                    e
+                );
+            }
+            HttpResponse::Ok().json(new_version)
+        }
         Err(e) => match e.downcast_ref::<tokio_postgres::Error>() {
             Some(db_error) if db_error.code().is_some_and(|c| c.code() == "P0002") => {
                 HttpResponse::NotFound().finish()
