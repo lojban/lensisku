@@ -116,7 +116,7 @@ pub async fn get_definition_history(
             &format!(
                 "{VERSION_SELECT_SQL}
              WHERE v.definition_id = $1
-             ORDER BY v.created_at DESC
+             ORDER BY v.created_at DESC, v.version_id DESC
              LIMIT $2 OFFSET $3"
             ),
             &[&definition_id, &per_page, &offset],
