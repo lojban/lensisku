@@ -4800,6 +4800,10 @@ pub async fn update_definition(
         )
         .await?;
 
+    // Commit before eviction so a concurrent search cannot repopulate Redis
+    // from the old committed row after the cache was flushed.
+    transaction.commit().await?;
+
     if let Err(e) = redis_cache.invalidate_definition_search_caches().await {
         log::error!(
             "Failed to invalidate definition search caches after update: {}",
@@ -4818,8 +4822,6 @@ pub async fn update_definition(
             e
         );
     }
-    transaction.commit().await?;
-
     Ok(rafsi_warning)
 }
 
