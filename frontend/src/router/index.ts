@@ -116,6 +116,7 @@ const baseRoutes: Array<RouteRecordRaw> = [
     meta: {
       requiresAuth: true,
       fullHeight: true,
+      hideFooter: true,
       hidePageFooter: true,
     },
   },
