@@ -697,6 +697,7 @@ pub async fn get_definitions_by_entry(
     query: web::Query<ValsiDefinitionsQuery>,
     claims: Option<Claims>,
 ) -> impl Responder {
+    let is_authenticated = claims.is_some();
     match service::get_definitions_by_entry(
         &pool,
         &id_or_word.into_inner(),
@@ -708,18 +709,26 @@ pub async fn get_definitions_by_entry(
     {
         Ok(definitions) => {
             if definitions.is_empty() {
-                HttpResponse::NotFound()
-                    .insert_header((CACHE_CONTROL, "private, no-store, max-age=0"))
-                    .body("Valsi not found")
+                let mut response = HttpResponse::NotFound();
+                if is_authenticated {
+                    response.insert_header((CACHE_CONTROL, "private, no-store, max-age=0"));
+                }
+                response.body("Valsi not found")
             } else {
-                HttpResponse::Ok()
-                    .insert_header((CACHE_CONTROL, "private, no-store, max-age=0"))
-                    .json(definitions)
+                let mut response = HttpResponse::Ok();
+                if is_authenticated {
+                    response.insert_header((CACHE_CONTROL, "private, no-store, max-age=0"));
+                }
+                response.json(definitions)
             }
         }
-        Err(e) => HttpResponse::InternalServerError()
-            .insert_header((CACHE_CONTROL, "private, no-store, max-age=0"))
-            .body(format!("Database error: {}", e)),
+        Err(e) => {
+            let mut response = HttpResponse::InternalServerError();
+            if is_authenticated {
+                response.insert_header((CACHE_CONTROL, "private, no-store, max-age=0"));
+            }
+            response.body(format!("Database error: {}", e))
+        }
     }
 }
 
