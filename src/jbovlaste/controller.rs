@@ -27,6 +27,7 @@ use crate::middleware::cache::{
     generate_search_cache_key, generate_semantic_graph_cache_key,
     generate_semantic_graph_preview_cache_key, RedisCache,
 };
+use crate::middleware::cloudflare_cache::CloudflareCachePurger;
 use camxes_rs::camxes::peg::grammar::Peg;
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -1180,12 +1181,14 @@ pub async fn get_definition_image(
 #[protect(any("edit_definition"))]
 pub async fn update_definition(
     pool: web::Data<Pool>,
+    cloudflare_cache: web::Data<CloudflareCachePurger>,
     claims: Claims,
     redis_cache: web::Data<RedisCache>,
     req: web::Json<UpdateDefinitionRequest>,
     id: web::Path<i32>,
 ) -> impl Responder {
     let definition_id = id.into_inner();
+    let cache_target = service::definition_cache_target(&pool, definition_id).await;
 
     if req.is_wiki != Some(true) {
         let options = MathJaxValidationOptions { use_tectonic: true };
@@ -1228,11 +1231,20 @@ pub async fn update_definition(
     }
 
     match service::update_definition(&pool, definition_id, claims.sub, &req, &redis_cache).await {
-        Ok(warning) => HttpResponse::Ok().json(UpdateDefinitionResponse {
-            success: true,
-            error: None,
-            warning,
-        }),
+        Ok(warning) => {
+            cloudflare_cache
+                .purge_definition(
+                    definition_id,
+                    cache_target.as_ref().map(|(id, _)| *id),
+                    cache_target.as_ref().map(|(_, word)| word.as_str()),
+                )
+                .await;
+            HttpResponse::Ok().json(UpdateDefinitionResponse {
+                success: true,
+                error: None,
+                warning,
+            })
+        }
         Err(e) => {
             let msg = e.to_string();
             if msg.contains("Conflict:") {
@@ -1854,10 +1866,13 @@ pub async fn get_sitemap(
 #[delete("/definition/{id}")]
 pub async fn delete_definition(
     pool: web::Data<Pool>,
+    cloudflare_cache: web::Data<CloudflareCachePurger>,
     id: web::Path<i32>,
     claims: Claims,
 ) -> impl Responder {
-    match service::delete_definition(&pool, id.into_inner(), claims.sub).await {
+    let definition_id = id.into_inner();
+    let cache_target = service::definition_cache_target(&pool, definition_id).await;
+    match service::delete_definition(&pool, definition_id, claims.sub).await {
         Ok(result) => {
             if !result.definition_deleted {
                 if result.has_remaining_definitions {
@@ -1872,6 +1887,13 @@ pub async fn delete_definition(
                     }))
                 }
             } else {
+                cloudflare_cache
+                    .purge_definition(
+                        definition_id,
+                        cache_target.as_ref().map(|(id, _)| *id),
+                        cache_target.as_ref().map(|(_, word)| word.as_str()),
+                    )
+                    .await;
                 HttpResponse::Ok().json(json!({
                     "success": true,
                     "message": "Definition deleted successfully",

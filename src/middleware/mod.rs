@@ -3,6 +3,7 @@ use actix_web::dev::ServiceRequest;
 use std::time::Duration;
 
 pub mod cache;
+pub mod cloudflare_cache;
 pub mod image;
 pub mod limiter;
 pub mod panic_handler;

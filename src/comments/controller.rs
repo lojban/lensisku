@@ -5,6 +5,7 @@ use fancy_regex::Regex;
 use serde_json::json;
 
 use crate::middleware::cache::RedisCache;
+use crate::middleware::cloudflare_cache::CloudflareCachePurger;
 
 use super::{
     dto::{
@@ -231,6 +232,7 @@ pub async fn list_comments(
 pub async fn add_comment(
     pool: web::Data<Pool>,
     redis_cache: web::Data<RedisCache>,
+    cloudflare_cache: web::Data<CloudflareCachePurger>,
     claims: Claims,
     request: web::Json<NewCommentRequest>,
 ) -> impl Responder {
@@ -295,6 +297,13 @@ pub async fn add_comment(
                     e
                 );
             }
+            cloudflare_cache
+                .purge_comment(
+                    comment.valsi_id,
+                    comment.definition_id,
+                    comment.valsi_word.as_deref(),
+                )
+                .await;
             HttpResponse::Ok().json(comment)
         }
         Err(e) => {

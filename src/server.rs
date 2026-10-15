@@ -21,7 +21,7 @@ use crate::{
 use actix::Actor;
 use actix_cors::Cors;
 use actix_limitation::RateLimiter;
-use actix_web::{http::header, middleware::Logger, web, App, HttpServer};
+use actix_web::{dev::Service, http::header, middleware::Logger, web, App, HttpServer};
 use camxes_rs::camxes::peg::grammar::Peg;
 use log::{error, info};
 use std::{collections::HashMap, env, sync::Arc};
@@ -71,6 +71,9 @@ pub async fn start_server(
     })?);
 
     let redis_cache_data = web::Data::from(redis_cache);
+    let cloudflare_cache_purger = web::Data::new(
+        middleware::cloudflare_cache::CloudflareCachePurger::from_env(),
+    );
 
     // Initialize messaging service and WebSocket broadcast server
     let chat_server = messaging::websocket::ChatServer::new().start();
@@ -136,6 +139,29 @@ pub async fn start_server(
         App::new()
             .wrap(CatchPanicWithMessage)
             .wrap(Logger::default())
+            .wrap_fn(|req, service| {
+                let tags = if req.method() == actix_web::http::Method::GET {
+                    middleware::cloudflare_cache::tags_for_get(
+                        req.path(),
+                        req.uri().query(),
+                    )
+                } else {
+                    Vec::new()
+                };
+                let future = service.call(req);
+                async move {
+                    let mut response = future.await?;
+                    if !tags.is_empty() {
+                        if let Ok(value) = header::HeaderValue::from_str(&tags.join(",")) {
+                            response.response_mut().headers_mut().insert(
+                                header::HeaderName::from_static("cache-tag"),
+                                value,
+                            );
+                        }
+                    }
+                    Ok(response)
+                }
+            })
             .wrap(cors)
             .wrap(RateLimiter::default())
             .app_data(web::Data::new(pool.clone()))
@@ -147,6 +173,7 @@ pub async fn start_server(
             .app_data(login_limiter.clone())
             .app_data(kokoro_tts_limiter.clone())
             .app_data(redis_cache_data.clone())
+            .app_data(cloudflare_cache_purger.clone())
             .app_data(messaging_service.clone())
             .app_data(web::Data::new(chat_server.clone()))
             .configure(auth::configure)

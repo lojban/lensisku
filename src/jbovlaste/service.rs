@@ -13,6 +13,18 @@ use tokio::sync::mpsc;
 use deadpool_postgres::{Pool, Transaction};
 use log::debug;
 
+pub async fn definition_cache_target(pool: &Pool, definition_id: i32) -> Option<(i32, String)> {
+    let client = pool.get().await.ok()?;
+    let row = client
+        .query_opt(
+            "SELECT v.valsiid, v.word FROM definitions d JOIN valsi v ON v.valsiid = d.valsiid WHERE d.definitionid = $1",
+            &[&definition_id],
+        )
+        .await
+        .ok()??;
+    Some((row.get("valsiid"), row.get("word")))
+}
+
 use super::broadcast::Broadcaster;
 use super::dto::ClientIdGroup;
 use super::{

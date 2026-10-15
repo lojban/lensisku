@@ -4,6 +4,7 @@ use deadpool_postgres::Pool;
 
 use crate::auth::permissions::PermissionCache;
 use crate::middleware::cache::RedisCache;
+use crate::middleware::cloudflare_cache::CloudflareCachePurger;
 
 use super::{
     dto::{GetDiffQuery, GetVersionsQuery, VersionHistoryResponse},
@@ -113,10 +114,13 @@ pub async fn revert_to_version(
     user: crate::auth::Claims,
     perm_cache: web::Data<PermissionCache>,
     redis_cache: web::Data<RedisCache>,
+    cloudflare_cache: web::Data<CloudflareCachePurger>,
 ) -> impl Responder {
+    let version_id = version_id.into_inner();
+    let cache_target = service::definition_cache_target_for_version(&pool, version_id).await;
     match service::revert_to_version(
         &pool,
-        version_id.into_inner(),
+        version_id,
         user.sub,
         &user.role.to_string(),
         perm_cache.get_ref(),
@@ -124,6 +128,11 @@ pub async fn revert_to_version(
     .await
     {
         Ok(new_version) => {
+            if let Some((definition_id, valsi_id, word)) = cache_target {
+                cloudflare_cache
+                    .purge_definition(definition_id, Some(valsi_id), Some(&word))
+                    .await;
+            }
             if let Err(e) = redis_cache.invalidate_definition_search_caches().await {
                 log::error!(
                     "Failed to invalidate definition search caches after version revert: {}",

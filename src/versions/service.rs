@@ -18,6 +18,21 @@ const VERSION_SELECT_SQL: &str = "SELECT v.*, u.username,
              JOIN users u ON v.user_id = u.userid
              LEFT JOIN languages l ON v.langid = l.langid";
 
+pub async fn definition_cache_target_for_version(
+    pool: &Pool,
+    version_id: i32,
+) -> Option<(i32, i32, String)> {
+    let client = pool.get().await.ok()?;
+    let row = client
+        .query_opt(
+            "SELECT d.definitionid, v.valsiid, v.word FROM definition_versions dv JOIN definitions d ON d.definitionid = dv.definition_id JOIN valsi v ON v.valsiid = d.valsiid WHERE dv.version_id = $1",
+            &[&version_id],
+        )
+        .await
+        .ok()??;
+    Some((row.get(0), row.get(1), row.get(2)))
+}
+
 fn parse_keywords(row: &tokio_postgres::Row, column: &str) -> Option<Vec<KeywordMapping>> {
     row.try_get::<_, String>(column)
         .ok()
