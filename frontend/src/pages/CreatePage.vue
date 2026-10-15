@@ -25,7 +25,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Waves, BookPlus, FileText, ChevronRight } from '@lucide/vue'
+import { Waves, BookPlus, BookA, ChevronRight } from '@lucide/vue'
 import { useLocalePath } from '@/composables/useLocalePath'
 import { useSeoHead } from '@/composables/useSeoHead'
 const { t } = useI18n()
@@ -48,7 +48,7 @@ const choices = computed(() => [
   },
   {
     path: '/wiki/add',
-    icon: FileText,
+    icon: BookA,
     iconClass: 'fab-menu-icon--definition',
     label: t('creation.newWikiPage'),
     description: t('creation.wikiDescription'),

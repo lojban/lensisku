@@ -60,7 +60,7 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { Button } from '@packages/ui'
-import { Bell, BookOpen, FileText, List, MessageSquare } from '@lucide/vue'
+import { Bell, BookOpen, BookA, List, MessageSquare } from '@lucide/vue'
 import DiscussionComposer from './DiscussionComposer.vue'
 import ActivityCard from './ActivityCard.vue'
 import LiveChatCard from './LiveChatCard.vue'
@@ -83,7 +83,7 @@ const tabs = computed(() => [
   { key: 'all', label: t('activityFeed.all'), icon: List },
   { key: 'discussions', label: t('activityFeed.discussions'), icon: MessageSquare },
   { key: 'definitions', label: t('activityFeed.definitions'), icon: BookOpen },
-  { key: 'wiki', label: t('activityFeed.wiki'), icon: FileText },
+  { key: 'wiki', label: t('activityFeed.wiki'), icon: BookA },
   { key: 'news', label: t('recentChanges.news'), icon: Bell },
 ])
 const feedElement = ref<HTMLElement | null>(null)

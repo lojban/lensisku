@@ -17,15 +17,19 @@
     <ToolbarSelectDropdownItem
       v-for="choice in choices"
       :key="choice.path"
+      class="!w-80 !max-w-[calc(100vw-2rem)] !whitespace-normal !items-center !gap-4 !rounded-xl !border !border-transparent !px-5 !py-4 text-left hover:!border-blue-500 hover:!bg-white focus-visible:!outline focus-visible:!outline-2 focus-visible:!outline-blue-600"
       @click="router.push(localePath(choice.path))"
     >
       <component
         :is="choice.icon"
-        class="fab-menu-icon"
+        class="fab-menu-icon h-6 w-6 shrink-0"
         :class="choice.iconClass"
         stroke-width="2"
       />
-      {{ choice.label }}
+      <span class="flex flex-col items-start">
+        <span>{{ choice.label }}</span>
+        <span class="text-xs text-gray-500">{{ choice.description }}</span>
+      </span>
     </ToolbarSelectDropdownItem>
   </ToolbarSelectDropdown>
 </template>
@@ -33,7 +37,7 @@
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { Plus, Waves, BookPlus, FileText } from '@lucide/vue'
+import { Plus, Waves, BookPlus, BookA } from '@lucide/vue'
 import { FabButton, ToolbarSelectDropdown, ToolbarSelectDropdownItem } from '@packages/ui'
 import { useLocalePath } from '@/composables/useLocalePath'
 defineProps({ floating: { type: Boolean, default: false } })
@@ -46,18 +50,21 @@ const choices = computed(() => [
     icon: Waves,
     iconClass: 'fab-menu-icon--discussion',
     label: t('creation.newDiscussion'),
+    description: t('creation.discussionDescription'),
   },
   {
     path: '/valsi/add',
     icon: BookPlus,
     iconClass: 'fab-menu-icon--definition',
     label: t('creation.newDefinition'),
+    description: t('creation.definitionDescription'),
   },
   {
     path: '/wiki/add',
-    icon: FileText,
+    icon: BookA,
     iconClass: 'fab-menu-icon--definition',
     label: t('creation.newWikiPage'),
+    description: t('creation.wikiDescription'),
   },
 ])
 </script>
