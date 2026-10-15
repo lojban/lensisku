@@ -12,10 +12,7 @@
       </span>
       <SocialLinks class="max-w-full" :buttons="true" />
     </div>
-    <div
-      ref="listEl"
-      class="mt-2 max-h-[36rem] w-full space-y-1 overflow-y-auto overscroll-y-contain rounded bg-gray-50 p-2"
-    >
+    <div ref="listEl" class="mt-2 w-full space-y-1 rounded bg-gray-50 p-2">
       <div
         v-for="(msg, index) in messageStack"
         :key="`${msg.w}-${index}-${msg.d.slice(0, 24)}`"
