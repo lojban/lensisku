@@ -12,10 +12,11 @@
       </span>
       <SocialLinks class="max-w-full" :buttons="true" />
     </div>
-    <!-- Fixed viewport so async history / live messages do not shift the feed -->
+    <!-- Height capped only while loading; after history loads, grow with content (CLS OK). -->
     <div
       ref="listEl"
-      class="mt-2 w-full min-h-[7.5rem] max-h-[7.5rem] overflow-y-auto space-y-1 rounded bg-gray-50 p-2"
+      class="mt-2 w-full space-y-1 rounded bg-gray-50 p-2"
+      :class="historyLoaded ? '' : 'min-h-[7.5rem] max-h-[7.5rem] overflow-y-auto'"
     >
       <div v-if="!historyLoaded" class="space-y-2 skeleton-pulse" aria-hidden="true">
         <div class="skeleton-bone h-3.5 w-4/5" />
@@ -51,6 +52,7 @@
 </template>
 
 <script setup lang="ts">
+import type { Socket } from 'socket.io-client'
 import { nextTick, onMounted, onUnmounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
@@ -58,12 +60,6 @@ import SocialLinks from '@/components/SocialLinks.vue'
 
 type ChatMessage = { d: string; s?: string; w: string }
 type TextPart = { text: string; href?: string }
-// Minimal socket surface — loaded via dynamic import so it stays off the home critical path.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type SocketClient = {
-  on: (event: string, cb: (...args: any[]) => void) => void
-  disconnect: () => void
-}
 
 const { t } = useI18n()
 
@@ -73,7 +69,8 @@ const socketConnected = ref(false)
 /** True after history arrives, connect fails, or a short timeout — swaps skeleton for content. */
 const historyLoaded = ref(false)
 
-let socket: SocketClient | null = null
+/** Runtime client is still loaded via dynamic import (type-only import above). */
+let socket: Socket | null = null
 let historyTimeout: ReturnType<typeof setTimeout> | null = null
 let idleHandle: number | null = null
 let connectTimer: ReturnType<typeof setTimeout> | null = null
@@ -171,7 +168,7 @@ const connectSocket = async () => {
 
     socket = io('wss://jbotcan.org:9091', {
       transports: ['polling', 'websocket'],
-    }) as unknown as SocketClient
+    })
 
     socket.on('connect', () => {
       socketConnected.value = true
