@@ -36,7 +36,8 @@ export function useActivityFeed(filter: Ref<string>, location: Ref<string>) {
   const unread = useActivityUnread()
   const rows = shallowRef<ActivityRow[]>([])
   const cursor = ref<string | null>(null)
-  const loading = ref(false)
+  /** Start true so the first paint shows skeletons instead of an empty flash (CLS). */
+  const loading = ref(true)
   const error = ref(false)
   const newActivity = ref(false)
   const restoredScroll = ref(0)

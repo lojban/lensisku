@@ -85,7 +85,8 @@ const auth = useAuth()
 const { t, locale, tm } = useI18n()
 
 const streakData = ref<StreakData | null>(null)
-const isLoadingStreak = ref(false)
+/** Start true so the first paint uses the in-card skeleton (outer min-h already reserved). */
+const isLoadingStreak = ref(true)
 
 /** Maps daily points to a threshold-based emoji indicator. */
 const streakPointsEmoji = (points: number): string => {
@@ -107,7 +108,10 @@ const streakWeekdayShort = (isoDate: string) => {
 }
 
 const fetchStreakData = async () => {
-  if (!auth.state.isLoggedIn) return
+  if (!auth.state.isLoggedIn) {
+    isLoadingStreak.value = false
+    return
+  }
 
   isLoadingStreak.value = true
   try {

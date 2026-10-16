@@ -1,5 +1,32 @@
 <template>
-  <div v-if="collection">
+  <!-- Header skeleton while collection metadata loads (avoids blank → full header CLS) -->
+  <CollectionPageHeader
+    v-if="!collection"
+    loading
+    :collection="null"
+    :cover-image-url="null"
+    cover-image-alt=""
+    cover-lightbox-dialog-label=""
+    :cover-lightbox-close-label="t('collectionDetail.coverLightboxClose')"
+    :public-label="t('collectionDetail.public')"
+    :private-label="t('collectionDetail.private')"
+    :created-by-label="t('collectionDetail.createdBy')"
+    :items-count-label="t('collectionDetail.itemsCount', { count: 0 })"
+  >
+    <template #toolbar-skeleton>
+      <div class="space-y-4">
+        <div class="flex w-full flex-wrap items-center justify-center gap-2">
+          <div class="skeleton-bone h-6 w-28 rounded-full" />
+          <div class="skeleton-bone h-6 w-32 rounded-full" />
+          <div class="skeleton-bone h-6 w-24 rounded-full" />
+          <div class="skeleton-bone h-6 w-28 rounded-full" />
+        </div>
+        <SearchFormSkeleton />
+        <CombinedFiltersSkeleton :show-collection-filter="false" />
+      </div>
+    </template>
+  </CollectionPageHeader>
+  <div v-else>
     <!-- Header -->
     <CollectionPageHeader
       :collection="collection"
@@ -1411,6 +1438,8 @@ import CombinedFilters from '@/components/CombinedFilters.vue'
 import ModalComponent from '@/components/ModalComponent.vue'
 import PaginationComponent from '@/components/PaginationComponent.vue'
 import SearchForm from '@/components/SearchForm.vue'
+import CombinedFiltersSkeleton from '@/components/skeletons/CombinedFiltersSkeleton.vue'
+import SearchFormSkeleton from '@/components/skeletons/SearchFormSkeleton.vue'
 import SearchInput from '@/components/SearchInput.vue'
 import TabbedPageHeader from '@/components/TabbedPageHeader.vue'
 import {

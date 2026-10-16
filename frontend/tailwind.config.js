@@ -1203,9 +1203,12 @@ export default {
         '.skeleton-bone--soft': {
           '@apply rounded bg-gray-100': {},
         },
-        /** Shared activity loading rows (Me / contributions pages). */
+        /**
+         * Legacy activity loading row shell. Prefer `SkeletonActivityItem.vue`
+         * (`comment-item` chrome) so skeletons match CommentItem / RecentChangeItem.
+         */
         '.skeleton-activity-row': {
-          '@apply space-y-2 bg-white p-4 rounded-lg border border-gray-200': {},
+          '@apply space-y-2 bg-white p-3 rounded-lg border border-gray-200': {},
         },
         '.card-study-area': {
           '@apply flex items-center justify-center min-h-[5.5rem] py-6 sm:py-8 flex-shrink-0': {},

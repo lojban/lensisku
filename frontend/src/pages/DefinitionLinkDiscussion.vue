@@ -78,14 +78,24 @@
           </div>
         </div>
       </div>
-      <!-- Loading State for Header -->
-      <div v-else-if="isLoading" class="animate-pulse space-y-4">
-        <div class="h-8 bg-gray-200 rounded w-1/3"></div>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div class="h-40 bg-gray-100 rounded-xl"></div>
-
-          <div class="h-40 bg-gray-100 rounded-xl"></div>
+      <!-- Loading: mirror title + two definition cards -->
+      <div v-else-if="isLoading" class="space-y-6" aria-busy="true" aria-hidden="true">
+        <div class="skeleton-bone skeleton-pulse h-9 w-1/3 max-w-xs" />
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
+          <div v-for="n in 2" :key="n" class="flex flex-col">
+            <div class="mb-2 flex items-center gap-2">
+              <div class="skeleton-bone h-5 w-8 rounded-full" />
+              <div class="skeleton-bone h-5 w-28" />
+            </div>
+            <div
+              class="flex-grow min-h-[10rem] space-y-2 rounded-xl border border-gray-100 bg-white p-4 skeleton-pulse"
+            >
+              <div class="skeleton-bone h-4 w-full" />
+              <div class="skeleton-bone h-4 w-5/6" />
+              <div class="skeleton-bone--soft h-4 w-2/3" />
+              <div class="skeleton-bone--soft mt-4 h-4 w-24" />
+            </div>
+          </div>
         </div>
       </div>
     </div>

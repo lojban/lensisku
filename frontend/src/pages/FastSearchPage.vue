@@ -1,30 +1,28 @@
 <template>
   <!-- Search and Filter Section -->
-  <!-- Skeletons -->
-  <SearchFormSkeleton v-if="isInitialLoading" />
-  <CombinedFiltersSkeleton v-if="isInitialLoading" />
-  <!-- Search Form -->
-  <SearchForm
-    v-if="!isInitialLoading"
-    ref="searchFormRef"
-    :initial-query="searchQuery"
-    :initial-mode="'semantic'"
-    class="w-full"
-    @search="performSearch"
-  />
-  <CombinedFilters
-    v-model="filters"
-    :languages="languages"
-    class="w-full transition-opacity duration-300"
-    :class="{ 'opacity-0 pointer-events-none h-0 overflow-hidden': isInitialLoading }"
-    @change="handleFilterChange"
-    @reset="handleFiltersReset"
-  />
+  <!-- Skeletons: keep real controls out of the flow (no h-0 + space-y gap CLS) -->
+  <template v-if="isInitialLoading">
+    <SearchFormSkeleton />
+    <CombinedFiltersSkeleton />
+  </template>
+  <template v-else>
+    <SearchForm
+      ref="searchFormRef"
+      :initial-query="searchQuery"
+      :initial-mode="'semantic'"
+      class="w-full"
+      @search="performSearch"
+    />
+    <CombinedFilters
+      v-model="filters"
+      :languages="languages"
+      class="w-full"
+      @change="handleFilterChange"
+      @reset="handleFiltersReset"
+    />
+  </template>
 
-  <div
-    v-if="searchQuery || hasActiveSearchFilters(filters)"
-    class="min-h-[400px]"
-  >
+  <div v-if="searchQuery || hasActiveSearchFilters(filters)" class="min-h-[400px]">
     <div class="space-y-4">
       <div
         class="flex flex-wrap justify-between items-center gap-3 sm:space-x-4 w-full sm:w-auto ml-auto"
@@ -69,9 +67,7 @@
             :source-lang-id="filters.source_langid"
             :languages="languages"
           />
-          <template
-            v-if="filters.selectedCollections?.length || filters.usernames?.length"
-          >
+          <template v-if="filters.selectedCollections?.length || filters.usernames?.length">
             <div
               v-if="expandCollectionItemId"
               class="surface-definition-compact text-sm text-gray-700 flex flex-wrap items-center justify-between gap-2"
@@ -128,9 +124,7 @@
     </div>
   </div>
   <!-- PaginationComponent -->
-  <div
-    v-if="searchQuery || hasActiveSearchFilters(filters)"
-  >
+  <div v-if="searchQuery || hasActiveSearchFilters(filters)">
     <PaginationComponent
       :current-page="currentPage"
       :total-pages="totalPages"
@@ -293,9 +287,7 @@ const fetchDefinitions = async (page: number, search = '') => {
       page,
       per_page: 10,
       search: String(search ?? '').trim() || undefined,
-      username: filters.value.usernames?.length
-        ? filters.value.usernames.join(',')
-        : undefined,
+      username: filters.value.usernames?.length ? filters.value.usernames.join(',') : undefined,
       exclude_usernames: filters.value.excludeUsernames?.length
         ? filters.value.excludeUsernames.join(',')
         : undefined,

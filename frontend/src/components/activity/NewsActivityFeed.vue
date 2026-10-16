@@ -1,7 +1,12 @@
 <template>
   <div class="space-y-3">
-    <div v-if="loading && !rows.length" class="space-y-3" role="status">
-      <div v-for="n in 3" :key="n" class="h-36 rounded-xl bg-gray-100 animate-pulse" />
+    <div
+      v-if="loading && !rows.length"
+      class="space-y-3"
+      role="status"
+      :aria-label="t('activityFeed.loading')"
+    >
+      <SkeletonActivityItem v-for="n in 3" :key="n" />
     </div>
     <ActivityChanges
       v-else-if="!error || rows.length"
@@ -33,6 +38,7 @@ import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { Button } from '@packages/ui'
 import { getRecentChanges } from '@/api'
 import ActivityChanges from '@/components/activity/ActivityChanges.vue'
+import SkeletonActivityItem from '@/components/activity/SkeletonActivityItem.vue'
 import { useDateFormat } from '@/composables/useDateFormat'
 import { useNewsUnread } from '@/composables/useNewsUnread'
 import { useI18n } from 'vue-i18n'
@@ -43,7 +49,8 @@ const { formatDate } = useDateFormat()
 const { markNewsOpened } = useNewsUnread()
 const rows = ref<ChangeRow[]>([])
 const cursor = ref<string | null>(null)
-const loading = ref(false)
+/** Start true so the first paint shows skeletons instead of an empty flash (CLS). */
+const loading = ref(true)
 const error = ref(false)
 let controller: AbortController | undefined
 
