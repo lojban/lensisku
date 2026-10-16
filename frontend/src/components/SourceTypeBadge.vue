@@ -71,7 +71,7 @@ const typeConfig = {
   wiki: {
     icon: WikiIcon,
     bg: 'bg-teal-50',
-    text: 'text-teal-700',
+    text: 'wiki-icon',
   },
 }
 

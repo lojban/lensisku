@@ -199,6 +199,16 @@ export default {
           '@apply text-emerald-600': {},
         },
         /**
+         * Wiki glyphs (`WikiIcon`). Teal, not the emerald used for new definitions.
+         * `fab-menu-icon--wiki` is the create-menu alias of the same hue.
+         */
+        '.wiki-icon': {
+          '@apply text-teal-600': {},
+        },
+        '.fab-menu-icon--wiki': {
+          '@apply text-teal-600': {},
+        },
+        /**
          * Footer modal: iOS-style toggle track + thumb (pair thumb with translate-x-0 / translate-x-5).
          * Use `Button variant="plain"` so aqua/flat `ui-btn--*` padding/chrome do not fight the track.
          * Theme gloss / emboss lives in `buttonUiThemeLayer` (aqua vs flat).

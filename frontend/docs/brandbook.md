@@ -52,6 +52,7 @@ This document is the **human-readable contract** for product, design, QA, and en
 - **Navigation / links**: `text-nav-link` (`#007bff`) and **active** state via `.nav-link-active` (see `NavLink`, `navbar-item`). Mobile drawer uses `.mobile-nav-grid` (two columns) and `.mobile-nav-row` (hover/focus only—link color comes from NavLink). When logged in, **Logout** sits on the same row as **My activity and profile**.
 - **Semantic blues** in surfaces: borders and hovers (`border-blue-*`, `hover:border-blue-*`) for **interactive lists** (`.surface-list-row`, `.message-thread-card`, …).
 - **Status**: green success, red danger, amber warning—prefer existing **badge** and **btn** semantics over new hex values. **Yellow** is reserved for **edit / apply** (`ui-btn--edit`).
+- **Content-type icons**: **definitions** use emerald (`.fab-menu-icon--definition`, `text-emerald-600`). **Wiki** uses teal (`.wiki-icon` / `.fab-menu-icon--wiki`, `text-teal-600`) — do not reuse the definition green on `WikiIcon`. Wiki chips pair `.wiki-icon` with `bg-teal-50`.
 - **Selma'o / tags**: `.badge-definition-tag` (purple chip)—use for grammatical tags, not general emphasis.
 
 ### 5b. Transfer-direction icons (import / upload · export / download)
@@ -170,16 +171,16 @@ Application code and **`Button.vue`** / **`IconButton.vue`** should use **semant
 
 ## 8. Layout & shells
 
-| Class                                                       | Use                                                                    |
-| ----------------------------------------------------------- | ---------------------------------------------------------------------- |
-| `.app-header-bar`                                           | Sticky top chrome (logo, nav, auth).                                   |
-| `.page-loading-overlay`                                     | Full-screen loading veil (auth bootstrap).                             |
-| `.content-loading-overlay`                                  | In-region veil over a `relative` parent (filter/search refresh).       |
-| `.route-view-freeze` + `.route-freeze-spinner`              | Path-change overlay in App (not query/tabs).                           |
-| `.auth-page-shell` / `.auth-form-card` / `.auth-glass-card` | Login, signup, password flows.                                         |
-| `.toolbar-panel` + `.toolbar-row`                           | Search + filter toolbars.                                              |
-| `.page-section-title`                                       | In-page H1-style tool titles.                                          |
-| `.empty-state-panel`                                        | Zero-state blocks.                                                     |
+| Class                                                       | Use                                                              |
+| ----------------------------------------------------------- | ---------------------------------------------------------------- |
+| `.app-header-bar`                                           | Sticky top chrome (logo, nav, auth).                             |
+| `.page-loading-overlay`                                     | Full-screen loading veil (auth bootstrap).                       |
+| `.content-loading-overlay`                                  | In-region veil over a `relative` parent (filter/search refresh). |
+| `.route-view-freeze` + `.route-freeze-spinner`              | Path-change overlay in App (not query/tabs).                     |
+| `.auth-page-shell` / `.auth-form-card` / `.auth-glass-card` | Login, signup, password flows.                                   |
+| `.toolbar-panel` + `.toolbar-row`                           | Search + filter toolbars.                                        |
+| `.page-section-title`                                       | In-page H1-style tool titles.                                    |
+| `.empty-state-panel`                                        | Zero-state blocks.                                               |
 
 ---
 

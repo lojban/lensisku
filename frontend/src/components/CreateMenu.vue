@@ -63,7 +63,7 @@ const choices = computed(() => [
   {
     path: '/wiki/add',
     icon: WikiIcon,
-    iconClass: 'fab-menu-icon--definition',
+    iconClass: 'fab-menu-icon--wiki',
     label: t('creation.newWikiPage'),
     description: t('creation.wikiDescription'),
   },
