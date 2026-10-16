@@ -65,8 +65,7 @@
               <div
                 class="dropdown-action-trigger pointer-events-none border border-gray-200 bg-gray-100"
               >
-                <span class="invisible inline-flex items-center gap-2 select-none">
-                  <Plus class="h-4 w-4" />
+                <span class="invisible inline-flex items-center select-none">
                   <span>{{ $t('home.addDefinition') }}</span>
                 </span>
               </div>
@@ -82,9 +81,6 @@
                 trigger-icon="ellipsis"
                 trigger-class="dropdown-action-trigger"
               >
-                <template #icon>
-                  <Plus class="h-4 w-4" />
-                </template>
                 <template #label>{{ $t('home.addDefinition') }}</template>
                 <ToolbarSelectDropdownItem @click="router.push(localePath('/valsi/add'))">
                   <BookPlus class="h-4 w-4 shrink-0" aria-hidden="true" />
@@ -373,7 +369,7 @@
 
 <script setup lang="ts">
 import { jwtDecode } from 'jwt-decode'
-import { MessageSquare, AudioWaveform, Plus, X, BookPlus, StarPlus } from '@lucide/vue'
+import { MessageSquare, AudioWaveform, X, BookPlus, StarPlus } from '@lucide/vue'
 import { ref, onMounted, watch, computed, onBeforeUnmount, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 
