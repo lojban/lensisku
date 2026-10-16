@@ -17,7 +17,7 @@ defineOptions({ name: 'WikiIcon', inheritAttrs: false })
     stroke-width="2"
     stroke-linecap="round"
     stroke-linejoin="round"
-    class="lucide lucide-book-w-icon lucide-book-w wiki-icon"
+    class="lucide lucide-book-w-icon lucide-book-w"
     aria-hidden="true"
     v-bind="$attrs"
   >

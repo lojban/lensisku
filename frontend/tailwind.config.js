@@ -199,14 +199,18 @@ export default {
           '@apply text-emerald-600': {},
         },
         /**
-         * Wiki glyphs (`WikiIcon`). Teal, not the emerald used for new definitions.
-         * `fab-menu-icon--wiki` is the create-menu alias of the same hue.
+         * Wiki glyphs where a hue is required (create menu, chips). Black — not the emerald
+         * used for new definitions. Do not put this on `WikiIcon` itself: tabs and other
+         * chrome inherit `currentColor` (inactive gray, active tab color).
          */
         '.wiki-icon': {
-          '@apply text-teal-600': {},
+          '@apply text-black': {},
         },
         '.fab-menu-icon--wiki': {
-          '@apply text-teal-600': {},
+          '@apply text-black': {},
+        },
+        '.wiki-chip': {
+          '@apply bg-gray-100 text-black': {},
         },
         /**
          * Footer modal: iOS-style toggle track + thumb (pair thumb with translate-x-0 / translate-x-5).

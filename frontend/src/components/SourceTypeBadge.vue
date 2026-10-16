@@ -70,8 +70,8 @@ const typeConfig = {
   },
   wiki: {
     icon: WikiIcon,
-    bg: 'bg-teal-50',
-    text: 'wiki-icon',
+    bg: 'wiki-chip',
+    text: '',
   },
 }
 
