@@ -18,7 +18,7 @@
         <div class="toolbar-field-row">
           <label class="toolbar-control-label">{{ t('components.userListTab.roleLabel') }}</label>
           <div class="toolbar-dropdown-anchor">
-            <ToolbarSelectDropdown variant="role" truncate-label>
+            <ToolbarSelectDropdown variant="role">
               <template #label>{{ roleFilterTriggerLabel }}</template>
               <ToolbarSelectDropdownItem @click="$emit('update:roleFilter', '')">
                 {{ t('components.userListTab.allRoles') }}
@@ -46,7 +46,6 @@
               :options="sortFieldOptions"
               :aria-label="sortControlsAriaLabel"
               trigger-class=""
-              :truncate-label="false"
               @select="selectSort"
             />
           </div>

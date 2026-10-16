@@ -19,7 +19,8 @@
 </template>
 
 <script setup lang="ts">
-import { BookOpen, BookMarked, Mail, BookA, MessagesSquare } from '@lucide/vue'
+import { BookOpen, BookMarked, Mail, MessagesSquare } from '@lucide/vue'
+import { WikiIcon } from '@packages/ui'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 
@@ -68,7 +69,7 @@ const typeConfig = {
     text: 'text-orange-700',
   },
   wiki: {
-    icon: BookA,
+    icon: WikiIcon,
     bg: 'bg-teal-50',
     text: 'text-teal-700',
   },

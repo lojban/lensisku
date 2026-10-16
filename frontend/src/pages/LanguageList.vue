@@ -36,11 +36,16 @@
         </div>
 
         <div class="toolbar-field-row">
-          <label class="toolbar-control-label">{{ t('languageList.filters.forLojbanLabel') }}</label>
+          <label class="toolbar-control-label">{{
+            t('languageList.filters.forLojbanLabel')
+          }}</label>
           <div class="toolbar-dropdown-anchor">
-            <ToolbarSelectDropdown truncate-label>
+            <ToolbarSelectDropdown>
               <template #label>{{ forLojbanTriggerLabel }}</template>
-              <ToolbarSelectDropdownItem :class="{ 'bg-gray-100': !forLojbanFilter }" @click="setForLojbanFilter('')">
+              <ToolbarSelectDropdownItem
+                :class="{ 'bg-gray-100': !forLojbanFilter }"
+                @click="setForLojbanFilter('')"
+              >
                 {{ t('languageList.filters.all') }}
               </ToolbarSelectDropdownItem>
               <ToolbarSelectDropdownItem
@@ -62,9 +67,12 @@
         <div class="toolbar-field-row">
           <label class="toolbar-control-label">{{ t('languageList.filters.urlLabel') }}</label>
           <div class="toolbar-dropdown-anchor">
-            <ToolbarSelectDropdown truncate-label>
+            <ToolbarSelectDropdown>
               <template #label>{{ urlTriggerLabel }}</template>
-              <ToolbarSelectDropdownItem :class="{ 'bg-gray-100': !urlFilter }" @click="setUrlFilter('')">
+              <ToolbarSelectDropdownItem
+                :class="{ 'bg-gray-100': !urlFilter }"
+                @click="setUrlFilter('')"
+              >
                 {{ t('languageList.filters.all') }}
               </ToolbarSelectDropdownItem>
               <ToolbarSelectDropdownItem
@@ -124,7 +132,11 @@
             <div class="shrink-0 mt-1">
               <div
                 class="w-10 h-10 rounded-lg flex items-center justify-center text-sm font-semibold border bg-white"
-                :class="lang.for_lojban ? 'border-green-200 text-green-700' : 'border-gray-200 text-gray-600'"
+                :class="
+                  lang.for_lojban
+                    ? 'border-green-200 text-green-700'
+                    : 'border-gray-200 text-gray-600'
+                "
               >
                 {{ lang.tag }}
               </div>
@@ -146,13 +158,19 @@
                   "
                 >
                   {{ t('languageList.tableHeader.forLojban') }}:
-                  {{ lang.for_lojban ? t('languageList.filters.forLojban.yes') : t('languageList.filters.forLojban.no') }}
+                  {{
+                    lang.for_lojban
+                      ? t('languageList.filters.forLojban.yes')
+                      : t('languageList.filters.forLojban.no')
+                  }}
                 </span>
               </div>
 
               <div class="mt-3 text-sm text-gray-600 space-y-1">
                 <div>
-                  <span class="font-medium text-gray-500">{{ t('languageList.realNameLabel') }}</span>
+                  <span class="font-medium text-gray-500">{{
+                    t('languageList.realNameLabel')
+                  }}</span>
                   {{ lang.real_name }}
                 </div>
                 <div>
@@ -160,7 +178,9 @@
                   {{ lang.tag }}
                 </div>
                 <div v-if="lang.url">
-                  <span class="font-medium text-gray-500">{{ t('languageList.tableHeader.url') }}</span>
+                  <span class="font-medium text-gray-500">{{
+                    t('languageList.tableHeader.url')
+                  }}</span>
                   <a
                     :href="lang.url"
                     target="_blank"
@@ -201,7 +221,12 @@
 </template>
 
 <script setup lang="ts">
-import { Button, ListRowSurface, ToolbarSelectDropdown, ToolbarSelectDropdownItem } from '@packages/ui'
+import {
+  Button,
+  ListRowSurface,
+  ToolbarSelectDropdown,
+  ToolbarSelectDropdownItem,
+} from '@packages/ui'
 import { ref, computed, onMounted, watch } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
@@ -275,7 +300,9 @@ const filteredLanguages = computed(() => {
     return urlFilter.value === 'yes' ? has : !has
   }
 
-  return languages.value.filter((lang) => matchesSearch(lang) && matchesForLojban(lang) && matchesUrl(lang))
+  return languages.value.filter(
+    (lang) => matchesSearch(lang) && matchesForLojban(lang) && matchesUrl(lang)
+  )
 })
 
 const setForLojbanFilter = (v: '' | 'yes' | 'no') => {

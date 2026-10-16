@@ -8,22 +8,18 @@
           :aria-label="ariaLabel"
           aria-haspopup="menu"
           :aria-expanded="open"
-          class="w-auto max-w-full min-w-0"
+          class="w-auto max-w-full min-w-0 shrink overflow-hidden flex-nowrap"
           :class="[
             triggerIcon === 'ellipsis' ? 'dropdown-action-trigger' : 'dropdown-trigger',
             variant === 'role' ? 'max-w-[min(100vw-4rem,14rem)]' : '',
             triggerClass,
           ]"
         >
-          <span class="min-w-0 inline-flex items-center gap-2">
-            <span v-if="$slots.icon" class="shrink-0 inline-flex items-center" aria-hidden="true">
-              <slot name="icon" />
-            </span>
-            <span
-              :class="truncateLabel ? 'min-w-0 truncate whitespace-nowrap' : 'whitespace-nowrap'"
-            >
-              <slot name="label" />
-            </span>
+          <span v-if="$slots.icon" class="shrink-0 inline-flex items-center" aria-hidden="true">
+            <slot name="icon" />
+          </span>
+          <span class="dropdown-trigger-label min-w-0 max-w-full truncate">
+            <slot name="label" />
           </span>
           <ChevronDown
             v-if="triggerIcon === 'chevron'"
@@ -49,8 +45,6 @@ withDefaults(
   defineProps<{
     id?: string
     ariaLabel?: string
-    /** Wider labels (e.g. role names): ellipsis when overflow. */
-    truncateLabel?: boolean
     /** `role` caps trigger width on small viewports. */
     variant?: 'default' | 'role'
     /** Trailing icon for the trigger: `chevron` for selects, `ellipsis` for action menus. */
@@ -63,7 +57,6 @@ withDefaults(
     ariaLabel: undefined,
     variant: 'default',
     triggerIcon: 'chevron',
-    truncateLabel: false,
     triggerClass: '',
   }
 )

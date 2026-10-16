@@ -183,7 +183,6 @@
             id="cf-word-type"
             :aria-label="t('filters.filterBy.wordType')"
             trigger-class="!w-full cursor-pointer"
-            truncate-label
           >
             <template #label>
               {{ selectedWordTypeLabel }}
@@ -230,7 +229,9 @@
 
       <!-- Include authors: only when the merged collections+users picker is hidden. -->
       <div v-if="!showCollectionFilter" class="flex min-w-0 flex-col">
-        <label class="filters-field-label">{{ t('components.combinedFilters.filterByAuthors') }}</label>
+        <label class="filters-field-label">{{
+          t('components.combinedFilters.filterByAuthors')
+        }}</label>
         <div class="relative w-full min-w-0 [&>div]:block [&>div]:w-full">
           <MultiSelectDropdown
             v-model="selectedUsers"
@@ -287,7 +288,6 @@
             id="cf-source-language"
             :aria-label="t('filters.filterBy.sourceLanguage')"
             trigger-class="!w-full cursor-pointer"
-            truncate-label
           >
             <template #label>
               {{ sourceLanguageLabel }}
@@ -532,10 +532,8 @@ const lastAutoExpandedSelmaho = ref('')
 const wordTypes = ref<WordTypeOption[]>([])
 const route = useRoute()
 
-const { recent: recentLanguages, record: recordRecentLanguage } = useRecentSelections<LanguageOption>(
-  'recentLanguageSelections',
-  (lang) => lang.id
-)
+const { recent: recentLanguages, record: recordRecentLanguage } =
+  useRecentSelections<LanguageOption>('recentLanguageSelections', (lang) => lang.id)
 const { recent: recentCollections, record: recordRecentCollection } =
   useRecentSelections<CollectionOption>('recentCollectionSelections', (col) => col.collection_id)
 const { recent: recentIncludeAuthors, record: recordRecentIncludeAuthor } =
@@ -543,9 +541,8 @@ const { recent: recentIncludeAuthors, record: recordRecentIncludeAuthor } =
 const { recent: recentExcludeAuthors, record: recordRecentExcludeAuthor } =
   useRecentSelections<UserHint>('recentExcludeAuthorSelections', (u) => u.username)
 const { recent: recentCollectionUsers, record: recordRecentCollectionUser } =
-  useRecentSelections<CollectionUserOption>(
-    'recentCollectionUserSelections',
-    (item) => collectionUserOptionValue(item)
+  useRecentSelections<CollectionUserOption>('recentCollectionUserSelections', (item) =>
+    collectionUserOptionValue(item)
   )
 
 const languageSuggestions = computed(() => {
@@ -1032,11 +1029,11 @@ function onCollectionUserDropdownSearch(query: string) {
 const hasFilledAdvancedFilters = computed(() => {
   return Boolean(
     filters.value.selmaho ||
-      (selectedUsers.value.length > 0 && !props.showCollectionFilter) ||
-      excludedUsers.value.length > 0 ||
-      filters.value.word_type ||
-      filters.value.source_langid !== 1 ||
-      !searchInPhrases.value
+    (selectedUsers.value.length > 0 && !props.showCollectionFilter) ||
+    excludedUsers.value.length > 0 ||
+    filters.value.word_type ||
+    filters.value.source_langid !== 1 ||
+    !searchInPhrases.value
   )
 })
 
@@ -1045,13 +1042,13 @@ const shouldPulseExpandChevron = computed(() => !expanded.value && hasFilledAdva
 const hasAnyActiveFilters = computed(() => {
   return Boolean(
     props.forceShowReset ||
-      selectedLangs.value.length > 0 ||
-      selectedCollections.value.length > 0 ||
-      selectedUsers.value.length > 0 ||
-      hasFilledAdvancedFilters.value ||
-      !isSemantic.value ||
-      !searchInPhrases.value ||
-      expanded.value
+    selectedLangs.value.length > 0 ||
+    selectedCollections.value.length > 0 ||
+    selectedUsers.value.length > 0 ||
+    hasFilledAdvancedFilters.value ||
+    !isSemantic.value ||
+    !searchInPhrases.value ||
+    expanded.value
   )
 })
 

@@ -11,9 +11,10 @@
         </FabButton>
       </span>
     </template>
-    <template #label
-      ><Plus class="h-4 w-4" /><span>{{ t('creation.create') }}</span></template
-    >
+    <template #icon>
+      <Plus class="h-4 w-4" />
+    </template>
+    <template #label>{{ t('creation.create') }}</template>
     <ToolbarSelectDropdownItem
       v-for="choice in choices"
       :key="choice.path"
@@ -37,8 +38,8 @@
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { Plus, Waves, BookPlus, BookA } from '@lucide/vue'
-import { FabButton, ToolbarSelectDropdown, ToolbarSelectDropdownItem } from '@packages/ui'
+import { Plus, Waves, BookPlus } from '@lucide/vue'
+import { FabButton, ToolbarSelectDropdown, ToolbarSelectDropdownItem, WikiIcon } from '@packages/ui'
 import { useLocalePath } from '@/composables/useLocalePath'
 defineProps({ floating: { type: Boolean, default: false } })
 const router = useRouter()
@@ -61,7 +62,7 @@ const choices = computed(() => [
   },
   {
     path: '/wiki/add',
-    icon: BookA,
+    icon: WikiIcon,
     iconClass: 'fab-menu-icon--definition',
     label: t('creation.newWikiPage'),
     description: t('creation.wikiDescription'),

@@ -1,15 +1,24 @@
 <template>
   <div ref="rootRef" :class="rootClass" @keydown="handleKeydown">
-    <div aria-haspopup="true" :aria-expanded="open" @click="open = !open">
+    <div
+      class="min-w-0 max-w-full"
+      aria-haspopup="true"
+      :aria-expanded="open"
+      @click="open = !open"
+    >
       <slot name="trigger" :open="open">
         <button
           type="button"
-          class="dropdown-action-trigger"
+          class="dropdown-action-trigger max-w-full min-w-0 shrink overflow-hidden"
           aria-haspopup="menu"
           :aria-expanded="open"
         >
-          <span v-if="triggerLabel" class="text-sm text-gray-600">{{ triggerLabel }}</span>
-          <EllipsisVertical class="w-4 h-4" />
+          <span
+            v-if="triggerLabel"
+            class="dropdown-trigger-label min-w-0 max-w-full truncate text-sm text-gray-600"
+            >{{ triggerLabel }}</span
+          >
+          <EllipsisVertical class="h-4 w-4 shrink-0" />
         </button>
       </slot>
     </div>
@@ -55,7 +64,7 @@ const rootRef = ref<HTMLElement | null>(null)
 const panelRef = ref<HTMLElement | null>(null)
 const panelStyle = ref<Record<string, string>>({})
 
-const rootClass = 'relative inline-block'
+const rootClass = 'relative inline-block min-w-0 max-w-full'
 
 async function handleKeydown(event: KeyboardEvent) {
   const trigger = rootRef.value?.querySelector('button')

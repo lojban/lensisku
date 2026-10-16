@@ -42,9 +42,9 @@
         </button>
         <div class="space-y-4">
           <div
-            class="flex flex-wrap justify-between items-center gap-3 sm:space-x-4 w-full sm:w-auto ml-auto"
+            class="flex w-full min-w-0 flex-wrap items-center justify-between gap-3 sm:w-auto sm:space-x-4 ml-auto"
           >
-            <h2 class="text-xl sm:text-2xl font-bold text-gray-800 select-none">
+            <h2 class="min-w-0 text-xl font-bold text-gray-800 select-none sm:text-2xl">
               {{
                 similarDefinitionId
                   ? $t('home.searchResultsTitle.similar')
@@ -58,7 +58,7 @@
 
             <div
               v-if="auth.state.isLoading"
-              class="flex flex-col sm:flex-row items-end sm:items-center gap-3 sm:space-x-4 ml-auto"
+              class="ml-auto flex min-w-0 max-w-full flex-col items-end gap-3 sm:flex-row sm:items-center sm:space-x-4"
               aria-hidden="true"
             >
               <!-- Match dropdown-action-trigger + addDefinition label width -->
@@ -74,7 +74,7 @@
 
             <div
               v-else-if="searchMode === 'dictionary' || searchMode === 'semantic'"
-              class="flex flex-col sm:flex-row items-end sm:items-center gap-3 sm:space-x-4 ml-auto"
+              class="ml-auto flex min-w-0 max-w-full flex-col items-end gap-3 sm:flex-row sm:items-center sm:space-x-4"
             >
               <ToolbarSelectDropdown
                 v-if="auth.state.isLoggedIn && decodedRole !== 'Unconfirmed'"
@@ -82,10 +82,10 @@
                 trigger-icon="ellipsis"
                 trigger-class="dropdown-action-trigger"
               >
-                <template #label>
+                <template #icon>
                   <Plus class="h-4 w-4" />
-                  <span>{{ $t('home.addDefinition') }}</span>
                 </template>
+                <template #label>{{ $t('home.addDefinition') }}</template>
                 <ToolbarSelectDropdownItem @click="router.push(localePath('/valsi/add'))">
                   <BookPlus class="h-4 w-4 shrink-0" aria-hidden="true" />
                   {{ $t('home.createDefinition') }}
@@ -125,10 +125,7 @@
               :aria-label="$t('home.searchResultsTitle.comments')"
               class="flex flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto ml-auto justify-end sm:justify-start"
             >
-              <ToolbarSelectDropdown
-                trigger-class="!w-full max-w-[min(100vw-4rem,18rem)]"
-                truncate-label
-              >
+              <ToolbarSelectDropdown trigger-class="!w-full max-w-[min(100vw-4rem,18rem)]">
                 <template #icon>
                   <WaveSourceIcon :source="waveSource" />
                 </template>

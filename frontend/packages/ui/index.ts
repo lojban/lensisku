@@ -30,3 +30,4 @@ export {
   FileImportIcon,
   ImportIcon,
 } from './transferIcons'
+export { default as WikiIcon } from './WikiIcon.vue'

@@ -8,10 +8,7 @@
           :aria-label="t('home.searchResultsTitle.comments')"
           class="flex flex-wrap items-center gap-2"
         >
-          <ToolbarSelectDropdown
-            trigger-class="!w-full max-w-[min(100vw-4rem,18rem)]"
-            truncate-label
-          >
+          <ToolbarSelectDropdown trigger-class="!w-full max-w-[min(100vw-4rem,18rem)]">
             <template #icon>
               <WaveSourceIcon :source="waveSource" />
             </template>

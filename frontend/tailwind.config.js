@@ -880,7 +880,7 @@ export default {
         },
         /** Closed trigger for toolbar dropdowns (search mode, language multiselect). */
         '.dropdown-trigger': {
-          '@apply w-full h-6 min-h-[1.5rem] shrink-0 flex items-center justify-between gap-2 px-3 text-left text-sm font-normal text-gray-700 bg-white border border-gray-300 rounded-full transition-all focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 focus:z-50 shadow-inner shadow-slate-200':
+          '@apply w-full h-6 min-h-[1.5rem] max-w-full min-w-0 shrink flex flex-nowrap items-center justify-between gap-2 overflow-hidden px-3 text-left text-sm font-normal text-gray-700 bg-white border border-gray-300 rounded-full transition-all focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 focus:z-50 shadow-inner shadow-slate-200':
             {},
           '&:hover:not(:disabled)': {
             '@apply border-blue-400': {},
@@ -891,13 +891,24 @@ export default {
          * Aqua = glossy button; Flat = select pill without inset shadow.
          */
         '.dropdown-action-trigger': {
-          '@apply w-auto max-w-full min-w-0 h-6 min-h-[1.5rem] shrink-0 inline-flex items-center gap-2 px-3 text-left cursor-pointer select-none whitespace-nowrap transition-all disabled:opacity-40 disabled:cursor-not-allowed':
+          '@apply w-auto max-w-full min-w-0 h-6 min-h-[1.5rem] shrink inline-flex flex-nowrap items-center gap-2 overflow-hidden px-3 text-left cursor-pointer select-none whitespace-nowrap transition-all disabled:opacity-40 disabled:cursor-not-allowed':
             {},
           '& > span': {
             '@apply relative z-[3] min-w-0': {},
           },
           '& svg': {
             '@apply relative z-[3] shrink-0': {},
+          },
+        },
+        /**
+         * Single-line trigger label. Preflight sets `svg { display: block }`, which stacks an icon
+         * above the text inside a nowrap span; keep icons inline and ellipsize the text instead.
+         */
+        '.dropdown-trigger-label': {
+          '@apply block min-w-0 max-w-full overflow-hidden text-ellipsis whitespace-nowrap text-left':
+            {},
+          '& svg': {
+            '@apply inline-block shrink-0 align-middle': {},
           },
         },
         /** Default trigger for `Dropdown.vue` (ellipsis action menu). */

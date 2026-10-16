@@ -1,10 +1,5 @@
 <template>
-  <ToolbarSelectDropdown
-    :id="id"
-    :aria-label="ariaLabel"
-    :trigger-class="triggerClass"
-    :truncate-label="truncateLabel"
-  >
+  <ToolbarSelectDropdown :id="id" :aria-label="ariaLabel" :trigger-class="triggerClass">
     <template #icon>
       <ArrowUpNarrowWide v-if="order === 'asc'" class="h-4 w-4 opacity-60" :stroke-width="2" />
       <ArrowDownWideNarrow v-else class="h-4 w-4 opacity-60" :stroke-width="2" />
@@ -49,13 +44,11 @@ const props = withDefaults(
     id?: string
     ariaLabel?: string
     triggerClass?: string
-    truncateLabel?: boolean
   }>(),
   {
     id: undefined,
     ariaLabel: undefined,
     triggerClass: '!w-full max-w-[min(100vw-4rem,18rem)]',
-    truncateLabel: true,
   }
 )
 

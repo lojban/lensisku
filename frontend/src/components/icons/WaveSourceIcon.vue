@@ -11,7 +11,8 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { BookA, Layers, Mail, MessageSquare, MessagesSquare } from '@lucide/vue'
+import { Layers, Mail, MessageSquare, MessagesSquare } from '@lucide/vue'
+import { WikiIcon } from '@packages/ui'
 
 const props = defineProps<{
   source: 'all' | 'jbotcan' | 'freeforums' | 'comments' | 'mail' | 'wiki'
@@ -22,7 +23,7 @@ const lucideBySource = {
   freeforums: MessagesSquare,
   comments: MessageSquare,
   mail: Mail,
-  wiki: BookA,
+  wiki: WikiIcon,
 } as const
 
 const lucideIcon = computed(() =>
