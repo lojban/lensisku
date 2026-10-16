@@ -16,6 +16,7 @@ RUN chown -R $UID:$GID /home/$USERNAME
 RUN apt-get update && apt-get install -y --no-install-recommends \
     pkg-config libssl-dev libfontconfig1-dev libfreetype6-dev \
     libicu-dev libpng-dev zlib1g-dev libgraphite2-dev libharfbuzz-dev \
+    mold \
     && rm -rf /var/lib/apt/lists/*
     
 ENV HOME=/home/$USERNAME

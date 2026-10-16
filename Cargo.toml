@@ -4,45 +4,57 @@ version = "0.2.0"
 edition = "2021"
 default-run = "lensisku"
 
+# Dev: prioritize compile/link speed. Use `--profile debugging` for full debugger info.
+# Linker: mold via `.cargo/config.toml` (no runtime cost). Nightly container builds also
+# pass `-Zthreads=8` (parallel frontend) from the Docker/build scripts.
 [profile.dev]
 opt-level = 0
-debug = true
+debug = "line-tables-only"
+split-debuginfo = "unpacked"
 debug-assertions = true
 overflow-checks = true
-lto = false
+lto = "off"
 panic = 'abort'
 incremental = true
-codegen-units = 16
+codegen-units = 256
 rpath = false
 
-[profile.release]
-opt-level = 3           # Maximum optimizations
-lto = "fat"            # Enable link-time optimization across all crates
-codegen-units = 1      # Further optimize at the cost of compile time
-# Unwind required for CatchPanicWithMessage middleware to return panic message in HTTP 500
-panic = "unwind"
-strip = true          # Strip symbols from binary
-overflow-checks = false # Disable integer overflow checks
-debug = false         # No debug symbols
-debug-assertions = false # Disable debug assertions
-incremental = false   # Disable incremental compilation
-rpath = false        # Disable runtime path
-
-# Enable a small amount of optimization in debug mode
+# Dependencies: light opts, no debuginfo (big win for clean and incremental builds).
 [profile.dev.package."*"]
 opt-level = 1
+debug = false
+
+# Full debuginfo when stepping in a debugger: `cargo build --profile debugging`
+[profile.debugging]
+inherits = "dev"
+debug = true
+split-debuginfo = "off"
+
+# Max runtime speed for production `cargo build --release` (slower to compile).
+[profile.release]
+opt-level = 3
+lto = "fat"
+codegen-units = 1
+# Unwind required for CatchPanicWithMessage middleware to return panic message in HTTP 500
+panic = "unwind"
+strip = true
+overflow-checks = false
+debug = false
+debug-assertions = false
+incremental = false
+rpath = false
 
 # Profile for benchmark builds
 [profile.bench]
 inherits = "release"
 # Prefer faster bench builds over max LTO; search helpers are CPU-bound microbenches.
-lto = false
+lto = "off"
 codegen-units = 16
 
-# Faster release build for Docker/CI (less LTO and more codegen units)
+# Faster release build for Docker/CI (no LTO, more codegen units, incremental)
 [profile.release-fast]
 inherits = "release"
-lto = false
+lto = "off"
 codegen-units = 16
 incremental = true
 

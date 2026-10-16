@@ -26,6 +26,15 @@ CARGO_BUILD_PROFILE="${CARGO_BUILD_PROFILE:-release-fast}"
 # that require C++17 features (auto template parameters)
 export CXXFLAGS="-std=c++17"
 
+# Parallel rustc frontend on nightly (stable rejects -Z). Safe for release
+# codegen quality; only affects compile wall time / memory.
+if rustc --version | grep -q nightly; then
+  case " ${RUSTFLAGS:-} " in
+    *" -Zthreads="*|*" -Z threads="*) ;;
+    *) export RUSTFLAGS="${RUSTFLAGS:+$RUSTFLAGS }-Zthreads=8" ;;
+  esac
+fi
+
 cargo build --locked --bin lensisku --profile "$CARGO_BUILD_PROFILE"
 
 # Preserve the historical output path used by the hosting deployment scripts.

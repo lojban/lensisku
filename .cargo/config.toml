@@ -6,3 +6,7 @@
 [env]
 CXXFLAGS = "-std=c++17"
 
+# mold: faster linking than the system linker / lld, no effect on runtime speed.
+# Requires the `mold` package (installed in CI and container builders).
+[target.'cfg(target_os = "linux")']
+rustflags = ["-C", "link-arg=-fuse-ld=mold"]

@@ -14,6 +14,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libicu-dev libpng-dev zlib1g-dev \
     libgraphite2-dev \
     libharfbuzz-dev \
+    mold \
     && rm -rf /var/lib/apt/lists/*
 # Set C++ standard to C++17 for dependencies that compile C++ code
 ENV CXXFLAGS="-std=c++17"
@@ -32,11 +33,15 @@ RUN mkdir -p src test && \
     echo 'fn main() {}' > src/main.rs && \
     echo 'fn main() {}' > test/test.rs
 
+# Parallel rustc frontend when the builder toolchain is nightly (stable rejects -Z).
 # Build dependencies (and stub binaries). Use BuildKit cache mounts so
 # registry, git, and target are reused across builds (much faster rebuilds).
 RUN --mount=type=cache,target=/usr/local/cargo/registry \
     --mount=type=cache,target=/usr/local/cargo/git \
     --mount=type=cache,id=lensisku-target-${TARGETARCH}-${RUST_TOOLCHAIN}-${CARGO_BUILD_PROFILE},target=/usr/src/app/target,sharing=locked \
+    if echo "${RUST_TOOLCHAIN}" | grep -q nightly; then \
+      export RUSTFLAGS="${RUSTFLAGS:+$RUSTFLAGS }-Zthreads=8"; \
+    fi && \
     cargo build --locked --bin lensisku --profile "${CARGO_BUILD_PROFILE}"
 
 # Overwrite stubs with real source (only dirs needed for cargo build; excludes frontend, docs, scripts, etc.).
@@ -48,6 +53,9 @@ RUN --mount=type=cache,target=/usr/local/cargo/registry \
     --mount=type=cache,target=/usr/local/cargo/git \
     --mount=type=cache,id=lensisku-target-${TARGETARCH}-${RUST_TOOLCHAIN}-${CARGO_BUILD_PROFILE},target=/usr/src/app/target,sharing=locked \
     touch src/main.rs && \
+    if echo "${RUST_TOOLCHAIN}" | grep -q nightly; then \
+      export RUSTFLAGS="${RUSTFLAGS:+$RUSTFLAGS }-Zthreads=8"; \
+    fi && \
     cargo build --locked --bin lensisku --profile "${CARGO_BUILD_PROFILE}" && \
     cp /usr/src/app/target/${CARGO_BUILD_PROFILE}/lensisku /usr/src/app/lensisku-out
 

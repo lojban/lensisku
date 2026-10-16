@@ -2,8 +2,12 @@ To build lensisku for hosting on the main lojban.org infrastructure,
 run ./build-rust.sh and ./build-npm.sh in this directory.
 
 Rust builds default to nightly-2026-09-29 and the release-fast Cargo profile.
+The builder image installs mold (faster linking; configured in ../.cargo/config.toml).
+On nightly, build-rust-inside.sh also sets -Zthreads=8 (parallel frontend).
 Override with RUST_TOOLCHAIN=1.98.1 CARGO_BUILD_PROFILE=release ./build-rust.sh
-for stable Rust and maximum runtime optimization.
+for stable Rust and maximum runtime optimization (fat LTO; no -Z flags).
+After Dockerfile.rust changes, remove the build-rust image so podman rebuilds it:
+  podman rmi build-rust
 Compiled dependencies/incremental artifacts persist in ../target/container;
 the deployment executable is atomically replaced at ../target/release/lensisku.
 The running server keeps its old executable; restart it after a successful build
@@ -16,5 +20,6 @@ The hosting builder uses Debian Trixie to match the lensisku-containers runtime
 and its ICU 76 libraries. LBCS runtime image rebuilds do not compile Rust;
 run this helper in each deployed containers/web/src or containers/web-dev/src
 checkout. The source bind mount preserves ../target/container between runs.
+See archive/lensisku-containers/README-source-rebuild for the operator checklist.
 
 If things seem wonky, try: rm -rf ~/.local/npm-dotnpm ~/.local/rust-dotcargo
