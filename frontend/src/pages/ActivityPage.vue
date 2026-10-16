@@ -12,6 +12,9 @@
             trigger-class="!w-full max-w-[min(100vw-4rem,18rem)]"
             truncate-label
           >
+            <template #icon>
+              <WaveSourceIcon :source="waveSource" />
+            </template>
             <template #label>{{ waveSourceLabel }}</template>
             <ToolbarSelectDropdownItem
               v-for="source in waveSources"
@@ -19,34 +22,17 @@
               :class="{ 'bg-gray-100': waveSource === source }"
               @click="setWaveSource(source)"
             >
+              <WaveSourceIcon :source="source" />
               {{ t(`home.waveSource${sourceLabels[source]}`) }}
             </ToolbarSelectDropdownItem>
           </ToolbarSelectDropdown>
-          <ToolbarSelectDropdown
-            trigger-class="!w-full max-w-[min(100vw-4rem,18rem)]"
-            truncate-label
-          >
-            <template #label>{{ sortByLabel }}</template>
-            <ToolbarSelectDropdownItem
-              v-for="sort in sortOptions"
-              :key="sort"
-              :class="{ 'bg-gray-100': sortBy === sort }"
-              @click="setSortBy(sort)"
-            >
-              {{ t(`sort.${sort}`) }}
-            </ToolbarSelectDropdownItem>
-          </ToolbarSelectDropdown>
-          <Button
-            variant="empty"
-            type="button"
-            class="inline-flex h-8 min-w-0 w-auto items-center gap-1.5 whitespace-nowrap px-3 text-sm"
-            :title="sortOrder === 'asc' ? t('sort.ascending') : t('sort.descending')"
-            @click="toggleSortOrder"
-          >
-            <ChevronUp v-if="sortOrder === 'asc'" class="h-4 w-4 shrink-0 opacity-60" />
-            <ChevronDown v-else class="h-4 w-4 shrink-0 opacity-60" />
-            <span>{{ t(sortOrder === 'asc' ? 'sort.asc' : 'sort.desc') }}</span>
-          </Button>
+          <SortFieldOrderDropdown
+            :field="sortBy"
+            :order="sortOrder"
+            :options="sortFieldOptions"
+            :aria-label="t('sort.sortByLabel')"
+            @select="setSortFieldOrder"
+          />
         </div>
       </div>
       <ActivityFeed />
@@ -55,13 +41,17 @@
 </template>
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { ChevronDown, ChevronUp } from '@lucide/vue'
-import { Button, ToolbarSelectDropdown, ToolbarSelectDropdownItem } from '@packages/ui'
+import {
+  SortFieldOrderDropdown,
+  ToolbarSelectDropdown,
+  ToolbarSelectDropdownItem,
+} from '@packages/ui'
 import { useRoute } from 'vue-router'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import SearchForm from '@/components/SearchForm.vue'
 import ActivityFeed from '@/components/activity/ActivityFeed.vue'
+import WaveSourceIcon from '@/components/icons/WaveSourceIcon.vue'
 import { useLocalePath } from '@/composables/useLocalePath'
 import { useSeoHead } from '@/composables/useSeoHead'
 import { queryStr } from '@/utils/routeQuery'
@@ -86,7 +76,9 @@ const waveSource = ref<WaveSource>(validWaveSource(queryStr(route.query.wave_sou
 const sortBy = ref<SortBy>(validSortBy(queryStr(route.query.sort_by)))
 const sortOrder = ref(queryStr(route.query.sort_order) === 'asc' ? 'asc' : 'desc')
 const waveSourceLabel = computed(() => t(`home.waveSource${sourceLabels[waveSource.value]}`))
-const sortByLabel = computed(() => t(`sort.${sortBy.value}`))
+const sortFieldOptions = computed(() =>
+  sortOptions.map((value) => ({ value, label: t(`sort.${value}`) }))
+)
 useSeoHead({ title: () => t('activityFeed.title') })
 
 function validWaveSource(value: string): WaveSource {
@@ -122,13 +114,9 @@ function setWaveSource(source: WaveSource) {
   updateSearchOptions()
 }
 
-function setSortBy(sort: SortBy) {
-  sortBy.value = sort
-  updateSearchOptions()
-}
-
-function toggleSortOrder() {
-  sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc'
+function setSortFieldOrder({ field, order }: { field: string; order: 'asc' | 'desc' }) {
+  sortBy.value = validSortBy(field)
+  sortOrder.value = order
   updateSearchOptions()
 }
 

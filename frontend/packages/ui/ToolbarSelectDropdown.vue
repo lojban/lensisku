@@ -15,14 +15,15 @@
             triggerClass,
           ]"
         >
-          <span
-            :class="
-              truncateLabel
-                ? 'min-w-0 truncate whitespace-nowrap inline-flex items-center gap-2'
-                : 'whitespace-nowrap inline-flex items-center gap-2'
-            "
-          >
-            <slot name="label" />
+          <span class="min-w-0 inline-flex items-center gap-2">
+            <span v-if="$slots.icon" class="shrink-0 inline-flex items-center" aria-hidden="true">
+              <slot name="icon" />
+            </span>
+            <span
+              :class="truncateLabel ? 'min-w-0 truncate whitespace-nowrap' : 'whitespace-nowrap'"
+            >
+              <slot name="label" />
+            </span>
           </span>
           <ChevronDown
             v-if="triggerIcon === 'chevron'"

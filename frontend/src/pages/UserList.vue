@@ -22,8 +22,7 @@
     :sort-order="sortOrder"
     @update:search-query="handleSearchQueryUpdate"
     @update:role-filter="handleRoleFilterUpdate"
-    @update:sort-by="handleSortByUpdate"
-    @update:sort-order="handleSortOrderUpdate"
+    @select-sort="handleSortSelect"
     @update-search="updateSearch"
     @clear-search="clearSearch"
     @prev-page="prevPage"
@@ -225,13 +224,9 @@ const handleRoleFilterUpdate = (val: string) => {
   updateSearch()
 }
 
-const handleSortByUpdate = (val: string) => {
-  sortBy.value = val
-  updateSearch()
-}
-
-const handleSortOrderUpdate = (val: string) => {
-  sortOrder.value = val
+const handleSortSelect = ({ field, order }: { field: string; order: string }) => {
+  sortBy.value = field
+  sortOrder.value = order
   updateSearch()
 }
 

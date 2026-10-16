@@ -38,28 +38,17 @@
           <label class="toolbar-control-label" for="user-list-sort-by">{{
             t('components.userListTab.sortByLabel')
           }}</label>
-          <div class="toolbar-inline-actions" role="group" :aria-label="sortControlsAriaLabel">
-            <ToolbarSelectDropdown id="user-list-sort-by">
-              <template #label>{{ sortByTriggerLabel }}</template>
-              <ToolbarSelectDropdownItem @click="$emit('update:sortBy', 'created_at')">
-                {{ t('components.userListTab.createdAtSort') }}
-              </ToolbarSelectDropdownItem>
-              <ToolbarSelectDropdownItem @click="$emit('update:sortBy', 'username')">
-                {{ t('components.userListTab.usernameSort') }}
-              </ToolbarSelectDropdownItem>
-              <ToolbarSelectDropdownItem @click="$emit('update:sortBy', 'realname')">
-                {{ t('components.userListTab.realNameSort') }}
-              </ToolbarSelectDropdownItem>
-            </ToolbarSelectDropdown>
-            <ToolbarSelectDropdown :aria-label="t('components.userListTab.sortOrderLabel')">
-              <template #label>{{ sortOrderTriggerLabel }}</template>
-              <ToolbarSelectDropdownItem @click="$emit('update:sortOrder', 'asc')">
-                {{ t('components.userListTab.ascSort') }}
-              </ToolbarSelectDropdownItem>
-              <ToolbarSelectDropdownItem @click="$emit('update:sortOrder', 'desc')">
-                {{ t('components.userListTab.descSort') }}
-              </ToolbarSelectDropdownItem>
-            </ToolbarSelectDropdown>
+          <div class="toolbar-dropdown-anchor">
+            <SortFieldOrderDropdown
+              id="user-list-sort-by"
+              :field="sortBy"
+              :order="sortOrder"
+              :options="sortFieldOptions"
+              :aria-label="sortControlsAriaLabel"
+              trigger-class=""
+              :truncate-label="false"
+              @select="selectSort"
+            />
           </div>
         </div>
       </div>
@@ -156,11 +145,26 @@ import { computed, type PropType } from 'vue'
 import { getProfileImage } from '@/api'
 import PaginationComponent from '@/components/PaginationComponent.vue'
 import SearchInput from '@/components/SearchInput.vue'
-import { ListRowSurface, ToolbarSelectDropdown, ToolbarSelectDropdownItem } from '@packages/ui'
+import {
+  ListRowSurface,
+  SortFieldOrderDropdown,
+  ToolbarSelectDropdown,
+  ToolbarSelectDropdownItem,
+} from '@packages/ui'
 import { useDateFormat } from '@/composables/useDateFormat'
 
 const { t } = useI18n()
 const { formatDate } = useDateFormat()
+const emit = defineEmits([
+  'update:searchQuery',
+  'update:roleFilter',
+  'selectSort',
+  'updateSearch',
+  'clearSearch',
+  'prevPage',
+  'nextPage',
+  'viewUser',
+])
 
 type UserRow = {
   user_id: string | number
@@ -192,33 +196,19 @@ const roleFilterTriggerLabel = computed(() => {
   return translateRole(props.roleFilter)
 })
 
-const sortByTriggerLabel = computed(() => {
-  if (props.sortBy === 'username') return t('components.userListTab.usernameSort')
-  if (props.sortBy === 'realname') return t('components.userListTab.realNameSort')
-  return t('components.userListTab.createdAtSort')
-})
-
-const sortOrderTriggerLabel = computed(() =>
-  props.sortOrder === 'asc'
-    ? t('components.userListTab.ascSort')
-    : t('components.userListTab.descSort')
-)
+const sortFieldOptions = computed(() => [
+  { value: 'created_at', label: t('components.userListTab.createdAtSort') },
+  { value: 'username', label: t('components.userListTab.usernameSort') },
+  { value: 'realname', label: t('components.userListTab.realNameSort') },
+])
 
 const sortControlsAriaLabel = computed(
   () => `${t('components.userListTab.sortByLabel')} ${t('components.userListTab.sortOrderLabel')}`
 )
 
-defineEmits([
-  'update:searchQuery',
-  'update:roleFilter',
-  'update:sortBy',
-  'update:sortOrder',
-  'updateSearch',
-  'clearSearch',
-  'prevPage',
-  'nextPage',
-  'viewUser',
-])
+function selectSort({ field, order }: { field: string; order: 'asc' | 'desc' }) {
+  emit('selectSort', { field, order })
+}
 
 const translateRole = (role: string | undefined) => {
   if (!role || typeof role !== 'string') {

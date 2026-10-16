@@ -2,6 +2,7 @@ pub mod broadcast;
 pub mod controller;
 pub mod dto;
 pub mod models;
+pub mod seo;
 pub mod service;
 
 use broadcast::Broadcaster;

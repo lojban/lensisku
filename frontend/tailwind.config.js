@@ -518,6 +518,10 @@ export default {
           '@apply fixed z-50 w-fit min-w-0 max-w-[calc(100vw-1rem)] overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-lg py-1':
             {},
         },
+        /** Horizontal rule between menu groups (e.g. descending vs ascending sorts). */
+        '.dropdown-menu-separator': {
+          '@apply my-1 border-0 border-t border-gray-200': {},
+        },
         /** Anchored multiselect / popover list under a trigger. */
         '.dropdown-floating-panel': {
           '@apply absolute left-0 right-0 z-50 mt-1 flex min-h-0 flex-col rounded-lg border border-gray-200 bg-white py-2 shadow-lg':
@@ -818,13 +822,13 @@ export default {
         },
         // --- Forms, toolbar & media controls ---
         '.input-field': {
-          '@apply px-4 py-1.5 text-sm h-8 text-gray-700 bg-white border border-gray-300 placeholder-blue-400 rounded-full transition-all focus:ring-1 focus:ring-blue-500 focus:border-blue-500 focus:outline-none focus:z-50 whitespace-nowrap shadow-inner shadow-slate-200':
+          '@apply px-4 py-1.5 text-sm h-8 text-gray-700 bg-white border border-gray-300 placeholder-blue-400 rounded-full transition-all focus:ring-1 focus:ring-blue-500 focus:border-blue-500 focus:outline-none focus:z-50 whitespace-nowrap overflow-hidden text-ellipsis shadow-inner shadow-slate-200':
             {},
           '&:hover:not(:disabled)': {
             '@apply border-blue-400': {},
           },
           '&::placeholder': {
-            '@apply text-gray-400': {},
+            '@apply text-gray-400 overflow-hidden text-ellipsis': {},
           },
           '&:disabled': {
             '@apply bg-gray-100 cursor-not-allowed opacity-75': {},
@@ -838,6 +842,18 @@ export default {
         '.input-field-leading-icon': {
           '@apply pointer-events-none absolute inset-y-0 left-0 z-10 flex w-10 items-center justify-center text-gray-400':
             {},
+        },
+        /**
+         * Soft right-edge fade over empty search fields so long placeholders ease into
+         * padding instead of hard-clipping (pairs with `.input-field` ellipsis).
+         */
+        '.search-input-placeholder-fade': {
+          '@apply pointer-events-none absolute inset-y-px right-px z-[5] w-8 rounded-r-full': {},
+          background: 'linear-gradient(to left, rgb(255 255 255) 35%, rgb(255 255 255 / 0))',
+          '&--trailing': {
+            /* Sit just left of the h-4 spinner / clear control (`right-3` + icon). */
+            '@apply right-9 w-10': {},
+          },
         },
         /** Decorative icon inside `relative` input wrapper (user, mail, key). */
         '.input-field-trailing-icon': {
@@ -900,9 +916,13 @@ export default {
         '.toolbar-row': {
           '@apply flex flex-wrap items-center gap-3 sm:gap-4': {},
         },
-        /** Search column: full width on small screens, bounded width on sm+. */
+        /**
+         * Search column: dedicated full-width row on small screens (min-w-full beats
+         * flex-1 shrinking beside filters), bounded width on sm+.
+         */
         '.toolbar-search-slot': {
-          '@apply w-full sm:w-auto sm:min-w-[220px] sm:max-w-[280px] flex-1 sm:flex-initial': {},
+          '@apply w-full min-w-full sm:w-auto sm:min-w-[220px] sm:max-w-[280px] flex-1 sm:flex-initial':
+            {},
         },
         /** Label + control cluster (role filter, sort group). */
         '.toolbar-field-row': {

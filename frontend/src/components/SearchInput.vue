@@ -111,9 +111,19 @@ defineExpose({ focus })
         :class="{
           'rounded-l-none': joinedLeft,
           'rounded-r-none': joinedRight,
-          'pr-10': query.length > 0,
+          'pr-10': query.length > 0 || isLoading,
         }"
         @keyup.enter="onKeyup"
+      />
+      <!-- Soft fade into trailing padding/icons so long placeholders don’t hard-clip -->
+      <div
+        v-if="!query"
+        class="search-input-placeholder-fade"
+        :class="{
+          'rounded-r-none': joinedRight,
+          'search-input-placeholder-fade--trailing': isLoading,
+        }"
+        aria-hidden="true"
       />
       <div class="absolute right-3 top-1/2 z-10 -translate-y-1/2 flex items-center gap-1">
         <Loader2

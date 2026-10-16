@@ -197,6 +197,9 @@ pub async fn start_server(
             // These broad page routes must follow API routes such as /mail/message/{id}.
             .service(mailarchive::seo::thread_page)
             .service(mailarchive::seo::message_page)
+            .service(jbovlaste::seo::valsi_page)
+            .service(wiki::seo::wiki_by_id_page)
+            .service(wiki::seo::wiki_page)
     })
     .workers(num_workers)
     .bind("0.0.0.0:8080")

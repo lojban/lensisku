@@ -129,91 +129,27 @@
                 trigger-class="!w-full max-w-[min(100vw-4rem,18rem)]"
                 truncate-label
               >
+                <template #icon>
+                  <WaveSourceIcon :source="waveSource" />
+                </template>
                 <template #label>{{ waveSourceTriggerLabel }}</template>
                 <ToolbarSelectDropdownItem
-                  :class="{ 'bg-gray-100': waveSource === 'all' }"
-                  @click="setWaveSource('all')"
+                  v-for="source in WAVE_SOURCES"
+                  :key="source"
+                  :class="{ 'bg-gray-100': waveSource === source }"
+                  @click="setWaveSource(source)"
                 >
-                  {{ $t('home.waveSourceAll') }}
-                </ToolbarSelectDropdownItem>
-                <ToolbarSelectDropdownItem
-                  :class="{ 'bg-gray-100': waveSource === 'jbotcan' }"
-                  @click="setWaveSource('jbotcan')"
-                >
-                  {{ $t('home.waveSourceJbotcan') }}
-                </ToolbarSelectDropdownItem>
-                <ToolbarSelectDropdownItem
-                  :class="{ 'bg-gray-100': waveSource === 'freeforums' }"
-                  @click="setWaveSource('freeforums')"
-                >
-                  {{ $t('home.waveSourceFreeforums') }}
-                </ToolbarSelectDropdownItem>
-                <ToolbarSelectDropdownItem
-                  :class="{ 'bg-gray-100': waveSource === 'comments' }"
-                  @click="setWaveSource('comments')"
-                >
-                  {{ $t('home.waveSourceComments') }}
-                </ToolbarSelectDropdownItem>
-                <ToolbarSelectDropdownItem
-                  :class="{ 'bg-gray-100': waveSource === 'mail' }"
-                  @click="setWaveSource('mail')"
-                >
-                  {{ $t('home.waveSourceMail') }}
-                </ToolbarSelectDropdownItem>
-                <ToolbarSelectDropdownItem
-                  :class="{ 'bg-gray-100': waveSource === 'wiki' }"
-                  @click="setWaveSource('wiki')"
-                >
-                  {{ $t('home.waveSourceWiki') }}
+                  <WaveSourceIcon :source="source" />
+                  {{ waveSourceLabels[source] }}
                 </ToolbarSelectDropdownItem>
               </ToolbarSelectDropdown>
-              <ToolbarSelectDropdown
-                trigger-class="!w-full max-w-[min(100vw-4rem,18rem)]"
-                truncate-label
-              >
-                <template #label>{{ sortByTriggerLabel }}</template>
-                <ToolbarSelectDropdownItem
-                  :class="{ 'bg-gray-100': sortBy === 'relevance' }"
-                  @click="setSortByField('relevance')"
-                >
-                  {{ $t('sort.relevance') }}
-                </ToolbarSelectDropdownItem>
-                <ToolbarSelectDropdownItem
-                  :class="{ 'bg-gray-100': sortBy === 'time' }"
-                  @click="setSortByField('time')"
-                >
-                  {{ $t('sort.time') }}
-                </ToolbarSelectDropdownItem>
-                <ToolbarSelectDropdownItem
-                  :class="{ 'bg-gray-100': sortBy === 'reactions' }"
-                  @click="setSortByField('reactions')"
-                >
-                  {{ $t('sort.reactions') }}
-                </ToolbarSelectDropdownItem>
-                <ToolbarSelectDropdownItem
-                  :class="{ 'bg-gray-100': sortBy === 'replies' }"
-                  @click="setSortByField('replies')"
-                >
-                  {{ $t('sort.replies') }}
-                </ToolbarSelectDropdownItem>
-              </ToolbarSelectDropdown>
-              <Button
-                variant="empty"
-                type="button"
-                class="inline-flex h-8 min-w-0 w-auto items-center gap-1.5 whitespace-nowrap px-3 text-sm"
-                :title="sortOrder === 'asc' ? $t('sort.ascending') : $t('sort.descending')"
-                @click="toggleSortOrder"
-              >
-                <ChevronUp
-                  v-if="sortOrder === 'asc'"
-                  class="h-4 w-4 shrink-0 opacity-60"
-                  :stroke-width="2"
-                />
-                <ChevronDown v-else class="h-4 w-4 shrink-0 opacity-60" :stroke-width="2" />
-                <span class="whitespace-nowrap">{{
-                  sortOrder === 'asc' ? $t('sort.asc') : $t('sort.desc')
-                }}</span>
-              </Button>
+              <SortFieldOrderDropdown
+                :field="sortBy"
+                :order="sortOrder"
+                :options="sortFieldOptions"
+                :aria-label="t('sort.sortByLabel')"
+                @select="setSortFieldOrder"
+              />
             </div>
           </div>
 
@@ -440,16 +376,7 @@
 
 <script setup lang="ts">
 import { jwtDecode } from 'jwt-decode'
-import {
-  MessageSquare,
-  ChevronDown,
-  ChevronUp,
-  AudioWaveform,
-  Plus,
-  X,
-  BookPlus,
-  StarPlus,
-} from '@lucide/vue'
+import { MessageSquare, AudioWaveform, Plus, X, BookPlus, StarPlus } from '@lucide/vue'
 import { ref, onMounted, watch, computed, onBeforeUnmount, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 
@@ -466,6 +393,7 @@ import AddAllToCollectionWidget from '@/components/AddAllToCollectionWidget.vue'
 import CombinedFilters from '@/components/CombinedFilters.vue'
 import CommentItem from '@/components/CommentItem.vue'
 import SourceTypeBadge from '@/components/SourceTypeBadge.vue'
+import WaveSourceIcon from '@/components/icons/WaveSourceIcon.vue'
 import DefinitionCard from '@/components/DefinitionCard.vue'
 import DictionaryEntries from '@/components/DictionaryEntries.vue'
 import PhraseSplit from '@/components/PhraseSplit.vue'
@@ -476,6 +404,7 @@ import {
   IconButton,
   ToolbarSelectDropdown,
   ToolbarSelectDropdownItem,
+  SortFieldOrderDropdown,
   ExportIcon,
 } from '@packages/ui'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
@@ -841,17 +770,16 @@ const showTrendingHome = computed(() => {
   return !q && !hasActiveSearchFilters(filters.value)
 })
 
-const waveSourceTriggerLabel = computed(() => {
-  const m: Record<WaveSource, string> = {
-    all: t('home.waveSourceAll'),
-    jbotcan: t('home.waveSourceJbotcan'),
-    freeforums: t('home.waveSourceFreeforums'),
-    comments: t('home.waveSourceComments'),
-    mail: t('home.waveSourceMail'),
-    wiki: t('home.waveSourceWiki'),
-  }
-  return m[waveSource.value]
-})
+const waveSourceLabels = computed(() => ({
+  all: t('home.waveSourceAll'),
+  jbotcan: t('home.waveSourceJbotcan'),
+  freeforums: t('home.waveSourceFreeforums'),
+  comments: t('home.waveSourceComments'),
+  mail: t('home.waveSourceMail'),
+  wiki: t('home.waveSourceWiki'),
+}))
+
+const waveSourceTriggerLabel = computed(() => waveSourceLabels.value[waveSource.value])
 
 // Filter state
 const languages = ref([])
@@ -1192,19 +1120,12 @@ const sortBy = ref(
     : 'relevance'
 )
 
-const sortByTriggerLabel = computed(() => {
-  if (sortBy.value === 'relevance') return t('sort.relevance')
-  if (sortBy.value === 'reactions') return t('sort.reactions')
-  if (sortBy.value === 'replies') return t('sort.replies')
-  return t('sort.time')
-})
-
-const toggleSortOrder = () => {
-  sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc'
-  if (searchMode.value === 'comments') {
-    updateUrlWithFilters()
-  }
-}
+const sortFieldOptions = computed(() => [
+  { value: 'relevance', label: t('sort.relevance') },
+  { value: 'time', label: t('sort.time') },
+  { value: 'reactions', label: t('sort.reactions') },
+  { value: 'replies', label: t('sort.replies') },
+])
 
 const handleSortChange = () => {
   currentPage.value = 1
@@ -1213,8 +1134,9 @@ const handleSortChange = () => {
   }
 }
 
-const setSortByField = (value: 'relevance' | 'time' | 'reactions' | 'replies') => {
-  sortBy.value = value
+const setSortFieldOrder = ({ field, order }: { field: string; order: 'asc' | 'desc' }) => {
+  sortBy.value = field
+  sortOrder.value = order
   handleSortChange()
 }
 

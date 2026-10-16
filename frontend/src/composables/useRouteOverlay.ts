@@ -8,7 +8,8 @@ import { onApiPendingChange, getApiPendingCount } from '@/api'
  */
 
 const QUIET_MS = 120
-const FALLBACK_MS = 12_000
+/** Never keep the freeze up waiting on a slow remote API (chat is not axios). */
+const MAX_HOLD_MS = 900
 
 const freezeHtml: Ref<string | null> = ref(null)
 
@@ -58,9 +59,10 @@ function armSettle(gen: number) {
     }
     trySettle(gen)
   })
+  // Prefer quiet API, but never block navigation on languages/collections/chat.
   fallbackTimer = setTimeout(() => {
     if (gen === generation) clearRouteOverlay()
-  }, FALLBACK_MS)
+  }, MAX_HOLD_MS)
   trySettle(gen)
 }
 

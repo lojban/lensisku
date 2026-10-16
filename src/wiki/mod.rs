@@ -10,6 +10,7 @@ pub mod dto;
 pub mod importer;
 pub mod markdown;
 pub mod models;
+pub mod seo;
 pub mod service;
 
 use actix_web::web;

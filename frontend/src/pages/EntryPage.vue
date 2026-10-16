@@ -262,12 +262,17 @@ const entryDescription = computed(() => {
   const typeLabel = tm('wordTypes')[v.type_name]
   return t('entryPage.metaDescription', { word: v.word, type: typeLabel })
 })
-const entryCanonical = computed(() => route.path)
+const entryPathWithoutLocale = computed(() => {
+  const word = valsi.value?.canonical_word || valsi.value?.word || paramStr(route.params.id)
+  if (!word) return route.path.replace(/^\/(en|jbo|ru|ja|zh)/, '') || '/valsi'
+  return `/valsi/${encodeURIComponent(String(word).replace(/ /g, '_'))}`
+})
 
 useSeoHead({
   title: entryTitle,
   description: entryDescription,
-  canonical: entryCanonical,
+  canonical: entryPathWithoutLocale,
+  pathWithoutLocale: entryPathWithoutLocale,
 })
 
 // Remove the local getTypeClass implementation

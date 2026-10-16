@@ -39,8 +39,29 @@ function notifyApiPending() {
   apiPendingListeners.forEach((listener) => listener())
 }
 
+/**
+ * Secondary / background calls must not hold the App route-change freeze.
+ * Live chat uses socket.io (not axios). Languages/collections often remount with
+ * SearchForm on Home/Activity and can take seconds on remote API.
+ */
+function shouldTrackForRouteOverlay(config: RetryableRequestConfig): boolean {
+  const url = `${config.url || ''}`
+  const path = url.split('?')[0] || ''
+  if (path.includes('/language/languages')) return false
+  if (path.endsWith('/collections') || path.includes('/collections?')) return false
+  if (path.includes('/avatar')) return false
+  // Unread badge: limit=1 without a types filter.
+  if (path.includes('/jbovlaste/changes')) {
+    const q = url.includes('?') ? url.slice(url.indexOf('?') + 1) : ''
+    const params = new URLSearchParams(q)
+    if (params.get('limit') === '1' && !params.get('types')) return false
+  }
+  return true
+}
+
 function trackApiStart(config: RetryableRequestConfig) {
   if (config._routeOverlayTracked) return
+  if (!shouldTrackForRouteOverlay(config)) return
   config._routeOverlayTracked = true
   apiPendingCount += 1
   notifyApiPending()

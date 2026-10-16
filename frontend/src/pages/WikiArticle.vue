@@ -177,8 +177,24 @@ function scrollToHash() {
   document.getElementById(id)?.scrollIntoView()
 }
 
+const wikiTitle = computed(
+  () => article.value?.title || props.title?.replace(/_/g, ' ') || 'Wiki article'
+)
+const wikiPathWithoutLocale = computed(() => {
+  if (article.value?.title) {
+    return `/wiki/${encodeURIComponent(article.value.title.replace(/ /g, '_'))}`
+  }
+  if (props.definitionId != null && props.definitionId !== '') {
+    return `/wiki/id/${props.definitionId}`
+  }
+  if (props.title) {
+    return `/wiki/${encodeURIComponent(props.title.replace(/ /g, '_'))}`
+  }
+  return '/wiki'
+})
+
 useSeoHead({
-  title: computed(() => article.value?.title || props.title?.replace(/_/g, ' ') || 'Wiki article'),
+  title: wikiTitle,
   description: computed(() => {
     const summary = article.value?.markdown
       ?.replace(/<[^>]*>/g, ' ')
@@ -188,6 +204,8 @@ useSeoHead({
       .trim()
     return summary || 'Read a Lojban wiki article about the language and its vocabulary.'
   }),
+  pathWithoutLocale: wikiPathWithoutLocale,
+  canonical: wikiPathWithoutLocale,
 })
 
 const encodedTitle = computed(() =>

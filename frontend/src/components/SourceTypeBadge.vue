@@ -6,12 +6,20 @@
       'select-none px-2.5 py-0.5 rounded-full inline-flex items-center gap-1.5',
     ]"
   >
-    <component :is="config.icon" class="size-3.5 shrink-0" /> <span>{{ label }}</span>
+    <img
+      v-if="type === 'jbotcan'"
+      src="/assets/icons/jbotcan-128.png"
+      alt=""
+      class="size-3.5 shrink-0 object-contain"
+      aria-hidden="true"
+    />
+    <component :is="config.icon" v-else class="size-3.5 shrink-0" />
+    <span>{{ label }}</span>
   </span>
 </template>
 
 <script setup lang="ts">
-import { BookOpen, BookMarked, Mail, Image, BookA, MessagesSquare } from '@lucide/vue'
+import { BookOpen, BookMarked, Mail, BookA, MessagesSquare } from '@lucide/vue'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 
@@ -50,7 +58,7 @@ const typeConfig = {
     text: 'text-violet-700',
   },
   jbotcan: {
-    icon: Image,
+    icon: null,
     bg: 'bg-amber-50',
     text: 'text-amber-700',
   },
