@@ -10,8 +10,8 @@ import HomePage from '../pages/HomePage.vue'
 
 /**
  * Shared route meta for definition/wiki upsert pages (fixed header, inner scroll).
- * `fullHeight` + no `hideFooter` → App Teleports the public-domain notice into
- * `.public-domain-host` (UpsertPageLayout) / `.feed-page__body` (feed pages).
+ * `fullHeight` scroll hosts (`UpsertPageLayout` / `FeedPageBody`) render
+ * `PublicDomainNotice` from `hideFooter` / `fullHeight` meta — no App Teleport.
  */
 const upsertPageMeta = {
   requiresAuth: true,

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import PublicDomainNotice from '@/components/PublicDomainNotice.vue'
 
 withDefaults(
   defineProps<{
@@ -49,10 +50,9 @@ defineExpose({ scrollToTop })
       </div>
     </header>
 
-    <!-- Scroll column; App Teleports the public-domain notice here when fullHeight. -->
     <div
       ref="scrollEl"
-      class="public-domain-host flex min-h-0 flex-1 flex-col overflow-x-hidden overflow-y-auto overscroll-y-contain px-3 pb-0 pt-4 sm:px-4"
+      class="flex min-h-0 flex-1 flex-col overflow-x-hidden overflow-y-auto overscroll-y-contain px-3 pb-0 pt-4 sm:px-4"
       @scroll="handleScroll"
     >
       <div
@@ -63,6 +63,7 @@ defineExpose({ scrollToTop })
         <slot />
       </div>
       <slot v-else />
+      <PublicDomainNotice />
     </div>
     <footer
       v-if="$slots.actions"

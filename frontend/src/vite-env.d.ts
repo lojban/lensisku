@@ -7,16 +7,10 @@ declare module 'vue-router' {
     /** Hide the global floating action menu (FAB). */
     hideFab?: boolean
     /**
-     * Hide the App.vue public-domain notice.
-     * When omitted/false on a `fullHeight` route, App Teleports the notice into
-     * `publicDomainHost` (default: `.feed-page__body, .public-domain-host`).
+     * Hide the public-domain notice (`PublicDomainNotice` reads this meta).
+     * On `fullHeight` routes the notice lives in the page scroll host, not App.vue.
      */
     hideFooter?: boolean
-    /**
-     * CSS selector for the fullHeight scroll column Teleport target.
-     * @default '.feed-page__body, .public-domain-host'
-     */
-    publicDomainHost?: string
     /** Hide the sticky page footer (live chat / marquee). */
     hidePageFooter?: boolean
   }

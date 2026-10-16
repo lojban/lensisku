@@ -1,6 +1,6 @@
 <template>
   <div class="feed-page">
-    <div class="feed-page__body">
+    <FeedPageBody>
       <div class="space-y-3 py-4">
         <SearchForm initial-mode="comments" @search="search" />
         <div
@@ -36,7 +36,7 @@
         </div>
       </div>
       <ActivityFeed />
-    </div>
+    </FeedPageBody>
   </div>
 </template>
 <script setup lang="ts">
@@ -51,6 +51,7 @@ import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import SearchForm from '@/components/SearchForm.vue'
 import ActivityFeed from '@/components/activity/ActivityFeed.vue'
+import FeedPageBody from '@/components/layout/FeedPageBody.vue'
 import WaveSourceIcon from '@/components/icons/WaveSourceIcon.vue'
 import { useLocalePath } from '@/composables/useLocalePath'
 import { useSeoHead } from '@/composables/useSeoHead'

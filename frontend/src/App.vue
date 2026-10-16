@@ -323,18 +323,8 @@
           </div>
         </div>
 
-        <!--
-          `hideFooter` hides. Normal routes: inline after content.
-          `fullHeight`: Teleport into the page scroll column (see PUBLIC_DOMAIN_HOST).
-        -->
-        <PublicDomainNotice v-if="showPublicDomainNotice && !publicDomainDocked" />
-        <Teleport
-          v-if="showPublicDomainNotice && publicDomainDocked && publicDomainHostReady"
-          :key="route.fullPath"
-          :to="publicDomainHostSelector"
-        >
-          <PublicDomainNotice dock />
-        </Teleport>
+        <!-- Non-fullHeight: notice after content. fullHeight hosts render it in their scroll column. -->
+        <PublicDomainNotice v-if="!route.meta.fullHeight" />
       </div>
     </main>
   </div>
@@ -477,37 +467,6 @@ useHead({
   }),
   htmlAttrs: computed(() => ({ lang: i18n.locale.value })),
 })
-
-/**
- * Public-domain notice — controlled only by route meta + this Teleport.
- * fullHeight pages must expose `.feed-page__body` or `.public-domain-host` (or meta.publicDomainHost).
- */
-const PUBLIC_DOMAIN_HOST_DEFAULT = '.feed-page__body, .public-domain-host'
-const showPublicDomainNotice = computed(() => !route.meta.hideFooter)
-const publicDomainDocked = computed(() => !!route.meta.fullHeight)
-const publicDomainHostSelector = computed(
-  () => route.meta.publicDomainHost || PUBLIC_DOMAIN_HOST_DEFAULT
-)
-/** False until the scroll host exists (lazy route chunks mount after App). */
-const publicDomainHostReady = ref(false)
-
-watch(
-  () =>
-    [route.fullPath, showPublicDomainNotice.value, publicDomainDocked.value, publicDomainHostSelector.value] as const,
-  async ([, show, docked, selector]) => {
-    publicDomainHostReady.value = false
-    if (!show || !docked) return
-    for (let i = 0; i < 90; i++) {
-      await nextTick()
-      if (document.querySelector(selector)) {
-        publicDomainHostReady.value = true
-        return
-      }
-      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()))
-    }
-  },
-  { flush: 'post', immediate: true }
-)
 
 const isHomePage = computed(
   () => route.name === 'Home' || (typeof route.name === 'string' && route.name.startsWith('Home-'))
@@ -662,17 +621,41 @@ const viewThread = (subject: string) => {
   })
 }
 
-// Close mobile menu and clear errors on route change
+const syncLocaleFromPath = (path: string) => {
+  const localeMatch = path.match(localeCaptureGroupRegex)
+  if (localeMatch && localeMatch[1] !== $locale.value) {
+    $locale.value = localeMatch[1]
+  }
+}
+
+// Route path: locale, chrome cleanup, optional main scroll (DOM only on client).
 watch(
   () => route.fullPath,
   async () => {
+    syncLocaleFromPath(route.path)
     closeNavMenus()
     clearError()
-    if (!route.meta.scrollMainToTopOnNavigate) return
+    if (!route.meta.scrollMainToTopOnNavigate || typeof document === 'undefined') return
     await nextTick()
-    const mainContent = document.querySelector('.main-content') as HTMLElement | null
-    mainContent?.scrollTo({ top: 0, behavior: 'auto' })
-  }
+    document.querySelector('.main-content')?.scrollTo({ top: 0, behavior: 'auto' })
+  },
+  { immediate: true }
+)
+
+watch(() => route.query, syncFromRoute, { deep: true })
+
+// Preload the user's collection list so CollectionWidget opens instantly.
+watch(
+  () => [auth.state.isLoading, auth.state.isLoggedIn] as const,
+  ([isLoadingAuth, isLoggedIn]) => {
+    if (isLoadingAuth) return
+    if (isLoggedIn) {
+      void preloadCollections()
+    } else {
+      clearCollectionsCache()
+    }
+  },
+  { immediate: true }
 )
 
 const removeRouteOverlayBefore = router.beforeEach((to, from) => {
@@ -693,68 +676,20 @@ const removeRouteOverlayAfter = router.afterEach(async (to, from) => {
 const removeRouteOverlayError = router.onError(() => {
   clearRouteOverlay()
 })
-onBeforeUnmount(() => {
-  removeRouteOverlayBefore()
-  removeRouteOverlayAfter()
-  removeRouteOverlayError()
-  clearRouteOverlay()
-})
 
 // Handle click outside mobile menu to close it
-const handleClickOutside = (event) => {
+const handleClickOutside = (event: MouseEvent) => {
   const header = document.querySelector('header')
-  if (isMenuOpen.value && header && !header.contains(event.target)) {
+  if (isMenuOpen.value && header && !header.contains(event.target as Node)) {
     isMenuOpen.value = false
   }
-  if (isMoreNavOpen.value && moreNavRef.value && !moreNavRef.value.contains(event.target)) {
+  if (isMoreNavOpen.value && moreNavRef.value && !moreNavRef.value.contains(event.target as Node)) {
     isMoreNavOpen.value = false
   }
 }
 
-watch(() => route.query, syncFromRoute, { deep: true })
-
-// Preload the user's collection list so CollectionWidget opens instantly.
-watch(
-  () => [auth.state.isLoading, auth.state.isLoggedIn] as const,
-  ([isLoadingAuth, isLoggedIn]) => {
-    if (isLoadingAuth) return
-    if (isLoggedIn) {
-      void preloadCollections()
-    } else {
-      clearCollectionsCache()
-    }
-  },
-  { immediate: true }
-)
-
-// Watch route changes to update $locale
-watch(
-  () => router.currentRoute.value.path,
-  (path) => {
-    const localeMatch = path.match(localeCaptureGroupRegex)
-    if (localeMatch && localeMatch[1] !== $locale.value) {
-      $locale.value = localeMatch[1]
-    }
-  },
-  { immediate: true }
-)
-
-// Also set initial $locale based on route on mount
-onMounted(() => {
-  void refreshActivityBadge()
-  const path = router.currentRoute.value.path
-  const localeMatch = path.match(localeCaptureGroupRegex)
-  if (localeMatch) {
-    $locale.value = localeMatch[1]
-  }
-
-  // Initialize notification service and PWA install prompt
-  const { setupInstallPrompt } = useNotifications()
-  setupInstallPrompt()
-})
-
 // Global keyboard handler for "/" key to navigate to homepage and focus search
-const handleGlobalKeyDown = async (event) => {
+const handleGlobalKeyDown = async (event: KeyboardEvent) => {
   // Only handle "/" key
   if (event.key !== '/') {
     return
@@ -817,31 +752,32 @@ const handleGlobalKeyDown = async (event) => {
   }
 }
 
+const handleResize = () => {
+  if (window.innerWidth >= 640) {
+    isMenuOpen.value = false
+    isMoreNavOpen.value = false
+  }
+}
+
 onMounted(() => {
+  void refreshActivityBadge()
+  const { setupInstallPrompt } = useNotifications()
+  setupInstallPrompt()
   initButtonTheme()
-  // Close mobile menu when window resizes to desktop width
-  const handleResize = () => {
-    if (window.innerWidth >= 640) {
-      // sm breakpoint
-      isMenuOpen.value = false
-      isMoreNavOpen.value = false
-    }
-  }
-
+  handleResize()
   window.addEventListener('resize', handleResize)
-  handleResize() // Check initial size
-
   document.addEventListener('click', handleClickOutside)
-
-  // Add global keyboard handler for "/" key
   window.addEventListener('keydown', handleGlobalKeyDown)
+})
 
-  // Cleanup
-  return () => {
-    window.removeEventListener('resize', handleResize)
-    document.removeEventListener('click', handleClickOutside)
-    window.removeEventListener('keydown', handleGlobalKeyDown)
-  }
+onBeforeUnmount(() => {
+  removeRouteOverlayBefore()
+  removeRouteOverlayAfter()
+  removeRouteOverlayError()
+  clearRouteOverlay()
+  window.removeEventListener('resize', handleResize)
+  document.removeEventListener('click', handleClickOutside)
+  window.removeEventListener('keydown', handleGlobalKeyDown)
 })
 </script>
 

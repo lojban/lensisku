@@ -10,7 +10,7 @@
       />
     </div>
 
-    <div class="feed-page__body">
+    <FeedPageBody>
       <h2 class="page-section-title my-2 block md:hidden">{{ pageTitle }}</h2>
       <ProfilePage v-if="activeTab === 'profile'" embedded />
       <div v-else-if="isLoading" class="space-y-4">
@@ -41,7 +41,7 @@
           :no-items-message="t('reactionsPage.noVotes')"
         />
       </div>
-    </div>
+    </FeedPageBody>
 
     <div v-if="showPagination" class="feed-page__footer">
       <div class="feed-page__footer-inner">
@@ -74,6 +74,7 @@ import ActivityVotes from '@/components/activity/ActivityVotes.vue'
 import ReactionIcon from '@/components/icons/ReactionIcon.vue'
 import VoteIcon from '@/components/icons/VoteIcon.vue'
 import PaginationComponent from '@/components/PaginationComponent.vue'
+import FeedPageBody from '@/components/layout/FeedPageBody.vue'
 import SkeletonActivityItem from '@/components/activity/SkeletonActivityItem.vue'
 import TabbedPageHeader from '@/components/TabbedPageHeader.vue'
 import ProfilePage from '@/pages/ProfilePage.vue'

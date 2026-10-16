@@ -1,6 +1,6 @@
 <template>
   <div class="feed-page">
-    <div class="feed-page__body">
+    <FeedPageBody>
       <div class="mt-3 space-y-4 pb-3">
         <!-- Skeletons: keep real controls out of the flow (no h-0 + space-y gap CLS) -->
         <template v-if="isInitialLoading">
@@ -347,7 +347,7 @@
           </div>
         </div>
       </div>
-    </div>
+    </FeedPageBody>
 
     <!-- Add-all-to-collection modal (triggered from dictionary action menu) -->
     <AddAllToCollectionWidget
@@ -410,6 +410,7 @@ import {
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import PaginationComponent from '@/components/PaginationComponent.vue'
 import ActivityFeed from '@/components/activity/ActivityFeed.vue'
+import FeedPageBody from '@/components/layout/FeedPageBody.vue'
 import { useLocalePath } from '@/composables/useLocalePath'
 import SearchForm from '@/components/SearchForm.vue'
 import CombinedFiltersSkeleton from '@/components/skeletons/CombinedFiltersSkeleton.vue'

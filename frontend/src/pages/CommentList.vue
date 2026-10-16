@@ -184,7 +184,7 @@
         </div>
       </header>
 
-      <div :class="embedded ? undefined : 'feed-page__body'">
+      <component :is="embedded ? 'div' : FeedPageBody">
         <!-- Actions when no definition sidebar (collection / embedded) -->
         <div
           v-if="showBodyActionBar"
@@ -344,7 +344,7 @@
             </Button>
           </div>
         </div>
-      </div>
+      </component>
 
       <div v-if="!embedded && !isLoading && totalPages > 1" class="feed-page__footer">
         <div class="feed-page__footer-inner">
@@ -382,6 +382,7 @@ import AppSidebarHeader from '@/components/AppSidebarHeader.vue'
 import CommentForm from '@/components/CommentForm.vue'
 import CommentItem from '@/components/CommentItem.vue'
 import DefinitionCard from '@/components/DefinitionCard.vue'
+import FeedPageBody from '@/components/layout/FeedPageBody.vue'
 import PaginationComponent from '@/components/PaginationComponent.vue'
 import { useAuth } from '@/composables/useAuth'
 import { useError } from '@/composables/useError'

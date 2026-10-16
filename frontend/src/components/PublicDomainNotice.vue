@@ -1,19 +1,24 @@
 <script setup lang="ts">
 /**
  * Legal fine print for public-domain content.
- * Owned by App.vue — `hideFooter` / `fullHeight` / optional `publicDomainHost` in the router.
+ * Visibility/docking come from route meta (`hideFooter`, `fullHeight`) — no Teleport.
  */
-withDefaults(
-  defineProps<{
-    /** Sit at the bottom of a flex scroll column when content is shorter than the viewport. */
-    dock?: boolean
-  }>(),
-  { dock: false }
-)
+import { computed } from 'vue'
+import { useRoute } from 'vue-router'
+
+const route = useRoute()
+const visible = computed(() => !route.meta.hideFooter)
+/** Dock to the bottom of a flex scroll column on fullHeight routes. */
+const dock = computed(() => !!route.meta.fullHeight)
 </script>
 
 <template>
-  <aside class="public-domain-notice" :class="{ 'public-domain-notice--dock': dock }" role="note">
+  <aside
+    v-if="visible"
+    class="public-domain-notice"
+    :class="{ 'public-domain-notice--dock': dock }"
+    role="note"
+  >
     <p class="public-domain-notice__text">
       {{ $t('footer.publicDomainNotice') }}
     </p>
