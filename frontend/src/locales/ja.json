@@ -95,7 +95,7 @@
     "errorLanguages": "言語一覧を読み込めませんでした。"
   },
   "filters": {
-    "regexSearchHint": "検索クエリを /m.*atu/ のようにスラッシュで囲むと、辞書項目の見出しのみを正規表現で検索できます。",
+    "regexSearchHint": "見出しを正規表現で検索するには、クエリを /m.*atu/ のようにスラッシュで囲みます。このモードでは定義と注記は検索しません。",
     "changePhoto": "写真を変更",
     "uploadPhoto": "写真をアップロード",
     "removePhoto": "写真を削除",
@@ -116,6 +116,7 @@
     "selectAllAuthors": "すべての投稿者を選択",
     "deselectAllAuthors": "すべての投稿者の選択を解除",
     "searchLanguages": "言語を検索...",
+    "searchWordTypes": "語種を検索...",
     "searchOptions": "選択肢を検索...",
     "noMatches": "該当なし",
     "filterBy": {
@@ -127,6 +128,8 @@
     "defaultSourceLanguage": "既定（ロジバン）",
     "resetAllFilters": "リセット",
     "selectWordType": "語種を選択",
+    "allWordTypes": "すべての語",
+    "wordTypesPreface": "語種を1つ以上選べます。空のままにするとすべての語を含みます。",
     "wordTypes": {
       "nalvla": "nalvla",
       "gismu": "gismu",
@@ -1667,7 +1670,8 @@
     "sortActiveWeek": "今週の人気",
     "sortActiveMonth": "今月の人気",
     "sortActiveAll": "累計の人気",
-    "sortNewest": "新しい順"
+    "sortNewest": "新しい順",
+    "monthlyDrillers": "今月{count}人が学習"
   },
   "flashcardLevels": {
     "title": "{collectionName} — レベル",

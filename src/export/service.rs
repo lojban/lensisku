@@ -2916,6 +2916,7 @@ pub async fn export_search_results(
         .map(str::trim)
         .filter(|s| !s.is_empty())
         .map(str::to_string);
+    let word_types = crate::jbovlaste::dto::parse_word_type_list(&query.word_type);
     let collection_ids = query
         .collection_ids
         .as_deref()
@@ -2951,7 +2952,7 @@ pub async fn export_search_results(
             let filters = crate::collections::dto::ListCollectionItemsFilters {
                 languages: languages.clone(),
                 selmaho: selmaho.clone(),
-                word_type: query.word_type,
+                word_type: word_types.clone(),
                 usernames: collection_item_usernames.clone(),
                 exclude_usernames: exclude_usernames.clone(),
                 source_langid: query.source_langid,
@@ -2996,7 +2997,7 @@ pub async fn export_search_results(
             selmaho: selmaho.clone(),
             usernames: usernames.clone(),
             exclude_usernames: exclude_usernames.clone(),
-            word_type: query.word_type,
+            word_type: word_types.clone(),
             source_langid: query.source_langid,
             search_in_phrases: query.search_in_phrases,
             include_total_count: true,
@@ -3031,7 +3032,7 @@ pub async fn export_search_results(
         let filters = crate::collections::dto::ListCollectionItemsFilters {
             languages: languages.clone(),
             selmaho: selmaho.clone(),
-            word_type: query.word_type,
+            word_type: word_types.clone(),
             usernames: collection_item_usernames.clone(),
             exclude_usernames: exclude_usernames.clone(),
             source_langid: query.source_langid,
@@ -3080,7 +3081,7 @@ pub async fn export_search_results(
         selmaho: selmaho.clone(),
         usernames: usernames.clone(),
         exclude_usernames: exclude_usernames.clone(),
-        word_type: query.word_type,
+        word_type: word_types.clone(),
         source_langid: query.source_langid,
         search_in_phrases: query.search_in_phrases,
         include_total_count: true,
@@ -3376,7 +3377,7 @@ mod tests {
             ..Default::default()
         }));
         assert!(has_search_export_constraint(&SearchExportQuery {
-            word_type: Some(1),
+            word_type: Some("1".into()),
             ..Default::default()
         }));
         assert!(has_search_export_constraint(&SearchExportQuery {

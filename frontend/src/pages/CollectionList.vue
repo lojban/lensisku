@@ -21,7 +21,11 @@
           <Star class="h-4 w-4 shrink-0" />
           <span>{{ t('nav.library') }}</span>
         </RouterLink>
-        <RouterLink v-else to="/login" class="font-medium text-blue-600 underline hover:text-blue-800">
+        <RouterLink
+          v-else
+          to="/login"
+          class="font-medium text-blue-600 underline hover:text-blue-800"
+        >
           {{ t('collectionList.loginTo') }}
         </RouterLink>
       </template>
@@ -120,6 +124,7 @@
           :public-label="t('collectionList.publicStatus')"
           :private-label="t('collectionList.privateStatus')"
           :items-count-label="t('collectionList.itemsCount', { count: collection.item_count })"
+          :monthly-drillers-label="monthlyDrillersLabel(collection)"
           @study="startStudy(collection)"
         />
       </div>
@@ -215,6 +220,12 @@ const sortOptions = computed(() => [
 const selectedSortLabel = computed(
   () => sortOptions.value.find((o) => o.value === sortBy.value)?.label ?? ''
 )
+
+function monthlyDrillersLabel(collection) {
+  const count = Number(collection?.monthly_drill_users || 0)
+  if (count < 1) return ''
+  return t('collectionList.monthlyDrillers', { count })
+}
 
 const pageTitle = computed(() => t('collectionList.catalogCourses'))
 useSeoHead({ title: pageTitle, pathWithoutLocale: '/collections' })

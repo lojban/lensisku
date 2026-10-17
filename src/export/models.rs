@@ -78,7 +78,8 @@ pub struct SearchExportQuery {
     pub search: Option<String>,
     pub languages: Option<String>,
     pub selmaho: Option<String>,
-    pub word_type: Option<i16>,
+    /// Comma-separated valsi type ids (`1` or `1,4`).
+    pub word_type: Option<String>,
     pub username: Option<String>,
     pub exclude_usernames: Option<String>,
     pub source_langid: Option<i32>,
@@ -116,7 +117,7 @@ pub fn has_search_export_constraint(query: &SearchExportQuery) -> bool {
     if crate::jbovlaste::dto::parse_username_list(&query.exclude_usernames).is_some() {
         return true;
     }
-    if query.word_type.is_some() {
+    if crate::jbovlaste::dto::parse_word_type_list(&query.word_type).is_some() {
         return true;
     }
     if query.full_collection.unwrap_or(false) {

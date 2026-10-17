@@ -244,6 +244,7 @@ pub async fn create_collection(
         has_cover_image: false,
         has_collection_image: false,
         comment_count: 0,
+        monthly_drill_users: 0,
         owner: CollectionOwner { user_id, username },
     };
 
@@ -916,6 +917,14 @@ fn picker_response_from_rows(
     CollectionUserPickerResponse { items }
 }
 
+/// Distinct logged-in users who reviewed at least one card in the collection during the last 30 days.
+/// Same window as the public catalog “Popular this month” sort.
+const MONTHLY_DRILL_USERS_SQL: &str = "(SELECT COUNT(DISTINCT ufp_month.user_id)
+ FROM flashcards f_month
+ JOIN user_flashcard_progress ufp_month ON ufp_month.flashcard_id = f_month.id
+ WHERE f_month.collection_id = c.collection_id
+   AND ufp_month.last_reviewed_at >= NOW() - INTERVAL '30 days') AS monthly_drill_users";
+
 fn pagination_bounds(page: Option<i64>, per_page: Option<i64>) -> Option<(i64, i64, i64)> {
     if page.is_none() && per_page.is_none() {
         return None;
@@ -1043,6 +1052,7 @@ async fn query_collections(
                 (SELECT COUNT(*) FROM comments cm
                     JOIN threads t ON cm.threadid = t.threadid
                     WHERE t.collection_id = c.collection_id) AS comment_count,
+                {MONTHLY_DRILL_USERS_SQL},
                 {search_rank_select}
                 c.updated_at AS _rank_tiebreak
          FROM collections c
@@ -1082,6 +1092,7 @@ async fn query_collections(
             has_cover_image: row.get("has_cover_image"),
             has_collection_image: row.get("has_collection_image"),
             comment_count: row.get("comment_count"),
+            monthly_drill_users: row.get("monthly_drill_users"),
             owner: CollectionOwner {
                 user_id: row.get("userid"),
                 username: row
@@ -1122,6 +1133,7 @@ pub async fn refresh_collection_sort_cache(pool: &Pool, redis: &RedisCache) -> A
                 has_cover_image: row.get("has_cover_image"),
                 has_collection_image: row.get("has_collection_image"),
                 comment_count: row.get("comment_count"),
+                monthly_drill_users: row.get("monthly_drill_users"),
                 owner: CollectionOwner {
                     user_id: row.get("userid"),
                     username: row
@@ -1226,7 +1238,8 @@ fn build_collections_query(where_clause: &str, sort: Option<&str>, user_owned: b
                 ) AS has_collection_image,
                 (SELECT COUNT(*) FROM comments cm
                     JOIN threads t ON cm.threadid = t.threadid
-                    WHERE t.collection_id = c.collection_id) AS comment_count
+                    WHERE t.collection_id = c.collection_id) AS comment_count,
+                {MONTHLY_DRILL_USERS_SQL}
          FROM collections c
          JOIN users u ON c.user_id = u.userid
          {active_join}
@@ -1296,6 +1309,7 @@ pub async fn get_collection(
         has_cover_image: collection_row.get("has_cover_image"),
         has_collection_image: collection_row.get("has_collection_image"),
         comment_count: collection_row.try_get("comment_count").unwrap_or(0),
+        monthly_drill_users: 0,
         owner: CollectionOwner {
             user_id: owner_id,
             username: collection_row
@@ -1424,6 +1438,7 @@ pub async fn update_collection(
         has_cover_image: image_flags.get("has_cover_image"),
         has_collection_image: image_flags.get("has_collection_image"),
         comment_count: 0,
+        monthly_drill_users: 0,
         owner: CollectionOwner { user_id, username },
     })
 }
@@ -1648,6 +1663,7 @@ pub async fn import_json(
         has_cover_image: false,
         has_collection_image: false,
         comment_count: 0,
+        monthly_drill_users: 0,
         owner: CollectionOwner { user_id, username },
     };
 
@@ -2183,6 +2199,7 @@ pub async fn import_full(
         has_cover_image: false,
         has_collection_image: false,
         comment_count: 0,
+        monthly_drill_users: 0,
         owner: CollectionOwner { user_id, username },
     };
 
@@ -3787,6 +3804,7 @@ pub async fn clone_collection(
         has_cover_image: image_flags.get("has_cover_image"),
         has_collection_image: image_flags.get("has_collection_image"),
         comment_count: 0,
+        monthly_drill_users: 0,
         owner: CollectionOwner { user_id, username },
     })
 }
@@ -3895,6 +3913,7 @@ pub async fn merge_collections(
         has_cover_image: collection_row.get("has_cover_image"),
         has_collection_image: collection_row.get("has_collection_image"),
         comment_count: collection_row.try_get("comment_count").unwrap_or(0),
+        monthly_drill_users: 0,
         owner: CollectionOwner {
             user_id: collection_row.get("userid"),
             username: collection_row.get("username"),
@@ -4051,12 +4070,12 @@ pub async fn list_collection_items(
         param_count += 1;
     }
 
-    if let Some(word_type) = filters.word_type {
+    if let Some(word_types) = filters.word_type.as_ref().filter(|ids| !ids.is_empty()) {
         extra_clauses.push(format!(
-            " AND (v.typeid = ${idx} OR ci.definition_id IS NULL)",
+            " AND (v.typeid = ANY(${idx}::int2[]) OR ci.definition_id IS NULL)",
             idx = param_count
         ));
-        params.push(Box::new(word_type));
+        params.push(Box::new(word_types.clone()));
         param_count += 1;
     }
 
@@ -4081,7 +4100,9 @@ pub async fn list_collection_items(
 
     // search_in_phrases=false → exclude phrase-typed valsi (typeid 15) like dictionary search.
     // word_type takes precedence (matches the dictionary search behaviour).
-    if filters.word_type.is_none() && filters.search_in_phrases == Some(false) {
+    if !crate::jbovlaste::dto::has_word_type_filter(&filters.word_type)
+        && filters.search_in_phrases == Some(false)
+    {
         extra_clauses
             .push(" AND (v.typeid IS DISTINCT FROM 15 OR ci.definition_id IS NULL)".to_string());
     }
@@ -4287,12 +4308,12 @@ pub async fn list_collection_items(
         count_param_idx += 1;
     }
 
-    if let Some(word_type) = filters.word_type {
+    if let Some(word_types) = filters.word_type.as_ref().filter(|ids| !ids.is_empty()) {
         count_query.push_str(&format!(
-            " AND (v.typeid = ${idx} OR ci.definition_id IS NULL)",
+            " AND (v.typeid = ANY(${idx}::int2[]) OR ci.definition_id IS NULL)",
             idx = count_param_idx
         ));
-        count_params.push(Box::new(word_type));
+        count_params.push(Box::new(word_types.clone()));
         count_param_idx += 1;
     }
 
@@ -4315,7 +4336,9 @@ pub async fn list_collection_items(
         count_param_idx += 1;
     }
 
-    if filters.word_type.is_none() && filters.search_in_phrases == Some(false) {
+    if !crate::jbovlaste::dto::has_word_type_filter(&filters.word_type)
+        && filters.search_in_phrases == Some(false)
+    {
         count_query.push_str(" AND (v.typeid IS DISTINCT FROM 15 OR ci.definition_id IS NULL)");
     }
     let _ = count_param_idx;
@@ -4925,12 +4948,12 @@ fn append_multi_collection_search_clauses(
         *param_count += 1;
     }
 
-    if let Some(word_type) = filters.word_type {
+    if let Some(word_types) = filters.word_type.as_ref().filter(|ids| !ids.is_empty()) {
         sql.push_str(&format!(
-            " AND (d.cached_typeid = ${idx} OR ci.definition_id IS NULL)",
+            " AND (d.cached_typeid = ANY(${idx}::int2[]) OR ci.definition_id IS NULL)",
             idx = *param_count
         ));
-        params.push(Box::new(word_type));
+        params.push(Box::new(word_types.clone()));
         *param_count += 1;
     }
 
@@ -4952,7 +4975,9 @@ fn append_multi_collection_search_clauses(
         *param_count += 1;
     }
 
-    if filters.word_type.is_none() && filters.search_in_phrases == Some(false) {
+    if !crate::jbovlaste::dto::has_word_type_filter(&filters.word_type)
+        && filters.search_in_phrases == Some(false)
+    {
         sql.push_str(" AND (d.cached_typeid IS DISTINCT FROM 15 OR ci.definition_id IS NULL)");
     }
 

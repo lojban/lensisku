@@ -18,7 +18,7 @@ export type CombinedFiltersUrlState = {
   usernames: string[]
   excludeUsernames: string[]
   selmaho: string
-  word_type: number | null
+  word_type: number[]
   source_langid: number
   searchInPhrases: boolean
   isExpanded: boolean
@@ -53,6 +53,24 @@ function splitCsv(value: string): string[] {
     .split(',')
     .map((s) => s.trim())
     .filter(Boolean)
+}
+
+/** Valsi type ids from a query value, a single id, or an id list. */
+export function parseWordTypeIds(value: unknown): number[] {
+  if (Array.isArray(value)) {
+    return value.map((part) => Number(part)).filter((id) => Number.isFinite(id))
+  }
+  if (typeof value === 'number' && Number.isFinite(value)) return [value]
+  if (typeof value !== 'string' || !value.trim()) return []
+  return value
+    .split(',')
+    .map((part) => Number(part.trim()))
+    .filter((id) => Number.isFinite(id))
+}
+
+export function wordTypesToQueryParam(ids: number[] | null | undefined): string | undefined {
+  const clean = parseWordTypeIds(ids)
+  return clean.length ? clean.join(',') : undefined
 }
 
 function csvOrUndefined(values: Array<string | number> | undefined): string | undefined {
@@ -99,10 +117,7 @@ export function combinedFiltersToQuery(
     username: csvOrUndefined(filters.usernames),
     exclude_usernames: csvOrUndefined(filters.excludeUsernames),
     selmaho: filters.selmaho?.trim() || undefined,
-    word_type:
-      filters.word_type != null && Number.isFinite(filters.word_type)
-        ? String(filters.word_type)
-        : undefined,
+    word_type: wordTypesToQueryParam(filters.word_type),
     source_langid:
       filters.source_langid && filters.source_langid !== 1
         ? String(filters.source_langid)
@@ -117,7 +132,6 @@ export function combinedFiltersFromQuery(query: LocationQuery): CombinedFiltersU
   const collections = queryCsv(query.collections)
   const username = queryCsv(query.username)
   const exclude = queryCsv(query.exclude_usernames)
-  const wordType = queryStr(query.word_type)
   const source = queryStr(query.source_langid)
   return {
     selectedLanguages: langs
@@ -135,7 +149,7 @@ export function combinedFiltersFromQuery(query: LocationQuery): CombinedFiltersU
     usernames: username ? splitCsv(username) : [],
     excludeUsernames: exclude ? splitCsv(exclude) : [],
     selmaho: queryStr(query.selmaho),
-    word_type: wordType ? Number(wordType) : null,
+    word_type: parseWordTypeIds(queryCsv(query.word_type)),
     source_langid: source ? parseInt(source, 10) || 1 : 1,
     searchInPhrases: query.searchInPhrases !== 'false',
     isExpanded: query.isExpanded === 'true',
@@ -148,7 +162,7 @@ export function hasActiveSearchFilters(filters: CombinedFiltersUrlState): boolea
     filters.selmaho?.trim() ||
     filters.usernames?.length ||
     filters.excludeUsernames?.length ||
-    filters.word_type ||
+    filters.word_type?.length ||
     filters.selectedCollections?.length ||
     (filters.source_langid && filters.source_langid !== 1) ||
     filters.searchInPhrases === false

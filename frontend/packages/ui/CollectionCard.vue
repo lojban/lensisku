@@ -72,6 +72,10 @@
 
         <div class="card-footer-inner border-t border-gray-100 pt-3 mt-3 w-full">
           <div class="card-meta card-meta-row">
+            <span v-if="monthlyDrillersLabel" class="card-meta-drillers">
+              <Users class="card-meta-icon" aria-hidden="true" />
+              {{ monthlyDrillersLabel }}
+            </span>
             <span class="card-meta-by">
               {{ createdByLabel }}
               <RouterLink :to="`/user/${collection.owner.user_id}`" class="card-meta-link">
@@ -98,7 +102,14 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { BookOpen, GraduationCap, List, GalleryHorizontalEnd, CalendarClock } from '@lucide/vue'
+import {
+  BookOpen,
+  GraduationCap,
+  List,
+  GalleryHorizontalEnd,
+  CalendarClock,
+  Users,
+} from '@lucide/vue'
 import Card from './Card.vue'
 import Button from './Button.vue'
 
@@ -115,6 +126,8 @@ export interface CollectionCardCollection {
   comment_count?: number
   updated_at: string
   owner: { user_id: number; username: string }
+  /** Distinct users who drilled at least one card in the last 30 days. */
+  monthly_drill_users?: number
 }
 
 /** `Button` variant suffixes (`ui-btn--${id}`); rotates study CTA color by collection name. */
@@ -171,6 +184,8 @@ const props = defineProps({
   publicLabel: { type: String, default: 'Public' },
   privateLabel: { type: String, default: 'Private' },
   itemsCountLabel: { type: String, default: '0 items' },
+  /** Shown when at least one user drilled this course in the last 30 days. */
+  monthlyDrillersLabel: { type: String, default: '' },
   /** Resolved cover URL when `has_cover_image`; omit for placeholder icon. */
   coverImageUrl: { type: String, default: null },
   /** Study CTA; hide on the public collections catalog segment. */

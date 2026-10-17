@@ -1467,6 +1467,7 @@ import {
   combinedFiltersToQuery,
   compactQuery,
   queryStr,
+  wordTypesToQueryParam,
 } from '@/utils/routeQuery'
 import { normalizeSearchQuery } from '@/utils/searchQueryUtils'
 import type { CommentItemApiComment } from '@/types/comment'
@@ -2319,7 +2320,7 @@ interface ItemFiltersValue {
   selmaho: string
   usernames: string[]
   excludeUsernames: string[]
-  word_type: number | null
+  word_type: number[]
   isExpanded: boolean
   selectedLanguages: number[]
   source_langid: number
@@ -2570,8 +2571,8 @@ const fetchItems = async () => {
     }
     if (itemFilters.value.selmaho) {
       params.selmaho = itemFilters.value.selmaho
-    } else if (itemFilters.value.word_type) {
-      params.word_type = itemFilters.value.word_type
+    } else {
+      params.word_type = wordTypesToQueryParam(itemFilters.value.word_type)
     }
     if (itemFilters.value.source_langid && itemFilters.value.source_langid !== 1) {
       params.source_langid = itemFilters.value.source_langid

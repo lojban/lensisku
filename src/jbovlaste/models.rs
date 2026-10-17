@@ -20,7 +20,7 @@ pub struct SearchDefinitionsParams {
     pub usernames: Option<Vec<String>>,
     /// When set, definitions by these authors are omitted.
     pub exclude_usernames: Option<Vec<String>>,
-    pub word_type: Option<i16>,
+    pub word_type: Option<Vec<i16>>,
     pub source_langid: Option<i32>,
     pub search_in_phrases: Option<bool>,
     /// When false, semantic search skips the extra COUNT query and sets `total` to the number of rows returned.
@@ -39,7 +39,7 @@ pub struct SemanticGraphParams {
     pub usernames: Option<Vec<String>>,
     /// When set, definitions by these authors are omitted.
     pub exclude_usernames: Option<Vec<String>>,
-    pub word_type: Option<i16>,
+    pub word_type: Option<Vec<i16>>,
     pub source_langid: Option<i32>,
     pub search_in_phrases: Option<bool>,
     pub min_vote: i32,

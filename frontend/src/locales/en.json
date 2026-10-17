@@ -95,7 +95,7 @@
     "errorLanguages": "Could not load languages."
   },
   "filters": {
-    "regexSearchHint": "Wrap your search query in slashes, like /m.*atu/, to search dictionary entry titles only using a regular expression.",
+    "regexSearchHint": "To search entry titles with a regular expression, wrap the query in slashes, like /m.*atu/. Definitions and notes are not searched in this mode.",
     "changePhoto": "Change photo",
     "uploadPhoto": "Upload photo",
     "removePhoto": "Remove photo",
@@ -116,6 +116,7 @@
     "selectAllAuthors": "Select all authors",
     "deselectAllAuthors": "Deselect all authors",
     "searchLanguages": "Search languages...",
+    "searchWordTypes": "Search word types...",
     "searchOptions": "Search options...",
     "noMatches": "No matches",
     "filterBy": {
@@ -128,6 +129,7 @@
     "resetAllFilters": "Reset",
     "selectWordType": "Select word type",
     "allWordTypes": "All words",
+    "wordTypesPreface": "Choose one or more word types. Leave empty to include every word.",
     "wordTypes": {
       "nalvla": "nalvla",
       "gismu": "gismu",
@@ -1703,7 +1705,8 @@
     "sortActiveWeek": "Popular this week",
     "sortActiveMonth": "Popular this month",
     "sortActiveAll": "All-time popular",
-    "sortNewest": "Newest first"
+    "sortNewest": "Newest first",
+    "monthlyDrillers": "{count} user drilled this month | {count} users drilled this month"
   },
   "flashcardLevels": {
     "title": "{collectionName} - Levels",

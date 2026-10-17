@@ -167,6 +167,7 @@ import {
   combinedFiltersFromQuery,
   combinedFiltersToQuery,
   commitHomeQuery,
+  wordTypesToQueryParam,
   compactQuery,
   hasActiveSearchFilters,
   resolveHomeQuery,
@@ -297,7 +298,7 @@ const fetchDefinitions = async (page: number, search = '') => {
     }
 
     if (!filters.value.selmaho) {
-      params.word_type = filters.value.word_type || undefined
+      params.word_type = wordTypesToQueryParam(filters.value.word_type)
     }
 
     if (filters.value.source_langid && filters.value.source_langid !== 1) {

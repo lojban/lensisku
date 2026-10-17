@@ -104,6 +104,10 @@ pub struct CollectionResponse {
     /// Number of discussion comments on this collection (if any thread exists).
     #[serde(default)]
     pub comment_count: i64,
+    /// Distinct users who reviewed at least one card in this collection in the last 30 days.
+    /// Zero when the collection has no recent drill activity (including freshly created rows).
+    #[serde(default)]
+    pub monthly_drill_users: i64,
 }
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
@@ -141,8 +145,8 @@ pub struct ListCollectionItemsQuery {
     pub languages: Option<String>,
     /// Filter by selmaho on the linked definition.
     pub selmaho: Option<String>,
-    /// Filter by valsi typeid (word type) on the linked definition.
-    pub word_type: Option<i16>,
+    /// Comma-separated valsi type ids on the linked definition (`1` or `1,4`).
+    pub word_type: Option<String>,
     /// Comma-separated definition author usernames. When set, only those authors' definitions are included.
     pub username: Option<String>,
     /// Comma-separated usernames whose definitions should be excluded.
@@ -199,7 +203,8 @@ pub struct SearchCollectionsItemsQuery {
     /// Comma-separated definition language ids (matches `definitions.langid`).
     pub languages: Option<String>,
     pub selmaho: Option<String>,
-    pub word_type: Option<i16>,
+    /// Comma-separated valsi type ids (`1` or `1,4`).
+    pub word_type: Option<String>,
     pub username: Option<String>,
     pub exclude_usernames: Option<String>,
     pub source_langid: Option<i32>,
@@ -233,7 +238,7 @@ pub fn parse_positive_id_list(value: &str, max: usize) -> Vec<i32> {
 pub struct ListCollectionItemsFilters {
     pub languages: Option<Vec<i32>>,
     pub selmaho: Option<String>,
-    pub word_type: Option<i16>,
+    pub word_type: Option<Vec<i16>>,
     pub usernames: Option<Vec<String>>,
     pub exclude_usernames: Option<Vec<String>>,
     pub source_langid: Option<i32>,

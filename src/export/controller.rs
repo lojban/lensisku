@@ -154,7 +154,7 @@ pub async fn export_dictionary(
         ("search" = Option<String>, Query, description = "Search term"),
         ("languages" = Option<String>, Query, description = "Comma-separated definition language ids"),
         ("selmaho" = Option<String>, Query, description = "Filter by selma'o"),
-        ("word_type" = Option<i16>, Query, description = "Filter by valsi type id"),
+        ("word_type" = Option<String>, Query, description = "Comma-separated valsi type ids"),
         ("username" = Option<String>, Query, description = "Comma-separated author usernames to include"),
         ("exclude_usernames" = Option<String>, Query, description = "Comma-separated author usernames to exclude"),
         ("source_langid" = Option<i32>, Query, description = "Source language id of the valsi (default Lojban)"),

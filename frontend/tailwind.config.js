@@ -1192,6 +1192,10 @@ export default {
         '.card-meta-date': {
           '@apply text-gray-400': {},
         },
+        /** Users who drilled at least one card in this public course during the last 30 days. */
+        '.card-meta-drillers': {
+          '@apply inline-flex basis-full items-center gap-1 text-xs text-gray-500': {},
+        },
         /** Study streak strip (collections): seven columns that shrink in flex layouts; larger type than generic card-meta-date. */
         '.card-streak': {
           '@apply w-full min-w-0 max-w-full': {},

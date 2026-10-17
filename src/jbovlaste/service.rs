@@ -114,6 +114,21 @@ fn validate_required_place_span(
     Ok(())
 }
 
+fn push_word_type_filter<'a>(
+    conditions: &mut Vec<String>,
+    query_params: &mut Vec<&'a (dyn tokio_postgres::types::ToSql + Sync)>,
+    word_types: &'a Option<Vec<i16>>,
+    column: &str,
+) {
+    if let Some(ids) = word_types.as_ref().filter(|ids| !ids.is_empty()) {
+        conditions.push(format!(
+            "AND {column} = ANY(${}::int2[])",
+            query_params.len() + 1
+        ));
+        query_params.push(ids);
+    }
+}
+
 fn push_author_filters<'a>(
     conditions: &mut Vec<String>,
     query_params: &mut Vec<&'a (dyn tokio_postgres::types::ToSql + Sync)>,
@@ -336,19 +351,19 @@ pub async fn semantic_search_with_official_filter(
         "u.username",
     );
 
-    let word_type_value;
-    if let Some(word_type) = params.word_type {
-        word_type_value = word_type;
-        conditions.push(format!("AND v.typeid = ${}", query_params.len() + 1));
-        query_params.push(&word_type_value);
-    }
+    push_word_type_filter(
+        &mut conditions,
+        &mut query_params,
+        &params.word_type,
+        "v.typeid",
+    );
 
     // Add source_langid condition if present, otherwise default to 1 (Lojban)
     let source_langid_value = params.source_langid.unwrap_or(1);
     conditions.push(format!("AND v.source_langid = ${}", query_params.len() + 1));
     query_params.push(&source_langid_value);
 
-    if params.word_type.is_none() {
+    if !super::dto::has_word_type_filter(&params.word_type) {
         if let Some(false) = params.search_in_phrases {
             conditions.push("AND v.typeid != 15".to_string());
         }
@@ -817,19 +832,18 @@ pub async fn semantic_graph(
         "u.username",
     );
 
-    let word_type_value;
-    if let Some(word_type) = params.word_type {
-        // valsi.typeid / valsitypes.typeid are SMALLINT; bind as i16 (INT2).
-        word_type_value = word_type;
-        conditions.push(format!("AND v.typeid = ${}", query_params.len() + 1));
-        query_params.push(&word_type_value);
-    }
+    push_word_type_filter(
+        &mut conditions,
+        &mut query_params,
+        &params.word_type,
+        "v.typeid",
+    );
 
     let source_langid_value = params.source_langid.unwrap_or(1);
     conditions.push(format!("AND v.source_langid = ${}", query_params.len() + 1));
     query_params.push(&source_langid_value);
 
-    if params.word_type.is_none() {
+    if !super::dto::has_word_type_filter(&params.word_type) {
         if let Some(false) = params.search_in_phrases {
             conditions.push("AND v.typeid != 15".to_string());
         }
@@ -987,19 +1001,18 @@ pub async fn semantic_graph_preview(
         "u.username",
     );
 
-    let word_type_value;
-    if let Some(word_type) = params.word_type {
-        // valsi.typeid / valsitypes.typeid are SMALLINT; bind as i16 (INT2).
-        word_type_value = word_type;
-        conditions.push(format!("AND v.typeid = ${}", query_params.len() + 1));
-        query_params.push(&word_type_value);
-    }
+    push_word_type_filter(
+        &mut conditions,
+        &mut query_params,
+        &params.word_type,
+        "v.typeid",
+    );
 
     let source_langid_value = params.source_langid.unwrap_or(1);
     conditions.push(format!("AND v.source_langid = ${}", query_params.len() + 1));
     query_params.push(&source_langid_value);
 
-    if params.word_type.is_none() {
+    if !super::dto::has_word_type_filter(&params.word_type) {
         if let Some(false) = params.search_in_phrases {
             conditions.push("AND v.typeid != 15".to_string());
         }
@@ -1325,13 +1338,12 @@ pub async fn search_definitions(
         "d.cached_username",
     );
 
-    let word_type_value;
-    if let Some(word_type) = params.word_type {
-        word_type_value = word_type;
-        // Use cached_typeid to avoid joining valsi/valsitypes tables
-        conditions.push(format!("AND d.cached_typeid = ${}", query_params.len() + 1));
-        query_params.push(&word_type_value);
-    }
+    push_word_type_filter(
+        &mut conditions,
+        &mut query_params,
+        &params.word_type,
+        "d.cached_typeid",
+    );
 
     // Add source_langid condition if present, otherwise default to 1 (Lojban)
     // Use cached_source_langid to avoid joining valsi table
@@ -1342,7 +1354,7 @@ pub async fn search_definitions(
     ));
     query_params.push(&source_langid_value);
 
-    if params.word_type.is_none() {
+    if !super::dto::has_word_type_filter(&params.word_type) {
         if let Some(false) = params.search_in_phrases {
             conditions.push("AND d.cached_typeid != 15".to_string());
         }
@@ -1626,14 +1638,13 @@ pub async fn search_definitions(
         &params.exclude_usernames,
         "d.cached_username",
     );
+    push_word_type_filter(
+        &mut count_conditions,
+        &mut count_params,
+        &params.word_type,
+        "d.cached_typeid",
+    );
     current_param_num = count_params.len() + 1;
-    let word_type_value; // needs new binding
-    if let Some(word_type) = params.word_type {
-        word_type_value = word_type;
-        count_conditions.push(format!("AND d.cached_typeid = ${}", current_param_num));
-        count_params.push(&word_type_value);
-        current_param_num += 1;
-    }
     // source_langid
     count_conditions.push(format!(
         "AND d.cached_source_langid = ${}",
@@ -1641,7 +1652,7 @@ pub async fn search_definitions(
     ));
     count_params.push(&source_langid_value);
 
-    if params.word_type.is_none() {
+    if !super::dto::has_word_type_filter(&params.word_type) {
         if let Some(false) = params.search_in_phrases {
             count_conditions.push("AND d.cached_typeid != 15".to_string());
         }
@@ -1788,15 +1799,14 @@ pub async fn fast_search_definitions(
         "d.cached_username",
     );
 
-    // Add word_type condition if present (using cached field)
-    let word_type_value;
-    if let Some(word_type) = params.word_type {
-        word_type_value = word_type;
-        conditions.push(format!("AND d.cached_typeid = ${}", query_params.len() + 1));
-        query_params.push(&word_type_value);
-    }
+    push_word_type_filter(
+        &mut conditions,
+        &mut query_params,
+        &params.word_type,
+        "d.cached_typeid",
+    );
 
-    if params.word_type.is_none() {
+    if !super::dto::has_word_type_filter(&params.word_type) {
         if let Some(false) = params.search_in_phrases {
             conditions.push("AND d.cached_typeid != 15".to_string());
         }
@@ -1953,12 +1963,14 @@ pub async fn fast_search_definitions(
         "d.cached_username",
     );
 
-    // word_type condition needs to increment param_num too (using cached field)
-    if params.word_type.is_some() {
-        conditions.push(format!("AND d.cached_typeid = ${}", current_param_num));
+    if super::dto::has_word_type_filter(&params.word_type) {
+        conditions.push(format!(
+            "AND d.cached_typeid = ANY(${}::int2[])",
+            current_param_num
+        ));
     }
 
-    if params.word_type.is_none() {
+    if !super::dto::has_word_type_filter(&params.word_type) {
         if let Some(false) = params.search_in_phrases {
             conditions.push("AND d.cached_typeid != 15".to_string());
         }
@@ -1994,10 +2006,8 @@ pub async fn fast_search_definitions(
         &params.usernames,
         &params.exclude_usernames,
     );
-    let word_type_value; // Temporary storage needed outside the if block
-    if let Some(word_type) = params.word_type {
-        word_type_value = word_type;
-        count_params.push(&word_type_value);
+    if let Some(ids) = params.word_type.as_ref().filter(|ids| !ids.is_empty()) {
+        count_params.push(ids);
     }
 
     let total: i64 = transaction
@@ -2067,7 +2077,7 @@ pub async fn search_with_filtered_and_global_groups(
         let filters = crate::collections::dto::ListCollectionItemsFilters {
             languages: params.languages.clone(),
             selmaho: params.selmaho.clone(),
-            word_type: params.word_type,
+            word_type: params.word_type.clone(),
             // OR with authors: do not AND include-authors onto collection hits.
             usernames: None,
             exclude_usernames: exclude_usernames.clone(),
@@ -4877,10 +4887,10 @@ pub async fn list_definitions(
         param_count += 1;
     }
 
-    // Add word_type filter
-    if let Some(word_type) = &query.word_type {
-        conditions.push(format!("v.typeid = ${}", param_count));
-        params.push(word_type);
+    let word_types = super::dto::parse_word_type_list(&query.word_type);
+    if let Some(ids) = word_types.as_ref() {
+        conditions.push(format!("v.typeid = ANY(${}::int2[])", param_count));
+        params.push(ids);
         param_count += 1;
     }
 

@@ -106,6 +106,7 @@ import {
   compactQuery,
   hasActiveSearchFilters,
   queryStr,
+  wordTypesToQueryParam,
   type CombinedFiltersUrlState,
 } from '@/utils/routeQuery'
 import { normalizeSearchQuery } from '@/utils/searchQueryUtils'
@@ -142,12 +143,12 @@ useSeoHead({
 function hasItemFiltersExceptCollection(filterState: CombinedFiltersUrlState): boolean {
   return Boolean(
     filterState.selmaho?.trim() ||
-      filterState.usernames?.length ||
-      filterState.excludeUsernames?.length ||
-      filterState.word_type ||
-      filterState.selectedLanguages?.length ||
-      (filterState.source_langid && filterState.source_langid !== 1) ||
-      filterState.searchInPhrases === false
+    filterState.usernames?.length ||
+    filterState.excludeUsernames?.length ||
+    filterState.word_type?.length ||
+    filterState.selectedLanguages?.length ||
+    (filterState.source_langid && filterState.source_langid !== 1) ||
+    filterState.searchInPhrases === false
   )
 }
 
@@ -216,8 +217,9 @@ function buildExportParams(): Record<string, string | number | boolean> {
     params.languages = filters.value.selectedLanguages.join(',')
   }
   if (filters.value.selmaho) params.selmaho = filters.value.selmaho
-  if (!filters.value.selmaho && filters.value.word_type) {
-    params.word_type = filters.value.word_type
+  if (!filters.value.selmaho) {
+    const wordTypes = wordTypesToQueryParam(filters.value.word_type)
+    if (wordTypes) params.word_type = wordTypes
   }
   if (filters.value.usernames?.length) {
     params.username = filters.value.usernames.join(',')

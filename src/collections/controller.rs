@@ -1267,7 +1267,7 @@ pub async fn search_items_in_collections(
     let filters = ListCollectionItemsFilters {
         languages,
         selmaho: query.selmaho.clone(),
-        word_type: query.word_type,
+        word_type: crate::jbovlaste::dto::parse_word_type_list(&query.word_type),
         usernames: crate::jbovlaste::dto::parse_username_list(&query.username),
         exclude_usernames: crate::jbovlaste::dto::parse_username_list(&query.exclude_usernames),
         source_langid: query.source_langid,
@@ -1366,7 +1366,7 @@ pub async fn list_collection_items(
     let filters = ListCollectionItemsFilters {
         languages,
         selmaho: query.selmaho.clone(),
-        word_type: query.word_type,
+        word_type: crate::jbovlaste::dto::parse_word_type_list(&query.word_type),
         usernames: crate::jbovlaste::dto::parse_username_list(&query.username),
         exclude_usernames: crate::jbovlaste::dto::parse_username_list(&query.exclude_usernames),
         source_langid: query.source_langid,

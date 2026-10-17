@@ -201,6 +201,7 @@ import {
   combinedFiltersFromQuery,
   combinedFiltersToQuery,
   compactQuery,
+  wordTypesToQueryParam,
 } from '@/utils/routeQuery'
 import type { SupportedLocale } from '@/router'
 
@@ -314,10 +315,7 @@ const previewEntryHref = computed(() => {
   }).href
 })
 
-function buildGraphParams(opts?: {
-  preview?: boolean
-  focus?: string
-}): Record<string, unknown> {
+function buildGraphParams(opts?: { preview?: boolean; focus?: string }): Record<string, unknown> {
   const f = combinedFiltersModel.value
   const preview = opts?.preview === true
   const g = graphBuildParams.value
@@ -341,7 +339,8 @@ function buildGraphParams(opts?: {
   if (f.selmaho) params.selmaho = f.selmaho
   if (f.usernames?.length) params.username = f.usernames.join(',')
   if (f.excludeUsernames?.length) params.exclude_usernames = f.excludeUsernames.join(',')
-  if (f.word_type) params.word_type = f.word_type
+  const wordTypes = wordTypesToQueryParam(f.word_type)
+  if (wordTypes) params.word_type = wordTypes
   if (f.source_langid && f.source_langid !== 1) {
     params.source_langid = f.source_langid
   }

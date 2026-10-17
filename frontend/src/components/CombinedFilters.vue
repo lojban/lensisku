@@ -134,7 +134,7 @@
           type="button"
           variant="toolbar"
           class="w-full justify-start"
-          :disabled="!!filters.word_type"
+          :disabled="hasSelectedWordTypes"
           :title="t('searchForm.modes.searchInPhrases')"
           @click="toggleSearchInPhrases"
         >
@@ -142,8 +142,8 @@
             <Checkbox
               class="checkmark-aqua pointer-events-none shrink-0"
               checkbox-class="pointer-events-none"
-              :model-value="searchInPhrases && !filters.word_type"
-              :disabled="!!filters.word_type"
+              :model-value="searchInPhrases && !hasSelectedWordTypes"
+              :disabled="hasSelectedWordTypes"
               tabindex="-1"
               aria-hidden="true"
             />
@@ -178,28 +178,26 @@
 
       <div v-if="showWordType" class="flex min-w-0 flex-col">
         <label class="filters-field-label">{{ t('filters.filterBy.wordType') }}</label>
-        <div class="relative w-full [&>div]:block [&>div]:w-full">
-          <ToolbarSelectDropdown
+        <div class="relative w-full min-w-0 [&>div]:block [&>div]:w-full">
+          <MultiSelectDropdown
             id="cf-word-type"
+            v-model="selectedWordTypes"
             :aria-label="t('filters.filterBy.wordType')"
+            :options="wordTypeOptions"
+            :max-selected-labels="3"
+            :option-value="(type: WordTypeOption) => type.type_id"
+            :option-label="(type: WordTypeOption) => type.label"
+            :search-field-keys="wordTypeSearchFieldKeys"
+            :placeholder="t('filters.allWordTypes')"
+            :search-placeholder="t('filters.searchWordTypes')"
+            :select-all-label="t('filters.selectAll')"
+            :deselect-all-label="t('filters.deselectAll')"
+            :empty-filter-label="t('filters.noMatches')"
+            :preface="t('filters.wordTypesPreface')"
+            full-bleed-mobile-panel
             trigger-class="!w-full cursor-pointer"
-          >
-            <template #label>
-              {{ selectedWordTypeLabel }}
-            </template>
-            <ToolbarSelectDropdownItem
-              v-for="type in wordTypeOptions"
-              :key="type.type_id ?? 'all'"
-              :class="{
-                'bg-gray-100': filters.word_type
-                  ? filters.word_type.type_id === type.type_id
-                  : type.type_id === null,
-              }"
-              @click="selectWordType(type)"
-            >
-              {{ wordTypeOptionLabel(type) }}
-            </ToolbarSelectDropdownItem>
-          </ToolbarSelectDropdown>
+            class="w-full max-w-full"
+          />
         </div>
       </div>
       <!-- Selma'o filter -->
@@ -395,6 +393,7 @@ import { useAuth } from '@/composables/useAuth'
 import { useRecentSelections } from '@/composables/useRecentSelections'
 
 import { defaultFilterLanguageTags } from '@/config/locales'
+import { parseWordTypeIds } from '@/utils/routeQuery'
 import { useI18n } from 'vue-i18n'
 import type { PropType } from 'vue'
 const { t, tm } = useI18n()
@@ -416,6 +415,7 @@ const languageFilterSearchFieldKeys: string[] = ['tag', 'english_name', 'lojban_
 const userFilterSearchFieldKeys: string[] = ['username', 'realname']
 /** Fields used for the merged collections + users picker. */
 const collectionUserSearchFieldKeys: string[] = ['name', 'owner_username', 'username', 'realname']
+const wordTypeSearchFieldKeys: string[] = ['label', 'descriptor']
 
 type LanguageOption = {
   id: number
@@ -426,8 +426,9 @@ type LanguageOption = {
 }
 
 type WordTypeOption = {
-  type_id: number | null
+  type_id: number
   descriptor: string
+  label: string
 }
 
 type UserHint = {
@@ -481,7 +482,7 @@ const props = defineProps({
       isExpanded: false,
       selectedLanguages: [],
       selectedCollections: [],
-      word_type: null,
+      word_type: [],
       source_langid: 1, // Default to Lojban
       isSemantic: true,
       searchInPhrases: true,
@@ -529,7 +530,8 @@ const selectedCollections = ref<CollectionOption[]>([])
 const collectionOptions = ref<CollectionOption[]>([])
 const expanded = ref(props.modelValue.isExpanded)
 const lastAutoExpandedSelmaho = ref('')
-const wordTypes = ref<WordTypeOption[]>([])
+const wordTypes = ref<Array<{ type_id: number; descriptor: string }>>([])
+const selectedWordTypes = ref<WordTypeOption[]>([])
 const route = useRoute()
 
 const { recent: recentLanguages, record: recordRecentLanguage } =
@@ -667,9 +669,10 @@ const searchInPhrases = ref<boolean>(getInitialSearchInPhrases())
 
 const filters = ref({
   selmaho: props.modelValue.selmaho,
-  word_type: null as WordTypeOption | null,
   source_langid: props.modelValue.source_langid || 1,
 })
+
+const hasSelectedWordTypes = computed(() => selectedWordTypes.value.length > 0)
 
 const showWordType = computed(() => !filters.value.selmaho)
 
@@ -681,21 +684,32 @@ const sourceLanguageLabel = computed(() => {
   return lang ? lang.real_name : t('filters.defaultSourceLanguage')
 })
 
-const selectedWordTypeLabel = computed(() => {
-  const selected = filters.value.word_type
-  if (!selected) return t('filters.allWordTypes')
-  return wordTypeOptionLabel(selected)
-})
-
-const wordTypeOptions = computed<WordTypeOption[]>(() => [
-  { type_id: null, descriptor: t('filters.allWordTypes') },
-  ...wordTypes.value,
-])
-
-function wordTypeOptionLabel(type: WordTypeOption): string {
-  if (type.type_id === null) return type.descriptor
-  return tm('filters.wordTypes')[type.descriptor]
+function wordTypeIdsKey(types: Array<{ type_id: number }>): string {
+  return types
+    .map((type) => type.type_id)
+    .sort((a, b) => a - b)
+    .join(',')
 }
+
+function resolveWordTypes(ids: number[]): WordTypeOption[] {
+  const byId = new Map(wordTypeOptions.value.map((type) => [type.type_id, type]))
+  return ids.map(
+    (id) =>
+      byId.get(id) ?? {
+        type_id: id,
+        descriptor: String(id),
+        label: String(id),
+      }
+  )
+}
+
+const wordTypeOptions = computed<WordTypeOption[]>(() =>
+  wordTypes.value.map((type) => ({
+    type_id: type.type_id,
+    descriptor: type.descriptor,
+    label: tm('filters.wordTypes')[type.descriptor] || type.descriptor,
+  }))
+)
 
 const getLanguagesFromIds = (ids) => {
   return props.languages.filter((lang) => ids.includes(lang.id))
@@ -814,15 +828,15 @@ watch(
     expanded.value = newVal.isExpanded
     filters.value = {
       selmaho: newVal.selmaho,
-      word_type: null,
       source_langid: newVal.source_langid || 1,
     }
 
-    if (newVal.word_type && wordTypes.value.length > 0) {
-      const selectedType = wordTypes.value.find((t) => t.type_id === newVal.word_type)
-      if (selectedType) {
-        filters.value.word_type = selectedType
-      }
+    const incomingWordTypes = parseWordTypeIds(newVal.word_type)
+    if (
+      wordTypeIdsKey(selectedWordTypes.value) !==
+      wordTypeIdsKey(resolveWordTypes(incomingWordTypes))
+    ) {
+      selectedWordTypes.value = resolveWordTypes(incomingWordTypes)
     }
 
     if (newVal.selectedLanguages?.length > 0) {
@@ -1031,7 +1045,7 @@ const hasFilledAdvancedFilters = computed(() => {
     filters.value.selmaho ||
     (selectedUsers.value.length > 0 && !props.showCollectionFilter) ||
     excludedUsers.value.length > 0 ||
-    filters.value.word_type ||
+    hasSelectedWordTypes.value ||
     filters.value.source_langid !== 1 ||
     !searchInPhrases.value
   )
@@ -1072,11 +1086,6 @@ const debouncedFilterChange = () => {
   }, DEBOUNCE_DELAY)
 }
 
-function selectWordType(type: WordTypeOption) {
-  filters.value.word_type = type.type_id === null ? null : type
-  emitUpdate()
-}
-
 function selectSourceLang(id: number) {
   filters.value.source_langid = id
   emitUpdate()
@@ -1090,10 +1099,10 @@ const emitUpdate = () => {
     isExpanded: expanded.value,
     selectedLanguages: selectedLangs.value.map((lang) => lang.id),
     selectedCollections: selectedCollections.value.map((col) => col.collection_id),
-    word_type: filters.value.word_type?.type_id || null,
+    word_type: selectedWordTypes.value.map((type) => type.type_id),
     source_langid: filters.value.source_langid || 1, // Include source_langid
     isSemantic: isSemantic.value,
-    searchInPhrases: filters.value.word_type ? null : searchInPhrases.value,
+    searchInPhrases: hasSelectedWordTypes.value ? null : searchInPhrases.value,
   }
   emit('update:modelValue', updatedValue)
   emit('change', updatedValue)
@@ -1135,11 +1144,11 @@ const resetAllFilters = () => {
   // with a stale word_type / selmaho / source language.
   filters.value = {
     selmaho: '',
-    word_type: null,
     source_langid: 1,
   }
   expanded.value = false
 
+  selectedWordTypes.value = []
   selectedUsers.value = []
   excludedUsers.value = []
   selectedCollections.value = []
@@ -1161,7 +1170,7 @@ const resetAllFilters = () => {
     isExpanded: false,
     selectedLanguages: defaultLangs.map((lang) => lang.id),
     selectedCollections: [],
-    word_type: null,
+    word_type: [],
     source_langid: 1,
     isSemantic: true,
     searchInPhrases: true,
@@ -1178,7 +1187,7 @@ const toggleExpanded = () => {
 }
 
 const toggleSearchInPhrases = () => {
-  if (filters.value.word_type) return
+  if (hasSelectedWordTypes.value) return
   searchInPhrases.value = !searchInPhrases.value
   if (typeof window !== 'undefined') {
     localStorage.setItem('searchInPhrases', String(searchInPhrases.value))
@@ -1259,23 +1268,34 @@ watch(
 )
 
 watch(
-  () => wordTypes.value,
-  (newTypes) => {
-    if (newTypes.length > 0 && props.modelValue.word_type) {
-      const selectedType = newTypes.find((t) => t.type_id === props.modelValue.word_type)
-      if (selectedType) {
-        filters.value.word_type = selectedType
-      }
-    }
+  selectedWordTypes,
+  (next, prev) => {
+    if (!prev) return
+    if (wordTypeIdsKey(next) === wordTypeIdsKey(prev)) return
+    emitUpdate()
   },
-  { immediate: true }
+  { deep: true }
+)
+
+watch(
+  () => wordTypes.value,
+  () => {
+    if (!selectedWordTypes.value.length) return
+    const resolved = resolveWordTypes(selectedWordTypes.value.map((type) => type.type_id))
+    const labelsChanged = resolved.some(
+      (type, index) =>
+        type.label !== selectedWordTypes.value[index]?.label ||
+        type.descriptor !== selectedWordTypes.value[index]?.descriptor
+    )
+    if (labelsChanged) selectedWordTypes.value = resolved
+  }
 )
 
 watch(
   () => filters.value.selmaho,
   (newVal) => {
-    if (newVal) {
-      filters.value.word_type = null
+    if (newVal && selectedWordTypes.value.length) {
+      selectedWordTypes.value = []
     }
   }
 )

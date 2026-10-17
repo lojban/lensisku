@@ -16,7 +16,8 @@ pub struct SearchDefinitionsQuery {
     pub include_comments: Option<bool>,
     pub languages: Option<String>,
     pub selmaho: Option<String>,
-    pub word_type: Option<i16>,
+    /// Comma-separated valsi type ids (`1` or `1,4`). When set, only those word types are returned.
+    pub word_type: Option<String>,
     /// Comma-separated definition author usernames. When set, only those authors' definitions are returned.
     pub username: Option<String>,
     /// Comma-separated usernames whose definitions should be excluded.
@@ -33,6 +34,25 @@ pub struct SearchDefinitionsQuery {
     /// Expand a content-deduped collection hit: return every matching collection item
     /// (same valsi + definition + source language + target language) instead of one card.
     pub expand_collection_item: Option<i32>,
+}
+
+/// Parse a comma-separated valsi type id list (`word_type=1` or `word_type=1,4`).
+pub fn parse_word_type_list(value: &Option<String>) -> Option<Vec<i16>> {
+    let mut seen = std::collections::HashSet::new();
+    let mut ids = Vec::new();
+    for part in value.as_deref().unwrap_or("").split(',') {
+        let Ok(id) = part.trim().parse::<i16>() else {
+            continue;
+        };
+        if seen.insert(id) {
+            ids.push(id);
+        }
+    }
+    if ids.is_empty() { None } else { Some(ids) }
+}
+
+pub fn has_word_type_filter(word_types: &Option<Vec<i16>>) -> bool {
+    word_types.as_ref().is_some_and(|ids| !ids.is_empty())
 }
 
 /// Parse a comma-separated username query param into a non-empty list.
@@ -80,7 +100,8 @@ pub struct ListDefinitionsQuery {
     pub sort_order: Option<String>,
     pub languages: Option<String>, // Comma-separated list of langids
     pub selmaho: Option<String>,
-    pub word_type: Option<i16>,
+    /// Comma-separated valsi type ids.
+    pub word_type: Option<String>,
     pub user_id: Option<i32>,
     pub source_langid: Option<i32>,
 }
@@ -469,7 +490,8 @@ pub struct SemanticGraphQuery {
     pub search: Option<String>,
     pub languages: Option<String>,
     pub selmaho: Option<String>,
-    pub word_type: Option<i16>,
+    /// Comma-separated valsi type ids (`1` or `1,4`).
+    pub word_type: Option<String>,
     /// Comma-separated definition author usernames. When set, only those authors' definitions are returned.
     pub username: Option<String>,
     /// Comma-separated usernames whose definitions should be excluded.

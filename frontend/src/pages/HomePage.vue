@@ -421,6 +421,7 @@ import {
   compactQuery,
   hasActiveSearchFilters,
   queryStr,
+  wordTypesToQueryParam,
 } from '@/utils/routeQuery'
 import { normalizeSearchQuery } from '@/utils/searchQueryUtils'
 import {
@@ -827,7 +828,7 @@ const fetchDefinitions = async (page, search = '') => {
       params.languages = filters.value.selectedLanguages.join(',')
     }
     if (!filters.value.selmaho) {
-      params.word_type = filters.value.word_type || undefined
+      params.word_type = wordTypesToQueryParam(filters.value.word_type)
     } else {
       params.selmaho = filters.value.selmaho
     }
@@ -928,7 +929,7 @@ const buildSharedSearchFilterParams = (opts?: {
     params.languages = filters.value.selectedLanguages.join(',')
   }
   if (!filters.value.selmaho) {
-    params.word_type = filters.value.word_type || undefined
+    params.word_type = wordTypesToQueryParam(filters.value.word_type)
   } else {
     params.selmaho = filters.value.selmaho
   }
@@ -1255,7 +1256,7 @@ const handleFiltersReset = async () => {
     isExpanded: false,
     selectedLanguages: [],
     selectedCollections: [],
-    word_type: null,
+    word_type: [],
     source_langid: 1,
     searchInPhrases: true,
     isSemantic: true,

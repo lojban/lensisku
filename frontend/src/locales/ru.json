@@ -95,7 +95,7 @@
     "errorLanguages": "Не удалось загрузить языки."
   },
   "filters": {
-    "regexSearchHint": "Заключите поисковый запрос в косые черты, например /m.*atu/, для поиска по регулярному выражению только в заголовках словарных статей.",
+    "regexSearchHint": "Чтобы искать заголовки статей регулярным выражением, заключите запрос в косые черты, например /m.*atu/. В этом режиме определения и примечания не ищутся.",
     "changePhoto": "Изменить фото",
     "uploadPhoto": "Загрузить фото",
     "removePhoto": "Удалить фото",
@@ -116,6 +116,7 @@
     "selectAllAuthors": "Выбрать всех авторов",
     "deselectAllAuthors": "Снять всех авторов",
     "searchLanguages": "Поиск языков...",
+    "searchWordTypes": "Поиск типов слов...",
     "searchOptions": "Поиск вариантов...",
     "noMatches": "Нет совпадений",
     "filterBy": {
@@ -127,6 +128,8 @@
     "defaultSourceLanguage": "По умолчанию (Ложбан)",
     "resetAllFilters": "Сбросить",
     "selectWordType": "Выберите тип слова",
+    "allWordTypes": "Все слова",
+    "wordTypesPreface": "Можно выбрать несколько типов. Пустой список включает все слова.",
     "wordTypes": {
       "nalvla": "nalvla",
       "gismu": "gismu",
@@ -1619,6 +1622,7 @@
     "sortActiveMonth": "Популярные за месяц",
     "sortActiveAll": "Популярные за всё время",
     "sortNewest": "Сначала новые",
+    "monthlyDrillers": "Учили в этом месяце: {count}",
     "importCollection": "Импортировать коллекцию",
     "importError": "Ошибка импорта",
     "importFullFormatError": "Используйте файл полного экспорта коллекции (JSON с полями collection, items и опционально levels)."
