@@ -183,6 +183,35 @@ pub(crate) fn row_vote_score_f32(row: &tokio_postgres::Row, column: &str) -> f32
     row_vote_score_i32(row, column) as f32
 }
 
+/// Display order for a space-separated rafsi list: CVC, CCV, CVV, CV'V, then long rafsi.
+/// Tokens of the same shape keep their original order.
+pub(crate) fn ordered_rafsi(rafsi: Option<String>) -> Option<String> {
+    let raw = rafsi?;
+    if raw.split_whitespace().nth(1).is_none() {
+        return Some(raw);
+    }
+    let mut parts: Vec<&str> = raw.split_whitespace().collect();
+    parts.sort_by_key(|token| rafsi_shape_rank(token));
+    Some(parts.join(" "))
+}
+
+pub(crate) fn row_ordered_rafsi(row: &tokio_postgres::Row, column: &str) -> Option<String> {
+    ordered_rafsi(row.try_get(column).ok().flatten())
+}
+
+fn rafsi_shape_rank(rafsi: &str) -> u8 {
+    let chars: Vec<char> = rafsi.chars().collect();
+    let is_vowel = |c: char| matches!(c, 'a' | 'e' | 'i' | 'o' | 'u');
+    let is_consonant = |c: char| c.is_ascii_alphabetic() && !is_vowel(c);
+    match chars.as_slice() {
+        [c1, v, c2] if is_consonant(*c1) && is_vowel(*v) && is_consonant(*c2) => 0, // CVC
+        [c1, c2, v] if is_consonant(*c1) && is_consonant(*c2) && is_vowel(*v) => 1, // CCV
+        [c, v1, v2] if is_consonant(*c) && is_vowel(*v1) && is_vowel(*v2) => 2,     // CVV
+        [c, v1, '\'', v2] if is_consonant(*c) && is_vowel(*v1) && is_vowel(*v2) => 3, // CV'V
+        _ => 4,                                                                     // long rafsi
+    }
+}
+
 impl From<tokio_postgres::Row> for DefinitionDetail {
     fn from(row: tokio_postgres::Row) -> Self {
         Self {
@@ -203,9 +232,9 @@ impl From<tokio_postgres::Row> for DefinitionDetail {
             username: row.get("username"),
             time: row.get("time"),
             type_name: row.get("type_name"),
-            official_rafsi: row.try_get("official_rafsi").ok().flatten(),
-            experimental_rafsi: row.try_get("experimental_rafsi").ok().flatten(),
-            rafsi: row.try_get("rafsi").ok().flatten(), // Use try_get in case column is missing in some queries
+            official_rafsi: row_ordered_rafsi(&row, "official_rafsi"),
+            experimental_rafsi: row_ordered_rafsi(&row, "experimental_rafsi"),
+            rafsi: row_ordered_rafsi(&row, "rafsi"),
             score: row_vote_score_f32(&row, "score"),
             user_vote: row.get("user_vote"),
             comment_count: row.get("comment_count"),
@@ -282,6 +311,23 @@ pub struct RecentChange {
 pub struct ValsiType {
     pub type_id: i16,
     pub descriptor: String,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::ordered_rafsi;
+
+    #[test]
+    fn rafsi_display_order_is_cvc_ccv_cvv_apostrophe_then_long() {
+        let sorted = ordered_rafsi(Some("bai bap bapl ba'u bla".into()));
+        assert_eq!(sorted.as_deref(), Some("bap bla bai ba'u bapl"));
+
+        let condi = ordered_rafsi(Some("cno coi con cond".into()));
+        assert_eq!(condi.as_deref(), Some("con cno coi cond"));
+
+        let already = ordered_rafsi(Some("dav dza".into()));
+        assert_eq!(already.as_deref(), Some("dav dza"));
+    }
 }
 
 impl From<tokio_postgres::Row> for ValsiType {

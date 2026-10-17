@@ -36,7 +36,8 @@ use super::{
     ValsiDetail, ValsiType, WikiByDefinitionResponse,
 };
 use crate::jbovlaste::models::{
-    row_vote_score_f32, row_vote_score_i32, DefinitionDetail, RelatedValsi, SemanticGraphParams,
+    ordered_rafsi, row_ordered_rafsi, row_vote_score_f32, row_vote_score_i32, DefinitionDetail,
+    RelatedValsi, SemanticGraphParams,
 };
 use vlazba::{
     implicit_four_letter_gismu_rafsi, lujvo_rafsi, trivial_expansion_key, trivial_se_base,
@@ -336,7 +337,6 @@ pub async fn semantic_search_with_official_filter(
         conditions.push("AND v.source_langid = 1 AND v.typeid IN (1, 2)".to_string());
     }
 
-
     // Add selmaho condition if present
     if let Some(selmaho) = &params.selmaho {
         conditions.push(format!("AND d.selmaho = ${}", query_params.len() + 1));
@@ -600,15 +600,9 @@ pub async fn semantic_search_with_official_filter(
             has_image: row.get("has_image"),
             sound_url: sound_urls.get(&word).cloned().flatten(),
             metadata: None,
-            official_rafsi: row
-                .try_get::<_, Option<String>>("official_rafsi")
-                .ok()
-                .flatten(),
-            experimental_rafsi: row
-                .try_get::<_, Option<String>>("experimental_rafsi")
-                .ok()
-                .flatten(),
-            rafsi: row.try_get::<_, Option<String>>("rafsi").ok().flatten(),
+            official_rafsi: row_ordered_rafsi(&row, "official_rafsi"),
+            experimental_rafsi: row_ordered_rafsi(&row, "experimental_rafsi"),
+            rafsi: row_ordered_rafsi(&row, "rafsi"),
             examples: None,
             decomposition: parse_cached_decomposition(
                 row.try_get::<_, Option<String>>("cached_decomposition")
@@ -1564,15 +1558,9 @@ pub async fn search_definitions(
             sound_url: sound_urls.get(&word).cloned().flatten(), // Fixed type mismatch
             embedding: None,
             metadata: None,
-            official_rafsi: row
-                .try_get::<_, Option<String>>("official_rafsi")
-                .ok()
-                .flatten(),
-            experimental_rafsi: row
-                .try_get::<_, Option<String>>("experimental_rafsi")
-                .ok()
-                .flatten(),
-            rafsi: row.try_get::<_, Option<String>>("rafsi").ok().flatten(),
+            official_rafsi: row_ordered_rafsi(&row, "official_rafsi"),
+            experimental_rafsi: row_ordered_rafsi(&row, "experimental_rafsi"),
+            rafsi: row_ordered_rafsi(&row, "rafsi"),
             decomposition: parse_cached_decomposition(
                 row.try_get::<_, Option<String>>("cached_decomposition")
                     .ok()
@@ -1921,15 +1909,9 @@ pub async fn fast_search_definitions(
             sound_url: sound_urls.get(&word).cloned().flatten(),
             embedding: None,
             metadata: None,
-            official_rafsi: row
-                .try_get::<_, Option<String>>("official_rafsi")
-                .ok()
-                .flatten(),
-            experimental_rafsi: row
-                .try_get::<_, Option<String>>("experimental_rafsi")
-                .ok()
-                .flatten(),
-            rafsi: row.try_get::<_, Option<String>>("rafsi").ok().flatten(),
+            official_rafsi: row_ordered_rafsi(&row, "official_rafsi"),
+            experimental_rafsi: row_ordered_rafsi(&row, "experimental_rafsi"),
+            rafsi: row_ordered_rafsi(&row, "rafsi"),
             decomposition: None, // Not returned in fast search for performance
             canonical_word: row_canonical_word(&row, &row.get::<_, String>("type_name"), &word),
             examples: None,
@@ -2405,7 +2387,7 @@ pub async fn get_entry_details(
                 valsiid,
                 word: row.get("word"),
                 type_name: row.get("type_name"),
-                rafsi: row.get("rafsi"),
+                rafsi: ordered_rafsi(row.get("rafsi")),
                 comment_count: row.get("comment_count"),
                 decomposition: row
                     .try_get::<_, Option<String>>("cached_decomposition")
@@ -2619,18 +2601,9 @@ pub async fn get_wiki_by_word(
                 username: row.get("username"),
                 time: row.get("time"),
                 type_name: row.get("type_name"),
-                official_rafsi: row
-                    .try_get::<_, Option<String>>("official_rafsi")
-                    .ok()
-                    .flatten(),
-                experimental_rafsi: row
-                    .try_get::<_, Option<String>>("experimental_rafsi")
-                    .ok()
-                    .flatten(),
-                rafsi: row
-                    .try_get::<_, Option<String>>("cached_rafsi")
-                    .ok()
-                    .flatten(),
+                official_rafsi: row_ordered_rafsi(&row, "official_rafsi"),
+                experimental_rafsi: row_ordered_rafsi(&row, "experimental_rafsi"),
+                rafsi: row_ordered_rafsi(&row, "cached_rafsi"),
                 comment_count: row.get("comment_count"),
                 user_vote: row.get("user_vote"),
                 gloss_keywords,
@@ -4274,18 +4247,9 @@ pub async fn get_definition(
         username: row.get("username"),
         time: row.get("time"),
         type_name: row.get("type_name"),
-        official_rafsi: row
-            .try_get::<_, Option<String>>("official_rafsi")
-            .ok()
-            .flatten(),
-        experimental_rafsi: row
-            .try_get::<_, Option<String>>("experimental_rafsi")
-            .ok()
-            .flatten(),
-        rafsi: row
-            .try_get::<_, Option<String>>("cached_rafsi")
-            .ok()
-            .flatten(),
+        official_rafsi: row_ordered_rafsi(&row, "official_rafsi"),
+        experimental_rafsi: row_ordered_rafsi(&row, "experimental_rafsi"),
+        rafsi: row_ordered_rafsi(&row, "cached_rafsi"),
         comment_count: row.get("comment_count"),
         user_vote: row.get("user_vote"),
         gloss_keywords,
@@ -5432,18 +5396,9 @@ pub async fn get_definitions_by_entry(
             user_vote: None,     // Will be updated later
             gloss_keywords: None,
             place_keywords: None,
-            official_rafsi: row
-                .try_get::<_, Option<String>>("official_rafsi")
-                .ok()
-                .flatten(),
-            experimental_rafsi: row
-                .try_get::<_, Option<String>>("experimental_rafsi")
-                .ok()
-                .flatten(),
-            rafsi: row
-                .try_get::<_, Option<String>>("cached_rafsi")
-                .ok()
-                .flatten(),
+            official_rafsi: row_ordered_rafsi(&row, "official_rafsi"),
+            experimental_rafsi: row_ordered_rafsi(&row, "experimental_rafsi"),
+            rafsi: row_ordered_rafsi(&row, "cached_rafsi"),
             owner_only: row.get("owner_only"),
             can_edit: row.get("can_edit"),
             created_at: row.get("created_at"),
