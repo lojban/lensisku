@@ -415,17 +415,20 @@ const syncFromRoute = () => {
 
 // Watch for route changes
 watch(
-  () => route.query,
-  (newQuery, oldQuery) => {
-    if (JSON.stringify(newQuery) !== JSON.stringify(oldQuery)) {
-      syncFromRoute()
-      if (activeTab.value === 'users') {
-        fetchUsers()
-      }
-      // Roles data is fetched on tab click or mount
+  () => [
+    queryStr(route.query.q),
+    queryStr(route.query.offset),
+    queryStr(route.query.sort_by),
+    queryStr(route.query.sort_order),
+    queryStr(route.query.role),
+  ],
+  () => {
+    syncFromRoute()
+    if (activeTab.value === 'users') {
+      fetchUsers()
     }
   },
-  { deep: true, immediate: true } // immediate: true to run on mount
+  { immediate: true }
 )
 
 // Reactive page title

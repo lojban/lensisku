@@ -40,7 +40,7 @@ const baseRoutes: Array<RouteRecordRaw> = [
     path: '/activity',
     name: 'Activity',
     component: () => import('../pages/ActivityPage.vue'),
-    meta: { fullHeight: true, hidePageFooter: true },
+    meta: { fullHeight: true },
   },
   { path: '/create', name: 'Create', component: () => import('../pages/CreatePage.vue') },
   {
@@ -84,7 +84,6 @@ const baseRoutes: Array<RouteRecordRaw> = [
     meta: {
       hideTopBar: true,
       hideFooter: true,
-      hidePageFooter: true,
       hideFab: true,
       fullHeight: true,
       contentTopPaddingMainOnly: true,
@@ -118,7 +117,6 @@ const baseRoutes: Array<RouteRecordRaw> = [
       requiresAuth: true,
       fullHeight: true,
       hideFooter: true,
-      hidePageFooter: true,
     },
   },
   {
@@ -207,7 +205,6 @@ const baseRoutes: Array<RouteRecordRaw> = [
     meta: {
       hideFab: true,
       fullHeight: true,
-      hidePageFooter: true,
       contentTopPaddingMainOnly: true,
     },
     props: (route) => ({
@@ -227,7 +224,6 @@ const baseRoutes: Array<RouteRecordRaw> = [
     meta: {
       hideFab: true,
       fullHeight: true,
-      hidePageFooter: true,
       contentTopPaddingMainOnly: true,
     },
     props: (route) => ({
@@ -382,7 +378,6 @@ const baseRoutes: Array<RouteRecordRaw> = [
     meta: {
       hideTopBar: true,
       hideFooter: true,
-      hidePageFooter: true,
       hideFab: true,
       fullHeight: true,
       contentTopPaddingMainOnly: true,
@@ -395,7 +390,7 @@ const baseRoutes: Array<RouteRecordRaw> = [
     path: '/collections/:collectionId/flashcards/study',
     name: 'FlashcardStudy',
     component: () => import('../pages/FlashcardStudyView.vue'),
-    meta: { hideFooter: true, hideFab: true, hidePageFooter: true },
+    meta: { hideFooter: true, hideFab: true },
   },
   {
     path: '/collections/:collectionId/lingo/study',

@@ -11,8 +11,6 @@ declare module 'vue-router' {
      * On `fullHeight` routes the notice lives in the page scroll host, not App.vue.
      */
     hideFooter?: boolean
-    /** Hide the sticky page footer (live chat / marquee). */
-    hidePageFooter?: boolean
   }
 }
 

@@ -55,9 +55,5 @@ defineProps({
     type: Array as PropType<CommentItemApiComment[]>,
     required: true,
   },
-  formatDate: {
-    type: Function as PropType<(d: number | string) => string>,
-    required: true,
-  },
 })
 </script>

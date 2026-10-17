@@ -14,17 +14,9 @@
       <!-- Content -->
       <div v-else class="space-y-4">
         <!-- Comments Tab -->
-        <ActivityComments
-          v-if="activeTab === 'comments'"
-          :comments="comments"
-          :format-date="formatDate"
-        />
+        <ActivityComments v-if="activeTab === 'comments'" :comments="comments" />
         <!-- Definitions Tab -->
-        <ActivityDefinitions
-          v-if="activeTab === 'definitions'"
-          :definitions="definitions"
-          :format-date="formatDate"
-        />
+        <ActivityDefinitions v-if="activeTab === 'definitions'" :definitions="definitions" />
         <!-- PaginationComponent -->
         <div v-if="totalPages > 1">
           <PaginationComponent
@@ -71,7 +63,7 @@ const route = useRoute()
 const router = useRouter()
 const paginationHost = useFeedPaginationHost()
 const { showError, clearError } = useError()
-const { t, locale } = useI18n()
+const { t } = useI18n()
 
 // State
 const isLoading = ref(false)
@@ -171,16 +163,6 @@ const changePage = (newPage) => {
       })
     document.querySelector('.feed-page__body')?.scrollTo({ top: 0, behavior: 'smooth' })
   }
-}
-
-const formatDate = (timestamp) => {
-  return new Date(timestamp).toLocaleString(locale.value, {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
 }
 
 // Watch tab changes

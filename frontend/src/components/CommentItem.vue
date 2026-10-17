@@ -59,7 +59,7 @@
           >
             {{ processedComment.username }}
           </RouterLink>
-          <div class="comment-header-meta">{{ formatDate(processedComment.time) }}</div>
+          <div class="comment-header-meta">{{ formatDateTime(processedComment.time) }}</div>
         </div>
         <RouterLink
           :to="
@@ -304,7 +304,7 @@
     :show="showDeleteConfirm"
     :title="t('components.commentItem.deleteConfirmTitle')"
     :message="t('components.commentItem.deleteConfirmMessage')"
-    :is-deleting="isDeleting"
+    :is-deleting="isProcessing"
     @confirm="performDeleteComment"
     @cancel="showDeleteConfirm = false"
   />
@@ -406,7 +406,6 @@ const contextLink = computed(() => {
 const isBookmarkAnimating = ref(false)
 const showReactionPicker = ref(false)
 const showDeleteConfirm = ref(false)
-const isDeleting = ref(false)
 const showParentInThread = ref(false)
 
 const emojiList = [
@@ -638,7 +637,6 @@ const handleDeleteClick = () => {
 const performDeleteComment = async () => {
   if (isProcessing.value) return
 
-  isDeleting.value = true
   isProcessing.value = true
   try {
     const response = await deleteComment(processedComment.value.comment_id)
@@ -672,7 +670,6 @@ const performDeleteComment = async () => {
   } catch (error) {
     showError(error.response?.data?.error || 'components.commentItem.deleteFailed')
   } finally {
-    isDeleting.value = false
     isProcessing.value = false
     showDeleteConfirm.value = false
   }
@@ -706,10 +703,6 @@ const handleBookmarkClick = async (e) => {
   } finally {
     isProcessing.value = false
   }
-}
-
-const formatDate = (timestamp: number) => {
-  return formatDateTime(timestamp)
 }
 </script>
 

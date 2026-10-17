@@ -613,7 +613,6 @@ async function fetchCollectionMeta() {
 const returnToUrl = computed(() => {
   const cid = collectionIdParam.value
   if (levelIdParam.value != null) return `/collections/${cid}/levels`
-  if (isAnonNoLevelsMode.value) return `/collections/${cid}/flashcards`
   return `/collections/${cid}/flashcards`
 })
 

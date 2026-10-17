@@ -88,45 +88,6 @@ export function useTouchGestures() {
   }
 }
 
-export function useVirtualScrolling() {
-  const containerRef = ref<HTMLElement>()
-  const scrollTop = ref(0)
-  const visibleRange = ref({ start: 0, end: 20 })
-  const itemHeight = ref(80) // Default item height
-
-  const updateVisibleRange = () => {
-    if (!containerRef.value) return
-
-    const containerHeight = containerRef.value.clientHeight
-    const start = Math.floor(scrollTop.value / itemHeight.value)
-    const visibleCount = Math.ceil(containerHeight / itemHeight.value)
-    const end = start + visibleCount + 5 // Buffer for smooth scrolling
-
-    visibleRange.value = { start: Math.max(0, start - 5), end }
-  }
-
-  const handleScroll = () => {
-    if (!containerRef.value) return
-    scrollTop.value = containerRef.value.scrollTop
-    updateVisibleRange()
-  }
-
-  const scrollToItem = (index: number) => {
-    if (!containerRef.value) return
-    const targetScrollTop = index * itemHeight.value
-    containerRef.value.scrollTop = targetScrollTop
-  }
-
-  return {
-    containerRef,
-    visibleRange,
-    itemHeight,
-    handleScroll,
-    scrollToItem,
-    updateVisibleRange,
-  }
-}
-
 export function useMobileOptimizations() {
   const { isMobile, isTablet, orientation } = useViewport()
   const { swipeDirection, swipeDistance, handleTouchStart, handleTouchEnd } = useTouchGestures()
@@ -196,26 +157,6 @@ export function useMobileOptimizations() {
   }
 }
 
-// Utility functions for responsive design
-export const getResponsiveClasses = (isMobile: boolean, isTablet: boolean) => ({
-  container: isMobile ? 'px-4 py-2' : isTablet ? 'px-6 py-4' : 'px-8 py-6',
-  button: isMobile ? 'px-3 py-2 text-sm' : isTablet ? 'px-4 py-2' : 'px-6 py-3',
-  input: isMobile ? 'text-base' : 'text-sm',
-  spacing: isMobile ? 'space-y-2' : isTablet ? 'space-y-3' : 'space-y-4',
-  grid: isMobile ? 'grid-cols-1' : isTablet ? 'grid-cols-2' : 'grid-cols-3',
-  text: isMobile ? 'text-sm' : isTablet ? 'text-base' : 'text-lg',
-})
-
-export const getBreakpointValue = (breakpoint: 'sm' | 'md' | 'lg' | 'xl'): number => {
-  const breakpoints = {
-    sm: 640,
-    md: 768,
-    lg: 1024,
-    xl: 1280,
-  }
-  return breakpoints[breakpoint]
-}
-
 export const debounce = <T extends (...args: unknown[]) => unknown>(
   func: T,
   wait: number
@@ -224,19 +165,5 @@ export const debounce = <T extends (...args: unknown[]) => unknown>(
   return (...args: Parameters<T>) => {
     clearTimeout(timeout)
     timeout = setTimeout(() => func(...args), wait)
-  }
-}
-
-export const throttle = <T extends (...args: unknown[]) => unknown>(
-  func: T,
-  limit: number
-): ((...args: Parameters<T>) => void) => {
-  let inThrottle: boolean
-  return (...args: Parameters<T>) => {
-    if (!inThrottle) {
-      func(...args)
-      inThrottle = true
-      setTimeout(() => (inThrottle = false), limit)
-    }
   }
 }

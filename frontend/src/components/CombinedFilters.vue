@@ -796,24 +796,29 @@ async function pruneNonPublicSelectedCollections() {
   if (!needsLookup.length) return
 
   const kept = selectedCollections.value.filter((c) => publicIds.has(c.collection_id))
-  for (const col of needsLookup) {
-    try {
-      const response = await getCollection(col.collection_id)
-      const data = response.data as {
-        is_public?: boolean
-        name?: string
-        owner?: { username?: string }
-      }
-      if (data?.is_public) {
-        kept.push({
+  const lookups = await Promise.all(
+    needsLookup.map(async (col) => {
+      try {
+        const response = await getCollection(col.collection_id)
+        const data = response.data as {
+          is_public?: boolean
+          name?: string
+          owner?: { username?: string }
+        }
+        if (!data?.is_public) return null
+        return {
           collection_id: col.collection_id,
           name: data.name ?? col.name,
           owner_username: data.owner?.username ?? col.owner_username,
-        })
+        }
+      } catch {
+        // Private, missing, or no access — omit from filter.
+        return null
       }
-    } catch {
-      // Private, missing, or no access — omit from filter.
-    }
+    })
+  )
+  for (const col of lookups) {
+    if (col) kept.push(col)
   }
 
   if (kept.length !== selectedCollections.value.length) {

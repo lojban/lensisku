@@ -290,7 +290,9 @@
                 <AuthorLink :username="definition.username" :author-url="definition.author_url" />
               </span>
               <span v-if="definition.created_at && definition.username">·</span>
-              <span v-if="definition.created_at"> {{ formatDate(definition.created_at) }} </span>
+              <span v-if="definition.created_at">
+                {{ formatDateTime(definition.created_at) }}
+              </span>
             </div>
           </div>
         </div>
@@ -1224,10 +1226,6 @@ const getLanguageName = (langId: number | undefined) => {
     return lang.lojban_name || lang.real_name
   }
   return lang.real_name
-}
-
-const formatDate = (timestamp: string | number) => {
-  return formatDateTime(timestamp)
 }
 
 const handleDeleteClick = () => {

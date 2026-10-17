@@ -67,7 +67,7 @@ function armSettle(gen: number) {
 }
 
 /** Snapshot outgoing route HTML (no-op if a freeze is already showing). */
-export function captureRouteOverlay(liveRoot: HTMLElement | null | undefined) {
+function captureRouteOverlay(liveRoot: HTMLElement | null | undefined) {
   if (freezeHtml.value != null) return
   if (!liveRoot?.innerHTML.trim()) return
   freezeHtml.value = liveRoot.innerHTML

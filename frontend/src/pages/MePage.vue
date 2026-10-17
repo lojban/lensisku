@@ -17,27 +17,20 @@
         <SkeletonActivityItem v-for="n in 5" :key="n" />
       </div>
       <div v-else class="space-y-4">
-        <ActivityComments
-          v-if="activeTab === 'comments'"
-          :comments="comments"
-          :format-date="formatDate"
-        />
+        <ActivityComments v-if="activeTab === 'comments'" :comments="comments" />
         <ActivityBookmarks
           v-else-if="activeTab === 'bookmarked'"
           :comments="bookmarks"
-          :format-date="formatDate"
           :no-items-message="t('reactionsPage.noBookmarks')"
         />
         <ActivityReactions
           v-else-if="activeTab === 'reactions'"
           :comments="reactions"
-          :format-date="formatDate"
           :no-items-message="t('reactionsPage.noReactions')"
         />
         <ActivityVotes
           v-else-if="activeTab === 'votes'"
           :votes="votes"
-          :format-date="formatDate"
           :no-items-message="t('reactionsPage.noVotes')"
         />
       </div>
@@ -85,7 +78,7 @@ const ME_TABS = ['profile', 'comments', 'votes', 'reactions', 'bookmarked']
 const router = useRouter()
 const route = useRoute()
 const paginationHost = useFeedPaginationHost()
-const { t, locale } = useI18n()
+const { t } = useI18n()
 const { showError, clearError } = useError()
 const auth = useAuth()
 
@@ -103,16 +96,6 @@ const totalPages = computed(() => Math.ceil(total.value / perPage.value))
 const showPagination = computed(
   () => activeTab.value !== 'profile' && !isLoading.value && totalPages.value > 1
 )
-
-const formatDate = (timestamp) => {
-  return new Date(timestamp).toLocaleString(locale.value, {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
-}
 
 function normalizeTab(tabQ: string | undefined) {
   if (tabQ === 'bookmarks') return 'bookmarked'

@@ -36,10 +36,6 @@ defineProps({
     >,
     required: true,
   },
-  formatDate: {
-    type: Function,
-    required: true,
-  },
 })
 
 const languages = ref([])

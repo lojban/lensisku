@@ -3,7 +3,7 @@ import { computed, ref } from 'vue'
 import { getRecentChanges } from '@/api'
 
 /** Unix seconds of last time the News tab was opened. */
-export const NEWS_LAST_OPENED_KEY = 'news_last_opened_at'
+const NEWS_LAST_OPENED_KEY = 'news_last_opened_at'
 
 /** Max changes fetched when computing the unread badge. */
 const UNREAD_FETCH_LIMIT = 100

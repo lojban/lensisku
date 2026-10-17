@@ -43,10 +43,6 @@ const props = defineProps({
     type: Array as PropType<ActivityDefinition[]>,
     required: true,
   },
-  formatDate: {
-    type: Function,
-    required: true,
-  },
   noItemsMessage: {
     type: String,
     default: '',

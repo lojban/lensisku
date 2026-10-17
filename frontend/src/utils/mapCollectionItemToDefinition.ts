@@ -84,7 +84,3 @@ export function mapCollectionItemToDefinition(
     match_count: item.match_count ?? undefined,
   }
 }
-
-export function collectionDefinitionCardKey(def: CollectionDefinitionCard): string {
-  return `ci-${def.collection_id}-${def.item_id}`
-}

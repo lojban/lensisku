@@ -28,7 +28,7 @@ export type CombinedFiltersUrlState = {
 const HOME_SEARCH_MODES = new Set(['dictionary', 'semantic', 'comments', 'messages', 'muplis'])
 
 /** Query keys restored when navigating home via the logo (filters + search, not page chrome). */
-export const HOME_PRESERVED_QUERY_KEYS = [
+const HOME_PRESERVED_QUERY_KEYS = [
   'q',
   'mode',
   'langs',
@@ -172,9 +172,7 @@ export function hasActiveSearchFilters(filters: CombinedFiltersUrlState): boolea
   )
 }
 
-export function pickHomeQuery(
-  query: LocationQuery | Record<string, unknown>
-): Record<string, string> {
+function pickHomeQuery(query: LocationQuery | Record<string, unknown>): Record<string, string> {
   const out: Record<string, string> = {}
   for (const key of HOME_PRESERVED_QUERY_KEYS) {
     const s = queryCsv(query[key] as string | string[] | null | undefined)
@@ -219,7 +217,7 @@ function writeLastHomeQuery(record: Record<string, string>): void {
   }
 }
 
-export function loadLastHomeQuery(): Record<string, string> {
+function loadLastHomeQuery(): Record<string, string> {
   if (typeof window === 'undefined') return {}
   try {
     const fromLocal = parseStoredQueryRecord(localStorage.getItem(LAST_HOME_QUERY_KEY))
@@ -293,12 +291,8 @@ export function resolveHomeQuery(current: LocationQuery): Record<string, string>
   return { ...backfillLegacyHomeQuery(loadLastHomeQuery()), ...pickHomeQuery(current) }
 }
 
-export const mergeQueryForHomeNavigation = resolveHomeQuery
-
 /** Persist a complete home URL. Bare `/` (no preserved keys) does not wipe storage. */
-export function saveLastHomeQuery(
-  query: LocationQuery | Record<string, unknown>
-): Record<string, string> {
+function saveLastHomeQuery(query: LocationQuery | Record<string, unknown>): Record<string, string> {
   const picked = pickHomeQuery(query)
   if (Object.keys(picked).length === 0) return picked
   writeLastHomeQuery(picked)

@@ -678,24 +678,21 @@ const performFetchComments = async (isInitialLoad = false, scrollTo?: number) =>
       const response = await fetchComments(buildQuery)
       lastBuildQuery.value = buildQuery
       comments.value = response.data.comments
-      processedComments.value = processComments(response.data.comments, flatStyle.value)
       total.value = response.data.total
 
-      // Automatically enable flat style if any comment level >4
       const unflattenedComments = processComments(response.data.comments, false)
-      const maxLevel = Math.max(...unflattenedComments.map((c) => c.level))
+      const maxLevel = unflattenedComments.reduce((max, comment) => Math.max(max, comment.level), 0)
       if (maxLevel > 4) {
         flatStyle.value = true
         processedComments.value = processComments(response.data.comments, true)
         flatStyleEnforced.value = true
       } else {
-        flatStyle.value = localStorage.getItem('commentFlatStyle') === 'true'
+        const preferFlat = localStorage.getItem('commentFlatStyle') === 'true'
+        flatStyle.value = preferFlat
         flatStyleEnforced.value = false
-      }
-
-      // Wait for DOM updates if we changed comments
-      if (comments.value !== response.data.comments) {
-        await nextTick()
+        processedComments.value = preferFlat
+          ? processComments(response.data.comments, true)
+          : unflattenedComments
       }
     }
 
@@ -897,15 +894,29 @@ if (!props.embedded) {
 const fetchDefinitionsAndDetails = async () => {
   if (!props.valsiId) return
   try {
-    const result = await getEntriesAndDefinitionDetails(props.valsiId, props.definitionId)
+    const detailsPromise = getEntriesAndDefinitionDetails(props.valsiId, props.definitionId)
+    const langsPromise = getLanguages()
+    const result = await detailsPromise
     valsiDetails.value = result.valsi.valsi
     definitionDetails.value = result.definition
-
-    const langsResponse = await getLanguages()
+    const langsResponse = await langsPromise
     languages.value = langsResponse.data
   } catch (error) {
     console.error('Error fetching details:', error)
   }
+}
+
+function commentRouteNeedsRefresh() {
+  const q = route.query
+  return Boolean(
+    q.valsi_id ||
+    q.natlang_word_id ||
+    q.definition_id ||
+    q.definition_link_id ||
+    q.collection_id ||
+    q.comment_id ||
+    q.thread_id
+  )
 }
 
 onMounted(async () => {
@@ -913,23 +924,17 @@ onMounted(async () => {
     newComment.value.subject = props.initialSubject
   }
   await fetchDefinitionsAndDetails()
-  // Pass true for initial load
-  await performFetchComments(true)
+  // Route watcher already loads scoped threads; avoid a second identical request.
+  if (props.embedded || !commentRouteNeedsRefresh()) {
+    await performFetchComments(true)
+  }
 })
 
 // Watch for route changes to refresh comments
 watchEffect(async () => {
   if (props.embedded) return
-  const needsRefresh =
-    route.query.valsi_id ||
-    route.query.natlang_word_id ||
-    route.query.definition_id ||
-    route.query.definition_link_id ||
-    route.query.collection_id ||
-    route.query.comment_id ||
-    route.query.thread_id
 
-  if (needsRefresh) {
+  if (commentRouteNeedsRefresh()) {
     const st = route.query.scroll_to
     const scrollNum = st !== undefined ? Number(queryStr(st)) || 0 : undefined
     await performFetchComments(true, scrollNum)

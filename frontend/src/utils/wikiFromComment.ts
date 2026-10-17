@@ -1,5 +1,5 @@
 /** Session key for wiki create prefill from a comment. */
-export const WIKI_FROM_COMMENT_STORAGE_PREFIX = 'lensisku_wiki_from_comment_'
+const WIKI_FROM_COMMENT_STORAGE_PREFIX = 'lensisku_wiki_from_comment_'
 
 export type WikiFromCommentPrefill = {
   commentId: number
@@ -51,7 +51,9 @@ export function storeWikiFromCommentPrefill(prefill: WikiFromCommentPrefill): vo
   )
 }
 
-export function loadWikiFromCommentPrefill(commentId: number | string): WikiFromCommentPrefill | null {
+export function loadWikiFromCommentPrefill(
+  commentId: number | string
+): WikiFromCommentPrefill | null {
   const key = `${WIKI_FROM_COMMENT_STORAGE_PREFIX}${commentId}`
   const raw = sessionStorage.getItem(key)
   if (!raw) return null

@@ -60,7 +60,7 @@
 
 <script setup lang="ts">
 import { Button } from '@packages/ui'
-import { computed, inject, nextTick, onBeforeUnmount, onMounted, onUpdated, ref, watch } from 'vue'
+import { computed, inject, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import { feedPaginationHostKey } from '@/composables/useFeedPaginationHost'
@@ -160,8 +160,6 @@ onMounted(() => {
     bindObserver()
   })
 })
-
-onUpdated(() => refresh())
 
 onBeforeUnmount(() => observer?.disconnect())
 
