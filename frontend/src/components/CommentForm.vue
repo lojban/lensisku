@@ -6,11 +6,7 @@
     ]"
   >
     <div v-if="optionalTitle && !showSubjectField" class="mb-2 flex items-center text-sm">
-      <button
-        type="button"
-        class="text-blue-700 hover:underline"
-        @click="revealTitle"
-      >
+      <button type="button" class="text-blue-700 hover:underline" @click="revealTitle">
         {{ t('creation.addTitle') }}
       </button>
     </div>
@@ -292,27 +288,8 @@ defineExpose({
 </script>
 
 <style>
-milkdown-slash-menu {
-  z-index: 100;
-}
-
 .milkdown .ProseMirror {
   @apply py-2 px-0 md:pl-20;
-}
-
-milkdown-slash-menu {
-  position: fixed !important;
-  top: 50% !important;
-  left: 50% !important;
-  transform: translate(-50%, -50%) !important;
-  z-index: 100;
-  width: auto !important;
-  max-width: 80vw !important;
-  /* Prevent it from overflowing horizontally */
-  overflow-y: auto !important;
-  /* Allow vertical scrolling if needed */
-  max-height: none !important;
-  /* Remove any max-height limitations */
 }
 
 /* Hide block handle on mobile */

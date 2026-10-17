@@ -38,9 +38,9 @@
           :search-field-keys="collectionUserSearchFieldKeys"
           :placeholder="t('filters.selectCollectionsAndUsers')"
           :search-placeholder="t('filters.searchCollectionsAndUsers')"
-          :select-all-label="t('filters.selectAllAuthors')"
-          :deselect-all-label="t('filters.deselectAllAuthors')"
-          :select-all-predicate="isUserPickerOption"
+          :show-select-all="false"
+          :option-section="collectionUserSection"
+          :section-label="collectionUserSectionLabel"
           :empty-filter-label="t('filters.noCollectionUserMatches')"
           :preface="t('filters.collectionsAndUsersPreface')"
           full-bleed-mobile-panel
@@ -49,19 +49,21 @@
           @search="onCollectionUserDropdownSearch"
         >
           <template #after-select-all>
-            <label
-              class="mx-1 flex cursor-pointer items-center gap-2 rounded-md px-2 py-2 text-sm text-gray-700 hover:bg-gray-50"
-            >
-              <input
-                type="checkbox"
-                class="checkmark-aqua shrink-0"
-                :checked="includePopularCollections"
-                @change="togglePopularCollections"
-              />
-              <span class="min-w-0 flex-1 truncate">{{
-                t('filters.includePopularCollections')
-              }}</span>
-            </label>
+            <div class="border-b border-gray-100">
+              <label
+                class="mx-1 flex cursor-pointer items-center gap-2 rounded-md px-2 py-2 text-sm text-gray-700 hover:bg-gray-50"
+              >
+                <input
+                  type="checkbox"
+                  class="checkmark-aqua shrink-0"
+                  :checked="includePopularCollections"
+                  @change="togglePopularCollections"
+                />
+                <span class="min-w-0 flex-1 truncate">{{
+                  t('filters.includePopularCollections')
+                }}</span>
+              </label>
+            </div>
           </template>
           <template #option="{ option }">
             <span v-if="isCollectionPickerOption(option)" class="dropdown-option-rich">
@@ -459,6 +461,14 @@ function isUserPickerOption(option: unknown): option is UserPickerOption {
 function collectionUserOptionValue(item: CollectionUserOption): string {
   if (item.kind === 'popular') return 'popular'
   return item.kind === 'collection' ? `c:${item.collection_id}` : `u:${item.username}`
+}
+
+function collectionUserSection(item: unknown): string {
+  return isUserPickerOption(item) ? 'authors' : 'collections'
+}
+
+function collectionUserSectionLabel(section: string): string {
+  return section === 'collections' ? t('filters.recentSuggestions') : ''
 }
 
 function collectionUserOptionLabel(item: CollectionUserOption): string {

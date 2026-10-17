@@ -26,7 +26,7 @@
       <div
         v-if="open"
         ref="panelRef"
-        class="dropdown-menu-panel"
+        class="dropdown-menu-panel p-1"
         :style="panelStyle"
         @click="open = false"
         @keydown="handleKeydown"

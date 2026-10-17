@@ -19,3 +19,19 @@
   background: #2563eb;
   border: 1px solid white;
 }
+
+/* Slash menu is absolutely positioned and gets clipped by editor scrollports. */
+.milkdown .milkdown-slash-menu {
+  position: fixed !important;
+  top: 50% !important;
+  left: 50% !important;
+  right: auto !important;
+  bottom: auto !important;
+  transform: translate(-50%, -50%) !important;
+  translate: none !important;
+  z-index: 80;
+  width: min(18rem, calc(100vw - 2rem)) !important;
+  max-width: calc(100vw - 2rem) !important;
+  max-height: calc(100dvh - 2rem) !important;
+  overflow: auto !important;
+}

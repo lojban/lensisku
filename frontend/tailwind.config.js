@@ -558,7 +558,7 @@ export default {
         // --- Dropdowns & filters ---
         /** Teleported dropdown menu panel (FAB, ellipsis menus). */
         '.dropdown-menu-panel': {
-          '@apply fixed z-50 w-fit min-w-0 max-w-[calc(100vw-1rem)] overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-lg py-1':
+          '@apply fixed z-50 w-fit min-w-0 max-w-[calc(100vw-1rem)] overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-lg':
             {},
         },
         /** Horizontal rule between menu groups (e.g. descending vs ascending sorts). */

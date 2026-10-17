@@ -7,7 +7,7 @@ withDefaults(
     title: string
     /** Cap form width (markdown / wiki editors). */
     narrow?: boolean
-    /** Let a long-form editor fill the remaining scroll viewport. */
+    /** Let a long-form editor fill the remaining scroll viewport, above the public-domain notice. */
     fillContent?: boolean
   }>(),
   { narrow: false, fillContent: false }
@@ -17,6 +17,10 @@ const scrollEl = ref<HTMLElement | null>(null)
 const emit = defineEmits<{
   scroll: [scrollTop: number, viewportHeight: number]
 }>()
+
+function assignScrollEl(el: Element | null) {
+  scrollEl.value = el instanceof HTMLElement ? el : null
+}
 
 function scrollToTop(behavior: 'auto' | 'instant' | 'smooth' = 'smooth') {
   scrollEl.value?.scrollTo({ top: 0, behavior })
@@ -51,14 +55,25 @@ defineExpose({ scrollToTop })
     </header>
 
     <div
-      ref="scrollEl"
-      class="flex min-h-0 flex-1 flex-col overflow-x-hidden overflow-y-auto overscroll-y-contain px-3 pb-0 pt-4 sm:px-4"
-      @scroll="handleScroll"
+      :ref="fillContent ? undefined : assignScrollEl"
+      class="flex min-h-0 flex-1 flex-col overscroll-y-contain pb-0"
+      :class="
+        fillContent
+          ? 'overflow-hidden px-0 sm:px-4 [&_.public-domain-notice]:mt-0'
+          : 'overflow-x-hidden overflow-y-auto px-3 sm:px-4'
+      "
+      @scroll="fillContent ? undefined : handleScroll($event)"
     >
       <div
         v-if="narrow"
+        :ref="fillContent ? assignScrollEl : undefined"
         class="mx-auto w-full max-w-3xl"
-        :class="fillContent ? 'flex min-h-full flex-col' : ''"
+        :class="
+          fillContent
+            ? 'flex min-h-0 flex-1 flex-col overflow-x-hidden overflow-y-auto overscroll-y-contain'
+            : ''
+        "
+        @scroll="fillContent ? handleScroll($event) : undefined"
       >
         <slot />
       </div>

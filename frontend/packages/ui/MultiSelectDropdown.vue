@@ -99,28 +99,36 @@
             <li class="my-1 border-t border-gray-100" aria-hidden="true" />
           </template>
 
-          <li
-            v-for="(opt, idx) in filteredOptions"
-            :key="optionKey(opt, idx)"
-            role="option"
-            :aria-selected="isSelected(opt)"
-          >
-            <label
-              class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-2 text-sm text-gray-700 hover:bg-gray-50"
+          <template v-for="row in optionRows" :key="row.key">
+            <li
+              v-if="row.kind === 'heading'"
+              class="px-2 pt-1.5 pb-0.5 text-[11px] font-semibold uppercase tracking-wide text-gray-400"
             >
-              <input
-                :type="singleSelect ? 'radio' : 'checkbox'"
-                :disabled="disabled"
-                class="checkmark-aqua shrink-0"
-                :checked="isSelected(opt)"
-                @click="singleSelect && toggleOption(opt)"
-                @change="!singleSelect && toggleOption(opt)"
-              />
-              <slot name="option" :option="opt">
-                <span class="min-w-0 flex-1 truncate">{{ optionLabel(opt) }}</span>
-              </slot>
-            </label>
-          </li>
+              {{ row.label }}
+            </li>
+            <li
+              v-else-if="row.kind === 'divider'"
+              class="my-1 border-t border-gray-100"
+              aria-hidden="true"
+            />
+            <li v-else role="option" :aria-selected="isSelected(row.option)">
+              <label
+                class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-2 text-sm text-gray-700 hover:bg-gray-50"
+              >
+                <input
+                  :type="singleSelect ? 'radio' : 'checkbox'"
+                  :disabled="disabled"
+                  class="checkmark-aqua shrink-0"
+                  :checked="isSelected(row.option)"
+                  @click="singleSelect && toggleOption(row.option)"
+                  @change="!singleSelect && toggleOption(row.option)"
+                />
+                <slot name="option" :option="row.option">
+                  <span class="min-w-0 flex-1 truncate">{{ optionLabel(row.option) }}</span>
+                </slot>
+              </label>
+            </li>
+          </template>
 
           <li
             v-if="!filteredOptions.length && !visibleSuggested.length"
@@ -260,6 +268,18 @@ const props = defineProps({
   preface: {
     type: String,
     default: '',
+  },
+  /**
+   * Groups consecutive options. A divider is inserted when the section changes.
+   * `sectionLabel` supplies a heading for a section (empty string skips the heading).
+   */
+  optionSection: {
+    type: Function as PropType<(item: unknown) => string>,
+    default: undefined,
+  },
+  sectionLabel: {
+    type: Function as PropType<(section: string) => string>,
+    default: undefined,
   },
 })
 
@@ -478,6 +498,47 @@ const visibleSuggested = computed(() => {
     if (itemMatchesQuery(opt, searchQuery.value)) out.push(opt)
   }
   return out
+})
+
+type OptionListRow =
+  | { kind: 'heading'; key: string; label: string }
+  | { kind: 'divider'; key: string }
+  | { kind: 'option'; key: string; option: unknown }
+
+const optionRows = computed((): OptionListRow[] => {
+  const sectionOf = props.optionSection
+  if (!sectionOf) {
+    return filteredOptions.value.map((option, idx) => ({
+      kind: 'option' as const,
+      key: String(optionKey(option, idx)),
+      option,
+    }))
+  }
+  const rows: OptionListRow[] = []
+  let prev: string | null = null
+  filteredOptions.value.forEach((option, idx) => {
+    const section = sectionOf(option)
+    if (section !== prev) {
+      if (prev !== null) {
+        rows.push({ kind: 'divider', key: `divider-${section}-${idx}` })
+      }
+      const searching = searchQuery.value.trim().length > 0
+      let label = searching || !props.sectionLabel ? '' : props.sectionLabel(section)
+      if (label && label === props.suggestedLabel && visibleSuggested.value.length) {
+        label = ''
+      }
+      if (label) {
+        rows.push({ kind: 'heading', key: `heading-${section}`, label })
+      }
+      prev = section
+    }
+    rows.push({
+      kind: 'option',
+      key: String(optionKey(option, idx)),
+      option,
+    })
+  })
+  return rows
 })
 
 const allFilteredSelected = computed(() => {

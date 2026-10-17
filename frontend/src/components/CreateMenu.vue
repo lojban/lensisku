@@ -18,7 +18,7 @@
     <ToolbarSelectDropdownItem
       v-for="choice in choices"
       :key="choice.path"
-      class="!w-80 !max-w-[calc(100vw-2rem)] !whitespace-normal !items-center !gap-4 !rounded-xl !border !border-transparent !px-5 !py-4 text-left hover:!border-blue-500 hover:!bg-white focus-visible:!outline focus-visible:!outline-2 focus-visible:!outline-blue-600"
+      class="!w-80 !max-w-[calc(100vw-2rem)] !whitespace-normal !items-center !gap-4 !rounded-lg !px-5 !py-4 text-left hover:!bg-gray-200 focus-visible:!outline focus-visible:!outline-2 focus-visible:!outline-blue-600"
       @click="router.push(localePath(choice.path))"
     >
       <component
