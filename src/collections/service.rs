@@ -895,6 +895,68 @@ async fn query_users_and_collections(
     Ok(picker_response_from_rows(collection_rows, user_rows))
 }
 
+/// Top public collections by distinct flashcards learnt in the last 3 months.
+/// A collection counts only when more than one card was learnt in that window.
+pub const POPULAR_LEARNT_COLLECTION_LIMIT: i64 = 100;
+const POPULAR_LEARNT_CACHE_KEY: &str = "popular_collections:learnt_3m_v1";
+const POPULAR_LEARNT_CACHE_TTL: std::time::Duration = std::time::Duration::from_secs(3600);
+
+pub async fn popular_learnt_collection_ids(
+    pool: &Pool,
+    redis: &RedisCache,
+) -> AppResult<Vec<i32>> {
+    if let Ok(Some(cached)) = redis.get::<Vec<i32>>(POPULAR_LEARNT_CACHE_KEY).await {
+        return Ok(cached);
+    }
+    let ids = query_popular_learnt_collection_ids(pool).await?;
+    if let Err(e) = redis
+        .set(
+            POPULAR_LEARNT_CACHE_KEY,
+            &ids,
+            Some(POPULAR_LEARNT_CACHE_TTL),
+        )
+        .await
+    {
+        log::warn!("Failed to cache popular learnt collections: {e}");
+    }
+    Ok(ids)
+}
+
+pub async fn query_popular_learnt_collection_ids(pool: &Pool) -> AppResult<Vec<i32>> {
+    let client = pool
+        .get()
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+    let rows = client
+        .query(
+            "SELECT c.collection_id
+             FROM collections c
+             JOIN flashcards f ON f.collection_id = c.collection_id
+             JOIN user_flashcard_progress ufp ON ufp.flashcard_id = f.id
+             WHERE c.is_public = true
+               AND ufp.last_reviewed_at >= NOW() - INTERVAL '3 months'
+               AND ufp.review_count > 0
+             GROUP BY c.collection_id
+             HAVING COUNT(DISTINCT f.id) > 1
+             ORDER BY COUNT(DISTINCT f.id) DESC, c.collection_id DESC
+             LIMIT $1",
+            &[&POPULAR_LEARNT_COLLECTION_LIMIT],
+        )
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+    Ok(rows.iter().map(|row| row.get("collection_id")).collect())
+}
+
+pub fn merge_collection_ids(mut ids: Vec<i32>, popular: Vec<i32>) -> Vec<i32> {
+    let mut seen: std::collections::HashSet<i32> = ids.iter().copied().collect();
+    for id in popular {
+        if seen.insert(id) {
+            ids.push(id);
+        }
+    }
+    ids
+}
+
 fn picker_response_from_rows(
     collection_rows: Vec<tokio_postgres::Row>,
     user_rows: Vec<tokio_postgres::Row>,
@@ -4366,7 +4428,8 @@ pub async fn list_collection_items(
     })
 }
 
-const MAX_MULTI_COLLECTION_IDS: usize = 50;
+/// Explicit picker ids are capped at 50; popular-collections adds up to 100 more.
+const MAX_MULTI_COLLECTION_IDS: usize = 150;
 pub(crate) const MAX_MULTI_COLLECTION_PER_PAGE: i64 = 200;
 
 /// Search items across a set of **public** collections in one query. Private collection ids

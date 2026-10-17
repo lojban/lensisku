@@ -21,6 +21,7 @@ export type CombinedFiltersUrlState = {
   word_type: number[]
   source_langid: number
   searchInPhrases: boolean
+  includePopularCollections: boolean
   isExpanded: boolean
 }
 
@@ -38,6 +39,7 @@ export const HOME_PRESERVED_QUERY_KEYS = [
   'word_type',
   'source_langid',
   'searchInPhrases',
+  'popular_collections',
   'isExpanded',
   'group_by_thread',
   'wave_source',
@@ -122,7 +124,8 @@ export function combinedFiltersToQuery(
       filters.source_langid && filters.source_langid !== 1
         ? String(filters.source_langid)
         : undefined,
-    searchInPhrases: filters.searchInPhrases === false ? 'false' : undefined,
+    searchInPhrases: undefined,
+    popular_collections: filters.includePopularCollections ? undefined : '0',
     isExpanded: filters.isExpanded ? 'true' : undefined,
   }
 }
@@ -151,7 +154,8 @@ export function combinedFiltersFromQuery(query: LocationQuery): CombinedFiltersU
     selmaho: queryStr(query.selmaho),
     word_type: parseWordTypeIds(queryCsv(query.word_type)),
     source_langid: source ? parseInt(source, 10) || 1 : 1,
-    searchInPhrases: query.searchInPhrases !== 'false',
+    searchInPhrases: true,
+    includePopularCollections: query.popular_collections !== '0',
     isExpanded: query.isExpanded === 'true',
   }
 }
@@ -164,8 +168,7 @@ export function hasActiveSearchFilters(filters: CombinedFiltersUrlState): boolea
     filters.excludeUsernames?.length ||
     filters.word_type?.length ||
     filters.selectedCollections?.length ||
-    (filters.source_langid && filters.source_langid !== 1) ||
-    filters.searchInPhrases === false
+    (filters.source_langid && filters.source_langid !== 1)
   )
 }
 
@@ -272,9 +275,6 @@ function backfillLegacyHomeQuery(query: Record<string, string>): Record<string, 
     const storedQuery = localStorage.getItem('searchQuery')
     if (storedQuery) out.q = storedQuery
   }
-  if (!out.searchInPhrases && localStorage.getItem('searchInPhrases') === 'false') {
-    out.searchInPhrases = 'false'
-  }
   if (!out.wave_source) {
     const stored = localStorage.getItem('waveSource')
     if (stored) out.wave_source = stored
@@ -326,7 +326,8 @@ export function applyCombinedFiltersFromQuery(
   if (query.selmaho !== undefined) next.selmaho = fromQuery.selmaho
   if (query.word_type !== undefined) next.word_type = fromQuery.word_type
   if (query.source_langid !== undefined) next.source_langid = fromQuery.source_langid
-  if (query.searchInPhrases !== undefined) next.searchInPhrases = fromQuery.searchInPhrases
+  next.searchInPhrases = true
+  next.includePopularCollections = fromQuery.includePopularCollections
   if (query.isExpanded !== undefined) next.isExpanded = fromQuery.isExpanded
   return next
 }

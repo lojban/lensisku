@@ -86,6 +86,8 @@ pub struct SearchExportQuery {
     pub search_in_phrases: Option<bool>,
     pub semantic: Option<bool>,
     pub collection_ids: Option<String>,
+    /// When true, also export matches from the top 100 public collections by cards learnt in the last 3 months.
+    pub include_popular_collections: Option<bool>,
     pub collection_only: Option<bool>,
     /// When true with a single `collection_ids` value and `format=json`, export the full
     /// collection backup (`CollectionFullExport`: metadata, all items with images, levels).
@@ -118,6 +120,9 @@ pub fn has_search_export_constraint(query: &SearchExportQuery) -> bool {
         return true;
     }
     if crate::jbovlaste::dto::parse_word_type_list(&query.word_type).is_some() {
+        return true;
+    }
+    if query.include_popular_collections == Some(true) {
         return true;
     }
     if query.full_collection.unwrap_or(false) {

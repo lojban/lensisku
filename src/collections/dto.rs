@@ -196,7 +196,11 @@ pub struct CollectionUserPickerResponse {
 #[derive(Debug, Deserialize, ToSchema)]
 pub struct SearchCollectionsItemsQuery {
     /// Comma-separated collection ids. Private collections the caller cannot read are skipped.
+    /// Optional when `include_popular_collections` is set.
+    #[serde(default)]
     pub collection_ids: String,
+    /// When true, also search the top 100 public collections by cards learnt in the last 3 months.
+    pub include_popular_collections: Option<bool>,
     pub page: Option<i64>,
     pub per_page: Option<i64>,
     pub search: Option<String>,

@@ -61,6 +61,7 @@
             <span class="select-none">{{ selectAllRowLabel }}</span>
           </label>
         </div>
+        <slot name="after-select-all" />
 
         <ul
           class="min-h-0 flex-1 overflow-y-auto overscroll-contain px-1 py-0.5"

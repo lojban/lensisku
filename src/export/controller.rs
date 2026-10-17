@@ -161,6 +161,7 @@ pub async fn export_dictionary(
         ("search_in_phrases" = Option<bool>, Query, description = "When false, exclude phrase (type 15) entries"),
         ("semantic" = Option<bool>, Query, description = "Use semantic ranking when search text is present"),
         ("collection_ids" = Option<String>, Query, description = "Comma-separated public collection ids; unioned with include-authors unless collection_only is set. Without authors, only collection matches are exported (no unscoped dictionary fallback)"),
+        ("include_popular_collections" = Option<bool>, Query, description = "Also include the top 100 public collections by cards learnt in the last 3 months"),
         ("collection_only" = Option<bool>, Query, description = "When true with collection_ids, export only filtered collection items (authors filter items; no dictionary union)"),
         ("full_collection" = Option<bool>, Query, description = "When true with format=json and exactly one collection_id, export full collection backup (metadata, all items with images, levels). Same access as get collection.")
     ),

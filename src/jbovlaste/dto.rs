@@ -28,6 +28,8 @@ pub struct SearchDefinitionsQuery {
     /// Comma-separated public collection ids. With `include_global_group`, these hits
     /// appear in `filtered_collection_items` (not AND’d with `username`).
     pub collection_ids: Option<String>,
+    /// When true, also search the top 100 public collections by cards learnt in the last 3 months.
+    pub include_popular_collections: Option<bool>,
     /// When true, `username` / `collection_ids` form a priority filtered group, and
     /// `definitions` is the unscoped global group (excluding ids already in the filtered group).
     pub include_global_group: Option<bool>,

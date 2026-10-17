@@ -3050,6 +3050,7 @@ const goToCollectionExport = () => {
       ...combinedFiltersToQuery({
         ...itemFilters.value,
         selectedCollections: [numericCollectionId.value],
+        includePopularCollections: false,
       }),
     }),
   })

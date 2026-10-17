@@ -173,7 +173,9 @@
                 :expand-collection-items="!expandCollectionItemId"
                 :show-global-dictionary-banner="
                   !similarDefinitionId &&
-                  (filters.selectedCollections?.length > 0 || filters.usernames?.length > 0)
+                  (filters.selectedCollections?.length > 0 ||
+                    filters.usernames?.length > 0 ||
+                    filters.includePopularCollections)
                 "
                 :decomposition="decomposition || []"
                 @collection-updated="setCollections($event)"
@@ -808,7 +810,8 @@ const fetchDefinitions = async (page, search = '') => {
       ? (filters.value.selectedCollections || []).filter((n: number) => Number.isFinite(n) && n > 0)
       : []
     const hasAuthors = !similarId && !!filters.value.usernames?.length
-    const usePriorityThenGlobal = collectionIds.length > 0 || hasAuthors
+    const includePopular = !similarId && !!filters.value.includePopularCollections
+    const usePriorityThenGlobal = collectionIds.length > 0 || hasAuthors || includePopular
 
     const params: Record<string, unknown> = {
       page,
@@ -843,6 +846,7 @@ const fetchDefinitions = async (page, search = '') => {
       if (collectionIds.length) {
         params.collection_ids = collectionIds.join(',')
       }
+      if (includePopular) params.include_popular_collections = true
     }
     if (expandCollectionItemId.value) {
       params.expand_collection_item = expandCollectionItemId.value
@@ -953,7 +957,8 @@ const loadAllDefinitionIdsFromCollections = async (
   const baseParams: Record<string, unknown> = {
     // OR with authors: do not restrict collection hits to include-authors.
     ...buildSharedSearchFilterParams({ includeAuthors: false }),
-    collection_ids: collectionIds.join(','),
+    collection_ids: collectionIds.length ? collectionIds.join(',') : undefined,
+    include_popular_collections: filters.value.includePopularCollections || undefined,
     per_page: ADD_ALL_COLLECTION_PER_PAGE,
     search: trimmedSearch || undefined,
   }
@@ -1059,7 +1064,9 @@ const loadAllDefinitionIdsForCurrentSearch = async (
   const collectionIds = (filters.value.selectedCollections || []).filter(
     (n: number) => Number.isFinite(n) && n > 0
   )
-  const hasCollections = collectionIds.length > 0 && !similarDefinitionId.value
+  const hasCollections =
+    (collectionIds.length > 0 || !!filters.value.includePopularCollections) &&
+    !similarDefinitionId.value
   const hasAuthors = !!filters.value.usernames?.length
   // Dictionary when: authors selected (author half of the union), or no collections
   // (normal search / other filters). Skip unscoped global fallback for collections-only.
@@ -1259,6 +1266,7 @@ const handleFiltersReset = async () => {
     word_type: [],
     source_langid: 1,
     searchInPhrases: true,
+    includePopularCollections: true,
     isSemantic: true,
   }
   currentPage.value = 1
@@ -1595,6 +1603,7 @@ watch(
       newQuery.word_type !== oldQuery?.word_type ||
       newQuery.source_langid !== oldQuery?.source_langid ||
       newQuery.searchInPhrases !== oldQuery?.searchInPhrases ||
+      newQuery.popular_collections !== oldQuery?.popular_collections ||
       newQuery.wave_source !== oldQuery?.wave_source ||
       newQuery.sort_by !== oldQuery?.sort_by ||
       newQuery.sort_order !== oldQuery?.sort_order ||

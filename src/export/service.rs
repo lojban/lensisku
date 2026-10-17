@@ -2917,11 +2917,15 @@ pub async fn export_search_results(
         .filter(|s| !s.is_empty())
         .map(str::to_string);
     let word_types = crate::jbovlaste::dto::parse_word_type_list(&query.word_type);
-    let collection_ids = query
+    let mut collection_ids = query
         .collection_ids
         .as_deref()
         .map(|s| crate::collections::dto::parse_positive_id_list(s, 50))
         .unwrap_or_default();
+    if query.include_popular_collections == Some(true) {
+        let popular = crate::collections::service::query_popular_learnt_collection_ids(pool).await?;
+        collection_ids = crate::collections::service::merge_collection_ids(collection_ids, popular);
+    }
 
     let use_semantic = query.semantic.unwrap_or(false)
         && !search_term.is_empty()

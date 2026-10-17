@@ -147,8 +147,8 @@ function hasItemFiltersExceptCollection(filterState: CombinedFiltersUrlState): b
     filterState.excludeUsernames?.length ||
     filterState.word_type?.length ||
     filterState.selectedLanguages?.length ||
-    (filterState.source_langid && filterState.source_langid !== 1) ||
-    filterState.searchInPhrases === false
+    filterState.includePopularCollections ||
+    (filterState.source_langid && filterState.source_langid !== 1)
   )
 }
 
@@ -236,6 +236,9 @@ function buildExportParams(): Record<string, string | number | boolean> {
   if (filters.value.selectedCollections?.length) {
     params.collection_ids = filters.value.selectedCollections.join(',')
   }
+  if (filters.value.includePopularCollections) {
+    params.include_popular_collections = true
+  }
   if (isCollectionOnlyExport.value) {
     params.collection_only = true
   }
@@ -315,6 +318,7 @@ watch(
     filters.value.word_type = fromQuery.word_type
     filters.value.source_langid = fromQuery.source_langid
     filters.value.searchInPhrases = fromQuery.searchInPhrases
+    filters.value.includePopularCollections = fromQuery.includePopularCollections
     filters.value.isExpanded = fromQuery.isExpanded
     const mode = queryStr(query.mode)
     if (mode === 'semantic' || mode === 'dictionary') {

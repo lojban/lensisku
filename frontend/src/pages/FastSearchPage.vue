@@ -67,7 +67,13 @@
             :source-lang-id="filters.source_langid"
             :languages="languages"
           />
-          <template v-if="filters.selectedCollections?.length || filters.usernames?.length">
+          <template
+            v-if="
+              filters.selectedCollections?.length ||
+              filters.usernames?.length ||
+              filters.includePopularCollections
+            "
+          >
             <div
               v-if="expandCollectionItemId"
               class="surface-definition-compact text-sm text-gray-700 flex flex-wrap items-center justify-between gap-2"
@@ -282,7 +288,8 @@ const fetchDefinitions = async (page: number, search = '') => {
       (n) => Number.isFinite(n) && n > 0
     )
     const hasAuthors = !!filters.value.usernames?.length
-    const usePriorityThenGlobal = collectionIds.length > 0 || hasAuthors
+    const includePopular = !!filters.value.includePopularCollections
+    const usePriorityThenGlobal = collectionIds.length > 0 || hasAuthors || includePopular
 
     const params: Record<string, unknown> = {
       page,
@@ -318,6 +325,7 @@ const fetchDefinitions = async (page: number, search = '') => {
       if (collectionIds.length) {
         params.collection_ids = collectionIds.join(',')
       }
+      if (includePopular) params.include_popular_collections = true
     }
     if (expandCollectionItemId.value) {
       params.expand_collection_item = expandCollectionItemId.value
@@ -541,6 +549,7 @@ watch(
       newQuery.word_type !== oldQuery?.word_type ||
       newQuery.source_langid !== oldQuery?.source_langid ||
       newQuery.searchInPhrases !== oldQuery?.searchInPhrases ||
+      newQuery.popular_collections !== oldQuery?.popular_collections ||
       newQuery.expand_ci !== oldQuery?.expand_ci
 
     currentPage.value = parseInt(queryStr(newQuery.page), 10) || 1

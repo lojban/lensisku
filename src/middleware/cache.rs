@@ -119,7 +119,7 @@ pub fn generate_search_cache_key(query: &SearchDefinitionsQuery, use_fast_search
         "search"
     };
     format!(
-        "{}:{}:{}:{}:{}:{}:{}:{}:{}:{}:{}:{}:{}:{}:{}:{}",
+        "{}:{}:{}:{}:{}:{}:{}:{}:{}:{}:{}:{}:{}:{}:{}:{}:{}",
         prefix,
         query.page.unwrap_or(1),
         query.per_page.unwrap_or(20),
@@ -135,14 +135,15 @@ pub fn generate_search_cache_key(query: &SearchDefinitionsQuery, use_fast_search
         query.source_langid.unwrap_or(1),
         query.search_in_phrases.map(i32::from).unwrap_or(-1),
         query.collection_ids.as_deref().unwrap_or(""),
-        query.include_global_group.map(i32::from).unwrap_or(0)
+        query.include_global_group.map(i32::from).unwrap_or(0),
+        query.include_popular_collections.map(i32::from).unwrap_or(0)
     )
 }
 
 pub fn generate_semantic_search_cache_key(query: &SearchDefinitionsQuery) -> String {
     // Key includes search term and all filter/pagination options relevant to semantic search
     format!(
-        "semantic_search:{}:{}:{}:{}:{}:{}:{}:{}:{}:{}:{}:{}:{}",
+        "semantic_search:{}:{}:{}:{}:{}:{}:{}:{}:{}:{}:{}:{}:{}:{}",
         query.search.as_deref().unwrap_or(""),
         query.definition_id.unwrap_or(0),
         query.page.unwrap_or(1),
@@ -155,7 +156,8 @@ pub fn generate_semantic_search_cache_key(query: &SearchDefinitionsQuery) -> Str
         query.source_langid.unwrap_or(1),
         query.search_in_phrases.map(i32::from).unwrap_or(-1),
         query.collection_ids.as_deref().unwrap_or(""),
-        query.include_global_group.map(i32::from).unwrap_or(0)
+        query.include_global_group.map(i32::from).unwrap_or(0),
+        query.include_popular_collections.map(i32::from).unwrap_or(0)
     )
 }
 

@@ -1221,9 +1221,22 @@ pub async fn bulk_update_custom_text_items(
 #[get("/items/search")]
 pub async fn search_items_in_collections(
     pool: web::Data<Pool>,
+    redis_cache: web::Data<RedisCache>,
     query: web::Query<SearchCollectionsItemsQuery>,
 ) -> impl Responder {
-    let collection_ids = parse_positive_id_list(&query.collection_ids, 50);
+    let mut collection_ids = parse_positive_id_list(&query.collection_ids, 50);
+    if query.include_popular_collections == Some(true) {
+        match service::popular_learnt_collection_ids(pool.get_ref(), redis_cache.get_ref()).await {
+            Ok(popular) => {
+                collection_ids = service::merge_collection_ids(collection_ids, popular);
+            }
+            Err(e) => {
+                return HttpResponse::InternalServerError().json(json!({
+                    "error": format!("Failed to load popular collections: {e}")
+                }));
+            }
+        }
+    }
     if collection_ids.is_empty() {
         return HttpResponse::BadRequest().json(json!({
             "error": "collection_ids is required"

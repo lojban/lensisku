@@ -48,6 +48,21 @@
           @open="onCollectionUserDropdownOpen"
           @search="onCollectionUserDropdownSearch"
         >
+          <template #after-select-all>
+            <label
+              class="mx-1 flex cursor-pointer items-center gap-2 rounded-md px-2 py-2 text-sm text-gray-700 hover:bg-gray-50"
+            >
+              <input
+                type="checkbox"
+                class="checkmark-aqua shrink-0"
+                :checked="includePopularCollections"
+                @change="togglePopularCollections"
+              />
+              <span class="min-w-0 flex-1 truncate">{{
+                t('filters.includePopularCollections')
+              }}</span>
+            </label>
+          </template>
           <template #option="{ option }">
             <span v-if="isCollectionPickerOption(option)" class="dropdown-option-rich">
               <b>{{ option.name }}</b>
@@ -128,30 +143,6 @@
       class="mt-3 grid grid-cols-1 gap-x-3 gap-y-4 bg-white rounded-lg shadow-sm p-4 sm:grid-cols-2"
       :class="{ 'animate-expandSection': expanded }"
     >
-      <div class="flex min-w-0 flex-col">
-        <label class="filters-field-label" aria-hidden="true">&nbsp;</label>
-        <Button
-          type="button"
-          variant="toolbar"
-          class="w-full justify-start"
-          :disabled="hasSelectedWordTypes"
-          :title="t('searchForm.modes.searchInPhrases')"
-          @click="toggleSearchInPhrases"
-        >
-          <template #icon>
-            <Checkbox
-              class="checkmark-aqua pointer-events-none shrink-0"
-              checkbox-class="pointer-events-none"
-              :model-value="searchInPhrases && !hasSelectedWordTypes"
-              :disabled="hasSelectedWordTypes"
-              tabindex="-1"
-              aria-hidden="true"
-            />
-          </template>
-          <span class="text-sm select-none">{{ t('searchForm.modes.searchInPhrases') }}</span>
-        </Button>
-      </div>
-
       <div v-if="languagesInExpandedPanel" class="flex min-w-0 flex-col">
         <label class="filters-field-label">{{ t('filters.selectLanguages') }}</label>
         <div class="relative w-full min-w-0 [&>div]:block [&>div]:w-full">
@@ -446,7 +437,8 @@ type CollectionOption = {
 
 type CollectionPickerOption = CollectionOption & { kind: 'collection' }
 type UserPickerOption = UserHint & { kind: 'user' }
-type CollectionUserOption = CollectionPickerOption | UserPickerOption
+type PopularPickerOption = { kind: 'popular' }
+type CollectionUserOption = CollectionPickerOption | UserPickerOption | PopularPickerOption
 
 function isCollectionPickerOption(option: unknown): option is CollectionPickerOption {
   return (
@@ -465,10 +457,12 @@ function isUserPickerOption(option: unknown): option is UserPickerOption {
 }
 
 function collectionUserOptionValue(item: CollectionUserOption): string {
+  if (item.kind === 'popular') return 'popular'
   return item.kind === 'collection' ? `c:${item.collection_id}` : `u:${item.username}`
 }
 
 function collectionUserOptionLabel(item: CollectionUserOption): string {
+  if (item.kind === 'popular') return t('filters.includePopularCollections')
   return item.kind === 'collection' ? item.name : item.username
 }
 
@@ -486,6 +480,7 @@ const props = defineProps({
       source_langid: 1, // Default to Lojban
       isSemantic: true,
       searchInPhrases: true,
+      includePopularCollections: true,
     }),
   },
   languages: {
@@ -527,6 +522,7 @@ const selectedUsers = ref<UserHint[]>([])
 const excludedUsers = ref<UserHint[]>([])
 const userOptions = ref<UserHint[]>([])
 const selectedCollections = ref<CollectionOption[]>([])
+const includePopularCollections = ref(true)
 const collectionOptions = ref<CollectionOption[]>([])
 const expanded = ref(props.modelValue.isExpanded)
 const lastAutoExpandedSelmaho = ref('')
@@ -562,15 +558,20 @@ const collectionUserOptions = computed<CollectionUserOption[]>(() => [
 
 const selectedCollectionUsers = computed<CollectionUserOption[]>({
   get() {
-    return [
+    const selected: CollectionUserOption[] = []
+    if (includePopularCollections.value) selected.push({ kind: 'popular' })
+    selected.push(
       ...selectedCollections.value.map((c) => ({ kind: 'collection' as const, ...c })),
-      ...selectedUsers.value.map((u) => ({ kind: 'user' as const, ...u })),
-    ]
+      ...selectedUsers.value.map((u) => ({ kind: 'user' as const, ...u }))
+    )
+    return selected
   },
   set(items) {
+    includePopularCollections.value = items.some((item) => item.kind === 'popular')
     const collections: CollectionOption[] = []
     const users: UserHint[] = []
     for (const item of items) {
+      if (item.kind === 'popular') continue
       if (item.kind === 'collection') {
         collections.push({
           collection_id: item.collection_id,
@@ -860,6 +861,11 @@ watch(
       selectedCollections.value = collectionsFromIds(collectionIds, collectionOptions.value)
     }
     mergeCollectionOptions([])
+
+    const nextPopular = newVal.includePopularCollections !== false
+    if (includePopularCollections.value !== nextPopular) {
+      includePopularCollections.value = nextPopular
+    }
   },
   { deep: true, immediate: true }
 )
@@ -1046,8 +1052,7 @@ const hasFilledAdvancedFilters = computed(() => {
     (selectedUsers.value.length > 0 && !props.showCollectionFilter) ||
     excludedUsers.value.length > 0 ||
     hasSelectedWordTypes.value ||
-    filters.value.source_langid !== 1 ||
-    !searchInPhrases.value
+    filters.value.source_langid !== 1
   )
 })
 
@@ -1059,9 +1064,9 @@ const hasAnyActiveFilters = computed(() => {
     selectedLangs.value.length > 0 ||
     selectedCollections.value.length > 0 ||
     selectedUsers.value.length > 0 ||
+    !includePopularCollections.value ||
     hasFilledAdvancedFilters.value ||
     !isSemantic.value ||
-    !searchInPhrases.value ||
     expanded.value
   )
 })
@@ -1102,7 +1107,8 @@ const emitUpdate = () => {
     word_type: selectedWordTypes.value.map((type) => type.type_id),
     source_langid: filters.value.source_langid || 1, // Include source_langid
     isSemantic: isSemantic.value,
-    searchInPhrases: hasSelectedWordTypes.value ? null : searchInPhrases.value,
+    searchInPhrases: true,
+    includePopularCollections: includePopularCollections.value,
   }
   emit('update:modelValue', updatedValue)
   emit('change', updatedValue)
@@ -1149,6 +1155,7 @@ const resetAllFilters = () => {
   expanded.value = false
 
   selectedWordTypes.value = []
+  includePopularCollections.value = true
   selectedUsers.value = []
   excludedUsers.value = []
   selectedCollections.value = []
@@ -1174,6 +1181,7 @@ const resetAllFilters = () => {
     source_langid: 1,
     isSemantic: true,
     searchInPhrases: true,
+    includePopularCollections: true,
   }
 
   emit('reset')
@@ -1186,13 +1194,8 @@ const toggleExpanded = () => {
   emitUpdate()
 }
 
-const toggleSearchInPhrases = () => {
-  if (hasSelectedWordTypes.value) return
-  searchInPhrases.value = !searchInPhrases.value
-  if (typeof window !== 'undefined') {
-    localStorage.setItem('searchInPhrases', String(searchInPhrases.value))
-  }
-  emitUpdate()
+function togglePopularCollections() {
+  includePopularCollections.value = !includePopularCollections.value
 }
 
 const toggleSemanticSearch = () => {
@@ -1266,6 +1269,11 @@ watch(
   },
   { deep: true }
 )
+
+watch(includePopularCollections, (next, prev) => {
+  if (prev === undefined || next === prev) return
+  emitUpdate()
+})
 
 watch(
   selectedWordTypes,
