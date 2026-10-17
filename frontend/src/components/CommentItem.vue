@@ -565,9 +565,9 @@ const handleReactionClick = async (reaction: string) => {
   }
 }
 
-const addReaction = async (reaction: string) => {
-  await handleReactionClick(reaction)
+const addReaction = (reaction: string) => {
   showReactionPicker.value = false
+  void handleReactionClick(reaction)
 }
 
 const avatarStore = useAvatarStore()
