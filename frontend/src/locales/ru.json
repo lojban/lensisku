@@ -106,7 +106,7 @@
     "searchCollectionsAndUsers": "Поиск авторов и публичных коллекций…",
     "noCollectionMatches": "Коллекции не найдены",
     "noCollectionUserMatches": "Авторы и публичные коллекции не найдены",
-    "collectionsAndUsersPreface": "Можно отфильтровать по авторам, которые вам нравятся, или по их публичным коллекциям.",
+    "collectionsAndUsersPreface": "В результатах поиска сначала показываются записи выбранных авторов и публичных коллекций. Остальные определения идут ниже.",
     "includePopularCollections": "Популярные коллекции",
     "languagesPreface": "Выберите языки поиска. Определения на других языках будут скрыты.",
     "collectionByUser": "(автор: {username})",

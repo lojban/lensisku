@@ -106,7 +106,7 @@
     "searchCollectionsAndUsers": "投稿者と公開コレクションを検索…",
     "noCollectionMatches": "コレクションが見つかりません",
     "noCollectionUserMatches": "投稿者または公開コレクションが見つかりません",
-    "collectionsAndUsersPreface": "好みの投稿者、またはその公開コレクションで絞り込めます。",
+    "collectionsAndUsersPreface": "検索結果では、選んだ投稿者と公開コレクションの項目を優先します。それらは先頭に表示され、その後に他の定義が続きます。",
     "includePopularCollections": "人気のコレクション",
     "languagesPreface": "検索する言語を選びます。他の言語の定義は表示されません。",
     "collectionByUser": "（{username}）",

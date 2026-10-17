@@ -106,7 +106,7 @@
     "searchCollectionsAndUsers": "搜索作者和公开合集…",
     "noCollectionMatches": "未找到合集",
     "noCollectionUserMatches": "未找到作者或公开合集",
-    "collectionsAndUsersPreface": "可按你偏好的作者筛选，或按他们的公开合集筛选。",
+    "collectionsAndUsersPreface": "在搜索结果中优先显示所选作者和公开合集的条目。它们排在前面，其余定义仍会随后出现。",
     "includePopularCollections": "热门合集",
     "languagesPreface": "选择要搜索的语言。其他语言的定义将被隐藏。",
     "collectionByUser": "（{username}）",
