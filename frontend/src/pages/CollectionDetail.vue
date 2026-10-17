@@ -2401,6 +2401,7 @@ interface ItemFiltersValue {
   source_langid: number
   isSemantic: boolean
   searchInPhrases: boolean
+  includePopularCollections: boolean
   selectedCollections?: number[]
 }
 
@@ -2800,6 +2801,7 @@ watch(
     route.query.word_type,
     route.query.source_langid,
     route.query.searchInPhrases,
+    route.query.popular_collections,
   ],
   () => {
     const fromQuery = combinedFiltersFromQuery(route.query)
@@ -2812,6 +2814,7 @@ watch(
     itemFilters.value.word_type = fromQuery.word_type
     itemFilters.value.source_langid = fromQuery.source_langid
     itemFilters.value.searchInPhrases = fromQuery.searchInPhrases
+    itemFilters.value.includePopularCollections = fromQuery.includePopularCollections
     fetchItems()
   }
 )

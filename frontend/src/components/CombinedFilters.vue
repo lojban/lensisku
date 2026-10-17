@@ -603,7 +603,7 @@ const collectionUserSuggestions = computed(() => {
   const byKey = new Map(collectionUserOptions.value.map((o) => [collectionUserOptionValue(o), o]))
   return mixed
     .filter((item) => {
-      if (item.kind === 'user') return true
+      if (item.kind !== 'collection') return true
       // Recent collection chips: only public collections returned by the picker API.
       return publicCollectionIds.has(item.collection_id)
     })
