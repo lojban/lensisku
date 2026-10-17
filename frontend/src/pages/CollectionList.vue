@@ -1,145 +1,152 @@
 <template>
-  <div class="flex flex-col gap-4">
-    <StudyStreak />
+  <div class="feed-page">
+    <FeedPageBody>
+      <div class="flex flex-col gap-4">
+        <StudyStreak />
 
-    <PageHeader title-as="h2" title-tone="secondary" margin="none" class="mt-0">
-      <template #title>
-        <span class="select-none">{{ t('collectionList.catalogCourses') }}</span>
-      </template>
-      <template #description>
-        <div class="flex max-w-2xl flex-col gap-2 text-sm text-slate-600">
-          <p class="m-0">{{ t('collectionList.learnDescription') }}</p>
-          <p class="m-0">{{ t('collectionList.collectionDescriptionCourse') }}</p>
+        <PageHeader title-as="h2" title-tone="secondary" margin="none" class="mt-0">
+          <template #title>
+            <span class="select-none">{{ t('collectionList.catalogCourses') }}</span>
+          </template>
+          <template #description>
+            <div class="flex max-w-2xl flex-col gap-2 text-sm text-slate-600">
+              <p class="m-0">{{ t('collectionList.learnDescription') }}</p>
+              <p class="m-0">{{ t('collectionList.collectionDescriptionCourse') }}</p>
+            </div>
+          </template>
+          <template #trailing>
+            <RouterLink
+              v-if="auth.state.isLoggedIn"
+              to="/library"
+              class="ui-btn--neutral inline-flex items-center gap-2"
+            >
+              <Star class="h-4 w-4 shrink-0" />
+              <span>{{ t('nav.library') }}</span>
+            </RouterLink>
+            <RouterLink
+              v-else
+              to="/login"
+              class="font-medium text-blue-600 underline hover:text-blue-800"
+            >
+              {{ t('collectionList.loginTo') }}
+            </RouterLink>
+          </template>
+        </PageHeader>
+
+        <div class="card-base card-compact p-4 sm:p-5 flex flex-col gap-4 overflow-visible">
+          <Input
+            v-model="searchQuery"
+            type="text"
+            class="input-field w-full min-w-0 sm:max-w-md sm:mx-auto"
+            :placeholder="
+              segment === 'courses'
+                ? t('collectionList.searchPlaceholder')
+                : t('collectionList.searchPlaceholderCollections')
+            "
+          />
+
+          <div class="flex w-full justify-center">
+            <div class="btn-group-forced flex flex-nowrap" role="tablist">
+              <Button
+                v-for="seg in segments"
+                :key="seg.value"
+                variant="empty"
+                type="button"
+                role="tab"
+                class="ui-btn--group-item"
+                :class="segment === seg.value ? 'ui-btn--sort-sky' : 'ui-btn--empty'"
+                :aria-selected="segment === seg.value"
+                @click="setSegment(seg.value)"
+              >
+                {{ seg.label }}
+              </Button>
+            </div>
+          </div>
+
+          <div class="flex flex-row items-center gap-2 sm:block">
+            <span id="collection-list-sort-legend" class="sr-only">{{
+              t('sort.sortByLabel')
+            }}</span>
+            <div
+              class="btn-group-forced flex flex-nowrap justify-center min-w-0 overflow-visible py-2"
+              role="group"
+              aria-labelledby="collection-list-sort-legend"
+              aria-describedby="collection-list-sort-current"
+            >
+              <Button
+                v-for="opt in sortOptions"
+                :key="opt.value"
+                variant="empty"
+                type="button"
+                class="ui-btn--group-item relative flex h-6 shrink-0 items-center justify-center gap-1.5 px-2 sm:px-4 !cursor-pointer"
+                :class="[sortBy === opt.value ? opt.aquaClass : 'ui-btn--empty']"
+                :title="opt.label"
+                :aria-label="opt.label"
+                :aria-pressed="sortBy === opt.value"
+                @click="sortBy = opt.value"
+              >
+                <component
+                  :is="opt.icon"
+                  class="h-4 w-4 shrink-0 transition-[opacity,filter] duration-200"
+                  :class="
+                    sortBy === opt.value
+                      ? 'opacity-100 drop-shadow-[0_0_1px_rgba(30,64,175,0.9)]'
+                      : 'opacity-55'
+                  "
+                  aria-hidden="true"
+                /><span class="hidden sm:inline">{{ opt.label }}</span>
+              </Button>
+            </div>
+            <span
+              id="collection-list-sort-current"
+              class="min-w-0 shrink-0 text-sm text-gray-700 sm:hidden"
+              aria-live="polite"
+              >{{ selectedSortLabel }}</span
+            >
+          </div>
         </div>
-      </template>
-      <template #trailing>
-        <RouterLink
-          v-if="auth.state.isLoggedIn"
-          to="/library"
-          class="ui-btn--neutral inline-flex items-center gap-2"
-        >
-          <Star class="h-4 w-4 shrink-0" />
-          <span>{{ t('nav.library') }}</span>
-        </RouterLink>
-        <RouterLink
-          v-else
-          to="/login"
-          class="font-medium text-blue-600 underline hover:text-blue-800"
-        >
-          {{ t('collectionList.loginTo') }}
-        </RouterLink>
-      </template>
-    </PageHeader>
-
-    <div class="card-base card-compact p-4 sm:p-5 flex flex-col gap-4 overflow-visible">
-      <Input
-        v-model="searchQuery"
-        type="text"
-        class="input-field w-full min-w-0 sm:max-w-md sm:mx-auto"
-        :placeholder="
-          segment === 'courses'
-            ? t('collectionList.searchPlaceholder')
-            : t('collectionList.searchPlaceholderCollections')
-        "
-      />
-
-      <div class="flex w-full justify-center">
-        <div class="btn-group-forced flex flex-nowrap" role="tablist">
-          <Button
-            v-for="seg in segments"
-            :key="seg.value"
-            variant="empty"
-            type="button"
-            role="tab"
-            class="ui-btn--group-item"
-            :class="segment === seg.value ? 'ui-btn--sort-sky' : 'ui-btn--empty'"
-            :aria-selected="segment === seg.value"
-            @click="setSegment(seg.value)"
-          >
-            {{ seg.label }}
-          </Button>
-        </div>
-      </div>
-
-      <div class="flex flex-row items-center gap-2 sm:block">
-        <span id="collection-list-sort-legend" class="sr-only">{{ t('sort.sortByLabel') }}</span>
-        <div
-          class="btn-group-forced flex flex-nowrap justify-center min-w-0 overflow-visible py-2"
-          role="group"
-          aria-labelledby="collection-list-sort-legend"
-          aria-describedby="collection-list-sort-current"
-        >
-          <Button
-            v-for="opt in sortOptions"
-            :key="opt.value"
-            variant="empty"
-            type="button"
-            class="ui-btn--group-item relative flex h-6 shrink-0 items-center justify-center gap-1.5 px-2 sm:px-4 !cursor-pointer"
-            :class="[sortBy === opt.value ? opt.aquaClass : 'ui-btn--empty']"
-            :title="opt.label"
-            :aria-label="opt.label"
-            :aria-pressed="sortBy === opt.value"
-            @click="sortBy = opt.value"
-          >
-            <component
-              :is="opt.icon"
-              class="h-4 w-4 shrink-0 transition-[opacity,filter] duration-200"
-              :class="
-                sortBy === opt.value
-                  ? 'opacity-100 drop-shadow-[0_0_1px_rgba(30,64,175,0.9)]'
-                  : 'opacity-55'
+        <LoadingSpinner v-if="isLoading" />
+        <div v-else class="collections-section">
+          <div class="collections-grid">
+            <CollectionCard
+              v-for="collection in collections"
+              :key="collection.collection_id"
+              :collection="collection"
+              :cover-image-url="
+                collection.has_cover_image
+                  ? getCollectionImage(collection.collection_id, { cached: true })
+                  : null
               "
-              aria-hidden="true"
-            /><span class="hidden sm:inline">{{ opt.label }}</span>
-          </Button>
+              :study-loading="studyLoadingId === collection.collection_id"
+              :show-study="segment === 'courses'"
+              :format-date="formatDate"
+              :study-button-label="t('collectionList.studyButton')"
+              :collection-button-label="t('collectionList.collectionButton')"
+              :flashcards-button-label="t('collectionList.flashcardsButton')"
+              :created-by-label="t('collectionList.createdBy')"
+              :updated-label="t('collectionList.updatedAt')"
+              :public-label="t('collectionList.publicStatus')"
+              :private-label="t('collectionList.privateStatus')"
+              :items-count-label="t('collectionList.itemsCount', { count: collection.item_count })"
+              :monthly-drillers-label="monthlyDrillersLabel(collection)"
+              @study="startStudy(collection)"
+            />
+          </div>
+          <PaginationComponent
+            v-if="totalPages > 1"
+            :current-page="currentPage"
+            :total-pages="totalPages"
+            :total="totalCollections"
+            :per-page="perPage"
+            class="w-full"
+            @prev="prevPage"
+            @next="nextPage"
+          />
         </div>
-        <span
-          id="collection-list-sort-current"
-          class="min-w-0 shrink-0 text-sm text-gray-700 sm:hidden"
-          aria-live="polite"
-          >{{ selectedSortLabel }}</span
-        >
+        <EmptyStatePanel v-if="!isLoading && collections.length === 0" />
       </div>
-    </div>
-    <LoadingSpinner v-if="isLoading" />
-    <div v-else class="collections-section">
-      <div class="collections-grid">
-        <CollectionCard
-          v-for="collection in collections"
-          :key="collection.collection_id"
-          :collection="collection"
-          :cover-image-url="
-            collection.has_cover_image
-              ? getCollectionImage(collection.collection_id, { cached: true })
-              : null
-          "
-          :study-loading="studyLoadingId === collection.collection_id"
-          :show-study="segment === 'courses'"
-          :format-date="formatDate"
-          :study-button-label="t('collectionList.studyButton')"
-          :collection-button-label="t('collectionList.collectionButton')"
-          :flashcards-button-label="t('collectionList.flashcardsButton')"
-          :created-by-label="t('collectionList.createdBy')"
-          :updated-label="t('collectionList.updatedAt')"
-          :public-label="t('collectionList.publicStatus')"
-          :private-label="t('collectionList.privateStatus')"
-          :items-count-label="t('collectionList.itemsCount', { count: collection.item_count })"
-          :monthly-drillers-label="monthlyDrillersLabel(collection)"
-          @study="startStudy(collection)"
-        />
-      </div>
-      <PaginationComponent
-        v-if="totalPages > 1"
-        :current-page="currentPage"
-        :total-pages="totalPages"
-        :total="totalCollections"
-        :per-page="perPage"
-        class="w-full"
-        @prev="prevPage"
-        @next="nextPage"
-      />
-    </div>
-    <EmptyStatePanel v-if="!isLoading && collections.length === 0" />
+    </FeedPageBody>
+    <div ref="paginationHost" class="contents" />
   </div>
 </template>
 
@@ -154,6 +161,8 @@ import { Button, CollectionCard, EmptyStatePanel, Input } from '@packages/ui'
 import PageHeader from '@/components/layout/PageHeader.vue'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import PaginationComponent from '@/components/PaginationComponent.vue'
+import FeedPageBody from '@/components/layout/FeedPageBody.vue'
+import { useFeedPaginationHost } from '@/composables/useFeedPaginationHost'
 import StudyStreak from '@/components/StudyStreak.vue'
 import { useAuth } from '@/composables/useAuth'
 import { useSeoHead } from '@/composables/useSeoHead'
@@ -162,6 +171,7 @@ const SEGMENT_STORAGE_KEY = 'collections-catalog-segment'
 
 const auth = useAuth()
 const router = useRouter()
+const paginationHost = useFeedPaginationHost()
 const { t, locale } = useI18n()
 
 const initialSegment = () => {

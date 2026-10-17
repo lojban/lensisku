@@ -1,72 +1,79 @@
 <template>
-  <TabbedPageHeader
-    :tabs="tabs"
-    :active-tab="activeTab"
-    :page-title="activeTab === 'users' ? t('userList.users') : t('userList.roleManagement')"
-    @tab-click="handleTabClick"
-  />
-  <!-- Users Tab Content -->
-  <UserListTab
-    v-if="activeTab === 'users'"
-    :user-list="userList"
-    :total="total"
-    :per-page="perPage"
-    :current-page="currentPage"
-    :total-pages="totalPages"
-    :available-roles="availableRoles"
-    :is-loading="isLoading"
-    :is-searching="isSearching"
-    :search-query="searchQuery"
-    :role-filter="roleFilter"
-    :sort-by="sortBy"
-    :sort-order="sortOrder"
-    @update:search-query="handleSearchQueryUpdate"
-    @update:role-filter="handleRoleFilterUpdate"
-    @select-sort="handleSortSelect"
-    @update-search="updateSearch"
-    @clear-search="clearSearch"
-    @prev-page="prevPage"
-    @next-page="nextPage"
-    @view-user="viewUser"
-  />
-  <!-- Roles Tab Content -->
-  <RoleManagementTab
-    v-if="activeTab === 'roles' && hasManageRolesPermission"
-    :roles="roles"
-    :available-permissions="permissions"
-    :new-role-name="newRoleName"
-    :selected-permissions="selectedPermissions"
-    :selected-permission-map="selectedPermissionMap"
-    @update:new-role-name="newRoleName = $event"
-    @update:selected-permission="handleUpdateSelectedPermission"
-    @create-role="handleCreateRole"
-    @delete-role="handleDeleteRole"
-    @add-permission="handleAddPermission"
-    @delete-permission="handleDeletePermission"
-    @toggle-permission="handleTogglePermission"
-  />
-  <!-- Confirmation Modals (remain in the parent) -->
-  <DeleteConfirmationModal
-    :show="showDeletePermissionConfirm"
-    :title="t('roleManagement.deletePermissionConfirmTitle')"
-    :message="
-      t('roleManagement.deletePermissionConfirmMessage', {
-        permission: permissionToDelete.permission,
-        roleName: permissionToDelete.roleName,
-      })
-    "
-    :is-deleting="isDeletingPermission"
-    @confirm="performDeletePermission(permissionToDelete.roleName, permissionToDelete.permission)"
-    @cancel="showDeletePermissionConfirm = false"
-  />
-  <DeleteConfirmationModal
-    :show="showDeleteRoleConfirm"
-    :title="t('roleManagement.deleteRoleConfirmTitle')"
-    :message="t('roleManagement.deleteRoleConfirmMessage', { roleName: roleToDelete })"
-    :is-deleting="isDeletingRole"
-    @confirm="performDeleteRole"
-    @cancel="showDeleteRoleConfirm = false"
-  />
+  <div class="feed-page">
+    <div class="feed-page__header feed-page__header--tabs">
+      <TabbedPageHeader
+        :tabs="tabs"
+        :active-tab="activeTab"
+        :page-title="activeTab === 'users' ? t('userList.users') : t('userList.roleManagement')"
+        @tab-click="handleTabClick"
+      />
+    </div>
+    <FeedPageBody>
+      <!-- Users Tab Content -->
+      <UserListTab
+        v-if="activeTab === 'users'"
+        :user-list="userList"
+        :total="total"
+        :per-page="perPage"
+        :current-page="currentPage"
+        :total-pages="totalPages"
+        :available-roles="availableRoles"
+        :is-loading="isLoading"
+        :is-searching="isSearching"
+        :search-query="searchQuery"
+        :role-filter="roleFilter"
+        :sort-by="sortBy"
+        :sort-order="sortOrder"
+        @update:search-query="handleSearchQueryUpdate"
+        @update:role-filter="handleRoleFilterUpdate"
+        @select-sort="handleSortSelect"
+        @update-search="updateSearch"
+        @clear-search="clearSearch"
+        @prev-page="prevPage"
+        @next-page="nextPage"
+        @view-user="viewUser"
+      />
+      <!-- Roles Tab Content -->
+      <RoleManagementTab
+        v-if="activeTab === 'roles' && hasManageRolesPermission"
+        :roles="roles"
+        :available-permissions="permissions"
+        :new-role-name="newRoleName"
+        :selected-permissions="selectedPermissions"
+        :selected-permission-map="selectedPermissionMap"
+        @update:new-role-name="newRoleName = $event"
+        @update:selected-permission="handleUpdateSelectedPermission"
+        @create-role="handleCreateRole"
+        @delete-role="handleDeleteRole"
+        @add-permission="handleAddPermission"
+        @delete-permission="handleDeletePermission"
+        @toggle-permission="handleTogglePermission"
+      />
+    </FeedPageBody>
+    <div ref="paginationHost" class="contents" />
+    <!-- Confirmation Modals (remain in the parent) -->
+    <DeleteConfirmationModal
+      :show="showDeletePermissionConfirm"
+      :title="t('roleManagement.deletePermissionConfirmTitle')"
+      :message="
+        t('roleManagement.deletePermissionConfirmMessage', {
+          permission: permissionToDelete.permission,
+          roleName: permissionToDelete.roleName,
+        })
+      "
+      :is-deleting="isDeletingPermission"
+      @confirm="performDeletePermission(permissionToDelete.roleName, permissionToDelete.permission)"
+      @cancel="showDeletePermissionConfirm = false"
+    />
+    <DeleteConfirmationModal
+      :show="showDeleteRoleConfirm"
+      :title="t('roleManagement.deleteRoleConfirmTitle')"
+      :message="t('roleManagement.deleteRoleConfirmMessage', { roleName: roleToDelete })"
+      :is-deleting="isDeletingRole"
+      @confirm="performDeleteRole"
+      @cancel="showDeleteRoleConfirm = false"
+    />
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -80,6 +87,8 @@ import DeleteConfirmationModal from '@/components/DeleteConfirmation.vue'
 import TabbedPageHeader from '@/components/TabbedPageHeader.vue'
 import RoleManagementTab from '@/components/users/RoleManagementTab.vue'
 import UserListTab from '@/components/users/UserListTab.vue'
+import FeedPageBody from '@/components/layout/FeedPageBody.vue'
+import { useFeedPaginationHost } from '@/composables/useFeedPaginationHost'
 import { useAuth } from '@/composables/useAuth'
 import { useError } from '@/composables/useError'
 import { useSeoHead } from '@/composables/useSeoHead'
@@ -87,6 +96,7 @@ import { normalizeSearchQuery } from '@/utils/searchQueryUtils'
 import { queryStr } from '@/utils/routeQuery'
 
 const router = useRouter()
+const paginationHost = useFeedPaginationHost()
 const route = useRoute()
 const auth = useAuth()
 const { showError, clearError } = useError()

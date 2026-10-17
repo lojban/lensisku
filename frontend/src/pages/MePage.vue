@@ -43,20 +43,16 @@
       </div>
     </FeedPageBody>
 
-    <div v-if="showPagination" class="feed-page__footer">
-      <div class="feed-page__footer-inner">
-        <div class="feed-page__pagination">
-          <PaginationComponent
-            :current-page="currentPage"
-            :total-pages="totalPages"
-            :total="total"
-            :per-page="perPage"
-            @prev="() => changePage(currentPage - 1)"
-            @next="() => changePage(currentPage + 1)"
-          />
-        </div>
-      </div>
-    </div>
+    <PaginationComponent
+      v-if="showPagination"
+      :current-page="currentPage"
+      :total-pages="totalPages"
+      :total="total"
+      :per-page="perPage"
+      @prev="() => changePage(currentPage - 1)"
+      @next="() => changePage(currentPage + 1)"
+    />
+    <div ref="paginationHost" class="contents" />
   </div>
 </template>
 
@@ -75,6 +71,7 @@ import ReactionIcon from '@/components/icons/ReactionIcon.vue'
 import VoteIcon from '@/components/icons/VoteIcon.vue'
 import PaginationComponent from '@/components/PaginationComponent.vue'
 import FeedPageBody from '@/components/layout/FeedPageBody.vue'
+import { useFeedPaginationHost } from '@/composables/useFeedPaginationHost'
 import SkeletonActivityItem from '@/components/activity/SkeletonActivityItem.vue'
 import TabbedPageHeader from '@/components/TabbedPageHeader.vue'
 import ProfilePage from '@/pages/ProfilePage.vue'
@@ -87,6 +84,7 @@ const ME_TABS = ['profile', 'comments', 'votes', 'reactions', 'bookmarked']
 
 const router = useRouter()
 const route = useRoute()
+const paginationHost = useFeedPaginationHost()
 const { t, locale } = useI18n()
 const { showError, clearError } = useError()
 const auth = useAuth()

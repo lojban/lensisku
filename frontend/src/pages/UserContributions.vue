@@ -1,37 +1,44 @@
 <template>
-  <TabbedPageHeader
-    :tabs="tabs"
-    :active-tab="activeTab"
-    :page-title="pageTitle"
-    @tab-click="handleTabClick"
-  />
-  <!-- Loading State with Skeleton -->
-  <div v-if="isLoading" class="space-y-4"><SkeletonActivityItem v-for="n in 5" :key="n" /></div>
-  <!-- Content -->
-  <div v-else class="space-y-4">
-    <!-- Comments Tab -->
-    <ActivityComments
-      v-if="activeTab === 'comments'"
-      :comments="comments"
-      :format-date="formatDate"
-    />
-    <!-- Definitions Tab -->
-    <ActivityDefinitions
-      v-if="activeTab === 'definitions'"
-      :definitions="definitions"
-      :format-date="formatDate"
-    />
-    <!-- PaginationComponent -->
-    <div v-if="totalPages > 1">
-      <PaginationComponent
-        :current-page="currentPage"
-        :total-pages="totalPages"
-        :total="total"
-        :per-page="perPage"
-        @prev="() => changePage(currentPage - 1)"
-        @next="() => changePage(currentPage + 1)"
+  <div class="feed-page">
+    <div class="feed-page__header feed-page__header--tabs">
+      <TabbedPageHeader
+        :tabs="tabs"
+        :active-tab="activeTab"
+        :page-title="pageTitle"
+        @tab-click="handleTabClick"
       />
     </div>
+    <FeedPageBody>
+      <!-- Loading State with Skeleton -->
+      <div v-if="isLoading" class="space-y-4"><SkeletonActivityItem v-for="n in 5" :key="n" /></div>
+      <!-- Content -->
+      <div v-else class="space-y-4">
+        <!-- Comments Tab -->
+        <ActivityComments
+          v-if="activeTab === 'comments'"
+          :comments="comments"
+          :format-date="formatDate"
+        />
+        <!-- Definitions Tab -->
+        <ActivityDefinitions
+          v-if="activeTab === 'definitions'"
+          :definitions="definitions"
+          :format-date="formatDate"
+        />
+        <!-- PaginationComponent -->
+        <div v-if="totalPages > 1">
+          <PaginationComponent
+            :current-page="currentPage"
+            :total-pages="totalPages"
+            :total="total"
+            :per-page="perPage"
+            @prev="() => changePage(currentPage - 1)"
+            @next="() => changePage(currentPage + 1)"
+          />
+        </div>
+      </div>
+    </FeedPageBody>
+    <div ref="paginationHost" class="contents" />
   </div>
 </template>
 
@@ -45,6 +52,8 @@ import { getUserComments, getUserDefinitions, getUserVotes } from '@/api'
 import ActivityComments from '@/components/activity/ActivityComments.vue'
 import ActivityDefinitions from '@/components/activity/ActivityDefinitions.vue'
 import PaginationComponent from '@/components/PaginationComponent.vue'
+import FeedPageBody from '@/components/layout/FeedPageBody.vue'
+import { useFeedPaginationHost } from '@/composables/useFeedPaginationHost'
 import SkeletonActivityItem from '@/components/activity/SkeletonActivityItem.vue'
 import TabbedPageHeader from '@/components/TabbedPageHeader.vue'
 import { useError } from '@/composables/useError'
@@ -60,6 +69,7 @@ const props = defineProps({
 
 const route = useRoute()
 const router = useRouter()
+const paginationHost = useFeedPaginationHost()
 const { showError, clearError } = useError()
 const { t, locale } = useI18n()
 
@@ -159,7 +169,7 @@ const changePage = (newPage) => {
       .finally(() => {
         isUpdatingRoute.value = false
       })
-    window.scrollTo({ top: 0, behavior: 'smooth' })
+    document.querySelector('.feed-page__body')?.scrollTo({ top: 0, behavior: 'smooth' })
   }
 }
 

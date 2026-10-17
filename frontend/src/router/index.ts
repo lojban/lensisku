@@ -47,7 +47,7 @@ const baseRoutes: Array<RouteRecordRaw> = [
     path: '/sutra_sisku',
     name: 'FastSearch',
     component: () => import('../pages/FastSearchPage.vue'),
-    meta: { alwaysShowScrollbar: true },
+    meta: { alwaysShowScrollbar: true, fullHeight: true },
   },
   {
     path: '/semantic-graph',
@@ -71,6 +71,7 @@ const baseRoutes: Array<RouteRecordRaw> = [
     path: '/thread/:subject',
     name: 'ThreadView',
     component: () => import('../pages/ThreadView.vue'),
+    meta: { fullHeight: true },
     props: (route) => ({
       subject: decodeURIComponent(route.params.subject as string),
       searchTerm: route.query.highlight?.toString() || '',
@@ -163,6 +164,7 @@ const baseRoutes: Array<RouteRecordRaw> = [
     path: '/definition_link/:id/discussion',
     name: 'DefinitionLinkDiscussion',
     component: () => import('../pages/DefinitionLinkDiscussion.vue'),
+    meta: { fullHeight: true },
     props: (route) => ({ id: parseInt(route.params.id as string) }),
   },
   {
@@ -247,7 +249,7 @@ const baseRoutes: Array<RouteRecordRaw> = [
     name: 'VersionHistory',
     component: () => import('../pages/VersionHistory.vue'),
     props: true,
-    meta: { requiresAuth: true },
+    meta: { requiresAuth: true, fullHeight: true },
   },
   {
     path: '/user/:username',
@@ -259,7 +261,7 @@ const baseRoutes: Array<RouteRecordRaw> = [
     path: '/users',
     name: 'UserList',
     component: () => import('../pages/UserList.vue'),
-    meta: { requiresAuth: true },
+    meta: { requiresAuth: true, fullHeight: true },
   },
   {
     path: '/languages',
@@ -306,7 +308,7 @@ const baseRoutes: Array<RouteRecordRaw> = [
     path: '/collections',
     name: 'CollectionList',
     component: () => import('../pages/CollectionList.vue'),
-    meta: { alwaysShowScrollbar: true },
+    meta: { alwaysShowScrollbar: true, fullHeight: true },
     beforeEnter: (to) => {
       if (to.query.view !== 'my') return true
       const query = { ...to.query }
@@ -322,12 +324,13 @@ const baseRoutes: Array<RouteRecordRaw> = [
     path: '/library',
     name: 'Library',
     component: () => import('../pages/LibraryPage.vue'),
-    meta: { alwaysShowScrollbar: true, requiresAuth: true },
+    meta: { alwaysShowScrollbar: true, requiresAuth: true, fullHeight: true },
   },
   {
     path: '/collections/:id',
     name: 'CollectionDetail',
     component: () => import('../pages/CollectionDetail.vue'),
+    meta: { fullHeight: true },
     props: (route) => ({
       collectionId: route.params.id,
     }),
@@ -355,6 +358,7 @@ const baseRoutes: Array<RouteRecordRaw> = [
     path: '/user/:username/activity',
     name: 'UserActivity',
     component: () => import('../pages/UserContributions.vue'),
+    meta: { fullHeight: true },
     props: true,
   },
   {
@@ -366,7 +370,7 @@ const baseRoutes: Array<RouteRecordRaw> = [
     path: '/collections/:collectionId/flashcards',
     name: 'FlashcardCollection',
     component: () => import('../pages/FlashcardCollectionView.vue'),
-    meta: { scrollMainToTopOnNavigate: true },
+    meta: { scrollMainToTopOnNavigate: true, fullHeight: true },
     props: (route) => ({
       collectionId: route.params.collectionId,
     }),
@@ -424,6 +428,7 @@ const baseRoutes: Array<RouteRecordRaw> = [
     path: '/lingo/courses',
     name: 'LingoCourses',
     component: () => import('../pages/LingoCourses.vue'),
+    meta: { fullHeight: true },
   },
   {
     path: '/lingo/learn',

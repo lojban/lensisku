@@ -706,6 +706,16 @@ export default {
             '@apply relative z-[3] h-4 w-4 shrink-0 overflow-visible': {},
           },
         },
+        /**
+         * Reaction chip: aqua pills clip labels (`overflow: hidden` on the button and its spans).
+         * The emoji pop (rotate + scale) has to paint outside that box.
+         */
+        '.reaction-emoji-pop': {
+          '@apply !overflow-visible': {},
+          '& span:not(.sr-only)': {
+            '@apply relative z-[3] !overflow-visible !max-w-none': {},
+          },
+        },
         '.study-quiz-option-lingo-text': {
           '@apply cursor-pointer rounded-xl border-2 border-slate-200 bg-white p-2.5 text-left text-xs font-medium text-gray-800 transition-colors duration-200 hover:border-green-400 hover:bg-green-50/50 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-60 sm:text-sm':
             {},
@@ -1156,6 +1166,10 @@ export default {
          * Full-width: summary left + controls right when both fit (sm+).
          * On wrap (narrow), each row is centered.
          */
+        /** In-flow marker for docked pagination; hidden ancestor means this instance stays inline. */
+        '.feed-pagination-sentinel': {
+          '@apply pointer-events-none absolute h-px w-px overflow-hidden': {},
+        },
         '.pagination-bar': {
           '@apply flex w-full flex-wrap items-center justify-center gap-x-4 gap-y-2 border-0 bg-transparent p-0 sm:justify-between':
             {},
@@ -1581,6 +1595,14 @@ export default {
           '&:hover': {
             '@apply text-gray-700 border-gray-300': {},
           },
+        }
+        /**
+         * Active reaction label (the count) is white in flat theme. `aqua-base` inlines
+         * `text-black` into `.ui-btn--reaction-active`, and a later utility in that same
+         * `@apply` does not replace it — this selector is more specific.
+         */
+        aquaRules['html[data-button-theme="aqua"] button.ui-btn--reaction-active'] = {
+          color: theme('colors.white'),
         }
         Object.assign(rules, aquaRules, flatRules)
         return rules

@@ -1,6 +1,6 @@
 <template>
   <div
-    class="comment-item bg-white border rounded-lg p-3 my-2 hover:border-blue-300 transition-colors min-w-0 max-w-full overflow-hidden"
+    class="comment-item bg-white border rounded-lg p-3 my-2 hover:border-blue-300 transition-colors min-w-0 max-w-full overflow-visible"
     :data-comment-id="processedComment.comment_id"
   >
     <div
@@ -170,7 +170,7 @@
             v-for="reaction in reactions"
             :key="reaction.reaction"
             :variant="reaction.reacted ? 'reaction-active' : 'reaction'"
-            class="gap-1.5 transition-all duration-300 !overflow-visible"
+            class="reaction-emoji-pop gap-1.5 transition-all duration-300"
             @click.stop="handleReactionClick(reaction.reaction)"
           >
             <span

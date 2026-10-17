@@ -1,145 +1,152 @@
 <template>
-  <!-- Search and Filter Section -->
-  <!-- Skeletons: keep real controls out of the flow (no h-0 + space-y gap CLS) -->
-  <template v-if="isInitialLoading">
-    <SearchFormSkeleton />
-    <CombinedFiltersSkeleton />
-  </template>
-  <template v-else>
-    <SearchForm
-      ref="searchFormRef"
-      :initial-query="searchQuery"
-      :initial-mode="'semantic'"
-      class="w-full"
-      @search="performSearch"
-    />
-    <CombinedFilters
-      v-model="filters"
-      :languages="languages"
-      class="w-full"
-      @change="handleFilterChange"
-      @reset="handleFiltersReset"
-    />
-  </template>
-
-  <div v-if="searchQuery || hasActiveSearchFilters(filters)" class="min-h-[400px]">
-    <div class="space-y-4">
-      <div
-        class="flex flex-wrap justify-between items-center gap-3 sm:space-x-4 w-full sm:w-auto ml-auto"
-      >
-        <h2 class="text-xl sm:text-2xl font-bold text-gray-800 select-none">
-          {{ $t('home.searchResultsTitle.dictionary') }}
-        </h2>
-      </div>
-
-      <div v-if="isLoading" class="flex justify-center py-8">
-        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
-      </div>
-      <template v-else>
-        <div v-if="!isLoading && !error" class="grid gap-4 mb-6">
-          <!-- Decomposition display -->
-          <AlertComponent
-            v-if="decomposition?.length"
-            type="tip"
-            :label="$t('components.dictionaryEntries.decomposition')"
-          >
-            <div class="inline-flex items-center gap-1">
-              <template v-for="(word, index) in decomposition" :key="word">
-                <h2
-                  class="text-base font-semibold text-blue-700 hover:text-blue-800 hover:underline truncate flex-shrink-0"
-                >
-                  <RouterLink
-                    :to="{
-                      path: `/valsi/${word.replace(/ /g, '_')}`,
-                      query: { langid: definitions[0]?.langid },
-                    }"
-                  >
-                    {{ word }}
-                  </RouterLink>
-                </h2>
-                <span v-if="index < decomposition.length - 1" class="text-aqua-500">+</span>
-              </template>
-            </div>
-          </AlertComponent>
-          <PhraseSplit
-            :phrase="searchQuery"
-            :selected-languages="filters.selectedLanguages"
-            :source-lang-id="filters.source_langid"
-            :languages="languages"
-          />
-          <template
-            v-if="
-              filters.selectedCollections?.length ||
-              filters.usernames?.length ||
-              filters.includePopularCollections
-            "
-          >
-            <div
-              v-if="expandCollectionItemId"
-              class="surface-definition-compact text-sm text-gray-700 flex flex-wrap items-center justify-between gap-2"
-            >
-              <p class="font-medium text-gray-800">{{ $t('home.collectionItemMatches') }}</p>
-              <Button variant="cancel" type="button" @click="clearCollectionItemExpand">
-                {{ $t('home.backToSearchResults') }}
-              </Button>
-            </div>
-            <DefinitionCard
-              v-for="def in collectionMatches"
-              :key="
-                def.collection_id != null && def.item_id != null
-                  ? `ci-${def.collection_id}-${def.item_id}`
-                  : `d-${def.definitionid}`
-              "
-              :definition="def"
-              :languages="languages"
-              :disable-toolbar="true"
-              :disable-owner-only-lock="true"
-              :show-vote-buttons="false"
-              :collections="collections"
-              :collection-id="def.collection_id"
-              :item-id="def.item_id"
-              :expand-on-click="!expandCollectionItemId && !!def.item_id"
-              @collection-updated="setCollections($event)"
-              @card-activate="expandCollectionItem(def)"
-            />
-            <div class="surface-definition-compact text-sm text-gray-700">
-              <p class="font-medium text-gray-800">
-                {{ $t('home.globalDictionaryBelow') }}
-              </p>
-            </div>
-          </template>
-          <!-- Global dictionary (always after filtered authors∪collections hits) -->
-          <DefinitionCardSimple
-            v-for="def in dictionaryDefinitions"
-            :key="def.definitionid"
-            :definition="def"
-            :languages="languages"
-            :show-word-type="true"
-          />
-        </div>
-
-        <div
-          v-if="!isLoading && dictionaryDefinitions.length === 0 && collectionMatches.length === 0"
-          class="text-center py-8 text-gray-600"
-        >
-          {{ $t('components.dictionaryEntries.noEntries') }}
-        </div>
-
-        <div v-if="error" class="text-center py-8 text-red-600">{{ error }}</div>
+  <div class="feed-page">
+    <FeedPageBody>
+      <!-- Search and Filter Section -->
+      <!-- Skeletons: keep real controls out of the flow (no h-0 + space-y gap CLS) -->
+      <template v-if="isInitialLoading">
+        <SearchFormSkeleton />
+        <CombinedFiltersSkeleton />
       </template>
-    </div>
-  </div>
-  <!-- PaginationComponent -->
-  <div v-if="searchQuery || hasActiveSearchFilters(filters)">
-    <PaginationComponent
-      :current-page="currentPage"
-      :total-pages="totalPages"
-      :total="total"
-      :per-page="10"
-      class="w-full"
-      @prev="prevPage"
-      @next="nextPage"
-    />
+      <template v-else>
+        <SearchForm
+          ref="searchFormRef"
+          :initial-query="searchQuery"
+          :initial-mode="'semantic'"
+          class="w-full"
+          @search="performSearch"
+        />
+        <CombinedFilters
+          v-model="filters"
+          :languages="languages"
+          class="w-full"
+          @change="handleFilterChange"
+          @reset="handleFiltersReset"
+        />
+      </template>
+
+      <div v-if="searchQuery || hasActiveSearchFilters(filters)" class="min-h-[400px]">
+        <div class="space-y-4">
+          <div
+            class="flex flex-wrap justify-between items-center gap-3 sm:space-x-4 w-full sm:w-auto ml-auto"
+          >
+            <h2 class="text-xl sm:text-2xl font-bold text-gray-800 select-none">
+              {{ $t('home.searchResultsTitle.dictionary') }}
+            </h2>
+          </div>
+
+          <div v-if="isLoading" class="flex justify-center py-8">
+            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+          </div>
+          <template v-else>
+            <div v-if="!isLoading && !error" class="grid gap-4 mb-6">
+              <!-- Decomposition display -->
+              <AlertComponent
+                v-if="decomposition?.length"
+                type="tip"
+                :label="$t('components.dictionaryEntries.decomposition')"
+              >
+                <div class="inline-flex items-center gap-1">
+                  <template v-for="(word, index) in decomposition" :key="word">
+                    <h2
+                      class="text-base font-semibold text-blue-700 hover:text-blue-800 hover:underline truncate flex-shrink-0"
+                    >
+                      <RouterLink
+                        :to="{
+                          path: `/valsi/${word.replace(/ /g, '_')}`,
+                          query: { langid: definitions[0]?.langid },
+                        }"
+                      >
+                        {{ word }}
+                      </RouterLink>
+                    </h2>
+                    <span v-if="index < decomposition.length - 1" class="text-aqua-500">+</span>
+                  </template>
+                </div>
+              </AlertComponent>
+              <PhraseSplit
+                :phrase="searchQuery"
+                :selected-languages="filters.selectedLanguages"
+                :source-lang-id="filters.source_langid"
+                :languages="languages"
+              />
+              <template
+                v-if="
+                  filters.selectedCollections?.length ||
+                  filters.usernames?.length ||
+                  filters.includePopularCollections
+                "
+              >
+                <div
+                  v-if="expandCollectionItemId"
+                  class="surface-definition-compact text-sm text-gray-700 flex flex-wrap items-center justify-between gap-2"
+                >
+                  <p class="font-medium text-gray-800">{{ $t('home.collectionItemMatches') }}</p>
+                  <Button variant="cancel" type="button" @click="clearCollectionItemExpand">
+                    {{ $t('home.backToSearchResults') }}
+                  </Button>
+                </div>
+                <DefinitionCard
+                  v-for="def in collectionMatches"
+                  :key="
+                    def.collection_id != null && def.item_id != null
+                      ? `ci-${def.collection_id}-${def.item_id}`
+                      : `d-${def.definitionid}`
+                  "
+                  :definition="def"
+                  :languages="languages"
+                  :disable-toolbar="true"
+                  :disable-owner-only-lock="true"
+                  :show-vote-buttons="false"
+                  :collections="collections"
+                  :collection-id="def.collection_id"
+                  :item-id="def.item_id"
+                  :expand-on-click="!expandCollectionItemId && !!def.item_id"
+                  @collection-updated="setCollections($event)"
+                  @card-activate="expandCollectionItem(def)"
+                />
+                <div class="surface-definition-compact text-sm text-gray-700">
+                  <p class="font-medium text-gray-800">
+                    {{ $t('home.globalDictionaryBelow') }}
+                  </p>
+                </div>
+              </template>
+              <!-- Global dictionary (always after filtered authors∪collections hits) -->
+              <DefinitionCardSimple
+                v-for="def in dictionaryDefinitions"
+                :key="def.definitionid"
+                :definition="def"
+                :languages="languages"
+                :show-word-type="true"
+              />
+            </div>
+
+            <div
+              v-if="
+                !isLoading && dictionaryDefinitions.length === 0 && collectionMatches.length === 0
+              "
+              class="text-center py-8 text-gray-600"
+            >
+              {{ $t('components.dictionaryEntries.noEntries') }}
+            </div>
+
+            <div v-if="error" class="text-center py-8 text-red-600">{{ error }}</div>
+          </template>
+        </div>
+      </div>
+      <!-- PaginationComponent -->
+      <div v-if="searchQuery || hasActiveSearchFilters(filters)">
+        <PaginationComponent
+          :current-page="currentPage"
+          :total-pages="totalPages"
+          :total="total"
+          :per-page="10"
+          class="w-full"
+          @prev="prevPage"
+          @next="nextPage"
+        />
+      </div>
+    </FeedPageBody>
+    <div ref="paginationHost" class="contents" />
   </div>
 </template>
 
@@ -156,6 +163,8 @@ import DefinitionCardSimple from '@/components/DefinitionCardSimple.vue'
 import PhraseSplit from '@/components/PhraseSplit.vue'
 import AlertComponent from '@/components/AlertComponent.vue'
 import PaginationComponent from '@/components/PaginationComponent.vue'
+import FeedPageBody from '@/components/layout/FeedPageBody.vue'
+import { useFeedPaginationHost } from '@/composables/useFeedPaginationHost'
 import SearchForm from '@/components/SearchForm.vue'
 import CombinedFiltersSkeleton from '@/components/skeletons/CombinedFiltersSkeleton.vue'
 import SearchFormSkeleton from '@/components/skeletons/SearchFormSkeleton.vue'
@@ -188,6 +197,7 @@ import {
 
 const router = useRouter()
 const route = useRoute()
+const paginationHost = useFeedPaginationHost()
 const { collections, setCollections } = useCollectionsCache()
 const auth = useAuth()
 const { preload: preloadMembership } = useCollectionMembershipCache()

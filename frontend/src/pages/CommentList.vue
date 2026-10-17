@@ -346,20 +346,16 @@
         </div>
       </component>
 
-      <div v-if="!embedded && !isLoading && totalPages > 1" class="feed-page__footer">
-        <div class="feed-page__footer-inner">
-          <div class="feed-page__pagination">
-            <PaginationComponent
-              :current-page="currentPage"
-              :total-pages="totalPages"
-              :total="total"
-              :per-page="perPage"
-              @prev="changePage(currentPage - 1)"
-              @next="changePage(currentPage + 1)"
-            />
-          </div>
-        </div>
-      </div>
+      <PaginationComponent
+        v-if="!embedded && !isLoading && totalPages > 1"
+        :current-page="currentPage"
+        :total-pages="totalPages"
+        :total="total"
+        :per-page="perPage"
+        @prev="changePage(currentPage - 1)"
+        @next="changePage(currentPage + 1)"
+      />
+      <div v-if="!embedded" ref="paginationHost" class="contents" />
     </div>
   </div>
 </template>
@@ -383,6 +379,7 @@ import CommentForm from '@/components/CommentForm.vue'
 import CommentItem from '@/components/CommentItem.vue'
 import DefinitionCard from '@/components/DefinitionCard.vue'
 import FeedPageBody from '@/components/layout/FeedPageBody.vue'
+import { useFeedPaginationHost } from '@/composables/useFeedPaginationHost'
 import PaginationComponent from '@/components/PaginationComponent.vue'
 import { useAuth } from '@/composables/useAuth'
 import { useError } from '@/composables/useError'
@@ -432,6 +429,9 @@ const props = defineProps({
     default: '',
   },
 })
+
+// Standalone pages dock pagination; embedded lists use an ancestor host when one exists.
+const paginationHost = props.embedded ? undefined : useFeedPaginationHost()
 
 // Setup
 const route = useRoute()

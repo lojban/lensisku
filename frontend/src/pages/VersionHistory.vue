@@ -1,200 +1,205 @@
 <template>
-  <div class="bg-white rounded-lg shadow-sm p-6">
-    <!-- Header -->
-    <div class="flex justify-between items-center mb-6">
-      <h2 class="text-2xl font-bold text-gray-800">{{ t('versionHistory.title') }}</h2>
-      <RouterLink :to="backLink" class="ui-btn--history">
-        <ArrowLeft class="h-5 w-5" />
-      </RouterLink>
-    </div>
-    <!-- Loading State -->
-    <div v-if="isLoading" class="flex justify-center py-8">
-      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
-    </div>
-    <!-- Version List -->
-    <div v-else class="space-y-4">
-      <div
-        v-for="version in versions"
-        :key="version.version_id"
-        class="border rounded-lg p-4 hover:border-blue-300 transition-colors"
-      >
-        <div class="flex justify-between items-start mb-2">
-          <div class="space-x-2">
-            <span class="font-medium text-gray-800">
-              <i18n-t keypath="versionHistory.versionBy" tag="span">
-                <template #versionId>{{ version.version_id }}</template>
-                <template #username>
-                  <AuthorLink :username="version.username" :author-url="version.author_url" />
-                </template>
-              </i18n-t>
-            </span>
-            <p v-if="version.commit_message" class="text-sm text-gray-600 mt-1 italic">
-              {{ t('versionHistory.commitMessage', { message: version.commit_message }) }}
-            </p>
-            <span
-              v-if="isRenameVersion(version)"
-              class="inline-flex mt-1 text-xs font-medium px-2 py-0.5 rounded bg-amber-100 text-amber-800"
-            >
-              {{ t('versionHistory.renameEvent') }}
-            </span>
-          </div>
-          <span class="text-sm text-gray-500"> {{ formatDate(version.created_at) }} </span>
+  <div class="feed-page">
+    <FeedPageBody>
+      <div class="bg-white rounded-lg shadow-sm p-6">
+        <!-- Header -->
+        <div class="flex justify-between items-center mb-6">
+          <h2 class="text-2xl font-bold text-gray-800">{{ t('versionHistory.title') }}</h2>
+          <RouterLink :to="backLink" class="ui-btn--history">
+            <ArrowLeft class="h-5 w-5" />
+          </RouterLink>
         </div>
-        <!-- Version Details -->
-        <div class="space-y-2 text-sm text-gray-600">
-          <div v-if="versionLanguage(version)">
-            <span class="font-medium">{{ t('versionHistory.languageLabel') }}</span>
-            {{ versionLanguage(version) }}
-          </div>
-          <div v-if="version.content.word">
-            <span class="font-medium">{{ t('versionHistory.wordLabel') }}</span>
-            {{ version.content.word }}
-          </div>
-          <div>
-            <span class="font-medium">{{
-              isWikiMode ? t('versionHistory.bodyLabel') : t('versionHistory.definitionLabel')
-            }}</span>
-            <div class="mt-1 bg-gray-50 p-2 rounded">
-              <LazyMathJax
-                :content="previewContent(version.content.definition)"
-                :enable-markdown="true"
-              />
-            </div>
-          </div>
-
-          <div v-if="!isWikiMode && version.content.notes">
-            <span class="font-medium">{{ t('versionHistory.notesLabel') }}</span>
-            <div class="mt-1 bg-gray-50 p-2 rounded">
-              <LazyMathJax :content="version.content.notes" :enable-markdown="true" />
-            </div>
-          </div>
-
-          <div v-if="!isWikiMode && version.content.etymology">
-            <span class="font-medium">{{ t('versionHistory.etymologyLabel') }}</span>
-            <div class="mt-1 bg-gray-50 p-2 rounded">
-              <LazyMathJax :content="version.content.etymology" :enable-markdown="true" />
-            </div>
-          </div>
-          <!-- Keywords -->
-          <div v-if="!isWikiMode && version.content.gloss_keywords?.length" class="mt-2">
-            <span class="font-medium">{{ t('versionHistory.glossKeywordsLabel') }}</span>
-            <div class="flex flex-wrap gap-2 mt-1">
-              <span
-                v-for="(keyword, idx) in version.content.gloss_keywords"
-                :key="idx"
-                class="inline-flex items-center px-2 py-1 rounded-md text-sm font-medium bg-blue-100 text-blue-800"
-              >
-                {{ keyword.word }}
-                <span v-if="keyword.meaning" class="ml-1 text-blue-600"
-                  >({{ keyword.meaning }})</span
+        <!-- Loading State -->
+        <div v-if="isLoading" class="flex justify-center py-8">
+          <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+        </div>
+        <!-- Version List -->
+        <div v-else class="space-y-4">
+          <div
+            v-for="version in versions"
+            :key="version.version_id"
+            class="border rounded-lg p-4 hover:border-blue-300 transition-colors"
+          >
+            <div class="flex justify-between items-start mb-2">
+              <div class="space-x-2">
+                <span class="font-medium text-gray-800">
+                  <i18n-t keypath="versionHistory.versionBy" tag="span">
+                    <template #versionId>{{ version.version_id }}</template>
+                    <template #username>
+                      <AuthorLink :username="version.username" :author-url="version.author_url" />
+                    </template>
+                  </i18n-t>
+                </span>
+                <p v-if="version.commit_message" class="text-sm text-gray-600 mt-1 italic">
+                  {{ t('versionHistory.commitMessage', { message: version.commit_message }) }}
+                </p>
+                <span
+                  v-if="isRenameVersion(version)"
+                  class="inline-flex mt-1 text-xs font-medium px-2 py-0.5 rounded bg-amber-100 text-amber-800"
                 >
-              </span>
+                  {{ t('versionHistory.renameEvent') }}
+                </span>
+              </div>
+              <span class="text-sm text-gray-500"> {{ formatDate(version.created_at) }} </span>
             </div>
-          </div>
+            <!-- Version Details -->
+            <div class="space-y-2 text-sm text-gray-600">
+              <div v-if="versionLanguage(version)">
+                <span class="font-medium">{{ t('versionHistory.languageLabel') }}</span>
+                {{ versionLanguage(version) }}
+              </div>
+              <div v-if="version.content.word">
+                <span class="font-medium">{{ t('versionHistory.wordLabel') }}</span>
+                {{ version.content.word }}
+              </div>
+              <div>
+                <span class="font-medium">{{
+                  isWikiMode ? t('versionHistory.bodyLabel') : t('versionHistory.definitionLabel')
+                }}</span>
+                <div class="mt-1 bg-gray-50 p-2 rounded">
+                  <LazyMathJax
+                    :content="previewContent(version.content.definition)"
+                    :enable-markdown="true"
+                  />
+                </div>
+              </div>
 
-          <div v-if="!isWikiMode && version.content.place_keywords?.length" class="mt-2">
-            <span class="font-medium">{{ t('versionHistory.placeKeywordsLabel') }}</span>
-            <div class="flex flex-wrap gap-2 mt-1">
-              <span
-                v-for="(keyword, idx) in version.content.place_keywords"
-                :key="idx"
-                class="inline-flex items-center px-2 py-1 rounded-md text-sm font-medium bg-green-100 text-green-800"
+              <div v-if="!isWikiMode && version.content.notes">
+                <span class="font-medium">{{ t('versionHistory.notesLabel') }}</span>
+                <div class="mt-1 bg-gray-50 p-2 rounded">
+                  <LazyMathJax :content="version.content.notes" :enable-markdown="true" />
+                </div>
+              </div>
+
+              <div v-if="!isWikiMode && version.content.etymology">
+                <span class="font-medium">{{ t('versionHistory.etymologyLabel') }}</span>
+                <div class="mt-1 bg-gray-50 p-2 rounded">
+                  <LazyMathJax :content="version.content.etymology" :enable-markdown="true" />
+                </div>
+              </div>
+              <!-- Keywords -->
+              <div v-if="!isWikiMode && version.content.gloss_keywords?.length" class="mt-2">
+                <span class="font-medium">{{ t('versionHistory.glossKeywordsLabel') }}</span>
+                <div class="flex flex-wrap gap-2 mt-1">
+                  <span
+                    v-for="(keyword, idx) in version.content.gloss_keywords"
+                    :key="idx"
+                    class="inline-flex items-center px-2 py-1 rounded-md text-sm font-medium bg-blue-100 text-blue-800"
+                  >
+                    {{ keyword.word }}
+                    <span v-if="keyword.meaning" class="ml-1 text-blue-600"
+                      >({{ keyword.meaning }})</span
+                    >
+                  </span>
+                </div>
+              </div>
+
+              <div v-if="!isWikiMode && version.content.place_keywords?.length" class="mt-2">
+                <span class="font-medium">{{ t('versionHistory.placeKeywordsLabel') }}</span>
+                <div class="flex flex-wrap gap-2 mt-1">
+                  <span
+                    v-for="(keyword, idx) in version.content.place_keywords"
+                    :key="idx"
+                    class="inline-flex items-center px-2 py-1 rounded-md text-sm font-medium bg-green-100 text-green-800"
+                  >
+                    {{ keyword.word }}
+                    <span v-if="keyword.meaning" class="ml-1 text-green-600"
+                      >({{ keyword.meaning }})</span
+                    >
+                  </span>
+                </div>
+              </div>
+            </div>
+            <!-- Action Buttons -->
+            <div class="mt-4 flex items-center space-x-4">
+              <Button
+                v-if="selectedVersion && selectedVersion !== version.version_id"
+                variant="neutral"
+                class="px-3 py-1 text-sm bg-blue-50 text-blue-600 rounded hover:bg-blue-100"
+                @click="compareVersions(version.version_id)"
               >
-                {{ keyword.word }}
-                <span v-if="keyword.meaning" class="ml-1 text-green-600"
-                  >({{ keyword.meaning }})</span
-                >
-              </span>
+                {{ t('versionHistory.compareWith', { versionId: selectedVersion }) }}
+              </Button>
+              <Button
+                v-else-if="!selectedVersion"
+                variant="read"
+                @click="selectedVersion = version.version_id"
+              >
+                {{ t('versionHistory.compareThis') }}
+              </Button>
+              <Button
+                v-if="selectedVersion === version.version_id"
+                variant="cancel"
+                @click="selectedVersion = null"
+              >
+                {{ t('versionHistory.cancelSelection') }}
+              </Button>
+              <Button
+                v-if="auth.state.isLoggedIn && !isRenameVersion(version)"
+                variant="revert"
+                @click="performRevertToVersion(version.version_id)"
+              >
+                {{ t('versionHistory.revertToThis') }}
+              </Button>
             </div>
           </div>
         </div>
-        <!-- Action Buttons -->
-        <div class="mt-4 flex items-center space-x-4">
-          <Button
-            v-if="selectedVersion && selectedVersion !== version.version_id"
-            variant="neutral"
-            class="px-3 py-1 text-sm bg-blue-50 text-blue-600 rounded hover:bg-blue-100"
-            @click="compareVersions(version.version_id)"
+        <PaginationComponent
+          v-if="!isLoading && totalPages > 1"
+          :current-page="currentPage"
+          :total-pages="totalPages"
+          :total="total"
+          :per-page="10"
+          class="mt-6"
+          @prev="() => changePage(currentPage - 1)"
+          @next="() => changePage(currentPage + 1)"
+        />
+      </div>
+    </FeedPageBody>
+    <div ref="paginationHost" class="contents" />
+    <!-- Version Comparison ModalComponent -->
+    <ModalComponent
+      :show="showDiffModal"
+      :title="t('versionHistory.comparisonTitle')"
+      @close="closeDiffModal"
+    >
+      <div class="max-w-4xl">
+        <div v-if="versionDiff" class="space-y-4">
+          <div
+            v-for="change in versionDiff.changes"
+            :key="change.field"
+            class="border rounded-lg p-4"
           >
-            {{ t('versionHistory.compareWith', { versionId: selectedVersion }) }}
-          </Button>
-          <Button
-            v-else-if="!selectedVersion"
-            variant="read"
-            @click="selectedVersion = version.version_id"
-          >
-            {{ t('versionHistory.compareThis') }}
-          </Button>
-          <Button
-            v-if="selectedVersion === version.version_id"
-            variant="cancel"
-            @click="selectedVersion = null"
-          >
-            {{ t('versionHistory.cancelSelection') }}
-          </Button>
-          <Button
-            v-if="auth.state.isLoggedIn && !isRenameVersion(version)"
-            variant="revert"
-            @click="performRevertToVersion(version.version_id)"
-          >
-            {{ t('versionHistory.revertToThis') }}
-          </Button>
+            <h4 class="font-medium text-gray-700 mb-2">{{ formatFieldName(change.field) }}</h4>
+
+            <div class="grid grid-cols-2 gap-4">
+              <div class="space-y-2">
+                <div class="text-sm text-gray-500">{{ t('versionHistory.oldVersion') }}</div>
+
+                <div v-if="change.old_value" class="bg-red-50 p-2 rounded text-red-700">
+                  <template v-if="isPlainTextField(change.field)">{{ change.old_value }}</template>
+                  <LazyMathJax v-else :content="change.old_value" :enable-markdown="true" />
+                </div>
+
+                <div v-else class="text-gray-400 italic">{{ t('versionHistory.noContent') }}</div>
+              </div>
+
+              <div class="space-y-2">
+                <div class="text-sm text-gray-500">{{ t('versionHistory.newVersion') }}</div>
+
+                <div v-if="change.new_value" class="bg-green-50 p-2 rounded text-green-700">
+                  <template v-if="isPlainTextField(change.field)">{{ change.new_value }}</template>
+                  <LazyMathJax v-else :content="change.new_value" :enable-markdown="true" />
+                </div>
+
+                <div v-else class="text-gray-400 italic">{{ t('versionHistory.noContent') }}</div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
-    <PaginationComponent
-      v-if="!isLoading && totalPages > 1"
-      :current-page="currentPage"
-      :total-pages="totalPages"
-      :total="total"
-      :per-page="10"
-      class="mt-6"
-      @prev="() => changePage(currentPage - 1)"
-      @next="() => changePage(currentPage + 1)"
-    />
+    </ModalComponent>
   </div>
-  <!-- Version Comparison ModalComponent -->
-  <ModalComponent
-    :show="showDiffModal"
-    :title="t('versionHistory.comparisonTitle')"
-    @close="closeDiffModal"
-  >
-    <div class="max-w-4xl">
-      <div v-if="versionDiff" class="space-y-4">
-        <div
-          v-for="change in versionDiff.changes"
-          :key="change.field"
-          class="border rounded-lg p-4"
-        >
-          <h4 class="font-medium text-gray-700 mb-2">{{ formatFieldName(change.field) }}</h4>
-
-          <div class="grid grid-cols-2 gap-4">
-            <div class="space-y-2">
-              <div class="text-sm text-gray-500">{{ t('versionHistory.oldVersion') }}</div>
-
-              <div v-if="change.old_value" class="bg-red-50 p-2 rounded text-red-700">
-                <template v-if="isPlainTextField(change.field)">{{ change.old_value }}</template>
-                <LazyMathJax v-else :content="change.old_value" :enable-markdown="true" />
-              </div>
-
-              <div v-else class="text-gray-400 italic">{{ t('versionHistory.noContent') }}</div>
-            </div>
-
-            <div class="space-y-2">
-              <div class="text-sm text-gray-500">{{ t('versionHistory.newVersion') }}</div>
-
-              <div v-if="change.new_value" class="bg-green-50 p-2 rounded text-green-700">
-                <template v-if="isPlainTextField(change.field)">{{ change.new_value }}</template>
-                <LazyMathJax v-else :content="change.new_value" :enable-markdown="true" />
-              </div>
-
-              <div v-else class="text-gray-400 italic">{{ t('versionHistory.noContent') }}</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </ModalComponent>
 </template>
 
 <script setup lang="ts">
@@ -209,6 +214,8 @@ import AuthorLink from '@/components/AuthorLink.vue'
 import LazyMathJax from '@/components/LazyMathJax.vue'
 import ModalComponent from '@/components/ModalComponent.vue'
 import PaginationComponent from '@/components/PaginationComponent.vue'
+import FeedPageBody from '@/components/layout/FeedPageBody.vue'
+import { useFeedPaginationHost } from '@/composables/useFeedPaginationHost'
 import { useAuth } from '@/composables/useAuth'
 import { useError } from '@/composables/useError'
 import { useSeoHead } from '@/composables/useSeoHead'
@@ -216,6 +223,7 @@ import { useSeoHead } from '@/composables/useSeoHead'
 const { t, locale } = useI18n()
 
 const route = useRoute()
+const paginationHost = useFeedPaginationHost()
 const auth = useAuth()
 
 const isLoading = ref(true)

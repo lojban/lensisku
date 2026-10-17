@@ -352,20 +352,16 @@
       @collection-updated="setCollections($event)"
     />
 
-    <div v-if="!showTrendingHome" class="feed-page__footer">
-      <div class="feed-page__footer-inner">
-        <div class="feed-page__pagination">
-          <PaginationComponent
-            :current-page="currentPage"
-            :total-pages="totalPages"
-            :total="total"
-            :per-page="10"
-            @prev="prevPage"
-            @next="nextPage"
-          />
-        </div>
-      </div>
-    </div>
+    <PaginationComponent
+      v-if="!showTrendingHome"
+      :current-page="currentPage"
+      :total-pages="totalPages"
+      :total="total"
+      :per-page="10"
+      @prev="prevPage"
+      @next="nextPage"
+    />
+    <div ref="paginationHost" class="contents" />
   </div>
 </template>
 
@@ -406,6 +402,7 @@ import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import PaginationComponent from '@/components/PaginationComponent.vue'
 import ActivityFeed from '@/components/activity/ActivityFeed.vue'
 import FeedPageBody from '@/components/layout/FeedPageBody.vue'
+import { useFeedPaginationHost } from '@/composables/useFeedPaginationHost'
 import { useLocalePath } from '@/composables/useLocalePath'
 import SearchForm from '@/components/SearchForm.vue'
 import CombinedFiltersSkeleton from '@/components/skeletons/CombinedFiltersSkeleton.vue'
@@ -548,6 +545,7 @@ const collectionMatches = ref<CollectionDefinitionCard[]>([])
 
 const router = useRouter()
 const route = useRoute()
+const paginationHost = useFeedPaginationHost()
 const expandCollectionItemId = computed(() => {
   const n = parseInt(queryStr(route.query.expand_ci), 10)
   return Number.isFinite(n) && n > 0 ? n : null
