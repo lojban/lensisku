@@ -559,7 +559,7 @@
             :to="definitionDiscussionLink"
             class="ui-btn--read ui-btn--group-item inline-flex items-center justify-center gap-2"
           >
-            <AudioWaveform class="h-4 w-4 shrink-0" />
+            <WaveIcon class="h-4 w-4 shrink-0" />
             <span
               v-if="definition.comment_count && definition.comment_count > 0"
               class="bg-gray-100 px-1.5 rounded-md border"
@@ -696,7 +696,7 @@
 </template>
 
 <script setup lang="ts">
-import { Button, Input } from '@packages/ui'
+import { Button, Input, WaveIcon } from '@packages/ui'
 import {
   ArrowUp,
   ArrowDown,
@@ -705,7 +705,6 @@ import {
   Lock,
   MessageSquare,
   Clock,
-  AudioWaveform,
   MessageSquarePlus,
   MessageSquareMore,
   MinusCircle,

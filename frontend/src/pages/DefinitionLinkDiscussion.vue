@@ -136,7 +136,7 @@
                 :aria-label="t('commentList.newWave')"
                 @click="handleNewTopLevelComment"
               >
-                <AudioWaveform class="h-4 w-4 shrink-0 text-purple-600" />
+                <WaveIcon class="wave-icon h-4 w-4 shrink-0" />
                 <span>{{ t('commentList.newWave') }}</span>
               </Button>
             </div>
@@ -227,7 +227,7 @@
                 :aria-label="t('commentList.newDiscussionWave')"
                 @click="handleNewTopLevelComment"
               >
-                <AudioWaveform class="h-6 w-6 shrink-0 text-purple-600" />
+                <WaveIcon class="wave-icon h-6 w-6 shrink-0" />
                 <span>{{ t('commentList.newDiscussionWave') }}</span>
               </Button>
             </div>
@@ -240,15 +240,8 @@
 </template>
 
 <script setup lang="ts">
-import { Button, Checkbox } from '@packages/ui'
-import {
-  ArrowUpRight,
-  AudioWaveform,
-  MessageCircle,
-  MessageSquare,
-  Loader2,
-  Link as LinkIcon,
-} from '@lucide/vue'
+import { Button, Checkbox, WaveIcon } from '@packages/ui'
+import { ArrowUpRight, MessageCircle, MessageSquare, Loader2, Link as LinkIcon } from '@lucide/vue'
 import { ref, computed, onMounted, nextTick, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'

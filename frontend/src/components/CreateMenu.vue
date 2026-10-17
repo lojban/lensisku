@@ -38,8 +38,15 @@
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { Plus, Waves, BookPlus } from '@lucide/vue'
-import { FabButton, ToolbarSelectDropdown, ToolbarSelectDropdownItem, WikiIcon } from '@packages/ui'
+import { Plus } from '@lucide/vue'
+import {
+  DefinitionCreateIcon,
+  FabButton,
+  ToolbarSelectDropdown,
+  ToolbarSelectDropdownItem,
+  WaveIcon,
+  WikiIcon,
+} from '@packages/ui'
 import { useLocalePath } from '@/composables/useLocalePath'
 defineProps({ floating: { type: Boolean, default: false } })
 const router = useRouter()
@@ -48,14 +55,14 @@ const { t } = useI18n()
 const choices = computed(() => [
   {
     path: '/comments/new-thread',
-    icon: Waves,
+    icon: WaveIcon,
     iconClass: 'fab-menu-icon--discussion',
     label: t('creation.newDiscussion'),
     description: t('creation.discussionDescription'),
   },
   {
     path: '/valsi/add',
-    icon: BookPlus,
+    icon: DefinitionCreateIcon,
     iconClass: 'fab-menu-icon--definition',
     label: t('creation.newDefinition'),
     description: t('creation.definitionDescription'),

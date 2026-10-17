@@ -19,8 +19,8 @@
 </template>
 
 <script setup lang="ts">
-import { BookOpen, BookMarked, Mail, MessagesSquare } from '@lucide/vue'
-import { WikiIcon } from '@packages/ui'
+import { Mail, MessagesSquare } from '@lucide/vue'
+import { DefinitionIcon, EntryIcon, WikiIcon } from '@packages/ui'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 
@@ -44,29 +44,29 @@ const { t } = useI18n()
 
 const typeConfig = {
   definition: {
-    icon: BookOpen,
-    bg: 'bg-blue-50',
-    text: 'text-blue-700',
+    icon: DefinitionIcon,
+    bg: 'definition-chip',
+    text: '',
   },
   valsi: {
-    icon: BookMarked,
-    bg: 'bg-emerald-50',
-    text: 'text-emerald-700',
+    icon: EntryIcon,
+    bg: 'entry-chip',
+    text: '',
   },
   mail: {
     icon: Mail,
-    bg: 'bg-violet-50',
-    text: 'text-violet-700',
+    bg: 'mail-chip',
+    text: '',
   },
   jbotcan: {
     icon: null,
-    bg: 'bg-amber-50',
-    text: 'text-amber-700',
+    bg: 'jbotcan-chip',
+    text: '',
   },
   freeforums: {
     icon: MessagesSquare,
-    bg: 'bg-orange-50',
-    text: 'text-orange-700',
+    bg: 'freeforums-chip',
+    text: '',
   },
   wiki: {
     icon: WikiIcon,

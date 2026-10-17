@@ -52,7 +52,26 @@ This document is the **human-readable contract** for product, design, QA, and en
 - **Navigation / links**: `text-nav-link` (`#007bff`) and **active** state via `.nav-link-active` (see `NavLink`, `navbar-item`). Mobile drawer uses `.mobile-nav-grid` (two columns) and `.mobile-nav-row` (hover/focus only—link color comes from NavLink). When logged in, **Logout** sits on the same row as **My activity and profile**.
 - **Semantic blues** in surfaces: borders and hovers (`border-blue-*`, `hover:border-blue-*`) for **interactive lists** (`.surface-list-row`, `.message-thread-card`, …).
 - **Status**: green success, red danger, amber warning—prefer existing **badge** and **btn** semantics over new hex values. **Yellow** is reserved for **edit / apply** (`ui-btn--edit`).
-- **Content-type icons**: **definitions** use emerald (`.fab-menu-icon--definition`, `text-emerald-600`). **Wiki**, where a hue is required, uses black (`.wiki-icon` / `.fab-menu-icon--wiki`, `text-black`) — do not reuse the definition green. Do not put that class on `WikiIcon` itself; tabs and filters inherit `currentColor`. Wiki chips use `.wiki-chip` (`bg-gray-100 text-black`).
+- **Content-type icons**: one glyph per concept (§5c). Import from `@packages/ui` (`contentIcons.ts`, `WikiIcon.vue`). Hues, when required: **definitions** emerald (`.fab-menu-icon--definition`, `.definition-chip`); **waves** purple (`.wave-icon`, `.fab-menu-icon--discussion`); **wiki** black (`.wiki-icon` / `.fab-menu-icon--wiki`, `.wiki-chip`). Do not paint those hue classes onto the icon component itself when it sits in a tab, filter, or colored button — those inherit `currentColor`.
+
+### 5c. Content-type icons
+
+| Concept                                                                     | Glyph              | Import from `@packages/ui` | Hue when required                                             |
+| --------------------------------------------------------------------------- | ------------------ | -------------------------- | ------------------------------------------------------------- |
+| **Entry** (valsi / dictionary headword, entry page title, “In entry”)       | Open book          | `EntryIcon`                | `.entry-chip` (blue). Page title inherits text color.         |
+| **Definition** (one sense: “In definition”, definitions tabs, empty states) | Closed book        | `DefinitionIcon`           | `.definition-chip` and `.fab-menu-icon--definition` (emerald) |
+| **Create definition**                                                       | Closed book + plus | `DefinitionCreateIcon`     | `.fab-menu-icon--definition` (emerald)                        |
+| **Wiki** (article, tab, chip, **create wiki**)                              | Book + **W**       | `WikiIcon`                 | `.wiki-icon` / `.fab-menu-icon--wiki` / `.wiki-chip` (black)  |
+| **Wave** (discuss, new discussion, new wave)                                | Audio waveform     | `WaveIcon`                 | `.wave-icon` / `.fab-menu-icon--discussion` (purple)          |
+
+**Rules**
+
+1. The same concept uses the same glyph on the page header, the chip, the tab, and the create action. “In entry” is `EntryIcon`, the same open book as the entry page. “Create wiki” is `WikiIcon`, the same book-W as every other wiki control.
+2. Do not substitute Lucide `BookA`, `BookMarked`, `BookOpen`, `Globe`, or `Globe2` for wiki. Do not use Lucide `Waves` (ocean waves) for a discussion — that glyph is `WaveIcon`.
+3. `BookOpen` may still mark **courses, flashcards, and collection covers**. Those are not dictionary entries.
+4. Comment lists and comment filters stay `MessageSquare`. A **wave** (starting or opening a discussion) is `WaveIcon`.
+5. Source chips use the named classes: `.entry-chip`, `.definition-chip`, `.wiki-chip`, `.mail-chip`, `.jbotcan-chip`, `.freeforums-chip`.
+
 - **Selma'o / tags**: `.badge-definition-tag` (purple chip)—use for grammatical tags, not general emphasis.
 
 ### 5b. Transfer-direction icons (import / upload · export / download)
@@ -196,9 +215,9 @@ Application code and **`Button.vue`** / **`IconButton.vue`** should use **semant
 
 ### 10.1 “Waves” (comment threads)
 
-- **New wave** (root): `inline-flex items-center gap-2 btn-aqua-white` + Lucide **`AudioWaveform`**, icon `text-purple-600` (see `CommentList.vue`).
+- **New wave** / **discuss**: `WaveIcon` from `@packages/ui` (audio waveform). When the control is not already a colored button, add `.wave-icon` (purple). See the create menu, `DefinitionLinkDiscussion.vue`, and the entry page.
 - **Wave root** (jump to root): `inline-flex items-center btn-aqua-slate` + **`Home`** icon.
-- Do **not** use ad-hoc `Plus` or raw `bg-blue-600` for these two actions.
+- Do **not** use Lucide `Waves`, ad-hoc `Plus`, or raw `bg-blue-600` for these actions.
 
 ### 10.2 Assistant chat
 

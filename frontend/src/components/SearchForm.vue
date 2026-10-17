@@ -31,14 +31,15 @@
 <script setup lang="ts">
 import { computed, ref, watch, onBeforeUnmount } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { BookOpen, MessageSquare } from '@lucide/vue'
+import { MessageSquare } from '@lucide/vue'
+import { EntryIcon } from '@packages/ui'
 import SearchInput from '@/components/SearchInput.vue'
 import { normalizeSearchQuery } from '@/utils/searchQueryUtils'
 
 const { t } = useI18n()
 
 const modes = ref([
-  { label: t('searchForm.modes.dictionary'), value: 'dictionary', icon: BookOpen },
+  { label: t('searchForm.modes.dictionary'), value: 'dictionary', icon: EntryIcon },
   { label: t('searchForm.modes.comments'), value: 'comments', icon: MessageSquare },
 ])
 

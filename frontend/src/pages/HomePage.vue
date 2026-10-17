@@ -83,7 +83,10 @@
               >
                 <template #label>{{ $t('home.addDefinition') }}</template>
                 <ToolbarSelectDropdownItem @click="router.push(localePath('/valsi/add'))">
-                  <BookPlus class="h-4 w-4 shrink-0" aria-hidden="true" />
+                  <DefinitionCreateIcon
+                    class="fab-menu-icon--definition h-4 w-4 shrink-0"
+                    aria-hidden="true"
+                  />
                   {{ $t('home.createDefinition') }}
                 </ToolbarSelectDropdownItem>
                 <ToolbarSelectDropdownItem
@@ -111,7 +114,7 @@
                 button-classes="ui-btn--neutral"
                 @click="handleNewFreeComment"
               >
-                <template #icon> <AudioWaveform class="h-4 w-4 text-purple-600" /> </template>
+                <template #icon> <WaveIcon class="wave-icon h-4 w-4" /> </template>
               </IconButton>
             </div>
 
@@ -367,7 +370,7 @@
 
 <script setup lang="ts">
 import { jwtDecode } from 'jwt-decode'
-import { MessageSquare, AudioWaveform, X, BookPlus, StarPlus } from '@lucide/vue'
+import { MessageSquare, X, StarPlus } from '@lucide/vue'
 import { ref, onMounted, watch, computed, onBeforeUnmount, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 
@@ -392,7 +395,9 @@ import WikiContent from '@/components/WikiContent.vue'
 import { renderMailContent } from '@/utils/renderMailContent'
 import {
   Button,
+  DefinitionCreateIcon,
   IconButton,
+  WaveIcon,
   ToolbarSelectDropdown,
   ToolbarSelectDropdownItem,
   SortFieldOrderDropdown,

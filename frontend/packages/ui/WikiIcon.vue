@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
- * Wiki glyph: Lucide-style book outline with a W (not BookA).
- * Use this for wiki affordances app-wide instead of importing BookA from Lucide.
+ * Wiki glyph: Lucide-style book outline with a W (brand book §5c).
+ * Use this for every wiki affordance, including “create wiki”.
  */
 defineOptions({ name: 'WikiIcon', inheritAttrs: false })
 </script>

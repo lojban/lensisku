@@ -192,15 +192,44 @@ export default {
         '.fab-menu-icon--graph': {
           '@apply text-cornflower-600': {},
         },
-        '.fab-menu-icon--discussion': {
-          '@apply text-sky-600': {},
+        /**
+         * Wave / discuss glyphs (`WaveIcon`) when a hue is required. Purple — same as
+         * “new wave” on comment threads. Do not put this on the icon when it sits inside
+         * a colored button (inherit `currentColor`).
+         */
+        '.wave-icon': {
+          '@apply text-purple-600': {},
         },
+        '.fab-menu-icon--discussion': {
+          '@apply text-purple-600': {},
+        },
+        /** Definition type and “create definition” (`DefinitionIcon`, `DefinitionCreateIcon`). */
         '.fab-menu-icon--definition': {
           '@apply text-emerald-600': {},
         },
         /**
+         * Entry (valsi) chips: open book on blue. Distinct from definition emerald.
+         * Page-title entry icons inherit `currentColor` — do not force this fill there.
+         */
+        '.entry-chip': {
+          '@apply bg-blue-50 text-blue-700': {},
+        },
+        /** Definition chips: closed book on emerald (same hue as create-definition). */
+        '.definition-chip': {
+          '@apply bg-emerald-50 text-emerald-700': {},
+        },
+        '.mail-chip': {
+          '@apply bg-violet-50 text-violet-700': {},
+        },
+        '.jbotcan-chip': {
+          '@apply bg-amber-50 text-amber-700': {},
+        },
+        '.freeforums-chip': {
+          '@apply bg-orange-50 text-orange-700': {},
+        },
+        /**
          * Wiki glyphs where a hue is required (create menu, chips). Black — not the emerald
-         * used for new definitions. Do not put this on `WikiIcon` itself: tabs and other
+         * used for definitions. Do not put this on `WikiIcon` itself: tabs and other
          * chrome inherit `currentColor` (inactive gray, active tab color).
          */
         '.wiki-icon': {

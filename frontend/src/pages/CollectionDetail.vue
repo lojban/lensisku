@@ -1519,6 +1519,7 @@ import TabbedPageHeader from '@/components/TabbedPageHeader.vue'
 import {
   Button,
   Checkbox,
+  DefinitionIcon,
   CollectionCoverLightbox,
   FileInput,
   Input,
@@ -1633,7 +1634,7 @@ const addItemTabs = computed(() => [
   {
     key: 'definition',
     label: t('collectionDetail.dictionaryDefinitionsTab'),
-    icon: BookOpen,
+    icon: DefinitionIcon,
   },
   {
     key: 'newDefinition',

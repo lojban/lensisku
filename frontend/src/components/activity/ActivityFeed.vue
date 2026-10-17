@@ -67,9 +67,8 @@ import {
 } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { Button } from '@packages/ui'
-import { Bell, BookOpen, List, MessageSquare } from '@lucide/vue'
-import { WikiIcon } from '@packages/ui'
+import { Button, DefinitionIcon, WikiIcon } from '@packages/ui'
+import { Bell, List, MessageSquare } from '@lucide/vue'
 import DiscussionComposer from './DiscussionComposer.vue'
 import ActivityCard from './ActivityCard.vue'
 import LiveChatCardPlaceholder from './LiveChatCardPlaceholder.vue'
@@ -132,7 +131,7 @@ const feedSlots = computed((): FeedSlot[] => {
 const tabs = computed(() => [
   { key: 'all', label: t('activityFeed.all'), icon: List },
   { key: 'discussions', label: t('activityFeed.discussions'), icon: MessageSquare },
-  { key: 'definitions', label: t('activityFeed.definitions'), icon: BookOpen },
+  { key: 'definitions', label: t('activityFeed.definitions'), icon: DefinitionIcon },
   { key: 'wiki', label: t('activityFeed.wiki'), icon: WikiIcon },
   { key: 'news', label: t('recentChanges.news'), icon: Bell },
 ])

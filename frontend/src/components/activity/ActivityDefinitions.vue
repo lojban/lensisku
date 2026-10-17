@@ -1,7 +1,7 @@
 <template>
   <div class="space-y-4">
     <div v-if="definitions.length === 0" class="text-center py-8 bg-gray-50 rounded-lg">
-      <Book class="mx-auto h-12 w-12 text-blue-400" />
+      <DefinitionIcon class="mx-auto h-12 w-12 text-emerald-600" />
       <p class="text-gray-600">{{ emptyMessage }}</p>
     </div>
     <DictionaryEntries
@@ -16,7 +16,7 @@
 </template>
 
 <script setup lang="ts">
-import { Book } from '@lucide/vue'
+import { DefinitionIcon } from '@packages/ui'
 import { computed, ref, watch, onMounted, type PropType } from 'vue'
 import { useI18n } from 'vue-i18n'
 

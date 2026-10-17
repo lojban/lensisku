@@ -25,8 +25,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Waves, BookPlus, ChevronRight } from '@lucide/vue'
-import { WikiIcon } from '@packages/ui'
+import { ChevronRight } from '@lucide/vue'
+import { DefinitionCreateIcon, WaveIcon, WikiIcon } from '@packages/ui'
 import { useLocalePath } from '@/composables/useLocalePath'
 import { useSeoHead } from '@/composables/useSeoHead'
 const { t } = useI18n()
@@ -35,14 +35,14 @@ useSeoHead({ title: () => t('creation.create') })
 const choices = computed(() => [
   {
     path: '/comments/new-thread',
-    icon: Waves,
+    icon: WaveIcon,
     iconClass: 'fab-menu-icon--discussion',
     label: t('creation.newDiscussion'),
     description: t('creation.discussionDescription'),
   },
   {
     path: '/valsi/add',
-    icon: BookPlus,
+    icon: DefinitionCreateIcon,
     iconClass: 'fab-menu-icon--definition',
     label: t('creation.newDefinition'),
     description: t('creation.definitionDescription'),

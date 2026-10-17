@@ -3,7 +3,7 @@
     <article v-if="valsi" class="space-y-3" itemscope itemtype="https://schema.org/DefinedTerm">
       <PageHeader title-as="h1" :title-attrs="{ itemprop: 'name' }">
         <template #icon>
-          <BookOpen class="h-7 w-7 shrink-0 sm:h-8 sm:w-8" aria-hidden="true" />
+          <EntryIcon class="h-7 w-7 shrink-0 sm:h-8 sm:w-8" aria-hidden="true" />
         </template>
         <template #title>{{ valsi.word }}</template>
         <template #title-after>
@@ -67,7 +67,7 @@
       <!-- Discussion Section -->
       <div class="flex flex-wrap gap-2 w-full lg:w-auto justify-center">
         <RouterLink :to="`/comments?valsi_id=${valsi.valsiid}`" class="ui-btn--neutral-slate">
-          <AudioWaveform class="w-4 h-4" />
+          <WaveIcon class="h-4 w-4" />
           <span
             v-if="(valsi.comment_count ?? 0) > 0"
             class="text-xs font-medium bg-white/40 px-1.5 rounded-md border border-white/30"
@@ -176,9 +176,9 @@
                 <div class="mt-2 flex items-center space-x-3">
                   <RouterLink
                     :to="`/definition_link/${trans.link_id}/discussion`"
-                    class="text-xs font-bold text-blue-500 hover:text-blue-700 flex items-center bg-blue-50 px-2 py-1 rounded transition-colors"
+                    class="flex items-center gap-1 rounded bg-blue-50 px-2 py-1 text-xs font-bold text-blue-500 transition-colors hover:text-blue-700"
                   >
-                    <MessageCircle class="h-3 w-3 mr-1" />
+                    <WaveIcon class="h-3 w-3 shrink-0" />
                     {{ t('definitionLinkDiscussion.discussion') }}
                   </RouterLink>
                 </div>
@@ -201,7 +201,7 @@
 </template>
 
 <script setup lang="ts">
-import { AudioWaveform, BookOpen, Trash2, MessageCircle } from '@lucide/vue'
+import { Trash2 } from '@lucide/vue'
 import { ref, onMounted, watch, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
@@ -217,7 +217,7 @@ import {
 import AudioPlayer from '@/components/AudioPlayer.vue'
 import DefinitionCard from '@/components/DefinitionCard.vue'
 import PageHeader from '@/components/layout/PageHeader.vue'
-import { Button, IconButton } from '@packages/ui'
+import { Button, EntryIcon, IconButton, WaveIcon } from '@packages/ui'
 import SubscriptionControls from '@/components/SubscriptionControls.vue'
 import { useAuth } from '@/composables/useAuth'
 import { useCollectionsCache } from '@/composables/useCollectionsCache'

@@ -35,7 +35,8 @@
 </template>
 
 <script setup lang="ts">
-import { MessageSquare, Book } from '@lucide/vue'
+import { MessageSquare } from '@lucide/vue'
+import { DefinitionIcon } from '@packages/ui'
 import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
@@ -201,7 +202,7 @@ const tabs = computed(() => [
   {
     key: 'definitions',
     label: t('userContributions.definitions'),
-    icon: Book,
+    icon: DefinitionIcon,
   },
 ])
 
