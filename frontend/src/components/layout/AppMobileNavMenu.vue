@@ -48,7 +48,11 @@
         @click="$emit('close')"
       >
         <Users class="h-5 w-5" />
-        {{ auth.state.authorities?.includes('manage_roles') ? t('nav.iamUsers') : t('nav.users') }}
+        {{
+          auth.state.authorities?.includes('manage_roles')
+            ? t('nav.iamUsers')
+            : t('nav.usersLanguages')
+        }}
       </NavLink>
       <NavLink to="/assistant" class="mobile-nav-row" @click="$emit('close')">
         <Bot class="h-5 w-5" /> {{ t('nav.assistant') }}

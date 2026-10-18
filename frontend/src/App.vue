@@ -91,7 +91,7 @@
                   {{
                     auth.state.authorities?.includes('manage_roles')
                       ? $t('nav.iamUsers')
-                      : $t('nav.users')
+                      : $t('nav.usersLanguages')
                   }}
                 </NavLink>
                 <NavLink

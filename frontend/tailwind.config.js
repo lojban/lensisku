@@ -585,7 +585,7 @@ export default {
         },
         /** Anchored multiselect / popover list under a trigger. */
         '.dropdown-floating-panel': {
-          '@apply absolute left-0 right-0 z-50 mt-1 flex min-h-0 flex-col rounded-lg border border-gray-200 bg-white py-2 shadow-lg':
+          '@apply absolute left-0 right-0 z-50 mt-1 flex min-h-0 flex-col overflow-hidden rounded-lg border border-gray-200 bg-white py-2 shadow-lg':
             {},
         },
         /** Language / collection dropdown: full viewport width on mobile (teleported). */

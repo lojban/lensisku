@@ -24,7 +24,7 @@
       <div
         v-show="open"
         ref="panelRef"
-        class="dropdown-floating-panel"
+        class="dropdown-floating-panel overflow-hidden"
         :class="{ 'dropdown-floating-panel--viewport': useViewportPanel }"
         role="presentation"
         :style="panelViewportStyle"
@@ -64,7 +64,7 @@
         <slot name="after-select-all" />
 
         <ul
-          class="min-h-0 flex-1 overflow-y-auto overscroll-contain px-1 py-0.5"
+          class="min-h-0 overflow-y-auto overscroll-contain px-1 py-0.5"
           role="listbox"
           :aria-multiselectable="!singleSelect"
         >
@@ -306,8 +306,8 @@ const PANEL_GAP_PX = 4
 const VIEWPORT_BOTTOM_PAD_PX = 8
 /** Max panel height when there is plenty of vertical space (matches previous 24rem cap) */
 const PANEL_MAX_REM = 24
-/** Minimum panel height when the viewport allows (user request: not below 20rem) */
-const PANEL_MIN_REM = 20
+/** Flip above the trigger when less than this much room remains below. */
+const PANEL_FLIP_REM = 12
 
 const open = ref(false)
 const searchQuery = ref('')
@@ -349,13 +349,11 @@ function updatePanelViewportStyle() {
   const availableAbove = Math.max(0, rect.top - PANEL_GAP_PX - VIEWPORT_BOTTOM_PAD_PX)
   const openAbove =
     useViewportPanel.value &&
-    availableBelow < PANEL_MIN_REM * rem &&
+    availableBelow < PANEL_FLIP_REM * rem &&
     availableAbove > availableBelow
   const maxPx = Math.min(openAbove ? availableAbove : availableBelow, PANEL_MAX_REM * rem)
-  const minPx = Math.min(PANEL_MIN_REM * rem, maxPx)
   const style: Record<string, string> = {
     maxHeight: `${maxPx}px`,
-    minHeight: `${minPx}px`,
   }
   if (useViewportPanel.value) {
     if (openAbove) {

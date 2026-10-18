@@ -32,7 +32,7 @@
     </div>
 
     <Teleport defer to="#iam-tab-toolbar" :disabled="!embedded">
-      <div v-if="!isLoading && languages.length > 0" class="toolbar-panel">
+      <div class="toolbar-panel">
         <div class="toolbar-row">
           <div class="toolbar-search-slot">
             <SearchInput
