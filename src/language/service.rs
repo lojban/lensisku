@@ -251,6 +251,14 @@ async fn tag_taken(
     Ok(row.is_some())
 }
 
+fn map_language_db(error: tokio_postgres::Error) -> LanguageWriteError {
+    if error.code() == Some(&tokio_postgres::error::SqlState::UNIQUE_VIOLATION) {
+        LanguageWriteError::Conflict("A language with this tag already exists.")
+    } else {
+        LanguageWriteError::Db(Box::new(error))
+    }
+}
+
 pub async fn create_language(
     pool: &Pool,
     request: &UpsertLanguageRequest,
@@ -280,7 +288,7 @@ pub async fn create_language(
             ],
         )
         .await
-        .map_err(|error| LanguageWriteError::Db(Box::new(error)))?;
+        .map_err(map_language_db)?;
     Ok(Language::from(row))
 }
 
@@ -319,7 +327,7 @@ pub async fn update_language(
             ],
         )
         .await
-        .map_err(|error| LanguageWriteError::Db(Box::new(error)))?;
+        .map_err(map_language_db)?;
     row.map(Language::from).ok_or(LanguageWriteError::NotFound)
 }
 

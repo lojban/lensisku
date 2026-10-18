@@ -7,6 +7,7 @@
         :page-title="headerTitle"
         @tab-click="handleTabClick"
       />
+      <div id="iam-tab-toolbar" class="empty:hidden [&:not(:empty)]:mt-2" />
     </div>
     <FeedPageBody>
       <!-- Users Tab Content -->

@@ -1,57 +1,58 @@
 <template>
   <div class="space-y-6">
-    <!-- Search and Filter Controls (compact single row) -->
-    <div class="toolbar-panel">
-      <div class="toolbar-row">
-        <div class="toolbar-search-slot">
-          <SearchInput
-            :model-value="searchQuery"
-            :is-loading="isSearching"
-            :placeholder="t('userList.searchPlaceholder')"
-            :show-search-icon="true"
-            @update:model-value="$emit('update:searchQuery', $event)"
-            @keyup.enter="$emit('updateSearch')"
-            @clear="$emit('clearSearch')"
-          />
-        </div>
-
-        <div class="toolbar-field-row">
-          <label class="toolbar-control-label">{{ t('components.userListTab.roleLabel') }}</label>
-          <div class="toolbar-dropdown-anchor">
-            <ToolbarSelectDropdown variant="role">
-              <template #label>{{ roleFilterTriggerLabel }}</template>
-              <ToolbarSelectDropdownItem @click="$emit('update:roleFilter', '')">
-                {{ t('components.userListTab.allRoles') }}
-              </ToolbarSelectDropdownItem>
-              <ToolbarSelectDropdownItem
-                v-for="role in availableRoles"
-                :key="role.name"
-                @click="$emit('update:roleFilter', role.name)"
-              >
-                {{ translateRole(role.name) }}
-              </ToolbarSelectDropdownItem>
-            </ToolbarSelectDropdown>
-          </div>
-        </div>
-
-        <div class="toolbar-field-row">
-          <label class="toolbar-control-label" for="user-list-sort-by">{{
-            t('components.userListTab.sortByLabel')
-          }}</label>
-          <div class="toolbar-dropdown-anchor">
-            <SortFieldOrderDropdown
-              id="user-list-sort-by"
-              :field="sortBy"
-              :order="sortOrder"
-              :options="sortFieldOptions"
-              :aria-label="sortControlsAriaLabel"
-              trigger-class=""
-              @select="selectSort"
+    <Teleport defer to="#iam-tab-toolbar">
+      <div class="toolbar-panel">
+        <div class="toolbar-row">
+          <div class="toolbar-search-slot">
+            <SearchInput
+              :model-value="searchQuery"
+              :is-loading="isSearching"
+              :placeholder="t('userList.searchPlaceholder')"
+              :show-search-icon="true"
+              @update:model-value="$emit('update:searchQuery', $event)"
+              @keyup.enter="$emit('updateSearch')"
+              @clear="$emit('clearSearch')"
             />
+          </div>
+
+          <div class="toolbar-field-row">
+            <label class="toolbar-control-label">{{ t('components.userListTab.roleLabel') }}</label>
+            <div class="toolbar-dropdown-anchor">
+              <ToolbarSelectDropdown variant="role">
+                <template #label>{{ roleFilterTriggerLabel }}</template>
+                <ToolbarSelectDropdownItem @click="$emit('update:roleFilter', '')">
+                  {{ t('components.userListTab.allRoles') }}
+                </ToolbarSelectDropdownItem>
+                <ToolbarSelectDropdownItem
+                  v-for="role in availableRoles"
+                  :key="role.name"
+                  @click="$emit('update:roleFilter', role.name)"
+                >
+                  {{ translateRole(role.name) }}
+                </ToolbarSelectDropdownItem>
+              </ToolbarSelectDropdown>
+            </div>
+          </div>
+
+          <div class="toolbar-field-row">
+            <label class="toolbar-control-label" for="user-list-sort-by">{{
+              t('components.userListTab.sortByLabel')
+            }}</label>
+            <div class="toolbar-dropdown-anchor">
+              <SortFieldOrderDropdown
+                id="user-list-sort-by"
+                :field="sortBy"
+                :order="sortOrder"
+                :options="sortFieldOptions"
+                :aria-label="sortControlsAriaLabel"
+                trigger-class=""
+                @select="selectSort"
+              />
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </Teleport>
     <!-- User list -->
     <div class="min-h-[400px]">
       <!-- Loading state -->
@@ -216,8 +217,7 @@ const translateRole = (role: string | undefined) => {
   const lowerRole = role.toLowerCase()
   const translationKey = `roles.${lowerRole}`
   const translated = t(translationKey)
-  // If translation doesn't exist, return original role name
-  return translated !== translationKey ? translated : role
+  return translated !== translationKey ? translated : role.charAt(0).toUpperCase() + role.slice(1)
 }
 
 const getRoleClass = (role: string | undefined) => {

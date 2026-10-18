@@ -50,17 +50,6 @@
         <Users class="h-5 w-5" />
         {{ auth.state.authorities?.includes('manage_roles') ? t('nav.iamUsers') : t('nav.users') }}
       </NavLink>
-      <NavLink
-        :to="
-          auth.state.isLoggedIn
-            ? { path: '/users', query: { tab: 'dictionaryLanguages' } }
-            : '/languages'
-        "
-        class="mobile-nav-row"
-        @click="$emit('close')"
-      >
-        <Languages class="h-5 w-5" /> {{ t('nav.dictionaryLanguages') }}
-      </NavLink>
       <NavLink to="/assistant" class="mobile-nav-row" @click="$emit('close')">
         <Bot class="h-5 w-5" /> {{ t('nav.assistant') }}
       </NavLink>
@@ -111,7 +100,6 @@ import {
   Bot,
   Share2,
   FilePlus,
-  Languages,
 } from '@lucide/vue'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'

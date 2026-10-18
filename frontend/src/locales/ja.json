@@ -517,7 +517,8 @@
     "editor": "編集者",
     "user": "ユーザー",
     "unconfirmed": "未確認",
-    "blocked": "ブロック済み"
+    "blocked": "ブロック済み",
+    "importer": "インポーター"
   },
   "userList": {
     "users": "ユーザー",

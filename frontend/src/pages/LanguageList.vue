@@ -31,76 +31,77 @@
       </div>
     </div>
 
-    <!-- Toolbar -->
-    <div v-if="!isLoading && languages.length > 0" class="toolbar-panel">
-      <div class="toolbar-row">
-        <div class="toolbar-search-slot">
-          <SearchInput
-            v-model="searchQuery"
-            :is-loading="isSearching"
-            :placeholder="t('languageList.searchPlaceholder')"
-            :show-search-icon="true"
-            @clear="clearSearch"
-          />
-        </div>
-
-        <div class="toolbar-field-row">
-          <label class="toolbar-control-label">{{
-            t('languageList.filters.forLojbanLabel')
-          }}</label>
-          <div class="toolbar-dropdown-anchor">
-            <ToolbarSelectDropdown>
-              <template #label>{{ forLojbanTriggerLabel }}</template>
-              <ToolbarSelectDropdownItem
-                :class="{ 'bg-gray-100': !forLojbanFilter }"
-                @click="setForLojbanFilter('')"
-              >
-                {{ t('languageList.filters.all') }}
-              </ToolbarSelectDropdownItem>
-              <ToolbarSelectDropdownItem
-                :class="{ 'bg-gray-100': forLojbanFilter === 'yes' }"
-                @click="setForLojbanFilter('yes')"
-              >
-                {{ t('languageList.filters.forLojban.yes') }}
-              </ToolbarSelectDropdownItem>
-              <ToolbarSelectDropdownItem
-                :class="{ 'bg-gray-100': forLojbanFilter === 'no' }"
-                @click="setForLojbanFilter('no')"
-              >
-                {{ t('languageList.filters.forLojban.no') }}
-              </ToolbarSelectDropdownItem>
-            </ToolbarSelectDropdown>
+    <Teleport defer to="#iam-tab-toolbar" :disabled="!embedded">
+      <div v-if="!isLoading && languages.length > 0" class="toolbar-panel">
+        <div class="toolbar-row">
+          <div class="toolbar-search-slot">
+            <SearchInput
+              v-model="searchQuery"
+              :is-loading="isSearching"
+              :placeholder="t('languageList.searchPlaceholder')"
+              :show-search-icon="true"
+              @clear="clearSearch"
+            />
           </div>
-        </div>
 
-        <div class="toolbar-field-row">
-          <label class="toolbar-control-label">{{ t('languageList.filters.urlLabel') }}</label>
-          <div class="toolbar-dropdown-anchor">
-            <ToolbarSelectDropdown>
-              <template #label>{{ urlTriggerLabel }}</template>
-              <ToolbarSelectDropdownItem
-                :class="{ 'bg-gray-100': !urlFilter }"
-                @click="setUrlFilter('')"
-              >
-                {{ t('languageList.filters.all') }}
-              </ToolbarSelectDropdownItem>
-              <ToolbarSelectDropdownItem
-                :class="{ 'bg-gray-100': urlFilter === 'yes' }"
-                @click="setUrlFilter('yes')"
-              >
-                {{ t('languageList.filters.url.hasUrl') }}
-              </ToolbarSelectDropdownItem>
-              <ToolbarSelectDropdownItem
-                :class="{ 'bg-gray-100': urlFilter === 'no' }"
-                @click="setUrlFilter('no')"
-              >
-                {{ t('languageList.filters.url.noUrl') }}
-              </ToolbarSelectDropdownItem>
-            </ToolbarSelectDropdown>
+          <div class="toolbar-field-row">
+            <label class="toolbar-control-label">{{
+              t('languageList.filters.forLojbanLabel')
+            }}</label>
+            <div class="toolbar-dropdown-anchor">
+              <ToolbarSelectDropdown>
+                <template #label>{{ forLojbanTriggerLabel }}</template>
+                <ToolbarSelectDropdownItem
+                  :class="{ 'bg-gray-100': !forLojbanFilter }"
+                  @click="setForLojbanFilter('')"
+                >
+                  {{ t('languageList.filters.all') }}
+                </ToolbarSelectDropdownItem>
+                <ToolbarSelectDropdownItem
+                  :class="{ 'bg-gray-100': forLojbanFilter === 'yes' }"
+                  @click="setForLojbanFilter('yes')"
+                >
+                  {{ t('languageList.filters.forLojban.yes') }}
+                </ToolbarSelectDropdownItem>
+                <ToolbarSelectDropdownItem
+                  :class="{ 'bg-gray-100': forLojbanFilter === 'no' }"
+                  @click="setForLojbanFilter('no')"
+                >
+                  {{ t('languageList.filters.forLojban.no') }}
+                </ToolbarSelectDropdownItem>
+              </ToolbarSelectDropdown>
+            </div>
+          </div>
+
+          <div class="toolbar-field-row">
+            <label class="toolbar-control-label">{{ t('languageList.filters.urlLabel') }}</label>
+            <div class="toolbar-dropdown-anchor">
+              <ToolbarSelectDropdown>
+                <template #label>{{ urlTriggerLabel }}</template>
+                <ToolbarSelectDropdownItem
+                  :class="{ 'bg-gray-100': !urlFilter }"
+                  @click="setUrlFilter('')"
+                >
+                  {{ t('languageList.filters.all') }}
+                </ToolbarSelectDropdownItem>
+                <ToolbarSelectDropdownItem
+                  :class="{ 'bg-gray-100': urlFilter === 'yes' }"
+                  @click="setUrlFilter('yes')"
+                >
+                  {{ t('languageList.filters.url.hasUrl') }}
+                </ToolbarSelectDropdownItem>
+                <ToolbarSelectDropdownItem
+                  :class="{ 'bg-gray-100': urlFilter === 'no' }"
+                  @click="setUrlFilter('no')"
+                >
+                  {{ t('languageList.filters.url.noUrl') }}
+                </ToolbarSelectDropdownItem>
+              </ToolbarSelectDropdown>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </Teleport>
 
     <!-- Loading State -->
     <div v-if="isLoading" class="flex flex-col items-center justify-center py-8">
@@ -129,23 +130,17 @@
         </Button>
       </div>
 
-      <div v-else class="space-y-3">
+      <div v-else class="grid gap-3 sm:gap-4">
         <ListRowSurface
           v-for="lang in filteredLanguages"
           :key="lang.id"
-          :class="['cursor-pointer transition-colors hover:bg-blue-50/40']"
           @click="openLanguage(lang)"
         >
           <div class="flex items-start gap-4">
-            <!-- Badge / thumbnail -->
             <div class="shrink-0 mt-1">
               <div
-                class="w-10 h-10 rounded-lg flex items-center justify-center text-sm font-semibold border bg-white"
-                :class="
-                  lang.for_lojban
-                    ? 'border-green-200 text-green-700'
-                    : 'border-gray-200 text-gray-600'
-                "
+                class="avatar-placeholder-sm overflow-hidden px-1 text-center text-[10px] font-semibold leading-tight tracking-tight text-gray-600 [overflow-wrap:anywhere]"
+                :title="lang.tag"
               >
                 {{ lang.tag }}
               </div>
@@ -154,7 +149,7 @@
             <div class="min-w-0 flex-1">
               <div class="flex justify-between items-start gap-2 min-w-0">
                 <div class="min-w-0 flex-1 pr-1">
-                  <h3 class="text-lg font-medium text-blue-600 break-words">
+                  <h3 class="text-lg font-medium text-blue-600 break-words hover:text-blue-700">
                     {{ lang.english_name }}
                   </h3>
                   <p class="text-gray-600 text-sm mt-0.5 break-words">{{ lang.lojban_name }}</p>
@@ -175,37 +170,12 @@
                 </span>
               </div>
 
-              <div class="mt-3 text-sm text-gray-600 space-y-1">
-                <div>
-                  <span class="font-medium text-gray-500">{{
-                    t('languageList.realNameLabel')
-                  }}</span>
-                  {{ lang.real_name }}
-                </div>
-                <div>
-                  <span class="font-medium text-gray-500">{{ t('languageList.codeLabel') }}</span>
-                  {{ lang.tag }}
-                </div>
-                <div v-if="lang.url">
-                  <span class="font-medium text-gray-500">{{
-                    t('languageList.tableHeader.url')
-                  }}</span>
-                  <a
-                    :href="lang.url"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    class="text-blue-600 hover:underline"
-                    @click.stop
-                  >
-                    {{ t('languageList.visit') }}
-                  </a>
-                </div>
-              </div>
-
-              <div class="flex flex-wrap gap-2 mt-3">
+              <div class="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-400">
+                <span>{{ lang.real_name }}</span>
+                <span>{{ lang.tag }}</span>
                 <RouterLink
                   :to="`/?mode=dictionary&langs=${lang.id}`"
-                  class="ui-btn--read ui-btn--group-item"
+                  class="text-blue-600 hover:underline"
                   @click.stop
                 >
                   {{ t('languageList.viewInDictionary') }}
@@ -215,14 +185,19 @@
                   :href="lang.url"
                   target="_blank"
                   rel="noopener noreferrer"
-                  class="ui-btn--market ui-btn--group-item"
+                  class="text-blue-600 hover:underline"
                   @click.stop
                 >
                   {{ t('languageList.visitWebsite') }}
                 </a>
-                <Button v-if="canManage" variant="edit" type="button" @click.stop="openEdit(lang)">
+                <button
+                  v-if="canManage"
+                  type="button"
+                  class="text-blue-600 hover:underline"
+                  @click.stop="openEdit(lang)"
+                >
                   {{ t('languageList.editLanguage') }}
-                </Button>
+                </button>
               </div>
             </div>
           </div>

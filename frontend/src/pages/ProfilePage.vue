@@ -650,8 +650,7 @@ const translateRole = (role: string | undefined) => {
   const lowerRole = role.toLowerCase()
   const translationKey = `roles.${lowerRole}`
   const translated = t(translationKey)
-  // If translation doesn't exist, return original role name
-  return translated !== translationKey ? translated : role
+  return translated !== translationKey ? translated : role.charAt(0).toUpperCase() + role.slice(1)
 }
 
 const fetchProfileData = async () => {

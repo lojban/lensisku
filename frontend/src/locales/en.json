@@ -520,7 +520,8 @@
     "editor": "Editor",
     "user": "User",
     "unconfirmed": "Unconfirmed",
-    "blocked": "Blocked"
+    "blocked": "Blocked",
+    "importer": "Importer"
   },
   "userList": {
     "users": "Users",

@@ -517,7 +517,8 @@
     "editor": "编辑",
     "user": "用户",
     "unconfirmed": "未验证",
-    "blocked": "已封禁"
+    "blocked": "已封禁",
+    "importer": "导入者"
   },
   "userList": {
     "users": "用户",

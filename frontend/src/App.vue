@@ -95,17 +95,6 @@
                   }}
                 </NavLink>
                 <NavLink
-                  :to="
-                    auth.state.isLoggedIn
-                      ? { path: '/users', query: { tab: 'dictionaryLanguages' } }
-                      : '/languages'
-                  "
-                  class="navbar-item justify-start py-2"
-                  @click="closeNavMenus"
-                >
-                  <Languages class="h-4 w-4" /> {{ $t('nav.dictionaryLanguages') }}
-                </NavLink>
-                <NavLink
                   to="/assistant"
                   class="navbar-item justify-start py-2"
                   @click="closeNavMenus"
@@ -356,7 +345,6 @@ import {
   Share2,
   Bell,
   FilePlus,
-  Languages,
 } from '@lucide/vue'
 import { Menu } from '@lucide/vue' // Explicitly import Menu if it was missed by auto-sort
 import { ref, onMounted, onBeforeUnmount, watch, computed, nextTick } from 'vue'
