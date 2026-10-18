@@ -503,12 +503,7 @@ pub fn compute_content_changes(
         &mut changes,
     );
 
-    compare_option_field(
-        "word",
-        &old_content.word,
-        &new_content.word,
-        &mut changes,
-    );
+    compare_option_field("word", &old_content.word, &new_content.word, &mut changes);
 
     compare_language(old_content, new_content, &mut changes);
 

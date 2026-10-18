@@ -901,10 +901,7 @@ pub const POPULAR_LEARNT_COLLECTION_LIMIT: i64 = 100;
 const POPULAR_LEARNT_CACHE_KEY: &str = "popular_collections:learnt_3m_v1";
 const POPULAR_LEARNT_CACHE_TTL: std::time::Duration = std::time::Duration::from_secs(3600);
 
-pub async fn popular_learnt_collection_ids(
-    pool: &Pool,
-    redis: &RedisCache,
-) -> AppResult<Vec<i32>> {
+pub async fn popular_learnt_collection_ids(pool: &Pool, redis: &RedisCache) -> AppResult<Vec<i32>> {
     if let Ok(Some(cached)) = redis.get::<Vec<i32>>(POPULAR_LEARNT_CACHE_KEY).await {
         return Ok(cached);
     }
@@ -991,10 +988,7 @@ fn pagination_bounds(page: Option<i64>, per_page: Option<i64>) -> Option<(i64, i
     if page.is_none() && per_page.is_none() {
         return None;
     }
-    let normalized_page = page.unwrap_or(1).max(1);
-    let normalized_per_page = per_page.unwrap_or(24).clamp(1, 100);
-    let offset = (normalized_page - 1) * normalized_per_page;
-    Some((normalized_page, normalized_per_page, offset))
+    Some(crate::pagination::page_window(page, per_page, 24, 100))
 }
 
 fn build_collection_where_clause(

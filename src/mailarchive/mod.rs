@@ -1,8 +1,8 @@
 pub mod controller;
 pub mod dto;
 pub mod models;
-pub mod service;
 pub mod seo;
+pub mod service;
 
 use actix_web::web;
 pub use dto::*;

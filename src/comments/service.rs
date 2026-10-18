@@ -14,11 +14,10 @@ use tokio_postgres::Row;
 use super::{
     dto::{
         CommentStats, ContentPart, CreateOpinionRequest, NewCommentParams, OpinionVoteRequest,
-        PaginatedCommentsResponse, ReactionResponse, SearchCommentsParams, ThreadParams,
-        TrendingHashtag,
+        PaginatedCommentsResponse, ReactionResponse, ThreadParams, TrendingHashtag,
     },
     errors::ReactionError,
-    models::{CommentOpinion, FreeThread, TrendingTimespan},
+    models::{CommentOpinion, FreeThread, SearchCommentsParams, TrendingTimespan},
 };
 
 pub fn sanitize_html(html: &str) -> String {

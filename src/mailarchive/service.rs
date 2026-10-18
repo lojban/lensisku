@@ -1,9 +1,9 @@
 #![allow(clippy::expect_used)]
 
-use crate::search_helpers::{escape_like, like_contains_pattern, mail_word_like_patterns};
 use crate::mailarchive::{
     dto::MailThreadSummary, Message, SearchQuery, SearchResponse, ThreadQuery, ThreadResponse,
 };
+use crate::search_helpers::{escape_like, like_contains_pattern, mail_word_like_patterns};
 use base64::engine::general_purpose::STANDARD;
 use base64::Engine as _;
 use chrono::{DateTime, FixedOffset, NaiveDateTime, Utc};
@@ -78,7 +78,11 @@ pub async fn search_messages(
     let sort_column = match query.sort_by.as_deref() {
         Some("date") => "p.date",
         Some("subject") => {
-            if group_by_thread { "p.cleaned_subject" } else { "p.subject" }
+            if group_by_thread {
+                "p.cleaned_subject"
+            } else {
+                "p.subject"
+            }
         }
         Some("sent_at") => "p.sent_at",
         _ => "p.rank",
@@ -198,7 +202,9 @@ pub async fn show_thread(
     let include_content = query.include_content.unwrap_or(true);
 
     let order_by = match query.sort_by.as_deref() {
-        Some("subject") => format!("m.subject {sort_order}, m.date {sort_order}, m.id {sort_order}"),
+        Some("subject") => {
+            format!("m.subject {sort_order}, m.date {sort_order}, m.id {sort_order}")
+        }
         Some("sent_at") => format!("m.sent_at {sort_order}, m.id {sort_order}"),
         _ => format!("m.date {sort_order}, m.id {sort_order}"),
     };
@@ -596,7 +602,10 @@ async fn process_email(
         Some(parsed_date.as_str())
     };
     let identity = if normalized_message_id.is_empty() {
-        format!("fallback:{from_address}:{subject}:{}", fallback_date.unwrap_or(""))
+        format!(
+            "fallback:{from_address}:{subject}:{}",
+            fallback_date.unwrap_or("")
+        )
     } else {
         format!("message-id:{normalized_message_id}")
     };
@@ -617,7 +626,13 @@ async fn process_email(
                    AND content IS NOT DISTINCT FROM $4
                    AND (coalesce(content, '') <> '' OR parts_json IS NOT DISTINCT FROM $5)
                  ORDER BY id LIMIT 1",
-                &[&fallback_date, &subject, &from_address, &plain_text_content, &parts_json_value],
+                &[
+                    &fallback_date,
+                    &subject,
+                    &from_address,
+                    &plain_text_content,
+                    &parts_json_value,
+                ],
             )
             .await?
     } else {
@@ -628,7 +643,11 @@ async fn process_email(
                    AND content IS NOT DISTINCT FROM $2
                    AND (coalesce(content, '') <> '' OR parts_json IS NOT DISTINCT FROM $3)
                  ORDER BY id LIMIT 1",
-                &[&normalized_message_id, &plain_text_content, &parts_json_value],
+                &[
+                    &normalized_message_id,
+                    &plain_text_content,
+                    &parts_json_value,
+                ],
             )
             .await?
     };

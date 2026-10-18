@@ -1,7 +1,6 @@
 use actix_web::{delete, get, post, put, web, HttpResponse};
 use actix_web_httpauth::middleware::HttpAuthentication;
 use actix_web_lab::sse;
-use serde::Deserialize;
 use serde_json::Value;
 use tokio::sync::{mpsc, Mutex};
 use uuid::Uuid;
@@ -13,8 +12,7 @@ use crate::error::AppError;
 use crate::middleware::cache::RedisCache;
 
 use super::chat_store::{self, AssistantChatPutBody, ChatCreateResult, ImportBody, ImportResponse};
-use super::dto::ChatRequest;
-use super::dto::WikiTitleFromCommentRequest;
+use super::dto::{ChatRequest, LocaleBody, WikiTitleFromCommentRequest};
 use super::persist::ChatPersistState;
 use super::stored_messages::{
     build_chat_messages_from_stored, strip_trailing_empty_assistant_stub,
@@ -88,11 +86,6 @@ pub async fn chat_stream_public(
     });
 
     Ok(sse::Sse::from_infallible_receiver(rx))
-}
-
-#[derive(Debug, Deserialize)]
-pub struct LocaleBody {
-    pub locale: Option<String>,
 }
 
 #[get("/chats")]

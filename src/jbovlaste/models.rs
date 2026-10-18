@@ -343,3 +343,10 @@ impl From<tokio_postgres::Row> for ValsiType {
 pub struct ValsiTypeListResponse {
     pub types: Vec<ValsiType>,
 }
+
+#[derive(Debug)]
+pub struct DeleteDefinitionResult {
+    pub definition_deleted: bool,
+    pub valsi_deleted: bool,
+    pub has_remaining_definitions: bool,
+}

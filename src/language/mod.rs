@@ -6,11 +6,10 @@ mod service;
 use actix_web::web;
 use actix_web_httpauth::middleware::HttpAuthentication;
 
-pub use models::MathJaxValidationOptions;
+pub use models::{LujvoClassification, MathJaxValidationOptions};
 pub use service::{
     analyze_word, classify_lujvo_spelling, has_dollar_math_span, is_decomposable_lujvo_type,
-    load_owned_rafsi_maps,
-    validate_mathjax, validate_mathjax_fields, LujvoClassification, LUJVO_TYPE_NAME,
+    load_owned_rafsi_maps, validate_mathjax, validate_mathjax_fields, LUJVO_TYPE_NAME,
     NON_CANONICAL_LUJVO_TYPE_NAME,
 };
 

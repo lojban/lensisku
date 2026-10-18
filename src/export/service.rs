@@ -2923,7 +2923,8 @@ pub async fn export_search_results(
         .map(|s| crate::collections::dto::parse_positive_id_list(s, 50))
         .unwrap_or_default();
     if query.include_popular_collections == Some(true) {
-        let popular = crate::collections::service::query_popular_learnt_collection_ids(pool).await?;
+        let popular =
+            crate::collections::service::query_popular_learnt_collection_ids(pool).await?;
         collection_ids = crate::collections::service::merge_collection_ids(collection_ids, popular);
     }
 

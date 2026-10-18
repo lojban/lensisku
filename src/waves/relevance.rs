@@ -60,9 +60,8 @@ async fn search_with_embedding(
 ) -> Result<WavesSearchResponse, SearchError> {
     let term = query.search.as_deref().unwrap_or("").trim();
     let source = query.source.as_deref().unwrap_or("all");
-    let page = query.page.unwrap_or(1).max(1);
-    let per_page = query.per_page.unwrap_or(20).clamp(1, 100);
-    let offset = page.saturating_sub(1).saturating_mul(per_page);
+    let (page, per_page, offset) =
+        crate::pagination::page_window(query.page, query.per_page, 20, 100);
     let minimum_similarity = std::env::var("WAVE_SEARCH_MIN_SIMILARITY")
         .ok()
         .and_then(|v| v.parse::<f64>().ok())

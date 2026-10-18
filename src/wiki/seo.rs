@@ -13,11 +13,7 @@ fn is_reserved_wiki_path(title: &str) -> bool {
 }
 
 fn fallback_description(title: &str, locale: &str) -> String {
-    format!(
-        "{} — {}",
-        seo::compact(title, 80),
-        seo::site_title(locale)
-    )
+    format!("{} — {}", seo::compact(title, 80), seo::site_title(locale))
 }
 
 fn description_from_body(title: &str, body: Option<&str>, locale: &str) -> String {
@@ -135,10 +131,7 @@ pub async fn wiki_by_id_page(
 }
 
 #[get("/{locale}/wiki/{title:.*}")]
-pub async fn wiki_page(
-    pool: web::Data<Pool>,
-    path: web::Path<(String, String)>,
-) -> impl Responder {
+pub async fn wiki_page(pool: web::Data<Pool>, path: web::Path<(String, String)>) -> impl Responder {
     let (locale, title_raw) = path.into_inner();
     let title_raw = title_raw.trim_end_matches('/').to_string();
     if !LOCALES.contains(&locale.as_str())

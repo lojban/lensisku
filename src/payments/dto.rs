@@ -122,6 +122,52 @@ pub struct CancelSubscriptionRequestDto {
     pub reason: String,
 }
 
+#[derive(Debug, Deserialize)]
+pub struct PayPalWebhookEvent {
+    pub event_type: String,
+    pub resource: serde_json::Value,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct PayPalRelatedIds {
+    pub order_id: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct PayPalSupplementaryData {
+    pub related_ids: Option<PayPalRelatedIds>,
+}
+
+/// `PAYMENT.CAPTURE.*` resource. Orders are stored under the checkout order id,
+/// while `id` on this payload is the capture id.
+#[derive(Debug, Deserialize)]
+pub struct PayPalCaptureResource {
+    pub id: String,
+    #[allow(dead_code)]
+    pub custom_id: Option<String>,
+    pub amount: PayPalMoneyDto,
+    pub supplementary_data: Option<PayPalSupplementaryData>,
+}
+
+impl PayPalCaptureResource {
+    pub fn payment_ids(&self) -> Vec<String> {
+        let mut ids = Vec::new();
+        if let Some(order_id) = self
+            .supplementary_data
+            .as_ref()
+            .and_then(|data| data.related_ids.as_ref())
+            .and_then(|ids| ids.order_id.clone())
+            .filter(|id| !id.is_empty())
+        {
+            ids.push(order_id);
+        }
+        if !self.id.is_empty() && !ids.iter().any(|id| id == &self.id) {
+            ids.push(self.id.clone());
+        }
+        ids
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct SubscriptionWebhookEventResource {
     pub id: String, // Subscription ID
@@ -131,4 +177,30 @@ pub struct SubscriptionWebhookEventResource {
     pub summary: String,
     pub resource: PayPalSubscriptionDto, // The actual subscription object
     pub links: Option<Vec<PayPalLink>>,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{PayPalCaptureResource, PayPalMoneyDto, PayPalRelatedIds, PayPalSupplementaryData};
+
+    #[test]
+    fn capture_ids_prefer_checkout_order_id() {
+        let resource = PayPalCaptureResource {
+            id: "capture".into(),
+            custom_id: Some("42".into()),
+            amount: PayPalMoneyDto {
+                currency_code: "USD".into(),
+                value: "1.99".into(),
+            },
+            supplementary_data: Some(PayPalSupplementaryData {
+                related_ids: Some(PayPalRelatedIds {
+                    order_id: Some("order".into()),
+                }),
+            }),
+        };
+        assert_eq!(
+            resource.payment_ids(),
+            vec!["order".to_string(), "capture".to_string()]
+        );
+    }
 }

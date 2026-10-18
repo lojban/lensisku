@@ -3,7 +3,7 @@ use std::io;
 use chrono::{DateTime, Utc};
 use deadpool_postgres::Pool;
 
-use crate::comments::{dto::SearchCommentsParams, service as comments_service};
+use crate::comments::{models::SearchCommentsParams, service as comments_service};
 use crate::mailarchive::{self as mailarchive, service as mailarchive_service};
 use crate::waves::dto::{WaveSearchHit, WaveThreadSummary, WavesSearchQuery, WavesThreadsQuery};
 use crate::wiki::service as wiki_service;
@@ -189,8 +189,7 @@ pub async fn search_waves(
     {
         return super::relevance::search(pool, &query, current_user_id).await;
     }
-    let page = query.page.unwrap_or(1).max(1);
-    let per_page = query.per_page.unwrap_or(20).clamp(1, 100);
+    let (page, per_page, _) = crate::pagination::page_window(query.page, query.per_page, 20, 100);
     let search_term = query.search.as_deref().unwrap_or("").to_string();
     let sort_order = query.sort_order.as_deref().unwrap_or("desc");
     let sort_by = query.sort_by.as_deref().unwrap_or("time");

@@ -393,6 +393,8 @@ pub struct WebRTCSignaling {
     pub created_at: DateTime<Utc>,
     pub expires_at: DateTime<Utc>,
     pub is_processed: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub from_username: Option<String>,
 }
 
 // Database row implementations
@@ -507,6 +509,7 @@ impl From<tokio_postgres::Row> for WebRTCSignaling {
             created_at: row.get("created_at"),
             expires_at: row.get("expires_at"),
             is_processed: row.get("is_processed"),
+            from_username: row.try_get("from_username").ok(),
         }
     }
 }

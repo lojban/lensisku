@@ -331,7 +331,7 @@ fn render_node(node: &Node<'_>, md: &mut String, plain: &mut String, depth: usiz
             "s" | "strike" | "del" => md.push_str("~~"),
             _ => {}
         },
-        Node::Comment { .. } | Node::MagicWord { .. } => {},
+        Node::Comment { .. } | Node::MagicWord { .. } => {}
         Node::Table {
             attributes,
             captions,
@@ -1072,8 +1072,8 @@ fn sanitize_html_attribute_string(raw: &str) -> String {
 
 fn is_allowed_table_attr(key: &str, value: &str) -> bool {
     match key {
-        "class" | "id" | "title" | "lang" | "dir" | "align" | "scope" | "headers"
-        | "rowspan" | "colspan" | "width" | "height" | "bgcolor" => {
+        "class" | "id" | "title" | "lang" | "dir" | "align" | "scope" | "headers" | "rowspan"
+        | "colspan" | "width" | "height" | "bgcolor" => {
             !value.chars().any(|c| c == '<' || c == '>' || c == '"')
                 && !value.to_ascii_lowercase().contains("javascript:")
         }
@@ -1235,11 +1235,7 @@ fn render_nodes_html(nodes: &[Node<'_>], html: &mut String, plain: &mut String, 
                 if url.is_empty() {
                     continue;
                 }
-                let display = if label.is_empty() {
-                    url.clone()
-                } else {
-                    label
-                };
+                let display = if label.is_empty() { url.clone() } else { label };
                 html.push_str("<a href=\"");
                 html.push_str(&html_escape_attr(&url));
                 html.push_str("\">");
@@ -1456,7 +1452,6 @@ fn parse_md_link(chars: &[char]) -> Option<(String, String, usize)> {
     }
     Some((label, url, i + 1))
 }
-
 
 fn collapse_blank_lines(s: &str) -> String {
     let mut out = String::with_capacity(s.len());
@@ -1690,10 +1685,7 @@ mod tests {
         assert!(md.contains("Uses of JA*"), "md={md}");
         assert!(md.contains("</caption>"), "md={md}");
         assert!(md.contains("<th>"), "md={md}");
-        assert!(
-            md.contains("style=\"background-color:#ddddff\""),
-            "md={md}"
-        );
+        assert!(md.contains("style=\"background-color:#ddddff\""), "md={md}");
         assert!(md.contains("<em>sumti</em>"), "md={md}");
         assert!(md.contains("<em>ko'a ja ko'e</em>"), "md={md}");
         assert!(!md.contains("| --- |"), "should not emit GFM pipes: {md}");
@@ -1729,14 +1721,14 @@ mod tests {
 "#;
         let (md, _) = wikitext_to_markdown(wt);
         assert!(md.contains("<table class=\"wikitable\">"), "md={md}");
-        assert!(md.contains("<caption>Afterthought connectives</caption>"), "md={md}");
+        assert!(
+            md.contains("<caption>Afterthought connectives</caption>"),
+            "md={md}"
+        );
         assert!(md.contains("rowspan=\"2\""), "md={md}");
         assert!(md.contains("colspan=\"2\""), "md={md}");
         assert!(md.contains("<s>undefined</s>"), "md={md}");
-        assert!(
-            md.contains("style=\"background-color:#ddffdd\""),
-            "md={md}"
-        );
+        assert!(md.contains("style=\"background-color:#ddffdd\""), "md={md}");
         // Must not fall back to broken GFM with literal separators.
         assert!(!md.contains("| --- |"), "md={md}");
         assert!(!md.contains("| argument type |"), "md={md}");
@@ -1761,7 +1753,10 @@ mod tests {
 "#;
         let (md, plain) = wikitext_to_markdown(wt);
         assert!(md.contains("<caption>Complexity</caption>"), "md={md}");
-        assert!(md.contains("<th>count</th>") || md.contains(">count</th>"), "md={md}");
+        assert!(
+            md.contains("<th>count</th>") || md.contains(">count</th>"),
+            "md={md}"
+        );
         assert!(md.contains(">27</td>") || md.contains(">27<"), "md={md}");
         assert!(md.contains(">9</td>") || md.contains(">9<"), "md={md}");
         assert!(plain.contains("27"), "plain={plain}");
@@ -1795,5 +1790,4 @@ mod tests {
         assert!(!md.to_ascii_lowercase().contains("onclick"), "md={md}");
         assert!(!md.to_ascii_lowercase().contains("expression"), "md={md}");
     }
-
 }

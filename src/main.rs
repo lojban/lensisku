@@ -27,14 +27,15 @@ mod messaging;
 mod middleware;
 mod notifications;
 mod openapi;
+mod pagination;
 mod payments;
+mod search_helpers;
 #[cfg(test)]
 mod security_regression_tests;
 mod server;
 pub mod sessions;
 mod subscriptions;
 mod users;
-mod search_helpers;
 mod utils;
 mod versions;
 mod waves;
@@ -63,7 +64,9 @@ async fn main() -> AppResult<()> {
         info!("Valši TTS disabled; skipping speech model and voice downloads");
     } else {
         match tokio::task::spawn_blocking(utils::kokoro_tts::ensure_model_files_cached).await {
-            Ok(Ok(())) => info!("German TTS model and Martin/Victoria/Eva/Bernd voice packs are cached"),
+            Ok(Ok(())) => {
+                info!("German TTS model and Martin/Victoria/Eva/Bernd voice packs are cached")
+            }
             Ok(Err(e)) => error!("TTS model preparation failed (will retry on use): {e}"),
             Err(e) => error!("TTS model preparation task failed: {e}"),
         }

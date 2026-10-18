@@ -1,7 +1,5 @@
-use super::models::{
-    Notification, NotificationListResponse, Subscription, SubscriptionResponse, SubscriptionState,
-    SubscriptionTrigger,
-};
+use super::dto::{NotificationListResponse, SubscriptionResponse, SubscriptionState};
+use super::models::{Notification, Subscription, SubscriptionTrigger};
 use deadpool_postgres::Pool;
 
 pub async fn subscribe_to_valsi(

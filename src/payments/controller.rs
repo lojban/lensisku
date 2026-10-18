@@ -1,38 +1,15 @@
 use actix_web::{get, post, web, HttpResponse, Responder};
 use deadpool_postgres::Pool;
 use log::info;
-use serde::Deserialize;
 
 use super::{dto::*, paypal::PayPalOrder, service, PaymentProvider};
 use crate::{auth::Claims, payments::paypal::PayPalProvider};
 
-#[derive(Debug, Deserialize)]
-struct PayPalEvent {
-    event_type: String,
-    resource: serde_json::Value,
-}
-
-#[derive(Debug, Deserialize, Clone)]
-#[allow(dead_code)]
-struct PayPalResource {
-    id: String,
-    status: String,
-    custom_id: Option<String>,
-    amount: PayPalAmount,
-}
-
-#[derive(Debug, Deserialize, Clone)]
-struct PayPalAmount {
-    value: String,
-    currency_code: String,
-}
-
-#[derive(Debug, Deserialize)]
-pub struct GenericPaymentIntent {
-    pub id: String,
-    pub amount: u64,
-    pub currency: String,
-    pub metadata: std::collections::HashMap<String, String>,
+fn paypal_client() -> Result<&'static PayPalProvider, HttpResponse> {
+    PayPalProvider::shared().map_err(|e| {
+        log::error!("Failed to create PayPal provider: {}", e);
+        HttpResponse::InternalServerError().body("Failed to initialize payment provider")
+    })
 }
 
 #[utoipa::path(
@@ -56,16 +33,9 @@ pub async fn create_paypal_subscription(
     claims: Claims,
     req: web::Json<CreateSubscriptionRequest>,
 ) -> impl Responder {
-    let paypal_provider = match PayPalProvider::new(
-        std::env::var("PAYPAL_CLIENT_ID").unwrap_or_default(),
-        std::env::var("PAYPAL_CLIENT_SECRET").unwrap_or_default(),
-    ) {
+    let paypal_provider = match paypal_client() {
         Ok(provider) => provider,
-        Err(e) => {
-            log::error!("Failed to create PayPal provider: {}", e);
-            return HttpResponse::InternalServerError()
-                .body("Failed to initialize payment provider");
-        }
+        Err(response) => return response,
     };
 
     match paypal_provider.create_subscription(&req.into_inner()).await {
@@ -110,16 +80,9 @@ pub async fn get_paypal_subscription_details(
     claims: Claims,
     subscription_id_path: web::Path<String>,
 ) -> impl Responder {
-    let paypal_provider = match PayPalProvider::new(
-        std::env::var("PAYPAL_CLIENT_ID").unwrap_or_default(),
-        std::env::var("PAYPAL_CLIENT_SECRET").unwrap_or_default(),
-    ) {
+    let paypal_provider = match paypal_client() {
         Ok(provider) => provider,
-        Err(e) => {
-            log::error!("Failed to create PayPal provider: {}", e);
-            return HttpResponse::InternalServerError()
-                .body("Failed to initialize payment provider");
-        }
+        Err(response) => return response,
     };
 
     let subscription_id = subscription_id_path.into_inner();
@@ -204,16 +167,9 @@ pub async fn cancel_paypal_subscription(
     subscription_id_path: web::Path<String>,
     req: web::Json<CancelSubscriptionRequestDto>,
 ) -> impl Responder {
-    let paypal_provider = match PayPalProvider::new(
-        std::env::var("PAYPAL_CLIENT_ID").unwrap_or_default(),
-        std::env::var("PAYPAL_CLIENT_SECRET").unwrap_or_default(),
-    ) {
+    let paypal_provider = match paypal_client() {
         Ok(provider) => provider,
-        Err(e) => {
-            log::error!("Failed to create PayPal provider: {}", e);
-            return HttpResponse::InternalServerError()
-                .body("Failed to initialize payment provider");
-        }
+        Err(response) => return response,
     };
 
     let subscription_id = subscription_id_path.into_inner();
@@ -294,16 +250,9 @@ pub async fn create_payment(
     claims: Claims,
     req: web::Json<CreatePaymentRequest>,
 ) -> impl Responder {
-    let paypal_provider = match PayPalProvider::new(
-        std::env::var("PAYPAL_CLIENT_ID").unwrap_or_default(),
-        std::env::var("PAYPAL_CLIENT_SECRET").unwrap_or_default(),
-    ) {
+    let paypal_provider = match paypal_client() {
         Ok(provider) => provider,
-        Err(e) => {
-            log::error!("Failed to create PayPal provider: {}", e);
-            return HttpResponse::InternalServerError()
-                .body("Failed to initialize payment provider");
-        }
+        Err(response) => return response,
     };
 
     match paypal_provider
@@ -339,27 +288,41 @@ pub async fn create_payment(
     description = "Capture a PayPal order to complete the transaction. Returns captured order details."
 )]
 #[post("/orders/{order_id}/capture")]
-pub async fn capture_order(pool: web::Data<Pool>, order_id: web::Path<String>) -> impl Responder {
-    let paypal_provider = match PayPalProvider::new(
-        std::env::var("PAYPAL_CLIENT_ID").unwrap_or_default(),
-        std::env::var("PAYPAL_CLIENT_SECRET").unwrap_or_default(),
-    ) {
+pub async fn capture_order(
+    pool: web::Data<Pool>,
+    claims: Claims,
+    order_id: web::Path<String>,
+) -> impl Responder {
+    let paypal_provider = match paypal_client() {
         Ok(provider) => provider,
-        Err(e) => {
-            log::error!("Failed to create PayPal provider: {}", e);
-            return HttpResponse::InternalServerError()
-                .body("Failed to initialize payment provider");
-        }
+        Err(response) => return response,
     };
 
-    match paypal_provider.capture_order(&order_id).await {
-        Ok(order) => {
-            if let Err(e) = service::update_payment_order(&pool, &order_id, "captured").await {
-                log::error!("Failed to update payment order: {}", e);
-                return HttpResponse::InternalServerError().body("Failed to update payment order");
-            }
-            HttpResponse::Ok().json(order)
+    let order_id = order_id.into_inner();
+    match service::paypal_payment_owner(&pool, &order_id).await {
+        Ok(Some(owner)) if owner == claims.sub => {}
+        Ok(Some(_)) => return HttpResponse::Forbidden().finish(),
+        Ok(None) => return HttpResponse::NotFound().body("Payment order not found"),
+        Err(e) => {
+            log::error!("Failed to verify payment owner for {}: {}", order_id, e);
+            return HttpResponse::InternalServerError().body("Failed to verify payment order");
         }
+    }
+
+    match paypal_provider.capture_order(&order_id).await {
+        Ok(order) => match service::credit_captured_paypal_payment(&pool, &[order_id]).await {
+            Ok(service::PaymentCredit::Credited | service::PaymentCredit::AlreadySettled) => {
+                HttpResponse::Ok().json(order)
+            }
+            Ok(service::PaymentCredit::NotFound) => {
+                log::error!("Captured PayPal order but no pending payment row matched");
+                HttpResponse::InternalServerError().body("Failed to record captured payment")
+            }
+            Err(e) => {
+                log::error!("Failed to record captured payment: {}", e);
+                HttpResponse::InternalServerError().body("Failed to record captured payment")
+            }
+        },
         Err(e) => {
             log::error!("Failed to capture PayPal order: {}", e);
             HttpResponse::BadRequest().body(e.to_string())
@@ -416,18 +379,12 @@ pub async fn paypal_webhook(
         .ok_or_else(|| actix_web::error::ErrorBadRequest("Missing signature"))?;
 
     // Verify the webhook signature
-    let paypal_provider = match PayPalProvider::new(
-        std::env::var("PAYPAL_CLIENT_ID").unwrap_or_default(),
-        std::env::var("PAYPAL_CLIENT_SECRET").unwrap_or_default(),
-    ) {
-        Ok(provider) => provider,
-        Err(e) => {
-            return Err(actix_web::error::ErrorInternalServerError(format!(
-                "Failed to initialize PayPal provider: {}",
-                e
-            )));
-        }
-    };
+    let paypal_provider = PayPalProvider::shared().map_err(|e| {
+        actix_web::error::ErrorInternalServerError(format!(
+            "Failed to initialize PayPal provider: {}",
+            e
+        ))
+    })?;
 
     let is_valid = paypal_provider
         .verify_webhook_signature(
@@ -449,7 +406,7 @@ pub async fn paypal_webhook(
         }));
     }
 
-    let event: PayPalEvent = serde_json::from_str(payload_str).map_err(|e| {
+    let event: PayPalWebhookEvent = serde_json::from_str(payload_str).map_err(|e| {
         actix_web::error::ErrorBadRequest(format!("Invalid webhook payload: {}", e))
     })?;
 
@@ -457,74 +414,90 @@ pub async fn paypal_webhook(
     log::debug!("Full webhook payload: {:?}", payload_str);
 
     match event.event_type.as_str() {
-        // Existing Payment Capture Events
         "PAYMENT.CAPTURE.COMPLETED" => {
-            match serde_json::from_value::<PayPalResource>(event.resource.clone()) {
+            match serde_json::from_value::<PayPalCaptureResource>(event.resource) {
                 Ok(resource) => {
-                    info!("Processing PAYMENT.CAPTURE.COMPLETED for resource ID: {}", resource.id);
-                    info!("Amount value to parse: {}", resource.amount.value);
-                    let amount = match resource.amount.value.parse::<f64>() {
-                        Ok(val) => (val * 100.0) as u64,
-                        Err(e) => {
-                            let err_msg = format!("Failed to parse amount '{}': {}", resource.amount.value, e);
-                            log::error!("{}", err_msg);
-                            return Ok(HttpResponse::BadRequest().json(WebhookResponse { success: false, message: err_msg }));
+                    info!(
+                        "Processing PAYMENT.CAPTURE.COMPLETED for capture {} amount {}",
+                        resource.id, resource.amount.value
+                    );
+                    let ids = resource.payment_ids();
+                    match service::credit_captured_paypal_payment(&pool, &ids).await {
+                        Ok(service::PaymentCredit::Credited) => Ok(HttpResponse::Ok().json(
+                            WebhookResponse {
+                                success: true,
+                                message: "Payment processed successfully".to_string(),
+                            },
+                        )),
+                        Ok(service::PaymentCredit::AlreadySettled) => Ok(HttpResponse::Ok().json(
+                            WebhookResponse {
+                                success: true,
+                                message: "Payment was already settled".to_string(),
+                            },
+                        )),
+                        Ok(service::PaymentCredit::NotFound) => {
+                            log::error!(
+                                "No pending PayPal payment matched capture {} ids {:?}",
+                                resource.id,
+                                ids
+                            );
+                            Ok(HttpResponse::BadRequest().json(WebhookResponse {
+                                success: false,
+                                message: "No matching payment order".to_string(),
+                            }))
                         }
-                    };
-
-                    let mut metadata = std::collections::HashMap::new();
-                    if let Some(custom_id) = resource.custom_id {
-                        if let Some(user_id_str) = custom_id.split('-').nth(4) { // Assuming specific format
-                            if let Ok(user_id) = user_id_str.parse::<i32>() {
-                                metadata.insert("user_id".to_string(), user_id.to_string());
-                            } else {
-                                metadata.insert("user_id".to_string(), "unknown_user_format".to_string());
-                            }
-                        }
-                        metadata.insert("custom_id".to_string(), custom_id);
-                    }
-
-                    let payment_intent = GenericPaymentIntent {
-                        id: resource.id,
-                        amount,
-                        currency: resource.amount.currency_code.to_lowercase(),
-                        metadata,
-                    };
-                    match service::handle_payment_success(&pool, &payment_intent, &service::PaymentProvider::PayPal).await {
-                        Ok(_) => Ok(HttpResponse::Ok().json(WebhookResponse { success: true, message: "Payment processed successfully".to_string() })),
                         Err(e) => {
                             log::error!("Failed to handle PayPal payment success: {}", e);
-                            Ok(HttpResponse::InternalServerError().json(WebhookResponse { success: false, message: format!("Error processing payment: {}", e) }))
+                            Ok(HttpResponse::InternalServerError().json(WebhookResponse {
+                                success: false,
+                                message: format!("Error processing payment: {}", e),
+                            }))
                         }
                     }
                 }
                 Err(e) => {
-                    log::error!("Failed to deserialize PayPalResource for PAYMENT.CAPTURE.COMPLETED: {}", e);
-                    Ok(HttpResponse::BadRequest().json(WebhookResponse { success: false, message: "Invalid resource for payment capture event".to_string() }))
+                    log::error!(
+                        "Failed to deserialize PayPal capture for PAYMENT.CAPTURE.COMPLETED: {}",
+                        e
+                    );
+                    Ok(HttpResponse::BadRequest().json(WebhookResponse {
+                        success: false,
+                        message: "Invalid resource for payment capture event".to_string(),
+                    }))
                 }
             }
         }
         "PAYMENT.CAPTURE.DENIED" | "PAYMENT.CAPTURE.DECLINED" => {
-             match serde_json::from_value::<PayPalResource>(event.resource.clone()) {
+            match serde_json::from_value::<PayPalCaptureResource>(event.resource) {
                 Ok(resource) => {
-                    info!("Processing PAYMENT.CAPTURE.DENIED/DECLINED for resource ID: {}", resource.id);
-                    let payment_intent = GenericPaymentIntent {
-                        id: resource.id,
-                        amount: (resource.amount.value.parse::<f64>().unwrap_or(0.0) * 100.0) as u64,
-                        currency: resource.amount.currency_code.to_lowercase(),
-                        metadata: Default::default(), // Consider if metadata is needed/available
-                    };
-                    match service::handle_payment_failure(&pool, &payment_intent).await {
-                        Ok(_) => Ok(HttpResponse::Ok().json(WebhookResponse { success: true, message: "Payment failure recorded".to_string() })),
+                    info!(
+                        "Processing PAYMENT.CAPTURE.DENIED/DECLINED for capture {}",
+                        resource.id
+                    );
+                    match service::mark_paypal_payment_failed(&pool, &resource.payment_ids()).await
+                    {
+                        Ok(_) => Ok(HttpResponse::Ok().json(WebhookResponse {
+                            success: true,
+                            message: "Payment failure recorded".to_string(),
+                        })),
                         Err(e) => {
                             log::error!("Failed to handle PayPal payment failure: {}", e);
-                            Ok(HttpResponse::InternalServerError().json(WebhookResponse { success: false, message: format!("Error processing payment failure: {}", e) }))
+                            Ok(HttpResponse::InternalServerError().json(WebhookResponse {
+                                success: false,
+                                message: format!("Error processing payment failure: {}", e),
+                            }))
                         }
                     }
                 }
                 Err(e) => {
-                    log::error!("Failed to deserialize PayPalResource for PAYMENT.CAPTURE.DENIED/DECLINED: {}", e);
-                    Ok(HttpResponse::BadRequest().json(WebhookResponse { success: false, message: "Invalid resource for payment capture event".to_string() }))
+                    log::error!(
+                        "Failed to deserialize PayPal capture for PAYMENT.CAPTURE.DENIED/DECLINED: {}",
+                        e
+                    );
+                    Ok(HttpResponse::BadRequest().json(WebhookResponse {
+                        success: false,
+                        message: "Invalid resource for payment capture event".to_string(),
+                    }))
                 }
             }
         }

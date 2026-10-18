@@ -607,7 +607,7 @@ pub async fn mark_notification_read(
     path = "/messaging/webrtc/signal",
     tag = "messaging",
     summary = "Send WebRTC signaling message",
-    request_body = WebRTCSignalRequest,
+    request_body = SendSignalRequest,
     responses(
         (status = 201, description = "Signal sent successfully"),
         (status = 400, description = "Invalid request data"),
@@ -620,7 +620,7 @@ pub async fn mark_notification_read(
 )]
 pub async fn webrtc_signal(
     claims: Claims,
-    request: web::Json<super::webrtc_handler::SendSignalRequest>,
+    request: web::Json<super::dto::SendSignalRequest>,
     service: web::Data<MessagingService>,
 ) -> Result<HttpResponse, AppError> {
     super::webrtc_handler::send_signal(claims, request, service).await

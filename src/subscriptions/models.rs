@@ -30,16 +30,15 @@ pub enum SubscriptionTrigger {
     Edit,
 }
 
-#[derive(Debug, Serialize, Deserialize, ToSchema, Clone)]
-pub struct SubscriptionRequest {
-    pub valsi_id: i32,
-    pub trigger_type: SubscriptionTrigger,
-}
-
-#[derive(Debug, Serialize, Deserialize, ToSchema)]
-pub struct SubscriptionResponse {
-    pub success: bool,
-    pub message: String,
+impl SubscriptionTrigger {
+    pub fn from_label(label: &str) -> Option<Self> {
+        match label {
+            "comment" => Some(Self::Comment),
+            "definition" => Some(Self::Definition),
+            "edit" => Some(Self::Edit),
+            _ => None,
+        }
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
@@ -55,20 +54,6 @@ pub struct Notification {
     pub created_at: DateTime<Utc>,
     #[schema(value_type = Option<String>, format = DateTime)]
     pub read_at: Option<DateTime<Utc>>,
-}
-
-#[derive(Debug, Serialize, Deserialize, ToSchema)]
-pub struct NotificationListResponse {
-    pub notifications: Vec<Notification>,
-    pub total: i64,
-    pub unread_count: i64,
-}
-
-#[derive(Debug, Deserialize, ToSchema)]
-pub struct NotificationQuery {
-    pub page: Option<i64>,
-    pub per_page: Option<i64>,
-    pub unread_only: Option<bool>,
 }
 
 impl From<tokio_postgres::Row> for Notification {
@@ -96,20 +81,9 @@ impl From<tokio_postgres::Row> for Subscription {
             created_at: row.get("created_at"),
             unsubscribed: row.get("unsubscribed"),
             unsubscribed_at: row.get("unsubscribed_at"),
-            trigger_type: match row.get::<_, String>("trigger_type").as_str() {
-                "comment" => SubscriptionTrigger::Comment,
-                "definition" => SubscriptionTrigger::Definition,
-                "edit" => SubscriptionTrigger::Edit,
-                _ => SubscriptionTrigger::Comment, // Default case
-            },
+            trigger_type: row.get("trigger_type"),
             source_definition_id: row.get("source_definition_id"),
             source_comment_id: row.get("source_comment_id"),
         }
     }
-}
-
-#[derive(Debug, Serialize, ToSchema)]
-pub struct SubscriptionState {
-    pub is_subscribed: bool,
-    pub subscriptions: Vec<SubscriptionTrigger>,
 }

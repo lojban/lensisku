@@ -9,7 +9,6 @@ use lettre::{
     },
     Message, SmtpTransport, Transport,
 };
-use serde::{Deserialize, Serialize};
 use std::{env, num::ParseIntError};
 use thiserror::Error;
 
@@ -76,15 +75,7 @@ pub enum EmailError {
     Other(String),
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct EmailNotification {
-    pub to_email: String,
-    pub subject: String,
-    pub text_body: String,
-    pub html_body: String,
-    pub initiated_by_user_id: Option<i32>,
-    pub params: serde_json::Value,
-}
+pub use super::models::EmailNotification;
 
 pub struct EmailService {
     mailer: SmtpTransport,

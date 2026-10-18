@@ -65,6 +65,31 @@ pub struct BlockUserRequest {
     pub reason: Option<String>,
 }
 
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct SendSignalRequest {
+    pub signal_type: SignalType,
+    pub signal_data: String,
+    pub to_user_id: i32,
+}
+
+#[derive(Debug, Serialize, Clone, ToSchema)]
+pub struct SignalResponse {
+    pub id: i64,
+    pub signal_type: SignalType,
+    pub signal_data: String,
+    pub from_user_id: i32,
+    pub from_username: String,
+    pub to_user_id: i32,
+    pub created_at: DateTime<Utc>,
+    pub expires_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Serialize, ToSchema)]
+pub struct SignalListResponse {
+    pub signals: Vec<SignalResponse>,
+    pub total: i64,
+}
+
 #[derive(Debug, Serialize, Deserialize, ToSchema, Validate)]
 pub struct WebRTCSignalRequest {
     pub to_user_id: i32,

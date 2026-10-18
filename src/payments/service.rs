@@ -6,7 +6,6 @@ use tokio_postgres::types::{FromSql, IsNull, ToSql, Type};
 use super::dto; // For PayPalSubscriptionDto, SubscriptionWebhookEventResource etc.
 use super::paypal; // For event constants
 use super::{
-    controller::GenericPaymentIntent,
     dto::{BalanceResponse, CreatePaymentRequest},
     error::PaymentError,
     paypal::PayPalOrder,
@@ -101,125 +100,141 @@ pub async fn store_payment_order(
     Ok(())
 }
 
-pub async fn update_payment_order(
+pub enum PaymentCredit {
+    Credited,
+    AlreadySettled,
+    NotFound,
+}
+
+pub async fn paypal_payment_owner(
     pool: &Pool,
-    order_id: &str,
-    status: &str,
-) -> Result<(), PaymentError> {
+    provider_payment_id: &str,
+) -> Result<Option<i32>, PaymentError> {
     let client = pool
         .get()
         .await
         .map_err(|e| PaymentError::Database(e.to_string()))?;
+    let row = client
+        .query_opt(
+            "SELECT user_id FROM payments
+             WHERE provider = 'paypal' AND provider_payment_id = $1",
+            &[&provider_payment_id],
+        )
+        .await
+        .map_err(|e| PaymentError::Database(e.to_string()))?;
+    Ok(row.map(|row| row.get("user_id")))
+}
 
-    client
-        .execute(
-            "UPDATE payments 
-            SET status = $1,
-                updated_at = NOW()
-            WHERE provider_payment_id = $2",
-            &[&status, &order_id],
+/// Credit the stored order amount once. Capture webhooks identify a capture id;
+/// pass the checkout order id as well. Repeated calls do not credit again.
+pub async fn credit_captured_paypal_payment(
+    pool: &Pool,
+    provider_payment_ids: &[String],
+) -> Result<PaymentCredit, PaymentError> {
+    if provider_payment_ids.is_empty() {
+        return Ok(PaymentCredit::NotFound);
+    }
+    let mut client = pool
+        .get()
+        .await
+        .map_err(|e| PaymentError::Database(e.to_string()))?;
+    let transaction = client
+        .transaction()
+        .await
+        .map_err(|e| PaymentError::Database(e.to_string()))?;
+
+    let row = transaction
+        .query_opt(
+            "UPDATE payments
+             SET status = 'succeeded',
+                 completed_at = NOW(),
+                 updated_at = NOW()
+             WHERE provider = 'paypal'
+               AND provider_payment_id = ANY($1)
+               AND status = 'pending'
+             RETURNING id, user_id, amount_cents, currency",
+            &[&provider_payment_ids],
         )
         .await
         .map_err(|e| PaymentError::Database(e.to_string()))?;
 
-    Ok(())
-}
-
-pub async fn handle_payment_success(
-    pool: &Pool,
-    payment_intent: &GenericPaymentIntent,
-    provider: &PaymentProvider,
-) -> Result<(), Box<dyn std::error::Error>> {
-    let mut client = pool.get().await?;
-    let transaction = client.transaction().await?;
-
-    // Get user_id from metadata
-    let user_id: i32 = payment_intent
-        .metadata
-        .get("user_id")
-        .ok_or("Missing user_id in payment metadata")?
-        .parse()?;
-
-    // Try to update payment status
-    let updated = transaction
-        .execute(
-            "UPDATE payments 
-         SET status = 'succeeded',
-             updated_at = NOW()
-         WHERE provider_payment_id = $1",
-            &[&payment_intent.id],
-        )
-        .await?;
-
-    // If no rows were updated, create a faulty record
-    if updated == 0 {
+    if let Some(row) = row {
+        let payment_id: i32 = row.get("id");
+        let user_id: i32 = row.get("user_id");
+        let amount_cents: i64 = row.get("amount_cents");
+        let currency: String = row.get("currency");
+        let reference = format!("payment:{payment_id}");
         transaction
             .execute(
-                "INSERT INTO payments (
-                user_id, provider, provider_payment_id,
-                amount_cents, currency, status,
-                created_at, updated_at
-            ) VALUES ($1, $2, $3, $4, $5, 'faulty', NOW(), NOW())",
-                &[
-                    &user_id,
-                    provider,
-                    &payment_intent.id,
-                    &(payment_intent.amount as i64),
-                    &payment_intent.currency,
-                ],
+                "INSERT INTO balance_transactions (
+                    user_id, amount_cents, currency, transaction_type, reference_id, created_at
+                 ) VALUES ($1, $2, $3, 'payment', $4, NOW())",
+                &[&user_id, &amount_cents, &currency, &reference],
             )
-            .await?;
+            .await
+            .map_err(|e| PaymentError::Database(e.to_string()))?;
+        transaction
+            .execute(
+                "INSERT INTO user_balances (user_id, balance_cents, created_at, updated_at)
+                 VALUES ($1, $2, NOW(), NOW())
+                 ON CONFLICT (user_id) DO UPDATE
+                 SET balance_cents = user_balances.balance_cents + EXCLUDED.balance_cents,
+                     updated_at = NOW()",
+                &[&user_id, &amount_cents],
+            )
+            .await
+            .map_err(|e| PaymentError::Database(e.to_string()))?;
+        transaction
+            .commit()
+            .await
+            .map_err(|e| PaymentError::Transaction(e.to_string()))?;
+        return Ok(PaymentCredit::Credited);
     }
 
-    // Update user balance
-    transaction
-        .execute(
-            "UPDATE user_balances 
-         SET balance_cents = balance_cents + $1,
-             updated_at = NOW()
-         WHERE user_id = $2",
-            &[&(payment_intent.amount as i64), &user_id],
+    let settled = transaction
+        .query_opt(
+            "SELECT 1 FROM payments
+             WHERE provider = 'paypal'
+               AND provider_payment_id = ANY($1)
+               AND status = 'succeeded'",
+            &[&provider_payment_ids],
         )
-        .await?;
-
-    // Record transaction
+        .await
+        .map_err(|e| PaymentError::Database(e.to_string()))?;
     transaction
-        .execute(
-            "INSERT INTO balance_transactions (
-            user_id, amount_cents, currency, 
-            transaction_type, reference_id, created_at
-        ) VALUES ($1, $2, $3, 'payment', $4, NOW())",
-            &[
-                &user_id,
-                &(payment_intent.amount as i64),
-                &payment_intent.currency,
-                &format!("payment:{}", payment_intent.id),
-            ],
-        )
-        .await?;
-
-    transaction.commit().await?;
-    Ok(())
+        .commit()
+        .await
+        .map_err(|e| PaymentError::Transaction(e.to_string()))?;
+    if settled.is_some() {
+        Ok(PaymentCredit::AlreadySettled)
+    } else {
+        Ok(PaymentCredit::NotFound)
+    }
 }
 
-pub async fn handle_payment_failure(
+pub async fn mark_paypal_payment_failed(
     pool: &Pool,
-    payment_intent: &GenericPaymentIntent,
-) -> Result<(), Box<dyn std::error::Error>> {
-    let client = pool.get().await?;
-
-    // Update payment status
+    provider_payment_ids: &[String],
+) -> Result<u64, PaymentError> {
+    if provider_payment_ids.is_empty() {
+        return Ok(0);
+    }
+    let client = pool
+        .get()
+        .await
+        .map_err(|e| PaymentError::Database(e.to_string()))?;
     client
         .execute(
-            "UPDATE payments 
-         SET status = 'failed',
-             updated_at = NOW()
-         WHERE provider_payment_id = $1",
-            &[&payment_intent.id],
+            "UPDATE payments
+             SET status = 'failed', updated_at = NOW()
+             WHERE provider = 'paypal'
+               AND provider_payment_id = ANY($1)
+               AND status = 'pending'",
+            &[&provider_payment_ids],
         )
-        .await?;
-
-    Ok(())
+        .await
+        .map(|count| count)
+        .map_err(|e| PaymentError::Database(e.to_string()))
 }
 
 pub async fn get_balance(

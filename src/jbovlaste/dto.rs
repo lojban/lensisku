@@ -50,7 +50,11 @@ pub fn parse_word_type_list(value: &Option<String>) -> Option<Vec<i16>> {
             ids.push(id);
         }
     }
-    if ids.is_empty() { None } else { Some(ids) }
+    if ids.is_empty() {
+        None
+    } else {
+        Some(ids)
+    }
 }
 
 pub fn has_word_type_filter(word_types: &Option<Vec<i16>>) -> bool {

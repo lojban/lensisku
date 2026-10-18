@@ -71,9 +71,8 @@ pub async fn start_server(
     })?);
 
     let redis_cache_data = web::Data::from(redis_cache);
-    let cloudflare_cache_purger = web::Data::new(
-        middleware::cloudflare_cache::CloudflareCachePurger::from_env(),
-    );
+    let cloudflare_cache_purger =
+        web::Data::new(middleware::cloudflare_cache::CloudflareCachePurger::from_env());
 
     // Initialize messaging service and WebSocket broadcast server
     let chat_server = messaging::websocket::ChatServer::new().start();
@@ -141,10 +140,7 @@ pub async fn start_server(
             .wrap(Logger::default())
             .wrap_fn(|req, service| {
                 let tags = if req.method() == actix_web::http::Method::GET {
-                    middleware::cloudflare_cache::tags_for_get(
-                        req.path(),
-                        req.uri().query(),
-                    )
+                    middleware::cloudflare_cache::tags_for_get(req.path(), req.uri().query())
                 } else {
                     Vec::new()
                 };
@@ -153,10 +149,10 @@ pub async fn start_server(
                     let mut response = future.await?;
                     if !tags.is_empty() {
                         if let Ok(value) = header::HeaderValue::from_str(&tags.join(",")) {
-                            response.response_mut().headers_mut().insert(
-                                header::HeaderName::from_static("cache-tag"),
-                                value,
-                            );
+                            response
+                                .response_mut()
+                                .headers_mut()
+                                .insert(header::HeaderName::from_static("cache-tag"), value);
                         }
                     }
                     Ok(response)

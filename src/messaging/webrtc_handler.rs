@@ -1,38 +1,12 @@
 // Functional WebRTC signaling handler for peer-to-peer communication
 
 use actix_web::{web, HttpResponse, Result};
-use chrono::{DateTime, Utc};
-use serde::{Deserialize, Serialize};
+use chrono::Utc;
 
+use super::dto::{SendSignalRequest, SignalListResponse, SignalResponse};
 use super::models::SignalType;
 use super::service::MessagingService;
 use crate::{auth::Claims, AppError};
-
-// Request/Response DTOs
-#[derive(Debug, Deserialize)]
-pub struct SendSignalRequest {
-    signal_type: SignalType,
-    signal_data: String,
-    to_user_id: i32,
-}
-
-#[derive(Debug, Serialize, Clone)]
-pub struct SignalResponse {
-    id: i64,
-    signal_type: SignalType,
-    signal_data: String,
-    from_user_id: i32,
-    from_username: String,
-    to_user_id: i32,
-    created_at: DateTime<Utc>,
-    expires_at: DateTime<Utc>,
-}
-
-#[derive(Debug, Serialize)]
-pub struct SignalListResponse {
-    signals: Vec<SignalResponse>,
-    total: i64,
-}
 
 // Send WebRTC signal
 pub async fn send_signal(
@@ -69,7 +43,7 @@ pub async fn send_signal(
         signal_type: signal.signal_type,
         signal_data: signal.signal_data.to_string(),
         from_user_id: signal.from_user_id,
-        from_username: "User".to_string(), // TODO: Get from database
+        from_username: claims.username.clone(),
         to_user_id: signal.to_user_id,
         created_at: signal.created_at,
         expires_at: signal.expires_at,
@@ -100,7 +74,11 @@ pub async fn get_pending_signals(
             signal_type: signal.signal_type,
             signal_data: signal.signal_data.to_string(),
             from_user_id: signal.from_user_id,
-            from_username: "User".to_string(), // TODO: Get from database
+            from_username: signal
+                .from_username
+                .clone()
+                .filter(|name| !name.is_empty())
+                .unwrap_or_else(|| "User".to_string()),
             to_user_id: signal.to_user_id,
             created_at: signal.created_at,
             expires_at: signal.expires_at,
@@ -161,10 +139,14 @@ pub async fn get_webrtc_config(claims: Claims) -> Result<HttpResponse, AppError>
 
 // Clean up expired signals (admin endpoint)
 pub async fn cleanup_expired_signals(
-    _claims: Claims,
+    claims: Claims,
     service: web::Data<MessagingService>,
 ) -> Result<HttpResponse, AppError> {
-    // TODO: Add admin permission check
+    if !claims.role.eq_ignore_ascii_case("admin") {
+        return Err(AppError::Auth(
+            "Admin permission required to clean up signals".to_string(),
+        ));
+    }
     let cleaned_count = service.cleanup_expired_webrtc_signals().await?;
 
     Ok(HttpResponse::Ok().json(serde_json::json!({

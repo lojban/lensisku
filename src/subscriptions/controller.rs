@@ -2,10 +2,11 @@ use actix_web::{get, post, put, web, HttpResponse, Responder};
 use deadpool_postgres::Pool;
 use serde_json::json;
 
-use super::models::{
-    NotificationListResponse, NotificationQuery, Subscription, SubscriptionRequest,
-    SubscriptionResponse, SubscriptionState,
+use super::dto::{
+    NotificationListResponse, NotificationQuery, SubscriptionRequest, SubscriptionResponse,
+    SubscriptionState,
 };
+use super::models::Subscription;
 use crate::auth::Claims;
 
 #[utoipa::path(
@@ -73,14 +74,15 @@ pub async fn unsubscribe(
     path: web::Path<(i32, String)>,
 ) -> impl Responder {
     let (valsi_id, trigger_type) = path.into_inner();
-    let trigger = match trigger_type.as_str() {
-        "comment" => Some(super::models::SubscriptionTrigger::Comment),
-        "definition" => Some(super::models::SubscriptionTrigger::Definition),
-        "edit" => Some(super::models::SubscriptionTrigger::Edit),
-        _ => None,
-    };
+    if super::models::SubscriptionTrigger::from_label(&trigger_type).is_none() {
+        return HttpResponse::BadRequest().json(json!({
+            "success": false,
+            "message": "Unknown trigger type"
+        }));
+    }
 
-    match super::service::unsubscribe_from_valsi(&pool, claims.sub, valsi_id, trigger).await {
+    // The word alert toggle subscribes every trigger, so a valid label clears all of them.
+    match super::service::unsubscribe_from_valsi(&pool, claims.sub, valsi_id, None).await {
         Ok(response) => HttpResponse::Ok().json(response),
         Err(e) => HttpResponse::InternalServerError().json(json!({
             "success": false,
@@ -141,8 +143,7 @@ pub async fn get_notifications(
     claims: Claims,
     query: web::Query<NotificationQuery>,
 ) -> impl Responder {
-    let page = query.page.unwrap_or(1);
-    let per_page = query.per_page.unwrap_or(20);
+    let (page, per_page, _) = crate::pagination::page_window(query.page, query.per_page, 20, 100);
     let unread_only = query.unread_only.unwrap_or(false);
 
     match super::service::get_user_notifications(&pool, claims.sub, page, per_page, unread_only)

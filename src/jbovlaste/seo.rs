@@ -7,7 +7,12 @@ fn is_reserved_valsi_path(word: &str) -> bool {
     word.eq_ignore_ascii_case("add")
 }
 
-fn entry_description(word: &str, type_name: &str, definition: Option<&str>, locale: &str) -> String {
+fn entry_description(
+    word: &str,
+    type_name: &str,
+    definition: Option<&str>,
+    locale: &str,
+) -> String {
     if let Some(def) = definition.filter(|s| !s.trim().is_empty()) {
         let preview = seo::plain_preview(def, 120);
         if !preview.is_empty() {

@@ -234,12 +234,13 @@ pub async fn search_wiki(
             })
             .collect();
         scored.sort_by(|a, b| {
-            b.0.cmp(&a.0).then_with(|| match (b.1.last_edited, a.1.last_edited) {
-                (Some(tb), Some(ta)) => tb.cmp(&ta),
-                (Some(_), None) => Ordering::Greater,
-                (None, Some(_)) => Ordering::Less,
-                (None, None) => Ordering::Equal,
-            })
+            b.0.cmp(&a.0)
+                .then_with(|| match (b.1.last_edited, a.1.last_edited) {
+                    (Some(tb), Some(ta)) => tb.cmp(&ta),
+                    (Some(_), None) => Ordering::Greater,
+                    (None, Some(_)) => Ordering::Less,
+                    (None, None) => Ordering::Equal,
+                })
         });
         hits = scored.into_iter().map(|(_, hit)| hit).collect();
     }

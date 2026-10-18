@@ -30,6 +30,11 @@ pub struct ChatMessage {
     pub name: Option<String>,
 }
 
+#[derive(Debug, Deserialize)]
+pub struct LocaleBody {
+    pub locale: Option<String>,
+}
+
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct ChatRequest {
     pub messages: Vec<ChatMessage>,

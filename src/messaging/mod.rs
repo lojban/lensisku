@@ -3,7 +3,6 @@ pub mod dto;
 pub mod encryption;
 pub mod models;
 pub mod service;
-pub mod webrtc;
 pub mod webrtc_handler; // Functional WebRTC implementation
 pub mod websocket; // Functional WebSocket implementation
 

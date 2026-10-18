@@ -23,6 +23,7 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
     cfg.service(
         web::scope("/payments")
             .service(controller::create_payment)
+            .service(controller::capture_order)
             .service(controller::get_balance)
             .service(controller::paypal_webhook)
             .service(controller::create_paypal_subscription)

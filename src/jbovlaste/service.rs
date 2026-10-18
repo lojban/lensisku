@@ -37,7 +37,7 @@ use super::{
 };
 use crate::jbovlaste::models::{
     ordered_rafsi, row_ordered_rafsi, row_vote_score_f32, row_vote_score_i32, DefinitionDetail,
-    RelatedValsi, SemanticGraphParams,
+    DeleteDefinitionResult, RelatedValsi, SemanticGraphParams,
 };
 use vlazba::{
     implicit_four_letter_gismu_rafsi, lujvo_rafsi, trivial_expansion_key, trivial_se_base,
@@ -6647,13 +6647,6 @@ pub async fn bulk_import_definitions(
         error_count
     );
     Ok((success_count, error_count))
-}
-
-#[derive(Debug)]
-pub struct DeleteDefinitionResult {
-    pub definition_deleted: bool,
-    pub valsi_deleted: bool,
-    pub has_remaining_definitions: bool,
 }
 
 pub async fn delete_definition(

@@ -4,7 +4,7 @@ use std::{
 };
 
 use crate::language::dto::*;
-use crate::language::models::{Language, LojbanToken};
+use crate::language::models::{Language, LojbanToken, LujvoClassification, OwnedRafsiMaps};
 use camxes_rs::camxes::peg::{grammar::Peg, parsing::ParseResult};
 use deadpool_postgres::{Pool, Transaction};
 use log::warn;
@@ -24,25 +24,6 @@ pub const LUJVO_TYPE_ID: i16 = 4;
 pub const NON_CANONICAL_LUJVO_TYPE_ID: i16 = 17;
 pub const LUJVO_TYPE_NAME: &str = "lujvo";
 pub const NON_CANONICAL_LUJVO_TYPE_NAME: &str = "non-canonical lujvo";
-
-/// Dictionary-facing classification (vlazba morphology + lensisku type ids).
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct LujvoClassification {
-    pub type_id: i16,
-    pub type_name: &'static str,
-    /// Score-optimal form; equal to `word` when type is canonical lujvo.
-    pub canonical_word: String,
-}
-
-/// Owned rafsi maps so callers can build [`RafsiOptions`] without lifetime issues.
-#[derive(Debug, Default, Clone)]
-pub struct OwnedRafsiMaps {
-    pub cmavo: HashMap<String, Vec<String>>,
-    pub cmavo_exp: HashMap<String, Vec<String>>,
-    pub gismu: HashMap<String, Vec<String>>,
-    pub gismu_exp: HashMap<String, Vec<String>>,
-    pub se_words: HashSet<String>,
-}
 
 impl OwnedRafsiMaps {
     pub fn se_words(&self) -> Option<&HashSet<String>> {

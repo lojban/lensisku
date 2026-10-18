@@ -133,7 +133,9 @@ pub fn tags_for_get(path: &str, query: Option<&str>) -> Vec<String> {
             tags.push(format!("definition:{id}"));
         }
     }
-    if let Some(id) = path.strip_prefix("/versions/").and_then(|s| s.strip_suffix("/history"))
+    if let Some(id) = path
+        .strip_prefix("/versions/")
+        .and_then(|s| s.strip_suffix("/history"))
         .and_then(parse_positive_id)
     {
         tags.push(format!("definition:{id}"));
@@ -152,7 +154,8 @@ pub fn tags_for_get(path: &str, query: Option<&str>) -> Vec<String> {
     }
 
     match path {
-        "/jbovlaste/definitions" | "/jbovlaste/definitions/list"
+        "/jbovlaste/definitions"
+        | "/jbovlaste/definitions/list"
         | "/jbovlaste/non-lojban-definitions" => tags.push("definitions".into()),
         "/jbovlaste/semantic-search" | "/jbovlaste/semantic-graph" => {
             tags.push("dictionary-search".into())
@@ -204,4 +207,3 @@ fn valsi_tag(valsi: &str) -> String {
         format!("valsi:{}", valsi.replace(' ', "_").to_lowercase())
     }
 }
-

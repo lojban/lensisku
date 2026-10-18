@@ -195,8 +195,7 @@ pub async fn semantic_search(
     let result = if use_groups {
         // Skip redis cache: filtered groups include live collection rows.
         let collection_ids =
-            collection_ids_for_filtered_search(pool.get_ref(), redis_cache.get_ref(), &query)
-                .await;
+            collection_ids_for_filtered_search(pool.get_ref(), redis_cache.get_ref(), &query).await;
         service::search_with_filtered_and_global_groups(
             &pool,
             params,
@@ -556,8 +555,7 @@ pub async fn search_definitions(
 
     let result = if use_groups {
         let collection_ids =
-            collection_ids_for_filtered_search(pool.get_ref(), redis_cache.get_ref(), &query)
-                .await;
+            collection_ids_for_filtered_search(pool.get_ref(), redis_cache.get_ref(), &query).await;
         service::search_with_filtered_and_global_groups(
             &pool,
             params,

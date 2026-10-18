@@ -1,5 +1,6 @@
 use camxes_rs::camxes::peg::parsing::ParseNode;
 use serde::{Deserialize, Serialize};
+use std::collections::{HashMap, HashSet};
 use std::error::Error as StdError;
 use tokio_postgres::Row;
 use utoipa::ToSchema;
@@ -25,6 +26,25 @@ impl StdError for MathJaxValidationError {}
 #[derive(Debug)]
 pub struct MathJaxValidationOptions {
     pub use_tectonic: bool,
+}
+
+/// Dictionary-facing classification (vlazba morphology + lensisku type ids).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct LujvoClassification {
+    pub type_id: i16,
+    pub type_name: &'static str,
+    /// Score-optimal form; equal to `word` when type is canonical lujvo.
+    pub canonical_word: String,
+}
+
+/// Owned rafsi maps so callers can build [`vlazba::jvozba::tools::RafsiOptions`] without lifetime issues.
+#[derive(Debug, Default, Clone)]
+pub struct OwnedRafsiMaps {
+    pub cmavo: HashMap<String, Vec<String>>,
+    pub cmavo_exp: HashMap<String, Vec<String>>,
+    pub gismu: HashMap<String, Vec<String>>,
+    pub gismu_exp: HashMap<String, Vec<String>>,
+    pub se_words: HashSet<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]

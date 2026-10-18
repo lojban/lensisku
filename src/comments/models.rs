@@ -186,3 +186,21 @@ pub struct FreeThread {
     #[schema(value_type = Vec<ReactionResponse>)]
     pub reactions: Vec<ReactionResponse>,
 }
+
+/// Internal search parameters. Not an HTTP body.
+#[derive(Debug)]
+pub struct SearchCommentsParams {
+    pub page: i64,
+    pub per_page: i64,
+    pub search_term: String,
+    pub sort_by: String,
+    pub sort_order: String,
+    pub username: Option<String>,
+    pub valsi_id: Option<i32>,
+    pub definition_id: Option<i32>,
+    pub definition_link_id: Option<i32>,
+    pub target_user_id: Option<i32>,
+    pub collection_id: Option<i32>,
+    /// `jbotcan` | `freeforums` | `comments` (site, non-import) — filters `comments.import_source`.
+    pub wave_source: Option<String>,
+}

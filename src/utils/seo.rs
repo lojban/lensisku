@@ -125,7 +125,12 @@ fn index_html_path() -> String {
         })
 }
 
-pub fn html_response(locale: &str, page_title: &str, description: &str, path: &str) -> HttpResponse {
+pub fn html_response(
+    locale: &str,
+    page_title: &str,
+    description: &str,
+    path: &str,
+) -> HttpResponse {
     let Ok(template) = std::fs::read_to_string(index_html_path()) else {
         return HttpResponse::InternalServerError().finish();
     };

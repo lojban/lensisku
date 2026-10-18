@@ -8,9 +8,13 @@ use once_cell::sync::Lazy;
 use reqwest::header::{HeaderMap, HeaderName, HeaderValue, AUTHORIZATION};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::sync::Mutex;
+use std::sync::{Mutex, OnceLock};
 use std::time::Duration;
 use utoipa::ToSchema;
+
+pub fn format_cents(cents: u64) -> String {
+    format!("{}.{:02}", cents / 100, cents % 100)
+}
 
 const PAYPAL_API_URL: &str = "https://api.paypal.com";
 const PAYPAL_SANDBOX_API_URL: &str = "https://api.sandbox.paypal.com";
@@ -60,6 +64,21 @@ pub struct PayPalOrder {
 static CERT_CACHE: Lazy<Mutex<HashMap<String, String>>> = Lazy::new(|| Mutex::new(HashMap::new()));
 
 impl PayPalProvider {
+    pub fn shared() -> Result<&'static Self, Box<dyn std::error::Error + Send + Sync>> {
+        static SHARED: OnceLock<PayPalProvider> = OnceLock::new();
+        if let Some(provider) = SHARED.get() {
+            return Ok(provider);
+        }
+        let provider = Self::new(
+            std::env::var("PAYPAL_CLIENT_ID").unwrap_or_default(),
+            std::env::var("PAYPAL_CLIENT_SECRET").unwrap_or_default(),
+        )?;
+        let _ = SHARED.set(provider);
+        SHARED
+            .get()
+            .ok_or_else(|| "PayPal provider unavailable".into())
+    }
+
     pub fn new(
         client_id: String,
         client_secret: String,
@@ -228,7 +247,7 @@ impl PayPalProvider {
 
         let amount = Amount {
             currency_code: currency.to_uppercase(),
-            value: format!("{:.2}", amount_cents as f64 / 100.0),
+            value: format_cents(amount_cents),
         };
 
         let purchase_unit = PurchaseUnit {
@@ -697,5 +716,19 @@ impl PaymentProvider for PayPalProvider {
         log::info!("\nSignature verification result: {}", result);
 
         Ok(result)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::format_cents;
+
+    #[test]
+    fn formats_cents_without_binary_float_error() {
+        assert_eq!(format_cents(0), "0.00");
+        assert_eq!(format_cents(50), "0.50");
+        assert_eq!(format_cents(100), "1.00");
+        assert_eq!(format_cents(199), "1.99");
+        assert_eq!(format_cents(10_000), "100.00");
     }
 }
