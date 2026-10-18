@@ -2,12 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Mobile drawer: same span between columns as between rows. */
-.mobile-nav-grid {
-  column-gap: 0.5rem;
-  row-gap: 0.5rem;
-}
-
 @media (prefers-reduced-motion: reduce) {
   .toggle-switch,
   .toggle-switch-thumb {

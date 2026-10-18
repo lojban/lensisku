@@ -386,19 +386,23 @@ export default {
           '@apply text-[10px] text-gray-700 font-mono bg-blue-50/30 px-1.5 py-0.5 rounded border border-blue-100/30 inline-block mx-auto sm:text-xs':
             {},
         },
-        /** App mobile drawer: two equal columns. Gap matches the row spacing so neighboring cells do not touch. */
+        /**
+         * App mobile drawer: two equal columns.
+         * One 0.5rem rhythm for the column gap, the row gap, and the inset from the drawer edges.
+         */
         '.mobile-nav-grid': {
           display: 'grid',
           alignItems: 'stretch',
           gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)',
           gap: '0.5rem',
+          paddingInline: '0.5rem',
         },
         '.mobile-nav-grid__full': {
           '@apply col-span-2': {},
         },
         /** App mobile drawer row: layout + hover only — link color comes from `NavLink` (`text-nav-link` / `nav-link-active`). */
         '.mobile-nav-row': {
-          '@apply flex min-w-0 cursor-pointer items-center gap-1.5 rounded-md py-2 pl-2 pr-1 text-base leading-snug transition-colors duration-200 hover:bg-gray-100 hover:text-blue-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 focus-visible:ring-offset-white [&>svg]:shrink-0':
+          '@apply flex min-w-0 cursor-pointer items-center gap-1.5 rounded-md py-2 text-base leading-snug transition-colors duration-200 hover:bg-gray-100 hover:text-blue-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 focus-visible:ring-offset-white [&>svg]:shrink-0':
             {},
         },
         /** Logout / primary action row in mobile nav. */
