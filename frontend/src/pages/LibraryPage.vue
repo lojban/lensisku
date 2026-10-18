@@ -49,7 +49,7 @@
           <div class="flex flex-row items-center gap-2 sm:block">
             <span id="library-list-sort-legend" class="sr-only">{{ t('sort.sortByLabel') }}</span>
             <div
-              class="btn-group-forced flex flex-nowrap justify-center min-w-0 overflow-visible py-2"
+              class="btn-group-forced flex flex-nowrap justify-center min-w-0"
               role="group"
               aria-labelledby="library-list-sort-legend"
               aria-describedby="library-list-sort-current"

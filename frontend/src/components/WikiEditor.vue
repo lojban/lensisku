@@ -25,7 +25,7 @@
       v-model="rawValue"
       class="wiki-editor-surface wiki-editor-min-h w-full rounded border border-gray-300 p-3 font-mono text-sm max-sm:rounded-none max-sm:border-x-0"
       :disabled="disabled"
-      :placeholder="placeholder"
+      :placeholder="t('upsertWiki.rawPlaceholder')"
       @input="syncFromRaw"
     />
     <div
@@ -179,7 +179,7 @@ defineExpose({
 
 <style scoped>
 .wiki-editor-surface {
-  @apply max-sm:-mx-3 max-sm:!w-[calc(100%+1.5rem)];
+  @apply w-full;
 }
 
 .wiki-editor-min-h {

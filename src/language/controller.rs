@@ -1,4 +1,5 @@
-use actix_web::{get, post, web, HttpResponse, Responder};
+use actix_web::{get, post, put, web, HttpResponse, Responder};
+use actix_web_grants::protect;
 use camxes_rs::camxes::peg::grammar::Peg;
 use deadpool_postgres::Pool;
 use std::collections::HashMap;
@@ -203,6 +204,81 @@ pub async fn analyze_word(
         ("bearer_auth" = [])
     )
 )]
+fn language_write_response(result: Result<Language, service::LanguageWriteError>) -> HttpResponse {
+    match result {
+        Ok(language) => HttpResponse::Ok().json(language),
+        Err(service::LanguageWriteError::Invalid(message)) => {
+            HttpResponse::BadRequest().json(serde_json::json!({ "error": message }))
+        }
+        Err(service::LanguageWriteError::NotFound) => {
+            HttpResponse::NotFound().json(serde_json::json!({ "error": "Language not found." }))
+        }
+        Err(service::LanguageWriteError::Conflict(message)) => {
+            HttpResponse::Conflict().json(serde_json::json!({ "error": message }))
+        }
+        Err(service::LanguageWriteError::Db(error)) => {
+            log::error!("language write failed: {error}");
+            HttpResponse::InternalServerError()
+                .json(serde_json::json!({ "error": "Could not save the language." }))
+        }
+    }
+}
+
+#[utoipa::path(
+    post,
+    path = "/language/languages",
+    tag = "language",
+    operation_id = "create_language",
+    summary = "Add a dictionary language",
+    request_body = UpsertLanguageRequest,
+    responses(
+        (status = 200, description = "Language created", body = Language),
+        (status = 400, description = "Invalid language"),
+        (status = 401, description = "Missing or invalid bearer token"),
+        (status = 403, description = "Missing manage_languages permission"),
+        (status = 409, description = "Tag already exists")
+    ),
+    security(("bearer_auth" = ["manage_languages"]))
+)]
+#[post("/languages")]
+#[protect("manage_languages")]
+pub async fn create_language(
+    pool: web::Data<Pool>,
+    request: web::Json<UpsertLanguageRequest>,
+    _claims: crate::auth::Claims,
+) -> HttpResponse {
+    language_write_response(service::create_language(&pool, &request).await)
+}
+
+#[utoipa::path(
+    put,
+    path = "/language/languages/{id}",
+    tag = "language",
+    operation_id = "update_language",
+    summary = "Edit a dictionary language",
+    params(("id" = i32, Path, description = "Language id")),
+    request_body = UpsertLanguageRequest,
+    responses(
+        (status = 200, description = "Language updated", body = Language),
+        (status = 400, description = "Invalid language"),
+        (status = 401, description = "Missing or invalid bearer token"),
+        (status = 403, description = "Missing manage_languages permission"),
+        (status = 404, description = "Language not found"),
+        (status = 409, description = "Tag already exists")
+    ),
+    security(("bearer_auth" = ["manage_languages"]))
+)]
+#[put("/languages/{id}")]
+#[protect("manage_languages")]
+pub async fn update_language(
+    pool: web::Data<Pool>,
+    id: web::Path<i32>,
+    request: web::Json<UpsertLanguageRequest>,
+    _claims: crate::auth::Claims,
+) -> HttpResponse {
+    language_write_response(service::update_language(&pool, id.into_inner(), &request).await)
+}
+
 #[post("/validate_mathjax")]
 pub async fn validate_mathjax(request: web::Json<MathJaxValidationRequest>) -> impl Responder {
     let response = service::validate_mathjax_handler(&request.text).await;

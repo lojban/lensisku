@@ -108,7 +108,8 @@ export function buildAquaBaseLayer() {
       gridRow: '1',
       borderRadius: '1000px',
       position: 'relative',
-      overflow: 'hidden',
+      /* Visible so the outer drop shadow is not cut by this pill. Gloss stays inside via the inset pseudos. */
+      overflow: 'visible',
       cursor: 'default',
       outline: 'none',
       boxShadow:
@@ -190,7 +191,7 @@ export function buildAquaBaseLayer() {
       gridRow: '1',
       borderRadius: '1000px',
       position: 'relative',
-      overflow: 'hidden',
+      overflow: 'visible',
       cursor: 'default',
       outline: 'none',
       boxShadow:
@@ -419,11 +420,12 @@ export function buildAquaButtonGroupLayer() {
      * `.btn-group-forced`.
      */
     '.btn-group': {
-      '@apply flex flex-wrap gap-2 min-w-0': {},
+      /* Same inset as `.shadow-bounds` — keep the pill shadow inside any overflow ancestor. */
+      '@apply flex flex-wrap gap-2 min-w-0 overflow-visible px-3 pt-1 pb-3': {},
     },
     /** Fused segment control at every breakpoint (spacing + item joins; use where wrapping must stay one bar). */
     '.btn-group-forced': {
-      '@apply gap-0': {},
+      '@apply gap-0 overflow-visible px-3 pt-1 pb-3': {},
       [`& > :nth-child(1 of ${list})`]: {
         '@apply rounded-l-full': {},
       },

@@ -51,12 +51,15 @@
         {{ auth.state.authorities?.includes('manage_roles') ? t('nav.iamUsers') : t('nav.users') }}
       </NavLink>
       <NavLink
-        to="/languages"
+        :to="
+          auth.state.isLoggedIn
+            ? { path: '/users', query: { tab: 'dictionaryLanguages' } }
+            : '/languages'
+        "
         class="mobile-nav-row"
-        :class="{ 'mobile-nav-grid__full': !auth.state.isLoggedIn }"
         @click="$emit('close')"
       >
-        <Globe class="h-5 w-5" /> {{ t('nav.languages') }}
+        <Languages class="h-5 w-5" /> {{ t('nav.dictionaryLanguages') }}
       </NavLink>
       <NavLink to="/assistant" class="mobile-nav-row" @click="$emit('close')">
         <Bot class="h-5 w-5" /> {{ t('nav.assistant') }}
@@ -89,6 +92,10 @@
         <ImportIcon class="h-5 w-5" /> {{ t('nav.bulkImport') }}
       </NavLink>
     </div>
+    <div class="mobile-nav-grid px-2">
+      <LocaleSelect block />
+      <ButtonThemeSelect block />
+    </div>
   </div>
 </template>
 
@@ -96,7 +103,6 @@
 import { Button, DownloadIcon, ExportIcon, ImportIcon } from '@packages/ui'
 import {
   Users,
-  Globe,
   LogOut,
   Clock4,
   GraduationCap,
@@ -105,10 +111,13 @@ import {
   Bot,
   Share2,
   FilePlus,
+  Languages,
 } from '@lucide/vue'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import NavLink from '@/components/NavLink.vue'
+import ButtonThemeSelect from '@/components/layout/ButtonThemeSelect.vue'
+import LocaleSelect from '@/components/layout/LocaleSelect.vue'
 import { useAuth } from '@/composables/useAuth'
 
 defineProps({

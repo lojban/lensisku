@@ -4,13 +4,14 @@ import PublicDomainNotice from '@/components/PublicDomainNotice.vue'
 
 withDefaults(
   defineProps<{
-    title: string
+    /** Page heading. Omit it when the toolbar should show actions only. */
+    title?: string
     /** Cap form width (markdown / wiki editors). */
     narrow?: boolean
     /** Let a long-form editor fill the remaining scroll viewport, above the public-domain notice. */
     fillContent?: boolean
   }>(),
-  { narrow: false, fillContent: false }
+  { title: '', narrow: false, fillContent: false }
 )
 
 const scrollEl = ref<HTMLElement | null>(null)
@@ -41,13 +42,14 @@ defineExpose({ scrollToTop })
     >
       <div class="flex w-full min-w-0 flex-nowrap items-center justify-between gap-3">
         <h2
+          v-if="title"
           class="my-0 min-w-0 flex-1 truncate text-xl font-bold text-gray-800 select-none sm:text-2xl"
         >
           {{ title }}
         </h2>
         <div
           v-if="$slots.trailing"
-          class="flex shrink-0 flex-nowrap items-center justify-end gap-2"
+          class="ml-auto flex shrink-0 flex-nowrap items-center justify-end gap-2"
         >
           <slot name="trailing" />
         </div>
@@ -55,30 +57,29 @@ defineExpose({ scrollToTop })
     </header>
 
     <div
-      :ref="fillContent ? undefined : assignScrollEl"
-      class="flex min-h-0 flex-1 flex-col overscroll-y-contain pb-0"
-      :class="
-        fillContent
-          ? 'overflow-hidden px-0 sm:px-4 [&_.public-domain-notice]:mt-0'
-          : 'overflow-x-hidden overflow-y-auto px-3 sm:px-4'
-      "
-      @scroll="fillContent ? undefined : handleScroll($event)"
+      v-if="fillContent"
+      class="flex min-h-0 w-full flex-1 flex-col overflow-hidden overscroll-y-contain pb-0 [&_.public-domain-notice]:mt-0"
     >
       <div
-        v-if="narrow"
-        :ref="fillContent ? assignScrollEl : undefined"
-        class="mx-auto w-full max-w-3xl"
-        :class="
-          fillContent
-            ? 'flex min-h-0 flex-1 flex-col overflow-x-hidden overflow-y-auto overscroll-y-contain'
-            : ''
-        "
-        @scroll="fillContent ? handleScroll($event) : undefined"
+        :ref="assignScrollEl"
+        class="flex min-h-0 w-full flex-1 flex-col overflow-x-hidden overflow-y-auto overscroll-y-contain"
+        @scroll="handleScroll($event)"
       >
         <slot />
       </div>
-      <slot v-else />
       <PublicDomainNotice />
+    </div>
+    <div v-else :ref="assignScrollEl" class="upsert-scroll" @scroll="handleScroll($event)">
+      <div class="upsert-scroll__stack">
+        <div
+          class="upsert-scroll__main px-3 pt-4 pb-4 sm:px-4"
+          :class="narrow ? 'mx-auto max-w-3xl' : ''"
+        >
+          <slot />
+        </div>
+        <div class="upsert-scroll__spacer" aria-hidden="true"></div>
+        <PublicDomainNotice />
+      </div>
     </div>
     <footer
       v-if="$slots.actions"

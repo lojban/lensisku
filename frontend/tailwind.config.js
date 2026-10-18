@@ -291,6 +291,24 @@ export default {
         '.page-banner--error': {
           '@apply w-fit px-2 py-0 text-xs opacity-80 bg-red-100 border-red-200': {},
         },
+        /**
+         * Room for an aqua pill's outer drop shadow inside an overflow clip.
+         * The shadow reaches about 0.5em sideways and 0.9em below the border box.
+         */
+        '.shadow-bounds': {
+          '@apply overflow-visible px-3 pt-1 pb-3': {},
+        },
+        /** In-form note. Inset from the header rule; text stays off the box border. */
+        '.form-callout': {
+          '@apply mb-4 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm leading-relaxed text-blue-800':
+            {},
+        },
+        '.form-callout--warning': {
+          '@apply border-amber-200 bg-amber-50 text-amber-900': {},
+        },
+        '.form-callout--error': {
+          '@apply mb-0 mt-3 border-red-200 bg-red-50 text-red-800': {},
+        },
         /** `ModalComponent` default slot: scroll area. Padding inset keeps button box-shadows and focus rings inside the scrollport (they paint outside the border box and would otherwise clip). */
         '.modal-scroll-body': {
           '@apply min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 pt-2 pb-6 sm:px-3 sm:pb-7':
@@ -1163,6 +1181,26 @@ export default {
         },
         '.feed-page__footer-inner': {
           '@apply flex w-full flex-col': {},
+        },
+        /**
+         * Upsert scroll body. Block flow (same reason as `.feed-page__body`).
+         * The stack is at least the scrollport tall; the spacer pushes the
+         * public-domain notice to the bottom when the form is short.
+         */
+        '.upsert-scroll': {
+          '@apply flex min-h-0 w-full flex-1 flex-col overflow-x-hidden overflow-y-auto overscroll-y-contain px-3 pb-0 sm:px-4':
+            {},
+        },
+        '.upsert-scroll__stack': {
+          /* Grow to the scrollport, never shrink — shrinking would park the notice mid-scroll. */
+          '@apply flex w-full min-h-full flex-col [&_.public-domain-notice]:mt-0': {},
+          flex: '1 0 auto',
+        },
+        '.upsert-scroll__main': {
+          '@apply w-full px-3 pt-4 pb-4 sm:px-4': {},
+        },
+        '.upsert-scroll__spacer': {
+          '@apply min-h-6 w-full flex-1': {},
         },
         /**
          * Legal fine print at the end of scroll content.

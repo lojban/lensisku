@@ -176,6 +176,153 @@ pub async fn get_languages(pool: &Pool) -> Result<Vec<Language>, Box<dyn std::er
     Ok(languages)
 }
 
+#[derive(Debug)]
+pub enum LanguageWriteError {
+    Invalid(&'static str),
+    NotFound,
+    Conflict(&'static str),
+    Db(Box<dyn std::error::Error + Send + Sync>),
+}
+
+struct NormalizedLanguage {
+    tag: String,
+    english_name: String,
+    lojban_name: String,
+    real_name: String,
+    for_lojban: Option<String>,
+    url: Option<String>,
+}
+
+fn optional_text(value: Option<String>) -> Option<String> {
+    value.and_then(|raw| {
+        let trimmed = raw.trim().to_string();
+        (!trimmed.is_empty()).then_some(trimmed)
+    })
+}
+
+fn normalize_language(
+    request: &UpsertLanguageRequest,
+) -> Result<NormalizedLanguage, LanguageWriteError> {
+    let tag = request.tag.trim().to_string();
+    let english_name = request.english_name.trim().to_string();
+    let lojban_name = request.lojban_name.trim().to_string();
+    let real_name = request.real_name.trim().to_string();
+    if tag.is_empty()
+        || tag.chars().count() > 128
+        || tag.chars().any(char::is_whitespace)
+        || english_name.is_empty()
+        || lojban_name.is_empty()
+        || real_name.is_empty()
+    {
+        return Err(LanguageWriteError::Invalid(
+            "Tag, English name, Lojban name, and real name are required. The tag cannot contain spaces.",
+        ));
+    }
+    let url = optional_text(request.url.clone());
+    if let Some(url) = &url {
+        if !(url.starts_with("https://") || url.starts_with("http://")) {
+            return Err(LanguageWriteError::Invalid(
+                "Website must start with http:// or https://.",
+            ));
+        }
+    }
+    Ok(NormalizedLanguage {
+        tag,
+        english_name,
+        lojban_name,
+        real_name,
+        for_lojban: optional_text(request.for_lojban.clone()),
+        url,
+    })
+}
+
+async fn tag_taken(
+    client: &deadpool_postgres::Client,
+    tag: &str,
+    except_id: Option<i32>,
+) -> Result<bool, LanguageWriteError> {
+    let row = client
+        .query_opt(
+            "SELECT langid FROM languages WHERE lower(tag) = lower($1) AND ($2::int IS NULL OR langid <> $2)",
+            &[&tag, &except_id],
+        )
+        .await
+        .map_err(|error| LanguageWriteError::Db(Box::new(error)))?;
+    Ok(row.is_some())
+}
+
+pub async fn create_language(
+    pool: &Pool,
+    request: &UpsertLanguageRequest,
+) -> Result<Language, LanguageWriteError> {
+    let language = normalize_language(request)?;
+    let client = pool
+        .get()
+        .await
+        .map_err(|error| LanguageWriteError::Db(Box::new(error)))?;
+    if tag_taken(&client, &language.tag, None).await? {
+        return Err(LanguageWriteError::Conflict(
+            "A language with this tag already exists.",
+        ));
+    }
+    let row = client
+        .query_one(
+            "INSERT INTO languages (tag, englishname, lojbanname, realname, forlojban, url)
+             VALUES ($1, $2, $3, $4, $5, $6)
+             RETURNING langid, tag, englishname, lojbanname, realname, forlojban, url",
+            &[
+                &language.tag,
+                &language.english_name,
+                &language.lojban_name,
+                &language.real_name,
+                &language.for_lojban,
+                &language.url,
+            ],
+        )
+        .await
+        .map_err(|error| LanguageWriteError::Db(Box::new(error)))?;
+    Ok(Language::from(row))
+}
+
+pub async fn update_language(
+    pool: &Pool,
+    id: i32,
+    request: &UpsertLanguageRequest,
+) -> Result<Language, LanguageWriteError> {
+    if id <= 0 {
+        return Err(LanguageWriteError::NotFound);
+    }
+    let language = normalize_language(request)?;
+    let client = pool
+        .get()
+        .await
+        .map_err(|error| LanguageWriteError::Db(Box::new(error)))?;
+    if tag_taken(&client, &language.tag, Some(id)).await? {
+        return Err(LanguageWriteError::Conflict(
+            "A language with this tag already exists.",
+        ));
+    }
+    let row = client
+        .query_opt(
+            "UPDATE languages
+             SET tag = $1, englishname = $2, lojbanname = $3, realname = $4, forlojban = $5, url = $6
+             WHERE langid = $7
+             RETURNING langid, tag, englishname, lojbanname, realname, forlojban, url",
+            &[
+                &language.tag,
+                &language.english_name,
+                &language.lojban_name,
+                &language.real_name,
+                &language.for_lojban,
+                &language.url,
+                &id,
+            ],
+        )
+        .await
+        .map_err(|error| LanguageWriteError::Db(Box::new(error)))?;
+    row.map(Language::from).ok_or(LanguageWriteError::NotFound)
+}
+
 // TODO: Adapt this function or create a new one if parsing for non-Lojban languages is needed.
 // Currently, it assumes the Lojban parser (ID 1).
 pub fn parse_lojban(parsers: &Arc<HashMap<i32, Peg>>, input: &str) -> LojbanParseResponse {

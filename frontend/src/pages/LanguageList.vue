@@ -3,22 +3,31 @@
     <!-- Header with stats -->
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
       <div>
-        <h2 class="text-2xl font-bold text-gray-800">{{ t('languageList.title') }}</h2>
-        <p class="text-gray-600 mt-2">{{ t('languageList.description') }}</p>
+        <h2 v-if="!embedded" class="text-2xl font-bold text-gray-800">
+          {{ t('languageList.title') }}
+        </h2>
+        <p class="text-gray-600" :class="embedded ? '' : 'mt-2'">
+          {{ t('languageList.description') }}
+        </p>
       </div>
 
-      <div
-        v-if="languages.length > 0"
-        class="text-sm text-gray-600 bg-gray-100 px-3 py-1.5 rounded-full font-medium shrink-0"
-      >
-        {{
-          hasActiveSearchOrFilters
-            ? t('languageList.showingCount', {
-                count: filteredLanguages.length,
-                total: languages.length,
-              })
-            : t('languageList.totalLabel', { count: languages.length })
-        }}
+      <div class="flex flex-wrap items-center gap-2 shrink-0">
+        <Button v-if="canManage" variant="create" type="button" @click="openCreate">
+          {{ t('languageList.addLanguage') }}
+        </Button>
+        <div
+          v-if="languages.length > 0"
+          class="text-sm text-gray-600 bg-gray-100 px-3 py-1.5 rounded-full font-medium shrink-0"
+        >
+          {{
+            hasActiveSearchOrFilters
+              ? t('languageList.showingCount', {
+                  count: filteredLanguages.length,
+                  total: languages.length,
+                })
+              : t('languageList.totalLabel', { count: languages.length })
+          }}
+        </div>
       </div>
     </div>
 
@@ -211,12 +220,67 @@
                 >
                   {{ t('languageList.visitWebsite') }}
                 </a>
+                <Button v-if="canManage" variant="edit" type="button" @click.stop="openEdit(lang)">
+                  {{ t('languageList.editLanguage') }}
+                </Button>
               </div>
             </div>
           </div>
         </ListRowSurface>
       </div>
     </div>
+
+    <ModalComponent
+      :show="showEditor"
+      :title="editingId ? t('languageList.editLanguage') : t('languageList.addLanguage')"
+      @close="closeEditor"
+    >
+      <form class="space-y-3" @submit.prevent="saveLanguage">
+        <label class="block text-sm font-medium text-gray-700">
+          {{ t('languageList.tableHeader.tag') }}
+          <input v-model="draft.tag" class="input-field mt-1 w-full" required maxlength="128" />
+        </label>
+        <label class="block text-sm font-medium text-gray-700">
+          {{ t('languageList.tableHeader.englishName') }}
+          <input v-model="draft.english_name" class="input-field mt-1 w-full" required />
+        </label>
+        <label class="block text-sm font-medium text-gray-700">
+          {{ t('languageList.tableHeader.lojbanName') }}
+          <input v-model="draft.lojban_name" class="input-field mt-1 w-full" required />
+        </label>
+        <label class="block text-sm font-medium text-gray-700">
+          {{ t('languageList.tableHeader.realName') }}
+          <input v-model="draft.real_name" class="input-field mt-1 w-full" required />
+        </label>
+        <label class="block text-sm font-medium text-gray-700">
+          {{ t('languageList.tableHeader.forLojban') }}
+          <input
+            v-model="draft.for_lojban"
+            class="input-field mt-1 w-full"
+            :placeholder="t('languageList.forLojbanPlaceholder')"
+          />
+        </label>
+        <label class="block text-sm font-medium text-gray-700">
+          {{ t('languageList.tableHeader.url') }}
+          <input
+            v-model="draft.url"
+            class="input-field mt-1 w-full"
+            :placeholder="t('languageList.urlPlaceholder')"
+          />
+        </label>
+        <p v-if="editorError" class="form-callout--error">{{ editorError }}</p>
+      </form>
+      <template #footer>
+        <div class="flex justify-end gap-2">
+          <Button variant="neutral" type="button" @click="closeEditor">
+            {{ t('modal.close') }}
+          </Button>
+          <Button variant="edit" type="button" :disabled="isSaving" @click="saveLanguage">
+            {{ t('languageList.save') }}
+          </Button>
+        </div>
+      </template>
+    </ModalComponent>
   </div>
 </template>
 
@@ -232,12 +296,20 @@ import { RouterLink, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 
 import SearchInput from '@/components/SearchInput.vue'
-import { getLanguages } from '@/api'
+import ModalComponent from '@/components/ModalComponent.vue'
+import { createLanguage, getLanguages, updateLanguage } from '@/api'
+import { useAuth } from '@/composables/useAuth'
 import { useError } from '@/composables/useError'
 import { useSeoHead } from '@/composables/useSeoHead'
 
+const props = defineProps({
+  embedded: { type: Boolean, default: false },
+})
+
 const { t } = useI18n()
 const router = useRouter()
+const auth = useAuth()
+const canManage = computed(() => auth.state.authorities?.includes('manage_languages') ?? false)
 
 type LanguageRow = {
   id: number
@@ -329,6 +401,73 @@ const openLanguage = (lang: LanguageRow) => {
   router.push(`/language/${lang.id}`)
 }
 
+const emptyDraft = () => ({
+  tag: '',
+  english_name: '',
+  lojban_name: '',
+  real_name: '',
+  for_lojban: '',
+  url: '',
+})
+
+const showEditor = ref(false)
+const editingId = ref<number | null>(null)
+const draft = ref(emptyDraft())
+const editorError = ref('')
+const isSaving = ref(false)
+
+const openCreate = () => {
+  editingId.value = null
+  draft.value = emptyDraft()
+  editorError.value = ''
+  showEditor.value = true
+}
+
+const openEdit = (lang: LanguageRow) => {
+  editingId.value = lang.id
+  draft.value = {
+    tag: lang.tag,
+    english_name: lang.english_name,
+    lojban_name: lang.lojban_name,
+    real_name: lang.real_name,
+    for_lojban: lang.for_lojban || '',
+    url: lang.url || '',
+  }
+  editorError.value = ''
+  showEditor.value = true
+}
+
+const closeEditor = () => {
+  showEditor.value = false
+}
+
+const saveLanguage = async () => {
+  editorError.value = ''
+  isSaving.value = true
+  const body = {
+    tag: draft.value.tag.trim(),
+    english_name: draft.value.english_name.trim(),
+    lojban_name: draft.value.lojban_name.trim(),
+    real_name: draft.value.real_name.trim(),
+    for_lojban: draft.value.for_lojban.trim() || null,
+    url: draft.value.url.trim() || null,
+  }
+  try {
+    const response = editingId.value
+      ? await updateLanguage(editingId.value, body)
+      : await createLanguage(body)
+    const saved = response.data as LanguageRow
+    languages.value = [...languages.value.filter((lang) => lang.id !== saved.id), saved].sort(
+      (a, b) => a.real_name.localeCompare(b.real_name)
+    )
+    showEditor.value = false
+  } catch (e) {
+    editorError.value = e.response?.data?.error || t('languageList.saveError')
+  } finally {
+    isSaving.value = false
+  }
+}
+
 const fetchLanguages = async () => {
   isLoading.value = true
   clearError()
@@ -358,5 +497,7 @@ watch(languages, (newLanguages) => {
   }
 })
 
-useSeoHead({ title: pageTitle, pathWithoutLocale: '/languages' })
+if (!props.embedded) {
+  useSeoHead({ title: pageTitle, pathWithoutLocale: '/languages' })
+}
 </script>

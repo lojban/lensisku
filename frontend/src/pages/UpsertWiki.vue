@@ -1,9 +1,8 @@
 <template>
   <UpsertPageLayout
     ref="layoutRef"
-    narrow
     fill-content
-    :title="isEditMode ? t('upsertWiki.editTitle') : t('creation.newWiki')"
+    :title="isEditMode ? t('upsertWiki.editTitle') : ''"
     @scroll="handleLayoutScroll"
   >
     <template #trailing>
@@ -20,7 +19,7 @@
       </UpsertToolbarButton>
     </template>
 
-    <div class="flex flex-col max-sm:px-3">
+    <div class="flex w-full flex-col px-3 pt-4 pb-4 sm:px-4">
       <div
         v-if="fromCommentId"
         class="mb-4 p-3 bg-blue-50 border border-blue-100 rounded text-sm text-blue-800"

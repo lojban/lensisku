@@ -258,6 +258,10 @@ export const getUserProfile = (username: string) =>
 export const listUsers = (params?: Record<string, unknown>) => api.get('/users', { params })
 
 export const getLanguages = () => api.get('/language/languages')
+export const createLanguage = (body: Record<string, unknown>) =>
+  api.post('/language/languages', body)
+export const updateLanguage = (id: number, body: Record<string, unknown>) =>
+  api.put(`/language/languages/${id}`, body)
 export const fetchDefinitionsTypes = () => api.get(`/jbovlaste/types`)
 export const analyzeWord = (word: string, sourceLangId = 1) =>
   api.post('/language/analyze_word', { word, source_langid: sourceLangId })

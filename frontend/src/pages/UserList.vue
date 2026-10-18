@@ -4,7 +4,7 @@
       <TabbedPageHeader
         :tabs="tabs"
         :active-tab="activeTab"
-        :page-title="activeTab === 'users' ? t('userList.users') : t('userList.roleManagement')"
+        :page-title="headerTitle"
         @tab-click="handleTabClick"
       />
     </div>
@@ -49,6 +49,7 @@
         @delete-permission="handleDeletePermission"
         @toggle-permission="handleTogglePermission"
       />
+      <LanguageList v-if="activeTab === 'dictionaryLanguages'" embedded />
     </FeedPageBody>
     <div ref="paginationHost" class="contents" />
     <!-- Confirmation Modals (remain in the parent) -->
@@ -77,7 +78,7 @@
 </template>
 
 <script setup lang="ts">
-import { Shield, Users } from '@lucide/vue'
+import { Languages, Shield, Users } from '@lucide/vue'
 import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter, useRoute } from 'vue-router'
@@ -87,6 +88,7 @@ import DeleteConfirmationModal from '@/components/DeleteConfirmation.vue'
 import TabbedPageHeader from '@/components/TabbedPageHeader.vue'
 import RoleManagementTab from '@/components/users/RoleManagementTab.vue'
 import UserListTab from '@/components/users/UserListTab.vue'
+import LanguageList from '@/pages/LanguageList.vue'
 import FeedPageBody from '@/components/layout/FeedPageBody.vue'
 import { useFeedPaginationHost } from '@/composables/useFeedPaginationHost'
 import { useAuth } from '@/composables/useAuth'
@@ -174,11 +176,24 @@ const hasManageRolesPermission = computed(() => {
 })
 
 const tabs = computed(() => {
-  const baseTabs = [{ key: 'users', label: t('userList.users'), icon: Users }]
+  const baseTabs = [
+    { key: 'users', label: t('userList.users'), icon: Users },
+    {
+      key: 'dictionaryLanguages',
+      label: t('userList.dictionaryLanguages'),
+      icon: Languages,
+    },
+  ]
   if (hasManageRolesPermission.value) {
     baseTabs.push({ key: 'roles', label: t('userList.roleManagement'), icon: Shield })
   }
   return baseTabs
+})
+
+const headerTitle = computed(() => {
+  if (activeTab.value === 'roles') return t('userList.roleManagement')
+  if (activeTab.value === 'dictionaryLanguages') return t('userList.dictionaryLanguages')
+  return t('userList.users')
 })
 
 // Methods for UserListTab
@@ -388,10 +403,19 @@ const performDeleteRole = async () => {
 // Shared Methods
 const handleTabClick = (tabKey) => {
   activeTab.value = tabKey
+  if (tabKey === 'dictionaryLanguages') {
+    router.replace({ query: { tab: 'dictionaryLanguages' } })
+    return
+  }
+  if (route.query.tab) {
+    const nextQuery = { ...route.query }
+    delete nextQuery.tab
+    router.replace({ query: nextQuery })
+  }
   if (tabKey === 'roles') {
     fetchRolesAndPermissions()
   } else {
-    fetchUsers() // Fetch users when switching back
+    fetchUsers()
   }
 }
 
@@ -411,6 +435,16 @@ const syncFromRoute = () => {
   if (route.query.role !== undefined) {
     roleFilter.value = queryStr(route.query.role) || ''
   }
+  if (route.query.tab !== undefined) {
+    const tab = queryStr(route.query.tab)
+    if (tab === 'dictionaryLanguages') {
+      activeTab.value = 'dictionaryLanguages'
+    } else if (tab === 'roles' && hasManageRolesPermission.value) {
+      activeTab.value = 'roles'
+    } else {
+      activeTab.value = 'users'
+    }
+  }
 }
 
 // Watch for route changes
@@ -421,6 +455,7 @@ watch(
     queryStr(route.query.sort_by),
     queryStr(route.query.sort_order),
     queryStr(route.query.role),
+    queryStr(route.query.tab),
   ],
   () => {
     syncFromRoute()
@@ -441,6 +476,8 @@ watch(
   () => {
     if (activeTab.value === 'roles') {
       pageTitle.value = t('userList.roleManagement')
+    } else if (activeTab.value === 'dictionaryLanguages') {
+      pageTitle.value = t('userList.dictionaryLanguages')
     } else {
       const titleParts = []
       if (searchQuery.value) {

@@ -1838,6 +1838,7 @@
     "languagePlaceholder": "言語を選択",
     "definitionLabel": "本文",
     "editorPlaceholder": "/ を入力してメニューを表示",
+    "rawPlaceholder": "ページのソースを入力",
     "saving": "保存中",
     "saveButton": "ウィキページを保存",
     "commitMessageLabel": "編集概要",

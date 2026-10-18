@@ -1,5 +1,5 @@
 <template>
-  <UpsertPageLayout narrow :title="t('newThreadPage.title')">
+  <UpsertPageLayout narrow>
     <template #trailing>
       <Button
         variant="cancel"
@@ -20,12 +20,10 @@
       </UpsertToolbarButton>
     </template>
 
-    <p
-      class="mb-4 rounded-lg border border-blue-100 bg-blue-50 px-3 py-2.5 text-sm leading-relaxed text-blue-800"
-    >
+    <p class="form-callout">
       {{ t('newThreadPage.description') }}
     </p>
-    <p v-if="!canCreate" class="text-sm text-amber-800" role="status">
+    <p v-if="!canCreate" class="form-callout form-callout--warning" role="status">
       {{ t('creation.permissionRequired') }}
     </p>
     <CommentForm
@@ -42,7 +40,7 @@
       @draft-change="updateDraft"
       @submit="createNewThread"
     />
-    <p v-if="error" role="alert" class="text-sm text-red-700 mt-3">{{ error }}</p>
+    <p v-if="error" role="alert" class="form-callout form-callout--error">{{ error }}</p>
   </UpsertPageLayout>
 </template>
 <script setup lang="ts">

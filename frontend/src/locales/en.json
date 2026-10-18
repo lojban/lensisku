@@ -389,6 +389,7 @@
     "more": "More",
     "users": "Users",
     "languages": "Languages",
+    "dictionaryLanguages": "Dictionary languages",
     "cachedExports": "Cached exports",
     "export": "Export",
     "bulkImport": "Bulk import",
@@ -524,6 +525,7 @@
   "userList": {
     "users": "Users",
     "roleManagement": "Role management",
+    "dictionaryLanguages": "Dictionary languages",
     "searchPlaceholder": "Search by name",
     "loadingUsers": "Loading users...",
     "roleFilterLabel": "Role:",
@@ -1107,7 +1109,13 @@
     "yes": "Yes",
     "visit": "Visit",
     "noLanguages": "No languages available",
-    "loadError": "Failed to load languages"
+    "loadError": "Failed to load languages",
+    "addLanguage": "Add language",
+    "editLanguage": "Edit language",
+    "save": "Save",
+    "forLojbanPlaceholder": "Optional, for example Official",
+    "urlPlaceholder": "https://",
+    "saveError": "Could not save the language."
   },
   "loginPage": {
     "title": "Log in",
@@ -1802,6 +1810,7 @@
     "languagePlaceholder": "Select a language",
     "definitionLabel": "Body",
     "editorPlaceholder": "Type / to show menu",
+    "rawPlaceholder": "Write the page source",
     "saving": "Saving",
     "saveButton": "Save wiki page",
     "commitMessageLabel": "Edit summary",

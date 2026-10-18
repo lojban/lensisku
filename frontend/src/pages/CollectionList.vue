@@ -68,7 +68,7 @@
               t('sort.sortByLabel')
             }}</span>
             <div
-              class="btn-group-forced flex flex-nowrap justify-center min-w-0 overflow-visible py-2"
+              class="btn-group-forced flex flex-nowrap justify-center min-w-0"
               role="group"
               aria-labelledby="collection-list-sort-legend"
               aria-describedby="collection-list-sort-current"

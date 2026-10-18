@@ -54,6 +54,18 @@ pub struct AnalyzeWordResponse {
 }
 
 #[derive(Debug, Deserialize, ToSchema)]
+pub struct UpsertLanguageRequest {
+    pub tag: String,
+    pub english_name: String,
+    pub lojban_name: String,
+    pub real_name: String,
+    #[serde(default)]
+    pub for_lojban: Option<String>,
+    #[serde(default)]
+    pub url: Option<String>,
+}
+
+#[derive(Debug, Deserialize, ToSchema)]
 pub struct MathJaxValidationRequest {
     pub text: String,
 }

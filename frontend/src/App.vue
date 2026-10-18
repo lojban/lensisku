@@ -95,11 +95,15 @@
                   }}
                 </NavLink>
                 <NavLink
-                  to="/languages"
+                  :to="
+                    auth.state.isLoggedIn
+                      ? { path: '/users', query: { tab: 'dictionaryLanguages' } }
+                      : '/languages'
+                  "
                   class="navbar-item justify-start py-2"
                   @click="closeNavMenus"
                 >
-                  <Globe class="h-4 w-4" /> {{ $t('nav.languages') }}
+                  <Languages class="h-4 w-4" /> {{ $t('nav.dictionaryLanguages') }}
                 </NavLink>
                 <NavLink
                   to="/assistant"
@@ -166,6 +170,9 @@
                       {{ $t('buttonTheme.flat') }}
                     </Button>
                   </div>
+                </div>
+                <div class="px-2 py-2" @click.stop>
+                  <LocaleSelect />
                 </div>
               </div>
             </div>
@@ -336,7 +343,6 @@
 <script setup lang="ts">
 import {
   Users,
-  Globe,
   LogIn,
   LogOut,
   UserPlus,
@@ -350,6 +356,7 @@ import {
   Share2,
   Bell,
   FilePlus,
+  Languages,
 } from '@lucide/vue'
 import { Menu } from '@lucide/vue' // Explicitly import Menu if it was missed by auto-sort
 import { ref, onMounted, onBeforeUnmount, watch, computed, nextTick } from 'vue'
@@ -368,6 +375,7 @@ import { Button, DownloadIcon, ExportIcon, ImportIcon } from '@packages/ui'
 import BackgroundComponent from './components/BackgroundComponent.vue'
 import AppFixedBanners from './components/layout/AppFixedBanners.vue'
 import AppMobileNavMenu from './components/layout/AppMobileNavMenu.vue'
+import LocaleSelect from './components/layout/LocaleSelect.vue'
 import NavLink from './components/NavLink.vue'
 import { normalizeSearchQuery } from '@/utils/searchQueryUtils'
 import { compactQuery, queryStr } from '@/utils/routeQuery'

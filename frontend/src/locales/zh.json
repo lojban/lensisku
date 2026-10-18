@@ -1843,6 +1843,7 @@
     "languagePlaceholder": "选择语言",
     "definitionLabel": "正文",
     "editorPlaceholder": "输入 / 显示菜单",
+    "rawPlaceholder": "输入页面源码",
     "saving": "保存中",
     "saveButton": "保存维基页面",
     "commitMessageLabel": "编辑摘要",

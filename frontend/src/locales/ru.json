@@ -1792,6 +1792,7 @@
     "languagePlaceholder": "Выберите язык",
     "definitionLabel": "Текст",
     "editorPlaceholder": "Введите / для меню",
+    "rawPlaceholder": "Введите исходный текст страницы",
     "saving": "Сохранение",
     "saveButton": "Сохранить вики-страницу",
     "commitMessageLabel": "Описание правки",
