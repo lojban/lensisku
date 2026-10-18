@@ -353,6 +353,6 @@ onBeforeUnmount(() => {
 }
 
 .collections-grid {
-  @apply grid gap-4 sm:gap-5 items-stretch grid-cols-1 sm:grid-cols-2 lg:grid-cols-3;
+  @apply grid gap-4 sm:gap-5 items-stretch grid-cols-1 sm:grid-cols-2;
 }
 </style>

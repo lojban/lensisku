@@ -50,7 +50,11 @@
             :disabled="isSubmitting || isGeneratingTitle"
             :placeholder="t('upsertWiki.wordPlaceholder')"
           />
-          <p v-if="isGeneratingTitle" class="mt-1 text-xs text-gray-500">
+          <p
+            v-if="isGeneratingTitle"
+            class="mt-1 animate-pulse text-xs text-gray-500 motion-reduce:animate-none"
+            role="status"
+          >
             {{ t('upsertWiki.generatingTitle') }}
           </p>
           <p v-if="isEditMode && titleChanged" class="mt-1 text-xs text-amber-700">

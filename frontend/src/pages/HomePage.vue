@@ -94,11 +94,11 @@
                   :class="{ 'opacity-50 cursor-not-allowed': !hasSearchResults }"
                   @click="hasSearchResults && (showAddAllModal = true)"
                 >
-                  <StarPlus class="h-4 w-4 shrink-0" aria-hidden="true" />
+                  <StarPlus class="fab-menu-icon--collection h-4 w-4 shrink-0" aria-hidden="true" />
                   {{ $t('home.addAllToCollection') }}
                 </ToolbarSelectDropdownItem>
                 <ToolbarSelectDropdownItem @click="goToSearchExport">
-                  <ExportIcon class="h-4 w-4 shrink-0" aria-hidden="true" />
+                  <ExportIcon class="fab-menu-icon--export h-4 w-4 shrink-0" aria-hidden="true" />
                   {{ $t('home.exportResults') }}
                 </ToolbarSelectDropdownItem>
               </ToolbarSelectDropdown>

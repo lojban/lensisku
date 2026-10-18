@@ -85,7 +85,8 @@
         <ImportIcon class="h-5 w-5" /> {{ t('nav.bulkImport') }}
       </NavLink>
     </div>
-    <div class="mobile-nav-grid px-2">
+    <div class="my-2 border-t border-gray-200" />
+    <div class="mobile-nav-grid">
       <LocaleSelect block />
       <ButtonThemeSelect block />
     </div>

@@ -52,41 +52,44 @@ This document is the **human-readable contract** for product, design, QA, and en
 - **Navigation / links**: `text-nav-link` (`#007bff`) and **active** state via `.nav-link-active` (see `NavLink`, `navbar-item`). Mobile drawer uses `.mobile-nav-grid` (two columns) and `.mobile-nav-row` (hover/focus only—link color comes from NavLink). When logged in, **Logout** sits on the same row as **My activity and profile**.
 - **Semantic blues** in surfaces: borders and hovers (`border-blue-*`, `hover:border-blue-*`) for **interactive lists** (`.surface-list-row`, `.message-thread-card`, …).
 - **Status**: green success, red danger, amber warning—prefer existing **badge** and **btn** semantics over new hex values. **Yellow** is reserved for **edit / apply** (`ui-btn--edit`).
-- **Content-type icons**: one glyph per concept (§5c). Import from `@packages/ui` (`contentIcons.ts`, `WikiIcon.vue`). Hues, when required: **definitions** emerald (`.fab-menu-icon--definition`, `.definition-chip`); **waves** purple (`.wave-icon`, `.fab-menu-icon--discussion`); **wiki** black (`.wiki-icon` / `.fab-menu-icon--wiki`, `.wiki-chip`). Do not paint those hue classes onto the icon component itself when it sits in a tab, filter, or colored button — those inherit `currentColor`.
+- **Content-type icons**: one glyph per concept (§5c). Import from `@packages/ui` (`contentIcons.ts`, `WikiIcon.vue`, `DefinitionCreateIcon.vue`). Hues, when required: **definitions** emerald (`.fab-menu-icon--definition`, `.definition-chip`); **collections** amber (`.fab-menu-icon--collection`); **export** cyan (`.fab-menu-icon--export`); **waves** purple (`.wave-icon`, `.fab-menu-icon--discussion`); **wiki** black (`.wiki-icon` / `.fab-menu-icon--wiki`, `.wiki-chip`). Do not paint those hue classes onto the icon component itself when it sits in a tab, filter, nav link, or colored button — those inherit `currentColor`. In a plain menu, color every icon, not only one of them.
 
 ### 5c. Content-type icons
 
-| Concept                                                                     | Glyph              | Import from `@packages/ui` | Hue when required                                             |
-| --------------------------------------------------------------------------- | ------------------ | -------------------------- | ------------------------------------------------------------- |
-| **Entry** (valsi / dictionary headword, entry page title, “In entry”)       | Open book          | `EntryIcon`                | `.entry-chip` (blue). Page title inherits text color.         |
-| **Definition** (one sense: “In definition”, definitions tabs, empty states) | Closed book        | `DefinitionIcon`           | `.definition-chip` and `.fab-menu-icon--definition` (emerald) |
-| **Create definition**                                                       | Closed book + plus | `DefinitionCreateIcon`     | `.fab-menu-icon--definition` (emerald)                        |
-| **Wiki** (article, tab, chip, **create wiki**)                              | Book + **W**       | `WikiIcon`                 | `.wiki-icon` / `.fab-menu-icon--wiki` / `.wiki-chip` (black)  |
-| **Wave** (discuss, new discussion, new wave)                                | Audio waveform     | `WaveIcon`                 | `.wave-icon` / `.fab-menu-icon--discussion` (purple)          |
+| Concept                                                                     | Glyph               | Import from `@packages/ui`     | Hue when required                                             |
+| --------------------------------------------------------------------------- | ------------------- | ------------------------------ | ------------------------------------------------------------- |
+| **Entry** (valsi / dictionary headword, entry page title, “In entry”)       | Book with letter A  | `EntryIcon` (`BookA`)          | `.entry-chip` (blue). Page title inherits text color.         |
+| **Definition** (one sense: “In definition”, definitions tabs, empty states) | Quoted gloss        | `DefinitionIcon` (`TextQuote`) | `.definition-chip` and `.fab-menu-icon--definition` (emerald) |
+| **Create definition**                                                       | Quoted gloss + plus | `DefinitionCreateIcon`         | `.fab-menu-icon--definition` (emerald)                        |
+| **Add to collection**                                                       | Star + plus         | Lucide `StarPlus`              | `.fab-menu-icon--collection` (amber)                          |
+| **Wiki** (article, tab, chip, **create wiki**)                              | Book + **W**        | `WikiIcon`                     | `.wiki-icon` / `.fab-menu-icon--wiki` / `.wiki-chip` (black)  |
+| **Wave** (discuss, new discussion, new wave)                                | Audio waveform      | `WaveIcon`                     | `.wave-icon` / `.fab-menu-icon--discussion` (purple)          |
 
 **Rules**
 
-1. The same concept uses the same glyph on the page header, the chip, the tab, and the create action. “In entry” is `EntryIcon`, the same open book as the entry page. “Create wiki” is `WikiIcon`, the same book-W as every other wiki control.
-2. Do not substitute Lucide `BookA`, `BookMarked`, `BookOpen`, `Globe`, or `Globe2` for wiki. Do not use Lucide `Waves` (ocean waves) for a discussion — that glyph is `WaveIcon`.
-3. `BookOpen` may still mark **courses, flashcards, and collection covers**. Those are not dictionary entries.
-4. Comment lists and comment filters stay `MessageSquare`. A **wave** (starting or opening a discussion) is `WaveIcon`.
-5. Source chips use the named classes: `.entry-chip`, `.definition-chip`, `.wiki-chip`, `.mail-chip`, `.jbotcan-chip`, `.freeforums-chip`.
+1. The same concept uses the same glyph on the page header, the chip, the tab, and the create action. “In entry” is `EntryIcon`, the same book-with-A as the entry page. “In definition” is `DefinitionIcon`, the quoted gloss. “Create definition” is that quote plus a plus. “Create wiki” is `WikiIcon`, the same book-W as every other wiki control.
+2. A plus on a compound glyph sits in the **bottom-right corner**, with the same strokes as Lucide `StarPlus` (`M15 18h6`, `M18 15v6`). The base glyph stops short of those strokes so the plus does not join the rest of the icon.
+3. Do not substitute Lucide `BookMarked`, `BookOpen`, `Globe`, or `Globe2` for wiki, and do not use `BookA` or `TextQuote` for wiki. `BookA` is the entry headword; `TextQuote` is a definition. Do not use Lucide `Waves` (ocean waves) for a discussion — that glyph is `WaveIcon`.
+4. `BookOpen` may still mark **courses, flashcards, and collection covers**. Those are not dictionary entries. Adding words to a collection is `StarPlus` with `.fab-menu-icon--collection` (amber) in a plain menu. Amber here is the collection star, not the edit-yellow button.
+5. Comment lists and comment filters stay `MessageSquare`. A **wave** (starting or opening a discussion) is `WaveIcon`.
+6. Source chips use the named classes: `.entry-chip`, `.definition-chip`, `.wiki-chip`, `.mail-chip`, `.jbotcan-chip`, `.freeforums-chip`.
+7. In a **plain menu**, every icon takes its concept hue (`.fab-menu-icon--*`, `.wave-icon`, `.wiki-icon`). Do not color one item and leave its siblings in `currentColor`. Tabs, filters, nav links, and colored buttons still inherit `currentColor`.
 
 - **Selma'o / tags**: `.badge-definition-tag` (purple chip)—use for grammatical tags, not general emphasis.
 
 ### 5b. Transfer-direction icons (import / upload · export / download)
 
-| Action                                 | Direction      | Approved Lucide glyphs | Import from                                        |
-| -------------------------------------- | -------------- | ---------------------- | -------------------------------------------------- |
-| **Import** (pick file / bring data in) | Arrow **up**   | `Upload`, `FileUp`     | `ImportIcon`, `FileImportIcon` from `@packages/ui` |
-| **Upload** (send file to server)       | Arrow **up**   | `Upload`               | `UploadIcon` from `@packages/ui`                   |
-| **Export** (generate / send data out)  | Arrow **down** | `Download`, `FileDown` | `ExportIcon`, `FileExportIcon` from `@packages/ui` |
-| **Download** (save locally)            | Arrow **down** | `Download`             | `DownloadIcon` from `@packages/ui`                 |
+| Action                                 | Direction      | Approved Lucide glyphs | Import from                                                                                       |
+| -------------------------------------- | -------------- | ---------------------- | ------------------------------------------------------------------------------------------------- |
+| **Import** (pick file / bring data in) | Arrow **up**   | `Upload`, `FileUp`     | `ImportIcon`, `FileImportIcon` from `@packages/ui`                                                |
+| **Upload** (send file to server)       | Arrow **up**   | `Upload`               | `UploadIcon` from `@packages/ui`                                                                  |
+| **Export** (generate / send data out)  | Arrow **down** | `Download`, `FileDown` | `ExportIcon`, `FileExportIcon` from `@packages/ui`. Plain menus: `.fab-menu-icon--export` (cyan). |
+| **Download** (save locally)            | Arrow **down** | `Download`             | `DownloadIcon` from `@packages/ui`                                                                |
 
 **Rules**
 
 1. **Import and upload** always use arrow-**up** icons; **export and download** always use arrow-**down** icons—do not swap them even if other products do.
-2. File-oriented menus: **`FileExportIcon`** / **`FileImportIcon`**; generic upload: **`UploadIcon`**; generic export nav: **`ExportIcon`**; cached downloads / attachments: **`DownloadIcon`**; file import buttons: **`ImportIcon`**.
+2. File-oriented menus: **`FileExportIcon`** / **`FileImportIcon`**; generic upload: **`UploadIcon`**; generic export nav: **`ExportIcon`**; cached downloads / attachments: **`DownloadIcon`**; file import buttons: **`ImportIcon`**. In a plain menu, export glyphs use **`.fab-menu-icon--export`** (cyan, same family as the read/export button). Nav links keep the link color.
 3. Voting, reorder, and unrelated arrows (`ArrowUp`, `ArrowDown`, …) are **out of scope**.
 4. ESLint blocks direct `@lucide/vue` use of `Upload`, `Download`, `FileUp`, `FileDown`, and `Import`; **`packages/ui/transferIcons.ts`** is the only re-export site. Do not use Lucide’s `Import` glyph (it is a down arrow).
 

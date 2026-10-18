@@ -324,8 +324,18 @@
       </div>
     </main>
   </div>
-  <div v-if="!route.meta.hideFab" class="fixed bottom-4 right-4 sm:right-6 z-50">
-    <CreateMenu floating />
+  <div
+    v-if="!route.meta.hideFab"
+    class="pointer-events-none fixed inset-x-0 bottom-4 z-50 flex justify-center"
+  >
+    <div
+      class="pointer-events-none relative w-full max-w-4xl"
+      :class="route.path.startsWith('/lingo') ? 'lg:pl-64' : ''"
+    >
+      <div class="pointer-events-auto absolute bottom-0 right-4 md:right-6 lg:-right-4 lg:-mr-4">
+        <CreateMenu floating />
+      </div>
+    </div>
   </div>
 </template>
 

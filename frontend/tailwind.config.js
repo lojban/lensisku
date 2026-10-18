@@ -207,14 +207,25 @@ export default {
         '.fab-menu-icon--definition': {
           '@apply text-emerald-600': {},
         },
+        /** Add to a collection (`StarPlus`) in a plain menu. Amber — not edit yellow. */
+        '.fab-menu-icon--collection': {
+          '@apply text-amber-600': {},
+        },
         /**
-         * Entry (valsi) chips: open book on blue. Distinct from definition emerald.
+         * Export (`ExportIcon`, `FileExportIcon`) in a plain menu. Cyan — same family as
+         * the read/export button (`btn-get`). Nav links inherit `currentColor` instead.
+         */
+        '.fab-menu-icon--export': {
+          '@apply text-cyan-700': {},
+        },
+        /**
+         * Entry (valsi) chips: book-with-A on blue. Distinct from definition emerald.
          * Page-title entry icons inherit `currentColor` — do not force this fill there.
          */
         '.entry-chip': {
           '@apply bg-blue-50 text-blue-700': {},
         },
-        /** Definition chips: closed book on emerald (same hue as create-definition). */
+        /** Definition chips: quoted gloss on emerald (same hue as create-definition). */
         '.definition-chip': {
           '@apply bg-emerald-50 text-emerald-700': {},
         },
@@ -375,13 +386,12 @@ export default {
           '@apply text-[10px] text-gray-700 font-mono bg-blue-50/30 px-1.5 py-0.5 rounded border border-blue-100/30 inline-block mx-auto sm:text-xs':
             {},
         },
-        /** App mobile drawer: two-column item grid (profile + logout share a row). */
+        /** App mobile drawer: two equal columns. Gap matches the row spacing so neighboring cells do not touch. */
         '.mobile-nav-grid': {
           display: 'grid',
           alignItems: 'stretch',
           gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)',
-          columnGap: '0px',
-          rowGap: '0.5rem',
+          gap: '0.5rem',
         },
         '.mobile-nav-grid__full': {
           '@apply col-span-2': {},
