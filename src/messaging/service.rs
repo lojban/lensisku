@@ -6,6 +6,7 @@ use deadpool_postgres::Pool;
 
 use super::dto::WebSocketMessage;
 use super::dto::*;
+use super::encryption::EncryptionService;
 use super::models::*;
 use super::websocket::{BroadcastToUsers, ChatServer};
 
@@ -197,8 +198,45 @@ impl MessagingService {
 
         transaction.commit().await?;
 
-        // Get the complete thread with participants
+        let crypto = EncryptionService::new(self.pool.clone());
+        let (aes_key, hmac_key) = crypto.generate_thread_key_pair(thread_id).await?;
+        let stored_key = format!("{aes_key}:{hmac_key}");
+        let client = self.pool.get().await?;
+        client
+            .execute(
+                "INSERT INTO message_encryption_keys (thread_id, user_id, encrypted_key, key_algorithm)
+                 VALUES ($1, $2, $3, 'aes-256-gcm+hmac-sha256')",
+                &[&thread_id, &user_id, &stored_key],
+            )
+            .await?;
+
         self.get_thread(thread_id, user_id).await
+    }
+
+    fn crypto(&self) -> EncryptionService {
+        EncryptionService::new(self.pool.clone())
+    }
+
+    async fn thread_keys(&self, thread_id: i64) -> AppResult<Option<(String, String)>> {
+        let client = self.pool.get().await?;
+        let row = client
+            .query_opt(
+                "SELECT encrypted_key FROM message_encryption_keys
+                 WHERE thread_id = $1 AND is_active = TRUE
+                   AND key_algorithm = 'aes-256-gcm+hmac-sha256'
+                 ORDER BY key_version DESC
+                 LIMIT 1",
+                &[&thread_id],
+            )
+            .await?;
+        let Some(row) = row else {
+            return Ok(None);
+        };
+        let stored: String = row.get("encrypted_key");
+        let Some((aes, hmac)) = stored.split_once(':') else {
+            return Ok(None);
+        };
+        Ok(Some((aes.to_string(), hmac.to_string())))
     }
 
     pub async fn get_thread(&self, thread_id: i64, user_id: i32) -> AppResult<ThreadResponse> {
@@ -517,6 +555,19 @@ impl MessagingService {
             .as_ref()
             .and_then(|sig| general_purpose::STANDARD.decode(sig).ok());
 
+        if let (Some(signature), Some((_, hmac_key))) = (
+            request.sender_key_signature.as_deref(),
+            self.thread_keys(request.thread_id).await?,
+        ) {
+            let valid = self
+                .crypto()
+                .verify_signature(&request.encrypted_content, signature, &hmac_key)
+                .await?;
+            if !valid {
+                return Err(AppError::BadRequest("Invalid message signature".into()));
+            }
+        }
+
         // Insert message
         let message_row = transaction
             .query_one(
@@ -610,15 +661,29 @@ impl MessagingService {
 
             let content_nonce: Vec<u8> = row.get("content_nonce");
             let sender_key_signature: Option<Vec<u8>> = row.get("sender_key_signature");
+            let message_type: MessageType = row.get("message_type");
+            let mut encrypted_content: String = row.get("encrypted_content");
+            let nonce_b64 = general_purpose::STANDARD.encode(&content_nonce);
+            if message_type == MessageType::System {
+                if let Some((aes_key, _)) = self.thread_keys(thread_id).await? {
+                    if let Ok(plain) = self
+                        .crypto()
+                        .decrypt_message(&encrypted_content, &nonce_b64, &aes_key)
+                        .await
+                    {
+                        encrypted_content = plain;
+                    }
+                }
+            }
 
             Ok(MessageResponse {
                 message_id: row.get("message_id"),
                 thread_id: row.get("thread_id"),
                 sender_id: row.get("sender_id"),
                 username: row.get("username"),
-                message_type: row.get("message_type"),
-                encrypted_content: row.get("encrypted_content"),
-                content_nonce: general_purpose::STANDARD.encode(&content_nonce),
+                message_type,
+                encrypted_content,
+                content_nonce: nonce_b64,
                 sender_key_signature: sender_key_signature
                     .map(|sig| general_purpose::STANDARD.encode(&sig)),
                 reply_to_message_id: row.get("reply_to_message_id"),
@@ -862,5 +927,584 @@ impl MessagingService {
         }
 
         Ok(active_calls)
+    }
+
+    async fn require_thread_admin(&self, thread_id: i64, user_id: i32) -> AppResult<()> {
+        let client = self.pool.get().await?;
+        let is_admin = client
+            .query_opt(
+                "SELECT 1 FROM thread_participants
+                 WHERE thread_id = $1 AND user_id = $2 AND role = 'admin' AND is_active = TRUE",
+                &[&thread_id, &user_id],
+            )
+            .await?
+            .is_some();
+        if is_admin {
+            Ok(())
+        } else {
+            Err(AppError::Auth("Only thread admins can do that".to_string()))
+        }
+    }
+
+    fn broadcast(&self, user_ids: Vec<i32>, message: &WebSocketMessage, exclude_user: Option<i32>) {
+        let Some(chat_server) = &self.chat_server else {
+            return;
+        };
+        let Ok(json) = serde_json::to_string(message) else {
+            return;
+        };
+        chat_server.do_send(BroadcastToUsers {
+            user_ids,
+            message_json: json,
+            exclude_user,
+        });
+    }
+
+    pub async fn update_message(
+        &self,
+        user_id: i32,
+        message_id: i64,
+        request: UpdateMessageRequest,
+    ) -> AppResult<MessageResponse> {
+        let content_nonce = general_purpose::STANDARD
+            .decode(&request.content_nonce)
+            .map_err(|_| AppError::BadRequest("Invalid content nonce format".to_string()))?;
+        let sender_key_signature = request
+            .sender_key_signature
+            .as_ref()
+            .and_then(|sig| general_purpose::STANDARD.decode(sig).ok());
+        let client = self.pool.get().await?;
+        let updated = client
+            .execute(
+                "UPDATE private_messages
+                 SET encrypted_content = $1,
+                     content_nonce = $2,
+                     sender_key_signature = $3,
+                     edit_count = edit_count + 1,
+                     last_edited_at = CURRENT_TIMESTAMP
+                 WHERE message_id = $4 AND sender_id = $5 AND is_deleted = FALSE",
+                &[
+                    &request.encrypted_content,
+                    &content_nonce,
+                    &sender_key_signature,
+                    &message_id,
+                    &user_id,
+                ],
+            )
+            .await?;
+        if updated == 0 {
+            let exists = client
+                .query_opt(
+                    "SELECT sender_id, is_deleted FROM private_messages WHERE message_id = $1",
+                    &[&message_id],
+                )
+                .await?;
+            return match exists {
+                None => Err(AppError::NotFound("Message not found".into())),
+                Some(row) if row.get::<_, bool>("is_deleted") => {
+                    Err(AppError::NotFound("Message not found".into()))
+                }
+                Some(_) => Err(AppError::Auth(
+                    "Only the sender can edit this message".into(),
+                )),
+            };
+        }
+        let message = self.get_message(message_id, user_id).await?;
+        if let Ok(user_ids) = self
+            .get_thread_participant_user_ids(message.thread_id)
+            .await
+        {
+            self.broadcast(
+                user_ids,
+                &WebSocketMessage::MessageSent {
+                    message: message.clone(),
+                    thread_id: message.thread_id,
+                },
+                Some(user_id),
+            );
+        }
+        Ok(message)
+    }
+
+    pub async fn delete_message(&self, user_id: i32, message_id: i64) -> AppResult<()> {
+        let client = self.pool.get().await?;
+        let row = client
+            .query_opt(
+                "SELECT thread_id, sender_id, is_deleted FROM private_messages WHERE message_id = $1",
+                &[&message_id],
+            )
+            .await?
+            .ok_or_else(|| AppError::NotFound("Message not found".into()))?;
+        if row.get::<_, bool>("is_deleted") {
+            return Err(AppError::NotFound("Message not found".into()));
+        }
+        let thread_id: i64 = row.get("thread_id");
+        let sender_id: i32 = row.get("sender_id");
+        if sender_id != user_id {
+            self.require_thread_admin(thread_id, user_id).await?;
+        }
+        client
+            .execute(
+                "UPDATE private_messages
+                 SET is_deleted = TRUE, deleted_at = CURRENT_TIMESTAMP, deleted_by = $1
+                 WHERE message_id = $2",
+                &[&user_id, &message_id],
+            )
+            .await?;
+        if let Ok(user_ids) = self.get_thread_participant_user_ids(thread_id).await {
+            self.broadcast(
+                user_ids,
+                &WebSocketMessage::MessageDeleted {
+                    message_id,
+                    thread_id,
+                    deleted_by: user_id,
+                },
+                None,
+            );
+        }
+        Ok(())
+    }
+
+    pub async fn add_participant(
+        &self,
+        actor_id: i32,
+        thread_id: i64,
+        request: AddParticipantRequest,
+    ) -> AppResult<ThreadParticipantResponse> {
+        if request.user_id == actor_id {
+            return Err(AppError::BadRequest(
+                "You are already in this thread".into(),
+            ));
+        }
+        self.require_thread_admin(thread_id, actor_id).await?;
+        if self.is_user_blocked(actor_id, request.user_id).await?
+            || self.is_user_blocked(request.user_id, actor_id).await?
+        {
+            return Err(AppError::Auth(
+                "Cannot add a user in a block relationship".into(),
+            ));
+        }
+        let client = self.pool.get().await?;
+        let thread = client
+            .query_opt(
+                "SELECT thread_type, max_participants FROM message_threads
+                 WHERE thread_id = $1 AND is_active = TRUE",
+                &[&thread_id],
+            )
+            .await?
+            .ok_or_else(|| AppError::NotFound("Thread not found".into()))?;
+        let thread_type: ThreadType = thread.get("thread_type");
+        if thread_type == ThreadType::Direct {
+            return Err(AppError::BadRequest(
+                "Direct threads cannot take more participants".into(),
+            ));
+        }
+        let max_participants: i32 = thread.get("max_participants");
+        let active_count: i64 = client
+            .query_one(
+                "SELECT COUNT(*) FROM thread_participants WHERE thread_id = $1 AND is_active = TRUE",
+                &[&thread_id],
+            )
+            .await?
+            .get(0);
+        let username: String = client
+            .query_opt(
+                "SELECT username FROM users WHERE userid = $1",
+                &[&request.user_id],
+            )
+            .await?
+            .map(|row| row.get("username"))
+            .ok_or_else(|| AppError::NotFound("User not found".into()))?;
+        let existing = client
+            .query_opt(
+                "SELECT is_active FROM thread_participants WHERE thread_id = $1 AND user_id = $2",
+                &[&thread_id, &request.user_id],
+            )
+            .await?;
+        let role = request.role.unwrap_or(ParticipantRole::Member);
+        let role_name = role.to_string();
+        match existing {
+            Some(row) if row.get::<_, bool>("is_active") => {
+                return Err(AppError::BadRequest("User is already a participant".into()));
+            }
+            Some(_) => {
+                client
+                    .execute(
+                        "UPDATE thread_participants
+                         SET is_active = TRUE, left_at = NULL, role = $3, joined_at = CURRENT_TIMESTAMP
+                         WHERE thread_id = $1 AND user_id = $2",
+                        &[&thread_id, &request.user_id, &role_name],
+                    )
+                    .await?;
+            }
+            None => {
+                if active_count >= i64::from(max_participants) {
+                    return Err(AppError::BadRequest("Thread is full".into()));
+                }
+                client
+                    .execute(
+                        "INSERT INTO thread_participants (thread_id, user_id, role)
+                         VALUES ($1, $2, $3)",
+                        &[&thread_id, &request.user_id, &role_name],
+                    )
+                    .await?;
+            }
+        }
+        if let Some((aes_key, hmac_key)) = self.thread_keys(thread_id).await? {
+            let notice = format!("{username} joined the thread");
+            let (ciphertext, nonce) = self.crypto().encrypt_message(&notice, &aes_key).await?;
+            let signature = self.crypto().sign_message(&ciphertext, &hmac_key).await?;
+            let nonce_bytes = general_purpose::STANDARD
+                .decode(nonce)
+                .map_err(|e| AppError::Internal(e.to_string()))?;
+            let signature_bytes = general_purpose::STANDARD
+                .decode(signature)
+                .map_err(|e| AppError::Internal(e.to_string()))?;
+            let system = MessageType::System.to_string();
+            client
+                .execute(
+                    "INSERT INTO private_messages (thread_id, sender_id, message_type, encrypted_content, content_nonce, sender_key_signature)
+                     VALUES ($1, $2, $3, $4, $5, $6)",
+                    &[
+                        &thread_id,
+                        &actor_id,
+                        &system,
+                        &ciphertext,
+                        &nonce_bytes,
+                        &signature_bytes,
+                    ],
+                )
+                .await?;
+        }
+        client
+            .execute(
+                "INSERT INTO message_notifications (user_id, thread_id, message_id, sender_id, notification_type)
+                 SELECT $1, $2, m.message_id, $3, 'thread_added'
+                 FROM private_messages m
+                 WHERE m.thread_id = $2
+                 ORDER BY m.message_id DESC
+                 LIMIT 1",
+                &[&request.user_id, &thread_id, &actor_id],
+            )
+            .await?;
+        let participant = client
+            .query_one(
+                "SELECT tp.*, u.username
+                 FROM thread_participants tp
+                 JOIN users u ON u.userid = tp.user_id
+                 WHERE tp.thread_id = $1 AND tp.user_id = $2",
+                &[&thread_id, &request.user_id],
+            )
+            .await?;
+        let response = ThreadParticipantResponse {
+            participant_id: participant.get("participant_id"),
+            user_id: participant.get("user_id"),
+            username,
+            role: participant.get("role"),
+            joined_at: participant.get("joined_at"),
+            is_active: participant.get("is_active"),
+            unread_count: participant.get("unread_count"),
+        };
+        if let Ok(user_ids) = self.get_thread_participant_user_ids(thread_id).await {
+            self.broadcast(
+                user_ids,
+                &WebSocketMessage::ParticipantAdded {
+                    thread_id,
+                    participant: response.clone(),
+                },
+                None,
+            );
+        }
+        Ok(response)
+    }
+
+    pub async fn remove_participant(
+        &self,
+        actor_id: i32,
+        thread_id: i64,
+        user_id: i32,
+    ) -> AppResult<()> {
+        if actor_id != user_id {
+            self.require_thread_admin(thread_id, actor_id).await?;
+        }
+        let client = self.pool.get().await?;
+        let role: Option<String> = client
+            .query_opt(
+                "SELECT role FROM thread_participants
+                 WHERE thread_id = $1 AND user_id = $2 AND is_active = TRUE",
+                &[&thread_id, &user_id],
+            )
+            .await?
+            .map(|row| row.get("role"));
+        let Some(role) = role else {
+            return Err(AppError::NotFound("Participant not found".into()));
+        };
+        if role == "admin" {
+            let admins: i64 = client
+                .query_one(
+                    "SELECT COUNT(*) FROM thread_participants
+                     WHERE thread_id = $1 AND role = 'admin' AND is_active = TRUE",
+                    &[&thread_id],
+                )
+                .await?
+                .get(0);
+            if admins <= 1 {
+                return Err(AppError::BadRequest(
+                    "The last admin cannot leave the thread".into(),
+                ));
+            }
+        }
+        let updated = client
+            .execute(
+                "UPDATE thread_participants
+                 SET is_active = FALSE, left_at = CURRENT_TIMESTAMP
+                 WHERE thread_id = $1 AND user_id = $2 AND is_active = TRUE",
+                &[&thread_id, &user_id],
+            )
+            .await?;
+        if updated == 0 {
+            return Err(AppError::NotFound("Participant not found".into()));
+        }
+        if let Ok(user_ids) = self.get_thread_participant_user_ids(thread_id).await {
+            self.broadcast(
+                user_ids,
+                &WebSocketMessage::ParticipantRemoved {
+                    thread_id,
+                    user_id,
+                    removed_by: actor_id,
+                },
+                None,
+            );
+        }
+        Ok(())
+    }
+
+    pub async fn update_participant_role(
+        &self,
+        actor_id: i32,
+        thread_id: i64,
+        user_id: i32,
+        role: ParticipantRole,
+    ) -> AppResult<()> {
+        self.require_thread_admin(thread_id, actor_id).await?;
+        let client = self.pool.get().await?;
+        let current: Option<String> = client
+            .query_opt(
+                "SELECT role FROM thread_participants
+                 WHERE thread_id = $1 AND user_id = $2 AND is_active = TRUE",
+                &[&thread_id, &user_id],
+            )
+            .await?
+            .map(|row| row.get("role"));
+        let Some(current) = current else {
+            return Err(AppError::NotFound("Participant not found".into()));
+        };
+        if current == "admin" && role == ParticipantRole::Member {
+            let admins: i64 = client
+                .query_one(
+                    "SELECT COUNT(*) FROM thread_participants
+                     WHERE thread_id = $1 AND role = 'admin' AND is_active = TRUE",
+                    &[&thread_id],
+                )
+                .await?
+                .get(0);
+            if admins <= 1 {
+                return Err(AppError::BadRequest(
+                    "The last admin cannot be demoted".into(),
+                ));
+            }
+        }
+        let role_name = role.to_string();
+        client
+            .execute(
+                "UPDATE thread_participants SET role = $3
+                 WHERE thread_id = $1 AND user_id = $2 AND is_active = TRUE",
+                &[&thread_id, &user_id, &role_name],
+            )
+            .await?;
+        if let Ok(user_ids) = self.get_thread_participant_user_ids(thread_id).await {
+            self.broadcast(
+                user_ids,
+                &WebSocketMessage::ParticipantRoleUpdated {
+                    thread_id,
+                    user_id,
+                    new_role: role,
+                    updated_by: actor_id,
+                },
+                None,
+            );
+        }
+        Ok(())
+    }
+
+    pub async fn block_user(
+        &self,
+        blocker_id: i32,
+        request: BlockUserRequest,
+    ) -> AppResult<BlockedUserResponse> {
+        if blocker_id == request.user_id {
+            return Err(AppError::BadRequest("You cannot block yourself".into()));
+        }
+        let client = self.pool.get().await?;
+        let username: String = client
+            .query_opt(
+                "SELECT username FROM users WHERE userid = $1",
+                &[&request.user_id],
+            )
+            .await?
+            .map(|row| row.get("username"))
+            .ok_or_else(|| AppError::NotFound("User not found".into()))?;
+        let row = client
+            .query_one(
+                "INSERT INTO user_message_blocks (blocker_id, blocked_id, reason)
+                 VALUES ($1, $2, $3)
+                 ON CONFLICT (blocker_id, blocked_id)
+                 DO UPDATE SET is_active = TRUE, reason = EXCLUDED.reason, blocked_at = CURRENT_TIMESTAMP
+                 RETURNING block_id, blocked_at, reason",
+                &[&blocker_id, &request.user_id, &request.reason],
+            )
+            .await?;
+        Ok(BlockedUserResponse {
+            block_id: row.get("block_id"),
+            blocked_id: request.user_id,
+            blocked_username: username,
+            blocked_at: row.get("blocked_at"),
+            reason: row.get("reason"),
+        })
+    }
+
+    pub async fn unblock_user(&self, blocker_id: i32, blocked_id: i32) -> AppResult<()> {
+        let client = self.pool.get().await?;
+        let updated = client
+            .execute(
+                "UPDATE user_message_blocks
+                 SET is_active = FALSE
+                 WHERE blocker_id = $1 AND blocked_id = $2 AND is_active = TRUE",
+                &[&blocker_id, &blocked_id],
+            )
+            .await?;
+        if updated == 0 {
+            return Err(AppError::NotFound("Block not found".into()));
+        }
+        Ok(())
+    }
+
+    pub async fn get_blocked_users(&self, blocker_id: i32) -> AppResult<Vec<BlockedUserResponse>> {
+        let client = self.pool.get().await?;
+        let rows = client
+            .query(
+                "SELECT b.block_id, b.blocked_id, u.username, b.blocked_at, b.reason
+                 FROM user_message_blocks b
+                 JOIN users u ON u.userid = b.blocked_id
+                 WHERE b.blocker_id = $1 AND b.is_active = TRUE
+                 ORDER BY b.blocked_at DESC",
+                &[&blocker_id],
+            )
+            .await?;
+        Ok(rows
+            .into_iter()
+            .map(|row| BlockedUserResponse {
+                block_id: row.get("block_id"),
+                blocked_id: row.get("blocked_id"),
+                blocked_username: row.get("username"),
+                blocked_at: row.get("blocked_at"),
+                reason: row.get("reason"),
+            })
+            .collect())
+    }
+
+    pub async fn get_notifications(
+        &self,
+        user_id: i32,
+        query: GetNotificationsQuery,
+    ) -> AppResult<NotificationListResponse> {
+        let (page, per_page, offset) =
+            crate::pagination::page_window(Some(query.page), Some(query.per_page), 20, 100);
+        let type_filter = query.notification_type.map(|kind| kind.to_string());
+        let client = self.pool.get().await?;
+        let total_count: i64 = client
+            .query_one(
+                "SELECT COUNT(*) FROM message_notifications
+                 WHERE user_id = $1
+                   AND ($2 = FALSE OR is_read = FALSE)
+                   AND ($3::text IS NULL OR notification_type = $3)",
+                &[&user_id, &query.unread_only, &type_filter],
+            )
+            .await?
+            .get(0);
+        let unread_count: i64 = client
+            .query_one(
+                "SELECT COUNT(*) FROM message_notifications
+                 WHERE user_id = $1 AND is_read = FALSE",
+                &[&user_id],
+            )
+            .await?
+            .get(0);
+        let rows = client
+            .query(
+                "SELECT n.notification_id, n.thread_id, t.thread_name, n.message_id, n.sender_id,
+                        u.username AS sender_username, n.notification_type, n.is_read, n.created_at, n.read_at
+                 FROM message_notifications n
+                 JOIN message_threads t ON t.thread_id = n.thread_id
+                 JOIN users u ON u.userid = n.sender_id
+                 WHERE n.user_id = $1
+                   AND ($2 = FALSE OR n.is_read = FALSE)
+                   AND ($3::text IS NULL OR n.notification_type = $3)
+                 ORDER BY n.created_at DESC
+                 LIMIT $4 OFFSET $5",
+                &[&user_id, &query.unread_only, &type_filter, &per_page, &offset],
+            )
+            .await?;
+        let notifications = rows
+            .into_iter()
+            .map(|row| NotificationResponse {
+                notification_id: row.get("notification_id"),
+                thread_id: row.get("thread_id"),
+                thread_name: row.get("thread_name"),
+                message_id: row.get("message_id"),
+                sender_id: row.get("sender_id"),
+                sender_username: row.get("sender_username"),
+                notification_type: row.get("notification_type"),
+                is_read: row.get("is_read"),
+                created_at: row.get("created_at"),
+                read_at: row.get("read_at"),
+            })
+            .collect();
+        Ok(NotificationListResponse {
+            notifications,
+            unread_count,
+            total_count,
+            page,
+            per_page,
+            has_more: offset + per_page < total_count,
+        })
+    }
+
+    pub async fn mark_notification_read(
+        &self,
+        user_id: i32,
+        notification_id: i64,
+    ) -> AppResult<()> {
+        let client = self.pool.get().await?;
+        let updated = client
+            .execute(
+                "UPDATE message_notifications
+                 SET is_read = TRUE, read_at = CURRENT_TIMESTAMP
+                 WHERE notification_id = $1 AND user_id = $2 AND is_read = FALSE",
+                &[&notification_id, &user_id],
+            )
+            .await?;
+        if updated == 0 {
+            let exists = client
+                .query_opt(
+                    "SELECT 1 FROM message_notifications WHERE notification_id = $1 AND user_id = $2",
+                    &[&notification_id, &user_id],
+                )
+                .await?;
+            if exists.is_none() {
+                return Err(AppError::NotFound("Notification not found".into()));
+            }
+        }
+        Ok(())
     }
 }

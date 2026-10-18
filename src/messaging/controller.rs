@@ -305,18 +305,17 @@ pub async fn get_message(
         ("bearer_auth" = [])
     )
 )]
-#[allow(dead_code)]
+#[put("/messages/{message_id}")]
 pub async fn update_message(
-    _claims: Claims,
+    claims: Claims,
     path: web::Path<i64>,
-    _request: web::Json<UpdateMessageRequest>,
-    _service: web::Data<MessagingService>,
+    request: web::Json<UpdateMessageRequest>,
+    service: web::Data<MessagingService>,
 ) -> Result<HttpResponse, AppError> {
-    let _message_id = path.into_inner();
-    // TODO: Implement message update functionality
-    Err(AppError::Internal(
-        "Message update not yet implemented".to_string(),
-    ))
+    let message = service
+        .update_message(claims.sub, path.into_inner(), request.into_inner())
+        .await?;
+    Ok(HttpResponse::Ok().json(message))
 }
 
 #[utoipa::path(
@@ -338,17 +337,16 @@ pub async fn update_message(
         ("bearer_auth" = [])
     )
 )]
-#[allow(dead_code)]
+#[delete("/messages/{message_id}")]
 pub async fn delete_message(
-    _claims: Claims,
+    claims: Claims,
     path: web::Path<i64>,
-    _service: web::Data<MessagingService>,
+    service: web::Data<MessagingService>,
 ) -> Result<HttpResponse, AppError> {
-    let _message_id = path.into_inner();
-    // TODO: Implement message delete functionality
-    Err(AppError::Internal(
-        "Message delete not yet implemented".to_string(),
-    ))
+    service
+        .delete_message(claims.sub, path.into_inner())
+        .await?;
+    Ok(HttpResponse::NoContent().finish())
 }
 
 #[utoipa::path(
@@ -372,18 +370,17 @@ pub async fn delete_message(
         ("bearer_auth" = [])
     )
 )]
-#[allow(dead_code)]
+#[post("/threads/{thread_id}/participants")]
 pub async fn add_participant(
-    _claims: Claims,
+    claims: Claims,
     path: web::Path<i64>,
-    _request: web::Json<AddParticipantRequest>,
-    _service: web::Data<MessagingService>,
+    request: web::Json<AddParticipantRequest>,
+    service: web::Data<MessagingService>,
 ) -> Result<HttpResponse, AppError> {
-    let _thread_id = path.into_inner();
-    // TODO: Implement add participant functionality
-    Err(AppError::Internal(
-        "Add participant not yet implemented".to_string(),
-    ))
+    let participant = service
+        .add_participant(claims.sub, path.into_inner(), request.into_inner())
+        .await?;
+    Ok(HttpResponse::Created().json(participant))
 }
 
 #[utoipa::path(
@@ -406,17 +403,17 @@ pub async fn add_participant(
         ("bearer_auth" = [])
     )
 )]
-#[allow(dead_code)]
+#[delete("/threads/{thread_id}/participants/{user_id}")]
 pub async fn remove_participant(
-    _claims: Claims,
+    claims: Claims,
     path: web::Path<(i64, i32)>,
-    _service: web::Data<MessagingService>,
+    service: web::Data<MessagingService>,
 ) -> Result<HttpResponse, AppError> {
-    let (_thread_id, _user_id) = path.into_inner();
-    // TODO: Implement remove participant functionality
-    Err(AppError::Internal(
-        "Remove participant not yet implemented".to_string(),
-    ))
+    let (thread_id, user_id) = path.into_inner();
+    service
+        .remove_participant(claims.sub, thread_id, user_id)
+        .await?;
+    Ok(HttpResponse::NoContent().finish())
 }
 
 #[utoipa::path(
@@ -441,18 +438,18 @@ pub async fn remove_participant(
         ("bearer_auth" = [])
     )
 )]
-#[allow(dead_code)]
+#[put("/threads/{thread_id}/participants/{user_id}/role")]
 pub async fn update_participant_role(
-    _claims: Claims,
+    claims: Claims,
     path: web::Path<(i64, i32)>,
-    _request: web::Json<UpdateParticipantRoleRequest>,
-    _service: web::Data<MessagingService>,
+    request: web::Json<UpdateParticipantRoleRequest>,
+    service: web::Data<MessagingService>,
 ) -> Result<HttpResponse, AppError> {
-    let (_thread_id, _user_id) = path.into_inner();
-    // TODO: Implement update participant role functionality
-    Err(AppError::Internal(
-        "Update participant role not yet implemented".to_string(),
-    ))
+    let (thread_id, user_id) = path.into_inner();
+    service
+        .update_participant_role(claims.sub, thread_id, user_id, request.role)
+        .await?;
+    Ok(HttpResponse::Ok().json(serde_json::json!({ "success": true })))
 }
 
 #[utoipa::path(
@@ -471,16 +468,14 @@ pub async fn update_participant_role(
         ("bearer_auth" = [])
     )
 )]
-#[allow(dead_code)]
+#[post("/blocks")]
 pub async fn block_user(
-    _claims: Claims,
-    _request: web::Json<BlockUserRequest>,
-    _service: web::Data<MessagingService>,
+    claims: Claims,
+    request: web::Json<BlockUserRequest>,
+    service: web::Data<MessagingService>,
 ) -> Result<HttpResponse, AppError> {
-    // TODO: Implement block user functionality
-    Err(AppError::Internal(
-        "Block user not yet implemented".to_string(),
-    ))
+    let blocked = service.block_user(claims.sub, request.into_inner()).await?;
+    Ok(HttpResponse::Created().json(blocked))
 }
 
 #[utoipa::path(
@@ -501,17 +496,14 @@ pub async fn block_user(
         ("bearer_auth" = [])
     )
 )]
-#[allow(dead_code)]
+#[delete("/blocks/{user_id}")]
 pub async fn unblock_user(
-    _claims: Claims,
+    claims: Claims,
     path: web::Path<i32>,
-    _service: web::Data<MessagingService>,
+    service: web::Data<MessagingService>,
 ) -> Result<HttpResponse, AppError> {
-    let _user_id = path.into_inner();
-    // TODO: Implement unblock user functionality
-    Err(AppError::Internal(
-        "Unblock user not yet implemented".to_string(),
-    ))
+    service.unblock_user(claims.sub, path.into_inner()).await?;
+    Ok(HttpResponse::NoContent().finish())
 }
 
 #[utoipa::path(
@@ -528,15 +520,13 @@ pub async fn unblock_user(
         ("bearer_auth" = [])
     )
 )]
-#[allow(dead_code)]
+#[get("/blocks")]
 pub async fn get_blocked_users(
-    _claims: Claims,
-    _service: web::Data<MessagingService>,
+    claims: Claims,
+    service: web::Data<MessagingService>,
 ) -> Result<HttpResponse, AppError> {
-    // TODO: Implement get blocked users functionality
-    Err(AppError::Internal(
-        "Get blocked users not yet implemented".to_string(),
-    ))
+    let blocked = service.get_blocked_users(claims.sub).await?;
+    Ok(HttpResponse::Ok().json(blocked))
 }
 
 #[utoipa::path(
@@ -559,16 +549,16 @@ pub async fn get_blocked_users(
         ("bearer_auth" = [])
     )
 )]
-#[allow(dead_code)]
+#[get("/notifications")]
 pub async fn get_notifications(
-    _claims: Claims,
-    _query: web::Query<GetNotificationsQuery>,
-    _service: web::Data<MessagingService>,
+    claims: Claims,
+    query: web::Query<GetNotificationsQuery>,
+    service: web::Data<MessagingService>,
 ) -> Result<HttpResponse, AppError> {
-    // TODO: Implement get notifications functionality
-    Err(AppError::Internal(
-        "Get notifications not yet implemented".to_string(),
-    ))
+    let notifications = service
+        .get_notifications(claims.sub, query.into_inner())
+        .await?;
+    Ok(HttpResponse::Ok().json(notifications))
 }
 
 #[utoipa::path(
@@ -589,17 +579,16 @@ pub async fn get_notifications(
         ("bearer_auth" = [])
     )
 )]
-#[allow(dead_code)]
+#[put("/notifications/{notification_id}/read")]
 pub async fn mark_notification_read(
-    _claims: Claims,
+    claims: Claims,
     path: web::Path<i64>,
-    _service: web::Data<MessagingService>,
+    service: web::Data<MessagingService>,
 ) -> Result<HttpResponse, AppError> {
-    let _notification_id = path.into_inner();
-    // TODO: Implement mark notification read functionality
-    Err(AppError::Internal(
-        "Mark notification read not yet implemented".to_string(),
-    ))
+    service
+        .mark_notification_read(claims.sub, path.into_inner())
+        .await?;
+    Ok(HttpResponse::Ok().json(serde_json::json!({ "success": true })))
 }
 
 #[utoipa::path(

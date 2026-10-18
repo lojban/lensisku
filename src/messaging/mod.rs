@@ -19,7 +19,17 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
             .service(controller::delete_thread)
             .service(controller::get_thread_messages)
             .service(controller::send_message)
+            .service(controller::update_message)
+            .service(controller::delete_message)
             .service(controller::get_message)
+            .service(controller::add_participant)
+            .service(controller::remove_participant)
+            .service(controller::update_participant_role)
+            .service(controller::block_user)
+            .service(controller::unblock_user)
+            .service(controller::get_blocked_users)
+            .service(controller::get_notifications)
+            .service(controller::mark_notification_read)
             // Read receipts
             .service(controller::mark_thread_read)
             // WebSocket routes

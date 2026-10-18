@@ -330,16 +330,12 @@ pub struct GetMessagesQuery {
 #[derive(Debug, Deserialize, Validate, ToSchema)]
 pub struct GetNotificationsQuery {
     #[serde(default = "default_page")]
-    #[allow(dead_code)]
     pub page: i64,
     #[serde(default = "default_per_page")]
-    #[allow(dead_code)]
     pub per_page: i64,
     #[serde(default)]
-    #[allow(dead_code)]
     pub unread_only: bool,
     #[serde(default)]
-    #[allow(dead_code)]
     pub notification_type: Option<NotificationType>,
 }
 

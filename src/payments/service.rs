@@ -100,6 +100,25 @@ pub async fn store_payment_order(
     Ok(())
 }
 
+pub fn cents_from_decimal(value: &str) -> Option<i64> {
+    let value = value.trim();
+    if value.is_empty() || value.starts_with('-') {
+        return None;
+    }
+    let (whole, frac) = value.split_once('.').unwrap_or((value, ""));
+    if whole.is_empty()
+        || !whole.chars().all(|c| c.is_ascii_digit())
+        || frac.len() > 2
+        || !frac.chars().all(|c| c.is_ascii_digit())
+    {
+        return None;
+    }
+    let frac = format!("{frac:0<2}");
+    let whole = whole.parse::<i64>().ok()?;
+    let frac = frac.parse::<i64>().ok()?;
+    whole.checked_mul(100)?.checked_add(frac)
+}
+
 pub enum PaymentCredit {
     Credited,
     AlreadySettled,
@@ -210,6 +229,84 @@ pub async fn credit_captured_paypal_payment(
     } else {
         Ok(PaymentCredit::NotFound)
     }
+}
+
+/// When a capture payload has no checkout order id, settle the single pending
+/// PayPal order for `custom_id` (the user id stored at checkout) and this amount.
+pub async fn settle_paypal_capture(
+    pool: &Pool,
+    provider_payment_ids: &[String],
+    custom_id: Option<&str>,
+    amount_value: &str,
+    currency: &str,
+) -> Result<PaymentCredit, PaymentError> {
+    let direct = credit_captured_paypal_payment(pool, provider_payment_ids).await?;
+    if !matches!(direct, PaymentCredit::NotFound) {
+        return Ok(direct);
+    }
+    let Some(user_id) = custom_id.and_then(|id| id.parse::<i32>().ok()) else {
+        return Ok(PaymentCredit::NotFound);
+    };
+    let Some(amount_cents) = cents_from_decimal(amount_value) else {
+        return Ok(PaymentCredit::NotFound);
+    };
+    let ids = pending_paypal_payment_ids(pool, user_id, amount_cents, currency).await?;
+    if ids.len() != 1 {
+        return Ok(PaymentCredit::NotFound);
+    }
+    credit_captured_paypal_payment(pool, &ids).await
+}
+
+async fn pending_paypal_payment_ids(
+    pool: &Pool,
+    user_id: i32,
+    amount_cents: i64,
+    currency: &str,
+) -> Result<Vec<String>, PaymentError> {
+    let client = pool
+        .get()
+        .await
+        .map_err(|e| PaymentError::Database(e.to_string()))?;
+    let rows = client
+        .query(
+            "SELECT provider_payment_id FROM payments
+             WHERE provider = 'paypal'
+               AND user_id = $1
+               AND amount_cents = $2
+               AND lower(currency) = lower($3)
+               AND status = 'pending'",
+            &[&user_id, &amount_cents, &currency],
+        )
+        .await
+        .map_err(|e| PaymentError::Database(e.to_string()))?;
+    Ok(rows
+        .into_iter()
+        .map(|row| row.get("provider_payment_id"))
+        .collect())
+}
+
+pub async fn fail_paypal_capture(
+    pool: &Pool,
+    provider_payment_ids: &[String],
+    custom_id: Option<&str>,
+    amount_value: &str,
+    currency: &str,
+) -> Result<u64, PaymentError> {
+    let updated = mark_paypal_payment_failed(pool, provider_payment_ids).await?;
+    if updated > 0 {
+        return Ok(updated);
+    }
+    let Some(user_id) = custom_id.and_then(|id| id.parse::<i32>().ok()) else {
+        return Ok(0);
+    };
+    let Some(amount_cents) = cents_from_decimal(amount_value) else {
+        return Ok(0);
+    };
+    let ids = pending_paypal_payment_ids(pool, user_id, amount_cents, currency).await?;
+    if ids.len() != 1 {
+        return Ok(0);
+    }
+    mark_paypal_payment_failed(pool, &ids).await
 }
 
 pub async fn mark_paypal_payment_failed(

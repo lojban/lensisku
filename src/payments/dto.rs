@@ -143,7 +143,6 @@ pub struct PayPalSupplementaryData {
 #[derive(Debug, Deserialize)]
 pub struct PayPalCaptureResource {
     pub id: String,
-    #[allow(dead_code)]
     pub custom_id: Option<String>,
     pub amount: PayPalMoneyDto,
     pub supplementary_data: Option<PayPalSupplementaryData>,
@@ -202,5 +201,19 @@ mod tests {
             resource.payment_ids(),
             vec!["order".to_string(), "capture".to_string()]
         );
+    }
+}
+
+#[cfg(test)]
+mod cents_tests {
+    use super::super::service::cents_from_decimal;
+
+    #[test]
+    fn parses_paypal_amounts_as_cents() {
+        assert_eq!(cents_from_decimal("1.99"), Some(199));
+        assert_eq!(cents_from_decimal("10"), Some(1000));
+        assert_eq!(cents_from_decimal("0.5"), Some(50));
+        assert_eq!(cents_from_decimal("1.999"), None);
+        assert_eq!(cents_from_decimal("-1.00"), None);
     }
 }

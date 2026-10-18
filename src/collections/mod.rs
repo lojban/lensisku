@@ -1,6 +1,7 @@
 pub mod controller;
 pub mod dto;
 pub mod models;
+mod images;
 pub mod service;
 
 use actix_web::web;

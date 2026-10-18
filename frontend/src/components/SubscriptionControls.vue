@@ -56,16 +56,20 @@ const fetchState = async () => {
   }
 }
 
+const alertTriggers = ['comment', 'definition', 'edit']
+
 const toggleSubscription = async () => {
   isLoading.value = true
   error.value = null
 
   try {
     if (isSubscribed.value) {
-      await unsubscribeFromValsi(props.valsiId, 'edit')
+      await Promise.all(
+        alertTriggers.map((trigger) => unsubscribeFromValsi(props.valsiId, trigger))
+      )
       isSubscribed.value = false
     } else {
-      await subscribeToValsi(props.valsiId, 'edit')
+      await Promise.all(alertTriggers.map((trigger) => subscribeToValsi(props.valsiId, trigger)))
       isSubscribed.value = true
     }
   } catch {

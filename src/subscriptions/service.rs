@@ -6,7 +6,7 @@ pub async fn subscribe_to_valsi(
     pool: &Pool,
     user_id: i32,
     valsi_id: i32,
-    _trigger_type: SubscriptionTrigger,
+    trigger_type: SubscriptionTrigger,
 ) -> Result<SubscriptionResponse, Box<dyn std::error::Error>> {
     let client = pool.get().await?;
 
@@ -26,22 +26,15 @@ pub async fn subscribe_to_valsi(
         });
     }
 
-    // Subscribe to all trigger types
-    for trigger in &[
-        SubscriptionTrigger::Edit,
-        SubscriptionTrigger::Comment,
-        SubscriptionTrigger::Definition,
-    ] {
-        client
-            .execute(
-                "INSERT INTO valsi_subscriptions (valsi_id, user_id, trigger_type)
-                     VALUES ($1, $2, $3)
-                     ON CONFLICT (valsi_id, user_id, trigger_type) 
-                     DO UPDATE SET unsubscribed = false, unsubscribed_at = NULL",
-                &[&valsi_id, &user_id, &trigger],
-            )
-            .await?;
-    }
+    client
+        .execute(
+            "INSERT INTO valsi_subscriptions (valsi_id, user_id, trigger_type)
+                 VALUES ($1, $2, $3)
+                 ON CONFLICT (valsi_id, user_id, trigger_type)
+                 DO UPDATE SET unsubscribed = false, unsubscribed_at = NULL",
+            &[&valsi_id, &user_id, &trigger_type],
+        )
+        .await?;
 
     Ok(SubscriptionResponse {
         success: true,
@@ -53,23 +46,22 @@ pub async fn unsubscribe_from_valsi(
     pool: &Pool,
     user_id: i32,
     valsi_id: i32,
-    _trigger_type: Option<SubscriptionTrigger>,
+    trigger_type: SubscriptionTrigger,
 ) -> Result<SubscriptionResponse, Box<dyn std::error::Error>> {
     let client = pool.get().await?;
 
-    // Unsubscribe from all trigger types
     let affected_rows = client
         .execute(
-            "UPDATE valsi_subscriptions 
+            "UPDATE valsi_subscriptions
                      SET unsubscribed = true, unsubscribed_at = CURRENT_TIMESTAMP
-                     WHERE valsi_id = $1 AND user_id = $2",
-            &[&valsi_id, &user_id],
+                     WHERE valsi_id = $1 AND user_id = $2 AND trigger_type = $3 AND NOT unsubscribed",
+            &[&valsi_id, &user_id, &trigger_type],
         )
         .await?;
 
     if affected_rows == 0 {
         return Ok(SubscriptionResponse {
-            success: false,
+            success: true,
             message: "No active subscription found".to_string(),
         });
     }

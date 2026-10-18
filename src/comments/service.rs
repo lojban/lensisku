@@ -24,6 +24,10 @@ pub fn sanitize_html(html: &str) -> String {
     remove_html_tags(html)
 }
 
+fn bounded_page(page: i64, per_page: i64) -> (i64, i64, i64) {
+    crate::pagination::page_window(Some(page), Some(per_page), 20, 100)
+}
+
 pub async fn get_thread_comments(
     pool: &Pool,
     params: ThreadParams,
@@ -31,8 +35,8 @@ pub async fn get_thread_comments(
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
 
-    let per_page = params.per_page.unwrap_or(20);
-    let mut page = params.page.unwrap_or(1);
+    let per_page = params.per_page.unwrap_or(20).clamp(1, 100);
+    let mut page = params.page.unwrap_or(1).max(1);
     let mut offset = (page - 1) * per_page;
 
     // Determine thread ID using sequential fallback approach
@@ -616,7 +620,7 @@ pub async fn get_bookmarked_comments(
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
 
-    let offset = (page - 1) * per_page;
+    let (page, per_page, offset) = bounded_page(page, per_page);
 
     // Get total count
     let total: i64 = transaction
@@ -775,7 +779,7 @@ pub async fn get_user_comments(
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
 
-    let offset = (page - 1) * per_page;
+    let (page, per_page, offset) = bounded_page(page, per_page);
 
     // Get total count
     let total: i64 = transaction
@@ -1327,7 +1331,7 @@ pub async fn get_most_bookmarked_comments(
     per_page: i64,
     current_user_id: Option<i32>,
 ) -> Result<PaginatedCommentsResponse, Box<dyn std::error::Error>> {
-    let offset = (page - 1) * per_page;
+    let (page, per_page, offset) = bounded_page(page, per_page);
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
 
@@ -1471,9 +1475,7 @@ pub async fn get_comments_by_hashtag(
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
 
-    let page = page.unwrap_or(1);
-    let per_page = per_page.unwrap_or(20);
-    let offset = (page - 1) * per_page;
+    let (page, per_page, offset) = crate::pagination::page_window(page, per_page, 20, 100);
 
     // Get total count first
     let total: i64 = transaction
@@ -1779,7 +1781,7 @@ async fn search_comments_inner(
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
 
-    let offset = (search_params.page - 1) * search_params.per_page;
+    let (page, per_page, offset) = bounded_page(search_params.page, search_params.per_page);
     let search_pattern = format!(
         "%{}%",
         crate::search_helpers::escape_like(&search_params.search_term)
@@ -1924,7 +1926,7 @@ async fn search_comments_inner(
     );
 
     // Add pagination parameters
-    query_params.push(&search_params.per_page);
+    query_params.push(&per_page);
     query_params.push(&offset);
 
     // Get total count
@@ -1979,8 +1981,8 @@ async fn search_comments_inner(
     Ok(PaginatedCommentsResponse {
         comments: mapped_comments,
         total,
-        page: search_params.page,
-        per_page: search_params.per_page,
+        page,
+        per_page,
     })
 }
 
@@ -1993,7 +1995,7 @@ pub async fn get_my_reactions(
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
 
-    let offset = (page - 1) * per_page;
+    let (page, per_page, offset) = bounded_page(page, per_page);
 
     // Get total count of distinct comments where user has reactions
     let total: i64 = transaction
@@ -2243,7 +2245,7 @@ pub(crate) async fn list_threads(
 ) -> Result<PaginatedCommentsResponse, Box<dyn std::error::Error>> {
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
-    let offset = (page - 1) * per_page;
+    let (page, per_page, offset) = bounded_page(page, per_page);
 
     let source_filter = match wave_source {
         Some("jbotcan") => {
@@ -2417,7 +2419,7 @@ pub async fn list_comments(
 ) -> Result<PaginatedCommentsResponse, Box<dyn std::error::Error>> {
     let mut client = pool.get().await?;
     let transaction = client.transaction().await?;
-    let offset = (page - 1) * per_page;
+    let (page, per_page, offset) = bounded_page(page, per_page);
 
     let sort_dir = if sort_order.eq_ignore_ascii_case("asc") {
         "ASC"

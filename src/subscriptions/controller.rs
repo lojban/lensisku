@@ -1,4 +1,4 @@
-use actix_web::{get, post, put, web, HttpResponse, Responder};
+use actix_web::{get, post, put, web, HttpResponse};
 use deadpool_postgres::Pool;
 use serde_json::json;
 
@@ -8,6 +8,7 @@ use super::dto::{
 };
 use super::models::Subscription;
 use crate::auth::Claims;
+use crate::AppError;
 
 #[utoipa::path(
     post,
@@ -30,7 +31,7 @@ pub async fn subscribe(
     pool: web::Data<Pool>,
     claims: Claims,
     req: web::Json<SubscriptionRequest>,
-) -> impl Responder {
+) -> Result<HttpResponse, AppError> {
     match super::service::subscribe_to_valsi(
         &pool,
         claims.sub,
@@ -39,11 +40,9 @@ pub async fn subscribe(
     )
     .await
     {
-        Ok(response) => HttpResponse::Ok().json(response),
-        Err(e) => HttpResponse::InternalServerError().json(json!({
-            "success": false,
-            "message": format!("Failed to subscribe: {}", e)
-        })),
+        Ok(response) if response.success => Ok(HttpResponse::Ok().json(response)),
+        Ok(response) => Err(AppError::NotFound(response.message)),
+        Err(e) => Err(AppError::Internal(format!("Failed to subscribe: {e}"))),
     }
 }
 
@@ -72,22 +71,16 @@ pub async fn unsubscribe(
     pool: web::Data<Pool>,
     claims: Claims,
     path: web::Path<(i32, String)>,
-) -> impl Responder {
+) -> Result<HttpResponse, AppError> {
     let (valsi_id, trigger_type) = path.into_inner();
-    if super::models::SubscriptionTrigger::from_label(&trigger_type).is_none() {
-        return HttpResponse::BadRequest().json(json!({
-            "success": false,
-            "message": "Unknown trigger type"
-        }));
-    }
+    let Some(trigger) = super::models::SubscriptionTrigger::from_label(&trigger_type) else {
+        return Err(AppError::BadRequest("Unknown trigger type".into()));
+    };
 
-    // The word alert toggle subscribes every trigger, so a valid label clears all of them.
-    match super::service::unsubscribe_from_valsi(&pool, claims.sub, valsi_id, None).await {
-        Ok(response) => HttpResponse::Ok().json(response),
-        Err(e) => HttpResponse::InternalServerError().json(json!({
-            "success": false,
-            "message": format!("Failed to unsubscribe: {}", e)
-        })),
+    match super::service::unsubscribe_from_valsi(&pool, claims.sub, valsi_id, trigger).await {
+        Ok(response) if response.success => Ok(HttpResponse::Ok().json(response)),
+        Ok(response) => Err(AppError::NotFound(response.message)),
+        Err(e) => Err(AppError::Internal(format!("Failed to unsubscribe: {e}"))),
     }
 }
 
@@ -107,12 +100,15 @@ pub async fn unsubscribe(
                   the valsi details and trigger types the user is subscribed to."
 )]
 #[get("")]
-pub async fn get_subscriptions(pool: web::Data<Pool>, claims: Claims) -> impl Responder {
+pub async fn get_subscriptions(
+    pool: web::Data<Pool>,
+    claims: Claims,
+) -> Result<HttpResponse, AppError> {
     match super::service::get_user_subscriptions(&pool, claims.sub).await {
-        Ok(subscriptions) => HttpResponse::Ok().json(subscriptions),
-        Err(e) => HttpResponse::InternalServerError().json(json!({
-            "error": format!("Failed to get subscriptions: {}", e)
-        })),
+        Ok(subscriptions) => Ok(HttpResponse::Ok().json(subscriptions)),
+        Err(e) => Err(AppError::Internal(format!(
+            "Failed to get subscriptions: {e}"
+        ))),
     }
 }
 
@@ -142,17 +138,17 @@ pub async fn get_notifications(
     pool: web::Data<Pool>,
     claims: Claims,
     query: web::Query<NotificationQuery>,
-) -> impl Responder {
+) -> Result<HttpResponse, AppError> {
     let (page, per_page, _) = crate::pagination::page_window(query.page, query.per_page, 20, 100);
     let unread_only = query.unread_only.unwrap_or(false);
 
     match super::service::get_user_notifications(&pool, claims.sub, page, per_page, unread_only)
         .await
     {
-        Ok(response) => HttpResponse::Ok().json(response),
-        Err(e) => HttpResponse::InternalServerError().json(json!({
-            "error": format!("Failed to get notifications: {}", e)
-        })),
+        Ok(response) => Ok(HttpResponse::Ok().json(response)),
+        Err(e) => Err(AppError::Internal(format!(
+            "Failed to get notifications: {e}"
+        ))),
     }
 }
 
@@ -178,7 +174,7 @@ pub async fn mark_notifications_read(
     pool: web::Data<Pool>,
     claims: Claims,
     notification_ids: Option<web::Json<Vec<i32>>>,
-) -> impl Responder {
+) -> Result<HttpResponse, AppError> {
     match super::service::mark_notifications_read(
         &pool,
         claims.sub,
@@ -186,12 +182,12 @@ pub async fn mark_notifications_read(
     )
     .await
     {
-        Ok(count) => HttpResponse::Ok().json(json!({
+        Ok(count) => Ok(HttpResponse::Ok().json(json!({
             "marked_count": count
-        })),
-        Err(e) => HttpResponse::InternalServerError().json(json!({
-            "error": format!("Failed to mark notifications as read: {}", e)
-        })),
+        }))),
+        Err(e) => Err(AppError::Internal(format!(
+            "Failed to mark notifications as read: {e}"
+        ))),
     }
 }
 
@@ -218,11 +214,11 @@ pub async fn get_subscription_state(
     pool: web::Data<Pool>,
     claims: Claims,
     valsi_id: web::Path<i32>,
-) -> impl Responder {
+) -> Result<HttpResponse, AppError> {
     match super::service::get_subscription_state(&pool, claims.sub, valsi_id.into_inner()).await {
-        Ok(state) => HttpResponse::Ok().json(state),
-        Err(e) => HttpResponse::InternalServerError().json(json!({
-            "error": format!("Failed to get subscription state: {}", e)
-        })),
+        Ok(state) => Ok(HttpResponse::Ok().json(state)),
+        Err(e) => Err(AppError::Internal(format!(
+            "Failed to get subscription state: {e}"
+        ))),
     }
 }

@@ -1,14 +1,15 @@
-use actix_web::{get, post, web, HttpResponse, Responder};
+use actix_web::{get, post, web, HttpResponse};
 use deadpool_postgres::Pool;
 use log::info;
 
 use super::{dto::*, paypal::PayPalOrder, service, PaymentProvider};
-use crate::{auth::Claims, payments::paypal::PayPalProvider};
+use crate::payments::paypal::PayPalProvider;
+use crate::{auth::Claims, AppError};
 
-fn paypal_client() -> Result<&'static PayPalProvider, HttpResponse> {
+fn paypal_client() -> Result<&'static PayPalProvider, AppError> {
     PayPalProvider::shared().map_err(|e| {
         log::error!("Failed to create PayPal provider: {}", e);
-        HttpResponse::InternalServerError().body("Failed to initialize payment provider")
+        AppError::Internal("Failed to initialize payment provider".into())
     })
 }
 
@@ -32,26 +33,26 @@ pub async fn create_paypal_subscription(
     pool: web::Data<Pool>,
     claims: Claims,
     req: web::Json<CreateSubscriptionRequest>,
-) -> impl Responder {
-    let paypal_provider = match paypal_client() {
-        Ok(provider) => provider,
-        Err(response) => return response,
-    };
+) -> Result<HttpResponse, AppError> {
+    let paypal_provider = paypal_client()?;
 
     match paypal_provider.create_subscription(&req.into_inner()).await {
         Ok(paypal_response) => {
             match service::create_subscription_record(&pool, claims.sub, &paypal_response).await {
-                Ok(_) => HttpResponse::Ok().json(paypal_response),
+                Ok(_) => Ok(HttpResponse::Ok().json(paypal_response)),
                 Err(e) => {
                     log::error!("Failed to record subscription locally: {}", e);
-                    HttpResponse::InternalServerError()
-                        .body("Failed to record subscription locally.")
+                    Err(AppError::Internal(
+                        "Failed to record subscription locally.".into(),
+                    ))
                 }
             }
         }
         Err(e) => {
             log::error!("Failed to create PayPal subscription: {}", e);
-            HttpResponse::InternalServerError().body("Failed to create PayPal subscription.")
+            Err(AppError::ExternalService(
+                "Failed to create PayPal subscription.".into(),
+            ))
         }
     }
 }
@@ -79,25 +80,18 @@ pub async fn get_paypal_subscription_details(
     pool: web::Data<Pool>,
     claims: Claims,
     subscription_id_path: web::Path<String>,
-) -> impl Responder {
-    let paypal_provider = match paypal_client() {
-        Ok(provider) => provider,
-        Err(response) => return response,
-    };
+) -> Result<HttpResponse, AppError> {
+    let paypal_provider = paypal_client()?;
 
     let subscription_id = subscription_id_path.into_inner();
 
-    // Security Check: Verify user owns the subscription
     match service::get_subscription_owner(&pool, &subscription_id).await {
-        Ok(Some(owner_user_id)) => {
-            if owner_user_id != claims.sub {
-                return HttpResponse::Forbidden().finish();
-            }
-            // User owns the subscription, proceed.
-        }
+        Ok(Some(owner_user_id)) if owner_user_id == claims.sub => {}
+        Ok(Some(_)) => return Err(AppError::Auth("Forbidden".into())),
         Ok(None) => {
-            return HttpResponse::NotFound()
-                .body(format!("Subscription {} not found.", subscription_id))
+            return Err(AppError::NotFound(format!(
+                "Subscription {subscription_id} not found."
+            )))
         }
         Err(e) => {
             log::error!(
@@ -105,8 +99,9 @@ pub async fn get_paypal_subscription_details(
                 subscription_id,
                 e
             );
-            return HttpResponse::InternalServerError()
-                .body("Failed to verify subscription ownership.");
+            return Err(AppError::Internal(
+                "Failed to verify subscription ownership.".into(),
+            ));
         }
     }
 
@@ -114,28 +109,21 @@ pub async fn get_paypal_subscription_details(
         .get_subscription_details(&subscription_id)
         .await
     {
-        Ok(details) => {
-            // Additional check: ensure the custom_id from PayPal matches our expectation if set
-            // or that the subscription record in our DB for this ID belongs to claims.sub
-            // This is a more robust check than just relying on PayPal's response if custom_id wasn't used
-            // or if we want to ensure our local records align.
-            // For now, we trust the initial DB check is sufficient.
-            HttpResponse::Ok().json(details)
-        }
+        Ok(details) => Ok(HttpResponse::Ok().json(details)),
         Err(e) => {
             log::error!(
                 "Failed to get PayPal subscription details for {}: {}",
                 subscription_id,
                 e
             );
-            // Check error type if possible to return NotFound vs InternalServerError
             if e.to_string().contains("RESOURCE_NOT_FOUND") {
-                // Example check
-                HttpResponse::NotFound()
-                    .body(format!("Subscription {} not found.", subscription_id))
+                Err(AppError::NotFound(format!(
+                    "Subscription {subscription_id} not found."
+                )))
             } else {
-                HttpResponse::InternalServerError()
-                    .body("Failed to get PayPal subscription details.")
+                Err(AppError::ExternalService(
+                    "Failed to get PayPal subscription details.".into(),
+                ))
             }
         }
     }
@@ -166,26 +154,19 @@ pub async fn cancel_paypal_subscription(
     claims: Claims,
     subscription_id_path: web::Path<String>,
     req: web::Json<CancelSubscriptionRequestDto>,
-) -> impl Responder {
-    let paypal_provider = match paypal_client() {
-        Ok(provider) => provider,
-        Err(response) => return response,
-    };
+) -> Result<HttpResponse, AppError> {
+    let paypal_provider = paypal_client()?;
 
     let subscription_id = subscription_id_path.into_inner();
     let reason = &req.reason;
 
-    // Security Check: Verify user owns the subscription before attempting cancellation.
     match service::get_subscription_owner(&pool, &subscription_id).await {
-        Ok(Some(owner_user_id)) => {
-            if owner_user_id != claims.sub {
-                return HttpResponse::Forbidden().finish();
-            }
-            // User owns the subscription, proceed with cancellation.
-        }
+        Ok(Some(owner_user_id)) if owner_user_id == claims.sub => {}
+        Ok(Some(_)) => return Err(AppError::Auth("Forbidden".into())),
         Ok(None) => {
-            return HttpResponse::NotFound()
-                .body(format!("Subscription {} not found.", subscription_id))
+            return Err(AppError::NotFound(format!(
+                "Subscription {subscription_id} not found."
+            )))
         }
         Err(e) => {
             log::error!(
@@ -193,8 +174,9 @@ pub async fn cancel_paypal_subscription(
                 subscription_id,
                 e
             );
-            return HttpResponse::InternalServerError()
-                .body("Failed to verify subscription ownership.");
+            return Err(AppError::Internal(
+                "Failed to verify subscription ownership.".into(),
+            ));
         }
     }
 
@@ -206,15 +188,16 @@ pub async fn cancel_paypal_subscription(
             match service::process_subscription_cancellation(&pool, &subscription_id, Some(reason))
                 .await
             {
-                Ok(_) => HttpResponse::NoContent().finish(),
+                Ok(_) => Ok(HttpResponse::NoContent().finish()),
                 Err(e) => {
                     log::error!(
                         "Failed to update local subscription status after cancellation for {}: {}",
                         subscription_id,
                         e
                     );
-                    HttpResponse::InternalServerError()
-                        .body("Failed to update local subscription status after cancellation.")
+                    Err(AppError::Internal(
+                        "Failed to update local subscription status after cancellation.".into(),
+                    ))
                 }
             }
         }
@@ -224,7 +207,9 @@ pub async fn cancel_paypal_subscription(
                 subscription_id,
                 e
             );
-            HttpResponse::InternalServerError().body("Failed to cancel PayPal subscription.")
+            Err(AppError::ExternalService(
+                "Failed to cancel PayPal subscription.".into(),
+            ))
         }
     }
 }
@@ -249,11 +234,8 @@ pub async fn create_payment(
     pool: web::Data<Pool>,
     claims: Claims,
     req: web::Json<CreatePaymentRequest>,
-) -> impl Responder {
-    let paypal_provider = match paypal_client() {
-        Ok(provider) => provider,
-        Err(response) => return response,
-    };
+) -> Result<HttpResponse, AppError> {
+    let paypal_provider = paypal_client()?;
 
     match paypal_provider
         .create_order(req.amount_cents, &req.currency, claims.sub)
@@ -262,13 +244,13 @@ pub async fn create_payment(
         Ok(order) => {
             if let Err(e) = service::store_payment_order(&pool, claims.sub, &order, &req).await {
                 log::error!("Failed to store payment order: {}", e);
-                return HttpResponse::InternalServerError().body("Failed to store payment order");
+                return Err(AppError::Internal("Failed to store payment order".into()));
             }
-            HttpResponse::Ok().json(order)
+            Ok(HttpResponse::Ok().json(order))
         }
         Err(e) => {
             log::error!("Failed to create PayPal order: {}", e);
-            HttpResponse::BadRequest().body(e.to_string())
+            Err(AppError::BadRequest(e.to_string()))
         }
     }
 }
@@ -292,40 +274,41 @@ pub async fn capture_order(
     pool: web::Data<Pool>,
     claims: Claims,
     order_id: web::Path<String>,
-) -> impl Responder {
-    let paypal_provider = match paypal_client() {
-        Ok(provider) => provider,
-        Err(response) => return response,
-    };
+) -> Result<HttpResponse, AppError> {
+    let paypal_provider = paypal_client()?;
 
     let order_id = order_id.into_inner();
     match service::paypal_payment_owner(&pool, &order_id).await {
         Ok(Some(owner)) if owner == claims.sub => {}
-        Ok(Some(_)) => return HttpResponse::Forbidden().finish(),
-        Ok(None) => return HttpResponse::NotFound().body("Payment order not found"),
+        Ok(Some(_)) => return Err(AppError::Auth("Forbidden".into())),
+        Ok(None) => return Err(AppError::NotFound("Payment order not found".into())),
         Err(e) => {
             log::error!("Failed to verify payment owner for {}: {}", order_id, e);
-            return HttpResponse::InternalServerError().body("Failed to verify payment order");
+            return Err(AppError::Internal("Failed to verify payment order".into()));
         }
     }
 
     match paypal_provider.capture_order(&order_id).await {
         Ok(order) => match service::credit_captured_paypal_payment(&pool, &[order_id]).await {
             Ok(service::PaymentCredit::Credited | service::PaymentCredit::AlreadySettled) => {
-                HttpResponse::Ok().json(order)
+                Ok(HttpResponse::Ok().json(order))
             }
             Ok(service::PaymentCredit::NotFound) => {
                 log::error!("Captured PayPal order but no pending payment row matched");
-                HttpResponse::InternalServerError().body("Failed to record captured payment")
+                Err(AppError::Internal(
+                    "Failed to record captured payment".into(),
+                ))
             }
             Err(e) => {
                 log::error!("Failed to record captured payment: {}", e);
-                HttpResponse::InternalServerError().body("Failed to record captured payment")
+                Err(AppError::Internal(
+                    "Failed to record captured payment".into(),
+                ))
             }
         },
         Err(e) => {
             log::error!("Failed to capture PayPal order: {}", e);
-            HttpResponse::BadRequest().body(e.to_string())
+            Err(AppError::BadRequest(e.to_string()))
         }
     }
 }
@@ -422,7 +405,15 @@ pub async fn paypal_webhook(
                         resource.id, resource.amount.value
                     );
                     let ids = resource.payment_ids();
-                    match service::credit_captured_paypal_payment(&pool, &ids).await {
+                    match service::settle_paypal_capture(
+                        &pool,
+                        &ids,
+                        resource.custom_id.as_deref(),
+                        &resource.amount.value,
+                        &resource.amount.currency_code,
+                    )
+                    .await
+                    {
                         Ok(service::PaymentCredit::Credited) => Ok(HttpResponse::Ok().json(
                             WebhookResponse {
                                 success: true,
@@ -474,7 +465,14 @@ pub async fn paypal_webhook(
                         "Processing PAYMENT.CAPTURE.DENIED/DECLINED for capture {}",
                         resource.id
                     );
-                    match service::mark_paypal_payment_failed(&pool, &resource.payment_ids()).await
+                    match service::fail_paypal_capture(
+                        &pool,
+                        &resource.payment_ids(),
+                        resource.custom_id.as_deref(),
+                        &resource.amount.value,
+                        &resource.amount.currency_code,
+                    )
+                    .await
                     {
                         Ok(_) => Ok(HttpResponse::Ok().json(WebhookResponse {
                             success: true,
@@ -585,9 +583,9 @@ pub async fn paypal_webhook(
                   Includes available funds and transaction history. Requires valid authentication token."
 )]
 #[get("/balance")]
-pub async fn get_balance(pool: web::Data<Pool>, claims: Claims) -> impl Responder {
+pub async fn get_balance(pool: web::Data<Pool>, claims: Claims) -> Result<HttpResponse, AppError> {
     match service::get_balance(&pool, claims.sub).await {
-        Ok(balance) => HttpResponse::Ok().json(balance),
-        Err(e) => HttpResponse::InternalServerError().body(e.to_string()),
+        Ok(balance) => Ok(HttpResponse::Ok().json(balance)),
+        Err(e) => Err(AppError::Internal(e.to_string())),
     }
 }

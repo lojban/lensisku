@@ -8,8 +8,9 @@ use once_cell::sync::Lazy;
 use reqwest::header::{HeaderMap, HeaderName, HeaderValue, AUTHORIZATION};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::sync::{Mutex, OnceLock};
+use std::sync::OnceLock;
 use std::time::Duration;
+use tokio::sync::Mutex;
 use utoipa::ToSchema;
 
 pub fn format_cents(cents: u64) -> String {
@@ -115,7 +116,7 @@ impl PayPalProvider {
         use openssl::x509::X509;
 
         {
-            let cache = CERT_CACHE.lock().map_err(|e| e.to_string())?;
+            let cache = CERT_CACHE.lock().await;
             if let Some(cert) = cache.get(url) {
                 return Ok(cert.clone());
             }
@@ -153,7 +154,7 @@ impl PayPalProvider {
         }
 
         {
-            let mut cache = CERT_CACHE.lock().map_err(|e| e.to_string())?;
+            let mut cache = CERT_CACHE.lock().await;
             cache.insert(url.to_string(), cert_pem.clone());
         }
 
