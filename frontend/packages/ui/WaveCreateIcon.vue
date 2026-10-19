@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
- * New wave (brand book §5c): Lucide `AudioWaveform` at full width, plus a plus.
- * The plus uses the same bottom-right corner as Lucide `StarPlus`.
+ * New discussion / wave / thread (brand book §5c): a plus above two wave lines.
+ * A new comment stays Lucide `MessageSquarePlus`.
  */
 defineOptions({ name: 'WaveCreateIcon', inheritAttrs: false })
 </script>
@@ -17,17 +17,13 @@ defineOptions({ name: 'WaveCreateIcon', inheritAttrs: false })
     stroke-width="2"
     stroke-linecap="round"
     stroke-linejoin="round"
-    class="lucide lucide-audio-waveform-plus-icon lucide-audio-waveform-plus"
+    class="lucide lucide-wave-plus-icon lucide-wave-plus"
     aria-hidden="true"
     v-bind="$attrs"
   >
-    <g transform="translate(0 1.5) scale(1 0.52)">
-      <path
-        vector-effect="non-scaling-stroke"
-        d="M2 13a2 2 0 0 0 2-2V7a2 2 0 0 1 4 0v13a2 2 0 0 0 4 0V4a2 2 0 0 1 4 0v13a2 2 0 0 0 4 0v-4a2 2 0 0 1 2-2"
-      />
-    </g>
-    <path d="M15 18h6" />
-    <path d="M18 15v6" />
+    <path d="M12 2v6" />
+    <path d="M9 5h6" />
+    <path d="M2 14c1.7-1.7 3.3-1.7 5 0s3.3 1.7 5 0 3.3-1.7 5 0 3.3 1.7 5 0" />
+    <path d="M2 20c1.7-1.7 3.3-1.7 5 0s3.3 1.7 5 0 3.3-1.7 5 0 3.3 1.7 5 0" />
   </svg>
 </template>

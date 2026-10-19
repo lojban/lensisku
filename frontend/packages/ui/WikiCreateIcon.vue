@@ -1,7 +1,6 @@
 <script setup lang="ts">
 /**
- * New wiki article (brand book §5c): the letter W plus a plus.
- * The book outline is omitted so the W stays readable beside the plus.
+ * New wiki page and “into wiki” (brand book §5c): a book, a plus, and a W.
  */
 defineOptions({ name: 'WikiCreateIcon', inheritAttrs: false })
 </script>
@@ -21,8 +20,9 @@ defineOptions({ name: 'WikiCreateIcon', inheritAttrs: false })
     aria-hidden="true"
     v-bind="$attrs"
   >
-    <path d="M2 4.5 5 17 8 9.5 11 17 14 4.5" />
-    <path d="M15 18h6" />
-    <path d="M18 15v6" />
+    <path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7" />
+    <path d="M18 3v6" />
+    <path d="M15 6h6" />
+    <path d="M6 10l2 7 2-4 2 4 2-7" />
   </svg>
 </template>

@@ -38,12 +38,13 @@
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { Plus, MessageSquarePlus } from '@lucide/vue'
+import { Plus } from '@lucide/vue'
 import {
   DefinitionCreateIcon,
   FabButton,
   ToolbarSelectDropdown,
   ToolbarSelectDropdownItem,
+  WaveCreateIcon,
   WikiCreateIcon,
 } from '@packages/ui'
 import { useLocalePath } from '@/composables/useLocalePath'
@@ -54,7 +55,7 @@ const { t } = useI18n()
 const choices = computed(() => [
   {
     path: '/comments/new-thread',
-    icon: MessageSquarePlus,
+    icon: WaveCreateIcon,
     iconClass: 'fab-menu-icon--discussion',
     label: t('creation.newDiscussion'),
     description: t('creation.discussionDescription'),

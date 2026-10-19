@@ -1,6 +1,7 @@
 <script setup lang="ts">
 /**
- * Several wiki articles (brand book §5c): the book with a W. One article is the letter W (`WikiIcon`).
+ * Wiki pages, the wiki book, and wiki as a source (brand book §5c): stacked books with a W.
+ * One article stays the letter W (`WikiIcon`). Creating a page is `WikiCreateIcon`.
  */
 defineOptions({ name: 'WikisIcon', inheritAttrs: false })
 </script>
@@ -20,9 +21,8 @@ defineOptions({ name: 'WikisIcon', inheritAttrs: false })
     aria-hidden="true"
     v-bind="$attrs"
   >
-    <path
-      d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20"
-    />
-    <path d="m8 6 2 7 2-4 2 4 2-7" />
+    <path d="M5 6h9a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z" />
+    <path d="M7 6V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2h-3" />
+    <path d="M6 11l1.75 6 1.75-3.5 1.75 3.5L13 11" />
   </svg>
 </template>
