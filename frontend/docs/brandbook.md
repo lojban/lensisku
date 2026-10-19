@@ -76,7 +76,7 @@ Every concept below has **three** glyphs. They share one hue. **One** is the sin
 
 1. Do not invent a fourth drawing for the same concept. “Create wiki” is `WikiCreateIcon`, not a bare `WikiIcon` and not Lucide `FilePlus`.
 2. Do not substitute Lucide `BookMarked`, `BookOpen`, `Globe`, or `Globe2` for wiki, and do not use `BookA` or `TextQuote` for wiki. Discuss links, the discussions tab, and discussions as a source use Lucide `MessagesSquare`. Do not use `AudioWaveform` or `WavesHorizontal` for those.
-3. `BookOpen` may still mark **courses, flashcards, and collection covers**. Those are not dictionary entries. Amber on a star is the collection hue, not the edit-yellow button.
+3. A collection or course with no cover uses `PlayingCardsFanIcon` (Lucide `playing-cards-fan`). That is the cover fallback, not a dictionary entry. Amber on a star is the collection hue, not the edit-yellow button.
 4. **Threads and comments:** discuss links, the discussions tab, and discussions as a source use Lucide `MessagesSquare`. A new wave, a new discussion, and a new thread use `WaveCreateIcon` (a plus above two wave lines). A new comment uses `MessageSquarePlus`. A single comment, and comment filters, use `MessageSquare`. Freeforums as a source uses Lucide `MessageCircle` (the circle bubble).
 5. Source chips are always the **one** glyph: `.entry-chip`, `.definition-chip`, `.wiki-chip`, `.mail-chip`, `.jbotcan-chip`, `.freeforums-chip`.
 6. In a **plain menu**, every icon takes its concept hue. Tabs, filters, nav links, and colored buttons inherit `currentColor`.

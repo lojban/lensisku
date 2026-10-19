@@ -417,7 +417,7 @@
                     v-show="!isEditCollectionImageLoading && !editCollectionImageUrl"
                     class="collection-edit-logo-placeholder"
                   >
-                    <BookOpen class="h-14 w-14" />
+                    <PlayingCardsFanIcon class="h-14 w-14" />
                   </div>
 
                   <div
@@ -1449,7 +1449,6 @@ import {
   GalleryVerticalIcon,
   LayoutPanelTop,
   List,
-  BookOpen,
   Edit3,
   HelpCircle,
   FileText,
@@ -1521,6 +1520,7 @@ import {
   DefinitionCreateIcon,
   DefinitionsIcon,
   CollectionCoverLightbox,
+  PlayingCardsFanIcon,
   FileInput,
   Input,
   Select,

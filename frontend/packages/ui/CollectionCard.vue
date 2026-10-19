@@ -19,7 +19,7 @@
           </div>
         </RouterLink>
         <div v-else class="collection-card-logo-placeholder" aria-hidden="true">
-          <BookOpen class="h-6 w-6 sm:h-8 sm:w-8" />
+          <PlayingCardsFanIcon class="h-6 w-6 sm:h-8 sm:w-8" />
         </div>
 
         <div class="min-w-0 flex-1 flex flex-col gap-1.5 text-left">
@@ -102,16 +102,10 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import {
-  BookOpen,
-  GraduationCap,
-  List,
-  GalleryHorizontalEnd,
-  CalendarClock,
-  Users,
-} from '@lucide/vue'
+import { GraduationCap, List, GalleryHorizontalEnd, CalendarClock, Users } from '@lucide/vue'
 import Card from './Card.vue'
 import Button from './Button.vue'
+import PlayingCardsFanIcon from './PlayingCardsFanIcon.vue'
 
 export interface CollectionCardCollection {
   collection_id: number

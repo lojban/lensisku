@@ -16,7 +16,7 @@
     <div
       class="flex h-[70px] w-[93px] shrink-0 items-center justify-center rounded-lg border border-neutral-200 bg-neutral-50 drop-shadow-md"
     >
-      <BookOpen class="h-9 w-9 text-green-600" />
+      <PlayingCardsFanIcon class="h-9 w-9 text-green-600" />
     </div>
 
     <p class="mt-3 text-center font-bold text-neutral-700 line-clamp-2">{{ collection.name }}</p>
@@ -24,8 +24,8 @@
 </template>
 
 <script setup lang="ts">
-import { Button } from '@packages/ui'
-import { Check, BookOpen } from '@lucide/vue'
+import { Button, PlayingCardsFanIcon } from '@packages/ui'
+import { Check } from '@lucide/vue'
 
 defineProps({
   collection: { type: Object, required: true },

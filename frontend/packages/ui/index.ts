@@ -36,6 +36,7 @@ export { default as WikiCreateIcon } from './WikiCreateIcon.vue'
 export { default as DefinitionCreateIcon } from './DefinitionCreateIcon.vue'
 export { default as WaveCreateIcon } from './WaveCreateIcon.vue'
 export { default as StarsIcon } from './StarsIcon.vue'
+export { default as PlayingCardsFanIcon } from './PlayingCardsFanIcon.vue'
 export {
   EntryIcon,
   DefinitionsIcon,

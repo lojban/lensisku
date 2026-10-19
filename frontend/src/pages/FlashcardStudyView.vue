@@ -34,7 +34,7 @@
           </div>
         </Button>
         <div v-else class="collection-card-logo-placeholder shrink-0 self-start" aria-hidden="true">
-          <BookOpen class="h-8 w-8" />
+          <PlayingCardsFanIcon class="h-8 w-8" />
         </div>
 
         <div class="ml-auto flex w-auto max-w-full flex-col gap-3 flex-wrap items-end justify-end">
@@ -532,7 +532,6 @@ import {
   Loader2,
   CheckCircle2,
   EqualApproximately,
-  BookOpen,
   MessagesSquare,
 } from '@lucide/vue'
 import { ref, onMounted, computed, watch, nextTick, onBeforeUnmount } from 'vue'
@@ -540,7 +539,7 @@ import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import AnonymousProgressBanner from '@/components/AnonymousProgressBanner.vue'
 import ModalComponent from '@/components/ModalComponent.vue'
-import { Button, IconButton, Textarea } from '@packages/ui'
+import { Button, IconButton, PlayingCardsFanIcon, Textarea } from '@packages/ui'
 
 import {
   getDueCards,
