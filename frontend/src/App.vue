@@ -224,14 +224,14 @@
     >
       <div
         id="main-child"
-        class="max-w-4xl mx-auto relative flex flex-col"
+        class="mx-auto relative flex flex-col"
         :class="[
+          route.meta.lingoShell ? 'max-w-none w-full' : 'max-w-4xl',
           route.meta.contentTopPaddingMainOnly || route.meta.authFullBleed || route.meta.fullHeight
             ? 'pt-0'
             : 'pt-3',
           route.meta.fullHeight ? 'main-child-full-height w-full' : 'main-child-min-height',
-          route.meta.authFullBleed ? 'main-child--auth-fullbleed' : '',
-          route.path.startsWith('/lingo') ? 'lg:pl-64' : '',
+          route.meta.authFullBleed || route.meta.lingoShell ? 'main-child--auth-fullbleed' : '',
         ]"
       >
         <div
@@ -300,10 +300,7 @@
     v-if="!route.meta.hideFab"
     class="pointer-events-none fixed inset-x-0 bottom-4 z-50 flex justify-center"
   >
-    <div
-      class="pointer-events-none relative w-full max-w-4xl"
-      :class="route.path.startsWith('/lingo') ? 'lg:pl-64' : ''"
-    >
+    <div class="pointer-events-none relative w-full max-w-4xl">
       <div class="fab-anchor">
         <CreateMenu floating />
       </div>

@@ -7,7 +7,6 @@
       class="mx-auto flex h-full max-w-[1140px] items-center justify-between gap-3 px-3 py-2 sm:px-4 sm:py-2.5 lg:px-6"
       :class="compact ? 'min-h-[56px] sm:min-h-[60px]' : 'min-h-[72px] sm:py-3 lg:min-h-[88px]'"
     >
-      <!-- Status message (correct / wrong) -->
       <div
         v-if="status === 'correct'"
         class="flex items-center gap-1.5 text-xs font-bold text-green-600 sm:gap-2 sm:text-sm"
@@ -30,29 +29,27 @@
       </div>
 
       <div v-else class="flex-1" />
-      <!-- Main action button -->
-      <Button
-        variant="neutral"
+
+      <button
         type="button"
+        class="lingo-btn ml-auto text-sm"
+        :class="[
+          buttonVariantClass,
+          compact
+            ? 'lingo-btn--sm min-w-[88px] sm:min-w-[96px]'
+            : 'lingo-btn--lg min-w-[100px] sm:min-w-[110px] sm:text-base lg:min-w-[120px]',
+        ]"
         :disabled="disabled"
         :aria-disabled="disabled"
-        class="ml-auto text-sm"
-        :class="[
-          buttonClass,
-          compact
-            ? 'min-w-[88px] py-2 sm:min-w-[96px] sm:py-2'
-            : 'min-w-[100px] py-2.5 sm:min-w-[110px] sm:py-3 sm:text-base lg:min-w-[120px]',
-        ]"
         @click="$emit('check')"
       >
         {{ buttonLabel }}
-      </Button>
+      </button>
     </div>
   </footer>
 </template>
 
 <script setup lang="ts">
-import { Button } from '@packages/ui'
 import { CheckCircle, XCircle } from '@lucide/vue'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -93,9 +90,9 @@ const footerClass = computed(() => {
   return 'border-slate-200 bg-white'
 })
 
-const buttonClass = computed(() => {
-  if (props.status === 'wrong') return 'ui-btn--danger-rose'
-  return 'ui-btn--auth-signup'
+const buttonVariantClass = computed(() => {
+  if (props.status === 'wrong') return 'lingo-btn--danger'
+  return 'lingo-btn--secondary'
 })
 
 const buttonLabel = computed(() => {

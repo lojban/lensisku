@@ -1,8 +1,6 @@
 <template>
   <LingoLayout fill>
-    <!-- Match archive: full-height container, 12px horizontal on mobile (-mx-4 cancels layout px-4, then px-3) -->
-
-    <div class="feed-page min-h-0 flex-1 -mx-4 px-3 lg:mx-0 lg:px-0">
+    <div class="feed-page min-h-0 flex-1">
       <FeedPageBody>
         <h1 class="text-2xl font-bold text-neutral-700">{{ t('lingo.languageCourses') }}</h1>
 

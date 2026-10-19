@@ -6,13 +6,13 @@ This document is the **human-readable contract** for product, design, QA, and en
 
 ## 1. Goals
 
-| Goal                          | What it means in practice                                                                                                                                |
-| ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Recognizable product**      | Glossy **Aqua** controls and flat **toolbar** controls are both “Lensisku”; users can switch themes without breaking layouts.                            |
-| **Predictable actions**       | Primary flows (save, search, destructive) map to **semantic** `ui-btn--*` names, not random Tailwind color utilities on `<button>`.                      |
-| **Accessible by default**     | Visible focus states (`focus-visible` / rings), icon-only controls require **accessible names** (`aria-label` or visible `label`).                       |
-| **Maintainable UI**           | New screens use **named patterns** from the Tailwind layer (`input-field`, `toolbar-panel`, `card-elevated`, …) and shared **`packages/ui`** primitives. |
-| **No layout hacks for icons** | Icon + text controls use **`gap-*` on the parent**—never `mr-*` / `ml-*` on icons (breaks when labels are hidden or translated).                         |
+| Goal                          | What it means in practice                                                                                                                                                                        |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Recognizable product**      | Glossy **Aqua** and flat **toolbar** controls are both “Lensisku”; users can switch themes without breaking layouts. **Lingo** is a separate green chunky shell (Duolingo-style), not Aqua/Flat. |
+| **Predictable actions**       | Primary flows (save, search, destructive) map to **semantic** `ui-btn--*` names, not random Tailwind color utilities on `<button>`.                                                              |
+| **Accessible by default**     | Visible focus states (`focus-visible` / rings), icon-only controls require **accessible names** (`aria-label` or visible `label`).                                                               |
+| **Maintainable UI**           | New screens use **named patterns** from the Tailwind layer (`input-field`, `toolbar-panel`, `card-elevated`, …) and shared **`packages/ui`** primitives.                                         |
+| **No layout hacks for icons** | Icon + text controls use **`gap-*` on the parent**—never `mr-*` / `ml-*` on icons (breaks when labels are hidden or translated).                                                                 |
 
 ---
 
@@ -31,6 +31,7 @@ This document is the **human-readable contract** for product, design, QA, and en
 | **`tailwind.config.js`**                | Brand tokens (`colors.nav-link`, `fontFamily.sans`), shared **component classes** (`.btn-base`, `.aqua-base`, `.input-field`, …), **semantic button mapping** (`ui-btn--*` → aqua/flat primitives via `data-button-theme`). |
 | **`tailwind.flat-buttons.mjs`**         | **Flat** theme: `.btn-flat-surface` + semantic `btn-*` palettes (imported into `tailwind.config.js`).                                                                                                                       |
 | **`tailwind.aqua-buttons.mjs`**         | **Aqua** theme: `.aqua-base` / `.aqua-base-secondary`, semantic `btn-aqua-*`, segment geometry helper, toggle-off shadow.                                                                                                   |
+| **`tailwind.lingo.mjs`**                | **Lingo** shell: Duolingo-style chunky `.lingo-btn*`, sidebar rail, mobile header, course cards, lesson nodes (§10.3).                                                                                                      |
 | **`packages/ui/*.vue`**                 | **Reusable, mostly stateless** building blocks (`Button`, `IconButton`, `Card`, `Dropdown`, …). They must **not** import from `src/`.                                                                                       |
 | **`src/components/**`\*\*               | Domain-aware UI (search, definitions, filters, Lingo study, …). Prefer composing `packages/ui` + Tailwind named classes.                                                                                                    |
 | **`src/composables/useButtonTheme.ts`** | Persists `aqua` \| `flat` in `localStorage`, sets `document.documentElement.dataset.buttonTheme`.                                                                                                                           |
@@ -102,12 +103,15 @@ Every concept below has **three** glyphs. They share one hue. **One** is the sin
 
 ---
 
-## 6. Button system (two families)
+## 6. Button system (three families)
+
+Lensisku dictionary chrome uses **Aqua** or **Flat** (user toggle). **Lingo** (`/lingo`, collection lingo study) uses a separate **chunky** family (§10.3) that does **not** follow `data-button-theme`.
 
 ### 6.1 Theme switch: Aqua vs Flat
 
 - Stored as `lensisku.buttonTheme` in `localStorage`; mirrored on **`html[data-button-theme="aqua"]`** or **`flat`** (default **flat** if unset).
 - **`index.html`** runs a small script before Vue boots so the first paint uses the correct primitive classes.
+- **Does not apply** to Lingo shell controls (`.lingo-btn*`, `.lingo-icon-btn`, lesson nodes, course cards).
 
 ### 6.2 Primitives
 
@@ -234,6 +238,28 @@ Application code and **`Button.vue`** / **`IconButton.vue`** should use **semant
 - Use **`.assistant-*`** classes for the sidebar, bubbles, and composer (see Tailwind config) so the assistant stays visually isolated from the dictionary chrome.
 - **Tool-step foldouts** (semantic search results in the transcript): **`.assistant-fold-details`**, **`.assistant-fold-details-nested`**, **`.assistant-fold-summary`**, **`.assistant-fold-summary-row`**, and **`.assistant-fold-details-warning`** / **`.assistant-fold-summary-warning`** for error blocks—see `AssistantThoughtStep.vue`.
 
+### 10.3 Lingo (study shell) — third control family
+
+`/lingo/*` and `/collections/:id/lingo/*` use a **Duolingo-style** shell copied from `archive/duolingo-clone`, not Aqua or Flat pills. Machine source: **`frontend/tailwind.lingo.mjs`** (merged into `tailwind.config.js`).
+
+| Piece              | Class / meta                                                                                               | Notes                                                                                                                                                        |
+| ------------------ | ---------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Route shell**    | `meta.lingoShell` (+ `hideTopBar`, `hideFab`, `hideFooter`, `fullHeight`)                                  | Hides Lensisku top bar / FAB / footer; `#main-child` goes full-bleed (`max-w-none`).                                                                         |
+| **Layout**         | `LingoLayout` → `.lingo-mobile-header` + `.lingo-sidebar-rail` + `.lingo-main` / `.lingo-main-inner`       | Mobile: fixed green bar + drawer. Desktop: fixed **256px** left rail, main `lg:pl-[256px]`, content `max-w-[1056px]`.                                        |
+| **Chunky buttons** | `.lingo-btn` + `.lingo-btn--{default\|primary\|secondary\|danger\|locked\|ghost\|sidebar\|sidebar-active}` | Thick **bottom border** (`border-b-4` / press `border-b-0` or `border-b-2`), `rounded-xl`, uppercase tracking. Sizes: `--sm`, `--lg`, `--icon`, `--rounded`. |
+| **Icon chrome**    | `.lingo-icon-btn`, `--on-green`, `--muted`                                                                 | Menu / close / back — **never** `Button` / `ui-btn--*` (Aqua gloss “mutilates” these).                                                                       |
+| **Course tiles**   | `.lingo-course-card`                                                                                       | Plain `<button>` with chunky card border — not `variant="neutral"`.                                                                                          |
+| **Lesson ladder**  | `.lingo-lesson-node` + `--open` / `--locked`                                                               | 70×70 circle, `border-b-8`.                                                                                                                                  |
+| **Unit banner**    | `.lingo-unit-banner`                                                                                       | Green strip; Continue uses `.lingo-btn--secondary`.                                                                                                          |
+| **Study**          | `.lingo-study-header-bar`, `.lingo-study-card-shell`, footer `.lingo-btn--secondary` / `--danger`          | Quiz options stay `.study-quiz-option-lingo-*`.                                                                                                              |
+
+**Rules**
+
+1. Inside Lingo chrome (sidebar, mobile header, course grid, ladder, study check/next), use **`.lingo-*` only** — do not wrap those controls in `packages/ui` `Button` / `IconButton` with Aqua/Flat themes.
+2. Lensisku **modals** opened from Lingo (create level, add cards, delete confirm) may still use **`ui-btn--*`** — they are dictionary tooling, not lesson chrome.
+3. Green (`green-500` / `green-600`) is the Lingo accent; sky is for **active sidebar** and **primary** CTAs (create), matching the clone. Do not introduce purple gradients or Aqua gloss here.
+4. When adding a new Lingo control, extend **`tailwind.lingo.mjs`** and document the class in this section — do not scatter one-off `border-b-4` utilities in Vue files.
+
 ---
 
 ## 11. Motion & seasons
@@ -249,13 +275,16 @@ Application code and **`Button.vue`** / **`IconButton.vue`** should use **semant
 - **Margin on icons** inside flex button rows—use **`gap-*`**.
 - New **hex colors** in Vue for things that already have a **named class** in `tailwind.config.js`.
 - **`packages/ui`** importing **`src/`**—forbidden.
+- On **Lingo** pages: wrapping menu / close / course cards / study Check in **`Button` `variant="neutral"`** (Aqua gloss “mutilates” Duolingo chunky controls)—use **`.lingo-btn*` / `.lingo-icon-btn`** instead (§10.3).
+- Showing the Lensisku **top bar or FAB** on `/lingo` routes—set **`meta.lingoShell`** (and hide flags) on the route.
 
 ---
 
 ## 13. QA checklist (quick)
 
 - [ ] New buttons use **`Button` / `IconButton`** or documented **`ui-btn--*`** + primitives.
-- [ ] Both **`data-button-theme="flat"`** and **`aqua`** look acceptable for the touched screen.
+- [ ] Both **`data-button-theme="flat"`** and **`aqua`** look acceptable for the touched screen (skip for pure Lingo chrome — use §10.3 checklist instead).
+- [ ] Lingo routes: no Lensisku top bar / FAB; menu and close are flat `.lingo-icon-btn`, not Aqua pills; desktop rail is 256px.
 - [ ] Icon-only controls have **`aria-label`** (or visible label).
 - [ ] Focus visible on keyboard navigation (tab through interactive elements).
 - [ ] No new raw duplicate of **`input-field`** styling for standard text inputs.
@@ -273,3 +302,5 @@ Application code and **`Button.vue`** / **`IconButton.vue`** should use **semant
 ## Summary for marketing & QA
 
 Lensisku’s UI is **white, blue-linked, tool-oriented**, with an optional **Aqua** theme for glossy controls. **Buttons are not random colors**: they follow **`ui-btn--*`** semantics mapped in Tailwind. **Typography** is **Open Sans** globally. Tests should always include **both** button themes when verifying anything that looks like a button, tab, or toolbar.
+
+**Lingo** (`/lingo/…`, collection ladder + study) is a separate product shell: green mobile bar, fixed left rail on desktop, **chunky bottom-border buttons** (no Aqua gloss). QA: confirm the Lensisku top bar and pink FAB are **hidden**, sidebar fits on mobile drawer and desktop rail, and Check/Continue study buttons stay green/rose chunky pills—not metallic Aqua circles.

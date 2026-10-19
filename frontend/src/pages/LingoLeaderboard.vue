@@ -11,9 +11,7 @@
 
       <p class="mb-6 text-center text-slate-600">{{ t('lingo.leaderboardDescription') }}</p>
 
-      <div
-        class="w-full max-w-md rounded-xl border-2 border-slate-200 bg-white p-4 text-center text-slate-500"
-      >
+      <div class="lingo-panel max-w-md">
         {{ t('lingo.comingSoon') }}
       </div>
     </div>

@@ -9,7 +9,7 @@
 
       <p class="mb-6 text-center text-slate-600">{{ t('lingo.shopDescription') }}</p>
 
-      <div class="w-full max-w-md space-y-4 rounded-xl border-2 border-slate-200 bg-white p-4">
+      <div class="lingo-panel max-w-md space-y-4 text-left">
         <div
           class="flex items-center gap-4 border-t-2 border-slate-100 pt-4 first:border-t-0 first:pt-0"
         >

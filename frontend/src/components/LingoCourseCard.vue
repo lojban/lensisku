@@ -1,9 +1,7 @@
 <template>
-  <Button
-    variant="neutral"
+  <button
     type="button"
-    class="lingo-course-card flex h-full min-h-[217px] min-w-0 cursor-pointer flex-col items-center justify-between rounded-xl border-2 border-b-[4px] border-neutral-200 p-3 pb-6 transition hover:bg-black/5 active:border-b-2 lg:min-w-[200px]"
-    :class="{ 'pointer-events-none opacity-50': disabled }"
+    class="lingo-course-card"
     :disabled="disabled"
     @click="$emit('select', collection.collection_id)"
   >
@@ -20,11 +18,11 @@
     </div>
 
     <p class="mt-3 text-center font-bold text-neutral-700 line-clamp-2">{{ collection.name }}</p>
-  </Button>
+  </button>
 </template>
 
 <script setup lang="ts">
-import { Button, PlayingCardsFanIcon } from '@packages/ui'
+import { PlayingCardsFanIcon } from '@packages/ui'
 import { Check } from '@lucide/vue'
 
 defineProps({

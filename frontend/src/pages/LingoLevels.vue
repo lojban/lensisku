@@ -1,53 +1,58 @@
 <template>
-  <div class="lingo-levels-root flex min-h-screen flex-col bg-slate-50">
-    <!-- Duolingo-style sticky header: back + title + primary CTA -->
-    <header
-      class="sticky top-0 z-40 flex items-center justify-between gap-4 border-b-2 border-slate-200 bg-white px-4 py-3 lg:px-6"
-    >
-      <RouterLink to="/lingo/courses" class="icon-btn-header-back" aria-label="Back">
-        <ArrowLeft class="h-5 w-5" />
-      </RouterLink>
-      <div class="flex shrink-0 items-center gap-2">
-        <IconButton
-          :label="t('flashcardLevels.studyButton')"
-          button-classes="ui-btn--warning-orange h-10 px-4 text-sm font-semibold"
-          icon-classes="h-4 w-4"
-          @click="startStudy"
+  <LingoLayout>
+    <div class="lingo-levels-root flex w-full flex-col pb-10">
+      <header
+        class="sticky top-0 z-40 mb-5 flex items-center justify-between gap-3 border-b-2 border-slate-200 bg-white pb-3 text-neutral-400 lg:z-50 lg:mt-[-28px] lg:pt-[28px]"
+      >
+        <RouterLink
+          to="/lingo/courses"
+          class="lingo-btn lingo-btn--ghost lingo-btn--sm lingo-btn--icon"
+          aria-label="Back"
         >
-          <template #icon> <Dumbbell class="h-4 w-4" /> </template>
-        </IconButton>
-        <IconButton
-          v-if="isOwner"
-          :label="t('flashcardLevels.createLevel')"
-          button-classes="ui-btn--create h-10"
-          @click="showCreateModal = true"
-        />
-      </div>
-    </header>
-    <!-- Main content: Duolingo-style feed (max-w, padded) -->
-    <main class="relative flex-1 pb-10">
-      <!-- Loading State -->
+          <ArrowLeft class="h-5 w-5 stroke-2 text-neutral-400" />
+        </RouterLink>
+        <h1 class="min-w-0 truncate text-center text-lg font-bold text-neutral-700">
+          {{ collection?.name || t('flashcardLevels.title', { collectionName: '' }) }}
+        </h1>
+        <div class="flex shrink-0 items-center gap-2">
+          <button
+            type="button"
+            class="lingo-btn lingo-btn--secondary lingo-btn--sm"
+            @click="startStudy"
+          >
+            <Dumbbell class="h-4 w-4 shrink-0" />
+            <span class="hidden sm:inline">{{ t('flashcardLevels.studyButton') }}</span>
+          </button>
+          <button
+            v-if="isOwner"
+            type="button"
+            class="lingo-btn lingo-btn--primary lingo-btn--sm"
+            @click="showCreateModal = true"
+          >
+            {{ t('flashcardLevels.createLevel') }}
+          </button>
+        </div>
+      </header>
+
       <div v-if="isLoading" class="flex min-h-[40vh] items-center justify-center py-12">
         <div
           class="h-10 w-10 animate-spin rounded-full border-2 border-green-500 border-t-transparent"
         />
       </div>
-      <!-- Levels Display -->
-      <div v-else class="mx-auto flex max-w-[1056px] flex-col gap-6 px-4 pt-6 lg:px-6">
-        <!-- Empty State -->
-        <div
-          v-if="levels.length === 0"
-          class="rounded-2xl border-2 border-slate-200 bg-white py-12 text-center shadow-sm"
-        >
+
+      <div v-else class="flex flex-col gap-6">
+        <div v-if="levels.length === 0" class="lingo-panel py-12">
           <p class="mb-4 text-slate-600">{{ t('flashcardLevels.noLevels') }}</p>
-          <IconButton
+          <button
             v-if="isOwner"
-            :label="t('flashcardLevels.createFirst')"
-            button-classes="ui-btn--create"
+            type="button"
+            class="lingo-btn lingo-btn--secondary"
             @click="showCreateModal = true"
-          />
+          >
+            {{ t('flashcardLevels.createFirst') }}
+          </button>
         </div>
-        <!-- Duolingo-style ladder: unit banner + lesson buttons -->
+
         <div v-else class="relative flex flex-col items-center pb-16">
           <LingoUnitBanner
             :title="collection?.name || ''"
@@ -55,7 +60,7 @@
             :continue-label="t('flashcardLevels.continueLabel')"
             @continue="startStudy"
           />
-          <div class="relative mt-4 flex flex-col items-center">
+          <div class="relative mt-4 flex w-full flex-col items-center">
             <LingoLessonButton
               v-for="(level, i) in sortedEffectiveLevels"
               :key="level.level_id"
@@ -72,38 +77,38 @@
               :show-owner-menu="isOwner"
             >
               <template #menu>
-                <div class="flex flex-row">
-                  <Button
-                    variant="neutral"
+                <div class="flex flex-col py-1">
+                  <button
                     type="button"
-                    class="flex items-center gap-1.5 px-3 py-1.5 text-left text-sm text-slate-700 hover:bg-slate-100"
+                    class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm font-medium text-slate-700 hover:bg-slate-100"
                     @click.stop="editLevel(level)"
                   >
-                    <Settings class="h-4 w-4" /> {{ t('flashcardLevels.actions.edit') }}
-                  </Button>
-                  <Button
-                    variant="neutral"
+                    <Settings class="h-4 w-4 shrink-0" />
+                    {{ t('flashcardLevels.actions.edit') }}
+                  </button>
+                  <button
                     type="button"
-                    class="flex items-center gap-1.5 px-3 py-1.5 text-left text-sm text-slate-700 hover:bg-slate-100"
+                    class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm font-medium text-slate-700 hover:bg-slate-100"
                     @click.stop="showAddCardsModal(level)"
                   >
-                    <PlusCircle class="h-4 w-4" /> {{ t('flashcardLevels.actions.addCards') }}
-                  </Button>
-                  <Button
-                    variant="neutral"
+                    <PlusCircle class="h-4 w-4 shrink-0" />
+                    {{ t('flashcardLevels.actions.addCards') }}
+                  </button>
+                  <button
                     type="button"
-                    class="flex items-center gap-1.5 px-3 py-1.5 text-left text-sm text-slate-700 hover:bg-slate-100"
+                    class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm font-medium text-slate-700 hover:bg-slate-100"
                     @click.stop="showLevelCards(level)"
                   >
-                    <BookOpen class="h-4 w-4" /> {{ t('flashcardLevels.actions.viewCards') }}
-                  </Button>
+                    <BookOpen class="h-4 w-4 shrink-0" />
+                    {{ t('flashcardLevels.actions.viewCards') }}
+                  </button>
                 </div>
               </template>
             </LingoLessonButton>
           </div>
         </div>
       </div>
-    </main>
+    </div>
     <!-- Create/Edit Level ModalComponent -->
     <div
       v-if="showCreateModal || showEditModal"
@@ -428,16 +433,15 @@
         </div>
       </div>
     </div>
-  </div>
-  <!-- Delete Level Confirmation Modal -->
-  <DeleteConfirmationModal
-    :show="showDeleteLevelConfirm"
-    :title="t('flashcardLevels.deleteLevelConfirmTitle')"
-    :message="t('flashcardLevels.deleteLevelConfirmMessage', { levelName: levelToDelete?.name })"
-    :is-deleting="isDeletingLevel"
-    @confirm="performDeleteLevel"
-    @cancel="showDeleteLevelConfirm = false"
-  />
+    <DeleteConfirmationModal
+      :show="showDeleteLevelConfirm"
+      :title="t('flashcardLevels.deleteLevelConfirmTitle')"
+      :message="t('flashcardLevels.deleteLevelConfirmMessage', { levelName: levelToDelete?.name })"
+      :is-deleting="isDeletingLevel"
+      @confirm="performDeleteLevel"
+      @cancel="showDeleteLevelConfirm = false"
+    />
+  </LingoLayout>
 </template>
 
 <script setup lang="ts">
@@ -447,6 +451,7 @@ import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import DeleteConfirmationModal from '@/components/DeleteConfirmation.vue'
 import ModalComponent from '@/components/ModalComponent.vue'
+import LingoLayout from '@/components/LingoLayout.vue'
 import LingoUnitBanner from '@/components/LingoUnitBanner.vue'
 import LingoLessonButton from '@/components/LingoLessonButton.vue'
 
@@ -462,7 +467,7 @@ import {
   deleteLevel, // Import the new function
 } from '@/api'
 import DefinitionCard from '@/components/DefinitionCard.vue'
-import { Button, IconButton, Input, MultiSelectDropdown, Textarea } from '@packages/ui'
+import { Button, Input, MultiSelectDropdown, Textarea } from '@packages/ui'
 import { useAuth } from '@/composables/useAuth'
 import { useAnonymousProgress, type LevelProgressData } from '@/composables/useAnonymousProgress'
 import { useSeoHead } from '@/composables/useSeoHead'
@@ -841,7 +846,3 @@ onMounted(async () => {
   await Promise.all([fetchCollection(), fetchLevels()])
 })
 </script>
-
-<style scoped>
-/* Ladder layout uses LingoUnitBanner + LingoLessonButton */
-</style>

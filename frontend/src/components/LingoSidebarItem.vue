@@ -1,19 +1,11 @@
 <template>
   <RouterLink
     :to="href"
-    class="lingo-sidebar-item flex items-center font-medium transition-colors"
-    :class="[
-      horizontal
-        ? 'h-9 shrink-0 gap-2 rounded-lg px-3 text-slate-600 hover:bg-slate-100'
-        : 'h-[52px] w-full gap-5 rounded-xl px-4 text-left',
-      isActive
-        ? 'bg-green-100 text-green-700'
-        : horizontal
-          ? ''
-          : 'text-slate-600 hover:bg-slate-100',
-    ]"
+    class="lingo-btn"
+    :class="isActive ? 'lingo-btn--sidebar-active' : 'lingo-btn--sidebar'"
+    @click="$emit('navigate')"
   >
-    <component :is="iconComponent" :class="horizontal ? 'h-5 w-5 shrink-0' : 'h-8 w-8 shrink-0'" />
+    <component :is="iconComponent" class="h-8 w-8 shrink-0" />
     <span>{{ label }}</span>
   </RouterLink>
 </template>
@@ -32,8 +24,9 @@ const props = defineProps({
     validator: (v: unknown) =>
       typeof v === 'string' && ['learn', 'courses', 'leaderboard', 'quests', 'shop'].includes(v),
   },
-  horizontal: { type: Boolean, default: false },
 })
+
+defineEmits(['navigate'])
 
 const route = useRoute()
 const isActive = computed(
@@ -48,6 +41,6 @@ const iconComponent = computed(() => {
     quests: Target,
     shop: ShoppingBag,
   }
-  return map[props.icon] || BookOpen
+  return map[props.icon as keyof typeof map] || BookOpen
 })
 </script>

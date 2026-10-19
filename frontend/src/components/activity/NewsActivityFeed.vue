@@ -34,7 +34,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { Button } from '@packages/ui'
 import { getRecentChanges } from '@/api'
 import { useAuth } from '@/composables/useAuth'
@@ -69,7 +69,7 @@ const groupedChanges = computed(() => {
 })
 
 async function load(append = false) {
-  if (loading.value || (append && !cursor.value)) return
+  if (append && (loading.value || !cursor.value)) return
   controller?.abort()
   controller = new AbortController()
   const request = controller
@@ -106,17 +106,19 @@ async function load(append = false) {
 function reload() {
   controller?.abort()
   controller = undefined
-  loading.value = false
   rows.value = []
   cursor.value = null
+  error.value = false
   void load()
 }
 
-onMounted(() => {
-  if (!auth.state.isLoading) void load()
-})
-watch([() => auth.state.userId, () => auth.state.isLoading], () => {
-  if (!auth.state.isLoading) reload()
-})
+watch(
+  [() => auth.state.userId, () => auth.state.isLoading],
+  () => {
+    if (auth.state.isLoading) return
+    reload()
+  },
+  { immediate: true }
+)
 onBeforeUnmount(() => controller?.abort())
 </script>

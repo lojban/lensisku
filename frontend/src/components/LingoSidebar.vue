@@ -1,25 +1,45 @@
 <template>
-  <aside
-    class="lingo-sidebar flex w-full flex-row flex-wrap items-center gap-x-1 gap-y-2 border-b-2 border-slate-200 bg-white px-4"
-  >
-    <nav class="flex flex-row flex-wrap items-center gap-x-1">
-      <span
-        v-if="!hideLogo"
-        class="lingo-sidebar-item flex h-9 shrink-0 items-center gap-2 px-3 font-medium italic text-slate-400"
-      >
-        <GraduationCap class="h-5 w-5 shrink-0 text-slate-400" />
-        <span>{{ t('lingo.appName') }}</span>
-      </span>
-      <LingoSidebarItem label="Learn" href="/lingo/learn" icon="learn" :horizontal="true" />
-      <LingoSidebarItem label="Courses" href="/lingo/courses" icon="courses" :horizontal="true" />
+  <aside class="lingo-sidebar-rail" :class="railClass">
+    <RouterLink
+      to="/lingo/courses"
+      class="lingo-sidebar-brand no-underline"
+      @click="$emit('navigate')"
+    >
+      <GraduationCap class="h-10 w-10 shrink-0 text-green-600" />
+      <span>{{ t('lingo.appName') }}</span>
+    </RouterLink>
+
+    <nav class="lingo-sidebar-nav">
       <LingoSidebarItem
-        label="Leaderboard"
+        :label="t('lingo.learn')"
+        href="/lingo/learn"
+        icon="learn"
+        @navigate="$emit('navigate')"
+      />
+      <LingoSidebarItem
+        :label="t('lingo.courses')"
+        href="/lingo/courses"
+        icon="courses"
+        @navigate="$emit('navigate')"
+      />
+      <LingoSidebarItem
+        :label="t('lingo.leaderboard')"
         href="/lingo/leaderboard"
         icon="leaderboard"
-        :horizontal="true"
+        @navigate="$emit('navigate')"
       />
-      <LingoSidebarItem label="Quests" href="/lingo/quests" icon="quests" :horizontal="true" />
-      <LingoSidebarItem label="Shop" href="/lingo/shop" icon="shop" :horizontal="true" />
+      <LingoSidebarItem
+        :label="t('lingo.quests')"
+        href="/lingo/quests"
+        icon="quests"
+        @navigate="$emit('navigate')"
+      />
+      <LingoSidebarItem
+        :label="t('lingo.shop')"
+        href="/lingo/shop"
+        icon="shop"
+        @navigate="$emit('navigate')"
+      />
     </nav>
   </aside>
 </template>
@@ -30,8 +50,11 @@ import { useI18n } from 'vue-i18n'
 import LingoSidebarItem from './LingoSidebarItem.vue'
 
 defineProps({
-  hideLogo: { type: Boolean, default: false },
+  /** Extra classes for the rail (e.g. drawer vs desktop). */
+  railClass: { type: String, default: '' },
 })
+
+defineEmits(['navigate'])
 
 const { t } = useI18n()
 </script>

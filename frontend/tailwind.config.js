@@ -7,6 +7,7 @@ import {
   buildAquaToggleSwitchThemeRules,
   buildAquaUiBtnGroupItemGeometry,
 } from './tailwind.aqua-buttons.mjs'
+import { buildLingoThemeLayer } from './tailwind.lingo.mjs'
 
 /** @type {import('tailwindcss').Config} */
 export default {
@@ -793,6 +794,8 @@ export default {
             {},
         },
         // --- Study & lingo ---
+        /** Duolingo-clone Lingo shell + chunky buttons (`tailwind.lingo.mjs`). */
+        ...buildLingoThemeLayer(),
         /** Flashcard study: quiz multiple-choice tiles (text + image). */
         '.study-quiz-option-flashcard-text': {
           '@apply cursor-pointer rounded-xl border-2 border-gray-200 bg-white p-4 text-left text-base font-medium text-gray-800 transition-colors duration-200 hover:border-blue-400 hover:bg-blue-50/50 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-60':
@@ -842,13 +845,12 @@ export default {
         /** Lingo study header row (tap highlight off for mobile). */
         '.lingo-study-header-bar': {
           '-webkit-tap-highlight-color': 'transparent',
-          '@apply sticky top-0 z-40 mx-auto flex w-full max-w-[1140px] items-center gap-x-2 border-b border-slate-200 bg-white px-3 py-2 sm:px-4 sm:py-2.5 lg:px-6 lg:py-3':
+          '@apply sticky top-0 z-40 mx-auto flex w-full max-w-[1140px] items-center gap-x-2 border-b-2 border-slate-200 bg-white px-3 py-2 sm:px-4 sm:py-2.5 lg:px-6 lg:py-3':
             {},
         },
-        /** Lingo header back control. */
+        /** Lingo header back / exit — alias of `.lingo-icon-btn--muted` for study pages. */
         '.icon-btn-header-back': {
-          '@apply flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-lg text-slate-500 transition-colors duration-200 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-green-500':
-            {},
+          '@apply lingo-icon-btn lingo-icon-btn--muted': {},
         },
         '.icon-btn-header-back--compact': {
           '@apply h-9 w-9': {},

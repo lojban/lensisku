@@ -35,15 +35,14 @@
         :disabled="isLoading"
       />
       <p v-if="error" class="text-sm text-red-600" role="alert">{{ error }}</p>
-      <Button
-        variant="auth-signup"
+      <button
         type="submit"
-        class="h-12 w-full text-base"
+        class="lingo-btn lingo-btn--secondary lingo-btn--lg w-full normal-case tracking-normal"
         :disabled="isLoading"
       >
         <Loader2 v-if="isLoading" class="mx-auto h-5 w-5 animate-spin" />
         <span v-else>{{ t('signupPage.createAccountButton') }}</span>
-      </Button>
+      </button>
     </form>
 
     <SocialLoginButtons class="w-full max-w-[400px]" :return-to="returnTo" />
@@ -58,7 +57,7 @@
 </template>
 
 <script setup lang="ts">
-import { Button, Input } from '@packages/ui'
+import { Input } from '@packages/ui'
 import { ref, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'

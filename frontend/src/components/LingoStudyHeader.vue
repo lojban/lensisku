@@ -1,15 +1,13 @@
 <template>
   <header class="lingo-study-header-bar">
-    <Button
-      variant="neutral"
+    <button
       type="button"
       class="icon-btn-header-back icon-btn-header-back--compact"
       :aria-label="t('flashcardStudy.endSession')"
       @click="$emit('exit')"
     >
-      <X class="h-5 w-5 sm:h-5 sm:w-5" />
-    </Button>
-    <!-- Progress bar: fills remaining width so green reaches end of row -->
+      <X class="h-5 w-5" />
+    </button>
     <div class="min-w-0 flex-1 pl-2 pr-0 sm:pl-3 sm:pr-0">
       <div
         class="relative h-3 w-full overflow-hidden rounded-full bg-slate-200 sm:h-3.5"
@@ -24,13 +22,11 @@
         />
       </div>
     </div>
-    <!-- Optional slot for hearts/points (e.g. hearts count) -->
     <div v-if="$slots.extra" class="flex shrink-0 items-center"><slot name="extra" /></div>
   </header>
 </template>
 
 <script setup lang="ts">
-import { Button } from '@packages/ui'
 import { X } from '@lucide/vue'
 import { useI18n } from 'vue-i18n'
 
