@@ -1,31 +1,25 @@
 <template>
   <div class="wiki-editor flex flex-col space-y-2">
-    <div class="flex shrink-0 flex-wrap items-center gap-2">
-      <Button
-        type="button"
-        variant="empty"
-        class="text-sm"
-        :disabled="disabled"
-        @click="insertWikiLink"
-      >
-        {{ t('upsertWiki.insertWikiLink') }}
-      </Button>
-      <Button
-        type="button"
-        variant="empty"
-        class="text-sm"
-        :disabled="disabled"
-        @click="toggleMode"
-      >
-        {{ rawMode ? t('upsertWiki.visualEditor') : t('upsertWiki.rawSource') }}
-      </Button>
+    <div v-if="rawMode" class="milkdown">
+      <div class="milkdown-top-bar">
+        <div class="top-bar-inner">
+          <button
+            type="button"
+            class="top-bar-item active"
+            :aria-label="t('components.editorToolbar.visual')"
+            :disabled="disabled"
+            @pointerdown.prevent="toggleRawMode"
+          >
+            <span class="milkdown-icon" v-html="sourceToolbarIcon" />
+          </button>
+        </div>
+      </div>
     </div>
     <textarea
       v-if="rawMode"
-      v-model="rawValue"
+      v-model="rawText"
       class="wiki-editor-surface wiki-editor-min-h w-full rounded border border-gray-300 p-3 font-mono text-sm max-sm:rounded-none max-sm:border-x-0"
       :disabled="disabled"
-      :placeholder="t('upsertWiki.rawPlaceholder')"
       @input="syncFromRaw"
     />
     <div
@@ -38,23 +32,29 @@
 </template>
 
 <script setup lang="ts">
-import { Button } from '@packages/ui'
 import { Crepe } from '@milkdown/crepe'
-import { insert } from '@milkdown/utils'
+import { editorViewCtx } from '@milkdown/core'
 import { nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import '@milkdown/crepe/theme/common/style.css'
 import '@milkdown/crepe/theme/frame.css'
 
+import {
+  addSourceToolbarItem,
+  attachTopBarToggle,
+  crepeToolbarFeatures,
+  placeHeadingLast,
+  resolveEditorHref,
+  sourceToolbarIcon,
+} from '@/utils/crepeToolbar'
+
 const props = withDefaults(
   defineProps<{
     modelValue: string
     disabled?: boolean
-    placeholder?: string
   }>(),
   {
     disabled: false,
-    placeholder: '',
   }
 )
 
@@ -65,92 +65,129 @@ const emit = defineEmits<{
 const { t } = useI18n()
 const editorRoot = ref<HTMLElement | null>(null)
 const rawMode = ref(false)
-const rawValue = ref(props.modelValue || '')
+const rawText = ref(props.modelValue || '')
 let crepe: Crepe | null = null
 let mountGeneration = 0
+let lastMarkdown = props.modelValue || ''
+let rewriting = false
+let topBarToggleCleanup: (() => void) | null = null
 
 function normalizeMarkdown(markdown: string): string {
   return markdown.replace(/<(https?:\/\/[^\s>]+)>/g, '[$1]($1)')
 }
 
+function rewriteLinkHrefs() {
+  if (!crepe || rewriting) return
+  crepe.editor.action((ctx) => {
+    const view = ctx.get(editorViewCtx)
+    const linkType = view.state.schema.marks.link
+    if (!linkType) return
+    let tr = view.state.tr
+    let changed = false
+    view.state.doc.descendants((node, pos) => {
+      if (!node.isText) return
+      const mark = node.marks.find((item) => item.type === linkType)
+      if (!mark) return
+      const href = String(mark.attrs.href || '')
+      const next = resolveEditorHref(href)
+      if (next === href) return
+      const from = pos
+      const to = pos + node.nodeSize
+      tr = tr
+        .removeMark(from, to, mark)
+        .addMark(from, to, linkType.create({ ...mark.attrs, href: next }))
+      changed = true
+    })
+    if (!changed) return
+    rewriting = true
+    view.dispatch(tr)
+    rewriting = false
+  })
+}
+
+function currentMarkdown(): string {
+  if (!crepe) return normalizeMarkdown(lastMarkdown)
+  rewriteLinkHrefs()
+  return normalizeMarkdown(crepe.getMarkdown())
+}
+
 function syncFromEditor() {
-  if (!crepe) return
-  const markdown = normalizeMarkdown(crepe.getMarkdown())
-  rawValue.value = markdown
+  if (!crepe || rewriting) return
+  const markdown = currentMarkdown()
+  if (markdown === lastMarkdown) return
+  lastMarkdown = markdown
   emit('update:modelValue', markdown)
-}
-
-function syncFromRaw() {
-  const markdown = normalizeMarkdown(rawValue.value)
-  rawValue.value = markdown
-  emit('update:modelValue', markdown)
-}
-
-function wikiLinkSnippet(title: string): string {
-  const page = title.trim()
-  const slug = encodeURIComponent(page.replace(/ /g, '_'))
-  return ` [${page}](/wiki/${slug}) `
-}
-
-function insertWikiLink() {
-  const title = window.prompt(t('upsertWiki.wikiLinkPrompt'))
-  if (!title?.trim()) return
-  const snippet = wikiLinkSnippet(title)
-  if (rawMode.value) {
-    rawValue.value = `${rawValue.value}${snippet}`
-    syncFromRaw()
-    return
-  }
-  if (!crepe) return
-  crepe.editor.action(insert(snippet))
-  syncFromEditor()
 }
 
 async function destroyEditor() {
   mountGeneration += 1
+  topBarToggleCleanup?.()
+  topBarToggleCleanup = null
   const instance = crepe
   crepe = null
   if (!instance) return
   await instance.destroy()
 }
 
+function syncFromRaw() {
+  lastMarkdown = rawText.value
+  emit('update:modelValue', normalizeMarkdown(rawText.value))
+}
+
+async function toggleRawMode() {
+  if (!rawMode.value) {
+    rawText.value = currentMarkdown()
+    lastMarkdown = rawText.value
+    await destroyEditor()
+    rawMode.value = true
+    return
+  }
+  lastMarkdown = rawText.value
+  rawMode.value = false
+  await mountEditor()
+}
+
 async function mountEditor() {
+  if (rawMode.value) return
   const generation = ++mountGeneration
   await nextTick()
-  if (generation !== mountGeneration || rawMode.value || !editorRoot.value) return
+  if (generation !== mountGeneration || !editorRoot.value) return
   const instance = new Crepe({
     root: editorRoot.value,
-    defaultValue: rawValue.value || '',
+    defaultValue: lastMarkdown,
+    features: crepeToolbarFeatures,
     featureConfigs: {
-      [Crepe.Feature.Placeholder]: {
-        text: props.placeholder || t('upsertWiki.editorPlaceholder') || 'Type / to show menu',
+      [Crepe.Feature.TopBar]: {
+        buildTopBar: (builder) => {
+          placeHeadingLast(builder)
+          addSourceToolbarItem(builder, () => {
+            queueMicrotask(() => {
+              void toggleRawMode()
+            })
+          })
+        },
+      },
+      [Crepe.Feature.LinkTooltip]: {
+        inputPlaceholder: t('upsertWiki.linkPlaceholder'),
       },
     },
   })
   await instance.create()
-  if (generation !== mountGeneration || rawMode.value) {
+  if (generation !== mountGeneration) {
     await instance.destroy()
     return
   }
   crepe = instance
+  if (editorRoot.value) {
+    topBarToggleCleanup = attachTopBarToggle(editorRoot.value, {
+      expand: t('components.editorToolbar.expand'),
+      collapse: t('components.editorToolbar.collapse'),
+      raw: t('components.editorToolbar.raw'),
+    })
+  }
   crepe.on((listener) => {
     listener.markdownUpdated(syncFromEditor)
   })
-}
-
-async function toggleMode() {
-  if (rawMode.value) {
-    syncFromRaw()
-    rawMode.value = false
-    await mountEditor()
-    return
-  }
-  if (crepe) {
-    rawValue.value = normalizeMarkdown(crepe.getMarkdown())
-    emit('update:modelValue', rawValue.value)
-  }
-  await destroyEditor()
-  rawMode.value = true
 }
 
 onMounted(() => {
@@ -161,7 +198,11 @@ watch(
   () => props.modelValue,
   (value) => {
     const next = value || ''
-    if (next !== rawValue.value) rawValue.value = next
+    if (next === lastMarkdown) return
+    lastMarkdown = next
+    rawText.value = next
+    if (rawMode.value) return
+    void destroyEditor().then(mountEditor)
   }
 )
 
@@ -170,20 +211,17 @@ onUnmounted(() => {
 })
 
 defineExpose({
-  getMarkdown: () => {
-    if (crepe && !rawMode.value) return normalizeMarkdown(crepe.getMarkdown())
-    return normalizeMarkdown(rawValue.value || props.modelValue)
-  },
+  getMarkdown: () => (rawMode.value ? normalizeMarkdown(rawText.value) : currentMarkdown()),
 })
 </script>
 
 <style scoped>
-.wiki-editor-surface {
-  @apply w-full;
-}
-
 .wiki-editor-min-h {
   min-height: calc(100dvh + 16rem);
+}
+
+.wiki-editor-surface {
+  @apply w-full;
 }
 
 .milkdown-editor {
@@ -195,14 +233,7 @@ defineExpose({
 }
 
 .milkdown-editor :deep(.milkdown .ProseMirror) {
-  @apply w-full py-3 px-3 sm:py-4 sm:pl-14 sm:pr-4;
+  @apply w-full py-3 px-3 sm:px-4 sm:py-4;
   min-height: calc(100dvh + 16rem);
-}
-
-@media (max-width: 640px) {
-  .milkdown-editor :deep(.milkdown-block-handle),
-  .milkdown-editor :deep(milkdown-block-handle) {
-    display: none !important;
-  }
 }
 </style>

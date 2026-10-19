@@ -859,8 +859,11 @@ export default {
         },
         /** Comment composer shell. */
         '.surface-comment-form': {
-          '@apply mt-3 mb-6 bg-white border rounded-lg p-3 hover:border-blue-300 transition-colors relative':
+          '@apply relative mt-3 mb-6 overflow-hidden rounded-lg border bg-white p-0 transition-colors hover:border-blue-300 has-[.top-bar-heading-dropdown]:overflow-visible':
             {},
+          '& .milkdown-top-bar': {
+            '@apply rounded-t-lg': {},
+          },
         },
         '.surface-comment-form--borderless': {
           '@apply !mt-0 !mb-0 !p-0 border-0 shadow-none hover:border-transparent': {},
@@ -1239,8 +1242,7 @@ export default {
         },
         /** Only this block scrolls — scrollbar sits between pinned header and footer. */
         '.feed-page__body': {
-          /* Keep block flow (not flex-col): flex shrink lets tall children overflow over later siblings.
-           * No bottom padding — docked public-domain notice sits flush with the scroll edge. */
+          /* Keep block flow (not flex-col): flex shrink lets tall children overflow over later siblings. */
           '@apply min-h-0 w-full flex-1 overflow-y-auto overscroll-y-contain px-3 pt-3 pb-0': {},
         },
         '.feed-page__footer': {
@@ -1249,41 +1251,21 @@ export default {
         '.feed-page__footer-inner': {
           '@apply flex w-full flex-col': {},
         },
-        /**
-         * Upsert scroll body. Block flow (same reason as `.feed-page__body`).
-         * The stack is at least the scrollport tall; the spacer pushes the
-         * public-domain notice to the bottom when the form is short.
-         */
+        /** Upsert scroll body. Horizontal padding stays on the form so the notice spans this box. */
         '.upsert-scroll': {
-          '@apply flex min-h-0 w-full flex-1 flex-col overflow-x-hidden overflow-y-auto overscroll-y-contain px-3 pb-0 sm:px-4':
+          '@apply min-h-0 w-full flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain pb-0':
             {},
-        },
-        '.upsert-scroll__stack': {
-          /* Grow to the scrollport, never shrink — shrinking would park the notice mid-scroll. */
-          '@apply flex w-full min-h-full flex-col [&_.public-domain-notice]:mt-0': {},
-          flex: '1 0 auto',
         },
         '.upsert-scroll__main': {
           '@apply w-full px-3 pt-4 pb-4 sm:px-4': {},
         },
-        '.upsert-scroll__spacer': {
-          '@apply min-h-6 w-full flex-1': {},
-        },
         /**
-         * Legal fine print at the end of scroll content.
+         * Legal fine print at the end of page content.
          * Same striped wash as global `header` / `footer` in App.vue.
-         * Do not use `mt-auto` inside overflow flex columns — it parks the bar mid-scroll.
-         * `--dock` full-bleeds past host horizontal padding and sits flush on the bottom edge.
          */
         '.public-domain-notice': {
           '@apply mt-6 w-full shrink-0 border-t border-gray-200/80 px-3 py-2.5': {},
           background: 'repeating-linear-gradient(#f8f8f8, #f8f8f8 4px, #ffffff 4px, #ffffff 8px)',
-        },
-        '.public-domain-notice--dock': {
-          marginLeft: '-0.75rem',
-          marginRight: '-0.75rem',
-          marginBottom: 0,
-          width: 'calc(100% + 1.5rem)',
         },
         '.public-domain-notice__text': {
           '@apply w-full text-center text-[10px] leading-snug text-gray-500': {},

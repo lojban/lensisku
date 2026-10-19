@@ -1316,11 +1316,16 @@
     "loadingSpinner": {
       "loadingDefault": "Загрузка..."
     },
+    "editorToolbar": {
+      "expand": "Показать всё форматирование",
+      "collapse": "Свернуть форматирование",
+      "raw": "Исходный текст",
+      "visual": "Визуальный редактор"
+    },
     "commentForm": {
       "sendButton": "Отправить",
       "posting": "Отправка...",
       "subjectPlaceholder": "Тема",
-      "placeholder": "Введите / для отображения меню",
       "addSubject": "Добавить тему",
       "errorTooLarge": "Комментарий слишком большой (макс. 5МБ)."
     },
@@ -1374,7 +1379,7 @@
       "inDefinition": "В определении",
       "inValsi": "В записи",
       "untitledEntry": "Запись без названия",
-      "createWiki": "в вики"
+      "createWiki": "В вики"
     },
     "activityVotes": {
       "noVotes": "Голосов пока нет",
@@ -1794,14 +1799,11 @@
     "languageLabel": "Язык содержимого",
     "languagePlaceholder": "Выберите язык",
     "definitionLabel": "Текст",
-    "editorPlaceholder": "Введите / для меню",
-    "rawPlaceholder": "Введите исходный текст страницы",
     "saving": "Сохранение",
     "saveButton": "Сохранить вики-страницу",
     "commitMessageLabel": "Описание правки",
     "commitMessagePlaceholder": "Опишите изменения (необязательно)",
-    "insertWikiLink": "Вставить вики-ссылку",
-    "wikiLinkPrompt": "Заголовок вики-страницы для ссылки:",
+    "linkPlaceholder": "https://… или название вики-страницы",
     "renameHint": "При смене заголовка на старом имени останется перенаправление.",
     "renameConfirm": "Переименовать «{oldTitle}» в «{newTitle}»? На старом заголовке останется перенаправление.",
     "renameError": "Не удалось переименовать вики-страницу.",

@@ -20,18 +20,100 @@
   border: 1px solid white;
 }
 
-/* Slash menu is absolutely positioned and gets clipped by editor scrollports. */
-.milkdown .milkdown-slash-menu {
-  position: fixed !important;
-  top: 50% !important;
-  left: 50% !important;
-  right: auto !important;
-  bottom: auto !important;
-  transform: translate(-50%, -50%) !important;
-  translate: none !important;
-  z-index: 80;
-  width: min(18rem, calc(100vw - 2rem)) !important;
-  max-width: calc(100vw - 2rem) !important;
-  max-height: calc(100dvh - 2rem) !important;
-  overflow: auto !important;
+.milkdown .milkdown-top-bar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: white;
+}
+
+.milkdown .milkdown-top-bar.milkdown-top-bar {
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.surface-comment-form:not(.message-input) {
+  padding: 0;
+  overflow: hidden;
+}
+
+.surface-comment-form:not(.message-input):has(.top-bar-heading-dropdown) {
+  overflow: visible;
+}
+
+.surface-comment-form .milkdown-top-bar {
+  @apply rounded-t-lg;
+}
+
+.milkdown .milkdown-top-bar:has(> .milkdown-top-bar-action) {
+  flex-wrap: nowrap;
+  align-items: flex-start;
+}
+
+.milkdown .milkdown-top-bar:has(> .milkdown-top-bar-action) .top-bar-inner {
+  flex: 1 1 auto;
+  width: auto;
+  min-width: 0;
+}
+
+.milkdown .milkdown-top-bar-action-host {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+}
+
+.milkdown .milkdown-top-bar-action {
+  align-self: flex-start;
+  flex-shrink: 0;
+  margin: 10px 6px;
+}
+
+.milkdown .milkdown-top-bar.is-expanded .top-bar-inner {
+  flex: 1 1 100%;
+  width: 100%;
+}
+
+.milkdown .milkdown-toolbar {
+  z-index: 30;
+}
+
+.milkdown .milkdown-top-bar--collapsible:not(.is-expanded) {
+  max-height: 44px;
+  overflow: hidden;
+}
+
+.milkdown .milkdown-top-bar--collapsible:not(.is-expanded):has(.top-bar-heading-dropdown) {
+  max-height: none;
+  overflow: visible;
+}
+
+.milkdown .milkdown-top-bar--overflow {
+  flex-wrap: nowrap;
+  align-items: flex-start;
+}
+
+.milkdown .milkdown-top-bar--overflow .top-bar-inner {
+  flex: 1 1 auto;
+  width: auto;
+  min-width: 0;
+}
+
+.milkdown .milkdown-top-bar--overflow:not(.is-expanded) .top-bar-inner {
+  max-height: 44px;
+  overflow: hidden;
+}
+
+.milkdown
+  .milkdown-top-bar--overflow:not(.is-expanded):has(.top-bar-heading-dropdown)
+  .top-bar-inner {
+  max-height: none;
+  overflow: visible;
+}
+
+.milkdown .milkdown-top-bar-toggle svg {
+  transition: transform 150ms ease;
+}
+
+.milkdown .milkdown-top-bar.is-expanded .milkdown-top-bar-toggle svg {
+  transform: rotate(180deg);
 }

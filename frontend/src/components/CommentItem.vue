@@ -221,9 +221,10 @@
                     @click="addReaction(emoji.symbol)"
                   >
                     <div class="flex flex-col items-center justify-between">
-                      <span class="text-base group-hover:scale-110 transition-transform mb-1">{{
-                        emoji.symbol
-                      }}</span>
+                      <span
+                        class="text-2xl leading-none group-hover:scale-110 transition-transform mb-1"
+                        >{{ emoji.symbol }}</span
+                      >
                       <span
                         class="text-xs text-gray-500 text-center break-words"
                         :lang="locale"

@@ -291,7 +291,7 @@
           </div>
         </div>
 
-        <!-- Non-fullHeight: notice after content. fullHeight hosts render it in their scroll column. -->
+        <!-- Non-fullHeight: notice after content. fullHeight hosts append it inside their scroll column. -->
         <PublicDomainNotice v-if="!route.meta.fullHeight" />
       </div>
     </main>

@@ -1378,11 +1378,16 @@
     "loadingSpinner": {
       "loadingDefault": "ca'o troci lo ka cpacu"
     },
+    "editorToolbar": {
+      "expand": "jarco ro se morji",
+      "collapse": "mipri lo se morji",
+      "raw": "selkai",
+      "visual": "velcki"
+    },
     "commentForm": {
       "sendButton": "benji",
       "posting": "ca'o troci lo ka mo'u benji",
       "subjectPlaceholder": "selcasnu",
-      "placeholder": "ko ciska lo me'o \"/\" mu'i lo nu viska lo liste",
       "addSubject": "jmina lo selcasnu",
       "hideSubject": "mipri lo selcasnu",
       "errorTooLarge": "lo notci cu mutce lo ka barda (memmau li 5 megbaitni)"
@@ -1866,14 +1871,11 @@
     "languageLabel": "se gerna fi le uencu",
     "languagePlaceholder": "ko cuxna tu'a pa bangu",
     "definitionLabel": "se ciska",
-    "editorPlaceholder": "ko ciska zo / mu'i lo nu jarco lo te zukte",
-    "rawPlaceholder": "ko ciska lo selkai be lo pagbu",
     "saving": "ca'o vreji",
     "saveButton": "vreji lo wiki papri",
     "commitMessageLabel": "velgalfi se farsni",
     "commitMessagePlaceholder": "ko farsni lo do galfi .i ca'e",
-    "insertWikiLink": "jmina lo wiki pilno",
-    "wikiLinkPrompt": "ma kau wiki papri cmene le ka pilno:",
+    "linkPlaceholder": "https://… .a lo cmene be lo wiki papri",
     "renameHint": "lo nu galfi lo cmene cu kakne lo nu lo rore cmene cu galfybi'o",
     "renameConfirm": "xu do djica lo nu cmene la {oldTitle} cu binxo la {newTitle}? .i lo rore cmene cu galfybi'o",
     "renameError": "fliba lo nu galfi lo papri cmene",

@@ -159,7 +159,6 @@
             ref="wikiEditor"
             v-model="definition"
             :disabled="isSubmitting"
-            :placeholder="t('upsertWiki.editorPlaceholder')"
           />
         </div>
 

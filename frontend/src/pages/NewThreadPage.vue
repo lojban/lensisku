@@ -101,11 +101,3 @@ async function createNewThread(formData: { subject: string; content: unknown[] }
   }
 }
 </script>
-
-<style scoped>
-@media (max-width: 640px) {
-  .discussion-page-editor :deep(.milkdown-block-handle) {
-    display: none;
-  }
-}
-</style>

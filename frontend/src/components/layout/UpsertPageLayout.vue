@@ -8,7 +8,7 @@ withDefaults(
     title?: string
     /** Cap form width (markdown / wiki editors). */
     narrow?: boolean
-    /** Let a long-form editor fill the remaining scroll viewport, above the public-domain notice. */
+    /** Let a long-form editor fill the remaining scroll viewport. The public-domain notice follows the content. */
     fillContent?: boolean
   }>(),
   { title: '', narrow: false, fillContent: false }
@@ -58,28 +58,18 @@ defineExpose({ scrollToTop })
 
     <div
       v-if="fillContent"
-      class="flex min-h-0 w-full flex-1 flex-col overflow-hidden overscroll-y-contain pb-0 [&_.public-domain-notice]:mt-0"
+      :ref="assignScrollEl"
+      class="min-h-0 w-full flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain"
+      @scroll="handleScroll($event)"
     >
-      <div
-        :ref="assignScrollEl"
-        class="flex min-h-0 w-full flex-1 flex-col overflow-x-hidden overflow-y-auto overscroll-y-contain"
-        @scroll="handleScroll($event)"
-      >
-        <slot />
-      </div>
+      <slot />
       <PublicDomainNotice />
     </div>
     <div v-else :ref="assignScrollEl" class="upsert-scroll" @scroll="handleScroll($event)">
-      <div class="upsert-scroll__stack">
-        <div
-          class="upsert-scroll__main px-3 pt-4 pb-4 sm:px-4"
-          :class="narrow ? 'mx-auto max-w-3xl' : ''"
-        >
-          <slot />
-        </div>
-        <div class="upsert-scroll__spacer" aria-hidden="true"></div>
-        <PublicDomainNotice />
+      <div class="upsert-scroll__main" :class="narrow ? 'mx-auto max-w-3xl' : ''">
+        <slot />
       </div>
+      <PublicDomainNotice />
     </div>
     <footer
       v-if="$slots.actions"

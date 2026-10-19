@@ -1366,11 +1366,16 @@
     "loadingSpinner": {
       "loadingDefault": "加载中…"
     },
+    "editorToolbar": {
+      "expand": "显示全部格式",
+      "collapse": "收起格式",
+      "raw": "源码",
+      "visual": "可视化"
+    },
     "commentForm": {
       "sendButton": "发送",
       "posting": "发布中…",
       "subjectPlaceholder": "主题",
-      "placeholder": "输入 / 打开菜单",
       "addSubject": "添加主题",
       "hideSubject": "隐藏主题",
       "errorTooLarge": "评论过大（最大 5MB）。"
@@ -1845,14 +1850,11 @@
     "languageLabel": "正文语言",
     "languagePlaceholder": "选择语言",
     "definitionLabel": "正文",
-    "editorPlaceholder": "输入 / 显示菜单",
-    "rawPlaceholder": "输入页面源码",
     "saving": "保存中",
     "saveButton": "保存维基页面",
     "commitMessageLabel": "编辑摘要",
     "commitMessagePlaceholder": "描述您的更改（可选）",
-    "insertWikiLink": "插入维基链接",
-    "wikiLinkPrompt": "要链接的维基页面标题：",
+    "linkPlaceholder": "https://… 或维基页面标题",
     "renameHint": "更改标题后，旧标题将保留重定向。",
     "renameConfirm": "将「{oldTitle}」重命名为「{newTitle}」？旧标题将保留重定向。",
     "renameError": "重命名维基页面失败。",

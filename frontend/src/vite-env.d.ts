@@ -8,7 +8,7 @@ declare module 'vue-router' {
     hideFab?: boolean
     /**
      * Hide the public-domain notice (`PublicDomainNotice` reads this meta).
-     * On `fullHeight` routes the notice lives in the page scroll host, not App.vue.
+     * On `fullHeight` routes the notice is the last child of the page scroll host.
      */
     hideFooter?: boolean
   }

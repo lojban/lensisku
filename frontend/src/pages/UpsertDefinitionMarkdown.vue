@@ -94,6 +94,8 @@
 <script setup lang="ts">
 import { Input, Select } from '@packages/ui'
 import { Crepe } from '@milkdown/crepe'
+
+import { attachTopBarToggle, crepeToolbarFeatures, placeHeadingLast } from '@/utils/crepeToolbar'
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
@@ -140,9 +142,12 @@ onMounted(async () => {
   crepe = new Crepe({
     root: editor.value,
     defaultValue: definition.value,
+    features: crepeToolbarFeatures,
     featureConfigs: {
-      [Crepe.Feature.Placeholder]: {
-        text: 'Type / to show menu',
+      [Crepe.Feature.TopBar]: {
+        buildTopBar: (builder) => {
+          placeHeadingLast(builder)
+        },
       },
       [Crepe.Feature.ImageBlock]: {
         onUpload: async (file) => {
@@ -195,6 +200,12 @@ onMounted(async () => {
   crepe.on((listener) => {
     listener.markdownUpdated(updateDefinition)
   })
+  if (editor.value) {
+    attachTopBarToggle(editor.value, {
+      expand: t('components.editorToolbar.expand'),
+      collapse: t('components.editorToolbar.collapse'),
+    })
+  }
   unsaved.reset()
 })
 

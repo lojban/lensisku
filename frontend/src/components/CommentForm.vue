@@ -5,14 +5,14 @@
       disableBorder ? 'surface-comment-form--borderless' : null,
     ]"
   >
-    <div v-if="optionalTitle && !showSubjectField" class="mb-2 flex items-center text-sm">
+    <div v-if="optionalTitle && !showSubjectField" class="mb-2 flex items-center px-3 pt-3 text-sm">
       <button type="button" class="text-blue-700 hover:underline" @click="revealTitle">
         {{ t('creation.addTitle') }}
       </button>
     </div>
     <div class="border-b border-gray-100 last:border-0">
       <form :id="formId" @submit.prevent="handleSubmit">
-        <div v-if="showSubjectField || (!isReply && !optionalTitle)" class="mb-2">
+        <div v-if="showSubjectField || (!isReply && !optionalTitle)" class="mb-2 px-3 pt-3">
           <div class="flex justify-between items-center">
             <Input
               ref="subjectInputRef"
@@ -33,24 +33,43 @@
           </div>
         </div>
 
-        <div ref="editor" class="milkdown-editor z-index-1" />
-
-        <div v-if="!hideSubmit" class="flex items-center justify-end mt-1">
-          <div class="flex items-center space-x-3">
-            <!-- add subject control removed in favor of subject Input field -->
+        <div v-if="rawMode" class="milkdown">
+          <div class="milkdown-top-bar">
+            <div class="top-bar-inner">
+              <button
+                type="button"
+                class="top-bar-item active"
+                :aria-label="t('components.editorToolbar.visual')"
+                @pointerdown.prevent="toggleRawMode"
+              >
+                <span class="milkdown-icon" v-html="sourceToolbarIcon" />
+              </button>
+            </div>
             <Button
+              v-if="!hideSubmit"
               variant="insert"
               type="submit"
-              :disabled="isSubmitting || characterCount > 10280 || (requireBody && !hasBody)"
-              class="inline-flex items-center ui-btn--insert text-sm"
+              :disabled="submitDisabled"
+              class="milkdown-top-bar-action inline-flex items-center text-sm"
             >
-              <div class="flex items-center">
-                <Loader v-if="isSubmitting" class="animate-spin -ml-1 mr-2 h-4 w-4" />
-                {{ submitButtonText }}
-              </div>
+              <Loader v-if="isSubmitting" class="animate-spin -ml-1 mr-2 h-4 w-4" />
+              {{ submitButtonText }}
             </Button>
           </div>
         </div>
+        <textarea v-if="rawMode" v-model="markdown" class="comment-source" />
+        <div v-else ref="editor" class="milkdown-editor z-index-1" />
+        <Teleport v-if="!rawMode && !hideSubmit && submitBar" :to="submitBar">
+          <Button
+            variant="insert"
+            type="submit"
+            :disabled="submitDisabled"
+            class="milkdown-top-bar-action inline-flex items-center text-sm"
+          >
+            <Loader v-if="isSubmitting" class="animate-spin -ml-1 mr-2 h-4 w-4" />
+            {{ submitButtonText }}
+          </Button>
+        </Teleport>
       </form>
     </div>
   </div>
@@ -68,6 +87,13 @@ import '@milkdown/crepe/theme/frame.css'
 import { useI18n } from 'vue-i18n'
 
 import { useError } from '@/composables/useError'
+import {
+  addSourceToolbarItem,
+  attachTopBarToggle,
+  crepeToolbarFeatures,
+  placeHeadingLast,
+  sourceToolbarIcon,
+} from '@/utils/crepeToolbar'
 
 const { t } = useI18n()
 const { showError } = useError()
@@ -76,17 +102,34 @@ const { showError } = useError()
 const MAX_PAYLOAD_SIZE = 5 * 1024 * 1024
 
 const editor = ref(null)
+const rawMode = ref(false)
+const submitBar = ref<HTMLElement | null>(null)
 let crepe = null
 /** Cleanup for Space-exits-link keydown listener (remove on unmount). */
 let spaceExitLinkCleanup = null
+let topBarToggleCleanup = null
 
-onMounted(async () => {
+onMounted(() => {
+  void mountCrepe()
+})
+
+async function mountCrepe() {
+  await nextTick()
+  if (rawMode.value || !editor.value) return
   crepe = new Crepe({
     root: editor.value,
-    defaultValue: props.initialValues.content,
+    defaultValue: markdown.value || props.initialValues.content || '',
+    features: crepeToolbarFeatures,
     featureConfigs: {
-      [Crepe.Feature.Placeholder]: {
-        text: 'Type / to show menu',
+      [Crepe.Feature.TopBar]: {
+        buildTopBar: (builder) => {
+          placeHeadingLast(builder)
+          addSourceToolbarItem(builder, () => {
+            queueMicrotask(() => {
+              void toggleRawMode()
+            })
+          })
+        },
       },
       [Crepe.Feature.ImageBlock]: {
         onUpload: async (file: File) => {
@@ -104,6 +147,17 @@ onMounted(async () => {
   })
 
   await crepe.create()
+  if (rawMode.value) {
+    crepe.destroy()
+    crepe = null
+    return
+  }
+  topBarToggleCleanup = attachTopBarToggle(editor.value, {
+    expand: t('components.editorToolbar.expand'),
+    collapse: t('components.editorToolbar.collapse'),
+    raw: t('components.editorToolbar.raw'),
+  })
+  submitBar.value = editor.value.querySelector('.milkdown-top-bar-action-host')
 
   // When cursor is inside a link, Space or Tab should end the link and insert the character (not extend the anchor).
   crepe.editor.action((ctx) => {
@@ -140,15 +194,37 @@ onMounted(async () => {
   crepe.on((listener) => {
     listener.markdownUpdated(updateFormContent)
   })
-})
+}
+
+function releaseCrepe() {
+  submitBar.value = null
+  if (typeof topBarToggleCleanup === 'function') {
+    topBarToggleCleanup()
+    topBarToggleCleanup = null
+  }
+  if (typeof spaceExitLinkCleanup === 'function') spaceExitLinkCleanup()
+  if (crepe) {
+    const instance = crepe
+    crepe = null
+    instance.destroy()
+  }
+}
+
+async function toggleRawMode() {
+  if (!rawMode.value) {
+    if (crepe) markdown.value = crepe.getMarkdown()
+    submitBar.value = null
+    await nextTick()
+    releaseCrepe()
+    rawMode.value = true
+    return
+  }
+  rawMode.value = false
+  await mountCrepe()
+}
 
 onUnmounted(() => {
-  if (typeof spaceExitLinkCleanup === 'function') {
-    spaceExitLinkCleanup()
-  }
-  if (crepe) {
-    crepe.destroy()
-  }
+  releaseCrepe()
 })
 
 const props = defineProps({
@@ -206,6 +282,9 @@ const submitButtonText = computed(() =>
     ? t('components.commentForm.posting')
     : props.submitLabel || t('components.commentForm.sendButton')
 )
+const submitDisabled = computed(
+  () => props.isSubmitting || characterCount.value > 10280 || (props.requireBody && !hasBody.value)
+)
 
 const autoResize = async () => {
   await nextTick()
@@ -229,7 +308,9 @@ watch(
       content: newValues.content || '',
     }
 
-    if (crepe && newValues.content) {
+    if (rawMode.value && newValues.content) {
+      markdown.value = `${markdown.value}\n\n${newValues.content}`
+    } else if (crepe && newValues.content) {
       crepe.editor.action(insert('\n\n' + newValues.content))
     }
   },
@@ -287,15 +368,19 @@ defineExpose({
 })
 </script>
 
-<style>
-.milkdown .ProseMirror {
-  @apply py-2 px-0 md:pl-20;
+<style scoped>
+.milkdown-editor :deep(.milkdown .ProseMirror) {
+  @apply p-2;
+  min-height: calc(3lh + 1rem);
 }
 
-/* Hide block handle on mobile */
-@media (max-width: 640px) {
-  milkdown-block-handle {
-    display: none !important;
-  }
+.comment-source {
+  display: block;
+  width: 100%;
+  margin: 0;
+  border: 0;
+  resize: vertical;
+  @apply rounded-b-lg bg-transparent p-2 font-mono text-sm;
+  min-height: calc(3lh + 1rem);
 }
 </style>

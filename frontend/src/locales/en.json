@@ -1403,11 +1403,16 @@
     "loadingSpinner": {
       "loadingDefault": "Loading..."
     },
+    "editorToolbar": {
+      "expand": "Show all formatting",
+      "collapse": "Show less formatting",
+      "raw": "Raw source",
+      "visual": "Visual editor"
+    },
     "commentForm": {
       "sendButton": "Send",
       "posting": "Posting...",
       "subjectPlaceholder": "Subject",
-      "placeholder": "Type / to show menu",
       "addSubject": "Add subject",
       "hideSubject": "Hide subject",
       "errorTooLarge": "Comment is too large (max 5MB)."
@@ -1459,7 +1464,7 @@
       "parentComment": "Parent comment",
       "saved": "Saved",
       "delete": "Delete",
-      "createWiki": "into wiki",
+      "createWiki": "Into wiki",
       "inDefinition": "In definition",
       "inValsi": "In entry",
       "untitledEntry": "Untitled entry"
@@ -1812,16 +1817,11 @@
     "languageLabel": "Content language",
     "languagePlaceholder": "Select a language",
     "definitionLabel": "Body",
-    "editorPlaceholder": "Type / to show menu",
-    "rawPlaceholder": "Write the page source",
     "saving": "Saving",
     "saveButton": "Save wiki page",
     "commitMessageLabel": "Edit summary",
     "commitMessagePlaceholder": "Describe your changes (optional)",
-    "insertWikiLink": "Insert wiki link",
-    "rawSource": "Raw source",
-    "visualEditor": "Visual editor",
-    "wikiLinkPrompt": "Wiki page title to link to:",
+    "linkPlaceholder": "https://… or a wiki page title",
     "renameHint": "Changing the title will leave a redirect at the old name.",
     "renameConfirm": "Rename “{oldTitle}” to “{newTitle}\"? A redirect will be left at the old title.",
     "renameError": "Failed to rename wiki page.",

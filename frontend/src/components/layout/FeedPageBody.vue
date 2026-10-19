@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
- * Scroll column for `meta.fullHeight` feed pages. Renders the public-domain notice
- * from route meta at the end of the column (no App Teleport).
+ * Scroll column for `meta.fullHeight` feed pages. The public-domain notice
+ * is the last child; `hideFooter` hides it.
  */
 import PublicDomainNotice from '@/components/PublicDomainNotice.vue'
 </script>
