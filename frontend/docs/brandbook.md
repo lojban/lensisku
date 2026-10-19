@@ -58,26 +58,26 @@ This document is the **human-readable contract** for product, design, QA, and en
 
 Every concept below has **three** glyphs. They share one hue. **One** is the single-item picture. **Several** is a different picture for a list or a set. **Create** adds a plus in the bottom-right corner, with the same strokes as Lucide `StarPlus` (`M15 18h6`, `M18 15v6`), and the plus does not join the glyph.
 
-| Concept                      | One                                   | Several (a list, a collection, results, exporting that set) | Create (new instance)                        | Hue when required                                                                                                                     |
-| ---------------------------- | ------------------------------------- | ----------------------------------------------------------- | -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| **Wave / thread**            | `WaveIcon` (Lucide `AudioWaveform`)   | `WavesIcon` (Lucide `WavesHorizontal`)                      | `WaveCreateIcon` (waveform + plus)           | purple: `.wave-icon`, `.fab-menu-icon--discussion`                                                                                    |
-| **Definition**               | `DefinitionIcon` (Lucide `TextQuote`) | `DefinitionsIcon` (Lucide `List`)                           | `DefinitionCreateIcon` (quoted gloss + plus) | emerald: `.definition-chip`, `.fab-menu-icon--definition`                                                                             |
-| **Wiki article**             | `WikiIcon` (the letter W)             | `WikisIcon` (book with a W)                                 | `WikiCreateIcon` (W + plus)                  | black: `.wiki-icon`, `.fab-menu-icon--wiki`, `.wiki-chip`                                                                             |
-| **Favorite / collection**    | `StarIcon` (Lucide `Star`)            | `StarsIcon` (star with the left half of a star beside it)   | `StarCreateIcon` (Lucide `StarPlus`)         | amber: `.fab-menu-icon--collection`                                                                                                   |
-| **Entry** (valsi / headword) | `EntryIcon` (`BookA`)                 | —                                                           | —                                            | blue chip: `.entry-chip`. Page title inherits text color. A new dictionary sense is **create definition**, not a separate entry-plus. |
+| Concept                      | One                                   | Several (a list, a collection, results, exporting that set)          | Create (new instance)                                       | Hue when required                                                                                                                     |
+| ---------------------------- | ------------------------------------- | -------------------------------------------------------------------- | ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| **Thread**                   | `MessageSquare` (one comment)         | `MessagesSquare` (discuss, discussions tab, discussions as a source) | `MessageSquarePlus` (new wave, new discussion, new comment) | purple: `.wave-icon`, `.fab-menu-icon--discussion`                                                                                    |
+| **Definition**               | `DefinitionIcon` (Lucide `TextQuote`) | `DefinitionsIcon` (Lucide `List`)                                    | `DefinitionCreateIcon` (quoted gloss + plus)                | emerald: `.definition-chip`, `.fab-menu-icon--definition`                                                                             |
+| **Wiki article**             | `WikiIcon` (the letter W)             | `WikisIcon` (book with a W)                                          | `WikiCreateIcon` (W + plus)                                 | black: `.wiki-icon`, `.fab-menu-icon--wiki`, `.wiki-chip`                                                                             |
+| **Favorite / collection**    | `StarIcon` (Lucide `Star`)            | `StarsIcon` (star with the left half of a star beside it)            | `StarCreateIcon` (Lucide `StarPlus`)                        | amber: `.fab-menu-icon--collection`                                                                                                   |
+| **Entry** (valsi / headword) | `EntryIcon` (`BookA`)                 | —                                                                    | —                                                           | blue chip: `.entry-chip`. Page title inherits text color. A new dictionary sense is **create definition**, not a separate entry-plus. |
 
 **Which variant**
 
-1. **One** — a single thing: “In definition”, “In entry”, one wiki chip, opening one thread (“discuss”), one favorite.
-2. **Several** — a set of that thing: the definitions tab (`List`), the wiki tab, the discussions tab, “My collections”, an empty list of that type. The activity **All** tab is Lucide `Layers`. The wave-source filter’s **All** option is Lucide `LayoutGrid`. The list glyph stays with definitions.
-3. **Create** — making a new one: new definition, new wave, new wiki article, add to a collection.
+1. **One** — a single thing: “In definition”, “In entry”, one wiki chip, one comment, one favorite.
+2. **Several** — a set of that thing: the definitions tab (`List`), the wiki tab, the discussions tab (`MessagesSquare`), “My collections”, an empty list of that type. The activity **All** tab is Lucide `Layers`. The wave-source filter’s **All** option is Lucide `LayoutGrid`. The list glyph stays with definitions.
+3. **Create** — making a new one: new definition, new wave (`MessageSquarePlus`), new wiki article, add to a collection.
 
 **Rules**
 
 1. Do not invent a fourth drawing for the same concept. “Create wiki” is `WikiCreateIcon`, not a bare `WikiIcon` and not Lucide `FilePlus`.
-2. Do not substitute Lucide `BookMarked`, `BookOpen`, `Globe`, or `Globe2` for wiki, and do not use `BookA` or `TextQuote` for wiki. A list of threads uses Lucide `WavesHorizontal`. A single thread uses `AudioWaveform`.
+2. Do not substitute Lucide `BookMarked`, `BookOpen`, `Globe`, or `Globe2` for wiki, and do not use `BookA` or `TextQuote` for wiki. Discuss links, the discussions tab, and discussions as a source use Lucide `MessagesSquare`. Do not use `AudioWaveform` or `WavesHorizontal` for those.
 3. `BookOpen` may still mark **courses, flashcards, and collection covers**. Those are not dictionary entries. Amber on a star is the collection hue, not the edit-yellow button.
-4. A single comment, and comment filters, stay `MessageSquare`. A thread or a list of threads is the wave family.
+4. **Threads and comments:** discuss links, the discussions tab, and discussions as a source use Lucide `MessagesSquare`. A new wave, a new discussion, and a new comment use `MessageSquarePlus`. A single comment, and comment filters, use `MessageSquare`. Freeforums as a source uses Lucide `MessageCircle` (the circle bubble).
 5. Source chips are always the **one** glyph: `.entry-chip`, `.definition-chip`, `.wiki-chip`, `.mail-chip`, `.jbotcan-chip`, `.freeforums-chip`.
 6. In a **plain menu**, every icon takes its concept hue. Tabs, filters, nav links, and colored buttons inherit `currentColor`.
 7. Exporting a file, a generated download, or a **result set** (search **Export results**) uses the down arrow in §5b (`ExportIcon` or `FileExportIcon`), with `.fab-menu-icon--export` (cyan) in a plain menu. It does not use a content-type glyph.
@@ -225,7 +225,7 @@ Application code and **`Button.vue`** / **`IconButton.vue`** should use **semant
 
 ### 10.1 “Waves” (comment threads)
 
-- **New wave**: `WaveCreateIcon` from `@packages/ui` (waveform + plus). **Open a thread** (“discuss”): `WaveIcon` (`AudioWaveform`). **A list of threads**: `WavesIcon` (`WavesHorizontal`). When the control is not already a colored button, add `.wave-icon` (purple).
+- **New wave / new discussion**: Lucide `MessageSquarePlus`. In a plain menu add `.fab-menu-icon--discussion` (purple). **Discuss** (entry header, linked definition, definition toolbar) and **the discussions tab**: Lucide `MessagesSquare`. Colored buttons inherit `currentColor`.
 - **Wave root** (jump to root): `inline-flex items-center btn-aqua-slate` + **`Home`** icon.
 - Do **not** use Lucide `Waves`, ad-hoc `Plus`, or raw `bg-blue-600` for these actions.
 

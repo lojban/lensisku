@@ -67,7 +67,7 @@
       <!-- Discussion Section -->
       <div class="flex flex-wrap gap-2 w-full lg:w-auto justify-center">
         <RouterLink :to="`/comments?valsi_id=${valsi.valsiid}`" class="ui-btn--neutral-slate">
-          <WaveIcon class="h-4 w-4" />
+          <MessagesSquare class="h-4 w-4" />
           <span
             v-if="(valsi.comment_count ?? 0) > 0"
             class="text-xs font-medium bg-white/40 px-1.5 rounded-md border border-white/30"
@@ -178,7 +178,7 @@
                     :to="`/definition_link/${trans.link_id}/discussion`"
                     class="flex items-center gap-1 rounded bg-blue-50 px-2 py-1 text-xs font-bold text-blue-500 transition-colors hover:text-blue-700"
                   >
-                    <WaveIcon class="h-3 w-3 shrink-0" />
+                    <MessagesSquare class="h-3 w-3 shrink-0" />
                     {{ t('definitionLinkDiscussion.discussion') }}
                   </RouterLink>
                 </div>
@@ -201,7 +201,7 @@
 </template>
 
 <script setup lang="ts">
-import { Trash2 } from '@lucide/vue'
+import { MessagesSquare, Trash2 } from '@lucide/vue'
 import { ref, onMounted, watch, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
@@ -217,7 +217,7 @@ import {
 import AudioPlayer from '@/components/AudioPlayer.vue'
 import DefinitionCard from '@/components/DefinitionCard.vue'
 import PageHeader from '@/components/layout/PageHeader.vue'
-import { Button, EntryIcon, IconButton, WaveIcon } from '@packages/ui'
+import { Button, EntryIcon, IconButton } from '@packages/ui'
 import SubscriptionControls from '@/components/SubscriptionControls.vue'
 import { useAuth } from '@/composables/useAuth'
 import { useCollectionsCache } from '@/composables/useCollectionsCache'

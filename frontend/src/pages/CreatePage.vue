@@ -25,8 +25,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { ChevronRight } from '@lucide/vue'
-import { DefinitionCreateIcon, WaveCreateIcon, WikiCreateIcon } from '@packages/ui'
+import { ChevronRight, MessageSquarePlus } from '@lucide/vue'
+import { DefinitionCreateIcon, WikiCreateIcon } from '@packages/ui'
 import { useLocalePath } from '@/composables/useLocalePath'
 import { useSeoHead } from '@/composables/useSeoHead'
 const { t } = useI18n()
@@ -35,7 +35,7 @@ useSeoHead({ title: () => t('creation.create') })
 const choices = computed(() => [
   {
     path: '/comments/new-thread',
-    icon: WaveCreateIcon,
+    icon: MessageSquarePlus,
     iconClass: 'fab-menu-icon--discussion',
     label: t('creation.newDiscussion'),
     description: t('creation.discussionDescription'),

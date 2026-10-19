@@ -117,7 +117,7 @@
                 button-classes="ui-btn--neutral"
                 @click="handleNewFreeComment"
               >
-                <template #icon> <WaveCreateIcon class="wave-icon h-4 w-4" /> </template>
+                <template #icon> <MessageSquarePlus class="h-4 w-4" /> </template>
               </IconButton>
             </div>
 
@@ -375,7 +375,7 @@
 
 <script setup lang="ts">
 import { jwtDecode } from 'jwt-decode'
-import { MessageSquare, X } from '@lucide/vue'
+import { MessageSquare, MessageSquarePlus, X } from '@lucide/vue'
 import { ref, onMounted, watch, computed, onBeforeUnmount, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 
@@ -404,7 +404,6 @@ import {
   ExportIcon,
   IconButton,
   StarCreateIcon,
-  WaveCreateIcon,
   ToolbarSelectDropdown,
   ToolbarSelectDropdownItem,
   SortFieldOrderDropdown,
@@ -780,7 +779,7 @@ const waveSourceLabels = computed(() => ({
   all: t('home.waveSourceAll'),
   jbotcan: t('home.waveSourceJbotcan'),
   freeforums: t('home.waveSourceFreeforums'),
-  comments: t('home.waveSourceComments'),
+  comments: t('home.discussionWaves'),
   mail: t('home.waveSourceMail'),
   wiki: t('home.waveSourceWiki'),
 }))

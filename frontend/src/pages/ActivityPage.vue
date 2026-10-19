@@ -20,7 +20,7 @@
               @click="setWaveSource(source)"
             >
               <WaveSourceIcon :source="source" />
-              {{ t(`home.waveSource${sourceLabels[source]}`) }}
+              {{ t(sourceLabelKeys[source]) }}
             </ToolbarSelectDropdownItem>
           </ToolbarSelectDropdown>
           <SortFieldOrderDropdown
@@ -58,13 +58,13 @@ import { queryStr } from '@/utils/routeQuery'
 
 const waveSources = ['all', 'jbotcan', 'freeforums', 'comments', 'mail', 'wiki'] as const
 type WaveSource = (typeof waveSources)[number]
-const sourceLabels: Record<WaveSource, string> = {
-  all: 'All',
-  jbotcan: 'Jbotcan',
-  freeforums: 'Freeforums',
-  comments: 'Comments',
-  mail: 'Mail',
-  wiki: 'Wiki',
+const sourceLabelKeys: Record<WaveSource, string> = {
+  all: 'home.waveSourceAll',
+  jbotcan: 'home.waveSourceJbotcan',
+  freeforums: 'home.waveSourceFreeforums',
+  comments: 'home.discussionWaves',
+  mail: 'home.waveSourceMail',
+  wiki: 'home.waveSourceWiki',
 }
 const sortOptions = ['relevance', 'time', 'reactions', 'replies'] as const
 type SortBy = (typeof sortOptions)[number]
@@ -75,7 +75,7 @@ const { t } = useI18n()
 const waveSource = ref<WaveSource>(validWaveSource(queryStr(route.query.wave_source)))
 const sortBy = ref<SortBy>(validSortBy(queryStr(route.query.sort_by)))
 const sortOrder = ref(queryStr(route.query.sort_order) === 'asc' ? 'asc' : 'desc')
-const waveSourceLabel = computed(() => t(`home.waveSource${sourceLabels[waveSource.value]}`))
+const waveSourceLabel = computed(() => t(sourceLabelKeys[waveSource.value]))
 const sortFieldOptions = computed(() =>
   sortOptions.map((value) => ({ value, label: t(`sort.${value}`) }))
 )

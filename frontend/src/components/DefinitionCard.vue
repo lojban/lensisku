@@ -104,7 +104,7 @@
                   :title="t('components.definitionCard.discussDefinitionButton')"
                 >
                   <MessageSquarePlus v-if="!definition.comment_count" class="h-4 w-4 shrink-0" />
-                  <MessageSquareMore v-else class="h-4 w-4 shrink-0" />
+                  <MessageSquare v-else class="h-4 w-4 shrink-0" />
                   <span v-if="definition.comment_count" class="text-xs font-medium">
                     {{ definition.comment_count }}
                   </span>
@@ -521,7 +521,7 @@
             :to="definitionDiscussionLink"
             class="ui-btn--create ui-btn--group-item inline-flex items-center justify-center gap-2"
           >
-            <MessageSquare class="h-4 w-4 shrink-0" />
+            <MessageSquarePlus class="h-4 w-4 shrink-0" />
             {{ t('components.definitionCard.commentButton') }}
           </RouterLink>
           <!-- Translate -->
@@ -559,7 +559,7 @@
             :to="definitionDiscussionLink"
             class="ui-btn--read ui-btn--group-item inline-flex items-center justify-center gap-2"
           >
-            <WaveIcon class="h-4 w-4 shrink-0" />
+            <MessagesSquare class="h-4 w-4 shrink-0" />
             <span
               v-if="definition.comment_count && definition.comment_count > 0"
               class="bg-gray-100 px-1.5 rounded-md border"
@@ -696,17 +696,17 @@
 </template>
 
 <script setup lang="ts">
-import { Button, Input, WaveIcon } from '@packages/ui'
+import { Button, Input } from '@packages/ui'
 import {
   ArrowUp,
   ArrowDown,
   Trash2,
   Pencil,
   Lock,
+  MessagesSquare,
   MessageSquare,
   Clock,
   MessageSquarePlus,
-  MessageSquareMore,
   MinusCircle,
   GalleryHorizontalIcon,
   EqualApproximately,

@@ -19,7 +19,7 @@
 </template>
 
 <script setup lang="ts">
-import { Mail, MessagesSquare } from '@lucide/vue'
+import { Mail, MessageCircle } from '@lucide/vue'
 import { DefinitionIcon, EntryIcon, WikiIcon } from '@packages/ui'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -64,7 +64,7 @@ const typeConfig = {
     text: '',
   },
   freeforums: {
-    icon: MessagesSquare,
+    icon: MessageCircle,
     bg: 'freeforums-chip',
     text: '',
   },
