@@ -282,7 +282,7 @@
         class="inline-flex items-center gap-2"
         @click.stop="handleCreateWikiClick"
       >
-        <WikiIcon class="h-4 w-4" />
+        <WikiCreateIcon class="wiki-icon h-4 w-4" />
         <span class="hidden sm:inline">{{ t('components.commentItem.createWiki') }}</span>
         <span class="sr-only sm:hidden">{{ t('components.commentItem.createWiki') }}</span>
       </Button>
@@ -311,7 +311,7 @@
 </template>
 
 <script setup lang="ts">
-import { Button, Input, WikiIcon } from '@packages/ui'
+import { Button, Input, WikiCreateIcon } from '@packages/ui'
 import { Bookmark, BookmarkCheck, Reply, User, Trash2, ArrowUp } from '@lucide/vue'
 import { ref, onMounted, onUnmounted, computed } from 'vue'
 import type { PropType } from 'vue'

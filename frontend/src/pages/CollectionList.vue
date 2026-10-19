@@ -20,7 +20,7 @@
               to="/library"
               class="ui-btn--neutral inline-flex items-center gap-2"
             >
-              <Star class="h-4 w-4 shrink-0" />
+              <StarsIcon class="h-4 w-4 shrink-0" />
               <span>{{ t('nav.library') }}</span>
             </RouterLink>
             <RouterLink
@@ -151,13 +151,13 @@
 </template>
 
 <script setup lang="ts">
-import { Star, CalendarDays, Calendar, Trophy, ArrowDown } from '@lucide/vue'
+import { CalendarDays, Calendar, Trophy, ArrowDown } from '@lucide/vue'
 import { ref, computed, onBeforeUnmount, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 
 import { getPublicCollections, getLevels, getCollectionImage } from '@/api'
-import { Button, CollectionCard, EmptyStatePanel, Input } from '@packages/ui'
+import { Button, CollectionCard, EmptyStatePanel, Input, StarsIcon } from '@packages/ui'
 import PageHeader from '@/components/layout/PageHeader.vue'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import PaginationComponent from '@/components/PaginationComponent.vue'

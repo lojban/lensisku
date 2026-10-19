@@ -26,7 +26,7 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ChevronRight } from '@lucide/vue'
-import { DefinitionCreateIcon, WaveIcon, WikiIcon } from '@packages/ui'
+import { DefinitionCreateIcon, WaveCreateIcon, WikiCreateIcon } from '@packages/ui'
 import { useLocalePath } from '@/composables/useLocalePath'
 import { useSeoHead } from '@/composables/useSeoHead'
 const { t } = useI18n()
@@ -35,7 +35,7 @@ useSeoHead({ title: () => t('creation.create') })
 const choices = computed(() => [
   {
     path: '/comments/new-thread',
-    icon: WaveIcon,
+    icon: WaveCreateIcon,
     iconClass: 'fab-menu-icon--discussion',
     label: t('creation.newDiscussion'),
     description: t('creation.discussionDescription'),
@@ -49,7 +49,7 @@ const choices = computed(() => [
   },
   {
     path: '/wiki/add',
-    icon: WikiIcon,
+    icon: WikiCreateIcon,
     iconClass: 'fab-menu-icon--wiki',
     label: t('creation.newWikiPage'),
     description: t('creation.wikiDescription'),

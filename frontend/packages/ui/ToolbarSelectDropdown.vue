@@ -1,5 +1,5 @@
 <template>
-  <Dropdown>
+  <Dropdown :columns="columns">
     <template #trigger="{ open }">
       <slot name="trigger" :open="open">
         <button
@@ -51,6 +51,8 @@ withDefaults(
     triggerIcon?: 'chevron' | 'ellipsis'
     /** Extra classes to override the trigger button styling. */
     triggerClass?: string
+    /** Lay menu items in this many columns. `2` pairs items on the same row. */
+    columns?: number
   }>(),
   {
     id: undefined,
@@ -58,6 +60,7 @@ withDefaults(
     variant: 'default',
     triggerIcon: 'chevron',
     triggerClass: '',
+    columns: 1,
   }
 )
 </script>

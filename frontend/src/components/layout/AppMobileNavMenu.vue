@@ -3,11 +3,11 @@
     v-show="show"
     class="fixed sm:hidden top-14 left-0 right-0 bg-white shadow-md py-2 space-y-2 z-50"
   >
-    <div class="mobile-nav-grid">
+    <div class="nav-menu-grid">
       <NavLink
         to="/collections"
         class="mobile-nav-row"
-        :class="{ 'mobile-nav-grid__full': !auth.state.isLoggedIn }"
+        :class="{ 'nav-menu-grid__full': !auth.state.isLoggedIn }"
         @click="$emit('close')"
       >
         <GraduationCap class="h-5 w-5" /> {{ t('nav.learn') }}
@@ -18,7 +18,7 @@
         class="mobile-nav-row"
         @click="$emit('close')"
       >
-        <Star class="h-5 w-5" /> {{ t('nav.library') }}
+        <StarsIcon class="h-5 w-5" /> {{ t('nav.library') }}
       </NavLink>
       <NavLink v-if="auth.state.isLoggedIn" to="/mi" class="mobile-nav-row" @click="$emit('close')">
         <BookmarkCheck class="h-5 w-5" /> {{ t('mobileNav.myActivityAndProfile') }}
@@ -34,7 +34,7 @@
       </Button>
     </div>
     <div class="my-2 border-t border-gray-200" />
-    <div class="mobile-nav-grid">
+    <div class="nav-menu-grid">
       <NavLink to="/create" class="mobile-nav-row" @click="$emit('close')">
         <FilePlus class="h-5 w-5" /> {{ t('creation.create') }}
       </NavLink>
@@ -86,21 +86,20 @@
       </NavLink>
     </div>
     <div class="my-2 border-t border-gray-200" />
-    <div class="mobile-nav-grid">
-      <LocaleSelect block />
-      <ButtonThemeSelect block />
+    <div class="nav-menu-grid">
+      <LocaleSelect />
+      <ButtonThemeSelect />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { Button, DownloadIcon, ExportIcon, ImportIcon } from '@packages/ui'
+import { Button, DownloadIcon, ExportIcon, ImportIcon, StarsIcon } from '@packages/ui'
 import {
   Users,
   LogOut,
   Clock4,
   GraduationCap,
-  Star,
   BookmarkCheck,
   Bot,
   Share2,

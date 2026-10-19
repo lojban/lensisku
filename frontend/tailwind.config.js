@@ -387,17 +387,25 @@ export default {
             {},
         },
         /**
-         * App mobile drawer: two equal columns.
-         * One 0.5rem rhythm for the column gap, the row gap, and the inset from the drawer edges.
+         * Two equal columns for the mobile drawer.
+         * One 0.5rem rhythm for the column gap, the row gap, and the inset from the edges.
          */
-        '.mobile-nav-grid': {
+        '.nav-menu-grid': {
           display: 'grid',
           alignItems: 'stretch',
           gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)',
           gap: '0.5rem',
           paddingInline: '0.5rem',
         },
-        '.mobile-nav-grid__full': {
+        /** Desktop More menu: one column, as wide as its contents. */
+        '.nav-menu-stack': {
+          display: 'grid',
+          alignItems: 'stretch',
+          gridTemplateColumns: 'minmax(0, 1fr)',
+          gap: '0.5rem',
+          paddingInline: '0.5rem',
+        },
+        '.nav-menu-grid__full': {
           '@apply col-span-2': {},
         },
         /** App mobile drawer row: layout + hover only — link color comes from `NavLink` (`text-nav-link` / `nav-link-active`). */
@@ -410,10 +418,30 @@ export default {
           '@apply flex w-full cursor-pointer items-center gap-2 rounded-md px-4 py-2 text-left text-base text-nav-link transition-colors duration-200 hover:bg-gray-100 hover:text-blue-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 focus-visible:ring-offset-white':
             {},
         },
-        /** Desktop “More” dropdown panel under navbar. */
+        /** Desktop More menu. Hangs from the trigger and sizes to its contents. */
         '.nav-dropdown-panel': {
-          '@apply absolute flex-col mt-0 bg-white border border-gray-200 rounded-md shadow-lg z-50 p-1 w-auto max-w-96':
-            {},
+          '@apply absolute left-0 z-50 mt-0 w-max max-w-96 flex-col': {},
+        },
+        '.nav-dropdown-sheet': {
+          '@apply rounded-md border border-gray-200 bg-white py-2 shadow-lg': {},
+        },
+        /** Centered header column (logo, nav, auth). */
+        '.app-header-inner': {
+          '@apply mx-auto max-w-4xl px-1 sm:px-2': {},
+        },
+        /**
+         * Language / theme select that fills its nav cell
+         * (desktop More menu and the mobile drawer grid).
+         */
+        '.nav-select': {
+          '@apply flex w-full min-w-0 items-center': {},
+        },
+        '.nav-select-field': {
+          '@apply !h-6 !w-full !min-w-0 appearance-none !py-0 !pr-3 !text-xs': {},
+        },
+        /** Extra room for a decorative chevron painted over a native `<select>`. */
+        '.nav-select-field--chevron': {
+          '@apply pr-8': {},
         },
         // --- Assistant (chat UI) ---
         /** Assistant chat: scrollable message column shell. */
@@ -593,9 +621,20 @@ export default {
           '@apply fixed z-50 w-fit min-w-0 max-w-[calc(100vw-1rem)] overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-lg':
             {},
         },
-        /** Horizontal rule between menu groups (e.g. descending vs ascending sorts). */
+        /** Horizontal rule between menu groups. */
         '.dropdown-menu-separator': {
           '@apply my-1 border-0 border-t border-gray-200': {},
+        },
+        /**
+         * Two-column menu: paired choices (e.g. descending | ascending) share a row.
+         * Pass `columns="2"` on `Dropdown` / `ToolbarSelectDropdown`.
+         */
+        '.dropdown-menu-columns': {
+          display: 'grid',
+          width: 'max-content',
+          gridTemplateColumns: 'repeat(2, max-content)',
+          alignItems: 'stretch',
+          columnGap: '0.125rem',
         },
         /** Anchored multiselect / popover list under a trigger. */
         '.dropdown-floating-panel': {

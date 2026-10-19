@@ -45,6 +45,8 @@
                 :order="sortOrder"
                 :options="sortFieldOptions"
                 :aria-label="sortControlsAriaLabel"
+                :descending-label="t('sort.descending')"
+                :ascending-label="t('sort.ascending')"
                 trigger-class=""
                 @select="selectSort"
               />

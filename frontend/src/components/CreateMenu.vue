@@ -44,8 +44,8 @@ import {
   FabButton,
   ToolbarSelectDropdown,
   ToolbarSelectDropdownItem,
-  WaveIcon,
-  WikiIcon,
+  WaveCreateIcon,
+  WikiCreateIcon,
 } from '@packages/ui'
 import { useLocalePath } from '@/composables/useLocalePath'
 defineProps({ floating: { type: Boolean, default: false } })
@@ -55,7 +55,7 @@ const { t } = useI18n()
 const choices = computed(() => [
   {
     path: '/comments/new-thread',
-    icon: WaveIcon,
+    icon: WaveCreateIcon,
     iconClass: 'fab-menu-icon--discussion',
     label: t('creation.newDiscussion'),
     description: t('creation.discussionDescription'),
@@ -69,7 +69,7 @@ const choices = computed(() => [
   },
   {
     path: '/wiki/add',
-    icon: WikiIcon,
+    icon: WikiCreateIcon,
     iconClass: 'fab-menu-icon--wiki',
     label: t('creation.newWikiPage'),
     description: t('creation.wikiDescription'),

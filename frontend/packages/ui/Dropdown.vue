@@ -31,7 +31,9 @@
         @click="open = false"
         @keydown="handleKeydown"
       >
-        <div class="w-fit whitespace-nowrap"><slot /></div>
+        <div :class="columns > 1 ? 'dropdown-menu-columns' : 'w-fit whitespace-nowrap'">
+          <slot />
+        </div>
       </div>
     </Teleport>
   </div>
@@ -43,9 +45,11 @@ import { EllipsisVertical } from '@lucide/vue'
 
 defineOptions({ name: 'UiDropdown', inheritAttrs: false })
 
-defineProps({
+const props = defineProps({
   /** Optional label shown next to the three-dot icon when using default trigger */
   triggerLabel: { type: String, default: '' },
+  /** Lay menu items in this many columns. `2` pairs items on the same row (left, then right). */
+  columns: { type: Number, default: 1 },
 })
 
 const VIEWPORT_MARGIN = 8
@@ -75,7 +79,9 @@ async function handleKeydown(event: KeyboardEvent) {
     trigger?.focus()
     return
   }
-  if (!['ArrowDown', 'ArrowUp'].includes(event.key) || trigger?.disabled) return
+  const horizontal = props.columns > 1 && (event.key === 'ArrowLeft' || event.key === 'ArrowRight')
+  if (!['ArrowDown', 'ArrowUp'].includes(event.key) && !horizontal) return
+  if (trigger?.disabled) return
   event.preventDefault()
   const wasOpen = open.value
   open.value = true
@@ -85,12 +91,20 @@ async function handleKeydown(event: KeyboardEvent) {
   )
   if (!items.length) return
   const current = items.findIndex((item) => item === document.activeElement)
+  const step =
+    event.key === 'ArrowDown'
+      ? props.columns
+      : event.key === 'ArrowUp'
+        ? -props.columns
+        : event.key === 'ArrowRight'
+          ? 1
+          : -1
   const next =
     !wasOpen || current < 0
-      ? event.key === 'ArrowDown'
-        ? 0
-        : items.length - 1
-      : (current + (event.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length
+      ? event.key === 'ArrowUp' || event.key === 'ArrowLeft'
+        ? items.length - 1
+        : 0
+      : (current + step + items.length) % items.length
   items[next]?.focus()
 }
 

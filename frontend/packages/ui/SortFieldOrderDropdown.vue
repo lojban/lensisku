@@ -1,29 +1,33 @@
 <template>
-  <ToolbarSelectDropdown :id="id" :aria-label="ariaLabel" :trigger-class="triggerClass">
+  <ToolbarSelectDropdown
+    :id="id"
+    :aria-label="ariaLabel"
+    :trigger-class="triggerClass"
+    :columns="2"
+  >
     <template #icon>
       <ArrowUpNarrowWide v-if="order === 'asc'" class="h-4 w-4 opacity-60" :stroke-width="2" />
       <ArrowDownWideNarrow v-else class="h-4 w-4 opacity-60" :stroke-width="2" />
     </template>
     <template #label>{{ selectedLabel }}</template>
-    <ToolbarSelectDropdownItem
-      v-for="opt in options"
-      :key="`${opt.value}-desc`"
-      :class="{ 'bg-gray-100': field === opt.value && order === 'desc' }"
-      @click="emit('select', { field: opt.value, order: 'desc' })"
-    >
-      <ArrowDownWideNarrow class="h-4 w-4 shrink-0 opacity-60" :stroke-width="2" />
-      {{ opt.label }}
-    </ToolbarSelectDropdownItem>
-    <div v-if="options.length" role="separator" class="dropdown-menu-separator" />
-    <ToolbarSelectDropdownItem
-      v-for="opt in options"
-      :key="`${opt.value}-asc`"
-      :class="{ 'bg-gray-100': field === opt.value && order === 'asc' }"
-      @click="emit('select', { field: opt.value, order: 'asc' })"
-    >
-      <ArrowUpNarrowWide class="h-4 w-4 shrink-0 opacity-60" :stroke-width="2" />
-      {{ opt.label }}
-    </ToolbarSelectDropdownItem>
+    <template v-for="opt in options" :key="opt.value">
+      <ToolbarSelectDropdownItem
+        :class="{ 'bg-gray-100': field === opt.value && order === 'desc' }"
+        :aria-label="itemAriaLabel(opt.label, 'desc')"
+        @click="emit('select', { field: opt.value, order: 'desc' })"
+      >
+        <ArrowDownWideNarrow class="h-4 w-4 shrink-0 opacity-60" :stroke-width="2" />
+        {{ opt.label }}
+      </ToolbarSelectDropdownItem>
+      <ToolbarSelectDropdownItem
+        :class="{ 'bg-gray-100': field === opt.value && order === 'asc' }"
+        :aria-label="itemAriaLabel(opt.label, 'asc')"
+        @click="emit('select', { field: opt.value, order: 'asc' })"
+      >
+        <ArrowUpNarrowWide class="h-4 w-4 shrink-0 opacity-60" :stroke-width="2" />
+        {{ opt.label }}
+      </ToolbarSelectDropdownItem>
+    </template>
   </ToolbarSelectDropdown>
 </template>
 
@@ -44,11 +48,16 @@ const props = withDefaults(
     id?: string
     ariaLabel?: string
     triggerClass?: string
+    /** Accessible names for the two direction columns, e.g. "Sort descending". */
+    descendingLabel?: string
+    ascendingLabel?: string
   }>(),
   {
     id: undefined,
     ariaLabel: undefined,
     triggerClass: '!w-full max-w-[min(100vw-4rem,18rem)]',
+    descendingLabel: '',
+    ascendingLabel: '',
   }
 )
 
@@ -59,4 +68,9 @@ const emit = defineEmits<{
 const selectedLabel = computed(
   () => props.options.find((o) => o.value === props.field)?.label ?? props.options[0]?.label ?? ''
 )
+
+function itemAriaLabel(label: string, direction: SortOrder) {
+  const directionLabel = direction === 'desc' ? props.descendingLabel : props.ascendingLabel
+  return directionLabel ? `${label}, ${directionLabel}` : label
+}
 </script>

@@ -31,5 +31,17 @@ export {
   ImportIcon,
 } from './transferIcons'
 export { default as WikiIcon } from './WikiIcon.vue'
+export { default as WikisIcon } from './WikisIcon.vue'
+export { default as WikiCreateIcon } from './WikiCreateIcon.vue'
 export { default as DefinitionCreateIcon } from './DefinitionCreateIcon.vue'
-export { EntryIcon, DefinitionIcon, WaveIcon } from './contentIcons'
+export { default as WaveCreateIcon } from './WaveCreateIcon.vue'
+export { default as StarsIcon } from './StarsIcon.vue'
+export {
+  EntryIcon,
+  DefinitionsIcon,
+  DefinitionIcon,
+  WaveIcon,
+  WavesIcon,
+  StarIcon,
+  StarCreateIcon,
+} from './contentIcons'

@@ -7,7 +7,7 @@
       :title="t('collectionWidget.addToCollection')"
       @click.stop="openModal"
     >
-      <StarPlus class="w-4 h-4" />
+      <StarCreateIcon class="w-4 h-4" />
     </Button>
     <ModalComponent :show="showModal" :title="t('collectionWidget.modalTitle')" @close="closeModal">
       <!-- Header -->
@@ -178,7 +178,7 @@ import { ref, watch, computed, onMounted, onUnmounted, type PropType } from 'vue
 import { useI18n } from 'vue-i18n'
 
 import { addCollectionItem, api } from '@/api'
-import { Button, Checkbox, IconButton, Input, Textarea } from '@packages/ui'
+import { Button, Checkbox, IconButton, Input, StarCreateIcon, Textarea } from '@packages/ui'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import ModalComponent from '@/components/ModalComponent.vue'
 import {
@@ -188,7 +188,6 @@ import {
 } from '@/composables/useCollectionMembershipCache'
 import { useCollectionsCache, type CachedCollection } from '@/composables/useCollectionsCache'
 import { useSuccessToast } from '@/composables/useSuccessToast'
-import { StarPlus } from '@lucide/vue'
 
 const { t } = useI18n()
 const { showSuccess } = useSuccessToast()

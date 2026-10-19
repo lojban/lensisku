@@ -28,6 +28,8 @@
             :order="sortOrder"
             :options="sortFieldOptions"
             :aria-label="t('sort.sortByLabel')"
+            :descending-label="t('sort.descending')"
+            :ascending-label="t('sort.ascending')"
             @select="setSortFieldOrder"
           />
         </div>

@@ -17,7 +17,7 @@
     <!-- Mobile-optimized header (omit on routes with meta.hideTopBar, e.g. full-bleed experiences) -->
 
     <header v-if="!route.meta.hideTopBar" class="app-header-bar">
-      <div class="px-1 sm:px-2 max-w-4xl mx-auto">
+      <div class="app-header-inner">
         <!-- Main header content -->
         <div class="flex items-center justify-between h-14 sm:h-12">
           <!-- Logo + Toggle Menu Button -->
@@ -55,7 +55,7 @@
               <GraduationCap class="h-5 w-5" /> {{ $t('nav.learn') }}
             </NavLink>
             <NavLink v-if="auth.state.isLoggedIn" to="/library" class="navbar-item">
-              <Star class="h-5 w-5" /> {{ $t('nav.library') }}
+              <StarsIcon class="h-5 w-5" /> {{ $t('nav.library') }}
             </NavLink>
             <NavLink to="/activity" class="navbar-item relative">
               <span class="navbar-item-badge-wrap"
@@ -63,7 +63,7 @@
               /></span>
               {{ $t('activityFeed.title') }}
             </NavLink>
-            <div ref="moreNavRef" class="relative group">
+            <div ref="moreNavRef" class="group relative">
               <Button
                 variant="topbar"
                 type="button"
@@ -75,93 +75,65 @@
                 <ChevronDown class="h-5 w-5" :stroke-width="2.5" :absolute-stroke-width="true" />
               </Button>
               <div
-                class="nav-dropdown-panel"
+                class="nav-dropdown-panel left-0 right-auto top-auto w-max max-w-96 pt-0"
                 :class="isMoreNavOpen ? 'flex' : 'hidden group-hover:flex'"
               >
-                <NavLink to="/create" class="navbar-item justify-start py-2" @click="closeNavMenus">
-                  <FilePlus class="h-4 w-4" /> {{ $t('creation.create') }}
-                </NavLink>
-                <NavLink
-                  v-if="auth.state.isLoggedIn"
-                  to="/users"
-                  class="navbar-item justify-start py-2"
-                  @click="closeNavMenus"
-                >
-                  <Users class="h-4 w-4" />
-                  {{
-                    auth.state.authorities?.includes('manage_roles')
-                      ? $t('nav.iamUsers')
-                      : $t('nav.usersLanguages')
-                  }}
-                </NavLink>
-                <NavLink
-                  to="/assistant"
-                  class="navbar-item justify-start py-2"
-                  @click="closeNavMenus"
-                >
-                  <Bot class="h-4 w-4" /> {{ $t('nav.assistant') }}
-                </NavLink>
-                <NavLink
-                  to="/semantic-graph"
-                  class="navbar-item justify-start py-2"
-                  @click="closeNavMenus"
-                >
-                  <Share2 class="h-4 w-4" /> {{ $t('nav.semanticGraph') }}
-                </NavLink>
-                <NavLink
-                  v-if="!auth.state.isLoggedIn"
-                  to="/export/cached"
-                  class="navbar-item justify-start py-2"
-                  @click="closeNavMenus"
-                >
-                  <DownloadIcon class="h-4 w-4" /> {{ $t('nav.cachedExports') }}
-                </NavLink>
-                <NavLink
-                  v-if="auth.state.isLoggedIn"
-                  to="/export"
-                  class="navbar-item justify-start py-2"
-                  @click="closeNavMenus"
-                >
-                  <ExportIcon class="h-4 w-4" /> {{ $t('nav.export') }}
-                </NavLink>
-                <NavLink
-                  v-if="auth.state.isLoggedIn && auth.state.authorities?.includes('bulk_import')"
-                  to="/bulk-import"
-                  class="navbar-item justify-start py-2"
-                  @click="closeNavMenus"
-                >
-                  <ImportIcon class="h-4 w-4" /> {{ $t('nav.bulkImport') }}
-                </NavLink>
-                <div
-                  class="border-t border-gray-100 mt-1 pt-1 px-2 py-2"
-                  role="group"
-                  :aria-label="$t('buttonTheme.label')"
-                >
-                  <p class="text-xs text-gray-500 mb-1">{{ $t('buttonTheme.label') }}</p>
-
-                  <div class="flex flex-col gap-0.5">
-                    <Button
-                      variant="topbar"
-                      type="button"
-                      class="justify-start py-2 text-sm w-full"
-                      :class="{ 'nav-link-active': buttonTheme === 'aqua' }"
-                      @click="setTheme('aqua')"
+                <div class="nav-dropdown-sheet">
+                  <div class="nav-menu-stack grid grid-cols-1 gap-2 px-2">
+                    <NavLink to="/create" class="mobile-nav-row" @click="closeNavMenus">
+                      <FilePlus class="h-5 w-5" /> {{ $t('creation.create') }}
+                    </NavLink>
+                    <NavLink
+                      v-if="auth.state.isLoggedIn"
+                      to="/users"
+                      class="mobile-nav-row"
+                      @click="closeNavMenus"
                     >
-                      {{ $t('buttonTheme.aqua') }}
-                    </Button>
-                    <Button
-                      variant="topbar"
-                      type="button"
-                      class="justify-start py-2 text-sm w-full"
-                      :class="{ 'nav-link-active': buttonTheme === 'flat' }"
-                      @click="setTheme('flat')"
+                      <Users class="h-5 w-5" />
+                      {{
+                        auth.state.authorities?.includes('manage_roles')
+                          ? $t('nav.iamUsers')
+                          : $t('nav.usersLanguages')
+                      }}
+                    </NavLink>
+                    <NavLink to="/assistant" class="mobile-nav-row" @click="closeNavMenus">
+                      <Bot class="h-5 w-5" /> {{ $t('nav.assistant') }}
+                    </NavLink>
+                    <NavLink to="/semantic-graph" class="mobile-nav-row" @click="closeNavMenus">
+                      <Share2 class="h-5 w-5" /> {{ $t('nav.semanticGraph') }}
+                    </NavLink>
+                    <NavLink
+                      v-if="!auth.state.isLoggedIn"
+                      to="/export/cached"
+                      class="mobile-nav-row"
+                      @click="closeNavMenus"
                     >
-                      {{ $t('buttonTheme.flat') }}
-                    </Button>
+                      <DownloadIcon class="h-5 w-5" /> {{ $t('nav.cachedExports') }}
+                    </NavLink>
+                    <NavLink
+                      v-if="auth.state.isLoggedIn"
+                      to="/export"
+                      class="mobile-nav-row"
+                      @click="closeNavMenus"
+                    >
+                      <ExportIcon class="h-5 w-5" /> {{ $t('nav.export') }}
+                    </NavLink>
+                    <NavLink
+                      v-if="
+                        auth.state.isLoggedIn && auth.state.authorities?.includes('bulk_import')
+                      "
+                      to="/bulk-import"
+                      class="mobile-nav-row"
+                      @click="closeNavMenus"
+                    >
+                      <ImportIcon class="h-5 w-5" /> {{ $t('nav.bulkImport') }}
+                    </NavLink>
                   </div>
-                </div>
-                <div class="px-2 py-2" @click.stop>
-                  <LocaleSelect />
+                  <div class="my-2 border-t border-gray-200" />
+                  <div class="nav-menu-stack grid grid-cols-1 gap-2 px-2" @click.stop>
+                    <LocaleSelect />
+                    <ButtonThemeSelect />
+                  </div>
                 </div>
               </div>
             </div>
@@ -182,7 +154,7 @@
                   class="navbar-item sm:hidden"
                   :aria-label="$t('nav.library')"
                 >
-                  <Star class="h-5 w-5" />
+                  <StarsIcon class="h-5 w-5" />
                 </NavLink>
                 <NavLink to="/mi" class="navbar-item" :aria-label="auth.state.username">
                   <BookmarkCheck class="h-5 w-5" />
@@ -332,7 +304,7 @@
       class="pointer-events-none relative w-full max-w-4xl"
       :class="route.path.startsWith('/lingo') ? 'lg:pl-64' : ''"
     >
-      <div class="pointer-events-auto absolute bottom-0 right-4 md:right-6 lg:-right-4 lg:-mr-4">
+      <div class="fab-anchor">
         <CreateMenu floating />
       </div>
     </div>
@@ -349,7 +321,6 @@ import {
   X,
   Clock4,
   GraduationCap,
-  Star,
   BookmarkCheck,
   Bot,
   Share2,
@@ -368,11 +339,12 @@ import Error from '@/components/Error.vue'
 import ToastFloat from '@/components/ToastFloat.vue'
 import PWAInstallPrompt from '@/components/messaging/shared/PWAInstallPrompt.vue'
 import { resendConfirmation } from '@/api'
-import { Button, DownloadIcon, ExportIcon, ImportIcon } from '@packages/ui'
+import { Button, DownloadIcon, ExportIcon, ImportIcon, StarsIcon } from '@packages/ui'
 
 import BackgroundComponent from './components/BackgroundComponent.vue'
 import AppFixedBanners from './components/layout/AppFixedBanners.vue'
 import AppMobileNavMenu from './components/layout/AppMobileNavMenu.vue'
+import ButtonThemeSelect from './components/layout/ButtonThemeSelect.vue'
 import LocaleSelect from './components/layout/LocaleSelect.vue'
 import NavLink from './components/NavLink.vue'
 import { normalizeSearchQuery } from '@/utils/searchQueryUtils'
@@ -492,7 +464,7 @@ const searchQuery = ref('')
 const searchMode = ref('messages')
 const auth = provideAuth()
 const { preload: preloadCollections, clear: clearCollectionsCache } = useCollectionsCache()
-const { buttonTheme, initButtonTheme, setButtonTheme: setButtonThemePreference } = useButtonTheme()
+const { initButtonTheme } = useButtonTheme()
 const { hasNewActivity, refresh: refreshActivityBadge } = useActivityUnread()
 const { error, clearError } = provideError()
 const { successToast, clearSuccess } = provideSuccessToast()
@@ -564,11 +536,6 @@ const syncFromRoute = () => {
 const closeNavMenus = () => {
   isMenuOpen.value = false
   isMoreNavOpen.value = false
-}
-
-const setTheme = (theme: Parameters<typeof setButtonThemePreference>[0]) => {
-  setButtonThemePreference(theme)
-  closeNavMenus()
 }
 
 const handleLogout = () => {
@@ -1224,6 +1191,20 @@ body:has(.main-content.main-content--no-scroll) {
 </style>
 
 <style>
+/* Create button. Inside the content column until that column is narrower than the viewport, then 1rem to its right. */
+.fab-anchor {
+  pointer-events: auto;
+  position: absolute;
+  bottom: 0;
+  right: 1rem;
+}
+
+@media (min-width: 960px) {
+  .fab-anchor {
+    right: -1rem;
+  }
+}
+
 @keyframes rotate-3d {
   0% {
     transform: rotateY(0deg) rotateX(0deg);

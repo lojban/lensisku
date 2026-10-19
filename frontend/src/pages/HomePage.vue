@@ -94,7 +94,10 @@
                   :class="{ 'opacity-50 cursor-not-allowed': !hasSearchResults }"
                   @click="hasSearchResults && (showAddAllModal = true)"
                 >
-                  <StarPlus class="fab-menu-icon--collection h-4 w-4 shrink-0" aria-hidden="true" />
+                  <StarCreateIcon
+                    class="fab-menu-icon--collection h-4 w-4 shrink-0"
+                    aria-hidden="true"
+                  />
                   {{ $t('home.addAllToCollection') }}
                 </ToolbarSelectDropdownItem>
                 <ToolbarSelectDropdownItem @click="goToSearchExport">
@@ -114,7 +117,7 @@
                 button-classes="ui-btn--neutral"
                 @click="handleNewFreeComment"
               >
-                <template #icon> <WaveIcon class="wave-icon h-4 w-4" /> </template>
+                <template #icon> <WaveCreateIcon class="wave-icon h-4 w-4" /> </template>
               </IconButton>
             </div>
 
@@ -144,6 +147,8 @@
                 :order="sortOrder"
                 :options="sortFieldOptions"
                 :aria-label="t('sort.sortByLabel')"
+                :descending-label="t('sort.descending')"
+                :ascending-label="t('sort.ascending')"
                 @select="setSortFieldOrder"
               />
             </div>
@@ -370,7 +375,7 @@
 
 <script setup lang="ts">
 import { jwtDecode } from 'jwt-decode'
-import { MessageSquare, X, StarPlus } from '@lucide/vue'
+import { MessageSquare, X } from '@lucide/vue'
 import { ref, onMounted, watch, computed, onBeforeUnmount, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 
@@ -396,12 +401,13 @@ import { renderMailContent } from '@/utils/renderMailContent'
 import {
   Button,
   DefinitionCreateIcon,
+  ExportIcon,
   IconButton,
-  WaveIcon,
+  StarCreateIcon,
+  WaveCreateIcon,
   ToolbarSelectDropdown,
   ToolbarSelectDropdownItem,
   SortFieldOrderDropdown,
-  ExportIcon,
 } from '@packages/ui'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import PaginationComponent from '@/components/PaginationComponent.vue'

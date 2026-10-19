@@ -1452,7 +1452,6 @@ import {
   BookOpen,
   Edit3,
   HelpCircle,
-  FilePlus,
   FileText,
   PlusCircle,
   Copy,
@@ -1519,7 +1518,8 @@ import TabbedPageHeader from '@/components/TabbedPageHeader.vue'
 import {
   Button,
   Checkbox,
-  DefinitionIcon,
+  DefinitionCreateIcon,
+  DefinitionsIcon,
   CollectionCoverLightbox,
   FileInput,
   Input,
@@ -1634,12 +1634,12 @@ const addItemTabs = computed(() => [
   {
     key: 'definition',
     label: t('collectionDetail.dictionaryDefinitionsTab'),
-    icon: DefinitionIcon,
+    icon: DefinitionsIcon,
   },
   {
     key: 'newDefinition',
     label: t('collectionDetail.newDefinitionTab'),
-    icon: FilePlus,
+    icon: DefinitionCreateIcon,
   },
   {
     key: 'custom',
