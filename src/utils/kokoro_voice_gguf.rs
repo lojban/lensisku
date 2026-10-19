@@ -96,7 +96,9 @@ pub fn read_voice_pack(bytes: &[u8]) -> Result<Array3<f32>, String> {
         )
         .ok_or("truncated GGUF voice tensor")?;
     let values: Vec<f32> = data
-        .chunks_exact(4)
+        .as_chunks::<4>()
+        .0
+        .iter()
         .map(|v| f32::from_le_bytes([v[0], v[1], v[2], v[3]]))
         .collect();
     if values.iter().any(|v| !v.is_finite()) {

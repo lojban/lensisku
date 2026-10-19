@@ -48,6 +48,12 @@
           <span class="hidden md:inline">{{ t('wiki.discussions') }}</span>
           <span class="sr-only md:hidden">{{ t('wiki.discussions') }}</span>
         </Button>
+        <SubscriptionControls
+          v-if="article.is_native && article.valsiid"
+          :key="article.valsiid"
+          :valsi-id="article.valsiid"
+          :auth="auth"
+        />
       </div>
     </div>
 
@@ -133,6 +139,7 @@ import { getWikiArticle, getNativeWikiArticle, getWikiByDefinitionId } from '@/a
 import WikiContent from '@/components/WikiContent.vue'
 import SourceTypeBadge from '@/components/SourceTypeBadge.vue'
 import AuthorLink from '@/components/AuthorLink.vue'
+import SubscriptionControls from '@/components/SubscriptionControls.vue'
 import { useSeoHead } from '@/composables/useSeoHead'
 import { useAuth } from '@/composables/useAuth'
 

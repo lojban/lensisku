@@ -330,7 +330,6 @@ pub async fn mark_paypal_payment_failed(
             &[&provider_payment_ids],
         )
         .await
-        .map(|count| count)
         .map_err(|e| PaymentError::Database(e.to_string()))
 }
 

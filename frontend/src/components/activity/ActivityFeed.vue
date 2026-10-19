@@ -98,7 +98,7 @@ const { t } = useI18n()
 const filter = computed(() =>
   ['all', 'discussions', 'definitions', 'wiki', 'news'].includes(queryStr(route.query.feed))
     ? queryStr(route.query.feed)
-    : 'all'
+    : 'news'
 )
 const location = computed(() => route.path)
 const { rows, cursor, loading, error, newActivity, restoredScroll, load, retry, save, setVisible } =
@@ -129,11 +129,11 @@ const feedSlots = computed((): FeedSlot[] => {
 })
 
 const tabs = computed(() => [
+  { key: 'news', label: t('recentChanges.news'), icon: Bell },
   { key: 'all', label: t('activityFeed.all'), icon: Layers },
   { key: 'discussions', label: t('home.discussionWaves'), icon: MessagesSquare },
   { key: 'definitions', label: t('activityFeed.definitions'), icon: DefinitionsIcon },
   { key: 'wiki', label: t('activityFeed.wiki'), icon: WikisIcon },
-  { key: 'news', label: t('recentChanges.news'), icon: Bell },
 ])
 const feedElement = ref<HTMLElement | null>(null)
 let body: HTMLElement | null = null
@@ -144,7 +144,7 @@ const saveScroll = () => save(body?.scrollTop || 0)
 function selectFilter(feed: string) {
   saveScroll()
   void router.push({
-    query: { ...route.query, feed: feed === 'all' ? undefined : feed, source: undefined },
+    query: { ...route.query, feed: feed === 'news' ? undefined : feed, source: undefined },
   })
 }
 async function refresh() {
@@ -152,7 +152,7 @@ async function refresh() {
   body?.scrollTo({ top: 0, behavior: 'instant' })
 }
 async function posted() {
-  await router.replace({ query: { ...route.query, feed: undefined, source: undefined } })
+  await router.replace({ query: { ...route.query, feed: 'all', source: undefined } })
   await refresh()
 }
 watch(

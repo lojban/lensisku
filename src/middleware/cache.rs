@@ -102,6 +102,12 @@ impl RedisCache {
         self.invalidate("recent_changes:*").await
     }
 
+    /// Invalidates one user's recent changes cache, e.g. after their watches change.
+    pub async fn invalidate_user_recent_changes(&self, user_id: i32) -> Result<(), RedisError> {
+        self.invalidate(&format!("recent_changes:*:user:{user_id}"))
+            .await
+    }
+
     /// Invalidates the default collections+authors filter picker (popular collections /
     /// authors by last definition). Call when definitions are added/updated or public
     /// collections change in ways that affect that ranking.

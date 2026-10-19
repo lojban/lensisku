@@ -2891,6 +2891,19 @@ async fn upsert_wiki_in_transaction(
         )
         .await?;
 
+    // Editors watch the page; an earlier explicit unsubscribe row is left untouched.
+    for trigger in [SubscriptionTrigger::Edit, SubscriptionTrigger::Comment] {
+        transaction
+            .execute(
+                "INSERT INTO valsi_subscriptions
+                     (valsi_id, user_id, trigger_type, source_definition_id)
+                     VALUES ($1, $2, $3, $4)
+                     ON CONFLICT (valsi_id, user_id, trigger_type) DO NOTHING",
+                &[&valsi_id, &claims.sub, &trigger, &definition_id],
+            )
+            .await?;
+    }
+
     let valsi_word: String = transaction
         .query_one("SELECT word FROM valsi WHERE valsiid = $1", &[&valsi_id])
         .await?
@@ -5396,9 +5409,9 @@ pub async fn get_definitions_by_entry(
             user_vote: None,     // Will be updated later
             gloss_keywords: None,
             place_keywords: None,
-            official_rafsi: row_ordered_rafsi(&row, "official_rafsi"),
-            experimental_rafsi: row_ordered_rafsi(&row, "experimental_rafsi"),
-            rafsi: row_ordered_rafsi(&row, "cached_rafsi"),
+            official_rafsi: row_ordered_rafsi(row, "official_rafsi"),
+            experimental_rafsi: row_ordered_rafsi(row, "experimental_rafsi"),
+            rafsi: row_ordered_rafsi(row, "cached_rafsi"),
             owner_only: row.get("owner_only"),
             can_edit: row.get("can_edit"),
             created_at: row.get("created_at"),
@@ -5605,7 +5618,12 @@ pub async fn get_recent_changes(
         ),
     };
 
-    let cache_ttl = StdDuration::from_secs(if feed { 30 } else { 300 });
+    let personal_news_user = user_id.filter(|_| !feed && types.as_deref() == Some("news"));
+    let cache_ttl = StdDuration::from_secs(if feed || personal_news_user.is_some() {
+        30
+    } else {
+        300
+    });
     let types_cloned = types.clone();
     let after_cloned = after.clone();
 
@@ -5624,7 +5642,7 @@ pub async fn get_recent_changes(
                         decode_recent_changes_cursor(a)
                     }
                 });
-                let queries = recent_change_queries(
+                let mut queries = recent_change_queries(
                     types_cloned.as_deref(),
                     home,
                     feed,
@@ -5632,6 +5650,9 @@ pub async fn get_recent_changes(
                     cursor_condition,
                     limit_val,
                 );
+                if let Some(uid) = personal_news_user {
+                    queries.extend(personal_news_queries(uid, cursor_condition, limit_val));
+                }
 
                 if queries.is_empty() {
                     return Ok(RecentChangesResponse {
@@ -7571,6 +7592,60 @@ mod activity_feed_tests {
         assert!(decode_recent_changes_cursor(&cursor).is_none());
         assert!(decode_feed_cursor(&encode_recent_changes_cursor(1000, 4, 10)).is_none());
         assert!(decode_feed_cursor("feed-v1:invalid").is_none());
+    }
+
+    #[tokio::test]
+    #[ignore = "requires LENSISKU_NEWS_TEST_DATABASE_URL and LENSISKU_NEWS_TEST_USER_ID (read-only)"]
+    async fn personal_news_paginates_without_duplicates() -> Result<(), Box<dyn std::error::Error>>
+    {
+        let database_url = std::env::var("LENSISKU_NEWS_TEST_DATABASE_URL")?;
+        let user_id: i32 = std::env::var("LENSISKU_NEWS_TEST_USER_ID")?.parse()?;
+        let (mut client, connection) =
+            tokio_postgres::connect(&database_url, tokio_postgres::NoTls).await?;
+        tokio::spawn(async move {
+            let _ = connection.await;
+        });
+        let transaction = client.transaction().await?;
+        let username: String = transaction
+            .query_one("SELECT username FROM users WHERE userid = $1", &[&user_id])
+            .await?
+            .get(0);
+        let mut cursor = None;
+        let mut seen = std::collections::HashSet::new();
+        let mut personal_rows = 0;
+        for _ in 0..5 {
+            let mut queries = recent_change_queries(Some("news"), false, false, "all", cursor, 10);
+            queries.extend(personal_news_queries(user_id, cursor, 10));
+            let sql = format!(
+                "SELECT * FROM ({}) news ORDER BY time DESC, type_sort_order ASC, cursor_id DESC LIMIT 10",
+                queries.join(" UNION ALL ")
+            );
+            let rows = transaction.query(&sql, &[]).await?;
+            if rows.is_empty() {
+                break;
+            }
+            for row in &rows {
+                let sort: i32 = row.get("type_sort_order");
+                let key = (sort, row.get::<_, i64>("cursor_id"));
+                assert!(seen.insert(key), "duplicate news row {key:?}");
+                if sort >= 7 {
+                    personal_rows += 1;
+                    assert_ne!(row.get::<_, String>("username"), username);
+                }
+            }
+            let last = &rows[rows.len() - 1];
+            cursor = decode_recent_changes_cursor(&encode_recent_changes_cursor(
+                last.get("time"),
+                last.get("type_sort_order"),
+                last.get("cursor_id"),
+            ));
+        }
+        assert!(
+            personal_rows > 0,
+            "expected personal rows for user {user_id}"
+        );
+        transaction.rollback().await?;
+        Ok(())
     }
 
     #[tokio::test]

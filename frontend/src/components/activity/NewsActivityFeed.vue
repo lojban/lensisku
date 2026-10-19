@@ -34,9 +34,10 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { Button } from '@packages/ui'
 import { getRecentChanges } from '@/api'
+import { useAuth } from '@/composables/useAuth'
 import ActivityChanges from '@/components/activity/ActivityChanges.vue'
 import SkeletonActivityItem from '@/components/activity/SkeletonActivityItem.vue'
 import { useDateFormat } from '@/composables/useDateFormat'
@@ -47,6 +48,7 @@ type ChangeRow = { time: number; [key: string]: unknown }
 const { t } = useI18n()
 const { formatDate } = useDateFormat()
 const { markNewsOpened } = useNewsUnread()
+const auth = useAuth()
 const rows = ref<ChangeRow[]>([])
 const cursor = ref<string | null>(null)
 /** Start true so the first paint shows skeletons instead of an empty flash (CLS). */
@@ -80,13 +82,13 @@ async function load(append = false) {
     )
     if (request !== controller) return
     const incoming = (response.data.changes ?? []) as ChangeRow[]
-    const seen = new Set(
-      append ? rows.value.map((row) => `${row.time}:${row.change_type}:${row.word}`) : []
-    )
+    const rowKey = (row: ChangeRow) =>
+      `${row.time}:${row.change_type}:${row.word}:${row.comment_id ?? ''}:${row.version_id ?? ''}`
+    const seen = new Set(append ? rows.value.map(rowKey) : [])
     rows.value = [
       ...(append ? rows.value : []),
       ...incoming.filter((row) => {
-        const key = `${row.time}:${row.change_type}:${row.word}`
+        const key = rowKey(row)
         if (seen.has(key)) return false
         seen.add(key)
         return true
@@ -101,6 +103,20 @@ async function load(append = false) {
   }
 }
 
-onMounted(() => void load())
+function reload() {
+  controller?.abort()
+  controller = undefined
+  loading.value = false
+  rows.value = []
+  cursor.value = null
+  void load()
+}
+
+onMounted(() => {
+  if (!auth.state.isLoading) void load()
+})
+watch([() => auth.state.userId, () => auth.state.isLoading], () => {
+  if (!auth.state.isLoading) reload()
+})
 onBeforeUnmount(() => controller?.abort())
 </script>

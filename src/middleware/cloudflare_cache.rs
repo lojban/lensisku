@@ -188,7 +188,7 @@ pub fn tags_for_get(path: &str, query: Option<&str>) -> Vec<String> {
     tags
 }
 
-fn query_value<'a>(query: Option<&'a str>, key: &str) -> Option<String> {
+fn query_value(query: Option<&str>, key: &str) -> Option<String> {
     query?
         .split('&')
         .filter_map(|pair| pair.split_once('='))

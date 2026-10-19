@@ -8,7 +8,14 @@ use super::dto::{
 };
 use super::models::Subscription;
 use crate::auth::Claims;
+use crate::middleware::cache::RedisCache;
 use crate::AppError;
+
+async fn invalidate_news(redis_cache: &RedisCache, user_id: i32) {
+    if let Err(e) = redis_cache.invalidate_user_recent_changes(user_id).await {
+        log::error!("Failed to invalidate recent changes cache for user {user_id}: {e}");
+    }
+}
 
 #[utoipa::path(
     post,
@@ -29,6 +36,7 @@ use crate::AppError;
 #[post("/subscribe")]
 pub async fn subscribe(
     pool: web::Data<Pool>,
+    redis_cache: web::Data<RedisCache>,
     claims: Claims,
     req: web::Json<SubscriptionRequest>,
 ) -> Result<HttpResponse, AppError> {
@@ -40,7 +48,10 @@ pub async fn subscribe(
     )
     .await
     {
-        Ok(response) if response.success => Ok(HttpResponse::Ok().json(response)),
+        Ok(response) if response.success => {
+            invalidate_news(&redis_cache, claims.sub).await;
+            Ok(HttpResponse::Ok().json(response))
+        }
         Ok(response) => Err(AppError::NotFound(response.message)),
         Err(e) => Err(AppError::Internal(format!("Failed to subscribe: {e}"))),
     }
@@ -69,6 +80,7 @@ pub async fn subscribe(
 #[post("/{valsi_id}/unsubscribe/{trigger_type}")]
 pub async fn unsubscribe(
     pool: web::Data<Pool>,
+    redis_cache: web::Data<RedisCache>,
     claims: Claims,
     path: web::Path<(i32, String)>,
 ) -> Result<HttpResponse, AppError> {
@@ -78,7 +90,10 @@ pub async fn unsubscribe(
     };
 
     match super::service::unsubscribe_from_valsi(&pool, claims.sub, valsi_id, trigger).await {
-        Ok(response) if response.success => Ok(HttpResponse::Ok().json(response)),
+        Ok(response) if response.success => {
+            invalidate_news(&redis_cache, claims.sub).await;
+            Ok(HttpResponse::Ok().json(response))
+        }
         Ok(response) => Err(AppError::NotFound(response.message)),
         Err(e) => Err(AppError::Internal(format!("Failed to unsubscribe: {e}"))),
     }

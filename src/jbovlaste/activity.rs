@@ -505,3 +505,140 @@ WHERE v.typeid = 16 AND u.username != 'officialdata' {}
 
     queries
 }
+
+/// Personal News branches for an authenticated user, generated on the fly from
+/// `valsi_subscriptions` and thread participation. Rows mirror the non-feed
+/// `recent_change_queries` column layout so they can be `UNION ALL`-ed with the
+/// global News branches; each branch has its own `type_sort_order` (7–9) so the
+/// shared keyset cursor stays unambiguous. The actor's own events are excluded.
+pub(crate) fn personal_news_queries(
+    user_id: i32,
+    cursor_condition: Option<(i32, i32, i64)>,
+    limit_val: i64,
+) -> Vec<String> {
+    let cursor = |time_expr: &str, sort: i32, id_expr: &str| {
+        cursor_condition.map_or(String::new(), |(ct, cs, ci)| {
+            format!(
+                " AND ({time_expr}, -{sort}, {id_expr}) < ({ct}, {}, {ci})",
+                -cs
+            )
+        })
+    };
+    let public_collection = "(t.collection_id IS NULL OR EXISTS (SELECT 1 FROM collections col WHERE col.collection_id = t.collection_id AND col.is_public))";
+
+    let definitions = format!(
+        "(SELECT
+    'definition' AS change_type,
+    v.word,
+    to_jsonb(dv.message) as content,
+    d.valsiid,
+    dv.langid,
+    0 AS natlangwordid,
+    0 AS commentid,
+    0 AS threadid,
+    d.definitionid,
+    u.username,
+    EXTRACT(EPOCH FROM dv.created_at)::integer as time,
+    l.realname AS language_name,
+    l.englishname AS language_english_name,
+    l.lojbanname AS language_lojban_name,
+    dv.version_id,
+    (SELECT prev_dv.version_id
+     FROM definition_versions prev_dv
+     WHERE prev_dv.definition_id = dv.definition_id
+       AND prev_dv.created_at < dv.created_at
+     ORDER BY prev_dv.created_at DESC LIMIT 1) as prev_version_id,
+    v.typeid AS valsi_typeid,
+    NULL::text AS valsi_word,
+    NULL::integer AS commentnum,
+    NULL::integer AS parentid,
+    7 AS type_sort_order,
+    dv.version_id::bigint AS cursor_id
+FROM definition_versions dv
+JOIN definitions d ON dv.definition_id = d.definitionid
+JOIN valsi v ON d.valsiid = v.valsiid
+JOIN users u ON dv.user_id = u.userid
+LEFT JOIN languages l ON dv.langid = l.langid
+WHERE u.username != 'officialdata' AND dv.mw_revid IS NULL AND v.typeid != 16
+  AND dv.user_id <> {user_id}
+  AND EXISTS (
+    SELECT 1 FROM valsi_subscriptions vs
+    WHERE vs.valsi_id = d.valsiid AND vs.user_id = {user_id} AND NOT vs.unsubscribed
+      AND vs.trigger_type IN ('definition', 'edit')
+  ){}
+ORDER BY dv.created_at DESC, type_sort_order ASC, dv.version_id DESC LIMIT {limit_val})",
+        cursor(
+            "EXTRACT(EPOCH FROM dv.created_at)::integer",
+            7,
+            "dv.version_id"
+        ),
+    );
+
+    let comment_columns = |sort: i32| {
+        format!(
+            "SELECT
+    'comment' AS change_type,
+    c.subject AS word,
+    c.content AS content,
+    COALESCE(t.valsiid, 0) AS valsiid,
+    COALESCE(d.langid, 0) AS langid,
+    COALESCE(t.natlangwordid, 0) AS natlangwordid,
+    c.commentid,
+    c.threadid,
+    COALESCE(t.definitionid, 0) AS definitionid,
+    u.username,
+    c.time,
+    l.realname AS language_name,
+    l.englishname AS language_english_name,
+    l.lojbanname AS language_lojban_name,
+    NULL::integer AS version_id,
+    NULL::integer AS prev_version_id,
+    v.typeid AS valsi_typeid,
+    v.word AS valsi_word,
+    c.commentnum,
+    c.parentid,
+    {sort} AS type_sort_order,
+    c.commentid::bigint AS cursor_id
+FROM comments c
+JOIN threads t ON c.threadid = t.threadid
+JOIN users u ON c.userid = u.userid
+LEFT JOIN valsi v ON t.valsiid = v.valsiid
+LEFT JOIN definitions d ON d.definitionid = t.definitionid
+LEFT JOIN languages l ON d.langid = l.langid"
+        )
+    };
+
+    // Discussions on entries / native wiki pages the user watches for comments.
+    let watched_comments = format!(
+        "({}
+WHERE u.username != 'officialdata' AND c.userid <> {user_id} AND t.valsiid IS NOT NULL
+  AND {public_collection}
+  AND EXISTS (
+    SELECT 1 FROM valsi_subscriptions vs
+    WHERE vs.valsi_id = t.valsiid AND vs.user_id = {user_id} AND NOT vs.unsubscribed
+      AND vs.trigger_type = 'comment'
+  ){}
+ORDER BY c.time DESC, type_sort_order ASC, c.commentid DESC LIMIT {limit_val})",
+        comment_columns(8),
+        cursor("c.time", 8, "c.commentid"),
+    );
+
+    // Replies in entry-less threads the user joined, plus posts on their profile.
+    // Free-wave roots (commentnum = 1) already come from the global News branch.
+    let participated_comments = format!(
+        "({}
+WHERE u.username != 'officialdata' AND c.userid <> {user_id} AND t.valsiid IS NULL
+  AND {public_collection}
+  AND (
+    t.target_user_id = {user_id}
+    OR (c.commentnum > 1 AND EXISTS (
+      SELECT 1 FROM comments mine WHERE mine.threadid = c.threadid AND mine.userid = {user_id}
+    ))
+  ){}
+ORDER BY c.time DESC, type_sort_order ASC, c.commentid DESC LIMIT {limit_val})",
+        comment_columns(9),
+        cursor("c.time", 9, "c.commentid"),
+    );
+
+    vec![definitions, watched_comments, participated_comments]
+}
