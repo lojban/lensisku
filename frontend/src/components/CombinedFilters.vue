@@ -79,8 +79,8 @@
           </template>
         </MultiSelectDropdown>
       </div>
-      <div class="flex items-center gap-2 self-end md:self-center">
-        <div class="btn-group-forced flex items-center flex-row" role="group">
+      <div class="filters-bar-actions">
+        <div class="btn-group-forced" role="group">
           <Button
             type="button"
             variant="toolbar"
@@ -103,7 +103,7 @@
           </Button>
         </div>
 
-        <div class="btn-group-forced flex items-center flex-row" role="group">
+        <div class="btn-group-forced" role="group">
           <Button
             v-if="hasAnyActiveFilters"
             type="button"

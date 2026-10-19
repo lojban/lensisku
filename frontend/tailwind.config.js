@@ -668,10 +668,24 @@ export default {
         '.filters-primary-selects': {
           '@apply grid grid-cols-2 gap-2 w-full min-w-0 flex-1': {},
         },
-        /** Top strip on CombinedFilters (language row). */
+        /**
+         * Top strip on CombinedFilters (language row).
+         * Children share one vertical center. Button groups elsewhere keep the
+         * shadow gutter (`pt-1 pb-3`); here that gutter lifts the pills above the dropdowns.
+         */
         '.filters-bar-row': {
-          '@apply flex flex-col sm:flex-row items-center sm:justify-between gap-4 md:p-4 md:bg-white md:rounded-lg md:shadow-sm':
+          '@apply flex flex-col items-center gap-4 sm:flex-row sm:justify-between md:rounded-lg md:bg-white md:p-4 md:shadow-sm':
             {},
+          /** Mode / reset / expand cluster. Nested so it ships with this row. */
+          '& > .filters-bar-actions': {
+            '@apply flex shrink-0 items-center gap-2': {},
+          },
+          '& > .filters-bar-actions > .btn-group': {
+            '@apply flex items-center py-0': {},
+          },
+          '& > .filters-bar-actions > .btn-group-forced': {
+            '@apply flex items-center py-0': {},
+          },
         },
         /** Compact definition preview card (list rows). */
         '.surface-definition-compact': {

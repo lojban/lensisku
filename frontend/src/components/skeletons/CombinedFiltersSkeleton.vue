@@ -24,8 +24,8 @@
           <span class="h-4 w-4 shrink-0 rounded bg-gray-300" />
         </div>
       </div>
-      <div class="flex items-center gap-2 self-end md:self-center">
-        <div class="btn-group-forced flex items-center flex-row" role="presentation">
+      <div class="filters-bar-actions">
+        <div class="btn-group-forced" role="presentation">
           <div
             class="inline-flex h-6 items-center gap-1.5 rounded-full border border-gray-200 bg-gray-100 px-3 pointer-events-none"
           >
@@ -35,7 +35,7 @@
             }}</span>
           </div>
         </div>
-        <div class="btn-group-forced flex items-center flex-row" role="presentation">
+        <div class="btn-group-forced" role="presentation">
           <div
             class="inline-flex h-6 items-center rounded-full border border-gray-200 bg-gray-100 px-3 pointer-events-none"
           >

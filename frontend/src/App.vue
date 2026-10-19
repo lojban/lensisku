@@ -156,9 +156,9 @@
                 >
                   <StarsIcon class="h-5 w-5" />
                 </NavLink>
-                <NavLink to="/mi" class="navbar-item" :aria-label="auth.state.username">
+                <NavLink to="/mi" class="navbar-item" :aria-label="$t('mePage.profile')">
                   <BookmarkCheck class="h-5 w-5" />
-                  <span class="hidden sm:inline">{{ auth.state.username }}</span>
+                  <span class="hidden sm:inline">{{ $t('mePage.profile') }}</span>
                 </NavLink>
                 <Button variant="topbar" class="hidden sm:flex" @click="handleLogout">
                   <LogOut class="h-5 w-5" />
