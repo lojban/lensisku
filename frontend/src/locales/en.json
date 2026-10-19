@@ -111,6 +111,8 @@
     "languagesPreface": "Choose which languages to search. Definitions in other languages will be hidden.",
     "collectionByUser": "(by {username})",
     "userOptionPrefix": "Author",
+    "collectionsSection": "Collections",
+    "authorsSection": "Authors",
     "recentSuggestions": "Recent",
     "selectAll": "Select all",
     "deselectAll": "Deselect all",

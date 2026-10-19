@@ -111,6 +111,8 @@
     "languagesPreface": "Выберите языки поиска. Определения на других языках будут скрыты.",
     "collectionByUser": "(автор: {username})",
     "userOptionPrefix": "Автор",
+    "collectionsSection": "Коллекции",
+    "authorsSection": "Авторы",
     "recentSuggestions": "Недавние",
     "selectAll": "Выбрать все",
     "deselectAll": "Снять все",

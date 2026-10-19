@@ -468,7 +468,9 @@ function collectionUserSection(item: unknown): string {
 }
 
 function collectionUserSectionLabel(section: string): string {
-  return section === 'collections' ? t('filters.recentSuggestions') : ''
+  if (section === 'collections') return t('filters.collectionsSection')
+  if (section === 'authors') return t('filters.authorsSection')
+  return ''
 }
 
 function collectionUserOptionLabel(item: CollectionUserOption): string {

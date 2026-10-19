@@ -111,6 +111,8 @@
     "languagesPreface": "検索する言語を選びます。他の言語の定義は表示されません。",
     "collectionByUser": "（{username}）",
     "userOptionPrefix": "投稿者",
+    "collectionsSection": "コレクション",
+    "authorsSection": "投稿者",
     "recentSuggestions": "最近",
     "selectAll": "すべて選択",
     "deselectAll": "すべて解除",

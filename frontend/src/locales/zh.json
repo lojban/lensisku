@@ -111,6 +111,8 @@
     "languagesPreface": "选择要搜索的语言。其他语言的定义将被隐藏。",
     "collectionByUser": "（{username}）",
     "userOptionPrefix": "作者",
+    "collectionsSection": "合集",
+    "authorsSection": "作者",
     "recentSuggestions": "最近",
     "selectAll": "全选",
     "deselectAll": "取消全选",
