@@ -439,10 +439,6 @@ export default {
         '.nav-select-field': {
           '@apply !h-6 !w-full !min-w-0 appearance-none !py-0 !pr-3 !text-xs': {},
         },
-        /** Extra room for a decorative chevron painted over a native `<select>`. */
-        '.nav-select-field--chevron': {
-          '@apply pr-8': {},
-        },
         // --- Assistant (chat UI) ---
         /** Assistant chat: scrollable message column shell. */
         '.assistant-messages-pane': {

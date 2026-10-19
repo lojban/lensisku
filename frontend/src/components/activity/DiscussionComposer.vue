@@ -1,9 +1,5 @@
 <template>
-  <section
-    ref="rootEl"
-    class="bg-white border rounded-xl p-3 sm:p-4"
-    @focusout="onFocusOut"
-  >
+  <section ref="rootEl" class="bg-white border rounded-xl p-3 sm:p-4" @focusout="onFocusOut">
     <button
       v-if="!expanded"
       type="button"
@@ -35,7 +31,7 @@
 </template>
 <script setup lang="ts">
 import { invalidateActivityFeed } from '@/composables/useActivityFeed'
-import { computed, nextTick, ref } from 'vue'
+import { computed, onUnmounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { addComment } from '@/api'
@@ -64,6 +60,19 @@ const editorKey = ref(0)
 const guard = useUnsavedChanges(computed(() => JSON.stringify(draft.value)))
 guard.reset()
 const canPost = computed(() => auth.state.authorities.includes('create_comment'))
+/** Composer root, or Crepe UI that may render outside it (menus/tooltips). */
+function isComposerInteraction(target: EventTarget | null): boolean {
+  if (!(target instanceof Node)) return false
+  if (rootEl.value?.contains(target)) return true
+  return (
+    target instanceof Element &&
+    Boolean(
+      target.closest(
+        '.milkdown-tooltip, .tippy-box, .top-bar-heading-dropdown, [data-milkdown-tooltip]'
+      )
+    )
+  )
+}
 function expand() {
   if (!auth.state.isLoggedIn) {
     void router.push(localePath('/comments/new-thread'))
@@ -77,20 +86,29 @@ function collapse() {
   initialValues.value = { subject: draft.value.subject, content: draft.value.markdown }
   expanded.value = false
 }
-async function onFocusOut() {
+function onFocusOut(event: FocusEvent) {
   if (!expanded.value || submitting.value) return
-  await nextTick()
-  const root = rootEl.value
-  const active = document.activeElement
-  if (!root || (active && root.contains(active))) return
-  // Crepe menus/tooltips can briefly steal focus outside the section.
-  window.setTimeout(() => {
-    if (!expanded.value || submitting.value) return
-    const still = document.activeElement
-    if (root.contains(still)) return
-    collapse()
-  }, 0)
+  // Crepe toolbar buttons blur the editor without taking focus (relatedTarget null).
+  // Stay open until focus lands on a real control outside, or an outside pointer.
+  const next = event.relatedTarget
+  if (!next || isComposerInteraction(next)) return
+  collapse()
 }
+function onPointerDownOutside(event: PointerEvent) {
+  if (!expanded.value || submitting.value) return
+  if (isComposerInteraction(event.target)) return
+  collapse()
+}
+watch(expanded, (isExpanded) => {
+  if (isExpanded) {
+    document.addEventListener('pointerdown', onPointerDownOutside, true)
+  } else {
+    document.removeEventListener('pointerdown', onPointerDownOutside, true)
+  }
+})
+onUnmounted(() => {
+  document.removeEventListener('pointerdown', onPointerDownOutside, true)
+})
 function updateDraft(value: DiscussionDraft) {
   draft.value = value
   saveDiscussionDraft(value)

@@ -32,8 +32,8 @@
         <div v-if="preface" class="dropdown-option-preface">
           {{ preface }}
         </div>
-        <!-- Search: see `searchFieldKeys` prop, else values-only deep match -->
-        <div class="border-b border-gray-100 px-2 pb-2">
+        <!-- Search only when the list is long enough to need filtering. -->
+        <div v-if="showSearch" class="border-b border-gray-100 px-2 pb-2">
           <Input
             v-model="searchQuery"
             type="search"
@@ -311,6 +311,8 @@ const PANEL_FLIP_REM = 12
 
 const open = ref(false)
 const searchQuery = ref('')
+/** Short lists stay scannable without a search box. */
+const showSearch = computed(() => props.options.length > 5)
 const rootRef = ref<HTMLElement | null>(null)
 const panelRef = ref<HTMLElement | null>(null)
 const selectAllInputRef = ref<HTMLInputElement | null>(null)

@@ -1,0 +1,33 @@
+{
+  "hooks": {
+    "postToolUse": [
+      {
+        "bash": "cargo-agents hook copilot post-tool-use",
+        "timeoutSec": 10,
+        "type": "command"
+      }
+    ],
+    "preToolUse": [
+      {
+        "bash": "cargo-agents hook copilot pre-tool-use",
+        "timeoutSec": 10,
+        "type": "command"
+      }
+    ],
+    "sessionStart": [
+      {
+        "bash": "cargo-agents hook copilot session-start",
+        "timeoutSec": 10,
+        "type": "command"
+      }
+    ],
+    "userPromptSubmitted": [
+      {
+        "bash": "cargo-agents hook copilot user-prompt-submit",
+        "timeoutSec": 10,
+        "type": "command"
+      }
+    ]
+  },
+  "version": 1
+}
