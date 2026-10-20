@@ -1681,6 +1681,7 @@
       },
       "collectionReel": {
         "backToCollection": "← Collection",
+        "backToLingo": "← Course",
         "empty": "No cards in this collection.",
         "frontLabel": "Front",
         "backLabel": "Back",
@@ -1732,6 +1733,7 @@
   "flashcardLevels": {
     "title": "{collectionName} - Levels",
     "viewFlashcards": "View flashcards",
+    "editCourse": "Edit",
     "backToCourses": "Back to courses",
     "studyButton": "Study",
     "createLevel": "Create level",

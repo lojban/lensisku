@@ -136,230 +136,240 @@
           </div>
         </template>
       </CollectionPageHeader>
-      <!-- Anonymous: sign-in prompt -->
-      <div v-if="isAnonView" class="bg-amber-50 border border-amber-200 rounded-lg p-4 text-center">
-        <p class="text-gray-700 mb-3">{{ t('anonymousProgress.signInToSaveProgress') }}</p>
-
-        <p class="text-sm text-gray-600">{{ t('anonymousProgress.studyByLevelHint') }}</p>
-      </div>
-      <!-- Stats Overview -->
-      <div v-if="!isAnonView" class="grid grid-cols-1 sm:grid-cols-4 gap-4">
-        <div class="bg-white p-4 rounded-lg border shadow-sm">
-          <h3 class="text-sm font-medium text-gray-600">
-            {{ t('components.flashcardCollectionView.stats.new') }}
-          </h3>
-
-          <p class="text-2xl font-bold text-blue-600">{{ stats.new }}</p>
-        </div>
-
-        <div class="bg-white p-4 rounded-lg border shadow-sm">
-          <h3 class="text-sm font-medium text-gray-600">
-            {{ t('components.flashcardCollectionView.stats.learning') }}
-          </h3>
-
-          <p class="text-2xl font-bold text-yellow-600">{{ stats.learning }}</p>
-        </div>
-
-        <div class="bg-white p-4 rounded-lg border shadow-sm">
-          <h3 class="text-sm font-medium text-gray-600">
-            {{ t('components.flashcardCollectionView.stats.review') }}
-          </h3>
-
-          <p class="text-2xl font-bold text-green-600">{{ stats.review }}</p>
-        </div>
-
-        <div class="bg-white p-4 rounded-lg border shadow-sm">
-          <h3 class="text-sm font-medium text-gray-600">
-            {{ t('components.flashcardCollectionView.stats.graduated') }}
-          </h3>
-
-          <p class="text-2xl font-bold text-purple-600">{{ stats.graduated }}</p>
-        </div>
-      </div>
-      <!-- Filters -->
-      <div v-if="!isAnonView" class="bg-white p-4 rounded-lg border shadow-sm">
-        <div class="flex flex-wrap gap-4">
-          <Select
-            v-model="filters.status"
-            class="input-field"
-            :options="[
-              { value: '', label: t('components.flashcardCollectionView.filters.allStatus') },
-              { value: 'new', label: t('components.flashcardCollectionView.stats.new') },
-              { value: 'learning', label: t('components.flashcardCollectionView.stats.learning') },
-              { value: 'review', label: t('components.flashcardCollectionView.stats.review') },
-              {
-                value: 'graduated',
-                label: t('components.flashcardCollectionView.stats.graduated'),
-              },
-            ]"
-          />
-          <label class="flex items-center gap-2">
-            <Checkbox v-model="filters.onlyDue" class="checkbox-toggle" />
-            <span class="text-sm text-gray-700">{{
-              t('components.flashcardCollectionView.filters.dueCardsOnly')
-            }}</span>
-          </label>
-        </div>
-      </div>
-      <!-- Flashcard List -->
-      <LoadingSpinner v-if="!isAnonView && isLoading" class="py-12" />
-      <div
-        v-else-if="isAnonView"
-        class="text-center py-8 bg-gray-50 rounded-lg border border-blue-100"
-      >
-        <p class="text-gray-600 mb-4">{{ t('anonymousProgress.useLevelsToStudy') }}</p>
-      </div>
-
-      <div
-        v-else-if="flashcards.length === 0"
-        class="text-center py-12 bg-gray-50 rounded-lg border border-blue-100"
-      >
-        <p class="text-gray-600">{{ t('components.flashcardCollectionView.noFlashcards') }}</p>
-      </div>
-
-      <div v-else class="space-y-4">
+      <div class="flex flex-col gap-4">
+        <!-- Anonymous: sign-in prompt -->
         <div
-          v-for="(card, index) in flashcards"
-          :key="card.flashcard.id"
-          :class="{ 'cursor-pointer': isOwner }"
-          class="surface-flashcard-summary"
-          @click="isOwner && openFlashcard(card)"
+          v-if="isAnonView"
+          class="bg-amber-50 border border-amber-200 rounded-lg p-4 text-center"
         >
-          <!-- Card Content -->
-          <div class="flex justify-between items-start gap-4">
-            <div class="min-w-0 flex-1">
-              <div class="flex flex-wrap items-center gap-2 min-w-0">
-                <h3 class="text-lg font-medium text-gray-800">
-                  {{ card.flashcard.word ?? card.flashcard.free_content_front }}
-                </h3>
-                <span v-if="card.flashcard.sound_url" class="shrink-0" @click.stop>
-                  <AudioPlayer
-                    :url="card.flashcard.sound_url"
-                    :collection-id="
-                      card.flashcard.sound_url?.startsWith?.('/api/')
-                        ? card.flashcard.collection_id
-                        : undefined
-                    "
-                    :item-id="
-                      card.flashcard.sound_url?.startsWith?.('/api/')
-                        ? card.flashcard.item_id
-                        : undefined
-                    "
-                    class="shrink-0"
-                  />
-                </span>
-              </div>
+          <p class="text-gray-700 mb-3">{{ t('anonymousProgress.signInToSaveProgress') }}</p>
 
-              <div
-                v-if="card.flashcard.has_front_image || card.flashcard.has_back_image"
-                class="mt-2"
-              >
-                <div v-if="card.flashcard.has_front_image" class="mb-2">
-                  <img
-                    :src="`/api/collections/${card.flashcard.collection_id}/items/${card.flashcard.item_id}/image/front`"
-                    class="max-h-40 rounded-lg object-contain bg-gray-100"
-                    alt="Front image"
-                  />
-                </div>
+          <p class="text-sm text-gray-600">{{ t('anonymousProgress.studyByLevelHint') }}</p>
+        </div>
+        <!-- Stats Overview -->
+        <div v-if="!isAnonView" class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+          <div class="bg-white p-4 rounded-lg border shadow-sm">
+            <h3 class="text-sm font-medium text-gray-600">
+              {{ t('components.flashcardCollectionView.stats.new') }}
+            </h3>
 
-                <div v-if="card.flashcard.has_back_image">
-                  <img
-                    :src="`/api/collections/${card.flashcard.collection_id}/items/${card.flashcard.item_id}/image/back`"
-                    class="max-h-40 rounded-lg object-contain bg-gray-100"
-                    alt="Back image"
-                  />
-                </div>
-              </div>
+            <p class="text-2xl font-bold text-blue-600">{{ stats.new }}</p>
+          </div>
 
-              <div v-if="card.flashcard.notes" class="text-sm text-gray-500 mt-1">
-                Notes: <LazyMathJax :content="card.flashcard.notes" :enable-markdown="true" />
-              </div>
-            </div>
-            <!-- Progress section -->
-            <div class="flex flex-col items-end gap-3">
-              <div
-                v-for="progress in getOrderedProgress(card.progress)"
-                :key="progress.card_side"
-                class="w-32"
-              >
-                <div class="flex items-center justify-between mb-1">
-                  <span class="text-xs font-medium text-gray-600">{{ progress.card_side }}</span>
-                  <span class="text-xs font-medium" :class="getStatusTextClass(progress.status)">
-                    {{ progress.status }}
+          <div class="bg-white p-4 rounded-lg border shadow-sm">
+            <h3 class="text-sm font-medium text-gray-600">
+              {{ t('components.flashcardCollectionView.stats.learning') }}
+            </h3>
+
+            <p class="text-2xl font-bold text-yellow-600">{{ stats.learning }}</p>
+          </div>
+
+          <div class="bg-white p-4 rounded-lg border shadow-sm">
+            <h3 class="text-sm font-medium text-gray-600">
+              {{ t('components.flashcardCollectionView.stats.review') }}
+            </h3>
+
+            <p class="text-2xl font-bold text-green-600">{{ stats.review }}</p>
+          </div>
+
+          <div class="bg-white p-4 rounded-lg border shadow-sm">
+            <h3 class="text-sm font-medium text-gray-600">
+              {{ t('components.flashcardCollectionView.stats.graduated') }}
+            </h3>
+
+            <p class="text-2xl font-bold text-purple-600">{{ stats.graduated }}</p>
+          </div>
+        </div>
+        <!-- Filters -->
+        <div v-if="!isAnonView" class="bg-white p-4 rounded-lg border shadow-sm">
+          <div class="flex flex-wrap gap-4">
+            <Select
+              v-model="filters.status"
+              class="input-field"
+              :options="[
+                { value: '', label: t('components.flashcardCollectionView.filters.allStatus') },
+                { value: 'new', label: t('components.flashcardCollectionView.stats.new') },
+                {
+                  value: 'learning',
+                  label: t('components.flashcardCollectionView.stats.learning'),
+                },
+                { value: 'review', label: t('components.flashcardCollectionView.stats.review') },
+                {
+                  value: 'graduated',
+                  label: t('components.flashcardCollectionView.stats.graduated'),
+                },
+              ]"
+            />
+            <label class="flex items-center gap-2">
+              <Checkbox v-model="filters.onlyDue" class="checkbox-toggle" />
+              <span class="text-sm text-gray-700">{{
+                t('components.flashcardCollectionView.filters.dueCardsOnly')
+              }}</span>
+            </label>
+          </div>
+        </div>
+        <!-- Flashcard List -->
+        <LoadingSpinner v-if="!isAnonView && isLoading" class="py-12" />
+        <div
+          v-else-if="isAnonView"
+          class="text-center py-8 bg-gray-50 rounded-lg border border-blue-100"
+        >
+          <p class="text-gray-600 mb-4">{{ t('anonymousProgress.useLevelsToStudy') }}</p>
+        </div>
+
+        <div
+          v-else-if="flashcards.length === 0"
+          class="text-center py-12 bg-gray-50 rounded-lg border border-blue-100"
+        >
+          <p class="text-gray-600">{{ t('components.flashcardCollectionView.noFlashcards') }}</p>
+        </div>
+
+        <div v-else class="flex flex-col gap-4">
+          <div
+            v-for="(card, index) in flashcards"
+            :key="card.flashcard.id"
+            :class="{ 'cursor-pointer': isOwner }"
+            class="surface-flashcard-summary"
+            @click="isOwner && openFlashcard(card)"
+          >
+            <!-- Card Content -->
+            <div class="flex justify-between items-start gap-4">
+              <div class="min-w-0 flex-1">
+                <div class="flex flex-wrap items-center gap-2 min-w-0">
+                  <h3 class="text-lg font-medium text-gray-800">
+                    {{ card.flashcard.word ?? card.flashcard.free_content_front }}
+                  </h3>
+                  <span v-if="card.flashcard.sound_url" class="shrink-0" @click.stop>
+                    <AudioPlayer
+                      :url="card.flashcard.sound_url"
+                      :collection-id="
+                        card.flashcard.sound_url?.startsWith?.('/api/')
+                          ? card.flashcard.collection_id
+                          : undefined
+                      "
+                      :item-id="
+                        card.flashcard.sound_url?.startsWith?.('/api/')
+                          ? card.flashcard.item_id
+                          : undefined
+                      "
+                      class="shrink-0"
+                    />
                   </span>
                 </div>
 
-                <div class="w-full bg-gray-200 rounded-full h-2">
-                  <div
-                    class="h-2 rounded-full transition-all duration-300"
-                    :class="getProgressBarClass(progress.status)"
-                    :style="{ width: getProgressWidth(progress) }"
-                  />
+                <div
+                  v-if="card.flashcard.has_front_image || card.flashcard.has_back_image"
+                  class="mt-2"
+                >
+                  <div v-if="card.flashcard.has_front_image" class="mb-2">
+                    <img
+                      :src="`/api/collections/${card.flashcard.collection_id}/items/${card.flashcard.item_id}/image/front`"
+                      class="max-h-40 rounded-lg object-contain bg-gray-100"
+                      alt="Front image"
+                    />
+                  </div>
+
+                  <div v-if="card.flashcard.has_back_image">
+                    <img
+                      :src="`/api/collections/${card.flashcard.collection_id}/items/${card.flashcard.item_id}/image/back`"
+                      class="max-h-40 rounded-lg object-contain bg-gray-100"
+                      alt="Back image"
+                    />
+                  </div>
                 </div>
 
-                <div v-if="progress.next_review_at" class="text-xs text-gray-500 mt-1 text-right">
-                  Next: {{ formatDate(progress.next_review_at) }}
+                <div v-if="card.flashcard.notes" class="text-sm text-gray-500 mt-1">
+                  Notes: <LazyMathJax :content="card.flashcard.notes" :enable-markdown="true" />
                 </div>
               </div>
+              <!-- Progress section -->
+              <div class="flex flex-col items-end gap-3">
+                <div
+                  v-for="progress in getOrderedProgress(card.progress)"
+                  :key="progress.card_side"
+                  class="w-32"
+                >
+                  <div class="flex items-center justify-between mb-1">
+                    <span class="text-xs font-medium text-gray-600">{{ progress.card_side }}</span>
+                    <span class="text-xs font-medium" :class="getStatusTextClass(progress.status)">
+                      {{ progress.status }}
+                    </span>
+                  </div>
 
-              <div class="flex items-center gap-2 flex-wrap">
-                <IconButton
-                  :aria-label="t('components.flashcardCollectionView.reviewNowAction')"
-                  :button-classes="'ui-btn--empty text-orange-600 hover:bg-orange-50'"
-                  @click.stop="reviewSingleCard(card.flashcard.id)"
-                >
-                  <template #icon> <Repeat1 class="h-4 w-4" /> </template>
-                </IconButton>
-                <IconButton
-                  :disabled="index === 0 || isReordering"
-                  :aria-label="t('components.flashcardCollectionView.moveUpAction')"
-                  :button-classes="`ui-btn--empty ${index === 0 || isReordering ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100'}`"
-                  @click.stop="moveCard(card, 'up')"
-                >
-                  <template #icon> <ArrowUp class="h-4 w-4" /> </template>
-                </IconButton>
-                <IconButton
-                  :disabled="index === flashcards.length - 1 || isReordering"
-                  :aria-label="t('components.flashcardCollectionView.moveDownAction')"
-                  :button-classes="`ui-btn--empty ${index === flashcards.length - 1 || isReordering ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100'}`"
-                  @click.stop="moveCard(card, 'down')"
-                >
-                  <template #icon> <ArrowDown class="h-4 w-4" /> </template>
-                </IconButton>
+                  <div class="w-full bg-gray-200 rounded-full h-2">
+                    <div
+                      class="h-2 rounded-full transition-all duration-300"
+                      :class="getProgressBarClass(progress.status)"
+                      :style="{ width: getProgressWidth(progress) }"
+                    />
+                  </div>
+
+                  <div v-if="progress.next_review_at" class="text-xs text-gray-500 mt-1 text-right">
+                    Next: {{ formatDate(progress.next_review_at) }}
+                  </div>
+                </div>
+
+                <div class="flex items-center gap-2 flex-wrap">
+                  <IconButton
+                    :aria-label="t('components.flashcardCollectionView.reviewNowAction')"
+                    :button-classes="'ui-btn--empty text-orange-600 hover:bg-orange-50'"
+                    @click.stop="reviewSingleCard(card.flashcard.id)"
+                  >
+                    <template #icon> <Repeat1 class="h-4 w-4" /> </template>
+                  </IconButton>
+                  <IconButton
+                    :disabled="index === 0 || isReordering"
+                    :aria-label="t('components.flashcardCollectionView.moveUpAction')"
+                    :button-classes="`ui-btn--empty ${index === 0 || isReordering ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100'}`"
+                    @click.stop="moveCard(card, 'up')"
+                  >
+                    <template #icon> <ArrowUp class="h-4 w-4" /> </template>
+                  </IconButton>
+                  <IconButton
+                    :disabled="index === flashcards.length - 1 || isReordering"
+                    :aria-label="t('components.flashcardCollectionView.moveDownAction')"
+                    :button-classes="`ui-btn--empty ${index === flashcards.length - 1 || isReordering ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100'}`"
+                    @click.stop="moveCard(card, 'down')"
+                  >
+                    <template #icon> <ArrowDown class="h-4 w-4" /> </template>
+                  </IconButton>
+                </div>
               </div>
             </div>
-          </div>
 
-          <div v-if="showCanonicalForCard(card)" class="mt-2 flex w-full flex-col gap-1">
-            <div
-              class="flex items-center gap-2 text-xs font-semibold text-gray-400 uppercase tracking-wider"
-            >
-              <EqualApproximately class="h-3.5 w-3.5 text-blue-400 shrink-0" />
-              <span>{{ t('components.definitionCard.canonicalLabel') }}</span>
+            <div v-if="showCanonicalForCard(card)" class="mt-2 flex w-full flex-col gap-1">
+              <div
+                class="flex items-center gap-2 text-xs font-semibold text-gray-400 uppercase tracking-wider"
+              >
+                <EqualApproximately class="h-3.5 w-3.5 text-blue-400 shrink-0" />
+                <span>{{ t('components.definitionCard.canonicalLabel') }}</span>
+              </div>
+
+              <div
+                class="text-sm text-gray-700 font-mono bg-blue-50/30 p-2 rounded border border-blue-100/30"
+              >
+                {{ card.flashcard.canonical_form }}
+              </div>
             </div>
 
-            <div
-              class="text-sm text-gray-700 font-mono bg-blue-50/30 p-2 rounded border border-blue-100/30"
-            >
-              {{ card.flashcard.canonical_form }}
+            <div class="mt-2 w-full text-sm text-gray-600">
+              <LazyMathJax
+                :content="card.flashcard.definition ?? card.flashcard.free_content_back"
+              />
             </div>
-          </div>
-
-          <div class="mt-2 w-full text-sm text-gray-600">
-            <LazyMathJax :content="card.flashcard.definition ?? card.flashcard.free_content_back" />
           </div>
         </div>
-      </div>
 
-      <div v-if="totalPages > 1">
-        <PaginationComponent
-          :current-page="currentPage"
-          :total-pages="totalPages"
-          :total="flashcards.length"
-          :per-page="perPage"
-          @prev="handlePageChange(currentPage - 1)"
-          @next="handlePageChange(currentPage + 1)"
-        />
+        <div v-if="totalPages > 1">
+          <PaginationComponent
+            :current-page="currentPage"
+            :total-pages="totalPages"
+            :total="flashcards.length"
+            :per-page="perPage"
+            @prev="handlePageChange(currentPage - 1)"
+            @next="handlePageChange(currentPage + 1)"
+          />
+        </div>
       </div>
     </FeedPageBody>
     <div ref="paginationHost" class="contents" />

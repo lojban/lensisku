@@ -30,7 +30,13 @@
       </slot>
     </div>
   </div>
-  <PageHeader v-else-if="collection" title-as="h2" title-tone="secondary" stack-gap="comfortable">
+  <PageHeader
+    v-else-if="collection"
+    title-as="h2"
+    title-tone="secondary"
+    margin="section"
+    stack-gap="comfortable"
+  >
     <template #leading>
       <CollectionCoverLightbox
         v-if="coverImageUrl"

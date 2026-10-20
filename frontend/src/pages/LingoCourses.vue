@@ -1,53 +1,50 @@
 <template>
   <LingoLayout fill>
-    <div class="feed-page min-h-0 flex-1">
-      <FeedPageBody>
-        <h1 class="text-2xl font-bold text-neutral-700">{{ t('lingo.languageCourses') }}</h1>
+    <LingoFeedLayout class="min-h-0 flex-1 overflow-y-auto overscroll-y-contain">
+      <h1 class="text-2xl font-bold text-neutral-700">{{ t('lingo.languageCourses') }}</h1>
 
-        <div class="mt-4">
-          <Input
-            v-model="searchQuery"
-            type="text"
-            class="input-field w-full sm:max-w-md"
-            :placeholder="t('lingo.searchCourses')"
-          />
-        </div>
-
-        <div v-if="isLoading" class="flex h-full w-full items-center justify-center py-12">
-          <div
-            class="h-10 w-10 animate-spin rounded-full border-2 border-green-500 border-t-transparent"
-          />
-        </div>
-
-        <div
-          v-else
-          class="grid grid-cols-2 gap-4 pt-6 lg:grid-cols-[repeat(auto-fill,minmax(210px,1fr))]"
-        >
-          <LingoCourseCard
-            v-for="collection in collections"
-            :key="collection.collection_id"
-            :collection="collection"
-            :is-active="activeCourseId === collection.collection_id"
-            :disabled="isSelecting"
-            @select="onSelectCourse"
-          />
-        </div>
-        <PaginationComponent
-          v-if="!isLoading && totalPages > 1"
-          :current-page="currentPage"
-          :total-pages="totalPages"
-          :total="totalCollections"
-          :per-page="perPage"
-          class="w-full mt-6"
-          @prev="prevPage"
-          @next="nextPage"
+      <div class="mt-4">
+        <Input
+          v-model="searchQuery"
+          type="text"
+          class="input-field w-full sm:max-w-md"
+          :placeholder="t('lingo.searchCourses')"
         />
-        <p v-if="!isLoading && collections.length === 0" class="py-8 text-center text-neutral-600">
-          {{ t('lingo.noCourses') }}
-        </p>
-      </FeedPageBody>
-      <div ref="paginationHost" class="contents" />
-    </div>
+      </div>
+
+      <div v-if="isLoading" class="flex w-full items-center justify-center py-12">
+        <div
+          class="h-10 w-10 animate-spin rounded-full border-2 border-green-500 border-t-transparent"
+        />
+      </div>
+
+      <div
+        v-else
+        class="grid grid-cols-2 gap-4 pt-6 lg:grid-cols-[repeat(auto-fill,minmax(210px,1fr))]"
+      >
+        <LingoCourseCard
+          v-for="collection in collections"
+          :key="collection.collection_id"
+          :collection="collection"
+          :is-active="activeCourseId === collection.collection_id"
+          :disabled="isSelecting"
+          @select="onSelectCourse"
+        />
+      </div>
+      <PaginationComponent
+        v-if="!isLoading && totalPages > 1"
+        :current-page="currentPage"
+        :total-pages="totalPages"
+        :total="totalCollections"
+        :per-page="perPage"
+        class="mt-6 w-full"
+        @prev="prevPage"
+        @next="nextPage"
+      />
+      <p v-if="!isLoading && collections.length === 0" class="py-8 text-center text-neutral-600">
+        {{ t('lingo.noCourses') }}
+      </p>
+    </LingoFeedLayout>
   </LingoLayout>
 </template>
 
@@ -57,16 +54,14 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import LingoLayout from '@/components/LingoLayout.vue'
+import LingoFeedLayout from '@/components/LingoFeedLayout.vue'
 import LingoCourseCard from '@/components/LingoCourseCard.vue'
 import PaginationComponent from '@/components/PaginationComponent.vue'
-import FeedPageBody from '@/components/layout/FeedPageBody.vue'
-import { useFeedPaginationHost } from '@/composables/useFeedPaginationHost'
 import { getPublicCollections } from '@/api'
 import { useSeoHead } from '@/composables/useSeoHead'
 import { useLingoProgress } from '@/composables/useLingoProgress'
 
 const router = useRouter()
-const paginationHost = useFeedPaginationHost()
 const { t } = useI18n()
 const { activeCourseId, setActiveCourse } = useLingoProgress()
 

@@ -250,7 +250,7 @@
           </label>
         </div>
 
-        <div v-show="activeTab === 'items'" class="mt-4 space-y-4" role="tabpanel">
+        <div v-show="activeTab === 'items'" class="flex flex-col gap-4" role="tabpanel">
           <!-- Loading state for items -->
           <LoadingSpinner v-if="isLoadingItems" class="py-8" />
           <!-- Items grid -->
@@ -327,7 +327,7 @@
           />
         </div>
 
-        <div v-show="activeTab === 'discussion'" class="mt-4 pt-2" role="tabpanel">
+        <div v-show="activeTab === 'discussion'" class="pt-2" role="tabpanel">
           <div v-if="searchMode === 'comments' && itemSearchQuery.trim()" class="space-y-4">
             <LoadingSpinner v-if="isLoadingWaves" class="py-8" />
             <template v-else>

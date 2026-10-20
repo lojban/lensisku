@@ -6,10 +6,10 @@
     <template v-if="isCollectionMode">
       <div class="absolute top-4 left-4 z-30">
         <RouterLink
-          :to="`/collections/${collectionIdStr}`"
+          :to="collectionReelBackTo"
           class="text-sm text-white/80 hover:text-white transition-colors"
         >
-          {{ t('components.tiktoknu.collectionReel.backToCollection') }}
+          {{ collectionReelBackLabel }}
         </RouterLink>
       </div>
 
@@ -82,6 +82,7 @@ import { Button } from '@packages/ui'
 import { useIntersectionObserver } from '@vueuse/core'
 import { Loader2 } from '@lucide/vue'
 import { ref, onMounted, computed } from 'vue'
+import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 
 import LanguageSelector from '../components/LanguageSelector.vue'
@@ -100,11 +101,25 @@ const props = defineProps<{
 }>()
 
 const { t } = useI18n()
+const route = useRoute()
 
 const isCollectionMode = computed(() =>
   Boolean(props.collectionId && String(props.collectionId).trim())
 )
 const collectionIdStr = computed(() => (props.collectionId ? String(props.collectionId) : ''))
+
+/** Opened from Lingo levels → return to that course ladder. */
+const fromLingo = computed(() => String(route.query.from || '') === 'lingo')
+const collectionReelBackTo = computed(() =>
+  fromLingo.value
+    ? `/collections/${collectionIdStr.value}/lingo/levels`
+    : `/collections/${collectionIdStr.value}`
+)
+const collectionReelBackLabel = computed(() =>
+  fromLingo.value
+    ? t('components.tiktoknu.collectionReel.backToLingo')
+    : t('components.tiktoknu.collectionReel.backToCollection')
+)
 
 const collectionTitle = ref('')
 const seoTitle = computed(() => {

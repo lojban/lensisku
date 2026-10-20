@@ -1643,6 +1643,7 @@
       },
       "collectionReel": {
         "backToCollection": "← 合集",
+        "backToLingo": "← 课程",
         "empty": "该合集中没有卡片。",
         "frontLabel": "正面",
         "backLabel": "背面",
@@ -1694,6 +1695,7 @@
   "flashcardLevels": {
     "title": "{collectionName} - 等级",
     "viewFlashcards": "查看闪卡",
+    "editCourse": "编辑",
     "backToCourses": "返回课程",
     "studyButton": "学习",
     "createLevel": "创建等级",

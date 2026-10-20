@@ -1638,6 +1638,7 @@
       },
       "collectionReel": {
         "backToCollection": "← コレクション",
+        "backToLingo": "← コース",
         "empty": "このコレクションにはカードがありません。",
         "frontLabel": "表面",
         "backLabel": "裏面",
@@ -1689,6 +1690,7 @@
   "flashcardLevels": {
     "title": "{collectionName} — レベル",
     "viewFlashcards": "フラッシュカードを見る",
+    "editCourse": "編集",
     "backToCourses": "コース一覧に戻る",
     "studyButton": "学習",
     "createLevel": "レベルを作成",

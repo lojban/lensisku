@@ -272,11 +272,12 @@ export function buildLingoThemeLayer() {
       },
     },
     /**
-     * Default body (no header slot): aside below main on mobile, aside right on desktop
-     * (row-reverse keeps DOM order aside-then-main while painting main|aside).
+     * DOM: aside then main.
+     * Mobile `flex-col`: streak/hearts first (visible without scrolling past the grid).
+     * Desktop `flex-row-reverse`: main | aside (rail on the right).
      */
     '.lingo-feed-layout__body': {
-      '@apply flex w-full flex-col-reverse gap-8 lg:flex-row-reverse lg:gap-12': {},
+      '@apply flex w-full flex-col gap-6 lg:flex-row-reverse lg:gap-12': {},
     },
     /**
      * Levels: sticky full-bleed header (title + hearts), then body (ladder + streak).
@@ -335,8 +336,9 @@ export function buildLingoThemeLayer() {
     },
 
 
+    /** Progress + streak: above main on small screens; sticky right rail on lg. */
     '.lingo-feed-layout__aside': {
-      '@apply hidden w-full shrink-0 lg:sticky lg:top-4 lg:block lg:w-[368px] lg:self-start': {},
+      '@apply w-full shrink-0 lg:sticky lg:top-4 lg:w-[368px] lg:self-start': {},
     },
     '.lingo-feed-layout__main': {
       '@apply relative min-w-0 flex-1': {},

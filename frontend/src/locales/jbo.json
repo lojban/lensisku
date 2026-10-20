@@ -1643,6 +1643,7 @@
       },
       "collectionReel": {
         "backToCollection": "← lo liste",
+        "backToLingo": "← lo ctuca",
         "empty": "no karda cu zasti lo liste",
         "frontLabel": "crane",
         "backLabel": "trixe",
@@ -1715,6 +1716,7 @@
   "flashcardLevels": {
     "title": "{collectionName} - klesi",
     "viewFlashcards": "zgana le karda",
+    "editCourse": "stika",
     "backToCourses": "xruti lo ctuca liste",
     "studyButton": "tadni",
     "createLevel": "finti lo klesi",

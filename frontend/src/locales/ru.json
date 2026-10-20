@@ -1592,6 +1592,7 @@
       },
       "collectionReel": {
         "backToCollection": "← Коллекция",
+        "backToLingo": "← Курс",
         "empty": "В коллекции нет карточек.",
         "frontLabel": "Лицевая сторона",
         "backLabel": "Оборот",
@@ -1643,6 +1644,7 @@
   "flashcardLevels": {
     "title": "{collectionName} - Уровни",
     "viewFlashcards": "К списку карточек",
+    "editCourse": "Изменить",
     "backToCourses": "К курсам",
     "studyButton": "Учить",
     "createLevel": "Создать уровень",
