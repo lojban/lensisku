@@ -167,6 +167,40 @@ export function buildLingoThemeLayer() {
       '@apply w-full rounded-xl border-2 border-slate-200 bg-white p-4 text-center text-slate-500':
         {},
     },
+    /** Study footer SRS grades (Forgot / Good / Easy). */
+    '.lingo-study-rate-row': {
+      '@apply flex w-full items-stretch gap-1.5 sm:gap-2': {},
+    },
+    /** Clone lesson title (`quiz.tsx` h1). */
+    '.lingo-study-lesson-title': {
+      '@apply shrink-0 text-center text-lg font-bold text-neutral-700 lg:text-start lg:text-3xl':
+        {},
+    },
+    /** Clone `QuestionBubble`: mascot + speech bubble for the stimulus. */
+    '.lingo-study-question-row': {
+      '@apply mb-2 flex items-center gap-x-3 sm:mb-4 sm:gap-x-4': {},
+    },
+    /** Portrait LTD icons: fixed max height, width follows aspect (object-contain). */
+    '.lingo-study-mascot': {
+      '@apply h-16 w-auto max-h-16 max-w-[3.5rem] shrink-0 object-contain object-center sm:h-20 sm:max-h-20 sm:max-w-[4.25rem] lg:h-[88px] lg:max-h-[88px] lg:max-w-[72px]':
+        {},
+    },
+    '.lingo-study-question-bubble': {
+      '@apply relative min-w-0 flex-1 rounded-xl border-2 border-neutral-200 bg-white px-4 py-2 text-sm text-neutral-700 lg:text-base':
+        {},
+    },
+    /** Speech-bubble caret (clone: rotated border triangle on the left). */
+    '.lingo-study-question-bubble::before': {
+      content: '""',
+      '@apply absolute -left-3 top-1/2 h-0 w-0 -translate-y-1/2 rotate-90 border-x-8 border-t-8 border-x-transparent border-t-neutral-200':
+        {},
+    },
+    '.lingo-study-stimulus': {
+      '@apply text-sm font-medium text-neutral-700 lg:text-base': {},
+    },
+    '.lingo-study-lesson-stack': {
+      '@apply flex w-full max-h-full min-h-0 flex-col gap-y-6 sm:gap-y-8 lg:gap-y-12': {},
+    },
     /** Leaderboard / list avatar ring (clone: green border circle). */
     '.lingo-avatar': {
       '@apply mr-4 flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-green-500 bg-green-100 text-sm font-bold text-green-700':

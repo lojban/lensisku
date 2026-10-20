@@ -8,24 +8,25 @@
       position="top"
       @visible="anonBannerVisible = $event"
     />
-    <!-- Duolingo learn layout: full viewport, no scroll; header + flex-1 content + footer -->
+    <!-- Full-bleed header stripe; inner chrome matches the lesson column width -->
+    <LingoStudyHeader
+      v-if="(currentCard || outOfHearts) && !isLoading"
+      :percentage="progressPercentage"
+      @exit="handleExit"
+    >
+      <template #extra>
+        <div class="flex items-center gap-1 text-rose-500">
+          <Heart class="h-5 w-5 fill-rose-500" />
+          <InfinityIcon v-if="hasUnlimitedHearts" class="h-4 w-4 stroke-[3]" />
+          <span v-else class="text-sm font-bold">{{ hearts }}</span>
+        </div>
+      </template>
+    </LingoStudyHeader>
+
+    <!-- Lesson column (card body only) -->
     <div
       class="mx-auto flex h-full w-full max-w-[600px] flex-1 flex-col min-h-0 overflow-hidden px-2 sm:px-3"
     >
-      <!-- Duolingo-style header: progress + exit (only when in lesson) -->
-      <LingoStudyHeader
-        v-if="(currentCard || outOfHearts) && !isLoading"
-        :percentage="progressPercentage"
-        @exit="handleExit"
-      >
-        <template #extra>
-          <div class="flex items-center gap-1 text-rose-500">
-            <Heart class="h-5 w-5 fill-rose-500" />
-            <InfinityIcon v-if="hasUnlimitedHearts" class="h-4 w-4 stroke-[3]" />
-            <span v-else class="text-sm font-bold">{{ hearts }}</span>
-          </div>
-        </template>
-      </LingoStudyHeader>
       <!-- Loading State -->
       <div v-if="isLoading" class="flex flex-1 items-center justify-center min-h-0 py-4">
         <div
@@ -74,103 +75,110 @@
           }}
         </button>
       </div>
-      <!-- Lesson: compact card + rating + footer, no scroll -->
+      <!-- Lesson card (footer is full-bleed below this column) -->
       <div v-else-if="currentCard" class="flex flex-1 flex-col min-h-0 overflow-hidden">
-        <!-- Centered content (Duolingo: flex-1, centered, max-w) -->
         <div class="flex flex-1 min-h-0 items-center justify-center overflow-hidden">
-          <div class="w-full flex flex-col gap-1.5 max-h-full min-h-0">
-            <!-- Card - Duolingo style: rounded-xl border-2 border-b-4, compact padding -->
-            <div class="lingo-study-card-shell">
-              <div class="mb-0.5 text-[10px] text-slate-500 sm:text-xs">
-                {{
-                  t('flashcardStudy.cardOfTotal', {
-                    current: totalCards - remainingCards.length,
-                    total: totalCards,
-                  })
-                }}
+          <div class="lingo-study-lesson-stack overflow-auto">
+            <!-- Clone lesson title: large; stimulus below is smaller in a bubble -->
+            <h1 v-if="lessonPrompt" class="lingo-study-lesson-title">
+              {{ lessonPrompt }}
+            </h1>
+
+            <div
+              v-if="currentCard.flashcard.definition_language_id"
+              class="text-[10px] text-gray-600 text-center sm:text-xs lg:text-start"
+            >
+              {{
+                t('flashcardStudy.definitionLanguage', {
+                  language: getLanguageName(currentCard.flashcard.definition_language_id),
+                })
+              }}
+            </div>
+
+            <!-- Clone QuestionBubble: random LTD dialogue icon + speech bubble -->
+            <div class="lingo-study-question-row">
+              <img :src="studyCharacterSrc" alt="" class="lingo-study-mascot" decoding="async" />
+              <div class="lingo-study-question-bubble">
+                <div
+                  v-if="currentCard.progress[0].card_side === 'direct'"
+                  class="flex items-start justify-between gap-2"
+                >
+                  <p class="lingo-study-stimulus min-w-0 flex-1 [overflow-wrap:anywhere]">
+                    {{
+                      currentCard.flashcard.question_text ??
+                      currentCard.flashcard.word ??
+                      currentCard.flashcard.free_content_front
+                    }}
+                  </p>
+                  <AudioPlayer
+                    v-if="currentCard.flashcard.sound_url"
+                    :key="'q-' + currentCard.flashcard.id"
+                    ref="questionAudioPlayerRef"
+                    class="shrink-0"
+                    :url="currentCard.flashcard.sound_url"
+                    :collection-id="
+                      currentCard.flashcard.sound_url?.startsWith?.('/api/')
+                        ? currentCard.flashcard.collection_id
+                        : undefined
+                    "
+                    :item-id="
+                      currentCard.flashcard.sound_url?.startsWith?.('/api/')
+                        ? currentCard.flashcard.item_id
+                        : undefined
+                    "
+                    :suppress-play-errors="true"
+                  />
+                </div>
+                <div v-else class="lingo-study-stimulus prose prose-sm max-w-none">
+                  <LazyMathJax
+                    :content="
+                      currentCard.flashcard.question_text ??
+                      currentCard.flashcard.definition ??
+                      currentCard.flashcard.free_content_back
+                    "
+                  />
+                </div>
               </div>
+            </div>
 
-              <div class="flex flex-col gap-1 min-h-0 overflow-auto">
-                <div
-                  v-if="currentCard.flashcard.definition_language_id"
-                  class="text-[10px] text-gray-600 text-center sm:text-xs"
-                >
-                  {{
-                    t('flashcardStudy.definitionLanguage', {
-                      language: getLanguageName(currentCard.flashcard.definition_language_id),
-                    })
-                  }}
-                </div>
+            <div
+              v-if="
+                currentCard.progress[0].card_side === 'direct' &&
+                currentCard.flashcard.has_front_image
+              "
+              class="flex justify-center"
+            >
+              <img
+                :src="`/api/collections/${currentCard.flashcard.collection_id}/items/${currentCard.flashcard.item_id}/image/front`"
+                class="max-h-20 rounded object-contain bg-gray-100 sm:max-h-24"
+                alt=""
+              />
+            </div>
+            <div
+              v-else-if="
+                currentCard.progress[0].card_side !== 'direct' &&
+                currentCard.flashcard.has_back_image
+              "
+              class="flex justify-center"
+            >
+              <img
+                :src="`/api/collections/${currentCard.flashcard.collection_id}/items/${currentCard.flashcard.item_id}/image/back`"
+                class="max-h-20 rounded object-contain bg-gray-100 sm:max-h-24"
+                alt=""
+              />
+            </div>
 
-                <div
-                  v-if="isFillInMode && currentCard.flashcard.use_canonical_comparison"
-                  class="badge-streak-success--compact"
-                >
-                  <CheckCircle2 class="h-3 w-3" />
-                  <span>{{ t('flashcardStudy.canonicalComparisonEnabled') }}</span>
-                </div>
-                <!-- Question (quiz uses question_text when present) -->
-                <div v-if="currentCard.progress[0].card_side === 'direct'">
-                  <div class="flex items-center justify-center gap-1.5">
-                    <h3 class="text-base font-bold text-gray-800 sm:text-lg">
-                      {{
-                        currentCard.flashcard.question_text ??
-                        currentCard.flashcard.word ??
-                        currentCard.flashcard.free_content_front
-                      }}
-                    </h3>
-                    <AudioPlayer
-                      v-if="currentCard.flashcard.sound_url"
-                      :key="'q-' + currentCard.flashcard.id"
-                      ref="questionAudioPlayerRef"
-                      :url="currentCard.flashcard.sound_url"
-                      :collection-id="
-                        currentCard.flashcard.sound_url?.startsWith?.('/api/')
-                          ? currentCard.flashcard.collection_id
-                          : undefined
-                      "
-                      :item-id="
-                        currentCard.flashcard.sound_url?.startsWith?.('/api/')
-                          ? currentCard.flashcard.item_id
-                          : undefined
-                      "
-                      :suppress-play-errors="true"
-                    />
-                  </div>
+            <div
+              v-if="isFillInMode && currentCard.flashcard.use_canonical_comparison"
+              class="badge-streak-success--compact"
+            >
+              <CheckCircle2 class="h-3 w-3" />
+              <span>{{ t('flashcardStudy.canonicalComparisonEnabled') }}</span>
+            </div>
 
-                  <div
-                    v-if="currentCard.flashcard.has_front_image"
-                    class="mt-1 flex justify-center"
-                  >
-                    <img
-                      :src="`/api/collections/${currentCard.flashcard.collection_id}/items/${currentCard.flashcard.item_id}/image/front`"
-                      class="max-h-20 rounded object-contain bg-gray-100 sm:max-h-24"
-                      alt="Front image"
-                    />
-                  </div>
-                </div>
-
-                <div v-else>
-                  <div class="text-center text-gray-800 text-base sm:text-lg">
-                    <LazyMathJax
-                      :content="
-                        currentCard.flashcard.question_text ??
-                        currentCard.flashcard.definition ??
-                        currentCard.flashcard.free_content_back
-                      "
-                    />
-                    <div
-                      v-if="currentCard.flashcard.has_back_image"
-                      class="mt-1 flex justify-center"
-                    >
-                      <img
-                        :src="`/api/collections/${currentCard.flashcard.collection_id}/items/${currentCard.flashcard.item_id}/image/back`"
-                        class="max-h-20 rounded object-contain bg-gray-100 sm:max-h-24"
-                        alt="Back image"
-                      />
-                    </div>
-                  </div>
-                </div>
+            <!-- Options / fill-in / revealed answer (clone: challenge cards, not the title) -->
+            <div v-if="showStudyCardShell" class="lingo-study-card-shell">
+              <div class="flex flex-col gap-1 min-h-0">
                 <!-- Quiz: multiple-choice options (text or image) -->
                 <div
                   v-if="
@@ -178,12 +186,7 @@
                     !quizResult &&
                     (currentCard.flashcard.quiz_options?.length || quizImageOptions?.length)
                   "
-                  class="mt-1.5"
                 >
-                  <p class="text-[10px] text-slate-500 text-center mb-1.5 sm:text-xs">
-                    {{ t('flashcardStudy.selectOption') }}
-                  </p>
-
                   <div class="grid grid-cols-2 gap-1.5 sm:gap-2">
                     <template v-if="quizImageOptions?.length">
                       <Button
@@ -229,8 +232,8 @@
                     @keydown.enter.prevent="() => submitAnswer()"
                   />
                 </div>
-                <!-- Quiz result -->
-                <div v-if="quizResult" class="flex flex-col gap-1 pt-1.5 border-t border-slate-200">
+                <!-- Quiz result (options hidden once answered — no divider needed) -->
+                <div v-if="quizResult" class="flex flex-col gap-1">
                   <div
                     :class="
                       quizResult.correct
@@ -253,10 +256,11 @@
                     {{ quizResult.message }}
                   </p>
                 </div>
-                <!-- Answer Display (after reveal or wrong fill-in) -->
+                <!-- Answer after Check / wrong fill-in. Divider only when fill-in input still sits above. -->
                 <div
                   v-if="(showAnswer || (fillinResult && !isFillinCorrect)) && !quizResult"
-                  class="flex flex-col gap-1 pt-1.5 border-t border-slate-200"
+                  class="flex flex-col gap-1"
+                  :class="isFillInMode ? 'mt-1.5 border-t border-slate-200 pt-1.5' : ''"
                 >
                   <div class="prose prose-sm max-w-none text-center text-sm sm:text-base">
                     <h4 class="text-[10px] text-center text-gray-700 mb-0.5 sm:text-xs">
@@ -346,90 +350,45 @@
                 </div>
               </div>
             </div>
-            <!-- Rating buttons - compact Duolingo card style -->
-            <div
-              v-if="showAnswer && !isFillInMode && !isJustInformationMode"
-              class="w-full rounded-xl border-2 border-b-4 border-neutral-200 bg-white p-2 shadow-sm hover:bg-black/5 shrink-0"
-            >
-              <h4 class="text-xs font-medium text-center text-neutral-700 mb-1.5">
-                {{ t('flashcardStudy.howWellRemembered') }}
-              </h4>
-
-              <div class="grid grid-cols-3 gap-1.5 sm:gap-2">
-                <Button
-                  variant="error"
-                  type="button"
-                  class="flex w-full items-center justify-center gap-1 py-1.5 text-xs sm:py-2 sm:text-sm"
-                  @click="submitAnswer(1)"
-                >
-                  <XCircle class="h-3.5 w-3.5 shrink-0" />
-                  <span class="inline-flex min-w-0 items-center gap-0.5">
-                    <span>{{ t('flashcardStudy.forgot') }}</span>
-                    <span class="hidden sm:inline">(1)</span>
-                  </span>
-                </Button>
-                <Button
-                  variant="warning"
-                  type="button"
-                  class="flex w-full items-center justify-center gap-1 py-1.5 text-xs sm:py-2 sm:text-sm"
-                  @click="submitAnswer(3)"
-                >
-                  <Smile class="h-3.5 w-3.5 shrink-0" />
-                  <span class="inline-flex min-w-0 items-center gap-0.5">
-                    <span>{{ t('flashcardStudy.good') }}</span>
-                    <span class="hidden sm:inline">(2)</span>
-                  </span>
-                </Button>
-                <Button
-                  variant="success"
-                  type="button"
-                  class="flex w-full items-center justify-center gap-1 py-1.5 text-xs sm:py-2 sm:text-sm"
-                  @click="submitAnswer(4)"
-                >
-                  <Check class="h-3.5 w-3.5 shrink-0" />
-                  <span class="inline-flex min-w-0 items-center gap-0.5">
-                    <span>{{ t('flashcardStudy.easy') }}</span>
-                    <span class="hidden sm:inline">(3)</span>
-                  </span>
-                </Button>
-              </div>
-            </div>
           </div>
         </div>
-        <!-- Duolingo-style footer: fixed at bottom, compact for scrollbar-less page -->
-        <LingoStudyFooter
-          v-if="!isJustInformationMode && (isFillInMode || !showAnswer)"
-          :status="footerStatus"
-          :disabled="footerDisabled"
-          :compact="true"
-          :correct-label="t('flashcardStudy.nicelyDone')"
-          :wrong-label="t('flashcardStudy.tryAgain')"
-          @check="onFooterCheck"
-        />
-        <LingoStudyFooter
-          v-else
-          status="none"
-          :disabled="false"
-          :compact="true"
-          :label-check="t('flashcardStudy.continue')"
-          @check="submitAnswer(4)"
-        />
       </div>
     </div>
+
+    <!-- Full-bleed footer stripe; inner chrome matches the lesson column width -->
+    <template v-if="currentCard && !isLoading && !outOfHearts">
+      <LingoStudyFooter
+        v-if="footerShowsRate"
+        status="rate"
+        :disabled="isSubmitting"
+        :compact="true"
+        :rate-prompt="t('flashcardStudy.howWellRemembered')"
+        @rate="submitAnswer"
+      />
+      <LingoStudyFooter
+        v-else-if="!isJustInformationMode"
+        :status="footerStatus"
+        :disabled="footerDisabled"
+        :compact="true"
+        :correct-label="t('flashcardStudy.nicelyDone')"
+        :wrong-label="t('flashcardStudy.tryAgain')"
+        @check="onFooterCheck"
+      />
+      <LingoStudyFooter
+        v-else
+        status="none"
+        :disabled="isSubmitting"
+        :compact="true"
+        :label-check="t('flashcardStudy.continue')"
+        @check="submitAnswer(4)"
+      />
+    </template>
   </div>
 </template>
 
 <script setup lang="ts">
 import { Button, Textarea } from '@packages/ui'
-import {
-  XCircle,
-  Check,
-  Smile,
-  CheckCircle2,
-  EqualApproximately,
-  Heart,
-  Infinity as InfinityIcon,
-} from '@lucide/vue'
+import { CheckCircle2, EqualApproximately, Heart, Infinity as InfinityIcon } from '@lucide/vue'
 import { ref, onMounted, computed, watch, nextTick, onBeforeUnmount } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter, RouterLink } from 'vue-router'
@@ -438,6 +397,7 @@ import LingoStudyHeader from '@/components/LingoStudyHeader.vue'
 import LingoStudyFooter from '@/components/LingoStudyFooter.vue'
 import LingoResultCard from '@/components/LingoResultCard.vue'
 import { useLingoProgress } from '@/composables/useLingoProgress'
+import { pickRandomLingoCharacter, useLingoStudySfx } from '@/composables/useLingoStudySfx'
 
 import {
   getDueCards,
@@ -471,17 +431,25 @@ const router = useRouter()
 const auth = useAuth()
 const { getProgress, saveLevelProgress } = useAnonymousProgress()
 const { hearts, hasUnlimitedHearts, loseHeart, awardSessionXp } = useLingoProgress()
+const { playCorrect, playIncorrect, playFinish } = useLingoStudySfx()
+const studyCharacterSrc = ref(pickRandomLingoCharacter())
 
 const outOfHearts = computed(() => !hasUnlimitedHearts.value && hearts.value <= 0)
 
 function registerWrongAnswer() {
+  playIncorrect()
   loseHeart()
+}
+
+function registerCorrectAnswer() {
+  playCorrect()
 }
 
 function claimSessionXpOnce() {
   if (sessionXpClaimed.value) return
   sessionXpClaimed.value = true
   sessionXpAwarded.value = awardSessionXp(cardsAnsweredInSession.value)
+  playFinish()
 }
 
 const collectionId = computed(() => paramStr(route.params.collectionId))
@@ -505,7 +473,8 @@ const isLoading = ref(true)
 const remainingCards = ref([])
 const currentCard = ref(null)
 const showAnswer = ref(false)
-const totalCards = ref(0)
+/** Cards in this study session (level queue / loaded batch) — not collection-wide due total. */
+const sessionTotal = ref(0)
 const showAnswerButtonRef = ref(null)
 const nextCardButtonRef = ref(null)
 const fillInTextareaRef = ref(null)
@@ -553,13 +522,27 @@ const getLanguageName = (langId) => {
   return lang?.real_name || 'Unknown'
 }
 
-/** Progress 0–100 for header bar */
+/**
+ * Progress 0–100 for header bar: share of this session’s cards finished.
+ * Uses the loaded queue size (per level / batch), not API `total` due in the collection.
+ */
 const progressPercentage = computed(() => {
-  if (totalCards.value <= 0) return 0
-  const answered = totalCards.value - remainingCards.value.length
-  if (currentCard.value) return Math.round((answered / totalCards.value) * 100)
-  return 100
+  if (sessionTotal.value <= 0) return 0
+  const stillInSession = remainingCards.value.length + (currentCard.value ? 1 : 0)
+  if (stillInSession <= 0) return 100
+  const done = Math.max(0, sessionTotal.value - stillInSession)
+  return Math.min(100, Math.round((done / sessionTotal.value) * 100))
 })
+
+/** After Check reveals the answer on a graded card, footer shows Forgot/Good/Easy. */
+const footerShowsRate = computed(
+  () =>
+    !!currentCard.value &&
+    showAnswer.value &&
+    !isFillInMode.value &&
+    !isJustInformationMode.value &&
+    !quizResult.value
+)
 
 /** Footer status for Duolingo-style footer */
 const footerStatus = computed(() => {
@@ -618,28 +601,46 @@ function isAnonFillinAnswerCorrect() {
   return expectedLower === user
 }
 
+/** Load due cards for this session. With a levelId, fetch every page so progress is per-level. */
 const loadDueCards = async (singleCardId = null) => {
   isLoading.value = true
   try {
-    let response
     if (singleCardId) {
-      // Fetch a single specific card for review
-      response = await getFlashcards({
+      const response = await getFlashcards({
         collection_id: collectionId.value,
         flashcard_id: singleCardId,
-        per_page: 1, // Ensure we only get one
+        per_page: 1,
       })
-      // Adapt the response structure if necessary, assuming it returns a list
-      remainingCards.value = response.data.flashcards
-      totalCards.value = 1 // Only one card in this session
+      remainingCards.value = response.data.flashcards || []
+      sessionTotal.value = remainingCards.value.length
+    } else if (levelIdParam.value) {
+      const all = []
+      let page = 1
+      const perPage = 100
+      let total = 0
+      do {
+        const response = await getDueCards({
+          collection_id: collectionId.value,
+          level_id: levelIdParam.value,
+          page,
+          per_page: perPage,
+        })
+        const batch = response.data.flashcards || []
+        total = Number(response.data.total || 0)
+        all.push(...batch)
+        page += 1
+        if (batch.length === 0) break
+      } while (all.length < total)
+      remainingCards.value = all
+      sessionTotal.value = all.length
     } else {
-      // Fetch all due cards
-      response = await getDueCards({
+      // Open due session: progress within the loaded batch (not collection-wide due count)
+      const response = await getDueCards({
         collection_id: collectionId.value,
-        level_id: levelIdParam.value || undefined,
+        per_page: 50,
       })
-      remainingCards.value = response.data.flashcards
-      totalCards.value = response.data.total
+      remainingCards.value = response.data.flashcards || []
+      sessionTotal.value = remainingCards.value.length
     }
     loadNextCard()
   } catch (error) {
@@ -690,7 +691,7 @@ const loadLevelCardsForAnon = async () => {
       page++
     } while (all.length < total)
     remainingCards.value = all
-    totalCards.value = all.length
+    sessionTotal.value = all.length
     loadNextCard()
   } catch (error) {
     console.error(t('flashcardStudy.loadError'), error)
@@ -719,7 +720,7 @@ const loadCollectionCardsForAnon = async () => {
     }
     if (all.length === 0) return false
     remainingCards.value = all
-    totalCards.value = all.length
+    sessionTotal.value = all.length
     isAnonNoLevelsMode.value = true
     anonLevelMeta.value = null
     loadNextCard()
@@ -760,6 +761,7 @@ const applyAnonLevelProgress = (correct: boolean) => {
 const loadNextCard = () => {
   if (remainingCards.value.length > 0) {
     currentCard.value = remainingCards.value.shift()
+    studyCharacterSrc.value = pickRandomLingoCharacter()
     showAnswer.value = false
     userAnswer.value = ''
     fillinResult.value = null
@@ -773,6 +775,37 @@ const userAnswer = ref('')
 const isSubmitting = ref(false)
 const fillinResult = ref(null)
 const quizResult = ref(null)
+
+/** True when stimulus is definition/back (user recalls the word). */
+const isReverseSide = computed(() => currentCard.value?.progress?.[0]?.card_side !== 'direct')
+
+/** Duolingo-style instruction above the card (clone lesson `title` h1). */
+const lessonPrompt = computed(() => {
+  if (!currentCard.value) return ''
+  const reverse = isReverseSide.value
+  if (isQuizMode.value && !quizResult.value) {
+    return reverse ? t('flashcardStudy.howDoYouSayThis') : t('flashcardStudy.selectOption')
+  }
+  if (isFillInMode.value && !fillinResult.value) {
+    return reverse ? t('flashcardStudy.howDoYouSayThis') : t('flashcardStudy.typeYourAnswer')
+  }
+  if (isJustInformationMode.value) return t('flashcardStudy.readThis')
+  if (!showAnswer.value) {
+    return reverse ? t('flashcardStudy.howDoYouSayThis') : t('flashcardStudy.whatDoesThisMean')
+  }
+  return ''
+})
+
+/** Hide empty white shell until there is quiz / fill-in / revealed answer content. */
+const showStudyCardShell = computed(() => {
+  if (!currentCard.value) return false
+  if (isQuizMode.value) return true
+  if (isFillInMode.value) return true
+  if (quizResult.value) return true
+  if (showAnswer.value) return true
+  if (fillinResult.value) return true
+  return false
+})
 
 /** Image quiz: options are "item_id:side"; build list with image URLs for current collection. */
 const quizImageOptions = computed(() => {
@@ -803,13 +836,15 @@ const submitAnswer = async (rating?: number) => {
         correct = isAnonFillinAnswerCorrect()
         fillinResult.value = { correct, message: correct ? t('flashcardStudy.correctAnswer') : '' }
         applyAnonLevelProgress(correct)
-        if (!correct) registerWrongAnswer()
+        if (correct) registerCorrectAnswer()
+        else registerWrongAnswer()
         await nextTick()
         if (!isJustInformationMode.value) answerAudioPlayerRef.value?.play()
       } else {
         correct = typeof rating === 'number' ? rating >= 3 : true
         applyAnonLevelProgress(correct)
-        if (!correct) registerWrongAnswer()
+        if (correct) registerCorrectAnswer()
+        else registerWrongAnswer()
         loadNextCard()
       }
       isSubmitting.value = false
@@ -822,9 +857,13 @@ const submitAnswer = async (rating?: number) => {
         answer: userAnswer.value.trim(),
       })
       fillinResult.value = response.data
-      if (response.data && !(response.data.correct === true || response.data.success === true)) {
-        registerWrongAnswer()
-      }
+      const ok =
+        response.data &&
+        (response.data.answer_correct === true ||
+          response.data.correct === true ||
+          response.data.success === true)
+      if (ok) registerCorrectAnswer()
+      else registerWrongAnswer()
       await checkForDueChanges()
       await nextTick()
       if (!isJustInformationMode.value) answerAudioPlayerRef.value?.play()
@@ -836,6 +875,7 @@ const submitAnswer = async (rating?: number) => {
         card_side: currentCard.value.progress[0].card_side,
       })
       if (rating < 3) registerWrongAnswer()
+      else registerCorrectAnswer()
       loadNextCard()
       await checkForDueChanges()
     }
@@ -867,7 +907,8 @@ const submitQuizOption = async (selectedOption) => {
           .toLowerCase()
       quizResult.value = { correct, message: correct ? '' : t('flashcardStudy.correctAnswer') }
       applyAnonLevelProgress(correct)
-      if (!correct) registerWrongAnswer()
+      if (correct) registerCorrectAnswer()
+      else registerWrongAnswer()
     } else {
       const response = await submitQuizAnswer({
         flashcard_id: fc.id,
@@ -876,7 +917,8 @@ const submitQuizOption = async (selectedOption) => {
         presented_options: options,
       })
       quizResult.value = response.data
-      if (response.data && !response.data.correct) registerWrongAnswer()
+      if (response.data?.correct) registerCorrectAnswer()
+      else registerWrongAnswer()
       await checkForDueChanges()
     }
     await nextTick()
@@ -915,18 +957,25 @@ const newCardsMessage = ref('')
 const showNewCardsMessage = ref(false)
 
 async function checkForDueChanges() {
-  // Check if we need to refresh due cards if the current queue is empty
-  if (remainingCards.value.length === 0) {
-    await loadDueCards() // This might repopulate remainingCards
-    if (remainingCards.value.length > 0) {
-      // Check again after loading
-      showNewCardsMessage.value = true
-      newCardsMessage.value = t('flashcardStudy.newCardsMessage')
-      // If new cards were loaded and the session seemed over, load the first new card
-      if (!currentCard.value) {
-        loadNextCard()
-      }
-    }
+  // Level sessions load the full queue up front — empty means the lesson is done.
+  if (levelIdParam.value) return
+  if (remainingCards.value.length > 0 || currentCard.value) return
+
+  try {
+    const response = await getDueCards({
+      collection_id: collectionId.value,
+      per_page: 50,
+    })
+    const batch = response.data.flashcards || []
+    if (batch.length === 0) return
+    const completedSoFar = sessionTotal.value
+    remainingCards.value = batch
+    sessionTotal.value = completedSoFar + batch.length
+    showNewCardsMessage.value = true
+    newCardsMessage.value = t('flashcardStudy.newCardsMessage')
+    loadNextCard()
+  } catch (e) {
+    console.error(e)
   }
 }
 

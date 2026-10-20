@@ -842,10 +842,16 @@ export default {
           '@apply flex min-h-0 flex-1 shrink-0 flex-col overflow-hidden rounded-xl border-2 border-b-4 border-neutral-200 bg-white p-2 pb-2 shadow-sm transition-colors duration-200 hover:bg-black/5 sm:p-2.5 sm:pb-2.5':
             {},
         },
-        /** Lingo study header row (tap highlight off for mobile). */
+        /**
+         * Lingo study header / footer: full-bleed stripe; pair with
+         * `.lingo-study-chrome-inner` so controls align to the lesson column.
+         */
         '.lingo-study-header-bar': {
           '-webkit-tap-highlight-color': 'transparent',
-          '@apply sticky top-0 z-40 mx-auto flex w-full max-w-[1140px] items-center gap-x-2 border-b-2 border-slate-200 bg-white px-3 py-2 sm:px-4 sm:py-2.5 lg:px-6 lg:py-3':
+          '@apply sticky top-0 z-40 w-full shrink-0 border-b-2 border-slate-200 bg-white': {},
+        },
+        '.lingo-study-chrome-inner': {
+          '@apply mx-auto flex h-full w-full max-w-[600px] items-center gap-x-2 px-2 py-2 sm:px-3 sm:py-2.5':
             {},
         },
         /** Lingo header back / exit — alias of `.lingo-icon-btn--muted` for study pages. */
