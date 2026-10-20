@@ -60,6 +60,40 @@ export function buildLingoThemeLayer() {
       '@apply h-[52px] w-full justify-start rounded-xl border-2 border-sky-300 bg-sky-500/15 px-4 text-sky-500 transition-none hover:bg-sky-500/20':
         {},
     },
+    /** Course row in the Lingo rail: cover + title + description. */
+    '.lingo-btn--sidebar-course': {
+      '@apply h-auto min-h-0 w-full items-center justify-start gap-2 rounded-xl border border-transparent bg-transparent px-1.5 py-1.5 text-left text-slate-600 normal-case tracking-normal transition-none hover:bg-slate-100':
+        {},
+    },
+    '.lingo-btn--sidebar-course-active': {
+      '@apply h-auto min-h-0 w-full items-center justify-start gap-2 rounded-xl border border-sky-300 bg-sky-500/15 px-1.5 py-1.5 text-left text-sky-700 shadow-sm shadow-sky-500/10 normal-case tracking-normal transition-none hover:bg-sky-500/20':
+        {},
+    },
+
+
+    '.lingo-sidebar-course__media': {
+      '@apply flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-neutral-200 bg-neutral-50':
+        {},
+    },
+    '.lingo-sidebar-course__copy': {
+      '@apply flex min-w-0 flex-1 flex-col justify-center gap-0.5 self-stretch': {},
+    },
+    /** Title-only rows: vertically center against the cover thumb. */
+    '.lingo-sidebar-course__copy--solo': {
+      '@apply justify-center': {},
+    },
+    '.lingo-sidebar-course__title': {
+      '@apply block min-w-0 truncate text-sm font-bold leading-snug text-inherit': {},
+    },
+    '.lingo-sidebar-course__desc': {
+      '@apply block min-w-0 truncate text-xs font-normal leading-snug text-slate-500': {},
+    },
+
+    '.lingo-btn--sidebar-course-active .lingo-sidebar-course__desc': {
+      '@apply text-sky-700/70': {},
+    },
+
+
     /** Icon-only chrome (menu, close, back) — never Aqua/Flat pills. */
     '.lingo-icon-btn': {
       '@apply inline-flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-lg border-0 bg-transparent p-0 text-inherit transition-colors hover:bg-black/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2':
@@ -86,13 +120,18 @@ export function buildLingoThemeLayer() {
      * z-40 keeps the rail above main content; never rely on in-flow placement alone.
      */
     '.lingo-sidebar-rail': {
-      '@apply flex h-full w-full flex-col border-r-2 border-slate-200 bg-white px-4 lg:fixed lg:left-0 lg:top-0 lg:z-40 lg:h-svh lg:w-[256px]':
+      '@apply flex h-full w-full flex-col border-r-2 border-slate-200 bg-white px-2 lg:fixed lg:left-0 lg:top-0 lg:z-40 lg:h-svh lg:w-[256px]':
         {},
     },
     '.lingo-sidebar-nav': {
       /* Desktop rail needs its own top inset; drawer gets that from `.lingo-drawer-toolbar`. */
-      '@apply flex flex-1 flex-col gap-y-2 pt-4 lg:pt-8': {},
+      '@apply flex min-h-0 flex-1 flex-col gap-y-1 overflow-y-auto pt-2 pb-2 lg:pt-3 lg:pb-3': {},
     },
+    /** Pushes the classic-collections link to the bottom of the rail. */
+    '.lingo-sidebar-nav__spacer': {
+      '@apply min-h-2 flex-1': {},
+    },
+
     /**
      * Main column: left inset for desktop rail; bottom reserve for mobile tab bar.
      * Safe-area padding is raw CSS (commas in `env()` break `@apply`).
@@ -144,20 +183,25 @@ export function buildLingoThemeLayer() {
     '.lingo-bottom-nav-item--active': {
       '@apply text-green-600': {},
     },
+    /** Shared Lingo card surface — thin border + soft shadow (not chunky clone borders). */
+    '.lingo-card': {
+      '@apply rounded-xl border border-slate-200/90 bg-white shadow-sm shadow-slate-200/60': {},
+    },
     /**
      * Course pick tile (clone: courses/card.tsx) — plain button, not ui-btn.
      * Top-aligned fixed slots (media → title → desc) so a grid of cards stays even.
      * Active = currently selected course (clone Check); smaller corner badge + sky border.
      */
     '.lingo-course-card': {
-      '@apply relative flex h-full min-h-[217px] min-w-0 w-full cursor-pointer flex-col items-center justify-start rounded-xl border-2 border-b-[4px] border-neutral-200 bg-white p-3 pb-5 text-left transition hover:bg-black/5 active:border-b-2 disabled:pointer-events-none disabled:opacity-50 lg:min-w-[200px]':
+      '@apply relative flex h-full min-h-[217px] min-w-0 w-full cursor-pointer flex-col items-center justify-start rounded-xl border border-slate-200/90 bg-white p-3 pb-5 text-left shadow-sm shadow-slate-200/60 transition hover:-translate-y-0.5 hover:bg-slate-50/80 hover:shadow-md hover:shadow-slate-200/80 active:translate-y-0 active:shadow-sm disabled:pointer-events-none disabled:opacity-50 lg:min-w-[200px]':
         {},
     },
     '.lingo-course-card--active': {
-      '@apply border-sky-400 bg-sky-500/5': {},
+      '@apply border-sky-400 bg-sky-500/5 shadow-md shadow-sky-500/15': {},
     },
+
     '.lingo-course-card__media': {
-      '@apply relative mt-1 flex h-[70px] w-[93px] shrink-0 items-center justify-center overflow-hidden rounded-lg border border-neutral-200 bg-neutral-50 drop-shadow-md':
+      '@apply relative mt-1 flex h-[70px] w-[93px] shrink-0 items-center justify-center overflow-hidden rounded-lg border border-neutral-200/80 bg-neutral-50 shadow-sm':
         {},
     },
     /**
@@ -171,20 +215,22 @@ export function buildLingoThemeLayer() {
     '.lingo-course-card__copy': {
       '@apply mt-3 flex w-full min-w-0 flex-col items-center gap-1 px-0.5 text-center': {},
     },
-    /** Two-line title slot (always reserved). */
+    /** Two-line title slot (always reserved) with ellipsis. */
     '.lingo-course-card__title': {
-      '@apply w-full min-h-[2.75rem] text-sm font-bold leading-snug text-neutral-700 line-clamp-2':
+      '@apply w-full min-h-[2.75rem] overflow-hidden text-sm font-bold leading-snug text-neutral-700 line-clamp-2':
         {},
     },
-    /** Two-line description slot (always reserved, even when empty). */
+    /** Two-line description slot (always reserved, even when empty) with ellipsis. */
     '.lingo-course-card__desc': {
-      '@apply card-description w-full min-h-[2.5rem] text-center leading-snug line-clamp-2': {},
+      '@apply card-description w-full min-h-[2.5rem] overflow-hidden text-center leading-snug line-clamp-2':
+        {},
     },
     /** Unit / collection banner on the learn ladder. */
     '.lingo-unit-banner': {
-      '@apply flex w-full flex-col gap-4 rounded-xl bg-green-500 p-5 text-white sm:flex-row sm:items-center sm:justify-between':
+      '@apply flex w-full flex-col gap-4 rounded-xl bg-green-500 p-5 text-white shadow-md shadow-green-600/25 sm:flex-row sm:items-center sm:justify-between':
         {},
     },
+
     /** Ladder lesson circle (clone: secondary / locked + border-b-8). */
     '.lingo-lesson-node': {
       '@apply flex h-[70px] w-[70px] shrink-0 items-center justify-center rounded-full border-2 border-b-8 transition-[transform,box-shadow] duration-150':
@@ -217,20 +263,92 @@ export function buildLingoThemeLayer() {
      * Pad owner when not using `feed-page` — do not also pad `.lingo-main-inner`.
      */
     '.lingo-feed-layout': {
-      '@apply flex w-full flex-col-reverse gap-8 px-4 py-4 lg:flex-row-reverse lg:gap-12 lg:px-6':
-        {},
+      '@apply flex w-full flex-col gap-8 px-4 py-4 lg:px-6': {},
+      '--lingo-feed-inline-pad': '1rem',
+      '--lingo-feed-aside-w': '368px',
+      '--lingo-feed-col-gap': '3rem',
+      '@screen lg': {
+        '--lingo-feed-inline-pad': '1.5rem',
+      },
     },
+    /**
+     * Default body (no header slot): aside below main on mobile, aside right on desktop
+     * (row-reverse keeps DOM order aside-then-main while painting main|aside).
+     */
+    '.lingo-feed-layout__body': {
+      '@apply flex w-full flex-col-reverse gap-8 lg:flex-row-reverse lg:gap-12': {},
+    },
+    /**
+     * Levels: sticky full-bleed header (title + hearts), then body (ladder + streak).
+     */
+    '.lingo-feed-layout--with-header': {
+      '@apply gap-0': {},
+    },
+    '.lingo-feed-layout--with-header .lingo-feed-layout__body': {
+      '@apply pt-6': {},
+    },
+    /** Keep streak card below the sticky header while scrolling. */
+    '.lingo-feed-layout--with-header .lingo-feed-layout__aside': {
+      '@screen lg': {
+        top: '5rem',
+      },
+    },
+    /**
+     * Full-bleed sticky top bar. Owns the Lensisku header/footer stripe wash
+     * (same as App.vue `header, footer`) across the whole feed width.
+     */
+    '.lingo-feed-layout__header-band': {
+      '@apply sticky top-0 z-40 shrink-0 lg:z-50': {},
+      position: 'sticky',
+      width: 'calc(100% + 2 * var(--lingo-feed-inline-pad))',
+      maxWidth: 'none',
+      marginLeft: 'calc(-1 * var(--lingo-feed-inline-pad))',
+      marginRight: 'calc(-1 * var(--lingo-feed-inline-pad))',
+      marginTop: '-1rem',
+      paddingTop: '1rem',
+      paddingLeft: 'var(--lingo-feed-inline-pad)',
+      paddingRight: 'var(--lingo-feed-inline-pad)',
+      background: 'repeating-linear-gradient(#f8f8f8, #f8f8f8 4px, #ffffff 4px, #ffffff 8px)',
+      boxShadow: 'inset 0 -2px 0 0 rgb(226 232 240), 0 4px 12px -6px rgb(15 23 42 / 0.12)',
+    },
+
+    '.lingo-feed-layout__header-row': {
+      '@apply relative z-[1] flex w-full flex-col gap-3 pb-3 lg:flex-row lg:items-center': {},
+      '@screen lg': {
+        gap: 'var(--lingo-feed-col-gap)',
+      },
+    },
+    '.lingo-feed-layout__header-main': {
+      '@apply min-w-0 flex-1': {},
+    },
+    '.lingo-feed-layout__header-aside': {
+      '@apply hidden w-full shrink-0 lg:block': {},
+      '@screen lg': {
+        width: 'var(--lingo-feed-aside-w)',
+      },
+    },
+    /** Title/actions only — stripe wash lives on `__header-band`, not here. */
+    '.lingo-levels-header': {
+      '@apply flex w-full items-center justify-between gap-3': {},
+      background: 'transparent',
+      backgroundImage: 'none',
+    },
+
+
     '.lingo-feed-layout__aside': {
       '@apply hidden w-full shrink-0 lg:sticky lg:top-4 lg:block lg:w-[368px] lg:self-start': {},
     },
     '.lingo-feed-layout__main': {
       '@apply relative min-w-0 flex-1': {},
     },
+
     /** Empty / placeholder panels inside Lingo. */
     '.lingo-panel': {
-      '@apply w-full rounded-xl border-2 border-slate-200 bg-white p-4 text-center text-slate-500':
+      '@apply w-full rounded-xl border border-slate-200/90 bg-white p-4 text-center text-slate-500 shadow-sm shadow-slate-200/60':
         {},
     },
+
+
     /** Study footer SRS grades (Forgot / Good / Easy). */
     '.lingo-study-rate-row': {
       '@apply flex w-full items-stretch gap-1.5 sm:gap-2': {},
@@ -244,15 +362,16 @@ export function buildLingoThemeLayer() {
     '.lingo-study-question-row': {
       '@apply mb-2 flex items-center gap-x-3 sm:mb-4 sm:gap-x-4': {},
     },
-    /** Portrait LTD icons: fixed max height, width follows aspect (object-contain). */
+    /** Portrait LTD icons: fixed box + background image (avoids CLS from late image layout). */
     '.lingo-study-mascot': {
-      '@apply h-16 w-auto max-h-16 max-w-[3.5rem] shrink-0 object-contain object-center sm:h-20 sm:max-h-20 sm:max-w-[4.25rem] lg:h-[88px] lg:max-h-[88px] lg:max-w-[72px]':
+      '@apply h-16 w-14 shrink-0 bg-contain bg-center bg-no-repeat sm:h-20 sm:w-[4.25rem] lg:h-[88px] lg:w-[72px]':
         {},
     },
     '.lingo-study-question-bubble': {
-      '@apply relative min-w-0 flex-1 rounded-xl border-2 border-neutral-200 bg-white px-4 py-2 text-sm text-neutral-700 lg:text-base':
+      '@apply relative min-w-0 flex-1 rounded-xl border border-neutral-200/90 bg-white px-4 py-2 text-sm text-neutral-700 shadow-sm shadow-slate-200/50 lg:text-base':
         {},
     },
+
     /** Speech-bubble caret (clone: rotated border triangle on the left). */
     '.lingo-study-question-bubble::before': {
       content: '""',

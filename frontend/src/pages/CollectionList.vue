@@ -15,21 +15,30 @@
             </div>
           </template>
           <template #trailing>
-            <RouterLink
-              v-if="auth.state.isLoggedIn"
-              to="/library"
-              class="ui-btn--neutral inline-flex items-center gap-2"
-            >
-              <StarsIcon class="h-4 w-4 shrink-0" />
-              <span>{{ t('nav.library') }}</span>
-            </RouterLink>
-            <RouterLink
-              v-else
-              to="/login"
-              class="font-medium text-blue-600 underline hover:text-blue-800"
-            >
-              {{ t('collectionList.loginTo') }}
-            </RouterLink>
+            <div class="flex flex-wrap items-center justify-end gap-2">
+              <RouterLink
+                :to="localePath('/lingo/courses')"
+                class="ui-btn--neutral inline-flex items-center gap-2"
+              >
+                <Dumbbell class="h-4 w-4 shrink-0" />
+                <span>{{ t('lingo.newTheme') }}</span>
+              </RouterLink>
+              <RouterLink
+                v-if="auth.state.isLoggedIn"
+                to="/library"
+                class="ui-btn--neutral inline-flex items-center gap-2"
+              >
+                <StarsIcon class="h-4 w-4 shrink-0" />
+                <span>{{ t('nav.library') }}</span>
+              </RouterLink>
+              <RouterLink
+                v-else
+                to="/login"
+                class="font-medium text-blue-600 underline hover:text-blue-800"
+              >
+                {{ t('collectionList.loginTo') }}
+              </RouterLink>
+            </div>
           </template>
         </PageHeader>
 
@@ -151,7 +160,7 @@
 </template>
 
 <script setup lang="ts">
-import { CalendarDays, Calendar, Trophy, ArrowDown } from '@lucide/vue'
+import { CalendarDays, Calendar, Trophy, ArrowDown, Dumbbell } from '@lucide/vue'
 import { ref, computed, onBeforeUnmount, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
@@ -165,12 +174,14 @@ import FeedPageBody from '@/components/layout/FeedPageBody.vue'
 import { useFeedPaginationHost } from '@/composables/useFeedPaginationHost'
 import StudyStreak from '@/components/StudyStreak.vue'
 import { useAuth } from '@/composables/useAuth'
+import { useLocalePath } from '@/composables/useLocalePath'
 import { useSeoHead } from '@/composables/useSeoHead'
 
 const SEGMENT_STORAGE_KEY = 'collections-catalog-segment'
 
 const auth = useAuth()
 const router = useRouter()
+const localePath = useLocalePath()
 const paginationHost = useFeedPaginationHost()
 const { t, locale } = useI18n()
 

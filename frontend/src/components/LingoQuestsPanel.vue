@@ -1,5 +1,5 @@
 <template>
-  <div class="space-y-4 rounded-xl border-2 border-slate-200 bg-white p-4">
+  <div class="lingo-card space-y-4 p-4">
     <div class="flex w-full items-center justify-between gap-2">
       <h3 class="text-lg font-bold text-neutral-800">{{ t('lingo.quests') }}</h3>
       <RouterLink

@@ -1,10 +1,9 @@
 <template>
   <LingoLayout>
     <LingoFeedLayout>
-      <div class="lingo-levels-root flex w-full flex-col">
-        <header
-          class="sticky top-0 z-40 mb-5 flex items-center justify-between gap-3 border-b-2 border-slate-200 bg-white pb-3 lg:z-50 lg:mt-[-1rem] lg:pt-4"
-        >
+      <template #header>
+        <!-- div not header: global App.vue `header` stripes belong on `__header-band`. -->
+        <div class="lingo-levels-header">
           <RouterLink
             to="/lingo/courses"
             class="lingo-icon-btn lingo-icon-btn--muted"
@@ -36,8 +35,10 @@
               {{ t('flashcardLevels.createLevel') }}
             </button>
           </div>
-        </header>
+        </div>
+      </template>
 
+      <div class="lingo-levels-root flex w-full flex-col">
         <div v-if="isLoading" class="flex min-h-[40vh] items-center justify-center py-12">
           <div
             class="h-10 w-10 animate-spin rounded-full border-2 border-green-500 border-t-transparent"

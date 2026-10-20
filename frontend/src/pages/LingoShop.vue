@@ -1,10 +1,6 @@
 <template>
   <LingoLayout>
     <LingoFeedLayout>
-      <template #aside>
-        <LingoQuestsPanel />
-      </template>
-
       <div class="flex w-full flex-col items-center">
         <div class="flex h-20 w-20 items-center justify-center rounded-2xl bg-green-100">
           <ShoppingBag class="h-10 w-10 text-green-600" />
@@ -73,7 +69,6 @@ import { ShoppingBag, Heart, Sparkles, Infinity as InfinityIcon } from '@lucide/
 import { useI18n } from 'vue-i18n'
 import LingoLayout from '@/components/LingoLayout.vue'
 import LingoFeedLayout from '@/components/LingoFeedLayout.vue'
-import LingoQuestsPanel from '@/components/LingoQuestsPanel.vue'
 import { useLingoProgress } from '@/composables/useLingoProgress'
 import { useSeoHead } from '@/composables/useSeoHead'
 

@@ -1820,6 +1820,9 @@
     "currentCourse": "受講中のコース",
     "noCourses": "まだコースがありません。メインアプリでコレクションを作成してください。",
     "courses": "コース",
+    "classicCollections": "クラシックテーマ",
+    "newTheme": "新テーマ",
+
     "heroTitle": "Lingo で学び、練習し、身につけよう。",
     "continueLearning": "学習を続ける",
     "getStarted": "はじめる",

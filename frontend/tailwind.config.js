@@ -830,18 +830,20 @@ export default {
           },
         },
         '.study-quiz-option-lingo-text': {
-          '@apply cursor-pointer rounded-xl border-2 border-slate-200 bg-white p-2.5 text-left text-xs font-medium text-gray-800 transition-colors duration-200 hover:border-green-400 hover:bg-green-50/50 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-60 sm:text-sm':
+          '@apply cursor-pointer rounded-xl border border-slate-200/90 bg-white p-2.5 text-left text-xs font-medium text-gray-800 shadow-sm shadow-slate-200/50 transition-colors duration-200 hover:border-green-400 hover:bg-green-50/50 hover:shadow-md disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-60 sm:text-sm':
             {},
         },
+
         '.study-quiz-option-lingo-image': {
-          '@apply flex min-h-[80px] cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-slate-200 bg-white p-2 transition-colors duration-200 hover:border-green-400 hover:bg-green-50/50 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-60':
+          '@apply flex min-h-[80px] cursor-pointer flex-col items-center justify-center rounded-xl border border-slate-200/90 bg-white p-2 shadow-sm shadow-slate-200/50 transition-colors duration-200 hover:border-green-400 hover:bg-green-50/50 hover:shadow-md disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-60':
             {},
         },
-        /** Lingo study: main lesson card (Duolingo-style bottom border). */
+        /** Lingo study: main lesson card — thin border + soft shadow. */
         '.lingo-study-card-shell': {
-          '@apply flex min-h-0 flex-1 shrink-0 flex-col overflow-hidden rounded-xl border-2 border-b-4 border-neutral-200 bg-white p-2 pb-2 shadow-sm transition-colors duration-200 hover:bg-black/5 sm:p-2.5 sm:pb-2.5':
+          '@apply flex min-h-0 flex-1 shrink-0 flex-col overflow-hidden rounded-xl border border-slate-200/90 bg-white p-2 pb-2 shadow-sm shadow-slate-200/60 transition-shadow duration-200 hover:shadow-md hover:shadow-slate-200/80 sm:p-2.5 sm:pb-2.5':
             {},
         },
+
         /**
          * Lingo study header / footer: full-bleed stripe; pair with
          * `.lingo-study-chrome-inner` so controls align to the lesson column.

@@ -1,7 +1,8 @@
 <template>
   <div
     v-if="auth.state.isLoggedIn"
-    class="card-base card-compact card-streak min-h-[11rem] p-4 sm:min-h-[13rem] sm:p-5"
+    class="card-streak min-h-[11rem] p-4 sm:min-h-[13rem] sm:p-5"
+    :class="lingo ? 'lingo-card' : 'card-base card-compact'"
   >
     <template v-if="!isLoadingStreak && streakData">
       <div class="card-streak-header">
@@ -70,6 +71,11 @@ import { useI18n } from 'vue-i18n'
 import { getStreak } from '@/api'
 import { useAuth } from '@/composables/useAuth'
 
+defineProps({
+  /** Soft Lingo card chrome (thin border + shadow) instead of dictionary card-base. */
+  lingo: { type: Boolean, default: false },
+})
+
 interface StreakDay {
   date: string
   reviews_count: number
@@ -88,10 +94,10 @@ const streakData = ref<StreakData | null>(null)
 /** Start true so the first paint uses the in-card skeleton (outer min-h already reserved). */
 const isLoadingStreak = ref(true)
 
-/** Maps daily points to a threshold-based emoji indicator. */
+/** Daily intensity tiers (exact pts are in title/aria-label). */
 const streakPointsEmoji = (points: number): string => {
   if (points <= 0) return '😴'
-  if (points < 10) return '🟦'
+  if (points < 10) return '🌱'
   if (points < 25) return '⭐'
   if (points < 50) return '🔥'
   return '🏆'

@@ -1,10 +1,6 @@
 <template>
   <LingoLayout>
     <LingoFeedLayout>
-      <template #aside>
-        <LingoPromo />
-      </template>
-
       <div class="flex w-full flex-col items-center">
         <div class="flex h-20 w-20 items-center justify-center rounded-2xl bg-green-100">
           <Target class="h-10 w-10 text-green-600" />
@@ -50,7 +46,6 @@ import { Target, Sparkles } from '@lucide/vue'
 import { useI18n } from 'vue-i18n'
 import LingoLayout from '@/components/LingoLayout.vue'
 import LingoFeedLayout from '@/components/LingoFeedLayout.vue'
-import LingoPromo from '@/components/LingoPromo.vue'
 import { LINGO_QUESTS } from '@/config/lingoConstants'
 import { useLingoProgress } from '@/composables/useLingoProgress'
 import { useSeoHead } from '@/composables/useSeoHead'

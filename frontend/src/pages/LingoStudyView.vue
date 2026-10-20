@@ -97,7 +97,12 @@
 
             <!-- Clone QuestionBubble: random LTD dialogue icon + speech bubble -->
             <div class="lingo-study-question-row">
-              <img :src="studyCharacterSrc" alt="" class="lingo-study-mascot" decoding="async" />
+              <div
+                class="lingo-study-mascot"
+                role="img"
+                aria-hidden="true"
+                :style="{ backgroundImage: `url(${studyCharacterSrc})` }"
+              />
               <div class="lingo-study-question-bubble">
                 <div
                   v-if="currentCard.progress[0].card_side === 'direct'"

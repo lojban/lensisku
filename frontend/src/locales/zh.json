@@ -1825,6 +1825,9 @@
     "currentCourse": "当前课程",
     "noCourses": "暂无课程。请在主应用中创建合集。",
     "courses": "课程",
+    "classicCollections": "经典主题",
+    "newTheme": "新主题",
+
     "heroTitle": "用 Lingo 学习、练习与精通。",
     "continueLearning": "继续学习",
     "getStarted": "开始使用",

@@ -3,6 +3,12 @@ import { LINGO_MAX_HEARTS, LINGO_POINTS_TO_REFILL } from '@/config/lingoConstant
 
 const STORAGE_KEY = 'lingo_progress_v1'
 const ACTIVE_COURSE_KEY = 'lingo_active_collection_id'
+const MAX_RECENT_COURSES = 5
+
+export type LingoRecentCourse = {
+  id: number
+  name: string
+}
 
 type LingoProgressState = {
   hearts: number
@@ -10,6 +16,7 @@ type LingoProgressState = {
   isPro: boolean
   activeCourseId: number | null
   activeCourseName: string
+  recentCourses: LingoRecentCourse[]
 }
 
 function readState(): LingoProgressState {
@@ -17,6 +24,18 @@ function readState(): LingoProgressState {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (raw) {
       const parsed = JSON.parse(raw) as Partial<LingoProgressState>
+      let recentCourses = parseRecentCourses(parsed.recentCourses)
+      if (
+        recentCourses.length === 0 &&
+        typeof parsed.activeCourseId === 'number' &&
+        Number.isFinite(parsed.activeCourseId)
+      ) {
+        recentCourses = pushRecentCourse(
+          [],
+          parsed.activeCourseId,
+          typeof parsed.activeCourseName === 'string' ? parsed.activeCourseName : ''
+        )
+      }
       return {
         hearts:
           typeof parsed.hearts === 'number'
@@ -27,6 +46,7 @@ function readState(): LingoProgressState {
         activeCourseId: typeof parsed.activeCourseId === 'number' ? parsed.activeCourseId : null,
         activeCourseName:
           typeof parsed.activeCourseName === 'string' ? parsed.activeCourseName : '',
+        recentCourses,
       }
     }
   } catch {
@@ -45,7 +65,34 @@ function readState(): LingoProgressState {
     isPro: false,
     activeCourseId,
     activeCourseName: '',
+    recentCourses: [],
   }
+}
+
+function parseRecentCourses(raw: unknown): LingoRecentCourse[] {
+  if (!Array.isArray(raw)) return []
+  const out: LingoRecentCourse[] = []
+  for (const entry of raw) {
+    if (!entry || typeof entry !== 'object') continue
+    const { id, name } = entry as { id?: unknown; name?: unknown }
+    if (typeof id !== 'number' || !Number.isFinite(id)) continue
+    out.push({
+      id,
+      name: typeof name === 'string' && name.trim() ? name : '',
+    })
+    if (out.length >= MAX_RECENT_COURSES) break
+  }
+  return out
+}
+
+function pushRecentCourse(
+  recent: LingoRecentCourse[],
+  id: number,
+  name: string
+): LingoRecentCourse[] {
+  const label = name.trim() || recent.find((c) => c.id === id)?.name || ''
+  const without = recent.filter((c) => c.id !== id)
+  return [{ id, name: label }, ...without].slice(0, MAX_RECENT_COURSES)
 }
 
 const state = ref<LingoProgressState>(readState())
@@ -74,13 +121,20 @@ export function useLingoProgress() {
   const isPro = computed(() => state.value.isPro)
   const activeCourseId = computed(() => state.value.activeCourseId)
   const activeCourseName = computed(() => state.value.activeCourseName)
+  const recentCourses = computed(() => state.value.recentCourses)
   const hasUnlimitedHearts = computed(() => state.value.isPro)
 
   function setActiveCourse(id: number | null, name = '') {
+    const nextName = name || state.value.activeCourseName
+    const recentCourses =
+      id != null
+        ? pushRecentCourse(state.value.recentCourses, id, nextName)
+        : state.value.recentCourses
     state.value = {
       ...state.value,
       activeCourseId: id,
-      activeCourseName: name || state.value.activeCourseName,
+      activeCourseName: nextName,
+      recentCourses,
     }
     persist()
   }
@@ -135,6 +189,7 @@ export function useLingoProgress() {
     hasUnlimitedHearts,
     activeCourseId,
     activeCourseName,
+    recentCourses,
     setActiveCourse,
     addPoints,
     loseHeart,

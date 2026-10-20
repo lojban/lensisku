@@ -1,5 +1,5 @@
 <template>
-  <div v-if="!isPro" class="space-y-4 rounded-xl border-2 border-slate-200 bg-white p-4">
+  <div v-if="!isPro" class="lingo-card space-y-4 p-4">
     <div class="space-y-2">
       <div class="flex items-center gap-x-2">
         <Sparkles class="h-6 w-6 text-indigo-500" />
