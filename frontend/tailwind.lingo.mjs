@@ -127,21 +127,18 @@ export function buildLingoThemeLayer() {
       /* Desktop rail needs its own top inset; drawer gets that from `.lingo-drawer-toolbar`. */
       '@apply flex min-h-0 flex-1 flex-col gap-y-1 overflow-y-auto pt-2 pb-2 lg:pt-3 lg:pb-3': {},
     },
+    /** Divides “all courses” from the recent/popular course list. */
+    '.lingo-sidebar-nav__separator': {
+      '@apply my-2 shrink-0 border-t-2 border-slate-200': {},
+    },
     /** Pushes the classic-collections link to the bottom of the rail. */
     '.lingo-sidebar-nav__spacer': {
       '@apply min-h-2 flex-1': {},
     },
 
-    /**
-     * Main column: left inset for desktop rail; bottom reserve for mobile tab bar.
-     * Safe-area padding is raw CSS (commas in `env()` break `@apply`).
-     */
+    /** Main column: left inset for desktop rail. No bottom pad (tab bar removed). */
     '.lingo-main': {
-      '@apply min-h-0 flex-1 lg:pl-[256px]': {},
-      paddingBottom: 'calc(4.25rem + env(safe-area-inset-bottom, 0px))',
-      '@screen lg': {
-        paddingBottom: '0',
-      },
+      '@apply min-h-0 flex-1 pb-0 lg:pl-[256px]': {},
     },
     /**
      * Width shell only (no padding). Inset lives on the scroll/content child:
@@ -280,13 +277,14 @@ export function buildLingoThemeLayer() {
       '@apply flex w-full flex-col gap-6 lg:flex-row-reverse lg:gap-12': {},
     },
     /**
-     * Levels: sticky full-bleed header (title + hearts), then body (ladder + streak).
+     * Levels: sticky full-bleed header, then ladder.
+     * Drop outer vertical pad on this variant — header sits flush under the app bar.
      */
     '.lingo-feed-layout--with-header': {
-      '@apply gap-0': {},
+      '@apply gap-0 py-0': {},
     },
     '.lingo-feed-layout--with-header .lingo-feed-layout__body': {
-      '@apply pt-6': {},
+      '@apply pt-3 lg:pt-6': {},
     },
     /** Keep streak card below the sticky header while scrolling. */
     '.lingo-feed-layout--with-header .lingo-feed-layout__aside': {
@@ -297,24 +295,22 @@ export function buildLingoThemeLayer() {
     /**
      * Full-bleed sticky top bar. Owns the Lensisku header/footer stripe wash
      * (same as App.vue `header, footer`) across the whole feed width.
+     * Inset: `p-2` only — no extra pad on `__header-row`.
      */
     '.lingo-feed-layout__header-band': {
-      '@apply sticky top-0 z-40 shrink-0 lg:z-50': {},
+      '@apply sticky top-0 z-40 shrink-0 p-2 lg:z-50': {},
       position: 'sticky',
       width: 'calc(100% + 2 * var(--lingo-feed-inline-pad))',
       maxWidth: 'none',
       marginLeft: 'calc(-1 * var(--lingo-feed-inline-pad))',
       marginRight: 'calc(-1 * var(--lingo-feed-inline-pad))',
-      marginTop: '-1rem',
-      paddingTop: '1rem',
-      paddingLeft: 'var(--lingo-feed-inline-pad)',
-      paddingRight: 'var(--lingo-feed-inline-pad)',
       background: 'repeating-linear-gradient(#f8f8f8, #f8f8f8 4px, #ffffff 4px, #ffffff 8px)',
       boxShadow: 'inset 0 -2px 0 0 rgb(226 232 240), 0 4px 12px -6px rgb(15 23 42 / 0.12)',
     },
 
     '.lingo-feed-layout__header-row': {
-      '@apply relative z-[1] flex w-full flex-col gap-3 pb-3 lg:flex-row lg:items-center': {},
+      '@apply relative z-[1] flex w-full flex-col gap-2 lg:flex-row lg:items-center lg:gap-3':
+        {},
       '@screen lg': {
         gap: 'var(--lingo-feed-col-gap)',
       },

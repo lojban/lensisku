@@ -1,6 +1,9 @@
 <template>
-  <LingoLayout>
-    <LingoFeedLayout>
+  <LingoLayout fill>
+    <LingoFeedLayout
+      :show-aside="false"
+      class="min-h-0 flex-1 overflow-y-auto overscroll-y-contain"
+    >
       <template #header>
         <!-- div not header: global App.vue `header` stripes belong on `__header-band`. -->
         <div class="lingo-levels-header">
@@ -43,6 +46,7 @@
               <Pencil class="h-4 w-4 shrink-0" />
               <span class="hidden sm:inline">{{ t('flashcardLevels.editCourse') }}</span>
             </RouterLink>
+            <LingoUserProgress />
           </div>
         </div>
       </template>
@@ -93,6 +97,7 @@ import LingoLayout from '@/components/LingoLayout.vue'
 import LingoFeedLayout from '@/components/LingoFeedLayout.vue'
 import LingoUnitBanner from '@/components/LingoUnitBanner.vue'
 import LingoLessonButton from '@/components/LingoLessonButton.vue'
+import LingoUserProgress from '@/components/LingoUserProgress.vue'
 import { useLingoProgress } from '@/composables/useLingoProgress'
 import { getCollection, getLevels } from '@/api'
 import { useAuth } from '@/composables/useAuth'

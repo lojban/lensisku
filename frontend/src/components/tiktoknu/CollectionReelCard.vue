@@ -58,8 +58,18 @@
       </div>
     </div>
 
+    <!--
+      Nested overflow+touch-pan-y blocks reel snap swipes when the panel does not
+      actually scroll. Only become a scrollport when content overflows.
+    -->
     <div
-      class="absolute inset-x-0 bottom-0 z-10 max-h-[55dvh] overflow-y-auto overscroll-y-contain text-white [-webkit-overflow-scrolling:touch] touch-pan-y bg-gradient-to-t from-black/92 via-black/80 to-transparent px-4 pb-[max(1rem,env(safe-area-inset-bottom,0px))] pt-12 sm:px-6"
+      ref="textPanelRef"
+      class="absolute inset-x-0 bottom-0 z-10 max-h-[55dvh] text-white bg-gradient-to-t from-black/92 via-black/80 to-transparent px-4 pb-[max(1rem,env(safe-area-inset-bottom,0px))] pt-12 sm:px-6"
+      :class="
+        panelScrollable
+          ? 'overflow-y-auto overscroll-y-contain touch-pan-y [-webkit-overflow-scrolling:touch]'
+          : 'overflow-hidden'
+      "
     >
       <div class="flex justify-between items-start gap-3 mb-3">
         <h2
@@ -99,7 +109,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 type CollectionReelItem = {
@@ -124,6 +134,34 @@ const imageLoaded = ref(false)
 /** After a failed image fetch, treat the card as text-only. */
 const imageFailed = ref(false)
 
+const textPanelRef = ref<HTMLElement | null>(null)
+/** True only when the caption panel’s content exceeds max-height (needs its own pan). */
+const panelScrollable = ref(false)
+let panelResizeObserver: ResizeObserver | null = null
+
+function updatePanelScrollable() {
+  const el = textPanelRef.value
+  if (!el) {
+    panelScrollable.value = false
+    return
+  }
+  panelScrollable.value = el.scrollHeight > el.clientHeight + 1
+}
+
+onMounted(() => {
+  void nextTick(() => {
+    updatePanelScrollable()
+    if (!textPanelRef.value || typeof ResizeObserver === 'undefined') return
+    panelResizeObserver = new ResizeObserver(() => updatePanelScrollable())
+    panelResizeObserver.observe(textPanelRef.value)
+  })
+})
+
+onUnmounted(() => {
+  panelResizeObserver?.disconnect()
+  panelResizeObserver = null
+})
+
 const hasImage = computed(
   () => !imageFailed.value && (props.item.has_front_image || props.item.has_back_image)
 )
@@ -133,6 +171,7 @@ watch(
   () => {
     imageLoaded.value = false
     imageFailed.value = false
+    void nextTick(updatePanelScrollable)
   }
 )
 
@@ -142,6 +181,14 @@ const imageSrc = computed(
   () =>
     `/api/collections/${props.collectionId}/items/${props.item.item_id}/image/${imageSide.value}`
 )
+
+function stripHtml(s: string | null | undefined): string {
+  if (!s) return ''
+  return s
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
 
 const heading = computed(() => {
   const w = props.item.word?.trim()
@@ -163,16 +210,13 @@ const entryHref = computed(() => {
   return `/valsi/${vid}`
 })
 
-function stripHtml(s: string | null | undefined): string {
-  if (!s) return ''
-  return s
-    .replace(/<[^>]*>/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
-}
+watch([frontPlain, backPlain, heading], () => {
+  void nextTick(updatePanelScrollable)
+})
 
 const handleImageError = () => {
   imageFailed.value = true
   imageLoaded.value = true
+  void nextTick(updatePanelScrollable)
 }
 </script>

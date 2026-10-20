@@ -3,6 +3,13 @@
     <nav class="lingo-sidebar-nav">
       <template v-if="showCourseList">
         <LingoSidebarItem
+          :label="t('lingo.courses')"
+          href="/lingo/courses"
+          icon="courses"
+          @navigate="$emit('navigate')"
+        />
+        <div class="lingo-sidebar-nav__separator" role="separator" />
+        <LingoSidebarItem
           v-for="course in sidebarCourses"
           :key="course.id"
           :label="course.name"
@@ -43,7 +50,7 @@
       <div class="lingo-sidebar-nav__spacer" aria-hidden="true" />
       <LingoSidebarItem
         :label="t('lingo.classicCollections')"
-        :href="localePath('/collections')"
+        :href="classicThemeHref"
         icon="library"
         @navigate="$emit('navigate')"
       />
@@ -59,6 +66,7 @@ import LingoSidebarItem from './LingoSidebarItem.vue'
 import { getCollection, searchCollectionsAndUsers } from '@/api'
 import { useLingoProgress } from '@/composables/useLingoProgress'
 import { useLocalePath } from '@/composables/useLocalePath'
+import { classicThemePathForRoute } from '@/utils/lingoClassicTheme'
 
 defineProps({
   /** Extra classes for the rail (e.g. drawer vs desktop). */
@@ -87,6 +95,12 @@ const coursesLoaded = ref(false)
 
 const SIDEBAR_COURSE_LIMIT = 10
 const POPULAR_FETCH_PER_KIND = 10
+
+/**
+ * Classic theme exit — always in the rail. Maps the current Lingo surface to the
+ * matching collections / flashcards route (catalog, levels, or study).
+ */
+const classicThemeHref = computed(() => localePath(classicThemePathForRoute(route)))
 
 /** Recent/popular course list only on the levels ladder (names are `LingoLevels` / `LingoLevels-en`). */
 const showCourseList = computed(() => {

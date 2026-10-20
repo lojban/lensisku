@@ -10,14 +10,13 @@
         <slot />
       </div>
     </main>
-    <LingoBottomNav />
+    <!-- Bottom tab bar omitted: Learn/Courses/Leaderboard live in the sidebar / drawer. -->
   </div>
 </template>
 
 <script setup lang="ts">
 import LingoMobileHeader from './LingoMobileHeader.vue'
 import LingoSidebar from './LingoSidebar.vue'
-import LingoBottomNav from './LingoBottomNav.vue'
 
 defineProps({
   fill: {

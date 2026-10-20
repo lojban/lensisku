@@ -61,14 +61,25 @@ const resolvedImageUrl = computed(() => {
 })
 
 const isActive = computed(() => {
+  const hrefPath = props.href.split('?')[0]
+  // Classic theme exit: never mark active while still inside Lingo chrome.
+  if (/\/lingo\//.test(route.path) || /\/lingo\/?$/.test(route.path)) {
+    if (
+      /\/collections\/?$/.test(hrefPath) ||
+      /\/collections\/[^/]+\/levels\/?$/.test(hrefPath) ||
+      /\/collections\/[^/]+\/flashcards(\/study)?\/?$/.test(hrefPath)
+    ) {
+      return false
+    }
+  }
   // Classic collections catalog: exact list path only (not /collections/:id/...).
-  if (/\/collections\/?$/.test(props.href)) {
+  if (/\/collections\/?$/.test(hrefPath)) {
     return /\/collections\/?$/.test(route.path)
   }
-  if (route.path === props.href || route.path.startsWith(props.href + '/')) return true
+  if (route.path === hrefPath || route.path.startsWith(hrefPath + '/')) return true
   // Levels ladder is the Learn surface (clone /learn).
-  if (props.href === '/lingo/learn' && /\/lingo\/levels\/?$/.test(route.path)) return true
-  if (props.href.startsWith('/collections/') && route.path.startsWith(props.href)) return true
+  if (hrefPath === '/lingo/learn' && /\/lingo\/levels\/?$/.test(route.path)) return true
+  if (hrefPath.includes('/collections/') && route.path.startsWith(hrefPath)) return true
   return false
 })
 
